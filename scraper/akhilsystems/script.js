@@ -2,7 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import AKHIL_SYSTEMS_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -258,7 +258,15 @@ export const createAkhilSystemsScraper = ({
     fetchPage = defaultFetchPage,
     now = defaultNow,
   } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+    const fetchApiOnlyPage = async (url) => {
+      try {
+        return await fetchPage(url)
+      } catch (error) {
+        throw new Error(`Akhil Systems API-only migration could not fetch ${url}: ${error.message}`)
+      }
+    }
+
+    const homepage = await fetchApiOnlyPage(HOMEPAGE_URL)
     if (
       homepage.status !== 200
       || !isAcceptedHomepageUrl(homepage.url)
@@ -272,7 +280,7 @@ export const createAkhilSystemsScraper = ({
       throw new Error('Akhil Systems verified homepage Career navigation changed materially')
     }
 
-    const careersPage = await fetchPage(CAREERS_URL)
+    const careersPage = await fetchApiOnlyPage(CAREERS_URL)
     if (
       careersPage.status !== 200
       || !isAcceptedCareersUrl(careersPage.url)
@@ -297,7 +305,7 @@ export const createAkhilSystemsScraper = ({
 export const run = async (options = {}) => createAkhilSystemsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

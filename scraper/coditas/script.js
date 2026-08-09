@@ -77,7 +77,7 @@ const fetchJson = async (url) => {
   const response = await fetch(url, {
     headers: {
       Accept: 'application/json,text/plain,*/*',
-      'User-Agent': 'Mozilla/5.0 (compatible; JobifyScraper/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyScraper/1.0)',
     },
   })
 
@@ -103,7 +103,7 @@ export const createCoditasScraper = () => ({
 export const run = async () => createCoditasScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Coditas scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

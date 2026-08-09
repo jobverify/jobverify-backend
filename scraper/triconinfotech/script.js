@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import TRICON_INFOTECH_CATALOG from './catalog.js'
 
@@ -40,7 +40,7 @@ export const hasVerifiedAwsmShellSignal = (html = '') =>
     && /awsmJobsPublic/i.test(String(html ?? ''))
 
 export const hasPublicJobsSurfaceSignal = (html = '', payload = []) =>
-  /awsm-b-job-post-title/i.test(String(html ?? ''))
+  /<[^>]+class=["'][^"']*\bawsm-b-job-post-title\b[^"']*["'][^>]*>/i.test(String(html ?? ''))
     || /https?:\/\/www\.triconinfotech\.com\/jobs\/[a-z0-9-]+\/?/i.test(String(html ?? ''))
     || (Array.isArray(payload) && payload.length > 0)
 
@@ -63,7 +63,7 @@ export const run = async ({
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

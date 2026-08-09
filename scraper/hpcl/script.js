@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { HPCL_CATALOG } from './catalog.js'
 
@@ -175,7 +175,8 @@ export const hasOfficialCareersSignal = (html = '') => {
   return /<title>\s*HPCL Careers \| Oil Gas Industry Jobs \| Hindustan Petroleum Corporation Ltd\s*<\/title>/i.test(page)
     && /href=["']\/job-openings["']/i.test(page)
     && /jobs\.hpcl\.co\.in\/Recruit_New\/recruitlogin\.jsp/i.test(page)
-    && /Interview call letters for shortlisted candidates/i.test(normalized)
+    && normalized.includes('Latest Announcements')
+    && /FRAUD ALERT!|What'?s Your Interest/i.test(normalized)
 }
 
 export const hasOfficialJobOpeningsSignal = (html = '') => {
@@ -350,7 +351,7 @@ export const createHpclScraper = ({
 export const run = async (options = {}) => createHpclScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

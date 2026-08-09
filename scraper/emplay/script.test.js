@@ -28,6 +28,8 @@ const jobsHtml = `
       <title>all jobs</title>
     </head>
     <body>
+      <h1>All Jobs</h1>
+      <p>Join Our Team</p>
       <section id="devops" class="devops">
         <div class="div-block-482"><div class="text-block-256">DEVOPS</div></div>
         <div class="w-dyn-list">
@@ -46,7 +48,7 @@ const jobsHtml = `
           </div>
         </div>
       </section>
-      <a href="/careers-all-jobs" class="button-21 w-button">Explore Job Openings</a>
+      <a href="/careers-all-jobs" class="button-21 w-button">All Jobs</a>
     </body>
   </html>
 `

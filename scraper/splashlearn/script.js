@@ -83,12 +83,12 @@ export const pageExposesPublicJobListings = (html = '') =>
 export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
 
-  return normalized.includes('SplashLearn Overview')
-    && normalized.includes("We are the world's first scientifically-designed, game-based curriculum spanning pre-kindergarten to Grade 5.")
+  return normalized.includes('Careers at SplashLearn')
+    && normalized.includes('1 in 7 elementary school children in the US love SplashLearn!')
     && normalized.includes('Culture at SplashLearn')
     && normalized.includes('At SplashLearn, we dig individuality.')
+    && normalized.includes('Meet Our Founders')
     && /Arpit Jain\s*-\s*CEO and a Co-founder\s*,?\s*SplashLearn\.?/i.test(normalized)
-    && normalized.includes('help@splashlearn.com')
     && normalized.includes('StudyPad & SplashLearn are registered Trademarks of StudyPad, Inc.')
   }
 
@@ -118,7 +118,7 @@ export const createSplashLearnScraper = () => ({
 export const run = async (options = {}) => createSplashLearnScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

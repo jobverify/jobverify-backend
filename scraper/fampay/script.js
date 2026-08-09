@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import FAMPAY_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -169,9 +169,9 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeText(page)
 
-  return /<title>\s*FamApp: Make payments with your own UPI and Card\s*<\/title>/i.test(page)
-    && text.includes('#jointhefam')
-    && text.includes('be a part of the team setting the bar for new-world work culture')
+  return text.includes('#jointhefam')
+    && text.includes('be a part of the team setting the bar for')
+    && text.includes('new-world work culture')
     && text.includes('so like, what does fam do?')
     && text.includes('famapp by trio (formerly fampay) focuses on financial inclusion of the next generation')
 }
@@ -186,8 +186,8 @@ export const hasCareersBundleJobsHandoff = (bundle = '') =>
 export const hasOfficialJobsShellSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title>\s*FamApp: Make payments with your own UPI and Card\s*<\/title>/i.test(page)
-    && /"page"\s*:\s*"\/jobs"/i.test(page)
+  return /"page"\s*:\s*"\/jobs"/i.test(page)
+    && /__NEXT_DATA__/i.test(page)
 }
 
 export const hasVerifiedJobsBundleReference = (html = '') =>
@@ -205,7 +205,6 @@ export const hasOfficialLeverBoardSignal = (html = '') => {
     && text.includes('location')
     && text.includes('team')
     && text.includes('work type')
-    && text.includes('jobs powered by lever')
     && text.includes('fam home page')
     && /https:\/\/jobs\.lever\.co\/fampay\/[a-z0-9-]+/i.test(page)
 }
@@ -334,7 +333,7 @@ export const createFampayScraper = ({
 export const run = async (options = {}) => createFampayScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

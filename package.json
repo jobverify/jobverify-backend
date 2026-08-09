@@ -1,39 +1,57 @@
 {
-  "name": "jobify-backend",
+  "name": "jobverify-backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
+    "e2e:local-stack": "node scripts/startLocalE2EStack.js",
     "clean:workspace": "node scripts/cleanWorkspace.js",
     "lint": "node scripts/lintSyntax.js",
-    "test": "node --test \"test/**/*.test.js\" \"scraper/**/*.test.js\"",
-    "scrape": "node scraper/runner.js",
-    "scrape:dry": "node scraper/runner.js --dry-run",
-    "scrape:parallel": "node scraper/runner.js --parallel",
-    "scrape:parallel:dry": "node scraper/runner.js --parallel --dry-run",
+    "test": "node --test --test-concurrency=4 \"test/**/*.test.js\" \"scraper/**/*.test.js\" \"scraper-support/**/*.test.js\"",
+    "scrape": "node --use-system-ca scraper-support/runner.js",
+    "scrape:dry": "node --use-system-ca scraper-support/runner.js --dry-run",
+    "scrape:parallel": "node --use-system-ca scraper-support/runner.js --parallel",
+    "scrape:parallel:dry": "node --use-system-ca scraper-support/runner.js --parallel --dry-run",
+    "scrape:backfill-missing:dry": "node --use-system-ca scripts/backfillMissingDryRunArtifacts.js",
+    "scrape:csv": "node --use-system-ca scripts/scrapeCompaniesFromCsv.js",
+    "validate:live-uncovered-500": "node scripts/validateLiveUncovered500Manifest.js",
     "coverage:companies": "node scripts/reportCompanyCoverage.js",
+    "coverage:companies:regenerate": "node scripts/regenerateCompanyCoverageReport.js",
+    "coverage:companies:sync": "node scripts/syncCompanyCoverageReportsFromScraper.js",
+    "coverage:companies:catalog-topology": "node scripts/reportScriptCatalogTopology.js",
+    "coverage:companies:himalayas500": "node scripts/buildHimalayas500CoverageReport.js",
     "backfill:job-filters": "node scripts/backfillJobFilterSignals.js",
+    "backfill:job-posted-at": "node scripts/backfillMissingPostedAt.js",
     "backfill:job-search-keys": "node scripts/backfillJobSearchKeys.js",
     "db:clear": "node scripts/clearJobs.js",
     "db:clean-non-india": "node scripts/removeNonIndiaJobs.js",
     "db:delete-user": "node scripts/sweepDeleteUser.js",
-    "db:verify-indexes": "node scripts/verifyIndexes.js",
-    "jobs:profile": "node scripts/profileJobQueries.js"
+    "jobs:audit:apply-links": "node scripts/auditJobApplyLinks.js",
+    "jobs:audit:apply-links:local": "node scripts/auditLocalScrapedApplyLinks.js",
+    "jobs:audit:engineering-domains:local": "node --use-system-ca scripts/auditLocalEngineeringDomains.js",
+    "jobs:audit:retry-ambiguous": "node scripts/retryApplyLinkAuditFromReport.js",
+    "jobs:remove-dead": "node scripts/removeDeadJobsFromAudit.js",
+    "jobs:audit:apply-links:settled": "node scripts/waitForSettledApplyLinkAudit.js",
+    "db:indexes:plan": "node scripts/indexes.js plan",
+    "db:indexes:apply": "node scripts/indexes.js apply",
+    "db:verify-indexes": "npm run db:indexes:plan",
+    "jobs:profile": "node scripts/profileJobQueries.js",
+    "jobs:profile:local": "node scripts/profileLocalJobQueries.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/LitenTechnologies/Jobify-backend.git"
+    "url": "git+https://github.com/LitenTechnologies/Jobverify-backend.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "bugs": {
-    "url": "https://github.com/LitenTechnologies/Jobify-backend/issues"
+    "url": "https://github.com/LitenTechnologies/Jobverify-backend/issues"
   },
-  "homepage": "https://github.com/LitenTechnologies/Jobify-backend#readme",
+  "homepage": "https://github.com/LitenTechnologies/Jobverify-backend#readme",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
@@ -41,11 +59,15 @@
     "express": "^5.1.0",
     "express-rate-limit": "^8.2.1",
     "express-validator": "^7.3.1",
+    "google-auth-library": "^11.0.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^8.20.0"
+    "mongoose": "^8.20.0",
+    "pdfjs-dist": "^6.2.108",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
+    "mongodb-memory-server": "^11.2.0",
     "nodemon": "^3.1.11"
   }
 }

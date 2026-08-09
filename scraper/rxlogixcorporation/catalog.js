@@ -15,9 +15,9 @@ export const RX_LOGIX_CORPORATION_CATALOG = {
   extractionStrategy: 'verified-first-party-careers-page+india-opening-links+first-party-detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://rxlogix.com/careers/ remained the official RxLogix careers page and listed India openings including Technical Architect in Noida, India and Performance Test Engineer in Noida, India as first-party detail links.',
+    'Verified on Tuesday, August 4, 2026 that https://rxlogix.com/careers/ remains the official RxLogix careers page, now exposes India openings as first-party job_tab cards with root-level detail URLs such as https://rxlogix.com/technical-architect/ and https://rxlogix.com/performance-test-engineer/, and continues to list current India roles including Technical Architect, Performance Test Engineer, Data Engineer, and Business Development Manager.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

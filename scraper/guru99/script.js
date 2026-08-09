@@ -73,10 +73,13 @@ export const hasOfficialContactSignal = (page = {}) => {
 
   return page?.status === 200
     && page?.url === CONTACT_URL
-    && normalized.includes('Happy to Help')
     && normalized.includes('Guru99')
     && normalized.includes('Titanium City Center')
     && normalized.includes('Ahmedabad, Gujarat, India')
+    && (
+      normalized.includes('Happy to Help')
+      || (normalized.includes('Advertising') && normalized.includes('Editorial'))
+    )
 }
 
 export const hasOfficialTermsSignal = (page = {}) => {
@@ -130,7 +133,7 @@ export const createGuru99Scraper = () => ({
 export const run = async (options = {}) => createGuru99Scraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

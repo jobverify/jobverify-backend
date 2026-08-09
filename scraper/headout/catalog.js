@@ -1,9 +1,9 @@
-export const HEADOUT_CATALOG = {
+﻿export const HEADOUT_CATALOG = {
   source: 'headout',
   companyName: 'Headout',
   officialBrandName: 'Headout',
   adapter: 'script',
-  modulePath: '../headout/script.js',
+  modulePath: '../../scraper/headout/script.js',
   companyCareerPage: 'https://www.headout.com/careers/',
   companyDomain: 'headout.com',
   atsPlatform: 'greenhouse',
@@ -21,3 +21,4 @@ export const HEADOUT_CATALOG = {
 }
 
 export default HEADOUT_CATALOG
+

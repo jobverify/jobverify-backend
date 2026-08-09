@@ -1,0 +1,22 @@
+{
+  "source": "nammayatri",
+  "companyName": "Namma Yatri",
+  "officialBrandName": "Namma Yatri",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../nammayatri/script.js",
+  "dryRunFile": "nammayatri/jobs.json",
+  "companyCareerPage": "https://www.nammayatri.in/",
+  "companyDomain": "nammayatri.in",
+  "atsPlatform": "official-first-party-site-no-public-careers-or-ats-listings",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-site-sentinel",
+  "extractionStrategy": "verified-first-party-site-without-public-careers-or-ats-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.nammayatri.in/",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://www.nammayatri.in/ is Namma Yatri's first-party website. Its footer identifies the registered entity as Moving Tech Innovations Private Limited, but the first-party site exposes no public careers page, public ATS handoff, or enumerable job listings. This exact-name provider does not substitute the operating entity, Juspay, LinkedIn, or third-party listings and fails closed until Namma Yatri publishes a trustworthy first-party or official ATS jobs surface."
+}

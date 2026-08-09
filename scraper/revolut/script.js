@@ -1,11 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import {
-  createOptimizedPage as defaultCreateOptimizedPage,
-  launchBrowser as defaultLaunchBrowser,
-} from '../utils/browser.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { enrichJobsWithPublicExperience } from '../../scraper-support/utils/publicExperienceEnrichment.js'
 
 import REVOLUT_CATALOG from './catalog.js'
 
@@ -18,7 +16,13 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const CAREERS_PAGE_URL = PROVIDER_METADATA.companyCareerPage
-export const POSITION_URL_LOCALE = 'en-US'
+export const POSITION_URL_LOCALE = 'en-IN'
+// Revolut's Cloudflare-protected detail pages intermittently fail under
+// parallel live detail fetches, so keep the enrichment path serialized.
+const DEFAULT_EXPERIENCE_ENRICHMENT_CONCURRENCY = 1
+const DEFAULT_NAVIGATION_TIMEOUT_MS = 120000
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => {
   const normalized = String(value ?? '')
@@ -30,6 +34,15 @@ const normalizeWhitespace = (value) => {
 }
 
 const unique = (values) => [...new Set(values.filter(Boolean))]
+
+const slugifyPositionTitle = (value) => normalizeWhitespace(value)
+  ?.normalize('NFKD')
+  .toLowerCase()
+  .replace(/&/g, ' and ')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '')
+  .replace(/-+/g, '-')
+  || null
 
 const isIndiaLocation = (location = {}) =>
   /india/i.test(normalizeWhitespace(location.country) || '')
@@ -65,13 +78,52 @@ const getRemoteStatus = (locations) => {
 export const hasOfficialCareersSignal = (html) => {
   const source = String(html ?? '')
 
-  return /<title>\s*Careers \| Revolut India\s*<\/title>/i.test(source)
+  return /<title[^>]*>\s*Careers \| Revolut India\s*<\/title>/i.test(source)
     && /\bopen positions\b/i.test(source)
-    && /Only apply through official Revolut channels/i.test(source)
+    && /Join the people creating a one-stop shop for financial freedom/i.test(source)
 }
 
-export const buildPositionDetailUrl = (jobId) =>
-  `${PROVIDER_METADATA.officialCareersGlobalUrl}position/${encodeURIComponent(String(jobId ?? ''))}/`
+export const extractPositionsPayload = (html = '') => {
+  const match = String(html ?? '').match(
+    /<script[^>]*id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i,
+  )
+  if (!match) return null
+
+  try {
+    const payload = JSON.parse(match[1])
+    return payload?.props?.pageProps?.positions ?? null
+  } catch {
+    return null
+  }
+}
+
+const defaultFetchText = (url, timeoutMs = DEFAULT_NAVIGATION_TIMEOUT_MS) => fetchTextWithRetry(url, {
+  headers: {
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'User-Agent': USER_AGENT,
+  },
+  label: 'revolut-text',
+  timeoutMs,
+})
+
+export const buildPositionDetailUrl = (jobId, title = null) => {
+  const normalizedId = normalizeWhitespace(jobId)
+  if (!normalizedId) return null
+
+  const slug = slugifyPositionTitle(title)
+  const baseUrl = `https://www.revolut.com/${POSITION_URL_LOCALE}/careers/position/`
+
+  return slug
+    ? `${baseUrl}${slug}-${encodeURIComponent(normalizedId)}/`
+    : `${baseUrl}${encodeURIComponent(normalizedId)}/`
+}
+
+export const buildPositionApplyUrl = (jobId) => {
+  const normalizedId = normalizeWhitespace(jobId)
+  if (!normalizedId) return null
+
+  return `https://www.revolut.com/${POSITION_URL_LOCALE}/careers/apply/${encodeURIComponent(normalizedId)}/`
+}
 
 export const extractIndiaJobs = (positions) => (Array.isArray(positions) ? positions : [])
   .map((position) => {
@@ -83,7 +135,12 @@ export const extractIndiaJobs = (positions) => (Array.isArray(positions) ? posit
       return null
     }
 
-    const sourceUrl = buildPositionDetailUrl(jobId)
+    const sourceUrl = buildPositionDetailUrl(jobId, title)
+    const applyUrl = buildPositionApplyUrl(jobId)
+
+    if (!sourceUrl || !applyUrl) {
+      return null
+    }
 
     return {
       title,
@@ -96,7 +153,7 @@ export const extractIndiaJobs = (positions) => (Array.isArray(positions) ? posit
       jobId,
       requisitionId: jobId,
       sourceUrl,
-      applyUrl: sourceUrl,
+      applyUrl,
       employmentType: null,
       experienceRequired: null,
       minimumQualification: null,
@@ -113,55 +170,57 @@ export const extractIndiaJobs = (positions) => (Array.isArray(positions) ? posit
 export const createRevolutScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now: defaultNow = () => new Date().toISOString(),
+  experienceEnrichmentConcurrency = DEFAULT_EXPERIENCE_ENRICHMENT_CONCURRENCY,
+  navigationTimeoutMs = DEFAULT_NAVIGATION_TIMEOUT_MS,
 } = {}) => ({
   async run({
-    launchBrowser = defaultLaunchBrowser,
-    createOptimizedPage = defaultCreateOptimizedPage,
+    fetchText = (url) => defaultFetchText(url, navigationTimeoutMs),
+    fetchPublicJobText = null,
     now = defaultNow,
   } = {}) {
-    let browser
-
-    try {
-      browser = await launchBrowser()
-      const page = await createOptimizedPage(browser)
-
-      await page.goto(CAREERS_PAGE_URL, { waitUntil: 'networkidle2' })
-
-      const careersHtml = await page.content()
-      if (!hasOfficialCareersSignal(careersHtml)) {
-        throw new Error('Response is not the verified official Revolut careers page')
-      }
-
-      const positions = await page.evaluate(
-        () => globalThis.window?.__NEXT_DATA__?.props?.pageProps?.positions ?? null,
-      )
-
-      if (!Array.isArray(positions)) {
-        throw new Error('Revolut careers page no longer exposes the verified positions payload')
-      }
-
-      const indiaJobs = extractIndiaJobs(positions)
-      const selectedJobs = maxJobs ? indiaJobs.slice(0, maxJobs) : indiaJobs
-
-      return selectedJobs.map((job) => ({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl,
-        scrapedAt: now(),
-        companyCareerPage: CAREERS_PAGE_URL,
-        companyDomain: PROVIDER_METADATA.companyDomain,
-        atsPlatform: PROVIDER_METADATA.atsPlatform,
-      }))
-    } finally {
-      if (browser) await browser.close()
+    const careersHtml = await fetchText(CAREERS_PAGE_URL)
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Response is not the verified official Revolut careers page')
     }
+
+    const positions = extractPositionsPayload(careersHtml)
+    if (!Array.isArray(positions)) {
+      throw new Error('Revolut careers page no longer exposes the verified positions payload')
+    }
+
+    const indiaJobs = extractIndiaJobs(positions)
+    const selectedJobs = maxJobs ? indiaJobs.slice(0, maxJobs) : indiaJobs
+    const detailTextFetcher = typeof fetchPublicJobText === 'function'
+      ? fetchPublicJobText
+      : fetchText
+    const jobsWithPublicDetails = selectedJobs.length > 0
+      ? await enrichJobsWithPublicExperience(selectedJobs, {
+          fetchText: detailTextFetcher,
+          useBrowserFallback: false,
+          concurrency: Math.min(
+            experienceEnrichmentConcurrency,
+            Math.max(1, selectedJobs.length),
+          ),
+        })
+      : selectedJobs
+
+    return jobsWithPublicDetails.map((job) => ({
+      ...job,
+      publicExperienceChecked: job.publicExperienceChecked === true,
+      source: SOURCE,
+      link: job.applyUrl,
+      scrapedAt: now(),
+      companyCareerPage: CAREERS_PAGE_URL,
+      companyDomain: PROVIDER_METADATA.companyDomain,
+      atsPlatform: PROVIDER_METADATA.atsPlatform,
+    }))
   },
 })
 
 export const run = async (options = {}) => createRevolutScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

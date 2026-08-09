@@ -18,9 +18,9 @@ export const INNOVAPPTIVE_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'innovapptive.com',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.innovapptive.com/company/careers was the live first-party Innovapptive careers page and that it handed applicants to the public board at https://innovapptive.applytojob.com/apply. Verified that the public board exposed current openings including Associate Solution Consultant - EAM and Senior Engineer - iOS.',
+    'Verified on Sunday, August 2, 2026 that https://www.innovapptive.com/company/careers remained the live first-party Innovapptive careers page and that the public ApplyToJob board at https://innovapptive.applytojob.com/apply exposed current India openings including AI Platform Lead, Associate Solution Consultant - EAM, and Support Manager. Also verified mixed-region remote roles on the board, so the scraper must confirm each listing location from its job-detail page before keeping it under the India filter.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

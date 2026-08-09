@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { BHARAT_HEAVY_ELECTRICALS_CATALOG } from './catalog.js'
 
@@ -22,6 +22,8 @@ export const TRUSTED_OPENING_HOSTS = [
   'careers.bhel.in',
   'careers1.bhel.in',
   'sbdapp.bhel.in',
+  'edn.bhel.com',
+  'ednnet.bhel.in',
   'hpep.bhel.com',
   'bpl.bhel.com',
   'cdn.digialm.com',
@@ -272,6 +274,7 @@ const normalizeJob = ({ department, html }, scrapedAt) => {
     postingDate: null,
     closingDate: null,
     jobDescription: normalizeWhitespace(html) || null,
+    publicExperienceChecked: true,
     requisitionId: slugify(title),
     source: SOURCE,
     link: selectedUrl,
@@ -379,7 +382,7 @@ export const createBharatHeavyElectricalsScraper = ({
 export const run = async (options = {}) => createBharatHeavyElectricalsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -13,6 +13,7 @@ export const BAJAJ_FINANCE_CATALOG = {
   adapter: 'script',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'bajajfinance/jobs.json',
+  dryRunEnrichPublicExperience: false,
   companyCareerPage: 'https://www.aboutbajajfinserv.com/finance-about-us',
   homepageUrl: 'https://www.bajajfinance.com/',
   portalOrigin: 'https://bflcareers.peoplestrong.com',

@@ -1,0 +1,23 @@
+{
+  "source": "skan",
+  "companyName": "Skan",
+  "officialBrandName": "Skan AI",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../skan/script.js",
+  "dryRunFile": "skan/jobs.json",
+  "companyCareerPage": "https://www.skan.ai/careers",
+  "companyDomain": "skan.ai",
+  "atsPlatform": "official-first-party-careers-no-enumerable-public-listings",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-careers-page-sentinel",
+  "extractionStrategy": "verified-first-party-current-openings-page-without-enumerable-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.skan.ai/careers",
+  "officialCurrentOpeningsPageUrl": "https://www.skan.ai/current-openings",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.skan.ai/careers and its first-party current-openings page are Skan AI's official careers surfaces. The public current-openings page exposes no trustworthy enumerable job cards, role-detail URLs, or stable ATS handoff, so this exact-name provider fails closed and returns no jobs until Skan publishes public openings."
+}

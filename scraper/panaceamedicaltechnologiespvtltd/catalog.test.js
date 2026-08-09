@@ -1,31 +1,37 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
 const SOURCE = 'panaceamedicaltechnologiespvtltd'
 const COMPANY = 'Panacea Medical Technologies Pvt Ltd'
 const OFFICIAL_COMPANY_NAME = 'Panacea Medical Technologies Pvt. Ltd.'
-const CAREERS_URL = 'https://www.panaceamedical.in/join-us/'
+const CAREERS_URL = 'https://www.panaceamedical.in/careers/'
 
-test('Panacea Medical Technologies is registered against its verified first-party Join Us page', () => {
+test('Panacea Medical Technologies is registered against its verified first-party careers portal', () => {
   const provider = getScraperCatalog().find((item) => item.source === SOURCE)
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, OFFICIAL_COMPANY_NAME)
+  assert.equal(provider.homepageUrl, 'https://www.panaceamedical.in/')
+  assert.equal(provider.joinUsUrl, 'https://www.panaceamedical.in/join-us/')
   assert.equal(provider.companyCareerPage, CAREERS_URL)
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.atsPlatform, 'official-first-party-careers-portal')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'official-homepage-plus-inline-join-us-page')
+  assert.equal(provider.paginationStrategy, 'join-us-handoff-plus-first-party-paginated-jobs-board')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-first-party-join-us-page+inline-accordion-job-cards+shared-mailto-apply',
+    'verified-homepage+verified-join-us-handoff+paginated-first-party-job-cards+detail-page-enrichment+first-party-apply-links',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'panaceamedical.in')
+  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.equal(provider.verifiedPublicJobCount, 22)
+  assert.equal(provider.verifiedIndiaJobCount, 22)
+  assert.match(provider.verifiedSurfaceSummary, /22 public job postings across three paginated pages/i)
   assert.match(provider.modulePath, /panaceamedicaltechnologiespvtltd[\\/]script\.js$/i)
 })
 

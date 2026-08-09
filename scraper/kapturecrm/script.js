@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserNetworkFallback } from '../../scraper-support/shared/browserNetworkFallback.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import {
   ACTIVE_JOBS_URL as BASE_ACTIVE_JOBS_URL,
   CAREER_PAGE_URL as BASE_CAREERS_URL,
@@ -17,12 +19,6 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const CAREERS_SIGNAL_PATTERNS = [
-  /Kapture CRM Careers/i,
-  /Kapture Careers/i,
-  /Kapture CRM/i,
-]
-
 const EMBED_IDENTIFIER = '30315393-d861-4cad-851c-03e99c4fe979'
 
 const defaultFetchText = async (url) => {
@@ -36,6 +32,15 @@ const defaultFetchText = async (url) => {
 
   return response.text()
 }
+
+const defaultFetchJson = async (url) => fetchJsonWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json,text/plain,*/*',
+  },
+  label: `${SOURCE}-json`,
+  timeoutMs: 15000,
+})
 
 export const PROVIDER_METADATA = KAPTURE_CRM_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
@@ -54,8 +59,17 @@ export const NORMALIZATION_PROFILE = PROVIDER_METADATA.normalizationProfile
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-export const hasVerifiedKaptureCrmCareersPageSignal = (html = '') =>
-  CAREERS_SIGNAL_PATTERNS.every((pattern) => pattern.test(String(html ?? '')))
+export const hasVerifiedKaptureCrmCareersPageSignal = (html = '') => {
+  const page = String(html ?? '')
+  const hasCanonicalLink =
+    /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.kapture\.cx\/careers\/["']/i.test(page)
+    || /<link[^>]+href=["']https:\/\/www\.kapture\.cx\/careers\/["'][^>]+rel=["']canonical["']/i.test(page)
+
+  return hasCanonicalLink
+    && /Kapture Careers/i.test(page)
+    && /window\.khConfig/i.test(page)
+    && hasVerifiedKaptureCrmEmbedConfigSignal(page)
+}
 
 export const hasVerifiedKaptureCrmEmbedConfigSignal = (scriptText = '') =>
   new RegExp(EMBED_IDENTIFIER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(String(scriptText ?? ''))
@@ -77,31 +91,57 @@ export const createKaptureCrmScraper = ({
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
-    fetchJson,
+    fetchJson = defaultFetchJson,
+    fetchBrowserText,
+    fetchBrowserJson,
   } = {}) {
-    const careersPageHtml = await fetchText(CAREERS_URL)
-    if (!hasVerifiedKaptureCrmCareersPageSignal(careersPageHtml)) {
-      throw new Error('Kapture CRM verified Kapture CRM careers page no longer matches the pinned first-party surface')
-    }
-
-    const embedConfigText = await fetchText(EMBED_CONFIG_URL)
-    if (!hasVerifiedKaptureCrmEmbedConfigSignal(embedConfigText)) {
-      throw new Error('Kapture CRM verified Kapture CRM embed config no longer matches the pinned Keka contract')
-    }
-
-    const cachedFetchText = async (url) => {
-      if (url === CAREERS_URL) return careersPageHtml
-      if (url === EMBED_CONFIG_URL) return embedConfigText
-      return fetchText(url)
-    }
-
-    const jobs = await createKaptureScraper({ maxJobs }).run({
-      fetchText: cachedFetchText,
+    const browserFallback = createBrowserNetworkFallback({
+      fetchText,
       fetchJson,
+      fetchBrowserText,
+      fetchBrowserJson,
+      userAgent: USER_AGENT,
+      browserSessionOptions: {
+        timeoutMs: 90000,
+        settleTimeMs: 12000,
+        ignoreHTTPSErrors: true,
+      },
     })
 
-    const scrapedAt = now()
-    return jobs.map((job) => decorateKaptureCrmJob(job, scrapedAt))
+    try {
+      const careersPageHtml = await browserFallback.fetchText(CAREERS_URL)
+      if (!hasVerifiedKaptureCrmCareersPageSignal(careersPageHtml)) {
+        throw new Error('Kapture CRM verified Kapture CRM careers page no longer matches the pinned first-party surface')
+      }
+
+      let embedConfigText = careersPageHtml
+      try {
+        const embedConfigCandidate = await browserFallback.fetchText(EMBED_CONFIG_URL)
+        if (hasVerifiedKaptureCrmEmbedConfigSignal(embedConfigCandidate)) {
+          embedConfigText = embedConfigCandidate
+        }
+      } catch {
+        // The first-party careers page already exposes the pinned khConfig payload.
+      }
+
+      const cachedFetchText = async (url) => {
+        if (url === CAREERS_URL) return careersPageHtml
+        if (url === EMBED_CONFIG_URL) return embedConfigText
+        return browserFallback.fetchText(url)
+      }
+
+      const cachedFetchJson = async (url, options = {}) => browserFallback.fetchJson(url, options)
+
+      const jobs = await createKaptureScraper({ maxJobs }).run({
+        fetchText: cachedFetchText,
+        fetchJson: cachedFetchJson,
+      })
+
+      const scrapedAt = now()
+      return jobs.map((job) => decorateKaptureCrmJob(job, scrapedAt))
+    } finally {
+      await browserFallback.close()
+    }
   },
 })
 
@@ -119,7 +159,7 @@ if (
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

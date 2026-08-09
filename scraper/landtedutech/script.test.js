@@ -95,6 +95,7 @@ test('L&T EduTech scraper keeps the official homepage, careers shell, and Edutec
     applyUrl: 'https://larsentoubrocareers.peoplestrong.com/job/detail/LNT_BA-P_1694797',
     employmentType: null,
     experienceRequired: '2-5 years',
+    publicExperienceChecked: true,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: ['Business Analysis'],

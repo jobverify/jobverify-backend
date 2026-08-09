@@ -1,9 +1,9 @@
-export const provider = {
+﻿export const provider = {
   source: 'shivaamicloudservices',
   companyName: 'Shivaami Cloud Services',
   officialBrandName: 'Shivaami',
   adapter: 'script',
-  modulePath: '../shivaamicloudservices/script.js',
+  modulePath: '../../scraper/shivaamicloudservices/script.js',
   homepageUrl: 'https://www.shivaami.com/',
   companyCareerPage: 'https://www.shivaami.com/careers/',
   atsPlatform: 'javascript-first-party-careers-bundle',
@@ -20,3 +20,4 @@ export const provider = {
 }
 
 export default provider
+

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { HASURA_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -182,8 +182,8 @@ export const hasOfficialCareersSignal = (page = {}) => {
   return Number(page.status) === 200
     && normalizeUrl(page.url) === REDIRECTED_CAREERS_URL
     && normalized.includes('join us to build the future of reliable ai')
-    && normalized.includes('help developers build great products')
-    && normalized.includes('open roles')
+    && normalized.includes('see open roles')
+    && normalized.includes('life at promptql')
     && rawHtml.includes(GEM_BOARD_URL)
 }
 
@@ -195,7 +195,7 @@ export const hasOfficialGemBoardSignal = (page = {}) => {
     && normalizeUrl(page.url) === GEM_BOARD_URL
     && normalized.includes('promptql careers')
     && rawHtml.includes(GEM_BOARD_TRACKING_ID)
-    && rawHtml.includes(GEM_BOARD_BUNDLE_URL)
+    && /https:\/\/static\.gem\.com\/scripts\/jobBoards\.[^"' ]+\.v2\.min\.js/i.test(rawHtml)
 }
 
 const hasValidPosting = (posting) =>
@@ -423,7 +423,7 @@ export const createHasuraScraper = ({ now = () => new Date().toISOString() } = {
 export const run = async (options = {}) => createHasuraScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import NXTGEN_DATACENTER_CLOUD_TECHNOLOGIES_CATALOG from './catalog.js'
 
@@ -48,6 +48,15 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 15000,
 })
+
+export const isTrustedUnavailableFailure = (error) => {
+  const message = String(error?.message ?? error).toLowerCase()
+
+  return message.includes('timed out')
+    || message.includes('timeout')
+    || message.includes('timed_out')
+    || message.includes('und_err_connect_timeout')
+}
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
@@ -108,7 +117,18 @@ export const createNxtgenDatacenterCloudTechnologiesScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    let careersHtml
+
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (isTrustedUnavailableFailure(error)) {
+        return []
+      }
+
+      throw error
+    }
+
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('The verified Nxtgen Datacenter Cloud Technologies careers page no longer matches the trusted first-party surface')
     }
@@ -136,7 +156,7 @@ export const run = async (options = {}) =>
   createNxtgenDatacenterCloudTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,8 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -21,6 +21,8 @@ const CONTACT_SIGNAL_PATTERNS = [
   /admin@edu-versity\.in/i,
   /HSR\s+layout,\s*Bengaluru,\s*Karnataka,\s*560102/i,
 ]
+
+const PINNED_COMMUNITY_LINK_PATTERN = /https?:\/\/(?:www\.)?edu-versity\.in\/join-our-community\/?/i
 
 const COMMUNITY_FORM_SIGNAL_PATTERNS = [
   /<title>\s*Join Our Community\s*-\s*Edu-?versity/i,
@@ -48,6 +50,9 @@ export const hasOfficialSiteSignal = (html) =>
 export const hasContactSignal = (html) =>
   CONTACT_SIGNAL_PATTERNS.every((pattern) => pattern.test(String(html ?? '')))
 
+export const hasPinnedCommunityLinkSignal = (html) =>
+  PINNED_COMMUNITY_LINK_PATTERN.test(String(html ?? ''))
+
 export const hasCommunityFormSignal = (html) =>
   COMMUNITY_FORM_SIGNAL_PATTERNS.every((pattern) => pattern.test(String(html ?? '')))
 
@@ -55,6 +60,21 @@ export const hasPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERN.test(String(html ?? ''))
 
 export const extractOpenings = () => []
+
+const hasHttpStatusInCauseChain = (error, status) => {
+  const visited = new Set()
+  let current = error
+
+  while (current && !visited.has(current)) {
+    visited.add(current)
+    if (current?.status === status) {
+      return true
+    }
+    current = current?.cause
+  }
+
+  return false
+}
 
 export const createEduversityScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
@@ -66,7 +86,16 @@ export const createEduversityScraper = ({
       return []
     }
 
-    const communityHtml = await fetchText(COMMUNITY_URL)
+    let communityHtml
+    try {
+      communityHtml = await fetchText(COMMUNITY_URL)
+    } catch (error) {
+      if (hasHttpStatusInCauseChain(error, 404) && hasPinnedCommunityLinkSignal(homepageHtml)) {
+        return []
+      }
+
+      throw error
+    }
 
     if (hasPublicJobsSignal(communityHtml)) {
       throw new Error('Edu-versity site now exposes public job listings; scraper needs an update')
@@ -84,7 +113,7 @@ export const createEduversityScraper = ({
 export const run = async () => createEduversityScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Edu-versity scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

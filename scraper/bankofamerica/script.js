@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -88,6 +88,10 @@ const extractListItems = (value) => [...String(value ?? '').matchAll(/<li\b[^>]*
 const extractTaggedSectionValue = (html, heading) => {
   const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   return extractFirst(
+    new RegExp(`<p><b>${escapedHeading}\\s*:?\\s*<\\/b>\\s*:?\\s*([\\s\\S]*?)<\\/p>`, 'i'),
+    html,
+    (match) => stripTags(match[1]),
+  ) || extractFirst(
     new RegExp(`<p><b>${escapedHeading}<\\/b><\\/p>\\s*<p>([\\s\\S]*?)<\\/p>`, 'i'),
     html,
     (match) => stripTags(match[1]),
@@ -309,7 +313,7 @@ export const createBankOfAmericaScraper = ({
 export const run = async (options = {}) => createBankOfAmericaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Bank of America scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

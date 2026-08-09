@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { SECPOD_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -50,15 +50,13 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page)
+  const text = normalizeWhitespace(page).toLowerCase()
 
-  return /<title>\s*SecPod Careers \| Join the Preventive Cybersecurity Team \| SecPod\s*<\/title>/i.test(page)
-    && text.includes('Shape the Future of Preventive Cybersecurity with SecPod')
-    && text.includes('Technology & Innovation')
-    && text.includes('Teams at SecPod')
-    && text.includes('Current Job Openings')
-    && text.includes('PUT PREVENTION FIRST')
-    && text.includes('SEE SANER IN ACTION')
+  return /<title[^>]*>\s*SecPod Careers \| Join the Preventive Cybersecurity Team \| SecPod\s*<\/title>/i.test(page)
+    && text.includes('shape the future of preventive cybersecurity with secpod')
+    && text.includes('technology & innovation')
+    && text.includes('teams at secpod')
+    && text.includes('current job openings')
 }
 
 export const hasPublicJobsSignal = (html = '') => {
@@ -91,7 +89,7 @@ export const createSecPodScraper = () => ({
 export const run = async (options = {}) => createSecPodScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

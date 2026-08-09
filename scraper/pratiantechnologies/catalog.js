@@ -17,9 +17,9 @@ export const PRATIAN_TECHNOLOGIES_CATALOG = {
   extractionStrategy: 'verified-first-party-angular-shell+verified-career-bundle-without-public-job-listings+fail-closed-sentinel',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.pratian.com/career serves a live first-party Angular careers shell and loads the current bundle main.d7ac0e33a2b8f83f.js. The verified bundle includes careers messaging such as "At Pratian, it is all about you." together with nurture, challenge, celebrate, and trust copy, but the verified surface exposed no trustworthy public jobs surface, public role rows, or stable anonymous job detail links.',
+    'Verified on Tuesday, August 4, 2026 that direct TLS-validated fetches to https://www.pratian.com/career currently fail with CERT_HAS_EXPIRED for this worker, and that a controlled inspection of the same first-party Angular careers shell still pointed to bundle main.d7ac0e33a2b8f83f.js containing the verified "At Pratian, it is all about you." messaging together with nurture, challenge, celebrate, and trust copy. No trustworthy public jobs surface, public role rows, or stable anonymous job detail links were exposed on the verified date, so this provider remains fail-closed.',
   dryRunFile: 'pratiantechnologies/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

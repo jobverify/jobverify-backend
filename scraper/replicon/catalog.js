@@ -11,20 +11,22 @@ export const REPLICON_CATALOG = {
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'replicon/jobs.json',
   companyCareerPage: 'https://www.replicon.com/company/careers/',
-  redirectCareersUrl: 'https://www.deltek.com/en/about/careers',
+  redirectCareersUrl: 'https://www.deltek.com/company/careers/',
   genericSearchJobsUrl: 'https://careers.deltek.com/',
+  searchApiUrl: 'https://jobsapi-google.m-cloud.io/api/job/search',
+  searchApiCompanyName: 'companies/d78c5717-c840-461e-8f42-7e005f1a8068',
   upstreamCompanyName: 'Deltek',
   companyDomain: 'replicon.com',
-  atsPlatform: 'redirected-parent-careers-no-standalone-replicon-jobs',
+  atsPlatform: 'deltek-careers-google-jobs-api',
   countryFilter: 'India',
-  paginationStrategy: 'exact-name-careers-redirect-validation',
+  paginationStrategy: 'verified-replicon-redirect-plus-deltek-page-token-search-api',
   extractionStrategy:
-    'verified-replicon-careers-redirect+generic-deltek-search-jobs+fail-closed-sentinel',
+    'verified-replicon-careers-redirect+verified-deltek-search-page+discovered-companyname+jobsapi-google-search',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.replicon.com/company/careers/ resolves to the generic Deltek careers page at https://www.deltek.com/en/about/careers, that the live page title is "Drive Your Career with #TeamDeltek | Search Jobs | Deltek", and that the hiring CTA points to https://careers.deltek.com/ rather than to a distinct Replicon public jobs surface. Replicon also remains a Deltek product after Deltek completed its acquisition of Replicon on August 22, 2023, so this local provider fails closed until an exact-name Replicon jobs surface reappears.',
+    'Verified on Tuesday, August 4, 2026 that https://www.replicon.com/company/careers/ resolves to https://www.deltek.com/company/careers/, that the Deltek careers page title is "Drive Your Career with #TeamDeltek | Search Jobs | Deltek", that the hiring CTAs point to https://careers.deltek.com/, and that the linked Deltek search page exposes public India hiring via company search identifier companies/d78c5717-c840-461e-8f42-7e005f1a8068 on the jobsapi-google.m-cloud.io job search feed.',
 }
 
 export default REPLICON_CATALOG

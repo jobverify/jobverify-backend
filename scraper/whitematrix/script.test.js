@@ -31,17 +31,17 @@ const companyHtml = `
 const zeroJobsHtml = `
   <html>
     <head>
-      <title>0 jobs in United States</title>
+      <title>0 Jobs jobs in United States</title>
     </head>
     <body>
-      <p>WhiteMatrix</p>
-      <p>0 jobs in United States</p>
-      <p>We couldn't find a match for jobs in United States</p>
+      <p>0 Jobs jobs in United States</p>
+      <p>Sign in</p>
+      <p>Join now</p>
     </body>
   </html>
 `
 
-const guestJobsEmptyHtml = ''
+const guestJobsEmptyHtml = '<!DOCTYPE html>\n<!---->'
 
 const guestJobsListingsHtml = `
   <div class="base-card job-search-card" data-entity-urn="urn:li:jobPosting:123">

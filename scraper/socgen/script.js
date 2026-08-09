@@ -25,8 +25,8 @@ export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const SIGNAL_PATTERNS = [
   /All Job offers at Societe Generale/i,
-  /688 offre\(s\)/i,
-  /Product owner - Payments/i,
+  /\d+\s+offre\(s\)/i,
+  /Senior Analyst/i,
   /Bangalore,\s*India/i,
   /Delivery Manager/i,
   /Chennai,\s*India/i,
@@ -50,8 +50,17 @@ const defaultFetchPage = async (url) => {
 
 export { extractJobDetail, extractSearchResults }
 
+const normalizeSignalText = (html = '') => String(html ?? '')
+  .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/\s+/g, ' ')
+  .trim()
+
 export const hasVerifiedSocGenCareersPageSignal = (html = '') =>
-  SIGNAL_PATTERNS.every((pattern) => pattern.test(String(html ?? '')))
+  SIGNAL_PATTERNS.every((pattern) => pattern.test(normalizeSignalText(html)))
 
 export const decorateSocGenJob = (job = {}, scrapedAt) => ({
   ...job,
@@ -94,7 +103,7 @@ if (BASE_CAREER_PAGE_URL !== CAREERS_URL) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

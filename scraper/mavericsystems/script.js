@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
-
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'mavericsystems'
@@ -153,23 +151,33 @@ const fetchTextWithHeaders = async (url) => {
   return response.text()
 }
 
-const collectSummaryPages = async (page) => {
+const hasNextPage = (html) => /<a[^>]+title=["']Next Page["'][^>]*>/i.test(String(html ?? ''))
+
+export const getLiveSearchPages = async ({
+  fetchText = fetchTextWithHeaders,
+  searchUrl = SUMMARY_URL,
+} = {}) => {
+  const html = await fetchText(searchUrl)
+
+  if (hasNextPage(html)) {
+    throw new Error(
+      'Maveric Systems API-only migration required: the verified SuccessFactors board requires pagination, but no HTTP pagination request contract is available; browser automation is disabled.',
+    )
+  }
+
+  return [html]
+}
+
+const collectSummaryPages = (pages) => {
   const listings = []
-  let html = await page.content()
-  let previousHtml = null
+  const seenIds = new Set()
 
-  while (html && html !== previousHtml) {
-    listings.push(...extractSearchResults(html))
-
-    if (!/title="Next Page"/i.test(html)) {
-      break
+  for (const html of pages) {
+    for (const listing of extractSearchResults(html)) {
+      if (seenIds.has(listing.requisitionId)) continue
+      seenIds.add(listing.requisitionId)
+      listings.push(listing)
     }
-
-    previousHtml = html
-    await page.evaluate(() => {
-      document.querySelector('a[title="Next Page"]')?.click()
-    })
-    html = await page.content()
   }
 
   return listings
@@ -177,51 +185,42 @@ const collectSummaryPages = async (page) => {
 
 export const createMavericSystemsScraper = ({
   fetchText = fetchTextWithHeaders,
-  launchBrowser: launchBrowserImpl = launchBrowser,
-  createOptimizedPage: createOptimizedPageImpl = createOptimizedPage,
+  getSearchPages = (options = {}) => getLiveSearchPages({ ...options, fetchText }),
+  now = () => new Date().toISOString(),
 } = {}) => ({
   async run() {
     await verifyFirstPartySurface(fetchText)
 
-    const browser = await launchBrowserImpl()
+    const searchPages = await getSearchPages({ searchUrl: buildSearchUrl(), fetchText })
+    const listings = collectSummaryPages(searchPages)
+    const jobs = []
 
-    try {
-      const page = await createOptimizedPageImpl(browser)
-      await page.goto(buildSearchUrl(), { waitUntil: 'domcontentloaded' })
+    for (const listing of listings) {
+      const detailHtml = await fetchText(listing.sourceUrl)
+      const detail = extractJobDetail(detailHtml, listing)
 
-      const listings = await collectSummaryPages(page)
-      const jobs = []
-
-      for (const listing of listings) {
-        await page.goto(listing.sourceUrl, { waitUntil: 'domcontentloaded' })
-        const detailHtml = await page.content()
-        const detail = extractJobDetail(detailHtml, listing)
-
-        jobs.push({
-          ...listing,
-          ...detail,
-          source: SOURCE,
-          company: COMPANY_NAME,
-          country: 'India',
-          companyCareerPage: CAREER_PAGE_URL,
-          companyDomain: 'maveric-systems.com',
-          atsPlatform: 'successfactors',
-          link: detail.applyUrl || listing.applyUrl || listing.sourceUrl,
-          scrapedAt: new Date().toISOString(),
-        })
-      }
-
-      return jobs
-    } finally {
-      await browser.close()
+      jobs.push({
+        ...listing,
+        ...detail,
+        source: SOURCE,
+        company: COMPANY_NAME,
+        country: 'India',
+        companyCareerPage: CAREER_PAGE_URL,
+        companyDomain: 'maveric-systems.com',
+        atsPlatform: 'successfactors',
+        link: detail.applyUrl || listing.applyUrl || listing.sourceUrl,
+        scrapedAt: now(),
+      })
     }
+
+    return jobs
   },
 })
 
 export const run = async (options = {}) => createMavericSystemsScraper(options).run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Maveric Systems scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { GREYTRIX_CATALOG } from './catalog.js'
 
@@ -29,11 +29,13 @@ export const hasOfficialCareersSignal = (html = '') => {
   const normalized = String(html).replace(/\s+/g, ' ')
 
   return normalized.includes('Careers - Greytrix')
-    && normalized.includes('Launch your PROFESSIONAL JOURNEY with us!')
+    && normalized.includes('Launch your')
+    && normalized.includes('PROFESSIONAL JOURNEY with us!')
     && normalized.includes('Join Us')
     && normalized.includes('Job Openings')
-    && normalized.includes('Greytrix official emails only come from @greytrix.com')
-    && normalized.includes('Contact Us')
+    && normalized.includes('Greytrix official emails only come from')
+    && normalized.includes('@greytrix.com')
+    && /Contact us/i.test(normalized)
 }
 
 export const hasPublicJobSignals = (html = '') =>
@@ -56,7 +58,7 @@ export const createGreytrixScraper = () => ({
 export const run = async (options = {}) => createGreytrixScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

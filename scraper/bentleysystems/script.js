@@ -45,6 +45,76 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
+const EXPERIENCE_CONTEXT_PATTERN = String.raw`(?:\s+of\s+(?:[a-z0-9+/,-]+\s+){0,8}?experience|\s+experience)`
+const DESCRIPTION_CONTAINER_PATTERN = /<(div|span)\b(?=[^>]*\bitemprop=["']description["'])(?=[^>]*\bclass=["'][^"']*\bjobdescription\b[^"']*["'])[^>]*>/i
+
+const findMatchingClosingTagIndex = (html, tagName, fromIndex) => {
+  const tagPattern = new RegExp(`<\\/?${tagName}\\b[^>]*>`, 'gi')
+  tagPattern.lastIndex = fromIndex
+  let depth = 1
+  let match = tagPattern.exec(html)
+
+  while (match) {
+    const tag = match[0]
+    const isClosingTag = tag.startsWith('</')
+    const isSelfClosingTag = /\/>$/.test(tag)
+
+    if (isClosingTag) {
+      depth -= 1
+      if (depth === 0) return match.index
+    } else if (!isSelfClosingTag) {
+      depth += 1
+    }
+
+    match = tagPattern.exec(html)
+  }
+
+  return -1
+}
+
+const extractJobDescriptionHtml = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const openingMatch = rawHtml.match(DESCRIPTION_CONTAINER_PATTERN)
+
+  if (!openingMatch || openingMatch.index == null) return null
+
+  const containerTagName = String(openingMatch[1] ?? '').toLowerCase()
+  const contentStartIndex = openingMatch.index + openingMatch[0].length
+  const closingTagIndex = findMatchingClosingTagIndex(rawHtml, containerTagName, contentStartIndex)
+
+  if (closingTagIndex === -1) return null
+
+  return rawHtml.slice(contentStartIndex, closingTagIndex).trim() || null
+}
+
+const formatExperienceYears = (minimum, maximum = null, suffix = '') => {
+  if (!minimum) return null
+  if (maximum) return `${minimum}-${maximum} years`
+  return `${minimum}${suffix} years`
+}
+
+const extractExperienceRequired = (value) => {
+  const text = stripTags(value)
+  if (!text) return null
+
+  const rangeMatch = text.match(new RegExp(`(\\d+(?:\\.\\d+)?)\\s*(?:-|to)\\s*(\\d+(?:\\.\\d+)?)\\s+years?${EXPERIENCE_CONTEXT_PATTERN}`, 'i'))
+  if (rangeMatch) {
+    return formatExperienceYears(rangeMatch[1], rangeMatch[2])
+  }
+
+  const plusMatch = text.match(new RegExp(`(\\d+(?:\\.\\d+)?)\\+\\s+years?${EXPERIENCE_CONTEXT_PATTERN}`, 'i'))
+  if (plusMatch) {
+    return formatExperienceYears(plusMatch[1], null, '+')
+  }
+
+  const singleMatch = text.match(new RegExp(`(\\d+(?:\\.\\d+)?)\\s+years?${EXPERIENCE_CONTEXT_PATTERN}`, 'i'))
+  if (singleMatch) {
+    return formatExperienceYears(singleMatch[1])
+  }
+
+  return null
+}
+
 const toAbsoluteUrl = (value, baseUrl) => {
   try {
     return new URL(value, baseUrl).toString()
@@ -67,9 +137,10 @@ const extractJobIdFromUrl = (value) => {
 
 export const hasOfficialJobsHostSignal = (html = '') => {
   const page = String(html ?? '')
-  return /<title>\s*Careers \| Bentley Systems/i.test(page)
+  return /<title>\s*(?:Careers \| )?Bentley Systems/i.test(page)
     && /https:\/\/www\.bentley\.com\/company\/careers\//i.test(page)
-    && /https:\/\/jobs\.bentley\.com\/search\/\?searchby=location&amp;q=&amp;locationsearch=&amp;geolocation=/i.test(page)
+    && /https:\/\/jobs\.bentley\.com\/search\/\?searchby=location/i.test(page)
+    && /locationsearch=/i.test(page)
 }
 
 export const hasIndiaSearchResultsSignal = (html = '') => {
@@ -129,13 +200,12 @@ export const extractJobDetail = (html = '', listing = {}) => {
     rawHtml.match(/<a[^>]+class="btn[^"]*apply[^"]*"[^>]+href="([^"]+)"/i)?.[1],
     listing.sourceUrl || SAMPLE_JOB_URL,
   )
-  const jobDescription = rawHtml.match(
-    /itemprop="description" class="jobdescription">([\s\S]*?)<\/div>/i,
-  )?.[1] || null
+  const jobDescription = extractJobDescriptionHtml(rawHtml)
   const detailLocation = stripTags(rawHtml.match(/<span class="jobGeoLocation">([\s\S]*?)<\/span>/i)?.[1] || '')
   const postingDate = stripTags(rawHtml.match(/<p[^>]+class="jobDate"[\s\S]*?<strong>\s*Date:\s*<\/strong>([\s\S]*?)<\/p>/i)?.[1] || '')
   const closingDate = toIsoDate(rawHtml.match(/itemprop="validThrough" content="([^"]+)"/i)?.[1] || null)
   const title = stripTags(rawHtml.match(/<h1 id="job-title"[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || listing.title || '')
+  const experienceRequired = extractExperienceRequired(jobDescription)
 
   return {
     ...listing,
@@ -148,6 +218,7 @@ export const extractJobDetail = (html = '', listing = {}) => {
     postingDate: postingDate || listing.postingDate,
     closingDate: closingDate || listing.closingDate,
     jobDescription: jobDescription || listing.jobDescription,
+    experienceRequired: experienceRequired || listing.experienceRequired || null,
   }
 }
 
@@ -205,7 +276,7 @@ export const createBentleySystemsScraper = ({
 export const run = async (options = {}) => createBentleySystemsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

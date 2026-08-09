@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { TOMTOM_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -16,10 +16,12 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
 export const OFFICIAL_CAREERS_URL = PROVIDER_METADATA.officialCareersPageUrl
 export const OFFICIAL_PUNE_OFFICE_URL = PROVIDER_METADATA.officialPuneOfficeUrl
-export const VERIFIED_JOB_DETAIL_URL = PROVIDER_METADATA.verifiedJobDetailUrl
-export const VERIFIED_APPLY_URL = PROVIDER_METADATA.verifiedApplyUrl
 export const LEVER_BOARD_URL = PROVIDER_METADATA.officialLeverBoardUrl
 export const LEVER_API_URL = PROVIDER_METADATA.leverApiUrl
+export const OFFICIAL_PUNE_JOBS_OVERVIEW_URL = new URL(
+  '/careers/joboverview/?location=Pune,+India',
+  OFFICIAL_CAREERS_URL,
+).toString()
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
@@ -119,54 +121,53 @@ const isIndiaJob = (job) => [
   normalizeWhitespace(job?.country),
 ].some((value) => /(^|[\s,(|-])india\b/i.test(value || ''))
 
-export const extractOfficialLeverApplyUrl = (html = '') => {
-  const match = String(html ?? '').match(
-    /https:\/\/jobs\.eu\.lever\.co\/tomtom\/[0-9a-f-]+\/apply/i,
-  )
-  return normalizeWhitespace(match?.[0])
-}
-
 export const hasOfficialTomTomCareersSignals = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeText(page)
 
-  return text.includes('engineer the first real-time map')
+  return /<title>\s*TomTom Careers\s*<\/title>/i.test(page)
+    && text.includes('engineer the first real-time map')
     && text.includes('find your place in the world')
-    && /https:\/\/www\.tomtom\.com\/careers\/joboverview\/?/i.test(page)
+    && /(?:https:\/\/www\.tomtom\.com)?\/careers\/joboverview\/?/i.test(page)
+    && /(?:https:\/\/www\.tomtom\.com)?\/careers\/offices\/pune\/?/i.test(page)
 }
 
 export const hasOfficialTomTomPuneOfficeSignals = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeText(page)
 
-  return text.includes('pune, india')
+  return /<title>\s*Pune Office \| TomTom Careers\s*<\/title>/i.test(page)
+    && text.includes('pune, india')
     && text.includes('tomtom india pvt ltd')
     && text.includes('yerwada, pune 411006')
-    && /https:\/\/www\.tomtom\.com\/careers\/joboverview\/\?location=Pune%2C\+India/i.test(page)
+    && text.includes('see jobs')
+    && /(?:https:\/\/www\.tomtom\.com)?\/careers\/joboverview\/\?location=Pune(?:%2C|,)(?:\+|%20)India/i.test(page)
 }
 
-export const hasVerifiedTomTomJobDetailSignals = (html = '') => {
+export const hasOfficialTomTomPuneJobsOverviewSignals = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeText(page)
 
-  return text.includes('engineering manager i - software')
-    && text.includes('location: madrid, spain')
-    && text.includes('apply to this job')
-    && text.includes('tomtom is a global leader in navigation, mapping, and traffic information.')
-    && extractOfficialLeverApplyUrl(page) === VERIFIED_APPLY_URL
+  return /<title>\s*Jobs \| TomTom Careers\s*<\/title>/i.test(page)
+    && text.includes('refine your search')
+    && text.includes('location')
+    && text.includes('team')
+    && text.includes('no filters were applied')
+    && text.includes('loading job results...')
 }
 
 export const hasOfficialLeverBoardSignal = (html = '') => {
-  const text = normalizeText(html)
+  const page = String(html ?? '')
+  const text = normalizeText(page)
 
-  return text.includes('tomtom')
+  return /<title>\s*TomTom\s*<\/title>/i.test(page)
+    && /job openings at tomtom/i.test(page)
     && text.includes('location type')
     && text.includes('location')
     && text.includes('team')
     && text.includes('work type')
-    && text.includes('pune, india')
-    && text.includes('engineer iii (sap sd)')
-    && text.includes('jobs powered by lever')
+    && /https?:\/\/(?:www\.)?tomtom\.com\/careers/i.test(page)
+    && /https:\/\/jobs\.eu\.lever\.co\/tomtom\/[^"'?#\s<]+/i.test(page)
 }
 
 export const extractIndiaLeverJobs = (leverJobs = []) => {
@@ -234,13 +235,13 @@ export const createTomTomScraper = ({
       throw new Error('TomTom verified Pune office careers surface changed materially')
     }
 
-    const jobDetailPage = await fetchPage(VERIFIED_JOB_DETAIL_URL)
+    const puneJobsOverviewPage = await fetchPage(OFFICIAL_PUNE_JOBS_OVERVIEW_URL)
     if (
-      Number(jobDetailPage.status) !== 200
-      || !sameUrl(jobDetailPage.url, VERIFIED_JOB_DETAIL_URL)
-      || !hasVerifiedTomTomJobDetailSignals(jobDetailPage.html)
+      Number(puneJobsOverviewPage.status) !== 200
+      || !sameUrl(puneJobsOverviewPage.url, OFFICIAL_PUNE_JOBS_OVERVIEW_URL)
+      || !hasOfficialTomTomPuneJobsOverviewSignals(puneJobsOverviewPage.html)
     ) {
-      throw new Error('TomTom verified job-detail surface changed materially')
+      throw new Error('TomTom verified Pune jobs-overview surface changed materially')
     }
 
     const leverBoardPage = await fetchPage(LEVER_BOARD_URL)
@@ -265,8 +266,8 @@ export const createTomTomScraper = ({
 
 export const run = async (options = {}) => createTomTomScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

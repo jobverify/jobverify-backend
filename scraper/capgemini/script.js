@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -113,6 +113,7 @@ export const extractSearchResults = (payload) => (Array.isArray(payload?.data) ?
     const requisitionId = normalizeWhitespace(record.ref || record.source_ref || record.id)
     const sourceUrl = normalizeWhitespace(record.apply_job_url)
     const location = normalizeLocation(record.location)
+    const jobDescription = stripTags(record.description)
 
     if (!jobId || !requisitionId || !sourceUrl || !location) return null
 
@@ -133,7 +134,8 @@ export const extractSearchResults = (payload) => (Array.isArray(payload?.data) ?
       requiredSkills: [],
       postingDate: normalizeWhitespace(record.updated_at || record.indexed_at),
       closingDate: null,
-      jobDescription: stripTags(record.description),
+      jobDescription,
+      publicExperienceChecked: Boolean(jobDescription),
     }
   })
   .filter(Boolean)
@@ -195,7 +197,7 @@ export const createCapgeminiScraper = ({
 export const run = async () => createCapgeminiScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Capgemini scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

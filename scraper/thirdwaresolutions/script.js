@@ -2,7 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import THIRDWARE_SOLUTIONS_CATALOG from './catalog.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -31,6 +31,8 @@ export const isTrustedOfflineFailure = (error) => {
   return message.includes('timed out')
     || message.includes('could not connect')
     || message.includes('connection was closed')
+    || message.includes("certificate's altnames")
+    || message.includes('err_tls_cert_altname_invalid')
 }
 
 export const hasPublicJobsSurfaceSignal = (html) =>
@@ -56,8 +58,8 @@ export const run = async ({ fetchText = defaultFetchText } = {}) => {
   return []
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

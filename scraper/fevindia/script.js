@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const OFFICIAL_CAREERS_HANDOFF_URL = 'https://www.fev.com/karriere/'
 export const LINKEDIN_COMPANY_URL = 'https://in.linkedin.com/company/fev-india'
@@ -84,7 +84,7 @@ export const extractJobDetail = (html) => ({
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
-    'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+    'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)',
     Accept: 'text/html,application/xhtml+xml',
   },
   label: SOURCE,

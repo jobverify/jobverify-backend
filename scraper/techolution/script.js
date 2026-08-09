@@ -1,3 +1,6 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 export const CAREERS_PAGE_URL = 'https://www.techolution.com/careers/'
 export const LISTING_API_URL = 'https://hire.techolution.com/backend/Roles/careers'
 
@@ -7,6 +10,8 @@ const COMPANY_NAME = 'Techolution'
 const SOURCE = 'techolution'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -120,6 +125,8 @@ export const extractIndiaJobs = (payload) => flattenRoleRecords(payload)
     const jobId = normalizeText(role?.id)
     const location = normalizeText(role?.locations)
     const applyUrl = buildApplyUrl(jobId)
+    const requiredSkills = extractRequiredSkills(role?.skills)
+    const jobDescription = stripHtml(role?.roleDescription)
 
     if (!title || !jobId || !location || !applyUrl) return null
 
@@ -138,10 +145,11 @@ export const extractIndiaJobs = (payload) => flattenRoleRecords(payload)
       experienceRequired: normalizeText(role?.positionStatus),
       minimumQualification: null,
       preferredQualification: null,
-      requiredSkills: extractRequiredSkills(role?.skills),
+      requiredSkills,
       postingDate: normalizeDate(role?.createdAt),
       closingDate: null,
-      jobDescription: stripHtml(role?.roleDescription),
+      jobDescription,
+      publicExperienceChecked: Boolean(jobDescription || requiredSkills.length > 0),
     }
   })
   .filter(Boolean)
@@ -151,6 +159,7 @@ export const extractJobDetail = (payload = {}, listing = {}) => {
   const jobId = normalizeText(listing?.jobId || detail?.id)
   const applyUrl = buildApplyUrl(jobId) || listing?.applyUrl || listing?.sourceUrl || null
   const requiredSkills = extractRequiredSkills(detail?.skills)
+  const jobDescription = buildDescriptionFromSections(detail?.jobDescription) || listing?.jobDescription || null
 
   return {
     ...listing,
@@ -169,7 +178,11 @@ export const extractJobDetail = (payload = {}, listing = {}) => {
     requiredSkills: requiredSkills.length > 0 ? requiredSkills : listing?.requiredSkills || [],
     postingDate: normalizeDate(detail?.createdAt) || listing?.postingDate || null,
     closingDate: listing?.closingDate || null,
-    jobDescription: buildDescriptionFromSections(detail?.jobDescription) || listing?.jobDescription || null,
+    jobDescription,
+    publicExperienceChecked: Boolean(
+      jobDescription
+      || (requiredSkills.length > 0 ? requiredSkills : listing?.requiredSkills || []).length > 0,
+    ),
   }
 }
 
@@ -224,3 +237,15 @@ export const createTecholutionScraper = ({ maxJobs = null } = {}) => ({
 })
 
 export const run = (options) => createTecholutionScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

@@ -39,9 +39,13 @@ const OFFICIAL_HOMEPAGE_TEXT_PATTERNS = [
 ]
 
 const OFFICIAL_HOMEPAGE_RAW_PATTERNS = [
-  /inquire@miphi\.in/i,
   /Powered by Phison/i,
   /Enhanced by Micromax/i,
+]
+
+const OFFICIAL_HOMEPAGE_CURRENT_OR_LEGACY_PATTERNS = [
+  /inquire@miphi\.in/i,
+  /Secure Data Storage & SSDs India/i,
 ]
 
 const defaultFetchPage = async (url) => {
@@ -65,6 +69,9 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return OFFICIAL_HOMEPAGE_TEXT_PATTERNS.every((pattern) => pattern.test(normalized))
     && OFFICIAL_HOMEPAGE_RAW_PATTERNS.every((pattern) => pattern.test(rawHtml))
+    && OFFICIAL_HOMEPAGE_CURRENT_OR_LEGACY_PATTERNS.some((pattern) =>
+      pattern.test(rawHtml) || pattern.test(normalized),
+    )
 }
 
 export const sitemapHasCareerLikeUrl = (xml) => {
@@ -110,7 +117,7 @@ export const createMiPhiSemiconductorsScraper = () => ({
 export const run = async (options = {}) => createMiPhiSemiconductorsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

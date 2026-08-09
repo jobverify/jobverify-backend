@@ -144,6 +144,82 @@ const officialCareersUsOnlyHtml = `
 </html>
 `
 
+const verifiedAug32026HomepageHtml = `
+<!doctype html>
+<html lang=en-US>
+  <head>
+    <title>AI-Driven Cloud, Data &amp; Enterprise Platforms Engineering Services</title>
+    <link rel=canonical href=https://nexturn.com/ >
+    <meta property="og:site_name" content="NexTurn">
+  </head>
+  <body>
+    <nav>
+      <a class="nav-link" href=https://nexturn.com/careers>Careers</a>
+    </nav>
+    <footer>info@nexturn.com | careers@nexturn.com | &copy;2026 NexTurn | All Rights Reserved</footer>
+  </body>
+</html>
+`
+
+const verifiedAug72026HomepageHtml = `
+<!doctype html>
+<html lang=en-US>
+  <head>
+    <title>AI-Driven Cloud, Data &amp; Enterprise Platforms Engineering Services</title>
+    <link rel=canonical href=https://65.0.158.166/ >
+    <meta property="og:site_name" content="NexTurn">
+  </head>
+  <body>
+    <nav>
+      <a class="nav-link" href=https://nexturn.com/careers>Careers</a>
+    </nav>
+    <footer>info@nexturn.com | careers@nexturn.com | &copy;2026 NexTurn | All Rights Reserved</footer>
+  </body>
+</html>
+`
+
+const verifiedAug32026CareersHtml = `
+<!doctype html>
+<html lang=en-US>
+  <head>
+    <title>Careers at NexTurn | Build the Future with Innovation &amp; Purpose</title>
+    <link rel=canonical href=https://65.0.158.166/careers/ >
+    <meta property="og:site_name" content="NexTurn">
+    <meta property="og:url" content="https://65.0.158.166/careers/">
+  </head>
+  <body>
+    <main>
+      <h1>Dream Big. Build Bold. Grow Limitlessly.</h1>
+      <p>Join our team</p>
+      <h2 class="mb-4 section-title pb-3">Current Positions Available</h2>
+      <div class="row g-4">
+        <div class="col-12 col-md-6 job_post_thumb" id="job_post_thumb_1">
+          <div class="job-card">
+            <h3 class="whitecard-heading">Staff Full Stack Engineer</h3>
+            <p class="job-subtitle">India, Hyderabad (Hybrid + Remote)</p>
+            <div class="mb-3 card-text-medium">
+              <strong class="job-subtitle">Work Experience:</strong>
+              8+ Years
+            </div>
+            <div class="mb-3 card-text-medium">
+              <strong class="job-subtitle">Qualifications:</strong>
+              Bachelor's or Master's degree in Computer Science, Information Technology, or a related field.
+            </div>
+            <div class="my-4">
+              <strong class="job-subtitle">Job Description:</strong>
+              <p class="card-text-medium">
+                Full Stack Architecture: Define the communication protocols and data contracts between the Java backend and the TypeScript frontend.
+              </p>
+            </div>
+            <a href="https://nexturn.com/job/staff-full-stack-engineer/" class="job-apply-btn mb-4">Apply</a>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
+`
+
 const javaLinuxAdminDetailHtml = `
 <!doctype html>
 <html lang="en-US">
@@ -160,6 +236,47 @@ const javaLinuxAdminDetailHtml = `
     <p>Requirements: Build and support enterprise Java applications, Linux environments, and cloud automation.</p>
     <p>Qualifications: Bachelor's or Master's degree in Computer Science, Information Technology, or a related field.</p>
     <p>Job Description: Develop and maintain enterprise Java and Linux administration workflows for secure cloud operations.</p>
+    <a href="#application-form">Apply</a>
+    <section>Job Application Form</section>
+  </body>
+</html>
+`
+
+const verifiedAug32026DetailHtml = `
+<!doctype html>
+<html lang=en-US>
+  <head>
+    <title>Staff Full Stack Engineer - NexTurn</title>
+    <link rel=canonical href=https://nexturn.com/job/staff-full-stack-engineer/ >
+    <meta property="og:site_name" content="NexTurn">
+    <meta property="og:url" content="https://nexturn.com/job/staff-full-stack-engineer/">
+  </head>
+  <body>
+    <h1>Like Minded People Work Together</h1>
+    <a href=https://nexturn.com/careers class=back-link><span class=icon>←</span> Back to Career</a>
+    <h1 class="section-title">Staff Full Stack Engineer</h1>
+    <h3 class="job-subtitle location mt-4">Location:
+      India, Hyderabad (Hybrid + Remote)<h3>
+    <p class="innersec-white-medium mt-4">
+      <strong class="job-subtitle text-white">Work
+        Experience:</strong>
+      8+ Years
+    </p>
+    <h2 class="job-subtitle text-white mt-4">Requirements:</h2>
+    <ul>
+      <li>Experience: Hands-on engineering experience with a track record of leading full stack projects in an enterprise environment.</li>
+      <li>Mastery: Deep, under-the-hood knowledge of Java, React, and TypeScript.</li>
+    </ul>
+    <p class="innersec-white-medium mt-4">
+      <strong class="job-subtitle text-white ">Qualifications:
+      </strong>
+      Bachelor's or Master's degree in Computer Science, Information Technology, or a related field.
+    </p>
+    <p><strong class="job-subtitle text-white ">Job Description:</strong></p>
+    <ul>
+      <li>Full Stack Architecture: Define the communication protocols and data contracts between the Java backend and the TypeScript frontend to ensure seamless data flow.</li>
+      <li>Platform Evolution: Lead the transition toward a unified, framework-agnostic UI strategy using Web Components.</li>
+    </ul>
     <a href="#application-form">Apply</a>
     <section>Job Application Form</section>
   </body>
@@ -225,6 +342,7 @@ test('NexTurn helpers validate the official homepage, careers shell, job cards, 
   assert.equal(nexturn.COMPANY, 'NexTurn')
   assert.equal(nexturn.HOMEPAGE_URL, 'https://nexturn.com/')
   assert.equal(nexturn.CAREERS_URL, 'https://nexturn.com/careers/')
+  assert.equal(nexturn.VERIFIED_ON, '2026-08-07')
   assert.equal(nexturn.hasOfficialHomepageSignal(officialHomepageHtml), true)
   assert.equal(nexturn.hasOfficialHomepageSignal('<html><title>Placeholder</title></html>'), false)
   assert.equal(nexturn.hasOfficialCareersSignal(officialCareersHtml), true)
@@ -414,4 +532,48 @@ test('NexTurn fails closed when the homepage, careers page, or job detail surfac
     }),
     /NexTurn official job detail surface changed/i,
   )
+})
+
+test('NexTurn accepts the verified Friday, August 7, 2026 homepage canonical drift', async () => {
+  const nexturn = await loadNexTurnModule()
+
+  assert.equal(nexturn.hasOfficialHomepageSignal(verifiedAug32026HomepageHtml), true)
+  assert.equal(nexturn.hasOfficialHomepageSignal(verifiedAug72026HomepageHtml), true)
+  assert.equal(nexturn.hasOfficialCareersSignal(verifiedAug32026CareersHtml), true)
+  assert.equal(nexturn.hasOfficialJobDetailSignal(verifiedAug32026DetailHtml), true)
+
+  const jobs = await nexturn.createNexTurnScraper().run({
+    fetchText: async (url) => {
+      if (url === nexturn.HOMEPAGE_URL) return verifiedAug72026HomepageHtml
+      if (url === nexturn.CAREERS_URL) return verifiedAug32026CareersHtml
+      if (url === 'https://nexturn.com/job/staff-full-stack-engineer/') {
+        return verifiedAug32026DetailHtml
+      }
+
+      throw new Error(`Unexpected NexTurn URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.deepEqual(
+    jobs.map((job) => ({
+      title: job.title,
+      location: job.location,
+      city: job.city,
+      experienceRequired: job.experienceRequired,
+      minimumQualification: job.minimumQualification,
+      sourceUrl: job.sourceUrl,
+    })),
+    [
+      {
+        title: 'Staff Full Stack Engineer',
+        location: 'India, Hyderabad (Hybrid + Remote)',
+        city: 'Hyderabad',
+        experienceRequired: '8+ Years',
+        minimumQualification: "Bachelor's or Master's degree in Computer Science, Information Technology, or a related field.",
+        sourceUrl: 'https://nexturn.com/job/staff-full-stack-engineer/',
+      },
+    ],
+  )
+  assert.match(jobs[0].jobDescription, /Platform Evolution/i)
 })

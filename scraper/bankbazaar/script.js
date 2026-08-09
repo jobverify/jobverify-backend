@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -14,7 +14,6 @@ const USER_AGENT =
 const PUBLIC_JOB_LISTING_PATTERNS = [
   /\bcurrent openings\b/i,
   /\bjob openings\b/i,
-  /\bopen positions\b/i,
   /\bvacanc(?:y|ies)\b/i,
   /\bjob description\b/i,
   /"@type"\s*:\s*"JobPosting"/i,
@@ -40,7 +39,8 @@ const normalizeWhitespace = (value) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
-  return /https:\/\/www\.bankbazaar\.com\/careers\.html/i.test(page)
+  return /(?:https:\/\/www\.bankbazaar\.com\/careers\.html|href=["']\/careers\.html["'])/i.test(page)
+    && /<title>\s*BankBazaar\s*<\/title>/i.test(page)
     && /\b(?:join our team|careers)\b/i.test(page)
 }
 
@@ -87,7 +87,7 @@ export const createBankBazaarScraper = () => ({
 export const run = async (options = {}) => createBankBazaarScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

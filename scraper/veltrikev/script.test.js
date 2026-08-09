@@ -17,7 +17,7 @@ import {
 const homepageHtml = `
   <html>
     <head>
-      <title>Cutting Edge R&D for Electric Vehicles | Veltrik.ev | VELTRIK.EV</title>
+      <title>Cutting Edge R&amp;D for Electric Vehicles | Veltrik.ev | VELTRIK.EV</title>
     </head>
     <body>
       <nav>
@@ -56,20 +56,20 @@ const careersHtml = `
         <h1>Join Our Team</h1>
         <p>Explore exciting career opportunities in automotive software development and functional safety engineering with us.</p>
         <p>Explore exciting career opportunities in the automotive domain. We're looking for talented individuals to innovate with us.</p>
-        <a href="https://veltrik.in/">Apply</a>
+        <a href="https://veltrik.in/campus-hiring.html">Apply</a>
         <h3>Careers Page</h3>
         <label>Which Job are you interested to Apply For?*</label>
-        <select name="role">
-          <option value="">Select a role</option>
-          <option>AUTOSAR Architect (15+ yrs exp)</option>
-          <option>Senior AUTOSAR BSW Developer (8+ yrs exp)</option>
-          <option>Software Integration Engineer (5+ yrs exp)</option>
-          <option>Functional Safety Engineer (3+ yrs exp)</option>
-          <option>Cybersecurity Engineer (3+ yrs exp)</option>
-          <option>Senior Firmware Developer (5+ yrs exp)</option>
-          <option>Firmware Developer (2+ yrs exp)</option>
-          <option>Graduate Engineering Trainee Software (0-1 yrs)</option>
-        </select>
+        <form>
+          <label class="select-input"><input type="checkbox"> AUTOSAR Architect (15+ yrs exp)</label>
+          <label class="select-input"><input type="checkbox"> Senior AUTOSAR BSW Developer (8+ yrs exp)</label>
+          <label class="select-input"><input type="checkbox"> Software Integration Engineer (5+ yrs exp)</label>
+          <label class="select-input"><input type="checkbox"> Functional Safety Engineer (3+ yrs exp)</label>
+          <label class="select-input"><input type="checkbox"> Cybersecurity Engineer (3+ yrs exp)</label>
+          <label class="select-input"><input type="checkbox"> Senior Firmware Developer (5+ yrs exp)</label>
+          <label class="select-input"><input type="checkbox"> Firmware Developer (2+ yrs exp)</label>
+          <label class="select-input"><input type="checkbox"> Graduate Engineering Trainee Software (0-1 yrs)</label>
+          <label>Your Message*</label>
+        </form>
         <button>Submit Your Application</button>
         <p>Bengaluru, India</p>
         <p>9 AM - 5 PM IST</p>
@@ -87,7 +87,7 @@ test('recognizes the verified VELTRIK.EV homepage and careers surfaces', () => {
   assert.equal(HOMEPAGE_URL, 'https://veltrik.com/')
   assert.equal(CAREERS_URL, 'https://veltrik.com/careers')
   assert.equal(CAMPUS_URL, 'https://veltrik.com/campus')
-  assert.equal(APPLY_HANDOFF_URL, 'https://veltrik.in/')
+  assert.equal(APPLY_HANDOFF_URL, 'https://veltrik.in/campus-hiring.html')
 
   assert.equal(hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(hasOfficialHomepageSignal('<html><title>Other Company</title></html>'), false)
@@ -117,7 +117,7 @@ test('extractJobsFromCareersPage parses the verified inline role list into jobs'
   assert.equal(jobs[0].location, 'Bengaluru, India')
   assert.equal(jobs[0].city, 'Bangalore')
   assert.equal(jobs[0].country, 'India')
-  assert.equal(jobs[0].applyUrl, APPLY_HANDOFF_URL)
+  assert.equal(jobs[0].applyUrl, CAREERS_URL)
   assert.equal(jobs[0].sourceUrl, CAREERS_URL)
   assert.equal(jobs[7].employmentType, null)
   assert.match(jobs[7].jobId, /^veltrikev-graduate-engineering-trainee-software$/)
@@ -126,7 +126,7 @@ test('extractJobsFromCareersPage parses the verified inline role list into jobs'
 test('extractJobsFromCareersPage fails closed when the verified role selector disappears', () => {
   assert.throws(
     () => extractJobsFromCareersPage(careersHtml.replace('Which Job are you interested to Apply For?*', 'Open roles')),
-    /verified inline role selector/i,
+    /verified inline role selector|verified careers page|trusted first-party hiring surface/i,
   )
 })
 
@@ -156,7 +156,7 @@ test('run scrapes the official careers page roles and decorates the output', asy
   assert.equal(jobs[0].source, SOURCE)
   assert.equal(jobs[0].companyCareerPage, CAREERS_URL)
   assert.equal(jobs[0].atsPlatform, 'official-company-careers')
-  assert.equal(jobs[0].link, APPLY_HANDOFF_URL)
+  assert.equal(jobs[0].link, CAREERS_URL)
   assert.equal(jobs[0].scrapedAt, '2026-07-13T00:00:00.000Z')
 })
 
@@ -177,7 +177,7 @@ test('run fails closed when the careers page no longer exposes the verified inli
           return homepageHtml
         }
 
-        return careersHtml.replace(/<select name="role">[\s\S]*?<\/select>/i, '<div>No roles listed right now</div>')
+        return careersHtml.replace(/<label>Which Job are you interested to Apply For\?\*<\/label>[\s\S]*?<\/form>/i, '<div>No roles listed right now</div>')
       },
     }),
     /verified inline role selector|verified careers page/i,

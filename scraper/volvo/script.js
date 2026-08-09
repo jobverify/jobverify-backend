@@ -72,7 +72,7 @@ const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
       Accept: 'application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8',
-      'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
     },
   })
 
@@ -113,7 +113,7 @@ export const getRunnerMetadata = () => ({
 })
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

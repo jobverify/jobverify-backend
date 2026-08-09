@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { EDUREKA_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -76,9 +76,9 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title>\s*Edureka\s*\|\s*Online Courses, PGP .* Upskilling\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.edureka\.co\/["']/i.test(page)
-    && /<a[^>]+href=["']\/careers["'][^>]*>\s*JOIN US\s*<\/a>/i.test(page)
+  return /<title>\s*Edureka\s*\|\s*Online Courses,\s*PGP\s*(?:&amp;|&)\s*Degree Programs for Upskilling\s*<\/title>/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.edureka\.co\/?["']/i.test(page)
+    && /<a[^>]+href=["'](?:https:\/\/www\.edureka\.co)?\/careers\/?["'][^>]*>\s*(?:JOIN US|Careers)\s*<\/a>/i.test(page)
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
@@ -276,7 +276,7 @@ export const createEdurekaScraper = ({
 export const run = async (options = {}) => createEdurekaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

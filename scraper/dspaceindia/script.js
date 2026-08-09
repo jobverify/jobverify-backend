@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import DSPACE_INDIA_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -193,12 +193,18 @@ export const buildAbsoluteUrl = (value) => {
 
 export const hasOfficialCareersLandingSignal = (html) => {
   const page = String(html ?? '')
+  const hasLegacyJobFinderCta =
+    /href=["'][^"']*\/en\/pub\/home\/career\/jobfinder\.cfm["']/i.test(page)
+    && /Job Finder/i.test(page)
+    && /Professionals/i.test(page)
+  const hasCurrentPositionsCta =
+    /href=["'][^"']*\/en\/pub\/home\/career\/jobfinder\/stellen\.cfm["']/i.test(page)
+    && /Current Positions/i.test(page)
+    && /Career in India/i.test(page)
 
   return /<title>\s*Career\s*-\s*dSPACE\s*<\/title>/i.test(page)
     && /Shape the future of mobility with us/i.test(page)
-    && /href=["'][^"']*\/en\/pub\/home\/career\/jobfinder\.cfm["']/i.test(page)
-    && /Job Finder/i.test(page)
-    && /Professionals/i.test(page)
+    && (hasLegacyJobFinderCta || hasCurrentPositionsCta)
 }
 
 export const hasVerifiedCurrentPositionsSignal = (html) => {
@@ -291,7 +297,11 @@ export const extractJobPostingJsonLd = (html) => {
   )
 
   for (const match of matches) {
-    const rawJson = normalizeWhitespace(match[1])
+    const rawJson = normalizeWhitespace(
+      decodeRepeatedHtmlEntities(String(match[1] ?? ''))
+        .replace(/[\u0000-\u001F\u007F]/g, ' ')
+        .trim(),
+    )
     if (!rawJson) continue
 
     try {
@@ -315,21 +325,33 @@ export const extractJobDetail = (
     scrapedAt = new Date().toISOString(),
   } = {},
 ) => {
+  const decodedHtml = decodeRepeatedHtmlEntities(String(html ?? ''))
   const jobPosting = extractJobPostingJsonLd(html)
   const title = normalizeWhitespace(jobPosting?.title)
-  const requisitionId = normalizeWhitespace(jobPosting?.identifier?.value || jobPosting?.identifier)
-  const country = normalizeCountry(jobPosting?.jobLocation?.address?.addressCountry)
-  const locality = normalizeWhitespace(jobPosting?.jobLocation?.address?.addressLocality) || deriveCity(baseJob?.location)
+  const detailIdentifier = normalizeWhitespace(jobPosting?.identifier?.value || jobPosting?.identifier)
+  const detailLocationMatch = /Location:\s*([^<\r\n]+)/i.exec(decodedHtml)
+  const detailLocality = normalizeWhitespace(detailLocationMatch?.[1])
+  const locality = detailLocality || deriveCity(baseJob?.location)
   const location = buildIndiaLocation(locality || baseJob?.location)
   const description = stripTags(decodeRepeatedHtmlEntities(jobPosting?.description))
-  const applicationEmailMatch = /mailto:([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i.exec(String(html ?? ''))
-  const applicationEmail = normalizeWhitespace(applicationEmailMatch?.[1])
+  const verifiedApplicationEmailMatch = new RegExp(escapeRegex(APPLICATION_EMAIL), 'i').exec(decodedHtml)
+  const applicationEmailMatch = /(?:mailto:)?([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i.exec(
+    decodedHtml,
+  )
+  const applicationEmail = normalizeWhitespace(
+    verifiedApplicationEmailMatch?.[0] || applicationEmailMatch?.[1],
+  )
 
   if (!title || title !== baseJob.title) {
     throw new Error('dSpace India detail page no longer matches the verified job title contract')
   }
 
-  if (requisitionId && baseJob?.requisitionId && requisitionId !== baseJob.requisitionId) {
+  if (
+    detailIdentifier
+    && baseJob?.requisitionId
+    && detailIdentifier !== baseJob.requisitionId
+    && detailIdentifier !== baseJob.jobId
+  ) {
     throw new Error('dSpace India detail page no longer matches the verified requisition contract')
   }
 
@@ -343,7 +365,7 @@ export const extractJobDetail = (
     location,
     city: deriveCity(location),
     state: null,
-    country,
+    country: 'India',
     sourceUrl: baseJob.sourceUrl,
     applyUrl: baseJob.sourceUrl,
     link: baseJob.sourceUrl,
@@ -396,7 +418,7 @@ export const createDSpaceIndiaScraper = ({
 export const run = async (options = {}) => createDSpaceIndiaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

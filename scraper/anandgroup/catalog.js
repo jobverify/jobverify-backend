@@ -1,11 +1,11 @@
-export const VERIFIED_SURFACE_SUMMARY =
+﻿export const VERIFIED_SURFACE_SUMMARY =
   'Verified on July 15, 2026 that https://www.anandgroupindia.com/ is the live official Anand Group homepage, that it hands off to the first-party careers subsection at https://www.anandgroupindia.com/careers-at-anand/, that the informational join-us page at https://www.anandgroupindia.com/careers-at-anand/join-usnew/ and the related shopfloor page at https://www.anandgroupindia.com/careers-at-anand/shopfloor-excellence/ are live, and that https://www.anandgroupindia.com/page-sitemap.xml lists those same careers subsection URLs. There is no trustworthy public jobs surface: the verified careers pages are employer-branding and culture content without public job cards, role detail pages, ATS handoff, or JobPosting markup, and common first-party job routes such as /careers, /career, /jobs, /join-us, /openings, /current-openings, and /work-with-us returned first-party 404 responses during live checks.'
 
 export const ANAND_GROUP_CATALOG = {
   source: 'anandgroup',
   companyName: 'Anand Group',
   adapter: 'script',
-  modulePath: '../anandgroup/script.js',
+  modulePath: '../../scraper/anandgroup/script.js',
   companyCareerPage: 'https://www.anandgroupindia.com/careers-at-anand/',
   joinUsPageUrl: 'https://www.anandgroupindia.com/careers-at-anand/join-usnew/',
   shopfloorPageUrl: 'https://www.anandgroupindia.com/careers-at-anand/shopfloor-excellence/',
@@ -32,3 +32,4 @@ export const ANAND_GROUP_CATALOG = {
 }
 
 export default ANAND_GROUP_CATALOG
+

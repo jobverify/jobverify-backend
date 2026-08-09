@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import {
   KOMPRISE_CATALOG,
@@ -137,7 +137,7 @@ const resolveIndiaLocation = (rawLocation, applyUrl) => {
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title>\s*Careers\s*@\s*Komprise\s*<\/title>/i.test(page)
+  return /<title>\s*Careers\s*(?:@|at)\s*Komprise\b[^<]*<\/title>/i.test(page)
     && /\bCAREERS @ KOMPRISE\b/i.test(page)
     && /\bOpen Positions\b/i.test(page)
     && /job_manager_ajax_filters/i.test(page)
@@ -239,7 +239,7 @@ export const createKompriseScraper = ({
 export const run = async (options = {}) => createKompriseScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

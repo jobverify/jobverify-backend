@@ -14,7 +14,7 @@ const careersPageHtml = `
 <html lang="en">
   <body>
     <main>
-      <h1>Let's Grow Together</h1>
+      <h1>Let’s Grow Together</h1>
       <p>You can be a game-changer at Opsera.</p>
       <h2>Current Positions</h2>
 

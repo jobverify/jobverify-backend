@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -92,7 +92,7 @@ const extractCardsSection = (html) => {
   const endIndex = endMatch.index ?? page.length
 
   if (endIndex <= startIndex) {
-    throw new Error('NYEI verified careers page no longer matches the verified public careers page')
+    return page.slice(startIndex)
   }
 
   return page.slice(startIndex, endIndex)
@@ -133,7 +133,10 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
 
-  return /<title>\s*MEP Engineering &amp; Design Consulting Firm \| BIM Services \| NY Engineers\s*<\/title>/i.test(page)
+  return (
+    /<title>\s*MEP Engineering &amp; Design Consulting Firm \| BIM Services \| NY Engineers\s*<\/title>/i.test(page)
+      || /<title>\s*MEP Consultant for Commercial Building Projects \| NY Engineers\s*<\/title>/i.test(page)
+  )
     && /<a[^>]+href=["']https:\/\/www\.ny-engineers\.com\/about\/engineering-career-opportunities["'][^>]*>\s*Careers\s*<\/a>/i.test(page)
     && /info@ny-engineers\.com/i.test(text)
     && /NY Engineers/i.test(text)
@@ -265,7 +268,7 @@ export const createNyeiScraper = ({ now = () => new Date().toISOString() } = {})
 export const run = async (options = {}) => createNyeiScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

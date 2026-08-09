@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import SYNCFUSION_CATALOG from './catalog.js'
 
@@ -16,7 +16,7 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 export const VERIFIED_JOB_DETAIL_URLS = [...PROVIDER_METADATA.verifiedJobDetailUrls]
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const RELEVANT_JOB_PATH = /^\/careers\/[^/]+\/$/i
 
 const decodeHtmlEntities = (value) => String(value ?? '')
@@ -26,6 +26,7 @@ const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/\u2019/g, "'")
 
 const stripScriptsAndStyles = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -111,7 +112,7 @@ const extractLastPathSegment = (value) => {
 
 const extractApplyUrl = (html = '', detailUrl) =>
   makeAbsoluteUrl(
-    String(html ?? '').match(/<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*(?:I['’]?m Interested|I'm Interested)\s*<\/a>/i)?.[1],
+    String(html ?? '').match(/<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*(?:I(?:'|\u2019|&#8217;|&#x27;)?m Interested)\s*<\/a>/i)?.[1],
     detailUrl,
   ) || detailUrl
 
@@ -172,10 +173,10 @@ export const extractRelevantJobCards = (html = '') => {
     const title = normalizeWhitespace(
       anchorText
         .replace(/\s*location:\s*[\s\S]*$/i, '')
-        .replace(/\s*i['’]?m interested\s*$/i, ''),
+        .replace(/\s*i(?:'|\u2019)?m interested\s*$/i, ''),
     )
     const location = normalizeWhitespace(
-      anchorText.match(/location:\s*([\s\S]*?)(?:i['’]?m interested)?$/i)?.[1],
+      anchorText.match(/location:\s*([\s\S]*?)(?:i(?:'|\u2019)?m interested)?$/i)?.[1],
     )
 
     seen.add(detailUrl)
@@ -303,7 +304,7 @@ export const createSyncfusionScraper = ({
 export const run = async (options = {}) => createSyncfusionScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

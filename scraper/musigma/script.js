@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -95,7 +95,15 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
 
   return /mu sigma/i.test(page)
-    && /linkedin\.com\/jobs\/search\/\?f_C=37734&geoId=102713980/i.test(page)
+    && (
+      /linkedin\.com\/jobs\/search\/\?f_C=37734&geoId=102713980/i.test(page)
+      || /linkedin\.com\/company\/mu-sigma(?:\/\?viewAsMember=true)?/i.test(page)
+    )
+    && (
+      /build what matters at mu sigma/i.test(page)
+      || /explore exciting career opportunities/i.test(page)
+      || /life at mu sigma/i.test(page)
+    )
 }
 
 export const extractSearchResults = (html) => [...String(html ?? '').matchAll(
@@ -212,7 +220,7 @@ export const createMuSigmaScraper = ({
 export const run = async (options = {}) => createMuSigmaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

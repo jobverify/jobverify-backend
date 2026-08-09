@@ -5,9 +5,16 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'nativeorange'
 export const COMPANY = 'Native orange'
+export const VERIFIED_ON = '2026-08-03'
 export const HOMEPAGE_URL = 'https://nativeorange.ai/'
 export const ABOUT_URL = 'https://nativeorange.ai/about/'
 export const CONTACT_URL = 'https://nativeorange.ai/contact/'
+export const CAREERS_PAGE_URL = 'https://nativeorange.ai/careers/'
+export const JOBS_PAGE_URL = 'https://nativeorange.ai/jobs/'
+export const NO_PUBLIC_JOB_ROUTE_URLS = [
+  CAREERS_PAGE_URL,
+  JOBS_PAGE_URL,
+]
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -15,15 +22,8 @@ const USER_AGENT =
 const FIRST_PARTY_JOB_PATH_PATTERN =
   /(?:^|\/)(careers?|jobs?|job|openings?|vacancies?|join-us|work-with-us)(?:\/|$)/i
 
-const PUBLIC_JOBS_SIGNAL_PATTERNS = [
+const RAW_PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
-  /\bcurrent openings\b/i,
-  /\bopen positions\b/i,
-  /\bopen roles\b/i,
-  /\bjob openings\b/i,
-  /\bjob description\b/i,
-  /\bsearch jobs\b/i,
-  /\bview jobs\b/i,
   /boards\.greenhouse\.io/i,
   /job-boards\.greenhouse\.io/i,
   /jobs\.lever\.co/i,
@@ -35,6 +35,16 @@ const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /recruitee/i,
   /breezy\.hr/i,
   /linkedin\.com\/jobs/i,
+]
+
+const VISIBLE_PUBLIC_JOBS_SIGNAL_PATTERNS = [
+  /\bcurrent openings\b/i,
+  /\bopen positions\b/i,
+  /\bopen roles\b/i,
+  /\bjob openings\b/i,
+  /\bjob description\b/i,
+  /\bsearch jobs\b/i,
+  /\bview jobs\b/i,
 ]
 
 const normalizeWhitespace = (value) =>
@@ -56,6 +66,14 @@ const toAbsoluteUrl = (value) => {
   } catch {
     return null
   }
+}
+
+const toComparableUrl = (value) => {
+  const absoluteUrl = value instanceof URL ? value : toAbsoluteUrl(value)
+  if (!absoluteUrl) return null
+
+  const normalizedPathname = absoluteUrl.pathname.replace(/\/+$/, '') || '/'
+  return `${absoluteUrl.origin}${normalizedPathname}`
 }
 
 const isFirstPartyUrl = (url) => {
@@ -82,34 +100,46 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html)
 
-  return normalized.includes('Nativeorange')
-    && normalized.includes('AI insurance products')
-    && normalized.includes('sales@nativeorange.ai')
-    && normalized.includes('San Francisco')
+  return /Nativeorange - AI-Powered Insurance Solutions \| Automated Underwriting/i.test(normalized)
+    && normalized.includes('AI-Powered Insurance Technology')
+    && normalized.includes('The Future of Insurance AI')
+    && normalized.includes('Google Scale Partner')
+    && normalized.includes('GUIDEWIRE Vanguard Program')
 }
 
 export const hasOfficialAboutSignal = (html) => {
   const normalized = normalizeWhitespace(html)
 
   return normalized.includes('About Nativeorange')
+    && normalized.includes('Pioneering intelligent AI solutions')
     && normalized.includes('Join Our Team')
-    && normalized.includes('actively looking for candidates')
+    && normalized.includes('leverage Agentic AI tools')
+    && normalized.includes('AWS, Google, and Microsoft')
     && normalized.includes('Apply Now')
 }
 
 export const hasOfficialContactSignal = (html) => {
   const normalized = normalizeWhitespace(html)
 
-  return normalized.includes('Contact Us')
+  return normalized.includes('Contact Nativeorange')
+    && normalized.includes('Contact Us')
+    && normalized.includes('Schedule a Demo')
     && normalized.includes('sales@nativeorange.ai')
-    && normalized.includes('San Francisco')
-    && normalized.includes('Talk to our team')
+    && normalized.includes('(408) 596 3079')
+    && normalized.includes('San Francisco, California, 94105')
+    && normalized.includes('Fill out the form below')
 }
 
-export const hasFirstPartyJobsPathLink = (html) => {
+export const hasFirstPartyJobsPathLink = (html, { currentUrl = null } = {}) => {
+  const currentComparableUrl = toComparableUrl(currentUrl)
+
   for (const match of String(html ?? '').matchAll(/href=["']([^"']+)["']/gi)) {
     const absoluteUrl = toAbsoluteUrl(match[1])
     if (!absoluteUrl || !isFirstPartyUrl(absoluteUrl)) {
+      continue
+    }
+
+    if (currentComparableUrl && toComparableUrl(absoluteUrl) === currentComparableUrl) {
       continue
     }
 
@@ -140,9 +170,16 @@ export const extractApplyHandoffUrl = (html) => {
   return null
 }
 
-export const hasPublicJobsSignal = (html) =>
-  hasFirstPartyJobsPathLink(html)
-  || PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+export const hasPublicJobsSignal = (html, options = {}) =>
+  hasFirstPartyJobsPathLink(html, options)
+  || RAW_PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+  || VISIBLE_PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(normalizeWhitespace(html)))
+
+export const isVerifiedNoJobsRoute = (page = {}) =>
+  Number(page.status) === 200
+  && NO_PUBLIC_JOB_ROUTE_URLS.includes(page.url)
+  && hasOfficialHomepageSignal(page.html)
+  && !hasPublicJobsSignal(page.html, { currentUrl: page.url })
 
 export const createNativeOrangeScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
@@ -150,7 +187,7 @@ export const createNativeOrangeScraper = () => ({
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Native orange verified official homepage no longer matches the known public surface')
     }
-    if (hasPublicJobsSignal(homepage.html)) {
+    if (hasPublicJobsSignal(homepage.html, { currentUrl: homepage.url })) {
       throw new Error('Native orange homepage now exposes public jobs')
     }
 
@@ -158,7 +195,7 @@ export const createNativeOrangeScraper = () => ({
     if (about.status !== 200 || !hasOfficialAboutSignal(about.html)) {
       throw new Error('Native orange verified about page no longer matches the known public surface')
     }
-    if (hasPublicJobsSignal(about.html)) {
+    if (hasPublicJobsSignal(about.html, { currentUrl: about.url })) {
       throw new Error('Native orange about page now exposes public jobs')
     }
     if (extractApplyHandoffUrl(about.html) !== CONTACT_URL) {
@@ -169,8 +206,15 @@ export const createNativeOrangeScraper = () => ({
     if (contact.status !== 200 || !hasOfficialContactSignal(contact.html)) {
       throw new Error('Native orange verified contact page no longer matches the known public surface')
     }
-    if (hasPublicJobsSignal(contact.html)) {
+    if (hasPublicJobsSignal(contact.html, { currentUrl: contact.url })) {
       throw new Error('Native orange contact page now exposes public jobs')
+    }
+
+    for (const url of NO_PUBLIC_JOB_ROUTE_URLS) {
+      const routePage = await fetchPage(url)
+      if (!isVerifiedNoJobsRoute(routePage)) {
+        throw new Error('Native orange verified no-jobs route no longer matches the known marketing shell')
+      }
     }
 
     return []
@@ -180,7 +224,7 @@ export const createNativeOrangeScraper = () => ({
 export const run = async (options = {}) => createNativeOrangeScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

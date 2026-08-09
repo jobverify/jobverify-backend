@@ -118,29 +118,33 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
 
-  return normalized.includes('Karur Vysya Bank')
-    && normalized.includes('Personal Banking')
-    && normalized.includes('Business Loans')
-    && /href=["']https:\/\/careers\.karurvysya\.bank\.in\/karurvysyabank\/jobslist["']/i.test(page)
+  return /<title>\s*Karur Vysya Bank - KVB\s*<\/title>/i.test(page)
+    && normalized.includes('customersupport@kvb.bank.in')
+    && /href=["']https:\/\/careers\.karurvysya\.bank\.in(?:\/karurvysyabank(?:\/jobslist)?\/?)?["']/i.test(page)
 }
 
 export const hasOfficialCareersShellSignal = (html = '') => {
   const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page) || ''
 
   return /<title>\s*Home\s*<\/title>/i.test(page)
     && /<base\s+href=["']\/karurvysyabank\/["']\s*\/?>/i.test(page)
     && /<app-root><\/app-root>/i.test(page)
-    && normalized.includes('runtime.36d5a07efd54c143.js')
-    && normalized.includes('main.92af9ef27720e0e0.js')
-    && normalized.includes('impl.openings.co')
+    && /runtime\.[a-f0-9]+\.js/i.test(page)
+    && /main\.[a-f0-9]+\.js/i.test(page)
+    && /impl\.openings\.co/i.test(page)
 }
 
+const extractVerifiedCompanyConfiguration = (payload = {}) =>
+  payload?.company
+  || payload?.reponseObject?.company
+  || payload?.responseObject?.company
+  || null
+
 export const hasVerifiedCompanyConfiguration = (payload = {}) =>
-  Number(payload?.company?.id) === 15551
-  && normalizeWhitespace(payload?.company?.companyName) === 'Karur Vysya Bank'
-  && normalizeWhitespace(payload?.company?.careerSiteUrl) === 'careers.karurvysya.bank.in'
-  && normalizeWhitespace(payload?.company?.domainName) === 'careers.karurvysya.bank.in'
+  Number(extractVerifiedCompanyConfiguration(payload)?.id) === 15551
+  && normalizeWhitespace(extractVerifiedCompanyConfiguration(payload)?.companyName) === 'Karur Vysya Bank'
+  && normalizeWhitespace(extractVerifiedCompanyConfiguration(payload)?.careerSiteUrl) === 'careers.karurvysya.bank.in'
+  && normalizeWhitespace(extractVerifiedCompanyConfiguration(payload)?.domainName) === 'careers.karurvysya.bank.in'
 
 export const buildSearchPayload = ({
   job = '',
@@ -197,6 +201,7 @@ export const extractSearchResults = (payload = {}) => {
   }
 
   return records
+    .map((record) => record?._source && typeof record._source === 'object' ? record._source : record)
     .filter((record) => !isClosedRecord(record))
     .map((record) => mapSearchRecord(record))
     .filter((job) => job.title && job.jobId && job.sourceUrl)
@@ -289,7 +294,7 @@ export const createKarurVysyaBankScraper = () => ({
 export const run = async (options = {}) => createKarurVysyaBankScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,3 +1,8 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
 export const SOURCE = 'whitematrix'
 export const COMPANY = 'WhiteMatrix'
 export const LINKEDIN_COMPANY_PAGE_URL = 'https://www.linkedin.com/company/whitematrix/'
@@ -54,13 +59,13 @@ export const pageIndicatesWhiteMatrixCompany = (html) => {
 export const jobsPageShowsZeroResults = (html) => {
   const normalized = normalizeWhitespace(html)?.toLowerCase() || ''
 
-  return normalized.includes('whitematrix')
-    && normalized.includes('0 jobs in')
-    && normalized.includes("we couldn't find a match")
+  return /\b0 jobs(?: jobs)? in\b/i.test(normalized)
+    && !guestJobsApiShowsListings(html)
 }
 
 export const guestJobsApiShowsZeroResults = (html) =>
-  normalizeWhitespace(html) == null
+  !guestJobsApiShowsListings(html)
+    && /^<!doctype html>\s*<!---->$/i.test(String(html ?? '').replace(/\s+/g, ' ').trim())
 
 export const guestJobsApiShowsListings = (html) =>
   /base-card|job-search-card|data-entity-urn="urn:li:jobPosting:/i.test(String(html ?? ''))
@@ -89,3 +94,15 @@ export const createWhiteMatrixScraper = () => ({
 })
 
 export const run = async (options = {}) => createWhiteMatrixScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

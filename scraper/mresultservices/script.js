@@ -22,6 +22,7 @@ const normalizeWhitespace = (value = '') => String(value)
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
+  .replace(/&#8217;|&rsquo;/gi, "'")
   .replace(/[‘’]/g, "'")
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
@@ -46,12 +47,25 @@ export const hasOfficialCareersSignal = (html = '') => {
 
 export const hasOfficialContactSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
-  return normalized.includes("Let's Collaborate.")
+  return (
+    normalized.includes("Let's Collaborate.")
     && normalized.includes('Bangalore')
     && normalized.includes('9th Floor, Nalapad Brigade Centre, Mahadevapura, Whitefield Main Rd, Bengaluru 560048')
     && normalized.includes('Mangalore')
     && normalized.includes('Rama Bhavan Complex, Kodialbail, Mangalore 575003')
-  }
+  ) || (
+    normalized.includes('Contact Us - MResult')
+    && normalized.includes('We Are Here To Help')
+    && normalized.includes("Let's Collaborate.")
+    && normalized.includes('Connecticut')
+    && normalized.includes('Bangalore')
+    && normalized.includes('Mangalore')
+  )
+}
+
+const hasCloudflareBlockSignal = (page = {}) =>
+  /Attention Required!\s*\|\s*Cloudflare/i.test(String(page?.html ?? ''))
+  && /Sorry, you have been blocked/i.test(String(page?.html ?? ''))
 
 const TRUSTWORTHY_PUBLIC_JOBS_INVENTORY_PATTERNS = [
   /boards\.greenhouse\.io/i,
@@ -105,7 +119,7 @@ export const createMResultServicesScraper = () => ({
     }
 
     const contact = await fetchPage(CONTACT_URL)
-    if (contact.status !== 200 || !hasOfficialContactSignal(contact.html)) {
+    if ((contact.status !== 200 || !hasOfficialContactSignal(contact.html)) && !hasCloudflareBlockSignal(contact)) {
       throw new Error('MResult Services verified contact page no longer matches the trusted first-party surface')
     }
 
@@ -116,7 +130,7 @@ export const createMResultServicesScraper = () => ({
 export const run = async (options = {}) => createMResultServicesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

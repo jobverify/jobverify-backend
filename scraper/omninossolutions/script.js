@@ -1,14 +1,19 @@
+﻿import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 export const SOURCE = 'omninossolutions'
 export const COMPANY = 'Omninos Solutions'
 export const HOMEPAGE_URL = 'https://www.omninos.in/'
 export const CAREERS_URL = 'https://omninos.in/current-opening.php'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const PROVIDER_METADATA = {
   source: SOURCE,
   companyName: COMPANY,
   officialBrandName: 'Omninos',
   adapter: 'script',
-  modulePath: '../omninossolutions/script.js',
+  modulePath: '../../scraper/omninossolutions/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-first-party-role-cards',
@@ -72,5 +77,36 @@ export const run = async ({
     link: CAREERS_URL,
     source: SOURCE,
     scrapedAt: now(),
+    publicExperienceChecked: true,
   }))
 }
+
+export const runStandalone = async ({
+  argv = process.argv,
+  fetchText,
+  now,
+  saveToFile,
+  saveToDB,
+} = {}) => {
+  const jobs = await run({
+    ...(fetchText ? { fetchText } : {}),
+    ...(now ? { now } : {}),
+  })
+
+  if (argv.includes('--dry-run')) {
+    const writeJobsToFile = saveToFile
+      ?? (await import('../../scraper-support/utils/saveToDB.js')).saveToFile
+    writeJobsToFile(jobs, path.join(currentDir, 'jobs.json'))
+    return jobs
+  }
+
+  const persistJobsToDb = saveToDB
+    ?? (await import('../../scraper-support/utils/saveToDB.js')).saveToDB
+  await persistJobsToDb(jobs, SOURCE)
+  return jobs
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  await runStandalone()
+}
+

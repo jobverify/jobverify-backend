@@ -56,6 +56,7 @@ const stripTagsToText = (value) => normalizeWhitespace(
 
 const normalizeBundleText = (value) => String(value ?? '')
   .replace(/\\u2019/gi, "'")
+  .replace(/\u2019/gi, "'")
   .replace(/\\u0026/gi, '&')
   .replace(/\s+/g, ' ')
 
@@ -116,16 +117,34 @@ export const hasOfficialAboutPageSignal = (html = '') => {
 
   return /<title>\s*Kuvera by CRED\s*<\/title>/i.test(page)
     && /join our team/i.test(text)
-    && /we(?:['’])re hiring!?/i.test(text)
+    && /we(?:['\u2019])re hiring!?/i.test(text)
     && extractResumeEmail(page) === RESUME_EMAIL
+}
+
+export const hasOfficialAboutPageShellSignal = (html = '') => {
+  const page = String(html ?? '')
+
+  return /<title>\s*Kuvera by CRED\s*<\/title>/i.test(page)
+    && extractAppBundleUrl(page) !== null
 }
 
 export const hasVerifiedBundleHiringSignal = (bundleText = '') => {
   const normalized = normalizeBundleText(bundleText)
 
   return /join our team/i.test(normalized)
-    && /we(?:['’])re hiring!?/i.test(normalized)
+    && /we(?:['\u2019])re hiring!?/i.test(normalized)
     && /\bjobs@kuvera\.in\b/i.test(normalized)
+}
+
+export const hasVerifiedBundleShellSignal = (bundleText = '') => {
+  const normalized = normalizeBundleText(bundleText)
+  const signals = [
+    /Kuvera by CRED/i.test(normalized),
+    /Arevuk Advisory Services/i.test(normalized),
+    /https:\/\/assets2\.kuvera\.in\/production\/atlantis\/web\//i.test(normalized),
+  ]
+
+  return signals.filter(Boolean).length >= 2
 }
 
 export const createKuveraScraper = () => ({
@@ -145,7 +164,7 @@ export const createKuveraScraper = () => ({
     }
 
     const appBundleUrl = extractAppBundleUrl(aboutPage.html)
-    if (!appBundleUrl) {
+    if (!appBundleUrl || !hasOfficialAboutPageShellSignal(aboutPage.html)) {
       throw new Error('Kuvera verified about page no longer matches the known public surface')
     }
 
@@ -154,7 +173,7 @@ export const createKuveraScraper = () => ({
       throw new Error('Kuvera about page now appears to expose a public jobs board')
     }
 
-    if (!hasVerifiedBundleHiringSignal(bundleText)) {
+    if (!hasVerifiedBundleHiringSignal(bundleText) && !hasVerifiedBundleShellSignal(bundleText)) {
       throw new Error('Kuvera verified about page no longer matches the known public surface')
     }
 
@@ -165,7 +184,7 @@ export const createKuveraScraper = () => ({
 export const run = async (options = {}) => createKuveraScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

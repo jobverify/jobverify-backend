@@ -1,4 +1,4 @@
-import {
+﻿import {
   CAREERS_URL,
   COMPANY,
   SOURCE,
@@ -8,7 +8,7 @@ export const provider = {
   source: SOURCE,
   companyName: COMPANY,
   adapter: 'script',
-  modulePath: '../aaravsolutions/script.js',
+  modulePath: '../../scraper/aaravsolutions/script.js',
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-company-careers',
   countryFilter: 'India',
@@ -24,3 +24,4 @@ export const provider = {
 }
 
 export default provider
+

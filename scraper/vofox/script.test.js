@@ -121,6 +121,58 @@ const careersHtml = `
 </html>
 `
 
+const liveAccordionCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Career at Vofox | Vofox Solutions</title>
+  </head>
+  <body>
+    <main>
+      <h2>Current Openings</h2>
+      <div class="accordion-item card-shadow">
+        <div class="accordion-button" type="button">
+          <div class="row">
+            <div class="col-lg-3 col-md-12">
+              <span class="badge bg-danger">Job Title</span>
+              <h5 class="career_name_1">System Administrator</h5>
+            </div>
+            <div class="col-lg-2 col-md-12">
+              <span class="badge bg-danger">Experience</span>
+              <h5>: 2 - 4 Years</h5>
+            </div>
+            <div class="col-lg-5 col-md-12">
+              <span class="badge bg-danger">Salary</span>
+              <h5>As per industry standard</h5>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-collapse collapse show">
+          <div class="accordion-body">
+            <div class="row">
+              <div class="col-lg-6 col-md-12">
+                <h4>Skills Required</h4>
+                <p>Active Directory<br />DNS</p>
+              </div>
+              <div class="col-lg-6 col-md-12">
+                <article>
+                  <h4>Description</h4>
+                  <p>Install, configure, and maintain Windows Server / Linux operating systems.</p>
+                </article>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <h5>Apply Now For The Position Of</h5>
+      <p>Attach latest resume</p>
+      <p>Only PDF & DOCX files are allowed.</p>
+      <p>Vofox Solutions Pvt Ltd, Vofox Square, VIP Road, JLN Stadium Metro Station, Kaloor, Kochi- 682017 Kerala, India</p>
+    </main>
+  </body>
+</html>
+`
+
 test('Vofox validates the verified homepage, about page, contact page, careers page, and extracts inline role sections', async () => {
   const vofox = await loadModule()
   assert.ok(vofox, 'Vofox scraper module should load')
@@ -166,6 +218,23 @@ test('Vofox validates the verified homepage, about page, contact page, careers p
         openingCount: 1,
       },
     ],
+  )
+
+  const accordionJobs = vofox.extractJobCards(liveAccordionCareersHtml)
+  assert.equal(accordionJobs.length, 1)
+  assert.deepEqual(
+    {
+      title: accordionJobs[0].title,
+      experienceRequired: accordionJobs[0].experienceRequired,
+      applyUrl: accordionJobs[0].applyUrl,
+      requiredSkills: accordionJobs[0].requiredSkills,
+    },
+    {
+      title: 'System Administrator',
+      experienceRequired: '2 - 4 Years',
+      applyUrl: 'https://vofoxsolutions.com/career-at-vofox',
+      requiredSkills: ['Active Directory', 'DNS'],
+    },
   )
 })
 

@@ -1,26 +1,26 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
 const SOURCE = 'sequellogistics'
 const COMPANY = 'Sequel Logistics'
-const COMPANY_PAGE_URL = 'https://sequelglobal.com/'
+const COMPANY_PAGE_URL = 'https://www.sequelglobal.com/career.html'
 
-test('Sequel Logistics is registered as a verified first-party zero-public-careers sentinel', () => {
+test('Sequel Logistics is registered as a verified first-party careers scraper', () => {
   const provider = getScraperCatalog().find((item) => item.source === SOURCE)
 
   assert.ok(provider, 'Expected Sequel Logistics provider to be registered in customProviders.json')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, COMPANY)
   assert.equal(provider.companyCareerPage, COMPANY_PAGE_URL)
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'official-company-site')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-about-office-contact-validation-and-dual-domain-404-routes')
+  assert.equal(provider.paginationStrategy, 'verified-careers-landing-page-plus-lateral-openings-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-about-page+verified-office-page+verified-contact-page+verified-dual-domain-404-careers-jobs-apply-routes-return-empty',
+    'verified-careers-page+verified-lateral-openings-cards',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
@@ -43,7 +43,7 @@ test('Sequel Logistics resolves from provider metadata and stays runnable throug
 
   const scraper = buildScrapers().find((item) => item.name === SOURCE)
 
-  assert.ok(scraper, 'Expected buildScrapers() to return the Sequel Logistics sentinel scraper')
+  assert.ok(scraper, 'Expected buildScrapers() to return the Sequel Logistics scraper')
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, SOURCE)
   assert.equal(scraper.provider.companyCareerPage, COMPANY_PAGE_URL)

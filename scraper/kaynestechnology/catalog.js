@@ -1,9 +1,9 @@
-export const KAYNES_TECHNOLOGY_CATALOG = {
+﻿export const KAYNES_TECHNOLOGY_CATALOG = {
   source: 'kaynestechnology',
   companyName: 'Kaynes Technology',
   officialBrandName: 'Kaynes Technology India Limited',
   adapter: 'script',
-  modulePath: '../kaynestechnology/script.js',
+  modulePath: '../../scraper/kaynestechnology/script.js',
   dryRunFile: 'kaynestechnology/jobs.json',
   homepageUrl: 'https://www.kaynestechnology.co.in/index.html',
   companyCareerPage: 'https://www.kaynestechnology.co.in/index.html',
@@ -20,3 +20,4 @@ export const KAYNES_TECHNOLOGY_CATALOG = {
 }
 
 export default KAYNES_TECHNOLOGY_CATALOG
+

@@ -77,7 +77,11 @@ export const hasOfficialHomepageSignal = (html) => {
   return title === 'BSV Group'
     && /<link[^>]+rel="canonical"[^>]+href="https:\/\/bsvgroup\.com\/"/i.test(page)
     && visibleText.includes('BSV Group')
-    && visibleText.includes('fastest growing biopharmaceutical companies in India')
+    && (
+      visibleText.includes('fastest growing biopharmaceutical companies in India')
+      || visibleText.includes('BSV (A Mankind Group Company)')
+    )
+    && visibleText.includes('Life at BSV')
   }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -137,7 +141,7 @@ export const createBharatSerumsAndVaccinesScraper = () => ({
 export const run = async (options = {}) => createBharatSerumsAndVaccinesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -24,9 +24,9 @@ export const QUADEYE_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   dryRunFile: 'quadeye/jobs.json',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that the official first-party careers page at https://www.quadeye.com/careers/ embeds a Zoho Recruit widget via rec_embed_js.load with site:"https://quadeye.zohorecruit.in" and empty_job_msg:"No current Openings", while the public portal at https://quadeye.zohorecruit.in/jobs/Careers/ and the public jobs API at https://quadeye.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite were both live. The verified public API returned 21 public India roles at verification time, with branded public detail pages served on career.quadeye.com.',
+    'Verified on Tuesday, August 4, 2026 that the official first-party careers page at https://www.quadeye.com/careers/ still embeds a Zoho Recruit widget via rec_embed_js.load with site:"https://quadeye.zohorecruit.in" and empty_job_msg:"No current Openings", while the public portal at https://quadeye.zohorecruit.in/jobs/Careers/ remained live with the current title "Jobs at PeoplePlus" and og:site_name "Quadeye". The public jobs API at https://quadeye.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite returned 7 current public India roles, with branded public detail pages still served on career.quadeye.com.',
 }
 
 export default QUADEYE_CATALOG

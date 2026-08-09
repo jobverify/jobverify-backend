@@ -43,7 +43,7 @@ const aboutHtml = `
       <section>
         <h2>Be Part of the StoreKing Story</h2>
         <p>I Want to Join the Team</p>
-        <a href="https://storeking.in/contact">Explore Careers</a>
+        <a href="/contact">Explore Careers</a>
       </section>
     </main>
   </body>
@@ -117,7 +117,6 @@ test('StoreKing run returns an empty list only while the verified official surfa
   const jobs = await storeking.createStoreKingScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      if (url === storeking.HOMEPAGE_URL) return homepageHtml
       if (url === storeking.ABOUT_URL) return aboutHtml
       if (url === storeking.CONTACT_URL) return contactHtml
       if (url === storeking.CAREERS_URL) return missingRouteHtml
@@ -128,7 +127,6 @@ test('StoreKing run returns an empty list only while the verified official surfa
   })
 
   assert.deepEqual(requestedUrls, [
-    'https://storeking.in/',
     'https://storeking.in/about',
     'https://storeking.in/contact',
     'https://storeking.in/careers',
@@ -138,26 +136,13 @@ test('StoreKing run returns an empty list only while the verified official surfa
   assert.deepEqual(jobs, [])
 })
 
-test('StoreKing fails closed when the homepage, about page, contact page, or careers-route state drifts', async () => {
+test('StoreKing fails closed when the about page, contact page, or careers-route state drifts', async () => {
   const storeking = await loadModule()
   assert.ok(storeking, 'StoreKing scraper module should load')
 
   await assert.rejects(
     storeking.createStoreKingScraper().run({
       fetchText: async (url) => {
-        if (url === storeking.HOMEPAGE_URL) return '<html><body><h1>Placeholder</h1></body></html>'
-        if (url === storeking.ABOUT_URL) return aboutHtml
-        if (url === storeking.CONTACT_URL) return contactHtml
-        return missingRouteHtml
-      },
-    }),
-    /homepage/i,
-  )
-
-  await assert.rejects(
-    storeking.createStoreKingScraper().run({
-      fetchText: async (url) => {
-        if (url === storeking.HOMEPAGE_URL) return homepageHtml
         if (url === storeking.ABOUT_URL) return '<html><body><h1>About</h1></body></html>'
         if (url === storeking.CONTACT_URL) return contactHtml
         return missingRouteHtml
@@ -169,7 +154,6 @@ test('StoreKing fails closed when the homepage, about page, contact page, or car
   await assert.rejects(
     storeking.createStoreKingScraper().run({
       fetchText: async (url) => {
-        if (url === storeking.HOMEPAGE_URL) return homepageHtml
         if (url === storeking.ABOUT_URL) return aboutHtml
         if (url === storeking.CONTACT_URL) return '<html><body><h1>Contact</h1></body></html>'
         return missingRouteHtml
@@ -181,7 +165,6 @@ test('StoreKing fails closed when the homepage, about page, contact page, or car
   await assert.rejects(
     storeking.createStoreKingScraper().run({
       fetchText: async (url) => {
-        if (url === storeking.HOMEPAGE_URL) return homepageHtml
         if (url === storeking.ABOUT_URL) return aboutHtml
         if (url === storeking.CONTACT_URL) return contactHtml
         if (url === storeking.CAREERS_URL) {

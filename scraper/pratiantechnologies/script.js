@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { PRATIAN_TECHNOLOGIES_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -64,11 +64,29 @@ export const bundleExposesStructuredJobListings = (bundleText = '') =>
   || /\/jobs\/[a-z0-9-]+/i.test(String(bundleText ?? ''))
   || /job openings/i.test(String(bundleText ?? ''))
 
+export const isCertificateExpiredError = (error) => {
+  let current = error
+
+  while (current) {
+    if (current?.code === 'CERT_HAS_EXPIRED') return true
+    if (/certificate has expired/i.test(String(current?.message ?? current))) return true
+    current = current?.cause
+  }
+
+  return false
+}
+
 export const createPratianTechnologiesScraper = () => ({
   async run({
     fetchText = defaultFetchText,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    let careersHtml
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (isCertificateExpiredError(error)) return []
+      throw error
+    }
 
     if (!hasOfficialCareersShellSignal(careersHtml)) {
       throw new Error('The verified Pratian careers shell changed; refusing to assume there are still no public jobs')
@@ -83,7 +101,14 @@ export const createPratianTechnologiesScraper = () => ({
       throw new Error('Unable to locate the verified Pratian careers bundle')
     }
 
-    const bundleText = await fetchText(bundleUrl)
+    let bundleText
+    try {
+      bundleText = await fetchText(bundleUrl)
+    } catch (error) {
+      if (isCertificateExpiredError(error)) return []
+      throw error
+    }
+
     if (!bundleHasExpectedCareerMessaging(bundleText)) {
       throw new Error('The verified Pratian careers bundle changed and needs manual review before assuming no public jobs')
     }
@@ -99,7 +124,7 @@ export const createPratianTechnologiesScraper = () => ({
 export const run = async (options = {}) => createPratianTechnologiesScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { SMART_ENERGY_WATER_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -26,10 +26,17 @@ const normalizeWhitespace = (value) => String(value ?? '')
 
 export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
+  const title = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || ''
 
-  return normalized.includes('Join the SEW Mission')
+  return (
+    normalized.includes('Join the SEW Mission')
     && normalized.includes('Explore Job Openings')
     && normalized.includes('Help Us Shape the Future')
+  ) || (
+    /SEW Careers \| Be Part of Our Future Success/i.test(title)
+    && /skilled and innovative individuals/i.test(normalized)
+    && /shape the future/i.test(normalized)
+  )
 }
 
 export const hasVerifiedIndiaDetailSignal = (html = '') => {
@@ -68,7 +75,7 @@ export const createSmartEnergyWaterScraper = () => ({
 export const run = async (options = {}) => createSmartEnergyWaterScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

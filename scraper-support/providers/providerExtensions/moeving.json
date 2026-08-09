@@ -1,0 +1,22 @@
+{
+  "source": "moeving",
+  "companyName": "MoEVing",
+  "officialBrandName": "MoEVing",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../moeving/script.js",
+  "dryRunFile": "moeving/jobs.json",
+  "companyCareerPage": "https://moeving.freshteam.com/jobs",
+  "companyDomain": "moeving.freshteam.com",
+  "atsPlatform": "Freshteam official ATS",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-official-ATS-sentinel",
+  "extractionStrategy": "verified-official-ATS-without-enumerable-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://moeving.freshteam.com/jobs",
+  "verifiedSurfaceSummary": "MoEVing's published career endpoint is hosted on Freshteam. No official enumerable job feed has been verified for this exact company, so the provider intentionally returns no jobs rather than substitute similarly named companies or third-party listings."
+}

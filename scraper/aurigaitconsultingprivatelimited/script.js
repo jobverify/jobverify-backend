@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { AURIGA_IT_CONSULTING_PRIVATE_LIMITED_CATALOG } from './catalog.js'
 
@@ -13,7 +13,7 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const KEKA_CAREERS_URL = PROVIDER_METADATA.externalHandoffUrl
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -85,6 +85,17 @@ export const extractCareerConfig = (html = '') => {
   return { identifier, domain, portalName }
 }
 
+export const extractBootstrapDocumentUrl = (html = '', pageUrl = KEKA_CAREERS_URL) => {
+  const relativeUrl = String(html ?? '').match(/fetch\(\s*['"]([^'"]+careerportal\/[^'"]+\.html)['"]\s*\)/i)?.[1]
+  if (!relativeUrl) return null
+
+  try {
+    return new URL(relativeUrl, pageUrl).toString()
+  } catch {
+    return null
+  }
+}
+
 export const buildActiveJobsUrl = ({ domain, identifier, portalName = 'default' } = {}) => {
   const normalizedDomain = normalizeDomain(domain)
   if (!normalizedDomain || !identifier) return null
@@ -145,7 +156,9 @@ export const createAurigaItConsultingPrivateLimitedScraper = () => ({
     }
 
     const kekaShellHtml = await fetchText(KEKA_CAREERS_URL)
-    const careerConfig = extractCareerConfig(kekaShellHtml)
+    const bootstrapDocumentUrl = extractBootstrapDocumentUrl(kekaShellHtml)
+    const kekaResolvedHtml = bootstrapDocumentUrl ? await fetchText(bootstrapDocumentUrl) : kekaShellHtml
+    const careerConfig = extractCareerConfig(kekaShellHtml) || extractCareerConfig(kekaResolvedHtml)
     if (!careerConfig) {
       throw new Error('Unable to resolve Auriga Keka embed configuration')
     }
@@ -165,7 +178,7 @@ export const createAurigaItConsultingPrivateLimitedScraper = () => ({
 export const run = async (options = {}) => createAurigaItConsultingPrivateLimitedScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

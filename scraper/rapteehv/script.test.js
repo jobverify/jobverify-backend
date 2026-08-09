@@ -13,7 +13,7 @@ const officialCareersHtml = `
   <!doctype html>
   <html lang="en">
     <head>
-      <title>Raptee.HV - India's First Motorcycle with Electric Car DNA | HV-TEC</title>
+      <title>Careers at Raptee.HV | Join India's High-Voltage EV Startup</title>
       <script type="application/ld+json">
       {
         "@graph": [
@@ -152,6 +152,7 @@ test('RAPTEE HV maps the Keka jobs payload into the shared contract', async () =
         postingDate: '2026-07-09',
         closingDate: null,
         jobDescription: 'Work across vehicle design, manufacturing, and validation.',
+        publicExperienceChecked: true,
       },
       {
         title: 'Industrial IoT Developer Intern',
@@ -172,6 +173,7 @@ test('RAPTEE HV maps the Keka jobs payload into the shared contract', async () =
         postingDate: '2026-07-09',
         closingDate: null,
         jobDescription: 'No public location listed.',
+        publicExperienceChecked: true,
       },
     ],
   )
@@ -235,6 +237,116 @@ test('RAPTEE HV run follows the verified handoff and decorates jobs', async () =
   assert.equal(jobs[0].scrapedAt, '2026-07-11T05:30:00.000Z')
 })
 
+test('RAPTEE HV can recover with browser-backed handoff and Keka jobs when direct requests time out', async () => {
+  const raptee = await loadModule()
+  assert.ok(raptee, 'RAPTEE HV scraper module should load')
+
+  const browserTextUrls = []
+  const browserJsonUrls = []
+  const portalDocumentUrl =
+    'https://raptee.keka.com/ats/documents/3d03878f-6bf4-4fe3-9090-2989304de3b4/careerportal/d9f7462140404de596d1d74272c07aa6.html'
+  const activeJobsUrl =
+    'https://raptee.keka.com/careers/api/embedjobs/default/active/3d03878f-6bf4-4fe3-9090-2989304de3b4'
+
+  const jobs = await raptee.createRapteeHvScraper({ maxJobs: 1 }).run({
+    fetchText: async () => {
+      throw new Error('fetch failed | Connect Timeout Error (attempted address: www.rapteehv.com:443, timeout: 10000ms)')
+    },
+    fetchJson: async () => {
+      throw new Error('fetch failed | Connect Timeout Error (attempted address: raptee.keka.com:443, timeout: 10000ms)')
+    },
+    fetchBrowserText: async (url) => {
+      browserTextUrls.push(url)
+      if (url === raptee.CAREERS_URL) return officialCareersHtml
+      if (url === raptee.EXTERNAL_HANDOFF_URL) return kekaWrapperHtml
+      if (url === portalDocumentUrl) return kekaCareersHtml
+      throw new Error(`Unexpected browser text URL: ${url}`)
+    },
+    fetchBrowserJson: async (url) => {
+      browserJsonUrls.push(url)
+      if (url === activeJobsUrl) {
+        return [
+          {
+            id: 149468,
+            title: 'EV Engineering - Fellowship',
+            description: '<div>Work across vehicle design, manufacturing, and validation.</div>',
+            departmentName: 'Product Development & Validation',
+            jobType: 2,
+            experience: '0 - 1',
+            publishedOn: '2026-07-09T10:04:57.420Z',
+            skillNames: ['CAD'],
+            jobLocations: [
+              {
+                city: 'Chennai',
+                state: 'TN',
+                countryCode: 'IN',
+                countryName: 'India',
+              },
+            ],
+          },
+        ]
+      }
+
+      throw new Error(`Unexpected browser JSON URL: ${url}`)
+    },
+    now: () => '2026-08-02T00:00:00.000Z',
+  })
+
+  assert.deepEqual(browserTextUrls, [
+    raptee.CAREERS_URL,
+    raptee.EXTERNAL_HANDOFF_URL,
+    portalDocumentUrl,
+  ])
+  assert.deepEqual(browserJsonUrls, [activeJobsUrl])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'rapteehv')
+  assert.equal(jobs[0].scrapedAt, '2026-08-02T00:00:00.000Z')
+})
+
+test('RAPTEE HV can use the direct rendered Keka board when the handoff already resolves to the final page', async () => {
+  const raptee = await loadModule()
+  assert.ok(raptee, 'RAPTEE HV scraper module should load')
+
+  const jobs = await raptee.createRapteeHvScraper({ maxJobs: 1 }).run({
+    fetchText: async (url) => {
+      if (url === raptee.CAREERS_URL) return officialCareersHtml
+      if (url === raptee.EXTERNAL_HANDOFF_URL) return kekaCareersHtml
+      throw new Error(`Unexpected text URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      assert.equal(
+        url,
+        'https://raptee.keka.com/careers/api/embedjobs/default/active/3d03878f-6bf4-4fe3-9090-2989304de3b4',
+      )
+      return [
+        {
+          id: 149468,
+          title: 'EV Engineering - Fellowship',
+          description: '<div>Work across vehicle design, manufacturing, and validation.</div>',
+          departmentName: 'Product Development & Validation',
+          jobType: 2,
+          experience: '0 - 1',
+          publishedOn: '2026-07-09T10:04:57.420Z',
+          skillNames: ['CAD'],
+          jobLocations: [
+            {
+              city: 'Chennai',
+              state: 'TN',
+              countryCode: 'IN',
+              countryName: 'India',
+            },
+          ],
+        },
+      ]
+    },
+    now: () => '2026-08-02T00:00:00.000Z',
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'rapteehv')
+  assert.equal(jobs[0].scrapedAt, '2026-08-02T00:00:00.000Z')
+})
+
 test('RAPTEE HV fails closed when the verified handoff or Keka surface changes', async () => {
   const raptee = await loadModule()
   assert.ok(raptee, 'RAPTEE HV scraper module should load')
@@ -242,6 +354,10 @@ test('RAPTEE HV fails closed when the verified handoff or Keka surface changes',
   await assert.rejects(
     raptee.createRapteeHvScraper().run({
       fetchText: async () => officialCareersHtml.replace(
+        'https://raptee.keka.com/careers/api/embedjobs/js/3d03878f-6bf4-4fe3-9090-2989304de3b4',
+        'https://example.com/jobs.js',
+      ),
+      fetchBrowserText: async () => officialCareersHtml.replace(
         'https://raptee.keka.com/careers/api/embedjobs/js/3d03878f-6bf4-4fe3-9090-2989304de3b4',
         'https://example.com/jobs.js',
       ),
@@ -261,6 +377,17 @@ test('RAPTEE HV fails closed when the verified handoff or Keka surface changes',
           )
         }
         throw new Error(`Unexpected text URL: ${url}`)
+      },
+      fetchBrowserText: async (url) => {
+        if (url === raptee.CAREERS_URL) return officialCareersHtml
+        if (url === raptee.EXTERNAL_HANDOFF_URL) return kekaWrapperHtml
+        if (url === 'https://raptee.keka.com/ats/documents/3d03878f-6bf4-4fe3-9090-2989304de3b4/careerportal/d9f7462140404de596d1d74272c07aa6.html') {
+          return kekaCareersHtml.replace(
+            '3d03878f-6bf4-4fe3-9090-2989304de3b4',
+            'changed-identifier',
+          )
+        }
+        throw new Error(`Unexpected browser text URL: ${url}`)
       },
     }),
     /verified Keka careers surface changed materially|Unable to resolve RAPTEE HV Keka embed configuration/i,

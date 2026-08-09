@@ -1,3 +1,5 @@
+﻿import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+
 export const SOURCE = 'selectsys'
 export const COMPANY = 'Selectsys'
 export const HOMEPAGE_URL = 'https://www.selectsys.com/'
@@ -6,12 +8,15 @@ export const APPLICATION_EMAIL = 'hr@selectsys.com'
 export const ROLE_LIST_LABEL = "Roles We're Hiring For"
 export const ROLE_LOCATION = 'Remote-first (U.S. and India hubs)'
 
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
 export const PROVIDER_METADATA = {
   source: SOURCE,
   companyName: COMPANY,
   officialBrandName: 'Selectsys',
   adapter: 'script',
-  modulePath: '../selectsys/script.js',
+  modulePath: '../../scraper/selectsys/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-company-careers-email-apply',
@@ -28,6 +33,17 @@ export const PROVIDER_METADATA = {
 }
 
 const normalizeWhitespace = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
+
+const stripTags = (value) => String(value ?? '').replace(/<[^>]+>/g, ' ')
+
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
 
 const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -50,13 +66,13 @@ export const hasOfficialCareersSignal = (html = '') => {
 
 export const extractRoles = (html = '') =>
   [...extractSection(html, ROLE_LIST_LABEL).matchAll(/<li>([\s\S]*?)<\/li>/gi)]
-    .map((match) => normalizeWhitespace(match[1]))
+    .map((match) => normalizeWhitespace(stripTags(match[1])))
     .filter(Boolean)
 
 export const buildApplyUrl = (title) =>
   `mailto:${APPLICATION_EMAIL}?subject=${encodeURIComponent(`Application for ${title}`)}`
 
-export const run = async ({ fetchText, now = () => new Date().toISOString() } = {}) => {
+export const run = async ({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) => {
   const careersHtml = await fetchText(CAREERS_URL)
   if (!hasOfficialCareersSignal(careersHtml)) {
     throw new Error('Selectsys verified first-party careers page changed materially')
@@ -78,7 +94,9 @@ export const run = async ({ fetchText, now = () => new Date().toISOString() } = 
       country: 'India',
       link: applyUrl,
       source: SOURCE,
+      publicExperienceChecked: true,
       scrapedAt: now(),
     }
   })
 }
+

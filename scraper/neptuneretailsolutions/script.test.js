@@ -5,11 +5,13 @@ import {
   ABOUT_URL,
   COMPANY,
   CORPORATE_JOBS_URL,
+  FIELD_JOBS_HANDOFF_URL,
   FIELD_JOBS_RSS_URL,
   FIELD_JOBS_URL,
   HOMEPAGE_URL,
   LEGACY_QUOTIENT_URL,
   SOURCE,
+  VERIFIED_ON,
   aboutPageLinksToOfficialJobSurfaces,
   createNeptuneRetailSolutionsScraper,
   extractFieldFeedItems,
@@ -37,7 +39,7 @@ const aboutHtml = `
       <p>Acquire Quotient creating the market leading in-store media network linked to market leading digital incentives network.</p>
       <h2>Join Neptune</h2>
       <p>Explore opportunities at Neptune.</p>
-      <a href="${FIELD_JOBS_URL}">Browse Field Positions</a>
+      <a href="${FIELD_JOBS_HANDOFF_URL}">Browse Field Positions</a>
       <a href="${CORPORATE_JOBS_URL}">Browse Corporate Positions</a>
     </body>
   </html>
@@ -72,9 +74,11 @@ const feedXml = `<?xml version="1.0" encoding="UTF-8"?>
 test('Neptune Retail Solutions stays pinned to the verified Quotient redirect, About Us careers shell, and Pinpoint field-jobs feed', () => {
   assert.equal(SOURCE, 'neptuneretailsolutions')
   assert.equal(COMPANY, 'Neptune Retail Solutions')
+  assert.equal(VERIFIED_ON, '2026-08-03')
   assert.equal(LEGACY_QUOTIENT_URL, 'https://www.quotient.com/')
   assert.equal(HOMEPAGE_URL, 'https://neptuneretailsolutions.com/')
   assert.equal(ABOUT_URL, 'https://neptuneretailsolutions.com/about-us/')
+  assert.equal(FIELD_JOBS_HANDOFF_URL, 'https://neptuneretailsolutions.pinpointhq.com/')
   assert.equal(FIELD_JOBS_URL, 'https://neptuneretailsolutions.pinpointhq.com/jobs')
   assert.equal(FIELD_JOBS_RSS_URL, 'https://neptuneretailsolutions.pinpointhq.com/jobs.rss')
   assert.equal(CORPORATE_JOBS_URL, 'https://neptuneretailsolutions.bamboohr.com/careers')

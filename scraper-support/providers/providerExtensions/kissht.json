@@ -1,0 +1,22 @@
+{
+  "source": "kissht",
+  "companyName": "Kissht",
+  "officialBrandName": "OnEMI Technology Solutions Limited",
+  "adapter": "script",
+  "modulePath": "../kissht/script.js",
+  "dryRunFile": "kissht/jobs.json",
+  "companyCareerPage": "https://www.kissht.com/career",
+  "companyDomain": "kissht.com",
+  "atsPlatform": "Workline",
+  "atsCareerPageUrl": "https://app1596.workline.hr",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-official-ats-sentinel",
+  "extractionStrategy": "verified-official-careers-link-without-stable-enumerable-public-feed+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.kissht.com/career",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that Kissht's first-party careers page links its View Open Positions control to the Workline tenant at https://app1596.workline.hr. No stable public listing feed was verified from that official ATS, so this exact-name provider fails closed and returns no jobs until an enumerable official endpoint is available."
+}

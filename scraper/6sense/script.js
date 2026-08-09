@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import SIX_SENSE_CATALOG from './catalog.js'
 
@@ -11,7 +11,7 @@ export const SOURCE = SIX_SENSE_CATALOG.source
 export const COMPANY = SIX_SENSE_CATALOG.companyName
 export const GREENHOUSE_API_URL = 'https://boards-api.greenhouse.io/v1/boards/6sense/jobs?content=true'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
@@ -104,7 +104,7 @@ export const createSixSenseScraper = () => ({
 export const run = async (options = {}) => createSixSenseScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

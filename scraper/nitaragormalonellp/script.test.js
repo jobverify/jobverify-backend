@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 
 const fixturesDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  '../tests/fixtures/nitaragormalonellp',
+  '../../scraper-support/tests/fixtures/nitaragormalonellp',
 )
 
 const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')

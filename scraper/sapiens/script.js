@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -37,6 +37,16 @@ const normalizeWhitespace = (value) => {
 const stripTags = (value) => normalizeWhitespace(
   String(value ?? '')
     .replace(/<(br|\/p|\/div|\/li|\/h[1-6])\b[^>]*>/gi, ' ')
+    .replace(/<li\b[^>]*>/gi, ' ')
+    .replace(/<[^>]+>/g, ' '),
+)
+
+const stripPageToText = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/tr|\/td|\/section)\b[^>]*>/gi, ' ')
     .replace(/<li\b[^>]*>/gi, ' ')
     .replace(/<[^>]+>/g, ' '),
 )
@@ -91,6 +101,48 @@ const extractListItems = (value) => [...String(value ?? '').matchAll(/<li\b[^>]*
 const extractDetailJobId = (value) => normalizeWhitespace(
   extractFirst(/\/(\d+)\/?(?:[#?].*)?$/i, value),
 )
+
+const extractMetaContent = (attribute, value, html) => normalizeWhitespace(
+  extractFirst(
+    new RegExp(`<meta\\b[^>]*${attribute}=["']${value}["'][^>]*content=["']([^"']+)["']`, 'i'),
+    html,
+  ),
+)
+
+const cleanDocumentTitle = (value) => normalizeWhitespace(value)
+  ?.replace(/\s+job details\s*\|\s*sapiens\s*$/i, '')
+  || null
+
+const extractDetailTitle = (html, listing = {}) => normalizeWhitespace(
+  extractFirst(
+    /data-careersite-propertyid=["']title["'][^>]*>([\s\S]*?)<\/span>/i,
+    html,
+  )
+  || extractMetaContent('property', 'og:title', html)
+  || cleanDocumentTitle(extractFirst(/<title[^>]*>([\s\S]*?)<\/title>/i, html))
+  || normalizeWhitespace(extractFirst(/<h1[^>]*>([\s\S]*?)<\/h1>/i, html))
+  || listing.title,
+)
+
+const extractDetailDescription = (html, title) => {
+  const pageText = stripPageToText(html)
+  if (!pageText) return null
+
+  const normalizedTitle = normalizeWhitespace(title)?.toLowerCase() || null
+  const normalizedPageText = pageText.toLowerCase()
+  const titleIndex = normalizedTitle ? normalizedPageText.indexOf(normalizedTitle) : -1
+  const narrativeIndex = normalizedPageText.indexOf('sapiens is on the lookout')
+  const roleOverviewIndex = normalizedPageText.indexOf('explore your next role at sapiens')
+  const startIndex = narrativeIndex >= 0
+    ? narrativeIndex
+    : (
+        roleOverviewIndex >= 0
+          ? roleOverviewIndex
+          : (titleIndex >= 0 ? titleIndex : 0)
+      )
+
+  return normalizeWhitespace(pageText.slice(startIndex)) || null
+}
 
 export const buildSearchUrl = ({ startRow = 0 } = {}) => {
   const url = new URL('/search/', BASE_URL)
@@ -180,9 +232,11 @@ export const extractJobDetail = (html, listing = {}) => {
     /<div\b[^>]*class=["'][^"']*jobdescription[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
     html,
   )
+  const title = extractDetailTitle(html, listing)
+  const description = stripTags(descriptionHtml) || extractDetailDescription(html, title)
 
   return {
-    title: normalizeWhitespace(extractFirst(/<h1[^>]*>([\s\S]*?)<\/h1>/i, html)) || listing.title || null,
+    title: title || listing.title || null,
     location,
     city: extractCity(location) || listing.city || null,
     jobId: normalizeWhitespace(
@@ -193,7 +247,7 @@ export const extractJobDetail = (html, listing = {}) => {
     ) || listing.requisitionId || listing.jobId || null,
     employmentType: null,
     experienceRequired: null,
-    jobDescription: stripTags(descriptionHtml),
+    jobDescription: description,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: extractListItems(descriptionHtml),
@@ -204,6 +258,7 @@ export const extractJobDetail = (html, listing = {}) => {
     applyUrl: detailJobId ? buildApplyUrl(detailJobId) : null,
     sourceUrl: listing.sourceUrl || null,
     department: null,
+    publicExperienceChecked: true,
   }
 }
 
@@ -267,3 +322,15 @@ export const createSapiensScraper = () => ({
 })
 
 export const run = async (options = {}) => createSapiensScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

@@ -1,8 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { METRICSTREAM_CATALOG } from './catalog.js'
 
@@ -16,7 +15,6 @@ export const SUCCESSFACTORS_BOARD_URL = METRICSTREAM_CATALOG.successFactorsBoard
 export const SUCCESSFACTORS_SEARCH_URL = METRICSTREAM_CATALOG.successFactorsSearchUrl
 export const SUCCESSFACTORS_COMPANY_TOKEN = METRICSTREAM_CATALOG.successFactorsCompanyToken
 
-const DEFAULT_TIMEOUT_MS = 120000
 const DEFAULT_MAX_PAGES = 10
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -189,7 +187,7 @@ export const hasOfficialCareersPageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = stripTags(rawHtml) || ''
 
-  return /<title>\s*Careers\s*&\s*Job Opportunities\s*-\s*MetricStream\s*<\/title>/i.test(rawHtml)
+  return /<title>\s*Careers\s*(?:&|&amp;)\s*Job Opportunities\s*-\s*MetricStream\s*<\/title>/i.test(rawHtml)
     && /search open positions/i.test(normalized)
     && /career5\.successfactors\.eu\/career\?company=metricstre/i.test(rawHtml)
 }
@@ -311,48 +309,21 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const getLiveSearchPages = async ({
+export const getLiveSearchPages = async ({
   searchUrl = SUCCESSFACTORS_SEARCH_URL,
-  maxPages = DEFAULT_MAX_PAGES,
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
+  fetchText = defaultFetchText,
 } = {}) => {
-  const browser = await launchBrowserImpl()
+  const html = await fetchText(searchUrl)
+  const summary = extractSearchSummary(html)
+  const hasEnabledNextPage = /<a(?![^>]*\bdisabled\b)[^>]+title=["']Next Page["'][^>]*>/i.test(html)
 
-  try {
-    const page = await createOptimizedPageImpl(browser)
-    await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: DEFAULT_TIMEOUT_MS })
-    await page.waitForFunction(() => document.querySelector('tr.jobResultItem'), { timeout: DEFAULT_TIMEOUT_MS })
-
-    const pages = []
-
-    for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
-      await page.waitForTimeout(1000)
-      pages.push(await page.content())
-
-      const nextCount = await page.locator('a[title="Next Page"]').count()
-      if (nextCount === 0) break
-
-      const next = page.locator('a[title="Next Page"]').first()
-      const className = await next.getAttribute('class')
-      if (className?.includes('disabled')) break
-
-      const firstReqId = await page.locator('tr.jobResultItem .jobContentEM').first().textContent()
-      await next.click()
-      await page.waitForFunction(
-        (previousReqId) => {
-          const currentReqId = document.querySelector('tr.jobResultItem .jobContentEM')?.textContent?.trim() || null
-          return currentReqId && currentReqId !== previousReqId
-        },
-        (firstReqId || '').trim(),
-        { timeout: DEFAULT_TIMEOUT_MS },
-      )
-    }
-
-    return pages
-  } finally {
-    await browser.close()
+  if ((summary.totalPages ?? 1) > 1 || hasEnabledNextPage) {
+    throw new Error(
+      'MetricStream API-only migration required: the verified SuccessFactors board requires pagination, but no HTTP pagination request contract is available; browser automation is disabled.',
+    )
   }
+
+  return [html]
 }
 
 export const createMetricStreamScraper = ({
@@ -380,6 +351,7 @@ export const createMetricStreamScraper = ({
     const searchPages = await getSearchPages({
       searchUrl: SUCCESSFACTORS_SEARCH_URL,
       maxPages,
+      fetchText,
     })
 
     if (!Array.isArray(searchPages) || searchPages.length === 0 || !hasSuccessFactorsSearchPageSignal(searchPages[0])) {
@@ -436,7 +408,7 @@ export const createMetricStreamScraper = ({
 export const run = async (options = {}) => createMetricStreamScraper(options).run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -17,12 +17,12 @@ export const SYMPHONY_CATALOG = {
   atsPlatform: 'official-careers-page-no-current-openings',
   countryFilter: 'India',
   paginationStrategy: 'single-verified-careers-page-no-openings-sentinel',
-  extractionStrategy: 'verified-careers-page+resume-email+no-openings-banner+fail-closed-sentinel',
+  extractionStrategy: 'verified-careers-page+no-openings-banner+fail-closed-sentinel',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-05',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://symphonylimited.com/careers/current-openings/ is the live first-party Symphony Limited careers page, that it asks candidates to write to careers@symphonylimited.com with their resume, and that it explicitly says "There are no current openings. Please check this space later." There is no trustworthy public jobs list for the exact-name Symphony row on the verified page, so this provider fails closed and returns no jobs until Symphony publishes a stable public openings surface.',
+    'Verified on Wednesday, August 5, 2026 that https://symphonylimited.com/careers/current-openings/ is still the live first-party Symphony Limited careers page and that it explicitly says "There are no current openings. Please check this space later." There is no trustworthy public jobs list for the exact-name Symphony row on the verified page, so this provider fails closed and returns no jobs until Symphony publishes a stable public openings surface.',
 }
 
 export default SYMPHONY_CATALOG

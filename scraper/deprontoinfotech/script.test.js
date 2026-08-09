@@ -131,6 +131,7 @@ test('DePronto InfoTech run validates the verified homepage shell and bundle, th
       applyUrl: job.applyUrl,
       link: job.link,
       scrapedAt: job.scrapedAt,
+      publicExperienceChecked: job.publicExperienceChecked,
     })),
     [
       {
@@ -142,6 +143,7 @@ test('DePronto InfoTech run validates the verified homepage shell and bundle, th
         applyUrl: 'mailto:hr@depronto.co.uk',
         link: 'mailto:hr@depronto.co.uk',
         scrapedAt: '2026-07-11T00:00:00.000Z',
+        publicExperienceChecked: true,
       },
       {
         title: 'Designer',
@@ -152,6 +154,7 @@ test('DePronto InfoTech run validates the verified homepage shell and bundle, th
         applyUrl: 'mailto:hr@depronto.co.uk',
         link: 'mailto:hr@depronto.co.uk',
         scrapedAt: '2026-07-11T00:00:00.000Z',
+        publicExperienceChecked: true,
       },
       {
         title: 'QA Engineer',
@@ -162,6 +165,7 @@ test('DePronto InfoTech run validates the verified homepage shell and bundle, th
         applyUrl: 'mailto:hr@depronto.co.uk',
         link: 'mailto:hr@depronto.co.uk',
         scrapedAt: '2026-07-11T00:00:00.000Z',
+        publicExperienceChecked: true,
       },
       {
         title: 'Data Engineer',
@@ -172,6 +176,7 @@ test('DePronto InfoTech run validates the verified homepage shell and bundle, th
         applyUrl: 'mailto:hr@depronto.co.uk',
         link: 'mailto:hr@depronto.co.uk',
         scrapedAt: '2026-07-11T00:00:00.000Z',
+        publicExperienceChecked: true,
       },
       {
         title: 'Project Manager',
@@ -182,6 +187,7 @@ test('DePronto InfoTech run validates the verified homepage shell and bundle, th
         applyUrl: 'mailto:hr@depronto.co.uk',
         link: 'mailto:hr@depronto.co.uk',
         scrapedAt: '2026-07-11T00:00:00.000Z',
+        publicExperienceChecked: true,
       },
       {
         title: 'Software Engineer',
@@ -192,6 +198,7 @@ test('DePronto InfoTech run validates the verified homepage shell and bundle, th
         applyUrl: 'mailto:hr@depronto.co.uk',
         link: 'mailto:hr@depronto.co.uk',
         scrapedAt: '2026-07-11T00:00:00.000Z',
+        publicExperienceChecked: true,
       },
     ],
   )

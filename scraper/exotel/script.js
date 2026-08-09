@@ -6,6 +6,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const CAREER_PAGE_URL = 'https://exotel.com/about-us/careers/'
 export const OPENINGS_API_URL = 'https://app.recruiterbox.com/widget/2176/openings/'
 export const DETAIL_URL_BASE = 'https://app.recruiterbox.com/widget/2176/opening/'
+const HOSTED_JOB_URL_BASE = 'https://exotel.hire.trakstar.com/jobs/'
 
 const INDIA_CITY_FALLBACK_PATTERN =
   /\b(bengaluru|bangalore|gurugram|gurgaon|mumbai|pune|chennai|hyderabad)\b/i
@@ -50,6 +51,11 @@ const buildDetailUrl = (id) => {
   return `${DETAIL_URL_BASE}${id}/`
 }
 
+const buildApplicationUrl = (hashId) => {
+  if (!hashId) return null
+  return `${HOSTED_JOB_URL_BASE}${hashId}/?apply=true`
+}
+
 export const hasRecruiterboxSignal = (payload) => Array.isArray(payload)
 
 export const extractSearchResults = (payload) => payload
@@ -64,7 +70,7 @@ export const extractSearchResults = (payload) => payload
     jobId: job.id == null ? null : String(job.id),
     requisitionId: normalizeWhitespace(job.job_code) || (job.id == null ? null : String(job.id)),
     sourceUrl: buildDetailUrl(job.id),
-    applyUrl: buildDetailUrl(job.id),
+    applyUrl: buildApplicationUrl(job.hash_id) || buildDetailUrl(job.id),
     employmentType: normalizeWhitespace(job.position_type),
     experienceRequired: null,
     minimumQualification: null,
@@ -119,7 +125,7 @@ export const createExotelScraper = ({
 export const run = async (options = {}) => createExotelScraper(options).run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Exotel scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

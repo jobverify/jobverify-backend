@@ -1,7 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -56,31 +57,68 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const createAmberEnterprisesScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    let browserSession = null
 
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('Amber Enterprises official homepage no longer matches the verified first-party surface')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Amber Enterprises official careers page no longer matches the verified first-party surface')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
     }
 
-    if (!hasExternalJobsHandoffSignal(careersHtml)) {
-      throw new Error('Amber Enterprises careers handoff changed; refusing to assume the verified external jobs route still applies')
-    }
+    try {
+      const homepageHtml = await fetchPageText(HOMEPAGE_URL)
+      const careersHtml = await fetchPageText(CAREERS_URL)
 
-    return []
+      if (!hasOfficialHomepageSignal(homepageHtml)) {
+        throw new Error('Amber Enterprises official homepage no longer matches the verified first-party surface')
+      }
+
+      if (!hasOfficialCareersSignal(careersHtml)) {
+        throw new Error('Amber Enterprises official careers page no longer matches the verified first-party surface')
+      }
+
+      if (!hasExternalJobsHandoffSignal(careersHtml)) {
+        throw new Error('Amber Enterprises careers handoff changed; refusing to assume the verified external jobs route still applies')
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 
 export const run = async (options = {}) => createAmberEnterprisesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

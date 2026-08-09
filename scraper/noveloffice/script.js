@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -55,7 +55,8 @@ export const hasOfficialHomepageSignal = (html) => {
   return /<title>\s*Managed Office Space in Bangalore\s*\|\s*Novel Office\s*<\/title>/i.test(page)
     && text.includes('officeenquiry@noveloffice.in')
     && text.includes('Want to join us?')
-    && text.includes("Apply now and show us what you've got.")
+    && /Explore our careers page and discover opportunities to grow with us\./i.test(text)
+    && /Apply now and show us what you(?:'|’)?ve got\./i.test(text)
     && /https:\/\/noveloffice\.in\/careers\?src=internal/i.test(page)
 }
 
@@ -162,7 +163,7 @@ export const createNovelOfficeScraper = ({ now = () => new Date().toISOString() 
 export const run = async (options = {}) => createNovelOfficeScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

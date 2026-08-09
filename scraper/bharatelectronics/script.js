@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { BHARAT_ELECTRONICS_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -205,50 +206,88 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to verify the first certificate|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const createBharatElectronicsScraper = () => ({
   async run({
     fetchText = defaultFetchText,
+    fetchBrowserText,
     now = () => new Date().toISOString(),
     maxPages = 6,
   } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('Bharat Electronics homepage no longer matches the verified official surface')
-    }
+    let browserSession = null
 
-    const scrapedAt = resolveNowIso(now)
-    const jobs = []
-    const seenJobIds = new Set()
-
-    for (let page = 1; page <= maxPages; page += 1) {
-      const html = await fetchText(buildJobNotificationsPageUrl(page))
-      const pageJobs = extractActiveJobNotifications(html, { now })
-      let newJobsAdded = 0
-
-      for (const job of pageJobs) {
-        if (seenJobIds.has(job.jobId)) continue
-
-        seenJobIds.add(job.jobId)
-        newJobsAdded += 1
-        jobs.push({
-          ...job,
-          source: SOURCE,
-          link: job.applyUrl || job.sourceUrl,
-          scrapedAt,
-        })
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
       }
 
-      if (newJobsAdded === 0) break
+      return browserSession
     }
 
-    return jobs
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchVerifiedText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
+    }
+
+    try {
+      const homepageHtml = await fetchVerifiedText(HOMEPAGE_URL)
+      if (!hasOfficialHomepageSignal(homepageHtml)) {
+        throw new Error('Bharat Electronics homepage no longer matches the verified official surface')
+      }
+
+      const scrapedAt = resolveNowIso(now)
+      const jobs = []
+      const seenJobIds = new Set()
+
+      for (let page = 1; page <= maxPages; page += 1) {
+        const html = await fetchVerifiedText(buildJobNotificationsPageUrl(page))
+        const pageJobs = extractActiveJobNotifications(html, { now })
+        let newJobsAdded = 0
+
+        for (const job of pageJobs) {
+          if (seenJobIds.has(job.jobId)) continue
+
+          seenJobIds.add(job.jobId)
+          newJobsAdded += 1
+          jobs.push({
+            ...job,
+            source: SOURCE,
+            link: job.applyUrl || job.sourceUrl,
+            scrapedAt,
+          })
+        }
+
+        if (newJobsAdded === 0) break
+      }
+
+      return jobs
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 
 export const run = async (options = {}) => createBharatElectronicsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

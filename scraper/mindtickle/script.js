@@ -54,10 +54,11 @@ const defaultFetchJson = async (url, options = {}) => {
 
 export const hasVerifiedAboutPageSignal = (html) => {
   const source = String(html ?? '')
+  const normalized = normalizeWhitespace(source)
 
   return /Mindtickle/i.test(source)
     && /Our people matter most/i.test(source)
-    && /dramatic impact on your career/i.test(source)
+    && /(dramatic impact on your career|See what opportunities are open at Mindtickle)/i.test(normalized)
     && /(View open opportunities|Join the team)/i.test(source)
     && /https:\/\/jobs\.lever\.co\/mindtickle/i.test(source)
 }
@@ -192,7 +193,7 @@ export const createMindTickleScraper = ({
 export const run = async (options = {}) => createMindTickleScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

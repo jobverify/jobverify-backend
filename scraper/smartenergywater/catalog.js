@@ -9,7 +9,7 @@ export const SMART_ENERGY_WATER_CATALOG = {
   officialBrandName: 'SEW.AI',
   adapter: 'script',
   homepageUrl: 'https://www.sew.ai/',
-  companyCareerPage: 'https://www.sew.ai/careers',
+  companyCareerPage: 'https://www.sew.ai/sew-career',
   knownIndiaJobDetailUrl: 'https://www.sew.ai/careers/product-engineer-net',
   companyDomain: 'sew.ai',
   atsPlatform: 'first-party-careers-site-with-unenumerable-detail-pages',
@@ -21,7 +21,7 @@ export const SMART_ENERGY_WATER_CATALOG = {
   normalizationProfile: 'engineering-default',
   verifiedOn: '2026-07-18',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.sew.ai/careers was the live SEW.AI careers landing page, that it marketed "Join the SEW Mission" and "Explore Job Openings", and that a verified India detail page at https://www.sew.ai/careers/product-engineer-net publicly described Product Engineer- .Net in Noida (India). Because this surface does not expose a trustworthy enumerable public listing index from the first-party landing page, this provider stays fail-closed.',
+    'Verified on Saturday, July 18, 2026 that https://www.sew.ai/sew-career was the live SEW.AI careers landing page, that it marketed the SEW careers experience, and that a verified India detail page at https://www.sew.ai/careers/product-engineer-net publicly described Product Engineer- .Net in Noida (India). Because this surface does not expose a trustworthy enumerable public listing index from the first-party landing page, this provider stays fail-closed.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

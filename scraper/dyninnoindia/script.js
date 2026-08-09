@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { DYNINNO_INDIA_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -12,7 +12,7 @@ export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -49,7 +49,10 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
 
-  return /<title>\s*India Office\s*<\/title>/i.test(page)
+  return (
+    /<title>\s*India Office\s*<\/title>/i.test(page)
+    || /<title>\s*India\s*-\s*DYNINNO\s*<\/title>/i.test(page)
+  )
     && /India Office/i.test(normalized)
     && /Jobs in India/i.test(normalized)
     && /Trevolution/i.test(normalized)
@@ -137,7 +140,7 @@ export const createDyninnoIndiaScraper = ({
 export const run = async (options = {}) => createDyninnoIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -28,6 +28,8 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<br\b[^>]*>/gi, ' ')
     .replace(/<[^>]+>/g, ' '),
 )
+
+const unique = (values) => [...new Set(values.filter(Boolean))]
 
 const extractTitle = (html) => normalizeWhitespace(
   String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1],
@@ -93,20 +95,23 @@ const extractRows = (tableHtml) => [...String(tableHtml ?? '').matchAll(/<tr\b[^
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  const text = stripTags(page)
+
   return /<title>\s*Invences\s*-\s*Technology\s+Solutions\s*<\/title>/i.test(page)
-    && /Empowering\s+Connectivity\s+Innovations/i.test(page)
     && /info@invences\.com/i.test(page)
     && /href=["'][^"']*\/career["'][^>]*>\s*Careers\s*</i.test(page)
+    && /\bAbout\b/i.test(text)
+    && /\bCapabilities\b/i.test(text)
 }
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
   return /<title>\s*Invences\s*-\s*Career\s*<\/title>/i.test(page)
-    && /Join\s+our\s+team/i.test(text)
-    && /We[\s\S]{0,24}Currently\s*hiring/i.test(text)
+    && /Currently\s*hiring/i.test(text)
     && /Position\s+Location\s+Type\s+Posted\s+On/i.test(text)
     && /info@invences\.com/i.test(text)
+    && /Job-details-table/i.test(page)
 }
 
 export const extractJobs = (html) => {
@@ -153,6 +158,9 @@ export const extractJobs = (html) => {
     .filter(Boolean)
 }
 
+export const filterIndiaJobs = (jobs = []) =>
+  jobs.filter((job) => /india/i.test(unique([job.location, job.city, job.state, job.country]).join(' ')))
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -179,7 +187,7 @@ export const createInvencesScraper = () => ({
       throw new Error('Invences verified careers surface no longer exposes the expected job table')
     }
 
-    return jobs.map((job) => ({
+    return filterIndiaJobs(jobs).map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
@@ -191,7 +199,7 @@ export const createInvencesScraper = () => ({
 export const run = async () => createInvencesScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Invences scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

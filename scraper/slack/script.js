@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import SLACK_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -60,6 +60,16 @@ export const hasOfficialCareersSignal = (html = '') => {
 
 export const extractLocationOptions = (html = '') => {
   const page = String(html ?? '')
+  const selectLocationsBlock = page.match(
+    /<select[^>]*(?:jobs-filter--mobile--location|mobile-location-selected|data-default-value=["']all-locations["'])[^>]*>([\s\S]*?)<\/select>/i,
+  )?.[1]
+
+  if (selectLocationsBlock) {
+    return [...selectLocationsBlock.matchAll(/<option[^>]*>([\s\S]*?)<\/option>/gi)]
+      .map((match) => normalizeWhitespace(match[1]))
+      .filter((value) => value && !/^all locations$/i.test(value))
+  }
+
   const locationsBlock = page.match(
     /all locations[\s\S]*?<ul[^>]*data-filter-name=["']locations["'][^>]*>([\s\S]*?)<\/ul>/i,
   )?.[1]
@@ -120,7 +130,7 @@ export const createSlackScraper = ({
 export const run = async (options = {}) => createSlackScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

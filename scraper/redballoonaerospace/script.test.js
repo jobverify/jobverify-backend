@@ -13,18 +13,19 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Red Balloon Aerospace Private Limited</title>
+    <title>Red Balloon Aerospace — Near-Space Infrastructure</title>
   </head>
   <body>
     <main>
-      <h1>RED BALLOON AEROSPACE PRIVATE LIMITED</h1>
+      <h1>RED BALLOON AEROSPACE</h1>
       <nav>
         <a href="/about/">About</a>
         <a href="/team/">Team</a>
         <a href="/jobs/">Jobs</a>
         <a href="/contact/">Contact</a>
       </nav>
-      <p>Vijayawada, Andhra Pradesh.</p>
+      <p>AI - POWERED HIGH ALTITUDE STRATOSPHERIC PLATFORMS</p>
+      <footer>TM 2026 RED BALLOON AEROSPACE PRIVATE LIMITED</footer>
     </main>
   </body>
 </html>
@@ -34,18 +35,19 @@ const jobsHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Jobs | Red Balloon Aerospace</title>
+    <title>Careers — Red Balloon Aerospace</title>
   </head>
   <body>
     <main>
-      <h1>Jobs</h1>
-      <p>Join the next wave of aerospace builders.</p>
-      <label for="position">Position</label>
-      <select id="position" name="position">
-        <option value="">Select a position</option>
+      <h1>Careers</h1>
+      <p>Loading jobs...</p>
+      <h2>Join Us</h2>
+      <label for="track">Choose One</label>
+      <select id="track" name="track">
+        <option value="">Choose One</option>
       </select>
-      <label for="resume">Upload Resume / CV</label>
-      <input id="resume" type="file" name="resume" />
+      <label for="resume">Resume/CV upload</label>
+      <button type="button">Upload RESUME</button>
       <button type="submit">Submit</button>
     </main>
   </body>

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 18, 2026 that https://atmecs.com/jobs/ is the live first-party ATMECS Global jobs route, but the page still renders only the literal placeholder shortcode "[jobs]" instead of public role cards, job detail pages, or a first-party ATS handoff. Because the verified jobs route is placeholder-only and exposes no trustworthy public jobs surface, this provider is pinned as a fail-closed sentinel that returns an empty set until ATMECS publishes real first-party listings.'
+  'Verified on Tuesday, July 28, 2026 that the previously pinned first-party ATMECS Global jobs route at https://atmecs.com/jobs/ no longer resolves from this environment and now fails before exposing any trustworthy public role inventory. The earlier placeholder-only "[jobs]" contract has therefore degraded further into an unavailable exact host, so this provider remains fail-closed and returns an empty set until ATMECS publishes a reachable first-party jobs surface again.'
 
 export const ATMECS_GLOBAL_CATALOG = {
   source: 'atmecsglobal',
@@ -17,12 +17,12 @@ export const ATMECS_GLOBAL_CATALOG = {
   companyDomain: 'atmecs.com',
   atsPlatform: 'official-first-party-jobs-page-placeholder-shortcode',
   countryFilter: 'India',
-  paginationStrategy: 'single-jobs-page-placeholder-shortcode-validation',
+  paginationStrategy: 'single-jobs-page-placeholder-shortcode-or-unavailable-host-validation',
   extractionStrategy:
-    'verified-first-party-jobs-page+verified-placeholder-shortcode-without-public-listings+return-empty',
+    'verified-first-party-jobs-page-placeholder-or-unavailable-host+return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-07-28',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'atmecsglobal/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

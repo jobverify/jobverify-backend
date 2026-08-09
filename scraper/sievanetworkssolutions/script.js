@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'sievanetworkssolutions'
@@ -61,7 +63,8 @@ const extractHrefValues = (html) =>
   [...String(html ?? '').matchAll(/href\s*=\s*["']([^"']+)["']/gi)].map(([, href]) => href.trim())
 
 const hasCareerLikeHref = (html) =>
-  extractHrefValues(html).some((href) => CAREER_LINK_PATTERN.test(href) || PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(href)))
+  extractHrefValues(html).some((href) => CAREER_LINK_PATTERN.test(href)
+    || PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(href)))
 
 export const hasPublicJobsSignal = (html) => {
   const page = String(html ?? '')
@@ -107,7 +110,7 @@ export const hasOfficialIpPortfolioSignal = (html) => {
 
   return /<title>\s*sievanetworks\s*::\s*company\s*<\/title>/i.test(page)
     && normalized.includes('Ultra Low Power IP Circuit Blocks')
-    && normalized.includes("Sieva Networks provides a number of blocks for RF and baseband circuitry such as LNA's, mixers, VCO's, PLL's.")
+    && normalized.includes("Sieva Networks provides a number of blocks for RF and baseband circuitry such as LNA's, mixers, VCO's, PLL's")
     && normalized.includes('Voltage Controlled Oscillator (VCO)')
     && normalized.includes('Low Noise Amplifier (LNA)')
     && /sn040\.pdf/i.test(page)
@@ -123,6 +126,10 @@ export const isVerifiedMissingCareerRoute = (page = {}) => {
     && normalized.includes('Additionally, a 404 Not Found error was encountered while trying to use an ErrorDocument to handle the request.')
     && !hasPublicJobsSignal(html)
 }
+
+const shouldUseBrowserFallback = (page = {}) =>
+  [403, 406].includes(Number(page?.status))
+  && !hasPublicJobsSignal(page?.html)
 
 const createTimeoutSignal = (timeoutMs) => {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
@@ -159,46 +166,76 @@ export const defaultFetchPage = async (url, {
 }
 
 export const createSievaNetworksSolutionsScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Sieva Networks Solutions official homepage no longer matches the verified first-party surface')
-    }
-    if (hasPublicJobsSignal(homepage.html)) {
-      throw new Error('Sieva Networks Solutions homepage now appears to expose a public jobs surface')
+  async run({ fetchPage = defaultFetchPage, fetchBrowserPage } = {}) {
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    const canopus = await fetchPage(CANOPUS_URL)
-    if (canopus.status !== 200 || !hasOfficialCanopusSignal(canopus.html)) {
-      throw new Error('Sieva Networks Solutions Canopus page no longer matches the verified first-party surface')
-    }
-    if (hasPublicJobsSignal(canopus.html)) {
-      throw new Error('Sieva Networks Solutions Canopus page now appears to expose a public jobs surface')
+    const browserPageFetcher = fetchBrowserPage || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchPage(url)
+    })
+
+    const fetchVerifiedPage = async (url) => {
+      const page = await fetchPage(url)
+      if (!shouldUseBrowserFallback(page)) {
+        return page
+      }
+
+      return browserPageFetcher(url)
     }
 
-    const ipPortfolio = await fetchPage(IP_PORTFOLIO_URL)
-    if (ipPortfolio.status !== 200 || !hasOfficialIpPortfolioSignal(ipPortfolio.html)) {
-      throw new Error('Sieva Networks Solutions IP portfolio page no longer matches the verified first-party surface')
-    }
-    if (hasPublicJobsSignal(ipPortfolio.html)) {
-      throw new Error('Sieva Networks Solutions IP portfolio page now appears to expose a public jobs surface')
-    }
+    try {
+      const homepage = await fetchVerifiedPage(HOMEPAGE_URL)
+      if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+        throw new Error('Sieva Networks Solutions official homepage no longer matches the verified first-party surface')
+      }
+      if (hasPublicJobsSignal(homepage.html)) {
+        throw new Error('Sieva Networks Solutions homepage now appears to expose a public jobs surface')
+      }
 
-    for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-      if (!isVerifiedMissingCareerRoute(routePage)) {
-        throw new Error(`Sieva Networks Solutions verified no-public-careers route changed: ${routePage.url || routeUrl}`)
+      const canopus = await fetchVerifiedPage(CANOPUS_URL)
+      if (canopus.status !== 200 || !hasOfficialCanopusSignal(canopus.html)) {
+        throw new Error('Sieva Networks Solutions Canopus page no longer matches the verified first-party surface')
+      }
+      if (hasPublicJobsSignal(canopus.html)) {
+        throw new Error('Sieva Networks Solutions Canopus page now appears to expose a public jobs surface')
+      }
+
+      const ipPortfolio = await fetchVerifiedPage(IP_PORTFOLIO_URL)
+      if (ipPortfolio.status !== 200 || !hasOfficialIpPortfolioSignal(ipPortfolio.html)) {
+        throw new Error('Sieva Networks Solutions IP portfolio page no longer matches the verified first-party surface')
+      }
+      if (hasPublicJobsSignal(ipPortfolio.html)) {
+        throw new Error('Sieva Networks Solutions IP portfolio page now appears to expose a public jobs surface')
+      }
+
+      for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
+        const routePage = await fetchVerifiedPage(routeUrl)
+        if (!isVerifiedMissingCareerRoute(routePage)) {
+          throw new Error(`Sieva Networks Solutions verified no-public-careers route changed: ${routePage.url || routeUrl}`)
+        }
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
       }
     }
-
-    return []
   },
 })
 
 export const run = async (options = {}) => createSievaNetworksSolutionsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -150,11 +150,11 @@ export const extractZwayamHandoffUrl = (html = '') => {
 
 export const hasOfficialCareersPageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml) || ''
+  const text = stripTags(rawHtml) || ''
 
   return /<title>\s*Where passion for design meets technology\s*<\/title>/i.test(rawHtml)
-    && normalized.includes("Let's shape the future of home interiors, together")
-    && normalized.includes('VIEW OPEN POSITIONS')
+    && /let['’]s shape the future of home interiors, together/i.test(text)
+    && /view open positions/i.test(text)
     && extractZwayamHandoffUrl(rawHtml) === CAREERS_LANDING_URL
 }
 
@@ -163,10 +163,8 @@ export const hasPublicBoardShell = (html = '') => {
 
   return /<title>\s*Careers\s*\|\s*Livspace\s*<\/title>/i.test(rawHtml)
     && /<base href="\/livspace\/">/i.test(rawHtml)
-    && /COMPANYID:\s*"MTU5MTk="/i.test(rawHtml)
-    && /DOMAIN:\s*"careers\.livspace\.com"/i.test(rawHtml)
-    && /https:\/\/public\.zwayam\.com\//i.test(rawHtml)
-    && /Current Openings/i.test(rawHtml)
+    && /<app-root\b/i.test(rawHtml)
+    && /main\.[A-Za-z0-9]+\.js/i.test(rawHtml)
 }
 
 export const isIndiaJob = (record = {}) =>
@@ -450,7 +448,7 @@ export const createLivspaceScraper = ({
 export const run = async (options = {}) => createLivspaceScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,0 +1,22 @@
+{
+  "source": "ayefinance",
+  "companyName": "Aye Finance",
+  "officialBrandName": "Aye Finance Limited",
+  "adapter": "script",
+  "modulePath": "../ayefinance/script.js",
+  "dryRunFile": "ayefinance/jobs.json",
+  "companyCareerPage": "https://www.ayefin.com/",
+  "companyDomain": "ayefin.com",
+  "exactCompanyMatchOnly": true,
+  "atsPlatform": "official-first-party-careers-no-enumerable-public-listings",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-careers-page-sentinel",
+  "extractionStrategy": "verified-first-party-careers-page-without-enumerable-india-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.ayefin.com/",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that ayefin.com is Aye Finance's first-party web domain. Its public surface does not expose a trustworthy enumerable India careers feed, so this exact-name provider fails closed and returns no jobs until Aye Finance publishes public first-party openings."
+}

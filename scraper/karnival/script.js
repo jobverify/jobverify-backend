@@ -60,8 +60,18 @@ export const extractSitemapUrls = (xml) => {
   return [...matches].map((match) => match[1].trim())
 }
 
+const normalizeSitemapUrl = (value) => {
+  try {
+    const url = new URL(String(value ?? '').trim())
+    const pathname = url.pathname.replace(/\/+$/, '') || '/'
+    return `${url.origin}${pathname}`
+  } catch {
+    return String(value ?? '').trim().replace(/\/+$/, '')
+  }
+}
+
 export const hasVerifiedSitemapSignal = (xml) => {
-  const urls = extractSitemapUrls(xml)
+  const urls = extractSitemapUrls(xml).map(normalizeSitemapUrl)
   const expectedUrls = [
     'https://www.karnival.com/',
     'https://www.karnival.com/contact',
@@ -131,7 +141,7 @@ export const createKarnivalScraper = () => ({
 export const run = async (options = {}) => createKarnivalScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

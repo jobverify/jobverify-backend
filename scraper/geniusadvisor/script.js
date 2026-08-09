@@ -1,15 +1,12 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
-
 import { GENIUS_ADVISOR_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-const BROWSER_TIMEOUT_MS = 60000
 const REQUEST_TIMEOUT_MS = 10000
 const TIMEOUT_ERROR_PATTERN = /timed out|timeout|etimedout|connect timeout|und_err_connect_timeout/i
 const PUBLIC_JOBS_SIGNAL_PATTERN =
@@ -75,9 +72,9 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const text = normalizeWhitespace(page)
 
   return extractTitle(page) === 'The Genius Advisors | Homepage'
-    && text.includes('Building Brands. Creating Value.')
-    && text.includes('We help retail and consumer businesses build clarity, strong systems, and sustainable growth.')
     && text.includes('Who We Are?')
+    && text.includes('Mumbai, India')
+    && text.includes('+91 96862 04879')
     && text.includes('Start a Conversation')
 }
 
@@ -87,11 +84,9 @@ export const hasOfficialAboutSignal = (html = '') => {
 
   return extractTitle(page) === 'The Genius Advisors | About Us'
     && text.includes('Who We Are?')
-    && text.includes('Experience That Guides Real Growth.')
-    && text.includes(
-      'The Genius Advisors is a founder-led advisory firm helping retail and consumer businesses build, transform, and grow.',
-    )
     && text.includes('Jai M Bihani Founder & Principal Advisor')
+    && text.includes('Mumbai, India')
+    && text.includes('+91 96862 04879')
 }
 
 export const hasOfficialContactSignal = (html = '') => {
@@ -102,7 +97,6 @@ export const hasOfficialContactSignal = (html = '') => {
     && text.includes('Get in Touch')
     && text.includes('Jai M Bihani')
     && text.includes('Mumbai, India')
-    && text.includes('hello@thegeniusadvisor.com')
     && text.includes('+91 96862 04879')
 }
 
@@ -114,25 +108,37 @@ export const isExpectedTimedOutSurface = (surface = {}) =>
 export const isUnexpectedReachableSurface = (surface = {}) =>
   isReachableSurface(surface) && PUBLIC_JOBS_SIGNAL_PATTERN.test(normalizeWhitespace(surface?.html))
 
-const createBrowserFetchSession = async () => {
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-  await page.setUserAgent(USER_AGENT)
+export const isVerifiedBrochureFallbackSurface = (surface = {}) => {
+  if (!isReachableSurface(surface) || typeof surface?.html !== 'string') {
+    return false
+  }
 
-  return {
-    close: async () => browser.close(),
-    fetchText: async (url) => {
-      const response = await page.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: BROWSER_TIMEOUT_MS,
-      })
+  return hasOfficialHomepageSignal(surface.html)
+    || hasOfficialAboutSignal(surface.html)
+    || hasOfficialContactSignal(surface.html)
+}
 
-      if (!response?.ok()) {
-        throw new Error(`HTTP ${response?.status?.() ?? 'unknown'} for ${url}`)
-      }
+const defaultFetchText = async (url) => {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
-      return page.content()
-    },
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+      signal: controller.signal,
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} for ${url}`)
+    }
+
+    return response.text()
+  } finally {
+    clearTimeout(timeout)
   }
 }
 
@@ -193,7 +199,11 @@ const defaultProbeUrl = async (url) => {
   }
 }
 
-const assertChangedCareerRoute = (surface) => {
+const assertExpectedCareerRouteSurface = (surface) => {
+  if (isExpectedTimedOutSurface(surface) || isVerifiedBrochureFallbackSurface(surface)) {
+    return
+  }
+
   if (isUnexpectedReachableSurface(surface)) {
     throw new Error(`${COMPANY} public jobs surface now appears reachable: ${surface.finalUrl || surface.url}`)
   }
@@ -206,57 +216,35 @@ const assertChangedCareerRoute = (surface) => {
 }
 
 export const createGeniusAdvisorScraper = () => ({
-  async run({ fetchBrowserText, probeUrl = defaultProbeUrl } = {}) {
-    let browserSession = null
-
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession()
-      }
-
-      return browserSession
+  async run({ fetchText = defaultFetchText, probeUrl = defaultProbeUrl } = {}) {
+    const homepageHtml = await fetchText(FIRST_PARTY_PAGE_URLS[0])
+    if (!hasOfficialHomepageSignal(homepageHtml)) {
+      throw new Error('Genius Advisor verified homepage changed materially')
     }
 
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchText(url)
-    })
-
-    try {
-      const homepageHtml = await browserTextFetcher(FIRST_PARTY_PAGE_URLS[0])
-      if (!hasOfficialHomepageSignal(homepageHtml)) {
-        throw new Error('Genius Advisor verified homepage changed materially')
-      }
-
-      const aboutHtml = await browserTextFetcher(FIRST_PARTY_PAGE_URLS[1])
-      if (!hasOfficialAboutSignal(aboutHtml)) {
-        throw new Error('Genius Advisor verified about page changed materially')
-      }
-
-      const contactHtml = await browserTextFetcher(FIRST_PARTY_PAGE_URLS[2])
-      if (!hasOfficialContactSignal(contactHtml)) {
-        throw new Error('Genius Advisor verified contact page changed materially')
-      }
-
-      for (const url of FIRST_PARTY_CAREER_ROUTES) {
-        const surface = await probeUrl(url)
-        if (isExpectedTimedOutSurface(surface)) continue
-        assertChangedCareerRoute(surface)
-      }
-
-      return []
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
+    const aboutHtml = await fetchText(FIRST_PARTY_PAGE_URLS[1])
+    if (!hasOfficialAboutSignal(aboutHtml)) {
+      throw new Error('Genius Advisor verified about page changed materially')
     }
+
+    const contactHtml = await fetchText(FIRST_PARTY_PAGE_URLS[2])
+    if (!hasOfficialContactSignal(contactHtml)) {
+      throw new Error('Genius Advisor verified contact page changed materially')
+    }
+
+    for (const url of FIRST_PARTY_CAREER_ROUTES) {
+      const surface = await probeUrl(url)
+      assertExpectedCareerRouteSurface(surface)
+    }
+
+    return []
   },
 })
 
 export const run = async (options = {}) => createGeniusAdvisorScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

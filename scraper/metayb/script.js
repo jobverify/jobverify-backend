@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import METAYB_CATALOG from './catalog.js'
 
@@ -49,10 +49,14 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const hasOfficialCareersSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+  const title = normalizeWhitespace(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
 
-  return normalized.includes('Advance your career as we evolve')
+  return (
+    normalized.includes('Advance your career as we evolve')
     && normalized.includes('Explore Open Positions')
+  ) || title === 'Metayb | AI-Native Digital Consultancy for Enterprise Transformation'
 }
 
 export const hasPublicJobsSignal = (html = '') => {
@@ -81,7 +85,7 @@ export const createMetaybScraper = () => ({
 export const run = async (options = {}) => createMetaybScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

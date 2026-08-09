@@ -59,9 +59,13 @@ const buildJobDescription = ({ experienceRequired, requiredSkills }) => {
 export const pageIndicatesAlohaTechnologyCareers = (html) => {
   const page = String(html ?? '')
   return (
-    /JOIN\s+OUR\s+TEAM/i.test(page)
+    (/JOIN\s+OUR\s+TEAM/i.test(page) || /Careers\s+at\s+Aloha\s+Technology/i.test(page))
     && /hr@alohatechnology\.com/i.test(page)
-    && /current\s+openings\s+at\s+Aloha/i.test(page)
+    && (
+      /current\s+openings\s+at\s+Aloha/i.test(page)
+      || /Open\s+Roles/i.test(page)
+      || /Explore\s+Current\s+Opportunities/i.test(page)
+    )
   )
 }
 
@@ -136,7 +140,7 @@ export const extractCareerJobs = (html) => {
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
   })
@@ -166,7 +170,7 @@ export const createAlohaTechnologyScraper = ({ fetchText = defaultFetchText } = 
 export const run = async (options = {}) => createAlohaTechnologyScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

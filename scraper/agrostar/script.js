@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { AGROSTAR_CATALOG } from './catalog.js'
 
@@ -22,16 +22,7 @@ export const VERIFIED_ON = AGROSTAR_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = AGROSTAR_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = AGROSTAR_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
-const AGROSTAR_DARWINBOX_NAVIGATION_TIMEOUT_MS = 60_000
-
-const darwinboxScraper = createDarwinboxScraper({
-  companyName: COMPANY_NAME,
-  source: SOURCE,
-  companyId: DARWINBOX_COMPANY_ID,
-  origin: DARWINBOX_ORIGIN,
-})
-
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const normalizeWhitespace = (value) => {
   if (value == null) return null
 
@@ -51,15 +42,6 @@ const normalizeWhitespace = (value) => {
 const extractTitle = (html) => {
   const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
   return normalizeWhitespace(match?.[1])
-}
-
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-let browserUtilsPromise
-
-const loadBrowserUtils = async () => {
-  browserUtilsPromise ||= import('../utils/browser.js')
-  return browserUtilsPromise
 }
 
 export const extractOfficialDarwinboxUrl = (html = '') => {
@@ -93,74 +75,100 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const createAgroStarBrowserListingFetcher = async () => {
-  const { launchBrowser, createOptimizedPage } = await loadBrowserUtils()
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-
-  page.setDefaultNavigationTimeout?.(AGROSTAR_DARWINBOX_NAVIGATION_TIMEOUT_MS)
+const normalizeDarwinboxJobUrl = (value) => {
+  if (!value) return null
 
   try {
-    try {
-      await page.goto(PUBLIC_PORTAL_URL, {
-        waitUntil: 'domcontentloaded',
-        timeout: AGROSTAR_DARWINBOX_NAVIGATION_TIMEOUT_MS,
-      })
-    } catch (err) {
-      if (!/Navigation timeout/i.test(String(err?.message || err))) {
-        throw err
-      }
+    const url = new URL(value, OFFICIAL_CAREERS_URL)
+    url.hash = ''
+    url.search = ''
+
+    if (url.hostname !== 'agrostar.darwinbox.in') return null
+    if (!url.pathname.startsWith(`/ms/candidatev2/${DARWINBOX_COMPANY_ID}/careers/jobDetails/`)) {
+      return null
     }
 
-    await page.waitForSelector('body', { timeout: config.jobListingTimeoutMs }).catch(() => null)
-    await delay(config.pageLoadDelayMs)
-
-    return {
-      fetchListingPage: async ({ page: pageNumber, pageSize = 10, companyId = DARWINBOX_COMPANY_ID }) =>
-        page.evaluate(
-          async ({ targetCompanyId, targetPage, targetPageSize }) => {
-            const response = await fetch(`/ms/candidateapi/job/alljobs?companyId=${targetCompanyId}`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                companyId: targetCompanyId,
-                sort_option: 'new',
-                limit: targetPageSize,
-                page: targetPage,
-              }),
-            })
-
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}`)
-            }
-
-            return response.json()
-          },
-          {
-            targetCompanyId: companyId,
-            targetPage: pageNumber,
-            targetPageSize: pageSize,
-          },
-        ),
-      close: async () => browser.close(),
-    }
-  } catch (err) {
-    await browser.close().catch(() => null)
-    throw err
+    return url.toString()
+  } catch {
+    return null
   }
+}
+
+const extractJobIdFromUrl = (value) => {
+  try {
+    return new URL(value).pathname.split('/').filter(Boolean).pop() || null
+  } catch {
+    return null
+  }
+}
+
+export const extractInlineJobsFromOfficialCareersPage = (html = '') => {
+  const page = String(html ?? '')
+  const jobs = []
+  const seenJobIds = new Set()
+  const pattern = /(?:<h3[^>]*>([\s\S]*?)<\/h3>[\s\S]*?)?<a[^>]+href=["']([^"']*\/ms\/candidatev2\/main\/careers\/jobDetails\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi
+
+  for (const match of page.matchAll(pattern)) {
+    const titleFromHeading = normalizeWhitespace(match[1])
+    const titleFromAnchor = normalizeWhitespace(match[3])
+    const sourceUrl = normalizeDarwinboxJobUrl(match[2])
+    const title = titleFromHeading || (
+      /^(apply now|view job|view details|learn more)$/i.test(titleFromAnchor || '')
+        ? null
+        : titleFromAnchor
+    )
+    const jobId = extractJobIdFromUrl(sourceUrl)
+
+    if (!sourceUrl || !title || !jobId || seenJobIds.has(jobId)) {
+      continue
+    }
+
+    seenJobIds.add(jobId)
+    jobs.push({
+      title,
+      company: COMPANY_NAME,
+      department: null,
+      location: null,
+      city: null,
+      jobId,
+      requisitionId: null,
+      sourceUrl,
+      applyUrl: sourceUrl,
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: null,
+      publicExperienceChecked: true,
+      source: SOURCE,
+      link: sourceUrl,
+    })
+  }
+
+  return jobs
 }
 
 export const createAgroStarScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
-} = {}) => ({
+  fetchImpl = fetch,
+} = {}) => {
+  const darwinboxScraper = createDarwinboxScraper({
+    companyName: COMPANY_NAME,
+    source: SOURCE,
+    companyId: DARWINBOX_COMPANY_ID,
+    origin: DARWINBOX_ORIGIN,
+    fetchImpl,
+  })
+
+  return {
   async run({
     maxPages = config.maxPages,
     fetchText = defaultFetchText,
     fetchListingPage,
-    createListingFetcher = createAgroStarBrowserListingFetcher,
   } = {}) {
     const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
 
@@ -168,37 +176,30 @@ export const createAgroStarScraper = ({
       throw new Error('AgroStar verified official careers page no longer matches the verified public surface')
     }
 
-    let listingFetcher = null
-
-    try {
-      if (!fetchListingPage) {
-        listingFetcher = await createListingFetcher()
-        fetchListingPage = listingFetcher.fetchListingPage
-      }
-
-      const jobs = await darwinboxScraper.run({
+    const inlineJobs = !fetchListingPage
+      ? extractInlineJobsFromOfficialCareersPage(careersHtml)
+      : []
+    const jobs = inlineJobs.length > 0
+      ? (maxJobs ? inlineJobs.slice(0, maxJobs) : inlineJobs)
+      : await darwinboxScraper.run({
         maxPages,
         maxJobs,
         fetchListingPage,
       })
-      const scrapedAt = now()
+    const scrapedAt = now()
 
-      return jobs.map((job) => ({
-        ...job,
-        scrapedAt,
-      }))
-    } finally {
-      if (listingFetcher) {
-        await listingFetcher.close()
-      }
-    }
+    return jobs.map((job) => ({
+      ...job,
+      scrapedAt,
+    }))
   },
-})
+  }
+}
 
 export const run = async (options = {}) => createAgroStarScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

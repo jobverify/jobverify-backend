@@ -101,12 +101,12 @@ test('run returns [] only while the verified Mywaggle homepage and checked route
 
   const requestedUrls = []
   const jobs = await mywaggle.createMywaggleScraper().run({
-    fetchText: async (url) => {
+    fetchPage: async (url) => {
       requestedUrls.push(url)
 
-      if (url === mywaggle.HOMEPAGE_URL) return homepageHtml
-      if (url === mywaggle.CAREERS_PAGE_URL) return missingJobsRouteHtml
-      if (url === mywaggle.JOBS_PAGE_URL) return missingJobsRouteHtml
+      if (url === mywaggle.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
+      if (url === mywaggle.CAREERS_PAGE_URL) return { status: 404, url, html: missingJobsRouteHtml }
+      if (url === mywaggle.JOBS_PAGE_URL) return { status: 404, url, html: missingJobsRouteHtml }
 
       throw new Error(`Unexpected URL: ${url}`)
     },
@@ -126,10 +126,10 @@ test('run fails closed when Mywaggle starts exposing a recruiting signal on the 
 
   await assert.rejects(
     mywaggle.createMywaggleScraper().run({
-      fetchText: async (url) => {
-        if (url === mywaggle.HOMEPAGE_URL) return homepageWithRecruitingSignalHtml
-        if (url === mywaggle.CAREERS_PAGE_URL) return missingJobsRouteHtml
-        if (url === mywaggle.JOBS_PAGE_URL) return missingJobsRouteHtml
+      fetchPage: async (url) => {
+        if (url === mywaggle.HOMEPAGE_URL) return { status: 200, url, html: homepageWithRecruitingSignalHtml }
+        if (url === mywaggle.CAREERS_PAGE_URL) return { status: 404, url, html: missingJobsRouteHtml }
+        if (url === mywaggle.JOBS_PAGE_URL) return { status: 404, url, html: missingJobsRouteHtml }
 
         throw new Error(`Unexpected URL: ${url}`)
       },
@@ -144,10 +144,10 @@ test('run fails closed when a checked Mywaggle route stops being the verified 40
 
   await assert.rejects(
     mywaggle.createMywaggleScraper().run({
-      fetchText: async (url) => {
-        if (url === mywaggle.HOMEPAGE_URL) return homepageHtml
-        if (url === mywaggle.CAREERS_PAGE_URL) return careersLandingHtml
-        if (url === mywaggle.JOBS_PAGE_URL) return missingJobsRouteHtml
+      fetchPage: async (url) => {
+        if (url === mywaggle.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
+        if (url === mywaggle.CAREERS_PAGE_URL) return { status: 200, url, html: careersLandingHtml }
+        if (url === mywaggle.JOBS_PAGE_URL) return { status: 404, url, html: missingJobsRouteHtml }
 
         throw new Error(`Unexpected URL: ${url}`)
       },

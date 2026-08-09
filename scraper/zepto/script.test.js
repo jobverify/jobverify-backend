@@ -36,6 +36,28 @@ const homepageHtml = `
   </html>
 `
 
+const currentHomepageHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Zepto: Online Grocery Delivery App - Groceries in Minutes</title>
+    </head>
+    <body>
+      <main>
+        <section>
+          <h2>How it Works</h2>
+          <p>Experience lighting-fast speed &amp; get all your items delivered in minutes</p>
+        </section>
+        <footer>
+          <nav>
+            <a href="/careers">Careers</a>
+          </nav>
+        </footer>
+      </main>
+    </body>
+  </html>
+`
+
 const careersRedirectPage = {
   status: 308,
   url: 'https://www.zepto.com/careers',
@@ -56,6 +78,28 @@ const careersAliasRedirectPage = {
   html: '/careers',
 }
 
+const awsWafCareersPage = {
+  status: 202,
+  url: 'https://www.zepto.com/careers',
+  headers: {},
+  html: `
+    <!doctype html>
+    <html lang="en">
+      <head><title></title></head>
+      <body>
+        <script type="text/javascript">
+          window.awsWafCookieDomainList = ['zepto.com','zepto.co.in','zeptonow.com'];
+        </script>
+      </body>
+    </html>
+  `,
+}
+
+const awsWafCareersAliasPage = {
+  ...awsWafCareersPage,
+  url: 'https://www.zepto.com/careers/',
+}
+
 test('Zepto sentinel pins the verified first-party homepage and current careers redirect contract', async () => {
   const zepto = await loadZeptoModule()
 
@@ -70,9 +114,11 @@ test('Zepto sentinel pins the verified first-party homepage and current careers 
     'Official Zepto careers route redirects to a third-party TalentRecruit board, so there is no first-party public jobs surface to scrape.',
   )
   assert.equal(zepto.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(zepto.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(zepto.extractCareersUrl(homepageHtml), 'https://www.zepto.com/careers')
   assert.equal(zepto.isKnownCareersAliasRedirect(careersAliasRedirectPage), true)
   assert.equal(zepto.isBlockedThirdPartyCareersHandoff(careersRedirectPage), true)
+  assert.equal(zepto.isBlockedAwsWafCareersInterstitial(awsWafCareersPage), true)
 })
 
 test('Zepto sentinel returns no jobs only while the official first-party careers routes keep the known blocked handoff', async () => {
@@ -109,6 +155,64 @@ test('Zepto sentinel returns no jobs only while the official first-party careers
     zepto.CAREERS_URL,
     zepto.CAREERS_ALIAS_URL,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Zepto sentinel returns no jobs when the careers routes are blocked by the current AWS WAF interstitial', async () => {
+  const zepto = await loadZeptoModule()
+
+  const jobs = await zepto.createZeptoScraper().run({
+    fetchPage: async (url) => {
+      if (url === zepto.HOMEPAGE_URL) {
+        return {
+          status: 200,
+          url,
+          headers: {},
+          html: currentHomepageHtml,
+        }
+      }
+
+      if (url === zepto.CAREERS_URL) {
+        return awsWafCareersPage
+      }
+
+      if (url === zepto.CAREERS_ALIAS_URL) {
+        return awsWafCareersAliasPage
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Zepto sentinel returns no jobs when the homepage and careers routes are blocked by the current AWS WAF interstitial', async () => {
+  const zepto = await loadZeptoModule()
+
+  const jobs = await zepto.createZeptoScraper().run({
+    fetchPage: async (url) => {
+      if (url === zepto.HOMEPAGE_URL) {
+        return {
+          status: 202,
+          url,
+          headers: {},
+          html: awsWafCareersPage.html,
+        }
+      }
+
+      if (url === zepto.CAREERS_URL) {
+        return awsWafCareersPage
+      }
+
+      if (url === zepto.CAREERS_ALIAS_URL) {
+        return awsWafCareersAliasPage
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })
 

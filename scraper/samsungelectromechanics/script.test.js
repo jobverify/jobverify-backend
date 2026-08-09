@@ -106,6 +106,31 @@ const COMPANY_PAGE_HTML = `
 </html>
 `
 
+const LIVEISH_COMPANY_PAGE_HTML = `
+<!doctype html>
+<html lang="ko">
+  <head>
+    <title>삼성전기 | SAMSUNG CAREERS</title>
+  </head>
+  <body>
+    <main class="companyDetail">
+      <button id="subScrap" class="btnScrap" value="false" data-target="0" data-index="C40"></button>
+      <h1>삼성전기</h1>
+      <p>삼성전기는 Electro(전자)와 Mechanics(기계)를 아우르는 글로벌 리딩 부품 회사입니다.</p>
+      <span>https://www.samsungsem.com</span>
+      <dd>
+        채용 문의
+        <span class="dd">sem.recruit@samsung.com</span>
+      </dd>
+      <section>
+        <h2>삼성전기 직무 알아보기</h2>
+        <p>연구/개발 공정개발</p>
+      </section>
+    </main>
+  </body>
+</html>
+`
+
 const LIST_HTML = `
 <input type="hidden" class="divCnt" data-value="1" data-max="1">
 <li>
@@ -140,6 +165,15 @@ const LIST_HTML = `
     </div>
   </div>
 </li>
+`
+
+const EMPTY_LIST_HTML = `
+<input type="hidden" class="divCnt" data-value="0" data-max="0">
+<div class="noData">
+  <i></i>
+  <p class="text1">현재 채용중인 공고가 없습니다.</p>
+  <p class="text2">검색어 또는 검색 조건을 확인해주시기 바랍니다.</p>
+</div>
 `
 
 const DETAIL_PAYLOAD = {
@@ -238,6 +272,8 @@ test('Samsung Electro-Mechanics validates the official homepage and exact-compan
   assert.equal(sem.DETAIL_URL, DETAIL_URL)
   assert.equal(sem.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
   assert.equal(sem.hasExactCompanyPageSignal(COMPANY_PAGE_HTML), true)
+  assert.equal(sem.hasExactCompanyPageSignal(LIVEISH_COMPANY_PAGE_HTML), true)
+  assert.equal(sem.hasNoCurrentPostingsSignal(EMPTY_LIST_HTML), true)
   assert.deepEqual(
     sem.extractRoleCodesFromCompanyPage(COMPANY_PAGE_HTML),
     ['G12022', 'G12021', 'G12025', 'G4010', 'G121042', 'G121003'],
@@ -365,6 +401,27 @@ test('Samsung Electro-Mechanics run() validates the route chain, posts the exact
   assert.equal(jobs[0].companyCareerPage, COMPANY_PAGE_URL)
   assert.equal(jobs[0].companyDomain, 'samsungcareers.com')
   assert.equal(jobs[0].atsPlatform, 'samsung-careers')
+})
+
+test('Samsung Electro-Mechanics returns an empty set when the official C40 listings endpoint reports no current postings', async () => {
+  const sem = await loadSamsungElectroMechanicsModule()
+  const requestedJson = []
+
+  const jobs = await sem.createSamsungElectroMechanicsScraper().run({
+    fetchText: async (url, options = {}) => {
+      if (url === HOMEPAGE_URL) return HOMEPAGE_HTML
+      if (url === COMPANY_PAGE_URL) return LIVEISH_COMPANY_PAGE_HTML
+      if (url === LIST_URL && (options.method || 'GET') === 'POST') return EMPTY_LIST_HTML
+      throw new Error(`Unexpected text URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      requestedJson.push(url)
+      return DETAIL_PAYLOAD
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedJson, [])
 })
 
 test('Samsung Electro-Mechanics fails closed when the exact company identity drifts or the listing mixes companies', async () => {

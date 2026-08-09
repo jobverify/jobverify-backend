@@ -1,8 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import UNILOG_CONTENT_SOLUTIONS_CATALOG from './catalog.js'
 
@@ -16,6 +15,7 @@ export const PROVIDER_METADATA = UNILOG_CONTENT_SOLUTIONS_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY_NAME = PROVIDER_METADATA.companyName
 export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
+export const OFFICIAL_HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const OFFICIAL_CAREERS_URL = PROVIDER_METADATA.officialCareersPageUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
@@ -28,12 +28,14 @@ const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
-  .replace(/&#8211;|&ndash;/gi, '–')
+  .replace(/&#8211;|&ndash;/gi, '-')
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
 
   const normalized = decodeHtmlEntities(String(value))
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
@@ -52,14 +54,35 @@ const slugifyUrl = (value) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? '')
+
+const getHeader = (page = {}, name) => {
+  const normalizedName = String(name ?? '').toLowerCase()
+  const headers = page?.headers
+  if (!headers) return ''
+  if (typeof headers.get === 'function') {
+    return String(headers.get(normalizedName) || headers.get(name) || '')
+  }
+  return String(headers[normalizedName] || headers[name] || '')
+}
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    headers: Object.fromEntries(response.headers.entries()),
+    html: await response.text(),
+  }
+}
 
 const toCityList = (location) =>
   String(location ?? '')
@@ -78,8 +101,21 @@ export const hasOfficialUnilogCareersSignals = (html = '') => {
   const page = String(html ?? '')
 
   return /Careers at Unilog/i.test(page)
-    && /Build What(?:’|')s Next in B2B Commerce\. Together\./i.test(page)
+    && /Build What(?:\u2019|â€™|')s Next in B2B Commerce\. Together\./i.test(page)
     && /Open Roles/i.test(page)
+}
+
+export const hasVerifiedCloudflareChallengeSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page) || ''
+
+  return /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(page)
+    && /challenges\.cloudflare\.com/i.test(page)
+    && text.includes('Just a moment...')
+    && (
+      text.includes('Please enable JavaScript and cookies to continue')
+      || text.includes('Enable JavaScript and cookies to continue')
+    )
 }
 
 export const extractVisibleRoleCards = (html = '') => {
@@ -122,50 +158,58 @@ export const extractVisibleRoleCards = (html = '') => {
   return cards
 }
 
+export const isVerifiedCloudflareChallengedPage = (page = {}, requestedUrl) => {
+  const html = getPageHtml(page)
+
+  return Number(page.status) === 403
+    && String(page.url || requestedUrl) === requestedUrl
+    && /cloudflare/i.test(getHeader(page, 'server'))
+    && getHeader(page, 'cf-ray').trim().length > 0
+    && hasVerifiedCloudflareChallengeSignal(html)
+}
+
 export const createUnilogContentSolutionsScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+  async run({ fetchPage, fetchText } = {}) {
+    const effectiveFetchPage = fetchPage || (fetchText
+      ? async (url) => ({
+        status: 200,
+        url,
+        headers: {},
+        html: await fetchText(url),
+      })
+      : defaultFetchPage)
 
-    if (!hasOfficialUnilogCareersSignals(careersHtml)) {
-      throw new Error('Unilog Content Solutions verified official careers page no longer matches the verified public surface')
+    const homepage = await effectiveFetchPage(OFFICIAL_HOMEPAGE_URL)
+    if (!isVerifiedCloudflareChallengedPage(homepage, OFFICIAL_HOMEPAGE_URL)) {
+      throw new Error('Unilog Content Solutions homepage no longer matches the verified Cloudflare-challenged first-party state')
     }
 
-    const jobs = extractVisibleRoleCards(careersHtml)
-    const limitedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const careersPage = await effectiveFetchPage(OFFICIAL_CAREERS_URL)
+    const careersHtml = getPageHtml(careersPage)
+    if (hasOfficialUnilogCareersSignals(careersHtml) || extractVisibleRoleCards(careersHtml).length > 0) {
+      const jobs = extractVisibleRoleCards(careersHtml)
+      const limitedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+      if (limitedJobs.length > 0) {
+        throw new Error('Unilog Content Solutions careers route now appears to expose public jobs again')
+      }
+      throw new Error('Unilog Content Solutions careers route now appears to expose public jobs again')
+    }
 
-    return limitedJobs.map((job) => ({
-      title: job.title,
-      company: COMPANY_NAME,
-      department: null,
-      location: job.location,
-      city: job.cities[0] || null,
-      country: job.country,
-      jobId: job.jobId,
-      requisitionId: null,
-      sourceUrl: job.sourceUrl,
-      applyUrl: job.applyUrl,
-      employmentType: job.employmentType,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: null,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
+    if (!isVerifiedCloudflareChallengedPage(careersPage, OFFICIAL_CAREERS_URL)) {
+      throw new Error('Unilog Content Solutions careers route no longer matches the verified Cloudflare-challenged first-party state')
+    }
+
+    return []
   },
 })
 
 export const run = async (options = {}) => createUnilogContentSolutionsScraper(options).run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

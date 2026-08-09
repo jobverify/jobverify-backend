@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import TIMES_INTERNET_CATALOG from './catalog.js'
 
@@ -16,7 +16,7 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 export const VERIFIED_JOB_DETAIL_URLS = [...PROVIDER_METADATA.verifiedJobDetailUrls]
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -128,13 +128,15 @@ const extractApplyUrl = (html = '', detailUrl) =>
   ) || detailUrl
 
 export const hasOfficialCareersSignal = (html = '') => {
-  const normalized = (stripTags(html) || '').toLowerCase()
+  const rawHtml = String(html ?? '')
+  const normalized = (stripTags(rawHtml) || '').toLowerCase()
 
-  return normalized.includes('join us')
-    && normalized.includes('associate sales')
-    && normalized.includes('enterprise sales manager')
-    && normalized.includes('manager - legal')
-    && normalized.includes("thanks for checking out our job openings")
+  return normalized.includes('job category')
+    && normalized.includes('all categories')
+    && normalized.includes('location')
+    && normalized.includes('all locations')
+    && normalized.includes('job type')
+    && normalized.includes('all types')
 }
 
 export const extractJobCards = (html = '') => {
@@ -163,11 +165,17 @@ export const extractJobCards = (html = '') => {
 }
 
 export const hasOfficialJobDetailSignal = (html = '') => {
-  const normalized = (stripTags(html) || '').toLowerCase()
+  const rawHtml = String(html ?? '')
+  const normalized = (stripTags(rawHtml) || '').toLowerCase()
 
   return normalized.includes('job description')
-    && normalized.includes('about times internet')
+    && (
+      normalized.includes('about times internet')
+      || normalized.includes('about times limited')
+      || normalized.includes('about the company')
+    )
     && normalized.includes('apply now')
+    && /<title>\s*.+job at times internet\b/i.test(rawHtml)
 }
 
 export const extractJobFromDetailHtml = (html = '', card = {}, { scrapedAt } = {}) => {
@@ -287,7 +295,7 @@ export const createTimesInternetScraper = ({
 export const run = async (options = {}) => createTimesInternetScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

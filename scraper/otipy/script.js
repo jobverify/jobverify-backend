@@ -49,23 +49,47 @@ export const defaultFetchPage = async (url, {
   fetchImpl = fetch,
   timeoutMs = 15000,
 } = {}) => {
-  const response = await fetchImpl(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    signal: createTimeoutSignal(timeoutMs),
-  })
+  try {
+    const response = await fetchImpl(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      signal: createTimeoutSignal(timeoutMs),
+    })
 
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
+    return {
+      status: response.status,
+      url: response.url,
+      html: await response.text(),
+      errorCode: null,
+      errorMessage: null,
+      errorReason: null,
+    }
+  } catch (error) {
+    return {
+      status: 0,
+      url,
+      html: '',
+      errorCode: error?.cause?.code || error?.code || null,
+      errorMessage: error?.message || String(error),
+      errorReason: error?.cause?.reason || null,
+    }
   }
 }
 
-export const isRestrictedSurface = ({ status, html }) =>
-  status === 403 && /Access is restricted/i.test(String(html ?? ''))
+export const isRestrictedSurface = (page = {}) =>
+  (
+    page.status === 403
+    && /Access is restricted/i.test(String(page.html ?? ''))
+  )
+  || (
+    page.status === 0
+    && /ERR_TLS_CERT_ALTNAME_INVALID/i.test(String(page.errorCode ?? ''))
+    && /not in the cert's altnames/i.test(
+      `${page.errorReason ?? ''} ${page.errorMessage ?? ''}`,
+    )
+  )
 
 export const hasPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
@@ -101,7 +125,7 @@ export const createOtipyScraper = () => ({
 export const run = async (options = {}) => createOtipyScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

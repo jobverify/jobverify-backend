@@ -4,7 +4,7 @@ import test from 'node:test'
 import {
   buildScrapers,
   getScraperCatalog,
-} from '../providers/index.js'
+} from '../../scraper-support/providers/index.js'
 
 test('getScraperCatalog includes Lionsbot as an official Kula-backed script provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'lionsbot')

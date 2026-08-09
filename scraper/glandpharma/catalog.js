@@ -1,4 +1,4 @@
-export const GLAND_PHARMA_CATALOG = {
+﻿export const GLAND_PHARMA_CATALOG = {
   source: 'glandpharma',
   companyName: 'Gland Pharma',
   officialBrandName: 'Gland Pharma Limited',
@@ -13,7 +13,7 @@ export const GLAND_PHARMA_CATALOG = {
     'verified-homepage+verified-careers-shell-routes-without-public-listings-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  modulePath: '../glandpharma/script.js',
+  modulePath: '../../scraper/glandpharma/script.js',
   dryRunFile: 'glandpharma/jobs.json',
   verifiedOn: '2026-07-16',
   verifiedSurfaceSummary:
@@ -21,3 +21,4 @@ export const GLAND_PHARMA_CATALOG = {
 }
 
 export default GLAND_PHARMA_CATALOG
+

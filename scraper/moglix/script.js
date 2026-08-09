@@ -3,9 +3,9 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:
 import { fileURLToPath } from 'node:url'
 
 import { MOGLIX_CATALOG } from './catalog.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
-import { withRetry } from '../utils/retry.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -26,7 +26,7 @@ export const REQUEST_ENCRYPTION_KEY = '2e35f242a46d67eeb74aabc37d5e5d05'
 export const REQUEST_ENCRYPTION_HEADER = 'fe-req-encrypted'
 export const RESPONSE_ENCRYPTION_HEADER = 'fe-res-encrypted'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const createTimeoutSignal = (timeoutMs) => {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
@@ -204,13 +204,17 @@ export const createJobsListPayload = ({
 const extractCareerSectionRow = (payload) =>
   Array.isArray(payload?.data?.rows) ? payload.data.rows[0] ?? null : null
 
+const extractGridColumnField = (column) =>
+  normalizeWhitespace(column?.field)
+  || normalizeWhitespace(column?.prop)
+
 const hasExpectedGridSchema = (payload) => {
   if (!payload || payload.code !== EXPECTED_GRID_CODE || payload.formCode !== EXPECTED_FORM_CODE) {
     return false
   }
 
   const fields = Array.isArray(payload.columns)
-    ? payload.columns.map((column) => normalizeWhitespace(column?.field)).filter(Boolean)
+    ? payload.columns.map((column) => extractGridColumnField(column)).filter(Boolean)
     : []
 
   return ['job_title', 'date_posted', 'location', 'department', 'functional_area', 'business_unit_name']
@@ -400,7 +404,7 @@ export const createMoglixScraper = ({
 export const run = async () => createMoglixScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

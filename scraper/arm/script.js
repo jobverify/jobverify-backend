@@ -1,7 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -10,10 +11,16 @@ const SEARCH_BASE_URL = 'https://careers.arm.com/search-jobs'
 const INDIA_FILTER_VALUE = '1269750'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;/gi, '"')
   .replace(/&#39;|&apos;/gi, "'")
+  .replace(/&ldquo;|&rdquo;|&#8220;|&#8221;/gi, '"')
+  .replace(/&rsquo;|&#8217;/gi, "'")
+  .replace(/&ndash;|&#8211;/gi, '-')
+  .replace(/&mdash;|&#8212;/gi, '-')
   .replace(/&lt;/gi, '<')
   .replace(/&gt;/gi, '>')
 
@@ -25,6 +32,14 @@ const normalizeWhitespace = (value) => {
     .trim()
   return normalized || null
 }
+
+const stripTags = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/ul|\/ol|hr)\b[^>]*>/gi, '\n')
+    .replace(/<li\b[^>]*>/gi, '\n')
+    .replace(/<p\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' '),
+)
 
 const toAbsoluteUrl = (value) => {
   if (!value) return null
@@ -44,6 +59,112 @@ const extractCity = (location) => {
   const normalized = normalizeWhitespace(location)
   if (!normalized || /^india$/i.test(normalized)) return null
   return normalized.split(',')[0]?.trim() || null
+}
+
+const parseJsonValue = (value) => {
+  try {
+    return JSON.parse(value)
+  } catch {
+    return null
+  }
+}
+
+const flattenJsonLdNodes = (value) => {
+  if (!value) return []
+  if (Array.isArray(value)) return value.flatMap((item) => flattenJsonLdNodes(item))
+  if (typeof value !== 'object') return []
+
+  return [
+    value,
+    ...flattenJsonLdNodes(value['@graph']),
+  ]
+}
+
+const extractJobPosting = (html) => {
+  const scripts = [...String(html ?? '').matchAll(
+    /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+  )]
+
+  for (const match of scripts) {
+    const parsed = parseJsonValue(match[1])
+    if (!parsed) continue
+
+    const jobPosting = flattenJsonLdNodes(parsed).find((node) => {
+      const type = node?.['@type']
+      return Array.isArray(type) ? type.includes('JobPosting') : type === 'JobPosting'
+    })
+
+    if (jobPosting) return jobPosting
+  }
+
+  return null
+}
+
+const inferExperienceRequired = (jobDescription) => {
+  const experienceProfile = extractJobFilterSignals({
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    jobDescription,
+  })?.experienceProfile
+
+  if (experienceProfile?.confidence === 'high' && experienceProfile.evidence) {
+    return normalizeWhitespace(
+      experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+        ? 'No experience required'
+        : experienceProfile.evidence,
+    )
+  }
+
+  return null
+}
+
+export const extractJobDetailFromHtml = (html, listing = {}) => {
+  const jobPosting = extractJobPosting(html)
+  if (!jobPosting) return listing
+
+  const jobDescription = stripTags(jobPosting.description)
+
+  return {
+    ...listing,
+    title: normalizeWhitespace(jobPosting.title) || listing.title || null,
+    location: normalizeWhitespace(
+      jobPosting?.jobLocation?.[0]?.address?.addressLocality
+        || jobPosting?.jobLocation?.address?.addressLocality,
+    )
+      ? `${normalizeWhitespace(
+        jobPosting?.jobLocation?.[0]?.address?.addressLocality
+          || jobPosting?.jobLocation?.address?.addressLocality,
+      )}, India`
+      : listing.location || null,
+    city: normalizeWhitespace(
+      jobPosting?.jobLocation?.[0]?.address?.addressLocality
+        || jobPosting?.jobLocation?.address?.addressLocality,
+    ) || listing.city || null,
+    jobDescription: jobDescription || listing.jobDescription || null,
+    experienceRequired: inferExperienceRequired(jobDescription) || listing.experienceRequired || null,
+    postingDate: normalizeWhitespace(jobPosting.datePosted) || listing.postingDate || null,
+  }
+}
+
+const mapWithConcurrency = async (items, limit, iteratee) => {
+  const concurrency = Math.max(1, Number.isInteger(limit) ? limit : 1)
+  const results = new Array(items.length)
+  let cursor = 0
+
+  const worker = async () => {
+    while (cursor < items.length) {
+      const currentIndex = cursor
+      cursor += 1
+      results[currentIndex] = await iteratee(items[currentIndex], currentIndex)
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, () => worker()),
+  )
+
+  return results
 }
 
 export const buildSearchUrl = ({ page = 1 } = {}) => {
@@ -135,42 +256,64 @@ const fetchText = async (url) => {
   return response.text()
 }
 
-export const run = async () => {
-  const jobs = []
-  const seenJobIds = new Set()
-  const maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY
-  const maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null
+export const createArmScraper = ({
+  maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
+  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+} = {}) => ({
+  async run({
+    fetchText: fetchTextOverride = fetchText,
+    now = () => new Date().toISOString(),
+  } = {}) {
+    const jobs = []
+    const seenJobIds = new Set()
 
-  for (let page = 1; page <= maxPages; page += 1) {
-    const html = await fetchText(buildSearchUrl({ page }))
-    const listings = extractSearchResults(html)
-    const summary = extractPaginationSummary(html)
+    for (let page = 1; page <= maxPages; page += 1) {
+      const html = await fetchTextOverride(buildSearchUrl({ page }))
+      const listings = extractSearchResults(html)
+      const summary = extractPaginationSummary(html)
 
-    for (const job of listings) {
-      if (seenJobIds.has(job.jobId)) continue
-      seenJobIds.add(job.jobId)
-      jobs.push({
-        ...job,
-        source: 'arm',
-        link: job.applyUrl || job.sourceUrl,
-        scrapedAt: new Date().toISOString(),
-      })
+      for (const job of listings) {
+        if (seenJobIds.has(job.jobId)) continue
+        seenJobIds.add(job.jobId)
+        jobs.push(job)
 
-      if (maxJobs && jobs.length >= maxJobs) {
-        return jobs
+        if (maxJobs && jobs.length >= maxJobs) {
+          break
+        }
+      }
+
+      if ((maxJobs && jobs.length >= maxJobs) || !summary.hasNext || (summary.totalPages && page >= summary.totalPages)) {
+        break
       }
     }
 
-    if (!summary.hasNext || (summary.totalPages && page >= summary.totalPages)) {
-      break
-    }
-  }
+    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const enrichedJobs = await mapWithConcurrency(
+      selectedJobs,
+      6,
+      async (job) => {
+        try {
+          const detailHtml = await fetchTextOverride(job.sourceUrl || job.applyUrl)
+          return extractJobDetailFromHtml(detailHtml, job)
+        } catch {
+          return job
+        }
+      },
+    )
 
-  return jobs
-}
+    return enrichedJobs.map((job) => ({
+      ...job,
+      source: 'arm',
+      link: job.applyUrl || job.sourceUrl,
+      scrapedAt: now(),
+    }))
+  },
+})
+
+export const run = async (options = {}) => createArmScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Arm scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { OK_CREDIT_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -50,10 +50,12 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>\s*Best Digital Bahi Khata & Ledger App \| OkCredit\s*<\/title>/i.test(page)
+  return (
+    /<title>\s*Best Digital Bahi Khata & Ledger App \| OkCredit\s*<\/title>/i.test(page)
+    || /<title>\s*Free Bahi Khata Aur Udhar Ledger App \| OkCredit\s*<\/title>/i.test(page)
+  )
     && /Digital Udhar Bahi Khata/i.test(page)
-    && /Keep track of receivables and payables\. Make collections simpler and faster\./i.test(page)
-    && /Spread across 2,800 cities/i.test(page)
+    && /(Keep track of receivables and payables\. Make collections simpler and faster\.|Simple\s*[·|&bull;]\s*Paperless\s*[·|&bull;]\s*Secure)/i.test(page)
     && /OkCredit Psi Phi Global Solutions Pvt\. Ltd\./i.test(page)
 }
 
@@ -88,6 +90,10 @@ export const createOkCreditScraper = () => ({
       throw new Error('OkCredit careers page now appears to expose public jobs')
     }
 
+    if (hasOfficialHomepageSignal(careersPage.html)) {
+      return []
+    }
+
     if (!hasOfficialCareersSignal(careersPage.html)) {
       throw new Error('OkCredit verified careers page no longer matches the official first-party surface')
     }
@@ -99,7 +105,7 @@ export const createOkCreditScraper = () => ({
 export const run = async (options = {}) => createOkCreditScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

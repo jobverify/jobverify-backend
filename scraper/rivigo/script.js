@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createFailClosedSentinelScraper } from '../zwayam/failClosedSentinel.js'
 import { RIVIGO_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -10,107 +11,125 @@ export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
+export const PARENT_DARWINBOX_URL = PROVIDER_METADATA.officialFirstPartyJobsUrl
+export const REDIRECTED_HOMEPAGE_URL = PROVIDER_METADATA.redirectedHomepageUrl
+export const PARENT_DARWINBOX_HOME_URL = 'https://nectar.darwinbox.in/ms/candidatev2/main/careers/home'
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const createTimeoutSignal = (timeoutMs) => {
-  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
-    return undefined
-  }
-
-  if (typeof AbortSignal?.timeout === 'function') {
-    return AbortSignal.timeout(timeoutMs)
-  }
-
-  const controller = new AbortController()
-  setTimeout(() => controller.abort(), timeoutMs)
-  return controller.signal
-}
-
-export const defaultFetchText = async (url, {
-  fetchImpl = fetch,
-  timeoutMs = 15000,
-} = {}) => {
-  const response = await fetchImpl(url, {
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
     headers: {
-      'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'User-Agent': USER_AGENT,
     },
-    signal: createTimeoutSignal(timeoutMs),
+    redirect: 'follow',
   })
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
-
-export const hasVerifiedCareersPageSignal = (html) => {
-  const rawHtml = String(html ?? '')
-
-  return /<title>\s*Careers\s*\|\s*Rivigo\s*<\/title>/i.test(rawHtml)
-    && /href=["']https:\/\/(?:www\.)?rivigo\.com\/?["']/i.test(rawHtml)
-    && /@Rivigo/i.test(rawHtml)
-    && /We are building the next generation logistics platform\./i.test(rawHtml)
-}
-
-export const extractJobOpeningCounts = (html) => {
-  const match = /Job Openings\s+(\d+)\s*-\s*(\d+)\s*of\s*(\d+)/i.exec(String(html ?? ''))
-  if (!match) return null
-
   return {
-    start: Number(match[1]),
-    end: Number(match[2]),
-    total: Number(match[3]),
+    status: response.status,
+    url: response.url || url,
+    html: await response.text(),
   }
 }
 
-export const hasVerifiedEmptyBoardSignals = (html) => {
-  const counts = extractJobOpeningCounts(html)
+const decodeEntities = (value = '') =>
+  String(value)
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+    .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
+    .replace(/[\u2018\u2019]/g, "'")
 
-  return hasVerifiedCareersPageSignal(html)
-    && /No Requsitions Found/i.test(String(html ?? ''))
-    && Boolean(counts)
-    && counts.start === 0
-    && counts.end === 0
-    && counts.total === 0
+const normalizeText = (value = '') =>
+  decodeEntities(String(value))
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+const extractTitle = (html = '') =>
+  normalizeText(String(html).match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || '')
+
+const extractLinkedUrls = (html = '', pageUrl = CAREERS_URL) => {
+  const matches = String(html).matchAll(
+    /(?:href|src|action|data-url)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi,
+  )
+  const urls = []
+
+  for (const match of matches) {
+    const rawValue = match[1] || match[2] || match[3] || ''
+
+    try {
+      urls.push(new URL(decodeEntities(rawValue), pageUrl))
+    } catch {
+      // Ignore malformed URLs and keep the scraper fail-closed.
+    }
+  }
+
+  return urls
 }
 
-export const hasPublicJobSignals = (html) => {
-  const counts = extractJobOpeningCounts(html)
-  return Boolean(counts && counts.total > 0)
+export const hasVerifiedRedirectedHomepageSignal = ({ url = '', html = '' } = {}) => {
+  const title = extractTitle(html)
+  const text = normalizeText(html)
+
+  return String(url).startsWith(REDIRECTED_HOMEPAGE_URL)
+    && title === 'B2B Express Services: Fastest Courier & Parcel Deliveries'
+    && /\bB2B Express That Delivers/i.test(text)
+    && /\bMahindra Logistics\b/i.test(text)
+}
+
+export const hasVerifiedParentCareersSignal = ({ url = '', html = '' } = {}) => {
+  const title = extractTitle(html)
+  const text = normalizeText(html)
+  const linkedUrls = extractLinkedUrls(html, url || CAREERS_URL)
+
+  return String(url).startsWith(CAREERS_URL)
+    && title === 'Work With Us - Mahindra Logistics'
+    && /\bWork With Us: Igniting Mutual Success & Growth\b/i.test(text)
+    && linkedUrls.some((linkedUrl) => linkedUrl.toString() === PARENT_DARWINBOX_URL)
+}
+
+export const hasVerifiedParentDarwinboxSignal = ({ url = '', html = '' } = {}) => {
+  const title = extractTitle(html)
+  const text = normalizeText(html)
+
+  return String(url).startsWith(PARENT_DARWINBOX_HOME_URL)
+    && title === 'Mahindra Logistics and Subsidiaries'
+    && /\bWe Have \d+ Open Jobs\b/i.test(text)
+    && /\bOpen Jobs\b/i.test(text)
 }
 
 export const createRivigoScraper = () => ({
-  async run({
-    fetchText = defaultFetchText,
-  } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-
-    if (!hasVerifiedCareersPageSignal(careersHtml)) {
-      throw new Error('Rivigo verified first-party careers surface no longer matches the known empty-board contract')
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const homepagePage = await fetchPage(HOMEPAGE_URL)
+    if (!hasVerifiedRedirectedHomepageSignal(homepagePage)) {
+      throw new Error('Rivigo verified Mahindra Logistics B2B Express landing no longer matches the trusted public surface')
     }
 
-    if (hasPublicJobSignals(careersHtml)) {
-      throw new Error('Rivigo verified public jobs surface changed materially and now exposes openings')
+    const parentCareersPage = await fetchPage(CAREERS_URL)
+    if (!hasVerifiedParentCareersSignal(parentCareersPage)) {
+      throw new Error('Rivigo verified parent-company careers handoff no longer matches the trusted Mahindra Logistics work-with-us surface')
     }
 
-    if (!hasVerifiedEmptyBoardSignals(careersHtml)) {
-      throw new Error('Rivigo verified empty-board careers surface no longer matches the known contract')
+    const parentDarwinboxPage = await fetchPage(PARENT_DARWINBOX_URL)
+    if (!hasVerifiedParentDarwinboxSignal(parentDarwinboxPage)) {
+      throw new Error('Rivigo verified parent-company Darwinbox board no longer matches the trusted Mahindra Logistics and Subsidiaries surface')
     }
 
-    return []
+    return createFailClosedSentinelScraper().run()
   },
 })
 
 export const run = async (options = {}) => createRivigoScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

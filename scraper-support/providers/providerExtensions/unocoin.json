@@ -1,0 +1,21 @@
+{
+  "source": "unocoin",
+  "companyName": "Unocoin",
+  "officialBrandName": "Unocoin Technologies Private Limited",
+  "adapter": "script",
+  "modulePath": "../unocoin/script.js",
+  "dryRunFile": "unocoin/jobs.json",
+  "companyCareerPage": "https://unocoin.com/in/",
+  "companyDomain": "unocoin.com",
+  "atsPlatform": "official-first-party-site-no-enumerable-public-listings",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-site-sentinel",
+  "extractionStrategy": "verified-first-party-site-without-enumerable-india-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://unocoin.com/in/",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://unocoin.com/in/ is Unocoin Technologies Private Limited's first-party India site. The public site identifies Unocoin and references a career callout, but exposes no trustworthy enumerable recruiting page, public job-listing feed, or official ATS endpoint. This exact-name provider therefore fails closed and returns no jobs until Unocoin publishes public openings on an official surface."
+}

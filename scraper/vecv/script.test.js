@@ -14,15 +14,12 @@ import {
 
 const homepageHtml = `
   <html>
+    <head>
+      <title>Just a moment...</title>
+    </head>
     <body>
-      <header>
-        <a href="/careers">Careers</a>
-      </header>
-      <main>
-        <h1>VE Commercial Vehicles Ltd.</h1>
-        <p>Operational since July 2008, VE Commercial Vehicles Ltd. (VECV) comprises of six business verticals.</p>
-        <p>VECV is a joint venture between the Volvo Group and Eicher Motors Limited.</p>
-      </main>
+      <h1>Just a moment...</h1>
+      <p>Enable JavaScript and cookies to continue</p>
     </body>
   </html>
 `
@@ -66,7 +63,7 @@ test('run returns an empty list only when the official VECV careers routes stay 
 
       if (url === HOMEPAGE_URL) {
         return {
-          status: 200,
+          status: 403,
           url: HOMEPAGE_URL,
           html: homepageHtml,
         }

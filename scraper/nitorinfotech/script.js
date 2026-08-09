@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { NITOR_INFOTECH_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -15,6 +15,8 @@ export const OPENINGS_URL = PROVIDER_METADATA.jobsBoardUrl
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const TRUSTED_CAREERS_ORIGIN = new URL(CAREERS_URL).origin
+const TRUSTED_OPENINGS_PATH = new URL(OPENINGS_URL).pathname.replace(/\/+$/, '') || '/'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;|&#160;/gi, ' ')
@@ -63,6 +65,20 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const normalizeTrustedOpeningsUrl = (value) => {
+  try {
+    const url = new URL(String(value ?? ''), CAREERS_URL)
+    const normalizedPath = url.pathname.replace(/\/+$/, '') || '/'
+    if (url.origin !== TRUSTED_CAREERS_ORIGIN || normalizedPath !== TRUSTED_OPENINGS_PATH) {
+      return null
+    }
+
+    return `${url.origin}${normalizedPath}`
+  } catch {
+    return null
+  }
+}
+
 const isIndiaLocation = (value) => /india/i.test(String(value ?? '')) && !/\bcanada|united states|usa\b/i.test(String(value ?? ''))
 
 const extractCity = (location) => normalizeText(String(location ?? '').split(',')[0])
@@ -76,7 +92,9 @@ export const hasOfficialCareersSignal = (html = '') => {
 }
 
 export const extractOpeningsUrl = (html = '') =>
-  String(html ?? '').match(/href=["'](https:\/\/careers\.nitorinfotech\.com\/opening)["']/i)?.[1] ?? null
+  [...String(html ?? '').matchAll(/href=["']([^"']+)["']/gi)]
+    .map((match) => normalizeTrustedOpeningsUrl(match[1]))
+    .find((url) => url === OPENINGS_URL) ?? null
 
 export const hasOpeningsPageSignal = (html = '') => {
   const page = String(html ?? '')
@@ -170,7 +188,7 @@ export const createNitorInfotechScraper = ({
 export const run = async (options = {}) => createNitorInfotechScraper(options).run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

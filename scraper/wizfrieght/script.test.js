@@ -23,6 +23,12 @@ const homepageHtml = `
         <h1>Launching Soon</h1>
         <p>Contact Us</p>
         <p>Powered by</p>
+        <nav>
+          <a href="/shop">Shop</a>
+          <a href="/m/login">Sign In</a>
+          <a href="/m/orders">Orders</a>
+          <a href="/m/account">Create Account</a>
+        </nav>
         <p>Copyright © 2026 wizfreight.com - All Rights Reserved.</p>
         <script>
           window.__WAM__ = {
@@ -49,6 +55,12 @@ const careers404Html = `
         <h1>Page Not Found</h1>
         <p>We can’t seem to find the page you’re looking for.</p>
         <a href="/">Go To Home Page</a>
+        <nav>
+          <a href="/shop">Shop</a>
+          <a href="/m/login">Sign In</a>
+          <a href="/m/orders">Orders</a>
+          <a href="/m/account">Create Account</a>
+        </nav>
         <script>
           window.__WAM__ = {
             wam_site_isHomepage: false

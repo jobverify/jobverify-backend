@@ -10,7 +10,7 @@ export const MICRON_TECHNOLOGY_INDIA_CATALOG = {
   adapter: 'script',
   homepageUrl: 'https://in.micron.com/',
   companyCareerPage: 'https://in.micron.com/about/careers',
-  publicBoardUrl: 'https://careers.micron.com/careers?domain=micron.com&pid=25253497&sort_by=relevance',
+  publicBoardUrl: 'https://micron.eightfold.ai/careers?location=India&domain=micron.com',
   listingApiUrl: 'https://careers.micron.com/api/pcsx/search',
   detailApiUrlTemplate:
     'https://careers.micron.com/api/pcsx/position_details?position_id={{jobId}}&domain=micron.com&hl=en',
@@ -23,12 +23,12 @@ export const MICRON_TECHNOLOGY_INDIA_CATALOG = {
   atsPlatform: 'eightfold',
   countryFilter: 'India',
   paginationStrategy: 'verified-india-careers-page-plus-public-eightfold-search-pagination',
-  extractionStrategy: 'verified-india-careers-page+eightfold-search-api+detail-api+india-openings-only',
+  extractionStrategy: 'verified-india-careers-page+eightfold-search-api+public-position-urls+india-openings-only',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Thursday, July 16, 2026 that https://in.micron.com/about/careers is the live first-party Micron India careers page and that it exposes "Search current jobs" links to https://careers.micron.com/careers?domain=micron.com&pid=25253497&sort_by=relevance. Verified that the public Eightfold search API at https://careers.micron.com/api/pcsx/search?domain=micron.com&query=&location=India&start=0&limit=10 returned live India openings including "Principal Engineer- HIG HBM Layout" in Hyderabad, Telangana, India.',
+    'Verified on Tuesday, August 4, 2026 that https://in.micron.com/about/careers is the live first-party Micron India careers page, that it exposes a "Search jobs" handoff to https://careers.micron.com/careers plus a "Search current jobs" India CTA to https://micron.eightfold.ai/careers?location=India&domain=micron.com, and that the public Eightfold search API at https://careers.micron.com/api/pcsx/search?domain=micron.com&query=&location=India&start=0&limit=10 returned 288 live India openings including "STAFF ENG-HIG-HBM-LAYOUT" in Hyderabad, Telangana, India. Verified that the listing payload itself exposes public position URLs under https://careers.micron.com/careers/job/ and currently returns 10 positions per page even when higher limit values are requested.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

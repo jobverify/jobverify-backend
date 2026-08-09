@@ -2,8 +2,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -16,7 +17,7 @@ export const OFFICIAL_CAREERS_URL = 'https://careers.airtel.com/'
 export const PUBLIC_PORTAL_URL =
   `${DARWINBOX_ORIGIN}/ms/candidatev2/${DARWINBOX_COMPANY_ID}/careers/allJobs`
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const darwinboxScraper = createDarwinboxScraper({
   companyName: COMPANY_NAME,
@@ -111,6 +112,10 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const createBhartiAirtelScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
@@ -118,41 +123,75 @@ export const createBhartiAirtelScraper = ({
   async run({
     maxPages = config.maxPages,
     fetchText = defaultFetchText,
+    fetchBrowserText,
     fetchListingPage,
   } = {}) {
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+    let browserSession = null
 
-    if (!hasOfficialBhartiAirtelCareersShell(careersHtml)) {
-      throw new Error('Bharti Airtel verified official careers page no longer matches the verified public surface')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    if (extractOfficialDarwinboxUrl(careersHtml) !== PUBLIC_PORTAL_URL) {
-      const bundleUrl = extractOfficialAirtelBundleUrl(careersHtml)
-      const bundle = await fetchText(bundleUrl)
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
 
-      if (!hasOfficialBhartiAirtelBundleSignals(bundle)) {
-        throw new Error('Bharti Airtel verified careers bundle no longer exposes the official Darwinbox public surface')
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
       }
     }
 
-    const jobs = await darwinboxScraper.run({
-      maxPages,
-      maxJobs,
-      fetchListingPage,
-    })
-    const scrapedAt = now()
+    try {
+      const careersHtml = await fetchPageText(OFFICIAL_CAREERS_URL)
 
-    return jobs.map((job) => ({
-      ...job,
-      scrapedAt,
-    }))
+      if (!hasOfficialBhartiAirtelCareersShell(careersHtml)) {
+        throw new Error('Bharti Airtel verified official careers page no longer matches the verified public surface')
+      }
+
+      if (extractOfficialDarwinboxUrl(careersHtml) !== PUBLIC_PORTAL_URL) {
+        const bundleUrl = extractOfficialAirtelBundleUrl(careersHtml)
+        const bundle = await fetchPageText(bundleUrl)
+
+        if (!hasOfficialBhartiAirtelBundleSignals(bundle)) {
+          throw new Error('Bharti Airtel verified careers bundle no longer exposes the official Darwinbox public surface')
+        }
+      }
+
+      const jobs = await darwinboxScraper.run({
+        maxPages,
+        maxJobs,
+        fetchListingPage,
+      })
+      const scrapedAt = now()
+
+      return jobs.map((job) => ({
+        ...job,
+        scrapedAt,
+      }))
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 
 export const run = async (options = {}) => createBhartiAirtelScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

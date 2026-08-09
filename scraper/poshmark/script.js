@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -13,10 +13,20 @@ export const GREENHOUSE_BOARD_URL = 'https://job-boards.greenhouse.io/poshmark'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+const decodeHtmlEntities = (value) => String(value ?? '')
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/&lt;/gi, '<')
+  .replace(/&gt;/gi, '>')
+
 const normalizeWhitespace = (value) => {
   if (value == null) return null
 
-  const normalized = String(value)
+  const normalized = decodeHtmlEntities(value)
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -24,15 +34,31 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+const stripTags = (value) => normalizeWhitespace(
+  String(value ?? '').replace(/<[^>]+>/g, ' '),
+)
+
+export const hasUpgradeEmailHandoffSignal = (html) => {
+  const text = (stripTags(html) || '').toLowerCase()
+
+  return text.includes("we're currently upgrading our careers page to serve you better!")
+    && text.includes('please email your application to')
+    && text.includes('talent@poshmark.com')
+}
+
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
+  const text = stripTags(page) || ''
+  const boardUrl = extractBoardUrl(page)
+  const hasLegacyBoardLink = boardUrl === GREENHOUSE_BOARD_URL
+  const hasCurrentBrandedShell = text.includes('Poshmark comes to life with our core values')
+    && text.includes('FOCUS ON PEOPLE')
 
-  return /Join us as we reimagine the future of shopping/i.test(page)
-    && /Current Openings/i.test(page)
-    && /talent@poshmark\.com/i.test(page)
-    && normalized?.includes("We're currently upgrading our careers page to serve you better!")
-    && normalized?.includes('please email your application to talent@poshmark.com.')
+  return text.includes('Join us as we reimagine the future of shopping')
+    && text.includes('talent@poshmark.com')
+    && text.includes('Current Openings')
+    && hasUpgradeEmailHandoffSignal(page)
+    && (hasLegacyBoardLink || hasCurrentBrandedShell)
 }
 
 export const extractBoardUrl = (html) => {
@@ -75,6 +101,14 @@ export const createPoshmarkScraper = () => ({
     }
 
     const boardUrl = extractBoardUrl(careersHtml)
+    if (!boardUrl) {
+      if (hasUpgradeEmailHandoffSignal(careersHtml)) {
+        return []
+      }
+
+      throw new Error('Poshmark careers page no longer links to the verified Greenhouse board')
+    }
+
     if (boardUrl !== GREENHOUSE_BOARD_URL) {
       throw new Error('Poshmark careers page no longer links to the verified Greenhouse board')
     }
@@ -91,7 +125,7 @@ export const createPoshmarkScraper = () => ({
 export const run = async (options = {}) => createPoshmarkScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

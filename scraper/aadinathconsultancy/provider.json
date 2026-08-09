@@ -1,8 +1,8 @@
-{
+﻿{
   "source": "aadinathconsultancy",
   "companyName": "Aadinath Consultancy",
   "adapter": "script",
-  "modulePath": "../aadinathconsultancy/script.js",
+  "modulePath": "../../scraper/aadinathconsultancy/script.js",
   "companyCareerPage": "https://aadinathconsultants.com/",
   "atsPlatform": "official-company-site-no-public-careers",
   "countryFilter": "India",
@@ -14,3 +14,4 @@
   "verifiedOn": "2026-07-14",
   "verifiedSurfaceSummary": "Verified https://aadinathconsultants.com/ on July 14, 2026. There is no trustworthy public jobs surface: the first-party domain served a bare LiteSpeed autoindex homepage with no public careers or jobs signals, and common first-party careers routes such as /careers, /career, /jobs, /join-us, /work-with-us, and /openings returned first-party LiteSpeed 404 pages."
 }
+

@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { GHX_INDIA_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -124,12 +124,19 @@ export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?conte
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page) || ''
+  const escapedBoardUrl = GREENHOUSE_BOARD_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const boardUrlPattern = new RegExp(`href=["']${escapedBoardUrl}["']`, 'i')
 
-  return /<title>\s*Careers at GHX\s*<\/title>/i.test(page)
-    && /Explore our opportunities/i.test(page)
+  return (
+    /<title>\s*(?:Careers at GHX|GHX Careers\s*\|\s*GHX)\s*<\/title>/i.test(page)
+    || normalized.includes('ghx careers')
+  )
     && /View all positions/i.test(page)
-    && new RegExp(`href=["']${GREENHOUSE_BOARD_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`, 'i')
-      .test(page)
+    && (
+      boardUrlPattern.test(page)
+      || new RegExp(`${escapedBoardUrl}/jobs/\\d+`, 'i').test(page)
+    )
 }
 
 export const normalizeGreenhouseJobUrl = (value, jobId) => {
@@ -263,7 +270,7 @@ export const createGhxIndiaScraper = ({
 export const run = async (options = {}) => createGhxIndiaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

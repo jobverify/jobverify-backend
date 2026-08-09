@@ -118,7 +118,7 @@ export const hasOfficialAboutPageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
 
-  return /<title>\s*GoKwik - Smart Checkout & RTO Solutions for D2C Brands\s*<\/title>/i.test(rawHtml)
+  return /<title>\s*GoKwik - Smart Checkout (?:&|&amp;) RTO Solutions for D2C Brands\s*<\/title>/i.test(rawHtml)
     && normalized.includes('We Are GoKwik')
     && normalized.includes('GoKwik is a D2C commerce growth platform')
     && normalized.includes('Life at GoKwik')
@@ -307,7 +307,7 @@ export const createGoKwikScraper = ({
 export const run = async (options = {}) => createGoKwikScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

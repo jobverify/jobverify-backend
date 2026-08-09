@@ -2,23 +2,30 @@ import crypto from 'node:crypto'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
-export const CAREERS_PORTAL_URL = 'https://www.icicicareers.com/CareerApplicant/Career/Home'
-export const JOB_LISTING_URL = 'https://www.icicicareers.com/CareerApplicant/career/job-listing/'
-export const SEARCH_API_URL = 'https://www.icicicareers.com/CareerApplicantApi/Career/Search/1'
-export const DETAIL_API_BASE_URL = 'https://www.icicicareers.com/CareerApplicantApi/Career/getSingleJob/1'
-export const PUBLIC_JOB_DETAIL_BASE_URL = 'https://www.icicicareers.com/CareerApplicant/Career/job-details'
+const CAREERS_ORIGIN = 'https://careers.icici.bank.in'
+
+export const CAREERS_PORTAL_URL = `${CAREERS_ORIGIN}/CareerApplicant/Career/Home`
+export const JOB_LISTING_URL = `${CAREERS_ORIGIN}/CareerApplicant/career/job-listing/`
+export const SEARCH_API_URL = `${CAREERS_ORIGIN}/CareerApplicantApi/Career/Search/1`
+export const DETAIL_API_BASE_URL = `${CAREERS_ORIGIN}/CareerApplicantApi/Career/getSingleJob/1`
+export const PUBLIC_JOB_DETAIL_BASE_URL = `${CAREERS_ORIGIN}/CareerApplicant/Career/job-details`
 
 const COMPANY = 'ICICI Bank Ltd'
 const SOURCE = 'icicibank'
 const SEARCH_PAGE_SIZE = 12
 const ENCRYPTION_KEY = '$k@m0u$0172@0r!k'
 const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const shouldUseBrowserFallback = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -87,10 +94,14 @@ export const encryptApiPayload = (value) => {
   ]).toString('base64') + iv
 }
 
+export const wrapEncryptedSearchPayload = (value) => JSON.stringify({
+  data: encryptApiPayload(value),
+})
+
 export const decryptApiPayload = (payload) => {
   const encrypted = typeof payload === 'string'
     ? payload
-    : payload?.Data
+    : payload?.Data || payload?.data
 
   if (!encrypted || String(encrypted).length <= 16) {
     throw new Error('ICICI Bank API response is missing the encrypted Data payload')
@@ -124,16 +135,24 @@ const toDateString = (value) => normalizeWhitespace(value)
 
 const extractSearchRecords = (payload) => {
   const decrypted = decryptApiPayload(payload)
+
+  if (Array.isArray(decrypted)) {
+    return {
+      totalRows: Number.parseInt(String(decrypted[0]?.Total_Rows ?? decrypted.length), 10) || decrypted.length,
+      records: decrypted,
+    }
+  }
+
   return {
-    totalRows: Number.parseInt(String(decrypted?.TotalRows ?? decrypted?.Count ?? 0), 10) || 0,
+    totalRows: Number.parseInt(String(decrypted?.TotalRows ?? decrypted?.Count ?? decrypted?.Total_Rows ?? 0), 10) || 0,
     records: Array.isArray(decrypted?.Data) ? decrypted.Data : [],
   }
 }
 
 export const extractSearchResults = (payload) => extractSearchRecords(payload).records
   .map((record) => {
-    const jobId = normalizeWhitespace(record?.f_jobId || record?.JobID || record?.id)
-    const title = normalizeWhitespace(record?.f_title || record?.JobTitle)
+    const jobId = normalizeWhitespace(record?.f_jobId || record?.hc_JobID || record?.JobID || record?.id)
+    const title = normalizeWhitespace(record?.f_title || record?.hc_JobTitle || record?.JobTitle)
 
     if (!jobId || !title) return null
 
@@ -144,20 +163,21 @@ export const extractSearchResults = (payload) => extractSearchRecords(payload).r
       department: normalizeWhitespace(record?.hc_Function || record?.Function),
       jobCategory: normalizeWhitespace(record?.hc_MainGroup || record?.MainGroup),
       jobId,
-      requisitionId: normalizeWhitespace(record?.JobNumber) || jobId,
+      requisitionId: normalizeWhitespace(record?.hc_JobNumber || record?.JobNumber) || jobId,
       sourceUrl: buildPublicJobUrl(jobId),
       applyUrl: buildPublicJobUrl(jobId),
       experienceRequired: normalizeWhitespace(record?.hc_Experience || record?.Experience),
       minimumQualification: normalizeWhitespace(record?.Education),
       closingDate: toDateString(record?.hc_EndDate || record?.EndDate),
-      shortDescription: normalizeWhitespace(record?.f_short_description),
+      shortDescription: normalizeWhitespace(record?.f_short_description || record?.f_description),
       shortUrl: normalizeWhitespace(record?.ShortUrl),
     }
   })
   .filter(Boolean)
 
 export const extractJobDetail = (payload, listing = {}) => {
-  const detail = decryptApiPayload(payload)
+  const decrypted = decryptApiPayload(payload)
+  const detail = Array.isArray(decrypted) ? decrypted[0] || {} : decrypted
   const jobId = normalizeWhitespace(detail?.JobID || detail?.f_jobId) || listing.jobId
   const sourceUrl = listing.sourceUrl || buildPublicJobUrl(jobId)
 
@@ -213,7 +233,9 @@ const createSearchHeaders = () => ({
   Accept: 'Application/json',
   'Content-Type': 'application/json',
   authorization: 'Bearer token',
-  Origin: 'https://www.icicicareers.com',
+  binfo: 'UTJoeWIyMWxJREV6T0E9PQ==',
+  Origin: CAREERS_ORIGIN,
+  platform: 'ZDJWaQ==',
   Referer: JOB_LISTING_URL,
   'User-Agent': USER_AGENT,
 })
@@ -231,55 +253,112 @@ export const createIciciBankScraper = ({
 } = {}) => ({
   async run(options = {}) {
     const fetchJson = options.fetchJson || defaultFetchJson
+    const fetchBrowserJson = options.fetchBrowserJson
     const now = options.now || (() => new Date().toISOString())
     const effectiveMaxJobs = Number.isInteger(options.maxJobs) ? options.maxJobs : maxJobs
     const effectiveMaxPages = Number.isInteger(options.maxPages) ? options.maxPages : maxPages
     const jobs = []
     const maxPageCount = effectiveMaxPages && effectiveMaxPages > 0 ? effectiveMaxPages : Number.POSITIVE_INFINITY
+    let browserSession = null
+    let browserJsonPrimed = false
 
-    for (let pageNo = 0; pageNo < maxPageCount; pageNo += 1) {
-      const searchResponse = await fetchJson(SEARCH_API_URL, {
-        method: 'POST',
-        headers: createSearchHeaders(),
-        body: encryptApiPayload(buildSearchRequestPayload(pageNo)),
-      })
-      const { totalRows, records } = extractSearchRecords(searchResponse)
-      const listings = extractSearchResults(searchResponse)
-
-      if (listings.length === 0) break
-
-      for (const listing of listings) {
-        const detailResponse = await fetchJson(buildDetailApiUrl(listing.jobId), {
-          method: 'GET',
-          headers: createDetailHeaders(),
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({
+          userAgent: USER_AGENT,
+          timeoutMs: 90000,
+          settleTimeMs: 15000,
         })
-        const job = extractJobDetail(detailResponse, listing)
-
-        jobs.push({
-          ...job,
-          company: COMPANY,
-          country: 'India',
-          source: SOURCE,
-          link: job.applyUrl || job.sourceUrl,
-          scrapedAt: now(),
-        })
-
-        if (effectiveMaxJobs && jobs.length >= effectiveMaxJobs) {
-          return jobs.slice(0, effectiveMaxJobs)
-        }
       }
 
-      if ((pageNo + 1) * SEARCH_PAGE_SIZE >= totalRows) break
+      return browserSession
     }
 
-    return jobs
+    const browserJsonFetcher = fetchBrowserJson || (async (url, requestOptions = {}, landingUrl = CAREERS_PORTAL_URL) => {
+      const session = await getBrowserSession()
+      return session.fetchJson(url, {
+        ...requestOptions,
+        ...(landingUrl ? { landingUrl } : {}),
+      })
+    })
+
+    const fetchJsonWithBrowserFallback = async (
+      url,
+      requestOptions = {},
+      landingUrl = CAREERS_PORTAL_URL,
+    ) => {
+      try {
+        return await fetchJson(url, requestOptions)
+      } catch (error) {
+        if (!shouldUseBrowserFallback(error)) {
+          throw error
+        }
+
+        return browserJsonFetcher(url, requestOptions, landingUrl)
+      }
+    }
+
+    try {
+      for (let pageNo = 0; pageNo < maxPageCount; pageNo += 1) {
+        const searchRequestOptions = {
+          method: 'POST',
+          headers: createSearchHeaders(),
+          body: wrapEncryptedSearchPayload(buildSearchRequestPayload(pageNo)),
+        }
+        const searchResponse = await fetchJsonWithBrowserFallback(
+          SEARCH_API_URL,
+          searchRequestOptions,
+          browserJsonPrimed ? null : CAREERS_PORTAL_URL,
+        )
+        browserJsonPrimed = browserJsonPrimed || Boolean(fetchBrowserJson)
+        const { totalRows, records } = extractSearchRecords(searchResponse)
+        const listings = extractSearchResults(searchResponse)
+
+        if (listings.length === 0) break
+
+        for (const listing of listings) {
+          const detailRequestOptions = {
+            method: 'GET',
+            headers: createDetailHeaders(),
+          }
+          const detailResponse = await fetchJsonWithBrowserFallback(
+            buildDetailApiUrl(listing.jobId),
+            detailRequestOptions,
+            browserJsonPrimed ? null : CAREERS_PORTAL_URL,
+          )
+          browserJsonPrimed = browserJsonPrimed || Boolean(fetchBrowserJson)
+          const job = extractJobDetail(detailResponse, listing)
+
+          jobs.push({
+            ...job,
+            company: COMPANY,
+            country: 'India',
+            source: SOURCE,
+            link: job.applyUrl || job.sourceUrl,
+            scrapedAt: now(),
+          })
+
+          if (effectiveMaxJobs && jobs.length >= effectiveMaxJobs) {
+            return jobs.slice(0, effectiveMaxJobs)
+          }
+        }
+
+        if ((pageNo + 1) * SEARCH_PAGE_SIZE >= totalRows) break
+      }
+
+      return jobs
+    } finally {
+      if (browserSession) {
+        await browserSession.close().catch(() => {})
+      }
+    }
   },
 })
 
 export const run = async (options = {}) => createIciciBankScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

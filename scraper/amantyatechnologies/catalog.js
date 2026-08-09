@@ -17,9 +17,9 @@ export const AMANTYA_TECHNOLOGIES_CATALOG = {
   extractionStrategy: 'verified-careers-page+inline-job-panels+onsite-application-handoff',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.amantyatech.com/careers is the live first-party Amantya Technologies careers page and that it exposes public inline role panels including Sr SW QA Automation Engineer, TAC Engineer, and Open Ran Developer, each with visible experience, location, and job-type metadata plus the first-party Apply Now handoff.',
+    'Verified on Saturday, August 1, 2026 that https://www.amantyatech.com/careers is the live first-party Amantya Technologies careers page and that it exposes public inline role cards including Linux Build - System Engineer, Telecom Tester (Core Team), and RAN Developer, each with visible experience, job location, and job-type metadata plus the first-party Apply Now handoff.',
   dryRunFile: 'amantyatechnologies/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

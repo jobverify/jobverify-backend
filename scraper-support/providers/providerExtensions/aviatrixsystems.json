@@ -1,0 +1,22 @@
+{
+  "source": "aviatrixsystems",
+  "companyName": "Aviatrix Systems",
+  "officialBrandName": "Aviatrix Systems",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../aviatrixsystems/script.js",
+  "dryRunFile": "aviatrixsystems/jobs.json",
+  "companyCareerPage": "https://aviatrix.ai/company/careers/",
+  "companyDomain": "aviatrix.ai",
+  "atsPlatform": "official-first-party-careers-client-rendered-no-verified-feed",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-careers-page-sentinel",
+  "extractionStrategy": "client-rendered-page-without-verified-enumerable-feed+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://aviatrix.ai/company/careers/",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://aviatrix.ai/company/careers/ is the live first-party Aviatrix careers surface. The public page is client-rendered and no stable verified public listing feed was confirmed. This exact-name provider pins the CSV company Aviatrix Systems to that official surface and fails closed rather than using third-party listings or fuzzy substitutions."
+}

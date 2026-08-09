@@ -43,6 +43,18 @@ const ScraperStatusSchema = new Schema(
       type: String,
       default: null,
     },
+    softFailure: {
+      type: Boolean,
+      default: false,
+    },
+    upstreamOutage: {
+      type: Boolean,
+      default: false,
+    },
+    failureKind: {
+      type: String,
+      default: null,
+    },
     lastJobsFound: {
       type: Number,
       default: 0,

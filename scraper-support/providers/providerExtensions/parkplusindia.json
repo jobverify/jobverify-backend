@@ -1,0 +1,22 @@
+{
+  "source": "parkplusindia",
+  "companyName": "Park+ India",
+  "officialBrandName": "Park+",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../parkplusindia/script.js",
+  "dryRunFile": "parkplusindia/jobs.json",
+  "companyCareerPage": "https://parkplus.io/careers",
+  "companyDomain": "parkplus.io",
+  "atsPlatform": "exact-name-fail-closed-sentinel",
+  "countryFilter": "India",
+  "paginationStrategy": "official-careers-page-without-public-application-feed-sentinel",
+  "extractionStrategy": "official-first-party-careers-page-without-enumerable-application-links+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://parkplus.io/careers",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://parkplus.io/careers is Park+'s official first-party careers page. It displays generic Sales Manager location labels but exposes no job detail pages, application links, or official ATS feed that can be reliably enumerated. This literal CSV-name provider therefore fails closed and returns no jobs until Park+ publishes a verifiable public application surface."
+}

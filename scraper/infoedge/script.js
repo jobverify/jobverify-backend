@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { INFOEDGE_CATALOG } from './catalog.js'
+import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -23,6 +24,7 @@ const DOMAIN = PROVIDER_METADATA.companyDomain
 const DEFAULT_PAGE_SIZE = 12
 const DEFAULT_MAX_PAGES = 30
 const DEFAULT_MAX_JOBS = 500
+const DEFAULT_DETAIL_CONCURRENCY = 10
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -131,6 +133,40 @@ const chooseLocation = (detailRecord = {}, listing = {}) => {
   return listingLocation || detailLocation || null
 }
 
+const hasStructuredPublicDetailEvidence = (detailRecord = {}, listing = {}) => {
+  const listingRecord = listing._listingRecord || listing
+  const listingJobId = normalizeWhitespace(
+    listing.jobId || listingRecord?.jobCode || listingRecord?.newJobCode,
+  )
+  const detailJobId = normalizeWhitespace(detailRecord?.jobCode)
+  const jobIdsAlign = !listingJobId || !detailJobId || listingJobId === detailJobId
+  const title = normalizeWhitespace(
+    detailRecord?.jobTitle || detailRecord?.jobConfigurationData?.['Job Title'] || listing.title,
+  )
+  const jobUrl = normalizeWhitespace(detailRecord?.jobUrl || listingRecord?.jobUrl)
+  const location = normalizeWhitespace(
+    detailRecord?.jobConfigurationData?.Location || detailRecord?.location || listing.location,
+  )
+  const description = normalizeWhitespace(
+    detailRecord?.jobConfigurationData?.Description
+      || detailRecord?.longDescription
+      || detailRecord?.shortDescription
+      || detailRecord?.mediumDescriptionWithoutHtml,
+  )
+  const skills = splitCsv(
+    detailRecord?.jobConfigurationData?.['Skills Required']
+      || detailRecord?.skillSet
+      || detailRecord?.desiredSkill,
+  )
+
+  return Boolean(
+    jobIdsAlign
+    && title
+    && (jobUrl || detailJobId)
+    && (location || description || skills.length > 0),
+  )
+}
+
 export const isIndiaJob = (record = {}) =>
   (Array.isArray(record?.jobLocationRecord) && record.jobLocationRecord.some(
     (location) => /india/i.test(normalizeWhitespace(location?.country) || ''),
@@ -219,6 +255,7 @@ export const extractJobDetail = (payload = {}, listing = {}) => {
   const listingRecord = listing._listingRecord || listing
   const jobCode = normalizeWhitespace(detailRecord?.jobCode || listing.jobId || listingRecord?.jobCode)
   const jobUrl = normalizeWhitespace(detailRecord?.jobUrl || listingRecord?.jobUrl)
+  const hasPublicDetailEvidence = hasStructuredPublicDetailEvidence(detailRecord, listing)
 
   return {
     title: normalizeWhitespace(detailRecord?.jobTitle) || listing.title || null,
@@ -274,6 +311,7 @@ export const extractJobDetail = (payload = {}, listing = {}) => {
         || detailRecord?.shortDescription
         || listing.jobDescription,
     ),
+    publicExperienceChecked: hasPublicDetailEvidence,
   }
 }
 
@@ -315,6 +353,7 @@ const defaultFetchJson = async (url, options = {}) => {
 export const createInfoEdgeScraper = ({
   maxPages = DEFAULT_MAX_PAGES,
   maxJobs = DEFAULT_MAX_JOBS,
+  detailConcurrency = DEFAULT_DETAIL_CONCURRENCY,
 } = {}) => ({
   async run({
     fetchJson = defaultFetchJson,
@@ -332,30 +371,41 @@ export const createInfoEdgeScraper = ({
       const listings = extractSearchResults(listingPayload)
       const summary = extractPaginationSummary(listingPayload)
 
+      const freshListings = []
       for (const listing of listings) {
         if (seenJobIds.has(listing.jobId)) continue
         seenJobIds.add(listing.jobId)
-
-        let job = listing
-        try {
-          const detailPayload = await fetchJson(DETAIL_API_URL, {
-            method: 'POST',
-            json: buildDetailRequest(listing._listingRecord),
-          })
-          job = extractJobDetail(detailPayload, listing)
-        } catch {
-          job = listing
-        }
-
-        jobs.push({
-          ...job,
-          source: SOURCE,
-          link: job.applyUrl || job.sourceUrl,
-          scrapedAt: now(),
-        })
-
-        if (jobs.length >= maxJobs) break
+        freshListings.push(listing)
       }
+
+      const remainingSlots = Math.max(maxJobs - jobs.length, 0)
+      const selectedListings = freshListings.slice(0, remainingSlots)
+      const pageJobs = await mapWithConcurrency(
+        selectedListings,
+        detailConcurrency,
+        async (listing) => {
+          let job = listing
+          try {
+            const detailPayload = await fetchJson(DETAIL_API_URL, {
+              method: 'POST',
+              json: buildDetailRequest(listing._listingRecord),
+            })
+            job = extractJobDetail(detailPayload, listing)
+          } catch {
+            job = listing
+          }
+
+          return {
+            ...job,
+            source: SOURCE,
+            link: job.applyUrl || job.sourceUrl,
+            scrapedAt: now(),
+          }
+        },
+      )
+
+      jobs.push(...pageJobs)
+      if (jobs.length >= maxJobs) break
 
       if (!summary.hasNext) break
       if (summary.totalCount > 0 && page * summary.pageSize >= summary.totalCount) break
@@ -368,7 +418,7 @@ export const createInfoEdgeScraper = ({
 export const run = async (options = {}) => createInfoEdgeScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

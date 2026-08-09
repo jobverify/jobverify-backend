@@ -71,6 +71,7 @@ test('Nobrokers scraper validates the verified homepage, careers shell, bundle s
       postingDate: null,
       closingDate: null,
       jobDescription: null,
+      publicExperienceChecked: true,
     },
     {
       title: 'Senior Software Engineer',
@@ -91,6 +92,7 @@ test('Nobrokers scraper validates the verified homepage, careers shell, bundle s
       postingDate: null,
       closingDate: null,
       jobDescription: null,
+      publicExperienceChecked: true,
     },
     {
       title: 'Frontend Developer',
@@ -111,6 +113,7 @@ test('Nobrokers scraper validates the verified homepage, careers shell, bundle s
       postingDate: null,
       closingDate: null,
       jobDescription: null,
+      publicExperienceChecked: true,
     },
     {
       title: 'Product Manager',
@@ -131,6 +134,7 @@ test('Nobrokers scraper validates the verified homepage, careers shell, bundle s
       postingDate: null,
       closingDate: null,
       jobDescription: null,
+      publicExperienceChecked: true,
     },
     {
       title: 'Android Developer',
@@ -151,6 +155,7 @@ test('Nobrokers scraper validates the verified homepage, careers shell, bundle s
       postingDate: null,
       closingDate: null,
       jobDescription: null,
+      publicExperienceChecked: true,
     },
     {
       title: 'IOS Developer',
@@ -171,6 +176,7 @@ test('Nobrokers scraper validates the verified homepage, careers shell, bundle s
       postingDate: null,
       closingDate: null,
       jobDescription: null,
+      publicExperienceChecked: true,
     },
   ])
 })
@@ -216,6 +222,7 @@ test('Nobrokers scraper run decorates jobs from the verified first-party feed', 
     'https://www.linkedin.com/jobs/view/2454032399/?capColoOverride=true',
   )
   assert.equal(jobs[0].scrapedAt, '2026-07-11T00:00:00.000Z')
+  assert.equal(jobs[0].publicExperienceChecked, true)
 })
 
 test('Nobrokers scraper fails closed when the verified first-party surface drifts', async () => {

@@ -1,4 +1,4 @@
-export const VERIFIED_SURFACE_SUMMARY =
+﻿export const VERIFIED_SURFACE_SUMMARY =
   'Verified on July 15, 2026 that https://www.autoform.com/ resolves to AutoForm Engineering\'s live official homepage at https://www.autoform.com/en/, that the homepage links candidates to the first-party careers site at https://careers.autoform.com/en/, and that https://careers.autoform.com/en/jobs/job-search/ exposes a public India location filter plus the first-party RSS feed at https://careers.autoform.com/en/jobs.rss. The verified search/feed surface currently lists openings in Europe, Switzerland, China, Mexico, and France but no India roles live right now for AutoForm India.'
 
 export const AUTOFORM_INDIA_CATALOG = {
@@ -6,7 +6,7 @@ export const AUTOFORM_INDIA_CATALOG = {
   companyName: 'AutoForm India',
   officialBrandName: 'AutoForm Engineering',
   adapter: 'script',
-  modulePath: '../autoformindia/script.js',
+  modulePath: '../../scraper/autoformindia/script.js',
   companyCareerPage: 'https://careers.autoform.com/en/jobs/job-search/',
   homepageUrl: 'https://www.autoform.com/en/',
   careersHomeUrl: 'https://careers.autoform.com/en/',
@@ -25,3 +25,4 @@ export const AUTOFORM_INDIA_CATALOG = {
 }
 
 export default AUTOFORM_INDIA_CATALOG
+

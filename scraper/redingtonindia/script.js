@@ -2,13 +2,15 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { enrichJobsWithPublicExperience } from '../../scraper-support/utils/publicExperienceEnrichment.js'
 import REDINGTON_INDIA_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const DEFAULT_EXPERIENCE_ENRICHMENT_CONCURRENCY = 4
 
 export const SOURCE = REDINGTON_INDIA_CATALOG.source
 export const COMPANY = REDINGTON_INDIA_CATALOG.companyName
@@ -93,15 +95,14 @@ export const hasOfficialCareersSignal = (html = '') => {
   return /<title>\s*Careers - Redington\s*<\/title>/i.test(page)
     && /Opportunities Across the Globe/i.test(page)
     && /Search Jobs/i.test(page)
-    && /Join our Community/i.test(page)
+    && /Join our\s*<br>\s*Community/i.test(page)
     && /Upload Resume/i.test(page)
     && /action:\s*["']get_jobs["']/i.test(page)
     && /action:\s*["']get_countries["']/i.test(page)
     && /action:\s*["']get_skills["']/i.test(page)
     && /job_nonce\s*=\s*["'][a-z0-9]+["']/i.test(page)
-    && /hrpulserlgroup\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/jobDetails\/\$\{job\.job_id\}\?from=all/i.test(
-      page,
-    )
+    && /href=["']\$\{job\.job_url\}["']/i.test(page)
+    && /Full Job Description/i.test(page)
 }
 
 export const extractJobNonce = (html = '') =>
@@ -204,10 +205,12 @@ const defaultPostForm = (url, body) => fetchTextWithRetry(url, {
 export const createRedingtonIndiaScraper = ({
   now: defaultNow = () => new Date().toISOString(),
   maxPages = 25,
+  experienceEnrichmentConcurrency = DEFAULT_EXPERIENCE_ENRICHMENT_CONCURRENCY,
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
     postForm = defaultPostForm,
+    fetchPublicJobText = null,
     now = defaultNow,
   } = {}) {
     const careersHtml = await fetchText(CAREERS_PAGE_URL)
@@ -241,14 +244,31 @@ export const createRedingtonIndiaScraper = ({
       offset += records.length
     }
 
-    return collectedJobs
+    const shouldEnrichPublicDetails =
+      typeof fetchPublicJobText === 'function' || fetchText === defaultFetchText
+    const jobsWithPublicDetails = shouldEnrichPublicDetails
+      ? await enrichJobsWithPublicExperience(collectedJobs, {
+          ...(typeof fetchPublicJobText === 'function'
+            ? { fetchText: fetchPublicJobText }
+            : {}),
+          concurrency: Math.min(
+            experienceEnrichmentConcurrency,
+            Math.max(1, collectedJobs.length),
+          ),
+        })
+      : collectedJobs
+
+    return jobsWithPublicDetails.map((job) => ({
+      ...job,
+      publicExperienceChecked: job.publicExperienceChecked === true,
+    }))
   },
 })
 
 export const run = async (options = {}) => createRedingtonIndiaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

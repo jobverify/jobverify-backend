@@ -73,17 +73,32 @@ export const hasMergedParentHomepageSignal = (html = '') => {
     && /\bFincare Corporate NetBanking\b/i.test(normalized)
 }
 
+export const hasCloudflareChallengePageSignal = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+
+  return /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(rawHtml)
+    && /\bEnable JavaScript and cookies to continue\b/i.test(normalized)
+}
+
+export const hasMergedParentHomepageCloudflareSignal = hasCloudflareChallengePageSignal
+
 export const isVerifiedMergedParentHomepage = (page = {}) =>
-  Number(page.status) === 200
-  && normalizeUrl(page.url) === normalizeUrl(MERGED_PARENT_HOMEPAGE_URL)
-  && hasMergedParentHomepageSignal(page.html)
+  normalizeUrl(page.url) === normalizeUrl(MERGED_PARENT_HOMEPAGE_URL)
+  && (
+    (
+      Number(page.status) === 200
+      && hasMergedParentHomepageSignal(page.html)
+    )
+    || (
+      Number(page.status) === 403
+      && hasCloudflareChallengePageSignal(page.html)
+    )
+  )
 
 export const isVerifiedLegacyRedirect = (page = {}) =>
   normalizeUrl(page.url) === normalizeUrl(MERGED_PARENT_HOMEPAGE_URL)
-  && (
-    Number(page.status) === 403
-    || isVerifiedMergedParentHomepage(page)
-  )
+  && isVerifiedMergedParentHomepage(page)
 
 export const createFincareScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
@@ -108,7 +123,7 @@ export const createFincareScraper = () => ({
 export const run = async (options = {}) => createFincareScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

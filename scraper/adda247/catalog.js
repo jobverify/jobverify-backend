@@ -9,7 +9,6 @@ export const ADDA247_CATALOG = {
   adapter: 'script',
   companyCareerPage: 'https://www.adda247.com/careers.html',
   companyDomain: 'adda247.com',
-  atsPlatform: 'official-company-careers',
   countryFilter: 'India',
   atsPlatform: 'keka',
   paginationStrategy: 'single-first-party-careers-page-plus-keka-active-jobs-api',

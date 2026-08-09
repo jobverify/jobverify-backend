@@ -1,0 +1,21 @@
+{
+  "source": "giottus",
+  "companyName": "Giottus",
+  "officialBrandName": "Giottus Technologies Pvt Ltd",
+  "adapter": "script",
+  "modulePath": "../giottus/script.js",
+  "dryRunFile": "giottus/jobs.json",
+  "companyCareerPage": "https://www.giottus.com/",
+  "companyDomain": "giottus.com",
+  "atsPlatform": "official-first-party-site-no-verified-careers-feed",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-site-sentinel",
+  "extractionStrategy": "no-verified-official-careers-feed+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.giottus.com/",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.giottus.com/ is Giottus Technologies Pvt Ltd's first-party website. The official site does not expose a verified public careers page, official ATS endpoint, or enumerable job feed. This exact-name provider fails closed and returns no jobs rather than substituting similarly named companies or third-party listings."
+}

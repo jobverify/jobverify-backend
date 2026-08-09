@@ -13,9 +13,6 @@ const USER_AGENT =
 
 const FETCH_TIMEOUT_MS = 15000
 
-const INDIA_LOCATION_PATTERN =
-  /\b(india|chennai|noida|bangalore|bengaluru|kerala|andhra pradesh)\b/i
-
 const createFetchTimeoutSignal = () => AbortSignal.timeout(FETCH_TIMEOUT_MS)
 
 const normalizeText = (value) => String(value ?? '')
@@ -57,12 +54,13 @@ const getPrimaryCity = (location) => {
   if (/bengaluru|bangalore/i.test(normalized)) return 'Bangalore'
   if (/chennai/i.test(normalized)) return 'Chennai'
   if (/noida/i.test(normalized)) return 'Noida'
+  if (/trichy|tiruchirappalli/i.test(normalized)) return 'Trichy'
   return null
 }
 
 const normalizeLocation = (value) => {
   const normalized = normalizeText(value)
-  if (!normalized || !INDIA_LOCATION_PATTERN.test(normalized)) {
+  if (!normalized) {
     return null
   }
 
@@ -222,7 +220,7 @@ export const createSwelectScraper = ({ now = () => new Date().toISOString() } = 
 export const run = async (options = {}) => createSwelectScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

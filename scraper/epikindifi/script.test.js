@@ -12,9 +12,11 @@ import {
 const homepageHtml = `
   <!doctype html>
   <html lang="en">
+    <head>
+      <title>Home - Epikindifi - Digital Lending Platform Ecosystem</title>
+    </head>
     <body>
       <h1>Digital Lending Made Simple & Effortless</h1>
-      <p>EPIKInDiFi Software & Solutions Private Limited</p>
       <a href="https://epikindifi.com/careers/">Careers</a>
       <a href="https://epikindifi.com/careers/">Apply Now</a>
     </body>

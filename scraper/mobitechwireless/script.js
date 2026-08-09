@@ -1,7 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -225,6 +226,53 @@ export const extractPublicJobs = (html) => {
   return jobs
 }
 
+const extractDetailText = (html = '') => {
+  const text = normalizeVisibleText(
+    String(html ?? '')
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/ul|\/ol|\/section|\/article)\b[^>]*>/gi, '\n')
+      .replace(/<(p|div|li|h[1-6]|section|article)\b[^>]*>/gi, '\n')
+      .replace(/<[^>]+>/g, ' '),
+  )
+  if (!text) return null
+
+  const beforeApplication = text.split(/Apply for this position/i)[0]?.trim() || ''
+  return beforeApplication || text
+}
+
+const inferExperienceFromDescription = (jobDescription) => {
+  const normalizedDescription = normalizeVisibleText(jobDescription)
+  if (!normalizedDescription) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalizedDescription,
+  })?.experienceProfile
+  const evidence = normalizeVisibleText(experienceProfile?.evidence)
+
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
+}
+
+export const enrichJobFromDetailPage = (job, detailHtml = '') => {
+  const detailText = extractDetailText(detailHtml)
+  const experienceRequired = inferExperienceFromDescription(detailText) || job.experienceRequired || null
+
+  return {
+    ...job,
+    jobDescription: detailText || job.jobDescription || null,
+    experienceRequired,
+    publicExperienceChecked: Boolean(detailText),
+  }
+}
+
 export const createMobitechWirelessScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
     const homepageHtml = await fetchText(HOMEPAGE_URL)
@@ -234,8 +282,20 @@ export const createMobitechWirelessScraper = ({ now = () => new Date().toISOStri
 
     const careersHtml = await fetchText(CAREERS_URL)
     const jobs = extractPublicJobs(careersHtml)
+    const enrichedJobs = []
 
-    return jobs.map((job) => ({
+    for (const job of jobs) {
+      try {
+        enrichedJobs.push(enrichJobFromDetailPage(
+          job,
+          await fetchText(job.applyUrl || job.sourceUrl),
+        ))
+      } catch {
+        enrichedJobs.push(job)
+      }
+    }
+
+    return enrichedJobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl,
@@ -250,7 +310,7 @@ export const createMobitechWirelessScraper = ({ now = () => new Date().toISOStri
 export const run = async (options = {}) => createMobitechWirelessScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

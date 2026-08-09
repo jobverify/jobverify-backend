@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { CAPITAL_NUMBERS_INFOTECH_CATALOG } from './catalog.js'
 
@@ -25,10 +25,14 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .trim()
 
 export const hasOfficialCareersSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
   return normalized.includes('Stable, Rewarding Remote Work Opportunities from Capital Numbers')
     && normalized.includes('Build Your Career with Capital Numbers')
-    && normalized.includes('career@capitalnumbers.com')
+    && normalized.includes('See Current Openings')
+    && normalized.includes('Rated 4.2 out of 5 on Glassdoor')
+    && normalized.includes('Beware of Fake Job or Freelancing Offers')
+    && (normalized.includes('jobs@capitalnumbers.com') || /mailto:jobs@capitalnumbers\.com/i.test(rawHtml))
   }
 
 export const hasPublicJobListingSignal = (html = '') => {
@@ -66,7 +70,7 @@ export const createCapitalNumbersInfotechScraper = () => ({
 export const run = async (options = {}) => createCapitalNumbersInfotechScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

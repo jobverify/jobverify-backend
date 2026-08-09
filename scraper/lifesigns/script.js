@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -10,6 +10,16 @@ export const COMPANY = 'LifeSigns'
 export const HOMEPAGE_URL = 'https://www.lifesigns.us/'
 export const CAREERS_URL = 'https://www.lifesigns.us/careers/'
 export const EXPECTED_ROLE_CARDS = {
+  '/careers/junior-video-editor/': {
+    title: 'Junior Video Editor',
+    employmentType: 'Full-Time',
+    city: 'Chennai',
+  },
+  '/careers/junior-visual-designer/': {
+    title: 'Junior Visual Designer',
+    employmentType: 'Full-Time',
+    city: 'Chennai',
+  },
   '/careers/lead-network-engineer/': {
     title: 'Lead Network Engineer',
     employmentType: 'Full-Time',
@@ -34,6 +44,10 @@ export const EXPECTED_ROLE_CARDS = {
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const DEFAULT_HEADERS = {
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'User-Agent': USER_AGENT,
+}
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/[\u2018\u2019]/g, "'")
@@ -71,6 +85,67 @@ const buildJobId = (pathname) => {
     .at(-1)
 
   return slug ? `${SOURCE}-${slug}` : null
+}
+
+const buildRoleUrl = (pathname) => {
+  try {
+    return new URL(normalizePathname(pathname) || '', HOMEPAGE_URL).toString()
+  } catch {
+    return CAREERS_URL
+  }
+}
+
+const stripHtml = (value) => String(value ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+
+const extractHtmlTitle = (html = '') =>
+  normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
+
+const extractSnapshotLinks = (html = '') => [...String(html ?? '').matchAll(
+  /<a\b[^>]*href=(["'])(.*?)\1[^>]*>/gi,
+)]
+  .map((match) => normalizeWhitespace(match[2]))
+  .filter(Boolean)
+
+const extractSnapshotRoleCards = (html = '') => {
+  const seenPaths = new Set()
+  const roleCards = []
+
+  for (const match of String(html ?? '').matchAll(/<a\b[^>]*href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi)) {
+    const href = normalizeWhitespace(match[2])
+    const pathname = normalizePathname(href, CAREERS_URL)
+    if (!pathname || pathname === '/careers/' || !pathname.startsWith('/careers/') || seenPaths.has(pathname)) {
+      continue
+    }
+
+    const text = normalizeWhitespace(stripHtml(match[3]))
+    if (!text) continue
+
+    seenPaths.add(pathname)
+    roleCards.push({ href, text })
+  }
+
+  return roleCards
+}
+
+const defaultFetchPageSnapshot = async (url) => {
+  const response = await fetch(url, {
+    headers: DEFAULT_HEADERS,
+    redirect: 'follow',
+  })
+  const finalUrl = response.url || url
+  const html = await response.text()
+
+  return {
+    status: response.status,
+    url: finalUrl,
+    title: extractHtmlTitle(html),
+    text: normalizeWhitespace(stripHtml(html)),
+    links: extractSnapshotLinks(html),
+    roleCards: extractSnapshotRoleCards(html),
+  }
 }
 
 export const hasOfficialHomepageSignal = (snapshot = {}) => {
@@ -168,6 +243,7 @@ export const extractVerifiedOpenRoles = (snapshot) => {
   return expectedPaths.map((pathname) => {
     const expected = EXPECTED_ROLE_CARDS[pathname]
     const jobId = buildJobId(pathname)
+    const roleUrl = buildRoleUrl(pathname)
 
     if (!cardsByPath.has(pathname) || !jobId) {
       throw new Error(`LifeSigns missing verified opening "${pathname}"`)
@@ -182,8 +258,8 @@ export const extractVerifiedOpenRoles = (snapshot) => {
       country: 'India',
       jobId,
       requisitionId: jobId,
-      sourceUrl: CAREERS_URL,
-      applyUrl: CAREERS_URL,
+      sourceUrl: roleUrl,
+      applyUrl: roleUrl,
       employmentType: expected.employmentType,
       experienceRequired: null,
       minimumQualification: null,
@@ -196,116 +272,33 @@ export const extractVerifiedOpenRoles = (snapshot) => {
   })
 }
 
-const createBrowserSnapshotFetcher = async ({
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
-} = {}) => {
-  const browser = await launchBrowserImpl()
-
-  try {
-    const page = await createOptimizedPageImpl(browser)
-    await page.setUserAgent(USER_AGENT)
-
-    return {
-      close: async () => browser.close(),
-      fetchPageSnapshot: async (url) => {
-        const response = await page.goto(url, {
-          waitUntil: 'domcontentloaded',
-          timeout: 60000,
-        })
-
-        await page.waitForSelector('body', { timeout: 30000 })
-
-        if (url === CAREERS_URL) {
-          await page.waitForFunction(
-            () => Array.from(document.querySelectorAll('main a[href^="/careers/"]'))
-              .filter((anchor) => {
-                const href = anchor.getAttribute('href') || ''
-                return href.split('/').filter(Boolean).length > 1
-              })
-              .length >= 4,
-            { timeout: 30000 },
-          )
-        }
-
-        const snapshot = await page.evaluate(() => {
-          const normalize = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
-
-          return {
-            url: window.location.href,
-            title: document.title,
-            text: normalize(document.body?.innerText || ''),
-            links: Array.from(document.querySelectorAll('a[href]'))
-              .map((anchor) => anchor.getAttribute('href'))
-              .filter(Boolean),
-            roleCards: Array.from(document.querySelectorAll('main a[href^="/careers/"]'))
-              .map((anchor) => {
-                const href = anchor.getAttribute('href') || ''
-                if (href.split('/').filter(Boolean).length <= 1) {
-                  return null
-                }
-
-                return {
-                  href,
-                  text: normalize(anchor.textContent || ''),
-                }
-              })
-              .filter(Boolean),
-          }
-        })
-
-        return {
-          status: response?.status() ?? 0,
-          ...snapshot,
-        }
-      },
-    }
-  } catch (error) {
-    await browser.close()
-    throw error
-  }
-}
-
 export const createLifeSignsScraper = () => ({
-  async run({ fetchPageSnapshot } = {}) {
-    let browserContext = null
-
-    try {
-      if (!fetchPageSnapshot) {
-        browserContext = await createBrowserSnapshotFetcher()
-        fetchPageSnapshot = browserContext.fetchPageSnapshot
-      }
-
-      const homepageSnapshot = await fetchPageSnapshot(HOMEPAGE_URL)
-      if (!hasOfficialHomepageSignal(homepageSnapshot)) {
-        throw new Error('LifeSigns homepage no longer matches the verified official public surface')
-      }
-
-      const careersSnapshot = await fetchPageSnapshot(CAREERS_URL)
-      const jobs = extractVerifiedOpenRoles(careersSnapshot)
-      const scrapedAt = new Date().toISOString()
-
-      return jobs.map((job) => ({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl,
-        scrapedAt,
-        companyCareerPage: CAREERS_URL,
-        companyDomain: 'lifesigns.us',
-        atsPlatform: 'official-company-careers',
-      }))
-    } finally {
-      if (browserContext) {
-        await browserContext.close()
-      }
+  async run({ fetchPageSnapshot = defaultFetchPageSnapshot } = {}) {
+    const homepageSnapshot = await fetchPageSnapshot(HOMEPAGE_URL)
+    if (!hasOfficialHomepageSignal(homepageSnapshot)) {
+      throw new Error('LifeSigns homepage no longer matches the verified official public surface')
     }
+
+    const careersSnapshot = await fetchPageSnapshot(CAREERS_URL)
+    const jobs = extractVerifiedOpenRoles(careersSnapshot)
+    const scrapedAt = new Date().toISOString()
+
+    return jobs.map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.applyUrl,
+      scrapedAt,
+      companyCareerPage: CAREERS_URL,
+      companyDomain: 'lifesigns.us',
+      atsPlatform: 'official-company-careers',
+    }))
   },
 })
 
 export const run = async (options = {}) => createLifeSignsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

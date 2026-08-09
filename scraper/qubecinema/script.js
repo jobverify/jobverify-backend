@@ -1,8 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -31,6 +32,7 @@ const normalizeWhitespace = (value) => {
     .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
     .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
     .replace(/&#8211;|&ndash;|&#8212;|&mdash;/gi, '-')
+    .replace(/[\u2013\u2014]/g, '-')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -39,6 +41,11 @@ const normalizeWhitespace = (value) => {
 }
 
 const decodeHtml = (value) => normalizeWhitespace(value) || ''
+
+const extractFirst = (pattern, value, transform = (match) => match[1]) => {
+  const match = pattern.exec(String(value ?? ''))
+  return match ? transform(match) : null
+}
 
 const extractTitle = (html) => normalizeWhitespace(
   String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1],
@@ -123,6 +130,17 @@ export const hasVerifiedBoardSignal = (html) => {
     && /qube cinema/i.test(text)
 }
 
+export const hasVerifiedJobDetailSignal = (html, listing = {}) => {
+  const page = String(html ?? '')
+  const title = extractTitle(page)
+  const expectedTitle = normalizeWhitespace(listing?.title)
+
+  return title?.endsWith(' - Career Page')
+    && (!expectedTitle || title.startsWith(expectedTitle))
+    && /id=["']job-description["']/i.test(page)
+    && /Apply/i.test(page)
+}
+
 export const extractBoardJobs = (html) => {
   const seen = new Set()
   const jobs = []
@@ -173,6 +191,77 @@ export const extractBoardJobs = (html) => {
   return jobs
 }
 
+const extractDetailRequiredSkills = (descriptionHtml) => [...String(descriptionHtml ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
+  .map((match) => normalizeWhitespace(match[1]))
+  .filter(Boolean)
+
+const normalizeExperienceEvidence = (value) => normalizeWhitespace(value)
+  ?.replace(/\bYears\b/g, 'years')
+  .replace(/\bYear\b/g, 'year')
+  || null
+
+const extractDirectExperienceLabel = (value) => normalizeExperienceEvidence(
+  extractFirst(
+    /\bExperience\s*:\s*(\d+(?:\s*(?:-|to)\s*\d+)?\s*(?:\+)?\s*(?:Years?|Year|Months?|Month))\b/i,
+    value,
+  ),
+)
+
+const extractExperienceRequired = ({ title, jobDescription }) => (
+  extractDirectExperienceLabel(jobDescription)
+  || normalizeExperienceEvidence(extractJobFilterSignals({
+    title,
+    jobDescription,
+    experienceRequired: null,
+  }).experienceProfile?.evidence)
+)
+
+export const extractJobDetail = (html, listing = {}) => {
+  if (!hasVerifiedJobDetailSignal(html, listing)) {
+    throw new Error('The verified Qube ApplyToJob detail page no longer matches the expected public surface')
+  }
+
+  const title = extractFirst(/<h2>\s*([\s\S]*?)\s*<\/h2>/i, html, (match) => normalizeWhitespace(match[1]))
+    || listing.title
+    || null
+  const location = normalizeLocation(
+    extractFirst(/title=["']Location["'][^>]*>[\s\S]*?<\/i>\s*([^<]+?)\s*<\/div>/i, html, (match) => normalizeWhitespace(match[1])),
+  ) || listing.location || null
+  const employmentType = extractFirst(
+    /id=['"]resumator-job-employment['"][^>]*>[\s\S]*?<\/i>\s*([^<]+?)\s*<\/div>/i,
+    html,
+    (match) => normalizeWhitespace(match[1]),
+  )
+  const descriptionHtml = extractFirst(
+    /<div class=['"]col col-xs-7 description['"] id=["']job-description["']>\s*([\s\S]*?)\s*<\/div>/i,
+    html,
+  )
+  const jobDescription = normalizeWhitespace(descriptionHtml)
+  const requiredSkills = extractDetailRequiredSkills(descriptionHtml)
+
+  return {
+    title,
+    company: COMPANY,
+    department: listing.department || null,
+    location,
+    city: getCity(location),
+    country: listing.country || 'India',
+    jobId: listing.jobId || extractJobId(listing.applyUrl || listing.sourceUrl),
+    requisitionId: listing.requisitionId || listing.jobId || extractJobId(listing.applyUrl || listing.sourceUrl),
+    sourceUrl: listing.sourceUrl || listing.applyUrl || null,
+    applyUrl: listing.applyUrl || listing.sourceUrl || null,
+    employmentType,
+    experienceRequired: extractExperienceRequired({ title, jobDescription }),
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills,
+    postingDate: null,
+    closingDate: null,
+    jobDescription,
+    remoteStatus: listing.remoteStatus || getRemoteStatus(location),
+  }
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -200,20 +289,28 @@ export const createQubeCinemaScraper = ({
 
     const jobs = extractBoardJobs(boardHtml)
     const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const enrichedJobs = []
 
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
+    for (const job of selectedJobs) {
+      const detailHtml = await fetchText(job.sourceUrl)
+      const detail = extractJobDetail(detailHtml, job)
+
+      enrichedJobs.push({
+        ...detail,
+        source: SOURCE,
+        link: detail.applyUrl || detail.sourceUrl,
+        scrapedAt: new Date().toISOString(),
+      })
+    }
+
+    return enrichedJobs
   },
 })
 
 export const run = async (options = {}) => createQubeCinemaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Qube Cinema scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

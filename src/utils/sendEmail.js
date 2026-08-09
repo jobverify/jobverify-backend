@@ -61,10 +61,10 @@ const sendEmail = async (to, subject, htmlContent, successLabel) => {
 // Sends a verification email containing a registration magic link.
 export const sendVerificationEmail = async (to, magicLink) => sendEmail(
   to,
-  "Verify your Jobify account",
+  "Verify your Jobverify account",
   `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-      <h2 style="color: #1e293b;">Welcome to Jobify!</h2>
+      <h2 style="color: #1e293b;">Welcome to Jobverify!</h2>
       <p style="color: #475569; font-size: 16px; line-height: 1.5;">
         Thank you for signing up. Please click the button below to verify your email address and access your account. This link is valid for 30 minutes.
       </p>
@@ -91,10 +91,10 @@ export const sendVerificationEmail = async (to, magicLink) => sendEmail(
 // Sends a password reset email containing a time-limited reset link.
 export const sendPasswordResetEmail = async (to, resetLink) => sendEmail(
   to,
-  "Reset your Jobify password",
+  "Reset your Jobverify password",
   `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-      <h2 style="color: #1e293b;">Reset your Jobify password</h2>
+      <h2 style="color: #1e293b;">Reset your Jobverify password</h2>
       <p style="color: #475569; font-size: 16px; line-height: 1.5;">
         We received a request to reset your password. Click the button below to choose a new password. This link is valid for 30 minutes.
       </p>

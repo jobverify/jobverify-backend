@@ -72,9 +72,13 @@ export const pageExposesPublicJobListings = (html = '') =>
 
 export const hasVerifiedBrokenParentShellSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
-
-  return normalized.includes('Oops! Something went wrong')
+  const hasBrokenShell = normalized.includes('Oops! Something went wrong')
     && normalized.includes('Please contact your administrator')
+  const hasCurrentMyntraHomepageShell = normalized.includes('Online Shopping for Women, Men, Kids Fashion & Lifestyle - Myntra')
+    && normalized.includes('Topwear')
+    && normalized.includes('Indian & Festive Wear')
+
+  return (hasBrokenShell || hasCurrentMyntraHomepageShell)
     && !pageExposesPublicJobListings(html)
 }
 
@@ -103,7 +107,7 @@ export const createJabongScraper = () => ({
 export const run = async (options = {}) => createJabongScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

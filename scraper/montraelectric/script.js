@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -96,9 +96,15 @@ const parseLocation = (value) => {
 
 const parseCard = (cardHtml, index) => {
   const title = stripTags(cardHtml.match(/<h3\b[^>]*>([\s\S]*?)<\/h3>/i)?.[1])
-  const paragraphTexts = [...cardHtml.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
-    .map((match) => stripTags(match[1]))
-    .filter(Boolean)
+  const cardText = stripTags(cardHtml) || ''
+  const groupedMetaMatch = cardText.match(
+    /Designation:\s*(.*?)\s+Experience:\s*(.*?)\s+Function:\s*(.*?)\s+Location:\s*(.*)$/i,
+  )
+  const paragraphTexts = groupedMetaMatch
+    ? []
+    : [...cardHtml.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+      .map((match) => stripTags(match[1]))
+      .filter(Boolean)
 
   const valueFor = (label) => {
     const prefix = `${label}:`
@@ -107,10 +113,10 @@ const parseCard = (cardHtml, index) => {
     )
   }
 
-  const designationText = valueFor('Designation')
-  const experienceText = valueFor('Experience')
-  const functionText = valueFor('Function')
-  const locationText = valueFor('Location')
+  const designationText = normalizeWhitespace(groupedMetaMatch?.[1]) || valueFor('Designation')
+  const experienceText = normalizeWhitespace(groupedMetaMatch?.[2]) || valueFor('Experience')
+  const functionText = normalizeWhitespace(groupedMetaMatch?.[3]) || valueFor('Function')
+  const locationText = normalizeWhitespace(groupedMetaMatch?.[4]) || valueFor('Location')
   const applyUrl = absoluteUrl(
     cardHtml.match(/<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*Apply Now\s*<\/a>/i)?.[1],
   )
@@ -159,10 +165,11 @@ export const hasOfficialHomepageSignal = (html) => {
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
+  const text = stripTags(page) || ''
 
   return /EV Careers at Montra Electric/i.test(page)
-    && /Current Openings/i.test(page)
-    && /Join Montra Electric/i.test(page)
+    && /Current Openings/i.test(text)
+    && /Join Montra Electric/i.test(text)
 }
 
 export const extractPublicListings = (html) => {
@@ -220,7 +227,7 @@ export const createMontraElectricScraper = () => ({
 export const run = async (options = {}) => createMontraElectricScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

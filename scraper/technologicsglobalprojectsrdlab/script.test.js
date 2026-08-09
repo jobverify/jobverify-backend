@@ -31,6 +31,28 @@ const homepageHtml = `
 </html>
 `
 
+const homepageHtmlWithCareersNav = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>No.1 PLC SCADA Training Institute In Bangalore</title>
+  </head>
+  <body>
+    <nav>
+      <a href="https://technologics.in/about-us/">About us</a>
+      <a href="https://technologics.in/careers">Careers</a>
+      <a href="https://technologics.in/lab/">R&amp;D Lab</a>
+      <a href="https://technologics.in/contact-enquire/">Contact us</a>
+    </nav>
+    <main>
+      <img src="https://technologics.in/wp-content/uploads/2020/10/TECHNOLOGICS-LOGO.png" alt="TECHNOLOGICS">
+      <p>For Immediate Assistance Call Us +919738171920</p>
+      <p>Best PLC SCADA Training</p>
+    </main>
+  </body>
+</html>
+`
+
 const jobsPageHtml = `
 <!doctype html>
 <html lang="en-US">
@@ -120,6 +142,7 @@ test('Technologics scraper pins the verified first-party public surface from 202
   assert.equal(technologics.JOBS_PAGE_URL, 'https://technologics.in/jobs/')
   assert.equal(technologics.PAGE_SITEMAP_URL, 'https://technologics.in/page-sitemap.xml')
   assert.equal(technologics.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(technologics.hasOfficialHomepageSignal(homepageHtmlWithCareersNav), true)
   assert.equal(technologics.hasOfficialJobsPageSignal(jobsPageHtml), true)
   assert.deepEqual(technologics.extractCandidateJobUrls(pageSitemapXml), [
     'https://technologics.in/job-description/',

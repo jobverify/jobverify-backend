@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -145,6 +145,16 @@ export const hasOfficialCareersSignal = (html) => {
     && extractGreenhouseJobsApiUrl(page) === GREENHOUSE_JOBS_API_URL
 }
 
+export const hasOfficialGreenhouseBoardSignal = (html) => {
+  const page = String(html ?? '')
+  const text = stripTags(page) || ''
+
+  return /<title[^>]*>\s*Jobs at Couchbase,\s*Inc\.\s*<\/title>/i.test(page)
+    && /meta[^>]+property=["']og:title["'][^>]+content=["']Couchbase,\s*Inc\.["']/i.test(page)
+    && /job-boards\.greenhouse\.io\/couchbaseinc/i.test(page)
+    && /Current openings at Couchbase,\s*Inc\./i.test(text)
+}
+
 export const extractGreenhouseJobsApiUrl = (html) => {
   const match = String(html ?? '').match(
     /data-api-url=["'](https:\/\/boards-api\.greenhouse\.io\/v1\/boards\/couchbaseinc\/jobs)["']/i,
@@ -269,18 +279,28 @@ export const createCouchbaseScraper = ({
     fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    let careersHtml = null
 
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Couchbase careers page no longer matches the verified official careers surface')
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch {
+      careersHtml = null
     }
 
-    if (extractGreenhouseJobsApiUrl(careersHtml) !== GREENHOUSE_JOBS_API_URL) {
-      throw new Error('Couchbase careers page no longer exposes the verified inline Greenhouse jobs API')
-    }
+    if (hasOfficialCareersSignal(careersHtml)) {
+      if (extractGreenhouseJobsApiUrl(careersHtml) !== GREENHOUSE_JOBS_API_URL) {
+        throw new Error('Couchbase careers page no longer exposes the verified inline Greenhouse jobs API')
+      }
 
-    if (extractOpenPositionsBucketId(careersHtml) !== OPEN_POSITIONS_BUCKET_ID) {
-      throw new Error('Couchbase careers page no longer exposes the verified open-positions widget contract')
+      if (extractOpenPositionsBucketId(careersHtml) !== OPEN_POSITIONS_BUCKET_ID) {
+        throw new Error('Couchbase careers page no longer exposes the verified open-positions widget contract')
+      }
+    } else {
+      const greenhouseBoardHtml = await fetchText(GREENHOUSE_BOARD_URL)
+
+      if (!hasOfficialGreenhouseBoardSignal(greenhouseBoardHtml)) {
+        throw new Error('Couchbase public Greenhouse board no longer matches the verified company hiring surface')
+      }
     }
 
     const jobs = extractIndiaJobsFromGreenhousePayload(
@@ -295,7 +315,7 @@ export const createCouchbaseScraper = ({
 export const run = async (options = {}) => createCouchbaseScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

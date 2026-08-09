@@ -20,6 +20,7 @@ export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
   'https://www.ipopi.in/work-with-us',
   'https://www.ipopi.in/join-us',
 ]
+export const VERIFIED_ON = '2026-08-07'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -87,7 +88,10 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return /<title>\s*Leading Digital Marketing Agency in Mysore & Bangalore \| Expert SEO & Social Media Marketing\s*<\/title>/i.test(page)
     && normalized.includes('#1 digital marketing company')
-    && normalized.includes('sales@ipop.in')
+    && (
+      normalized.includes('sales@ipopi.in')
+      || normalized.includes('sales@ipop.in')
+    )
     && normalized.includes('padmanabhanagar, bangalore, karnataka 560070')
     && /ipopi\s+ads\.\s+all rights reserved\./i.test(page)
 }
@@ -102,21 +106,25 @@ export const hasOfficialPrivacySignal = (html) => {
 }
 
 export const hasOfficialTermsSignal = (html) => {
-  const normalized = normalizeWhitespace(html)
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
 
-  return /\bTerms and Conditions\b/i.test(normalized)
-    && /refers to Ipopi Ads/i.test(normalized)
-    && /accessible from https:\/\/www\.ipopi\.in\//i.test(normalized)
-    && /info@ipopi\.in/i.test(normalized)
+  return /<title>\s*Terms and Conditions\s*-\s*Ipopi Ads\s*<\/title>/i.test(page)
+    && /\bTerms and Conditions\b/i.test(normalized)
+    && /Last updated:\s*June 13,\s*2024/i.test(normalized)
+    && /Company .* refers to Ipopi Ads/i.test(normalized)
+    && /Country refers to:\s*Kerala,\s*India/i.test(normalized)
+    && /Mysuru,\s*Karnataka\s*570017/i.test(normalized)
 }
 
 export const hasOfficialBlogSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
 
-  return /<title>\s*Ipopi Ads Blog\s*<\/title>/i.test(page)
+  return /<title>\s*Ipopi Ads Blog(?:\s*-\s*)?\s*<\/title>/i.test(page)
     && normalized.includes('ipopi ads blog')
-    && normalized.includes('digital marketing insights')
+    && normalized.includes('latest posts')
+    && normalized.includes('digital marketing')
 }
 
 export const hasPublicJobsSignal = (html) =>
@@ -134,8 +142,7 @@ export const sitemapHasCareerLikeUrl = (xml) => {
 
 export const isVerifiedMissingCareerRoute = (page = {}) =>
   Number(page?.status) === 404
-  && /<title>\s*404 Not Found\s*<\/title>/i.test(String(page?.html ?? ''))
-  && /\b404 Not Found\b/i.test(normalizeWhitespace(page?.html))
+  && /\b404 Not Found\b/i.test(String(page?.html ?? ''))
   && !hasPublicJobsSignal(page?.html)
 
 const hasVerifiedLegacyDomainBridge = (page = {}) =>
@@ -205,7 +212,7 @@ export const createIpopiAdsScraper = () => ({
 export const run = async (options = {}) => createIpopiAdsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -12,8 +12,12 @@ const loadModule = async () => {
 const homepageHtml = `
   <!doctype html>
   <html lang="en">
+    <head>
+      <title>Get Pure Water Filters Online | Best RO UV Purifiers - ZeroB</title>
+    </head>
     <body>
       <main>
+        <p>#BharatKaPaani</p>
         <h1>Multiple Options, One Destination</h1>
         <h2>India Grew up on ZeroB Purity, Quite Literally!</h2>
         <p>Our product range is vibrant mix, thoughtfully crafted to suit your unique needs.</p>
@@ -47,6 +51,9 @@ const storyHtml = `
 const careersHtml = `
   <!doctype html>
   <html lang="en">
+    <head>
+      <title>Careers - Ion Exchange</title>
+    </head>
     <body>
       <main>
         <h1>Careers</h1>
@@ -54,7 +61,7 @@ const careersHtml = `
         <p>Join Us!</p>
         <p>For over six decades, it has been our mission to conserve our planet’s most precious resource – WATER, through our 360° Water and Environment Management Solutions and we need you!</p>
         <p>At Ion Exchange, you will get a chance to work on numerous exciting yet challenging projects.</p>
-        <a href="https://careers.ionindia.com">Explore jobs</a>
+        <a href="https://careers.ionindia.com/jobs">Explore jobs</a>
         <p>Drop Your Resume Here</p>
         <p>recruit@ionexchange.co.in</p>
       </main>
@@ -74,7 +81,7 @@ test('ION EXCHANGE ZERO B sentinel validates the verified ZeroB homepage, story 
   assert.equal(ionexchangezerob.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(ionexchangezerob.hasOfficialStorySignal(storyHtml), true)
   assert.equal(ionexchangezerob.hasOfficialCareersSignal(careersHtml), true)
-  assert.equal(ionexchangezerob.extractOutboundCareersUrl(careersHtml), 'https://careers.ionindia.com/')
+  assert.equal(ionexchangezerob.extractOutboundCareersUrl(careersHtml), 'https://careers.ionindia.com/jobs')
   assert.equal(ionexchangezerob.extractEmailApplyHandoff(careersHtml), 'recruit@ionexchange.co.in')
   assert.equal(ionexchangezerob.hasPublicJobListingSignal(careersHtml), false)
 })

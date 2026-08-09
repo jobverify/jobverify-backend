@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import GROUPON_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -61,6 +61,8 @@ const stripTags = (value) =>
       .replace(/<(p|div|li|ul|ol|h[1-6]|section)\b[^>]*>/gi, '\n')
       .replace(/<[^>]+>/g, ' '),
   )
+
+const normalizeVisibleText = (value) => stripTags(value)?.toLowerCase() || ''
 
 const normalizeDate = (value) => {
   const normalized = normalizeWhitespace(value)
@@ -149,20 +151,26 @@ const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
 export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?content=true`
 
 export const extractOfficialBoardUrl = (html = '') => {
-  const match = String(html ?? '').match(
-    /<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*Apply now and join the Groupon team!\s*<\/a>/i,
-  )
+  const page = String(html ?? '')
 
-  return toAbsoluteUrl(match?.[1], CAREERS_URL)
+  for (const match of page.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    if (normalizeVisibleText(match[2]) === 'apply now and join the groupon team!') {
+      return toAbsoluteUrl(match[1], CAREERS_URL)
+    }
+  }
+
+  return null
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
+  const text = normalizeVisibleText(page)
 
   return /<title>\s*Why Groupon\s*<\/title>/i.test(page)
-    && /Meaningful Work\. Happy Teams\. Great Deals\./i.test(page)
-    && /Bangalore and Chennai/i.test(page)
-    && /Apply now and join the Groupon team!/i.test(page)
+    && text.includes('our mission')
+    && text.includes('our teams')
+    && text.includes('bangalore and chennai')
+    && text.includes('apply now and join the groupon team!')
     && extractOfficialBoardUrl(page) === BOARD_URL
 }
 
@@ -304,7 +312,7 @@ export const createGrouponScraper = ({
 export const run = async (options = {}) => createGrouponScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

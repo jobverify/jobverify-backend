@@ -18,12 +18,12 @@ const normalizeStringList = (value) => {
   )].slice(0, MAX_PROFILE_ITEMS);
 };
 
-const normalizeNumericList = (value) => {
+const normalizeDatePostedList = (value) => {
   const list = Array.isArray(value) ? value : String(value ?? "").split(",");
   return [...new Set(
     list
-      .map((item) => Number.parseInt(String(item ?? "").trim(), 10))
-      .filter(Number.isInteger),
+      .map((item) => String(item ?? "").trim().toLowerCase())
+      .filter((item) => item === "na" || (/^\d+$/u.test(item) && Number(item) >= 0 && Number(item) <= 30)),
   )].slice(0, MAX_PROFILE_ITEMS);
 };
 
@@ -39,7 +39,7 @@ export function normalizeProfilePreferenceFilters(input = {}) {
     experienceYear: String(input.experienceYear ?? "").trim(),
     roleDomain: normalizeStringList(input.roleDomain),
     workArrangement: normalizeStringList(input.workArrangement),
-    datePostedDays: normalizeNumericList(input.datePostedDays),
+    datePostedDays: normalizeDatePostedList(input.datePostedDays),
     sortBy,
   };
 }

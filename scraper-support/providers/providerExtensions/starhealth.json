@@ -1,0 +1,21 @@
+{
+  "source": "starhealth",
+  "companyName": "Star Health",
+  "officialBrandName": "Star Health",
+  "adapter": "script",
+  "modulePath": "../starhealth/script.js",
+  "dryRunFile": "starhealth/jobs.json",
+  "companyCareerPage": "https://www.starhealth.in/careers/",
+  "companyDomain": "starhealth.in",
+  "atsPlatform": "official-first-party-careers-shell-no-enumerable-public-listings",
+  "countryFilter": "India",
+  "paginationStrategy": "first-party-careers-shell-validation",
+  "extractionStrategy": "verified-first-party-careers-shell+no-enumerable-public-openings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.starhealth.in/careers/",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.starhealth.in/careers/ was Star Health's live first-party careers shell. The public page exposed Careers and Explore job opportunities content but no trustworthy enumerable India job cards, no public role-detail URLs, and no stable ATS handoff, so this exact-name provider fails closed and returns no jobs until the official surface publishes public openings."
+}

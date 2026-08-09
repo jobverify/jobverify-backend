@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { withRetry } from '../utils/retry.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
 
 import { CELKON_CATALOG } from './catalog.js'
 
@@ -62,7 +62,7 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
-  .replace(/&#39;|&apos;|&rsquo;|&lsquo;|&#x27;/gi, "'")
+  .replace(/&#0*39;|&apos;|&rsquo;|&lsquo;|&#x27;/gi, "'")
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/&#8211;|&ndash;/gi, '-')
   .replace(/[\u2018\u2019]/g, "'")
@@ -165,8 +165,11 @@ export const hasOfficialAboutSignal = (html) => {
 
   return /^About Us\s*-\s*Celkon Group$/i.test(extractTitle(rawHtml))
     && normalized.includes('why we are the best')
-    && normalized.includes("celkon began it's journey in 2009")
-    && normalized.includes('today, celkon stands as the no.1 supplier of mobile phones, tablets, and interactive flat panel displays for government initiatives in india.')
+    && (
+      normalized.includes("celkon began it's journey in 2009")
+      || normalized.includes('at celkon group, we combine innovation, engineering excellence, and large-scale manufacturing to deliver world-class electronic solutions')
+    )
+    && normalized.includes('today, celkon stands as the no.1 supplier of mobile phones, tablets, and interactive flat panel displays for government initiatives in india')
 }
 
 export const hasOfficialContactSignal = (html) => {
@@ -273,7 +276,7 @@ export const createCelkonScraper = () => ({
 export const run = async (options = {}) => createCelkonScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

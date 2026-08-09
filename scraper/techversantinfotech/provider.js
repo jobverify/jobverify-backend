@@ -1,9 +1,9 @@
-export const provider = {
+﻿export const provider = {
   source: 'techversantinfotech',
   companyName: 'Techversant Infotech',
   officialBrandName: 'Techversant Infotech',
   adapter: 'script',
-  modulePath: '../techversantinfotech/script.js',
+  modulePath: '../../scraper/techversantinfotech/script.js',
   homepageUrl: 'https://techversantinfotech.com/',
   companyCareerPage: 'https://techversantinfotech.com/jobs/',
   atsPlatform: 'wordpress-job-openings',
@@ -20,3 +20,4 @@ export const provider = {
 }
 
 export default provider
+

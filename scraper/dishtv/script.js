@@ -161,9 +161,8 @@ export const hasOfficialHomepageSignal = (page) => {
     && finalUrl === normalizeUrl(HOMEPAGE_URL)
     && extractTitle(rawHtml) === 'DishTV Recharge Online & New DTH Connection'
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.dishtv\.in\/["']/i.test(rawHtml)
-    && /href=["']\/careers\.html["']/i.test(rawHtml)
     && normalized.includes('Snack on the content you love.')
-    && normalized.includes('Careers')
+    && normalized.includes('All day, every day.')
 }
 
 export const sitemapIncludesCareersPage = (xml = '') =>
@@ -321,7 +320,7 @@ export const createDishTvScraper = ({
 export const run = async (options = {}) => createDishTvScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

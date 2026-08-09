@@ -11,13 +11,19 @@ export const AIG_BUSINESS_SOLUTION_CATALOG = {
   homepageUrl: 'https://aighealthcare.in/careers',
   companyCareerPage: 'https://aighealthcare.in/openings',
   companyDomain: 'aighealthcare.in',
-  atsPlatform: 'first-party-openings-page-with-same-domain-job-assets',
+  officialJobsHandoffUrl: 'https://eiyi.fa.ap1.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_3001',
+  oracleCandidateExperienceUrl: 'https://eiyi.fa.ap1.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_3001',
+  workspaceDomain: 'eiyi.fa.ap1.oraclecloud.com',
+  listingApiBaseUrl: 'https://eiyi.fa.ap1.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitions',
+  publicJobsBaseUrl: 'https://eiyi.fa.ap1.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_3001/job/',
+  siteNumber: 'CX_3001',
+  atsPlatform: 'oracle-cloud',
   countryFilter: 'India',
-  paginationStrategy: 'single-first-party-openings-page',
-  extractionStrategy: 'verified-careers-shell+verified-openings-page+same-domain-opening-links',
-  verifiedOn: '2026-07-18',
+  paginationStrategy: 'oracle-finder-api-offset-query',
+  extractionStrategy: 'verified-careers-shell+verified-openings-page+oracle-candidate-experience+finder-api',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://aighealthcare.in/careers linked to the first-party openings page at https://aighealthcare.in/openings and that the openings page included Join the rightful revolution, Join AIG Healthcare, Welcome to IKS Health, and visible same-domain opening assets such as Customer Service Representative.',
+    'Verified on Saturday, August 1, 2026 that https://aighealthcare.in/careers still links to the first-party openings page at https://aighealthcare.in/openings, that the openings page still includes Welcome to IKS Health and now hands applicants to the public Oracle Candidate Experience shell at https://eiyi.fa.ap1.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_3001, and that the live India finder exposed eight public roles including Business Analyst in Hyderabad, Telangana, India.',
 }
 
 export default AIG_BUSINESS_SOLUTION_CATALOG

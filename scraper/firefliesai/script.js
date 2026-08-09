@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 import { FIREFLIES_AI_CATALOG } from './catalog.js'
 
@@ -58,7 +58,7 @@ query JobBoardList($boardId: String!) {
     value
     count
   }
-  jobBoardExternal(boardId: $boardId) {
+  jobBoardExternal(vanityUrlPath: $boardId) {
     id
     teamDisplayName
     descriptionHtml
@@ -189,12 +189,13 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialGemBoardSignal = (page = {}) => {
   const rawHtml = String(page.html ?? '')
   const normalized = normalizeWhitespace(rawHtml).toLowerCase()
+  const currentBundlePattern = /https:\/\/static\.gem\.com\/scripts\/jobBoards\.[A-Za-z0-9_-]+\.v2\.min\.js/i
 
   return Number(page.status) === 200
     && normalizeUrl(page.url) === GEM_BOARD_URL
     && normalized.includes('fireflies careers')
     && rawHtml.includes(GEM_BOARD_TRACKING_ID)
-    && rawHtml.includes(GEM_BOARD_BUNDLE_URL)
+    && currentBundlePattern.test(rawHtml)
 }
 
 const hasValidPosting = (posting) =>
@@ -430,7 +431,7 @@ export const createFirefliesAiScraper = ({ now = () => new Date().toISOString() 
 export const run = async (options = {}) => createFirefliesAiScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

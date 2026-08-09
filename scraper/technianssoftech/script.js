@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { TECHNIANS_SOFTECH_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -13,7 +13,7 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const SHARED_LOCATION = 'Gurgaon / Mumbai / Bengaluru, India'
 
 const normalizeWhitespace = (value) => String(value ?? '')
@@ -32,6 +32,15 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 20000,
 })
+
+export const hasConnectTimeoutFailure = (error) => {
+  const code = String(error?.cause?.code ?? error?.code ?? '')
+  const message = String(error?.cause?.message ?? error?.message ?? error ?? '')
+
+  return code === 'UND_ERR_CONNECT_TIMEOUT'
+    || /\bconnect timeout\b/i.test(message)
+    || /\btimeout\b/i.test(message)
+}
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
@@ -55,38 +64,67 @@ export const extractRoleOptions = (html = '') => {
 
 export const run = async ({
   fetchText = defaultFetchText,
+  fetchBrowserText,
   now = () => new Date().toISOString(),
 } = {}) => {
-  const careersHtml = await fetchText(CAREERS_URL)
+  try {
+    let careersHtml
 
-  if (!hasOfficialCareersSignal(careersHtml)) {
-    throw new Error('Technians Softech verified Nians openings page changed materially')
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (!fetchBrowserText || !hasConnectTimeoutFailure(error)) {
+        throw error
+      }
+
+      careersHtml = await fetchBrowserText(CAREERS_URL)
+    }
+
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Technians Softech verified Nians openings page changed materially')
+    }
+
+    const roles = extractRoleOptions(careersHtml)
+    if (roles.length === 0) {
+      throw new Error('Technians Softech verified Nians openings page no longer exposes trusted role options')
+    }
+
+    return roles.map((title) => ({
+      title,
+      company: COMPANY,
+      source: SOURCE,
+      sourceUrl: CAREERS_URL,
+      applyUrl: CAREERS_URL,
+      link: CAREERS_URL,
+      location: SHARED_LOCATION,
+      country: 'India',
+      remoteStatus: 'On-site',
+      companyCareerPage: CAREERS_URL,
+      companyDomain: PROVIDER_METADATA.companyDomain,
+      atsPlatform: PROVIDER_METADATA.atsPlatform,
+      scrapedAt: now(),
+    }))
+  } catch (error) {
+    if (hasConnectTimeoutFailure(error)) {
+      return []
+    }
+
+    throw error
   }
-
-  const roles = extractRoleOptions(careersHtml)
-  if (roles.length === 0) {
-    throw new Error('Technians Softech verified Nians openings page no longer exposes trusted role options')
-  }
-
-  return roles.map((title) => ({
-    title,
-    company: COMPANY,
-    source: SOURCE,
-    sourceUrl: CAREERS_URL,
-    applyUrl: CAREERS_URL,
-    link: CAREERS_URL,
-    location: SHARED_LOCATION,
-    country: 'India',
-    remoteStatus: 'On-site',
-    companyCareerPage: CAREERS_URL,
-    companyDomain: PROVIDER_METADATA.companyDomain,
-    atsPlatform: PROVIDER_METADATA.atsPlatform,
-    scrapedAt: now(),
-  }))
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+const isDirectExecution = (() => {
+  if (!process.argv[1]) return false
+
+  try {
+    return path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+  } catch {
+    return false
+  }
+})()
+
+if (isDirectExecution) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

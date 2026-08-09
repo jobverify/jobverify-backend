@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -111,7 +111,7 @@ export const extractListings = (html) => extractJobBlocks(html).flatMap((block) 
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; JobifyScraper/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyScraper/1.0)',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
   })
@@ -147,7 +147,7 @@ export const createAxisEnergyScraper = ({
 export const run = async () => createAxisEnergyScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Axis Energy scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

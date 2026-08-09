@@ -1,8 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -131,6 +132,19 @@ const joinDescriptionParts = (...parts) => normalizeWhitespace(
     .join(' '),
 )
 
+const extractExperienceRequired = ({
+  title,
+  minimumQualification,
+  jobDescription,
+}) => (
+  extractJobFilterSignals({
+    title,
+    minimumQualification,
+    jobDescription,
+    experienceRequired: null,
+  }).experienceProfile?.evidence || null
+)
+
 const getRequisitionList = (payload) => {
   if (Array.isArray(payload?.items)) {
     return payload.items.flatMap((item) => Array.isArray(item?.requisitionList) ? item.requisitionList : [])
@@ -191,9 +205,12 @@ const toListing = (record = {}) => {
   const jobId = normalizeWhitespace(record.Id)
   const location = getEffectiveLocation(record)
   const sourceUrl = jobId ? buildJobDetailUrl(jobId) : null
+  const title = normalizeWhitespace(record.Title)
+  const minimumQualification = normalizeWhitespace(record.StudyLevel || record.ExternalQualificationsStr)
+  const jobDescription = joinDescriptionParts(record.ShortDescriptionStr, record.ExternalResponsibilitiesStr)
 
   return {
-    title: normalizeWhitespace(record.Title),
+    title,
     company: COMPANY_NAME,
     department: normalizeWhitespace(record.JobFunction || record.Department || record.Category || record.JobFamily),
     location,
@@ -204,13 +221,17 @@ const toListing = (record = {}) => {
     sourceUrl,
     applyUrl: sourceUrl,
     employmentType: getEmploymentType(record),
-    experienceRequired: null,
-    minimumQualification: null,
+    experienceRequired: extractExperienceRequired({
+      title,
+      minimumQualification,
+      jobDescription,
+    }),
+    minimumQualification,
     preferredQualification: null,
     requiredSkills: [],
     postingDate: normalizeDate(record.ExternalPostedStartDate || record.PostedDate),
     closingDate: normalizeDate(record.ExternalPostedEndDate || record.PostingEndDate),
-    jobDescription: joinDescriptionParts(record.ShortDescriptionStr, record.ExternalResponsibilitiesStr),
+    jobDescription,
     remoteStatus: normalizeRemoteStatus(record.WorkplaceType),
     siteNumber: SITE_NUMBER,
   }
@@ -220,19 +241,26 @@ export const hasOfficialCorporateCareersSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
 
-  return /<title>\s*DP World Careers & Jobs \| DP World Recruitment \| DP World\s*<\/title>/i.test(page)
-    && /href=["']https:\/\/ehpv\.fa\.em2\.oraclecloud\.com\/hcmUI\/CandidateExperience\/en\/sites\/CX_1\/jobs["'][^>]*>\s*View All Vacancies\s*</i.test(page)
+  return /<title[^>]*>\s*DP World Careers\s*(?:&amp;|&)\s*Jobs \| DP World Recruitment \| DP World\s*<\/title>/i.test(page)
+    && /href=["']https:\/\/ehpv\.fa\.em2\.oraclecloud\.com\/hcmUI\/CandidateExperience\/en\/sites\/CX_1\/jobs["'][^>]*>[\s\S]{0,250}?View All Vacancies/i.test(page)
     && text.includes('Join DP World and help shape the future of global trade.')
 }
 
 export const hasOfficialCandidateExperienceSignal = (html) => {
   const page = String(html ?? '')
+  const hasOracleSiteConfig = (
+    /<base[^>]+href=["']\/hcmUI\/CandidateExperience\/en\/sites\/CX_1\/?["'][^>]*data-apibaseurl=["']https:\/\/ehpv\.fa\.em2\.oraclecloud\.com:443["'][^>]*data-sitenumber=["']CX_1["'][^>]*>/i.test(page)
+    || (
+      /<base[^>]+href=["']\/hcmUI\/CandidateExperience\/en\/sites\/CX_1\/?["'][^>]*>/i.test(page)
+      && /apiBaseUrl:\s*['"]https:\/\/ehpv\.fa\.em2\.oraclecloud\.com:443['"]/i.test(page)
+      && /siteNumber:\s*['"]CX_1['"]/i.test(page)
+    )
+  )
 
   return /<title>\s*DP World\s*<\/title>/i.test(page)
     && /<meta[^>]+property=["']og:title["'][^>]+content=["']DP World Careers["']/i.test(page)
-    && /<base[^>]+href=["']\/hcmUI\/CandidateExperience\/en\/sites\/CX_1\/?["']/i.test(page)
-    && /apiBaseUrl:\s*['"]https:\/\/ehpv\.fa\.em2\.oraclecloud\.com:443['"]/i.test(page)
-    && /siteNumber:\s*['"]CX_1['"]/i.test(page)
+    && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']DP World["']/i.test(page)
+    && hasOracleSiteConfig
 }
 
 export const buildSearchUrl = ({
@@ -276,9 +304,19 @@ export const extractJobDetail = (payload, listing = {}) => {
   const location = getEffectiveLocation(detail) || listing.location || null
   const jobId = normalizeWhitespace(detail.Id) || listing.jobId || null
   const sourceUrl = listing.sourceUrl || buildJobDetailUrl(jobId)
+  const title = normalizeWhitespace(detail.Title) || listing.title || null
+  const minimumQualification = normalizeWhitespace(detail.ExternalQualificationsStr || detail.StudyLevel)
+    || listing.minimumQualification
+    || null
+  const jobDescription = joinDescriptionParts(
+    detail.ExternalDescriptionStr,
+    detail.ExternalResponsibilitiesStr,
+    detail.ShortDescriptionStr,
+    detail.ExternalQualificationsStr,
+  ) || listing.jobDescription || null
 
   return {
-    title: normalizeWhitespace(detail.Title) || listing.title || null,
+    title,
     company: COMPANY_NAME,
     department: normalizeWhitespace(detail.JobFunction || detail.Department || detail.Category || detail.JobFamily)
       || listing.department
@@ -291,10 +329,12 @@ export const extractJobDetail = (payload, listing = {}) => {
     sourceUrl,
     applyUrl: sourceUrl,
     employmentType: getEmploymentType(detail) || listing.employmentType || null,
-    experienceRequired: null,
-    minimumQualification: normalizeWhitespace(detail.ExternalQualificationsStr || detail.StudyLevel)
-      || listing.minimumQualification
-      || null,
+    experienceRequired: extractExperienceRequired({
+      title,
+      minimumQualification,
+      jobDescription,
+    }) || listing.experienceRequired || null,
+    minimumQualification,
     preferredQualification: null,
     requiredSkills: Array.isArray(detail.skills)
       ? detail.skills
@@ -303,13 +343,10 @@ export const extractJobDetail = (payload, listing = {}) => {
       : listing.requiredSkills || [],
     postingDate: normalizeDate(detail.ExternalPostedStartDate || detail.PostedDate) || listing.postingDate || null,
     closingDate: normalizeDate(detail.ExternalPostedEndDate || detail.PostingEndDate) || listing.closingDate || null,
-    jobDescription: joinDescriptionParts(
-      detail.ExternalDescriptionStr,
-      detail.ExternalResponsibilitiesStr,
-      detail.ShortDescriptionStr,
-    ) || listing.jobDescription || null,
+    jobDescription,
     remoteStatus: normalizeRemoteStatus(detail.WorkplaceType) || listing.remoteStatus || null,
     siteNumber: SITE_NUMBER,
+    publicExperienceChecked: true,
   }
 }
 
@@ -386,7 +423,7 @@ export const createDpWorldScraper = ({
 export const run = async (options = {}) => createDpWorldScraper(options).run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

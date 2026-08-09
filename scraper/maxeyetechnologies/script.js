@@ -19,6 +19,9 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const hasContactRoute = (html) =>
+  /href=["'](?:https:\/\/maxeye\.com)?\/contact\/["']/i.test(String(html ?? ''))
+
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -36,8 +39,8 @@ const defaultFetchText = async (url) => {
 
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = normalizeWhitespace(html)
-  return /Professional and Reliable Active Stylus Solution Provider/i.test(page)
-    && /maxeye\.com\/contact\//i.test(page)
+  return /Professional and Reliable Active Stylus (?:Solution )?Provider/i.test(page)
+    && hasContactRoute(html)
     && /Maxeye/i.test(page)
 }
 
@@ -82,7 +85,7 @@ export const createMaxEyeTechnologiesScraper = () => ({
 export const run = async (options = {}) => createMaxEyeTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { GGK_TECHNOLOGIES_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -32,8 +32,7 @@ export const hasRedirectedHomepageSignal = (html = '') => {
 
   return normalized.includes('Your Trusted IT Solutions and Digital Transformation Company')
     && normalized.includes('Innova Solutions')
-    && normalized.includes('trusted digital transformation solutions company')
-  }
+}
 
 export const pageExposesGgkJobListings = (html = '') =>
   /ggk/i.test(String(html ?? '')) && /careers|jobs|software engineer|developer/i.test(String(html ?? ''))
@@ -67,7 +66,7 @@ export const createGGKTechnologiesScraper = () => ({
 export const run = async (options = {}) => createGGKTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

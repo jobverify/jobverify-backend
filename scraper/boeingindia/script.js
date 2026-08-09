@@ -194,6 +194,9 @@ const extractExperienceRequired = (descriptionHtml) => {
   const plusMatch = descriptionText?.match(/(\d+\+?\s*years)/i)
   if (plusMatch) return normalizeWhitespace(plusMatch[1])
 
+  const openEndedMatch = descriptionText?.match(/(\d+)\s*(?:or more|or above)\s*years?(?:'|’)?/i)
+  if (openEndedMatch) return `${openEndedMatch[1]}+ years`
+
   return null
 }
 
@@ -472,7 +475,7 @@ export const createBoeingIndiaScraper = ({
 export const run = async (options = {}) => createBoeingIndiaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

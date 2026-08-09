@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { RNF_TECHNOLOGIES_CATALOG } from './catalog.js'
 
@@ -15,6 +15,7 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const ALLOWED_HOSTNAMES = new Set(['rnftechnologies.com', 'www.rnftechnologies.com'])
 
 const INDIA_LOCATION_PATTERN =
   /\b(?:india|noida|gurugram|gurgaon|delhi|new delhi|bangalore|bengaluru|hyderabad|chennai|mumbai|pune)\b/i
@@ -42,7 +43,8 @@ const slugify = (value) => normalizeWhitespace(value)
 const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
   try {
     const url = new URL(value, baseUrl)
-    if (url.hostname !== 'www.rnftechnologies.com') return null
+    if (!ALLOWED_HOSTNAMES.has(url.hostname.toLowerCase())) return null
+    url.hostname = url.hostname.replace(/^www\./i, '')
     return url.toString()
   } catch {
     return null
@@ -69,7 +71,7 @@ export const hasOfficialListingsSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title[^>]*>\s*Join Our Team\s*\|\s*RNF Technologies\s*<\/title>/i.test(page)
+  return /<title[^>]*>[\s\S]*RNF Technologies\s*<\/title>/i.test(page)
     && normalized.includes('Current Job Openings')
     && normalized.includes('Job Title')
     && normalized.includes('Location')
@@ -114,9 +116,14 @@ export const hasOfficialDetailSignal = (html = '', listing = {}) => {
 
   return /<title[^>]*>[\s\S]*?\|\s*RNF Technologies\s*<\/title>/i.test(page)
     && normalized.includes('Current Openings')
-    && normalized.includes('Relevant Experience:')
-    && normalized.includes('Job Description')
-    && normalized.includes('Skills')
+    && (
+      normalized.includes('Job Description')
+      || normalized.includes('Job Role:')
+    )
+    && (
+      normalized.includes('Skills')
+      || normalized.includes('Must Have Skills')
+    )
     && /\/join-our-team\/current-openings\/(?:\d+|[a-z0-9-]+)\/apply/i.test(page)
     && (!expectedTitle || expectedTitle.test(normalized))
   }
@@ -131,12 +138,13 @@ export const extractJobDetail = (html = '', listing = {}) => {
   const experienceRequired = stripTags(
     extractFirst(/Relevant Experience:\s*([^<\n]+)</i, `${html}<`),
   )
-  const jobDescription = stripTags(extractFirst(
-    /<h2[^>]*>\s*Job Description\s*<\/h2>\s*<p[^>]*>([\s\S]*?)<\/p>/i,
+  const jobDescriptionHtml = extractFirst(
+    /(?:<h2[^>]*>\s*Job Description\s*<\/h2>\s*|Job Role:\s*)([\s\S]*?)(?:<h2[^>]*>\s*(?:Skills|Must Have Skills)\s*<\/h2>|Must Have Skills|«\s*Back to Openings|$)/i,
     html,
-  ))
+  )
+  const jobDescription = stripTags(jobDescriptionHtml)
   const skillsSectionHtml = extractFirst(
-    /<h2[^>]*>\s*Skills\s*<\/h2>\s*(?:<ul[^>]*>)?([\s\S]*?)(?:<\/ul>|<h2[^>]*>|$)/i,
+    /(?:<h2[^>]*>\s*Skills\s*<\/h2>\s*|Must Have Skills\s*)([\s\S]*?)(?:«\s*Back to Openings|<h2[^>]*>|$)/i,
     html,
   )
   const requiredSkills = [...String(skillsSectionHtml ?? '').matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)]
@@ -203,7 +211,7 @@ export const createRNFTechnologiesScraper = ({
 export const run = async (options = {}) => createRNFTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -19,9 +19,9 @@ export const SIXT_CATALOG = {
   extractionStrategy: 'verified-first-party-india-jobs-page+visible-job-links+first-party-detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-07-27',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 against https://www.sixt.jobs/in/about-us and https://www.sixt.jobs/in/jobs?q=&country=IN. The first-party SIXT India jobs page exposed 4 public India roles through first-party detail pages, including Senior Product Manager II (Salesforce), Engineering Manager (Salesforce), AI Data Engineer III, and Staff Data Engineer.',
+    'Verified on Monday, July 27, 2026 against https://www.sixt.jobs/in/about-us and https://www.sixt.jobs/in/jobs?q=&country=IN. The first-party SIXT India jobs page exposed 9 public India roles through first-party detail pages, including Software Development Engineer III (Java Backend), Security Engineer II (AI), MLOps Engineer III, AI Data Engineer III, Senior Product Manager II (Salesforce), Staff Data Engineer, Engineering Manager (Salesforce), and Software Development Engineer II (Golang). Current detail pages still include stable first-party markers such as Apply now, YOUR ROLE AT SIXT, and YOUR SKILLS MATTER, but some live roles now use an About us section where older pages used What we offer.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: path.join(currentDir, 'jobs.json'),
 }

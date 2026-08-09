@@ -13,14 +13,15 @@ const homepageHtml = `
   <!doctype html>
   <html lang="en">
     <head>
-      <title>Genex Space</title>
+      <title>Genex Space : Shaping Future Astronauts and Innovators</title>
     </head>
     <body>
       <main>
         <h1>Genex Space</h1>
         <p>SpaceShaala is a Genex Space initiative for hands-on space education.</p>
         <p>info@genex.space</p>
-        <p>Bengaluru, Karnataka, India</p>
+        <p>UNLOCKING YOUR COSMIC CURIOSITY</p>
+        <p>GSE Fellowship</p>
         <a href="https://genex.space/gsef/">Apply</a>
       </main>
     </body>
@@ -37,7 +38,7 @@ const fellowshipHtml = `
       <main>
         <h1>Genex Space Explorers Fellowship</h1>
         <p>Indian nationals can apply to become full-time Fellows.</p>
-        <p>This is a two-year commitment with a monthly stipend.</p>
+        <p>This is a prestigious two-year program with a monthly stipend.</p>
         <p>Teaching locations may be in any city where Genex operates.</p>
         <form action="/gsef/apply" enctype="multipart/form-data">
           <input type="file" name="resume" />

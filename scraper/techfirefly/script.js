@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { TECH_FIREFLY_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -36,9 +36,19 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: SOURCE,
   timeoutMs: 20000,
 })
+
+export const hasConnectTimeoutFailure = (error) => {
+  const code = String(error?.cause?.code ?? error?.code ?? '')
+  const message = String(error?.cause?.message ?? error?.message ?? error ?? '')
+
+  return code === 'UND_ERR_CONNECT_TIMEOUT'
+    || /\bconnect timeout\b/i.test(message)
+    || /\btimeout\b/i.test(message)
+}
 
 export const hasOfficialCareersShellSignal = (html = '') => {
   const page = String(html ?? '')
@@ -60,24 +70,42 @@ export const createTechFireflyScraper = () => ({
   async run({
     fetchText = defaultFetchText,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    try {
+      const careersHtml = await fetchText(CAREERS_URL)
 
-    if (hasPublicJobsSignal(careersHtml)) {
-      throw new Error('Tech Firefly careers surface now appears to expose public jobs')
+      if (hasPublicJobsSignal(careersHtml)) {
+        throw new Error('Tech Firefly careers surface now appears to expose public jobs')
+      }
+
+      if (!hasOfficialCareersShellSignal(careersHtml)) {
+        throw new Error('Tech Firefly verified careers page no longer matches the trusted placeholder surface')
+      }
+
+      return []
+    } catch (error) {
+      if (hasConnectTimeoutFailure(error)) {
+        return []
+      }
+
+      throw error
     }
-
-    if (!hasOfficialCareersShellSignal(careersHtml)) {
-      throw new Error('Tech Firefly verified careers page no longer matches the trusted placeholder surface')
-    }
-
-    return []
   },
 })
 
 export const run = async (options = {}) => createTechFireflyScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+const isDirectExecution = (() => {
+  if (!process.argv[1]) return false
+
+  try {
+    return path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+  } catch {
+    return false
+  }
+})()
+
+if (isDirectExecution) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

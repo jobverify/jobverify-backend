@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { withRetry } from '../utils/retry.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
 
 import { SHORE_INFOTECH_INDIA_CATALOG } from './catalog.js'
 
@@ -84,18 +84,18 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return /Managed Data Services & AI-Powered Operations for SMBs \| Shore Group/i.test(page)
     && normalized.includes('managed data services that simplify your operations')
-    && normalized.includes('designed for small and medium-sized businesses.')
-    && normalized.includes('shore group associates llc')
+    && normalized.includes('small and medium-sized businesses.')
+    && normalized.includes('sla-backed outcomes')
 }
 
 export const hasOfficialContactSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeText(page)
 
-  return /Get Started/i.test(page)
-    && normalized.includes('let’s connect')
-    && normalized.includes('innovative services for modern businesses')
-    && normalized.includes('we’re just an email away.')
+  return /Schedule a Free Discovery Call \| Shore Group/i.test(page)
+    && normalized.includes('we respond within 24 hours')
+    && normalized.includes("schedule your discovery call and let's discuss how we can solve your biggest operational or strategic challenge.")
+    && normalized.includes('hyderabad, india - operations, r&d')
 }
 
 const isVerifiedMissingFirstPartyRoute = (page = {}) => {
@@ -103,7 +103,7 @@ const isVerifiedMissingFirstPartyRoute = (page = {}) => {
   const normalized = normalizeText(html)
 
   return page.status === 404
-    && /<title>\s*Not Found\s*<\/title>/i.test(html)
+    && /<title>\s*(?:404:\s*)?not[\s_-]*found\s*<\/title>/i.test(html)
     && normalized.includes('404')
     && !hasPublicJobsSignal(html)
 }
@@ -140,7 +140,7 @@ export const createShoreInfotechIndiaScraper = () => ({
 export const run = async (options = {}) => createShoreInfotechIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

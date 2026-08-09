@@ -1,0 +1,21 @@
+{
+  "source": "questt",
+  "companyName": "Questt",
+  "officialBrandName": "Questt",
+  "adapter": "script",
+  "modulePath": "../questt/script.js",
+  "dryRunFile": "questt/jobs.json",
+  "companyCareerPage": "https://www.questt.com/",
+  "companyDomain": "questt.com",
+  "atsPlatform": "official-first-party-site-no-verified-careers-feed",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-site-sentinel",
+  "extractionStrategy": "no-verified-official-careers-feed+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.questt.com/",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://www.questt.com/ is Questt's first-party public website. The public site exposes no verified careers page, official ATS endpoint, or enumerable job feed. This exact-name provider fails closed and returns no jobs rather than ingesting similarly named companies or third-party listings."
+}

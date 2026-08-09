@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { APPCINO_TECHNOLOGIES_CATALOG } from './catalog.js'
 
@@ -28,8 +28,11 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasParentCareersHubSignal = (html = '') => {
   const normalized = String(html).replace(/\s+/g, ' ')
 
-  return normalized.includes('<title>Careers | Xebia</title>')
-    && normalized.includes('Become a Xebian')
+  return (
+    normalized.includes('<title>Careers | Xebia</title>')
+    || normalized.includes('<title>Join Xebia: Top Digital Experts Wanted | People-First Culture</title>')
+  )
+    && (normalized.includes('Become a Xebian') || normalized.includes('Join us!'))
     && normalized.includes('Open Positions')
     && normalized.includes('North America (USA / Canada)')
 }
@@ -51,7 +54,7 @@ export const createAppcinoTechnologiesScraper = () => ({
 export const run = async (options = {}) => createAppcinoTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

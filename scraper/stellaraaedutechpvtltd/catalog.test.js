@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import companyAliases from '../../scraper-support/providers/companyAliases.json' with { type: 'json' }
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
 const SOURCE = 'stellaraaedutechpvtltd'
 const COMPANY = 'Stellaraa Edutech Pvt. Ltd.'
@@ -25,6 +25,11 @@ test('Stellaraa Edutech Pvt. Ltd. is registered as a verified LinkedIn guest-sea
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
+  assert.equal(provider.verifiedOn, '2026-08-05')
+  assert.match(
+    provider.verifiedSurfaceSummary,
+    /Verified on Wednesday, August 5, 2026 .* public LinkedIn company page .* 2 current Stellaraa roles/i,
+  )
   assert.equal(provider.companyDomain, 'stellaraa.com')
   assert.match(provider.modulePath, /stellaraaedutechpvtltd[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Stellaraa Edutech Pvt. Ltd'), false)

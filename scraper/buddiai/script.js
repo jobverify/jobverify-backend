@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 import { BUDDI_AI_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -46,36 +46,65 @@ const toAnchorUrl = (title) => `${CAREERS_URL}#${slugify(title)}`
 const normalizeIndiaLocation = (value) => {
   const cleaned = normalizeWhitespace(String(value ?? '').replace(/^Location:\s*/i, ''))
   if (!cleaned) return null
-  if (/\bchennai\b/i.test(cleaned)) return 'Chennai, India'
-  return cleaned
+  const normalized = cleaned.replace(/\s*,\s*/g, ', ')
+  if (/\bchennai\b/i.test(normalized)) return 'Chennai, India'
+  return normalized
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /<title>\s*Careers\s*-\s*BUDDI\.AI\s*<\/title>/i.test(page)
+  return text.includes('BUDDI.AI')
+    && text.includes('Healthcare AI Automation Platform')
     && text.includes("You're in good company")
     && text.includes('Hello Automation, Goodbye Complexity.')
+    && text.includes('Medical Coders')
 }
+
+const extractRoleBlocks = (html = '') => [
+  ...Array.from(
+    String(html ?? '').matchAll(/<div[^>]*class=["'][^"']*blurbs[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi),
+    (match) => match[1],
+  ),
+  ...Array.from(
+    String(html ?? '').matchAll(/<section[^>]*class=["'][^"']*role[^"']*["'][^>]*>([\s\S]*?)<\/section>/gi),
+    (match) => match[1],
+  ),
+]
 
 export const extractJobs = (html = '') => {
   const jobs = []
+  const seen = new Set()
   const page = String(html ?? '')
 
-  for (const match of page.matchAll(/<section[^>]*class=["'][^"']*role[^"']*["'][^>]*>([\s\S]*?)<\/section>/gi)) {
-    const block = match[1]
-    const department = normalizeWhitespace(block.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)?.[1])
+  for (const block of extractRoleBlocks(page)) {
+    const department = normalizeWhitespace(
+      block.match(/<p[^>]*class=["'][^"']*pink-header[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1]
+      || block.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)?.[1],
+    )
     const title = normalizeWhitespace(block.match(/<h2[^>]*>([\s\S]*?)<\/h2>/i)?.[1])
-    const locationMatch = block.match(/Location:\s*([^<]+)/i) || block.match(/<p[^>]*>([^<]*United States of America[^<]*)<\/p>/i)
-    const location = normalizeIndiaLocation(locationMatch?.[1])
-    const jobDescription = normalizeWhitespace(block.match(/Specializations:\s*([^<]+)/i)?.[0])
+    const detailsText = normalizeWhitespace(
+      block.match(/<p[^>]*class=["'][^"']*white-description[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1]
+      || block.match(/<p[^>]*>([\s\S]*?)<\/p>/i)?.[1],
+    )
+    const location = normalizeIndiaLocation(
+      detailsText?.match(/Location:\s*(.*?)(?:No\.\s*of openings:\s*\d+|$)/i)?.[1]
+      || detailsText?.match(/([^<]*United States of America[^<]*)/i)?.[1],
+    )
+    const jobDescription = normalizeWhitespace(
+      detailsText?.split(/Location:/i)[0] || '',
+    )
 
     if (!title || !location || !/\bindia\b/i.test(location)) continue
 
     const city = normalizeCity(location.split(',')[0]) || location.split(',')[0].trim()
     const anchorUrl = toAnchorUrl(title)
     const jobId = slugify(title)
+    const dedupeKey = `${jobId}:${location.toLowerCase()}`
+
+    if (seen.has(dedupeKey)) continue
+    seen.add(dedupeKey)
 
     jobs.push({
       title,
@@ -128,7 +157,7 @@ export const createBuddiAiScraper = ({
 export const run = async (options = {}) => createBuddiAiScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

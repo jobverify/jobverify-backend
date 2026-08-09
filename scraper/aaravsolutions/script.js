@@ -43,9 +43,12 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Aarav Solutions\s*<\/title>/i.test(page)
+  return /<title>\s*(?:Careers\s*-\s*)?Aarav Solutions\s*<\/title>/i.test(page)
     && normalized.includes('Careers')
-    && normalized.includes('You At Aarav')
+    && (
+      normalized.includes('You At Aarav')
+      || normalized.includes('Life at Aarav Solutions')
+    )
     && normalized.includes('Discover your new career with Aarav Solutions.')
     && /class=["'][^"']*job-board-wrapper[^"']*["']/i.test(page)
     && /class=["'][^"']*job-tabs[^"']*["']/i.test(page)
@@ -170,7 +173,7 @@ export const createAaravSolutionsScraper = ({ now = () => new Date().toISOString
 export const run = async (options = {}) => createAaravSolutionsScraper(options).run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

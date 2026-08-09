@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { PLUM_HQ_CATALOG } from './catalog.js'
 
@@ -46,6 +46,29 @@ const normalizeWhitespace = (value) => {
     .trim()
 
   return normalized || null
+}
+
+const stripHtml = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<(br|\/p|\/div|\/section|\/article|\/li|\/ul|\/ol|\/h[1-6])\b[^>]*>/gi, '\n')
+    .replace(/<(p|div|section|article|li|ul|ol|h[1-6]|span)\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' '),
+)
+
+const normalizeExperience = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  const rangeMatch = normalized.match(/\b(\d+)\s*[-–]\s*(\d+)\s*years?\b/i)
+  if (rangeMatch) return `${rangeMatch[1]} - ${rangeMatch[2]} years`
+
+  const plusMatch = normalized.match(/\b(\d+)\+\s*years?\b/i)
+  if (plusMatch) return `${plusMatch[1]}+ years`
+
+  const exactMatch = normalized.match(/\b(\d+)\s*years?\b/i)
+  if (exactMatch) return `${exactMatch[1]} years`
+
+  return null
 }
 
 const toPublicJobUrl = (jobId) => `https://careers.kula.ai/plumhq/${jobId}/?jobs=true`
@@ -166,6 +189,39 @@ const inferRemoteStatus = (offices = [], workplace = null) => {
   return 'On-site'
 }
 
+export const hasOfficialKulaJobDetailSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = stripHtml(page) || ''
+
+  return /<title>\s*.+\s*-\s*Plum/i.test(page)
+    && text.includes('India')
+    && text.includes('Job type:')
+  }
+
+export const extractKulaJobDetail = (html = '', listing = {}) => {
+  const text = stripHtml(html) || ''
+  const experienceSnippet = text.match(
+    /\b(?:\d+\s*[-–]\s*\d+\s*years?|\d+\+\s*years?|\d+\s*years?)\b[^.]{0,140}\bexperience\b/i,
+  )?.[0]
+
+  return {
+    ...listing,
+    experienceRequired: normalizeExperience(experienceSnippet) || listing.experienceRequired || null,
+  }
+}
+
+export const enrichJobsWithKulaDetails = async (jobs, fetchText = defaultFetchText) => Promise.all(
+  jobs.map(async (job) => {
+    try {
+      const detailHtml = await fetchText(job.sourceUrl)
+      if (!hasOfficialKulaJobDetailSignal(detailHtml)) return job
+      return extractKulaJobDetail(detailHtml, job)
+    } catch {
+      return job
+    }
+  }),
+)
+
 export const buildSearchUrl = () => KULA_JOBS_URL
 
 export const extractSearchResults = (html) => (
@@ -240,8 +296,9 @@ export const createPlumHqScraper = ({
     const listingHtml = await fetchText(buildSearchUrl())
     const jobs = extractSearchResults(listingHtml)
     const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const enrichedJobs = await enrichJobsWithKulaDetails(selectedJobs, fetchText)
 
-    return selectedJobs.map((job) => ({
+    return enrichedJobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
@@ -253,7 +310,7 @@ export const createPlumHqScraper = ({
 export const run = async (options = {}) => createPlumHqScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

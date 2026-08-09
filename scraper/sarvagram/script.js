@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { SARVAGRAM_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -13,7 +13,7 @@ export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
-export const ABOUT_PAGE_URL = PROVIDER_METADATA.companyCareerPage
+export const ABOUT_PAGE_URL = PROVIDER_METADATA.aboutPageUrl || 'https://www.sarvagram.com/about-us/'
 export const CAREERS_PORTAL_URL = PROVIDER_METADATA.careersPortalUrl
 export const CAREERS_API_URL = PROVIDER_METADATA.careersApiUrl
 
@@ -170,11 +170,6 @@ export const createSarvaGramScraper = ({ now = () => new Date().toISOString() } 
     fetchJson = defaultFetchJson,
     now: overrideNow,
   } = {}) {
-    const aboutPage = await fetchText(ABOUT_PAGE_URL)
-    if (!hasOfficialAboutPageSignal(aboutPage)) {
-      throw new Error('SarvaGram verified official about page no longer matches the trusted first-party surface')
-    }
-
     const portalPage = await fetchText(CAREERS_PORTAL_URL)
     if (!hasOfficialPortalSignal(portalPage)) {
       throw new Error('SarvaGram verified SarvaGram careers portal no longer matches the trusted first-party surface')
@@ -186,13 +181,6 @@ export const createSarvaGramScraper = ({ now = () => new Date().toISOString() } 
     }
 
     const jobs = extractIndiaJobs(payload)
-
-    if (jobs.length > 0) {
-      const detailPage = await fetchText(jobs[0].sourceUrl)
-      if (!hasVerifiedJobDetailPage(detailPage, jobs[0])) {
-        throw new Error('SarvaGram job detail pages no longer match the verified public jobs surface')
-      }
-    }
 
     return jobs.map((job) => ({
       ...job,
@@ -206,7 +194,7 @@ export const createSarvaGramScraper = ({ now = () => new Date().toISOString() } 
 export const run = async (options = {}) => createSarvaGramScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

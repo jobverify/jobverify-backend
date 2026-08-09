@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { KREDITBEE_CATALOG } from './catalog.js'
 
@@ -48,9 +48,8 @@ export const hasVerifiedCareersShellSignal = (html = '') => {
   const page = String(html ?? '')
 
   return /<title>\s*KreditBee\s*<\/title>/i.test(page)
-    && /If you're seeing this message, that means JavaScript has been disabled/i.test(page)
-    && /<div[^>]+id="root"[^>]*><\/div>/i.test(page)
-    && /\/react\/main\.[a-z0-9]+\.js/i.test(page)
+    && /<div[^>]+id=["'](?:root|app)["'][^>]*><\/div>/i.test(page)
+    && /\/react\/(?:runtime-main|main)\.[a-z0-9]+\.js/i.test(page)
 }
 
 export const extractCareerUrlsFromSitemap = (xml = '') => {
@@ -88,7 +87,6 @@ export const hasNonVerifiableDetailShell = (html = '') => {
   const page = String(html ?? '')
 
   return hasVerifiedCareersShellSignal(page)
-    && /\/careers\//i.test(page)
     && !hasTrustworthyPublicJobDetailSignal(page)
 }
 
@@ -129,7 +127,7 @@ export const createKreditBeeScraper = () => ({
 export const run = async (options = {}) => createKreditBeeScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

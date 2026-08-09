@@ -43,6 +43,36 @@ const careersShellHtml = `
   </html>
 `
 
+const currentCareersShellHtml = `
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <title>Kalvium</title>
+    </head>
+    <body>
+      <p>Kalvium is an ed-tech company that provides India's Best Undergraduate Computer Science Program.</p>
+      <div>Loading jobs...</div>
+      <div>Hiring Powered By</div>
+      <script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+    props: {
+      pageProps: {
+        companyDetails: {
+          name: companyContext.companyName,
+          slug: companyContext.companySlug,
+          uuid: companyContext.companyUuid,
+          allow_resume_drop_when_no_jobs: false,
+        },
+      },
+    },
+    query: {
+      company: companyContext.companyName,
+      company_uuid: companyContext.companyUuid,
+    },
+  })}</script>
+    </body>
+  </html>
+`
+
 const jobsApiPayload = {
   count: 1,
   next: null,
@@ -121,6 +151,11 @@ test('extracts the Kalvium PyjamaHR company context from the public careers shel
     buildJobsApiUrl(companyContext.companyUuid, 1),
     'https://api.pyjamahr.com/api/career/jobs/?company_uuid=DBE8CE5737&page=1&is_careers_page=false',
   )
+})
+
+test('accepts the current Kalvium PyjamaHR shell with the simplified title', () => {
+  assert.equal(hasCareersSurfaceSignal(currentCareersShellHtml), true)
+  assert.deepEqual(extractCompanyContext(currentCareersShellHtml), companyContext)
 })
 
 test('run uses the public PyjamaHR API and detail page to normalize Kalvium jobs', async () => {

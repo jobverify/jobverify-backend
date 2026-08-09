@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import DELPHIX_INDIA_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -168,7 +168,8 @@ export const extractLeverBoardUrl = (html = '') => {
 }
 
 export const hasOfficialLeverBoardSignal = (html = '') => {
-  const text = normalizeText(html)
+  const page = String(html ?? '')
+  const text = normalizeText(page)
 
   return text.includes('perforce')
     && text.includes('location type')
@@ -176,9 +177,9 @@ export const hasOfficialLeverBoardSignal = (html = '') => {
     && text.includes('team')
     && text.includes('work type')
     && text.includes('pune, maharashtra')
-    && text.includes('business development representative, delphix')
-    && text.includes('enterprise account executive, delphix')
+    && text.includes('delphix')
     && text.includes('jobs powered by')
+    && /https:\/\/jobs\.lever\.co\/perforce\/[a-z0-9-]+/i.test(page)
 }
 
 export const extractDelphixIndiaJobs = (leverJobs = []) => {
@@ -290,7 +291,7 @@ export const createDelphixIndiaScraper = ({
 export const run = async (options = {}) => createDelphixIndiaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

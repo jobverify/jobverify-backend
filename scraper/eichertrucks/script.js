@@ -102,11 +102,13 @@ export const hasPublicJobsSignal = (html) =>
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
-
-  return /<title>\s*Eicher Trucks and Buses : Best-in-Class Commercial Vehicles in India\s*<\/title>/i.test(rawHtml)
-    && /href=["']\/careers["']/i.test(rawHtml)
-    && normalized.includes('Eicher Trucks and Buses Leading the Way in Innovation and Reliability for the Future of Commercial Transportation')
+  const hasLegacyCopy = normalized.includes('Eicher Trucks and Buses Leading the Way in Innovation and Reliability for the Future of Commercial Transportation')
     && normalized.includes('At Eicher, we drive relevant modernization via next-gen technology, sustainable solutions and connected vehicles.')
+  const hasCurrentMetaDescription = /<meta[^>]+name=["']description["'][^>]+content=["']Explore Eicher Trucks and Buses, offering a wide range of commercial vehicles in India designed for performance, reliability, and efficiency across various industries\.[^"']*["']/i.test(rawHtml)
+
+  return /<title[^>]*>\s*Eicher Trucks and Buses : Best-in-Class Commercial Vehicles in India\s*<\/title>/i.test(rawHtml)
+    && /href=["']\/careers["']/i.test(rawHtml)
+    && (hasLegacyCopy || hasCurrentMetaDescription)
 }
 
 export const hasVecvCareerHandoffSignal = (html) => {
@@ -121,7 +123,7 @@ export const hasOfficialCareersPageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*Careers - Eicher Trucks & Buses\s*<\/title>/i.test(rawHtml)
+  return /<title[^>]*>\s*Careers - Eicher Trucks\s*(?:&|&amp;)\s*Buses\s*<\/title>/i.test(rawHtml)
     && normalized.includes('The Eicher Path to Progress')
     && normalized.includes('Join our Family')
     && normalized.includes('Beware Of Fake Job Offers')
@@ -174,7 +176,7 @@ export const createEicherTrucksScraper = () => ({
 export const run = async (options = {}) => createEicherTrucksScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

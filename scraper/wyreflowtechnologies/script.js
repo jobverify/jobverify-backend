@@ -39,6 +39,7 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
+  .replace(/[\u2018\u2019]/g, "'")
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
@@ -153,7 +154,7 @@ export const createWyreflowTechnologiesScraper = () => ({
 export const run = async (options = {}) => createWyreflowTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -13,13 +13,13 @@ export const AINDRA_SYSTEMS_CATALOG = {
   companyDomain: 'aindra.in',
   atsPlatform: 'official-company-site',
   countryFilter: 'India',
-  paginationStrategy: 'single-homepage-careers-section',
-  extractionStrategy: 'verified-homepage-careers-section+inline-role-modals+mailto-apply',
+  paginationStrategy: 'single-homepage-careers-section-or-unavailable-first-party-host-fail-closed',
+  extractionStrategy: 'verified-homepage-careers-section+inline-role-modals+first-party-host-unavailable-fail-closed',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-14',
+  verifiedOn: '2026-07-28',
   verifiedSurfaceSummary:
-    'Verified on July 14, 2026 that https://www.aindra.in/ is the official Aindra Systems homepage, the Careers navigation resolves within that same first-party page, and the Join us at Aindra section publishes public role descriptions that instruct applicants to email contactus@aindra.in.',
+    'Verified on July 28, 2026 that the legacy first-party host https://www.aindra.in/ no longer resolves in DNS, while the bare first-party host https://aindra.in/ still resolves but fails TLS verification from this environment. The previously verified Join us at Aindra careers surface is therefore not trustworthily reachable right now, so this provider stays fail-closed until a first-party host becomes safely fetchable again.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

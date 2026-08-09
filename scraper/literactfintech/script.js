@@ -1,30 +1,41 @@
 import path from 'node:path'
-import { resolve4, resolve6 } from 'node:dns/promises'
 import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'literactfintech'
 export const COMPANY = 'Literact Fintech'
-export const VERIFIED_ON = '2026-07-13'
+export const VERIFIED_ON = '2026-08-03'
 export const VERIFIED_SURFACE_SUMMARY =
-  'No trustworthy first-party careers surface was discoverable on July 13, 2026: the canonical literactfintech hostnames were unresolved, and literact.com redirected to a parked Sparkname for-sale page.'
+  'No trustworthy first-party careers surface was discoverable on August 3, 2026: every canonical literactfintech URL returned the expected unresolved-host error, and literact.com redirected to a parked Sparkname for-sale page.'
 export const CANONICAL_HOSTS = [
   'literactfintech.com',
   'www.literactfintech.com',
   'literactfintech.in',
   'www.literactfintech.in',
 ]
+export const CANONICAL_URLS = CANONICAL_HOSTS.map((host) => `https://${host}/`)
 export const PARKED_DOMAIN_URL = 'https://literact.com/'
 export const PARKED_FINAL_URL = 'https://www.sparkname.com/name/Literact.com'
 
 const SPARKNAME_PATTERN = /\bsparkname\b/i
 const FOR_SALE_TITLE_PATTERN = /<title>\s*literact\.com is for sale\s*<\/title>/i
-const PUBLIC_JOB_SIGNAL_PATTERN =
-  /\b(careers|career opportunities|open roles|open positions|job openings|vacancies|apply now|join our team)\b|boards\.greenhouse\.io|jobs\.lever\.co|ashbyhq\.com|workdayjobs|smartrecruiters/i
+const PUBLIC_JOB_TEXT_PATTERN =
+  /\b(career opportunities|open roles|open positions|job openings|vacancies|apply now|join our team)\b/i
+const PUBLIC_JOB_LINK_PATTERN =
+  /boards\.greenhouse\.io|jobs\.lever\.co|ashbyhq\.com|workdayjobs|smartrecruiters/i
 
-export const hasResolvableFirstPartyHost = (addresses) =>
-  Array.isArray(addresses) && addresses.length > 0
+const REQUEST_TIMEOUT_MS = 15_000
+
+const normalizeVisibleText = (html = '') => String(html ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;|&#160;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/\u00a0/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
 
 export const isVerifiedParkedPage = ({ finalUrl, html }) => {
   const page = String(html ?? '')
@@ -34,33 +45,25 @@ export const isVerifiedParkedPage = ({ finalUrl, html }) => {
     && FOR_SALE_TITLE_PATTERN.test(page)
 }
 
-export const hasPublicJobSignal = (html) =>
-  PUBLIC_JOB_SIGNAL_PATTERN.test(String(html ?? ''))
+export const hasPublicJobSignal = (html) => {
+  const page = String(html ?? '')
+  const visibleText = normalizeVisibleText(page)
 
-export const resolveCanonicalHosts = async (hosts = CANONICAL_HOSTS) => {
-  const addresses = new Set()
+  return PUBLIC_JOB_TEXT_PATTERN.test(visibleText)
+    || PUBLIC_JOB_LINK_PATTERN.test(page)
+}
 
-  for (const host of hosts) {
-    try {
-      for (const address of await resolve4(host)) {
-        addresses.add(address)
-      }
-    } catch {}
+export const isExpectedUnresolvedHostError = (error) => {
+  const code = error?.cause?.code ?? error?.code
 
-    try {
-      for (const address of await resolve6(host)) {
-        addresses.add(address)
-      }
-    } catch {}
-  }
-
-  return [...addresses]
+  return code === 'ENOTFOUND' || code === 'EAI_NONAME'
 }
 
 export const fetchPage = async (url) => {
   const response = await fetch(url, {
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
   })
@@ -77,24 +80,34 @@ export const fetchPage = async (url) => {
 
 export const createLiteractFintechScraper = () => ({
   async run({
-    resolveHosts = resolveCanonicalHosts,
     fetchPage: fetchPageImpl = fetchPage,
   } = {}) {
-    const addresses = await resolveHosts(CANONICAL_HOSTS)
+    for (const url of CANONICAL_URLS) {
+      try {
+        await fetchPageImpl(url)
+      } catch (error) {
+        if (isExpectedUnresolvedHostError(error)) {
+          continue
+        }
 
-    if (hasResolvableFirstPartyHost(addresses)) {
+        throw new Error(
+          `Literact Fintech canonical URL could not be verified as unresolved: ${url}`,
+          { cause: error },
+        )
+      }
+
       throw new Error(
-        'Literact Fintech canonical literactfintech hosts now resolve; re-verify the official careers surface before trusting []',
+        `Literact Fintech canonical URL responded; re-verify the official careers surface before trusting []: ${url}`,
       )
     }
 
     const parkedPage = await fetchPageImpl(PARKED_DOMAIN_URL)
 
-    if (hasPublicJobSignal(parkedPage.html)) {
-      throw new Error('Literact Fintech parked domain now appears to expose public jobs')
-    }
-
     if (!isVerifiedParkedPage(parkedPage)) {
+      if (hasPublicJobSignal(parkedPage.html)) {
+        throw new Error('Literact Fintech parked domain now appears to expose public jobs')
+      }
+
       throw new Error('Literact Fintech parked domain surface changed from the verified Sparkname for-sale page')
     }
 
@@ -105,7 +118,7 @@ export const createLiteractFintechScraper = () => ({
 export const run = async (options = {}) => createLiteractFintechScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

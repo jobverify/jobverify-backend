@@ -19,6 +19,7 @@ export const CHECKED_ROUTE_URLS = PROVIDER_METADATA.checkedRouteUrls
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const UNREACHABLE_ERROR_PATTERN = /UND_ERR_CONNECT_TIMEOUT|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|getaddrinfo|fetch failed|aborted due to timeout|timeout/i
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
@@ -62,6 +63,36 @@ const defaultFetchPage = async (url) => {
   }
 }
 
+export const isUnreachableError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+
+  return UNREACHABLE_ERROR_PATTERN.test(message)
+    || UNREACHABLE_ERROR_PATTERN.test(causeCode)
+    || UNREACHABLE_ERROR_PATTERN.test(causeMessage)
+}
+
+const fetchPageSafely = async (fetchPage, url) => {
+  try {
+    return await fetchPage(url)
+  } catch (error) {
+    if (!isUnreachableError(error)) throw error
+
+    return {
+      status: null,
+      url,
+      location: null,
+      html: null,
+      errorKind: 'unreachable',
+    }
+  }
+}
+
+export const isUnavailableSurface = (page = {}) =>
+  page?.status == null
+  && page?.errorKind === 'unreachable'
+
 export const extractRedirectTarget = (html = '') => {
   const match = /window\.location\.href\s*=\s*["']([^"']+)["']/i.exec(String(html ?? ''))
   return match?.[1] ?? null
@@ -97,50 +128,69 @@ export const hasExpectedSitemapSignal = (xml = '') => {
 
 export const hasParkedLanderRedirect = (response = {}) =>
   Number(response?.status) === 307
-  && /^https:\/\/www\.afternic\.com\/forsale\/authorstream\.com\b/i.test(String(response?.location ?? ''))
+  && /^(https:\/\/www\.afternic\.com\/forsale\/authorstream\.com\b|https:\/\/forsale\.godaddy\.com\/forsale\/authorstream\.com\b)/i
+    .test(String(response?.location ?? ''))
 
 export const createAuthorStreamScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasRedirectShellSignal(homepage.html) || extractRedirectTarget(homepage.html) !== '/lander') {
-      throw new Error('AuthorStream verified parked homepage no longer matches the known public surface')
-    }
-
-    if (hasPublicJobsSignal(homepage.html)) {
-      throw new Error('AuthorStream homepage now appears to expose public jobs')
-    }
-
-    const robotsTxt = await fetchPage(ROBOTS_TXT_URL)
-    if (robotsTxt.status !== 200 || !hasExpectedRobotsTxtSignal(robotsTxt.html)) {
-      throw new Error('AuthorStream verified robots.txt no longer matches the known public surface')
-    }
-
-    const sitemap = await fetchPage(SITEMAP_URL)
-    if (sitemap.status !== 200 || !hasExpectedSitemapSignal(sitemap.html)) {
-      throw new Error('AuthorStream verified sitemap no longer matches the known public surface')
-    }
-
-    for (const routeUrl of CHECKED_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-
-      if (routePage.status !== 200 || !hasRedirectShellSignal(routePage.html) || hasPublicJobsSignal(routePage.html)) {
-        throw new Error(`AuthorStream verified no-public-careers route changed: ${routePage.url || routeUrl}`)
+    try {
+      const homepage = await fetchPage(HOMEPAGE_URL)
+      if (homepage.status !== 200 || !hasRedirectShellSignal(homepage.html) || extractRedirectTarget(homepage.html) !== '/lander') {
+        throw new Error('AuthorStream verified parked homepage no longer matches the known public surface')
       }
-    }
 
-    const lander = await fetchPage(LANDER_URL)
-    if (!hasParkedLanderRedirect(lander)) {
-      throw new Error('AuthorStream parked-domain redirect changed or now exposes a public jobs surface')
-    }
+      if (hasPublicJobsSignal(homepage.html)) {
+        throw new Error('AuthorStream homepage now appears to expose public jobs')
+      }
 
-    return []
+      const robotsTxt = await fetchPage(ROBOTS_TXT_URL)
+      if (robotsTxt.status !== 200 || !hasExpectedRobotsTxtSignal(robotsTxt.html)) {
+        throw new Error('AuthorStream verified robots.txt no longer matches the known public surface')
+      }
+
+      const sitemap = await fetchPage(SITEMAP_URL)
+      if (sitemap.status !== 200 || !hasExpectedSitemapSignal(sitemap.html)) {
+        throw new Error('AuthorStream verified sitemap no longer matches the known public surface')
+      }
+
+      for (const routeUrl of CHECKED_ROUTE_URLS) {
+        const routePage = await fetchPage(routeUrl)
+
+        if (routePage.status !== 200 || !hasRedirectShellSignal(routePage.html) || hasPublicJobsSignal(routePage.html)) {
+          throw new Error(`AuthorStream verified no-public-careers route changed: ${routePage.url || routeUrl}`)
+        }
+      }
+
+      const lander = await fetchPage(LANDER_URL)
+      if (!hasParkedLanderRedirect(lander)) {
+        throw new Error('AuthorStream parked-domain redirect changed or now exposes a public jobs surface')
+      }
+
+      return []
+    } catch (error) {
+      if (!isUnreachableError(error)) throw error
+
+      const surfaces = await Promise.all([
+        fetchPageSafely(fetchPage, HOMEPAGE_URL),
+        fetchPageSafely(fetchPage, ROBOTS_TXT_URL),
+        fetchPageSafely(fetchPage, SITEMAP_URL),
+        fetchPageSafely(fetchPage, LANDER_URL),
+        ...CHECKED_ROUTE_URLS.map((url) => fetchPageSafely(fetchPage, url)),
+      ])
+
+      if (surfaces.every(isUnavailableSurface)) {
+        return []
+      }
+
+      throw error
+    }
   },
 })
 
 export const run = async (options = {}) => createAuthorStreamScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

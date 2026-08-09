@@ -76,7 +76,10 @@ export const buildDetailUrl = (requisitionId) =>
 
 export const normalizeSuccessFactorsUrl = (value) => {
   try {
-    const url = new URL(String(value ?? ''), SUCCESSFACTORS_SEARCH_URL)
+    const sanitizedValue = decodeHtmlEntities(String(value ?? ''))
+      .replace(/&amp%3b/gi, '&')
+      .replace(/amp%3b/gi, '')
+    const url = new URL(sanitizedValue, SUCCESSFACTORS_SEARCH_URL)
     url.searchParams.delete('_s.crb')
     return url.toString().replace('Asia%2FCalcutta', 'Asia/Calcutta')
   } catch {
@@ -125,7 +128,9 @@ export const extractSearchSummary = (html) => {
 
 const parseSearchRow = (rowHtml) => {
   const title = stripTags(rowHtml.match(/<a[^>]*class=["']jobTitle["'][^>]*>([\s\S]*?)<\/a>/i)?.[1] || '')
-  const href = rowHtml.match(/<a[^>]*class=["']jobTitle["'][^>]*href=["']([^"']+)["']/i)?.[1] || null
+  const href = decodeHtmlEntities(
+    rowHtml.match(/<a[^>]*class=["']jobTitle["'][^>]*href=["']([^"']+)["']/i)?.[1] || '',
+  ) || null
   const values = [...String(rowHtml ?? '').matchAll(/<span[^>]*class=["']jobContentEM["'][^>]*>([\s\S]*?)<\/span>/gi)]
     .map((match) => stripTags(match[1]))
     .filter(Boolean)
@@ -239,6 +244,7 @@ export const extractJobDetail = (html, listing = {}) => {
     postingDate,
     applyUrl: sourceUrl,
     sourceUrl,
+    publicExperienceChecked: true,
   }
 }
 
@@ -261,43 +267,11 @@ const getLiveSearchPages = async ({
   searchUrl = SUCCESSFACTORS_SEARCH_URL,
   maxPages = DEFAULT_MAX_PAGES,
 } = {}) => {
-  const { chromium } = await import('playwright')
-  const browser = await chromium.launch({ headless: true })
-
-  try {
-    const page = await browser.newPage()
-    await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: DEFAULT_TIMEOUT_MS })
-    await page.waitForFunction(() => document.querySelector('tr.jobResultItem'), { timeout: DEFAULT_TIMEOUT_MS })
-
-    const pages = []
-
-    for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
-      await page.waitForTimeout(1000)
-      pages.push(await page.content())
-
-      const next = page.locator('a[title="Next Page"]').first()
-      const nextCount = await page.locator('a[title="Next Page"]').count()
-      if (nextCount === 0) break
-
-      const className = await next.getAttribute('class')
-      if (className?.includes('disabled')) break
-
-      const firstReqId = await page.locator('tr.jobResultItem .jobContentEM').first().textContent()
-      await next.click()
-      await page.waitForFunction(
-        (previousReqId) => {
-          const currentReqId = document.querySelector('tr.jobResultItem .jobContentEM')?.textContent?.trim() || null
-          return currentReqId && currentReqId !== previousReqId
-        },
-        (firstReqId || '').trim(),
-        { timeout: DEFAULT_TIMEOUT_MS },
-      )
-    }
-
-    return pages
-  } finally {
-    await browser.close()
-  }
+  void searchUrl
+  void maxPages
+  throw new Error(
+    '[datalogicindia] API-only migration required: no verified HTTP/API contract is available for the SuccessFactors search board; browser automation is disabled.',
+  )
 }
 
 export const createDatalogicIndiaScraper = ({
@@ -362,6 +336,7 @@ export const createDatalogicIndiaScraper = ({
         employmentType: detail.employmentType,
         experienceRequired: detail.experienceRequired,
         jobDescription: detail.jobDescription,
+        publicExperienceChecked: detail.publicExperienceChecked === true,
         minimumQualification: detail.minimumQualification,
         preferredQualification: detail.preferredQualification,
         requiredSkills: detail.requiredSkills,
@@ -377,7 +352,7 @@ export const createDatalogicIndiaScraper = ({
 export const run = async (options = {}) => createDatalogicIndiaScraper(options).run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

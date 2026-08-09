@@ -32,7 +32,7 @@ const homepageHtml = `
       <nav>
         <a href="https://maxed.in/about-us/">About Us</a>
         <a href="https://maxed.in/services/">Services</a>
-        <a href="https://maxed.in/internship2025/">Internship</a>
+        <a href="https://maxed.in/internship/">Internship</a>
       </nav>
       <section>
         <h2>Work Together for Business Success</h2>
@@ -50,7 +50,8 @@ const pageSitemapXml = `
   <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url><loc>https://maxed.in/</loc></url>
     <url><loc>https://maxed.in/about-us/</loc></url>
-    <url><loc>https://maxed.in/internship2025/</loc></url>
+    <url><loc>https://maxed.in/internship-dashboard/</loc></url>
+    <url><loc>https://maxed.in/internship/</loc></url>
   </urlset>
 `
 
@@ -58,7 +59,7 @@ const internshipHtml = `
   <!doctype html>
   <html lang="en-US">
     <head>
-      <title>Internship2025 - MaxEd - Best Market Research Agency</title>
+      <title>Internship - MaxEd - Best Market Research Agency</title>
     </head>
     <body>
       <main>
@@ -100,7 +101,7 @@ test('MaxEd recognizes the verified homepage, page sitemap, internship page, and
   assert.equal(COMPANY, 'MaxEd')
   assert.equal(HOMEPAGE_URL, 'https://maxed.in/')
   assert.equal(PAGE_SITEMAP_URL, 'https://maxed.in/page-sitemap.xml')
-  assert.equal(INTERNSHIP_URL, 'https://maxed.in/internship2025/')
+  assert.equal(INTERNSHIP_URL, 'https://maxed.in/internship/')
   assert.deepEqual(MISSING_ROUTE_URLS, [
     'https://maxed.in/careers/',
     'https://maxed.in/jobs/',
@@ -132,7 +133,7 @@ test('MaxEd extracts the verified public internship program with the shared appl
       city: null,
       country: 'India',
       jobId: 'maxed-internship-program',
-      requisitionId: 'maxed-internship2025',
+      requisitionId: 'maxed-internship',
       sourceUrl: INTERNSHIP_URL,
       applyUrl: SHARED_APPLY_URL,
       employmentType: 'Internship',

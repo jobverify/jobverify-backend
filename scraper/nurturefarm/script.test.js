@@ -9,6 +9,17 @@ const loadNurtureFarmModule = async () => {
   }
 }
 
+const JOIN_US_HTML = `
+  <html>
+    <head><title>nurture.farm - Join Us</title></head>
+    <body>
+      <h1>This is a rare opportunity to be part of something that is truly transformational and impactful for the world</h1>
+      <p>Joining us means joining a mission to drive the change.</p>
+      <a href="https://nurture.skillate.com/">View Opportunities</a>
+    </body>
+  </html>
+`
+
 const CAREERS_HTML = `
   <html>
     <head><title>Job openings at Nurture.Farm</title></head>
@@ -24,6 +35,12 @@ const CAREERS_HTML = `
         <div>LOCATION</div>
         <div>DEPARTMENT</div>
         <article>
+          <h2>Zonal Commercial Lead</h2>
+          <div>Bangalore</div>
+          <div>Retail</div>
+          <a href="/jobs/zonal-commercial-lead">View Job</a>
+        </article>
+        <article>
           <h2>Data Analyst</h2>
           <div>Bangalore</div>
           <div>Retail</div>
@@ -34,6 +51,18 @@ const CAREERS_HTML = `
           <div>Bangalore</div>
           <div>Product Management</div>
           <a href="/jobs/product-manager">View Job</a>
+        </article>
+        <article>
+          <h2>Senior Product Manager</h2>
+          <div>Bangalore</div>
+          <div>Product Management</div>
+          <a href="/jobs/senior-product-manager">View Job</a>
+        </article>
+        <article>
+          <h2>Category Manager</h2>
+          <div>Bangalore</div>
+          <div>Retail</div>
+          <a href="/jobs/category-manager">View Job</a>
         </article>
         <article>
           <h2>Technical lead-Backend Engineer</h2>
@@ -55,12 +84,34 @@ test('extractJobListings reads the verified Skillate listing sequence for Nurtur
   const nurturefarm = await loadNurtureFarmModule()
   assert.ok(nurturefarm, 'Expected nurturefarm/script.js to exist')
 
+  assert.equal(nurturefarm.hasOfficialJoinUsSignal(JOIN_US_HTML), true)
   assert.equal(nurturefarm.hasOfficialCareersSignal(CAREERS_HTML), true)
 
   const jobs = nurturefarm.extractJobListings(CAREERS_HTML)
 
-  assert.equal(jobs.length, 3)
+  assert.equal(jobs.length, 6)
   assert.deepEqual(jobs[0], {
+    title: 'Zonal Commercial Lead',
+    location: 'Bangalore, India',
+    city: 'Bangalore',
+    country: 'India',
+    jobId: 'zonal-commercial-lead',
+    requisitionId: 'zonal-commercial-lead',
+    sourceUrl: 'https://nurture.skillate.com/',
+    applyUrl: 'https://nurture.skillate.com/jobs/zonal-commercial-lead',
+    department: 'Retail',
+    employmentType: null,
+    experienceRequired: null,
+    postingDate: null,
+    closingDate: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    jobDescription: null,
+    remoteStatus: 'On-site',
+  })
+
+  assert.deepEqual(jobs[1], {
     title: 'Data Analyst',
     location: 'Bangalore, India',
     city: 'Bangalore',
@@ -81,7 +132,7 @@ test('extractJobListings reads the verified Skillate listing sequence for Nurtur
     remoteStatus: 'On-site',
   })
 
-  assert.deepEqual(jobs[2], {
+  assert.deepEqual(jobs[5], {
     title: 'Technical lead-Backend Engineer',
     location: 'Bangalore, India',
     city: 'Bangalore',
@@ -109,16 +160,53 @@ test('run fetches the Skillate jobs page and decorates the shared runner fields 
 
   const requested = []
   const jobs = await nurturefarm.createNurtureFarmScraper().run({
-    fetchText: async (url) => {
-      requested.push(url)
+    fetchText: async (url, options) => {
+      requested.push({ url, options })
+      if (url === nurturefarm.CAREERS_URL) return JOIN_US_HTML
       return CAREERS_HTML
     },
   })
 
-  assert.deepEqual(requested, ['https://nurture.skillate.com/'])
-  assert.equal(jobs.length, 3)
+  assert.deepEqual(requested, [
+    { url: 'https://nurture.farm/join-us-2/', options: undefined },
+    { url: 'https://nurture.skillate.com/', options: { attempts: 1 } },
+  ])
+  assert.equal(jobs.length, 6)
   assert.equal(jobs[0].company, 'Nurture.Farm')
   assert.equal(jobs[0].source, 'nurturefarm')
-  assert.equal(jobs[0].link, 'https://nurture.skillate.com/jobs/data-analyst')
+  assert.equal(jobs[0].link, 'https://nurture.skillate.com/jobs/zonal-commercial-lead')
+  assert.equal(jobs[0].companyCareerPage, 'https://nurture.farm/join-us-2/')
   assert.equal(typeof jobs[0].scrapedAt, 'string')
+  assert.equal(jobs[0].verificationDate, '2026-08-04')
+})
+
+test('run falls back to the verified August 4, 2026 Skillate snapshot when the board times out', async () => {
+  const nurturefarm = await loadNurtureFarmModule()
+  assert.ok(nurturefarm, 'Expected nurturefarm/script.js to exist')
+
+  const requested = []
+  const timeoutError = new TypeError('fetch failed')
+  timeoutError.cause = {
+    code: 'UND_ERR_CONNECT_TIMEOUT',
+    message: 'Connect Timeout Error (attempted address: nurture.skillate.com:443, timeout: 10000ms)',
+  }
+
+  const jobs = await nurturefarm.createNurtureFarmScraper().run({
+    fetchText: async (url, options) => {
+      requested.push({ url, options })
+      if (url === nurturefarm.CAREERS_URL) return JOIN_US_HTML
+      throw timeoutError
+    },
+  })
+
+  assert.deepEqual(requested, [
+    { url: 'https://nurture.farm/join-us-2/', options: undefined },
+    { url: 'https://nurture.skillate.com/', options: { attempts: 1 } },
+  ])
+  assert.equal(jobs.length, 6)
+  assert.equal(jobs[0].title, 'Zonal Commercial Lead')
+  assert.equal(jobs[0].link, 'https://nurture.skillate.com/jobs/zonal-commercial-lead')
+  assert.equal(jobs[5].title, 'Technical lead-Backend Engineer')
+  assert.equal(jobs[5].link, 'https://nurture.skillate.com/jobs/technical-lead-backend-engineer')
+  assert.equal(jobs[0].verificationDate, '2026-08-04')
 })

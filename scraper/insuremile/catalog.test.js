@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 import INSUREMILE_CATALOG, { VERIFIED_SURFACE_SUMMARY } from './catalog.js'
 
 test('InsureMile catalog metadata captures the verified first-party WP Job Openings surface without aliases', () => {

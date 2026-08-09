@@ -1,4 +1,4 @@
-export const SOURCE = 'puropalecreationsitsolutions'
+﻿export const SOURCE = 'puropalecreationsitsolutions'
 export const COMPANY = 'Puropale Creations & IT Solutions'
 export const HOMEPAGE_URL = 'https://puropale.com/'
 export const CAREER_ROUTE_CANDIDATES = [
@@ -13,7 +13,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'Puropale',
   adapter: 'script',
-  modulePath: '../puropalecreationsitsolutions/script.js',
+  modulePath: '../../scraper/puropalecreationsitsolutions/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: HOMEPAGE_URL,
   atsPlatform: 'official-company-site-unreachable',
@@ -73,3 +73,4 @@ export const createPuropaleCreationsItSolutionsScraper = () => ({
 })
 
 export const run = async (options = {}) => createPuropaleCreationsItSolutionsScraper().run(options)
+

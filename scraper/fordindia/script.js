@@ -32,9 +32,11 @@ export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 const SIGNAL_PATTERNS = [
   /<title>\s*Search our Job Opportunities at Ford Motor Company\s*<\/title>/i,
   /Search our Job Opportunities at Ford Motor Company/i,
+  /search results\./i,
+  /Search Jobs/i,
+  /Job Category/i,
   /Country:\s*India/i,
   /Chennai,\s*India/i,
-  /Vehicle Technical Illustration Engineer/i,
 ]
 
 const normalizeWhitespace = (value) => String(value ?? '')
@@ -117,7 +119,7 @@ if (BASE_INDIA_FACET_ID !== INDIA_FACET_ID || BASE_RESULTS_POST_URL !== RESULTS_
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

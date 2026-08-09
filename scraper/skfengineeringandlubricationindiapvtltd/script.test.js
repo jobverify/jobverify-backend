@@ -278,7 +278,7 @@ test('extractJobDetail reads official SKF detail pages and keeps stable apply li
   )
 })
 
-test('run scrapes only India jobs from the official SKF board and decorates them for Jobify', async () => {
+test('run scrapes only India jobs from the official SKF board and decorates them for Jobverify', async () => {
   const requestedUrls = []
   const scraper = createSkfEngineeringAndLubricationIndiaScraper()
 

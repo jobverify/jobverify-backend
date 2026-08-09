@@ -1,7 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 
 import PRAMATA_KNOWLEDGE_SOLUTIONS_CATALOG from './catalog.js'
 
@@ -26,6 +27,28 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isExpectedCareers403Error = (error, url) =>
+  /HTTP 403/i.test(String(error?.message || error || ''))
+  && String(url ?? '') === CAREERS_URL
+
+const buildBlockedCareersSurfaceError = (error) => {
+  const upstreamError = new Error(
+    'Pramata Knowledge Solutions verified careers surface remains blocked after HTTP fallback',
+    { cause: error },
+  )
+  upstreamError.softFailure = true
+  upstreamError.upstreamOutage = true
+  upstreamError.failureKind = 'network_or_timeout'
+  upstreamError.abortRetries = true
+  return upstreamError
+}
+
+const buildMaterialSurfaceChangeError = () => {
+  const error = new Error('The verified Pramata Knowledge Solutions careers surface changed materially')
+  error.abortRetries = true
+  return error
+}
+
 export const hasVerifiedCloudflareChallengeSignal = (html = '') => {
   const page = String(html ?? '')
   return /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(page)
@@ -39,26 +62,85 @@ export const exposesStructuredPublicJobs = (html = '') =>
   || /Solution Architect\s*-\s*Contract AI/i.test(String(html ?? ''))
   || /Current Openings/i.test(String(html ?? ''))
 
+export const hasVerifiedNotFoundNoJobsSignal = (page = {}) => {
+  const html = String(page?.html ?? '')
+  const text = html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return Number(page?.status) === 404
+    && String(page?.url || '') === CAREERS_URL
+    && /<title>\s*Page not found - Pramata\s*<\/title>/i.test(html)
+    && /We value your privacy/i.test(text)
+    && /Reject All/i.test(text)
+    && /Accept All/i.test(text)
+    && /Necessary Always Active/i.test(text)
+    && !exposesStructuredPublicJobs(html)
+}
+
 export const createPramataKnowledgeSolutionsScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, fetchBrowserPage = null } = {}) {
+    let browserSession = null
+    const getBrowserPage = async (url) => {
+      if (typeof fetchBrowserPage === 'function') {
+        return fetchBrowserPage(url)
+      }
 
-    if (!hasVerifiedCloudflareChallengeSignal(careersHtml)) {
-      throw new Error('The verified Pramata Knowledge Solutions careers surface changed materially')
+      browserSession ??= await createBrowserFetchSession({ userAgent: USER_AGENT })
+      return browserSession.fetchPage(url)
     }
 
-    if (exposesStructuredPublicJobs(careersHtml)) {
-      throw new Error('Pramata Knowledge Solutions careers page now exposes scraper-visible public jobs')
-    }
+    try {
+      let careersHtml
+      try {
+        careersHtml = await fetchText(CAREERS_URL)
+      } catch (error) {
+        if (!isExpectedCareers403Error(error, CAREERS_URL)) {
+          throw error
+        }
 
-    return []
+        const browserPage = await getBrowserPage(CAREERS_URL)
+        if (hasVerifiedNotFoundNoJobsSignal(browserPage)) {
+          return []
+        }
+
+        if (hasVerifiedCloudflareChallengeSignal(browserPage.html)) {
+          if (exposesStructuredPublicJobs(browserPage.html)) {
+            throw new Error('Pramata Knowledge Solutions careers page now exposes scraper-visible public jobs')
+          }
+          return []
+        }
+
+        if (Number(browserPage.status) === 403) {
+          throw buildBlockedCareersSurfaceError(new Error(`HTTP 403 for ${CAREERS_URL}`))
+        }
+
+        throw buildMaterialSurfaceChangeError()
+      }
+
+      if (!hasVerifiedCloudflareChallengeSignal(careersHtml)) {
+        throw buildMaterialSurfaceChangeError()
+      }
+
+      if (exposesStructuredPublicJobs(careersHtml)) {
+        throw new Error('Pramata Knowledge Solutions careers page now exposes scraper-visible public jobs')
+      }
+
+      return []
+    } finally {
+      await browserSession?.close?.()
+    }
   },
 })
 
 export const run = async (options = {}) => createPramataKnowledgeSolutionsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+﻿import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const SOURCE = 'bankaiinfotech'
 export const COMPANY = 'Bankai Infotech'
@@ -15,7 +15,7 @@ export const PROVIDER_METADATA = {
   companyName: COMPANY,
   officialBrandName: 'Bankai Infotech Private Limited',
   adapter: 'script',
-  modulePath: '../bankaiinfotech/script.js',
+  modulePath: '../../scraper/bankaiinfotech/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CONTACT_URL,
   atsPlatform: 'official-company-site-no-public-careers',
@@ -101,3 +101,4 @@ export const run = async ({ fetchText = defaultFetchText } = {}) => {
 
   return []
 }
+

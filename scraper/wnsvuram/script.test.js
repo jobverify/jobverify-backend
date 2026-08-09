@@ -10,6 +10,7 @@ import {
   hasOfficialCareersSignal,
   hasOfficialHomepageSignal,
   hasPublicJobsSignal,
+  isVerifiedMissingCareersRoute,
 } from './script.js'
 
 const homepageHtml = `
@@ -26,15 +27,13 @@ const homepageHtml = `
 const careersHtml = `
   <html>
     <head>
-      <title>WNS-Vuram Careers | Join the Happiest and Best Nourishing Workplace</title>
+      <title>404 Error Page</title>
     </head>
     <body>
-      <h6>ROI CALCULATOR</h6>
-      <h2>Calculate Your Return-On-Investment</h2>
-      <p>Fill out the short form to connect with us and learn more.</p>
-      <h6>GET IN TOUCH</h6>
-      <h2>Elevate your business!</h2>
-      <button>CONTACT ME</button>
+      <h1>404 Error Page</h1>
+      <p>About Us</p>
+      <p>Our Story</p>
+      <p>Hyperautomation</p>
     </body>
   </html>
 `
@@ -54,11 +53,12 @@ test('WNS-Vuram sentinel stays pinned to the official homepage and careers shell
   assert.equal(HOMEPAGE_URL, 'https://www.vuram.com/')
   assert.equal(CAREERS_URL, 'https://www.vuram.com/careers/')
   assert.equal(hasOfficialHomepageSignal(homepageHtml), true)
-  assert.equal(hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(hasOfficialCareersSignal(careersHtml), false)
+  assert.equal(isVerifiedMissingCareersRoute({ status: 404, url: CAREERS_URL, html: careersHtml }), true)
   assert.equal(hasPublicJobsSignal(publicJobsHtml), true)
 })
 
-test('run returns an empty list when the official WNS-Vuram careers page is a non-listing shell', async () => {
+test('run returns an empty list when the official WNS-Vuram careers page is a verified 404 route', async () => {
   const requestedUrls = []
   const scraper = createWnsVuramScraper()
 
@@ -76,7 +76,7 @@ test('run returns an empty list when the official WNS-Vuram careers page is a no
 
       if (url === CAREERS_URL) {
         return {
-          status: 200,
+          status: 404,
           url: CAREERS_URL,
           html: careersHtml,
         }

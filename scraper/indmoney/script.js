@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { INDMONEY_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -16,6 +17,9 @@ export const LINKEDIN_JOBS_URL = PROVIDER_METADATA.linkedinJobsUrl
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const BROWSER_SETTLE_TIME_MS = 12000
+const NETWORK_FALLBACK_ERROR_PATTERN =
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -109,6 +113,26 @@ const defaultFetchPage = async (url) => {
   }
 }
 
+export const hasCloudflareChallengePageSignal = (html = '') => {
+  const source = String(html ?? '')
+  const normalized = normalizeWhitespace(source)?.toLowerCase() || ''
+
+  return /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(source)
+    && normalized.includes('enable javascript and cookies to continue')
+    && (
+      normalized.includes('security verification')
+      || normalized.includes('cloudflare')
+      || /\bindmoney\.com\b/i.test(source)
+    )
+}
+
+const shouldUseBrowserFallback = (page = {}) => (
+  page.status === 403 || page.status === 200
+) && hasCloudflareChallengePageSignal(page.html)
+
+const shouldUseBrowserFallbackForError = (error) =>
+  NETWORK_FALLBACK_ERROR_PATTERN.test(String(error?.message ?? error ?? ''))
+
 export const hasOfficialAboutPageSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
 
@@ -154,36 +178,67 @@ export const hasFirstPartyPublicJobsSignal = (html = '') => {
 }
 
 export const createIndmoneyScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const aboutPage = await fetchPage(ABOUT_PAGE_URL)
+  async run({ fetchPage = defaultFetchPage, fetchBrowserPage } = {}) {
+    let browserSession = null
+    const browserPageFetcher = fetchBrowserPage || (async (url) => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({
+          userAgent: USER_AGENT,
+          settleTimeMs: BROWSER_SETTLE_TIME_MS,
+        })
+      }
 
-    if (
-      aboutPage.status !== 200
-      || normalizeComparableUrl(aboutPage.url) !== normalizeComparableUrl(ABOUT_PAGE_URL)
-    ) {
-      throw new Error('INDmoney verified about page no longer matches the known first-party surface')
+      return browserSession.fetchPage(url)
+    })
+
+    try {
+      let aboutPage
+      try {
+        aboutPage = await fetchPage(ABOUT_PAGE_URL)
+      } catch (error) {
+        if (!shouldUseBrowserFallbackForError(error)) {
+          throw error
+        }
+
+        aboutPage = await browserPageFetcher(ABOUT_PAGE_URL)
+      }
+
+      if (shouldUseBrowserFallback(aboutPage)) {
+        aboutPage = await browserPageFetcher(ABOUT_PAGE_URL)
+      }
+
+      if (
+        aboutPage.status !== 200
+        || normalizeComparableUrl(aboutPage.url) !== normalizeComparableUrl(ABOUT_PAGE_URL)
+      ) {
+        throw new Error('INDmoney verified about page no longer matches the known first-party surface')
+      }
+
+      if (hasFirstPartyPublicJobsSignal(aboutPage.html)) {
+        throw new Error('INDmoney about page now appears to expose a first-party public jobs surface')
+      }
+
+      if (!hasOfficialAboutPageSignal(aboutPage.html)) {
+        throw new Error('INDmoney verified about page no longer matches the known first-party surface')
+      }
+
+      if (extractLinkedInJobsUrl(aboutPage.html) !== LINKEDIN_JOBS_URL) {
+        throw new Error('INDmoney verified LinkedIn handoff changed')
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close().catch(() => {})
+      }
     }
-
-    if (hasFirstPartyPublicJobsSignal(aboutPage.html)) {
-      throw new Error('INDmoney about page now appears to expose a first-party public jobs surface')
-    }
-
-    if (!hasOfficialAboutPageSignal(aboutPage.html)) {
-      throw new Error('INDmoney verified about page no longer matches the known first-party surface')
-    }
-
-    if (extractLinkedInJobsUrl(aboutPage.html) !== LINKEDIN_JOBS_URL) {
-      throw new Error('INDmoney verified LinkedIn handoff changed')
-    }
-
-    return []
   },
 })
 
 export const run = async (options = {}) => createIndmoneyScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

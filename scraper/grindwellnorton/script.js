@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'grindwellnorton'
@@ -33,14 +31,22 @@ const FIRST_PARTY_JOBS_PATTERNS = [
   /\bapply now\b/i,
 ]
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: typeof AbortSignal?.timeout === 'function' ? AbortSignal.timeout(15000) : undefined,
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
@@ -59,9 +65,30 @@ export const hasVerifiedLinkedInHandoff = (html) =>
 export const hasFirstPartyJobsSignal = (html) =>
   FIRST_PARTY_JOBS_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
+export const hasBrowserVerificationBlockSignal = (html) => {
+  const page = String(html ?? '')
+
+  return /<title>\s*Verifying your browser/i.test(page)
+    && /We're checking your browser before allowing access\./i.test(page)
+    && /Enable JavaScript and cookies to continue/i.test(page)
+ }
+
 export const createGrindwellNortonScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+  async run({ fetchPage, fetchText } = {}) {
+    const effectiveFetchPage = fetchPage
+      || (fetchText
+        ? async (url) => ({ status: 200, url, html: await fetchText(url) })
+        : defaultFetchPage)
+    const homepage = await effectiveFetchPage(HOMEPAGE_URL)
+    const homepageHtml = homepage.html
+
+    if (
+      Number(homepage?.status) === 403
+      && hasBrowserVerificationBlockSignal(homepageHtml)
+      && !hasFirstPartyJobsSignal(homepageHtml)
+    ) {
+      return []
+    }
 
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Grindwell Norton official homepage changed; refusing to assume the verified surface still applies')
@@ -82,7 +109,7 @@ export const createGrindwellNortonScraper = () => ({
 export const run = async (options = {}) => createGrindwellNortonScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -93,7 +93,7 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const section = getCurrentPositionsSection(page)
 
-  return /Let(?:'|&#39;|&rsquo;)?s Grow Together/i.test(page)
+  return /Let(?:'|’|&#39;|&rsquo;)?s Grow Together/i.test(page)
     && /Current Positions/i.test(page)
     && /India-based,\s*Remote Position/i.test(page)
     && /https:\/\/opsera\.ai\/careers\/[^"' ]+\/?/i.test(section || '')
@@ -220,7 +220,7 @@ export const createOpseraScraper = () => ({
 export const run = async (options = {}) => createOpseraScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

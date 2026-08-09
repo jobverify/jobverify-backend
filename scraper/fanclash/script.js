@@ -100,13 +100,18 @@ export const hasDnsResolutionFailure = (value) =>
   DNS_RESOLUTION_FAILURE_PATTERNS.some((pattern) => pattern.test(String(value ?? '')))
 
 export const hasVerifiedAtomParkedRedirect = (page = {}) => {
+  const rawHtml = String(page?.html ?? '')
   const finalUrl = getFinalUrl(page)
-  const normalized = normalizeWhitespace(page.html)
+  const normalized = normalizeWhitespace(rawHtml)
 
-  return Number(page.status) === 403
+  return (Number(page.status) === 200 || Number(page.status) === 403)
     && finalUrl === PARKED_DOMAIN_REDIRECT_URL
     && (
       normalized.length === 0
+      || (
+        /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(rawHtml)
+        && /(?:challenges\.cloudflare\.com|noindex,\s*nofollow)/i.test(rawHtml)
+      )
       || (
         normalized.includes('atom.com')
         && normalized.includes('fanclash.com is for sale')
@@ -125,6 +130,7 @@ export const hasVerified404Route = (page = {}, requestedUrl = '') => {
     && !hasPublicJobsSignal(page.html)
     && (
       normalized.length === 0
+      || (normalized.includes('404') && normalized.includes('page not found'))
       || (normalized.includes('page not found.') && normalized.includes('home'))
     )
 }
@@ -166,7 +172,7 @@ export const createFanclashScraper = () => ({
 export const run = async (options = {}) => createFanclashScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

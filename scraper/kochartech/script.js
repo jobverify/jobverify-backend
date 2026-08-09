@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import {
   KOCHARTECH_CATALOG,
@@ -95,7 +95,8 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title>\s*Careers\s*-\s*KocharTech\s*<\/title>/i.test(page)
+  return /<title>\s*Careers\b[^<]*<\/title>/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.kochartech\.com\/careers\/["']/i.test(page)
     && /\bOpen Positions\b/i.test(page)
     && /https:\/\/www\.kochartech\.com\/career\/senior-manager-sales-2\//i.test(page)
     && /https:\/\/www\.kochartech\.com\/career\/inside-sales-executive-sales\//i.test(page)
@@ -203,7 +204,7 @@ export const createKocharTechScraper = ({
 export const run = async (options = {}) => createKocharTechScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

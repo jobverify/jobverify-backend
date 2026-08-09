@@ -11,16 +11,37 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const FIRST_PARTY_ROOT_URLS = [
   'https://www.yalamanchili.co.in/',
+  'https://www.ysppayments.com/',
 ]
 export const NO_PUBLIC_JOB_ROUTE_URLS = [
   'https://www.yalamanchili.co.in/careers',
   'https://www.yalamanchili.co.in/jobs',
   'https://www.yalamanchili.co.in/careers.html',
+  'https://www.ysppayments.com/career',
+  'https://www.ysppayments.com/careers',
+  'https://www.ysppayments.com/jobs',
 ]
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 const REQUEST_TIMEOUT_MS = 10000
+
+export const isExpectedRedirectedHomepageSurface = (surface = {}) => {
+  const finalUrl = String(surface?.finalUrl ?? '')
+  const html = String(surface?.html ?? '')
+  const visibleText = html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return surface?.status === 200
+    && finalUrl === 'https://www.ysppayments.com/'
+    && /<title[^>]*>\s*YSP\s*\|\s*Yalamanchili Solutions for Payments\s*<\/title>/i.test(html)
+    && /Providing enterprise class customizable and scalable end-to-end payment solutions since 1998/i.test(visibleText)
+    && !/(career|careers|job|jobs|opening|openings|vacancy|vacancies|join us|work with us)/i.test(visibleText)
+}
 
 export const isExpectedDormantSurface = (surface = {}) =>
   (
@@ -30,8 +51,12 @@ export const isExpectedDormantSurface = (surface = {}) =>
   )
   || (
     surface?.status === 404
-    && /not found/i.test(String(surface?.html ?? ''))
+    && (
+      !String(surface?.html ?? '').trim()
+      || /not found/i.test(String(surface?.html ?? ''))
+    )
   )
+  || isExpectedRedirectedHomepageSurface(surface)
 
 export const isUnexpectedReachableSurface = (surface = {}) =>
   Number.isInteger(surface?.status) && surface.status > 0 && surface.status < 400
@@ -106,8 +131,8 @@ export const createYalamanchiliSoftwareExportsScraper = () => ({
 
 export const run = async (options = {}) => createYalamanchiliSoftwareExportsScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

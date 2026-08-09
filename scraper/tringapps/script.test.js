@@ -12,12 +12,19 @@ const loadModule = async () => {
 const homepageHtml = `
   <!doctype html>
   <html lang="en">
+    <head>
+      <title>Home - tringapps</title>
+      <meta
+        name="description"
+        content="Tringapps is a full-stack digital transformation company specializing in AI, FinTech, cloud, mobile, and OTT solutions. Explore our services!"
+      />
+    </head>
     <body>
       <main>
         <h1>Transform Ideas into Innovation</h1>
         <p>Build Next-Gen Digital Products with AI, ML &amp; Cloud to Drive Innovation, Scalability, and Engagement</p>
         <a href="https://tringapps.com/about-us/">About us</a>
-        <a href="https://tringapps.com/careers/">Careers</a>
+        <a href="https://tringapps.com/career/">Careers</a>
         <a href="https://tringapps.com/contact-us/">Contact us</a>
       </main>
     </body>
@@ -33,6 +40,7 @@ const aboutHtml = `
         <p>One vision. Infinite possibilities.</p>
         <p>Tringapps Inc, a part of Jean Martin Inc. (JMI), along with other affiliates forms a global powerhouse in technology, research, and analytics.</p>
         <p>With over 2,000 employees across ten global locations including the United States, Colombia, India, Dubai and Japan.</p>
+        <p>Empowering businesses through cutting-edge technology, research, and analytics solutions.</p>
         <p>500+ Clients</p>
       </main>
     </body>
@@ -128,6 +136,7 @@ const contactHtml = `
         <h2>Keep in touch</h2>
         <p>Which division should we connect you to</p>
         <h2>Global Locations</h2>
+        <p>New York City, NY</p>
         <p>Mumbai, India</p>
         <p>Chennai, India</p>
         <p>Madurai, India</p>

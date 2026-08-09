@@ -2,8 +2,10 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
+import { inferExperienceFromPublicPageHtml } from '../../scraper-support/utils/publicExperienceEnrichment.js'
 import { JOHNSON_CONTROLS_INDIA_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -20,8 +22,11 @@ export const PROVIDER_METADATA = JOHNSON_CONTROLS_INDIA_CATALOG
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const ALGOLIA_AGENT =
+  'Algolia for JavaScript (4.24.0); Browser (lite); instantsearch.js (4.87.0); JS Helper (3.27.0)'
 const DETAIL_URL_BASE = 'https://jobs.johnsoncontrols.com/job/'
 const DEFAULT_PAGE_SIZE = 100
+const DEFAULT_DETAIL_CONCURRENCY = 6
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -130,6 +135,14 @@ export const buildAlgoliaSearchRequestBody = ({
   ],
 })
 
+const buildAlgoliaRequestUrl = (baseUrl = ALGOLIA_SEARCH_URL) => {
+  const url = new URL(baseUrl)
+  url.searchParams.set('x-algolia-agent', ALGOLIA_AGENT)
+  url.searchParams.set('x-algolia-api-key', ALGOLIA_API_KEY)
+  url.searchParams.set('x-algolia-application-id', ALGOLIA_APPLICATION_ID)
+  return url.toString()
+}
+
 const getPrimaryAlgoliaResult = (payload) => {
   const result = Array.isArray(payload?.results) ? payload.results[0] : null
   const hits = Array.isArray(result?.hits) ? result.hits : null
@@ -194,14 +207,14 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(buildAlgoliaRequestUrl(url), {
   method: options.method,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
-    'Content-Type': 'application/json',
-    'x-algolia-api-key': ALGOLIA_API_KEY,
-    'x-algolia-application-id': ALGOLIA_APPLICATION_ID,
+    'Content-Type': 'application/x-www-form-urlencoded',
+    Origin: 'https://jobs.johnsoncontrols.com',
+    Referer: 'https://jobs.johnsoncontrols.com/',
     ...(options.headers || {}),
   },
   body: options.body,
@@ -212,6 +225,7 @@ const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
 export const createJohnsonControlsIndiaScraper = ({
   maxJobs = null,
   pageSize = DEFAULT_PAGE_SIZE,
+  detailConcurrency = DEFAULT_DETAIL_CONCURRENCY,
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
@@ -240,18 +254,31 @@ export const createJohnsonControlsIndiaScraper = ({
       page += 1
 
       if (Number.isFinite(maxJobs) && jobs.length >= maxJobs) {
-        return jobs.slice(0, maxJobs)
+        break
       }
     }
 
-    return jobs
+    const selectedJobs = Number.isFinite(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+
+    return mapWithConcurrency(
+      selectedJobs,
+      detailConcurrency,
+      async (job) => {
+        try {
+          const detailHtml = await fetchText(job.sourceUrl)
+          return inferExperienceFromPublicPageHtml(job, detailHtml)
+        } catch {
+          return job
+        }
+      },
+    )
   },
 })
 
 export const run = async (options = {}) => createJohnsonControlsIndiaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

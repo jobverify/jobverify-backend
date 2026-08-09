@@ -20,6 +20,17 @@ const homepageHtml = `
   </html>
 `
 
+const liveHomepageHtml = `
+  <html>
+    <head>
+      <title>Vidyalai.com: One to One Online Tuitions for IGCSE, IB, CBSE, ICSE, JEE, NEET, SAT and more.</title>
+    </head>
+    <body>
+      <a href="http://erp.vidyalai.com/jobs">Careers</a>
+    </body>
+  </html>
+`
+
 const jobsPageHtml = `
   <html>
     <head>
@@ -98,6 +109,7 @@ test('Vidyalai constants stay pinned to the verified homepage, jobs handoff, and
     'https://erp.vidyalai.com/api/resource/Job%20Opening?fields=%5B%22name%22,%22job_title%22,%22route%22,%22company%22,%22department%22,%22employment_type%22,%22location%22,%22status%22%5D&filters=%5B%5B%22company%22,%22%3D%22,%22Vidyalai%22%5D,%5B%22status%22,%22%3D%22,%22Open%22%5D%5D&limit_page_length=200',
   )
   assert.equal(vidyalai.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(vidyalai.hasOfficialHomepageSignal(liveHomepageHtml), true)
   assert.equal(vidyalai.extractJobsPageCount(jobsPageHtml), 2)
   assert.equal(
     vidyalai.buildDetailUrl('jobs/vidyalai/senior-software-engineer'),

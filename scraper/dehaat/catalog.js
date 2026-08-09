@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 15, 2026 that https://agrevolution.in/ exposes the first-party DeHaat homepage with an Apply Now handoff to https://apply.workable.com/agrevolution/, that https://agrevolution.in/careers remains the live first-party careers page, and that the public Workable surfaces at https://apply.workable.com/agrevolution/, https://apply.workable.com/agrevolution/jobs.md, and https://apply.workable.com/api/v1/widget/accounts/agrevolution were live with 0 current openings on the verified date.'
+  'Verified on Saturday, August 1, 2026 that https://agrevolution.in/ remains the live first-party DeHaat homepage with an Apply Now handoff to https://apply.workable.com/agrevolution/, that https://agrevolution.in/careers is still the live first-party Current Openings page on a newer Next.js shell, and that the public Workable surfaces at https://apply.workable.com/agrevolution/, https://apply.workable.com/agrevolution/jobs.md, and https://apply.workable.com/api/v1/widget/accounts/agrevolution were live and still showed 0 current openings on the verified date.'
 
 export const DEHAAT_CATALOG = {
   source: 'dehaat',
@@ -25,7 +25,7 @@ export const DEHAAT_CATALOG = {
     'verified-first-party-homepage+verified-first-party-careers-page+verified-workable-board+verified-workable-jobs-feed+widget-api-empty-state',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'dehaat/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

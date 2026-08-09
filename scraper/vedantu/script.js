@@ -1,8 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -44,6 +44,10 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<p\b[^>]*>/gi, '\n')
     .replace(/<[^>]+>/g, ' '),
 )
+
+const extractHrefs = (html) => [...String(html ?? '').matchAll(/href="([^"]+)"/gi)]
+  .map(([, href]) => normalizeWhitespace(href)?.replace(/&amp;/gi, '&'))
+  .filter(Boolean)
 
 const normalizeEmploymentType = (value) => {
   const normalized = normalizeWhitespace(value)?.toLowerCase()
@@ -111,12 +115,14 @@ const parseJobPostingJsonLd = (html) => {
 }
 
 export const pageIndicatesOfficialLinkedinHandoff = (html) => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)?.toLowerCase() || ''
+  const normalized = stripTags(html)?.toLowerCase() || ''
+  const hrefs = new Set(extractHrefs(html))
+  const hasAcademicCareersLink = hrefs.has('https://courses.vedantu.com/acads-career-page/')
+    || hrefs.has('https://courses.vedantu.com/career-page/')
 
   return normalized.includes('find your role')
-    && normalized.includes('courses.vedantu.com/acads-career-page')
-    && page.includes(LINKEDIN_JOBS_URL)
+    && hasAcademicCareersLink
+    && hrefs.has(LINKEDIN_JOBS_URL)
 }
 
 export const pageIndicatesVedantuCompany = (html) => {
@@ -233,8 +239,8 @@ export const createVedantuScraper = ({
 
 export const run = async () => createVedantuScraper().run()
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Vedantu scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

@@ -1,7 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { inferExperienceFromPublicPageHtml } from '../../scraper-support/utils/publicExperienceEnrichment.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -45,6 +46,28 @@ const slugify = (value) => normalizeWhitespace(value)
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '') || null
 
+const escapeRegex = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const extractExperienceEvidence = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+  if (/\bno experience required\b/i.test(normalized)) return 'No experience required'
+
+  let match = normalized.match(/\b(\d+)\s*-\s*(\d+)\s*(?:years?|yrs?)\b/i)
+  if (match) return `${match[1]}-${match[2]} years`
+
+  match = normalized.match(/\b(\d+)\+\s*(?:years?|yrs?)\b/i)
+  if (match) return `${match[1]}+ years`
+
+  match = normalized.match(/\bat least\s+(\d+)\s*(?:years?|yrs?)\b/i)
+  if (match) return `${match[1]} years`
+
+  match = normalized.match(/\bminimum\s+(\d+)\s*(?:years?|yrs?)\b/i)
+  if (match) return `${match[1]} years`
+
+  return null
+}
+
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
@@ -74,17 +97,75 @@ const extractRoleTitles = (html) => {
   return [...new Set(titles)]
 }
 
+const hasSharedApplicationFormSignal = (html) => {
+  const page = String(html ?? '')
+  const text = stripTags(page) || ''
+
+  return /id=["']jaf-select_role["']/i.test(page)
+    && (/id=["']jaf-experience["']/i.test(page) || /Relevant years of experience/i.test(text))
+    && /Current-CTC-LPA-INR/i.test(page)
+    && /Linked In - Job Posting/i.test(text)
+    && /Thence Website/i.test(text)
+}
+
+const extractRoleSpecificExperienceFromSharedPage = (html, title) => {
+  const normalizedTitle = normalizeWhitespace(title)
+  const pageText = stripTags(html) || ''
+  if (!normalizedTitle || !pageText) return null
+
+  const titlePattern = new RegExp(escapeRegex(normalizedTitle), 'ig')
+  for (const match of pageText.matchAll(titlePattern)) {
+    const index = match.index ?? -1
+    if (index === -1) continue
+
+    const start = Math.max(0, index - 80)
+    const end = Math.min(pageText.length, index + normalizedTitle.length + 260)
+    const experience = extractExperienceEvidence(pageText.slice(start, end))
+    if (experience) {
+      return experience
+    }
+  }
+
+  return null
+}
+
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
   const roleTitles = extractRoleTitles(page)
 
   return /<title>\s*Careers\s*<\/title>/i.test(page)
-    && /Join Thence/i.test(text)
+    && (/Join Thence/i.test(text) || /Solve for Change/i.test(text))
     && /Current-CTC-LPA-INR/i.test(page)
     && /Linked In - Job Posting/i.test(text)
     && /Thence Website/i.test(text)
     && roleTitles.length > 0
+}
+
+const enrichRoleFromSharedCareersPage = (job, html) => {
+  if (hasSharedApplicationFormSignal(html)) {
+    return {
+      ...job,
+      experienceRequired: extractRoleSpecificExperienceFromSharedPage(html, job.title) || job.experienceRequired || null,
+      jobDescription: null,
+      publicExperienceChecked: true,
+    }
+  }
+
+  const enriched = inferExperienceFromPublicPageHtml({
+    ...job,
+    source: SOURCE,
+    link: job.applyUrl || job.sourceUrl,
+    publicExperienceChecked: false,
+  }, html)
+
+  return {
+    ...job,
+    experienceRequired: enriched.experienceRequired || job.experienceRequired || null,
+    jobDescription: enriched.jobDescription || job.jobDescription || null,
+    publicExperienceChecked: enriched.publicExperienceChecked === true
+      || hasSharedApplicationFormSignal(html),
+  }
 }
 
 export const extractOpenRoles = (html) => {
@@ -95,7 +176,7 @@ export const extractOpenRoles = (html) => {
   const jobs = extractRoleTitles(html).map((title) => {
     const identitySlug = slugify(title)
 
-    return {
+    const baseJob = {
       title,
       company: COMPANY,
       department: null,
@@ -116,6 +197,8 @@ export const extractOpenRoles = (html) => {
       jobDescription: null,
       remoteStatus: null,
     }
+
+    return enrichRoleFromSharedCareersPage(baseJob, html)
   })
 
   if (jobs.length === 0) {
@@ -161,7 +244,7 @@ export const createThenceScraper = () => ({
 export const run = async (options = {}) => createThenceScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

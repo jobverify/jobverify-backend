@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { BLUCOGNITION_CATALOG } from './catalog.js'
 
@@ -12,7 +12,7 @@ export const COMPANY = BLUCOGNITION_CATALOG.companyName
 export const CAREERS_URL = BLUCOGNITION_CATALOG.companyCareerPage
 export const JOBS_API_URL = BLUCOGNITION_CATALOG.jobsApiUrl
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([a-f0-9]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -171,7 +171,7 @@ export const createBluCognitionScraper = ({ now = () => new Date().toISOString()
 export const run = async (options = {}) => createBluCognitionScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

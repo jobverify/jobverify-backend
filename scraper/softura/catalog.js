@@ -11,16 +11,16 @@ export const SOFTURA_CATALOG = {
   homepageUrl: 'https://www.softura.com/',
   companyCareerPage: 'https://www.softura.com/careers/',
   companyDomain: 'softura.com',
-  atsPlatform: 'official-company-careers-blocked',
+  atsPlatform: 'first-party-detail-pages-plus-zoho-links',
   countryFilter: 'India',
-  paginationStrategy: 'single-cloudflare-blocked-careers-route',
+  paginationStrategy: 'single-first-party-careers-page-plus-public-apply-links',
   extractionStrategy:
-    'verified-first-party-careers-route+cloudflare-block-page+fail-closed-empty-result',
+    'verified-first-party-careers-page+public-apply-now-links+first-party-detail-pages+zoho-detail-pages+india-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that the first-party Softura careers route is https://www.softura.com/careers/. The public route currently serves a Cloudflare "Sorry, you have been blocked" page instead of a trustworthy jobs surface, so this local provider fails closed until Softura exposes a publicly fetchable first-party careers board again.',
+    'Verified on Tuesday, August 4, 2026 that the first-party Softura careers route at https://www.softura.com/careers/ was publicly reachable again, exposed public Apply Now links to first-party Softura detail pages plus public Zoho Recruit detail pages, and included India-facing roles such as Java Senior Developer in Ahmedabad, Python Senior Software Engineer in Chennai, and Java Developer in Chennai.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'softura/jobs.json',
 }

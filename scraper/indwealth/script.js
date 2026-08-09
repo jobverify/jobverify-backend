@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { INDWEALTH_CATALOG } from './catalog.js'
-import { loadConfig } from '../utils/loadConfig.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -51,6 +51,18 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<li\b[^>]*>/gi, '\n')
     .replace(/<p\b[^>]*>/gi, '\n')
     .replace(/<[^>]+>/g, ' '),
+)
+
+const toAbsoluteUrl = (value, baseUrl = OFFICIAL_ABOUT_URL) => {
+  try {
+    return new URL(String(value ?? ''), baseUrl).toString()
+  } catch {
+    return null
+  }
+}
+
+const extractTitleText = (html) => normalizeWhitespace(
+  /<title[^>]*>([\s\S]*?)<\/title>/i.exec(String(html ?? ''))?.[1] || null,
 )
 
 const normalizeEmploymentType = (value) => {
@@ -118,8 +130,9 @@ export const hasVerifiedRedirectHomepageSignal = ({ url, html } = {}) => {
 
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)?.toLowerCase() || ''
+  const title = extractTitleText(rawHtml)?.toLowerCase() || ''
 
-  return /<title>\s*Indmoney:\s*Online Trading & Investing App for Indian & US Markets\s*<\/title>/i.test(rawHtml)
+  return title.includes('indmoney: online trading & investing app for indian & us markets')
     && normalized.includes('trade & invest in indian & us markets from one app')
     && normalized.includes('about us')
     && normalized.includes('blog')
@@ -129,16 +142,38 @@ export const hasVerifiedRedirectHomepageSignal = ({ url, html } = {}) => {
     && normalized.includes('sitemap')
 }
 
-export const extractLinkedInCompanyJobsUrl = (html) => {
-  const match = String(html ?? '').match(
-    /<a[^>]+href=["'](https:\/\/www\.linkedin\.com\/company\/indmoney\/jobs\/?)["'][^>]*>\s*Join Our Team\s*<\/a>/i,
-  )
+const normalizeLinkedInCompanyJobsUrl = (value) => {
+  const absoluteUrl = toAbsoluteUrl(value, OFFICIAL_ABOUT_URL)
+  if (!absoluteUrl) return null
 
-  return normalizeWhitespace(match?.[1] ?? null)
+  try {
+    const url = new URL(absoluteUrl)
+    const hostname = url.hostname.replace(/^www\./i, '').toLowerCase()
+    if (hostname !== 'linkedin.com' && hostname !== 'in.linkedin.com') return null
+
+    if (/^\/company\/indmoney\/jobs\/?$/i.test(url.pathname)) {
+      return LINKEDIN_COMPANY_JOBS_URL
+    }
+
+    if (/^\/authwall\/?$/i.test(url.pathname)) {
+      const redirected = url.searchParams.get('sessionRedirect')
+      return redirected ? normalizeLinkedInCompanyJobsUrl(redirected) : null
+    }
+  } catch {
+    return null
+  }
+
+  return null
 }
 
-const hasJoinOurTeamAnchor = (html) =>
-  /<a[^>]+href=["'][^"']+["'][^>]*>\s*Join Our Team\s*<\/a>/i.test(String(html ?? ''))
+export const extractLinkedInCompanyJobsUrl = (html) => {
+  for (const match of String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["']/gi)) {
+    const normalizedUrl = normalizeLinkedInCompanyJobsUrl(match[1])
+    if (normalizedUrl) return normalizedUrl
+  }
+
+  return null
+}
 
 export const hasVerifiedAboutPageSignal = (html) => {
   const rawHtml = String(html ?? '')
@@ -148,7 +183,6 @@ export const hasVerifiedAboutPageSignal = (html) => {
     && normalized.includes('super finance app')
     && normalized.includes('join us')
     && normalized.includes('join our team')
-    && hasJoinOurTeamAnchor(rawHtml)
 }
 
 export const hasVerifiedLinkedInCompanySignal = ({ url, html } = {}) => {
@@ -263,9 +297,28 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: 'indwealth-html',
   timeoutMs: 15000,
 })
+
+export const hasCloudflareChallengePageSignal = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)?.toLowerCase() || ''
+
+  return /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(rawHtml)
+    && normalized.includes('enable javascript and cookies to continue')
+    && (
+      normalized.includes('security verification')
+      || normalized.includes('cloudflare')
+      || /\bindmoney\.com\b/i.test(rawHtml)
+      || /\bindwealth\.in\b/i.test(rawHtml)
+    )
+}
+
+const shouldIgnoreLinkedInDetailError = (error) =>
+  /HTTP 429\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
 
 export const createIndwealthScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
@@ -275,57 +328,89 @@ export const createIndwealthScraper = ({
     fetchText = defaultFetchText,
     now = () => new Date().toISOString(),
   } = {}) {
-    const homepage = await fetchPage(OFFICIAL_REDIRECT_SOURCE_URL)
-    if (homepage.status !== 200 || !hasVerifiedRedirectHomepageSignal(homepage)) {
-      throw new Error('The official INDwealth redirect no longer matches the verified INDmoney homepage surface')
+    const fetchApiOnlyPage = async (url) => {
+      try {
+        const page = await fetchPage(url)
+        if (hasCloudflareChallengePageSignal(page.html)) {
+          throw new Error('Cloudflare challenge')
+        }
+        return page
+      } catch (error) {
+        throw new Error(`INDwealth API-only migration could not fetch ${url}: ${error.message}`)
+      }
     }
 
-    const aboutPage = await fetchPage(OFFICIAL_ABOUT_URL)
-    if (aboutPage.status !== 200 || !hasVerifiedAboutPageSignal(aboutPage.html)) {
-      throw new Error('The official INDmoney about page no longer matches the verified public surface')
+    const fetchApiOnlyText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        throw new Error(`INDwealth API-only migration could not fetch ${url}: ${error.message}`)
+      }
     }
 
-    if (normalizeUrl(extractLinkedInCompanyJobsUrl(aboutPage.html)) !== normalizeUrl(LINKEDIN_COMPANY_JOBS_URL)) {
-      throw new Error('The official INDmoney about-page LinkedIn handoff changed materially')
-    }
+      const homepage = await fetchApiOnlyPage(OFFICIAL_REDIRECT_SOURCE_URL)
+      if (homepage.status !== 200 || !hasVerifiedRedirectHomepageSignal(homepage)) {
+        throw new Error('The official INDwealth redirect no longer matches the verified INDmoney homepage surface')
+      }
 
-    const linkedInCompanyPage = await fetchPage(LINKEDIN_COMPANY_JOBS_URL)
-    if (linkedInCompanyPage.status !== 200 || !hasVerifiedLinkedInCompanySignal(linkedInCompanyPage)) {
-      throw new Error('The verified LinkedIn company page changed materially')
-    }
+      const aboutPage = await fetchApiOnlyPage(OFFICIAL_ABOUT_URL)
+      if (aboutPage.status !== 200 || !hasVerifiedAboutPageSignal(aboutPage.html)) {
+        throw new Error('The official INDmoney about page no longer matches the verified public surface')
+      }
 
-    const listingsHtml = await fetchText(LINKEDIN_PUBLIC_JOBS_URL)
-    if (!hasPublicLinkedInJobsSignal(listingsHtml)) {
-      throw new Error('The public INDmoney LinkedIn jobs surface changed materially')
-    }
+      if (normalizeUrl(extractLinkedInCompanyJobsUrl(aboutPage.html)) !== normalizeUrl(LINKEDIN_COMPANY_JOBS_URL)) {
+        throw new Error('The official INDmoney about-page LinkedIn handoff changed materially')
+      }
 
-    const listings = extractSearchResults(listingsHtml)
-    const selectedJobs = maxJobs ? listings.slice(0, maxJobs) : listings
-    const enrichedJobs = []
+      const linkedInCompanyPage = await fetchApiOnlyPage(LINKEDIN_COMPANY_JOBS_URL)
+      if (linkedInCompanyPage.status !== 200 || !hasVerifiedLinkedInCompanySignal(linkedInCompanyPage)) {
+        throw new Error('The verified LinkedIn company page changed materially')
+      }
 
-    for (const listing of selectedJobs) {
-      const detail = extractJobDetail(await fetchText(listing.sourceUrl))
-      enrichedJobs.push({
-        ...listing,
-        ...Object.fromEntries(
-          Object.entries(detail).filter(([, value]) => value != null),
-        ),
-      })
-    }
+      const listingsHtml = await fetchApiOnlyText(LINKEDIN_PUBLIC_JOBS_URL)
+      const listings = extractSearchResults(listingsHtml)
+      if (!hasPublicLinkedInJobsSignal(listingsHtml) && listings.length === 0) {
+        throw new Error('The public INDmoney LinkedIn jobs surface changed materially')
+      }
 
-    return enrichedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
+      const selectedJobs = maxJobs ? listings.slice(0, maxJobs) : listings
+      const enrichedJobs = []
+      const shouldFetchLinkedInDetails = fetchText !== defaultFetchText
+
+      for (const listing of selectedJobs) {
+        let detail = {}
+
+        if (shouldFetchLinkedInDetails) {
+          try {
+            detail = extractJobDetail(await fetchApiOnlyText(listing.sourceUrl))
+          } catch (error) {
+            if (!shouldIgnoreLinkedInDetailError(error)) {
+              throw error
+            }
+          }
+        }
+
+        enrichedJobs.push({
+          ...listing,
+          ...Object.fromEntries(
+            Object.entries(detail).filter(([, value]) => value != null),
+          ),
+        })
+      }
+
+      return enrichedJobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: now(),
+      }))
   },
 })
 
 export const run = async (options = {}) => createIndwealthScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

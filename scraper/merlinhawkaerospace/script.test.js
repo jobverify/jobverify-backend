@@ -1,11 +1,11 @@
-import assert from 'node:assert/strict'
+﻿import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const customProvidersPath = path.join(currentDir, '..', 'providers', 'customProviders.json')
+const customProvidersPath = path.join(currentDir, '..', '..', 'scraper-support', 'providers', 'customProviders.json')
 
 const verifiedHomepageHtml = `
   <!DOCTYPE html>
@@ -208,7 +208,7 @@ test('Merlinhawk Aerospace homepage signal accepts the live awards copy punctuat
   const merlinhawk = await loadModule()
   const liveLikeHomepageHtml = verifiedHomepageHtml.replace(
     'SIDM Champion Awards 2024 - Import Substitution',
-    'SIDM Champion Awards 2024 – Import Substitution',
+    'SIDM Champion Awards 2024 â€“ Import Substitution',
   )
 
   assert.equal(merlinhawk.hasOfficialHomepageSignal(liveLikeHomepageHtml), true)
@@ -326,3 +326,4 @@ test('Merlinhawk Aerospace custom provider entry points at the one-company no-pu
     companyDomain: 'merlinhawkaerospace.com',
   })
 })
+

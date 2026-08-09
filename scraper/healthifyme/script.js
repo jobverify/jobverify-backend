@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { HEALTHIFYME_CATALOG } from './catalog.js'
 
@@ -23,7 +23,8 @@ export const VERIFIED_ON = HEALTHIFYME_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = HEALTHIFYME_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = HEALTHIFYME_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const darwinboxScraper = createDarwinboxScraper({
   companyName: COMPANY_NAME,
@@ -113,7 +114,7 @@ export const createHealthifyMeScraper = ({
 export const run = async (options = {}) => createHealthifyMeScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

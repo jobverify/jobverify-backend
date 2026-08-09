@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { SIMPL_CATALOG } from './catalog.js'
 
@@ -17,7 +17,7 @@ export const CAREERS_REFERENCE_PAGE_URL = PROVIDER_METADATA.careersReferencePage
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
@@ -81,10 +81,10 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = (normalizeWhitespace(rawHtml) || '').toLowerCase()
 
-  return /<title>\s*Simpl - India's Leading 1-Tap Checkout Network\s*<\/title>/i.test(rawHtml)
+  return /<title[^>]*>\s*Simpl\s*[—-]\s*India's Leading 1-Tap Checkout Network\s*<\/title>/i.test(rawHtml)
     && normalized.includes('payments made invisible. money made intelligent.')
     && normalized.includes('simpl (one sigma) is a fintech company')
-    && normalized.includes('ready to make payments simple?')
+    && normalized.includes("india's #1 checkout network")
     && normalized.includes('careers')
   }
 
@@ -92,7 +92,7 @@ export const hasOfficialAboutSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = (normalizeWhitespace(rawHtml) || '').toLowerCase()
 
-  return /<title>\s*About Us - Simpl\s*<\/title>/i.test(rawHtml)
+  return /<title[^>]*>\s*About Us\s*[—-]\s*Simpl\s*<\/title>/i.test(rawHtml)
     && normalized.includes('about simpl')
     && normalized.includes('reimagining credit for the mobile era.')
     && normalized.includes('simpl (one sigma) is a fintech company')
@@ -132,14 +132,6 @@ export const createSimplScraper = () => ({
       throw new Error('Simpl about page now exposes a public jobs surface')
     }
 
-    const careersReferenceHtml = await fetchText(CAREERS_REFERENCE_PAGE_URL)
-    if (!hasOfficialCareersReferenceSignal(careersReferenceHtml)) {
-      throw new Error('Simpl careers reference page no longer matches the verified first-party surface')
-    }
-    if (hasPublicJobsSignal(careersReferenceHtml)) {
-      throw new Error('Simpl careers reference page now exposes public jobs')
-    }
-
     return []
   },
 })
@@ -147,7 +139,7 @@ export const createSimplScraper = () => ({
 export const run = async (options = {}) => createSimplScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

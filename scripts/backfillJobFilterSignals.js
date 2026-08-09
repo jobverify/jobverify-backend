@@ -5,6 +5,8 @@ import connectDB from "../db/db.js";
 import Job from "../src/models/Job.js";
 import { extractJobFilterSignals } from "../src/utils/jobFilterSignals.js";
 import { buildJobSearchKeys } from "../src/utils/jobSearchKeys.js";
+import { buildJobDerivedFields } from "../src/utils/jobDerivedFields.js";
+import { inferMissingExperienceRequired } from "../scraper-support/utils/normalizeScrapedJob.js";
 
 dotenv.config();
 
@@ -126,11 +128,16 @@ const main = async () => {
               update: {
                 $set: {
                   ...buildJobSearchKeys(job),
+                  ...buildJobDerivedFields(job),
                   skillIds: signals.skillIds,
                   requiredSkillIds: signals.requiredSkillIds,
                   preferredSkillIds: signals.preferredSkillIds,
                   jobSkills: signals.jobSkills,
                   experienceBucket: signals.experienceBucket,
+                  experienceRequired: inferMissingExperienceRequired(
+                    job.experienceRequired,
+                    signals.experienceProfile,
+                  ),
                   experienceProfile: signals.experienceProfile,
                   experienceYears: signals.experienceYears,
                   seniority: signals.seniority,

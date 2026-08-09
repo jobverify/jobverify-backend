@@ -1,0 +1,22 @@
+{
+  "source": "cropin",
+  "companyName": "CropIn",
+  "officialBrandName": "Cropin Technology Solutions Private Limited",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../cropin/script.js",
+  "dryRunFile": "cropin/jobs.json",
+  "companyCareerPage": "https://www.cropin.com/career/",
+  "companyDomain": "cropin.com",
+  "atsPlatform": "official-first-party-careers-resume-form-no-enumerable-public-listings",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-careers-page-sentinel",
+  "extractionStrategy": "verified-first-party-resume-form-without-public-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.cropin.com/career/",
+  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://www.cropin.com/career/ is CropIn's first-party careers surface. The page accepts resumes for a position applicants choose but exposes no trustworthy enumerable public openings or official ATS feed. This exact-name provider therefore fails closed and returns no jobs rather than substituting third-party listings or similarly named companies."
+}

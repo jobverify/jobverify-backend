@@ -1,7 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -76,6 +77,11 @@ const stripTags = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
 
 const normalizeVisibleText = (value) => normalizeWhitespace(stripTags(value)) || ''
+
+const hasHref = (html, path) => new RegExp(
+  `href=["']${String(path).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`,
+  'i',
+).test(String(html ?? ''))
 
 const slugify = (value) => normalizeWhitespace(value)
   ?.toLowerCase()
@@ -191,11 +197,20 @@ export const hasOfficialCareersSignal = (html) => {
   const text = normalizeVisibleText(page)
 
   return /<title>\s*Careers\s*\|\s*METRO GSC IN\s*<\/title>/i.test(page)
-    && page.includes('At METRO GSC India, you matter. Shape our future and your career- together with us.')
-    && text.includes('At METRO GSC India, you matter. Shape our future and your career- together with us.')
-    && /href=["']\/careers\/our-employer-promise["']/i.test(page)
-    && /href=["']\/careers\/working-at-mgsc-india["']/i.test(page)
-    && /href=["']\/careers\/jobs["']/i.test(page)
+    && (
+      text.includes('At METRO GSC India, you matter. Shape our future and your career- together with us.')
+      || text.includes("At METRO GSC India, you'll help build the future of METRO from the inside out.")
+    )
+    && (
+      hasHref(page, '/careers/our-employer-promise')
+      || hasHref(page, '/careers/why-join-us')
+    )
+    && (
+      hasHref(page, '/careers/working-at-mgsc-india')
+      || hasHref(page, '/careers/people-of-mgsc-india')
+    )
+    && (hasHref(page, '/careers/career-development') || hasHref(page, '/careers/jobs'))
+    && hasHref(page, '/careers/jobs')
 }
 
 export const hasOfficialJobsSignal = (html) => {
@@ -324,6 +339,25 @@ const buildCombinedDescription = ({ detailDescription, qualifications, benefits,
   return sections.join('\n\n') || null
 }
 
+const extractExperienceRequired = (publicEvidence) => {
+  const normalizedEvidence = normalizeWhitespace(publicEvidence)
+  if (!normalizedEvidence) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalizedEvidence,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
+}
+
 const extractJobFromDetailPage = ({ listing, detailHtml }) => {
   const detailPage = String(detailHtml ?? '')
   const headingTitle = extractAttribute(detailPage, /<h1\b[^>]*>([\s\S]*?)<\/h1>/i)
@@ -352,6 +386,19 @@ const extractJobFromDetailPage = ({ listing, detailHtml }) => {
     throw new Error(`Metro Global Solution Center detail page sections drifted for "${listing.title}"`)
   }
 
+  const jobDescription = buildCombinedDescription({
+    detailDescription,
+    qualifications: qualificationsSection,
+    benefits: benefitsSection,
+    listingDescription: listing.jobDescription,
+  })
+  const publicExperienceEvidence = normalizeWhitespace([
+    detailDescription,
+    qualificationsSection,
+    benefitsSection,
+    listing.jobDescription,
+  ].filter(Boolean).join(' '))
+
   return {
     title: listing.title,
     company: COMPANY,
@@ -364,18 +411,14 @@ const extractJobFromDetailPage = ({ listing, detailHtml }) => {
     sourceUrl: listing.detailUrl,
     applyUrl,
     employmentType: listing.employmentType,
-    experienceRequired: null,
+    experienceRequired: extractExperienceRequired(publicExperienceEvidence),
     minimumQualification: qualificationsSection,
     preferredQualification: null,
     requiredSkills: qualificationBullets,
     postingDate: listing.postingDate,
     closingDate: null,
-    jobDescription: buildCombinedDescription({
-      detailDescription,
-      qualifications: qualificationsSection,
-      benefits: benefitsSection,
-      listingDescription: listing.jobDescription,
-    }),
+    jobDescription,
+    publicExperienceChecked: Boolean(publicExperienceEvidence),
   }
 }
 
@@ -492,7 +535,7 @@ export const createMetroGlobalSolutionCenterScraper = ({
 export const run = async (options = {}) => createMetroGlobalSolutionCenterScraper(options).run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

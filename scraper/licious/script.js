@@ -2,7 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { LICIOUS_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -40,6 +40,11 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
+
+const extractTitle = (html = '') => {
+  const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+  return normalizeWhitespace(match?.[1]) || null
+}
 
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
@@ -85,10 +90,15 @@ export const extractOfficialDarwinboxUrl = (html = '') => {
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page)
+  const text = (normalizeWhitespace(page) || '').toLowerCase()
 
-  return /join the mix/i.test(text)
-    && text.includes('Make an impact.')
+  return extractTitle(page) === 'Licious Careers'
+    && text.includes('join the mix')
+    && (
+      text.includes('make an impact.')
+      || text.includes('think you are the magic ingredient?')
+      || text.includes('careers@licious.com')
+    )
     && extractOfficialDarwinboxUrl(page) === OFFICIAL_CAREERS_HANDOFF_URL
 }
 
@@ -116,7 +126,7 @@ export const createLiciousScraper = ({
   async run({
     maxPages = config.maxPages,
     fetchText = defaultFetchText,
-    fetchListingPage = defaultFetchListingPage,
+    fetchListingPage,
   } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
 
@@ -148,7 +158,7 @@ export const {
 export const run = async (options = {}) => createLiciousScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,9 +1,9 @@
-export const provider = {
+﻿export const provider = {
   source: 'relinns',
   companyName: 'Relinns Technologies',
   officialBrandName: 'Relinns',
   adapter: 'script',
-  modulePath: '../relinns/script.js',
+  modulePath: '../../scraper/relinns/script.js',
   homepageUrl: 'https://careers.relinns.com/',
   companyCareerPage: 'https://careers.relinns.com/',
   atsPlatform: 'official-company-careers',
@@ -20,3 +20,4 @@ export const provider = {
 }
 
 export default provider
+

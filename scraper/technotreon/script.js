@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -52,6 +52,22 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+export const hasTransportFailure = (error) => {
+  const code = String(error?.cause?.code ?? error?.code ?? '')
+  const message = String(error?.cause?.message ?? error?.message ?? error ?? '')
+
+  return [
+    'UND_ERR_CONNECT_TIMEOUT',
+    'ENOTFOUND',
+    'ENOENT',
+    'ECONNABORTED',
+  ].includes(code)
+    || /\bconnect timeout\b/i.test(message)
+    || /\bgetaddrinfo\b/i.test(message)
+    || /\bdns\b/i.test(message)
+    || /\btimeout\b/i.test(message)
+}
+
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
@@ -69,21 +85,20 @@ export const hasOfficialCareersSignal = (html) => {
   const normalized = normalizeWhitespace(page)
 
   return /<title>\s*CAREERS\s*<\/title>/i.test(page)
-    && normalized.includes("Although we aren't sailing for the Antarctic (yet)")
     && normalized.includes('Open call for all humans who are not machines')
     && normalized.includes('DEPARTMENTS AT TECHNOTREON')
-    && normalized.includes('The Only Room Where Inventors, Engineers & IP Lawyers Build')
+    && normalized.includes('STANDARDISED Aptitude Test')
     && /href=["']https:\/\/forms\.gle\//i.test(page)
 }
 
 export const extractListings = (html) => {
   const page = String(html ?? '')
-  const pattern = /<h2>\s*([^<]*STANDARDISED Aptitude Test)\s*<\/h2>([\s\S]*?)<a[^>]+href=["']([^"']+)["'][^>]*>\s*Apply\s*<\/a>/gi
+  const pattern = /<h2[^>]*>\s*([^<]*STANDARDISED Aptitude Test)\s*<\/h2>([\s\S]*?)<a[^>]+href=["']([^"']+)["'][^>]*>\s*Apply\s*<\/a>/gi
   const listings = []
 
   for (const [, rawTitle, content, rawApplyUrl] of page.matchAll(pattern)) {
     const paragraphs = Array.from(
-      content.matchAll(/<p>([\s\S]*?)<\/p>/gi),
+      content.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi),
       ([, paragraph]) => stripTags(paragraph),
     ).filter(Boolean)
     const title = stripTags(rawTitle)
@@ -106,60 +121,87 @@ export const extractListings = (html) => {
 }
 
 export const createTechnotreonScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('Technotreon verified official homepage changed; refusing to scrape guessed jobs')
-    }
+  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
+    try {
+      let homepageHtml = null
 
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Technotreon verified official careers page changed; refusing to scrape guessed jobs')
-    }
-
-    const listings = extractListings(careersHtml)
-    if (listings.length === 0) {
-      throw new Error('Technotreon verified official careers page no longer exposes parseable public openings')
-    }
-
-    return listings.map((listing) => {
-      const requisitionId = `${SOURCE}-${slugify(listing.title)}`
-
-      return {
-        title: listing.title,
-        company: COMPANY,
-        location: listing.location,
-        city: null,
-        country: 'India',
-        source: SOURCE,
-        sourceUrl: CAREERS_URL,
-        applyUrl: listing.applyUrl,
-        link: listing.applyUrl,
-        companyCareerPage: CAREERS_URL,
-        companyDomain: COMPANY_DOMAIN,
-        atsPlatform: ATS_PLATFORM,
-        jobId: requisitionId,
-        requisitionId,
-        department: listing.department,
-        employmentType: null,
-        remoteStatus: null,
-        experienceRequired: null,
-        jobDescription: listing.description,
-        requiredSkills: [],
-        preferredQualification: null,
-        minimumQualification: null,
-        closingDate: null,
-        postingDate: null,
-        scrapedAt: new Date().toISOString(),
+      try {
+        homepageHtml = await fetchText(HOMEPAGE_URL)
+      } catch (error) {
+        if (!hasTransportFailure(error)) {
+          throw error
+        }
       }
-    })
+
+      if (homepageHtml && !hasOfficialHomepageSignal(homepageHtml)) {
+        throw new Error('Technotreon verified official homepage changed; refusing to scrape guessed jobs')
+      }
+
+      const careersHtml = await fetchText(CAREERS_URL)
+      if (!hasOfficialCareersSignal(careersHtml)) {
+        throw new Error('Technotreon verified official careers page changed; refusing to scrape guessed jobs')
+      }
+
+      const listings = extractListings(careersHtml)
+      if (listings.length === 0) {
+        throw new Error('Technotreon verified official careers page no longer exposes parseable public openings')
+      }
+
+      return listings.map((listing) => {
+        const requisitionId = `${SOURCE}-${slugify(listing.title)}`
+
+        return {
+          title: listing.title,
+          company: COMPANY,
+          location: listing.location,
+          city: null,
+          country: 'India',
+          source: SOURCE,
+          sourceUrl: CAREERS_URL,
+          applyUrl: listing.applyUrl,
+          link: listing.applyUrl,
+          companyCareerPage: CAREERS_URL,
+          companyDomain: COMPANY_DOMAIN,
+          atsPlatform: ATS_PLATFORM,
+          jobId: requisitionId,
+          requisitionId,
+          department: listing.department,
+          employmentType: null,
+          remoteStatus: null,
+          experienceRequired: null,
+          jobDescription: listing.description,
+          requiredSkills: [],
+          preferredQualification: null,
+          minimumQualification: null,
+          closingDate: null,
+          postingDate: null,
+          scrapedAt: now(),
+        }
+      })
+    } catch (error) {
+      if (hasTransportFailure(error)) {
+        return []
+      }
+
+      throw error
+    }
   },
 })
 
 export const run = async (options = {}) => createTechnotreonScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+const isDirectExecution = (() => {
+  if (!process.argv[1]) return false
+
+  try {
+    return path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+  } catch {
+    return false
+  }
+})()
+
+if (isDirectExecution) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

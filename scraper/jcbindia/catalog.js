@@ -1,4 +1,4 @@
-export const VERIFIED_SURFACE_SUMMARY =
+﻿export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Thursday, July 16, 2026 that https://www.jcb.com/en-IN/explore/engage/careers/ is the live first-party JCB India careers route, that it routes candidates to the first-party search board at https://career-in.jcb.com/search/, and that the accessible search results and detail pages expose public roles such as Engineer, Assistant Manager, and Senior Engineer - MEP on the JCB India surface.'
 
 export const JCB_INDIA_CATALOG = {
@@ -6,7 +6,7 @@ export const JCB_INDIA_CATALOG = {
   companyName: 'JCB India',
   officialBrandName: 'JCB India',
   adapter: 'script',
-  modulePath: '../jcbindia/script.js',
+  modulePath: '../../scraper/jcbindia/script.js',
   companyCareerPage: 'https://www.jcb.com/en-IN/explore/engage/careers/',
   officialCareersPageUrl: 'https://www.jcb.com/en-IN/explore/engage/careers/',
   officialJobsBoardUrl: 'https://career-in.jcb.com/',
@@ -25,3 +25,4 @@ export const JCB_INDIA_CATALOG = {
 }
 
 export default JCB_INDIA_CATALOG
+

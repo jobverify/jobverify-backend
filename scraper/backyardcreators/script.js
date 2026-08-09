@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeScrapedJob } from '../utils/normalizeScrapedJob.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeScrapedJob } from '../../scraper-support/utils/normalizeScrapedJob.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -69,12 +69,20 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
 
-  return /<title>\s*Backyard Creators\s*<\/title>/i.test(page)
+  return (
+    /<title>\s*Backyard Creators\s*<\/title>/i.test(page)
     && /meta name="description" content="Redefining Hearing Through Non-Invasive Bionic ear"/i.test(page)
     && /Redefining Hearing Through\s*Non-Invasive/i.test(text)
     && /Backyard Creators Private Limited/i.test(text)
     && /AIC Raise,\s*Eachanari,\s*Coimbatore/i.test(text)
     && /href="\/careers"/i.test(page)
+  ) || (
+    /Backyard Creators/i.test(text)
+    && /Non-invasive electromagnetic platform/i.test(text)
+    && /Pursuing hearing with steerable electromagnetic fields/i.test(text)
+    && /Backyard Creators is developing a non-invasive approach to restore hearing/i.test(text)
+    && /Talk to us/i.test(text)
+  )
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -149,18 +157,58 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: SOURCE,
   timeoutMs: 15000,
 })
 
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
+
+const isLegacyCareersLinkedHomepage = (html = '') => /href="\/careers"/i.test(String(html ?? ''))
+const isHomepageShellWithoutPublicCareers = (html = '') =>
+  hasOfficialHomepageSignal(html) && !hasOfficialCareersSignal(html)
+
 export const createBackyardCreatorsScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
+  async run({
+    fetchText = defaultFetchText,
+    fetchPage = defaultFetchPage,
+    now: overrideNow,
+  } = {}) {
     const homepageHtml = await fetchText(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Backyard Creators verified official homepage no longer matches the known first-party surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
+    const careersPage = await fetchPage(CAREERS_URL)
+    if (careersPage.status === 404 && !isLegacyCareersLinkedHomepage(homepageHtml)) {
+      return []
+    }
+
+    const careersHtml = careersPage.status === 200
+      ? careersPage.html
+      : null
+
+    if (
+      !isLegacyCareersLinkedHomepage(homepageHtml)
+      && isHomepageShellWithoutPublicCareers(careersHtml)
+    ) {
+      return []
+    }
+
     const jobs = extractPublicJobs(careersHtml)
 
     return jobs.map((job) => normalizeScrapedJob({
@@ -183,7 +231,7 @@ export const createBackyardCreatorsScraper = ({ now = () => new Date().toISOStri
 export const run = async (options = {}) => createBackyardCreatorsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

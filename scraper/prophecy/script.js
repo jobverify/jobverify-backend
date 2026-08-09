@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import PROPHECY_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -73,6 +73,29 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const stripTags = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<(br|\/p|\/div|\/section|\/article|\/li|\/ul|\/ol|\/h[1-6])\b[^>]*>/gi, '\n')
+    .replace(/<(p|div|section|article|li|ul|ol|h[1-6]|span)\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' '),
+)
+
+const normalizeExperience = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  const rangeMatch = normalized.match(/\b(\d+)\s*[-–]\s*(\d+)\s*years?\b/i)
+  if (rangeMatch) return `${rangeMatch[1]} - ${rangeMatch[2]} years`
+
+  const plusMatch = normalized.match(/\b(\d+)\+\s*years?\b/i)
+  if (plusMatch) return `${plusMatch[1]}+ years`
+
+  const exactMatch = normalized.match(/\b(\d+)\s*years?\b/i)
+  if (exactMatch) return `${exactMatch[1]} years`
+
+  return null
+}
+
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
 
@@ -115,6 +138,39 @@ export const buildGreenhouseApplyUrl = (value, jobId) => {
   const sourceUrl = normalizeGreenhouseJobUrl(value, jobId)
   return sourceUrl ? `${sourceUrl}#application` : null
 }
+
+export const hasOfficialGreenhouseJobDetailSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = stripTags(page) || ''
+
+  return /<title>\s*.+\s*-\s*Prophecy\s*<\/title>/i.test(page)
+    && /<h1[^>]*>.+<\/h1>/i.test(page)
+    && text.includes('experience')
+  }
+
+export const extractGreenhouseJobDetail = (html = '', listing = {}) => {
+  const text = stripTags(html) || ''
+  const experienceSnippet = text.match(
+    /\b(?:\d+\s*[-–]\s*\d+\s*years?|\d+\+\s*years?|\d+\s*years?)\b[^.]{0,140}\bexperience\b/i,
+  )?.[0]
+
+  return {
+    ...listing,
+    experienceRequired: normalizeExperience(experienceSnippet) || listing.experienceRequired || null,
+  }
+}
+
+export const enrichIndiaJobsWithGreenhouseDetails = async (jobs, fetchText = defaultFetchText) => Promise.all(
+  jobs.map(async (job) => {
+    try {
+      const detailHtml = await fetchText(job.sourceUrl)
+      if (!hasOfficialGreenhouseJobDetailSignal(detailHtml)) return job
+      return extractGreenhouseJobDetail(detailHtml, job)
+    } catch {
+      return job
+    }
+  }),
+)
 
 export const extractIndiaJobsFromDepartmentsPayload = (
   payload,
@@ -197,17 +253,19 @@ export const createProphecyScraper = ({
       throw new Error('Verified careers page embedded greenhouse departments api changed materially')
     }
 
-    return extractIndiaJobsFromDepartmentsPayload(
+    const jobs = extractIndiaJobsFromDepartmentsPayload(
       await fetchJson(apiUrl),
       { scrapedAt: now() },
     )
+
+    return enrichIndiaJobsWithGreenhouseDetails(jobs, fetchText)
   },
 })
 
 export const run = async (options = {}) => createProphecyScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

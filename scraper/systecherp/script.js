@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -11,7 +11,7 @@ export const HOMEPAGE_URL = 'https://www.systecherp.com/'
 export const CAREERS_PAGE_URL = 'https://www.systecherp.com/company/careers'
 export const JOBS_EMAIL = 'joinus@systecherp.com'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)'
 const EMPLOYMENT_TYPE_PATTERN = /(Full-time|Part-time|Contract|Internship|Temporary|Freelance)$/i
 
 const decodeHtml = (value) => String(value ?? '')
@@ -292,7 +292,7 @@ export const createSystechErpScraper = () => ({
 export const run = async (options = {}) => createSystechErpScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

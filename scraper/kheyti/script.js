@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { KHEYTI_CATALOG } from './catalog.js'
 
@@ -120,10 +120,12 @@ const extractExperienceRequired = (description) => {
 export const hasOfficialJoinPageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /Join Us/i.test(page)
-    && /Build farmer-first climate-smart agriculture with us/i.test(page)
-    && /https:\/\/jobs\.kheyti\.com\/careers/i.test(page)
-    && /Apply Now/i.test(page)
+  return /<title>\s*We bring innovation in Indian agriculture\s*\|\s*Join Kheyti\s*<\/title>/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.kheyti\.com\/join-us["']/i.test(page)
+    && /Employee testimonials/i.test(page)
+    && /href=["']\/join-us["']/i.test(page)
+    && /Apply now/i.test(page)
+    && /1 million farmers/i.test(page)
 }
 
 export const hasOfficialJobsPageSignal = (html) => {
@@ -225,7 +227,7 @@ export const createKheytiScraper = ({
 export const run = async (options = {}) => createKheytiScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

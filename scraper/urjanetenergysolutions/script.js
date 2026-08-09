@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { URJANET_ENERGY_SOLUTIONS_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -10,11 +10,11 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export { PROVIDER_METADATA }
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
-export const FAQ_URL = 'https://www.arcadia.com/about-us/faqs'
-export const HISTORY_URL = 'https://www.arcadia.com/about-us/company-history'
+export const ACQUISITION_BLOG_URL = 'https://www.arcadia.com/blog/arcadia-acquires-urjanet'
+export const URJANET_REDIRECT_URL = 'https://www.urjanet.com/'
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
@@ -35,35 +35,40 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 20000,
 })
 
-export const hasAcquisitionFaqSignal = (html = '') => {
+export const hasAcquisitionBlogSignal = (html = '') => {
   const text = normalizeWhitespace(html)
-  return text.includes('what happened to urjanet? arcadia acquired urjanet in 2022.')
-    && text.includes('urjanet is fully integrated')
-    && text.includes('not a separate company or competitor')
+  return text.includes('arcadia acquires urjanet')
+    && text.includes('urjanet, the largest utility data provider in the world, is now part of arcadia.')
+    && text.includes('the urjanet data network will significantly expand arc')
 }
 
-export const hasAcquisitionHistorySignal = (html = '') => {
+export const hasRedirectPlatformSignal = (html = '') => {
   const text = normalizeWhitespace(html)
-  return text.includes('urjanet (2022, utility data automation)')
-    && text.includes('current status: fully integrated.')
-    && text.includes('urjanet is not a separate company or competitor.')
+  return text.includes('the most comprehensive energy data platform | arcadia')
+    && text.includes('power every decision with energy intelligence.')
+    && text.includes('the arcadia platform')
 }
 
 export const hasParentCareersSignal = (html = '') => {
   const text = normalizeWhitespace(html)
-  return text.includes('change the future of energy with us')
-    && text.includes('arcadia careers')
+  return text.includes('careers | arcadia')
+    && text.includes('change the future of energy with us')
+    && text.includes('view job openings')
 }
 
 export const createUrjanetEnergySolutionsScraper = () => ({
   async run({
     fetchText = defaultFetchText,
   } = {}) {
-    const faqHtml = await fetchText(FAQ_URL)
-    const historyHtml = await fetchText(HISTORY_URL)
+    const acquisitionBlogHtml = await fetchText(ACQUISITION_BLOG_URL)
+    const redirectPlatformHtml = await fetchText(URJANET_REDIRECT_URL)
     const careersHtml = await fetchText(CAREERS_URL)
 
-    if (!hasAcquisitionFaqSignal(faqHtml) || !hasAcquisitionHistorySignal(historyHtml) || !hasParentCareersSignal(careersHtml)) {
+    if (
+      !hasAcquisitionBlogSignal(acquisitionBlogHtml)
+      || !hasRedirectPlatformSignal(redirectPlatformHtml)
+      || !hasParentCareersSignal(careersHtml)
+    ) {
       throw new Error('Urjanet Energy Solutions verified acquisition evidence changed materially')
     }
 
@@ -74,7 +79,7 @@ export const createUrjanetEnergySolutionsScraper = () => ({
 export const run = async (options = {}) => createUrjanetEnergySolutionsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

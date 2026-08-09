@@ -1,8 +1,8 @@
-# Jobify Backend Architecture
+# Jobverify Backend Architecture
 
 ## Overview
 
-Jobify Backend is an Express 5 and MongoDB application with a separate scraper runtime. It handles:
+Jobverify Backend is an Express 5 and MongoDB application with a separate scraper runtime. It handles:
 
 - email-first account registration and verification
 - cookie-backed authenticated sessions with CSRF protection
@@ -60,13 +60,13 @@ Scraper runner
 
 `/api/auth`, `/api/user`, `/api/scrape`, and `/api/admin` are mounted behind a small `no-store` response header helper.
 
-### `scraper/runner.js`
+### `scraper-support/runner.js`
 
-`scraper/runner.js` is the job collection entry point. It:
+`scraper-support/runner.js` is the job collection entry point. It:
 
 - loads the root `.env`
 - builds the scraper list from:
-  - `scraper/myworkday/companies.json`
+  - `scraper-support/myworkday/companies.json`
   - `scraper/rubrik/script.js`
   - `scraper/google/script.js`
 - supports:
@@ -89,7 +89,7 @@ Every API request passes through a shared security stack:
 3. `requireJsonMutation` rejects mutating `/api` requests that are not JSON.
 4. `createCsrfProtection()` rejects mutating `/api` requests unless:
    - the request origin is allowed
-   - the `jobify_csrf` cookie exists
+   - the `jobverify_csrf` cookie exists
    - the `x-csrf-token` header matches the cookie value
 5. A global `/api` rate limiter caps request volume per IP.
 6. Route-level middleware performs auth, validation, and role checks.
@@ -98,7 +98,7 @@ Every API request passes through a shared security stack:
 
 Authentication accepts either:
 
-- the httpOnly `jobify_token` cookie
+- the httpOnly `jobverify_token` cookie
 - an `Authorization: Bearer ...` header
 
 The frontend primarily relies on the cookie. The backend still accepts Bearer tokens for compatibility.
@@ -109,7 +109,7 @@ The frontend initializes mutating requests through:
 
 - `GET /api/auth/csrf-token`
 
-That route issues the non-httpOnly `jobify_csrf` cookie and returns the same token in JSON. The client mirrors it into the `x-csrf-token` header for `POST`, `PUT`, `PATCH`, and `DELETE`.
+That route issues the non-httpOnly `jobverify_csrf` cookie and returns the same token in JSON. The client mirrors it into the `x-csrf-token` header for `POST`, `PUT`, `PATCH`, and `DELETE`.
 
 ## Authentication
 
@@ -157,7 +157,7 @@ Flow:
    - validates credentials
    - applies a separate login backoff keyed by normalized email plus IP
    - rejects deactivated users
-   - sets the httpOnly `jobify_token` cookie
+   - sets the httpOnly `jobverify_token` cookie
    - returns a non-sensitive user snapshot in JSON
 
 7. `POST /api/auth/logout`
@@ -178,33 +178,47 @@ Primary files:
 
 Important behavior:
 
-- `GET /api/jobs`, `GET /api/jobs/meta`, `GET /api/jobs/seo-feed`, `GET /api/jobs/:id`, and `POST /api/jobs/:id/click` are all protected.
-- Only `GET /api/jobs/stats` is public.
-- Public job visibility is still scoped by `applyPublicJobLocationScope()`, which only exposes allowed India cities and approved India-offsite labels.
+- Public read paths are open, with optional auth used only to unlock premium filters and personalized recommended sorting.
+- Public job visibility is enforced through the materialized `isPublicIndia` flag applied by `applyPublicJobLocationScope()`.
+- Unscoped metadata and landing-page stats are served from the persisted `JobDatasetSummary` document when available.
 
 Endpoints:
 
 - `GET /api/jobs`
-  - supports `page`, `limit`, `sort`, `query`, `company`, `city`, `location`, `jobType`, `batch`, `branch`, and `skills`
+  - compatibility route for offset pagination and premium `recommended` sorting
+  - supports `page`, `limit`, `sort`, `query`, `company`, `city`, `location`, `jobType`, `batch`, `branch`, `skills`, and enrichment filters
   - always filters to `status: "active"`
-  - applies public location scope
+  - applies public location scope through `isPublicIndia`
   - supports:
+    - `all`
     - `latest`
+    - `oldest`
     - `popularity`
     - `recommended`
+  - caps page size at 2000 cards
   - `recommended` uses `req.user.profile` to score jobs by skills, branch keywords, location preference, and Graduation Year
 
+- `GET /api/jobs/search`
+- `POST /api/jobs/search`
+  - canonical cursor-search path for `latest`, `oldest`, and `popularity`
+  - returns `hasNextPage` and `nextCursor` instead of offset totals
+  - uses `sortDate` and `_id` for stable cursor boundaries, with `clickCount` added for popularity sorting
+
 - `GET /api/jobs/meta`
-  - returns distinct companies, merged city/location options, and job types
-  - sets a private cache header
+  - unscoped reads return summary-backed companies, cities, job types, and static taxonomy options
+  - scoped reads stay live and query-shaped for premium users
+
+- `GET /api/jobs/meta/companies`
+  - bounded company autocomplete for the filter UI
+  - applies the current scoped filters when premium users narrow the dataset
 
 - `GET /api/jobs/stats`
   - public endpoint for landing-page counts
-  - returns total active jobs and total companies
+  - returns summary-backed total active jobs and total companies
   - sets a public cache header
 
 - `GET /api/jobs/seo-feed`
-  - protected feed of active jobs with frontend URLs and SEO metadata
+  - public feed of active jobs with frontend URLs and SEO metadata
 
 - `GET /api/jobs/:id`
   - returns one active job within the public location scope
@@ -329,11 +343,11 @@ This is a smaller heartbeat-style route separate from the admin dashboard API:
 
 Primary files:
 
-- `scraper/runner.js`
-- `scraper/utils/saveToDB.js`
-- `scraper/utils/scraperPersistence.js`
-- `scraper/utils/indiaLocationFilter.js`
-- `scraper/utils/cityNormalizer.js`
+- `scraper-support/runner.js`
+- `scraper-support/utils/saveToDB.js`
+- `scraper-support/utils/scraperPersistence.js`
+- `scraper-support/utils/indiaLocationFilter.js`
+- `scraper-support/utils/cityNormalizer.js`
 - `src/utils/jobLocations.js`
 
 Live scraper flow:

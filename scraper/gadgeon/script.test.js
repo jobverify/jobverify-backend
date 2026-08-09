@@ -26,17 +26,12 @@ const pageData = {
 test('Gadgeon default page collector works with optimized pages that omit waitForTimeout', async () => {
   const gadgeon = await loadGadgeonModule()
   const requestedUrls = []
-  const fakePage = {
-    goto: async (url) => {
-      requestedUrls.push(url)
-    },
-    waitForSelector: async () => {},
-    evaluate: async () => pageData,
-  }
 
   const jobs = await gadgeon.createGadgeonScraper({ maxJobs: 1 }).run({
-    launchBrowserImpl: async () => ({ close: async () => {} }),
-    createOptimizedPageImpl: async () => fakePage,
+    collectPageDataImpl: async (url) => {
+      requestedUrls.push(url)
+      return pageData
+    },
   })
 
   assert.deepEqual(requestedUrls, [gadgeon.CAREERS_PAGE_URL])

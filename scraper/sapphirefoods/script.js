@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url'
 import {
   createOptimizedPage as defaultCreateOptimizedPage,
   launchBrowser as defaultLaunchBrowser,
-} from '../utils/browser.js'
-import { loadConfig } from '../utils/loadConfig.js'
+} from '../../scraper-support/utils/browser.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import SAPPHIRE_FOODS_CATALOG from './catalog.js'
 
@@ -101,6 +101,16 @@ export const hasCorporateCareersSignal = (html) => {
     && /Sapphire Foods India Ltd\./i.test(source)
 }
 
+export const hasVerifiedNotFoundShell = (html) => {
+  const source = String(html ?? '')
+
+  return /Page not found/i.test(source)
+    && /We'?re sorry, but the page you requested cannot be found\./i.test(source)
+    && /Sapphire Foods India Ltd\./i.test(source)
+    && /Store Careers/i.test(source)
+    && /Corporate Careers/i.test(source)
+}
+
 const sanitizeRoleCards = (cards) => (Array.isArray(cards) ? cards : [])
   .map((card) => ({
     title: normalizeWhitespace(card?.title),
@@ -141,7 +151,7 @@ export const buildJobsFromRoleCards = (cards, _categoryLabel = null) => sanitize
     }
   })
 
-const defaultFetchText = async (url) => {
+const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
@@ -149,11 +159,11 @@ const defaultFetchText = async (url) => {
     },
   })
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
   }
-
-  return response.text()
 }
 
 export const createBrowserRoleCardsLoader = ({
@@ -240,22 +250,34 @@ export const createSapphireFoodsScraper = ({
   now: defaultNow = () => new Date().toISOString(),
 } = {}) => ({
   async run({
-    fetchText = defaultFetchText,
+    fetchPage = defaultFetchPage,
     loadRoleCards = createBrowserRoleCardsLoader().load,
     now = defaultNow,
   } = {}) {
-    const landingHtml = await fetchText(CAREERS_LANDING_URL)
-    if (!hasCareersLandingSignal(landingHtml)) {
+    const landingPage = await fetchPage(CAREERS_LANDING_URL)
+    const storePage = await fetchPage(STORE_CAREERS_URL)
+    const corporatePage = await fetchPage(CORPORATE_CAREERS_URL)
+
+    if (
+      landingPage.status === 404
+      && storePage.status === 404
+      && corporatePage.status === 404
+      && hasVerifiedNotFoundShell(landingPage.html)
+      && hasVerifiedNotFoundShell(storePage.html)
+      && hasVerifiedNotFoundShell(corporatePage.html)
+    ) {
+      return []
+    }
+
+    if (landingPage.status !== 200 || !hasCareersLandingSignal(landingPage.html)) {
       throw new Error('Response is not the verified official Sapphire Foods careers landing page')
     }
 
-    const storeHtml = await fetchText(STORE_CAREERS_URL)
-    if (!hasStoreCareersSignal(storeHtml)) {
+    if (storePage.status !== 200 || !hasStoreCareersSignal(storePage.html)) {
       throw new Error('Response is not the verified official Sapphire Foods store careers page')
     }
 
-    const corporateHtml = await fetchText(CORPORATE_CAREERS_URL)
-    if (!hasCorporateCareersSignal(corporateHtml)) {
+    if (corporatePage.status !== 200 || !hasCorporateCareersSignal(corporatePage.html)) {
       throw new Error('Response is not the verified official Sapphire Foods corporate careers page')
     }
 
@@ -285,7 +307,7 @@ export const createSapphireFoodsScraper = ({
 export const run = async (options = {}) => createSapphireFoodsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

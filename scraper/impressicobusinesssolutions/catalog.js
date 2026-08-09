@@ -16,9 +16,9 @@ export const IMPRESSICO_BUSINESS_SOLUTIONS_CATALOG = {
   extractionStrategy: 'verified-first-party-careers-page+career-block-cards+modal-details+same-page-apply-form',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.impressico.com/career/ is the live first-party careers page for Impressico Business Solutions, that it renders Current Job Openings as inline career-block cards with modal details for roles such as Customer Success Manager and Artificial Intelligence Engineer, and that the same page contains the apply form and position selector.',
+    'Verified on August 2, 2026 that https://www.impressico.com/career/ is the live first-party careers page for Impressico Business Solutions, that it renders Current Openings as inline career-block cards with modal details for roles such as Senior Pre-Sales Consultant and Full Stack Developer, and that the same page still contains the apply form and position selector.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'impressicobusinesssolutions/jobs.json',
 }

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -145,11 +145,11 @@ export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeText(html)?.toLowerCase() || ''
   const page = String(html ?? '')
 
-  return normalized.includes('transform ideas into innovation')
-    && normalized.includes('build next-gen digital products with ai, ml & cloud')
-    && /href=["']https:\/\/tringapps\.com\/careers\/["']/i.test(page)
-    && /href=["']https:\/\/tringapps\.com\/about-us\/["']/i.test(page)
-    && /href=["']https:\/\/tringapps\.com\/contact-us\/["']/i.test(page)
+  return /<title>\s*Home - tringapps\s*<\/title>/i.test(page)
+    && /<meta[^>]+name=["']description["'][^>]+content=["']Tringapps is a full-stack digital transformation company specializing in AI, FinTech, cloud, mobile, and OTT solutions\. Explore our services!["']/i.test(page)
+    && /href=["'](?:https:\/\/tringapps\.com)?\/career\/?["']/i.test(page)
+    && /href=["'](?:https:\/\/tringapps\.com)?\/about(?:-us)?\/?["']/i.test(page)
+    && /href=["'](?:https:\/\/tringapps\.com)?\/contact-us\/?["']/i.test(page)
 }
 
 export const hasOfficialAboutSignal = (html) => {
@@ -158,15 +158,16 @@ export const hasOfficialAboutSignal = (html) => {
   return normalized.includes('one vision. infinite possibilities')
     && normalized.includes('global powerhouse in technology, research, and analytics')
     && normalized.includes('2,000 employees')
-    && normalized.includes('500+ clients')
+    && normalized.includes('empowering businesses through cutting-edge technology, research, and analytics solutions')
 }
 
 export const hasOfficialCareersSignal = (html) => {
-  const normalized = normalizeText(html)?.toLowerCase() || ''
+  const normalized = normalizeText(toStructuredText(html))?.toLowerCase() || ''
 
   return normalized.includes('shape your future with us')
     && normalized.includes('discover opportunities')
-    && normalized.includes('view details apply now')
+    && normalized.includes('view details')
+    && normalized.includes('apply now')
     && normalized.includes('apply here')
     && normalized.includes('india')
     && normalized.includes('usa')
@@ -175,9 +176,9 @@ export const hasOfficialCareersSignal = (html) => {
 export const hasOfficialContactSignal = (html) => {
   const normalized = normalizeText(html)?.toLowerCase() || ''
 
-  return normalized.includes("let's connect")
+  return /let[’']s connect/i.test(normalized)
     && normalized.includes('global locations')
-    && normalized.includes('mumbai, india')
+    && normalized.includes('new york city, ny')
     && normalized.includes('chennai, india')
     && normalized.includes('madurai, india')
 }
@@ -272,8 +273,8 @@ export const createTringappsScraper = ({ now = () => new Date().toISOString() } 
 
 export const run = async (options = {}) => createTringappsScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

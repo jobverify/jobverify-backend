@@ -1,14 +1,19 @@
+﻿import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+
 export const SOURCE = 'fingent'
 export const COMPANY = 'Fingent'
 export const HOMEPAGE_URL = 'https://www.fingent.com/careers/'
 export const CAREERS_URL = 'https://www.fingent.com/careers/career-openings/'
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 export const PROVIDER_METADATA = {
   source: SOURCE,
   companyName: COMPANY,
   officialBrandName: 'Fingent',
   adapter: 'script',
-  modulePath: '../fingent/script.js',
+  modulePath: '../../scraper/fingent/script.js',
   homepageUrl: HOMEPAGE_URL,
   companyCareerPage: CAREERS_URL,
   atsPlatform: 'official-first-party-openings-page',
@@ -20,7 +25,7 @@ export const PROVIDER_METADATA = {
   companyDomain: 'fingent.com',
   verifiedOn: '2026-07-18',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.fingent.com/careers/career-openings/ was the live first-party Fingent openings page, and that it publicly exposed current opening links such as Accounts Executive [Contract Role], Associate Technical Lead – .NET, Senior Software Engineer .NET, DevOps Engineer, and Data Engineer with experience ranges in the visible listing text.',
+    'Verified on Saturday, July 18, 2026 that https://www.fingent.com/careers/career-openings/ was the live first-party Fingent openings page, and that it publicly exposed current opening links such as Accounts Executive [Contract Role], Associate Technical Lead - .NET, Senior Software Engineer .NET, DevOps Engineer, and Data Engineer with experience ranges in the visible listing text.',
   dryRunFile: 'fingent/jobs.json',
 }
 
@@ -29,10 +34,20 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
+
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
-  return page.includes('Explore Our Current Openings')
-    && page.includes('Accounts Executive [Contract Role] 1 - 3 Years')
+  return /<title>\s*Career Openings\s*-\s*Fingent Careers\s*<\/title>/i.test(page)
+    && page.includes('Explore Our Current Openings')
+    && page.includes('Accounts Executive [Contract Role]')
     && page.includes('Associate Technical Lead')
 }
 
@@ -58,7 +73,7 @@ export const extractOpenings = (html = '') => {
   return jobs
 }
 
-export const run = async ({ fetchText, now = () => new Date().toISOString() } = {}) => {
+export const run = async ({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) => {
   const careersHtml = await fetchText(CAREERS_URL)
   if (!hasOfficialCareersSignal(careersHtml)) {
     throw new Error('Fingent verified first-party openings page changed materially')
@@ -78,3 +93,4 @@ export const run = async ({ fetchText, now = () => new Date().toISOString() } = 
     scrapedAt: now(),
   }))
 }
+

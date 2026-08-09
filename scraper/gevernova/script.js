@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -48,7 +48,11 @@ export const buildJobsPageUrl = (page = 1) =>
 
 export const pageHasOfficialJobsListing = (html) => {
   const value = String(html ?? '')
-  return /\bopen jobs\b/i.test(value) && /showing\s+\d+\s*-\s*\d+\s+of\s+\d+\s+jobs/i.test(value)
+  return /\bopen jobs\b/i.test(value)
+    && (
+      /showing\s+\d+\s*-\s*\d+\s+of\s+\d+\s+jobs/i.test(value)
+      || /showing\s+\{start_job\}\s*-\s*\{end_job\}\s+of\s+\{total\}\s+jobs/i.test(value)
+    )
 }
 
 const extractJobCards = (html) => {
@@ -147,7 +151,7 @@ export const createGeVernovaScraper = () => ({
 export const run = async () => createGeVernovaScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running GE Vernova scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

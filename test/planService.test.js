@@ -153,6 +153,7 @@ test("verifyAndActivatePurchase is idempotent for already paid purchases", async
     const result = await verifyAndActivatePurchase({
       purchaseId: "purchase-10",
       userId: "user-10",
+      now: new Date("2026-07-01T00:00:00.000Z"),
     });
 
     assert.equal(result.idempotent, true);
@@ -160,6 +161,31 @@ test("verifyAndActivatePurchase is idempotent for already paid purchases", async
   } finally {
     PlanPurchase.findOne = originalFindOne;
     User.findById = originalUserFindById;
+  }
+});
+
+test("verifyAndActivatePurchase rejects an order ID that belongs to a different purchase", async () => {
+  const originalPlanPurchaseFindOne = PlanPurchase.findOne;
+  PlanPurchase.findOne = async () => ({
+    _id: "expensive-purchase",
+    user: "buyer-1",
+    providerOrderId: "order-expensive",
+    status: "pending",
+  });
+
+  try {
+    await assert.rejects(
+      verifyAndActivatePurchase({
+        purchaseId: "expensive-purchase",
+        providerOrderId: "order-cheap",
+        providerPaymentId: "payment-cheap",
+        providerSignature: "signature-cheap",
+        userId: "buyer-1",
+      }),
+      /order does not match/i,
+    );
+  } finally {
+    PlanPurchase.findOne = originalPlanPurchaseFindOne;
   }
 });
 
@@ -215,7 +241,7 @@ test("activateWebhookPurchase counts three unique semester referrals and issues 
     providerPaymentId: null,
     providerSignature: null,
     status: "pending",
-    referralCodeUsed: "JOBIFYABCD",
+    referralCodeUsed: "JOBVERIFYABCD",
     referredBy: "referrer-1",
     async save() {
       return this;
@@ -224,7 +250,7 @@ test("activateWebhookPurchase counts three unique semester referrals and issues 
   const referralCode = {
     _id: "referral-1",
     owner: "referrer-1",
-    code: "JOBIFYABCD",
+    code: "JOBVERIFYABCD",
     status: "active",
     targetPlan: PLAN_IDS.SEMESTER,
     requiredConversions: 3,
@@ -305,7 +331,7 @@ test("activateWebhookPurchase does not count the same buyer twice for one referr
     providerPaymentId: null,
     providerSignature: null,
     status: "pending",
-    referralCodeUsed: "JOBIFYDUP",
+    referralCodeUsed: "JOBVERIFYDUP",
     referredBy: "referrer-2",
     async save() {
       return this;
@@ -324,7 +350,7 @@ test("activateWebhookPurchase does not count the same buyer twice for one referr
   ReferralCode.findOne = async () => ({
     _id: "referral-2",
     owner: "referrer-2",
-    code: "JOBIFYDUP",
+    code: "JOBVERIFYDUP",
     status: "active",
     targetPlan: PLAN_IDS.SEMESTER,
     requiredConversions: 3,

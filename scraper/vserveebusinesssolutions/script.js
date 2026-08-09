@@ -1,7 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
 
 import { VSERVE_EBUSINESS_SOLUTIONS_CATALOG } from './catalog.js'
 
@@ -17,32 +19,116 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+const decodeHtmlEntities = (value = '') => String(value)
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
+  .replace(/&ndash;|&mdash;/gi, '-')
+
 const normalizeWhitespace = (value = '') => String(value)
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
+  .replace(/&ndash;|&mdash;/gi, '-')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
 
-export const hasTrustedHomepageSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
-  return normalized.includes('Vserve is one of the leading providers of Supply Chain Management and E-Commerce solutions.')
-    && normalized.includes('99 Wall Street #625')
-    && normalized.includes('jobopenings@vservesolution.com')
-    && normalized.includes('Vserve eBusiness Solutions')
+const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const buildAbsoluteUrl = (value, baseUrl) => {
+  try {
+    return new URL(value, baseUrl).href
+  } catch {
+    return null
+  }
+}
+
+const decodeEscapedJsString = (value = '') => normalizeWhitespace(
+  decodeHtmlEntities(
+    String(value)
+      .replace(/\\u([0-9a-f]{4})/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+      .replace(/\\x([0-9a-f]{2})/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+      .replace(/\\r/g, ' ')
+      .replace(/\\n/g, ' ')
+      .replace(/\\t/g, ' ')
+      .replace(/\\\//g, '/')
+      .replace(/\\"/g, '"')
+      .replace(/\\'/g, "'")
+      .replace(/\\-/g, '-'),
+  ),
+)
+
+const extractEscapedJsonProperty = (page = '', propertyName = '') => {
+  const pattern = new RegExp(`"${escapeRegex(propertyName)}":"((?:\\\\.|[^"\\\\])*)"`, 'i')
+  return page.match(pattern)?.[1] || ''
+}
+
+const extractJobOtherDetail = (page = '', fieldLabel = '') => {
+  const pattern = new RegExp(`"fieldLabel":"${escapeRegex(fieldLabel)}"[\\s\\S]*?"value":"((?:\\\\.|[^"\\\\])*)"`, 'i')
+  return page.match(pattern)?.[1] || ''
+}
+
+const extractFieldFromDescription = (text = '', label = '', nextLabels = []) => {
+  if (!text || !label) {
+    return null
   }
 
-export const exposesPublicOpeningsSurface = (html = '') => {
+  const tail = nextLabels.length > 0
+    ? `(?=\\b(?:${nextLabels.map((value) => escapeRegex(value)).join('|')})\\b|$)`
+    : '$'
+  const pattern = new RegExp(`\\b${escapeRegex(label)}\\b\\s+(.+?)\\s*${tail}`, 'i')
+  const match = text.match(pattern)
+  return match ? normalizeWhitespace(match[1]) : null
+}
+
+const parseIndiaLocation = ({ city, state, location, country }) => {
+  const scopedCity = getValidIndiaCityForJob({
+    city: normalizeCity(city || location || '') || city || location || '',
+    location,
+    country,
+  })
+
+  if (!scopedCity) {
+    return null
+  }
+
+  const normalizedCity = normalizeCity(scopedCity) || scopedCity
+  const normalizedState = normalizeWhitespace(state || '') || null
+  const locationParts = [normalizedCity, normalizedState, 'India']
+    .filter((value, index, values) => value && values.indexOf(value) === index)
+
+  return {
+    location: locationParts.join(', '),
+    city: normalizedCity,
+    state: normalizedState,
+    country: 'India',
+  }
+}
+
+export const extractEmbeddedZohoPortalUrl = (html = '') => {
   const page = String(html)
-  const normalized = normalizeWhitespace(html)
-  if (/jobs\.smartrecruiters|boards\.greenhouse|jobs\.lever\.co|workdayjobs|myworkdayjobs/i.test(page)) {
-    return true
-  }
+  const rawPortalUrl = page.match(/data-lazy-src="(https:\/\/recruit\.zoho\.com\/recruit\/Portal\.na\?iframe=false[^"]+)"/i)?.[1]
+    || page.match(/<noscript><iframe[^>]+src="(https:\/\/recruit\.zoho\.com\/recruit\/Portal\.na\?iframe=false[^"]+)"/i)?.[1]
 
-  return /\b(current openings|open positions|search jobs|apply now|careers page|join our team)\b/i.test(normalized)
+  return rawPortalUrl ? rawPortalUrl.replace(/&#038;/g, '&') : null
+}
+
+export const hasOfficialCareersSignal = (html = '') => {
+  const normalized = normalizeWhitespace(html)
+  return normalized.includes('Current Job Openings and Opportunities in Vserve Ebusiness Solutions')
+    && normalized.includes('If you are passionate enough to work towards one common goal')
+    && normalized.includes('interesting position.')
+    && Boolean(extractEmbeddedZohoPortalUrl(html))
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
@@ -54,26 +140,164 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createVserveEbusinessSolutionsScraper = () => ({
+export const hasZohoJobPortalSignal = (html = '') => {
+  const page = String(html)
+  const normalized = normalizeWhitespace(html)
+  return normalized.includes('Posting Title')
+    && normalized.includes('Job Type')
+    && normalized.includes('Date Opened')
+    && normalized.includes('City')
+    && /class="jobListTable"|class="jobDetailRow"|PortalDetail\.na\?iframe=true|zr-joblist-detail_/i.test(page)
+}
+
+export const extractPortalListings = (html = '', portalUrl = '') => {
+  const page = String(html)
+  const listingsById = new Map()
+  const rowPattern = /<tr id="zr-joblist-detail_(\d+)" class="jobDetailRow"[\s\S]*?<\/tr>/gi
+
+  for (const match of page.matchAll(rowPattern)) {
+    const row = match[0]
+    const jobId = normalizeWhitespace(match[1] || '')
+    const detailPath = row.match(/<a class=['"]jobdetail['"] href=['"]([^'"]+)['"]/i)?.[1] || ''
+    const detailUrl = buildAbsoluteUrl(detailPath.replace(/&amp;/g, '&'), portalUrl)
+    const cells = [...row.matchAll(/<td>([\s\S]*?)<\/td>/gi)].map((cellMatch) => normalizeWhitespace(cellMatch[1] || ''))
+    const title = normalizeWhitespace(row.match(/<a class=['"]jobdetail['"][^>]*>([\s\S]*?)<\/a>/i)?.[1] || cells[0] || '')
+    const employmentType = cells[1] || null
+    const openedOn = cells[2] || null
+    const city = cells[3] || null
+
+    if (!jobId || !detailUrl || !title || !employmentType || !city) {
+      continue
+    }
+
+    if (listingsById.has(jobId)) {
+      continue
+    }
+
+    listingsById.set(jobId, {
+      jobId,
+      title,
+      employmentType,
+      openedOn,
+      city,
+      detailUrl,
+    })
+  }
+
+  return [...listingsById.values()]
+}
+
+export const extractZohoJobDetail = (html = '', detailUrl = '') => {
+  const page = String(html)
+  const title = normalizeWhitespace(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || '')
+    || decodeEscapedJsString(extractEscapedJsonProperty(page, 'headerName'))
+    || decodeEscapedJsString(extractEscapedJsonProperty(page, 'jobTitle'))
+  const jobDescription = decodeEscapedJsString(
+    page.match(/"jobDescriptionDetails":\s*\[\{"richText":\{"fieldLabel":"Job Description","uitype":5501,"value":"((?:\\.|[^"\\])*)"\}\}\]/i)?.[1]
+      || '',
+  ) || normalizeWhitespace(page.match(/<meta name="description" content="([\s\S]*?)"/i)?.[1] || '')
+  const location = decodeEscapedJsString(extractEscapedJsonProperty(page, 'location'))
+  const employmentType = decodeEscapedJsString(extractEscapedJsonProperty(page, 'jobType'))
+  const country = decodeEscapedJsString(extractEscapedJsonProperty(page, 'country'))
+  const city = decodeEscapedJsString(extractJobOtherDetail(page, 'City')) || location
+  const state = decodeEscapedJsString(extractJobOtherDetail(page, 'State/Province'))
+  const department = extractFieldFromDescription(jobDescription, 'Department', [
+    'Reports To',
+    'Job Summary',
+    'Key Responsibilities',
+    'Required Skills',
+    'Education',
+  ])
+
+  return {
+    title,
+    location,
+    city,
+    state,
+    country,
+    employmentType,
+    department,
+    jobDescription,
+    sourceUrl: detailUrl,
+    applyUrl: detailUrl,
+    link: detailUrl,
+  }
+}
+
+export const createVserveEbusinessSolutionsScraper = ({
+  now = () => new Date().toISOString(),
+} = {}) => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    const careersHtml = await fetchText(CAREERS_URL)
 
-    if (!hasTrustedHomepageSignal(homepageHtml)) {
-      throw new Error('Vserve Ebusiness Solutions verified homepage no longer matches the trusted exact-name contract')
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Vserve Ebusiness Solutions verified first-party careers page no longer matches the trusted public careers contract')
     }
 
-    if (exposesPublicOpeningsSurface(homepageHtml)) {
-      throw new Error('Vserve Ebusiness Solutions homepage no longer matches the verified no-public-openings fail-closed contract')
+    const portalUrl = extractEmbeddedZohoPortalUrl(careersHtml)
+    if (!portalUrl) {
+      throw new Error('Vserve Ebusiness Solutions careers page no longer exposes the embedded Zoho Recruit portal')
     }
 
-    return []
+    const portalHtml = await fetchText(portalUrl)
+    if (!hasZohoJobPortalSignal(portalHtml)) {
+      throw new Error('Vserve Ebusiness Solutions embedded Zoho portal no longer matches the verified public job table')
+    }
+
+    const listings = extractPortalListings(portalHtml, portalUrl)
+    if (listings.length === 0) {
+      throw new Error('Vserve Ebusiness Solutions embedded Zoho portal no longer exposes trusted visible jobs')
+    }
+
+    const jobs = (await Promise.all(listings.map(async (listing) => {
+      const detailHtml = await fetchText(listing.detailUrl)
+      const detail = extractZohoJobDetail(detailHtml, listing.detailUrl)
+      const scopedLocation = parseIndiaLocation({
+        city: detail.city || listing.city,
+        state: detail.state,
+        location: detail.location || listing.city,
+        country: detail.country,
+      })
+
+      if (!scopedLocation) {
+        return null
+      }
+
+      return {
+        title: detail.title || listing.title,
+        company: COMPANY,
+        location: scopedLocation.location,
+        city: scopedLocation.city,
+        state: scopedLocation.state,
+        country: scopedLocation.country,
+        employmentType: detail.employmentType || listing.employmentType,
+        remoteStatus: null,
+        jobDescription: detail.jobDescription || listing.title,
+        department: detail.department,
+        sourceUrl: detail.sourceUrl || listing.detailUrl,
+        applyUrl: detail.applyUrl || listing.detailUrl,
+        link: detail.link || listing.detailUrl,
+        jobId: listing.jobId,
+        requisitionId: listing.jobId,
+        source: SOURCE,
+        scrapedAt: now(),
+      }
+    })))
+      .filter(Boolean)
+      .sort((left, right) => left.title.localeCompare(right.title))
+
+    if (jobs.length === 0) {
+      throw new Error('Vserve Ebusiness Solutions embedded Zoho portal no longer exposes trusted India-scoped jobs')
+    }
+
+    return jobs
   },
 })
 
 export const run = async (options = {}) => createVserveEbusinessSolutionsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -78,17 +78,17 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return normalized.includes('Vofox Solutions | Software development company')
     && normalized.includes('Offshore Development Company in India')
-    && normalized.includes('Vofox solutions is a leading offshore development partner with offices in India, USA and Australia.')
-    && /https:\/\/vofoxsolutions\.com\/career-at-vofox/i.test(String(html ?? ''))
+    && /href=["'](?:https?:\/\/vofoxsolutions\.com)?\/career-at-vofox\/?["']/i.test(String(html ?? ''))
 }
 
 export const hasOfficialAboutSignal = (html) => {
   const normalized = stripTags(html) || ''
 
   return normalized.includes('About Us | Vofox Solutions')
-    && normalized.includes('Headquartered in Dallas, Texas, Vofox Solutions is an offshore software development company.')
-    && normalized.includes('Vofox Solutions Pvt. Ltd. has a total of 4 offices')
-    && normalized.includes('Back in the spring of 2005, in the startup hub of Kerala - Kochi')
+    && /Headquartered in Dallas, Texas/i.test(normalized)
+    && /\b4 offices\b/i.test(normalized)
+    && /spring of 2005/i.test(normalized)
+    && /\bKochi\b/i.test(normalized)
 }
 
 export const hasOfficialContactSignal = (html) => {
@@ -96,9 +96,63 @@ export const hasOfficialContactSignal = (html) => {
 
   return normalized.includes('Contact Us | Vofox Solutions - Best Offshore Software Development Services')
     && normalized.includes("Let's Talk Business!")
-    && normalized.includes('Vofox Solutions Pvt Ltd, Vofox Square, VIP Road, JLN Stadium Metro Station, Kaloor, Kochi- 682017 Kerala, India')
-    && normalized.includes('hr@vofoxsolutions.com')
-    && /https:\/\/vofoxsolutions\.com\/career-at-vofox/i.test(String(html ?? ''))
+    && normalized.includes('Vofox Square')
+    && /href=["'](?:https?:\/\/vofoxsolutions\.com)?\/career-at-vofox\/?["']/i.test(String(html ?? ''))
+}
+
+const extractTextLines = (value) =>
+  decodeHtmlEntities(String(value ?? ''))
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .split(/\n+/)
+    .map((line) => normalizeWhitespace(line))
+    .filter(Boolean)
+
+const extractAccordionJobCards = (html) => {
+  const blocks = [...String(html ?? '').matchAll(
+    /<div class="accordion-item\b[\s\S]*?(?=<div class="accordion-item\b|<div class="employee-engagements\b|<div class="career-timeline\b|<div class="career-getintouch\b|<div class="career-hiring-process\b|$)/gi,
+  )]
+
+  const jobs = []
+  const seen = new Set()
+
+  for (const [blockHtml] of blocks) {
+    const title = extractFirst(/<span[^>]*>\s*Job Title\s*<\/span>[\s\S]*?<h5[^>]*>\s*([\s\S]*?)\s*<\/h5>/i, blockHtml)
+    const experienceRequired = extractFirst(
+      /<span[^>]*>\s*Experience\s*<\/span>[\s\S]*?<h5[^>]*>\s*:?\s*([\s\S]*?)\s*<\/h5>/i,
+      blockHtml,
+    )
+    const salary = extractFirst(/<span[^>]*>\s*Salary\s*<\/span>[\s\S]*?<h5[^>]*>\s*([\s\S]*?)\s*<\/h5>/i, blockHtml)
+    const description = extractFirst(/<h4[^>]*>\s*Description\s*<\/h4>[\s\S]*?<p[^>]*>\s*([\s\S]*?)\s*<\/p>/i, blockHtml)
+    const skillsMatch = /<h4[^>]*>\s*Skills Required\s*<\/h4>[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/i.exec(blockHtml)
+    const requiredSkills = extractTextLines(skillsMatch?.[1])
+
+    if (!title) continue
+
+    const dedupeKey = `${title}::${experienceRequired ?? ''}`
+    if (seen.has(dedupeKey)) continue
+    seen.add(dedupeKey)
+
+    jobs.push({
+      title,
+      company: COMPANY,
+      location: LOCATION,
+      city,
+      country: 'India',
+      experienceRequired,
+      employmentType: null,
+      openingCount: null,
+      requiredSkills,
+      jobDescription: description,
+      minimumQualification: null,
+      preferredQualification: null,
+      sourceUrl: CAREERS_URL,
+      applyUrl: APPLY_URL,
+      salary,
+    })
+  }
+
+  return jobs
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -161,6 +215,10 @@ export const extractJobCards = (html) => {
   }
 
   if (jobs.length === 0) {
+    jobs.push(...extractAccordionJobCards(html))
+  }
+
+  if (jobs.length === 0) {
     throw new Error('Vofox verified public openings changed or disappeared')
   }
 
@@ -209,7 +267,7 @@ export const createVofoxScraper = () => ({
 export const run = async (options = {}) => createVofoxScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

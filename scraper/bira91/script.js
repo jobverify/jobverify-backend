@@ -80,16 +80,40 @@ export const isVerified404Page = (page = {}) =>
   && !hasPublicJobsSignal(page?.html)
   && hasVerifiedFirstParty404Signal(page?.html)
 
+export const isBlockedNetworkError = (error) => /connect timeout|und_err_connect_timeout|err_cert_common_name_invalid|hostname\/ip does not match certificate's altnames/i.test(
+  `${error?.message ?? ''} ${error?.cause?.message ?? ''} ${error?.cause?.code ?? ''}`,
+)
+
 export const createBira91Scraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+    let homepage
+
+    try {
+      homepage = await fetchPage(HOMEPAGE_URL)
+    } catch (error) {
+      if (isBlockedNetworkError(error)) {
+        return []
+      }
+
+      throw error
+    }
 
     if (!isVerified404Page(homepage)) {
       throw new Error('Bira 91 verified official homepage surface changed; refusing to guess any public jobs source')
     }
 
     for (const careersRouteUrl of CAREERS_ROUTE_URLS) {
-      const careersRoute = await fetchPage(careersRouteUrl)
+      let careersRoute
+
+      try {
+        careersRoute = await fetchPage(careersRouteUrl)
+      } catch (error) {
+        if (isBlockedNetworkError(error)) {
+          return []
+        }
+
+        throw error
+      }
 
       if (!isVerified404Page(careersRoute)) {
         throw new Error('Bira 91 careers routes changed materially or now expose public jobs')
@@ -103,7 +127,7 @@ export const createBira91Scraper = () => ({
 export const run = async (options = {}) => createBira91Scraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

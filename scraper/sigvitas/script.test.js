@@ -130,6 +130,28 @@ const missingCareerRoutePage = {
   `,
 }
 
+const launchingSoonCareerRoutePage = {
+  status: 200,
+  url: 'https://sigvitas.com/career/',
+  html: `
+    <!doctype html>
+    <html lang="en-US">
+      <head>
+        <title>Careers | Sigvitas</title>
+      </head>
+      <body>
+        <main>
+          <h1>Join Our Team</h1>
+          <p>Thank you for your interest in joining Sigvitas.</p>
+          <p>We are currently building our Careers Portal to provide a seamless experience for future applicants.</p>
+          <p>Launching Soon</p>
+          <p>We appreciate your patience and look forward to welcoming talented professionals in the near future.</p>
+        </main>
+      </body>
+    </html>
+  `,
+}
+
 test('Sigvitas sentinel pins the verified first-party no-public-jobs surface', async () => {
   const sigvitas = await loadModule()
   assert.ok(sigvitas, 'Expected scraper module at ./script.js')
@@ -161,9 +183,12 @@ test('Sigvitas sentinel pins the verified first-party no-public-jobs surface', a
   assert.equal(sigvitas.hasOfficialPagesApiSignal(pagesApiJson), true)
   assert.equal(sigvitas.hasPublicJobsSignal(homepageHtml), false)
   assert.equal(sigvitas.hasPublicJobsSignal(contactHtml), false)
+  assert.equal(sigvitas.hasVerifiedLaunchingSoonCareerPlaceholder(launchingSoonCareerRoutePage.html), true)
+  assert.equal(sigvitas.hasPublicJobsSignal(launchingSoonCareerRoutePage.html), false)
   assert.equal(sigvitas.hasFirstPartyCareerLikeLink(homepageHtml), false)
   assert.equal(sigvitas.hasFirstPartyCareerLikeLink(contactHtml), false)
   assert.equal(sigvitas.isVerifiedMissingCareerRoute(missingCareerRoutePage), true)
+  assert.equal(sigvitas.isVerifiedLaunchingSoonCareerRoute(launchingSoonCareerRoutePage), true)
 })
 
 test('Sigvitas sentinel returns no jobs only while the verified first-party surfaces stay unchanged', async () => {
@@ -180,6 +205,9 @@ test('Sigvitas sentinel returns no jobs only while the verified first-party surf
       if (url === sigvitas.SITEMAP_INDEX_URL) return { status: 200, url, html: sitemapIndexXml }
       if (url === sigvitas.PAGE_SITEMAP_URL) return { status: 200, url, html: pageSitemapXml }
       if (url === sigvitas.PAGES_API_URL) return { status: 200, url, html: pagesApiJson }
+      if (url === 'https://sigvitas.com/career/' || url === 'https://sigvitas.com/career') {
+        return { ...launchingSoonCareerRoutePage, url }
+      }
       if (sigvitas.NO_PUBLIC_CAREERS_ROUTE_URLS.includes(url)) return { ...missingCareerRoutePage, url }
 
       throw new Error(`Unexpected Sigvitas URL: ${url}`)
@@ -295,14 +323,19 @@ test('Sigvitas sentinel fails closed when the verified no-public-careers contrac
         if (url === sigvitas.SITEMAP_INDEX_URL) return { status: 200, url, html: sitemapIndexXml }
         if (url === sigvitas.PAGE_SITEMAP_URL) return { status: 200, url, html: pageSitemapXml }
         if (url === sigvitas.PAGES_API_URL) return { status: 200, url, html: pagesApiJson }
-        if (url === sigvitas.NO_PUBLIC_CAREERS_ROUTE_URLS[0]) {
+        if (url === sigvitas.NO_PUBLIC_CAREERS_ROUTE_URLS[2]) {
           return {
             status: 200,
             url,
             html: '<html><body><h1>Current Openings</h1><a href="/careers/software-engineer">Apply now</a></body></html>',
           }
         }
-        if (sigvitas.NO_PUBLIC_CAREERS_ROUTE_URLS.slice(1).includes(url)) return { ...missingCareerRoutePage, url }
+        if (url === 'https://sigvitas.com/career/' || url === 'https://sigvitas.com/career') {
+          return { ...launchingSoonCareerRoutePage, url }
+        }
+        if (sigvitas.NO_PUBLIC_CAREERS_ROUTE_URLS.filter((route) => route !== 'https://sigvitas.com/career/' && route !== 'https://sigvitas.com/career').includes(url)) {
+          return { ...missingCareerRoutePage, url }
+        }
 
         throw new Error(`Unexpected Sigvitas URL: ${url}`)
       },

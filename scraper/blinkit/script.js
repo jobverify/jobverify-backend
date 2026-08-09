@@ -21,6 +21,10 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const extractTitle = (html = '') => normalizeWhitespace(
+  String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '',
+)
+
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -39,11 +43,15 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml).toLowerCase()
+  const title = extractTitle(rawHtml)
 
-  return /<title[^>]*>\s*blinkit:[^<]*<\/title>/i.test(rawHtml)
-    && /<link[^>]+rel="canonical"[^>]+href="https:\/\/blinkit\.com\/"/i.test(rawHtml)
+  return (/^blinkit:/i.test(title) || /blinkit/i.test(title))
     && normalized.includes('blinkit')
-    && normalized.includes('minutes')
+    && (
+      normalized.includes('minutes')
+      || normalized.includes('products delivered to your doorstep')
+      || normalized.includes('instant delivery service in india')
+    )
   }
 
 export const extractJobCards = (html) =>
@@ -73,22 +81,25 @@ const buildOfficialAccessDeniedError = () => {
 
 export const hasVerifiedJobsShellSignal = (html) => {
   const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
+  const normalized = normalizeWhitespace(rawHtml).toLowerCase()
+  const title = extractTitle(rawHtml)
 
-  return /<title[^>]*>\s*Careers Opportunities, Current Job Openings[^<]*Blinkit\s*<\/title>/i.test(rawHtml)
-    && /<link[^>]+rel="canonical"[^>]+href="https:\/\/blinkit\.com\/careers\/jobs"/i.test(rawHtml)
-    && /0 job positions/i.test(normalized)
-    && /0 of 0 results/i.test(normalized)
-    && /Choose A Location/i.test(normalized)
-    && /Choose A Team/i.test(normalized)
-    && (/Search jobs/i.test(normalized) || /placeholder="Search jobs"/i.test(rawHtml))
-    && /See where you fit in/i.test(normalized)
+  return (/Careers Opportunities, Current Job Openings/i.test(title) || /^blinkit\s*\|\s*careers$/i.test(title))
+    && normalized.includes('0 job positions')
+    && normalized.includes('0 of 0 results')
+    && (normalized.includes('open positions') || normalized.includes('choose a location'))
+    && (normalized.includes('locations') || normalized.includes('choose a location'))
+    && (normalized.includes('teams') || normalized.includes('choose a team'))
+    && (
+      normalized.includes('see where you fit in')
+      || normalized.includes('job listing')
+      || normalized.includes('search jobs')
+    )
   }
 
 export const createBlinkitScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
-
     if (isOfficialAccessDeniedPage(homepage)) {
       throw buildOfficialAccessDeniedError()
     }
@@ -98,7 +109,6 @@ export const createBlinkitScraper = () => ({
     }
 
     const jobsPage = await fetchPage(JOBS_URL)
-
     if (isOfficialAccessDeniedPage(jobsPage)) {
       throw buildOfficialAccessDeniedError()
     }
@@ -118,7 +128,7 @@ export const createBlinkitScraper = () => ({
 export const run = async (options = {}) => createBlinkitScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

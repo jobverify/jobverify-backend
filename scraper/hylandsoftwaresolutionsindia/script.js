@@ -13,12 +13,18 @@ export const JOBS_SEARCH_URL = PROVIDER_METADATA.jobsSearchUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
-const normalizeWhitespace = (value) => String(value ?? '')
-  .replace(/<[^>]+>/g, ' ')
+const decodeHtml = (value) => String(value ?? '')
   .replace(/&amp;/gi, '&')
-  .replace(/&ndash;|&#8211;/gi, '–')
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&#39;|&apos;|&#8217;|&rsquo;/gi, "'")
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&#8211;|&ndash;/gi, '-')
+  .replace(/&#8212;|&mdash;/gi, '-')
+
+const normalizeWhitespace = (value) => decodeHtml(String(value ?? ''))
+  .replace(/<[^>]+>/g, ' ')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
@@ -38,47 +44,76 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
+const toAbsoluteUrl = (value, baseUrl = JOBS_SEARCH_URL) => {
+  if (!value) return null
+
+  try {
+    return new URL(decodeHtml(value), baseUrl).toString()
+  } catch {
+    return null
+  }
+}
+
+const normalizeLocation = (value) => normalizeWhitespace(value).replace(/\s+Office$/i, '')
+
+const isIndiaLocation = (value) => /\bIndia\b/i.test(normalizeLocation(value))
+
+const toCity = (location = '') => {
+  const normalized = normalizeLocation(location)
+  if (!normalized || /remote\s*-\s*india/i.test(normalized)) return null
+
+  const match = normalized.match(/^([A-Za-z][A-Za-z\s-]+?)\s+India\b/i)
+  return match ? match[1].trim() : null
+}
+
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
-  return /<title>\s*Careers \| Explore Opportunities Across the Globe \| Hyland\s*<\/title>/i.test(page)
-    && /Explore opportunities across the globe/i.test(page)
-    && /careers-hyland\.icims\.com\/jobs\/search\?hashed=-435679902&ss=1/i.test(page)
-  }
+  const normalized = normalizeWhitespace(page)
 
-export const extractSearchUrl = (html = '') => {
-  const match = String(html ?? '').match(/href=["'](https:\/\/careers-hyland\.icims\.com\/jobs\/search\?hashed=-435679902&ss=1)["']/i)
-  return match?.[1] || null
+  return /<title>\s*Careers\s*\|\s*Explore Opportunities Across the Globe\s*\|\s*Hyland\s*<\/title>/i.test(page)
+    && /Explore opportunities across the globe/i.test(normalized)
+    && /Join our team/i.test(normalized)
+    && /Fraud alert/i.test(normalized)
+    && /careers-hyland\.icims\.com\/jobs\/search\?ss=1(?:&amp;|&|\\u0026)hashed=-435679902/i.test(page)
+    && /careers-hyland\.icims\.com\/jobs\/intro\?hashed=-435679902/i.test(page)
 }
 
 export const hasListingsSignal = (html = '') => {
   const page = String(html ?? '')
-  return /Job Listings at Hyland/i.test(page)
-    && /Search Results Page/i.test(page)
-    && /Job ID\s*2026-/i.test(page)
-    && /India/i.test(page)
-  }
+  const normalized = normalizeWhitespace(page)
+
+  return /<title>\s*Careers at Hyland\s*\|\s*Jobs in Software at Hyland\s*\|\s*Job Listings at Hyland\s*<\/title>/i.test(page)
+    && normalized.includes('Here are our current job openings.')
+    && normalized.includes('Use this form to perform another job search')
+    && normalized.includes('Please enable cookies in your browser')
+}
 
 export const extractNextPageUrl = (html = '') => {
   const match = String(html ?? '').match(/<link[^>]+rel=["']next["'][^>]+href=["']([^"']+)["']/i)
-  return match?.[1] || null
-}
-
-const toCity = (location = '') => {
-  if (/Remote - India/i.test(location)) return null
-  const match = normalizeWhitespace(location).match(/^(Hyderabad|Kolkata)/i)
-  return match ? match[1][0].toUpperCase() + match[1].slice(1).toLowerCase() : null
+  return toAbsoluteUrl(match?.[1])
 }
 
 export const extractJobs = (html = '') => [...String(html ?? '').matchAll(
-  /<article class="job">\s*<a href="([^"]+)">([^<]+)<\/a>\s*<div>Job ID\s*([^<]+)<\/div>\s*<div>Category\s*([^<]+)<\/div>\s*<div>Job Locations\s*([^<]+)<\/div>\s*<p>([^<]*)<\/p>/gi,
+  /<li class="iCIMS_JobCardItem">([\s\S]*?)<\/li>/gi,
 )]
   .map((match) => {
-    const sourceUrl = normalizeWhitespace(match[1])
-    const title = normalizeWhitespace(match[2])
-    const jobId = normalizeWhitespace(match[3])
-    const department = normalizeWhitespace(match[4])
-    const location = normalizeWhitespace(match[5])
-    const jobDescription = normalizeWhitespace(match[6]) || null
+    const segment = match[1]
+    const sourceUrl = toAbsoluteUrl(
+      segment.match(/<a[^>]+href=["']([^"']*\/jobs\/\d+\/[^"']+)["'][^>]*>/i)?.[1],
+    )
+    const title = normalizeWhitespace(segment.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)?.[1])
+    const jobId = normalizeWhitespace(segment.match(/<dt class="iCIMS_JobHeaderField">Job ID<\/dt>[\s\S]*?<dd class="iCIMS_JobHeaderData"><span[^>]*>\s*([^<]+)\s*<\/span>/i)?.[1])
+    const department = normalizeWhitespace(segment.match(/<dt class="iCIMS_JobHeaderField">Category<\/dt>[\s\S]*?<dd class="iCIMS_JobHeaderData"><span[^>]*>\s*([^<]+)\s*<\/span>/i)?.[1])
+    const location = normalizeLocation(
+      segment.match(/<span class="sr-only field-label">Job Locations<\/span>[\s\S]*?<dd class="iCIMS_JobHeaderData"><span[^>]*>\s*([^<]+)\s*<\/span>/i)?.[1],
+    )
+    const jobDescription = normalizeWhitespace(
+      segment.match(/<div class="col-xs-12 description">([\s\S]*?)<\/div>/i)?.[1],
+    )
+
+    if (!sourceUrl || !title || !jobId || !location || !isIndiaLocation(location)) {
+      return null
+    }
 
     return {
       title,
@@ -98,9 +133,11 @@ export const extractJobs = (html = '') => [...String(html ?? '').matchAll(
       requiredSkills: [],
       postingDate: null,
       closingDate: null,
-      jobDescription,
+      jobDescription: jobDescription || null,
+      publicExperienceChecked: Boolean(jobDescription),
     }
   })
+  .filter(Boolean)
 
 export const createHylandSoftwareSolutionsIndiaScraper = ({
   fetchText = defaultFetchText,
@@ -110,7 +147,7 @@ export const createHylandSoftwareSolutionsIndiaScraper = ({
     const fetchImpl = overrideFetchText || fetchText
     const careersHtml = await fetchImpl(CAREERS_URL)
 
-    if (!hasOfficialCareersSignal(careersHtml) || extractSearchUrl(careersHtml) !== JOBS_SEARCH_URL) {
+    if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('The verified Hyland careers page no longer matches the pinned first-party handoff')
     }
 
@@ -145,7 +182,7 @@ export const createHylandSoftwareSolutionsIndiaScraper = ({
 export const run = async (options = {}) => createHylandSoftwareSolutionsIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,12 +1,12 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
-const API_BASE_URL = 'https://apipersistent.zwayam.com'
+const API_BASE_URL = 'https://public.zwayam.com'
 const CAREERS_BASE_URL = 'https://careers.persistent.com'
 const SEARCH_API_URL = `${API_BASE_URL}/jobs/search`
 const DETAIL_API_URL = `${API_BASE_URL}/jobs-service/v1/jobs/careersite`
@@ -129,9 +129,11 @@ const isIndiaJob = (record = {}) =>
     (location) => /india/i.test(normalizeWhitespace(location?.country) || ''),
   ))
 
-export const buildSearchPayload = ({ page = 1, keywords = '' } = {}) => ({
+export const buildSearchPayload = ({ page = 1, offset = null, keywords = '' } = {}) => ({
   filterCri: JSON.stringify({
-    paginationStartNo: (Math.max(1, Number(page) || 1) - 1) * DEFAULT_PAGE_SIZE,
+    paginationStartNo: Number.isFinite(offset)
+      ? Math.max(0, Number(offset) || 0)
+      : (Math.max(1, Number(page) || 1) - 1) * DEFAULT_PAGE_SIZE,
     selectedCall: 'sort',
     sortCriteria: {
       name: 'modifiedDate',
@@ -221,6 +223,7 @@ export const extractJobDetail = (payload, listing = {}) => {
     applyUrl: sourceUrl,
     sourceUrl,
     jobDescription: description,
+    publicExperienceChecked: true,
   }
 }
 
@@ -240,7 +243,11 @@ const fetchJson = async (url, options = {}) => {
   })
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+    const errorBody = await response.text().catch(() => '')
+    const errorSuffix = normalizeWhitespace(errorBody)
+      ? `: ${normalizeWhitespace(errorBody)}`
+      : ''
+    throw new Error(`HTTP ${response.status} for ${url}${errorSuffix}`)
   }
 
   return response.json()
@@ -255,6 +262,10 @@ const markUpstreamOutage = (error) => {
   return error
 }
 
+const isClosedJobDetailError = (error) =>
+  /HTTP 404/i.test(String(error?.message || ''))
+  && /no longer accepting applications/i.test(String(error?.message || ''))
+
 export const createPersistentScraper = ({
   fetchJsonImpl = fetchJson,
   maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
@@ -263,10 +274,11 @@ export const createPersistentScraper = ({
   async run() {
     const jobs = []
     const seenJobIds = new Set()
+    let currentOffset = 0
 
     try {
       for (let page = 1; page <= maxPages; page += 1) {
-        const searchPayload = buildSearchPayload({ page })
+        const searchPayload = buildSearchPayload({ page, offset: currentOffset })
         const listingPayload = await fetchJsonImpl(SEARCH_API_URL, {
           method: 'POST',
           headers: {
@@ -278,29 +290,42 @@ export const createPersistentScraper = ({
 
         const listings = extractSearchResults(listingPayload)
         const summary = extractPaginationSummary(listingPayload, {
-          currentOffset: (page - 1) * DEFAULT_PAGE_SIZE,
+          currentOffset,
         })
+        currentOffset = summary.nextOffset
 
         for (const listing of listings) {
           if (seenJobIds.has(listing.jobId)) continue
           seenJobIds.add(listing.jobId)
 
-          const detailPayload = await fetchJsonImpl(DETAIL_API_URL, {
-            method: 'POST',
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-              Accept: 'application/json,text/plain,*/*',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              jobUrl: listing.sourceUrl.split('/').pop(),
-              externalSource: 'CareerSite',
-              campusUrl: 'empty',
-              companyId: '14977',
-            }),
-          })
+          let detail = listing
+          try {
+            const detailPayload = await fetchJsonImpl(DETAIL_API_URL, {
+              method: 'POST',
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+                Accept: 'application/json,text/plain,*/*',
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                jobUrl: listing.sourceUrl.split('/').pop(),
+                externalSource: 'CareerSite',
+                campusUrl: 'empty',
+                companyId: '14977',
+              }),
+            })
 
-          const detail = extractJobDetail(detailPayload, listing)
+            detail = extractJobDetail(detailPayload, listing)
+          } catch (error) {
+            if (isClosedJobDetailError(error)) {
+              continue
+            }
+
+            const message = String(error?.message || '')
+            if (!/HTTP 404/i.test(message)) {
+              throw error
+            }
+          }
 
           jobs.push({
             ...detail,
@@ -328,7 +353,7 @@ export const createPersistentScraper = ({
 export const run = async () => createPersistentScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Persistent Systems scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

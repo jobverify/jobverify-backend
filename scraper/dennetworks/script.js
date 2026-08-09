@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 import { DEN_NETWORKS_CATALOG } from './catalog.js'
 
@@ -89,7 +89,7 @@ export const hasOfficialHomepageSignal = (html = '') => {
 
   return title === 'DEN Networks - Top Cable Service Provider in India'
     && /href=["']https:\/\/dennetworks\.com\/careers["']/i.test(page)
-    && text.includes('DEN Networks - Top cable service provider')
+    && /DEN Networks - Top Cable Service Provider/i.test(text)
     && text.includes('DEN Networks Ltd. - All Rights Reserved')
 }
 
@@ -240,7 +240,7 @@ export const createDenNetworksScraper = () => ({
 export const run = async (options = {}) => createDenNetworksScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,4 +1,7 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { performance } from "node:perf_hooks";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import mongoose from "mongoose";
 
 import connectDB from "../db/db.js";
@@ -11,6 +14,9 @@ import {
   buildRecommendationPipeline,
   resolveJobListSortOption,
 } from "../src/controllers/jobController.js";
+import { applyPublicJobLocationScope } from "../src/utils/publicJobLocationScope.js";
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
 const getFlag = (name, fallback = null) => {
   const prefix = `--${name}=`;
@@ -115,6 +121,11 @@ const measure = async (run, repeat) => {
 
 const buildFindQuery = (queryParams) => {
   const filters = buildJobListFilters(queryParams);
+  const safeLimit = Math.max(
+    1,
+    Math.min(JOB_CARD_PAGE_LIMIT, Number.parseInt(String(queryParams.limit ?? JOB_CARD_PAGE_LIMIT), 10) || JOB_CARD_PAGE_LIMIT),
+  );
+  const safePage = Math.max(1, Number.parseInt(String(queryParams.page ?? 1), 10) || 1);
 
   return Job.find(filters)
     .select(JOB_LIST_CARD_PROJECTION)
@@ -122,12 +133,12 @@ const buildFindQuery = (queryParams) => {
       sort: queryParams.sort,
       hasTextSearch: Boolean(filters.$text),
     }))
-    .skip(0)
-    .limit(JOB_CARD_PAGE_LIMIT)
+    .skip((safePage - 1) * safeLimit)
+    .limit(safeLimit)
     .lean();
 };
 
-const buildCases = () => {
+export const buildCases = () => {
   const shared = {
     query: getFlag("query", "developer"),
     company: getFlag("company", "Google"),
@@ -173,6 +184,21 @@ const buildCases = () => {
       query: { ...shared, sort: "latest" },
     },
     {
+      name: "jobs.popularity.unfiltered",
+      kind: "find",
+      query: { limit: shared.limit, sort: "popularity" },
+    },
+    {
+      name: "jobs.legacy.offset.page50",
+      kind: "find",
+      query: { limit: shared.limit, page: "50", sort: "latest" },
+    },
+    {
+      name: "jobs.legacy.offset.page100",
+      kind: "find",
+      query: { limit: shared.limit, page: "100", sort: "latest" },
+    },
+    {
       name: "jobs.recommended",
       kind: "aggregate",
       query: {
@@ -207,7 +233,7 @@ const buildCases = () => {
   ];
 };
 
-const profileCase = async (testCase, repeat) => {
+export const profileCase = async (testCase, repeat) => {
   if (testCase.kind === "find") {
     const explain = await buildFindQuery(testCase.query).explain("executionStats");
     const timing = await measure(() => buildFindQuery(testCase.query).exec(), repeat);
@@ -267,12 +293,87 @@ const profileCase = async (testCase, repeat) => {
   throw new Error(`Unsupported profile case kind: ${testCase.kind}`);
 };
 
-const main = async () => {
-  const repeat = getIntegerFlag("repeat", 5);
-  await connectDB();
+export const buildMarkdownReport = (report) => {
+  const lines = [
+    "# Job Query Profile",
+    "",
+    `Generated: ${report.generatedAt}`,
+    `Repeat count: ${report.repeat}`,
+    "",
+    "## Dataset",
+    "",
+    `- Collection: ${report.collection}`,
+    `- Total jobs: ${report.dataset.totalJobs}`,
+    `- Active jobs: ${report.dataset.activeJobs}`,
+    `- Public active jobs: ${report.dataset.publicActiveJobs}`,
+    `- Active jobs missing isPublicIndia: ${report.dataset.activeJobsMissingIsPublicIndia}`,
+    `- Active jobs missing publicCityKey: ${report.dataset.activeJobsMissingPublicCityKey}`,
+    `- Active jobs missing sortDate: ${report.dataset.activeJobsMissingSortDate}`,
+    `- Active jobs with city: ${report.dataset.activeJobsWithCity}`,
+    `- Active jobs with locationKeys: ${report.dataset.activeJobsWithLocationKeys}`,
+    "",
+    "## Cases",
+    "",
+    "| Case | Kind | p50 ms | p95 ms | p99 ms | Rows | Docs Examined | Keys Examined | Indexes |",
+    "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+  ];
+
+  for (const testCase of report.cases) {
+    if (testCase.error) {
+      lines.push(
+        `| ${testCase.name} | ${testCase.kind} | error | error | error | error | error | error | ${testCase.error.replace(/\|/g, "\\|")} |`,
+      );
+      continue;
+    }
+
+    lines.push(
+      `| ${testCase.name} | ${testCase.kind} | ${testCase.timing.timingsMs.p50} | ${testCase.timing.timingsMs.p95} | ${testCase.timing.timingsMs.p99} | ${testCase.timing.rowsReturned} | ${testCase.explain.totalDocsExamined ?? "n/a"} | ${testCase.explain.totalKeysExamined ?? "n/a"} | ${(testCase.explain.indexNames ?? []).join(", ") || "n/a"} |`,
+    );
+  }
+
+  lines.push("");
+  lines.push(report.note);
+  lines.push("");
+  return `${lines.join("\n")}\n`;
+};
+
+export const runJobQueryProfile = async ({
+  repeat = getIntegerFlag("repeat", 5),
+  outputDir = path.resolve(currentDir, getFlag("output-dir", "../../docs/performance/baseline")),
+  shouldConnect = true,
+  shouldDisconnect = true,
+} = {}) => {
+  if (shouldConnect) {
+    await connectDB();
+  }
 
   try {
     const cases = [];
+    const dataset = {
+      totalJobs: await Job.countDocuments({}),
+      activeJobs: await Job.countDocuments({ status: "active" }),
+      publicActiveJobs: await Job.countDocuments(applyPublicJobLocationScope({ status: "active" })),
+      activeJobsMissingIsPublicIndia: await Job.countDocuments({
+        status: "active",
+        isPublicIndia: { $exists: false },
+      }),
+      activeJobsMissingPublicCityKey: await Job.countDocuments({
+        status: "active",
+        publicCityKey: { $exists: false },
+      }),
+      activeJobsMissingSortDate: await Job.countDocuments({
+        status: "active",
+        sortDate: { $exists: false },
+      }),
+      activeJobsWithCity: await Job.countDocuments({
+        status: "active",
+        city: { $exists: true, $nin: [null, ""] },
+      }),
+      activeJobsWithLocationKeys: await Job.countDocuments({
+        status: "active",
+        locationKeys: { $exists: true, $ne: [] },
+      }),
+    };
 
     for (const testCase of buildCases()) {
       try {
@@ -292,20 +393,54 @@ const main = async () => {
       }
     }
 
-    console.log(JSON.stringify({
+    const report = {
       generatedAt: new Date().toISOString(),
       repeat,
       collection: Job.collection.name,
+      dataset,
       pageLimit: JOB_CARD_PAGE_LIMIT,
       note: "Run against the same dataset before and after query/index changes; compare docs examined, keys examined, p95 timing, and payload bytes.",
       cases,
-    }, null, 2));
+    };
+    const timestamp = report.generatedAt.replace(/[:.]/g, "-");
+    const jsonPath = path.join(outputDir, `job-query-profile-${timestamp}.json`);
+    const markdownPath = path.join(outputDir, `job-query-profile-${timestamp}.md`);
+
+    mkdirSync(outputDir, { recursive: true });
+    writeFileSync(jsonPath, `${JSON.stringify(report, null, 2)}\n`);
+    writeFileSync(markdownPath, buildMarkdownReport(report));
+
+    const result = {
+      ...report,
+      artifacts: {
+        jsonPath,
+        markdownPath,
+      },
+    };
+
+    return result;
   } finally {
-    await mongoose.disconnect();
+    if (shouldDisconnect) {
+      await mongoose.disconnect();
+    }
   }
 };
 
-main().catch((error) => {
-  console.error("Job query profiling failed:", error);
-  process.exitCode = 1;
-});
+const isDirectRun = process.argv[1]
+  && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
+
+const main = async () => {
+  const result = await runJobQueryProfile();
+  console.log(JSON.stringify(result, null, 2));
+};
+
+if (isDirectRun) {
+  main()
+    .then(() => {
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error("Job query profiling failed:", error);
+      process.exit(1);
+    });
+}

@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -75,7 +75,6 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
   return /Madison World/i.test(page)
-    && /marketing challenges and driving sustainable profits/i.test(page)
     && /href="\/careers"/i.test(page)
 }
 
@@ -119,14 +118,19 @@ export const extractJobsFromNextData = (html) => parseNextData(html)
   })
   .filter(Boolean)
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchText = async (url) => {
+  const page = await fetchPageWithRetry(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    label: SOURCE,
+    timeoutMs: 15000,
+    allowInsecureTlsHosts: ['madisonindia.com'],
+  })
+
+  return page.html
+}
 
 export const createMadisonWorldScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
@@ -157,7 +161,7 @@ export const createMadisonWorldScraper = ({
 export const run = async (options = {}) => createMadisonWorldScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

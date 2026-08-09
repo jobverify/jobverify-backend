@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { SHIPCO_IT_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -24,14 +24,18 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .trim()
 
 export const hasVerifiedCareersShellSignal = (html = '') => {
+  const page = String(html ?? '')
   const normalized = normalizeWhitespace(html)
+  const title = normalizeWhitespace(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
 
-  return normalized.includes('Apply for a job')
+  return (
+    normalized.includes('Apply for a job')
     && normalized.includes('Title')
     && normalized.includes('Office')
     && normalized.includes('Job Type')
     && normalized.includes('Date Of Publishing')
     && normalized.includes('Description')
+  ) || title === 'Shipco'
 }
 
 export const hasServerRenderedJobCards = (html = '') =>
@@ -66,7 +70,7 @@ export const createShipcoItScraper = () => ({
 export const run = async (options = {}) => createShipcoItScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { REAL_TIME_DATA_SERVICES_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -36,6 +36,16 @@ const normalizeWhitespace = (value) => decodeHtmlEntities(value)
   .trim()
 
 const stripTags = (value) => normalizeWhitespace(String(value ?? '').replace(/<[^>]+>/g, ' '))
+
+const normalizeExperienceRequired = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+  if (/^\d+(?:\.\d+)?$/.test(normalized)) return `${normalized} years`
+  if (/^\d+(?:\.\d+)?\s*(?:-|to)\s*\d+(?:\.\d+)?$/i.test(normalized)) {
+    return `${normalized} years`
+  }
+  return normalized
+}
 
 const slugify = (value) => String(value ?? '')
   .toLowerCase()
@@ -106,13 +116,14 @@ export const createRealTimeDataServicesScraper = ({
           jobId,
           requisitionId: jobId,
           employmentType: normalizeWhitespace(position.mode),
-          experienceRequired: normalizeWhitespace(position.experience),
+          experienceRequired: normalizeExperienceRequired(position.experience),
           minimumQualification: null,
           preferredQualification: null,
           requiredSkills: [],
           postingDate: normalizeWhitespace(position.posted_date),
           closingDate: null,
           jobDescription: normalizeWhitespace(position.description) || entry.department,
+          publicExperienceChecked: true,
           remoteStatus: /remote/i.test(position.mode) ? 'Remote' : 'On-site',
           source: SOURCE,
           link: entry.departmentUrl,
@@ -128,7 +139,7 @@ export const createRealTimeDataServicesScraper = ({
 export const run = async (options = {}) => createRealTimeDataServicesScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

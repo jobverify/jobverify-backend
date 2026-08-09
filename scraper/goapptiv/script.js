@@ -91,7 +91,10 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return normalized.includes('goapptiv')
     && normalized.includes('improving access to primary healthcare')
-    && normalized.includes('quality medication across india')
+    && (
+      normalized.includes('quality medication across india')
+      || normalized.includes('quality medicines across india')
+    )
     && normalized.includes('business@goapptiv.com')
     && normalized.includes('grievances@goapptiv.com')
     && normalized.includes('the team')
@@ -157,7 +160,7 @@ export const createGoApptivScraper = () => ({
 export const run = async (options = {}) => createGoApptivScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

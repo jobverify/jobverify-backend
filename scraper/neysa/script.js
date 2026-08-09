@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { NEYSA_CATALOG } from './catalog.js'
 
@@ -33,7 +33,7 @@ const normalizeWhitespace = (value) => {
   if (value == null) return null
 
   const normalized = decodeHtmlEntities(value)
-    .replace(/[–—−]/g, '-')
+    .replace(/[\u2013\u2014\u2212â€“â€”âˆ’]/g, '-')
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<br\s*\/?>/gi, ' ')
@@ -50,6 +50,9 @@ const normalizeWhitespace = (value) => {
 const stripTags = (value) => normalizeWhitespace(value)
 
 const escapeRegex = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const hasExpectedNeysaTitle = (rawHtml, patterns) =>
+  patterns.some((pattern) => pattern.test(String(rawHtml ?? '')))
 
 const firstMatch = (source, patterns) => {
   for (const pattern of patterns) {
@@ -120,7 +123,11 @@ const inferRemoteStatus = (...values) => {
 
 const extractJobIdFromUrl = (value) => {
   try {
-    const pathname = new URL(value).pathname.replace(/\/+$/, '')
+    const url = new URL(value)
+    const queryJobId = normalizeWhitespace(url.searchParams.get('job_id'))
+    if (queryJobId) return queryJobId
+
+    const pathname = url.pathname.replace(/\/+$/, '')
     return pathname.split('/').filter(Boolean).at(-1) || null
   } catch {
     return null
@@ -128,7 +135,7 @@ const extractJobIdFromUrl = (value) => {
 }
 
 const extractLabeledValue = (source, label) => firstMatch(source, [
-  new RegExp(`${escapeRegex(label)}\\s*<\\/[^>]+>\\s*<[^>]+>([\\s\\S]*?)<\\/[^>]+>`, 'i'),
+  new RegExp(`${escapeRegex(label)}\\s*:?\\s*<\\/[^>]+>\\s*<[^>]+>([\\s\\S]*?)<\\/[^>]+>`, 'i'),
   new RegExp(`${escapeRegex(label)}\\s*[:|-]\\s*([^<\\n]+)`, 'i'),
 ])
 
@@ -157,14 +164,33 @@ const hasJobDetailSignal = (html) => {
     && /Apply Now/i.test(normalized)
     && (
       /<meta[^>]+property=["']og:title["']/i.test(rawHtml)
-      || /<title[^>]*>[\s\S]*?- Neysa<\/title>/i.test(rawHtml)
+      || /<title[^>]*>[\s\S]*?[\u2013-]\s*Neysa<\/title>/i.test(rawHtml)
       || /<h1[^>]*>/i.test(rawHtml)
     )
 }
 
+const isGenericDetailTitle = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return true
+
+  return /^(?:Job Openings?|Build a Career at Neysa)$/i.test(normalized)
+}
+
+const pickMeaningfulText = (...values) => {
+  for (const value of values) {
+    const normalized = normalizeWhitespace(value)
+    if (!normalized || isGenericDetailTitle(normalized)) continue
+    return normalized
+  }
+
+  return null
+}
+
 const extractSectionSlices = (html) => {
   const rawHtml = String(html ?? '')
-  const headingMatches = [...rawHtml.matchAll(/<h2[^>]*class="[^"]*\btest\b[^"]*"[^>]*>([\s\S]*?)<\/h2>/gi)]
+  const headingMatches = [...rawHtml.matchAll(
+    /<h2[^>]*class="[^"]*\b(?:test|department-title)\b[^"]*"[^>]*>([\s\S]*?)<\/h2>/gi,
+  )]
 
   return headingMatches.map((match, index) => {
     const start = match.index ?? 0
@@ -220,8 +246,11 @@ export const hasOfficialCareersPageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
 
-  return /<title[^>]*>\s*Careers at Neysa \| Build the Future of AI Infrastructure\s*<\/title>/i.test(rawHtml)
-    && /Build the Future of AI Infrastructure/i.test(normalized)
+  return hasExpectedNeysaTitle(rawHtml, [
+    /<title[^>]*>\s*Careers at Neysa \| Build the Future of AI Infrastructure\s*<\/title>/i,
+    /<title[^>]*>\s*Career\s*[\u2013-]\s*Neysa\s*<\/title>/i,
+  ])
+    && (/Build the Future of AI Infrastructure/i.test(normalized) || /\bCareer\b/i.test(normalized))
     && /View Job Openings/i.test(normalized)
 }
 
@@ -237,51 +266,77 @@ export const hasOfficialJobOpeningsSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
 
-  return /<title[^>]*>\s*Job Opening - Build a Career at Neysa\s*<\/title>/i.test(rawHtml)
+  return hasExpectedNeysaTitle(rawHtml, [
+    /<title[^>]*>\s*Job Opening - Build a Career at Neysa\s*<\/title>/i,
+    /<title[^>]*>\s*Job Openings?\s*[\u2013-]\s*Neysa\s*<\/title>/i,
+  ])
     && /filter_career_listings/i.test(rawHtml)
     && /job-section/i.test(rawHtml)
     && /job-title/i.test(rawHtml)
-    && /Backend Engineer/i.test(normalized)
-  }
+    && (/Backend Engineer/i.test(normalized) || /Job Details/i.test(normalized))
+}
 
 export const extractJobListings = (html) =>
   extractSectionSlices(html)
     .flatMap((section) => extractCardsFromSection(section))
     .filter(Boolean)
 
+const extractApplyUrl = (html, detailUrl) => toAbsoluteUrl(
+  String(html ?? '').match(
+    /<a[^>]*class="[^"]*\bapply-btn\b[^"]*"[^>]*href="([^"]+)"|<a[^>]*href="([^"]+)"[^>]*class="[^"]*\bapply-btn\b[^"]*"/i,
+  )?.slice(1).find(Boolean),
+  detailUrl,
+)
+
+const extractExperienceRequiredFromDescription = (value) => normalizeExperienceRequired(
+  normalizeWhitespace(value)?.match(
+    /\bExperience:\s*([^.;]+?(?:years?|yrs?))/i,
+  )?.[1],
+)
+
 export const extractJobDetail = (html, listing = {}) => {
-  const title = firstMatch(html, [
-    /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i,
-    /<h1[^>]*>([\s\S]*?)<\/h1>/i,
-    /<title[^>]*>([\s\S]*?)\s*-\s*Neysa<\/title>/i,
-  ]) || listing.title
   const detailUrl = listing.detailUrl || listing.sourceUrl || listing.applyUrl
+  const descriptionHtml = extractDescriptionHtml(html)
+  const jobDescription = stripTags(descriptionHtml)
+  const detailLocation = extractLabeledValue(html, 'Location')
+  const title = pickMeaningfulText(
+    firstMatch(html, [
+      /<h1[^>]*class="[^"]*\bjob-title\b[^"]*"[^>]*>([\s\S]*?)<\/h1>/i,
+      /<h1[^>]*>([\s\S]*?)<\/h1>/i,
+    ]),
+    firstMatch(html, [
+      /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i,
+      /<title[^>]*>([\s\S]*?)\s*[\u2013-]\s*Neysa<\/title>/i,
+    ]),
+  ) || listing.title
   const jobId = listing.jobId || extractJobIdFromUrl(detailUrl)
-  const jobDescription = stripTags(extractDescriptionHtml(html))
 
   return {
     title,
     company: COMPANY,
-    department: listing.department || null,
-    location: listing.location || null,
-    city: listing.city || extractCity(listing.location),
+    department: extractLabeledValue(html, 'Department') || listing.department || null,
+    location: listing.location || ensureIndiaLocation(detailLocation),
+    city: listing.city || extractCity(detailLocation || listing.location),
     country: PROVIDER_METADATA.countryFilter,
     jobId,
     requisitionId: listing.requisitionId || jobId,
     sourceUrl: detailUrl,
-    applyUrl: detailUrl,
-    employmentType: null,
+    applyUrl: extractApplyUrl(html, detailUrl) || detailUrl,
+    employmentType: extractLabeledValue(html, 'Type') || null,
     experienceRequired:
       normalizeExperienceRequired(
         firstMatch(html, [/Experience\s*:\s*([^<\n]+)/i]),
-      ) || listing.experienceRequired || null,
-    minimumQualification: null,
+      )
+      || extractExperienceRequiredFromDescription(jobDescription)
+      || listing.experienceRequired
+      || null,
+    minimumQualification: extractLabeledValue(html, 'Minimum Qualifications') || null,
     preferredQualification: null,
     requiredSkills: [],
     postingDate: extractPostingDate(html),
     closingDate: null,
     jobDescription,
-    remoteStatus: inferRemoteStatus(listing.location, jobDescription),
+    remoteStatus: inferRemoteStatus(detailLocation, listing.location, jobDescription),
   }
 }
 
@@ -337,7 +392,7 @@ export const createNeysaScraper = ({
 export const run = async (options = {}) => createNeysaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

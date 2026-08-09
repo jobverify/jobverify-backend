@@ -15,6 +15,7 @@ export const OFFICIAL_CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const VIEW_ALL_JOBS_URL = PROVIDER_METADATA.officialCareersHandoffUrl
 export const BASE_URL = new URL(VIEW_ALL_JOBS_URL).origin
 export const DEFAULT_LOCALE = 'en_GB'
+export const DIRECT_CATEGORY_HANDOFF_URL = `${BASE_URL}/NH-India/`
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -72,9 +73,20 @@ const extractListItems = (value) => [...String(value ?? '').matchAll(/<li\b[^>]*
   .map((match) => stripTags(match[1]))
   .filter(Boolean)
 
-export const extractOfficialJobsBoardUrl = (html = '') => normalizeWhitespace(
-  extractFirst(/href=["'](https:\/\/jobs\.narayanahealth\.org\/\?locale=en_GB)["']/i, html),
-)
+const ACCEPTED_SITE_MAP_HANDOFF_URLS = new Set([
+  OFFICIAL_CAREERS_URL,
+  DIRECT_CATEGORY_HANDOFF_URL,
+])
+
+export const extractOfficialJobsBoardUrl = (html = '') => {
+  for (const match of String(html ?? '').matchAll(/href=["']([^"']+)["']/gi)) {
+    const url = toAbsoluteUrl(match[1])
+    if (!url || !ACCEPTED_SITE_MAP_HANDOFF_URLS.has(url)) continue
+    return url
+  }
+
+  return null
+}
 
 export const hasVerifiedSiteMapSignal = (html = '') => {
   const page = String(html ?? '')
@@ -82,7 +94,7 @@ export const hasVerifiedSiteMapSignal = (html = '') => {
 
   return text.includes('Sitemap')
     && text.includes('Careers')
-    && extractOfficialJobsBoardUrl(page) === OFFICIAL_CAREERS_URL
+    && ACCEPTED_SITE_MAP_HANDOFF_URLS.has(extractOfficialJobsBoardUrl(page))
 }
 
 export const hasOfficialCareersBoardSignal = (html = '') => {
@@ -407,7 +419,7 @@ export const createNarayanaHealthScraper = () => ({
 export const run = async (options = {}) => createNarayanaHealthScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

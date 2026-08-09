@@ -10,16 +10,16 @@ export const SMARTSTREAM_TECHNOLOGIES_CATALOG = {
   adapter: 'script',
   homepageUrl: 'https://smart.stream/',
   companyCareerPage: 'https://smart.stream/careers/',
-  atsPlatform: 'official-company-careers-no-public-jobs-catalog',
+  atsPlatform: 'official-company-site-cloudflare-blocked-no-public-jobs-catalog',
   countryFilter: 'India',
-  paginationStrategy: 'single-first-party-careers-page',
-  extractionStrategy: 'verified-first-party-careers-page+email-only-interest-flow+no-public-job-catalog',
+  paginationStrategy: 'verified-cloudflare-blocked-homepage-and-careers-routes',
+  extractionStrategy: 'verified-cloudflare-blocked-homepage+verified-cloudflare-blocked-careers-route-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'smart.stream',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://smart.stream/careers/ is the exact Smartstream careers page, that it asks candidates to send CVs to careers@smart.stream, and that the page shows Apply Online and View All Roles copy but no enumerable public jobs catalog or trustworthy first-party listings feed.',
+    'Verified on Tuesday, August 4, 2026 that both https://smart.stream/ and https://smart.stream/careers/ currently return the same Cloudflare-backed HTTP 403 Forbidden shell with the title "Error 403 Forbidden" and no public job cards, detail links, ATS handoff, or structured jobs payload. Search snippets still reference older careers copy, but without a reachable first-party careers surface or trustworthy public jobs contract there is no enumerable public Smartstream jobs feed to scrape today.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

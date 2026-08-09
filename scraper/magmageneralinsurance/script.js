@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { MAGMA_GENERAL_INSURANCE_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -53,7 +53,7 @@ export const hasPrimaryCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /<title>\s*General Insurance Company India \| Careers & Opportunities - Magma Insurance\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*General Insurance Company India \| Careers\s*&(?:amp;)?\s*Opportunities - Magma Insurance(?:\s*-\s*Magma)?\s*<\/title>/i.test(page)
     && text.includes('Careers')
     && text.includes('Be a part of the Magma family!')
     && text.includes('Apply for Job')
@@ -67,7 +67,7 @@ export const hasAlternateCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /<title>\s*Careers(?: & Opportunities)? - Magma Insurance\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*Career(?:s)?(?:\s*&(?:amp;)?\s*Opportunities)? - Magma Insurance(?:\s*-\s*Magma)?\s*<\/title>/i.test(page)
     && text.includes('Careers')
     && text.includes('Apply for Job')
     && text.includes('Insurance Experience')
@@ -108,7 +108,7 @@ export const createMagmaGeneralInsuranceScraper = () => ({
 export const run = async (options = {}) => createMagmaGeneralInsuranceScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

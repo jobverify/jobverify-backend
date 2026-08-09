@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Friday, July 17, 2026 that https://www.purplestylelabs.com/careers is the live official Purple Style Labs careers page, that it invites applicants to email careers@purplestylelabs.com, and that its visible BROWSE OPPORTUNITIES action currently hands candidates to a public LinkedIn jobs search surface filtered to Purple Style Labs (PSL) via company filter 10277228. No trustworthy first-party public jobs board is exposed on the exact company domain: the first-party site does not expose live role cards, a first-party ATS handoff, or any other trustworthy first-party public hiring surface, so this provider is pinned as a fail-closed sentinel that returns no jobs until a real first-party public hiring surface appears.'
+  'Verified on Tuesday, August 4, 2026 that https://www.purplestylelabs.com/careers is still the live official Purple Style Labs careers page, that it still invites applicants to email careers@purplestylelabs.com, and that its visible BROWSE OPPORTUNITIES action still hands candidates to a public LinkedIn jobs search surface filtered to Purple Style Labs (PSL) via company filter 10277228. The page title now renders as Purple Style Labs, but no trustworthy first-party public jobs board is exposed on the exact company domain, so this provider remains a fail-closed sentinel that returns no jobs until a real first-party public hiring surface appears.'
 
 export const PURPLE_STYLE_LABS_CATALOG = {
   source: 'purplestylelabs',
@@ -24,7 +24,7 @@ export const PURPLE_STYLE_LABS_CATALOG = {
   extractionStrategy: 'verified-first-party-careers-page+linkedin-jobs-search-handoff-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'purplestylelabs/jobs.json',
   modulePath: path.join(currentDir, 'script.js'),

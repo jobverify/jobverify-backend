@@ -144,7 +144,7 @@ const MISSING_ROUTE_HTML = `
     <nav>
       <a href="https://punt.partners/newsroom/">Newsroom</a>
       <a href="https://punt.partners/team/">Team</a>
-      <a href="https://punt.partners/partners/">Partners</a>
+      <a href="https://punt.partners/partners">Partners</a>
       <a href="https://punt.partners/contact-us/">Contact Us</a>
       <a href="https://punt.partners/creative/">Punt Creative</a>
       <a href="https://findfables.ai/">FablesAI</a>
@@ -163,7 +163,7 @@ test('Punt Partners sentinel pins the verified first-party zero-public-careers s
 
   assert.equal(scraper.SOURCE, 'puntpartners')
   assert.equal(scraper.COMPANY, 'Punt Partners')
-  assert.equal(scraper.VERIFIED_AT, '2026-07-13')
+  assert.equal(scraper.VERIFIED_AT, '2026-08-04')
   assert.equal(scraper.HOMEPAGE_URL, 'https://punt.partners/')
   assert.equal(scraper.TEAM_URL, 'https://punt.partners/team/')
   assert.equal(scraper.PARTNERS_URL, 'https://punt.partners/partners/')
@@ -192,6 +192,16 @@ test('Punt Partners sentinel pins the verified first-party zero-public-careers s
   assert.equal(scraper.hasOfficialPageSitemapSignal(PAGE_SITEMAP_XML), true)
   assert.equal(
     scraper.isVerifiedMissingRoute({ status: 404, html: MISSING_ROUTE_HTML }),
+    true,
+  )
+  assert.equal(
+    scraper.isVerifiedMissingRoute({
+      status: 404,
+      html: MISSING_ROUTE_HTML.replace(
+        'href="https://punt.partners/partners/"',
+        'href="https://punt.partners/partners"',
+      ),
+    }),
     true,
   )
 })

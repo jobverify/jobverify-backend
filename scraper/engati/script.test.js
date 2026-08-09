@@ -14,8 +14,11 @@ import {
 const homepageHtml = `
   <!doctype html>
   <html lang="en">
+    <head>
+      <title>Enterprise-grade AI-native Customer eXperience platform for revenue growth | Engati</title>
+    </head>
     <body>
-      <h1>Engati</h1>
+      <h1>Drive Revenue Growth across your Customer eXperience lifecycle</h1>
       <a href="https://www.engati.ai/careers">Careers</a>
     </body>
   </html>

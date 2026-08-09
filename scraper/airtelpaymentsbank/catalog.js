@@ -18,14 +18,14 @@ export const AIRTEL_PAYMENTS_BANK_CATALOG = {
   atsPlatform: 'official-company-site-no-public-careers',
   countryFilter: 'India',
   paginationStrategy:
-    'verified-branded-bank-pages-plus-shared-airtel-careers-shell-bundle-and-darwinbox-checks',
+    '403-guarded-bank-pages-plus-shared-airtel-careers-shell-bundle-and-darwinbox-checks',
   extractionStrategy:
-    'verified-bank-homepage+verified-bank-about-page+no-branded-careers-links+shared-airtel-careers-shell+shared-bundle-reference+shared-darwinbox-shell-return-empty',
+    '403-guarded-bank-homepage+403-guarded-bank-about-page+shared-airtel-careers-shell+shared-bundle-reference+shared-darwinbox-shell+no-distinct-bank-jobs-route-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-08-07',
   verifiedSurfaceSummary:
-    'Verified on July 15, 2026 that https://www.airtelpayments.bank.in/ and https://www.airtelpayments.bank.in/static/about-us are the live branded Airtel Payments Bank first-party pages, while the only verified public Airtel careers surface that references Airtel Payments Bank is the shared parent shell at https://careers.airtel.com/, its current bundle at https://careers.airtel.com/static/js/main.57023176.js, and the shared Airtel Darwinbox handoff at https://airtel.darwinbox.in/ms/candidatev2/main/careers/allJobs. No distinct Airtel Payments Bank public jobs surface was verifiable on the bank domain or as a separate bank-specific careers route, so there is no trustworthy public jobs surface for Airtel Payments Bank itself.',
+    'Verified on Friday, August 7, 2026 that https://www.airtelpayments.bank.in/ and https://www.airtelpayments.bank.in/static/about-us returned Cloudflare-guarded HTTP 403 surfaces from this environment, while the shared Airtel careers shell at https://careers.airtel.com/, its bundle at https://careers.airtel.com/static/js/main.57023176.js, and the shared Airtel Darwinbox handoff at https://airtel.darwinbox.in/ms/candidatev2/main/careers/allJobs remained publicly reachable and still exposed no distinct Airtel Payments Bank public jobs route.',
   dryRunFile: 'airtelpaymentsbank/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

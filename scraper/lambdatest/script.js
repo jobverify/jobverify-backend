@@ -18,7 +18,7 @@ export const JOB_DETAIL_BASE_URL = PROVIDER_METADATA.externalJobDetailBaseUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -140,7 +140,7 @@ export const hasExpectedDepartmentPayload = (payload = []) => {
   if (!Array.isArray(payload) || payload.length < 3) return false
 
   const normalizedNames = payload
-    .map((item) => normalizeWhitespace(item?.departmentName)?.toLowerCase())
+    .map((item) => normalizeWhitespace(item?.departmentName || item?.name)?.toLowerCase())
     .filter(Boolean)
 
   return normalizedNames.includes('application support')
@@ -232,7 +232,7 @@ export const createLambdaTestScraper = ({
 export const run = async (options = {}) => createLambdaTestScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

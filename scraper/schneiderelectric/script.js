@@ -1,8 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
-import { launchBrowser } from '../utils/browser.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -33,6 +33,29 @@ const normalizeEmploymentType = (value) => {
   if (/contract/i.test(normalized)) return 'Contract'
   if (/intern/i.test(normalized)) return 'Internship'
   return normalized
+}
+
+const extractExperienceRequired = (job = {}) => {
+  const publicEvidence = normalizeWhitespace([
+    job.description,
+    job.responsibilities,
+    job.qualifications,
+  ].filter(Boolean).join(' '))
+  if (!publicEvidence) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: publicEvidence,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
 }
 
 const isIndiaJob = (job = {}) => {
@@ -79,6 +102,9 @@ export const normalizeJobListing = (item = {}) => {
   const job = item?.data || {}
   if (!isIndiaJob(job)) return null
 
+  const jobDescription = normalizeWhitespace(job.description || job.responsibilities)
+  const minimumQualification = normalizeWhitespace(job.qualifications)
+
   return {
     title: normalizeWhitespace(job.title),
     location: getLocation(job),
@@ -88,47 +114,25 @@ export const normalizeJobListing = (item = {}) => {
     requisitionId: normalizeWhitespace(job.req_id || job.slug),
     department: getDepartment(job),
     employmentType: normalizeEmploymentType(job.employment_type || job.tags1?.[0]),
-    experienceRequired: null,
-    jobDescription: normalizeWhitespace(job.description || job.responsibilities),
-    minimumQualification: normalizeWhitespace(job.qualifications),
+    experienceRequired: extractExperienceRequired(job),
+    jobDescription,
+    minimumQualification,
     preferredQualification: null,
     requiredSkills: [],
     postingDate: normalizeWhitespace(job.posted_date),
     closingDate: normalizeWhitespace(job.posting_expiry_date),
     applyUrl: normalizeWhitespace(job.apply_url),
     sourceUrl: buildCanonicalJobUrl(job),
+    publicExperienceChecked: Boolean(jobDescription || minimumQualification),
   }
 }
 
-const createBrowserJsonFetcher = async () => {
-  const browser = await launchBrowser()
-  const page = await browser.newPage()
-
-  await page.goto(OFFICIAL_JOBS_URL, {
-    waitUntil: 'networkidle2',
-    timeout: NAVIGATION_TIMEOUT_MS,
+const defaultFetchJson = async (url) => {
+  const response = await fetch(url, {
+    headers: { Accept: 'application/json,text/plain,*/*' },
   })
-
-  return {
-    fetchJson: async (url) => page.evaluate(
-      async (targetUrl) => {
-        const response = await fetch(targetUrl, {
-          headers: {
-            Accept: 'application/json,text/plain,*/*',
-          },
-          credentials: 'include',
-        })
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`)
-        }
-
-        return response.json()
-      },
-      url,
-    ),
-    close: async () => browser.close(),
-  }
+  if (!response.ok) throw new Error(`Schneider Electric jobs API returned HTTP ${response.status}`)
+  return response.json()
 }
 
 export const createSchneiderElectricScraper = ({
@@ -142,13 +146,8 @@ export const createSchneiderElectricScraper = ({
     maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : Number.POSITIVE_INFINITY,
     fetchJson,
   } = {}) => {
-    let browserContext = null
-
-    try {
-      if (!fetchJson) {
-        browserContext = await createBrowserJsonFetcher()
-        fetchJson = browserContext.fetchJson
-      }
+    {
+      fetchJson ||= defaultFetchJson
 
       const jobs = []
       const seenJobIds = new Set()
@@ -178,10 +177,6 @@ export const createSchneiderElectricScraper = ({
       }
 
       return jobs
-    } finally {
-      if (browserContext) {
-        await browserContext.close()
-      }
     }
   },
 })
@@ -193,7 +188,7 @@ export const {
 } = scraper
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Schneider Electric scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

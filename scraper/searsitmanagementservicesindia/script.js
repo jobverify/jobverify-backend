@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { SEARS_IT_MANAGEMENT_SERVICES_INDIA_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -33,12 +33,17 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const hasOfficialSearsCareersSignal = (html = '') => {
+  const rawHtml = String(html ?? '')
   const text = normalizeWhitespace(html)
-  return text.includes('CURRENT OPENINGS')
+
+  return /<title[^>]*>\s*Sears India Careers\s*\|\s*Together,\s*Let(?:’|'|&#8217;)s Commit to Excellence\s*<\/title>/i.test(rawHtml)
+    && text.includes('Together, Let’s Commit to Excellence')
+    && text.includes('Current Openings')
     && text.includes('Pune')
     && text.includes('Hyderabad')
-    && text.includes('Chennai')
-  }
+    && text.includes('We are hiring for multiple roles across all Business Units')
+    && text.includes('Job Disclaimer')
+}
 
 export const pageExposesStructuredJobListings = (html = '') => {
   const page = String(html ?? '')
@@ -65,7 +70,7 @@ export const createSearsITManagementServicesIndiaScraper = () => ({
 export const run = async (options = {}) => createSearsITManagementServicesIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

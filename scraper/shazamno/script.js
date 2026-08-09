@@ -5,8 +5,7 @@ import { SHAZAM_NO_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const USER_AGENT = 'Mozilla/5.0'
 const REQUEST_TIMEOUT_MS = 15000
 
 export { PROVIDER_METADATA }
@@ -61,15 +60,17 @@ export const containsLiteralBacklogRow = (html = '') =>
   normalizeWhitespace(html).toLowerCase().includes('shazam? no')
 
 export const extractAppleCareersSearchUrl = (html = '') => {
-  const match = String(html ?? '').match(/https:\/\/jobs\.apple\.com\/en-us\/search\?product=apple-music-APPMU/i)
-  return match ? match[0] : null
+  const match = String(html ?? '').match(
+    /<a\b[^>]*href=["'](https:\/\/jobs\.apple\.com\/en-us\/search\?[^"']*search=shazam[^"']*)["'][^>]*>\s*Careers\s*<\/a>/i,
+  )
+  return match ? normalizeWhitespace(match[1]) : null
 }
 
 export const hasVerifiedShazamBrandPageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /<title>\s*Shazam - Music Discovery, Charts & Song Lyrics\s*<\/title>/i.test(page)
+  return text.includes('Shazam - Music Discovery, Charts & Song Lyrics')
     && text.includes('Find music, concerts and more with Shazam')
     && text.includes('Shazam Footer')
     && text.includes('Careers')
@@ -80,7 +81,10 @@ export const hasVerifiedAppleCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /<title>\s*Search Jobs - Apple Music - Jobs - Careers at Apple\s*<\/title>/i.test(page)
+  return (
+    text.includes('Search Jobs - Jobs - Careers at Apple')
+      || text.includes('Search Jobs - Apple Music - Jobs - Careers at Apple')
+  )
     && text.includes('Find your perfect role.')
     && text.includes('QA Lead - Shazam (12 Month Contract)')
     && text.includes('tech hub of the Shazam team')
@@ -115,7 +119,7 @@ export const createShazamNoScraper = () => ({
 export const run = async (options = {}) => createShazamNoScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

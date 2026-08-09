@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { HAPTIK_CATALOG } from './catalog.js'
 
@@ -65,6 +65,20 @@ const toAbsoluteUrl = (value, baseUrl = LISTING_URL) => {
 
   try {
     return new URL(value, baseUrl).toString()
+  } catch {
+    return null
+  }
+}
+
+const normalizeFreshteamJobsUrl = (value) => {
+  const absoluteUrl = toAbsoluteUrl(value, CAREERS_URL)
+  if (!absoluteUrl) return null
+
+  try {
+    const url = new URL(absoluteUrl)
+    url.search = ''
+    url.hash = ''
+    return url.toString().replace(/\/$/, '')
   } catch {
     return null
   }
@@ -163,9 +177,9 @@ export const buildDetailUrl = (opaqueId, slug) =>
     .replace('{slug}', slug)
 
 export const extractFreshteamJobsUrl = (html) =>
-  toAbsoluteUrl(firstMatch(html, [
+  normalizeFreshteamJobsUrl(firstMatch(html, [
     /<a[^>]+href="([^"]*freshteam\.com\/jobs[^"]*)"/i,
-  ]), CAREERS_URL)
+  ]))
 
 export const hasOfficialCareersSignal = (html) => {
   const normalized = normalizeWhitespace(html) || ''
@@ -293,7 +307,7 @@ export const createHaptikScraper = ({
 export const run = async (options = {}) => createHaptikScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

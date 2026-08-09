@@ -78,7 +78,7 @@ test('extractJobsFromBundle maps the visible open position and internship from t
     sourceUrl: CAREER_PAGE_URL,
     applyUrl: CONTACT_PAGE_URL,
     employmentType: 'Internship',
-    experienceRequired: '6 months',
+    experienceRequired: null,
     minimumQualification: 'B.Tech, M.Tech, and Ph.D. candidates',
     preferredQualification: null,
     requiredSkills: [],

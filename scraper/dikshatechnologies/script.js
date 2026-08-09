@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { DIKSHA_TECHNOLOGIES_CATALOG } from './catalog.js'
 
@@ -98,6 +98,7 @@ export const extractJobCards = (html = '') => [...String(html ?? '').matchAll(
       .map((value) => value.trim())
       .filter(Boolean)
     const [postingDate = null, location = null, workplaceType = null, experienceRequired = null] = metaParts
+    const jobDescription = metaParts.join(' | ') || title
 
     return {
       title,
@@ -117,7 +118,8 @@ export const extractJobCards = (html = '') => [...String(html ?? '').matchAll(
       requiredSkills: [],
       postingDate,
       closingDate: null,
-      jobDescription: metaParts.join(' | ') || title,
+      jobDescription,
+      publicExperienceChecked: Boolean(jobDescription),
     }
   })
   .filter(Boolean)
@@ -181,7 +183,7 @@ export const createDikshaTechnologiesScraper = ({
 export const run = async (options = {}) => createDikshaTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

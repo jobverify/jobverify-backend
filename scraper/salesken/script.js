@@ -57,9 +57,9 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Empower Your Sales with AI \| Salesken\.ai\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*Empower Your Sales with AI \| Salesken\.ai\s*<\/title>/i.test(page)
     && normalized.includes('Empower Your Sales with AI')
-    && normalized.includes('Book a demo')
+    && /(?:Book|Request) a Demo/i.test(normalized)
     && normalized.includes('Pricing')
     && normalized.includes('Privacy Policy')
     && !/\bcareers\b/i.test(normalized)
@@ -113,7 +113,7 @@ export const createSaleskenScraper = () => ({
 export const run = async (options = {}) => createSaleskenScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

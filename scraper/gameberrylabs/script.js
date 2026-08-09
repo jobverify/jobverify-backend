@@ -141,8 +141,8 @@ export const hasOfficialHomepageSignal = (html) => {
   return /<title>\s*Gameberry Labs\s*\|\s*Makers of Ludo STAR &amp; Parchisi STAR\s*<\/title>/i.test(rawHtml)
     && normalized.includes('we build games that players love to grow old with')
     && normalized.includes('build your dream career with us')
-    && normalized.includes('join our passion for gaming as we build the future of indian mobile gaming studios - together.')
-    && normalized.includes('we are an agile team of go-getters filled with people who want to build great games.')
+    && normalized.includes('join our passion for gaming as we build the future of indian mobile gaming studios - together')
+    && normalized.includes('we are an agile team of go-getters filled with people who want to build great games')
     && normalized.includes('bellandur village')
     && normalized.includes('gameberry labs')
 }
@@ -182,7 +182,7 @@ export const createGameberryLabsScraper = () => ({
 export const run = async (options = {}) => createGameberryLabsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

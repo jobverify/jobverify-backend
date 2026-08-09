@@ -13,7 +13,7 @@ const loadKampdModule = async () => {
 }
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const fixturesDir = path.join(currentDir, '../tests/fixtures/kampd')
+const fixturesDir = path.join(currentDir, '../../scraper-support/tests/fixtures/kampd')
 
 const officialHomepageHtml = fs.readFileSync(path.join(fixturesDir, 'homepage.html'), 'utf8')
 const officialFaqHtml = fs.readFileSync(path.join(fixturesDir, 'faq.html'), 'utf8')

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -28,6 +28,10 @@ const normalizeWhitespace = (value) =>
 
 const normalizeText = (value) => normalizeWhitespace(value).toLowerCase()
 
+const normalizeComparableUrl = (value) => String(value ?? '')
+  .trim()
+  .replace(/\/+$/, '')
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -40,12 +44,20 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeText(rawHtml)
-
-  return rawHtml.includes('https://kanini.com/')
-    && normalized.includes('trailblazers of digital transformation')
+  const hasCanonicalHome = /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/kanini\.com\/?["']/i.test(rawHtml)
+  const hasCareersLink = /href=["'][^"']*\/careers\/?["']/i.test(rawHtml)
+  const hasOpenPositionsLink = /href=["'][^"']*\/careers\/open-positions\/?["']/i.test(rawHtml)
+  const hasLegacyHero = normalized.includes('trailblazers of digital transformation')
     && normalized.includes('creating the roadmap for businesses to become truly future-ready')
+  const hasCurrentHero = normalized.includes('your partner in ai journey')
+    && normalized.includes("let's blaze the trail for tomorrow's transformation")
+
+  return hasCanonicalHome
+    && hasCareersLink
+    && hasOpenPositionsLink
     && normalized.includes('get agile. go digital.')
     && normalized.includes('kanini software solutions inc')
+    && (hasLegacyHero || hasCurrentHero)
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -60,6 +72,7 @@ export const hasOfficialCareersSignal = (html) => {
 export const extractOpenPositionsUrl = (html) => {
   const page = String(html ?? '')
   const patterns = [
+    /<a[^>]+href="([^"]*\/careers\/open-positions\/?)"[^>]*>[\s\S]*?<\/a>/i,
     /<a[^>]+href="([^"]+)"[^>]*>\s*view open positions\s*<\/a>/i,
     /<a[^>]+href="([^"]+)"[^>]*>\s*join us\s*<\/a>/i,
   ]
@@ -101,7 +114,7 @@ export const createKaniniScraper = () => ({
     }
 
     const openPositionsUrl = extractOpenPositionsUrl(careersHtml)
-    if (openPositionsUrl !== OPEN_POSITIONS_URL) {
+    if (normalizeComparableUrl(openPositionsUrl) !== normalizeComparableUrl(OPEN_POSITIONS_URL)) {
       throw new Error('KANINI careers page no longer links to the verified official open positions surface')
     }
 
@@ -117,7 +130,7 @@ export const createKaniniScraper = () => ({
 export const run = async (options = {}) => createKaniniScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

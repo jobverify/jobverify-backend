@@ -1,9 +1,11 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { shouldContinueWorkdayJobsApiPagination } from '../myworkday/engine.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { extractJobDetail } from '../../scraper-support/detailExtractors/index.js'
+import { shouldContinueWorkdayJobsApiPagination } from '../../scraper-support/myworkday/engine.js'
+import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 import TECHWAVE_CONSULTING_CATALOG from './catalog.js'
 
@@ -19,7 +21,8 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const PAGE_SIZE = 20
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const DETAIL_FETCH_CONCURRENCY = 4
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -269,14 +272,46 @@ export const createTechwaveConsultingScraper = ({
       }
     }
 
-    return jobs
+    return mapWithConcurrency(
+      jobs,
+      DETAIL_FETCH_CONCURRENCY,
+      async (job) => {
+        try {
+          const detailHtml = await fetchText(job.sourceUrl || job.link)
+          if (!detailHtml) {
+            return job
+          }
+
+          const detail = await extractJobDetail({
+            provider: 'workday',
+            html: detailHtml,
+          })
+
+          return {
+            ...job,
+            department: detail.department || job.department,
+            experienceRequired: detail.experienceRequired || job.experienceRequired,
+            minimumQualification: detail.minimumQualification || job.minimumQualification,
+            preferredQualification: detail.preferredQualification || job.preferredQualification,
+            requiredSkills: Array.isArray(detail.requiredSkills) && detail.requiredSkills.length > 0
+              ? detail.requiredSkills
+              : job.requiredSkills,
+            jobDescription: detail.jobDescription || job.jobDescription,
+            postingDate: detail.postingDate || job.postingDate,
+            requisitionId: detail.requisitionId || job.requisitionId,
+          }
+        } catch {
+          return job
+        }
+      },
+    )
   },
 })
 
 export const run = async (options = {}) => createTechwaveConsultingScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -10,7 +10,7 @@ export const COMPANY = COUPA_SOFTWARE_INC_CATALOG.companyName
 export const JOBS_PAGE_URL = COUPA_SOFTWARE_INC_CATALOG.jobsPageUrl
 export const VERIFIED_ON = COUPA_SOFTWARE_INC_CATALOG.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -33,7 +33,9 @@ const stripTags = (value) => normalizeWhitespace(String(value ?? '').replace(/<[
 
 const normalizeUrl = (value) => {
   try {
-    return new URL(String(value), JOBS_PAGE_URL).toString()
+    const url = new URL(String(value), JOBS_PAGE_URL)
+    url.hash = ''
+    return url.toString()
   } catch {
     return null
   }
@@ -66,12 +68,15 @@ export const hasOfficialJobsPageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
 
-  return /<title>\s*Shape your career at Coupa - Explore opportunities to make an impact\.\s*\|\s*Coupa Careers\s*<\/title>/i.test(page)
+  return /<title>\s*(?:Shape your career at Coupa|Jobs)\s*-\s*Explore opportunities to make an impact\.\s*\|\s*Coupa Careers\s*<\/title>/i.test(page)
     && text.includes('Shape your career at Coupa')
-    && /Displaying\s+1\s+to\s+20\s+of\s+101\s+matching\s+jobs/i.test(text)
+    && (
+      /Displaying\s+\d+\s+to\s+\d+\s+of\s+\d+\s+matching\s+jobs/i.test(text)
+      || /class=["'][^"']*js-card-job[^"']*["']/i.test(page)
+    )
 }
 
-export const extractIndiaJobsFromPage = (html = '') => Array.from(
+const extractLegacyIndiaJobsFromPage = (html = '') => Array.from(
   String(html ?? '').matchAll(
     /<article\b[^>]*>[\s\S]*?<h2>\s*<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>\s*<\/h2>[\s\S]*?<li>([\s\S]*?)<\/li>[\s\S]*?<li>([\s\S]*?)<\/li>(?:[\s\S]*?<li>([\s\S]*?)<\/li>)?/gi,
   ),
@@ -93,6 +98,37 @@ export const extractIndiaJobsFromPage = (html = '') => Array.from(
     }
   },
 ).filter((job) => job.title && /,\s*India$/i.test(job.location || '') && job.sourceUrl && job.jobId)
+
+const extractCardGridIndiaJobsFromPage = (html = '') => Array.from(
+  String(html ?? '').matchAll(
+    /<div\b[^>]*class=["'][^"']*js-card-job[^"']*["'][^>]*>[\s\S]*?<a[^>]+href=["']([^"']+)["'][^>]*aria-label=["'][^"']*View job:\s*([^"']+)["'][^>]*>\s*<\/a>[\s\S]*?<ul[^>]*class=["'][^"']*job-meta[^"']*["'][^>]*>([\s\S]*?)<\/ul>/gi,
+  ),
+  (match) => {
+    const sourceUrl = normalizeUrl(match[1])
+    const title = stripTags(match[2])
+    const metaItems = [...String(match[3] ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
+      .map((item) => stripTags(item[1]))
+      .filter(Boolean)
+    const [location = null, department = null, employmentType = null] = metaItems
+    const jobId = buildJobId(title, sourceUrl)
+
+    return {
+      title,
+      location,
+      department,
+      employmentType,
+      sourceUrl,
+      jobId,
+    }
+  },
+).filter((job) => job.title && /,\s*India$/i.test(job.location || '') && job.sourceUrl && job.jobId)
+
+export const extractIndiaJobsFromPage = (html = '') => {
+  const jobs = extractLegacyIndiaJobsFromPage(html)
+  if (jobs.length > 0) return jobs
+
+  return extractCardGridIndiaJobsFromPage(html)
+}
 
 export const extractPaginationUrls = (html = '') => {
   const urls = new Set()
@@ -169,7 +205,7 @@ export const createCoupaSoftwareIncScraper = ({
 export const run = async (options = {}) => createCoupaSoftwareIncScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

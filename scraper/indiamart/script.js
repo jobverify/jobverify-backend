@@ -1,7 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -22,6 +23,10 @@ export const PROVIDER_METADATA = {
 const JOBS_BOARD_ORIGIN = 'https://joblist.klimb.io'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const shouldUseBrowserFallback = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
 
 const decodeHtmlEntities = (value) =>
   String(value ?? '')
@@ -152,7 +157,7 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialLeadershipJobsPageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /Leadership\s*\/\s*Product\s*\/\s*Tech\s*&amp;\s*Corporate Roles/i.test(page)
+  return /Leadership\s*\/\s*Product\s*\/\s*Tech\s*(?:&amp;|&)\s*Corporate Roles/i.test(page)
     && /joblist\.klimb\.io\/js\/embedscripts\/embed\.js/i.test(page)
     && /klimb_init\(\s*\{[\s\S]*company\s*:\s*"indiamart"/i.test(page)
     && /id="klimbjobs"/i.test(page)
@@ -227,12 +232,16 @@ export const hasVerifiedJobDetailPage = (page = {}, job = {}) => {
 
   const html = String(page.html ?? '')
   const normalizedHtml = normalizeWhitespace(html)?.toLowerCase() || ''
+  const applyHrefPattern = new RegExp(
+    `/indiamart/${job.jobId}/\\s*apply\\?source=careers`,
+    'i',
+  )
   const normalizedTitle = normalizeWhitespace(job.title)?.toLowerCase() || ''
 
   return normalizedHtml.includes(normalizedTitle)
     && normalizedHtml.includes(OFFICIAL_BRAND_NAME.toLowerCase())
     && new RegExp(`data-position="${job.jobId}"`, 'i').test(html)
-    && new RegExp(`/indiamart/${job.jobId}/apply\\?source=careers`, 'i').test(html)
+    && applyHrefPattern.test(html)
     && /JobPosting/i.test(html)
 }
 
@@ -242,6 +251,7 @@ const defaultFetchPage = async (url) => {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
+    attempts: 1,
     label: SOURCE,
     timeoutMs: 15000,
   })
@@ -255,6 +265,7 @@ const defaultFetchJson = (url) =>
       'User-Agent': USER_AGENT,
       Accept: 'application/json,text/plain,*/*',
     },
+    attempts: 1,
     label: SOURCE,
     timeoutMs: 15000,
   })
@@ -266,83 +277,154 @@ export const createIndiaMartScraper = ({
   async run({
     fetchPage = defaultFetchPage,
     fetchJson = defaultFetchJson,
+    fetchBrowserPage,
+    fetchBrowserJson,
     now = () => new Date().toISOString(),
   } = {}) {
-    const homepage = await fetchPage(CAREERS_HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Official IndiaMART careers homepage no longer matches the verified surface')
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({
+          userAgent: USER_AGENT,
+          settleTimeMs: 4000,
+        })
+      }
+
+      return browserSession
     }
 
-    const leadershipPage = await fetchPage(LEADERSHIP_JOBS_PAGE_URL)
-    if (leadershipPage.status !== 200 || !hasOfficialLeadershipJobsPageSignal(leadershipPage.html)) {
-      throw new Error('IndiaMART official leadership jobs page no longer matches the verified surface')
-    }
+    const browserPageFetcher = fetchBrowserPage || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchPage(url)
+    })
 
-    const boardPage = await fetchPage(JOBS_BOARD_URL)
-    if (boardPage.status !== 200 || !hasOfficialJobsBoardSignal(boardPage.html)) {
-      throw new Error('The public IndiaMART Klimb board no longer matches the verified surface')
-    }
+    let browserJsonPrimed = false
+    const browserJsonFetcher = fetchBrowserJson || (async (url, landingUrl = JOBS_BOARD_URL) => {
+      const session = await getBrowserSession()
+      return session.fetchJson(url, {
+        ...(landingUrl ? { landingUrl } : {}),
+        headers: {
+          Accept: 'application/json,text/plain,*/*',
+        },
+      })
+    })
 
-    const jobs = []
-    const seenJobIds = new Set()
-    const addJobs = (items = []) => {
-      for (const item of items) {
-        if (!item || !item.jobId || seenJobIds.has(item.jobId)) continue
-        seenJobIds.add(item.jobId)
-        jobs.push(item)
+    const fetchPageWithBrowserFallback = async (url) => {
+      try {
+        return await fetchPage(url)
+      } catch (error) {
+        if (!shouldUseBrowserFallback(error)) {
+          throw error
+        }
+
+        return browserPageFetcher(url)
       }
     }
 
-    addJobs(extractInitialBoardJobs(boardPage.html))
-    if (jobs.length === 0) {
-      throw new Error('No public IndiaMART jobs found on the verified Klimb board')
-    }
+    const fetchJsonWithBrowserFallback = async (url, landingUrl = JOBS_BOARD_URL) => {
+      try {
+        return await fetchJson(url)
+      } catch (error) {
+        if (!shouldUseBrowserFallback(error)) {
+          throw error
+        }
 
-    let cursor = extractLoadMoreCursor(boardPage.html)
-    const seenCursors = new Set()
-    let pageCount = 0
-
-    while (cursor && pageCount < maxPages && !seenCursors.has(cursor)) {
-      seenCursors.add(cursor)
-      pageCount += 1
-
-      const payload = await fetchJson(`${JOBS_BOARD_URL}?lastPosId=${encodeURIComponent(cursor)}`)
-      if (!Array.isArray(payload?.jobs?.positions)) {
-        throw new Error('IndiaMART Klimb pagination endpoint no longer returns the verified public jobs payload')
-      }
-
-      addJobs(extractPaginatedJobs(payload))
-
-      const lastPositionId = normalizeWhitespace(payload.jobs.positions.at(-1)?.id)
-      if (payload.showLoadMore === true && lastPositionId && !seenCursors.has(lastPositionId)) {
-        cursor = lastPositionId
-      } else {
-        cursor = null
+        return browserJsonFetcher(url, landingUrl)
       }
     }
 
-    const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+    const shouldPreferBrowserJson = fetchJson === defaultFetchJson
 
-    if (selectedJobs.length > 0) {
-      const detailPage = await fetchPage(selectedJobs[0].sourceUrl)
-      if (!hasVerifiedJobDetailPage(detailPage, selectedJobs[0])) {
-        throw new Error('IndiaMART job detail pages no longer match the verified public jobs surface')
+    try {
+      const homepage = await fetchPageWithBrowserFallback(CAREERS_HOMEPAGE_URL)
+      if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+        throw new Error('Official IndiaMART careers homepage no longer matches the verified surface')
+      }
+
+      const leadershipPage = await fetchPageWithBrowserFallback(LEADERSHIP_JOBS_PAGE_URL)
+      if (leadershipPage.status !== 200 || !hasOfficialLeadershipJobsPageSignal(leadershipPage.html)) {
+        throw new Error('IndiaMART official leadership jobs page no longer matches the verified surface')
+      }
+
+      const boardPage = await fetchPageWithBrowserFallback(JOBS_BOARD_URL)
+      if (boardPage.status !== 200 || !hasOfficialJobsBoardSignal(boardPage.html)) {
+        throw new Error('The public IndiaMART Klimb board no longer matches the verified surface')
+      }
+
+      const jobs = []
+      const seenJobIds = new Set()
+      const addJobs = (items = []) => {
+        for (const item of items) {
+          if (!item || !item.jobId || seenJobIds.has(item.jobId)) continue
+          seenJobIds.add(item.jobId)
+          jobs.push(item)
+        }
+      }
+
+      addJobs(extractInitialBoardJobs(boardPage.html))
+      if (jobs.length === 0) {
+        throw new Error('No public IndiaMART jobs found on the verified Klimb board')
+      }
+
+      let cursor = extractLoadMoreCursor(boardPage.html)
+      const seenCursors = new Set()
+      let pageCount = 0
+
+      while (cursor && pageCount < maxPages && !seenCursors.has(cursor)) {
+        seenCursors.add(cursor)
+        pageCount += 1
+
+        const paginationUrl = `${JOBS_BOARD_URL}?lastPosId=${encodeURIComponent(cursor)}`
+        const payload = shouldPreferBrowserJson
+          ? await browserJsonFetcher(
+            paginationUrl,
+            browserJsonPrimed ? null : JOBS_BOARD_URL,
+          )
+          : await fetchJsonWithBrowserFallback(paginationUrl)
+        if (!Array.isArray(payload?.jobs?.positions)) {
+          throw new Error('IndiaMART Klimb pagination endpoint no longer returns the verified public jobs payload')
+        }
+
+        browserJsonPrimed = true
+
+        addJobs(extractPaginatedJobs(payload))
+
+        const lastPositionId = normalizeWhitespace(payload.jobs.positions.at(-1)?.id)
+        if (payload.showLoadMore === true && lastPositionId && !seenCursors.has(lastPositionId)) {
+          cursor = lastPositionId
+        } else {
+          cursor = null
+        }
+      }
+
+      const selectedJobs = Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
+
+      if (selectedJobs.length > 0) {
+        const detailPage = await fetchPageWithBrowserFallback(selectedJobs[0].sourceUrl)
+        if (!hasVerifiedJobDetailPage(detailPage, selectedJobs[0])) {
+          throw new Error('IndiaMART job detail pages no longer match the verified public jobs surface')
+        }
+      }
+
+      return selectedJobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: now(),
+      }))
+    } finally {
+      if (browserSession) {
+        await browserSession.close().catch(() => {})
       }
     }
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
   },
 })
 
 export const run = async () => createIndiaMartScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

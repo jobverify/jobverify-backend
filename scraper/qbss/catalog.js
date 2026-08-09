@@ -6,21 +6,24 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const QBSS_CATALOG = {
   source: 'qbss',
   companyName: 'Qbss',
-  officialBrandName: 'Quatrro Business Support Services',
+  officialBrandName: 'ContinuServe',
   adapter: 'script',
-  companyCareerPage: 'https://www.quatrrobss.com/careers/',
+  companyCareerPage: 'https://continuserve.com/careers/',
+  legacyCareerPage: 'https://www.quatrrobss.com/careers/',
   workingAtUrl: 'https://www.quatrrobss.com/working-at-quatrro/',
-  companyDomain: 'quatrrobss.com',
-  atsPlatform: 'official-company-careers-cloudflare-blocked',
+  companyDomain: 'continuserve.com',
+  atsPlatform: 'verified-rebrand-continuserve-careers-wordpress',
   countryFilter: 'India',
-  paginationStrategy: 'verified-first-party-careers-routes-cloudflare-block-validation',
+  paginationStrategy: 'single-continuserve-listing-page-plus-detail-pages',
   extractionStrategy:
-    'verified-qbss-careers-route+verified-working-at-route+cloudflare-block-page-return-empty',
+    'verified-qbss-legacy-redirects+continuserve-detail-links+india-internal-detail-table-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-07-26',
+  verifiedPublicJobCount: 14,
+  verifiedIndiaJobCount: 6,
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that the legacy first-party QBSS routes https://www.quatrrobss.com/careers/ and https://www.quatrrobss.com/working-at-quatrro/ both returned Cloudflare "Sorry, you have been blocked" pages from this environment, while public search results still referenced Quatrro Business Support Services and its ContinuServe rebrand. Because the exact-name first-party jobs surface is blocked to anonymous enumeration, this provider fails closed and returns no jobs until the public surface becomes crawlable again.',
+    'Verified on Sunday, July 26, 2026 that the legacy QBSS routes https://www.quatrrobss.com/careers/ and https://www.quatrrobss.com/working-at-quatrro/ redirected to the live ContinuServe careers surface at https://continuserve.com/careers/, where the rendered listing exposed 14 public detail pages and 6 India roles of type "Jobs at ContinuServe". This scraper validates the ContinuServe careers surface and returns only India internal roles whose detail tables still match that verified contract.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

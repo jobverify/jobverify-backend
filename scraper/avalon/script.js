@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { AVALON_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -144,11 +144,15 @@ export const hasOfficialCareerPageSignal = (html = '') => {
 export const hasLegacyCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const hasLegacyHandoff = /href=["']\/index\.php\/career["']/i.test(page)
+  const hasCurrentCareersCopy = normalized.includes('Aside from the openings below')
+    || normalized.includes('send examples of your work to')
+    || normalized.includes('Join Avalon Information Systems')
 
   return /<title>\s*Avalon Information Systems \| Careers\s*<\/title>/i.test(page)
     && normalized.includes('Current Openings')
     && normalized.includes(APPLICATION_EMAIL)
-    && /href=["']\/index\.php\/career["']/i.test(page)
+    && (hasLegacyHandoff || hasCurrentCareersCopy)
     && extractListingRows(page).length === 0
     && !sameDomainVacancyLinkPattern.test(page)
   }
@@ -334,7 +338,7 @@ export const createAvalonScraper = ({ now = () => new Date().toISOString() } = {
 export const run = async (options = {}) => createAvalonScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -18,9 +18,9 @@ export const MOBILOITTE_TECHNOLOGIES_CATALOG = {
     'verified-first-party-careers-page+no-jobs-found-state+resume-drop-fallback',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-03',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.mobiloitte.com/careers is the exact-name Mobiloitte careers page, that it renders the branded "Current Openings" search/filter UI, and that the visible public state currently says "No Jobs Found" while offering a "Send Your Resume" fallback to careers@mobiloitte.com. Because no trustworthy public role inventory is presently exposed, this local provider remains empty-state only.',
+    'Verified on Monday, August 3, 2026 that https://www.mobiloitte.com/careers is the exact-name Mobiloitte careers page, that it renders the branded "Current Openings" search/filter UI, and that the visible public state currently says "No Jobs Found" while offering a "Send Your Resume" fallback to careers@mobiloitte.com. Because no trustworthy public role inventory is presently exposed, this local provider remains empty-state only.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'mobiloittetechnologies/jobs.json',
 }

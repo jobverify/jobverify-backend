@@ -102,7 +102,7 @@ export const hasCuriousJrHomeSignal = (html = '') => {
     && normalized.includes('learning made fun for curious minds')
     && normalized.includes('trusted by olympiad rankers')
     && /href=["']https:\/\/www\.pw\.live\/about-us["']/i.test(rawHtml)
-    && normalized.includes('physicswallah ltd')
+    && /physics\s*wallah\s*ltd/i.test(normalized)
 }
 
 export const hasCuriousJrContactSignal = (html = '') => {
@@ -170,7 +170,7 @@ export const createCuriousJrScraper = () => ({
 export const run = async (options = {}) => createCuriousJrScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

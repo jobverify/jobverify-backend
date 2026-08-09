@@ -56,6 +56,11 @@ export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
   const compact = compactText(rawHtml)
+  const hasCurrentPlaceholderShell =
+    normalized.includes('sign in')
+    && normalized.includes('create account')
+    && normalized.includes('orders')
+    && normalized.includes('shop')
 
   return /<title[^>]*>\s*wizfreight\.com\s*<\/title>/i.test(rawHtml)
     && /meta[^>]+name=["']author["'][^>]+content=["']wizfreight\.com["']/i.test(rawHtml)
@@ -65,7 +70,7 @@ export const hasOfficialHomepageSignal = (html) => {
     && normalized.includes('powered by')
     && normalized.includes('copyright © 2026 wizfreight.com - all rights reserved.')
     && compact.includes('coming_soon')
-    && compact.includes('wam_site_ishomepage:true')
+    && (compact.includes('wam_site_ishomepage:true') || hasCurrentPlaceholderShell)
 }
 
 export const hasVerifiedSitemapIndexSignal = (xml) => {
@@ -95,6 +100,11 @@ export const hasVerified404CareersSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
   const compact = compactText(rawHtml)
+  const hasCurrentPlaceholderShell =
+    normalized.includes('sign in')
+    && normalized.includes('create account')
+    && normalized.includes('orders')
+    && normalized.includes('shop')
 
   return /<title[^>]*>\s*wizfreight\.com\s*<\/title>/i.test(rawHtml)
     && /meta[^>]+name=["']generator["'][^>]+content=["']Starfield Technologies; Go Daddy Website Builder 8\.0\.0000["']/i.test(rawHtml)
@@ -102,7 +112,7 @@ export const hasVerified404CareersSignal = (html) => {
     && normalized.includes('page not found')
     && normalized.includes("we can't seem to find the page you're looking for.")
     && normalized.includes('go to home page')
-    && compact.includes('wam_site_ishomepage:false')
+    && (compact.includes('wam_site_ishomepage:false') || hasCurrentPlaceholderShell)
 }
 
 export const isVerifiedNoPublicCareersRoute = (page = {}) =>
@@ -144,8 +154,8 @@ export const createWizFrieghtScraper = () => ({
 
 export const run = async (options = {}) => createWizFrieghtScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

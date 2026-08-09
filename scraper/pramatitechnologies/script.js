@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-
 import { PRAMATI_TECHNOLOGIES_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -29,27 +27,30 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchPage = async (url) => ({
-  status: 200,
-  url,
-  html: await fetchTextWithRetry(url, {
+export const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
-    label: SOURCE,
-    timeoutMs: 15000,
-  }),
-})
+    redirect: 'follow',
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
 
 export const hasVerifiedHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Pramati/i.test(page)
-    && normalized.includes('Build the next')
-    && normalized.includes('People are our priority')
-    && normalized.includes('Careers')
+  return /<title>\s*Pramati(?:\s*&#8211;|\s*&ndash;|\s*–|\s*-)\s*Build the next/i.test(page)
+    && normalized.includes('Pramati builds independent, innovative technology companies focused on profitable, well-defined markets.')
+    && normalized.includes('Pramati Prism is where it all starts, our in-house accelerator which incubates products in early stage, and nurtures them before spinning them out into autonomous ventures.')
+    && normalized.includes('Catch the buzz. Pramati is a happening place for everyone')
 }
 
 export const hasLinkedZappyhireCareersBoard = (html = '') =>
@@ -95,7 +96,7 @@ export const createPramatiTechnologiesScraper = () => ({
 export const run = async (options = {}) => createPramatiTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

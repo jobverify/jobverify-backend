@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -12,8 +12,13 @@ const SOURCE = 'esypos'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
-export const hasBrokenOfficialSurfaceSignal = (html) =>
-  /Cannot connect to database/i.test(String(html ?? ''))
+export const hasBrokenOfficialSurfaceSignal = (html) => {
+  const normalized = String(html ?? '').replace(/\s+/g, ' ').trim()
+  return normalized === ''
+    || /Cannot connect to database/i.test(normalized)
+    || /HugeDomains/i.test(normalized)
+    || /<frameset\b/i.test(String(html ?? ''))
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -43,7 +48,7 @@ export const createEsyposScraper = () => ({
 export const run = async (options = {}) => createEsyposScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running ESYPOS scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import POLYMED_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -15,7 +15,7 @@ export const JOB_OPENING_URL = PROVIDER_METADATA.officialJobOpeningUrl
 export const OFFICIAL_CAREERS_EMAIL = PROVIDER_METADATA.officialCareersEmail
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -85,7 +85,8 @@ export const createPolymedScraper = () => ({
     if (!hasOfficialCareersFormSignal(careersHtml)) {
       throw new Error('Polymed verified official careers form changed materially')
     }
-    if (extractOfficialCareersEmail(careersHtml) !== OFFICIAL_CAREERS_EMAIL) {
+    const careersEmail = extractOfficialCareersEmail(careersHtml)
+    if (careersEmail && careersEmail !== OFFICIAL_CAREERS_EMAIL) {
       throw new Error('Polymed verified official careers email changed materially')
     }
 
@@ -104,7 +105,7 @@ export const createPolymedScraper = () => ({
 export const run = async (options = {}) => createPolymedScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

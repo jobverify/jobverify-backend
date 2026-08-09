@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import companyAliases from '../../scraper-support/providers/companyAliases.json' with { type: 'json' }
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
 const SOURCE = 'syplatlabs'
 const COMPANY = 'SYplat Labs'
-const CAREERS_URL = 'https://syplat-labs.com/'
+const CAREERS_URL = 'https://www.syplat.com/'
 
 test('SYplat Labs is registered as a verified no-public-jobs first-party shell without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === SOURCE)
@@ -25,7 +25,7 @@ test('SYplat Labs is registered as a verified no-public-jobs first-party shell w
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.companyDomain, 'syplat-labs.com')
+  assert.equal(provider.companyDomain, 'syplat.com')
   assert.match(provider.modulePath, /syplatlabs[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, COMPANY), false)
 })

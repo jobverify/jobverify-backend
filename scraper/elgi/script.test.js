@@ -126,216 +126,66 @@ test('ELGi scraper validates the official page then decorates Darwinbox India jo
   assert.equal(DARWINBOX_CAREERS_URL, 'https://elgi.darwinbox.in/ms/candidate/a61e65404e890b/careers')
 })
 
-test('ELGi browser listing fetcher loads the public allJobs shell and POSTs through same-origin fetch', async () => {
+test('ELGi scraper seeds the public Darwinbox shell before posting to the verified listing API', async () => {
   const elgi = await loadModule()
   assert.ok(elgi, 'ELGi scraper module should load')
 
-  const {
-    DARWINBOX_COMPANY_ID,
-    DARWINBOX_LISTING_API_URL,
-    DARWINBOX_PUBLIC_ALL_JOBS_URL,
-    createBrowserListingFetcher,
-  } = elgi
-
-  assert.equal(
-    DARWINBOX_PUBLIC_ALL_JOBS_URL,
-    'https://elgi.darwinbox.in/ms/candidatev2/a61e65404e890b/careers/allJobs',
-  )
-  assert.equal(
-    DARWINBOX_LISTING_API_URL,
-    'https://elgi.darwinbox.in/ms/candidateapi/job/alljobs?companyId=a61e65404e890b',
-  )
-
-  const calls = []
-  const browser = {
-    newPage: async () => page,
-    close: async () => calls.push({ type: 'close' }),
-  }
-  const page = {
-    setJavaScriptEnabled: async (enabled) => calls.push({ type: 'setJavaScriptEnabled', enabled }),
-    setRequestInterception: async (enabled) => calls.push({ type: 'setRequestInterception', enabled }),
-    on: (eventName, handler) => {
-      calls.push({ type: 'on', eventName })
-    },
-    goto: async (url, options) => {
-      calls.push({ type: 'goto', url, options })
-
-      return {
-        status: () => 200,
-        text: async () => '',
-      }
-    },
-    evaluate: async (fn, payload) => {
-      calls.push({ type: 'evaluate', payload })
-      assert.equal(typeof fn, 'function')
-
-      return {
-        status: 200,
-        text: JSON.stringify({ status: 'success', data: [], job_counts: 0 }),
-      }
-    },
-  }
-
-  const context = await createBrowserListingFetcher({
-    launchBrowserImpl: async () => browser,
-  })
-
-  const payload = await context.fetchListingPage({ page: 2, pageSize: 25 })
-  await context.close()
-
-  assert.deepEqual(calls.slice(0, 4), [
-    { type: 'setJavaScriptEnabled', enabled: false },
-    { type: 'setRequestInterception', enabled: true },
-    { type: 'on', eventName: 'request' },
-    {
-      type: 'goto',
-      url: DARWINBOX_PUBLIC_ALL_JOBS_URL,
-      options: calls[3].options,
-    },
-  ])
-  assert.equal(calls[3].options.waitUntil, 'domcontentloaded')
-  assert.equal(Number.isInteger(calls[3].options.timeout), true)
-  assert.equal(calls[3].options.timeout > 0, true)
-  assert.deepEqual(payload, { status: 'success', data: [], job_counts: 0 })
-  assert.deepEqual(calls[4], {
-    type: 'evaluate',
-    payload: {
-      targetApiUrl: DARWINBOX_LISTING_API_URL,
-      body: {
-        companyId: DARWINBOX_COMPANY_ID,
-        sort_option: 'new',
-        limit: 25,
-        page: 2,
-      },
-    },
-  })
-  assert.deepEqual(calls.at(-1), { type: 'close' })
-})
-
-test('ELGi browser listing fetcher surfaces non-JSON or non-200 Darwinbox API responses', async () => {
-  const elgi = await loadModule()
-  assert.ok(elgi, 'ELGi scraper module should load')
-
-  const { createBrowserListingFetcher } = elgi
-  const browser = {
-    newPage: async () => page,
-    close: async () => {},
-  }
-  const page = {
-    setJavaScriptEnabled: async () => {},
-    setRequestInterception: async () => {},
-    on: () => {},
-    goto: async () => ({ status: () => 200, text: async () => '' }),
-    evaluate: async () => ({ status: 403, text: '<html>blocked</html>' }),
-  }
-
-  const context = await createBrowserListingFetcher({
-    launchBrowserImpl: async () => browser,
-  })
-
-  await assert.rejects(
-    context.fetchListingPage({ page: 1 }),
-    /HTTP 403 for ELGi Darwinbox listing API/i,
-  )
-})
-
-test('ELGi scraper keeps successful jobs when its owned browser context reports Target closed while closing', async () => {
-  const elgi = await loadModule()
-  assert.ok(elgi, 'ELGi scraper module should load')
-
-  const { createElgiScraper } = elgi
-  const listingFetcherOptions = []
-  const closeError = new Error('Protocol error (Runtime.callFunctionOn): Target closed')
-
-  const jobs = await createElgiScraper({
+  const requests = []
+  const jobs = await elgi.createElgiScraper({
     maxJobs: 1,
-    createBrowserListingFetcherImpl: async (options) => {
-      listingFetcherOptions.push(options)
-      return {
-        fetchListingPage: async () => ({
-          status: 'success',
-          data: [
-            {
-              id: 'job-002',
-              title: 'Engineer - Electrical',
-              department_name: 'Engineering',
-              locations: 'Singanallur, Coimbatore, Tamil Nadu, India',
-              country: 'India',
-              emp_type_name: 'Full Time',
-              experience: '2 - 5 Years',
-              posted_on: '18-Jul-2026',
-              jd: '<p>Build electrical systems</p>',
-            },
-          ],
-          job_counts: 1,
-        }),
-        close: async () => {
-          throw closeError
-        },
-      }
-    },
-  }).run({
-    fetchText: async () => officialCareersHtml,
-  })
+    fetchImpl: async (url, options = {}) => {
+      requests.push({ url, options })
 
-  assert.deepEqual(listingFetcherOptions, [undefined])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Engineer - Electrical')
-  assert.equal(jobs[0].source, 'elgi')
-})
-
-test('ELGi scraper waits for Darwinbox listing extraction before closing its browser context', async () => {
-  const elgi = await loadModule()
-  assert.ok(elgi, 'ELGi scraper module should load')
-
-  const events = []
-  let listingCanResolve
-  const listingReady = new Promise((resolve) => {
-    listingCanResolve = resolve
-  })
-
-  const jobsPromise = elgi.createElgiScraper({
-    maxJobs: 1,
-    createBrowserListingFetcherImpl: async () => ({
-      fetchListingPage: async () => {
-        events.push('fetch:start')
-        await listingReady
-        events.push('fetch:resolved')
+      if ((options.method || 'GET') === 'GET') {
         return {
-          status: 'success',
-          data: [
-            {
-              id: 'job-003',
-              title: 'Engineer - Testing',
-              department_name: 'Engineering',
-              locations: 'Coimbatore, Tamil Nadu, India',
-              country: 'India',
-              emp_type_name: 'Full Time',
-              experience: '2 - 5 Years',
-              posted_on: '18-Jul-2026',
-              jd: '<p>Test compressor systems</p>',
-            },
-          ],
-          job_counts: 1,
+          ok: true,
+          status: 200,
+          headers: {
+            get: (name) => (String(name).toLowerCase() === 'content-type' ? 'text/html' : null),
+            getSetCookie: () => [],
+          },
+          text: async () => '<!doctype html><html><body>ELGI Group - </body></html>',
         }
-      },
-      close: async () => {
-        events.push('close')
-      },
-    }),
+      }
+
+      return {
+        ok: true,
+        status: 200,
+        headers: {
+          get: () => 'application/json',
+          getSetCookie: () => [],
+        },
+        json: async () => ({
+          status: 'success',
+          job_counts: 1,
+          data: [{
+            id: 'job-api-001',
+            title: 'Engineer - Electrical',
+            department_name: 'Engineering',
+            locations: 'Coimbatore, Tamil Nadu, India',
+            country: 'India',
+            emp_type_name: 'Full Time',
+            experience: '2 - 5 Years',
+            posted_on: '18-Jul-2026',
+            jd: '<p>Build electrical systems</p>',
+          }],
+        }),
+      }
+    },
   }).run({
+    maxPages: 1,
     fetchText: async () => officialCareersHtml,
   })
 
-  await new Promise((resolve) => setImmediate(resolve))
-  assert.deepEqual(events, ['fetch:start'])
-
-  listingCanResolve()
-  const jobs = await jobsPromise
-
-  assert.deepEqual(events, ['fetch:start', 'fetch:resolved', 'close'])
   assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Engineer - Testing')
+  assert.equal(jobs[0].jobId, 'job-api-001')
+  assert.equal(requests.length, 2)
+  assert.equal(requests[0].url, elgi.DARWINBOX_PUBLIC_ALL_JOBS_URL)
+  assert.equal(requests[0].options.method, 'GET')
+  assert.equal(requests[1].url, elgi.DARWINBOX_LISTING_API_URL)
+  assert.equal(requests[1].options.method, 'POST')
+  assert.equal(requests[1].options.headers.Origin, elgi.DARWINBOX_ORIGIN)
+  assert.equal(requests[1].options.headers.Referer, elgi.DARWINBOX_PUBLIC_ALL_JOBS_URL)
 })
 
 test('ELGi scraper rejects an official careers page that no longer matches the verified public surface', async () => {

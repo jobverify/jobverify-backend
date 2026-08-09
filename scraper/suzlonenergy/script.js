@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { SUZLON_ENERGY_CATALOG } from './catalog.js'
 
@@ -21,6 +21,7 @@ const normalizeWhitespace = (value) =>
   String(value ?? '')
     .replace(/&nbsp;|\u00a0/gi, ' ')
     .replace(/&amp;/gi, '&')
+    .replace(/&#x27;|&#39;|&apos;|&rsquo;/gi, "'")
     .replace(/\s+/g, ' ')
     .trim()
 
@@ -59,7 +60,7 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Careers at Suzlon \| Join India's Wind Energy Leader\s*<\/title>/i.test(page)
+  return normalized.includes("Careers at Suzlon | Join India's Wind Energy Leader")
     && normalized.includes('Your work can move the world forward')
     && normalized.includes('We are building renewable energy systems designed for the new world.')
     && normalized.includes('Advancing people. Accelerating futures')
@@ -89,7 +90,7 @@ export const createSuzlonEnergyScraper = () => ({
 export const run = async (options = {}) => createSuzlonEnergyScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

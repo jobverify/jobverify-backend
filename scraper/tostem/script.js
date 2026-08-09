@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'tostem'
@@ -57,43 +59,56 @@ const createTimeoutSignal = (timeoutMs) => {
 }
 
 export const defaultFetchPage = async (url, {
-  fetchImpl = fetch,
-  timeoutMs = 15000,
+  fetchImpl = null,
+  timeoutMs = 20000,
 } = {}) => {
-  const response = await fetchImpl(url, {
+  if (fetchImpl) {
+    const response = await fetchImpl(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      signal: createTimeoutSignal(timeoutMs),
+    })
+
+    return {
+      status: response.status,
+      url: response.url,
+      html: await response.text(),
+    }
+  }
+
+  return fetchPageWithRetry(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
-    signal: createTimeoutSignal(timeoutMs),
+    label: SOURCE,
+    timeoutMs,
   })
-
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
-  }
 }
 
 export const hasOfficialHomepageSignal = (html) => {
-  const normalized = normalizeWhitespace(html).toLowerCase()
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page).toLowerCase()
 
-  return normalized.includes("tostem - world's leading aluminium windows and doors brand")
-    && normalized.includes('lixil window systems private limited')
-    && /href=["']https:\/\/www\.tostemindia\.com\/career\/["']/i.test(String(html ?? ''))
-  }
+  return /<title>\s*leading aluminium windows and doors manufacturer, supplier company \| tostem india\s*<\/title>/i.test(page)
+    && normalized.includes('japanese innovation in window design')
+    && normalized.includes('lixil window system')
+    && /href=["']https:\/\/www\.tostemindia\.com\/career\/["']/i.test(page)
+}
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
-  const normalized = normalizeWhitespace(html).toLowerCase()
+  const normalized = normalizeWhitespace(page).toLowerCase()
 
-  return normalized.includes('career')
-    && /href=["']https:\/\/www\.tostemindia\.com\/["']/i.test(page)
-    && /href=["']https:\/\/www\.tostemindia\.com\/career\/["']/i.test(page)
-    && normalized.includes('lixil window systems private limited')
+  return /<title>\s*Tostem India Jobs Vacancy Recruitment, Career Portal for Fresher/i.test(page)
+    && normalized.includes('japanese innovation in window design')
+    && normalized.includes('lixil window system')
     && normalized.includes('support.lwsindia@lixil.com')
-    && normalized.includes('© 2022-2025 tostem india. all rights reserved.')
-  }
+    && normalized.includes('tostem india. all rights reserved.')
+    && normalized.includes('career portal for fresher & experienced job opening')
+}
 
 export const hasPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
@@ -120,8 +135,8 @@ export const createTostemScraper = () => ({
 
 export const run = async (options = {}) => createTostemScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

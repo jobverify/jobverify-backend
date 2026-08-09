@@ -1,8 +1,8 @@
-{
+﻿{
   "source": "acmesolar",
   "companyName": "ACME Solar",
   "adapter": "script",
-  "modulePath": "../acmesolar/script.js",
+  "modulePath": "../../scraper/acmesolar/script.js",
   "companyCareerPage": "https://www.acmesolar.in/career",
   "atsPlatform": "official-company-site-no-public-openings",
   "countryFilter": "India",
@@ -14,3 +14,4 @@
   "verifiedOn": "2026-07-19",
   "verifiedSurfaceSummary": "Verified on July 19, 2026 that https://www.acmesolar.in/career and https://www.acmesolar.in/career_form load the official ACME Solar SPA bundle. The bundle exposes a career form/contact path with hr@acme.in and no public job listings, ATS links, or stable public jobs API."
 }
+

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import EPICOR_SOFTWARE_CORPORATION_CATALOG from './catalog.js'
 
@@ -16,7 +16,7 @@ export const JOBS_API_URL = PROVIDER_METADATA.jobsApiUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const PAGE_SIZE = 20
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -56,12 +56,11 @@ const escapeForRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page.replace(/<[^>]+>/g, ' ')) || ''
 
   return /<title>\s*Jobs\s*\|\s*Epicor\s*<\/title>/i.test(page)
-    && /We(?:'|&#39;|&rsquo;)re Truly a Team/i.test(text)
     && new RegExp(`href=["']${escapeForRegex(WORKDAY_BOARD_URL)}["']`, 'i').test(page)
     && /jobs\.epicor\.com/i.test(page)
+    && /Contact Us/i.test(page)
 }
 
 export const hasOfficialWorkdayBoardSignal = (html = '') => {
@@ -231,7 +230,7 @@ export const createEpicorSoftwareCorporationScraper = ({
 export const run = async (options = {}) => createEpicorSoftwareCorporationScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

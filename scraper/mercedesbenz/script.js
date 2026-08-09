@@ -187,7 +187,7 @@ const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
       Accept: 'text/html,application/xhtml+xml',
-      'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
     },
   })
   if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
@@ -202,7 +202,7 @@ const buildSearchRequest = () => ({
     Referer: MERCEDES_BENZ_TALEO_SEARCH_URL,
     tz: '-330',
     tzname: 'Asia/Calcutta',
-    'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+    'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
   },
   body: JSON.stringify({
     fieldData: { fields: { LOCATION: '', KEYWORD: '' }, valid: true },

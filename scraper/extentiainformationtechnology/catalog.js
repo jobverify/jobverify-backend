@@ -17,9 +17,9 @@ export const EXTENTIA_INFORMATION_TECHNOLOGY_CATALOG = {
   extractionStrategy: 'verified-role-archive+detail-links+first-party-more-details-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.extentia.com/careers/careers-opportunities/ is the live first-party Extentia role archive and that it exposes public role links such as .Net Fullstack Developer, Senior Salesforce Developer, and UX Designer, each paired with city and job-type metadata plus first-party More Details pages on extentia.com.',
+    'Verified on Sunday, August 2, 2026 that https://www.extentia.com/careers/careers-opportunities/ is the live first-party Extentia role archive, that page 1 exposes public role links including .Net Fullstack Developer, Devops Engineer, and SAP ABAP Developer, and that pagination continues through the first-party page-2 route https://www.extentia.com/careers/careers-opportunities/?e-page-0431873=2 with additional roles including Legal and Compliance Manager and Salesforce Development.',
   dryRunFile: 'extentiainformationtechnology/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

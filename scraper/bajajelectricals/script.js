@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -16,7 +16,7 @@ export const OFFICIAL_CAREERS_URL = 'https://www.bajajelectricals.com/pages/care
 export const PUBLIC_PORTAL_URL =
   `${DARWINBOX_ORIGIN}/ms/candidatev2/${DARWINBOX_COMPANY_ID}/careers/allJobs`
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const darwinboxScraper = createDarwinboxScraper({
   companyName: COMPANY_NAME,
@@ -57,11 +57,9 @@ export const extractOfficialDarwinboxUrl = (html = '') => {
 
 export const hasOfficialBajajElectricalsCareersSignals = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page) || ''
 
-  return /^Careers (?:\||-) Bajaj Electricals(?: India)?$/i.test(extractTitle(page) || '')
+  return /^Careers (?:(?:\||-|–|—)) Bajaj Electricals(?: India)?$/i.test(extractTitle(page) || '')
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.bajajelectricals\.com\/pages\/careers["']/i.test(page)
-    && text.toLowerCase().includes('careers at bajaj electricals')
     && extractOfficialDarwinboxUrl(page) === PUBLIC_PORTAL_URL
 }
 
@@ -106,7 +104,7 @@ export const createBajajElectricalsScraper = ({
 export const run = async (options = {}) => createBajajElectricalsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

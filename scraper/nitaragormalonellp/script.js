@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -48,6 +48,8 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
+const normalizePageText = (html) => stripTags(String(html ?? '')) || ''
+
 const slugify = (value) => normalizeWhitespace(value)
   ?.toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
@@ -89,21 +91,23 @@ const findNearestDepartment = (html, matchIndex) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  const pageText = normalizePageText(page)
 
   return /<title>\s*Gormalone\s*\|\s*Precision Dairy Farming Technology for India\s*<\/title>/i.test(page)
-    && /GormalOne LLP stands as an innovation-driven Agri-tech organization/i.test(page)
-    && /Nitara,\s*the flagship product/i.test(page)
-    && /href=["'](?:https?:\/\/gormalone\.com)?\/careers\.html["']/i.test(page)
+    && /GormalOne LLP stands as an innovation-driven Agri-tech organization committed to revolutionizing the Dairy Industry through AI-led digital solutions/i.test(pageText)
+    && /Nitara,\s*the flagship product which was established in 2020/i.test(pageText)
+    && /href=["'](?:https?:\/\/gormalone\.com\/?)?\/?careers\.html["']/i.test(page)
 }
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
-  const pdfLinkCount = (page.match(/href=["'][^"']*\/files\/JD\/[^"']+\.pdf["']/gi) || []).length
+  const pageText = normalizePageText(page)
+  const pdfLinkCount = (page.match(/href=["'][^"']*\/?files\/JD\/[^"']+\.pdf["']/gi) || []).length
 
   return /<title>\s*Careers at Gormalone\s*\|\s*Jobs in Dairy Tech\s*&(?:amp;)?\s*AgriTech India\s*<\/title>/i.test(page)
-    && /Find your next job at GormalOne/i.test(page)
-    && /Send Us Your Resume/i.test(page)
-    && /hr@gormalone\.com/i.test(page)
+    && /Find your next job at GormalOne/i.test(pageText)
+    && /Send Us Your Resume/i.test(pageText)
+    && /hr@gormalone\.com/i.test(pageText)
     && pdfLinkCount >= 1
 }
 
@@ -117,7 +121,7 @@ export const extractPublicListings = (html) => {
   const jobs = []
 
   for (const match of String(html ?? '').matchAll(
-    /<a\b[^>]*href=["']([^"']*\/files\/JD\/[^"']+\.pdf)["'][^>]*>([\s\S]*?)<\/a>/gi,
+    /<a\b[^>]*href=["']([^"']*\/?files\/JD\/[^"']+\.pdf)["'][^>]*>([\s\S]*?)<\/a>/gi,
   )) {
     const title = stripTags(match[2])
     const sourceUrl = toAbsoluteUrl(match[1], CAREERS_URL)
@@ -192,7 +196,7 @@ export const createNitaraGormaloneLlpScraper = ({ now = () => new Date().toISOSt
 export const run = async (options = {}) => createNitaraGormaloneLlpScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

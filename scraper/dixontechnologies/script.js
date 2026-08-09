@@ -1,9 +1,11 @@
+import http from 'node:http'
+import https from 'node:https'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { DIXON_TECHNOLOGIES_CATALOG } from './catalog.js'
 
@@ -24,7 +26,8 @@ export const VERIFIED_ON = DIXON_TECHNOLOGIES_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = DIXON_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = DIXON_TECHNOLOGIES_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
+const OFFICIAL_PAGE_TIMEOUT_MS = 15000
 
 const darwinboxScraper = createDarwinboxScraper({
   companyName: COMPANY_NAME,
@@ -96,8 +99,78 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: 'dixon-technologies-official',
-  timeoutMs: 15000,
+  timeoutMs: OFFICIAL_PAGE_TIMEOUT_MS,
 })
+
+const OFFICIAL_HEADERS = {
+  'User-Agent': USER_AGENT,
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+}
+
+const isCertificateError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const code = String(error?.code ?? error?.cause?.code ?? '')
+  return /certificate has expired|cert_has_expired|err_cert_date_invalid/i.test(`${message} ${code}`)
+}
+
+const fetchTextIgnoringTlsErrors = (url, {
+  headers = OFFICIAL_HEADERS,
+  timeoutMs = OFFICIAL_PAGE_TIMEOUT_MS,
+  redirectsRemaining = 5,
+} = {}) => new Promise((resolve, reject) => {
+  const parsedUrl = new URL(url)
+  const requestImpl = parsedUrl.protocol === 'http:' ? http : https
+
+  const request = requestImpl.request(parsedUrl, {
+    method: 'GET',
+    headers,
+    rejectUnauthorized: false,
+  }, (response) => {
+    const status = Number(response.statusCode) || 0
+    const location = response.headers?.location
+
+    if (status >= 300 && status < 400 && location) {
+      response.resume()
+
+      if (redirectsRemaining <= 0) {
+        reject(new Error(`Too many redirects for ${url}`))
+        return
+      }
+
+      const nextUrl = new URL(location, url).toString()
+      resolve(fetchTextIgnoringTlsErrors(nextUrl, {
+        headers,
+        timeoutMs,
+        redirectsRemaining: redirectsRemaining - 1,
+      }))
+      return
+    }
+
+    let body = ''
+    response.setEncoding('utf8')
+    response.on('data', (chunk) => {
+      body += chunk
+    })
+    response.on('end', () => {
+      if (status < 200 || status >= 300) {
+        const error = new Error(`HTTP ${status} for ${url}`)
+        error.status = status
+        reject(error)
+        return
+      }
+
+      resolve(body)
+    })
+  })
+
+  request.setTimeout(timeoutMs, () => {
+    request.destroy(new Error(`The operation was aborted due to timeout after ${timeoutMs}ms`))
+  })
+  request.on('error', reject)
+  request.end()
+})
+
+const defaultFetchInsecureText = (url) => fetchTextIgnoringTlsErrors(url)
 
 export const createDixonTechnologiesScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
@@ -106,15 +179,28 @@ export const createDixonTechnologiesScraper = ({
   async run({
     maxPages = config.maxPages,
     fetchText = defaultFetchText,
+    fetchInsecureText = defaultFetchInsecureText,
     fetchListingPage,
   } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    const fetchOfficialPage = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isCertificateError(error)) {
+          throw error
+        }
+
+        return fetchInsecureText(url)
+      }
+    }
+
+    const homepageHtml = await fetchOfficialPage(HOMEPAGE_URL)
 
     if (!hasOfficialDixonHomepageSignals(homepageHtml)) {
       throw new Error('Dixon Technologies verified official homepage no longer matches the verified public surface')
     }
 
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+    const careersHtml = await fetchOfficialPage(OFFICIAL_CAREERS_URL)
 
     if (!hasOfficialDixonJobOpeningsSignals(careersHtml)) {
       throw new Error('Dixon Technologies verified official job openings page no longer matches the verified public surface')
@@ -137,7 +223,7 @@ export const createDixonTechnologiesScraper = ({
 export const run = async (options = {}) => createDixonTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

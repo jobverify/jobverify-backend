@@ -169,6 +169,7 @@ export const extractIndiaSocialJobs = (payload) =>
         postingDate: normalizeWhitespace(record.publishDate),
         closingDate: null,
         jobDescription: joinDescription(record.jobDuty, record.workRequire),
+        publicExperienceChecked: true,
         remoteStatus: null,
       }
     })
@@ -200,6 +201,7 @@ export const extractIndiaCampusJobs = (payload) =>
         postingDate: normalizeWhitespace(record.releaseTime),
         closingDate: null,
         jobDescription: joinDescription(record.positionDesc, record.positionRequire),
+        publicExperienceChecked: true,
         remoteStatus: null,
       }
     })
@@ -302,7 +304,7 @@ export const createOppoScraper = ({ pageSize = 100 } = {}) => ({
 export const run = async () => createOppoScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

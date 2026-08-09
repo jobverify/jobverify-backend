@@ -33,17 +33,17 @@ const careersLandingHtml = `
     </head>
     <body>
       <main>
-        <h1>Shape Your Future With a Global Leader in Natural Ingredients Innovation</h1>
+        <h1>Build Your Career with a Global Leader in Natural Ingredients Innovation</h1>
         <a href="/careers/career-opportunities/">Explore Current Openings</a>
         <section>
           <h2>Career Opportunities</h2>
-          <p>Explore current job openings, graduate programs, internships, and international assignments that shape your career.</p>
+          <p>Explore current job openings, graduate programs, internships, and international assignments across our worldwide operations.</p>
         </section>
         <section>
-          <h2>Employee Experience & Development</h2>
+          <h2>Employee Experience</h2>
         </section>
       </main>
-    </body>
+  </body>
   </html>
 `
 
@@ -59,16 +59,15 @@ const careerOpportunitiesHtml = `
     </head>
     <body>
       <main>
-        <h1>Diverse Pathways to Excellence in Natural Ingredients Innovation</h1>
+        <h1>Explore career opportunities at Synthite across research, manufacturing, business development, and leadership roles.</h1>
         <div class="cursor-pointer">View Current Openings</div>
         <h2>Current Openings</h2>
-        <p>Our career portal leverages Darwinbox technology to provide real-time access to current opportunities with intelligent matching, streamlined application processes, and comprehensive tracking throughout your recruitment journey.</p>
-        <h3>Current Opportunity Categories</h3>
+        <p>We offer structured pathways from graduate entry programs to senior executive roles, supporting career development aligned with organizational goals.</p>
+        <h3>Our Opportunity Spectrum Includes</h3>
         <p>Application Access:</p>
-        <p>Career Portal: Available through website with Darwinbox integration</p>
-        <p>Mobile App: Complete application functionality through mobile interface</p>
+        <p>Career Portal: Available through website</p>
+        <p>Graduate programs, internships, research positions, and international assignments.</p>
         <p>Email Updates: <a href="mailto:careers@synthite.com">careers@synthite.com</a> for application support and inquiries</p>
-        <p>Phone: <a href="tel:+91 484 3051360">+91 484 3051360</a></p>
       </main>
     </body>
   </html>
@@ -84,13 +83,11 @@ test('Synthite sentinel validates the verified first-party homepage, careers lan
   assert.equal(synthite.CAREERS_URL, 'https://www.synthite.com/careers/')
   assert.equal(synthite.CAREER_OPPORTUNITIES_URL, 'https://www.synthite.com/careers/career-opportunities/')
   assert.equal(synthite.CAREERS_EMAIL, 'careers@synthite.com')
-  assert.equal(synthite.CAREERS_PHONE, '+91 484 3051360')
   assert.equal(synthite.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(synthite.hasOfficialCareersLandingSignal(careersLandingHtml), true)
   assert.equal(synthite.hasOfficialCareerOpportunitiesSignal(careerOpportunitiesHtml), true)
   assert.deepEqual(synthite.extractCareerContact(careerOpportunitiesHtml), {
     email: 'careers@synthite.com',
-    phone: '+91 484 3051360',
   })
   assert.equal(synthite.hasPublicJobBoardSignal(careerOpportunitiesHtml), false)
 })

@@ -72,13 +72,22 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const raw = String(html ?? '')
   const normalized = normalizeWhitespace(raw)
-
-  return /<title>\s*SmartHMS: Best Hospital Management System \| HMIS \| HIS \| EMR \| LIS \| LIMS\s*<\/title>/i.test(raw)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.smarthms\.in["']/i.test(raw)
+  const hasLegacyMetadataSignals = /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.smarthms\.in["']/i.test(raw)
     && /<meta[^>]+name=["']reply-to["'][^>]+content=["']info@smarthms\.in["']/i.test(raw)
     && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']SmartHMS["']/i.test(raw)
+  const hasCurrentInformationalShell = normalized.includes('Get in touch')
+    && normalized.includes('Office Address: Smart HMS')
+    && normalized.includes('Email: info@smarthms.in')
+    && normalized.includes('About us')
+    && normalized.includes('Hospital Information System Solution')
+
+  return /<title>\s*SmartHMS: Best Hospital Management System \| HMIS \| HIS \| EMR \| LIS \| LIMS\s*<\/title>/i.test(raw)
+    && (hasLegacyMetadataSignals || hasCurrentInformationalShell)
     && normalized.includes('Smart Hospital Management System')
-    && normalized.includes('Lab Information Management System')
+    && (
+      normalized.includes('Lab Information Management System')
+      || normalized.includes('Lab information system')
+    )
 }
 
 export const hasFirstPartyCareerLikeLink = (html) =>
@@ -151,7 +160,7 @@ export const createSmartHmsSolutionsScraper = () => ({
 export const run = async (options = {}) => createSmartHmsSolutionsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

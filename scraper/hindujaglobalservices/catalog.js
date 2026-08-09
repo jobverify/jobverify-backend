@@ -1,4 +1,4 @@
-export const VERIFIED_SURFACE_SUMMARY =
+﻿export const VERIFIED_SURFACE_SUMMARY =
   'Verified on July 16, 2026 that https://www.joinhgs.com/in/en is the live first-party HGS India careers landing page, that it links candidates to the public category pages at https://careers.joinhgs.com/India/go/BPM-Jobs-India/7947010/ and https://careers.joinhgs.com/India/go/Digital-Data-And-Analytics-Jobs-India/7947110/, and that those pages expose the public RSS feeds https://careers.joinhgs.com/services/rss/category/?catid=7947010 and https://careers.joinhgs.com/services/rss/category/?catid=7947110. During verification those linked feeds returned 12 India openings in total, including Process Consultant and SAC Planning Consultant.'
 
 export const HINDUJA_GLOBAL_SERVICES_CATALOG = {
@@ -6,7 +6,7 @@ export const HINDUJA_GLOBAL_SERVICES_CATALOG = {
   companyName: 'Hinduja Global Services',
   officialBrandName: 'Hinduja Global Solutions Ltd',
   adapter: 'script',
-  modulePath: '../hindujaglobalservices/script.js',
+  modulePath: '../../scraper/hindujaglobalservices/script.js',
   dryRunFile: 'hindujaglobalservices/jobs.json',
   companyCareerPage: 'https://www.joinhgs.com/in/en',
   companyDomain: 'joinhgs.com',
@@ -31,3 +31,4 @@ export const HINDUJA_GLOBAL_SERVICES_CATALOG = {
 }
 
 export default HINDUJA_GLOBAL_SERVICES_CATALOG
+

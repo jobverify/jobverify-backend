@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { RELEVANTZ_TECHNOLOGY_SERVICES_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -11,9 +11,18 @@ export { PROVIDER_METADATA }
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
+export const WORDPRESS_ORIGIN = PROVIDER_METADATA.wordpressOrigin
+export const CAREERS_PAGE_SLUG = PROVIDER_METADATA.wordpressCareersPageSlug
+export const CAREERS_PAGE_API_URL = PROVIDER_METADATA.wordpressCareersPageApiUrl
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const APPLY_EMAIL_BY_TAB = {
+  india: 'careers-india@relevantz.com',
+  us: 'careers-us@relevantz.com',
+  canada: 'canada@relevantz.com',
+}
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([a-f0-9]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -47,16 +56,17 @@ const inferCity = (location) => {
   const normalized = normalizeWhitespace(location)
   if (!normalized) return null
 
-  return normalized
-    .split(/[\/,|]/)
-    .map((part) => normalizeWhitespace(part))
-    .find(Boolean) || null
+  const primarySegment = normalized.split('/')[0] || normalized
+  return normalizeWhitespace(primarySegment.split(',')[0]) || null
 }
 
 const normalizeEmploymentType = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
   if (/^full\s*time$/i.test(normalized) || /^fulltime$/i.test(normalized)) return 'Full-time'
+  if (/^part\s*time$/i.test(normalized) || /^parttime$/i.test(normalized)) return 'Part-time'
+  if (/^contract$/i.test(normalized)) return 'Contract'
+  if (/^permanent$/i.test(normalized)) return 'Permanent'
   return normalized
 }
 
@@ -65,122 +75,137 @@ const splitSkills = (value) => normalizeWhitespace(value)
   .map((item) => normalizeWhitespace(item))
   .filter(Boolean)
 
-export const hasOfficialCareersSignal = (html = '') => {
-  const page = String(html ?? '')
-  const text = normalizeWhitespace(page.replace(/<[^>]+>/g, ' '))
+const normalizeAbsoluteUrl = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
 
-  return /<title>\s*Careers at Relevantz \| Join Our Digital Engineering & AI Innovation Team\s*<\/title>/i.test(page)
-    && text.includes('Join us to create relevant solutions for customers that improve lives')
-    && text.includes('Careers India')
-    && text.includes('Java Full stack Developer')
-    && text.includes('Data Architect')
+  try {
+    return new URL(normalized, CAREERS_URL).toString()
+  } catch {
+    return null
+  }
 }
 
-export const extractIndiaJobs = (html = '') => {
-  const lines = toTextLines(html)
-  const careersIndiaIndex = lines.findIndex((line) => /^Careers India$/i.test(line))
+const extractCareersPageRecord = (payload) => {
+  const record = Array.isArray(payload) ? payload[0] : payload
 
-  if (careersIndiaIndex === -1) return []
+  if (!record || typeof record !== 'object') return null
+  if (!record.acf || typeof record.acf !== 'object') return null
 
-  const jobs = []
-  let current = null
+  return record
+}
 
-  const flushCurrent = () => {
-    if (!current?.title || !current?.location) return
+export const hasOfficialCareersSignal = (payload) => {
+  const record = extractCareersPageRecord(payload)
+  if (!record) return false
 
-    const location = normalizeWhitespace(current.location)
-    const slug = slugify(`${current.title}-${location}`)
-    const description = normalizeWhitespace(current.descriptionLines.join(' ')) || current.title
+  const title = normalizeWhitespace(record?.title?.rendered)
+  const slug = normalizeWhitespace(record?.slug)
+  const tabs = Array.isArray(record?.acf?.ju_location_tabs) ? record.acf.ju_location_tabs : []
+  const tabLabels = tabs
+    .map((tab) => normalizeWhitespace(tab?.label)?.toLowerCase())
+    .filter(Boolean)
+  const listings = Array.isArray(record?.acf?.ju_job_listings) ? record.acf.ju_job_listings : []
+  const hiringBold = normalizeWhitespace(record?.acf?.ju_hiring_heading_bold)
+  const hiringSubtitle = normalizeWhitespace(record?.acf?.ju_hiring_subtitle)
 
-    jobs.push({
-      title: normalizeWhitespace(current.title),
-      company: COMPANY,
-      department: null,
-      location,
-      city: inferCity(location),
-      country: 'India',
-      jobId: `${SOURCE}-${slug}`,
-      requisitionId: slug,
-      sourceUrl: CAREERS_URL,
-      applyUrl: CAREERS_URL,
-      employmentType: normalizeEmploymentType(current.positionType),
-      experienceRequired: normalizeWhitespace(current.experience),
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: current.requiredSkills,
-      postingDate: null,
-      closingDate: null,
-      jobDescription: description,
-    })
+  return title === 'Join us page'
+    && slug === CAREERS_PAGE_SLUG
+    && tabLabels.includes('india')
+    && tabLabels.includes('us')
+    && tabLabels.includes('canada')
+    && hiringBold === 'Hiring!'
+    && hiringSubtitle === 'Find the perfect job for you'
+    && listings.length > 0
+}
+
+const extractExperience = (...values) => {
+  for (const value of values) {
+    const normalized = normalizeWhitespace(value)
+    const match = normalized.match(/Experience:\s*([^|]+)/i)
+    if (match) return normalizeWhitespace(match[1])
   }
 
-  const relevantLines = lines.slice(careersIndiaIndex + 1)
+  return null
+}
 
-  for (let index = 0; index < relevantLines.length; index += 1) {
-    const line = relevantLines[index]
-    if (/^©\s*\d{4}\s+Relevantz/i.test(line) || /^We are in the business of custom software engineering/i.test(line)) {
-      break
-    }
+const stripExperienceSuffix = (value) =>
+  normalizeWhitespace(value).replace(/\|\s*Experience:\s*.+$/i, '').trim()
 
-    const titleMatch = line.match(/^Job Title:\s*(.+)$/i)
-    if (titleMatch) {
-      flushCurrent()
-      current = {
-        title: titleMatch[1],
-        location: null,
-        positionType: null,
-        experience: null,
-        requiredSkills: [],
-        descriptionLines: [],
+const extractRequiredSkills = (descriptionHtml = '') => {
+  const lines = toTextLines(descriptionHtml)
+  const skillsLine = lines.find((line) => /^(?:Skillsets Required|Skills Required)\s*:/i.test(line))
+  if (!skillsLine) return []
+
+  return splitSkills(skillsLine.replace(/^(?:Skillsets Required|Skills Required)\s*:\s*/i, ''))
+}
+
+const buildMailtoApplyUrl = ({ title, location, locationTab }) => {
+  const key = normalizeWhitespace(locationTab).toLowerCase()
+  const email = APPLY_EMAIL_BY_TAB[key] || APPLY_EMAIL_BY_TAB.us
+  const subject = encodeURIComponent(`Application: ${title}`)
+  const body = encodeURIComponent(
+    `Hi,\n\nI would like to apply for the position: ${title}\nLocation: ${location}\n\nPlease find my details below:\n\n`,
+  )
+
+  return `mailto:${email}?subject=${subject}&body=${body}`
+}
+
+export const extractIndiaJobs = (payload) => {
+  const record = extractCareersPageRecord(payload)
+  if (!record) return []
+
+  const listings = Array.isArray(record?.acf?.ju_job_listings) ? record.acf.ju_job_listings : []
+
+  return listings
+    .filter((job) => normalizeWhitespace(job?.job_location_tab).toLowerCase() === 'india')
+    .map((job) => {
+      const title = normalizeWhitespace(job?.job_title)
+      const rawLocation = stripExperienceSuffix(job?.job_location)
+      const employmentType = normalizeEmploymentType(stripExperienceSuffix(job?.job_type))
+      const experienceRequired = extractExperience(job?.job_type, job?.job_location)
+      const descriptionLines = toTextLines(job?.job_description)
+      const description = normalizeWhitespace(descriptionLines.join(' ')) || title
+      const requiredSkills = extractRequiredSkills(job?.job_description)
+      const location = normalizeWhitespace(rawLocation)
+      const slug = slugify(`${title}-${location}`)
+      const applyUrl = normalizeAbsoluteUrl(job?.job_link)
+        || buildMailtoApplyUrl({
+          title,
+          location,
+          locationTab: job?.job_location_tab,
+        })
+
+      if (!title || !location) return null
+
+      return {
+        title,
+        company: COMPANY,
+        department: null,
+        location,
+        city: inferCity(location),
+        country: 'India',
+        jobId: `${SOURCE}-${slug}`,
+        requisitionId: slug,
+        sourceUrl: CAREERS_URL,
+        applyUrl,
+        employmentType,
+        experienceRequired,
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills,
+        postingDate: null,
+        closingDate: null,
+        jobDescription: description,
       }
-      continue
-    }
-
-    if (!current) continue
-
-    const locationMatch = line.match(/^Location:\s*(.+)$/i)
-    if (locationMatch) {
-      current.location = locationMatch[1]
-      continue
-    }
-
-    const positionTypeMatch = line.match(/^Position Type:\s*(.+)$/i)
-    if (positionTypeMatch) {
-      current.positionType = positionTypeMatch[1]
-      continue
-    }
-
-    const experienceMatch = line.match(/^Experience:\s*(.+)$/i)
-    if (experienceMatch) {
-      current.experience = experienceMatch[1]
-      continue
-    }
-
-    const skillsMatch = line.match(/^(?:Skillsets Required|Skills Required)\s*:\s*(.+)$/i)
-    if (skillsMatch) {
-      current.requiredSkills = splitSkills(skillsMatch[1])
-      continue
-    }
-
-    if (/^APPLY NOW$/i.test(line)) continue
-
-    const nextLine = relevantLines[index + 1] || ''
-    const lineAfterNext = relevantLines[index + 2] || ''
-    if (current.location && /^APPLY NOW$/i.test(nextLine) && /^Job Title:\s*/i.test(lineAfterNext)) {
-      continue
-    }
-
-    current.descriptionLines.push(line)
-  }
-
-  flushCurrent()
-  return jobs
+    })
+    .filter(Boolean)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    Accept: 'application/json,text/plain,*/*',
   },
   label: SOURCE,
   timeoutMs: 15000,
@@ -189,16 +214,13 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const createRelevantzTechnologyServicesScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('The verified Relevantz Technology Services careers page no longer matches the trusted first-party surface')
+  async run({ fetchJson = defaultFetchJson } = {}) {
+    const careersPayload = await fetchJson(CAREERS_PAGE_API_URL)
+    if (!hasOfficialCareersSignal(careersPayload)) {
+      throw new Error('The verified Relevantz Technology Services careers payload no longer matches the trusted first-party surface')
     }
 
-    const jobs = extractIndiaJobs(careersHtml)
-    if (jobs.length === 0) {
-      throw new Error('Relevantz Technology Services verified India openings are no longer exposed on the public careers page')
-    }
+    const jobs = extractIndiaJobs(careersPayload)
 
     return jobs.map((job) => ({
       ...job,
@@ -215,7 +237,7 @@ export const createRelevantzTechnologyServicesScraper = ({
 export const run = async (options = {}) => createRelevantzTechnologyServicesScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -48,9 +48,9 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return normalized.includes('Financial services companies | Vivriti Capital')
     && normalized.includes('Vivriti Capital Limited')
+    && normalized.includes('Public Notice')
     && normalized.includes('Careers All the hot jobs that are open at Vivriti Capital')
     && normalized.includes('sales@vivriticapital.com')
-    && /https:\/\/vivriti\.darwinbox\.in/i.test(String(html ?? ''))
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -59,8 +59,8 @@ export const hasOfficialCareersSignal = (html) => {
   return normalized.includes('Career | Vivriti Capital')
     && normalized.includes('People Are at the Heart of What We Do')
     && normalized.includes('Join Our Team')
-    && normalized.includes("one of India's top-rated employers")
-    && /APPLY NOW/i.test(String(html ?? ''))
+    && normalized.includes('Discover roles across various departments')
+    && normalized.includes('Use our filters to find opportunities')
 }
 
 export const hasOfficialAboutSignal = (html) => {
@@ -113,7 +113,7 @@ export const createVivritiCapitalScraper = () => ({
 export const run = async (options = {}) => createVivritiCapitalScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

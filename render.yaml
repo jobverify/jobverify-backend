@@ -1,9 +1,9 @@
 version: "1"
 services:
   - type: web
-    name: Jobify-backend
+    name: jobverify-backend
     runtime: node
-    repo: https://github.com/LitenTechnologies/Jobify-backend
+    repo: https://github.com/jobverify/jobverify-backend
     region: oregon
     plan: free
     branch: main
@@ -14,6 +14,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_OPTIONS
+        value: --openssl-legacy-provider
       - key: TRUST_PROXY
         value: "1"
       - key: MONGO_URI
@@ -27,7 +29,7 @@ services:
       - key: BREVO_API_KEY
         sync: false
       - key: BREVO_SENDER_NAME
-        value: Jobify
+        value: Jobverify
       - key: BREVO_SENDER_EMAIL
         sync: false
       - key: GITHUB_PAT
@@ -35,4 +37,14 @@ services:
       - key: GITHUB_REPO
         sync: false
       - key: SCRAPER_CONCURRENCY
+        sync: false
+      - key: WORKDAY_DETAIL_FETCH_CONCURRENCY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: TURNSTILE_SECRET_KEY
+        sync: false
+      - key: TURNSTILE_ALLOWED_HOSTNAMES
+        sync: false
+      - key: TURNSTILE_EXPECTED_ACTION
         sync: false

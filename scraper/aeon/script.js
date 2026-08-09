@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { AEON_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -49,6 +50,10 @@ const defaultFetchPage = async (url) => {
     html: await response.text(),
   }
 }
+
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
 
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
@@ -118,44 +123,77 @@ export const hasBlockedPublicJobListingsSignal = ({ status, url, html } = {}) =>
 }
 
 export const createAeonScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('AEON verified official homepage no longer matches the known public surface')
+  async run({ fetchPage = defaultFetchPage, fetchBrowserPage } = {}) {
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    const careersHub = await fetchPage(CAREERS_URL)
-    if (careersHub.status !== 200 || !hasOfficialCareersHubSignal(careersHub.html)) {
-      throw new Error('AEON verified careers hub no longer matches the known first-party public surface')
+    const browserPageFetcher = fetchBrowserPage || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchPage(url)
+    })
+
+    const fetchVerifiedPage = async (url) => {
+      try {
+        return await fetchPage(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserPageFetcher(url)
+      }
     }
 
-    const joinUsPage = await fetchPage(JOIN_US_URL)
-    if (joinUsPage.status !== 200 || !hasOfficialJoinUsSignal(joinUsPage.html)) {
-      throw new Error('AEON verified join-us page no longer matches the known first-party public surface')
-    }
+    try {
+      const homepage = await fetchVerifiedPage(HOMEPAGE_URL)
+      if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+        throw new Error('AEON verified official homepage no longer matches the known public surface')
+      }
 
-    const jobListingsUrl = extractJobListingsUrl(joinUsPage.html)
-    if (!isAcceptedJobListingsUrl(jobListingsUrl)) {
-      throw new Error('AEON verified public job vacancy handoff no longer matches the known PeopleStrong URL')
-    }
+      const careersHub = await fetchVerifiedPage(CAREERS_URL)
+      if (careersHub.status !== 200 || !hasOfficialCareersHubSignal(careersHub.html)) {
+        throw new Error('AEON verified careers hub no longer matches the known first-party public surface')
+      }
 
-    const jobListingsPage = await fetchPage(jobListingsUrl)
-    if (hasBlockedPublicJobListingsSignal(jobListingsPage)) {
-      return []
-    }
+      const joinUsPage = await fetchVerifiedPage(JOIN_US_URL)
+      if (joinUsPage.status !== 200 || !hasOfficialJoinUsSignal(joinUsPage.html)) {
+        throw new Error('AEON verified join-us page no longer matches the known first-party public surface')
+      }
 
-    if (jobListingsPage.status === 200 && PUBLIC_JOB_SIGNAL_PATTERN.test(jobListingsPage.html || '')) {
+      const jobListingsUrl = extractJobListingsUrl(joinUsPage.html)
+      if (!isAcceptedJobListingsUrl(jobListingsUrl)) {
+        throw new Error('AEON verified public job vacancy handoff no longer matches the known PeopleStrong URL')
+      }
+
+      const jobListingsPage = await fetchVerifiedPage(jobListingsUrl)
+      if (hasBlockedPublicJobListingsSignal(jobListingsPage)) {
+        return []
+      }
+
+      if (jobListingsPage.status === 200 && PUBLIC_JOB_SIGNAL_PATTERN.test(jobListingsPage.html || '')) {
+        throw new Error('AEON public job listings surface no longer matches the verified blocked state')
+      }
+
       throw new Error('AEON public job listings surface no longer matches the verified blocked state')
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
     }
-
-    throw new Error('AEON public job listings surface no longer matches the verified blocked state')
   },
 })
 
 export const run = async (options = {}) => createAeonScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -118,26 +118,33 @@ const extractPositionsFromApplyForm = (html) => {
 
 const extractListingLines = (html) => {
   const lines = htmlToLines(html)
-  const startIndex = lines.findIndex((line) =>
+  const introIndex = lines.findIndex((line) =>
     /^Currently,\s*we are looking for applicants for the following positions\.$/i.test(line),
   )
+  const firstPositionIndex = lines.findIndex((line) => /^Position:\s*/i.test(line))
   const endIndex = lines.findIndex((line) => /^Please fill your Details$/i.test(line))
+  const startIndex = firstPositionIndex !== -1 ? firstPositionIndex : introIndex + 1
 
-  if (startIndex === -1 || endIndex === -1 || endIndex <= startIndex) {
+  if ((introIndex === -1 && firstPositionIndex === -1) || endIndex === -1 || endIndex <= startIndex) {
     throw new Error(CAREERS_ERROR)
   }
 
-  return lines.slice(startIndex + 1, endIndex)
+  return lines.slice(startIndex, endIndex)
 }
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
+  const hasLegacyCompanyIntro =
+    /Dineshchandra R\. Agrawal Infracon Private Limited, which has been operating successfully over five decades/i.test(text)
+  const hasCurrentCompanyIntro =
+    /Our Vision for better tomorrow/i.test(text)
+    && /About Dineshchandra R\. Agrawal Infracon Pvt\. Ltd\./i.test(text)
 
   return /DINESHCHANDRA R\. AGRAWAL INFRACON PVT\. LTD\./i.test(text)
-    && /Dineshchandra R\. Agrawal Infracon Private Limited, which has been operating successfully over five decades/i.test(text)
+    && (hasLegacyCompanyIntro || hasCurrentCompanyIntro)
     && /The fundamental premise of the Company is built on integrity, commitment to quality and excellence/i.test(text)
-    && /href=["']https:\/\/www\.draipl\.com\/careers\.html["']/i.test(page)
+    && /href=["'](?:(?:https:\/\/www\.draipl\.com\/)|\/)?careers\.html["']/i.test(page)
     && /info@draipl\.com/i.test(text)
 }
 
@@ -146,7 +153,7 @@ export const hasOfficialCareersSignal = (html) => {
   const text = stripTags(page) || ''
 
   return /<title>\s*DRA\s*\|\s*We build future\s*-\s*Dineshchandra R\.\s*Agrawal Infracon Pvt\.\s*Ltd\.\s*<\/title>/i.test(page)
-    && /<h1>\s*Careers\s*<\/h1>/i.test(page)
+    && /<h[1-4]\b[^>]*>\s*Careers\s*<\/h[1-4]>/i.test(page)
     && /Currently,\s*we are looking for applicants for the following positions\./i.test(text)
     && /Please fill your Details/i.test(text)
     && /Upload Your Resume/i.test(text)
@@ -166,23 +173,77 @@ export const extractPublicListings = (html) => {
   for (let index = 0; index < lines.length; index += 1) {
     if (!/^Position:\s*/i.test(lines[index])) continue
 
-    const title = normalizeOptionalField(lines[index].replace(/^Position:\s*/i, ''))
-    const experienceLine = lines[index + 1]
-    const locationLine = lines[index + 2]
-    const descriptionLine = lines[index + 3]
-    const applyLine = lines[index + 4]
+    const titleParts = [
+      normalizeOptionalField(lines[index].replace(/^Position:\s*/i, '')),
+    ].filter(Boolean)
+    let experienceIndex = index + 1
+
+    while (experienceIndex < lines.length && !/^Experience:\s*/i.test(lines[experienceIndex] || '')) {
+      const continuation = normalizeOptionalField(lines[experienceIndex])
+      if (continuation) {
+        titleParts.push(continuation)
+      }
+      experienceIndex += 1
+    }
+
+    const title = normalizeOptionalField(titleParts.join(' '))
+    const experienceLine = lines[experienceIndex]
+    const experienceParts = [
+      normalizeOptionalField(experienceLine?.replace(/^Experience:\s*/i, '')),
+    ].filter(Boolean)
+    let locationIndex = experienceIndex + 1
+
+    while (locationIndex < lines.length && !/^Location:\s*/i.test(lines[locationIndex] || '')) {
+      const continuation = normalizeOptionalField(lines[locationIndex])
+      if (continuation) {
+        experienceParts.push(continuation)
+      }
+      locationIndex += 1
+    }
+
+    const locationLine = lines[locationIndex]
+    const locationParts = [
+      normalizeOptionalField(locationLine?.replace(/^Location:\s*/i, '')),
+    ].filter(Boolean)
+    let descriptionIndex = locationIndex + 1
+
+    while (descriptionIndex < lines.length && !/^Description:\s*/i.test(lines[descriptionIndex] || '')) {
+      const continuation = normalizeOptionalField(lines[descriptionIndex])
+      if (continuation) {
+        locationParts.push(continuation)
+      }
+      descriptionIndex += 1
+    }
+
+    const descriptionLine = lines[descriptionIndex]
 
     if (
       !title
       || !/^Experience:\s*/i.test(experienceLine || '')
       || !/^Location:\s*/i.test(locationLine || '')
       || !/^Description:\s*/i.test(descriptionLine || '')
-      || !/^Apply Now$/i.test(applyLine || '')
     ) {
       throw new Error(CAREERS_ERROR)
     }
 
-    const locationFields = parseLocation(locationLine.replace(/^Location:\s*/i, ''))
+    const descriptionParts = [
+      normalizeOptionalField(descriptionLine.replace(/^Description:\s*/i, '')),
+    ].filter(Boolean)
+    let applyIndex = descriptionIndex + 1
+
+    while (applyIndex < lines.length && !/^Apply Now$/i.test(lines[applyIndex] || '')) {
+      const continuation = normalizeOptionalField(lines[applyIndex])
+      if (continuation) {
+        descriptionParts.push(continuation)
+      }
+      applyIndex += 1
+    }
+
+    if (!/^Apply Now$/i.test(lines[applyIndex] || '')) {
+      throw new Error(CAREERS_ERROR)
+    }
+
+    const locationFields = parseLocation(locationParts.join(' '))
     const jobId = `${SOURCE}-${slugify(title)}`
 
     if (!jobId) {
@@ -202,16 +263,16 @@ export const extractPublicListings = (html) => {
       sourceUrl: CAREERS_URL,
       applyUrl: CAREERS_URL,
       employmentType: null,
-      experienceRequired: normalizeOptionalField(experienceLine.replace(/^Experience:\s*/i, '')),
+      experienceRequired: normalizeOptionalField(experienceParts.join(' ')),
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
       postingDate: null,
       closingDate: null,
-      jobDescription: normalizeOptionalField(descriptionLine.replace(/^Description:\s*/i, '')),
+      jobDescription: normalizeOptionalField(descriptionParts.join(' ')),
     })
 
-    index += 4
+    index = applyIndex
   }
 
   if (jobs.length === 0 || jobs.length !== formTitles.length) {
@@ -262,7 +323,7 @@ export const createDineshchandraRAgrawalInfraconScraper = ({
 export const run = async (options = {}) => createDineshchandraRAgrawalInfraconScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

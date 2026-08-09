@@ -1,11 +1,11 @@
-export const VERIFIED_SURFACE_SUMMARY =
+﻿export const VERIFIED_SURFACE_SUMMARY =
   'Verified on July 15, 2026 that https://aktek.io/ is the live official AKTEK homepage, that https://aktek.io/robots.txt and https://aktek.io/sitemap.xml are the live first-party crawl surfaces, and that https://aktek.io/page-sitemap.xml lists product, policy, conference, and about pages but no careers or jobs page. There is no trustworthy public jobs surface: common first-party careers routes such as https://aktek.io/careers, https://aktek.io/career, https://aktek.io/jobs, https://aktek.io/join-us, https://aktek.io/work-with-us, https://aktek.io/openings, and https://aktek.io/current-openings all returned first-party 404 pages during live checks, and the verified homepage exposed no first-party careers link or public ATS handoff.'
 
 export const AKTEK_CATALOG = {
   source: 'aktek',
   companyName: 'Aktek',
   adapter: 'script',
-  modulePath: '../aktek/script.js',
+  modulePath: '../../scraper/aktek/script.js',
   companyCareerPage: 'https://aktek.io/',
   companyDomain: 'aktek.io',
   robotsTxtUrl: 'https://aktek.io/robots.txt',
@@ -23,3 +23,4 @@ export const AKTEK_CATALOG = {
 }
 
 export default AKTEK_CATALOG
+

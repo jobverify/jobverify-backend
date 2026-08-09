@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { QUICK_HEAL_CATALOG } from './catalog.js'
 
@@ -22,7 +22,7 @@ export const VERIFIED_ON = QUICK_HEAL_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = QUICK_HEAL_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = QUICK_HEAL_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const darwinboxScraper = createDarwinboxScraper({
   companyName: COMPANY_NAME,
@@ -62,8 +62,12 @@ export const extractOfficialDarwinboxUrl = (html = '') => {
 export const hasOfficialQuickHealCareersSignals = (html = '') => {
   const page = String(html ?? '')
   const text = (normalizeWhitespace(page) || '').toLowerCase()
+  const title = extractTitle(page)
 
-  return extractTitle(page) === 'Quick Heal Careers - Be Part of Our Security Innovations'
+  return (
+    title === 'Quick Heal Careers - Be Part of Our Security Innovations'
+      || title === 'Careers at Quick Heal | Cybersecurity Jobs & Career Opportunities'
+  )
     && text.includes('work with purpose. grow from the experience. innovate to shape the future with quick heal')
     && text.includes('innovator. curious. growth-mindset. positive. sounds like you?')
     && text.includes('apply for a job')
@@ -112,7 +116,7 @@ export const createQuickHealScraper = ({
 export const run = async (options = {}) => createQuickHealScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

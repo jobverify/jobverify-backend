@@ -1,7 +1,11 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import {
+  createBrowserNetworkFallback,
+  defaultShouldUseBrowserNetworkFallback,
+} from '../../scraper-support/shared/browserNetworkFallback.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -165,20 +169,24 @@ const parseAccordionJob = (rawTitle, rawContent) => {
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
-
-  return /<title>\s*Lekha Wireless Solutions Private Limited\s*<\/title>/i.test(page)
-    && /Welcome to Lekha - The future of seamless wireless connectivity/i.test(text)
+  const hasLegacyShell = /Welcome to Lekha - The future of seamless wireless connectivity/i.test(text)
     && /deep-tech company specializing in mobile wireless technology and connectivity/i.test(text)
     && /4G and 5G RAN equipment/i.test(text)
     && /IEEE 802\.16s\/t data connectivity products for railroads/i.test(text)
+  const hasCurrentShell = /The future of seamless mobile wireless connectivity/i.test(text)
+    && /Lekha designs and manufactures 5G, 4G and IEEE 802\.16/i.test(text)
+    && /founding member of the Bharat 6G Alliance/i.test(text)
+
+  return /<title>\s*Lekha Wireless Solutions Private Limited\s*<\/title>/i.test(page)
     && /href=["']https:\/\/www\.lekhawireless\.com\/company\/contact-us\/careers\/["']/i.test(page)
+    && (hasLegacyShell || hasCurrentShell)
 }
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
 
-  return /<title>\s*Careers\s*(?:-|&#8211;)\s*Lekha Wireless Solutions Private Limited\s*<\/title>/i.test(page)
+  return /<title>\s*Careers\s*(?:-|&#8211;|–)\s*Lekha Wireless Solutions Private Limited\s*<\/title>/i.test(page)
     && /Shape the Future with Lekha/i.test(text)
     && /ready to make a real difference/i.test(text)
     && /Upload your Resume/i.test(text)
@@ -212,31 +220,53 @@ export const extractPublicJobs = (html) => {
 }
 
 export const createLekhaWirelessSolutionsScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('Lekha Wireless Solutions verified official homepage no longer matches the known first-party surface')
+  async run({
+    fetchText = defaultFetchText,
+    fetchBrowserText,
+    now: overrideNow,
+  } = {}) {
+    const browserFallback = createBrowserNetworkFallback({
+      fetchText,
+      fetchBrowserText,
+      userAgent: USER_AGENT,
+      browserSessionOptions: {
+        timeoutMs: 90000,
+        settleTimeMs: 12000,
+        ignoreHTTPSErrors: true,
+      },
+      shouldUseBrowserFallback: (error) =>
+        defaultShouldUseBrowserNetworkFallback(error)
+        || /HTTP 406\b|not acceptable/i.test(String(error?.message ?? error ?? '')),
+    })
+
+    try {
+      const homepageHtml = await browserFallback.fetchText(HOMEPAGE_URL)
+      if (!hasOfficialHomepageSignal(homepageHtml)) {
+        throw new Error('Lekha Wireless Solutions verified official homepage no longer matches the known first-party surface')
+      }
+
+      const careersHtml = await browserFallback.fetchText(CAREERS_URL)
+      const jobs = extractPublicJobs(careersHtml)
+
+      return jobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl,
+        scrapedAt: (overrideNow || now)(),
+        companyCareerPage: CAREERS_URL,
+        companyDomain: 'lekhawireless.com',
+        atsPlatform: 'official-company-careers',
+      }))
+    } finally {
+      await browserFallback.close()
     }
-
-    const careersHtml = await fetchText(CAREERS_URL)
-    const jobs = extractPublicJobs(careersHtml)
-
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl,
-      scrapedAt: (overrideNow || now)(),
-      companyCareerPage: CAREERS_URL,
-      companyDomain: 'lekhawireless.com',
-      atsPlatform: 'official-company-careers',
-    }))
   },
 })
 
 export const run = async (options = {}) => createLekhaWirelessSolutionsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

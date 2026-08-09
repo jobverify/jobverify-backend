@@ -1,10 +1,10 @@
-import { JOB_OPENINGS_URL, SOURCE, COMPANY } from './script.js'
+﻿import { JOB_OPENINGS_URL, SOURCE, COMPANY } from './script.js'
 
 export const provider = {
   source: SOURCE,
   companyName: COMPANY,
   adapter: 'script',
-  modulePath: '../cloverinfotech/script.js',
+  modulePath: '../../scraper/cloverinfotech/script.js',
   companyCareerPage: JOB_OPENINGS_URL,
   atsPlatform: 'official-company-careers',
   countryFilter: 'India',
@@ -17,3 +17,4 @@ export const provider = {
 }
 
 export default provider
+

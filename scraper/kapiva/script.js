@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { KAPIVA_CATALOG } from './catalog.js'
 
@@ -58,20 +58,63 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+const decodeCloudflareEmail = (hex = '') => {
+  const value = String(hex ?? '').trim()
+  if (!/^[0-9a-f]+$/i.test(value) || value.length < 4 || value.length % 2 !== 0) {
+    return null
+  }
+
+  const key = Number.parseInt(value.slice(0, 2), 16)
+  let decoded = ''
+
+  for (let index = 2; index < value.length; index += 2) {
+    decoded += String.fromCharCode(Number.parseInt(value.slice(index, index + 2), 16) ^ key)
+  }
+
+  return decoded
+}
+
+const extractEmails = (html = '') => {
+  const emails = new Set()
+  const page = String(html ?? '')
+
+  for (const match of page.matchAll(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi)) {
+    emails.add(match[0].toLowerCase())
+  }
+
+  for (const match of page.matchAll(/\bdata-cfemail=["']([0-9a-f]+)["']/gi)) {
+    const decoded = decodeCloudflareEmail(match[1])
+    if (decoded) {
+      emails.add(decoded.toLowerCase())
+    }
+  }
+
+  return emails
+}
+
 export const hasVerifiedHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
 
-  return /<title>\s*Kapiva\s*-\s*Buy Modern Ayurvedic Products Online for Complete Nutrition\s*<\/title>/i.test(page)
-    && normalized.includes('HAPPY AYURVEDA CONSUMERS')
-    && normalized.includes('FORMULATED BY EXPERTS AT KAPIVA ACADEMY OF AYURVEDA')
+  return /<title\b[^>]*>\s*Kapiva\s*-\s*Buy Modern Ayurvedic Products Online for Complete Nutrition\s*<\/title>/i.test(page)
+    && (
+      (
+        normalized.includes('HAPPY AYURVEDA CONSUMERS')
+        && normalized.includes('FORMULATED BY EXPERTS AT KAPIVA ACADEMY OF AYURVEDA')
+      )
+      || (
+        normalized.includes('Kapiva is a company of Adret Retail Private Limited')
+        && /1800[-\s]274[-\s]2575/i.test(normalized)
+        && normalized.includes('info@kapiva.in')
+      )
+    )
   }
 
 export const hasVerifiedAboutPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
 
-  return /<title>\s*Explore Ayurveda Products for Healthy Life\s*\|\s*Kapiva\s*\|\s*<\/title>/i.test(page)
+  return /<title\b[^>]*>\s*Explore Ayurveda Products for Healthy Life\s*\|\s*Kapiva\s*\|\s*<\/title>/i.test(page)
     && normalized.includes('ABOUT US')
     && normalized.includes('Kapiva tri-dosha synergy is an ever growing family')
     && normalized.includes('Your simple guide to everyday Ayurveda')
@@ -80,11 +123,12 @@ export const hasVerifiedAboutPageSignal = (html = '') => {
 export const hasVerifiedContactPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
+  const emails = extractEmails(page)
 
-  return /<title>\s*Contact Kapiva\s*\|\s*Get in Touch With Us\s*<\/title>/i.test(page)
+  return /<title\b[^>]*>\s*Contact Kapiva\s*\|\s*Get in Touch With Us\s*<\/title>/i.test(page)
     && normalized.includes('CONTACT US')
     && normalized.includes('For openings and collaboration:')
-    && normalized.includes('careers@kapiva.in')
+    && emails.has('careers@kapiva.in')
   }
 
 export const hasPublicJobSignals = (content = '') => {
@@ -136,7 +180,7 @@ export const createKapivaScraper = () => ({
 export const run = async (options = {}) => createKapivaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

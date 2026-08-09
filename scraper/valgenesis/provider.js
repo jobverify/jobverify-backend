@@ -1,8 +1,8 @@
-export const provider = {
+﻿export const provider = {
   source: 'valgenesis',
   companyName: 'ValGenesis',
   adapter: 'script',
-  modulePath: '../valgenesis/script.js',
+  modulePath: '../../scraper/valgenesis/script.js',
   companyCareerPage: 'https://www.valgenesis.com/careers',
   atsPlatform: 'official-company-site-no-public-jobs-feed',
   countryFilter: 'India',
@@ -18,3 +18,4 @@ export const provider = {
 }
 
 export default provider
+

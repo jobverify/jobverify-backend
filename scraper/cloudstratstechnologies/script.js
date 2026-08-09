@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { CLOUDSTRATS_TECHNOLOGIES_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -33,14 +33,35 @@ const slugify = (value) => normalizeWhitespace(value)
 
 const extractFirst = (pattern, value) => pattern.exec(String(value ?? ''))?.[1] || null
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
+  ...options,
 })
+
+const isExpectedCareersConnectTimeout = (error) => {
+  const code = `${error?.code ?? ''} ${error?.cause?.code ?? ''}`
+  const message = `${error?.message ?? error ?? ''} ${error?.cause?.message ?? ''}`
+
+  return /UND_ERR_CONNECT_TIMEOUT|ETIMEDOUT/i.test(code)
+    || /Connect Timeout Error|timed out|timeout/i.test(message)
+}
+
+const buildVerifiedCareersTimeoutError = (error) => {
+  const outageError = new Error(
+    'Cloudstrats verified careers page timed out before the first-party board could be checked',
+    { cause: error },
+  )
+  outageError.softFailure = true
+  outageError.upstreamOutage = true
+  outageError.failureKind = 'network_or_timeout'
+  outageError.abortRetries = true
+  return outageError
+}
 
 export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
@@ -83,7 +104,16 @@ export const createCloudstratsTechnologiesScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    let careersHtml
+    try {
+      careersHtml = await fetchText(CAREERS_URL, { attempts: 1 })
+    } catch (error) {
+      if (isExpectedCareersConnectTimeout(error)) {
+        throw buildVerifiedCareersTimeoutError(error)
+      }
+      throw error
+    }
+
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('The verified Cloudstrats careers page no longer matches the trusted first-party surface')
     }
@@ -132,7 +162,7 @@ export const createCloudstratsTechnologiesScraper = ({
 export const run = async (options = {}) => createCloudstratsTechnologiesScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

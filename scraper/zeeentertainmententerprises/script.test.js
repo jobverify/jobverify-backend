@@ -213,6 +213,7 @@ test('extractSearchResults keeps only open India jobs from the Zee SenseHQ listi
     postingDate: '2026-06-12',
     closingDate: null,
     jobDescription: 'Skills : Python, SQL, Machine Learning Build recommendation models for digital products.',
+    publicExperienceChecked: true,
   })
 
   assert.deepEqual(zee.extractPaginationSummary(LISTING_PAGE_1_HTML), {
@@ -251,8 +252,10 @@ test('run verifies the official Zee pages, paginates the SenseHQ board, and deco
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'zeeentertainmententerprises')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(jobs[0].publicExperienceChecked, true)
   assert.equal(jobs[1].title, 'Senior Manager - Revenue Analytics')
   assert.equal(jobs[1].location, 'Noida, India')
+  assert.equal(jobs[1].publicExperienceChecked, true)
   assert.deepEqual(jobs[1].requiredSkills, [
     'SQL',
     'Forecasting',

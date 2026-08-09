@@ -1,8 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -12,6 +12,8 @@ export const COMPANY = 'Clover Infotech'
 export const BASE_URL = 'https://www.cloverinfotech.com'
 export const JOB_OPENINGS_URL = `${BASE_URL}/job-openings/`
 export const COMPANY_DOMAIN = 'cloverinfotech.com'
+export const DESKTOP_BROWSER_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const INDIA_LOCATION_SEGMENTS = new Map([
   ['airoli', 'Airoli'],
@@ -53,9 +55,10 @@ const COMMON_HTML_ENTITIES = new Map([
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
-    'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+    'User-Agent': DESKTOP_BROWSER_USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: SOURCE,
   timeoutMs: 15000,
 })
@@ -182,6 +185,9 @@ const extractPublishedDate = (html) =>
   extractFirst(/"datePublished"\s*:\s*"([^"]+)"/i, html)
   || extractFirst(/"datePublished":"([^"]+)"/i, html)
 
+const isGenericDetailHeading = (value) => /^(job openings|apply for job|job features|apply online|stay connected with us|quick links|subscribe)$/i
+  .test(normalizeWhitespace(value) || '')
+
 const hasCanonicalJobOpeningsUrl = (html) =>
   /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.cloverinfotech\.com\/job-openings\/(?:page\/\d+\/)?["']/i
     .test(String(html ?? ''))
@@ -255,13 +261,14 @@ export const hasOfficialJobDetailSignal = (html) => {
 }
 
 const extractDetailTitle = (html, listing) => {
+  const titleTag = normalizeWhitespace(extractFirst(/<title>([\s\S]*?)<\/title>/i, html))
   const headings = [...String(html ?? '').matchAll(/<h3>([\s\S]*?)<\/h3>/gi)]
     .map((match) => stripTags(match[1]))
     .filter(Boolean)
-  const headingTitle = headings.find((heading) => heading !== 'Job Openings' && heading !== 'Apply For Job')
+  const headingTitle = headings.find((heading) => !isGenericDetailHeading(heading))
 
-  return headingTitle
-    || normalizeWhitespace(extractFirst(/<title>([\s\S]*?)<\/title>/i, html))
+  return (!isGenericDetailHeading(titleTag) ? titleTag : null)
+    || headingTitle
     || listing?.title
     || null
 }
@@ -324,74 +331,82 @@ export const extractJobDetail = (html, listing = {}) => {
 
 export const createCloverInfotechScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const firstPageHtml = await fetchText(buildJobOpeningsPageUrl(1))
-    if (!hasOfficialJobOpeningsSignal(firstPageHtml)) {
-      throw new Error('Clover Infotech verified first-party job openings page no longer matches the trusted public surface')
+    const fetchApiOnlyText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        throw new Error(`Clover Infotech API-only migration could not fetch ${url}: ${error.message}`)
+      }
     }
 
-    const maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY
-    const { totalPages } = extractPaginationSummary(firstPageHtml)
-    const pagesToFetch = Math.max(1, Math.min(totalPages || 1, maxPages))
-
-    const jobs = []
-    const seenSourceUrls = new Set()
-
-    for (let page = 1; page <= pagesToFetch; page += 1) {
-      const html = page === 1
-        ? firstPageHtml
-        : await fetchText(buildJobOpeningsPageUrl(page))
-
-      if (page > 1 && !hasOfficialJobOpeningsSignal(html)) {
+      const firstPageHtml = await fetchApiOnlyText(buildJobOpeningsPageUrl(1))
+      if (!hasOfficialJobOpeningsSignal(firstPageHtml)) {
         throw new Error('Clover Infotech verified first-party job openings page no longer matches the trusted public surface')
       }
 
-      for (const listing of extractListings(html)) {
-        if (seenSourceUrls.has(listing.sourceUrl)) continue
-        seenSourceUrls.add(listing.sourceUrl)
+      const maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY
+      const { totalPages } = extractPaginationSummary(firstPageHtml)
+      const pagesToFetch = Math.max(1, Math.min(totalPages || 1, maxPages))
 
-        const detailHtml = await fetchText(listing.sourceUrl)
-        if (!hasOfficialJobDetailSignal(detailHtml)) {
-          throw new Error('Clover Infotech verified first-party job detail page no longer matches the trusted public surface')
+      const jobs = []
+      const seenSourceUrls = new Set()
+
+      for (let page = 1; page <= pagesToFetch; page += 1) {
+        const html = page === 1
+          ? firstPageHtml
+          : await fetchApiOnlyText(buildJobOpeningsPageUrl(page))
+
+        if (page > 1 && !hasOfficialJobOpeningsSignal(html)) {
+          throw new Error('Clover Infotech verified first-party job openings page no longer matches the trusted public surface')
         }
 
-        const detail = extractJobDetail(detailHtml, listing)
+        for (const listing of extractListings(html)) {
+          if (seenSourceUrls.has(listing.sourceUrl)) continue
+          seenSourceUrls.add(listing.sourceUrl)
 
-        jobs.push({
-          jobId: detail.jobId || slugFromUrl(listing.sourceUrl),
-          requisitionId: detail.requisitionId || detail.jobId || slugFromUrl(listing.sourceUrl),
-          title: detail.title || listing.title,
-          company: COMPANY,
-          department: null,
-          location: detail.location || listing.location,
-          city: detail.city || listing.city,
-          link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
-          applyUrl: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
-          sourceUrl: detail.sourceUrl || listing.sourceUrl,
-          source: SOURCE,
-          employmentType: detail.employmentType,
-          experienceRequired: detail.experienceRequired || listing.experienceRequired,
-          jobDescription: detail.jobDescription,
-          minimumQualification: detail.minimumQualification,
-          preferredQualification: detail.preferredQualification,
-          requiredSkills: detail.requiredSkills,
-          postingDate: detail.postingDate,
-          closingDate: detail.closingDate,
-          scrapedAt: now(),
-          companyCareerPage: JOB_OPENINGS_URL,
-          companyDomain: COMPANY_DOMAIN,
-          atsPlatform: 'official-company-careers',
-        })
+          const detailHtml = await fetchApiOnlyText(listing.sourceUrl)
+          if (!hasOfficialJobDetailSignal(detailHtml)) {
+            throw new Error('Clover Infotech verified first-party job detail page no longer matches the trusted public surface')
+          }
+
+          const detail = extractJobDetail(detailHtml, listing)
+
+          jobs.push({
+            jobId: detail.jobId || slugFromUrl(listing.sourceUrl),
+            requisitionId: detail.requisitionId || detail.jobId || slugFromUrl(listing.sourceUrl),
+            title: detail.title || listing.title,
+            company: COMPANY,
+            department: null,
+            location: detail.location || listing.location,
+            city: detail.city || listing.city,
+            link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
+            applyUrl: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
+            sourceUrl: detail.sourceUrl || listing.sourceUrl,
+            source: SOURCE,
+            employmentType: detail.employmentType,
+            experienceRequired: detail.experienceRequired || listing.experienceRequired,
+            jobDescription: detail.jobDescription,
+            minimumQualification: detail.minimumQualification,
+            preferredQualification: detail.preferredQualification,
+            requiredSkills: detail.requiredSkills,
+            postingDate: detail.postingDate,
+            closingDate: detail.closingDate,
+            scrapedAt: now(),
+            companyCareerPage: JOB_OPENINGS_URL,
+            companyDomain: COMPANY_DOMAIN,
+            atsPlatform: 'official-company-careers',
+          })
+        }
       }
-    }
 
-    return jobs
+      return jobs
   },
 })
 
 export const run = async (options = {}) => createCloverInfotechScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
 
   console.log(`Running ${COMPANY} scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)

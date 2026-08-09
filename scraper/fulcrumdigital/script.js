@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { FULCRUM_DIGITAL_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -13,7 +13,7 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const JOBS_BOARD_URL = PROVIDER_METADATA.jobsBoardUrl
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -91,14 +91,29 @@ const extractJobsPayload = (html = '') => {
 }
 
 const extractMetaPayload = (html = '') => {
-  const rawPayload = extractInputValue(html, 'meta')
-  if (!rawPayload) return {}
+  for (const inputId of ['pageJson', 'meta', 'moduleMeta']) {
+    const rawPayload = extractInputValue(html, inputId)
+    if (!rawPayload) continue
 
-  try {
-    return JSON.parse(rawPayload)
-  } catch {
-    return {}
+    try {
+      const parsed = JSON.parse(rawPayload)
+      if (Array.isArray(parsed)) continue
+      if (
+        parsed
+        && typeof parsed === 'object'
+        && (
+          Object.prototype.hasOwnProperty.call(parsed, 'company_name')
+          || Object.prototype.hasOwnProperty.call(parsed, 'list_url')
+        )
+      ) {
+        return parsed
+      }
+    } catch {
+      // Continue until we find the hidden payload that carries the board metadata.
+    }
   }
+
+  return {}
 }
 
 const normalizeLocation = (record = {}) => {
@@ -123,10 +138,10 @@ const isPublishedRecord = (record = {}) => record.Publish !== false
 export const hasOfficialPortalSignal = (html = '') => {
   const page = String(html ?? '')
   const meta = extractMetaPayload(page)
-  const companyName = normalizeWhitespace(meta.company_name)
-  const listUrl = normalizeWhitespace(meta.list_url)
+  const companyName = normalizeWhitespace(meta.company_name) || COMPANY
+  const listUrl = normalizeWhitespace(meta.list_url) || JOBS_BOARD_URL
 
-  return /Jobs at Fulcrum Digital/i.test(page)
+  return (/Jobs at Fulcrum Digital/i.test(page) || /<title>\s*Jobs at Careers\s*<\/title>/i.test(page))
     && page.includes(JOBS_BOARD_URL)
     && hasInputWithId(page, 'pageJson')
     && hasInputWithId(page, 'moduleMeta')
@@ -209,7 +224,7 @@ export const createFulcrumDigitalScraper = ({
 export const run = async (options = {}) => createFulcrumDigitalScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import YAMAHA_MOTORS_SOLUTIONS_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -94,7 +94,10 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
 
   return /<title>\s*Yamaha - Careers\s*<\/title>/i.test(page)
-    && /Find your Dream Job at Yamaha Motor Solutions/i.test(page)
+    && (
+      /Find your Dream Job at Yamaha Motor Solutions/i.test(page)
+      || /Be Cautious/i.test(page)
+    )
     && /does not authorize any third party/i.test(page)
 }
 
@@ -175,7 +178,7 @@ export const createYamahaMotorsSolutionsScraper = ({
 export const run = async (options = {}) => createYamahaMotorsSolutionsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

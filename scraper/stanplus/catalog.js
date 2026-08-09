@@ -21,15 +21,15 @@ export const STAN_PLUS_CATALOG = {
   darwinboxListingApiUrl: 'https://redhealth.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
   atsPlatform: 'official-company-site-no-public-careers',
   countryFilter: 'India',
-  paginationStrategy: 'verified-careers-page-plus-darwinbox-timeout-validation',
+  paginationStrategy: 'verified-careers-page-plus-darwinbox-shell-and-blocked-api-validation',
   extractionStrategy:
-    'verified-first-party-careers-page+verified-darwinbox-handoff+timed-out-public-darwinbox-routes-return-empty',
+    'verified-first-party-careers-page+verified-darwinbox-handoff+reachable-public-shells+blocked-listing-api-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'red.health',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-05',
   verifiedSurfaceSummary:
-    "Verified on July 17, 2026 that https://www.red.health/career was the live first-party RED.Health careers page for StanPlus and linked candidates via Discover Roles to the Darwinbox handoff at https://redhealth.darwinbox.in/ms/candidatev2/main, while first-party legal copy on https://www.red.health/contact-us identified Stanplus Technologies Private Limited. Direct probes to https://redhealth.darwinbox.in/jobs, https://redhealth.darwinbox.in/ms/candidate/careers, https://redhealth.darwinbox.in/ms/candidatev2/main/careers/home, https://redhealth.darwinbox.in/ms/candidatev2/main/careers/allJobs, and https://redhealth.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main timed out, so there was no trustworthy public jobs surface on Friday, July 17, 2026.",
+    'Verified on Wednesday, August 5, 2026 that https://www.red.health/career was still the live first-party RED.Health careers page for StanPlus and still linked candidates via Discover Roles to the Darwinbox handoff at https://redhealth.darwinbox.in/ms/candidatev2/main, while first-party legal copy on https://www.red.health/contact-us still identified Stanplus Technologies Private Limited. Direct probes to https://redhealth.darwinbox.in/jobs, https://redhealth.darwinbox.in/ms/candidate/careers, https://redhealth.darwinbox.in/ms/candidatev2/main/careers/home, and https://redhealth.darwinbox.in/ms/candidatev2/main/careers/allJobs now returned generic public Darwinbox JavaScript shells with no trustworthy job content, while https://redhealth.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main returned a Cloudflare 403 block. In this environment there was still no trustworthy public StanPlus jobs surface.',
   darwinboxTimeoutRouteUrls: [
     'https://redhealth.darwinbox.in/jobs',
     'https://redhealth.darwinbox.in/ms/candidate/careers',

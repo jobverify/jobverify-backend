@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -16,7 +16,7 @@ const USER_AGENT =
 
 const CAREERS_LANDING_SIGNALS = [
   'Great people. Real impact.',
-  'At Turing, our mission is to accelerate superintelligence to drive real economic progress.',
+  'At Turing, our mission is to accelerate superintelligence to drive real economic progress',
   'Turing Talent Network',
 ]
 
@@ -123,8 +123,8 @@ export const createTuringGlobalIndiaScraper = () => ({
 
 export const run = async (options = {}) => createTuringGlobalIndiaScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

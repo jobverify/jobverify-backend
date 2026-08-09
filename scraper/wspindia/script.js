@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -10,8 +10,8 @@ const config = loadConfig(currentDir)
 export const INDIA_SITE_URL = 'https://www.wsp.com/en-gl/sites/india'
 export const JOBS_PAGE_URL = 'https://www.wsp.com/en-gl/careers/job-opportunities?country=IN'
 
-const COMPANY = 'WSP India'
-const SOURCE = 'wspindia'
+export const COMPANY = 'WSP India'
+export const SOURCE = 'wspindia'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 const ORACLE_PREVIEW_LINK_PATTERN =
@@ -43,12 +43,18 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
-const toAbsoluteUrl = (value) => {
-  try {
-    return new URL(value, JOBS_PAGE_URL).toString()
-  } catch {
-    return null
-  }
+const extractVisibleText = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<(br|\/p|\/div|\/li|\/span|\/h[1-6]|\/section|\/article|\/ul|\/ol)\b[^>]*>/gi, '\n')
+    .replace(/<(li|p|div|span|section|article|h[1-6])\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' '),
+)
+
+const extractFirst = (pattern, html) => {
+  const match = pattern.exec(String(html ?? ''))
+  return match ? stripTags(match[1]) : null
 }
 
 const extractStructuredText = (html) =>
@@ -75,13 +81,34 @@ export const hasOfficialJobsPageSignal = (html) => {
     && /emit\.fa\.ca3\.oraclecloud\.com/i.test(page)
 }
 
+export const hasCloudflareChallengeSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = stripTags(page) || ''
+
+  return /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(page)
+    && /cloudflare/i.test(page)
+    && (
+      text.includes('Please enable cookies')
+      || /cdn-cgi\/challenge-platform/i.test(page)
+      || /challenges\.cloudflare\.com/i.test(page)
+    )
+}
+
 export const buildJobsPageUrl = ({ page = 1 } = {}) =>
   Number(page) > 1 ? `${JOBS_PAGE_URL}&page=${Number(page)}` : JOBS_PAGE_URL
 
+export const buildJobDetailsApiUrl = (jobId) =>
+  `https://emit.fa.ca3.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails?expand=all&onlyData=true&finder=ById;Id=%22${encodeURIComponent(String(jobId ?? ''))}%22,siteNumber=CX_2001`
+
 export const extractMaxPageNumber = (html) => {
-  const pageNumbers = [...String(html ?? '').matchAll(/country=IN(?:&amp;|&)page=(\d+)/gi)]
-    .map(([, value]) => Number.parseInt(value, 10))
-    .filter(Number.isInteger)
+  const pageNumbers = [
+    ...[...String(html ?? '').matchAll(/country=IN(?:&amp;|&)page=(\d+)/gi)]
+      .map(([, value]) => Number.parseInt(value, 10))
+      .filter(Number.isInteger),
+    ...[...String(html ?? '').matchAll(/class=["'][^"']*page(?:prev|next)[^"']*["'][^>]*>\s*(\d+)\s*<\/a>/gi)]
+      .map(([, value]) => Number.parseInt(value, 10))
+      .filter(Number.isInteger),
+  ]
 
   return pageNumbers.length > 0 ? Math.max(...pageNumbers) : 1
 }
@@ -97,8 +124,12 @@ export const extractJobsFromHtml = (html) => {
     if (!previewMatch) continue
 
     const segments = extractStructuredText(innerHtml)
-    const title = normalizeWhitespace(segments[0]) || stripTags(innerHtml)
-    const location = normalizeWhitespace(segments[1] || segments.at(-1)) || null
+    const title = extractFirst(/<h[1-6][^>]*>\s*([\s\S]*?)\s*<\/h[1-6]>/i, innerHtml)
+      || normalizeWhitespace(segments[0])
+      || stripTags(innerHtml)
+    const location = extractFirst(/class=["'][^"']*text-locations[^"']*["'][^>]*>\s*([\s\S]*?)\s*<\/div>/i, innerHtml)
+      || normalizeWhitespace(segments.findLast((segment) => segment && segment !== title))
+      || null
 
     if (!title || !location) continue
 
@@ -118,72 +149,165 @@ export const extractJobsFromHtml = (html) => {
   return jobs
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const inferExperienceFromDescription = (jobDescription) => {
+  const normalizedDescription = normalizeWhitespace(jobDescription)
+  if (!normalizedDescription) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalizedDescription,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
+}
+
+const buildDetailDescription = (detailRecord = {}) => {
+  const sections = [
+    detailRecord.ExternalDescriptionStr,
+    detailRecord.InternalResponsibilitiesStr,
+    detailRecord.ExternalQualificationsStr,
+  ]
+    .map((value) => extractVisibleText(value))
+    .filter(Boolean)
+
+  return sections.length > 0 ? sections.join('\n\n') : null
+}
+
+export const enrichJobFromDetailRecord = (job, detailRecord = null) => {
+  const detailText = buildDetailDescription(detailRecord) || job.jobDescription || null
+  const experienceRequired = inferExperienceFromDescription(detailText)
+
+  return {
+    ...job,
+    jobDescription: detailText || job.jobDescription || null,
+    experienceRequired: experienceRequired || job.experienceRequired || null,
+    publicExperienceChecked: Boolean(detailRecord && (detailText || detailRecord.Id)),
+  }
+}
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    html: await response.text(),
+  }
+}
+
+const defaultFetchJson = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'application/json,text/plain,*/*',
+    },
+    signal: AbortSignal.timeout(15000),
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} for ${url}`)
+  }
+
+  return response.json()
+}
+
+const isCloudflareChallengePage = (page = {}) =>
+  Number(page.status) === 403 && hasCloudflareChallengeSignal(page.html)
 
 export const createWspIndiaScraper = ({
   maxPages = Number.isInteger(config.maxPages) ? config.maxPages : null,
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run({
-    fetchText = defaultFetchText,
+    fetchPage = defaultFetchPage,
+    fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
   } = {}) {
-    const indiaSiteHtml = await fetchText(INDIA_SITE_URL)
-    if (!hasOfficialIndiaSiteSignal(indiaSiteHtml)) {
-      throw new Error('WSP India official India site surface changed; refusing to guess the jobs handoff')
+    const fetchVerifiedPage = async (url) => {
+      const rawPage = await fetchPage(url)
+      if (isCloudflareChallengePage(rawPage)) {
+        throw new Error(`WSP India API-only fetch received a Cloudflare challenge for ${url}`)
+      }
+      return rawPage
     }
 
-    const firstJobsPageHtml = await fetchText(buildJobsPageUrl({ page: 1 }))
-    if (!hasOfficialJobsPageSignal(firstJobsPageHtml)) {
-      throw new Error('WSP India official jobs page surface changed; refusing to guess job links')
-    }
-
-    const discoveredMaxPages = extractMaxPageNumber(firstJobsPageHtml)
-    const totalPages = Math.max(1, maxPages ? Math.min(maxPages, discoveredMaxPages) : discoveredMaxPages)
-    const jobs = []
-    const seenJobIds = new Set()
-    const pageHtmlCache = new Map([[1, firstJobsPageHtml]])
-
-    for (let page = 1; page <= totalPages; page += 1) {
-      const pageHtml = pageHtmlCache.get(page) || await fetchText(buildJobsPageUrl({ page }))
-      const pageJobs = extractJobsFromHtml(pageHtml)
-      let addedOnPage = 0
-
-      for (const job of pageJobs) {
-        if (!job.jobId || seenJobIds.has(job.jobId)) continue
-        seenJobIds.add(job.jobId)
-        addedOnPage += 1
-
-        jobs.push({
-          ...job,
-          source: SOURCE,
-          link: job.applyUrl || job.sourceUrl,
-          scrapedAt: now(),
-        })
-
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
-        }
+    {
+      const indiaSitePage = await fetchVerifiedPage(INDIA_SITE_URL)
+      if (!hasOfficialIndiaSiteSignal(indiaSitePage.html)) {
+        throw new Error('WSP India official India site surface changed; refusing to guess the jobs handoff')
       }
 
-      if (pageJobs.length === 0 || addedOnPage === 0) break
-    }
+      const firstJobsPage = await fetchVerifiedPage(buildJobsPageUrl({ page: 1 }))
+      if (!hasOfficialJobsPageSignal(firstJobsPage.html)) {
+        throw new Error('WSP India official jobs page surface changed; refusing to guess job links')
+      }
 
-    return jobs
+      const discoveredMaxPages = extractMaxPageNumber(firstJobsPage.html)
+      const totalPages = Math.max(1, maxPages ? Math.min(maxPages, discoveredMaxPages) : discoveredMaxPages)
+      const jobs = []
+      const seenJobIds = new Set()
+      const pageHtmlCache = new Map([[1, firstJobsPage.html]])
+
+      for (let page = 1; page <= totalPages; page += 1) {
+        const pageHtml = pageHtmlCache.get(page) || (await fetchVerifiedPage(buildJobsPageUrl({ page }))).html
+        const pageJobs = extractJobsFromHtml(pageHtml)
+        let addedOnPage = 0
+
+        for (const job of pageJobs) {
+          if (!job.jobId || seenJobIds.has(job.jobId)) continue
+          seenJobIds.add(job.jobId)
+          addedOnPage += 1
+
+          let normalizedJob = job
+          try {
+            const detailPayload = await fetchJson(buildJobDetailsApiUrl(job.jobId))
+            normalizedJob = enrichJobFromDetailRecord(
+              job,
+              Array.isArray(detailPayload?.items) ? detailPayload.items[0] : null,
+            )
+          } catch {
+            normalizedJob = job
+          }
+
+          jobs.push({
+            ...normalizedJob,
+            source: SOURCE,
+            link: normalizedJob.applyUrl || normalizedJob.sourceUrl,
+            scrapedAt: now(),
+          })
+
+          if (maxJobs && jobs.length >= maxJobs) {
+            return jobs
+          }
+        }
+
+        if (pageJobs.length === 0 || addedOnPage === 0) break
+      }
+
+      return jobs
+    }
   },
 })
 
 export const run = async (options = {}) => createWspIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

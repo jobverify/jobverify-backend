@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 import { TAAL_TECH_INDIA_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -51,6 +51,16 @@ const extractParagraphs = (html = '') => [...String(html ?? '').matchAll(/<p[^>]
   .map((match) => normalizeWhitespace(match[1]))
   .filter(Boolean)
 
+const htmlToLines = (value = '') => String(value ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<br\s*\/?>/gi, '\n')
+  .replace(/<\/(p|div|section|article|li|ul|ol|h1|h2|h3|h4|h5|h6|a)>/gi, '\n')
+  .replace(/<[^>]+>/g, ' ')
+  .split(/\r?\n/)
+  .map((line) => normalizeWhitespace(line))
+  .filter(Boolean)
+
 const extractLabeledValue = (html = '', label) =>
   normalizeWhitespace(String(html ?? '').match(new RegExp(`${label}\\s*\\|\\s*([^<]+)`, 'i'))?.[1]) || null
 
@@ -62,6 +72,15 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 20000,
 })
+
+export const hasConnectTimeoutFailure = (error) => {
+  const code = String(error?.cause?.code ?? error?.code ?? '')
+  const message = String(error?.cause?.message ?? error?.message ?? error ?? '')
+
+  return code === 'UND_ERR_CONNECT_TIMEOUT'
+    || /\bconnect timeout\b/i.test(message)
+    || /\btimeout\b/i.test(message)
+}
 
 const normalizeIndiaLocation = (value) => {
   const normalized = normalizeWhitespace(value)
@@ -109,6 +128,70 @@ export const extractListingCards = (html = '') => {
     jobs.push({
       title,
       detailUrl,
+      employmentType,
+      location,
+      postedLabel,
+    })
+  }
+
+  if (jobs.length > 0) {
+    return jobs
+  }
+
+  const anchorEntries = []
+  const seenUrls = new Map()
+  const anchors = [...String(html ?? '').matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
+
+  for (const match of anchors) {
+    const detailUrl = toAbsoluteUrl(match[1])
+    const anchorText = normalizeWhitespace(match[2])
+    if (!detailUrl) continue
+
+    let parsedUrl
+    try {
+      parsedUrl = new URL(detailUrl)
+    } catch {
+      continue
+    }
+
+    if (!parsedUrl.pathname.startsWith('/careers/')) continue
+    if (/^\/careers\/page\/\d+\/?$/i.test(parsedUrl.pathname)) continue
+    if (/^\/careers\/?$/i.test(parsedUrl.pathname)) continue
+    if (/^(?:apply now|\d+)$/i.test(anchorText || '')) continue
+
+    if (!seenUrls.has(detailUrl)) {
+      seenUrls.set(detailUrl, {
+        detailUrl,
+        title: anchorText,
+        startIndex: match.index ?? 0,
+      })
+      anchorEntries.push(seenUrls.get(detailUrl))
+      continue
+    }
+
+    const existing = seenUrls.get(detailUrl)
+    if (!existing.title && anchorText) {
+      existing.title = anchorText
+    }
+  }
+
+  for (let index = 0; index < anchorEntries.length; index += 1) {
+    const entry = anchorEntries[index]
+    const nextIndex = anchorEntries[index + 1]?.startIndex ?? String(html ?? '').length
+    const segment = String(html ?? '').slice(entry.startIndex, nextIndex)
+    const lines = htmlToLines(segment)
+    const employmentType = lines.find((line) => /\b(?:full time|part time|contract)\b/i.test(line)) || null
+    const location = lines.find((line) =>
+      INDIA_LOCATION_PATTERN.test(line)
+      || /\bUnited States\b/i.test(line),
+    ) || null
+    const postedLabel = lines.find((line) => /^Posted\b/i.test(line)) || null
+
+    if (!entry.title || !location) continue
+
+    jobs.push({
+      title: entry.title,
+      detailUrl: entry.detailUrl,
       employmentType,
       location,
       postedLabel,
@@ -179,46 +262,54 @@ export const createTaalTechIndiaScraper = ({
     fetchText = defaultFetchText,
     now = defaultNow,
   } = {}) {
-    const scrapedAt = now()
-    const jobs = []
-    let pageNumber = 1
-    let pageHtml = await fetchText(CAREERS_URL)
+    try {
+      const scrapedAt = now()
+      const jobs = []
+      let pageNumber = 1
+      let pageHtml = await fetchText(CAREERS_URL)
 
-    if (!hasOfficialArchiveSignal(pageHtml)) {
-      throw new Error('The verified TAAL Tech jobs archive no longer matches the trusted first-party surface')
+      if (!hasOfficialArchiveSignal(pageHtml)) {
+        throw new Error('The verified TAAL Tech jobs archive no longer matches the trusted first-party surface')
+      }
+
+      while (pageNumber <= maxPages) {
+        if (hasNoJobsFoundSignal(pageHtml)) {
+          break
+        }
+
+        const cards = extractListingCards(pageHtml)
+        if (cards.length === 0) {
+          throw new Error('The verified TAAL Tech jobs archive no longer exposes parsable listing cards')
+        }
+
+        for (const card of cards) {
+          if (!INDIA_LOCATION_PATTERN.test(card.location)) continue
+
+          const detailHtml = await fetchText(card.detailUrl)
+          const detail = extractJobDetail(detailHtml)
+          jobs.push(createJobFromCard({ card, detail, scrapedAt }))
+        }
+
+        pageNumber += 1
+        if (pageNumber > maxPages) break
+        pageHtml = await fetchText(buildArchivePageUrl(pageNumber))
+      }
+
+      return jobs.sort((left, right) => left.title.localeCompare(right.title))
+    } catch (error) {
+      if (hasConnectTimeoutFailure(error)) {
+        return []
+      }
+
+      throw error
     }
-
-    while (pageNumber <= maxPages) {
-      if (hasNoJobsFoundSignal(pageHtml)) {
-        break
-      }
-
-      const cards = extractListingCards(pageHtml)
-      if (cards.length === 0) {
-        throw new Error('The verified TAAL Tech jobs archive no longer exposes parsable listing cards')
-      }
-
-      for (const card of cards) {
-        if (!INDIA_LOCATION_PATTERN.test(card.location)) continue
-
-        const detailHtml = await fetchText(card.detailUrl)
-        const detail = extractJobDetail(detailHtml)
-        jobs.push(createJobFromCard({ card, detail, scrapedAt }))
-      }
-
-      pageNumber += 1
-      if (pageNumber > maxPages) break
-      pageHtml = await fetchText(buildArchivePageUrl(pageNumber))
-    }
-
-    return jobs.sort((left, right) => left.title.localeCompare(right.title))
   },
 })
 
 export const run = async (options = {}) => createTaalTechIndiaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

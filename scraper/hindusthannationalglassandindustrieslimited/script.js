@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -133,6 +133,7 @@ export const extractVacancyRows = (html) => {
           + `Job code: ${requisitionId}. `
           + 'The current first-party vacancies page lists this role inline and does not expose a public detail or application-form URL in the markup.',
         ),
+        publicExperienceChecked: true,
       })
     }
   }
@@ -177,7 +178,7 @@ export const createHindusthanNationalGlassAndIndustriesLimitedScraper = () => ({
 export const run = async (options = {}) => createHindusthanNationalGlassAndIndustriesLimitedScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

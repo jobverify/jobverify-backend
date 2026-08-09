@@ -1,7 +1,7 @@
+import http from 'node:http'
+import https from 'node:https'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-import { fetchTextWithRetry } from '../utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -13,14 +13,21 @@ export const CAREERS_API_URL = 'https://api.storeys.ae/api/v1/careers'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const REQUEST_TIMEOUT_MS = 15000
+const MAX_REDIRECTS = 5
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
   /\bcurrent openings\b/i,
   /\bopen positions?\b/i,
   /\bjob openings?\b/i,
+  /\bcareer opportunities\b/i,
   /\bsearch jobs\b/i,
   /\bview openings\b/i,
+  /\bapply now\b/i,
+  /\bjob description\b/i,
+  /\bjoin our team\b/i,
+  /\bwe(?:'re| are)? hiring\b/i,
   /boards\.greenhouse\.io/i,
   /job-boards\.greenhouse\.io/i,
   /jobs\.lever\.co/i,
@@ -32,104 +39,216 @@ const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /breezy\.hr/i,
 ]
 
+const CERTIFICATE_ERROR_PATTERNS = [
+  /\bcertificate has expired\b/i,
+  /\bcert_has_expired\b/i,
+  /\berr_cert_date_invalid\b/i,
+  /\bdepth_zero_self_signed_cert\b/i,
+  /\bself[-\s]signed certificate\b/i,
+  /\bunable to verify the first certificate\b/i,
+]
+
+const TIMEOUT_ERROR_PATTERNS = [
+  /\btimeout\b/i,
+  /\btimed out\b/i,
+  /\boperation was aborted\b/i,
+  /\baborted\b/i,
+  /\bund_err_connect_timeout\b/i,
+  /\bheaders timeout\b/i,
+  /\bbody timeout\b/i,
+  /\bconnect timeout\b/i,
+]
+
+const createTimeoutSignal = (timeoutMs) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return undefined
+  }
+
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs)
+  }
+
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), timeoutMs)
+  return controller.signal
+}
+
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
   .replace(/<[^>]+>/g, ' ')
+  .replace(/\\u003c/gi, '<')
+  .replace(/\\u003e/gi, '>')
+  .replace(/\\u0026/gi, '&')
+  .replace(/\\\//g, '/')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  redirect: 'follow',
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const extractErrorMessage = (error) =>
+  String(error?.cause?.message ?? error?.message ?? error ?? '')
+
+const isOfficialDomainUrl = (value) => {
+  try {
+    const hostname = new URL(value).hostname.toLowerCase()
+    return hostname === 'storeys.ae'
+      || hostname === 'www.storeys.ae'
+      || hostname === 'api.storeys.ae'
+  } catch {
+    return false
+  }
+}
+
+const fetchPageIgnoringTlsErrors = (url, redirectsRemaining = MAX_REDIRECTS) =>
+  new Promise((resolve, reject) => {
+    const parsedUrl = new URL(url)
+    const requestImpl = parsedUrl.protocol === 'http:' ? http : https
+
+    const request = requestImpl.request(parsedUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7',
+      },
+      rejectUnauthorized: false,
+    }, (response) => {
+      const status = Number(response.statusCode) || 0
+      const location = response.headers.location
+
+      if (status >= 300 && status < 400 && location) {
+        response.resume()
+
+        if (redirectsRemaining <= 0) {
+          reject(new Error(`Too many redirects for ${url}`))
+          return
+        }
+
+        const nextUrl = new URL(location, parsedUrl).toString()
+        resolve(fetchPageIgnoringTlsErrors(nextUrl, redirectsRemaining - 1))
+        return
+      }
+
+      const chunks = []
+      response.on('data', (chunk) => chunks.push(chunk))
+      response.on('end', () => {
+        resolve({
+          status,
+          url: parsedUrl.toString(),
+          contentType: String(response.headers['content-type'] || ''),
+          html: Buffer.concat(chunks).toString('utf8'),
+          errorMessage: '',
+        })
+      })
+    })
+
+    request.setTimeout(REQUEST_TIMEOUT_MS, () => {
+      request.destroy(new Error(`timeout for ${url}`))
+    })
+    request.on('error', reject)
+    request.end()
+  })
+
+const defaultFetchPage = async (url) => {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7',
+      },
+      signal: createTimeoutSignal(REQUEST_TIMEOUT_MS),
+    })
+
+    return {
+      status: response.status,
+      url: response.url,
+      contentType: String(response.headers?.get?.('content-type') || ''),
+      html: await response.text(),
+      errorMessage: '',
+    }
+  } catch (error) {
+    const errorMessage = extractErrorMessage(error)
+
+    if (hasRecoverableCertificateError(errorMessage)) {
+      try {
+        return await fetchPageIgnoringTlsErrors(url)
+      } catch (fallbackError) {
+        const fallbackErrorMessage = extractErrorMessage(fallbackError)
+        return {
+          status: hasTimeoutError(fallbackErrorMessage) ? 'TIMEOUT' : 'NETWORK_ERROR',
+          url,
+          contentType: '',
+          html: '',
+          errorMessage: fallbackErrorMessage,
+        }
+      }
+    }
+
+    return {
+      status: hasTimeoutError(errorMessage) ? 'TIMEOUT' : 'NETWORK_ERROR',
+      url,
+      contentType: '',
+      html: '',
+      errorMessage,
+    }
+  }
+}
 
 export const hasPublicJobsSignal = (value) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(value ?? '')))
 
-export const extractBundleUrl = (html, pageUrl = HOMEPAGE_URL) => {
-  const match = String(html ?? '').match(/<script[^>]+src=["']([^"']*\/assets\/index-[^"']+\.js)["']/i)
-  if (!match) return null
+export const hasRecoverableCertificateError = (value) =>
+  CERTIFICATE_ERROR_PATTERNS.some((pattern) => pattern.test(String(value ?? '')))
 
-  try {
-    return new URL(match[1], pageUrl).toString()
-  } catch {
-    return null
+export const hasTimeoutError = (value) =>
+  TIMEOUT_ERROR_PATTERNS.some((pattern) => pattern.test(String(value ?? '')))
+
+export const hasBrokenWordPressJsonSignal = (page = {}) => {
+  const raw = String(page.html ?? '')
+  const normalized = normalizeWhitespace(raw)
+
+  return Number(page.status) === 500
+    && isOfficialDomainUrl(page.url || '')
+    && /application\/json/i.test(String(page.contentType || ''))
+    && /"code"\s*:\s*"internal_server_error"/i.test(raw)
+    && /"status"\s*:\s*500/i.test(raw)
+    && normalized.includes('There has been a critical error on this website.')
+    && normalized.includes('Learn more about troubleshooting WordPress.')
+    && !hasPublicJobsSignal(raw)
+}
+
+export const hasUnavailableCareersApiSignal = (page = {}) => {
+  if (hasPublicJobsSignal(page.html)) {
+    return false
   }
-}
 
-export const hasHomepageSignal = (html) => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
+  if (!isOfficialDomainUrl(page.url || CAREERS_API_URL)) {
+    return false
+  }
 
-  return /<title>\s*Storeys\b[\s\S]*<\/title>/i.test(page)
-    && normalized.includes('Storeys')
-    && /href=["']\/careers["']/i.test(page)
-    && Boolean(extractBundleUrl(page, HOMEPAGE_URL))
-}
+  if (String(page.status) === 'TIMEOUT') {
+    return hasTimeoutError(page.errorMessage)
+  }
 
-export const hasCareersMarketingSignal = (html) => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
-
-  return /<title>\s*Careers\b[\s\S]*Storeys[\s\S]*<\/title>/i.test(page)
-    && normalized.includes('Storeys')
-    && normalized.includes('APPLY NOW')
-    && /\bFAQs?\b/i.test(normalized)
-    && /\bteam\b/i.test(normalized)
-    && /\bstats?\b/i.test(normalized)
-    && Boolean(extractBundleUrl(page, CAREERS_URL))
-}
-
-export const hasBundleApplyModalSignal = (js) => {
-  const source = String(js ?? '')
-  return /\/careers\b/i.test(source)
-    && /https:\/\/api\.storeys\.ae\/api\/v1\/careers/i.test(source)
-    && /firstName/i.test(source)
-    && /lastName/i.test(source)
-    && /email/i.test(source)
-    && /phone/i.test(source)
-    && /designation/i.test(source)
-    && /resume/i.test(source)
+  return hasBrokenWordPressJsonSignal(page)
 }
 
 export const createStoreysRealEstateScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasHomepageSignal(homepageHtml)) {
-      throw new Error('Storeys official homepage no longer matches the verified first-party surface')
-    }
-    if (hasPublicJobsSignal(homepageHtml)) {
-      throw new Error('Storeys homepage now appears to expose public jobs')
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    const homepage = await fetchPage(HOMEPAGE_URL)
+    if (!hasBrokenWordPressJsonSignal(homepage)) {
+      throw new Error('Storeys official homepage no longer matches the verified broken first-party surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasCareersMarketingSignal(careersHtml)) {
-      throw new Error('Storeys careers page no longer matches the verified first-party marketing-only surface')
-    }
-    if (hasPublicJobsSignal(careersHtml)) {
-      throw new Error('Storeys careers page now appears to expose public jobs')
+    const careersPage = await fetchPage(CAREERS_URL)
+    if (!hasBrokenWordPressJsonSignal(careersPage)) {
+      throw new Error('Storeys careers page no longer matches the verified broken first-party surface')
     }
 
-    const bundleUrl = extractBundleUrl(careersHtml, CAREERS_URL) || extractBundleUrl(homepageHtml, HOMEPAGE_URL)
-    if (!bundleUrl) {
-      throw new Error('Storeys careers bundle URL is no longer discoverable from the verified first-party surface')
-    }
-
-    const bundleJs = await fetchText(bundleUrl)
-    if (!hasBundleApplyModalSignal(bundleJs)) {
-      throw new Error('Storeys careers bundle no longer matches the verified apply-modal contract')
-    }
-    if (hasPublicJobsSignal(bundleJs)) {
-      throw new Error('Storeys careers bundle now appears to expose public jobs')
+    const careersApi = await fetchPage(CAREERS_API_URL)
+    if (!hasUnavailableCareersApiSignal(careersApi)) {
+      throw new Error('Storeys careers api no longer matches the verified unavailable first-party surface')
     }
 
     return []
@@ -139,7 +258,7 @@ export const createStoreysRealEstateScraper = () => ({
 export const run = async (options = {}) => createStoreysRealEstateScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

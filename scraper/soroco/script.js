@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import SOROCO_CATALOG from './catalog.js'
 
@@ -16,7 +16,7 @@ export const VERIFIED_ON = SOROCO_CATALOG.verifiedOn
 export const COMPANY_DOMAIN = SOROCO_CATALOG.companyDomain
 export const PROVIDER_METADATA = SOROCO_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
@@ -122,7 +122,7 @@ export const createSorocoScraper = ({ now = () => new Date().toISOString() } = {
 export const run = async (options = {}) => createSorocoScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

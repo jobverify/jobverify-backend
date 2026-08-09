@@ -52,6 +52,34 @@ const missingCareersHtml = `
   </html>
 `
 
+const currentHomepageHtml = `
+  <html>
+    <head>
+      <title>Freelance Web Development in Leeds, West Yorkshire - eclipse360</title>
+    </head>
+    <body>
+      <a href="./">homepage</a>
+      <p>nick@eclipse360</p>
+      <h1>eclipse360</h1>
+      <p>freelance web &amp; media developer based in Leeds</p>
+      <p>eclipse360 are a freelance web design and web development business based in Leeds, West Yorkshire.</p>
+    </body>
+  </html>
+`
+
+const plain404Html = `
+  <html>
+    <head>
+      <title>404 Not Found</title>
+    </head>
+    <body>
+      <h1>404 Not Found</h1>
+      <p>Not Found</p>
+      <p>The requested URL was not found on this server.</p>
+    </body>
+  </html>
+`
+
 const jobsPageHtml = `
   <html>
     <head>
@@ -72,8 +100,10 @@ test('recognizes the verified Eclipse360 official homepage and no-listings pages
   assert.equal(HOMEPAGE_URL, 'https://www.eclipse360.co.uk/')
   assert.deepEqual(CAREERS_CANDIDATE_PATHS, ['/careers', '/jobs', '/vacancies'])
   assert.equal(hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(hasOfficialHomepageSignal('<html><title>Other Company</title></html>'), false)
   assert.equal(pageExposesPublicJobListings(missingCareersHtml), false)
+  assert.equal(pageExposesPublicJobListings(plain404Html), false)
   assert.equal(pageExposesPublicJobListings(jobsPageHtml), true)
 })
 
@@ -90,7 +120,7 @@ test('run returns [] only when the official Eclipse360 site shape is valid and c
           ok: true,
           status: 200,
           url,
-          text: homepageHtml,
+          text: currentHomepageHtml,
         }
       }
 
@@ -98,7 +128,7 @@ test('run returns [] only when the official Eclipse360 site shape is valid and c
         ok: false,
         status: 404,
         url,
-        text: missingCareersHtml,
+        text: plain404Html,
       }
     },
   })

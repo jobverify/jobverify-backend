@@ -1,7 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { CDW_CATALOG } from './catalog.js'
 
@@ -11,6 +13,7 @@ export const PROVIDER_METADATA = CDW_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const SEARCH_URL = PROVIDER_METADATA.companyCareerPage
+export const INDIA_SEARCH_URL = new URL('/search/jobs/in/country/india', SEARCH_URL).toString()
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -48,14 +51,39 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const hasOfficialSearchResultsSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
-  return normalized.includes('Job Search Results')
-    && /Country India \(5 jobs/i.test(normalized)
-    && normalized.includes('Senior Data Engineer-2')
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
+const buildBlockedPublicSurfaceError = (surfaceLabel, error) => {
+  const upstreamError = new Error(
+    `CDW verified ${surfaceLabel} remains blocked after HTTP fallback`,
+    { cause: error },
+  )
+  upstreamError.softFailure = true
+  upstreamError.upstreamOutage = true
+  upstreamError.failureKind = 'network_or_timeout'
+  upstreamError.abortRetries = true
+  return upstreamError
 }
 
-export const extractListingCards = (html = '') =>
+const HAS_JOB_DETAIL_LINK_PATTERN = /href=["'][^"']*(?:\/jobs\/|\/search\/jobs\/)[^"']+/i
+
+export const hasOfficialSearchResultsSignal = (html = '') => {
+  const normalized = normalizeWhitespace(html)
+  const page = String(html ?? '')
+  return normalized.includes('Job Search Results')
+    && /\bIndia\s*\(\d+\s*jobs?\s*\)/i.test(normalized)
+    && Boolean(
+      extractIndiaSearchUrl(page)
+      || (
+        /(jobs-section__item|<article)/i.test(page)
+        && HAS_JOB_DETAIL_LINK_PATTERN.test(page)
+      )
+    )
+}
+
+const extractLegacyListingCards = (html = '') =>
   [...String(html).matchAll(/<article[^>]*>([\s\S]*?)<\/article>/gi)]
     .map((match) => match[1])
     .map((block) => {
@@ -72,7 +100,53 @@ export const extractListingCards = (html = '') =>
         location: lines[2] || null,
       }
     })
-    .filter((job) => job.title && job.detailUrl && /, India$/i.test(job.location || ''))
+
+const extractCurrentListingCards = (html = '') =>
+  [...String(html).matchAll(
+    /<div[^>]*class=["'][^"']*jobs-section__item[^"']*["'][^>]*>[\s\S]*?<h4[^>]*>\s*<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>\s*<\/h4>[\s\S]*?<div[^>]*class=["'][^"']*columns medium-7[^"']*["'][^>]*>([\s\S]*?)<\/div>[\s\S]*?<div[^>]*class=["'][^"']*columns medium-5 text-right[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi,
+  )]
+    .map((match) => ({
+      title: normalizeWhitespace(match[2]),
+      detailUrl: toAbsoluteUrl(match[1]),
+      focusArea: normalizeWhitespace(match[3]) || null,
+      location: normalizeWhitespace(match[4]) || null,
+    }))
+
+export const extractListingCards = (html = '') => {
+  const legacyListings = extractLegacyListingCards(html)
+  const listings = legacyListings.length > 0
+    ? legacyListings
+    : extractCurrentListingCards(html)
+
+  return listings.filter((job) => job.title && job.detailUrl && /, India$/i.test(job.location || ''))
+}
+
+export const extractIndiaSearchUrl = (html = '') => {
+  const href = String(html ?? '').match(
+    /<a[^>]+href=["']([^"']*\/search\/jobs\/in\/country\/india[^"']*)["'][^>]*>/i,
+  )?.[1]
+
+  return href ? toAbsoluteUrl(href) : null
+}
+
+export const hasOfficialIndiaResultsSignal = (html = '') => {
+  const normalized = normalizeWhitespace(html)
+  const page = String(html ?? '')
+
+  return (
+    (normalized.includes('India Careers') || normalized.includes('Job Search Results'))
+    && /\bCountry\s+India\s*\(\d+\s*jobs?\s*\)/i.test(normalized)
+    && /(jobs-section__item|<article)/i.test(page)
+    && HAS_JOB_DETAIL_LINK_PATTERN.test(page)
+  )
+}
+
+const resolveIndiaSearchUrl = (searchHtml = '') => {
+  const explicitIndiaUrl = extractIndiaSearchUrl(searchHtml)
+  if (explicitIndiaUrl) return explicitIndiaUrl
+  if (extractListingCards(searchHtml).length > 0) return SEARCH_URL
+  return INDIA_SEARCH_URL
+}
 
 const extractField = (html = '', label = '') => {
   const normalized = normalizeWhitespace(html)
@@ -100,54 +174,110 @@ const extractDetail = (html = '') => ({
 export const createCdwScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const searchHtml = await fetchText(SEARCH_URL)
-    if (!hasOfficialSearchResultsSignal(searchHtml)) {
-      throw new Error('CDW search results page no longer matches the verified first-party surface')
+  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    const listings = extractListingCards(searchHtml)
-    if (listings.length === 0) {
-      throw new Error('CDW search results no longer expose trusted India listings')
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchPageText = async (url, surfaceLabel) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        try {
+          return await browserTextFetcher(url)
+        } catch (browserError) {
+          if (isBrowserFallbackError(browserError)) {
+            throw buildBlockedPublicSurfaceError(surfaceLabel, browserError)
+          }
+          throw browserError
+        }
+      }
     }
 
-    const jobs = []
-    for (const listing of listings) {
-      const detailHtml = await fetchText(listing.detailUrl)
-      const detail = extractDetail(detailHtml)
-      if (!/, India$/i.test(detail.location)) continue
+    try {
+      const searchHtml = await fetchPageText(SEARCH_URL, 'search results page')
+      if (!hasOfficialSearchResultsSignal(searchHtml)) {
+        throw new Error('CDW search results page no longer matches the verified first-party surface')
+      }
 
-      jobs.push({
-        title: detail.title || listing.title,
-        company: COMPANY,
-        location: detail.location,
-        city: detail.location.split(',')[0].trim(),
-        country: 'India',
-        team: detail.team || null,
-        department: detail.focusArea || listing.focusArea || null,
-        focusArea: detail.focusArea || listing.focusArea || null,
-        remoteType: detail.remoteType || null,
-        employmentType: null,
-        jobId: detail.jobId || toSlug(detail.title || listing.title),
-        requisitionId: detail.jobId || toSlug(detail.title || listing.title),
-        datePosted: detail.datePosted || null,
-        sourceUrl: listing.detailUrl,
-        applyUrl: listing.detailUrl,
-        link: listing.detailUrl,
-        jobDescription: detail.jobDescription || null,
-        source: SOURCE,
-        scrapedAt: now(),
-      })
+      const indiaSearchUrl = resolveIndiaSearchUrl(searchHtml)
+      const indiaSearchHtml = indiaSearchUrl === SEARCH_URL
+        ? searchHtml
+        : await fetchPageText(indiaSearchUrl, 'India search results page')
+
+      if (!hasOfficialIndiaResultsSignal(indiaSearchHtml)) {
+        throw new Error('CDW India results page no longer matches the verified first-party jobs surface')
+      }
+
+      const listings = extractListingCards(indiaSearchHtml)
+      if (listings.length === 0) {
+        throw new Error('CDW search results no longer expose trusted India listings')
+      }
+
+      const jobs = []
+      for (const listing of listings) {
+        const detailHtml = await fetchPageText(
+          listing.detailUrl,
+          `job detail page for ${listing.title || listing.detailUrl}`,
+        )
+        const detail = extractDetail(detailHtml)
+        const location = detail.location || listing.location
+        if (!/, India$/i.test(location || '')) continue
+        const title = detail.title || listing.title
+        const city = normalizeCity(location.split(',')[0]?.trim() || location)
+        const jobId = detail.jobId || toSlug(title)
+
+        jobs.push({
+          title,
+          company: COMPANY,
+          location,
+          city,
+          country: 'India',
+          team: detail.team || null,
+          department: detail.focusArea || listing.focusArea || null,
+          focusArea: detail.focusArea || listing.focusArea || null,
+          remoteType: detail.remoteType || null,
+          employmentType: null,
+          jobId,
+          requisitionId: jobId,
+          datePosted: detail.datePosted || null,
+          sourceUrl: listing.detailUrl,
+          applyUrl: listing.detailUrl,
+          link: listing.detailUrl,
+          jobDescription: detail.jobDescription || null,
+          source: SOURCE,
+          scrapedAt: now(),
+        })
+      }
+
+      return jobs.sort((left, right) => left.title.localeCompare(right.title))
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
     }
-
-    return jobs.sort((left, right) => left.title.localeCompare(right.title))
   },
 })
 
 export const run = async (options = {}) => createCdwScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

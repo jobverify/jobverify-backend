@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import THREE_PILLAR_GLOBAL_CATALOG from './catalog.js'
 
@@ -17,7 +17,7 @@ export const VERIFIED_ON = THREE_PILLAR_GLOBAL_CATALOG.verifiedOn
 export const COMPANY_DOMAIN = THREE_PILLAR_GLOBAL_CATALOG.companyDomain
 export const PROVIDER_METADATA = THREE_PILLAR_GLOBAL_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
@@ -144,7 +144,7 @@ export const createThreePillarGlobalScraper = ({
 export const run = async (options = {}) => createThreePillarGlobalScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

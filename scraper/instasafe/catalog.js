@@ -22,10 +22,10 @@ export const INSTASAFE_CATALOG = {
   normalizationProfile: 'engineering-default',
   companyDomain: 'instasafe.com',
   dryRunFile: 'instasafe/jobs.json',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-02',
   verifiedPublicPostingCount: 14,
   verifiedSurfaceSummary:
-    'Verified on July 16, 2026 that https://instasafe.com/careers/ is the live first-party InstaSafe careers page, that the page embeds the public Zoho Recruit portal at https://instasafe.zohorecruit.com/jobs/Careers/, and that the public jobs API at https://instasafe.zohorecruit.com/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite currently returns 14 public postings.',
+    'Verified on August 2, 2026 that https://instasafe.com/careers/ is the live first-party InstaSafe careers page, that the page embeds the public Zoho Recruit portal at https://instasafe.zohorecruit.com/jobs/Careers/, and that the public jobs API at https://instasafe.zohorecruit.com/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite currently returns 14 public postings, of which 12 are explicitly tagged to India while 2 remote listings omit country metadata.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

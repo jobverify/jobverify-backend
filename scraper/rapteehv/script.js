@@ -1,8 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { createBrowserNetworkFallback } from '../../scraper-support/shared/browserNetworkFallback.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -11,8 +12,10 @@ export const SOURCE = 'rapteehv'
 export const COMPANY = 'RAPTEE HV'
 export const CAREERS_URL = 'https://www.rapteehv.com/careers'
 export const EXTERNAL_HANDOFF_URL = 'https://raptee.keka.com/careers/'
+export const EXPECTED_IDENTIFIER = '3d03878f-6bf4-4fe3-9090-2989304de3b4'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -44,7 +47,7 @@ const parseQuotedConfigValue = (block, key) => {
 export const hasOfficialCareersSignal = (html) => {
   const rawHtml = String(html ?? '')
 
-  return /<title>Raptee\.HV - India's First Motorcycle with Electric Car DNA \| HV-TEC<\/title>/i.test(rawHtml)
+  return /<title>(?:Raptee\.HV - India's First Motorcycle with Electric Car DNA \| HV-TEC|Careers at Raptee\.HV \| Join India's High-Voltage EV Startup)<\/title>/i.test(rawHtml)
     && /"name":\s*"Careers",\s*"url":\s*"https:\/\/www\.rapteehv\.com\/careers"/i.test(rawHtml)
     && /https:\/\/raptee\.keka\.com\/careers\/api\/embedjobs\/js\/3d03878f-6bf4-4fe3-9090-2989304de3b4/i.test(rawHtml)
 }
@@ -174,6 +177,7 @@ const mapJob = (job, { domain } = {}) => {
     postingDate: normalizePostingDate(job.publishedOn),
     closingDate: null,
     jobDescription: normalizeWhitespace(job.description),
+    publicExperienceChecked: true,
   }
 }
 
@@ -206,52 +210,98 @@ export const createRapteeHvScraper = ({
   async run({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
+    fetchBrowserText,
+    fetchBrowserJson,
     now = () => new Date().toISOString(),
   } = {}) {
-    const officialCareersHtml = await fetchText(CAREERS_URL)
+    const browserFallback = createBrowserNetworkFallback({
+      fetchText,
+      fetchJson,
+      fetchBrowserText,
+      fetchBrowserJson,
+      userAgent: USER_AGENT,
+      browserSessionOptions: {
+        timeoutMs: 90000,
+        settleTimeMs: 12000,
+        ignoreHTTPSErrors: true,
+      },
+    })
 
-    if (!hasOfficialCareersSignal(officialCareersHtml) || extractExternalHandoffUrl(officialCareersHtml) !== EXTERNAL_HANDOFF_URL) {
-      throw new Error('RAPTEE HV verified first-party careers handoff changed materially')
+    try {
+      const loadVerifiedText = async (url, verifier) => {
+        let pageHtml
+        try {
+          pageHtml = await fetchText(url)
+        } catch {
+          pageHtml = await browserFallback.fetchTextInBrowser(url)
+        }
+
+        if (!verifier(pageHtml)) {
+          pageHtml = await browserFallback.fetchTextInBrowser(url)
+        }
+
+        return pageHtml
+      }
+
+      const officialCareersHtml = await loadVerifiedText(
+        CAREERS_URL,
+        (html) => hasOfficialCareersSignal(html) && extractExternalHandoffUrl(html) === EXTERNAL_HANDOFF_URL,
+      )
+
+      if (!hasOfficialCareersSignal(officialCareersHtml) || extractExternalHandoffUrl(officialCareersHtml) !== EXTERNAL_HANDOFF_URL) {
+        throw new Error('RAPTEE HV verified first-party careers handoff changed materially')
+      }
+
+      const kekaEntryHtml = await loadVerifiedText(
+        EXTERNAL_HANDOFF_URL,
+        (html) => Boolean(extractCareerConfig(html) || extractPortalDocumentUrl(html)),
+      )
+      let kekaCareersHtml = kekaEntryHtml
+      let careerConfig = extractCareerConfig(kekaCareersHtml)
+
+      if (!careerConfig) {
+        const portalDocumentUrl = extractPortalDocumentUrl(kekaEntryHtml)
+        if (!portalDocumentUrl) {
+          throw new Error('Unable to resolve RAPTEE HV portal document URL')
+        }
+
+        kekaCareersHtml = await loadVerifiedText(portalDocumentUrl, (html) => Boolean(extractCareerConfig(html)))
+        careerConfig = extractCareerConfig(kekaCareersHtml)
+      }
+
+      if (
+        !careerConfig
+        || careerConfig.identifier !== EXPECTED_IDENTIFIER
+        || careerConfig.domain !== EXTERNAL_HANDOFF_URL
+      ) {
+        throw new Error('Unable to resolve RAPTEE HV Keka embed configuration')
+      }
+
+      const activeJobsUrl = buildActiveJobsUrl(careerConfig)
+      if (!activeJobsUrl) {
+        throw new Error('Unable to build RAPTEE HV active jobs URL')
+      }
+
+      const jobs = extractSearchResults(await browserFallback.fetchJson(activeJobsUrl), careerConfig)
+      const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+      const scrapedAt = now()
+
+      return selectedJobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt,
+      }))
+    } finally {
+      await browserFallback.close()
     }
-
-    const kekaWrapperHtml = await fetchText(EXTERNAL_HANDOFF_URL)
-    const portalDocumentUrl = extractPortalDocumentUrl(kekaWrapperHtml)
-    if (!portalDocumentUrl) {
-      throw new Error('Unable to resolve RAPTEE HV portal document URL')
-    }
-
-    const kekaCareersHtml = await fetchText(portalDocumentUrl)
-    if (!hasKekaCareersSignal(kekaCareersHtml)) {
-      throw new Error('RAPTEE HV verified Keka careers surface changed materially')
-    }
-
-    const careerConfig = extractCareerConfig(kekaCareersHtml)
-    if (!careerConfig) {
-      throw new Error('Unable to resolve RAPTEE HV Keka embed configuration')
-    }
-
-    const activeJobsUrl = buildActiveJobsUrl(careerConfig)
-    if (!activeJobsUrl) {
-      throw new Error('Unable to build RAPTEE HV active jobs URL')
-    }
-
-    const jobs = extractSearchResults(await fetchJson(activeJobsUrl), careerConfig)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-    const scrapedAt = now()
-
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt,
-    }))
   },
 })
 
 export const run = async (options = {}) => createRapteeHvScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

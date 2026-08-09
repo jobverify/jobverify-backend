@@ -10,7 +10,7 @@ const loadModule = async () => {
   }
 }
 
-const readFixture = (name) => readFileSync(new URL(`../tests/fixtures/${name}`, import.meta.url), 'utf8')
+const readFixture = (name) => readFileSync(new URL(`../../scraper-support/tests/fixtures/${name}`, import.meta.url), 'utf8')
 
 const indiaSearchPage1Html = readFixture('vantive-india-search.html')
 const indiaSearchPage2Html = readFixture('vantive-india-search-page-2.html')

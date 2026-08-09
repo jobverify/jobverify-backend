@@ -1,8 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
 import test from 'node:test'
-import { fileURLToPath } from 'node:url'
 
 import {
   CAREERS_API_URL,
@@ -11,45 +8,63 @@ import {
   HOMEPAGE_URL,
   SOURCE,
   createStoreysRealEstateScraper,
-  extractBundleUrl,
-  hasBundleApplyModalSignal,
-  hasCareersMarketingSignal,
-  hasHomepageSignal,
+  hasBrokenWordPressJsonSignal,
   hasPublicJobsSignal,
+  hasRecoverableCertificateError,
+  hasTimeoutError,
+  hasUnavailableCareersApiSignal,
 } from './script.js'
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const readFixture = (name) => readFileSync(path.join(currentDir, 'fixtures', name), 'utf8')
+const brokenWordPressJson = (url) => ({
+  status: 500,
+  url,
+  contentType: 'application/json; charset=UTF-8',
+  html: JSON.stringify({
+    code: 'internal_server_error',
+    message: '<p>There has been a critical error on this website.</p><p><a href="https://wordpress.org/documentation/article/faq-troubleshooting/">Learn more about troubleshooting WordPress.</a></p>',
+    data: {
+      status: 500,
+      error: {
+        type: 1,
+      },
+    },
+  }),
+  errorMessage: '',
+})
 
-const homepageHtml = readFixture('homepage.html')
-const careersHtml = readFixture('careers.html')
-const bundleJs = readFixture('bundle.js')
-const bundleUrl = 'https://www.storeys.ae/assets/index-y7euq6Rn.js'
+const unavailableApiPage = {
+  status: 'TIMEOUT',
+  url: CAREERS_API_URL,
+  contentType: '',
+  html: '',
+  errorMessage: `timeout for ${CAREERS_API_URL}`,
+}
 
-test('Storeys Real Estate sentinel pins the verified first-party careers marketing page and apply-modal bundle contract', () => {
+test('Storeys Real Estate sentinel pins the verified broken first-party WordPress JSON surface and unavailable API contract', () => {
   assert.equal(SOURCE, 'storeysrealestate')
   assert.equal(COMPANY, 'Storeys Real Estate')
   assert.equal(HOMEPAGE_URL, 'https://www.storeys.ae/')
   assert.equal(CAREERS_URL, 'https://www.storeys.ae/careers')
   assert.equal(CAREERS_API_URL, 'https://api.storeys.ae/api/v1/careers')
-  assert.equal(hasHomepageSignal(homepageHtml), true)
-  assert.equal(hasCareersMarketingSignal(careersHtml), true)
-  assert.equal(extractBundleUrl(homepageHtml, HOMEPAGE_URL), 'https://www.storeys.ae/assets/index-y7euq6Rn.js')
-  assert.equal(extractBundleUrl(careersHtml, CAREERS_URL), 'https://www.storeys.ae/assets/index-y7euq6Rn.js')
-  assert.equal(hasBundleApplyModalSignal(bundleJs), true)
-  assert.equal(hasPublicJobsSignal(homepageHtml), false)
-  assert.equal(hasPublicJobsSignal(careersHtml), false)
-  assert.equal(hasPublicJobsSignal(bundleJs), false)
+
+  assert.equal(hasBrokenWordPressJsonSignal(brokenWordPressJson(HOMEPAGE_URL)), true)
+  assert.equal(hasBrokenWordPressJsonSignal(brokenWordPressJson(CAREERS_URL)), true)
+  assert.equal(hasUnavailableCareersApiSignal(unavailableApiPage), true)
+
+  assert.equal(hasRecoverableCertificateError('fetch failed: certificate has expired'), true)
+  assert.equal(hasTimeoutError(`timeout for ${CAREERS_API_URL}`), true)
+  assert.equal(hasPublicJobsSignal('{"jobs":[{"title":"Senior Agent"}]}'), false)
 })
 
-test('Storeys Real Estate sentinel returns no jobs while the official surface stays marketing-only with an apply modal', async () => {
+test('Storeys Real Estate sentinel returns no jobs while the official surface stays broken and the careers API remains unavailable', async () => {
   const requestedUrls = []
+
   const jobs = await createStoreysRealEstateScraper().run({
-    fetchText: async (url) => {
+    fetchPage: async (url) => {
       requestedUrls.push(url)
-      if (url === HOMEPAGE_URL) return homepageHtml
-      if (url === CAREERS_URL) return careersHtml
-      if (url === 'https://www.storeys.ae/assets/index-y7euq6Rn.js') return bundleJs
+      if (url === HOMEPAGE_URL) return brokenWordPressJson(HOMEPAGE_URL)
+      if (url === CAREERS_URL) return brokenWordPressJson(CAREERS_URL)
+      if (url === CAREERS_API_URL) return unavailableApiPage
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
@@ -57,7 +72,7 @@ test('Storeys Real Estate sentinel returns no jobs while the official surface st
   assert.deepEqual(requestedUrls, [
     HOMEPAGE_URL,
     CAREERS_URL,
-    'https://www.storeys.ae/assets/index-y7euq6Rn.js',
+    CAREERS_API_URL,
   ])
   assert.deepEqual(jobs, [])
 })
@@ -69,9 +84,27 @@ test('Storeys Real Estate default fetch attaches a bounded abort signal to every
   globalThis.fetch = async (url, options = {}) => {
     requests.push({ url: String(url), options })
 
-    if (url === HOMEPAGE_URL) return { ok: true, text: async () => homepageHtml }
-    if (url === CAREERS_URL) return { ok: true, text: async () => careersHtml }
-    if (url === bundleUrl) return { ok: true, text: async () => bundleJs }
+    if (url === HOMEPAGE_URL) {
+      return {
+        status: 500,
+        url: HOMEPAGE_URL,
+        headers: { get: () => 'application/json; charset=UTF-8' },
+        text: async () => brokenWordPressJson(HOMEPAGE_URL).html,
+      }
+    }
+
+    if (url === CAREERS_URL) {
+      return {
+        status: 500,
+        url: CAREERS_URL,
+        headers: { get: () => 'application/json; charset=UTF-8' },
+        text: async () => brokenWordPressJson(CAREERS_URL).html,
+      }
+    }
+
+    if (url === CAREERS_API_URL) {
+      throw new Error(`timeout for ${CAREERS_API_URL}`)
+    }
 
     throw new Error(`Unexpected URL: ${url}`)
   }
@@ -83,7 +116,7 @@ test('Storeys Real Estate default fetch attaches a bounded abort signal to every
     assert.deepEqual(requests.map((request) => request.url), [
       HOMEPAGE_URL,
       CAREERS_URL,
-      bundleUrl,
+      CAREERS_API_URL,
     ])
     assert.ok(
       requests.every((request) => request.options.signal && typeof request.options.signal.aborted === 'boolean'),
@@ -94,11 +127,19 @@ test('Storeys Real Estate default fetch attaches a bounded abort signal to every
   }
 })
 
-test('Storeys Real Estate sentinel fails closed when the verified first-party marketing surface drifts into a public jobs board', async () => {
+test('Storeys Real Estate sentinel fails closed when the verified broken first-party surface changes or the API starts responding', async () => {
   await assert.rejects(
     createStoreysRealEstateScraper().run({
-      fetchText: async (url) => {
-        if (url === HOMEPAGE_URL) return '<html><body><h1>Unexpected</h1></body></html>'
+      fetchPage: async (url) => {
+        if (url === HOMEPAGE_URL) {
+          return {
+            status: 200,
+            url: HOMEPAGE_URL,
+            contentType: 'text/html; charset=UTF-8',
+            html: '<html><body><h1>Storeys careers recovered</h1></body></html>',
+            errorMessage: '',
+          }
+        }
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
@@ -107,34 +148,48 @@ test('Storeys Real Estate sentinel fails closed when the verified first-party ma
 
   await assert.rejects(
     createStoreysRealEstateScraper().run({
-      fetchText: async (url) => {
-        if (url === HOMEPAGE_URL) return homepageHtml
+      fetchPage: async (url) => {
+        if (url === HOMEPAGE_URL) return brokenWordPressJson(HOMEPAGE_URL)
         if (url === CAREERS_URL) {
-          return careersHtml.replace(
-            '</main>',
-            '<section><h2>Current Openings</h2><a href=\"/careers/software-engineer\">View openings</a></section></main>',
-          )
+          return {
+            status: 500,
+            url: CAREERS_URL,
+            contentType: 'application/json; charset=UTF-8',
+            html: JSON.stringify({
+              code: 'internal_server_error',
+              message: '<p>Current Openings</p><p><a href="/careers/sales-agent">View openings</a></p>',
+              data: { status: 500 },
+            }),
+            errorMessage: '',
+          }
         }
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /careers page now appears to expose public jobs/i,
+    /careers page/i,
   )
 
   await assert.rejects(
     createStoreysRealEstateScraper().run({
-      fetchText: async (url) => {
-        if (url === HOMEPAGE_URL) return homepageHtml
-        if (url === CAREERS_URL) return careersHtml
-        if (url === 'https://www.storeys.ae/assets/index-y7euq6Rn.js') {
-          return bundleJs.replace(
-            'const applyEndpoint="https://api.storeys.ae/api/v1/careers";',
-            '',
-          )
+      fetchPage: async (url) => {
+        if (url === HOMEPAGE_URL) return brokenWordPressJson(HOMEPAGE_URL)
+        if (url === CAREERS_URL) return brokenWordPressJson(CAREERS_URL)
+        if (url === CAREERS_API_URL) {
+          return {
+            status: 200,
+            url: CAREERS_API_URL,
+            contentType: 'application/json; charset=UTF-8',
+            html: JSON.stringify({
+              jobs: [
+                { title: 'Sales Agent', id: 42 },
+              ],
+            }),
+            errorMessage: '',
+          }
         }
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /apply-modal contract/i,
+    /careers api/i,
   )
 })

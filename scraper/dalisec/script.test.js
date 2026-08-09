@@ -86,14 +86,29 @@ const verifiedBundleJs = `
 `
 
 const publicJobsBundleJs = `${verifiedBundleJs}\ncomponent---src-pages-careers-tsx\nCurrent Openings\njobs.lever.co/dalisec`
+const cloudflare526Text = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>dalisec.com | 526: Invalid SSL certificate</title>
+  </head>
+  <body>
+    <main>
+      <h1>Invalid SSL certificate</h1>
+      <p>Error code 526</p>
+    </main>
+  </body>
+</html>
+`
 
-test('Dalisec sentinel recognizes the verified Gatsby homepage shell, placeholder sitemap, marketing bundle, and missing careers routes', async () => {
+test('Dalisec sentinel recognizes the historical Gatsby shell helpers and the current untrustworthy Cloudflare 526 edge page', async () => {
   const dalisec = await loadDalisecModule()
 
   assert.equal(dalisec.SOURCE, 'dalisec')
   assert.equal(dalisec.COMPANY, 'Dalisec')
   assert.equal(dalisec.HOMEPAGE_URL, 'https://dalisec.com/')
   assert.equal(dalisec.SITEMAP_URL, 'https://dalisec.com/sitemap-index.xml')
+  assert.equal(dalisec.UNTRUSTWORTHY_EDGE_ERROR_STATUS_CODE, 526)
   assert.deepEqual(dalisec.NO_PUBLIC_CAREERS_ROUTE_URLS, [
     'https://dalisec.com/careers',
     'https://dalisec.com/career',
@@ -115,6 +130,14 @@ test('Dalisec sentinel recognizes the verified Gatsby homepage shell, placeholde
   assert.equal(dalisec.isVerifiedPlaceholderSitemap(placeholderSitemapXml), true)
   assert.equal(dalisec.hasVerifiedBundleSignal(verifiedBundleJs), true)
   assert.equal(dalisec.hasBundleJobsSignal(verifiedBundleJs), false)
+  assert.equal(
+    dalisec.isVerifiedCloudflareEdgeErrorPage({
+      status: 526,
+      url: dalisec.HOMEPAGE_URL,
+      html: cloudflare526Text,
+    }),
+    true,
+  )
   assert.equal(
     dalisec.isVerifiedMissingCareersRoute(
       { status: 404, url: 'https://dalisec.com/careers', html: missingCareersRouteHtml },
@@ -167,7 +190,25 @@ test('Dalisec sentinel returns no jobs while the verified first-party no-public-
   assert.deepEqual(jobs, [])
 })
 
-test('Dalisec sentinel fails closed when the homepage, sitemap, bundle, or checked route drifts', async () => {
+test('Dalisec sentinel returns [] when the current public surface is the verified untrustworthy Cloudflare 526 edge error', async () => {
+  const dalisec = await loadDalisecModule()
+  const requestedPages = []
+
+  const jobs = await dalisec.createDalisecScraper().run({
+    fetchPage: async (url) => {
+      requestedPages.push(url)
+      return { status: 526, url, html: cloudflare526Text }
+    },
+    fetchText: async () => {
+      assert.fail('Did not expect the app bundle to be fetched after a Cloudflare 526 edge error')
+    },
+  })
+
+  assert.deepEqual(requestedPages, [dalisec.HOMEPAGE_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('Dalisec sentinel fails closed when the historical homepage, sitemap, bundle, or checked route drifts', async () => {
   const dalisec = await loadDalisecModule()
 
   await assert.rejects(

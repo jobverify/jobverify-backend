@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -38,19 +38,20 @@ export const hasBrokenOfficialSurfaceError = (error) =>
   errorMessageChain(error)
     .some((message) => /timed out|timeout|etimedout|connect timeout|und_err_connect_timeout|connecttimeouterror/i.test(message))
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
+  ...options,
 })
 
 export const createBimaKaroScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
     try {
-      await fetchText(HOMEPAGE_URL)
+      await fetchText(HOMEPAGE_URL, { attempts: 1 })
       throw new Error('BimaKaro official host no longer matches the verified broken public surface')
     } catch (error) {
       if (!hasBrokenOfficialSurfaceError(error)) {
@@ -59,7 +60,7 @@ export const createBimaKaroScraper = () => ({
     }
 
     try {
-      await fetchText(CAREERS_URL)
+      await fetchText(CAREERS_URL, { attempts: 1 })
       throw new Error('BimaKaro careers route no longer matches the verified broken public surface')
     } catch (error) {
       if (!hasBrokenOfficialSurfaceError(error)) {
@@ -74,7 +75,7 @@ export const createBimaKaroScraper = () => ({
 export const run = async (options = {}) => createBimaKaroScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

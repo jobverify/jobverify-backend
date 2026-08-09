@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -135,7 +135,21 @@ export const extractCompanyPageData = (html) => {
     return queryKey[0] === 'companyPageData' && queryKey[1] === 'pantheon-digital-96-46NMdJSa'
   })
 
-  return target?.state?.data ?? null
+  const payload = target?.state?.data ?? null
+
+  if (payload?.data?.pageData) {
+    return payload.data.pageData
+  }
+
+  if (payload?.pageData) {
+    return payload.pageData
+  }
+
+  if (payload?.data && (payload.data.companyDetails || payload.data.companyJobs)) {
+    return payload.data
+  }
+
+  return payload
 }
 
 const hasVerifiedMissingRouteError = (error, url) =>
@@ -197,6 +211,8 @@ const normalizeJob = (job, scrapedAt) => {
 
 const validateOfficialCutshortContext = (data) => {
   const companyDetails = data?.companyDetails
+    || data?.company
+    || data?.companyJobs?.jobs?.[0]?.companyDetails
   const website = normalizeUrl(companyDetails?.links?.website)
   const linkedin = normalizeUrl(companyDetails?.links?.linkedin)
   const alias = normalizeWhitespace(companyDetails?.alias)
@@ -264,7 +280,7 @@ export const createPantheonDigitalScraper = () => ({
 export const run = async (options = {}) => createPantheonDigitalScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

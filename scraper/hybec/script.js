@@ -56,10 +56,10 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return /<title[^>]*>\s*hybec\.co\.in\s*<\/title>/i.test(rawHtml)
     && /\bHybec\b/i.test(normalized)
+    && /\bLaunching Soon\b/i.test(normalized)
     && /\bContact Us\b/i.test(normalized)
     && /Copyright\s+[©&#a-z0-9;\s]+2025\s+Hybec\s*-\s*All Rights Reserved\./i.test(normalized)
     && /GoDaddy/i.test(rawHtml)
-    && /Website Builder/i.test(normalized)
 }
 
 export const hasFirstPartyCareerLikeLink = (html) =>
@@ -91,7 +91,7 @@ export const createHybecScraper = () => ({
 export const run = async (options = {}) => createHybecScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

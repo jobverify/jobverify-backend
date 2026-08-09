@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { COGNUS_TECHNOLOGY_CATALOG } from './catalog.js'
 
@@ -15,6 +15,9 @@ export const CAREERS_URL = COGNUS_TECHNOLOGY_CATALOG.companyCareerPage
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const INPUT_TAG_PATTERN = /<input\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi
+const ATTRIBUTE_PATTERN = /([a-zA-Z_:][-a-zA-Z0-9_:.]*)=(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&quot;/gi, '"')
@@ -53,9 +56,22 @@ const toAbsoluteUrl = (value) => {
   }
 }
 
-const extractHiddenInputValue = (html, id) =>
-  String(html ?? '').match(new RegExp(`<input[^>]+id=["']${id}["'][^>]+value=["']([\\s\\S]*?)["']`, 'i'))?.[1]
-  ?? null
+const extractHiddenInputValue = (html, id) => {
+  for (const tag of String(html ?? '').match(INPUT_TAG_PATTERN) ?? []) {
+    const attributes = {}
+
+    for (const match of tag.matchAll(ATTRIBUTE_PATTERN)) {
+      const [, key, doubleQuoted, singleQuoted, bareValue] = match
+      attributes[key.toLowerCase()] = doubleQuoted ?? singleQuoted ?? bareValue ?? ''
+    }
+
+    if (attributes.id?.toLowerCase() === String(id).toLowerCase()) {
+      return attributes.value ?? null
+    }
+  }
+
+  return null
+}
 
 export const extractHiddenInputJson = (html, id) => {
   const rawValue = extractHiddenInputValue(html, id)
@@ -74,7 +90,14 @@ const buildFieldApiMap = (moduleMeta = []) => {
     ? moduleMeta.find((module) => module?.api_name === 'Job_Openings')
     : null
 
-  for (const field of jobModule?.fields ?? []) {
+  const fieldEntries = [
+    ...(jobModule?.fields ?? []),
+    ...((jobModule?.layouts ?? []).flatMap((layout) =>
+      (layout?.sections ?? []).flatMap((section) => section?.fields ?? []),
+    )),
+  ]
+
+  for (const field of fieldEntries) {
     if (!field?.id || !field?.api_name) continue
     map.set(String(field.id), field.api_name)
   }
@@ -253,7 +276,7 @@ export const createCognusTechnologyScraper = ({ now = () => new Date().toISOStri
 export const run = async (options = {}) => createCognusTechnologyScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

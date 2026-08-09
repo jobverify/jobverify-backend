@@ -1,23 +1,23 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import companyAliases from '../../scraper-support/providers/companyAliases.json' with { type: 'json' }
+import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
+import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
-test('Rappit is registered as a verified first-party empty-vacancies sentinel with Vanenburg legacy alias coverage', () => {
+test('Rappit is registered as a verified first-party vacancies scraper with Vanenburg legacy alias coverage', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'rappit')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Rappit')
   assert.equal(provider.companyCareerPage, 'https://rappit.io/vacancies/')
-  assert.equal(provider.atsPlatform, 'official-company-careers-empty-board')
+  assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'Global')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-about-careers-and-vacancies-validation')
+  assert.equal(provider.paginationStrategy, 'single-current-vacancies-page-plus-first-party-detail-pages')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-rebrand-about-page+verified-careers-page+verified-empty-vacancies-page',
+    'verified-homepage+verified-rebrand-about-page+verified-careers-page+first-party-vacancy-links+first-party-detail-pages',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

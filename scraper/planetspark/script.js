@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -70,12 +70,18 @@ const deriveCity = (value) => {
 }
 
 const findMetadataValue = (lines, prefix) => {
-  const line = lines.find((entry) => new RegExp(`^${prefix}\\b`, 'i').test(entry))
-  return normalizeWhitespace(line?.replace(new RegExp(`^${prefix}\\b`, 'i'), ''))
+  const pattern = new RegExp(`^${prefix}\\b`, 'i')
+  const index = lines.findIndex((entry) => pattern.test(entry))
+  if (index < 0) return null
+
+  const inlineValue = normalizeWhitespace(lines[index]?.replace(pattern, ''))
+  if (inlineValue) return inlineValue
+
+  return normalizeWhitespace(lines[index + 1] || null)
 }
 
 const getVerifiedRolesSection = (html) => String(html ?? '').match(
-  /We(?:'|&#39;|&rsquo;)?re[\s\S]*?hiring[\s\S]*?for these[\s\S]*?roles([\s\S]*?)For job application related queries/i,
+  /We(?:'|’|&#39;|&rsquo;|&#x2019;)?re[\s\S]*?hiring[\s\S]*?for these[\s\S]*?roles([\s\S]*?)For job application related queries/i,
 )?.[1] || null
 
 export const hasOfficialCareersSignal = (html) => {
@@ -170,7 +176,7 @@ export const createPlanetSparkScraper = () => ({
 export const run = async (options = {}) => createPlanetSparkScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

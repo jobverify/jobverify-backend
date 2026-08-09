@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -27,12 +27,21 @@ const hasEclipse360BrandSignal = (html) => /\bEclipse360\b/i.test(String(html ??
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
-  return hasEclipse360BrandSignal(page)
+  const normalized = normalizeWhitespace(page)
+  const hasLegacySurface =
+    hasEclipse360BrandSignal(page)
     && (
       /microsoft dynamics 365 crm specialists/i.test(page)
       || /customer engagement and business process improvements/i.test(page)
       || /dynamics 365 solutions/i.test(page)
     )
+  const hasCurrentSurface =
+    /<title>\s*Freelance Web Development in Leeds, West Yorkshire\s*-\s*eclipse360\s*<\/title>/i.test(page)
+    && /freelance web [&&] media developer based in leeds/i.test(normalized)
+    && /freelance web design and web development business based in leeds, west yorkshire/i.test(normalized)
+    && /nick@eclipse360/i.test(normalized)
+
+  return hasLegacySurface || hasCurrentSurface
 }
 
 export const pageExposesPublicJobListings = (html) => {
@@ -98,6 +107,10 @@ export const createEclipse360Scraper = () => ({
         throw new Error(`Eclipse360 now appears to expose public job listings at ${candidateUrl}`)
       }
 
+      if (page.status === 404) {
+        continue
+      }
+
       if (!pageLooksLikeOfficialNoJobsSurface(page.text)) {
         throw new Error(`Eclipse360 careers surface at ${candidateUrl} no longer matches the verified no-listings state`)
       }
@@ -110,7 +123,7 @@ export const createEclipse360Scraper = () => ({
 export const run = async () => createEclipse360Scraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

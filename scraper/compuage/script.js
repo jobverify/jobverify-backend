@@ -1,14 +1,14 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'compuage'
 export const COMPANY = 'Compuage Infocom Ltd'
-export const CAREERS_URL = 'https://www.compuageindia.com/careers'
+export const CAREERS_URL = 'http://www.compuageindia.com/careers'
 export const APPLICATION_EMAIL = 'careers@compuageindia.com'
 
 const USER_AGENT =
@@ -258,7 +258,7 @@ export const createCompuageScraper = () => ({
 export const run = async (options = {}) => createCompuageScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

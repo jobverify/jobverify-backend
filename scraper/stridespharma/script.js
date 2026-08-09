@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { STRIDES_PHARMA_CATALOG } from './catalog.js'
 
@@ -22,7 +22,7 @@ export const DETAIL_KEY = PROVIDER_METADATA.detailKey
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -96,7 +96,8 @@ export const hasOfficialCareersPageSignal = (html = '') => {
 
   return /<title>\s*Careers\s*\|\s*Join the Strides Team\s*<\/title>/i.test(page)
     && normalized?.includes('Join Us and Grow with Strides')
-    && /<a[^>]+href=["']https:\/\/portal\.arcolab\.com\/careerportal\/["'][^>]*>\s*View current openings\s*<\/a>/i.test(page)
+    && /href=["']https:\/\/portal\.arcolab\.com\/careerportal\/["']/i.test(page)
+    && normalized?.includes('View current openings')
 }
 
 export const hasOfficialPortalSignal = (html = '') => {
@@ -106,8 +107,8 @@ export const hasOfficialPortalSignal = (html = '') => {
   return (
     /<title>\s*Career Portal\s*<\/title>/i.test(page)
     && normalized?.includes('Build your future with Us')
-    && normalized?.includes('Welcome to the Careers Centre for strides.')
-    && /Strides Pharma Science Limited\s*\(Formerly Strides Shasun Limited\)/i.test(page)
+    && /Welcome to the Careers Centre for strides\s*\./i.test(normalized || '')
+    && /Strides Pharma Science Limited\b/i.test(page)
     && /company\s*:\s*"Strides"/i.test(page)
     && (/ServiceHandler\.svc/i.test(page) || /js\/Communicator\.js/i.test(page))
   )
@@ -298,7 +299,7 @@ export const createStridesPharmaScraper = ({
 export const run = async (options = {}) => createStridesPharmaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

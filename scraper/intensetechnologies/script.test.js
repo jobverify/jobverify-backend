@@ -8,7 +8,7 @@ const careersPageHtml = `
 <html lang="en">
   <head>
     <title>Careers</title>
-    <link rel="canonical" href="https://www.in10stech.com/careers" />
+    <link href="https://www.in10stech.com/careers" rel="canonical" />
   </head>
   <body>
     <main>
@@ -81,7 +81,7 @@ test('Intense Technologies helpers stay pinned to the verified first-party caree
 
   assert.equal(intense.SOURCE, 'intensetechnologies')
   assert.equal(intense.COMPANY, 'Intense Technologies')
-  assert.equal(intense.VERIFIED_ON, '2026-07-16')
+  assert.equal(intense.VERIFIED_ON, '2026-08-02')
   assert.equal(intense.CAREERS_URL, 'https://www.in10stech.com/careers')
   assert.equal(intense.CAREER_PORTAL_INFO_URL, 'https://intense.keka.com/careers/api/organization/default/careerportalinfo')
   assert.equal(intense.EXPECTED_IDENTIFIER, 'fcf90e1b-bb0a-4d66-b896-6b0de9cf0dce')
@@ -167,6 +167,48 @@ test('Intense Technologies run validates the verified first-party careers shell 
   assert.equal(jobs[0].source, 'intensetechnologies')
   assert.equal(jobs[0].link, 'https://intense.keka.com/careers/applyjob/72301')
   assert.equal(jobs[0].scrapedAt, '2026-07-16T07:30:00.000Z')
+})
+
+test('Intense Technologies can recover with browser-backed careers and Keka payloads when direct requests time out', async () => {
+  const intense = await loadIntenseTechnologiesModule()
+  const browserTextUrls = []
+  const browserJsonUrls = []
+
+  const jobs = await intense.createIntenseTechnologiesScraper({ maxJobs: 1 }).run({
+    fetchText: async () => {
+      throw new Error('fetch failed | Connect Timeout Error (attempted address: www.in10stech.com:443, timeout: 10000ms)')
+    },
+    fetchJson: async () => {
+      throw new Error('fetch failed | Connect Timeout Error (attempted address: intense.keka.com:443, timeout: 10000ms)')
+    },
+    fetchBrowserText: async (url) => {
+      browserTextUrls.push(url)
+      if (url === intense.CAREERS_URL) return careersPageHtml
+      throw new Error(`Unexpected browser text URL: ${url}`)
+    },
+    fetchBrowserJson: async (url) => {
+      browserJsonUrls.push(url)
+      if (url === intense.CAREER_PORTAL_INFO_URL) return portalInfo
+      if (url === intense.buildActiveJobsUrl({
+        domain: intense.EXPECTED_KEKA_DOMAIN,
+        identifier: intense.EXPECTED_IDENTIFIER,
+      })) {
+        return activeJobsPayload
+      }
+
+      throw new Error(`Unexpected browser JSON URL: ${url}`)
+    },
+    now: () => '2026-08-02T00:00:00.000Z',
+  })
+
+  assert.deepEqual(browserTextUrls, [intense.CAREERS_URL])
+  assert.deepEqual(browserJsonUrls, [
+    intense.CAREER_PORTAL_INFO_URL,
+    'https://intense.keka.com/careers/api/embedjobs/default/active/fcf90e1b-bb0a-4d66-b896-6b0de9cf0dce',
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'intensetechnologies')
+  assert.equal(jobs[0].scrapedAt, '2026-08-02T00:00:00.000Z')
 })
 
 test('Intense Technologies fails closed when the verified careers shell or Keka identity drifts', async () => {

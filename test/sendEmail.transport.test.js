@@ -12,8 +12,8 @@ test("sendVerificationEmail posts a JSON payload to Brevo's transactional email 
   const originalFetch = global.fetch;
 
   process.env.BREVO_API_KEY = "brevo_test_key";
-  process.env.BREVO_SENDER_EMAIL = "no-reply@jobify.test";
-  process.env.BREVO_SENDER_NAME = "Jobify";
+  process.env.BREVO_SENDER_EMAIL = "no-reply@jobverify.test";
+  process.env.BREVO_SENDER_NAME = "Jobverify";
 
   let request = null;
   global.fetch = async (url, options) => {
@@ -29,7 +29,7 @@ test("sendVerificationEmail posts a JSON payload to Brevo's transactional email 
   try {
     const result = await sendVerificationEmail(
       "student@example.com",
-      "https://jobify.test/verify-email#token=abc123",
+      "https://jobverify.test/verify-email#token=abc123",
     );
 
     assert.deepEqual(result, { messageId: "mail_123" });
@@ -38,10 +38,10 @@ test("sendVerificationEmail posts a JSON payload to Brevo's transactional email 
     assert.equal(request.options.headers["api-key"], "brevo_test_key");
 
     const payload = JSON.parse(request.options.body);
-    assert.equal(payload.subject, "Verify your Jobify account");
+    assert.equal(payload.subject, "Verify your Jobverify account");
     assert.deepEqual(payload.sender, {
-      name: "Jobify",
-      email: "no-reply@jobify.test",
+      name: "Jobverify",
+      email: "no-reply@jobverify.test",
     });
     assert.deepEqual(payload.to, [{ email: "student@example.com" }]);
     assert.match(payload.htmlContent, /Verify Email Address/);

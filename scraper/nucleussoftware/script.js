@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { NUCLEUS_SOFTWARE_CATALOG } from './catalog.js'
 
@@ -81,8 +81,9 @@ export const hasOfficialCareersPageSignal = (html) => {
   const page = String(html ?? '')
 
   return /<title>\s*Careers at Nucleus Software: Join Our Dynamic Team of Innovators\s*<\/title>/i.test(page)
-    && /Copyright © 2026 Nucleus Software Exports Ltd\./i.test(page)
-    && /Build Your Future Explore Exciting Career Opportunities with Nucleus Software/i.test(page)
+    && /<meta[^>]+name=["']description["'][^>]+content=["']Join Nucleus Software to lead innovation in lending and transaction banking\. Explore rewarding fintech careers, professional growth, and a dynamic culture\. Apply now!["']/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.nucleussoftware\.com\/careers\/["']/i.test(page)
+    && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']Nucleus Software["']/i.test(page)
     && /href=["']https:\/\/nucleussoftware\.zohorecruit\.in\/jobs\/Careers["'][^>]*>\s*Open Positions\s*</i.test(page)
     && /href=["']https:\/\/nucleussoftware\.zohorecruit\.in\/jobs\/Careers["'][^>]*>\s*Explore opportunities\s*</i.test(page)
     && /href=["']https:\/\/nucleussoftware\.zohorecruit\.in\/jobs\/Careers["'][^>]*>\s*Search Job Opportunities\s*</i.test(page)
@@ -177,7 +178,7 @@ export const createNucleusSoftwareScraper = ({
 export const run = async (options = {}) => createNucleusSoftwareScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

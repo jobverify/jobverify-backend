@@ -17,6 +17,7 @@ import {
   hasOfficialWorkingAtSbdSignal,
   hasOnlyVerifiedCvHandoff,
   hasPublicJobsSignal,
+  runStandalone,
 } from './script.js'
 
 const homepageHtml = `
@@ -24,6 +25,20 @@ const homepageHtml = `
     <body>
       <h1>SBD Automotive</h1>
       <p>A global team of research and consulting experts helping our industry deliver Safe, Secure, Sustainable & Seamless mobility.</p>
+    </body>
+  </html>
+`
+
+const currentHomepageHtml = `
+  <html>
+    <head>
+      <title>Automotive Research and Consulting Firm | SBD Automotive</title>
+    </head>
+    <body>
+      <p>
+        A global team of research and consulting experts helping our industry deliver
+        Safe , Secure , Sustainable & Seamless mobility
+      </p>
     </body>
   </html>
 `
@@ -104,6 +119,10 @@ test('SBD Automotive sentinel stays pinned to the official homepage, India page,
   assert.equal(hasPublicJobsSignal(publicJobsHtml), true)
 })
 
+test('SBD Automotive homepage matcher accepts the current punctuation spacing on the live first-party site', () => {
+  assert.equal(hasOfficialHomepageSignal(currentHomepageHtml), true)
+})
+
 test('run returns an empty list when SBD Automotive exposes only the verified careers shell and single CV handoff', async () => {
   const requestedUrls = []
   const scraper = createSbdAutomotiveScraper()
@@ -151,4 +170,24 @@ test('run fails closed when SBD Automotive starts exposing public job links inst
     }),
     /verified BambooHR CV handoff|rendered public jobs/i,
   )
+})
+
+test('runStandalone writes jobs.json during dry runs', async () => {
+  const writes = []
+
+  const jobs = await runStandalone({
+    argv: ['node', 'script.js', '--dry-run'],
+    runScraper: async () => [],
+    saveToFileImpl: (results, filePath) => {
+      writes.push({ results, filePath })
+    },
+    saveToDbImpl: async () => {
+      assert.fail('dry run should not write to the database')
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+  assert.equal(writes.length, 1)
+  assert.deepEqual(writes[0].results, [])
+  assert.match(writes[0].filePath, /sbdautomotive[\\/]jobs\.json$/i)
 })

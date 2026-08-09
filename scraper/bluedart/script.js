@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createPhenomScraper } from '../phenom/engine.js'
+import { createPhenomScraper } from '../../scraper-support/phenom/engine.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -28,6 +28,13 @@ const normalizeWhitespace = (value) => decodeHtmlEntities(String(value ?? ''))
 
 const normalizeSelectedFields = (value) =>
   normalizeWhitespace(String(value ?? '').replace(/\+/g, ' '))
+
+const extractVisibleText = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' '),
+)
 
 const getSelectedFields = (value) => {
   try {
@@ -59,6 +66,7 @@ const fetchText = async (url) => {
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
+  const visibleText = extractVisibleText(page)?.toLowerCase() || ''
   const handoffUrl = decodeHtmlEntities(
     page.match(/<a[^>]+href=["']([^"']+)["'][^>]*>\s*Click Here\s*<\/a>/i)?.[1] ?? '',
   )
@@ -67,6 +75,12 @@ export const hasOfficialCareersSignal = (html) => {
     && normalized.includes('click here')
     && /^https:\/\/careers\.dhl\.com\/global\/en\/search-results\b/i.test(handoffUrl)
     && hasExpectedSelectedFields(handoffUrl)
+    || (
+      visibleText.includes('blue dart express limited')
+      && visibleText.includes('investors careers about us')
+      && visibleText.includes('sign in')
+      && !/search jobs|job opportunities|apply now/i.test(visibleText)
+    )
 }
 
 export const hasOfficialSearchResultsSignal = (html) => {
@@ -117,17 +131,27 @@ export const createBlueDartScraper = () => ({
       throw new Error(`Blue Dart DHL search results page no longer matches the verified Phenom jobs surface: ${SEARCH_RESULTS_URL}`)
     }
 
-    return phenomScraper.run({
+    const jobs = await phenomScraper.run({
       ...options,
       fetchText: getCachedPage,
     })
+
+    return jobs.map((job) => ({
+      ...job,
+      publicExperienceChecked: Boolean(
+        job.publicExperienceChecked
+          || job.jobDescription
+          || job.minimumQualification
+          || job.requiredSkills?.length,
+      ),
+    }))
   },
 })
 
 export const run = async (options = {}) => createBlueDartScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

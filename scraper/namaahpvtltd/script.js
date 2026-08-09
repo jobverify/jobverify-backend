@@ -5,15 +5,15 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'namaahpvtltd'
 export const COMPANY = 'Namaah Pvt Ltd'
-export const VERIFIED_ON = '2026-07-13'
+export const VERIFIED_ON = '2026-08-03'
 export const VERIFIED_SURFACE_SUMMARY =
-  'The verified first-party public surface on July 13, 2026 was https://namaah.co.in/, a Namaah baby-names product homepage with no public jobs board, while common careers and jobs routes returned 404.'
-export const HOMEPAGE_URL = 'https://namaah.co.in/'
+  'Verified on Monday, August 3, 2026 that https://namaah.in/ now serves only a first-party JavaScript redirect shell that sends visitors to /lander, with no public jobs board, and that common careers and jobs routes return the same no-public-jobs shell.'
+export const HOMEPAGE_URL = 'https://namaah.in/'
 export const NO_PUBLIC_JOB_ROUTE_URLS = [
-  'https://namaah.co.in/careers',
-  'https://namaah.co.in/careers/',
-  'https://namaah.co.in/jobs',
-  'https://namaah.co.in/jobs/',
+  'https://namaah.in/careers',
+  'https://namaah.in/careers/',
+  'https://namaah.in/jobs',
+  'https://namaah.in/jobs/',
 ]
 
 const USER_AGENT =
@@ -42,21 +42,10 @@ const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /linkedin\.com\/jobs/i,
 ]
 
-const normalizeWhitespace = (value) =>
-  String(value ?? '')
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/\u00a0/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-
 export const isFirstPartyUrl = (value) => {
   try {
     const hostname = new URL(value || HOMEPAGE_URL).hostname.toLowerCase()
-    return hostname === 'namaah.co.in' || hostname === 'www.namaah.co.in'
+    return hostname === 'namaah.in' || hostname === 'www.namaah.in'
   } catch {
     return false
   }
@@ -101,21 +90,16 @@ export const hasPublicJobsSignal = (html) =>
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Namaah\s*[—-]\s*600,000\+\s*Sacred Baby Names by Religion, Meaning & Origin\s*<\/title>/i.test(page)
-    && /<meta[^>]+name=["']description["'][^>]+Discover 600,000\+ authentic baby names from 11 world religions/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/namaah\.co\.in\/["']/i.test(page)
-    && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']Namaah["']/i.test(page)
-    && /<meta[^>]+name=["']twitter:site["'][^>]+content=["']@namaah_coin["']/i.test(page)
-    && page.includes('Namaah Baby Name Finder')
-    && page.includes('LifestyleApplication')
-    && normalized.includes('600,000+ authentic baby names from 11 world religions and mythologies')
-    && normalized.includes('Find the perfect baby name from Hindu, Muslim, Christian, Jewish, Greek, Norse, Egyptian, Celtic & more traditions. 600k+ names, free.')
-  }
+  return /<!doctype html>/i.test(page)
+    && /<html>\s*<head>\s*<script>\s*window\.onload\s*=\s*function\(\)\s*\{\s*window\.location\.href\s*=\s*["']\/lander["']\s*\}\s*<\/script>\s*<\/head>\s*<\/html>/i.test(page)
+    && !hasPublicJobsSignal(page)
+}
 
 export const isVerifiedNoJobsRoute = (page = {}) =>
-  Number(page?.status) === 404 && !hasPublicJobsSignal(page?.html)
+  Number(page?.status) === 200
+  && hasOfficialHomepageSignal(page?.html)
+  && !hasPublicJobsSignal(page?.html)
 
 export const createNamaahScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
@@ -141,7 +125,7 @@ export const createNamaahScraper = () => ({
 export const run = async (options = {}) => createNamaahScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

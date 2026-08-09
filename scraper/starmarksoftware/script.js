@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { STARMARK_SOFTWARE_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -36,9 +36,10 @@ export const hasOfficialStarmarkCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /Careers\s*\|\s*Starmark Software/i.test(page)
-    && text.includes('Open Positions')
-    && text.includes('careers@starmarksoftware.com')
+  return /Careers\s*\|\s*Starmark Software\b/i.test(page)
+    && text.includes('Join Our Team')
+    && text.includes('Join 1200+ professionals')
+    && text.includes('careers@starmarksv.com')
   }
 
 export const pageExposesStructuredJobListings = (html = '') => {
@@ -66,7 +67,7 @@ export const createStarmarkSoftwareScraper = () => ({
 export const run = async (options = {}) => createStarmarkSoftwareScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

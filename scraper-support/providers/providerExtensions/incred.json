@@ -1,0 +1,21 @@
+{
+  "source": "incred",
+  "companyName": "InCred",
+  "officialBrandName": "InCred Financial Services",
+  "adapter": "script",
+  "modulePath": "../incred/script.js",
+  "dryRunFile": "incred/jobs.json",
+  "companyCareerPage": "https://incred.com/Career-Page/",
+  "companyDomain": "incred.com",
+  "atsPlatform": "official-first-party-careers-page-no-enumerable-public-listings",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-careers-page-sentinel",
+  "extractionStrategy": "verified-first-party-careers-page-without-enumerable-openings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://incred.com/Career-Page/",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://incred.com/Career-Page/ is InCred Financial Services' first-party careers page. It explicitly reports no current opening and exposes no trustworthy enumerable public job feed, so this exact-name provider fails closed and returns no jobs until InCred publishes public openings."
+}

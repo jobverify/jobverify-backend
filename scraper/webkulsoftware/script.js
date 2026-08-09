@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 import { WEBKUL_SOFTWARE_CATALOG } from './catalog.js'
 
@@ -144,15 +144,16 @@ export const extractJobCards = (html) => [...String(html ?? '').matchAll(
   })
   .filter(Boolean)
 
-const hasOfficialJobDetailSignal = (html, expectedTitle) => {
+export const hasOfficialJobDetailSignal = (html, expectedTitle) => {
   const page = String(html ?? '')
   const normalizedTitle = normalizeTitle(expectedTitle)
   const detailTitle = normalizeTitle(stripTags(/<h1[^>]*>([\s\S]*?)<\/h1>/i.exec(page)?.[1]))
+  const hasRecognizedApplyCta = /Apply By Github/i.test(page) || /Apply Now/i.test(page)
 
   return normalizedTitle
     && detailTitle === normalizedTitle
     && /Webkul Software/i.test(page)
-    && /Apply By Github/i.test(page)
+    && hasRecognizedApplyCta
     && (/class=["'][^"']*job-location[^"']*["'][^>]*data-val=/i.test(page) || /Job Location/i.test(page))
 }
 
@@ -256,7 +257,7 @@ export const createWebkulSoftwareScraper = ({
 export const run = async (options = {}) => createWebkulSoftwareScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

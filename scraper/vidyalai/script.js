@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -102,9 +102,16 @@ const defaultFetchJson = async (url) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page) || ''
+  const title = normalizeWhitespace(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]) || ''
+  const hasOfficialTitle = /^Vidyalai$/i.test(title)
+    || /Vidyalai\.com:\s*One to One Online Tuitions/i.test(title)
+  const hasVerifiedJobsLink = /href=["']https?:\/\/erp\.vidyalai\.com\/jobs\/?["']/i.test(page)
 
-  return /<title>\s*Vidyalai\s*<\/title>/i.test(page)
-    && /href=["']https:\/\/erp\.vidyalai\.com\/jobs["']/i.test(page)
+  return hasOfficialTitle
+    && /Vidyalai/i.test(normalized)
+    && /Careers/i.test(normalized)
+    && hasVerifiedJobsLink
 }
 
 export const extractJobsPageCount = (html) => {
@@ -226,7 +233,7 @@ export const createVidyalaiScraper = ({
 export const run = async (options = {}) => createVidyalaiScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

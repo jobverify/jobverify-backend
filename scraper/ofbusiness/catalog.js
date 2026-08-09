@@ -21,9 +21,9 @@ export const OF_BUSINESS_CATALOG = {
     'verified-careers-homepage+verified-categories-page+wix-warmup-data+paginated-first-party-job-slices+deduplication',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.ofbcareers.com/ is the official OfBusiness careers landing page and https://www.ofbcareers.com/categories is the official first-party paginated jobs board. The categories page exposed a first-party Wix warmup-data payload plus page navigation through 18 pages, and the verified paginated warmup slices yielded 72 unique public postings after de-duplication.',
+    'Verified on Saturday, August 1, 2026 that https://www.ofbcareers.com/ remained the official OfBusiness careers landing page and https://www.ofbcareers.com/categories remained the official first-party paginated jobs board. The categories page still exposed a first-party Wix warmup-data payload plus page navigation through 18 pages; the verified paginated warmup slices yielded 72 unique records, including one incomplete placeholder row, leaving 71 valid public postings after de-duplication and payload validation.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'ofbusiness/jobs.json',
 }

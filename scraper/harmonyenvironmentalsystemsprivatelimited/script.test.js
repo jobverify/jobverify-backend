@@ -17,9 +17,10 @@ const homepageHtml = `
         <a href="https://harmonyenviro.in/who-we-are/">Who We Are</a>
         <a href="https://harmonyenviro.in/career/">Career</a>
         <a href="https://harmonyenviro.in/contact-us/">Contact Us</a>
-        <h1>Innovative Solutions for a Sustainable Future</h1>
-        <p>Harmony Environmental Systems Private Limited (HESPL) offers Air Quality Systems to Industries across the world.</p>
-        <p>At HESPL, we harmonize growth and environmental stewardship, driving towards cleaner, greener future for generations to come.</p>
+        <h1>Innovative Solutions For A Sustainable Future</h1>
+        <h2>Leading the way in Air Quality Systems</h2>
+        <p>Welcome to Harmony Environmental Solutions.</p>
+        <p>At Harmony, we offer integrated solutions including design and engineering services.</p>
       </main>
     </body>
   </html>
@@ -232,6 +233,11 @@ const detailerDetailHtml = createDetailHtml({
   nextUrl: 'https://harmonyenviro.in/career/manager-projects/',
 })
 
+const detailerDetailHtmlWithoutBanner = detailerDetailHtml.replace(
+  '<h3>Work with Harmony</h3>',
+  '<h3>Apply for this role</h3>',
+)
+
 const managerProjectsDetailHtml = createDetailHtml({
   title: 'Manager &#8211; Projects',
   canonicalUrl: 'https://harmonyenviro.in/career/manager-projects/',
@@ -369,6 +375,13 @@ test('Harmony detail parsing extracts normalized role metadata from the verified
   assert.equal(mechanicalJob.experienceRequired, '3 - 7 yrs')
   assert.equal(mechanicalJob.applyUrl, 'https://harmonyenviro.in/career/')
   assert.match(mechanicalJob.jobDescription, /strong experience in mechanical engineering/i)
+})
+
+test('Harmony detail pages still validate when the legacy Work with Harmony banner is absent', async () => {
+  const harmony = await loadHarmonyModule()
+  assert.ok(harmony, 'Harmony scraper module should load')
+
+  assert.equal(harmony.hasOfficialDetailSignal(detailerDetailHtmlWithoutBanner), true)
 })
 
 test('Harmony run validates the verified surfaces, walks the career sitemap, and stamps the shared apply contract', async () => {

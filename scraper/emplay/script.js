@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -63,7 +63,8 @@ export const hasOfficialJobsPageSignal = (html) => {
   const page = String(html ?? '')
   return /<title>\s*all jobs\s*<\/title>/i.test(page)
     && /collection-item-6-copy/i.test(page)
-    && /Explore Job Openings/i.test(page)
+    && /All Jobs/i.test(page)
+    && /Join Our Team/i.test(page)
 }
 
 export const extractJobs = (html) => {
@@ -160,7 +161,7 @@ export const createEmplayScraper = ({
 export const run = async () => createEmplayScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Emplay scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

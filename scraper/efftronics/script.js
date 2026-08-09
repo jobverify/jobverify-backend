@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -321,9 +321,10 @@ const buildJob = ({ title, minimumQualification, requiredSkills, detailText }) =
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = stripTags(page)
   return /<title>\s*Efftronics Systems Pvt\. Ltd\.\s*<\/title>/i.test(page)
     && /href=["']https:\/\/www\.efftronics\.com\/careers["']/i.test(page)
-    && /YOUR ONE-STOP DESTINATION FOR END-TO-END SMART SOLUTIONS/i.test(page)
+    && /YOUR ONE-STOP DESTINATION FOR END-TO-END SMART SOLUTIONS/i.test(normalized)
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -344,10 +345,6 @@ export const extractPublicListings = (html) => {
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
   label: SOURCE,
   timeoutMs: 15000,
 })
@@ -376,7 +373,7 @@ export const createEfftronicsScraper = () => ({
 export const run = async (options = {}) => createEfftronicsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Efftronics scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

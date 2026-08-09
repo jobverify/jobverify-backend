@@ -120,6 +120,15 @@ export const hasDeadWidgetScriptSignal = (html) => {
     && /window\.location\.replace\(["']https:\/\/ats\.zimyo\.work["']\)/i.test(page)
 }
 
+export const isKnownDeadWidgetScriptTlsFailure = (error) => {
+  const code = error?.cause?.code ?? error?.code ?? null
+  const message = `${error?.message ?? ''} ${error?.cause?.message ?? ''}`
+
+  return code === 'ERR_TLS_CERT_ALTNAME_INVALID'
+    && /ats\.zimyo\.com/i.test(message)
+    && /apiserver\.zimyo\.com|hrms\.zimyo\.com|sandbox\.zimyo\.com/i.test(message)
+}
+
 export const isVerifiedMissingPublicJobRoute = (page = {}) =>
   Number(page.status) === 404 && !hasPublicJobBoardSignal(page.html)
 
@@ -166,9 +175,15 @@ export const createAapkaPainterScraper = () => ({
       throw new Error('Aapka Painter embedded Zimyo widget state changed materially')
     }
 
-    const widgetScript = await fetchPage(WIDGET_SCRIPT_URL)
-    if (widgetScript.status !== 200 || !hasDeadWidgetScriptSignal(widgetScript.html)) {
-      throw new Error('Aapka Painter embedded Zimyo widget state changed materially')
+    try {
+      const widgetScript = await fetchPage(WIDGET_SCRIPT_URL)
+      if (widgetScript.status !== 200 || !hasDeadWidgetScriptSignal(widgetScript.html)) {
+        throw new Error('Aapka Painter embedded Zimyo widget state changed materially')
+      }
+    } catch (error) {
+      if (!isKnownDeadWidgetScriptTlsFailure(error)) {
+        throw error
+      }
     }
 
     for (const routeUrl of NO_PUBLIC_JOB_ROUTE_URLS) {
@@ -185,7 +200,7 @@ export const createAapkaPainterScraper = () => ({
 export const run = async (options = {}) => createAapkaPainterScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

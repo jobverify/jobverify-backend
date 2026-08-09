@@ -123,7 +123,7 @@ export const hasOfficialAboutSignal = (html) => {
     && normalized.includes('WHO WE ARE?')
     && normalized.includes('pixbot is a full service video production company based out of Central Florida.')
     && normalized.includes('We create content that helps businesses connect with viewers, build brand awareness and promote products and services.')
-    && normalized.includes('Our Mission is to help businesses use their story to connect with audiences and build their brand awareness.')
+    && normalized.includes('Our Mission is to help businesses use their story to connect with audiences and build their brand awareness')
 }
 
 export const hasOfficialContactSignal = (html) => {
@@ -167,6 +167,17 @@ export const isVerifiedMissingCareersRoute = (page = {}) => {
     && !hasPublicJobsSignal(rawHtml)
 }
 
+export const isModSecurityAccessBlock = (page = {}) =>
+  Number(page?.status) === 406
+  && /Not Acceptable!/i.test(String(page?.html ?? ''))
+  && /Mod_Security/i.test(String(page?.html ?? ''))
+
+const markUpstreamAccessBlock = (error) => {
+  error.softFailure = true
+  error.upstreamOutage = true
+  return error
+}
+
 const assertStablePage = ({
   page,
   hasOfficialSignal,
@@ -184,6 +195,11 @@ const assertStablePage = ({
 export const createPixbotScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
+    if (isModSecurityAccessBlock(homepage)) {
+      throw markUpstreamAccessBlock(
+        new Error('Pixbot first-party surface is currently blocking this worker with ModSecurity (HTTP 406)'),
+      )
+    }
     assertStablePage({
       page: homepage,
       hasOfficialSignal: hasOfficialHomepageSignal,
@@ -191,6 +207,11 @@ export const createPixbotScraper = () => ({
     })
 
     const aboutPage = await fetchPage(ABOUT_URL)
+    if (isModSecurityAccessBlock(aboutPage)) {
+      throw markUpstreamAccessBlock(
+        new Error('Pixbot first-party surface is currently blocking this worker with ModSecurity (HTTP 406)'),
+      )
+    }
     assertStablePage({
       page: aboutPage,
       hasOfficialSignal: hasOfficialAboutSignal,
@@ -198,6 +219,11 @@ export const createPixbotScraper = () => ({
     })
 
     const contactPage = await fetchPage(CONTACT_URL)
+    if (isModSecurityAccessBlock(contactPage)) {
+      throw markUpstreamAccessBlock(
+        new Error('Pixbot first-party surface is currently blocking this worker with ModSecurity (HTTP 406)'),
+      )
+    }
     assertStablePage({
       page: contactPage,
       hasOfficialSignal: hasOfficialContactSignal,
@@ -205,6 +231,11 @@ export const createPixbotScraper = () => ({
     })
 
     const pageSitemap = await fetchPage(PAGE_SITEMAP_URL)
+    if (isModSecurityAccessBlock(pageSitemap)) {
+      throw markUpstreamAccessBlock(
+        new Error('Pixbot first-party surface is currently blocking this worker with ModSecurity (HTTP 406)'),
+      )
+    }
     if (!hasOfficialPageSitemapSignal(pageSitemap?.html)) {
       throw new Error('Pixbot verified page sitemap no longer matches the trusted first-party surface')
     }
@@ -215,6 +246,11 @@ export const createPixbotScraper = () => ({
 
     for (const careersRouteUrl of CAREERS_ROUTE_URLS) {
       const careersRoute = await fetchPage(careersRouteUrl)
+      if (isModSecurityAccessBlock(careersRoute)) {
+        throw markUpstreamAccessBlock(
+          new Error('Pixbot first-party surface is currently blocking this worker with ModSecurity (HTTP 406)'),
+        )
+      }
 
       if (!isVerifiedMissingCareersRoute(careersRoute)) {
         throw new Error('Pixbot careers routes changed materially or now expose public jobs')
@@ -228,7 +264,7 @@ export const createPixbotScraper = () => ({
 export const run = async (options = {}) => createPixbotScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

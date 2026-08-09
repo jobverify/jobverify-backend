@@ -1,0 +1,21 @@
+{
+  "source": "appsecure",
+  "companyName": "AppSecure",
+  "officialBrandName": "AppSecure Security",
+  "adapter": "script",
+  "modulePath": "../appsecure/script.js",
+  "dryRunFile": "appsecure/jobs.json",
+  "companyCareerPage": "https://www.appsecure.security/",
+  "companyDomain": "appsecure.security",
+  "atsPlatform": "official-first-party-site-no-verified-careers-feed",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-site-sentinel",
+  "extractionStrategy": "no-verified-official-careers-feed+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.appsecure.security/",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.appsecure.security/ is AppSecure Security's first-party website. The site does not expose a verified public careers page, official ATS endpoint, or enumerable job feed. This exact-name provider fails closed and returns no jobs rather than substituting similarly named companies or third-party listings."
+}

@@ -36,7 +36,7 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
-  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/&#039;|&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
   .replace(/&quot;/gi, '"')
   .replace(/&amp;/gi, '&')
   .replace(/\u00a0/g, ' ')
@@ -108,8 +108,15 @@ export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html)
 
   return normalized.includes('India\'s Leading Edtech Company Offering New-Age Programs in New-Age Domains')
-    && normalized.includes('iNurture is a pioneering edtech company making waves in the higher education space by offering new-age programs for tomorrow\'s industries.')
-    && /href=["']https:\/\/inurture\.co\.in\/careers-inurture\/["']/i.test(String(html ?? ''))
+    && (
+      normalized.includes('iNurture is a pioneering edtech company making waves in the higher education space by offering new-age programs for tomorrow\'s industries.')
+      || (
+        normalized.includes('Careers @ iNurture')
+        && normalized.includes('Managed Classroom')
+        && normalized.includes('Global Education')
+      )
+    )
+    && /href=["'](?:https:\/\/(?:www\.)?inurture\.co\.in)?\/careers-inurture\/["']/i.test(String(html ?? ''))
 }
 
 export const hasLinkedCareersSignal = (html) => {
@@ -227,7 +234,7 @@ export const createInurtureEducationSolutionsScraper = () => ({
 export const run = async (options = {}) => createInurtureEducationSolutionsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -153,7 +153,7 @@ test("unauthenticated users cannot unlock premium sorting through direct API acc
   assert.equal(res.body.premiumRequired, true);
 });
 
-test("free users can request larger job pages up to the public 100-card limit", async () => {
+test("free users can request the public 2000-card limit on the legacy jobs route", async () => {
   const originalCountDocuments = Job.countDocuments;
   const originalDistinct = Job.distinct;
   const originalFind = Job.find;
@@ -186,7 +186,7 @@ test("free users can request larger job pages up to the public 100-card limit", 
 
     await getAllJobs(
       {
-        query: { page: "1", limit: "50" },
+        query: { page: "1", limit: "2000" },
         user: {
           role: "user",
           accessRole: ACCESS_ROLES.FREE,
@@ -200,8 +200,8 @@ test("free users can request larger job pages up to the public 100-card limit", 
     );
 
     assert.equal(res.statusCode, 200);
-    assert.equal(capturedLimit, 50);
-    assert.equal(res.body.pagination.limit, 50);
+    assert.equal(capturedLimit, 2000);
+    assert.equal(res.body.pagination.limit, 2000);
   } finally {
     Job.countDocuments = originalCountDocuments;
     Job.distinct = originalDistinct;
@@ -264,12 +264,7 @@ test("premium users can keep using existing filters while requesting larger job 
     assert.equal(capturedLimit, 40);
     assert.equal(res.body.pagination.limit, 40);
     assert.equal(res.body.pagination.totalCompanies, 2);
-    assert.equal(
-      capturedFilter?.$and?.some(
-        (entry) => entry.companyKey === "google",
-      ),
-      true,
-    );
+    assert.equal(capturedFilter?.companyKey, "google");
   } finally {
     Job.countDocuments = originalCountDocuments;
     Job.distinct = originalDistinct;

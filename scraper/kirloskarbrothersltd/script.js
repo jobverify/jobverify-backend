@@ -1,14 +1,17 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'kirloskarbrothersltd'
 export const COMPANY = 'Kirloskar Brothers Ltd'
+export const VERIFIED_ON = '2026-08-07'
 export const HOMEPAGE_URL = 'https://www.kirloskarpumps.com/'
 export const CAREERS_URL = 'https://www.kirloskarpumps.com/careers/'
+export const JOBS_LISTINGS_URL = 'https://www.kirloskarpumps.com/jobs-listings/'
+export const APPLICATION_FORM_URL = 'https://www.kirloskarpumps.com/job/apply/candidate/'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -63,18 +66,14 @@ const normalizeWhitespace = (value) =>
 
 const normalizeText = (value) => normalizeWhitespace(value).toLowerCase()
 
-const defaultFetchPage = async (url) => {
-  const html = await fetchTextWithRetry(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    label: SOURCE,
-    timeoutMs: 15000,
-  })
-
-  return { status: 200, url, html }
-}
+const defaultFetchPage = (url) => fetchPageWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
 
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeText(html)
@@ -99,6 +98,9 @@ export const hasResumeOnlySignal = (html) => {
     && /<input[^>]+(?:id=["']resume-file["'][^>]+type=["']file["']|type=["']file["'][^>]+id=["']resume-file["'])/i.test(page)
     && /contact-form-7|wpcf7/i.test(page)
 }
+
+export const hasUnavailableSurfaceSignal = (page = {}) =>
+  Number(page?.status) === 503
 
 export const extractSuspiciousPublicJobLinks = (html) => {
   const suspiciousLinks = []
@@ -137,6 +139,22 @@ export const createKirloskarBrothersLtdScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
 
+    if (hasUnavailableSurfaceSignal(homepage)) {
+      const [careersPage, jobsListingsPage, applicationFormPage] = await Promise.all([
+        fetchPage(CAREERS_URL),
+        fetchPage(JOBS_LISTINGS_URL),
+        fetchPage(APPLICATION_FORM_URL),
+      ])
+
+      if (
+        hasUnavailableSurfaceSignal(careersPage)
+        && hasUnavailableSurfaceSignal(jobsListingsPage)
+        && hasUnavailableSurfaceSignal(applicationFormPage)
+      ) {
+        return []
+      }
+    }
+
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Kirloskar Brothers Ltd verified official homepage no longer matches the known public surface')
     }
@@ -171,7 +189,7 @@ export const createKirloskarBrothersLtdScraper = () => ({
 export const run = async (options = {}) => createKirloskarBrothersLtdScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

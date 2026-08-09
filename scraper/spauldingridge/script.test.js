@@ -9,40 +9,25 @@ const loadModule = async () => {
   }
 }
 
-const careersHtml = `
+const BLOCKED_PAGE_HTML = `
   <!doctype html>
   <html lang="en">
     <head>
-      <title>Careers at Spaulding Ridge | Join Our Team</title>
+      <title>Attention Required! | Cloudflare</title>
     </head>
     <body>
       <main>
-        <span>about us</span>
-        <h1>Careers</h1>
-        <p>Join Spaulding Ridge for a transformative experience in your career journey</p>
-        <a href="https://spauldingridge.com/about-us/open-positions">View Open Roles</a>
+        <p>Please enable cookies.</p>
+        <h1>Sorry, you have been blocked</h1>
+        <p>You are unable to access spauldingridge.com</p>
+        <p>Cloudflare Ray ID: abc123</p>
+        <p>Performance &amp; security by Cloudflare</p>
       </main>
     </body>
   </html>
 `
 
-const openPositionsShellHtml = `
-  <!doctype html>
-  <html lang="en">
-    <head>
-      <title>Open Positions | Join Spaulding Ridge Careers</title>
-    </head>
-    <body>
-      <main>
-        <h1>Become Part of the Band</h1>
-        <p>Join our award-winning global team. Take a look at our open positions below.</p>
-        <p>Learn more about our hiring process and get tips on how to apply and prepare for your dream role.</p>
-      </main>
-    </body>
-  </html>
-`
-
-test('Spaulding Ridge scraper recognizes the verified official careers handoff and empty open-positions shell', async () => {
+test('Spaulding Ridge recognizes the verified Cloudflare-blocked first-party careers surfaces from Monday, July 27, 2026', async () => {
   const spauldingRidge = await loadModule()
   assert.ok(spauldingRidge, 'Spaulding Ridge scraper module should load')
 
@@ -54,25 +39,32 @@ test('Spaulding Ridge scraper recognizes the verified official careers handoff a
     spauldingRidge.OPEN_POSITIONS_URL,
     'https://spauldingridge.com/about-us/open-positions',
   )
-  assert.equal(spauldingRidge.hasOfficialCareersSignal(careersHtml), true)
-  assert.equal(
-    spauldingRidge.extractOpenPositionsUrl(careersHtml),
-    'https://spauldingridge.com/about-us/open-positions',
-  )
-  assert.equal(spauldingRidge.hasOpenPositionsShellSignal(openPositionsShellHtml), true)
-  assert.equal(spauldingRidge.pageExposesPublicJobListings(openPositionsShellHtml), false)
+  assert.equal(typeof spauldingRidge.hasCloudflareBlockSignal, 'function')
+  assert.equal(spauldingRidge.hasCloudflareBlockSignal(BLOCKED_PAGE_HTML), true)
 })
 
-test('Spaulding Ridge scraper returns no jobs while the official open-positions page exposes no public job board', async () => {
+test('Spaulding Ridge returns [] only while both official first-party routes remain Cloudflare-blocked', async () => {
   const spauldingRidge = await loadModule()
   assert.ok(spauldingRidge, 'Spaulding Ridge scraper module should load')
 
   const requestedUrls = []
   const jobs = await spauldingRidge.createSpauldingRidgeScraper().run({
-    fetchText: async (url) => {
+    fetchPage: async (url) => {
       requestedUrls.push(url)
-      if (url === spauldingRidge.CAREERS_URL) return careersHtml
-      if (url === spauldingRidge.OPEN_POSITIONS_URL) return openPositionsShellHtml
+      if (url === spauldingRidge.CAREERS_URL) {
+        return {
+          status: 403,
+          url,
+          body: BLOCKED_PAGE_HTML,
+        }
+      }
+      if (url === spauldingRidge.OPEN_POSITIONS_URL) {
+        return {
+          status: 403,
+          url,
+          body: BLOCKED_PAGE_HTML,
+        }
+      }
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
@@ -84,51 +76,53 @@ test('Spaulding Ridge scraper returns no jobs while the official open-positions 
   assert.deepEqual(jobs, [])
 })
 
-test('Spaulding Ridge scraper fails closed when the official careers handoff changes or public job links appear', async () => {
+test('Spaulding Ridge fails closed when either blocked route stops matching the verified Cloudflare shell', async () => {
   const spauldingRidge = await loadModule()
   assert.ok(spauldingRidge, 'Spaulding Ridge scraper module should load')
 
   await assert.rejects(
     spauldingRidge.createSpauldingRidgeScraper().run({
-      fetchText: async (url) => {
+      fetchPage: async (url) => {
         if (url === spauldingRidge.CAREERS_URL) {
-          return careersHtml.replace(
-            'https://spauldingridge.com/about-us/open-positions',
-            'https://spauldingridge.com/about-us/careers/open-role/123',
-          )
+          return {
+            status: 200,
+            url,
+            body: '<html><body><h1>Careers</h1><a href="/jobs/senior-consultant">Apply now</a></body></html>',
+          }
         }
-
+        if (url === spauldingRidge.OPEN_POSITIONS_URL) {
+          return {
+            status: 403,
+            url,
+            body: BLOCKED_PAGE_HTML,
+          }
+        }
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /verified open positions surface/i,
+    /cloudflare-blocked/i,
   )
 
   await assert.rejects(
     spauldingRidge.createSpauldingRidgeScraper().run({
-      fetchText: async (url) => {
-        if (url === spauldingRidge.CAREERS_URL) return careersHtml
-        if (url === spauldingRidge.OPEN_POSITIONS_URL) {
-          return `
-            <html lang="en">
-              <head>
-                <title>Open Positions | Join Spaulding Ridge Careers</title>
-              </head>
-              <body>
-                <main>
-                  <h1>Become Part of the Band</h1>
-                  <p>Join our award-winning global team. Take a look at our open positions below.</p>
-                  <p>Learn more about our hiring process and get tips on how to apply and prepare for your dream role.</p>
-                  <a href="https://jobs.lever.co/spauldingridge/senior-consultant">Senior Consultant</a>
-                </main>
-              </body>
-            </html>
-          `
+      fetchPage: async (url) => {
+        if (url === spauldingRidge.CAREERS_URL) {
+          return {
+            status: 403,
+            url,
+            body: BLOCKED_PAGE_HTML,
+          }
         }
-
+        if (url === spauldingRidge.OPEN_POSITIONS_URL) {
+          return {
+            status: 200,
+            url,
+            body: '<html><body><h1>Open Positions</h1><a href="https://jobs.lever.co/spauldingridge/senior-consultant">Senior Consultant</a></body></html>',
+          }
+        }
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /public job board/i,
+    /cloudflare-blocked/i,
   )
 })

@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { DELHIVERY_CATALOG } from './catalog.js'
 
@@ -29,6 +29,7 @@ const DEFAULT_PAGE_SIZE = 10
 const DEFAULT_TIMEOUT_MS = Number.isInteger(config.jobListingTimeoutMs)
   ? config.jobListingTimeoutMs
   : 30000
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -131,111 +132,70 @@ const buildLinkMap = (surface = {}) => new Map(
     .filter(([text, href]) => text && href),
 )
 
-const captureRenderedSurface = async ({ url, waitForTextPattern }) => {
-  const browser = await launchBrowser()
+const stripHtml = (html = '') => normalizeText(
+  String(html)
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' '),
+)
 
-  try {
-    const page = await createOptimizedPage(browser)
-    await page.goto(url, {
-      waitUntil: 'domcontentloaded',
-      timeout: 120000,
-    })
+const parseHtmlSurface = (html = '', url) => ({
+  url,
+  title: normalizeText(String(html).match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]),
+  text: stripHtml(html),
+  links: [...String(html).matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
+    .map((match) => ({
+      href: normalizeLink(match[1]),
+      text: stripHtml(match[2]),
+    })),
+})
 
-    if (waitForTextPattern) {
-      await page.waitForFunction(
-        (source, flags) => new RegExp(source, flags).test(document.body.innerText || ''),
-        { timeout: DEFAULT_TIMEOUT_MS },
-        waitForTextPattern.source,
-        waitForTextPattern.flags,
-      ).catch(() => null)
-    }
-
-    const title = await page.title()
-    const text = await page.evaluate(() => document.body.innerText || '')
-    const links = await page.$$eval(
-      'a',
-      (elements) => elements
-        .map((element) => ({
-          text: (element.textContent || '').trim(),
-          href: element.href,
-        }))
-        .filter((item) => item.text || item.href),
-    )
-
-    return {
-      url: page.url(),
-      title,
-      text,
-      links,
-    }
-  } finally {
-    await browser.close()
-  }
-}
-
-const createBrowserListingContext = async ({ pageSize = DEFAULT_PAGE_SIZE } = {}) => {
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-
-  await page.goto(DARWINBOX_JOBS_URL, {
-    waitUntil: 'domcontentloaded',
-    timeout: 120000,
-  })
-
-  await page.waitForFunction(
-    () => /open jobs/i.test(document.body.innerText || ''),
-    { timeout: DEFAULT_TIMEOUT_MS },
-  ).catch(() => null)
-
-  const surface = {
-    url: page.url(),
-    title: await page.title(),
-    text: await page.evaluate(() => document.body.innerText || ''),
-    links: await page.$$eval(
-      'a',
-      (elements) => elements
-        .map((element) => ({
-          text: (element.textContent || '').trim(),
-          href: element.href,
-        }))
-        .filter((item) => item.text || item.href),
-    ),
-  }
-
-  const fetchListingPage = async ({ page: pageNumber, pageSize: requestedPageSize = pageSize }) => page.evaluate(
-    async ({ companyId, targetPage, targetPageSize }) => {
-      const response = await fetch(`/ms/candidateapi/job/alljobs?companyId=${companyId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          companyId,
-          sort_option: 'new',
-          limit: targetPageSize,
-          page: targetPage,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-
-      return response.json()
+const fetchSurface = async (url, fetchImpl, label) => parseHtmlSurface(
+  await fetchTextWithRetry(url, {
+    fetchImpl,
+    headers: {
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'User-Agent': USER_AGENT,
     },
-    {
-      companyId: COMPANY_ID,
-      targetPage: pageNumber,
-      targetPageSize: requestedPageSize,
-    },
-  )
+    label,
+    timeoutMs: DEFAULT_TIMEOUT_MS,
+  }),
+  url,
+)
 
-  return {
-    surface,
-    fetchListingPage,
-    close: async () => browser.close(),
-  }
-}
+export const captureOfficialCareersSurface = ({ fetchImpl = fetch } = {}) =>
+  fetchSurface(OFFICIAL_CAREERS_URL, fetchImpl, 'delhivery-official-careers')
+
+const createNativeListingContext = async ({
+  pageSize = DEFAULT_PAGE_SIZE,
+  fetchImpl = fetch,
+} = {}) => ({
+  surface: await fetchSurface(
+    PUBLIC_PORTAL_HOME_URL,
+    fetchImpl,
+    'delhivery-darwinbox-home',
+  ),
+  fetchListingPage: ({ page: pageNumber, pageSize: requestedPageSize = pageSize }) =>
+    fetchJsonWithRetry(LISTING_API_URL, {
+      fetchImpl,
+      method: 'POST',
+      headers: {
+        Accept: 'application/json,text/plain;q=0.9,*/*;q=0.8',
+        'Content-Type': 'application/json',
+        Origin: DARWINBOX_ORIGIN,
+        Referer: PUBLIC_ALL_JOBS_URL,
+        'User-Agent': USER_AGENT,
+      },
+      body: JSON.stringify({
+        companyId: COMPANY_ID,
+        sort_option: 'new',
+        limit: requestedPageSize,
+        page: pageNumber,
+      }),
+      label: 'delhivery-darwinbox-listings',
+      timeoutMs: DEFAULT_TIMEOUT_MS,
+    }),
+})
 
 export const buildJobDetailUrl = (jobId) =>
   `${DARWINBOX_ORIGIN}/ms/candidatev2/${COMPANY_ID}/careers/jobDetails/${normalizeText(jobId) || ''}`
@@ -284,93 +244,92 @@ export const hasOfficialDelhiveryCareersSignals = (surface = {}) => {
 
   return title === "Build Your Career with Delhivery – Join India's Leading Logistics Innovator"
     && text.includes('Build a career at Delhivery')
-    && text.includes('Jobs at Delhivery')
     && linkMap.get('Jobs at Delhivery') === OFFICIAL_CAREERS_HANDOFF_URL
     && linkMap.get('Corporate Jobs') === OFFICIAL_CAREERS_HANDOFF_URL
 }
 
 export const hasPublicDarwinboxHomeSignal = (surface = {}) => {
+  const url = normalizeLink(surface.url)
   const title = normalizeText(surface.title)
   const text = normalizeText(surface.text) || ''
   const links = Array.isArray(surface.links) ? surface.links : []
 
-  return title === OFFICIAL_BRAND_NAME
-    && text.includes('Thank you for choosing us for your next chapter!')
+  const hasRichShellSignals = text.includes('Thank you for choosing us for your next chapter!')
     && /We Have\s+\d+\s+Open Jobs/i.test(text)
     && text.includes('Powered by: darwinbox')
     && links.some((link) => normalizeLink(link?.href) === PUBLIC_ALL_JOBS_URL)
+
+  const hasMinimalShellSignals = url === PUBLIC_PORTAL_HOME_URL
+    && text === `${OFFICIAL_BRAND_NAME} -`
+
+  return title === OFFICIAL_BRAND_NAME
+    && (hasRichShellSignals || hasMinimalShellSignals)
 }
 
 export const createDelhiveryScraper = ({
   now = () => new Date().toISOString(),
   pageSize = DEFAULT_PAGE_SIZE,
+  fetchImpl = fetch,
 } = {}) => ({
   async run({
     maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
     maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-    getOfficialCareersSurface = () => captureRenderedSurface({
-      url: OFFICIAL_CAREERS_URL,
-      waitForTextPattern: /Jobs at Delhivery/i,
-    }),
-    getBrowserListingContext = () => createBrowserListingContext({ pageSize }),
+    getOfficialCareersSurface = () => captureOfficialCareersSurface({ fetchImpl }),
+    getListingContext = () => createNativeListingContext({ pageSize, fetchImpl }),
   } = {}) {
     const officialSurface = await getOfficialCareersSurface()
     if (!hasOfficialDelhiveryCareersSignals(officialSurface)) {
       throw new Error('Delhivery verified official careers page no longer matches the verified public surface')
     }
 
-    const browserListingContext = await getBrowserListingContext()
+    const listingContext = await getListingContext()
 
-    try {
-      if (!hasPublicDarwinboxHomeSignal(browserListingContext.surface)) {
-        throw new Error('Delhivery verified public Darwinbox home surface no longer matches the verified public surface')
-      }
+    if (!hasPublicDarwinboxHomeSignal(listingContext.surface)) {
+      throw new Error('Delhivery verified public Darwinbox home surface no longer matches the verified public surface')
+    }
 
-      const jobs = []
-      let pageNumber = 1
+    const jobs = []
+    let pageNumber = 1
 
-      while (pageNumber <= maxPages) {
-        const payload = await browserListingContext.fetchListingPage({
-          page: pageNumber,
-          pageSize,
-          companyId: COMPANY_ID,
+    while (pageNumber <= maxPages) {
+      const payload = await listingContext.fetchListingPage({
+        page: pageNumber,
+        pageSize,
+        companyId: COMPANY_ID,
+      })
+
+      const results = extractSearchResults(payload)
+
+      for (const job of results) {
+        jobs.push({
+          ...job,
+          source: SOURCE,
+          link: job.applyUrl || job.sourceUrl,
+          scrapedAt: now(),
         })
 
-        const results = extractSearchResults(payload)
-
-        for (const job of results) {
-          jobs.push({
-            ...job,
-            source: SOURCE,
-            link: job.applyUrl || job.sourceUrl,
-            scrapedAt: now(),
-          })
-
-          if (maxJobs && jobs.length >= maxJobs) {
-            return jobs
-          }
+        if (maxJobs && jobs.length >= maxJobs) {
+          return jobs
         }
-
-        const totalJobCount = Number.parseInt(String(payload?.job_counts ?? ''), 10)
-        const hasMore = Number.isFinite(totalJobCount)
-          ? pageNumber * pageSize < totalJobCount
-          : Array.isArray(payload?.data) && payload.data.length === pageSize
-
-        if (!hasMore) break
-        pageNumber += 1
       }
 
-      return jobs
-    } finally {
-      await browserListingContext.close()
+      const totalJobCount = Number.parseInt(String(payload?.job_counts ?? ''), 10)
+      const hasMore = Number.isFinite(totalJobCount)
+        ? pageNumber * pageSize < totalJobCount
+        : Array.isArray(payload?.data) && payload.data.length === pageSize
+
+      if (!hasMore) break
+      pageNumber += 1
     }
+
+    return jobs
   },
 })
 
 export const run = async (options = {}) => createDelhiveryScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

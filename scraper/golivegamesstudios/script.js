@@ -42,7 +42,7 @@ const PUBLIC_JOBS_SIGNAL_PATTERNS = [
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
-  .replace(/&#39;|&apos;|&rsquo;/gi, "'")
+  .replace(/&#39;|&apos;|&rsquo;|\u2019/gi, "'")
   .replace(/&quot;/gi, '"')
   .replace(/&amp;/gi, '&')
   .replace(/\u00a0/g, ' ')
@@ -111,7 +111,7 @@ export const createGoLiveGamesStudiosScraper = () => ({
 export const run = async (options = {}) => createGoLiveGamesStudiosScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

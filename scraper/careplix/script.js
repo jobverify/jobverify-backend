@@ -157,6 +157,7 @@ const buildJobRecord = ({
   employmentType = null,
   jobDescription = null,
   jobId = null,
+  publicExperienceChecked = false,
 }) => {
   const normalizedTitle = normalizeWhitespace(title)
   const normalizedLocation = normalizeWhitespace(location)
@@ -183,6 +184,7 @@ const buildJobRecord = ({
     postingDate: null,
     closingDate: null,
     jobDescription: normalizeWhitespace(jobDescription),
+    ...(publicExperienceChecked ? { publicExperienceChecked: true } : {}),
   }
 }
 
@@ -220,6 +222,7 @@ export const extractPublicListingsFromBundle = (bundleText) => [
       employmentType,
       jobDescription,
       jobId,
+      publicExperienceChecked: true,
     })
   })
   .filter(Boolean)
@@ -578,7 +581,7 @@ export const createCarePlixScraper = () => ({
 export const run = async (options = {}) => createCarePlixScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running CarePlix scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

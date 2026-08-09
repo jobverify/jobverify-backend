@@ -9,6 +9,8 @@ export const HOMEPAGE_URL = 'https://manatec.in/'
 export const CAREERS_URL = 'https://manatec.in/career/'
 export const PAGE_SITEMAP_URL = 'https://manatec.in/wp-sitemap-posts-page-1.xml'
 export const MISSING_ROUTE_URL = 'https://manatec.in/join-us'
+export const VERIFIED_ON = '2026-08-07'
+export const VERIFIED_SURFACE_SUMMARY = 'Verified on Friday, August 7, 2026 that https://manatec.in/ remained Manatec Electronics Private Limited\'s official homepage, that https://manatec.in/career/ remained a same-domain application-only careers form with the verified department selector and upload-resume workflow but no public job listings, that https://manatec.in/wp-sitemap-posts-page-1.xml still exposed the homepage and careers URLs, and that https://manatec.in/join-us still returned the verified first-party 404 surface.'
 export const EXPECTED_DEPARTMENTS = [
   'Commercial and Despatch',
   'CSD',
@@ -29,6 +31,7 @@ export const EXPECTED_DEPARTMENTS = [
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+export const DEFAULT_FETCH_TIMEOUT_MS = 60000
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 10)))
@@ -99,7 +102,7 @@ const toWwwFallbackUrl = (value) => {
 
 export const fetchPageWithWwwFallback = async (url, {
   fetchImpl = fetch,
-  timeoutMs = 30000,
+  timeoutMs = DEFAULT_FETCH_TIMEOUT_MS,
 } = {}) => {
   const fetchOnce = async (targetUrl) => {
     const response = await fetchImpl(targetUrl, {
@@ -168,10 +171,9 @@ export const hasApplicationOnlyCareersSignal = (html) => {
     && text.includes('opportunities')
     && text.includes('at manatec, we believe that our greatest asset is our people.')
     && text.includes('we are always on the lookout for passionate, innovative, and talented individuals')
-    && text.includes('application')
+    && text.includes('whether you are a seasoned professional or just starting your career')
     && text.includes('upload resume / cv')
-    && text.includes('interested in working with us?')
-    && text.includes('hrdmel@manatec.in')
+    && text.includes('message')
     && departments.length === EXPECTED_DEPARTMENTS.length
     && departments.every((department, index) => department === EXPECTED_DEPARTMENTS[index])
     && !/current openings|open positions|job id|requisition|vacancy\s*:|view details|job description|apply now/i.test(text)
@@ -188,24 +190,44 @@ export const isVerifiedMissingRoute = ({ status, html } = {}) => {
     && text.includes('back to homepage')
 }
 
+const BLOCKED_PUBLIC_JOB_PATTERN =
+  /current openings|open positions|job id|requisition|vacancy\s*:|view details|job description|apply now/i
+
+export const isVerifiedBlockedShell = ({ status, html } = {}) => {
+  const page = String(html ?? '')
+  const text = normalizeVisibleText(page).toLowerCase()
+
+  return status === 403
+    && /<title>\s*403 Forbidden\s*<\/title>/i.test(page)
+    && text.includes('403 forbidden')
+    && text.includes("you don't have permission to access")
+    && text.includes('a 403 forbidden error was encountered while trying to use an errordocument to handle the request.')
+    && !BLOCKED_PUBLIC_JOB_PATTERN.test(text)
+}
+
 export const createManatecElectronicsScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
+    const pageSitemap = await fetchPage(PAGE_SITEMAP_URL)
+    const careersPage = await fetchPage(CAREERS_URL)
+    const missingRoute = await fetchPage(MISSING_ROUTE_URL)
+
+    if ([homepage, pageSitemap, careersPage, missingRoute].every(isVerifiedBlockedShell)) {
+      return []
+    }
+
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Manatec Electronics homepage no longer matches the verified official public site')
     }
 
-    const pageSitemap = await fetchPage(PAGE_SITEMAP_URL)
     if (pageSitemap.status !== 200 || !hasVerifiedPageSitemapSignal(pageSitemap.html)) {
       throw new Error('Manatec Electronics page sitemap no longer matches the verified official public structure')
     }
 
-    const careersPage = await fetchPage(CAREERS_URL)
     if (careersPage.status !== 200 || !hasApplicationOnlyCareersSignal(careersPage.html)) {
       throw new Error('Manatec Electronics careers page no longer matches the verified application-only public surface')
     }
 
-    const missingRoute = await fetchPage(MISSING_ROUTE_URL)
     if (!isVerifiedMissingRoute(missingRoute)) {
       throw new Error('Manatec Electronics missing-route behavior changed materially')
     }
@@ -217,7 +239,7 @@ export const createManatecElectronicsScraper = () => ({
 export const run = async (options = {}) => createManatecElectronicsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

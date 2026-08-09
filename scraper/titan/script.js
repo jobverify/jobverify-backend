@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -24,12 +24,14 @@ const normalizeWhitespace = (value) => {
 }
 
 export const hasOfficialCareersSignal = (html) => {
-  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(
+    String(html ?? '').replace(/<[^>]+>/g, ' '),
+  )?.toLowerCase() || ''
 
-  return /Career Opportunities at Titan Company/i.test(page)
-    && /Current vacancies/i.test(page)
-    && /Life at Titan/i.test(page)
-    && /Working at Titan Company\s+Limited/i.test(page)
+  return normalized.includes('career opportunities at titan company')
+    && normalized.includes('current vacancies')
+    && normalized.includes('life at titan')
+    && normalized.includes('working at titan company limited')
 }
 
 export const extractCurrentVacanciesUrl = (html) => {
@@ -88,7 +90,7 @@ export const createTitanScraper = () => ({
 export const run = async (options = {}) => createTitanScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

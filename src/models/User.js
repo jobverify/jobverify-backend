@@ -32,7 +32,7 @@ const ProfilePreferenceFiltersSchema = new Schema(
     experienceYear: { type: String, default: "" },
     roleDomain: { type: [String], default: [], validate: boundedStringList },
     workArrangement: { type: [String], default: [], validate: boundedStringList },
-    datePostedDays: { type: [Number], default: [] },
+    datePostedDays: { type: [String], default: [], validate: boundedStringList },
     sortBy: {
       type: String,
       enum: ["all", "popularity", "latest", "oldest"],
@@ -54,6 +54,10 @@ const ProfileSchema = new Schema(
     },
     locationPreference: { type: [String], default: [], validate: boundedStringList },
     profilePreferenceFilters: {
+      type: ProfilePreferenceFiltersSchema,
+      default: () => ({}),
+    },
+    whatsappAlertFilters: {
       type: ProfilePreferenceFiltersSchema,
       default: () => ({}),
     },
@@ -107,6 +111,26 @@ const ContactSchema = new Schema(
   { _id: false },
 );
 
+const GoogleAuthSchema = new Schema(
+  {
+    sub: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    picture: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    linkedAt: {
+      type: Date,
+      default: null,
+    },
+  },
+  { _id: false },
+);
+
 const UserSchema = new Schema(
   {
     email: {
@@ -116,7 +140,7 @@ const UserSchema = new Schema(
       trim: true,
       lowercase: true,
     },
-    password: { type: String, required: true },
+    password: { type: String, default: null },
     role: {
       type: String,
       enum: ["user", "admin"],
@@ -135,6 +159,10 @@ const UserSchema = new Schema(
       type: ContactSchema,
       default: () => ({}),
     },
+    google: {
+      type: GoogleAuthSchema,
+      default: () => ({}),
+    },
     profile: { type: ProfileSchema, default: () => ({}) },
     savedJobs: {
       type: [{
@@ -147,6 +175,8 @@ const UserSchema = new Schema(
     isVerified: { type: Boolean, default: false },
     deactivated: { type: Boolean, default: false },
     lastLoginAt: { type: Date },
+    passwordChangedAt: { type: Date, default: null },
+    sessionVersion: { type: Number, default: 0 },
     resetPasswordTokenHash: { type: String, default: null },
     resetPasswordExpiresAt: { type: Date, default: null },
   },
@@ -162,6 +192,7 @@ UserSchema.index({ createdAt: -1 });
 UserSchema.index({ "profile.passingYear": 1 });
 UserSchema.index({ "premium.expiresAt": 1 });
 UserSchema.index({ "contact.phoneE164": 1 }, { sparse: true });
+UserSchema.index({ "google.sub": 1 }, { sparse: true });
 UserSchema.index({ resetPasswordTokenHash: 1 }, { sparse: true });
 UserSchema.index(
   { onboardingCompleted: 1 },

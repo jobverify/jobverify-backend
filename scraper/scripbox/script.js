@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import SCRIPBOX_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -153,7 +153,18 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
 
   try {
     const openings = extractEmbeddedJobOpenings(page)
-    const titles = new Set(openings.map((opening) => normalizeWhitespace(opening.job_title)).filter(Boolean))
+    const publicIndiaOpenings = openings.filter(
+      (opening) => isPublicCareerOpening(opening) && isIndiaOpening(opening),
+    )
+    const detailLinks = extractDarwinboxJobLinks(page)
+    const allOpeningsHaveMatchedDetailLinks = publicIndiaOpenings.every((opening) => {
+      const title = normalizeWhitespace(opening.job_title)
+      const jobId = normalizeWhitespace(opening.job_id)
+
+      if (!title || !jobId) return false
+
+      return Boolean(detailLinks.byId.get(jobId) || detailLinks.byTitle.get(title))
+    })
 
     return /<title>\s*Careers\s*\|\s*Scripbox\s*<\/title>/i.test(page)
       && hasCanonicalCareersUrl(page)
@@ -161,9 +172,8 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
       && text.includes('Join us in helping make every Indian financially secure')
       && text.includes('Job Openings')
       && text.includes('Get In Touch')
-      && titles.has('Associate')
-      && titles.has('Software Development Engineer in Test')
-      && openings.filter((opening) => isPublicCareerOpening(opening) && isIndiaOpening(opening)).length >= 3
+      && publicIndiaOpenings.length >= 3
+      && allOpeningsHaveMatchedDetailLinks
   } catch {
     return false
   }
@@ -244,7 +254,7 @@ export const createScripboxScraper = () => ({
 export const run = async (options = {}) => createScripboxScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

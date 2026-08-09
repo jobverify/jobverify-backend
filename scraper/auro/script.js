@@ -1,4 +1,4 @@
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const CAREER_PAGE_URL = 'https://www.aurouniversity.edu.in/job-and-vacancies/'
 

@@ -1,7 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { DEFAULT_JOB_RETENTION_DAYS } from '../../src/utils/jobLifecycle.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -9,6 +10,7 @@ const config = loadConfig(currentDir)
 export const BASE_URL = 'https://www.amazon.jobs'
 export const SEARCH_COUNTRY_CODE = 'IND'
 export const DEFAULT_PAGE_SIZE = 10
+export const DEFAULT_DETAIL_FETCH_RETENTION_DAYS = DEFAULT_JOB_RETENTION_DAYS
 
 const MONTH_INDEX = {
   january: '01',
@@ -59,6 +61,11 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
+const extractFirst = (pattern, value) => {
+  const match = pattern.exec(String(value ?? ''))
+  return match ? match[1] : null
+}
+
 const normalizeEmploymentType = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
@@ -81,6 +88,125 @@ const normalizeDate = (value) => {
   if (!month) return null
 
   return `${year}-${month}-${String(day).padStart(2, '0')}`
+}
+
+const formatExperienceDuration = (minimum, {
+  maximum = null,
+  suffix = '',
+  unit = 'years',
+} = {}) => {
+  if (!minimum) return null
+  const normalizedUnit = /^mo/i.test(unit) ? 'month' : 'year'
+  const singular = Number.parseFloat(maximum ?? minimum) === 1 && !maximum && suffix !== '+'
+  if (maximum) return `${minimum}-${maximum} ${normalizedUnit}s`
+  return `${minimum}${suffix} ${singular ? normalizedUnit : `${normalizedUnit}s`}`
+}
+
+const extractExperienceRequired = (value) => {
+  const text = stripTags(value)
+  if (!text) return null
+
+  let match = text.match(/\b(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*((?:years?|yrs?|months?|mos?))\b[^.]{0,120}\bexperience\b/i)
+  if (match) {
+    return formatExperienceDuration(match[1], {
+      maximum: match[2],
+      unit: match[3],
+    })
+  }
+
+  match = text.match(/\b(\d+(?:\.\d+)?)\s*(\+|plus)\s*((?:years?|yrs?|months?|mos?))\b[^.]{0,120}\bexperience\b/i)
+  if (match) {
+    return formatExperienceDuration(match[1], {
+      suffix: '+',
+      unit: match[3],
+    })
+  }
+
+  match = text.match(/\b(\d+(?:\.\d+)?)\s*((?:years?|yrs?|months?|mos?))\b[^.]{0,120}\bexperience\b/i)
+  if (match) {
+    return formatExperienceDuration(match[1], {
+      unit: match[2],
+    })
+  }
+
+  return null
+}
+
+const extractMetaContent = (html, key) => {
+  const patterns = [
+    new RegExp(`<meta[^>]+property=["']${key}["'][^>]+content=["']([\\s\\S]*?)["']`, 'i'),
+    new RegExp(`<meta[^>]+content=["']([\\s\\S]*?)["'][^>]+property=["']${key}["']`, 'i'),
+  ]
+
+  for (const pattern of patterns) {
+    const value = extractFirst(pattern, html)
+    const normalized = normalizeWhitespace(value)
+    if (normalized) return normalized
+  }
+
+  return null
+}
+
+const extractSectionText = (html, heading) => stripTags(
+  extractFirst(
+    new RegExp(`<div[^>]*class=["'][^"']*section[^"']*["'][^>]*>\\s*<h2>\\s*${heading}\\s*<\\/h2>([\\s\\S]*?)<\\/div>`, 'i'),
+    html,
+  ),
+)
+
+const extractDetailTitle = (html, listing = {}) => {
+  const ogTitle = extractMetaContent(html, 'og:title')
+  if (ogTitle) return ogTitle
+
+  const titleTag = normalizeWhitespace(extractFirst(/<title>\s*([\s\S]*?)\s*<\/title>/i, html))
+  if (titleTag) {
+    return normalizeWhitespace(
+      titleTag
+        .replace(/\s*-\s*Job ID:\s*\d+[\s\S]*$/i, '')
+        .replace(/\s*\|\s*Amazon\.jobs\s*$/i, ''),
+    )
+  }
+
+  return listing.title || null
+}
+
+const parseIsoDate = (value) => {
+  const normalized = normalizeDate(value)
+  if (!normalized) return null
+  const parsed = new Date(`${normalized}T00:00:00.000Z`)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+export const shouldFetchDetailForJob = (job, {
+  now = new Date(),
+  detailFetchRetentionDays = DEFAULT_DETAIL_FETCH_RETENTION_DAYS,
+} = {}) => {
+  const postingDate = parseIsoDate(job?.postingDate)
+  if (!postingDate) return true
+
+  const cutoff = new Date(now)
+  cutoff.setUTCDate(cutoff.getUTCDate() - Math.max(0, Number(detailFetchRetentionDays) || DEFAULT_DETAIL_FETCH_RETENTION_DAYS))
+  cutoff.setUTCHours(0, 0, 0, 0)
+  return postingDate >= cutoff
+}
+
+export const extractJobDetail = (html, listing = {}) => {
+  const description = extractSectionText(html, 'Description')
+  const basicQualifications = extractSectionText(html, 'Basic Qualifications')
+  const preferredQualifications = extractSectionText(html, 'Preferred Qualifications')
+  const detailText = [
+    description,
+    basicQualifications,
+    preferredQualifications,
+  ].filter(Boolean).join('\n\n')
+
+  return {
+    title: extractDetailTitle(html, listing),
+    experienceRequired: extractExperienceRequired(basicQualifications || preferredQualifications || detailText),
+    minimumQualification: basicQualifications || null,
+    preferredQualification: preferredQualifications || null,
+    jobDescription: detailText || listing.jobDescription || null,
+  }
 }
 
 const normalizeLocation = (record = {}) => {
@@ -197,6 +323,21 @@ const fetchJson = async (url) => {
   return response.json()
 }
 
+const fetchText = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} for ${url}`)
+  }
+
+  return response.text()
+}
+
 export const createAmazonScraper = ({
   pageSize = Number.isInteger(config.pageSize) ? config.pageSize : DEFAULT_PAGE_SIZE,
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
@@ -204,6 +345,11 @@ export const createAmazonScraper = ({
 } = {}) => ({
   async run(options = {}) {
     const fetchJsonImpl = options.fetchJson || fetchJson
+    const fetchTextImpl = options.fetchText || fetchText
+    const now = options.now ? new Date(options.now) : new Date()
+    const detailFetchRetentionDays = Number.isInteger(options.detailFetchRetentionDays)
+      ? options.detailFetchRetentionDays
+      : Number.parseInt(process.env.SCRAPER_JOB_POSTED_WITHIN_DAYS || '', 30) || DEFAULT_DETAIL_FETCH_RETENTION_DAYS
     const jobs = []
     const seenJobIds = new Set()
 
@@ -217,8 +363,22 @@ export const createAmazonScraper = ({
         if (seenJobIds.has(job.jobId)) continue
         seenJobIds.add(job.jobId)
 
+        let detail = {}
+        if (shouldFetchDetailForJob(job, { now, detailFetchRetentionDays })) {
+          try {
+            detail = extractJobDetail(await fetchTextImpl(job.sourceUrl), job)
+          } catch {
+            detail = {}
+          }
+        }
+
         jobs.push({
           ...job,
+          title: detail.title || job.title,
+          experienceRequired: detail.experienceRequired || job.experienceRequired,
+          minimumQualification: detail.minimumQualification || job.minimumQualification,
+          preferredQualification: detail.preferredQualification || job.preferredQualification,
+          jobDescription: detail.jobDescription || job.jobDescription,
           source: 'amazon',
           link: job.applyUrl || job.sourceUrl,
           scrapedAt: new Date().toISOString(),
@@ -241,7 +401,7 @@ export const createAmazonScraper = ({
 export const run = async () => createAmazonScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Amazon scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()
@@ -253,7 +413,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
     console.log(`Dry run - wrote ${jobs.length} jobs to jobs.json`)
   } else {
-    const result = await saveToDB(jobs, 'amazon')
+    const result = await saveToDB(jobs, 'amazon', {
+      enrichPublicExperience: false,
+    })
     console.log('DB result:', result)
     process.exit(0)
   }

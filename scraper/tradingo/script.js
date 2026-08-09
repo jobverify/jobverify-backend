@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { TRADINGO_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -84,7 +84,7 @@ export const extractSharedApplyUrl = (html = '') => {
 
 const extractJobSection = (html = '') => {
   const match = String(html ?? '').match(
-    /<h2\b[^>]*>\s*Job Opportunities\s*<\/h2>([\s\S]*?)<\/main>/i,
+    /<h2\b[^>]*>\s*Job Opportunities\s*<\/h2>([\s\S]*?)(?=<section\b|<\/main>|$)/i,
   )
 
   return match?.[1] ?? ''
@@ -141,17 +141,25 @@ export const extractRoleCards = (html = '') => {
   if (!sharedApplyUrl || !jobSection) return []
 
   const jobs = []
-  let currentDepartment = null
+  const departmentSections = [...jobSection.matchAll(
+    /<h3\b[^>]*>([\s\S]*?)<\/h3>([\s\S]*?)(?=<h3\b|$)/gi,
+  )]
 
-  for (const match of jobSection.matchAll(/<h3\b[^>]*>([\s\S]*?)<\/h3>|<article\b[^>]*class=["'][^"']*job-card[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi)) {
-    if (match[1]) {
-      currentDepartment = stripTags(match[1]) || currentDepartment
-      continue
-    }
+  const sectionsToParse = departmentSections.length > 0
+    ? departmentSections.map((match) => ({
+      department: stripTags(match[1]) || null,
+      html: match[2],
+    }))
+    : [{ department: null, html: jobSection }]
 
-    const job = parseArticle(match[2], currentDepartment, sharedApplyUrl)
-    if (job) {
-      jobs.push(job)
+  for (const section of sectionsToParse) {
+    for (const roleMatch of section.html.matchAll(
+      /<h4\b[^>]*>[\s\S]*?<\/h4>[\s\S]*?<a\b[^>]*href=["'][^"']+["'][^>]*>\s*APPLY\s*<\/a>/gi,
+    )) {
+      const job = parseArticle(roleMatch[0], section.department, sharedApplyUrl)
+      if (job) {
+        jobs.push(job)
+      }
     }
   }
 
@@ -182,8 +190,8 @@ export const createTradingoScraper = ({ now = () => new Date().toISOString() } =
 
 export const run = async (options = {}) => createTradingoScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

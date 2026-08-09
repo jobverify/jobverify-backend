@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import PURPLE_STYLE_LABS_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -16,26 +16,31 @@ export const LINKEDIN_JOBS_HOST = PROVIDER_METADATA.officialLinkedInJobsHost
 export const LINKEDIN_COMPANY_ID = PROVIDER_METADATA.officialLinkedInCompanyId
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
-const normalizeWhitespace = (value) => String(value ?? '')
+const decodeHtmlEntities = (value) => String(value ?? '')
+  .replace(/&#8211;|&ndash;/gi, '-')
+  .replace(/&#8217;|&rsquo;|&#39;|&apos;/gi, "'")
+  .replace(/&amp;/gi, '&')
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/\u00a0/g, ' ')
+
+const normalizeWhitespace = (value) => decodeHtmlEntities(value)
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
   .replace(/<[^>]+>/g, ' ')
-  .replace(/&#8211;|&ndash;/gi, '-')
-  .replace(/&#8217;|&rsquo;/gi, "'")
-  .replace(/&amp;/gi, '&')
-  .replace(/&nbsp;/gi, ' ')
-  .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
+  const title = normalizeWhitespace(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '')
 
-  return /<title>\s*Careers\b/i.test(page)
+  return (title === 'Purple Style Labs' || /^Careers\b/i.test(title))
     && text.includes('Purple Style Labs')
+    && text.includes('Love the business of Luxury?')
     && text.includes('Join Us!')
     && text.includes('BROWSE OPPORTUNITIES')
     && text.includes(CAREERS_EMAIL)
@@ -49,7 +54,7 @@ export const extractLinkedInJobsUrl = (html = '') => {
   if (!match?.[1]) return null
 
   try {
-    return new URL(match[1]).toString()
+    return new URL(decodeHtmlEntities(match[1])).toString()
   } catch {
     return null
   }
@@ -108,7 +113,7 @@ export const createPurpleStyleLabsScraper = () => ({
 export const run = async (options = {}) => createPurpleStyleLabsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

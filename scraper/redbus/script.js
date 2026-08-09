@@ -2,9 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
-import { launchBrowser, createOptimizedPage } from '../utils/browser.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { REDBUS_CATALOG } from './catalog.js'
 
@@ -50,10 +49,41 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+const decodePercentEncodedText = (value) => {
+  if (value == null) return null
+
+  const normalized = String(value).trim()
+  if (!normalized) return null
+
+  const sanitized = normalized
+    .replace(/\+/g, '%20')
+    .replace(/%(?![0-9a-f]{2})/gi, '%25')
+
+  try {
+    return decodeURIComponent(sanitized)
+  } catch {
+    return sanitized.replace(
+      /%([0-9a-f]{2})/gi,
+      (_, hex) => String.fromCharCode(Number.parseInt(hex, 16)),
+    )
+  }
+}
+
 const extractTitle = (html = '') => {
   const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
   return normalizeWhitespace(match?.[1])
 }
+
+export const extractInlinePageData = (html = '') => {
+  const match = String(html ?? '').match(/\b(?:let|var)\s+data\s*=\s*(["'])([\s\S]*?)\1/i)
+  return match ? decodePercentEncodedText(match[2]) : null
+}
+
+const buildVerifiedSurfaceText = (html = '') =>
+  normalizeWhitespace([String(html ?? ''), extractInlinePageData(html)].filter(Boolean).join(' ')) || ''
+
+const buildVerifiedSurfaceSource = (html = '') =>
+  [String(html ?? ''), extractInlinePageData(html)].filter(Boolean).join('\n')
 
 export const buildDarwinboxAllJobsUrl = () => darwinboxScraper.buildCareersPageUrl()
 export const buildDarwinboxJobDetailUrl = (jobId) => darwinboxScraper.buildJobDetailUrl(jobId)
@@ -68,16 +98,17 @@ export const extractJobsBundleUrl = (html = '') => {
 
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page) || ''
+  const text = buildVerifiedSurfaceText(page)
+  const source = buildVerifiedSurfaceSource(page)
 
   return extractTitle(page) === 'redBus Careers'
     && text.includes('Explore open roles')
-    && /["']\/careers\/jobs["']/i.test(page)
+    && /["']\/careers\/jobs["']/i.test(source)
 }
 
 export const hasJobsPageSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page) || ''
+  const text = buildVerifiedSurfaceText(page)
 
   return extractTitle(page) === 'redBus Careers'
     && extractJobsBundleUrl(page) !== null
@@ -95,11 +126,11 @@ export const hasDarwinboxApplyHandoffSignal = (bundle = '') => {
 
 export const hasDarwinboxShellSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page) || ''
 
-  return extractTitle(page) === 'MakeMyTrip'
-    && /property=["']og:title["'][^>]+content=["']MakeMyTrip\s*["']/i.test(page)
-    && text.includes('MakeMyTrip -')
+  return /<base[^>]+href=["']\/ms\/candidatev2\/["'][^>]*>/i.test(page)
+    && /db-components\.esm\.js/i.test(page)
+    && /\/ms\/formbuilder\/assets\/db-form\/db-form\.js/i.test(page)
+    && /<app-root\b/i.test(page)
 }
 
 export const isRedBusRecord = (record = {}) => {
@@ -135,45 +166,29 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const createBrowserListingFetcher = async ({ pageSize = DEFAULT_PAGE_SIZE } = {}) => {
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
-
-  await page.goto(buildDarwinboxAllJobsUrl(), { waitUntil: 'domcontentloaded' })
-  await page.waitForSelector('body', { timeout: config.jobListingTimeoutMs }).catch(() => null)
-
-  const fetchListingPage = async ({ page: pageNumber }) => page.evaluate(
-    async ({ targetCompanyId, targetPage, targetPageSize }) => {
-      const response = await fetch(`/ms/candidateapi/job/alljobs?companyId=${targetCompanyId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          companyId: targetCompanyId,
-          sort_option: 'new',
-          limit: targetPageSize,
-          page: targetPage,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-
-      return response.json()
+const defaultFetchListingPage = async ({ page, pageSize, companyId }) => {
+  const url = new URL('/ms/candidateapi/job/alljobs', DARWINBOX_ORIGIN)
+  url.searchParams.set('companyId', companyId)
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      'User-Agent': USER_AGENT,
     },
-    {
-      targetCompanyId: DARWINBOX_COMPANY_ID,
-      targetPage: pageNumber,
-      targetPageSize: pageSize,
-    },
-  )
+    body: JSON.stringify({
+      companyId,
+      sort_option: 'new',
+      limit: pageSize,
+      page,
+    }),
+  })
 
-  return {
-    fetchListingPage,
-    close: async () => browser.close(),
+  if (!response.ok) {
+    throw new Error(`RedBus Darwinbox jobs API returned HTTP ${response.status}`)
   }
+
+  return response.json()
 }
 
 export const createRedBusScraper = ({
@@ -208,13 +223,8 @@ export const createRedBusScraper = ({
       throw new Error('RedBus verified Darwinbox shell no longer matches the known public surface')
     }
 
-    let browserContext = null
-
-    try {
-      if (!fetchListingPage) {
-        browserContext = await createBrowserListingFetcher({ pageSize })
-        fetchListingPage = browserContext.fetchListingPage
-      }
+    {
+      fetchListingPage ||= defaultFetchListingPage
 
       const jobs = []
 
@@ -256,10 +266,6 @@ export const createRedBusScraper = ({
       }
 
       return jobs
-    } finally {
-      if (browserContext) {
-        await browserContext.close()
-      }
     }
   },
 })
@@ -267,7 +273,7 @@ export const createRedBusScraper = ({
 export const run = async (options = {}) => createRedBusScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import SHIPROCKET_CATALOG from './catalog.js'
 
@@ -24,8 +24,10 @@ export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&#038;|&amp;/gi, '&')
-  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/&#0*39;|&apos;|&rsquo;|&lsquo;|&#8217;|&#8216;/gi, "'")
   .replace(/&quot;|&ldquo;|&rdquo;|&#8220;|&#8221;/gi, '"')
+  .replace(/[\u2018\u2019]/g, "'")
+  .replace(/&#8211;|&#8212;|&ndash;|&mdash;/gi, '-')
   .replace(/\u2013|\u2014/g, '-')
 
 const normalizeWhitespace = (value) => {
@@ -134,7 +136,7 @@ const parsePostingDate = (value) => {
 
 const extractListMetaValues = (html = '') =>
   Array.from(
-    String(html ?? '').matchAll(/<span\b[^>]*>([\s\S]*?)<\/span>/gi),
+    String(html ?? '').matchAll(/<(?:span|small)\b[^>]*>([\s\S]*?)<\/(?:span|small)>/gi),
     (match) => normalizeWhitespace(match[1]),
   ).filter(Boolean)
 
@@ -200,37 +202,43 @@ export const hasOfficialCareersSignal = (html = '') => {
     && text.includes('join the family')
     && text.includes("we're hiring!")
     && text.includes('job application form')
-    && page.includes('GoLang Developer')
-    && page.includes('Central Analytics Lead')
+    && extractVisibleJobListings(page).length > 0
     && /https:\/\/careers\.shiprocket\.in\/jobs\//i.test(page)
 }
 
 export const extractVisibleJobListings = (html = '') => {
   const listings = []
   const seenSlugs = new Set()
-
-  for (const match of String(html ?? '').matchAll(
+  const patterns = [
     /<article\b[^>]*class=["'][^"']*\bjob-card\b[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi,
-  )) {
-    const cardHtml = match[1]
-    const title = normalizeWhitespace(cardHtml.match(/<h5[^>]*>([\s\S]*?)<\/h5>/i)?.[1])
-    const metaValues = extractListMetaValues(cardHtml)
-    const sourceUrl = normalizeWhitespace(cardHtml.match(/<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*View Job\s*<\/a>/i)?.[1])
-    const slug = slugify(title)
+    /<div\b[^>]*class=["'][^"']*\bjob\b[^"']*["'][^>]*>([\s\S]*?)<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*View Job\s*<\/a>\s*<\/div>/gi,
+  ]
 
-    if (!title || !slug || !sourceUrl || seenSlugs.has(slug) || !isShiprocketJobUrl(sourceUrl)) continue
+  for (const pattern of patterns) {
+    for (const match of String(html ?? '').matchAll(pattern)) {
+      const cardHtml = match[1]
+      const title = normalizeWhitespace(cardHtml.match(/<h5[^>]*>([\s\S]*?)<\/h5>/i)?.[1])
+      const metaValues = extractListMetaValues(cardHtml)
+      const sourceUrl = normalizeWhitespace(
+        match[2]
+          || cardHtml.match(/<a\b[^>]*href=["']([^"']+)["'][^>]*>\s*View Job\s*<\/a>/i)?.[1],
+      )
+      const slug = slugify(title)
 
-    seenSlugs.add(slug)
-    const location = metaValues[metaValues.length - 1] || null
-    const experienceRequired = metaValues.length > 1 ? metaValues[0] : null
-    listings.push({
-      slug,
-      title,
-      sourceUrl,
-      applyUrl: sourceUrl,
-      location,
-      experienceRequired,
-    })
+      if (!title || !slug || !sourceUrl || seenSlugs.has(slug) || !isShiprocketJobUrl(sourceUrl)) continue
+
+      seenSlugs.add(slug)
+      const location = metaValues[metaValues.length - 1] || null
+      const experienceRequired = metaValues.length > 1 ? metaValues[0] : null
+      listings.push({
+        slug,
+        title,
+        sourceUrl,
+        applyUrl: sourceUrl,
+        location,
+        experienceRequired,
+      })
+    }
   }
 
   return listings
@@ -346,7 +354,7 @@ export const createShiprocketScraper = ({
 export const run = async (options = {}) => createShiprocketScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

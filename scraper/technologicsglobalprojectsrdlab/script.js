@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { withRetry } from '../utils/retry.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -132,9 +132,10 @@ const defaultFetchText = (url) => withRetry(async () => {
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const hasCareersEntryLink = /href=["']https:\/\/technologics\.in\/(?:jobs|careers)\/?["']/i.test(page)
 
   return /<title>\s*No\.1 PLC SCADA Training Institute In Bangalore\s*<\/title>/i.test(page)
-    && /href=["']https:\/\/technologics\.in\/jobs\/["']/i.test(page)
+    && hasCareersEntryLink
     && /href=["']https:\/\/technologics\.in\/lab\/["']/i.test(page)
     && /href=["']https:\/\/technologics\.in\/about-us\/["']/i.test(page)
     && normalized.includes('For Immediate Assistance Call Us +919738171920')
@@ -270,7 +271,7 @@ export const createTechnologicsGlobalProjectsRDLabScraper = ({ maxJobs = null } 
 export const run = async (options = {}) => createTechnologicsGlobalProjectsRDLabScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

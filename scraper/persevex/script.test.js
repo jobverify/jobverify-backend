@@ -195,6 +195,7 @@ test('Persevex scraper extracts the current public role cards from the first-par
     postingDate: null,
     closingDate: null,
     jobDescription: 'Official Persevex opening listed on the first-party careers page. Department: Business Development. Location: Hybrid (Bangalore / India). Work type: Full-time.',
+    publicExperienceChecked: true,
     remoteStatus: 'Hybrid',
   })
 
@@ -219,6 +220,7 @@ test('Persevex scraper extracts the current public role cards from the first-par
     postingDate: null,
     closingDate: null,
     jobDescription: 'Official Persevex opening listed on the first-party careers page. Department: Marketing. Location: Remote (India). Work type: Internship. Compensation: ₹15,000.',
+    publicExperienceChecked: true,
     remoteStatus: 'Remote',
   })
 })

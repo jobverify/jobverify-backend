@@ -1,39 +1,23 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'lsdevicespltd'
 export const COMPANY = 'LS Devices (P) Ltd'
-export const VERIFIED_AT = '2026-07-13'
-export const HOMEPAGE_URL = 'http://lsdevices.com/'
-export const WWW_HOMEPAGE_URL = 'http://www.lsdevices.com/'
-export const ROBOTS_URL = 'http://lsdevices.com/robots.txt'
-export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
-  'http://lsdevices.com/career',
-  'http://lsdevices.com/careers',
-  'http://lsdevices.com/careers/',
-  'http://lsdevices.com/jobs',
-  'http://lsdevices.com/openings',
-  'http://lsdevices.com/current-openings',
-]
+export const VERIFIED_AT = '2026-08-03'
+export const CAREERS_URL = 'https://www.lifesigns.us/careers/'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
-  /\bcurrent openings\b/i,
-  /\bopen positions?\b/i,
   /\bjob openings?\b/i,
-  /\bcareer opportunities\b/i,
-  /\bjoin our team\b/i,
   /\bapply now\b/i,
   /\bapply here\b/i,
-  /\bvacanc(?:y|ies)\b/i,
-  /\bwe(?:'|&#8217;|&#x2019;|&rsquo;)?re hiring\b/i,
   /boards\.greenhouse\.io/i,
   /job-boards\.greenhouse\.io/i,
   /jobs\.lever\.co/i,
@@ -51,10 +35,9 @@ const normalizeWhitespace = (value) =>
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
-    .replace(/&mdash;|&#8212;|&#x2014;/gi, '-')
-    .replace(/&ndash;|&#8211;|&#x2013;/gi, '-')
-    .replace(/&amp;/gi, '&')
     .replace(/\u00a0/g, ' ')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u2013\u2014]/g, '-')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase()
@@ -72,48 +55,27 @@ const defaultFetchText = (url) =>
 export const hasPublicJobsSignal = (value) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(value ?? '')))
 
-export const hasVerifiedExpiredWixSignal = (html) => {
-  const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
+export const hasVerifiedNoPublicJobsSignal = (html) => {
+  const normalized = normalizeWhitespace(html)
 
-  return /<title>\s*Reconnect Your Domain \| Wix\.com\s*<\/title>/i.test(rawHtml)
-    && /<meta[^>]+name=["']description["'][^>]+content=["']This domain used to be connected to a Wix website\./i.test(rawHtml)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.expiredwixdomain\.com\/["']/i.test(rawHtml)
-    && /<meta[^>]+name=["']robots["'][^>]+content=["']noindex["']/i.test(rawHtml)
-    && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']Domain Expired Page["']/i.test(rawHtml)
-    && normalized.includes('dreaming of your own domain? claim one now on wix.')
-    && normalized.includes('need to extend your registration.')
-    && normalized.includes('get a domain')
-  }
+  return /<title>\s*careers at lifesigns\s*\|\s*challenge convention\s*<\/title>/i.test(String(html ?? ''))
+    && normalized.includes('explore our open roles')
+    && normalized.includes('see the role')
+    && normalized.includes('looking for')
+    && normalized.includes('reach out to us')
+    && normalized.includes('contribute')
+    && normalized.includes('leave a message')
+}
 
 export const createLSDevicesScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (hasPublicJobsSignal(homepageHtml)) {
-      throw new Error('LS Devices (P) Ltd homepage now appears to expose public jobs')
-    }
-    if (!hasVerifiedExpiredWixSignal(homepageHtml)) {
-      throw new Error('LS Devices (P) Ltd homepage no longer matches the verified expired-domain surface')
-    }
+    const careersHtml = await fetchText(CAREERS_URL)
 
-    const wwwHomepageHtml = await fetchText(WWW_HOMEPAGE_URL)
-    if (hasPublicJobsSignal(wwwHomepageHtml)) {
-      throw new Error('LS Devices (P) Ltd www homepage now appears to expose public jobs')
+    if (hasPublicJobsSignal(careersHtml)) {
+      throw new Error('LS Devices (P) Ltd careers page now appears to expose public jobs')
     }
-    if (!hasVerifiedExpiredWixSignal(wwwHomepageHtml)) {
-      throw new Error('LS Devices (P) Ltd www homepage no longer matches the verified expired-domain surface')
-    }
-
-    const robotsSurface = await fetchText(ROBOTS_URL)
-    if (hasPublicJobsSignal(robotsSurface) || !hasVerifiedExpiredWixSignal(robotsSurface)) {
-      throw new Error('LS Devices (P) Ltd robots surface no longer matches the verified expired-domain contract')
-    }
-
-    for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
-      const routeHtml = await fetchText(routeUrl)
-      if (hasPublicJobsSignal(routeHtml) || !hasVerifiedExpiredWixSignal(routeHtml)) {
-        throw new Error(`LS Devices (P) Ltd verified no-public-careers route changed: ${routeUrl}`)
-      }
+    if (!hasVerifiedNoPublicJobsSignal(careersHtml)) {
+      throw new Error('LS Devices (P) Ltd careers page no longer matches the verified no-public-jobs surface')
     }
 
     return []
@@ -123,7 +85,7 @@ export const createLSDevicesScraper = () => ({
 export const run = async (options = {}) => createLSDevicesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

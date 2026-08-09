@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Friday, July 17, 2026 that https://sonacomstar.com/career is the live official Sona Comstar career page for the exact-name Sona BLW Precision row, that it currently exposes only the generic resume-upload copy "Explore A career with sona comstar", "We are always eager to meet fresh talent.", and "Upload Resume", and that there is no trustworthy public jobs surface, public ATS listing, or public job detail link on that page. The legal-entity footer on https://sonacomstar.com/pages/about-us still identifies the company as Sona BLW Precision Forgings Limited and links the cautionary notice PDF at https://api.procuzy.com/sonacomstar/public/pdf/cautionary_notice_against_fake_employment_or_offers_etc.pdf, so this provider intentionally fails closed and returns an empty array until a trustworthy public jobs surface appears.'
+  'Verified on Sunday, July 26, 2026 that the old https://sonacomstar.com/career route still appears in the sitemap and from the live https://sonacomstar.com/our-culture page "Join Us" CTA, but the linked /career destination currently responds with HTTP 404 instead of a trustworthy public jobs surface. The live first-party https://sonacomstar.com/our-culture page still carries the official Sona Comstar branding, "Life @Sona Comstar", and "Explore a career with sona comstar" copy, while the legal-entity footer on https://sonacomstar.com/pages/about-us still identifies the company as Sona BLW Precision Forgings Limited and now links the cautionary notice PDF at https://sonacomstar.com/files/policy/Cautionary_Notice_Against_Fake_Employment_Offers_etc.pdf. This provider intentionally fails closed and returns an empty array until a trustworthy public jobs surface appears.'
 
 export const SONA_BLW_PRECISION_CATALOG = {
   source: 'sonablwprecision',
@@ -13,20 +13,20 @@ export const SONA_BLW_PRECISION_CATALOG = {
   adapter: 'script',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'sonablwprecision/jobs.json',
-  companyCareerPage: 'https://sonacomstar.com/career',
+  companyCareerPage: 'https://sonacomstar.com/our-culture',
   officialCompanyPageUrl: 'https://sonacomstar.com/pages/about-us',
   officialCulturePageUrl: 'https://sonacomstar.com/our-culture',
   cautionNoticeUrl:
-    'https://api.procuzy.com/sonacomstar/public/pdf/cautionary_notice_against_fake_employment_or_offers_etc.pdf',
+    'https://sonacomstar.com/files/policy/Cautionary_Notice_Against_Fake_Employment_Offers_etc.pdf',
   companyDomain: 'sonacomstar.com',
-  atsPlatform: 'official-company-site-resume-upload-no-public-jobs',
+  atsPlatform: 'official-company-site-culture-page-broken-career-route-no-public-jobs',
   countryFilter: 'India',
-  paginationStrategy: 'verified-career-page-plus-legal-entity-footer-checks',
+  paginationStrategy: 'verified-culture-page-plus-linked-career-404-plus-legal-entity-footer-checks',
   extractionStrategy:
-    'verified-career-page+footer-legal-entity+cautionary-notice-no-public-jobs-return-empty',
+    'verified-culture-page+linked-career-404+footer-legal-entity+cautionary-notice-no-public-jobs-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-07-26',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

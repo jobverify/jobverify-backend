@@ -1,4 +1,4 @@
-export const IMAGE_INFORMATION_SYSTEMS_CATALOG = {
+﻿export const IMAGE_INFORMATION_SYSTEMS_CATALOG = {
   source: 'imageinformationsystems',
   companyName: 'Image Information Systems',
   officialBrandName: 'IMAGE Information Systems Europe GmbH',
@@ -13,7 +13,7 @@ export const IMAGE_INFORMATION_SYSTEMS_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   verifiedSampleJobUrl: 'https://www.iq-image.com/job/frontend-developer-m-f-d/',
-  modulePath: '../imageinformationsystems/script.js',
+  modulePath: '../../scraper/imageinformationsystems/script.js',
   dryRunFile: 'imageinformationsystems/jobs.json',
   verifiedOn: '2026-07-16',
   verifiedSurfaceSummary:
@@ -21,3 +21,4 @@ export const IMAGE_INFORMATION_SYSTEMS_CATALOG = {
 }
 
 export default IMAGE_INFORMATION_SYSTEMS_CATALOG
+

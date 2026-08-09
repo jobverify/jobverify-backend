@@ -1,8 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 import QUIZIZZ_CATALOG from './catalog.js'
 
@@ -40,6 +41,13 @@ const normalizeWhitespace = (value) => {
 
   return normalized || null
 }
+
+const stripTags = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<(br|\/p|\/div|\/li|\/ul|\/ol|\/h[1-6])\b[^>]*>/gi, '\n')
+    .replace(/<(p|div|li|ul|ol|h[1-6])\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' '),
+)
 
 const normalizeText = (value) => normalizeWhitespace(
   String(value ?? '')
@@ -114,6 +122,40 @@ const toIsoDateTime = (value) => {
   return Number.isNaN(date.getTime()) ? null : date.toISOString()
 }
 
+const collectRichDescriptionSections = (job = {}) => {
+  const sections = [
+    job?.openingPlain,
+    job?.opening,
+    job?.descriptionPlain,
+    job?.descriptionBodyPlain,
+    job?.description,
+    job?.additionalPlain,
+    job?.additional,
+    ...(Array.isArray(job?.lists)
+      ? job.lists.flatMap((section) => [section?.text, section?.content])
+      : []),
+  ]
+
+  return [...new Set(
+    sections
+      .map((section) => stripTags(section))
+      .filter(Boolean),
+  )]
+}
+
+const buildJobDescription = (job = {}) => {
+  const sections = collectRichDescriptionSections(job)
+  return sections.length > 0 ? sections.join(' ') : null
+}
+
+const extractExperienceRequired = ({ title, jobDescription }) => (
+  extractJobFilterSignals({
+    title,
+    jobDescription,
+    experienceRequired: null,
+  }).experienceProfile?.evidence || null
+)
+
 const buildIndiaLocation = (rawLocation) => {
   const city = extractCity(rawLocation)
   if (city) return `${city}, India`
@@ -150,19 +192,23 @@ export const hasResolvedCareersSignal = (html = '') => {
 
 export const extractLeverBoardUrl = (html = '') => {
   const match = String(html ?? '').match(/href=["'](https:\/\/jobs\.lever\.co\/Wayground\/?)["']/i)
-  return match?.[1] ? match[1].replace(/\/$/, '') : null
+  if (match?.[1]) {
+    return match[1].replace(/\/$/, '')
+  }
+
+  return hasResolvedCareersSignal(html) ? LEVER_BOARD_URL : null
 }
 
 export const hasOfficialLeverBoardSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeText(page)
 
-  return text.includes('wayground (formerly quizizz)')
+  return /<title>\s*Wayground \(formerly Quizizz\)\s*<\/title>/i.test(page)
+    && /job openings at wayground \(formerly quizizz\)/i.test(page)
     && text.includes('location type')
     && text.includes('location')
     && text.includes('team')
     && text.includes('work type')
-    && text.includes('jobs powered by lever')
     && /https:\/\/jobs\.lever\.co\/Wayground\/[a-z0-9-]+/i.test(page)
 }
 
@@ -179,6 +225,7 @@ export const extractIndiaLeverJobs = (leverJobs = []) => {
       const city = extractCity(location)
       const sourceUrl = normalizeWhitespace(job?.hostedUrl) || buildPublicJobUrl(job?.id)
       const id = normalizeWhitespace(job?.id)
+      const jobDescription = buildJobDescription(job)
 
       if (!title || !id || !sourceUrl || !city) {
         throw new Error('Quizizz Lever postings payload no longer exposes the verified India job fields')
@@ -196,15 +243,13 @@ export const extractIndiaLeverJobs = (leverJobs = []) => {
         sourceUrl,
         applyUrl: normalizeWhitespace(job?.applyUrl) || sourceUrl,
         employmentType: normalizeWhitespace(job?.categories?.commitment),
-        experienceRequired: null,
+        experienceRequired: extractExperienceRequired({ title, jobDescription }),
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: [],
         postingDate: toIsoDateTime(job?.createdAt),
         closingDate: null,
-        jobDescription: normalizeWhitespace(
-          job?.descriptionPlain || job?.openingPlain || job?.additionalPlain,
-        ),
+        jobDescription,
         remoteStatus: toRemoteStatus(job?.workplaceType),
       }
     })
@@ -262,7 +307,7 @@ export const createQuizizzScraper = ({
 export const run = async (options = {}) => createQuizizzScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

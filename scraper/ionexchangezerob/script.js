@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -32,7 +32,7 @@ const PUBLIC_JOB_LISTING_PATTERNS = [
 ]
 
 const EMAIL_PATTERN = /\b([a-z0-9._%+-]+@ionexchange\.co\.in)\b/i
-const CAREERS_HANDOFF_PATTERN = /href=["'](https:\/\/careers\.ionindia\.com\/?[^"']*)["']/i
+const CAREERS_HANDOFF_PATTERN = /href=["'](https?:\/\/careers\.ionindia\.com\/?[^"']*)["']/i
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -74,15 +74,14 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const hasOfficialHomepageSignal = (html) => {
+  const page = String(html ?? '')
   const normalized = normalizeText(html)
 
-  return normalized.includes('India Grew up on ZeroB Purity, Quite Literally!')
-    && normalized.includes('Registered office and Corporate office')
-    && normalized.includes('Manufacturer/ Importer Details')
+  return /<title>\s*Get Pure Water Filters Online \| Best RO UV Purifiers - ZeroB\s*<\/title>/i.test(page)
+    && normalized.includes('#BharatKaPaani')
     && normalized.includes('Ion Exchange (India) Ltd.')
     && normalized.includes('zerob@ionexchange.co.in')
-    && /href=["']https:\/\/www\.zerobonline\.com\/our-story\/["']/i.test(String(html ?? ''))
-    && /href=["']https:\/\/ionexchangeglobal\.com\/careers\/["']/i.test(String(html ?? ''))
+    && /href=["'][^"']*\/careers\/["']/i.test(page)
 }
 
 export const hasOfficialStorySignal = (html) => {
@@ -96,14 +95,15 @@ export const hasOfficialStorySignal = (html) => {
 }
 
 export const hasOfficialCareersSignal = (html) => {
+  const page = String(html ?? '')
   const normalized = normalizeText(html)
 
-  return normalized.includes('Aspiring to make a difference, just like us?')
+  return /<title>\s*Careers\s*-\s*Ion Exchange\s*<\/title>/i.test(page)
     && normalized.includes('Join Us!')
-    && normalized.includes('At Ion Exchange, you will get a chance to work on numerous exciting yet challenging projects')
     && normalized.includes('Drop Your Resume Here')
     && normalized.includes('recruit@ionexchange.co.in')
     && normalized.includes('Explore jobs')
+    && /href=["']https?:\/\/careers\.ionindia\.com\/jobs/i.test(page)
 }
 
 export const extractOutboundCareersUrl = (html) => {
@@ -155,7 +155,7 @@ export const createIonExchangeZeroBScraper = () => ({
 export const run = async (options = {}) => createIonExchangeZeroBScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

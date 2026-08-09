@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { runApiPortalScraper } from '../apiPortal/engine.js'
+import { runApiPortalScraper } from '../../scraper-support/apiPortal/engine.js'
 import {
   buildScrapers,
   getScraperCatalog,
-} from '../providers/index.js'
+} from '../../scraper-support/providers/index.js'
 import {
   buildCompanyLookup,
   normalizeCompanyName,
-} from '../providers/companyCoverage.js'
+} from '../../scraper-support/providers/companyCoverage.js'
 
 test('getScraperCatalog includes Morgan Stanley as an Eightfold apiPortal provider with official metadata', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'morganstanley')

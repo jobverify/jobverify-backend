@@ -1,7 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -69,6 +70,19 @@ const joinDescriptionParts = (...parts) => normalizeWhitespace(
     .map((part) => normalizeWhitespace(part))
     .filter(Boolean)
     .join(' '),
+)
+
+const extractExperienceRequired = ({
+  title,
+  minimumQualification,
+  jobDescription,
+}) => (
+  extractJobFilterSignals({
+    title,
+    minimumQualification,
+    jobDescription,
+    experienceRequired: null,
+  }).experienceProfile?.evidence || null
 )
 
 const getRequisitionList = (payload) => {
@@ -164,9 +178,19 @@ export const extractPaginationSummary = (payload, { page = 0 } = {}) => {
 export const extractJobDetail = (payload, listing = {}) => {
   const detail = getRequisitionDetail(payload)
   const sourceUrl = listing.sourceUrl || buildJobDetailUrl(detail.Id)
+  const title = normalizeWhitespace(detail.Title) || listing.title || null
+  const minimumQualification = normalizeWhitespace(detail.StudyLevel || detail.ExternalQualificationsStr)
+    || listing.minimumQualification
+    || null
+  const jobDescription = joinDescriptionParts(
+    detail.ExternalDescriptionStr,
+    detail.ShortDescriptionStr,
+    detail.ExternalResponsibilitiesStr,
+    detail.ExternalQualificationsStr,
+  ) || listing.jobDescription || null
 
   return {
-    title: normalizeWhitespace(detail.Title) || listing.title || null,
+    title,
     company: 'Hexaware',
     department: normalizeWhitespace(
       detail.Department || detail.JobFunction || detail.JobFamily,
@@ -178,8 +202,12 @@ export const extractJobDetail = (payload, listing = {}) => {
     sourceUrl,
     applyUrl: sourceUrl,
     employmentType: normalizeWhitespace(detail.JobType || detail.WorkerType || detail.ContractType),
-    experienceRequired: null,
-    minimumQualification: normalizeWhitespace(detail.StudyLevel || detail.ExternalQualificationsStr),
+    experienceRequired: extractExperienceRequired({
+      title,
+      minimumQualification,
+      jobDescription,
+    }) || listing.experienceRequired || null,
+    minimumQualification,
     preferredQualification: null,
     requiredSkills: Array.isArray(detail.skills)
       ? detail.skills
@@ -188,11 +216,8 @@ export const extractJobDetail = (payload, listing = {}) => {
       : [],
     postingDate: normalizeDate(detail.ExternalPostedStartDate || detail.PostedDate) || listing.postingDate || null,
     closingDate: normalizeDate(detail.ExternalPostedEndDate || detail.PostingEndDate) || listing.closingDate || null,
-    jobDescription: joinDescriptionParts(
-      detail.ExternalDescriptionStr,
-      detail.ShortDescriptionStr,
-      detail.ExternalResponsibilitiesStr,
-    ) || listing.jobDescription || null,
+    jobDescription,
+    publicExperienceChecked: true,
   }
 }
 
@@ -248,7 +273,7 @@ export const run = async () => {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Hexaware scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -32,6 +32,19 @@ const toAbsoluteUrl = (value) => {
     return new URL(normalized, CAREERS_URL).toString()
   } catch {
     return null
+  }
+}
+
+const isCompanyRoleUrl = (value) => {
+  const absoluteUrl = toAbsoluteUrl(value)
+  if (!absoluteUrl) return false
+
+  try {
+    const parsed = new URL(absoluteUrl)
+    return parsed.origin === 'https://compare.buyhatke.com'
+      && /^\/company\/[^/]+\.php$/i.test(parsed.pathname)
+  } catch {
+    return false
   }
 }
 
@@ -78,7 +91,7 @@ const buildJobDescription = (html) => [...String(html ?? '').matchAll(/<section\
 
 const buildListing = ({ title, sourceUrl }) => {
   const jobId = toJobId(sourceUrl)
-  if (!title || !sourceUrl || !jobId || EXCLUDED_ROLE_PATHS.has(jobId)) return null
+  if (!title || !sourceUrl || !jobId || !isCompanyRoleUrl(sourceUrl) || EXCLUDED_ROLE_PATHS.has(jobId)) return null
 
   return {
     title,
@@ -207,7 +220,7 @@ export const createBuyhatkeScraper = ({ now = () => new Date().toISOString() } =
 export const run = async (options = {}) => createBuyhatkeScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

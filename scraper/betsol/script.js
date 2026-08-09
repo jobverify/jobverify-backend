@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { BETSOL_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -34,10 +34,10 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasVerifiedBoardSignal = (html) => {
   const normalized = normalizeWhitespace(html)
-  return normalized.includes('Jobs at Betsol LLC')
+  return /<title[^>]*>\s*Careers at BETSOL\s*<\/title>/i.test(String(html ?? ''))
+    && normalized.includes('Jobs at Betsol LLC')
     && normalized.includes('Bengaluru, India')
-    && normalized.includes('Telecom Voice Operations Engineer')
-    && normalized.includes('ServiceNow QA Engineer')
+    && /https:\/\/jobs\.smartrecruiters\.com\/Betsol\//i.test(String(html ?? ''))
     && (/href="https:\/\/www\.betsol\.com\/"/i.test(String(html ?? ''))
       || normalized.includes('Home Page'))
 }
@@ -110,7 +110,7 @@ export const createBetsolScraper = ({
 export const run = async (options = {}) => createBetsolScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

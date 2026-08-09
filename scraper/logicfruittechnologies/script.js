@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -38,6 +38,10 @@ const stripTags = (value) => normalizeWhitespace(
   decodeHtmlEntities(String(value ?? ''))
     .replace(/<br\s*\/?>/gi, ' ')
     .replace(/<[^>]+>/g, ' '),
+)
+
+const extractTitle = (html = '') => stripTags(
+  String(html ?? '').match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1],
 )
 
 const slugify = (value) => normalizeWhitespace(value)
@@ -76,11 +80,85 @@ const deriveCity = (location) => {
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
+  const title = extractTitle(page) || ''
 
-  return /Create Your Future With Us!/i.test(text)
+  return /^Current Jobs Opening\s*-\s*Logic Fruit Technologies$/i.test(title)
+    && /Create Your Future With Us!/i.test(text)
     && /Current Openings/i.test(text)
-    && /Application Form/i.test(text)
-    && /logic-fruit\.com/i.test(page)
+    && /Open Positions In Logic Fruit/i.test(text)
+    && /theplus-tabs-content-wrapper/i.test(page)
+    && /jobs-current-opening\//i.test(page)
+}
+
+export const extractTabbedOpeningSections = (html = '') => {
+  const page = String(html ?? '')
+  const wrapperIndex = page.indexOf('theplus-tabs-content-wrapper')
+  if (wrapperIndex === -1) return []
+
+  return page
+    .slice(wrapperIndex)
+    .split(/<div class="elementor-tab-title elementor-tab-mobile-title[^>]*>/i)
+    .slice(1)
+    .map((sectionHtml) => {
+      const label = stripTags(sectionHtml.match(/<span>([\s\S]*?)<\/span>/i)?.[1])
+      const contentIndex = sectionHtml.indexOf('<div id="elementor-tab-content')
+      if (contentIndex === -1) return null
+
+      return {
+        label,
+        html: sectionHtml.slice(contentIndex),
+      }
+    })
+    .filter(Boolean)
+}
+
+export const extractOpeningCardsFromSection = (sectionHtml = '') =>
+  String(sectionHtml ?? '')
+    .split(/<div\s+data-tp-sc-link=/i)
+    .slice(1)
+    .map((cardHtml) => {
+      const sourceUrl = toAbsoluteUrl(
+        cardHtml.match(
+          /<h[1-6][^>]*class=["'][^"']*elementor-heading-title[^"']*["'][^>]*>[\s\S]*?<a[^>]+href=["']([^"']+)["']/i,
+        )?.[1],
+      )
+      const title = stripTags(
+        cardHtml.match(
+          /<h[1-6][^>]*class=["'][^"']*elementor-heading-title[^"']*["'][^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/i,
+        )?.[1],
+      )
+      const location = normalizeLocation(
+        cardHtml.match(
+          /<span[^>]*class=["'][^"']*elementor-icon-list-text[^"']*["'][^>]*>([\s\S]*?)<\/span>/i,
+        )?.[1],
+      )
+
+      return {
+        title,
+        location,
+        city: deriveCity(location),
+        sourceUrl,
+        applyUrl: sourceUrl || APPLY_URL,
+        remoteStatus: 'On-site',
+      }
+    })
+    .filter((job) => job.title && job.location && job.sourceUrl)
+
+const scoreOpeningSpecificity = (job = {}) => {
+  const location = normalizeWhitespace(job.location) || ''
+
+  return location.length
+    + (location.includes('/') ? 100 : 0)
+    + ((location.match(/,/g) || []).length * 5)
+}
+
+export const mergePreferredOpening = (existingJob, candidateJob) => {
+  if (!existingJob) return candidateJob
+  if (!candidateJob) return existingJob
+
+  return scoreOpeningSpecificity(candidateJob) > scoreOpeningSpecificity(existingJob)
+    ? { ...existingJob, ...candidateJob }
+    : existingJob
 }
 
 export const extractOpenings = (html) => {
@@ -90,35 +168,18 @@ export const extractOpenings = (html) => {
     )
   }
 
-  const cards = [...String(html ?? '').matchAll(
-    /<h[2-4][^>]*>\s*<a[^>]+href=["']([^"']+)["'][^>]*>\s*([\s\S]*?)\s*<\/a>\s*<\/h[2-4]>\s*([\s\S]{0,300}?)(?=<h[2-4]\b|<\/section>|<\/main>)/gi,
-  )]
+  const jobsBySourceUrl = new Map()
 
-  const seen = new Set()
-  const jobs = []
-
-  for (const match of cards) {
-    const sourceUrl = toAbsoluteUrl(match[1])
-    const title = stripTags(match[2])
-    const nearbyHtml = match[3]
-    const locationMatch = nearbyHtml.match(/<(?:li|p|div|span)\b[^>]*>\s*([^<]+?)\s*<\/(?:li|p|div|span)>/i)
-    const location = normalizeLocation(locationMatch?.[1])
-
-    if (!title || !location || !sourceUrl) continue
-
-    const dedupeKey = `${sourceUrl}::${location}`
-    if (seen.has(dedupeKey)) continue
-    seen.add(dedupeKey)
-
-    jobs.push({
-      title,
-      location,
-      city: deriveCity(location),
-      sourceUrl,
-      applyUrl: APPLY_URL,
-      remoteStatus: 'On-site',
-    })
+  for (const section of extractTabbedOpeningSections(html)) {
+    for (const job of extractOpeningCardsFromSection(section.html)) {
+      jobsBySourceUrl.set(
+        job.sourceUrl,
+        mergePreferredOpening(jobsBySourceUrl.get(job.sourceUrl), job),
+      )
+    }
   }
+
+  const jobs = [...jobsBySourceUrl.values()]
 
   if (jobs.length === 0) {
     throw new Error('Logic Fruit Technologies verified public openings changed or disappeared')
@@ -136,9 +197,12 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createLogicFruitTechnologiesScraper = () => ({
+export const createLogicFruitTechnologiesScraper = ({
+  now = () => new Date().toISOString(),
+} = {}) => ({
   async run({ fetchText = defaultFetchText } = {}) {
     const html = await fetchText(CAREERS_URL)
+    const scrapedAt = now()
 
     return extractOpenings(html).map((job) => {
       const identitySlug = slugify(`${job.title}-${job.location}`)
@@ -160,7 +224,7 @@ export const createLogicFruitTechnologiesScraper = () => ({
         jobDescription: null,
         source: SOURCE,
         link: job.applyUrl || job.sourceUrl,
-        scrapedAt: new Date().toISOString(),
+        scrapedAt,
       }
     })
   },
@@ -169,7 +233,7 @@ export const createLogicFruitTechnologiesScraper = () => ({
 export const run = async (options = {}) => createLogicFruitTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

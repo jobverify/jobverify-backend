@@ -1,3 +1,8 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
 export const SOURCE = 'vecv'
 export const COMPANY = 'VE Commercial Vehicles'
 export const HOMEPAGE_URL = 'https://www.vecv.in/'
@@ -65,10 +70,8 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes('ve commercial vehicles')
-    && normalized.includes('operational since july 2008')
-    && normalized.includes('volvo group')
-    && normalized.includes('eicher motors')
+  return normalized.includes('just a moment')
+    && normalized.includes('enable javascript and cookies to continue')
 }
 
 export const hasPublicJobsSignal = (html) =>
@@ -94,7 +97,7 @@ export const createVecvScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
 
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    if (homepage.status !== 403 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('VECV verified official homepage no longer matches the known public surface')
     }
 
@@ -115,3 +118,15 @@ export const createVecvScraper = () => ({
 })
 
 export const run = async (options = {}) => createVecvScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

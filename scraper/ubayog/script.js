@@ -72,7 +72,8 @@ export const hasOfficialHomepageSignal = (html) => {
     && text.includes('turn your unused things into income')
     && text.includes("find what you need. list what you don't.")
     && text.includes('the autonomous ai ecosystem that works 24/7')
-    && text.includes('every idle asset has a home on ubayog')
+    && text.includes("hi! i'm yogu")
+    && text.includes('how ubayog works')
     && text.includes('loveall innovations pvt ltd')
 }
 
@@ -84,9 +85,9 @@ export const hasOfficialAboutSignal = (html) => {
     && text.includes('understanding ubayog')
     && text.includes("ubayog is india's first ai-native asset marketplace")
     && text.includes('your personal ai broker, lawyer, negotiator, and logistics manager')
-    && text.includes('aadhaar-linked kyc')
-    && text.includes('real-time trust scores keep every deal safe')
-    && text.includes('less waste, more wealth')
+    && text.includes('verified users')
+    && text.includes('secure communication')
+    && text.includes('multiple business models')
 }
 
 export const hasOfficialContactSignal = (html) => {
@@ -213,8 +214,8 @@ export const createUbayogScraper = () => ({
 
 export const run = async (options = {}) => createUbayogScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { GLANCE_CATALOG } from './catalog.js'
 
@@ -156,16 +156,16 @@ export const extractEmbeddedFirstPartyJobs = (html = '') => {
 
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page) || ''
+  const normalized = decodeRepeatedHtmlEntities(normalizeWhitespace(page) || '')
   const payload = extractNextDataPayload(page)
   const jobs = flattenEmbeddedJobs(payload?.props?.pageProps?.jobsDepartmentWise)
 
   return page.includes('__NEXT_DATA__')
     && payload?.page === '/careers/latest'
+    && normalized.includes("Why you'd love being here.")
     && normalized.includes('Search')
     && normalized.includes('Everywhere')
     && normalized.includes('All')
-    && normalized.includes('Glance AI, Inc. © 2026')
     && jobs.length > 0
     && jobs.some((job) => String(job?.id) === VERIFIED_SAMPLE_JOB_ID)
     && jobs.some((job) => isIndiaJob(job))
@@ -287,7 +287,7 @@ export const createGlanceScraper = ({
 export const run = async (options = {}) => createGlanceScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

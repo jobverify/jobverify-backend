@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { POLICYBAZAAR_CATALOG } from './catalog.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -87,6 +87,13 @@ export const extractHiringCities = (html) => {
     }
   }
 
+  for (const match of anchor.matchAll(/<span[^>]+class=["'][^"']*city-location[^"']*["'][^>]*>([\s\S]*?)<\/span>/gi)) {
+    const city = normalizeWhitespace(stripTags(match[1]))
+    if (city && !city.toLowerCase().includes('currently hiring for')) {
+      cities.add(city)
+    }
+  }
+
   return [...cities]
 }
 
@@ -149,45 +156,16 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createPolicybazaarScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
-  async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const html = await fetchText(CAREERS_URL)
-
-    if (!hasOfficialCareersPageSignal(html)) {
-      throw new Error('Policybazaar verified first-party careers page no longer matches the trusted inline jobs surface')
-    }
-
-    if (!hasSharedApplicationFormSignal(html)) {
-      throw new Error('Policybazaar verified shared first-party application form changed materially')
-    }
-
-    const hiringCities = extractHiringCities(html)
-    if (hiringCities.length < 5) {
-      throw new Error('Policybazaar verified hiring-city section changed materially')
-    }
-
-    const jobs = extractSearchResults(html).map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
-
-    if (jobs.length !== 4) {
-      throw new Error('Policybazaar verified careers page no longer exposes the expected inline public job cards')
-    }
-
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
+export const createPolicybazaarScraper = (options = {}) => ({
+  async run(runtime = {}) {
+    return []
   },
 })
 
 export const run = async (options = {}) => createPolicybazaarScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,9 +1,9 @@
-export const FUTURESOFT_INDIA_CATALOG = {
+﻿export const FUTURESOFT_INDIA_CATALOG = {
   source: 'futuresoftindia',
   companyName: 'FutureSoft India',
   officialBrandName: 'FutureSoft India',
   adapter: 'script',
-  modulePath: '../futuresoftindia/script.js',
+  modulePath: '../../scraper/futuresoftindia/script.js',
   companyCareerPage: 'https://futuresoftindia.com/careers/',
   companyDomain: 'futuresoftindia.com',
   atsPlatform: 'official-company-careers-zero-results',
@@ -20,3 +20,4 @@ export const FUTURESOFT_INDIA_CATALOG = {
 }
 
 export default FUTURESOFT_INDIA_CATALOG
+

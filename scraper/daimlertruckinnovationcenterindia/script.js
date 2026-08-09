@@ -110,7 +110,7 @@ export const createDaimlerTruckInnovationCenterIndiaScraper = (options = {}) => 
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'Mozilla/5.0 (compatible; JobifyCareerScraper/1.0)',
+        'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
       },
       body: requestBody,
     })

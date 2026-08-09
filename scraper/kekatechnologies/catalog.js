@@ -9,23 +9,19 @@ export const KEKA_TECHNOLOGIES_CATALOG = {
   officialBrandName: 'Keka Technologies Private Limited',
   adapter: 'script',
   modulePath: path.join(currentDir, 'script.js'),
-  companyCareerPage: 'https://www.keka.com/careers',
-  verifiedRolePageUrls: [
-    'https://www.keka.com/careers/product-manager',
-    'https://www.keka.com/careers/design-roles',
-    'https://www.keka.com/marketing-roles',
-  ],
-  companyDomain: 'keka.com',
-  atsPlatform: 'first-party-role-pages-plus-keka-apply-links',
+  companyCareerPage: 'https://hr.keka.com/careers/',
+  companyDomain: 'hr.keka.com',
+  atsPlatform: 'keka-careers-embed-jobs-api',
+  jobsBoardUrl: 'https://hr.keka.com/careers/',
   countryFilter: 'India',
-  paginationStrategy: 'verified-careers-landing-plus-curated-first-party-role-pages',
-  extractionStrategy: 'verified-careers-landing+verified-first-party-role-pages+hr-keka-apply-links',
+  paginationStrategy: 'verified-keka-careers-shell-plus-active-jobs-api',
+  extractionStrategy: 'verified-keka-careers-shell+embedded-career-config+active-jobs-api',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   dryRunFile: 'kekatechnologies/jobs.json',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-07',
   verifiedSurfaceSummary:
-    "Verified on Saturday, July 18, 2026 that https://www.keka.com/careers remains the live first-party Keka careers landing page and links View all Job openings to Keka's hiring portal, while first-party role pages on keka.com publicly expose openings such as Associate Product Manager, Manager Product Designer, and Growth Marketer with Hyderabad location signals and apply links.",
+    "Verified on Friday, August 7, 2026 that https://hr.keka.com/careers/ is the live official Keka careers host, its embedded career portal resolves to identifier 24040a7e-a7c5-47a5-9cd5-019962c66385, and the active jobs API returns current India openings with inline experience values such as 3-6, 4+, and 10+ years.",
 }
 
 export default KEKA_TECHNOLOGIES_CATALOG

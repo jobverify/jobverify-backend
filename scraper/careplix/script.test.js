@@ -185,8 +185,11 @@ test('extractPublicListingsFromBundle parses the current CarePlix client-side ro
     postingDate: null,
     closingDate: null,
     jobDescription: 'Build and optimize physiological signal processing models for real-time vital extraction.',
+    publicExperienceChecked: true,
   })
   assert.equal(jobs[1].country, null)
+  assert.equal(jobs[1].experienceRequired, null)
+  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })
 
 test('run parses the current CarePlix careers shell from the verified client bundle', async () => {
@@ -211,4 +214,6 @@ test('run parses the current CarePlix careers shell from the verified client bun
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'careplix')
   assert.equal(jobs[0].link, 'mailto:careers@careplix.com?subject=Application%20for%20Senior%20ML%20Engineer')
+  assert.equal(jobs[0].experienceRequired, null)
+  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })

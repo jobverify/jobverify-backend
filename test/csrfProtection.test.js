@@ -40,7 +40,7 @@ test("csrf cookie is readable by the frontend and mirrors auth cookie security d
 });
 
 test("csrf protection ignores safe methods", () => {
-  const middleware = createCsrfProtection({ allowedOrigins: ["https://app.jobify.test"] });
+  const middleware = createCsrfProtection({ allowedOrigins: ["https://app.jobverify.test"] });
   const res = createResponseDouble();
   let nextCalled = false;
 
@@ -61,7 +61,7 @@ test("csrf protection ignores safe methods", () => {
 });
 
 test("csrf protection rejects state-changing requests from untrusted origins", () => {
-  const middleware = createCsrfProtection({ allowedOrigins: ["https://app.jobify.test"] });
+  const middleware = createCsrfProtection({ allowedOrigins: ["https://app.jobverify.test"] });
   const res = createResponseDouble();
 
   middleware(
@@ -83,7 +83,7 @@ test("csrf protection rejects state-changing requests from untrusted origins", (
 });
 
 test("csrf protection accepts matching cookie and header values from an allowed origin", () => {
-  const middleware = createCsrfProtection({ allowedOrigins: ["https://app.jobify.test"] });
+  const middleware = createCsrfProtection({ allowedOrigins: ["https://app.jobverify.test"] });
   const res = createResponseDouble();
   let nextCalled = false;
 
@@ -92,7 +92,7 @@ test("csrf protection accepts matching cookie and header values from an allowed 
       method: "POST",
       originalUrl: "/api/user/profile",
       headers: {
-        origin: "https://app.jobify.test",
+        origin: "https://app.jobverify.test",
         cookie: `${CSRF_COOKIE_NAME}=csrf-token`,
         "x-csrf-token": "csrf-token",
       },
@@ -137,7 +137,7 @@ test("csrf protection accepts loopback development origins when enabled", () => 
 
 test("csrf protection can exempt provider webhook paths from browser CSRF checks", () => {
   const middleware = createCsrfProtection({
-    allowedOrigins: ["https://app.jobify.test"],
+    allowedOrigins: ["https://app.jobverify.test"],
     exemptPaths: ["/api/billing/webhook"],
   });
   const res = createResponseDouble();

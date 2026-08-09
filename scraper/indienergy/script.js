@@ -7,6 +7,8 @@ export const SOURCE = 'indienergy'
 export const COMPANY = 'INDI ENERGY'
 export const HOMEPAGE_URL = 'https://indienergy.in/'
 export const CAREERS_URL = 'https://indienergy.in/careers/'
+export const VERIFIED_ON = '2026-08-07'
+export const VERIFIED_SURFACE_SUMMARY = 'Verified on Friday, August 7, 2026 that both https://indienergy.in/ and https://indienergy.in/careers/ served IndiEnergy\'s live first-party Vercel SPA shell titled "IndiEnergy — Desh Ki Battery. Designed for the World.", with the same root div, brand description, OG metadata, and client bundle assets. Also verified on Friday, August 7, 2026 that the public bundle exposed About and Contact routes plus Contact Us and Send enquiry copy, but no trustworthy public careers route, ATS handoff, or enumerable jobs surface. This provider is therefore repinned fail-closed and returns an honest empty result until the official first-party site publishes public openings.'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -25,6 +27,9 @@ const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /workdayjobs/i,
   /myworkdayjobs/i,
 ]
+
+const SHARED_DESCRIPTION_SNIPPET =
+  'IndiEnergy transforms agricultural biomass into advanced Sodium-ion battery materials and intelligent energy-storage systems'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -69,34 +74,24 @@ export const extractCareersUrl = (html) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title[^>]*>\s*Home\s*-\s*Indi Energy\s*<\/title>/i.test(rawHtml)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/indienergy\.in\/["']/i.test(rawHtml)
-    && /"@type":\["Corporation","Organization"\]/.test(rawHtml)
-    && /"name":"Indi Energy"/.test(rawHtml)
-    && /Sodium ion batteries for Empowering Energy Independence/i.test(normalized)
-    && /DRDO Dare to Dream 3\.0/i.test(normalized)
-    && extractCareersUrl(rawHtml) === CAREERS_URL
+  return /<title[^>]*>\s*IndiEnergy\s*[—-]\s*Desh Ki Battery\. Designed for the World\.\s*<\/title>/i.test(rawHtml)
+    && /<meta[^>]+name=["']description["'][^>]+content=["'][^"']*IndiEnergy transforms agricultural biomass into advanced Sodium-ion battery materials and intelligent energy-storage systems/i.test(rawHtml)
+    && /<meta[^>]+property=["']og:title["'][^>]+content=["']IndiEnergy\s*[—-]\s*Desh Ki Battery\. Designed for the World\./i.test(rawHtml)
+    && /<meta[^>]+property=["']og:type["'][^>]+content=["']website["']/i.test(rawHtml)
+    && /<link[^>]+href=["']\/logo\.svg["'][^>]*>/i.test(rawHtml)
+    && /<script[^>]+src=["']\/assets\/index-[^"']+\.js["'][^>]*>/i.test(rawHtml)
+    && /<div id=["']root["']><\/div>/i.test(rawHtml)
 }
 
-export const hasApplyOnlyCareersSignal = (html) => {
+export const hasNoPublicCareersShellSignal = (html) => {
   const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title[^>]*>\s*Careers\s*-\s*Indi Energy\s*<\/title>/i.test(rawHtml)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/indienergy\.in\/careers\/["']/i.test(rawHtml)
-    && /<meta[^>]+name=["']description["'][^>]+content=["']Check out the career options at IndiEnergy["']/i.test(rawHtml)
-    && /Apply today/i.test(normalized)
-    && /class=["']wpcf7 no-js["']/i.test(rawHtml)
-    && /aria-label=["']Contact form["']/i.test(rawHtml)
-    && /Required fields are marked \(\*\)\./i.test(normalized)
-    && /Your name \*/i.test(normalized)
-    && /Your email \*/i.test(normalized)
-    && /Subject \*/i.test(normalized)
-    && /Your message \(optional\)/i.test(normalized)
-    && /type=["']submit["'][^>]+value=["']Submit["']/i.test(rawHtml)
-  }
+  return hasOfficialHomepageSignal(rawHtml)
+    && rawHtml.includes(SHARED_DESCRIPTION_SNIPPET)
+    && !/career options at indienergy/i.test(rawHtml)
+    && extractCareersUrl(rawHtml) === null
+}
 
 export const hasPublicJobListingsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
@@ -106,7 +101,7 @@ export const createIndiEnergyScraper = () => ({
     const homepage = await fetchPage(HOMEPAGE_URL)
 
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('INDI ENERGY verified official homepage no longer matches the known careers handoff')
+      throw new Error('INDI ENERGY verified official homepage no longer matches the verified public surface')
     }
 
     const careersPage = await fetchPage(CAREERS_URL)
@@ -115,8 +110,8 @@ export const createIndiEnergyScraper = () => ({
       throw new Error('INDI ENERGY careers page now appears to expose public job listings')
     }
 
-    if (careersPage.status !== 200 || !hasApplyOnlyCareersSignal(careersPage.html)) {
-      throw new Error('INDI ENERGY careers page no longer matches the verified apply-only careers shell')
+    if (careersPage.status !== 200 || !hasNoPublicCareersShellSignal(careersPage.html)) {
+      throw new Error('INDI ENERGY careers page no longer matches the verified no-public-careers shell')
     }
 
     return []
@@ -126,7 +121,7 @@ export const createIndiEnergyScraper = () => ({
 export const run = async (options = {}) => createIndiEnergyScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

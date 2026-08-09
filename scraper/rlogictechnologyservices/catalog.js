@@ -17,9 +17,9 @@ export const R_LOGIC_TECHNOLOGY_SERVICES_CATALOG = {
   extractionStrategy: 'verified-first-party-careers-culture-page+contact-handoff+no-public-job-listings',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-04',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.r-logic.com/careers-culture/ is the live first-party careers-and-culture page for R-Logic, that it presents Join Our Team and a Get Started button which routes candidates to https://www.r-logic.com/contact-us/, and that the surface exposes no trustworthy public job listings or structured openings.',
+    'Verified on Tuesday, August 4, 2026 that https://www.r-logic.com/careers-culture/ is the live first-party R-Logic careers-and-culture page, that the redesigned page highlights Careers and Culture, Employee Stories, Join Our Team, and a Get Started contact handoff, that https://www.r-logic.com/contact-us/ is the live first-party contact page with Careers at R-Logic chat and WhatsApp handoff links, and that neither surface exposes trustworthy public job listings or structured openings.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'rlogictechnologyservices/jobs.json',
 }

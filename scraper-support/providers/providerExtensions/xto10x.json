@@ -1,0 +1,21 @@
+{
+  "source": "xto10x",
+  "companyName": "XTO10X",
+  "officialBrandName": "xto10x",
+  "adapter": "script",
+  "modulePath": "../xto10x/script.js",
+  "dryRunFile": "xto10x/jobs.json",
+  "companyCareerPage": "https://www.xto10x.com/about",
+  "companyDomain": "xto10x.com",
+  "atsPlatform": "official-first-party-careers-no-enumerable-public-listings",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-careers-page-sentinel",
+  "extractionStrategy": "verified-first-party-careers-page-without-enumerable-listings+return-empty",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-25",
+  "verifiedPublicJobCount": 0,
+  "verifiedIndiaJobCount": 0,
+  "officialCareersPageUrl": "https://www.xto10x.com/about",
+  "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.xto10x.com/about is xto10x's first-party company surface and includes its Join Us careers callout. It exposes no linked official ATS or trustworthy enumerable public job listings, so this exact-name provider fails closed and returns no jobs until the company publishes a verifiable first-party listings surface."
+}

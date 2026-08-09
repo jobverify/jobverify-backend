@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { MOBINEERS_INFO_SYSTEMS_CATALOG } from './catalog.js'
 
@@ -63,16 +63,31 @@ const parseDetailPage = (html = '', url = '') => {
   const lines = [...String(html).matchAll(/<(?:p|li)[^>]*>\s*([\s\S]*?)\s*<\/(?:p|li)>/gi)]
     .map((match) => normalizeWhitespace(match[1]))
     .filter(Boolean)
+  const titleFromPageTitle = normalizeWhitespace(
+    html.match(/<title[^>]*>\s*([\s\S]*?)\s*<\/title>/i)?.[1]
+      ?.replace(/\s*-\s*Mobineers Info Systems Pvt\. Ltd\s*$/i, ''),
+  )
+  const headingCandidates = [...String(html).matchAll(/<h[1-3][^>]*>\s*([\s\S]*?)\s*<\/h[1-3]>/gi)]
+    .map((match) => normalizeWhitespace(match[1]))
+    .filter((heading) => heading && !/Mobineers Info Systems/i.test(heading) && !/^Home$/i.test(heading))
   const title = normalizeWhitespace(
-    html.match(/<h[1-3][^>]*>\s*([\s\S]*?)\s*<\/h[1-3]>/i)?.[1]
+    titleFromPageTitle
+      || headingCandidates[0]
       || normalized.match(/^(.+?)(?:Job Description|About the Role|JOB DESCRIPTION)/i)?.[1]
       || toSlug(url).replace(/-/g, ' '),
   )
-  const jobType = normalized.match(/Job Type:\s*([A-Za-z ]+)/i)?.[1]?.trim() || null
+  const jobType = lines
+    .find((line) => /^Job Type:/i.test(line))
+    ?.replace(/^Job Type:\s*/i, '')
+    .trim()
+    || normalized.match(/Job Type:\s*([A-Za-z ]+?)(?:Job Location:|Apply for this position|$)/i)?.[1]?.trim()
+    || null
   const location = lines
     .find((line) => /^Job Location:/i.test(line))
     ?.replace(/^Job Location:\s*/i, '')
-    .trim() || null
+    .trim()
+    || normalized.match(/Job Location:\s*([A-Za-z\/, ]+?)(?:Apply for this position|$)/i)?.[1]?.trim()
+    || null
   const jobDescription = lines
     .filter((line) =>
       !/^Job Type:/i.test(line)
@@ -139,7 +154,7 @@ export const createMobineersInfoSystemsScraper = ({
 export const run = async (options = {}) => createMobineersInfoSystemsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { VELOCITY_SOFTWARE_SOLUTIONS_CATALOG } from './catalog.js'
 
@@ -12,10 +12,13 @@ export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
+export const JOBS_ARCHIVE_URL = 'https://www.velsof.com/jobs/'
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const JOB_LINK_PATTERN = /<a\b[^>]*href=(['"])(https:\/\/www\.velsof\.com\/jobs\/[^'">]+\/)\1[^>]*>([\s\S]*?)<\/a>/gi
 
 const decodeHtml = (value = '') => String(value)
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -107,22 +110,35 @@ const parseLocation = (value = '') => {
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html)
-  return /<h1>\s*Careers\s*<\/h1>/i.test(page)
-    && /Join our dynamic team to innovate, create, and excel/i.test(page)
+  const text = normalizeWhitespace(page)
+
+  return (
+    /<h1>\s*Careers\s*<\/h1>/i.test(page)
+      && /Join our dynamic team to innovate, create, and excel/i.test(page)
+      && /https:\/\/www\.velsof\.com\/jobs\/ui-ux-designer\//i.test(page)
+      && /https:\/\/www\.velsof\.com\/jobs\/flutter-mobile-app-developer\//i.test(page)
+      && /https:\/\/www\.velsof\.com\/jobs\/senior-laravel-developer\//i.test(page)
+  ) || (
+    /<title>\s*Careers\s*\|\s*Velocity Software Solutions\s*<\/title>/i.test(page)
+      && text.includes('View Open Positions')
+  )
+}
+
+export const hasOfficialJobsArchiveSignal = (html = '') => {
+  const page = String(html)
+  return /<title>\s*Jobs\s*\|\s*Velocity Software Solutions\s*<\/title>/i.test(page)
     && /https:\/\/www\.velsof\.com\/jobs\/ui-ux-designer\//i.test(page)
     && /https:\/\/www\.velsof\.com\/jobs\/flutter-mobile-app-developer\//i.test(page)
     && /https:\/\/www\.velsof\.com\/jobs\/senior-laravel-developer\//i.test(page)
 }
 
 export const extractJobLinks = (html = '') => {
-  const page = String(html)
   const links = []
   const seen = new Set()
-  const linkPattern = /<a href="(https:\/\/www\.velsof\.com\/jobs\/[^"]+\/)">([\s\S]*?)<\/a>/gi
 
-  for (const match of page.matchAll(linkPattern)) {
-    const applyUrl = toAbsoluteUrl(match[1])
-    const metadata = parseCareerLinkText(match[2])
+  for (const match of String(html).matchAll(JOB_LINK_PATTERN)) {
+    const applyUrl = toAbsoluteUrl(match[2])
+    const metadata = parseCareerLinkText(match[3])
     if (!applyUrl || !metadata || seen.has(applyUrl)) continue
     seen.add(applyUrl)
     links.push(applyUrl)
@@ -131,15 +147,27 @@ export const extractJobLinks = (html = '') => {
   return links
 }
 
+export const extractArchiveJobLinks = (html = '') => {
+  const links = []
+  const seen = new Set()
+
+  for (const match of String(html).matchAll(JOB_LINK_PATTERN)) {
+    const applyUrl = toAbsoluteUrl(match[2], JOBS_ARCHIVE_URL)
+    if (!applyUrl || applyUrl === JOBS_ARCHIVE_URL || /\/feed\/?$/i.test(applyUrl) || seen.has(applyUrl)) continue
+    seen.add(applyUrl)
+    links.push(applyUrl)
+  }
+
+  return links
+}
+
 const extractCareerCards = (html = '') => {
-  const page = String(html)
   const cards = []
   const seen = new Set()
-  const linkPattern = /<a href="(https:\/\/www\.velsof\.com\/jobs\/[^"]+\/)">([\s\S]*?)<\/a>/gi
 
-  for (const match of page.matchAll(linkPattern)) {
-    const applyUrl = toAbsoluteUrl(match[1])
-    const metadata = parseCareerLinkText(match[2])
+  for (const match of String(html).matchAll(JOB_LINK_PATTERN)) {
+    const applyUrl = toAbsoluteUrl(match[2])
+    const metadata = parseCareerLinkText(match[3])
     if (!applyUrl || !metadata || seen.has(applyUrl)) continue
     seen.add(applyUrl)
     cards.push({
@@ -180,6 +208,43 @@ const buildJobDescription = ({ summary, requirements }) => {
   return sections.join(' ')
 }
 
+const extractDetailMetadata = (html = '') => {
+  const text = normalizeWhitespace(html)
+  const match = text.match(
+    /(Design|Mobile Development|Engineering)\s+(.*?)\s+(\d+(?:-\d+|\+)?\s+years)\s+(Full-time|Part-time|Contract)\s+About the Role/i,
+  )
+
+  if (!match) {
+    return {
+      department: null,
+      location: null,
+      city: null,
+      state: null,
+      country: null,
+      remoteStatus: null,
+      experienceRequired: null,
+      employmentType: null,
+    }
+  }
+
+  const [, department, location, experienceRequired, employmentType] = match
+  return {
+    department: normalizeWhitespace(department),
+    ...parseLocation(location),
+    experienceRequired: normalizeWhitespace(experienceRequired),
+    employmentType: normalizeWhitespace(employmentType),
+  }
+}
+
+const extractDetailTitle = (html = '') => {
+  const title = normalizeWhitespace(String(html).match(/<title>\s*([\s\S]*?)\s*<\/title>/i)?.[1] || '')
+  if (title) {
+    return normalizeWhitespace(title.replace(/\|\s*Velocity\s*$/i, ''))
+  }
+
+  return normalizeWhitespace(String(html).match(/<h1[^>]*>\s*([\s\S]*?)\s*<\/h1>/i)?.[1] || '')
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -198,7 +263,19 @@ export const createVelocitySoftwareSolutionsScraper = ({
       throw new Error('Velocity Software Solutions verified careers index no longer matches the trusted first-party contract')
     }
 
-    const cards = extractCareerCards(careersHtml)
+    let cards = extractCareerCards(careersHtml)
+    if (cards.length === 0) {
+      const archiveHtml = await fetchText(JOBS_ARCHIVE_URL)
+      if (!hasOfficialJobsArchiveSignal(archiveHtml)) {
+        throw new Error('Velocity Software Solutions jobs archive no longer matches the trusted first-party contract')
+      }
+
+      cards = extractArchiveJobLinks(archiveHtml).map((applyUrl) => ({
+        applyUrl,
+        sourceUrl: applyUrl,
+      }))
+    }
+
     if (cards.length === 0) {
       throw new Error('Velocity Software Solutions careers index no longer exposes trusted job links')
     }
@@ -207,8 +284,11 @@ export const createVelocitySoftwareSolutionsScraper = ({
 
     for (const card of cards) {
       const detailHtml = await fetchText(card.applyUrl)
-      const detailTitle = normalizeWhitespace(detailHtml.match(/<h1>\s*([\s\S]*?)\s*<\/h1>/i)?.[1] || '')
-      if (detailTitle !== card.title) {
+      const detailTitle = extractDetailTitle(detailHtml)
+      const detailMetadata = extractDetailMetadata(detailHtml)
+      const title = card.title || detailTitle
+
+      if (!title || (card.title && detailTitle && detailTitle !== card.title)) {
         throw new Error(`Velocity Software Solutions detail page drifted for ${card.applyUrl}`)
       }
 
@@ -219,18 +299,18 @@ export const createVelocitySoftwareSolutionsScraper = ({
       }
 
       jobs.push({
-        title: card.title,
+        title,
         company: COMPANY,
-        department: card.department,
-        location: card.location,
-        city: card.city,
-        state: card.state,
-        country: card.country,
-        remoteStatus: card.remoteStatus,
-        employmentType: card.employmentType,
-        experienceRequired: card.experienceRequired,
-        jobId: toSlug(card.title),
-        requisitionId: toSlug(card.title),
+        department: card.department || detailMetadata.department,
+        location: card.location || detailMetadata.location,
+        city: card.city || detailMetadata.city,
+        state: card.state || detailMetadata.state,
+        country: card.country || detailMetadata.country,
+        remoteStatus: card.remoteStatus || detailMetadata.remoteStatus,
+        employmentType: card.employmentType || detailMetadata.employmentType,
+        experienceRequired: card.experienceRequired || detailMetadata.experienceRequired,
+        jobId: toSlug(title),
+        requisitionId: toSlug(title),
         sourceUrl: card.sourceUrl,
         applyUrl: card.applyUrl,
         link: card.applyUrl,
@@ -246,8 +326,8 @@ export const createVelocitySoftwareSolutionsScraper = ({
 
 export const run = async (options = {}) => createVelocitySoftwareSolutionsScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

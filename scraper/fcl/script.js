@@ -112,9 +112,8 @@ export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeText(rawHtml)
 
-  return /<title>\s*FIREFLY CAMPUS LAUNDRY/i.test(rawHtml)
-    && normalized.includes('express laundry coimbatore')
-    && normalized.includes('firefly campus laundry')
+  return /<title>\s*(?:Express Laundry Service Coimbatore\s*\|\s*)?FIREFLY CAMPUS(?: LAUNDRY)?/i.test(rawHtml)
+    && normalized.includes('firefly campus')
     && /firefly campus laundry logo/i.test(rawHtml)
     && /api\.whatsapp\.com\/send\/\?phone=919944008811/i.test(rawHtml)
     && /tel:04224173837/i.test(rawHtml)
@@ -158,7 +157,7 @@ export const createFclScraper = () => ({
 export const run = async (options = {}) => createFclScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

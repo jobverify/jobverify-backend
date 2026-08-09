@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { JANA_SMALL_FINANCE_BANK_CATALOG } from './catalog.js'
 
@@ -74,6 +74,23 @@ const defaultFetchText = async (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+    },
+    redirect: 'follow',
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
+
 export const extractCurrentOpeningsUrl = (html) => {
   for (const match of String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
     const href = toAbsoluteUrl(match[1], HOMEPAGE_URL)
@@ -99,19 +116,38 @@ export const hasVerifiedCareersSignals = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*careers\s*<\/title>/i.test(page)
-    && normalized.includes('A career with us is more than just a job.')
-    && normalized.includes('Click here to view our current openings.')
-    && normalized.includes('Jana Small Finance Bank will never ask or accept payment from anyone seeking employment with us.')
+  const hasVerifiedTitle = /<title>\s*(?:careers|jana small finance bank careers)\s*<\/title>/i.test(page)
+  const hasVerifiedCurrentOpeningsLink = extractCurrentOpeningsUrl(page) === CURRENT_OPENINGS_URL
+  const hasLegacyEmailHandoffSignals = normalized.includes('A career with us is more than just a job.')
+    && normalized.includes('Click here to view our current openings')
+    && normalized.includes(
+      'Jana Small Finance Bank will never ask or accept payment from anyone seeking employment with us.',
+    )
+  const hasCurrentBrandedCareersSignals = normalized.includes('A culture of learn and grow')
+    && normalized.includes('Why choose Jana')
+    && normalized.includes('Thinking about joining us?')
+    && normalized.includes('Dig in on your first day')
+    && normalized.includes('Count on us for career growth')
+    && normalized.includes('JANA Small Finance Bank')
+
+  return hasVerifiedTitle
+    && hasVerifiedCurrentOpeningsLink
+    && (hasLegacyEmailHandoffSignals || hasCurrentBrandedCareersSignals)
 }
 
 export const hasVerifiedCurrentOpeningsSignals = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*current opening\s*<\/title>/i.test(page)
+  const hasLegacyEmailHandoffSignals = /<title>\s*current opening\s*<\/title>/i.test(page)
     && normalized.includes('Share your resume with us at careers@jana.bank.in')
     && normalized.includes('mention the Job Role in the subject line')
+  const hasCurrentBranded404Signals = /<title>\s*404\s*-\s*category not found\s*<\/title>/i.test(page)
+    && normalized.includes('404 - Category not found')
+    && normalized.includes('The requested resource was not found.')
+    && normalized.includes('Please try one of the following pages: Home Page')
+
+  return hasLegacyEmailHandoffSignals || hasCurrentBranded404Signals
 }
 
 export const hasPublicJobSignals = (html) => {
@@ -121,8 +157,12 @@ export const hasPublicJobSignals = (html) => {
   return PUBLIC_JOB_PATTERNS.some((pattern) => pattern.test(page) || pattern.test(normalized))
 }
 
+const isExpectedCurrentOpenings404Error = (error) =>
+  /HTTP 404\b/i.test(String(error?.message ?? error))
+  && String(error?.message ?? error).includes(CURRENT_OPENINGS_URL)
+
 export const createJanaSmallFinanceBankScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText = defaultFetchText, fetchPage = defaultFetchPage } = {}) {
     const homepageHtml = await fetchText(HOMEPAGE_URL)
     if (!hasVerifiedHomepageSignals(homepageHtml)) {
       throw new Error(
@@ -140,7 +180,22 @@ export const createJanaSmallFinanceBankScraper = () => ({
       )
     }
 
-    const currentOpeningsHtml = await fetchText(CURRENT_OPENINGS_URL)
+    let currentOpeningsHtml
+    try {
+      currentOpeningsHtml = await fetchText(CURRENT_OPENINGS_URL)
+    } catch (error) {
+      if (!isExpectedCurrentOpenings404Error(error)) {
+        throw error
+      }
+
+      const currentOpeningsPage = await fetchPage(CURRENT_OPENINGS_URL)
+      if (currentOpeningsPage.status !== 404) {
+        throw error
+      }
+
+      currentOpeningsHtml = currentOpeningsPage.html
+    }
+
     if (hasPublicJobSignals(currentOpeningsHtml)) {
       throw new Error(
         'Jana Small Finance Bank current openings page now appears to expose a public jobs surface',
@@ -159,7 +214,7 @@ export const createJanaSmallFinanceBankScraper = () => ({
 export const run = async (options = {}) => createJanaSmallFinanceBankScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

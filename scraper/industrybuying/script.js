@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { INDUSTRY_BUYING_CATALOG } from './catalog.js'
-import { loadConfig } from '../utils/loadConfig.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -11,12 +11,18 @@ const config = loadConfig(currentDir)
 export const PROVIDER_METADATA = INDUSTRY_BUYING_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
-export const KEKA_CAREER_PAGE_URL = PROVIDER_METADATA.kekaCareerPageUrl
-export const EXPECTED_IDENTIFIER = PROVIDER_METADATA.expectedKekaIdentifier
-export const EXPECTED_KEKA_DOMAIN = PROVIDER_METADATA.expectedKekaDomain
-export const EXPECTED_PORTAL_NAME = PROVIDER_METADATA.expectedPortalName
+export const HOMEPAGE_URL = PROVIDER_METADATA.officialHomepageUrl
+export const HOMEPAGE_HANDOFF_URL = PROVIDER_METADATA.officialCareersHandoffPageUrl
+export const JOBS_SITE_URL = PROVIDER_METADATA.officialJobsSiteUrl
+export const JOBS_PAGE_URL = PROVIDER_METADATA.companyCareerPage
+export const CAREER_API_BASE_URL = PROVIDER_METADATA.careersApiBaseUrl
+export const CAREER_ORGS_API_URL = PROVIDER_METADATA.careersOrgsApiUrl
+export const CAREER_JOBS_API_URL = PROVIDER_METADATA.careersJobsApiUrl
+export const EXPECTED_ORG_ID = PROVIDER_METADATA.expectedOrgId
+export const EXPECTED_ORG_SLUG = PROVIDER_METADATA.expectedOrgSlug
+export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -28,137 +34,154 @@ const normalizeWhitespace = (value) => {
     .replace(/&quot;/gi, '"')
     .replace(/&#39;|&apos;|&#x27;/gi, "'")
     .replace(/\u00a0/g, ' ')
+    .replace(/[\u2013\u2014]/g, '-')
     .replace(/\s+/g, ' ')
     .trim()
 
   return normalized || null
 }
 
-const normalizeDomain = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return null
-  return normalized.endsWith('/') ? normalized : `${normalized}/`
-}
-
-const parseQuotedConfigValue = (block, key) => {
-  const match = String(block ?? '').match(new RegExp(`${key}\\s*:\\s*['"]([^'"]+)['"]`, 'i'))
-  return normalizeWhitespace(match?.[1] ?? null)
-}
-
-export const extractEmbeddedCareersDocumentPath = (html) =>
-  String(html ?? '').match(/\/ats\/documents\/[0-9a-f-]+\/careerportal\/[^"' ]+\.html/i)?.[0] ?? null
-
-export const extractCareerConfig = (html) => {
-  const configBlock = String(html ?? '').match(/window\.khConfig\s*=\s*\{([\s\S]*?)\}\s*;?/i)?.[1]
-  if (!configBlock) return null
-
-  const identifier = parseQuotedConfigValue(configBlock, 'identifier')
-  const domain = normalizeDomain(parseQuotedConfigValue(configBlock, 'domain'))
-
-  if (!identifier || !domain) return null
-
-  return {
-    identifier,
-    domain,
-    portalName: 'default',
-  }
-}
-
-export const buildCareerPortalInfoUrl = ({ domain, portalName = 'default' } = {}) => {
-  const normalizedDomain = normalizeDomain(domain)
-  if (!normalizedDomain) return null
-  return `${normalizedDomain}api/organization/${portalName}/careerportalinfo`
-}
-
-export const buildActiveJobsUrl = ({ domain, identifier, portalName = 'default' } = {}) => {
-  const normalizedDomain = normalizeDomain(domain)
-  if (!normalizedDomain || !identifier) return null
-  return `${normalizedDomain}api/embedjobs/${portalName}/active/${identifier}`
-}
-
-const buildJobDetailUrl = ({ domain, jobId } = {}) => {
-  const normalizedDomain = normalizeDomain(domain)
-  if (!normalizedDomain || !jobId) return null
-  return `${normalizedDomain}jobdetails/${jobId}`
-}
-
-const buildApplyUrl = ({ domain, jobId } = {}) => {
-  const normalizedDomain = normalizeDomain(domain)
-  if (!normalizedDomain || !jobId) return null
-  return `${normalizedDomain}applyjob/${jobId}`
-}
-
-export const hasExpectedPortalIdentity = (payload) => {
-  const normalizedName = normalizeWhitespace(payload?.name)
-  const normalizedShortName = normalizeWhitespace(payload?.shortName)
-  const normalizedPortalDomain = normalizeWhitespace(payload?.careersPortalDomain)
-
-  return normalizedName === EXPECTED_PORTAL_NAME
-    && normalizedShortName === EXPECTED_PORTAL_NAME
-    && normalizedPortalDomain === new URL(EXPECTED_KEKA_DOMAIN).hostname
-}
-
-const isIndiaLocation = (location = {}) => {
-  if (String(location.countryCode || '').toUpperCase() === 'IN') return true
-  if (/india/i.test(String(location.countryName || ''))) return true
-  return /india/i.test([location.name, location.city, location.state].filter(Boolean).join(' '))
-}
-
-const toEmploymentType = (jobType) => (jobType === 2 || jobType === '2' ? 'Full Time' : null)
+const normalizeSlug = (value) => normalizeWhitespace(value)?.toLowerCase().replace(/[^a-z0-9]/g, '') || null
 
 const normalizePostingDate = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
+  if (/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return normalized
 
   const date = new Date(normalized)
   return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10)
 }
 
-const mapJob = (job, { domain } = {}) => {
-  const locations = Array.isArray(job?.jobLocations) ? job.jobLocations : []
-  const location = locations.find(isIndiaLocation)
-  const jobId = normalizeWhitespace(job?.id)
-  const title = normalizeWhitespace(job?.title)
+const htmlToText = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<li>/gi, '- ')
+    .replace(/<[^>]+>/g, ' ')
+)
 
-  if (!location || !jobId || !title) return null
+const toIndiaLocation = (value) => {
+  const location = normalizeWhitespace(value)
+  if (!location) return { location: 'India', city: null, country: 'India' }
 
-  const city = normalizeWhitespace(location.city) || normalizeWhitespace(location.name)
-  const locationLabel = [city, normalizeWhitespace(location.state), 'India']
-    .filter((part, index, values) => part && values.indexOf(part) === index)
-    .join(', ')
-  const sourceUrl = buildJobDetailUrl({ domain, jobId })
-  const applyUrl = buildApplyUrl({ domain, jobId })
+  return {
+    location: /india/i.test(location) ? location : `${location}, India`,
+    city: location.split(/\s*,\s*/)[0] || location,
+    country: 'India',
+  }
+}
 
-  if (!sourceUrl || !applyUrl) return null
+export const extractCareersLink = (html) => {
+  const matches = [...String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
+  for (const [, href, label] of matches) {
+    const normalizedHref = normalizeWhitespace(href)
+    const normalizedLabel = normalizeWhitespace(label)
+    if (/careers/i.test(normalizedLabel || '') && normalizedHref) {
+      return new URL(normalizedHref, HOMEPAGE_URL).toString()
+    }
+  }
+
+  return null
+}
+
+export const hasOfficialJobsSiteSignal = (html) => {
+  const page = String(html ?? '')
+
+  return /<title>\s*Careers at IndustryBuying\s*<\/title>/i.test(page)
+    && /Build India(?:&#x27;|')s largest B2B marketplace with us\./i.test(page)
+    && /href=["']\/jobs["']/i.test(page)
+    && /View all roles/i.test(page)
+}
+
+export const extractExpectedOrg = (payload) => {
+  const orgs = Array.isArray(payload?.data) ? payload.data : []
+
+  return orgs.find((org) =>
+    normalizeWhitespace(org?.id) === EXPECTED_ORG_ID
+    && normalizeSlug(org?.slug) === EXPECTED_ORG_SLUG
+    && normalizeSlug(org?.name) === EXPECTED_ORG_SLUG)
+    || null
+}
+
+export const extractJobSummaries = (payload, { orgId = EXPECTED_ORG_ID } = {}) => {
+  const jobs = Array.isArray(payload?.data) ? payload.data : null
+  if (!jobs) {
+    throw new Error('IndustryBuying careers jobs payload no longer returns a data array')
+  }
+
+  return jobs
+    .filter((job) => normalizeWhitespace(job?.orgId) === orgId)
+    .map((job) => {
+      const id = normalizeWhitespace(job?.id)
+      const title = normalizeWhitespace(job?.title)
+      const location = normalizeWhitespace(job?.location)
+
+      if (!id || !title || !location) {
+        throw new Error('IndustryBuying careers jobs payload no longer exposes the verified summary job fields')
+      }
+
+      return {
+        id,
+        orgId: normalizeWhitespace(job?.orgId),
+        requisitionId: normalizeWhitespace(job?.requisitionId),
+        title,
+        department: normalizeWhitespace(job?.department),
+        location,
+        jobType: normalizeWhitespace(job?.jobType),
+        openings: Number.isFinite(Number(job?.openings)) ? Number(job.openings) : null,
+        createdAt: normalizePostingDate(job?.createdAt),
+      }
+    })
+}
+
+export const extractJobDetail = (payload) => {
+  const detail = payload?.data
+  if (!detail || typeof detail !== 'object') {
+    throw new Error('IndustryBuying careers detail payload no longer exposes a data object')
+  }
+
+  return detail
+}
+
+export const buildJobDetailUrl = (jobId) => `${JOBS_SITE_URL}jobs/detail?id=${encodeURIComponent(jobId)}`
+export const buildApplyUrl = (jobId) => `${JOBS_SITE_URL}jobs/apply?id=${encodeURIComponent(jobId)}`
+
+export const mapJob = ({ summary, detail }) => {
+  const jobId = normalizeWhitespace(summary?.id)
+  const title = normalizeWhitespace(detail?.title || summary?.title)
+  const requisitionId = normalizeWhitespace(detail?.requisitionId || detail?.reqId || summary?.requisitionId)
+  const employmentType = normalizeWhitespace(detail?.jobType || summary?.jobType)
+  const description = htmlToText(detail?.jobDescription)
+  const locationInfo = toIndiaLocation(detail?.location || summary?.location)
+
+  if (!jobId || !title || !requisitionId || !description) {
+    throw new Error('IndustryBuying careers detail payload no longer exposes the verified job fields')
+  }
 
   return {
     title,
     company: COMPANY,
-    department: normalizeWhitespace(job.departmentName),
-    location: locationLabel || 'India',
-    city,
-    country: 'India',
+    department: normalizeWhitespace(detail?.department || summary?.department),
+    location: locationInfo.location,
+    city: locationInfo.city,
+    country: locationInfo.country,
     jobId,
-    requisitionId: jobId,
-    sourceUrl,
-    applyUrl,
-    employmentType: toEmploymentType(job.jobType),
-    experienceRequired: normalizeWhitespace(job.experience),
+    requisitionId,
+    sourceUrl: buildJobDetailUrl(jobId),
+    applyUrl: buildApplyUrl(jobId),
+    employmentType,
+    experienceRequired: normalizeWhitespace(detail?.experience),
     minimumQualification: null,
     preferredQualification: null,
-    requiredSkills: Array.isArray(job.skillNames)
-      ? job.skillNames.map((skill) => normalizeWhitespace(skill)).filter(Boolean)
+    requiredSkills: Array.isArray(detail?.skillsRequired)
+      ? detail.skillsRequired.map((skill) => normalizeWhitespace(skill)).filter(Boolean)
       : [],
-    postingDate: normalizePostingDate(job.publishedOn),
+    postingDate: normalizePostingDate(detail?.createdAt || summary?.createdAt),
     closingDate: null,
-    jobDescription: normalizeWhitespace(job.description),
+    jobDescription: description,
   }
 }
-
-export const extractSearchResults = (payload, { domain } = {}) =>
-  (Array.isArray(payload) ? payload : [])
-    .map((job) => mapJob(job, { domain }))
-    .filter(Boolean)
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -182,44 +205,37 @@ export const createIndustryBuyingScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
-    const bootstrapHtml = await fetchText(KEKA_CAREER_PAGE_URL)
-    const embeddedCareersPath = extractEmbeddedCareersDocumentPath(bootstrapHtml)
-    if (!embeddedCareersPath) {
-      throw new Error('IndustryBuying Keka careers page no longer exposes the verified embedded careers document')
+    const homepageHtml = await fetchText(HOMEPAGE_HANDOFF_URL)
+    const careersLink = extractCareersLink(homepageHtml)
+    if (careersLink !== JOBS_SITE_URL) {
+      throw new Error('IndustryBuying homepage no longer exposes the verified careers handoff')
     }
 
-    const embeddedCareersUrl = new URL(embeddedCareersPath, KEKA_CAREER_PAGE_URL).toString()
-    const careerConfig = extractCareerConfig(await fetchText(embeddedCareersUrl))
-    if (!careerConfig) {
-      throw new Error('IndustryBuying embedded careers document no longer exposes the verified Keka configuration')
+    const jobsSiteHtml = await fetchText(JOBS_SITE_URL)
+    if (!hasOfficialJobsSiteSignal(jobsSiteHtml)) {
+      throw new Error('IndustryBuying careers site no longer matches the verified first-party surface')
     }
 
-    if (
-      careerConfig.identifier !== EXPECTED_IDENTIFIER
-      || careerConfig.domain !== EXPECTED_KEKA_DOMAIN
-      || careerConfig.portalName !== 'default'
-    ) {
-      throw new Error('IndustryBuying verified Keka job surface changed materially')
+    const org = extractExpectedOrg(await fetchJson(CAREER_ORGS_API_URL))
+    if (!org) {
+      throw new Error('IndustryBuying careers orgs payload no longer exposes the verified org identity')
     }
 
-    const careerPortalInfoUrl = buildCareerPortalInfoUrl(careerConfig)
-    if (!careerPortalInfoUrl) {
-      throw new Error('Unable to build IndustryBuying career portal info URL')
-    }
+    const summaries = extractJobSummaries(
+      await fetchJson(`${CAREER_JOBS_API_URL}?orgId=${encodeURIComponent(org.id)}`),
+      { orgId: org.id },
+    )
+    const selectedSummaries = maxJobs ? summaries.slice(0, maxJobs) : summaries
 
-    if (!hasExpectedPortalIdentity(await fetchJson(careerPortalInfoUrl))) {
-      throw new Error('IndustryBuying exact company identity no longer matches the verified public Keka portal')
-    }
+    const jobs = await Promise.all(selectedSummaries.map(async (summary) => {
+      const detail = extractJobDetail(
+        await fetchJson(`${CAREER_JOBS_API_URL}?id=${encodeURIComponent(summary.id)}`),
+      )
 
-    const activeJobsUrl = buildActiveJobsUrl(careerConfig)
-    if (!activeJobsUrl) {
-      throw new Error('Unable to build IndustryBuying active jobs URL')
-    }
+      return mapJob({ summary, detail })
+    }))
 
-    const jobs = extractSearchResults(await fetchJson(activeJobsUrl), careerConfig)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-
-    return selectedJobs.map((job) => ({
+    return jobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
@@ -228,10 +244,10 @@ export const createIndustryBuyingScraper = ({
   },
 })
 
-export const run = async () => createIndustryBuyingScraper().run()
+export const run = async (options = {}) => createIndustryBuyingScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

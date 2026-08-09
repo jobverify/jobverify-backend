@@ -5,7 +5,7 @@ const pineLabsCareersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers at Pine Labs – Join Our Fintech Innovation Team</title>
+    <title>Careers at Pine Labs &ndash; Join Our Fintech Innovation Team</title>
     <meta
       name="description"
       content="Explore exciting career opportunities at Pine Labs. Be part of a dynamic fintech company driving innovation in digital payments and merchant solutions."
@@ -19,7 +19,7 @@ const pineLabsCareersHtml = `
     </header>
     <main>
       <h1>Careers at Pine Labs</h1>
-      <p>Join our fintech innovation team.</p>
+      <p>Join our fintech innovation team</p>
     </main>
   </body>
 </html>
@@ -41,6 +41,12 @@ test('Qwikcilver sentinel recognizes the verified Pine Labs careers surface with
   assert.equal(qwikcilver.COMPANY, 'Qwikcilver')
   assert.equal(qwikcilver.VERIFIED_SURFACE_URL, 'https://www.pinelabs.com/careers')
   assert.equal(qwikcilver.hasVerifiedParentCareersSurface(pineLabsCareersHtml), true)
+  assert.equal(
+    qwikcilver.hasVerifiedParentCareersSurface(
+      pineLabsCareersHtml.replace('&ndash;', '–'),
+    ),
+    true,
+  )
   assert.equal(qwikcilver.hasQwikcilverJobsSignal(pineLabsCareersHtml), false)
   assert.equal(qwikcilver.hasPublicJobBoardSignal(pineLabsCareersHtml), false)
 })

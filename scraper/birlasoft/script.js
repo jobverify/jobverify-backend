@@ -1,7 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -201,6 +202,10 @@ export const extractJobDetail = (html, listing = {}) => {
     html,
   ))
   const descriptionHtml = extractFirst(/itemprop="description"[^>]*>([\s\S]*?)<\/span>/i, html)
+  const jobDescription = stripTags(descriptionHtml)
+  const experienceProfile = extractJobFilterSignals({
+    description: jobDescription,
+  })?.experienceProfile
   const jobId = normalizeWhitespace(extractFirst(/jobID\s*:\s*'?(\d+)'?/i, html)) || listing.jobId || null
 
   return {
@@ -217,13 +222,13 @@ export const extractJobDetail = (html, listing = {}) => {
     sourceUrl: listing.sourceUrl || buildJobDetailUrl(listing.sourceUrl),
     applyUrl: buildApplyUrl(jobId),
     employmentType: positionType || null,
-    experienceRequired: null,
+    experienceRequired: experienceProfile?.confidence === 'high' ? experienceProfile.evidence || null : null,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: extractListItems(descriptionHtml),
     postingDate: normalizeDate(extractFirst(/itemprop="datePosted" content="([^"]+)"/i, html)) || listing.postingDate || null,
     closingDate: normalizeDate(extractFirst(/itemprop="validThrough" content="([^"]+)"/i, html)),
-    jobDescription: stripTags(descriptionHtml),
+    jobDescription,
   }
 }
 
@@ -282,7 +287,7 @@ export const run = async () => {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Birlasoft scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

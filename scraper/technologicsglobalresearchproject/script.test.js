@@ -67,6 +67,16 @@ test('Technologics Global Research & Project sentinel pins the verified no-signa
     }),
     false,
   )
+  assert.equal(
+    scraper.isVerifiedNoSignalFirstPartySurface({
+      status: 'FETCH_ERROR',
+      url: 'https://technologicsglobalresearchproject.com/',
+      html: '',
+      errorMessage:
+        '[technologicsglobalresearchproject] All 3 attempts failed. Last error: fetch failed | getaddrinfo ENOTFOUND technologicsglobalresearchproject.com',
+    }),
+    true,
+  )
 })
 
 test('Technologics Global Research & Project sentinel returns [] only while every verified candidate domain stays unresolved', async () => {

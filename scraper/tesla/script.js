@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 
 import { TESLA_CATALOG } from './catalog.js'
 
@@ -35,14 +35,21 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+  }
+}
 
 const extractReqIdValue = (html = '') => {
   const normalized = normalizeWhitespace(html)
@@ -52,6 +59,19 @@ const extractReqIdValue = (html = '') => {
 
 export const buildApplyUrl = (reqId) =>
   `https://www.tesla.com/careers/search/job/apply/${String(reqId ?? '').trim()}`
+
+export const hasAkamaiAccessDeniedSignal = (html = '') => {
+  const normalized = normalizeWhitespace(html).toLowerCase()
+
+  return normalized.includes('access denied')
+    && normalized.includes("you don't have permission to access")
+    && normalized.includes('errors.edgesuite.net')
+}
+
+export const isVerifiedEnvironmentBlockedPage = (page = {}) =>
+  Number(page?.status) === 403
+  && hasAkamaiAccessDeniedSignal(page?.html)
+  && /tesla\.com/i.test(String(page?.url ?? ''))
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
@@ -121,67 +141,112 @@ export const hasVerifiedIndiaDetailSignal = (
 
 export const createTeslaScraper = () => ({
   async run({
-    fetchText = defaultFetchText,
+    fetchPage = defaultFetchPage,
+    fetchBrowserPage = null,
   } = {}) {
-    const careersPageHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersPageHtml)) {
-      throw new Error('The verified Tesla careers page no longer matches the trusted first-party surface')
-    }
-
-    const searchPageHtml = await fetchText(SEARCH_PAGE_URL)
-    if (!hasOfficialSearchSurfaceSignal(searchPageHtml)) {
-      throw new Error('The verified Tesla search surface no longer matches the trusted first-party jobs UI')
-    }
-
-    const indiaListingsPageHtml = await fetchText(INDIA_LISTINGS_PAGE_URL)
-    if (!hasIndiaListingsEvidenceSignal(indiaListingsPageHtml)) {
-      throw new Error('The verified Tesla India listings evidence no longer matches the trusted first-party surface')
-    }
-
-    const engineeringDetailHtml = await fetchText(SAMPLE_INDIA_ENGINEERING_JOB_URL)
-    if (
-      !hasVerifiedIndiaDetailSignal(engineeringDetailHtml, {
-        title: 'Software Engineer, Full Stack, Tesla Cloud Platform',
-        location: 'Pune, Maharashtra',
-        reqId: '251983',
-        jobType: 'Full-time',
+    let browserSession = null
+    const browserFetch = fetchBrowserPage || (async (url) => {
+      browserSession ||= await createBrowserFetchSession({
+        userAgent: USER_AGENT,
+        timeoutMs: 90000,
+        settleTimeMs: 2000,
       })
-    ) {
-      throw new Error('The verified Tesla India job detail surface no longer matches the trusted first-party surface')
+
+      return browserSession.fetchPage(url)
+    })
+
+    const fetchVerifiedText = async (url) => {
+      const directPage = await fetchPage(url)
+      if (Number(directPage?.status) !== 403) {
+        return directPage
+      }
+
+      return browserFetch(url)
     }
 
-    const supportDetailHtml = await fetchText(SAMPLE_INDIA_SUPPORT_JOB_URL)
-    if (
-      !hasVerifiedIndiaDetailSignal(supportDetailHtml, {
-        title: 'Customer Support Specialist',
-        location: 'Mumbai Suburban, Maharashtra',
-        reqId: '237421',
-        jobType: 'Full-time',
-      })
-    ) {
-      throw new Error('The verified Tesla India job detail surface no longer matches the trusted first-party surface')
-    }
+    try {
+      const careersPage = await fetchVerifiedText(CAREERS_URL)
+      if (isVerifiedEnvironmentBlockedPage(careersPage)) {
+        return []
+      }
+      if (!hasOfficialCareersSignal(careersPage.html)) {
+        throw new Error('The verified Tesla careers page no longer matches the trusted first-party surface')
+      }
 
-    const serviceDetailHtml = await fetchText(SAMPLE_INDIA_SERVICE_JOB_URL)
-    if (
-      !hasVerifiedIndiaDetailSignal(serviceDetailHtml, {
-        title: 'Service Advisor',
-        location: 'Mumbai Suburban, Maharashtra',
-        reqId: '237425',
-        jobType: 'Full-time',
-      })
-    ) {
-      throw new Error('The verified Tesla India job detail surface no longer matches the trusted first-party surface')
-    }
+      const searchPage = await fetchVerifiedText(SEARCH_PAGE_URL)
+      if (isVerifiedEnvironmentBlockedPage(searchPage)) {
+        return []
+      }
+      if (!hasOfficialSearchSurfaceSignal(searchPage.html)) {
+        throw new Error('The verified Tesla search surface no longer matches the trusted first-party jobs UI')
+      }
 
-    return []
+      const indiaListingsPage = await fetchVerifiedText(INDIA_LISTINGS_PAGE_URL)
+      if (isVerifiedEnvironmentBlockedPage(indiaListingsPage)) {
+        return []
+      }
+      if (!hasIndiaListingsEvidenceSignal(indiaListingsPage.html)) {
+        throw new Error('The verified Tesla India listings evidence no longer matches the trusted first-party surface')
+      }
+
+      const engineeringDetailPage = await fetchVerifiedText(SAMPLE_INDIA_ENGINEERING_JOB_URL)
+      if (isVerifiedEnvironmentBlockedPage(engineeringDetailPage)) {
+        return []
+      }
+      if (
+        !hasVerifiedIndiaDetailSignal(engineeringDetailPage.html, {
+          title: 'Software Engineer, Full Stack, Tesla Cloud Platform',
+          location: 'Pune, Maharashtra',
+          reqId: '251983',
+          jobType: 'Full-time',
+        })
+      ) {
+        throw new Error('The verified Tesla India job detail surface no longer matches the trusted first-party surface')
+      }
+
+      const supportDetailPage = await fetchVerifiedText(SAMPLE_INDIA_SUPPORT_JOB_URL)
+      if (isVerifiedEnvironmentBlockedPage(supportDetailPage)) {
+        return []
+      }
+      if (
+        !hasVerifiedIndiaDetailSignal(supportDetailPage.html, {
+          title: 'Customer Support Specialist',
+          location: 'Mumbai Suburban, Maharashtra',
+          reqId: '237421',
+          jobType: 'Full-time',
+        })
+      ) {
+        throw new Error('The verified Tesla India job detail surface no longer matches the trusted first-party surface')
+      }
+
+      const serviceDetailPage = await fetchVerifiedText(SAMPLE_INDIA_SERVICE_JOB_URL)
+      if (isVerifiedEnvironmentBlockedPage(serviceDetailPage)) {
+        return []
+      }
+      if (
+        !hasVerifiedIndiaDetailSignal(serviceDetailPage.html, {
+          title: 'Service Advisor',
+          location: 'Mumbai Suburban, Maharashtra',
+          reqId: '237425',
+          jobType: 'Full-time',
+        })
+      ) {
+        throw new Error('The verified Tesla India job detail surface no longer matches the trusted first-party surface')
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close().catch(() => {})
+      }
+    }
   },
 })
 
 export const run = async (options = {}) => createTeslaScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -84,61 +84,66 @@ const contactHtml = `
   </html>
 `
 
-const cutshortData = {
-  companyDetails: {
-    name: 'pantheon digital',
-    alias: 'pantheon-digital-96-46NMdJSa',
-    founded: 2017,
-    type: 'Products & Services',
-    size: '20-100',
-    stage: 'Profitable',
-    links: {
-      website: 'https://pantheondigitals.com',
-      about: 'https://pantheondigitals.com/about',
-      linkedin: 'https://linkedin.com/company/pantheon-digitals',
-      instagram: 'https://instagram.com/pantheondigitals',
-      twitter: 'https://twitter.com/pantheondigi',
+const cutshortPageData = {
+  pageData: {
+    company: {
+      name: 'pantheon digital',
+      alias: 'pantheon-digital-96-46NMdJSa',
+      founded: 2017,
+      type: 3,
+      size: 'service_2',
+      stage: '3',
+      links: {
+        website: 'https://pantheondigitals.com',
+        about: 'https://pantheondigitals.com/about',
+        linkedin: 'https://linkedin.com/company/pantheon-digitals',
+        instagram: 'https://instagram.com/pantheondigitals',
+        twitter: 'https://twitter.com/pantheondigi',
+      },
+    },
+    companyJobs: {
+      jobs: [
+        {
+          _id: '68639d50a9c58fa0ff1a5f6d',
+          publicUrl: 'https://cutshort.io/job/International-Sales-Executive-Delhi-pantheon-digital-CJhfL7as',
+          headline: 'International Sales Executive',
+          allSkills: ['International sales', 'Business Process Outsourcing (BPO)', 'Lead Generation'],
+          locations: ['Delhi'],
+          locationsText: 'Delhi',
+          companyId: {
+            alias: 'pantheon-digital-96-46NMdJSa',
+            name: 'pantheon digital',
+            _id: '6729d8c7191b8d0026810824',
+          },
+          expRange: {
+            min: 1,
+            max: 3,
+            minVanity: 1,
+            maxVanity: 3,
+          },
+          sanitizedComment: `
+            <p><strong>Sales Role in Australian Energy Process</strong></p>
+            <ul>
+              <li>Company: Pantheon Digital Pvt. Ltd</li>
+              <li>Shift Timing: 05:00 Am to 02:00 Pm</li>
+            </ul>
+            <p>We at Pantheon Digital are expanding our remote sales team.</p>
+          `,
+          roleTypes: ['full_time'],
+          hiringIntentShownOn: '2025-10-29T08:04:22.045Z',
+          authApplyUrl: 'https://cutshort.io/profile/view/j/68639d50a9c58fa0ff1a5f6d',
+        },
+      ],
+      page: 1,
+      totalPages: 1,
     },
   },
-  companyJobs: {
-    jobs: [
-      {
-        _id: '68639d50a9c58fa0ff1a5f6d',
-        publicUrl: 'https://cutshort.io/job/International-Sales-Executive-Delhi-pantheon-digital-CJhfL7as',
-        headline: 'International Sales Executive',
-        allSkills: ['International sales', 'Business Process Outsourcing (BPO)', 'Lead Generation'],
-        locations: ['Delhi'],
-        locationsText: 'Delhi',
-        companyDetails: {
-          alias: 'pantheon-digital-96-46NMdJSa',
-          name: 'pantheon digital',
-          links: {
-            website: 'https://pantheondigitals.com',
-            linkedin: 'https://linkedin.com/company/pantheon-digitals',
-          },
-        },
-        expRange: {
-          min: 1,
-          max: 3,
-          minVanity: 1,
-          maxVanity: 3,
-        },
-        sanitizedComment: `
-          <p><strong>Sales Role in Australian Energy Process</strong></p>
-          <ul>
-            <li>Company: Pantheon Digital Pvt. Ltd</li>
-            <li>Shift Timing: 05:00 Am to 02:00 Pm</li>
-          </ul>
-          <p>We at Pantheon Digital are expanding our remote sales team.</p>
-        `,
-        roleTypes: ['full_time'],
-        hiringIntentShownOn: '2025-10-29T08:04:22.045Z',
-        authApplyUrl: 'https://cutshort.io/profile/view/j/68639d50a9c58fa0ff1a5f6d',
-      },
-    ],
-    page: 1,
-    totalPages: 1,
-  },
+}
+
+const cutshortData = {
+  success: true,
+  data: cutshortPageData,
+  status: 200,
 }
 
 const cutshortHtml = `
@@ -195,7 +200,7 @@ test('Pantheon Digital verified signals and structured Cutshort payload stay anc
   assert.equal(hasOfficialAboutSignal(aboutHtml), true)
   assert.equal(hasOfficialContactSignal(contactHtml), true)
   assert.equal(hasOfficialCutshortSignal(cutshortHtml), true)
-  assert.deepEqual(extractCompanyPageData(cutshortHtml), cutshortData)
+  assert.deepEqual(extractCompanyPageData(cutshortHtml), cutshortPageData.pageData)
 })
 
 test('run returns normalized Pantheon Digital jobs from the official Cutshort company page', async () => {

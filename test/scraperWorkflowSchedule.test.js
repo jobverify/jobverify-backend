@@ -11,18 +11,24 @@ const readScraperWorkflow = () => readFileSync(
   'utf8',
 )
 
-test('scraper workflow runs daily at 11:11 PM IST', () => {
+test('scraper workflow runs on Tuesday and Friday at 02:08 AM IST', () => {
   const workflow = readScraperWorkflow()
 
-  assert.match(workflow, /cron:\s*['"]41 17 \* \* \*['"]/)
-  assert.match(workflow, /11:11 PM IST/)
+  assert.match(workflow, /cron:\s*['"]38 20 \* \* 1,4['"]/)
+  assert.match(workflow, /Tuesday and Friday at 02:08 AM IST/)
 })
 
-test('scraper workflow does not abort the full batch after only a few source failures', () => {
+test('scraper workflow leaves failure-abort handling disabled', () => {
   const workflow = readFileSync(
     path.join(repoRoot, '.github/workflows/scraper.yml'),
     'utf8',
   )
 
-  assert.match(workflow, /SCRAPER_FAILURE_ABORT_THRESHOLD:\s*['"]1000['"]/)
+  assert.doesNotMatch(workflow, /SCRAPER_FAILURE_ABORT_THRESHOLD:/)
+})
+
+test('scraper workflow runs the scraper with system CA support enabled', () => {
+  const workflow = readScraperWorkflow()
+
+  assert.match(workflow, /NODE_OPTIONS:\s*['"]--use-system-ca['"]/)
 })

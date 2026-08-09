@@ -13,7 +13,7 @@ dotenv.config({ path: path.resolve(currentDir, "../.env") });
 
 const { default: connectDB } = await import("../db/db.js");
 const { default: Job } = await import("../src/models/Job.js");
-const { normalizeCity } = await import("../scraper/utils/cityNormalizer.js");
+const { normalizeCity } = await import("../scraper-support/utils/cityNormalizer.js");
 
 // Query all active and expired jobs, re-run city normalization, and save modifications.
 async function main() {

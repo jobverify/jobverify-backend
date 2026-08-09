@@ -1,7 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { runWorkdayScraper } from '../../scraper-support/myworkday/engine.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { ROCKET_SOFTWARE_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -45,36 +46,38 @@ export const hasOfficialCareersSignal = (html = '') => {
     && page.includes(WORKDAY_BOARD_URL)
 }
 
-export const hasWorkdayOutageSignal = (html = '') => {
-  const page = String(html ?? '')
-  const text = normalizeWhitespace(page)
-
-  return /Workday is currently unavailable/i.test(text)
-    && /community\.workday\.com\/outage-page/i.test(page)
-}
-
 export const createRocketSoftwareScraper = () => ({
   async run({
     fetchText = defaultFetchText,
+    runWorkday = runWorkdayScraper,
   } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Rocket Software verified careers page changed materially')
     }
 
-    const workdayBoardHtml = await fetchText(WORKDAY_BOARD_URL)
-    if (!hasWorkdayOutageSignal(workdayBoardHtml)) {
-      throw new Error('Rocket Software verified Workday outage contract changed; promote a real scraper')
-    }
+    const jobs = await runWorkday({
+      company: COMPANY,
+      baseUrl: WORKDAY_BOARD_URL,
+      locationCountry: 'India',
+      source: SOURCE,
+      scraperDir: currentDir,
+    })
 
-    return []
+    return jobs.map((job) => ({
+      ...job,
+      company: job.company || COMPANY,
+      source: job.source || SOURCE,
+      sourceUrl: job.sourceUrl || job.link || null,
+      applyUrl: job.applyUrl || job.link || null,
+    }))
   },
 })
 
 export const run = async (options = {}) => createRocketSoftwareScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

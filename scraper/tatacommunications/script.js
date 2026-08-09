@@ -1,12 +1,13 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
 export const CAREER_PAGE_URL = 'https://jobs.tatacommunications.com/'
+export const HOME_URL = 'https://jobs.tatacommunications.com/home'
 export const WORKSPACE_DOMAIN = 'jobs.tatacommunications.com'
 export const WORKSPACE_ID = 'TCLPROD-c62po'
 export const API_BASE = 'https://io.spire2grow.com/ies/v1/p'
@@ -17,6 +18,7 @@ export const DEFAULT_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) App
 const INDIA_COUNTRY = 'India'
 const REQUEST_ACCEPT = 'application/json, text/plain, */*'
 const CAREER_PAGE_ORIGIN = new URL(CAREER_PAGE_URL).origin
+const HOME_PAGE_HOST = new URL(HOME_URL).host
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -98,6 +100,177 @@ const joinDescriptionParts = (...parts) => normalizeWhitespace(
 const normalizeSkill = (value) => {
   if (typeof value === 'string') return normalizeWhitespace(value)
   return normalizeWhitespace(value?.skill || value?.name)
+}
+
+const normalizeSkillsList = (value) => {
+  const seenSkills = new Set()
+
+  return String(value ?? '')
+    .split(',')
+    .map((skill) => normalizeWhitespace(skill))
+    .filter(Boolean)
+    .filter((skill) => {
+      const key = skill.toLowerCase()
+      if (seenSkills.has(key)) return false
+      seenSkills.add(key)
+      return true
+    })
+}
+
+const normalizeRenderedLines = (value) => String(value ?? '')
+  .split(/\r?\n/)
+  .map((line) => normalizeWhitespace(line))
+  .filter(Boolean)
+
+const isIndiaLocationText = (value) =>
+  /\bindia\b/i.test(normalizeWhitespace(value) || '')
+
+const resolveNowDate = (value) => {
+  const fallback = new Date()
+
+  if (value == null) return fallback
+
+  const resolved = value instanceof Date ? new Date(value.getTime()) : new Date(value)
+  return Number.isNaN(resolved.getTime()) ? fallback : resolved
+}
+
+const formatUtcDate = (value) => {
+  const date = resolveNowDate(value)
+  const year = date.getUTCFullYear()
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const parseRelativePostingDate = (value, { nowDate = new Date() } = {}) => {
+  const normalized = normalizeWhitespace(value)?.toLowerCase()
+  if (!normalized) return null
+
+  const relativeMatch = normalized.match(/posted\s+(\d+)\s+(minute|hour|day|week|month)s?\s+ago/)
+  if (!relativeMatch) return null
+
+  const amount = Number(relativeMatch[1])
+  const unit = relativeMatch[2]
+  const unitToMilliseconds = {
+    minute: 60 * 1000,
+    hour: 60 * 60 * 1000,
+    day: 24 * 60 * 60 * 1000,
+    week: 7 * 24 * 60 * 60 * 1000,
+    month: 30 * 24 * 60 * 60 * 1000,
+  }
+  const durationMs = unitToMilliseconds[unit]
+
+  if (!durationMs || !Number.isFinite(amount)) {
+    return null
+  }
+
+  return formatUtcDate(new Date(resolveNowDate(nowDate).getTime() - amount * durationMs))
+}
+
+export const extractRenderedDetailCards = (pageText) => {
+  const lines = normalizeRenderedLines(pageText)
+  const detailCards = []
+
+  for (let index = 0; index < lines.length - 4; index += 1) {
+    const jobIdMatch = lines[index].match(/^Job ID\s+(\d+)$/i)
+    if (!jobIdMatch) continue
+
+    detailCards.push({
+      jobId: jobIdMatch[1],
+      location: lines[index + 1] || null,
+      skillsText: lines[index + 2] || null,
+      experienceRequired: lines[index + 3] || null,
+      postedLabel: lines[index + 4] || null,
+    })
+  }
+
+  return detailCards
+}
+
+export const extractRenderedTitleCards = (pageText) => {
+  const lines = normalizeRenderedLines(pageText)
+  const titles = []
+  const startIndex = lines.indexOf('Posting Date')
+
+  if (startIndex === -1) {
+    return titles
+  }
+
+  for (let index = startIndex + 1; index < lines.length - 2; index += 1) {
+    const title = lines[index]
+    const skillsText = lines[index + 1]
+    const action = lines[index + 2]
+
+    if (title === 'TATA COMMUNICATIONS') {
+      break
+    }
+
+    if (!title || !skillsText || action !== 'Apply') {
+      continue
+    }
+
+    titles.push({
+      title,
+      skillsText,
+    })
+    index += 2
+  }
+
+  return titles
+}
+
+export const extractRenderedJobs = (pageText, { nowDate = new Date() } = {}) => {
+  const detailCards = extractRenderedDetailCards(pageText)
+  const titleCards = [...extractRenderedTitleCards(pageText)]
+  const jobs = []
+
+  for (const detailCard of detailCards) {
+    if (!isIndiaLocationText(detailCard.location)) {
+      continue
+    }
+
+    const matchingTitleIndex = titleCards.findIndex((titleCard) =>
+      normalizeWhitespace(titleCard.skillsText)?.toLowerCase()
+        === normalizeWhitespace(detailCard.skillsText)?.toLowerCase())
+    const titleCard = matchingTitleIndex >= 0
+      ? titleCards.splice(matchingTitleIndex, 1)[0]
+      : titleCards.shift()
+
+    if (!titleCard?.title) {
+      continue
+    }
+
+    const requiredSkills = normalizeSkillsList(titleCard.skillsText || detailCard.skillsText)
+    const location = normalizeWhitespace(detailCard.location)
+
+    jobs.push({
+      title: titleCard.title,
+      company: 'Tata Communications',
+      department: null,
+      location,
+      city: extractCity(location),
+      jobId: detailCard.jobId,
+      requisitionId: detailCard.jobId,
+      sourceUrl: HOME_URL,
+      applyUrl: HOME_URL,
+      employmentType: null,
+      experienceRequired: normalizeWhitespace(detailCard.experienceRequired),
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills,
+      postingDate: parseRelativePostingDate(detailCard.postedLabel, { nowDate }),
+      closingDate: null,
+      jobDescription: joinDescriptionParts(
+        titleCard.title,
+        location,
+        requiredSkills.length > 0 ? `Skills: ${requiredSkills.join(', ')}` : null,
+        detailCard.experienceRequired ? `Experience: ${detailCard.experienceRequired}` : null,
+        detailCard.postedLabel,
+      ),
+    })
+  }
+
+  return jobs
 }
 
 const getSkills = (record = {}) => {
@@ -279,8 +452,11 @@ export const createTataCommunicationsScraper = ({
 } = {}) => ({
   async run(options = {}) {
     const fetchJson = options.fetchJson || defaultFetchJson
+    const nowDate = resolveNowDate((options.now || (() => new Date()))())
+
     const jobs = []
     const seenJobIds = new Set()
+    const scrapedAt = nowDate.toISOString()
 
     const bootstrapPayload = await fetchJson(WORKSPACE_BOOTSTRAP_URL, {
       headers: buildBootstrapHeaders(),
@@ -292,42 +468,54 @@ export const createTataCommunicationsScraper = ({
     }
 
     for (let page = 1; page <= maxPages; page += 1) {
-      const listingPayload = await fetchJson(buildListingApiUrl(), {
-        method: 'POST',
-        headers: buildRequestHeaders({ workflowId }),
-        body: buildListingRequestBody({ page, pageSize }),
-      })
-      const listings = extractSearchResults(listingPayload)
-      const summary = extractPaginationSummary(listingPayload, { page, pageSize })
-
-      for (const listing of listings) {
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
-
-        const detailPayload = await fetchJson(buildDetailApiUrl(listing.jobId), {
+        const listingPayload = await fetchJson(buildListingApiUrl(), {
+          method: 'POST',
           headers: buildRequestHeaders({ workflowId }),
+          body: buildListingRequestBody({ page, pageSize }),
         })
-        const detail = extractJobDetail(detailPayload, listing)
+        const listings = extractSearchResults(listingPayload)
+        const summary = extractPaginationSummary(listingPayload, { page, pageSize })
 
-        jobs.push({
-          ...detail,
-          source: 'tatacommunications',
-          link: detail.applyUrl || detail.sourceUrl,
-          scrapedAt: new Date().toISOString(),
-        })
+        for (const listing of listings) {
+          if (seenJobIds.has(listing.jobId)) continue
+          seenJobIds.add(listing.jobId)
 
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
+          const detailPayload = await fetchJson(buildDetailApiUrl(listing.jobId), {
+            headers: buildRequestHeaders({ workflowId }),
+          })
+          const detail = extractJobDetail(detailPayload, listing)
+
+          jobs.push({
+            ...detail,
+            source: 'tatacommunications',
+            link: detail.applyUrl || detail.sourceUrl,
+            scrapedAt,
+          })
+
+          if (maxJobs && jobs.length >= maxJobs) {
+            return jobs
+          }
+        }
+
+        if (!summary.hasNext) {
+          break
         }
       }
-
-      if (!summary.hasNext) {
-        break
-      }
-    }
 
     return jobs
   },
 })
 
 export const run = async (options = {}) => createTataCommunicationsScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, 'tatacommunications')
+  }
+}

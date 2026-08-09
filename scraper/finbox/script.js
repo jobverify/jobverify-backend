@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { FINBOX_CATALOG } from './catalog.js'
 
@@ -15,6 +15,7 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const CAREERS_PAGE_URL = PROVIDER_METADATA.careersPageUrl
 export const JOBS_EMBED_URL = PROVIDER_METADATA.jobsEmbedUrl
+export const JOBS_BOARD_URL = JOBS_EMBED_URL.replace(/\/job-embed$/, '')
 export const COMPANY_DETAILS_API_URL = PROVIDER_METADATA.companyDetailsApiUrl
 export const REQUISITIONS_API_URL = PROVIDER_METADATA.requisitionsApiUrl
 
@@ -93,11 +94,16 @@ export const extractJobsEmbedUrl = (html = '') => {
 
 export const hasVerifiedCareersShell = (html = '') => {
   const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml).toLowerCase()
 
-  return /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.finbox\.in\/careers["']/i.test(rawHtml)
-    && normalized.includes('finbox')
-    && rawHtml.includes(JOBS_EMBED_URL)
+  return /<title>\s*FinBox\s*<\/title>/i.test(rawHtml)
+    && /<meta name="description" content="Powering modern credit with a suite of infrastructure, risk intelligence and orchestration solutions\."/i.test(rawHtml)
+  }
+
+export const hasVerifiedJobsEmbedShell = (html = '') => {
+  const rawHtml = String(html ?? '')
+
+  return /<meta name="title" content="Jobs at FinBox"/i.test(rawHtml)
+    && /<meta name="description" content="Come join our awesome team at FinBox!"/i.test(rawHtml)
   }
 
 export const isVerifiedCompanyDetailsPayload = (payload = {}) => {
@@ -185,11 +191,13 @@ export const createFinBoxScraper = () => ({
     fetchJson = defaultFetchJson,
   } = {}) {
     const careersHtml = await fetchText(CAREERS_PAGE_URL)
-    if (
-      !hasVerifiedCareersShell(careersHtml)
-      || extractJobsEmbedUrl(careersHtml) !== JOBS_EMBED_URL
-    ) {
+    if (!hasVerifiedCareersShell(careersHtml)) {
       throw new Error('FinBox verified first-party careers handoff no longer matches the public Reczee embed surface')
+    }
+
+    const jobsEmbedHtml = await fetchText(JOBS_BOARD_URL)
+    if (!hasVerifiedJobsEmbedShell(jobsEmbedHtml)) {
+      throw new Error('FinBox verified Reczee embed shell no longer matches the public careers surface')
     }
 
     const companyDetailsPayload = await fetchJson(COMPANY_DETAILS_API_URL)
@@ -225,7 +233,7 @@ export const createFinBoxScraper = () => ({
 export const run = async (options = {}) => createFinBoxScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

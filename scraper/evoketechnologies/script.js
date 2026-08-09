@@ -11,7 +11,7 @@ export const CAREERS_URL = EVOKE_TECHNOLOGIES_CATALOG.companyCareerPage
 export const INDIA_JOBS_URL = EVOKE_TECHNOLOGIES_CATALOG.indiaJobsPageUrl
 export const VERIFIED_ON = EVOKE_TECHNOLOGIES_CATALOG.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -62,18 +62,55 @@ export const hasOfficialCareersSignal = (html = '') => {
     && /careers\.evoketechnologies\.com/i.test(page)
 }
 
-export const extractIndiaJobs = (html = '') => Array.from(
-  String(html ?? '').matchAll(
-    /<tr>[\s\S]*?<td>(\d+)<\/td>[\s\S]*?<td><a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a><\/td>[\s\S]*?<td>([\s\S]*?)<\/td>[\s\S]*?<td>([\s\S]*?)<\/td>[\s\S]*?<\/tr>/gi,
-  ),
-  (match) => ({
-    jobId: normalizeWhitespace(match[1]),
-    title: stripTags(match[3]),
-    location: stripTags(match[4]),
-    postingDate: stripTags(match[5]),
-    sourceUrl: normalizeUrl(match[2]),
-  }),
-).filter((job) => job.jobId && job.title && job.location && job.postingDate && job.sourceUrl)
+export const hasOfficialIndiaJobsSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = stripTags(page) || ''
+
+  return (
+    /View All Jobs/i.test(text)
+      && /Results\s*1\b[\s\S]{0,20}\bof\s+\d+\s+Page\s+1\s+of\s+1/i.test(text)
+      && /Job Req ID/i.test(text)
+      && /Evoke Technologies Pvt\. Ltd\./i.test(text)
+      && /Privacy Policy/i.test(text)
+  ) || (
+    /<h1>\s*India\s*<\/h1>/i.test(page)
+      && /Results\s*1\b[\s\S]{0,20}\bof\s+\d+\s+Page\s+1\s+of\s+1/i.test(text)
+      && /<table[\s>]/i.test(page)
+  )
+}
+
+export const extractIndiaJobs = (html = '') => {
+  const page = String(html ?? '')
+  const structuredJobs = Array.from(
+    page.matchAll(
+      /<tr[^>]*class=["'][^"']*data-row[^"']*["'][\s\S]*?<span[^>]*class=["'][^"']*jobFacility[^"']*["'][^>]*>([\s\S]*?)<\/span>[\s\S]*?<a[^>]+href=["']([^"']+)["'][^>]*class=["'][^"']*jobTitle-link[^"']*["'][^>]*>([\s\S]*?)<\/a>[\s\S]*?<span[^>]*class=["'][^"']*jobLocation[^"']*["'][^>]*>([\s\S]*?)<\/span>[\s\S]*?<span[^>]*class=["'][^"']*jobDate[^"']*["'][^>]*>([\s\S]*?)<\/span>[\s\S]*?<\/tr>/gi,
+    ),
+    (match) => ({
+      jobId: normalizeWhitespace(match[1]),
+      title: stripTags(match[3]),
+      location: stripTags(match[4]),
+      postingDate: stripTags(match[5]),
+      sourceUrl: normalizeUrl(match[2]),
+    }),
+  ).filter((job) => job.jobId && job.title && job.location && job.postingDate && job.sourceUrl)
+
+  if (structuredJobs.length > 0) {
+    return structuredJobs
+  }
+
+  return Array.from(
+    page.matchAll(
+      /<tr[^>]*>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>\s*<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>\s*<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>\s*<\/tr>/gi,
+    ),
+    (match) => ({
+      jobId: normalizeWhitespace(match[1]),
+      title: stripTags(match[3]),
+      location: stripTags(match[4]),
+      postingDate: stripTags(match[5]),
+      sourceUrl: normalizeUrl(match[2]),
+    }),
+  ).filter((job) => job.jobId && job.title && job.location && job.postingDate && job.sourceUrl)
+}
 
 export const createEvokeTechnologiesScraper = ({
   now = () => new Date().toISOString(),
@@ -85,6 +122,10 @@ export const createEvokeTechnologiesScraper = ({
     }
 
     const indiaHtml = await fetchText(INDIA_JOBS_URL)
+    if (!hasOfficialIndiaJobsSignal(indiaHtml)) {
+      throw new Error('Evoke India listing page no longer matches the trusted public jobs surface')
+    }
+
     const jobs = extractIndiaJobs(indiaHtml)
     if (jobs.length === 0) {
       throw new Error('Evoke India listing page no longer exposes trusted public openings')
@@ -95,7 +136,7 @@ export const createEvokeTechnologiesScraper = ({
       company: COMPANY,
       department: null,
       location: job.location,
-      city: 'Hyderabad',
+      city: normalizeWhitespace(job.location?.split(',')[0]) || null,
       country: 'India',
       jobId: job.jobId,
       requisitionId: job.jobId,
@@ -122,7 +163,7 @@ export const createEvokeTechnologiesScraper = ({
 export const run = async (options = {}) => createEvokeTechnologiesScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

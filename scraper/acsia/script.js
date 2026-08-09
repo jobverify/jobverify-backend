@@ -1,8 +1,9 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -122,28 +123,66 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isBrowserFallbackError = (error) =>
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const createAcsiaScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
-    const careersHtml = await fetchText(CAREER_PAGE_URL)
-    const jobs = extractSearchResults(careersHtml)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const fetchBrowserText = options.fetchBrowserText
+    let browserSession = null
 
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: 'acsia',
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
+    }
+
+    const browserTextFetcher = fetchBrowserText || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchText(url)
+    })
+
+    const fetchPageText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserTextFetcher(url)
+      }
+    }
+
+    try {
+      const careersHtml = await fetchPageText(CAREER_PAGE_URL)
+      const jobs = extractSearchResults(careersHtml)
+      const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+
+      return selectedJobs.map((job) => ({
+        ...job,
+        source: 'acsia',
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: new Date().toISOString(),
+      }))
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 
 export const run = async () => createAcsiaScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Acsia scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

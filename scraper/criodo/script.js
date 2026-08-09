@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 export const CAREERS_PAGE_URL = 'https://www.crio.do/about-us/'
 
@@ -141,6 +141,8 @@ export const extractCareerJobs = (html) => {
       closingDate: null,
       jobDescription: null,
       remoteStatus: getRemoteStatus(rawLocation),
+      companyCareerPage: CAREERS_PAGE_URL,
+      atsPlatform: 'official-company-careers',
     })
   }
 
@@ -149,7 +151,7 @@ export const extractCareerJobs = (html) => {
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
-    'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+    'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)',
     Accept: 'text/html,application/xhtml+xml',
   },
   label: SOURCE,

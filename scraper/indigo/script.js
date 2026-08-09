@@ -1,7 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
 import { INDIGO_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -94,41 +96,44 @@ const normalizeSuccessFactorsUrl = (value) => {
 }
 
 const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
+  return withRetry(async () => {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+      signal: typeof AbortSignal?.timeout === 'function' ? AbortSignal.timeout(15000) : undefined,
+    })
 
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
-  }
+    return {
+      status: response.status,
+      url: response.url,
+      html: await response.text(),
+    }
+  }, {
+    attempts: 3,
+    baseDelayMs: 250,
+    label: `${SOURCE}-page`,
+  })
 }
 
-const defaultFetchJson = async (url, options = {}) => {
-  const response = await fetch(url, {
-    method: options.method || 'GET',
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'application/json,text/plain,*/*',
-      Origin: 'https://www.goindigo.in',
-      Referer: JOB_SEARCH_URL,
-      ...(options.headers || {}),
-    },
-    body: options.body,
-    redirect: 'follow',
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.json()
-}
+const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
+  method: options.method || 'GET',
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json,text/plain,*/*',
+    Origin: 'https://www.goindigo.in',
+    Referer: JOB_SEARCH_URL,
+    ...(options.headers || {}),
+  },
+  body: options.body,
+  redirect: 'follow',
+  attempts: 3,
+  baseDelayMs: 250,
+  timeoutMs: 20000,
+  label: `${SOURCE}-json`,
+})
 
 export const hasOfficialCareersLandingSignal = (html = '') => {
   const normalized = stripTags(html) || ''
@@ -329,6 +334,7 @@ export const extractJobsFromApiPayload = (
         postingDate: parseSapDate(posting?.postStartDate),
         closingDate: parseSapDate(posting?.postEndDate),
         jobDescription: stripTags(locale.externalJobDescription),
+        publicExperienceChecked: true,
         remoteStatus: /remote/i.test(location) ? 'Remote' : 'On-site',
         scrapedAt,
       }
@@ -382,7 +388,7 @@ export const createIndigoScraper = () => ({
 export const run = async (options = {}) => createIndigoScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

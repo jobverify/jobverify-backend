@@ -6,6 +6,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = 'openupconstruction'
 export const COMPANY = 'Open Up Construction'
 export const COMPANY_DOMAIN = 'openupgroup.co.jp'
+export const VERIFIED_ON = '2026-08-03'
 export const CAREERS_URL = 'https://goodwork.openupgroup.co.jp/job-info/opc/'
 export const MIDCAREER_URL = 'https://goodwork.openupgroup.co.jp/job-info/opc/application/'
 export const NEW_GRADUATE_URL = 'https://goodwork.openupgroup.co.jp/job-info/opc/newgraduate/'
@@ -17,11 +18,13 @@ export const FIRST_PARTY_LISTING_URLS = [
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const CAREERS_TITLE_PATTERN = /<title>\s*オープンアップコンストラクション\s*\|\s*オープンアップブランドサイト\s*<\/title>/i
-const DETAIL_TITLE_PATTERNS = new Map([
-  [MIDCAREER_URL, /<title>\s*募集要項（中途未経験）\s*\|\s*オープンアップブランドサイト\s*<\/title>/i],
-  [NEW_GRADUATE_URL, /<title>\s*募集要項（新卒）\s*\|\s*オープンアップブランドサイト\s*<\/title>/i],
+const CAREERS_TITLE = 'オープンアップコンストラクション | オープンアップブランドサイト'
+const DETAIL_TITLES = new Map([
+  [MIDCAREER_URL, '募集要項（中途未経験） | オープンアップブランドサイト'],
+  [NEW_GRADUATE_URL, '募集要項（新卒） | オープンアップブランドサイト'],
 ])
+const MIDCAREER_LINK_TEXT = /中途未経験\s*[：:]\s*募集要項・応募フォーム/i
+const NEW_GRADUATE_LINK_TEXT = /新卒採用\s*[：:]\s*募集要項・応募フォーム/i
 
 const createTimeoutSignal = (timeoutMs) => {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
@@ -50,6 +53,7 @@ const decodeHtmlEntities = (value) => String(value ?? '')
 const normalizeWhitespace = (value) => {
   const normalized = decodeHtmlEntities(value)
     .replace(/\u00a0/g, ' ')
+    .replace(/\u3000/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 
@@ -58,7 +62,10 @@ const normalizeWhitespace = (value) => {
 
 const stripTags = (value) => normalizeWhitespace(
   String(value ?? '')
-    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/section|\/main|\/tr|\/td|\/th|\/table)\b[^>]*>/gi, ' ')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, ' ')
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/section|\/main|\/tr|\/td|\/th|\/table|\/figure)\b[^>]*>/gi, ' ')
     .replace(/<[^>]+>/g, ' '),
 )
 
@@ -93,15 +100,40 @@ const defaultFetchPage = async (url) => {
   }
 }
 
-const extractAnchorHref = (html, textPattern) => {
-  const source = String(html ?? '')
-  const pattern = new RegExp(
-    `<a[^>]+href=["']([^"']+)["'][^>]*>\\s*${textPattern.source}\\s*<\\/a>`,
-    textPattern.flags,
+const cloneRegex = (pattern) => new RegExp(pattern.source, pattern.flags)
+
+const matchesPattern = (value, pattern) => {
+  if (pattern instanceof RegExp) {
+    return cloneRegex(pattern).test(String(value ?? ''))
+  }
+
+  return normalizeWhitespace(value) === normalizeWhitespace(pattern)
+}
+
+const hasTitle = (html, title) => new RegExp(
+  `<title>\\s*${escapeRegex(title)}\\s*<\\/title>`,
+  'i',
+).test(String(html ?? ''))
+
+const extractAnchors = (html, baseUrl = CAREERS_URL) => Array.from(
+  String(html ?? '').matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi),
+).flatMap((match) => {
+  try {
+    return [{
+      href: new URL(match[1], baseUrl).toString(),
+      text: stripTags(match[2]) ?? '',
+    }]
+  } catch {
+    return []
+  }
+})
+
+const extractAnchorHref = (html, textPattern, { baseUrl = CAREERS_URL, hrefPattern = null } = {}) => {
+  const anchor = extractAnchors(html, baseUrl).find(({ href, text }) =>
+    matchesPattern(text, textPattern) && (!hrefPattern || matchesPattern(href, hrefPattern)),
   )
 
-  const match = source.match(pattern)
-  return match?.[1] ? new URL(match[1], CAREERS_URL).toString() : null
+  return anchor?.href ?? null
 }
 
 const extractStrongValue = (html, label) => {
@@ -112,16 +144,80 @@ const extractStrongValue = (html, label) => {
     ),
   )
 
-  return normalizeWhitespace(match?.[1])
+  return stripTags(match?.[1])
 }
 
-const extractSection = (text, label, nextLabels) => {
-  const pattern = new RegExp(
-    `${escapeRegex(label)}\\s+([\\s\\S]*?)(?=\\s+(?:${nextLabels.map(escapeRegex).join('|')})\\s+|$)`,
-    'i',
-  )
+const findFirstPatternMatch = (source, patterns, fromIndex = 0) => {
+  let bestMatch = null
 
-  return normalizeWhitespace(text.match(pattern)?.[1])
+  for (const pattern of patterns) {
+    const slice = source.slice(fromIndex)
+    const match = slice.match(pattern)
+    if (!match) continue
+
+    const candidate = {
+      index: fromIndex + match.index,
+      text: match[0],
+    }
+
+    if (!bestMatch || candidate.index < bestMatch.index) {
+      bestMatch = candidate
+    }
+  }
+
+  return bestMatch
+}
+
+const createStrongLabelPattern = (label) => new RegExp(
+  `<strong[^>]*>\\s*${escapeRegex(label)}\\s*<\\/strong>\\s*<\\/p>`,
+  'i',
+)
+
+const createHeadingPattern = (label) => new RegExp(
+  `<h[1-6][^>]*>\\s*${escapeRegex(label)}\\s*<\\/h[1-6]>`,
+  'i',
+)
+
+const extractLabeledSection = (html, label, { nextLabels = [], nextPhrases = [] } = {}) => {
+  const source = String(html ?? '')
+  const startMatch = findFirstPatternMatch(source, [
+    createStrongLabelPattern(label),
+    createHeadingPattern(label),
+  ])
+
+  if (!startMatch) {
+    return null
+  }
+
+  const sectionStart = startMatch.index + startMatch.text.length
+  const endPatterns = [
+    ...nextLabels.flatMap((nextLabel) => [
+      createStrongLabelPattern(nextLabel),
+      createHeadingPattern(nextLabel),
+    ]),
+    ...nextPhrases.map((phrase) => new RegExp(escapeRegex(phrase), 'i')),
+  ]
+  const endMatch = endPatterns.length > 0
+    ? findFirstPatternMatch(source, endPatterns, sectionStart)
+    : null
+  const sectionHtml = endMatch
+    ? source.slice(sectionStart, endMatch.index)
+    : source.slice(sectionStart)
+
+  return stripTags(sectionHtml)
+}
+
+const unique = (values) => {
+  const seen = new Set()
+
+  return values.filter((value) => {
+    if (!value || seen.has(value)) {
+      return false
+    }
+
+    seen.add(value)
+    return true
+  })
 }
 
 const buildJobId = (sourceUrl) => {
@@ -137,7 +233,7 @@ const buildAudienceTag = (sourceUrl) => {
 }
 
 const summarizeLocation = (locationSection) => {
-  if (String(locationSection ?? '').includes('全国の各プロジェクト先')) {
+  if (String(locationSection ?? '').includes('全国の各プロジェクト先が勤務地です')) {
     return 'Nationwide project sites, Japan'
   }
 
@@ -145,7 +241,7 @@ const summarizeLocation = (locationSection) => {
 }
 
 const extractPreferredQualification = (title, candidateProfile) => {
-  const match = `${title || ''} ${candidateProfile || ''}`.match(/CAD（[^）]+）習得者尚可[。！]?/)
+  const match = `${title || ''} ${candidateProfile || ''}`.match(/CAD[（(][^）)]+[）)]習得者尚可[。！]?/)
   return normalizeWhitespace(match?.[0])
 }
 
@@ -173,28 +269,23 @@ export const hasVerifiedCareersHub = (html) => {
   const source = String(html ?? '')
   const text = stripTags(source) || ''
 
-  return CAREERS_TITLE_PATTERN.test(source)
-    && text.includes('JOB DESCRIPTION 求人情報 オープンアップコンストラクション')
+  return hasTitle(source, CAREERS_TITLE)
+    && text.includes('求人情報')
+    && text.includes('オープンアップコンストラクション')
     && extractStrongValue(source, '募集求人') === '施工管理技術者'
     && extractStrongValue(source, '対象') === '新卒・中途未経験'
-    && extractAnchorHref(source, /中途未経験\s*[：:]\s*募集要項・応募フォーム/i) !== null
-    && extractAnchorHref(source, /新卒採用\s*[：:]\s*募集要項・応募フォーム/i) !== null
+    && extractAnchorHref(source, MIDCAREER_LINK_TEXT, { baseUrl: CAREERS_URL }) !== null
+    && extractAnchorHref(source, NEW_GRADUATE_LINK_TEXT, { baseUrl: CAREERS_URL }) !== null
 }
 
-export const extractFirstPartyListingLinks = (html) => {
-  const midcareerLink = extractAnchorHref(html, /中途未経験\s*[：:]\s*募集要項・応募フォーム/i)
-  const newGraduateLink = extractAnchorHref(html, /新卒採用\s*[：:]\s*募集要項・応募フォーム/i)
-
-  return [midcareerLink, newGraduateLink].filter(Boolean)
-}
+export const extractFirstPartyListingLinks = (html) => unique([
+  extractAnchorHref(html, MIDCAREER_LINK_TEXT, { baseUrl: CAREERS_URL }),
+  extractAnchorHref(html, NEW_GRADUATE_LINK_TEXT, { baseUrl: CAREERS_URL }),
+])
 
 export const extractJobDetail = (html, { sourceUrl } = {}) => {
-  const comparableUrl = normalizeComparableUrl(sourceUrl)
-  const expectedTitlePattern = comparableUrl
-    ? Array.from(DETAIL_TITLE_PATTERNS.entries()).find(([url]) => isExpectedUrl(comparableUrl, url))?.[1]
-    : null
-
-  if (!expectedTitlePattern) {
+  const expectedTitle = Array.from(DETAIL_TITLES.entries()).find(([url]) => isExpectedUrl(sourceUrl, url))?.[1]
+  if (!expectedTitle) {
     throw new Error('Open Up Construction detail route no longer matches the verified first-party pages')
   }
 
@@ -204,23 +295,37 @@ export const extractJobDetail = (html, { sourceUrl } = {}) => {
   const audience = extractStrongValue(source, '対象')
   const employmentType = extractStrongValue(source, '雇用形態')
   const workingHours = extractStrongValue(source, '勤務時間')
+  const locationSection = extractLabeledSection(source, '勤務地', { nextLabels: ['給与'] })
+  const compensation = extractLabeledSection(source, '給与', { nextLabels: ['昇給・賞与', '諸手当'] })
+  const allowances = extractLabeledSection(source, '諸手当', { nextLabels: ['休日・休暇'] })
+  const holidays = extractLabeledSection(source, '休日・休暇', {
+    nextLabels: ['福利厚生'],
+    nextPhrases: ['応募はオープンアップコンストラクションのサイトから', 'TOP'],
+  })
+  const candidateProfile = extractLabeledSection(source, '対象となる方', {
+    nextLabels: ['募集要項'],
+    nextPhrases: ['応募はオープンアップコンストラクションのサイトから', 'TOP'],
+  })
   const applyUrl = isExpectedUrl(sourceUrl, MIDCAREER_URL)
-    ? extractAnchorHref(source, /中途未経験\s*[：:]\s*募集要項・応募フォーム/i)
-    : extractAnchorHref(source, /新卒採用\s*[：:]\s*募集要項・応募フォーム/i)
-  const locationSection = extractSection(text, '勤務地', ['給与'])
-  const compensation = extractSection(text, '給与', ['昇給・賞与', '諸手当'])
-  const allowances = extractSection(text, '諸手当', ['休日・休暇'])
-  const holidays = extractSection(text, '休日・休暇', ['福利厚生', '応募はオープンアップコンストラクションのサイトから', 'TOP'])
-  const candidateProfile = extractSection(text, '対象となる方', ['募集要項'])
+    ? extractAnchorHref(source, MIDCAREER_LINK_TEXT, {
+      baseUrl: sourceUrl,
+      hrefPattern: /www55\.rpm-sys\.jp/i,
+    })
+    : extractAnchorHref(source, NEW_GRADUATE_LINK_TEXT, {
+      baseUrl: sourceUrl,
+      hrefPattern: /www55\.rpm-sys\.jp/i,
+    })
 
   if (
-    !expectedTitlePattern.test(source)
-    || !text.includes('JOB APPLICATION 募集要項（応募フォーム） オープンアップコンストラクション')
+    !hasTitle(source, expectedTitle)
+    || !text.includes('募集要項')
+    || !text.includes('オープンアップコンストラクション')
     || !roleTitle
     || !audience
     || !employmentType
     || !workingHours
-    || !locationSection?.includes('全国の各プロジェクト先')
+    || !candidateProfile
+    || !locationSection?.includes('全国の各プロジェクト先が勤務地です')
     || !compensation?.includes('未経験者 給与例')
     || !holidays?.includes('年間休日120日')
     || !applyUrl?.includes('www55.rpm-sys.jp')
@@ -228,13 +333,13 @@ export const extractJobDetail = (html, { sourceUrl } = {}) => {
     throw new Error('Open Up Construction verified first-party job detail page changed materially')
   }
 
-  const jobId = buildJobId(sourceUrl)
-  const audienceTag = buildAudienceTag(sourceUrl)
   const location = summarizeLocation(locationSection)
-
   if (!location) {
     throw new Error('Open Up Construction verified first-party job detail page changed materially')
   }
+
+  const audienceTag = buildAudienceTag(sourceUrl)
+  const jobId = buildJobId(sourceUrl)
 
   return {
     title: roleTitle,
@@ -309,7 +414,7 @@ export const createOpenUpConstructionScraper = () => ({
 export const run = async (options = {}) => createOpenUpConstructionScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

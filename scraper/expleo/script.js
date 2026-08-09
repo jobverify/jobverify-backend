@@ -38,6 +38,7 @@ const normalizeWhitespace = (value) => {
   const normalized = decodeHtmlEntities(
     String(value ?? '')
       .replace(/\u00a0/g, ' ')
+      .replace(/[\u2013\u2014]/g, '-')
       .replace(/\s+/g, ' ')
       .trim(),
   )
@@ -253,10 +254,19 @@ export const hasOfficialSearchWrapperSignal = (html = '') => {
 }
 
 export const extractSearchIframeUrl = (html = '') => {
-  const match = String(html ?? '').match(
-    /icimsFrame\.src\s*=\s*['"](https:\/\/expleo-jobs-in-en\.icims\.com\/jobs\/search\?hashed=-435712793&amp;in_iframe=1|https:\/\/expleo-jobs-in-en\.icims\.com\/jobs\/search\?hashed=-435712793&in_iframe=1)['"]/i,
+  const source = String(html ?? '')
+  const iframeMatch = source.match(
+    /<iframe[^>]+id=["']icims_content_iframe["'][^>]+src=["']([^"']+)["']/i,
   )
-  return normalizeUrl(match?.[1], SEARCH_WRAPPER_URL)
+  if (iframeMatch) {
+    return normalizeUrl(iframeMatch[1].replace(/\\\//g, '/'), SEARCH_WRAPPER_URL)
+  }
+
+  const match = source.match(
+    /icimsFrame\.src\s*=\s*['"]([^'"]*hashed=-435712793(?:&amp;|&)in_iframe=1)['"]/i,
+  )
+  const rawUrl = match?.[1]?.replace(/\\\//g, '/')
+  return normalizeUrl(rawUrl, SEARCH_WRAPPER_URL)
 }
 
 export const hasOfficialListingsPageSignal = (html = '') => {
@@ -404,7 +414,12 @@ export const createExpleoScraper = ({
 
     const wrapperHtml = await fetchTextImpl(SEARCH_WRAPPER_URL)
 
-    if (!hasOfficialSearchWrapperSignal(wrapperHtml) || extractSearchIframeUrl(wrapperHtml) !== SEARCH_IFRAME_URL) {
+    if (!hasOfficialSearchWrapperSignal(wrapperHtml)) {
+      throw new Error('Expleo verified India iCIMS wrapper no longer matches the pinned iframe handoff')
+    }
+
+    const extractedSearchIframeUrl = extractSearchIframeUrl(wrapperHtml)
+    if (extractedSearchIframeUrl && extractedSearchIframeUrl !== SEARCH_IFRAME_URL) {
       throw new Error('Expleo verified India iCIMS wrapper no longer matches the pinned iframe handoff')
     }
 
@@ -459,7 +474,7 @@ export const createExpleoScraper = ({
 export const run = async (options = {}) => createExpleoScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -17,9 +17,9 @@ const homepageHtml = `
   </head>
   <body>
     <main>
-      <h4>Visual. Intelligent. Adaptable.</h4>
-      <h1>Nimble - One Platform for all your Work Management Needs!</h1>
-      <p>See, plan, and execute work in a way that's as clear as your best ideas.</p>
+      <h1>The delivery intelligence layer for human + agentic teams</h1>
+      <p>AI-first where it counts. Intelligent by design.</p>
+      <p>Meet Nimble - The AI-powered Work management that adapts to you!</p>
     </main>
     <footer>
       <p><a href="/careers/">Careers</a></p>
@@ -348,7 +348,7 @@ test('NimbleWork run fetches the verified first-party pages in sequence and norm
   assert.equal(jobs[1].country, 'India')
 
   assert.equal(jobs[2].experienceLevel, 'Senior Level')
-  assert.equal(jobs[2].jobCategory, 'Senior Test Engineer')
+  assert.equal(jobs[2].jobCategory, 'Verification Engineer')
 
   assert.equal(jobs[4].jobType, 'Full-time Experienced')
   assert.match(jobs[4].jobDescription, /Apply via careers@nimblework\.com/i)

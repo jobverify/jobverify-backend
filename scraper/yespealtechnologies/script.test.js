@@ -66,9 +66,9 @@ test('run returns no jobs only while every verified Yespeal candidate surface st
     },
   })
 
-  assert.equal(requestedUrls.length, OFFICIAL_SURFACE_CANDIDATES.length * CAREERS_PATHS.length)
+  assert.equal(requestedUrls.length, OFFICIAL_SURFACE_CANDIDATES.length)
   assert.equal(requestedUrls[0], 'https://yespealtechnologies.com/')
-  assert.equal(requestedUrls.at(-1), 'https://www.yespealtech.co.in/jobs/')
+  assert.equal(requestedUrls.at(-1), 'https://www.yespealtech.co.in/')
   assert.deepEqual(jobs, [])
 })
 
@@ -78,7 +78,7 @@ test('run fails closed when any Yespeal candidate surface starts resolving or dr
   await assert.rejects(
     scraper.run({
       fetchText: async (url) => {
-        if (url === 'https://yespeal.in/careers') {
+        if (url === 'https://yespeal.in/') {
           return '<html><title>Yespeal Technologies</title><body>Careers</body></html>'
         }
 

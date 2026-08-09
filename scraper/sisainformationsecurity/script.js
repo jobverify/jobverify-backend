@@ -1,8 +1,8 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../utils/loadConfig.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -22,11 +22,11 @@ export const PROVIDER_METADATA = {
   companyDomain: 'sisa.ai',
   adapter: 'script',
   atsPlatform: 'keka-embed-api',
-  modulePath: '../sisainformationsecurity/script.js',
+  modulePath: '../../scraper/sisainformationsecurity/script.js',
   dryRunFile: 'sisainformationsecurity/jobs.json',
 }
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -241,10 +241,11 @@ export const createSisaInformationSecurityScraper = ({
 export const run = async () => createSisaInformationSecurityScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
   if (isDryRun) saveToFile(jobs, path.join(currentDir, 'jobs.json'))
   else await saveToDB(jobs, SOURCE)
 }
+

@@ -21,9 +21,9 @@ export const GET_MY_UNI_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'getmyuni.com',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-07-25',
   verifiedSurfaceSummary:
-    'Verified on July 16, 2026 that https://www.getmyuni.com/ remains the live GetMyUni homepage, that https://www.getmyuni.com/contact-us says "Want to work with us? contact@getmyuni.com", and that https://www.getmyuni.com/careers is informational career-guidance content rather than a public jobs board, so there is no trustworthy public jobs surface on the first-party GetMyUni domain.',
+    'Verified on Saturday, July 25, 2026 that https://www.getmyuni.com/ remains the live GetMyUni homepage with the current "Explore Top Colleges, Courses, Fees and Exams" brand title, that https://www.getmyuni.com/contact-us still says "Want to work with us? contact@getmyuni.com", and that https://www.getmyuni.com/careers remains informational career-guidance content rather than a public jobs board, so there is no trustworthy public jobs surface on the first-party GetMyUni domain.',
   dryRunFile: 'getmyuni/jobs.json',
 }
 

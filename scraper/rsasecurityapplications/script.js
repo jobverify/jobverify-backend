@@ -9,6 +9,13 @@ export const CAREERS_URL = 'https://www.rsa.com/rsa-careers/'
 export const JOBS_URL = 'https://ats.rippling.com/rsa-security/jobs'
 export const JOB_BOARD_SLUG = 'rsa-security'
 export const OFFICIAL_BOARD_COMPANY = 'RSA Security'
+const VERIFIED_CAREERS_PAGE_SIGNALS = [
+  'Our Culture',
+  'Rewards, Benefits, and Growth',
+  'RSA Values',
+  'Join RSA to build your career',
+  'and secure the most secure.',
+]
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -143,9 +150,8 @@ export const hasVerifiedCareersPageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = stripHtml(rawHtml)
 
-  return /<title>\s*RSA Careers\s*<\/title>/i.test(rawHtml)
-    && /<h1[^>]*>\s*Secure your future\.\s*<\/h1>/i.test(rawHtml)
-    && normalized.includes('Explore open roles and take the first step toward a career with RSA. Apply today!')
+  return /<title[^>]*>\s*RSA Careers\b/i.test(rawHtml)
+    && VERIFIED_CAREERS_PAGE_SIGNALS.every((signal) => normalized.includes(signal))
     && /href=["']https:\/\/ats\.rippling\.com\/rsa-security\/jobs["']/i.test(rawHtml)
 }
 
@@ -268,7 +274,7 @@ export const createRsaSecurityApplicationsScraper = () => ({
 export const run = async (options = {}) => createRsaSecurityApplicationsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

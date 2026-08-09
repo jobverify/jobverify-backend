@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { KUMARAN_SYSTEMS_CATALOG } from './catalog.js'
 
@@ -66,10 +66,17 @@ const toAbsoluteJobsUrl = (value) => {
 
 export const hasOfficialCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
-  return /<title>\s*Jobs at Kumaran Systems Pvt Ltd\s*<\/title>/i.test(rawHtml)
-    && /Engineer What's Next Alongside People Who Care/i.test(rawHtml)
+  const normalized = normalizeWhitespace(rawHtml)
+  const hasLegacyRecruitingSurface = /Engineer What's Next Alongside People Who Care/i.test(rawHtml)
     && /kumaranite/i.test(rawHtml)
     && /RBP_offshore@kumaran\.com/i.test(rawHtml)
+  const hasCurrentBrandedShell = /href=["'][^"']*\/careers\/?["']/i.test(rawHtml)
+    && /info@kumaran\.com/i.test(rawHtml)
+    && /Founded in 1992, Kumaran Systems is a global technology partner/i.test(normalized)
+    && /Life At Kumaran'?s/i.test(normalized)
+
+  return /<title>\s*Jobs at Kumaran Systems Pvt Ltd\s*<\/title>/i.test(rawHtml)
+    && (hasLegacyRecruitingSurface || hasCurrentBrandedShell)
 }
 
 export const extractIndiaJobs = (payload = {}) =>
@@ -124,7 +131,7 @@ export const createKumaranSystemsScraper = () => ({
 export const run = async (options = {}) => createKumaranSystemsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()
 
   if (process.argv.includes('--dry-run')) {

@@ -25,24 +25,30 @@ export const CAREER_HOSTS = [
 export const hasResolvableFirstPartyHost = (addresses) =>
   Array.isArray(addresses) && addresses.length > 0
 
-export const resolveCanonicalHosts = async (hosts = CAREER_HOSTS) => {
-  const addresses = new Set()
+const resolveWithTimeout = (resolver, host, timeoutMs) => new Promise((resolve) => {
+  const timeoutId = setTimeout(() => resolve([]), timeoutMs)
+  resolver(host)
+    .then((addresses) => resolve(Array.isArray(addresses) ? addresses : []))
+    .catch(() => resolve([]))
+    .finally(() => clearTimeout(timeoutId))
+})
 
-  for (const host of hosts) {
-    try {
-      for (const address of await resolve4(host)) {
-        addresses.add(address)
-      }
-    } catch {}
+export const resolveCanonicalHosts = async (
+  hosts = CAREER_HOSTS,
+  {
+    resolve4Impl = resolve4,
+    resolve6Impl = resolve6,
+    timeoutMs = 3000,
+  } = {},
+) => {
+  const results = await Promise.all(
+    hosts.flatMap((host) => [
+      resolveWithTimeout(resolve4Impl, host, timeoutMs),
+      resolveWithTimeout(resolve6Impl, host, timeoutMs),
+    ]),
+  )
 
-    try {
-      for (const address of await resolve6(host)) {
-        addresses.add(address)
-      }
-    } catch {}
-  }
-
-  return [...addresses]
+  return [...new Set(results.flat())]
 }
 
 export const createOdNestCompanyScraper = () => ({
@@ -64,7 +70,7 @@ export const createOdNestCompanyScraper = () => ({
 export const run = async () => createOdNestCompanyScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

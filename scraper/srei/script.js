@@ -58,7 +58,7 @@ export const hasOfficialCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /<link[^>]+href=["']https:\/\/www\.srei\.com\/careers["']/i.test(rawHtml)
+  return /<title>\s*Careers\s*\|\s*Srei\b/i.test(rawHtml)
     && normalized.includes('Careers')
     && normalized.includes('Work with us')
     && normalized.includes('Beyond Work')
@@ -88,7 +88,6 @@ export const hasBlockedEmployWiseShellSignal = ({ status, url, html } = {}) => {
     && url === JOB_LISTINGS_URL
     && normalized.includes('Open Positions')
     && normalized.includes('Search by function(s)')
-    && normalized.includes('Keywords')
     && pleaseWaitMatches.length >= 2
 }
 
@@ -127,7 +126,7 @@ export const createSreiScraper = () => ({
 export const run = async (options = {}) => createSreiScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

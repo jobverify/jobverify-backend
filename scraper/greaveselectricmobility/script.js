@@ -31,7 +31,7 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
-  .replace(/&#39;|&apos;|&rsquo;|&#x27;/gi, "'")
+  .replace(/&#039;|&#39;|&apos;|&rsquo;|&#x27;/gi, "'")
   .replace(/&quot;/gi, '"')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
@@ -101,6 +101,7 @@ export const isExpectedVerificationFailure = (error) => {
     || /Could not establish trust relationship for the SSL\/TLS secure channel/i.test(combined)
     || /DEPTH_ZERO_SELF_SIGNED_CERT/i.test(combined)
     || /self-signed certificate/i.test(combined)
+    || /certificate has expired/i.test(combined)
 }
 
 const fetchVerifiedPage = async (url, fetchPage) => {
@@ -147,7 +148,7 @@ export const createGreavesElectricMobilityScraper = () => ({
 export const run = async (options = {}) => createGreavesElectricMobilityScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

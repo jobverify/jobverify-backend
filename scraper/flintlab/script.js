@@ -7,6 +7,8 @@ export const SOURCE = 'flintlab'
 export const COMPANY = 'FlintLab'
 export const HOMEPAGE_URL = 'https://flintlab.io/'
 export const SITEMAP_URL = 'https://flintlab.io/sitemap.xml'
+export const VERIFIED_ON = '2026-08-07'
+export const VERIFIED_SURFACE_SUMMARY = 'Verified on Friday, August 7, 2026 that https://flintlab.io/ was FlintLab\'s live first-party Next.js homepage, that it now led with the "Ship Mobile & Web Apps" and "With Real Confidence, At Scale" hero copy plus an "Ask FlintBot" control, and that its metadata and schema still identified FlintLab Sirius, AI NEXUS FLINT LAB INDIA PRIVATE LIMITED., engage@flintlab.io, and https://www.linkedin.com/company/flintlab-inc as the trusted public brand surface. Also verified on Friday, August 7, 2026 that https://flintlab.io/sitemap.xml exposed only product, docs, blog, and informational routes, while the first-party /careers, /career, and /jobs routes still resolved to branded missing-page responses rather than a public openings board. This provider remains fail-closed and returns an honest empty result until FlintLab publishes a trustworthy public careers surface.'
 export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
   'https://flintlab.io/careers',
   'https://flintlab.io/careers/',
@@ -22,10 +24,11 @@ const USER_AGENT =
 const CAREERS_SIGNAL_PATTERN = /\b(career|careers|job|jobs|opening|openings|vacancy|vacancies|join us|work with us)\b/i
 
 const normalizeWhitespace = (value) => String(value ?? '')
-  .replace(/\u2014/g, '-')
+  .replace(/[\u2013\u2014]/g, '-')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
-  .replace(/&#39;|&apos;|&rsquo;/gi, "'")
+  .replace(/[\u2018\u2019]/g, "'")
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
   .replace(/&quot;/gi, '"')
   .replace(/&amp;/gi, '&')
   .replace(/\u00a0/g, ' ')
@@ -49,13 +52,18 @@ const defaultFetchPage = async (url) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
+  const normalized = normalizeWhitespace(rawHtml).toLowerCase()
 
-  return /FlintLab Sirius - Device Infrastructure PaaS/i.test(normalized)
-    && /Begin Your Journey Towards Precision Testing/i.test(normalized)
-    && /FlintLab powers efficient, collaborative testing across devices\./i.test(normalized)
-    && /Ask Flint Nexus Pioneers/i.test(normalized)
-    && /mailto:engage@flintlab\.io/i.test(rawHtml)
+  return normalized.includes('flintlab sirius')
+    && normalized.includes('device infrastructure paas')
+    && normalized.includes('ship mobile & web apps')
+    && normalized.includes('with real confidence, at scale')
+    && normalized.includes('flintlab unifies real devices, emulators, and cloud-native execution in one platform')
+    && normalized.includes('developer advocacy team that stress-tests your releases before your users do')
+    && normalized.includes('platform, people, and compliance: all covered')
+    && normalized.includes('ai nexus flint lab india private limited.')
+    && normalized.includes('engage@flintlab.io')
+    && normalized.includes('ask flintbot')
     && /linkedin\.com\/company\/flintlab-inc/i.test(rawHtml)
 }
 
@@ -98,7 +106,7 @@ export const createFlintLabScraper = () => ({
 export const run = async (options = {}) => createFlintLabScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

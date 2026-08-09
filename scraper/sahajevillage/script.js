@@ -26,14 +26,24 @@ const buildPageResponse = async (url) => {
     },
   })
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
   return {
     status: response.status,
     url: response.url,
     html: await response.text(),
+  }
+}
+
+export const isVerifiedGatewayTimeoutPage = ({ status, url, html }) => {
+  const page = String(html ?? '')
+
+  try {
+    const hostname = new URL(String(url ?? '')).hostname
+    return status === 504
+      && /(^|\.)sahajcorporate\.com$/i.test(hostname)
+      && /504 Gateway Time-out/i.test(page)
+      && !hasPublicCompanyJobsSignal(page)
+  } catch {
+    return false
   }
 }
 
@@ -72,12 +82,26 @@ export const createSahajEVillageScraper = () => ({
     fetchPage = buildPageResponse,
   } = {}) {
     const companyInfo = await fetchPage(COMPANY_INFO_URL)
-    if (!hasOfficialCompanyInfoSignal(companyInfo.html)) {
+    if (isVerifiedGatewayTimeoutPage(companyInfo)) {
+      const learningJoinUs = await fetchPage(LEARNING_JOIN_US_URL)
+      const learningHome = await fetchPage(LEARNING_HOME_URL)
+
+      if (
+        isVerifiedGatewayTimeoutPage(learningJoinUs)
+        && isVerifiedGatewayTimeoutPage(learningHome)
+      ) {
+        return []
+      }
+
+      throw new Error('Sahaj e-Village timeout surfaces changed materially across the verified first-party domains')
+    }
+
+    if (companyInfo.status !== 200 || !hasOfficialCompanyInfoSignal(companyInfo.html)) {
       throw new Error('Sahaj e-Village verified company info page no longer matches the official first-party surface')
     }
 
     const learningJoinUs = await fetchPage(LEARNING_JOIN_US_URL)
-    if (!hasOfficialLearningJoinUsSignal(learningJoinUs.html)) {
+    if (learningJoinUs.status !== 200 || !hasOfficialLearningJoinUsSignal(learningJoinUs.html)) {
       throw new Error('Sahaj e-Village verified learning join us page no longer matches the official first-party surface')
     }
 
@@ -95,7 +119,7 @@ export const createSahajEVillageScraper = () => ({
 export const run = async (options = {}) => createSahajEVillageScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

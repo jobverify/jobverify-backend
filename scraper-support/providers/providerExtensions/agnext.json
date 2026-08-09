@@ -1,0 +1,21 @@
+{
+  "source": "agnext",
+  "companyName": "AgNext",
+  "officialBrandName": "AgNext",
+  "exactCompanyMatchOnly": true,
+  "adapter": "script",
+  "modulePath": "../agnext/script.js",
+  "dryRunFile": "agnext/jobs.json",
+  "companyCareerPage": "https://www.agnext.com/",
+  "companyDomain": "agnext.com",
+  "atsPlatform": "keka-hosted-careers",
+  "countryFilter": "India",
+  "paginationStrategy": "verified-first-party-careers-link-no-safe-public-parser",
+  "extractionStrategy": "fail-closed-until-keka-listing-contract-is-verified",
+  "parser": "custom-script",
+  "normalizationProfile": "engineering-default",
+  "verifiedOn": "2026-07-26",
+  "officialCareersPageUrl": "https://www.agnext.com/",
+  "verifiedJobOpeningsPageUrl": "https://agnext.keka.com/careers",
+  "verifiedSurfaceSummary": "Verified on July 26, 2026 that AgNext's first-party site links Explore Current Openings to https://agnext.keka.com/careers. This exact-name provider fails closed because no stable, verified public Keka listing contract is established for safe extraction; it returns no inferred jobs rather than substituting third-party or similarly named companies."
+}

@@ -1,8 +1,9 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -26,6 +27,20 @@ const normalizeWhitespace = (value) => {
 
   return normalized || null
 }
+
+const extractVisibleText = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/ul|\/ol|\/section|\/article)\b[^>]*>/gi, '\n')
+    .replace(/<li\b[^>]*>/gi, '\n')
+    .replace(/<p\b[^>]*>/gi, '\n')
+    .replace(/<div\b[^>]*>/gi, '\n')
+    .replace(/<section\b[^>]*>/gi, '\n')
+    .replace(/<article\b[^>]*>/gi, '\n')
+    .replace(/<h[1-6]\b[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' '),
+)
 
 const toIsoDate = (value) => {
   if (!value) return null
@@ -91,6 +106,7 @@ export const extractSearchResults = (html) => extractJsonLdPostings(html)
     const applyUrl = normalizeWhitespace(posting?.url)
     const city = readJobLocation(posting)
     const jobId = extractJobId(applyUrl)
+    const jobDescription = normalizeWhitespace(posting?.description)
 
     return {
       title: normalizeWhitespace(posting?.title),
@@ -110,11 +126,70 @@ export const extractSearchResults = (html) => extractJsonLdPostings(html)
       requiredSkills: [],
       postingDate: toIsoDate(posting?.datePosted),
       closingDate: null,
-      jobDescription: normalizeWhitespace(posting?.description),
+      jobDescription,
+      publicExperienceChecked: Boolean(jobDescription),
       remoteStatus: inferRemoteStatus(city),
     }
   })
   .filter((job) => job.title && job.jobId && job.applyUrl)
+
+const extractDetailText = (html = '') => {
+  const visibleText = extractVisibleText(html)
+  if (!visibleText) return null
+
+  const beforeApplicationForm = visibleText.split(/apply for this position/i)[0]?.trim() || ''
+  return beforeApplicationForm || visibleText
+}
+
+const extractExplicitExperience = (detailText) => {
+  const normalizedText = normalizeWhitespace(detailText)
+  if (!normalizedText) return null
+
+  const labelMatch = normalizedText.match(/\bexperience\s*:\s*([0-9][0-9+\-–to\s]*(?:years?|yrs?))/i)
+  if (labelMatch?.[1]) {
+    return normalizeWhitespace(labelMatch[1])
+  }
+
+  return null
+}
+
+const inferExperienceFromDescription = (jobDescription) => {
+  const normalizedDescription = normalizeWhitespace(jobDescription)
+  if (!normalizedDescription) return null
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalizedDescription,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
+}
+
+export const enrichJobFromDetailPage = (job, detailHtml = '') => {
+  const detailText = extractDetailText(detailHtml)
+  const experienceRequired = (
+    extractExplicitExperience(detailText)
+    || inferExperienceFromDescription(detailText)
+    || inferExperienceFromDescription(job.jobDescription)
+    || job.experienceRequired
+    || null
+  )
+
+  return {
+    ...job,
+    jobDescription: detailText || job.jobDescription || null,
+    experienceRequired,
+    publicExperienceChecked: Boolean(detailText),
+  }
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -133,8 +208,20 @@ export const createAutoRABITScraper = ({
     const html = await fetchText(buildSearchUrl())
     const jobs = extractSearchResults(html)
     const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const enrichedJobs = []
 
-    return selectedJobs.map((job) => ({
+    for (const job of selectedJobs) {
+      try {
+        enrichedJobs.push(enrichJobFromDetailPage(
+          job,
+          await fetchText(job.applyUrl || job.sourceUrl),
+        ))
+      } catch {
+        enrichedJobs.push(job)
+      }
+    }
+
+    return enrichedJobs.map((job) => ({
       ...job,
       source: 'autorabit',
       link: job.applyUrl || job.sourceUrl,
@@ -146,7 +233,7 @@ export const createAutoRABITScraper = ({
 export const run = async () => createAutoRABITScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running AutoRABIT scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

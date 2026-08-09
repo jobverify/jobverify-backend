@@ -1,7 +1,9 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import { inferMissingExperienceRequired } from '../../scraper-support/utils/normalizeScrapedJob.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -43,6 +45,46 @@ const stripTags = (value) => normalizeWhitespace(
 const extractFirst = (pattern, value, transform = (match) => match[1]) => {
   const match = pattern.exec(String(value ?? ''))
   return match ? transform(match) : null
+}
+
+const escapeRegex = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const extractBalancedElementInnerHtml = (html, openingMatch) => {
+  if (!openingMatch) return null
+
+  const tagName = String(openingMatch[1] || '').toLowerCase()
+  if (!tagName) return null
+
+  const source = String(html ?? '')
+  const startIndex = openingMatch.index + openingMatch[0].length
+  const tagPattern = new RegExp(`<\\/?${tagName}\\b[^>]*>`, 'gi')
+  tagPattern.lastIndex = startIndex
+
+  let depth = 1
+  let match
+
+  while ((match = tagPattern.exec(source))) {
+    if (/^<\//.test(match[0])) {
+      depth -= 1
+    } else if (!/\/>\s*$/i.test(match[0])) {
+      depth += 1
+    }
+
+    if (depth === 0) {
+      return source.slice(startIndex, match.index)
+    }
+  }
+
+  return null
+}
+
+const extractElementInnerHtmlByClass = (html, className) => {
+  const pattern = new RegExp(
+    `<(div|span)\\b[^>]*class=(["'])[^"']*\\b${escapeRegex(className)}\\b[^"']*\\2[^>]*>`,
+    'i',
+  )
+  const match = pattern.exec(String(html ?? ''))
+  return extractBalancedElementInnerHtml(html, match)
 }
 
 const toAbsoluteUrl = (value) => {
@@ -177,10 +219,25 @@ export const extractJobDetail = (html, listing = {}) => {
     /data-careersite-propertyid="shifttype"[^>]*>([\s\S]*?)<\/span>/i,
     html,
   ))
-  const descriptionHtml = extractFirst(/<div class="jobdescription">([\s\S]*?)<\/div>\s*<div class="applylink/i, html)
+  const descriptionHtml = extractElementInnerHtmlByClass(html, 'jobdescription')
+    || extractFirst(/<div class="jobdescription">([\s\S]*?)<\/div>\s*<div class="applylink/i, html)
   const applyUrl = toAbsoluteUrl(
     extractFirst(/<a[^>]+class="[^"]*applybutton[^"]*"[^>]+href="([^"]+)"/i, html)
       || extractFirst(/<a[^>]+href="([^"]+)"[^>]*>\s*Apply now/i, html),
+  )
+  const jobDescription = normalizeDescription(descriptionHtml)
+  const experienceRequired = inferMissingExperienceRequired(
+    {
+      title: listing.title,
+      jobDescription,
+      description: jobDescription,
+    },
+    null,
+    extractJobFilterSignals({
+      title: listing.title,
+      jobDescription,
+      description: jobDescription,
+    }).experienceProfile,
   )
 
   return {
@@ -190,8 +247,8 @@ export const extractJobDetail = (html, listing = {}) => {
     jobId: requisitionId,
     requisitionId,
     employmentType,
-    experienceRequired: null,
-    jobDescription: normalizeDescription(descriptionHtml),
+    experienceRequired,
+    jobDescription,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
@@ -271,7 +328,7 @@ export const run = async () => {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running SAP scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

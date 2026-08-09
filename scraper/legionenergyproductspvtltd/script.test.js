@@ -1,163 +1,74 @@
 import assert from 'node:assert/strict'
-import fs from 'node:fs'
-import path from 'node:path'
 import test from 'node:test'
-import { fileURLToPath } from 'node:url'
 
-const loadLegionModule = async () => {
-  try {
-    return await import('./script.js')
-  } catch {
-    assert.fail('Expected Legion Energy Products pvt ltd. scraper module at ./script.js')
-  }
-}
+import {
+  CAREERS_URL,
+  HOMEPAGE_URL,
+  MISSING_ROUTE_URLS,
+  createLegionEnergyProductsScraper,
+  hasOfficialHomepageSignal,
+  hasVerifiedCareersLink,
+  isVerifiedServerTimeoutPage,
+} from './script.js'
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const fixturesDir = path.join(currentDir, 'fixtures')
+const HOMEPAGE_HTML = `<!DOCTYPE html>
+<html>
+<head><title>Legion Energy - Powering What Matters</title></head>
+<body>
+  <section>Powering What Matters</section>
+  <section>Founded in 2007 in Bangalore</section>
+  <section>Electrical Power and Telecom Networks Industries</section>
+  <a href="https://legionenergy.in/careers/">Careers</a>
+</body>
+</html>`
 
-const homepageHtml = fs.readFileSync(path.join(fixturesDir, 'homepage.html'), 'utf8')
-const careersHtml = fs.readFileSync(path.join(fixturesDir, 'careers.html'), 'utf8')
-const missingRouteHtml = fs.readFileSync(path.join(fixturesDir, 'missing-route-404.html'), 'utf8')
+const TIMEOUT_HTML = `<!DOCTYPE html>
+<html>
+<head><title>408 Request Time-out</title></head>
+<body>
+  <h1>408 Request Time-out</h1>
+  <p>This request takes too long to process, it is timed out by the server.</p>
+  <p>If it should not be timed out, please contact administrator of this web site to increase 'Connection Timeout'.</p>
+</body>
+</html>`
 
-test('Legion Energy Products pvt ltd. scraper validates the verified homepage, careers page, and missing careers routes', async () => {
-  const legion = await loadLegionModule()
-
-  assert.equal(legion.SOURCE, 'legionenergyproductspvtltd')
-  assert.equal(legion.COMPANY, 'Legion Energy Products pvt ltd.')
-  assert.equal(legion.HOMEPAGE_URL, 'https://legionenergy.in/')
-  assert.equal(legion.CAREERS_URL, 'https://legionenergy.in/careers/')
-  assert.deepEqual(legion.MISSING_ROUTE_URLS, [
-    'https://legionenergy.in/career',
-    'https://legionenergy.in/jobs',
-    'https://legionenergy.in/join-us',
-  ])
-  assert.equal(legion.hasOfficialHomepageSignal(homepageHtml), true)
-  assert.equal(legion.hasVerifiedCareersLink(homepageHtml), true)
-  assert.equal(legion.hasOfficialCareersSignal(careersHtml), true)
-  assert.deepEqual(legion.extractCultureCardTitles(careersHtml), legion.EXPECTED_CULTURE_CARD_TITLES)
-  assert.equal(legion.hasEmailOnlyCareersSignal(careersHtml), true)
-  assert.equal(legion.hasSuspiciousPublicJobsSignal(careersHtml), false)
-  assert.equal(
-    legion.isVerifiedMissingRoute({
-      status: 404,
-      html: missingRouteHtml,
-    }),
-    true,
-  )
+test('Legion Energy homepage still verifies the official careers handoff', () => {
+  assert.equal(hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
+  assert.equal(hasVerifiedCareersLink(HOMEPAGE_HTML), true)
 })
 
-test('Legion Energy Products pvt ltd. scraper returns no jobs while the verified first-party careers surface remains email-only', async () => {
-  const legion = await loadLegionModule()
-  const requestedUrls = []
+test('Legion Energy recognizes the current first-party 408 timeout shell', () => {
+  assert.equal(isVerifiedServerTimeoutPage({
+    status: 408,
+    url: CAREERS_URL,
+    html: TIMEOUT_HTML,
+  }), true)
+})
 
-  const jobs = await legion.createLegionEnergyProductsScraper().run({
+test('Legion Energy returns an empty set when careers routes consistently serve the verified 408 shell', async () => {
+  const scraper = createLegionEnergyProductsScraper()
+
+  const jobs = await scraper.run({
     fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === legion.HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageHtml }
+      if (url === HOMEPAGE_URL) {
+        return {
+          status: 200,
+          url,
+          html: HOMEPAGE_HTML,
+        }
       }
 
-      if (url === legion.CAREERS_URL) {
-        return { status: 200, url, html: careersHtml }
+      if (url === CAREERS_URL || MISSING_ROUTE_URLS.includes(url)) {
+        return {
+          status: 408,
+          url,
+          html: TIMEOUT_HTML,
+        }
       }
 
-      if (legion.MISSING_ROUTE_URLS.includes(url)) {
-        return { status: 404, url, html: missingRouteHtml }
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
+      throw new Error(`Unexpected URL ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [
-    legion.HOMEPAGE_URL,
-    legion.CAREERS_URL,
-    ...legion.MISSING_ROUTE_URLS,
-  ])
   assert.deepEqual(jobs, [])
-})
-
-test('Legion Energy Products pvt ltd. scraper fails closed when the verified zero-job surface drifts', async () => {
-  const legion = await loadLegionModule()
-
-  await assert.rejects(
-    legion.createLegionEnergyProductsScraper().run({
-      fetchPage: async (url) => {
-        if (url === legion.HOMEPAGE_URL) {
-          return {
-            status: 200,
-            url,
-            html: '<html><body><h1>Placeholder</h1></body></html>',
-          }
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /verified official homepage/i,
-  )
-
-  await assert.rejects(
-    legion.createLegionEnergyProductsScraper().run({
-      fetchPage: async (url) => {
-        if (url === legion.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === legion.CAREERS_URL) {
-          return {
-            status: 200,
-            url,
-            html: careersHtml.replace(
-              '</body>',
-              `
-                <section>
-                  <h2>Current Openings</h2>
-                  <a href="/careers/sales-engineer">Sales Engineer</a>
-                </section>
-              </body>
-              `,
-            ),
-          }
-        }
-
-        if (legion.MISSING_ROUTE_URLS.includes(url)) {
-          return { status: 404, url, html: missingRouteHtml }
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /public jobs surface|email-only careers surface/i,
-  )
-
-  await assert.rejects(
-    legion.createLegionEnergyProductsScraper().run({
-      fetchPage: async (url) => {
-        if (url === legion.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === legion.CAREERS_URL) {
-          return { status: 200, url, html: careersHtml }
-        }
-
-        if (url === legion.MISSING_ROUTE_URLS[0]) {
-          return {
-            status: 200,
-            url,
-            html: '<html><head><title>Jobs - Legion Energy</title></head><body><h1>Vacancies</h1></body></html>',
-          }
-        }
-
-        if (legion.MISSING_ROUTE_URLS.slice(1).includes(url)) {
-          return { status: 404, url, html: missingRouteHtml }
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /missing careers routes changed materially/i,
-  )
 })

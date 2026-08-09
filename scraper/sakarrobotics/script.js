@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../utils/loadConfig.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -10,7 +10,7 @@ export const HOMEPAGE_URL = 'https://www.sakarrobotics.com/'
 export const CAREERS_PAGE_URL = 'https://www.sakarrobotics.com/careers'
 export const CAREERS_PORTAL_URL = 'https://sakarrobotics.zohorecruit.in/jobs/Careers'
 export const CAREERS_API_URL =
-  'https://sakarrobotics.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite'
+  'https://sakarrobotics.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite&extra_fields=%5B%22Work_Experience%22,%22Job_Description%22,%22Date_Opened%22%5D'
 
 const COMPANY = 'Sakar Robotics'
 const SOURCE = 'sakarrobotics'
@@ -122,13 +122,16 @@ export const extractIndiaJobs = (payload) =>
         sourceUrl,
         applyUrl: sourceUrl,
         employmentType: normalizeEmploymentType(record.Job_Type),
-        experienceRequired: null,
+        experienceRequired: normalizeWhitespace(record.Work_Experience),
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: [],
         postingDate: normalizeWhitespace(record.Date_Opened),
         closingDate: null,
         jobDescription: normalizeWhitespace(record.Job_Description),
+        publicExperienceChecked: Boolean(
+          normalizeWhitespace(record.Work_Experience) || normalizeWhitespace(record.Job_Description),
+        ),
         remoteStatus: normalizeRemoteStatus(record.Remote_Job),
       }
     })
@@ -201,7 +204,7 @@ export const createSakarRoboticsScraper = ({
 export const run = async () => createSakarRoboticsScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Sakar Robotics scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { CAMBRIDGE_TECHNOLOGY_ENTERPRISES_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -87,6 +87,16 @@ const extractDetailPathParts = (value) => {
   }
 }
 
+const isVerifiedFreshteamJobsUrl = (value) => {
+  try {
+    const url = new URL(value)
+    return url.hostname === 'cambridgetechnology.freshteam.com'
+      && /^\/jobs(?:\/search)?$/i.test(url.pathname)
+  } catch {
+    return false
+  }
+}
+
 const normalizeEmploymentType = (value) => {
   const normalized = normalizeWhitespace(value)?.toLowerCase() || ''
   if (!normalized) return null
@@ -149,10 +159,9 @@ export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(rawHtml) || ''
 
   return /\bCambridge Technology\b/i.test(normalized)
-    && /\bBuild the next big tech with us\b/i.test(normalized)
-    && /Join seasoned experts in building the future of tech/i.test(normalized)
+    && /\bEnterprise AI,\s*Data\s*&\s*SaaS Applications\b/i.test(normalized)
     && /\bSee Open Positions\b/i.test(normalized)
-    && extractFreshteamJobsUrl(rawHtml) === LISTING_URL
+    && isVerifiedFreshteamJobsUrl(extractFreshteamJobsUrl(rawHtml))
 }
 
 export const hasOfficialJobsBoardSignal = (html) => {
@@ -164,6 +173,8 @@ export const hasOfficialJobsBoardSignal = (html) => {
     && (
       /data-portal-id="job-role-list"/i.test(rawHtml)
       || /\/jobs\/[^/"?#]+\/[^/"?#]+/i.test(rawHtml)
+      || /\bChoose Location\b/i.test(normalized)
+      || /\bNo jobs found\b/i.test(normalized)
     )
 }
 
@@ -344,7 +355,7 @@ export const createCambridgeTechnologyEnterprisesScraper = ({
     }
 
     const listingUrl = extractFreshteamJobsUrl(officialHtml)
-    if (listingUrl !== LISTING_URL) {
+    if (!isVerifiedFreshteamJobsUrl(listingUrl)) {
       throw new Error(
         'Verified official homepage handoff no longer points to the known Cambridge Technology Freshteam board',
       )
@@ -359,6 +370,9 @@ export const createCambridgeTechnologyEnterprisesScraper = ({
 
     const listingJobs = extractListingJobs(listingHtml).filter(isIndiaListing)
     const selectedListings = maxJobs ? listingJobs.slice(0, maxJobs) : listingJobs
+    if (selectedListings.length === 0) {
+      return []
+    }
     const detailHtmlByUrl = {}
 
     await Promise.all(selectedListings.map(async (listing) => {
@@ -382,7 +396,7 @@ export const createCambridgeTechnologyEnterprisesScraper = ({
 export const run = async (options = {}) => createCambridgeTechnologyEnterprisesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

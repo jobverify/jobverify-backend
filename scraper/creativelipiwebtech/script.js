@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { CREATIVELIPI_WEBTECH_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -14,7 +14,7 @@ export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const CONTACT_URL = PROVIDER_METADATA.companyCareerPage
 export const PAGE_SITEMAP_URL = 'https://creativelipi.com/page-sitemap.xml'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -84,7 +84,7 @@ export const createCreativelipiWebtechScraper = () => ({
 export const run = async (options = {}) => createCreativelipiWebtechScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()
 
   if (process.argv.includes('--dry-run')) {

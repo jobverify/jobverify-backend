@@ -16,9 +16,9 @@ export const EXCELSOFT_TECHNOLOGIES_CATALOG = {
   extractionStrategy: 'verified-careers-landing-page+no-public-openings-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that Excelsoft Technologies used the first-party careers landing page at https://www.excelsoftcorp.com/career/, but the page remained a branding surface with the headings "One Team One Dream" and "Being an Excelian is just a choice away!" and did not expose a trustworthy public openings list or first-party apply links.',
+    'Verified on Sunday, August 2, 2026 that Excelsoft Technologies still used the first-party careers landing page at https://www.excelsoftcorp.com/career/, that the page remained a branding surface headed "One Team One Dream" and "Being an Excelian is just a choice away!", and that the embedded Zoho Recruit widget was configured with empty_job_msg "No current Openings" rather than exposing public apply links or enumerable openings.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

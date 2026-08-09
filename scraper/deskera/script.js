@@ -112,6 +112,19 @@ export const isVerifiedMissingLinkedInJobsPage = ({ status, url, html }) => {
     || /Page not found/i.test(String(html ?? ''))
 }
 
+export const isVerifiedGenericLinkedInJobsSearchPage = ({ status, url, html }) => {
+  if (Number(status) !== 200) return false
+  if (normalizeUrl(url) !== normalizeUrl(LINKEDIN_JOBS_URL)) return false
+
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+
+  return /<meta[^>]+name=["']pageKey["'][^>]+content=["']d_jobs_guest_search["']/i.test(rawHtml)
+    && /<meta[^>]+name=["']linkedin:pageTag["'][^>]+content=["']urlType=jserp_canonical_other;emptyResult=false["']/i.test(rawHtml)
+    && /\bDeskera jobs\b/i.test(normalized)
+    && !/base-search-card__subtitle[^>]*>\s*<a[^>]*>\s*Deskera\s*<\/a>/i.test(rawHtml)
+}
+
 export const createDeskeraScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
@@ -136,7 +149,10 @@ export const createDeskeraScraper = () => ({
 
     const linkedInJobsPage = await fetchPage(LINKEDIN_JOBS_URL)
 
-    if (!isVerifiedMissingLinkedInJobsPage(linkedInJobsPage)) {
+    if (
+      !isVerifiedMissingLinkedInJobsPage(linkedInJobsPage)
+      && !isVerifiedGenericLinkedInJobsSearchPage(linkedInJobsPage)
+    ) {
       throw new Error('Deskera LinkedIn jobs route no longer matches the verified missing-jobs state')
     }
 
@@ -147,7 +163,7 @@ export const createDeskeraScraper = () => ({
 export const run = async (options = {}) => createDeskeraScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Friday, July 17, 2026 that https://sciative.com/ was the live exact-name first-party Sciative homepage, that https://sciative.com/about-us exposed the public "Humans of Sciative" company page plus a "Join Our Talent Community" prompt, and that no trustworthy public job listings were exposed on the verified first-party surface.'
+  'Verified on Sunday, July 26, 2026 that https://sciative.com/careers is the live first-party Sciative careers page with the title "Explore Exciting Careers and Growth Opportunities | Sciative", and that it loads the public first-party careers API at https://sciative.com/backend/get_career_item/1. The live API returned 21 public roles for this exact-name provider, including Business Manager: Hospitality (RMS & Dynamic Pricing), Devops Engineer, and Product Manager - Hospality Domain, all on the verified first-party surface.'
 
 export const SCIATIVE_SOLUTIONS_CATALOG = {
   source: 'sciative',
@@ -12,15 +12,16 @@ export const SCIATIVE_SOLUTIONS_CATALOG = {
   officialBrandName: 'Sciative',
   adapter: 'script',
   homepageUrl: 'https://sciative.com/',
-  companyCareerPage: 'https://sciative.com/about-us',
+  companyCareerPage: 'https://sciative.com/careers',
+  careersApiUrl: 'https://sciative.com/backend/get_career_item/1',
   companyDomain: 'sciative.com',
-  atsPlatform: 'official-company-site-no-public-careers',
+  atsPlatform: 'first-party-careers-page-plus-json-api',
   countryFilter: 'India',
-  paginationStrategy: 'verified-homepage-plus-about-page-talent-community-scan',
-  extractionStrategy: 'verified-homepage+verified-about-page-talent-community-without-public-openings-return-empty',
+  paginationStrategy: 'single-first-party-careers-page-plus-public-json-endpoint',
+  extractionStrategy: 'verified-first-party-careers-page+verified-first-party-careers-api+same-page-apply-flow',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-07-26',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'sciative/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

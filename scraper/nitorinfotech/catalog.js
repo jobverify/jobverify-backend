@@ -18,9 +18,9 @@ export const NITOR_INFOTECH_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'nitorinfotech.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-03',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://careers.nitorinfotech.com/ remained the exact first-party Nitor Infotech careers page, linked to https://careers.nitorinfotech.com/opening, and that the public openings page listed India roles including Engineering Manager, DevOps Architect, Dot Net - Architect, and Senior Software Engineer (Golang).',
+    'Verified on Monday, August 3, 2026 that https://careers.nitorinfotech.com/ remained the exact first-party Nitor Infotech careers page, that its public jobs handoff now uses the same-origin relative link /opening resolving to https://careers.nitorinfotech.com/opening, and that the public openings page listed India roles including Engineering Manager, DevOps Architect, Dot Net - Architect, and Senior Software Engineer (Golang).',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

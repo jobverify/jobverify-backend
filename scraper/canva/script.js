@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -53,9 +53,10 @@ export const buildJobsPageUrl = ({ page = 1 } = {}) => {
 
 export const hasOfficialJobsPageSignal = (html) => {
   const page = String(html ?? '')
+  const heading = stripTags(page.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || '')
 
   return /<title>\s*Find your dream job\s*\|\s*Canva Careers(?:\s*-\s*Page\s*\d+)?\s*<\/title>/i.test(page)
-    && /<h1[^>]*>\s*Find your dream job\s*<\/h1>/i.test(page)
+    && heading === 'Find your dream job'
     && /Location Type/i.test(page)
     && /Work Type/i.test(page)
     && /Live Results/i.test(page)
@@ -264,7 +265,7 @@ export const createCanvaScraper = ({
 export const run = async (options = {}) => createCanvaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

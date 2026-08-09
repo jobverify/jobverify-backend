@@ -38,6 +38,10 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({ msg: "Invalid Token" });
     }
 
+    if ((decoded.sessionVersion ?? 0) !== (req.user.sessionVersion ?? 0)) {
+      return res.status(401).json({ message: "Not authorized, token revoked" });
+    }
+
     if (applyExpiredAccessDowngrade(req.user)) {
       await Subscription.updateOne(
         { user: req.user._id },
@@ -67,7 +71,11 @@ export const optionalProtect = async (req, res, next) => {
       if (!isBlacklisted) {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded.id).select("-password");
-        if (user && !user.deactivated) {
+        if (
+          user
+          && !user.deactivated
+          && (decoded.sessionVersion ?? 0) === (user.sessionVersion ?? 0)
+        ) {
           if (applyExpiredAccessDowngrade(user)) {
             await Subscription.updateOne(
               { user: user._id },

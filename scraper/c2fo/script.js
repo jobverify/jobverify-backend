@@ -1,9 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -20,7 +19,6 @@ export const OFFICIAL_DAYFORCE_URL = `${DAYFORCE_ORIGIN}/${DAYFORCE_LOCALE}/${DA
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-const NAVIGATION_TIMEOUT_MS = Math.max(config.jobListingTimeoutMs || 0, 60000)
 const DEFAULT_PAGE_SIZE = 20
 
 const normalizeWhitespace = (value) => {
@@ -221,6 +219,37 @@ export const buildJobDetailApiUrl = (jobPostingId) =>
 
 export const buildJobDetailUrl = (jobPostingId) => `${OFFICIAL_DAYFORCE_URL}/jobs/${jobPostingId}`
 
+export const extractCookieHeaderFromResponse = (response) => {
+  const headers = response?.headers
+  if (!headers) return null
+
+  const setCookies = typeof headers.getSetCookie === 'function'
+    ? headers.getSetCookie()
+    : String(headers.get?.('set-cookie') || '')
+      .split(/,(?=\s*[^;,=\s]+=[^;]+)/)
+      .filter(Boolean)
+
+  const cookieHeader = setCookies
+    .map((line) => normalizeWhitespace(String(line).split(';')[0]))
+    .filter(Boolean)
+    .join('; ')
+
+  return cookieHeader || null
+}
+
+export const buildDayforceSessionHeaders = (
+  session = {},
+  { includeContentType = false } = {},
+) => ({
+  'User-Agent': USER_AGENT,
+  Accept: 'application/json,text/plain,*/*',
+  Cookie: session.cookieHeader,
+  'X-CSRF-Token': session.csrfToken,
+  Referer: OFFICIAL_DAYFORCE_URL,
+  Origin: DAYFORCE_ORIGIN,
+  ...(includeContentType ? { 'Content-Type': 'application/json;charset=UTF-8' } : {}),
+})
+
 export const buildSearchRequestPayload = (paginationStart = 0) => ({
   clientNamespace: DAYFORCE_CLIENT_NAMESPACE,
   jobBoardCode: DAYFORCE_JOB_BOARD_CODE,
@@ -366,112 +395,50 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
+  ...options,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
+    ...(options.headers || {}),
   },
-  label: 'c2fo-sitecontext',
-  timeoutMs: 15000,
+  label: options.label || 'c2fo-json',
+  timeoutMs: options.timeoutMs || 15000,
 })
 
-const createBrowserDayforceClient = async ({
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
+export const createDayforceSession = async ({
+  fetchJson = defaultFetchJson,
 } = {}) => {
-  const browser = await launchBrowserImpl()
+  let csrfResponse = null
+  const payload = await fetchJson(buildCsrfUrl(), {
+    label: 'c2fo-dayforce-csrf',
+    fetchImpl: async (url, requestInit) => {
+      const response = await fetch(url, requestInit)
+      csrfResponse = response
+      return response
+    },
+  })
 
-  try {
-    const page = await createOptimizedPageImpl(browser)
+  const csrfToken = firstNonEmpty(payload?.csrfToken)
+  const cookieHeader = extractCookieHeaderFromResponse(csrfResponse)
 
-    await page.goto(OFFICIAL_DAYFORCE_URL, {
-      waitUntil: 'networkidle2',
-      timeout: NAVIGATION_TIMEOUT_MS,
-    })
+  if (!csrfToken || !cookieHeader) {
+    throw new Error('C2FO Dayforce public session bootstrap no longer exposes a CSRF token and cookie contract')
+  }
 
-    return {
-      async searchJobPostings(payload = buildSearchRequestPayload()) {
-        return page.evaluate(
-          async ({ authUrl, searchUrl, requestPayload }) => {
-            const csrfResponse = await fetch(authUrl, {
-              credentials: 'include',
-              headers: {
-                Accept: 'application/json,text/plain,*/*',
-              },
-            })
-
-            if (!csrfResponse.ok) {
-              throw new Error(`HTTP ${csrfResponse.status} for ${authUrl}`)
-            }
-
-            const csrfPayload = await csrfResponse.json()
-            const csrfToken = csrfPayload?.csrfToken
-
-            if (!csrfToken) {
-              throw new Error('Missing Dayforce CSRF token')
-            }
-
-            const response = await fetch(searchUrl, {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                Accept: 'application/json,text/plain,*/*',
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': csrfToken,
-              },
-              body: JSON.stringify(requestPayload),
-            })
-
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status} for ${searchUrl}`)
-            }
-
-            return response.json()
-          },
-          {
-            authUrl: buildCsrfUrl(),
-            searchUrl: buildSearchApiUrl(),
-            requestPayload: payload,
-          },
-        )
-      },
-      async fetchJobDetail(jobPostingId) {
-        return page.evaluate(
-          async (detailUrl) => {
-            const response = await fetch(detailUrl, {
-              credentials: 'include',
-              headers: {
-                Accept: 'application/json,text/plain,*/*',
-              },
-            })
-
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status} for ${detailUrl}`)
-            }
-
-            return response.json()
-          },
-          buildJobDetailApiUrl(jobPostingId),
-        )
-      },
-      async close() {
-        await browser.close()
-      },
-    }
-  } catch (error) {
-    await browser.close()
-    throw error
+  return {
+    csrfToken,
+    cookieHeader,
   }
 }
 
 export const createC2foScraper = ({
   now = () => new Date().toISOString(),
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
+    createDayforceSessionImpl = createDayforceSession,
     searchJobPostings,
     fetchJobDetail,
     maxPages = Number.isInteger(config.maxPages) ? config.maxPages : 1,
@@ -483,99 +450,110 @@ export const createC2foScraper = ({
       throw new Error('C2FO verified official careers page no longer matches the verified Dayforce public surface')
     }
 
-    const siteContext = await fetchJson(buildSiteContextUrl())
+    const siteContext = await fetchJson(buildSiteContextUrl(), {
+      label: 'c2fo-sitecontext',
+    })
 
     if (!hasVerifiedDayforceSiteContext(siteContext)) {
       throw new Error('C2FO verified Dayforce public jobs surface no longer matches the pinned C2FO site context')
     }
 
-    let browserClient = null
-
-    try {
-      if (!searchJobPostings || !fetchJobDetail) {
-        browserClient = await createBrowserDayforceClient({
-          launchBrowserImpl,
-          createOptimizedPageImpl,
-        })
-
-        searchJobPostings ||= browserClient.searchJobPostings
-        fetchJobDetail ||= browserClient.fetchJobDetail
+    let dayforceSessionPromise = null
+    const getDayforceSession = async () => {
+      if (!dayforceSessionPromise) {
+        dayforceSessionPromise = Promise.resolve(createDayforceSessionImpl({ fetchJson }))
       }
 
-      const jobs = []
-      const seenJobIds = new Set()
-      let paginationStart = 0
+      return dayforceSessionPromise
+    }
 
-      for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
-        const searchPayload = await searchJobPostings(buildSearchRequestPayload(paginationStart))
-        const postings = extractSearchPostings(searchPayload)
-        if (!postings.length) break
+    const sessionFreeSearchJobPostings = searchJobPostings || (async (payload) => {
+      const session = await getDayforceSession()
+      return fetchJson(buildSearchApiUrl(), {
+        method: 'POST',
+        headers: buildDayforceSessionHeaders(session, { includeContentType: true }),
+        body: JSON.stringify(payload),
+        label: 'c2fo-dayforce-search',
+      })
+    })
 
-        for (const posting of postings) {
-          const listing = normalizeSearchPosting(posting)
-          if (!listing?.jobId || seenJobIds.has(listing.jobId)) continue
-          seenJobIds.add(listing.jobId)
+    const sessionFreeFetchJobDetail = fetchJobDetail || (async (jobPostingId) => {
+      const session = await getDayforceSession()
+      return fetchJson(buildJobDetailApiUrl(jobPostingId), {
+        headers: buildDayforceSessionHeaders(session),
+        label: `c2fo-dayforce-detail-${jobPostingId}`,
+      })
+    })
 
-          let detail = listing
-          try {
-            const detailPayload = await fetchJobDetail(listing.jobId)
-            detail = {
-              ...detail,
-              ...normalizeJobDetail(detailPayload, listing),
-            }
-          } catch {
-            detail = {
-              ...listing,
-            }
+    const jobs = []
+    const seenJobIds = new Set()
+    let paginationStart = 0
+
+    for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
+      const searchPayload = await sessionFreeSearchJobPostings(buildSearchRequestPayload(paginationStart))
+      const postings = extractSearchPostings(searchPayload)
+      if (!postings.length) break
+
+      for (const posting of postings) {
+        const listing = normalizeSearchPosting(posting)
+        if (!listing?.jobId || seenJobIds.has(listing.jobId)) continue
+        seenJobIds.add(listing.jobId)
+
+        let detail = listing
+        try {
+          const detailPayload = await sessionFreeFetchJobDetail(listing.jobId)
+          detail = {
+            ...detail,
+            ...normalizeJobDetail(detailPayload, listing),
           }
-
-          jobs.push({
-            title: detail.title,
-            company: COMPANY_NAME,
-            department: detail.department,
-            location: detail.location,
-            city: detail.city,
-            jobId: detail.jobId,
-            requisitionId: detail.requisitionId,
-            sourceUrl: detail.sourceUrl,
-            applyUrl: detail.applyUrl,
-            employmentType: detail.employmentType,
-            experienceRequired: detail.experienceRequired,
-            minimumQualification: detail.minimumQualification,
-            preferredQualification: detail.preferredQualification,
-            requiredSkills: detail.requiredSkills,
-            postingDate: detail.postingDate,
-            closingDate: detail.closingDate,
-            jobDescription: detail.jobDescription,
-            source: SOURCE,
-            link: detail.applyUrl || detail.sourceUrl,
-            scrapedAt: now(),
-          })
-
-          if (jobs.length >= maxJobs) return jobs
+        } catch {
+          detail = {
+            ...listing,
+          }
         }
 
-        const totalCount = getTotalCount(searchPayload)
-        const pageSize = postings.length || DEFAULT_PAGE_SIZE
-        paginationStart += pageSize
+        jobs.push({
+          title: detail.title,
+          company: COMPANY_NAME,
+          department: detail.department,
+          location: detail.location,
+          city: detail.city,
+          jobId: detail.jobId,
+          requisitionId: detail.requisitionId,
+          sourceUrl: detail.sourceUrl,
+          applyUrl: detail.applyUrl,
+          employmentType: detail.employmentType,
+          experienceRequired: detail.experienceRequired,
+          minimumQualification: detail.minimumQualification,
+          preferredQualification: detail.preferredQualification,
+          requiredSkills: detail.requiredSkills,
+          postingDate: detail.postingDate,
+          closingDate: detail.closingDate,
+          jobDescription: detail.jobDescription,
+          source: SOURCE,
+          link: detail.applyUrl || detail.sourceUrl,
+          scrapedAt: now(),
+        })
 
-        if (pageSize < DEFAULT_PAGE_SIZE) break
-        if (totalCount && paginationStart >= totalCount) break
+        if (jobs.length >= maxJobs) return jobs
       }
 
-      return jobs
-    } finally {
-      if (browserClient) {
-        await browserClient.close()
-      }
+      const totalCount = getTotalCount(searchPayload)
+      const pageSize = postings.length || DEFAULT_PAGE_SIZE
+      paginationStart += pageSize
+
+      if (pageSize < DEFAULT_PAGE_SIZE) break
+      if (totalCount && paginationStart >= totalCount) break
     }
+
+    return jobs
   },
 })
 
 export const run = async (options = {}) => createC2foScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

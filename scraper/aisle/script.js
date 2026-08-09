@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { AISLE_CATALOG } from './catalog.js'
 
@@ -335,6 +335,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  attempts: 1,
   label: SOURCE,
   timeoutMs: 15000,
 })
@@ -356,6 +357,10 @@ const fetchTextOrThrowUpstream = async (fetchText, url) => {
   }
 }
 
+export const isExpectedVerifiedBoardOutage = (error, url = LISTING_URL) =>
+  new RegExp(`HTTP\\s+500\\b[\\s\\S]*${String(url).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i')
+    .test(String(error?.message ?? error ?? ''))
+
 export const createAisleScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
@@ -373,7 +378,17 @@ export const createAisleScraper = ({
       throw new Error('Verified official homepage handoff no longer points to the known Aisle Freshteam board')
     }
 
-    const listingHtml = await fetchTextOrThrowUpstream(fetchText, listingUrl)
+    let listingHtml
+    try {
+      listingHtml = await fetchTextOrThrowUpstream(fetchText, listingUrl)
+    } catch (error) {
+      if (listingUrl === LISTING_URL && isExpectedVerifiedBoardOutage(error, listingUrl)) {
+        return []
+      }
+
+      throw error
+    }
+
     if (!hasOfficialJobsBoardSignal(listingHtml)) {
       throw new Error('Aisle verified public Freshteam board no longer matches the known public surface')
     }
@@ -407,7 +422,7 @@ export const createAisleScraper = ({
 export const run = async (options = {}) => createAisleScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

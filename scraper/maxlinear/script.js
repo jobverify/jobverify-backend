@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const CAREERS_PAGE_URL = 'https://www.maxlinear.com/company/careers'
-export const INTERNATIONAL_JOBS_URL = 'https://careersintl-maxlinear.icims.com/jobs/search?ss=1&searchLocation=13228-13245-Bangalore'
+export const INTERNATIONAL_JOBS_URL = 'https://careersintl-maxlinear.icims.com/jobs/search?ss=1'
 export const SEARCH_PAGE_URL = `${INTERNATIONAL_JOBS_URL}&in_iframe=1`
 
 const COMPANY_NAME = 'MaxLinear'
@@ -80,6 +80,19 @@ const normalizeUrl = (value) => {
     return url.toString()
   } catch {
     return normalizeWhitespace(value)
+  }
+}
+
+const isValidListingsPageUrl = (value) => {
+  const normalized = normalizeUrl(value)
+  if (!normalized) return false
+
+  try {
+    const url = new URL(normalized)
+    return /\/jobs\/search$/i.test(url.pathname)
+      && /^\d+$/.test(url.searchParams.get('pr') || '')
+  } catch {
+    return false
   }
 }
 
@@ -186,7 +199,7 @@ const defaultFetchText = async (url) => {
 
 export const buildSearchUrl = (pageIndex = 0) => (
   pageIndex > 0
-    ? `${ICIMS_HOST}/jobs/search?pr=${pageIndex}&in_iframe=1&searchLocation=13228-13245-Bangalore`
+    ? `${ICIMS_HOST}/jobs/search?pr=${pageIndex}&in_iframe=1`
     : SEARCH_PAGE_URL
 )
 
@@ -317,9 +330,21 @@ export const extractJobDetail = (html = '', listing = {}) => {
 export const extractNextPageUrl = (html = '') => {
   const source = String(html ?? '')
   const nextMatch = source.match(/<link[^>]+rel=["']next["'][^>]+href=["']([^"']+)["']/i)
-    || source.match(/<a[^>]+href=["']([^"']+)["'][^>]*>[\s\S]*?<span class="sr-only">Next page of results<\/span>/i)
+  const normalizedNextLink = normalizeUrl(toAbsoluteUrl(nextMatch?.[1], ICIMS_HOST))
+  if (isValidListingsPageUrl(normalizedNextLink)) {
+    return normalizedNextLink
+  }
 
-  return nextMatch ? normalizeUrl(toAbsoluteUrl(nextMatch[1], ICIMS_HOST)) : null
+  for (const match of source.matchAll(/<a\b[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    if (!/Next page of results/i.test(match[2])) continue
+
+    const candidateUrl = normalizeUrl(toAbsoluteUrl(match[1], ICIMS_HOST))
+    if (isValidListingsPageUrl(candidateUrl)) {
+      return candidateUrl
+    }
+  }
+
+  return null
 }
 
 export const createMaxLinearScraper = ({
@@ -392,7 +417,7 @@ export const createMaxLinearScraper = ({
 export const run = async (options = {}) => createMaxLinearScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,4 +1,4 @@
-import {
+﻿import {
   COMPANY,
   CURRENT_OPPORTUNITIES_URL,
   SOURCE,
@@ -8,7 +8,7 @@ export const provider = {
   source: SOURCE,
   companyName: COMPANY,
   adapter: 'script',
-  modulePath: '../cyfuture/script.js',
+  modulePath: '../../scraper/cyfuture/script.js',
   companyCareerPage: CURRENT_OPPORTUNITIES_URL,
   atsPlatform: 'official-company-careers',
   countryFilter: 'India',
@@ -24,3 +24,4 @@ export const provider = {
 }
 
 export default provider
+

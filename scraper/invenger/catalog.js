@@ -1,9 +1,9 @@
-export const INVENGER_CATALOG = {
+﻿export const INVENGER_CATALOG = {
   source: 'invenger',
   companyName: 'Invenger',
   officialBrandName: 'Invenger',
   adapter: 'script',
-  modulePath: '../invenger/script.js',
+  modulePath: '../../scraper/invenger/script.js',
   companyCareerPage: 'https://www.invenger.com/careers',
   officialCareersPageUrl: 'https://www.invenger.com/careers',
   officialJobsPageUrl: 'https://www.invenger.com/jobs',
@@ -23,3 +23,4 @@ export const INVENGER_CATALOG = {
 }
 
 export default INVENGER_CATALOG
+

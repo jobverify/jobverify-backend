@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { fetchJsonWithRetry } from '../utils/fetch.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -12,7 +12,7 @@ export const REQUEST_HEADERS = {
   Accept: 'application/json',
   'X-Origin': 'careers.textron.com',
   Referer: CAREER_PAGE_URL,
-  'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+  'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)',
 }
 
 const COMPANY = 'Textron'
@@ -169,7 +169,7 @@ export const createTextronScraper = () => ({
 export const run = async () => createTextronScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -87,23 +87,23 @@ export const hasOfficialHomepageSignal = (html) => {
   const raw = normalizeHtml(html)
   const text = normalizeWhitespace(html)
 
-  return raw.includes('<title>urc construction</title>')
-    && raw.includes('href="career.aspx">careers</a>')
-    && raw.includes('href="contact-us.aspx">contact')
+  return /<title>\s*urc construction\s*<\/title>/i.test(String(html ?? ''))
+    && /href="career\.aspx">careers<\/a>/i.test(raw)
+    && /href="contact-us\.aspx">contact(?: us)?<\/a>/i.test(raw)
     && text.includes('URC Construction brings a wide range of capabilities to major infrastructure projects.')
     && text.includes('past 6 decades')
-    && text.includes('URC Construction (P) Ltd')
+    && text.includes('About URC')
 }
 
 export const hasOfficialCareersSignal = (html) => {
   const raw = normalizeHtml(html)
   const text = normalizeWhitespace(html)
 
-  return raw.includes('<title>urc construction careers</title>')
+  return /<title>\s*urc construction\s*<\/title>/i.test(String(html ?? ''))
     && raw.includes('action="./career.aspx"')
-    && raw.includes('placeholder="contact number"')
-    && raw.includes('placeholder="enter current location"')
-    && raw.includes('type="submit"')
+    && raw.includes('enter 10 digit valid mobileno.')
+    && raw.includes('years of work experience')
+    && raw.includes('select department')
     && text.includes('Work With Us')
     && text.includes('We place a high value on internal growth and employee learning and development.')
     && text.includes('Department')
@@ -155,8 +155,8 @@ export const createUrcConstructionScraper = () => ({
 
 export const run = async (options = {}) => createUrcConstructionScraper().run(options)
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

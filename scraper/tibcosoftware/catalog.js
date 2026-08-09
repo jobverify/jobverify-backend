@@ -20,9 +20,9 @@ export const TIBCO_SOFTWARE_CATALOG = {
     'verified-official-contact-page+verified-generic-cloud-careers-handoff+no-stable-tibco-only-public-jobs-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-05',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.tibco.com/contact-us is the live official TIBCO page exposing a Careers link to https://careers.cloud.com/. Verified that the linked Cloud Software Group careers hub and its public search page are live, but they remain a generic multi-brand surface rather than a stable TIBCO-only public jobs endpoint, and the only additional TIBCO-branded public jobs listing we found was a legacy Hirebridge board that is not directly linked from the current official TIBCO site. The local provider therefore fails closed until TIBCO exposes a clearly linked stable public jobs surface for TIBCO roles.',
+    'Verified on Wednesday, August 5, 2026 that https://www.tibco.com/contact-us is the live official TIBCO contact page and still links applicants to https://careers.cloud.com/. Verified that the linked Cloud Software Group careers hub and search page are now protected by an AWS WAF JavaScript challenge in raw HTTP responses, but browser-rendered inspection still shows a generic multi-brand careers surface with Brand filters for Citrix, Cloud Software Group Corporate, and Spotfire rather than a stable TIBCO-only public jobs endpoint. The local provider therefore continues to fail closed until TIBCO exposes a clearly linked stable public jobs surface for TIBCO roles.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'tibcosoftware/jobs.json',
 }

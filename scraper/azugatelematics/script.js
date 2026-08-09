@@ -10,7 +10,7 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export { PROVIDER_METADATA }
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
@@ -28,7 +28,7 @@ export const hasVerifiedAzugaCareersSignal = (html) => {
     && normalized.includes('Careers @ Azuga')
     && normalized.includes('Take a look at our open positions.')
     && normalized.includes('No items found.')
-    && /bebridgestone\.com\/en_us\/careers/i.test(page)
+    && /bebridgestone\.com/i.test(page)
 }
 
 export const hasPublicAzugaJobSignal = (html) => {
@@ -73,7 +73,7 @@ export const createAzugaTelematicsScraper = () => ({
 export const run = async (options = {}) => createAzugaTelematicsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

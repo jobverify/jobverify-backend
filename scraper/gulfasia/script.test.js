@@ -42,9 +42,9 @@ test('Gulf Asia module loads and validates the verified parked no-jobs public su
     validateJobResults,
   } = gulfasia
 
-  assert.equal(HOMEPAGE_URL, 'https://www.gulfasia.com/')
-  assert.equal(CAREERS_URL, 'https://www.gulfasia.com/careers')
-  assert.equal(JOBS_URL, 'https://www.gulfasia.com/jobs')
+  assert.equal(HOMEPAGE_URL, 'https://gulfasia.com/')
+  assert.equal(CAREERS_URL, 'https://gulfasia.com/careers')
+  assert.equal(JOBS_URL, 'https://gulfasia.com/jobs')
   assert.equal(hasParkedDomainSignal(parkedHtml), true)
   assert.equal(hasPublicJobBoardSignal(parkedHtml), false)
   assert.equal(matchesVerifiedNoJobsSurface(parkedHtml, parkedHtml, parkedHtml), true)

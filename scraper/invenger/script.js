@@ -1,9 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { INVENGER_CATALOG } from './catalog.js'
 
@@ -92,10 +92,14 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
-
-  return /careers\s*\|\s*invenger/i.test(page)
+  const hasLegacyCareersSurface = /careers\s*\|\s*invenger/i.test(page)
     && /info@invenger\.com/i.test(page)
     && /india\s*office\s*location/i.test(page)
+  const hasCurrentJobsHandoff = /careers\s*\|\s*invenger/i.test(page)
+    && /href=["'][^"']*\/jobs["']/i.test(page)
+    && /invenger/i.test(page)
+
+  return hasLegacyCareersSurface || hasCurrentJobsHandoff
 }
 
 export const hasOfficialJobsPageSignal = (html) => {
@@ -230,7 +234,7 @@ export const createInvengerScraper = ({
 export const run = async (options = {}) => createInvengerScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

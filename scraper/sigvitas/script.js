@@ -103,9 +103,24 @@ const defaultFetchPage = async (url) => {
 export const hasFirstPartyCareerLikeLink = (html) =>
   FIRST_PARTY_CAREER_LINK_PATTERN.test(String(html ?? ''))
 
+export const hasVerifiedLaunchingSoonCareerPlaceholder = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page).toLowerCase()
+
+  return /<title>\s*Careers\s*\|\s*Sigvitas\s*<\/title>/i.test(page)
+    && normalized.includes('join our team')
+    && normalized.includes('we are currently building our careers portal')
+    && normalized.includes('launching soon')
+    && normalized.includes('look forward to welcoming talented professionals in the near future')
+}
+
 export const hasPublicJobsSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+
+  if (hasVerifiedLaunchingSoonCareerPlaceholder(page)) {
+    return false
+  }
 
   return PUBLIC_JOBS_TEXT_PATTERNS.some((pattern) => pattern.test(normalized))
     || PUBLIC_JOBS_RAW_PATTERNS.some((pattern) => pattern.test(page))
@@ -215,6 +230,12 @@ export const isVerifiedMissingCareerRoute = (page = {}) => {
     && !hasPublicJobsSignal(html)
 }
 
+export const isVerifiedLaunchingSoonCareerRoute = (page = {}) =>
+  Number(page?.status) === 200
+  && hasVerifiedLaunchingSoonCareerPlaceholder(page?.html)
+  && !hasFirstPartyCareerLikeLink(page?.html)
+  && !hasPublicJobsSignal(page?.html)
+
 export const getRunnerMetadata = () => ({
   name: SOURCE,
   dryRunFile: 'jobs.json',
@@ -282,7 +303,14 @@ export const createSigvitasScraper = () => ({
 
     for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
       const routePage = await fetchPage(routeUrl)
-      if (!isVerifiedMissingCareerRoute(routePage)) {
+      if (
+        isVerifiedMissingCareerRoute(routePage)
+        || isVerifiedLaunchingSoonCareerRoute(routePage)
+      ) {
+        continue
+      }
+
+      {
         throw new Error(`Sigvitas verified no-public-careers route changed: ${routePage.url || routeUrl}`)
       }
     }
@@ -294,7 +322,7 @@ export const createSigvitasScraper = () => ({
 export const run = async (options = {}) => createSigvitasScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

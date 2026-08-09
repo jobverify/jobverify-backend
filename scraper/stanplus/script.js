@@ -10,7 +10,7 @@ const USER_AGENT =
 const REQUEST_TIMEOUT_MS = 10000
 const TIMEOUT_ERROR_PATTERN = /timed out|timeout|etimedout|connect timeout|und_err_connect_timeout/i
 const PUBLIC_JOBS_SIGNAL_PATTERN =
-  /\b(current openings|open positions|job openings|jobs|search jobs|apply|career opportunities)\b/i
+  /\b(current openings|open positions|job openings|job postings|search jobs|apply|career opportunities)\b/i
 
 export { PROVIDER_METADATA }
 export const SOURCE = PROVIDER_METADATA.source
@@ -21,6 +21,7 @@ export const OFFICIAL_CAREERS_HANDOFF_URL = PROVIDER_METADATA.officialCareersHan
 export const VERIFIED_AT = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 export const DARWINBOX_TIMEOUT_ROUTE_URLS = [...PROVIDER_METADATA.darwinboxTimeoutRouteUrls]
+export const DARWINBOX_LISTING_API_URL = PROVIDER_METADATA.darwinboxListingApiUrl
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -89,6 +90,41 @@ export const isExpectedTimedOutSurface = (surface = {}) =>
   && !Number.isInteger(surface?.status)
   && surface?.html == null
 
+export const hasBlankDarwinboxShellSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+  const hasNoPublicJobSignals = !PUBLIC_JOBS_SIGNAL_PATTERN.test(normalized)
+  const hasCandidateV2ShellSignals =
+    /<!doctype html>/i.test(page)
+    && /<title>\s*<\/title>/i.test(page)
+    && /<app-root\b/i.test(page)
+    && /db-components\.esm\.js/i.test(page)
+    && /challenges\.cloudflare\.com\/turnstile/i.test(page)
+    && (
+      /<base[^>]+href=["']\/ms\/candidatev2\/["']/i.test(page)
+      || /<base[^>]+href=["']\/ms\/candidate\/["']/i.test(page)
+    )
+
+  const hasMinimalCandidateShellSignals =
+    /<!doctype html>/i.test(page)
+    && /<title>\s*<\/title>/i.test(page)
+    && /<app-root\b/i.test(page)
+    && normalized.includes('Please enable Javascript!')
+
+  return hasNoPublicJobSignals
+    && (hasCandidateV2ShellSignals || hasMinimalCandidateShellSignals)
+}
+
+export const hasBlockedDarwinboxListingApiSignal = ({ status = 0, html = '' } = {}) => {
+  const text = normalizeWhitespace(html).toLowerCase()
+
+  return Number(status) === 403
+    && text.includes('attention required!')
+    && text.includes('sorry, you have been blocked')
+    && text.includes('you are unable to access darwinbox.in')
+    && text.includes('cloudflare ray id')
+}
+
 export const hasUnexpectedPublicJobSurface = (surface = {}) =>
   isReachableSurface(surface) && PUBLIC_JOBS_SIGNAL_PATTERN.test(normalizeWhitespace(surface?.html))
 
@@ -110,7 +146,7 @@ const defaultFetchPage = async (url) => {
 
     return {
       status: response.status,
-      url: response.url,
+      url,
       finalUrl: response.url,
       html: await response.text(),
       errorKind: null,
@@ -167,13 +203,19 @@ export const createStanPlusScraper = () => ({
 
       if (isExpectedTimedOutSurface(surface)) continue
 
+      if (url === DARWINBOX_LISTING_API_URL) {
+        if (hasBlockedDarwinboxListingApiSignal(surface)) continue
+      } else if (surface.status === 200 && hasBlankDarwinboxShellSignal(surface.html)) {
+        continue
+      }
+
       if (hasUnexpectedPublicJobSurface(surface)) {
         throw new Error(
           `${COMPANY} public Darwinbox jobs surface now appears reachable: ${surface.finalUrl || surface.url}`,
         )
       }
 
-      throw new Error(`${COMPANY} verified timed-out Darwinbox surface changed materially: ${surface.finalUrl || surface.url}`)
+      throw new Error(`${COMPANY} verified unavailable Darwinbox surface changed materially: ${surface.finalUrl || surface.url}`)
     }
 
     return []
@@ -183,7 +225,7 @@ export const createStanPlusScraper = () => ({
 export const run = async (options = {}) => createStanPlusScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

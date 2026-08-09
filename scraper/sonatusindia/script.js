@@ -2,8 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../utils/fetch.js'
-import { normalizeCity } from '../utils/cityNormalizer.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { SONATUS_INDIA_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -130,11 +130,33 @@ const isTalentCommunityProspect = (job = {}) => (
 
 export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?content=true`
 
+const canonicalizeGreenhouseBoardUrl = (value) => {
+  try {
+    const url = new URL(value)
+    const normalizedHost = url.hostname.replace(/^www\./i, '').toLowerCase()
+    const normalizedPathname = url.pathname.replace(/\/+$/, '')
+
+    if (normalizedHost !== 'job-boards.greenhouse.io') return null
+    if (normalizedPathname !== '/sonatus') return null
+
+    return GREENHOUSE_BOARD_URL
+  } catch {
+    return null
+  }
+}
+
 export const extractOfficialGreenhouseBoardUrl = (html = '') => {
-  const match = String(html ?? '').match(
-    /<a[^>]+href=["'](https:\/\/job-boards\.greenhouse\.io\/sonatus)["'][^>]*>\s*View open positions\s*<\/a>/i,
-  )
-  return normalizeWhitespace(match?.[1])
+  const page = String(html ?? '')
+  const anchors = page.matchAll(/<a\b[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)
+
+  for (const [, href, contents] of anchors) {
+    if (!/view open positions/i.test(stripTags(contents))) continue
+
+    const normalizedUrl = canonicalizeGreenhouseBoardUrl(decodeRepeatedHtmlEntities(href))
+    if (normalizedUrl) return normalizedUrl
+  }
+
+  return null
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -295,7 +317,7 @@ export const createSonatusIndiaScraper = ({
 export const run = async (options = {}) => createSonatusIndiaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

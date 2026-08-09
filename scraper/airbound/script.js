@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry } from '../utils/fetch.js'
-import { filterIndiaJobs } from '../utils/indiaLocationFilter.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { filterIndiaJobs } from '../../scraper-support/utils/indiaLocationFilter.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -114,7 +114,7 @@ export const createAirboundScraper = () => ({
 export const run = async () => createAirboundScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

@@ -1,9 +1,9 @@
-export const KAPIVA_CATALOG = {
+﻿export const KAPIVA_CATALOG = {
   source: 'kapiva',
   companyName: 'Kapiva',
   officialBrandName: 'Kapiva',
   adapter: 'script',
-  modulePath: '../kapiva/script.js',
+  modulePath: '../../scraper/kapiva/script.js',
   dryRunFile: 'kapiva/jobs.json',
   homepageUrl: 'https://kapiva.in/',
   aboutPageUrl: 'https://kapiva.in/about-us/',
@@ -17,9 +17,10 @@ export const KAPIVA_CATALOG = {
     'verified-homepage+verified-about-page+verified-contact-page-without-public-jobs-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary:
-    'Verified on July 16, 2026 that https://kapiva.in/, https://kapiva.in/about-us/, and https://kapiva.in/contact-us/ are live first-party Kapiva surfaces. Verified that the contact page exposes the recruiting email careers@kapiva.in under "For openings and collaboration," but no trustworthy public job listings, ATS handoff, role cards, or JobPosting markup, so the scraper returns an empty array until a real public jobs surface appears.',
+    'Verified on Sunday, August 2, 2026 that https://kapiva.in/, https://kapiva.in/about-us/, and https://kapiva.in/contact-us/ are live first-party Kapiva surfaces. The homepage is now a commerce storefront while the contact page still exposes the recruiting email careers@kapiva.in under "For openings and collaboration" through Cloudflare-protected email markup, but there are still no trustworthy public job listings, ATS handoff, role cards, or JobPosting markup, so the scraper returns an empty array until a real public jobs surface appears.',
 }
 
 export default KAPIVA_CATALOG
+

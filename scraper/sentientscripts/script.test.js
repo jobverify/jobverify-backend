@@ -67,6 +67,28 @@ const pagesSitemapXml = `
   </urlset>
 `
 
+const currentPagesSitemapXml = `
+  <?xml version="1.0" encoding="UTF-8"?>
+  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+      <loc>https://www.sentientscripts.com/book-online</loc>
+      <lastmod>2026-05-07</lastmod>
+    </url>
+    <url>
+      <loc>https://www.sentientscripts.com/pephire</loc>
+      <lastmod>2026-05-07</lastmod>
+    </url>
+    <url>
+      <loc>https://www.sentientscripts.com</loc>
+      <lastmod>2026-05-07</lastmod>
+    </url>
+    <url>
+      <loc>https://www.sentientscripts.com/contact-us</loc>
+      <lastmod>2026-05-07</lastmod>
+    </url>
+  </urlset>
+`
+
 const notFoundHtml = `
   <!doctype html>
   <html lang="en">
@@ -148,6 +170,13 @@ test('Sentient Scripts returns no jobs only while the verified no-public-careers
     ...sentientScripts.NO_PUBLIC_CAREERS_ROUTE_URLS,
   ])
   assert.deepEqual(jobs, [])
+})
+
+test('Sentient Scripts accepts the live pages sitemap when Wix omits the homepage trailing slash', async () => {
+  const sentientScripts = await loadModule()
+  assert.ok(sentientScripts, 'Sentient Scripts scraper module should load')
+
+  assert.equal(sentientScripts.hasVerifiedPagesSitemap(currentPagesSitemapXml), true)
 })
 
 test('Sentient Scripts fails closed when the homepage, sitemap, or careers-route contract changes', async () => {

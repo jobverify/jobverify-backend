@@ -1,9 +1,9 @@
-export const IONIC_CATALOG = {
+﻿export const IONIC_CATALOG = {
   source: 'ionic',
   companyName: 'Ionic',
   officialBrandName: 'Ionic',
   adapter: 'script',
-  modulePath: '../ionic/script.js',
+  modulePath: '../../scraper/ionic/script.js',
   dryRunFile: 'ionic/jobs.json',
   homepageUrl: 'https://ionic.io/',
   companyCareerPage: 'https://ionic.io/about/jobs',
@@ -23,3 +23,4 @@ export const IONIC_CATALOG = {
 }
 
 export default IONIC_CATALOG
+

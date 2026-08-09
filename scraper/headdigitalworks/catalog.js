@@ -1,9 +1,9 @@
-export const HEAD_DIGITAL_WORKS_CATALOG = {
+﻿export const HEAD_DIGITAL_WORKS_CATALOG = {
   source: 'headdigitalworks',
   companyName: 'Head Digital Works',
   officialBrandName: 'Head Digital Works',
   adapter: 'script',
-  modulePath: '../headdigitalworks/script.js',
+  modulePath: '../../scraper/headdigitalworks/script.js',
   companyCareerPage: 'https://hdworks.in/join-our-team/',
   companyDomain: 'hdworks.in',
   atsPlatform: 'official-company-site-no-public-careers',
@@ -20,3 +20,4 @@ export const HEAD_DIGITAL_WORKS_CATALOG = {
 }
 
 export default HEAD_DIGITAL_WORKS_CATALOG
+

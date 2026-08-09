@@ -1,7 +1,7 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -17,7 +17,7 @@ export const PROVIDER_METADATA = {
   companyDomain: 'cbip.org',
   adapter: 'script',
   atsPlatform: 'official-company-homepage',
-  modulePath: '../centralboardofirrigationandpower/script.js',
+  modulePath: '../../scraper/centralboardofirrigationandpower/script.js',
   dryRunFile: 'centralboardofirrigationandpower/jobs.json',
   countryFilter: 'India',
   paginationStrategy: 'homepage-recruitment-placeholder',
@@ -172,7 +172,7 @@ export const createCentralBoardOfIrrigationAndPowerScraper = () => ({
 export const run = async (options = {}) => createCentralBoardOfIrrigationAndPowerScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
@@ -182,3 +182,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     await saveToDB(jobs, SOURCE)
   }
 }
+

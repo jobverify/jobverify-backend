@@ -84,7 +84,7 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return /<title>\s*NxtSync\s*-\s*Courses\s*&(?:amp;)?\s*Internships\s*<\/title>/i.test(page)
     && normalized.includes('support@nxtsync.in')
-    && normalized.includes('+91 63026 55033')
+    && /\+91\s*63026\s*55033/i.test(normalized)
     && page.includes('https://lms.nxtsync.in/')
     && /https:\/\/linkedin\.com\/company\/nxtsync\/?/i.test(page)
 }
@@ -144,7 +144,7 @@ export const createNxtsyncScraper = () => ({
 export const run = async (options = {}) => createNxtsyncScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

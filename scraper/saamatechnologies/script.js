@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { SAAMA_TECHNOLOGIES_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -46,6 +46,8 @@ const normalizeText = (value) => {
   const normalized = normalizeWhitespace(value)
   return normalized || null
 }
+
+const escapeRegExp = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 const firstMatch = (value, patterns) => {
   for (const pattern of patterns) {
@@ -134,7 +136,12 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return /<title>\s*Careers\b[^<]*Saama/i.test(page)
     && /Explore our openings/i.test(text)
-    && extractJobBoardUrl(page) === JOB_BOARD_URL
+    && (
+      extractJobBoardUrl(page) === JOB_BOARD_URL
+      || /data-careersite=["']saama["']/i.test(page)
+      || /Jobvite\s*=\s*\{\s*careersite:\s*['"]saama['"]\s*\}/i.test(page)
+      || /jobs\.jobvite\.com\/__assets__\/scripts\/careersite\/public\/iframe\.js/i.test(page)
+    )
 }
 
 export const extractJobBoardUrl = (html = '') => {
@@ -143,7 +150,13 @@ export const extractJobBoardUrl = (html = '') => {
     /href=["'](https:\/\/jobs\.jobvite\.com\/careers\/saama\/search)["']/i,
   ])
 
-  if (!raw) return null
+  if (!raw) {
+    return /data-careersite=["']saama["']/i.test(String(html ?? ''))
+      || /Jobvite\s*=\s*\{\s*careersite:\s*['"]saama['"]\s*\}/i.test(String(html ?? ''))
+      || /jobs\.jobvite\.com\/__assets__\/scripts\/careersite\/public\/iframe\.js/i.test(String(html ?? ''))
+      ? JOB_BOARD_URL
+      : null
+  }
   if (/\/careers\/saama\/search$/i.test(raw)) return JOB_BOARD_URL
   return toAbsoluteUrl(raw, JOB_BOARD_URL)
 }
@@ -196,6 +209,38 @@ export const extractJobBoardListings = (html = '') => {
     }
   }
 
+  for (const sectionMatch of page.matchAll(
+    /<h3[^>]*class=["'][^"']*\bh2\b[^"']*["'][^>]*>([\s\S]*?)<\/h3>([\s\S]*?)(?=<h3[^>]*class=["'][^"']*\bh2\b|<hr\b|<\/article>|<\/body>|$)/gi,
+  )) {
+    const department = normalizeText(sectionMatch[1]) || null
+    const sectionHtml = sectionMatch[2]
+
+    for (const rowMatch of sectionHtml.matchAll(/<tr>([\s\S]*?)<\/tr>/gi)) {
+      const rowHtml = rowMatch[1]
+      const href = firstMatch(rowHtml, [
+        /<a[^>]*href=["']([^"']+)["']/i,
+      ])
+      const title = firstMatch(rowHtml, [
+        /<a[^>]*>([\s\S]*?)<\/a>/i,
+      ])
+      const detailUrl = toAbsoluteUrl(href)
+      const jobId = detailUrl?.match(/\/job\/([^/?#]+)/i)?.[1] ?? null
+      const fallbackLocation = firstMatch(rowHtml, [
+        /<td[^>]*class=["'][^"']*\bjv-job-list-location\b[^"']*["'][^>]*>([\s\S]*?)<\/td>/i,
+      ])
+
+      if (!title || !detailUrl || !jobId) continue
+
+      listings.push({
+        title,
+        department,
+        detailUrl,
+        jobId,
+        fallbackLocation,
+      })
+    }
+  }
+
   return listings
 }
 
@@ -204,10 +249,24 @@ const extractDescriptionHtml = (html = '') =>
     /<h3[^>]*>\s*Description\s*<\/h3>([\s\S]*?)(?:<p[^>]*>\s*Powered by Jobvite\s*<\/p>|<\/body>|<\/main>)/i,
   )?.[1] ?? ''
 
+const extractVisibleLocation = (html = '', listing = {}) => {
+  const text = normalizeWhitespace(html)
+  if (!text || !listing?.title) return listing?.fallbackLocation || null
+
+  const titlePattern = escapeRegExp(listing.title)
+  const departmentPattern = listing.department ? `(?:${escapeRegExp(listing.department)}\\s+)?` : ''
+  const explicitLocation = text.match(
+    new RegExp(`${titlePattern}\\s+${departmentPattern}([A-Za-z0-9 .,&()\\/-]+?,\\s*India)\\s+Apply\\b`, 'i'),
+  )?.[1]
+
+  return normalizeText(explicitLocation) || listing?.fallbackLocation || null
+}
+
 export const extractJobDetail = (html = '', listing = {}) => {
   const descriptionHtml = extractDescriptionHtml(html)
   const description = normalizeText(descriptionHtml)?.replace(/\n+/g, ' ') || null
-  const fallbackParts = parseLocationParts(listing.fallbackLocation)
+  const resolvedFallbackLocation = extractVisibleLocation(html, listing)
+  const fallbackParts = parseLocationParts(resolvedFallbackLocation)
   const city = extractJsonLdValue(html, 'addressLocality') || fallbackParts.city
   const state = extractJsonLdValue(html, 'addressRegion') || fallbackParts.state
   const country = extractJsonLdValue(html, 'addressCountry') || fallbackParts.country
@@ -226,7 +285,7 @@ export const extractJobDetail = (html = '', listing = {}) => {
       country,
       fallback: {
         ...fallbackParts,
-        location: listing.fallbackLocation,
+        location: resolvedFallbackLocation,
       },
     }),
     city: normalizeText(city),
@@ -293,7 +352,7 @@ export const createSaamaTechnologiesScraper = ({
 export const run = async (options = {}) => createSaamaTechnologiesScraper(options).run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

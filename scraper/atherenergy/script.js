@@ -1,9 +1,8 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { launchBrowser, createOptimizedPage } from '../utils/browser.js'
-import { loadConfig } from '../utils/loadConfig.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -21,33 +20,43 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-IN,en-US;q=0.9,en;q=0.8',
+    Referer: CAREERS_HOME_URL,
   },
+  attempts: 1,
   label: 'atherenergy',
   timeoutMs: 15000,
 })
 
-const shouldUseBrowserFallback = (error) =>
-  /HTTP 403\b/i.test(String(error?.message || ''))
+const isHttpStatusError = (error, statusCode, url) => {
+  const escapedUrl = String(url).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`HTTP\\s+${statusCode}\\b[\\s\\S]*${escapedUrl}`, 'i')
+    .test(String(error?.message ?? error ?? ''))
+}
 
-const createBrowserTextFetcher = async () => {
-  const browser = await launchBrowser()
-  const page = await createOptimizedPage(browser)
+const isDeterministicHttpBlock = (error) =>
+  /HTTP\s+(?:401|403|404|410|451)\b/i.test(String(error?.message ?? error ?? ''))
 
-  return {
-    close: async () => browser.close(),
-    fetchText: async (url) => {
-      const response = await page.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: 30000,
-      })
+const wrapApiOnlyFetchError = (url, error) => {
+  const wrapped = new Error(
+    `Ather Energy API-only migration could not fetch ${url}: ${error?.message ?? error}`,
+    { cause: error },
+  )
 
-      if (!response?.ok()) {
-        throw new Error(`HTTP ${response?.status?.() ?? 'unknown'} for ${url}`)
-      }
-
-      return page.content()
-    },
+  for (const key of ['abortRetries', 'softFailure', 'upstreamOutage', 'failureKind', 'localTimeout', 'retryDelayMs']) {
+    if (error?.[key] != null) {
+      wrapped[key] = error[key]
+    }
   }
+
+  if (wrapped.abortRetries !== true && isDeterministicHttpBlock(error)) {
+    wrapped.abortRetries = true
+    wrapped.softFailure ??= true
+    wrapped.upstreamOutage ??= true
+    wrapped.failureKind ??= 'network_or_timeout'
+  }
+
+  return wrapped
 }
 
 export const hasCareersHomeSignal = (html) =>
@@ -76,53 +85,43 @@ export const createAtherEnergyScraper = ({
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
-    let browserContext = null
 
     const fetchPageText = async (url) => {
       try {
         return await fetchText(url)
       } catch (error) {
-        if (!shouldUseBrowserFallback(error)) {
-          throw error
-        }
-
-        const browserFetchText = options.fetchBrowserText || (
-          async (browserUrl) => {
-            if (!browserContext) {
-              browserContext = await createBrowserTextFetcher()
-            }
-
-            return browserContext.fetchText(browserUrl)
-          }
-        )
-
-        return browserFetchText(url)
+        throw wrapApiOnlyFetchError(url, error)
       }
     }
 
+    let careersHomeHtml = null
     try {
-      const careersHomeHtml = await fetchPageText(CAREERS_HOME_URL)
-
-      if (!hasCareersHomeSignal(careersHomeHtml)) {
-        return []
-      }
-
-      const allJobsHtml = await fetchPageText(ALL_JOBS_URL)
-      const jobs = extractJobs(allJobsHtml)
-
-      return maxJobs ? jobs.slice(0, maxJobs) : jobs
-    } finally {
-      if (browserContext) {
-        await browserContext.close()
+      careersHomeHtml = await fetchPageText(CAREERS_HOME_URL)
+    } catch (error) {
+      if (!isHttpStatusError(error, 403, CAREERS_HOME_URL)) {
+        throw error
       }
     }
+
+    const allJobsHtml = await fetchPageText(ALL_JOBS_URL)
+    if (careersHomeHtml && !hasCareersHomeSignal(careersHomeHtml)) {
+      return []
+    }
+
+    if (!hasJobsPageSignal(allJobsHtml)) {
+      return []
+    }
+
+    const jobs = extractJobs(allJobsHtml)
+
+    return maxJobs ? jobs.slice(0, maxJobs) : jobs
   },
 })
 
 export const run = async () => createAtherEnergyScraper().run()
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Ather Energy scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

@@ -89,7 +89,7 @@ const hasEmptyJobsShell = (html = '') => {
   const location = extractLocationConfig(rawHtml)
 
   return location.country === 'India'
-    && location.city === 'Chennai'
+    && Boolean(location.city)
     && /No jobs available\./i.test(normalized)
     && /Search all jobs:/i.test(normalized)
     && /id=["']job-search["']/i.test(rawHtml)
@@ -169,7 +169,7 @@ export const createEsteeLauderIndiaScraper = () => ({
 export const run = async (options = {}) => createEsteeLauderIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

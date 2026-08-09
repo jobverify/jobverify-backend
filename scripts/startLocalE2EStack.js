@@ -1,0 +1,434 @@
+import { spawn } from "node:child_process";
+import { once } from "node:events";
+import fs from "node:fs/promises";
+import path from "node:path";
+import process from "node:process";
+import { fileURLToPath } from "node:url";
+
+import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
+import { MongoMemoryServer } from "mongodb-memory-server";
+
+import Click from "../src/models/Click.js";
+import Job from "../src/models/Job.js";
+import JobDatasetSummary from "../src/models/JobDatasetSummary.js";
+import Subscription from "../src/models/Subscription.js";
+import User from "../src/models/User.js";
+import BlacklistedToken from "../src/models/BlacklistedToken.js";
+import { ACCESS_ROLES, PLAN_IDS } from "../src/constants/accessPlans.js";
+import { refreshJobDatasetSummary } from "../src/services/jobDatasetSummaryService.js";
+import { normalizeEmailAddress } from "../src/utils/authSecurity.js";
+import { buildJobDerivedFields } from "../src/utils/jobDerivedFields.js";
+import { buildJobSearchKeys } from "../src/utils/jobSearchKeys.js";
+import { seedJobProfileFixtures } from "./lib/jobProfileFixtures.js";
+import { runIndexManagement } from "./indexes.js";
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(currentDir, "..", "..");
+const frontendDir = path.resolve(repoRoot, "Jobverify-frontend");
+const backendDir = path.resolve(repoRoot, "Jobverify-backend");
+const mongoBinaryCacheDir = path.resolve(repoRoot, "artifacts", "mongodb-binaries");
+
+process.env.MONGOMS_DOWNLOAD_DIR = process.env.MONGOMS_DOWNLOAD_DIR || mongoBinaryCacheDir;
+process.env.MONGOMS_PREFER_GLOBAL_PATH = "false";
+
+const FRONTEND_HOST = process.env.JOBVERIFY_FRONTEND_HOST || "127.0.0.1";
+const FRONTEND_PORT = Number(process.env.JOBVERIFY_FRONTEND_PORT || 4173);
+const BACKEND_HOST = process.env.JOBVERIFY_BACKEND_HOST || "127.0.0.1";
+const BACKEND_PORT = Number(process.env.JOBVERIFY_BACKEND_PORT || 5090);
+const FRONTEND_ORIGIN = `http://${FRONTEND_HOST}:${FRONTEND_PORT}`;
+const BACKEND_ORIGIN = `http://${BACKEND_HOST}:${BACKEND_PORT}`;
+const TOTAL_JOBS = Number(process.env.JOBVERIFY_E2E_TOTAL_JOBS || 1800);
+const E2E_EMAIL = normalizeEmailAddress(
+  process.env.JOBVERIFY_E2E_EMAIL || "student@example.com",
+);
+const E2E_PASSWORD = process.env.JOBVERIFY_E2E_PASSWORD || "Password123A";
+const E2E_USER_NAME = process.env.JOBVERIFY_E2E_USER_NAME || "Jobverify E2E User";
+const E2E_ADMIN_EMAIL = normalizeEmailAddress(process.env.JOBVERIFY_E2E_ADMIN_EMAIL || "");
+const E2E_ADMIN_PASSWORD = process.env.JOBVERIFY_E2E_ADMIN_PASSWORD || "";
+const E2E_ADMIN_NAME = process.env.JOBVERIFY_E2E_ADMIN_NAME || "Jobverify E2E Admin";
+const AUDIT_COMPANY = process.env.JOBVERIFY_E2E_SENTINEL_COMPANY || "Audit Signal Labs";
+const AUDIT_TITLE = process.env.JOBVERIFY_E2E_SENTINEL_TITLE || "Audit Signal Frontend Intern";
+const AUDIT_SOURCE_URL = "https://example.com/jobs/audit-signal-frontend-intern";
+const HEALTH_POLL_INTERVAL_MS = 500;
+const HEALTH_TIMEOUT_MS = 120_000;
+const STACK_SHUTDOWN_TIMEOUT_MS = 10_000;
+const STRONG_JWT_SECRET =
+  process.env.JOBVERIFY_E2E_JWT_SECRET || "12345678901234567890123456789012";
+
+const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+const trackedChildren = [];
+let mongoServer = null;
+let shuttingDown = false;
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const waitForChildExit = (child) => once(child, "exit").catch(() => null);
+
+const prefixOutput = (stream, label) => {
+  if (!stream) return;
+
+  let buffered = "";
+  stream.setEncoding("utf8");
+  stream.on("data", (chunk) => {
+    buffered += chunk;
+    const lines = buffered.split(/\r?\n/u);
+    buffered = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (line.length > 0) {
+        process.stdout.write(`[${label}] ${line}\n`);
+      }
+    }
+  });
+  stream.on("end", () => {
+    if (buffered.length > 0) {
+      process.stdout.write(`[${label}] ${buffered}\n`);
+      buffered = "";
+    }
+  });
+};
+
+const forceKillChildTree = async (child) => {
+  if (!child?.pid) {
+    return;
+  }
+
+  if (process.platform === "win32") {
+    const killer = spawn("taskkill", ["/pid", String(child.pid), "/t", "/f"], {
+      stdio: "ignore",
+      windowsHide: true,
+    });
+    await once(killer, "exit").catch(() => null);
+    return;
+  }
+
+  if (child.exitCode === null) {
+    child.kill("SIGKILL");
+  }
+};
+
+const terminateChild = async (child) => {
+  if (!child || child.exitCode !== null || child.killed) {
+    return;
+  }
+
+  const exitPromise = waitForChildExit(child);
+  child.kill(process.platform === "win32" ? undefined : "SIGTERM");
+  const exitedCleanly = await Promise.race([
+    exitPromise.then(() => true),
+    sleep(STACK_SHUTDOWN_TIMEOUT_MS).then(() => false),
+  ]);
+
+  if (!exitedCleanly && child.exitCode === null) {
+    await forceKillChildTree(child);
+    await Promise.race([exitPromise, sleep(STACK_SHUTDOWN_TIMEOUT_MS)]);
+  }
+};
+
+const cleanup = async (exitCode = 0) => {
+  if (shuttingDown) {
+    return;
+  }
+
+  shuttingDown = true;
+  await Promise.allSettled(trackedChildren.map(({ child }) => terminateChild(child)));
+  await mongoose.disconnect().catch(() => null);
+  await mongoServer?.stop().catch(() => null);
+  process.exit(exitCode);
+};
+
+const monitorChild = (name, child) => {
+  trackedChildren.push({ name, child });
+  prefixOutput(child.stdout, name);
+  prefixOutput(child.stderr, `${name}:err`);
+
+  child.on("exit", (code, signal) => {
+    if (shuttingDown) {
+      return;
+    }
+
+    const detail = signal ? `signal ${signal}` : `code ${code ?? "unknown"}`;
+    process.stderr.write(`[stack] ${name} exited unexpectedly with ${detail}\n`);
+    void cleanup(1);
+  });
+};
+
+const waitForHealthyUrl = async (url, label) => {
+  const deadline = Date.now() + HEALTH_TIMEOUT_MS;
+  let lastError = null;
+
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(url);
+      if (response.ok) {
+        return;
+      }
+
+      lastError = new Error(`${label} responded with ${response.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+
+    await sleep(HEALTH_POLL_INTERVAL_MS);
+  }
+
+  throw new Error(
+    `Timed out waiting for ${label} at ${url}: ${lastError?.message ?? "unreachable"}`,
+  );
+};
+
+const createAuditSentinelJob = async () => {
+  const baseJob = await Job.findOne({
+    title: "Frontend Developer Intern",
+    company: "Google",
+  }).lean();
+
+  if (!baseJob) {
+    throw new Error("Could not locate the canonical fixture job used for the local audit.");
+  }
+
+  const postedAt = new Date("2026-07-20T10:00:00.000Z");
+  const nextJob = {
+    ...baseJob,
+    _id: new mongoose.Types.ObjectId(),
+    title: AUDIT_TITLE,
+    originalTitle: AUDIT_TITLE,
+    normalizedTitle: AUDIT_TITLE.toLowerCase(),
+    company: AUDIT_COMPANY,
+    sourceUrl: AUDIT_SOURCE_URL,
+    applyUrl: `${AUDIT_SOURCE_URL}/apply`,
+    companyCareerPage: "https://example.com/careers/audit-signal",
+    jobId: "fixture-audit-signal-frontend-intern",
+    requisitionId: "REQ-AUDIT-0001",
+    fingerprint: "fixture-audit-signal-frontend-intern",
+    postedAt,
+    sortDate: postedAt,
+    scrapedAt: postedAt,
+    scrapedTimestamp: postedAt,
+    lastSeenAt: postedAt,
+    createdAt: postedAt,
+    updatedAt: postedAt,
+    clickCount: 999,
+  };
+
+  delete nextJob.__v;
+  delete nextJob.id;
+  delete nextJob.applicationStatus;
+  delete nextJob.applicationStatusReason;
+  delete nextJob.applicationUrl;
+
+  Object.assign(nextJob, buildJobSearchKeys(nextJob), buildJobDerivedFields(nextJob));
+
+  await Job.create(nextJob);
+  return nextJob;
+};
+
+const seedLocalState = async () => {
+  await Promise.all([
+    Click.deleteMany({}),
+    BlacklistedToken.deleteMany({}),
+    Subscription.deleteMany({}),
+    User.deleteMany({}),
+    Job.deleteMany({}),
+    JobDatasetSummary.deleteMany({}),
+  ]);
+
+  const seedInfo = await seedJobProfileFixtures(Job, { totalJobs: TOTAL_JOBS });
+  const auditJob = await createAuditSentinelJob();
+  await refreshJobDatasetSummary();
+
+  const hashedPassword = await bcrypt.hash(E2E_PASSWORD, 10);
+  const premiumStartedAt = new Date("2026-07-01T00:00:00.000Z");
+  const premiumExpiresAt = new Date("2026-08-01T00:00:00.000Z");
+
+  await User.create({
+    email: E2E_EMAIL,
+    password: hashedPassword,
+    role: "user",
+    accessRole: ACCESS_ROLES.MONTHLY,
+    premium: {
+      planId: PLAN_IDS.MONTHLY,
+      status: "active",
+      startedAt: premiumStartedAt,
+      expiresAt: premiumExpiresAt,
+      whatsappAlertsEnabled: false,
+    },
+    profile: {
+      name: E2E_USER_NAME,
+      branch: "CSE",
+      passingYear: 2027,
+      preferredJobTypes: ["Intern", "Full-time Fresher"],
+      locationPreference: ["Bangalore"],
+      profilePreferenceFilters: {
+        company: [],
+        jobType: [],
+        location: [],
+        experienceYear: "",
+        roleDomain: [],
+        workArrangement: [],
+        datePostedDays: [],
+        sortBy: "latest",
+      },
+    },
+    onboardingCompleted: true,
+    isVerified: true,
+    deactivated: false,
+    lastLoginAt: new Date("2026-07-22T10:00:00.000Z"),
+  });
+
+  if (E2E_ADMIN_EMAIL && E2E_ADMIN_PASSWORD) {
+    const hashedAdminPassword = await bcrypt.hash(E2E_ADMIN_PASSWORD, 10);
+
+    await User.create({
+      email: E2E_ADMIN_EMAIL,
+      password: hashedAdminPassword,
+      role: "admin",
+      accessRole: ACCESS_ROLES.YEARLY,
+      premium: {
+        planId: PLAN_IDS.YEARLY,
+        status: "active",
+        startedAt: premiumStartedAt,
+        expiresAt: premiumExpiresAt,
+        whatsappAlertsEnabled: false,
+      },
+      profile: {
+        name: E2E_ADMIN_NAME,
+        branch: "CSE",
+        passingYear: 2024,
+        preferredJobTypes: ["Intern", "Full-time Experienced"],
+        locationPreference: ["Bangalore"],
+        profilePreferenceFilters: {
+          company: [],
+          jobType: [],
+          location: [],
+          experienceYear: "",
+          roleDomain: [],
+          workArrangement: [],
+          datePostedDays: [],
+          sortBy: "latest",
+        },
+      },
+      onboardingCompleted: true,
+      isVerified: true,
+      deactivated: false,
+      lastLoginAt: new Date("2026-07-22T10:00:00.000Z"),
+    });
+  }
+
+  const previousAck = process.env.JOBVERIFY_ACKNOWLEDGE_INDEX_MUTATIONS;
+  process.env.JOBVERIFY_ACKNOWLEDGE_INDEX_MUTATIONS = "true";
+  try {
+    await runIndexManagement({
+      mode: "apply",
+      dryRun: false,
+      shouldConnect: false,
+      shouldDisconnect: false,
+      log: () => {},
+      errorLog: console.error,
+    });
+  } finally {
+    if (previousAck == null) {
+      delete process.env.JOBVERIFY_ACKNOWLEDGE_INDEX_MUTATIONS;
+    } else {
+      process.env.JOBVERIFY_ACKNOWLEDGE_INDEX_MUTATIONS = previousAck;
+    }
+  }
+
+  return {
+    seedInfo,
+    auditJob,
+  };
+};
+
+const spawnBackend = (mongoUri) => {
+  const child = spawn(process.execPath, ["server.js"], {
+    cwd: backendDir,
+    env: {
+      ...process.env,
+      MONGO_URI: mongoUri,
+      NODE_ENV: "test",
+      PORT: String(BACKEND_PORT),
+      JWT_SECRET: STRONG_JWT_SECRET,
+      CORS_ORIGIN: FRONTEND_ORIGIN,
+      FRONTEND_ORIGIN,
+      TURNSTILE_SECRET_KEY: "",
+      TRUST_PROXY: "false",
+    },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  monitorChild("backend", child);
+  return child;
+};
+
+const spawnFrontend = () => {
+  const child = spawn(
+    npmCommand,
+    ["run", "dev", "--", "--host", FRONTEND_HOST, "--port", String(FRONTEND_PORT)],
+    {
+      cwd: frontendDir,
+      env: {
+        ...process.env,
+        VITE_API_BASE_URL: BACKEND_ORIGIN,
+        VITE_DISABLE_TURNSTILE: "true",
+        VITE_TURNSTILE_SITE_KEY: "",
+      },
+      shell: process.platform === "win32",
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
+
+  monitorChild("frontend", child);
+  return child;
+};
+
+async function main() {
+  process.on("SIGINT", () => {
+    void cleanup(0);
+  });
+  process.on("SIGTERM", () => {
+    void cleanup(0);
+  });
+
+  await fs.mkdir(mongoBinaryCacheDir, { recursive: true });
+  mongoServer = await MongoMemoryServer.create({
+    instance: {
+      dbName: "jobverify-local-e2e",
+      ip: BACKEND_HOST,
+    },
+    binary: {
+      downloadDir: mongoBinaryCacheDir,
+    },
+  });
+
+  const mongoUri = mongoServer.getUri();
+  await mongoose.connect(mongoUri);
+  const { seedInfo, auditJob } = await seedLocalState();
+  await mongoose.disconnect();
+
+  spawnBackend(mongoUri);
+  spawnFrontend();
+
+  await Promise.all([
+    waitForHealthyUrl(`${BACKEND_ORIGIN}/health`, "backend"),
+    waitForHealthyUrl(FRONTEND_ORIGIN, "frontend"),
+  ]);
+
+  process.stdout.write(
+    `${JSON.stringify({
+      event: "jobverify_local_e2e_stack_ready",
+      frontendOrigin: FRONTEND_ORIGIN,
+      backendOrigin: BACKEND_ORIGIN,
+      seededEmail: E2E_EMAIL,
+      seededAdminEmail: E2E_ADMIN_EMAIL || null,
+      totalJobs: seedInfo.totalJobs + 1,
+      canonicalAuditCompany: AUDIT_COMPANY,
+      canonicalAuditTitle: auditJob.title,
+    })}\n`,
+  );
+}
+
+main().catch((error) => {
+  process.stderr.write(`[stack] ${error.stack || error.message}\n`);
+  void cleanup(1);
+});

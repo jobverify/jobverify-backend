@@ -10,17 +10,17 @@ export const AERIES_TECHNOLOGY_CATALOG = {
   adapter: 'script',
   homepageUrl: 'https://aeriestechnology.com/',
   companyCareerPage: 'https://aeriestechnology.com/careers/',
-  jobsBoardUrl: 'https://aeriestechnology.talentrecruit.com/Default.aspx',
+  jobsBoardUrl: 'https://aeriestechnology.talentrecruit.com/Search/',
   atsPlatform: 'talentrecruit',
   countryFilter: 'India',
-  paginationStrategy: 'single-talentrecruit-public-board',
-  extractionStrategy: 'verified-first-party-careers-page+talentrecruit-public-board+india-listings',
+  paginationStrategy: 'single-talentrecruit-search-service-request',
+  extractionStrategy: 'verified-first-party-careers-page+talentrecruit-search-board+searchjobsservice-api+india-listings',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'aeriestechnology.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-01',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://aeriestechnology.com/careers/ remained the exact first-party Aeries Technology careers page, handed applicants to https://aeriestechnology.talentrecruit.com/Default.aspx, and that the public TalentRecruit board exposed listings including Technical Support Analyst, Associate Security Analyst, and Treasury Analyst in India.',
+    'Verified on Saturday, August 1, 2026 that https://aeriestechnology.com/careers/ remained the exact first-party Aeries Technology careers page, that its View Current Openings CTA now hands applicants to https://aeriestechnology.talentrecruit.com/Search/, and that the live TalentRecruit SearchJobsService public API exposed India roles including Senior Executive/Assistant Manager - Billing and Cash Application and Senior Cybersecurity Analyst.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

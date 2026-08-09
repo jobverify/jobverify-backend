@@ -1,9 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createOptimizedPage, launchBrowser } from '../utils/browser.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
-import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { SCHOOLNET_INDIA_CATALOG } from './catalog.js'
 
@@ -20,7 +19,7 @@ export const RECRUITMENT_PORTAL_URL = PROVIDER_METADATA.recruitmentPortalUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const ROLE_ACTION_PATTERN = /^(view details|apply)$/i
 
 const normalizeWhitespace = (value) => {
@@ -47,6 +46,13 @@ const normalizeHtmlText = (value) => normalizeWhitespace(
     .replace(/<style[\s\S]*?<\/style>/gi, ' '),
 )
 
+const extractTitle = (html = '') => normalizeWhitespace(
+  String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? null,
+)
+
+const extractCanonicalUrl = (html = '') =>
+  String(html ?? '').match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i)?.[1] ?? null
+
 const normalizeRoleLine = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
@@ -54,6 +60,17 @@ const normalizeRoleLine = (value) => {
   if (/^(image\s*)+$/i.test(normalized) || /^imageimage$/i.test(normalized)) return null
   return normalized
 }
+
+const toRoleCardText = (html = '') => String(html ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<br\s*\/?>/gi, '\n')
+  .replace(/<\/(p|div|li|article|section|h[1-6]|button|a)>/gi, '\n')
+  .replace(/<[^>]+>/g, ' ')
+  .split(/\r?\n/)
+  .map((line) => normalizeRoleLine(line))
+  .filter(Boolean)
+  .join('\n')
 
 const slugify = (value) => normalizeWhitespace(value)
   ?.toLowerCase()
@@ -110,25 +127,37 @@ const extractTextBetweenMarkers = (value, startMarker, endMarker) => {
 export const hasOfficialCareersPageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = (normalizeHtmlText(rawHtml) || '').toLowerCase()
+  const canonicalUrl = extractCanonicalUrl(rawHtml)
 
-  return /<title>\s*Digitising Education \| ICT Labs & English Language Training\s*<\/title>/i.test(rawHtml)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.schoolnetindia\.com\/careers\/["']/i.test(rawHtml)
+  return extractTitle(rawHtml) === 'Digitising Education | ICT Labs & English Language Training'
+    && (
+      canonicalUrl === 'https://www.schoolnetindia.com/careers/'
+      || canonicalUrl === 'https://www.schoolnetindia.com/more'
+    )
     && normalized.includes('unlock your potential with our team of visionaries')
     && normalized.includes('browse jobs')
     && normalized.includes('job openings')
-  }
+}
 
 export const hasOfficialRecruitmentPortalSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = (normalizeHtmlText(rawHtml) || '').toLowerCase()
 
-  return /<title>\s*hms\s*<\/title>/i.test(rawHtml)
-    && normalized.includes('welcome back')
-    && normalized.includes('sign in to your hms account')
-    && normalized.includes('hiring management system')
-    && normalized.includes('browse jobs')
-    && normalized.includes('schoolnet india ltd., india')
-  }
+  return extractTitle(rawHtml)?.toLowerCase() === 'hms'
+    && (
+      (
+        normalized.includes('welcome back')
+        && normalized.includes('sign in to your hms account')
+        && normalized.includes('hiring management system')
+        && normalized.includes('browse jobs')
+        && normalized.includes('schoolnet india ltd., india')
+      )
+      || (
+        /<div[^>]+id=["']root["'][^>]*><\/div>/i.test(rawHtml)
+        && /\/assets\/index-[^"']+\.(?:js|css)/i.test(rawHtml)
+      )
+    )
+}
 
 export const parseRoleCardText = (text = '', urls = {}) => {
   const lines = String(text ?? '')
@@ -151,16 +180,18 @@ export const parseRoleCardText = (text = '', urls = {}) => {
   const description = normalizeWhitespace(lines.slice(metadataLineIndex + 1).join(' '))
   const detailUrl = urls.detailUrl || CAREERS_URL
   const applyUrl = urls.applyUrl || detailUrl
-  const jobIdFromUrl = slugify(
-    (() => {
-      try {
-        const pathname = new URL(detailUrl).pathname
-        return pathname.split('/').filter(Boolean).at(-1) || title
-      } catch {
-        return title
-      }
-    })(),
-  )
+  const jobIdFromUrl = urls.detailUrl
+    ? slugify(
+      (() => {
+        try {
+          const pathname = new URL(detailUrl).pathname
+          return pathname.split('/').filter(Boolean).at(-1) || title
+        } catch {
+          return title
+        }
+      })(),
+    )
+    : null
   const jobId = jobIdFromUrl || slugify(title)
 
   if (!jobId) return null
@@ -210,79 +241,77 @@ export const buildJobsFromRoleCards = (cards = [], { scrapedAt } = {}) => {
     }))
 }
 
-export const createBrowserRoleCardsLoader = ({
-  launchBrowserImpl = launchBrowser,
-  createOptimizedPageImpl = createOptimizedPage,
-} = {}) => ({
-  async load() {
-    const browser = await launchBrowserImpl()
+export const extractRoleCardsFromCareersHtml = (html = '') => {
+  const cards = Array.from(
+    String(html ?? '').matchAll(/<article[^>]*class=["'][^"']*job-card[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi),
+    (match) => ({
+      text: toRoleCardText(match[1]),
+      detailUrl: match[1].match(/href=["']([^"']+)["'][^>]*>\s*View Details/i)?.[1] || null,
+      applyUrl: match[1].match(/href=["']([^"']+)["'][^>]*>\s*Apply/i)?.[1] || null,
+    }),
+  ).filter((card) => card.text && /experience:/i.test(card.text) && /posted:/i.test(card.text))
 
-    try {
-      const page = await createOptimizedPageImpl(browser)
-      const response = await page.goto(CAREERS_URL, {
-        waitUntil: 'networkidle2',
-        timeout: 60000,
-      })
+  if (cards.length > 0) {
+    return cards
+  }
 
-      if (response && !response.ok()) {
-        throw new Error(`HTTP ${response.status()} for ${CAREERS_URL}`)
-      }
+  const jobOpeningsText = normalizeHtmlText(html)
+  if (!jobOpeningsText?.includes('Job Openings')) {
+    return []
+  }
 
-      await page.waitForSelector('body', { timeout: config.jobListingTimeoutMs })
+  const [, afterJobOpenings] = jobOpeningsText.split('Job Openings')
+  if (!afterJobOpenings) {
+    return []
+  }
 
-      return page.evaluate((actionPatternSource) => {
-        const actionPattern = new RegExp(actionPatternSource, 'i')
-        const normalize = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
-        const seen = new Set()
-        const cards = []
+  const employmentTypes = [
+    'Contract/ Full-time',
+    'Full-time',
+    'Part-time',
+    'Internship',
+  ]
 
-        const findContainer = (node) => {
-          let current = node?.parentElement || null
-          while (current) {
-            const text = normalize(current.innerText)
-            if (/experience:/i.test(text) && /posted:/i.test(text)) {
-              return current
-            }
-            current = current.parentElement
-          }
-          return null
-        }
+  const toFallbackRoleCard = (segment) => {
+    const normalized = normalizeWhitespace(segment)
+    if (!normalized) return null
 
-        for (const node of Array.from(document.querySelectorAll('a[href], button'))) {
-          const label = normalize(node.textContent)
-          if (!actionPattern.test(label)) continue
+    const metadataMatch = normalized.match(/Experience:\s*([^|]+)\|\s*Posted:\s*(\d{2}-\d{2}-\d{4})/i)
+    if (!metadataMatch?.index) return null
 
-          const container = findContainer(node)
-          if (!container) continue
+    const header = normalized.slice(0, metadataMatch.index).trim()
+    const description = normalized.slice(metadataMatch.index + metadataMatch[0].length).trim()
+    const employmentType = employmentTypes.find((value) => header.endsWith(value))
+    if (!employmentType) return null
 
-          const text = normalize(container.innerText)
-          if (!text) continue
+    const titleAndLocation = header.slice(0, header.length - employmentType.length).trim()
+    const locationMatch = titleAndLocation.match(
+      /(Remote\s*\/\s*[A-Za-z ]+|As per requirement|Noida|Kolkata|Mumbai|Delhi|Gurgaon|Gurugram|Bangalore|Bengaluru|Pune|Hyderabad|Chennai)$/i,
+    )
+    if (!locationMatch?.index && locationMatch?.index !== 0) return null
 
-          const heading = container.querySelector('h1, h2, h3, h4, h5, h6, strong, b')
-          const title = normalize(heading?.textContent || text.split('\n')[0] || '')
-          const detailAnchor = Array.from(container.querySelectorAll('a[href]'))
-            .find((anchor) => /view details/i.test(normalize(anchor.textContent)))
-          const applyAnchor = Array.from(container.querySelectorAll('a[href]'))
-            .find((anchor) => /apply/i.test(normalize(anchor.textContent)))
-          const key = `${title}::${detailAnchor?.href || ''}::${applyAnchor?.href || ''}`
+    const location = locationMatch[0].trim()
+    const title = titleAndLocation.slice(0, locationMatch.index).trim()
+    if (!title || !location) return null
 
-          if (!title || seen.has(key)) continue
-          seen.add(key)
-
-          cards.push({
-            text: container.innerText,
-            detailUrl: detailAnchor?.href || null,
-            applyUrl: applyAnchor?.href || detailAnchor?.href || null,
-          })
-        }
-
-        return cards
-      }, ROLE_ACTION_PATTERN.source)
-    } finally {
-      await browser.close()
+    return {
+      text: [
+        title,
+        location,
+        employmentType,
+        metadataMatch[0].trim(),
+        description,
+      ].join('\n'),
+      detailUrl: null,
+      applyUrl: null,
     }
-  },
-})
+  }
+
+  return afterJobOpenings
+    .split(/View Details\s+Apply/gi)
+    .map((segment) => toFallbackRoleCard(segment))
+    .filter(Boolean)
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -298,7 +327,6 @@ export const createSchoolnetIndiaScraper = ({
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
-    loadRoleCards,
   } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
     if (!hasOfficialCareersPageSignal(careersHtml)) {
@@ -310,11 +338,9 @@ export const createSchoolnetIndiaScraper = ({
       throw new Error('The official Schoolnet India recruitment portal no longer matches the verified public surface')
     }
 
-    if (!loadRoleCards) {
-      loadRoleCards = createBrowserRoleCardsLoader().load
-    }
+    const resolvedRoleCards = extractRoleCardsFromCareersHtml(careersHtml)
 
-    const jobs = buildJobsFromRoleCards(await loadRoleCards(), { scrapedAt: now() })
+    const jobs = buildJobsFromRoleCards(resolvedRoleCards, { scrapedAt: now() })
     if (jobs.length === 0) {
       throw new Error('Schoolnet India public role cards no longer match the verified official careers surface')
     }
@@ -326,7 +352,7 @@ export const createSchoolnetIndiaScraper = ({
 export const run = async (options = {}) => createSchoolnetIndiaScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

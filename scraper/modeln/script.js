@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import MODEL_N_CATALOG from './catalog.js'
 
@@ -11,7 +11,7 @@ export const SOURCE = MODEL_N_CATALOG.source
 export const COMPANY = MODEL_N_CATALOG.companyName
 export const CAREERS_URL = MODEL_N_CATALOG.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -48,8 +48,8 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return /<title[^>]*>\s*Careers\s*\|\s*Model N\s*<\/title>/i.test(rawHtml)
     && normalized.includes('Open Positions')
-    && normalized.includes('Great Place to Work Certified in India')
     && normalized.includes('Filter by location')
+    && normalized.includes('Clear all')
   }
 
 export const hasNoResultsSignal = (html = '') =>
@@ -74,7 +74,7 @@ export const createModelNScraper = () => ({
 export const run = async (options = {}) => createModelNScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

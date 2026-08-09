@@ -62,6 +62,21 @@ const normalizeUrl = (value) => trimTrailingSlash(String(value ?? ''))
 
 const buildJobIdFromUrl = (url) => normalizeUrl(url).split('/').pop() || null
 
+const normalizeMicrosoftFormsUrl = (value) => {
+  try {
+    const url = new URL(String(value ?? ''))
+    const hostname = url.hostname.toLowerCase()
+
+    if (!['forms.office.com', 'forms.cloud.microsoft'].includes(hostname)) {
+      return null
+    }
+
+    return `${trimTrailingSlash(url.pathname)}${url.search}`
+  } catch {
+    return null
+  }
+}
+
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;/gi, '"')
@@ -170,7 +185,7 @@ export const isBrokenPeopleStrongSurface = (page = {}) =>
   && Number(page.status) === 404
 
 export const isWorkingOfficeFormSurface = (page = {}) =>
-  normalizeUrl(page.url) === PILOT_APPLY_URL
+  normalizeMicrosoftFormsUrl(page.url) === normalizeMicrosoftFormsUrl(PILOT_APPLY_URL)
   && Number(page.status) === 200
   && /Microsoft Forms/i.test(String(page.html ?? ''))
 
@@ -262,7 +277,7 @@ export const createAkasaAirScraper = ({
 export const run = async (options = {}) => createAkasaAirScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

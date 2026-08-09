@@ -4,13 +4,13 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_JOB_DETAIL_URLS = [
+  'https://www.komprise.com/job/software-development-engineer-productivity/',
   'https://www.komprise.com/job/implementation-engineer-2/',
-  'https://www.komprise.com/job/sde2-frontend-engineer/',
   'https://www.komprise.com/job/technical-support-engineer/',
 ]
 
 const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 16, 2026 that https://www.komprise.com/careers/ is the current first-party Komprise careers page and that https://www.komprise.com/job_listing-sitemap.xml is the authoritative public job URL feed, including same-day updates for technical-support-engineer, sde2-frontend-engineer, and implementation-engineer-2. Verified current India detail pages expose the first-party WP Job Manager apply flow via india_careers@komprise.com.'
+  'Verified on August 2, 2026 that https://www.komprise.com/careers/ remains the current first-party Komprise careers page and that https://www.komprise.com/job_listing-sitemap.xml remains the authoritative public job URL feed, now publishing software-development-engineer-productivity, implementation-engineer-2, and technical-support-engineer as the live India detail URLs. Verified the current India detail pages still expose the first-party WP Job Manager email apply flow via india_careers@komprise.com.'
 
 export const KOMPRISE_CATALOG = {
   source: 'komprise',
@@ -30,7 +30,7 @@ export const KOMPRISE_CATALOG = {
   extractionStrategy: 'verified-careers-page+job-listing-sitemap+wp-job-manager-detail-pages+india-role-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-02',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

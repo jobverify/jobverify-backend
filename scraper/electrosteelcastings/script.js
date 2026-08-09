@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -25,10 +25,12 @@ export const hasOfficialHomepageSignal = (html) => {
 
 export const hasApplicationOnlyCareerSignal = (html) => {
   const page = String(html ?? '')
+  const text = page.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+
   return /Careers Enquiry/i.test(page)
-    && /Step 1:\s*Download Employment Form/i.test(page)
-    && /Step 2:\s*Fill in your details/i.test(page)
-    && /Step 3:\s*Upload Employment Form/i.test(page)
+    && /Step 1:\s*Download Employment Form/i.test(text)
+    && /Step 2:\s*Fill in your details/i.test(text)
+    && /Step 3:\s*Upload Employment Form/i.test(text)
     && /employment_form\.pdf/i.test(page)
 }
 
@@ -60,7 +62,7 @@ export const createElectrosteelCastingsScraper = () => ({
 export const run = async (options = {}) => createElectrosteelCastingsScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   console.log(`Running Electrosteel Castings scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()

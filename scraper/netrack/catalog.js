@@ -25,14 +25,14 @@ export const NETRACK_CATALOG = {
   atsPlatform: 'official-company-site-no-public-careers',
   countryFilter: 'India',
   paginationStrategy:
-    'verified-blocked-homepage-plus-company-pages-plus-common-careers-route-validation',
+    'verified-first-party-informational-pages-plus-missing-common-careers-route-validation',
   extractionStrategy:
-    'verified-blocked-first-party-routes+no-trustworthy-public-jobs-surface-return-empty',
+    'verified-first-party-informational-pages+missing-common-hiring-routes+no-trustworthy-public-jobs-surface-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-03',
   verifiedSurfaceSummary:
-    'Verified on Thursday, July 16, 2026 that direct HTTP requests to the official exact-name first-party domain routes https://www.netrackindia.com/en, https://www.netrackindia.com/en/contact-0, and https://www.netrackindia.com/en/about-us/about-company/team returned first-party 403 Access Denied responses rather than a public careers surface. Verified that adjacent common hiring routes https://www.netrackindia.com/en/careers, https://www.netrackindia.com/careers, https://www.netrackindia.com/en/jobs, and https://www.netrackindia.com/jobs also returned the same blocked 403 Access Denied state. There is no trustworthy public jobs surface for Netrack on the verified date.',
+    'Verified on Monday, August 3, 2026 that the official exact-name first-party Netrack routes https://www.netrackindia.com/en, https://www.netrackindia.com/en/contact-0, and https://www.netrackindia.com/en/about-us/about-company/team returned stable first-party informational pages rather than a public careers surface. Verified that adjacent common hiring routes https://www.netrackindia.com/en/careers, https://www.netrackindia.com/careers, https://www.netrackindia.com/en/jobs, and https://www.netrackindia.com/jobs returned first-party 404 no-content responses. There is no trustworthy public jobs surface for Netrack on the verified date.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

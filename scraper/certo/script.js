@@ -42,6 +42,7 @@ const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/[\u2018\u2019]/g, "'")
   .replace(/&#8211;?|&#x2013;?|&ndash;?/gi, '-')
   .replace(/\u2013|\u2014/g, '-')
   .replace(/\u00a0/g, ' ')
@@ -171,7 +172,7 @@ export const createCertoScraper = () => ({
 export const run = async (options = {}) => createCertoScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

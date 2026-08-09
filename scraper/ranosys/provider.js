@@ -1,9 +1,9 @@
-export const provider = {
+﻿export const provider = {
   source: 'ranosys',
   companyName: 'Ranosys Technologies',
   officialBrandName: 'Ranosys',
   adapter: 'script',
-  modulePath: '../ranosys/script.js',
+  modulePath: '../../scraper/ranosys/script.js',
   homepageUrl: 'https://www.ranosys.com/index.php/career/',
   companyCareerPage: 'https://www.ranosys.com/global/about-us/career/current-openings/',
   atsPlatform: 'official-company-careers',
@@ -20,3 +20,4 @@ export const provider = {
 }
 
 export default provider
+

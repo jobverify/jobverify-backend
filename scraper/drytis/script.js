@@ -80,22 +80,38 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
-
-  return /<title>\s*Drytis\s*[\u2014-]\s*AI builds prototypes\.\s*Humans build companies\.\s*<\/title>/i.test(page)
-    && normalized.includes('ai democratized starting. drytis democratizes finishing.')
+  const title = normalizeWhitespace(String(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || ''))
+  const hasLegacyHeroCopy =
+    normalized.includes('ai democratized starting. drytis democratizes finishing.')
     && normalized.includes('we built the door.')
-    && /©\s*2026\s*Drytis\.\s*All rights reserved\./i.test(page)
+    && page.includes('2026 Drytis. All rights reserved.')
+  const hasCurrentHeroCopy =
+    normalized.includes("ai only gets you started. it doesn't get you finished.")
+    && normalized.includes('a real human engineer steps in.')
+    && normalized.includes('you build something that actually works.')
+
+  return /^Drytis\b/i.test(title)
+    && /AI builds prototypes\.\s*Humans build companies\./i.test(title)
+    && (hasLegacyHeroCopy || hasCurrentHeroCopy)
 }
 
 export const hasOfficialAboutSignal = (html) => {
   const page = String(html ?? '')
   const raw = page.toLowerCase()
   const normalized = normalizeWhitespace(page).toLowerCase()
-
-  return /<title>\s*Drytis\s*[\u2014-]\s*About\s*<\/title>/i.test(page)
-    && raw.includes('drytis exists so finishing is just as accessible as starting.')
+  const hasLegacyAboutCopy =
+    raw.includes('drytis exists so finishing is just as accessible as starting.')
     && normalized.includes('we built drytis for that exact moment.')
     && normalized.includes("you're probably at the wrong company.")
+  const hasCurrentAboutCopy =
+    normalized.includes("you didn't fail. ai was not enough .")
+    && normalized.includes('what no ai has ever done.')
+    && normalized.includes('everyone has a prototype. almost nobody has a product.')
+
+  return (
+    /<title>\s*Drytis\s*[\u2014-]\s*About\s*<\/title>/i.test(page)
+      || /<title>\s*About\s*\|\s*Drytis\s*<\/title>/i.test(page)
+  ) && (hasLegacyAboutCopy || hasCurrentAboutCopy)
 }
 
 export const pageHasExpectedEngineersLink = (html) =>
@@ -104,24 +120,41 @@ export const pageHasExpectedEngineersLink = (html) =>
 export const hasOfficialPrivacySignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
-
-  return /<title>\s*Privacy\s*\|\s*Drytis\s*-\s*AI App Builder\s*<\/title>/i.test(page)
-    && normalized.includes('how drytis collects, uses, and protects your personal information.')
+  const hasSharedPrivacyContent =
+    normalized.includes('how drytis collects, uses, and protects your personal information.')
     && normalized.includes('drytis, inc.')
     && normalized.includes('job applicants and recruiting candidates')
+  const hasLegacyPrivacySurface =
+    /<title>\s*Privacy\s*\|\s*Drytis\s*-\s*AI App Builder\s*<\/title>/i.test(page)
     && pageHasExpectedEngineersLink(page)
+  const hasCurrentPrivacySurface =
+    /<title>\s*Privacy Policy\s*\|\s*Drytis\s*<\/title>/i.test(page)
+    && normalized.includes('cookie policy')
+    && normalized.includes('last updated: april 3, 2026')
+
+  return hasSharedPrivacyContent
+    && (hasLegacyPrivacySurface || hasCurrentPrivacySurface)
 }
 
 export const hasOfficialTermsSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
-
-  return /<title>\s*Terms\s*\|\s*Drytis\s*-\s*AI App Builder\s*<\/title>/i.test(page)
-    && normalized.includes('the terms, policies, and agreements that govern your use of the drytis platform.')
+  const hasSharedTermsContent =
+    normalized.includes('the terms, policies, and agreements that govern your use of the drytis platform.')
     && normalized.includes('drytis charges on a pay-per-use basis.')
     && normalized.includes('support@drytis.com')
     && normalized.includes('state of delaware, united states')
+  const hasLegacyTermsSurface =
+    /<title>\s*Terms\s*\|\s*Drytis\s*-\s*AI App Builder\s*<\/title>/i.test(page)
     && pageHasExpectedEngineersLink(page)
+  const hasCurrentTermsSurface =
+    /<title>\s*Terms of Service\s*\|\s*Drytis\s*<\/title>/i.test(page)
+    && normalized.includes('acceptable use')
+    && normalized.includes('ai use policy')
+    && normalized.includes('data processing')
+
+  return hasSharedTermsContent
+    && (hasLegacyTermsSurface || hasCurrentTermsSurface)
 }
 
 export const hasOfficialEngineersSignal = (html) => {
@@ -220,7 +253,7 @@ export const createDrytisScraper = () => ({
 export const run = async (options = {}) => createDrytisScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

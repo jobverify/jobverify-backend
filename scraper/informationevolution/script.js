@@ -13,6 +13,12 @@ export const JOBS_URL = PROVIDER_METADATA.jobsPageUrl
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+const stripNonContentBlocks = (value) => String(value ?? '')
+  .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, ' ')
+  .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, ' ')
+
 const decodeHtml = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 16)))
   .replace(/&#(\d+);/g, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 10)))
@@ -22,16 +28,70 @@ const decodeHtml = (value) => String(value ?? '')
   .replace(/&lt;/gi, '<')
   .replace(/&gt;/gi, '>')
 
-const normalizeWhitespace = (value) => decodeHtml(String(value ?? ''))
+const normalizeWhitespace = (value) => decodeHtml(stripNonContentBlocks(String(value ?? '')))
   .replace(/<[^>]+>/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
 
 const buildAbsoluteUrl = (value) => {
+  if (value == null || String(value).trim() === '') {
+    return null
+  }
+
   try {
     return new URL(String(value ?? ''), JOBS_URL).toString()
   } catch {
     return null
+  }
+}
+
+const escapeRegExp = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const extractJobsRowInput = (html, rowClassFragment) => normalizeWhitespace(
+  new RegExp(
+    `<div[^>]*class=["'][^"']*${escapeRegExp(rowClassFragment)}[^"']*["'][^>]*>[\\s\\S]*?<div[^>]*class=["'][^"']*jobs-row-input[^"']*["'][^>]*>([\\s\\S]*?)</div>\\s*</div>`,
+    'i',
+  ).exec(String(html ?? ''))?.[1],
+)
+
+const extractSectionFromText = (text, labels, stopLabels) => {
+  const labelPattern = labels.map(escapeRegExp).join('|')
+  const stopPattern = stopLabels.map(escapeRegExp).join('|')
+  const match = new RegExp(
+    `(?:^|\\b)(?:${labelPattern})\\s*[:\\-]?\\s*([\\s\\S]*?)(?=\\s+(?:${stopPattern})\\b|$)`,
+    'i',
+  ).exec(String(text ?? ''))
+
+  return normalizeWhitespace(match?.[1])
+}
+
+const extractCityStateFromLocation = (location, listingLocation) => {
+  const normalizedLocation = normalizeWhitespace(location)
+
+  if (normalizedLocation) {
+    const simpleMatch = /^\s*([^,]+),\s*([^,]+),\s*India\s*$/i.exec(normalizedLocation)
+    if (simpleMatch) {
+      return {
+        city: simpleMatch[1].trim(),
+        state: simpleMatch[2].trim(),
+      }
+    }
+
+    const cityBeforePostalCodeMatch = /,\s*([^,]+),\s*\d[\d .-]*,?\s*India\s*$/i.exec(normalizedLocation)
+    if (cityBeforePostalCodeMatch) {
+      return {
+        city: cityBeforePostalCodeMatch[1].trim(),
+        state: null,
+      }
+    }
+  }
+
+  const normalizedListingLocation = normalizeWhitespace(listingLocation)
+  const listingCity = normalizedListingLocation?.split(',')[0]?.trim() || null
+
+  return {
+    city: listingCity,
+    state: null,
   }
 }
 
@@ -98,29 +158,48 @@ export const extractJobCards = (html) => {
 
 export const extractJobDetail = (html, listing) => {
   const page = String(html ?? '')
-  const title = normalizeWhitespace(
-    page.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1]
-      || page.match(/<title[^>]*>(.*?)\s*[-–]/i)?.[1],
-  )
-  const location = normalizeWhitespace(page.match(/Location:\s*([\s\S]*?)\s*(?:Type:|<\/p>)/i)?.[1])
-  const employmentType = normalizeWhitespace(page.match(/Type:\s*([\s\S]*?)\s*<\/p>/i)?.[1]) || null
+  const pageText = normalizeWhitespace(page)
+  const title = extractJobsRowInput(page, 'position_title')
+    || normalizeWhitespace(
+      page.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1]
+        || page.match(/<title[^>]*>([\s\S]*?)\s*(?:-|–|&#8211;|&ndash;)/i)?.[1],
+    )
+  const location = extractJobsRowInput(page, 'position_job_location')
+    || extractSectionFromText(
+      pageText,
+      ['Job Location', 'Location'],
+      ['Description', 'PDF Export', 'Apply now', 'Employment Type', 'Type', 'Hiring organization'],
+    )
+  const employmentType = extractJobsRowInput(page, 'position_employment_type')
+    || extractSectionFromText(
+      pageText,
+      ['Employment Type', 'Type'],
+      ['Job Location', 'Location', 'PDF Export', 'Apply now', 'Hiring organization'],
+    ) || null
   const applyUrl = buildAbsoluteUrl(page.match(/<a[^>]+href=["']([^"']+)["'][^>]*>\s*Apply/i)?.[1])
     || page.match(/href=["'](mailto:[^"']+)["']/i)?.[1]
     || null
-  const description = normalizeWhitespace(
-    page.match(/<div[^>]*class=["'][^"']*job-description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1],
-  )
+  const description = extractJobsRowInput(page, 'position_description')
+    || normalizeWhitespace(
+      page.match(/<div[^>]*class=["'][^"']*job-description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1],
+    ) || extractSectionFromText(
+      pageText,
+      ['Description'],
+      ['Qualifications', 'Hiring organization', 'Experience', 'Employment Type', 'Type', 'Job Location', 'Location', 'PDF Export', 'Apply now'],
+    )
 
   if (!title || !location) {
     throw new Error(`Expected verified Information Evolution detail page for ${listing.title}`)
   }
 
+  const { city, state } = extractCityStateFromLocation(location, listing.location)
+
   return {
     title,
     company: COMPANY,
     location,
-    city: location.split(',')[0]?.trim() || null,
-    state: location.split(',')[1]?.trim() || null,
+    city,
+    state,
     country: 'India',
     jobId: listing.detailUrl.match(/\/job\/([^/]+)\/?$/)?.[1] || null,
     requisitionId: null,
@@ -161,7 +240,7 @@ export const createInformationEvolutionScraper = () => ({
 export const run = async (options = {}) => createInformationEvolutionScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../utils/saveToDB.js')
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 

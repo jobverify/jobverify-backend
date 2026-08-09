@@ -26,9 +26,9 @@ export const MOGLIX_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'moglix.com',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-03',
   verifiedSurfaceSummary:
-    'Verified on July 16, 2026 that https://www.moglix.com/career is the live first-party Moglix careers page and that it hands off to the public jobs board at https://moglix.flexiele.com/careers/moglix/jobs. Live verification on July 16, 2026 confirmed https://moglix-api.flexiele.com/api-pub/rec/careerSectionConfiguration/search for site_url=moglix, https://moglix-api.flexiele.com/grid?gridCode=GRD0000837, and https://moglix-api.flexiele.com/api-pub/rec/careers/list returning the public Moglix careers surface with 139 active public India vacancies including AM - Finance ( Credlix ), AD/D- Sales (B2C- Energy- Solar), and Java Software developer.',
+    'Verified on Monday, August 3, 2026 that https://www.moglix.com/career is still the live first-party Moglix careers page and that it hands off to the public jobs board at https://moglix.flexiele.com/careers/moglix/jobs. Live verification on Monday, August 3, 2026 confirmed https://moglix-api.flexiele.com/api-pub/rec/careerSectionConfiguration/search for site_url=moglix, https://moglix-api.flexiele.com/grid?gridCode=GRD0000837, and https://moglix-api.flexiele.com/api-pub/rec/careers/list returning 141 active public India vacancies, with the live grid exposing row keys via column.prop values such as job_title, date_posted, location, department, functional_area, and business_unit_name.',
   dryRunFile: 'moglix/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

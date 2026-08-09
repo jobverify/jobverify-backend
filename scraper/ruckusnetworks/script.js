@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const BASE_URL = 'https://jobs.vistancenetworks.com/'
 export const CAREER_PAGE_URL = new URL('go/RUCKUS-Jobs/9892600/', BASE_URL).toString()
@@ -192,7 +192,7 @@ export const extractJobDetail = (html, listing = {}) => {
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
-    'User-Agent': 'Mozilla/5.0 (compatible; Jobify/1.0)',
+    'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)',
     Accept: 'text/html,application/xhtml+xml',
   },
   label: 'ruckusnetworks',

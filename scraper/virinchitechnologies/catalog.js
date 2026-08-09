@@ -19,9 +19,9 @@ export const VIRINCHI_TECHNOLOGIES_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'virinchi.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-06',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.virinchi.com/careers.php is the live first-party Virinchi careers page, but it exposes only a Profile Sign Up handoff and the resume email virinchi2015@gmail.com instead of a trustworthy public list of open roles. This provider therefore fails closed and returns no jobs until a real first-party openings surface appears.',
+    'Verified on Thursday, August 6, 2026 that https://www.virinchi.com/careers.php is still the live first-party Virinchi careers page, now under the title ".:: Welcome to Virinchi ::.", and that it still exposes only the Profile Sign Up handoff at http://www.virinchigroup.com/ksoft/profSignup.php plus the resume email virinchi2015@gmail.com instead of a trustworthy public list of open roles. This provider therefore remains fail-closed and returns no jobs until a real first-party openings surface appears.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 
