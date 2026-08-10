@@ -30,7 +30,7 @@ jobs:
         working-directory: ./scraper
 
       - name: Run Scraper
-        run: node scraper/runner.js --parallel
+        run: npm run scrape:parallel
         env:
           NODE_ENV: production
           NODE_OPTIONS: '--use-system-ca'
