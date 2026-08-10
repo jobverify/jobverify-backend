@@ -4935,22 +4935,6 @@
     "companyDomain": "achiralabs.com"
   },
   {
-    "source": "axisbank",
-    "companyName": "Axis Bank",
-    "adapter": "script",
-    "modulePath": "../axisbank/script.js",
-    "companyCareerPage": "https://www.axisbank.com/careers-new",
-    "atsPlatform": "ripplehire",
-    "countryFilter": "India",
-    "paginationStrategy": "page-query",
-    "extractionStrategy": "official-careers-page+ripplehire-search-api+detail-endpoint-fallback-to-listing-only",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "axisbank.com",
-    "verifiedOn": "2026-08-08",
-    "verifiedSurfaceSummary": "Verified on Saturday, August 8, 2026 that https://www.axisbank.com/careers-new remained the official Axis Bank careers page and still handed job seekers to the public Ripplehire listings surface at https://axisbank.ripplehire.com/candidate/?token=WIXhCuz0XRZ7H0GZCwjJ&source=CAREERSITE#list. The public Ripplehire search endpoint continued returning live India-facing openings from this environment, but the companion candidatejobdetail endpoint was returning HTTP 500 for sampled job sequences. The scraper therefore now verifies the official careers-page handoff, scrapes the live Ripplehire search feed directly, and falls back to listing-only records whenever the broken detail endpoint cannot be trusted."
-  },
-  {
     "source": "axiscades",
     "companyName": "AXISCADES",
     "adapter": "script",
@@ -5152,28 +5136,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "bajajelectricals.com"
-  },
-  {
-    "source": "bajajfinance",
-    "companyName": "Bajaj Finance",
-    "officialBrandName": "Bajaj Finance Limited",
-    "adapter": "script",
-    "modulePath": "../bajajfinance/script.js",
-    "dryRunFile": "bajajfinance/jobs.json",
-    "companyCareerPage": "https://www.aboutbajajfinserv.com/finance-about-us",
-    "homepageUrl": "https://www.bajajfinance.com/",
-    "portalOrigin": "https://bflcareers.peoplestrong.com",
-    "jobListingsUrl": "https://bflcareers.peoplestrong.com/",
-    "jobsApiUrl": "https://bflcareers.peoplestrong.com/api/cp/rest/altone/cp/jobs/v1?offset=0&limit=20",
-    "companyDomain": "bflcareers.peoplestrong.com",
-    "atsPlatform": "peoplestrong",
-    "countryFilter": "India",
-    "paginationStrategy": "official-bajaj-finance-page-plus-peoplestrong-offset-limit-api",
-    "extractionStrategy": "official-bajaj-finance-page+direct-peoplestrong-handoff+peoplestrong-jobs-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-15",
-    "verifiedSurfaceSummary": "Verified on July 15, 2026 that https://www.bajajfinance.com/ redirects to the Bajaj Finserv web property, that https://www.bajajfinserv.in/about-us resolves to https://www.aboutbajajfinserv.com/about-us, and that the Bajaj Finance company page at https://www.aboutbajajfinserv.com/finance-about-us is the live first-party page exposing the Careers handoff to https://bflcareers.peoplestrong.com/. Verified that the public PeopleStrong portal shell at https://bflcareers.peoplestrong.com/ is live and that the public jobs API at https://bflcareers.peoplestrong.com/api/cp/rest/altone/cp/jobs/v1?offset=0&limit=20 returned live Bajaj Finance listings during verification."
   },
   {
     "source": "bajajfinserv",
@@ -6088,20 +6050,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "careers.bluebrix.health"
-  },
-  {
-    "source": "bluedart",
-    "companyName": "Blue Dart",
-    "adapter": "script",
-    "modulePath": "../bluedart/script.js",
-    "companyCareerPage": "https://www.bluedart.com/careers",
-    "atsPlatform": "phenom",
-    "countryFilter": "India",
-    "paginationStrategy": "official-careers-page-plus-phenom-handoff",
-    "extractionStrategy": "official-careers-page+phenom-search+detail-pages",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "bluedart.com"
   },
   {
     "source": "bluestarinfotech",
@@ -9536,28 +9484,6 @@
     "companyDomain": "davincitrading.com"
   },
   {
-    "source": "dbsbankindia",
-    "companyName": "DBS Bank India",
-    "officialBrandName": "DBS",
-    "adapter": "script",
-    "companyCareerPage": "https://www.dbs.com/careers/default.page",
-    "companyDomain": "dbs.com",
-    "officialHomepageUrl": "https://www.dbs.com/in/index/default.page",
-    "officialWorkdayBoardUrl": "https://dbs.wd3.myworkdayjobs.com/DBS_Careers",
-    "jobsApiUrl": "https://dbs.wd3.myworkdayjobs.com/wday/cxs/dbs/DBS_Careers/jobs",
-    "verifiedIndiaCountryFacetId": "c4f78be1a8f14da0ab49ce1162348a5e",
-    "verifiedIndiaJobUrl": "https://dbs.wd3.myworkdayjobs.com/DBS_Careers/job/Kolkata-DBIL/Associate--Relationship-Manager--Credit-Program-Small--Small-Medium-Enterprises_WD86720",
-    "atsPlatform": "workday",
-    "countryFilter": "India",
-    "paginationStrategy": "verified-first-party-careers-handoff-plus-workday-country-facet",
-    "extractionStrategy": "verified-careers-page+verified-workday-board+unfiltered-workday-jobs-api+india-country-facet+filtered-workday-jobs-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-15",
-    "verifiedSurfaceSummary": "Verified on July 15, 2026 that https://www.dbs.com/careers/default.page is the live first-party DBS careers page and links Explore Jobs to the public Workday board at https://dbs.wd3.myworkdayjobs.com/DBS_Careers. The public Workday jobs API at https://dbs.wd3.myworkdayjobs.com/wday/cxs/dbs/DBS_Careers/jobs exposes a stable India country facet with id c4f78be1a8f14da0ab49ce1162348a5e and returns 484 India roles when filtered to that verified facet, including https://dbs.wd3.myworkdayjobs.com/DBS_Careers/job/Kolkata-DBIL/Associate--Relationship-Manager--Credit-Program-Small--Small-Medium-Enterprises_WD86720.",
-    "modulePath": "../dbsbankindia/script.js"
-  },
-  {
     "source": "dealshare",
     "companyName": "DealShare",
     "adapter": "script",
@@ -11221,20 +11147,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "edstechnologies.com"
-  },
-  {
-    "source": "educohire",
-    "companyName": "EducoHire",
-    "adapter": "script",
-    "modulePath": "../educohire/script.js",
-    "companyCareerPage": "https://job.educohire.com/jobs/Careers",
-    "atsPlatform": "zoho-public-careers-api",
-    "countryFilter": "India",
-    "paginationStrategy": "validate-official-homepage-and-zoho-portal-then-read-public-job-openings-endpoint",
-    "extractionStrategy": "official-homepage-validation-plus-zoho-public-job-openings-json",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "educohire.com"
   },
   {
     "source": "edureka",
@@ -16172,31 +16084,6 @@
     "normalizationProfile": "engineering-default"
   },
   {
-    "source": "hdfcsecurities",
-    "companyName": "HDFC Securities",
-    "officialBrandName": "HDFC securities",
-    "adapter": "script",
-    "modulePath": "../hdfcsecurities/script.js",
-    "dryRunFile": "hdfcsecurities/jobs.json",
-    "homepageUrl": "https://www.hdfcsec.com/",
-    "companyCareerPage": "https://www.hdfcsec.com/Careers",
-    "companyDomain": "hdfcsec.com",
-    "officialCareersHandoffUrl": "https://hdfcsecurities.darwinbox.in/ms/candidatev2/main/careers/home",
-    "darwinboxOrigin": "https://hdfcsecurities.darwinbox.in",
-    "darwinboxCompanyId": "main",
-    "publicPortalHomeUrl": "https://hdfcsecurities.darwinbox.in/ms/candidatev2/main/careers/home",
-    "publicAllJobsUrl": "https://hdfcsecurities.darwinbox.in/ms/candidatev2/main/careers/allJobs",
-    "listingApiUrl": "https://hdfcsecurities.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main",
-    "atsPlatform": "darwinbox",
-    "countryFilter": "India",
-    "paginationStrategy": "verified-first-party-homepage-plus-careers-page-and-darwinbox-browser-session-listing-api",
-    "extractionStrategy": "verified-homepage+verified-careers-page+darwinbox-browser-session-listing-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-16",
-    "verifiedSurfaceSummary": "Verified on July 16, 2026 that https://www.hdfcsec.com/ is the live first-party HDFC securities homepage and links Careers in the footer to https://www.hdfcsec.com/Careers. Verified that the official careers page links directly to the public Darwinbox candidate home at https://hdfcsecurities.darwinbox.in/ms/candidatev2/main/careers/home, that the public all-jobs route resolves at https://hdfcsecurities.darwinbox.in/ms/candidatev2/main/careers/allJobs, and that the browser-session candidate API at https://hdfcsecurities.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main returned 15 public jobs. Direct non-browser requests to the same Darwinbox API returned a Cloudflare 403 during verification."
-  },
-  {
     "source": "headdigitalworks",
     "companyName": "Head Digital Works",
     "officialBrandName": "Head Digital Works",
@@ -16445,20 +16332,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "hike.in"
-  },
-  {
-    "source": "hilitegroup",
-    "companyName": "HiLITE Group",
-    "adapter": "script",
-    "modulePath": "../hilitegroup/script.js",
-    "companyCareerPage": "https://hilitegroup.com/explore-careers/",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "single-first-party-careers-page",
-    "extractionStrategy": "verified-official-homepage-plus-inline-job-sections-and-apply-anchors",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "hilitegroup.com"
   },
   {
     "source": "hillimited",
@@ -17600,27 +17473,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "careers.indegene.com"
-  },
-  {
-    "source": "indiagold",
-    "companyName": "Indiagold",
-    "officialBrandName": "indiagold",
-    "adapter": "script",
-    "modulePath": "../indiagold/script.js",
-    "companyCareerPage": "https://indiagold.co/join-us",
-    "homepageUrl": "https://indiagold.co/",
-    "careersApiUrl": "https://indiagold.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite&extra_fields=%5B%22State%22%2C%22Salary%22%2C%22Industry%22%5D",
-    "generalApplicationFormUrl": "https://indiagold.zohorecruit.in/forms/38b7f90a5d50181c7e90b5fb206f7906c671dc7d5b1e459876d880446809e996",
-    "companyDomain": "indiagold.co",
-    "atsPlatform": "zohorecruit",
-    "countryFilter": "India",
-    "paginationStrategy": "single-public-api-request",
-    "extractionStrategy": "verified-first-party-careers-page+public-zohorecruit-job-openings-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "dryRunFile": "indiagold/jobs.json",
-    "verifiedOn": "2026-08-02",
-    "verifiedSurfaceSummary": "Verified on August 2, 2026 that https://indiagold.co/join-us is the official indiagold careers page, that it advertises SEE ALL POSITIONS and the Great Places to Work Certified join-us wrapper, and that the branded Zoho Recruit API still returns 24 current India jobs including Collections Executive, Sales Officer (DSA) - Karimnagar, Warangal, Nizamabad & Khammam, and Senior DevOps Engineer."
   },
   {
     "source": "indiamart",
@@ -20836,20 +20688,6 @@
     "companyDomain": "efhi.fa.em3.oraclecloud.com"
   },
   {
-    "source": "landtedutech",
-    "companyName": "L&T EduTech",
-    "adapter": "script",
-    "modulePath": "../landtedutech/script.js",
-    "companyCareerPage": "https://larsentoubrocareers.peoplestrong.com/job/joblist",
-    "atsPlatform": "peoplestrong",
-    "countryFilter": "India",
-    "paginationStrategy": "homepage-plus-careers-shell-validation-plus-offset-limit-api",
-    "extractionStrategy": "official-homepage-link-to-peoplestrong-shell-plus-edutech-organizationunit-filter",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "lntedutech.com"
-  },
-  {
     "source": "lapaelectricprivatelimited",
     "companyName": "Lapa Electric Private Limited",
     "adapter": "script",
@@ -20862,20 +20700,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "lapaelectric.com"
-  },
-  {
-    "source": "larsentoubro",
-    "companyName": "Larsen & Toubro",
-    "adapter": "script",
-    "modulePath": "../larsentoubro/script.js",
-    "companyCareerPage": "https://www.larsentoubro.com/corporate/careers",
-    "atsPlatform": "peoplestrong",
-    "countryFilter": "India",
-    "paginationStrategy": "offset-limit-api",
-    "extractionStrategy": "peoplestrong-jobs-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "larsentoubrocareers.peoplestrong.com"
   },
   {
     "source": "latentviewanalytics",
@@ -26838,20 +26662,6 @@
     "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://pharmeasy.in/careers/ is the live first-party PharmEasy careers page and that it explicitly sends applicants to the official Darwinbox handoff at https://myhr.darwinbox.in/ms/candidate/careers via visible Start Applying calls-to-action. Verified that https://pharmeasy.in/careers/jobs/ currently says \"We're currently updating open positions on the website. Please check back soon.\" while the public Darwinbox portal at https://myhr.darwinbox.in/ms/candidatev2/main/careers/allJobs still exposes live India openings, including the public job detail page https://myhr.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a39234c7fe21. Direct non-browser requests to the Darwinbox candidate API were Cloudflare-protected during verification, so this scraper uses the repo's browser-session Darwinbox pagination pattern."
   },
   {
-    "source": "physicswallah",
-    "companyName": "PhysicsWallah",
-    "adapter": "script",
-    "modulePath": "../physicswallah/script.js",
-    "companyCareerPage": "https://pwhr.darwinbox.in/ms/candidatev2/a62d7a6e288992/careers/home",
-    "atsPlatform": "darwinbox",
-    "countryFilter": "India",
-    "paginationStrategy": "browser-session-darwinbox-pagination",
-    "extractionStrategy": "darwinbox-alljobs-api-via-hosted-origin",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "pwhr.darwinbox.in"
-  },
-  {
     "source": "pickrr",
     "companyName": "Pickrr",
     "officialBrandName": "Pickrr",
@@ -27369,27 +27179,6 @@
     "verifiedPublicJobCount": 0,
     "verifiedIndiaJobCount": 0,
     "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.polymedicure.com/careers/ is the live official Polymed careers page and currently exposes employer-branding copy plus a submit-application resume form without any enumerable public job listings or explicit careers email handoff in the fetched HTML. Verified the separate official page at https://www.polymedicure.com/job-opening/ and found it to remain stale 2019 shortcode-heavy content with Product Quick Finder and no trustworthy public jobs board. No trustworthy public jobs surface was available for the Polymed exact-name row on the verified date."
-  },
-  {
-    "source": "porter",
-    "companyName": "Porter",
-    "officialBrandName": "Porter",
-    "adapter": "script",
-    "modulePath": "../porter/script.js",
-    "companyCareerPage": "https://porter.in/careers",
-    "companyDomain": "porter.in",
-    "atsPlatform": "darwinbox",
-    "countryFilter": "India",
-    "paginationStrategy": "browser-session-darwinbox-pagination",
-    "extractionStrategy": "official-careers-page+darwinbox-listing-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "officialCareersHandoffUrl": "https://porter.darwinbox.in/ms/candidate/careers",
-    "darwinboxOrigin": "https://porter.darwinbox.in",
-    "darwinboxCompanyId": "main",
-    "dryRunFile": "porter/jobs.json",
-    "verifiedOn": "2026-07-16",
-    "verifiedSurfaceSummary": "Verified on Thursday, July 16, 2026 that https://porter.in/careers is the live first-party Porter careers page and that its SEE OPEN POSITIONS call-to-action hands job seekers to the official Darwinbox candidate portal at https://porter.darwinbox.in/ms/candidate/careers."
   },
   {
     "source": "poshmark",
@@ -32889,24 +32678,6 @@
     "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.spinny.com/careers/ is the live first-party Spinny careers page and that its \"See Job Openings\" handoff points applicants to the official Spinny Darwinbox candidate host at https://spinzone.darwinbox.in/ms/candidate/careers."
   },
   {
-    "source": "spintly",
-    "companyName": "Spintly",
-    "officialBrandName": "Spintly",
-    "adapter": "script",
-    "modulePath": "../spintly/script.js",
-    "homepageUrl": "https://spintly.com/",
-    "companyCareerPage": "https://spintly.com/careers/",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "single-first-party-careers-page-text-sections",
-    "extractionStrategy": "verified-first-party-careers-page+inline-job-sections+shared-apply-form",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "spintly.com",
-    "verifiedOn": "2026-07-17",
-    "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://spintly.com/careers/ is the live first-party Spintly careers page, that it invites applicants to \"Join Us As We Build The Future of Access Control\", and that it publishes public inline Job Openings sections directly on that page with a shared first-party application form."
-  },
-  {
     "source": "spiretechnologies",
     "companyName": "Spire Technologies",
     "officialBrandName": "Spire Technologies",
@@ -34452,19 +34223,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "careers.tatapower.com"
-  },
-  {
-    "source": "tatasteel",
-    "companyName": "Tata Steel",
-    "adapter": "script",
-    "modulePath": "../tatasteel/script.js",
-    "companyCareerPage": "https://www.tatasteel.com/careers/",
-    "atsPlatform": "ripplehire",
-    "countryFilter": "India",
-    "paginationStrategy": "page-query",
-    "extractionStrategy": "xml+detail-page",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default"
   },
   {
     "source": "tatatechnologies",
@@ -36872,20 +36630,6 @@
     "companyDomain": "vivriticapital.com"
   },
   {
-    "source": "vodafoneidea",
-    "companyName": "Vodafone Idea Limited",
-    "adapter": "script",
-    "modulePath": "../vodafoneidea/script.js",
-    "companyCareerPage": "https://careers.vodafoneidea.com/go/All-Current-Job-Opportunities/4268701/",
-    "atsPlatform": "successfactors",
-    "countryFilter": "India",
-    "paginationStrategy": "jobs2web-category-page-query",
-    "extractionStrategy": "jobs2web-listing-rows+detail-pages+talentcommunity-apply-handoff",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "careers.vodafoneidea.com"
-  },
-  {
     "source": "vofox",
     "companyName": "Vofox Solutions Pvt Ltd",
     "adapter": "script",
@@ -37086,20 +36830,6 @@
     "verifiedOn": "2026-07-26",
     "verifiedIndiaJobCount": 0,
     "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that Walmart's official careers surface had moved off the stale Workday tenant to https://careers.walmart.com/us/en, that the first-party Technology and Corporate pages route candidates into the live results surface at https://careers.walmart.com/us/en/results, and that the public search endpoint at https://careers.walmart.com/api/ai/search-ai/api/v1/combined/hybrid-search still returned structured Walmart job results for generic role queries while explicit India searches returned a verified zero-job slice with an India filter expression. The legacy Workday URL https://walmart.wd5.myworkdayjobs.com/en-US/WalmartExternal returned HTTP 500 during live verification, and no trustworthy enumerable first-party India results feed could be reproduced from Walmart's current public results experience."
-  },
-  {
-    "source": "wabtec",
-    "companyName": "Wabtec Corporation",
-    "adapter": "script",
-    "modulePath": "../wabtec/script.js",
-    "companyCareerPage": "https://careers.wabtec.com/in/jobs",
-    "atsPlatform": "smartrecruiters-attrax",
-    "countryFilter": "India",
-    "paginationStrategy": "page-query",
-    "extractionStrategy": "attrax-html-cards+detail-page-workflow-apply",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "careers.wabtec.com"
   },
   {
     "source": "waferspace",

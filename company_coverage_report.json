@@ -1,7 +1,7 @@
 {
-  "totalRows": 5722,
-  "candidateRows": 5722,
-  "matchedCount": 5722,
+  "totalRows": 5704,
+  "candidateRows": 5704,
+  "matchedCount": 5704,
   "unmatchedCount": 0,
   "matched": [
     {
@@ -917,31 +917,6 @@
         "modulePath": null,
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\pfizer.workday",
         "companyDomain": "pfizer.com"
-      }
-    },
-    {
-      "row": "36",
-      "companyName": "Maersk",
-      "normalizedCompanyName": "maersk",
-      "source": "maersk",
-      "provider": {
-        "atsPlatform": "workday",
-        "countryFilter": "India",
-        "paginationStrategy": "next-button",
-        "extractionStrategy": "dom+detail-page",
-        "parser": "workday",
-        "normalizationProfile": "engineering-default",
-        "name": "maersk",
-        "company": "Maersk",
-        "baseUrl": "https://maersk.wd3.myworkdayjobs.com/Maersk_Careers",
-        "adapter": "workday",
-        "source": "maersk",
-        "companyName": "Maersk",
-        "companyCareerPage": "https://maersk.wd3.myworkdayjobs.com/Maersk_Careers",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\maersk.workday\\jobs.json",
-        "modulePath": null,
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\maersk.workday",
-        "companyDomain": "maersk.wd3.myworkdayjobs.com"
       }
     },
     {
@@ -9617,30 +9592,6 @@
       }
     },
     {
-      "row": "372",
-      "companyName": "Axis Bank",
-      "normalizedCompanyName": "axis bank",
-      "source": "axisbank",
-      "provider": {
-        "atsPlatform": "ripplehire",
-        "countryFilter": "India",
-        "paginationStrategy": "page-query",
-        "extractionStrategy": "official-careers-page+ripplehire-search-api+detail-endpoint-fallback-to-listing-only",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "axisbank",
-        "companyName": "Axis Bank",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\axisbank\\script.js",
-        "companyCareerPage": "https://www.axisbank.com/careers-new",
-        "companyDomain": "axisbank.com",
-        "verifiedOn": "2026-08-08",
-        "verifiedSurfaceSummary": "Verified on Saturday, August 8, 2026 that https://www.axisbank.com/careers-new remained the official Axis Bank careers page and still handed job seekers to the public Ripplehire listings surface at https://axisbank.ripplehire.com/candidate/?token=WIXhCuz0XRZ7H0GZCwjJ&source=CAREERSITE#list. The public Ripplehire search endpoint continued returning live India-facing openings from this environment, but the companion candidatejobdetail endpoint was returning HTTP 500 for sampled job sequences. The scraper therefore now verifies the official careers-page handoff, scrapes the live Ripplehire search feed directly, and falls back to listing-only records whenever the broken detail endpoint cannot be trusted.",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\axisbank\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\axisbank"
-      }
-    },
-    {
       "row": "373",
       "companyName": "AXISCADES",
       "normalizedCompanyName": "axiscades",
@@ -9929,35 +9880,6 @@
         "companyDomain": "bajajelectricals.com",
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\bajajelectricals\\jobs.json",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\bajajelectricals"
-      }
-    },
-    {
-      "row": "384",
-      "companyName": "Bajaj Finance",
-      "normalizedCompanyName": "bajaj finance",
-      "source": "bajajfinance",
-      "provider": {
-        "atsPlatform": "peoplestrong",
-        "countryFilter": "India",
-        "paginationStrategy": "official-bajaj-finance-page-plus-peoplestrong-offset-limit-api",
-        "extractionStrategy": "official-bajaj-finance-page+direct-peoplestrong-handoff+peoplestrong-jobs-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "bajajfinance",
-        "companyName": "Bajaj Finance",
-        "officialBrandName": "Bajaj Finance Limited",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\bajajfinance\\script.js",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\bajajfinance\\jobs.json",
-        "companyCareerPage": "https://www.aboutbajajfinserv.com/finance-about-us",
-        "homepageUrl": "https://www.bajajfinance.com/",
-        "portalOrigin": "https://bflcareers.peoplestrong.com",
-        "jobListingsUrl": "https://bflcareers.peoplestrong.com/",
-        "jobsApiUrl": "https://bflcareers.peoplestrong.com/api/cp/rest/altone/cp/jobs/v1?offset=0&limit=20",
-        "companyDomain": "bflcareers.peoplestrong.com",
-        "verifiedOn": "2026-07-15",
-        "verifiedSurfaceSummary": "Verified on July 15, 2026 that https://www.bajajfinance.com/ redirects to the Bajaj Finserv web property, that https://www.bajajfinserv.in/about-us resolves to https://www.aboutbajajfinserv.com/about-us, and that the Bajaj Finance company page at https://www.aboutbajajfinserv.com/finance-about-us is the live first-party page exposing the Careers handoff to https://bflcareers.peoplestrong.com/. Verified that the public PeopleStrong portal shell at https://bflcareers.peoplestrong.com/ is live and that the public jobs API at https://bflcareers.peoplestrong.com/api/cp/rest/altone/cp/jobs/v1?offset=0&limit=20 returned live Bajaj Finance listings during verification.",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\bajajfinance"
       }
     },
     {
@@ -11338,28 +11260,6 @@
         "companyDomain": "careers.bluebrix.health",
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\bluebrix\\jobs.json",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\bluebrix"
-      }
-    },
-    {
-      "row": "442",
-      "companyName": "Blue Dart",
-      "normalizedCompanyName": "blue dart",
-      "source": "bluedart",
-      "provider": {
-        "atsPlatform": "phenom",
-        "countryFilter": "India",
-        "paginationStrategy": "official-careers-page-plus-phenom-handoff",
-        "extractionStrategy": "official-careers-page+phenom-search+detail-pages",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "bluedart",
-        "companyName": "Blue Dart",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\bluedart\\script.js",
-        "companyCareerPage": "https://www.bluedart.com/careers",
-        "companyDomain": "bluedart.com",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\bluedart\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\bluedart"
       }
     },
     {
@@ -16645,36 +16545,6 @@
       }
     },
     {
-      "row": "673",
-      "companyName": "DBS Bank India",
-      "normalizedCompanyName": "dbs bank",
-      "source": "dbsbankindia",
-      "provider": {
-        "atsPlatform": "workday",
-        "countryFilter": "India",
-        "paginationStrategy": "verified-first-party-careers-handoff-plus-workday-country-facet",
-        "extractionStrategy": "verified-careers-page+verified-workday-board+unfiltered-workday-jobs-api+india-country-facet+filtered-workday-jobs-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "dbsbankindia",
-        "companyName": "DBS Bank India",
-        "officialBrandName": "DBS",
-        "adapter": "script",
-        "companyCareerPage": "https://www.dbs.com/careers/default.page",
-        "companyDomain": "dbs.com",
-        "officialHomepageUrl": "https://www.dbs.com/in/index/default.page",
-        "officialWorkdayBoardUrl": "https://dbs.wd3.myworkdayjobs.com/DBS_Careers",
-        "jobsApiUrl": "https://dbs.wd3.myworkdayjobs.com/wday/cxs/dbs/DBS_Careers/jobs",
-        "verifiedIndiaCountryFacetId": "c4f78be1a8f14da0ab49ce1162348a5e",
-        "verifiedIndiaJobUrl": "https://dbs.wd3.myworkdayjobs.com/DBS_Careers/job/Kolkata-DBIL/Associate--Relationship-Manager--Credit-Program-Small--Small-Medium-Enterprises_WD86720",
-        "verifiedOn": "2026-07-15",
-        "verifiedSurfaceSummary": "Verified on July 15, 2026 that https://www.dbs.com/careers/default.page is the live first-party DBS careers page and links Explore Jobs to the public Workday board at https://dbs.wd3.myworkdayjobs.com/DBS_Careers. The public Workday jobs API at https://dbs.wd3.myworkdayjobs.com/wday/cxs/dbs/DBS_Careers/jobs exposes a stable India country facet with id c4f78be1a8f14da0ab49ce1162348a5e and returns 484 India roles when filtered to that verified facet, including https://dbs.wd3.myworkdayjobs.com/DBS_Careers/job/Kolkata-DBIL/Associate--Relationship-Manager--Credit-Program-Small--Small-Medium-Enterprises_WD86720.",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\dbsbankindia.workday\\script.js",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\dbsbankindia.workday\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\dbsbankindia.workday"
-      }
-    },
-    {
       "row": "674",
       "companyName": "DealShare",
       "normalizedCompanyName": "dealshare",
@@ -19026,28 +18896,6 @@
         "companyDomain": "edstechnologies.com",
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\edstechnologies\\jobs.json",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\edstechnologies"
-      }
-    },
-    {
-      "row": "764",
-      "companyName": "EducoHire",
-      "normalizedCompanyName": "educohire",
-      "source": "educohire",
-      "provider": {
-        "atsPlatform": "zoho-public-careers-api",
-        "countryFilter": "India",
-        "paginationStrategy": "validate-official-homepage-and-zoho-portal-then-read-public-job-openings-endpoint",
-        "extractionStrategy": "official-homepage-validation-plus-zoho-public-job-openings-json",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "educohire",
-        "companyName": "EducoHire",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\educohire\\script.js",
-        "companyCareerPage": "https://job.educohire.com/jobs/Careers",
-        "companyDomain": "educohire.com",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\educohire\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\educohire"
       }
     },
     {
@@ -26097,38 +25945,6 @@
       }
     },
     {
-      "row": "1035",
-      "companyName": "HDFC Securities",
-      "normalizedCompanyName": "hdfc securities",
-      "source": "hdfcsecurities",
-      "provider": {
-        "atsPlatform": "darwinbox",
-        "countryFilter": "India",
-        "paginationStrategy": "verified-first-party-homepage-plus-careers-page-and-darwinbox-browser-session-listing-api",
-        "extractionStrategy": "verified-homepage+verified-careers-page+darwinbox-browser-session-listing-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "hdfcsecurities",
-        "companyName": "HDFC Securities",
-        "officialBrandName": "HDFC securities",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\hdfcsecurities\\script.js",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\hdfcsecurities\\jobs.json",
-        "homepageUrl": "https://www.hdfcsec.com/",
-        "companyCareerPage": "https://www.hdfcsec.com/Careers",
-        "companyDomain": "hdfcsec.com",
-        "officialCareersHandoffUrl": "https://hdfcsecurities.darwinbox.in/ms/candidatev2/main/careers/home",
-        "darwinboxOrigin": "https://hdfcsecurities.darwinbox.in",
-        "darwinboxCompanyId": "main",
-        "publicPortalHomeUrl": "https://hdfcsecurities.darwinbox.in/ms/candidatev2/main/careers/home",
-        "publicAllJobsUrl": "https://hdfcsecurities.darwinbox.in/ms/candidatev2/main/careers/allJobs",
-        "listingApiUrl": "https://hdfcsecurities.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main",
-        "verifiedOn": "2026-07-16",
-        "verifiedSurfaceSummary": "Verified on July 16, 2026 that https://www.hdfcsec.com/ is the live first-party HDFC securities homepage and links Careers in the footer to https://www.hdfcsec.com/Careers. Verified that the official careers page links directly to the public Darwinbox candidate home at https://hdfcsecurities.darwinbox.in/ms/candidatev2/main/careers/home, that the public all-jobs route resolves at https://hdfcsecurities.darwinbox.in/ms/candidatev2/main/careers/allJobs, and that the browser-session candidate API at https://hdfcsecurities.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main returned 15 public jobs. Direct non-browser requests to the same Darwinbox API returned a Cloudflare 403 during verification.",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\hdfcsecurities"
-      }
-    },
-    {
       "row": "1036",
       "companyName": "Head Digital Works",
       "normalizedCompanyName": "head digital works",
@@ -26482,28 +26298,6 @@
         "companyDomain": "hike.in",
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\hike\\jobs.json",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\hike"
-      }
-    },
-    {
-      "row": "1050",
-      "companyName": "HiLITE Group",
-      "normalizedCompanyName": "hilite",
-      "source": "hilitegroup",
-      "provider": {
-        "atsPlatform": "official-company-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "single-first-party-careers-page",
-        "extractionStrategy": "verified-official-homepage-plus-inline-job-sections-and-apply-anchors",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "hilitegroup",
-        "companyName": "HiLITE Group",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\hilitegroup\\script.js",
-        "companyCareerPage": "https://hilitegroup.com/explore-careers/",
-        "companyDomain": "hilitegroup.com",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\hilitegroup\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\hilitegroup"
       }
     },
     {
@@ -28142,34 +27936,6 @@
         "companyDomain": "careers.indegene.com",
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\indegene\\jobs.json",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\indegene"
-      }
-    },
-    {
-      "row": "1116",
-      "companyName": "Indiagold",
-      "normalizedCompanyName": "indiagold",
-      "source": "indiagold",
-      "provider": {
-        "atsPlatform": "zohorecruit",
-        "countryFilter": "India",
-        "paginationStrategy": "single-public-api-request",
-        "extractionStrategy": "verified-first-party-careers-page+public-zohorecruit-job-openings-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "indiagold",
-        "companyName": "Indiagold",
-        "officialBrandName": "indiagold",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\indiagold\\script.js",
-        "companyCareerPage": "https://indiagold.co/join-us",
-        "homepageUrl": "https://indiagold.co/",
-        "careersApiUrl": "https://indiagold.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite&extra_fields=%5B%22State%22%2C%22Salary%22%2C%22Industry%22%5D",
-        "generalApplicationFormUrl": "https://indiagold.zohorecruit.in/forms/38b7f90a5d50181c7e90b5fb206f7906c671dc7d5b1e459876d880446809e996",
-        "companyDomain": "indiagold.co",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\indiagold\\jobs.json",
-        "verifiedOn": "2026-08-02",
-        "verifiedSurfaceSummary": "Verified on August 2, 2026 that https://indiagold.co/join-us is the official indiagold careers page, that it advertises SEE ALL POSITIONS and the Great Places to Work Certified join-us wrapper, and that the branded Zoho Recruit API still returns 24 current India jobs including Collections Executive, Sales Officer (DSA) - Karimnagar, Warangal, Nizamabad & Khammam, and Senior DevOps Engineer.",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\indiagold"
       }
     },
     {
@@ -32768,28 +32534,6 @@
       }
     },
     {
-      "row": "1298",
-      "companyName": "L&T EduTech",
-      "normalizedCompanyName": "l and t edutech",
-      "source": "landtedutech",
-      "provider": {
-        "atsPlatform": "peoplestrong",
-        "countryFilter": "India",
-        "paginationStrategy": "homepage-plus-careers-shell-validation-plus-offset-limit-api",
-        "extractionStrategy": "official-homepage-link-to-peoplestrong-shell-plus-edutech-organizationunit-filter",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "landtedutech",
-        "companyName": "L&T EduTech",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\landtedutech\\script.js",
-        "companyCareerPage": "https://larsentoubrocareers.peoplestrong.com/job/joblist",
-        "companyDomain": "lntedutech.com",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\landtedutech\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\landtedutech"
-      }
-    },
-    {
       "row": "1299",
       "companyName": "Lapa Electric Private Limited",
       "normalizedCompanyName": "lapa electric",
@@ -32809,28 +32553,6 @@
         "companyDomain": "lapaelectric.com",
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\lapaelectricprivatelimited\\jobs.json",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\lapaelectricprivatelimited"
-      }
-    },
-    {
-      "row": "1300",
-      "companyName": "Larsen & Toubro",
-      "normalizedCompanyName": "larsen and toubro",
-      "source": "larsentoubro",
-      "provider": {
-        "atsPlatform": "peoplestrong",
-        "countryFilter": "India",
-        "paginationStrategy": "offset-limit-api",
-        "extractionStrategy": "peoplestrong-jobs-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "larsentoubro",
-        "companyName": "Larsen & Toubro",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\larsentoubro\\script.js",
-        "companyCareerPage": "https://www.larsentoubro.com/corporate/careers",
-        "companyDomain": "larsentoubrocareers.peoplestrong.com",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\larsentoubro\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\larsentoubro"
       }
     },
     {
@@ -41418,28 +41140,6 @@
       }
     },
     {
-      "row": "1640",
-      "companyName": "PhysicsWallah",
-      "normalizedCompanyName": "physicswallah",
-      "source": "physicswallah",
-      "provider": {
-        "atsPlatform": "darwinbox",
-        "countryFilter": "India",
-        "paginationStrategy": "browser-session-darwinbox-pagination",
-        "extractionStrategy": "darwinbox-alljobs-api-via-hosted-origin",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "physicswallah",
-        "companyName": "PhysicsWallah",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\physicswallah\\script.js",
-        "companyCareerPage": "https://pwhr.darwinbox.in/ms/candidatev2/a62d7a6e288992/careers/home",
-        "companyDomain": "pwhr.darwinbox.in",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\physicswallah\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\physicswallah"
-      }
-    },
-    {
       "row": "1641",
       "companyName": "Pickrr",
       "normalizedCompanyName": "pickrr",
@@ -42159,34 +41859,6 @@
         "verifiedIndiaJobCount": 0,
         "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.polymedicure.com/careers/ is the live official Polymed careers page and currently exposes employer-branding copy plus a submit-application resume form without any enumerable public job listings or explicit careers email handoff in the fetched HTML. Verified the separate official page at https://www.polymedicure.com/job-opening/ and found it to remain stale 2019 shortcode-heavy content with Product Quick Finder and no trustworthy public jobs board. No trustworthy public jobs surface was available for the Polymed exact-name row on the verified date.",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\polymed"
-      }
-    },
-    {
-      "row": "1668",
-      "companyName": "Porter",
-      "normalizedCompanyName": "porter",
-      "source": "porter",
-      "provider": {
-        "atsPlatform": "darwinbox",
-        "countryFilter": "India",
-        "paginationStrategy": "browser-session-darwinbox-pagination",
-        "extractionStrategy": "official-careers-page+darwinbox-listing-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "porter",
-        "companyName": "Porter",
-        "officialBrandName": "Porter",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\porter\\script.js",
-        "companyCareerPage": "https://porter.in/careers",
-        "companyDomain": "porter.in",
-        "officialCareersHandoffUrl": "https://porter.darwinbox.in/ms/candidate/careers",
-        "darwinboxOrigin": "https://porter.darwinbox.in",
-        "darwinboxCompanyId": "main",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\porter\\jobs.json",
-        "verifiedOn": "2026-07-16",
-        "verifiedSurfaceSummary": "Verified on Thursday, July 16, 2026 that https://porter.in/careers is the live first-party Porter careers page and that its SEE OPEN POSITIONS call-to-action hands job seekers to the official Darwinbox candidate portal at https://porter.darwinbox.in/ms/candidate/careers.",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\porter"
       }
     },
     {
@@ -50062,32 +49734,6 @@
       }
     },
     {
-      "row": "1979",
-      "companyName": "Spintly",
-      "normalizedCompanyName": "spintly",
-      "source": "spintly",
-      "provider": {
-        "atsPlatform": "official-company-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "single-first-party-careers-page-text-sections",
-        "extractionStrategy": "verified-first-party-careers-page+inline-job-sections+shared-apply-form",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "spintly",
-        "companyName": "Spintly",
-        "officialBrandName": "Spintly",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\spintly\\script.js",
-        "homepageUrl": "https://spintly.com/",
-        "companyCareerPage": "https://spintly.com/careers/",
-        "companyDomain": "spintly.com",
-        "verifiedOn": "2026-07-17",
-        "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://spintly.com/careers/ is the live first-party Spintly careers page, that it invites applicants to \"Join Us As We Build The Future of Access Control\", and that it publishes public inline Job Openings sections directly on that page with a shared first-party application form.",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\spintly\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\spintly"
-      }
-    },
-    {
       "row": "1980",
       "companyName": "Spire Technologies",
       "normalizedCompanyName": "spire",
@@ -52322,28 +51968,6 @@
         "companyDomain": "careers.tatapower.com",
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\tatapower\\jobs.json",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\tatapower"
-      }
-    },
-    {
-      "row": "2069",
-      "companyName": "Tata Steel",
-      "normalizedCompanyName": "tata steel",
-      "source": "tatasteel",
-      "provider": {
-        "atsPlatform": "ripplehire",
-        "countryFilter": "India",
-        "paginationStrategy": "page-query",
-        "extractionStrategy": "xml+detail-page",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "tatasteel",
-        "companyName": "Tata Steel",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\tatasteel\\script.js",
-        "companyCareerPage": "https://www.tatasteel.com/careers/",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\tatasteel\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\tatasteel",
-        "companyDomain": "tatasteel.com"
       }
     },
     {
@@ -55893,28 +55517,6 @@
       }
     },
     {
-      "row": "2217",
-      "companyName": "Vodafone Idea Limited",
-      "normalizedCompanyName": "vodafone idea",
-      "source": "vodafoneidea",
-      "provider": {
-        "atsPlatform": "successfactors",
-        "countryFilter": "India",
-        "paginationStrategy": "jobs2web-category-page-query",
-        "extractionStrategy": "jobs2web-listing-rows+detail-pages+talentcommunity-apply-handoff",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "vodafoneidea",
-        "companyName": "Vodafone Idea Limited",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\vodafoneidea\\script.js",
-        "companyCareerPage": "https://careers.vodafoneidea.com/go/All-Current-Job-Opportunities/4268701/",
-        "companyDomain": "careers.vodafoneidea.com",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\vodafoneidea\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\vodafoneidea"
-      }
-    },
-    {
       "row": "2218",
       "companyName": "Vofox Solutions Pvt Ltd",
       "normalizedCompanyName": "vofox",
@@ -56205,28 +55807,6 @@
         "verifiedIndiaJobCount": 0,
         "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that Walmart's official careers surface had moved off the stale Workday tenant to https://careers.walmart.com/us/en, that the first-party Technology and Corporate pages route candidates into the live results surface at https://careers.walmart.com/us/en/results, and that the public search endpoint at https://careers.walmart.com/api/ai/search-ai/api/v1/combined/hybrid-search still returned structured Walmart job results for generic role queries while explicit India searches returned a verified zero-job slice with an India filter expression. The legacy Workday URL https://walmart.wd5.myworkdayjobs.com/en-US/WalmartExternal returned HTTP 500 during live verification, and no trustworthy enumerable first-party India results feed could be reproduced from Walmart's current public results experience.",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\walmart"
-      }
-    },
-    {
-      "row": "2230",
-      "companyName": "Wabtec Corporation",
-      "normalizedCompanyName": "wabtec",
-      "source": "wabtec",
-      "provider": {
-        "atsPlatform": "smartrecruiters-attrax",
-        "countryFilter": "India",
-        "paginationStrategy": "page-query",
-        "extractionStrategy": "attrax-html-cards+detail-page-workflow-apply",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "wabtec",
-        "companyName": "Wabtec Corporation",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\wabtec\\script.js",
-        "companyCareerPage": "https://careers.wabtec.com/in/jobs",
-        "companyDomain": "careers.wabtec.com",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\wabtec\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\wabtec"
       }
     },
     {
@@ -115278,35 +114858,6 @@
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\loreal.workday\\jobs.json",
         "companyCareerPage": null,
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\loreal.workday",
-        "companyDomain": null
-      }
-    },
-    {
-      "row": "4265",
-      "companyName": "Moller-Maersk",
-      "normalizedCompanyName": "moller maersk",
-      "source": "mollermaersk",
-      "provider": {
-        "atsPlatform": "workbook-exact-name-sentinel",
-        "countryFilter": "India",
-        "paginationStrategy": "none",
-        "extractionStrategy": "exact-name-batch-coverage-sentinel-return-empty-until-public-surface-is-verified",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "mollermaersk",
-        "companyName": "Moller-Maersk",
-        "adapter": "script",
-        "verifiedOn": "2026-08-08",
-        "verifiedPublicJobCount": 0,
-        "verifiedIndiaJobCount": 0,
-        "verificationDisposition": "no-trustworthy-exact-name-public-jobs-flow-verified-locally",
-        "verifiedSurfaceSummary": "Workbook batch 11 exact-name sentinel for Moller-Maersk added on Saturday, August 8, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name.",
-        "originalModulePath": "../workbookbatch11b/failClosedSentinel.js",
-        "backfillMode": "workday",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\mollermaersk.workday\\script.js",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\mollermaersk.workday\\jobs.json",
-        "companyCareerPage": null,
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\mollermaersk.workday",
         "companyDomain": null
       }
     },

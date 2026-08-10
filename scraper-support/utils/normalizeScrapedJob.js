@@ -624,41 +624,6 @@ const SOURCE_ENGINEERING_DOMAIN_RULES = [
     value: 'Construction',
   },
   {
-    sources: new Set(['larsentoubro']),
-    pattern: /\b(ptd-power transmission & distribution - ic|ltpo-l&t energy-carbonlite solutions)\b/i,
-    value: 'Power Systems',
-  },
-  {
-    sources: new Set(['larsentoubro']),
-    pattern: /\b(bnf-buildings & factories)\b/i,
-    value: 'Construction',
-  },
-  {
-    sources: new Set(['larsentoubro']),
-    pattern: /\b(deic-l&t precision engineering & systems ic)\b/i,
-    value: 'Electrical',
-  },
-  {
-    sources: new Set(['larsentoubro']),
-    pattern: /\b(wet-water & effluent treatment ic)\b/i,
-    value: 'Process',
-  },
-  {
-    sources: new Set(['larsentoubro']),
-    pattern: /\b(heng-heavy engineering)\b/i,
-    value: 'Manufacturing',
-  },
-  {
-    sources: new Set(['larsentoubro']),
-    pattern: /\b(hvac|mep)\b/i,
-    value: 'Mechanical',
-  },
-  {
-    sources: new Set(['larsentoubro']),
-    pattern: /\b(structural steel|formwork|finishing|planning - site|site|package engineer|architect|ehs engineer|tooling|precision components)\b/i,
-    value: 'Construction',
-  },
-  {
     sources: new Set(['atkinsrealis']),
     pattern: /\b(principal engineer|senior design manager|lead architect|architectural team|infrastructure|buildings commissions)\b/i,
     value: 'Construction',

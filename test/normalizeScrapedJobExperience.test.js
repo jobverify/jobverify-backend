@@ -604,9 +604,9 @@ test('normalizes cue-based single-value experience with a domain noun between of
 test('normalizes hyphenated at-least phrasing with a role qualifier into an open-ended requirement', () => {
   const normalized = normalizeScrapedJob({
     title: 'Customs Operations FinOps Specialist',
-    company: 'Maersk',
+    company: 'ExampleCo',
     location: 'Airoli, India',
-    sourceUrl: 'https://maersk.wd3.myworkdayjobs.com/Maersk_Careers/job/India-Airoli-400708/Customs-Operations-FinOps-Specialist_R187221',
+    sourceUrl: 'https://careers.example.com/jobs/customs-operations-finops-specialist',
     description: 'We are looking for: Any Graduate with at-least 2 years of Customer Service experience. Background in Finance would be added advantage.',
     experienceRequired: null,
   })

@@ -25,7 +25,6 @@ export { classifyScraperError } from './utils/failureClassification.js'
 import { classifyScraperError } from './utils/failureClassification.js'
 import {
   resolveParallelWorkerConcurrency,
-  resolveRecommendedLocalDryRunConcurrency,
 } from './utils/parallelConcurrency.js'
 import { formatFinalSummaryTable } from './finalSummaryFormatter.js'
 import { refreshJobDatasetSummary } from '../src/services/jobDatasetSummaryService.js'
@@ -858,28 +857,14 @@ const runAllParallel = async ({
   stagedDatasetContext = null,
 } = {}) => {
   const startTime = Date.now()
-  const recommendedDryRunConcurrency = resolveRecommendedLocalDryRunConcurrency()
   const {
-    requested: requestedConcurrencyLimit,
     effective: concurrencyLimit,
-    clamped: dryRunConcurrencyClamped,
-  } = resolveParallelWorkerConcurrency({
-    dryRun: isDryRun,
-    recommendedDryRunConcurrency,
-  })
+  } = resolveParallelWorkerConcurrency()
   const failureAbortThreshold = resolveFailureAbortThreshold()
   const queue = [...scrapers]
   const summary = {}
 
   if (resumeMessage) console.log(`[runner] ${resumeMessage}`)
-  if (isDryRun && requestedConcurrencyLimit > recommendedDryRunConcurrency) {
-    const safetyMessage = `[runner] Local dry runs above concurrency ${recommendedDryRunConcurrency} can amplify Workday 429s and timeout noise.`
-    if (dryRunConcurrencyClamped) {
-      console.log(
-        `${safetyMessage} Requested ${requestedConcurrencyLimit}; clamping to ${concurrencyLimit}.`
-      )
-    }
-  }
   console.log(`[runner] Launching parallel worker pool with concurrency limit: ${concurrencyLimit}`)
 
   let failedCount = 0

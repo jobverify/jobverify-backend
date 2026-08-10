@@ -71,7 +71,6 @@ test('getScraperCatalog merges workday and official portal providers into one re
   const tcs = catalog.find((provider) => provider.source === 'tcs')
   const tataelxsi = catalog.find((provider) => provider.source === 'tataelxsi')
   const tatamotors = catalog.find((provider) => provider.source === 'tatamotors')
-  const tatasteel = catalog.find((provider) => provider.source === 'tatasteel')
   const tatatechnologies = catalog.find((provider) => provider.source === 'tatatechnologies')
   const techmahindra = catalog.find((provider) => provider.source === 'techmahindra')
   const zensar = catalog.find((provider) => provider.source === 'zensar')
@@ -462,12 +461,6 @@ test('getScraperCatalog merges workday and official portal providers into one re
   assert.match(tatamotors.companyCareerPage, /careers\.tatamotors\.com/i)
   assert.equal(tatamotors.companyDomain, 'careers.tatamotors.com')
 
-  assert.ok(tatasteel)
-  assert.equal(tatasteel.adapter, 'script')
-  assert.equal(tatasteel.atsPlatform, 'ripplehire')
-  assert.match(tatasteel.companyCareerPage, /tatasteel\.com\/careers/i)
-  assert.equal(tatasteel.companyDomain, 'tatasteel.com')
-
   assert.ok(tatatechnologies)
   assert.equal(tatatechnologies.adapter, 'script')
   assert.equal(tatatechnologies.atsPlatform, 'ripplehire')
@@ -579,7 +572,6 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   const synopsys = scrapers.find((scraper) => scraper.name === 'synopsys')
   const tataelxsi = scrapers.find((scraper) => scraper.name === 'tataelxsi')
   const tatamotors = scrapers.find((scraper) => scraper.name === 'tatamotors')
-  const tatasteel = scrapers.find((scraper) => scraper.name === 'tatasteel')
   const tatatechnologies = scrapers.find((scraper) => scraper.name === 'tatatechnologies')
   const techmahindra = scrapers.find((scraper) => scraper.name === 'techmahindra')
   const zensar = scrapers.find((scraper) => scraper.name === 'zensar')
@@ -958,12 +950,6 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   assert.match(tatamotors.dryRunFile, /tatamotors[\\/]jobs\.json$/)
   assert.equal(tatamotors.provider.source, 'tatamotors')
   assert.equal(tatamotors.provider.atsPlatform, 'successfactors')
-
-  assert.ok(tatasteel)
-  assert.equal(typeof tatasteel.run, 'function')
-  assert.match(tatasteel.dryRunFile, /tatasteel[\\/]jobs\.json$/)
-  assert.equal(tatasteel.provider.source, 'tatasteel')
-  assert.equal(tatasteel.provider.atsPlatform, 'ripplehire')
 
   assert.ok(tatatechnologies)
   assert.equal(typeof tatatechnologies.run, 'function')

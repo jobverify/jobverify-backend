@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { jobMatchesSavedFilters } from "../src/services/jobFilterMatcher.js";
+import {
+  buildJobFilterConditions,
+  jobMatchesSavedFilters,
+} from "../src/services/jobFilterMatcher.js";
 
 test("jobMatchesSavedFilters applies the full saved-filter contract except sortBy", () => {
   const matched = jobMatchesSavedFilters({
@@ -60,6 +63,24 @@ test("jobMatchesSavedFilters applies fresher job-type semantics for experience y
       jobType: "Full-time Fresher",
     },
   }), true);
+});
+
+test("buildJobFilterConditions excludes explicit non-numeric experience from the unspecified filter", () => {
+  const filters = buildJobFilterConditions({ experienceYear: "unspecified" });
+  const explicitExperienceGuard = filters.$and?.[0]?.$and?.[1]?.$or || [];
+
+  assert.equal(
+    explicitExperienceGuard.some(
+      (clause) => clause?.["experienceProfile.hasExplicitExperience"]?.$exists === false,
+    ),
+    true,
+  );
+  assert.equal(
+    explicitExperienceGuard.some(
+      (clause) => clause?.["experienceProfile.hasExplicitExperience"] === false,
+    ),
+    true,
+  );
 });
 
 test("jobMatchesSavedFilters uses calendar-day date-posted windows", () => {

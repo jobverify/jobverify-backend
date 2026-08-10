@@ -296,9 +296,9 @@ test('inferExperienceFromPublicPageHtml marks title-matched application flows as
 test('inferExperienceFromPublicPageHtml marks structured title-matched metadata shells as checked when no job description is available yet', () => {
   const enriched = inferExperienceFromPublicPageHtml({
     title: 'Assistant Manager',
-    company: 'Porter',
-    applyUrl: 'https://porter.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a4f8525660a3',
-    sourceUrl: 'https://porter.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a4f8525660a3',
+    company: 'ExampleCo',
+    applyUrl: 'https://careers.example.com/jobs/assistant-manager',
+    sourceUrl: 'https://careers.example.com/jobs/assistant-manager',
     experienceRequired: null,
   }, `
     <html>
@@ -394,9 +394,9 @@ test('inferExperienceFromPublicPageHtml does not treat shortlisted-candidate res
 test('inferExperienceFromPublicPageHtml does not treat access-denied shells as verified job-detail evidence', () => {
   const enriched = inferExperienceFromPublicPageHtml({
     title: 'Business Development Associate',
-    company: 'Physics Wallah',
-    applyUrl: 'https://pwhr.darwinbox.in/ms/candidatev2/a62d7a6e288992/careers/jobDetails/a6a1541142df8a',
-    sourceUrl: 'https://pwhr.darwinbox.in/ms/candidatev2/a62d7a6e288992/careers/jobDetails/a6a1541142df8a',
+    company: 'Example Learning Co',
+    applyUrl: 'https://careers.example-learning.com/job/business-development-associate',
+    sourceUrl: 'https://careers.example-learning.com/job/business-development-associate',
     experienceRequired: null,
   }, `
     <html>
