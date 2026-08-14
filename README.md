@@ -175,7 +175,7 @@ Operational notes:
 - On Render Free, the abuse store is process-local, so counters can reset after a restart or free-tier spin-down. That is expected for this phase.
 - A Cloudflare WAF or rate-limit rule can be added later as a separate manual production step, but this repository does not assume that Cloudflare protection is already configured.
 
-For full setup, environment variables, and operational steps, see [RUNBOOK.md](./RUNBOOK.md).
+For full setup, environment variables, and operational steps, see [Runbook.md](./Runbook.md).
 ## WhatsApp alerts
 
 - `WHATSAPP_PROVIDER` selects `mock` or `meta`
