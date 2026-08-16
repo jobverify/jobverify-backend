@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
+import { isDeepStrictEqual } from "node:util";
 
 import { ACCESS_ROLES } from "../src/constants/accessPlans.js";
 import {
@@ -44,6 +45,18 @@ const createEligibleUser = (overrides = {}) => ({
   profile: { telegramAlertFilters: {} },
   async save() { return this; },
   ...overrides,
+});
+
+test("Telegram link tokens enforce one unconsumed token per user in MongoDB", () => {
+  const activeTokenIndex = TelegramLinkToken.schema.indexes().find(([key]) => (
+    isDeepStrictEqual(key, { user: 1 })
+  ));
+
+  assert.ok(activeTokenIndex);
+  assert.equal(activeTokenIndex[1].unique, true);
+  assert.deepEqual(activeTokenIndex[1].partialFilterExpression, {
+    consumedAt: null,
+  });
 });
 
 test("createTelegramAlertLink invalidates old links and returns only a new deep link", async () => {
@@ -123,32 +136,28 @@ test("createTelegramAlertLink rejects users without an active eligible plan", as
   }
 });
 
-test("concurrent link creation leaves only the latest token valid", async () => {
+test("a persistence collision is retried and leaves one active link token", async () => {
   const originalUsername = process.env.TELEGRAM_BOT_USERNAME;
   const originalFindById = User.findById;
   const originalUpdateMany = TelegramLinkToken.updateMany;
   const originalCreate = TelegramLinkToken.create;
-  const validHashes = new Set();
-  let invalidationCount = 0;
-  let releaseConcurrentInvalidations;
-  const concurrentInvalidations = new Promise((resolve) => {
-    releaseConcurrentInvalidations = resolve;
-  });
+  let activeToken = null;
+  let collisionCount = 0;
 
   process.env.TELEGRAM_BOT_USERNAME = "jobverify_test_bot";
   User.findById = async () => createEligibleUser();
   TelegramLinkToken.updateMany = async () => {
-    invalidationCount += 1;
-    if (invalidationCount === 2) releaseConcurrentInvalidations();
-    await Promise.race([
-      concurrentInvalidations,
-      new Promise((resolve) => setTimeout(resolve, 20)),
-    ]);
-    validHashes.clear();
-    await Promise.resolve();
+    activeToken = null;
   };
   TelegramLinkToken.create = async (payload) => {
-    validHashes.add(payload.tokenHash);
+    await new Promise((resolve) => setImmediate(resolve));
+    if (activeToken) {
+      collisionCount += 1;
+      throw Object.assign(new Error("duplicate active Telegram link"), {
+        code: 11000,
+      });
+    }
+    activeToken = payload;
     return payload;
   };
 
@@ -163,7 +172,13 @@ test("concurrent link creation leaves only the latest token valid", async () => 
       responses[0].body.data.deepLink,
       responses[1].body.data.deepLink,
     );
-    assert.equal(validHashes.size, 1);
+    assert.equal(collisionCount, 1);
+    const returnedHashes = responses.map(({ body }) => {
+      const rawToken = new URL(body.data.deepLink).searchParams.get("start");
+      return createHash("sha256").update(rawToken).digest("hex");
+    });
+    assert.ok(activeToken);
+    assert.equal(returnedHashes.includes(activeToken.tokenHash), true);
   } finally {
     process.env.TELEGRAM_BOT_USERNAME = originalUsername;
     User.findById = originalFindById;

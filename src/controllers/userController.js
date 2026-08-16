@@ -84,33 +84,28 @@ const TELEGRAM_ELIGIBLE_ACCESS_ROLES = new Set([
   ACCESS_ROLES.YEARLY,
 ]);
 
-const telegramLinkIssuanceLocks = new Map();
-
-const serializeTelegramLinkIssuance = async (userId, operation) => {
-  const lockKey = String(userId);
-  const previousLock = telegramLinkIssuanceLocks.get(lockKey) ?? Promise.resolve();
-  let releaseLock;
-  const currentLock = new Promise((resolve) => {
-    releaseLock = resolve;
-  });
-  telegramLinkIssuanceLocks.set(lockKey, currentLock);
-
-  await previousLock;
-  try {
-    return await operation();
-  } finally {
-    releaseLock();
-    if (telegramLinkIssuanceLocks.get(lockKey) === currentLock) {
-      telegramLinkIssuanceLocks.delete(lockKey);
-    }
-  }
-};
-
 const revokeUnusedTelegramLinks = (userId, now = new Date()) =>
   TelegramLinkToken.updateMany(
     { user: userId, consumedAt: null },
     { $set: { consumedAt: now } },
   );
+
+const issueTelegramLinkToken = async (userId) => {
+  const maxAttempts = 3;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const now = new Date();
+    await revokeUnusedTelegramLinks(userId, now);
+
+    try {
+      return await createTelegramLinkToken(userId, now);
+    } catch (error) {
+      if (error?.code !== 11000 || attempt === maxAttempts) throw error;
+    }
+  }
+
+  throw new Error("Unable to issue a Telegram link token.");
+};
 
 const hasTelegramEligibility = (user) =>
   user.role === "admin"
@@ -584,16 +579,12 @@ export const createTelegramAlertLink = async (req, res) => {
       });
     }
 
-    return serializeTelegramLinkIssuance(user._id, async () => {
-      const now = new Date();
-      await revokeUnusedTelegramLinks(user._id, now);
-      const { rawToken } = await createTelegramLinkToken(user._id, now);
+    const { rawToken } = await issueTelegramLinkToken(user._id);
 
-      return res.status(200).json({
-        data: {
-          deepLink: `https://t.me/${botUsername}?start=${rawToken}`,
-        },
-      });
+    return res.status(200).json({
+      data: {
+        deepLink: `https://t.me/${botUsername}?start=${rawToken}`,
+      },
     });
   } catch (error) {
     return res.status(500).json({

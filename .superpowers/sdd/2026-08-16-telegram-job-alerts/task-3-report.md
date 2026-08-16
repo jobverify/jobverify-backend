@@ -77,3 +77,20 @@
   missing index, two concurrent owners, and absent token invalidation.
 - Fix-round focused verification: `node --test test/userTelegramAlerts.test.js
   test/telegramWebhook.test.js` passed 14 tests with zero failures.
+
+## Fix round 2
+
+- Replaced the process-local same-user issuance lock with a database invariant:
+  `TelegramLinkToken` now has a unique partial `{ user: 1 }` index covering
+  documents whose `consumedAt` is `null`. MongoDB therefore permits historical
+  consumed links but rejects a second active link across backend instances.
+- Link issuance invalidates the prior active link, attempts the hashed-token
+  insert, and performs a bounded invalidate/retry when MongoDB reports an
+  `E11000` persistence race. The final database state can contain only one
+  unconsumed token for the user.
+- The strengthened concurrent test uses a persistence double that enforces the
+  unique-index behavior. It first failed because no index existed and the
+  process lock prevented any database collision; it now proves a duplicate-key
+  collision is retried and the sole active hash belongs to one returned link.
+- Fix-round focused verification: `node --test test/userTelegramAlerts.test.js
+  test/telegramWebhook.test.js` passed 15 tests with zero failures.

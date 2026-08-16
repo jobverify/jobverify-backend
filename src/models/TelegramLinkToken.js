@@ -32,6 +32,15 @@ const TelegramLinkTokenSchema = new Schema(
   },
 );
 
+TelegramLinkTokenSchema.index(
+  { user: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { consumedAt: null },
+    name: "unique_active_telegram_link_per_user",
+  },
+);
+
 const TelegramLinkToken = model("TelegramLinkToken", TelegramLinkTokenSchema);
 
 export default TelegramLinkToken;
