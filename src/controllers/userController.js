@@ -5,6 +5,7 @@
 
 import Job from "../models/Job.js";
 import Subscription from "../models/Subscription.js";
+import TelegramLinkToken from "../models/TelegramLinkToken.js";
 import User from "../models/User.js";
 import { normalizePreferredJobType } from "../constants/preferredJobTypes.js";
 import { ACCESS_ROLES } from "../constants/accessPlans.js";
@@ -15,10 +16,12 @@ import {
 import {
   applyExpiredAccessDowngrade,
   buildAccessSummary,
+  canUseTelegramAlerts,
   canUseWhatsappAlerts,
 } from "../utils/accessControl.js";
 import { normalizePhoneE164 } from "../utils/phoneNumbers.js";
 import { buildPublishedJobDateScope } from "../utils/publicJobLocationScope.js";
+import { createTelegramLinkToken } from "../services/telegramLinkService.js";
 
 const MAX_PROFILE_TEXT_LENGTH = 80;
 const MAX_PROFILE_ITEMS = 20;
@@ -76,6 +79,43 @@ const WHATSAPP_ELIGIBLE_ACCESS_ROLES = new Set([
   ACCESS_ROLES.YEARLY,
 ]);
 
+const TELEGRAM_ELIGIBLE_ACCESS_ROLES = new Set([
+  ACCESS_ROLES.SEMESTER,
+  ACCESS_ROLES.YEARLY,
+]);
+
+const hasTelegramEligibility = (user) =>
+  user.role === "admin"
+  || (
+    TELEGRAM_ELIGIBLE_ACCESS_ROLES.has(user.accessRole)
+    && user.premium?.status === "active"
+  );
+
+const hasLinkedTelegram = (user) => {
+  const linkedAt = user.telegram?.linkedAt;
+  const optedOutAt = user.telegram?.optedOutAt;
+
+  return Boolean(
+    user.telegram?.chatId
+    && linkedAt
+    && (
+      !optedOutAt
+      || new Date(linkedAt).getTime() > new Date(optedOutAt).getTime()
+    ),
+  );
+};
+
+const persistExpiredAccessDowngrade = async (user) => {
+  if (!applyExpiredAccessDowngrade(user)) return false;
+
+  await Subscription.updateOne(
+    { user: user._id },
+    { $set: { isActive: false } },
+  ).catch(() => null);
+  await user.save();
+  return true;
+};
+
 const buildWhatsappAlertSettingsData = (user) => ({
   phoneE164: user.contact?.phoneE164 ?? null,
   whatsappOptInAt: user.contact?.whatsappOptInAt ?? null,
@@ -85,6 +125,20 @@ const buildWhatsappAlertSettingsData = (user) => ({
   accessRole: user.accessRole,
   access: buildAccessSummary(user),
   whatsappAlertFilters: normalizeProfilePreferenceFilters(user.profile?.whatsappAlertFilters),
+});
+
+const buildTelegramAlertSettingsData = (user) => ({
+  linked: hasLinkedTelegram(user),
+  username: user.telegram?.username ?? null,
+  linkedAt: user.telegram?.linkedAt ?? null,
+  optedOutAt: user.telegram?.optedOutAt ?? null,
+  enabled: Boolean(user.premium?.telegramAlertsEnabled),
+  canUseTelegramAlerts: canUseTelegramAlerts(user),
+  accessRole: user.accessRole,
+  access: buildAccessSummary(user),
+  telegramAlertFilters: normalizeProfilePreferenceFilters(
+    user.profile?.telegramAlertFilters,
+  ),
 });
 
 const buildProfilePayload = (user, savedJobsCount) => ({
@@ -459,6 +513,179 @@ export const updateWhatsappAlertSettings = async (req, res) => {
       success: true,
       message: "WhatsApp alert settings updated successfully.",
       data: buildWhatsappAlertSettingsData(user),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      code: 500,
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const createTelegramAlertLink = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        code: 404,
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    await persistExpiredAccessDowngrade(user);
+
+    if (!hasTelegramEligibility(user)) {
+      return res.status(403).json({
+        code: 403,
+        success: false,
+        message: "Telegram alerts require an active semester or yearly plan.",
+      });
+    }
+
+    const botUsername = String(process.env.TELEGRAM_BOT_USERNAME || "")
+      .trim()
+      .replace(/^@/u, "");
+    if (!botUsername) {
+      return res.status(503).json({
+        code: 503,
+        success: false,
+        message: "Telegram linking is not configured.",
+      });
+    }
+
+    const now = new Date();
+    await TelegramLinkToken.updateMany(
+      { user: user._id, consumedAt: null },
+      { $set: { consumedAt: now } },
+    );
+    const { rawToken } = await createTelegramLinkToken(user._id, now);
+
+    return res.status(200).json({
+      data: {
+        deepLink: `https://t.me/${botUsername}?start=${rawToken}`,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      code: 500,
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const getTelegramAlertSettings = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        code: 404,
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    await persistExpiredAccessDowngrade(user);
+
+    return res.status(200).json({
+      code: 200,
+      success: true,
+      data: buildTelegramAlertSettingsData(user),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      code: 500,
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const updateTelegramAlertSettings = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        code: 404,
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    await persistExpiredAccessDowngrade(user);
+
+    if (req.body.enabled === true && !hasLinkedTelegram(user)) {
+      return res.status(400).json({
+        code: 400,
+        success: false,
+        message: "Link a Telegram account before enabling alerts.",
+      });
+    }
+
+    if (req.body.enabled === true && !hasTelegramEligibility(user)) {
+      return res.status(403).json({
+        code: 403,
+        success: false,
+        message: "Telegram alerts require an active semester or yearly plan.",
+      });
+    }
+
+    if (req.body.telegramAlertFilters !== undefined) {
+      user.profile.telegramAlertFilters = normalizeProfilePreferenceFilters(
+        req.body.telegramAlertFilters,
+      );
+    }
+
+    if (req.body.enabled !== undefined) {
+      user.premium.telegramAlertsEnabled = req.body.enabled === true;
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      code: 200,
+      success: true,
+      message: "Telegram alert settings updated successfully.",
+      data: buildTelegramAlertSettingsData(user),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      code: 500,
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const deleteTelegramAlertSettings = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        code: 404,
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    user.telegram.chatId = null;
+    user.telegram.username = null;
+    user.telegram.linkedAt = null;
+    user.telegram.optedOutAt = new Date();
+    user.premium.telegramAlertsEnabled = false;
+    await user.save();
+
+    return res.status(200).json({
+      code: 200,
+      success: true,
+      message: "Telegram account unlinked successfully.",
+      data: buildTelegramAlertSettingsData(user),
     });
   } catch (error) {
     return res.status(500).json({

@@ -228,34 +228,40 @@ const validateOptionalProfilePreferenceExperienceYear = (value) => {
   return true;
 };
 
-const whatsappAlertFiltersValidationRules = () => [
-  body("whatsappAlertFilters").optional().isObject(),
-  body("whatsappAlertFilters.company")
+const alertFiltersValidationRules = (field, label) => [
+  body(field).optional().isObject(),
+  body(`${field}.company`)
     .optional()
-    .custom((value) => validateStringList(value, "WhatsApp alert company")),
-  body("whatsappAlertFilters.jobType")
+    .custom((value) => validateStringList(value, `${label} company`)),
+  body(`${field}.jobType`)
     .optional()
-    .custom((value) => validateStringList(value, "WhatsApp alert job type")),
-  body("whatsappAlertFilters.location")
+    .custom((value) => validateStringList(value, `${label} job type`)),
+  body(`${field}.location`)
     .optional()
-    .custom((value) => validateStringList(value, "WhatsApp alert location")),
-  body("whatsappAlertFilters.experienceYear")
+    .custom((value) => validateStringList(value, `${label} location`)),
+  body(`${field}.experienceYear`)
     .optional()
     .custom((value) => validateOptionalProfilePreferenceExperienceYear(value)),
-  body("whatsappAlertFilters.roleDomain")
+  body(`${field}.roleDomain`)
     .optional()
     .custom((value) => validateProfilePreferenceChoiceList(value, ROLE_DOMAIN_OPTIONS, "Role domain is invalid.")),
-  body("whatsappAlertFilters.workArrangement")
+  body(`${field}.workArrangement`)
     .optional()
     .custom((value) => validateProfilePreferenceChoiceList(value, WORK_ARRANGEMENT_OPTIONS, "Work arrangement is invalid.")),
-  body("whatsappAlertFilters.datePostedDays")
+  body(`${field}.datePostedDays`)
     .optional()
     .custom((value) => validateProfilePreferenceDatePostedList(value)),
-  body("whatsappAlertFilters.sortBy")
+  body(`${field}.sortBy`)
     .optional()
     .isIn(["all", "popularity", "latest", "oldest"])
-    .withMessage("WhatsApp alert sort must be one of: all, popularity, latest, oldest."),
+    .withMessage(`${label} sort must be one of: all, popularity, latest, oldest.`),
 ];
+
+const whatsappAlertFiltersValidationRules = () =>
+  alertFiltersValidationRules("whatsappAlertFilters", "WhatsApp alert");
+
+const telegramAlertFiltersValidationRules = () =>
+  alertFiltersValidationRules("telegramAlertFilters", "Telegram alert");
 
 export const registerValidation = [
   boundedStringRule(body("name"), "Name"),
@@ -603,4 +609,14 @@ export const whatsappAlertsValidation = [
     .bail()
     .toBoolean(),
   ...whatsappAlertFiltersValidationRules(),
+];
+
+export const telegramAlertsValidation = [
+  body("enabled")
+    .optional()
+    .isBoolean()
+    .withMessage("enabled must be a boolean.")
+    .bail()
+    .toBoolean(),
+  ...telegramAlertFiltersValidationRules(),
 ];

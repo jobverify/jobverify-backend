@@ -12,6 +12,7 @@ import authRoutes from "./src/routes/authRoutes.js";
 import helmet from "helmet";
 import jobRoutes from "./src/routes/jobRoutes.js";
 import userRoutes from "./src/routes/userRoutes.js";
+import telegramRoutes from "./src/routes/telegramRoutes.js";
 import scrapeRoutes from "./src/routes/scrapeRoutes.js";
 import adminRoutes from "./src/routes/adminRoutes.js";
 import billingRoutes from "./src/routes/billingRoutes.js";
@@ -132,7 +133,10 @@ app.use(
   createCsrfProtection({
     allowedOrigins,
     allowDevLoopback: nodeEnv !== "production",
-    exemptPaths: ["/api/billing/webhook"],
+    exemptPaths: [
+      "/api/billing/webhook",
+      "/api/integrations/telegram/webhook",
+    ],
   }),
 );
 
@@ -201,6 +205,7 @@ app.use("/api/user", noStore, userRoutes);
 app.use("/api/billing", noStore, billingRoutes);
 app.use("/api/scrape", noStore, scrapeRoutes);
 app.use("/api/admin", noStore, adminRoutes);
+app.use("/api/integrations/telegram", noStore, telegramRoutes);
 app.get("/", (req, res) => {
   res.send("Hello from the Jobverify Backend!");
 });
