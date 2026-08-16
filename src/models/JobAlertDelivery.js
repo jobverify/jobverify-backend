@@ -19,7 +19,7 @@ const JobAlertDeliverySchema = new Schema(
     },
     channel: {
       type: String,
-      enum: ["whatsapp"],
+      enum: ["whatsapp", "telegram"],
       default: "whatsapp",
     },
     status: {

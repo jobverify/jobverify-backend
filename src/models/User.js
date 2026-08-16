@@ -61,6 +61,10 @@ const ProfileSchema = new Schema(
       type: ProfilePreferenceFiltersSchema,
       default: () => ({}),
     },
+    telegramAlertFilters: {
+      type: ProfilePreferenceFiltersSchema,
+      default: () => ({}),
+    },
   },
   { _id: false },
 );
@@ -85,6 +89,10 @@ const PremiumSchema = new Schema(
       default: null,
     },
     whatsappAlertsEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    telegramAlertsEnabled: {
       type: Boolean,
       default: false,
     },
@@ -131,6 +139,16 @@ const GoogleAuthSchema = new Schema(
   { _id: false },
 );
 
+const TelegramSchema = new Schema(
+  {
+    chatId: { type: String, default: null },
+    username: { type: String, default: null },
+    linkedAt: { type: Date, default: null },
+    optedOutAt: { type: Date, default: null },
+  },
+  { _id: false },
+);
+
 const UserSchema = new Schema(
   {
     email: {
@@ -161,6 +179,10 @@ const UserSchema = new Schema(
     },
     google: {
       type: GoogleAuthSchema,
+      default: () => ({}),
+    },
+    telegram: {
+      type: TelegramSchema,
       default: () => ({}),
     },
     profile: { type: ProfileSchema, default: () => ({}) },
