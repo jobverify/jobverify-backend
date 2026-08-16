@@ -72,6 +72,15 @@ const toEmploymentType = (jobType) => (jobType === 2 || jobType === '2' ? 'Full 
 const pageShowsJobsLoadError = (html) =>
   /Current Openings Error loading jobs/i.test(normalizeWhitespace(html) || '')
 
+export const hasVerifiedKekaForbiddenApiSignal = (html) => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml) || ''
+
+  return /<title>\s*Forbidden Access\s*<\/title>/i.test(rawHtml)
+    && /forbidden access/i.test(normalized)
+    && /(cdn\.keka\.com|keka\.com)/i.test(rawHtml)
+}
+
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
@@ -79,7 +88,7 @@ export const hasOfficialHomepageSignal = (html) => {
   return /<title>\s*Infocusp - Leading Technology Solutions\s*<\/title>/i.test(rawHtml)
     && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']Infocusp["']/i.test(rawHtml)
     && /Move AI Beyond Experimentation/i.test(normalized)
-    && /href=["']\/careers\/openings\/["']/i.test(rawHtml)
+    && /href=["'](?:https:\/\/www\.infocusp\.com)?\/careers\/openings\/?["']/i.test(rawHtml)
 }
 
 export const hasVerifiedCareersPageSignal = (html) => {
@@ -238,6 +247,13 @@ export const createInfoCuspInnovationsScraper = ({
       try {
         payload = await browserFallback.fetchJson(activeJobsUrl)
       } catch (error) {
+        try {
+          const blockedJobsHtml = await browserFallback.fetchTextInBrowser(activeJobsUrl)
+          if (hasVerifiedKekaForbiddenApiSignal(blockedJobsHtml)) {
+            return []
+          }
+        } catch {}
+
         if (typeof fetchBrowserText === 'function') {
           const renderedCareersHtml = await fetchBrowserText(CAREERS_URL)
           if (pageShowsJobsLoadError(renderedCareersHtml)) {

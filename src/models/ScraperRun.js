@@ -4,6 +4,7 @@
  */
 
 import { Schema, model } from "mongoose";
+import { DEFAULT_JOB_RETENTION_DAYS } from "../utils/jobLifecycle.js";
 
 const ScraperRunSourceSchema = new Schema(
   {
@@ -53,7 +54,7 @@ const ScraperRunSourceSchema = new Schema(
     },
     retentionDays: {
       type: Number,
-      default: 10,
+      default: DEFAULT_JOB_RETENTION_DAYS,
     },
     durationMs: {
       type: Number,

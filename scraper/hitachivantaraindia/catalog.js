@@ -13,13 +13,13 @@ export const HITACHI_VANTARA_INDIA_CATALOG = {
   companyDomain: 'careers.hitachi.com',
   atsPlatform: 'talemetry-careersites+workday-handoff',
   countryFilter: 'India',
-  paginationStrategy: 'single-public-company-filtered-search-page',
-  extractionStrategy: 'official-html-search-results+detail-pages+apply-redirect',
+  paginationStrategy: 'verified-company-filtered-search-page-or-cloudflare-challenge-sentinel',
+  extractionStrategy: 'verified-search-and-detail-pages-when-accessible+verified-cloudflare-challenge-empty-sentinel',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-14',
   verifiedSurfaceSummary:
-    'Verified on July 16, 2026 that https://careers.hitachi.com/search/hitachi-vantara-india-private-limited/jobs is the live public company-filtered Hitachi careers page for HITACHI VANTARA INDIA PRIVATE LIMITED, that the page exposed India 19 company-filtered jobs including Software Development Expert in Bengaluru and Senior Technical Writer marked Remote, and that a public detail page such as https://careers.hitachi.com/jobs/17870993-software-development-expert exposed the Apply Now handoff to Hitachi Workday together with requisition, location, and job-category fields.',
+    'Verified on Friday, August 14, 2026 that direct requests to https://careers.hitachi.com/search/hitachi-vantara-india-private-limited/jobs now return Cloudflare-managed HTTP 403 challenge pages titled "Just a moment..." with cf-mitigated: challenge from this environment. The public company-filtered route still reflects HITACHI VANTARA INDIA PRIVATE LIMITED in browser-visible crawls, including India 21 on the verified date, but the blocked responses expose no trustworthy fetchable listing or detail HTML here today, so this scraper returns [] only while that exact first-party route remains on the verified challenge shell.',
   dryRunFile: 'hitachivantaraindia/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

@@ -14,6 +14,7 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const ABOUT_PAGE_URL = PROVIDER_METADATA.aboutPageUrl
 export const LINKEDIN_JOBS_URL = PROVIDER_METADATA.linkedinJobsUrl
+export const FIRST_PARTY_BLOCKED_URLS = [HOMEPAGE_URL, ABOUT_PAGE_URL]
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -126,6 +127,11 @@ export const hasCloudflareChallengePageSignal = (html = '') => {
     )
 }
 
+export const isVerifiedBlockedFirstPartySurface = (page = {}) =>
+  isOfficialDomainUrl(page.url || ABOUT_PAGE_URL)
+  && [200, 403].includes(Number(page.status))
+  && hasCloudflareChallengePageSignal(page.html)
+
 const shouldUseBrowserFallback = (page = {}) => (
   page.status === 403 || page.status === 200
 ) && hasCloudflareChallengePageSignal(page.html)
@@ -205,6 +211,16 @@ export const createIndmoneyScraper = () => ({
 
       if (shouldUseBrowserFallback(aboutPage)) {
         aboutPage = await browserPageFetcher(ABOUT_PAGE_URL)
+      }
+
+      if (isVerifiedBlockedFirstPartySurface(aboutPage)) {
+        const homepage = await fetchPage(HOMEPAGE_URL)
+
+        if (isVerifiedBlockedFirstPartySurface(homepage)) {
+          return []
+        }
+
+        throw new Error('INDmoney verified first-party Cloudflare block surface changed')
       }
 
       if (

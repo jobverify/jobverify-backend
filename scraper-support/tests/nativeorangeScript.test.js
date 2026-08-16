@@ -5,14 +5,15 @@ const HOMEPAGE_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Nativeorange - AI-Powered Insurance Solutions | Automated Underwriting</title>
+    <title>Nativeorange - Agentic Underwriting to Claims on One Platform</title>
   </head>
   <body>
     <a href="https://nativeorange.ai/contact/">Book a Demo</a>
-    <h1>AI-Powered Insurance Technology</h1>
-    <p>The Future of Insurance AI</p>
-    <p>Google Scale Partner</p>
-    <p>GUIDEWIRE Vanguard Program</p>
+    <h1>One platform for the entire insurance lifecycle</h1>
+    <p>AI-powered solutions for carriers and agencies</p>
+    <p>A connected suite of agentic-AI products across the value chain</p>
+    <p>Google Scale Startup</p>
+    <p>GUIDEWIRE Insurtech Vanguard</p>
   </body>
 </html>
 `
@@ -55,17 +56,18 @@ const buildNoJobsRouteHtml = (routePath) => `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Nativeorange - AI-Powered Insurance Solutions | Automated Underwriting</title>
+    <title>Nativeorange - Agentic Underwriting to Claims on One Platform</title>
   </head>
   <body>
     <a href="https://nativeorange.ai/contact/">Book a Demo</a>
     <a href="https://nativeorange.ai/${routePath}/#">Resources</a>
     <a href="https://nativeorange.ai/${routePath}/#">Privacy Policy</a>
     <a href="https://nativeorange.ai/${routePath}/#">Terms of Service</a>
-    <h1>AI-Powered Insurance Technology</h1>
-    <p>The Future of Insurance AI</p>
-    <p>Google Scale Partner</p>
-    <p>GUIDEWIRE Vanguard Program</p>
+    <h1>One platform for the entire insurance lifecycle</h1>
+    <p>AI-powered solutions for carriers and agencies</p>
+    <p>A connected suite of agentic-AI products across the value chain</p>
+    <p>Google Scale Startup</p>
+    <p>GUIDEWIRE Insurtech Vanguard</p>
   </body>
 </html>
 `
@@ -94,12 +96,12 @@ const loadNativeOrangeModule = async () => {
   }
 }
 
-test('Native orange constants and validators stay pinned to the Monday, August 3, 2026 no-public-jobs surface', async () => {
+test('Native orange constants and validators stay pinned to the Thursday, August 13, 2026 no-public-jobs surface', async () => {
   const nativeorange = await loadNativeOrangeModule()
 
   assert.equal(nativeorange.SOURCE, 'nativeorange')
   assert.equal(nativeorange.COMPANY, 'Native orange')
-  assert.equal(nativeorange.VERIFIED_ON, '2026-08-03')
+  assert.equal(nativeorange.VERIFIED_ON, '2026-08-13')
   assert.equal(nativeorange.HOMEPAGE_URL, 'https://nativeorange.ai/')
   assert.equal(nativeorange.ABOUT_URL, 'https://nativeorange.ai/about/')
   assert.equal(nativeorange.CONTACT_URL, 'https://nativeorange.ai/contact/')

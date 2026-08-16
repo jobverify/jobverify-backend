@@ -9,6 +9,24 @@ const fixturesDir = path.join(currentDir, 'fixtures', 'infocuspinnovations')
 
 const readFixture = (name) => readFile(path.join(fixturesDir, name), 'utf8')
 
+const KEKA_FORBIDDEN_HTML = `
+<!DOCTYPE html>
+<html style="height:100%">
+  <head>
+    <meta charset="utf-8" />
+    <title>Forbidden Access</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:500,400italic,100,700italic,300,700,500italic,100italic,300italic,400" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="https://cdn.keka.com/shared/fonts/proximanova/proximanova.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Forbidden Access</h1>
+      <p>The requested resource is not available.</p>
+    </main>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/infocuspinnovations/script.js')
@@ -127,6 +145,43 @@ test('InfoCusp Innovations returns no jobs when the verified careers page render
     },
     fetchBrowserJson: async () => {
       throw new Error('Expected JSON from Keka but received an invalid browser payload')
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('InfoCusp Innovations returns no jobs when Keka serves the verified forbidden shell instead of JSON', async () => {
+  const infocusp = await loadModule()
+  const homepageHtml = await readFixture('homepage.html')
+  const careersHtml = await readFixture('careers-openings.html')
+  const bundleJs = await readFixture('current-openings-bundle.js')
+  const bundlePath = infocusp.extractCareersBundlePath(careersHtml)
+  const bundleUrl = new URL(bundlePath, infocusp.HOMEPAGE_URL).toString()
+  const activeJobsUrl = infocusp.buildActiveJobsUrl({
+    identifier: infocusp.EXPECTED_IDENTIFIER,
+    domain: infocusp.EXPECTED_KEKA_DOMAIN,
+    portalName: 'default',
+  })
+
+  assert.equal(infocusp.hasVerifiedKekaForbiddenApiSignal(KEKA_FORBIDDEN_HTML), true)
+
+  const jobs = await infocusp.createInfoCuspInnovationsScraper().run({
+    fetchText: async (url) => {
+      if (url === infocusp.HOMEPAGE_URL) return homepageHtml
+      if (url === infocusp.CAREERS_URL) return careersHtml
+      if (url === bundleUrl) return bundleJs
+      throw new Error(`Unexpected text URL: ${url}`)
+    },
+    fetchJson: async () => {
+      throw new Error(`Forbidden HTML response for ${activeJobsUrl}`)
+    },
+    fetchBrowserText: async (url) => {
+      if (url === activeJobsUrl) return KEKA_FORBIDDEN_HTML
+      throw new Error(`Unexpected browser text URL: ${url}`)
+    },
+    fetchBrowserJson: async () => {
+      throw new Error(`Expected JSON from ${activeJobsUrl} but received an invalid API payload`)
     },
   })
 

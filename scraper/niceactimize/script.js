@@ -115,7 +115,7 @@ export const hasFilteredNiceCareersSignal = (html = '') => {
   const hasSelectedPuneFilter = /<option\b[^>]*value=["']India - Pune["'][^>]*selected(?:=["'][^"']*["'])?[^>]*>/i.test(page)
     || /<option\b[^>]*selected(?:=["'][^"']*["'])?[^>]*value=["']India - Pune["'][^>]*>/i.test(page)
   const hasKnownActimizeResult = /boards\.eu\.greenhouse\.io\/nice\/jobs\/\d+\?gh_jid=\d+/i.test(page)
-    && /Data Scientist,\s*Actimize/i.test(page)
+    && /\bActimize\b/i.test(page)
 
   return hasCareersHeading
     && hasSelectedPuneFilter

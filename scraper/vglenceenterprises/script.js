@@ -7,7 +7,7 @@ export const SOURCE = 'vglenceenterprises'
 export const COMPANY = 'VGLENCE ENTERPRISES'
 export const HOMEPAGE_URL = 'https://vglence.com/'
 export const CANONICAL_HOMEPAGE_URL = 'https://www.vglence.com/'
-export const BUNDLE_URL = 'https://www.vglence.com/assets/index-CgAnA7CH.js'
+export const BUNDLE_URL = 'https://www.vglence.com/assets/index-CXKv6uBB.js'
 export const CAREERS_ROUTE_URLS = [
   'https://www.vglence.com/careers/',
   'https://www.vglence.com/career/',
@@ -20,12 +20,9 @@ const USER_AGENT =
 const VERIFIED_SHELL_PATTERNS = [
   /<title>\s*VGLENCE \| sales booster\s*<\/title>/i,
   /<link\s+rel=["']stylesheet["']\s+href=["']\/montserrat\.css["']/i,
-  /<script\s+type=["']module["']\s+crossorigin\s+src=["']\/assets\/index-CgAnA7CH\.js["']><\/script>/i,
-  /<link\s+rel=["']modulepreload["']\s+crossorigin\s+href=["']\/assets\/vendor-react-D1u0J6rM\.js["']>/i,
-  /<link\s+rel=["']modulepreload["']\s+crossorigin\s+href=["']\/assets\/vendor-query-DArEN8uz\.js["']>/i,
-  /<link\s+rel=["']modulepreload["']\s+crossorigin\s+href=["']\/assets\/vendor-ui-BctUoQFA\.js["']>/i,
-  /<link\s+rel=["']modulepreload["']\s+crossorigin\s+href=["']\/assets\/vendor-redux-C4UxkRid\.js["']>/i,
-  /<link\s+rel=["']stylesheet["']\s+crossorigin\s+href=["']\/assets\/index-DI4W16j2\.css["']>/i,
+  /<script[^>]+type=["']module["'][^>]+src=["']\/assets\/index-[^"']+\.js["'][^>]*><\/script>/i,
+  /<link\s+rel=["']modulepreload["']\s+crossorigin\s+href=["']\/assets\/vendor-react-[^"']+\.js["']>/i,
+  /<link\s+rel=["']stylesheet["']\s+crossorigin\s+href=["']\/assets\/index-[^"']+\.css["']>/i,
   /<div\s+id=["']root["']><\/div>/i,
 ]
 
@@ -110,6 +107,19 @@ export const hasVerifiedShell = (html) => {
   return VERIFIED_SHELL_PATTERNS.every((pattern) => pattern.test(page))
 }
 
+export const extractBundleUrl = (html) => {
+  const match = String(html ?? '')
+    .match(/<script[^>]+src=["']([^"']*\/assets\/index-[^"']+\.js)["'][^>]*><\/script>/i)
+
+  if (!match) return null
+
+  try {
+    return new URL(match[1], CANONICAL_HOMEPAGE_URL).toString()
+  } catch {
+    return null
+  }
+}
+
 export const hasVerifiedBundle = (bundle) => {
   const source = String(bundle ?? '')
 
@@ -138,7 +148,7 @@ export const createVglenceEnterprisesScraper = () => ({
       throw new Error('VGLENCE ENTERPRISES homepage now exposes public jobs')
     }
 
-    const bundle = await fetchBundle(BUNDLE_URL)
+    const bundle = await fetchBundle(extractBundleUrl(homepage.html) || BUNDLE_URL)
     if (!hasVerifiedBundle(bundle)) {
       throw new Error('VGLENCE ENTERPRISES verified first-party bundle no longer matches the trusted non-jobs route map')
     }

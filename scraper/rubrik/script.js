@@ -24,6 +24,7 @@ const normalizeWhitespace = (value) => {
     .replace(/&amp;/gi, '&')
     .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
     .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+    .replace(/\u2019/g, "'")
     .replace(/&lt;/gi, '<')
     .replace(/&gt;/gi, '>')
     .replace(/<[^>]+>/g, ' ')
@@ -44,6 +45,7 @@ const extractTextLines = (html) => String(html ?? '')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/\u2019/g, "'")
   .replace(/&lt;/gi, '<')
   .replace(/&gt;/gi, '>')
   .split('\n')
@@ -52,11 +54,15 @@ const extractTextLines = (html) => String(html ?? '')
 
 export const hasOfficialCareersSignal = (html = '') => {
   const title = normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([^<]*)<\/title>/i)?.[1] ?? null)
+  const description = normalizeWhitespace(
+    String(html ?? '').match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["'][^>]*>/i)?.[1] ?? null,
+  )
   const text = normalizeWhitespace(html) || ''
 
-  return /careers\s*@\s*rubrik/i.test(title || '')
-    && /together,\s*we(?:’|')re unstoppable/i.test(text)
-    && /view all jobs/i.test(text)
+  return /careers at rubrik\s*\|\s*discover the power of you/i.test(title || '')
+    && /explore cybersecurity and ai careers at rubrik\./i.test(description || '')
+    && /together,\s*we(?:â€™|')re unstoppable/i.test(text)
+    && /view openings/i.test(text)
 }
 
 export const getSafeRubrikUrl = (value) => {
@@ -69,14 +75,25 @@ export const getSafeRubrikUrl = (value) => {
   }
 }
 
+const humanizeDepartmentSlug = (slug) =>
+  normalizeWhitespace(
+    slug?.split('-').map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`).join(' '),
+  )
+
 export const extractDepartmentLinks = (html = '') => {
   const links = []
   const seen = new Set()
 
   for (const match of String(html ?? '').matchAll(/<a[^>]+href=["']([^"']*\/company\/careers\/departments\/(?!job)[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
     const url = getSafeRubrikUrl(match[1])
-    const name = normalizeWhitespace(match[2])
+    const rawName = normalizeWhitespace(match[2])
+    const slug = normalizeWhitespace(url?.match(/\/company\/careers\/departments\/([^/?#]+)/i)?.[1]?.replace(/\.\d+$/, '') ?? null)
+    const name = rawName && !/^view openings$/i.test(rawName)
+      ? rawName
+      : humanizeDepartmentSlug(slug)
+
     if (!url || !name || seen.has(url)) continue
+
     seen.add(url)
     links.push({ name, url })
   }
@@ -142,6 +159,29 @@ const extractSectionLines = (lines, startPatterns, endPatterns) => {
   return sectionLines
 }
 
+const RUBRIK_DESCRIPTION_END_PATTERNS = [
+  /^required skills/i,
+  /^experience & qualifications/i,
+  /^experience you'll need[:\s]*$/i,
+  /^why join us\??$/i,
+  /^apply for this job$/i,
+  /^join us$/i,
+  /^eeo is the law$/i,
+]
+
+const RUBRIK_SKILLS_START_PATTERNS = [
+  /^required skills/i,
+  /^experience & qualifications you'll need$/i,
+  /^experience you'll need[:\s]*$/i,
+]
+
+const RUBRIK_SKILLS_END_PATTERNS = [
+  /^why join us\??$/i,
+  /^apply for this job$/i,
+  /^join us$/i,
+  /^eeo is the law$/i,
+]
+
 export const extractJobFromHtml = ({
   html,
   department,
@@ -163,12 +203,27 @@ export const extractJobFromHtml = ({
   const descriptionLines = extractSectionLines(
     lines,
     [/^about the role$/i, /^about role$/i, /^about the team$/i, /^about rubrik$/i],
-    [/^required skills/i, /^experience & qualifications/i, /^why join us/i, /^apply for this job$/i, /^join us$/i, /^eeo is the law$/i],
+    RUBRIK_DESCRIPTION_END_PATTERNS,
   )
+  const narrativeLines = descriptionLines.length > 0
+    ? descriptionLines
+    : (() => {
+        const locationIndex = lines.findIndex((line) => line === locationLine)
+        if (locationIndex === -1) return []
+
+        const collectedLines = []
+        for (const line of lines.slice(locationIndex + 1)) {
+          if (/^location[:\s]/i.test(line)) continue
+          if (RUBRIK_DESCRIPTION_END_PATTERNS.some((pattern) => pattern.test(line))) break
+          collectedLines.push(line)
+        }
+
+        return collectedLines
+      })()
   const skillsLines = extractSectionLines(
     lines,
-    [/^required skills/i, /^experience & qualifications you'll need$/i],
-    [/^why join us$/i, /^apply for this job$/i, /^join us$/i, /^eeo is the law$/i],
+    RUBRIK_SKILLS_START_PATTERNS,
+    RUBRIK_SKILLS_END_PATTERNS,
   )
   const fullText = lines.join(' ')
   const experienceRequired = normalizeWhitespace(fullText.match(/\b(\d+\+?(?:\s*-\s*\d+)?)\s+years?\b/i)?.[0] ?? null)
@@ -190,7 +245,7 @@ export const extractJobFromHtml = ({
     requiredSkills: skillsLines.filter(Boolean),
     postingDate: null,
     closingDate: null,
-    jobDescription: normalizeWhitespace(descriptionLines.join('\n')),
+    jobDescription: normalizeWhitespace(narrativeLines.join('\n')),
     remoteStatus: /remote/i.test(location) ? 'Remote' : 'On-site',
     source: SOURCE,
     link: jobUrl,

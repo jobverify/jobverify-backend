@@ -1,5 +1,16 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import test from 'node:test'
+import { fileURLToPath } from 'node:url'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+const tipsConfig = JSON.parse(
+  readFileSync(
+    path.resolve(currentDir, '../../scraper/theindianpublicschool.workday/config.json'),
+    'utf8',
+  ),
+)
 
 const loadTipsModule = async () => {
   try {
@@ -16,18 +27,22 @@ test('buildScraperOptions keeps TIPS on the verified official careers handoff an
   assert.equal(tips.CAREER_PAGE_URL, 'https://www.theindianpublicschool.org/careers')
   assert.equal(
     tips.BASE_URL,
-    'https://internationalschools.wd3.myworkdayjobs.com/en-US/ISPCareers?q=TIPS&jobFamilyGroup=2d491c2214bf1000c1f6c9eeac980001&CF_LRV_Job_Category__From_Job_Profile__Extended=2d491c2214bf1000c1f6c9eeac980001',
+    'https://internationalschools.wd3.myworkdayjobs.com/en-US/ISPCareers',
   )
   assert.equal(tips.COMPANY_NAME, 'The Indian Public School (TIPS)')
   assert.equal(tips.SOURCE, 'theindianpublicschool')
   assert.equal(options.company, 'The Indian Public School (TIPS)')
   assert.equal(
     options.baseUrl,
-    'https://internationalschools.wd3.myworkdayjobs.com/en-US/ISPCareers?q=TIPS&jobFamilyGroup=2d491c2214bf1000c1f6c9eeac980001&CF_LRV_Job_Category__From_Job_Profile__Extended=2d491c2214bf1000c1f6c9eeac980001',
+    'https://internationalschools.wd3.myworkdayjobs.com/en-US/ISPCareers',
   )
-  assert.equal(options.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
+  assert.equal(options.locationCountry, null)
   assert.equal(options.source, 'theindianpublicschool')
   assert.match(options.scraperDir, /theindianpublicschool\.workday$/)
+  assert.deepEqual(tipsConfig, {
+    locationCountry: null,
+    searchText: 'TIPS',
+  })
 })
 
 test('run delegates TIPS scraping to the shared Workday runner with the verified tenant options', async () => {
@@ -47,9 +62,9 @@ test('run delegates TIPS scraping to the shared Workday runner with the verified
   assert.equal(receivedOptions.company, 'The Indian Public School (TIPS)')
   assert.equal(
     receivedOptions.baseUrl,
-    'https://internationalschools.wd3.myworkdayjobs.com/en-US/ISPCareers?q=TIPS&jobFamilyGroup=2d491c2214bf1000c1f6c9eeac980001&CF_LRV_Job_Category__From_Job_Profile__Extended=2d491c2214bf1000c1f6c9eeac980001',
+    'https://internationalschools.wd3.myworkdayjobs.com/en-US/ISPCareers',
   )
-  assert.equal(receivedOptions.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
+  assert.equal(receivedOptions.locationCountry, null)
   assert.equal(receivedOptions.source, 'theindianpublicschool')
   assert.match(receivedOptions.scraperDir, /theindianpublicschool\.workday$/)
 })

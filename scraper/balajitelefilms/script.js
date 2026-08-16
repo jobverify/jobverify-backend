@@ -1,3 +1,4 @@
+import https from 'node:https'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -67,22 +68,117 @@ const createTimeoutSignal = (timeoutMs) => {
   return controller.signal
 }
 
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
+const TLS_CERTIFICATE_ERROR_CODES = new Set([
+  'CERT_HAS_EXPIRED',
+  'ERR_CERT_DATE_INVALID',
+  'ERR_TLS_CERT_ALTNAME_INVALID',
+  'SELF_SIGNED_CERT_IN_CHAIN',
+  'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+  'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+])
+
+const hasTlsCertificateError = (error) => {
+  const visited = new Set()
+  let current = error
+
+  while (current && !visited.has(current)) {
+    visited.add(current)
+
+    const code = normalizeWhitespace(current?.code)?.toUpperCase()
+    if (code && TLS_CERTIFICATE_ERROR_CODES.has(code)) {
+      return true
+    }
+
+    const message = normalizeWhitespace(current?.message || current)
+    if (message && /unable to verify the first certificate|certificate has expired|self signed certificate|unable to get local issuer certificate/i.test(message)) {
+      return true
+    }
+
+    current = current?.cause
+  }
+
+  return false
+}
+
+export const fetchPageIgnoringTlsErrors = (url, redirectCount = 0) => new Promise((resolve, reject) => {
+  if (redirectCount > 5) {
+    reject(new Error(`Too many redirects while loading ${url}`))
+    return
+  }
+
+  const target = new URL(url)
+  const request = https.request({
+    protocol: target.protocol,
+    hostname: target.hostname,
+    port: target.port || 443,
+    path: `${target.pathname}${target.search}`,
+    method: 'GET',
+    rejectUnauthorized: false,
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
-    redirect: 'follow',
-    signal: createTimeoutSignal(15000),
+  }, (response) => {
+    const status = Number(response.statusCode) || 0
+    const location = normalizeWhitespace(response.headers?.location)
+    if (location && status >= 300 && status < 400) {
+      response.resume()
+      const redirectedUrl = new URL(location, url).toString()
+      fetchPageIgnoringTlsErrors(redirectedUrl, redirectCount + 1).then(resolve, reject)
+      return
+    }
+
+    let html = ''
+    response.setEncoding('utf8')
+    response.on('data', (chunk) => {
+      html += chunk
+    })
+    response.on('end', () => {
+      resolve({
+        status,
+        url,
+        html,
+      })
+    })
+    response.on('error', reject)
   })
 
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
+  request.setTimeout(15000, () => {
+    request.destroy(new Error(`TLS fallback timed out for ${url}`))
+  })
+  request.on('error', reject)
+  request.end()
+})
+
+export const createDefaultFetchPage = ({
+  fetchImpl = fetch,
+  fetchInsecurePageImpl = fetchPageIgnoringTlsErrors,
+} = {}) => async (url) => {
+  try {
+    const response = await fetchImpl(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+      signal: createTimeoutSignal(15000),
+    })
+
+    return {
+      status: response.status,
+      url: response.url,
+      html: await response.text(),
+    }
+  } catch (error) {
+    if (!hasTlsCertificateError(error)) {
+      throw error
+    }
+
+    return fetchInsecurePageImpl(url)
   }
 }
+
+const defaultFetchPage = createDefaultFetchPage()
 
 const isBrowserFallbackError = (error) =>
   /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
@@ -123,6 +219,16 @@ export const hasEmailOnlyCareersSignal = (html) => {
 
   return extractApplicationEmail(html) === 'careers@balajitelefilms.com'
     && normalized.includes('please send your resume to careers@balajitelefilms.com')
+}
+
+export const hasVerifiedIncapsulaBlockedShell = (html) => {
+  const page = String(html ?? '')
+
+  return /<meta[^>]+name=["']robots["'][^>]+content=["']noindex,\s*nofollow["']/i.test(page)
+    && (
+      /<iframe[^>]+id=["']main-iframe["'][^>]+src=["']\/_Incapsula_Resource\?/i.test(page)
+      || /<script[^>]+src=["']\/_Incapsula_Resource\?/i.test(page)
+    )
 }
 
 export const hasUnexpectedPublicJobsSignal = (html) =>
@@ -177,20 +283,26 @@ export const createBalajiTelefilmsScraper = () => ({
 
     try {
       const homepage = await fetchVerifiedPage(HOMEPAGE_URL)
+      const homepageIsBlockedShell = homepage.status === 200 && hasVerifiedIncapsulaBlockedShell(homepage.html)
 
-      if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+      if (!homepageIsBlockedShell && (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html))) {
         throw new Error('Balaji Telefilms verified official homepage no longer matches the known first-party surface')
       }
 
-      if (!hasVerifiedCareersLink(homepage.html)) {
+      if (!homepageIsBlockedShell && !hasVerifiedCareersLink(homepage.html)) {
         throw new Error('Balaji Telefilms homepage no longer links to the verified first-party careers page')
       }
 
-      if (hasUnexpectedPublicJobsSignal(homepage.html)) {
+      if (!homepageIsBlockedShell && hasUnexpectedPublicJobsSignal(homepage.html)) {
         throw new Error('Balaji Telefilms homepage now appears to expose a public jobs surface')
       }
 
       const careersPage = await fetchVerifiedPage(CAREERS_URL)
+      const careersPageIsBlockedShell = careersPage.status === 200 && hasVerifiedIncapsulaBlockedShell(careersPage.html)
+
+      if (careersPageIsBlockedShell) {
+        return []
+      }
 
       if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
         throw new Error('Balaji Telefilms verified first-party careers surface no longer matches the known public page')

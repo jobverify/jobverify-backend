@@ -17,6 +17,9 @@ const listingsPayload = {
           jobField: 'Engineering',
           jobSchedule: 'Full-time',
           postedDate: '2026-07-01',
+          yearsOfExperience: '5',
+          descriptionExternalHTML: '<p>Design and operate cloud data platforms for enterprise workloads.</p>',
+          externalQualificationHTML: '<ul><li>Bachelor degree</li></ul>',
         },
         {
           contestNumber: 'VRT-456',
@@ -44,6 +47,9 @@ test('runApiPortalScraper maps Virtusa GraphQL jobs, resolves relative URLs, and
       assert.equal(options.method, 'POST')
       assert.equal(options.headers['Content-Type'], 'application/json')
       assert.match(JSON.parse(options.body).query, /jobListResults\(isList: "true"\)/)
+      assert.match(JSON.parse(options.body).query, /yearsOfExperience/)
+      assert.match(JSON.parse(options.body).query, /descriptionExternalHTML/)
+      assert.match(JSON.parse(options.body).query, /externalQualificationHTML/)
       return listingsPayload
     },
   })
@@ -63,10 +69,10 @@ test('runApiPortalScraper maps Virtusa GraphQL jobs, resolves relative URLs, and
     requisitionId: 'VRT-123',
     department: 'Engineering',
     employmentType: 'Full-time',
-    experienceRequired: null,
+    experienceRequired: '5 years',
     postingDate: '2026-07-01',
-    jobDescription: null,
-    minimumQualification: null,
+    jobDescription: '<p>Design and operate cloud data platforms for enterprise workloads.</p>',
+    minimumQualification: '<ul><li>Bachelor degree</li></ul>',
     preferredQualification: null,
     requiredSkills: [],
     remoteStatus: 'On-site',

@@ -15,6 +15,36 @@ const createResponseDouble = () => ({
   },
 });
 
+test("cancelPlan returns free access after a successful cancellation", async () => {
+  const controller = await import(`../src/controllers/billingController.js?case=cancel-success-${Date.now()}`);
+  const cancelPlan = controller.createCancelPlanHandler(async () => ({
+    user: { accessRole: "free_user" },
+    access: { planId: "free", isPremium: false },
+  }));
+  const res = createResponseDouble();
+
+  await cancelPlan({ user: { _id: "user_1" } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.success, true);
+  assert.equal(res.body.data.accessRole, "free_user");
+  assert.equal(res.body.data.access.planId, "free");
+});
+
+test("cancelPlan returns a safe 400 for an ineligible plan", async () => {
+  const controller = await import(`../src/controllers/billingController.js?case=cancel-ineligible-${Date.now()}`);
+  const { BillingRequestError } = await import("../src/services/planService.js");
+  const cancelPlan = controller.createCancelPlanHandler(async () => {
+    throw new BillingRequestError("No active paid plan to cancel.");
+  });
+  const res = createResponseDouble();
+
+  await cancelPlan({ user: { _id: "user_1" } }, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.body.message, "No active paid plan to cancel.");
+});
+
 test("handleBillingWebhook rejects an invalid Razorpay webhook signature", async () => {
   const originalProvider = process.env.PAYMENT_PROVIDER;
   const originalWebhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
@@ -120,4 +150,237 @@ test("handleBillingWebhook accepts a valid Razorpay webhook signature for non-pa
     process.env.PAYMENT_PROVIDER = originalProvider;
     process.env.RAZORPAY_WEBHOOK_SECRET = originalWebhookSecret;
   }
+});
+
+test("createPlanCheckout hides untyped infrastructure and configuration failures", async () => {
+  const controller = await import(`../src/controllers/billingController.js?case=checkout-errors-${Date.now()}`);
+  assert.equal(typeof controller.createPlanCheckoutHandler, "function");
+
+  const cases = [
+    {
+      error: new Error("Referral lookup failed with topology details"),
+    },
+    {
+      error: new Error("Purchase create failed with database details"),
+    },
+    {
+      error: new Error("Purchase save failed with database details"),
+    },
+    {
+      error: new Error("Razorpay order amount must be an integer of at least 100 paise"),
+    },
+    {
+      error: Object.assign(new Error("Razorpay secret is not configured"), {
+        statusCode: 401,
+      }),
+    },
+    {
+      error: Object.assign(new Error("Provider secret should not be exposed"), {
+        statusCode: 500,
+      }),
+    },
+  ];
+
+  for (const { error } of cases) {
+    const res = createResponseDouble();
+    const createPlanCheckout = controller.createPlanCheckoutHandler(async () => {
+      throw error;
+    });
+
+    await createPlanCheckout(
+      { user: { _id: "user_1" }, body: { planId: "monthly" } },
+      res,
+    );
+
+    assert.equal(res.statusCode, 500);
+    assert.equal(res.body.code, 500);
+    assert.equal(res.body.message, "Unable to create checkout at this time.");
+    assert.equal(JSON.stringify(res.body).includes(error.message), false);
+  }
+});
+
+test("createPlanCheckout preserves known client input failures as safe 400 responses", async () => {
+  const controller = await import(`../src/controllers/billingController.js?case=checkout-client-error-${Date.now()}`);
+  const { BillingRequestError } = await import("../src/services/planService.js");
+  const createPlanCheckout = controller.createPlanCheckoutHandler(async () => {
+    throw new BillingRequestError("Unsupported plan selected for checkout.");
+  });
+  const res = createResponseDouble();
+
+  await createPlanCheckout(
+    { user: { _id: "user_1" }, body: { planId: "unsupported" } },
+    res,
+  );
+
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.body.code, 400);
+  assert.equal(res.body.message, "Unsupported plan selected for checkout.");
+});
+
+test("createPlanCheckout preserves marked provider authentication failures as safe 401 responses", async () => {
+  const controller = await import(`../src/controllers/billingController.js?case=checkout-provider-auth-${Date.now()}`);
+  const { PaymentProviderError } = await import("../src/services/paymentProvider.js");
+  assert.equal(typeof PaymentProviderError, "function");
+  const createPlanCheckout = controller.createPlanCheckoutHandler(async () => {
+    throw new PaymentProviderError(
+      "Payment provider authentication failed.",
+      { statusCode: 401 },
+    );
+  });
+  const res = createResponseDouble();
+
+  await createPlanCheckout(
+    { user: { _id: "user_1" }, body: { planId: "monthly" } },
+    res,
+  );
+
+  assert.equal(res.statusCode, 401);
+  assert.equal(res.body.code, 401);
+  assert.equal(res.body.message, "Payment provider authentication failed.");
+});
+
+test("verifyPlanCheckout hides unexpected verification failures behind a generic 500", async () => {
+  const controller = await import(`../src/controllers/billingController.js?case=verify-server-error-${Date.now()}`);
+  const rawErrorMessage = "Razorpay secret is not configured.";
+  const verifyPlanCheckout = controller.verifyPlanCheckoutHandler(async () => {
+    throw new Error(rawErrorMessage);
+  });
+  const res = createResponseDouble();
+
+  await verifyPlanCheckout(
+    {
+      user: { _id: "user_1" },
+      body: {
+        purchaseId: "purchase_1",
+        providerOrderId: "order_1",
+        providerPaymentId: "payment_1",
+        providerSignature: "signature_1",
+      },
+    },
+    res,
+  );
+
+  assert.equal(res.statusCode, 500);
+  assert.equal(res.body.code, 500);
+  assert.equal(res.body.message, "Unable to verify purchase at this time.");
+  assert.equal(JSON.stringify(res.body).includes(rawErrorMessage), false);
+});
+
+test("verifyPlanCheckout preserves safe 400 verification failures", async () => {
+  const controller = await import(`../src/controllers/billingController.js?case=verify-client-error-${Date.now()}`);
+  const { BillingRequestError } = await import("../src/services/planService.js");
+  const verifyPlanCheckout = controller.verifyPlanCheckoutHandler(async () => {
+    throw new BillingRequestError("Payment verification failed.");
+  });
+  const res = createResponseDouble();
+
+  await verifyPlanCheckout(
+    {
+      user: { _id: "user_1" },
+      body: {
+        purchaseId: "purchase_1",
+        providerOrderId: "order_1",
+        providerPaymentId: "payment_1",
+        providerSignature: "invalid_signature",
+      },
+    },
+    res,
+  );
+
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.body.code, 400);
+  assert.equal(res.body.message, "Payment verification failed.");
+});
+
+test("verifyPlanCheckout does not expose arbitrary upstream errors tagged 400", async () => {
+  const controller = await import(`../src/controllers/billingController.js?case=verify-provider-400-${Date.now()}`);
+  const rawErrorMessage = "Provider transaction rejected with internal details";
+  const verifyPlanCheckout = controller.verifyPlanCheckoutHandler(async () => {
+    throw Object.assign(new Error(rawErrorMessage), { statusCode: 400 });
+  });
+  const res = createResponseDouble();
+
+  await verifyPlanCheckout(
+    {
+      user: { _id: "user_1" },
+      body: {
+        purchaseId: "purchase_1",
+        providerOrderId: "order_1",
+        providerPaymentId: "payment_1",
+        providerSignature: "signature_1",
+      },
+    },
+    res,
+  );
+
+  assert.equal(res.statusCode, 500);
+  assert.equal(res.body.message, "Unable to verify purchase at this time.");
+  assert.equal(JSON.stringify(res.body).includes(rawErrorMessage), false);
+});
+
+test("handleBillingWebhook hides activation failures behind a generic 500", async () => {
+  const controller = await import(`../src/controllers/billingController.js?case=webhook-server-error-${Date.now()}`);
+  const rawErrorMessage = "MongoDB transaction aborted: topology details";
+  const handleBillingWebhook = controller.handleBillingWebhookHandler({
+    getProvider: () => ({
+      verifyWebhook: () => true,
+    }),
+    activatePurchase: async () => {
+      throw new Error(rawErrorMessage);
+    },
+  });
+  const res = createResponseDouble();
+
+  await handleBillingWebhook(
+    {
+      body: {
+        event: "payment.captured",
+        payload: {
+          payment: {
+            entity: {
+              id: "payment_1",
+              order_id: "order_1",
+            },
+          },
+        },
+      },
+      rawBody: "{}",
+      headers: { "x-razorpay-signature": "signature_1" },
+    },
+    res,
+  );
+
+  assert.equal(res.statusCode, 500);
+  assert.equal(res.body.code, 500);
+  assert.equal(res.body.message, "Unable to process billing webhook at this time.");
+  assert.equal(JSON.stringify(res.body).includes(rawErrorMessage), false);
+});
+
+test("handleBillingWebhook rejects captured payments missing provider identifiers", async () => {
+  const controller = await import(`../src/controllers/billingController.js?case=webhook-missing-fields-${Date.now()}`);
+  const handleBillingWebhook = controller.handleBillingWebhookHandler({
+    getProvider: () => ({
+      verifyWebhook: () => true,
+    }),
+    activatePurchase: async () => {
+      throw new Error("activation must not run for an invalid payload");
+    },
+  });
+  const res = createResponseDouble();
+
+  await handleBillingWebhook(
+    {
+      body: {
+        event: "payment.captured",
+        payload: { payment: { entity: { id: "payment_1" } } },
+      },
+      rawBody: "{}",
+      headers: { "x-razorpay-signature": "signature_1" },
+    },
+    res,
+  );
+
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.body.code, 400);
+  assert.equal(res.body.message, "Webhook payment identifiers are required.");
 });

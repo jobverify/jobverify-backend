@@ -104,6 +104,20 @@ const buildSummaryPageTwoHtml = () => `
 </html>
 `
 
+const createMockResponse = ({ status, body = '', location = null, url = null }) => ({
+  ok: status >= 200 && status < 300,
+  status,
+  url: url || 'https://maveric-systems.com/',
+  headers: {
+    get(name) {
+      return String(name).toLowerCase() === 'location' ? location : null
+    },
+  },
+  async text() {
+    return body
+  },
+})
+
 test('Maveric Systems scraper module exports the verified first-party contract', async () => {
   const mavericSystems = await loadMavericSystemsModule()
 
@@ -118,6 +132,50 @@ test('Maveric Systems scraper module exports the verified first-party contract',
     mavericSystems.buildDetailUrl('5673'),
     'https://career44.sapsf.com/career?career_ns=job_listing&company=mavericsys&navBarLevel=JOB_SEARCH&rcm_site_locale=en_US&selected_lang=en_US&browserTimeZone=Asia/Calcutta&career_job_req_id=5673',
   )
+})
+
+test('fetchFirstPartyHtml follows verified same-domain first-party redirects', async () => {
+  const mavericSystems = await loadMavericSystemsModule()
+
+  assert.ok(mavericSystems, 'Expected Maveric Systems scraper module to exist')
+  assert.equal(mavericSystems.isVerifiedFirstPartyRedirectUrl('https://www.maveric-systems.com/'), true)
+  assert.equal(mavericSystems.isVerifiedFirstPartyRedirectUrl('https://www.maveric-systems.com/careers/'), true)
+  assert.equal(mavericSystems.isVerifiedFirstPartyRedirectUrl('https://example.com/careers/'), false)
+
+  const requestedUrls = []
+  const html = await mavericSystems.fetchFirstPartyHtml(mavericSystems.HOMEPAGE_URL, {
+    fetchImpl: async (url, options = {}) => {
+      requestedUrls.push({ url, redirect: options.redirect })
+
+      if (url === mavericSystems.HOMEPAGE_URL) {
+        return createMockResponse({
+          status: 307,
+          location: 'https://www.maveric-systems.com/',
+          url,
+        })
+      }
+
+      if (url === 'https://www.maveric-systems.com/') {
+        return createMockResponse({
+          status: 200,
+          body: '<html><body><h1>Maveric Systems</h1></body></html>',
+          url,
+        })
+      }
+
+      throw new Error(`Unexpected redirect URL: ${url}`)
+    },
+  })
+
+  assert.match(html, /Maveric Systems/i)
+  assert.deepEqual(
+    requestedUrls.map((request) => request.url),
+    [
+      'https://maveric-systems.com/',
+      'https://www.maveric-systems.com/',
+    ],
+  )
+  assert.ok(requestedUrls.every((request) => request.redirect === 'manual'))
 })
 
 test('extractSearchResults parses Maveric Systems SuccessFactors rows', async () => {

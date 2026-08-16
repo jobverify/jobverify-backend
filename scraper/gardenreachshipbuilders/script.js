@@ -1,7 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { extractTextFromPdfBuffer } from '../../scraper-support/shared/pdfText.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
 
 import { GARDEN_REACH_SHIPBUILDERS_CATALOG } from './catalog.js'
 
@@ -19,6 +21,7 @@ export const VERIFIED_APPLY_PORTAL_URLS = PROVIDER_METADATA.verifiedApplyPortalU
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const PDF_CONTENT_TYPE_PATTERN = /application\/pdf/i
 
 const MONTH_INDEX = {
   jan: 0,
@@ -64,10 +67,35 @@ const normalizeWhitespace = (value) => decodeHtmlEntities(String(value ?? ''))
 
 const normalizeText = (value) => normalizeWhitespace(value) || null
 
+const normalizeNotificationId = (value) => normalizeText(value)
+  ?.replace(/\s+/g, '')
+  ?.replace(/([0-9])\(([A-Z])\)$/i, '$1($2)')
+  || null
+
+const normalizeNoticeTitle = (value) => normalizeText(value)
+  ?.replace(/^Apply\s+for\s+Engagement\s+of\s+/i, '')
+  ?.replace(/^Apply\s+for\s+/i, '')
+  || null
+
 const slugify = (value) => normalizeWhitespace(value)
   .toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
+
+const parseDashedPortalDate = (value) => {
+  const normalized = normalizeText(value)
+  if (!normalized) return null
+
+  const match = normalized.match(/(\d{1,2})[-\s]([A-Za-z]+)[-\s,]+(\d{4})/i)
+  if (!match) return null
+
+  const day = Number(match[1])
+  const month = MONTH_INDEX[match[2].toLowerCase()]
+  const year = Number(match[3])
+  if (!Number.isInteger(day) || month == null || !Number.isInteger(year)) return null
+
+  return new Date(Date.UTC(year, month, day)).toISOString()
+}
 
 const parseHumanDate = (value) => {
   const normalized = normalizeText(value)
@@ -84,7 +112,7 @@ const parseHumanDate = (value) => {
   return new Date(Date.UTC(year, month, day)).toISOString()
 }
 
-const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
+const toAbsoluteUrl = (value, baseUrl) => {
   if (!value) return null
 
   try {
@@ -94,175 +122,133 @@ const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
   }
 }
 
-const injectAnchorUrls = (html) => String(html ?? '').replace(
-  /<a\b[^>]*href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi,
-  (_, __, href, label) => `${label} [${toAbsoluteUrl(href) || href}]`,
-)
-
-const toLines = (html) => injectAnchorUrls(html)
-  .replace(/<(br|\/p|\/div|\/section|\/article|\/li|\/main|\/h[1-6])\b[^>]*>/gi, '\n')
-  .replace(/<(p|div|section|article|li|main|h[1-6])\b[^>]*>/gi, '\n')
-  .replace(/<[^>]+>/g, ' ')
-  .split('\n')
-  .map((line) => normalizeText(line))
-  .filter(Boolean)
-
 const toStartOfDayTimestamp = (value) => {
   if (!value) return null
+  if (/\dT\d/.test(String(value))) return Date.parse(value)
   return Date.parse(`${value}T00:00:00.000Z`)
 }
 
-const buildNoticeDescription = (roleSummary) => {
-  if (!Array.isArray(roleSummary) || roleSummary.length === 0) {
-    return 'Official GRSE recruitment notice. Review the official notice for eligibility and application details.'
+export const hasOfficialPortalIndexSignal = (html = '', { portalYear } = {}) => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+  const expectedHeading = portalYear ? `Welcome to Online Application in GRSE - ${portalYear}` : null
+
+  return /<title>\s*Welcome to Online Registration\s*<\/title>/i.test(page)
+    && (!expectedHeading || normalized.includes(expectedHeading))
+    && /\[Employment Notification No\.\s*:/i.test(page)
+    && /window\.location\.assign\(/i.test(page)
+    && /Last date to Apply:/i.test(page)
+}
+
+export const extractPortalNotices = (html, { portalIndexUrl }) => {
+  if (!hasOfficialPortalIndexSignal(html, {
+    portalYear: portalIndexUrl?.match(/grse(\d{4})/i)?.[1] || null,
+  })) {
+    throw new Error('Garden Reach Shipbuilders verified official GRSE apply portal surface changed')
   }
 
-  return `Official GRSE recruitment notice. Roles on the verified public surface: ${roleSummary.join('; ')}.`
+  const notices = []
+
+  for (const match of String(html ?? '').matchAll(
+    /<li>\s*<a\b[^>]*href=(["'])javascript:window\.location\.assign\((["'])(.*?)\2\)\s*;?\1[^>]*>([\s\S]*?)<\/a>\s*<br\s*\/?>\s*Last date to Apply:\s*([^<\r\n]+)/gi,
+  )) {
+    const detailPath = normalizeText(match[3])
+    const anchorText = normalizeWhitespace(String(match[4] ?? '').replace(/<[^>]+>/g, ' '))
+    const noticeMatch = anchorText.match(/\[Employment Notification No\.\s*:\s*([^\]]+)\]\s*:?\s*(.*)$/i)
+    const notificationId = normalizeNotificationId(noticeMatch?.[1])
+    const title = normalizeNoticeTitle(noticeMatch?.[2])
+    const detailUrl = toAbsoluteUrl(detailPath, portalIndexUrl)
+    const closingDate = parseDashedPortalDate(match[5])
+
+    if (!notificationId || !title || !detailUrl || !closingDate) continue
+
+    notices.push({
+      title,
+      notificationId,
+      detailUrl,
+      sourceUrl: portalIndexUrl,
+      closingDate,
+    })
+  }
+
+  return notices
 }
 
-const shouldKeepRoleLine = (line) => {
-  const normalized = normalizeText(line)
-  if (!normalized) return false
+export const hasOfficialNoticeDetailSignal = (html = '', { notificationId } = {}) => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+  const normalizedNotificationId = normalizeNotificationId(notificationId)
 
-  return !(
-    /^\d+\./.test(normalized)
-    || /GRSE Employment Notification/i.test(normalized)
-    || /Opening date for Online Registration/i.test(normalized)
-    || /Closing date for Online Registration/i.test(normalized)
-    || /Last date for online submission/i.test(normalized)
-    || /APPLY ONLINE/i.test(normalized)
-    || /CORRIGENDUM/i.test(normalized)
-    || /Keep checking this webpage/i.test(normalized)
-    || /DOWNLOAD CALL LETTER/i.test(normalized)
-    || /Issuance of Call Letter/i.test(normalized)
-  )
+  return /<title>\s*Welcome to Online Registration\s*<\/title>/i.test(page)
+    && normalized.includes('Welcome to Online Application for GRSE Recruitment')
+    && (!normalizedNotificationId || normalized.includes(`Employment Notification No. : ${normalizedNotificationId.replace(/\(/, ' (')}`) || normalized.includes(`Employment Notification No. : ${normalizedNotificationId}`))
+    && normalized.includes('View Advertisement - English version')
+    && normalized.includes('Fresh Candidate to create Log In')
+    && normalized.includes('To Complete Registration Process')
 }
 
-const parseNotificationBlock = (lines) => {
-  if (!Array.isArray(lines) || lines.length === 0) return null
+export const extractNoticePdfUrl = (html = '', { detailUrl }) => {
+  for (const match of String(html ?? '').matchAll(/<a\b[^>]*href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi)) {
+    const linkText = normalizeWhitespace(String(match[3] ?? '').replace(/<[^>]+>/g, ' '))
+    if (/^View Advertisement - English version$/i.test(linkText)) {
+      return toAbsoluteUrl(match[2], detailUrl)
+    }
+  }
 
-  const headerMatch = lines[0].match(
-    /^\d+\.\s*(.*?)\s*\[EMPLOYMENT NOTIFICATION\s*-?\s*([0-9]{4}\/\d+\([A-Z]\))\]/i,
-  )
-  if (!headerMatch) return null
+  return null
+}
 
-  const title = normalizeText(headerMatch[1])
-  const notificationId = normalizeText(headerMatch[2])
-  const applyLine = lines.find((line) => /APPLY ONLINE/i.test(line)) || ''
-  const applyUrl = applyLine.match(/\[(https?:\/\/[^\]]+)\]/i)?.[1] || null
+export const extractNoticeDetailsFromPdf = (pdfText = '', {
+  listingTitle,
+  notificationId,
+} = {}) => {
+  const rawDescription = String(pdfText ?? '').trim()
+  const normalized = normalizeWhitespace(pdfText)
+  const normalizedNotificationId = normalizeNotificationId(notificationId)
+  const compactNormalized = normalized.replace(/\s+/g, '')
+
+  if (!normalized) {
+    throw new Error('Garden Reach Shipbuilders active notice PDF is empty')
+  }
+
+  if (
+    normalizedNotificationId
+    && !compactNormalized.includes(`EMPLOYMENTNOTIFICATIONNO.${normalizedNotificationId}`)
+  ) {
+    throw new Error(`Garden Reach Shipbuilders active notice PDF changed for ${normalizedNotificationId}`)
+  }
+
   const openingDate = parseHumanDate(
-    lines.find((line) => /Opening date for Online Registration/i.test(line)),
+    normalized.match(/Opening date for Online registration:\s*([^.]*)/i)?.[1],
   )
   const closingDate = parseHumanDate(
-    lines.find((line) => /Closing date for Online Registration/i.test(line)),
+    normalized.match(/Closing date for Online registration:\s*([^.]*)/i)?.[1],
   )
-  const extendedClosingDate = parseHumanDate(
-    lines.find((line) => /extended upto/i.test(line)),
+  const minimumQualification = normalizeText(
+    normalized.match(/Chartered Accountant \(CA\) OR Cost & Management Accountant \(CMA\)/i)?.[0],
   )
-  const roleSummary = lines.filter(shouldKeepRoleLine)
+  const experienceRequired = normalizeText(
+    normalized
+      .match(/(\d+\s+years['’]?\s+post qualification experience)/i)?.[1]
+      ?.replace(/['’]/g, ''),
+  )
 
-  if (!title || !notificationId || !applyUrl || !openingDate || !closingDate) {
-    return null
+  if (!openingDate || !closingDate) {
+    throw new Error(`Garden Reach Shipbuilders active notice PDF no longer exposes dates for ${normalizedNotificationId || listingTitle || 'the current notice'}`)
   }
 
   return {
-    title,
-    notificationId,
-    sourceUrl: CAREERS_URL,
-    applyUrl,
-    openingDate,
+    title: listingTitle,
+    notificationId: normalizedNotificationId,
+    postingDate: openingDate,
     closingDate,
-    effectiveClosingDate: extendedClosingDate || closingDate,
-    roleSummary,
+    employmentType: /A PERMANENT EMPLOYMENT/i.test(normalized)
+      ? 'Full-time'
+      : (/ON CONTRACT BASIS/i.test(`${listingTitle || ''} ${normalized}`) ? 'Contract' : null),
+    experienceRequired: experienceRequired || null,
+    minimumQualification: minimumQualification || null,
+    jobDescription: rawDescription || normalized,
   }
-}
-
-export const hasOfficialHomepageSignal = (html = '') => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
-
-  return /<title>\s*Official website of Garden Reach Shipbuilders\s*(?:&amp;|&)\s*Engineers Limited\s*<\/title>/i.test(page)
-    && /href=["'](?:(?:https?:\/\/(?:www\.)?grse\.in\/)?(?:\.\.\/)?career\/)["']/i.test(page)
-    && normalized.includes('WELCOME TO THE OFFICIAL WEBSITE OF GARDEN REACH SHIPBUILDERS & ENGINEERS LIMITED')
-    && normalized.includes('LATEST')
-}
-
-export const hasOfficialCareersSignal = (html = '') => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
-
-  return /<title>\s*Careers\s*-\s*Official website of Garden Reach Shipbuilders and Engineers\s+Limited/i.test(page)
-    && normalized.includes('Current Job Openings')
-    && normalized.includes('Engagement of Apprentices and Trainee')
-    && normalized.includes('Other Positions')
-    && normalized.includes('RECRUITMENT OF OFFICERS [EMPLOYMENT NOTIFICATION -2026/03(O)]')
-    && /https:\/\/jobapply\.in\/grse2026\/?/i.test(normalized)
-    && /https:\/\/jobapply\.in\/grse2025\/?/i.test(normalized)
-}
-
-export const extractNotifications = (html) => {
-  if (!hasOfficialCareersSignal(html)) {
-    throw new Error('Garden Reach Shipbuilders careers page no longer matches the verified official public surface')
-  }
-
-  const lines = toLines(html)
-  const blocks = []
-  let currentBlock = []
-
-  for (const line of lines) {
-    if (/^\d+\.\s+/.test(line)) {
-      if (currentBlock.length > 0) blocks.push(currentBlock)
-      currentBlock = [line]
-      continue
-    }
-
-    if (currentBlock.length > 0) {
-      currentBlock.push(line)
-    }
-  }
-
-  if (currentBlock.length > 0) blocks.push(currentBlock)
-
-  return blocks.map(parseNotificationBlock).filter(Boolean)
-}
-
-export const extractActiveOpenings = (html, { asOfDate } = {}) => {
-  const notices = extractNotifications(html)
-  const asOfTimestamp = toStartOfDayTimestamp(asOfDate || new Date().toISOString().slice(0, 10))
-
-  return notices
-    .filter((notice) => {
-      const openingTimestamp = Date.parse(notice.openingDate)
-      const closingTimestamp = Date.parse(notice.effectiveClosingDate)
-
-      return Number.isFinite(asOfTimestamp)
-        && Number.isFinite(openingTimestamp)
-        && Number.isFinite(closingTimestamp)
-        && openingTimestamp <= asOfTimestamp
-        && closingTimestamp >= asOfTimestamp
-    })
-    .map((notice) => ({
-      title: `${notice.title} [Employment Notification ${notice.notificationId}]`,
-      company: COMPANY,
-      department: null,
-      location: 'India',
-      city: null,
-      state: null,
-      country: 'India',
-      jobId: `${SOURCE}-${slugify(notice.notificationId)}`,
-      requisitionId: notice.notificationId,
-      sourceUrl: notice.sourceUrl,
-      applyUrl: notice.applyUrl,
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: notice.openingDate,
-      closingDate: notice.effectiveClosingDate,
-      jobDescription: buildNoticeDescription(notice.roleSummary),
-      remoteStatus: 'On-site',
-    }))
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
@@ -274,27 +260,137 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchDocumentText = (url) => withRetry(async () => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15000),
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} for ${url}`)
+  }
+
+  const contentType = response.headers?.get?.('content-type') || ''
+  if (PDF_CONTENT_TYPE_PATTERN.test(contentType) || /\.pdf(?:$|\?)/i.test(url)) {
+    return extractTextFromPdfBuffer(await response.arrayBuffer())
+  }
+
+  return response.text()
+}, {
+  attempts: 3,
+  baseDelayMs: 2000,
+  label: SOURCE,
+})
+
+const dedupeNotices = (notices) => {
+  const noticesById = new Map()
+
+  for (const notice of notices) {
+    if (!notice?.notificationId || noticesById.has(notice.notificationId)) continue
+    noticesById.set(notice.notificationId, notice)
+  }
+
+  return [...noticesById.values()]
+}
+
 export const createGardenReachShipbuildersScraper = ({
   now = () => new Date().toISOString(),
   asOfDate = new Date().toISOString().slice(0, 10),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('Garden Reach Shipbuilders verified homepage changed materially')
+  async run({
+    fetchText = defaultFetchText,
+    fetchDocumentText = defaultFetchDocumentText,
+    now: overrideNow,
+  } = {}) {
+    const portalNotices = dedupeNotices(
+      (
+        await Promise.all(
+          VERIFIED_APPLY_PORTAL_URLS.map(async (portalIndexUrl) => extractPortalNotices(
+            await fetchText(portalIndexUrl),
+            { portalIndexUrl },
+          )),
+        )
+      ).flat(),
+    )
+
+    const asOfTimestamp = toStartOfDayTimestamp(asOfDate)
+    if (!Number.isFinite(asOfTimestamp)) {
+      throw new Error(`Garden Reach Shipbuilders received an invalid as-of date: ${asOfDate}`)
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Garden Reach Shipbuilders verified careers surface changed materially')
+    const candidateNotices = portalNotices.filter((notice) =>
+      toStartOfDayTimestamp(notice.closingDate) >= asOfTimestamp,
+    )
+
+    if (candidateNotices.length === 0) {
+      return []
     }
 
-    return extractActiveOpenings(careersHtml, { asOfDate }).map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: (overrideNow || now)(),
-    }))
+    const jobs = []
+
+    for (const notice of candidateNotices) {
+      const detailHtml = await fetchText(notice.detailUrl)
+      if (!hasOfficialNoticeDetailSignal(detailHtml, { notificationId: notice.notificationId })) {
+        throw new Error(`Garden Reach Shipbuilders verified active notice detail page changed for ${notice.notificationId}`)
+      }
+
+      const noticePdfUrl = extractNoticePdfUrl(detailHtml, { detailUrl: notice.detailUrl })
+      if (!noticePdfUrl) {
+        throw new Error(`Garden Reach Shipbuilders active notice detail page no longer exposes the official PDF for ${notice.notificationId}`)
+      }
+
+      const noticeDetails = extractNoticeDetailsFromPdf(
+        await fetchDocumentText(noticePdfUrl),
+        {
+          listingTitle: notice.title,
+          notificationId: notice.notificationId,
+        },
+      )
+
+      const postingTimestamp = toStartOfDayTimestamp(noticeDetails.postingDate)
+      const closingTimestamp = toStartOfDayTimestamp(noticeDetails.closingDate)
+      if (
+        !Number.isFinite(postingTimestamp)
+        || !Number.isFinite(closingTimestamp)
+        || postingTimestamp > asOfTimestamp
+        || closingTimestamp < asOfTimestamp
+      ) {
+        continue
+      }
+
+      jobs.push({
+        title: `${noticeDetails.title} [Employment Notification ${notice.notificationId}]`,
+        company: COMPANY,
+        department: null,
+        location: 'India',
+        city: null,
+        state: null,
+        country: 'India',
+        jobId: `${SOURCE}-${slugify(notice.notificationId)}`,
+        requisitionId: notice.notificationId,
+        sourceUrl: notice.detailUrl,
+        applyUrl: notice.detailUrl,
+        employmentType: noticeDetails.employmentType,
+        experienceRequired: noticeDetails.experienceRequired,
+        minimumQualification: noticeDetails.minimumQualification,
+        preferredQualification: null,
+        requiredSkills: [],
+        postingDate: noticeDetails.postingDate,
+        closingDate: noticeDetails.closingDate,
+        jobDescription: noticeDetails.jobDescription,
+        remoteStatus: 'On-site',
+        publicExperienceChecked: true,
+        source: SOURCE,
+        link: notice.detailUrl,
+        scrapedAt: (overrideNow || now)(),
+      })
+    }
+
+    return jobs
   },
 })
 

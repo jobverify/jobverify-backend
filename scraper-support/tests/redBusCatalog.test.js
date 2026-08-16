@@ -17,7 +17,7 @@ const loadRedBusCatalog = async () => {
   }
 }
 
-test('RedBus local catalog captures the verified exact-name careers surface and shared Darwinbox handoff', async () => {
+test('RedBus local catalog captures the verified first-party careers pages and signed jobs API contract', async () => {
   const {
     REDBUS_CATALOG,
     default: defaultCatalog,
@@ -38,27 +38,29 @@ test('RedBus local catalog captures the verified exact-name careers surface and 
     provider.darwinboxAllJobsUrl,
     'https://gommt.darwinbox.in/ms/candidatev2/main/careers/allJobs',
   )
-  assert.equal(provider.atsPlatform, 'darwinbox')
+  assert.equal(provider.atsPlatform, 'signed-first-party-jobs-api')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.verifiedPublicJobCount, 6)
-  assert.equal(provider.paginationStrategy, 'official-redbus-careers-plus-shared-darwinbox-browser-session')
+  assert.equal(provider.verifiedPublicJobCount, 11)
+  assert.equal(provider.paginationStrategy, 'official-redbus-jobs-page-plus-signed-first-party-api')
   assert.equal(
     provider.extractionStrategy,
-    'official-redbus-careers+jobs-page+bundle-verified-darwinbox-handoff+shared-darwinbox-rb-employee-filter',
+    'official-redbus-careers+jobs-page+bundle-verified-signed-jobs-api+redbus-only-detail-api',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.companyDomain, 'gommt.darwinbox.in')
-  assert.equal(provider.verifiedOn, '2026-08-04')
+  assert.equal(provider.companyDomain, 'redbus.in')
+  assert.equal(provider.verifiedOn, '2026-08-14')
   assert.match(provider.dryRunFile, /redbus[\\/]jobs\.json$/i)
   assert.match(provider.modulePath, /redbus[\\/]script\.js$/i)
   assert.equal(provider.modulePath, redbusModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.redbus\.in\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.redbus\.in\/careers\/jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/gommt\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/allJobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /RB - Employee/i)
-  assert.match(provider.verifiedSurfaceSummary, /6 public RedBus jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.redbus\.in\/careers\/api\/getJobsList/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.redbus\.in\/careers\/api\/getJobDesc/i)
+  assert.match(provider.verifiedSurfaceSummary, /Cloudflare-backed HTTP 403/i)
+  assert.match(provider.verifiedSurfaceSummary, /RB_MMT/i)
+  assert.match(provider.verifiedSurfaceSummary, /11 public RedBus jobs/i)
 })
 
 test('RedBus exact backlog row matches directly from the local catalog without aliases', async () => {

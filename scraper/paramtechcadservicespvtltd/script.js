@@ -15,8 +15,8 @@ export const CAREERS_URL = 'https://www.paramtechnologies.in/career.php'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-// The first-party domain currently brands as Paramtech Engineering Services, but its
-// homepage still names Paramtech CAD Services Pvt Ltd and links the same careers shell.
+// The first-party domain now consistently brands as Paramtech Engineering Services while
+// keeping the same first-party about, contact, and careers shell for this exact-name row.
 const decodeHtml = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&#39;|&apos;|&#x27;|&#8217;|&rsquo;|&lsquo;/gi, "'")
@@ -66,7 +66,6 @@ export const hasOfficialHomepageSignal = (html) => {
     && normalized.includes('empowering innovation with the spirit of giving')
     && normalized.includes('product design')
     && normalized.includes('we specialize in innovative product design services tailored to meet the unique needs of the automotive, manufacturing, industrial, and heavy engineering sectors')
-    && normalized.includes('wanted to congratulate paramtech cad services pvt ltd')
     && normalized.includes('spot-18, suite no')
     && normalized.includes('pimple saudagar, rahatani, pune')
     && normalized.includes('info@paramtechnologies.in')

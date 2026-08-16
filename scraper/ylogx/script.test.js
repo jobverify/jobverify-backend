@@ -46,7 +46,7 @@ const bundleText = `
     { path: "/contact", component: "Contact" },
     { path: "/team", component: "Team" },
     { path: "/faq", component: "Faq" },
-    { path: "*", lazy: () => import("./NotFound-A1B2C3.js") }
+    { path: "*", lazy: () => import("./NotFound-Bcy7mi-x.js") }
   ];
   const apis = ["/api/blogs", "/api/blog-list-seo", "/api/faq-items", "/api/site-settings", "/api/chatbot/ask"];
   console.log("YlogX", routes, apis);

@@ -12,7 +12,7 @@ const loadNativeOrangeModule = async () => {
   }
 }
 
-test('Native orange provider metadata stays pinned to the Monday, August 3, 2026 marketing-shell no-public-jobs surface', async () => {
+test('Native orange provider metadata stays pinned to the Thursday, August 13, 2026 marketing-shell no-public-jobs surface', async () => {
   const nativeorange = await loadNativeOrangeModule()
   const provider = getScraperCatalog().find((item) => item.source === 'nativeorange')
 
@@ -22,10 +22,10 @@ test('Native orange provider metadata stays pinned to the Monday, August 3, 2026
   assert.equal(provider.homepageUrl, 'https://nativeorange.ai/')
   assert.equal(provider.contactPageUrl, 'https://nativeorange.ai/contact/')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
-  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.equal(provider.verifiedOn, '2026-08-13')
   assert.match(
     provider.verifiedSurfaceSummary,
-    /resolve to the same marketing shell without enumerable openings or ATS links/i,
+    /agentic underwriting to claims on one platform/i,
   )
   assert.equal(nativeorange.CONTACT_URL, provider.contactPageUrl)
 })

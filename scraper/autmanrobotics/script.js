@@ -163,6 +163,27 @@ export const hasOfficialCareersSignal = (html) => {
     && APPLY_MAILTO_TEST_PATTERN.test(page)
 }
 
+export const hasVerifiedGeneralApplicationHomepageSignal = (html) => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(stripTagsToLines(page).join(' '))?.toLowerCase() || ''
+
+  return hasOfficialHomepageSignal(page)
+    && /mailto:info@aut-man\.com\?subject=General%20Application(?:%20|\s)*-(?:%20|\s)*Autman%20Careers/i.test(page)
+    && text.includes('join the mission')
+    && text.includes('drop your cv')
+    && text.includes("don't see a role matching your exact specifications?")
+    && text.includes('submit application')
+}
+
+export const isVerifiedCareersRuntimeUnavailable = (value) => {
+  const raw = String(value?.message ?? value ?? '')
+  const normalized = normalizeWhitespace(raw)?.toLowerCase() || ''
+
+  return normalized.includes('runtime is unreachable')
+    || /\bHTTP 504\b/i.test(raw)
+    || /\bgateway timeout\b/i.test(raw)
+}
+
 export const extractApplyRoleLinks = (html) => {
   const seen = new Set()
 
@@ -311,7 +332,23 @@ export const createAutmanRoboticsScraper = ({
       throw new Error('Autman Robotics verified official homepage no longer matches the trusted first-party surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
+    const homepageSupportsGeneralApplications = hasVerifiedGeneralApplicationHomepageSignal(homepageHtml)
+
+    let careersHtml
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (homepageSupportsGeneralApplications && isVerifiedCareersRuntimeUnavailable(error)) {
+        return []
+      }
+
+      throw error
+    }
+
+    if (homepageSupportsGeneralApplications && isVerifiedCareersRuntimeUnavailable(careersHtml)) {
+      return []
+    }
+
     const jobs = extractPublicOpenings(careersHtml)
     const limit = Number.isInteger(overrideMaxJobs) ? overrideMaxJobs : maxJobs
     const selectedJobs = Number.isInteger(limit) ? jobs.slice(0, limit) : jobs

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 18, 2026 that https://nians.com/job/ was the live first-party openings page for Technians Softech under the current Nians brand, that the page explicitly stated "Technians is now Nians", and that it exposed department counts such as Technology/ IT department (1) plus a shared application selector containing roles including Trainee - Social Media.'
+  'Verified on Friday, August 14, 2026 that https://nians.com/ remains the live official Nians homepage for Technians Softech, that it still links candidates to https://nians.com/job/, and that the first-party Nians jobs archive now publishes roles through the public WordPress REST API at https://nians.com/wp-json/wp/v2/job?per_page=100&page=1&_embed=wp:term. Verified the archive still uses the title "Current Job Openings in Gurgaon, Mumbai - Nians" with the "Technians is now Nians" brand handoff, and that the public API returned 59 live India openings across Gurugram, Mumbai, and Remote (India), including the same-domain detail page https://nians.com/job/business-head/.'
 
 export const TECHNIANS_SOFTECH_CATALOG = {
   source: 'technianssoftech',
@@ -13,14 +13,18 @@ export const TECHNIANS_SOFTECH_CATALOG = {
   adapter: 'script',
   homepageUrl: 'https://nians.com/',
   companyCareerPage: 'https://nians.com/job/',
+  jobsApiUrl: 'https://nians.com/wp-json/wp/v2/job',
   companyDomain: 'nians.com',
-  atsPlatform: 'official-company-jobs-form',
+  atsPlatform: 'official-company-careers-plus-wordpress-jobs-api',
   countryFilter: 'India',
-  paginationStrategy: 'single-page-role-select-options',
-  extractionStrategy: 'verified-roles-page+designation-select-options+shared-application-form',
+  paginationStrategy: 'verified-first-party-jobs-archive-plus-paged-wordpress-rest-api',
+  extractionStrategy:
+    'verified-homepage-career-link+verified-jobs-archive+wp-json-job+embedded-taxonomies+same-domain-job-detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedPublicJobCount: 59,
+  verifiedIndiaJobCount: 59,
+  verifiedOn: '2026-08-14',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'technianssoftech/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

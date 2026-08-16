@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  cancelPlan,
   createOrGetMyReferralCode,
   createPlanCheckout,
   getBillingPlans,
@@ -21,6 +22,7 @@ router.get("/plans", getBillingPlans);
 router.post("/webhook", handleBillingWebhook);
 
 router.use(protect);
+router.post("/cancel", cancelPlan);
 router.get("/me", getMyBillingSummary);
 router.get("/referrals/me", getMyReferralStatus);
 router.post("/referrals/code", createOrGetMyReferralCode);

@@ -15,24 +15,24 @@ const homepageHtml = `
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>RedAnt Technologies Ltd | Building Digital Excellence</title>
+      <title>RedAnt Technologies Ltd | Software, Cloud, AI & Digital Solutions</title>
       <meta
         name="description"
-        content="RedAnt Technologies delivers cutting-edge software solutions that transform businesses. Custom software, cloud solutions, cybersecurity, and more."
+        content="RedAnt Technologies Ltd builds scalable software, mobile, cloud, data, AI and geospatial solutions that help businesses innovate, operate and grow."
       />
       <meta name="author" content="RedAnt Technologies Ltd" />
-      <meta property="og:title" content="RedAnt Technologies Ltd" />
+      <meta property="og:title" content="RedAnt Technologies Ltd | Software, Cloud, AI & Digital Solutions" />
       <meta
         property="og:description"
-        content="Building Digital Excellence - Custom software solutions for modern enterprises"
+        content="RedAnt Technologies Ltd builds scalable software, mobile, cloud, data, AI and geospatial solutions that help businesses innovate, operate and grow."
       />
       <meta property="og:type" content="website" />
       <meta property="og:image" content="favicon.ico" />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:site" content="@RedAntTech" />
       <meta name="twitter:image" content="favicon.ico" />
-      <script type="module" crossorigin src="/assets/index-tfSLClDB.js"></script>
-      <link rel="stylesheet" crossorigin href="/assets/index-BJxZPvY_.css">
+      <script type="module" crossorigin src="/assets/index-BdFdV-mz.js"></script>
+      <link rel="stylesheet" crossorigin href="/assets/index-C6o_RYSD.css">
     </head>
     <body>
       <div id="root"></div>

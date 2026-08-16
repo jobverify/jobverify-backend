@@ -16,7 +16,11 @@ const USER_AGENT =
 
 const OFFICIAL_TITLE_PATTERN =
   /<title>\s*SkipperX\s*-\s*Built for Innovators,\s*Entrepreneur\s*(?:&|&amp;)\s*Hustlers\s*<\/title>/i
-const ROOT_LINK_PATTERN = /href=["']https:\/\/skipperx\.io["']/i
+const DESCRIPTION_PATTERN =
+  /<meta[^>]+name=["']description["'][^>]+content=["']Your dream skill is,\s*not days,\s*not hours but minutes away\.["']/i
+const AUTHOR_PATTERN = /<meta[^>]+name=["']author["'][^>]+content=["']SkipperX Team["']/i
+const OG_URL_PATTERN = /<meta[^>]+property=["']og:url["'][^>]+content=["']https:\/\/skipperx\.io["']/i
+const ROOT_DIV_PATTERN = /<div[^>]+id=["']root["'][^>]*><\/div>/i
 const MAIN_SCRIPT_PATH_PATTERN = /<script[^>]+src=["'](?<src>\/static\/js\/main\.[^"']+\.js)["']/i
 const MAIN_STYLE_PATH_PATTERN = /<link[^>]+href=["'](?<href>\/static\/css\/main\.[^"']+\.css)["']/i
 
@@ -24,9 +28,9 @@ const HERO_COPY_PATTERN =
   /Your dream skill is, not days, not hours but[\s\S]{0,120}minutes[\s\S]{0,120}away/i
 const TAGLINE_PATTERN = /Built for Innovators,\s*Entrepreneurs?\s*&\s*Hustlers/i
 const SUPPORT_EMAIL_PATTERN = /support@skipperx\.io/i
-const CAREERS_PLACEHOLDER_PATTERN = /href:"#",children:"Careers"/
-const ABOUT_ROUTE_PATTERN = /to:"\/about",children:"About Us"/
-const CONTACT_ROUTE_PATTERN = /to:"\/contact",children:"Contact Us"/
+const CAREERS_TEXT_PATTERN = /\bCareers\b/
+const ABOUT_TEXT_PATTERN = /\bAbout Us\b/
+const CONTACT_TEXT_PATTERN = /\bContact Us\b/
 const PUBLIC_CAREER_ROUTE_PATTERN = /(?:path|to|href):"\/(?:careers?|jobs)(?:\/)?"/i
 const PUBLIC_JOB_BOARD_PATTERN =
   /\b(open roles|job openings|current openings|available positions|view openings|search jobs|we(?:'|’)re hiring)\b|boards\.greenhouse\.io|jobs\.lever\.co|ashbyhq\.com|myworkdayjobs|workdayjobs|jobvite|smartrecruiters/i
@@ -66,7 +70,10 @@ export const hasOfficialHomepageShell = (html) => {
   const shell = getShellFingerprint(page, HOMEPAGE_URL)
 
   return OFFICIAL_TITLE_PATTERN.test(page)
-    && ROOT_LINK_PATTERN.test(page)
+    && DESCRIPTION_PATTERN.test(page)
+    && AUTHOR_PATTERN.test(page)
+    && OG_URL_PATTERN.test(page)
+    && ROOT_DIV_PATTERN.test(page)
     && Boolean(shell.scriptUrl)
     && Boolean(shell.styleUrl)
 }
@@ -76,7 +83,10 @@ export const hasOfficialRouteShell = (html) => {
   const shell = getShellFingerprint(page, HOMEPAGE_URL)
 
   return OFFICIAL_TITLE_PATTERN.test(page)
-    && ROOT_LINK_PATTERN.test(page)
+    && DESCRIPTION_PATTERN.test(page)
+    && AUTHOR_PATTERN.test(page)
+    && OG_URL_PATTERN.test(page)
+    && ROOT_DIV_PATTERN.test(page)
     && Boolean(shell.scriptUrl)
     && Boolean(shell.styleUrl)
 }
@@ -96,9 +106,9 @@ export const hasOfficialBundleSignals = (bundleJs) => {
   return HERO_COPY_PATTERN.test(bundle)
     && TAGLINE_PATTERN.test(bundle)
     && SUPPORT_EMAIL_PATTERN.test(bundle)
-    && CAREERS_PLACEHOLDER_PATTERN.test(bundle)
-    && ABOUT_ROUTE_PATTERN.test(bundle)
-    && CONTACT_ROUTE_PATTERN.test(bundle)
+    && CAREERS_TEXT_PATTERN.test(bundle)
+    && ABOUT_TEXT_PATTERN.test(bundle)
+    && CONTACT_TEXT_PATTERN.test(bundle)
 }
 
 export const definesPublicCareerRoute = (bundleJs) =>

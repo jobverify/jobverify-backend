@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { EXCELRA_KNOWLEDGE_SOLUTIONS_CATALOG } from './catalog.js'
 
@@ -13,6 +13,7 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const CAREERS_PORTAL_BASE_URL = PROVIDER_METADATA.careersPortalBaseUrl
+export const CAREERS_WORDPRESS_API_URL = PROVIDER_METADATA.careersWordpressApiUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const USER_AGENT =
@@ -27,6 +28,8 @@ const decodeHtml = (value = '') => String(value)
   .replace(/&amp;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
+  .replace(/[\u201c\u201d]/g, '"')
+  .replace(/[\u2018\u2019]/g, "'")
 
 const stripTags = (value = '') => String(value).replace(/<[^>]+>/g, ' ')
 
@@ -106,16 +109,25 @@ export const hasOfficialCareersSignal = (html = '') => {
 }
 
 export const extractVisibleJobCards = (html = '') => {
-  const page = String(html)
-  const cardPattern = /<h4 class="display-2 m-0 p-0 custom-theme-color"[^>]*>([\s\S]*?)<\/h4>[\s\S]*?<strong>([^<]+)<\/strong>[\s\S]*?<strong>([^<]+)<\/strong>[\s\S]*?<strong>([^<]+)<\/strong>[\s\S]*?<a[^>]+href="(https:\/\/excelra\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/jobDetails\/[^"]+)"[^>]*>\s*<span>\s*Apply now\s*<\/span>/gi
+  const page = decodeHtml(String(html))
+  const cardPattern = /<h4 class="display-2 m-0 p-0 custom-theme-color"[^>]*>([\s\S]*?)<\/h4>([\s\S]*?)(?=<h4 class="display-2 m-0 p-0 custom-theme-color"|$)/gi
   const jobs = []
 
   for (const match of page.matchAll(cardPattern)) {
     const title = normalizeWhitespace(match[1])
-    const employmentType = normalizeEmploymentType(match[2])
-    const locationDetails = parseLocation(match[3])
-    const experienceRequired = normalizeWhitespace(match[4])
-    const applyUrl = toAbsoluteUrl(match[5])
+    const cardHtml = match[2]
+    const fields = [...cardHtml.matchAll(/<strong>([^<]+)<\/strong>/gi)]
+      .map((fieldMatch) => normalizeWhitespace(fieldMatch[1]))
+      .filter(Boolean)
+    const employmentType = normalizeEmploymentType(fields[0])
+    const locationDetails = parseLocation(fields[1])
+    const experienceRequired = normalizeWhitespace(fields[2])
+    const applyUrlMatch = cardHtml.match(
+      /<a[^>]+href="(https:\/\/excelra\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/jobDetails\/[^"]+)"[^>]*>\s*(?:<span[^>]*>)?\s*Apply now\b/i,
+    ) || cardHtml.match(
+      /\[nectar_btn[^\]]*?\burl=(?:"|')?(https:\/\/excelra\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/jobDetails\/[^"' \]]+)(?:"|')?[^\]]*\]/i,
+    )
+    const applyUrl = toAbsoluteUrl(applyUrlMatch?.[1])
 
     if (!title || !employmentType || !locationDetails.location || !experienceRequired || !applyUrl) {
       continue
@@ -155,11 +167,37 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json,text/plain,*/*',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
+
+export const extractWordpressRenderedContent = (payload) => {
+  const pages = Array.isArray(payload) ? payload : []
+  const careersPage = pages.find((page) => normalizeWhitespace(page?.slug) === 'careers') || pages[0]
+  return String(careersPage?.content?.rendered ?? '')
+}
+
 export const createExcelraKnowledgeSolutionsScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({
+    fetchJson = defaultFetchJson,
+    fetchText = defaultFetchText,
+  } = {}) {
+    let careersHtml = ''
+
+    try {
+      const careersPayload = await fetchJson(CAREERS_WORDPRESS_API_URL)
+      careersHtml = extractWordpressRenderedContent(careersPayload)
+    } catch {
+      careersHtml = await fetchText(CAREERS_URL)
+    }
+
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Excelra Knowledge Solutions verified first-party careers page no longer matches the trusted contract')
     }

@@ -15,6 +15,12 @@ test('getScraperCatalog includes the Elecbits scraper with official metadata', (
   assert.equal(elecbits.atsPlatform, 'official-company-careers')
   assert.match(elecbits.companyCareerPage, /elecbits\.in\/careers/i)
   assert.equal(elecbits.companyDomain, 'elecbits.in')
+  assert.equal(elecbits.verifiedOn, '2026-08-14')
+  assert.equal(elecbits.verifiedPublicJobCount, 4)
+  assert.equal(elecbits.verifiedIndiaJobCount, 4)
+  assert.match(elecbits.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
+  assert.match(elecbits.verifiedSurfaceSummary, /Careers at Elecbits Join Electronics Innovation Team/i)
+  assert.match(elecbits.verifiedSurfaceSummary, /https:\/\/elecbits\.in\/elecbits-jd-sales\//i)
 })
 
 test('buildScrapers exposes a runnable Elecbits scraper without changing the runner contract', () => {

@@ -8,6 +8,7 @@ import {
   REDIRECTED_HOMEPAGE_URL,
   createRivigoScraper,
   hasVerifiedParentCareersSignal,
+  hasVerifiedParentDarwinboxJavascriptShellSignal,
   hasVerifiedParentDarwinboxSignal,
   hasVerifiedRedirectedHomepageSignal,
 } from './script.js'
@@ -66,6 +67,22 @@ const parentDarwinboxHtml = `
 </html>
 `
 
+const parentDarwinboxJavascriptShellHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title></title>
+    <base href="/ms/candidate/">
+    <noscript>Please enable Javascript!</noscript>
+    <script type="module" src="/ms/dboxuilibrary/assets/dboxuilib_dist/www/build/db-components.esm.js"></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
+  </head>
+  <body>
+    <app-root ng-class="clearfix"></app-root>
+  </body>
+</html>
+`
+
 test('Rivigo recognizes the verified Mahindra redirect and parent-company handoff surfaces', () => {
   assert.equal(
     hasVerifiedRedirectedHomepageSignal({
@@ -87,6 +104,22 @@ test('Rivigo recognizes the verified Mahindra redirect and parent-company handof
     hasVerifiedParentDarwinboxSignal({
       url: 'https://nectar.darwinbox.in/ms/candidatev2/main/careers/home',
       html: parentDarwinboxHtml,
+    }),
+    true,
+  )
+
+  assert.equal(
+    hasVerifiedParentDarwinboxJavascriptShellSignal({
+      url: PARENT_DARWINBOX_URL,
+      html: parentDarwinboxJavascriptShellHtml,
+    }),
+    true,
+  )
+
+  assert.equal(
+    hasVerifiedParentDarwinboxSignal({
+      url: PARENT_DARWINBOX_URL,
+      html: parentDarwinboxJavascriptShellHtml,
     }),
     true,
   )
@@ -118,8 +151,8 @@ test('Rivigo returns no jobs when the official brand only hands off to the paren
       if (url === PARENT_DARWINBOX_URL) {
         return {
           status: 200,
-          url: 'https://nectar.darwinbox.in/ms/candidatev2/main/careers/home',
-          html: parentDarwinboxHtml,
+          url: PARENT_DARWINBOX_URL,
+          html: parentDarwinboxJavascriptShellHtml,
         }
       }
 

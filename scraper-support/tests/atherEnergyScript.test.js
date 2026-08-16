@@ -35,6 +35,21 @@ const allJobsHtml = `
   </html>
 `
 
+const cloudflareBlockedPageHtml = `
+  <!doctype html>
+  <html lang="en-US">
+    <head>
+      <title>Attention Required! | Cloudflare</title>
+    </head>
+    <body>
+      <p>Please enable cookies.</p>
+      <h1>Sorry, you have been blocked</h1>
+      <p>You are unable to access atherenergy.com</p>
+      <p>Cloudflare Ray ID: 8f1e4b92c5e44e21</p>
+    </body>
+  </html>
+`
+
 test('extractJobs returns no jobs when the official Ather careers page shows no open roles', async () => {
   const atherenergy = await loadAtherEnergyModule()
 
@@ -84,4 +99,29 @@ test('run reports an API-only migration error when direct HTTP access to Ather c
       return true
     },
   )
+})
+
+test('run returns an honest zero-openings result when the verified Ather careers routes are Cloudflare-blocked on Thursday, August 13, 2026', async () => {
+  const atherenergy = await loadAtherEnergyModule()
+  const requestedPageUrls = []
+
+  const jobs = await atherenergy.createAtherEnergyScraper().run({
+    fetchText: async (url) => {
+      throw new Error(`HTTP 403 for ${url}`)
+    },
+    fetchPage: async (url) => {
+      requestedPageUrls.push(url)
+      return {
+        status: 403,
+        url,
+        html: cloudflareBlockedPageHtml,
+      }
+    },
+  })
+
+  assert.deepEqual(requestedPageUrls, [
+    atherenergy.CAREERS_HOME_URL,
+    atherenergy.ALL_JOBS_URL,
+  ])
+  assert.deepEqual(jobs, [])
 })

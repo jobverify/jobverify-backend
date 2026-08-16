@@ -14,9 +14,17 @@ export const HOMEPAGE_URL = PICKRR_CATALOG.homepageUrl
 export const CAREERS_LANDING_URL = PICKRR_CATALOG.companyCareerPage
 export const SITEMAP_URL = PICKRR_CATALOG.officialSitemapUrl
 export const CAREERS_404_URL = PICKRR_CATALOG.official404CareersUrl
+export const FIRST_PARTY_TIMEOUT_URLS = [
+  HOMEPAGE_URL,
+  SITEMAP_URL,
+  CAREERS_LANDING_URL,
+  CAREERS_404_URL,
+]
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const REQUEST_TIMEOUT_MS = 10000
+const TIMEOUT_ERROR_PATTERN = /timed out|timeout|etimedout|connect timeout|und_err_connect_timeout/i
 
 const PUBLIC_JOB_SIGNAL_PATTERNS = [
   /jobs\.lever\.co/i,
@@ -32,19 +40,61 @@ const PUBLIC_JOB_SIGNAL_PATTERNS = [
   /\bjob-role\b/i,
 ]
 
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    redirect: 'follow',
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
+const isTimeoutError = (error) => {
+  if (error?.name === 'AbortError') return true
 
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const message = String(error?.message ?? error ?? '')
+
+  return /UND_ERR_CONNECT_TIMEOUT|ETIMEDOUT/i.test(causeCode)
+    || TIMEOUT_ERROR_PATTERN.test(causeMessage)
+    || TIMEOUT_ERROR_PATTERN.test(message)
+}
+
+const isReachableSurface = (surface = {}) =>
+  Number.isInteger(surface?.status) && surface.status > 0
+
+export const isExpectedTimedOutSurface = (surface = {}) =>
+  surface?.errorKind === 'timeout'
+  && !Number.isInteger(surface?.status)
+  && surface?.html == null
+
+const defaultFetchPage = async (url) => {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(url, {
+      redirect: 'follow',
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeout)
+
+    return {
+      status: response.status,
+      url: response.url,
+      html: await response.text(),
+      errorKind: null,
+    }
+  } catch (error) {
+    clearTimeout(timeout)
+
+    if (isTimeoutError(error)) {
+      return {
+        status: null,
+        url,
+        html: null,
+        errorKind: 'timeout',
+      }
+    }
+
+    throw error
   }
 }
 
@@ -106,30 +156,43 @@ export const createPickrrScraper = () => ({
   async run({
     fetchPage = defaultFetchPage,
   } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    const [
+      homepage,
+      sitemap,
+      lifeAtPickrrPage,
+      careers404Page,
+    ] = await Promise.all(FIRST_PARTY_TIMEOUT_URLS.map((url) => fetchPage(url)))
+
+    if (!isExpectedTimedOutSurface(homepage) && (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html))) {
       throw new Error('Pickrr verified homepage no longer matches the official first-party surface')
     }
 
-    const sitemap = await fetchPage(SITEMAP_URL)
-    if (sitemap.status !== 200 || !sitemapHasLifeAtPickrrRoute(sitemap.html)) {
+    if (!isExpectedTimedOutSurface(sitemap) && (sitemap.status !== 200 || !sitemapHasLifeAtPickrrRoute(sitemap.html))) {
       throw new Error('Pickrr verified sitemap no longer matches the official first-party route contract')
     }
-    if (sitemapHasPublicCareersRoute(sitemap.html)) {
+    if (isReachableSurface(sitemap) && sitemapHasPublicCareersRoute(sitemap.html)) {
       throw new Error('Pickrr verified sitemap now exposes a public careers route')
     }
 
-    const lifeAtPickrrPage = await fetchPage(CAREERS_LANDING_URL)
-    if (lifeAtPickrrPage.status !== 200 || !hasVerifiedLifeAtPickrrSignal(lifeAtPickrrPage.html)) {
+    if (
+      !isExpectedTimedOutSurface(lifeAtPickrrPage)
+      && (lifeAtPickrrPage.status !== 200 || !hasVerifiedLifeAtPickrrSignal(lifeAtPickrrPage.html))
+    ) {
       throw new Error('Pickrr verified life-at-pickrr page no longer matches the official first-party careers surface')
     }
-    if (hasPublicJobsSignal(lifeAtPickrrPage.html)) {
+    if (isReachableSurface(lifeAtPickrrPage) && hasPublicJobsSignal(lifeAtPickrrPage.html)) {
       throw new Error('Pickrr official careers form surface now appears to expose public jobs')
     }
 
-    const careers404Page = await fetchPage(CAREERS_404_URL)
-    if (![200, 404].includes(Number(careers404Page.status)) || !hasVerifiedNotFoundCareersSignal(careers404Page.html)) {
+    if (
+      !isExpectedTimedOutSurface(careers404Page)
+      && (![200, 404].includes(Number(careers404Page.status)) || !hasVerifiedNotFoundCareersSignal(careers404Page.html))
+    ) {
       throw new Error('Pickrr verified careers not-found contract no longer matches the official first-party surface')
+    }
+
+    if (isReachableSurface(careers404Page) && hasPublicJobsSignal(careers404Page.html)) {
+      throw new Error('Pickrr verified careers route now appears to expose public jobs')
     }
 
     return []

@@ -1,37 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const OFFICIAL_HOMEPAGE_HTML = `
-  <html>
-    <head>
-      <title>e6data: 10x Faster Lakehouse Queries at 60% Lower Cost | SQL &amp; AI Engine</title>
-    </head>
-    <body>
-      <nav>
-        <a href="/products">Products</a>
-        <a href="/customers">Customers</a>
-        <a href="/about">About Us</a>
-      </nav>
-      <h1>Compute Engine for Iceberg, Delta Lake, Hudi: Query | ETL | Ingestion</h1>
-      <p>The only engine built for the Agentic AI era</p>
-      <p>Cloud, On Premise, Hybrid. AI-native lakehouse compute engine.</p>
-      <a href="https://wellfound.com/company/evix">Company profile</a>
-    </body>
-  </html>
-`
-
-const MISSING_ROUTE_HTML = `
-  <html>
-    <head>
-      <title>Not Found</title>
-    </head>
-    <body>
-      <h1>Page not found</h1>
-      <p>The page you are looking for doesn't exist or has been moved.</p>
-      <a href="/">Go to Homepage</a>
-    </body>
-  </html>
-`
+import {
+  buildScrapers,
+  getScraperCatalog,
+} from '../providers/index.js'
 
 const loadModule = async () => {
   try {
@@ -41,57 +14,58 @@ const loadModule = async () => {
   }
 }
 
-test('e6data accepts the current official encoded homepage title and returns [] while careers routes remain missing', async () => {
+test('getScraperCatalog includes e6data with the verified August 14, 2026 homepage, careers handoff, and Zoho API contract', async () => {
   const e6data = await loadModule()
-  const seenUrls = []
+  const provider = getScraperCatalog().find((item) => item.source === 'e6data')
 
-  const jobs = await e6data.createE6DataScraper().run({
-    fetchPage: async (url) => {
-      seenUrls.push(url)
+  assert.ok(provider)
+  assert.equal(provider.source, 'e6data')
+  assert.equal(provider.companyName, 'e6data Inc.')
+  assert.equal(provider.officialBrandName, 'e6data')
+  assert.equal(provider.adapter, 'script')
+  assert.equal(provider.companyCareerPage, 'https://e6data.com/careers')
+  assert.equal(provider.homepageUrl, 'https://e6data.com/')
+  assert.equal(provider.careersPortalUrl, 'https://e6data.zohorecruit.in/jobs/Careers')
+  assert.equal(
+    provider.careersApiUrl,
+    'https://e6data.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite',
+  )
+  assert.equal(provider.companyDomain, 'e6data.com')
+  assert.equal(provider.atsPlatform, 'zohorecruit')
+  assert.equal(provider.countryFilter, 'India')
+  assert.equal(
+    provider.paginationStrategy,
+    'single-first-party-careers-page-plus-zohorecruit-portal-plus-public-api',
+  )
+  assert.equal(
+    provider.extractionStrategy,
+    'verified-homepage+verified-first-party-careers-page+zohorecruit-portal+public-job-openings-api+explicit-india-country-filter',
+  )
+  assert.equal(provider.parser, 'custom-script')
+  assert.equal(provider.normalizationProfile, 'engineering-default')
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.equal(provider.verifiedPublicJobCount, 6)
+  assert.equal(provider.verifiedIndiaJobCount, 2)
+  assert.match(provider.modulePath, /e6data[\\/]script\.js$/i)
+  assert.match(provider.dryRunFile, /e6data[\\/]jobs\.json$/i)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/e6data\.com\/careers/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/e6data\.zohorecruit\.in\/jobs\/Careers/i)
+  assert.match(provider.verifiedSurfaceSummary, /six public jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /two explicitly India-scoped jobs/i)
 
-      if (url === e6data.HOMEPAGE_URL) {
-        return {
-          status: 200,
-          url,
-          html: OFFICIAL_HOMEPAGE_HTML,
-        }
-      }
-
-      return {
-        status: 404,
-        url,
-        html: MISSING_ROUTE_HTML,
-      }
-    },
-  })
-
-  assert.deepEqual(jobs, [])
-  assert.deepEqual(seenUrls, [
-    e6data.HOMEPAGE_URL,
-    e6data.CAREERS_ROUTE_URL,
-    e6data.CAREER_ROUTE_URL,
-    e6data.JOBS_ROUTE_URL,
-  ])
-  assert.equal(e6data.hasOfficialHomepageSignal(OFFICIAL_HOMEPAGE_HTML), true)
+  assert.equal(e6data.HOMEPAGE_URL, provider.homepageUrl)
+  assert.equal(e6data.CAREERS_PAGE_URL, provider.companyCareerPage)
+  assert.equal(e6data.CAREERS_PORTAL_URL, provider.careersPortalUrl)
+  assert.equal(e6data.CAREERS_API_URL, provider.careersApiUrl)
 })
 
-test('e6data rejects when the homepage now exposes a public careers surface', async () => {
-  const e6data = await loadModule()
+test('buildScrapers exposes a runnable e6data scraper with the updated provider metadata', () => {
+  const scraper = buildScrapers().find((item) => item.name === 'e6data')
 
-  await assert.rejects(
-    e6data.createE6DataScraper().run({
-      fetchPage: async (url) => ({
-        status: 200,
-        url,
-        html: url === e6data.HOMEPAGE_URL
-          ? `
-            ${OFFICIAL_HOMEPAGE_HTML}
-            <a href="/careers">Careers</a>
-            <p>We are hiring now.</p>
-          `
-          : MISSING_ROUTE_HTML,
-      }),
-    }),
-    /public careers surface/i,
-  )
+  assert.ok(scraper)
+  assert.equal(typeof scraper.run, 'function')
+  assert.equal(scraper.provider.source, 'e6data')
+  assert.equal(scraper.provider.atsPlatform, 'zohorecruit')
+  assert.match(scraper.dryRunFile, /e6data[\\/]jobs\.json$/i)
 })

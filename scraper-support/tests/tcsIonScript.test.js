@@ -23,6 +23,45 @@ const MARKETPLACE_HTML = `
 </html>
 `
 
+const CURRENT_MARKETPLACE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>TCS iON Jobs: Explore opportunities and give your career a boost</title>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <h1>Unlock Career Opportunities with AI Precision Matching</h1>
+        <p>Browse job openings that align with your skills, goals, and where you want to go next.</p>
+        <p>Get the Right Job Faster</p>
+        <p>Search Manually</p>
+        <p>Use AI Mode Coming Soon</p>
+      </section>
+      <section class="primer">
+        <h2>TCS iON Job Primer</h2>
+      </section>
+      <section class="marketplace">
+        <h2>Find the Best-suited Jobs for You</h2>
+        <p>Explore opportunities from leading companies and give your career a boost.</p>
+      </section>
+      <section class="testimonials">
+        <h4>Yashwant Mehta</h4>
+        <p>Secretary | ABC Higher Secondary School</p>
+      </section>
+      <section class="hiringSection tcs-section d-none">
+        <h2>Featured Companies Hiring</h2>
+        <div class="featured-company"><h4>Nest Digital</h4></div>
+        <div class="featured-company"><h4>TATA ELXSI</h4></div>
+        <div class="featured-company"><h4>Publicis sapient</h4></div>
+        <div class="featured-company"><h4>Vedantu</h4></div>
+        <div class="featured-company"><h4>Presistent</h4></div>
+      </section>
+    </main>
+  </body>
+</html>
+`
+
 const EXACT_NAME_PUBLIC_JOBS_HTML = `
 <!doctype html>
 <html lang="en">
@@ -54,7 +93,7 @@ test('TCS iON sentinel helpers stay pinned to the verified first-party jobs mark
   assert.equal(tcsIon.SOURCE, 'tcsion')
   assert.equal(tcsIon.COMPANY, 'TCS iON')
   assert.equal(tcsIon.OFFICIAL_BRAND_NAME, 'TCS iON')
-  assert.equal(tcsIon.VERIFIED_ON, '2026-07-17')
+  assert.equal(tcsIon.VERIFIED_ON, '2026-08-14')
   assert.equal(tcsIon.HOMEPAGE_URL, 'https://www.tcsion.com/')
   assert.equal(tcsIon.CAREERS_URL, 'https://www.tcsion.com/jobs/')
   assert.equal(
@@ -62,13 +101,22 @@ test('TCS iON sentinel helpers stay pinned to the verified first-party jobs mark
     'https://www.tcsion.com/job-openings/jobs-in-hyderabad',
   )
   assert.equal(tcsIon.hasOfficialJobsMarketplaceSignal(MARKETPLACE_HTML), true)
+  assert.equal(tcsIon.hasOfficialJobsMarketplaceSignal(CURRENT_MARKETPLACE_HTML), true)
   assert.deepEqual(tcsIon.extractFeaturedCompanyNames(MARKETPLACE_HTML), [
     'Nest Digital',
     'TATA ELXSI',
     'Publicis sapient',
     'Vedantu',
   ])
+  assert.deepEqual(tcsIon.extractFeaturedCompanyNames(CURRENT_MARKETPLACE_HTML), [
+    'Nest Digital',
+    'TATA ELXSI',
+    'Publicis sapient',
+    'Vedantu',
+    'Presistent',
+  ])
   assert.equal(tcsIon.marketplaceAppearsGenericMultiCompany(MARKETPLACE_HTML), true)
+  assert.equal(tcsIon.marketplaceAppearsGenericMultiCompany(CURRENT_MARKETPLACE_HTML), true)
   assert.equal(tcsIon.marketplaceExposesExactNameJobs(MARKETPLACE_HTML), false)
   assert.equal(tcsIon.marketplaceExposesExactNameJobs(EXACT_NAME_PUBLIC_JOBS_HTML), true)
 })
@@ -82,7 +130,7 @@ test('TCS iON returns [] for the verified multi-company marketplace and fails cl
       requestedUrls.push(url)
 
       if (url === tcsIon.CAREERS_URL) {
-        return { status: 200, url, html: MARKETPLACE_HTML }
+        return { status: 200, url, html: CURRENT_MARKETPLACE_HTML }
       }
 
       throw new Error(`Unexpected TCS iON URL: ${url}`)

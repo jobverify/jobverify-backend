@@ -17,12 +17,12 @@ const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Work at Buildkite | Remote-first since 2013 | Buildkite</title>
+    <title>Work at Buildkite | Remote-first careers | Buildkite</title>
   </head>
   <body>
     <main>
       <h1>Work at Buildkite</h1>
-      <p>Remote-first since 2013.</p>
+      <p>Remote-first careers.</p>
       <section>
         <h2>Open roles</h2>
       </section>
@@ -35,7 +35,7 @@ const careersHtml = `
 </html>
 `
 
-test('Buildkite constants and official careers page validation match the verified public surface', () => {
+test('Buildkite constants and official careers page validation match the Thursday, August 13, 2026 public surface', () => {
   assert.equal(SOURCE, 'buildkite')
   assert.equal(CAREERS_URL, 'https://buildkite.com/about/careers/')
   assert.equal(GREENHOUSE_BOARD_URL, 'https://job-boards.greenhouse.io/buildkite')

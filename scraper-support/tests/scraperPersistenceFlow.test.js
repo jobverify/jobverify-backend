@@ -5,9 +5,10 @@ import mongoose from 'mongoose'
 import Job from '../../src/models/Job.js'
 import ScraperRun from '../../src/models/ScraperRun.js'
 import ScraperStatus from '../../src/models/ScraperStatus.js'
-import { runAll } from '../runner.js'
+import { FatalScraperPersistenceError, runAll } from '../runner.js'
 import { upsertScraperStatus, writeScraperRun } from '../utils/scraperPersistence.js'
 import { generateFingerprint, saveToDB } from '../utils/saveToDB.js'
+import { DEFAULT_JOB_RETENTION_DAYS } from '../../src/utils/jobLifecycle.js'
 import { jobAlertService } from '../../src/services/jobAlertService.js'
 
 const setReadyState = (value) => {
@@ -31,7 +32,7 @@ const setReadyState = (value) => {
   }
 }
 
-test('runAll preserves the existing jobs collection while processing scraper results', async () => {
+test('runAll clears the existing jobs collection before a full live run', async () => {
   const restoreReadyState = setReadyState(1)
   const originalDeleteMany = Job.deleteMany
   const originalFindOneAndUpdate = ScraperStatus.findOneAndUpdate
@@ -58,9 +59,62 @@ test('runAll preserves the existing jobs collection while processing scraper res
   try {
     await runAll()
 
-    assert.deepEqual(deleteFilters, [])
+    assert.deepEqual(deleteFilters, [{}])
   } finally {
     Job.deleteMany = originalDeleteMany
+    ScraperStatus.findOneAndUpdate = originalFindOneAndUpdate
+    ScraperStatus.findOne = originalFindOne
+    ScraperRun.create = originalCreate
+    restoreReadyState()
+  }
+})
+
+test('runAll aborts before starting scrapers when Atlas storage quota blocks status seeding', async () => {
+  const restoreReadyState = setReadyState(1)
+  const originalBulkWrite = ScraperStatus.bulkWrite
+  const originalFindOneAndUpdate = ScraperStatus.findOneAndUpdate
+  const originalFindOne = ScraperStatus.findOne
+  const originalCreate = ScraperRun.create
+
+  let activeStatusReads = 0
+  let pipelineStatusWrites = 0
+  const quotaError = new Error(
+    'you are over your space quota, using 521 MB of 512 MB. Writes are blocked on your cluster.',
+  )
+
+  ScraperStatus.bulkWrite = async () => {
+    throw quotaError
+  }
+  ScraperStatus.findOneAndUpdate = async () => {
+    pipelineStatusWrites += 1
+    return {}
+  }
+  ScraperStatus.findOne = () => {
+    activeStatusReads += 1
+    return {
+      lean() {
+        return {
+          exec: async () => ({ isActive: true }),
+        }
+      },
+    }
+  }
+  ScraperRun.create = async () => ({})
+
+  try {
+    await assert.rejects(
+      runAll(),
+      (error) => {
+        assert.ok(error instanceof FatalScraperPersistenceError)
+        assert.match(error.message, /seeding scraper status records/i)
+        assert.equal(error.cause, quotaError)
+        return true
+      },
+    )
+    assert.equal(pipelineStatusWrites, 0)
+    assert.equal(activeStatusReads, 0)
+  } finally {
+    ScraperStatus.bulkWrite = originalBulkWrite
     ScraperStatus.findOneAndUpdate = originalFindOneAndUpdate
     ScraperStatus.findOne = originalFindOne
     ScraperRun.create = originalCreate
@@ -225,75 +279,6 @@ test('saveToDB only enqueues inserted active jobs for WhatsApp alerts', async ()
   } finally {
     Job.bulkWrite = originalBulkWrite
     Job.find = originalFind
-    jobAlertService.enqueueJobAlertsForJobs = originalEnqueueJobAlertsForJobs
-    restoreReadyState()
-  }
-})
-
-test('saveToDB can target a provided job model without enqueuing alerts', async () => {
-  const restoreReadyState = setReadyState(1)
-  const originalBulkWrite = Job.bulkWrite
-  const originalEnqueueJobAlertsForJobs = jobAlertService.enqueueJobAlertsForJobs
-
-  let liveBulkWriteAttempted = false
-  let stagedBulkWriteAttempted = false
-  let alertsQueued = false
-
-  const stagedJobModel = {
-    bulkWrite: async () => {
-      stagedBulkWriteAttempted = true
-      return {
-        upsertedCount: 1,
-        modifiedCount: 0,
-        upsertedIds: { 0: 'stage-job-1' },
-      }
-    },
-    updateMany: () => ({
-      exec: async () => ({ matchedCount: 0, modifiedCount: 0 }),
-    }),
-    find: () => ({
-      lean() {
-        return this
-      },
-      exec: async () => [
-        { _id: 'stage-job-1', title: 'Platform Engineer', status: 'active' },
-      ],
-    }),
-  }
-
-  Job.bulkWrite = async () => {
-    liveBulkWriteAttempted = true
-    return {
-      upsertedCount: 0,
-      modifiedCount: 0,
-      upsertedIds: {},
-    }
-  }
-  jobAlertService.enqueueJobAlertsForJobs = () => {
-    alertsQueued = true
-  }
-
-  try {
-    const result = await saveToDB([
-      {
-        title: 'Platform Engineer',
-        company: 'Example',
-        location: 'Bengaluru, India',
-        city: 'Bengaluru',
-        link: 'https://example.com/jobs/platform-engineer',
-      },
-    ], 'example-source', {
-      replaceExisting: false,
-      jobModel: stagedJobModel,
-      enqueueAlerts: false,
-    })
-
-    assert.equal(result.inserted, 1)
-    assert.equal(stagedBulkWriteAttempted, true)
-    assert.equal(liveBulkWriteAttempted, false)
-    assert.equal(alertsQueued, false)
-  } finally {
-    Job.bulkWrite = originalBulkWrite
     jobAlertService.enqueueJobAlertsForJobs = originalEnqueueJobAlertsForJobs
     restoreReadyState()
   }
@@ -709,7 +694,7 @@ test('upsertScraperStatus defaults lifecycle retention tracking to 30 days when 
       durationMs: 500,
     })
 
-    assert.equal(capturedUpdate.$set.lastRetentionDays, 30)
+    assert.equal(capturedUpdate.$set.lastRetentionDays, DEFAULT_JOB_RETENTION_DAYS)
   } finally {
     ScraperStatus.findOneAndUpdate = originalFindOneAndUpdate
     restoreReadyState()

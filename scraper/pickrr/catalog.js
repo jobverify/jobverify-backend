@@ -17,12 +17,12 @@ export const PICKRR_CATALOG = {
   countryFilter: 'India',
   paginationStrategy: 'homepage-plus-sitemap-plus-life-page-validation',
   extractionStrategy:
-    'verified-homepage+verified-life-at-pickrr-page+verified-sitemap+verified-careers-404-return-empty',
+    'verified-timeout-only-first-party-routes+legacy-homepage-life-at-pickrr-sitemap-and-careers-404-fallback-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-04',
+  verifiedOn: '2026-08-13',
   verifiedSurfaceSummary:
-    'Verified on Tuesday, August 4, 2026 that https://pickrr.com/ is the live official Pickrr homepage, that https://pickrr.com/life-at-pickrr/ is still the official first-party "Life at Pickrr" careers-branded page with a resume submission form but no trustworthy public job listings, that https://pickrr.com/sitemap.xml exposes the life-at-pickrr route but not a public careers route, and that https://pickrr.com/careers resolves to the first-party "Page Not Found - Pickrr" page.',
+    'Verified on Thursday, August 13, 2026 that https://pickrr.com/, https://pickrr.com/sitemap.xml, https://pickrr.com/life-at-pickrr/, and https://pickrr.com/careers each currently fail with repeated connect timeouts, so no trustworthy public jobs surface is reachable on the first-party Pickrr domain from this environment. The scraper still tolerates the previously verified homepage, life-at-pickrr form page, sitemap, and careers not-found fallback when those legacy surfaces reappear without public job listings.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'pickrr/jobs.json',
 }

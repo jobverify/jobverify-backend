@@ -27,8 +27,8 @@ test('CBNITS sentinel helpers stay pinned to the verified SPA careers shell', as
 
   assert.equal(cbnits.SOURCE, 'cbnits')
   assert.equal(cbnits.COMPANY, 'CBNITS')
-  assert.equal(cbnits.CAREERS_URL, 'https://www.cbnits.com/career')
-  assert.equal(cbnits.VERIFIED_ON, '2026-07-18')
+  assert.equal(cbnits.CAREERS_URL, 'https://www.cbnits.com/careers')
+  assert.equal(cbnits.VERIFIED_ON, '2026-08-14')
   assert.equal(cbnits.hasOfficialCareersShellSignal(careersShellHtml), true)
   assert.equal(cbnits.hasServerRenderedJobsSignal(careersShellHtml), false)
 })

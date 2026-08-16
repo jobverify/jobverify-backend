@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-
 import REPHRASE_AI_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -21,14 +19,22 @@ export const COMMON_ROUTE_URLS = [ABOUT_URL, CAREERS_URL, JOBS_URL]
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'User-Agent': USER_AGENT,
-  },
-  label: 'rephraseai-text',
-  timeoutMs: 30000,
-})
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'User-Agent': USER_AGENT,
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(30000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    html: await response.text(),
+  }
+}
 
 const normalizeWhitespace = (value) => {
   const normalized = String(value ?? '')
@@ -40,6 +46,8 @@ const normalizeWhitespace = (value) => {
 }
 
 const stripTags = (value) => normalizeWhitespace(String(value ?? '').replace(/<[^>]+>/g, ' '))
+
+const getPageHtml = (page = {}) => String(page.html ?? page.text ?? page.body ?? '')
 
 export const extractSuspiciousCareerLinks = (html, baseUrl = HOMEPAGE_URL) => {
   const links = []
@@ -76,6 +84,15 @@ export const hasHomepageSignal = (html) => {
     && /\bAI (writing assistant|rephraser|rewriting tools?)\b/i.test(source)
 }
 
+export const hasVercelSecurityCheckpointSignal = (html) => {
+  const source = String(html ?? '')
+  const normalized = normalizeWhitespace(source)?.toLowerCase() || ''
+
+  return /<title>\s*Vercel Security Checkpoint\s*<\/title>/i.test(source)
+    && normalized.includes('vercel')
+    && normalized.includes('security checkpoint')
+}
+
 export const hasNotFoundSignal = (html) => {
   const source = String(html ?? '')
 
@@ -91,9 +108,34 @@ const assertNoSuspiciousLinks = (html, routeLabel, routeUrl) => {
   }
 }
 
+export const isVerifiedVercelCheckpointPage = (page = {}, requestedUrl = '') =>
+  Number(page.status) === 429
+  && String(page.url || requestedUrl) === requestedUrl
+  && hasVercelSecurityCheckpointSignal(getPageHtml(page))
+
 export const createRephraseAiScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+  async run({ fetchPage, fetchText } = {}) {
+    const effectiveFetchPage = fetchPage || (fetchText
+      ? async (url) => ({
+        status: 200,
+        url,
+        html: await fetchText(url),
+      })
+      : defaultFetchPage)
+
+    const homepage = await effectiveFetchPage(HOMEPAGE_URL)
+    const homepageHtml = getPageHtml(homepage)
+
+    if (isVerifiedVercelCheckpointPage(homepage, HOMEPAGE_URL)) {
+      for (const routeUrl of COMMON_ROUTE_URLS) {
+        const routePage = await effectiveFetchPage(routeUrl)
+        if (!isVerifiedVercelCheckpointPage(routePage, routeUrl)) {
+          throw new Error('Rephrase.ai public routes no longer match the verified site-wide Vercel security checkpoint state')
+        }
+      }
+
+      return []
+    }
 
     if (!hasHomepageSignal(homepageHtml)) {
       throw new Error('Rephrase.ai homepage no longer matches the verified public surface')
@@ -102,7 +144,12 @@ export const createRephraseAiScraper = () => ({
     assertNoSuspiciousLinks(homepageHtml, 'Rephrase.ai homepage', HOMEPAGE_URL)
 
     for (const routeUrl of COMMON_ROUTE_URLS) {
-      const routeHtml = await fetchText(routeUrl)
+      const routePage = await effectiveFetchPage(routeUrl)
+      const routeHtml = getPageHtml(routePage)
+
+      if (isVerifiedVercelCheckpointPage(routePage, routeUrl)) {
+        continue
+      }
 
       if (!hasNotFoundSignal(routeHtml)) {
         throw new Error(`${routeUrl} no longer matches the verified no-public-careers surface`)

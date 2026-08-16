@@ -67,6 +67,17 @@ export const hasOfficialBajajMarketsCareersSignals = (html = '') => {
     && extractOfficialDarwinboxUrl(page) === OFFICIAL_CAREERS_HANDOFF_URL
 }
 
+export const hasOfficialBajajMarketsMaintenanceSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page) || ''
+
+  return extractTitle(page) === 'Maintenance Alert'
+    && text.includes('Maintenance Alert!')
+    && text.includes("We'll Be Right Back!")
+    && text.includes('A quick tune-up break.')
+    && text.includes("We'll be live again on")
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -121,7 +132,10 @@ export const createBajajMarketsScraper = ({
     try {
       const careersHtml = await fetchCareersText(OFFICIAL_CAREERS_URL)
 
-      if (!hasOfficialBajajMarketsCareersSignals(careersHtml)) {
+      if (
+        !hasOfficialBajajMarketsCareersSignals(careersHtml)
+        && !hasOfficialBajajMarketsMaintenanceSignal(careersHtml)
+      ) {
         throw new Error('Bajaj Markets verified official careers page no longer matches the verified public surface')
       }
 

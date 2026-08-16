@@ -12,7 +12,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('PathPartner Technology local catalog captures the verified no-public-careers first-party surface', async () => {
+test('PathPartner Technology local catalog captures the verified no-public-careers or trusted-host-unavailable sentinel', async () => {
   const { PATHPARTNER_TECHNOLOGY_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(PATHPARTNER_TECHNOLOGY_CATALOG)
 
@@ -22,14 +22,15 @@ test('PathPartner Technology local catalog captures the verified no-public-caree
   assert.equal(provider.homepageUrl, 'https://pathpartnertech.com/')
   assert.equal(provider.companyCareerPage, 'https://pathpartnertech.com/about/')
   assert.equal(provider.companyDomain, 'pathpartnertech.com')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
-  assert.equal(provider.verifiedOn, '2026-08-04')
-  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
+  assert.equal(provider.atsPlatform, 'official-company-site-unavailable-no-public-jobs')
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /ECONNRESET/i)
   assert.match(provider.verifiedSurfaceSummary, /page-sitemap\.xml/i)
   assert.match(provider.verifiedSurfaceSummary, /\/career\//i)
   assert.match(provider.verifiedSurfaceSummary, /\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /\/jobs\//i)
-  assert.match(provider.verifiedSurfaceSummary, /no public careers|no trustworthy public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /zero-job sentinel|no trustworthy public jobs surface/i)
 })
 
 test('PathPartner Technology backlog row matches directly through the local catalog', async () => {

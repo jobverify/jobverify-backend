@@ -59,19 +59,21 @@ test('Datalogic India local catalog captures the verified first-party careers ha
   assert.equal(provider.companyDomain, 'datalogic.com')
   assert.equal(provider.atsPlatform, 'successfactors')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'successfactors-next-page')
+  assert.equal(provider.paginationStrategy, 'successfactors-dwr-initial-search')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+successfactors-public-search-results+india-detail-pages',
+    'verified-first-party-careers-page+successfactors-bootstrap+dwr-search-results+india-detail-pages',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-08-13')
   assert.match(provider.dryRunFile, /datalogicindia[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.datalogic\.com\/eng\/company\/careers-ca-26\.html/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/career2\.successfactors\.eu\/career\?company=datalogics/i)
-  assert.match(provider.verifiedSurfaceSummary, /\b63 Jobs matched your search\b/i)
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /\b63 global postings\b/i)
+  assert.match(provider.verifiedSurfaceSummary, /\b1 India role\b/i)
   assert.match(provider.verifiedSurfaceSummary, /India Finance Manager/i)
   assert.match(provider.verifiedSurfaceSummary, /\b11363\b/)
 

@@ -120,7 +120,7 @@ export const hasVerifiedBundleIdentity = (bundleText) => {
 
   return BUNDLE_REQUIRED_SIGNALS.every((signal) => source.includes(signal))
     && /path:\s*["']\*["']/i.test(source)
-    && /NotFound-[A-Za-z0-9]+\.js/i.test(source)
+    && /NotFound-[A-Za-z0-9_-]+\.js/i.test(source)
 }
 
 export const hasBundleJobsSignal = (bundleText) =>

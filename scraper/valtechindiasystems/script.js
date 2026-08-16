@@ -12,8 +12,12 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const PROVIDER_METADATA = VALTECH_INDIA_SYSTEMS_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
-export const JOBS_URL = PROVIDER_METADATA.companyCareerPage
+export const CAREER_LANDING_URL = PROVIDER_METADATA.homepageUrl
+export const JOBS_URL = PROVIDER_METADATA.jobListingsUrl || PROVIDER_METADATA.companyCareerPage
+export const JOBS_API_URL = PROVIDER_METADATA.jobsApiUrl
+export const INDIA_COUNTRY_TAG = PROVIDER_METADATA.indiaCountryTag
 
+const DEFAULT_API_LIMIT = 100
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
@@ -46,6 +50,22 @@ const defaultFetchText = async (url) => {
   }
 
   return response.text()
+}
+
+const defaultFetchJson = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'application/json,text/plain;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} for ${url}`)
+  }
+
+  return response.json()
 }
 
 const toAbsoluteUrl = (value, baseUrl = JOBS_URL) => {
@@ -100,41 +120,90 @@ const buildLocationData = (value) => {
   }
 }
 
-export const hasOfficialJobsPageSignal = (html = '') => {
+const buildOfficesLabel = (offices = []) => (
+  Array.isArray(offices)
+    ? offices.map((value) => stripTags(value)).filter(Boolean).join(' | ')
+    : stripTags(offices)
+) || null
+
+const extractRequisitionIdFromUrl = (url) => extractFirst(/\/(\d+)\/?$/i, url)
+
+export const hasOfficialCareerLandingSignal = (html = '') => {
   const page = String(html ?? '')
+  const normalized = stripTags(page) || ''
+  const jobDetailMatches = [...page.matchAll(/\/en-in\/career\/jobs\/\d+\/?/gi)]
 
   return /<title>\s*Career\s*\|\s*Valtech\s*<\/title>/i.test(page)
-    && /Wanted:\s*Innovators,\s*Thinkers,\s*Doers/i.test(page)
-    && /\/en-in\/career\/jobs\/4944510101\//i.test(page)
-    && /\/en-in\/career\/jobs\/4945513101\//i.test(page)
+    && normalized.includes('Wanted: Innovators, Thinkers, Doers')
+    && normalized.includes('Joblist')
+    && normalized.includes('View All')
+    && jobDetailMatches.length >= 3
+    && /href=["']\/en-in\/career\/jobs\/["']/i.test(page)
 }
 
-export const extractJobListings = (html = '') => Array.from(
-  String(html ?? '').matchAll(
-    /<a[^>]+href=["']([^"']*\/en-in\/career\/jobs\/\d+\/?)["'][^>]*class=["'][^"']*\brow\b[^"']*slide-fade-in[^"']*["'][^>]*>[\s\S]*?<h4[^>]*class=["'][^"']*jobs__list__title[^"']*["'][^>]*>([\s\S]*?)<\/h4>[\s\S]*?<h5[^>]*class=["'][^"']*jobs__list__city[^"']*["'][^>]*>([\s\S]*?)<\/h5>[\s\S]*?<\/a>/gi,
-  ),
+export const extractJobsApiUrl = (html = '') => {
+  const relativeUrl = normalizeWhitespace(extractFirst(
+    /<react[^>]+data-react-component-name=["']JobsPage["'][^>]+data-url=["']([^"']+)["']/i,
+    html,
+  ))?.replace(/&amp;/gi, '&')
+
+  return relativeUrl ? toAbsoluteUrl(relativeUrl, JOBS_URL) : null
+}
+
+export const hasOfficialJobsPageSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = stripTags(page) || ''
+  const jobsApiUrl = extractJobsApiUrl(page)
+
+  return /<title>\s*Jobs\s*\|\s*Valtech\s*<\/title>/i.test(page)
+    && normalized.includes('Joblist')
+    && jobsApiUrl === JOBS_API_URL
+    && /data-react-component-name=["']JobsPage["']/i.test(page)
+}
+
+export const buildIndiaJobsApiUrl = ({
+  jobsApiUrl = JOBS_API_URL,
+  countryTag = INDIA_COUNTRY_TAG,
+  offset = 0,
+  limit = DEFAULT_API_LIMIT,
+} = {}) => {
+  const url = new URL(jobsApiUrl)
+  url.searchParams.set('offset', String(offset))
+  url.searchParams.set('limit', String(limit))
+  url.searchParams.set('country', countryTag)
+  return url.toString()
+}
+
+export const extractJobListingsFromApi = (payload = {}) => (
+  Array.isArray(payload?.list)
+    ? payload.list
+      .map((item) => {
+        const sourceUrl = toAbsoluteUrl(item?.url, CAREER_LANDING_URL)
+        const title = normalizeWhitespace(item?.title)
+        const officesLabel = buildOfficesLabel(item?.offices)
+        const primaryOffice = Array.isArray(item?.offices) ? item.offices[0] : item?.offices
+        const locationData = buildLocationData(primaryOffice || officesLabel)
+        const requisitionId = extractRequisitionIdFromUrl(sourceUrl)
+
+        if (!sourceUrl || !title || !officesLabel || !locationData.location) return null
+
+        return {
+          title,
+          company: COMPANY,
+          department: null,
+          location: officesLabel.includes('|') ? officesLabel : locationData.location,
+          city: locationData.city,
+          country: locationData.country,
+          remoteStatus: locationData.remoteStatus,
+          sourceUrl,
+          applyUrl: sourceUrl,
+          requisitionId,
+          requiredSkills: [],
+        }
+      })
+      .filter(Boolean)
+    : []
 )
-  .map((match) => {
-    const sourceUrl = toAbsoluteUrl(match[1])
-    const title = stripTags(match[2])
-    const locationData = buildLocationData(stripTags(match[3]))
-
-    if (!sourceUrl || !title || !locationData.location) return null
-
-    return {
-      title,
-      company: COMPANY,
-      department: null,
-      location: locationData.location,
-      city: locationData.city,
-      country: locationData.country,
-      remoteStatus: locationData.remoteStatus,
-      sourceUrl,
-      applyUrl: sourceUrl,
-      requiredSkills: [],
-    }
-  })
-  .filter(Boolean)
 
 const extractSectionParagraph = (html = '', heading) => {
   const pattern = new RegExp(
@@ -169,6 +238,7 @@ export const extractJobDetail = (html = '', listing = {}) => {
     remoteStatus: locationData.remoteStatus || listing.remoteStatus,
     sourceUrl: listing.sourceUrl,
     applyUrl,
+    requisitionId: listing.requisitionId || extractRequisitionIdFromUrl(listing.sourceUrl),
     requiredSkills: [],
     employmentType: null,
     postingDate: null,
@@ -181,24 +251,55 @@ export const createValtechindiasystemsScraper = ({
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
+    fetchJson = defaultFetchJson,
     now: overrideNow = now,
   } = {}) {
-    const listingHtml = await fetchText(JOBS_URL)
-    if (!hasOfficialJobsPageSignal(listingHtml)) {
-      throw new Error('Valtech verified Valtech careers page no longer matches the known public jobs surface')
+    const landingHtml = await fetchText(CAREER_LANDING_URL)
+    if (!hasOfficialCareerLandingSignal(landingHtml)) {
+      throw new Error('Valtech verified Valtech careers landing page no longer matches the known public jobs surface')
+    }
+
+    const jobsPageHtml = await fetchText(JOBS_URL)
+    if (!hasOfficialJobsPageSignal(jobsPageHtml)) {
+      throw new Error('Valtech verified Valtech jobs page no longer matches the known public jobs surface')
+    }
+
+    const discoveredJobsApiUrl = extractJobsApiUrl(jobsPageHtml)
+    if (discoveredJobsApiUrl !== JOBS_API_URL) {
+      throw new Error('Valtech verified first-party jobs API handoff no longer matches the known public surface')
     }
 
     const scrapedAt = overrideNow()
     const jobs = []
+    let offset = 0
 
-    for (const listing of extractJobListings(listingHtml)) {
-      const detail = extractJobDetail(await fetchText(listing.sourceUrl), listing)
-      jobs.push({
-        ...detail,
-        link: detail.applyUrl || detail.sourceUrl,
-        source: SOURCE,
-        scrapedAt,
-      })
+    while (true) {
+      const payload = await fetchJson(buildIndiaJobsApiUrl({ offset }))
+      const listings = extractJobListingsFromApi(payload)
+
+      if (offset === 0 && listings.length === 0) {
+        return []
+      }
+
+      for (const listing of listings) {
+        const detail = extractJobDetail(await fetchText(listing.sourceUrl), listing)
+        jobs.push({
+          ...detail,
+          link: detail.applyUrl || detail.sourceUrl,
+          source: SOURCE,
+          scrapedAt,
+        })
+      }
+
+      const itemTotal = Number(payload?.page?.itemTotal)
+      const pageLimit = Number(payload?.page?.pageLimit || DEFAULT_API_LIMIT)
+      offset += listings.length
+
+      const hasMore = Number.isFinite(itemTotal)
+        ? offset < itemTotal && listings.length === pageLimit
+        : false
+
+      if (!hasMore) break
     }
 
     return filterIndiaJobs(jobs)

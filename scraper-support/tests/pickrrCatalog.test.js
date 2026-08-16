@@ -44,14 +44,13 @@ test('Pickrr local catalog captures the verified first-party careers-form-withou
   assert.equal(provider.paginationStrategy, 'homepage-plus-sitemap-plus-life-page-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-life-at-pickrr-page+verified-sitemap+verified-careers-404-return-empty',
+    'verified-timeout-only-first-party-routes+legacy-homepage-life-at-pickrr-sitemap-and-careers-404-fallback-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-04')
-  assert.match(provider.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/pickrr\.com\/life-at-pickrr\//i)
-  assert.match(provider.verifiedSurfaceSummary, /Page Not Found - Pickrr/i)
+  assert.equal(provider.verifiedOn, '2026-08-13')
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /repeated connect timeouts/i)
   assert.equal(provider.modulePath, pickrrModulePath)
   assert.match(provider.dryRunFile, /pickrr[\\/]jobs\.json$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Pickrr'), false)

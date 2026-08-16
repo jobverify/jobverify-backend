@@ -60,7 +60,7 @@ test('Sophos Technologies pins the verified first-party Lever board and API', as
   assert.equal(sophos.CAREERS_URL, 'https://www.sophos.com/en-us/company/careers')
   assert.equal(sophos.LEVER_BOARD_URL, 'https://jobs.lever.co/sophos')
   assert.equal(sophos.LEVER_POSTINGS_API_URL, 'https://api.lever.co/v0/postings/sophos')
-  assert.equal(sophos.VERIFIED_ON, '2026-07-23')
+  assert.equal(sophos.VERIFIED_ON, '2026-08-14')
 })
 
 test('Sophos Technologies paginates Lever until a short page and keeps India jobs from the final page', async () => {
@@ -212,6 +212,31 @@ test('Sophos Technologies accepts the full country name when a location is city-
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].location, 'Bengaluru')
   assert.equal(jobs[0].city, 'Bengaluru')
+  assert.equal(jobs[0].country, 'India')
+})
+
+test('Sophos Technologies accepts a generic India location when Lever explicitly cross-lists India for a foreign primary country', async () => {
+  const { extractIndiaJobsFromLeverPostings } = await loadModule()
+  const crossListedIndiaJob = {
+    ...principalFirewallEngineer,
+    id: '566fcac4-599c-480d-b904-83d01f58cbbf',
+    text: 'Data Quality Analyst (Salesforce Data Steward)',
+    country: 'PH',
+    categories: {
+      location: 'Philippines',
+      allLocations: ['Philippines', 'India'],
+      team: 'Financial Business Systems and Operations',
+      commitment: 'Permanent',
+    },
+    hostedUrl: 'https://jobs.lever.co/sophos/566fcac4-599c-480d-b904-83d01f58cbbf',
+    applyUrl: 'https://jobs.lever.co/sophos/566fcac4-599c-480d-b904-83d01f58cbbf/apply',
+  }
+
+  const jobs = extractIndiaJobsFromLeverPostings([crossListedIndiaJob])
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].location, 'India')
+  assert.equal(jobs[0].city, null)
   assert.equal(jobs[0].country, 'India')
 })
 

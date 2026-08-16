@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-16T10:15:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-14T10:15:00.000Z'
 
 const listingsPageOneHtml = `
 <!doctype html>
@@ -189,6 +189,28 @@ const detailHtmlByUrl = {
 `,
 }
 
+const blockedChallengePage = {
+  status: 403,
+  url: 'https://jobs.gartner.com/jobs/?country=India',
+  headers: {
+    server: 'cloudflare',
+    'cf-mitigated': 'challenge',
+    'cf-ray': 'a2acce014b27c728-MAA',
+  },
+  html: `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Just a moment...</title>
+  </head>
+  <body>
+    <div id="challenge-body-text">Enable JavaScript and cookies to continue</div>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
+  </body>
+</html>
+`,
+}
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/gartner/script.js')
@@ -197,7 +219,7 @@ const loadModule = async () => {
   }
 }
 
-test('Gartner helpers keep the browser-rendered India jobs contract explicit', async () => {
+test('Gartner helpers keep the verified browser-visible India jobs contract explicit', async () => {
   const gartner = await loadModule()
 
   assert.equal(gartner.SOURCE, 'gartner')
@@ -206,8 +228,14 @@ test('Gartner helpers keep the browser-rendered India jobs contract explicit', a
   assert.equal(gartner.LISTINGS_URL, 'https://jobs.gartner.com/jobs/?country=India')
   assert.equal(gartner.COMPANY_DOMAIN, 'jobs.gartner.com')
   assert.equal(gartner.COUNTRY_FILTER, 'India')
-  assert.equal(gartner.VERIFIED_ON, '2026-07-16')
-  assert.match(gartner.VERIFIED_SURFACE_SUMMARY, /36 unique India jobs/i)
+  assert.equal(gartner.VERIFIED_ON, '2026-08-14')
+  assert.match(gartner.VERIFIED_SURFACE_SUMMARY, /Cloudflare-managed HTTP 403 challenge shell/i)
+  assert.match(gartner.VERIFIED_SURFACE_SUMMARY, /HR System Ops Specialist/i)
+  assert.equal(gartner.hasVerifiedCloudflareChallengeSignal(blockedChallengePage), true)
+  assert.equal(
+    gartner.isVerifiedCloudflareChallengedPage(blockedChallengePage, gartner.LISTINGS_URL),
+    true,
+  )
   assert.equal(
     gartner.buildListingsUrl(),
     'https://jobs.gartner.com/jobs/?country=India',
@@ -341,6 +369,49 @@ test('Gartner run paginates browser-rendered listings until pages stop yielding 
     jobs[2].applyUrl,
     'https://gartner.wd5.myworkdayjobs.com/EXT/job/Chennai/Associate-Database-Administrator_109239-1/apply',
   )
+})
+
+test('Gartner returns a truthful current-openings signal when the live India listings route is challenge-gated', async () => {
+  const gartner = await loadModule()
+
+  const jobs = await gartner.createGartnerScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchPage: async (url) => {
+      assert.equal(url, gartner.LISTINGS_URL)
+      return blockedChallengePage
+    },
+  })
+
+  assert.deepEqual(jobs, [
+    {
+      title: 'Current openings at Gartner',
+      company: 'Gartner',
+      location: 'India',
+      city: null,
+      country: 'India',
+      link: 'https://jobs.gartner.com/jobs/?country=India',
+      applyUrl: 'https://jobs.gartner.com/jobs/?country=India',
+      sourceUrl: 'https://jobs.gartner.com/jobs/?country=India',
+      source: 'gartner',
+      jobId: 'gartner-current-openings',
+      requisitionId: 'gartner-current-openings',
+      department: null,
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription:
+        'The official Gartner careers page still exposes India openings in the browser, but direct requests to https://jobs.gartner.com/jobs/?country=India returned a verified Cloudflare challenge during this scrape. Review current openings directly on https://jobs.gartner.com/jobs/?country=India.',
+      companyCareerPage: 'https://jobs.gartner.com/jobs/?country=India',
+      companyDomain: 'jobs.gartner.com',
+      atsPlatform: 'official-company-careers',
+      scrapedAt: FIXED_SCRAPED_AT,
+    },
+  ])
 })
 
 test('Gartner fails closed when the listings or detail contract drifts', async () => {

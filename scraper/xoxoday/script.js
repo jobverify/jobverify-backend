@@ -47,6 +47,23 @@ const normalizeComparableUrl = (value) => String(value ?? '').replace(/\/$/, '')
 const buildJobDetailUrl = (jobId) => `${normalizeComparableUrl(KEKA_CAREERS_URL)}/jobdetails/${jobId}`
 const buildApplyUrl = (jobId) => `${normalizeComparableUrl(KEKA_CAREERS_URL)}/applyjob/${jobId}`
 
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    html: await response.text(),
+  }
+}
+
 const mapJobType = (value) => {
   const numeric = Number(value)
   if (numeric === 1) return 'Part Time'
@@ -93,6 +110,14 @@ export const hasOfficialCareersSignal = (html = '') => {
   return normalized.includes("See who we're hiring right now.")
     && normalized.includes('Live listings, straight from our applicant tracking system.')
     && normalized.includes('Explore roles shaping the future of rewards')
+}
+
+export const hasVercelSecurityCheckpointSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+
+  return /<title[^>]*>\s*Vercel Security Checkpoint\s*<\/title>/i.test(page)
+    && normalized.includes('Vercel Security Checkpoint')
 }
 
 export const hasKekaShellSignal = (html = '') =>
@@ -156,13 +181,35 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
 })
 
 export const createXoxodayScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson, now: overrideNow } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
+  async run({ fetchPage, fetchText, fetchJson = defaultFetchJson, now: overrideNow } = {}) {
+    const loadPage = async (url) => {
+      if (typeof fetchPage === 'function') {
+        return fetchPage(url)
+      }
+
+      if (typeof fetchText === 'function') {
+        return {
+          status: 200,
+          url,
+          html: await fetchText(url),
+        }
+      }
+
+      return defaultFetchPage(url)
+    }
+
+    const careersPage = await loadPage(CAREERS_URL)
+    const careersHtml = String(careersPage.html ?? '')
+    const careersPageBlocked =
+      Number(careersPage.status) === 429
+      && String(careersPage.url || CAREERS_URL) === CAREERS_URL
+      && hasVercelSecurityCheckpointSignal(careersHtml)
+
+    if (!careersPageBlocked && !hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Xoxoday verified first-party careers page changed materially')
     }
 
-    const kekaShellHtml = await fetchText(KEKA_CAREERS_URL)
+    const kekaShellHtml = String((await loadPage(KEKA_CAREERS_URL)).html ?? '')
     if (!hasKekaShellSignal(kekaShellHtml)) {
       throw new Error('Xoxoday verified public Keka shell changed materially')
     }

@@ -51,6 +51,8 @@ const extractParagraphs = (html = '') => [...String(html ?? '').matchAll(/<p[^>]
   .map((match) => normalizeWhitespace(match[1]))
   .filter(Boolean)
 
+const stripHtmlComments = (value = '') => String(value ?? '').replace(/<!--[\s\S]*?-->/g, '')
+
 const htmlToLines = (value = '') => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
@@ -113,10 +115,14 @@ export const hasOfficialArchiveSignal = (html = '') => {
 export const hasNoJobsFoundSignal = (html = '') =>
   /\bNo jobs found\b/i.test(normalizeWhitespace(html))
 
+export const hasNextArchivePageSignal = (html = '') =>
+  /<a[^>]*class=["'][^"']*next\s+page-numbers[^"']*["'][^>]*href=["'][^"']+["']/i.test(String(html ?? ''))
+
 export const extractListingCards = (html = '') => {
+  const page = stripHtmlComments(html)
   const jobs = []
 
-  for (const match of String(html ?? '').matchAll(/<article[^>]*class=["'][^"']*job-card[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi)) {
+  for (const match of String(page).matchAll(/<article[^>]*class=["'][^"']*job-card[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi)) {
     const block = match[1]
     const title = normalizeWhitespace(block.match(/<h[1-6][^>]*>\s*<a[^>]*>([\s\S]*?)<\/a>\s*<\/h[1-6]>/i)?.[1])
     const detailUrl = toAbsoluteUrl(block.match(/<a[^>]*href=["']([^"']+)["']/i)?.[1])
@@ -140,7 +146,7 @@ export const extractListingCards = (html = '') => {
 
   const anchorEntries = []
   const seenUrls = new Map()
-  const anchors = [...String(html ?? '').matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
+  const anchors = [...String(page).matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
 
   for (const match of anchors) {
     const detailUrl = toAbsoluteUrl(match[1])
@@ -177,8 +183,8 @@ export const extractListingCards = (html = '') => {
 
   for (let index = 0; index < anchorEntries.length; index += 1) {
     const entry = anchorEntries[index]
-    const nextIndex = anchorEntries[index + 1]?.startIndex ?? String(html ?? '').length
-    const segment = String(html ?? '').slice(entry.startIndex, nextIndex)
+    const nextIndex = anchorEntries[index + 1]?.startIndex ?? String(page).length
+    const segment = String(page).slice(entry.startIndex, nextIndex)
     const lines = htmlToLines(segment)
     const employmentType = lines.find((line) => /\b(?:full time|part time|contract)\b/i.test(line)) || null
     const location = lines.find((line) =>
@@ -288,6 +294,10 @@ export const createTaalTechIndiaScraper = ({
           const detailHtml = await fetchText(card.detailUrl)
           const detail = extractJobDetail(detailHtml)
           jobs.push(createJobFromCard({ card, detail, scrapedAt }))
+        }
+
+        if (!hasNextArchivePageSignal(pageHtml)) {
+          break
         }
 
         pageNumber += 1

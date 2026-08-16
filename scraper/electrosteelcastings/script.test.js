@@ -3,11 +3,14 @@ import test from 'node:test'
 
 import {
   CAREERS_URL,
-  EMPLOYMENT_FORM_URL,
   HOMEPAGE_URL,
-  LIFE_AT_URL,
+  LEGACY_CAREERS_ENQUIRY_URL,
+  LEGACY_LIFE_AT_URL,
+  SOURCE,
+  VERIFIED_ON,
   createElectrosteelCastingsScraper,
-  hasApplicationOnlyCareerSignal,
+  hasBrandedMissingRouteSignal,
+  hasCareerInfoOnlySignal,
   hasOfficialHomepageSignal,
 } from './script.js'
 
@@ -15,80 +18,129 @@ const homepageHtml = `
   <!doctype html>
   <html lang="en">
     <head>
-      <title>Electrosteel Castings Limited</title>
+      <title>Home | Electrosteel Castings Limited</title>
     </head>
     <body>
-      <nav>
-        <a href="${LIFE_AT_URL}">Life @ Electrosteel</a>
-        <a href="${CAREERS_URL}">Join us</a>
-      </nav>
+      <p>MANUFACTURING EXCELLENCE.</p>
+      <p>A proud make in india company With Global Outreach</p>
+      <p>We are the largest manufacturer of Ductile Iron (DI) Pipes in the Indian sub-continent.</p>
     </body>
   </html>
 `
 
-const careersHtml = `
+const careerInfoHtml = `
   <!doctype html>
   <html lang="en">
     <head>
-      <title>Careers Enquiry</title>
+      <title>Electrosteel</title>
     </head>
     <body>
-      <h1>Careers Enquiry</h1>
-      <p>Step 1: Download Employment Form</p>
-      <p>Step 2: Fill in your details</p>
-      <p>Step 3: Upload Employment Form</p>
-      <a href="${EMPLOYMENT_FORM_URL}">employment_form.pdf</a>
+      <h1>Build the Future with Electrosteel Castings Limited</h1>
+      <h2>WHY JOIN ELECTROSTEEL</h2>
+      <h2>OUR PROMISE</h2>
+      <h2>Explore Opportunities at Electrosteel</h2>
+      <h2>Khoj The Campus Drive</h2>
+      <h3>Roles Offered Under Khoj</h3>
+      <p>Final-year students pursuing B.Tech, MBA, CA, B.Sc., B.A., B.Com., and other relevant disciplines from recognised universities and institutes across India</p>
     </body>
   </html>
 `
 
-test('validates the official Electrosteel homepage and application-only careers enquiry page', async () => {
+const missingRouteHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Electrosteel</title>
+    </head>
+    <body>
+      <h1>404 / Page Not Found</h1>
+      <p>THIS PAGE IS OFF THE GRID.</p>
+      <p>Routing Status 404</p>
+      <p>Destination unavailable.</p>
+    </body>
+  </html>
+`
+
+test('validates the Friday, August 14, 2026 Electrosteel homepage, careers hub, and branded legacy 404 routes', async () => {
   const requestedUrls = []
   const scraper = createElectrosteelCastingsScraper()
 
+  assert.equal(SOURCE, 'electrosteelcastings')
+  assert.equal(VERIFIED_ON, '2026-08-14')
   assert.equal(hasOfficialHomepageSignal(homepageHtml), true)
-  assert.equal(hasApplicationOnlyCareerSignal(careersHtml), true)
+  assert.equal(hasCareerInfoOnlySignal(careerInfoHtml), true)
+  assert.equal(hasBrandedMissingRouteSignal(missingRouteHtml), true)
 
   const jobs = await scraper.run({
     fetchText: async (url) => {
       requestedUrls.push(url)
 
       if (url === HOMEPAGE_URL) return homepageHtml
-      if (url === CAREERS_URL) return careersHtml
+      if (url === CAREERS_URL) return careerInfoHtml
 
       throw new Error(`Unexpected URL: ${url}`)
     },
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === LEGACY_CAREERS_ENQUIRY_URL || url === LEGACY_LIFE_AT_URL) {
+        return { status: 404, url, html: missingRouteHtml }
+      }
+
+      throw new Error(`Unexpected page URL: ${url}`)
+    },
   })
 
-  assert.deepEqual(requestedUrls, [HOMEPAGE_URL, CAREERS_URL])
+  assert.deepEqual(requestedUrls, [
+    HOMEPAGE_URL,
+    CAREERS_URL,
+    LEGACY_CAREERS_ENQUIRY_URL,
+    LEGACY_LIFE_AT_URL,
+  ])
   assert.deepEqual(jobs, [])
 })
 
-test('fails closed when the Electrosteel homepage signal changes', async () => {
+test('fails closed when the Electrosteel homepage, careers hub, or legacy 404 routes drift', async () => {
   await assert.rejects(
     createElectrosteelCastingsScraper().run({
       fetchText: async (url) => {
         if (url === HOMEPAGE_URL) {
-          return '<html><body>No careers navigation</body></html>'
+          return '<html><body>No manufacturing overview</body></html>'
         }
 
-        return careersHtml
+        return careerInfoHtml
       },
     }),
     /Electrosteel homepage no longer matches the verified official public site/i,
   )
-})
 
-test('fails closed when the Electrosteel careers enquiry page changes', async () => {
   await assert.rejects(
     createElectrosteelCastingsScraper().run({
       fetchText: async (url) => {
         if (url === HOMEPAGE_URL) return homepageHtml
-        if (url === CAREERS_URL) return '<html><body>Open roles listed here</body></html>'
+        if (url === CAREERS_URL) return '<html><body>Apply now for open roles</body></html>'
+        throw new Error(`Unexpected text URL: ${url}`)
+      },
+      fetchPage: async (url) => ({ status: 404, url, html: missingRouteHtml }),
+    }),
+    /career information page no longer matches the verified official no-openings surface/i,
+  )
 
-        throw new Error(`Unexpected URL: ${url}`)
+  await assert.rejects(
+    createElectrosteelCastingsScraper().run({
+      fetchText: async (url) => {
+        if (url === HOMEPAGE_URL) return homepageHtml
+        if (url === CAREERS_URL) return careerInfoHtml
+        throw new Error(`Unexpected text URL: ${url}`)
+      },
+      fetchPage: async (url) => {
+        if (url === LEGACY_CAREERS_ENQUIRY_URL) {
+          return { status: 200, url, html: '<html><body>Open roles listed here</body></html>' }
+        }
+
+        return { status: 404, url, html: missingRouteHtml }
       },
     }),
-    /Electrosteel careers enquiry page no longer matches the verified official application-only surface/i,
+    /legacy careers routes no longer match the verified first-party missing-page surface/i,
   )
 })

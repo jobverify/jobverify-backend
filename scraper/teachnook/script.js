@@ -5,11 +5,11 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'teachnook'
 export const COMPANY = 'Teachnook'
-export const HOMEPAGE_URL = 'https://teachnook.com/'
-export const CAREERS_URL = 'https://teachnook.com/careers'
-export const LANDER_URL = 'https://teachnook.com/lander'
-export const ALT_HOMEPAGE_URL = 'https://teachnook.in/'
-export const ALT_CAREERS_URL = 'https://teachnook.in/careers'
+export const HOMEPAGE_URL = 'https://teachnook.in/'
+export const CAREERS_URL = 'https://teachnook.in/careers'
+export const LANDER_URL = 'https://teachnook.in/lander'
+export const ALT_HOMEPAGE_URL = 'https://teachnook.com/'
+export const ALT_CAREERS_URL = 'https://teachnook.com/careers'
 export const APPLY_URL = null
 export const PRIMARY_URLS = [
   HOMEPAGE_URL,

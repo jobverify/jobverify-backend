@@ -123,6 +123,20 @@ const NOT_FOUND_HTML = `
 </html>
 `
 
+const ACCESS_DENIED_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Access Denied</title>
+  </head>
+  <body>
+    <h1>Access Denied</h1>
+    <p>You don't have permission to access "http://www.metro-gsc.in/" on this server.</p>
+    <p>https://errors.edgesuite.net/18.12345678.1234567890.deadbeef</p>
+  </body>
+</html>
+`
+
 const SEARCH_RESPONSE_PAGE_1 = {
   TotalTime: 100,
   QueryTime: 50,
@@ -135,8 +149,8 @@ const SEARCH_RESPONSE_PAGE_1 = {
       Html: `
         <div class="teaser--job teaser" id="job-607055d7-5995-4236-a710-c49436e93415" itemscope itemtype="https://schema.org/JobPosting">
           <a
-            class="teaser__link"
-            href="https://www.metro-gsc.in/careers/jobs/sr-full-stack-engineer?jid=607055d7-5995-4236-a710-c49436e93415"
+            class ="teaser__link"
+            href ="https://www.metro-gsc.in/careers/jobs/sr-full-stack-engineer?jid=607055d7-5995-4236-a710-c49436e93415"
             title="Sr Full Stack Engineer"
             itemprop="url"
           ></a>
@@ -161,8 +175,8 @@ const SEARCH_RESPONSE_PAGE_1 = {
       Html: `
         <div class="teaser--job teaser" id="job-2469ba38-1029-432a-b1aa-d2d950366ea7" itemscope itemtype="https://schema.org/JobPosting">
           <a
-            class="teaser__link"
-            href="https://www.metro-gsc.in/careers/jobs/group-manager-transitions?jid=2469ba38-1029-432a-b1aa-d2d950366ea7"
+            class ="teaser__link"
+            href ="https://www.metro-gsc.in/careers/jobs/group-manager-transitions?jid=2469ba38-1029-432a-b1aa-d2d950366ea7"
             title="Group Manager - Transitions"
             itemprop="url"
           ></a>
@@ -197,8 +211,8 @@ const SEARCH_RESPONSE_PAGE_2 = {
       Html: `
         <div class="teaser--job teaser" id="job-non-india" itemscope itemtype="https://schema.org/JobPosting">
           <a
-            class="teaser__link"
-            href="https://www.metro-gsc.in/careers/jobs/eu-platform-architect?jid=job-non-india"
+            class ="teaser__link"
+            href ="https://www.metro-gsc.in/careers/jobs/eu-platform-architect?jid=job-non-india"
             title="EU Platform Architect"
             itemprop="url"
           ></a>
@@ -382,6 +396,41 @@ test('Metro Global Solution Center extracts India jobs from the verified paginat
   assert.equal(jobs[1].publicExperienceChecked, true)
 })
 
+test('Metro Global Solution Center falls back to listing-only jobs when the verified detail page is Akamai-blocked', async () => {
+  const jobs = await extractJobsFromSearchResponse({
+    searchResponse: {
+      ...SEARCH_RESPONSE_PAGE_1,
+      Results: [SEARCH_RESPONSE_PAGE_1.Results[0]],
+    },
+    fetchText: async () => {
+      throw new Error('HTTP 403 for https://www.metro-gsc.in/careers/jobs/sr-full-stack-engineer?jid=607055d7-5995-4236-a710-c49436e93415')
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.deepEqual(jobs[0], {
+    title: 'Sr Full Stack Engineer',
+    company: COMPANY,
+    department: 'IT',
+    location: 'Pune, MH, India',
+    city: 'Pune',
+    country: 'India',
+    jobId: 'metroglobalsolutioncenter-607055d7-5995-4236-a710-c49436e93415',
+    requisitionId: '607055d7-5995-4236-a710-c49436e93415',
+    sourceUrl: 'https://www.metro-gsc.in/careers/jobs/sr-full-stack-engineer?jid=607055d7-5995-4236-a710-c49436e93415',
+    applyUrl: 'https://www.metro-gsc.in/careers/jobs/sr-full-stack-engineer?jid=607055d7-5995-4236-a710-c49436e93415',
+    employmentType: 'Full time',
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: '2026-07-10T11:07:48.000Z',
+    closingDate: null,
+    jobDescription: 'Build scalable products & services.',
+    publicExperienceChecked: true,
+  })
+})
+
 test('Metro Global Solution Center run() validates the route chain, paginates the jobs API, filters non-India entries, and returns catalog-ready jobs', async () => {
   const requestedJsonUrls = []
   const requestedTextUrls = []
@@ -440,7 +489,7 @@ test('Metro Global Solution Center run() validates the route chain, paginates th
         companyCareerPage: JOBS_URL,
         companyDomain: COMPANY_DOMAIN,
         atsPlatform: 'official-company-careers',
-      link:
+        link:
           'https://jobs.smartrecruiters.com/METROMAKRO/744000137129495-sr-full-stack-engineer?oga=true&utm_source=external%20careers',
         scrapedAt: '2026-07-11T00:00:00.000Z',
         experienceRequired: '5+ years',
@@ -461,4 +510,19 @@ test('Metro Global Solution Center run() validates the route chain, paginates th
       },
     ],
   )
+})
+
+test('Metro Global Solution Center returns [] when homepage, careers, and jobs are all on the verified Akamai access-denied shell', async () => {
+  const jobs = await createMetroGlobalSolutionCenterScraper().run({
+    fetchPage: async (url) => ({
+      status: 403,
+      url,
+      html: ACCESS_DENIED_HTML,
+    }),
+    fetchJson: async () => {
+      throw new Error('Jobs API should not be called when all verified first-party routes are blocked')
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })

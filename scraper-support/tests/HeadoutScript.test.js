@@ -15,8 +15,8 @@ const officialCareersHtml = `
   <head>
     <title>Careers at Headout — Help the world head out</title>
     <link rel="canonical" href="https://www.headout.com/careers/" />
-    <script src="/brand-pages/_next/static/chunks/11111-no-match.js" async=""></script>
-    <script src="/brand-pages/_next/static/chunks/47646-open-roles.js" async=""></script>
+    <script src="https://assets.headout.com/hobrandpages/_next/static/chunks/11111-no-match.js" async=""></script>
+    <script src="https://assets.headout.com/hobrandpages/_next/static/chunks/47646-open-roles.js" async=""></script>
   </head>
   <body>
     <main>
@@ -106,7 +106,7 @@ test('Headout verifies the first-party careers shell and open-roles loader contr
   assert.equal(headout.COMPANY, 'Headout')
   assert.equal(headout.OFFICIAL_BRAND_NAME, 'Headout')
   assert.equal(headout.CAREERS_URL, 'https://www.headout.com/careers/')
-  assert.equal(headout.VERIFIED_ON, '2026-07-16')
+  assert.equal(headout.VERIFIED_ON, '2026-08-15')
   assert.deepEqual(headout.GREENHOUSE_BOARD_SLUGS, ['headoutcareers', 'headoutreferrals'])
   assert.equal(
     headout.buildGreenhouseJobsApiUrl('headoutcareers'),
@@ -114,8 +114,8 @@ test('Headout verifies the first-party careers shell and open-roles loader contr
   )
   assert.equal(headout.hasOfficialCareersSignal(officialCareersHtml), true)
   assert.deepEqual(headout.extractCandidateLoaderScriptUrls(officialCareersHtml), [
-    'https://www.headout.com/brand-pages/_next/static/chunks/11111-no-match.js',
-    'https://www.headout.com/brand-pages/_next/static/chunks/47646-open-roles.js',
+    'https://assets.headout.com/hobrandpages/_next/static/chunks/11111-no-match.js',
+    'https://assets.headout.com/hobrandpages/_next/static/chunks/47646-open-roles.js',
   ])
   assert.equal(headout.hasVerifiedOpenRolesLoaderSignal(unrelatedChunkScript), false)
   assert.equal(headout.hasVerifiedOpenRolesLoaderSignal(verifiedLoaderScript), true)
@@ -153,10 +153,10 @@ test('Headout run validates the official page and loader before fetching the Gre
     fetchText: async (url) => {
       requested.push({ type: 'text', url })
       if (url === headout.CAREERS_URL) return officialCareersHtml
-      if (url === 'https://www.headout.com/brand-pages/_next/static/chunks/11111-no-match.js') {
+      if (url === 'https://assets.headout.com/hobrandpages/_next/static/chunks/11111-no-match.js') {
         return unrelatedChunkScript
       }
-      if (url === 'https://www.headout.com/brand-pages/_next/static/chunks/47646-open-roles.js') {
+      if (url === 'https://assets.headout.com/hobrandpages/_next/static/chunks/47646-open-roles.js') {
         return verifiedLoaderScript
       }
       throw new Error(`Unexpected Headout text fixture URL: ${url}`)
@@ -172,8 +172,8 @@ test('Headout run validates the official page and loader before fetching the Gre
 
   assert.deepEqual(requested, [
     { type: 'text', url: headout.CAREERS_URL },
-    { type: 'text', url: 'https://www.headout.com/brand-pages/_next/static/chunks/11111-no-match.js' },
-    { type: 'text', url: 'https://www.headout.com/brand-pages/_next/static/chunks/47646-open-roles.js' },
+    { type: 'text', url: 'https://assets.headout.com/hobrandpages/_next/static/chunks/11111-no-match.js' },
+    { type: 'text', url: 'https://assets.headout.com/hobrandpages/_next/static/chunks/47646-open-roles.js' },
     {
       type: 'json',
       url: 'https://boards-api.greenhouse.io/v1/boards/headoutcareers/jobs?content=true',

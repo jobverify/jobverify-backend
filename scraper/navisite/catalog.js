@@ -13,15 +13,15 @@ export const NAVISITE_CATALOG = {
   parentCareersUrl: 'https://www.accenture.com/us-en/careers',
   atsPlatform: 'official-careers-parent-search-handoff',
   countryFilter: 'Global',
-  paginationStrategy: 'first-party-handoff-page-validation',
+  paginationStrategy: 'first-party-handoff-page-or-blocked-shell-validation',
   extractionStrategy:
-    'verified-first-party-navisite-handoff+opaque-accenture-search-flow+fail-closed-sentinel',
+    'verified-first-party-navisite-handoff-or-cloudflare-blocked-shell+opaque-accenture-search-flow+fail-closed-sentinel',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'navisite.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-13',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.navisite.com/about/careers/ was the live first-party Navisite careers page and that it instructed candidates to use the Accenture Careers page at https://www.accenture.com/us-en/careers and search “Navisite” for open roles. Because the public inventory is only exposed through that opaque parent search flow rather than a stable Navisite-enumerable board, this provider stays fail-closed.',
+    'Verified on Thursday, August 13, 2026 that https://www.navisite.com/about/careers/ currently returns a Cloudflare "Just a moment..." challenge shell with HTTP 403. The previously verified first-party Navisite careers surface historically instructed candidates to use the Accenture Careers page at https://www.accenture.com/us-en/careers and search "Navisite" for open roles, but the current public inventory is not trustworthily enumerable from the blocked first-party route or the opaque parent search flow, so this provider remains fail-closed and returns an empty sentinel.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'navisite/jobs.json',
 }

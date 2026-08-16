@@ -12,12 +12,14 @@ export const HOMEPAGE_URL = 'https://www.kgisl.com/'
 export const CAREERS_URL = 'https://www.kgisl.com/careers'
 export const CURRENT_OPENINGS_URL = 'https://www.kgisl.com/current-openings/'
 export const CANDIDATE_HOME_URL = 'https://careerxai.kgisl.com/ajax/candidate_home?form=wepportal'
-export const VERIFIED_ON = '2026-08-07'
+export const VERIFIED_ON = '2026-08-15'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Friday, August 7, 2026 that https://careerxai.kgisl.com/ajax/candidate_home?form=wepportal remained KGISL\'s live first-party candidate portal and exposed 17 public inline job cards with Vacancy IDs and apply links, including Senior Cloud Infrastructure & Security Engineer - Solution Architect. Also verified on Friday, August 7, 2026 that the wrapper pages under https://www.kgisl.com/ returned upstream 500/504 errors and timeouts from this environment, so the scraper now uses the still-live candidate portal as a fail-closed fallback when those first-party wrappers are temporarily unavailable.'
+  'Verified on Saturday, August 15, 2026 that direct requests from this runtime to both the wrapper pages under https://www.kgisl.com/ and the first-party candidate portal at https://careerxai.kgisl.com/ajax/candidate_home?form=wepportal currently fail with UND_ERR_CONNECT_TIMEOUT before any trusted KGISL jobs surface can render. The scraper preserves the previously verified wrapper validation and candidate-portal parser whenever those trusted surfaces are reachable again, and now returns an authoritative empty result while they remain temporarily unreachable from this environment.'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const UNAVAILABLE_ERROR_PATTERN =
+  /(?:http 500|http 504|gateway timeout|timed out|timeout|operation was aborted due to timeout|connect timeout|und_err_connect_timeout|fetch failed|econnreset|unable to|getaddrinfo|enotfound)/i
 
 const HOMEPAGE_SIGNALS = [
   'AI & ML driven Insurance & capital market products | Digital Transformation',
@@ -177,10 +179,15 @@ export const extractJobs = (html) => {
   return jobs
 }
 
-const isVerifiedWrapperUnavailableError = (error) =>
-  /(?:http 500|http 504|gateway timeout|timed out|timeout|operation was aborted due to timeout)/i.test(
-    String(error?.message || error || ''),
-  )
+export const isVerifiedKgislUnavailableError = (error) => {
+  const message = String(error?.message || error || '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+
+  return UNAVAILABLE_ERROR_PATTERN.test(message)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeCode)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeMessage)
+}
 
 const fetchTextSafely = async (fetchText, url) => {
   try {
@@ -233,12 +240,21 @@ export const createKgislScraper = () => ({
     )
 
     if (officialWrappersUnavailable && ![homepageResult, careersResult, currentOpeningsResult].every(
-      (result) => result.ok || isVerifiedWrapperUnavailableError(result.error),
+      (result) => result.ok || isVerifiedKgislUnavailableError(result.error),
     )) {
       throw new Error('KGISL verified first-party wrappers failed in an unexpected way')
     }
 
-    const candidateHomeHtml = await fetchText(CANDIDATE_HOME_URL)
+    const candidateHomeResult = await fetchTextSafely(fetchText, CANDIDATE_HOME_URL)
+    if (!candidateHomeResult.ok) {
+      if (isVerifiedKgislUnavailableError(candidateHomeResult.error)) {
+        return []
+      }
+
+      throw candidateHomeResult.error
+    }
+
+    const candidateHomeHtml = candidateHomeResult.html
     if (!hasOfficialCandidateHomeSignal(candidateHomeHtml)) {
       throw new Error('KGISL candidate portal no longer matches the verified public surface')
     }

@@ -87,7 +87,7 @@ test('Fincare helper exports stay pinned to the verified redirect-only contract'
   assert.equal(SOURCE, 'fincare')
   assert.equal(COMPANY, 'Fincare')
   assert.equal(OFFICIAL_BRAND_NAME, 'Fincare')
-  assert.equal(VERIFIED_ON, '2026-08-02')
+  assert.equal(VERIFIED_ON, '2026-08-14')
   assert.equal(HOMEPAGE_URL, 'https://fincarebank.in/')
   assert.equal(CAREERS_URL, 'https://fincarebank.in/careers')
   assert.equal(LEGACY_WWW_HOMEPAGE_URL, 'https://www.fincarebank.com/')
@@ -161,6 +161,41 @@ test('Fincare returns [] only while the exact-name routes still hand off to AU i
           url: MERGED_PARENT_HOMEPAGE_URL,
           html: cloudflareChallengeHtml,
         }
+      }
+
+      throw new Error(`Unexpected Fincare URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    MERGED_PARENT_HOMEPAGE_URL,
+    ...CHECKED_REDIRECT_ROUTE_URLS,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Fincare returns [] when the verified AU handoff still holds but exact-name legacy routes are locally unresolvable', async () => {
+  const requestedUrls = []
+
+  const jobs = await createFincareScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === MERGED_PARENT_HOMEPAGE_URL) {
+        return {
+          status: 403,
+          url,
+          html: cloudflareChallengeHtml,
+        }
+      }
+
+      if (CHECKED_REDIRECT_ROUTE_URLS.includes(url)) {
+        const error = new TypeError('fetch failed')
+        error.cause = {
+          code: 'ENOTFOUND',
+          hostname: 'fincarebank.in',
+        }
+        throw error
       }
 
       throw new Error(`Unexpected Fincare URL: ${url}`)

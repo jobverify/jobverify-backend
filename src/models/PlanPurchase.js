@@ -99,11 +99,19 @@ const PlanPurchaseSchema = new Schema(
 PlanPurchaseSchema.index({ user: 1, createdAt: -1 });
 PlanPurchaseSchema.index(
   { provider: 1, providerOrderId: 1 },
-  { unique: true, sparse: true },
+  {
+    name: "provider_1_providerOrderId_1",
+    unique: true,
+    partialFilterExpression: { providerOrderId: { $type: "string" } },
+  },
 );
 PlanPurchaseSchema.index(
   { provider: 1, providerPaymentId: 1 },
-  { unique: true, sparse: true },
+  {
+    name: "provider_1_providerPaymentId_1",
+    unique: true,
+    partialFilterExpression: { providerPaymentId: { $type: "string" } },
+  },
 );
 
 PlanPurchaseSchema.set("toJSON", {

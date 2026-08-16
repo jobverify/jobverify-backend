@@ -40,7 +40,8 @@ export const hasOfficialSeqriteCareersSignals = (html = '') => {
 
   return /^Careers at Quick Heal \| Cybersecurity Jobs & Career Opportunities$/i.test(extractTitle(html))
     && text.includes('work with purpose. grow from the experience. innovate to shape the future with quick heal')
-    && text.includes('customer centricity is one the core values of seqrite')
+    && text.includes('innovator. curious. growth-mindset. positive. sounds like you?')
+    && text.includes('discover seqrite')
     && text.includes('apply for a job')
     && text.includes('join our innovative team')
     && extractOfficialDarwinboxUrl(html) === OFFICIAL_CAREERS_HANDOFF_URL

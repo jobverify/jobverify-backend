@@ -63,6 +63,24 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': DESKTOP_BROWSER_USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    headers: Object.fromEntries(response.headers.entries()),
+    html: await response.text(),
+  }
+}
+
 const decodeHtmlEntities = (value) => {
   let decoded = String(value ?? '')
 
@@ -105,6 +123,18 @@ const htmlToText = (value) => String(value ?? '')
   .map((line) => normalizeWhitespace(line))
   .filter(Boolean)
   .join('\n')
+
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
+
+const getHeader = (page = {}, name) => {
+  const normalizedName = String(name ?? '').toLowerCase()
+  const headers = page?.headers
+  if (!headers) return ''
+  if (typeof headers.get === 'function') {
+    return String(headers.get(normalizedName) || headers.get(name) || '')
+  }
+  return String(headers[normalizedName] || headers[name] || '')
+}
 
 const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -199,6 +229,24 @@ export const hasOfficialJobOpeningsSignal = (html) => {
     && hasCanonicalJobOpeningsUrl(rawHtml)
     && /class=["'][^"']*article--career[^"']*["']/i.test(rawHtml)
     && /career__title/i.test(rawHtml)
+}
+
+export const hasVerifiedBlockedJobOpeningsSignal = (page = {}) => {
+  const html = getPageHtml(page)
+
+  return Number(page.status) === 403
+    && /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(html)
+    && /Checking your browser\.\.\./i.test(html)
+    && /\?ki-cf-botcl=1/i.test(html)
+}
+
+export const isVerifiedCloudflareBlockedPage = (page = {}, expectedUrl) => {
+  const finalUrl = String(page.url || expectedUrl)
+
+  return finalUrl === expectedUrl
+    && /cloudflare/i.test(getHeader(page, 'server'))
+    && getHeader(page, 'cf-ray').trim().length > 0
+    && hasVerifiedBlockedJobOpeningsSignal(page)
 }
 
 export const extractListings = (html) => [...String(html ?? '').matchAll(
@@ -330,16 +378,27 @@ export const extractJobDetail = (html, listing = {}) => {
 }
 
 export const createCloverInfotechScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const fetchApiOnlyText = async (url) => {
+  async run({ fetchText = defaultFetchText, fetchPage = defaultFetchPage } = {}) {
+    const fetchTrustedPageText = async (url) => {
       try {
         return await fetchText(url)
       } catch (error) {
-        throw new Error(`Clover Infotech API-only migration could not fetch ${url}: ${error.message}`)
+        throw new Error(`Clover Infotech first-party jobs page fetch failed for ${url}: ${error.message}`)
       }
     }
 
-      const firstPageHtml = await fetchApiOnlyText(buildJobOpeningsPageUrl(1))
+      const firstPageUrl = buildJobOpeningsPageUrl(1)
+      let firstPageHtml
+      try {
+        firstPageHtml = await fetchTrustedPageText(firstPageUrl)
+      } catch (error) {
+        const blockedPage = await fetchPage(firstPageUrl)
+        if (isVerifiedCloudflareBlockedPage(blockedPage, firstPageUrl)) {
+          return []
+        }
+
+        throw error
+      }
       if (!hasOfficialJobOpeningsSignal(firstPageHtml)) {
         throw new Error('Clover Infotech verified first-party job openings page no longer matches the trusted public surface')
       }
@@ -354,7 +413,7 @@ export const createCloverInfotechScraper = ({ now = () => new Date().toISOString
       for (let page = 1; page <= pagesToFetch; page += 1) {
         const html = page === 1
           ? firstPageHtml
-          : await fetchApiOnlyText(buildJobOpeningsPageUrl(page))
+          : await fetchTrustedPageText(buildJobOpeningsPageUrl(page))
 
         if (page > 1 && !hasOfficialJobOpeningsSignal(html)) {
           throw new Error('Clover Infotech verified first-party job openings page no longer matches the trusted public surface')
@@ -364,7 +423,7 @@ export const createCloverInfotechScraper = ({ now = () => new Date().toISOString
           if (seenSourceUrls.has(listing.sourceUrl)) continue
           seenSourceUrls.add(listing.sourceUrl)
 
-          const detailHtml = await fetchApiOnlyText(listing.sourceUrl)
+          const detailHtml = await fetchTrustedPageText(listing.sourceUrl)
           if (!hasOfficialJobDetailSignal(detailHtml)) {
             throw new Error('Clover Infotech verified first-party job detail page no longer matches the trusted public surface')
           }

@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 import { ENDURANCE_TECHNOLOGIES_CATALOG } from './catalog.js'
@@ -38,6 +39,18 @@ const normalizeWhitespace = (value) => decodeHtmlEntities(value)
   .trim()
 
 const normalizeText = (value) => normalizeWhitespace(value) || null
+
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
+
+const getHeader = (page = {}, name) => {
+  const normalizedName = String(name ?? '').toLowerCase()
+  const headers = page?.headers
+  if (!headers) return ''
+  if (typeof headers.get === 'function') {
+    return String(headers.get(normalizedName) || headers.get(name) || '')
+  }
+  return String(headers[normalizedName] || headers[name] || '')
+}
 
 const stripTagsToText = (value) => normalizeWhitespace(
   String(value ?? '')
@@ -228,21 +241,43 @@ export const hasOfficialJobPortalSignal = (html = '') => {
     && /href=["'][^"']*\/career\/[^"']+["']/i.test(rawHtml)
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
+const defaultFetchPage = (url) => fetchPageWithRetry(url, {
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-IN,en-US;q=0.9,en;q=0.8',
+    Referer: HOMEPAGE_URL,
+  },
+  label: SOURCE,
+  timeoutMs: DEFAULT_TIMEOUT_MS,
+})
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
+export const hasVerifiedCloudflareChallengeSignal = (page = {}) => {
+  const html = getPageHtml(page)
+  const text = normalizeWhitespace(html) || ''
 
-  return response.text()
+  return Number(page.status) === 403
+    && /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(html)
+    && /challenges\.cloudflare\.com/i.test(html)
+    && text.includes('Enable JavaScript and cookies to continue')
 }
+
+export const isVerifiedCloudflareChallengedPage = (page = {}, expectedUrl) => {
+  const finalUrl = String(page.url || expectedUrl)
+
+  return finalUrl === expectedUrl
+    && /cloudflare/i.test(getHeader(page, 'server'))
+    && getHeader(page, 'cf-ray').trim().length > 0
+    && getHeader(page, 'cf-mitigated').toLowerCase() === 'challenge'
+    && hasVerifiedCloudflareChallengeSignal(page)
+}
+
+const createFetchPageFromText = (fetchText) => async (url) => ({
+  status: 200,
+  url,
+  headers: {},
+  html: await fetchText(url),
+})
 
 export const collectListingCandidates = (html = '', baseUrl = JOB_PORTAL_URL) => [...String(html ?? '').matchAll(
   /<li\b[^>]*class="[^"]*job-card[^"]*"[^>]*>([\s\S]*?)<\/li>/gi,
@@ -368,9 +403,21 @@ export const createEnduranceTechnologiesScraper = ({
   maxJobs = null,
 } = {}) => ({
   async run({
-    fetchText = defaultFetchText,
+    fetchPage,
+    fetchText,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    const effectiveFetchPage = typeof fetchPage === 'function'
+      ? fetchPage
+      : typeof fetchText === 'function'
+        ? createFetchPageFromText(fetchText)
+        : defaultFetchPage
+
+    const careersPage = await effectiveFetchPage(CAREERS_URL)
+    if (isVerifiedCloudflareChallengedPage(careersPage, CAREERS_URL)) {
+      return []
+    }
+
+    const careersHtml = getPageHtml(careersPage)
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('Endurance Technologies careers page no longer matches the verified first-party surface')
     }
@@ -380,7 +427,12 @@ export const createEnduranceTechnologiesScraper = ({
       throw new Error('Endurance Technologies careers page no longer exposes the verified first-party job portal handoff')
     }
 
-    const jobPortalHtml = await fetchText(jobPortalUrl)
+    const jobPortalPage = await effectiveFetchPage(jobPortalUrl)
+    if (isVerifiedCloudflareChallengedPage(jobPortalPage, jobPortalUrl)) {
+      return []
+    }
+
+    const jobPortalHtml = getPageHtml(jobPortalPage)
     if (!hasOfficialJobPortalSignal(jobPortalHtml)) {
       throw new Error('Endurance Technologies job portal no longer matches the verified first-party public surface')
     }
@@ -402,7 +454,12 @@ export const createEnduranceTechnologiesScraper = ({
     const jobs = []
 
     for (const listing of limitedListings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
+      const detailPage = await effectiveFetchPage(listing.sourceUrl)
+      if (isVerifiedCloudflareChallengedPage(detailPage, listing.sourceUrl)) {
+        return []
+      }
+
+      const detailHtml = getPageHtml(detailPage)
       const detail = extractJobDetail(detailHtml, listing)
 
       jobs.push({

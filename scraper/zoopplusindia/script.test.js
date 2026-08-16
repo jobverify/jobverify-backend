@@ -65,6 +65,31 @@ const renderedCareersHtml = `
 </html>
 `
 
+const currentEmptyShellHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Career | Join Our Team</title>
+  </head>
+  <body>
+    <main>
+      <section>
+        <h1>About ZOOP</h1>
+        <p>Why Join Us?</p>
+        <p>View Openings</p>
+      </section>
+      <footer>
+        <p>Tower B, Panchsheel Business Park, Clover Park, Viman Nagar, Pune, Maharashtra 411014</p>
+        <p>sales@zoop.one</p>
+        <p>For any grievance related issues contact us at: grievance@zoop.one</p>
+        <p>Join our journey today!</p>
+        <p>Quagga Tech Pvt. Ltd.</p>
+      </footer>
+    </main>
+  </body>
+</html>
+`
+
 test('ZoopPlus India extracts rendered first-party role cards', async () => {
   const zoop = await loadZoopPlusIndiaModule()
   const cards = zoop.extractRenderedRoleCards(renderedCareersHtml)
@@ -113,4 +138,15 @@ test('ZoopPlus India falls back to browser-rendered HTML when static fetch does 
   assert.equal(jobs[0].location, 'Pune, India')
   assert.equal(jobs[0].applyUrl, 'https://forms.gle/5UCs1YZiSugpu6La6')
   assert.equal(jobs[0].scrapedAt, '2026-08-02T20:00:00.000Z')
+})
+
+test('ZoopPlus India returns an empty list for the current verified branded shell without role cards', async () => {
+  const zoop = await loadZoopPlusIndiaModule()
+
+  const jobs = await zoop.createZoopPlusIndiaScraper().run({
+    fetchHtml: async () => currentEmptyShellHtml,
+    fetchBrowserHtml: async () => currentEmptyShellHtml,
+  })
+
+  assert.deepEqual(jobs, [])
 })

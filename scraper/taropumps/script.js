@@ -29,6 +29,8 @@ const normalizeWhitespace = (value) => {
 }
 
 const decodeHtmlEntities = (value) => String(value ?? '')
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
   .replace(/&quot;/gi, '"')
@@ -57,7 +59,7 @@ const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
   if (!value) return null
 
   try {
-    return new URL(value, baseUrl).toString()
+    return new URL(decodeHtmlEntities(value), baseUrl).toString()
   } catch {
     return null
   }
@@ -270,6 +272,12 @@ export const hasConnectTimeoutFailure = (error) => {
     || /\btimeout\b/i.test(message)
 }
 
+export const hasRecoverableBrandedCareersFailure = (error) => {
+  const message = String(error?.cause?.message ?? error?.message ?? error ?? '')
+
+  return /\bHTTP\s+(500|502|503|504)\b/i.test(message)
+}
+
 export const createTaroPumpsScraper = () => ({
   async run({
     fetchText = defaultFetchText,
@@ -314,7 +322,7 @@ export const createTaroPumpsScraper = () => ({
       try {
         brandedCareersHtml = await fetchSurfaceHtml(CAREERS_URL)
       } catch (error) {
-        if (!hasConnectTimeoutFailure(error)) {
+        if (!hasConnectTimeoutFailure(error) && !hasRecoverableBrandedCareersFailure(error)) {
           throw error
         }
       }

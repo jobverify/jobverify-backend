@@ -9,6 +9,37 @@ const loadBytexlModule = async () => {
   }
 }
 
+const homepageHtml = `
+<!doctype html>
+<html>
+  <head>
+    <title>byteXL: Industry-Aligned Skilling for Modern AI Careers</title>
+  </head>
+  <body>
+    <nav>
+      <a href="/programs">Programs</a>
+      <a href="/careerxl">CareerXL</a>
+      <a href="/careers">Careers</a>
+    </nav>
+    <main>
+      <h1>byteXL</h1>
+    </main>
+  </body>
+</html>
+`
+
+const missingCareersRouteHtml = `
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <title>Not Found</title>
+  </head>
+  <body>
+    HTTP Status: 404 (not found)
+  </body>
+</html>
+`
+
 const careersPageHtml = `
 <!doctype html>
 <html>
@@ -121,13 +152,20 @@ const learningDevelopmentManagerDetailHtml = `
 </html>
 `
 
-test('byteXL scraper parses the official careers listing cards and detail pages', async () => {
+test('byteXL scraper verifies the current official homepage and missing careers route while preserving the legacy detail parser', async () => {
   const bytexl = await loadBytexlModule()
   assert.ok(bytexl, 'Expected byteXL scraper module at ../../scraper/bytexl/script.js')
 
-  assert.equal(bytexl.CAREERS_PAGE_URL, 'https://bytexl.com/careers.php')
+  assert.equal(bytexl.HOMEPAGE_URL, 'https://bytexl.com/')
+  assert.equal(bytexl.CAREERS_PAGE_URL, 'https://bytexl.com/careers')
   assert.equal(bytexl.COMPANY, 'byteXL')
   assert.equal(bytexl.SOURCE, 'bytexl')
+  assert.equal(bytexl.VERIFIED_ON, '2026-08-13')
+  assert.equal(bytexl.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(
+    bytexl.isVerifiedMissingCareersRoute({ status: 404, html: missingCareersRouteHtml }),
+    true,
+  )
 
   assert.deepEqual(bytexl.extractOpenings(careersPageHtml), [
     {
@@ -179,26 +217,73 @@ test('byteXL scraper parses the official careers listing cards and detail pages'
   assert.match(learningDetail.jobDescription, /Learning Development Executive plays a pivotal role/i)
 })
 
-test('run follows byteXL official detail pages and decorates the shared runner fields', async () => {
+test('run returns an honest zero-job result while the official /careers route currently resolves to a verified 404', async () => {
   const bytexl = await loadBytexlModule()
   assert.ok(bytexl, 'Expected byteXL scraper module at ../../scraper/bytexl/script.js')
 
-  const requestedUrls = []
-  const scraper = bytexl.createBytexlScraper({ maxJobs: 1 })
+  const pageRequests = []
+  const textRequests = []
+  const scraper = bytexl.createBytexlScraper()
 
   const jobs = await scraper.run({
+    fetchPage: async (url) => {
+      pageRequests.push(url)
+
+      if (url === bytexl.HOMEPAGE_URL) {
+        return { status: 200, url, html: homepageHtml }
+      }
+
+      if (url === bytexl.CAREERS_PAGE_URL) {
+        return { status: 404, url, html: missingCareersRouteHtml }
+      }
+
+      throw new Error(`Unexpected page URL: ${url}`)
+    },
     fetchText: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === bytexl.CAREERS_PAGE_URL) return careersPageHtml
-      if (url === 'https://bytexl.com/careers-Finance-Controller.php') return financeControllerDetailHtml
-
-      throw new Error(`Unexpected URL: ${url}`)
+      textRequests.push(url)
+      throw new Error(`Unexpected detail URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [
-    'https://bytexl.com/careers.php',
+  assert.deepEqual(pageRequests, [
+    'https://bytexl.com/',
+    'https://bytexl.com/careers',
+  ])
+  assert.deepEqual(textRequests, [])
+  assert.deepEqual(jobs, [])
+})
+
+test('run still follows legacy byteXL detail pages if the official /careers route publishes openings again', async () => {
+  const bytexl = await loadBytexlModule()
+  assert.ok(bytexl, 'Expected byteXL scraper module at ../../scraper/bytexl/script.js')
+
+  const pageRequests = []
+  const textRequests = []
+  const scraper = bytexl.createBytexlScraper({ maxJobs: 1 })
+
+  const jobs = await scraper.run({
+    fetchPage: async (url) => {
+      pageRequests.push(url)
+
+      if (url === bytexl.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
+      if (url === bytexl.CAREERS_PAGE_URL) return { status: 200, url, html: careersPageHtml }
+
+      throw new Error(`Unexpected page URL: ${url}`)
+    },
+    fetchText: async (url) => {
+      textRequests.push(url)
+
+      if (url === 'https://bytexl.com/careers-Finance-Controller.php') return financeControllerDetailHtml
+
+      throw new Error(`Unexpected detail URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(pageRequests, [
+    'https://bytexl.com/',
+    'https://bytexl.com/careers',
+  ])
+  assert.deepEqual(textRequests, [
     'https://bytexl.com/careers-Finance-Controller.php',
   ])
   assert.equal(jobs.length, 1)

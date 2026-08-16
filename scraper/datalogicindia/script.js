@@ -1,6 +1,19 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import {
+  buildInitialSearchDwrBody,
+  buildPaginatedSearchDwrBody,
+  buildSuccessFactorsPostingFieldMap,
+  createSuccessFactorsScriptSessionId,
+  extractDwrPayload,
+  fetchSuccessFactorsSearchSession,
+  hasSuccessFactorsDwrBootstrapShellSignal,
+  hasSuccessFactorsDwrResponseSignal,
+  parseSuccessFactorsDialogValue,
+  postSuccessFactorsDwr,
+} from '../../scraper-support/shared/successFactorsDwr.js'
+
 import { DATALOGIC_INDIA_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -52,7 +65,16 @@ const toIsoDate = (value) => {
 
   if (!match) return normalized
 
-  const [, month, day, year] = match
+  const [, first, second, year] = match
+  const firstNumber = Number.parseInt(first, 10)
+  const secondNumber = Number.parseInt(second, 10)
+
+  if (firstNumber > 12 && secondNumber <= 12) {
+    return `${year}-${second}-${first}`
+  }
+
+  const month = first
+  const day = second
   return `${year}-${month}-${day}`
 }
 
@@ -105,12 +127,25 @@ export const hasSuccessFactorsSearchPageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = stripTags(rawHtml) || ''
 
+  return hasStaticSuccessFactorsSearchPageSignal(rawHtml)
+    || hasSuccessFactorsDwrResponseSignal(rawHtml)
+}
+
+export const hasStaticSuccessFactorsSearchPageSignal = (html) => {
+  const rawHtml = String(html ?? '')
+  const normalized = stripTags(rawHtml) || ''
+
   return /<title>\s*Career Opportunities\s*<\/title>/i.test(rawHtml)
     && /Search for Openings/i.test(normalized)
     && /Jobs matched your search/i.test(normalized)
     && /class=["']jobResultItem["']/i.test(rawHtml)
     && /company=datalogics/i.test(rawHtml)
 }
+
+export const hasSuccessFactorsDwrBootstrapSignal = (html) => hasSuccessFactorsDwrBootstrapShellSignal({
+  html,
+  companyToken: SUCCESSFACTORS_COMPANY_TOKEN,
+})
 
 export const extractSearchSummary = (html) => {
   const normalized = stripTags(html) || ''
@@ -158,6 +193,10 @@ const parseSearchRow = (rowHtml) => {
 }
 
 export const extractSearchResults = (html) => {
+  if (hasSuccessFactorsDwrResponseSignal(html)) {
+    return extractDwrSearchResults(html)
+  }
+
   const rows = []
 
   for (const match of String(html ?? '').matchAll(/<tr[^>]*class=["']jobResultItem["'][^>]*>([\s\S]*?)<\/tr>/gi)) {
@@ -166,6 +205,40 @@ export const extractSearchResults = (html) => {
   }
 
   return rows
+}
+
+export const extractDwrSearchResults = (responseText) => {
+  const payload = extractDwrPayload(responseText, {
+    parseErrorMessage: 'Datalogic India verified SuccessFactors DWR search payload could not be parsed',
+    missingResultsErrorMessage: 'Datalogic India verified SuccessFactors DWR payload no longer exposes postings',
+  })
+
+  return payload.results.postings
+    .map((posting) => {
+      const fields = buildSuccessFactorsPostingFieldMap(posting, { normalize: normalizeWhitespace })
+      const requisitionId = normalizeWhitespace(posting?.id)
+      const city = parseSuccessFactorsDialogValue(fields.get('location_obj'))
+      const country = fields.get('filter1')
+      const state = normalizeState(fields.get('filter2'))
+
+      if (!requisitionId || !city || !country) return null
+
+      const sourceUrl = buildDetailUrl(requisitionId)
+
+      return {
+        title: normalizeWhitespace(posting?.title),
+        location: buildLocation(city, country),
+        city,
+        state,
+        country,
+        jobId: requisitionId,
+        requisitionId,
+        sourceUrl,
+        applyUrl: sourceUrl,
+        postingDate: toIsoDate(posting?.postingDate),
+      }
+    })
+    .filter(Boolean)
 }
 
 const extractSectionHtml = (html, heading) => {
@@ -263,20 +336,118 @@ const fetchText = async (url) => {
   return response.text()
 }
 
-const getLiveSearchPages = async ({
+export const getLiveSearchPages = async ({
   searchUrl = SUCCESSFACTORS_SEARCH_URL,
   maxPages = DEFAULT_MAX_PAGES,
+  fetchText: fetchTextImpl = fetchText,
+  fetchSearchSession = (options = {}) => fetchSuccessFactorsSearchSession(options),
+  fetchDwrText = (options = {}) => postSuccessFactorsDwr(options),
 } = {}) => {
-  void searchUrl
-  void maxPages
-  throw new Error(
-    '[datalogicindia] API-only migration required: no verified HTTP/API contract is available for the SuccessFactors search board; browser automation is disabled.',
+  const html = await fetchTextImpl(searchUrl)
+
+  if (hasStaticSuccessFactorsSearchPageSignal(html)) {
+    const summary = extractSearchSummary(html)
+
+    if ((summary.totalPages ?? 1) > 1) {
+      throw new Error(
+        '[datalogicindia] API-only migration required: the verified SuccessFactors board requires pagination, but no HTTP pagination request contract is available; browser automation is disabled.',
+      )
+    }
+
+    return [html]
+  }
+
+  if (!hasSuccessFactorsDwrBootstrapSignal(html)) {
+    return [html]
+  }
+
+  const session = await fetchSearchSession({
+    searchUrl,
+    userAgent:
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+    label: `${SOURCE}-successfactors-bootstrap`,
+    missingAjaxTokenErrorMessage:
+      'Datalogic India verified SuccessFactors search bootstrap no longer exposes an ajaxSecKey token',
+  })
+
+  if (!hasSuccessFactorsDwrBootstrapSignal(session.html)) {
+    throw new Error('Datalogic India verified public SuccessFactors search surface no longer matches the known page')
+  }
+
+  const scriptSessionId = createSuccessFactorsScriptSessionId()
+  const initialResponse = await fetchDwrText({
+    searchUrl,
+    endpoint: 'getInitialJobSearchData',
+    body: buildInitialSearchDwrBody({ searchUrl, scriptSessionId }),
+    csrfToken: session.csrfToken,
+    cookieHeader: session.cookieHeader,
+    companyToken: SUCCESSFACTORS_COMPANY_TOKEN,
+    userAgent:
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+    label: `${SOURCE}-successfactors-getInitialJobSearchData`,
+    responseContractErrorMessage:
+      'Datalogic India verified SuccessFactors getInitialJobSearchData response no longer matches the expected DWR contract',
+    subaction: 0,
+  })
+  const initialPayload = extractDwrPayload(initialResponse, {
+    parseErrorMessage: 'Datalogic India verified SuccessFactors DWR search payload could not be parsed',
+    missingResultsErrorMessage: 'Datalogic India verified SuccessFactors DWR payload no longer exposes postings',
+  })
+  const initialPagination = initialPayload.results.options?.pagination || {}
+  const pageSize = Math.max(
+    1,
+    Number.parseInt(initialPagination.pageSize, 10) || initialPayload.results.postings.length || 10,
   )
+  const totalCount = Math.max(
+    initialPayload.results.postings.length,
+    Number.parseInt(initialPagination.totalCount, 10)
+      || Number.parseInt(initialPayload.results.postingCount, 10)
+      || initialPayload.results.postings.length,
+  )
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+
+  if (totalPages > maxPages) {
+    throw new Error(
+      `[datalogicindia] API-only migration required: the verified SuccessFactors board spans ${totalPages} pages, which exceeds the configured safe page limit of ${maxPages}.`,
+    )
+  }
+
+  const sortByColumn = normalizeWhitespace(initialPayload.results.options?.sortByColumn) || undefined
+  const sortOrder = normalizeWhitespace(initialPayload.results.options?.sortOrder) || undefined
+  const pages = [initialResponse]
+
+  for (let currentPage = 2; currentPage <= totalPages; currentPage += 1) {
+    pages.push(await fetchDwrText({
+      searchUrl,
+      endpoint: 'search',
+      body: buildPaginatedSearchDwrBody({
+        searchUrl,
+        scriptSessionId,
+        currentPage,
+        pageSize,
+        totalCount,
+        sortByColumn,
+        sortOrder,
+        batchId: currentPage - 1,
+      }),
+      csrfToken: session.csrfToken,
+      cookieHeader: session.cookieHeader,
+      companyToken: SUCCESSFACTORS_COMPANY_TOKEN,
+      userAgent:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+      label: `${SOURCE}-successfactors-search`,
+      responseContractErrorMessage:
+        'Datalogic India verified SuccessFactors search response no longer matches the expected DWR contract',
+      subaction: currentPage - 1,
+    }))
+  }
+
+  return pages
 }
 
 export const createDatalogicIndiaScraper = ({
   fetchText: fetchTextImpl = fetchText,
-  getSearchPages = getLiveSearchPages,
+  getSearchPages = (options = {}) => getLiveSearchPages({ ...options, fetchText: fetchTextImpl }),
   now = () => new Date().toISOString(),
   maxPages = DEFAULT_MAX_PAGES,
 } = {}) => ({
@@ -295,6 +466,7 @@ export const createDatalogicIndiaScraper = ({
     const searchPages = await getSearchPages({
       searchUrl: SUCCESSFACTORS_SEARCH_URL,
       maxPages,
+      fetchText: fetchTextImpl,
     })
 
     if (!Array.isArray(searchPages) || searchPages.length === 0 || !hasSuccessFactorsSearchPageSignal(searchPages[0])) {

@@ -43,6 +43,20 @@ const jobsJson = [
   },
 ]
 
+const cloudflareChallengeHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Just a moment...</title>
+  </head>
+  <body>
+    <div>Cloudflare</div>
+    <div>Please enable cookies.</div>
+    <script src="/cdn-cgi/challenge-platform/scripts/jsd/main.js"></script>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/waydotcomindia/script.js')
@@ -96,4 +110,17 @@ test('Way.com run uses the official careers response plus jobs JSON payload', as
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].title, 'Senior Android Developer')
   assert.equal(jobs[0].city, 'Trivandrum')
+})
+
+test('Way.com run returns a verified zero-job result when both public surfaces are Cloudflare challenged', async () => {
+  const way = await loadModule()
+
+  const jobs = await way.createWayDotComIndiaScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async () => cloudflareChallengeHtml,
+    fetchJson: async () => cloudflareChallengeHtml,
+  })
+
+  assert.deepEqual(jobs, [])
 })

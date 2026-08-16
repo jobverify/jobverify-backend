@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Friday, July 17, 2026 that Nutanix\'s official careers surface at https://careers.nutanix.com/en/jobs/ is live in-browser, but direct non-browser fetches currently return a Cloudflare challenge page, and that Nutanix\'s public Jobvite surfaces at https://jobs.jobvite.com/nutanix and https://jobs.jobvite.com/nutanix/jobs are live, Nutanix-branded, cross-link back to the official current openings page, and expose India openings including Director of Field Marketing, India plus multiple Bangalore and Pune roles.'
+  'Verified on Friday, August 14, 2026 that Nutanix\'s official careers surface at https://careers.nutanix.com/en/jobs/ still returned a Cloudflare 403 challenge page to direct non-browser fetches, while the public Jobvite surfaces at https://jobs.jobvite.com/nutanix and https://jobs.jobvite.com/nutanix/jobs remained live, Nutanix-branded, cross-linked back to the official current openings page, and exposed India openings including Financial Analyst, Senior Payroll Specialist, and Engineering Manager - Observability. The Financial Analyst detail page at https://jobs.jobvite.com/nutanix/job/oucAAfwA was also publicly readable on the verified date.'
 
 export const NUTANIX_CATALOG = {
   source: 'nutanix',
@@ -21,7 +21,7 @@ export const NUTANIX_CATALOG = {
     'verified-official-careers-page+official-job-detail-apply-handoff+public-jobvite-current-openings+india-detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-14',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'nutanix/jobs.json',
   modulePath: path.join(currentDir, 'script.js'),

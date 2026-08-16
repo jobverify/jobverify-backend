@@ -1,5 +1,6 @@
 export const SOURCE = 'eaglexsasmakerspvtltd'
 export const COMPANY = 'Eaglex SAS Makers Pvt Ltd'
+export const VERIFIED_AT = '2026-08-13'
 export const HOMEPAGE_URL = 'https://eaglex.co.in/'
 export const ABOUT_URL = 'https://eagle-x.in/about'
 export const CONTACT_URL = 'https://eagle-x.in/contact'
@@ -52,7 +53,7 @@ const normalizeWhitespace = (value) =>
     .replace(/\s+/g, ' ')
     .trim()
 
-export const hasOfficialPageSignal = (html) => {
+export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html)
   const lower = normalized.toLowerCase()
   const rawHtml = String(html ?? '')
@@ -69,13 +70,69 @@ export const hasOfficialPageSignal = (html) => {
   const hasCurrentSurface =
     lower.includes('eagle x | we engineer dominance')
     && lower.includes('we engineer dominance')
-    && lower.includes('forging high-performance digital infrastructure for the next generation of unicorn founders.')
-    && lower.includes('mvp in 7 days')
-    && lower.includes('rapid deployment')
-    && lower.includes('deploy unit')
+    && (
+      lower.includes('forging high-performance digital infrastructure for the next generation of unicorn founders.')
+      || lower.includes('architecting ultra-resilient digital infrastructure for the next generation of unicorn founders')
+    )
+    && (
+      lower.includes('mvp in 7 days')
+      || lower.includes('we build platforms that scale flawlessly from day one.')
+    )
+    && (
+      lower.includes('rapid deployment')
+      || lower.includes('enterprise deployment')
+    )
+    && (
+      lower.includes('deploy unit')
+      || lower.includes('elite software engineering studio systems')
+    )
 
   return hasLegacySurface || hasCurrentSurface
 }
+
+export const hasOfficialAboutPageSignal = (html) => {
+  const normalized = normalizeWhitespace(html)
+  const lower = normalized.toLowerCase()
+  const rawHtml = String(html ?? '')
+
+  return hasOfficialHomepageSignal(html)
+    || (
+      /<title>\s*Eagle X \| We Engineer Dominance\s*<\/title>/i.test(rawHtml)
+    && lower.includes('system identity')
+    && lower.includes('the architects of the new order')
+    && lower.includes('we are not just a dev shop')
+    && lower.includes('high-performance engineering unit dedicated to building digital dominance')
+    && lower.includes('while others follow trends, we forge the infrastructure that defines them')
+    && lower.includes('projects deployed')
+    && lower.includes('global partners')
+    )
+}
+
+export const hasOfficialContactPageSignal = (html) => {
+  const normalized = normalizeWhitespace(html)
+  const lower = normalized.toLowerCase()
+  const rawHtml = String(html ?? '')
+
+  return hasOfficialHomepageSignal(html)
+    || (
+      /<title>\s*Eagle X \| We Engineer Dominance\s*<\/title>/i.test(rawHtml)
+    && lower.includes('get in touch')
+    && lower.includes('contact us')
+    && lower.includes("we'd love to hear from you")
+    && lower.includes("send us a message and we'll get back to you within 24 hours")
+    && lower.includes('delhi, india')
+    && lower.includes('support team')
+    && lower.includes('send message')
+    && lower.includes('building professional web solutions for early-stage startups')
+    && lower.includes('2026 launch initiative supporting the entrepreneurial ecosystem')
+    && lower.includes('eaglexdevelopment@gmail.com')
+    )
+}
+
+export const hasOfficialPageSignal = (html) =>
+  hasOfficialHomepageSignal(html)
+  || hasOfficialAboutPageSignal(html)
+  || hasOfficialContactPageSignal(html)
 
 export const hasFirstPartyCareerLikeLink = (html) =>
   FIRST_PARTY_CAREER_LINK_PATTERN.test(String(html ?? ''))
@@ -85,10 +142,21 @@ export const hasPublicJobsSignal = (html) =>
 
 export const isVerifiedMissingCareersRoute = (page = {}) => {
   const rawHtml = String(page?.html ?? '')
+  const lower = normalizeWhitespace(rawHtml).toLowerCase()
 
-  return Number(page?.status) === 200
-    && hasOfficialPageSignal(rawHtml)
+  const matchesLegacySoft404 = Number(page?.status) === 200
+    && hasOfficialHomepageSignal(rawHtml)
     && /404:\s*This page could not be found\./i.test(rawHtml)
+
+  const matchesCurrentHard404 = Number(page?.status) === 404
+    && /<title>\s*404:\s*This page could not be found\.\s*<\/title>/i.test(rawHtml)
+    && lower.includes('this page could not be found')
+    && lower.includes('building professional web solutions for early-stage startups')
+    && lower.includes('2026 launch initiative supporting the entrepreneurial ecosystem')
+    && lower.includes('eaglexdevelopment@gmail.com')
+    && lower.includes('indore, madhya pradesh, india')
+
+  return (matchesLegacySoft404 || matchesCurrentHard404)
     && !hasPublicJobsSignal(rawHtml)
     && !hasFirstPartyCareerLikeLink(rawHtml)
 }
@@ -111,12 +179,16 @@ const defaultFetchPage = async (url) => {
 
 export const createEaglexSasMakersScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const verifiedPageUrls = [HOMEPAGE_URL, ABOUT_URL, CONTACT_URL]
+    const verifiedPageUrls = [
+      { url: HOMEPAGE_URL, validator: hasOfficialHomepageSignal },
+      { url: ABOUT_URL, validator: hasOfficialAboutPageSignal },
+      { url: CONTACT_URL, validator: hasOfficialContactPageSignal },
+    ]
 
-    for (const url of verifiedPageUrls) {
+    for (const { url, validator } of verifiedPageUrls) {
       const page = await fetchPage(url)
 
-      if (page.status !== 200 || !hasOfficialPageSignal(page.html)) {
+      if (page.status !== 200 || !validator(page.html)) {
         throw new Error(`${COMPANY} verified first-party marketing surface no longer matches the known public site`)
       }
 
@@ -129,8 +201,14 @@ export const createEaglexSasMakersScraper = () => ({
       }
     }
 
-    for (const careersRouteUrl of CAREERS_ROUTE_URLS) {
-      const careersRoute = await fetchPage(careersRouteUrl)
+    const careersRoutes = await Promise.all(
+      CAREERS_ROUTE_URLS.map(async (careersRouteUrl) => ({
+        careersRouteUrl,
+        careersRoute: await fetchPage(careersRouteUrl),
+      })),
+    )
+
+    for (const { careersRouteUrl, careersRoute } of careersRoutes) {
       if (!isVerifiedMissingCareersRoute(careersRoute)) {
         throw new Error(`${COMPANY} public careers surface changed materially or now exposes jobs`)
       }

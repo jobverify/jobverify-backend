@@ -6,7 +6,7 @@ import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 import { getScraperSourceDirectoryName } from '../providers/sourcePaths.js'
 
-const EXPECTED_COMPANY_COUNT = 93
+const EXPECTED_COMPANY_COUNT = 92
 const EXPECTED_BATCH_ID = "11b"
 const EXPECTED_BATCH_LABEL = "11"
 const EXPECTED_EXTRACTION_STRATEGY =

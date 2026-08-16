@@ -10,29 +10,39 @@ const CAREERS_HTML = `
     <title>TatvaSoft Career and Culture</title>
   </head>
   <body>
-    <h1>Technology evolves, Challenges grow</h1>
+    <h1>Technology Evolves, Challenges Grow</h1>
     <p>Please note, we do not charge any fees or recruit through third-party agents. All official communication is sent only through email IDs ending with @tatvasoft.com.</p>
     <p>At TatvaSoft, we care for our employees and our customers, they are our most important assets.</p>
-    <h2>Jobs at TatvaSoft</h2>
+    <h2>Current Openings</h2>
     <article>
-      <h3>Business Development Executive</h3>
-      <p>Position: BDE/BDM</p>
-      <p>Experience: 1+ years</p>
-      <a href="https://www.tatvasoft.com/career/business-development-executive">Read More</a>
-      <span>Apply now</span>
+      <h3>
+        <a href="https://www.tatvasoft.com/career/business-development-executive">
+          Business Development Executive
+          <img src="https://www.tatvasoft.com/public/images/primary-blue-arrow-icon.svg" alt="Arrow Icon">
+        </a>
+      </h3>
+      <p><span>Position: BDE/BDM</span> <span>Experience: 1+ years</span></p>
+      <button title="Apply">Apply</button>
     </article>
     <article>
-      <h3>Java Developer</h3>
-      <p>Position: ASE/SE/SSE/TL</p>
-      <p>Experience: 2 - 5 years</p>
-      <a href="https://www.tatvasoft.com/career/java-developer">Read More</a>
-      <span>Apply now</span>
+      <h3>
+        <a href="https://www.tatvasoft.com/career/java-developer">
+          Java Developer
+          <img src="https://www.tatvasoft.com/public/images/primary-blue-arrow-icon.svg" alt="Arrow Icon">
+        </a>
+      </h3>
+      <p><span>Position: ASE/SE/SSE/TL</span> <span>Experience: 2 - 5 years</span></p>
+      <button title="Apply">Apply</button>
     </article>
     <h2>Benefits of working with TatvaSoft:</h2>
     <p>Find the open positions listed below and apply via email on career@tatvasoft.com</p>
   </body>
 </html>
 `
+
+const LEGACY_CAREERS_HTML = CAREERS_HTML
+  .replace('Technology Evolves, Challenges Grow', 'Technology evolves, Challenges grow')
+  .replace('Current Openings', 'Jobs at TatvaSoft')
 
 const BUSINESS_DEVELOPMENT_DETAIL_HTML = `
 <!doctype html>
@@ -95,11 +105,12 @@ test('TatvaSoft helpers stay pinned to the verified first-party career page and 
   assert.equal(tatvasoft.SOURCE, 'tatvasoft')
   assert.equal(tatvasoft.COMPANY, 'TatvaSoft')
   assert.equal(tatvasoft.OFFICIAL_BRAND_NAME, 'TatvaSoft')
-  assert.equal(tatvasoft.VERIFIED_ON, '2026-07-17')
+  assert.equal(tatvasoft.VERIFIED_ON, '2026-08-14')
   assert.equal(tatvasoft.CAREERS_URL, 'https://www.tatvasoft.com/career')
   assert.equal(tatvasoft.APPLICATION_EMAIL, 'career@tatvasoft.com')
   assert.equal(tatvasoft.APPLICATION_URL, 'mailto:career@tatvasoft.com')
   assert.equal(tatvasoft.hasOfficialCareersPageSignal(CAREERS_HTML), true)
+  assert.equal(tatvasoft.hasOfficialCareersPageSignal(LEGACY_CAREERS_HTML), true)
   assert.deepEqual(tatvasoft.extractOpeningLinks(CAREERS_HTML), [
     {
       title: 'Business Development Executive',
@@ -183,7 +194,7 @@ test('TatvaSoft fails closed when the verified career page or role detail contra
     tatvasoft.createTatvaSoftScraper().run({
       fetchPage: async (url) => {
         if (url === tatvasoft.CAREERS_URL) {
-          return { status: 200, url, html: CAREERS_HTML.replace('Jobs at TatvaSoft', 'Open Roles') }
+          return { status: 200, url, html: CAREERS_HTML.replace('Current Openings', 'Open Roles') }
         }
 
         return { status: 200, url, html: BUSINESS_DEVELOPMENT_DETAIL_HTML }

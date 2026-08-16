@@ -32,6 +32,7 @@ test('Thirdware sentinel returns [] only while the first-party routes remain unr
   const thirdware = await loadScript()
 
   assert.equal(thirdware.isTrustedOfflineFailure(new Error('The operation has timed out.')), true)
+  assert.equal(thirdware.isTrustedOfflineFailure(new Error('Connect Timeout Error for https://www.thirdware.com/')), true)
   assert.equal(
     thirdware.isTrustedOfflineFailure(
       new Error("fetch failed | Hostname/IP does not match certificate's altnames"),

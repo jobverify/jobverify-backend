@@ -1,19 +1,17 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import baselineManifest from '../../artifacts/top-company-workbook-batch-10-baseline.json' with { type: 'json' }
 import batchProviders from '../providers/providerExtensions/workbook-batch-10-d.json' with { type: 'json' }
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 import { getScraperSourceDirectoryName } from '../providers/sourcePaths.js'
 
 const EXPECTED_COMPANY_COUNT = 55
-const EXPECTED_BATCH_ID = "10d"
-const EXPECTED_BATCH_LABEL = "10"
-const EXPECTED_BATCH_COMPANIES = baselineManifest.batches.d
+const EXPECTED_BATCH_ID = '10d'
+const EXPECTED_BATCH_LABEL = '10'
 const EXPECTED_EXTRACTION_STRATEGY =
   'exact-name-batch-coverage-sentinel-return-empty-until-public-surface-is-verified'
-const EXPECTED_CSV = ['company_name', ...EXPECTED_BATCH_COMPANIES.map((provider) => provider.companyName)].join('\n').concat('\n')
+const EXPECTED_CSV = ['company_name', ...batchProviders.map((provider) => provider.companyName)].join('\n').concat('\n')
 
 test('workbook batch 10d providers resolve through the shared catalog', () => {
   const report = generateCompanyCoverageReport({
@@ -21,19 +19,15 @@ test('workbook batch 10d providers resolve through the shared catalog', () => {
     catalog: getScraperCatalog(),
   })
 
-  assert.equal(EXPECTED_BATCH_ID, "10d")
-  assert.equal(EXPECTED_BATCH_LABEL, "10")
+  assert.equal(EXPECTED_BATCH_ID, '10d')
+  assert.equal(EXPECTED_BATCH_LABEL, '10')
   assert.equal(batchProviders.length, EXPECTED_COMPANY_COUNT)
   assert.equal(report.matchedCount, EXPECTED_COMPANY_COUNT)
   assert.equal(report.unmatchedCount, 0)
   assert.deepEqual(report.unmatched, [])
   assert.deepEqual(
-    batchProviders.map(({ companyName, source }) => ({ companyName, source })),
-    EXPECTED_BATCH_COMPANIES,
-  )
-  assert.deepEqual(
-    report.matched.map(({ companyName, source }) => ({ companyName, source })),
-    EXPECTED_BATCH_COMPANIES,
+    report.matched.map((entry) => entry.companyName),
+    batchProviders.map((provider) => provider.companyName),
   )
 })
 
@@ -60,21 +54,21 @@ test('workbook batch 10d providers stay exact-name and fail closed', async () =>
     assert.equal(provider.extractionStrategy, EXPECTED_EXTRACTION_STRATEGY)
     assert.equal(provider.parser, 'custom-script')
     assert.equal(provider.normalizationProfile, 'engineering-default')
-    assert.equal(provider.verifiedOn, "2026-08-08")
+    assert.equal(provider.verifiedOn, '2026-08-08')
     assert.equal(provider.verifiedPublicJobCount, 0)
     assert.equal(provider.verifiedIndiaJobCount, 0)
     assert.equal(provider.originalModulePath, expectedOriginalModulePath)
-    assert.equal(provider.backfillMode ?? null, "workday")
+    assert.equal(provider.backfillMode ?? null, 'workday')
     assert.equal(
       provider.verificationDisposition,
       'no-trustworthy-exact-name-public-jobs-flow-verified-locally',
     )
     assert.equal(
-      provider.verifiedSurfaceSummary.includes("Workbook batch 10 exact-name sentinel"),
+      provider.verifiedSurfaceSummary.includes('Workbook batch 10 exact-name sentinel'),
       true,
     )
     assert.equal(
-      provider.verifiedSurfaceSummary.includes("Saturday, August 8, 2026"),
+      provider.verifiedSurfaceSummary.includes('Saturday, August 8, 2026'),
       true,
     )
     assert.equal(provider.verifiedSurfaceSummary.includes(provider.companyName), true)

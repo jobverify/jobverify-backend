@@ -152,6 +152,30 @@ const technicalLeadHardwareDetailHtml = `
 </html>
 `
 
+const blockedChallengePage = {
+  status: 403,
+  url: 'https://www.endurancegroup.com/careers/',
+  headers: {
+    server: 'cloudflare',
+    'cf-ray': 'a2acbab51999cbcd-MAA',
+    'cf-mitigated': 'challenge',
+  },
+  html: `
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <title>Just a moment...</title>
+  </head>
+  <body>
+    <noscript>
+      <div>Enable JavaScript and cookies to continue</div>
+    </noscript>
+    <script src="https://challenges.cloudflare.com"></script>
+  </body>
+</html>
+`,
+}
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/endurancetechnologies/script.js')
@@ -425,4 +449,28 @@ test('Endurance Technologies fails closed when the careers landing page, job por
     }),
     /job detail no longer matches/i,
   )
+})
+
+test('Endurance Technologies returns [] when the verified careers page is challenge-gated by Cloudflare', async () => {
+  const enduranceTechnologies = await loadModule()
+
+  assert.equal(
+    enduranceTechnologies.hasVerifiedCloudflareChallengeSignal(blockedChallengePage),
+    true,
+  )
+
+  const requestedUrls = []
+  const jobs = await enduranceTechnologies.createEnduranceTechnologiesScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      if (url === enduranceTechnologies.CAREERS_URL) {
+        return blockedChallengePage
+      }
+
+      throw new Error(`Unexpected Endurance Technologies URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [enduranceTechnologies.CAREERS_URL])
+  assert.deepEqual(jobs, [])
 })

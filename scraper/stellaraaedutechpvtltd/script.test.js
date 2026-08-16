@@ -43,6 +43,7 @@ const companyPageHtml = `
   <html>
     <head>
       <title>Stellaraa | LinkedIn</title>
+      <link rel="canonical" href="https://in.linkedin.com/company/stellaraa" />
       <meta
         name="description"
         content="Stellaraa | 5,995 followers on LinkedIn. Where education meets innovation | Empowering Education through Innovation"
@@ -71,11 +72,6 @@ const companyPageHtml = `
           ]
         }
       </script>
-      <a
-        href="https://www.linkedin.com/jobs/stellaraa-jobs-worldwide?f_C=104439273&amp;trk=top-card_top-card-primary-button-top-card-primary-cta"
-      >
-        See jobs
-      </a>
     </body>
   </html>
 `
@@ -83,10 +79,10 @@ const companyPageHtml = `
 const zeroJobsSearchHtml = `
   <html>
     <head>
-      <title>0 jobs in India</title>
+      <title>0 Jobs jobs in India</title>
     </head>
     <body>
-      <p>We couldn't find a match for jobs in India</p>
+      <p>We couldn't find a match for Jobs jobs in India</p>
       <section class="jobs-search__results-list"></section>
     </body>
   </html>

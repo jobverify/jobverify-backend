@@ -22,9 +22,9 @@ export const SNYK_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'snyk.io',
-  verifiedOn: '2026-07-25',
+  verifiedOn: '2026-08-13',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 25, 2026 that https://snyk.io/careers/ is the live first-party Snyk careers landing page, that https://snyk.io/careers/all-jobs/ is the live first-party open-jobs page, and that the current jobs bundle calls the first-party endpoint https://snyk.io/api/next/jobs for Workday-backed openings under https://snyk.wd103.myworkdayjobs.com/External. Direct verification of that first-party jobs API returned 19 public roles and 0 India roles on the verified date.',
+    'Verified on Thursday, August 13, 2026 that https://snyk.io/careers/ remains the live first-party Snyk careers landing page, that https://snyk.io/careers/all-jobs/ remains the live first-party open-jobs page, and that the current jobs bundle still calls the first-party endpoint https://snyk.io/api/next/jobs for Workday-backed openings under https://snyk.wd103.myworkdayjobs.com/External. Direct verification of that first-party jobs API returned 24 public roles and 0 India roles on the verified date.',
 }
 
 export default SNYK_CATALOG

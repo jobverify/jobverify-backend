@@ -110,6 +110,19 @@ const isVerifiedHomepageFallback = ({ status, url, html }, site) => {
     && hasOfficialHomepageSignal(html, site)
   }
 
+const isVerifiedMissingRoute = ({ status, url, html }, routeUrl) => {
+  const normalizedUrl = String(url || '')
+  const normalizedRouteUrl = String(routeUrl || '')
+
+  return status === 404
+    && (
+      normalizedUrl === normalizedRouteUrl
+      || normalizedUrl === `${normalizedRouteUrl}/`
+    )
+    && /\bnot found\b/i.test(html)
+    && !hasUnexpectedPublicJobsSignal(html)
+}
+
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     redirect: 'follow',
@@ -143,7 +156,10 @@ const verifySiteSurface = async (site, { fetchPage }) => {
 
   for (const routeUrl of site.missingRouteUrls) {
     const routePage = await fetchPage(routeUrl)
-    if (!isVerifiedHomepageFallback(routePage, site)) {
+    if (
+      !isVerifiedHomepageFallback(routePage, site)
+      && !isVerifiedMissingRoute(routePage, routeUrl)
+    ) {
       throw new Error(`${site.key} route ${routeUrl} no longer falls back to the verified homepage surface`)
     }
   }

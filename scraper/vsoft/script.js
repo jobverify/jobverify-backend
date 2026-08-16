@@ -9,37 +9,33 @@ const config = loadConfig(currentDir)
 
 export const SOURCE = 'vsoft'
 export const COMPANY = 'VSoft'
+export const VERIFIED_ON = '2026-08-14'
 export const CAREERS_PAGE_URL = 'https://www.vsoftconsulting.com/careers/'
 export const CAREER_PORTAL_URL = 'https://www.vsoftconsulting.com/career-portal/'
-export const CAREER_PORTAL_PAGE_JSON_URL =
-  'https://www.vsoftconsulting.com/wp-json/wp/v2/pages?slug=career-portal&_fields=id,slug,link,title,content'
-export const APP_ROOT_URL = 'https://www.vsoftconsulting.com/wp-content/plugins/bullhorn-oscp/#/'
-export const APP_SHELL_URL = 'https://www.vsoftconsulting.com/wp-content/plugins/bullhorn-oscp/'
-export const APP_CONFIG_URL = 'https://www.vsoftconsulting.com/wp-content/plugins/bullhorn-oscp/app.json'
+export const JOBDIVA_PORTAL_URL =
+  'https://www1.jobdiva.com/portal/?a=ehjdnwnz6myv05mxjimlmwguleo14c0be149kcy238wtxsp4ozlqyjqehdl6g0y1&compid=-1'
+export const JOBDIVA_AUTH_URL = 'https://ws.jobdiva.com/candPortal/rest/auth/a'
+export const JOBDIVA_LIST_ALL_URL = 'https://ws.jobdiva.com/candPortal/rest/job/listall'
+export const JOBDIVA_GET_MORE_URL = 'https://ws.jobdiva.com/candPortal/rest/job/getmore'
+export const JOBDIVA_DETAIL_URL_PREFIX = 'https://ws.jobdiva.com/candPortal/rest/job/getdetailbyjobid/'
+export const JOBDIVA_PUBLIC_PORTAL_TYPE = '1'
+export const JOBDIVA_PUBLIC_COMPID = '-1'
+export const JOBDIVA_PUBLIC_AUTHORIZATION = 'Basic YXhlbG9uOmF4ZWxvbg=='
+export const DEFAULT_PAGE_SIZE = 200
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const CAREERS_PAGE_SIGNAL_PATTERNS = [
-  /<title>\s*(?:V-Soft Consulting Careers and IT Opportunities|Careers\s*-\s*V-Soft Consulting\s*\|\s*Enterprise AI(?:\s*&amp;\s*|\s*&\s*)Digital Transformation)\s*<\/title>/i,
+  /<title>\s*Careers\s*-\s*V-Soft Consulting\s*\|\s*Enterprise AI(?:\s*&amp;\s*|\s*&\s*)Digital Transformation\s*<\/title>/i,
   /https:\/\/www\.vsoftconsulting\.com\/career-portal\/?/i,
   /\b(?:Browse Open Roles|View Roles)\b/i,
 ]
 
-const DEFAULT_FIELDS = [
-  'id',
-  'title',
-  'publishedCategory(id,name)',
-  'address(city,state,countryName)',
-  'employmentType',
-  'dateLastPublished',
-  'publicDescription',
-  'isOpen',
-  'isPublic',
-  'isDeleted',
-  'publishedZip',
-  'salary',
-  'salaryUnit',
+const CAREER_PORTAL_SIGNAL_PATTERNS = [
+  /<title>\s*V-Soft Consulting Careers and IT Opportunities\s*<\/title>/i,
+  /\bjobdiva-careers\b/i,
+  /<iframe\b/i,
 ]
 
 const INDIA_LOCATION_KEYWORDS = [
@@ -72,44 +68,11 @@ const INDIA_LOCATION_KEYWORDS = [
   'uttar pradesh',
 ]
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: 'vsoft-text',
-  timeoutMs: 15000,
-})
-
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'application/json, text/plain, */*',
-  },
-  label: 'vsoft-json',
-  timeoutMs: 15000,
-})
-
-const defaultFetchApiResponse = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'application/json, text/plain, */*',
-    },
-  })
-
-  return {
-    status: response.status,
-    url: response.url,
-    text: await response.text(),
-  }
-}
-
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
   .replace(/&nbsp;/gi, ' ')
-  .replace(/&amp;/gi, '&')
+  .replace(/&#038;|&amp;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
   .replace(/&lt;/gi, '<')
@@ -118,7 +81,7 @@ const decodeHtmlEntities = (value) => String(value ?? '')
 const normalizeWhitespace = (value) => {
   if (value == null) return null
 
-  const normalized = decodeHtmlEntities(value)
+  const normalized = decodeHtmlEntities(String(value))
     .replace(/[\u2012\u2013\u2014\u2015]/g, '-')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
@@ -139,6 +102,17 @@ const extractListItems = (value) => [...String(value ?? '').matchAll(/<li\b[^>]*
   .map((match) => stripTags(match[1]))
   .filter(Boolean)
 
+const normalizeUrl = (value) => String(value ?? '').replace(/\/+$/, '')
+
+const normalizeLocationPart = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  return /^[a-z][a-z\s-]*$/i.test(normalized) && normalized === normalized.toLowerCase()
+    ? normalized.replace(/\b[a-z]/g, (match) => match.toUpperCase())
+    : normalized
+}
+
 const toIsoDate = (value) => {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return new Date(value).toISOString()
@@ -151,201 +125,314 @@ const toIsoDate = (value) => {
   return Number.isNaN(parsed.getTime()) ? normalized : parsed.toISOString()
 }
 
-const isPlaceholderValue = (value) => /^\[.*\]$/.test(String(value ?? '').trim())
+const toLocationText = (value) => {
+  if (!value) return null
+  if (typeof value === 'string') return normalizeWhitespace(value)
+
+  return [
+    normalizeLocationPart(value.city),
+    normalizeLocationPart(value.state),
+    normalizeLocationPart(value.country),
+  ]
+    .filter(Boolean)
+    .join(', ') || null
+}
+
+const buildRequestHeaders = (defaultHeaders, options = {}) => {
+  const { headers = {}, ...rest } = options
+  return {
+    ...rest,
+    headers: {
+      ...defaultHeaders,
+      ...headers,
+    },
+  }
+}
+
+const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, buildRequestHeaders({
+  'User-Agent': USER_AGENT,
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+}, {
+  label: 'vsoft-text',
+  timeoutMs: 15000,
+  ...options,
+}))
+
+const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, buildRequestHeaders({
+  'User-Agent': USER_AGENT,
+  Accept: 'application/json, text/plain, */*',
+}, {
+  label: 'vsoft-json',
+  timeoutMs: 15000,
+  ...options,
+}))
+
+const isJobDivaPortalUrl = (value) => {
+  try {
+    const url = new URL(String(value ?? ''))
+    return /^www\d+\.jobdiva\.com$/i.test(url.hostname)
+      && url.pathname === '/portal/'
+      && url.searchParams.has('a')
+  } catch {
+    return false
+  }
+}
+
+const extractIframeUrlCandidates = (html) => {
+  const page = decodeHtmlEntities(String(html ?? ''))
+
+  return [...page.matchAll(/<iframe\b[^>]+(?:data-lazy-src|src)=["']([^"']+)["'][^>]*>/gi)]
+    .map((match) => match[1])
+    .filter(Boolean)
+}
 
 export const hasCareersPageSignal = (html) => CAREERS_PAGE_SIGNAL_PATTERNS.every((pattern) => (
   pattern.test(String(html ?? ''))
 ))
 
-export const hasPortalAppShellSignal = (html) => {
-  const page = String(html ?? '')
-
-  return /<title>\s*Career Portal\s*<\/title>/i.test(page)
-    && /<app-root>/i.test(page)
-    && /novo-loading/i.test(page)
-}
-
-export const isPortalLoginBlockedResponse = (response = {}) =>
-  Number(response?.status) === 500
-  && /"errorMessage"\s*:\s*"Unable to login"/i.test(String(response?.text ?? ''))
-
-export const extractPortalIframeUrl = (payload) => {
-  const page = Array.isArray(payload) ? payload[0] : payload
-  const rendered = String(page?.content?.rendered ?? '')
-  const match = rendered.match(/<iframe\b[^>]*src="([^"]+)"/i)
-  if (!match && /\[oscp\]/i.test(rendered)) {
-    return APP_ROOT_URL
-  }
-  if (!match) return null
-
-  try {
-    return new URL(match[1], CAREER_PORTAL_URL).toString()
-  } catch {
-    return null
-  }
-}
-
-export const normalizeBullhornFields = (fields) => {
-  if (!Array.isArray(fields) || fields.length === 0) return [...DEFAULT_FIELDS]
-
-  const normalized = []
-  let buffer = ''
-  let depth = 0
-
-  for (const rawField of fields) {
-    const field = normalizeWhitespace(rawField)
-    if (!field) continue
-
-    buffer = buffer ? `${buffer},${field}` : field
-    depth += [...field].reduce((count, char) => {
-      if (char === '(') return count + 1
-      if (char === ')') return count - 1
-      return count
-    }, 0)
-
-    if (depth <= 0) {
-      normalized.push(buffer)
-      buffer = ''
-      depth = 0
+export const extractJobDivaIframeUrl = (html) => {
+  for (const candidate of extractIframeUrlCandidates(html)) {
+    try {
+      const absoluteUrl = new URL(candidate, CAREER_PORTAL_URL).toString()
+      if (isJobDivaPortalUrl(absoluteUrl)) {
+        return absoluteUrl
+      }
+    } catch {
+      continue
     }
   }
 
-  if (buffer) normalized.push(buffer)
-
-  return normalized.length > 0 ? normalized : [...DEFAULT_FIELDS]
+  return null
 }
 
-export const buildBaseUrl = (appConfig) => {
-  const service = appConfig?.service ?? {}
-  const swimlane = normalizeWhitespace(service.swimlane)
-  const corpToken = normalizeWhitespace(service.corpToken)
-  const rawPort = service.port
-  const port = Number.isFinite(rawPort) ? rawPort : 443
+export const hasCareerPortalPageSignal = (html) => (
+  CAREER_PORTAL_SIGNAL_PATTERNS.every((pattern) => pattern.test(String(html ?? '')))
+  && normalizeUrl(extractJobDivaIframeUrl(html)) === normalizeUrl(JOBDIVA_PORTAL_URL)
+)
 
-  if (!swimlane || !corpToken) {
-    throw new Error('VSoft Bullhorn app config is missing the swimlane or corp token')
+export const hasJobDivaPortalShellSignal = (html) => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+
+  return /<title>\s*Candidate Portal\s*<\/title>/i.test(page)
+    && normalized?.includes('You need to enable JavaScript to run this app.')
+    && page.includes('var JobPortalEnv = "PRODUCTION"')
+    && /\/portal\/index_bundle\.js\.gz\?v=\d{8}_\d+/i.test(page)
+    && /\/portal\/1\.index_bundle\.js\.gz\?v=\d{8}_\d+/i.test(page)
+}
+
+export const extractJobDivaPortalParams = (portalUrl) => {
+  if (!isJobDivaPortalUrl(portalUrl)) {
+    return null
   }
 
-  const protocol = port === 443 ? 'https' : 'http'
-  return `${protocol}://public-rest${swimlane}.bullhornstaffing.com:${port}/rest-services/${corpToken}`
+  const url = new URL(portalUrl)
+  const a = normalizeWhitespace(url.searchParams.get('a'))
+  const compid = normalizeWhitespace(url.searchParams.get('compid')) || JOBDIVA_PUBLIC_COMPID
+
+  return a ? { a, compid } : null
 }
 
-export const buildSearchUrl = (appConfig, {
-  count = Number.isFinite(appConfig?.service?.batchSize) ? appConfig.service.batchSize : 500,
-  start = 0,
-} = {}) => {
-  const params = new URLSearchParams({
-    query: '(isOpen:1) AND (isDeleted:0)',
-    fields: normalizeBullhornFields(appConfig?.service?.fields).join(','),
-    count: String(count),
-    sort: normalizeWhitespace(appConfig?.additionalJobCriteria?.sort) || '-dateLastPublished',
-    showTotalMatched: 'true',
-  })
+export const buildJobDivaListAllUrl = (count = DEFAULT_PAGE_SIZE) =>
+  `${JOBDIVA_LIST_ALL_URL}?portaltype=${JOBDIVA_PUBLIC_PORTAL_TYPE}&count=${count}`
 
-  if (Number.isFinite(start) && start > 0) {
-    params.set('start', String(start))
-  }
+export const buildJobDivaGetMoreUrl = (from, to, count = DEFAULT_PAGE_SIZE) =>
+  `${JOBDIVA_GET_MORE_URL}?from=${from}&to=${to}&count=${count}&portaltype=${JOBDIVA_PUBLIC_PORTAL_TYPE}`
 
-  return `${buildBaseUrl(appConfig)}/search/JobOrder?${params.toString()}`
-}
+export const buildJobDivaDetailUrl = (jobId, compid = JOBDIVA_PUBLIC_COMPID) =>
+  `${JOBDIVA_DETAIL_URL_PREFIX}${encodeURIComponent(String(jobId ?? ''))}?compid=${encodeURIComponent(String(compid))}`
 
-const buildJobUrl = (jobId) => `${APP_ROOT_URL}jobs/${jobId}`
+export const buildJobDivaJobUrl = (jobId) =>
+  `${JOBDIVA_PORTAL_URL}#/jobs/${encodeURIComponent(String(jobId ?? ''))}`
 
-const isIndiaLocation = (record) => {
+export const isIndiaSummaryRecord = (record) => {
   const haystack = [
-    record?.address?.city,
-    record?.address?.state,
-    record?.address?.countryName,
-    record?.title,
+    record?.location,
+    toLocationText(record?.mainLocation),
+    ...(Array.isArray(record?.otherLocations) ? record.otherLocations.map((value) => toLocationText(value)) : []),
   ]
-    .map((value) => normalizeWhitespace(value)?.toLowerCase())
     .filter(Boolean)
     .join(' | ')
+    .toLowerCase()
 
   return INDIA_LOCATION_KEYWORDS.some((keyword) => haystack.includes(keyword))
 }
 
-const buildIndiaLocation = (record) => {
-  const city = normalizeWhitespace(record?.address?.city)
-  const state = normalizeWhitespace(record?.address?.state)
-  return [city, state, 'India'].filter(Boolean).join(', ')
+const buildIndiaLocation = (mainLocation) => [
+  normalizeLocationPart(mainLocation?.city),
+  normalizeLocationPart(mainLocation?.state),
+  'India',
+]
+  .filter(Boolean)
+  .join(', ')
+
+const buildJobDivaApiHeaders = (authPayload) => ({
+  portalID: String(authPayload?.portalID ?? ''),
+  token: String(authPayload?.token ?? ''),
+  a: String(authPayload?.a ?? ''),
+})
+
+const fetchJobDivaAuth = async (fetchJson, portalUrl) => {
+  const params = extractJobDivaPortalParams(portalUrl)
+  if (!params?.a) {
+    throw new Error('The verified VSoft JobDiva iframe no longer exposes a usable public portal token')
+  }
+
+  const authPayload = await fetchJson(JOBDIVA_AUTH_URL, {
+    label: 'vsoft-jobdiva-auth',
+    headers: {
+      Authorization: JOBDIVA_PUBLIC_AUTHORIZATION,
+      portalID: JOBDIVA_PUBLIC_PORTAL_TYPE,
+      a: params.a,
+      compid: params.compid,
+    },
+  })
+
+  if (!authPayload?.token || !authPayload?.a || !authPayload?.portalID) {
+    throw new Error('The verified VSoft JobDiva auth flow no longer returns a usable public portal token')
+  }
+
+  return {
+    ...authPayload,
+    compid: params.compid,
+  }
 }
 
-export const extractJobs = (payload) =>
-  (Array.isArray(payload?.data) ? payload.data : [])
-    .filter((record) => record?.isOpen && !record?.isDeleted)
-    .filter((record) => isIndiaLocation(record))
-    .map((record) => {
-      const title = normalizeWhitespace(record?.title)
-      const jobId = normalizeWhitespace(record?.id)
-      const sourceUrl = jobId ? buildJobUrl(jobId) : null
+const dedupeSummaryRecords = (records) => {
+  const uniqueRecords = new Map()
 
-      if (!title || !jobId || !sourceUrl) {
-        return null
-      }
+  for (const record of records) {
+    const jobId = normalizeWhitespace(record?.id)
+    if (!jobId || uniqueRecords.has(jobId)) continue
+    uniqueRecords.set(jobId, record)
+  }
 
-      return {
-        title,
-        company: COMPANY,
-        department: normalizeWhitespace(record?.publishedCategory?.name),
-        location: buildIndiaLocation(record),
-        city: normalizeWhitespace(record?.address?.city),
-        state: normalizeWhitespace(record?.address?.state),
-        country: 'India',
-        jobId,
-        requisitionId: jobId,
-        sourceUrl,
-        applyUrl: sourceUrl,
-        employmentType: normalizeWhitespace(record?.employmentType),
-        postingDate: toIsoDate(record?.dateLastPublished),
-        jobDescription: stripTags(record?.publicDescription),
-        requiredSkills: extractListItems(record?.publicDescription),
-      }
-    })
+  return [...uniqueRecords.values()]
+}
+
+const fetchAllJobDivaSummaries = async (fetchJson, authPayload, pageSize = DEFAULT_PAGE_SIZE) => {
+  const apiHeaders = buildJobDivaApiHeaders(authPayload)
+  const firstPage = await fetchJson(buildJobDivaListAllUrl(pageSize), {
+    label: 'vsoft-jobdiva-listall',
+    headers: apiHeaders,
+  })
+
+  const total = Number(firstPage?.total)
+  let records = dedupeSummaryRecords(Array.isArray(firstPage?.data) ? firstPage.data : [])
+
+  if (Number.isFinite(total) && records.length < total) {
+    for (let from = records.length + 1; from <= total; from += pageSize) {
+      const to = Math.min(from + pageSize - 1, total)
+      const page = await fetchJson(buildJobDivaGetMoreUrl(from, to, pageSize), {
+        label: 'vsoft-jobdiva-getmore',
+        headers: apiHeaders,
+      })
+
+      records = dedupeSummaryRecords([
+        ...records,
+        ...(Array.isArray(page?.data) ? page.data : []),
+      ])
+    }
+  }
+
+  return records
+}
+
+const isIndiaDetailRecord = (job) => {
+  const country = normalizeWhitespace(job?.mainLocation?.country)?.toLowerCase()
+  return country === 'india' || isIndiaSummaryRecord(job)
+}
+
+const mapJobDivaDetailToJob = (detailPayload) => {
+  const detail = detailPayload?.job ?? detailPayload
+  if (!detail || !isIndiaDetailRecord(detail)) {
+    return null
+  }
+
+  const title = normalizeWhitespace(detail?.title)
+  const jobId = normalizeWhitespace(detail?.id)
+  if (!title || !jobId) {
+    return null
+  }
+
+  const requisitionId = normalizeWhitespace(detail?.refNo) || jobId
+  const city = normalizeLocationPart(detail?.mainLocation?.city)
+  const state = normalizeLocationPart(detail?.mainLocation?.state)
+  const location = buildIndiaLocation(detail?.mainLocation) || normalizeWhitespace(detail?.location)
+  const jobDescription = stripTags(detail?.jobDescription)
+
+  return {
+    title,
+    company: COMPANY,
+    department: /^\d+$/.test(String(detail?.jobSector ?? '').trim())
+      ? null
+      : normalizeWhitespace(detail?.jobSector),
+    location,
+    city,
+    state,
+    country: 'India',
+    jobId,
+    requisitionId,
+    sourceUrl: buildJobDivaJobUrl(jobId),
+    applyUrl: buildJobDivaJobUrl(jobId),
+    employmentType: normalizeWhitespace(detail?.positionType),
+    postingDate: toIsoDate(detail?.postDate ?? detail?.postDateStr),
+    jobDescription,
+    requiredSkills: extractListItems(detail?.jobDescription),
+  }
+}
+
+export const extractJobs = (detailPayloads) =>
+  (Array.isArray(detailPayloads) ? detailPayloads : [detailPayloads])
+    .map((payload) => mapJobDivaDetailToJob(payload))
     .filter(Boolean)
 
 export const createVsoftScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+  pageSize = DEFAULT_PAGE_SIZE,
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
-    fetchApiResponse = defaultFetchApiResponse,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_PAGE_URL)
+    const careersHtml = await fetchText(CAREERS_PAGE_URL, {
+      label: 'vsoft-careers-page',
+    })
     if (!hasCareersPageSignal(careersHtml)) {
       throw new Error('The verified VSoft careers surface no longer matches the official first-party page')
     }
 
-    const portalPagePayload = await fetchJson(CAREER_PORTAL_PAGE_JSON_URL)
-    if (extractPortalIframeUrl(portalPagePayload) !== APP_ROOT_URL) {
-      throw new Error('The verified VSoft Bullhorn portal handoff no longer matches the official first-party iframe')
+    const careerPortalHtml = await fetchText(CAREER_PORTAL_URL, {
+      label: 'vsoft-career-portal-page',
+    })
+    if (!hasCareerPortalPageSignal(careerPortalHtml)) {
+      throw new Error('The verified VSoft career portal handoff no longer matches the official first-party iframe')
     }
 
-    const portalAppHtml = await fetchText(APP_SHELL_URL)
-    if (!hasPortalAppShellSignal(portalAppHtml)) {
-      throw new Error('The verified VSoft Bullhorn app shell no longer matches the public first-party portal')
+    const jobDivaPortalUrl = extractJobDivaIframeUrl(careerPortalHtml)
+    const jobDivaPortalHtml = await fetchText(jobDivaPortalUrl, {
+      label: 'vsoft-jobdiva-portal-shell',
+    })
+    if (!hasJobDivaPortalShellSignal(jobDivaPortalHtml)) {
+      throw new Error('The verified VSoft public JobDiva portal no longer matches the trusted embedded jobs board')
     }
 
-    const appConfig = await fetchJson(APP_CONFIG_URL)
-    const jobsResponse = await fetchApiResponse(buildSearchUrl(appConfig))
-    if (isPortalLoginBlockedResponse(jobsResponse)) {
+    const authPayload = await fetchJobDivaAuth(fetchJson, jobDivaPortalUrl)
+    const summaryRecords = await fetchAllJobDivaSummaries(fetchJson, authPayload, pageSize)
+    const indiaSummaries = summaryRecords.filter((record) => isIndiaSummaryRecord(record))
+
+    if (indiaSummaries.length === 0) {
       return []
     }
-    if (Number(jobsResponse?.status) !== 200) {
-      throw new Error(`The verified VSoft Bullhorn search API returned HTTP ${jobsResponse?.status ?? 'unknown'}`)
-    }
 
-    let jobsPayload = null
-    try {
-      jobsPayload = JSON.parse(jobsResponse.text)
-    } catch (error) {
-      throw new Error('The verified VSoft Bullhorn search API no longer returns valid JSON', {
-        cause: error,
+    const detailPayloads = await Promise.all(indiaSummaries.map((record) =>
+      fetchJson(buildJobDivaDetailUrl(record.id, authPayload.compid), {
+        label: 'vsoft-jobdiva-detail',
+        headers: buildJobDivaApiHeaders(authPayload),
       })
-    }
+    ))
 
-    const jobs = extractJobs(jobsPayload).map((job) => ({
+    const jobs = extractJobs(detailPayloads).map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
@@ -356,35 +443,20 @@ export const createVsoftScraper = ({
   },
 })
 
-export const getRunnerMetadata = () => {
-  const appConfig = {
-    service: {
-      batchSize: 500,
-      corpToken: 'H85C9',
-      port: 443,
-      swimlane: '34',
-      fields: [...DEFAULT_FIELDS],
-    },
-    additionalJobCriteria: {
-      sort: '-dateLastPublished',
-    },
-  }
-
-  return {
-    name: SOURCE,
-    dryRunFile: 'jobs.json',
-    provider: {
-      source: SOURCE,
-      companyName: COMPANY,
-      companyCareerPage: CAREERS_PAGE_URL,
-      jobBoardUrl: CAREER_PORTAL_URL,
-      jobBoardApi: buildSearchUrl(appConfig),
-      adapter: 'script',
-      atsPlatform: 'bullhorn-oscp',
-      countryFilter: 'India',
-    },
-  }
-}
+export const getRunnerMetadata = () => ({
+  name: SOURCE,
+  dryRunFile: 'jobs.json',
+  provider: {
+    source: SOURCE,
+    companyName: COMPANY,
+    companyCareerPage: CAREERS_PAGE_URL,
+    jobBoardUrl: CAREER_PORTAL_URL,
+    jobBoardApi: buildJobDivaListAllUrl(DEFAULT_PAGE_SIZE),
+    adapter: 'script',
+    atsPlatform: 'jobdiva-candidate-portal',
+    countryFilter: 'India',
+  },
+})
 
 export const run = async (options = {}) => createVsoftScraper().run(options)
 

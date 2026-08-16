@@ -5,6 +5,27 @@ const HOMEPAGE_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
+    <title>Digital Asset Management Software | Scaleflex</title>
+  </head>
+  <body>
+    <main>
+      <h1>One place for every visual. Days back in your week.</h1>
+      <p>Turn visuals into high-converting digital experiences at scale.</p>
+      <p>Dynamic Media Optimization</p>
+      <p>Trusted by enterprises.</p>
+    </main>
+    <footer>
+      <a href="https://portals.scaleflex.com/s/GNQy1BKc/en/home">Media Kit</a>
+      <a href="https://portals.scaleflex.com/s/xJfYX5yl/en/home">We are Hiring</a>
+    </footer>
+  </body>
+</html>
+`
+
+const LEGACY_HOMEPAGE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
     <title>Cloud-based Visual Asset Management for Enterprise</title>
   </head>
   <body>
@@ -67,12 +88,13 @@ test('Scaleflex sentinel recognizes the verified homepage, official careers hand
     'https://www.scaleflex.com/jobs',
   ])
   assert.equal(scaleflex.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
+  assert.equal(scaleflex.hasOfficialHomepageSignal(LEGACY_HOMEPAGE_HTML), true)
   assert.equal(
     scaleflex.extractOfficialCareersHandoffUrl(HOMEPAGE_HTML),
     'https://portals.scaleflex.com/s/xJfYX5yl/en/home',
   )
   assert.equal(scaleflex.hasVerifiedPortalLoadingSignal(PORTAL_LOADING_HTML), true)
-  assert.equal(scaleflex.hasPublicJobsSignal(HOMEPAGE_HTML), false)
+  assert.equal(scaleflex.hasPublicJobsSignal(HOMEPAGE_HTML), true)
   assert.equal(scaleflex.hasPublicJobsSignal(PORTAL_LOADING_HTML), false)
   assert.equal(
     scaleflex.isVerifiedNoPublicJobsRoute({

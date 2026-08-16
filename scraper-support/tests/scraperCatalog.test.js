@@ -87,16 +87,16 @@ test('getScraperCatalog merges workday and official portal providers into one re
   assert.match(airbus.companyDomain, /wd\d+\.myworkdayjobs\.com$/)
 
   assert.ok(abb)
-  assert.equal(abb.adapter, 'workday')
-  assert.equal(abb.atsPlatform, 'workday')
+  assert.equal(abb.adapter, 'script')
+  assert.equal(abb.atsPlatform, 'phenom')
   assert.match(abb.companyCareerPage, /careers\.abb\/global\/en\/search-results/i)
   assert.equal(abb.companyDomain, 'careers.abb')
   assert.match(abb.baseUrl, /abb\.wd3\.myworkdayjobs\.com\/External_Career_Page/i)
 
   assert.ok(allstate)
-  assert.equal(allstate.adapter, 'workday')
-  assert.equal(allstate.atsPlatform, 'workday')
-  assert.match(allstate.companyCareerPage, /allstate\.jobs/i)
+  assert.equal(allstate.adapter, 'script')
+  assert.equal(allstate.atsPlatform, 'official-company-careers-json-api')
+  assert.match(allstate.companyCareerPage, /allstate\.jobs\/job-search-results/i)
   assert.equal(allstate.companyDomain, 'allstate.jobs')
   assert.match(allstate.baseUrl, /allstate\.wd5\.myworkdayjobs\.com\/allstate_careers/i)
 
@@ -669,14 +669,14 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   assert.equal(typeof abb.run, 'function')
   assert.match(abb.dryRunFile, /abb.workday[\\/]jobs\.json$/)
   assert.equal(abb.provider.source, 'abb')
-  assert.equal(abb.provider.atsPlatform, 'workday')
+  assert.equal(abb.provider.atsPlatform, 'phenom')
   assert.equal(abb.provider.companyDomain, 'careers.abb')
 
   assert.ok(allstate)
   assert.equal(typeof allstate.run, 'function')
   assert.match(allstate.dryRunFile, /allstate.workday[\\/]jobs\.json$/)
   assert.equal(allstate.provider.source, 'allstate')
-  assert.equal(allstate.provider.atsPlatform, 'workday')
+  assert.equal(allstate.provider.atsPlatform, 'official-company-careers-json-api')
   assert.equal(allstate.provider.companyDomain, 'allstate.jobs')
 
   assert.ok(seveneleven)

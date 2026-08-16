@@ -19,6 +19,18 @@ const pendingCareersHtml = `
   </html>
 `
 
+const cloudflareBlockedPageHtml = `
+  <!doctype html>
+  <html lang="en-US">
+    <head><title>Just a moment...</title></head>
+    <body>
+      <h1>Just a moment...</h1>
+      <p>Enable JavaScript and cookies to continue</p>
+      <p>Sorry, you have been blocked</p>
+    </body>
+  </html>
+`
+
 test('recognizes Capillary Technologies official careers page while its new experience is pending', () => {
   assert.equal(isCareersExperiencePending(pendingCareersHtml), true)
 })
@@ -45,4 +57,25 @@ test('surfaces Capillary Technologies direct-request failures without a browser 
     }),
     /HTTP 403 for https:\/\/www\.capillarytech\.com\/careers\//,
   )
+})
+
+test('returns no jobs when the verified Capillary Technologies careers route is Cloudflare-blocked on Thursday, August 13, 2026', async () => {
+  const requestedPageUrls = []
+
+  const jobs = await createCapillaryTechnologiesScraper().run({
+    fetchText: async (url) => {
+      throw new Error(`HTTP 403 for ${url}`)
+    },
+    fetchPage: async (url) => {
+      requestedPageUrls.push(url)
+      return {
+        status: 403,
+        url,
+        html: cloudflareBlockedPageHtml,
+      }
+    },
+  })
+
+  assert.deepEqual(requestedPageUrls, [CAREER_PAGE_URL])
+  assert.deepEqual(jobs, [])
 })

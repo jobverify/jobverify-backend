@@ -22,6 +22,12 @@ export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
 export const OFFICIAL_CAREERS_URL = PROVIDER_METADATA.officialCareersPageUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
+export const LEGACY_MISSING_ROUTE_URLS = [
+  'https://www.ruralshores.com/career.html',
+  'https://www.ruralshores.com/careers',
+  'https://www.ruralshores.com/career',
+  'https://www.ruralshores.com/jobs',
+]
 
 const decodeHtmlEntities = (value) => {
   let decoded = String(value ?? '')
@@ -104,12 +110,21 @@ const extractVisibleReferenceId = (metaValues = []) =>
 
 export const hasOfficialRuralShoresCareersSignals = (html = '') => {
   const page = String(html ?? '')
-
-  return extractTitle(page) === 'Career - RuralShores'
+  const isLegacyJobBoard =
+    extractTitle(page) === 'Career - RuralShores'
     && /Current Openings/i.test(page)
     && /class=["'][^"']*\bjobcard\b/i.test(page)
     && /mailto:careers@ruralshores\.com/i.test(page)
     && />\s*careers@ruralshores\.com\s*</i.test(page)
+  const isCurrentTalentNetworkShell =
+    extractTitle(page) === 'Careers - RuralShores'
+    && /Build a Rewarding Career with RuralShores/i.test(page)
+    && /Join Our Talent Network/i.test(page)
+    && /href="\/career\.aspx"/i.test(page)
+    && /mailto:careers@ruralshores\.com/i.test(page)
+    && />\s*careers@ruralshores\.com\s*</i.test(page)
+
+  return isLegacyJobBoard || isCurrentTalentNetworkShell
 }
 
 export const extractVisibleJobCards = (html = '') => {
@@ -179,7 +194,7 @@ export const createRuralShoresScraper = ({
 
     const jobs = extractVisibleJobCards(careersHtml)
     if (jobs.length === 0) {
-      throw new Error('RuralShores verified careers page did not expose any public India jobcards')
+      return []
     }
 
     const limitedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs

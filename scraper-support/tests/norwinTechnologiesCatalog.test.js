@@ -34,8 +34,10 @@ test('Norwin Technologies local catalog captures the verified Trakstar jobs surf
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'single-trakstar-board-root')
   assert.equal(provider.extractionStrategy, 'verified-careers-page+norwin-branded-trakstar-board')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-14')
   assert.equal(provider.modulePath, modulePath)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /self-redirect loop/i)
   assert.match(provider.verifiedSurfaceSummary, /Sr,\s*Storage Ops/i)
 })
 

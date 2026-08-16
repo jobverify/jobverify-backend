@@ -17,13 +17,13 @@ export const ENDURANCE_CATALOG = {
   countryFilter: 'India',
   paginationStrategy: 'single-first-party-job-portal-html',
   extractionStrategy:
-    'verified-first-party-homepage+careers-page+job-portal+job-detail-pages',
+    'verified-browser-rendered-careers-page+job-portal+same-domain-detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'endurancegroup.com',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-08-14',
   verifiedSurfaceSummary:
-    'Verified on July 15, 2026 that https://www.endurancegroup.com/ is the live Endurance Technologies homepage, that https://www.endurancegroup.com/careers/ is the first-party careers page, and that the current first-party public jobs surface is the job portal at https://www.endurancegroup.com/careers/job-portal/ with detail pages such as https://www.endurancegroup.com/career/technical-architect/. Verified current first-party openings including Technical Architect and Technical Lead - Hardware. The apply flow is handled on the first-party detail pages via the embedded Apply Now resume form rather than an external ATS, and the verified first-party homepage remains https://www.endurancegroup.com/',
+    'Verified on August 14, 2026 that the live Endurance careers surface remains first-party on https://www.endurancegroup.com/careers/ and https://www.endurancegroup.com/careers/job-portal/, with same-domain detail pages such as https://www.endurancegroup.com/career/technical-architect/. Browser-rendered verification still showed Current Opening (6) plus public roles including Technical Architect and Technical Lead - Hardware. Direct Node fetch probes to https://www.endurancegroup.com/, https://www.endurancegroup.com/careers/, https://www.endurancegroup.com/careers/job-portal/, and https://www.endurancegroup.com/career/technical-architect/ returned a Cloudflare 403 "Just a moment..." challenge, so API-only runs must treat that verified first-party block as a graceful no-data condition instead of crashing while the verified official homepage remains https://www.endurancegroup.com/',
   dryRunFile: 'endurance/jobs.json',
 }
 

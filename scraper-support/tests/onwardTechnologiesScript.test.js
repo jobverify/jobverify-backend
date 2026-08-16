@@ -125,6 +125,24 @@ test('Onward Technologies pins the verified careers page and Sucuri challenge be
   assert.match(cookie, /^sucuri_cloudproxy_uuid_[a-z0-9]+=.+$/i)
 })
 
+test('defaultFetchText accepts the live 307 Sucuri interstitial body for the verified careers page', async () => {
+  const onwardTechnologies = await loadScriptModule()
+  const originalFetch = globalThis.fetch
+
+  globalThis.fetch = async () => ({
+    ok: false,
+    status: 307,
+    text: async () => sucuriChallengeHtml,
+  })
+
+  try {
+    const html = await onwardTechnologies.defaultFetchText(onwardTechnologies.CAREERS_PAGE_URL)
+    assert.equal(html, sucuriChallengeHtml)
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
 test('extractIndiaJobs keeps only India listings from the verified Onward Technologies careers accordion', async () => {
   const onwardTechnologies = await loadScriptModule()
   const jobs = onwardTechnologies.extractIndiaJobs(careersPageHtml)

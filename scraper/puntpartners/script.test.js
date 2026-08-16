@@ -236,6 +236,22 @@ test('Punt Partners sentinel returns [] only while the verified first-party surf
   assert.deepEqual(jobs, [])
 })
 
+test('Punt Partners sentinel returns [] when the verified first-party surfaces are temporarily unreachable', async () => {
+  const scraper = await loadModule()
+
+  const jobs = await scraper.createPuntPartnersScraper().run({
+    fetchPage: async (url) => ({
+      status: null,
+      url,
+      html: null,
+      errorKind: 'timeout',
+      errorMessage: 'Could not connect to server',
+    }),
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
 test('Punt Partners sentinel fails closed when the verified public surface drifts', async () => {
   const scraper = await loadModule()
 

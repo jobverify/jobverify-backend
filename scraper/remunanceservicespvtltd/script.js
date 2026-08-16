@@ -50,6 +50,14 @@ const normalizeUrl = (value) => {
   return parsed.toString()
 }
 
+const isOfficialJobDetailUrl = (value) => {
+  try {
+    return normalizeUrl(value).startsWith(JOBS_URL)
+  } catch {
+    return false
+  }
+}
+
 const toLocation = (cityText) => {
   const city = normalizeWhitespace(cityText)
   if (!city) {
@@ -253,7 +261,7 @@ const hasOfficialJobDetailSignal = (html, listing = {}) => {
 
   return pageTitle === `${listing.title} - Remunance`
     && heading === listing.title
-    && (!canonicalUrl || canonicalUrl === normalizeUrl(listing.sourceUrl || listing.applyUrl || ''))
+    && (!canonicalUrl || isOfficialJobDetailUrl(canonicalUrl))
     && /<h2>\s*Apply for this position\s*<\/h2>/i.test(page)
     && /id=["']awsm-application-form["']/i.test(page)
     && extractFooterCompany(page) === 'Remunance Services Pvt Ltd'
@@ -268,6 +276,10 @@ export const extractJobDetail = (html, listing = {}) => {
   const title = stripTags(page.match(/<h1\b[^>]*class=["'][^"']*entry-title[^"']*["'][^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? null)
     || listing.title
     || null
+  const canonicalUrl = normalizeWhitespace(extractCanonicalUrl(page))
+  const resolvedDetailUrl = isOfficialJobDetailUrl(canonicalUrl)
+    ? normalizeUrl(canonicalUrl)
+    : normalizeUrl(listing.sourceUrl || listing.applyUrl || '')
   const fields = extractTableFields(page)
   const entryHtml = extractEntryContentHtml(page)
   const { lines, listItems } = buildDetailContent(entryHtml)
@@ -278,6 +290,8 @@ export const extractJobDetail = (html, listing = {}) => {
     ...listing,
     title,
     company: COMPANY,
+    sourceUrl: resolvedDetailUrl,
+    applyUrl: resolvedDetailUrl,
     department: null,
     location: locationData.location,
     city: locationData.city,

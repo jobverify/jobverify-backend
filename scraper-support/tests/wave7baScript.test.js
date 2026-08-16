@@ -55,58 +55,55 @@ const appliedCloudBoardHtml = `
     <h1>Applied Cloud Computing</h1>
     <a href="https://www.appliedcloudcomputing.com/">Applied Cloud Computing</a>
     <h2>Careers at Applied Cloud Computing</h2>
-    <h3>Jobs at Applied Cloud Computing</h3>
-    <a href="https://jobs.smartrecruiters.com/AppliedCloudComputing/744000140000001-cloud-operations-engineer-gcp-kubernetes">
-      Cloud Operations Engineer (GCP & Kubernetes) Navi Mumbai, India Full-time
-    </a>
-    <a href="https://jobs.smartrecruiters.com/AppliedCloudComputing/744000140000002-l3-cloud-engineer-applied-cloud-computing">
-      L3 Cloud Engineer - Applied Cloud Computing Mumbai, India Full-time
-    </a>
+    <label for="search-input">Search jobs</label>
+    <input id="search-input" type="search" />
+    <h2>Jobs at Applied Cloud Computing</h2>
+    <p>Search by keyword or location to explore current openings.</p>
   </body>
 </html>
 `
 
 const appliedCloudListingPayload = {
-  totalFound: 2,
+  totalFound: 4,
   content: [
     {
-      id: '744000140000001',
-      name: 'Cloud Operations Engineer (GCP & Kubernetes)',
+      id: '744000143239951',
+      name: 'Cloud Network Security Engineer',
       refNumber: 'ACC-1001',
-      releasedDate: '2026-07-12T09:15:00.000Z',
+      releasedDate: '2026-08-13T09:15:00.000Z',
       location: {
-        city: 'Navi Mumbai',
+        city: 'Pune',
         region: 'MH',
         country: 'in',
-        fullLocation: 'Navi Mumbai, MH, India',
+        fullLocation: 'Pune, MH, India',
       },
       company: {
         identifier: 'AppliedCloudComputing',
         name: 'Applied Cloud Computing',
       },
       department: {
-        label: 'Cloud Operations',
+        label: 'Cloud Security',
       },
       typeOfEmployment: {
         id: 'full-time',
         label: 'Full-time',
       },
       experienceLevel: {
-        id: 'mid-level',
-        label: 'Mid-Level',
+        id: 'senior',
+        label: 'Senior',
       },
-      ref: 'https://api.smartrecruiters.com/v1/companies/AppliedCloudComputing/postings/744000140000001',
+      ref: 'https://api.smartrecruiters.com/v1/companies/AppliedCloudComputing/postings/744000143239951',
     },
     {
-      id: '744000140000002',
-      name: 'L3 Cloud Engineer - Applied Cloud Computing',
+      id: '744000143239952',
+      name: 'OCI Cloud and Network Engineer',
       refNumber: 'ACC-1002',
-      releasedDate: '2026-07-10T07:10:00.000Z',
+      releasedDate: '2026-08-12T07:10:00.000Z',
       location: {
-        city: 'Mumbai',
+        city: 'Bengaluru',
         region: 'MH',
         country: 'in',
-        fullLocation: 'Mumbai, MH, India',
+        fullLocation: 'Bengaluru, KA, India',
       },
       company: {
         identifier: 'AppliedCloudComputing',
@@ -123,66 +120,122 @@ const appliedCloudListingPayload = {
         id: 'senior',
         label: 'Senior',
       },
-      ref: 'https://api.smartrecruiters.com/v1/companies/AppliedCloudComputing/postings/744000140000002',
+      ref: 'https://api.smartrecruiters.com/v1/companies/AppliedCloudComputing/postings/744000143239952',
+    },
+    {
+      id: '744000143239953',
+      name: 'Network Security Compliance Check & Remediation Engineer',
+      refNumber: 'ACC-1003',
+      releasedDate: '2026-08-11T10:00:00.000Z',
+      location: {
+        city: 'Mumbai',
+        region: 'MH',
+        country: 'in',
+        fullLocation: 'Mumbai, MH, India',
+      },
+      company: {
+        identifier: 'AppliedCloudComputing',
+        name: 'Applied Cloud Computing',
+      },
+      department: {
+        label: 'Compliance Engineering',
+      },
+      typeOfEmployment: {
+        id: 'full-time',
+        label: 'Full-time',
+      },
+      experienceLevel: {
+        id: 'senior',
+        label: 'Senior',
+      },
+      ref: 'https://api.smartrecruiters.com/v1/companies/AppliedCloudComputing/postings/744000143239953',
+    },
+    {
+      id: '744000143239954',
+      name: 'L2 CDN & Edge Security Engineer',
+      refNumber: 'ACC-1004',
+      releasedDate: '2026-08-10T08:00:00.000Z',
+      location: {
+        city: 'Navi Mumbai',
+        region: 'MH',
+        country: 'in',
+        fullLocation: 'Navi Mumbai, MH, India',
+      },
+      company: {
+        identifier: 'AppliedCloudComputing',
+        name: 'Applied Cloud Computing',
+      },
+      department: {
+        label: 'Edge Security',
+      },
+      typeOfEmployment: {
+        id: 'full-time',
+        label: 'Full-time',
+      },
+      experienceLevel: {
+        id: 'mid-level',
+        label: 'Mid-Level',
+      },
+      ref: 'https://api.smartrecruiters.com/v1/companies/AppliedCloudComputing/postings/744000143239954',
     },
   ],
 }
 
 const appliedCloudDetailPayloadById = {
-  '744000140000001': {
-    id: '744000140000001',
-    name: 'Cloud Operations Engineer (GCP & Kubernetes)',
+  '744000143239951': {
+    id: '744000143239951',
+    name: 'Cloud Network Security Engineer',
     refNumber: 'ACC-1001',
-    releasedDate: '2026-07-12T09:15:00.000Z',
+    releasedDate: '2026-08-13T09:15:00.000Z',
     postingUrl:
-      'https://jobs.smartrecruiters.com/AppliedCloudComputing/744000140000001-cloud-operations-engineer-gcp-kubernetes',
+      'https://jobs.smartrecruiters.com/AppliedCloudComputing/744000143239951-cloud-network-security-engineer',
     applyUrl:
-      'https://jobs.smartrecruiters.com/AppliedCloudComputing/744000140000001-cloud-operations-engineer-gcp-kubernetes?oga=true',
+      'https://jobs.smartrecruiters.com/AppliedCloudComputing/744000143239951-cloud-network-security-engineer?oga=true',
     location: {
-      city: 'Navi Mumbai',
+      city: 'Pune',
       region: 'MH',
       country: 'in',
-      fullLocation: 'Navi Mumbai, MH, India',
+      fullLocation: 'Pune, MH, India',
     },
     department: {
-      label: 'Cloud Operations',
+      label: 'Cloud Security',
     },
     typeOfEmployment: {
       id: 'full-time',
       label: 'Full-time',
     },
     experienceLevel: {
-      id: 'mid-level',
-      label: 'Mid-Level',
+      id: 'senior',
+      label: 'Senior',
     },
     jobAd: {
       sections: {
         jobDescription: {
-          text: '<p>Manage GCP and Kubernetes production workloads for regulated cloud environments.</p>',
+          text: '<p>Design and operate network security controls for enterprise cloud workloads.</p>',
         },
         qualifications: {
-          text: '<p>3+ years of experience with Kubernetes and public cloud operations.</p>',
+          text: '<p>Strong hands-on experience with firewalls, proxy controls, and cloud network security.</p>',
         },
         additionalInformation: {
-          text: '<p>Shift flexibility and BFSI cloud support experience are preferred.</p>',
+          text: '<p>Cross-team collaboration across Pune and hybrid client environments is preferred.</p>',
         },
       },
     },
   },
-  '744000140000002': {
-    id: '744000140000002',
-    name: 'L3 Cloud Engineer - Applied Cloud Computing',
+  '744000143239952': {
+    id: '744000143239952',
+    name: 'OCI Cloud and Network Engineer',
     refNumber: 'ACC-1002',
-    releasedDate: '2026-07-10T07:10:00.000Z',
+    releasedDate: '2026-08-12T07:10:00.000Z',
     postingUrl:
-      'https://jobs.smartrecruiters.com/AppliedCloudComputing/744000140000002-l3-cloud-engineer-applied-cloud-computing',
+      'https://jobs.smartrecruiters.com/AppliedCloudComputing/744000143239952-oci-cloud-and-network-engineer',
     applyUrl:
-      'https://jobs.smartrecruiters.com/AppliedCloudComputing/744000140000002-l3-cloud-engineer-applied-cloud-computing?oga=true',
+      'https://jobs.smartrecruiters.com/AppliedCloudComputing/744000143239952-oci-cloud-and-network-engineer?oga=true',
     location: {
-      city: 'Mumbai',
-      region: 'MH',
+      city: 'Bengaluru',
+      region: 'KA',
       country: 'in',
-      fullLocation: 'Mumbai, MH, India',
+      fullLocation: 'Bengaluru, KA, India',
     },
     department: {
       label: 'Cloud Engineering',
@@ -198,13 +251,93 @@ const appliedCloudDetailPayloadById = {
     jobAd: {
       sections: {
         jobDescription: {
-          text: '<p>Lead multi-cloud platform engineering and incident response for enterprise clients.</p>',
+          text: '<p>Build and support Oracle Cloud Infrastructure networking for production workloads.</p>',
         },
         qualifications: {
-          text: '<p>Strong hands-on experience with AWS, Azure, and infrastructure automation.</p>',
+          text: '<p>Hands-on OCI networking, routing, and cloud automation experience is required.</p>',
         },
         additionalInformation: {
-          text: '<p>Pune and Mumbai collaboration with immediate joiners preferred.</p>',
+          text: '<p>Bengaluru collaboration with on-call support coverage is preferred.</p>',
+        },
+      },
+    },
+  },
+  '744000143239953': {
+    id: '744000143239953',
+    name: 'Network Security Compliance Check & Remediation Engineer',
+    refNumber: 'ACC-1003',
+    releasedDate: '2026-08-11T10:00:00.000Z',
+    postingUrl:
+      'https://jobs.smartrecruiters.com/AppliedCloudComputing/744000143239953-network-security-compliance-check-remediation-engineer',
+    applyUrl:
+      'https://jobs.smartrecruiters.com/AppliedCloudComputing/744000143239953-network-security-compliance-check-remediation-engineer?oga=true',
+    location: {
+      city: 'Mumbai',
+      region: 'MH',
+      country: 'in',
+      fullLocation: 'Mumbai, MH, India',
+    },
+    department: {
+      label: 'Compliance Engineering',
+    },
+    typeOfEmployment: {
+      id: 'full-time',
+      label: 'Full-time',
+    },
+    experienceLevel: {
+      id: 'senior',
+      label: 'Senior',
+    },
+    jobAd: {
+      sections: {
+        jobDescription: {
+          text: '<p>Own network security compliance checks and drive remediation across cloud estates.</p>',
+        },
+        qualifications: {
+          text: '<p>Experience with audit remediation, security baselines, and cloud governance.</p>',
+        },
+        additionalInformation: {
+          text: '<p>Financial-services security controls experience is beneficial.</p>',
+        },
+      },
+    },
+  },
+  '744000143239954': {
+    id: '744000143239954',
+    name: 'L2 CDN & Edge Security Engineer',
+    refNumber: 'ACC-1004',
+    releasedDate: '2026-08-10T08:00:00.000Z',
+    postingUrl:
+      'https://jobs.smartrecruiters.com/AppliedCloudComputing/744000143239954-l2-cdn-edge-security-engineer',
+    applyUrl:
+      'https://jobs.smartrecruiters.com/AppliedCloudComputing/744000143239954-l2-cdn-edge-security-engineer?oga=true',
+    location: {
+      city: 'Navi Mumbai',
+      region: 'MH',
+      country: 'in',
+      fullLocation: 'Navi Mumbai, MH, India',
+    },
+    department: {
+      label: 'Edge Security',
+    },
+    typeOfEmployment: {
+      id: 'full-time',
+      label: 'Full-time',
+    },
+    experienceLevel: {
+      id: 'mid-level',
+      label: 'Mid-Level',
+    },
+    jobAd: {
+      sections: {
+        jobDescription: {
+          text: '<p>Support CDN, edge protection, and incident handling for customer-facing platforms.</p>',
+        },
+        qualifications: {
+          text: '<p>Experience with CDN platforms, WAF controls, and security troubleshooting.</p>',
+        },
+        additionalInformation: {
+          text: '<p>Shift-based response and cross-functional coordination may be required.</p>',
         },
       },
     },
@@ -381,7 +514,7 @@ test('Novigo Solutions run returns normalized jobs from the verified first-party
   assert.match(jobs[2].jobDescription, /Python 3/i)
 })
 
-test('Applied Cloud Computing run validates the exact-name SmartRecruiters board and maps jobs from the API', async () => {
+test('Applied Cloud Computing run validates the current SmartRecruiters board shell and maps live India jobs from the API', async () => {
   const appliedCloud = await loadModule('../../scraper/appliedcloudcomputing/script.js')
   const requestedUrls = []
 
@@ -415,20 +548,31 @@ test('Applied Cloud Computing run validates the exact-name SmartRecruiters board
   assert.deepEqual(requestedUrls, [
     appliedCloud.BOARD_URL,
     'https://api.smartrecruiters.com/v1/companies/AppliedCloudComputing/postings?limit=100&country=in&offset=0',
-    'https://api.smartrecruiters.com/v1/companies/AppliedCloudComputing/postings/744000140000001',
-    'https://api.smartrecruiters.com/v1/companies/AppliedCloudComputing/postings/744000140000002',
+    'https://api.smartrecruiters.com/v1/companies/AppliedCloudComputing/postings/744000143239951',
+    'https://api.smartrecruiters.com/v1/companies/AppliedCloudComputing/postings/744000143239952',
+    'https://api.smartrecruiters.com/v1/companies/AppliedCloudComputing/postings/744000143239953',
+    'https://api.smartrecruiters.com/v1/companies/AppliedCloudComputing/postings/744000143239954',
   ])
 
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].title, 'Cloud Operations Engineer (GCP & Kubernetes)')
-  assert.equal(jobs[0].department, 'Cloud Operations')
+  assert.equal(jobs.length, 4)
+  assert.deepEqual(
+    jobs.map((job) => job.title),
+    [
+      'Cloud Network Security Engineer',
+      'L2 CDN & Edge Security Engineer',
+      'Network Security Compliance Check & Remediation Engineer',
+      'OCI Cloud and Network Engineer',
+    ],
+  )
+  assert.equal(jobs[0].department, 'Cloud Security')
   assert.equal(jobs[0].country, 'India')
   assert.equal(
     jobs[0].applyUrl,
-    'https://jobs.smartrecruiters.com/AppliedCloudComputing/744000140000001-cloud-operations-engineer-gcp-kubernetes?oga=true',
+    'https://jobs.smartrecruiters.com/AppliedCloudComputing/744000143239951-cloud-network-security-engineer?oga=true',
   )
-  assert.equal(jobs[1].title, 'L3 Cloud Engineer - Applied Cloud Computing')
-  assert.match(jobs[1].jobDescription, /multi-cloud platform engineering/i)
+  assert.match(jobs[1].jobDescription, /edge protection/i)
+  assert.match(jobs[2].jobDescription, /remediation across cloud estates/i)
+  assert.match(jobs[3].jobDescription, /Oracle Cloud Infrastructure networking/i)
 })
 
 test('Mobiloitte Technologies sentinel validates the official careers empty state and returns []', async () => {

@@ -17,6 +17,32 @@ const listingPayload = JSON.parse(
   readFileSync(path.join(fixtureDir, 'alljobs-page-1.json'), 'utf8'),
 )
 
+const blockedDarwinboxShellHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <base href="/ms/candidatev2/">
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
+    <script type="module" src="/ms/dboxuilibrary/assets/dboxuilib_dist/www/build/db-components.esm.js"></script>
+  </head>
+  <body>
+    <app-root></app-root>
+  </body>
+</html>
+`
+
+const minimalDarwinboxShellHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Greenko Group</title>
+  </head>
+  <body>
+    Greenko Group -
+  </body>
+</html>
+`
+
 const loadGreenkoHubModule = async () => {
   try {
     return await import('../../scraper/greenkohub/script.js')
@@ -24,6 +50,44 @@ const loadGreenkoHubModule = async () => {
     assert.fail('Expected Greenko Hub scraper module at ../../scraper/greenkohub/script.js')
   }
 }
+
+test('Greenko Hub official homepage fetch falls back to a scoped non-verifying HTTPS read only for the verified Greenko host certificate failure', async () => {
+  const greenkoHub = await loadGreenkoHubModule()
+  const fallbackCalls = []
+
+  const html = await greenkoHub.fetchOfficialGreenkoText(
+    greenkoHub.OFFICIAL_HOMEPAGE_URL,
+    {
+      headers: { Accept: 'text/html' },
+      fetchTextWithRetryImpl: async () => {
+        throw new Error('fetch failed: unable to verify the first certificate')
+      },
+      insecureHtmlFetch: async (url, options) => {
+        fallbackCalls.push({ url, options })
+        return officialHomepageHtml
+      },
+    },
+  )
+
+  assert.equal(html, officialHomepageHtml)
+  assert.deepEqual(fallbackCalls, [{
+    url: greenkoHub.OFFICIAL_HOMEPAGE_URL,
+    options: {
+      headers: { Accept: 'text/html' },
+      timeoutMs: 15000,
+    },
+  }])
+
+  await assert.rejects(
+    greenkoHub.fetchOfficialGreenkoText('https://example.com/', {
+      fetchTextWithRetryImpl: async () => {
+        throw new Error('fetch failed: unable to verify the first certificate')
+      },
+      insecureHtmlFetch: async () => officialHomepageHtml,
+    }),
+    /unable to verify the first certificate/i,
+  )
+})
 
 test('Greenko Hub scraper keeps the verified homepage to Darwinbox handoff explicit and fails closed on drift', async () => {
   const {
@@ -141,4 +205,70 @@ test('run maps verified Darwinbox listings into Jobverify jobs and keeps only In
       scrapedAt: FIXED_SCRAPED_AT,
     },
   ])
+})
+
+test('Greenko Hub returns a current-openings signal job when the verified Darwinbox public allJobs shell is now Cloudflare-turnstile guarded and the listings API responds with 403', async () => {
+  const greenkoHub = await loadGreenkoHubModule()
+
+  const jobs = await greenkoHub.createGreenkoHubScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async (url) => {
+      if (url === greenkoHub.OFFICIAL_HOMEPAGE_URL) return officialHomepageHtml
+      if (url === greenkoHub.PUBLIC_JOBS_URL) return blockedDarwinboxShellHtml
+      throw new Error(`Unexpected Greenko Hub URL: ${url}`)
+    },
+    fetchListingPage: async () => {
+      throw new Error(`HTTP 403 for ${greenkoHub.PUBLIC_JOBS_URL}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [
+    {
+      title: 'Current openings at Greenko Hub',
+      company: 'Greenko Hub',
+      location: 'India',
+      city: null,
+      country: 'India',
+      link: 'https://greenkogroup.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+      applyUrl: 'https://greenkogroup.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+      sourceUrl: 'https://greenkogroup.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+      source: 'greenkohub',
+      jobId: 'greenkohub-current-openings',
+      requisitionId: 'greenkohub-current-openings',
+      department: null,
+      employmentType: null,
+      experienceRequired: null,
+      jobDescription: 'The official Greenko Hub homepage and public Darwinbox shell remained reachable, but the public Darwinbox inventory API returned HTTP 403 during this scrape. Review current openings directly on https://greenkogroup.darwinbox.in/ms/candidatev2/main/careers/allJobs.',
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      remoteStatus: null,
+      postingDate: null,
+      closingDate: null,
+      scrapedAt: FIXED_SCRAPED_AT,
+    },
+  ])
+})
+
+test('Greenko Hub returns the same current-openings signal job when the verified public allJobs shell is the current minimal branded shell', async () => {
+  const greenkoHub = await loadGreenkoHubModule()
+
+  assert.equal(greenkoHub.hasMinimalDarwinboxShellSignal(minimalDarwinboxShellHtml), true)
+
+  const jobs = await greenkoHub.createGreenkoHubScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async (url) => {
+      if (url === greenkoHub.OFFICIAL_HOMEPAGE_URL) return officialHomepageHtml
+      if (url === greenkoHub.PUBLIC_JOBS_URL) return minimalDarwinboxShellHtml
+      throw new Error(`Unexpected Greenko Hub URL: ${url}`)
+    },
+    fetchListingPage: async () => {
+      throw new Error(`HTTP 403 for ${greenkoHub.PUBLIC_JOBS_URL}`)
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, 'greenkohub-current-openings')
 })

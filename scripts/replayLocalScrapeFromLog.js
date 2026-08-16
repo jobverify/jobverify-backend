@@ -8,6 +8,16 @@ import { formatFinalSummaryTable } from '../scraper-support/finalSummaryFormatte
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const backendDir = path.resolve(currentDir, '..')
 const repoRoot = path.resolve(backendDir, '..')
+const resolveExecutionPath = (value) => {
+  if (value == null || value === '') return null
+
+  const absolutePath = path.resolve(String(value))
+  try {
+    return fs.realpathSync.native(absolutePath)
+  } catch {
+    return absolutePath
+  }
+}
 
 const DEFAULT_SOURCE_LOG = path.join(
   repoRoot,
@@ -111,8 +121,8 @@ const main = async () => {
   }
 }
 
-const isDirectExecution = process.argv[1]
-  && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+const directExecutionModulePath = resolveExecutionPath(fileURLToPath(import.meta.url))
+const isDirectExecution = resolveExecutionPath(process.argv[1]) === directExecutionModulePath
 
 if (isDirectExecution) {
   try {

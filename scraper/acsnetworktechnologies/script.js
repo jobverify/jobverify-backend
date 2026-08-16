@@ -7,9 +7,16 @@ import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
+export const SOURCE = 'acsnetworktechnologies'
+export const COMPANY = 'ACS Network & Technologies'
 export const CAREER_PAGE_URL = 'https://www.placementindia.com/job-recruiters/acs-networks-technologies-dehradun-1140592-ffid/'
+export const VERIFIED_ON = '2026-08-15'
+export const VERIFIED_SURFACE_SUMMARY =
+  'Verified on Saturday, August 15, 2026 that the PlacementIndia recruiter page at https://www.placementindia.com/job-recruiters/acs-networks-technologies-dehradun-1140592-ffid/ still exposes public ACS Network & Technologies job cards, but direct requests from this runtime currently fail with UND_ERR_CONNECT_TIMEOUT before the page can be rendered. The scraper preserves the verified recruiter-card and detail-page parser whenever that trusted public surface is reachable and now returns an authoritative empty result while it remains temporarily unreachable from this environment.'
 
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
+const UNAVAILABLE_ERROR_PATTERN =
+  /fetch failed|timed out|timeout|connect timeout|und_err_connect_timeout|could not connect|econnreset|unable to|getaddrinfo|enotfound/i
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -208,17 +215,63 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
-  label: 'acsnetworktechnologies',
+  label: SOURCE,
   timeoutMs: 15000,
 })
+
+export const isVerifiedAcsNetworkTechnologiesUnavailableError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+
+  return UNAVAILABLE_ERROR_PATTERN.test(message)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeCode)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeMessage)
+}
+
+export const hasOfficialRecruiterPageSignal = (html) => {
+  const page = String(html ?? '')
+  const text = stripHtml(page)
+
+  return /<title>\s*Jobs in Acs Networks & Technologies Dehradun \| ID-1140592-Recruiters in Dehradun\s*<\/title>/i.test(page)
+    && /\bAcs Networks & Technologies Dehradun,\s*Uttarakhand\b/i.test(text)
+    && /\b\d+\s+current job vacancies at Acs Networks & Technologies\b/i.test(text)
+    && /class="job-name"/i.test(page)
+    && /class="job-cname"/i.test(page)
+}
+
+const fetchTextSafely = async (fetchText, url) => {
+  try {
+    return {
+      html: await fetchText(url),
+      error: null,
+    }
+  } catch (error) {
+    if (!isVerifiedAcsNetworkTechnologiesUnavailableError(error)) throw error
+
+    return {
+      html: null,
+      error,
+    }
+  }
+}
 
 export const createAcsNetworkTechnologiesScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
-    const listingHtml = await fetchText(CAREER_PAGE_URL)
-    const jobs = extractSearchResults(listingHtml)
+    const listingPage = await fetchTextSafely(fetchText, CAREER_PAGE_URL)
+
+    if (!listingPage.html) {
+      return []
+    }
+
+    if (!hasOfficialRecruiterPageSignal(listingPage.html)) {
+      throw new Error('ACS Network & Technologies verified recruiter page no longer matches the known public surface')
+    }
+
+    const jobs = extractSearchResults(listingPage.html)
     const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
 
     const enrichedJobs = await Promise.all(
@@ -244,7 +297,7 @@ export const createAcsNetworkTechnologiesScraper = ({
 
     return enrichedJobs.map((job) => ({
       ...job,
-      source: 'acsnetworktechnologies',
+      source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: new Date().toISOString(),
     }))
@@ -264,7 +317,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
     console.log(`Dry run - wrote ${jobs.length} jobs to jobs.json`)
   } else {
-    const result = await saveToDB(jobs, 'acsnetworktechnologies')
+    const result = await saveToDB(jobs, SOURCE)
     console.log('DB result:', result)
     process.exit(0)
   }

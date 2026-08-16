@@ -54,26 +54,26 @@ test('Avenue Supermarts local catalog captures the verified first-party DMart ca
   )
   assert.equal(
     provider.verifiedSampleJobUrl,
-    'https://career10.successfactors.com/career?career_ns=job_listing&company=avenuesupe&navBarLevel=JOB_SEARCH&rcm_site_locale=en_GB&career_job_req_id=110923&selected_lang=en_GB&jobAlertController_jobAlertId=&jobAlertController_jobAlertName=&browserTimeZone=Asia/Calcutta',
+    'https://career10.successfactors.com/career?career_ns=job_listing&company=avenuesupe&navBarLevel=JOB_SEARCH&rcm_site_locale=en_GB&career_job_req_id=109412&selected_lang=en_GB&jobAlertController_jobAlertId=&jobAlertController_jobAlertName=&browserTimeZone=Asia/Calcutta',
   )
   assert.equal(provider.companyDomain, 'dmartindia.com')
   assert.equal(provider.atsPlatform, 'successfactors')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'successfactors-next-page')
+  assert.equal(provider.paginationStrategy, 'successfactors-dwr-initial-search')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-dmart-careers-page+successfactors-public-search-results+detail-pages',
+    'verified-first-party-dmart-careers-page+successfactors-bootstrap+dwr-search-results+detail-pages',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-08-13')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /avenuesupermarts[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /July 15, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.dmartindia\.com\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/career10\.successfactors\.com\/career\?company=avenuesupe/i)
-  assert.match(provider.verifiedSurfaceSummary, /career_job_req_id=110923/i)
-  assert.match(provider.verifiedSurfaceSummary, /24 Jobs match the selections/i)
+  assert.match(provider.verifiedSurfaceSummary, /career_job_req_id=109412/i)
+  assert.match(provider.verifiedSurfaceSummary, /30 India postings/i)
 
   assert.equal(avenueSupermarts.PROVIDER_METADATA.source, provider.source)
   assert.equal(avenueSupermarts.PROVIDER_METADATA.companyName, provider.companyName)

@@ -106,6 +106,12 @@ export const hasOfficialCareersSignal = (html) => {
     && BRAND_COPY_PATTERN.test(page)
 }
 
+export const hasVerifiedWorkdayBoardSignal = (html) => {
+  const page = String(html ?? '')
+  return /myworkdaysite/i.test(page)
+    && /recruiting\/yokogawa\/yokogawa-career-site/i.test(page)
+}
+
 const isVerifiedWorkdayBoardUrl = (value) => {
   try {
     const url = new URL(value)
@@ -200,13 +206,17 @@ export const createYokogawaIndiaScraper = ({
     const fetchText = options.fetchText || defaultFetchText
 
     const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Yokogawa India official careers surface changed; refusing to guess the public jobs source')
-    }
+    const boardHtml = await fetchText(WORKDAY_BOARD_URL)
 
-    const verifiedBoardUrl = extractVerifiedWorkdayBoardUrl(careersHtml)
-    if (verifiedBoardUrl !== WORKDAY_BOARD_URL) {
-      throw new Error('Yokogawa India verified Workday handoff changed; refusing to guess the public jobs source')
+    if (!hasVerifiedWorkdayBoardSignal(boardHtml)) {
+      if (
+        hasOfficialCareersSignal(careersHtml)
+        && extractVerifiedWorkdayBoardUrl(careersHtml) !== WORKDAY_BOARD_URL
+      ) {
+        throw new Error('Yokogawa India verified Workday handoff changed; refusing to guess the public jobs source')
+      }
+
+      throw new Error('Yokogawa India verified Workday board changed; refusing to guess the public jobs source')
     }
 
     const jobs = []
@@ -218,7 +228,11 @@ export const createYokogawaIndiaScraper = ({
         JOBS_API_URL,
         buildJobsRequestBody({ offset }),
       )
-      const postings = Array.isArray(payload?.jobPostings) ? payload.jobPostings : []
+      if (!Array.isArray(payload?.jobPostings)) {
+        throw new Error('Yokogawa India Workday jobs API no longer exposes jobPostings')
+      }
+
+      const postings = payload.jobPostings
 
       if (page === 1 && postings.length === 0) {
         return []

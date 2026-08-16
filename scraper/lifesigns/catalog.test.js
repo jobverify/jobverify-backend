@@ -14,10 +14,10 @@ test('LifeSigns is registered with the verified first-party careers page and no 
   assert.equal(provider.companyCareerPage, 'https://www.lifesigns.us/careers/')
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-rendered-careers-page')
+  assert.equal(provider.paginationStrategy, 'single-first-party-careers-shell-plus-pinned-role-detail-pages')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-rendered-careers-page+browser-rendered-role-cards',
+    'verified-official-homepage+verified-careers-shell+verified-pinned-role-detail-pages',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

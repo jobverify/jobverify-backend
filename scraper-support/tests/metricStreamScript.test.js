@@ -115,6 +115,72 @@ const searchHtml = `
 </html>
 `
 
+const dwrBootstrapHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Career Opportunities</title>
+  </head>
+  <body>
+    <h1 id="candidateProfileTitle">Career Opportunities</h1>
+    <input id="career_ns" value="job_listing_summary" />
+    <input id="company" value="metricstre" />
+    <input type="hidden" name="ajaxSecKey" value="csrf-token" />
+    <div id="careerJobSearchContainer"></div>
+    <script>
+      window.addEventListener("load", getInitialJobSearchData);
+      careerJobSearchController.getInitialJobSearchData("", "", "", "Asia/Calcutta");
+      var ajaxSecKey="csrf-token";
+    </script>
+  </body>
+</html>
+`
+
+const buildDwrSummaryResponse = ({
+  currentPage = 1,
+  pageSize = 10,
+  totalCount,
+  postings,
+  wrapInPayload = true,
+}) => {
+  const normalizedPostings = postings.map((posting) => ({
+    id: Number(posting.requisitionId),
+    title: posting.title,
+    postingDate: posting.postingDate,
+    otherValues: [[
+      { fieldId: 'filter2', shortVal: posting.department },
+      { fieldId: 'mfield1', shortVal: `["Country","${posting.country}"]` },
+      { fieldId: 'mfield2', shortVal: `["City","${posting.city}"]` },
+    ]],
+  }))
+
+  const payload = {
+    results: {
+      postingCount: totalCount ?? normalizedPostings.length,
+      options: {
+        pagination: {
+          currentPage,
+          pageSize,
+          totalCount: totalCount ?? normalizedPostings.length,
+          startRow: ((currentPage - 1) * pageSize) + 1,
+          endRow: Math.min(currentPage * pageSize, totalCount ?? normalizedPostings.length),
+          increaseCandSummaryPagination: false,
+        },
+        sortByColumn: 'JOB_POSTING_DATE',
+        sortOrder: 'DESC',
+      },
+      postings: normalizedPostings,
+    },
+  }
+
+  const callbackValue = wrapInPayload ? { payload } : payload
+
+  return `
+throw 'allowScriptTagRemoting is false.';
+dwr.engine._remoteHandleCallback('0', '0', ${JSON.stringify(callbackValue)});
+`
+}
+
 const productManagerDetailHtml = `
 <!doctype html>
 <html lang="en">
@@ -261,6 +327,81 @@ test('MetricStream helpers stay pinned to the verified first-party careers hando
   ])
 })
 
+test('MetricStream extracts the verified SuccessFactors DWR response used by the live board on Thursday, August 13, 2026', async () => {
+  const metricStream = await loadMetricStreamModule()
+
+  const jobs = [...metricStream.extractSearchResults(
+    buildDwrSummaryResponse({
+      postings: [
+        {
+          requisitionId: '3567',
+          title: 'Financial Data Engineer',
+          postingDate: '31/07/2026',
+          department: 'Finance/Accounting',
+          country: 'United States',
+          city: 'Remote',
+        },
+        {
+          requisitionId: '3565',
+          title: 'Project Manager',
+          postingDate: '24/07/2026',
+          department: 'Professional Services',
+          country: 'United States',
+          city: 'Remote',
+        },
+        {
+          requisitionId: '3563',
+          title: 'Business Analyst',
+          postingDate: '16/07/2026',
+          department: 'Professional Services',
+          country: 'United Kingdom',
+          city: 'London',
+        },
+      ],
+      wrapInPayload: false,
+    }),
+  )].map((job) => ({ ...job }))
+
+  assert.deepEqual(jobs, [
+    {
+      title: 'Financial Data Engineer',
+      department: 'Finance/Accounting',
+      location: 'Remote, United States',
+      city: 'Remote',
+      country: 'United States',
+      jobId: '3567',
+      requisitionId: '3567',
+      sourceUrl: metricStream.buildDetailUrl('3567'),
+      applyUrl: metricStream.buildDetailUrl('3567'),
+      postingDate: '2026-07-31',
+    },
+    {
+      title: 'Project Manager',
+      department: 'Professional Services',
+      location: 'Remote, United States',
+      city: 'Remote',
+      country: 'United States',
+      jobId: '3565',
+      requisitionId: '3565',
+      sourceUrl: metricStream.buildDetailUrl('3565'),
+      applyUrl: metricStream.buildDetailUrl('3565'),
+      postingDate: '2026-07-24',
+    },
+    {
+      title: 'Business Analyst',
+      department: 'Professional Services',
+      location: 'London, United Kingdom',
+      city: 'London',
+      country: 'United Kingdom',
+      jobId: '3563',
+      requisitionId: '3563',
+      sourceUrl: metricStream.buildDetailUrl('3563'),
+      applyUrl: metricStream.buildDetailUrl('3563'),
+      postingDate: '2026-07-16',
+    },
+  ])
+})
+
 test('MetricStream detail extraction preserves the canonical public detail URL and sectioned description', async () => {
   const metricStream = await loadMetricStreamModule()
 
@@ -325,6 +466,51 @@ test('MetricStream API-only search reads a single verified SuccessFactors page o
 
   assert.deepEqual(requestedUrls, [metricStream.SUCCESSFACTORS_SEARCH_URL])
   assert.deepEqual(pages, [searchHtml])
+})
+
+test('MetricStream getLiveSearchPages follows the verified DWR bootstrap contract when the board no longer renders static rows', async () => {
+  const metricStream = await loadMetricStreamModule()
+
+  const pages = await metricStream.getLiveSearchPages({
+    fetchText: async () => dwrBootstrapHtml,
+    fetchSearchSession: async () => ({
+      html: dwrBootstrapHtml,
+      csrfToken: 'csrf-token',
+      cookieHeader: 'JSESSIONID=abc123',
+    }),
+    fetchDwrText: async ({ endpoint }) => {
+      assert.equal(endpoint, 'getInitialJobSearchData')
+
+      return buildDwrSummaryResponse({
+        postings: [
+          {
+            requisitionId: '3567',
+            title: 'Financial Data Engineer',
+            postingDate: '31/07/2026',
+            department: 'Finance/Accounting',
+            country: 'United States',
+            city: 'Remote',
+          },
+        ],
+      })
+    },
+  })
+
+  assert.equal(pages.length, 1)
+  assert.deepEqual([...metricStream.extractSearchResults(pages[0])].map((job) => ({ ...job })), [
+    {
+      title: 'Financial Data Engineer',
+      department: 'Finance/Accounting',
+      location: 'Remote, United States',
+      city: 'Remote',
+      country: 'United States',
+      jobId: '3567',
+      requisitionId: '3567',
+      sourceUrl: metricStream.buildDetailUrl('3567'),
+      applyUrl: metricStream.buildDetailUrl('3567'),
+      postingDate: '2026-07-31',
+    },
+  ])
 })
 
 test('MetricStream run keeps the scraper on the verified first-party careers handoff, public board, and India detail pages only', async () => {

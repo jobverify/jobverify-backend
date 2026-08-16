@@ -11,12 +11,13 @@ import dotenv from 'dotenv'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: path.resolve(currentDir, '../.env'), quiet: true })
 
-import { saveDryRunSnapshot, saveToDB } from './utils/saveToDB.js'
+import { deleteAllJobsFromDB, saveDryRunSnapshot, saveToDB } from './utils/saveToDB.js'
 import { filterIndiaJobs } from './utils/indiaLocationFilter.js'
-import { withRetry } from './utils/retry.js'
+import { getRetryMetadata, withRetry } from './utils/retry.js'
 import {
   upsertScraperStatus,
   writeScraperRun,
+  readPreviousScraperRun,
   ensureScrapersSeeded,
   markPipelineRunStarted,
   markPipelineRunFinished,
@@ -31,15 +32,19 @@ import { refreshJobDatasetSummary } from '../src/services/jobDatasetSummaryServi
 import { DEFAULT_JOB_RETENTION_DAYS } from '../src/utils/jobLifecycle.js'
 import ScraperStatus from '../src/models/ScraperStatus.js'
 import { buildScrapers } from './providers/index.js'
-import {
-  clearStagedJobDatasetRun,
-  prepareStagedJobDatasetRun,
-  promoteStagedJobDataset,
-  shouldUseStagedJobDatasetRun,
-} from './utils/stagedJobDataset.js'
 
 const isDryRun = process.argv.includes('--dry-run')
 const isParallel = process.argv.includes('--parallel')
+const resolveExecutionPath = (value) => {
+  if (value == null || value === '') return null
+
+  const absolutePath = path.resolve(String(value))
+  try {
+    return fs.realpathSync.native(absolutePath)
+  } catch {
+    return absolutePath
+  }
+}
 const DEFAULT_SCRAPER_TIMEOUT_MS = 5 * 60 * 1000
 const DEFAULT_WORKDAY_SCRAPER_TIMEOUT_MS = 210 * 1000
 const DEFAULT_ABORT_GRACE_MS = 5 * 1000
@@ -90,10 +95,16 @@ export const buildDryRunSnapshotOptions = ({
 
 export const finalizeDirectRunnerExit = ({
   processRef = process,
-  exit = process.exit,
+  exit = null,
 } = {}) => {
   const exitCode = Number.isInteger(processRef?.exitCode) ? processRef.exitCode : 0
-  exit(exitCode)
+  if (processRef && !Number.isInteger(processRef.exitCode)) {
+    processRef.exitCode = exitCode
+  }
+  if (typeof exit === 'function') {
+    exit(exitCode)
+  }
+  return exitCode
 }
 
 export const formatIstTimestamp = (timestamp = new Date()) => {
@@ -136,6 +147,11 @@ const hasPuppeteerInternals = (value = '') => (
   /puppeteer|CdpCDPSession|CallbackRegistry|NodeWebSocketTransport|puppeteer-core[\\/].*common[\\/]util\.js|third_party[\\/]rxjs/i.test(value)
 )
 
+const MONGODB_STORAGE_QUOTA_PATTERNS = [
+  /over your space quota/i,
+  /writes are blocked on your cluster/i,
+]
+
 const collectNestedErrorText = (reason) => {
   const queue = [reason]
   const seen = new Set()
@@ -165,6 +181,29 @@ const collectNestedErrorText = (reason) => {
   }
 
   return fragments.join('\n')
+}
+
+export const isMongoStorageQuotaWriteBlockError = (error) => {
+  const errorText = collectNestedErrorText(error)
+  return MONGODB_STORAGE_QUOTA_PATTERNS.every((pattern) => pattern.test(errorText))
+}
+
+export class FatalScraperPersistenceError extends Error {
+  constructor(message, options = {}) {
+    super(message, options)
+    this.name = 'FatalScraperPersistenceError'
+    this.persistenceBlocked = true
+    this.abortPipeline = true
+  }
+}
+
+const toFatalScraperPersistenceError = (context, error) => {
+  if (!isMongoStorageQuotaWriteBlockError(error)) return null
+
+  return new FatalScraperPersistenceError(
+    `${context}: ${error?.message || 'MongoDB Atlas writes are blocked by storage quota.'}`,
+    error ? { cause: error } : undefined,
+  )
 }
 
 export const isLatePuppeteerTargetClose = (reason) => {
@@ -379,7 +418,9 @@ export const shouldClearExistingJobsBeforeRun = ({
   onlySources = process.env.SCRAPER_ONLY,
   startAt = process.env.SCRAPER_START_AT,
   startAfter = process.env.SCRAPER_START_AFTER,
-} = {}) => false
+} = {}) => !String(onlySources || '').trim()
+  && !String(startAt || '').trim()
+  && !String(startAfter || '').trim()
 
 const isWorkdayScraper = (scraper) => (
   scraper?.provider?.adapter === 'workday'
@@ -395,7 +436,7 @@ export const isAuthoritativeEmptyScrape = (scraper, jobs) => (
 )
 
 export const resolveScraperRetryAttempts = (scraper) => (
-  isWorkdayScraper(scraper) ? 1 : 3
+  isWorkdayScraper(scraper) ? 1 : 4
 )
 
 export const resolveScraperTimeoutMs = (
@@ -533,7 +574,6 @@ export const runAll = async () => {
   const startTime = Date.now()
   const startedAt = new Date(startTime)
   const failureAbortThreshold = resolveFailureAbortThreshold()
-  let stagedDatasetContext = null
 
   console.log(`\n${'='.repeat(60)}`)
   console.log(`  Jobverify Scraper Pipeline - ${isDryRun ? 'DRY RUN' : 'LIVE'} | ${isParallel ? 'PARALLEL' : 'SEQUENTIAL'}`)
@@ -541,31 +581,37 @@ export const runAll = async () => {
   console.log(`${'='.repeat(60)}\n`)
   if (resumeMessage) console.log(`[runner] ${resumeMessage}\n`)
 
-  if (!isDryRun) {
-    if (shouldUseStagedJobDatasetRun({ dryRun: isDryRun })) {
-      try {
-        stagedDatasetContext = await prepareStagedJobDatasetRun()
-        console.log(
-          `[runner] Writing the full live run to staging collection ${stagedDatasetContext.collectionName}; live jobs stay visible until promotion.\n`,
-        )
-      } catch (stagedDatasetError) {
-        console.error(
-          `  [runner] Failed to initialize staged dataset mode; falling back to in-place source refresh: ${stagedDatasetError.message}`,
-        )
-      }
-    }
-
-    if (!stagedDatasetContext) {
-      console.log('[runner] Preserving existing jobs during the run; sources will refresh in place as they complete.\n')
-    }
-  }
-
   // Ensure active scrapers are seeded in the database
   if (!isDryRun) {
     try {
       await ensureScrapersSeeded()
     } catch (seedErr) {
+      const fatalPersistenceError = toFatalScraperPersistenceError(
+        '[pipeline] MongoDB writes are blocked while seeding scraper status records; aborting run',
+        seedErr,
+      )
+      if (fatalPersistenceError) {
+        console.error(`  ${fatalPersistenceError.message}`)
+        throw fatalPersistenceError
+      }
       console.error('  ERROR Failed to seed scraper status records:', seedErr.message)
+    }
+  }
+
+  if (!isDryRun && shouldClearExistingJobsBeforeRun()) {
+    try {
+      const deletedJobs = await deleteAllJobsFromDB()
+      console.log(`[runner] Cleared ${deletedJobs} live jobs before the full scraper run.\n`)
+    } catch (cleanupError) {
+      const fatalPersistenceError = toFatalScraperPersistenceError(
+        '[pipeline] MongoDB writes are blocked while clearing jobs for a full run; aborting run',
+        cleanupError,
+      )
+      if (fatalPersistenceError) {
+        console.error(`  ${fatalPersistenceError.message}`)
+        throw fatalPersistenceError
+      }
+      throw cleanupError
     }
   }
 
@@ -573,6 +619,14 @@ export const runAll = async () => {
     try {
       await markPipelineRunStarted(startedAt)
     } catch (pipelineErr) {
+      const fatalPersistenceError = toFatalScraperPersistenceError(
+        '[pipeline] MongoDB writes are blocked while marking the pipeline as running; aborting run',
+        pipelineErr,
+      )
+      if (fatalPersistenceError) {
+        console.error(`  ${fatalPersistenceError.message}`)
+        throw fatalPersistenceError
+      }
       console.error('  [pipeline] Failed to mark pipeline as running:', pipelineErr.message)
     }
   }
@@ -582,7 +636,6 @@ export const runAll = async () => {
       startedAt,
       scrapers,
       resumeMessage,
-      stagedDatasetContext,
     })
   }
 
@@ -643,10 +696,6 @@ export const runAll = async () => {
         result = await saveToDB(jobs, scraper.name, {
           refreshDatasetSummary: false,
           authoritativeEmpty: isAuthoritativeEmptyScrape(scraper, jobs),
-          ...(stagedDatasetContext ? {
-            jobModel: stagedDatasetContext.jobModel,
-            enqueueAlerts: false,
-          } : {}),
         })
         result.jobs = indiaJobs.length
         result.cities = cities
@@ -660,6 +709,14 @@ export const runAll = async () => {
       result.durationMs = Date.now() - scraperStart
       summary[scraper.name] = { success: true, ...result }
     } catch (err) {
+      const fatalPersistenceError = toFatalScraperPersistenceError(
+        `[pipeline] MongoDB writes are blocked while persisting jobs for [${scraper.name}]; aborting run`,
+        err,
+      )
+      if (fatalPersistenceError) {
+        console.error(`  ${fatalPersistenceError.message}`)
+        throw fatalPersistenceError
+      }
       const classification = classifyScraperError(err)
       const failureResult = {
         success: false,
@@ -679,6 +736,14 @@ export const runAll = async () => {
       try {
         await upsertScraperStatus(scraper.name, summary[scraper.name])
       } catch (dbErr) {
+        const fatalPersistenceError = toFatalScraperPersistenceError(
+          `[pipeline] MongoDB writes are blocked while saving status for [${scraper.name}]; aborting run`,
+          dbErr,
+        )
+        if (fatalPersistenceError) {
+          console.error(`  ${fatalPersistenceError.message}`)
+          throw fatalPersistenceError
+        }
         console.error(`  ERROR [${scraper.name}] Failed to save status to DB:`, dbErr.message)
       }
     }
@@ -698,24 +763,7 @@ export const runAll = async () => {
 
   if (!isDryRun) {
     try {
-      const pipelineAborted = shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold)
-
-      if (stagedDatasetContext) {
-        if (pipelineAborted) {
-          await clearStagedJobDatasetRun()
-          console.error('  [pipeline] Skipped staged dataset promotion because the pipeline aborted early.')
-        } else {
-          const promotion = await promoteStagedJobDataset({
-            selectedSources: scrapers.map((scraper) => scraper.name),
-            summary,
-          })
-          console.log(
-            `  [pipeline] Promoted staged dataset with ${promotion.totalPromotedJobs} jobs; carried forward ${promotion.carriedForwardJobs} jobs from ${promotion.carriedForwardSources.length} source(s).`,
-          )
-        }
-      } else {
-        await refreshJobDatasetSummary()
-      }
+      await refreshJobDatasetSummary()
     } catch (summaryErr) {
       console.error(`  [pipeline] Failed to finalize the visible dataset:`, summaryErr.message)
     }
@@ -781,6 +829,7 @@ export const runScraper = async (
         label: scraper.name,
       },
     )
+    const retry = getRetryMetadata(jobs)
     const indiaJobs = filterIndiaJobs(jobs)
     const cities = [...new Set(indiaJobs.map(j => j.city).filter(Boolean))].sort()
 
@@ -814,6 +863,7 @@ export const runScraper = async (
     }
 
     if (cities.length) console.log(`  Cities: ${cities.join(', ')}`)
+    result.retry = retry
     result.durationMs = Date.now() - scraperStart
     const successResult = { success: true, ...result }
 
@@ -821,12 +871,28 @@ export const runScraper = async (
       try {
         await upsertScraperStatus(scraper.name, successResult)
       } catch (dbErr) {
+        const fatalPersistenceError = toFatalScraperPersistenceError(
+          `[pipeline] MongoDB writes are blocked while saving status for [${scraper.name}]; aborting run`,
+          dbErr,
+        )
+        if (fatalPersistenceError) {
+          console.error(`  ${fatalPersistenceError.message}`)
+          throw fatalPersistenceError
+        }
         console.error(`  ERROR [${scraper.name}] Failed to save status to DB:`, dbErr.message)
       }
     }
 
     return { name: scraper.name, ...successResult }
   } catch (err) {
+    const fatalPersistenceError = toFatalScraperPersistenceError(
+      `[pipeline] MongoDB writes are blocked while persisting jobs for [${scraper.name}]; aborting run`,
+      err,
+    )
+    if (fatalPersistenceError) {
+      console.error(`  ${fatalPersistenceError.message}`)
+      throw fatalPersistenceError
+    }
     const classification = classifyScraperError(err)
     const failResult = {
       success: false,
@@ -841,6 +907,14 @@ export const runScraper = async (
       try {
         await upsertScraperStatus(scraper.name, failResult)
       } catch (dbErr) {
+        const fatalPersistenceError = toFatalScraperPersistenceError(
+          `[pipeline] MongoDB writes are blocked while saving status for [${scraper.name}]; aborting run`,
+          dbErr,
+        )
+        if (fatalPersistenceError) {
+          console.error(`  ${fatalPersistenceError.message}`)
+          throw fatalPersistenceError
+        }
         console.error(`  ERROR [${scraper.name}] Failed to save status to DB:`, dbErr.message)
       }
     }
@@ -854,9 +928,16 @@ const runAllParallel = async ({
   startedAt = new Date(),
   scrapers = selectScrapersForRun(buildScrapers()).scrapers,
   resumeMessage = null,
-  stagedDatasetContext = null,
 } = {}) => {
   const startTime = Date.now()
+  let previousRun = null
+  if (!isDryRun) {
+    try {
+      previousRun = await readPreviousScraperRun(startedAt)
+    } catch (error) {
+      console.error(`[runner] Previous-run analytics unavailable: ${error.message}`)
+    }
+  }
   const {
     effective: concurrencyLimit,
   } = resolveParallelWorkerConcurrency()
@@ -871,10 +952,12 @@ const runAllParallel = async ({
   let startedCount = 0
   let completedCount = 0
   const totalScrapers = scrapers.length
+  let fatalWorkerError = null
 
   // Worker loop that drains the shared queue
   const worker = async () => {
     while (queue.length > 0) {
+      if (fatalWorkerError) break
       if (shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold)) break
 
       const scraper = queue.shift()
@@ -882,16 +965,21 @@ const runAllParallel = async ({
 
       startedCount++
       const progressStr = `[${startedCount}/${totalScrapers}] `
-      const result = await runScraper(
-        scraper,
-        progressStr,
-        stagedDatasetContext
-          ? {
-            jobModel: stagedDatasetContext.jobModel,
-            enqueueAlerts: false,
-          }
-          : {},
-      )
+      let result
+      try {
+        result = await runScraper(
+          scraper,
+          progressStr,
+          {},
+        )
+      } catch (error) {
+        if (error?.persistenceBlocked === true) {
+          fatalWorkerError ||= error
+          queue.length = 0
+          break
+        }
+        throw error
+      }
       const { name, ...rest } = result
       summary[name] = rest
       
@@ -917,28 +1005,12 @@ const runAllParallel = async ({
 
   // Wait for all workers to finish draining the queue
   await Promise.all(activeWorkers)
+  if (fatalWorkerError) throw fatalWorkerError
 
   if (!isDryRun) {
     try {
       const totalFailures = Object.values(summary).filter(isFailureCountedForAbort).length
-      const pipelineAborted = shouldAbortPipelineAfterFailures(totalFailures, failureAbortThreshold)
-
-      if (stagedDatasetContext) {
-        if (pipelineAborted) {
-          await clearStagedJobDatasetRun()
-          console.error('  [pipeline] Skipped staged dataset promotion because the pipeline aborted early.')
-        } else {
-          const promotion = await promoteStagedJobDataset({
-            selectedSources: scrapers.map((scraper) => scraper.name),
-            summary,
-          })
-          console.log(
-            `  [pipeline] Promoted staged dataset with ${promotion.totalPromotedJobs} jobs; carried forward ${promotion.carriedForwardJobs} jobs from ${promotion.carriedForwardSources.length} source(s).`,
-          )
-        }
-      } else {
-        await refreshJobDatasetSummary()
-      }
+      await refreshJobDatasetSummary()
     } catch (summaryErr) {
       console.error(`  [pipeline] Failed to finalize the visible dataset:`, summaryErr.message)
     }
@@ -969,11 +1041,14 @@ const runAllParallel = async ({
     }
   }
 
+  Object.defineProperty(summary, 'previousRun', { value: previousRun })
   return summary
 }
 
+const directExecutionModulePath = resolveExecutionPath(fileURLToPath(import.meta.url))
+
 // Run when invoked directly: node scraper-support/runner.js [--dry-run] [--parallel]
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
   try {
     const summary = await runAll()
     const legacyTableData = Object.keys(summary).map((source) => ({
@@ -1005,7 +1080,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     })
 
     console.log('\nFinal Pipeline Summary:')
-    console.log(formatFinalSummaryTable(summary))
+    console.log(formatFinalSummaryTable(summary, { previousRun: summary.previousRun }))
 
     const totalFailures = Object.values(summary).filter(isFailureCountedForAbort).length
     const failureAbortThreshold = resolveFailureAbortThreshold()

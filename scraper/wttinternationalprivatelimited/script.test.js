@@ -47,12 +47,19 @@ const unresolvedPage = (url) => ({
   errorMessage: `The remote name could not be resolved: '${new URL(url).hostname}'`,
 })
 
-test('WTT International Private Limited sentinel pins the verified parked and unresolved first-party contract', async () => {
+const timeoutPage = (url) => ({
+  status: 'FETCH_ERROR',
+  url,
+  html: '',
+  errorMessage: 'Connect Timeout Error (attempted addresses: 76.223.54.146:443, 13.248.169.48:443, timeout: 10000ms)',
+})
+
+test('WTT International Private Limited sentinel pins the Friday, August 14, 2026 unreachable-or-unresolved first-party contract', async () => {
   const scraper = await loadModule()
 
   assert.equal(scraper.SOURCE, 'wttinternationalprivatelimited')
   assert.equal(scraper.COMPANY, 'WTT International Private Limited')
-  assert.equal(scraper.VERIFIED_AT, '2026-07-13')
+  assert.equal(scraper.VERIFIED_AT, '2026-08-14')
   assert.deepEqual(scraper.PARKED_ROUTE_URLS, [
     'https://wttinternational.com/',
     'https://www.wttinternational.com/',
@@ -82,19 +89,20 @@ test('WTT International Private Limited sentinel pins the verified parked and un
   assert.equal(scraper.hasPublicJobsSignal(publicJobsHtml), true)
   assert.equal(scraper.hasVerifiedGoDaddyLanderRedirect(rootLanderPage, 'wttinternational.com'), true)
   assert.equal(scraper.hasVerifiedGoDaddyLanderRedirect(wwwLanderPage, 'www.wttinternational.com'), true)
+  assert.equal(scraper.hasVerifiedUnavailableFirstPartySurface(timeoutPage('https://wttinternational.com/')), true)
   assert.equal(
     scraper.isVerifiedUnresolvedFirstPartySurface(unresolvedPage('https://wttinternational.in/')),
     true,
   )
 })
 
-test('run returns [] only while every verified WTT International candidate surface stays parked or unresolved', async () => {
+test('run returns [] while verified WTT International candidate surfaces stay parked, unreachable, or unresolved', async () => {
   const scraper = await loadModule()
-  const requestedUrls = []
+  const requestedParkedUrls = []
 
-  const jobs = await scraper.createWttInternationalPrivateLimitedScraper().run({
+  const parkedJobs = await scraper.createWttInternationalPrivateLimitedScraper().run({
     fetchPage: async (url) => {
-      requestedUrls.push(url)
+      requestedParkedUrls.push(url)
 
       if (scraper.PARKED_ROUTE_URLS.includes(url)) {
         return {
@@ -121,7 +129,36 @@ test('run returns [] only while every verified WTT International candidate surfa
     },
   })
 
-  assert.deepEqual(requestedUrls, [
+  assert.deepEqual(requestedParkedUrls, [
+    ...scraper.PARKED_ROUTE_URLS,
+    ...scraper.LANDER_URLS,
+    ...scraper.UNRESOLVED_DOMAIN_URLS,
+  ])
+  assert.deepEqual(parkedJobs, [])
+
+  const requestedUnreachableUrls = []
+
+  const jobs = await scraper.createWttInternationalPrivateLimitedScraper().run({
+    fetchPage: async (url) => {
+      requestedUnreachableUrls.push(url)
+
+      if (scraper.PARKED_ROUTE_URLS.includes(url)) {
+        return timeoutPage(url)
+      }
+
+      if (scraper.LANDER_URLS.includes(url)) {
+        return timeoutPage(url)
+      }
+
+      if (scraper.UNRESOLVED_DOMAIN_URLS.includes(url)) {
+        return unresolvedPage(url)
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUnreachableUrls, [
     ...scraper.PARKED_ROUTE_URLS,
     ...scraper.LANDER_URLS,
     ...scraper.UNRESOLVED_DOMAIN_URLS,

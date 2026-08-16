@@ -42,7 +42,7 @@ const normalizeWhitespace = (value) => {
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;|&#160;/gi, ' ')
     .replace(/&amp;/gi, '&')
-    .replace(/&#39;|&apos;|&#x27;|&#8217;/gi, "'")
+    .replace(/&#39;|&apos;|&#x27;|&#8217;|&rsquo;/gi, "'")
     .replace(/&quot;/gi, '"')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
@@ -76,6 +76,14 @@ export const hasKhazanaCareersSignal = (html = '') => {
     && text.includes(CAREERS_APPLY_EMAIL)
 }
 
+export const hasScheduledMaintenanceSignal = (html = '') => {
+  const text = normalizeWhitespace(html) || ''
+
+  return text.includes("We'll be back soon")
+    && text.includes('Khazana Jewellery')
+    && text.includes('scheduled maintenance')
+}
+
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -106,6 +114,10 @@ export const createKhazanaJewelleryScraper = () => ({
     }
 
     if (isCloudflareInterstitial(careersHtml)) {
+      return []
+    }
+
+    if (hasScheduledMaintenanceSignal(careersHtml)) {
       return []
     }
 

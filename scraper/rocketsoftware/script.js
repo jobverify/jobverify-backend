@@ -36,6 +36,18 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 20000,
 })
 
+const hasKnownCloudflareGateSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page)
+
+  return /<title>\s*Just a moment/i.test(page)
+    || /Cloudflare/i.test(text)
+    || /Checking your browser/i.test(text)
+}
+
+const isKnownCloudflareGateError = (error) =>
+  /HTTP 403\b/i.test(String(error?.message ?? error ?? ''))
+
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
@@ -51,9 +63,20 @@ export const createRocketSoftwareScraper = () => ({
     fetchText = defaultFetchText,
     runWorkday = runWorkdayScraper,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Rocket Software verified careers page changed materially')
+    let careersHtml = null
+
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (!isKnownCloudflareGateError(error)) {
+        throw error
+      }
+    }
+
+    if (careersHtml && !hasOfficialCareersSignal(careersHtml)) {
+      if (!hasKnownCloudflareGateSignal(careersHtml)) {
+        throw new Error('Rocket Software verified careers page changed materially')
+      }
     }
 
     const jobs = await runWorkday({

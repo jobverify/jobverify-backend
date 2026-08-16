@@ -151,22 +151,48 @@ export const hasOfficialCareersSignal = (html) => {
     && /All teams/i.test(page)
 }
 
+const isVerifiedLoaderAssetUrl = (value) => {
+  try {
+    const url = new URL(value)
+    const normalizedHost = url.hostname.replace(/^www\./i, '').toLowerCase()
+    const normalizedPath = url.pathname.replace(/\/+$/, '')
+
+    return (
+      (
+        normalizedHost === 'headout.com'
+        && normalizedPath.startsWith('/brand-pages/_next/static/chunks/')
+      )
+      || (
+        normalizedHost === 'assets.headout.com'
+        && normalizedPath.startsWith('/hobrandpages/_next/static/chunks/')
+      )
+    )
+      && normalizedPath.endsWith('.js')
+  } catch {
+    return false
+  }
+}
+
 export const extractCandidateLoaderScriptUrls = (html) => {
   const page = String(html ?? '')
   const matches = Array.from(
     page.matchAll(/<script[^>]+src=["']([^"']+)["'][^>]*><\/script>/gi),
   )
 
-  return matches
-    .map((match) => match[1])
-    .map((href) => {
-      try {
-        return new URL(href, CAREERS_URL).toString()
-      } catch {
-        return null
-      }
-    })
-    .filter((url) => url?.startsWith('https://www.headout.com/brand-pages/_next/static/chunks/'))
+  return Array.from(
+    new Set(
+      matches
+        .map((match) => match[1])
+        .map((href) => {
+          try {
+            return new URL(href, CAREERS_URL).toString()
+          } catch {
+            return null
+          }
+        })
+        .filter((url) => isVerifiedLoaderAssetUrl(url)),
+    ),
+  )
 }
 
 export const hasVerifiedOpenRolesLoaderSignal = (scriptText = '') => {

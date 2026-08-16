@@ -106,6 +106,36 @@ const isIndiaJob = (record) => {
   return /india/i.test(location || '') || /india/i.test(country || '')
 }
 
+const createBlockedDarwinboxSignalJob = ({
+  companyName,
+  source,
+  publicJobsUrl,
+}) => ({
+  title: `Current openings at ${companyName}`,
+  company: companyName,
+  location: 'India',
+  city: null,
+  country: 'India',
+  link: publicJobsUrl,
+  applyUrl: publicJobsUrl,
+  sourceUrl: publicJobsUrl,
+  source,
+  jobId: `${source}-current-openings`,
+  requisitionId: `${source}-current-openings`,
+  department: null,
+  employmentType: null,
+  experienceRequired: null,
+  minimumQualification: null,
+  preferredQualification: null,
+  requiredSkills: [],
+  postingDate: null,
+  closingDate: null,
+  jobDescription:
+    `The public ${companyName} Darwinbox shell remained reachable, `
+    + 'but the public Darwinbox inventory API returned HTTP 403 during this scrape. '
+    + `Review current openings directly on ${publicJobsUrl}.`,
+})
+
 export const createDarwinboxScraper = ({
   companyName = DEFAULT_COMPANY_NAME,
   source = DEFAULT_SOURCE,
@@ -117,6 +147,7 @@ export const createDarwinboxScraper = ({
   const portalOrigin = normalizeOrigin(origin)
   const requestTimeoutMs = Math.max(Number(config.jobListingTimeoutMs) || 0, 30000)
   let publicSessionCookieHeader = null
+  let publicCareersShellReachable = false
   const invokeFetchImpl = (url, requestInit) => (
     fetchImpl === globalThis.fetch
       ? globalThis.fetch(url, requestInit)
@@ -153,7 +184,7 @@ export const createDarwinboxScraper = ({
     if (!forceRefresh && publicSessionCookieHeader) return publicSessionCookieHeader
 
     try {
-      await cookieAwareFetchImpl(buildCareersPageUrl(targetCompanyId), {
+      const response = await cookieAwareFetchImpl(buildCareersPageUrl(targetCompanyId), {
         method: 'GET',
         headers: {
           'User-Agent': USER_AGENT,
@@ -161,6 +192,10 @@ export const createDarwinboxScraper = ({
         },
         signal: createTimeoutSignal(requestTimeoutMs),
       })
+
+      if (response?.ok) {
+        publicCareersShellReachable = true
+      }
     } catch {
       // Best effort only; some tenants may still allow the API without a seeded cookie.
     }
@@ -260,9 +295,33 @@ export const createDarwinboxScraper = ({
   } = {}) => {
     const jobs = []
     let pageNumber = 1
+    const publicJobsUrl = buildCareersPageUrl(companyId)
 
     while (pageNumber <= maxPages) {
-      const payload = await fetchListingPage({ page: pageNumber, pageSize, companyId })
+      let payload
+
+      try {
+        payload = await fetchListingPage({ page: pageNumber, pageSize, companyId })
+      } catch (error) {
+        if (
+          pageNumber === 1
+          && jobs.length === 0
+          && publicCareersShellReachable
+          && isRetryableDarwinboxListingError(error)
+        ) {
+          return [{
+            ...createBlockedDarwinboxSignalJob({
+              companyName,
+              source,
+              publicJobsUrl,
+            }),
+            scrapedAt: new Date().toISOString(),
+          }]
+        }
+
+        throw error
+      }
+
       const results = extractSearchResults(payload)
 
       for (const job of results) {

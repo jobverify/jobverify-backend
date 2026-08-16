@@ -1,6 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { composeAbortSignals, fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
+
 import { NEW_VISION_SOFTWARE_CONSULTANCY_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -19,6 +22,8 @@ export const DEFAULT_SEARCH_BODY = {}
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const PAGE_REQUEST_TIMEOUT_MS = 30000
+const API_REQUEST_TIMEOUT_MS = 30000
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
@@ -134,35 +139,53 @@ export const buildPublicHeaders = () => ({
   'Content-Type': 'application/json',
 })
 
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
+const createTimeoutSignal = (timeoutMs) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return undefined
 
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs)
   }
+
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), timeoutMs)
+  return controller.signal
 }
 
-const defaultFetchJson = async (url, options = {}) => {
-  const response = await fetch(url, {
+const defaultFetchPage = async (url, { signal } = {}) =>
+  withRetry(async () => {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+      signal: composeAbortSignals(
+        signal,
+        createTimeoutSignal(PAGE_REQUEST_TIMEOUT_MS),
+      ),
+    })
+
+    return {
+      status: response.status,
+      url: response.url,
+      html: await response.text(),
+    }
+  }, {
+    attempts: 3,
+    baseDelayMs: 2000,
+    label: `${SOURCE}-page`,
+    signal,
+  })
+
+const defaultFetchJson = (url, options = {}) =>
+  fetchJsonWithRetry(url, {
     method: options.method || 'GET',
     headers: options.headers,
     body: options.body,
+    label: `${SOURCE}-json`,
+    timeoutMs: API_REQUEST_TIMEOUT_MS,
+    signal: options.signal,
   })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.json()
-}
 
 export const extractPeopleStrongHandoffUrl = (html = '') => {
   const match = String(html ?? '').match(
@@ -257,8 +280,9 @@ export const createNewVisionSoftwareConsultancyScraper = () => ({
     maxPages = Number.POSITIVE_INFINITY,
     maxJobs = null,
     now = () => new Date().toISOString(),
+    signal,
   } = {}) {
-    const careersPage = await fetchPage(CAREERS_PAGE_URL)
+    const careersPage = await fetchPage(CAREERS_PAGE_URL, { signal })
     if (careersPage.status !== 200 || !hasOfficialCareersPageSignal(careersPage.html)) {
       throw new Error('NewVision Software & Consultancy verified official careers page no longer matches the known public surface')
     }
@@ -268,7 +292,7 @@ export const createNewVisionSoftwareConsultancyScraper = () => ({
       throw new Error('NewVision Software & Consultancy verified careers page no longer exposes the known PeopleStrong handoff')
     }
 
-    const portalPage = await fetchPage(JOB_LISTINGS_URL)
+    const portalPage = await fetchPage(JOB_LISTINGS_URL, { signal })
     if (portalPage.status !== 200 || !hasPublicPortalShell(portalPage.html)) {
       throw new Error('NewVision Software & Consultancy verified public PeopleStrong portal no longer matches the known public surface')
     }
@@ -281,6 +305,7 @@ export const createNewVisionSoftwareConsultancyScraper = () => ({
         method: 'POST',
         headers: buildPublicHeaders(),
         body: JSON.stringify(DEFAULT_SEARCH_BODY),
+        signal,
       })
 
       const pageJobs = extractSearchResults(payload)

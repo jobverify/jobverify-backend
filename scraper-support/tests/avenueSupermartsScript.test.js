@@ -29,19 +29,12 @@ const buildCurrentCareersShellHtml = () => `
 <!doctype html>
 <html>
   <head>
-    <title>Careers | DMart</title>
+    <title>DMart</title>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <nav>
-      <a href="/about-us">About us</a>
-      <a href="/categories">Categories</a>
-      <a href="/social-outreach">Social Outreach</a>
-      <a href="/partner-with-us">Partner with us</a>
-      <a href="/careers">Careers</a>
-      <a href="/investor-relations">Investor Relations</a>
-    </nav>
-    <a href="https://career10.successfactors.com/career?company=avenuesupe">APPLY NOW</a>
+    <div id="root"></div>
+    <script src="/static/js/main.b8467f57.chunk.js"></script>
   </body>
 </html>
 `
@@ -145,6 +138,60 @@ const buildSummaryPageTwoHtml = () => `
 </html>
 `
 
+const buildDwrSummaryResponse = ({
+  currentPage = 1,
+  pageSize = 10,
+  totalCount,
+  postings,
+  wrapInPayload = true,
+}) => {
+  const normalizedPostings = postings.map((posting) => ({
+    id: Number(posting.requisitionId),
+    title: posting.title,
+    postingDate: posting.postingDate,
+    otherValues: [
+      [
+        { fieldId: 'filter1', shortVal: posting.hiringEntity },
+        { fieldId: 'filter2', shortVal: posting.state },
+        { fieldId: 'filter3', shortVal: posting.city },
+      ],
+      [
+        { fieldId: 'filter4', shortVal: posting.department },
+      ],
+    ],
+  }))
+
+  const payload = {
+    filters: {
+      postingCount: String(totalCount ?? normalizedPostings.length),
+    },
+    results: {
+      detailURLPrefix: '/career?career_ns=job_listing&company=avenuesupe&navBarLevel=JOB_SEARCH&rcm_site_locale=en_GB&career_job_req_id=',
+      postingCount: totalCount ?? normalizedPostings.length,
+      options: {
+        pagination: {
+          currentPage,
+          pageSize,
+          totalCount: totalCount ?? normalizedPostings.length,
+          startRow: ((currentPage - 1) * pageSize) + 1,
+          endRow: Math.min(currentPage * pageSize, totalCount ?? normalizedPostings.length),
+          increaseCandSummaryPagination: false,
+        },
+        sortByColumn: 'JOB_POSTING_DATE',
+        sortOrder: 'DESC',
+      },
+      postings: normalizedPostings,
+    },
+  }
+
+  const callbackValue = wrapInPayload ? { payload } : payload
+
+  return `
+throw 'allowScriptTagRemoting is false.';
+dwr.engine._remoteHandleCallback('0', '0', ${JSON.stringify(callbackValue)});
+`
+}
+
 const buildDetailHtml = ({
   requisitionId,
   title,
@@ -183,6 +230,24 @@ test('Avenue Supermarts scraper exports the verified first-party DMart and Succe
     'https://career10.successfactors.com/career?company=avenuesupe&career_ns=job_listing_summary&navBarLevel=JOB_SEARCH&',
   )
   assert.equal(
+    avenueSupermarts.hasSuccessFactorsSearchPageSignal(
+      buildDwrSummaryResponse({
+        postings: [
+          {
+            requisitionId: '110923',
+            title: 'PURCHASE OFFICERS',
+            postingDate: '13/07/2026',
+            hiringEntity: 'Avenue Supermart Ltd',
+            state: 'Karnataka',
+            city: 'Bangalore',
+            department: 'Category Garments',
+          },
+        ],
+      }),
+    ),
+    true,
+  )
+  assert.equal(
     avenueSupermarts.buildDetailUrl('110923'),
     'https://career10.successfactors.com/career?career_ns=job_listing&company=avenuesupe&navBarLevel=JOB_SEARCH&rcm_site_locale=en_GB&career_job_req_id=110923&selected_lang=en_GB&jobAlertController_jobAlertId=&jobAlertController_jobAlertName=&browserTimeZone=Asia/Calcutta',
   )
@@ -215,6 +280,57 @@ test('extractSearchResults parses the verified Avenue Supermarts SuccessFactors 
     applyUrl: 'https://career10.successfactors.com/career?career_ns=job_listing&company=avenuesupe&navBarLevel=JOB_SEARCH&rcm_site_locale=en_GB&career_job_req_id=110923&selected_lang=en_GB&jobAlertController_jobAlertId=&jobAlertController_jobAlertName=&browserTimeZone=Asia/Calcutta',
     link: 'https://career10.successfactors.com/career?career_ns=job_listing&company=avenuesupe&navBarLevel=JOB_SEARCH&rcm_site_locale=en_GB&career_job_req_id=110923&selected_lang=en_GB&jobAlertController_jobAlertId=&jobAlertController_jobAlertName=&browserTimeZone=Asia/Calcutta',
     postingDate: '2026-07-13',
+    jobDescription: null,
+  })
+})
+
+test('extractSearchResults parses the verified Avenue Supermarts SuccessFactors DWR results pages', async () => {
+  const avenueSupermarts = await loadAvenueSupermartsModule()
+
+  const jobs = avenueSupermarts.extractSearchResults(
+    buildDwrSummaryResponse({
+      currentPage: 2,
+      totalCount: 30,
+      postings: [
+        {
+          requisitionId: '77644',
+          title: 'EXECUTIVE ACCOUNTS',
+          postingDate: '13/12/2025',
+          hiringEntity: 'Avenue Supermart Ltd',
+          state: 'Karnataka',
+          city: 'Bangalore',
+          department: 'Finance & Accounts',
+        },
+        {
+          requisitionId: '99577',
+          title: 'EXECUTIVE HR',
+          postingDate: '10/11/2025',
+          hiringEntity: 'Avenue Supermart Ltd',
+          state: 'Karnataka',
+          city: 'Bangalore',
+          department: 'Human Resources',
+        },
+      ],
+      wrapInPayload: false,
+    }),
+  )
+
+  assert.equal(jobs.length, 2)
+  assert.deepEqual(jobs[0], {
+    title: 'EXECUTIVE ACCOUNTS',
+    company: 'Avenue Supermarts',
+    hiringEntity: 'Avenue Supermart Ltd',
+    department: 'Finance & Accounts',
+    location: 'Bangalore, Karnataka, India',
+    city: 'Bangalore',
+    state: 'Karnataka',
+    country: 'India',
+    jobId: '77644',
+    requisitionId: '77644',
+    sourceUrl: avenueSupermarts.buildDetailUrl('77644'),
+    applyUrl: avenueSupermarts.buildDetailUrl('77644'),
+    link: avenueSupermarts.buildDetailUrl('77644'),
+    postingDate: '2025-12-13',
     jobDescription: null,
   })
 })
@@ -326,6 +442,72 @@ test('run verifies the DMart careers page, consumes injected HTTP search pages, 
   assert.match(jobs[0].jobDescription, /vendor schedule/i)
   assert.equal(jobs[2].title, 'EXECUTIVE ACCOUNTS')
   assert.match(jobs[2].jobDescription, /reconciliations/i)
+})
+
+test('run accepts the current DMart JavaScript shell when the verified SuccessFactors board remains reachable', async () => {
+  const avenueSupermarts = await loadAvenueSupermartsModule()
+
+  const requestedUrls = []
+  const detailPages = {
+    [avenueSupermarts.buildDetailUrl('110923')]: buildDetailHtml({
+      requisitionId: '110923',
+      title: 'PURCHASE OFFICERS',
+      postingDate: '13/07/2026',
+      state: 'Karnataka',
+      city: 'Bangalore',
+      department: 'Category Garments',
+      body: `
+        <p>FUNCTION : OPERATIONS</p>
+        <p>Job Description Is responsible for preparing the vendor schedule and optimum utilisation of space.</p>
+      `,
+    }),
+  }
+
+  const jobs = await avenueSupermarts.run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === avenueSupermarts.CAREERS_PAGE_URL) return buildCurrentCareersShellHtml()
+      if (detailPages[url]) return detailPages[url]
+      throw new Error(`Unexpected Avenue Supermarts URL: ${url}`)
+    },
+    getSearchPages: async ({ searchUrl }) => {
+      requestedUrls.push(searchUrl)
+      return [
+        buildDwrSummaryResponse({
+          totalCount: 2,
+          postings: [
+            {
+              requisitionId: '110923',
+              title: 'PURCHASE OFFICERS',
+              postingDate: '13/07/2026',
+              hiringEntity: 'Avenue Supermart Ltd',
+              state: 'Karnataka',
+              city: 'Bangalore',
+              department: 'Category Garments',
+            },
+            {
+              requisitionId: '96584',
+              title: 'Circle HR Manager',
+              postingDate: '10/07/2026',
+              hiringEntity: 'Avenue Supermart Ltd',
+              state: 'Rajastan',
+              city: 'Jaipur',
+              department: 'Human Resources',
+            },
+          ],
+        }),
+      ]
+    },
+    now: () => '2026-08-13T17:30:00.000Z',
+  })
+
+  assert.deepEqual(requestedUrls.slice(0, 2), [
+    avenueSupermarts.CAREERS_PAGE_URL,
+    avenueSupermarts.SUCCESSFACTORS_SEARCH_URL,
+  ])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].source, 'avenuesupermarts')
+  assert.equal(jobs[0].scrapedAt, '2026-08-13T17:30:00.000Z')
 })
 
 test('run fails closed when the verified DMart careers handoff disappears', async () => {

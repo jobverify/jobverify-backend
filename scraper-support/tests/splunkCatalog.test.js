@@ -9,7 +9,7 @@ const loadCatalog = async () => {
   }
 }
 
-test('Splunk catalog captures the verified first-party Cisco-hosted empty India slice', async () => {
+test('Splunk catalog captures the verified first-party Cisco-hosted India results surface', async () => {
   const splunkCatalog = await loadCatalog()
   const provider = splunkCatalog.default
 
@@ -20,7 +20,13 @@ test('Splunk catalog captures the verified first-party Cisco-hosted empty India 
   assert.equal(provider.officialSearchPageUrl, 'https://careers.cisco.com/global/en/splunk/search-page')
   assert.equal(provider.indiaJobsPageUrl, 'https://careers.cisco.com/global/en/splunk/india')
   assert.equal(provider.atsPlatform, 'official-first-party-cisco-careers-search')
-  assert.equal(provider.verifiedOn, '2026-07-25')
-  assert.match(provider.verifiedSurfaceSummary, /59 Splunk-branded public openings/i)
-  assert.match(provider.verifiedSurfaceSummary, /India-filtered payload returned 0 hits/i)
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.equal(provider.verifiedPublicJobCount, 80)
+  assert.equal(provider.verifiedIndiaJobCount, 1)
+  assert.equal(
+    provider.verifiedSampleJobUrl,
+    'https://careers.cisco.com/global/en/job/2021623/Solution-Test-Technical-Lead-Python-Java-Programming-UI-Automation-Network-Protocols-AWS-Splunk-Kubernetes-Linux-Wireshark-AI-8-to-12-years-Bangalore',
+  )
+  assert.match(provider.verifiedSurfaceSummary, /80 public Splunk openings/i)
+  assert.match(provider.verifiedSurfaceSummary, /India-filtered payload returned 1 Bangalore, India hit/i)
 })

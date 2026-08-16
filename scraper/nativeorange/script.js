@@ -5,7 +5,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'nativeorange'
 export const COMPANY = 'Native orange'
-export const VERIFIED_ON = '2026-08-03'
+export const VERIFIED_ON = '2026-08-13'
 export const HOMEPAGE_URL = 'https://nativeorange.ai/'
 export const ABOUT_URL = 'https://nativeorange.ai/about/'
 export const CONTACT_URL = 'https://nativeorange.ai/contact/'
@@ -97,14 +97,26 @@ const defaultFetchPage = async (url) => {
   }
 }
 
+const hasLegacyOfficialHomepageSignal = (normalized) =>
+  /Nativeorange - AI-Powered Insurance Solutions \| Automated Underwriting/i.test(normalized)
+  && normalized.includes('AI-Powered Insurance Technology')
+  && normalized.includes('The Future of Insurance AI')
+  && normalized.includes('Google Scale Partner')
+  && normalized.includes('GUIDEWIRE Vanguard Program')
+
+const hasCurrentOfficialHomepageSignal = (normalized) =>
+  /Nativeorange - Agentic Underwriting to Claims on One Platform/i.test(normalized)
+  && normalized.includes('One platform for the entire insurance lifecycle')
+  && normalized.includes('AI-powered solutions for carriers and agencies')
+  && normalized.includes('A connected suite of agentic-AI products across the value chain')
+  && normalized.includes('Google Scale Startup')
+  && normalized.includes('GUIDEWIRE Insurtech Vanguard')
+
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html)
 
-  return /Nativeorange - AI-Powered Insurance Solutions \| Automated Underwriting/i.test(normalized)
-    && normalized.includes('AI-Powered Insurance Technology')
-    && normalized.includes('The Future of Insurance AI')
-    && normalized.includes('Google Scale Partner')
-    && normalized.includes('GUIDEWIRE Vanguard Program')
+  return hasLegacyOfficialHomepageSignal(normalized)
+    || hasCurrentOfficialHomepageSignal(normalized)
 }
 
 export const hasOfficialAboutSignal = (html) => {

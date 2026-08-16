@@ -9,7 +9,9 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const SURFACE_TIMEOUT_MS = 30000
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
+export const HOMEPAGE_URL = 'https://www.mobikwik.com/'
 export const CAREERS_URL = 'https://www.mobikwik.com/careers'
+export const ALTERNATE_CAREERS_URL = 'https://www.mobikwik.com/company/careers'
 export const SOURCE = 'mobikwik'
 export const COMPANY_NAME = 'MobiKwik'
 export const COMPANY = COMPANY_NAME
@@ -86,6 +88,17 @@ export const hasDarwinboxHandoffSignal = (surface = {}) =>
 export const hasExternalJobsHandoffSignal = (surface = {}) =>
   hasDarwinboxHandoffSignal(surface)
 
+export const hasCollapsedHomepageShellSignal = (surface = {}) => {
+  const title = extractSurfaceTitle(surface)
+  const text = extractSurfaceText(surface)
+
+  return /^Online Mobile\s*&\s*DTH Recharge, Bill Payments, Easy Recharge$/i.test(title)
+    && text.includes('This website requires JavaScript.')
+    && text.includes('MobiKwik')
+    && !/view job openings|want to empower millions of indians with financial independence/i.test(text)
+    && extractDarwinboxHandoffUrl(surface) == null
+}
+
 const parseCareersSurface = (html = '') => ({
   title: normalizeWhitespace(String(html).match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]),
   text: normalizeWhitespace(html),
@@ -136,6 +149,14 @@ export const createMobiKwikScraper = ({
       ...darwinboxOptions
     } = {}) {
       const careersSurface = await overrideLoadRenderedCareersSurface(CAREERS_URL)
+
+      if (hasCollapsedHomepageShellSignal(careersSurface)) {
+        const alternateCareersSurface = await overrideLoadRenderedCareersSurface(ALTERNATE_CAREERS_URL)
+
+        if (hasCollapsedHomepageShellSignal(alternateCareersSurface)) {
+          return []
+        }
+      }
 
       if (!hasOfficialCareersSignal(careersSurface)) {
         throw new Error('MobiKwik official careers surface changed; refusing to assume the verified Darwinbox jobs surface still applies')

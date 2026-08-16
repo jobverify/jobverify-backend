@@ -94,8 +94,10 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialCareersSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = stripTags(rawHtml)
+  const title = extractTitle(rawHtml)
 
-  return extractTitle(rawHtml) === 'Careers - Elecbits'
+  return /^(?:Careers\s*-\s*Elecbits|Careers at Elecbits Join Electronics Innovation Team)$/i
+    .test(title)
     && /Shape India's future with hardware/i.test(normalized)
     && /Join the Team/i.test(normalized)
     && /https:\/\/elecbits\.in\/elecbits-jd-[^"'\s<]+\/?/i.test(rawHtml)

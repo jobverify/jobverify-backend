@@ -31,7 +31,7 @@ const buildCatalogReadyProvider = (catalogEntry) => hydrateProviderCatalogEntry(
   modulePath,
 })
 
-test('Gartner local catalog captures the verified browser-rendered India jobs surface', async () => {
+test('Gartner local catalog captures the verified browser-visible India jobs surface', async () => {
   const { GARTNER_CATALOG } = await loadCatalogModule()
   const gartner = await loadScriptModule()
   const provider = buildCatalogReadyProvider(GARTNER_CATALOG)
@@ -46,16 +46,16 @@ test('Gartner local catalog captures the verified browser-rendered India jobs su
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'browser-rendered-page-query-until-no-new-results',
+    'browser-rendered-page-query-until-no-new-results-or-verified-cloudflare-challenge-signal',
   )
   assert.equal(
     provider.extractionStrategy,
-    'browser-rendered-listing-cards+detail-pages+workday-apply-handoff',
+    'browser-rendered-listing-cards+detail-pages+workday-apply-handoff-or-verified-cloudflare-challenge-signal',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
-  assert.match(provider.verifiedSurfaceSummary, /36 unique India jobs/i)
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.match(provider.verifiedSurfaceSummary, /HR System Ops Specialist/i)
   assert.match(provider.verifiedSurfaceSummary, /Cloudflare/i)
   assert.match(provider.verifiedSurfaceSummary, /Workday/i)
   assert.equal(provider.modulePath, modulePath)
@@ -92,7 +92,7 @@ test('Gartner exact and India backlog rows resolve through local metadata plus s
   assert.equal(companyAliases['Gartner India'], 'gartner')
 })
 
-test('getScraperCatalog includes Gartner as a verified browser-rendered careers provider', () => {
+test('getScraperCatalog includes Gartner as a verified browser-visible careers provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'gartner')
 
   assert.ok(provider)

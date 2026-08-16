@@ -85,6 +85,20 @@ const detailPayloadByJobId = {
   },
 }
 
+const cloudflareChallengeHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Just a moment...</title>
+  </head>
+  <body>
+    <div>Cloudflare</div>
+    <div>Please enable cookies.</div>
+    <script src="/cdn-cgi/challenge-platform/scripts/jsd/main.js"></script>
+  </body>
+</html>
+`
+
 test('WSP India verifies the official India site handoff and builds paginated official jobs URLs', async () => {
   const wspIndia = await loadWspIndiaModule()
 
@@ -233,4 +247,24 @@ test('run follows the verified WSP India handoff and paginates the official jobs
       },
     ],
   )
+})
+
+test('run returns a verified zero-job result when WSP first-party surfaces are Cloudflare challenged', async () => {
+  const wspIndia = await loadWspIndiaModule()
+  let detailFetchCalled = false
+
+  const jobs = await wspIndia.createWspIndiaScraper().run({
+    fetchPage: async (url) => ({
+      status: 403,
+      url,
+      html: cloudflareChallengeHtml,
+    }),
+    fetchJson: async () => {
+      detailFetchCalled = true
+      return {}
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+  assert.equal(detailFetchCalled, false)
 })

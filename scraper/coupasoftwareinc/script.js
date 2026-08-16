@@ -41,6 +41,24 @@ const normalizeUrl = (value) => {
   }
 }
 
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    headers: Object.fromEntries(response.headers.entries()),
+    html: await response.text(),
+  }
+}
+
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -56,6 +74,18 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
+
+const getHeader = (page = {}, name) => {
+  const normalizedName = String(name ?? '').toLowerCase()
+  const headers = page?.headers
+  if (!headers) return ''
+  if (typeof headers.get === 'function') {
+    return String(headers.get(normalizedName) || headers.get(name) || '')
+  }
+  return String(headers[normalizedName] || headers[name] || '')
+}
+
 const buildJobId = (title, sourceUrl) => {
   const titleMatch = String(title ?? '').match(/-\s*(\d+)\s*$/)
   if (titleMatch) return titleMatch[1]
@@ -68,12 +98,29 @@ export const hasOfficialJobsPageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
 
-  return /<title>\s*(?:Shape your career at Coupa|Jobs)\s*-\s*Explore opportunities to make an impact\.\s*\|\s*Coupa Careers\s*<\/title>/i.test(page)
+  return /<title>\s*(?:Shape your career at Coupa|Jobs)\s*-\s*Explore opportunities to make an impact\.\s*\|\s*Coupa Careers(?:\s*-\s*Page\s+\d+)?\s*<\/title>/i.test(page)
     && text.includes('Shape your career at Coupa')
     && (
       /Displaying\s+\d+\s+to\s+\d+\s+of\s+\d+\s+matching\s+jobs/i.test(text)
       || /class=["'][^"']*js-card-job[^"']*["']/i.test(page)
     )
+}
+
+export const hasVerifiedCloudflareChallengeSignal = (page = {}) => {
+  const html = getPageHtml(page)
+  return [200, 403].includes(Number(page.status))
+    && /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(html)
+    && /Enable JavaScript and cookies to continue/i.test(html)
+}
+
+export const isVerifiedCloudflareChallengedPage = (page = {}, expectedUrl) => {
+  const finalUrl = String(page.url || expectedUrl)
+
+  return finalUrl === expectedUrl
+    && /cloudflare/i.test(getHeader(page, 'server'))
+    && getHeader(page, 'cf-ray').trim().length > 0
+    && ['challenge', ''].includes(getHeader(page, 'cf-mitigated').toLowerCase())
+    && hasVerifiedCloudflareChallengeSignal(page)
 }
 
 const extractLegacyIndiaJobsFromPage = (html = '') => Array.from(
@@ -176,8 +223,29 @@ const normalizeJob = (job, scrapedAt) => ({
 export const createCoupaSoftwareIncScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const firstPage = await fetchText(JOBS_PAGE_URL)
+  async run({ fetchText = defaultFetchText, fetchPage = defaultFetchPage } = {}) {
+    const loadJobsPage = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        const fallbackPage = await fetchPage(url)
+        if (isVerifiedCloudflareChallengedPage(fallbackPage, url)) {
+          return null
+        }
+
+        const fallbackHtml = getPageHtml(fallbackPage)
+        if (hasOfficialJobsPageSignal(fallbackHtml)) {
+          return fallbackHtml
+        }
+
+        throw error
+      }
+    }
+
+    const firstPage = await loadJobsPage(JOBS_PAGE_URL)
+    if (firstPage == null) {
+      return []
+    }
     if (!hasOfficialJobsPageSignal(firstPage)) {
       throw new Error('The verified Coupa jobs page no longer matches the trusted first-party surface')
     }
@@ -190,7 +258,10 @@ export const createCoupaSoftwareIncScraper = ({
       const nextUrl = queue.shift()
       if (!nextUrl || visited.has(nextUrl)) continue
       visited.add(nextUrl)
-      const html = await fetchText(nextUrl)
+      const html = await loadJobsPage(nextUrl)
+      if (html == null) {
+        return []
+      }
       for (const job of extractIndiaJobsFromPage(html)) {
         if (!jobs.some((existing) => existing.jobId === job.jobId)) {
           jobs.push(job)

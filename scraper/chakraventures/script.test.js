@@ -37,10 +37,19 @@ const parkedLanderHtml = `
 test('Chakra Ventures sentinel recognizes the verified parked first-party surface', async () => {
   const chakraventures = await loadModule()
 
+  assert.equal(chakraventures.SOURCE, 'chakraventures')
+  assert.equal(chakraventures.COMPANY, 'Chakra Ventures')
+  assert.equal(chakraventures.VERIFIED_AT, '2026-08-13')
   assert.equal(chakraventures.HOMEPAGE_URL, 'https://chakraventures.com/')
   assert.equal(chakraventures.CAREERS_URL, 'https://chakraventures.com/careers')
   assert.equal(chakraventures.JOBS_URL, 'https://chakraventures.com/jobs')
   assert.equal(chakraventures.LANDER_URL, 'https://chakraventures.com/lander')
+  assert.deepEqual(chakraventures.FIRST_PARTY_TIMEOUT_URLS, [
+    'https://chakraventures.com/',
+    'https://chakraventures.com/careers',
+    'https://chakraventures.com/jobs',
+    'https://chakraventures.com/lander',
+  ])
 
   assert.equal(chakraventures.hasRedirectToLanderSignal(redirectShellHtml), true)
   assert.equal(chakraventures.hasRedirectToLanderSignal(parkedLanderHtml), false)
@@ -48,6 +57,8 @@ test('Chakra Ventures sentinel recognizes the verified parked first-party surfac
   assert.equal(chakraventures.hasParkedLanderSignal('<html><body>Careers at Chakra Ventures</body></html>'), false)
   assert.equal(chakraventures.hasPublicJobListingsSignal(redirectShellHtml), false)
   assert.equal(chakraventures.hasPublicJobListingsSignal(parkedLanderHtml), false)
+  assert.equal(chakraventures.isExpectedTimedOutSurface({ errorKind: 'timeout', status: null, html: null }), true)
+  assert.equal(chakraventures.isExpectedTimedOutSurface({ errorKind: 'dns' }), false)
 })
 
 test('Chakra Ventures sentinel returns no jobs only while the verified parked surface remains unchanged', async () => {
@@ -80,6 +91,28 @@ test('Chakra Ventures sentinel returns no jobs only while the verified parked su
     chakraventures.JOBS_URL,
     chakraventures.LANDER_URL,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Chakra Ventures sentinel returns no jobs when the current verified first-party routes all time out', async () => {
+  const chakraventures = await loadModule()
+  const requests = []
+
+  const jobs = await chakraventures.createChakraVenturesScraper().run({
+    probeUrl: async (url) => {
+      requests.push(url)
+
+      return {
+        url,
+        finalUrl: url,
+        status: null,
+        html: null,
+        errorKind: 'timeout',
+      }
+    },
+  })
+
+  assert.deepEqual(requests, chakraventures.FIRST_PARTY_TIMEOUT_URLS)
   assert.deepEqual(jobs, [])
 })
 

@@ -17,7 +17,22 @@ const homepageHtml = `
     </head>
     <body>
       <main>
-        <h1>The World’s Largest Producer of Value-Added Spices</h1>
+        <h1>The World's Leading Producer of Botanical Extracts</h1>
+        <p>At Synthite, we go beyond delivering natural ingredients; we partner with you to craft tailored, high-impact solutions.</p>
+        <h2>Built on Experience Engineered for Impact</h2>
+        <p>50+ Years. 90+ Countries. 1 Mission.</p>
+        <a href="/careers/">Careers</a>
+      </main>
+    </body>
+  </html>
+`
+
+const legacyHomepageHtml = `
+  <!doctype html>
+  <html lang="en">
+    <body>
+      <main>
+        <h1>The World's Largest Producer of Value-Added Spices</h1>
         <p>50+ Years. 90+ Countries. 1 Mission.</p>
         <a href="/careers/">Careers</a>
       </main>
@@ -84,6 +99,7 @@ test('Synthite sentinel validates the verified first-party homepage, careers lan
   assert.equal(synthite.CAREER_OPPORTUNITIES_URL, 'https://www.synthite.com/careers/career-opportunities/')
   assert.equal(synthite.CAREERS_EMAIL, 'careers@synthite.com')
   assert.equal(synthite.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(synthite.hasOfficialHomepageSignal(legacyHomepageHtml), true)
   assert.equal(synthite.hasOfficialCareersLandingSignal(careersLandingHtml), true)
   assert.equal(synthite.hasOfficialCareerOpportunitiesSignal(careerOpportunitiesHtml), true)
   assert.deepEqual(synthite.extractCareerContact(careerOpportunitiesHtml), {

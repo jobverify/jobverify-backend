@@ -13,14 +13,14 @@ export const PRAMATA_KNOWLEDGE_SOLUTIONS_CATALOG = {
   contactEmail: 'hr-usa@pramata.com',
   atsPlatform: 'first-party-careers-page-bot-gated',
   countryFilter: 'India',
-  paginationStrategy: 'single-public-page',
-  extractionStrategy: 'verified-cloudflare-challenge-page-return-empty',
+  paginationStrategy: 'verified-blocked-careers-routes',
+  extractionStrategy: 'verified-cloudflare-403-careers-routes-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'pramata.com',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-14',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that the official careers surface for the backlog company Pramata Knowledge Solutions was https://www.pramata.com/careers/, that direct fetches of both the careers landing page and the sample role route https://www.pramata.com/careers/legal-solution-consultant/ returned a Cloudflare bot challenge instead of scraper-visible listings, and that public first-party role evidence still referenced hr-usa@pramata.com. This local provider is intentionally fail-closed and returns an honest empty list until the official surface becomes scraper-accessible.',
+    'Verified on Friday, August 14, 2026 that both https://www.pramata.com/careers/ and the sample role route https://www.pramata.com/careers/legal-solution-consultant/ returned the same Cloudflare HTTP 403 "Just a moment..." interstitial with the ki-cf-botcl=1 refresh pattern instead of scraper-visible listings. This local provider remains intentionally fail-closed and returns an honest empty list until the official careers surfaces become scraper-accessible again.',
   dryRunFile: 'pramataknowledgesolutions/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

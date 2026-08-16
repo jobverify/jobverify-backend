@@ -5,7 +5,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'zivame'
 export const COMPANY = 'Zivame'
-export const VERIFIED_ON = '2026-08-04'
+export const VERIFIED_ON = '2026-08-13'
 export const HOMEPAGE_URL = 'https://www.zivame.com/'
 export const CAREERS_URL = 'https://www.zivame.com/careers'
 export const LEGACY_CAREERS_URL = 'https://careers.zivame.com/'
@@ -146,6 +146,10 @@ export const isBlockedCareersRoute = (page = {}) =>
   Number(page.status) === 403
   && hasCloudflareChallengeSignal(page.html)
 
+export const isBlockedHomepageRoute = (page = {}) =>
+  Number(page.status) === 403
+  && hasCloudflareChallengeSignal(page.html)
+
 export const isUnavailableLegacyCareersHost = (page = {}) =>
   String(page.status) === 'ERROR'
   && hasDnsResolutionFailure(page.errorMessage)
@@ -153,11 +157,14 @@ export const isUnavailableLegacyCareersHost = (page = {}) =>
 export const createZivameScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Zivame official homepage no longer matches the verified public surface')
+    const homepageIsOfficial = hasOfficialHomepageSignal(homepage.html)
+    const homepageIsBlocked = isBlockedHomepageRoute(homepage)
+
+    if (!homepageIsOfficial && !homepageIsBlocked) {
+      throw new Error('Zivame homepage no longer matches the verified official or blocked first-party state')
     }
 
-    if (hasPublicJobsSignal(homepage.html)) {
+    if (homepageIsOfficial && hasPublicJobsSignal(homepage.html)) {
       throw new Error('Zivame homepage now appears to expose public jobs')
     }
 

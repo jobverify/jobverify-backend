@@ -31,13 +31,21 @@ test('Sophos Technologies local catalog captures the verified first-party Lever 
   assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.parser, 'custom-script')
   assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.modulePath, '../../scraper/sophostechnologies/script.js')
-  assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.verifiedOn, '2026-07-23')
+  assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.verifiedOn, '2026-08-14')
+  assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.verifiedPublicJobCount, 114)
+  assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.verifiedIndiaJobCount, 13)
+  assert.equal(
+    SOPHOS_TECHNOLOGIES_CATALOG.verifiedSampleJobUrl,
+    'https://jobs.lever.co/sophos/76606093-369d-436c-8541-ad2e8571e6c8',
+  )
   assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.dryRunFile, 'sophostechnologies/jobs.json')
   assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.leverBoardUrl, 'https://jobs.lever.co/sophos')
   assert.equal(SOPHOS_TECHNOLOGIES_CATALOG.leverPostingsApiUrl, 'https://api.lever.co/v0/postings/sophos')
   assert.match(SOPHOS_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.sophos\.com\/en-us\/company\/careers/i)
   assert.match(SOPHOS_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /https:\/\/jobs\.lever\.co\/sophos/i)
   assert.match(SOPHOS_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /api\.lever\.co/i)
+  assert.match(SOPHOS_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /114 public openings/i)
+  assert.match(SOPHOS_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /13 India-filtered results/i)
 })
 
 test('Sophos Technologies exact backlog row resolves directly from local provider metadata', async () => {

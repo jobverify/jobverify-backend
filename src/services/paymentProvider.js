@@ -4,6 +4,7 @@
  */
 
 import crypto from "node:crypto";
+import Razorpay from "razorpay";
 
 const PAYMENT_PROVIDER = String(process.env.PAYMENT_PROVIDER || "mock")
   .trim()
@@ -47,38 +48,66 @@ const createMockProvider = (env = process.env) => ({
   },
 });
 
-const encodeBasicAuth = (keyId, keySecret) =>
-  Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+export class PaymentProviderError extends Error {
+  constructor(message, { statusCode = 500 } = {}) {
+    super(message);
+    this.name = "PaymentProviderError";
+    this.statusCode = statusCode === 401 ? 401 : 500;
+  }
+}
 
-const createRazorpayProvider = () => ({
+const createProviderOrderError = (error) => {
+  const providerStatus = error?.statusCode ?? error?.status;
+  const isAuthenticationFailure = providerStatus === 401;
+  return new PaymentProviderError(
+    isAuthenticationFailure
+      ? "Payment provider authentication failed."
+      : "Failed to create payment order.",
+    { statusCode: isAuthenticationFailure ? 401 : 500 },
+  );
+};
+
+const createProviderConfigurationError = () => new PaymentProviderError(
+  "Payment provider is not configured.",
+);
+
+export const createRazorpayProvider = ({
+  createClient = (options) => new Razorpay(options),
+} = {}) => ({
   name: "razorpay",
   async createCheckoutOrder({ purchase, planConfig, user }) {
     const keyId = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
     if (!keyId || !keySecret) {
-      throw new Error("Razorpay credentials are not configured.");
+      throw createProviderOrderError();
     }
 
-    const response = await fetch("https://api.razorpay.com/v1/orders", {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${encodeBasicAuth(keyId, keySecret)}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        amount: planConfig.priceInr * 100,
+    const amount = Number(planConfig.priceInr) * 100;
+    if (!Number.isInteger(amount) || amount < 100) {
+      throw new Error("Razorpay order amount must be an integer of at least 100 paise.");
+    }
+
+    let data;
+    try {
+      const razorpay = createClient({
+        key_id: keyId,
+        key_secret: keySecret,
+      });
+      data = await razorpay.orders.create({
+        amount,
         currency: "INR",
         receipt: String(purchase._id),
         notes: {
           email: user.email,
           planId: purchase.planId,
         },
-      }),
-    });
+      });
+    } catch (error) {
+      throw createProviderOrderError(error);
+    }
 
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.id) {
-      throw new Error(data?.error?.description || "Failed to create Razorpay order.");
+    if (!data?.id) {
+      throw createProviderOrderError();
     }
 
     return {
@@ -98,34 +127,59 @@ const createRazorpayProvider = () => ({
   verifyPayment({ providerOrderId, providerPaymentId, providerSignature }) {
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
     if (!keySecret) {
-      throw new Error("Razorpay secret is not configured.");
+      throw createProviderConfigurationError();
     }
 
-    const digest = crypto
+    if (
+      typeof providerSignature !== "string"
+      || !/^[a-f0-9]{64}$/.test(providerSignature)
+    ) {
+      return { verified: false };
+    }
+
+    const expectedSignature = crypto
       .createHmac("sha256", keySecret)
       .update(`${providerOrderId}|${providerPaymentId}`)
-      .digest("hex");
+      .digest();
+    const receivedSignature = Buffer.from(providerSignature, "hex");
 
-    return { verified: digest === providerSignature };
+    return {
+      verified: expectedSignature.length === receivedSignature.length
+        && crypto.timingSafeEqual(expectedSignature, receivedSignature),
+    };
   },
   verifyWebhook({ rawBody, signature }) {
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-    if (!webhookSecret || !rawBody || !signature) {
+    if (!webhookSecret) {
+      throw createProviderConfigurationError();
+    }
+
+    if (
+      !rawBody
+      || typeof signature !== "string"
+      || !/^[a-f0-9]{64}$/.test(signature)
+    ) {
       return false;
     }
 
-    const digest = crypto
+    const expectedSignature = crypto
       .createHmac("sha256", webhookSecret)
       .update(rawBody)
-      .digest("hex");
+      .digest();
+    const receivedSignature = Buffer.from(signature, "hex");
 
-    return digest === signature;
+    return expectedSignature.length === receivedSignature.length
+      && crypto.timingSafeEqual(expectedSignature, receivedSignature);
   },
 });
 
-export const getPaymentProvider = (name = PAYMENT_PROVIDER, env = process.env) => {
+export const getPaymentProvider = (
+  name = PAYMENT_PROVIDER,
+  env = process.env,
+  razorpayOptions = {},
+) => {
   if (name === "razorpay") {
-    return createRazorpayProvider();
+    return createRazorpayProvider(razorpayOptions);
   }
 
   return createMockProvider(env);

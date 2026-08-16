@@ -1,8 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-17T00:00:00.000Z'
-
 const officialCareersHtml = `
 <!DOCTYPE html>
 <html lang="en-US">
@@ -19,58 +17,54 @@ const officialCareersHtml = `
 </html>
 `
 
-const listingPayload = {
-  status: 'success',
-  message: {
-    jobscount: 2,
-    jobs: [
-      {
-        id: 'a6a55a83432880',
-        title: 'Chief Manager_CNOS',
-        created_on: '2026-07-14T03:08:36.000Z',
-        officelocation_show_arr: 'Praj Project Site (CNOS), Pune, Maharashtra, India',
-        job_posting_on: 1783967400,
-        department: 'CNOS',
-        emp_type: 'Regular',
-        experience_from_num: '10',
-        experience_to_num: '15',
-        tool_tip_locations: ['Praj Project Site (CNOS), Pune, Maharashtra, India'],
-        timezone: 'Asia/Kolkata',
-      },
-      {
-        id: 'praj-us-001',
-        title: 'North America Operations Lead',
-        created_on: '2026-07-14T07:37:30.000Z',
-        officelocation_show_arr: 'Houston, Texas, United States',
-        job_posting_on: 1783967400,
-        department: 'International Projects',
-        emp_type: 'Regular',
-        experience_from_num: '10',
-        experience_to_num: '15',
-        tool_tip_locations: ['Houston, Texas, United States'],
-        timezone: 'America/Chicago',
-      },
-    ],
-  },
-}
+const darwinboxCandidateShellHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <base href="/ms/candidate/">
+    <noscript>Please enable Javascript!</noscript>
+    <script type="module" src="/ms/dboxuilibrary/assets/dboxuilib_dist/www/build/db-components.esm.js"></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
+  </head>
+  <body>
+    <app-root ng-class="clearfix"></app-root>
+  </body>
+</html>
+`
 
-const detailPayload = {
-  status: 'success',
-  message: {
-    job: [
-      {
-        id: 'a6a55a83432880',
-        experience: '10 - 15 Years',
-        jd: '<p>Lead CNOS site execution.</p>',
-        officelocation_show_arr: 'Praj Project Site (CNOS), Pune, Maharashtra, India',
-        posted_on: '14-Jul-2026',
-        department: 'CNOS',
-        emp_type: 'Regular',
-        title: 'Chief Manager_CNOS',
-      },
-    ],
-  },
-}
+const darwinboxCandidateV2ShellHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <base href="/ms/candidatev2/">
+    <script type="module" src="/ms/dboxuilibrary/assets/dboxuilib_dist/www/build/db-components.esm.js"></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
+  </head>
+  <body>
+    <app-root ng-class="clearfix"></app-root>
+  </body>
+</html>
+`
+
+const blockedListingApiHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Attention Required! | Cloudflare</title>
+  </head>
+  <body>
+    <div id="cf-wrapper">
+      <p>Sorry, you have been blocked</p>
+      <p>Please enable cookies.</p>
+      <p>Cloudflare Ray ID: 1234567890</p>
+    </div>
+  </body>
+</html>
+`
 
 const loadPrajIndustriesModule = async () => {
   try {
@@ -80,24 +74,33 @@ const loadPrajIndustriesModule = async () => {
   }
 }
 
-test('Praj Industries pins the verified first-party careers handoff and Darwinbox routes', async () => {
+test('Praj Industries scraper constants stay pinned to the verified first-party careers handoff and Darwinbox unavailable surfaces', async () => {
   const praj = await loadPrajIndustriesModule()
 
   assert.equal(praj.SOURCE, 'prajindustries')
   assert.equal(praj.COMPANY, 'Praj Industries')
   assert.equal(praj.OFFICIAL_BRAND_NAME, 'Praj Industries')
-  assert.equal(praj.VERIFIED_ON, '2026-07-17')
+  assert.equal(praj.VERIFIED_ON, '2026-08-14')
   assert.equal(praj.OFFICIAL_CAREERS_URL, 'https://www.praj.net/careers/')
   assert.equal(praj.DARWINBOX_HANDOFF_URL, 'https://praj.darwinbox.in/ms/candidate/careers')
   assert.equal(praj.DARWINBOX_ORIGIN, 'https://praj.darwinbox.in')
   assert.equal(praj.DARWINBOX_COMPANY_ID, 'main')
+  assert.equal(praj.DARWINBOX_JOBS_URL, 'https://praj.darwinbox.in/jobs')
+  assert.equal(praj.DARWINBOX_CANDIDATE_CAREERS_URL, 'https://praj.darwinbox.in/ms/candidate/careers')
+  assert.equal(praj.DARWINBOX_PUBLIC_HOME_URL, 'https://praj.darwinbox.in/ms/candidatev2/main/careers/home')
+  assert.equal(praj.DARWINBOX_PUBLIC_ALL_JOBS_URL, 'https://praj.darwinbox.in/ms/candidatev2/main/careers/allJobs')
+  assert.equal(praj.DARWINBOX_LISTING_API_URL, 'https://praj.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main')
+  assert.deepEqual(praj.DARWINBOX_SHELL_ROUTE_URLS, [
+    'https://praj.darwinbox.in/jobs',
+    'https://praj.darwinbox.in/ms/candidate/careers',
+    'https://praj.darwinbox.in/ms/candidatev2/main/careers/home',
+    'https://praj.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+  ])
   assert.equal(typeof praj.extractOfficialDarwinboxUrl, 'function')
   assert.equal(typeof praj.hasVerifiedCareersPageSignals, 'function')
-  assert.equal(typeof praj.buildListingApiUrl, 'function')
-  assert.equal(typeof praj.buildJobDetailApiUrl, 'function')
-  assert.equal(typeof praj.buildJobDetailUrl, 'function')
-  assert.equal(typeof praj.extractListings, 'function')
-  assert.equal(typeof praj.extractJobDetail, 'function')
+  assert.equal(typeof praj.hasBlankDarwinboxShellSignal, 'function')
+  assert.equal(typeof praj.hasBlockedDarwinboxListingApiSignal, 'function')
+  assert.equal(typeof praj.hasUnexpectedPublicJobSurface, 'function')
   assert.equal(typeof praj.createPrajIndustriesScraper, 'function')
 
   assert.equal(
@@ -106,218 +109,132 @@ test('Praj Industries pins the verified first-party careers handoff and Darwinbo
   )
   assert.equal(praj.hasVerifiedCareersPageSignals(officialCareersHtml), true)
   assert.equal(praj.hasVerifiedCareersPageSignals('<html><body>No trusted Praj careers content</body></html>'), false)
-  assert.equal(praj.buildListingApiUrl(1), 'https://praj.darwinbox.in/ms/candidateapi/job?page=1')
-  assert.equal(praj.buildListingApiUrl(2), 'https://praj.darwinbox.in/ms/candidateapi/job?page=2')
+  assert.equal(praj.hasBlankDarwinboxShellSignal(darwinboxCandidateShellHtml), true)
+  assert.equal(praj.hasBlankDarwinboxShellSignal(darwinboxCandidateV2ShellHtml), true)
   assert.equal(
-    praj.buildJobDetailApiUrl('a6a55a83432880'),
-    'https://praj.darwinbox.in/ms/candidateapi/job/a6a55a83432880',
+    praj.hasBlockedDarwinboxListingApiSignal({ status: 403, body: blockedListingApiHtml }),
+    true,
   )
   assert.equal(
-    praj.buildJobDetailUrl('a6a55a83432880'),
-    'https://praj.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a55a83432880',
+    praj.hasUnexpectedPublicJobSurface({
+      status: 200,
+      html: '<html><body><h1>Open Jobs</h1><button>Search Jobs</button><a href="/apply">Apply</a></body></html>',
+    }),
+    true,
   )
 })
 
-test('Praj Industries maps only India listings from the official public candidate API', async () => {
-  const { extractListings } = await loadPrajIndustriesModule()
-  const listings = extractListings(listingPayload)
+test('Praj Industries returns no jobs while the verified careers handoff stays fixed and Darwinbox only exposes blank shells plus a blocked listing API', async () => {
+  const praj = await loadPrajIndustriesModule()
+  const requestedUrls = []
+  const listingApiRequests = []
 
-  assert.deepEqual(listings, [
-    {
-      title: 'Chief Manager_CNOS',
-      company: 'Praj Industries',
-      department: 'CNOS',
-      location: 'Praj Project Site (CNOS), Pune, Maharashtra, India',
-      city: 'Pune',
-      jobId: 'a6a55a83432880',
-      requisitionId: null,
-      sourceUrl: 'https://praj.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a55a83432880',
-      applyUrl: 'https://praj.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a55a83432880',
-      employmentType: 'Regular',
-      experienceRequired: '10 - 15 Years',
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: '2026-07-14',
-      closingDate: null,
-      jobDescription: null,
+  const jobs = await praj.createPrajIndustriesScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === praj.OFFICIAL_CAREERS_URL) {
+        return { status: 200, url, finalUrl: url, html: officialCareersHtml, errorKind: null }
+      }
+
+      if (url === praj.DARWINBOX_CANDIDATE_CAREERS_URL) {
+        return { status: 200, url, finalUrl: url, html: darwinboxCandidateShellHtml, errorKind: null }
+      }
+
+      if (praj.DARWINBOX_SHELL_ROUTE_URLS.includes(url)) {
+        return {
+          status: 200,
+          url,
+          finalUrl: url === praj.DARWINBOX_JOBS_URL ? praj.DARWINBOX_PUBLIC_HOME_URL : url,
+          html: darwinboxCandidateV2ShellHtml,
+          errorKind: null,
+        }
+      }
+
+      throw new Error(`Unexpected page URL: ${url}`)
     },
+    probeListingApi: async (url) => {
+      listingApiRequests.push(url)
+      return { status: 403, body: blockedListingApiHtml }
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    praj.OFFICIAL_CAREERS_URL,
+    ...praj.DARWINBOX_SHELL_ROUTE_URLS,
   ])
+  assert.deepEqual(listingApiRequests, [praj.DARWINBOX_LISTING_API_URL])
+  assert.deepEqual(jobs, [])
 })
 
-test('Praj Industries enriches a listing from the official public job detail API', async () => {
-  const { extractJobDetail } = await loadPrajIndustriesModule()
-  const detail = extractJobDetail(detailPayload, {
-    title: 'Chief Manager_CNOS',
-    company: 'Praj Industries',
-    department: 'CNOS',
-    location: 'Praj Project Site (CNOS), Pune, Maharashtra, India',
-    city: 'Pune',
-    jobId: 'a6a55a83432880',
-    requisitionId: null,
-    sourceUrl: 'https://praj.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a55a83432880',
-    applyUrl: 'https://praj.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a55a83432880',
-    employmentType: 'Regular',
-    experienceRequired: '10 - 15 Years',
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: '2026-07-14',
-    closingDate: null,
-    jobDescription: null,
-  })
-
-  assert.deepEqual(detail, {
-    title: 'Chief Manager_CNOS',
-    company: 'Praj Industries',
-    department: 'CNOS',
-    location: 'Praj Project Site (CNOS), Pune, Maharashtra, India',
-    city: 'Pune',
-    jobId: 'a6a55a83432880',
-    requisitionId: null,
-    sourceUrl: 'https://praj.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a55a83432880',
-    applyUrl: 'https://praj.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a55a83432880',
-    employmentType: 'Regular',
-    experienceRequired: '10 - 15 Years',
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: '14-Jul-2026',
-    closingDate: null,
-    jobDescription: '<p>Lead CNOS site execution.</p>',
-  })
-})
-
-test('Praj Industries validates the official careers page before returning India jobs', async () => {
-  const {
-    OFFICIAL_CAREERS_URL,
-    createPrajIndustriesScraper,
-  } = await loadPrajIndustriesModule()
-  const requests = []
-  const jobs = await createPrajIndustriesScraper({
-    now: () => FIXED_SCRAPED_AT,
-    maxPages: 1,
-  }).run({
-    fetchText: async (url) => {
-      requests.push({ url, type: 'text' })
-      if (url === OFFICIAL_CAREERS_URL) return officialCareersHtml
-      throw new Error(`Unexpected text URL ${url}`)
-    },
-    fetchJson: async (url) => {
-      requests.push({ url, type: 'json' })
-      if (url === 'https://praj.darwinbox.in/ms/candidateapi/job?page=1') return listingPayload
-      if (url === 'https://praj.darwinbox.in/ms/candidateapi/job/a6a55a83432880') return detailPayload
-      throw new Error(`Unexpected JSON URL ${url}`)
-    },
-  })
-
-  assert.deepEqual(requests, [
-    {
-      url: 'https://www.praj.net/careers/',
-      type: 'text',
-    },
-    {
-      url: 'https://praj.darwinbox.in/ms/candidateapi/job?page=1',
-      type: 'json',
-    },
-    {
-      url: 'https://praj.darwinbox.in/ms/candidateapi/job/a6a55a83432880',
-      type: 'json',
-    },
-  ])
-
-  assert.deepEqual(jobs, [
-    {
-      title: 'Chief Manager_CNOS',
-      company: 'Praj Industries',
-      department: 'CNOS',
-      location: 'Praj Project Site (CNOS), Pune, Maharashtra, India',
-      city: 'Pune',
-      jobId: 'a6a55a83432880',
-      requisitionId: null,
-      sourceUrl: 'https://praj.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a55a83432880',
-      applyUrl: 'https://praj.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a55a83432880',
-      employmentType: 'Regular',
-      experienceRequired: '10 - 15 Years',
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: '14-Jul-2026',
-      closingDate: null,
-      jobDescription: '<p>Lead CNOS site execution.</p>',
-      source: 'prajindustries',
-      link: 'https://praj.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a55a83432880',
-      scrapedAt: FIXED_SCRAPED_AT,
-    },
-  ])
-})
-
-test('Praj Industries falls back to browser-backed Darwinbox API fetches when direct API requests return HTTP 403', async () => {
-  const {
-    OFFICIAL_CAREERS_URL,
-    createPrajIndustriesScraper,
-  } = await loadPrajIndustriesModule()
-  const requests = []
-  const browserRequests = []
-
-  const jobs = await createPrajIndustriesScraper({
-    now: () => FIXED_SCRAPED_AT,
-    maxPages: 1,
-  }).run({
-    fetchText: async (url) => {
-      requests.push({ url, type: 'text' })
-      if (url === OFFICIAL_CAREERS_URL) return officialCareersHtml
-      throw new Error(`Unexpected text URL ${url}`)
-    },
-    fetchJson: async (url) => {
-      requests.push({ url, type: 'json' })
-      throw new Error(`HTTP 403 for ${url}`)
-    },
-    fetchBrowserJson: async (url) => {
-      browserRequests.push(url)
-      if (url === 'https://praj.darwinbox.in/ms/candidateapi/job?page=1') return listingPayload
-      if (url === 'https://praj.darwinbox.in/ms/candidateapi/job/a6a55a83432880') return detailPayload
-      throw new Error(`Unexpected browser JSON URL ${url}`)
-    },
-  })
-
-  assert.deepEqual(requests, [
-    {
-      url: 'https://www.praj.net/careers/',
-      type: 'text',
-    },
-    {
-      url: 'https://praj.darwinbox.in/ms/candidateapi/job?page=1',
-      type: 'json',
-    },
-    {
-      url: 'https://praj.darwinbox.in/ms/candidateapi/job/a6a55a83432880',
-      type: 'json',
-    },
-  ])
-  assert.deepEqual(browserRequests, [
-    'https://praj.darwinbox.in/ms/candidateapi/job?page=1',
-    'https://praj.darwinbox.in/ms/candidateapi/job/a6a55a83432880',
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].jobId, 'a6a55a83432880')
-  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
-})
-
-test('Praj Industries fails closed when the verified official careers handoff drifts', async () => {
-  const { createPrajIndustriesScraper } = await loadPrajIndustriesModule()
-  const scraper = createPrajIndustriesScraper({
-    now: () => FIXED_SCRAPED_AT,
-  })
+test('Praj Industries fails closed when the verified careers handoff drifts, Darwinbox jobs become public, or the listing API is no longer blocked', async () => {
+  const praj = await loadPrajIndustriesModule()
 
   await assert.rejects(
-    scraper.run({
-      fetchText: async () => officialCareersHtml.replace(
-        'https://praj.darwinbox.in/ms/candidate/careers',
-        'https://example.com/jobs',
-      ),
-      fetchJson: async () => listingPayload,
+    praj.createPrajIndustriesScraper().run({
+      fetchPage: async (url) => {
+        if (url === praj.OFFICIAL_CAREERS_URL) {
+          return {
+            status: 200,
+            url,
+            finalUrl: url,
+            html: officialCareersHtml.replace(
+              'https://praj.darwinbox.in/ms/candidate/careers',
+              'https://example.com/jobs',
+            ),
+            errorKind: null,
+          }
+        }
+
+        return { status: 200, url, finalUrl: url, html: darwinboxCandidateV2ShellHtml, errorKind: null }
+      },
+      probeListingApi: async () => ({ status: 403, body: blockedListingApiHtml }),
     }),
-    /verified careers page/i,
+    /verified Darwinbox handoff/i,
+  )
+
+  await assert.rejects(
+    praj.createPrajIndustriesScraper().run({
+      fetchPage: async (url) => {
+        if (url === praj.OFFICIAL_CAREERS_URL) {
+          return { status: 200, url, finalUrl: url, html: officialCareersHtml, errorKind: null }
+        }
+
+        if (url === praj.DARWINBOX_PUBLIC_ALL_JOBS_URL) {
+          return {
+            status: 200,
+            url,
+            finalUrl: url,
+            html: '<html><body><h1>Current Openings</h1><button>Search Jobs</button><a href="/apply">Apply</a></body></html>',
+            errorKind: null,
+          }
+        }
+
+        return { status: 200, url, finalUrl: url, html: darwinboxCandidateV2ShellHtml, errorKind: null }
+      },
+      probeListingApi: async () => ({ status: 403, body: blockedListingApiHtml }),
+    }),
+    /public Darwinbox jobs surface/i,
+  )
+
+  await assert.rejects(
+    praj.createPrajIndustriesScraper().run({
+      fetchPage: async (url) => {
+        if (url === praj.OFFICIAL_CAREERS_URL) {
+          return { status: 200, url, finalUrl: url, html: officialCareersHtml, errorKind: null }
+        }
+
+        if (url === praj.DARWINBOX_CANDIDATE_CAREERS_URL) {
+          return { status: 200, url, finalUrl: url, html: darwinboxCandidateShellHtml, errorKind: null }
+        }
+
+        return { status: 200, url, finalUrl: url, html: darwinboxCandidateV2ShellHtml, errorKind: null }
+      },
+      probeListingApi: async () => ({
+        status: 200,
+        body: JSON.stringify({ data: [], job_counts: 0 }),
+      }),
+    }),
+    /listing api no longer matches the verified blocked state/i,
   )
 })

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  DEFAULT_JOB_RETENTION_DAYS,
   buildJobPostedAtCutoff,
   resolveJobMissesBeforeExpiry,
   resolveJobPostedAt,
@@ -40,8 +41,8 @@ test('resolveJobPostedAt uses the scrape date when the posting date is missing o
 
 test('job lifecycle configuration rejects unsafe or invalid values', () => {
   assert.equal(resolveJobRetentionDays('14'), 14)
-  assert.equal(resolveJobRetentionDays('0'), 30)
-  assert.equal(resolveJobRetentionDays('invalid'), 30)
+  assert.equal(resolveJobRetentionDays('0'), DEFAULT_JOB_RETENTION_DAYS)
+  assert.equal(resolveJobRetentionDays('invalid'), DEFAULT_JOB_RETENTION_DAYS)
   assert.equal(resolveJobMissesBeforeExpiry('3'), 3)
   assert.equal(resolveJobMissesBeforeExpiry('1'), 2)
   assert.equal(resolveJobMissesBeforeExpiry('invalid'), 2)

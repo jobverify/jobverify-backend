@@ -60,7 +60,7 @@ test('Techtree It Systems local catalog captures the verified first-party wp-job
   })
 })
 
-test('Rocket Software local catalog captures the verified careers handoff and recovered public Workday contract', async () => {
+test('Rocket Software local catalog captures the Cloudflare-gated careers handoff and current public Workday contract', async () => {
   const modulePath = path.resolve(currentDir, '../../scraper/rocketsoftware/script.js')
   const {
     ROCKET_SOFTWARE_CATALOG,
@@ -83,12 +83,14 @@ test('Rocket Software local catalog captures the verified careers handoff and re
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-careers-page+browser-fallback+public-workday-jobs-api+india-detail-pages',
+    'verified-careers-page-or-known-cloudflare-gate+public-workday-jobs-api+india-detail-pages',
   )
-  assert.equal(provider.verifiedOn, '2026-08-04')
+  assert.equal(provider.verifiedOn, '2026-08-13')
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /Cloudflare challenge/i)
-  assert.match(provider.verifiedSurfaceSummary, /5 India postings/i)
-  assert.match(provider.verifiedSurfaceSummary, /Software Engineer III - Java Full Stack Development/i)
+  assert.match(provider.verifiedSurfaceSummary, /2 India postings/i)
+  assert.match(provider.verifiedSurfaceSummary, /Software Engineer III/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior Accounts Receivable Specialist/i)
 
   assertBacklogRowMatches({
     provider,

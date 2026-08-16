@@ -13,14 +13,14 @@ const homepageHtml = `
   <!doctype html>
   <html lang="en">
     <head>
-      <title>Optym | Transportation Optimization Software</title>
+      <title>Transportation Optimization Software | Optym</title>
     </head>
     <body>
       <main>
-        <h1>Make the best move, not just a good one.</h1>
-        <p>In freight, speed matters, but so does precision.</p>
+        <h1>The best move, out of billions.</h1>
+        <p>We help transportation companies across road and rail make better decisions about their freight.</p>
         <section>
-          <div>10,000+</div>
+          <div>56,000+</div>
           <p>drivers routed daily</p>
           <p>Roadrunner</p>
         </section>
@@ -37,11 +37,12 @@ const careersHtml = `
     </head>
     <body>
       <main>
-        <h1>Careers</h1>
-        <h2>Let&apos;s grow together</h2>
+        <h1>Let&apos;s grow</h1>
+        <h2>together.</h2>
         <p>
-          Optym is where amazing people (like you) can do their best work.
+          Optym is where amazing people (like you) do their best work.
         </p>
+        <a href="#open-roles">See open roles</a>
         <section>
           <h2>What Optymers say about working here:</h2>
           <p>Wins are celebrated</p>
@@ -51,6 +52,9 @@ const careersHtml = `
           <p>250+</p>
           <p>Optymers around the world</p>
           <h2>You might be the perfect fit.</h2>
+        </section>
+        <section>
+          <h2>Find your lane.</h2>
         </section>
       </main>
     </body>
@@ -65,11 +69,12 @@ const publicJobsHtml = `
     </head>
     <body>
       <main>
-        <h1>Careers</h1>
-        <h2>Let's grow together</h2>
+        <h1>Let&apos;s grow</h1>
+        <h2>together.</h2>
         <p>
-          Optym is where amazing people (like you) can do their best work.
+          Optym is where amazing people (like you) do their best work.
         </p>
+        <a href="#open-roles">See open roles</a>
         <section>
           <h2>What Optymers say about working here:</h2>
           <p>Wins are celebrated</p>
@@ -78,7 +83,9 @@ const publicJobsHtml = `
           <p>250+</p>
           <p>Optymers around the world</p>
         </section>
-        <p>Current openings</p>
+        <section>
+          <h2>Find your lane.</h2>
+        </section>
         <article class="job-listing">
           <h2>Software Engineer</h2>
           <a href="/careers/software-engineer">Apply now</a>

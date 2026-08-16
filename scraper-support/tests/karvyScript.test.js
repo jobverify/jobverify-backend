@@ -80,6 +80,7 @@ test('Karvy sentinel helpers stay pinned to the verified inactive exact-name dom
   assert.equal(karvy.SOURCE, 'karvy')
   assert.equal(karvy.COMPANY, 'Karvy')
   assert.equal(karvy.HOMEPAGE_URL, 'https://www.karvy.com/')
+  assert.equal(karvy.LANDER_URL, 'https://www.karvyonline.com/lander')
   assert.deepEqual(karvy.PARKED_HOMEPAGE_URLS, [
     'https://karvy.com/',
     'https://www.karvy.com/',
@@ -91,6 +92,91 @@ test('Karvy sentinel helpers stay pinned to the verified inactive exact-name dom
   assert.equal(karvy.hasStaleCareerPageSignal(staleCareerPageHtml), true)
   assert.equal(karvy.hasPublicJobsSignal(staleCareerPageHtml), false)
   assert.equal(karvy.hasPublicJobsSignal(publicJobsHtml), true)
+})
+
+const redirectShellHtml = `
+<!DOCTYPE html>
+<html>
+  <head>
+    <script>
+      window.onload = function () {
+        window.location.href = "/lander"
+      }
+    </script>
+  </head>
+</html>
+`
+
+const parkedLanderHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+    <script>window.LANDER_SYSTEM="PW"</script>
+    <script>window._trfd=window._trfd||[],window._trfd.push({ap:"parking"})</script>
+    <script async src="https://img1.wsimg.com/signals/js/clients/scc-c2/scc-c2.min.js"></script>
+    <script defer src="https://img1.wsimg.com/parking-lander/static/js/main.16375edd.js"></script>
+    <link href="https://img1.wsimg.com/parking-lander/static/css/main.1a427d5f.css" rel="stylesheet" />
+  </head>
+  <body><div id="root"></div></body>
+</html>
+`
+
+test('Karvy recognizes the current legacy redirect-shell and parked-lander contract from Thursday, August 13, 2026', async () => {
+  const karvy = await loadKarvyModule()
+
+  assert.equal(karvy.PROVIDER_METADATA.verifiedOn, '2026-08-13')
+  assert.equal(karvy.hasRedirectToLanderSignal(redirectShellHtml), true)
+  assert.equal(karvy.hasParkedLanderSignal(parkedLanderHtml), true)
+})
+
+test('Karvy returns [] when the current legacy routes redirect into the parked lander instead of exposing public jobs', async () => {
+  const karvy = await loadKarvyModule()
+  const requestedUrls = []
+
+  const jobs = await karvy.createKarvyScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (karvy.PARKED_HOMEPAGE_URLS.includes(url)) {
+        return {
+          status: 200,
+          url,
+          finalUrl: 'https://karvy.com/',
+          html: parkedHomepageHtml,
+        }
+      }
+
+      if (url === karvy.LEGACY_HOMEPAGE_URL || url === karvy.CAREERS_URL) {
+        return {
+          status: 200,
+          url,
+          finalUrl: url,
+          html: redirectShellHtml,
+        }
+      }
+
+      if (url === karvy.LANDER_URL) {
+        return {
+          status: 200,
+          url,
+          finalUrl: url,
+          html: parkedLanderHtml,
+        }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    ...karvy.PARKED_HOMEPAGE_URLS,
+    karvy.LEGACY_HOMEPAGE_URL,
+    karvy.CAREERS_URL,
+    karvy.LANDER_URL,
+  ])
+  assert.deepEqual(jobs, [])
 })
 
 test('Karvy returns [] only while the verified exact-name domain stays inactive and the linked legacy careers page remains resume-only', async () => {

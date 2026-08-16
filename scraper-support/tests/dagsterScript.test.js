@@ -1,24 +1,35 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const OFFICIAL_CAREERS_HTML = `
+const OFFICIAL_HOMEPAGE_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers at Dagster | Help Shape Data's Future</title>
+    <title>Modern Data Orchestrator Platform | Dagster</title>
+  </head>
+  <body>
+    <div>Dagster is joining Prefect</div>
+    <main>
+      <h1>Modern Data Orchestrator Platform</h1>
+      <a href="/company/careers">Careers</a>
+      <footer>
+        <p>Copyright Â© 2026 Elementl, Inc. d.b.a. Dagster Labs. All rights reserved.</p>
+      </footer>
+    </main>
+  </body>
+</html>
+`
+
+const PREFECT_CAREERS_REDIRECT_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers at Prefect - Open Roles</title>
   </head>
   <body>
     <main>
-      <h1>Join the Dagster Team</h1>
-      <p>Help us shape the future of data orchestration.</p>
-      <a href="https://job-boards.greenhouse.io/dagsterlabs">View Open Positions</a>
-      <section>
-        <h2>Open Roles</h2>
-        <p>We're not currently hiring, but check back soon! In the meantime, feel free to follow us on LinkedIn.</p>
-      </section>
-      <footer>
-        <p>Copyright © 2026 Elementl, Inc. d.b.a. Dagster Labs. All rights reserved.</p>
-      </footer>
+      <h1>Careers at Prefect - Open Roles</h1>
+      <p>Join the team building modern workflow orchestration.</p>
     </main>
   </body>
 </html>
@@ -60,61 +71,111 @@ const loadDagsterModule = async () => {
   }
 }
 
-test('Dagster pins the verified official careers page and empty Greenhouse board constants', async () => {
+test('Dagster pins the verified Dagster homepage, Prefect redirect, and empty Greenhouse board constants', async () => {
   const dagster = await loadDagsterModule()
 
   assert.equal(dagster.SOURCE, 'dagster')
   assert.equal(dagster.COMPANY_NAME, 'Dagster')
   assert.equal(dagster.OFFICIAL_BRAND_NAME, 'Dagster Labs')
+  assert.equal(dagster.HOMEPAGE_URL, 'https://dagster.io/')
   assert.equal(dagster.CAREERS_URL, 'https://dagster.io/company/careers')
   assert.equal(dagster.GREENHOUSE_BOARD_URL, 'https://job-boards.greenhouse.io/dagsterlabs')
-  assert.equal(dagster.hasOfficialCareersPageSignal(OFFICIAL_CAREERS_HTML), true)
+  assert.equal(dagster.hasOfficialHomepageSignal(OFFICIAL_HOMEPAGE_HTML), true)
+  assert.equal(
+    dagster.isVerifiedPrefectCareersRedirect({
+      status: 200,
+      url: 'https://www.prefect.io/careers',
+      html: PREFECT_CAREERS_REDIRECT_HTML,
+    }, dagster.CAREERS_URL),
+    true,
+  )
   assert.equal(dagster.hasEmptyGreenhouseBoardSignal(GREENHOUSE_BOARD_HTML), true)
 })
 
-test('Dagster returns an honest empty result while the verified official careers and board surfaces remain empty', async () => {
+test('Dagster returns an honest empty result while the verified homepage, Prefect redirect, and empty Greenhouse board remain unchanged', async () => {
   const dagster = await loadDagsterModule()
   const requested = []
+  const requestedPages = []
 
   const jobs = await dagster.createDagsterScraper().run({
     fetchText: async (url) => {
       requested.push(url)
-      if (url === dagster.CAREERS_URL) return OFFICIAL_CAREERS_HTML
+      if (url === dagster.HOMEPAGE_URL) return OFFICIAL_HOMEPAGE_HTML
       if (url === dagster.GREENHOUSE_BOARD_URL) return GREENHOUSE_BOARD_HTML
       throw new Error(`Unexpected Dagster fixture URL: ${url}`)
+    },
+    fetchPage: async (url) => {
+      requestedPages.push(url)
+      if (url === dagster.CAREERS_URL) {
+        return {
+          status: 200,
+          url: 'https://www.prefect.io/careers',
+          html: PREFECT_CAREERS_REDIRECT_HTML,
+        }
+      }
+      throw new Error(`Unexpected Dagster fixture page URL: ${url}`)
     },
   })
 
   assert.deepEqual(requested, [
-    dagster.CAREERS_URL,
+    dagster.HOMEPAGE_URL,
     dagster.GREENHOUSE_BOARD_URL,
+  ])
+  assert.deepEqual(requestedPages, [
+    dagster.CAREERS_URL,
   ])
   assert.deepEqual(jobs, [])
 })
 
-test('Dagster fails closed when the verified careers page or empty Greenhouse board drifts', async () => {
+test('Dagster fails closed when the verified homepage, redirect target, or empty Greenhouse board drifts', async () => {
   const dagster = await loadDagsterModule()
 
   await assert.rejects(
     dagster.createDagsterScraper().run({
       fetchText: async (url) => {
-        if (url === dagster.CAREERS_URL) {
-          return OFFICIAL_CAREERS_HTML.replace('View Open Positions', 'Explore Roles')
+        if (url === dagster.HOMEPAGE_URL) {
+          return OFFICIAL_HOMEPAGE_HTML.replace('Dagster is joining Prefect', 'Dagster only')
         }
         return GREENHOUSE_BOARD_HTML
       },
+      fetchPage: async () => ({
+        status: 200,
+        url: 'https://www.prefect.io/careers',
+        html: PREFECT_CAREERS_REDIRECT_HTML,
+      }),
     }),
-    /verified dagster careers page/i,
+    /verified dagster homepage/i,
   )
 
   await assert.rejects(
     dagster.createDagsterScraper().run({
       fetchText: async (url) => {
-        if (url === dagster.CAREERS_URL) return OFFICIAL_CAREERS_HTML
+        if (url === dagster.HOMEPAGE_URL) return OFFICIAL_HOMEPAGE_HTML
         if (url === dagster.GREENHOUSE_BOARD_URL) return GREENHOUSE_BOARD_WITH_ROLE_HTML
         throw new Error(`Unexpected Dagster fixture URL: ${url}`)
       },
+      fetchPage: async () => ({
+        status: 200,
+        url: 'https://www.prefect.io/careers',
+        html: PREFECT_CAREERS_REDIRECT_HTML,
+      }),
     }),
     /verified dagster greenhouse board changed materially/i,
+  )
+
+  await assert.rejects(
+    dagster.createDagsterScraper().run({
+      fetchText: async (url) => {
+        if (url === dagster.HOMEPAGE_URL) return OFFICIAL_HOMEPAGE_HTML
+        if (url === dagster.GREENHOUSE_BOARD_URL) return GREENHOUSE_BOARD_HTML
+        throw new Error(`Unexpected Dagster fixture URL: ${url}`)
+      },
+      fetchPage: async () => ({
+        status: 200,
+        url: 'https://www.prefect.io/careers',
+        html: PREFECT_CAREERS_REDIRECT_HTML.replace('Careers at Prefect - Open Roles', 'Careers at Someone Else'),
+      }),
+    }),
+    /verified dagster careers redirect changed materially/i,
   )
 })

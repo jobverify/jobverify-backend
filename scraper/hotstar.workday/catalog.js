@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 16, 2026 that https://www.hotstar.com/ is the official Hotstar brand homepage, that https://www.jiostar.com/ is the live first-party JioStar corporate surface, and that its Careers handoff points to the public JioStar Workday board at https://jiostar.wd102.myworkdayjobs.com/JioStar. Verified that the public Workday jobs API at https://jiostar.wd102.myworkdayjobs.com/wday/cxs/jiostar/JioStar/jobs returns 84 India roles when queried with searchText=JioHotstar, including https://jiostar.wd102.myworkdayjobs.com/JioStar/job/Chennai---Kochar-Jade/Assistant-Manager---Marketing--JioHotstar--South-_JR11910 and its public apply URL. Also verified that legacy tech-jobs.hotstar.com is not a trustworthy active public board.'
+  'Verified on Friday, August 14, 2026 that https://www.hotstar.com/ still resolves to the official JioHotstar homepage, that https://www.jiostar.com/ currently returns a blocked 403 Error page referencing errors.edgesuite.net in this environment, and that the public JioStar Workday board at https://jiostar.wd102.myworkdayjobs.com/JioStar remains live. Verified that the public Workday jobs API at https://jiostar.wd102.myworkdayjobs.com/wday/cxs/jiostar/JioStar/jobs returns 96 keyword matches when queried with searchText=JioHotstar, including https://jiostar.wd102.myworkdayjobs.com/JioStar/job/Bengaluru---EGL/Senior-Director---Marketing--JioHotstar--South-_JR12076 and its public apply URL. Also verified that legacy tech-jobs.hotstar.com is not a trustworthy active public board.'
 
 export const HOTSTAR_CATALOG = {
   source: 'hotstar',
@@ -19,18 +19,18 @@ export const HOTSTAR_CATALOG = {
   jobsApiUrl: 'https://jiostar.wd102.myworkdayjobs.com/wday/cxs/jiostar/JioStar/jobs',
   verifiedKeyword: 'JioHotstar',
   verifiedJobUrl:
-    'https://jiostar.wd102.myworkdayjobs.com/JioStar/job/Chennai---Kochar-Jade/Assistant-Manager---Marketing--JioHotstar--South-_JR11910',
+    'https://jiostar.wd102.myworkdayjobs.com/JioStar/job/Bengaluru---EGL/Senior-Director---Marketing--JioHotstar--South-_JR12076',
   verifiedApplyUrl:
-    'https://jiostar.wd102.myworkdayjobs.com/JioStar/job/Chennai---Kochar-Jade/Assistant-Manager---Marketing--JioHotstar--South-_JR11910/apply',
+    'https://jiostar.wd102.myworkdayjobs.com/JioStar/job/Bengaluru---EGL/Senior-Director---Marketing--JioHotstar--South-_JR12076/apply',
   companyDomain: 'hotstar.com',
   atsPlatform: 'workday',
   countryFilter: 'India',
-  paginationStrategy: 'verified-parent-careers-handoff-plus-keyworded-workday-search',
+  paginationStrategy: 'verified-homepage-plus-blocked-careers-page-plus-keyworded-workday-search',
   extractionStrategy:
-    'verified-hotstar-brand-homepage+verified-jiostar-careers-page+verified-workday-board+keyworded-workday-jobs-api',
+    'verified-hotstar-brand-homepage+verified-blocked-jiostar-page+verified-workday-board+keyworded-workday-jobs-api',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-14',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

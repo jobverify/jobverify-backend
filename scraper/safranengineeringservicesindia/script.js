@@ -9,13 +9,21 @@ const config = loadConfig(currentDir)
 export const SOURCE = 'safranengineeringservicesindia'
 export const COMPANY = 'Safran Engineering Services India'
 export const PUBLIC_COMPANY_NAME = 'Safran Engineering Services'
-export const COMPANY_PAGE_URL = 'https://www.safran-group.com/companies/safran-engineering-services'
-export const LISTING_URL = 'https://www.safran-group.com/jobs?companies%5B%5D=636-safran-engineering-services&countries%5B%5D=1083-india'
+export const VERIFIED_ON = '2026-08-14'
+export const CAREERS_HOST = 'https://careers.safran-group.com'
+export const SEARCH_KEYWORDS = 'Safran Engineering Services'
+export const SEARCH_URL =
+  `${CAREERS_HOST}/offre-de-emploi/liste-toutes-offres.aspx?Keywords=Safran%20Engineering%20Services&LCID=1033`
 
-const LISTING_QUERY_COMPANY = '636-safran-engineering-services'
-const LISTING_QUERY_COUNTRY = '1083-india'
-const SAFRAN_HOSTNAME = 'www.safran-group.com'
 const INDIA = 'India'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36'
+
+const SAFRAN_HEADERS = {
+  'User-Agent': USER_AGENT,
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+}
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -31,6 +39,8 @@ const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&gt;/gi, '>')
 
 const stripTags = (value) => String(value ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
   .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/ul|\/ol)\b[^>]*>/gi, ' ')
   .replace(/<li\b[^>]*>/gi, ' ')
   .replace(/<[^>]+>/g, ' ')
@@ -44,49 +54,63 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
-const toAbsoluteUrl = (value, baseUrl = LISTING_URL) => {
-  if (!value) return null
+const normalizeSearchText = (value) => normalizeWhitespace(value)
+  ?.normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  || ''
+
+const normalizeSlashDate = (value) => {
+  const normalized = normalizeWhitespace(value)
+  const match = normalized?.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+  if (!match) return null
+
+  const [, month, day, year] = match
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+}
+
+const toAbsoluteUrl = (value, baseUrl = SEARCH_URL) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
 
   try {
-    return new URL(decodeHtmlEntities(value), baseUrl).toString()
+    return new URL(normalized, baseUrl).toString()
   } catch {
     return null
   }
 }
 
-const getSplitIndexes = (html) => [...String(html ?? '').matchAll(/<div class="c-offer-item js-block-link">/gi)]
-  .map((match) => match.index)
+const extractTitleText = (html) =>
+  normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
 
-const splitOfferCards = (html) => {
-  const pageHtml = String(html ?? '')
-  const indexes = getSplitIndexes(pageHtml)
+const extractMetaDescription = (html) =>
+  decodeHtmlEntities(
+    String(html ?? '').match(/<meta[^>]+name="Description"[^>]+content="([^"]+)"/i)?.[1] ?? '',
+  ).trim() || null
 
-  return indexes.map((start, index) => {
-    const end = indexes[index + 1] ?? pageHtml.length
-    return pageHtml.slice(start, end)
-  })
-}
+const extractFieldById = (html, fieldId) =>
+  normalizeWhitespace(String(html ?? '').match(new RegExp(`<p id="${fieldId}">([\\s\\S]*?)<\\/p>`, 'i'))?.[1])
 
-const extractInfoItems = (cardHtml) => {
-  const infoHtml = String(cardHtml ?? '')
-    .replace(/<svg[\s\S]*?<\/svg>/gi, '')
-    .replace(/<span class="c-offer-item__infos__item__icon[^"]*"[^>]*><\/span>/gi, '')
+const extractFieldListById = (html, fieldId) => [...String(html ?? '').matchAll(
+  new RegExp(`<p id="${fieldId}">([\\s\\S]*?)<\\/p>`, 'gi'),
+)]
+  .map((match) => normalizeWhitespace(match[1]))
+  .filter(Boolean)
 
-  return [...infoHtml.matchAll(/<span class="c-offer-item__infos__item">([\s\S]*?)<\/span>/gi)]
-    .map((match) => normalizeWhitespace(match[1]))
+const extractOfferIdFromUrl = (value) =>
+  normalizeWhitespace(String(value ?? '').match(/_(\d+)\.aspx(?:\?|$)/i)?.[1])
+
+const extractCountry = (geographicalArea) => {
+  const parts = normalizeWhitespace(geographicalArea)
+    ?.split(',')
+    .map((part) => normalizeWhitespace(part))
     .filter(Boolean)
+    || []
+
+  return parts.at(-1) || null
 }
 
-const getLastPathId = (value) => {
-  try {
-    const pathname = new URL(value).pathname.replace(/\/+$/, '')
-    return pathname.match(/-(\d+)$/)?.[1] || null
-  } catch {
-    return null
-  }
-}
-
-const buildLocation = (city, country = INDIA) => {
+const buildLocation = (city, country) => {
   const normalizedCity = normalizeWhitespace(city)
   const normalizedCountry = normalizeWhitespace(country)
 
@@ -97,227 +121,148 @@ const buildLocation = (city, country = INDIA) => {
   return normalizedCity || normalizedCountry || null
 }
 
-const extractCity = (location) => normalizeWhitespace(String(location ?? '').split(',')[0])
+const normalizeEmploymentType = (value) => normalizeWhitespace(value) || null
 
-const normalizeEmploymentType = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return null
-  if (/permanent/i.test(normalized)) return 'Permanent'
-  if (/fixed term/i.test(normalized)) return 'Fixed Term contract'
-  if (/intern/i.test(normalized)) return 'Internship'
-  if (/contract/i.test(normalized)) return 'Contract'
-  if (/full[\s-]?time/i.test(normalized)) return 'Full-time'
-  return normalized
-}
-
-const flattenJsonLdNodes = (value) => {
-  if (!value) return []
-  if (Array.isArray(value)) return value.flatMap((item) => flattenJsonLdNodes(item))
-  if (Array.isArray(value['@graph'])) return flattenJsonLdNodes(value['@graph'])
-  return [value]
-}
-
-const extractJsonLdNodes = (html) => {
-  const nodes = []
-
-  for (const match of String(html ?? '').matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
-    const raw = decodeHtmlEntities(match[1]).trim()
-    if (!raw) continue
-
-    try {
-      nodes.push(...flattenJsonLdNodes(JSON.parse(raw)))
-    } catch {
-      continue
-    }
+export const buildSearchUrl = (page = 1) => {
+  const normalizedPage = Math.max(1, Number(page) || 1)
+  if (normalizedPage <= 1) {
+    return SEARCH_URL
   }
 
-  return nodes
+  return `${SEARCH_URL}&page=${normalizedPage}`
 }
 
-const findJobPostingNode = (html) => extractJsonLdNodes(html)
-  .find((node) => {
-    const type = node?.['@type']
-    if (Array.isArray(type)) return type.includes('JobPosting')
-    return type === 'JobPosting'
-  }) || null
+export const createDefaultFetchText = ({
+  fetchImpl = fetch,
+} = {}) => async (url) => {
+  const response = await fetchImpl(url, {
+    headers: SAFRAN_HEADERS,
+    redirect: 'follow',
+  })
 
-const isSafranGroupUrl = (value) => {
-  try {
-    return new URL(value).hostname === SAFRAN_HOSTNAME
-  } catch {
-    return false
-  }
-}
-
-const buildDetailApplyUrl = (html, sourceUrl) => {
-  const applyCandidates = [
-    /<a[^>]+id="simple-apply"[^>]+href="([^"]+)"/i,
-    /<a[^>]+id="one-click-apply"[^>]+href="([^"]+)"/i,
-  ]
-
-  for (const pattern of applyCandidates) {
-    const relativeUrl = pattern.exec(String(html ?? ''))?.[1]
-    const absoluteUrl = toAbsoluteUrl(relativeUrl, sourceUrl)
-    if (absoluteUrl && isSafranGroupUrl(absoluteUrl)) {
-      return absoluteUrl
-    }
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} for ${url}`)
   }
 
-  return null
+  return response.text()
 }
 
-const extractDetailLocation = (jobPosting = {}, listing = {}) => {
-  const address = jobPosting.jobLocation?.address || {}
-  const city = normalizeWhitespace(address.addressLocality) || listing.city || null
-  const country = normalizeWhitespace(address.addressCountry) || listing.country || INDIA
-
-  return {
-    city,
-    country,
-    location: buildLocation(city, country) || listing.location || INDIA,
-  }
-}
-
-const extractDescription = (jobPosting = {}, html = '', listing = {}) =>
-  normalizeWhitespace(jobPosting.description)
-  || normalizeWhitespace(/<meta[^>]+name="description"[^>]+content="([^"]+)"/i.exec(html)?.[1])
-  || listing.jobDescription
-  || null
-
-export const buildListingUrl = (pageNumber = 1) => {
-  const normalizedPageNumber = Math.max(1, Number(pageNumber) || 1)
-  const url = new URL(LISTING_URL)
-
-  if (normalizedPageNumber > 1) {
-    url.searchParams.set('page', String(normalizedPageNumber - 1))
-  } else {
-    url.searchParams.delete('page')
-  }
-
-  return url.toString()
-}
-
-export const hasVerifiedCompanyPageSignal = (html) => {
+export const hasVerifiedSearchPageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
+  const normalizedTitle = normalizeSearchText(extractTitleText(rawHtml))
 
-  return /<title>\s*Safran Engineering Services\b[\s\S]*\|\s*Safran\s*<\/title>/i.test(rawHtml)
-    && /"name"\s*:\s*"Safran Engineering Services"/i.test(rawHtml)
-    && /<a href="\/countries\/india">India<\/a>/i.test(rawHtml)
-    && /Join Safran Engineering Services and take a look at our/i.test(rawHtml)
-    && /href="\/jobs\?companies%5B%5D=636-safran-engineering-services"/i.test(rawHtml)
+  return normalizedTitle.startsWith(normalizeSearchText('Safran - Search results'))
+    && normalizedTitle.includes(normalizeSearchText(`Keywords : ${SEARCH_KEYWORDS}`))
+    && /offerRss\.ashx\?lcid=1033&amp;Keywords=Safran%20Engineering%20Services/i.test(rawHtml)
+    && /ts-offer-list-item offerlist-item/i.test(rawHtml)
 }
 
-export const hasVerifiedListingPageSignal = (html) => {
-  const rawHtml = String(html ?? '')
-
-  return /<body[^>]+class="[^"]*\blist_job_offers\b/i.test(rawHtml)
-    && /<title>\s*Job openings\s*\|\s*Safran\s*<\/title>/i.test(rawHtml)
-    && /c-structured-news-list__results--nb/i.test(rawHtml)
-    && new RegExp(PUBLIC_COMPANY_NAME, 'i').test(rawHtml)
-    && /https:\/\/www\.safran-group\.com\/jobs\/india\//i.test(rawHtml)
-    && new RegExp(LISTING_QUERY_COMPANY, 'i').test(rawHtml)
-    && new RegExp(LISTING_QUERY_COUNTRY, 'i').test(rawHtml)
-}
-
-const hasVerifiedDetailSignal = (html) => {
-  const rawHtml = String(html ?? '')
-  const jobPosting = findJobPostingNode(rawHtml)
-  const country = normalizeWhitespace(jobPosting?.jobLocation?.address?.addressCountry)
-  const detailApplyUrl = buildDetailApplyUrl(rawHtml, LISTING_URL)
-
-  return /<body[^>]+class="[^"]*\bjob_offer\b/i.test(rawHtml)
-    && /Safran Engineering Services/i.test(rawHtml)
-    && jobPosting != null
-    && country === INDIA
-    && Boolean(detailApplyUrl)
-  }
-
-export const extractTotalPages = (html) => {
-  const pageNumbers = [...String(html ?? '').matchAll(/(?:aria-label="Page\s*\d+"[^>]*>|class="pagination__page"[^>]*>)(?:<span[^>]*>[^<]*<\/span>)?(\d+)/gi)]
+export const extractTotalPages = (html = '') => {
+  const pageNumbers = [...String(html ?? '').matchAll(/liste-toutes-offres\.aspx\?[^"]*page=(\d+)/gi)]
     .map((match) => Number.parseInt(match[1], 10))
     .filter(Number.isFinite)
 
   if (!pageNumbers.length) {
-    return splitOfferCards(html).length ? 1 : 0
+    return extractSearchResults(html).length ? 1 : 0
   }
 
   return Math.max(...pageNumbers)
 }
 
-export const extractSearchResults = (html) => splitOfferCards(html)
-  .map((cardHtml) => {
-    const titleAnchor = /<a[^>]*class="[^"]*\bc-offer-item__title\b[^"]*"[^>]*>([\s\S]*?)<\/a>/i.exec(cardHtml)?.[0] || null
-    const sourceUrl = toAbsoluteUrl(/href="([^"]+)"/i.exec(titleAnchor || '')?.[1], LISTING_URL)
-    const title = normalizeWhitespace(/<a[^>]*>([\s\S]*?)<\/a>/i.exec(titleAnchor || '')?.[1])
-    const infoItems = extractInfoItems(cardHtml)
-    const companyLabel = infoItems[0] || null
-    const location = infoItems[1] || null
-    const employmentType = infoItems[3] || null
-    const department = infoItems[4] || null
-    const postingDate = normalizeWhitespace(/<span class="c-offer-item__date">([^<]+)<\/span>/i.exec(cardHtml)?.[1])
-    const jobId = getLastPathId(sourceUrl)
+export const extractSearchResults = (html = '') => [...String(html ?? '').matchAll(
+  /<li class="ts-offer-list-item offerlist-item[\s\S]*?<ul class="ts-offer-list-item__description [\s\S]*?<\/ul>/gi,
+)]
+  .map((match) => {
+    const block = match[0]
+    const titleAnchor = block.match(
+      /<a[^>]*class="[^"]*\bts-offer-list-item__title-link\b[^"]*"[^>]*>[\s\S]*?<\/a>/i,
+    )?.[0] || ''
+    const sourceUrl = toAbsoluteUrl(titleAnchor.match(/href="([^"]+)"/i)?.[1], SEARCH_URL)
+    const title = normalizeWhitespace(titleAnchor.match(/>([\s\S]*?)<\/a>/i)?.[1])
+    const detailsHtml = block.match(/<ul class="ts-offer-list-item__description [\s\S]*?<\/ul>/i)?.[0] || ''
+    const details = [...detailsHtml.matchAll(/<li(?: [^>]*)?>([\s\S]*?)<\/li>/gi)]
+      .map((item) => normalizeWhitespace(item[1]))
+      .filter(Boolean)
+    const city = normalizeWhitespace(details[3])
+    const requisitionId = normalizeWhitespace(details[0]?.match(/Ref\.\s*:\s*([A-Z0-9-]+)/i)?.[1])
+    const offerId = extractOfferIdFromUrl(sourceUrl)
 
-    if (!sourceUrl || !title || !jobId) return null
-    if (companyLabel !== PUBLIC_COMPANY_NAME) return null
-    if (!/\bIndia\b/i.test(location || '')) return null
+    if (!sourceUrl || !title || !requisitionId || !offerId || !city) {
+      return null
+    }
 
     return {
       title,
       company: COMPANY,
-      department: normalizeWhitespace(department),
-      location: normalizeWhitespace(location),
-      city: extractCity(location),
-      country: INDIA,
-      jobId,
-      requisitionId: jobId,
+      department: null,
+      location: city,
+      city,
+      country: null,
+      jobId: offerId,
+      requisitionId,
       sourceUrl,
       applyUrl: sourceUrl,
-      employmentType: normalizeEmploymentType(employmentType),
+      employmentType: normalizeEmploymentType(details[2]),
       experienceRequired: null,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate,
+      postingDate: normalizeSlashDate(details[1]),
       closingDate: null,
       jobDescription: null,
     }
   })
   .filter(Boolean)
 
+export const hasVerifiedDetailSignal = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const normalizedTitle = normalizeSearchText(extractTitleText(rawHtml))
+  const metaDescription = extractMetaDescription(rawHtml)
+
+  return normalizedTitle.startsWith(normalizeSearchText('Safran - '))
+    && metaDescription?.includes(`Offre d'emploi ${PUBLIC_COMPANY_NAME} -`)
+    && Boolean(extractFieldById(rawHtml, 'fldjobdescription_jobtitle'))
+    && Boolean(extractFieldById(rawHtml, 'fldlocation_location_geographicalareacollection'))
+    && Boolean(extractFieldById(rawHtml, 'fldlocation_joblocation'))
+}
+
 export const extractJobDetail = (html, listing = {}) => {
   const rawHtml = String(html ?? '')
-  const jobPosting = findJobPostingNode(rawHtml) || {}
-  const { city, country, location } = extractDetailLocation(jobPosting, listing)
+  const geographicalArea = extractFieldById(rawHtml, 'fldlocation_location_geographicalareacollection')
+  const city = extractFieldById(rawHtml, 'fldlocation_joblocation') || listing.city || null
+  const country = extractCountry(geographicalArea) || listing.country || null
+  const descriptionBlocks = [
+    ...extractFieldListById(rawHtml, 'fldjobdescription_description1'),
+    ...extractFieldListById(rawHtml, 'fldjobdescription_longtext2'),
+    ...extractFieldListById(rawHtml, 'fldjobdescription_description2'),
+  ]
 
   return {
     ...listing,
-    title: normalizeWhitespace(jobPosting.title) || listing.title || null,
+    title: extractFieldById(rawHtml, 'fldjobdescription_jobtitle') || listing.title || null,
     company: COMPANY,
-    department: normalizeWhitespace(jobPosting.industry) || listing.department || null,
-    location,
+    department: extractFieldById(rawHtml, 'fldjobdescription_primaryprofile') || listing.department || null,
+    location: buildLocation(city, country),
     city,
     country,
-    jobId: getLastPathId(listing.sourceUrl || LISTING_URL) || listing.jobId || null,
-    requisitionId: normalizeWhitespace(jobPosting.identifier) || listing.requisitionId || listing.jobId || null,
-    applyUrl: buildDetailApplyUrl(rawHtml, listing.sourceUrl || LISTING_URL) || listing.applyUrl || null,
-    employmentType: normalizeEmploymentType(jobPosting.employmentType || listing.employmentType),
-    experienceRequired: null,
-    minimumQualification: null,
+    jobId: listing.jobId || extractOfferIdFromUrl(listing.sourceUrl || rawHtml) || null,
+    requisitionId: listing.requisitionId || null,
+    sourceUrl: listing.sourceUrl || null,
+    applyUrl: listing.applyUrl || listing.sourceUrl || null,
+    employmentType: normalizeEmploymentType(
+      extractFieldById(rawHtml, 'fldjobdescription_contract') || listing.employmentType,
+    ),
+    experienceRequired: extractFieldById(rawHtml, 'fldapplicantcriteria_experiencelevel'),
+    minimumQualification: extractFieldById(rawHtml, 'fldapplicantcriteria_educationlevel'),
     preferredQualification: null,
     requiredSkills: [],
     postingDate: listing.postingDate || null,
     closingDate: null,
-    jobDescription: extractDescription(jobPosting, rawHtml, listing),
+    jobDescription: normalizeWhitespace(descriptionBlocks.join('\n\n')) || extractMetaDescription(rawHtml),
   }
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: { Accept: 'text/html,application/xhtml+xml' },
-  })
-  if (!response.ok) throw new Error(`Safran Engineering Services API-only fetch returned HTTP ${response.status} for ${url}`)
-  return response.text()
-}
+const defaultFetchText = createDefaultFetchText()
 
 export const createSafranEngineeringServicesIndiaScraper = ({
   maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
@@ -328,60 +273,55 @@ export const createSafranEngineeringServicesIndiaScraper = ({
     const fetchText = options.fetchText || defaultFetchText
     const now = options.now || defaultNow
 
-    {
-
-      const companyPageHtml = await fetchText(COMPANY_PAGE_URL)
-      if (!hasVerifiedCompanyPageSignal(companyPageHtml)) {
-        throw new Error('The verified Safran Engineering Services company page no longer matches the known public surface')
-      }
-
-      const firstListingPageHtml = await fetchText(buildListingUrl(1))
-      if (!hasVerifiedListingPageSignal(firstListingPageHtml)) {
-        throw new Error('The verified Safran India jobs listing no longer matches the known public surface')
-      }
-
-      const totalPages = extractTotalPages(firstListingPageHtml)
-      const pageLimit = Math.min(totalPages || 1, maxPages)
-      const jobs = []
-      const seenJobIds = new Set()
-
-      for (let pageNumber = 1; pageNumber <= pageLimit; pageNumber += 1) {
-        const listingPageHtml = pageNumber === 1
-          ? firstListingPageHtml
-          : await fetchText(buildListingUrl(pageNumber))
-
-        if (!hasVerifiedListingPageSignal(listingPageHtml)) {
-          throw new Error(`The verified Safran India jobs listing no longer matches the known public surface on page ${pageNumber}`)
-        }
-
-        const listings = extractSearchResults(listingPageHtml)
-
-        for (const listing of listings) {
-          if (!listing.jobId || seenJobIds.has(listing.jobId)) continue
-          seenJobIds.add(listing.jobId)
-
-          const detailHtml = await fetchText(listing.sourceUrl)
-          if (!hasVerifiedDetailSignal(detailHtml)) {
-            throw new Error(`The verified Safran detail page no longer matches the known public surface for ${listing.sourceUrl}`)
-          }
-
-          const job = extractJobDetail(detailHtml, listing)
-
-          jobs.push({
-            ...job,
-            source: SOURCE,
-            link: job.applyUrl || job.sourceUrl,
-            scrapedAt: now(),
-          })
-
-          if (jobs.length >= maxJobs) {
-            return jobs
-          }
-        }
-      }
-
-      return jobs
+    const firstPageHtml = await fetchText(buildSearchUrl(1))
+    if (!hasVerifiedSearchPageSignal(firstPageHtml)) {
+      throw new Error('The verified accessible Safran Engineering Services search page no longer matches the trusted first-party careers surface')
     }
+
+    const totalPages = Math.min(extractTotalPages(firstPageHtml) || 1, maxPages)
+    const jobs = []
+    const seenJobIds = new Set()
+
+    for (let page = 1; page <= totalPages; page += 1) {
+      const pageHtml = page === 1
+        ? firstPageHtml
+        : await fetchText(buildSearchUrl(page))
+
+      if (!hasVerifiedSearchPageSignal(pageHtml)) {
+        throw new Error(`The verified accessible Safran Engineering Services search page no longer matches the trusted first-party careers surface on page ${page}`)
+      }
+
+      const listings = extractSearchResults(pageHtml)
+      if (listings.length === 0) {
+        throw new Error('The verified accessible Safran Engineering Services search page no longer exposes company-specific job cards')
+      }
+
+      for (const listing of listings) {
+        if (!listing.jobId || seenJobIds.has(listing.jobId)) continue
+        seenJobIds.add(listing.jobId)
+
+        const detailHtml = await fetchText(listing.sourceUrl)
+        if (!hasVerifiedDetailSignal(detailHtml)) {
+          throw new Error(`The verified Safran Engineering Services detail page no longer matches the accessible first-party careers surface for ${listing.sourceUrl}`)
+        }
+
+        const job = extractJobDetail(detailHtml, listing)
+        if (job.country !== INDIA) continue
+
+        jobs.push({
+          ...job,
+          source: SOURCE,
+          link: job.applyUrl || job.sourceUrl,
+          scrapedAt: now(),
+        })
+
+        if (jobs.length >= maxJobs) {
+          return jobs
+        }
+      }
+    }
+
+    return jobs
   },
 })
 

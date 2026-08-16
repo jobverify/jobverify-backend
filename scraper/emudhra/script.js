@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { EMUDHRA_CATALOG } from './catalog.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -19,6 +20,9 @@ export const SITEMAP_URL = PROVIDER_METADATA.sitemapUrl
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const BROWSER_FALLBACK_ERROR_PATTERN =
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to verify the first certificate|unable to get local issuer certificate|self signed certificate|certificate has expired|unable_to_verify_leaf_signature/i
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
@@ -52,6 +56,30 @@ const normalizeWhitespace = (value) => String(value ?? '')
 const extractTitle = (html = '') => {
   const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
   return normalizeWhitespace(match?.[1]) || null
+}
+
+const describeError = (error) => {
+  const visited = new Set()
+  const parts = []
+  let current = error
+
+  while (current && !visited.has(current)) {
+    visited.add(current)
+
+    if (current?.code) {
+      parts.push(String(current.code))
+    }
+
+    if (current?.message) {
+      parts.push(String(current.message))
+    } else if (typeof current === 'string') {
+      parts.push(current)
+    }
+
+    current = current?.cause
+  }
+
+  return parts.join(' | ')
 }
 
 const matchesCareersTitle = (title, market) =>
@@ -138,45 +166,93 @@ export const sitemapListsOpeningsRoute = (xml = '') => (
   /https:\/\/emudhra\.com\/en(?:-in)?\/careers-open-positions/i.test(String(xml ?? ''))
 )
 
+const isBrowserFallbackError = (error) => BROWSER_FALLBACK_ERROR_PATTERN.test(describeError(error))
+
+export const isEmudhraVerifiedTimeoutBlocker = (error) =>
+  /connect timeout error|timed out|timeout|fetch failed|getaddrinfo|err_connection_timed_out|other side closed|terminated/i
+    .test(String(error?.message ?? error?.cause?.message ?? error ?? ''))
+
 export const createEmudhraScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+  async run({ fetchPage = defaultFetchPage, fetchBrowserPage } = {}) {
+    let browserSession = null
 
-    if (Number(homepage.status) !== 200 || !hasHomepageSignal(homepage.html)) {
-      throw new Error('eMudhra verified homepage no longer matches the known India homepage surface')
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    const indiaCareersPage = await fetchPage(CAREER_PAGE_URL)
+    const browserPageFetcher = fetchBrowserPage || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchPage(url)
+    })
 
-    if (Number(indiaCareersPage.status) !== 200 || !hasIndiaCareersSignal(indiaCareersPage.html)) {
-      throw new Error('eMudhra verified India careers page no longer matches the known first-party surface')
-    }
+    const fetchVerifiedPage = async (url) => {
+      try {
+        return await fetchPage(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
 
-    const globalCareersPage = await fetchPage(GLOBAL_CAREER_PAGE_URL)
-
-    if (Number(globalCareersPage.status) !== 200 || !hasGlobalCareersSignal(globalCareersPage.html)) {
-      throw new Error('eMudhra verified global careers page no longer matches the known first-party surface')
-    }
-
-    for (const routeUrl of CHECKED_BROKEN_OPENINGS_URLS) {
-      const routePage = await fetchPage(routeUrl)
-
-      if (!hasBrokenOpeningsSignal(routePage)) {
-        throw new Error(`eMudhra verified broken openings route changed: ${routeUrl}`)
+        return browserPageFetcher(url)
       }
     }
 
-    const sitemapPage = await fetchPage(SITEMAP_URL)
+    try {
+      let homepage
+      try {
+        homepage = await fetchVerifiedPage(HOMEPAGE_URL)
+      } catch (error) {
+        if (isEmudhraVerifiedTimeoutBlocker(error)) {
+          return []
+        }
 
-    if (
-      Number(sitemapPage.status) !== 200
-      || !sitemapHasCareersRoute(sitemapPage.html)
-      || sitemapListsOpeningsRoute(sitemapPage.html)
-    ) {
-      throw new Error('eMudhra verified sitemap changed')
+        throw error
+      }
+
+      if (Number(homepage.status) !== 200 || !hasHomepageSignal(homepage.html)) {
+        throw new Error('eMudhra verified homepage no longer matches the known India homepage surface')
+      }
+
+      const indiaCareersPage = await fetchVerifiedPage(CAREER_PAGE_URL)
+
+      if (Number(indiaCareersPage.status) !== 200 || !hasIndiaCareersSignal(indiaCareersPage.html)) {
+        throw new Error('eMudhra verified India careers page no longer matches the known first-party surface')
+      }
+
+      const globalCareersPage = await fetchVerifiedPage(GLOBAL_CAREER_PAGE_URL)
+
+      if (Number(globalCareersPage.status) !== 200 || !hasGlobalCareersSignal(globalCareersPage.html)) {
+        throw new Error('eMudhra verified global careers page no longer matches the known first-party surface')
+      }
+
+      for (const routeUrl of CHECKED_BROKEN_OPENINGS_URLS) {
+        const routePage = await fetchVerifiedPage(routeUrl)
+
+        if (!hasBrokenOpeningsSignal(routePage)) {
+          throw new Error(`eMudhra verified broken openings route changed: ${routeUrl}`)
+        }
+      }
+
+      const sitemapPage = await fetchVerifiedPage(SITEMAP_URL)
+
+      if (
+        Number(sitemapPage.status) !== 200
+        || !sitemapHasCareersRoute(sitemapPage.html)
+        || sitemapListsOpeningsRoute(sitemapPage.html)
+      ) {
+        throw new Error('eMudhra verified sitemap changed')
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
     }
-
-    return []
   },
 })
 

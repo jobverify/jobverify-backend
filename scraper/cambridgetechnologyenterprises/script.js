@@ -13,6 +13,7 @@ export const COMPANY_NAME = PROVIDER_METADATA.companyName
 export const SOURCE = PROVIDER_METADATA.source
 export const COUNTRY_FILTER = PROVIDER_METADATA.countryFilter
 export const OFFICIAL_HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
+export const CAREERS_LANDING_URL = PROVIDER_METADATA.officialCareersLandingUrl
 export const LISTING_URL = PROVIDER_METADATA.officialJobsBoardUrl
 export const DETAIL_URL_PATTERN = PROVIDER_METADATA.detailUrlPattern
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
@@ -149,18 +150,39 @@ const extractExperienceRequired = (value) => {
   return null
 }
 
-export const extractFreshteamJobsUrl = (html) =>
-  toAbsoluteUrl(firstMatch(html, [
-    /<a[^>]+href="([^"]*cambridgetechnology\.freshteam\.com\/jobs[^"]*)"/i,
-  ]), OFFICIAL_HOMEPAGE_URL)
+export const extractFreshteamJobsUrl = (html) => {
+  const matches = [...String(html ?? '').matchAll(
+    /<a[^>]+href="([^"]*cambridgetechnology\.freshteam\.com\/jobs[^"]*)"/gi,
+  )]
+    .map((match) => toAbsoluteUrl(match[1], OFFICIAL_HOMEPAGE_URL))
+    .filter(Boolean)
+
+  return matches.find((url) => isVerifiedFreshteamJobsUrl(url))
+    || matches[0]
+    || null
+}
 
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
 
-  return /\bCambridge Technology\b/i.test(normalized)
-    && /\bEnterprise AI,\s*Data\s*&\s*SaaS Applications\b/i.test(normalized)
-    && /\bSee Open Positions\b/i.test(normalized)
+  return /<title>\s*AI Cloud Solutions\s*\|\s*Cambridge Technology Inc\.\s*<\/title>/i.test(rawHtml)
+    && /\bCambridge Technology\b/i.test(normalized)
+    && /\bLeap to The Future with AI at Your Core\b/i.test(normalized)
+    && /\bCareers\b/i.test(normalized)
+    && /href="(?:https:\/\/www\.ctepl\.com)?\/careers\/"/i.test(rawHtml)
+}
+
+export const hasOfficialCareersLandingSignal = (html) => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml) || ''
+
+  return /<title>\s*Careers\s*-\s*Cambridge Technology Inc\.\s*<\/title>/i.test(rawHtml)
+    && /\bCome,\s*Be a Part of the Future of Technology\b/i.test(normalized)
+    && /\bStudents\/\s*Internships\b/i.test(normalized)
+    && /\bFreshers\/\s*Graduates\b/i.test(normalized)
+    && /\bExperienced Professionals INDIA\b/i.test(normalized)
+    && /\bOpen Positions\b/i.test(normalized)
     && isVerifiedFreshteamJobsUrl(extractFreshteamJobsUrl(rawHtml))
 }
 
@@ -354,10 +376,17 @@ export const createCambridgeTechnologyEnterprisesScraper = ({
       )
     }
 
-    const listingUrl = extractFreshteamJobsUrl(officialHtml)
+    const careersLandingHtml = await fetchText(CAREERS_LANDING_URL)
+    if (!hasOfficialCareersLandingSignal(careersLandingHtml)) {
+      throw new Error(
+        'Cambridge Technology Enterprises verified first-party careers landing no longer matches the trusted public surface',
+      )
+    }
+
+    const listingUrl = extractFreshteamJobsUrl(careersLandingHtml)
     if (!isVerifiedFreshteamJobsUrl(listingUrl)) {
       throw new Error(
-        'Verified official homepage handoff no longer points to the known Cambridge Technology Freshteam board',
+        'Verified first-party careers landing no longer points to the known Cambridge Technology Freshteam board',
       )
     }
 

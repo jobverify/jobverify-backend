@@ -72,7 +72,7 @@ const parseCsvRows = (csvText) => {
   })
 }
 
-test('generated dedicated scraper backfill manifest stays aligned with local folder files', () => {
+test('generated dedicated scraper backfill manifest stays aligned with local source files', () => {
   assert.equal(BACKFILL_MANIFEST.length, 586)
 
   for (const provider of BACKFILL_MANIFEST) {
@@ -83,7 +83,7 @@ test('generated dedicated scraper backfill manifest stays aligned with local fol
 
     assert.equal(existsSync(path.join(sourceDir, 'catalog.js')), true, `${provider.source} should have catalog.js`)
     assert.equal(existsSync(path.join(sourceDir, 'script.js')), true, `${provider.source} should have script.js`)
-    assert.equal(existsSync(path.join(sourceDir, 'jobs.json')), true, `${provider.source} should have jobs.json`)
+    assert.match(String(provider.dryRunFile || ''), /(?:^|[\\/])jobs\.json$/i, `${provider.source} should resolve dry runs to jobs.json`)
   }
 })
 

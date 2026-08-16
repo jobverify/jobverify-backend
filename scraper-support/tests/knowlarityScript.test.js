@@ -84,7 +84,7 @@ test('Knowlarity pins the verified official empty-state careers page and embedde
 
   assert.equal(knowlarity.SOURCE, 'knowlarity')
   assert.equal(knowlarity.COMPANY, 'Knowlarity')
-  assert.equal(knowlarity.VERIFIED_ON, '2026-07-16')
+  assert.equal(knowlarity.VERIFIED_ON, '2026-08-15')
   assert.equal(knowlarity.HOMEPAGE_URL, 'https://www.knowlarity.com/')
   assert.equal(knowlarity.CAREERS_URL, 'https://www.knowlarity.com/careers')
 
@@ -111,6 +111,47 @@ test('Knowlarity sentinel returns [] only while the official careers page stays 
   })
 
   assert.deepEqual(requestedUrls, [knowlarity.CAREERS_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('Knowlarity falls back to the browser-backed page fetch when direct TLS validation fails', async () => {
+  const knowlarity = await loadKnowlarityModule()
+  const requestedUrls = []
+
+  const jobs = await knowlarity.createKnowlarityScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(`direct:${url}`)
+      throw new Error('fetch failed | unable to verify the first certificate')
+    },
+    fetchBrowserPage: async (url) => {
+      requestedUrls.push(`browser:${url}`)
+      return { status: 200, url, html: careersPageHtml }
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    `direct:${knowlarity.CAREERS_URL}`,
+    `browser:${knowlarity.CAREERS_URL}`,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Knowlarity returns an empty result when the verified careers shell is temporarily timeout-blocked', async () => {
+  const knowlarity = await loadKnowlarityModule()
+
+  const jobs = await knowlarity.createKnowlarityScraper().run({
+    fetchPage: async () => {
+      throw new Error(
+        'fetch failed | Connect Timeout Error (attempted address: www.knowlarity.com:443, timeout: 10000ms)',
+      )
+    },
+    fetchBrowserPage: async () => {
+      throw new Error(
+        'fetch failed | Connect Timeout Error (attempted address: www.knowlarity.com:443, timeout: 10000ms)',
+      )
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })
 

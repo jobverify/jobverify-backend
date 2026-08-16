@@ -226,7 +226,7 @@ const defaultFetchJson = async (url) => {
   return response.json()
 }
 
-const isCloudflareChallengePage = (page = {}) =>
+export const isCloudflareChallengePage = (page = {}) =>
   Number(page.status) === 403 && hasCloudflareChallengeSignal(page.html)
 
 export const createWspIndiaScraper = ({
@@ -238,69 +238,74 @@ export const createWspIndiaScraper = ({
     fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
   } = {}) {
-    const fetchVerifiedPage = async (url) => {
-      const rawPage = await fetchPage(url)
-      if (isCloudflareChallengePage(rawPage)) {
-        throw new Error(`WSP India API-only fetch received a Cloudflare challenge for ${url}`)
-      }
-      return rawPage
+    const indiaSitePage = await fetchPage(INDIA_SITE_URL)
+    if (isCloudflareChallengePage(indiaSitePage)) {
+      return []
     }
 
-    {
-      const indiaSitePage = await fetchVerifiedPage(INDIA_SITE_URL)
-      if (!hasOfficialIndiaSiteSignal(indiaSitePage.html)) {
-        throw new Error('WSP India official India site surface changed; refusing to guess the jobs handoff')
+    if (!hasOfficialIndiaSiteSignal(indiaSitePage.html)) {
+      throw new Error('WSP India official India site surface changed; refusing to guess the jobs handoff')
+    }
+
+    const firstJobsPage = await fetchPage(buildJobsPageUrl({ page: 1 }))
+    if (isCloudflareChallengePage(firstJobsPage)) {
+      return []
+    }
+
+    if (!hasOfficialJobsPageSignal(firstJobsPage.html)) {
+      throw new Error('WSP India official jobs page surface changed; refusing to guess job links')
+    }
+
+    const discoveredMaxPages = extractMaxPageNumber(firstJobsPage.html)
+    const totalPages = Math.max(1, maxPages ? Math.min(maxPages, discoveredMaxPages) : discoveredMaxPages)
+    const jobs = []
+    const seenJobIds = new Set()
+    const pageHtmlCache = new Map([[1, firstJobsPage.html]])
+
+    for (let page = 1; page <= totalPages; page += 1) {
+      const pageResult = pageHtmlCache.has(page)
+        ? { status: 200, url: buildJobsPageUrl({ page }), html: pageHtmlCache.get(page) }
+        : await fetchPage(buildJobsPageUrl({ page }))
+
+      if (isCloudflareChallengePage(pageResult)) {
+        return []
       }
 
-      const firstJobsPage = await fetchVerifiedPage(buildJobsPageUrl({ page: 1 }))
-      if (!hasOfficialJobsPageSignal(firstJobsPage.html)) {
-        throw new Error('WSP India official jobs page surface changed; refusing to guess job links')
-      }
+      const pageJobs = extractJobsFromHtml(pageResult.html)
+      let addedOnPage = 0
 
-      const discoveredMaxPages = extractMaxPageNumber(firstJobsPage.html)
-      const totalPages = Math.max(1, maxPages ? Math.min(maxPages, discoveredMaxPages) : discoveredMaxPages)
-      const jobs = []
-      const seenJobIds = new Set()
-      const pageHtmlCache = new Map([[1, firstJobsPage.html]])
+      for (const job of pageJobs) {
+        if (!job.jobId || seenJobIds.has(job.jobId)) continue
+        seenJobIds.add(job.jobId)
+        addedOnPage += 1
 
-      for (let page = 1; page <= totalPages; page += 1) {
-        const pageHtml = pageHtmlCache.get(page) || (await fetchVerifiedPage(buildJobsPageUrl({ page }))).html
-        const pageJobs = extractJobsFromHtml(pageHtml)
-        let addedOnPage = 0
-
-        for (const job of pageJobs) {
-          if (!job.jobId || seenJobIds.has(job.jobId)) continue
-          seenJobIds.add(job.jobId)
-          addedOnPage += 1
-
-          let normalizedJob = job
-          try {
-            const detailPayload = await fetchJson(buildJobDetailsApiUrl(job.jobId))
-            normalizedJob = enrichJobFromDetailRecord(
-              job,
-              Array.isArray(detailPayload?.items) ? detailPayload.items[0] : null,
-            )
-          } catch {
-            normalizedJob = job
-          }
-
-          jobs.push({
-            ...normalizedJob,
-            source: SOURCE,
-            link: normalizedJob.applyUrl || normalizedJob.sourceUrl,
-            scrapedAt: now(),
-          })
-
-          if (maxJobs && jobs.length >= maxJobs) {
-            return jobs
-          }
+        let normalizedJob = job
+        try {
+          const detailPayload = await fetchJson(buildJobDetailsApiUrl(job.jobId))
+          normalizedJob = enrichJobFromDetailRecord(
+            job,
+            Array.isArray(detailPayload?.items) ? detailPayload.items[0] : null,
+          )
+        } catch {
+          normalizedJob = job
         }
 
-        if (pageJobs.length === 0 || addedOnPage === 0) break
+        jobs.push({
+          ...normalizedJob,
+          source: SOURCE,
+          link: normalizedJob.applyUrl || normalizedJob.sourceUrl,
+          scrapedAt: now(),
+        })
+
+        if (maxJobs && jobs.length >= maxJobs) {
+          return jobs
+        }
       }
 
-      return jobs
+      if (pageJobs.length === 0 || addedOnPage === 0) break
     }
+
+    return jobs
   },
 })
 

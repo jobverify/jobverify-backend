@@ -32,6 +32,8 @@ export const EXPECTED_POPULATIONS = [
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+const INDIA_LOCATED_TITLE_PATTERN = /^\(IND\)\s*/i
+
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
@@ -47,6 +49,12 @@ const hasAllExpectedPopulationTokens = (value = '') =>
 
 const isExpectedPopulationValue = (value = '') =>
   EXPECTED_POPULATIONS.includes(String(value ?? ''))
+
+const isIndiaCountryCode = (value = '') =>
+  String(value ?? '').trim().toUpperCase() === 'IN'
+
+const hasIndiaPopulationToken = (value = '') =>
+  /(?:^|_)IN(?:$|_)/i.test(String(value ?? ''))
 
 const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
@@ -137,16 +145,41 @@ export const hasStructuredSearchProbe = (payload = {}) => {
     )
 }
 
-export const hasVerifiedIndiaZeroResult = (payload = {}) => {
-  const jobs = Array.isArray(payload?.jobs) ? payload.jobs : []
-  const filters = String(payload?.jobFilters ?? '')
+export const isIndiaLocatedSearchHit = (job = {}) => {
+  const metadata = job?.metadata || {}
+  const locationText = [
+    metadata.primaryLocationCountry,
+    metadata.primaryLocationCity,
+    metadata.primaryLocationState,
+    metadata.primaryLocationStateCode,
+    metadata.primaryLocation,
+    metadata.location,
+    metadata.formattedLocation,
+    metadata.country,
+    metadata.secondaryLocations,
+    metadata.secondaryLocation,
+    metadata.additionalLocations,
+  ]
+    .map((item) => normalizeWhitespace(item))
+    .filter(Boolean)
+    .join(' | ')
 
-  return payload?.jobSearchSucceeded === true
-    && Number(payload?.totalJobs) === 0
-    && jobs.length === 0
-    && /primaryLocationCountry\s*==\s*'IN'/i.test(filters)
-    && hasAllExpectedPopulationTokens(filters)
+  return isIndiaCountryCode(metadata.primaryLocationCountry)
+    || hasIndiaPopulationToken(metadata.population)
+    || INDIA_LOCATED_TITLE_PATTERN.test(normalizeWhitespace(metadata.title || job?.text || ''))
+    || /\bindia\b/i.test(locationText)
 }
+
+export const extractIndiaLocatedSearchHits = (payload = {}) => {
+  const jobs = Array.isArray(payload?.jobs) ? payload.jobs : []
+  return jobs.filter((job) => isIndiaLocatedSearchHit(job))
+}
+
+export const hasVerifiedIndiaQueryWithoutLocatedHits = (payload = {}) =>
+  payload?.jobSearchSucceeded === true
+    && Number.isFinite(Number(payload?.totalJobs))
+    && Array.isArray(payload?.jobs)
+    && extractIndiaLocatedSearchHits(payload).length === 0
 
 export const createWalmartScraper = () => ({
   async run({
@@ -175,15 +208,13 @@ export const createWalmartScraper = () => ({
     }
 
     const indiaProbe = await searchJobs(INDIA_PROBE_QUERY, { signal })
-    if (
-      Number(indiaProbe?.totalJobs) > 0
-      || (Array.isArray(indiaProbe?.jobs) && indiaProbe.jobs.length > 0)
-    ) {
-      throw new Error('Walmart official search now exposes enumerable India jobs')
+    const indiaLocatedHits = extractIndiaLocatedSearchHits(indiaProbe)
+    if (indiaLocatedHits.length > 0) {
+      throw new Error('Walmart public India keyword probe now returns India-located jobs')
     }
 
-    if (!hasVerifiedIndiaZeroResult(indiaProbe)) {
-      throw new Error('Walmart India search no longer matches the verified zero-results contract')
+    if (!hasVerifiedIndiaQueryWithoutLocatedHits(indiaProbe)) {
+      throw new Error('Walmart India keyword probe no longer matches the verified public search contract')
     }
 
     return []

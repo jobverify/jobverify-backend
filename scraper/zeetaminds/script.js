@@ -60,6 +60,8 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const normalizeUrl = (value) => String(value ?? '').replace(/\/+$/, '')
+
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -126,7 +128,11 @@ export const hasPublicJobsSignal = (html) =>
 export const createZeetamindsScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || homepage.url !== EXPLORE_URL || !hasOfficialHomepageSignal(homepage.html)) {
+    if (
+      homepage.status !== 200
+      || normalizeUrl(homepage.url) !== normalizeUrl(EXPLORE_URL)
+      || !hasOfficialHomepageSignal(homepage.html)
+    ) {
       throw new Error('Zeetaminds verified official homepage no longer matches the trusted first-party shell')
     }
 

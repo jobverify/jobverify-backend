@@ -60,25 +60,30 @@ export const extractSitemapUrls = (xml) => {
   return [...matches].map((match) => match[1].trim())
 }
 
-const normalizeSitemapUrl = (value) => {
+const normalizeKarnivalHostname = (hostname) => hostname.replace(/^www\./i, '').toLowerCase()
+
+export const normalizeSitemapUrl = (value) => {
   try {
     const url = new URL(String(value ?? '').trim())
     const pathname = url.pathname.replace(/\/+$/, '') || '/'
-    return `${url.origin}${pathname}`
+    return `${url.protocol}//${normalizeKarnivalHostname(url.hostname)}${pathname}`
   } catch {
-    return String(value ?? '').trim().replace(/\/+$/, '')
+    return String(value ?? '')
+      .trim()
+      .replace(/^https?:\/\/www\./i, (prefix) => prefix.replace(/www\./i, ''))
+      .replace(/\/+$/, '')
   }
 }
 
 export const hasVerifiedSitemapSignal = (xml) => {
   const urls = extractSitemapUrls(xml).map(normalizeSitemapUrl)
   const expectedUrls = [
-    'https://www.karnival.com/',
-    'https://www.karnival.com/contact',
-    'https://www.karnival.com/blogs',
-    'https://www.karnival.com/privacy-policy',
-    'https://www.karnival.com/terms-and-conditions',
-  ]
+    'https://karnival.com/',
+    'https://karnival.com/contact',
+    'https://karnival.com/blogs',
+    'https://karnival.com/privacy-policy',
+    'https://karnival.com/terms-and-conditions',
+  ].map(normalizeSitemapUrl)
 
   return expectedUrls.every((url) => urls.includes(url))
     && !urls.some((url) => /\/(careers|jobs)(?:\/|$)/i.test(url))

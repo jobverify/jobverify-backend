@@ -84,22 +84,24 @@ export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(page)
 
   return /<title>\s*CreatED \| Inspiring the Innovators of Tomorrow\s*<\/title>/i.test(page)
+    && /<link rel="canonical" href="https:\/\/www\.create-ed\.in"\/?>/i.test(page)
     && normalized.includes('INSPIRING THE INNOVATORS OF TOMORROW')
     && /CreatED is an innovation hub empowering high school students to ideate, create, and build groundbreaking projects/i.test(page)
-    && normalized.includes('Schedule A Consultation')
-    && normalized.includes('Contact Us: info@create-ed.in | +91 8655700705')
+    && (
+      normalized.includes('Schedule A Consultation')
+      || normalized.includes('Reach Out')
+    )
 }
 
 export const hasOfficialAboutSignal = (html) => {
   const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
 
   return /<title>\s*About \| CreatED\s*<\/title>/i.test(page)
+    && /<link rel="canonical" href="https:\/\/www\.create-ed\.in\/about"\/?>/i.test(page)
     && /Aashna Saraf/i.test(page)
     && /Harvard University/i.test(page)
     && /Aashna founded CreatEd with the vision of turning curiosity into creation/i.test(page)
     && /Founder\s*&(?:amp;)?\s*CEO/i.test(page)
-    && normalized.includes('Contact Us: info@create-ed.in | +91 8655700705')
 }
 
 export const hasPublicJobsSignal = (html) =>

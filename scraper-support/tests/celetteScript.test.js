@@ -9,38 +9,127 @@ const loadCeletteModule = async () => {
   }
 }
 
-const homepageHtml = `
-  <html>
-    <body>
-      <div class="e-n-accordion-item-title-text">INDIA</div>
-      <p><strong>CELETTE INDIA PVT LTD.</strong><br>2/122 B-1, Mylampatty Road, Karayampalayam, Coimbatore 641062 / INDIA</p>
-      <a href="https://www.celette.com/workshop-equipment/">Workshop equipment</a>
-      <a href="https://www.celette.com/contact/">Contact</a>
-    </body>
-  </html>
-`
+const buildVerifiedChallengePage = (url) => ({
+  status: 403,
+  url,
+  finalUrl: url,
+  errorKind: null,
+  headers: {
+    server: 'cloudflare',
+    'cf-mitigated': 'challenge',
+  },
+  html: `
+    <!doctype html>
+    <html lang="en-US">
+      <head>
+        <title>Just a moment...</title>
+        <meta charset="utf-8" />
+      </head>
+      <body>
+        <span id="challenge-error-text">Enable JavaScript and cookies to continue</span>
+        <script>
+          window._cf_chl_opt = {
+            cZone: 'celette.com',
+            cUPMDTk: '${url}',
+          }
+        </script>
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
+      </body>
+    </html>
+  `,
+})
 
-test('extractOpenings returns no jobs when the official Celette site exposes India office details but no public careers source', async () => {
+test('Celette stays pinned to the verified blocked first-party Cloudflare challenge routes', async () => {
   const celette = await loadCeletteModule()
   assert.ok(celette)
 
-  assert.equal(celette.hasIndiaOfficeSignal(homepageHtml), true)
-  assert.equal(celette.hasCareerLink(homepageHtml), false)
-  assert.deepEqual(celette.extractOpenings(homepageHtml), [])
+  assert.equal(celette.SOURCE, 'celette')
+  assert.equal(celette.COMPANY, 'Celette')
+  assert.equal(celette.COMPANY_DOMAIN, 'celette.com')
+  assert.equal(celette.VERIFIED_AT, '2026-08-15')
+  assert.equal(celette.HOMEPAGE_URL, 'https://www.celette.com/')
+  assert.equal(celette.CONTACT_US_URL, 'https://www.celette.com/contact-us/')
+  assert.equal(celette.CAREERS_URL, 'https://www.celette.com/careers/')
+  assert.equal(celette.JOBS_URL, 'https://www.celette.com/jobs/')
+  assert.deepEqual(celette.VERIFIED_ROUTE_URLS, [
+    'https://www.celette.com/',
+    'https://www.celette.com/contact-us/',
+    'https://www.celette.com/careers/',
+    'https://www.celette.com/jobs/',
+  ])
+  assert.equal(celette.hasVerifiedCloudflareChallengeSignal(buildVerifiedChallengePage(celette.HOMEPAGE_URL)), true)
+  assert.equal(celette.exposesStructuredPublicJobs(buildVerifiedChallengePage(celette.HOMEPAGE_URL).html), false)
 })
 
-test('run fetches the official Celette site and returns an honest zero-openings result', async () => {
+test('Celette returns an honest zero-openings result while the verified first-party routes remain challenge-gated', async () => {
   const celette = await loadCeletteModule()
   assert.ok(celette)
 
   const requestedUrls = []
   const jobs = await celette.createCeletteScraper().run({
-    fetchText: async (url) => {
+    fetchPage: async (url) => {
       requestedUrls.push(url)
-      return homepageHtml
+      return buildVerifiedChallengePage(url)
     },
   })
 
-  assert.deepEqual(requestedUrls, ['https://www.celette.com/'])
+  assert.deepEqual(requestedUrls, celette.VERIFIED_ROUTE_URLS)
   assert.deepEqual(jobs, [])
+})
+
+test('Celette preserves the zero-openings sentinel when the verified first-party routes are temporarily timeout-blocked', async () => {
+  const celette = await loadCeletteModule()
+  assert.ok(celette)
+
+  const requestedUrls = []
+  const jobs = await celette.createCeletteScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      return {
+        status: null,
+        url,
+        finalUrl: url,
+        html: null,
+        headers: {},
+        errorKind: 'timeout',
+      }
+    },
+  })
+
+  assert.deepEqual(requestedUrls, celette.VERIFIED_ROUTE_URLS)
+  assert.deepEqual(jobs, [])
+})
+
+test('Celette fails closed when the verified blocked routes drift or begin exposing public jobs', async () => {
+  const celette = await loadCeletteModule()
+  assert.ok(celette)
+
+  await assert.rejects(
+    celette.createCeletteScraper().run({
+      fetchPage: async (url) => ({
+        status: 403,
+        url,
+        finalUrl: url,
+        html: '<html><body><h1>Unexpected</h1></body></html>',
+        headers: {
+          server: 'cloudflare',
+          'cf-mitigated': 'challenge',
+        },
+        errorKind: null,
+      }),
+    }),
+    /verified celette first-party blocked surfaces changed materially/i,
+  )
+
+  await assert.rejects(
+    celette.createCeletteScraper().run({
+      fetchPage: async (url) => ({
+        ...buildVerifiedChallengePage(url),
+        html: url === celette.CAREERS_URL
+          ? `${buildVerifiedChallengePage(url).html}<article class="job-card"><a href="/careers/applications-engineer">Apply now</a></article>`
+          : buildVerifiedChallengePage(url).html,
+      }),
+    }),
+    /scraper-visible public jobs/i,
+  )
 })

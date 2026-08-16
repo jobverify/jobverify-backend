@@ -17,6 +17,8 @@ test('getScraperCatalog includes Greenko Hub as a homepage-verified Darwinbox sc
   assert.equal(provider.paginationStrategy, 'browser-session-darwinbox-pagination')
   assert.equal(provider.extractionStrategy, 'verified-official-homepage-link+darwinbox-listing-api')
   assert.equal(provider.parser, 'custom-script')
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.match(provider.verifiedSurfaceSummary, /29 India jobs/i)
   assert.match(provider.modulePath, /greenkohub[\\/]script\.js$/i)
 })
 

@@ -56,6 +56,20 @@ const toUniqueArray = (values) => [...new Set(values.filter(Boolean))]
 
 const extractFirst = (html, pattern) => normalizeWhitespace(String(html ?? '').match(pattern)?.[1])
 
+const toAbsoluteCareersUrl = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  try {
+    const url = new URL(normalized, CAREERS_URL)
+    if (url.hostname !== 'careers.kissflow.com') return null
+    if (!/^\/[a-z0-9-]+\/?$/i.test(url.pathname)) return null
+    return `${url.origin}${url.pathname.replace(/\/$/, '')}`
+  } catch {
+    return null
+  }
+}
+
 const toIndiaLocation = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
@@ -78,33 +92,55 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
   const text = stripTags(page) || ''
 
   return /<title>\s*Careers\s*-\s*Kissflow\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/careers\.kissflow\.com\/?["']/i.test(page)
-    && /https:\/\/kissflow\.com\//i.test(page)
-    && text.includes('Get Jobs')
+    && text.includes('We’re Redefining Work')
+    && text.includes('Find your calling')
     && text.includes('Open Positions')
-    && text.includes('Solution Advisor')
-    && text.includes('Client Director')
-    && text.includes('Manager - Digital Marketing')
-  }
+    && text.includes('Contact Sales')
+    && extractListingCards(page).length >= 2
+}
+
+const extractOpenPositionsSection = (html = '') => String(html ?? '').match(
+  /<h[1-6][^>]*>\s*Open Positions\s*<\/h[1-6]>([\s\S]*?)(?=<h[1-6][^>]*>\s*Always looking for passionate people to make our team better\s*<\/h[1-6]>|<h[1-6][^>]*>\s*Contact Sales\s*<\/h[1-6]>|<\/main>|<\/body>)/i,
+)?.[1] || ''
 
 export const extractListingCards = (html = '') => {
-  const cards = [...String(html ?? '').matchAll(
+  const sectionHtml = extractOpenPositionsSection(html)
+  const cards = []
+
+  for (const match of sectionHtml.matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const sourceUrl = toAbsoluteCareersUrl(match[1])
+    const text = stripTags(match[2]) || ''
+    const experienceRequired = normalizeWhitespace(text.match(/\bExperience:\s*([^<]+?years)\b/i)?.[1])
+    const title = normalizeWhitespace(text.replace(/\bExperience:\s*.+$/i, '').replace(/\bExplore More\b/i, ''))
+
+    if (!sourceUrl || !title || !experienceRequired) continue
+
+    cards.push({
+      title,
+      sourceUrl,
+      experienceRequired,
+    })
+  }
+
+  const legacyCards = [...String(sectionHtml || html || '').matchAll(
     /<a\s+href="(https:\/\/careers\.kissflow\.com\/[^"]+)"\s+class="career-in-row">[\s\S]*?<h6[^>]*>([\s\S]*?)<\/h6>[\s\S]*?<p[^>]*>\s*Experience:\s*([^<]+)<\/p>/gi,
   )]
     .map((match) => ({
       title: normalizeWhitespace(match[2]),
-      sourceUrl: normalizeWhitespace(match[1]),
+      sourceUrl: toAbsoluteCareersUrl(match[1]),
       experienceRequired: normalizeWhitespace(match[3]),
     }))
     .filter((card) => card.title && card.sourceUrl && card.experienceRequired)
 
-  return cards.filter((card, index, collection) =>
+  const mergedCards = [...cards, ...legacyCards]
+
+  return mergedCards.filter((card, index, collection) =>
     collection.findIndex((candidate) => candidate.sourceUrl === card.sourceUrl) === index)
 }
 
 const extractJobDescription = (html = '') => {
   const section = String(html ?? '').match(
-    /Job Description:\s*<\/span>\s*<\/h6>([\s\S]*?)(?:<h[1-6][^>]*>\s*(?:<[^>]+>\s*)*Applicant Details(?:\s*<\/[^>]+>)*\s*<\/h[1-6]>|<div[^>]+id=["']apply["'][^>]*>|<form[^>]+id=["']career-app-form["'][^>]*>|<\/main>)/i,
+    /Job Description:\s*(?:<\/[^>]+>\s*)*([\s\S]*?)(?:<h[1-6][^>]*>\s*(?:<[^>]+>\s*)*(?:Required Skills|Applicant Details|Open Positions)(?:\s*<\/[^>]+>)*\s*<\/h[1-6]>|<div[^>]+id=["']apply["'][^>]*>|<form[^>]+id=["']career-app-form["'][^>]*>|<\/main>|<\/body>)/i,
   )?.[1]
 
   return stripTags(section)
@@ -124,14 +160,23 @@ export const extractJobDetail = (html = '', listing = {}) => {
   const title = extractFirst(
     html,
     /<h1[^>]*class="[^"]*\bjob-title\b[^"]*"[^>]*>([\s\S]*?)<\/h1>/i,
+  ) || extractFirst(
+    html,
+    /<h1[^>]*>([\s\S]*?)<\/h1>/i,
   )
   const experienceRequired = extractFirst(
     html,
     /job-experience[^>]*>\s*<span[^>]*>\s*Experience:\s*<\/span>\s*([^<]+)</i,
+  ) || extractFirst(
+    html,
+    /Experience:\s*([^<]+years)/i,
   )
   const rawLocation = extractFirst(
     html,
     /job-location[^>]*>\s*<span[^>]*>\s*Work Location:\s*<\/span>\s*([^<]+)</i,
+  ) || extractFirst(
+    html,
+    /Work Location:\s*([^<]+)/i,
   )
   const location = toIndiaLocation(rawLocation)
   const jobDescription = extractJobDescription(html)

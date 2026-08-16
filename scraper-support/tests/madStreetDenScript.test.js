@@ -44,6 +44,45 @@ Apply here
 Powered by: darwinbox
 `
 
+const darwinboxShellPage = {
+  status: 200,
+  url: 'https://msd.darwinbox.in/ms/candidate/careers',
+  html: `
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <title></title>
+        <base href="/ms/candidatev2/">
+      </head>
+      <body>
+        <app-root></app-root>
+        <script type="module" src="/ms/dboxuilibrary/assets/dboxuilib_dist/www/build/db-components.esm.js"></script>
+        <script nomodule src="/ms/dboxuilibrary/assets/dboxuilib_dist/www/build/db-components.js"></script>
+        <script src="/ms/formbuilder/assets/db-form/db-form.js"></script>
+      </body>
+    </html>
+  `,
+}
+
+const darwinboxBrandedStubPage = {
+  status: 200,
+  url: 'https://msd.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+  html: `
+    <!doctype html>
+    <html lang="en-US">
+      <head>
+        <title>Mad Street Den</title>
+        <meta property="og:title" content="Mad Street Den " />
+        <meta property="og:image" content="https://s3-ap-southeast-1.amazonaws.com/darwinbox-data/logo.png" />
+        <meta property="og:image:alt" content="Mad Street Den" />
+      </head>
+      <body>
+        Mad Street Den -
+      </body>
+    </html>
+  `,
+}
+
 const darwinboxLiveJobsText = `
 Careers
 Search for jobs
@@ -80,7 +119,7 @@ test('Mad Street Den helpers stay pinned to the verified exact-name first-party 
   assert.equal(madStreetDen.SOURCE, 'madstreetden')
   assert.equal(madStreetDen.COMPANY, 'Mad Street Den')
   assert.equal(madStreetDen.OFFICIAL_BRAND_NAME, 'Mad Street Den')
-  assert.equal(madStreetDen.VERIFIED_ON, '2026-07-16')
+  assert.equal(madStreetDen.VERIFIED_ON, '2026-08-15')
   assert.equal(madStreetDen.HOMEPAGE_URL, 'https://www.madstreetden.com/')
   assert.equal(madStreetDen.CAREERS_URL, 'https://www.madstreetden.com/careers/')
   assert.equal(madStreetDen.JOBLIST_API_URL, 'https://www.madstreetden.com/api/joblist.php')
@@ -99,6 +138,8 @@ test('Mad Street Den helpers stay pinned to the verified exact-name first-party 
   assert.equal(madStreetDen.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(madStreetDen.isVerifiedJobListApiFailure(apiInvalidUrlResponse), true)
   assert.equal(madStreetDen.hasVerifiedDarwinboxEmptyBoardSignal(darwinboxEmptyBoardText), true)
+  assert.equal(madStreetDen.hasVerifiedDarwinboxShellSignal(darwinboxShellPage), true)
+  assert.equal(madStreetDen.hasVerifiedDarwinboxShellSignal(darwinboxBrandedStubPage), true)
   assert.equal(madStreetDen.textExposesPublicJobs(darwinboxEmptyBoardText), false)
   assert.equal(madStreetDen.textExposesPublicJobs(darwinboxLiveJobsText), true)
 })
@@ -122,9 +163,13 @@ test('Mad Street Den returns [] only while the official careers page, joblist AP
 
       throw new Error(`Unexpected Mad Street Den URL: ${url}`)
     },
-    fetchDarwinboxBoardText: async (url) => {
+    fetchDarwinboxBoardPage: async (url) => {
       requestedBoardUrls.push(url)
-      return darwinboxEmptyBoardText
+      return {
+        status: 200,
+        url,
+        html: `<html><body>${darwinboxEmptyBoardText}</body></html>`,
+      }
     },
   })
 
@@ -133,6 +178,27 @@ test('Mad Street Den returns [] only while the official careers page, joblist AP
     madStreetDen.JOBLIST_API_URL,
   ])
   assert.deepEqual(requestedBoardUrls, [madStreetDen.DARWINBOX_PUBLIC_BOARD_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('Mad Street Den also accepts the verified raw Darwinbox shell contract', async () => {
+  const madStreetDen = await loadModule()
+
+  const jobs = await madStreetDen.createMadStreetDenScraper().run({
+    fetchPage: async (url) => {
+      if (url === madStreetDen.CAREERS_URL) {
+        return { status: 200, url, html: careersHtml }
+      }
+
+      if (url === madStreetDen.JOBLIST_API_URL) {
+        return apiInvalidUrlResponse
+      }
+
+      throw new Error(`Unexpected Mad Street Den URL: ${url}`)
+    },
+    fetchDarwinboxBoardPage: async () => darwinboxBrandedStubPage,
+  })
+
   assert.deepEqual(jobs, [])
 })
 
@@ -152,7 +218,11 @@ test('Mad Street Den fails closed when the official careers page, joblist API, o
 
         throw new Error(`Unexpected Mad Street Den URL: ${url}`)
       },
-      fetchDarwinboxBoardText: async () => darwinboxEmptyBoardText,
+      fetchDarwinboxBoardPage: async () => ({
+        status: 200,
+        url: madStreetDen.DARWINBOX_PUBLIC_BOARD_URL,
+        html: `<html><body>${darwinboxEmptyBoardText}</body></html>`,
+      }),
     }),
     /careers page/i,
   )
@@ -170,7 +240,11 @@ test('Mad Street Den fails closed when the official careers page, joblist API, o
 
         throw new Error(`Unexpected Mad Street Den URL: ${url}`)
       },
-      fetchDarwinboxBoardText: async () => darwinboxEmptyBoardText,
+      fetchDarwinboxBoardPage: async () => ({
+        status: 200,
+        url: madStreetDen.DARWINBOX_PUBLIC_BOARD_URL,
+        html: `<html><body>${darwinboxEmptyBoardText}</body></html>`,
+      }),
     }),
     /joblist api/i,
   )
@@ -188,7 +262,11 @@ test('Mad Street Den fails closed when the official careers page, joblist API, o
 
         throw new Error(`Unexpected Mad Street Den URL: ${url}`)
       },
-      fetchDarwinboxBoardText: async () => darwinboxLiveJobsText,
+      fetchDarwinboxBoardPage: async () => ({
+        status: 200,
+        url: madStreetDen.DARWINBOX_PUBLIC_BOARD_URL,
+        html: `<html><body>${darwinboxLiveJobsText}</body></html>`,
+      }),
     }),
     /darwinbox board/i,
   )

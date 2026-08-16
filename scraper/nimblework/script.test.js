@@ -224,6 +224,21 @@ const currentOpeningsHtml = `
 </html>
 `
 
+const challengeHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Just a moment...</title>
+  </head>
+  <body>
+    <main>
+      <h1>Just a moment...</h1>
+      <p>Enable JavaScript and cookies to continue</p>
+    </main>
+  </body>
+</html>
+`
+
 test('NimbleWork validates the verified official homepage, careers handoff, and current openings surfaces', async () => {
   const nimble = await loadModule()
   assert.ok(nimble)
@@ -394,4 +409,28 @@ test('NimbleWork fails closed when the verified homepage, careers, or current op
     }),
     /verified first-party current openings page/i,
   )
+})
+
+test('NimbleWork returns [] when homepage, careers, and current openings all match the verified Cloudflare challenge shell', async () => {
+  const nimble = await loadModule()
+  assert.ok(nimble)
+
+  const requestedUrls = []
+  const jobs = await nimble.createNimbleWorkScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      return {
+        status: 403,
+        url,
+        html: challengeHtml,
+      }
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    nimble.HOMEPAGE_URL,
+    nimble.CAREERS_URL,
+    nimble.CURRENT_OPENINGS_URL,
+  ])
+  assert.deepEqual(jobs, [])
 })

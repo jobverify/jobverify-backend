@@ -13,13 +13,16 @@ const careersHtml = String.raw`
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Careers @ Rubrik | Together, we're unstoppable</title>
+    <title>Careers at Rubrik | Discover The Power of You</title>
+    <meta
+      name="description"
+      content="Explore cybersecurity and AI careers at Rubrik. Come do the best work of your life at a company securing and accelerating the world's AI transformation."
+    />
   </head>
   <body>
     <h1>Together, we're unstoppable.</h1>
-    <a href="/company/careers/departments/people">People</a>
-    <a href="/company/careers/departments/product.1930">Product</a>
-    <p>View All Jobs</p>
+    <a class="departments_grid__new-link btn-link" href="/company/careers/departments/people">View Openings</a>
+    <a class="departments_grid__new-link btn-link" href="/company/careers/departments/product">View Openings</a>
   </body>
 </html>
 `
@@ -85,12 +88,11 @@ const productIndiaJobHtml = String.raw`
 <!DOCTYPE html>
 <html>
   <body>
-    <h2>Job Summary</h2>
     <h1>Staff Product Manager, Cloud Data Protection</h1>
+    <p>Bangalore, India Office</p>
     <p>Location: Bangalore, India</p>
-    <h3>About the Role</h3>
     <p>Lead roadmap and execution for cloud data protection.</p>
-    <h3>Experience & qualifications you'll need</h3>
+    <h3>Experience you'll need:</h3>
     <ul>
       <li>8+ years of product management experience</li>
       <li>Cloud security experience</li>
@@ -109,7 +111,7 @@ test('Rubrik validates the verified official careers page and extracts departmen
     rubrik.extractDepartmentLinks(careersHtml),
     [
       { name: 'People', url: 'https://www.rubrik.com/company/careers/departments/people' },
-      { name: 'Product', url: 'https://www.rubrik.com/company/careers/departments/product.1930' },
+      { name: 'Product', url: 'https://www.rubrik.com/company/careers/departments/product' },
     ],
   )
   assert.deepEqual(
@@ -172,7 +174,7 @@ test('Rubrik runs through first-party browser-free HTML surfaces and keeps only 
       requests.push(url)
       if (url === rubrik.CAREERS_URL) return careersHtml
       if (url === 'https://www.rubrik.com/company/careers/departments/people') return peopleDepartmentHtml
-      if (url === 'https://www.rubrik.com/company/careers/departments/product.1930') return productDepartmentHtml
+      if (url === 'https://www.rubrik.com/company/careers/departments/product') return productDepartmentHtml
       if (url === 'https://www.rubrik.com/company/careers/departments/job.2333116') return peopleIndiaJobHtml
       if (url === 'https://www.rubrik.com/company/careers/departments/job.5555555') return peopleUsJobHtml
       if (url === 'https://www.rubrik.com/company/careers/departments/job.7540806') return productIndiaJobHtml
@@ -188,7 +190,7 @@ test('Rubrik runs through first-party browser-free HTML surfaces and keeps only 
       'https://www.rubrik.com/company/careers/departments/people',
       'https://www.rubrik.com/company/careers/departments/job.2333116',
       'https://www.rubrik.com/company/careers/departments/job.5555555',
-      'https://www.rubrik.com/company/careers/departments/product.1930',
+      'https://www.rubrik.com/company/careers/departments/product',
       'https://www.rubrik.com/company/careers/departments/job.7540806',
     ],
   )
@@ -200,4 +202,10 @@ test('Rubrik runs through first-party browser-free HTML surfaces and keeps only 
       'Staff Product Manager, Cloud Data Protection',
     ],
   )
+  assert.equal(jobs[1].department, 'Product')
+  assert.deepEqual(jobs[1].requiredSkills, [
+    '8+ years of product management experience',
+    'Cloud security experience',
+  ])
+  assert.equal(jobs[1].jobDescription, 'Lead roadmap and execution for cloud data protection.')
 })

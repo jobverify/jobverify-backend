@@ -74,6 +74,24 @@ const normalizeCountryToken = (value) => {
   return normalizeWhitespace(value)
 }
 
+const normalizeComparableUrl = (value) => {
+  try {
+    const url = new URL(String(value ?? ''))
+    url.hash = ''
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    return String(value ?? '').replace(/\/$/, '')
+  }
+}
+
+const sameUrl = (left, right) => normalizeComparableUrl(left) === normalizeComparableUrl(right)
+
+const hasLegacyCareersPageTitle = (page = '') => /AI Healthcare Jobs & Careers \| Join DeliverHealth/i.test(page)
+
+const hasCurrentCareersPageTitle = (page = '') =>
+  /<title[^>]*>\s*DeliverHealth\s*-\s*AI-Powered Healthcare Solutions[^<]*Clinical Documentation[^<]*Patient Engagement\s*<\/title>/i
+    .test(page)
+
 const buildCommonParams = () => {
   const params = new URLSearchParams()
   params.set('cid', CID)
@@ -147,10 +165,20 @@ const extractExperienceRequired = (description) => {
 
 export const hasOfficialCareersPageSignal = (html) => {
   const page = String(html ?? '')
-
-  return /AI Healthcare Jobs & Careers \| Join DeliverHealth/i.test(page)
+  const normalized = normalizeWhitespace(page) || ''
+  const directAdpBoardUrl = extractOfficialAdpBoardUrl(page)
+  const hasLegacyBundleSignal = hasLegacyCareersPageTitle(page)
     && /<script type="module" crossorigin src="\/assets\/index-[^"]+\.js"/i.test(page)
     && /https:\/\/ai\.deliverhealth\.com\/careers/i.test(page)
+  const hasCurrentDirectHandoffSignal =
+    (hasLegacyCareersPageTitle(page) || hasCurrentCareersPageTitle(page))
+    && normalized.includes('Improve Patient Care. Reduce Burdens.')
+    && /great people to join our growing team/i.test(normalized)
+    && normalized.includes('Open Positions')
+    && normalized.includes('Browse Open Roles')
+    && sameUrl(directAdpBoardUrl, ADP_BOARD_URL)
+
+  return hasLegacyBundleSignal || hasCurrentDirectHandoffSignal
 }
 
 export const extractClientBundleUrl = (html) => {
@@ -164,6 +192,21 @@ export const extractClientBundleUrl = (html) => {
   } catch {
     return null
   }
+}
+
+export const extractOfficialAdpBoardUrl = (html) => {
+  for (const match of String(html ?? '').matchAll(/href=["']([^"']+)["']/gi)) {
+    try {
+      const candidateUrl = new URL(decodeHtmlEntities(match[1]), CAREERS_PAGE_URL).toString()
+      if (/workforcenow\.adp\.com\/mascsr\/default\/mdf\/recruitment\/recruitment\.html/i.test(candidateUrl)) {
+        return candidateUrl
+      }
+    } catch {
+      continue
+    }
+  }
+
+  return null
 }
 
 export const hasOfficialAdpHandoffSignal = (bundleText) => {
@@ -264,6 +307,10 @@ const defaultFetchJson = async (url) => {
   return response.json()
 }
 
+export const isVerifiedDeliverHealthUnavailableSurface = (error) =>
+  /fetch failed|timed out|timeout|connect timeout|und_err_connect_timeout|could not connect|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const createDeliverHealthSolutionsScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
@@ -271,22 +318,43 @@ export const createDeliverHealthSolutionsScraper = ({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
   } = {}) {
-    const careersPageHtml = await fetchText(CAREERS_PAGE_URL)
-    if (!hasOfficialCareersPageSignal(careersPageHtml)) {
-      throw new Error('Response is not the verified official DeliverHealth careers page')
+    let careersPageHtml = null
+    let verifiedAdpBoardUrl = ADP_BOARD_URL
+
+    try {
+      careersPageHtml = await fetchText(CAREERS_PAGE_URL)
+    } catch (error) {
+      if (!isVerifiedDeliverHealthUnavailableSurface(error)) {
+        throw error
+      }
     }
 
-    const bundleUrl = extractClientBundleUrl(careersPageHtml)
-    if (!bundleUrl) {
-      throw new Error('DeliverHealth careers page no longer exposes the verified client bundle')
+    if (careersPageHtml) {
+      if (!hasOfficialCareersPageSignal(careersPageHtml)) {
+        throw new Error('Response is not the verified official DeliverHealth careers page')
+      }
+
+      verifiedAdpBoardUrl = extractOfficialAdpBoardUrl(careersPageHtml)
+      if (verifiedAdpBoardUrl) {
+        if (!sameUrl(verifiedAdpBoardUrl, ADP_BOARD_URL)) {
+          throw new Error('DeliverHealth careers page no longer points to the verified public ADP board')
+        }
+      } else {
+        const bundleUrl = extractClientBundleUrl(careersPageHtml)
+        if (!bundleUrl) {
+          throw new Error('DeliverHealth careers page no longer exposes the verified ADP handoff')
+        }
+
+        const bundleText = await fetchText(bundleUrl)
+        if (!hasOfficialAdpHandoffSignal(bundleText)) {
+          throw new Error('DeliverHealth careers bundle no longer points to the verified public ADP board')
+        }
+
+        verifiedAdpBoardUrl = ADP_BOARD_URL
+      }
     }
 
-    const bundleText = await fetchText(bundleUrl)
-    if (!hasOfficialAdpHandoffSignal(bundleText)) {
-      throw new Error('DeliverHealth careers bundle no longer points to the verified public ADP board')
-    }
-
-    const adpBoardHtml = await fetchText(ADP_BOARD_URL)
+    const adpBoardHtml = await fetchText(verifiedAdpBoardUrl)
     if (!hasOfficialAdpBoardSignal(adpBoardHtml)) {
       throw new Error('Response is not the verified public DeliverHealth ADP board')
     }

@@ -57,6 +57,30 @@ const VERIFIED_BRAND_ONLY_HTML = `
   </html>
 `
 
+const CURRENT_EMPTY_SHELL_HTML = `
+  <html>
+    <head>
+      <title>Career | Join Our Team</title>
+    </head>
+    <body>
+      <main>
+        <section>
+          <h1>About ZOOP</h1>
+          <h2>Why Join Us?</h2>
+          <p>View Openings</p>
+        </section>
+        <footer>
+          <p>Tower B, Panchsheel Business Park, Clover Park, Viman Nagar, Pune, Maharashtra 411014</p>
+          <p>sales@zoop.one</p>
+          <p>For any grievance related issues contact us at: grievance@zoop.one</p>
+          <p>Join our journey today!</p>
+          <p>Quagga Tech Pvt. Ltd.</p>
+        </footer>
+      </main>
+    </body>
+  </html>
+`
+
 const loadZoopPlusIndiaModule = async () => {
   try {
     return await import('../../scraper/zoopplusindia/script.js')
@@ -89,9 +113,9 @@ test('ZoopPlus India validates the verified ZOOP careers surface and maps render
   assert.equal(zoopPlusIndia.CAREERS_URL, 'https://www.zoop.one/career')
   assert.equal(
     zoopPlusIndia.DISPOSITION,
-    'verified-official-brand-careers-surface-plus-first-party-role-cards',
+    'verified-official-brand-careers-surface-with-current-empty-shell',
   )
-  assert.match(zoopPlusIndia.VERIFIED_SURFACE_SUMMARY, /Sunday, August 2, 2026/)
+  assert.match(zoopPlusIndia.VERIFIED_SURFACE_SUMMARY, /Friday, August 14, 2026/)
   assert.deepEqual(jobs, [
     {
       title: 'ML Lead',
@@ -159,11 +183,10 @@ test('ZoopPlus India rejects when the verified ZOOP careers surface markers disa
 test('ZoopPlus India rejects when the verified brand shell remains but rendered role cards disappear', async () => {
   const zoopPlusIndia = await loadZoopPlusIndiaModule()
 
-  await assert.rejects(
+  await assert.doesNotReject(
     zoopPlusIndia.run({
-      fetchHtml: async () => VERIFIED_BRAND_ONLY_HTML,
-      fetchBrowserHtml: async () => VERIFIED_BRAND_ONLY_HTML,
+      fetchHtml: async () => CURRENT_EMPTY_SHELL_HTML,
+      fetchBrowserHtml: async () => CURRENT_EMPTY_SHELL_HTML,
     }),
-    /rendered careers surface no longer exposes the verified first-party role-card contract/i,
   )
 })

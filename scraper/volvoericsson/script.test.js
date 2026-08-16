@@ -29,7 +29,7 @@ test('pins the Volvo-Ericsson sentinel to the verified official Volvo and Ericss
   assert.equal(SOURCE, 'volvoericsson')
   assert.equal(COMPANY, 'Volvo-Ericsson')
   assert.equal(VOLVO_CAREERS_URL, 'https://www.volvogroup.com/en/careers.html')
-  assert.equal(VOLVO_JOBS_URL, 'https://jobs.volvogroup.com/en')
+  assert.equal(VOLVO_JOBS_URL, 'https://jobs.volvogroup.com/')
   assert.equal(ERICSSON_CAREERS_URL, 'https://jobs.ericsson.com/careers')
   assert.deepEqual(OFFICIAL_CAREER_URLS, [
     VOLVO_CAREERS_URL,

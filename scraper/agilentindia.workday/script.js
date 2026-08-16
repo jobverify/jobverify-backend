@@ -21,6 +21,7 @@ export const INDIA_COUNTRY_FACET_ID = 'c4f78be1a8f14da0ab49ce1162348a5e'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const WORKDAY_MAINTENANCE_ERROR_PATTERN = /received html \(workday is currently unavailable\.\)|workday is currently unavailable/i
 
 const GROUPED_LOCATION_PATTERN = /^\d+\s+locations?$/i
 const INDIA_LOCATION_PATTERN =
@@ -116,6 +117,17 @@ export const hasOfficialIndiaLocationSignal = (html = '') => {
     )
     && sameUrlIgnoringSearch(extractExperiencedWorkdayUrl(page, INDIA_LOCATION_URL), EXPERIENCED_WORKDAY_PAGE)
     && sameUrlIgnoringSearch(extractStudentWorkdayUrl(page, INDIA_LOCATION_URL), STUDENT_WORKDAY_PAGE)
+}
+
+export const hasWorkdayMaintenanceSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+
+  return /<title>\s*Workday is currently unavailable\.\s*<\/title>/i.test(page)
+    && normalized.includes('Workday is currently unavailable.')
+    && normalized.includes('Workday is performing planned maintenance')
+    && normalized.includes('We apologize for the inconvenience.')
+    && normalized.includes('Workday customer')
 }
 
 export const buildJobsApiUrl = (boardUrl) => {
@@ -259,6 +271,21 @@ const WORKDAY_BOARDS = [
   },
 ]
 
+const isWorkdayMaintenanceError = (error) =>
+  WORKDAY_MAINTENANCE_ERROR_PATTERN.test(String(error?.message ?? error ?? ''))
+
+export const isVerifiedUnavailableFirstPartySurface = (error) =>
+  /fetch failed|timed out|timeout|connect timeout|und_err_connect_timeout|could not connect|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
+const isVerifiedMaintenancePage = (page = {}) =>
+  Number(page?.status) === 200
+  && /maintenance-page/i.test(String(page?.url ?? ''))
+  && hasWorkdayMaintenanceSignal(page?.html)
+
+const isVerifiedMaintenanceOrUnavailablePage = (page = {}) =>
+  page?.errorKind === 'timeout' || isVerifiedMaintenancePage(page)
+
 export const createAgilentIndiaScraper = ({
   now = () => new Date().toISOString(),
   pageSize = 20,
@@ -267,13 +294,34 @@ export const createAgilentIndiaScraper = ({
     fetchPage = defaultFetchPage,
     fetchJson = defaultFetchJson,
   } = {}) {
-    const careersHome = await fetchPage(CAREERS_HOME_URL)
-    if (careersHome.status !== 200 || !hasOfficialCareersHomeSignal(careersHome.html)) {
+    let careersHome = null
+
+    try {
+      careersHome = await fetchPage(CAREERS_HOME_URL)
+    } catch (error) {
+      if (!isVerifiedUnavailableFirstPartySurface(error)) {
+        throw error
+      }
+    }
+
+    if (careersHome && (careersHome.status !== 200 || !hasOfficialCareersHomeSignal(careersHome.html))) {
       throw new Error('Agilent India verified careers home no longer matches the trusted first-party surface')
     }
 
-    const indiaLocationPage = await fetchPage(INDIA_LOCATION_URL)
-    if (indiaLocationPage.status !== 200 || !hasOfficialIndiaLocationSignal(indiaLocationPage.html)) {
+    let indiaLocationPage = null
+
+    try {
+      indiaLocationPage = await fetchPage(INDIA_LOCATION_URL)
+    } catch (error) {
+      if (!isVerifiedUnavailableFirstPartySurface(error)) {
+        throw error
+      }
+    }
+
+    if (
+      indiaLocationPage
+      && (indiaLocationPage.status !== 200 || !hasOfficialIndiaLocationSignal(indiaLocationPage.html))
+    ) {
       throw new Error('Agilent India verified India location page no longer matches the trusted first-party surface')
     }
 
@@ -285,10 +333,39 @@ export const createAgilentIndiaScraper = ({
       let total = Number.POSITIVE_INFINITY
 
       while (offset < total) {
-        const payload = await fetchJson(board.apiUrl, {
-          method: 'POST',
-          body: JSON.stringify(buildJobsApiRequest(offset, pageSize)),
-        })
+        let payload
+        try {
+          payload = await fetchJson(board.apiUrl, {
+            method: 'POST',
+            body: JSON.stringify(buildJobsApiRequest(offset, pageSize)),
+          })
+        } catch (error) {
+          if (isWorkdayMaintenanceError(error) || isVerifiedUnavailableFirstPartySurface(error)) {
+            const fetchBoardPage = async (url) => {
+              try {
+                return await fetchPage(url)
+              } catch (boardError) {
+                if (isVerifiedUnavailableFirstPartySurface(boardError)) {
+                  return { status: null, url, html: null, errorKind: 'timeout' }
+                }
+
+                throw boardError
+              }
+            }
+
+            const experiencedBoardPage = await fetchBoardPage(EXPERIENCED_WORKDAY_PAGE)
+            const studentBoardPage = await fetchBoardPage(STUDENT_WORKDAY_PAGE)
+
+            if (
+              isVerifiedMaintenanceOrUnavailablePage(experiencedBoardPage)
+              && isVerifiedMaintenanceOrUnavailablePage(studentBoardPage)
+            ) {
+              return []
+            }
+          }
+
+          throw error
+        }
         const postings = Array.isArray(payload?.jobPostings) ? payload.jobPostings : []
 
         total = Number.isFinite(payload?.total) ? payload.total : offset + postings.length

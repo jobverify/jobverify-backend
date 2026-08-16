@@ -556,18 +556,24 @@ export const billingVerifyValidation = [
     .isMongoId()
     .withMessage("purchaseId must be a valid purchase ID."),
   body("providerOrderId")
-    .optional()
     .customSanitizer(trimIfString)
+    .notEmpty()
+    .withMessage("providerOrderId is required.")
+    .bail()
     .isLength({ min: 3, max: 120 })
     .withMessage("providerOrderId must be between 3 and 120 characters."),
   body("providerPaymentId")
-    .optional()
     .customSanitizer(trimIfString)
+    .notEmpty()
+    .withMessage("providerPaymentId is required.")
+    .bail()
     .isLength({ min: 3, max: 120 })
     .withMessage("providerPaymentId must be between 3 and 120 characters."),
   body("providerSignature")
-    .optional()
     .customSanitizer(trimIfString)
+    .notEmpty()
+    .withMessage("providerSignature is required.")
+    .bail()
     .isLength({ min: 3, max: 200 })
     .withMessage("providerSignature must be between 3 and 200 characters."),
   body().custom((value) => {

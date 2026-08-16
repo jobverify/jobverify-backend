@@ -27,6 +27,15 @@ const cloudflareInterstitialHtml = `
   </html>
 `
 
+const maintenancePageHtml = `
+  <html lang="en">
+    <body>
+      <h1>We&rsquo;ll be back soon</h1>
+      <p>Khazana Jewellery is currently down for scheduled maintenance until 11:59 PM on 16th August 2026.</p>
+    </body>
+  </html>
+`
+
 const publicJobsHtml = `
   <html lang="en">
     <head>
@@ -56,11 +65,12 @@ test('Khazana Jewellery pins the verified email-only careers surface and Cloudfl
   assert.equal(khazanaJewellery.HOMEPAGE_URL, 'https://www.khazanajewellery.com/')
   assert.equal(khazanaJewellery.OFFICIAL_CAREERS_URL, 'https://www.khazanajewellery.com/careers?page_id=33')
   assert.equal(khazanaJewellery.CAREERS_APPLY_EMAIL, 'careers@khazanajewellery.com')
-  assert.equal(khazanaJewellery.VERIFIED_ON, '2026-08-02')
+  assert.equal(khazanaJewellery.VERIFIED_ON, '2026-08-15')
   assert.equal(khazanaJewellery.hasKhazanaCareersSignal(careersPageHtml), true)
   assert.equal(khazanaJewellery.hasKhazanaCareersSignal('<html><body>Contact us</body></html>'), false)
   assert.equal(khazanaJewellery.isCloudflareInterstitial(cloudflareInterstitialHtml), true)
   assert.equal(khazanaJewellery.isCloudflareInterstitial(careersPageHtml), false)
+  assert.equal(khazanaJewellery.hasScheduledMaintenanceSignal(maintenancePageHtml), true)
   assert.equal(khazanaJewellery.hasPublicJobsSignal(careersPageHtml), false)
   assert.equal(khazanaJewellery.hasPublicJobsSignal(publicJobsHtml), true)
 })
@@ -85,6 +95,12 @@ test('Khazana Jewellery returns [] while the verified first-party careers surfac
   })
 
   assert.deepEqual(cloudflareJobs, [])
+
+  const maintenanceJobs = await khazanaJewellery.createKhazanaJewelleryScraper().run({
+    fetchText: async () => maintenancePageHtml,
+  })
+
+  assert.deepEqual(maintenanceJobs, [])
 })
 
 test('Khazana Jewellery fails closed if the verified careers page turns into a public jobs surface', async () => {

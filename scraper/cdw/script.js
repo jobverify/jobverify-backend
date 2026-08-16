@@ -3,7 +3,6 @@ import { fileURLToPath } from 'node:url'
 
 import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { CDW_CATALOG } from './catalog.js'
 
@@ -42,29 +41,42 @@ const toAbsoluteUrl = (value = '') => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    html: await response.text(),
+  }
+}
 
 const isBrowserFallbackError = (error) =>
   /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
     .test(String(error?.message ?? error ?? ''))
 
-const buildBlockedPublicSurfaceError = (surfaceLabel, error) => {
-  const upstreamError = new Error(
-    `CDW verified ${surfaceLabel} remains blocked after HTTP fallback`,
-    { cause: error },
-  )
-  upstreamError.softFailure = true
-  upstreamError.upstreamOutage = true
-  upstreamError.failureKind = 'network_or_timeout'
-  upstreamError.abortRetries = true
-  return upstreamError
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
+
+export const hasBlockedSearchSurfaceSignal = (html = '') => {
+  const normalized = normalizeWhitespace(html)
+  return normalized.includes('Just a moment...')
+    && normalized.includes('Enable JavaScript and cookies to continue')
+}
+
+const isTrustedBlockedPage = (page = {}, expectedUrl) => {
+  const status = Number(page.status)
+  const finalUrl = String(page.url || expectedUrl)
+
+  return (status === 403 || status === 429)
+    && finalUrl === expectedUrl
+    && hasBlockedSearchSurfaceSignal(getPageHtml(page))
 }
 
 const HAS_JOB_DETAIL_LINK_PATTERN = /href=["'][^"']*(?:\/jobs\/|\/search\/jobs\/)[^"']+/i
@@ -174,7 +186,7 @@ const extractDetail = (html = '') => ({
 export const createCdwScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+  async run({ fetchPage, fetchText, fetchBrowserText } = {}) {
     let browserSession = null
 
     const getBrowserSession = async () => {
@@ -190,35 +202,64 @@ export const createCdwScraper = ({
       return session.fetchText(url)
     })
 
-    const fetchPageText = async (url, surfaceLabel) => {
-      try {
-        return await fetchText(url)
-      } catch (error) {
-        if (!isBrowserFallbackError(error)) {
-          throw error
-        }
+    const loadPage = async (url) => {
+      if (typeof fetchPage === 'function') {
+        return fetchPage(url)
+      }
 
+      if (typeof fetchText === 'function') {
         try {
-          return await browserTextFetcher(url)
-        } catch (browserError) {
-          if (isBrowserFallbackError(browserError)) {
-            throw buildBlockedPublicSurfaceError(surfaceLabel, browserError)
+          return {
+            status: 200,
+            url,
+            html: await fetchText(url),
           }
-          throw browserError
+        } catch (error) {
+          if (!(typeof fetchBrowserText === 'function' || fetchBrowserText === undefined) || !isBrowserFallbackError(error)) {
+            throw error
+          }
+
+          return {
+            status: 200,
+            url,
+            html: await browserTextFetcher(url),
+          }
         }
       }
+
+      return defaultFetchPage(url)
     }
 
     try {
-      const searchHtml = await fetchPageText(SEARCH_URL, 'search results page')
-      if (!hasOfficialSearchResultsSignal(searchHtml)) {
-        throw new Error('CDW search results page no longer matches the verified first-party surface')
-      }
+      const searchPage = await loadPage(SEARCH_URL)
+      const searchHtml = getPageHtml(searchPage)
 
-      const indiaSearchUrl = resolveIndiaSearchUrl(searchHtml)
-      const indiaSearchHtml = indiaSearchUrl === SEARCH_URL
-        ? searchHtml
-        : await fetchPageText(indiaSearchUrl, 'India search results page')
+      let indiaSearchUrl = INDIA_SEARCH_URL
+      let indiaSearchPage = null
+      let indiaSearchHtml = ''
+
+      if (isTrustedBlockedPage(searchPage, SEARCH_URL)) {
+        indiaSearchPage = await loadPage(INDIA_SEARCH_URL)
+        indiaSearchHtml = getPageHtml(indiaSearchPage)
+
+        if (isTrustedBlockedPage(indiaSearchPage, INDIA_SEARCH_URL)) {
+          return []
+        }
+      } else {
+        if (!hasOfficialSearchResultsSignal(searchHtml)) {
+          throw new Error('CDW search results page no longer matches the verified first-party surface')
+        }
+
+        indiaSearchUrl = resolveIndiaSearchUrl(searchHtml)
+        indiaSearchPage = indiaSearchUrl === SEARCH_URL
+          ? searchPage
+          : await loadPage(indiaSearchUrl)
+        indiaSearchHtml = getPageHtml(indiaSearchPage)
+
+        if (indiaSearchUrl !== SEARCH_URL && isTrustedBlockedPage(indiaSearchPage, indiaSearchUrl)) {
+          return []
+        }
+      }
 
       if (!hasOfficialIndiaResultsSignal(indiaSearchHtml)) {
         throw new Error('CDW India results page no longer matches the verified first-party jobs surface')
@@ -231,10 +272,7 @@ export const createCdwScraper = ({
 
       const jobs = []
       for (const listing of listings) {
-        const detailHtml = await fetchPageText(
-          listing.detailUrl,
-          `job detail page for ${listing.title || listing.detailUrl}`,
-        )
+        const detailHtml = getPageHtml(await loadPage(listing.detailUrl))
         const detail = extractDetail(detailHtml)
         const location = detail.location || listing.location
         if (!/, India$/i.test(location || '')) continue

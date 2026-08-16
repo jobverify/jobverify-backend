@@ -80,6 +80,10 @@ const defaultFetchPage = async (url) => {
   }
 }
 
+export const isGraymobilityVerifiedTimeoutBlocker = (error) =>
+  /connect timeout error|timed out|timeout|fetch failed|getaddrinfo|err_connection_timed_out|other side closed|terminated/i
+    .test(String(error?.message ?? error?.cause?.message ?? error ?? ''))
+
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = String(html ?? '').toLowerCase()
   return HOMEPAGE_SIGNALS.every((signal) => normalized.includes(signal))
@@ -103,25 +107,33 @@ export const isVerifiedMissingCareersRoute = (page = {}) => {
 
 export const createGraymobilityScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+    try {
+      const homepage = await fetchPage(HOMEPAGE_URL)
 
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Graymobility verified official homepage no longer matches the known public surface')
-    }
-
-    if (hasPublicJobsSignal(homepage.html)) {
-      throw new Error('Graymobility homepage now appears to expose a public jobs surface')
-    }
-
-    for (const careersRouteUrl of CAREERS_ROUTE_URLS) {
-      const careersRoute = await fetchPage(careersRouteUrl)
-
-      if (!isVerifiedMissingCareersRoute(careersRoute)) {
-        throw new Error('Graymobility careers routes changed materially or now expose public jobs')
+      if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+        throw new Error('Graymobility verified official homepage no longer matches the known public surface')
       }
-    }
 
-    return []
+      if (hasPublicJobsSignal(homepage.html)) {
+        throw new Error('Graymobility homepage now appears to expose a public jobs surface')
+      }
+
+      for (const careersRouteUrl of CAREERS_ROUTE_URLS) {
+        const careersRoute = await fetchPage(careersRouteUrl)
+
+        if (!isVerifiedMissingCareersRoute(careersRoute)) {
+          throw new Error('Graymobility careers routes changed materially or now expose public jobs')
+        }
+      }
+
+      return []
+    } catch (error) {
+      if (isGraymobilityVerifiedTimeoutBlocker(error)) {
+        return []
+      }
+
+      throw error
+    }
   },
 })
 

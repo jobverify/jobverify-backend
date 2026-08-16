@@ -61,6 +61,35 @@ const searchResultsHtml = `
 </html>
 `
 
+const zeroResultsSearchHtml = `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Search our Job Opportunities at Boeing</title>
+    <meta name="search-analytics-total-jobs" content="0">
+    <meta name="dimension7" content="India">
+  </head>
+  <body>
+    <section
+      class="search-results"
+      id="search-results"
+      data-location="India"
+      data-location-path="1269750"
+      data-total-results="0"
+      data-total-job-results="0"
+      data-total-pages="1"
+      data-current-page="1"
+      data-no-results="true"
+    >
+      <h2 class="search-results__heading"><span class="search-results__results-count">0</span> results found in India</h2>
+      <div class="search-results__list" id="search-results-list">
+        <p class="search-results__no-results-msg" id="no-results">Please try a different keyword/location combination or broaden your search criteria.</p>
+      </div>
+    </section>
+  </body>
+</html>
+`
+
 const detailHtml = `
 <!DOCTYPE html>
 <html lang="en">
@@ -102,14 +131,14 @@ const loadBoeingIndiaModule = async () => {
   }
 }
 
-test('Boeing India helpers stay pinned to the verified careers redirect, India search route, and job detail handoff', async () => {
+test('Boeing India helpers stay pinned to the Thursday, August 13, 2026 careers redirect, India search route, and job detail handoff', async () => {
   const boeingIndia = await loadBoeingIndiaModule()
 
   assert.equal(boeingIndia.SOURCE, 'boeingindia')
   assert.equal(boeingIndia.COMPANY_NAME, 'Boeing India')
   assert.equal(boeingIndia.OFFICIAL_BRAND_NAME, 'Boeing')
   assert.equal(boeingIndia.ATS_PLATFORM, 'talentbrew-radancy')
-  assert.equal(boeingIndia.VERIFIED_ON, '2026-07-15')
+  assert.equal(boeingIndia.VERIFIED_ON, '2026-08-13')
   assert.equal(boeingIndia.HOMEPAGE_URL, 'https://www.boeing.com/careers/')
   assert.equal(boeingIndia.CAREERS_LANDING_URL, 'https://jobs.boeing.com/')
   assert.equal(
@@ -127,11 +156,18 @@ test('Boeing India helpers stay pinned to the verified careers redirect, India s
   )
   assert.equal(boeingIndia.hasCareersLandingSignal(homepageHtml), true)
   assert.equal(boeingIndia.hasIndiaSearchResultsSignal(searchResultsHtml), true)
+  assert.equal(boeingIndia.hasIndiaSearchResultsSignal(zeroResultsSearchHtml), true)
   assert.deepEqual(boeingIndia.extractPaginationSummary(searchResultsHtml), {
     hasNext: false,
     currentPage: 1,
     totalPages: 1,
     totalJobCount: 14,
+  })
+  assert.deepEqual(boeingIndia.extractPaginationSummary(zeroResultsSearchHtml), {
+    hasNext: false,
+    currentPage: 1,
+    totalPages: 1,
+    totalJobCount: 0,
   })
   assert.deepEqual(
     boeingIndia.extractSearchResults(searchResultsHtml),
@@ -335,6 +371,33 @@ test('Boeing India run validates the careers redirect, parses the India search r
     scrapedAt: jobs[0].scrapedAt,
   })
   assert.equal(typeof jobs[0].scrapedAt, 'string')
+})
+
+test('Boeing India returns an honest zero-job slice when the verified India search route currently exposes no public results', async () => {
+  const boeingIndia = await loadBoeingIndiaModule()
+  const requests = []
+
+  const jobs = await boeingIndia.createBoeingIndiaScraper({ maxPages: 1 }).run({
+    fetchText: async (url) => {
+      requests.push(url)
+
+      if (url === boeingIndia.HOMEPAGE_URL) {
+        return { status: 200, url: boeingIndia.CAREERS_LANDING_URL, html: homepageHtml }
+      }
+
+      if (url === boeingIndia.SEARCH_RESULTS_URL) {
+        return { status: 200, url, html: zeroResultsSearchHtml }
+      }
+
+      throw new Error(`Unexpected Boeing India URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requests, [
+    boeingIndia.HOMEPAGE_URL,
+    boeingIndia.SEARCH_RESULTS_URL,
+  ])
+  assert.deepEqual(jobs, [])
 })
 
 test('Boeing India fails closed when the careers redirect, India search page, or Workday handoff drifts', async () => {

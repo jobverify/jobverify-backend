@@ -12,6 +12,7 @@ export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const PARKED_HOMEPAGE_URLS = PROVIDER_METADATA.parkedHomepageUrls
 export const LEGACY_HOMEPAGE_URL = PROVIDER_METADATA.legacyHomepageUrl
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
+export const LANDER_URL = 'https://www.karvyonline.com/lander'
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const PUBLIC_JOB_PATTERNS = [
@@ -58,6 +59,17 @@ export const hasParkedHomepageSignal = (html = '') => {
     normalized.includes('403 forbidden')
     && !hasPublicJobsSignal(html)
   )
+}
+
+export const hasRedirectToLanderSignal = (html = '') =>
+  /window\.location\.href\s*=\s*["']\/lander["']/i.test(String(html ?? ''))
+
+export const hasParkedLanderSignal = (html = '') => {
+  const page = String(html ?? '')
+
+  return /window\.LANDER_SYSTEM\s*=\s*["']PW["']/i.test(page)
+    && /_trfd\.push\(\{ap:\s*["']parking["']\}\)/i.test(page)
+    && /img1\.wsimg\.com\/parking-lander/i.test(page)
 }
 
 export const hasOfficialLegacyRootSignal = (html = '') => {
@@ -119,6 +131,27 @@ export const createKarvyScraper = () => ({
     if (hasPublicJobsSignal(legacyHomepage.html)) {
       throw new Error('Karvy legacy homepage now exposes public jobs')
     }
+
+    if (Number(legacyHomepage.status) === 200 && hasRedirectToLanderSignal(legacyHomepage.html)) {
+      const careersPage = await fetchPage(CAREERS_URL)
+      if (hasPublicJobsSignal(careersPage.html)) {
+        throw new Error('Karvy stale career page now exposes public job listings')
+      }
+      if (Number(careersPage.status) !== 200 || !hasRedirectToLanderSignal(careersPage.html)) {
+        throw new Error('Karvy legacy career handoff no longer matches the verified parked redirect surface')
+      }
+
+      const landerPage = await fetchPage(LANDER_URL)
+      if (hasPublicJobsSignal(landerPage.html)) {
+        throw new Error('Karvy parked legacy lander now exposes public job listings')
+      }
+      if (Number(landerPage.status) !== 200 || !hasParkedLanderSignal(landerPage.html)) {
+        throw new Error('Karvy parked legacy lander no longer matches the verified parked-domain surface')
+      }
+
+      return []
+    }
+
     if (Number(legacyHomepage.status) !== 200 || !hasOfficialLegacyRootSignal(legacyHomepage.html)) {
       throw new Error('Karvy legacy homepage no longer matches the verified first-party careers handoff surface')
     }

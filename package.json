@@ -14,6 +14,7 @@
     "scrape:dry": "node --use-system-ca scraper-support/runner.js --dry-run",
     "scrape:parallel": "node --use-system-ca scraper-support/runner.js --parallel",
     "scrape:parallel:dry": "node --use-system-ca scraper-support/runner.js --parallel --dry-run",
+    "scrape:parallel:dry:monitored": "node --use-system-ca scripts/startMonitoredLocalScrapeRun.js --parallel --dry-run",
     "scrape:backfill-missing:dry": "node --use-system-ca scripts/backfillMissingDryRunArtifacts.js",
     "scrape:csv": "node --use-system-ca scripts/scrapeCompaniesFromCsv.js",
     "validate:live-uncovered-500": "node scripts/validateLiveUncovered500Manifest.js",
@@ -36,6 +37,7 @@
     "jobs:audit:apply-links:settled": "node scripts/waitForSettledApplyLinkAudit.js",
     "db:indexes:plan": "node scripts/indexes.js plan",
     "db:indexes:apply": "node scripts/indexes.js apply",
+    "db:migrate:plan-purchase-indexes": "node scripts/migratePlanPurchaseRazorpayIndexes.js",
     "db:verify-indexes": "npm run db:indexes:plan",
     "jobs:profile": "node scripts/profileJobQueries.js",
     "jobs:profile:local": "node scripts/profileLocalJobQueries.js"
@@ -64,6 +66,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.20.0",
     "pdfjs-dist": "^6.2.108",
+    "razorpay": "^2.9.8",
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {

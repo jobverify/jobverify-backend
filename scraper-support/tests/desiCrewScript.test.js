@@ -232,7 +232,7 @@ const loadModule = async () => {
   }
 }
 
-test('Desi Crew constants and extractors stay pinned to the August 1, 2026 first-party careers surface', async () => {
+test('Desi Crew constants and extractors stay pinned to the August 15, 2026 first-party careers surface', async () => {
   const desiCrew = await loadModule()
 
   assert.equal(desiCrew.COMPANY_NAME, 'Desi Crew')
@@ -243,7 +243,7 @@ test('Desi Crew constants and extractors stay pinned to the August 1, 2026 first
   assert.equal(desiCrew.JOBS_ARCHIVE_URL, 'https://www.desicrew.in/careers/')
   assert.equal(desiCrew.JOBS_API_URL, null)
   assert.equal(desiCrew.SAMPLE_JOB_URL, 'https://www.desicrew.in/careers/qa-automation-engineer/')
-  assert.equal(desiCrew.VERIFIED_ON, '2026-08-01')
+  assert.equal(desiCrew.VERIFIED_ON, '2026-08-15')
   assert.equal(desiCrew.hasOfficialHomepageSignal(homepagePage), true)
   assert.equal(desiCrew.hasOfficialCareersPageSignal(careersPage), true)
   assert.equal(desiCrew.hasOfficialJobsArchiveSignal(careersPage), true)
@@ -341,7 +341,7 @@ test('Desi Crew constants and extractors stay pinned to the August 1, 2026 first
   assert.match(qaJob.jobDescription, /Build and maintain the automated regression suites/i)
 })
 
-test('run validates the August 1, 2026 Desi Crew careers surfaces and returns the five live first-party openings', async () => {
+test('run validates the August 15, 2026 Desi Crew careers surfaces and returns the five live first-party openings', async () => {
   const desiCrew = await loadModule()
   const requestedUrls = []
 
@@ -438,7 +438,40 @@ test('run validates the August 1, 2026 Desi Crew careers surfaces and returns th
   assert.equal(jobs[3].experienceRequired, null)
 })
 
-test('Desi Crew scraper fails closed when the verified August 1, 2026 public-surface checkpoints drift', async () => {
+test('Desi Crew accepts the current inline first-party apply form without the legacy Basin action', async () => {
+  const desiCrew = await loadModule()
+
+  const currentCareersPage = {
+    ...careersPage,
+    html: `
+      <!doctype html>
+      <html lang="en">
+        <head>
+          <title>Careers at DesiCrew | Build a career with purpose.</title>
+          <link rel="canonical" href="https://www.desicrew.in/careers/" />
+        </head>
+        <body>
+          <a href="#apply" class="dc-mh-cta">Apply now</a>
+          <section id="roles">
+            <h2>Open roles</h2>
+            <a href="/careers/delivery-center-manager/">
+              <p class="text-h6 font-main">Delivery Center Manager</p>
+              <p class="text-body-small text-text-tertiary">Operations Â· Chennai</p>
+            </a>
+          </section>
+          <form id="apply-form">
+            <label>What are you applying for?</label>
+            <button type="submit">Send application</button>
+          </form>
+        </body>
+      </html>
+    `,
+  }
+
+  assert.equal(desiCrew.hasOfficialCareersPageSignal(currentCareersPage), true)
+})
+
+test('Desi Crew scraper fails closed when the verified August 15, 2026 public-surface checkpoints drift', async () => {
   const desiCrew = await loadModule()
 
   await assert.rejects(

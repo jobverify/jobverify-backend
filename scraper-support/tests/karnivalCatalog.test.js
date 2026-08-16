@@ -24,10 +24,10 @@ test('Karnival catalog captures the verified no-careers-route sitemap contract a
   assert.equal(KARNIVAL_CATALOG.adapter, 'script')
   assert.equal(KARNIVAL_CATALOG.companyCareerPage, 'https://www.karnival.com/')
   assert.equal(KARNIVAL_CATALOG.homepageUrl, 'https://www.karnival.com/')
-  assert.equal(KARNIVAL_CATALOG.sitemapUrl, 'https://www.karnival.com/sitemap.xml')
+  assert.equal(KARNIVAL_CATALOG.sitemapUrl, 'https://karnival.com/sitemap.xml')
   assert.deepEqual(KARNIVAL_CATALOG.missingJobsRouteUrls, [
-    'https://www.karnival.com/careers',
-    'https://www.karnival.com/jobs',
+    'https://karnival.com/careers',
+    'https://karnival.com/jobs',
   ])
   assert.equal(KARNIVAL_CATALOG.companyDomain, 'karnival.com')
   assert.equal(KARNIVAL_CATALOG.atsPlatform, 'official-company-site-no-public-careers')
@@ -43,11 +43,11 @@ test('Karnival catalog captures the verified no-careers-route sitemap contract a
   assert.equal(KARNIVAL_CATALOG.parser, 'custom-script')
   assert.equal(KARNIVAL_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(KARNIVAL_CATALOG.dryRunFile, 'karnival/jobs.json')
-  assert.equal(KARNIVAL_CATALOG.verifiedOn, '2026-08-02')
-  assert.match(KARNIVAL_CATALOG.verifiedSurfaceSummary, /Sunday, August 2, 2026/i)
+  assert.equal(KARNIVAL_CATALOG.verifiedOn, '2026-08-15')
+  assert.match(KARNIVAL_CATALOG.verifiedSurfaceSummary, /Saturday, August 15, 2026/i)
   assert.match(KARNIVAL_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.karnival\.com\//i)
-  assert.match(KARNIVAL_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.karnival\.com\/sitemap\.xml/i)
-  assert.match(KARNIVAL_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.karnival\.com\/careers/i)
+  assert.match(KARNIVAL_CATALOG.verifiedSurfaceSummary, /https:\/\/karnival\.com\/sitemap\.xml/i)
+  assert.match(KARNIVAL_CATALOG.verifiedSurfaceSummary, /https:\/\/karnival\.com\/careers/i)
   assert.match(KARNIVAL_CATALOG.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
   assert.match(KARNIVAL_CATALOG.modulePath, /karnival[\\/]script\.js$/i)
 })

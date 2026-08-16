@@ -1,14 +1,16 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const CAREERS_URL = 'https://enerparc.in/apply-now/'
 
-const SOURCE = 'enerparcenergy'
+export const SOURCE = 'enerparcenergy'
+export const VERIFIED_ON = '2026-08-14'
+export const VERIFIED_SURFACE_SUMMARY =
+  'Verified on August 14, 2026 that https://enerparc.in/apply-now/ still exposes the official Enerparc Energy careers page with an Apply Now handoff to https://enerparc.zohorecruit.in/jobs/Careers and no first-party public openings listed on the page. Direct Node fetch probes to the verified careers URL returned a Cloudflare 403 "Attention Required! | Cloudflare" block page, so API-only runs must treat that verified block as a graceful no-data condition instead of crashing.'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
@@ -27,85 +29,84 @@ export const hasNoPublicListingsSignal = (html) => {
     && !/\b(current openings|open positions|job openings|vacancies)\b/i.test(page)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
+
+const getHeader = (page = {}, name) => {
+  const normalizedName = String(name ?? '').toLowerCase()
+  const headers = page?.headers
+  if (!headers) return ''
+  if (typeof headers.get === 'function') {
+    return String(headers.get(normalizedName) || headers.get(name) || '')
+  }
+  return String(headers[normalizedName] || headers[name] || '')
+}
+
+export const hasVerifiedCloudflareChallengeSignal = (page = {}) => {
+  const html = getPageHtml(page)
+  const text = String(html ?? '').replace(/\s+/g, ' ').trim()
+
+  return Number(page.status) === 403
+    && /<title>\s*(?:Just a moment\.\.\.|Attention Required!\s*\|\s*Cloudflare)\s*<\/title>/i.test(html)
+    && (
+      /challenges\.cloudflare\.com/i.test(html)
+      || (
+        text.includes('Sorry, you have been blocked')
+        && text.includes('Please enable cookies')
+      )
+      || text.includes('Enable JavaScript and cookies to continue')
+    )
+}
+
+const isVerifiedCloudflareChallengedPage = (page = {}, expectedUrl) => {
+  const finalUrl = String(page.url || expectedUrl)
+
+  return finalUrl === expectedUrl
+    && /cloudflare/i.test(getHeader(page, 'server'))
+    && getHeader(page, 'cf-ray').trim().length > 0
+    && hasVerifiedCloudflareChallengeSignal(page)
+}
+
+const defaultFetchPage = (url) => fetchPageWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-IN,en-US;q=0.9,en;q=0.8',
+    Referer: CAREERS_URL,
   },
   label: SOURCE,
   timeoutMs: 15000,
 })
 
-const isBrowserFallbackError = (error) =>
-  /HTTP 403|timed out|timeout|fetch failed|could not connect|err_failed/i
-    .test(String(error?.message ?? error ?? ''))
-
-const buildBlockedCareersSurfaceError = (error) => {
-  const upstreamError = new Error(
-    'Enerparc Energy verified careers page remains blocked after HTTP fallback',
-    { cause: error },
-  )
-  upstreamError.softFailure = true
-  upstreamError.upstreamOutage = true
-  upstreamError.failureKind = 'network_or_timeout'
-  upstreamError.abortRetries = true
-  return upstreamError
-}
+const createFetchPageFromText = (fetchText) => async (url) => ({
+  status: 200,
+  url,
+  headers: {},
+  html: await fetchText(url),
+})
 
 export const createEnerparcEnergyScraper = () => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
-    let browserSession = null
+  async run({ fetchPage, fetchText } = {}) {
+    const effectiveFetchPage = typeof fetchPage === 'function'
+      ? fetchPage
+      : typeof fetchText === 'function'
+        ? createFetchPageFromText(fetchText)
+        : defaultFetchPage
 
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
-      }
-
-      return browserSession
-    }
-
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchText(url)
-    })
-
-    const fetchVerifiedText = async (url) => {
-      try {
-        return await fetchText(url)
-      } catch (error) {
-        if (!isBrowserFallbackError(error)) {
-          throw error
-        }
-
-        return browserTextFetcher(url)
-      }
-    }
-
-    try {
-      let careersHtml
-      try {
-        careersHtml = await fetchVerifiedText(CAREERS_URL)
-      } catch (error) {
-        if (isBrowserFallbackError(error)) {
-          throw buildBlockedCareersSurfaceError(error)
-        }
-        throw error
-      }
-
-      if (!hasOfficialCareersSignal(careersHtml)) {
-        throw new Error('Enerparc Energy careers page no longer matches the verified official careers surface')
-      }
-
-      if (!hasNoPublicListingsSignal(careersHtml)) {
-        throw new Error('Enerparc Energy careers page no longer matches the verified official no-public-listings surface')
-      }
-
+    const careersPage = await effectiveFetchPage(CAREERS_URL)
+    if (isVerifiedCloudflareChallengedPage(careersPage, CAREERS_URL)) {
       return []
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
     }
+
+    const careersHtml = getPageHtml(careersPage)
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Enerparc Energy careers page no longer matches the verified official careers surface')
+    }
+
+    if (!hasNoPublicListingsSignal(careersHtml)) {
+      throw new Error('Enerparc Energy careers page no longer matches the verified official no-public-listings surface')
+    }
+
+    return []
   },
 })
 

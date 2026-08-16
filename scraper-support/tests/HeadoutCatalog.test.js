@@ -44,10 +44,11 @@ test('Headout local catalog captures the verified first-party Greenhouse contrac
   assert.equal(HEADOUT_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(HEADOUT_CATALOG.modulePath, '../../scraper/headout/script.js')
   assert.deepEqual(HEADOUT_CATALOG.greenhouseBoardSlugs, ['headoutcareers', 'headoutreferrals'])
-  assert.equal(HEADOUT_CATALOG.verifiedOn, '2026-07-16')
+  assert.equal(HEADOUT_CATALOG.verifiedOn, '2026-08-15')
   assert.equal(HEADOUT_CATALOG.dryRunFile, 'headout/jobs.json')
   assert.match(HEADOUT_CATALOG.verifiedSurfaceSummary, /headout\.com\/careers/i)
   assert.match(HEADOUT_CATALOG.verifiedSurfaceSummary, /Greenhouse/i)
+  assert.match(HEADOUT_CATALOG.verifiedSurfaceSummary, /assets\.headout\.com/i)
 
   assert.equal(headout.PROVIDER_METADATA.source, HEADOUT_CATALOG.source)
   assert.equal(headout.CAREERS_URL, HEADOUT_CATALOG.companyCareerPage)

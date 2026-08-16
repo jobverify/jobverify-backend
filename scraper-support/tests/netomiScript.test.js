@@ -5,7 +5,7 @@ const officialCareersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers — Netomi</title>
+    <title>Careers - Netomi</title>
   </head>
   <body>
     <main>
@@ -19,6 +19,21 @@ const officialCareersHtml = `
     <script>
       fetch('https://api.lever.co/v0/postings/netomi?mode=json')
     </script>
+  </body>
+</html>
+`
+
+const referralOnlyHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Netomi</title>
+  </head>
+  <body>
+    <main>
+      <h1>We create intelligent experiences for the world&rsquo;s most ambitious companies.</h1>
+      <p>New engagements are by referral.</p>
+    </main>
   </body>
 </html>
 `
@@ -81,8 +96,9 @@ test('Netomi scraper pins the verified first-party careers page and embedded Lev
   assert.equal(netomi.LEVER_BOARD_URL, 'https://jobs.lever.co/netomi')
   assert.equal(netomi.LEVER_API_URL, 'https://api.lever.co/v0/postings/netomi?mode=json')
   assert.equal(netomi.COMPANY_DOMAIN, 'netomi.com')
-  assert.equal(netomi.VERIFIED_ON, '2026-07-16')
+  assert.equal(netomi.VERIFIED_ON, '2026-08-15')
   assert.equal(netomi.hasOfficialNetomiCareersSignal(officialCareersHtml), true)
+  assert.equal(netomi.hasReferralOnlyHomepageSignal(referralOnlyHomepageHtml), true)
   assert.equal(
     netomi.extractLeverApiUrl(officialCareersHtml),
     'https://api.lever.co/v0/postings/netomi?mode=json',
@@ -175,6 +191,28 @@ test('Netomi run validates the first-party careers page and decorates public Lev
       atsPlatform: 'lever',
     },
   ])
+})
+
+test('Netomi returns [] when the careers route now resolves to the verified referral-only homepage redirect', async () => {
+  const netomi = await loadNetomiModule()
+  const requestedPages = []
+
+  const jobs = await netomi.createNetomiScraper().run({
+    fetchPage: async (url) => {
+      requestedPages.push(url)
+      return {
+        status: 200,
+        url: netomi.HOMEPAGE_URL,
+        html: referralOnlyHomepageHtml,
+      }
+    },
+    fetchJson: async () => {
+      throw new Error('Lever API should not be called for the referral-only empty state')
+    },
+  })
+
+  assert.deepEqual(requestedPages, [netomi.CAREERS_URL])
+  assert.deepEqual(jobs, [])
 })
 
 test('Netomi fails closed when the verified careers page disappears or the Lever payload shape drifts', async () => {

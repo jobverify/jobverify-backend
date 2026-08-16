@@ -9,7 +9,7 @@ export const SOURCE = 'birlanu'
 export const COMPANY = 'BirlaNu'
 export const HOMEPAGE_URL = 'https://birlanu.com/'
 export const CAREERS_URL = 'https://birlanu.com/people'
-export const VERIFIED_LINKEDIN_URL = 'https://www.linkedin.com/company/birlanu/jobs/'
+export const VERIFIED_HANDOFF_URL = 'https://iconnect-hil.darwinbox.in/ms/candidatev2/main/careers/allJobs'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -105,8 +105,8 @@ export const createBirlaNuScraper = () => ({
     }
 
     const joinUsUrl = extractJoinUsUrl(careersHtml)
-    if (joinUsUrl !== VERIFIED_LINKEDIN_URL) {
-      throw new Error('BirlaNu people page no longer links to the verified LinkedIn handoff')
+    if (joinUsUrl !== VERIFIED_HANDOFF_URL) {
+      throw new Error('BirlaNu people page no longer links to the verified Darwinbox handoff')
     }
 
     if (pageExposesFirstPartyJobRecords(careersHtml)) {

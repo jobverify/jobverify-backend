@@ -25,46 +25,40 @@ const loadScraperModule = async () => {
   }
 }
 
-test('InstaSafe local catalog captures the verified first-party careers page and Zoho Recruit API surface', async () => {
+test('InstaSafe local catalog captures the verified first-party careers page and fail-closed empty-state contract', async () => {
   const { INSTASAFE_CATALOG } = await loadCatalogModule()
   const instasafe = await loadScraperModule()
 
   assert.equal(INSTASAFE_CATALOG.source, 'instasafe')
   assert.equal(INSTASAFE_CATALOG.companyName, 'InstaSafe')
-  assert.equal(INSTASAFE_CATALOG.officialBrandName, 'Instasafe Technologies Pvt Ltd')
+  assert.equal(INSTASAFE_CATALOG.officialBrandName, 'InstaSafe')
   assert.equal(INSTASAFE_CATALOG.adapter, 'script')
   assert.equal(INSTASAFE_CATALOG.companyCareerPage, 'https://instasafe.com/careers/')
   assert.equal(INSTASAFE_CATALOG.homepageUrl, 'https://instasafe.com/')
   assert.equal(INSTASAFE_CATALOG.careersPageUrl, 'https://instasafe.com/careers/')
-  assert.equal(INSTASAFE_CATALOG.careersPortalUrl, 'https://instasafe.zohorecruit.com/jobs/Careers/')
-  assert.equal(
-    INSTASAFE_CATALOG.careersApiUrl,
-    'https://instasafe.zohorecruit.com/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite',
-  )
-  assert.equal(INSTASAFE_CATALOG.atsPlatform, 'zohorecruit')
+  assert.equal(INSTASAFE_CATALOG.atsPlatform, 'official-company-careers-no-public-openings')
   assert.equal(INSTASAFE_CATALOG.countryFilter, 'India')
-  assert.equal(INSTASAFE_CATALOG.paginationStrategy, 'official-careers-page-embed-plus-public-zoho-api')
+  assert.equal(INSTASAFE_CATALOG.paginationStrategy, 'first-party-careers-page-validation-only')
   assert.equal(
     INSTASAFE_CATALOG.extractionStrategy,
-    'official-careers-page+embedded-zohorecruit-site+public-job-openings-api',
+    'verified-first-party-careers-page-without-public-openings-return-empty',
   )
   assert.equal(INSTASAFE_CATALOG.parser, 'custom-script')
   assert.equal(INSTASAFE_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(INSTASAFE_CATALOG.companyDomain, 'instasafe.com')
-  assert.equal(INSTASAFE_CATALOG.verifiedOn, '2026-08-02')
-  assert.equal(INSTASAFE_CATALOG.verifiedPublicPostingCount, 14)
-  assert.match(INSTASAFE_CATALOG.verifiedSurfaceSummary, /August 2, 2026/i)
+  assert.equal(INSTASAFE_CATALOG.verifiedOn, '2026-08-15')
+  assert.equal(INSTASAFE_CATALOG.verifiedPublicPostingCount, 0)
+  assert.equal(INSTASAFE_CATALOG.verifiedIndiaJobCount, 0)
+  assert.match(INSTASAFE_CATALOG.verifiedSurfaceSummary, /August 15, 2026/i)
   assert.match(INSTASAFE_CATALOG.verifiedSurfaceSummary, /https:\/\/instasafe\.com\/careers\//i)
-  assert.match(INSTASAFE_CATALOG.verifiedSurfaceSummary, /https:\/\/instasafe\.zohorecruit\.com\/jobs\/Careers\//i)
-  assert.match(INSTASAFE_CATALOG.verifiedSurfaceSummary, /public Zoho Recruit portal/i)
+  assert.match(INSTASAFE_CATALOG.verifiedSurfaceSummary, /no trustworthy public jobs inventory/i)
+  assert.match(INSTASAFE_CATALOG.verifiedSurfaceSummary, /fails closed/i)
   assert.equal(INSTASAFE_CATALOG.modulePath, modulePath)
   assert.match(INSTASAFE_CATALOG.dryRunFile, /instasafe[\\/]jobs\.json$/i)
 
   assert.equal(instasafe.PROVIDER_METADATA.source, INSTASAFE_CATALOG.source)
   assert.equal(instasafe.PROVIDER_METADATA.companyName, INSTASAFE_CATALOG.companyName)
   assert.equal(instasafe.PROVIDER_METADATA.companyCareerPage, INSTASAFE_CATALOG.companyCareerPage)
-  assert.equal(instasafe.PROVIDER_METADATA.careersPortalUrl, INSTASAFE_CATALOG.careersPortalUrl)
-  assert.equal(instasafe.PROVIDER_METADATA.careersApiUrl, INSTASAFE_CATALOG.careersApiUrl)
 })
 
 test('InstaSafe local catalog covers the exact backlog row without aliases', async () => {
@@ -82,7 +76,7 @@ test('InstaSafe local catalog covers the exact backlog row without aliases', asy
   )
 })
 
-test('getScraperCatalog includes InstaSafe as a verified Zoho Recruit provider', () => {
+test('getScraperCatalog includes InstaSafe as a verified fail-closed careers provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'instasafe')
 
   assert.ok(provider)
@@ -90,7 +84,7 @@ test('getScraperCatalog includes InstaSafe as a verified Zoho Recruit provider',
   assert.equal(provider.companyName, 'InstaSafe')
   assert.equal(provider.companyCareerPage, 'https://instasafe.com/careers/')
   assert.equal(provider.companyDomain, 'instasafe.com')
-  assert.equal(provider.atsPlatform, 'zohorecruit')
+  assert.equal(provider.atsPlatform, 'official-company-careers-no-public-openings')
   assert.match(provider.modulePath, /instasafe[\\/]script\.js$/i)
 })
 
@@ -100,6 +94,6 @@ test('buildScrapers exposes a runnable InstaSafe scraper without changing the ru
   assert.ok(scraper)
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'instasafe')
-  assert.equal(scraper.provider.atsPlatform, 'zohorecruit')
+  assert.equal(scraper.provider.atsPlatform, 'official-company-careers-no-public-openings')
   assert.match(scraper.dryRunFile, /instasafe[\\/]jobs\.json$/i)
 })

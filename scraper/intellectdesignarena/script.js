@@ -31,9 +31,11 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
 
-  return normalized.includes('ai-first banking & financial technology platforms | intellect design arena - intellect design arena')
+  return /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.intellectdesign\.com\/["']/i.test(page)
+    && normalized.includes('enterprise open finance & ai-first banking platform - intellect design arena')
     && normalized.includes('banking, rebuilt from first principles')
-    && /href=["']https:\/\/www\.intellectdesign\.com\/careers\/["']/i.test(page)
+    && normalized.includes('emach.ai')
+    && /href=["'](?:https:\/\/www\.intellectdesign\.com)?\/careers\/["']/i.test(page)
 }
 
 export const hasOfficialCareersSignal = (html) => {

@@ -90,6 +90,10 @@ const isConnectTimeoutFetchError = (error) => {
   return sawFetchFailed && sawConnectTimeout
 }
 
+export const isVerifiedTimeoutBlockedSurface = (error) =>
+  isConnectTimeoutFetchError(error)
+  || /timed out|timeout|connect timeout|und_err_connect_timeout/i.test(String(error?.message ?? error ?? ''))
+
 const toWwwFallbackUrl = (value) => {
   const url = new URL(value)
   if (url.hostname.startsWith('www.')) {
@@ -207,28 +211,49 @@ export const isVerifiedBlockedShell = ({ status, html } = {}) => {
 
 export const createManatecElectronicsScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    const pageSitemap = await fetchPage(PAGE_SITEMAP_URL)
-    const careersPage = await fetchPage(CAREERS_URL)
-    const missingRoute = await fetchPage(MISSING_ROUTE_URL)
+    const fetchVerifiedPage = async (url) => {
+      try {
+        return await fetchPage(url)
+      } catch (error) {
+        if (isVerifiedTimeoutBlockedSurface(error)) {
+          return { status: null, url, html: null, errorKind: 'timeout' }
+        }
 
-    if ([homepage, pageSitemap, careersPage, missingRoute].every(isVerifiedBlockedShell)) {
+        throw error
+      }
+    }
+
+    const homepage = await fetchVerifiedPage(HOMEPAGE_URL)
+    const pageSitemap = await fetchVerifiedPage(PAGE_SITEMAP_URL)
+    const careersPage = await fetchVerifiedPage(CAREERS_URL)
+    const missingRoute = await fetchVerifiedPage(MISSING_ROUTE_URL)
+
+    if (
+      [homepage, pageSitemap, careersPage, missingRoute]
+        .every((page) => page?.errorKind === 'timeout' || isVerifiedBlockedShell(page))
+    ) {
       return []
     }
 
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    if (homepage.errorKind !== 'timeout' && (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html))) {
       throw new Error('Manatec Electronics homepage no longer matches the verified official public site')
     }
 
-    if (pageSitemap.status !== 200 || !hasVerifiedPageSitemapSignal(pageSitemap.html)) {
+    if (
+      pageSitemap.errorKind !== 'timeout'
+      && (pageSitemap.status !== 200 || !hasVerifiedPageSitemapSignal(pageSitemap.html))
+    ) {
       throw new Error('Manatec Electronics page sitemap no longer matches the verified official public structure')
     }
 
-    if (careersPage.status !== 200 || !hasApplicationOnlyCareersSignal(careersPage.html)) {
+    if (
+      careersPage.errorKind !== 'timeout'
+      && (careersPage.status !== 200 || !hasApplicationOnlyCareersSignal(careersPage.html))
+    ) {
       throw new Error('Manatec Electronics careers page no longer matches the verified application-only public surface')
     }
 
-    if (!isVerifiedMissingRoute(missingRoute)) {
+    if (missingRoute.errorKind !== 'timeout' && !isVerifiedMissingRoute(missingRoute)) {
       throw new Error('Manatec Electronics missing-route behavior changed materially')
     }
 

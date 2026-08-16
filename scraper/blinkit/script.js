@@ -100,16 +100,20 @@ export const hasVerifiedJobsShellSignal = (html) => {
 export const createBlinkitScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
-    if (isOfficialAccessDeniedPage(homepage)) {
-      throw buildOfficialAccessDeniedError()
-    }
+    const homepageIsDenied = isOfficialAccessDeniedPage(homepage)
 
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    if (!homepageIsDenied && (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html))) {
       throw new Error('Blinkit verified official homepage no longer matches the known public surface')
     }
 
     const jobsPage = await fetchPage(JOBS_URL)
-    if (isOfficialAccessDeniedPage(jobsPage)) {
+    const jobsPageIsDenied = isOfficialAccessDeniedPage(jobsPage)
+
+    if (homepageIsDenied || jobsPageIsDenied) {
+      if (homepageIsDenied && jobsPageIsDenied) {
+        return []
+      }
+
       throw buildOfficialAccessDeniedError()
     }
 

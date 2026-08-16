@@ -98,7 +98,7 @@ export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
 
-  return /<title>\s*Work at Buildkite \| Remote-first since 2013 \| Buildkite\s*<\/title>/i.test(page)
+  return /<title>\s*Work at Buildkite \| Remote-first (?:since 2013|careers) \| Buildkite\s*<\/title>/i.test(page)
     && normalized.includes('Work at Buildkite')
     && normalized.includes('Open roles')
     && normalized.includes('Join our talent community')

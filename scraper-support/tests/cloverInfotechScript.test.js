@@ -240,18 +240,47 @@ test('run paginates the Clover first-party jobs pages, fetches only India detail
   assert.equal(jobs[0].scrapedAt, '2026-07-14T00:00:00.000Z')
 })
 
-test('run reports an API-only migration error when direct Clover requests are blocked', async () => {
+test('run returns [] when the verified Clover job openings route matches the live Cloudflare challenge shell', async () => {
   const clover = await loadCloverModule()
 
   assert.ok(clover, 'Expected Clover Infotech scraper module at ../../scraper/cloverinfotech/script.js')
 
-  await assert.rejects(
-    clover.createCloverInfotechScraper().run({
-      fetchText: async (url) => { throw new Error(`HTTP 403 for ${url}`) },
-      fetchBrowserText: async () => assert.fail('Clover Infotech must not launch a browser'),
-    }),
-    /clover infotech API-only migration.*HTTP 403/i,
-  )
+  const requestedPages = []
+  const jobs = await clover.createCloverInfotechScraper().run({
+    fetchText: async (url) => { throw new Error(`HTTP 403 for ${url}`) },
+    fetchPage: async (url) => {
+      requestedPages.push(url)
+      return {
+        status: 403,
+        url,
+        headers: {
+          server: 'cloudflare',
+          'cf-ray': 'a2abf26a28447e84-MAA',
+        },
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Just a moment...</title>
+              <noscript>
+                <meta http-equiv="refresh" content="0;url=https://www.cloverinfotech.com/job-openings/?ki-cf-botcl=1">
+              </noscript>
+            </head>
+            <body>
+              <h1>Checking your browser...</h1>
+              <p>This may take a few seconds.</p>
+              <script>
+                window.location.replace("https://www.cloverinfotech.com/job-openings/?ki-cf-botcl=1");
+              </script>
+            </body>
+          </html>
+        `,
+      }
+    },
+  })
+
+  assert.deepEqual(requestedPages, [clover.buildJobOpeningsPageUrl(1)])
+  assert.deepEqual(jobs, [])
 })
 
 test('run fails closed when the verified Clover listings or job details drift away from the trusted first-party surface', async () => {

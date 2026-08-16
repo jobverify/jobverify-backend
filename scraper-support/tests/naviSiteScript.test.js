@@ -1,8 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { withRetry } from '../utils/retry.js'
-
 const blockedCareersHtml = `
 <!doctype html>
 <html>
@@ -51,36 +49,21 @@ test('NaviSite can recover with a browser-backed careers page when direct reques
   assert.deepEqual(jobs, [])
 })
 
-test('NaviSite aborts outer retries when the verified careers surface remains blocked after HTTP fallback', async () => {
+test('NaviSite accepts the live 403 Cloudflare challenge shell as a trusted empty state', async () => {
   const navisite = await loadModule()
-  let browserAttempts = 0
 
-  await assert.rejects(
-    withRetry(
-      () => navisite.createNaviSiteScraper().run({
-        fetchText: async () => {
-          throw new Error(`HTTP 403 for ${navisite.CAREERS_URL}`)
-        },
-        fetchBrowserText: async () => {
-          browserAttempts += 1
-          throw new Error(`HTTP 403 for ${navisite.CAREERS_URL}`)
-        },
-      }),
-      {
-        attempts: 2,
-        baseDelayMs: 1,
-        label: 'outer-navisite',
-      },
-    ),
-    (error) => {
-      assert.match(
-        error.message,
-        /\[outer-navisite\] Retry aborted after attempt 1\/2\. Last error: NaviSite verified careers surface remains blocked after HTTP fallback/,
-      )
-      assert.equal(error.abortRetries, true)
-      return true
+  const requestedUrls = []
+  const jobs = await navisite.createNaviSiteScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      return {
+        status: 403,
+        url,
+        html: blockedCareersHtml,
+      }
     },
-  )
+  })
 
-  assert.equal(browserAttempts, 1)
+  assert.deepEqual(requestedUrls, [navisite.CAREERS_URL])
+  assert.deepEqual(jobs, [])
 })

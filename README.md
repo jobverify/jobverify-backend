@@ -73,6 +73,43 @@ npm run scrape:dry
 npm run scrape:csv -- --parallel --dry-run
 ```
 
+## Razorpay Standard Checkout
+
+To use Razorpay Test Mode, configure the backend environment with these variable
+names (keep all credential values out of tracked files):
+
+```text
+PAYMENT_PROVIDER
+RAZORPAY_KEY_ID
+RAZORPAY_KEY_SECRET
+RAZORPAY_WEBHOOK_SECRET
+```
+
+Set `PAYMENT_PROVIDER` to `razorpay` and obtain the Test Mode key ID and secret
+from Razorpay. Start the services from their respective repositories:
+
+```bash
+# jobverify-backend
+npm run dev
+
+# jobverify-frontend
+npm run dev
+```
+
+After signing in, select a paid plan in the frontend. The authenticated flow
+creates a plan-aware order through `POST /api/billing/checkout`, opens Razorpay
+Standard Checkout with only the public key ID, and sends the completed payment
+response to `POST /api/billing/verify`. The backend creates the order and
+verifies the payment signature server-side before activating access. A successful
+Test Mode payment activates the selected plan and refreshes the user's access.
+Closing Checkout or a failed payment leaves the plan inactive and shows an error;
+no access is granted.
+
+For production, replace the Test Mode keys with production keys and configure a
+Razorpay webhook endpoint at `POST /api/billing/webhook` with its corresponding
+webhook secret in `RAZORPAY_WEBHOOK_SECRET`. Do not expose the key secret or
+webhook secret to the frontend.
+
 ## Scraper company coverage
 
 `company_coverage_report.json` is the authoritative inventory of cataloged,

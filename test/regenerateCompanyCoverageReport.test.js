@@ -7,7 +7,7 @@ import test from 'node:test'
 
 import { regenerateCompanyCoverageReport } from '../scripts/regenerateCompanyCoverageReport.js'
 
-test('regenerateCompanyCoverageReport defaults to backend scraper inventory when csvPath is omitted', () => {
+test('regenerateCompanyCoverageReport includes every backend scraper directory when csvPath is omitted', () => {
   const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobverify-regenerate-coverage-default-'))
 
   try {
@@ -26,9 +26,9 @@ test('regenerateCompanyCoverageReport defaults to backend scraper inventory when
     })
 
     assert.equal(summary.sourceType, 'scraper-directory-inventory')
-    assert.equal(summary.totalRows, 2)
-    assert.equal(summary.candidateRows, 2)
-    assert.equal(summary.matchedCount, 2)
+    assert.equal(summary.totalRows, 3)
+    assert.equal(summary.candidateRows, 3)
+    assert.equal(summary.matchedCount, 3)
     assert.equal(summary.unmatchedCount, 0)
     assert.deepEqual(summary.unresolvedSample, [])
 
@@ -41,8 +41,10 @@ test('regenerateCompanyCoverageReport defaults to backend scraper inventory when
       [
         ['Alpha Inc.', 'alpha'],
         ['Beta Labs', 'beta'],
+        ['helpers', 'helpers'],
       ],
     )
+    assert.equal(backendReport.matched[2].provider, null)
   } finally {
     rmSync(tempDir, { recursive: true, force: true })
   }

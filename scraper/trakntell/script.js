@@ -35,7 +35,7 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
-  .replace(/&#39;|&apos;|&rsquo;|&#x27;/gi, "'")
+  .replace(/&#39;|&#8217;|&apos;|&rsquo;|&#x27;/gi, "'")
   .replace(/&quot;/gi, '"')
   .replace(/&amp;/gi, '&')
   .replace(/\u00a0/g, ' ')
@@ -76,15 +76,14 @@ export const hasOfficialHomepageSignal = (page = {}) => {
 
   return page?.status === 200
     && page?.url === HOMEPAGE_URL
+    && normalized.includes("experience india's 1st oem gps vehicle tracker")
     && normalized.includes('gps vehicle tracker')
     && normalized.includes('trak n tell mobile app')
     && normalized.includes('need support?')
-    && normalized.includes('activate your gps device')
-    && normalized.includes('contact us')
-    && normalized.includes('about us')
+    && normalized.includes('track your vehicle anywhere anytime')
+    && normalized.includes('smart gps vehicle tracker')
     && normalized.includes('press')
     && normalized.includes('emi')
-    && normalized.includes('care@trakntell.com')
 }
 
 export const hasOfficialContactSignal = (page = {}) => {
@@ -92,12 +91,11 @@ export const hasOfficialContactSignal = (page = {}) => {
 
   return page?.status === 200
     && page?.url === CONTACT_URL
+    && normalized.includes('contact us')
     && normalized.includes('get in touch')
-    && normalized.includes('select product')
-    && normalized.includes('how did you hear about us?')
-    && normalized.includes('enquiry')
-    && normalized.includes('send message')
+    && normalized.includes('8010-80-8010')
     && normalized.includes('care@trakntell.com')
+    && normalized.includes('gurgaon')
 }
 
 export const hasPublicJobsSignal = (html = '') => (

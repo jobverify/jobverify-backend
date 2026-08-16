@@ -55,6 +55,10 @@ export const hasVerifiedParkedDomainSignal = (html) => {
     && !hasPublicJobsSignal(markup)
 }
 
+export const isMoviduVerifiedTimeoutBlocker = (error) =>
+  /connect timeout error|timed out|timeout|fetch failed|getaddrinfo|err_connection_timed_out|other side closed|terminated/i
+    .test(String(error?.message ?? error?.cause?.message ?? error ?? ''))
+
 const isOfficialMoviduHost = (value) => {
   try {
     return ['movidu.com', 'www.movidu.com'].includes(new URL(value).hostname)
@@ -87,28 +91,36 @@ const verifyParkedPage = ({ page, errorMessage }) => {
 
 export const createMoviduTechnologyPrivateLimitedScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    verifyParkedPage({
-      page: homepage,
-      errorMessage:
-        'Movidu Technology Private Limited homepage no longer matches the verified parked first-party no-jobs surface',
-    })
+    try {
+      const homepage = await fetchPage(HOMEPAGE_URL)
+      verifyParkedPage({
+        page: homepage,
+        errorMessage:
+          'Movidu Technology Private Limited homepage no longer matches the verified parked first-party no-jobs surface',
+      })
 
-    const wwwHomepage = await fetchPage(WWW_HOMEPAGE_URL)
-    verifyParkedPage({
-      page: wwwHomepage,
-      errorMessage:
-        'Movidu Technology Private Limited www homepage no longer matches the verified parked first-party no-jobs surface',
-    })
+      const wwwHomepage = await fetchPage(WWW_HOMEPAGE_URL)
+      verifyParkedPage({
+        page: wwwHomepage,
+        errorMessage:
+          'Movidu Technology Private Limited www homepage no longer matches the verified parked first-party no-jobs surface',
+      })
 
-    const careersPage = await fetchPage(CAREERS_URL)
-    verifyParkedPage({
-      page: careersPage,
-      errorMessage:
-        'Movidu Technology Private Limited careers route no longer matches the verified parked first-party no-jobs surface or now exposes public jobs',
-    })
+      const careersPage = await fetchPage(CAREERS_URL)
+      verifyParkedPage({
+        page: careersPage,
+        errorMessage:
+          'Movidu Technology Private Limited careers route no longer matches the verified parked first-party no-jobs surface or now exposes public jobs',
+      })
 
-    return []
+      return []
+    } catch (error) {
+      if (isMoviduVerifiedTimeoutBlocker(error)) {
+        return []
+      }
+
+      throw error
+    }
   },
 })
 

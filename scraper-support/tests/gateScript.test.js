@@ -9,21 +9,29 @@ const OFFICIAL_CAREERS_HTML = `
   </head>
   <body>
     <main>
-      <h1>Career Opportunities</h1>
-      <p>Start your career journey with Gate and explore unlimited opportunities.</p>
-      <p>Job Openings</p>
-      <button>View LinkedIn</button>
-      <p>12 positions open, waiting just for you!</p>
-      <ul>
-        <li>Product</li>
-        <li>Engineering</li>
-        <li>Technical Support</li>
-        <li>Legal &amp; Compliance</li>
-        <li>Investment Products</li>
-        <li>Risk Control &amp; AML</li>
-        <li>Finance</li>
-        <li>Internship</li>
-      </ul>
+      <h1>Join Gate &amp; Shape A New Career Chapter|</h1>
+      <p>Join global innovators to shape the future of crypto finance and create your own impact.</p>
+      <p>0 Open Positions 0 Job Categories Remote Global Team</p>
+      <section>
+        <h2>Our Culture, One Gate</h2>
+        <p>Direct communication, clear ownership, and results-driven collaboration.</p>
+      </section>
+      <section>
+        <h2>Our Core Values</h2>
+        <p>Innovation, cooperation, insight, curiosity, and integrity - the principles that guide how we work.</p>
+      </section>
+      <section>
+        <h2>Why Gate</h2>
+        <p>Rewards, growth, flexibility, and a global stage - all here.</p>
+      </section>
+      <section>
+        <h2>Unlock Your Next Career Chapter</h2>
+        <p>View All Positions (0)</p>
+      </section>
+      <section>
+        <h2>Gate News &amp; Insights</h2>
+        <a href="https://www.linkedin.com/company/gateio/">LinkedIn</a>
+      </section>
     </main>
   </body>
 </html>

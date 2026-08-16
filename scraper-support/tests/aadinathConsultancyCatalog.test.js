@@ -29,13 +29,13 @@ test('Aadinath Consultancy provider contract captures the verified no-public-car
   assert.equal(provider.paginationStrategy, 'homepage-plus-missing-first-party-careers-routes')
   assert.equal(
     provider.extractionStrategy,
-    'verified-autoindex-homepage+verified-missing-first-party-careers-routes+no-public-job-signals',
+    'verified-timeout-only-first-party-routes+legacy-autoindex-homepage-and-missing-first-party-careers-routes+no-public-job-signals',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'aadinathconsultants.com')
-  assert.equal(provider.verifiedOn, '2026-07-14')
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.equal(provider.verifiedOn, '2026-08-13')
+  assert.match(provider.verifiedSurfaceSummary, /repeated connect timeouts/i)
   assert.match(provider.modulePath, /aadinathconsultancy[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /aadinathconsultancy[\\/]jobs\.json$/i)
 })

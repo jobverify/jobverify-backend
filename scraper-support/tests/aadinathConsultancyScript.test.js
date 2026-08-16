@@ -61,8 +61,19 @@ test('Aadinath Consultancy sentinel targets the verified first-party autoindex h
 
   assert.equal(aadinath.SOURCE, 'aadinathconsultancy')
   assert.equal(aadinath.COMPANY, 'Aadinath Consultancy')
-  assert.equal(aadinath.VERIFIED_AT, '2026-07-14')
+  assert.equal(aadinath.VERIFIED_AT, '2026-08-13')
   assert.equal(aadinath.HOMEPAGE_URL, 'https://aadinathconsultants.com/')
+  assert.deepEqual(aadinath.FIRST_PARTY_TIMEOUT_URLS, [
+    'https://aadinathconsultants.com/',
+    'https://aadinathconsultants.com/careers',
+    'https://aadinathconsultants.com/careers/',
+    'https://aadinathconsultants.com/career',
+    'https://aadinathconsultants.com/jobs',
+    'https://aadinathconsultants.com/jobs/',
+    'https://aadinathconsultants.com/join-us',
+    'https://aadinathconsultants.com/work-with-us',
+    'https://aadinathconsultants.com/openings',
+  ])
   assert.deepEqual(aadinath.NO_PUBLIC_CAREERS_ROUTE_URLS, [
     'https://aadinathconsultants.com/careers',
     'https://aadinathconsultants.com/careers/',
@@ -76,11 +87,34 @@ test('Aadinath Consultancy sentinel targets the verified first-party autoindex h
   assert.equal(aadinath.hasOfficialHomepageSignal(officialHomepageHtml), true)
   assert.equal(aadinath.hasPublicJobsSignal(officialHomepageHtml), false)
   assert.equal(aadinath.hasCareerRouteLinkSignal(officialHomepageHtml), false)
+  assert.equal(aadinath.isExpectedTimedOutSurface({ errorKind: 'timeout', status: null, html: null }), true)
+  assert.equal(aadinath.isExpectedTimedOutSurface({ errorKind: 'dns' }), false)
   assert.equal(aadinath.isVerifiedMissingCareerRoute({
     status: 404,
     url: 'https://aadinathconsultants.com/careers',
     html: missingCareersRouteHtml,
   }), true)
+})
+
+test('Aadinath Consultancy sentinel returns no jobs when the current verified first-party routes all time out', async () => {
+  const aadinath = await loadAadinathModule()
+  const requestedUrls = []
+
+  const jobs = await aadinath.run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      return {
+        status: null,
+        url,
+        html: null,
+        errorKind: 'timeout',
+      }
+    },
+  })
+
+  assert.deepEqual(requestedUrls, aadinath.FIRST_PARTY_TIMEOUT_URLS)
+  assert.deepEqual(jobs, [])
 })
 
 test('Aadinath Consultancy sentinel returns no jobs while the verified homepage stays live and careers routes stay missing', async () => {
@@ -148,6 +182,6 @@ test('Aadinath Consultancy sentinel fails closed when the homepage changes or a 
         return { status: 404, url, html: missingCareersRouteHtml }
       },
     }),
-    /verified no-public-careers surface/i,
+    /public jobs surface|verified no-public-careers surface/i,
   )
 })

@@ -56,6 +56,24 @@ const parentDarwinboxPage = {
   `,
 }
 
+const parentDarwinboxJavascriptShellPage = {
+  url: 'https://nectar.darwinbox.in/ms/candidate/careers',
+  html: `
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8">
+        <title></title>
+        <base href="/ms/candidate/">
+      </head>
+      <body>
+        <noscript>Please enable Javascript!</noscript>
+        <script src="runtime-es2015.darwinbox.js"></script>
+      </body>
+    </html>
+  `,
+}
+
 const loadRivigoModule = async () => {
   try {
     return await import('../../scraper/rivigo/script.js')
@@ -81,6 +99,7 @@ test('Rivigo helper signals stay pinned to the verified Mahindra Logistics redir
   assert.equal(rivigo.hasVerifiedRedirectedHomepageSignal(redirectedHomepagePage), true)
   assert.equal(rivigo.hasVerifiedParentCareersSignal(parentCareersPage), true)
   assert.equal(rivigo.hasVerifiedParentDarwinboxSignal(parentDarwinboxPage), true)
+  assert.equal(rivigo.hasVerifiedParentDarwinboxSignal(parentDarwinboxJavascriptShellPage), true)
 })
 
 test('Rivigo returns [] while the verified brand redirect and parent-company careers handoff remain intact', async () => {
@@ -108,7 +127,7 @@ test('Rivigo returns [] while the verified brand redirect and parent-company car
       if (url === rivigo.PARENT_DARWINBOX_URL) {
         return {
           status: 200,
-          ...parentDarwinboxPage,
+          ...parentDarwinboxJavascriptShellPage,
         }
       }
 

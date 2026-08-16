@@ -14,6 +14,7 @@ const CAREERS_HTML = `
 <html lang="en">
   <head>
     <title>Careers - Tech Firefly</title>
+    <link rel="canonical" href="https://www.techfirefly.com/careers/" />
   </head>
   <body>
     <h1>Careers At Techfirefly</h1>

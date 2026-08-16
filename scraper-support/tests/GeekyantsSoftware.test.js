@@ -37,6 +37,33 @@ const CAREERS_HTML = `
 </html>
 `
 
+const CURRENT_CAREERS_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers | Join Us in India - GeekyAnts</title>
+  </head>
+  <body>
+    <h1>Join GeekyAnts</h1>
+    <p>Build purposeful digital experiences with a team that ships bold products.</p>
+    <section class="opening-card">
+      <a href="https://topgeek.io/company/geekyants-india-pvt-ltd/openings/senior-learning--development-specialist-7996">
+        <h2>Senior Learning &amp; Development Specialist</h2>
+        <p>Bengaluru</p>
+        <p>Design and scale learning programs for a growing engineering organization.</p>
+      </a>
+    </section>
+    <section class="opening-card">
+      <a href="https://topgeek.io/company/geekyants-india-pvt-ltd/openings/legal-associate--8b45">
+        <h2>Legal Associate</h2>
+        <p>Bengaluru</p>
+        <p>Support contracts, compliance, and cross-functional legal operations.</p>
+      </a>
+    </section>
+  </body>
+</html>
+`
+
 const BACKEND_DETAIL_HTML = `
 <!doctype html>
 <html lang="en">
@@ -177,6 +204,32 @@ test('Geekyants Software scraper validates the first-party careers page and norm
       source: 'geekyantssoftware',
       link: 'https://topgeek.io/company/geekyants-india-pvt-ltd/openings/senior-backend-engineer-7996',
       scrapedAt: '2026-07-18T00:00:00.000Z',
+    },
+  ])
+})
+
+test('Geekyants Software accepts the current first-party join page without the legacy exact results copy', async () => {
+  const geekyants = await loadScriptModule()
+
+  assert.equal(geekyants.hasOfficialCareersSignal(CURRENT_CAREERS_HTML), true)
+  assert.deepEqual(geekyants.extractListingJobs(CURRENT_CAREERS_HTML), [
+    {
+      title: 'Senior Learning & Development Specialist',
+      detailUrl: 'https://topgeek.io/company/geekyants-india-pvt-ltd/openings/senior-learning--development-specialist-7996',
+      jobId: 'senior-learning--development-specialist-7996',
+      requisitionId: 'senior-learning--development-specialist-7996',
+      locationText: 'Bengaluru',
+      summary: 'Design and scale learning programs for a growing engineering organization.',
+      department: null,
+    },
+    {
+      title: 'Legal Associate',
+      detailUrl: 'https://topgeek.io/company/geekyants-india-pvt-ltd/openings/legal-associate--8b45',
+      jobId: 'legal-associate--8b45',
+      requisitionId: 'legal-associate--8b45',
+      locationText: 'Bengaluru',
+      summary: 'Support contracts, compliance, and cross-functional legal operations.',
+      department: null,
     },
   ])
 })

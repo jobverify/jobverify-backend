@@ -92,6 +92,72 @@ const searchHtml = `
 </html>
 `
 
+const dwrBootstrapHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Career Opportunities</title>
+  </head>
+  <body>
+    <h1 id="candidateProfileTitle">Career Opportunities</h1>
+    <input id="career_ns" value="job_listing_summary" />
+    <input id="company" value="datalogics" />
+    <input type="hidden" name="ajaxSecKey" value="csrf-token" />
+    <div id="careerJobSearchContainer"></div>
+    <script>
+      window.addEventListener("load", getInitialJobSearchData);
+      careerJobSearchController.getInitialJobSearchData("", "", "", "Asia/Calcutta");
+      var ajaxSecKey="csrf-token";
+    </script>
+  </body>
+</html>
+`
+
+const buildDwrSummaryResponse = ({
+  currentPage = 1,
+  pageSize = 10,
+  totalCount,
+  postings,
+  wrapInPayload = true,
+}) => {
+  const normalizedPostings = postings.map((posting) => ({
+    id: Number(posting.requisitionId),
+    title: posting.title,
+    postingDate: posting.postingDate,
+    otherValues: [[
+      { fieldId: 'location_obj', shortVal: `["Location",1,"${posting.city}"]` },
+      { fieldId: 'filter1', shortVal: posting.country },
+      { fieldId: 'filter2', shortVal: posting.state || 'N/A' },
+    ]],
+  }))
+
+  const payload = {
+    results: {
+      postingCount: totalCount ?? normalizedPostings.length,
+      options: {
+        pagination: {
+          currentPage,
+          pageSize,
+          totalCount: totalCount ?? normalizedPostings.length,
+          startRow: ((currentPage - 1) * pageSize) + 1,
+          endRow: Math.min(currentPage * pageSize, totalCount ?? normalizedPostings.length),
+          increaseCandSummaryPagination: false,
+        },
+        sortByColumn: 'JOB_POSTING_DATE',
+        sortOrder: 'DESC',
+      },
+      postings: normalizedPostings,
+    },
+  }
+
+  const callbackValue = wrapInPayload ? { payload } : payload
+
+  return `
+throw 'allowScriptTagRemoting is false.';
+dwr.engine._remoteHandleCallback('0', '0', ${JSON.stringify(callbackValue)});
+`
+}
+
 const detailHtml = `
 <!doctype html>
 <html lang="en">
@@ -196,6 +262,61 @@ test('Datalogic India helpers stay pinned to the verified first-party careers ha
       sourceUrl: datalogicIndia.buildDetailUrl('11306'),
       applyUrl: datalogicIndia.buildDetailUrl('11306'),
       postingDate: '2026-07-13',
+    },
+    {
+      title: 'India Finance Manager',
+      location: 'Gurgaon, India',
+      city: 'Gurgaon',
+      state: null,
+      country: 'India',
+      jobId: '11363',
+      requisitionId: '11363',
+      sourceUrl: datalogicIndia.buildDetailUrl('11363'),
+      applyUrl: datalogicIndia.buildDetailUrl('11363'),
+      postingDate: '2026-03-11',
+    },
+  ])
+})
+
+test('Datalogic India extracts verified SuccessFactors DWR results for the India board', async () => {
+  const datalogicIndia = await loadDatalogicIndiaModule()
+
+  const jobs = [...datalogicIndia.extractSearchResults(
+    buildDwrSummaryResponse({
+      currentPage: 2,
+      totalCount: 63,
+      postings: [
+        {
+          requisitionId: '11306',
+          title: 'Embedded Software Engineer (R&D93)',
+          postingDate: '08/13/2026',
+          city: 'Trnava',
+          country: 'Slovakia',
+        },
+        {
+          requisitionId: '11363',
+          title: 'India Finance Manager',
+          postingDate: '03/11/2026',
+          city: 'Gurgaon',
+          country: 'India',
+        },
+      ],
+      wrapInPayload: false,
+    }),
+  )].map((job) => ({ ...job }))
+
+  assert.deepEqual(jobs, [
+    {
+      title: 'Embedded Software Engineer (R&D93)',
+      location: 'Trnava, Slovakia',
+      city: 'Trnava',
+      state: null,
+      country: 'Slovakia',
+      jobId: '11306',
+      requisitionId: '11306',
+      sourceUrl: datalogicIndia.buildDetailUrl('11306'),
+      applyUrl: datalogicIndia.buildDetailUrl('11306'),
+      postingDate: '2026-08-13',
     },
     {
       title: 'India Finance Manager',
@@ -331,20 +452,46 @@ test('Datalogic India fails closed when the verified careers handoff or public s
   )
 })
 
-test('Datalogic India blocks its browser-only SuccessFactors search path before a browser can launch', async () => {
+test('Datalogic India follows the verified public SuccessFactors DWR bootstrap contract', async () => {
   const datalogicIndia = await loadDatalogicIndiaModule()
-  let fetchedDetail = false
 
-  await assert.rejects(
-    datalogicIndia.createDatalogicIndiaScraper({
-      fetchText: async (url) => {
-        if (url === datalogicIndia.CAREERS_PAGE_URL) return careersHtml
-        fetchedDetail = true
-        throw new Error(`Unexpected Datalogic India URL: ${url}`)
-      },
-    }).run(),
-    /datalogicindia.*api-only migration.*browser automation is disabled/i,
-  )
+  const pages = await datalogicIndia.getLiveSearchPages({
+    fetchText: async () => dwrBootstrapHtml,
+    fetchSearchSession: async () => ({
+      html: dwrBootstrapHtml,
+      csrfToken: 'csrf-token',
+      cookieHeader: 'JSESSIONID=abc123',
+    }),
+    fetchDwrText: async ({ endpoint }) => {
+      assert.equal(endpoint, 'getInitialJobSearchData')
 
-  assert.equal(fetchedDetail, false)
+      return buildDwrSummaryResponse({
+        postings: [
+          {
+            requisitionId: '11363',
+            title: 'India Finance Manager',
+            postingDate: '03/11/2026',
+            city: 'Gurgaon',
+            country: 'India',
+          },
+        ],
+      })
+    },
+  })
+
+  assert.equal(pages.length, 1)
+  assert.deepEqual([...datalogicIndia.extractSearchResults(pages[0])].map((job) => ({ ...job })), [
+    {
+      title: 'India Finance Manager',
+      location: 'Gurgaon, India',
+      city: 'Gurgaon',
+      state: null,
+      country: 'India',
+      jobId: '11363',
+      requisitionId: '11363',
+      sourceUrl: datalogicIndia.buildDetailUrl('11363'),
+      applyUrl: datalogicIndia.buildDetailUrl('11363'),
+      postingDate: '2026-03-11',
+    },
+  ])
 })

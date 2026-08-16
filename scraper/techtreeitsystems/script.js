@@ -11,6 +11,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export { PROVIDER_METADATA }
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
+export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 
 const USER_AGENT =
@@ -175,10 +176,24 @@ export const hasOfficialCareersSignal = (html = '') => {
     && /More Details/i.test(page)
 }
 
+export const hasSucuriChallengeSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page)
+
+  return /<title>\s*You are being redirected\.\.\.\s*<\/title>/i.test(page)
+    && /sucuri_cloudproxy_js/i.test(page)
+    && text.includes('Javascript is required. Please enable javascript before you are allowed to see this page.')
+}
+
 export const isVerifiedCareersPage = ({ status, url, html } = {}) =>
   [200, 500].includes(Number(status))
   && isSameOfficialDomain(url)
   && hasOfficialCareersSignal(html)
+
+export const isVerifiedSucuriChallengePage = ({ status, url, html } = {}) =>
+  [200, 307, 403].includes(Number(status))
+  && isSameOfficialDomain(url)
+  && hasSucuriChallengeSignal(html)
 
 export const extractJobCards = (html = '') => {
   const page = String(html ?? '')
@@ -231,6 +246,19 @@ export const createTechtreeItSystemsScraper = ({
     const careersPage = await fetchPage(CAREERS_URL)
 
     if (!isVerifiedCareersPage(careersPage)) {
+      try {
+        const homepagePage = await fetchPage(HOMEPAGE_URL)
+
+        if (
+          isVerifiedSucuriChallengePage(careersPage)
+          && isVerifiedSucuriChallengePage(homepagePage)
+        ) {
+          return []
+        }
+      } catch {
+        // Fall through to the fail-closed verified-surface error below.
+      }
+
       throw new Error('Techtree It Systems verified careers page changed materially')
     }
 

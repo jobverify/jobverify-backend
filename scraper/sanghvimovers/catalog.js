@@ -19,9 +19,9 @@ export const SANGHVI_MOVERS_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'sanghvicranes.com',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-14',
   verifiedSurfaceSummary:
-    "Verified on Friday, July 17, 2026 that https://sanghvicranes.com/careers/ is the live first-party Sanghvi Movers Limited careers page, that it exposes a public Join Our Team section on the company domain with Apply Now job cards, and that current public listings include Lead Engineers Civil (Solar), Area Operations Manager, and WTG Installation Engineer.",
+    'Verified on Friday, August 14, 2026 that https://sanghvicranes.com/careers/ is still the live first-party Sanghvi Movers Limited careers page, that it exposes a public Join Our Team section on the company domain with Apply Now job cards, and that current public listings include Lead Engineers Civil (Solar), Area Operations Manager, and WTG Installation Engineer.',
   dryRunFile: 'sanghvimovers/jobs.json',
 }
 

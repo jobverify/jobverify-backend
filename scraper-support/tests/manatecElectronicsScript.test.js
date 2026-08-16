@@ -141,6 +141,42 @@ test('Manatec Electronics returns no jobs while the verified public surface rema
   assert.deepEqual(jobs, [])
 })
 
+test('Manatec Electronics preserves the application-only sentinel while verified routes are temporarily timeout-blocked', async () => {
+  const requestedUrls = []
+
+  const jobs = await createManatecElectronicsScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === HOMEPAGE_URL) {
+        throw new Error('fetch failed | Connect Timeout Error (attempted address: manatec.in:443, timeout: 10000ms)')
+      }
+
+      if (url === PAGE_SITEMAP_URL) {
+        return { status: 200, url, html: pageSitemapXml }
+      }
+
+      if (url === CAREERS_URL) {
+        return { status: 200, url, html: careersHtml }
+      }
+
+      if (url === MISSING_ROUTE_URL) {
+        return { status: 404, url, html: missingRouteHtml }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    HOMEPAGE_URL,
+    PAGE_SITEMAP_URL,
+    CAREERS_URL,
+    MISSING_ROUTE_URL,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
 test('Manatec Electronics fails closed when the careers page drifts into a public jobs surface', async () => {
   await assert.rejects(
     createManatecElectronicsScraper().run({

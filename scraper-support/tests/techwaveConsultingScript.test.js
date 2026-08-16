@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-17T18:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-14T18:00:00.000Z'
 
 const careersHtml = `
 <!doctype html>
@@ -11,8 +11,21 @@ const careersHtml = `
   </head>
   <body>
     <h1>Work that moves you.</h1>
-    <a href="https://techwave.wd108.myworkdayjobs.com/TechWave_Careers">Explore Opportunities</a>
-    <a href="https://www.techwave.com/careers/">View Open Roles</a>
+    <a href="https://www.techwave.com/join-us/">Explore Opportunities</a>
+    <a href="https://www.techwave.com/join-us/">View Open Roles</a>
+  </body>
+</html>
+`
+
+const joinUsHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Join Us - TechWave</title>
+  </head>
+  <body>
+    <h1>Discover What’s Possible. Join Us.</h1>
+    <iframe src="https://techwave.wd108.myworkdayjobs.com/TechWave_Careers"></iframe>
   </body>
 </html>
 `
@@ -30,7 +43,7 @@ const workdayBoardHtml = `
 `
 
 const unfilteredPayload = {
-  total: 72,
+  total: 63,
   jobPostings: [
     {
       title: 'Finance Intern',
@@ -49,8 +62,8 @@ const unfilteredPayload = {
           facetParameter: 'locations',
           descriptor: 'Locations',
           values: [
-            { descriptor: 'Bangalore', id: 'bangalore-id', count: 3 },
-            { descriptor: 'GDC Financial District', id: 'gdc-financial-id', count: 42 },
+            { descriptor: 'Bangalore', id: 'bangalore-id', count: 1 },
+            { descriptor: 'GDC Financial District', id: 'gdc-financial-id', count: 34 },
             { descriptor: 'GDC HiTech', id: 'gdc-hitech-id', count: 3 },
             { descriptor: 'Khammam', id: 'khammam-id', count: 3 },
             { descriptor: 'Budapest', id: 'budapest-id', count: 19 },
@@ -62,7 +75,7 @@ const unfilteredPayload = {
 }
 
 const filteredIndiaPayload = {
-  total: 4,
+  total: 37,
   jobPostings: [
     {
       title: 'Sr. Data Architect (Databricks)',
@@ -101,7 +114,7 @@ const detailPageHtmlByUrl = {
         "@context": "http://schema.org",
         "@type": "JobPosting",
         "title": "Sr. Data Architect (Databricks)",
-        "datePosted": "2026-07-17",
+        "datePosted": "2026-08-14",
         "identifier": { "value": "TW-1275" },
         "description": "Job Description Design end-to-end Lakehouse architectures using Databricks. Preferred Experience 10-15+ years of IT experience. 5+ years of hands-on Databricks architecture and implementation experience. Qualifications Bachelor's degree in Computer Science."
       }
@@ -119,7 +132,7 @@ const detailPageHtmlByUrl = {
         "@context": "http://schema.org",
         "@type": "JobPosting",
         "title": "Telecom-ATT-(ES050)",
-        "datePosted": "2026-07-16",
+        "datePosted": "2026-08-13",
         "identifier": { "value": "Telecom-ATT--ES050" },
         "description": "Job Description Own telecom application support and release governance. Qualifications Bachelor's degree."
       }
@@ -137,7 +150,7 @@ const detailPageHtmlByUrl = {
         "@context": "http://schema.org",
         "@type": "JobPosting",
         "title": "Service Delivery Manager – AI/ML and Data",
-        "datePosted": "2026-07-14",
+        "datePosted": "2026-08-11",
         "identifier": { "value": "TW-1262" },
         "description": "Job Description Lead AI, data, and analytics service delivery. Preferred Experience 10-15 years of IT experience with 5+ years in Service Delivery or Delivery Management. Qualifications Bachelor's degree in Computer Science."
       }
@@ -156,19 +169,21 @@ const loadModule = async () => {
   }
 }
 
-test('Techwave Consulting helpers stay pinned to the verified shell, public Workday board, and India location facets', async () => {
+test('Techwave Consulting helpers stay pinned to the verified careers shell, join-us Workday embed, and India location facets', async () => {
   const techwave = await loadModule()
 
   assert.equal(techwave.SOURCE, 'techwaveconsulting')
   assert.equal(techwave.COMPANY, 'Techwave Consulting')
   assert.equal(techwave.CAREERS_URL, 'https://www.techwave.com/career/')
+  assert.equal(techwave.JOIN_US_URL, 'https://www.techwave.com/join-us/')
   assert.equal(techwave.WORKDAY_BOARD_URL, 'https://techwave.wd108.myworkdayjobs.com/TechWave_Careers')
   assert.equal(
     techwave.JOBS_API_URL,
     'https://techwave.wd108.myworkdayjobs.com/wday/cxs/techwave/TechWave_Careers/jobs',
   )
-  assert.equal(techwave.VERIFIED_ON, '2026-07-17')
+  assert.equal(techwave.VERIFIED_ON, '2026-08-14')
   assert.equal(techwave.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(techwave.hasJoinUsWorkdayEmbedSignal(joinUsHtml), true)
   assert.equal(techwave.hasOfficialWorkdayBoardSignal(workdayBoardHtml), true)
   assert.deepEqual(techwave.extractIndiaLocationFacetIds(unfilteredPayload), [
     'bangalore-id',
@@ -178,7 +193,7 @@ test('Techwave Consulting helpers stay pinned to the verified shell, public Work
   ])
 })
 
-test('Techwave Consulting run validates the shell and enriches India jobs from public Workday detail pages', async () => {
+test('Techwave Consulting run validates the careers shell, join-us handoff, and enriches India jobs from public Workday detail pages', async () => {
   const techwave = await loadModule()
   const requestedTexts = []
   const requestedJsonBodies = []
@@ -189,6 +204,7 @@ test('Techwave Consulting run validates the shell and enriches India jobs from p
     fetchText: async (url) => {
       requestedTexts.push(url)
       if (url === techwave.CAREERS_URL) return careersHtml
+      if (url === techwave.JOIN_US_URL) return joinUsHtml
       if (url === techwave.WORKDAY_BOARD_URL) return workdayBoardHtml
       if (detailPageHtmlByUrl[url]) return detailPageHtmlByUrl[url]
       throw new Error(`Unexpected text URL: ${url}`)
@@ -202,12 +218,13 @@ test('Techwave Consulting run validates the shell and enriches India jobs from p
     },
   })
 
-  assert.deepEqual(requestedTexts.slice(0, 2), [
+  assert.deepEqual(requestedTexts.slice(0, 3), [
     techwave.CAREERS_URL,
+    techwave.JOIN_US_URL,
     techwave.WORKDAY_BOARD_URL,
   ])
   assert.deepEqual(
-    requestedTexts.slice(2).sort(),
+    requestedTexts.slice(3).sort(),
     Object.keys(detailPageHtmlByUrl).sort(),
   )
   assert.deepEqual(requestedJsonBodies, [
@@ -234,7 +251,7 @@ test('Techwave Consulting run validates the shell and enriches India jobs from p
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
   assert.equal(jobs[0].jobId, 'TW-1275')
   assert.equal(jobs[0].experienceRequired, '10-15 years')
-  assert.equal(jobs[0].postingDate, '2026-07-17')
+  assert.equal(jobs[0].postingDate, '2026-08-14')
   assert.match(jobs[0].jobDescription || '', /Lakehouse architectures/i)
   assert.equal(jobs[1].location, '2 Locations, India')
   assert.equal(jobs[1].experienceRequired, null)
@@ -242,12 +259,16 @@ test('Techwave Consulting run validates the shell and enriches India jobs from p
   assert.equal(jobs[2].experienceRequired, '10-15 years')
 })
 
-test('Techwave Consulting fails closed when the shell, board, or India location facets change', async () => {
+test('Techwave Consulting fails closed when the careers shell, join-us handoff, board, or India location facets change', async () => {
   const techwave = await loadModule()
 
   await assert.rejects(
     techwave.createTechwaveConsultingScraper().run({
-      fetchText: async (url) => (url === techwave.CAREERS_URL ? '<html><body><h1>Careers</h1></body></html>' : workdayBoardHtml),
+      fetchText: async (url) => {
+        if (url === techwave.CAREERS_URL) return '<html><body><h1>Careers</h1></body></html>'
+        if (url === techwave.JOIN_US_URL) return joinUsHtml
+        return workdayBoardHtml
+      },
       fetchJson: async () => unfilteredPayload,
     }),
     /verified Techwave careers shell/i,
@@ -255,21 +276,41 @@ test('Techwave Consulting fails closed when the shell, board, or India location 
 
   await assert.rejects(
     techwave.createTechwaveConsultingScraper().run({
-      fetchText: async (url) => (url === techwave.CAREERS_URL ? careersHtml : '<html><body><h1>Board</h1></body></html>'),
+      fetchText: async (url) => {
+        if (url === techwave.CAREERS_URL) return careersHtml
+        if (url === techwave.JOIN_US_URL) return '<html><body><h1>Join Us</h1></body></html>'
+        return workdayBoardHtml
+      },
       fetchJson: async () => unfilteredPayload,
     }),
-    /verified Techwave workday board/i,
+    /verified Techwave join-us page/i,
   )
 
   await assert.rejects(
     techwave.createTechwaveConsultingScraper().run({
-      fetchText: async (url) => (url === techwave.CAREERS_URL ? careersHtml : workdayBoardHtml),
+      fetchText: async (url) => {
+        if (url === techwave.CAREERS_URL) return careersHtml
+        if (url === techwave.JOIN_US_URL) return joinUsHtml
+        return '<html><body><h1>Board</h1></body></html>'
+      },
+      fetchJson: async () => unfilteredPayload,
+    }),
+    /verified Techwave Workday board/i,
+  )
+
+  await assert.rejects(
+    techwave.createTechwaveConsultingScraper().run({
+      fetchText: async (url) => {
+        if (url === techwave.CAREERS_URL) return careersHtml
+        if (url === techwave.JOIN_US_URL) return joinUsHtml
+        return workdayBoardHtml
+      },
       fetchJson: async () => ({
-        total: 72,
+        total: 63,
         jobPostings: [],
         facets: [],
       }),
     }),
-    /verified Techwave india workday facet/i,
+    /verified Techwave India Workday facet/i,
   )
 })

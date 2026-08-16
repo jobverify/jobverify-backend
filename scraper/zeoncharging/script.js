@@ -38,6 +38,26 @@ const slugify = (value) => normalizeWhitespace(value)
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '') || null
 
+const inferEmploymentType = (title, description = null, explicitValue = null) => {
+  const normalizedExplicitValue = normalizeWhitespace(explicitValue)
+  if (normalizedExplicitValue) return normalizedExplicitValue
+
+  if (/\binternship\b/i.test(String(title ?? ''))) return 'Internship'
+
+  const normalizedDescription = normalizeWhitespace(description) || ''
+  const employmentTypePatterns = [
+    ['Full-time', /\bfull[\s-]?time\b/i],
+    ['Part-time', /\bpart[\s-]?time\b/i],
+    ['Contract', /\bcontract\b/i],
+  ]
+
+  for (const [employmentType, pattern] of employmentTypePatterns) {
+    if (pattern.test(normalizedDescription)) return employmentType
+  }
+
+  return null
+}
+
 const normalizeComparableUrl = (value) => {
   try {
     const url = new URL(value)
@@ -84,7 +104,7 @@ export const hasOfficialContactSignal = (html) => {
     && /Tamil Nadu/i.test(page)
 }
 
-export const extractJobCards = (html) =>
+const extractLegacyJobCards = (html) =>
   String(html ?? '')
     .split(/<div class="card\s*">/i)
     .slice(1)
@@ -107,9 +127,11 @@ export const extractJobCards = (html) =>
         ? String(cardHtml.match(new RegExp(`<div id="job_role_${roleId}" class="hide">([\\s\\S]*?)<\\/div>`, 'i'))?.[1] ?? '')
         : ''
       const titleSlug = slugify(title)
-      const employmentType = normalizeWhitespace(
+      const employmentType = inferEmploymentType(
+        title,
+        jobDescription,
         detailHtml.match(/<h3>\s*Job Type\s*<\/h3>\s*<p>([\s\S]*?)<\/p>/i)?.[1],
-      ) || (/\binternship\b/i.test(title) ? 'Internship' : null)
+      )
 
       if (!location || !roleId || !title || !department || !jobDescription || !titleSlug) return null
 
@@ -140,6 +162,64 @@ export const extractJobCards = (html) =>
       }
     })
     .filter(Boolean)
+
+const extractArticleJobCards = (html) =>
+  Array.from(String(html ?? '').matchAll(/<article\b[\s\S]*?<\/article>/gi))
+    .map(([articleHtml]) => {
+      const title = normalizeWhitespace(
+        articleHtml.match(/<(?:h3|h4|h5)[^>]*>([\s\S]*?)<\/(?:h3|h4|h5)>/i)?.[1],
+      )
+      const department = normalizeWhitespace(articleHtml.match(/<h6[^>]*>([\s\S]*?)<\/h6>/i)?.[1])
+      const applyUrl = normalizeWhitespace(articleHtml.match(/href="([^"]*apply_job[^"]*)"/i)?.[1])
+      const roleId = normalizeWhitespace(applyUrl?.match(/[?&]job_id=(\d+)/i)?.[1])
+      const articleDivValues = Array.from(articleHtml.matchAll(/<div[^>]*>([^<]+)<\/div>/gi))
+        .map(([, value]) => normalizeWhitespace(value))
+        .filter(Boolean)
+      const location = articleDivValues[0] || null
+      const experienceRequired = articleDivValues[1] || null
+      const jobDescription = normalizeWhitespace(
+        articleHtml.match(/<h6[^>]*>[\s\S]*?<\/h6>\s*<div[^>]*>([\s\S]*?)<details\b/i)?.[1],
+      ) || normalizeWhitespace(
+        articleHtml.match(/<h6[^>]*>[\s\S]*?<\/h6>\s*<div[^>]*>([\s\S]*?)<\/div>/i)?.[1],
+      )
+      const employmentType = inferEmploymentType(title, jobDescription)
+
+      if (!location || !roleId || !title || !department || !jobDescription || !applyUrl) return null
+
+      return {
+        title,
+        company: COMPANY,
+        department,
+        location: `${location}, India`,
+        city: location,
+        state: null,
+        country: 'India',
+        jobId: `${SOURCE}-${roleId}`,
+        requisitionId: roleId,
+        sourceUrl: applyUrl,
+        applyUrl,
+        employmentType,
+        experienceRequired,
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: [],
+        postingDate: null,
+        closingDate: null,
+        jobDescription,
+        remoteStatus: 'On-site',
+      }
+    })
+    .filter(Boolean)
+
+export const extractJobCards = (html) => {
+  const dedupedJobs = new Map()
+
+  for (const job of [...extractLegacyJobCards(html), ...extractArticleJobCards(html)]) {
+    dedupedJobs.set(job.jobId, job)
+  }
+
+  return [...dedupedJobs.values()]
+}
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')

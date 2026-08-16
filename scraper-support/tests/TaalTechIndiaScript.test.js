@@ -69,6 +69,7 @@ const currentArchivePageHtml = `
   </head>
   <body>
     <h1>Careers</h1>
+    <!-- <li class="extra-design-button"><a href="contact.html">Contact Us</a></li> -->
     <h4><a href="https://www.taaltech.com/careers/civil-and-structural-designer-2/">Civil and Structural designer</a></h4>
     <a href="https://www.taaltech.com/careers/civil-and-structural-designer-2/">Apply Now</a>
     <p>Full Time</p>
@@ -133,6 +134,8 @@ test('TAAL Tech India helpers stay pinned to the verified first-party jobs archi
 
   assert.equal(taal.hasOfficialArchiveSignal(archivePageOneHtml), true)
   assert.equal(taal.hasNoJobsFoundSignal(archivePageThreeHtml), true)
+  assert.equal(taal.hasNextArchivePageSignal(archivePageOneHtml), true)
+  assert.equal(taal.hasNextArchivePageSignal(archivePageThreeHtml), false)
   assert.deepEqual(taal.extractListingCards(archivePageOneHtml), [
     {
       title: 'Technical Publications Engineer (Video-Based Training)',

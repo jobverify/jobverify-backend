@@ -117,7 +117,7 @@ test('Zeetaminds sentinel returns no jobs only while the verified first-party ma
       requestedUrls.push(url)
 
       if (url === zeetaminds.HOMEPAGE_URL) {
-        return { status: 200, url: zeetaminds.EXPLORE_URL, html: homepageHtml }
+        return { status: 200, url: zeetaminds.EXPLORE_URL.replace(/\/$/, ''), html: homepageHtml }
       }
 
       if (url === zeetaminds.ROBOTS_URL) {
@@ -165,7 +165,7 @@ test('Zeetaminds sentinel fails closed when the verified shell, sitemap, or empt
     zeetaminds.createZeetamindsScraper().run({
       fetchPage: async (url) => {
         if (url === zeetaminds.HOMEPAGE_URL) {
-          return { status: 200, url: zeetaminds.EXPLORE_URL, html: homepageHtml }
+          return { status: 200, url: zeetaminds.EXPLORE_URL.replace(/\/$/, ''), html: homepageHtml }
         }
 
         if (url === zeetaminds.ROBOTS_URL) {
@@ -189,7 +189,7 @@ test('Zeetaminds sentinel fails closed when the verified shell, sitemap, or empt
     zeetaminds.createZeetamindsScraper().run({
       fetchPage: async (url) => {
         if (url === zeetaminds.HOMEPAGE_URL) {
-          return { status: 200, url: zeetaminds.EXPLORE_URL, html: homepageHtml }
+          return { status: 200, url: zeetaminds.EXPLORE_URL.replace(/\/$/, ''), html: homepageHtml }
         }
 
         if (url === zeetaminds.ROBOTS_URL) {

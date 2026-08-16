@@ -1,7 +1,23 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const CAREERS_PAGE_HTML = `
+const CURRENT_CAREERS_PAGE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>DeliverHealth - AI-Powered Healthcare Solutions | Clinical Documentation &amp; Patient Engagement</title>
+  </head>
+  <body>
+    <h1>Improve Patient Care.</h1>
+    <h1>Reduce Burdens.</h1>
+    <p>We're looking for great people to join our growing team!</p>
+    <h2>Open Positions</h2>
+    <a href="https://workforcenow.adp.com/mascsr/default/mdf/recruitment/recruitment.html?cid=4228bffd-fe58-4423-b90e-accba06e7569&amp;ccId=19000101_000001&amp;lang=en_US">Browse Open Roles</a>
+  </body>
+</html>
+`
+
+const LEGACY_CAREERS_PAGE_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
@@ -46,9 +62,14 @@ test('DeliverHealth Solutions exports stable ADP helpers and bundle validation',
   assert.equal(deliverHealth.COMPANY, 'DeliverHealth Solutions')
   assert.equal(deliverHealth.OFFICIAL_BRAND_NAME, 'DeliverHealth')
   assert.equal(deliverHealth.CAREERS_PAGE_URL, 'https://ai.deliverhealth.com/careers')
-  assert.equal(deliverHealth.hasOfficialCareersPageSignal(CAREERS_PAGE_HTML), true)
+  assert.equal(deliverHealth.hasOfficialCareersPageSignal(CURRENT_CAREERS_PAGE_HTML), true)
+  assert.equal(deliverHealth.hasOfficialCareersPageSignal(LEGACY_CAREERS_PAGE_HTML), true)
   assert.equal(
-    deliverHealth.extractClientBundleUrl(CAREERS_PAGE_HTML),
+    deliverHealth.extractOfficialAdpBoardUrl(CURRENT_CAREERS_PAGE_HTML),
+    'https://workforcenow.adp.com/mascsr/default/mdf/recruitment/recruitment.html?cid=4228bffd-fe58-4423-b90e-accba06e7569&ccId=19000101_000001&lang=en_US',
+  )
+  assert.equal(
+    deliverHealth.extractClientBundleUrl(LEGACY_CAREERS_PAGE_HTML),
     'https://ai.deliverhealth.com/assets/index-BJwQdFGg.js',
   )
   assert.equal(deliverHealth.hasOfficialAdpHandoffSignal(BUNDLE_TEXT), true)
@@ -70,7 +91,69 @@ test('DeliverHealth Solutions run returns [] while the verified public ADP feeds
   }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      if (url === deliverHealth.CAREERS_PAGE_URL) return CAREERS_PAGE_HTML
+      if (url === deliverHealth.CAREERS_PAGE_URL) return CURRENT_CAREERS_PAGE_HTML
+      if (url === deliverHealth.ADP_BOARD_URL) return ADP_BOARD_HTML
+      throw new Error(`Unexpected DeliverHealth text URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      requestedUrls.push(url)
+      if (url === deliverHealth.buildSearchFiltersApiUrl()) return { data: [], status: 'success' }
+      if (url === deliverHealth.buildJobsApiUrl()) return { jobRequisitions: [] }
+      throw new Error(`Unexpected DeliverHealth JSON URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedUrls, [
+    deliverHealth.CAREERS_PAGE_URL,
+    deliverHealth.ADP_BOARD_URL,
+    deliverHealth.buildSearchFiltersApiUrl(),
+    deliverHealth.buildJobsApiUrl(),
+  ])
+})
+
+test('DeliverHealth Solutions can preserve the empty-board sentinel when the first-party careers page times out but the verified ADP board and feeds still confirm zero jobs', async () => {
+  const deliverHealth = await loadScriptModule()
+  const requestedUrls = []
+
+  const jobs = await deliverHealth.createDeliverHealthSolutionsScraper({
+    now: () => '2026-08-15T12:00:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === deliverHealth.CAREERS_PAGE_URL) {
+        throw new Error('fetch failed | Connect Timeout Error (attempted address: ai.deliverhealth.com:443, timeout: 10000ms)')
+      }
+      if (url === deliverHealth.ADP_BOARD_URL) return ADP_BOARD_HTML
+      throw new Error(`Unexpected DeliverHealth text URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      requestedUrls.push(url)
+      if (url === deliverHealth.buildSearchFiltersApiUrl()) return { data: [], status: 'success' }
+      if (url === deliverHealth.buildJobsApiUrl()) return { jobRequisitions: [] }
+      throw new Error(`Unexpected DeliverHealth JSON URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedUrls, [
+    deliverHealth.CAREERS_PAGE_URL,
+    deliverHealth.ADP_BOARD_URL,
+    deliverHealth.buildSearchFiltersApiUrl(),
+    deliverHealth.buildJobsApiUrl(),
+  ])
+})
+
+test('DeliverHealth Solutions still supports the legacy bundle-based ADP handoff when the direct board link is absent', async () => {
+  const deliverHealth = await loadScriptModule()
+  const requestedUrls = []
+
+  const jobs = await deliverHealth.createDeliverHealthSolutionsScraper({
+    now: () => '2026-08-15T12:00:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === deliverHealth.CAREERS_PAGE_URL) return LEGACY_CAREERS_PAGE_HTML
       if (url === 'https://ai.deliverhealth.com/assets/index-BJwQdFGg.js') return BUNDLE_TEXT
       if (url === deliverHealth.ADP_BOARD_URL) return ADP_BOARD_HTML
       throw new Error(`Unexpected DeliverHealth text URL: ${url}`)

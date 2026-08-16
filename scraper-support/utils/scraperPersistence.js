@@ -177,6 +177,15 @@ export const writeScraperRun = async (ranAt, summary) => {
   });
 };
 
+export const readPreviousScraperRun = async (before = new Date()) => {
+  await ensureConnected();
+  const ScraperRunModel = await getScraperRunModel();
+  return ScraperRunModel.findOne({ ranAt: { $lt: before } })
+    .sort({ ranAt: -1 })
+    .lean()
+    .exec();
+};
+
 // Marks the shared pipeline status document as actively running.
 export const markPipelineRunStarted = async (triggeredAt = new Date()) => {
   await ensureConnected();

@@ -17,11 +17,16 @@ test('IQnext (Synconext) is registered as a verified first-party zero-job scrape
   assert.equal(provider.paginationStrategy, 'first-party-careers-handoff-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-iqnext-homepage+verified-careers-wellfound-handoff+verified-challenge-gated-wellfound-board-return-empty',
+    'verified-iqnext-homepage+verified-careers-wellfound-handoff+verified-readable-wellfound-board-listing-extraction',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'iqnext.io')
+  assert.equal(provider.verifiedOn, '2026-08-15')
+  assert.equal(provider.verifiedPublicJobCount, 1)
+  assert.equal(provider.verifiedIndiaJobCount, 1)
+  assert.match(provider.verifiedSurfaceSummary, /View 1 job/i)
+  assert.match(provider.verifiedSurfaceSummary, /Enterprise Sales Manager \(B2B, SaaS\)/i)
   assert.match(provider.modulePath, /iqnextsynconext[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'IQnext (Synconext)'), false)
 })

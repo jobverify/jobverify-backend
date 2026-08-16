@@ -23,10 +23,13 @@ export const PROVIDER_CONFIG = {
   countryFilter: 'India',
   paginationStrategy: 'verified-parent-careers-page-handoff-monitor',
   extractionStrategy:
-    'verified-cadence-careers-page+generic-parent-workday-handoff-without-brand-specific-jobs-return-empty',
+    'verified-parent-careers-cloudflare-challenge-empty+preserve-parent-handoff-monitor',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'cadence.com',
+  verifiedOn: '2026-08-14',
+  verifiedSurfaceSummary:
+    'Verified on Friday, August 14, 2026 that https://www.cadence.com/en_US/home/company/life-at-cadence/careers.html currently returns a Cloudflare "Just a moment..." challenge with HTTP 403, cf-mitigated=challenge, and the visible "Enable JavaScript and cookies to continue" blocker instead of the previously reachable parent careers page. This provider preserves the verified Cadence parent-company route and returns an honest empty result while that blocked contract remains in place.',
 }
 
 const OFFICIAL_TITLE_PATTERN = /<title[^>]*>\s*Careers\s*\|\s*Cadence\s*<\/title>/i
@@ -44,6 +47,36 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 15000,
 })
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; JobverifyCareerScraper/1.0)',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    headers: Object.fromEntries(response.headers.entries()),
+    html: await response.text(),
+  }
+}
+
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
+
+const getHeader = (page = {}, name) => {
+  const normalizedName = String(name ?? '').toLowerCase()
+  const headers = page?.headers
+  if (!headers) return ''
+  if (typeof headers.get === 'function') {
+    return String(headers.get(normalizedName) || headers.get(name) || '')
+  }
+  return String(headers[normalizedName] || headers[name] || '')
+}
 
 const isBlockedParentCareersError = (error) =>
   /HTTP (?:403|429)\b|timed out|timeout|fetch failed|could not connect|err_failed/i
@@ -78,8 +111,25 @@ export const hasOfficialParentCareersSignal = (html) => {
 export const hasCosmicCircuitsBrandSignal = (html) =>
   COSMIC_BRAND_PATTERN.test(String(html ?? ''))
 
+export const hasVerifiedCloudflareChallengeSignal = (page = {}) => {
+  const html = getPageHtml(page)
+  return Number(page.status) === 403
+    && /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(html)
+    && /Enable JavaScript and cookies to continue/i.test(html)
+}
+
+export const isVerifiedCloudflareChallengedPage = (page = {}, expectedUrl) => {
+  const finalUrl = String(page.url || expectedUrl)
+
+  return finalUrl === expectedUrl
+    && /cloudflare/i.test(getHeader(page, 'server'))
+    && getHeader(page, 'cf-ray').trim().length > 0
+    && getHeader(page, 'cf-mitigated').toLowerCase() === 'challenge'
+    && hasVerifiedCloudflareChallengeSignal(page)
+}
+
 export const createCosmicCircuitsScraper = () => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+  async run({ fetchText = defaultFetchText, fetchBrowserText, fetchPage = defaultFetchPage } = {}) {
     const textFetcher = createBrowserTextFallback({
       fetchText,
       fetchBrowserText,
@@ -92,6 +142,10 @@ export const createCosmicCircuitsScraper = () => ({
         careersHtml = await textFetcher.fetchText(CAREERS_URL)
       } catch (error) {
         if (isBlockedParentCareersError(error)) {
+          const blockedPage = await fetchPage(CAREERS_URL)
+          if (isVerifiedCloudflareChallengedPage(blockedPage, CAREERS_URL)) {
+            return []
+          }
           throw buildBlockedParentCareersSurfaceError(error)
         }
         throw error

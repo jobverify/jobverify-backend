@@ -21,6 +21,7 @@ const defaultFetchText = (url) =>
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
+    attempts: 1,
     label: SOURCE,
     timeoutMs: 15000,
   })
@@ -29,6 +30,7 @@ export const isTrustedOfflineFailure = (error) => {
   const message = String(error?.message ?? error).toLowerCase()
 
   return message.includes('timed out')
+    || message.includes('connect timeout')
     || message.includes('could not connect')
     || message.includes('connection was closed')
     || message.includes("certificate's altnames")

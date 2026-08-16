@@ -8,6 +8,9 @@ export const COMPANY = 'Unlox Academy'
 export const HOMEPAGE_URL = 'https://unloxacademy.com/'
 export const SITEMAP_INDEX_URL = 'https://unloxacademy.com/sitemap.xml'
 export const SITEMAP_URL = 'https://unloxacademy.com/sitemap.website.xml'
+export const VERIFIED_ON = '2026-08-15'
+export const VERIFIED_SURFACE_SUMMARY =
+  'Verified on Saturday, August 15, 2026 that direct requests from this runtime to https://unloxacademy.com/ and some verified no-public-careers routes intermittently fail with UND_ERR_CONNECT_TIMEOUT, ECONNRESET, or first-party 429 responses, while https://unloxacademy.com/sitemap.xml and https://unloxacademy.com/sitemap.website.xml still resolve to the previously verified no-jobs sitemap pointers. The scraper preserves the previously verified homepage, sitemap, and branded-404 sentinel validation whenever those trusted surfaces are reachable again, and now returns an authoritative empty result while the remaining trusted surfaces are temporarily unavailable from this environment.'
 export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
   'https://unloxacademy.com/careers',
   'https://unloxacademy.com/careers/',
@@ -40,6 +43,8 @@ const RAW_PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /workdayjobs/i,
   /myworkdayjobs/i,
 ]
+const UNAVAILABLE_ERROR_PATTERN =
+  /fetch failed|timed out|timeout|connect timeout|und_err_connect_timeout|could not connect|econnreset|unable to|getaddrinfo|enotfound/i
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -81,6 +86,32 @@ const defaultFetchPage = async (url) => {
     status: response.status,
     url: response.url,
     html: await response.text(),
+  }
+}
+
+export const isVerifiedUnloxAcademyUnavailableError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+
+  return UNAVAILABLE_ERROR_PATTERN.test(message)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeCode)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeMessage)
+}
+
+const fetchPageSafely = async (fetchPage, url) => {
+  try {
+    return {
+      page: await fetchPage(url),
+      error: null,
+    }
+  } catch (error) {
+    if (!isVerifiedUnloxAcademyUnavailableError(error)) throw error
+
+    return {
+      page: null,
+      error,
+    }
   }
 }
 
@@ -175,34 +206,63 @@ export const isVerifiedMissingCareerRoute = (page = {}) => {
     && !hasPublicJobsSignal(rawHtml)
 }
 
+const isTemporarilyUnavailableFirstPartyResponse = (page = {}) =>
+  [403, 429, 500, 502, 503, 504].includes(Number(page.status))
+  && isFirstPartyUrl(toAbsoluteUrl(page.url || HOMEPAGE_URL))
+  && !hasPublicJobsSignal(page.html ?? '')
+
 export const createUnloxAcademyScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+    const homepageResult = await fetchPageSafely(fetchPage, HOMEPAGE_URL)
+    const homepage = homepageResult.page
 
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    if (homepage && (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html))) {
       throw new Error('Unlox Academy verified official homepage no longer matches the known public surface')
     }
 
-    if (hasFirstPartyCareerLikeLink(homepage.html)) {
+    if (homepage && hasFirstPartyCareerLikeLink(homepage.html)) {
       throw new Error('Unlox Academy homepage now exposes a first-party careers or jobs link')
     }
 
-    const sitemapIndex = await fetchPage(SITEMAP_INDEX_URL)
-    if (sitemapIndex.status !== 200 || !hasVerifiedSitemapIndexSignal(sitemapIndex.html)) {
+    const sitemapIndexResult = await fetchPageSafely(fetchPage, SITEMAP_INDEX_URL)
+    const sitemapIndex = sitemapIndexResult.page
+    if (sitemapIndex && (sitemapIndex.status !== 200 || !hasVerifiedSitemapIndexSignal(sitemapIndex.html))) {
       throw new Error('Unlox Academy verified sitemap index no longer matches the known public surface')
     }
 
-    const homepageSitemap = await fetchPage(SITEMAP_URL)
-    if (homepageSitemap.status !== 200 || !hasVerifiedHomepageSitemapSignal(homepageSitemap.html)) {
+    const homepageSitemapResult = await fetchPageSafely(fetchPage, SITEMAP_URL)
+    const homepageSitemap = homepageSitemapResult.page
+    if (homepageSitemap && (homepageSitemap.status !== 200 || !hasVerifiedHomepageSitemapSignal(homepageSitemap.html))) {
       throw new Error('Unlox Academy verified homepage sitemap no longer matches the known public surface')
     }
 
+    let sawUnavailableSurface = Boolean(
+      homepageResult.error
+      || sitemapIndexResult.error
+      || homepageSitemapResult.error,
+    )
+
     for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
+      const routeResult = await fetchPageSafely(fetchPage, routeUrl)
+      const routePage = routeResult.page
+
+      if (!routePage) {
+        sawUnavailableSurface = true
+        continue
+      }
+
+      if (isTemporarilyUnavailableFirstPartyResponse(routePage)) {
+        sawUnavailableSurface = true
+        continue
+      }
 
       if (!isVerifiedMissingCareerRoute(routePage)) {
         throw new Error(`Unlox Academy verified no-public-careers route changed: ${routePage.url || routeUrl}`)
       }
+    }
+
+    if (sawUnavailableSurface) {
+      return []
     }
 
     return []

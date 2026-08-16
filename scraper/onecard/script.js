@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { ONECARD_CATALOG } from './catalog.js'
@@ -20,12 +19,17 @@ export const OFFICIAL_APPLY_URL = ONECARD_CATALOG.officialApplyUrl
 export const VERIFIED_AT = ONECARD_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = ONECARD_CATALOG.verifiedSurfaceSummary
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const REQUEST_TIMEOUT_MS = 15000
+const BROKEN_UPSTREAM_API_URL = 'https://paa.fplabs.tech/proxy/CRUD/api/test-jobs?populate=*'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
 
   const normalized = String(value)
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
@@ -40,6 +44,20 @@ const normalizeWhitespace = (value) => {
 
 const extractTitle = (html) =>
   normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? null)
+
+const parseJsonText = (body) => {
+  try {
+    return JSON.parse(String(body ?? ''))
+  } catch {
+    return null
+  }
+}
+
+const buildMaterialSurfaceChangeError = () => {
+  const error = new Error('The verified OneCard careers surfaces changed materially')
+  error.abortRetries = true
+  return error
+}
 
 export const extractOfficialHandoffUrl = (html) =>
   normalizeWhitespace(
@@ -79,6 +97,30 @@ export const hasOfficialOneCardCareersSignals = (html) => {
     && extractOfficialApplyUrl(rawHtml) === OFFICIAL_APPLY_URL
     && apiConfig?.jobsApiUrl === OFFICIAL_JOBS_API_URL
     && apiConfig?.jobsApiKey === OFFICIAL_JOBS_API_KEY
+}
+
+export const hasVerifiedFplHandoffGateSignal = (html) => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml) || ''
+
+  return extractTitle(rawHtml) === 'You are being redirected...'
+    && normalized.includes('Javascript is required. Please enable javascript before you are allowed to see this page.')
+    && /sucuri_cloudproxy_js/i.test(rawHtml)
+}
+
+export const hasVerifiedBrokenPublicJobsApiError = (status, body) => {
+  const payload = parseJsonText(body)
+  const message = normalizeWhitespace(
+    typeof payload?.error === 'string'
+      ? payload.error
+      : payload?.error?.message,
+  ) || ''
+
+  return Number(status) === 500
+    && payload?.success === false
+    && message.includes(`invalid json response body at ${BROKEN_UPSTREAM_API_URL}`)
+    && message.includes(`Unexpected token '<'`)
+    && message.includes('is not valid JSON')
 }
 
 const normalizePostingDate = (value) => {
@@ -129,61 +171,113 @@ export const extractJobsFromPayload = (payload) => {
     .filter(Boolean)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: 'onecard-html',
-  timeoutMs: 15000,
-})
+const defaultFetchPage = async (url, {
+  accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  headers = {},
+} = {}) => {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
-const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'application/json,text/plain,*/*',
-    ...(options.headers ?? {}),
-  },
-  label: 'onecard-json',
-  timeoutMs: 15000,
-})
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: accept,
+        ...headers,
+      },
+      redirect: 'follow',
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeout)
+
+    return {
+      status: response.status,
+      url,
+      finalUrl: response.url,
+      body: await response.text(),
+      errorKind: null,
+    }
+  } catch (error) {
+    clearTimeout(timeout)
+
+    return {
+      status: null,
+      url,
+      finalUrl: url,
+      body: null,
+      errorKind: error?.name === 'AbortError' ? 'timeout' : 'network',
+      errorMessage: String(error?.message ?? error),
+    }
+  }
+}
 
 export const createOneCardScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
+    fetchPage = defaultFetchPage,
   } = {}) {
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+    const careersPage = await fetchPage(OFFICIAL_CAREERS_URL)
 
-    if (!hasOfficialOneCardCareersSignals(careersHtml)) {
-      throw new Error('OneCard verified official careers page no longer matches the trusted public surface')
+    if (careersPage.errorKind) {
+      throw new Error(`Failed to fetch verified OneCard careers route: ${OFFICIAL_CAREERS_URL} (${careersPage.errorKind})`)
     }
 
-    const apiConfig = extractOfficialJobsApiConfig(careersHtml)
+    if (Number(careersPage.status) !== 200 || !hasOfficialOneCardCareersSignals(careersPage.body)) {
+      throw buildMaterialSurfaceChangeError()
+    }
+
+    const apiConfig = extractOfficialJobsApiConfig(careersPage.body)
     if (!apiConfig) {
-      throw new Error('OneCard verified official careers page no longer exposes the public jobs api config')
+      throw buildMaterialSurfaceChangeError()
     }
 
-    const payload = await fetchJson(apiConfig.jobsApiUrl, {
+    const handoffPage = await fetchPage(OFFICIAL_CAREERS_HANDOFF_URL)
+    if (handoffPage.errorKind) {
+      throw new Error(`Failed to fetch verified OneCard handoff route: ${OFFICIAL_CAREERS_HANDOFF_URL} (${handoffPage.errorKind})`)
+    }
+
+    if (Number(handoffPage.status) !== 307 || !hasVerifiedFplHandoffGateSignal(handoffPage.body)) {
+      throw buildMaterialSurfaceChangeError()
+    }
+
+    const jobsApiPage = await fetchPage(apiConfig.jobsApiUrl, {
+      accept: 'application/json,text/plain,*/*',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiConfig.jobsApiKey,
       },
     })
 
-    const jobs = extractJobsFromPayload(payload)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
-    const scrapedAt = now()
+    if (jobsApiPage.errorKind) {
+      throw new Error(`Failed to fetch verified OneCard public jobs API: ${apiConfig.jobsApiUrl} (${jobsApiPage.errorKind})`)
+    }
 
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.sourceUrl,
-      scrapedAt,
-    }))
+    if (Number(jobsApiPage.status) === 200) {
+      const payload = parseJsonText(jobsApiPage.body)
+      if (!payload) {
+        throw buildMaterialSurfaceChangeError()
+      }
+
+      const jobs = extractJobsFromPayload(payload)
+      const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+      const scrapedAt = now()
+
+      return selectedJobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.sourceUrl,
+        scrapedAt,
+      }))
+    }
+
+    if (hasVerifiedBrokenPublicJobsApiError(jobsApiPage.status, jobsApiPage.body)) {
+      return []
+    }
+
+    throw buildMaterialSurfaceChangeError()
   },
 })
 

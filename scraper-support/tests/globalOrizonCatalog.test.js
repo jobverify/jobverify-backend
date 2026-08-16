@@ -6,7 +6,7 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes Global Orizon as a verified linked-platform zero-jobs provider', () => {
+test('getScraperCatalog includes Global Orizon as a verified first-party hiring-partner role provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'globalorizon')
 
   assert.ok(provider)
@@ -15,6 +15,11 @@ test('getScraperCatalog includes Global Orizon as a verified linked-platform zer
   assert.equal(provider.companyName, 'Global Orizon')
   assert.equal(provider.companyCareerPage, 'https://www.globalorizon.com/the-hiring-partner-com')
   assert.equal(provider.companyDomain, 'globalorizon.com')
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.equal(provider.verifiedIndiaJobCount, 3)
+  assert.match(provider.paginationStrategy, /first-party-role-page/i)
+  assert.match(provider.extractionStrategy, /html-role-cards/i)
+  assert.match(provider.verifiedSurfaceSummary, /DevOps Engineers/i)
   assert.match(provider.modulePath, /globalorizon[\\/]script\.js$/i)
 })
 

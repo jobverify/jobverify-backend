@@ -213,6 +213,19 @@ const xoxodayKekaShellHtml = `
 </html>
 `
 
+const xoxodayBlockedCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Vercel Security Checkpoint</title>
+  </head>
+  <body>
+    <h1>Vercel Security Checkpoint</h1>
+    <p>Please enable JavaScript to continue.</p>
+  </body>
+</html>
+`
+
 const xoxodayPayload = [
   {
     id: 135128,
@@ -385,4 +398,49 @@ test('Xoxoday run returns global jobs from the verified Keka shell and embed job
       ['Strategic Account Manager', 'Philippines, ABR', 'Philippines'],
     ],
   )
+})
+
+test('Xoxoday accepts the current blocked first-party careers page while the Keka shell and jobs API remain live', async () => {
+  const xoxoday = await loadModule('../../scraper/xoxoday/script.js')
+  const requestedUrls = []
+
+  assert.equal(xoxoday.hasVercelSecurityCheckpointSignal(xoxodayBlockedCareersHtml), true)
+
+  const jobs = await xoxoday.createXoxodayScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      if (url === xoxoday.CAREERS_URL) {
+        return {
+          status: 429,
+          url,
+          html: xoxodayBlockedCareersHtml,
+        }
+      }
+
+      if (url === xoxoday.KEKA_CAREERS_URL) {
+        return {
+          status: 200,
+          url,
+          html: xoxodayKekaShellHtml,
+        }
+      }
+
+      throw new Error(`Unexpected Xoxoday page URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      requestedUrls.push(url)
+      assert.equal(url, xoxoday.JOBS_API_URL)
+      return xoxodayPayload
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    xoxoday.CAREERS_URL,
+    xoxoday.KEKA_CAREERS_URL,
+    xoxoday.JOBS_API_URL,
+  ])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].source, 'xoxoday')
 })

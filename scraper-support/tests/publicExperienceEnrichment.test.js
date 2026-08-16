@@ -173,6 +173,228 @@ test('inferExperienceFromPublicPageHtml keeps job-detail meta summaries when bod
   assert.equal(normalized.engineeringDomain, 'Software Engineering')
 })
 
+test('inferExperienceFromPublicPageHtml captures Workday experience from job-detail meta summaries when the body is sparse', () => {
+  const enriched = inferExperienceFromPublicPageHtml({
+    title: 'Hardware & Silicon Validation Engg',
+    company: 'Marvell',
+    applyUrl: 'https://marvell.wd1.myworkdayjobs.com/en-US/MarvellCareers/job/Pune/Hardware---Silicon-Validation-Engg_2601982',
+    sourceUrl: 'https://marvell.wd1.myworkdayjobs.com/en-US/MarvellCareers/job/Pune/Hardware---Silicon-Validation-Engg_2601982',
+    experienceRequired: null,
+    jobDescription: null,
+    description: null,
+  }, `
+    <html>
+      <head>
+        <meta property="og:title" content="Hardware &amp; Silicon Validation Engg" />
+        <meta
+          property="og:description"
+          content="About Marvell. Your Team, Your Impact. What You Can Expect Design and develop firmware to validate various IPs, including security IPs, DMA, and boot sequences. Validate and debug multiple SoC interfaces, including SAS, SATA, UFS, USB, DDR, SPI, I2C, and UART. What We're Looking For Bachelor's degree in Software, Computer or Electrical Engineering, and at least 3-5 years professional experience and/or Master's degree in Software, Computer or Electrical Engineering, and at least 2-3 years professional experience, in following domains - Pre-Si Validation, Post-Si Validation, Stress and PVT testing."
+        />
+      </head>
+      <body>
+        <div id="root"></div>
+      </body>
+    </html>
+  `)
+
+  assert.equal(enriched.experienceRequired, '3-5 years')
+  assert.equal(enriched.publicExperienceChecked, true)
+  assert.match(enriched.jobDescription || '', /validate and debug multiple so\s*c interfaces/i)
+})
+
+test('enrichJobWithPublicExperience recovers Oracle Candidate Experience detail from the public detail API when the shell is sparse', async () => {
+  const job = {
+    title: 'Specialist.Laboratory.Aster Laboratory',
+    company: 'Aster DM Healthcare',
+    source: 'asterdmhealthcare',
+    atsPlatform: 'oracle-cloud',
+    jobId: '1395',
+    siteNumber: 'CX',
+    sourceUrl: 'https://hcdt.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX/job/1395',
+    applyUrl: 'https://hcdt.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX/job/1395/apply',
+    experienceRequired: null,
+    jobDescription: null,
+    description: null,
+    publicExperienceChecked: false,
+  }
+
+  const enriched = await enrichJobWithPublicExperience(job, {
+    fetchText: async (url) => {
+      if (url === job.sourceUrl) {
+        return `
+          <html>
+            <head>
+              <title>Aster DM Healthcare</title>
+              <meta property="og:title" content="Specialist.Laboratory.Aster Laboratory" />
+            </head>
+            <body>
+              <div class="app-loading-spinner"></div>
+            </body>
+          </html>
+        `
+      }
+
+      throw new Error(`Unexpected HTML fetch: ${url}`)
+    },
+    fetchJson: async (url) => {
+      assert.match(url, /recruitingCEJobRequisitionDetails/)
+      assert.match(url, /Id=%221395%22,siteNumber=CX$/)
+
+      return {
+        items: [{
+          Id: '1395',
+          Title: 'Specialist.Laboratory.Aster Laboratory',
+          ExternalDescriptionStr: '<p>Conduct diagnostic testing, maintain quality controls, and support laboratory operations.</p>',
+          ExternalQualificationsStr: '<p>Bachelor degree with 3-5 years of experience in accredited laboratory environments.</p>',
+        }],
+      }
+    },
+  })
+
+  assert.equal(enriched.experienceRequired, '3-5 years')
+  assert.equal(enriched.publicExperienceChecked, true)
+  assert.match(enriched.jobDescription || '', /diagnostic testing/i)
+})
+
+test('enrichJobWithPublicExperience recovers Fountain descriptions and experience from the public application form API', async () => {
+  const job = {
+    title: 'Chennai - Project Manager-chennai',
+    company: 'CMS Info Systems',
+    source: 'cmscomputers',
+    atsPlatform: 'fountain',
+    companyCareerPage: 'https://www.cms.com/careers',
+    jobId: 'b775b39d-2a57-4954-b232-0d460503938b',
+    sourceUrl: 'https://ap-1.fountain.com/cms/apply/chennai-project-manager-chennai',
+    applyUrl: 'https://ap-1.fountain.com/cms/apply/chennai-project-manager-chennai',
+    experienceRequired: null,
+    jobDescription: null,
+    description: null,
+    publicExperienceChecked: false,
+  }
+
+  const enriched = await enrichJobWithPublicExperience(job, {
+    fetchText: async (url) => {
+      if (url === job.sourceUrl) {
+        return `
+          <html>
+            <head>
+              <title>Fountain Applicant UI</title>
+            </head>
+            <body>
+              <div id="app"></div>
+            </body>
+          </html>
+        `
+      }
+
+      if (url === job.companyCareerPage) {
+        return `
+          <html>
+            <body>
+              <a href="https://careers.ap-1.fountain.com/cms/a9218256-8fbf-40ab-936b-49ff5ff7c900">Explore Jobs</a>
+            </body>
+          </html>
+        `
+      }
+
+      throw new Error(`Unexpected HTML fetch: ${url}`)
+    },
+    fetchJson: async (url) => {
+      assert.match(url, /internal_api\/portal\/cms\/application_forms\/new/)
+      assert.match(url, /funnel_id=b775b39d-2a57-4954-b232-0d460503938b/)
+      assert.match(url, /brand_id=a9218256-8fbf-40ab-936b-49ff5ff7c900/)
+
+      return {
+        funnel: {
+          title: 'Chennai - Project Manager-chennai',
+          position_description_html: '<p>Lead cash logistics programs and improve regional operations with 3-5 years of experience in project delivery.</p>',
+        },
+      }
+    },
+  })
+
+  assert.equal(enriched.experienceRequired, '3-5 years')
+  assert.equal(enriched.publicExperienceChecked, true)
+  assert.match(enriched.jobDescription || '', /cash logistics programs/i)
+})
+
+test('enrichJobWithPublicExperience recovers CEIPAL descriptions and experience from the public career portal API', async () => {
+  const job = {
+    title: 'Embedded Systems Engineer II',
+    company: 'Detroit Engineered Products',
+    source: 'detroitengineeredproducts',
+    atsPlatform: 'ceipal-widget',
+    companyCareerPage: 'https://depusa.com/index.php/careers-india',
+    jobId: '241',
+    sourceUrl: 'https://candidateportal.ceipal.com/job-details/nkzeTD_pVxOyfXBv3ZSrqQxNFSQYc65xfDJfQ7Rg18A',
+    applyUrl: 'https://candidateportal.ceipal.com/jobs/career/nfS0lik6V2Gzg4omK9_WOTOoh5Qmp2u7D1haLtzQS7c/xNNBs3JmqLhRnG7dg2BWOhObGvuHKqxCb9rK8eOqrA8/JAPW0VMTXcklssI6raPVWZhU-E9LDKYeefhizfTCNwg',
+    experienceRequired: null,
+    jobDescription: null,
+    description: null,
+    publicExperienceChecked: false,
+  }
+
+  const enriched = await enrichJobWithPublicExperience(job, {
+    fetchText: async (url) => {
+      if (url === job.sourceUrl) {
+        return `
+          <html>
+            <head>
+              <title>Candidate Portal</title>
+            </head>
+            <body>
+              <app-root></app-root>
+            </body>
+          </html>
+        `
+      }
+
+      if (url === job.companyCareerPage) {
+        return `
+          <html>
+            <body>
+              <script
+                src="https://jobsapi.ceipal.com/APISource/widget.js"
+                data-ceipal-api-key="test-key"
+                data-ceipal-career-portal-id="test-portal"
+              ></script>
+            </body>
+          </html>
+        `
+      }
+
+      throw new Error(`Unexpected HTML fetch: ${url}`)
+    },
+    fetchJson: async (url, options = {}) => {
+      assert.equal(url, 'https://careerapi.ceipal.com/test-key/CareerPortalJobPostings/?page=1')
+      assert.equal(options.method, 'POST')
+      assert.match(String(options.body), /cp_id=test-portal/)
+
+      return {
+        count: 1,
+        num_pages: 1,
+        page_number: 1,
+        next: false,
+        results: [{
+          id: '241',
+          job_id: '241',
+          country: 'India',
+          city: 'Chennai',
+          state: 'Tamil Nadu',
+          public_job_title: 'Embedded Systems Engineer II',
+          public_job_desc: 'Requires 5-7 years of embedded systems experience across automotive programs.',
+          apply_job: job.applyUrl,
+          campus_portal_job_details_url: job.sourceUrl,
+        }],
+      }
+    },
+  })
+
+  assert.equal(enriched.experienceRequired, '5-7 years')
+  assert.equal(enriched.publicExperienceChecked, true)
+  assert.match(enriched.jobDescription || '', /embedded systems experience/i)
+})
+
 test('inferExperienceFromPublicPageHtml ignores generic overview shells that only repeat career-site chrome', () => {
   const enriched = inferExperienceFromPublicPageHtml({
     title: 'Regulatory Compliance Engineer',

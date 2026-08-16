@@ -17,15 +17,15 @@ export const INDWEALTH_CATALOG = {
   publicLinkedInJobsUrl: 'https://in.linkedin.com/jobs/indmoney-jobs',
   atsPlatform: 'linkedin-guest-search',
   countryFilter: 'India',
-  paginationStrategy: 'single-public-company-search-page',
+  paginationStrategy: 'blocked-first-party-redirect-and-about-plus-public-company-search-page',
   extractionStrategy:
-    'official-brand-redirect+official-about-linkedin-handoff+public-linkedin-company-search+public-detail-jsonld',
+    'verified-blocked-brand-redirect+verified-blocked-about-page+verified-linkedin-company-page+public-linkedin-company-search+optional-public-detail-jsonld',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'indmoney.com',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-15',
   verifiedSurfaceSummary:
-    'Verified on July 16, 2026 that https://www.indwealth.in/ redirects to https://www.indmoney.com/, that the official INDmoney about page at https://www.indmoney.com/about contains the verified Join Our Team handoff to https://www.linkedin.com/company/indmoney/jobs/, that the public LinkedIn company search surface at https://in.linkedin.com/jobs/indmoney-jobs exposed current India roles, and that public detail pages were available for INDmoney openings including Associate Product Manager – Growth, Product Manager — US Stocks, Finance Research Analyst, Compliance Officer (Payments Vertical), and Platform Engineer-SRE. This should remain a direct provider rather than alias-only because there is no existing INDmoney provider in the shared registry yet.',
+    'Verified on Saturday, August 15, 2026 that https://www.indwealth.in/ now returns an HTTP 403 Cloudflare "Just a moment..." challenge while still resolving to https://www.indmoney.com/, and that both https://www.indmoney.com/ and https://www.indmoney.com/about return the same first-party challenge shell in this environment. Also verified that the public LinkedIn company surface at https://www.linkedin.com/company/indmoney/jobs/ still resolves to https://in.linkedin.com/company/indmoney, and that the public LinkedIn guest jobs page at https://in.linkedin.com/jobs/indmoney-jobs still exposes exact-company India roles including Founder\'s Office - Growth, Product Manager - Lending, Anchor and Content Creator, Customer Support Executive, and Senior Analyst - Growth. This remains a direct provider because the verified public LinkedIn company and jobs surfaces are still reachable even while the first-party INDwealth and INDmoney routes are challenge-blocked.',
   dryRunFile: 'indwealth/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

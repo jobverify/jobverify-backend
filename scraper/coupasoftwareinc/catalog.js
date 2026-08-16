@@ -14,12 +14,12 @@ export const COUPA_SOFTWARE_INC_CATALOG = {
   atsPlatform: 'coupa-careers-site',
   countryFilter: 'India',
   paginationStrategy: 'first-party-html-pagination',
-  extractionStrategy: 'verified-first-party-jobs-page+html-job-cards+country-filtered-pagination',
+  extractionStrategy: 'verified-cloudflare-challenge-empty+preserve-first-party-html-job-card-parser',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-14',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://careers.coupa.com/en/jobs/ was the live first-party Coupa jobs page, that it publicly rendered Displaying 1 to 20 of 101 matching jobs, and that the visible listings included India roles such as Manager, Software Engineering (.Net with React)(12+ years) - 11699 in Hyderabad, Lead Software Engineer - Ruby on Rails(8-12 years) - 11693 in Pune, and Lead Cloud Software Engineer - 11625 in Bangalore.',
+    'Verified on Friday, August 14, 2026 that https://careers.coupa.com/en/jobs/ currently returns a Cloudflare "Just a moment..." challenge with HTTP 403, cf-mitigated=challenge, and the visible "Enable JavaScript and cookies to continue" blocker instead of the previously public Coupa jobs listings page. This provider preserves the verified first-party route and returns an honest empty result while that blocked contract remains in place.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'coupasoftwareinc/jobs.json',
 }

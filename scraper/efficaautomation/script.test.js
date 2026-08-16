@@ -58,12 +58,12 @@ test('validates the official Effica public surfaces and returns no structured jo
   assert.equal(hasHiringContactSignal(contactHtml), true)
 
   const jobs = await scraper.run({
-    fetchText: async (url) => {
+    fetchPage: async (url) => {
       requestedUrls.push(url)
 
-      if (url === HOMEPAGE_URL) return homepageHtml
-      if (url === CAREERS_URL) return careersHtml
-      if (url === CONTACT_URL) return contactHtml
+      if (url === HOMEPAGE_URL) return { status: 200, url, headers: {}, html: homepageHtml }
+      if (url === CAREERS_URL) return { status: 200, url, headers: {}, html: careersHtml }
+      if (url === CONTACT_URL) return { status: 200, url, headers: {}, html: contactHtml }
 
       throw new Error(`Unexpected URL: ${url}`)
     },
@@ -76,10 +76,10 @@ test('validates the official Effica public surfaces and returns no structured jo
 test('fails closed when the Effica homepage signal changes', async () => {
   await assert.rejects(
     createEfficaAutomationScraper().run({
-      fetchText: async (url) => {
-        if (url === HOMEPAGE_URL) return '<html><body>No careers link</body></html>'
-        if (url === CAREERS_URL) return careersHtml
-        return contactHtml
+      fetchPage: async (url) => {
+        if (url === HOMEPAGE_URL) return { status: 200, url, headers: {}, html: '<html><body>No careers link</body></html>' }
+        if (url === CAREERS_URL) return { status: 200, url, headers: {}, html: careersHtml }
+        return { status: 200, url, headers: {}, html: contactHtml }
       },
     }),
     /Effica homepage no longer matches the verified official public site/i,
@@ -89,10 +89,10 @@ test('fails closed when the Effica homepage signal changes', async () => {
 test('fails closed when the Effica careers surface changes', async () => {
   await assert.rejects(
     createEfficaAutomationScraper().run({
-      fetchText: async (url) => {
-        if (url === HOMEPAGE_URL) return homepageHtml
-        if (url === CAREERS_URL) return '<html><body>Open jobs table</body></html>'
-        return contactHtml
+      fetchPage: async (url) => {
+        if (url === HOMEPAGE_URL) return { status: 200, url, headers: {}, html: homepageHtml }
+        if (url === CAREERS_URL) return { status: 200, url, headers: {}, html: '<html><body>Open jobs table</body></html>' }
+        return { status: 200, url, headers: {}, html: contactHtml }
       },
     }),
     /Effica careers page no longer matches the verified official application-only surface/i,
@@ -102,10 +102,10 @@ test('fails closed when the Effica careers surface changes', async () => {
 test('fails closed when the Effica hiring contact signal changes', async () => {
   await assert.rejects(
     createEfficaAutomationScraper().run({
-      fetchText: async (url) => {
-        if (url === HOMEPAGE_URL) return homepageHtml
-        if (url === CAREERS_URL) return careersHtml
-        if (url === CONTACT_URL) return '<html><body>No HR contact</body></html>'
+      fetchPage: async (url) => {
+        if (url === HOMEPAGE_URL) return { status: 200, url, headers: {}, html: homepageHtml }
+        if (url === CAREERS_URL) return { status: 200, url, headers: {}, html: careersHtml }
+        if (url === CONTACT_URL) return { status: 200, url, headers: {}, html: '<html><body>No HR contact</body></html>' }
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),

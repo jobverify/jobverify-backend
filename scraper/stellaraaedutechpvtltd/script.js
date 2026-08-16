@@ -28,6 +28,7 @@ const normalizeWhitespace = (value) => {
     .replace(/&amp;/gi, '&')
     .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
     .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+    .replace(/\u2019/g, "'")
     .replace(/&lt;/gi, '<')
     .replace(/&gt;/gi, '>')
     .replace(/&#8211;|&ndash;/gi, '-')
@@ -47,6 +48,7 @@ const decodeHtml = (value) =>
     .replace(/&amp;/gi, '&')
     .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
     .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+    .replace(/\u2019/g, "'")
     .replace(/&lt;/gi, '<')
     .replace(/&gt;/gi, '>')
     .replace(/&#8211;|&ndash;/gi, '-')
@@ -244,13 +246,19 @@ export const pageIndicatesStellaraaCompany = (html) => {
       raw.includes('https://www.linkedin.com/redir/redirect?url=https%3A%2F%2Fwww%2Estellaraa%2Ecom%2F')
       || raw.includes('https://www.stellaraa.com/')
     )
-    && raw.includes(`stellaraa-jobs-worldwide?f_C=${LINKEDIN_COMPANY_ID}`)
+    && (
+      raw.includes('https://in.linkedin.com/company/stellaraa')
+      || raw.includes('https://www.linkedin.com/company/stellaraa/')
+    )
 }
 
 export const searchPageShowsZeroResults = (html) => {
   const normalized = normalizeWhitespace(html)?.toLowerCase() || ''
 
-  return normalized.includes('0 jobs in india')
+  return (
+    normalized.includes('0 jobs in india')
+    || normalized.includes('0 jobs jobs in india')
+  )
     && (
       normalized.includes("we couldn't find a match")
       || normalized.includes('no matching jobs found')

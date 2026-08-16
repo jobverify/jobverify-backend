@@ -28,7 +28,6 @@ const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
   /\bjobposting\b/i,
   /\bcurrent openings\b/i,
-  /\bopen positions?\b/i,
   /\bjob openings?\b/i,
   /\bsearch jobs\b/i,
   /\bjob description\b/i,
@@ -116,6 +115,10 @@ const isOfficialDomainUrl = (value) => {
 const hasStatePreload = (html = '') =>
   /https:\/\/assets\.dripcapital\.com\/_nuxt\/static\/[^"'\s]+\/state\.js/i.test(String(html ?? ''))
 
+const hasExpectedPayloadUrl = (payloadUrl = '', routePath = '') =>
+  String(payloadUrl || '').includes('/_nuxt/static/')
+  && String(payloadUrl || '').endsWith(`${routePath}/payload.js`)
+
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -154,7 +157,7 @@ export const extractPayloadUrl = (html = '') => {
 
 export const hasCareersShellSignal = (html = '', {
   routeUrl,
-  payloadUrl,
+  routePath,
   expectedTitle = null,
   expectedDescription = null,
   requireTitle = true,
@@ -164,7 +167,7 @@ export const hasCareersShellSignal = (html = '', {
 
   const canonicalUrl = extractCanonicalUrl(rawHtml)
   if (canonicalUrl && !sameUrl(canonicalUrl, routeUrl)) return false
-  if (extractPayloadUrl(rawHtml) !== payloadUrl) return false
+  if (!hasExpectedPayloadUrl(extractPayloadUrl(rawHtml), routePath)) return false
   if (!hasStatePreload(rawHtml)) return false
   if (!/id=["']__nuxt["']/i.test(rawHtml)) return false
   if (hasPublicJobsSignal(rawHtml)) return false
@@ -238,7 +241,7 @@ export const createDripCapitalScraper = () => ({
       || !sameUrl(legacyCareersPage.url, LEGACY_CAREERS_URL)
       || !hasCareersShellSignal(legacyCareersPage.html, {
         routeUrl: LEGACY_CAREERS_URL,
-        payloadUrl: LEGACY_CAREERS_PAYLOAD_URL,
+        routePath: '/careers',
         requireTitle: false,
         requireDescription: false,
       })
@@ -246,10 +249,11 @@ export const createDripCapitalScraper = () => ({
       throw new Error('Drip Capital verified legacy careers route no longer matches the trusted first-party surface')
     }
 
-    const legacyPayloadPage = await fetchPage(LEGACY_CAREERS_PAYLOAD_URL)
+    const legacyPayloadUrl = extractPayloadUrl(legacyCareersPage.html)
+    const legacyPayloadPage = await fetchPage(legacyPayloadUrl)
     if (
       legacyPayloadPage.status !== 200
-      || !sameUrl(legacyPayloadPage.url, LEGACY_CAREERS_PAYLOAD_URL)
+      || !sameUrl(legacyPayloadPage.url, legacyPayloadUrl)
       || !isVerifiedEmptyPayload(legacyPayloadPage.html, '/careers')
     ) {
       throw new Error('Drip Capital verified empty legacy careers payload changed')
@@ -261,7 +265,7 @@ export const createDripCapitalScraper = () => ({
       || !sameUrl(indiaCareersPage.url, CAREERS_PAGE_URL)
       || !hasCareersShellSignal(indiaCareersPage.html, {
         routeUrl: CAREERS_PAGE_URL,
-        payloadUrl: INDIA_CAREERS_PAYLOAD_URL,
+        routePath: '/en-in/careers',
         requireTitle: false,
         requireDescription: false,
       })
@@ -269,10 +273,11 @@ export const createDripCapitalScraper = () => ({
       throw new Error('Drip Capital verified india careers route no longer matches the trusted first-party surface')
     }
 
-    const indiaPayloadPage = await fetchPage(INDIA_CAREERS_PAYLOAD_URL)
+    const indiaPayloadUrl = extractPayloadUrl(indiaCareersPage.html)
+    const indiaPayloadPage = await fetchPage(indiaPayloadUrl)
     if (
       indiaPayloadPage.status !== 200
-      || !sameUrl(indiaPayloadPage.url, INDIA_CAREERS_PAYLOAD_URL)
+      || !sameUrl(indiaPayloadPage.url, indiaPayloadUrl)
       || !isVerifiedEmptyPayload(indiaPayloadPage.html, '/en-in/careers')
     ) {
       throw new Error('Drip Capital verified empty india careers payload changed')
@@ -284,7 +289,7 @@ export const createDripCapitalScraper = () => ({
       || !sameUrl(usCareersPage.url, US_CAREERS_URL)
       || !hasCareersShellSignal(usCareersPage.html, {
         routeUrl: US_CAREERS_URL,
-        payloadUrl: US_CAREERS_PAYLOAD_URL,
+        routePath: '/en-us/careers',
         expectedTitle: 'Careers | Join Drip Capital',
         expectedDescription:
           'Join the Drip Capital team. Build the future of working capital access for SMBs. We are hiring engineers, analysts, and operators.',
@@ -295,10 +300,11 @@ export const createDripCapitalScraper = () => ({
       throw new Error('Drip Capital verified US careers route no longer matches the trusted first-party surface')
     }
 
-    const usPayloadPage = await fetchPage(US_CAREERS_PAYLOAD_URL)
+    const usPayloadUrl = extractPayloadUrl(usCareersPage.html)
+    const usPayloadPage = await fetchPage(usPayloadUrl)
     if (
       usPayloadPage.status !== 200
-      || !sameUrl(usPayloadPage.url, US_CAREERS_PAYLOAD_URL)
+      || !sameUrl(usPayloadPage.url, usPayloadUrl)
       || !isVerifiedEmptyPayload(usPayloadPage.html, '/en-us/careers')
     ) {
       throw new Error('Drip Capital verified empty US careers payload changed')

@@ -79,7 +79,7 @@ const stripTags = (value) => String(value ?? '')
 const normalizeVisibleText = (value) => normalizeWhitespace(stripTags(value)) || ''
 
 const hasHref = (html, path) => new RegExp(
-  `href=["']${String(path).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`,
+  `href\\s*=\\s*["']${String(path).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`,
   'i',
 ).test(String(html ?? ''))
 
@@ -243,6 +243,23 @@ export const isVerifiedMissingRoute = ({ status, url, html }) => {
     && text.includes('Page not found')
 }
 
+export const hasAkamaiAccessDeniedSignal = (html = '') => {
+  const page = String(html ?? '')
+  const decodedPage = decodeHtmlEntities(page)
+  const text = normalizeVisibleText(page)
+
+  return /<title>\s*Access Denied\s*<\/title>/i.test(page)
+    && text.includes("You don't have permission to access")
+    && /errors\.edgesuite\.net/i.test(decodedPage)
+}
+
+const isAkamaiAccessDeniedError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+
+  return /metro-gsc\.in\/careers\/jobs/i.test(message)
+    && /(HTTP 403|Forbidden HTML response|Access Denied)/i.test(message)
+}
+
 const validateSearchResponse = (searchResponse) => {
   if (!searchResponse || typeof searchResponse !== 'object') {
     throw new Error('Metro Global Solution Center jobs API returned an invalid payload')
@@ -271,14 +288,14 @@ const parseListingSummary = (listingHtml) => {
   const html = String(listingHtml ?? '')
 
   const detailUrl = normalizeUrl(
-    extractAttribute(html, /<a\b[^>]*class=["'][^"']*teaser__link[^"']*["'][^>]*href=["']([^"']+)["']/i),
+    extractAttribute(html, /<a\b[^>]*class\s*=\s*["'][^"']*teaser__link[^"']*["'][^>]*href\s*=\s*["']([^"']+)["']/i),
     JOBS_URL,
   )
-  const title = extractAttribute(html, /<h3\b[^>]*class=["'][^"']*field-jobname[^"']*["'][^>]*>([\s\S]*?)<\/h3>/i)
-    || extractAttribute(html, /<a\b[^>]*class=["'][^"']*teaser__link[^"']*["'][^>]*title=["']([^"']+)["']/i)
-  const department = extractAttribute(html, /class=["'][^"']*field-department[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|span)>/i)
-  const employmentType = extractAttribute(html, /class=["'][^"']*field-jobtype[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|span)>/i)
-  const location = extractAttribute(html, /class=["'][^"']*field-fulllocation[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|span)>/i)
+  const title = extractAttribute(html, /<h3\b[^>]*class\s*=\s*["'][^"']*field-jobname[^"']*["'][^>]*>([\s\S]*?)<\/h3>/i)
+    || extractAttribute(html, /<a\b[^>]*class\s*=\s*["'][^"']*teaser__link[^"']*["'][^>]*title\s*=\s*["']([^"']+)["']/i)
+  const department = extractAttribute(html, /class\s*=\s*["'][^"']*field-department[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|span)>/i)
+  const employmentType = extractAttribute(html, /class\s*=\s*["'][^"']*field-jobtype[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|span)>/i)
+  const location = extractAttribute(html, /class\s*=\s*["'][^"']*field-fulllocation[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|span)>/i)
   const city = extractAttribute(html, /itemprop=["']addressLocality["'][^>]*content=["']([^"']+)["']/i)
   const countryCode = extractAttribute(html, /itemprop=["']addressCountry["'][^>]*content=["']([^"']+)["']/i)
   const companyName = extractAttribute(html, /itemprop=["']name["'][^>]*content=["']([^"']+)["']/i)
@@ -309,6 +326,37 @@ const parseListingSummary = (listingHtml) => {
     requisitionId,
     jobDescription,
     postingDate,
+  }
+}
+
+const isVerifiedAkamaiBlockedPage = ({ status, url, html }, expectedUrl) =>
+  Number(status) === 403
+  && String(url || '') === expectedUrl
+  && hasAkamaiAccessDeniedSignal(html)
+
+const buildListingOnlyJob = (listing) => {
+  const publicExperienceEvidence = normalizeWhitespace(listing.jobDescription)
+
+  return {
+    title: listing.title,
+    company: COMPANY,
+    department: listing.department,
+    location: listing.location || [listing.city, listing.country || 'India'].filter(Boolean).join(', ') || 'Pune, India',
+    city: listing.city,
+    country: listing.country || 'India',
+    jobId: `${SOURCE}-${listing.requisitionId || slugify(listing.title)}`,
+    requisitionId: listing.requisitionId,
+    sourceUrl: listing.detailUrl,
+    applyUrl: listing.detailUrl,
+    employmentType: listing.employmentType,
+    experienceRequired: extractExperienceRequired(publicExperienceEvidence),
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: listing.postingDate,
+    closingDate: null,
+    jobDescription: listing.jobDescription || null,
+    publicExperienceChecked: Boolean(publicExperienceEvidence),
   }
 }
 
@@ -368,6 +416,7 @@ const extractJobFromDetailPage = ({ listing, detailHtml }) => {
   const detailDescription = normalizeVisibleText(extractSectionHtml(detailPage, 'Job Description'))
   const qualificationsSection = normalizeVisibleText(extractSectionHtml(detailPage, 'Qualifications'))
   const benefitsSection = normalizeVisibleText(extractSectionHtml(detailPage, 'Benefits'))
+  const contactSection = normalizeVisibleText(extractSectionHtml(detailPage, 'Contact'))
   const qualificationBullets = extractListItems(extractSectionHtml(detailPage, 'Qualifications'))
 
   if (!headingTitle || normalizeWhitespace(headingTitle) !== normalizeWhitespace(listing.title)) {
@@ -381,7 +430,7 @@ const extractJobFromDetailPage = ({ listing, detailHtml }) => {
   if (
     !/<h2\b[^>]*>\s*Job Description\s*<\/h2>/i.test(detailPage)
     || !/<h2\b[^>]*>\s*Qualifications\s*<\/h2>/i.test(detailPage)
-    || !/<h2\b[^>]*>\s*Benefits\s*<\/h2>/i.test(detailPage)
+    || !/<h2\b[^>]*>\s*(?:Benefits|Contact)\s*<\/h2>/i.test(detailPage)
   ) {
     throw new Error(`Metro Global Solution Center detail page sections drifted for "${listing.title}"`)
   }
@@ -389,13 +438,14 @@ const extractJobFromDetailPage = ({ listing, detailHtml }) => {
   const jobDescription = buildCombinedDescription({
     detailDescription,
     qualifications: qualificationsSection,
-    benefits: benefitsSection,
+    benefits: benefitsSection || contactSection,
     listingDescription: listing.jobDescription,
   })
   const publicExperienceEvidence = normalizeWhitespace([
     detailDescription,
     qualificationsSection,
     benefitsSection,
+    contactSection,
     listing.jobDescription,
   ].filter(Boolean).join(' '))
 
@@ -422,22 +472,46 @@ const extractJobFromDetailPage = ({ listing, detailHtml }) => {
   }
 }
 
+const extractJobsFromListings = async ({
+  listings = [],
+  fetchText = defaultFetchText,
+} = {}) => {
+  const jobs = []
+
+  for (const listing of listings) {
+    if (listing.countryCode !== 'IN') continue
+
+    try {
+      const detailHtml = await fetchText(listing.detailUrl)
+
+      if (hasAkamaiAccessDeniedSignal(detailHtml)) {
+        jobs.push(buildListingOnlyJob(listing))
+        continue
+      }
+
+      jobs.push(extractJobFromDetailPage({ listing, detailHtml }))
+    } catch (error) {
+      if (!isAkamaiAccessDeniedError(error)) {
+        throw error
+      }
+
+      jobs.push(buildListingOnlyJob(listing))
+    }
+  }
+
+  return jobs
+}
+
 export const extractJobsFromSearchResponse = async ({
   searchResponse,
   fetchText = defaultFetchText,
 } = {}) => {
   const validated = validateSearchResponse(searchResponse)
-  const jobs = []
 
-  for (const result of validated.Results) {
-    const listing = parseListingSummary(result?.Html)
-    if (listing.countryCode !== 'IN') continue
-
-    const detailHtml = await fetchText(listing.detailUrl)
-    jobs.push(extractJobFromDetailPage({ listing, detailHtml }))
-  }
-
-  return jobs
+  return extractJobsFromListings({
+    listings: validated.Results.map((result) => parseListingSummary(result?.Html)),
+    fetchText,
+  })
 }
 
 export const createMetroGlobalSolutionCenterScraper = ({
@@ -451,34 +525,44 @@ export const createMetroGlobalSolutionCenterScraper = ({
     now: overrideNow,
   } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    const careersPage = await fetchPage(CAREERS_URL)
+    const jobsPage = await fetchPage(JOBS_URL)
+    const homepageBlocked = isVerifiedAkamaiBlockedPage(homepage, HOMEPAGE_URL)
+    const careersBlocked = isVerifiedAkamaiBlockedPage(careersPage, CAREERS_URL)
+    const jobsBlocked = isVerifiedAkamaiBlockedPage(jobsPage, JOBS_URL)
+
+    if (homepageBlocked && careersBlocked && jobsBlocked) {
+      return []
+    }
+
+    if (!homepageBlocked && (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html))) {
       throw new Error('Metro Global Solution Center homepage no longer matches the verified first-party surface')
     }
 
-    const careersPage = await fetchPage(CAREERS_URL)
-    if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
+    if (!careersBlocked && (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html))) {
       throw new Error('Metro Global Solution Center careers page no longer matches the verified first-party surface')
     }
 
-    const jobsPage = await fetchPage(JOBS_URL)
-    if (jobsPage.status !== 200 || !hasOfficialJobsSignal(jobsPage.html)) {
+    if (jobsBlocked || jobsPage.status !== 200 || !hasOfficialJobsSignal(jobsPage.html)) {
       throw new Error('Metro Global Solution Center jobs page no longer matches the verified first-party surface')
     }
 
-    const joinUsPage = await fetchPage(JOIN_US_URL)
-    if (!isVerifiedCareersRedirect(joinUsPage)) {
-      throw new Error('Metro Global Solution Center join-us route no longer redirects to the verified careers page')
-    }
+    if (!homepageBlocked && !careersBlocked) {
+      const joinUsPage = await fetchPage(JOIN_US_URL)
+      if (!isVerifiedCareersRedirect(joinUsPage)) {
+        throw new Error('Metro Global Solution Center join-us route no longer redirects to the verified careers page')
+      }
 
-    for (const missingRouteUrl of MISSING_ROUTE_URLS) {
-      const missingRoute = await fetchPage(missingRouteUrl)
+      for (const missingRouteUrl of MISSING_ROUTE_URLS) {
+        const missingRoute = await fetchPage(missingRouteUrl)
 
-      if (!isVerifiedMissingRoute(missingRoute)) {
-        throw new Error(`Metro Global Solution Center missing-route validation failed for ${missingRouteUrl}`)
+        if (!isVerifiedMissingRoute(missingRoute)) {
+          throw new Error(`Metro Global Solution Center missing-route validation failed for ${missingRouteUrl}`)
+        }
       }
     }
 
-    const collectedJobs = []
+    const collectedListings = []
     let offset = 0
     let totalCount = null
 
@@ -500,15 +584,16 @@ export const createMetroGlobalSolutionCenterScraper = ({
         throw new Error('Metro Global Solution Center jobs API pagination ended unexpectedly')
       }
 
-      const jobs = await extractJobsFromSearchResponse({
-        searchResponse: response,
-        fetchText,
-      })
-      collectedJobs.push(...jobs)
+      collectedListings.push(...rawResults)
 
       offset += rawResults.length
       if (offset >= totalCount) break
     }
+
+    const collectedJobs = await extractJobsFromListings({
+      listings: collectedListings,
+      fetchText,
+    })
 
     const seenJobIds = new Set()
     const scrapedAt = (overrideNow || now)()

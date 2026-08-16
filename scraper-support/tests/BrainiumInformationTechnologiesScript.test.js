@@ -62,6 +62,23 @@ const careersHtml = `
 </html>
 `
 
+const blockedPageHtml = `
+<!DOCTYPE html>
+<html class="no-js" lang="en-US">
+  <head>
+    <title>Attention Required! | Cloudflare</title>
+  </head>
+  <body>
+    <div id="cf-wrapper">
+      <div>Please enable cookies.</div>
+      <h1>Sorry, you have been blocked</h1>
+      <h2>You are unable to access brainiuminfotech.com</h2>
+      <p>Cloudflare Ray ID: abc123</p>
+    </div>
+  </body>
+</html>
+`
+
 const loadBrainiumModule = async () => {
   try {
     return await import('../../scraper/brainiuminformationtechnologies/script.js')
@@ -140,19 +157,37 @@ test('Brainium Information Technologies run returns structured jobs from the ver
   assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })
 
-test('Brainium Information Technologies stays API-only and surfaces direct-request failures without a browser fallback', async () => {
+test('Brainium Information Technologies returns [] when both first-party routes match the verified Cloudflare-blocked shell', async () => {
   const brainium = await loadBrainiumModule()
+  const requestedUrls = []
 
-  await assert.rejects(
-    brainium.createBrainiumInformationTechnologiesScraper({
-      now: () => FIXED_SCRAPED_AT,
-    }).run({
-      fetchText: async () => {
-        throw new Error('HTTP 403 for https://www.brainiuminfotech.com/careers')
-      },
-    }),
-    /HTTP 403 for https:\/\/www\.brainiuminfotech\.com\/careers/,
-  )
+  const jobs = await brainium.createBrainiumInformationTechnologiesScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      if (url === brainium.OFFICIAL_CAREERS_URL || url === brainium.OFFICIAL_HOMEPAGE_URL) {
+        return {
+          status: 403,
+          url,
+          headers: {
+            server: 'cloudflare',
+            'cf-ray': 'a2abd122184a398f-MAA',
+          },
+          html: blockedPageHtml,
+        }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.equal(brainium.hasCloudflareBlockSignal(blockedPageHtml), true)
+  assert.deepEqual(requestedUrls, [
+    brainium.OFFICIAL_CAREERS_URL,
+    brainium.OFFICIAL_HOMEPAGE_URL,
+  ])
+  assert.deepEqual(jobs, [])
 })
 
 test('Brainium Information Technologies fails closed when the verified careers surface no longer exposes open roles', async () => {
@@ -163,5 +198,35 @@ test('Brainium Information Technologies fails closed when the verified careers s
       fetchText: async () => '<html><body><h1>Careers</h1></body></html>',
     }),
     /verified official careers page/i,
+  )
+
+  await assert.rejects(
+    brainium.createBrainiumInformationTechnologiesScraper().run({
+      fetchPage: async (url) => {
+        if (url === brainium.OFFICIAL_CAREERS_URL) {
+          return {
+            status: 403,
+            url,
+            headers: {
+              server: 'cloudflare',
+              'cf-ray': 'a2abd122184a398f-MAA',
+            },
+            html: blockedPageHtml,
+          }
+        }
+
+        if (url === brainium.OFFICIAL_HOMEPAGE_URL) {
+          return {
+            status: 200,
+            url,
+            headers: {},
+            html: '<html><body><h1>Brainium</h1></body></html>',
+          }
+        }
+
+        throw new Error(`Unexpected URL: ${url}`)
+      },
+    }),
+    /verified public or fully blocked surface/i,
   )
 })

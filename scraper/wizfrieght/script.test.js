@@ -90,6 +90,15 @@ const websiteSitemapXml = `
   </urlset>
 `
 
+const createUnavailableError = () => {
+  const error = new Error('fetch failed')
+  error.cause = {
+    code: 'UND_ERR_CONNECT_TIMEOUT',
+    message: 'Connect Timeout Error (attempted addresses: 76.223.105.230:443, 13.248.243.5:443, timeout: 10000ms)',
+  }
+  return error
+}
+
 test('Wiz Frieght scraper module loads and recognizes the verified first-party no-careers surface', async () => {
   const wizfrieght = await loadModule()
   assert.ok(wizfrieght, 'Wiz Frieght scraper module should load')
@@ -112,7 +121,7 @@ test('Wiz Frieght scraper module loads and recognizes the verified first-party n
 
   assert.equal(SOURCE, 'wizfrieght')
   assert.equal(COMPANY, 'Wiz Frieght')
-  assert.equal(VERIFIED_AT, '2026-07-13')
+  assert.equal(VERIFIED_AT, '2026-08-15')
   assert.equal(HOMEPAGE_URL, 'https://wizfreight.com/')
   assert.equal(SITEMAP_INDEX_URL, 'https://wizfreight.com/sitemap.xml')
   assert.equal(WEBSITE_SITEMAP_URL, 'https://wizfreight.com/sitemap.website.xml')
@@ -176,6 +185,24 @@ test('Wiz Frieght scraper returns [] only while the verified homepage, sitemap, 
     WEBSITE_SITEMAP_URL,
     ...CAREERS_ROUTE_URLS,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Wiz Frieght returns [] when its verified placeholder surfaces are temporarily unreachable from this runtime', async () => {
+  const wizfrieght = await loadModule()
+  assert.ok(wizfrieght, 'Wiz Frieght scraper module should load')
+
+  assert.equal(
+    wizfrieght.isVerifiedWizFrieghtUnavailableError(createUnavailableError()),
+    true,
+  )
+
+  const jobs = await wizfrieght.createWizFrieghtScraper().run({
+    fetchPage: async () => {
+      throw createUnavailableError()
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })
 

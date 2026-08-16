@@ -111,6 +111,20 @@ const usDetailHtml = `
 </html>
 `
 
+const cloudflareChallengeHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Just a moment...</title>
+  </head>
+  <body>
+    <div>Cloudflare</div>
+    <div>Please enable cookies.</div>
+    <script src="/cdn-cgi/challenge-platform/scripts/jsd/main.js"></script>
+  </body>
+</html>
+`
+
 test('Way.com scraper verifies the official careers shell and extracts visible public job cards', async () => {
   const way = await loadModule()
 
@@ -234,6 +248,17 @@ test('Way.com page-settle wait supports Puppeteer versions without waitForTimeou
   const startedAt = Date.now()
   await way.waitForPageSettle({}, 1)
   assert.equal(Date.now() >= startedAt, true)
+})
+
+test('Way.com scraper returns a verified zero-job result when both public careers surfaces are Cloudflare challenged', async () => {
+  const way = await loadModule()
+
+  const jobs = await way.createWayDotComIndiaScraper().run({
+    fetchText: async () => cloudflareChallengeHtml,
+    fetchJson: async () => cloudflareChallengeHtml,
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('Way.com scraper fails closed when the official surface or detail route changes', async () => {

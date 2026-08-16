@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Sunday, July 26, 2026 that https://planful.com/jobs/ is the live first-party Planful careers landing page, that https://planful.com/jobs/careers-list/ is the live first-party careers list page, and that the public Greenhouse jobs API at https://boards-api.greenhouse.io/v1/boards/hostanalytics/jobs?content=true returned 11 public jobs including 2 India roles. A current India posting is Product Manager, Planning in Madhapur, Hyderabad, India at https://planful.com/jobs/careers-list/?gh_jid=8617451002, so this provider preserves the verified first-party detail URL while filtering the Greenhouse payload to India jobs.'
+  'Verified on Friday, August 14, 2026 that both https://planful.com/jobs/ and https://planful.com/jobs/careers-list/ now render the live first-party "Open Roles at Planful | Planful Careers" shell, and that the public Greenhouse jobs API at https://boards-api.greenhouse.io/v1/boards/hostanalytics/jobs?content=true returned 12 public jobs with 0 India roles. A current public sample posting is Customer Success Advocate at https://planful.com/jobs/careers-list/?gh_jid=8644621002, so this provider continues to preserve first-party Planful detail URLs while returning 0 India jobs until India roles reappear.'
 
 export const PLANFUL_CATALOG = {
   source: 'planful',
@@ -16,10 +16,10 @@ export const PLANFUL_CATALOG = {
   companyCareerPage: 'https://planful.com/jobs/careers-list/',
   officialCareersLandingUrl: 'https://planful.com/jobs/',
   greenhouseJobsApiUrl: 'https://boards-api.greenhouse.io/v1/boards/hostanalytics/jobs',
-  verifiedPublicJobCount: 11,
-  verifiedIndiaJobCount: 2,
-  verifiedSampleJobTitle: 'Product Manager, Planning',
-  verifiedSampleJobUrl: 'https://planful.com/jobs/careers-list/?gh_jid=8617451002',
+  verifiedPublicJobCount: 12,
+  verifiedIndiaJobCount: 0,
+  verifiedSampleJobTitle: 'Customer Success Advocate',
+  verifiedSampleJobUrl: 'https://planful.com/jobs/careers-list/?gh_jid=8644621002',
   companyDomain: 'planful.com',
   atsPlatform: 'greenhouse',
   countryFilter: 'India',
@@ -28,7 +28,7 @@ export const PLANFUL_CATALOG = {
     'verified-first-party-careers-pages+greenhouse-jobs-api+first-party-detail-url-preservation+india-location-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-26',
+  verifiedOn: '2026-08-14',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

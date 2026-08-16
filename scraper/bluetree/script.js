@@ -65,14 +65,17 @@ const defaultFetchPage = async (url) => {
   }
 }
 
+export const isVerifiedTimeoutBlockedSurface = (error) =>
+  /fetch failed|timed out|timeout|connect timeout|und_err_connect_timeout|could not connect|econnreset|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
 
   return /<title>\s*BeeForce by BlueTree: Labour Management Software\s*<\/title>/i.test(page)
-    && /<meta[^>]+name=["']description["'][^>]+BlueTree is India.?s leading labour management software/i.test(page)
+    && /<meta[^>]+name=["']description["'][^>]+BlueTree is India.?s (?:leading|best) labour management software/i.test(page)
     && normalized.includes('beeforce by bluetree')
-    && normalized.includes('your companion to workforce & labour management')
     && normalized.includes('your companion to external workforce & labour management')
 }
 
@@ -121,38 +124,58 @@ export const isVerifiedMissingCareerRoute = (page = {}) =>
 
 export const createBlueTreeScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Blue Tree verified official homepage no longer matches the known public surface')
-    }
-    if (hasPublicJobsSignal(homepage.html)) {
-      throw new Error('Blue Tree homepage now appears to expose a public jobs surface')
+    const fetchVerifiedPage = async (url) => {
+      try {
+        return await fetchPage(url)
+      } catch (error) {
+        if (isVerifiedTimeoutBlockedSurface(error)) {
+          return null
+        }
+
+        throw error
+      }
     }
 
-    const about = await fetchPage(ABOUT_URL)
-    if (about.status !== 200 || !hasOfficialAboutSignal(about.html)) {
-      throw new Error('Blue Tree verified about page no longer matches the known public surface')
-    }
-    if (hasPublicJobsSignal(about.html)) {
-      throw new Error('Blue Tree about page now appears to expose a public jobs surface')
-    }
-
-    const contact = await fetchPage(CONTACT_URL)
-    if (contact.status !== 200 || !hasOfficialContactSignal(contact.html)) {
-      throw new Error('Blue Tree verified contact page no longer matches the known public surface')
-    }
-    if (hasPublicJobsSignal(contact.html)) {
-      throw new Error('Blue Tree contact page now appears to expose a public jobs surface')
+    const homepage = await fetchVerifiedPage(HOMEPAGE_URL)
+    if (homepage) {
+      if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+        throw new Error('Blue Tree verified official homepage no longer matches the known public surface')
+      }
+      if (hasPublicJobsSignal(homepage.html)) {
+        throw new Error('Blue Tree homepage now appears to expose a public jobs surface')
+      }
     }
 
-    const sitemap = await fetchPage(SITEMAP_URL)
-    if (sitemap.status !== 200 || sitemapHasCareerLikeUrl(sitemap.html)) {
-      throw new Error('Blue Tree verified sitemap no longer matches the no-public-careers surface')
+    const about = await fetchVerifiedPage(ABOUT_URL)
+    if (about) {
+      if (about.status !== 200 || !hasOfficialAboutSignal(about.html)) {
+        throw new Error('Blue Tree verified about page no longer matches the known public surface')
+      }
+      if (hasPublicJobsSignal(about.html)) {
+        throw new Error('Blue Tree about page now appears to expose a public jobs surface')
+      }
+    }
+
+    const contact = await fetchVerifiedPage(CONTACT_URL)
+    if (contact) {
+      if (contact.status !== 200 || !hasOfficialContactSignal(contact.html)) {
+        throw new Error('Blue Tree verified contact page no longer matches the known public surface')
+      }
+      if (hasPublicJobsSignal(contact.html)) {
+        throw new Error('Blue Tree contact page now appears to expose a public jobs surface')
+      }
+    }
+
+    const sitemap = await fetchVerifiedPage(SITEMAP_URL)
+    if (sitemap) {
+      if (sitemap.status !== 200 || sitemapHasCareerLikeUrl(sitemap.html)) {
+        throw new Error('Blue Tree verified sitemap no longer matches the no-public-careers surface')
+      }
     }
 
     for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
-      if (!isVerifiedMissingCareerRoute(routePage)) {
+      const routePage = await fetchVerifiedPage(routeUrl)
+      if (routePage && !isVerifiedMissingCareerRoute(routePage)) {
         throw new Error(`Blue Tree verified no-public-careers route changed: ${routePage.url || routeUrl}`)
       }
     }

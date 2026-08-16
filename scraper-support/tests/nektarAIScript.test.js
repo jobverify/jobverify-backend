@@ -72,9 +72,13 @@ test('Nektar AI helper contract stays pinned to the verified careers landing pag
   assert.equal(nektar.SOURCE, 'nektarai')
   assert.equal(nektar.COMPANY, 'Nektar AI')
   assert.equal(nektar.OFFICIAL_BRAND_NAME, 'Nektar.ai')
-  assert.equal(nektar.VERIFIED_ON, '2026-07-16')
+  assert.equal(nektar.VERIFIED_ON, '2026-08-13')
   assert.equal(nektar.HOMEPAGE_URL, 'https://nektar.ai/')
   assert.equal(nektar.CAREERS_URL, 'https://nektar.ai/careers/')
+  assert.deepEqual(nektar.FIRST_PARTY_TIMEOUT_URLS, [
+    'https://nektar.ai/',
+    'https://nektar.ai/careers/',
+  ])
   assert.equal(
     nektar.OPEN_ROLES_URL,
     'https://coda.io/@anusha-laksh/open-roles-for-website-publication',
@@ -83,7 +87,7 @@ test('Nektar AI helper contract stays pinned to the verified careers landing pag
     nektar.APPLY_FORM_URL,
     'https://coda.io/form/Kick-start-your-career-with-us_dfLGyijCu1N',
   )
-  assert.match(nektar.VERIFIED_SURFACE_SUMMARY, /no trustworthy current public job listings/i)
+  assert.match(nektar.VERIFIED_SURFACE_SUMMARY, /repeated connect timeouts/i)
 
   assert.equal(nektar.hasOfficialCareersLandingSignal(careersLandingHtml), true)
   assert.deepEqual(nektar.extractOfficialCodaTargets(careersLandingHtml), {
@@ -94,6 +98,54 @@ test('Nektar AI helper contract stays pinned to the verified careers landing pag
   assert.equal(nektar.hasOfficialApplyFormSignal(applyFormHtml), true)
   assert.equal(nektar.pageExposesPublicJobListings(openRolesHtml), false)
   assert.equal(nektar.pageExposesPublicJobListings(openRolesHtmlWithJob), true)
+  assert.equal(nektar.isExpectedTimedOutSurface({ errorKind: 'timeout', status: null, html: null }), true)
+  assert.equal(nektar.isExpectedTimedOutSurface({ errorKind: 'dns' }), false)
+})
+
+test('Nektar AI returns [] when the current first-party routes time out but the verified Coda handoff stays in the no-listings state', async () => {
+  const nektar = await loadModule()
+  const requestedUrls = []
+
+  const jobs = await nektar.createNektarAIScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === nektar.CAREERS_URL || url === nektar.HOMEPAGE_URL) {
+        return {
+          status: null,
+          url,
+          html: null,
+          errorKind: 'timeout',
+        }
+      }
+
+      if (url === nektar.OPEN_ROLES_URL) {
+        return {
+          status: 200,
+          url: 'https://docs.superhuman.com/@anusha-laksh/open-roles-for-website-publication',
+          html: openRolesHtml,
+        }
+      }
+
+      if (url === nektar.APPLY_FORM_URL) {
+        return {
+          status: 200,
+          url: 'https://docs.superhuman.com/form/Kick-start-your-career-with-us_dfLGyijCu1N',
+          html: applyFormHtml,
+        }
+      }
+
+      throw new Error(`Unexpected Nektar AI URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    nektar.CAREERS_URL,
+    nektar.HOMEPAGE_URL,
+    nektar.OPEN_ROLES_URL,
+    nektar.APPLY_FORM_URL,
+  ])
+  assert.deepEqual(jobs, [])
 })
 
 test('Nektar AI returns [] while the verified careers redirect and Coda pages stay in the no-listings state', async () => {

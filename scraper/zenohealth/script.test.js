@@ -33,6 +33,24 @@ const jsShellHtml = `
 </html>
 `
 
+const currentShellHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Zeno Health</title>
+    <meta
+      name="description"
+      content="Zeno Health is a healthcare brand that makes medicines affordable and accessible to all, we are on a journey to educate Indians about the value of generic medicines"
+    />
+    <meta property="og:url" content="https://zeno.health">
+  </head>
+  <body>
+    <script src="runtime.js"></script>
+    <script src="main.js"></script>
+  </body>
+</html>
+`
+
 test('Zeno Health validates the verified fail-closed careers contract', async () => {
   const zenoHealth = await loadZenoHealthModule()
 
@@ -61,6 +79,19 @@ test('Zeno Health falls back to a browser-rendered careers page when static fetc
 
   assert.deepEqual(requestedStaticUrls, [zenoHealth.CAREERS_URL])
   assert.deepEqual(requestedBrowserUrls, [zenoHealth.CAREERS_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('Zeno Health accepts the current first-party shell with no public openings flow', async () => {
+  const zenoHealth = await loadZenoHealthModule()
+
+  const jobs = await zenoHealth.createZenoHealthScraper().run({
+    fetchHtml: async () => currentShellHtml,
+    fetchBrowserHtml: async () => {
+      assert.fail('Browser fallback was not expected for the current verified shell')
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })
 

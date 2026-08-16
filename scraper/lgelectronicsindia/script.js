@@ -92,10 +92,9 @@ export const hasOfficialIndiaLocationSignal = (html = '') => {
   return /<title>\s*Jobs at LG India \| LG Global Careers\s*<\/title>/i.test(page)
     && text.includes('India')
     && text.includes('Explore Jobs')
-    && text.includes('LG Electronics India')
-    && text.includes('Noida Factory')
-    && text.includes('Pune Factory')
-    && text.includes('R&D Office')
+    && text.includes('LG Electronics')
+    && text.includes('Equal Opportunity')
+    && text.includes('Dedicated to creating an inclusive workplace')
 }
 
 export const hasOfficialJobsSearchSignal = (html = '') => {

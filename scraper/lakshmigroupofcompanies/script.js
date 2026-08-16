@@ -84,7 +84,6 @@ export const hasOfficialHomepageSignal = (html) => {
     && /Lakshmi Group as on date operates through 60\+\s*state of art Workshops,\s*50 Showrooms,\s*8 Used Car Showrooms,\s*16 Commercial Showrooms and 1 Driving School/i.test(normalized)
     && /34 years of Automobile Journey\./i.test(normalized)
     && /Team of 4,545 employees/i.test(normalized)
-    && /Contact our showrooms,\s*outlets,\s*workshops/i.test(normalized)
     && /Powered By CarDekho Pvt\. Ltd\./i.test(normalized)
 }
 

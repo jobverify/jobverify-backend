@@ -28,7 +28,7 @@ const careersHtml = `
   <!doctype html>
   <html lang="en">
     <head>
-      <title>Careers - Elecbits</title>
+      <title>Careers at Elecbits Join Electronics Innovation Team</title>
     </head>
     <body>
       <section>
@@ -150,7 +150,7 @@ test('fails closed when the Elecbits careers surface changes', async () => {
     createElecbitsScraper().run({
       fetchText: async (url) => {
         if (url === HOMEPAGE_URL) return homepageHtml
-        if (url === CAREERS_URL) return '<html><head><title>Careers - Elecbits</title></head><body>No role cards</body></html>'
+        if (url === CAREERS_URL) return '<html><head><title>Careers at Elecbits Join Electronics Innovation Team</title></head><body>No role cards</body></html>'
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),

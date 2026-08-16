@@ -1,4 +1,6 @@
+import https from 'node:https'
 import path from 'node:path'
+import zlib from 'node:zlib'
 import { fileURLToPath } from 'node:url'
 
 import { SANGHVI_MOVERS_CATALOG } from './catalog.js'
@@ -101,21 +103,31 @@ const createTimeoutSignal = (timeoutMs) => {
 
 export const defaultFetchText = async (url, {
   fetchImpl = fetch,
+  lenientFetchText = null,
   timeoutMs = 15000,
 } = {}) => {
-  const response = await fetchImpl(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    signal: createTimeoutSignal(timeoutMs),
-  })
+  try {
+    const response = await fetchImpl(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      signal: createTimeoutSignal(timeoutMs),
+    })
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} for ${url}`)
+    }
+
+    return response.text()
+  } catch (error) {
+    if (!isCertificateError(error)) {
+      throw error
+    }
+
+    const fetchLenientText = lenientFetchText || fetchTextIgnoringTlsErrors
+    return fetchLenientText(url, { timeoutMs })
   }
-
-  return response.text()
 }
 
 const shouldUseBrowserFallback = (error) => {
@@ -126,6 +138,77 @@ const shouldUseBrowserFallback = (error) => {
 
   return defaultShouldUseBrowserTextFallback(error)
     || /unable to verify the first certificate|certificate|ssl|tls|trust relationship|unable_to_verify_leaf_signature/i.test(combined)
+}
+
+const isCertificateError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const combined = `${message} ${causeCode} ${causeMessage}`
+
+  return /unable to verify the first certificate|certificate|ssl|tls|trust relationship|unable_to_verify_leaf_signature/i.test(combined)
+}
+
+const fetchTextIgnoringTlsErrors = async (url, {
+  timeoutMs = 15000,
+  maxRedirects = 5,
+} = {}) => {
+  if (maxRedirects < 0) {
+    throw new Error(`Too many redirects for ${url}`)
+  }
+
+  return new Promise((resolve, reject) => {
+    const request = https.request(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+      },
+      rejectUnauthorized: false,
+      signal: createTimeoutSignal(timeoutMs),
+    }, (response) => {
+      const statusCode = response.statusCode ?? 0
+
+      if ([301, 302, 303, 307, 308].includes(statusCode) && response.headers.location) {
+        response.resume()
+        const nextUrl = new URL(response.headers.location, url).toString()
+        fetchTextIgnoringTlsErrors(nextUrl, {
+          timeoutMs,
+          maxRedirects: maxRedirects - 1,
+        }).then(resolve, reject)
+        return
+      }
+
+      if (statusCode >= 400) {
+        response.resume()
+        reject(new Error(`HTTP ${statusCode} for ${url}`))
+        return
+      }
+
+      const encoding = String(response.headers['content-encoding'] ?? '').toLowerCase()
+      let stream = response
+
+      if (encoding.includes('br')) {
+        stream = response.pipe(zlib.createBrotliDecompress())
+      } else if (encoding.includes('gzip')) {
+        stream = response.pipe(zlib.createGunzip())
+      } else if (encoding.includes('deflate')) {
+        stream = response.pipe(zlib.createInflate())
+      }
+
+      const chunks = []
+      stream.on('data', (chunk) => {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+      })
+      stream.on('error', reject)
+      stream.on('end', () => {
+        resolve(Buffer.concat(chunks).toString('utf8'))
+      })
+    })
+
+    request.on('error', reject)
+    request.end()
+  })
 }
 
 const extractBlocks = (html = '') => {
@@ -143,7 +226,7 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const text = htmlToText(rawHtml)
 
-  return /<title[^>]*>\s*Careers at Sanghvi Movers\s*\|\s*Join Asia(?:&#x27;|'|’)s Largest Crane Leader\s*<\/title>/i.test(rawHtml)
+  return /<title[^>]*>\s*Careers at Sanghvi Movers\s*\|\s*Join Asia(?:&#x27;|&#0*39;|'|’)s Largest Crane Leader\s*<\/title>/i.test(rawHtml)
     && text.includes('Join Our Team')
 }
 

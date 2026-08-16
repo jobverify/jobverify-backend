@@ -72,7 +72,22 @@ export const buildSearchUrl = (startRow = null) => {
 export const extractCity = (location) => {
   const normalized = normalizeWhitespace(location)
   if (!normalized) return null
+  if (!normalized.includes(',')) return null
   return normalized.split(',')[0]?.trim() || null
+}
+
+const extractStateFromLocation = (location) => {
+  const normalized = normalizeWhitespace(location)
+  if (!normalized) return null
+
+  const parts = normalized
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  if (parts.length >= 3) return parts[parts.length - 2]
+  if (parts.length === 2 && /india/i.test(parts[1])) return parts[0]
+  return null
 }
 
 export const extractJobIdFromUrl = (value) =>
@@ -81,18 +96,28 @@ export const extractJobIdFromUrl = (value) =>
 export const hasOfficialSearchResultsSignal = (html) => {
   const page = String(html ?? '')
 
-  return /Tata Power/i.test(page)
+  return (
+    /Tata Power/i.test(page)
     && /class="paginationLabel"/i.test(page)
-    && /class="jobTitle-link"/i.test(page)
+    && /class="[^"]*\bjobTitle-link\b[^"]*"/i.test(page)
+  ) || (
+    /tatapower Jobs/i.test(page)
+    && /id="tile-search-results-label"/i.test(page)
+    && /id="job-tile-list"/i.test(page)
+    && /class="[^"]*\bjobTitle-link\b[^"]*"/i.test(page)
+  )
 }
 
 export const hasOfficialEmptyStateSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = stripTags(page) || ''
 
-  return /Tata Power/i.test(page)
+  return (/Tata Power/i.test(page) || /tatapower Jobs/i.test(page))
     && (
-      /There are currently no open positions matching this category or location\./i.test(page)
-      || /The\s+0\s+most recent jobs posted by\s+tatapower/i.test(page)
+      (/id="noresults"/i.test(page)
+        && /The 0 most recent jobs posted by tatapower are listed below for your convenience\./i.test(normalized))
+      || /There are currently no open positions matching/i.test(normalized)
+      || /The 0 most recent jobs posted by tatapower are listed below for your convenience\./i.test(normalized)
       || /Results\s*<b>\s*0\s*(?:to|-|–)\s*0\s*<\/b>\s*of\s*<b>\s*0\s*<\/b>/i.test(page)
     )
 }
@@ -100,7 +125,7 @@ export const hasOfficialEmptyStateSignal = (html) => {
 export const extractSearchResults = (html) => {
   const rows = [...String(html).matchAll(/<tr class="data-row">([\s\S]*?)<\/tr>/gi)]
 
-  return rows
+  const legacyResults = rows
     .map((rowMatch) => {
       const rowHtml = rowMatch[1]
       const title = normalizeWhitespace(
@@ -135,6 +160,44 @@ export const extractSearchResults = (html) => {
       }
     })
     .filter(Boolean)
+
+  if (legacyResults.length > 0) {
+    return legacyResults
+  }
+
+  return [...String(html).matchAll(/<li class="job-tile\b[\s\S]*?<\/li>/gi)]
+    .map((tileMatch) => {
+      const tileHtml = tileMatch[0]
+      const title = normalizeWhitespace(
+        extractFirst(/<a[^>]*class="[^"]*\bjobTitle-link\b[^"]*"[^>]*>([\s\S]*?)<\/a>/i, tileHtml),
+      )
+      const relativeLink = normalizeWhitespace(
+        extractFirst(/data-url="([^"]+)"/i, tileHtml)
+          || extractFirst(/<a[^>]*class="[^"]*\bjobTitle-link\b[^"]*"[^>]*href="([^"]+)"/i, tileHtml),
+      )
+      const department = normalizeWhitespace(
+        extractFirst(/id="job-[^"]+-desktop-section-dept-value"[^>]*>\s*([\s\S]*?)\s*<\/div>/i, tileHtml),
+      )
+      const state = normalizeWhitespace(
+        extractFirst(/id="job-[^"]+-desktop-section-customfield1-value"[^>]*>\s*([\s\S]*?)\s*<\/div>/i, tileHtml),
+      )
+      const sourceUrl = toAbsoluteUrl(relativeLink)
+      const jobId = extractJobIdFromUrl(sourceUrl)
+
+      if (!title || !sourceUrl || !jobId) return null
+
+      return {
+        title,
+        department,
+        location: state ? `${state}, India` : null,
+        city: null,
+        jobId,
+        requisitionId: jobId,
+        sourceUrl,
+        postingDate: null,
+      }
+    })
+    .filter(Boolean)
 }
 
 export const extractResultsSummary = (html) => {
@@ -155,31 +218,65 @@ export const extractResultsSummary = (html) => {
   const [start, end, totalResults] = labelNumbers
   const currentPage = pageMatch ? Number.parseInt(pageMatch[1], 10) : null
   const totalPages = pageMatch ? Number.parseInt(pageMatch[2], 10) : null
+  const tileLabel = stripTags(extractFirst(
+    /<span id="tile-search-results-label"[^>]*>([\s\S]*?)<\/span>/i,
+    html,
+  ))
+  const tileTotalResults = Number.parseInt(extractFirst(/Showing\s+(\d+)\s+Jobs?/i, tileLabel || ''), 10)
+  const dataRecordReturned = Number.parseInt(extractFirst(/data-record-returned="(\d+)"/i, html), 10)
+  const dataPerPage = Number.parseInt(extractFirst(/data-per-page="(\d+)"/i, html), 10)
 
   return {
-    totalResults: Number.isInteger(totalResults) ? totalResults : null,
+    totalResults: Number.isInteger(totalResults)
+      ? totalResults
+      : (Number.isInteger(tileTotalResults) ? tileTotalResults : null),
     currentPage: Number.isInteger(currentPage) ? currentPage : null,
-    totalPages: Number.isInteger(totalPages) ? totalPages : null,
-    pageSize: Number.isInteger(start) && Number.isInteger(end) ? end - start + 1 : null,
+    totalPages: Number.isInteger(totalPages)
+      ? totalPages
+      : (
+        Number.isInteger(tileTotalResults) && Number.isInteger(dataPerPage) && dataPerPage > 0
+          ? Math.ceil(tileTotalResults / dataPerPage)
+          : null
+      ),
+    pageSize: Number.isInteger(start) && Number.isInteger(end)
+      ? end - start + 1
+      : (Number.isInteger(dataRecordReturned) ? dataRecordReturned : null),
   }
 }
+
+const extractDescriptionLocation = (descriptionHtml) =>
+  normalizeWhitespace(extractFirst(/>\s*Location:\s*([^<]+)\s*</i, descriptionHtml))
 
 export const extractJobDetail = (html, listing = {}) => {
   const title = normalizeWhitespace(
     extractFirst(/<(?:span|h1)\b[^>]*itemprop="title"[^>]*>([\s\S]*?)<\/(?:span|h1)>/i, html),
   ) || listing.title || null
   const descriptionHtml = extractFirst(
+    /<span itemprop="description"[^>]*class="jobdescription"[^>]*>([\s\S]*?)<\/span>\s*<\/div>/i,
+    html,
+  ) || extractFirst(
+    /<span itemprop="description"[^>]*>\s*<span class="jobdescription"[^>]*>([\s\S]*?)<\/span>\s*<\/span>/i,
+    html,
+  ) || extractFirst(
     /itemprop="description"[^>]*>([\s\S]*?)<\/span>\s*<\/span>/i,
     html,
   ) || extractFirst(/itemprop="description"[^>]*>([\s\S]*?)<\/span>/i, html)
   const applyPath = normalizeWhitespace(
     extractFirst(/<a(?=[^>]*class="[^"]*\bdialogApplyBtn\b[^"]*")(?=[^>]*href="([^"]+)")[^>]*>/i, html),
   )
-  const location = normalizeWhitespace(
+  const rawLocation = normalizeWhitespace(
     extractFirst(/<span class="jobGeoLocation">\s*([\s\S]*?)\s*<\/span>/i, html),
   ) || normalizeWhitespace(
     extractFirst(/itemprop="streetAddress" content="([^"]+)"/i, html),
   ) || listing.location || null
+  const descriptionCity = extractDescriptionLocation(descriptionHtml)
+  const listingState = extractStateFromLocation(listing.location)
+  const hasPlaceholderIndiaLocation = /,\s*0,\s*India(?:,\s*0)?/i.test(rawLocation || '')
+  const location = descriptionCity
+    ? [descriptionCity, listingState, 'India']
+      .filter((part, index, parts) => part && parts.indexOf(part) === index)
+      .join(', ')
+    : (hasPlaceholderIndiaLocation ? listing.location || rawLocation : rawLocation)
   const department = normalizeWhitespace(
     extractFirst(/data-careersite-propertyid="department"[^>]*>([\s\S]*?)<\/span>/i, html),
   ) || listing.department || null
@@ -194,7 +291,7 @@ export const extractJobDetail = (html, listing = {}) => {
     title,
     department,
     location,
-    city: listing.city || extractCity(location),
+    city: descriptionCity || listing.city || (hasPlaceholderIndiaLocation ? null : extractCity(location)),
     jobId,
     requisitionId: listing.requisitionId || jobId,
     employmentType,

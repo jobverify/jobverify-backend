@@ -56,7 +56,7 @@ test('eMudhra local catalog captures the verified India careers pages and broken
   )
   assert.equal(EMUDHRA_CATALOG.parser, 'custom-script')
   assert.equal(EMUDHRA_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(EMUDHRA_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(EMUDHRA_CATALOG.verifiedOn, '2026-08-15')
   assert.equal(EMUDHRA_CATALOG.dryRunFile, 'emudhra/jobs.json')
   assert.match(EMUDHRA_CATALOG.verifiedSurfaceSummary, /https:\/\/emudhra\.com\/en-in\/careers/i)
   assert.match(EMUDHRA_CATALOG.verifiedSurfaceSummary, /https:\/\/emudhra\.com\/en\/careers/i)
@@ -69,6 +69,8 @@ test('eMudhra local catalog captures the verified India careers pages and broken
     /https:\/\/emudhra\.com\/en-in\/careers-open-positions/i,
   )
   assert.match(EMUDHRA_CATALOG.verifiedSurfaceSummary, /https:\/\/emudhra\.com\/sitemap\.xml/i)
+  assert.match(EMUDHRA_CATALOG.verifiedSurfaceSummary, /browser-backed HTTPS fallback/i)
+  assert.match(EMUDHRA_CATALOG.verifiedSurfaceSummary, /certificate verification/i)
   assert.match(EMUDHRA_CATALOG.verifiedSurfaceSummary, /Page Not Found/i)
   assert.match(EMUDHRA_CATALOG.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
   assert.equal(EMUDHRA_CATALOG.modulePath, emudhraModulePath)

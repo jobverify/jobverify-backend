@@ -37,23 +37,28 @@ test('MetricStream catalog captures the verified first-party SuccessFactors hiri
     METRICSTREAM_CATALOG.successFactorsSearchUrl,
     'https://career5.successfactors.eu/career?company=metricstre&career_ns=job_listing_summary&navBarLevel=JOB_SEARCH&',
   )
+  assert.equal(
+    METRICSTREAM_CATALOG.verifiedSampleJobUrl,
+    'https://career5.successfactors.eu/career?career_ns=job_listing&company=metricstre&navBarLevel=JOB_SEARCH&rcm_site_locale=en_US&career_job_req_id=3567&selected_lang=en_US&jobAlertController_jobAlertId=&jobAlertController_jobAlertName=&browserTimeZone=Asia/Calcutta',
+  )
   assert.equal(METRICSTREAM_CATALOG.atsPlatform, 'successfactors')
   assert.equal(METRICSTREAM_CATALOG.countryFilter, 'India')
-  assert.equal(METRICSTREAM_CATALOG.paginationStrategy, 'successfactors-browser-rendered-search-next-page')
+  assert.equal(METRICSTREAM_CATALOG.paginationStrategy, 'successfactors-dwr-initial-search')
   assert.equal(
     METRICSTREAM_CATALOG.extractionStrategy,
-    'verified-first-party-homepage+verified-first-party-careers-page+successfactors-browser-rendered-search-results+india-detail-pages',
+    'verified-first-party-homepage+verified-first-party-careers-page+successfactors-bootstrap+dwr-search-results+india-filter',
   )
   assert.equal(METRICSTREAM_CATALOG.parser, 'custom-script')
   assert.equal(METRICSTREAM_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(METRICSTREAM_CATALOG.verifiedOn, '2026-07-16')
+  assert.equal(METRICSTREAM_CATALOG.verifiedOn, '2026-08-13')
   assert.equal(METRICSTREAM_CATALOG.dryRunFile, 'metricstream/jobs.json')
-  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /Thursday, July 16, 2026/i)
+  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
   assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.metricstream\.com\//)
   assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.metricstream\.com\/about-us\/careers\.htm/)
   assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /https:\/\/career5\.successfactors\.eu\/career\?company=metricstre/)
-  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /3 Jobs matched your search/i)
-  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /2 India roles/i)
+  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /3 public postings/i)
+  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /outside India/i)
+  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /3567/i)
   assert.match(METRICSTREAM_CATALOG.modulePath, /metricstream[\\/]script\.js$/i)
 })
 

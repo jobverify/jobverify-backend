@@ -5,6 +5,7 @@ import {
   HOMEPAGE_URL,
   WELLFOUND_JOBS_URL,
   defaultFetchPage,
+  hasAccessibleWellfoundJobsSignal,
   isVerifiedWellfoundChallenge,
 } from './script.js'
 
@@ -47,6 +48,10 @@ test('IQnext Synconext accepts the current verified Wellfound Cloudflare challen
   assert.equal(isVerifiedWellfoundChallenge({
     status: 403,
     url: WELLFOUND_JOBS_URL,
+    headers: {
+      server: 'cloudflare',
+      'cf-mitigated': 'challenge',
+    },
     html,
   }), true)
 })
@@ -74,4 +79,31 @@ test('IQnext Synconext rejects unrelated 403 pages', () => {
     url: WELLFOUND_JOBS_URL,
     html: '<html><head><title>Forbidden</title></head><body>Access denied</body></html>',
   }), false)
+})
+
+test('IQnext Synconext recognizes the readable public Wellfound board', () => {
+  const page = {
+    status: 200,
+    url: WELLFOUND_JOBS_URL,
+    html: `
+      <html>
+        <head><title>Jobs at IQnext: Explore current Opportunities</title></head>
+        <body>
+          <p>View 1 job</p>
+          <h1>Jobs at IQnext</h1>
+          <a href="https://wellfound.com/jobs/4438235-enterprise-sales-manager-b2b-saas">
+            Enterprise Sales Manager (B2B, SaaS)
+          </a>
+          <p>Sales</p>
+          <p>In office • Bangalore Urban</p>
+          <p>Full Time</p>
+          <p>
+            Identify potential customer targets from enterprise/corporate segments.
+          </p>
+        </body>
+      </html>
+    `,
+  }
+
+  assert.equal(hasAccessibleWellfoundJobsSignal(page), true)
 })

@@ -58,10 +58,11 @@ const VERIFIED_EMPLOYER_REGISTER_HTML = `
     <body>
       <main>
         <h5>BOON.AI</h5>
-        <label>Agency Name</label>
-        <label>License Number</label>
-        <p>Already have an account? Login</p>
-        <button>Register</button>
+        <h1>How would you like to register?</h1>
+        <p>Agency</p>
+        <p>Client / Foreign Employer</p>
+        <button>Continue</button>
+        <p>Already have an account ? Login</p>
       </main>
     </body>
   </html>
@@ -102,16 +103,17 @@ test('BoonAI validates the verified public platform and recruiter surfaces and r
   assert.equal(boonai.SOURCE, 'boonai')
   assert.equal(boonai.COMPANY, 'BoonAI')
   assert.equal(boonai.OFFICIAL_BRAND, 'Boon.ai')
-  assert.equal(boonai.VERIFIED_ON, '2026-08-01')
+  assert.equal(boonai.VERIFIED_ON, '2026-08-14')
   assert.equal(boonai.CAREERS_URL, 'https://www.boonindia.ai/about')
   assert.equal(
     boonai.DISPOSITION,
     'verified-public-platform-and-recruiter-surfaces-without-exact-company-careers-contract',
   )
-  assert.match(boonai.VERIFIED_SURFACE_SUMMARY, /Saturday, August 1, 2026/)
+  assert.match(boonai.VERIFIED_SURFACE_SUMMARY, /Friday, August 14, 2026/)
   assert.match(boonai.VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.boonindia\.ai\/about/)
   assert.match(boonai.VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.boonindia\.ai\/pricing/)
   assert.match(boonai.VERIFIED_SURFACE_SUMMARY, /https:\/\/employer\.boonindia\.ai\/register/)
+  assert.match(boonai.VERIFIED_SURFACE_SUMMARY, /registration-type chooser/i)
   assert.equal(boonai.hasVerifiedHomeSurface(VERIFIED_HOME_HTML), true)
   assert.equal(boonai.hasVerifiedAboutSurface(VERIFIED_ABOUT_HTML), true)
   assert.equal(boonai.hasVerifiedPricingSurface(VERIFIED_PRICING_HTML), true)

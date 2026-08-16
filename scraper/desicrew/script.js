@@ -197,6 +197,11 @@ export const hasOfficialCareersPageSignal = (page) => {
   const finalUrl = normalizeUrl(getFinalUrl(page, CAREERS_PAGE_URL))
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
+  const hasLegacyBasinApplyForm = rawHtml.includes('id="apply-form"')
+    && rawHtml.includes('usebasin.com')
+  const hasCurrentInlineApplyForm = rawHtml.includes('id="apply-form"')
+    && normalized.includes('What are you applying for?')
+    && normalized.includes('Send application')
 
   return status === 200
     && finalUrl === normalizeUrl(CAREERS_PAGE_URL)
@@ -204,8 +209,7 @@ export const hasOfficialCareersPageSignal = (page) => {
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.desicrew\.in\/careers\/["']/i.test(rawHtml)
     && normalized.includes('Build a career with purpose.')
     && normalized.includes('Open roles')
-    && rawHtml.includes('id="apply-form"')
-    && rawHtml.includes('usebasin.com')
+    && (hasLegacyBasinApplyForm || hasCurrentInlineApplyForm)
     && /href="\/careers\/[a-z0-9-]+\/"/i.test(rawHtml)
 }
 

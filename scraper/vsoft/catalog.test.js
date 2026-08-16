@@ -16,16 +16,19 @@ test('VSoft is registered as a verified Bullhorn-backed careers scraper without 
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, COMPANY)
   assert.equal(provider.companyCareerPage, CAREERS_URL)
-  assert.equal(provider.atsPlatform, 'bullhorn-oscp')
+  assert.equal(provider.atsPlatform, 'jobdiva-candidate-portal')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'first-party-careers-page-plus-wordpress-page-api-plus-bullhorn-search-api')
+  assert.equal(provider.paginationStrategy, 'first-party-careers-handoff-plus-jobdiva-listall-getmore-detail-api')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-wordpress-page-api+verified-bullhorn-portal-handoff+india-job-search-api',
+    'verified-first-party-careers-page+verified-first-party-career-portal-iframe+verified-jobdiva-candidate-portal+jobdiva-auth+listall+detail-api+india-location-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'vsoftconsulting.com')
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.equal(provider.verifiedPublicJobCount, 136)
+  assert.equal(provider.verifiedIndiaJobCount, 2)
   assert.match(provider.modulePath, /vsoft[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, COMPANY), false)
 })

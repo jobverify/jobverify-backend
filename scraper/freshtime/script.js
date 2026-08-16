@@ -3,13 +3,13 @@ import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
 export const SOURCE = 'freshtime'
 export const COMPANY = 'Freshtime'
 export const OFFICIAL_BRAND = 'Freshtime UK Limited'
-export const VERIFIED_ON = '2026-07-25'
+export const VERIFIED_ON = '2026-08-14'
 export const CAREERS_URL =
   'https://www.greencore.com/ir-draft/why-invest-draft/strategy/freshtime/'
 export const DISPOSITION =
   'verified-exact-company-official-greencore-surface-with-no-enumerable-public-jobs-contract'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that the official Greencore Freshtime surface at https://www.greencore.com/ir-draft/why-invest-draft/strategy/freshtime/ identifies Freshtime as the acquired food-to-go business, while the Freshtime UK Limited legal entity was dissolved on September 23, 2025 and operations had transferred to Greencore Food to Go Limited. The reviewed exact-company surface is informational only and exposes no trustworthy enumerable Freshtime jobs contract, so this scraper remains fail-closed.'
+  'Verified on Friday, August 14, 2026 that the previously reviewed Greencore Freshtime route at https://www.greencore.com/ir-draft/why-invest-draft/strategy/freshtime/ now returns the first-party title "Page not found - Greencore" with standard Greencore navigation including Careers and Work With Greencore, and no replacement exact-company public jobs contract was identified. The legacy Freshtime UK Limited entity remains dissolved, so this scraper stays fail-closed and returns no jobs until a trustworthy exact-company public openings surface reappears.'
 
 const TRUSTED_ATS_HOST_PATTERNS = [
   /boards\.greenhouse\.io/i,
@@ -92,6 +92,16 @@ export const assertVerifiedOfficialPublicSurface = (html = '') => {
     return
   }
 
+  if (
+    /<title[^>]*>\s*Page not found\s*-\s*Greencore\s*<\/title>/i.test(rawHtml)
+    && /\bPage not found\b/i.test(text)
+    && /\bGreencore\b/i.test(text)
+    && /\bCareers\b/i.test(text)
+    && /\bWork With Greencore\b/i.test(text)
+  ) {
+    return
+  }
+
   throw new Error(
     'Freshtime verified official public surface changed; review the public contract before promoting a parser.',
   )
@@ -116,7 +126,7 @@ export const assertNoPublicJobsSurface = (html = '', surfaceUrl = CAREERS_URL) =
   }
 }
 
-const defaultFetchHtml = async (url) => {
+const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -124,13 +134,25 @@ const defaultFetchHtml = async (url) => {
     },
   })
 
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
-  return response.text()
+  return {
+    status: response.status,
+    html: await response.text(),
+  }
 }
 
 export const createFreshtimeScraper = () => ({
-  async run({ fetchHtml = defaultFetchHtml } = {}) {
-    const html = await fetchHtml(CAREERS_URL)
+  async run({ fetchHtml, fetchPage = defaultFetchPage } = {}) {
+    const page = fetchHtml
+      ? { status: 200, html: await fetchHtml(CAREERS_URL) }
+      : await fetchPage(CAREERS_URL)
+    const status = Number(page?.status ?? 200)
+    const html = String(page?.html ?? '')
+
+    if (status < 200 || status >= 400) {
+      if (status !== 404) {
+        throw new Error(`HTTP ${status} for ${CAREERS_URL}`)
+      }
+    }
 
     assertVerifiedOfficialPublicSurface(html)
     assertNoPublicJobsSurface(html, CAREERS_URL)

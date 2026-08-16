@@ -8,6 +8,23 @@ const resolveAbortReason = (signal) => {
   return error
 }
 
+const RETRY_METADATA = Symbol('jobverify.retryMetadata')
+
+export const getRetryMetadata = (value) => value?.[RETRY_METADATA] || {
+  attemptsUsed: 1,
+  retries: 0,
+  retryDelayMs: 0,
+}
+
+const attachRetryMetadata = (value, metadata) => {
+  if (value == null || (typeof value !== 'object' && typeof value !== 'function')) return value
+  Object.defineProperty(value, RETRY_METADATA, {
+    configurable: true,
+    value: metadata,
+  })
+  return value
+}
+
 const throwIfAborted = (signal) => {
   if (signal?.aborted) {
     throw resolveAbortReason(signal)
@@ -157,6 +174,7 @@ export const withRetry = async (
   } = {},
 ) => {
   let lastError
+  let retryDelayMs = 0
 
   for (let attempt = 1; attempt <= attempts; attempt++) {
     throwIfAborted(signal)
@@ -164,7 +182,11 @@ export const withRetry = async (
     try {
       const result = await fn()
       throwIfAborted(signal)
-      return result
+      return attachRetryMetadata(result, {
+        attemptsUsed: attempt,
+        retries: attempt - 1,
+        retryDelayMs,
+      })
     } catch (err) {
       throwIfAborted(signal)
       lastError = err
@@ -183,6 +205,7 @@ export const withRetry = async (
           resolveRetryDelayMs(err) || 0,
         )
         console.warn(`  [retry:${label}] Retrying in ${(delay / 1000).toFixed(1)}s...\n`)
+        retryDelayMs += delay
         await sleep(delay, { signal })
       }
     }

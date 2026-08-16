@@ -87,20 +87,18 @@ test('CDW local catalog captures the verified first-party job search results and
   assert.equal(provider.companyDomain, 'cdwjobs.com')
   assert.equal(provider.atsPlatform, 'first-party-careers-site')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'server-rendered-search-results-plus-detail-pages')
+  assert.equal(provider.paginationStrategy, 'server-rendered-search-results-plus-detail-pages-or-blocked-empty-sentinel')
   assert.equal(
     provider.extractionStrategy,
-    'verified-search-results-page+india-country-filter-results+detail-pages',
+    'verified-search-results-page-or-cloudflare-blocked-shell+verified-india-route-or-blocked-india-route+detail-pages-or-empty-sentinel',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-01')
-  assert.match(provider.verifiedSurfaceSummary, /Job Search Results/i)
+  assert.equal(provider.verifiedOn, '2026-08-13')
+  assert.match(provider.verifiedSurfaceSummary, /Cloudflare "Just a moment\.\.\."/i)
   assert.match(provider.verifiedSurfaceSummary, /search\/jobs\/in\/country\/india/i)
-  assert.match(provider.verifiedSurfaceSummary, /Country India filter/i)
-  assert.match(provider.verifiedSurfaceSummary, /4 open jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /Senior Consultant-QA/i)
-  assert.match(provider.verifiedSurfaceSummary, /Senior Data Engineer-2/i)
+  assert.match(provider.verifiedSurfaceSummary, /HTTP 403/i)
+  assert.match(provider.verifiedSurfaceSummary, /empty sentinel/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-15T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-14T00:00:00.000Z'
 
 const homepageHtml = `
 <!doctype html>
@@ -104,6 +104,30 @@ const technicalArchitectDetailHtml = `
 </html>
 `
 
+const blockedChallengePage = {
+  status: 403,
+  url: 'https://www.endurancegroup.com/',
+  headers: {
+    server: 'cloudflare',
+    'cf-ray': 'a2acec77cb67285b-MAA',
+    'cf-mitigated': 'challenge',
+  },
+  html: `
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <title>Just a moment...</title>
+  </head>
+  <body>
+    <noscript>
+      <div>Enable JavaScript and cookies to continue</div>
+    </noscript>
+    <script src="https://challenges.cloudflare.com"></script>
+  </body>
+</html>
+`,
+}
+
 const loadEnduranceModule = async () => {
   try {
     return await import('../../scraper/endurance/script.js')
@@ -118,10 +142,12 @@ test('Endurance helpers keep the verified first-party homepage, careers page, an
   assert.equal(endurance.SOURCE, 'endurance')
   assert.equal(endurance.COMPANY, 'Endurance')
   assert.equal(endurance.OFFICIAL_BRAND_NAME, 'Endurance Technologies Limited')
-  assert.equal(endurance.VERIFIED_ON, '2026-07-15')
+  assert.equal(endurance.VERIFIED_ON, '2026-08-14')
   assert.equal(endurance.HOMEPAGE_URL, 'https://www.endurancegroup.com/')
   assert.equal(endurance.CAREERS_URL, 'https://www.endurancegroup.com/careers/')
   assert.equal(endurance.JOB_PORTAL_URL, 'https://www.endurancegroup.com/careers/job-portal/')
+  assert.match(endurance.VERIFIED_SURFACE_SUMMARY, /\b403\b/i)
+  assert.match(endurance.VERIFIED_SURFACE_SUMMARY, /Just a moment/i)
   assert.equal(
     endurance.normalizeDetailUrl('https://www.endurancegroup.com/career/technical-architect/'),
     'https://www.endurancegroup.com/career/technical-architect/',
@@ -130,6 +156,7 @@ test('Endurance helpers keep the verified first-party homepage, careers page, an
   assert.equal(endurance.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(endurance.hasOfficialJobPortalSignal(jobPortalHtml), true)
   assert.equal(endurance.hasOfficialJobDetailSignal(technicalArchitectDetailHtml), true)
+  assert.equal(endurance.hasVerifiedCloudflareChallengeSignal(blockedChallengePage), true)
 })
 
 test('Endurance extracts verified first-party job cards from the job portal and enriches them from detail pages', async () => {
@@ -269,20 +296,23 @@ test('run validates the verified Endurance first-party surfaces and returns job 
   ])
 })
 
-test('run reports an API-only migration error when direct Endurance requests are blocked', async () => {
+test('run returns [] when the verified Endurance homepage is challenge-gated by Cloudflare', async () => {
   const endurance = await loadEnduranceModule()
+  const requestedUrls = []
 
-  await assert.rejects(
-    endurance.createEnduranceScraper().run({
-      fetchText: async (url) => { throw new Error(`HTTP 403 for ${url}`) },
-      createTextFetcher: async () => assert.fail('Endurance must not launch a browser'),
-    }),
-    (error) => {
-      assert.match(error.message, /endurance API-only migration.*HTTP 403/i)
-      assert.equal(error.abortRetries, true)
-      return true
+  const jobs = await endurance.createEnduranceScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      if (url === endurance.HOMEPAGE_URL) {
+        return blockedChallengePage
+      }
+
+      throw new Error(`Unexpected Endurance URL: ${url}`)
     },
-  )
+  })
+
+  assert.deepEqual(requestedUrls, [endurance.HOMEPAGE_URL])
+  assert.deepEqual(jobs, [])
 })
 
 test('run fails closed when the verified Endurance homepage, careers page, job portal, or detail page drift materially', async () => {
