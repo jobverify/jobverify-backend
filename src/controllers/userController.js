@@ -84,6 +84,34 @@ const TELEGRAM_ELIGIBLE_ACCESS_ROLES = new Set([
   ACCESS_ROLES.YEARLY,
 ]);
 
+const telegramLinkIssuanceLocks = new Map();
+
+const serializeTelegramLinkIssuance = async (userId, operation) => {
+  const lockKey = String(userId);
+  const previousLock = telegramLinkIssuanceLocks.get(lockKey) ?? Promise.resolve();
+  let releaseLock;
+  const currentLock = new Promise((resolve) => {
+    releaseLock = resolve;
+  });
+  telegramLinkIssuanceLocks.set(lockKey, currentLock);
+
+  await previousLock;
+  try {
+    return await operation();
+  } finally {
+    releaseLock();
+    if (telegramLinkIssuanceLocks.get(lockKey) === currentLock) {
+      telegramLinkIssuanceLocks.delete(lockKey);
+    }
+  }
+};
+
+const revokeUnusedTelegramLinks = (userId, now = new Date()) =>
+  TelegramLinkToken.updateMany(
+    { user: userId, consumedAt: null },
+    { $set: { consumedAt: now } },
+  );
+
 const hasTelegramEligibility = (user) =>
   user.role === "admin"
   || (
@@ -556,17 +584,16 @@ export const createTelegramAlertLink = async (req, res) => {
       });
     }
 
-    const now = new Date();
-    await TelegramLinkToken.updateMany(
-      { user: user._id, consumedAt: null },
-      { $set: { consumedAt: now } },
-    );
-    const { rawToken } = await createTelegramLinkToken(user._id, now);
+    return serializeTelegramLinkIssuance(user._id, async () => {
+      const now = new Date();
+      await revokeUnusedTelegramLinks(user._id, now);
+      const { rawToken } = await createTelegramLinkToken(user._id, now);
 
-    return res.status(200).json({
-      data: {
-        deepLink: `https://t.me/${botUsername}?start=${rawToken}`,
-      },
+      return res.status(200).json({
+        data: {
+          deepLink: `https://t.me/${botUsername}?start=${rawToken}`,
+        },
+      });
     });
   } catch (error) {
     return res.status(500).json({
@@ -680,6 +707,7 @@ export const deleteTelegramAlertSettings = async (req, res) => {
     user.telegram.optedOutAt = new Date();
     user.premium.telegramAlertsEnabled = false;
     await user.save();
+    await revokeUnusedTelegramLinks(user._id, user.telegram.optedOutAt);
 
     return res.status(200).json({
       code: 200,

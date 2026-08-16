@@ -123,6 +123,55 @@ test("createTelegramAlertLink rejects users without an active eligible plan", as
   }
 });
 
+test("concurrent link creation leaves only the latest token valid", async () => {
+  const originalUsername = process.env.TELEGRAM_BOT_USERNAME;
+  const originalFindById = User.findById;
+  const originalUpdateMany = TelegramLinkToken.updateMany;
+  const originalCreate = TelegramLinkToken.create;
+  const validHashes = new Set();
+  let invalidationCount = 0;
+  let releaseConcurrentInvalidations;
+  const concurrentInvalidations = new Promise((resolve) => {
+    releaseConcurrentInvalidations = resolve;
+  });
+
+  process.env.TELEGRAM_BOT_USERNAME = "jobverify_test_bot";
+  User.findById = async () => createEligibleUser();
+  TelegramLinkToken.updateMany = async () => {
+    invalidationCount += 1;
+    if (invalidationCount === 2) releaseConcurrentInvalidations();
+    await Promise.race([
+      concurrentInvalidations,
+      new Promise((resolve) => setTimeout(resolve, 20)),
+    ]);
+    validHashes.clear();
+    await Promise.resolve();
+  };
+  TelegramLinkToken.create = async (payload) => {
+    validHashes.add(payload.tokenHash);
+    return payload;
+  };
+
+  try {
+    const responses = [createResponseDouble(), createResponseDouble()];
+    await Promise.all(responses.map((res) => createTelegramAlertLink({
+      user: { _id: "507f1f77bcf86cd799439011" },
+    }, res)));
+
+    assert.deepEqual(responses.map(({ statusCode }) => statusCode), [200, 200]);
+    assert.notEqual(
+      responses[0].body.data.deepLink,
+      responses[1].body.data.deepLink,
+    );
+    assert.equal(validHashes.size, 1);
+  } finally {
+    process.env.TELEGRAM_BOT_USERNAME = originalUsername;
+    User.findById = originalFindById;
+    TelegramLinkToken.updateMany = originalUpdateMany;
+    TelegramLinkToken.create = originalCreate;
+  }
+});
+
 test("updateTelegramAlertSettings requires both a link and eligible access when enabling", async () => {
   const originalFindById = User.findById;
   const users = [
@@ -201,6 +250,8 @@ test("Telegram settings expose safe linked state and update dedicated filters", 
 
 test("deleteTelegramAlertSettings unlinks Telegram without changing WhatsApp alerts", async () => {
   const originalFindById = User.findById;
+  const originalUpdateMany = TelegramLinkToken.updateMany;
+  let revokedFilter = null;
   const user = createEligibleUser({
     telegram: {
       chatId: "1001",
@@ -216,6 +267,9 @@ test("deleteTelegramAlertSettings unlinks Telegram without changing WhatsApp ale
     },
   });
   User.findById = async () => user;
+  TelegramLinkToken.updateMany = async (filter) => {
+    revokedFilter = filter;
+  };
 
   try {
     const res = createResponseDouble();
@@ -228,7 +282,9 @@ test("deleteTelegramAlertSettings unlinks Telegram without changing WhatsApp ale
     assert.ok(user.telegram.optedOutAt instanceof Date);
     assert.equal(user.premium.telegramAlertsEnabled, false);
     assert.equal(user.premium.whatsappAlertsEnabled, true);
+    assert.deepEqual(revokedFilter, { user: user._id, consumedAt: null });
   } finally {
     User.findById = originalFindById;
+    TelegramLinkToken.updateMany = originalUpdateMany;
   }
 });

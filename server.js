@@ -78,16 +78,6 @@ if (nodeEnv === "production") {
   resolvePublicApiOrigin();
 }
 
-app.use(express.json({
-  limit: "32kb",
-  verify: (req, _res, buffer) => {
-    if (req.originalUrl === "/api/billing/webhook") {
-      req.rawBody = buffer.toString("utf8");
-    }
-  },
-}));
-app.use(express.urlencoded({ extended: true, limit: "32kb" }));
-
 // Middleware
 app.use(
   helmet({
@@ -127,6 +117,20 @@ app.use(
     credentials: true,
   }),
 );
+
+// Telegram authenticates the webhook before its route-local JSON parser runs.
+app.use("/api/integrations/telegram", telegramRoutes);
+
+app.use(express.json({
+  limit: "32kb",
+  verify: (req, _res, buffer) => {
+    if (req.originalUrl === "/api/billing/webhook") {
+      req.rawBody = buffer.toString("utf8");
+    }
+  },
+}));
+app.use(express.urlencoded({ extended: true, limit: "32kb" }));
+
 app.use("/api", requireJsonMutation);
 app.use(
   "/api",
@@ -205,7 +209,6 @@ app.use("/api/user", noStore, userRoutes);
 app.use("/api/billing", noStore, billingRoutes);
 app.use("/api/scrape", noStore, scrapeRoutes);
 app.use("/api/admin", noStore, adminRoutes);
-app.use("/api/integrations/telegram", noStore, telegramRoutes);
 app.get("/", (req, res) => {
   res.send("Hello from the Jobverify Backend!");
 });

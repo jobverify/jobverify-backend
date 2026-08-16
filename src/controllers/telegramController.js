@@ -4,6 +4,7 @@
  */
 
 import { createHash, timingSafeEqual } from "node:crypto";
+import TelegramLinkToken from "../models/TelegramLinkToken.js";
 import User from "../models/User.js";
 import { consumeTelegramLinkToken } from "../services/telegramLinkService.js";
 import { getTelegramProvider } from "../services/telegramProvider.js";
@@ -18,16 +19,16 @@ const secretsMatch = (provided, expected) =>
 
 const sendAccepted = (res) => res.status(200).json({ ok: true });
 
-const unlinkTelegram = async (user, now = new Date()) => {
-  user.telegram.chatId = null;
-  user.telegram.username = null;
-  user.telegram.linkedAt = null;
-  user.telegram.optedOutAt = now;
-  user.premium.telegramAlertsEnabled = false;
-  await user.save();
-};
+const revokeUnusedTelegramLinks = (userId, now = new Date()) =>
+  TelegramLinkToken.updateMany(
+    { user: userId, consumedAt: null },
+    { $set: { consumedAt: now } },
+  );
 
-export const processTelegramWebhook = async (req, res) => {
+const sendTelegramMessage = (chatId, body) =>
+  getTelegramProvider().sendTextMessage({ chatId: String(chatId), body });
+
+export const verifyTelegramWebhookSecret = (req, res, next) => {
   const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
   if (!expectedSecret) {
     return res.status(503).json({
@@ -45,6 +46,11 @@ export const processTelegramWebhook = async (req, res) => {
     });
   }
 
+  req.telegramWebhookVerified = true;
+  return next();
+};
+
+const processVerifiedTelegramWebhook = async (req, res) => {
   const message = req.body?.message;
   if (message?.chat?.type !== "private") {
     return sendAccepted(res);
@@ -61,28 +67,68 @@ export const processTelegramWebhook = async (req, res) => {
     const userId = await consumeTelegramLinkToken(startMatch[1]);
     if (!userId) return sendAccepted(res);
 
-    const user = await User.findById(userId);
+    const linkedAt = new Date();
+    let user;
+    try {
+      user = await User.findOneAndUpdate(
+        { _id: userId },
+        {
+          $set: {
+            "telegram.chatId": String(chatId),
+            "telegram.username": message.chat.username
+              ? String(message.chat.username).slice(0, 80)
+              : null,
+            "telegram.linkedAt": linkedAt,
+            "telegram.optedOutAt": null,
+          },
+        },
+        { new: true, runValidators: true },
+      );
+    } catch (error) {
+      if (error?.code !== 11000) throw error;
+
+      await sendTelegramMessage(
+        chatId,
+        "This Telegram chat is already linked to another JobVerify account.",
+      );
+      return sendAccepted(res);
+    }
+
     if (!user) return sendAccepted(res);
 
-    user.telegram.chatId = String(chatId);
-    user.telegram.username = message.chat.username
-      ? String(message.chat.username).slice(0, 80)
-      : null;
-    user.telegram.linkedAt = new Date();
-    user.telegram.optedOutAt = null;
-    await user.save();
-
-    await getTelegramProvider().sendTextMessage({
-      chatId: String(chatId),
-      body: "Your JobVerify Telegram alerts are linked.",
-    });
+    await sendTelegramMessage(chatId, "Your JobVerify Telegram alerts are linked.");
     return sendAccepted(res);
   }
 
   if (/^\/stop(?:@[A-Za-z0-9_]+)?$/u.test(text)) {
-    const user = await User.findOne({ "telegram.chatId": String(chatId) });
-    if (user) await unlinkTelegram(user);
+    const optedOutAt = new Date();
+    const user = await User.findOneAndUpdate(
+      { "telegram.chatId": String(chatId) },
+      {
+        $set: {
+          "telegram.chatId": null,
+          "telegram.username": null,
+          "telegram.linkedAt": null,
+          "telegram.optedOutAt": optedOutAt,
+          "premium.telegramAlertsEnabled": false,
+        },
+      },
+      { new: true },
+    );
+    if (user) await revokeUnusedTelegramLinks(user._id, optedOutAt);
   }
 
   return sendAccepted(res);
+};
+
+export const processTelegramWebhook = async (req, res) => {
+  if (req.telegramWebhookVerified) {
+    return processVerifiedTelegramWebhook(req, res);
+  }
+
+  return verifyTelegramWebhookSecret(
+    req,
+    res,
+    () => processVerifiedTelegramWebhook(req, res),
+  );
 };

@@ -215,6 +215,13 @@ UserSchema.index({ "profile.passingYear": 1 });
 UserSchema.index({ "premium.expiresAt": 1 });
 UserSchema.index({ "contact.phoneE164": 1 }, { sparse: true });
 UserSchema.index({ "google.sub": 1 }, { sparse: true });
+UserSchema.index(
+  { "telegram.chatId": 1 },
+  {
+    unique: true,
+    partialFilterExpression: { "telegram.chatId": { $type: "string" } },
+  },
+);
 UserSchema.index({ resetPasswordTokenHash: 1 }, { sparse: true });
 UserSchema.index(
   { onboardingCompleted: 1 },
