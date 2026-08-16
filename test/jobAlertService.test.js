@@ -1360,3 +1360,133 @@ test("invalid retry settings fail safe without additional provider attempts", as
     process.env.WHATSAPP_RETRY_DELAY_MS = originalRetryDelay;
   }
 });
+
+test("queueJobAlertsForJobs deduplicates Telegram deliveries independently by channel", async () => {
+  const originalUserFind = User.find;
+  const originalDeliveryCreate = JobAlertDelivery.create;
+  const originalDeliveryFindOneAndUpdate = JobAlertDelivery.findOneAndUpdate;
+  const originalDeliveryUpdateMany = JobAlertDelivery.updateMany;
+  const originalFetch = global.fetch;
+  const originalEnabled = process.env.TELEGRAM_ENABLED;
+  const originalToken = process.env.TELEGRAM_BOT_TOKEN;
+  const createdKeys = new Set();
+  const createdPayloads = [];
+  let fetchCalls = 0;
+
+  process.env.TELEGRAM_ENABLED = "true";
+  process.env.TELEGRAM_BOT_TOKEN = "test-bot-token";
+  global.fetch = async () => {
+    fetchCalls += 1;
+    return { ok: true, json: async () => ({ ok: true, result: { message_id: 99 } }) };
+  };
+  User.find = () => ({
+    lean() { return this; },
+    exec: async () => [{
+      _id: "telegram-user",
+      accessRole: "semester_premium_user",
+      premium: { status: "active", telegramAlertsEnabled: true },
+      telegram: { chatId: "777", linkedAt: new Date("2026-08-01T00:00:00.000Z") },
+      profile: { telegramAlertFilters: { jobType: ["Internship"] } },
+    }],
+  });
+  JobAlertDelivery.create = async (payload) => {
+    createdPayloads.push(payload);
+    const key = `${payload.user}:${payload.job}:${payload.channel}`;
+    if (createdKeys.has(key)) {
+      throw Object.assign(new Error("duplicate"), { code: 11000 });
+    }
+    createdKeys.add(key);
+    return { _id: key, ...payload };
+  };
+  JobAlertDelivery.findOneAndUpdate = claimAlways;
+  JobAlertDelivery.updateMany = async () => ({ modifiedCount: 1 });
+
+  try {
+    const jobs = [{ _id: "job-telegram", title: "Frontend Intern", company: "Example", jobType: "Intern" }];
+    await queueJobAlertsForJobs(jobs);
+    await queueJobAlertsForJobs(jobs);
+
+    assert.equal(createdPayloads.length, 2);
+    assert.equal(createdPayloads[0].channel, "telegram");
+    assert.equal(createdKeys.size, 1);
+    assert.equal(fetchCalls, 1);
+  } finally {
+    User.find = originalUserFind;
+    JobAlertDelivery.create = originalDeliveryCreate;
+    JobAlertDelivery.findOneAndUpdate = originalDeliveryFindOneAndUpdate;
+    JobAlertDelivery.updateMany = originalDeliveryUpdateMany;
+    global.fetch = originalFetch;
+    process.env.TELEGRAM_ENABLED = originalEnabled;
+    process.env.TELEGRAM_BOT_TOKEN = originalToken;
+  }
+});
+
+test("a blocked Telegram chat disables only Telegram alerts and records an unavailable-chat reason", async () => {
+  const originalUserFind = User.find;
+  const originalUserUpdateOne = User.updateOne;
+  const originalDeliveryCreate = JobAlertDelivery.create;
+  const originalDeliveryFindOneAndUpdate = JobAlertDelivery.findOneAndUpdate;
+  const originalDeliveryUpdateMany = JobAlertDelivery.updateMany;
+  const originalFetch = global.fetch;
+  const originalEnabled = process.env.TELEGRAM_ENABLED;
+  const originalToken = process.env.TELEGRAM_BOT_TOKEN;
+  const originalRetryCount = process.env.TELEGRAM_RETRY_COUNT;
+  const updates = [];
+  const userUpdates = [];
+  let fetchCalls = 0;
+
+  process.env.TELEGRAM_ENABLED = "true";
+  process.env.TELEGRAM_BOT_TOKEN = "test-bot-token";
+  process.env.TELEGRAM_RETRY_COUNT = "2";
+  global.fetch = async () => {
+    fetchCalls += 1;
+    return { ok: false, status: 403, json: async () => ({ ok: false }) };
+  };
+  User.find = () => ({
+    lean() { return this; },
+    exec: async () => [{
+      _id: "telegram-user",
+      accessRole: "semester_premium_user",
+      premium: { status: "active", telegramAlertsEnabled: true, whatsappAlertsEnabled: true },
+      telegram: { chatId: "777", linkedAt: new Date("2026-08-01T00:00:00.000Z") },
+      profile: { telegramAlertFilters: { jobType: ["Internship"] } },
+    }],
+  });
+  User.updateOne = async (filter, update) => {
+    userUpdates.push({ filter, update });
+    return { modifiedCount: 1 };
+  };
+  JobAlertDelivery.create = async (payload) => ({ _id: "telegram-delivery", ...payload });
+  JobAlertDelivery.findOneAndUpdate = claimAlways;
+  JobAlertDelivery.updateMany = async (_filter, update) => {
+    updates.push(update);
+    return { modifiedCount: 1 };
+  };
+
+  try {
+    await queueJobAlertsForJobs([{
+      _id: "job-telegram-blocked",
+      title: "Frontend Intern",
+      company: "Example",
+      jobType: "Intern",
+    }]);
+
+    assert.equal(fetchCalls, 1);
+    assert.deepEqual(userUpdates, [{
+      filter: { _id: "telegram-user" },
+      update: { $set: { "premium.telegramAlertsEnabled": false } },
+    }]);
+    assert.equal(updates.at(-1).$set.status, "failed");
+    assert.equal(updates.at(-1).$set.reason, "telegram_chat_unavailable");
+  } finally {
+    User.find = originalUserFind;
+    User.updateOne = originalUserUpdateOne;
+    JobAlertDelivery.create = originalDeliveryCreate;
+    JobAlertDelivery.findOneAndUpdate = originalDeliveryFindOneAndUpdate;
+    JobAlertDelivery.updateMany = originalDeliveryUpdateMany;
+    global.fetch = originalFetch;
+    process.env.TELEGRAM_ENABLED = originalEnabled;
+    process.env.TELEGRAM_BOT_TOKEN = originalToken;
+    process.env.TELEGRAM_RETRY_COUNT = originalRetryCount;
+  }
+});
