@@ -61,17 +61,25 @@ const matchesExpectedUrl = (value, expected) => {
   }
 }
 
+const extractFeaturedCompaniesScope = (html = '') =>
+  String(html ?? '').match(/<section[^>]*class="[^"]*\bhiringSection\b[^"]*"[^>]*>([\s\S]*?)<\/section>/i)?.[1]
+  || String(html ?? '')
+
 export const extractFeaturedCompanyNames = (html = '') =>
-  [...String(html ?? '').matchAll(/<h4[^>]*>([^<]+)<\/h4>/gi)]
+  [...extractFeaturedCompaniesScope(html).matchAll(/<h4[^>]*>([^<]+)<\/h4>/gi)]
     .map((match) => normalizeWhitespace(match[1]))
     .filter(Boolean)
 
 export const hasOfficialJobsMarketplaceSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const hasMarketplaceSearchSignal =
+    normalized.includes('Search by Job Role, Company, or Skills')
+    || normalized.includes('Unlock Career Opportunities with AI Precision Matching')
+    || normalized.includes('Get the Right Job Faster')
 
   return /<title>\s*TCS iON Jobs:\s*Explore opportunities and give your career a boost\s*<\/title>/i.test(page)
-    && normalized.includes('Search by Job Role, Company, or Skills')
+    && hasMarketplaceSearchSignal
     && normalized.includes('Find the Best-suited Jobs for You')
     && normalized.includes('Explore opportunities from leading companies and give your career a boost.')
     && normalized.includes('Featured Companies Hiring')

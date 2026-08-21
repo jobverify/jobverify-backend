@@ -13,6 +13,7 @@ export const PROVIDER_METADATA = DAGSTER_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY_NAME = PROVIDER_METADATA.companyName
 export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
+export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const GREENHOUSE_BOARD_URL = PROVIDER_METADATA.greenhouseBoardUrl
 
@@ -41,16 +42,43 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const hasOfficialCareersPageSignal = (html = '') => {
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    headers: Object.fromEntries(response.headers.entries()),
+    html: await response.text(),
+  }
+}
+
+export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
 
-  return /<title>\s*Careers at Dagster\s*\|\s*Help Shape Data(?:'|’|&#39;|&apos;|&#x27;)s Future\s*<\/title>/i.test(page)
-    && normalized.includes('Help us shape the future of data orchestration.')
-    && normalized.includes('View Open Positions')
-    && normalized.includes('Open Roles')
-    && normalized.includes("We're not currently hiring, but check back soon!")
-    && normalized.includes('Dagster Labs')
+  return /<title>\s*Modern Data Orchestrator Platform\s*\|\s*Dagster\s*<\/title>/i.test(page)
+    && normalized.includes('AI-native DataOps platform')
+    && normalized.includes('Data your team trusts. AI that runs on it.')
+    && normalized.includes('Dagster is the operational layer that structures how data is built, observed, and delivered')
+    && /dagster\.plus/i.test(page)
+}
+
+export const isVerifiedPrefectCareersRedirect = (page = {}, expectedUrl = CAREERS_URL) => {
+  const finalUrl = String(page.url || expectedUrl)
+  const html = String(page.html ?? '')
+  const normalized = normalizeWhitespace(html) || ''
+
+  return /^https:\/\/www\.prefect\.io\/careers\/?$/i.test(finalUrl)
+    && /<title>\s*Careers at Prefect\s*-\s*Open Roles\s*<\/title>/i.test(html)
+    && normalized.includes('Careers at Prefect - Open Roles')
 }
 
 export const hasEmptyGreenhouseBoardSignal = (html = '') => {
@@ -67,10 +95,16 @@ export const hasEmptyGreenhouseBoardSignal = (html = '') => {
 export const createDagsterScraper = () => ({
   async run({
     fetchText = defaultFetchText,
+    fetchPage = defaultFetchPage,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersPageSignal(careersHtml)) {
-      throw new Error('Verified Dagster careers page changed materially')
+    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    if (!hasOfficialHomepageSignal(homepageHtml)) {
+      throw new Error('Verified Dagster homepage changed materially')
+    }
+
+    const careersPage = await fetchPage(CAREERS_URL)
+    if (!isVerifiedPrefectCareersRedirect(careersPage, CAREERS_URL)) {
+      throw new Error('Verified Dagster careers redirect changed materially')
     }
 
     const greenhouseBoardHtml = await fetchText(GREENHOUSE_BOARD_URL)

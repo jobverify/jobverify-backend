@@ -3,10 +3,12 @@ import test from 'node:test'
 
 import {
   classifyScraperError,
+  FatalScraperPersistenceError,
   formatIstTimestamp,
   isFailureCountedForAbort,
   isLatePuppeteerTargetClose,
   isLatePuppeteerWaitTimeout,
+  isMongoStorageQuotaWriteBlockError,
   resolveFailureAbortThreshold,
   shouldAbortPipelineAfterFailures,
 } from '../runner.js'
@@ -64,6 +66,20 @@ test('isLatePuppeteerWaitTimeout recognizes a nested Puppeteer timeout cause und
   error.cause = cause
 
   assert.equal(isLatePuppeteerWaitTimeout(error), true)
+})
+
+test('isMongoStorageQuotaWriteBlockError recognizes Atlas write-block errors through nested causes', () => {
+  const cause = new Error(
+    'you are over your space quota, using 521 MB of 512 MB. Writes are blocked on your cluster.',
+  )
+  const wrapped = new FatalScraperPersistenceError('wrapper', { cause })
+
+  assert.equal(isMongoStorageQuotaWriteBlockError(cause), true)
+  assert.equal(isMongoStorageQuotaWriteBlockError(wrapped), true)
+  assert.equal(
+    isMongoStorageQuotaWriteBlockError(new Error('connect ETIMEDOUT 159.41.206.100:27017')),
+    false,
+  )
 })
 
 test('runner ignores late unhandled rejections when they classify as upstream soft failures', async () => {

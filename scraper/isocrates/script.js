@@ -56,6 +56,9 @@ const parseQuotedConfigValue = (block, key) => {
   return normalizeWhitespace(match?.[1] ?? null)
 }
 
+export const extractEmbeddedCareersDocumentPath = (html = '') =>
+  String(html ?? '').match(/fetch\(['"]([^'"]+careerportal\/[^'"]+\.html)['"]\)/i)?.[1] ?? null
+
 export const extractDirectKekaBoardUrl = (html) =>
   /https:\/\/isocrates\.keka\.com\/careers\/?/i.test(String(html ?? '')) ? EXPECTED_KEKA_DOMAIN : null
 
@@ -63,8 +66,9 @@ export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
 
-  return /Global Leader in MADTECH Resource Planning and Execution/i.test(normalized)
-    && /<h1[^>]*>\s*Global Leader in MADTECH Resource Planning and Execution/i.test(rawHtml)
+  return /<title[^>]*>\s*Global Leader in MADTECH Resource Planning and Execution(?:™|&#x2122;)?\s*<\/title>/i.test(rawHtml)
+    && /MADTECH \(MarTech, AdTech [&] DataTech\) is complex, expensive, time-consuming, and hard to staff\./i.test(normalized)
+    && /Picking the right business partner is crucial\./i.test(normalized)
     && /https:\/\/isocrates\.com\/careers\/?/i.test(rawHtml)
 }
 
@@ -76,7 +80,7 @@ export const hasOfficialCareersPageSignal = (html) => {
     && /api\/embedjobs\/js\//i.test(rawHtml)
     && /khembedjobs/i.test(rawHtml)
 
-  return /<title[^>]*>\s*Careers \| iSOCRATES\s*<\/title>/i.test(rawHtml)
+  return /<title[^>]*>\s*Careers\s*(?:\||&#124;)\s*iSOCRATES\s*<\/title>/i.test(rawHtml)
     && (hasLegacyKekaEmbed || hasDirectKekaBoardHandoff)
 }
 
@@ -258,11 +262,31 @@ export const createIsocratesScraper = ({
           kekaBoardHtml = await browserFallback.fetchTextInBrowser(kekaBoardUrl)
         }
 
-        if (!extractCareerConfig(kekaBoardHtml)) {
+        careerConfig = extractCareerConfig(kekaBoardHtml)
+        let embeddedDocumentPath = extractEmbeddedCareersDocumentPath(kekaBoardHtml)
+
+        if (!careerConfig && !embeddedDocumentPath) {
           kekaBoardHtml = await browserFallback.fetchTextInBrowser(kekaBoardUrl)
+          careerConfig = extractCareerConfig(kekaBoardHtml)
+          embeddedDocumentPath = extractEmbeddedCareersDocumentPath(kekaBoardHtml)
         }
 
-        careerConfig = extractCareerConfig(kekaBoardHtml)
+        if (!careerConfig && embeddedDocumentPath) {
+          const embeddedDocumentUrl = new URL(embeddedDocumentPath, kekaBoardUrl).toString()
+          let embeddedCareersHtml
+
+          try {
+            embeddedCareersHtml = await fetchText(embeddedDocumentUrl)
+          } catch {
+            embeddedCareersHtml = await browserFallback.fetchTextInBrowser(embeddedDocumentUrl)
+          }
+
+          careerConfig = extractCareerConfig(embeddedCareersHtml)
+          if (!careerConfig) {
+            embeddedCareersHtml = await browserFallback.fetchTextInBrowser(embeddedDocumentUrl)
+            careerConfig = extractCareerConfig(embeddedCareersHtml)
+          }
+        }
       }
 
       if (!careerConfig) {

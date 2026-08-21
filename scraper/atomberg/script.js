@@ -48,8 +48,9 @@ const PUBLIC_JOB_SIGNAL_PATTERNS = [
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;|&#160;/gi, ' ')
   .replace(/&amp;/gi, '&')
-  .replace(/&#x27;|&#39;|&apos;/gi, "'")
+  .replace(/&#8217;|&#x2019;|&#x27;|&#39;|&apos;/gi, "'")
   .replace(/&quot;/gi, '"')
+  .replace(/[’‘]/g, "'")
 
 const normalizeWhitespace = (value) => decodeHtmlEntities(value)
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -114,20 +115,28 @@ export const extractApplicationEmail = (html = '') => {
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
-
-  return /<title>\s*Atomberg: Buy Best Ceiling Fans, Mixer Grinders &amp; Water Purifier\s*<\/title>/i.test(page)
-    && /Welcome to Atomberg!/i.test(text)
+  const hasVerifiedTitle = /<title>\s*Atomberg: Buy Best Ceiling Fans, Mixer Grinders &amp; Water Purifier\s*<\/title>/i.test(page)
+  const hasLegacyHomepageContent = /Welcome to Atomberg!/i.test(text)
     && /real customer problems into modern solutions through tech-first innovation/i.test(text)
     && /Pan-India service network with on-site warranty/i.test(text)
     && /href=["']\/careers["']/i.test(page)
+  const hasCurrentShopifyHomepageContent = /<meta[^>]+property=["']og:site_name["'][^>]+content=["']Atomberg["']/i.test(page)
+    && /<meta[^>]+property=["']og:description["'][^>]+content=["'][^"']*Explore Atomberg/i.test(page)
+    && /ceiling fans, mixer grinders, water purifier/i.test(page)
+    && /href=["']\/(?:pages\/)?careers["']/i.test(page)
+
+  return hasVerifiedTitle
+    && (hasLegacyHomepageContent || hasCurrentShopifyHomepageContent)
     && !pageExposesPublicJobListings(page)
 }
 
 export const hasResumeOnlyCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
+  const hasLegacyCareersTitle = /<title>\s*Atomberg- Join us in the journey of revolutionizing India(?:&#x27;|')s home appliances\s*<\/title>/i.test(page)
+  const hasCurrentCareersTitle = /<title>\s*Careers at Atomberg \| Join Our Team\s*<\/title>/i.test(page)
 
-  return /<title>\s*Atomberg- Join us in the journey of revolutionizing India(?:&#x27;|')s home appliances\s*<\/title>/i.test(page)
+  return (hasLegacyCareersTitle || hasCurrentCareersTitle)
     && /\bCAREERS\b/i.test(text)
     && /Interested candidates can share their updated resumes on/i.test(text)
     && extractApplicationEmail(page) === APPLICATION_EMAIL
@@ -137,16 +146,32 @@ export const hasResumeOnlyCareersSignal = (html = '') => {
 export const hasVerifiedNext404Route = (page = {}, requestedUrl) =>
   Number(page.status) === 404
   && page.url === requestedUrl
-  && /<html[^>]+id=["']__next_error__["']/i.test(String(page.html ?? ''))
-  && /<meta[^>]+name=["']robots["'][^>]+content=["']noindex["']/i.test(String(page.html ?? ''))
-  && /<meta[^>]+name=["']generator["'][^>]+content=["']Next\.js["']/i.test(String(page.html ?? ''))
+  && (
+    (
+      /<html[^>]+id=["']__next_error__["']/i.test(String(page.html ?? ''))
+      && /<meta[^>]+name=["']robots["'][^>]+content=["']noindex["']/i.test(String(page.html ?? ''))
+      && /<meta[^>]+name=["']generator["'][^>]+content=["']Next\.js["']/i.test(String(page.html ?? ''))
+    )
+    || (
+      /<title>\s*404 Not Found(?:\s*&ndash;\s*Atomberg)?\s*<\/title>/i.test(String(page.html ?? ''))
+      && (
+        /template\s*:\s*\{\s*name\s*:\s*['"]404['"]\s*,?\s*\}/i.test(String(page.html ?? ''))
+        || /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/atomberg\.com\/404["']/i.test(String(page.html ?? ''))
+      )
+    )
+  )
   && !pageExposesPublicJobListings(page.html)
 
 export const hasVerifiedInternalServerErrorRoute = (page = {}, requestedUrl) =>
-  Number(page.status) === 500
-  && page.url === requestedUrl
-  && extractTitle(page.html) === '500: Internal Server Error'
-  && /500 Internal Server Error/i.test(normalizeWhitespace(page.html))
+  (
+    (
+      Number(page.status) === 500
+      && page.url === requestedUrl
+      && extractTitle(page.html) === '500: Internal Server Error'
+      && /500 Internal Server Error/i.test(normalizeWhitespace(page.html))
+    )
+    || hasVerifiedNext404Route(page, requestedUrl)
+  )
   && !pageExposesPublicJobListings(page.html)
 
 export const createAtombergScraper = () => ({

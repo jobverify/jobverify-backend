@@ -118,8 +118,8 @@ test('selectScrapersForRun rejects ambiguous or missing resume sources', () => {
   )
 })
 
-test('shouldClearExistingJobsBeforeRun preserves the existing dataset for both full and selective runs', () => {
-  assert.equal(shouldClearExistingJobsBeforeRun({}), false)
+test('shouldClearExistingJobsBeforeRun clears only a full live run', () => {
+  assert.equal(shouldClearExistingJobsBeforeRun({}), true)
   assert.equal(
     shouldClearExistingJobsBeforeRun({ onlySources: 'alpha, zeta' }),
     false,
@@ -187,7 +187,7 @@ test('resolveScraperRetryAttempts avoids multiplying the Workday source budget',
     resolveScraperRetryAttempts({
       provider: { adapter: 'script', atsPlatform: 'custom' },
     }),
-    3,
+    4,
   )
 })
 

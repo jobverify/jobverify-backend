@@ -87,15 +87,53 @@ test('Ampere Computing parses India search results and detail JSON-LD', async ()
   assert.equal(jobs[0].jobId, '12345')
 })
 
-test('Ampere Computing stays API-only and surfaces direct-request failures without a browser fallback', async () => {
+test('Ampere Computing accepts the verified Friday, August 14, 2026 Cloudflare challenge shell as an empty state', async () => {
   const ampere = await loadModule()
 
-  await assert.rejects(
-    ampere.createAmpereComputingScraper().run({
-      fetchText: async () => {
-        throw new Error(`HTTP 403 for ${ampere.SEARCH_URL}`)
-      },
-    }),
-    /HTTP 403 for https:\/\/careers\.amperecomputing\.com\/search\/jobs/,
-  )
+  const blockedChallengePage = {
+    status: 403,
+    url: ampere.SEARCH_URL,
+    headers: {
+      server: 'cloudflare',
+      'cf-ray': 'a2abc87858e29f61-MAA',
+      'cf-mitigated': 'challenge',
+    },
+    html: `
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <title>Just a moment...</title>
+  </head>
+  <body>
+    <noscript>
+      <div>Enable JavaScript and cookies to continue</div>
+    </noscript>
+    <script src="https://challenges.cloudflare.com"></script>
+  </body>
+</html>
+`,
+  }
+
+  const requestedUrls = []
+  const jobs = await ampere.createAmpereComputingScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      if (url === ampere.SEARCH_URL) return blockedChallengePage
+      if (url === ampere.INDIA_SEARCH_URL) {
+        return {
+          ...blockedChallengePage,
+          url,
+        }
+      }
+
+      throw new Error(`Unexpected Ampere Computing URL: ${url}`)
+    },
+  })
+
+  assert.equal(ampere.hasVerifiedCloudflareChallengeSignal(blockedChallengePage), true)
+  assert.deepEqual(requestedUrls, [
+    ampere.SEARCH_URL,
+    ampere.INDIA_SEARCH_URL,
+  ])
+  assert.deepEqual(jobs, [])
 })

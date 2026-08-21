@@ -125,13 +125,18 @@ test('Pickrr sentinel pins the verified homepage, sitemap, life-at-pickrr page, 
   assert.equal(pickrr.SOURCE, 'pickrr')
   assert.equal(pickrr.COMPANY, 'Pickrr')
   assert.equal(pickrr.OFFICIAL_BRAND_NAME, 'Pickrr')
-  assert.equal(pickrr.VERIFIED_ON, '2026-08-04')
+  assert.equal(pickrr.VERIFIED_ON, '2026-08-13')
   assert.equal(pickrr.HOMEPAGE_URL, 'https://pickrr.com/')
   assert.equal(pickrr.CAREERS_LANDING_URL, 'https://pickrr.com/life-at-pickrr/')
   assert.equal(pickrr.SITEMAP_URL, 'https://pickrr.com/sitemap.xml')
   assert.equal(pickrr.CAREERS_404_URL, 'https://pickrr.com/careers')
-  assert.match(pickrr.VERIFIED_SURFACE_SUMMARY, /Life at Pickrr/i)
-  assert.match(pickrr.VERIFIED_SURFACE_SUMMARY, /Page Not Found - Pickrr/i)
+  assert.deepEqual(pickrr.FIRST_PARTY_TIMEOUT_URLS, [
+    'https://pickrr.com/',
+    'https://pickrr.com/sitemap.xml',
+    'https://pickrr.com/life-at-pickrr/',
+    'https://pickrr.com/careers',
+  ])
+  assert.match(pickrr.VERIFIED_SURFACE_SUMMARY, /repeated connect timeouts/i)
 
   assert.equal(pickrr.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(pickrr.hasVerifiedLifeAtPickrrSignal(lifeAtPickrrHtml), true)
@@ -141,7 +146,30 @@ test('Pickrr sentinel pins the verified homepage, sitemap, life-at-pickrr page, 
   assert.equal(pickrr.sitemapHasPublicCareersRoute(sitemapWithCareers), true)
   assert.equal(pickrr.hasPublicJobsSignal(lifeAtPickrrHtml), false)
   assert.equal(pickrr.hasPublicJobsSignal(lifeAtPickrrWithVisibleJobsHtml), true)
+  assert.equal(pickrr.isExpectedTimedOutSurface({ errorKind: 'timeout', status: null, html: null }), true)
+  assert.equal(pickrr.isExpectedTimedOutSurface({ errorKind: 'dns' }), false)
   assert.doesNotMatch(pickrr.stripHtmlComments(lifeAtPickrrHtml), /Product Manager/i)
+})
+
+test('Pickrr returns [] when the current verified first-party routes all time out', async () => {
+  const pickrr = await loadModule()
+  const requestedUrls = []
+
+  const jobs = await pickrr.createPickrrScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      return {
+        status: null,
+        url,
+        html: null,
+        errorKind: 'timeout',
+      }
+    },
+  })
+
+  assert.deepEqual(requestedUrls, pickrr.FIRST_PARTY_TIMEOUT_URLS)
+  assert.deepEqual(jobs, [])
 })
 
 test('Pickrr returns [] only while the official life-at-pickrr page remains a resume-form surface without public jobs', async () => {

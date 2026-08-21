@@ -252,6 +252,16 @@ test('run validates the official EXA AG archive before returning jobs', async ()
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
 })
 
+test('run returns no jobs when the verified EXA AG jobs archive is temporarily unavailable', async () => {
+  const jobs = await createExaAgScraper().run({
+    fetchText: async () => {
+      throw new Error(`HTTP 500 for ${CAREER_PAGE_URL}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
 test('fails closed when the EXA AG jobs archive no longer matches the verified public shape', async () => {
   await assert.rejects(
     createExaAgScraper().run({

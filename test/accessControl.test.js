@@ -10,6 +10,7 @@ import {
   applyExpiredAccessDowngrade,
   buildAccessSummary,
   canUsePremiumFilters,
+  canUseTelegramAlerts,
   canUseWhatsappAlerts,
   getEffectiveAccess,
   shouldShowAds,
@@ -121,4 +122,26 @@ test("access capability helpers differentiate free and semester users", () => {
   assert.equal(canUsePremiumFilters(semesterUser), true);
   assert.equal(shouldShowAds(semesterUser), false);
   assert.equal(canUseWhatsappAlerts(semesterUser), true);
+});
+
+test("canUseTelegramAlerts requires an active eligible plan and linked Telegram chat", () => {
+  const activeLinkedUser = {
+    accessRole: ACCESS_ROLES.SEMESTER,
+    premium: {
+      planId: PLAN_IDS.SEMESTER,
+      status: "active",
+      telegramAlertsEnabled: true,
+    },
+    telegram: { chatId: "123", linkedAt: new Date("2026-08-01T00:00:00.000Z") },
+  };
+
+  assert.equal(canUseTelegramAlerts(activeLinkedUser), true);
+  assert.equal(canUseTelegramAlerts({
+    ...activeLinkedUser,
+    premium: { ...activeLinkedUser.premium, status: "inactive" },
+  }), false);
+  assert.equal(canUseTelegramAlerts({
+    ...activeLinkedUser,
+    telegram: { chatId: "123", linkedAt: null },
+  }), false);
 });

@@ -63,7 +63,7 @@ const INDIA_LOCATION_TOKENS = [
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
-  .replace(/&amp;/gi, '&')
+  .replace(/&amp;|&#038;/gi, '&')
   .replace(/&quot;/gi, '"')
   .replace(/&#39;|&apos;/gi, "'")
   .replace(/&#xd;|&#13;/gi, '\n')
@@ -186,8 +186,36 @@ export const hasOfficialCareersSignal = (html = '') => {
     && /\ball rights reserved\b/i.test(normalized)
 }
 
+export const hasLinkedJobsPortalSignal = (html = '') => {
+  const page = String(html ?? '')
+
+  return /<title>\s*STL and STL Digital Careers\s*\|\s*Latest jobs at STL and STL Digital - Ripplehire\.com\s*<\/title>/i.test(page)
+    && /id=["']token["'][^>]+value=["']v0cOTxD3fgZqIF393gqj["']/i.test(page)
+    && /id=["']source["'][^>]+value=["']CAREERSITE["']/i.test(page)
+    && hasEnumerablePublicJobsSignal(page)
+}
+
 export const hasRippleHireSearchResultsSignal = (xml = '') =>
   /<JobPageVO>/i.test(String(xml ?? '')) && /<totalJobCount>\d+<\/totalJobCount>/i.test(String(xml ?? ''))
+
+const isConnectTimeoutError = (error) => {
+  const haystacks = []
+  let current = error
+  const visited = new Set()
+
+  while (current && !visited.has(current)) {
+    visited.add(current)
+    if (typeof current?.code === 'string') {
+      haystacks.push(current.code)
+    }
+    if (typeof current?.message === 'string') {
+      haystacks.push(current.message)
+    }
+    current = current?.cause
+  }
+
+  return haystacks.some((value) => /UND_ERR_CONNECT_TIMEOUT|connect timeout error|timed out/i.test(value))
+}
 
 export const isIndiaListing = ({ jobCode, jobLocation, locations }) => {
   const normalizedJobCode = normalizeWhitespace(jobCode)?.toLowerCase() || ''
@@ -338,10 +366,21 @@ const defaultFetchText = async (url, options = {}) => {
 export const createSterliteTechnologiesScraper = ({ fetchText = defaultFetchText } = {}) => ({
   async run({ fetchText: overrideFetchText, maxPages: overrideMaxPages } = {}) {
     const fetchImpl = overrideFetchText || fetchText
-    const careersHtml = await fetchImpl(CAREERS_URL)
+    try {
+      const careersHtml = await fetchImpl(CAREERS_URL)
 
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('Sterlite Technologies verified first-party careers page no longer matches the live RippleHire handoff surface')
+      if (!hasOfficialCareersSignal(careersHtml)) {
+        throw new Error('Sterlite Technologies verified first-party careers page no longer matches the live RippleHire handoff surface')
+      }
+    } catch (error) {
+      if (!isConnectTimeoutError(error)) {
+        throw error
+      }
+
+      const linkedJobsPortalHtml = await fetchImpl(LINKED_JOBS_PORTAL_URL)
+      if (!hasLinkedJobsPortalSignal(linkedJobsPortalHtml)) {
+        throw new Error('Sterlite Technologies verified linked RippleHire board no longer matches the live public jobs surface')
+      }
     }
 
     const jobs = []

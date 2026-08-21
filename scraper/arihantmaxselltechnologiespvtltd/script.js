@@ -11,6 +11,7 @@ export const COMPANY = 'Arihant Maxsell Technologies Pvt Ltd'
 export const HOMEPAGE_URL = 'https://maxsell.co.in/'
 export const CAREERS_URL = 'https://maxsell.co.in/careers/'
 export const CURRENT_OPENINGS_URL = 'https://maxsell.co.in/current-openings/'
+export const CURRENT_OPENINGS_SITEMAP_URL = 'https://maxsell.co.in/current-opening-sitemap.xml'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -136,7 +137,6 @@ const hasOfficialHomepageSignal = (html) => {
 
   return /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/maxsell\.co\.in\/["']/i.test(page)
     && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']Maxsell["']/i.test(page)
-    && /href=["']https:\/\/maxsell\.co\.in\/careers\/["']/i.test(page)
     && /Arihant Park 1st Floor/i.test(page)
 }
 
@@ -158,6 +158,14 @@ const hasOfficialCurrentOpeningsSignal = (html) => {
     && /Apply Now/i.test(page)
 }
 
+const hasOfficialCurrentOpeningsShellSignal = (html) => {
+  const page = String(html ?? '')
+
+  return /<title>\s*Current Job Openings at Maxsell India\b/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/maxsell\.co\.in\/current-openings\/["']/i.test(page)
+    && /<h1[^>]*>\s*Current Openings\s*<\/h1>/i.test(page)
+}
+
 const hasOfficialJobDetailSignal = (html, sourceUrl) => {
   const page = String(html ?? '')
   const canonicalPattern = new RegExp(
@@ -167,8 +175,13 @@ const hasOfficialJobDetailSignal = (html, sourceUrl) => {
 
   return canonicalPattern.test(page)
     && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']Maxsell["']/i.test(page)
-    && /<form[^>]+class=["'][^"']*\belementor-form\b[^"']*["'][^>]*name=["']Apply Now Form["']/i.test(page)
-    && /<strong>\s*Position:\s*<\/strong>/i.test(page)
+    && (
+      (
+        /<form[^>]+class=["'][^"']*\belementor-form\b[^"']*["'][^>]*name=["']Apply Now Form["']/i.test(page)
+        && /<strong>\s*Position:\s*<\/strong>/i.test(page)
+      )
+      || /<h1[^>]+class=["'][^"']*\bentry-title\b[^"']*["'][^>]*>/i.test(page)
+    )
 }
 
 const isControlLine = (value) => /^(?:Apply Now|Submit|Name|Phone Number|Email|Comments|Upload Resume|Position:|Please fill in the details below)/i.test(String(value ?? ''))
@@ -299,6 +312,16 @@ const extractOpenings = (html) => {
   return jobs
 }
 
+const extractCurrentOpeningUrlsFromSitemap = (xml) => {
+  const urls = [...String(xml ?? '').matchAll(
+    /<loc>(https:\/\/maxsell\.co\.in\/current-opening\/[^<]+)<\/loc>/gi,
+  )]
+    .map((match) => toAbsoluteUrl(match[1], CURRENT_OPENINGS_SITEMAP_URL))
+    .filter(isOfficialCurrentOpeningUrl)
+
+  return [...new Set(urls)]
+}
+
 const extractJobDetail = (html, listing = {}) => {
   const lines = htmlToTextLines(html)
   const title = extractText(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i, html) || listing.title || null
@@ -362,7 +385,30 @@ export const createArihantMaxsellTechnologiesPvtLtdScraper = () => ({
     }
 
     const openingsHtml = await fetchText(CURRENT_OPENINGS_URL)
-    const listings = extractOpenings(openingsHtml)
+    const listings = hasOfficialCurrentOpeningsSignal(openingsHtml)
+      ? extractOpenings(openingsHtml)
+      : hasOfficialCurrentOpeningsShellSignal(openingsHtml)
+        ? extractCurrentOpeningUrlsFromSitemap(await fetchText(CURRENT_OPENINGS_SITEMAP_URL)).map((sourceUrl) => {
+            const jobId = buildJobId(sourceUrl)
+            return {
+              title: null,
+              positions: null,
+              location: null,
+              city: null,
+              sourceUrl,
+              applyUrl: sourceUrl,
+              jobId,
+              requisitionId: jobId,
+            }
+          })
+        : (() => {
+            throw new Error('verified Maxsell current openings surface no longer matches the official first-party jobs page')
+          })()
+
+    if (listings.length === 0) {
+      throw new Error('verified Maxsell current-opening sitemap no longer exposes trusted first-party job detail URLs')
+    }
+
     const jobs = []
 
     for (const listing of listings) {
@@ -372,6 +418,8 @@ export const createArihantMaxsellTechnologiesPvtLtdScraper = () => ({
       }
 
       const detail = extractJobDetail(detailHtml, listing)
+      if (isFilledRole(detail.title)) continue
+
       jobs.push({
         ...detail,
         company: COMPANY,

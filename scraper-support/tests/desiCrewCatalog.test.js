@@ -30,7 +30,7 @@ const loadDesiCrewModule = async () => {
   }
 }
 
-test('Desi Crew local catalog captures the August 1, 2026 first-party careers site contract', async () => {
+test('Desi Crew local catalog captures the August 15, 2026 first-party careers site contract', async () => {
   const { DESI_CREW_CATALOG } = await loadDesiCrewCatalog()
   const desiCrew = await loadDesiCrewModule()
 
@@ -60,7 +60,7 @@ test('Desi Crew local catalog captures the August 1, 2026 first-party careers si
   )
   assert.equal(DESI_CREW_CATALOG.parser, 'custom-script')
   assert.equal(DESI_CREW_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(DESI_CREW_CATALOG.verifiedOn, '2026-08-01')
+  assert.equal(DESI_CREW_CATALOG.verifiedOn, '2026-08-15')
   assert.equal(DESI_CREW_CATALOG.dryRunFile, 'desicrew/jobs.json')
   assert.equal(DESI_CREW_CATALOG.modulePath, desiCrewModulePath)
   assert.match(DESI_CREW_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.desicrew\.in\//i)
@@ -72,6 +72,7 @@ test('Desi Crew local catalog captures the August 1, 2026 first-party careers si
     /https:\/\/www\.desicrew\.in\/careers\/qa-automation-engineer\//i,
   )
   assert.match(DESI_CREW_CATALOG.verifiedSurfaceSummary, /JobPosting metadata/i)
+  assert.match(DESI_CREW_CATALOG.verifiedSurfaceSummary, /inline apply form directly on-page/i)
 
   assert.equal(desiCrew.PROVIDER_METADATA.source, DESI_CREW_CATALOG.source)
   assert.equal(desiCrew.PROVIDER_METADATA.companyName, DESI_CREW_CATALOG.companyName)

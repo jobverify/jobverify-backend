@@ -70,8 +70,8 @@ export const hasVerifiedJobsPageSignal = (html = '') => {
 
   return /<title[^>]*>\s*Open jobs\s*\|\s*Snyk\s*<\/title>/i.test(page)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/snyk\.io\/careers\/all-jobs\/["']/i.test(page)
-    && normalized.includes('find your next role @snyk')
     && /id=["']all-jobs["']/i.test(page)
+    && normalized.includes('open security')
 }
 
 const toArray = (value) => {

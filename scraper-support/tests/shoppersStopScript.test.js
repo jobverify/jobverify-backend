@@ -39,9 +39,9 @@ test('Shoppers Stop pins the verified first-party about page and Darwinbox tenan
   assert.equal(shoppersStop.SOURCE, 'shoppersstop')
   assert.equal(shoppersStop.COMPANY, 'Shoppers Stop')
   assert.equal(shoppersStop.OFFICIAL_BRAND_NAME, 'Shoppers Stop Limited')
-  assert.equal(shoppersStop.VERIFIED_ON, '2026-07-27')
+  assert.equal(shoppersStop.VERIFIED_ON, '2026-08-14')
   assert.equal(shoppersStop.HOMEPAGE_URL, 'https://www.shoppersstop.com/')
-  assert.equal(shoppersStop.ABOUT_PAGE_URL, 'https://beta.shoppersstop.com/miscs/aboutus')
+  assert.equal(shoppersStop.ABOUT_PAGE_URL, 'https://www.shoppersstop.com/miscs/aboutus')
   assert.equal(
     shoppersStop.DARWINBOX_HANDOFF_URL,
     'https://ss-people.darwinbox.in/ms/candidate/careers',

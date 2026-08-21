@@ -67,11 +67,12 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
+  const hasResumeProductLink = /href="https:\/\/(?:jobsurf|resume)\.haveloc\.com\/?"/i.test(rawHtml)
 
   return /<title[^>]*>\s*Haveloc \| Placement Automation Software\s*<\/title>/i.test(rawHtml)
     && /href="https:\/\/placements\.haveloc\.com"/i.test(rawHtml)
     && /href="https:\/\/insider\.haveloc\.com"/i.test(rawHtml)
-    && /href="https:\/\/resume\.haveloc\.com"/i.test(rawHtml)
+    && hasResumeProductLink
     && /href="\/about\.html"/i.test(rawHtml)
     && /management@haveloc\.com/i.test(rawHtml)
     && normalized.includes('finally all your job postings students in one place')

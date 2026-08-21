@@ -20,7 +20,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Lattice Semiconductor India catalog captures the verified first-party careers page and India iCIMS contracts', async () => {
+test('Lattice Semiconductor India catalog captures the verified first-party Workday contract', async () => {
   const {
     LATTICE_SEMICONDUCTOR_INDIA_CATALOG,
     default: defaultCatalog,
@@ -38,50 +38,37 @@ test('Lattice Semiconductor India catalog captures the verified first-party care
   assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.homepageUrl, 'https://www.latticesemi.com/en')
   assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.companyCareerPage, 'https://www.latticesemi.com/About/Jobs')
   assert.equal(
-    LATTICE_SEMICONDUCTOR_INDIA_CATALOG.indiaJobsIntroUrl,
-    'https://careers-latticesemi.icims.com/jobs/intro?bga=true&hashed=-625919477&height=500&jan1offset=-480&jun1offset=-420&mobile=false&needsRedirect=false&width=1378',
+    LATTICE_SEMICONDUCTOR_INDIA_CATALOG.workdayBoardUrl,
+    'https://latticesemi.wd5.myworkdayjobs.com/latticesemiconductorscareers',
   )
   assert.equal(
-    LATTICE_SEMICONDUCTOR_INDIA_CATALOG.indiaJobsSearchWrapperUrl,
-    'https://careers-latticesemi.icims.com/jobs/search?hashed=-625919477&ss=1',
+    LATTICE_SEMICONDUCTOR_INDIA_CATALOG.workdayJobsApiUrl,
+    'https://latticesemi.wd5.myworkdayjobs.com/wday/cxs/latticesemi/latticesemiconductorscareers/jobs',
   )
-  assert.equal(
-    LATTICE_SEMICONDUCTOR_INDIA_CATALOG.indiaJobsSearchIframeUrl,
-    'https://careers-latticesemi.icims.com/jobs/search?hashed=-625919477&ss=1&in_iframe=1',
-  )
-  assert.equal(
-    LATTICE_SEMICONDUCTOR_INDIA_CATALOG.officialJobDetailExampleUrl,
-    'https://careers-latticesemi.icims.com/jobs/3678/senior-director%2C-global-facilities/job',
-  )
-  assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.atsPlatform, 'icims')
+  assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.atsPlatform, 'workday-jobs-api')
   assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.countryFilter, 'India')
-  assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.paginationStrategy, 'icims-next-page-search')
+  assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.paginationStrategy, 'workday-jobs-api')
   assert.equal(
     LATTICE_SEMICONDUCTOR_INDIA_CATALOG.extractionStrategy,
-    'verified-first-party-careers-page+verified-icims-intro+iframe-listings+detail-pages',
+    'verified-first-party-careers-page+verified-workday-handoff+verified-workday-board+jobs-api',
   )
   assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.parser, 'custom-script')
   assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.companyDomain, 'latticesemi.com')
-  assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.verifiedOn, '2026-08-02')
+  assert.equal(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.verifiedOn, '2026-08-15')
+  assert.match(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.verifiedSurfaceSummary, /Saturday, August 15, 2026/i)
   assert.match(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.latticesemi\.com\/About\/Jobs/i)
   assert.match(
     LATTICE_SEMICONDUCTOR_INDIA_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/careers-latticesemi\.icims\.com\/jobs\/intro\?bga=true&hashed=-625919477/i,
+    /https:\/\/latticesemi\.wd5\.myworkdayjobs\.com\/latticesemiconductorscareers/i,
   )
   assert.match(
     LATTICE_SEMICONDUCTOR_INDIA_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/careers-latticesemi\.icims\.com\/jobs\/search\?hashed=-625919477&ss=1/i,
+    /https:\/\/latticesemi\.wd5\.myworkdayjobs\.com\/wday\/cxs\/latticesemi\/latticesemiconductorscareers\/jobs/i,
   )
-  assert.match(
-    LATTICE_SEMICONDUCTOR_INDIA_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/careers-latticesemi\.icims\.com\/jobs\/search\?hashed=-625919477&ss=1&in_iframe=1/i,
-  )
-  assert.match(
-    LATTICE_SEMICONDUCTOR_INDIA_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/careers-latticesemi\.icims\.com\/jobs\/3678\/senior-director%2C-global-facilities\/job/i,
-  )
-  assert.match(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.verifiedSurfaceSummary, /IN-MH-Pune/i)
+  assert.match(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.verifiedSurfaceSummary, /Design Eng/i)
+  assert.match(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.verifiedSurfaceSummary, /Senior Design Verification Engineer/i)
+  assert.match(LATTICE_SEMICONDUCTOR_INDIA_CATALOG.verifiedSurfaceSummary, /Intellectual Property Counsel/i)
 
   assert.equal(provider.source, 'latticesemiconductorindia')
   assert.equal(provider.companyName, 'Lattice Semiconductor India')
@@ -94,9 +81,8 @@ test('Lattice Semiconductor India catalog captures the verified first-party care
   assert.equal(lattice.PROVIDER_METADATA.source, provider.source)
   assert.equal(lattice.HOMEPAGE_URL, provider.homepageUrl)
   assert.equal(lattice.OFFICIAL_CAREERS_PAGE_URL, provider.companyCareerPage)
-  assert.equal(lattice.SEARCH_INTRO_URL, provider.indiaJobsIntroUrl)
-  assert.equal(lattice.SEARCH_WRAPPER_URL, provider.indiaJobsSearchWrapperUrl)
-  assert.equal(lattice.SEARCH_IFRAME_URL, provider.indiaJobsSearchIframeUrl)
+  assert.equal(lattice.OFFICIAL_WORKDAY_BOARD_URL, provider.workdayBoardUrl)
+  assert.equal(lattice.WORKDAY_JOBS_API_URL, provider.workdayJobsApiUrl)
 })
 
 test('Lattice Semiconductor India exact-name backlog rows resolve directly from the local provider metadata', async () => {

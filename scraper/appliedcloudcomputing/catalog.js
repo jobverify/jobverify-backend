@@ -25,9 +25,9 @@ export const APPLIED_CLOUD_COMPUTING_CATALOG = {
     'verified-exact-name-smartrecruiters-board+official-homepage-link+smartrecruiters-jobs-api+detail-api',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-13',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://careers.smartrecruiters.com/AppliedCloudComputing is the exact-name public Applied Cloud Computing careers board, that it links back to the official https://www.appliedcloudcomputing.com/ homepage, and that the board visibly lists at least "Cloud Operations Engineer (GCP & Kubernetes)" and "L3 Cloud Engineer - Applied Cloud Computing" in India. This local provider uses the SmartRecruiters jobs API and detail API after validating the branded board.',
+    'Verified on Thursday, August 13, 2026 that https://careers.smartrecruiters.com/AppliedCloudComputing is still the exact-name public Applied Cloud Computing careers board, that it links back to the official https://www.appliedcloudcomputing.com/ homepage, and that the current branded shell still exposes the Careers at Applied Cloud Computing title and Jobs at Applied Cloud Computing heading even though the legacy sample titles are no longer rendered in the board HTML. The public SmartRecruiters jobs API returned 4 India postings, including Cloud Network Security Engineer, OCI Cloud and Network Engineer, Network Security Compliance Check & Remediation Engineer, and L2 CDN & Edge Security Engineer.',
   config: {
     request: {
       method: 'GET',

@@ -61,6 +61,8 @@ const currentHomepageHtml = `
 </html>
 `
 
+const unreachableCareersRuntimeText = 'Runtime is unreachable'
+
 const loadAutmanRoboticsModule = async () => {
   try {
     return await import('../../scraper/autmanrobotics/script.js')
@@ -206,4 +208,37 @@ test('Autman Robotics fails closed when the homepage or careers page contract ch
     }),
     /verified first-party careers page/i,
   )
+})
+
+test('Autman Robotics returns [] when the verified homepage degrades to a general-application-only surface and the dedicated careers runtime is unreachable', async () => {
+  const autmanRobotics = await loadAutmanRoboticsModule()
+
+  const jobs = await autmanRobotics.createAutmanRoboticsScraper({
+    now: () => '2026-08-13T17:35:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      if (url === autmanRobotics.HOMEPAGE_URL) return currentHomepageHtml
+      if (url === autmanRobotics.CAREERS_URL) return unreachableCareersRuntimeText
+      throw new Error(`Unexpected Autman Robotics URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Autman Robotics returns [] when the verified general-application homepage remains live but the dedicated careers route responds with a 504', async () => {
+  const autmanRobotics = await loadAutmanRoboticsModule()
+
+  const jobs = await autmanRobotics.createAutmanRoboticsScraper().run({
+    fetchText: async (url) => {
+      if (url === autmanRobotics.HOMEPAGE_URL) return currentHomepageHtml
+      if (url === autmanRobotics.CAREERS_URL) {
+        throw new Error(`HTTP 504 for ${autmanRobotics.CAREERS_URL}`)
+      }
+
+      throw new Error(`Unexpected Autman Robotics URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })

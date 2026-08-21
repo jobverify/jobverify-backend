@@ -20,17 +20,18 @@ import {
 import { buildJobSearchKeys } from '../../src/utils/jobSearchKeys.js'
 import { buildJobDerivedFields } from '../../src/utils/jobDerivedFields.js'
 import {
-  buildJobPostedAtCutoff,
   normalizeLifecycleDate,
   resolveJobMissesBeforeExpiry,
   resolveJobPostedAt,
-  resolveJobRetentionDays,
-  startOfUtcDay,
 } from '../../src/utils/jobLifecycle.js'
 import { normalizeScrapedJob, resolveJobType } from './normalizeScrapedJob.js'
 import { enrichJobsWithPublicExperience } from './publicExperienceEnrichment.js'
 import { jobAlertService } from '../../src/services/jobAlertService.js'
 import { refreshJobDatasetSummary } from '../../src/services/jobDatasetSummaryService.js'
+import {
+  analyzePublishableJobs,
+  normalizeHttpUrl,
+} from './publishableJobMetrics.js'
 
 dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.env'), quiet: true })
 
@@ -98,64 +99,22 @@ const inferJobType = (title = '') => {
   return 'Full-time'
 }
 
-// Returns true for senior/experienced roles that should never be stored.
-const isSeniorRole = (title = '') =>
-  /\b(senior|sr\.?|lead|principal|staff|manager|director|head\s+of|vp|vice\s+president|architect|distinguished|fellow|executive)\b/i.test(title)
-
-const normalizeHttpUrl = (value) => {
-  try {
-    const parsed = new URL(value)
-    if (!['http:', 'https:'].includes(parsed.protocol)) return null
-    return parsed.toString()
-  } catch {
-    return null
-  }
-}
-
 export const saveToDB = async (jobs, source, options = {}) => {
   await ensureConnected()
-  const JobModel = options.jobModel || await getJobModel()
+  const JobModel = await getJobModel()
 
   const now = normalizeLifecycleDate(options.now) || new Date()
-  const retentionDays = resolveJobRetentionDays(
-    options.retentionDays ?? process.env.SCRAPER_JOB_POSTED_WITHIN_DAYS,
-  )
   const missesBeforeExpiry = resolveJobMissesBeforeExpiry(
     options.missesBeforeExpiry ?? process.env.SCRAPER_JOB_MISSES_BEFORE_EXPIRY,
   )
-  const postedAtCutoff = buildJobPostedAtCutoff(now, retentionDays)
-  const today = startOfUtcDay(now)
-  const filterCounts = {
-    nonIndia: 0,
-    old: 0,
-    closed: 0,
-    senior: 0,
-    invalidUrl: 0,
-  }
-
-  const indiaJobs = filterIndiaJobs(jobs)
-  filterCounts.nonIndia = Math.max(0, jobs.length - indiaJobs.length)
-
-  const eligibleJobs = indiaJobs.filter((job) => {
-    if (isSeniorRole(job.title)) {
-      filterCounts.senior++
-      return false
-    }
-    if (!normalizeHttpUrl(job.applyUrl || job.link || job.sourceUrl)) {
-      filterCounts.invalidUrl++
-      return false
-    }
-    const postedAt = resolveJobPostedAt(job)
-    if (postedAt && startOfUtcDay(postedAt) < postedAtCutoff) {
-      filterCounts.old++
-      return false
-    }
-    const closingDate = normalizeLifecycleDate(job.closingDate)
-    if (closingDate && startOfUtcDay(closingDate) < today) {
-      filterCounts.closed++
-      return false
-    }
-    return true
+  const {
+    eligibleJobs,
+    filterCounts,
+    postedAtCutoff,
+    retentionDays,
+  } = analyzePublishableJobs(jobs, {
+    now,
+    retentionDays: options.retentionDays ?? process.env.SCRAPER_JOB_POSTED_WITHIN_DAYS,
   })
 
   const jobsForPersistence = options.enrichPublicExperience === false
@@ -269,7 +228,6 @@ export const saveToDB = async (jobs, source, options = {}) => {
     filteredNonIndia: filterCounts.nonIndia,
     filteredOld: filterCounts.old,
     filteredClosed: filterCounts.closed,
-    filteredSenior: filterCounts.senior,
     filteredInvalidUrl: filterCounts.invalidUrl,
     missed: 0,
     expired: 0,
@@ -295,7 +253,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
       .map((index) => operations[index]?.updateOne?.filter?.fingerprint)
       .filter(Boolean)
 
-    if (insertedFingerprints.length > 0 && options.enqueueAlerts !== false) {
+    if (insertedFingerprints.length > 0) {
       const insertedJobs = await JobModel.find({
         fingerprint: { $in: insertedFingerprints },
         status: 'active',

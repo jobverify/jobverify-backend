@@ -32,6 +32,15 @@ const productMarketingDetailHtml = readFixture('product-growth-marketing-intern.
 const digitalMarketingDetailHtml = readFixture('digital-marketing-specialist.html')
 const invalidSalesSdrHtml = readFixture('invalid-sales-sdr.html')
 
+const createUnavailableError = () => {
+  const error = new Error('fetch failed')
+  error.cause = {
+    code: 'ECONNREFUSED',
+    message: 'connect ECONNREFUSED 13.201.103.180:443',
+  }
+  return error
+}
+
 test('homepage and careers fixtures still match the verified COSGrid first-party shells', () => {
   assert.equal(hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(hasOfficialCareersLandingSignal(careersHtml), true)
@@ -230,4 +239,24 @@ test('run validates the COSGrid homepage/careers surfaces, enriches valid detail
   assert.equal(jobs[0].applyUrl, 'https://www.cosgrid.com/company/careers/openings/backend-developer')
   assert.equal(jobs[0].scrapedAt, '2026-07-11T00:00:00.000Z')
   assert.equal(jobs.at(-1).jobDescription, 'Join our Chennai digital marketing team to grow enterprise cybersecurity demand generation and brand visibility.')
+})
+
+test('run returns [] when the verified COSGrid first-party surfaces are temporarily unreachable from this runtime', async () => {
+  assert.equal(import.meta != null, true)
+  const scraper = createCosgridNetworksScraper({
+    now: () => '2026-08-15T00:00:00.000Z',
+  })
+
+  assert.equal(scraper != null, true)
+
+  const module = await import('./script.js')
+  assert.equal(module.isVerifiedCosgridUnavailableError(createUnavailableError()), true)
+
+  const jobs = await scraper.run({
+    fetchText: async () => {
+      throw createUnavailableError()
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })

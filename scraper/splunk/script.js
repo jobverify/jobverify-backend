@@ -51,6 +51,77 @@ const extractJsonBlock = (html = '', key, trailingKey) => {
 const getAggregationValue = (state, field) =>
   state?.data?.aggregations?.find((item) => item?.field === field)?.value ?? null
 
+const normalizeEmploymentType = (value) => {
+  const normalized = normalizeWhitespace(value)?.toLowerCase()
+  if (!normalized) return null
+  if (normalized === 'full time' || normalized === 'full-time') return 'Full-time'
+  if (normalized === 'part time' || normalized === 'part-time') return 'Part-time'
+  return normalizeWhitespace(value)
+}
+
+const normalizeCountry = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+  return /^india$/i.test(normalized) ? 'India' : normalized
+}
+
+const extractLocationCandidates = (job = {}) => {
+  const values = [
+    job.location,
+    job.cityStateCountry,
+    job.cityState,
+    job.address,
+    ...(Array.isArray(job.multi_location) ? job.multi_location : []),
+    ...(Array.isArray(job.multi_location_array)
+      ? job.multi_location_array.map((item) => item?.location)
+      : []),
+  ]
+
+  return [...new Set(
+    values
+      .map((value) => normalizeWhitespace(value))
+      .filter(Boolean),
+  )]
+}
+
+const extractPrimaryLocation = (job = {}) => {
+  const locations = extractLocationCandidates(job)
+  return locations[0] || null
+}
+
+const extractCityFromLocation = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+  return normalizeWhitespace(normalized.split(',')[0])
+}
+
+const extractRequiredSkills = (job = {}) => [...new Set(
+  (Array.isArray(job?.ml_skills) ? job.ml_skills : [])
+    .map((skill) => normalizeWhitespace(skill))
+    .filter(Boolean),
+)]
+
+export const buildCiscoJobDetailUrl = ({ jobId, title } = {}) => {
+  const normalizedJobId = normalizeWhitespace(jobId)
+  if (!normalizedJobId) return null
+
+  const normalizedTitle = normalizeWhitespace(title) || normalizedJobId
+  const slug = normalizedTitle
+    .normalize('NFKC')
+    .replace(/&/g, ' and ')
+    .replace(/[^\p{Letter}\p{Number}]+/gu, '-')
+    .replace(/^-+|-+$/g, '')
+
+  return slug
+    ? `https://careers.cisco.com/global/en/job/${encodeURIComponent(normalizedJobId)}/${encodeURIComponent(slug)}`
+    : `https://careers.cisco.com/global/en/job/${encodeURIComponent(normalizedJobId)}`
+}
+
+const isIndiaJob = (job = {}) => {
+  if (normalizeCountry(job?.country) === 'India') return true
+  return extractLocationCandidates(job).some((value) => /\bIndia\b/i.test(value))
+}
+
 export const extractRefineSearchState = (html = '') =>
   extractJsonBlock(html, 'eagerLoadRefineSearch', 'jobwidgetsettings')
 
@@ -86,26 +157,81 @@ export const searchPageShowsLiveGlobalResults = (state = {}) => {
   const countryAggregation = getAggregationValue(state, 'country') || {}
   const totalHits = Number(state?.totalHits ?? -1)
   const jobs = Array.isArray(state?.data?.jobs) ? state.data.jobs : []
+  const query = String(state?.eid?.query ?? '')
 
   return totalHits > 0
     && jobs.length > 0
-    && jobs.every((job) => String(job?.title ?? '').toLowerCase().includes('splunk'))
-    && !Object.prototype.hasOwnProperty.call(countryAggregation, 'India')
-  }
+    && Number(countryAggregation.India ?? 0) > 0
+    && /title\.title_phenom:\("Splunk"\)/i.test(query)
+}
 
-export const indiaPageShowsVerifiedEmptySlice = (state = {}) => {
+export const indiaPageShowsLiveIndiaResults = (state = {}) => {
   const countryAggregation = getAggregationValue(state, 'country') || {}
   const totalHits = Number(state?.totalHits ?? -1)
   const jobs = Array.isArray(state?.data?.jobs) ? state.data.jobs : []
   const selectedCountries = state?.data?.ui_selections?.country || []
+  const query = String(state?.eid?.query ?? '')
 
-  return totalHits === 0
-    && jobs.length === 0
-    && countryAggregation.India === 0
+  return totalHits > 0
+    && jobs.length > 0
+    && Number(countryAggregation.India ?? 0) >= jobs.length
     && Array.isArray(selectedCountries)
     && selectedCountries.length === 1
     && selectedCountries[0] === 'India'
-  }
+    && jobs.every((job) => isIndiaJob(job))
+    && /country\.country_sort:\("India"\)/i.test(query)
+}
+
+export const extractIndiaJobs = (state = {}) => {
+  const jobs = Array.isArray(state?.data?.jobs) ? state.data.jobs : []
+
+  return jobs
+    .filter((job) => isIndiaJob(job))
+    .map((job) => {
+      const title = normalizeWhitespace(job?.title)
+      const requisitionId = normalizeWhitespace(job?.reqId || job?.jobId || job?.jobSeqNo)
+      const location = extractPrimaryLocation(job)
+      const sourceUrl = buildCiscoJobDetailUrl({ jobId: requisitionId, title })
+        || normalizeWhitespace(job?.applyUrl)
+      const applyUrl = normalizeWhitespace(job?.applyUrl) || sourceUrl
+      const jobDescription = normalizeWhitespace(
+        job?.ml_job_parser?.descriptionTeaser_ats
+        || job?.ml_job_parser?.descriptionTeaser_first200
+        || job?.descriptionTeaser,
+      )
+
+      if (!title || !requisitionId || !location || !sourceUrl) return null
+
+      const jobEntry = {
+        title,
+        company: COMPANY,
+        department: normalizeWhitespace(job?.department) || normalizeWhitespace(job?.category),
+        location,
+        city: normalizeWhitespace(job?.city) || extractCityFromLocation(location),
+        country: 'India',
+        jobId: requisitionId,
+        requisitionId,
+        sourceUrl,
+        applyUrl,
+        employmentType: normalizeEmploymentType(job?.type),
+        experienceRequired: null,
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: extractRequiredSkills(job),
+        postingDate: normalizeWhitespace(job?.postedDate || job?.dateCreated)?.slice(0, 10) || null,
+        closingDate: null,
+        jobDescription,
+      }
+
+      const locations = extractLocationCandidates(job)
+      if (locations.length > 0) {
+        jobEntry.locations = locations
+      }
+
+      return jobEntry
+    })
+    .filter(Boolean)
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -116,8 +242,13 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 20000,
 })
 
-export const createSplunkScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+export const createSplunkScraper = ({
+  now: defaultNow = () => new Date().toISOString(),
+} = {}) => ({
+  async run({
+    fetchText = defaultFetchText,
+    now = defaultNow,
+  } = {}) {
     const entryHtml = await fetchText(CAREERS_ENTRY_URL)
     if (!hasLegacyCareersEntrySignal(entryHtml)) {
       throw new Error('Verified Splunk first-party careers entry no longer matches the trusted public surface')
@@ -139,11 +270,21 @@ export const createSplunkScraper = () => ({
     }
 
     const indiaState = extractRefineSearchState(indiaHtml)
-    if (!indiaPageShowsVerifiedEmptySlice(indiaState)) {
-      throw new Error('Verified Splunk India empty slice changed materially')
+    if (!indiaPageShowsLiveIndiaResults(indiaState)) {
+      throw new Error('Verified Splunk India results changed materially')
     }
 
-    return []
+    const jobs = extractIndiaJobs(indiaState)
+    if (!jobs.length) {
+      throw new Error('Verified Splunk India results changed materially')
+    }
+
+    return jobs.map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.applyUrl || job.sourceUrl,
+      scrapedAt: now(),
+    }))
   },
 })
 

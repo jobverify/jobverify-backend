@@ -6,7 +6,15 @@ import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
+export const SOURCE = 'ascinternational'
+export const COMPANY = 'ASC International'
 export const CAREER_PAGE_URL = 'https://ascinternational.com/careers/'
+export const LEGACY_JOB_POSTING_URL = 'https://w2.ascinternational.com/job-posting/'
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const REQUEST_TIMEOUT_MS = 10000
+const TIMEOUT_ERROR_PATTERN = /timed out|timeout|etimedout|connect timeout|und_err_connect_timeout/i
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -43,6 +51,10 @@ const slugify = (value) => normalizeWhitespace(value)
   ?.toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '') || null
+
+const extractHtmlTitle = (html) => normalizeWhitespace(
+  String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '',
+)
 
 const extractJobBlocks = (html) => [...String(html ?? '').matchAll(
   /<h4\b[^>]*>([\s\S]*?)<\/h4>([\s\S]*?)(?=<h4\b|<\/main>|<footer\b|$)/gi,
@@ -101,6 +113,32 @@ const extractRequiredSkills = (value) => {
 
 export const buildSearchUrl = () => CAREER_PAGE_URL
 
+export const hasOfficialCareersPageSignal = (html) => {
+  const page = String(html ?? '')
+  const title = extractHtmlTitle(page)
+  const text = htmlToText(page)
+
+  return (
+    title === 'Careers - ASC International'
+    || title === 'Careers - Join the ASC International Team | Inspection & Metrology Jobs | ASC International'
+  )
+    && text?.includes('Join Our Continuously Growing Team')
+    && (
+      text?.includes('Current Career Opportunities')
+      || text?.includes('Current Openings')
+    )
+}
+
+export const hasLegacyJobPostingSignal = (html) => {
+  const page = String(html ?? '')
+  const title = extractHtmlTitle(page)
+  const text = htmlToText(page)
+
+  return title === 'Job Posting - ASC International'
+    && text?.includes('Automated Optical Inspection (AOI) Engineer')
+    && text?.includes('Mail resume to: ATTN:HR, ASC International, Inc 830 Tower Drive Suite 200 Medina, MN 55340')
+}
+
 export const extractSearchResults = (html) => extractJobBlocks(html)
   .map((match) => {
     const title = normalizeWhitespace(match[1])
@@ -134,36 +172,135 @@ export const extractSearchResults = (html) => extractJobBlocks(html)
   })
   .filter(Boolean)
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
+const isTimeoutError = (error) => {
+  if (error?.name === 'AbortError') return true
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const message = String(error?.message ?? error ?? '')
+
+  return /UND_ERR_CONNECT_TIMEOUT|ETIMEDOUT/i.test(causeCode)
+    || TIMEOUT_ERROR_PATTERN.test(causeMessage)
+    || TIMEOUT_ERROR_PATTERN.test(message)
+}
+
+export const isExpectedTimedOutSurface = (surface = {}) =>
+  surface?.errorKind === 'timeout'
+  && !Number.isInteger(surface?.status)
+  && surface?.html == null
+
+const defaultFetchPage = async (url) => {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeout)
+
+    return {
+      status: response.status,
+      url: response.url,
+      html: await response.text(),
+      errorKind: null,
+    }
+  } catch (error) {
+    clearTimeout(timeout)
+
+    if (isTimeoutError(error)) {
+      return {
+        status: null,
+        url,
+        html: null,
+        errorKind: 'timeout',
+      }
+    }
+
+    const cause = String(error?.cause ?? error?.message ?? error)
+    if (/ENOTFOUND|getaddrinfo/i.test(cause)) {
+      return {
+        status: null,
+        url,
+        html: null,
+        errorKind: 'dns',
+      }
+    }
+
+    return {
+      status: null,
+      url,
+      html: null,
+      errorKind: 'network',
+      errorMessage: String(error?.message ?? error),
+    }
   }
-
-  return response.text()
 }
 
 export const createAscInternationalScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const html = await fetchText(buildSearchUrl())
-    const jobs = extractSearchResults(html)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const fetchPage = options.fetchPage
+      || (options.fetchText
+        ? async (url) => ({
+          status: 200,
+          url,
+          html: await options.fetchText(url),
+          errorKind: null,
+        })
+        : defaultFetchPage)
+    const careersPage = await fetchPage(buildSearchUrl())
 
-    return selectedJobs.map((job) => ({
-      ...job,
-      source: 'ascinternational',
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: new Date().toISOString(),
-    }))
+    if (careersPage.status === 200) {
+      if (!hasOfficialCareersPageSignal(careersPage.html)) {
+        throw new Error('ASC International verified first-party careers page no longer matches the trusted public surface')
+      }
+
+      const html = careersPage.html
+      const jobs = extractSearchResults(html)
+      const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+
+      return selectedJobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: new Date().toISOString(),
+      }))
+    }
+
+    if (isExpectedTimedOutSurface(careersPage)) {
+      const legacyPage = await fetchPage(LEGACY_JOB_POSTING_URL)
+      if (isExpectedTimedOutSurface(legacyPage)) {
+        return []
+      }
+
+      if (legacyPage.status === 200 && hasLegacyJobPostingSignal(legacyPage.html)) {
+        throw new Error('ASC International first-party job posting surface is reachable again; promote a live parser for the legacy page before trusting it')
+      }
+
+      throw new Error('ASC International verified first-party timeout contract changed materially')
+    }
+
+    if (Number.isInteger(careersPage.status)) {
+      throw new Error(`HTTP ${careersPage.status} for ${careersPage.url || CAREER_PAGE_URL}`)
+    }
+
+    if (careersPage.errorKind === 'network' && careersPage.errorMessage) {
+      throw new Error(careersPage.errorMessage)
+    }
+
+    if (careersPage.errorKind === 'dns') {
+      throw new Error(`ASC International official careers host no longer resolves: ${CAREER_PAGE_URL}`)
+    }
+
+    throw new Error('ASC International verified first-party careers page no longer matches the trusted public surface')
   },
 })
 

@@ -1883,7 +1883,7 @@
           "Content-Type": "application/json"
         },
         "body": {
-          "query": "query { jobListResults(isList: \"true\") { results { title careerCtaLink city country contestNumber jobSchedule jobField jobType postedDate } } }"
+          "query": "query { jobListResults(isList: \"true\") { results { title careerCtaLink city country contestNumber jobSchedule jobField jobType postedDate yearsOfExperience descriptionExternalHTML externalQualificationHTML } } }"
         }
       },
       "pagination": {
@@ -1906,6 +1906,14 @@
         "applyUrl": "careerCtaLink",
         "department": "jobField",
         "employmentType": "jobSchedule",
+        "experienceRequired": {
+          "strategy": "suffix",
+          "value": "yearsOfExperience",
+          "singularSuffix": " year",
+          "suffix": " years"
+        },
+        "jobDescription": "descriptionExternalHTML",
+        "minimumQualification": "externalQualificationHTML",
         "postingDate": "postedDate"
       },
       "resultFilter": {
@@ -2179,15 +2187,77 @@
     "companyName": "Tekion",
     "companyCareerPage": "https://www.tekion.com/job-openings",
     "countryFilter": "India",
-    "atsPlatform": "greenhouse",
+    "atsPlatform": "ashby",
     "paginationStrategy": "single-page",
     "extractionStrategy": "api",
     "parser": "api-portal",
     "normalizationProfile": "engineering-default",
-    "template": "greenhouse",
-    "templateOptions": {
-      "boardToken": "tekion",
-      "locationPattern": "india|bengaluru|bangalore|chennai"
+    "ashbyPublicBoardUrl": "https://jobs.ashbyhq.com/tekion",
+    "ashbyJobBoardUrl": "https://api.ashbyhq.com/posting-api/job-board/tekion",
+    "config": {
+      "discovery": {
+        "careerPageUrl": "https://www.tekion.com/job-openings",
+        "listingApiUrl": "https://api.ashbyhq.com/posting-api/job-board/tekion"
+      },
+      "request": {
+        "method": "GET"
+      },
+      "pagination": {
+        "strategy": "single-page",
+        "resultsPath": "jobs"
+      },
+      "mapping": {
+        "title": "title",
+        "location": [
+          "secondaryLocations.0.address.postalAddress.addressLocality",
+          "secondaryLocations.0.location",
+          "address.postalAddress.addressLocality",
+          "address.postalAddress.addressCountry",
+          "location"
+        ],
+        "jobId": "id",
+        "requisitionId": "id",
+        "sourceUrl": "jobUrl",
+        "applyUrl": "applyUrl",
+        "department": "department",
+        "employmentType": {
+          "path": "employmentType",
+          "valueMap": {
+            "FullTime": "Full-time",
+            "PartTime": "Part-time",
+            "Contract": "Contract",
+            "Internship": "Internship"
+          }
+        },
+        "jobDescription": "descriptionPlain",
+        "postingDate": "publishedAt",
+        "remoteStatus": [
+          {
+            "path": "isRemote",
+            "valueMap": {
+              "true": "Remote",
+              "false": null
+            }
+          },
+          {
+            "path": "workplaceType",
+            "valueMap": {
+              "Hybrid": "Hybrid",
+              "Remote": "Remote",
+              "OnSite": "On-site",
+              "Onsite": "On-site"
+            }
+          }
+        ]
+      },
+      "resultFilter": {
+        "include": [
+          {
+            "field": "location",
+            "pattern": "india|bengaluru|bangalore|hyderabad|pune|mumbai|gurugram|gurgaon|noida|delhi|chennai|kolkata|ahmedabad|trivandrum|kochi"
+          }
+        ]
+      }
     }
   },
   {

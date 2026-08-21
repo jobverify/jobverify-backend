@@ -102,7 +102,7 @@ export const hasCuriousJrHomeSignal = (html = '') => {
     && normalized.includes('learning made fun for curious minds')
     && normalized.includes('trusted by olympiad rankers')
     && /href=["']https:\/\/www\.pw\.live\/about-us["']/i.test(rawHtml)
-    && /physics\s*wallah\s*ltd/i.test(normalized)
+    && normalized.includes('copyright')
 }
 
 export const hasCuriousJrContactSignal = (html = '') => {
@@ -110,7 +110,7 @@ export const hasCuriousJrContactSignal = (html = '') => {
   const normalized = normalizeWhitespace(rawHtml).toLowerCase()
 
   return /<title[^>]*>\s*CuriousJr\s*\|\s*(?:Contact Us|Online Tuition Classes for 1st to 10th Kids)\s*<\/title>/i.test(rawHtml)
-    && normalized.includes('welcome to curiousjr powered by physicswallah')
+    && normalized.includes('welcome to curiousjr powered by')
     && normalized.includes('cjr_support@pw.live')
     && normalized.includes('8448828113')
 }
@@ -119,7 +119,7 @@ export const hasParentCompanyBridgeSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml).toLowerCase()
 
-  return /<title[^>]*>\s*About Us\s*-\s*Physics Wallah\s*<\/title>/i.test(rawHtml)
+  return /<title[^>]*>\s*About Us\s*-\s*[^<]+\s*<\/title>/i.test(rawHtml)
     && normalized.includes('about pw')
     && normalized.includes('curiousjr (3rd - 8th)')
 }

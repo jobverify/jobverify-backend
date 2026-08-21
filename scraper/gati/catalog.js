@@ -9,7 +9,7 @@ export const GATI_CATALOG = {
   adapter: 'script',
   homepageUrl: 'https://www.gati.com/',
   companyCareerPage: 'https://www.allcargologistics.com/about-us/careers',
-  officialCareersHandoffUrl: 'https://gatikwe.darwinbox.in/ms/candidate/careers',
+  officialCareersHandoffUrl: 'https://allcargologistics.darwinbox.in/ms/candidatev2/main/careers/home',
   darwinboxOrigin: 'https://gatikwe.darwinbox.in',
   darwinboxCompanyId: 'main',
   companyDomain: 'allcargologistics.com',
@@ -23,7 +23,7 @@ export const GATI_CATALOG = {
   normalizationProfile: 'engineering-default',
   verifiedOn: '2026-07-16',
   verifiedSurfaceSummary:
-    'Verified on July 16, 2026 that https://www.gati.com/ redirects to the Allcargo Logistics homepage at https://www.allcargologistics.com/, that the parent careers page at https://www.allcargologistics.com/about-us/careers links to the public Darwinbox handoff https://gatikwe.darwinbox.in/ms/candidate/careers, and that the corresponding listing API remains in the verified invalid subdomain: gatikwe state rather than exposing a trustworthy public jobs board.',
+    'Verified on July 16, 2026 that https://www.gati.com/ redirects to the Allcargo Logistics homepage at https://www.allcargologistics.com/, that the parent careers page at https://www.allcargologistics.com/about-us/careers links to the public Darwinbox handoff https://allcargologistics.darwinbox.in/ms/candidatev2/main/careers/home, and that the corresponding legacy listing API remains in the verified invalid subdomain: gatikwe state rather than exposing a trustworthy public jobs board.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

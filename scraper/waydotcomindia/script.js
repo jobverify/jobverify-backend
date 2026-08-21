@@ -17,6 +17,19 @@ export const VERIFIED_CAREERS_SIGNALS = [
   'View Jobs',
 ]
 
+export const hasCloudflareChallengeSignal = (value = '') => {
+  const page = String(value ?? '')
+  const text = stripTags(page) || ''
+
+  return /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(page)
+    && /cloudflare/i.test(page)
+    && (
+      text.includes('Please enable cookies')
+      || /cdn-cgi\/challenge-platform/i.test(page)
+      || /challenges\.cloudflare\.com/i.test(page)
+    )
+}
+
 const NAVIGATION_TIMEOUT_MS = 45000
 const PAGE_SETTLE_MS = 1200
 
@@ -277,14 +290,28 @@ export const extractJobDetail = (html, listing) => {
 
 const defaultFetchText = async (url) => {
   const response = await fetch(url, { headers: { Accept: 'text/html,application/xhtml+xml' } })
-  if (!response.ok) throw new Error(`Way.com API-only fetch returned HTTP ${response.status} for ${url}`)
-  return response.text()
+  const text = await response.text()
+
+  if (!response.ok && response.status !== 403) {
+    throw new Error(`Way.com API-only fetch returned HTTP ${response.status} for ${url}`)
+  }
+
+  return text
 }
 
 const defaultFetchJson = async (url) => {
   const response = await fetch(url, { headers: { Accept: 'application/json' } })
-  if (!response.ok) throw new Error(`Way.com jobs JSON API returned HTTP ${response.status}`)
-  return response.json()
+  const text = await response.text()
+
+  if (!response.ok) {
+    if (response.status === 403) {
+      return text
+    }
+
+    throw new Error(`Way.com jobs JSON API returned HTTP ${response.status}`)
+  }
+
+  return JSON.parse(text)
 }
 
 const fetchCareersSurface = async ({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) => ({
@@ -301,9 +328,19 @@ export const createWayDotComIndiaScraper = ({
     fetchJson = defaultFetchJson,
   } = {}) {
     const careersSurface = await fetchCareersSurface({ fetchText, fetchJson })
+    const careersChallenge = hasCloudflareChallengeSignal(careersSurface?.careersHtml)
+    const jobsJsonChallenge = hasCloudflareChallengeSignal(careersSurface?.jobsJson)
 
-    if (!hasOfficialCareersSignal(careersSurface?.careersHtml)) {
+    if (careersChallenge && jobsJsonChallenge) {
+      return []
+    }
+
+    if (!careersChallenge && !hasOfficialCareersSignal(careersSurface?.careersHtml)) {
       throw new Error('Way.com official careers surface no longer matches the verified first-party shell')
+    }
+
+    if (!Array.isArray(careersSurface?.jobsJson)) {
+      throw new Error('Way.com public jobs JSON no longer returns the verified array payload')
     }
 
     const jobs = uniqueBy(

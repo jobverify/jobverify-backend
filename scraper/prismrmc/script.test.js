@@ -266,13 +266,13 @@ test('Prism RMC scraper enriches verified first-party detail pages into job reco
 test('Prism RMC scraper returns normalized first-party jobs end to end from the verified careers flow', async () => {
   const prismRmc = await loadPrismRmcModule()
   const requestedUrls = []
+  const requestedSitemaps = []
 
   const jobs = await prismRmc.createPrismRmcScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
 
       if (url === prismRmc.HOMEPAGE_URL) return HOMEPAGE_HTML
-      if (url === prismRmc.PAGE_SITEMAP_URL) return PAGE_SITEMAP_XML
       if (url === prismRmc.CAREERS_URL) return CAREERS_HTML
       if (url === 'https://www.rmcindia.com/rmc-jobs-graduate-engineer-trainee-details/') {
         return TRAINEE_DETAIL_HTML
@@ -283,16 +283,21 @@ test('Prism RMC scraper returns normalized first-party jobs end to end from the 
 
       throw new Error(`Unexpected URL: ${url}`)
     },
+    fetchPageSitemap: async (url) => {
+      requestedSitemaps.push(url)
+      if (url === prismRmc.PAGE_SITEMAP_URL) return { status: 200, text: PAGE_SITEMAP_XML }
+      throw new Error(`Unexpected sitemap URL: ${url}`)
+    },
     now: () => '2026-07-11T00:00:00.000Z',
   })
 
   assert.deepEqual(requestedUrls, [
     'https://www.rmcindia.com/',
-    'https://www.rmcindia.com/wp-sitemap-posts-page-1.xml',
     'https://www.rmcindia.com/join-our-team/',
     'https://www.rmcindia.com/rmc-jobs-graduate-engineer-trainee-details/',
     'https://www.rmcindia.com/rmc-jobs-sales-executive/',
   ])
+  assert.deepEqual(requestedSitemaps, ['https://www.rmcindia.com/wp-sitemap-posts-page-1.xml'])
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'prismrmc')
   assert.equal(jobs[0].company, 'Prism RMC')
@@ -314,13 +319,48 @@ test('Prism RMC scraper returns no jobs when the verified careers page explicitl
   const jobs = await prismRmc.createPrismRmcScraper().run({
     fetchText: async (url) => {
       if (url === prismRmc.HOMEPAGE_URL) return HOMEPAGE_HTML
-      if (url === prismRmc.PAGE_SITEMAP_URL) return EMPTY_SITEMAP_XML
       if (url === prismRmc.CAREERS_URL) return EMPTY_CAREERS_HTML
 
       throw new Error(`Unexpected URL: ${url}`)
     },
+    fetchPageSitemap: async (url) => {
+      if (url === prismRmc.PAGE_SITEMAP_URL) return { status: 200, text: EMPTY_SITEMAP_XML }
+      throw new Error(`Unexpected sitemap URL: ${url}`)
+    },
   })
 
+  assert.deepEqual(jobs, [])
+})
+
+test('Prism RMC scraper accepts the verified sitemap body even when the host currently labels the sitemap response as 404', async () => {
+  const prismRmc = await loadPrismRmcModule()
+  const requested = []
+
+  const jobs = await prismRmc.createPrismRmcScraper().run({
+    fetchText: async (url) => {
+      requested.push(`text:${url}`)
+
+      if (url === prismRmc.HOMEPAGE_URL) return HOMEPAGE_HTML
+      if (url === prismRmc.CAREERS_URL) return EMPTY_CAREERS_HTML
+
+      throw new Error(`Unexpected fetchText URL: ${url}`)
+    },
+    fetchPageSitemap: async (url) => {
+      requested.push(`sitemap:${url}`)
+
+      assert.equal(url, prismRmc.PAGE_SITEMAP_URL)
+      return {
+        status: 404,
+        text: EMPTY_SITEMAP_XML,
+      }
+    },
+  })
+
+  assert.deepEqual(requested, [
+    `text:${prismRmc.HOMEPAGE_URL}`,
+    `sitemap:${prismRmc.PAGE_SITEMAP_URL}`,
+    `text:${prismRmc.CAREERS_URL}`,
+  ])
   assert.deepEqual(jobs, [])
 })
 

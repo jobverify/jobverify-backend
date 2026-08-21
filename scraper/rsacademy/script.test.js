@@ -10,6 +10,37 @@ const readFixture = (name) => fs.readFileSync(path.join(currentDir, 'fixtures', 
 
 const homepageHtml = readFixture('homepage.html')
 const soft404Html = readFixture('careers-soft-404.html')
+const forbiddenHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>403 Forbidden</title>
+  </head>
+  <body>
+    <main>
+      <h1>403 Forbidden</h1>
+      <p>Forbidden</p>
+      <p>You don't have permission to access this resource.</p>
+    </main>
+  </body>
+</html>
+`
+
+const missingRouteHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>404 Not Found</title>
+  </head>
+  <body>
+    <main>
+      <h1>404 Not Found</h1>
+      <p>Not Found</p>
+      <p>The requested URL was not found on this server.</p>
+    </main>
+  </body>
+</html>
+`
 
 const loadModule = async () => {
   try {
@@ -149,4 +180,20 @@ test('RS Academy fails closed when the homepage or non-listing routes drift into
     }),
     /verified non-listing route changed|public careers or jobs signal/i,
   )
+})
+
+test('RS Academy returns no jobs when the homepage is currently blocked and the legacy careers routes all resolve to the verified 404 shell', async () => {
+  const rsacademy = await loadModule()
+
+  const jobs = await rsacademy.createRsAcademyScraper().run({
+    fetchPage: async (url) => {
+      if (url === rsacademy.HOMEPAGE_URL) {
+        return { status: 403, url, html: forbiddenHomepageHtml }
+      }
+
+      return { status: 404, url, html: missingRouteHtml }
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })

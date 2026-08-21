@@ -249,6 +249,72 @@ test('Akasa Air run returns only the live pilot posting and filters role pages w
   ])
 })
 
+test('Akasa Air run propagates the runner abort signal to each page fetch', async () => {
+  const akasaAir = await loadAkasaAirModule()
+  const controller = new AbortController()
+  const seenSignals = []
+
+  await akasaAir.createAkasaAirScraper().run({
+    signal: controller.signal,
+    fetchPage: async (url, { signal } = {}) => {
+      seenSignals.push(signal)
+
+      if (url === akasaAir.CAREERS_REDIRECT_URL) {
+        return {
+          status: 200,
+          url: akasaAir.CAREERS_LANDING_URL,
+          html: careersLandingHtml,
+        }
+      }
+
+      if (url === akasaAir.SITEMAP_URL) {
+        return {
+          status: 200,
+          url,
+          html: sitemapXml,
+        }
+      }
+
+      if (url === akasaAir.ROLE_PAGE_URLS[0]) {
+        return {
+          status: 200,
+          url,
+          html: crewRoleHtml,
+        }
+      }
+
+      if (url === akasaAir.ROLE_PAGE_URLS[1]) {
+        return {
+          status: 200,
+          url,
+          html: pilotRoleHtml,
+        }
+      }
+
+      if (url === akasaAir.ROLE_PAGE_URLS[2]) {
+        return {
+          status: 200,
+          url,
+          html: corporateRoleHtml,
+        }
+      }
+
+      if (url === akasaAir.BROKEN_PEOPLESTRONG_JOBLIST_URL) {
+        return brokenPeopleStrongPage
+      }
+
+      if (url === akasaAir.PILOT_APPLY_URL) {
+        return workingOfficeFormPage
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.equal(seenSignals.length, 8)
+  assert.ok(seenSignals.every((signal) => signal === controller.signal))
+})
+
 test('Akasa Air fails closed when the first-party landing page, sitemap role set, pilot handoff, or broken PeopleStrong state drifts', async () => {
   const akasaAir = await loadAkasaAirModule()
 

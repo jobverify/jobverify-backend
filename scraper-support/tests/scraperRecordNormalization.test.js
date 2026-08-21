@@ -244,15 +244,15 @@ test('normalizeScrapedJob ignores company-tenure and training-duration prose tha
   const normalized = normalizeScrapedJob(
     {
       title: 'Assistant Vice President, Treasures Bancassurance Specialist',
-      company: 'DBS Bank India',
+      company: 'ExampleCo',
       location: 'Noida, India',
       city: 'Noida',
-      description: 'DBS Bank has been present in India for over 30 years. Demonstrate the inputs at the Branch with an average of minimum of 3 insurance calls per day for the month. Facilitate IRDA certification of new joinees within 3 months of their joining DBS.',
-      link: 'https://dbs.wd3.myworkdayjobs.com/DBS_Careers/job/Noida/example',
+      description: 'ExampleCo has been present in India for over 30 years. Demonstrate the inputs at the Branch with an average of minimum of 3 insurance calls per day for the month. Facilitate IRDA certification of new joinees within 3 months of their joining ExampleCo.',
+      link: 'https://careers.example.com/job/noida/example',
     },
     {
-      source: 'dbsbankindia.workday',
-      companyCareerPage: 'https://dbs.wd3.myworkdayjobs.com/DBS_Careers',
+      source: 'example.workday',
+      companyCareerPage: 'https://careers.example.com',
       atsPlatform: 'workday',
     },
   )
@@ -801,26 +801,6 @@ test('normalizeScrapedJob uses semiconductor source hints for generic product en
   assert.equal(normalized.engineeringDomain, 'Semiconductor')
 })
 
-test('normalizeScrapedJob uses larsentoubro site-role hints for construction engineering titles', () => {
-  const normalized = normalizeScrapedJob(
-    {
-      title: 'Engineer - Finishing - Site',
-      company: 'Larsen & Toubro',
-      location: 'Chennai, India',
-      city: 'Chennai',
-      link: 'https://careers.example.com/jobs/site-finishing',
-      source: 'larsentoubro',
-    },
-    {
-      source: 'larsentoubro',
-      companyCareerPage: 'https://careers.example.com',
-      atsPlatform: 'peoplestrong',
-    },
-  )
-
-  assert.equal(normalized.engineeringDomain, 'Construction')
-})
-
 test('normalizeScrapedJob uses wipro administrator hints for cloud operations roles', () => {
   const normalized = normalizeScrapedJob(
     {
@@ -1218,26 +1198,6 @@ test('normalizeScrapedJob applies agilent source hints to field service engineer
   )
 
   assert.equal(normalized.engineeringDomain, 'Electrical')
-})
-
-test('normalizeScrapedJob maps larsentoubro power-transmission departments into power systems', () => {
-  const normalized = normalizeScrapedJob(
-    {
-      title: 'PRIMARY ENGINEER',
-      company: 'Larsen & Toubro',
-      department: 'PTD-Power Transmission & Distribution - IC',
-      location: 'Chennai, India',
-      city: 'Chennai',
-      link: 'https://larsentoubrocareers.peoplestrong.com/job/detail/LNT_PE_1698031',
-    },
-    {
-      source: 'larsentoubro',
-      companyCareerPage: 'https://larsentoubrocareers.peoplestrong.com',
-      atsPlatform: 'peoplestrong',
-    },
-  )
-
-  assert.equal(normalized.engineeringDomain, 'Power Systems')
 })
 
 test('normalizeScrapedJob maps ingersoll application engineers into mechanical engineering', () => {

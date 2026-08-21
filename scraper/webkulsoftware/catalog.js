@@ -15,12 +15,12 @@ export const WEBKUL_SOFTWARE_CATALOG = {
   atsPlatform: 'official-company-site-jobs-pages',
   countryFilter: 'India',
   paginationStrategy: 'single-first-party-jobs-page-html',
-  extractionStrategy: 'verified-first-party-jobs-page+detail-pages+inline-open-position-cards',
+  extractionStrategy: 'verified-first-party-jobs-page+detail-pages+inline-open-position-cards-or-current-empty-shell',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-15',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://webkul.com/jobs/ is the live first-party jobs surface for Webkul Software, that it renders inline Open Positions cards linking to first-party detail pages such as IT Cloud Engineer and Performance Marketing Specialist, and that those detail pages expose Job Location, Education, and JobPosting metadata on webkul.com.',
+    'Verified on Saturday, August 15, 2026 that https://webkul.com/jobs/ remains the live first-party Webkul Software jobs surface, but its current HTML now renders only the Open Positions shell with category tabs, LinkedIn follow messaging, and the fallback resume prompt instead of enumerable public job cards. The previously verified detail-page contract on webkul.com still looks trustworthy when specific role URLs are known, but the listing page no longer exposes a trustworthy public jobs inventory, so this provider now returns an honest empty result until public cards reappear on the first-party shell.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'webkulsoftware/jobs.json',
 }

@@ -34,14 +34,15 @@ test('DeliverHealth Solutions local catalog captures the verified first-party AD
   assert.equal(provider.paginationStrategy, 'single-public-adp-job-requisitions-call')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page-bundle+verified-public-adp-board+job-requisitions-api+detail-api+india-filter',
+    'verified-first-party-careers-page-direct-adp-link-or-bundle+verified-public-adp-board+job-requisitions-api+detail-api+india-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-15')
   assert.match(provider.dryRunFile, /deliverhealthsolutions[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 15, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Browse Open Roles link/i)
   assert.match(provider.verifiedSurfaceSummary, /workforcenow\.adp\.com/i)
   assert.match(provider.verifiedSurfaceSummary, /no live openings/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'DeliverHealth Solutions'), false)

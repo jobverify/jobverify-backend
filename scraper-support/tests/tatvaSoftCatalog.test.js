@@ -54,11 +54,11 @@ test('TatvaSoft local catalog captures the verified first-party career page and 
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-14')
   assert.equal(provider.verifiedPublicOpeningCount, 2)
   assert.match(provider.dryRunFile, /tatvasoft[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.tatvasoft\.com\/career/i)
   assert.match(
     provider.verifiedSurfaceSummary,

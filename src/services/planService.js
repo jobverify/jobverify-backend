@@ -13,6 +13,7 @@ import {
   ACCESS_ROLES,
   PLAN_CONFIG,
   PLAN_IDS,
+  PREMIUM_ACCESS_ROLES,
   PREMIUM_PLAN_IDS,
 } from "../constants/accessPlans.js";
 import {
@@ -29,6 +30,16 @@ const addMonths = (date, months) => {
 
 const normalizeReferralCode = (value) =>
   String(value || "").trim().toUpperCase();
+
+export class BillingRequestError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "BillingRequestError";
+    this.statusCode = 400;
+  }
+}
+
+const useSession = (query, session) => (session ? query.session(session) : query);
 
 const hasWhatsappOptIn = (user) =>
   Boolean(
@@ -99,9 +110,10 @@ export const activatePlanForUser = async ({
   purchaseId = null,
   source = "purchase",
   now = new Date(),
+  session = null,
 }) => {
   const planConfig = assertPaidPlan(planId);
-  const user = await User.findById(userId);
+  const user = await useSession(User.findById(userId), session);
   if (!user) {
     throw new Error("User not found for plan activation.");
   }
@@ -119,8 +131,42 @@ export const activatePlanForUser = async ({
     planConfig.hasWhatsAppAlerts && hasWhatsappOptIn(user);
   user.premium.activationSource = source;
 
-  await user.save();
+  await user.save(session ? { session } : undefined);
   return user;
+};
+
+export const cancelActivePlan = async ({ userId }) => {
+  return PlanPurchase.db.transaction(async (session) => {
+    const user = await useSession(User.findById(userId), session);
+    if (
+      !user
+      || !PREMIUM_ACCESS_ROLES.includes(user.accessRole)
+      || user.premium?.status !== "active"
+    ) {
+      throw new BillingRequestError("No active paid plan to cancel.");
+    }
+
+    user.accessRole = ACCESS_ROLES.FREE;
+    user.premium.planId = PLAN_IDS.FREE;
+    user.premium.status = "cancelled";
+    user.premium.startedAt = null;
+    user.premium.expiresAt = null;
+    user.premium.lastPurchase = null;
+    user.premium.whatsappAlertsEnabled = false;
+
+    await user.save({ session });
+    await Subscription.updateOne(
+      { user: user._id },
+      { $set: { isActive: false } },
+      { session },
+    );
+
+    return { user, access: buildAccessSummary(user) };
+  }, {
+    readPreference: "primary",
+    readConcern: { level: "snapshot" },
+    writeConcern: { w: "majority" },
+  });
 };
 
 export const getOrCreateReferralCodeForUser = async (userId) => {
@@ -147,6 +193,9 @@ export const getOrCreateReferralCodeForUser = async (userId) => {
 };
 
 export const createCheckout = async ({ user, planId, referralCode }) => {
+  if (!PREMIUM_PLAN_IDS.includes(planId)) {
+    throw new BillingRequestError("Unsupported plan selected for checkout.");
+  }
   const planConfig = assertPaidPlan(planId);
   const provider = getPaymentProvider();
   const normalizedReferralCode = normalizeReferralCode(referralCode);
@@ -154,7 +203,9 @@ export const createCheckout = async ({ user, planId, referralCode }) => {
 
   if (normalizedReferralCode) {
     if (planId !== PLAN_IDS.SEMESTER) {
-      throw new Error("Referral codes are only valid for semester purchases.");
+      throw new BillingRequestError(
+        "Referral codes are only valid for semester purchases.",
+      );
     }
 
     const referral = await ReferralCode.findOne({
@@ -164,11 +215,11 @@ export const createCheckout = async ({ user, planId, referralCode }) => {
     });
 
     if (!referral) {
-      throw new Error("Referral code is invalid or inactive.");
+      throw new BillingRequestError("Referral code is invalid or inactive.");
     }
 
     if (String(referral.owner) === String(user._id)) {
-      throw new Error("You cannot use your own referral code.");
+      throw new BillingRequestError("You cannot use your own referral code.");
     }
 
     referralOwnerId = referral.owner;
@@ -328,41 +379,67 @@ const finalizeVerifiedPurchase = async ({
   source = "payment_verification",
   now = new Date(),
 }) => {
-  if (purchase.status === "paid" || purchase.status === "free_referral") {
-    const existingUser = await User.findById(purchase.user);
-    return {
-      purchase,
-      user: existingUser,
-      access: buildAccessSummary(existingUser, now),
-      idempotent: true,
-    };
-  }
+  const result = await PlanPurchase.db.transaction(async (session) => {
+    const currentPurchase = await useSession(
+      PlanPurchase.findOne({ _id: purchase._id }),
+      session,
+    );
+    if (!currentPurchase) {
+      throw new Error("Purchase not found.");
+    }
 
-  const updatedUser = await activatePlanForUser({
-    userId: purchase.user,
-    planId: purchase.planId,
-    purchaseId: purchase._id,
-    source,
-    now,
+    if (
+      currentPurchase.status === "paid"
+      || currentPurchase.status === "free_referral"
+    ) {
+      const existingUser = await useSession(
+        User.findById(currentPurchase.user),
+        session,
+      );
+      return {
+        purchase: currentPurchase,
+        user: existingUser,
+        access: buildAccessSummary(existingUser, now),
+        idempotent: true,
+      };
+    }
+
+    const updatedUser = await activatePlanForUser({
+      userId: currentPurchase.user,
+      planId: currentPurchase.planId,
+      purchaseId: currentPurchase._id,
+      source,
+      now,
+      session,
+    });
+
+    currentPurchase.status = "paid";
+    currentPurchase.providerPaymentId =
+      providerPaymentId || currentPurchase.providerPaymentId;
+    if (providerSignature) {
+      currentPurchase.providerSignature = providerSignature;
+    }
+    currentPurchase.startsAt = updatedUser.premium.startedAt;
+    currentPurchase.expiresAt = updatedUser.premium.expiresAt;
+    await currentPurchase.save({ session });
+
+    return {
+      purchase: currentPurchase,
+      user: updatedUser,
+      access: buildAccessSummary(updatedUser, now),
+      idempotent: false,
+    };
+  }, {
+    readPreference: "primary",
+    readConcern: { level: "snapshot" },
+    writeConcern: { w: "majority" },
   });
 
-  purchase.status = "paid";
-  purchase.providerPaymentId = providerPaymentId || purchase.providerPaymentId;
-  if (providerSignature) {
-    purchase.providerSignature = providerSignature;
+  if (!result.idempotent) {
+    await recordReferralConversion({ purchase: result.purchase, now });
   }
-  purchase.startsAt = updatedUser.premium.startedAt;
-  purchase.expiresAt = updatedUser.premium.expiresAt;
-  await purchase.save();
 
-  await recordReferralConversion({ purchase, now });
-
-  return {
-    purchase,
-    user: updatedUser,
-    access: buildAccessSummary(updatedUser, now),
-    idempotent: false,
-  };
+  return result;
 };
 
 export const verifyAndActivatePurchase = async ({
@@ -373,26 +450,23 @@ export const verifyAndActivatePurchase = async ({
   userId,
   now = new Date(),
 }) => {
-  const purchase = await PlanPurchase.findOne({
-    $or: [
-      ...(purchaseId ? [{ _id: purchaseId }] : []),
-      ...(providerOrderId ? [{ providerOrderId }] : []),
-    ],
-  });
+  const purchase = await PlanPurchase.findOne(
+    purchaseId ? { _id: purchaseId } : { providerOrderId },
+  );
 
   if (!purchase) {
-    throw new Error("Purchase not found.");
+    throw new BillingRequestError("Purchase not found.");
   }
 
   if (userId && String(purchase.user) !== String(userId)) {
-    throw new Error("Purchase does not belong to this user.");
+    throw new BillingRequestError("Purchase does not belong to this user.");
   }
 
   if (
     providerOrderId
     && String(purchase.providerOrderId) !== String(providerOrderId)
   ) {
-    throw new Error("Payment order does not match this purchase.");
+    throw new BillingRequestError("Payment order does not match this purchase.");
   }
 
   if (purchase.status === "paid" || purchase.status === "free_referral") {
@@ -407,14 +481,12 @@ export const verifyAndActivatePurchase = async ({
 
   const provider = getPaymentProvider(purchase.provider);
   const verification = provider.verifyPayment({
-    providerOrderId: providerOrderId || purchase.providerOrderId,
+    providerOrderId: purchase.providerOrderId,
     providerPaymentId,
     providerSignature,
   });
   if (!verification.verified) {
-    purchase.status = "failed";
-    await purchase.save();
-    throw new Error("Payment verification failed.");
+    throw new BillingRequestError("Payment verification failed.");
   }
 
   return finalizeVerifiedPurchase({
@@ -434,7 +506,7 @@ export const activateWebhookPurchase = async ({
 }) => {
   const purchase = await PlanPurchase.findOne({ providerOrderId });
   if (!purchase) {
-    throw new Error("Purchase not found for webhook event.");
+    throw new BillingRequestError("Purchase not found for webhook event.");
   }
 
   return finalizeVerifiedPurchase({

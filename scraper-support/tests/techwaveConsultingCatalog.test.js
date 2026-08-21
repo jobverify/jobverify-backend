@@ -17,7 +17,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('Techwave Consulting local catalog captures the verified first-party shell and Workday jobs API contract', async () => {
+test('Techwave Consulting local catalog captures the verified careers shell, join-us embed, and Workday jobs API contract', async () => {
   const { TECHWAVE_CONSULTING_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(TECHWAVE_CONSULTING_CATALOG)
 
@@ -27,6 +27,7 @@ test('Techwave Consulting local catalog captures the verified first-party shell 
   assert.equal(provider.officialBrandName, 'Techwave')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://www.techwave.com/career/')
+  assert.equal(provider.joinUsPageUrl, 'https://www.techwave.com/join-us/')
   assert.equal(provider.officialWorkdayBoardUrl, 'https://techwave.wd108.myworkdayjobs.com/TechWave_Careers')
   assert.equal(
     provider.jobsApiUrl,
@@ -44,12 +45,19 @@ test('Techwave Consulting local catalog captures the verified first-party shell 
   assert.equal(provider.paginationStrategy, 'first-party-workday-jobs-api')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-shell+public-workday-board+india-location-facets+jobs-api',
+    'verified-first-party-careers-shell+verified-join-us-workday-embed+public-workday-board+india-location-facets+jobs-api',
   )
-  assert.equal(provider.verifiedOn, '2026-07-17')
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /Sr\. Data Architect \(Databricks\)/i)
-  assert.match(provider.verifiedSurfaceSummary, /GDC Financial District/i)
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.equal(provider.verifiedPublicJobCount, 63)
+  assert.equal(provider.verifiedIndiaJobCount, 37)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.techwave\.com\/career\//i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.techwave\.com\/join-us\//i)
+  assert.match(provider.verifiedSurfaceSummary, /Join Us - TechWave/i)
+  assert.match(provider.verifiedSurfaceSummary, /TechWave_Careers/i)
+  assert.match(provider.verifiedSurfaceSummary, /AI Architect/i)
+  assert.match(provider.verifiedSurfaceSummary, /Product Designer/i)
+  assert.match(provider.verifiedSurfaceSummary, /37 India jobs/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /techwaveconsulting[\\/]jobs\.json$/i)
 })
@@ -76,6 +84,7 @@ test('Techwave Consulting hydrated local catalog stays script-runner compatible 
 
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://www.techwave.com/career/')
+  assert.equal(provider.joinUsPageUrl, 'https://www.techwave.com/join-us/')
   assert.match(provider.modulePath, /techwaveconsulting[\\/]script\.js$/i)
   assert.equal(typeof module.run, 'function')
 })

@@ -21,14 +21,15 @@ test('getScraperCatalog includes Supabase as a first-party-verified Ashby script
     'verified-first-party-careers-page+ashby-handoff+public-ashby-get-feed+india-location-filter',
   )
   assert.equal(provider.companyDomain, 'supabase.com')
-  assert.equal(provider.verifiedOn, '2026-07-25')
+  assert.equal(provider.verifiedOn, '2026-08-13')
   assert.match(provider.modulePath, /supabase[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /supabase[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 25, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/supabase\.com\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/jobs\.ashbyhq\.com\/supabase/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/api\.ashbyhq\.com\/posting-api\/job-board\/supabase/i)
   assert.match(provider.verifiedSurfaceSummary, /Product Manager - Marketplace/i)
+  assert.match(provider.verifiedSurfaceSummary, /Customer Solution Architect \(AMER\)/i)
   assert.match(provider.verifiedSurfaceSummary, /zero India openings/i)
 })
 

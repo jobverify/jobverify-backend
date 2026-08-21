@@ -8,10 +8,11 @@ const officialCareersHtml = `
     <head>
       <title>Careers at Quick Heal | Cybersecurity Jobs &amp; Career Opportunities</title>
     </head>
-    <body>
+  <body>
       <p>Work with purpose. Grow from the experience. Innovate to shape the future with Quick Heal</p>
       <p>Innovator. Curious. Growth-mindset. Positive. Sounds like you?</p>
-      <p>Customer Centricity is one the core values of Seqrite.</p>
+      <p>Discover Seqrite</p>
+      <p>Life at Quick Heal</p>
       <a href="https://lifecycleqhtl.darwinbox.in/ms/candidate/careers">Apply for a job</a>
       <a href="https://lifecycleqhtl.darwinbox.in/ms/candidate/careers">Join Our Innovative Team</a>
     </body>

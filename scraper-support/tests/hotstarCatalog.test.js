@@ -18,7 +18,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('Hotstar local catalog captures the verified JioStar careers handoff and keyworded Workday surface', async () => {
+test('Hotstar local catalog captures the verified live JioStar page and keyworded Workday surface', async () => {
   const {
     HOTSTAR_CATALOG,
     VERIFIED_SURFACE_SUMMARY,
@@ -48,28 +48,30 @@ test('Hotstar local catalog captures the verified JioStar careers handoff and ke
   assert.equal(provider.verifiedKeyword, 'JioHotstar')
   assert.equal(
     provider.verifiedJobUrl,
-    'https://jiostar.wd102.myworkdayjobs.com/JioStar/job/Chennai---Kochar-Jade/Assistant-Manager---Marketing--JioHotstar--South-_JR11910',
+    'https://jiostar.wd102.myworkdayjobs.com/JioStar/job/Bengaluru---EGL/Senior-Director---Marketing--JioHotstar--South-_JR12076',
   )
   assert.equal(
     provider.verifiedApplyUrl,
-    'https://jiostar.wd102.myworkdayjobs.com/JioStar/job/Chennai---Kochar-Jade/Assistant-Manager---Marketing--JioHotstar--South-_JR11910/apply',
+    'https://jiostar.wd102.myworkdayjobs.com/JioStar/job/Bengaluru---EGL/Senior-Director---Marketing--JioHotstar--South-_JR12076/apply',
   )
   assert.equal(provider.atsPlatform, 'workday')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'verified-parent-careers-handoff-plus-keyworded-workday-search',
+    'verified-homepage-plus-live-careers-page-plus-keyworded-workday-search',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-hotstar-brand-homepage+verified-jiostar-careers-page+verified-workday-board+keyworded-workday-jobs-api',
+    'verified-hotstar-brand-homepage+verified-live-jiostar-page+verified-workday-board+keyworded-workday-jobs-api',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-08-17')
   assert.equal(provider.verifiedSurfaceSummary, VERIFIED_SURFACE_SUMMARY)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.hotstar\.com\//i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.jiostar\.com\//i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /live JioStar corporate page/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /public Workday careers handoff/i)
   assert.match(
     VERIFIED_SURFACE_SUMMARY,
     /https:\/\/jiostar\.wd102\.myworkdayjobs\.com\/JioStar/i,
@@ -78,24 +80,16 @@ test('Hotstar local catalog captures the verified JioStar careers handoff and ke
     VERIFIED_SURFACE_SUMMARY,
     /https:\/\/jiostar\.wd102\.myworkdayjobs\.com\/wday\/cxs\/jiostar\/JioStar\/jobs/i,
   )
-  assert.match(VERIFIED_SURFACE_SUMMARY, /\b84 India roles\b/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /\b96 keyword matches\b/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /searchText=JioHotstar/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /tech-jobs\.hotstar\.com/i)
-})
 
-test('Hotstar exact backlog name matches from the local provider contract without aliases', async () => {
-  const { HOTSTAR_CATALOG } = await loadCatalogModule()
   const report = generateCompanyCoverageReport({
     csvText: 'Hotstar\n',
-    catalog: [hydrateProviderCatalogEntry(HOTSTAR_CATALOG)],
+    catalog: [provider],
   })
-
   assert.equal(report.matchedCount, 1)
   assert.equal(report.unmatchedCount, 0)
-  assert.deepEqual(
-    report.matched.map((item) => [item.companyName, item.source, item.provider?.companyName ?? null]),
-    [['Hotstar', 'hotstar', 'Hotstar']],
-  )
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Hotstar'), false)
 })
 

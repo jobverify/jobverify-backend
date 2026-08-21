@@ -3,7 +3,7 @@ import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
 export const SOURCE = 'boonai'
 export const COMPANY = 'BoonAI'
 export const OFFICIAL_BRAND = 'Boon.ai'
-export const VERIFIED_ON = '2026-08-01'
+export const VERIFIED_ON = '2026-08-14'
 export const HOME_URL = 'https://www.boonindia.ai/'
 export const ABOUT_URL = 'https://www.boonindia.ai/about'
 export const PRICING_URL = 'https://www.boonindia.ai/pricing'
@@ -12,7 +12,7 @@ export const CAREERS_URL = ABOUT_URL
 export const DISPOSITION =
   'verified-public-platform-and-recruiter-surfaces-without-exact-company-careers-contract'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, August 1, 2026 that https://www.boonindia.ai/ and https://www.boonindia.ai/about were the live official public Boon.ai surfaces reviewed for workbook company BoonAI, that https://www.boonindia.ai/pricing and https://employer.boonindia.ai/register exposed recruiter-facing marketplace and agency registration flows, and that the observed careers@boonindia.ai contact email did not itself constitute a trustworthy exact-company careers contract. These reviewed surfaces still establish Boon.ai as an overseas jobs platform rather than a trustworthy exact-company BoonAI careers contract, so this company-local scraper stays fail-closed and returns no jobs until a stable official BoonAI openings surface is verified.'
+  'Verified on Friday, August 14, 2026 that https://www.boonindia.ai/ and https://www.boonindia.ai/about remained the live official public Boon.ai surfaces reviewed for workbook company BoonAI, that https://www.boonindia.ai/pricing and https://employer.boonindia.ai/register still exposed recruiter-facing marketplace and employer registration flows, and that the current employer registration page now begins with a registration-type chooser rather than agency-name and license-number fields. These reviewed surfaces still establish Boon.ai as an overseas jobs platform rather than a trustworthy exact-company BoonAI careers contract, so this company-local scraper stays fail-closed and returns no jobs until a stable official BoonAI openings surface is verified.'
 
 const HOME_REQUIRED_PATTERNS = [
   /\byour international career starts here\b/i,
@@ -42,10 +42,11 @@ const PRICING_REQUIRED_PATTERNS = [
 
 const EMPLOYER_REGISTER_REQUIRED_PATTERNS = [
   /\bboon\.ai\b/i,
-  /\bagency name\b/i,
-  /\blicense number\b/i,
-  /\balready have an account\?\s*login\b/i,
-  /\bregister\b/i,
+  /\bhow would you like to register\?/i,
+  /\bagency\b/i,
+  /\b(?:client\s*\/\s*)?foreign employer\b/i,
+  /\bcontinue\b/i,
+  /\balready have an account\s*\?\s*login\b/i,
 ]
 
 const TRUSTED_ATS_HOST_PATTERNS = [

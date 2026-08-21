@@ -18,7 +18,7 @@ const shellHtml = `
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VGLENCE | sales booster</title>
     <link rel="stylesheet" href="/montserrat.css" />
-    <script type="module" crossorigin src="/assets/index-CgAnA7CH.js"></script>
+    <script type="module" crossorigin src="/assets/index-CXKv6uBB.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/vendor-react-D1u0J6rM.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-query-DArEN8uz.js">
     <link rel="modulepreload" crossorigin href="/assets/vendor-ui-BctUoQFA.js">
@@ -60,13 +60,14 @@ test('VGLENCE ENTERPRISES sentinel pins the verified official SPA shell, bundle,
   assert.equal(scraper.COMPANY, 'VGLENCE ENTERPRISES')
   assert.equal(scraper.HOMEPAGE_URL, 'https://vglence.com/')
   assert.equal(scraper.CANONICAL_HOMEPAGE_URL, 'https://www.vglence.com/')
-  assert.equal(scraper.BUNDLE_URL, 'https://www.vglence.com/assets/index-CgAnA7CH.js')
+  assert.equal(scraper.BUNDLE_URL, 'https://www.vglence.com/assets/index-CXKv6uBB.js')
   assert.deepEqual(scraper.CAREERS_ROUTE_URLS, [
     'https://www.vglence.com/careers/',
     'https://www.vglence.com/career/',
     'https://www.vglence.com/jobs/',
   ])
   assert.equal(scraper.hasVerifiedShell(shellHtml), true)
+  assert.equal(scraper.extractBundleUrl(shellHtml), scraper.BUNDLE_URL)
   assert.equal(scraper.hasVerifiedBundle(bundleJs), true)
   assert.equal(scraper.hasPublicJobSignals(shellHtml), false)
   assert.equal(scraper.hasPublicJobSignals(bundleJs), false)

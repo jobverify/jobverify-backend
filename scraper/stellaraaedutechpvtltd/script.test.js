@@ -43,6 +43,7 @@ const companyPageHtml = `
   <html>
     <head>
       <title>Stellaraa | LinkedIn</title>
+      <link rel="canonical" href="https://in.linkedin.com/company/stellaraa" />
       <meta
         name="description"
         content="Stellaraa | 5,995 followers on LinkedIn. Where education meets innovation | Empowering Education through Innovation"
@@ -71,11 +72,6 @@ const companyPageHtml = `
           ]
         }
       </script>
-      <a
-        href="https://www.linkedin.com/jobs/stellaraa-jobs-worldwide?f_C=104439273&amp;trk=top-card_top-card-primary-button-top-card-primary-cta"
-      >
-        See jobs
-      </a>
     </body>
   </html>
 `
@@ -83,10 +79,10 @@ const companyPageHtml = `
 const zeroJobsSearchHtml = `
   <html>
     <head>
-      <title>0 jobs in India</title>
+      <title>0 Jobs jobs in India</title>
     </head>
     <body>
-      <p>We couldn't find a match for jobs in India</p>
+      <p>We couldn't find a match for Jobs jobs in India</p>
       <section class="jobs-search__results-list"></section>
     </body>
   </html>
@@ -142,6 +138,44 @@ const searchResultsHtml = `
       </li>
     </ul>
   </section>
+`
+
+const currentGuestSearchCardHtml = `
+  <li>
+    <div class="base-card base-search-card job-search-card" data-entity-urn="urn:li:jobPosting:4455607809" data-impression-id="jobs-search-desktop-0">
+      <a
+        class="base-card__full-link absolute top-0 right-0 bottom-0 left-0 p-0 z-[2] outline-offset-[4px]"
+        href="https://in.linkedin.com/jobs/view/corporate-development-intern-at-stellaraa-4455607809?position=1&amp;pageNum=0&amp;refId=aPeLjRRa%2B6KvC9Ca%2FOJBcg%3D%3D&amp;trackingId=p0xXkmCz717w5%2Fx07SEkUg%3D%3D"
+      >
+        <span class="sr-only">Corporate Development Intern</span>
+      </a>
+      <div class="search-entity-media"></div>
+      <div class="base-search-card__info">
+        <h3 class="base-search-card__title">
+          Corporate Development Intern
+        </h3>
+        <h4 class="base-search-card__subtitle">
+          <a
+            class="hidden-nested-link"
+            href="https://in.linkedin.com/company/stellaraa?trk=public_jobs_jserp-result_job-search-card-subtitle"
+          >
+            Stellaraa
+          </a>
+        </h4>
+        <div class="base-search-card__metadata">
+          <span class="job-search-card__location">
+            Salem, Tamil Nadu, India
+          </span>
+          <div class="job-posting-benefits text-sm">
+            <span class="job-posting-benefits__text">Be an early applicant</span>
+          </div>
+          <time class="job-search-card__listdate--new" datetime="2026-08-20">
+            10 hours ago
+          </time>
+        </div>
+      </div>
+    </div>
+  </li>
 `
 
 const detailHtml = `
@@ -213,6 +247,29 @@ test('extractSearchResults keeps only Stellaraa India jobs from the public Linke
     preferredQualification: null,
     requiredSkills: [],
     postingDate: '2026-06-30',
+    closingDate: null,
+    jobDescription: null,
+  }])
+})
+
+test('extractSearchResults handles the current LinkedIn guest-search card markup for Stellaraa India jobs', () => {
+  assert.deepEqual(extractSearchResults(currentGuestSearchCardHtml), [{
+    title: 'Corporate Development Intern',
+    company: 'Stellaraa Edutech Pvt. Ltd.',
+    department: null,
+    location: 'Salem, Tamil Nadu, India',
+    city: 'Salem',
+    country: 'India',
+    jobId: '4455607809',
+    requisitionId: '4455607809',
+    sourceUrl: 'https://in.linkedin.com/jobs/view/corporate-development-intern-at-stellaraa-4455607809?position=1&pageNum=0&refId=aPeLjRRa%2B6KvC9Ca%2FOJBcg%3D%3D&trackingId=p0xXkmCz717w5%2Fx07SEkUg%3D%3D',
+    applyUrl: 'https://in.linkedin.com/jobs/view/corporate-development-intern-at-stellaraa-4455607809?position=1&pageNum=0&refId=aPeLjRRa%2B6KvC9Ca%2FOJBcg%3D%3D&trackingId=p0xXkmCz717w5%2Fx07SEkUg%3D%3D',
+    employmentType: null,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: '2026-08-20',
     closingDate: null,
     jobDescription: null,
   }])

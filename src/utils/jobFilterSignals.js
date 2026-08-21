@@ -238,6 +238,7 @@ const unique = (values = []) => [...new Set(values.filter(Boolean))];
 const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const NON_NUMERIC_EXPERIENCE_CONTEXT_EXCLUSION_PATTERN = /\b(?:customer|candidate|employee|guest|post-booking|real[- ]world|user)\s+experience\b|\bexperience\s+(?:charter|platform|the\s+world|the\s+perfect\s+blend)\b|\bwork\s+experience\s*\(in\s+years\)\b|\byears?\s+of\s+profitability\b|\bhistory\s+spanning\s+over\b|\bretained\s+for\s+a\s+period\b|\bannual\s+ctc\b|\bupload\s+cv\b/i;
 const NON_NUMERIC_EXPERIENCE_REQUIREMENT_CONTEXT_PATTERN = /\b(?:requirements?|role requirements?|qualifications?|required skills?|preferred qualifications?|must-haves?|what you(?:'ll| will)\s+bring|who we are looking for|experience\s*[:\-])\b/i;
+const GENERIC_EXPLICIT_EXPERIENCE_LABEL_PATTERN = /^(?:experienced(?: professionals?)?|entry[- ]level|junior level|mid(?:-| )level|senior(?:-| )level|associate(?: level)?)$/i;
 const NON_NUMERIC_EXPERIENCE_PATTERNS = [
   {
     pattern: /\b((?:prior|previous|relevant|strong|extensive|demonstrated|demonstrable|proven|hands[- ]on|solid|significant|practical|professional)\s+(?:[a-z-]+\s+){0,2}experience\s+(?:in|with|as|of|managing|mentoring|driving|building|leading|working|designing|troubleshooting|conducting|hiring|aligning|partnering|using|developing|untangling|influencing|executing|running|owning)\b[^.]{0,140})/i,
@@ -767,6 +768,19 @@ const parseExperienceProfile = (job = {}) => {
       confidence: "high",
       evidence: fresherCueMatch[0],
       experienceBucket: "0-1",
+    };
+  }
+
+  const genericExplicitExperienceLabel = explicitExperienceField?.match(
+    GENERIC_EXPLICIT_EXPERIENCE_LABEL_PATTERN,
+  )?.[0];
+  if (genericExplicitExperienceLabel) {
+    return {
+      ...baseProfile,
+      hasExplicitExperience: true,
+      confidence: "medium",
+      evidence: genericExplicitExperienceLabel,
+      experienceBucket: "unspecified",
     };
   }
 

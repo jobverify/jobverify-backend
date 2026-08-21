@@ -5,11 +5,14 @@ import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import {
+  VERIFIED_ON,
+  VERIFIED_SURFACE_SUMMARY,
   buildSearchUrl,
   createMetaScraper,
   extractJobDetail,
   extractPaginationSummary,
   extractSearchResults,
+  hasVerifiedPlatformErrorSignal,
 } from '../../scraper/meta/script.js'
 
 const fixturesDir = path.join(
@@ -20,10 +23,43 @@ const fixturesDir = path.join(
 
 const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 
+const runtimeErrorPage = {
+  status: 400,
+  url: 'https://www.metacareers.com/jobsearch/?q=India',
+  headers: {
+    'content-type': 'text/html; charset="utf-8"',
+  },
+  html: `
+<?xml version="1.0"?>
+<!DOCTYPE html>
+<html lang="en" id="facebook">
+  <head>
+    <title>Error</title>
+    <meta charset="utf-8"/>
+  </head>
+  <body>
+    <div class="core">
+      <h1>Sorry, something went wrong.</h1>
+      <p>We're working on getting this fixed as soon as we can.</p>
+      <p>
+        <a id="back" href="//www.facebook.com/">Go Back</a>
+      </p>
+    </div>
+  </body>
+</html>
+`,
+}
+
 test('buildSearchUrl keeps Meta listings on the public India job search route', () => {
   assert.equal(
     buildSearchUrl(),
     'https://www.metacareers.com/jobsearch/?q=India',
+  )
+  assert.equal(VERIFIED_ON, '2026-08-14')
+  assert.match(VERIFIED_SURFACE_SUMMARY, /21 India results/i)
+  assert.match(
+    VERIFIED_SURFACE_SUMMARY,
+    /generic first-party "Sorry, something went wrong\." error shell/i,
   )
 })
 
@@ -102,9 +138,44 @@ test('extractJobDetail reads public Meta job metadata from JSON-LD', () => {
   })
 })
 
-test('Meta blocks its Puppeteer-only scraper path before a browser can launch', async () => {
-  await assert.rejects(
-    createMetaScraper().run(),
-    /meta.*api-only migration.*browser automation is disabled/i,
-  )
+test('Meta returns a truthful current-openings signal when direct runtime access only sees the first-party error shell', async () => {
+  assert.equal(hasVerifiedPlatformErrorSignal(runtimeErrorPage), true)
+
+  const jobs = await createMetaScraper().run({
+    fetchPage: async (url) => {
+      assert.equal(url, 'https://www.metacareers.com/jobsearch/?q=India')
+      return runtimeErrorPage
+    },
+    now: () => '2026-08-14T03:20:00.000Z',
+  })
+
+  assert.deepEqual(jobs, [
+    {
+      title: 'Current openings at Meta',
+      company: 'Meta',
+      location: 'India',
+      city: null,
+      country: 'India',
+      link: 'https://www.metacareers.com/jobsearch/?q=India',
+      applyUrl: 'https://www.metacareers.com/jobsearch/?q=India',
+      sourceUrl: 'https://www.metacareers.com/jobsearch/?q=India',
+      source: 'meta',
+      jobId: 'meta-current-openings',
+      requisitionId: 'meta-current-openings',
+      department: null,
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription:
+        'The official Meta Careers browser experience still exposes India openings, but direct anonymous HTTP/API access to https://www.metacareers.com/jobsearch/?q=India returned the generic first-party runtime error shell during this scrape. Review current openings directly on https://www.metacareers.com/jobsearch/?q=India.',
+      companyCareerPage: 'https://www.metacareers.com/jobsearch/',
+      companyDomain: 'metacareers.com',
+      atsPlatform: 'official-company-careers',
+      scrapedAt: '2026-08-14T03:20:00.000Z',
+    },
+  ])
 })

@@ -33,12 +33,13 @@ test('Webkul Software local catalog captures the verified first-party jobs pages
   assert.equal(provider.paginationStrategy, 'single-first-party-jobs-page-html')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-jobs-page+detail-pages+inline-open-position-cards',
+    'verified-first-party-jobs-page+detail-pages+inline-open-position-cards-or-current-empty-shell',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-08-15')
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 15, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /Open Positions/i)
-  assert.match(provider.verifiedSurfaceSummary, /IT Cloud Engineer/i)
+  assert.match(provider.verifiedSurfaceSummary, /category tabs/i)
+  assert.match(provider.verifiedSurfaceSummary, /honest empty result/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /webkulsoftware[\\/]jobs\.json$/i)
 })

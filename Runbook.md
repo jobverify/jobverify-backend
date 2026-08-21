@@ -256,6 +256,14 @@ Run all scrapers in parallel without writing to MongoDB:
 npm run scrape:parallel:dry
 ```
 
+For unattended Windows dry runs that should keep retrying public experience repair automatically, use:
+
+```powershell
+npm run scrape:parallel:dry:monitored
+```
+
+This launcher writes `stdout.log`, `stderr.log`, and `experience-monitor.log` under a timestamped `artifacts/run-logs/local-scrape-<stamp>` folder.
+
 ```powershell
 cd jobverify-backend
 $env:SCRAPER_CONCURRENCY = "5"
@@ -265,6 +273,12 @@ $runStamp = Get-Date -Format "yyyyMMddTHHmmss"
 $logDir = "..\artifacts\run-logs\local-scrape-$runStamp"
 New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 npm run scrape:parallel:dry 2>&1 | Tee-Object -FilePath "$logDir\pipeline.log"
+```
+
+If a manual `Tee-Object` dry run hits Workday `HTTP_429` detail instability, keep the missing-experience repair loop running in a second terminal:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\monitorCurrentDryRunExperience.ps1" -LogPath "$logDir\pipeline.log"
 ```
 
 Equivalent direct commands:
@@ -528,3 +542,23 @@ Optional admin-only variables:
 
 - `GITHUB_PAT`
 - `GITHUB_REPO`
+
+
+
+
+## Test Razor Pay
+
+
+### International Card
+Test card
+4111 1111 1111 1111 · CVV: 123 · Expiry: 12/26
+Test UPI
+test@razorpay
+
+
+### Domestic Card
+
+Test card
+4100 2800 0000 1007 · CVV: 123 · Expiry: 12/26
+Test UPI
+test@razorpay

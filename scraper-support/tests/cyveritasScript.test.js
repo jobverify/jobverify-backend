@@ -32,6 +32,7 @@ test('Cyveritas sentinel pins the verified unresolved first-party URL and host c
   assert.equal(cyveritas.isExpectedUnresolvedHostError(new Error('getaddrinfo ENOTFOUND cyveritas.com')), true)
   assert.equal(cyveritas.isExpectedUnresolvedHostError(new Error('DNS name does not exist')), true)
   assert.equal(cyveritas.isExpectedUnresolvedHostError(new Error('queryA ETIMEOUT cyveritas.com')), true)
+  assert.equal(cyveritas.isExpectedUnresolvedHostError(new Error('queryA ECONNREFUSED cyveritas.com')), true)
   assert.equal(cyveritas.isExpectedUnresolvedHostError(new Error('socket hang up')), false)
   assert.equal(cyveritas.hasResolvableFirstPartyHost([]), false)
   assert.equal(cyveritas.hasResolvableFirstPartyHost(['104.21.0.1']), true)

@@ -105,6 +105,37 @@ test('Innspark run returns mapped jobs from the verified first-party careers flo
   assert.equal(jobs[0].company, 'Innspark')
 })
 
+test('Innspark run falls back to a tolerant HTTP parser when the live first-party pages return the broken HTTP/1.1 response shape', async () => {
+  const innspark = await loadInnsparkModule()
+  const requestedPrimaryUrls = []
+  const requestedTolerantUrls = []
+
+  const jobs = await innspark.createInnsparkScraper().run({
+    fetchText: async (url) => {
+      requestedPrimaryUrls.push(url)
+      throw new TypeError('fetch failed | Response does not match the HTTP/1.1 protocol (Missing expected CR after header value)')
+    },
+    fetchProtocolTolerantText: async (url) => {
+      requestedTolerantUrls.push(url)
+      if (url === innspark.CAREERS_URL) return careersHtml
+      if (url === innspark.APPLY_URL) return applyHtml
+      throw new Error(`Unexpected tolerant URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedPrimaryUrls, [
+    innspark.CAREERS_URL,
+    innspark.APPLY_URL,
+  ])
+  assert.deepEqual(requestedTolerantUrls, [
+    innspark.CAREERS_URL,
+    innspark.APPLY_URL,
+  ])
+  assert.equal(jobs.length, 11)
+  assert.equal(jobs[0].source, 'innspark')
+  assert.equal(jobs[0].company, 'Innspark')
+})
+
 test('Innspark scraper fails closed when the verified first-party careers flow changes', async () => {
   const innspark = await loadInnsparkModule()
 

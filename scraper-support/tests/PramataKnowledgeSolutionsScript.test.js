@@ -1,43 +1,20 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const verifiedChallengeHtml = `
+const buildVerifiedChallengeHtml = (url) => `
 <!doctype html>
 <html lang="en-US">
   <head>
     <title>Just a moment...</title>
-    <meta name="robots" content="noindex,nofollow" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <noscript>
+      <meta http-equiv="refresh" content="0;url=${url}?ki-cf-botcl=1" />
+    </noscript>
   </head>
   <body>
-    <div class="main-content">
-      <noscript>
-        <div class="h2">
-          <span id="challenge-error-text">Enable JavaScript and cookies to continue</span>
-        </div>
-      </noscript>
-    </div>
-    <script>
-      window._cf_chl_opt = {
-        cZone: 'www.pramata.com',
-        cUPMDTk: '/careers/?ki-cf-botcl=1',
-      }
-    </script>
-  </body>
-</html>
-`
-
-const verifiedNotFoundHtml = `
-<!doctype html>
-<html lang="en-US">
-  <head>
-    <title>Page not found - Pramata</title>
-  </head>
-  <body>
-    <h1>Page not found - Pramata</h1>
-    <p>We value your privacy</p>
-    <button>Reject All</button>
-    <button>Accept All</button>
-    <p>Necessary Always Active</p>
+    <h1>Checking you before accessing www.pramata.com.</h1>
+    <div class="spinner"></div>
   </body>
 </html>
 `
@@ -50,107 +27,81 @@ const loadModule = async () => {
   }
 }
 
-test('Pramata Knowledge Solutions recognizes the verified Cloudflare challenge on the official careers surface', async () => {
+test('Pramata Knowledge Solutions recognizes the current Cloudflare challenge on its verified blocked careers surfaces', async () => {
   const pramata = await loadModule()
 
   assert.equal(pramata.SOURCE, 'pramataknowledgesolutions')
   assert.equal(pramata.COMPANY_NAME, 'Pramata Knowledge Solutions')
   assert.equal(pramata.OFFICIAL_BRAND_NAME, 'Pramata')
   assert.equal(pramata.CAREERS_URL, 'https://www.pramata.com/careers/')
-  assert.equal(pramata.VERIFIED_ON, '2026-07-17')
-  assert.equal(pramata.hasVerifiedCloudflareChallengeSignal(verifiedChallengeHtml), true)
+  assert.equal(pramata.SAMPLE_ROLE_URL, 'https://www.pramata.com/careers/legal-solution-consultant/')
+  assert.equal(pramata.VERIFIED_ON, '2026-08-14')
   assert.equal(
-    pramata.hasVerifiedNotFoundNoJobsSignal({
-      status: 404,
-      url: 'https://www.pramata.com/careers/',
-      html: verifiedNotFoundHtml,
-    }),
+    pramata.hasVerifiedCloudflareChallengeSignal(
+      buildVerifiedChallengeHtml('https://www.pramata.com/careers/'),
+    ),
     true,
   )
-  assert.equal(pramata.exposesStructuredPublicJobs(verifiedChallengeHtml), false)
+  assert.equal(pramata.exposesStructuredPublicJobs(buildVerifiedChallengeHtml('https://www.pramata.com/careers/')), false)
   assert.equal(
     pramata.exposesStructuredPublicJobs(
-      `${verifiedChallengeHtml}<article class="job-card"><h2>Solution Architect - Contract AI</h2></article>`,
+      `${buildVerifiedChallengeHtml('https://www.pramata.com/careers/')}<article class="job-card"><h2>Solution Architect - Contract AI</h2></article>`,
     ),
     true,
   )
 })
 
-test('Pramata Knowledge Solutions returns an honest empty list while the official careers surface is bot-gated', async () => {
+test('Pramata Knowledge Solutions returns an honest empty list while the verified careers and sample-role routes are Cloudflare-gated', async () => {
   const pramata = await loadModule()
   const requestedUrls = []
 
   const jobs = await pramata.createPramataKnowledgeSolutionsScraper().run({
-    fetchText: async (url) => {
+    fetchPage: async (url) => {
       requestedUrls.push(url)
-      return verifiedChallengeHtml
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [pramata.CAREERS_URL])
-  assert.deepEqual(jobs, [])
-})
-
-test('Pramata Knowledge Solutions returns [] when the direct careers fetch is 403 but the browser-visible page is the verified branded 404', async () => {
-  const pramata = await loadModule()
-  const requestedBrowserUrls = []
-
-  const jobs = await pramata.createPramataKnowledgeSolutionsScraper().run({
-    fetchText: async () => {
-      throw new Error(`HTTP 403 for ${pramata.CAREERS_URL}`)
-    },
-    fetchBrowserPage: async (url) => {
-      requestedBrowserUrls.push(url)
       return {
-        status: 404,
+        status: 403,
         url,
-        html: verifiedNotFoundHtml,
+        finalUrl: url,
+        html: buildVerifiedChallengeHtml(url),
+        errorKind: null,
       }
     },
   })
 
-  assert.deepEqual(requestedBrowserUrls, [pramata.CAREERS_URL])
+  assert.deepEqual(requestedUrls, [
+    pramata.CAREERS_URL,
+    pramata.SAMPLE_ROLE_URL,
+  ])
   assert.deepEqual(jobs, [])
 })
 
-test('Pramata Knowledge Solutions aborts retries when the careers surface stays blocked after fallback', async () => {
+test('Pramata Knowledge Solutions fails closed when the verified blocked surfaces drift or begin exposing public jobs', async () => {
   const pramata = await loadModule()
 
   await assert.rejects(
     pramata.createPramataKnowledgeSolutionsScraper().run({
-      fetchText: async () => {
-        throw new Error(`HTTP 403 for ${pramata.CAREERS_URL}`)
-      },
-      fetchBrowserPage: async (url) => ({
+      fetchPage: async (url) => ({
         status: 403,
         url,
-        html: '<html><body><h1>Forbidden</h1></body></html>',
+        finalUrl: url,
+        html: '<html><body><h1>Unexpected</h1></body></html>',
+        errorKind: null,
       }),
     }),
-    (error) => {
-      assert.match(error.message, /Pramata Knowledge Solutions verified careers surface remains blocked/i)
-      assert.equal(error.abortRetries, true)
-      assert.equal(error.softFailure, true)
-      assert.equal(error.upstreamOutage, true)
-      return true
-    },
-  )
-})
-
-test('Pramata Knowledge Solutions fails closed when the challenge contract drifts or a scraper-visible jobs surface appears', async () => {
-  const pramata = await loadModule()
-
-  await assert.rejects(
-    pramata.createPramataKnowledgeSolutionsScraper().run({
-      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
-    }),
-    /verified pramata knowledge solutions careers surface/i,
+    /verified pramata knowledge solutions careers surfaces/i,
   )
 
   await assert.rejects(
     pramata.createPramataKnowledgeSolutionsScraper().run({
-      fetchText: async () =>
-        `${verifiedChallengeHtml}<article class="job-card"><h2>Solution Architect - Contract AI</h2></article>`,
+      fetchPage: async (url) => ({
+        status: 403,
+        url,
+        finalUrl: url,
+        html: url === pramata.SAMPLE_ROLE_URL
+          ? `${buildVerifiedChallengeHtml(url)}<article class="job-card"><h2>Solution Architect - Contract AI</h2></article>`
+          : buildVerifiedChallengeHtml(url),
+        errorKind: null,
+      }),
     }),
     /scraper-visible public jobs/i,
   )

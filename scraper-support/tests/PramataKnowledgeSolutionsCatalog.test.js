@@ -22,7 +22,7 @@ const buildCatalogReadyProvider = (catalogEntry) => hydrateProviderCatalogEntry(
   modulePath,
 })
 
-test('Pramata Knowledge Solutions local catalog captures the verified bot-gated official careers surface', async () => {
+test('Pramata Knowledge Solutions local catalog captures the currently verified Cloudflare-gated careers routes', async () => {
   const { PRAMATA_KNOWLEDGE_SOLUTIONS_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = buildCatalogReadyProvider(PRAMATA_KNOWLEDGE_SOLUTIONS_CATALOG)
 
@@ -36,15 +36,17 @@ test('Pramata Knowledge Solutions local catalog captures the verified bot-gated 
   assert.equal(provider.contactEmail, 'hr-usa@pramata.com')
   assert.equal(provider.atsPlatform, 'first-party-careers-page-bot-gated')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-public-page')
-  assert.equal(provider.extractionStrategy, 'verified-cloudflare-challenge-page-return-empty')
+  assert.equal(provider.paginationStrategy, 'verified-blocked-careers-routes')
+  assert.equal(provider.extractionStrategy, 'verified-cloudflare-403-careers-routes-return-empty')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'pramata.com')
-  assert.equal(provider.verifiedOn, '2026-07-17')
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /Cloudflare/i)
-  assert.match(provider.verifiedSurfaceSummary, /hr-usa@pramata\.com/i)
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.pramata\.com\/careers\//i)
+  assert.match(provider.verifiedSurfaceSummary, /legal-solution-consultant/i)
+  assert.match(provider.verifiedSurfaceSummary, /403/i)
+  assert.match(provider.verifiedSurfaceSummary, /Just a moment/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /pramataknowledgesolutions[\\/]jobs\.json$/i)
 })

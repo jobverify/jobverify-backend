@@ -68,16 +68,16 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*RedAnt Technologies Ltd \| Building Digital Excellence\s*<\/title>/i.test(page)
-    && /<meta[^>]+name=["']description["'][^>]+content=["']RedAnt Technologies delivers cutting-edge software solutions that transform businesses\.\s*Custom software,\s*cloud solutions,\s*cybersecurity,\s*and more\.["']/i.test(page)
+  return /<title>\s*RedAnt Technologies Ltd \| Software,\s*Cloud,\s*AI\s*&\s*Digital Solutions\s*<\/title>/i.test(page)
+    && /<meta[^>]+name=["']description["'][^>]+content=["']RedAnt Technologies Ltd builds scalable software,\s*mobile,\s*cloud,\s*data,\s*AI and geospatial solutions that help businesses innovate,\s*operate and grow\.["']/i.test(page)
     && /<meta[^>]+name=["']author["'][^>]+content=["']RedAnt Technologies Ltd["']/i.test(page)
-    && /<meta[^>]+property=["']og:title["'][^>]+content=["']RedAnt Technologies Ltd["']/i.test(page)
-    && /<meta[^>]+property=["']og:description["'][^>]+content=["']Building Digital Excellence - Custom software solutions for modern enterprises["']/i.test(page)
+    && /<meta[^>]+property=["']og:title["'][^>]+content=["']RedAnt Technologies Ltd \| Software,\s*Cloud,\s*AI\s*&\s*Digital Solutions["']/i.test(page)
+    && /<meta[^>]+property=["']og:description["'][^>]+content=["']RedAnt Technologies Ltd builds scalable software,\s*mobile,\s*cloud,\s*data,\s*AI and geospatial solutions that help businesses innovate,\s*operate and grow\.["']/i.test(page)
     && /<meta[^>]+name=["']twitter:site["'][^>]+content=["']@RedAntTech["']/i.test(page)
-    && /<script[^>]+src=["']\/assets\/index-tfSLClDB\.js["']/i.test(page)
-    && /<link[^>]+href=["']\/assets\/index-BJxZPvY_\.css["']/i.test(page)
+    && /<script[^>]+src=["']\/assets\/index-[^"']+\.js["']/i.test(page)
+    && /<link[^>]+href=["']\/assets\/index-[^"']+\.css["']/i.test(page)
     && /<div[^>]+id=["']root["'][^>]*><\/div>/i.test(page)
-    && normalized.includes('RedAnt Technologies Ltd | Building Digital Excellence')
+    && normalized.includes('RedAnt Technologies Ltd | Software, Cloud, AI & Digital Solutions')
 }
 
 export const hasCareerLikeLink = (html) =>
@@ -102,9 +102,36 @@ export const isVerifiedMissingRoute = (page = {}) => {
     && normalized.includes('The resource requested could not be found on this server!')
 }
 
+export const isTemporaryHomepageUnavailableError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const causeHostname = String(error?.cause?.hostname ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const diagnostic = `${message}\n${causeMessage}\n${causeHostname}\n${causeCode}`
+
+  return diagnostic.includes('redanttech.com')
+    && (
+      /fetch failed/i.test(diagnostic)
+      || /getaddrinfo/i.test(diagnostic)
+      || /eai_again/i.test(diagnostic)
+      || /enotfound/i.test(diagnostic)
+      || /timeout/i.test(diagnostic)
+      || /socket hang up/i.test(diagnostic)
+    )
+}
+
 export const createRedAntTechnologiesScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+    let homepage
+    try {
+      homepage = await fetchPage(HOMEPAGE_URL)
+    } catch (error) {
+      if (isTemporaryHomepageUnavailableError(error)) {
+        return []
+      }
+
+      throw error
+    }
 
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('RedAnt Technologies verified official homepage no longer matches the known public surface')

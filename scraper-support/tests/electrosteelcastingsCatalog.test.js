@@ -13,7 +13,7 @@ test('getScraperCatalog includes the Electrosteel Castings scraper with official
   assert.ok(electrosteel)
   assert.equal(electrosteel.adapter, 'script')
   assert.equal(electrosteel.atsPlatform, 'official-company-careers')
-  assert.match(electrosteel.companyCareerPage, /electrosteel\.com\/careers-enquiry\.php/i)
+  assert.match(electrosteel.companyCareerPage, /electrosteel\.com\/career\/?$/i)
   assert.equal(electrosteel.companyDomain, 'electrosteel.com')
 })
 

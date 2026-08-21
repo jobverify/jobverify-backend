@@ -20,6 +20,40 @@ const careersHtmlShell = `
 </html>
 `
 
+const currentCareersHtmlShell = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers | Revolut India</title>
+    <meta name="description" content="The future of money is here. Be the one who creates it.">
+  </head>
+  <body>
+    <main>
+      <h1>Careers</h1>
+      <p>We have 500 open positions</p>
+      <p>The future of money is here. Be the one who creates it.</p>
+      <p>Search from 500 open positions</p>
+    </main>
+  </body>
+</html>
+`
+
+const securityCheckHtml = `
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <title>Just a quick security check | Revolut</title>
+    <meta property="og:title" content="Just a quick security check | Revolut" />
+  </head>
+  <body>
+    <main>
+      <h1>Just a quick security check</h1>
+      <p>We need to check that you are a human before you continue.</p>
+    </main>
+  </body>
+</html>
+`
+
 const positions = [
   {
     id: '666ce819-a63a-4642-98c8-66c88af9c63a',
@@ -153,6 +187,8 @@ test('Revolut scraper stays pinned to the verified first-party careers page and 
     'https://www.revolut.com/en-IN/careers/apply/666ce819-a63a-4642-98c8-66c88af9c63a/',
   )
   assert.equal(revolut.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(revolut.hasOfficialCareersSignal(currentCareersHtmlShell), true)
+  assert.equal(revolut.hasVerifiedSecurityCheckSignal(securityCheckHtml), true)
   assert.equal(revolut.hasOfficialCareersSignal('<html><title>Careers</title></html>'), false)
   assert.deepEqual(revolut.extractPositionsPayload(careersHtml), positions)
 })
@@ -338,4 +374,14 @@ test('Revolut fails closed when the careers page markers or embedded positions p
     }),
     /positions payload/i,
   )
+})
+
+test('Revolut returns [] when the verified security-check interstitial is served instead of the careers page', async () => {
+  const revolut = await loadModule()
+
+  const jobs = await revolut.createRevolutScraper().run({
+    fetchText: async () => securityCheckHtml,
+  })
+
+  assert.deepEqual(jobs, [])
 })

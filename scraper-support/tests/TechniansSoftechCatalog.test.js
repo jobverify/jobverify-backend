@@ -17,7 +17,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('Technians Softech local catalog captures the verified Nians first-party openings form contract', async () => {
+test('Technians Softech local catalog captures the verified Nians jobs archive and public WordPress API contract', async () => {
   const { TECHNIANS_SOFTECH_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(TECHNIANS_SOFTECH_CATALOG)
 
@@ -26,20 +26,28 @@ test('Technians Softech local catalog captures the verified Nians first-party op
   assert.equal(provider.companyName, 'Technians Softech')
   assert.equal(provider.officialBrandName, 'Nians')
   assert.equal(provider.adapter, 'script')
+  assert.equal(provider.homepageUrl, 'https://nians.com/')
   assert.equal(provider.companyCareerPage, 'https://nians.com/job/')
   assert.equal(provider.companyDomain, 'nians.com')
-  assert.equal(provider.atsPlatform, 'official-company-jobs-form')
+  assert.equal(provider.atsPlatform, 'official-company-careers-plus-wordpress-jobs-api')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-page-role-select-options')
+  assert.equal(
+    provider.paginationStrategy,
+    'verified-first-party-jobs-archive-plus-paged-wordpress-rest-api',
+  )
   assert.equal(
     provider.extractionStrategy,
-    'verified-roles-page+designation-select-options+shared-application-form',
+    'verified-homepage-career-link+verified-jobs-archive+wp-json-job+embedded-taxonomies+same-domain-job-detail-pages',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.equal(provider.jobsApiUrl, 'https://nians.com/wp-json/wp/v2/job')
+  assert.equal(provider.verifiedPublicJobCount, 59)
+  assert.equal(provider.verifiedIndiaJobCount, 59)
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /Technians is now Nians/i)
-  assert.match(provider.verifiedSurfaceSummary, /Technology\/ IT department \(1\)/i)
-  assert.match(provider.verifiedSurfaceSummary, /Trainee - Social Media/i)
+  assert.match(provider.verifiedSurfaceSummary, /wp-json\/wp\/v2\/job/i)
+  assert.match(provider.verifiedSurfaceSummary, /59 live India openings/i)
+  assert.match(provider.verifiedSurfaceSummary, /job\/business-head/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /technianssoftech[\\/]jobs\.json$/i)
 })

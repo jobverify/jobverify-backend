@@ -160,6 +160,13 @@ export const hasOfficialExaAgJobsPageShape = (html) => {
     )
 }
 
+export const isTemporaryExaAgJobsArchiveError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+
+  return message.includes(CAREER_PAGE_URL)
+    && /HTTP 50[0-4]\b/i.test(message)
+}
+
 export const extractIndiaJobs = (html) => {
   if (!hasOfficialExaAgJobsPageShape(html)) {
     throw new Error('EXA AG jobs archive shape changed; refusing to scrape unverified content')
@@ -269,7 +276,16 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const createExaAgScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const html = await fetchText(CAREER_PAGE_URL)
+    let html
+    try {
+      html = await fetchText(CAREER_PAGE_URL)
+    } catch (error) {
+      if (isTemporaryExaAgJobsArchiveError(error)) {
+        return []
+      }
+
+      throw error
+    }
     const jobs = extractIndiaJobs(html)
 
     return jobs.map((job) => ({

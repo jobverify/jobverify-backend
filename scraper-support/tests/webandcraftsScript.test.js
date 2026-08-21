@@ -21,6 +21,54 @@ const jobsIndexHtml = readFixture('job-openings.html')
 const digitalMarketingPayload = readJsonFixture('digital-marketing.json')
 const softwareEngineeringPayload = readJsonFixture('software-engineering.json')
 
+const buildFlightChunkHtml = (payload) => `
+  <html>
+    <head>
+      <title>Infopark Jobs &amp; Vacancies For Freshers &amp; Experienced At WAC</title>
+      <link rel="canonical" href="https://webandcrafts.com/careers/job-openings">
+    </head>
+    <body>
+      <h1>Job Openings</h1>
+      <script>self.__next_f.push([1,${JSON.stringify(JSON.stringify(payload))}])</script>
+    </body>
+  </html>
+`
+
+const embeddedJobsIndexHtml = buildFlightChunkHtml({
+  jobOpenings: [
+    {
+      id: 10,
+      category_name: 'Business Development',
+      total_openings: 7,
+      is_active: true,
+      job_post: [
+        {
+          id: 78,
+          title: 'Senior Account Executive (Outbound)',
+          slug: 'senior-account-executive-outbound',
+          formatted_experience_range: '5 - 8 years',
+          is_active: true,
+        },
+      ],
+    },
+    {
+      id: 11,
+      category_name: 'Software Engineering',
+      total_openings: 5,
+      is_active: true,
+      job_post: [
+        {
+          id: 64,
+          title: 'Software Engineer - React',
+          slug: 'software-engineer-react',
+          formatted_experience_range: '4+ years',
+          is_active: true,
+        },
+      ],
+    },
+  ],
+})
+
 const loadWebandcraftsModule = async () => {
   try {
     return await import('../../scraper/webandcrafts/script.js')
@@ -62,6 +110,93 @@ test('Webandcrafts extracts the verified first-party job categories from the job
         categoryName: 'Software Engineering',
         totalOpenings: 2,
       },
+    ],
+  )
+})
+
+test('Webandcrafts accepts Monday, August 17, 2026 department payloads when total_openings reflects listing count instead of summed seats', async () => {
+  const webandcrafts = await loadWebandcraftsModule()
+
+  const category = {
+    id: 10,
+    categoryName: 'Business Development',
+    totalOpenings: 3,
+  }
+  const payload = {
+    status: true,
+    results: {
+      total_records: 3,
+      data: [
+        {
+          id: 501,
+          is_active: true,
+          title: 'Sales Development Representative (Outbound)',
+          slug: 'sales-development-representative-outbound',
+          requisition_id: 'WAC-BD-SDR-0501',
+          number_of_openings: 2,
+          location: 'Koratty',
+          job_type: 'On-site',
+          formatted_experience_range: '2 - 4 years',
+          requirements: '<p>Prospecting experience.</p>',
+          technology: [],
+          created_at: '2026-08-17',
+          about: '<p>Own outbound prospecting.</p>',
+          responsibilities: '<ul><li>Build pipeline</li></ul>',
+          join_team_content: '<p>Join us.</p>',
+          department_id: { name: 'Business Development' },
+          wac_pro_job_dept: { id: 10, category_name: 'Business Development' },
+        },
+        {
+          id: 502,
+          is_active: true,
+          title: 'Sales Development Representative (Inbound+Outbound)',
+          slug: 'sales-development-representative-inbound-outbound',
+          requisition_id: 'WAC-BD-SDR-0502',
+          number_of_openings: 3,
+          location: 'Koratty',
+          job_type: 'On-site',
+          formatted_experience_range: '2 - 5 years',
+          requirements: '<p>Pipeline hygiene.</p>',
+          technology: [],
+          created_at: '2026-08-17',
+          about: '<p>Balance inbound and outbound demand.</p>',
+          responsibilities: '<ul><li>Qualify leads</li></ul>',
+          join_team_content: '<p>Grow revenue.</p>',
+          department_id: { name: 'Business Development' },
+          wac_pro_job_dept: { id: 10, category_name: 'Business Development' },
+        },
+        {
+          id: 503,
+          is_active: true,
+          title: 'Senior Account Executive (Outbound)',
+          slug: 'senior-account-executive-outbound',
+          requisition_id: 'WAC-BD-AE-0503',
+          number_of_openings: 2,
+          location: 'Koratty',
+          job_type: 'On-site',
+          formatted_experience_range: '5 - 8 years',
+          requirements: '<p>Enterprise closing experience.</p>',
+          technology: [],
+          created_at: '2026-08-17',
+          about: '<p>Own complex outbound opportunities.</p>',
+          responsibilities: '<ul><li>Close deals</li></ul>',
+          join_team_content: '<p>Scale with WAC.</p>',
+          department_id: { name: 'Business Development' },
+          wac_pro_job_dept: { id: 10, category_name: 'Business Development' },
+        },
+      ],
+    },
+  }
+
+  const jobs = webandcrafts.extractDepartmentJobs(payload, category)
+
+  assert.equal(jobs.length, 3)
+  assert.deepEqual(
+    jobs.map((job) => [job.title, job.department, job.location, job.country]),
+    [
+      ['Sales Development Representative (Outbound)', 'Business Development', 'Koratty, India', 'India'],
+      ['Sales Development Representative (Inbound+Outbound)', 'Business Development', 'Koratty, India', 'India'],
+      ['Senior Account Executive (Outbound)', 'Business Development', 'Koratty, India', 'India'],
     ],
   )
 })
@@ -204,6 +339,73 @@ test('Webandcrafts run verifies the trusted surfaces and returns the first-party
   assert.equal(jobs[0].source, 'webandcrafts')
   assert.equal(jobs[0].companyCareerPage, 'https://webandcrafts.com/careers/job-openings')
   assert.equal(typeof jobs[0].scrapedAt, 'string')
+})
+
+test('Webandcrafts falls back to the embedded first-party job_post payload when the legacy forms API now returns 404', async () => {
+  const webandcrafts = await loadWebandcraftsModule()
+  const legacyApi404 = new Error('HTTP 404 for https://forms.webandcrafts.com/api/careers/career-job-listing')
+  legacyApi404.status = 404
+  legacyApi404.abortRetries = true
+
+  const jobs = await webandcrafts.createWebandcraftsScraper().run({
+    fetchText: async (url) => {
+      if (url === webandcrafts.HOMEPAGE_URL) return homepageHtml
+      if (url === webandcrafts.CAREERS_URL) return careersHtml
+      if (url === webandcrafts.JOBS_INDEX_URL) return embeddedJobsIndexHtml
+
+      throw new Error(`Unexpected text URL: ${url}`)
+    },
+    fetchJson: async () => {
+      throw legacyApi404
+    },
+  })
+
+  assert.deepEqual(
+    jobs.map((job) => ({
+      title: job.title,
+      department: job.department,
+      country: job.country,
+      location: job.location,
+      jobId: job.jobId,
+      requisitionId: job.requisitionId,
+      sourceUrl: job.sourceUrl,
+      applyUrl: job.applyUrl,
+      experienceRequired: job.experienceRequired,
+      jobDescription: job.jobDescription,
+      companyCareerPage: job.companyCareerPage,
+      atsPlatform: job.atsPlatform,
+    })),
+    [
+      {
+        title: 'Senior Account Executive (Outbound)',
+        department: 'Business Development',
+        country: 'India',
+        location: null,
+        jobId: '78',
+        requisitionId: '78',
+        sourceUrl: 'https://webandcrafts.com/careers/job-openings/senior-account-executive-outbound?job_id=78&dept=10',
+        applyUrl: 'https://webandcrafts.com/careers/job-openings/senior-account-executive-outbound?job_id=78&dept=10',
+        experienceRequired: '5 - 8 years',
+        jobDescription: 'Official Webandcrafts opening listed on the first-party public jobs index.\n\nDepartment: Business Development.\n\nThe current first-party jobs index exposes the title and experience range, while the legacy department API now returns 404.',
+        companyCareerPage: 'https://webandcrafts.com/careers/job-openings',
+        atsPlatform: 'webandcrafts-first-party-careers-api',
+      },
+      {
+        title: 'Software Engineer - React',
+        department: 'Software Engineering',
+        country: 'India',
+        location: null,
+        jobId: '64',
+        requisitionId: '64',
+        sourceUrl: 'https://webandcrafts.com/careers/job-openings/software-engineer-react?job_id=64&dept=11',
+        applyUrl: 'https://webandcrafts.com/careers/job-openings/software-engineer-react?job_id=64&dept=11',
+        experienceRequired: '4+ years',
+        jobDescription: 'Official Webandcrafts opening listed on the first-party public jobs index.\n\nDepartment: Software Engineering.\n\nThe current first-party jobs index exposes the title and experience range, while the legacy department API now returns 404.',
+        companyCareerPage: 'https://webandcrafts.com/careers/job-openings',
+        atsPlatform: 'webandcrafts-first-party-careers-api',
+      },
+    ],
+  )
 })
 
 test('Webandcrafts fails closed when the verified homepage, jobs index, or department API contract changes', async () => {

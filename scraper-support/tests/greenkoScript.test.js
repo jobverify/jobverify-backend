@@ -16,6 +16,20 @@ const homepageHtml = `
 </html>
 `
 
+const blockedDarwinboxShellHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <base href="/ms/candidatev2/">
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
+    <script type="module" src="/ms/dboxuilibrary/assets/dboxuilib_dist/www/build/db-components.esm.js"></script>
+  </head>
+  <body>
+    <app-root></app-root>
+  </body>
+</html>
+`
+
 const loadGreenkoModule = async () => {
   try {
     return await import('../../scraper/greenko/script.js')
@@ -36,7 +50,7 @@ test('Greenko exports a stable exact-name wrapper over the verified Greenko Darw
   assert.equal(greenko.ATS_PLATFORM, 'darwinbox')
   assert.equal(greenko.COUNTRY_FILTER, 'India')
   assert.equal(greenko.PAGINATION_STRATEGY, 'browser-session-darwinbox-pagination')
-  assert.equal(greenko.VERIFIED_ON, '2026-07-15')
+  assert.equal(greenko.VERIFIED_ON, '2026-08-14')
   assert.match(greenko.VERIFIED_SURFACE_SUMMARY, /Greenko Group/i)
   assert.match(greenko.VERIFIED_SURFACE_SUMMARY, /Careers/i)
   assert.equal(greenko.hasVerifiedGreenkoHomepageSignal(homepageHtml), true)
@@ -129,4 +143,23 @@ test('Greenko fails closed when the verified homepage drifts materially', async 
     }),
     /verified Greenko homepage/i,
   )
+})
+
+test('Greenko returns [] when the shared verified Darwinbox allJobs shell is now Turnstile-guarded and the listings API is 403-blocked', async () => {
+  const greenko = await loadGreenkoModule()
+
+  const jobs = await greenko.createGreenkoScraper({
+    now: () => '2026-08-13T17:45:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      if (url === greenko.HOMEPAGE_URL) return homepageHtml
+      if (url === greenko.PUBLIC_JOBS_URL) return blockedDarwinboxShellHtml
+      throw new Error(`Unexpected Greenko URL: ${url}`)
+    },
+    fetchListingPage: async () => {
+      throw new Error(`HTTP 403 for ${greenko.PUBLIC_JOBS_URL}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })

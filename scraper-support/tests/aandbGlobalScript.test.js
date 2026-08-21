@@ -116,6 +116,19 @@ const driftedSitemapXml = `
 </urlset>
 `
 
+const unavailableHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Site Currently Unavailable</title>
+  </head>
+  <body>
+    <h1>Site Currently Unavailable</h1>
+    <p>Please check back later.</p>
+  </body>
+</html>
+`
+
 test('A&B Global sentinel pins the verified official homepage, partner popup, sitemap, and adjacent first-party routes', async () => {
   const aandb = await loadAandbGlobalModule()
 
@@ -143,6 +156,10 @@ test('A&B Global sentinel pins the verified official homepage, partner popup, si
   assert.equal(aandb.hasSingleHomepageSitemap(driftedSitemapXml), false)
   assert.equal(aandb.isVerifiedMissingPublicJobRoute({ status: 404, html: missingRouteHtml }), true)
   assert.equal(aandb.isVerifiedMissingPublicJobRoute({ status: 200, html: publicJobsHomepageHtml }), false)
+  assert.equal(
+    aandb.isTemporarilyUnavailableFirstPartyResponse({ status: 503, url: aandb.HOMEPAGE_URL, html: unavailableHtml }),
+    true,
+  )
 })
 
 test('A&B Global sentinel returns [] only while the verified homepage-only no-jobs surface remains unchanged', async () => {
@@ -251,4 +268,23 @@ test('A&B Global sentinel fails closed when the homepage, popup, sitemap, or com
     }),
     /common job route changed materially or now exposes public jobs/i,
   )
+})
+
+test('A&B Global sentinel returns [] when every verified no-public-jobs surface is temporarily unavailable from this runtime', async () => {
+  const aandb = await loadAandbGlobalModule()
+  const requestedUrls = []
+
+  const jobs = await aandb.createAandbGlobalScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      return { status: 503, url, html: unavailableHtml }
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    aandb.HOMEPAGE_URL,
+    aandb.SITEMAP_URL,
+    ...aandb.NO_PUBLIC_JOB_ROUTE_URLS,
+  ])
+  assert.deepEqual(jobs, [])
 })

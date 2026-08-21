@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'lifesigns'
@@ -20,16 +18,6 @@ export const EXPECTED_ROLE_CARDS = {
     employmentType: 'Full-Time',
     city: 'Chennai',
   },
-  '/careers/lead-network-engineer/': {
-    title: 'Lead Network Engineer',
-    employmentType: 'Full-Time',
-    city: 'Delhi',
-  },
-  '/careers/biomedical-field-implementation-engineer-icu-solutions/': {
-    title: 'Biomedical Field Implementation Engineer',
-    employmentType: 'Full-Time',
-    city: 'Bangalore',
-  },
   '/careers/digital-patient-monitoring-executive-cmt/': {
     title: 'Digital Patient Monitoring Executive (Central Monitoring Executive)',
     employmentType: 'Full-Time',
@@ -38,7 +26,7 @@ export const EXPECTED_ROLE_CARDS = {
   '/careers/hospital-support-executive-hse/': {
     title: 'Hospital Support Executive (HSE)',
     employmentType: 'Full-Time',
-    city: 'Mysore',
+    city: 'Surat',
   },
 }
 
@@ -55,16 +43,6 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim() || null
-
-const normalizeEmploymentType = (value) => {
-  const normalized = normalizeWhitespace(value)?.toLowerCase()
-  if (!normalized) return null
-  if (/full/.test(normalized)) return 'Full-Time'
-  if (/part/.test(normalized)) return 'Part-Time'
-  if (/intern/.test(normalized)) return 'Internship'
-  if (/contract/.test(normalized)) return 'Contract'
-  return normalizeWhitespace(value)
-}
 
 const normalizePathname = (value, baseUrl = CAREERS_URL) => {
   try {
@@ -109,27 +87,6 @@ const extractSnapshotLinks = (html = '') => [...String(html ?? '').matchAll(
   .map((match) => normalizeWhitespace(match[2]))
   .filter(Boolean)
 
-const extractSnapshotRoleCards = (html = '') => {
-  const seenPaths = new Set()
-  const roleCards = []
-
-  for (const match of String(html ?? '').matchAll(/<a\b[^>]*href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi)) {
-    const href = normalizeWhitespace(match[2])
-    const pathname = normalizePathname(href, CAREERS_URL)
-    if (!pathname || pathname === '/careers/' || !pathname.startsWith('/careers/') || seenPaths.has(pathname)) {
-      continue
-    }
-
-    const text = normalizeWhitespace(stripHtml(match[3]))
-    if (!text) continue
-
-    seenPaths.add(pathname)
-    roleCards.push({ href, text })
-  }
-
-  return roleCards
-}
-
 const defaultFetchPageSnapshot = async (url) => {
   const response = await fetch(url, {
     headers: DEFAULT_HEADERS,
@@ -144,7 +101,6 @@ const defaultFetchPageSnapshot = async (url) => {
     title: extractHtmlTitle(html),
     text: normalizeWhitespace(stripHtml(html)),
     links: extractSnapshotLinks(html),
-    roleCards: extractSnapshotRoleCards(html),
   }
 }
 
@@ -175,77 +131,33 @@ export const hasOfficialCareersSignal = (snapshot = {}) => {
     && normalizedText.includes('leave a message')
 }
 
-const parseRoleCard = (roleCard = {}) => {
-  const pathname = normalizePathname(roleCard.href, CAREERS_URL)
-  if (!pathname || pathname === '/careers/') return null
-
-  const text = normalizeWhitespace(roleCard.text)
-  if (!text) return null
-
-  const employmentMatch = /(Full-Time|Full time|Full Time|Part-Time|Part time|Internship|Contract)/i.exec(text)
-  if (!employmentMatch) return null
-
-  const title = normalizeWhitespace(text.slice(0, employmentMatch.index))
-  const employmentType = normalizeEmploymentType(employmentMatch[1])
-  const city = normalizeWhitespace(text.slice(employmentMatch.index + employmentMatch[0].length))
-
-  if (!title || !employmentType || !city) return null
-
-  return {
-    pathname,
-    title,
-    employmentType,
-    city,
+export const hasVerifiedRoleDetailSignal = (snapshot = {}, pathname, expected = EXPECTED_ROLE_CARDS[pathname]) => {
+  if (!expected) {
+    return false
   }
+
+  const title = normalizeWhitespace(snapshot.title) || ''
+
+  return snapshot.status === 200
+    && normalizePathname(snapshot.url, CAREERS_URL) === pathname
+    && title === expected.title
 }
 
-export const extractVerifiedOpenRoles = (snapshot) => {
-  if (!hasOfficialCareersSignal(snapshot)) {
+export const extractVerifiedOpenRoles = (careersSnapshot, roleSnapshotsByPath = {}) => {
+  if (!hasOfficialCareersSignal(careersSnapshot)) {
     throw new Error('LifeSigns careers page no longer matches the verified official public surface')
   }
 
-  const expectedPaths = Object.keys(EXPECTED_ROLE_CARDS)
-  const parsedCards = (Array.isArray(snapshot?.roleCards) ? snapshot.roleCards : [])
-    .map(parseRoleCard)
-    .filter(Boolean)
-
-  if (parsedCards.length !== expectedPaths.length) {
-    throw new Error('LifeSigns rendered public openings changed materially')
-  }
-
-  const cardsByPath = new Map()
-
-  for (const card of parsedCards) {
-    if (cardsByPath.has(card.pathname)) {
-      throw new Error(`LifeSigns duplicated rendered opening "${card.pathname}"`)
-    }
-
-    const expected = EXPECTED_ROLE_CARDS[card.pathname]
-    if (!expected) {
-      throw new Error(`LifeSigns unexpected rendered opening "${card.pathname}"`)
-    }
-
-    if (card.title !== expected.title) {
-      throw new Error(`LifeSigns title drifted for "${card.pathname}"`)
-    }
-
-    if (card.employmentType !== expected.employmentType) {
-      throw new Error(`LifeSigns employment type drifted for "${card.pathname}"`)
-    }
-
-    if (card.city !== expected.city) {
-      throw new Error(`LifeSigns location drifted for "${card.pathname}"`)
-    }
-
-    cardsByPath.set(card.pathname, card)
-  }
-
-  return expectedPaths.map((pathname) => {
-    const expected = EXPECTED_ROLE_CARDS[pathname]
+  return Object.entries(EXPECTED_ROLE_CARDS).map(([pathname, expected]) => {
+    const roleSnapshot = roleSnapshotsByPath[pathname]
     const jobId = buildJobId(pathname)
     const roleUrl = buildRoleUrl(pathname)
 
-    if (!cardsByPath.has(pathname) || !jobId) {
+    if (!hasVerifiedRoleDetailSignal(roleSnapshot, pathname, expected)) {
+      throw new Error(`LifeSigns role detail page drifted for "${pathname}"`)
+    }
+
+    if (!jobId) {
       throw new Error(`LifeSigns missing verified opening "${pathname}"`)
     }
 
@@ -280,7 +192,12 @@ export const createLifeSignsScraper = () => ({
     }
 
     const careersSnapshot = await fetchPageSnapshot(CAREERS_URL)
-    const jobs = extractVerifiedOpenRoles(careersSnapshot)
+    const roleSnapshots = Object.fromEntries(
+      await Promise.all(
+        Object.keys(EXPECTED_ROLE_CARDS).map(async (pathname) => [pathname, await fetchPageSnapshot(buildRoleUrl(pathname))]),
+      ),
+    )
+    const jobs = extractVerifiedOpenRoles(careersSnapshot, roleSnapshots)
     const scrapedAt = new Date().toISOString()
 
     return jobs.map((job) => ({

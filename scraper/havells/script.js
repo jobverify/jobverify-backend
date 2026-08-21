@@ -190,6 +190,13 @@ export const buildSearchUrl = ({
 
 export const buildJobDetailUrl = (jobId) => `${PUBLIC_JOBS_BASE_URL}${jobId}`
 
+export const isTemporaryListingOutageError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+
+  return /HTTP 503\b/i.test(message)
+    && message.includes(LISTING_API_BASE_URL)
+}
+
 export const extractSearchResults = (payload) => getRequisitionList(payload)
   .filter((record) => isIndiaJob(record))
   .map((record) => toJob(record))
@@ -271,7 +278,16 @@ export const createHavellsScraper = ({
     const seenJobIds = new Set()
 
     for (let page = 0; page < maxPages; page += 1) {
-      const payload = await fetchJson(buildSearchUrl({ page }))
+      let payload
+      try {
+        payload = await fetchJson(buildSearchUrl({ page }))
+      } catch (error) {
+        if (isTemporaryListingOutageError(error)) {
+          return jobs
+        }
+
+        throw error
+      }
       const pageJobs = extractSearchResults(payload)
       const summary = extractPaginationSummary(payload, { page })
 

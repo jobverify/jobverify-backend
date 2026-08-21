@@ -1,7 +1,22 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { withRetry } from '../utils/retry.js'
+import { getRetryMetadata, withRetry } from '../utils/retry.js'
+
+test('withRetry exposes retry telemetry on successful object results', async () => {
+  let attempts = 0
+  const jobs = await withRetry(() => {
+    attempts += 1
+    if (attempts === 1) throw new Error('temporary upstream failure')
+    return []
+  }, { attempts: 2, baseDelayMs: 0, label: 'telemetry-source' })
+
+  assert.deepEqual(getRetryMetadata(jobs), {
+    attemptsUsed: 2,
+    retries: 1,
+    retryDelayMs: 0,
+  })
+})
 
 test('withRetry stops after the first local runner timeout instead of multiplying overlapping attempts', async () => {
   let attempts = 0

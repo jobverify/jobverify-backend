@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import {
   COMPANY_NAME as BASE_COMPANY,
+  fetchOfficialGreenkoText,
   OFFICIAL_HOMEPAGE_URL as BASE_HOMEPAGE_URL,
   PUBLIC_JOBS_URL as BASE_PUBLIC_JOBS_URL,
   SOURCE as BASE_SOURCE,
@@ -17,20 +18,14 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
+const defaultFetchText = (url) => fetchOfficialGreenkoText(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: 'greenko-official',
+  timeoutMs: 15000,
+})
 
 const normalizeVerifiedHomepageHtml = (html = '') =>
   String(html ?? '').replace(/\u00e2\u20ac\u2122/g, '\u2019')

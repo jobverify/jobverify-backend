@@ -22,15 +22,33 @@ const VERIFIED_SURFACE_HTML = `
   </html>
 `
 
+const VERIFIED_NOT_FOUND_HTML = `
+  <html>
+    <head><title>Page not found - Greencore</title></head>
+    <body>
+      <h1>Page not found</h1>
+      <p>Greencore</p>
+      <a href="https://www.greencore.com/careers/">Careers</a>
+      <a href="https://www.greencore.com/careers/work-with-greencore/">Work With Greencore</a>
+    </body>
+  </html>
+`
+
 test('Freshtime validates the verified official informational surface and stays fail-closed', async () => {
   assert.equal(COMPANY, 'Freshtime')
-  assert.equal(VERIFIED_ON, '2026-07-25')
+  assert.equal(VERIFIED_ON, '2026-08-14')
   assert.match(CAREERS_URL, /greencore\.com\/.*freshtime/i)
   assert.doesNotThrow(() => assertVerifiedOfficialPublicSurface(VERIFIED_SURFACE_HTML))
+  assert.doesNotThrow(() => assertVerifiedOfficialPublicSurface(VERIFIED_NOT_FOUND_HTML))
   assert.doesNotThrow(() => assertNoPublicJobsSurface(VERIFIED_SURFACE_HTML))
+  assert.doesNotThrow(() => assertNoPublicJobsSurface(VERIFIED_NOT_FOUND_HTML))
 
   const scraper = createFreshtimeScraper()
   assert.deepEqual(await scraper.run({ fetchHtml: async () => VERIFIED_SURFACE_HTML }), [])
+  assert.deepEqual(
+    await scraper.run({ fetchPage: async () => ({ status: 404, html: VERIFIED_NOT_FOUND_HTML }) }),
+    [],
+  )
 })
 
 test('Freshtime rejects official-surface drift and public jobs emergence', () => {

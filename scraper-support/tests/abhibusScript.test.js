@@ -142,6 +142,11 @@ test('AbhiBus pins the verified first-party careers page and SmartRecruiters API
     'https://api.smartrecruiters.com/v1/companies/AbhiBus/postings',
   )
   assert.equal(
+    abhibus.hasVerifiedZeroListingsState({ ...smartRecruitersListingsPayload, totalFound: 0, content: [] }),
+    true,
+  )
+  assert.equal(abhibus.hasVerifiedZeroListingsState(smartRecruitersListingsPayload), false)
+  assert.equal(
     abhibus.extractSmartRecruitersCompanyIdentifier(
       'https://api.smartrecruiters.com/v1/companies/AbhiBus/postings?limit=100',
     ),
@@ -224,7 +229,18 @@ test('AbhiBus run validates the official careers page and maps public SmartRecru
   ])
 })
 
-test('AbhiBus fails closed when the verified SmartRecruiters API contract changes or has no India jobs', async () => {
+test('AbhiBus returns [] while the verified SmartRecruiters API reports zero live openings', async () => {
+  const abhibus = await loadAbhiBusModule()
+
+  const jobs = await abhibus.createAbhiBusScraper().run({
+    fetchText: async () => officialCareersHtml,
+    fetchJson: async () => ({ ...smartRecruitersListingsPayload, totalFound: 0, content: [] }),
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('AbhiBus fails closed when the verified SmartRecruiters API contract changes', async () => {
   const abhibus = await loadAbhiBusModule()
 
   await assert.rejects(
@@ -241,13 +257,5 @@ test('AbhiBus fails closed when the verified SmartRecruiters API contract change
       fetchJson: async () => smartRecruitersListingsPayload,
     }),
     /smartrecruiters api handoff/i,
-  )
-
-  await assert.rejects(
-    abhibus.createAbhiBusScraper().run({
-      fetchText: async () => officialCareersHtml,
-      fetchJson: async () => ({ ...smartRecruitersListingsPayload, totalFound: 0, content: [] }),
-    }),
-    /no public India jobs/i,
   )
 })

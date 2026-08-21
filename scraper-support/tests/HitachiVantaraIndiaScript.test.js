@@ -10,6 +10,19 @@ const REMOTE_DETAIL_URL =
 const PUBLIC_APPLY_URL = `${DETAIL_URL}/apply?tm_src=0`
 const FINAL_APPLY_URL =
   'https://hitachi.wd1.myworkdayjobs.com/hitachi/job/Bengaluru-Karnataka-India/Software-Development-Expert_R0133334/apply'
+const challengeHtml = `
+  <!doctype html>
+  <html>
+    <head>
+      <title>Just a moment...</title>
+    </head>
+    <body>
+      <h1>Just a moment...</h1>
+      <p>Enable JavaScript and cookies to continue</p>
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
+    </body>
+  </html>
+`
 
 const listingHtml = `
   <main>
@@ -127,7 +140,7 @@ test('Hitachi Vantara India stays pinned to the verified public company-filtered
     'HITACHI VANTARA INDIA PRIVATE LIMITED',
   )
   assert.equal(hitachiVantaraIndia.SEARCH_PAGE_URL, SEARCH_PAGE_URL)
-  assert.equal(hitachiVantaraIndia.VERIFIED_ON, '2026-07-16')
+  assert.equal(hitachiVantaraIndia.VERIFIED_ON, '2026-08-14')
   assert.equal(hitachiVantaraIndia.buildSearchPageUrl(), SEARCH_PAGE_URL)
   assert.equal(hitachiVantaraIndia.hasOfficialSearchPageSignal(listingHtml), true)
 })
@@ -252,6 +265,44 @@ test('Hitachi Vantara India resolves the final Workday apply URL through the bro
   })
 
   assert.equal(applyUrl, FINAL_APPLY_URL)
+})
+
+test('Hitachi Vantara India treats the verified Cloudflare challenge shell as an honest empty state', async () => {
+  const { createHitachiVantaraIndiaScraper, hasVerifiedCloudflareChallengeSignal } =
+    await loadHitachiVantaraIndiaModule()
+  const requestedUrls = []
+
+  assert.equal(hasVerifiedCloudflareChallengeSignal({
+    status: 403,
+    url: SEARCH_PAGE_URL,
+    headers: {
+      server: 'cloudflare',
+      'cf-ray': '92ab1234abcd1234-BOM',
+      'cf-mitigated': 'challenge',
+    },
+    html: challengeHtml,
+  }), true)
+
+  const jobs = await createHitachiVantaraIndiaScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      return {
+        status: 403,
+        url,
+        headers: {
+          server: 'cloudflare',
+          'cf-ray': '92ab1234abcd1234-BOM',
+          'cf-mitigated': 'challenge',
+        },
+        html: challengeHtml,
+      }
+    },
+    fetchText: async () => assert.fail('Hitachi Vantara India must stop after the verified listing challenge shell'),
+    fetchImpl: async () => assert.fail('Hitachi Vantara India must not resolve apply URLs when the listing page is challenge-gated'),
+  })
+
+  assert.deepEqual(requestedUrls, [SEARCH_PAGE_URL])
+  assert.deepEqual(jobs, [])
 })
 
 test('Hitachi Vantara India falls back to browser-readable HTML when direct text fetch is blocked', async () => {

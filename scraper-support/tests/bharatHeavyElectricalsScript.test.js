@@ -110,6 +110,11 @@ const untrustedLinkCareersHtml = careersHtml.replace(
   'https://jobs.lever.co/bhel/sbd-fta',
 )
 
+const currentFirstPartyHostCareersHtml = careersHtml.replace(
+  'https://sbdapp.bhel.in/FTARecruitment/',
+  'https://bplcareers.bhel.com/fta_tbg/career.jsp',
+)
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/bharatheavyelectricals/script.js')
@@ -259,6 +264,18 @@ test('Bharat Heavy Electricals run validates the homepage handoff and extracts o
       ],
     ],
   )
+})
+
+test('Bharat Heavy Electricals accepts current first-party BHEL subdomains for application handoffs', async () => {
+  const bhel = await loadModule()
+
+  const jobs = bhel.extractJobsFromCareersPage(currentFirstPartyHostCareersHtml, FIXED_SCRAPED_AT)
+  const ftaJob = jobs.find((job) =>
+    job.title === 'Engagement of Engineers and Supervisors on Fixed Tenure Appointment (FTA) basis for SBD Bengaluru')
+
+  assert.ok(ftaJob)
+  assert.equal(ftaJob.sourceUrl, 'https://bplcareers.bhel.com/fta_tbg/career.jsp')
+  assert.equal(ftaJob.applyUrl, 'https://bplcareers.bhel.com/fta_tbg/career.jsp')
 })
 
 test('Bharat Heavy Electricals fails closed when the homepage handoff, careers shell, or trusted opening links drift', async () => {

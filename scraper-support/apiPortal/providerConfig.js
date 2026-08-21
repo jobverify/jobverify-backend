@@ -52,6 +52,20 @@ export const getMappedFieldValue = (payload, selector) => {
   }
   if (typeof selector === 'string') return getValueAtPath(payload, selector)
   if (typeof selector !== 'object' || Array.isArray(selector)) return null
+  if (selector.strategy === 'suffix') {
+    const value = getMappedFieldValue(payload, selector.value)
+    const normalized = value == null ? null : String(value).trim()
+    if (!normalized) return null
+
+    const suffix = (
+      selector.singularSuffix
+      && /^1(?:\.0+)?$/u.test(normalized)
+    )
+      ? selector.singularSuffix
+      : (selector.suffix ?? '')
+
+    return `${normalized}${suffix}`
+  }
   if (selector.strategy === 'template') {
     const values = Object.fromEntries(
       Object.entries(selector.values || {}).map(([token, tokenSelector]) => ([

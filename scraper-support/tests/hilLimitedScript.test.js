@@ -20,7 +20,7 @@ const loadHilLimitedModule = async () => {
   }
 }
 
-test('HIL Limited scraper validates the verified BirlaNu people page and current LinkedIn-only handoff', async () => {
+test('HIL Limited scraper validates the verified BirlaNu people page and current Darwinbox-only handoff', async () => {
   const hillimited = await loadHilLimitedModule()
   const peoplePageHtml = readFixture('people-page.html')
 
@@ -29,13 +29,13 @@ test('HIL Limited scraper validates the verified BirlaNu people page and current
   assert.equal(hillimited.HOMEPAGE_URL, 'https://www.hil.in/')
   assert.equal(hillimited.CAREERS_URL, 'https://birlanu.com/people')
   assert.equal(
-    hillimited.VERIFIED_LINKEDIN_URL,
-    'https://www.linkedin.com/company/birlanu/jobs/',
+    hillimited.VERIFIED_DARWINBOX_URL,
+    'https://iconnect-hil.darwinbox.in/ms/candidatev2/main/careers/allJobs',
   )
   assert.equal(hillimited.hasOfficialCareersSignal(peoplePageHtml), true)
   assert.equal(
     hillimited.extractJoinUsUrl(peoplePageHtml),
-    'https://www.linkedin.com/company/birlanu/jobs/',
+    'https://iconnect-hil.darwinbox.in/ms/candidatev2/main/careers/allJobs',
   )
   assert.equal(hillimited.pageExposesFirstPartyJobRecords(peoplePageHtml), false)
 
@@ -62,7 +62,7 @@ test('HIL Limited scraper fails closed when the verified BirlaNu handoff changes
       fetchText: async (url) => {
         if (url === hillimited.CAREERS_URL) {
           return peoplePageHtml.replace(
-            'https://www.linkedin.com/company/birlanu/jobs/',
+            'https://iconnect-hil.darwinbox.in/ms/candidatev2/main/careers/allJobs',
             'https://birlanu.com/careers/openings',
           )
         }
@@ -70,7 +70,7 @@ test('HIL Limited scraper fails closed when the verified BirlaNu handoff changes
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /verified linkedin handoff/i,
+    /verified darwinbox handoff/i,
   )
 
   await assert.rejects(

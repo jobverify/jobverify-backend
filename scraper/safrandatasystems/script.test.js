@@ -13,11 +13,11 @@ const COMPANY_PAGE_HTML = `
 <!doctype html>
 <html lang="fr">
   <head>
-    <title>Safran Data Systems - Leader mondial en instrumentation d’essais, télémesure et communications pour l’espace | Safran</title>
+    <title>Safran Data Systems - Leader mondial en instrumentation dâ€™essais, tÃ©lÃ©mesure et communications pour lâ€™espace | Safran</title>
   </head>
   <body>
     <h1>Safran Data Systems</h1>
-    <p>Rejoignez Safran Data Systems et découvrez nos <strong>52</strong> opportunités</p>
+    <p>Rejoignez Safran Data Systems et dÃ©couvrez nos <strong>52</strong> opportunitÃ©s</p>
     <a class="c-btn c-btn--arrow-btn" href="/fr/offres?companies%5B%5D=609-safran-data-systems">
       Voir nos offres d'emplois
     </a>
@@ -36,18 +36,18 @@ const FILTERED_PAGE_1_HTML = `
     <select name="companies[]" id="edit-companies">
       <option value="609-safran-data-systems" selected="selected">Safran Data Systems</option>
     </select>
-    <span class="c-structured-news-list__results--nb">3</span>&nbsp;résultat(s)
+    <span class="c-structured-news-list__results--nb">3</span>&nbsp;rÃ©sultat(s)
 
     <div class="c-offer-item js-block-link">
       <div class="c-offer-item__content">
-        <a href="https://www.safran-group.com/fr/offres/france/ulis/ingenieur-qualite-logicielprojet-fh-183425" class="c-offer-item__title js-block-link--href">Ingénieur qualité logiciel/projet F/H</a>
+        <a href="https://www.safran-group.com/fr/offres/france/ulis/ingenieur-qualite-logicielprojet-fh-183425" class="c-offer-item__title js-block-link--href">IngÃ©nieur qualitÃ© logiciel/projet F/H</a>
         <span class="c-offer-item__date">11.07.2026</span>
         <div class="c-offer-item__infos">
           <span class="c-offer-item__infos__item">Safran Data Systems</span>
           <span class="c-offer-item__infos__item">Les Ulis, Ile de France, France</span>
-          <span class="c-offer-item__infos__item">Ingénieur &amp; Cadre</span>
+          <span class="c-offer-item__infos__item">IngÃ©nieur &amp; Cadre</span>
           <span class="c-offer-item__infos__item">CDI</span>
-          <span class="c-offer-item__infos__item">Qualité</span>
+          <span class="c-offer-item__infos__item">QualitÃ©</span>
         </div>
       </div>
     </div>
@@ -59,14 +59,14 @@ const FILTERED_PAGE_1_HTML = `
         <div class="c-offer-item__infos">
           <span class="c-offer-item__infos__item">Safran Data Systems</span>
           <span class="c-offer-item__infos__item">Les Ulis, Ile de France, France</span>
-          <span class="c-offer-item__infos__item">Ingénieur &amp; Cadre</span>
+          <span class="c-offer-item__infos__item">IngÃ©nieur &amp; Cadre</span>
           <span class="c-offer-item__infos__item">CDI</span>
-          <span class="c-offer-item__infos__item">Ingénierie Industrielle</span>
+          <span class="c-offer-item__infos__item">IngÃ©nierie Industrielle</span>
         </div>
       </div>
     </div>
 
-    <a href="?companies%5B0%5D=609-safran-data-systems&amp;page=1" title="Aller à la page suivante" class="pagination__nav-btn pagination__nav-btn--next" rel="next"></a>
+    <a href="?companies%5B0%5D=609-safran-data-systems&amp;page=1" title="Aller Ã  la page suivante" class="pagination__nav-btn pagination__nav-btn--next" rel="next"></a>
   </body>
 </html>
 `
@@ -81,18 +81,18 @@ const FILTERED_PAGE_2_HTML = `
     <select name="companies[]" id="edit-companies">
       <option value="609-safran-data-systems" selected="selected">Safran Data Systems</option>
     </select>
-    <span class="c-structured-news-list__results--nb">3</span>&nbsp;résultat(s)
+    <span class="c-structured-news-list__results--nb">3</span>&nbsp;rÃ©sultat(s)
 
     <div class="c-offer-item js-block-link">
       <div class="c-offer-item__content">
-        <a href="https://www.safran-group.com/fr/offres/france/colombelles/architecte-base-donnees-fh-182282" class="c-offer-item__title js-block-link--href">Architecte en base de données F/H</a>
+        <a href="https://www.safran-group.com/fr/offres/france/colombelles/architecte-base-donnees-fh-182282" class="c-offer-item__title js-block-link--href">Architecte en base de donnÃ©es F/H</a>
         <span class="c-offer-item__date">10.07.2026</span>
         <div class="c-offer-item__infos">
           <span class="c-offer-item__infos__item">Safran Data Systems</span>
           <span class="c-offer-item__infos__item">Colombelles, Normandie, France</span>
-          <span class="c-offer-item__infos__item">Ingénieur &amp; Cadre</span>
+          <span class="c-offer-item__infos__item">IngÃ©nieur &amp; Cadre</span>
           <span class="c-offer-item__infos__item">CDI</span>
-          <span class="c-offer-item__infos__item">Systèmes d&#039;information</span>
+          <span class="c-offer-item__infos__item">SystÃ¨mes d&#039;information</span>
         </div>
       </div>
     </div>
@@ -109,7 +109,7 @@ const createDetailHtml = ({
   description,
   qualifications,
   industry,
-  occupationalCategory = 'Ingénieur & Cadre',
+  occupationalCategory = 'IngÃ©nieur & Cadre',
   employmentType = 'CDI',
   datePosted = '2026-07-11',
   sourceUrl,
@@ -164,13 +164,13 @@ const createDetailHtml = ({
 
 const DETAIL_HTML_BY_URL = {
   'https://www.safran-group.com/fr/offres/france/ulis/ingenieur-qualite-logicielprojet-fh-183425': createDetailHtml({
-    title: 'Ingénieur qualité logiciel/projet F/H',
+    title: 'IngÃ©nieur qualitÃ© logiciel/projet F/H',
     identifier: '2026-183425',
     city: 'Les Ulis',
     state: 'Ile de France',
-    industry: 'Qualité',
-    description: 'Dans un contexte de forte croissance, Safran Data Systems crée un nouveau poste clé au sein de l’équipe Qualité.',
-    qualifications: '• 5+ years in software quality assurance\n• DO-178 / DO-254 experience\n• Strong communication skills',
+    industry: 'QualitÃ©',
+    description: 'Dans un contexte de forte croissance, Safran Data Systems crÃ©e un nouveau poste clÃ© au sein de lâ€™Ã©quipe QualitÃ©.',
+    qualifications: 'â€¢ 5+ years in software quality assurance\nâ€¢ DO-178 / DO-254 experience\nâ€¢ Strong communication skills',
     sourceUrl: 'https://www.safran-group.com/fr/offres/france/ulis/ingenieur-qualite-logicielprojet-fh-183425',
   }),
   'https://www.safran-group.com/fr/offres/france/ulis/responsable-test-informatique-industrielle-fh-175733': createDetailHtml({
@@ -178,19 +178,19 @@ const DETAIL_HTML_BY_URL = {
     identifier: '2026-175733',
     city: 'Les Ulis',
     state: 'Ile de France',
-    industry: 'Ingénierie Industrielle',
-    description: 'Safran Data Systems recherche un responsable test et informatique industrielle pour ses activités spatiales.',
-    qualifications: '• Industrial test leadership\n• Lab and automation experience',
+    industry: 'IngÃ©nierie Industrielle',
+    description: 'Safran Data Systems recherche un responsable test et informatique industrielle pour ses activitÃ©s spatiales.',
+    qualifications: 'â€¢ Industrial test leadership\nâ€¢ Lab and automation experience',
     sourceUrl: 'https://www.safran-group.com/fr/offres/france/ulis/responsable-test-informatique-industrielle-fh-175733',
   }),
   'https://www.safran-group.com/fr/offres/france/colombelles/architecte-base-donnees-fh-182282': createDetailHtml({
-    title: 'Architecte en base de données F/H',
+    title: 'Architecte en base de donnÃ©es F/H',
     identifier: '2026-182282',
     city: 'Colombelles',
     state: 'Normandie',
-    industry: 'Systèmes d’information',
-    description: 'Safran Data Systems développe ses plateformes de données critiques pour les communications spatiales.',
-    qualifications: '• Database architecture\n• Cloud and resilience design',
+    industry: 'SystÃ¨mes dâ€™information',
+    description: 'Safran Data Systems dÃ©veloppe ses plateformes de donnÃ©es critiques pour les communications spatiales.',
+    qualifications: 'â€¢ Database architecture\nâ€¢ Cloud and resilience design',
     sourceUrl: 'https://www.safran-group.com/fr/offres/france/colombelles/architecte-base-donnees-fh-182282',
   }),
 }
@@ -210,7 +210,7 @@ test('Safran Data Systems scraper locks the exact first-party company page and f
   assert.equal(safranDataSystems.extractNextPageUrl(FILTERED_PAGE_1_HTML), NEXT_PAGE_URL)
 })
 
-test('Safran Data Systems default fetch falls back to browser rendering when the first-party site returns HTTP 403', async () => {
+test('Safran Data Systems default fetch falls back to curl before browser rendering when the first-party site returns HTTP 403', async () => {
   const safranDataSystems = await loadSafranDataSystemsModule()
   const calls = []
   const fetchText = safranDataSystems.createDefaultFetchText({
@@ -221,6 +221,10 @@ test('Safran Data Systems default fetch falls back to browser rendering when the
         status: 403,
       }
     },
+    execFileImpl: (command, args, callback) => {
+      calls.push({ type: 'curl', command, args })
+      callback(null, `${COMPANY_PAGE_HTML}\n__SAFRAN_STATUS__200`, '')
+    },
     fetchBrowserText: async (url) => {
       calls.push({ type: 'browser', url })
       return '<html>ok</html>'
@@ -229,10 +233,11 @@ test('Safran Data Systems default fetch falls back to browser rendering when the
 
   const html = await fetchText(COMPANY_PAGE_URL)
 
-  assert.equal(html, '<html>ok</html>')
+  assert.equal(html.includes('Safran Data Systems'), true)
   assert.equal(calls[0].type, 'fetch')
-  assert.equal(calls[1].type, 'browser')
-  assert.equal(calls[1].url, COMPANY_PAGE_URL)
+  assert.equal(calls[1].type, 'curl')
+  assert.match(calls[1].command, /curl(?:\.exe)?$/i)
+  assert.equal(calls.some((call) => call.type === 'browser'), false)
 })
 
 test('Safran Data Systems scraper extracts exact-company cards and detail metadata from first-party pages', async () => {
@@ -241,23 +246,45 @@ test('Safran Data Systems scraper extracts exact-company cards and detail metada
 
   assert.deepEqual(cards, [
     {
-      title: 'Ingénieur qualité logiciel/projet F/H',
+      title: 'IngÃ©nieur qualitÃ© logiciel/projet F/H',
       sourceUrl: 'https://www.safran-group.com/fr/offres/france/ulis/ingenieur-qualite-logicielprojet-fh-183425',
       company: COMPANY,
+      location: 'Les Ulis, Ile de France, France',
+      city: 'Les Ulis',
+      state: 'Ile de France',
+      country: 'France',
+      jobId: '183425',
+      requisitionId: '183425',
+      applyUrl: 'https://www.safran-group.com/fr/offres/france/ulis/ingenieur-qualite-logicielprojet-fh-183425',
+      employmentType: 'CDI',
+      department: 'QualitÃ©',
+      postingDate: '11.07.2026',
+      jobDescription: null,
     },
     {
       title: 'Responsable Test et Informatique Industrielle F/H',
       sourceUrl: 'https://www.safran-group.com/fr/offres/france/ulis/responsable-test-informatique-industrielle-fh-175733',
       company: COMPANY,
+      location: 'Les Ulis, Ile de France, France',
+      city: 'Les Ulis',
+      state: 'Ile de France',
+      country: 'France',
+      jobId: '175733',
+      requisitionId: '175733',
+      applyUrl: 'https://www.safran-group.com/fr/offres/france/ulis/responsable-test-informatique-industrielle-fh-175733',
+      employmentType: 'CDI',
+      department: 'IngÃ©nierie Industrielle',
+      postingDate: '11.07.2026',
+      jobDescription: null,
     },
   ])
 
   const detail = safranDataSystems.extractJobDetail(cards[0], DETAIL_HTML_BY_URL[cards[0].sourceUrl])
 
   assert.deepEqual(detail, {
-    title: 'Ingénieur qualité logiciel/projet F/H',
+    title: 'IngÃ©nieur qualitÃ© logiciel/projet F/H',
     company: COMPANY,
-    department: 'Qualité',
+    department: 'QualitÃ©',
     location: 'Les Ulis, Ile de France, France',
     city: 'Les Ulis',
     state: 'Ile de France',
@@ -271,16 +298,40 @@ test('Safran Data Systems scraper extracts exact-company cards and detail metada
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [
-      '5+ years in software quality assurance',
-      'DO-178 / DO-254 experience',
-      'Strong communication skills',
+      'â€¢ 5+ years in software quality assurance',
+      'â€¢ DO-178 / DO-254 experience',
+      'â€¢ Strong communication skills',
     ],
     postingDate: '2026-07-11',
     closingDate: null,
-    jobDescription: 'Dans un contexte de forte croissance, Safran Data Systems crée un nouveau poste clé au sein de l’équipe Qualité.',
+    jobDescription: 'Dans un contexte de forte croissance, Safran Data Systems crÃ©e un nouveau poste clÃ© au sein de lâ€™Ã©quipe QualitÃ©.',
     remoteStatus: 'On-site',
-    occupationalCategory: 'Ingénieur & Cadre',
+    occupationalCategory: 'IngÃ©nieur & Cadre',
   })
+})
+
+test('Safran Data Systems scraper falls back to listing data when detail pages are Cloudflare-blocked', async () => {
+  const safranDataSystems = await loadSafranDataSystemsModule()
+
+  const jobs = await safranDataSystems.createSafranDataSystemsScraper({
+    now: () => '2026-07-11T08:00:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      if (url === COMPANY_PAGE_URL) return COMPANY_PAGE_HTML
+      if (url === FILTERED_JOBS_URL) return FILTERED_PAGE_1_HTML
+      if (url === NEXT_PAGE_URL) return FILTERED_PAGE_2_HTML
+      if (DETAIL_HTML_BY_URL[url]) {
+        throw new Error(`Safran Data Systems curl fetch returned HTTP 403 for ${url}`)
+      }
+
+      throw new Error(`Unexpected URL ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 3)
+  assert.equal(jobs[0].applyUrl, jobs[0].sourceUrl)
+  assert.equal(jobs[0].jobDescription, null)
+  assert.equal(jobs[0].employmentType, 'CDI')
 })
 
 test('Safran Data Systems scraper run() follows the exact company page, paginated filter, and same-domain detail pages', async () => {
@@ -312,9 +363,9 @@ test('Safran Data Systems scraper run() follows the exact company page, paginate
   ])
   assert.equal(jobs.length, 3)
   assert.deepEqual(jobs[0], {
-    title: 'Architecte en base de données F/H',
+    title: 'Architecte en base de donnÃ©es F/H',
     company: COMPANY,
-    department: 'Systèmes d’information',
+    department: 'SystÃ¨mes dâ€™information',
     location: 'Colombelles, Normandie, France',
     city: 'Colombelles',
     state: 'Normandie',
@@ -328,14 +379,14 @@ test('Safran Data Systems scraper run() follows the exact company page, paginate
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [
-      'Database architecture',
-      'Cloud and resilience design',
+      'â€¢ Database architecture',
+      'â€¢ Cloud and resilience design',
     ],
     postingDate: '2026-07-11',
     closingDate: null,
-    jobDescription: 'Safran Data Systems développe ses plateformes de données critiques pour les communications spatiales.',
+    jobDescription: 'Safran Data Systems dÃ©veloppe ses plateformes de donnÃ©es critiques pour les communications spatiales.',
     remoteStatus: 'On-site',
-    occupationalCategory: 'Ingénieur & Cadre',
+    occupationalCategory: 'IngÃ©nieur & Cadre',
     source: SOURCE,
     link: 'https://www.safran-group.com/fr/offres/france/colombelles/architecte-base-donnees-fh-182282/jobapplication',
     scrapedAt: '2026-07-11T08:00:00.000Z',

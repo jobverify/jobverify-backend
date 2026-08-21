@@ -17,7 +17,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('Artefact local catalog captures the verified first-party careers surface without aliases', async () => {
+test('Artefact local catalog captures the Thursday, August 13, 2026 blocked-first-party plus Greenhouse public surface without aliases', async () => {
   const { ARTEFACT_CATALOG } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(ARTEFACT_CATALOG)
 
@@ -26,28 +26,31 @@ test('Artefact local catalog captures the verified first-party careers surface w
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://www.artefact.com/careers/')
   assert.equal(provider.homepageUrl, 'https://www.artefact.com/')
+  assert.equal(provider.greenhouseBoardUrl, 'https://job-boards.greenhouse.io/artefact')
+  assert.equal(provider.greenhouseJobsApiUrl, 'https://boards-api.greenhouse.io/v1/boards/artefact/jobs?content=true')
   assert.equal(provider.companyDomain, 'artefact.com')
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'official-homepage-plus-first-party-careers-list-pages-plus-detail-pages',
+    'bunkerweb-blocked-first-party-pages-plus-public-greenhouse-board-api',
   )
   assert.equal(
     provider.extractionStrategy,
-    'official-homepage+official-careers-page+first-party-list-pages+first-party-detail-pages+greenhouse-apply-links',
+    'verified-bot-detection-first-party-pages+public-greenhouse-board+greenhouse-jobs-api+india-location-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-08-13')
   assert.match(provider.modulePath, /artefact[\\/]script\.js$/i)
-  assert.match(provider.verifiedSurfaceSummary, /July 15, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.artefact\.com\/careers\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.artefact\.com\/careers\/explore-our-jobs\/page\/2\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.artefact\.com\/job\/data-analyst-india-2026\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.artefact\.com\/job\/data-architect\//i)
+  assert.match(provider.verifiedSurfaceSummary, /Bot Detection/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/job-boards\.greenhouse\.io\/artefact/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/boards-api\.greenhouse\.io\/v1\/boards\/artefact\/jobs\?content=true/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/job-boards\.greenhouse\.io\/artefact\/jobs\/8360407002/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/job-boards\.greenhouse\.io\/artefact\/jobs\/7884340002/i)
+  assert.match(provider.verifiedSurfaceSummary, /5 India roles/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Artefact'), false)
 })
 

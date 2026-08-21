@@ -20,7 +20,7 @@ const homepageHtml = `
       <h1>Learning made fun for Curious Minds!</h1>
       <p>Trusted by Olympiad Rankers</p>
       <a href="https://www.pw.live/about-us">About Us</a>
-      <footer>Copyright © 2025 Physicswallah Ltd. All rights reserved.</footer>
+      <footer>Copyright © 2025 Learning Platform Ltd. All rights reserved.</footer>
     </body>
   </html>
 `
@@ -36,7 +36,7 @@ const currentHomepageHtml = `
       <h1>Learning made fun for Curious Minds!</h1>
       <p>Trusted by Olympiad Rankers</p>
       <a href="https://www.pw.live/about-us">About Us</a>
-      <footer>Copyright © 2025 Physics Wallah Ltd. All rights reserved.</footer>
+      <footer>Copyright © 2025 Learning Platform Ltd. All rights reserved.</footer>
     </body>
   </html>
 `
@@ -49,7 +49,7 @@ const contactHtml = `
     </head>
     <body>
       <h1>Contact Us</h1>
-      <p>Welcome to CuriousJr powered by Physicswallah!</p>
+      <p>Welcome to CuriousJr powered by our learning platform!</p>
       <p>cjr_support@pw.live</p>
       <p>8448828113</p>
     </body>
@@ -60,7 +60,7 @@ const parentAboutHtml = `
   <!doctype html>
   <html lang="en">
     <head>
-      <title>About Us - Physics Wallah</title>
+      <title>About Us - Learning Platform</title>
     </head>
     <body>
       <nav>

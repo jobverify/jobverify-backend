@@ -80,7 +80,19 @@ export const hasOfficialCareersSignal = (html) => {
 
   return /<title[^>]*>\s*Careers \| Revolut India\s*<\/title>/i.test(source)
     && /\bopen positions\b/i.test(source)
-    && /Join the people creating a one-stop shop for financial freedom/i.test(source)
+    && (
+      /Join the people creating a one-stop shop for financial freedom/i.test(source)
+      || /The future of money is here\.\s*Be the one who creates it\./i.test(source)
+      || /Search from \d+ open positions/i.test(source)
+    )
+}
+
+export const hasVerifiedSecurityCheckSignal = (html = '') => {
+  const source = String(html ?? '')
+
+  return /<title[^>]*>\s*Just a quick security check \| Revolut\s*<\/title>/i.test(source)
+    && /\bsecurity check\b/i.test(source)
+    && /revolut/i.test(source)
 }
 
 export const extractPositionsPayload = (html = '') => {
@@ -97,14 +109,66 @@ export const extractPositionsPayload = (html = '') => {
   }
 }
 
-const defaultFetchText = (url, timeoutMs = DEFAULT_NAVIGATION_TIMEOUT_MS) => fetchTextWithRetry(url, {
-  headers: {
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'User-Agent': USER_AGENT,
-  },
-  label: 'revolut-text',
-  timeoutMs,
-})
+const createTimeoutSignal = (timeoutMs) =>
+  typeof AbortSignal?.timeout === 'function'
+    ? AbortSignal.timeout(timeoutMs)
+    : undefined
+
+const findErrorInChain = (error, predicate) => {
+  const seen = new Set()
+  let current = error
+
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    if (predicate(current)) return current
+    current = current?.cause
+  }
+
+  return null
+}
+
+const hasHttpStatus = (error, status) =>
+  Boolean(findErrorInChain(error, (candidate) => Number(candidate?.status) === status))
+
+const fetchTextAllowingSecurityCheck = async (url, timeoutMs = DEFAULT_NAVIGATION_TIMEOUT_MS) => {
+  try {
+    return await fetchTextWithRetry(url, {
+      headers: {
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'User-Agent': USER_AGENT,
+      },
+      label: 'revolut-text',
+      timeoutMs,
+    })
+  } catch (error) {
+    if (!hasHttpStatus(error, 403)) {
+      throw error
+    }
+
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'User-Agent': USER_AGENT,
+      },
+      redirect: 'follow',
+      signal: createTimeoutSignal(timeoutMs),
+    })
+    const html = await response.text()
+
+    if (response.status === 403 && hasVerifiedSecurityCheckSignal(html)) {
+      return html
+    }
+
+    if (response.ok) {
+      return html
+    }
+
+    throw error
+  }
+}
+
+const defaultFetchText = (url, timeoutMs = DEFAULT_NAVIGATION_TIMEOUT_MS) =>
+  fetchTextAllowingSecurityCheck(url, timeoutMs)
 
 export const buildPositionDetailUrl = (jobId, title = null) => {
   const normalizedId = normalizeWhitespace(jobId)
@@ -177,8 +241,11 @@ export const createRevolutScraper = ({
     fetchText = (url) => defaultFetchText(url, navigationTimeoutMs),
     fetchPublicJobText = null,
     now = defaultNow,
-  } = {}) {
+    } = {}) {
     const careersHtml = await fetchText(CAREERS_PAGE_URL)
+    if (hasVerifiedSecurityCheckSignal(careersHtml)) {
+      return []
+    }
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Response is not the verified official Revolut careers page')
     }

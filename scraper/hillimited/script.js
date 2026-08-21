@@ -9,7 +9,7 @@ export const SOURCE = 'hillimited'
 export const COMPANY = 'HIL Limited'
 export const HOMEPAGE_URL = 'https://www.hil.in/'
 export const CAREERS_URL = 'https://birlanu.com/people'
-export const VERIFIED_LINKEDIN_URL = 'https://www.linkedin.com/company/birlanu/jobs/'
+export const VERIFIED_DARWINBOX_URL = 'https://iconnect-hil.darwinbox.in/ms/candidatev2/main/careers/allJobs'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -99,8 +99,8 @@ export const createHilLimitedScraper = () => ({
     }
 
     const joinUsUrl = extractJoinUsUrl(careersHtml)
-    if (joinUsUrl !== VERIFIED_LINKEDIN_URL) {
-      throw new Error('HIL Limited BirlaNu people page no longer links to the verified LinkedIn handoff')
+    if (joinUsUrl !== VERIFIED_DARWINBOX_URL) {
+      throw new Error('HIL Limited BirlaNu people page no longer links to the verified Darwinbox handoff')
     }
 
     if (pageExposesFirstPartyJobRecords(careersHtml)) {

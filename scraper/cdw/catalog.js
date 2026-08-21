@@ -13,14 +13,14 @@ export const CDW_CATALOG = {
   companyDomain: 'cdwjobs.com',
   atsPlatform: 'first-party-careers-site',
   countryFilter: 'India',
-  paginationStrategy: 'server-rendered-search-results-plus-detail-pages',
+  paginationStrategy: 'server-rendered-search-results-plus-detail-pages-or-blocked-empty-sentinel',
   extractionStrategy:
-    'verified-search-results-page+india-country-filter-results+detail-pages',
+    'verified-search-results-page-or-cloudflare-blocked-shell+verified-india-route-or-blocked-india-route+detail-pages-or-empty-sentinel',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-01',
+  verifiedOn: '2026-08-13',
   verifiedSurfaceSummary:
-    'Verified on Saturday, August 1, 2026 that https://www.cdwjobs.com/search/jobs remained the live first-party CDW Job Search Results page, that the Country India filter linked to https://www.cdwjobs.com/search/jobs/in/country/india with 4 open jobs, and that public India detail pages included Senior Consultant-QA in Bangalore and Senior Data Engineer-2 in Hyderabad.',
+    'Verified on Thursday, August 13, 2026 that both https://www.cdwjobs.com/search/jobs and https://www.cdwjobs.com/search/jobs/in/country/india currently return a Cloudflare "Just a moment..." challenge shell with HTTP 403. Because the live first-party search surface and India-filtered route are both blocked, the public India inventory is not trustworthily enumerable on the verified date and this provider returns an empty sentinel until the verified search pages become publicly accessible again.',
   modulePath: path.join(currentDir, 'script.js'),
   dryRunFile: 'cdw/jobs.json',
 }

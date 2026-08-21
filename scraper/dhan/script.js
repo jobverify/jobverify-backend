@@ -21,6 +21,11 @@ export const CAREERS_CONFIG_URL = DHAN_CATALOG.careersConfigUrl
 export const CAREERS_FILTER_PARAMS_URL = DHAN_CATALOG.careersFilterParamsUrl
 export const JOBS_API_URL = DHAN_CATALOG.jobsApiUrl
 export const DEFAULT_PAGE_SIZE = 12
+const VERIFIED_BOARD_API_404_PATHS = [
+  '/api/careers/configurations/',
+  '/api/careers/filter-params/',
+  '/api/jobs/jobsearch/',
+]
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -231,6 +236,13 @@ export const hasZappyhireFilterParamsSignal = (payload = {}) => {
     && jobTypes.some((jobType) => jobType?.value === 'full_time' && jobType?.label === 'Full Time')
 }
 
+export const isVerifiedBoardApi404Error = (error) => {
+  const message = String(error?.message ?? error ?? '')
+
+  return /HTTP 404\b/i.test(message)
+    && VERIFIED_BOARD_API_404_PATHS.some((path) => message.includes(`${CAREERS_API_ORIGIN}${path}`))
+}
+
 const hasValidJobSearchPayloadShape = (payload = {}) =>
   payload?.status === 1
   && Number.isFinite(Number(payload?.results?.total?.value ?? 0))
@@ -360,53 +372,61 @@ export const createDhanScraper = ({
       throw new Error('Dhan verified Zappyhire board shell changed materially')
     }
 
-    const configPayload = await fetchJson(CAREERS_CONFIG_URL)
-    if (!hasZappyhireConfigSignal(configPayload)) {
-      throw new Error('Dhan verified Zappyhire configuration changed materially')
-    }
-
-    const filterParamsPayload = await fetchJson(CAREERS_FILTER_PARAMS_URL)
-    if (!hasZappyhireFilterParamsSignal(filterParamsPayload)) {
-      throw new Error('Dhan verified Zappyhire filter params changed materially')
-    }
-
     const normalizedJobs = []
     const seenJobIds = new Set()
     const safePageSize = normalizePageSize(pageSize)
 
-    for (let page = 1; page <= maxPages; page += 1) {
-      const payload = await fetchJson(buildJobsApiUrl({ page, pageSize: safePageSize }))
-      const hits = extractJobHits(payload)
-      const totalHits = extractTotalHits(payload)
-      const pageJobs = hits.map((hit) => normalizeZappyhireJob(hit)).filter(Boolean)
-
-      if (page === 1 && totalHits > 0 && hits.length === 0) {
-        throw new Error('Dhan verified jobs API changed materially: positive totals no longer produce first-page hits')
+    try {
+      const configPayload = await fetchJson(CAREERS_CONFIG_URL)
+      if (!hasZappyhireConfigSignal(configPayload)) {
+        throw new Error('Dhan verified Zappyhire configuration changed materially')
       }
 
-      if (page === 1 && hits.length > 0 && pageJobs.length === 0) {
-        throw new Error('Dhan verified jobs API changed materially: first-page hits no longer normalize into India jobs')
+      const filterParamsPayload = await fetchJson(CAREERS_FILTER_PARAMS_URL)
+      if (!hasZappyhireFilterParamsSignal(filterParamsPayload)) {
+        throw new Error('Dhan verified Zappyhire filter params changed materially')
       }
 
-      for (const job of pageJobs) {
-        if (seenJobIds.has(job.jobId)) continue
-        seenJobIds.add(job.jobId)
+      for (let page = 1; page <= maxPages; page += 1) {
+        const payload = await fetchJson(buildJobsApiUrl({ page, pageSize: safePageSize }))
+        const hits = extractJobHits(payload)
+        const totalHits = extractTotalHits(payload)
+        const pageJobs = hits.map((hit) => normalizeZappyhireJob(hit)).filter(Boolean)
 
-        normalizedJobs.push({
-          ...job,
-          source: SOURCE,
-          companyDomain: PROVIDER_METADATA.companyDomain,
-          atsPlatform: PROVIDER_METADATA.atsPlatform,
-          companyCareerPage: CAREERS_URL,
-          link: job.applyUrl || job.sourceUrl,
-          scrapedAt: (overrideNow || now)(),
-        })
+        if (page === 1 && totalHits > 0 && hits.length === 0) {
+          throw new Error('Dhan verified jobs API changed materially: positive totals no longer produce first-page hits')
+        }
+
+        if (page === 1 && hits.length > 0 && pageJobs.length === 0) {
+          throw new Error('Dhan verified jobs API changed materially: first-page hits no longer normalize into India jobs')
+        }
+
+        for (const job of pageJobs) {
+          if (seenJobIds.has(job.jobId)) continue
+          seenJobIds.add(job.jobId)
+
+          normalizedJobs.push({
+            ...job,
+            source: SOURCE,
+            companyDomain: PROVIDER_METADATA.companyDomain,
+            atsPlatform: PROVIDER_METADATA.atsPlatform,
+            companyCareerPage: CAREERS_URL,
+            link: job.applyUrl || job.sourceUrl,
+            scrapedAt: (overrideNow || now)(),
+          })
+        }
+
+        const totalPages = Math.max(1, Math.ceil(totalHits / safePageSize))
+        if (page >= totalPages || hits.length === 0) {
+          break
+        }
+      }
+    } catch (error) {
+      if (isVerifiedBoardApi404Error(error)) {
+        return []
       }
 
-      const totalPages = Math.max(1, Math.ceil(totalHits / safePageSize))
-      if (page >= totalPages || hits.length === 0) {
-        break
-      }
+      throw error
     }
 
     return normalizedJobs

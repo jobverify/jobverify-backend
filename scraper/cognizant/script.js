@@ -152,6 +152,18 @@ const COGNIZANT_HEADERS = {
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 }
 
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
+
+const getHeader = (page = {}, name) => {
+  const normalizedName = String(name ?? '').toLowerCase()
+  const headers = page?.headers
+  if (!headers) return ''
+  if (typeof headers.get === 'function') {
+    return String(headers.get(normalizedName) || headers.get(name) || '')
+  }
+  return String(headers[normalizedName] || headers[name] || '')
+}
+
 const extractHtmlTitle = (html) =>
   String(html ?? '').match(/<title[^>]*>([^<]*)<\/title>/i)?.[1]?.trim() || null
 
@@ -212,6 +224,38 @@ const runCurlRequest = (url, execFileImpl = execFile) => new Promise((resolve, r
     resolve(output)
   })
 })
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: COGNIZANT_HEADERS,
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    headers: Object.fromEntries(response.headers.entries()),
+    html: await response.text(),
+  }
+}
+
+export const hasVerifiedCloudflareChallengeSignal = (page = {}) => {
+  const html = getPageHtml(page)
+  return Number(page.status) === 403
+    && hasCloudflareChallengeSignal(html)
+    && /Enable JavaScript and cookies to continue/i.test(html)
+}
+
+export const isVerifiedCloudflareChallengedPage = (page = {}, expectedUrl) => {
+  const finalUrl = String(page.url || expectedUrl)
+
+  return finalUrl === expectedUrl
+    && /cloudflare/i.test(getHeader(page, 'server'))
+    && getHeader(page, 'cf-ray').trim().length > 0
+    && getHeader(page, 'cf-mitigated').toLowerCase() === 'challenge'
+    && hasVerifiedCloudflareChallengeSignal(page)
+}
 
 export const extractSearchResults = (html) => [...String(html).matchAll(
   /<div class="card card-job" data-id="[^"]+">[\s\S]*?<\/div>\s*<\/div>/gi,
@@ -355,11 +399,23 @@ export const createCognizantScraper = ({
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
+    const fetchPage = options.fetchPage || defaultFetchPage
     const jobs = []
     const seenJobIds = new Set()
 
     for (let page = 1; page <= maxPages; page += 1) {
-      const listingHtml = await fetchText(buildSearchUrl({ page }))
+      const listingUrl = buildSearchUrl({ page })
+      let listingHtml
+      try {
+        listingHtml = await fetchText(listingUrl)
+      } catch (error) {
+        const blockedPage = await fetchPage(listingUrl)
+        if (isVerifiedCloudflareChallengedPage(blockedPage, listingUrl)) {
+          return []
+        }
+
+        throw error
+      }
       const listings = extractSearchResults(listingHtml)
       const summary = extractPaginationSummary(listingHtml)
 

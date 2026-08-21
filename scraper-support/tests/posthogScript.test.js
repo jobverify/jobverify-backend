@@ -13,19 +13,13 @@ const CAREERS_HTML = `
   </head>
   <body>
     <main>
-      <h1>Current open roles</h1>
-      <div>Location</div>
-      <div>Remote (Hybrid UK)</div>
-      <div>Timezone(s)</div>
-      <div>GMT 0</div>
-      <select aria-label="Open roles">
-        <option value="Technical Customer Success Manager - Americas">
-          Technical Customer Success Manager - Americas
-        </option>
-        <option value="Technical Account Manager - EMEA">
-          Technical Account Manager - EMEA
-        </option>
-      </select>
+      <h1>Who's hiring?</h1>
+      <p>Our small teams are looking to add 12 team members.</p>
+      <div>Select a role</div>
+      <div>AI Research Engineer</div>
+      <div>Backend Engineer - Ingestion (Europe/UK timezone)</div>
+      <div>Technical Account Executive - EMEA</div>
+      <div>Technical Customer Success Manager - Americas</div>
       <a href="/careers/ai-research-engineer">Read more</a>
     </main>
   </body>
@@ -37,8 +31,8 @@ const PAGE_DATA_PAYLOAD = {
     data: {
       ashbyJobPosting: {
         fields: {
-          title: 'AI Research Engineer',
-          slug: '/careers/ai-research-engineer',
+          title: 'Backend Engineer - Ingestion (Europe/UK timezone)',
+          slug: '/careers/backend-engineer-ingestion-(europeuk-timezone)',
         },
       },
       allJobPostings: {
@@ -51,16 +45,19 @@ const PAGE_DATA_PAYLOAD = {
             },
             parent: {
               customFields: [
-                { title: 'Timezone', value: '["UK (GMT 0)"]' },
-                { title: 'Timezone(s)', value: 'GMT 0 ' },
+                {
+                  title: 'Timezone',
+                  value: '["UK (GMT 0)"]',
+                },
+                { title: 'Timezone(s)', value: 'GMT 0' },
               ],
             },
           },
           {
-            departmentName: 'Sales & Customer Success',
+            departmentName: 'Engineering',
             fields: {
-              title: 'Technical Account Manager - EMEA',
-              slug: '/careers/technical-account-manager-emea',
+              title: 'Backend Engineer - Ingestion (Europe/UK timezone)',
+              slug: '/careers/backend-engineer-ingestion-(europeuk-timezone)',
             },
             parent: {
               customFields: [
@@ -68,7 +65,23 @@ const PAGE_DATA_PAYLOAD = {
                   title: 'Timezone',
                   value: '["Europe/Africa (GMT +2 to GMT 0)","UK (GMT 0)"]',
                 },
-                { title: 'Timezone(s)', value: 'GMT +2 to GMT ' },
+                { title: 'Timezone(s)', value: 'GMT 0 to GMT +2' },
+              ],
+            },
+          },
+          {
+            departmentName: 'Sales & Customer Success',
+            fields: {
+              title: 'Technical Account Executive - EMEA',
+              slug: '/careers/technical-account-executive-emea',
+            },
+            parent: {
+              customFields: [
+                {
+                  title: 'Timezone',
+                  value: '["Europe/Africa (GMT +2 to GMT 0)","UK (GMT 0)"]',
+                },
+                { title: 'Timezone(s)', value: 'GMT +2:00 to GMT 0:00' },
               ],
             },
           },
@@ -134,14 +147,17 @@ test('PostHog pins the verified first-party careers page and Gatsby page-data co
   assert.equal(posthog.SOURCE, 'posthog')
   assert.equal(posthog.COMPANY, 'PostHog')
   assert.equal(posthog.OFFICIAL_BRAND_NAME, 'PostHog')
-  assert.equal(posthog.VERIFIED_ON, '2026-07-25')
+  assert.equal(posthog.VERIFIED_ON, '2026-08-21')
   assert.equal(posthog.CAREERS_PAGE_URL, 'https://posthog.com/careers')
   assert.equal(
     posthog.DISCOVERY_PAGE_DATA_URL,
     'https://posthog.com/page-data/careers/ai-research-engineer/page-data.json',
   )
   assert.equal(posthog.hasVerifiedCareersPageSignal(CAREERS_HTML), true)
-  assert.equal(posthog.extractVerifiedRoleSlug(CAREERS_HTML), '/careers/ai-research-engineer')
+  assert.equal(
+    posthog.extractVerifiedRoleSlug(CAREERS_HTML),
+    '/careers/ai-research-engineer',
+  )
   assert.equal(
     posthog.buildPageDataUrl('/careers/ai-research-engineer'),
     'https://posthog.com/page-data/careers/ai-research-engineer/page-data.json',
@@ -155,11 +171,18 @@ test('PostHog pins the verified first-party careers page and Gatsby page-data co
       timezones: ['UK (GMT 0)', 'GMT 0'],
     },
     {
-      title: 'Technical Account Manager - EMEA',
-      slug: '/careers/technical-account-manager-emea',
-      sourceUrl: 'https://posthog.com/careers/technical-account-manager-emea',
+      title: 'Backend Engineer - Ingestion (Europe/UK timezone)',
+      slug: '/careers/backend-engineer-ingestion-(europeuk-timezone)',
+      sourceUrl: 'https://posthog.com/careers/backend-engineer-ingestion-(europeuk-timezone)',
+      department: 'Engineering',
+      timezones: ['Europe/Africa (GMT +2 to GMT 0)', 'UK (GMT 0)', 'GMT 0 to GMT +2'],
+    },
+    {
+      title: 'Technical Account Executive - EMEA',
+      slug: '/careers/technical-account-executive-emea',
+      sourceUrl: 'https://posthog.com/careers/technical-account-executive-emea',
       department: 'Sales & Customer Success',
-      timezones: ['Europe/Africa (GMT +2 to GMT 0)', 'UK (GMT 0)', 'GMT +2 to GMT'],
+      timezones: ['Europe/Africa (GMT +2 to GMT 0)', 'UK (GMT 0)', 'GMT +2:00 to GMT 0:00'],
     },
     {
       title: 'Technical Customer Success Manager - Americas',

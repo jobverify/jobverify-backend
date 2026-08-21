@@ -192,6 +192,14 @@ const parseOpeningsCount = (value) => {
   return Number.isInteger(count) && count > 0 ? count : null
 }
 
+const buildIndexOnlyJobDescription = (categoryName) => [
+  'Official Webandcrafts opening listed on the first-party public jobs index.',
+  categoryName ? `Department: ${categoryName}.` : null,
+  'The current first-party jobs index exposes the title and experience range, while the legacy department API now returns 404.',
+]
+  .filter(Boolean)
+  .join('\n\n')
+
 const parseJobOpeningsPayload = (html) => {
   const payloadChunk = extractFlightChunks(html).find((chunk) => chunk.includes('"jobOpenings":['))
   if (!payloadChunk) {
@@ -208,6 +216,31 @@ const parseJobOpeningsPayload = (html) => {
   } catch {
     throw new Error('Webandcrafts verified public jobs index category payload is no longer valid JSON')
   }
+}
+
+const isLegacyDepartmentApiMissingError = (error) => {
+  const queue = [error]
+  const visited = new Set()
+
+  while (queue.length > 0) {
+    const current = queue.shift()
+    if (!current || visited.has(current)) continue
+    visited.add(current)
+
+    const status = Number(current?.status)
+    const message = String(current?.message || '')
+    if (
+      status === 404
+      && (message.includes(JOBS_API_URL) || message.includes('career-job-listing'))
+    ) {
+      return true
+    }
+
+    if (current?.cause) queue.push(current.cause)
+    if (Array.isArray(current?.errors)) queue.push(...current.errors)
+  }
+
+  return false
 }
 
 export const hasOfficialHomepageSignal = (html) => {
@@ -272,6 +305,67 @@ export const extractJobCategories = (html) => {
   return categories
 }
 
+const extractEmbeddedJobsIndexPostings = (html) => {
+  const categories = parseJobOpeningsPayload(html)
+    .map((item) => ({
+      id: Number(item?.id),
+      categoryName: normalizeWhitespace(item?.category_name),
+      isActive: item?.is_active === true,
+      jobPosts: Array.isArray(item?.job_post) ? item.job_post : [],
+    }))
+    .filter((item) => item.isActive && Number.isFinite(item.id) && item.categoryName)
+
+  const jobs = categories.flatMap((category) => category.jobPosts
+    .map((job) => {
+      const jobId = Number(job?.id)
+      const title = normalizeWhitespace(job?.title)
+      const slug = normalizeWhitespace(job?.slug)
+
+      if (job?.is_active !== true || !Number.isFinite(jobId) || !title || !slug) {
+        return null
+      }
+
+      const requisitionId = String(jobId)
+      const sourceUrl = buildJobUrl({
+        id: jobId,
+        slug,
+        wac_pro_job_dept: { id: category.id },
+      })
+
+      return {
+        title,
+        company: COMPANY,
+        department: category.categoryName,
+        location: null,
+        city: null,
+        state: null,
+        country: 'India',
+        jobId: requisitionId,
+        requisitionId,
+        sourceUrl,
+        applyUrl: sourceUrl,
+        employmentType: null,
+        experienceRequired: normalizeWhitespace(job?.formatted_experience_range),
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: [],
+        postingDate: null,
+        closingDate: null,
+        jobDescription: buildIndexOnlyJobDescription(category.categoryName),
+        remoteStatus: null,
+      }
+    })
+    .filter(Boolean))
+
+  if (jobs.length === 0) {
+    throw new Error(
+      'Webandcrafts verified public jobs index no longer exposes embedded public job cards while the legacy department API remains unavailable',
+    )
+  }
+
+  return jobs
+}
+
 const validateDepartmentPayload = (payload, category) => {
   const data = payload?.results?.data
 
@@ -314,7 +408,10 @@ const validateDepartmentPayload = (payload, category) => {
     openingSum += openings
   }
 
-  if (openingSum !== category.totalOpenings) {
+  const hasVerifiedOpeningTotal = openingSum === category.totalOpenings
+    || data.length === category.totalOpenings
+
+  if (!hasVerifiedOpeningTotal) {
     throw new Error(
       `Webandcrafts verified public department openings no longer match the verified opening total for ${category.categoryName}`,
     )
@@ -405,18 +502,28 @@ export const createWebandcraftsScraper = ({
 
     const jobsIndexHtml = await fetchTextImpl(JOBS_INDEX_URL)
     const categories = extractJobCategories(jobsIndexHtml)
-    const jobs = []
+    let jobs
 
-    for (const category of categories) {
-      const payload = await fetchJsonImpl(JOBS_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ wac_pro_job_dept: category.id }),
-      })
+    try {
+      jobs = []
 
-      jobs.push(...extractDepartmentJobs(payload, category))
+      for (const category of categories) {
+        const payload = await fetchJsonImpl(JOBS_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ wac_pro_job_dept: category.id }),
+        })
+
+        jobs.push(...extractDepartmentJobs(payload, category))
+      }
+    } catch (error) {
+      if (!isLegacyDepartmentApiMissingError(error)) {
+        throw error
+      }
+
+      jobs = extractEmbeddedJobsIndexPostings(jobsIndexHtml)
     }
 
     const scrapedAt = (overrideNow || now)()

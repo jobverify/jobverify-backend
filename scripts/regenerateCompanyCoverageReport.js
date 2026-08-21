@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 import { generateCompanyCoverageReport, getCompanyAliasMap, normalizeCompanyName } from '../scraper-support/providers/companyCoverage.js'
 import { getScraperCatalog } from '../scraper-support/providers/index.js'
-import { getDiskBackedScraperSources } from '../scraper-support/providers/sourceInventory.js'
+import { getScraperSourceDirectoryName } from '../scraper-support/providers/sourcePaths.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const backendDir = path.resolve(currentDir, '..')
@@ -18,14 +18,14 @@ const buildReportFromScraperInventory = ({
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name),
 } = {}) => {
-  const sourceDirs = getDiskBackedScraperSources({
-    catalog,
-    scraperDirectories,
-  })
-  const providersBySource = new Map(catalog.map((provider) => [provider.source, provider]))
-  const matched = sourceDirs.map((source, index) => {
-    const provider = providersBySource.get(source)
-    const companyName = provider?.companyName || provider?.company || source
+  const providersByDirectory = new Map(
+    catalog.map((provider) => [getScraperSourceDirectoryName(provider), provider]),
+  )
+  const sourceDirs = [...scraperDirectories].sort((left, right) => left.localeCompare(right))
+  const matched = sourceDirs.map((directoryName, index) => {
+    const provider = providersByDirectory.get(directoryName) || null
+    const source = provider?.source || directoryName
+    const companyName = provider?.companyName || provider?.company || directoryName
 
     return {
       row: String(index + 1),

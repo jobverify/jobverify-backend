@@ -36,9 +36,14 @@ const toAbsoluteUrl = (value) => {
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html)
 
-  return /Careers at K7 Computing/i.test(page)
+  return /<title[^>]*>\s*Careers(?:\s*(?:&#8211;|&ndash;|–|-)\s*K7 Security)?\s*<\/title>/i.test(page)
+    && /Careers at K7 Computing/i.test(page)
     && /Current Openings/i.test(page)
-    && /href=["'][^"']*\/index\.php\/jobs\//i.test(page)
+}
+
+export const hasVerifiedEmptyCareersSignal = (html = '') => {
+  const text = normalizeText(html)
+  return text.includes('We currently have no job openings')
 }
 
 const extractLocation = (text) => {
@@ -116,6 +121,10 @@ export const createK7ComputingScraper = () => ({
 
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('The verified K7 Computing careers surface no longer matches the trusted first-party jobs page')
+    }
+
+    if (hasVerifiedEmptyCareersSignal(careersHtml)) {
+      return []
     }
 
     return extractK7ComputingJobs(careersHtml)

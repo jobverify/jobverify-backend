@@ -24,6 +24,10 @@ test('getScraperCatalog includes WSP India as an official WSP handoff scraper', 
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'emit.fa.ca3.oraclecloud.com')
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.equal(provider.verifiedPublicJobCount, 0)
+  assert.equal(provider.verifiedIndiaJobCount, 0)
+  assert.match(provider.verifiedSurfaceSummary, /Cloudflare 'Just a moment/i)
   assert.match(provider.modulePath, /wspindia[\\/]script\.js$/i)
 })
 

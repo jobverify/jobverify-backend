@@ -6,7 +6,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = 'volvoericsson'
 export const COMPANY = 'Volvo-Ericsson'
 export const VOLVO_CAREERS_URL = 'https://www.volvogroup.com/en/careers.html'
-export const VOLVO_JOBS_URL = 'https://jobs.volvogroup.com/en'
+export const VOLVO_JOBS_URL = 'https://jobs.volvogroup.com/'
 export const ERICSSON_CAREERS_URL = 'https://jobs.ericsson.com/careers'
 export const OFFICIAL_CAREER_URLS = [
   VOLVO_CAREERS_URL,
@@ -56,12 +56,29 @@ export const hasVolvoCareersSignal = (html) => VOLVO_SIGNAL_PATTERNS.every((patt
   pattern.test(String(html ?? ''))
 ))
 
+const normalizeVolvoJobsUrl = (value) => {
+  try {
+    const url = new URL(value)
+    if (url.origin !== 'https://jobs.volvogroup.com') {
+      return url.toString()
+    }
+
+    if (/^\/(?:en\/?)?$/.test(url.pathname) || url.pathname === '/') {
+      return 'https://jobs.volvogroup.com/'
+    }
+
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
 export const extractVolvoJobsUrl = (html) => {
   const match = String(html ?? '').match(/href="([^"]*jobs\.volvogroup\.com[^"]*)"/i)
   if (!match) return null
 
   try {
-    return new URL(match[1], VOLVO_CAREERS_URL).toString()
+    return normalizeVolvoJobsUrl(new URL(match[1], VOLVO_CAREERS_URL).toString())
   } catch {
     return null
   }

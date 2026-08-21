@@ -65,12 +65,17 @@ const stripTags = (value) => normalizeWhitespace(String(value ?? '').replace(/<[
 
 const extractSectionBetweenHeadings = (html, heading, nextHeading) => {
   const page = String(html ?? '')
-  const pattern = new RegExp(
-    `<h3[^>]*>\\s*${heading}\\s*<\\/h3>([\\s\\S]*?)(?=<h3[^>]*>\\s*${nextHeading}\\s*<\\/h3>)`,
-    'i',
-  )
 
-  return page.match(pattern)?.[1] ?? null
+  if (nextHeading) {
+    const pattern = new RegExp(
+      `<h3[^>]*>\\s*${heading}\\s*<\\/h3>([\\s\\S]*?)(?=<h3[^>]*>\\s*${nextHeading}\\s*<\\/h3>)`,
+      'i',
+    )
+    const matched = page.match(pattern)?.[1]
+    if (matched != null) return matched
+  }
+
+  return page.match(new RegExp(`<h3[^>]*>\\s*${heading}\\s*<\\/h3>([\\s\\S]*?)(?=<h3\\b|$)`, 'i'))?.[1] ?? null
 }
 
 const extractMeaningfulHrefs = (html) => Array.from(

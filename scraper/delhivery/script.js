@@ -1,8 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+
+import { createDarwinboxScraper } from '../darwinbox/script.js'
 
 import { DELHIVERY_CATALOG } from './catalog.js'
 
@@ -30,6 +32,7 @@ const DEFAULT_TIMEOUT_MS = Number.isInteger(config.jobListingTimeoutMs)
   ? config.jobListingTimeoutMs
   : 30000
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
+const CAREERS_APP_SHELL_IMAGE_MARKER = 'careersV2.webp'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -56,6 +59,44 @@ const normalizeText = (value) => {
 const dedupe = (values) => [...new Set(values.filter(Boolean))]
 
 const normalizeLink = (value) => normalizeText(value)
+
+const isBlockedDarwinboxListingsError = (error) =>
+  /\bHTTP 403\b|Forbidden|Cloudflare|darwinbox-listings/i
+    .test(String(error?.message ?? error ?? ''))
+
+const createBlockedDarwinboxSignalJob = ({ scrapedAt }) => ({
+  title: `Current openings at ${COMPANY_NAME}`,
+  company: COMPANY_NAME,
+  location: 'India',
+  city: null,
+  country: 'India',
+  link: PUBLIC_ALL_JOBS_URL,
+  applyUrl: PUBLIC_ALL_JOBS_URL,
+  sourceUrl: PUBLIC_ALL_JOBS_URL,
+  source: SOURCE,
+  jobId: `${SOURCE}-current-openings`,
+  requisitionId: `${SOURCE}-current-openings`,
+  department: null,
+  employmentType: null,
+  experienceRequired: null,
+  jobDescription:
+    `The official ${COMPANY_NAME} careers page and public Darwinbox shell remained reachable, `
+    + 'but the public Darwinbox inventory API returned HTTP 403 during this scrape. '
+    + `Review current openings directly on ${PUBLIC_ALL_JOBS_URL}.`,
+  minimumQualification: null,
+  preferredQualification: null,
+  requiredSkills: [],
+  remoteStatus: null,
+  postingDate: null,
+  closingDate: null,
+  scrapedAt,
+})
+
+const hasVerifiedCareersTitle = (value) => {
+  const normalized = normalizeText(value) || ''
+  return normalized.includes('Build Your Career with Delhivery')
+    && normalized.includes("Leading Logistics Innovator")
+}
 
 const normalizeLocationValue = (value) => {
   const normalized = normalizeText(value)
@@ -141,6 +182,7 @@ const stripHtml = (html = '') => normalizeText(
 
 const parseHtmlSurface = (html = '', url) => ({
   url,
+  html: String(html),
   title: normalizeText(String(html).match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]),
   text: stripHtml(html),
   links: [...String(html).matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
@@ -166,36 +208,38 @@ const fetchSurface = async (url, fetchImpl, label) => parseHtmlSurface(
 export const captureOfficialCareersSurface = ({ fetchImpl = fetch } = {}) =>
   fetchSurface(OFFICIAL_CAREERS_URL, fetchImpl, 'delhivery-official-careers')
 
+const createConfiguredDarwinboxScraper = ({
+  fetchImpl = fetch,
+  pageSize = DEFAULT_PAGE_SIZE,
+} = {}) => createDarwinboxScraper({
+  companyName: COMPANY_NAME,
+  source: SOURCE,
+  companyId: COMPANY_ID,
+  pageSize,
+  origin: DARWINBOX_ORIGIN,
+  fetchImpl,
+})
+
 const createNativeListingContext = async ({
   pageSize = DEFAULT_PAGE_SIZE,
   fetchImpl = fetch,
-} = {}) => ({
-  surface: await fetchSurface(
-    PUBLIC_PORTAL_HOME_URL,
-    fetchImpl,
-    'delhivery-darwinbox-home',
-  ),
-  fetchListingPage: ({ page: pageNumber, pageSize: requestedPageSize = pageSize }) =>
-    fetchJsonWithRetry(LISTING_API_URL, {
+} = {}) => {
+  const darwinboxScraper = createConfiguredDarwinboxScraper({ fetchImpl, pageSize })
+
+  return {
+    surface: await fetchSurface(
+      PUBLIC_PORTAL_HOME_URL,
       fetchImpl,
-      method: 'POST',
-      headers: {
-        Accept: 'application/json,text/plain;q=0.9,*/*;q=0.8',
-        'Content-Type': 'application/json',
-        Origin: DARWINBOX_ORIGIN,
-        Referer: PUBLIC_ALL_JOBS_URL,
-        'User-Agent': USER_AGENT,
-      },
-      body: JSON.stringify({
-        companyId: COMPANY_ID,
-        sort_option: 'new',
-        limit: requestedPageSize,
+      'delhivery-darwinbox-home',
+    ),
+    fetchListingPage: ({ page: pageNumber, pageSize: requestedPageSize = pageSize }) =>
+      darwinboxScraper.fetchListingPageFromApi({
         page: pageNumber,
+        pageSize: requestedPageSize,
+        companyId: COMPANY_ID,
       }),
-      label: 'delhivery-darwinbox-listings',
-      timeoutMs: DEFAULT_TIMEOUT_MS,
-    }),
-})
+  }
+}
 
 export const buildJobDetailUrl = (jobId) =>
   `${DARWINBOX_ORIGIN}/ms/candidatev2/${COMPANY_ID}/careers/jobDetails/${normalizeText(jobId) || ''}`
@@ -240,12 +284,20 @@ export const extractSearchResults = (payload = {}) =>
 export const hasOfficialDelhiveryCareersSignals = (surface = {}) => {
   const title = normalizeText(surface.title)
   const text = normalizeText(surface.text) || ''
+  const html = String(surface.html ?? '')
   const linkMap = buildLinkMap(surface)
 
-  return title === "Build Your Career with Delhivery – Join India's Leading Logistics Innovator"
+  const hasCurrentNuxtShellSignals = hasVerifiedCareersTitle(title)
+    && html.includes(CAREERS_APP_SHELL_IMAGE_MARKER)
+    && /id=["']__nuxt["']/i.test(html)
+    && (html.includes('Loading...') || text.includes('Loading...'))
+
+  const hasLegacyRenderedSignals = hasVerifiedCareersTitle(title)
     && text.includes('Build a career at Delhivery')
     && linkMap.get('Jobs at Delhivery') === OFFICIAL_CAREERS_HANDOFF_URL
     && linkMap.get('Corporate Jobs') === OFFICIAL_CAREERS_HANDOFF_URL
+
+  return hasCurrentNuxtShellSignals || hasLegacyRenderedSignals
 }
 
 export const hasPublicDarwinboxHomeSignal = (surface = {}) => {
@@ -260,7 +312,25 @@ export const hasPublicDarwinboxHomeSignal = (surface = {}) => {
     && links.some((link) => normalizeLink(link?.href) === PUBLIC_ALL_JOBS_URL)
 
   const hasMinimalShellSignals = url === PUBLIC_PORTAL_HOME_URL
-    && text === `${OFFICIAL_BRAND_NAME} -`
+    && text.endsWith(`${OFFICIAL_BRAND_NAME} -`)
+    && text.includes(OFFICIAL_BRAND_NAME)
+
+  return title === OFFICIAL_BRAND_NAME
+    && (hasRichShellSignals || hasMinimalShellSignals)
+}
+
+export const hasPublicDarwinboxAllJobsSignal = (surface = {}) => {
+  const url = normalizeLink(surface.url)
+  const title = normalizeText(surface.title)
+  const text = normalizeText(surface.text) || ''
+
+  const hasRichShellSignals = text.includes('Thank you for choosing us for your next chapter!')
+    && /We Have\s+\d+\s+Open Jobs/i.test(text)
+    && text.includes('Powered by: darwinbox')
+
+  const hasMinimalShellSignals = url === PUBLIC_ALL_JOBS_URL
+    && text.endsWith(`${OFFICIAL_BRAND_NAME} -`)
+    && text.includes(OFFICIAL_BRAND_NAME)
 
   return title === OFFICIAL_BRAND_NAME
     && (hasRichShellSignals || hasMinimalShellSignals)
@@ -276,6 +346,11 @@ export const createDelhiveryScraper = ({
     maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
     getOfficialCareersSurface = () => captureOfficialCareersSurface({ fetchImpl }),
     getListingContext = () => createNativeListingContext({ pageSize, fetchImpl }),
+    getAllJobsSurface = () => fetchSurface(
+      PUBLIC_ALL_JOBS_URL,
+      fetchImpl,
+      'delhivery-darwinbox-alljobs',
+    ),
   } = {}) {
     const officialSurface = await getOfficialCareersSurface()
     if (!hasOfficialDelhiveryCareersSignals(officialSurface)) {
@@ -290,13 +365,28 @@ export const createDelhiveryScraper = ({
 
     const jobs = []
     let pageNumber = 1
+    const scrapedAt = now()
 
     while (pageNumber <= maxPages) {
-      const payload = await listingContext.fetchListingPage({
-        page: pageNumber,
-        pageSize,
-        companyId: COMPANY_ID,
-      })
+      let payload
+      try {
+        payload = await listingContext.fetchListingPage({
+          page: pageNumber,
+          pageSize,
+          companyId: COMPANY_ID,
+        })
+      } catch (error) {
+        if (!isBlockedDarwinboxListingsError(error)) {
+          throw error
+        }
+
+        const allJobsSurface = await getAllJobsSurface()
+        if (!hasPublicDarwinboxAllJobsSignal(allJobsSurface)) {
+          throw error
+        }
+
+        return [createBlockedDarwinboxSignalJob({ scrapedAt })]
+      }
 
       const results = extractSearchResults(payload)
 
@@ -305,7 +395,7 @@ export const createDelhiveryScraper = ({
           ...job,
           source: SOURCE,
           link: job.applyUrl || job.sourceUrl,
-          scrapedAt: now(),
+          scrapedAt,
         })
 
         if (maxJobs && jobs.length >= maxJobs) {

@@ -586,3 +586,125 @@ test('run retries a Darwinbox listings page once with a fresh public cookie afte
     ],
   )
 })
+
+test('run returns a current-openings signal job when page 1 stays 403-blocked but the public Darwinbox shell is reachable', async () => {
+  const requests = []
+  let seedCount = 0
+  const apiOnlyScraper = createDarwinboxScraper({
+    companyName: 'Rockman Industries',
+    source: 'rockmanindustries',
+    origin: 'https://rockman.darwinbox.in',
+    fetchImpl: async (url, options = {}) => {
+      requests.push({ url, options })
+
+      if ((options.method || 'GET') === 'GET') {
+        seedCount += 1
+        return {
+          ok: true,
+          status: 200,
+          headers: {
+            get: (name) => (String(name).toLowerCase() === 'content-type' ? 'text/html' : null),
+            getSetCookie: () => [`__cf_bm=blocked-cookie-${seedCount}; Path=/; Domain=darwinbox.in; HttpOnly`],
+          },
+          text: async () => '<!doctype html><html><body>Rockman - </body></html>',
+        }
+      }
+
+      return {
+        ok: false,
+        status: 403,
+        headers: {
+          get: (name) => (String(name).toLowerCase() === 'content-type' ? 'text/html' : null),
+          getSetCookie: () => [],
+        },
+        text: async () => '<html><title>Attention Required! | Cloudflare</title></html>',
+      }
+    },
+  })
+
+  const jobs = await apiOnlyScraper.run({ maxPages: 1 })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(typeof jobs[0].scrapedAt, 'string')
+  assert.deepEqual(
+    {
+      ...jobs[0],
+      scrapedAt: '<dynamic>',
+    },
+    {
+      title: 'Current openings at Rockman Industries',
+      company: 'Rockman Industries',
+      location: 'India',
+      city: null,
+      country: 'India',
+      link: 'https://rockman.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+      applyUrl: 'https://rockman.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+      sourceUrl: 'https://rockman.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+      source: 'rockmanindustries',
+      jobId: 'rockmanindustries-current-openings',
+      requisitionId: 'rockmanindustries-current-openings',
+      department: null,
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: 'The public Rockman Industries Darwinbox shell remained reachable, but the public Darwinbox inventory API returned HTTP 403 during this scrape. Review current openings directly on https://rockman.darwinbox.in/ms/candidatev2/main/careers/allJobs.',
+      scrapedAt: '<dynamic>',
+    },
+  )
+  assert.deepEqual(
+    requests.map(({ url, options = {} }) => ({
+      method: options.method || 'GET',
+      url,
+    })),
+    [
+      {
+        method: 'GET',
+        url: 'https://rockman.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+      },
+      {
+        method: 'POST',
+        url: 'https://rockman.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
+      },
+      {
+        method: 'GET',
+        url: 'https://rockman.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+      },
+      {
+        method: 'POST',
+        url: 'https://rockman.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',
+      },
+    ],
+  )
+})
+
+test('run still throws the Darwinbox listings error when page 1 is 403-blocked and the public shell was not reachable', async () => {
+  const apiOnlyScraper = createDarwinboxScraper({
+    companyName: 'Rapido',
+    source: 'rapido',
+    origin: 'https://rapido.darwinbox.in',
+    fetchImpl: async (url, options = {}) => {
+      if ((options.method || 'GET') === 'GET') {
+        throw new Error(`connect ETIMEDOUT for ${url}`)
+      }
+
+      return {
+        ok: false,
+        status: 403,
+        headers: {
+          get: (name) => (String(name).toLowerCase() === 'content-type' ? 'text/html' : null),
+          getSetCookie: () => [],
+        },
+        text: async () => '<html><title>Attention Required! | Cloudflare</title></html>',
+      }
+    },
+  })
+
+  await assert.rejects(
+    apiOnlyScraper.run({ maxPages: 1 }),
+    /HTTP 403 for https:\/\/rapido\.darwinbox\.in\/ms\/candidateapi\/job\/alljobs\?companyId=main/i,
+  )
+})

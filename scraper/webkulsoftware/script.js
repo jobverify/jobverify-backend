@@ -120,6 +120,21 @@ export const hasOfficialJobsPageSignal = (html) => {
     && /https:\/\/webkul\.com\/jobs\//i.test(page)
 }
 
+export const hasOfficialNoListingsShellSignal = (html) => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page) || ''
+
+  return /<title[^>]*>\s*Jobs\s*-\s*Webkul Software\s*<\/title>/i.test(page)
+    && /<h1>\s*Open Positions\s*<\/h1>/i.test(page)
+    && /class=["'][^"']*\bwk-open-position\b[^"']*["']/i.test(page)
+    && /class=["'][^"']*\bwk-openjobs-tabs\b[^"']*["']/i.test(page)
+    && /class=["'][^"']*\bjob-group\b[^"']*["']/i.test(page)
+    && text.includes('Here is the list of open positions that we are currently hiring.')
+    && text.includes('You can follow us on Linkedin to recieve job updates.')
+    && text.includes("Didn't find relevant opportunity?")
+    && !/class=["'][^"']*\bop-block\b[^"']*["']/i.test(page)
+}
+
 export const extractJobCards = (html) => [...String(html ?? '').matchAll(
   /<a[^>]+href=["']([^"']+)["'][^>]*class=["'][^"']*\bop-block\b[^"']*["'][^>]*>\s*<h5[^>]*class=["'][^"']*\bop-name\b[^"']*["'][^>]*>([\s\S]*?)<\/h5>\s*<div[^>]*class=["'][^"']*\bop-info\b[^"']*["'][^>]*>([\s\S]*?)<\/div>\s*<\/a>/gi,
 )]
@@ -219,6 +234,10 @@ export const createWebkulSoftwareScraper = ({
     fetchText = defaultFetchText,
   } = {}) {
     const jobsHtml = await fetchText(JOBS_URL)
+
+    if (hasOfficialNoListingsShellSignal(jobsHtml)) {
+      return []
+    }
 
     if (!hasOfficialJobsPageSignal(jobsHtml)) {
       throw new Error('Webkul Software verified first-party jobs surface no longer matches the public contract')

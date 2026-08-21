@@ -17,12 +17,12 @@ export const TIBCO_SOFTWARE_CATALOG = {
   countryFilter: 'India',
   paginationStrategy: 'official-contact-page-plus-generic-multi-brand-careers-validation',
   extractionStrategy:
-    'verified-official-contact-page+verified-generic-cloud-careers-handoff+no-stable-tibco-only-public-jobs-return-empty',
+    'verified-official-contact-page+verified-generic-cloud-careers-handoff-or-documented-access-challenge+no-stable-tibco-only-public-jobs-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-05',
+  verifiedOn: '2026-08-14',
   verifiedSurfaceSummary:
-    'Verified on Wednesday, August 5, 2026 that https://www.tibco.com/contact-us is the live official TIBCO contact page and still links applicants to https://careers.cloud.com/. Verified that the linked Cloud Software Group careers hub and search page are now protected by an AWS WAF JavaScript challenge in raw HTTP responses, but browser-rendered inspection still shows a generic multi-brand careers surface with Brand filters for Citrix, Cloud Software Group Corporate, and Spotfire rather than a stable TIBCO-only public jobs endpoint. The local provider therefore continues to fail closed until TIBCO exposes a clearly linked stable public jobs surface for TIBCO roles.',
+    'Verified on Friday, August 14, 2026 that https://www.tibco.com/contact-us is the live official TIBCO contact page and still links applicants to https://careers.cloud.com/. Verified that the linked Cloud Software Group careers hub and public search page remain a generic multi-brand surface with Brand filters for Citrix, Cloud Software Group Corporate, and Spotfire rather than a stable TIBCO-only public jobs endpoint, and that raw Node HTTP requests from this runtime can now receive an AWS WAF or empty 202 challenge response instead of stable HTML. The local provider therefore returns [] while the official handoff stays pinned to that generic Cloud Software Group surface or its documented access challenge.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'tibcosoftware/jobs.json',
 }

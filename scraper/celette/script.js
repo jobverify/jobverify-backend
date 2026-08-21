@@ -1,56 +1,173 @@
-import https from 'node:https'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-export const CAREER_PAGE_URL = 'https://www.celette.com/'
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-const INDIA_OFFICE_PATTERN = /celette\s+india\s+pvt\s+ltd|coimbatore\s+641062\s*\/\s*india/i
-const CAREER_LINK_PATTERN = /href=["'][^"']*(career|careers|emploi|job|jobs|recruit|join-us|vacan)[^"']*["']/i
+export const SOURCE = 'celette'
+export const COMPANY = 'Celette'
+export const COMPANY_DOMAIN = 'celette.com'
+export const VERIFIED_AT = '2026-08-15'
+export const HOMEPAGE_URL = 'https://www.celette.com/'
+export const CONTACT_US_URL = 'https://www.celette.com/contact-us/'
+export const CAREERS_URL = 'https://www.celette.com/careers/'
+export const JOBS_URL = 'https://www.celette.com/jobs/'
+export const VERIFIED_ROUTE_URLS = [
+  HOMEPAGE_URL,
+  CONTACT_US_URL,
+  CAREERS_URL,
+  JOBS_URL,
+]
 
-const defaultFetchText = (url) =>
-  new Promise((resolve, reject) => {
-    const request = https.get(
-      url,
-      {
-        headers: {
-          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
-        },
-      },
-      (response) => {
-        const chunks = []
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'
+const REQUEST_TIMEOUT_MS = 15000
 
-        response.on('data', (chunk) => chunks.push(chunk))
-        response.on('end', () => {
-          const body = Buffer.concat(chunks).toString('utf8')
+const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/\u00a0/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
 
-          if (response.statusCode !== 200) {
-            reject(new Error(`HTTP ${response.statusCode} for ${url}`))
-            return
-          }
+const isTimeoutError = (error) =>
+  error?.name === 'AbortError'
+  || /UND_ERR_CONNECT_TIMEOUT|ETIMEDOUT/i.test(String(error?.cause?.code ?? ''))
+  || /timed out|timeout|connect timeout|und_err_connect_timeout/i.test(String(error?.cause?.message ?? error?.message ?? error ?? ''))
 
-          resolve(body)
-        })
-      },
+const getHeader = (page, name) => {
+  const headers = page?.headers
+  if (!headers) return ''
+
+  if (typeof headers.get === 'function') {
+    return String(headers.get(name) ?? '')
+  }
+
+  const value = headers[name] ?? headers[name.toLowerCase()]
+  return String(value ?? '')
+}
+
+const buildMaterialSurfaceChangeError = () => {
+  const error = new Error('The verified Celette first-party blocked surfaces changed materially')
+  error.abortRetries = true
+  return error
+}
+
+export const hasVerifiedCloudflareChallengeSignal = (page = {}) => {
+  const html = typeof page === 'string' ? String(page) : String(page?.html ?? '')
+  const normalized = normalizeWhitespace(html)
+  const status = typeof page === 'string' ? null : Number(page?.status)
+
+  return (status == null || status === 403)
+    && /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(html)
+    && normalized.includes('Enable JavaScript and cookies to continue')
+    && /challenges\.cloudflare\.com/i.test(html)
+    && /_cf_chl_opt/i.test(html)
+    && /celette\.com/i.test(html)
+    && (
+      typeof page === 'string'
+      || (
+        /cloudflare/i.test(getHeader(page, 'server'))
+        && getHeader(page, 'cf-mitigated').toLowerCase() === 'challenge'
+      )
     )
+}
 
-    request.on('error', reject)
-  })
+export const isVerifiedTimeoutBlockedRoute = (page = {}) => page?.errorKind === 'timeout'
 
-export const hasIndiaOfficeSignal = (html) => INDIA_OFFICE_PATTERN.test(String(html || ''))
+export const exposesStructuredPublicJobs = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
 
-export const hasCareerLink = (html) => CAREER_LINK_PATTERN.test(String(html || ''))
+  return normalized.includes('current openings')
+    || normalized.includes('open positions')
+    || normalized.includes('job openings')
+    || normalized.includes('join our team')
+    || normalized.includes('browse open roles')
+    || /<article[\s\S]*job/i.test(page)
+    || /href=["'][^"']*\/(?:careers|jobs)\/[^"']+["']/i.test(page)
+    || />\s*Apply now\s*</i.test(page)
+}
 
-export const extractOpenings = () => []
+const defaultFetchPage = async (url) => {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'User-Agent': USER_AGENT,
+      },
+      redirect: 'follow',
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeout)
+
+    return {
+      status: response.status,
+      url,
+      finalUrl: response.url,
+      html: await response.text(),
+      headers: Object.fromEntries(response.headers.entries()),
+      errorKind: null,
+    }
+  } catch (error) {
+    clearTimeout(timeout)
+
+    return {
+      status: null,
+      url,
+      finalUrl: url,
+      html: null,
+      headers: {},
+      errorKind: isTimeoutError(error) ? 'timeout' : 'network',
+      errorMessage: String(error?.message ?? error),
+    }
+  }
+}
 
 export const createCeletteScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const html = await fetchText(CAREER_PAGE_URL)
+  async run({ fetchPage = defaultFetchPage } = {}) {
+    for (const url of VERIFIED_ROUTE_URLS) {
+      const page = await fetchPage(url)
 
-    if (!hasIndiaOfficeSignal(html)) {
-      return []
+      if (page.errorKind) {
+        if (isVerifiedTimeoutBlockedRoute(page)) {
+          continue
+        }
+
+        throw new Error(`Failed to fetch verified Celette route: ${url} (${page.errorKind})`)
+      }
+
+      if (exposesStructuredPublicJobs(page.html)) {
+        throw new Error('Celette blocked first-party routes now expose scraper-visible public jobs')
+      }
+
+      if (!hasVerifiedCloudflareChallengeSignal(page)) {
+        throw buildMaterialSurfaceChangeError()
+      }
     }
 
-    return extractOpenings(html)
+    return []
   },
 })
 
-export const run = async () => createCeletteScraper().run()
+export const run = async (options = {}) => createCeletteScraper().run(options)
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  const isDryRun = process.argv.includes('--dry-run')
+  const jobs = await run()
+
+  if (isDryRun) {
+    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  } else {
+    await saveToDB(jobs, SOURCE)
+  }
+}

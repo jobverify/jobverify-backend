@@ -21,8 +21,8 @@ const CAREERS_HTML = `
           <a href="https://jobs.ashbyhq.com/supabase/23c9ce7e-6b7b-4316-8f00-8f318e902441">Apply for position</a>
         </article>
         <article>
-          <h3>Customer Solution Architect (APAC)</h3>
-          <p>APAC</p>
+          <h3>Customer Solution Architect (AMER)</h3>
+          <p>AMER</p>
           <a href="https://jobs.ashbyhq.com/supabase/d3f6bb95-8679-43cc-8a48-827efac070f4">Apply for position</a>
         </article>
         <article>

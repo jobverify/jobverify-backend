@@ -9,15 +9,16 @@ const homepagePage = {
     <html lang="en">
       <body>
         <main>
-          <h1>GPS Vehicle Tracker</h1>
+          <h1>Experience India's 1st OEM GPS Vehicle Tracker</h1>
+          <p>Learn More</p>
+          <h2>GPS Vehicle Tracker</h2>
+          <p>GPS Vehicle Tracker with Trak N Tell App</p>
+          <p>Track your vehicle anywhere anytime</p>
+          <p>Smart GPS Vehicle Tracker</p>
           <p>TRAK N TELL MOBILE APP</p>
           <p>Need Support?</p>
-          <a href="/activate-device/">Activate your GPS device</a>
-          <a href="/contact-us/">Contact Us</a>
-          <a href="/about-us/">About Us</a>
           <a href="/press/">Press</a>
           <a href="/emi/">EMI</a>
-          <p>care@TrakNTell.com</p>
         </main>
       </body>
     </html>
@@ -32,12 +33,11 @@ const contactPage = {
     <html lang="en">
       <body>
         <main>
-          <h1>Get In touch</h1>
-          <label>Select product</label>
-          <label>How did you hear about us?</label>
-          <label>Enquiry</label>
-          <button>Send Message</button>
+          <h1>Contact Us</h1>
+          <h2>Get In touch</h2>
+          <p>8010-80-8010</p>
           <p>care@TrakNTell.com</p>
+          <p>Address- A20, Info Technology Park, Sector 34, Gurgaon, Haryana 122001</p>
         </main>
       </body>
     </html>
@@ -69,14 +69,14 @@ const loadModule = async () => {
   }
 }
 
-test('Trak N Tell helpers stay pinned to the verified first-party product and contact surfaces from Friday, July 17, 2026', async () => {
+test('Trak N Tell helpers stay pinned to the verified first-party product and contact surfaces from Friday, August 14, 2026', async () => {
   const trakNTell = await loadModule()
 
   assert.equal(trakNTell.SOURCE, 'trakntell')
   assert.equal(trakNTell.COMPANY, 'Trak N Tell')
   assert.equal(trakNTell.HOMEPAGE_URL, 'https://www.trakntell.com/')
   assert.equal(trakNTell.CONTACT_URL, 'https://www.trakntell.com/contact-us/')
-  assert.equal(trakNTell.VERIFIED_ON, '2026-07-17')
+  assert.equal(trakNTell.VERIFIED_ON, '2026-08-14')
   assert.equal(trakNTell.hasOfficialHomepageSignal(homepagePage), true)
   assert.equal(trakNTell.hasOfficialContactSignal(contactPage), true)
   assert.equal(trakNTell.hasPublicJobsSignal(jobsSignalPage.html), true)

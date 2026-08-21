@@ -33,21 +33,32 @@ const homepageHtml = `
 const sitemapXml = `
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://www.karnival.com</loc></url>
-  <url><loc>https://www.karnival.com/contact</loc></url>
-  <url><loc>https://www.karnival.com/blogs</loc></url>
-  <url><loc>https://www.karnival.com/terms-and-conditions</loc></url>
-  <url><loc>https://www.karnival.com/privacy-policy</loc></url>
-  <url><loc>https://www.karnival.com/dpa</loc></url>
-  <url><loc>https://www.karnival.com/blog/why-is-customer-feedback-important-for-brands</loc></url>
+  <url><loc>https://karnival.com</loc></url>
+  <url><loc>https://karnival.com/contact</loc></url>
+  <url><loc>https://karnival.com/blogs</loc></url>
+  <url><loc>https://karnival.com/terms-and-conditions</loc></url>
+  <url><loc>https://karnival.com/privacy-policy</loc></url>
+  <url><loc>https://karnival.com/dpa</loc></url>
+  <url><loc>https://karnival.com/blog/why-is-customer-feedback-important-for-brands</loc></url>
 </urlset>
 `
 
 const jobsLinkedSitemapXml = `
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://karnival.com/</loc></url>
+  <url><loc>https://karnival.com/careers</loc></url>
+</urlset>
+`
+
+const mixedHostSitemapXml = `
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://www.karnival.com/</loc></url>
-  <url><loc>https://www.karnival.com/careers</loc></url>
+  <url><loc>https://karnival.com/contact</loc></url>
+  <url><loc>https://www.karnival.com/blogs</loc></url>
+  <url><loc>https://karnival.com/terms-and-conditions</loc></url>
+  <url><loc>https://www.karnival.com/privacy-policy</loc></url>
 </urlset>
 `
 
@@ -86,27 +97,28 @@ test('Karnival pins the verified official homepage, sitemap without careers rout
 
   assert.equal(karnival.SOURCE, 'karnival')
   assert.equal(karnival.COMPANY, 'Karnival')
-  assert.equal(karnival.VERIFIED_ON, '2026-08-02')
+  assert.equal(karnival.VERIFIED_ON, '2026-08-15')
   assert.equal(karnival.HOMEPAGE_URL, 'https://www.karnival.com/')
-  assert.equal(karnival.SITEMAP_URL, 'https://www.karnival.com/sitemap.xml')
+  assert.equal(karnival.SITEMAP_URL, 'https://karnival.com/sitemap.xml')
   assert.deepEqual(karnival.MISSING_JOBS_ROUTE_URLS, [
-    'https://www.karnival.com/careers',
-    'https://www.karnival.com/jobs',
+    'https://karnival.com/careers',
+    'https://karnival.com/jobs',
   ])
 
   assert.equal(karnival.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(karnival.hasRenderablePublicJobsSignal(homepageHtml), false)
   assert.equal(karnival.hasRenderablePublicJobsSignal(liveJobsHtml), true)
   assert.deepEqual(karnival.extractSitemapUrls(sitemapXml), [
-    'https://www.karnival.com',
-    'https://www.karnival.com/contact',
-    'https://www.karnival.com/blogs',
-    'https://www.karnival.com/terms-and-conditions',
-    'https://www.karnival.com/privacy-policy',
-    'https://www.karnival.com/dpa',
-    'https://www.karnival.com/blog/why-is-customer-feedback-important-for-brands',
+    'https://karnival.com',
+    'https://karnival.com/contact',
+    'https://karnival.com/blogs',
+    'https://karnival.com/terms-and-conditions',
+    'https://karnival.com/privacy-policy',
+    'https://karnival.com/dpa',
+    'https://karnival.com/blog/why-is-customer-feedback-important-for-brands',
   ])
   assert.equal(karnival.hasVerifiedSitemapSignal(sitemapXml), true)
+  assert.equal(karnival.hasVerifiedSitemapSignal(mixedHostSitemapXml), true)
   assert.equal(karnival.hasVerifiedSitemapSignal(jobsLinkedSitemapXml), false)
   assert.equal(
     karnival.isVerifiedMissingJobsRoute({

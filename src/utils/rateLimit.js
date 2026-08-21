@@ -20,7 +20,10 @@ export const isReadOnlyRequest = (req = {}) => READ_ONLY_METHODS.has(normalizeMe
 export const getApiRateLimitProfile = (req = {}) => {
   const path = getRequestPath(req);
 
-  if (path === "/api/billing/webhook") {
+  if (
+    path === "/api/billing/webhook"
+    || path === "/api/integrations/telegram/webhook"
+  ) {
     return "skip";
   }
 

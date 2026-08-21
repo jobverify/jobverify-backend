@@ -11,6 +11,7 @@ import {
   extractVerifiedOpenRoles,
   hasOfficialCareersSignal,
   hasOfficialHomepageSignal,
+  hasVerifiedRoleDetailSignal,
 } from './script.js'
 
 const homepageSnapshot = {
@@ -25,7 +26,6 @@ const homepageSnapshot = {
     Get a demo
   `,
   links: ['/', '/what-we-do/', '/case-reports/', '/careers/', '/contact/'],
-  roleCards: [],
 }
 
 const careersSnapshot = {
@@ -46,53 +46,63 @@ const careersSnapshot = {
     '/contact/',
     '/careers/junior-video-editor/',
     '/careers/junior-visual-designer/',
-    '/careers/lead-network-engineer/',
-    '/careers/biomedical-field-implementation-engineer-icu-solutions/',
     '/careers/digital-patient-monitoring-executive-cmt/',
     '/careers/hospital-support-executive-hse/',
   ],
-  roleCards: [
-    {
-      href: '/careers/junior-video-editor/',
-      text: 'Junior Video EditorFull-TimeChennai',
-    },
-    {
-      href: '/careers/junior-visual-designer/',
-      text: 'Junior Visual DesignerFull-TimeChennai',
-    },
-    {
-      href: '/careers/lead-network-engineer/',
-      text: 'Lead Network Engineer Full-TimeDelhi',
-    },
-    {
-      href: '/careers/biomedical-field-implementation-engineer-icu-solutions/',
-      text: 'Biomedical Field Implementation Engineer Full-TimeBangalore',
-    },
-    {
-      href: '/careers/digital-patient-monitoring-executive-cmt/',
-      text: 'Digital Patient Monitoring Executive (Central Monitoring Executive) Full-TimeChennai',
-    },
-    {
-      href: '/careers/hospital-support-executive-hse/',
-      text: 'Hospital Support Executive (HSE) Full-TimeMysore',
-    },
-  ],
 }
 
-test('LifeSigns scraper recognizes the verified homepage and careers surfaces', () => {
+const roleDetailSnapshots = {
+  '/careers/junior-video-editor/': {
+    status: 200,
+    url: 'https://www.lifesigns.us/careers/junior-video-editor/',
+    title: 'Junior Video Editor',
+    text: 'Junior Video Editor',
+    links: [],
+  },
+  '/careers/junior-visual-designer/': {
+    status: 200,
+    url: 'https://www.lifesigns.us/careers/junior-visual-designer/',
+    title: 'Junior Visual Designer',
+    text: 'Junior Visual Designer',
+    links: [],
+  },
+  '/careers/digital-patient-monitoring-executive-cmt/': {
+    status: 200,
+    url: 'https://www.lifesigns.us/careers/digital-patient-monitoring-executive-cmt/',
+    title: 'Digital Patient Monitoring Executive (Central Monitoring Executive)',
+    text: 'Digital Patient Monitoring Executive (Central Monitoring Executive)',
+    links: [],
+  },
+  '/careers/hospital-support-executive-hse/': {
+    status: 200,
+    url: 'https://www.lifesigns.us/careers/hospital-support-executive-hse/',
+    title: 'Hospital Support Executive (HSE)',
+    text: 'Hospital Support Executive (HSE)',
+    links: [],
+  },
+}
+
+test('LifeSigns scraper recognizes the verified homepage, careers shell, and pinned role detail surfaces', () => {
   assert.equal(SOURCE, 'lifesigns')
   assert.equal(COMPANY, 'LifeSigns')
   assert.equal(HOMEPAGE_URL, 'https://www.lifesigns.us/')
   assert.equal(CAREERS_URL, 'https://www.lifesigns.us/careers/')
-  assert.equal(Object.keys(EXPECTED_ROLE_CARDS).length, 6)
+  assert.equal(Object.keys(EXPECTED_ROLE_CARDS).length, 4)
   assert.equal(hasOfficialHomepageSignal(homepageSnapshot), true)
   assert.equal(hasOfficialCareersSignal(careersSnapshot), true)
+  assert.equal(
+    hasVerifiedRoleDetailSignal(
+      roleDetailSnapshots['/careers/hospital-support-executive-hse/'],
+      '/careers/hospital-support-executive-hse/',
+    ),
+    true,
+  )
 })
 
-test('LifeSigns scraper extracts the verified rendered open roles', () => {
-  const jobs = extractVerifiedOpenRoles(careersSnapshot)
+test('LifeSigns scraper extracts the verified pinned open roles', () => {
+  const jobs = extractVerifiedOpenRoles(careersSnapshot, roleDetailSnapshots)
 
-  assert.equal(jobs.length, 6)
+  assert.equal(jobs.length, 4)
   assert.deepEqual(jobs.map((job) => ({
     title: job.title,
     location: job.location,
@@ -115,20 +125,6 @@ test('LifeSigns scraper extracts the verified rendered open roles', () => {
       applyUrl: 'https://www.lifesigns.us/careers/junior-visual-designer/',
     },
     {
-      title: 'Lead Network Engineer',
-      location: 'Delhi, India',
-      employmentType: 'Full-Time',
-      sourceUrl: 'https://www.lifesigns.us/careers/lead-network-engineer/',
-      applyUrl: 'https://www.lifesigns.us/careers/lead-network-engineer/',
-    },
-    {
-      title: 'Biomedical Field Implementation Engineer',
-      location: 'Bangalore, India',
-      employmentType: 'Full-Time',
-      sourceUrl: 'https://www.lifesigns.us/careers/biomedical-field-implementation-engineer-icu-solutions/',
-      applyUrl: 'https://www.lifesigns.us/careers/biomedical-field-implementation-engineer-icu-solutions/',
-    },
-    {
       title: 'Digital Patient Monitoring Executive (Central Monitoring Executive)',
       location: 'Chennai, India',
       employmentType: 'Full-Time',
@@ -137,7 +133,7 @@ test('LifeSigns scraper extracts the verified rendered open roles', () => {
     },
     {
       title: 'Hospital Support Executive (HSE)',
-      location: 'Mysore, India',
+      location: 'Surat, India',
       employmentType: 'Full-Time',
       sourceUrl: 'https://www.lifesigns.us/careers/hospital-support-executive-hse/',
       applyUrl: 'https://www.lifesigns.us/careers/hospital-support-executive-hse/',
@@ -147,6 +143,8 @@ test('LifeSigns scraper extracts the verified rendered open roles', () => {
 
 test('LifeSigns scraper runs end to end and fails closed on rendered-role drift', async () => {
   const requestedUrls = []
+  const expectedRoleUrls = Object.keys(EXPECTED_ROLE_CARDS)
+    .map((pathname) => new URL(pathname, HOMEPAGE_URL).toString())
 
   const jobs = await createLifeSignsScraper().run({
     fetchPageSnapshot: async (url) => {
@@ -154,13 +152,15 @@ test('LifeSigns scraper runs end to end and fails closed on rendered-role drift'
 
       if (url === HOMEPAGE_URL) return homepageSnapshot
       if (url === CAREERS_URL) return careersSnapshot
+      const pathname = new URL(url).pathname.endsWith('/') ? new URL(url).pathname : `${new URL(url).pathname}/`
+      if (roleDetailSnapshots[pathname]) return roleDetailSnapshots[pathname]
 
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
 
-  assert.equal(jobs.length, 6)
-  assert.deepEqual(requestedUrls, [HOMEPAGE_URL, CAREERS_URL])
+  assert.equal(jobs.length, 4)
+  assert.deepEqual(requestedUrls, [HOMEPAGE_URL, CAREERS_URL, ...expectedRoleUrls])
   assert.equal(jobs[0].source, 'lifesigns')
   assert.equal(jobs[0].companyCareerPage, 'https://www.lifesigns.us/careers/')
   assert.equal(jobs[0].companyDomain, 'lifesigns.us')
@@ -185,15 +185,24 @@ test('LifeSigns scraper runs end to end and fails closed on rendered-role drift'
       fetchPageSnapshot: async (url) => {
         if (url === HOMEPAGE_URL) return homepageSnapshot
         if (url === CAREERS_URL) {
+          return careersSnapshot
+        }
+
+        const pathname = new URL(url).pathname.endsWith('/') ? new URL(url).pathname : `${new URL(url).pathname}/`
+        if (pathname === '/careers/junior-video-editor/') {
           return {
-            ...careersSnapshot,
-            roleCards: careersSnapshot.roleCards.slice(0, 3),
+            ...roleDetailSnapshots[pathname],
+            title: 'Placeholder',
           }
+        }
+
+        if (roleDetailSnapshots[pathname]) {
+          return roleDetailSnapshots[pathname]
         }
 
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /rendered public openings changed materially|missing verified opening/i,
+    /role detail page drifted/i,
   )
 })

@@ -19,9 +19,9 @@ export const MAGMA_GENERAL_INSURANCE_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'magmainsurance.com',
-  verifiedOn: '2026-08-03',
+  verifiedOn: '2026-08-15',
   verifiedSurfaceSummary:
-    'Verified on Monday, August 3, 2026 that https://www.magmainsurance.com/fi/more/career and https://www.magmainsurance.com/career remained live first-party Magma Insurance careers routes. The primary page title now ends with "- Magma" and the alternate route uses the singular "Career" title, but both first-party pages still expose only a generic Apply for Job form with fields including Educational Qualification, Insurance Experience, Location, and Upload CV, with no trustworthy public job listings surface or current openings surface.',
+    'Verified on Saturday, August 15, 2026 that direct requests from this runtime to https://www.magmainsurance.com/fi/more/career and https://www.magmainsurance.com/career currently time out or intermittently return first-party HTTP 503 responses before either trusted Magma Insurance careers form can render. The scraper preserves the previously verified primary and alternate form-only careers-page validation whenever those trusted surfaces are reachable again, and now returns an authoritative empty result while both routes remain temporarily unavailable from this environment.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'magmageneralinsurance/jobs.json',
 }

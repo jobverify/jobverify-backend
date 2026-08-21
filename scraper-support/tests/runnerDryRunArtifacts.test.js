@@ -92,6 +92,81 @@ test('dry-run snapshot options respect provider overrides for public experience 
   assert.equal(options.maxJobsToEnrich, null)
 })
 
+test('dry-run runner reports publishable job counts and rejection totals for summary logs', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-dry-run-filter-metrics-'))
+  const dryRunFile = path.join(tempDir, 'jobs.json')
+  const runner = await loadDryRunRunner()
+
+  try {
+    const result = await runner.runScraper({
+      name: 'publishable-metrics-source',
+      provider: {
+        adapter: 'script',
+        dryRunEnrichPublicExperience: false,
+      },
+      dryRunFile,
+      run: async () => [
+        {
+          title: 'Platform Engineer',
+          company: 'Example Corp',
+          location: 'Bengaluru, India',
+          city: 'Bengaluru',
+          link: 'https://careers.jobverify.dev/jobs/platform-engineer',
+        },
+        {
+          title: 'Senior Platform Engineer',
+          company: 'Example Corp',
+          location: 'Bengaluru, India',
+          city: 'Bengaluru',
+          link: 'https://careers.jobverify.dev/jobs/senior-platform-engineer',
+        },
+        {
+          title: 'Data Engineer',
+          company: 'Example Corp',
+          location: 'Hyderabad, India',
+          city: 'Hyderabad',
+          link: 'not-a-valid-url',
+        },
+        {
+          title: 'QA Engineer',
+          company: 'Example Corp',
+          location: 'Pune, India',
+          city: 'Pune',
+          link: 'https://careers.jobverify.dev/jobs/qa-engineer',
+          closingDate: '2020-01-01T00:00:00.000Z',
+        },
+        {
+          title: 'Backend Engineer',
+          company: 'Example Corp',
+          location: 'Chennai, India',
+          city: 'Chennai',
+          link: 'https://careers.jobverify.dev/jobs/backend-engineer',
+          postingDate: '2020-01-01T00:00:00.000Z',
+        },
+        {
+          title: 'Product Designer',
+          company: 'Example Corp',
+          location: 'Austin, United States',
+          city: 'Austin',
+          country: 'United States',
+          link: 'https://careers.jobverify.dev/jobs/product-designer',
+        },
+      ],
+    })
+
+    assert.equal(result.success, true)
+    assert.equal(result.jobs, 5)
+    assert.equal(result.eligibleJobs, 2)
+    assert.equal(result.filteredNonIndia, 1)
+    assert.equal(result.filteredSenior, undefined)
+    assert.equal(result.filteredInvalidUrl, 1)
+    assert.equal(result.filteredClosed, 1)
+    assert.equal(result.filteredOld, 1)
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true })
+  }
+})
+
 test('dry-run runner snapshots recover missing experience from the official public job page', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-dry-run-enrichment-'))
   const dryRunFile = path.join(tempDir, 'jobs.json')

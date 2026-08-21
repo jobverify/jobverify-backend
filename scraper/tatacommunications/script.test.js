@@ -8,65 +8,44 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const scriptPath = path.join(currentDir, 'script.js')
 const jobsPath = path.join(currentDir, 'jobs.json')
 
-const bootstrapPayload = {
-  workflowId: 'wf-live-123',
-}
+const bootstrapPayload = 'TCLPROD-c62po'
 
 const listingPayload = {
-  data: {
-    requisitions: [
-      {
-        displayId: 'TC-001',
-        id: 'req-001',
-        title: 'Senior Network Engineer',
-        department: 'Network Services',
-        employmentType: 'Full-time',
-        experience: '5-8 years',
-        qualification: 'B.E. / B.Tech',
-        postedDate: '2026-07-18T00:00:00.000Z',
-        locations: [
-          {
-            city: 'Chennai',
-            state: 'Tamil Nadu',
-            country: 'India',
-          },
-        ],
-        summary: '<p>Keep global network services resilient.</p>',
-      },
-    ],
-    totalPages: 1,
-    totalRecords: 1,
-    limit: 25,
-  },
-}
-
-const detailPayload = {
-  data: {
-    requisition: {
-      displayId: 'TC-001',
+  entities: [
+    {
       id: 'req-001',
-      title: 'Senior Network Engineer',
-      department: 'Network Services',
+      displayId: 'TC-001',
+      jobTitle: 'Senior Network Engineer',
+      departmentName: 'Network Services',
       employmentType: 'Full-time',
-      experience: '5-8 years',
-      qualification: 'B.E. / B.Tech',
-      postedDate: '2026-07-18T00:00:00.000Z',
-      description: '<div>Design and operate Tata Communications network infrastructure.</div>',
-      responsibilities: '<ul><li>Network design</li></ul>',
-      qualifications: '<ul><li>Routing and switching</li></ul>',
-      skills: [
-        { skill: 'Routing' },
-        { skill: 'Switching' },
-      ],
-      locations: [
+      requiredEducation: 'B.E. / B.Tech',
+      requiredExperienceInMonths: {
+        from: 60,
+        to: 96,
+      },
+      jobStatus: {
+        statusCode: 'OPEN',
+      },
+      jobPosting: {
+        startDate: '2026-07-18T00:00:00.000Z',
+        endDate: '2026-08-18T00:00:00.000Z',
+      },
+      jobLocation: [
         {
           city: 'Chennai',
           state: 'Tamil Nadu',
           country: 'India',
+          fqLocationName: 'Chennai, Tamil Nadu, India',
         },
       ],
+      jobDescription: '<div>Design and operate Tata Communications network infrastructure.</div>',
+      skills: [
+        { skill: 'Routing' },
+        { skill: 'Switching' },
+      ],
     },
-  },
+  ],
+  total: 1,
 }
 
 const renderedCareersText = `
@@ -85,98 +64,16 @@ financial planning & analysis, budgeting, variance analysis, data analysis, fina
 
 Posted 35 minutes ago
 
-Job ID 4717498478
-
-Jaipur, Rajasthan, India
-
-security operations center, logrhythm, threat detection and response, incident handling, arcsight siem, threat intelligence
-
-3Y - 5Y
-
-Posted 6 hours ago
-
-Job ID 8839827944
-
-Mumbai, Maharashtra, India
-
-product development, product strategy, pricing, gtm planning, product lifecycle management, sales enablement, sla
-
-1Y - 5Y
-
-Posted 9 hours ago
-
-Job ID 2152350934
-
-Bengaluru, Karnataka, India
-
-network operations, adva dwdm, asset management, change management, automation, incident management
-
-6Y - 10Y
-
-Posted 9 hours ago
-
-Job ID 6115917441
-
-Jaipur, Rajasthan, India
-
-threat hunting, cybersecurity, siem, malware analysis, log hunt, mitre att&ck, log analysis
-
-7Y - 12Y
-
-Posted 11 hours ago
-
-Job ID 1595583992
-
-Singapore, Singapore
-
-enterprise sales, business development, product, negotiation, network services, account management
-
-12Y - 20Y
-
-Posted 17 hours ago
-
-Saved Jobs
-EN
-Login
-We listen more when people root for you
-We accept DOC, DOCX, TXT, PDF, WPS less than 5MB Upload Resume
-Go
-Skill
-Role
-Skills are extracted from the resume to connect you with the right opportunities
-Filters:
-Skills
-Employment Type
-Department
-Job Type
-Apply Filters
-Clear all
-Sort By:
 Posting Date
 AM- Financial Planning & Analysis
 financial planning & analysis, budgeting, variance analysis, data analysis, financial models, accounting standards
-Apply
-Sr Engineer-Captive Operations
-security operations center, logrhythm, threat detection and response, incident handling, arcsight siem, threat intelligence
-Apply
-Analyst - Hybrid Connectivity Services
-product development, product strategy, pricing, gtm planning, product lifecycle management, sales enablement, sla
-Apply
-Assistant Manager - India Operations, New Rollouts and Automation
-network operations, adva dwdm, asset management, change management, automation, incident management
-Apply
-Manager - Captive Operations
-threat hunting, cybersecurity, siem, malware analysis, log hunt, mitre att&ck, log analysis
-Apply
-Sr Manager - Sales- APAC
-enterprise sales, business development, product, negotiation, network services, account management
 Apply
 TATA COMMUNICATIONS
 `
 
 const loadModule = async () => import('./script.js')
 
-test('run returns normalized India requisitions from the Spire listing and detail payloads', async () => {
+test('run returns normalized India requisitions from the public Spire search payload', async () => {
   const tataCommunications = await loadModule()
 
   const requestedUrls = []
@@ -186,7 +83,6 @@ test('run returns normalized India requisitions from the Spire listing and detai
 
       if (String(url) === tataCommunications.WORKSPACE_BOOTSTRAP_URL) return bootstrapPayload
       if (String(url) === tataCommunications.buildListingApiUrl()) return listingPayload
-      if (String(url) === tataCommunications.buildDetailApiUrl('TC-001')) return detailPayload
 
       throw new Error(`Unexpected URL: ${url}`)
     },
@@ -195,7 +91,6 @@ test('run returns normalized India requisitions from the Spire listing and detai
   assert.deepEqual(requestedUrls, [
     tataCommunications.WORKSPACE_BOOTSTRAP_URL,
     tataCommunications.buildListingApiUrl(),
-    tataCommunications.buildDetailApiUrl('TC-001'),
   ])
 
   assert.equal(jobs.length, 1)
@@ -207,8 +102,8 @@ test('run returns normalized India requisitions from the Spire listing and detai
     city: 'Chennai',
     jobId: 'TC-001',
     requisitionId: 'req-001',
-    sourceUrl: tataCommunications.buildDetailApiUrl('TC-001'),
-    applyUrl: tataCommunications.buildDetailApiUrl('TC-001'),
+    sourceUrl: tataCommunications.buildJobUrl('TC-001', tataCommunications.WORKSPACE_ID),
+    applyUrl: tataCommunications.buildJobUrl('TC-001', tataCommunications.WORKSPACE_ID),
     employmentType: 'Full-time',
     experienceRequired: '5-8 years',
     minimumQualification: 'B.E. / B.Tech',
@@ -218,10 +113,10 @@ test('run returns normalized India requisitions from the Spire listing and detai
       'Switching',
     ],
     postingDate: '2026-07-18',
-    closingDate: null,
-    jobDescription: 'Design and operate Tata Communications network infrastructure. Network design Routing and switching',
+    closingDate: '2026-08-18',
+    jobDescription: 'Design and operate Tata Communications network infrastructure.',
     source: 'tatacommunications',
-    link: tataCommunications.buildDetailApiUrl('TC-001'),
+    link: tataCommunications.buildJobUrl('TC-001', tataCommunications.WORKSPACE_ID),
     scrapedAt: jobs[0].scrapedAt,
   })
   assert.match(jobs[0].scrapedAt, /\d{4}-\d{2}-\d{2}T/)
@@ -240,10 +135,8 @@ test('CLI dry-run writes jobs.json when the scraper is executed directly', async
 
     if (requestUrl.includes('/workspaceId?domain=')) {
       payload = bootstrapPayload
-    } else if (requestUrl.endsWith('/requisition/_search')) {
+    } else if (requestUrl.includes('/requisition/_search?page=1&size=25')) {
       payload = listingPayload
-    } else if (requestUrl.endsWith('/requisition/displayId/TC-001')) {
-      payload = detailPayload
     } else {
       throw new Error(`Unexpected URL: ${requestUrl}`)
     }
@@ -252,7 +145,7 @@ test('CLI dry-run writes jobs.json when the scraper is executed directly', async
       ok: true,
       status: 200,
       async text() {
-        return JSON.stringify(payload)
+        return typeof payload === 'string' ? payload : JSON.stringify(payload)
       },
       async json() {
         return payload
@@ -281,7 +174,7 @@ test('CLI dry-run writes jobs.json when the scraper is executed directly', async
   }
 })
 
-test('run surfaces a Spire API authorization failure without opening a rendered-browser fallback', async () => {
+test('run surfaces a public Spire search authorization failure without opening a rendered-browser fallback', async () => {
   const tataCommunications = await loadModule()
 
   let renderedFallbackCalled = false

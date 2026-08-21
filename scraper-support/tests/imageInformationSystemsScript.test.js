@@ -37,6 +37,23 @@ const emptyCareersPageHtml = `
 </html>
 `
 
+const implicitEmptyCareersPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>IMAGE your future - and put your IQ to work! Medical Jobs</title>
+  </head>
+  <body>
+    <h1>Jobs at iQ IMAGE</h1>
+    <p>Then IMAGE Information Systems is the right place for you!</p>
+    <a href="#jobs">Current Jobs</a>
+    <h2>What you can expect from iQ IMAGE</h2>
+    <p>Choose your place of work</p>
+    <p>Work where you feel most comfortable, in the office or up to 100% from home.</p>
+  </body>
+</html>
+`
+
 const detailPageHtml = `
 <!doctype html>
 <html lang="en">
@@ -151,6 +168,20 @@ test('Image Information Systems returns [] when the careers page explicitly says
   const jobs = await imageInformationSystems.createImageInformationSystemsScraper().run({
     fetchText: async (url) => {
       if (url === imageInformationSystems.CAREERS_URL) return emptyCareersPageHtml
+      throw new Error(`Unexpected Image Information Systems URL: ${url}`)
+    },
+    now: () => FIXED_SCRAPED_AT,
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Image Information Systems returns [] when the verified careers page shows an implicit empty jobs section with no visible detail links', async () => {
+  const imageInformationSystems = await loadImageInformationSystemsModule()
+
+  const jobs = await imageInformationSystems.createImageInformationSystemsScraper().run({
+    fetchText: async (url) => {
+      if (url === imageInformationSystems.CAREERS_URL) return implicitEmptyCareersPageHtml
       throw new Error(`Unexpected Image Information Systems URL: ${url}`)
     },
     now: () => FIXED_SCRAPED_AT,

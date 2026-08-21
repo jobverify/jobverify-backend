@@ -22,7 +22,7 @@ const loadDelhiveryCatalog = async () => {
   }
 }
 
-test('Delhivery catalog captures the verified first-party careers page and Darwinbox corporate jobs surface', async () => {
+test('Delhivery catalog captures the verified August 14 careers app shell and Darwinbox listing surface', async () => {
   const { DELHIVERY_CATALOG } = await loadDelhiveryCatalog()
   const provider = hydrateProviderCatalogEntry(DELHIVERY_CATALOG)
 
@@ -54,14 +54,16 @@ test('Delhivery catalog captures the verified first-party careers page and Darwi
   assert.equal(provider.companyDomain, 'delhivery.com')
   assert.equal(provider.atsPlatform, 'darwinbox')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'browser-session-darwinbox-pagination')
+  assert.equal(provider.paginationStrategy, 'seeded-darwinbox-public-cookie-pagination')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+darwinbox-browser-session-listing-api',
+    'verified-first-party-careers-app-shell+seeded-darwinbox-listing-api',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-01')
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.equal(provider.verifiedPublicJobCount, 6)
+  assert.equal(provider.verifiedIndiaJobCount, 6)
   assert.equal(provider.modulePath, delhiveryModulePath)
   assert.match(provider.dryRunFile, /delhivery[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.delhivery\.com\//i)
@@ -83,8 +85,9 @@ test('Delhivery catalog captures the verified first-party careers page and Darwi
     provider.verifiedSurfaceSummary,
     /https:\/\/delhivery\.darwinbox\.in\/ms\/candidateapi\/job\/alljobs\?companyId=main/i,
   )
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /\bCloudflare 403\b/i)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /careersV2\.webp/i)
+  assert.match(provider.verifiedSurfaceSummary, /Jobs at Delhivery/i)
 })
 
 test('Delhivery backlog row matches directly from local provider metadata without alias churn', async () => {

@@ -51,6 +51,50 @@ const slugify = (value) => normalizeWhitespace(value)
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
 
+const createManualFetchSignal = () =>
+  typeof AbortSignal?.timeout === 'function'
+    ? AbortSignal.timeout(15000)
+    : undefined
+
+const findErrorInChain = (error, predicate) => {
+  const seen = new Set()
+  let current = error
+
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    if (predicate(current)) {
+      return current
+    }
+    current = current?.cause
+  }
+
+  return null
+}
+
+const hasHttpStatus = (error, status) =>
+  Boolean(findErrorInChain(error, (candidate) => Number(candidate?.status) === status))
+
+const fetchTextWithCapturedHttpBody = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'manual',
+    signal: createManualFetchSignal(),
+  })
+  const html = await response.text()
+
+  if (response.ok) {
+    return html
+  }
+
+  const error = new Error(`HTTP ${response.status} for ${url}`)
+  error.status = response.status
+  error.responseBody = html
+  throw error
+}
+
 const absoluteUrl = (value, base = CAREERS_URL) => {
   if (!value) return null
   try {
@@ -83,6 +127,33 @@ export const hasOfficialCareersSignal = (html) => {
     && /career@iwavesystems\.com/i.test(page)
     && /Keywords/i.test(page)
 }
+
+export const hasBlockedHomepageSignal = (html = '') => {
+  const page = String(html ?? '')
+  return /<title>\s*You are being redirected\.\.\.\s*<\/title>/i.test(page)
+    && /Javascript is required\./i.test(page)
+    && /sucuri_cloudproxy_js/i.test(page)
+}
+
+const hasVerifiedBlockedHomepageError = (error) =>
+  Boolean(
+    findErrorInChain(
+      error,
+      (candidate) =>
+        Number(candidate?.status) === 307
+        && hasBlockedHomepageSignal(candidate?.responseBody),
+    ),
+  )
+
+const hasVerifiedBlockedCareersError = (error) =>
+  Boolean(
+    findErrorInChain(
+      error,
+      (candidate) =>
+        Number(candidate?.status) === 307
+        && hasBlockedHomepageSignal(candidate?.responseBody),
+    ),
+  )
 
 const extractApplyUrl = (html) => {
   const page = String(html ?? '')
@@ -196,23 +267,58 @@ export const extractPublicListings = (html) => {
   return jobs
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchText = async (url) => {
+  try {
+    return await fetchTextWithRetry(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      label: SOURCE,
+      timeoutMs: 15000,
+    })
+  } catch (error) {
+    if (!hasHttpStatus(error, 307)) {
+      throw error
+    }
+
+    return fetchTextWithCapturedHttpBody(url)
+  }
+}
 
 export const createIWaveSystemsScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
+    let homepageHtml = null
+    try {
+      homepageHtml = await fetchText(HOMEPAGE_URL)
+    } catch (error) {
+      if (!hasVerifiedBlockedHomepageError(error)) {
+        throw error
+      }
+    }
+
+    if (
+      homepageHtml != null
+      && !hasOfficialHomepageSignal(homepageHtml)
+      && !hasBlockedHomepageSignal(homepageHtml)
+    ) {
       throw new Error('Expected verified iWave Systems homepage with first-party careers handoff')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
+    let careersHtml = null
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (hasVerifiedBlockedCareersError(error)) {
+        return []
+      }
+      throw error
+    }
+
+    if (hasBlockedHomepageSignal(careersHtml)) {
+      return []
+    }
+
     return extractPublicListings(careersHtml).map((job) => ({
       ...job,
       source: SOURCE,

@@ -5,9 +5,14 @@ import mongoose from 'mongoose'
 import Job from '../../src/models/Job.js'
 import ScraperRun from '../../src/models/ScraperRun.js'
 import ScraperStatus from '../../src/models/ScraperStatus.js'
-import { runAll } from '../runner.js'
-import { upsertScraperStatus, writeScraperRun } from '../utils/scraperPersistence.js'
+import { FatalScraperPersistenceError, runAll } from '../runner.js'
+import {
+  upsertScraperStatus,
+  writeScraperRun,
+  readPreviousScraperRun,
+} from '../utils/scraperPersistence.js'
 import { generateFingerprint, saveToDB } from '../utils/saveToDB.js'
+import { DEFAULT_JOB_RETENTION_DAYS } from '../../src/utils/jobLifecycle.js'
 import { jobAlertService } from '../../src/services/jobAlertService.js'
 
 const setReadyState = (value) => {
@@ -31,7 +36,7 @@ const setReadyState = (value) => {
   }
 }
 
-test('runAll preserves the existing jobs collection while processing scraper results', async () => {
+test('runAll clears the existing jobs collection before a full live run', async () => {
   const restoreReadyState = setReadyState(1)
   const originalDeleteMany = Job.deleteMany
   const originalFindOneAndUpdate = ScraperStatus.findOneAndUpdate
@@ -58,9 +63,62 @@ test('runAll preserves the existing jobs collection while processing scraper res
   try {
     await runAll()
 
-    assert.deepEqual(deleteFilters, [])
+    assert.deepEqual(deleteFilters, [{}])
   } finally {
     Job.deleteMany = originalDeleteMany
+    ScraperStatus.findOneAndUpdate = originalFindOneAndUpdate
+    ScraperStatus.findOne = originalFindOne
+    ScraperRun.create = originalCreate
+    restoreReadyState()
+  }
+})
+
+test('runAll aborts before starting scrapers when Atlas storage quota blocks status seeding', async () => {
+  const restoreReadyState = setReadyState(1)
+  const originalBulkWrite = ScraperStatus.bulkWrite
+  const originalFindOneAndUpdate = ScraperStatus.findOneAndUpdate
+  const originalFindOne = ScraperStatus.findOne
+  const originalCreate = ScraperRun.create
+
+  let activeStatusReads = 0
+  let pipelineStatusWrites = 0
+  const quotaError = new Error(
+    'you are over your space quota, using 521 MB of 512 MB. Writes are blocked on your cluster.',
+  )
+
+  ScraperStatus.bulkWrite = async () => {
+    throw quotaError
+  }
+  ScraperStatus.findOneAndUpdate = async () => {
+    pipelineStatusWrites += 1
+    return {}
+  }
+  ScraperStatus.findOne = () => {
+    activeStatusReads += 1
+    return {
+      lean() {
+        return {
+          exec: async () => ({ isActive: true }),
+        }
+      },
+    }
+  }
+  ScraperRun.create = async () => ({})
+
+  try {
+    await assert.rejects(
+      runAll(),
+      (error) => {
+        assert.ok(error instanceof FatalScraperPersistenceError)
+        assert.match(error.message, /seeding scraper status records/i)
+        assert.equal(error.cause, quotaError)
+        return true
+      },
+    )
+    assert.equal(pipelineStatusWrites, 0)
+    assert.equal(activeStatusReads, 0)
+  } finally {
+    ScraperStatus.bulkWrite = originalBulkWrite
     ScraperStatus.findOneAndUpdate = originalFindOneAndUpdate
     ScraperStatus.findOne = originalFindOne
     ScraperRun.create = originalCreate
@@ -225,75 +283,6 @@ test('saveToDB only enqueues inserted active jobs for WhatsApp alerts', async ()
   } finally {
     Job.bulkWrite = originalBulkWrite
     Job.find = originalFind
-    jobAlertService.enqueueJobAlertsForJobs = originalEnqueueJobAlertsForJobs
-    restoreReadyState()
-  }
-})
-
-test('saveToDB can target a provided job model without enqueuing alerts', async () => {
-  const restoreReadyState = setReadyState(1)
-  const originalBulkWrite = Job.bulkWrite
-  const originalEnqueueJobAlertsForJobs = jobAlertService.enqueueJobAlertsForJobs
-
-  let liveBulkWriteAttempted = false
-  let stagedBulkWriteAttempted = false
-  let alertsQueued = false
-
-  const stagedJobModel = {
-    bulkWrite: async () => {
-      stagedBulkWriteAttempted = true
-      return {
-        upsertedCount: 1,
-        modifiedCount: 0,
-        upsertedIds: { 0: 'stage-job-1' },
-      }
-    },
-    updateMany: () => ({
-      exec: async () => ({ matchedCount: 0, modifiedCount: 0 }),
-    }),
-    find: () => ({
-      lean() {
-        return this
-      },
-      exec: async () => [
-        { _id: 'stage-job-1', title: 'Platform Engineer', status: 'active' },
-      ],
-    }),
-  }
-
-  Job.bulkWrite = async () => {
-    liveBulkWriteAttempted = true
-    return {
-      upsertedCount: 0,
-      modifiedCount: 0,
-      upsertedIds: {},
-    }
-  }
-  jobAlertService.enqueueJobAlertsForJobs = () => {
-    alertsQueued = true
-  }
-
-  try {
-    const result = await saveToDB([
-      {
-        title: 'Platform Engineer',
-        company: 'Example',
-        location: 'Bengaluru, India',
-        city: 'Bengaluru',
-        link: 'https://example.com/jobs/platform-engineer',
-      },
-    ], 'example-source', {
-      replaceExisting: false,
-      jobModel: stagedJobModel,
-      enqueueAlerts: false,
-    })
-
-    assert.equal(result.inserted, 1)
-    assert.equal(stagedBulkWriteAttempted, true)
-    assert.equal(liveBulkWriteAttempted, false)
-    assert.equal(alertsQueued, false)
-  } finally {
-    Job.bulkWrite = originalBulkWrite
     jobAlertService.enqueueJobAlertsForJobs = originalEnqueueJobAlertsForJobs
     restoreReadyState()
   }
@@ -709,7 +698,7 @@ test('upsertScraperStatus defaults lifecycle retention tracking to 30 days when 
       durationMs: 500,
     })
 
-    assert.equal(capturedUpdate.$set.lastRetentionDays, 30)
+    assert.equal(capturedUpdate.$set.lastRetentionDays, DEFAULT_JOB_RETENTION_DAYS)
   } finally {
     ScraperStatus.findOneAndUpdate = originalFindOneAndUpdate
     restoreReadyState()
@@ -839,6 +828,101 @@ test('writeScraperRun stores when stale cleanup was skipped for a partial source
     )
   } finally {
     ScraperRun.create = originalCreate
+    restoreReadyState()
+  }
+})
+
+test('writeScraperRun encodes Mongo-unsafe source keys before creating run history', async () => {
+  const restoreReadyState = setReadyState(1)
+  const originalCreate = ScraperRun.create
+
+  let capturedPayload = null
+
+  ScraperRun.create = async (payload) => {
+    capturedPayload = payload
+    const validationError = new ScraperRun(payload).validateSync()
+    if (validationError) throw validationError
+    return payload
+  }
+
+  try {
+    await writeScraperRun(new Date('2026-08-17T00:00:00.000Z'), {
+      'sinch.himalayas.app': {
+        success: true,
+        jobs: 3,
+        eligibleJobs: 3,
+        inserted: 3,
+        updated: 0,
+        deleted: 0,
+      },
+      '$internal.source': {
+        success: false,
+        error: 'synthetic failure',
+      },
+    })
+
+    assert.ok(capturedPayload)
+    assert.equal(
+      Object.prototype.hasOwnProperty.call(capturedPayload.sources, 'sinch.himalayas.app'),
+      false,
+    )
+    assert.equal(
+      Object.prototype.hasOwnProperty.call(capturedPayload.sources, '$internal.source'),
+      false,
+    )
+    assert.equal(
+      capturedPayload.sources['sinch\uFF0Ehimalayas\uFF0Eapp'].jobsFound,
+      3,
+    )
+    assert.equal(
+      capturedPayload.sources['\uFF04internal\uFF0Esource'].error,
+      'synthetic failure',
+    )
+  } finally {
+    ScraperRun.create = originalCreate
+    restoreReadyState()
+  }
+})
+
+test('readPreviousScraperRun decodes persisted Mongo-safe source keys', async () => {
+  const restoreReadyState = setReadyState(1)
+  const originalFindOne = ScraperRun.findOne
+
+  const createQueryDouble = (value) => ({
+    sort() {
+      return this
+    },
+    lean() {
+      return this
+    },
+    exec: async () => value,
+  })
+
+  ScraperRun.findOne = () => createQueryDouble({
+    ranAt: new Date('2026-08-17T00:00:00.000Z'),
+    sources: {
+      'sinch\uFF0Ehimalayas\uFF0Eapp': { success: true, jobsFound: 3 },
+      '\uFF04internal\uFF0Esource': { success: false, error: 'synthetic failure' },
+    },
+    overall: {
+      totalJobs: 3,
+      sourcesSucceeded: 1,
+      sourcesFailed: 1,
+    },
+  })
+
+  try {
+    const previousRun = await readPreviousScraperRun(new Date('2026-08-18T00:00:00.000Z'))
+
+    assert.ok(previousRun)
+    assert.equal(previousRun.sources['sinch.himalayas.app'].jobsFound, 3)
+    assert.equal(previousRun.sources['$internal.source'].error, 'synthetic failure')
+    assert.equal(
+      Object.prototype.hasOwnProperty.call(previousRun.sources, 'sinch\uFF0Ehimalayas\uFF0Eapp'),
+      false,
+    )
+  } finally {
+    ScraperRun.findOne = originalFindOne
     restoreReadyState()
   }
 })

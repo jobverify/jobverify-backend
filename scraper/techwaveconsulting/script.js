@@ -15,6 +15,7 @@ export const PROVIDER_METADATA = TECHWAVE_CONSULTING_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
+export const JOIN_US_URL = PROVIDER_METADATA.joinUsPageUrl
 export const WORKDAY_BOARD_URL = PROVIDER_METADATA.officialWorkdayBoardUrl
 export const JOBS_API_URL = PROVIDER_METADATA.jobsApiUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
@@ -163,7 +164,18 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return /<title>\s*Techwave Careers:\s*Empowering Your Success\s*<\/title>/i.test(page)
     && normalized.includes('Work that moves you.')
-    && new RegExp(`href=["']${WORKDAY_BOARD_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`, 'i').test(page)
+    && normalized.includes('Explore Opportunities')
+    && normalized.includes('View Open Roles')
+    && new RegExp(`href=["']${JOIN_US_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`, 'i').test(page)
+}
+
+export const hasJoinUsWorkdayEmbedSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page.replace(/<[^>]+>/g, ' ')) || ''
+
+  return /<title>\s*Join Us\s*-\s*TechWave\s*<\/title>/i.test(page)
+    && normalized.includes('Discover What’s Possible. Join Us.')
+    && new RegExp(`<iframe[^>]+src=["']${WORKDAY_BOARD_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`, 'i').test(page)
 }
 
 export const hasOfficialWorkdayBoardSignal = (html = '') => {
@@ -222,6 +234,11 @@ export const createTechwaveConsultingScraper = ({
     const careersHtml = await fetchText(CAREERS_URL)
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('The verified Techwave careers shell no longer matches the trusted first-party surface')
+    }
+
+    const joinUsHtml = await fetchText(JOIN_US_URL)
+    if (!hasJoinUsWorkdayEmbedSignal(joinUsHtml)) {
+      throw new Error('The verified Techwave join-us page no longer matches the trusted first-party Workday handoff')
     }
 
     const boardHtml = await fetchText(WORKDAY_BOARD_URL)

@@ -18,6 +18,7 @@ export const RAILTEL_CATALOG = {
     'DEPUTATION/Re-employment for 1 post of Junior Translator/ E-0 at Corporate Office, Delhi',
   verifiedSampleApplyTitle: 'Click here to apply',
   atsPlatform: 'official-current-openings-page',
+  dryRunEnrichPublicExperience: false,
   countryFilter: 'India',
   paginationStrategy: 'single-first-party-current-openings-page',
   extractionStrategy:

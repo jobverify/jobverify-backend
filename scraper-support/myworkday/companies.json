@@ -217,11 +217,6 @@
     "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.pfizer.com/about/careers/search-results was the live first-party Pfizer careers search page and that it publicly listed India openings including Manager, Market Access in India - Mumbai and Senior HCE in India - Chennai. Verified on the same date that the public Pfizer Workday board exposed the canonical handoff https://pfizer.wd1.myworkdayjobs.com/PfizerCareers and that its public jobs API at https://pfizer.wd1.myworkdayjobs.com/wday/cxs/pfizer/PfizerCareers/jobs returned 30 India-filtered postings with the standard Workday Location_Country facet. Verified live India examples included Associate - MES in India - Vizag, Manager, Secretarial & Shareholder Services, India in India - Mumbai, Manager - Medical Communications and Content Solutions (MCCS), Oncology in India - Remote, and current public Pfizer India job detail pages under https://pfizer.wd1.myworkdayjobs.com/en-US/PfizerCareers/ including Data Ops Engineer in India - Chennai and India - Mumbai, Associate II - Reg CMC Strategy in India - Chennai, and Junior Associate in India - Vizag."
   },
   {
-    "name": "maersk",
-    "company": "Maersk",
-    "baseUrl": "https://maersk.wd3.myworkdayjobs.com/Maersk_Careers"
-  },
-  {
     "name": "shell",
     "company": "Shell",
     "baseUrl": "https://shell.wd3.myworkdayjobs.com/en-GB/shellcareers"

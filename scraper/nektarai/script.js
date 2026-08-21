@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { withRetry } from '../../scraper-support/utils/retry.js'
-
 import { NEKTAR_AI_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -17,9 +15,12 @@ export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const OPEN_ROLES_URL = PROVIDER_METADATA.officialOpenRolesUrl
 export const APPLY_FORM_URL = PROVIDER_METADATA.officialApplyFormUrl
+export const FIRST_PARTY_TIMEOUT_URLS = [HOMEPAGE_URL, CAREERS_URL]
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const REQUEST_TIMEOUT_MS = 10000
+const TIMEOUT_ERROR_PATTERN = /timed out|timeout|etimedout|connect timeout|und_err_connect_timeout/i
 
 const ROLE_TITLE_PATTERN =
   /<(?:a|h[1-6]|li|p|div|span)[^>]*>\s*[^<]{0,120}\b(?:engineer|developer|designer|manager|sales|marketing|product|operations|analyst|architect|scientist|intern|lead|consultant|executive)\b[^<]{0,120}<\/(?:a|h[1-6]|li|p|div|span)>/i
@@ -54,40 +55,60 @@ const normalizeComparableUrl = (value) => {
 
 const sameUrl = (left, right) => normalizeComparableUrl(left) === normalizeComparableUrl(right)
 
-const createTimeoutSignal = (timeoutMs) => {
-  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
-    return undefined
-  }
+const isTimeoutError = (error) => {
+  if (error?.name === 'AbortError') return true
 
-  if (typeof AbortSignal?.timeout === 'function') {
-    return AbortSignal.timeout(timeoutMs)
-  }
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const message = String(error?.message ?? error ?? '')
 
-  const controller = new AbortController()
-  setTimeout(() => controller.abort(), timeoutMs)
-  return controller.signal
+  return /UND_ERR_CONNECT_TIMEOUT|ETIMEDOUT/i.test(causeCode)
+    || TIMEOUT_ERROR_PATTERN.test(causeMessage)
+    || TIMEOUT_ERROR_PATTERN.test(message)
 }
 
-const defaultFetchPage = (url) => withRetry(async () => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-    signal: createTimeoutSignal(15000),
-  })
+export const isExpectedTimedOutSurface = (surface = {}) =>
+  surface?.errorKind === 'timeout'
+  && !Number.isInteger(surface?.status)
+  && surface?.html == null
 
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
+const defaultFetchPage = async (url) => {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeout)
+
+    return {
+      status: response.status,
+      url: response.url,
+      html: await response.text(),
+      errorKind: null,
+    }
+  } catch (error) {
+    clearTimeout(timeout)
+
+    if (isTimeoutError(error)) {
+      return {
+        status: null,
+        url,
+        html: null,
+        errorKind: 'timeout',
+      }
+    }
+
+    throw error
   }
-}, {
-  attempts: 3,
-  baseDelayMs: 2000,
-  label: SOURCE,
-})
+}
 
 const matchesKnownOpenRolesUrl = (value) => {
   try {
@@ -173,8 +194,26 @@ export const createNektarAIScraper = () => ({
     const careersResponse = await fetchPage(CAREERS_URL)
     let openRolesPage = careersResponse
     let applyFormTarget = APPLY_FORM_URL
+    let applyFormPage = null
 
-    if (sameUrl(careersResponse.url, CAREERS_URL)) {
+    if (isExpectedTimedOutSurface(careersResponse)) {
+      const [
+        homepageResponse,
+        timeoutPathOpenRolesPage,
+        timeoutPathApplyFormPage,
+      ] = await Promise.all([
+        fetchPage(HOMEPAGE_URL),
+        fetchPage(OPEN_ROLES_URL),
+        fetchPage(APPLY_FORM_URL),
+      ])
+
+      if (!isExpectedTimedOutSurface(homepageResponse)) {
+        throw new Error('Nektar AI homepage no longer matches the verified timeout-only first-party surface')
+      }
+
+      openRolesPage = timeoutPathOpenRolesPage
+      applyFormPage = timeoutPathApplyFormPage
+    } else if (sameUrl(careersResponse.url, CAREERS_URL)) {
       if (!hasOfficialCareersLandingSignal(careersResponse.html)) {
         throw new Error('Nektar AI careers surface no longer matches the verified first-party landing page')
       }
@@ -200,7 +239,10 @@ export const createNektarAIScraper = () => ({
       throw new Error('Nektar AI open roles surface now exposes public job listings')
     }
 
-    const applyFormPage = await fetchPage(applyFormTarget)
+    if (!applyFormPage) {
+      applyFormPage = await fetchPage(applyFormTarget)
+    }
+
     if (
       applyFormPage.status !== 200
       || !matchesKnownApplyFormUrl(applyFormPage.url || APPLY_FORM_URL)

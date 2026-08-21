@@ -21,6 +21,9 @@ const SKIP_HOSTNAMES = new Set([
   'localhost',
   '127.0.0.1',
 ])
+const oracleCandidateExperienceDetailCache = new Map()
+const fountainBoardConfigCache = new Map()
+const ceipalCareerPortalJobsCache = new Map()
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
@@ -430,7 +433,7 @@ const extractLabeledExperience = (text) => {
   )
 }
 
-const RELEVANT_JOB_CONTENT_PATTERN = /\b(job description|job summary|about job|about the role|qualifications?|requirements?|responsibilities|required skills|preferred qualifications?|preferred experience|expertise|what will you do|what are we looking for|key job details|what you bring|roles?\s*&\s*responsibilities|key skills required|functional area|must-?have skills?|nice to have|key responsibilities|role overview|role objective|reporting to|technical skills|education mandatory|minimum eligibility|eligibility|organization|title\s*&\s*(?:no|number)\s*of posts|term of appointment|scale of pay|specific requirements|service(?:\/department)?|duration)\b/i
+const RELEVANT_JOB_CONTENT_PATTERN = /\b(job description|job summary|about job|about the role|qualifications?|requirements?|responsibilities|required skills|preferred qualifications?|preferred experience|expertise|what will you do|what are we looking for|what you can expect|what we'?re looking for|key job details|what you bring|roles?\s*&\s*responsibilities|key skills required|functional area|must-?have skills?|nice to have|key responsibilities|role overview|role objective|reporting to|technical skills|education mandatory|minimum eligibility|eligibility|organization|title\s*&\s*(?:no|number)\s*of posts|term of appointment|scale of pay|specific requirements|service(?:\/department)?|duration)\b/i
 
 const trimTrailingJobSiteChrome = (value) => {
   const normalized = normalizeWhitespace(value)
@@ -734,6 +737,24 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
+const defaultFetchJson = async (url, options = {}) => {
+  const response = await fetch(url, {
+    method: options.method || 'GET',
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'application/json,text/plain,*/*',
+      ...(options.headers || {}),
+    },
+    ...(options.body != null ? { body: options.body } : {}),
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} for ${url}`)
+  }
+
+  return response.json()
+}
+
 const shouldSkipDefaultFetch = (jobUrl) => {
   try {
     const parsed = new URL(jobUrl)
@@ -804,6 +825,436 @@ const isSmartRecruitersPublicJobUrl = (jobUrl) => {
   }
 }
 
+const getOrCreateAsyncCacheEntry = (cache, key, loader) => {
+  if (!key) return Promise.resolve().then(loader)
+  if (cache.has(key)) return cache.get(key)
+
+  const pending = Promise.resolve().then(loader)
+  cache.set(key, pending)
+  pending.catch(() => {
+    cache.delete(key)
+  })
+  return pending
+}
+
+const joinProviderDescriptionParts = (...parts) => {
+  const description = parts
+    .map((part) => normalizeExistingPublicEvidenceValue(part))
+    .filter(Boolean)
+    .join('\n\n')
+
+  return normalizeWhitespace(description)
+}
+
+const inferExperienceFromDescriptionText = (description) => {
+  const normalized = normalizeWhitespace(description)
+  if (!normalized) return null
+
+  const explicitExperience = extractLabeledExperience(normalized)
+  if (explicitExperience) return explicitExperience
+
+  const experienceProfile = extractJobFilterSignals({
+    description: normalized,
+  })?.experienceProfile
+  const evidence = normalizeWhitespace(experienceProfile?.evidence)
+  if (!evidence || experienceProfile?.confidence !== 'high') {
+    return null
+  }
+
+  return (
+    experienceProfile.minimumYears === 0 && experienceProfile.maximumYears === 0
+      ? 'No experience required'
+      : evidence
+  )
+}
+
+const buildNormalizedProviderEnrichedJob = (job = {}, updates = {}) => {
+  const normalized = normalizeScrapedJob({
+    ...job,
+    ...updates,
+  }, {
+    source: job.source || null,
+  })
+
+  return {
+    ...job,
+    ...updates,
+    title: normalized.title,
+    description: normalized.jobDescription || normalizeWhitespace(updates.description) || job.description || null,
+    jobDescription: normalized.jobDescription || normalizeWhitespace(updates.jobDescription) || job.jobDescription || null,
+    experienceRequired: normalized.experienceRequired,
+    publicExperienceChecked: true,
+  }
+}
+
+const extractOracleCandidateExperienceSiteNumber = (job = {}) => {
+  const explicitSiteNumber = normalizeWhitespace(job.siteNumber)
+  if (explicitSiteNumber) return explicitSiteNumber
+
+  const publicJobUrl = resolvePublicJobUrl(job)
+  try {
+    const parsed = new URL(String(publicJobUrl ?? ''))
+    return normalizeWhitespace(
+      parsed.pathname.match(/\/sites\/([^/?#]+)/i)?.[1] || null,
+    )
+  } catch {
+    return null
+  }
+}
+
+const extractOracleCandidateExperienceJobId = (job = {}) => {
+  const explicitJobId = normalizeWhitespace(job.jobId || job.requisitionId)
+  if (explicitJobId) return explicitJobId
+
+  const publicJobUrl = resolvePublicJobUrl(job)
+  try {
+    const parsed = new URL(String(publicJobUrl ?? ''))
+    return normalizeWhitespace(
+      parsed.pathname.match(/\/job\/([^/?#]+)/i)?.[1] || null,
+    )
+  } catch {
+    return null
+  }
+}
+
+const buildOracleCandidateExperienceDetailApiUrl = (job = {}) => {
+  const publicJobUrl = resolvePublicJobUrl(job)
+  const siteNumber = extractOracleCandidateExperienceSiteNumber(job)
+  const jobId = extractOracleCandidateExperienceJobId(job)
+  if (!publicJobUrl || !siteNumber || !jobId) return null
+
+  try {
+    const parsed = new URL(String(publicJobUrl))
+    if (!/\/hcmUI\/CandidateExperience\//i.test(parsed.pathname)) {
+      return null
+    }
+
+    return `${parsed.origin}/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails?expand=all&onlyData=true&finder=ById;Id=%22${encodeURIComponent(jobId)}%22,siteNumber=${encodeURIComponent(siteNumber)}`
+  } catch {
+    return null
+  }
+}
+
+const extractOracleCandidateExperienceDetailRecord = (payload) => {
+  if (Array.isArray(payload?.items) && payload.items[0]) {
+    return payload.items[0]
+  }
+
+  return payload || {}
+}
+
+const enrichJobWithOracleCandidateExperienceDetail = async (job = {}, {
+  fetchJson = defaultFetchJson,
+} = {}) => {
+  const detailApiUrl = buildOracleCandidateExperienceDetailApiUrl(job)
+  if (!detailApiUrl) return job
+
+  const payload = await getOrCreateAsyncCacheEntry(
+    oracleCandidateExperienceDetailCache,
+    detailApiUrl,
+    () => fetchJson(detailApiUrl),
+  )
+  const detail = extractOracleCandidateExperienceDetailRecord(payload)
+  const providerDescription = joinProviderDescriptionParts(
+    detail.ExternalDescriptionStr,
+    detail.ExternalResponsibilitiesStr,
+    detail.ShortDescriptionStr,
+    detail.ExternalQualificationsStr,
+    detail.StudyLevel,
+  )
+  const providerExperience =
+    normalizeWhitespace(job.experienceRequired)
+    || inferExperienceFromDescriptionText(providerDescription)
+  if (!providerDescription && !providerExperience) {
+    return job
+  }
+
+  return buildNormalizedProviderEnrichedJob(job, {
+    title: normalizeWhitespace(detail.Title) || job.title,
+    description: providerDescription,
+    jobDescription: providerDescription,
+    experienceRequired: providerExperience,
+  })
+}
+
+const extractFountainBoardConfig = (html) => {
+  for (const match of String(html ?? '').matchAll(
+    /https:\/\/careers\.[^"'\s<]+\/[a-z0-9-]+\/[0-9a-f-]{36}/gi,
+  )) {
+    try {
+      const parsed = new URL(match[0])
+      const [accountSlug, brandId] = parsed.pathname.split('/').filter(Boolean)
+      if (!accountSlug || !brandId) continue
+
+      return {
+        accountSlug,
+        brandId,
+        apiOrigin: `https://${parsed.hostname.replace(/^careers\./i, '')}`,
+      }
+    } catch {
+      // Try the next candidate URL.
+    }
+  }
+
+  return null
+}
+
+const loadFountainBoardConfig = async (job = {}, {
+  fetchText = defaultFetchText,
+} = {}) => {
+  const careersUrl = normalizeWhitespace(job.companyCareerPage)
+  if (!careersUrl) return null
+
+  return getOrCreateAsyncCacheEntry(
+    fountainBoardConfigCache,
+    careersUrl,
+    async () => extractFountainBoardConfig(await fetchText(careersUrl)),
+  )
+}
+
+const buildFountainPortalApplicationFormUrl = ({
+  apiOrigin,
+  accountSlug,
+  brandId,
+  jobId,
+} = {}) => {
+  if (!apiOrigin || !accountSlug || !brandId || !jobId) return null
+
+  const url = new URL(`/internal_api/portal/${accountSlug}/application_forms/new`, apiOrigin)
+  url.searchParams.set('funnel_id', String(jobId))
+  url.searchParams.set('try_new_ui', 'true')
+  url.searchParams.set('brand_id', String(brandId))
+  return url.toString()
+}
+
+const enrichJobWithFountainPortalDetail = async (job = {}, {
+  fetchText = defaultFetchText,
+  fetchJson = defaultFetchJson,
+} = {}) => {
+  const publicJobUrl = resolvePublicJobUrl(job)
+  const jobId = normalizeWhitespace(job.jobId || job.requisitionId)
+  if (!publicJobUrl || !jobId || !/fountain\.com/i.test(publicJobUrl)) {
+    return job
+  }
+
+  const boardConfig = await loadFountainBoardConfig(job, { fetchText })
+  const portalUrl = buildFountainPortalApplicationFormUrl({
+    ...boardConfig,
+    jobId,
+  })
+  if (!portalUrl) return job
+
+  const payload = await fetchJson(portalUrl)
+  const providerDescription = joinProviderDescriptionParts(
+    payload?.funnel?.position_description_html,
+  )
+  const providerExperience =
+    normalizeWhitespace(job.experienceRequired)
+    || inferExperienceFromDescriptionText(providerDescription)
+  if (!providerDescription && !providerExperience) {
+    return job
+  }
+
+  return buildNormalizedProviderEnrichedJob(job, {
+    title: normalizeWhitespace(payload?.funnel?.title) || job.title,
+    description: providerDescription,
+    jobDescription: providerDescription,
+    experienceRequired: providerExperience,
+  })
+}
+
+const extractCeipalWidgetConfig = (html) => {
+  const scriptTag = String(html ?? '').match(
+    /<script\b[^>]*src=["']https:\/\/jobsapi\.ceipal\.com\/APISource\/widget\.js["'][^>]*><\/script>/i,
+  )?.[0]
+  if (!scriptTag) return null
+
+  const apiKey = extractAttributeValue(scriptTag, 'data-ceipal-api-key')
+  const careerPortalId = extractAttributeValue(scriptTag, 'data-ceipal-career-portal-id')
+  if (!apiKey || !careerPortalId) return null
+
+  return {
+    apiKey,
+    careerPortalId,
+  }
+}
+
+const buildCeipalWidgetUrl = ({ apiKey, careerPortalId } = {}) =>
+  `https://jobsapi.ceipal.com/APISource/v2/index.html?api_key=${apiKey}&cp_id=${careerPortalId}`
+
+const buildCeipalCareerPortalApiUrl = ({ apiKey, page = 1 } = {}) =>
+  `https://careerapi.ceipal.com/${apiKey}/CareerPortalJobPostings/?page=${page}`
+
+const buildCeipalCareerPortalRequestOptions = ({
+  apiKey,
+  careerPortalId,
+  page = 1,
+} = {}) => ({
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    Origin: 'https://jobsapi.ceipal.com',
+    Referer: buildCeipalWidgetUrl({ apiKey, careerPortalId }),
+    'X-Requested-With': 'XMLHttpRequest',
+  },
+  body: new URLSearchParams({
+    page: String(page),
+    api_key: String(apiKey ?? ''),
+    method: 'CareerPortalJobPostings',
+    cp_id: String(careerPortalId ?? ''),
+    from_career_portal: '1',
+  }),
+})
+
+const extractCeipalCareerPortalSourceUrl = (job = {}) => normalizeWhitespace(
+  job.campus_portal_job_details_url
+  || job.apply_job_monster
+  || job.apply_job
+  || job.campus_portal_login_url,
+)
+
+const extractCeipalCareerPortalApplyUrl = (job = {}) => normalizeWhitespace(
+  job.apply_job_monster
+  || job.apply_job
+  || job.campus_portal_login_url
+  || job.campus_portal_job_details_url,
+)
+
+const loadCeipalCareerPortalJobs = async (job = {}, {
+  fetchText = defaultFetchText,
+  fetchJson = defaultFetchJson,
+} = {}) => {
+  const careersUrl = normalizeWhitespace(job.companyCareerPage)
+  if (!careersUrl) return new Map()
+
+  return getOrCreateAsyncCacheEntry(
+    ceipalCareerPortalJobsCache,
+    careersUrl,
+    async () => {
+      const widgetConfig = extractCeipalWidgetConfig(await fetchText(careersUrl))
+      if (!widgetConfig) return new Map()
+
+      const jobsByKey = new Map()
+      for (let page = 1; ; page += 1) {
+        const payload = await fetchJson(
+          buildCeipalCareerPortalApiUrl({ apiKey: widgetConfig.apiKey, page }),
+          buildCeipalCareerPortalRequestOptions({
+            apiKey: widgetConfig.apiKey,
+            careerPortalId: widgetConfig.careerPortalId,
+            page,
+          }),
+        )
+        const results = Array.isArray(payload?.results) ? payload.results : []
+        if (results.length === 0) break
+
+        for (const rawJob of results) {
+          const country = normalizeWhitespace(rawJob?.country)
+          const jobId = normalizeWhitespace(rawJob?.job_id || rawJob?.id)
+          const sourceUrl = extractCeipalCareerPortalSourceUrl(rawJob)
+          const applyUrl = extractCeipalCareerPortalApplyUrl(rawJob)
+          if (!jobId || !sourceUrl || !applyUrl || !/india/i.test(country || '')) {
+            continue
+          }
+
+          const providerDescription = joinProviderDescriptionParts(
+            rawJob?.public_job_desc,
+            rawJob?.requistion_description,
+          )
+          const providerExperience = inferExperienceFromDescriptionText(providerDescription)
+          const normalizedJob = {
+            title: normalizeWhitespace(rawJob?.public_job_title || rawJob?.position_title),
+            jobId,
+            sourceUrl,
+            applyUrl,
+            jobDescription: providerDescription,
+            experienceRequired: providerExperience,
+          }
+
+          for (const key of [jobId, sourceUrl, applyUrl]) {
+            jobsByKey.set(key, normalizedJob)
+          }
+        }
+
+        const totalPages = Number.parseInt(String(payload?.num_pages ?? ''), 10)
+        if (!payload?.next || !Number.isFinite(totalPages) || page >= totalPages) {
+          break
+        }
+      }
+
+      return jobsByKey
+    },
+  )
+}
+
+const enrichJobWithCeipalCareerPortalDetail = async (job = {}, {
+  fetchText = defaultFetchText,
+  fetchJson = defaultFetchJson,
+} = {}) => {
+  const publicJobUrl = resolvePublicJobUrl(job)
+  if (!publicJobUrl || !/ceipal\.(?:com|in)/i.test(publicJobUrl)) {
+    return job
+  }
+
+  const jobsByKey = await loadCeipalCareerPortalJobs(job, {
+    fetchText,
+    fetchJson,
+  })
+  const matchedJob = jobsByKey.get(normalizeWhitespace(job.jobId))
+    || jobsByKey.get(normalizeWhitespace(job.sourceUrl))
+    || jobsByKey.get(normalizeWhitespace(job.applyUrl))
+  if (!matchedJob?.jobDescription && !matchedJob?.experienceRequired) {
+    return job
+  }
+
+  return buildNormalizedProviderEnrichedJob(job, {
+    title: matchedJob.title || job.title,
+    description: matchedJob.jobDescription,
+    jobDescription: matchedJob.jobDescription,
+    experienceRequired: normalizeWhitespace(job.experienceRequired) || matchedJob.experienceRequired,
+  })
+}
+
+const enrichJobWithProviderSpecificPublicData = async (job = {}, {
+  fetchText = defaultFetchText,
+  fetchJson = defaultFetchJson,
+} = {}) => {
+  let enriched = job
+
+  if (!hasSufficientPublicJobEvidence(enriched)) {
+    try {
+      enriched = await enrichJobWithOracleCandidateExperienceDetail(enriched, {
+        fetchJson,
+      })
+    } catch {
+      // Keep the best prior result when the public Oracle detail API cannot be reached.
+    }
+  }
+
+  if (!hasSufficientPublicJobEvidence(enriched)) {
+    try {
+      enriched = await enrichJobWithFountainPortalDetail(enriched, {
+        fetchText,
+        fetchJson,
+      })
+    } catch {
+      // Keep the best prior result when the public portal API cannot be reached.
+    }
+  }
+
+  if (!hasSufficientPublicJobEvidence(enriched)) {
+    try {
+      enriched = await enrichJobWithCeipalCareerPortalDetail(enriched, {
+        fetchText,
+        fetchJson,
+      })
+    } catch {
+      // Keep the best prior result when the public CEIPAL API cannot be reached.
+    }
+  }
+
+  return enriched
+}
+
 export const inferExperienceFromPublicPageHtml = (job = {}, html) => {
   const publicJobUrl = resolvePublicJobUrl(job)
   const pageText = stripHtmlToText(html)
@@ -812,7 +1263,8 @@ export const inferExperienceFromPublicPageHtml = (job = {}, html) => {
   const pageTitle = extractTitle(html)
   const primaryHeading = extractPrimaryHeading(html)
   const smartRecruitersJobAdId = extractMetaContent('sr:job-ad-id', html)
-  const explicitExperience = extractLabeledExperience(pageText)
+  const pageSummaryExperience = extractLabeledExperience(pageSummary)
+  const explicitExperience = extractLabeledExperience(pageText) || pageSummaryExperience
   const pageTextHasBlockingGenericShell = looksLikeBlockingPublicJobShell(pageText)
   const pageTextHasHardGenericShell = looksLikeHardGenericPublicJobShell(pageText)
   const pageTextHasSmartRecruitersMotivationalShell =
@@ -823,7 +1275,7 @@ export const inferExperienceFromPublicPageHtml = (job = {}, html) => {
   const relevantPageText = hasRelevantJobContent(pageText) || explicitExperience
     ? (extractRelevantJobSectionText(pageText) || pageText)
     : null
-  const relevantPageSummary = hasRelevantJobContent(pageSummary)
+  const relevantPageSummary = (pageSummaryExperience || hasRelevantJobContent(pageSummary))
     ? (extractRelevantJobSectionText(pageSummary) || pageSummary)
     : null
   const relevantPageTextLooksLikeGenericShell = looksLikeGenericPublicJobShell(relevantPageText)
@@ -951,6 +1403,7 @@ export const inferExperienceFromPublicPageHtml = (job = {}, html) => {
 
 export const enrichJobWithPublicExperience = async (job = {}, {
   fetchText = null,
+  fetchJson = null,
   fetchBrowserText = null,
   getBrowserText = null,
 } = {}) => {
@@ -995,6 +1448,14 @@ export const enrichJobWithPublicExperience = async (job = {}, {
     } catch {
       // Keep the wrapper-page result when the embedded board cannot be fetched.
     }
+  }
+
+  const providerFetchJson = fetchJson || (!fetchText ? defaultFetchJson : null)
+  if (!hasSufficientPublicJobEvidence(enriched) && providerFetchJson) {
+    enriched = await enrichJobWithProviderSpecificPublicData(enriched, {
+      fetchText: fetchImpl,
+      fetchJson: providerFetchJson,
+    })
   }
 
   enriched = preserveListingOnlyPublicVerification(job, promotedJob, enriched)

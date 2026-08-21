@@ -17,6 +17,19 @@ const officialCareersHtml = `
   </html>
 `
 
+const maintenanceCareersHtml = `
+  <html>
+    <head>
+      <title>Maintenance Alert</title>
+    </head>
+    <body>
+      <h1>Maintenance Alert!</h1>
+      <p>We'll Be Right Back!</p>
+      <p>A quick tune-up break. We'll be live again on 16th August 2026.</p>
+    </body>
+  </html>
+`
+
 const listingPayload = {
   job_counts: 2,
   data: [
@@ -65,6 +78,7 @@ test('Bajaj Markets scraper keeps the verified official Darwinbox handoff explic
     createBajajMarketsScraper,
     extractOfficialDarwinboxUrl,
     hasOfficialBajajMarketsCareersSignals,
+    hasOfficialBajajMarketsMaintenanceSignal,
   } = await loadBajajMarketsModule()
 
   assert.equal(COMPANY_NAME, 'Bajaj Markets')
@@ -76,6 +90,7 @@ test('Bajaj Markets scraper keeps the verified official Darwinbox handoff explic
   assert.equal(PUBLIC_PORTAL_URL, 'https://hrisbdirect.darwinbox.in/ms/candidatev2/main/careers/allJobs')
   assert.equal(extractOfficialDarwinboxUrl(officialCareersHtml), OFFICIAL_CAREERS_HANDOFF_URL)
   assert.equal(hasOfficialBajajMarketsCareersSignals(officialCareersHtml), true)
+  assert.equal(hasOfficialBajajMarketsMaintenanceSignal(maintenanceCareersHtml), true)
   assert.equal(
     hasOfficialBajajMarketsCareersSignals(
       officialCareersHtml.replace(OFFICIAL_CAREERS_HANDOFF_URL, 'https://example.com/jobs'),
@@ -137,6 +152,22 @@ test('run maps Bajaj Markets Darwinbox listings into Jobverify jobs and keeps on
       scrapedAt: FIXED_SCRAPED_AT,
     },
   ])
+})
+
+test('run preserves the verified Bajaj Markets Darwinbox board while the official careers page shows branded maintenance copy', async () => {
+  const { createBajajMarketsScraper } = await loadBajajMarketsModule()
+  const scraper = createBajajMarketsScraper({
+    now: () => FIXED_SCRAPED_AT,
+  })
+
+  const jobs = await scraper.run({
+    fetchText: async () => maintenanceCareersHtml,
+    fetchListingPage: async () => listingPayload,
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'bajajmarkets')
+  assert.equal(jobs[0].title, 'Product Manager')
 })
 
 test('run can recover the official Bajaj Markets careers handoff with a browser-backed HTML fetch', async () => {

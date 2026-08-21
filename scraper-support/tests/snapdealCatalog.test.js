@@ -26,7 +26,7 @@ const loadScraperModule = async () => {
   }
 }
 
-test('Snapdeal local catalog captures the verified homepage footer handoff to Darwinbox', async () => {
+test('Snapdeal local catalog captures the verified first-party LinkedIn handoff', async () => {
   const { SNAPDEAL_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const snapdeal = await loadScraperModule()
   const provider = hydrateProviderCatalogEntry(SNAPDEAL_CATALOG)
@@ -38,26 +38,32 @@ test('Snapdeal local catalog captures the verified homepage footer handoff to Da
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://www.snapdeal.com/')
   assert.equal(provider.officialCareersPageUrl, 'https://www.snapdeal.com/')
-  assert.equal(
-    provider.officialCareersHandoffUrl,
-    'https://snapdeal.darwinbox.in/ms/candidate/careers',
-  )
-  assert.equal(provider.darwinboxOrigin, 'https://snapdeal.darwinbox.in')
-  assert.equal(provider.darwinboxCompanyId, 'main')
+  assert.equal(provider.officialAboutPageUrl, 'https://www.snapdeal.com/page/about-us')
+  assert.equal(provider.officialCareersHandoffUrl, 'https://www.linkedin.com/company/snapdeal/')
+  assert.equal(provider.linkedinCompanyPageUrl, 'https://www.linkedin.com/company/snapdeal/')
+  assert.equal(provider.linkedinWorldwideJobsUrl, 'https://www.linkedin.com/jobs/snapdeal-jobs-worldwide?f_C=2100709')
+  assert.equal(provider.publicLinkedInJobsUrl, 'https://www.linkedin.com/jobs/search/?f_C=2100709&geoId=102713980')
   assert.equal(provider.companyDomain, 'snapdeal.com')
-  assert.equal(provider.atsPlatform, 'darwinbox')
+  assert.equal(provider.atsPlatform, 'linkedin-guest-search')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'browser-session-darwinbox-pagination')
-  assert.equal(provider.extractionStrategy, 'official-homepage-footer-careers-link+darwinbox-listing-api')
+  assert.equal(provider.paginationStrategy, 'single-public-company-search-page')
+  assert.equal(
+    provider.extractionStrategy,
+    'official-homepage-and-about-page-linkedin-handoff+public-linkedin-company-search+public-detail-jsonld',
+  )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.equal(provider.verifiedPublicJobCount, 3)
+  assert.equal(provider.verifiedIndiaJobCount, 3)
   assert.match(provider.dryRunFile, /snapdeal[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.snapdeal\.com\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/snapdeal\.darwinbox\.in\/ms\/candidate\/careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /Careers/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.snapdeal\.com\/page\/about-us/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.linkedin\.com\/company\/snapdeal\//i)
+  assert.match(provider.verifiedSurfaceSummary, /org id 2100709/i)
+  assert.match(provider.verifiedSurfaceSummary, /Lead Software Engineer/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Snapdeal'), false)
 
   assert.equal(snapdeal.PROVIDER_METADATA.source, SNAPDEAL_CATALOG.source)
@@ -88,7 +94,7 @@ test('Snapdeal hydrated local catalog stays script-runner compatible for central
   assert.equal(provider.companyName, 'Snapdeal')
   assert.equal(provider.companyCareerPage, 'https://www.snapdeal.com/')
   assert.equal(provider.companyDomain, 'snapdeal.com')
-  assert.equal(provider.atsPlatform, 'darwinbox')
+  assert.equal(provider.atsPlatform, 'linkedin-guest-search')
   assert.match(provider.modulePath, /snapdeal[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /snapdeal[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')

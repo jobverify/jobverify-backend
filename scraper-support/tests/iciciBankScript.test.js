@@ -108,6 +108,36 @@ const detailPayloads = {
   },
 }
 
+const blockedIncidentHtml = `
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Error</title>
+  </head>
+  <body>
+    <h2>Error</h2>
+    <table summary="Error" border="0" bgcolor="#FEEE7A" cellpadding="0" cellspacing="0" width="400">
+      <tr>
+        <td>
+          <table summary="Error" border="0" cellpadding="3" cellspacing="1">
+            <tr valign="top" bgcolor="#FBFFDF" align="left">
+              <td><strong>Error</strong></td>
+            </tr>
+            <tr valign="top" bgcolor="#FFFFFF">
+              <td>
+                This page can't be displayed. Contact support for additional information.<br />
+                The incident ID is: 7645407135896463049.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+`
+
 test('buildSearchRequestPayload keeps ICICI Bank on the verified encrypted public search contract', async () => {
   const iciciBank = await loadIciciBankModule()
 
@@ -311,4 +341,87 @@ test('run falls back to browser-backed ICICI APIs when Node fetch times out', as
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].jobId, '2204493')
   assert.equal(jobs[0].scrapedAt, '2026-08-02T12:00:00.000Z')
+})
+
+test('run falls back to browser-backed ICICI APIs when Node fetch returns the blocked HTML error page shell', async () => {
+  const iciciBank = await loadIciciBankModule()
+  const requestedPrimary = []
+  const requestedBrowser = []
+
+  const jobs = await iciciBank.createIciciBankScraper({ maxJobs: 1 }).run({
+    now: () => '2026-08-15T00:00:00.000Z',
+    fetchJson: async (url, options = {}) => {
+      requestedPrimary.push({
+        url,
+        method: options.method || 'GET',
+      })
+      throw new Error(`ICICI Bank careers endpoint returned blocked HTML error page for ${url}`)
+    },
+    fetchBrowserJson: async (url, options = {}, landingUrl) => {
+      requestedBrowser.push({
+        url,
+        method: options.method || 'GET',
+        landingUrl,
+      })
+
+      if (url === iciciBank.SEARCH_API_URL) {
+        return { Data: encryptIciciPayload(searchResponsePayload) }
+      }
+
+      const detailJobId = url.split('/').at(-1)
+      if (detailPayloads[detailJobId]) {
+        return { Data: encryptIciciPayload(detailPayloads[detailJobId]) }
+      }
+
+      throw new Error(`Unexpected browser ICICI URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedPrimary, [
+    { url: iciciBank.SEARCH_API_URL, method: 'POST' },
+    { url: `${iciciBank.DETAIL_API_BASE_URL}/2204493`, method: 'GET' },
+  ])
+  assert.deepEqual(requestedBrowser, [
+    {
+      url: iciciBank.SEARCH_API_URL,
+      method: 'POST',
+      landingUrl: iciciBank.CAREERS_PORTAL_URL,
+    },
+    {
+      url: `${iciciBank.DETAIL_API_BASE_URL}/2204493`,
+      method: 'GET',
+      landingUrl: null,
+    },
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, '2204493')
+  assert.equal(jobs[0].scrapedAt, '2026-08-15T00:00:00.000Z')
+})
+
+test('run returns no jobs when the verified ICICI careers surfaces remain blocked after browser API fallback still receives HTML', async () => {
+  const iciciBank = await loadIciciBankModule()
+  const requestedPages = []
+
+  const jobs = await iciciBank.createIciciBankScraper().run({
+    fetchJson: async (url) => {
+      throw new Error(`ICICI Bank careers endpoint returned blocked HTML error page for ${url}`)
+    },
+    fetchBrowserJson: async (url) => {
+      throw new Error(`Expected JSON from ${url} but received an invalid API payload`)
+    },
+    fetchPage: async (url) => {
+      requestedPages.push(url)
+      return {
+        status: 200,
+        url,
+        html: blockedIncidentHtml,
+      }
+    },
+  })
+
+  assert.equal(jobs.length, 0)
+  assert.deepEqual(requestedPages, [
+    iciciBank.CAREERS_PORTAL_URL,
+    iciciBank.JOB_LISTING_URL,
+  ])
 })

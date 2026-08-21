@@ -15,6 +15,9 @@ test('getScraperCatalog includes the Cognizant India custom script provider with
   assert.equal(cognizant.atsPlatform, 'official-company-careers')
   assert.match(cognizant.companyCareerPage, /careers\.cognizant\.com\/india-en\/jobs/i)
   assert.equal(cognizant.companyDomain, 'careers.cognizant.com')
+  assert.equal(cognizant.verifiedOn, '2026-08-14')
+  assert.match(cognizant.extractionStrategy, /verified-cloudflare-challenge-empty/i)
+  assert.match(cognizant.verifiedSurfaceSummary, /Just a moment/i)
 })
 
 test('buildScrapers exposes a runnable Cognizant scraper without changing the runner contract', () => {

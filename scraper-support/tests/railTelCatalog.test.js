@@ -42,6 +42,7 @@ test('RailTel local catalog captures the verified current-job-openings page and 
   assert.equal(provider.verifiedSampleJobTitle, 'DEPUTATION/Re-employment for 1 post of Junior Translator/ E-0 at Corporate Office, Delhi')
   assert.equal(provider.verifiedSampleApplyTitle, 'Click here to apply')
   assert.equal(provider.atsPlatform, 'official-current-openings-page')
+  assert.equal(provider.dryRunEnrichPublicExperience, false)
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'single-first-party-current-openings-page')
   assert.equal(

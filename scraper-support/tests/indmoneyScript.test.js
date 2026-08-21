@@ -72,9 +72,13 @@ test('INDmoney scraper exports the verified official about-page LinkedIn handoff
 
   assert.equal(indmoney.COMPANY, 'INDmoney')
   assert.equal(indmoney.OFFICIAL_BRAND_NAME, 'INDmoney')
-  assert.equal(indmoney.VERIFIED_ON, '2026-08-02')
+  assert.equal(indmoney.VERIFIED_ON, '2026-08-13')
   assert.equal(indmoney.HOMEPAGE_URL, 'https://www.indmoney.com/')
   assert.equal(indmoney.ABOUT_PAGE_URL, 'https://www.indmoney.com/about')
+  assert.deepEqual(indmoney.FIRST_PARTY_BLOCKED_URLS, [
+    'https://www.indmoney.com/',
+    'https://www.indmoney.com/about',
+  ])
   assert.equal(indmoney.LINKEDIN_JOBS_URL, 'https://www.linkedin.com/company/indmoney/jobs/')
   assert.equal(indmoney.hasCloudflareChallengePageSignal(cloudflareChallengeHtml), true)
   assert.equal(indmoney.hasOfficialAboutPageSignal(aboutPageHtml), true)
@@ -84,6 +88,10 @@ test('INDmoney scraper exports the verified official about-page LinkedIn handoff
   )
   assert.equal(indmoney.hasFirstPartyPublicJobsSignal(aboutPageHtml), false)
   assert.equal(indmoney.hasFirstPartyPublicJobsSignal(aboutPageWithFirstPartyJobsHtml), true)
+  assert.equal(
+    indmoney.isVerifiedBlockedFirstPartySurface({ status: 403, url: indmoney.ABOUT_PAGE_URL, html: cloudflareChallengeHtml }),
+    true,
+  )
 })
 
 test('INDmoney returns [] only while the verified first-party about page stays a LinkedIn handoff without public first-party jobs', async () => {
@@ -123,6 +131,27 @@ test('INDmoney falls back to a browser fetch when the official about page serves
   })
 
   assert.deepEqual(requestedPages, [indmoney.ABOUT_PAGE_URL])
+  assert.deepEqual(requestedBrowserPages, [indmoney.ABOUT_PAGE_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('INDmoney returns [] when both the official homepage and about page are currently blocked by the same Cloudflare challenge', async () => {
+  const indmoney = await loadModule()
+  const requestedPages = []
+  const requestedBrowserPages = []
+
+  const jobs = await indmoney.createIndmoneyScraper().run({
+    fetchPage: async (url) => {
+      requestedPages.push(url)
+      return { status: 403, url, html: cloudflareChallengeHtml }
+    },
+    fetchBrowserPage: async (url) => {
+      requestedBrowserPages.push(url)
+      return { status: 403, url, html: cloudflareChallengeHtml }
+    },
+  })
+
+  assert.deepEqual(requestedPages, [indmoney.ABOUT_PAGE_URL, indmoney.HOMEPAGE_URL])
   assert.deepEqual(requestedBrowserPages, [indmoney.ABOUT_PAGE_URL])
   assert.deepEqual(jobs, [])
 })

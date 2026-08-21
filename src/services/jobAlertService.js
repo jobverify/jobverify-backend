@@ -8,7 +8,7 @@ import { randomUUID } from "node:crypto";
 import User from "../models/User.js";
 import JobAlertDelivery from "../models/JobAlertDelivery.js";
 import { ACCESS_ROLES } from "../constants/accessPlans.js";
-import { canUseWhatsappAlerts } from "../utils/accessControl.js";
+import { canUseTelegramAlerts, canUseWhatsappAlerts } from "../utils/accessControl.js";
 import { getPreferredJobTypeMatches } from "../constants/preferredJobTypes.js";
 import {
   hasSavedFilters,
@@ -19,6 +19,10 @@ import {
   getWhatsappProvider,
   isWhatsappDeliveryEnabled,
 } from "./whatsappProvider.js";
+import {
+  getTelegramProvider,
+  isTelegramDeliveryEnabled,
+} from "./telegramProvider.js";
 
 const DEFAULT_COUNTRY_CODE = String(process.env.WHATSAPP_DEFAULT_COUNTRY_CODE || "IN")
   .trim()
@@ -48,6 +52,11 @@ const getWhatsappRetrySettings = () => ({
   retryDelayMs: getNonNegativeInteger(process.env.WHATSAPP_RETRY_DELAY_MS, 750),
 });
 
+const getTelegramRetrySettings = () => ({
+  retryCount: getNonNegativeInteger(process.env.TELEGRAM_RETRY_COUNT, 2),
+  retryDelayMs: getNonNegativeInteger(process.env.TELEGRAM_RETRY_DELAY_MS, 750),
+});
+
 const getPositiveInteger = (value, fallback) => {
   const normalized = getNonNegativeInteger(value, fallback);
   return normalized > 0 ? normalized : fallback;
@@ -71,6 +80,26 @@ const getWhatsappDeliveryTimingSettings = (retrySettings = getWhatsappRetrySetti
 
   return {
     claimTtlMs,
+    sendTimeoutMs: requestedTimeoutMs,
+  };
+};
+
+const getTelegramDeliveryTimingSettings = (retrySettings = getTelegramRetrySettings()) => {
+  const requestedClaimTtlMs = getPositiveInteger(
+    process.env.TELEGRAM_CLAIM_TTL_MS,
+    DEFAULT_DELIVERY_CLAIM_TTL_MS,
+  );
+  const requestedTimeoutMs = getPositiveInteger(
+    process.env.TELEGRAM_SEND_TIMEOUT_MS,
+    DEFAULT_SEND_TIMEOUT_MS,
+  );
+  const { retryCount, retryDelayMs } = retrySettings;
+  const minimumClaimTtlMs = ((retryCount + 1) * requestedTimeoutMs)
+    + (retryCount * retryDelayMs)
+    + 1000;
+
+  return {
+    claimTtlMs: Math.max(2, requestedClaimTtlMs, minimumClaimTtlMs),
     sendTimeoutMs: requestedTimeoutMs,
   };
 };
@@ -232,6 +261,41 @@ const sendWhatsappAlertBatch = async (provider, user, jobs) => {
   throw Object.assign(lastError, { attemptCount, body });
 };
 
+const sendTelegramAlertBatch = async (provider, user, jobs) => {
+  const chatId = user.telegram?.chatId;
+  const body = buildWhatsappMessageBody(jobs);
+  const { retryCount, retryDelayMs } = getTelegramRetrySettings();
+  const { sendTimeoutMs } = getTelegramDeliveryTimingSettings({
+    retryCount,
+    retryDelayMs,
+  });
+
+  let attemptCount = 0;
+  let lastError;
+
+  while (attemptCount <= retryCount) {
+    attemptCount += 1;
+    try {
+      const result = await sendTextMessageWithTimeout(
+        provider,
+        { chatId, body },
+        sendTimeoutMs,
+      );
+      return { result, attemptCount, body };
+    } catch (error) {
+      lastError = error;
+      if (error?.timedOut || [400, 403].includes(error?.statusCode)) {
+        throw Object.assign(lastError, { attemptCount, body });
+      }
+      if (attemptCount <= retryCount && retryDelayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+      }
+    }
+  }
+
+  throw Object.assign(lastError, { attemptCount, body });
+};
+
 const markDeliveries = async (deliveries, update) => {
   if (!deliveries.length) return;
   await JobAlertDelivery.updateMany(
@@ -240,7 +304,7 @@ const markDeliveries = async (deliveries, update) => {
   );
 };
 
-const buildClaimableDeliveryFilter = (claimedAt = new Date()) => {
+const buildClaimableDeliveryFilter = (channel = "whatsapp", claimedAt = new Date()) => {
   const legacyClaimCutoff = new Date(
     claimedAt.getTime() - DEFAULT_DELIVERY_CLAIM_TTL_MS,
   );
@@ -254,7 +318,7 @@ const buildClaimableDeliveryFilter = (claimedAt = new Date()) => {
   }
 
   return {
-    channel: "whatsapp",
+    channel,
     $or: [
       ...queueClauses,
       { status: "processing", claimExpiresAt: { $lte: claimedAt } },
@@ -266,7 +330,7 @@ const claimDeliveryRecord = async (delivery, claimToken, claimExpiresAt, claimed
   const claimedDelivery = await JobAlertDelivery.findOneAndUpdate(
     {
       _id: delivery._id,
-      ...buildClaimableDeliveryFilter(claimedAt),
+      ...buildClaimableDeliveryFilter(delivery.channel || "whatsapp", claimedAt),
     },
     {
       $set: {
@@ -293,7 +357,10 @@ const claimDeliveryRecord = async (delivery, claimToken, claimExpiresAt, claimed
 };
 
 const claimDeliveryBatch = async (deliveryRecords) => {
-  const claimTtlMs = getWhatsappDeliveryTimingSettings().claimTtlMs;
+  const channel = deliveryRecords[0]?.delivery?.channel || "whatsapp";
+  const claimTtlMs = (channel === "telegram"
+    ? getTelegramDeliveryTimingSettings()
+    : getWhatsappDeliveryTimingSettings()).claimTtlMs;
   const claimToken = randomUUID();
   const claimedAt = new Date();
   const claimExpiresAt = new Date(claimedAt.getTime() + claimTtlMs);
@@ -319,7 +386,7 @@ const claimDeliveryBatch = async (deliveryRecords) => {
   return { claimToken, claimedRecords };
 };
 
-const createQueuedDeliveries = async (user, jobs) => {
+const createQueuedDeliveries = async (user, jobs, channel = "whatsapp") => {
   const created = [];
 
   for (const job of jobs) {
@@ -327,7 +394,7 @@ const createQueuedDeliveries = async (user, jobs) => {
       const delivery = await JobAlertDelivery.create({
         user: user._id,
         job: job._id,
-        channel: "whatsapp",
+        channel,
         status: "queued",
         jobSnapshot: {
           title: job.title || null,
@@ -369,9 +436,19 @@ const markClaimedDeliveries = async (deliveries, claimToken, update) => {
 const processClaimedDeliveryBatch = async (user, deliveryRecords, claimToken) => {
   const queuedDeliveries = deliveryRecords.map(({ delivery }) => delivery);
   const queuedJobs = deliveryRecords.map(({ job }) => job);
-  const provider = getWhatsappProvider();
+  const channel = queuedDeliveries[0]?.channel || "whatsapp";
+  const isTelegram = channel === "telegram";
+  const provider = isTelegram ? getTelegramProvider() : getWhatsappProvider();
 
-  if (!isWhatsappDeliveryEnabled() && provider.name !== "mock") {
+  if (isTelegram && !isTelegramDeliveryEnabled()) {
+    await markClaimedDeliveries(queuedDeliveries, claimToken, {
+      status: "skipped",
+      reason: "telegram_disabled",
+    });
+    return;
+  }
+
+  if (!isTelegram && !isWhatsappDeliveryEnabled() && provider.name !== "mock") {
     await markClaimedDeliveries(queuedDeliveries, claimToken, {
       status: "skipped",
       reason: "whatsapp_disabled",
@@ -380,7 +457,9 @@ const processClaimedDeliveryBatch = async (user, deliveryRecords, claimToken) =>
   }
 
   try {
-    const { result, attemptCount, body } = await sendWhatsappAlertBatch(provider, user, queuedJobs);
+    const { result, attemptCount, body } = isTelegram
+      ? await sendTelegramAlertBatch(provider, user, queuedJobs)
+      : await sendWhatsappAlertBatch(provider, user, queuedJobs);
     const attemptedAt = new Date();
     await markClaimedDeliveries(queuedDeliveries, claimToken, {
       status: "sent",
@@ -393,13 +472,20 @@ const processClaimedDeliveryBatch = async (user, deliveryRecords, claimToken) =>
       reason: null,
     });
   } catch (error) {
+    const isUnavailableTelegramChat = isTelegram && [400, 403].includes(error?.statusCode);
+    if (isUnavailableTelegramChat) {
+      await User.updateOne(
+        { _id: user._id },
+        { $set: { "premium.telegramAlertsEnabled": false } },
+      );
+    }
     await markClaimedDeliveries(queuedDeliveries, claimToken, {
       status: "failed",
       lastAttemptAt: new Date(),
       attemptCount: error.attemptCount || 1,
       providerName: provider.name,
       payloadPreview: error.body?.slice(0, 500) || null,
-      reason: error.message,
+      reason: isUnavailableTelegramChat ? "telegram_chat_unavailable" : error.message,
     });
   }
 };
@@ -438,6 +524,32 @@ const processAlertsForUser = async (user, jobs) => {
 
   const queuedDeliveryRecords = await createQueuedDeliveries(user, matchingJobs);
   if (queuedDeliveryRecords.length === 0) {
+    return;
+  }
+  await processDeliveryRecords(user, queuedDeliveryRecords);
+};
+
+const processTelegramAlertsForUser = async (user, jobs) => {
+  if (!canUseTelegramAlerts(user)) {
+    return;
+  }
+
+  const alertFilters = normalizeProfilePreferenceFilters(user.profile?.telegramAlertFilters);
+  if (!hasSavedFilters(alertFilters)) {
+    return;
+  }
+
+  const matchingJobs = jobs.filter((job) => jobMatchesSavedFilters({
+    job,
+    filters: alertFilters,
+    userProfile: user.profile,
+  }));
+  if (matchingJobs.length === 0) {
+    return;
+  }
+
+  const queuedDeliveryRecords = await createQueuedDeliveries(user, matchingJobs, "telegram");
+  if (!queuedDeliveryRecords.length) {
     return;
   }
   await processDeliveryRecords(user, queuedDeliveryRecords);
@@ -514,7 +626,11 @@ const processRecoveredDeliveryBatch = async (candidateRecords) => {
   }
 
   const currentUser = readyRecords[0].user;
-  if (!canUseWhatsappAlerts(currentUser) || !hasWhatsappOptIn(currentUser)) {
+  const channel = readyRecords[0].delivery.channel || "whatsapp";
+  const eligible = channel === "telegram"
+    ? canUseTelegramAlerts(currentUser)
+    : canUseWhatsappAlerts(currentUser) && hasWhatsappOptIn(currentUser);
+  if (!eligible) {
     await markClaimedDeliveries(readyRecords.map(({ delivery }) => delivery), claimToken, {
       status: "skipped",
       reason: "user_ineligible",
@@ -522,9 +638,9 @@ const processRecoveredDeliveryBatch = async (candidateRecords) => {
     return;
   }
 
-  const alertFilters = normalizeProfilePreferenceFilters(
-    currentUser.profile?.whatsappAlertFilters,
-  );
+  const alertFilters = normalizeProfilePreferenceFilters(channel === "telegram"
+    ? currentUser.profile?.telegramAlertFilters
+    : currentUser.profile?.whatsappAlertFilters);
   if (!hasSavedFilters(alertFilters)) {
     await markClaimedDeliveries(readyRecords.map(({ delivery }) => delivery), claimToken, {
       status: "skipped",
@@ -568,7 +684,10 @@ export const recoverQueuedJobAlerts = async () => {
   recoveryInProgress = true;
 
   try {
-    const queued = await JobAlertDelivery.find(buildClaimableDeliveryFilter())
+    const queued = await JobAlertDelivery.find({
+      channel: { $in: ["whatsapp", "telegram"] },
+      $or: buildClaimableDeliveryFilter("whatsapp").$or,
+    })
       .sort({ createdAt: 1, _id: 1 })
       .limit(QUEUED_DELIVERY_RECOVERY_LIMIT)
       .lean()
@@ -587,7 +706,7 @@ export const recoverQueuedJobAlerts = async () => {
         continue;
       }
 
-      const userId = String(delivery.user);
+      const userId = `${String(delivery.user)}:${delivery.channel || "whatsapp"}`;
       if (!groupedByUser.has(userId)) {
         groupedByUser.set(userId, []);
       }
@@ -617,11 +736,17 @@ export const queueJobAlertsForJobs = async (jobs = []) => {
       $in: [ACCESS_ROLES.SEMESTER, ACCESS_ROLES.YEARLY],
     },
     "premium.status": "active",
-    "premium.whatsappAlertsEnabled": true,
+    $or: [
+      { "premium.whatsappAlertsEnabled": true },
+      { "premium.telegramAlertsEnabled": true },
+    ],
   }).lean().exec();
 
   await Promise.all(
-    users.map((user) => processAlertsForUser(user, jobs)),
+    users.map(async (user) => {
+      await processAlertsForUser(user, jobs);
+      await processTelegramAlertsForUser(user, jobs);
+    }),
   );
 };
 

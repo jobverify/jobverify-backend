@@ -15,15 +15,15 @@ const homepagePage = {
   html: `
     <html>
       <body>
-        <h1>GPS Vehicle Tracker</h1>
+        <h1>Experience India's 1st OEM GPS Vehicle Tracker</h1>
+        <h2>GPS Vehicle Tracker</h2>
+        <p>GPS Vehicle Tracker with Trak N Tell App</p>
+        <p>Track your vehicle anywhere anytime</p>
+        <p>Smart GPS Vehicle Tracker</p>
         <p>Trak N Tell Mobile App</p>
         <p>Need Support?</p>
-        <p>Activate your GPS Device</p>
-        <p>Contact us</p>
-        <p>About us</p>
         <p>Press</p>
         <p>EMI</p>
-        <a href="mailto:care@trakntell.com">care@trakntell.com</a>
       </body>
     </html>
   `,
@@ -35,12 +35,11 @@ const contactPage = {
   html: `
     <html>
       <body>
-        <h1>Get in Touch</h1>
-        <p>Select Product</p>
-        <p>How did you hear about us?</p>
-        <p>Enquiry</p>
-        <p>Send Message</p>
+        <h1>Contact Us</h1>
+        <h2>Get in Touch</h2>
+        <p>8010-80-8010</p>
         <a href="mailto:care@trakntell.com">care@trakntell.com</a>
+        <p>Address- A20, Info Technology Park, Sector 34, Gurgaon, Haryana 122001</p>
       </body>
     </html>
   `,

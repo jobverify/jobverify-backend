@@ -90,6 +90,88 @@ const publicJobsHtml = `
 </html>
 `
 
+const liveHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Atomberg: Buy Best Ceiling Fans, Mixer Grinders &amp; Water Purifier</title>
+    <meta property="og:site_name" content="Atomberg" />
+    <meta
+      property="og:description"
+      content="Explore Atomberg’s range of ceiling fans, mixer grinders, water purifier, cold press juicer &amp; locks. Designed for modern homes with cutting-edge technology. Shop now!"
+    />
+  </head>
+  <body>
+    <footer>
+      <a href="/pages/careers">Careers</a>
+    </footer>
+  </body>
+</html>
+`
+
+const liveCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers at Atomberg | Join Our Team</title>
+    <meta
+      property="og:description"
+      content="Interested candidates can share their updated resumes on career@atomberg.com"
+    />
+    <meta name="robots" content="noindex, nofollow" />
+  </head>
+  <body>
+    <main>
+      <h1>Careers at Atomberg</h1>
+      <p>Interested candidates can share their updated resumes on career@atomberg.com</p>
+    </main>
+  </body>
+</html>
+`
+
+const liveShopify404Html = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>404 Not Found &ndash; Atomberg</title>
+    <meta name="robots" content="noindex, nofollow" />
+  </head>
+  <body>
+    <script>
+      window.Shopify = window.Shopify || {};
+      window.Shopify.routes = { root: "/" };
+      const pageConfig = {
+        template: {
+          name: '404',
+        },
+      };
+    </script>
+    <main>
+      <h1>404 Not Found</h1>
+    </main>
+  </body>
+</html>
+`
+
+const currentLiveShopify404Html = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>404 Not Found &ndash; Atomberg</title>
+    <link rel="canonical" href="https://atomberg.com/404" />
+    <meta name="robots" content="noindex, nofollow" />
+  </head>
+  <body>
+    <main>
+      <h1>404 Not Found</h1>
+    </main>
+    <footer>
+      <a href="/pages/careers">Careers</a>
+    </footer>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/atomberg/script.js')
@@ -98,20 +180,19 @@ const loadModule = async () => {
   }
 }
 
-test('Atomberg sentinel pins the verified homepage, email-only careers page, and missing-route contract from July 15, 2026', async () => {
+test('Atomberg sentinel metadata reflects the August 17, 2026 Shopify resume-only careers contract while preserving legacy helpers', async () => {
   const atomberg = await loadModule()
 
   assert.equal(atomberg.SOURCE, 'atomberg')
   assert.equal(atomberg.COMPANY, 'Atomberg')
   assert.equal(atomberg.OFFICIAL_BRAND_NAME, 'Atomberg')
-  assert.equal(atomberg.VERIFIED_AT, '2026-07-15')
+  assert.equal(atomberg.VERIFIED_AT, '2026-08-17')
   assert.equal(atomberg.HOMEPAGE_URL, 'https://atomberg.com/')
   assert.equal(atomberg.CAREERS_URL, 'https://atomberg.com/careers')
   assert.equal(atomberg.APPLICATION_EMAIL, 'career@atomberg.com')
   assert.equal(atomberg.APPLICATION_URL, 'mailto:career@atomberg.com')
   assert.deepEqual(atomberg.NO_PUBLIC_JOB_ROUTE_URLS, [
     'https://atomberg.com/jobs',
-    'https://atomberg.com/pages/careers',
   ])
   assert.equal(atomberg.BROKEN_CAREER_ROUTE_URL, 'https://atomberg.com/career')
   assert.match(atomberg.VERIFIED_SURFACE_SUMMARY, /no trustworthy public jobs surface/i)
@@ -138,6 +219,64 @@ test('Atomberg sentinel pins the verified homepage, email-only careers page, and
         status: 500,
         url: 'https://atomberg.com/career',
         html: internalServerErrorHtml,
+      },
+      'https://atomberg.com/career',
+    ),
+    true,
+  )
+})
+
+test('Atomberg sentinel accepts the August 17, 2026 Shopify resume-only careers contract', async () => {
+  const atomberg = await loadModule()
+
+  assert.equal(atomberg.hasOfficialHomepageSignal(liveHomepageHtml), true)
+  assert.equal(atomberg.extractApplicationEmail(liveCareersHtml), 'career@atomberg.com')
+  assert.equal(atomberg.hasResumeOnlyCareersSignal(liveCareersHtml), true)
+  assert.equal(atomberg.pageExposesPublicJobListings(liveCareersHtml), false)
+  assert.equal(
+    atomberg.hasVerifiedNext404Route(
+      {
+        status: 404,
+        url: 'https://atomberg.com/jobs',
+        html: liveShopify404Html,
+      },
+      'https://atomberg.com/jobs',
+    ),
+    true,
+  )
+  assert.equal(
+    atomberg.hasVerifiedInternalServerErrorRoute(
+      {
+        status: 404,
+        url: 'https://atomberg.com/career',
+        html: liveShopify404Html,
+      },
+      'https://atomberg.com/career',
+    ),
+    true,
+  )
+})
+
+test('Atomberg sentinel accepts the Monday, August 17, 2026 Shopify 404 shell without the legacy template marker', async () => {
+  const atomberg = await loadModule()
+
+  assert.equal(
+    atomberg.hasVerifiedNext404Route(
+      {
+        status: 404,
+        url: 'https://atomberg.com/jobs',
+        html: currentLiveShopify404Html,
+      },
+      'https://atomberg.com/jobs',
+    ),
+    true,
+  )
+  assert.equal(
+    atomberg.hasVerifiedInternalServerErrorRoute(
+      {
+        status: 404,
+        url: 'https://atomberg.com/career',
+        html: currentLiveShopify404Html,
       },
       'https://atomberg.com/career',
     ),
@@ -179,6 +318,34 @@ test('Atomberg sentinel returns [] only while the homepage, careers page, and ad
     ...atomberg.NO_PUBLIC_JOB_ROUTE_URLS,
     atomberg.BROKEN_CAREER_ROUTE_URL,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Atomberg sentinel returns [] for the current Shopify homepage plus redirected resume-only careers page', async () => {
+  const atomberg = await loadModule()
+
+  const jobs = await atomberg.createAtombergScraper().run({
+    fetchPage: async (url) => {
+      if (url === atomberg.HOMEPAGE_URL) {
+        return { status: 200, url, html: liveHomepageHtml }
+      }
+
+      if (url === atomberg.CAREERS_URL) {
+        return { status: 200, url: 'https://atomberg.com/pages/careers', html: liveCareersHtml }
+      }
+
+      if (atomberg.NO_PUBLIC_JOB_ROUTE_URLS.includes(url)) {
+        return { status: 404, url, html: liveShopify404Html }
+      }
+
+      if (url === atomberg.BROKEN_CAREER_ROUTE_URL) {
+        return { status: 404, url, html: liveShopify404Html }
+      }
+
+      throw new Error(`Unexpected Atomberg URL: ${url}`)
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })
 

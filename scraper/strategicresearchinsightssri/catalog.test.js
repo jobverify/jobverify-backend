@@ -22,6 +22,14 @@ test('Strategic Research Insights is registered against the verified first-party
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'srinsights.com')
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.equal(provider.verifiedPublicJobCount, 8)
+  assert.equal(provider.verifiedIndiaJobCount, 4)
+  assert.equal(
+    provider.verifiedSampleJobUrl,
+    'https://www.srinsights.com/job/sr-analyst-lead-analyst-survey-programming/',
+  )
+  assert.match(provider.verifiedSurfaceSummary, /ModSecurity 406/i)
   assert.match(provider.modulePath, /strategicresearchinsightssri[\\/]script\.js$/i)
   assert.equal(
     companyAliases['Strategic Research Insights(SRI)'],

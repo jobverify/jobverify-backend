@@ -31,7 +31,6 @@ const sampleCsv = `row,company_name,url_in_text,note
 24,Razor Pay,,
 25,"iqigai.ai, built by Fractal Analytics",,
 26,Logitech,,
-27,A.P. Moller Maersk,,
 28,ASSA ABLOY,,
 29,Apollo Tyres,,
 30,Altair,,
@@ -56,7 +55,6 @@ const sampleCsv = `row,company_name,url_in_text,note
 49,Amrita-BIOS,,
 50,AutoRABIT',,
 51,Axtria,,
-52,AXIS BANK,,
 53,Avantor,,
 54,Altera,,
 55,BNP Paribas,,
@@ -358,9 +356,9 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
     catalog: getScraperCatalog(),
   })
 
-  assert.equal(report.totalRows, 169)
-  assert.equal(report.candidateRows, 166)
-  assert.equal(report.matchedCount, 165)
+  assert.equal(report.totalRows, 167)
+  assert.equal(report.candidateRows, 164)
+  assert.equal(report.matchedCount, 163)
   assert.equal(report.unmatchedCount, 1)
 
   assert.deepEqual(
@@ -388,7 +386,6 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
       ['Razor Pay', 'razorpay'],
       ['iqigai.ai, built by Fractal Analytics', 'fractal'],
       ['Logitech', 'logitech'],
-      ['A.P. Moller Maersk', 'maersk'],
       ['ASSA ABLOY', 'assaabloy'],
       ['Apollo Tyres', 'apollo'],
       ['Altair', 'siemens'],
@@ -413,7 +410,6 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
       ['Amrita-BIOS', 'amrita'],
       ["AutoRABIT'", 'autorabit'],
       ['Axtria', 'axtria'],
-      ['AXIS BANK', 'axisbank'],
       ['Avantor', 'avantor'],
       ['Altera', 'altera'],
       ['BNP Paribas', 'bnpparibas'],

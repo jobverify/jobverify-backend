@@ -22,6 +22,26 @@ const homepageHtml = `
   </html>
 `
 
+const hydratedHomepageHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>YlogX - AI-Driven Digital Transformation</title>
+      <script type="module" crossorigin src="/assets/index-C-gnE1iz.js"></script>
+    </head>
+    <body>
+      <div id="root">
+        <nav aria-label="Insights">
+          <h2>Insights</h2>
+          <ul>
+            <li><a href="https://ylogx.io/blogs/agentic-ai-for-enterprise-the-complete-guide">Agentic AI for Enterprise</a></li>
+          </ul>
+        </nav>
+      </div>
+    </body>
+  </html>
+`
+
 const sitemapXml = `
   <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url><loc>https://ylogx.io/</loc></url>
@@ -46,7 +66,7 @@ const bundleText = `
     { path: "/contact", component: "Contact" },
     { path: "/team", component: "Team" },
     { path: "/faq", component: "Faq" },
-    { path: "*", lazy: () => import("./NotFound-A1B2C3.js") }
+    { path: "*", lazy: () => import("./NotFound-Bcy7mi-x.js") }
   ];
   const apis = ["/api/blogs", "/api/blog-list-seo", "/api/faq-items", "/api/site-settings", "/api/chatbot/ask"];
   console.log("YlogX", routes, apis);
@@ -66,7 +86,9 @@ test('YlogX validates the canonical homepage, sitemap, bundle identity, and rout
     'https://ylogx.io/jobs',
   ])
   assert.equal(ylogx.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(ylogx.hasOfficialHomepageSignal(hydratedHomepageHtml), true)
   assert.equal(ylogx.extractMainBundleAssetPath(homepageHtml), '/assets/index-B4ZDnGNR.js')
+  assert.equal(ylogx.extractMainBundleAssetPath(hydratedHomepageHtml), '/assets/index-C-gnE1iz.js')
   assert.equal(ylogx.hasVerifiedSitemap(sitemapXml), true)
   assert.equal(ylogx.hasVerifiedBundleIdentity(bundleText), true)
   assert.equal(ylogx.hasBundleJobsSignal(bundleText), false)

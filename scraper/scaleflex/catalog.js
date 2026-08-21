@@ -22,9 +22,9 @@ export const SCALEFLEX_CATALOG = {
   extractionStrategy: 'verified-homepage+verified-loading-careers-portal+verified-missing-common-careers-routes-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-14',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.scaleflex.com/ is the live first-party Scaleflex homepage, that its Company navigation links Careers to https://portals.scaleflex.com/s/xJfYX5yl/en/home, that the linked first-party portal currently exposes only a loading shell rather than a trustworthy public jobs board, and that adjacent first-party routes https://www.scaleflex.com/careers and https://www.scaleflex.com/jobs returned 404 responses during live verification. There is no trustworthy public jobs surface on the verified first-party Scaleflex domain.',
+    'Verified on Friday, August 14, 2026 that https://www.scaleflex.com/ is the live first-party Scaleflex homepage, that its Company footer now exposes a We are Hiring handoff to https://portals.scaleflex.com/s/xJfYX5yl/en/home, that the linked first-party portal currently exposes only a loading shell rather than a trustworthy public jobs board, and that adjacent first-party routes https://www.scaleflex.com/careers and https://www.scaleflex.com/jobs returned 404 Not Found responses during live verification. There is no trustworthy public jobs surface on the verified first-party Scaleflex domain.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

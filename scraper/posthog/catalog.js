@@ -20,9 +20,9 @@ export const POSTHOG_CATALOG = {
     'verified-first-party-careers-page+same-domain-gatsby-page-data+timezone-scan+return-empty-when-no-india-signals',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-25',
+  verifiedOn: '2026-08-21',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 25, 2026 that https://posthog.com/careers was the live first-party PostHog careers page, that it exposed same-domain career detail links including /careers/ai-research-engineer with Location Remote (Hybrid UK) and Timezone(s) GMT 0, and that the first-party Gatsby page-data endpoint at https://posthog.com/page-data/careers/ai-research-engineer/page-data.json exposed allJobPostings.nodes entries such as Technical Account Manager - EMEA and Technical Customer Success Manager - Americas with zero India or Bengaluru signals.',
+    'Verified on Friday, August 21, 2026 that https://posthog.com/careers was the live first-party PostHog careers page, that it exposed same-domain career detail links including /careers/ai-research-engineer, and that the first-party Gatsby page-data endpoint at https://posthog.com/page-data/careers/ai-research-engineer/page-data.json exposed allJobPostings.nodes entries such as AI Research Engineer, Backend Engineer - Ingestion (Europe/UK timezone), Technical Account Executive - EMEA, and Technical Customer Success Manager - Americas with zero India or Bengaluru signals.',
 }
 
 export default POSTHOG_CATALOG

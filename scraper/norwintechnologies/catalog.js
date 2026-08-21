@@ -16,9 +16,9 @@ export const NORWIN_TECHNOLOGIES_CATALOG = {
   countryFilter: 'India',
   paginationStrategy: 'single-trakstar-board-root',
   extractionStrategy: 'verified-careers-page+norwin-branded-trakstar-board',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-14',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://norwintechnologies.com/careers/ was the official careers page and that the Norwin-branded Trakstar board at https://norwin.hire.trakstar.com/ exposed listings including Sr, Storage Ops on the public jobs board.',
+    'Verified on Friday, August 14, 2026 that https://norwintechnologies.com/careers/ falls into a self-redirect loop on the canonical careers URL, while the Norwin-branded Trakstar board at https://norwin.hire.trakstar.com/ still renders View 1 Opening and exposes Sr, Storage Ops in Atlanta, GA, United States. No India openings were publicly listed on the verified date, so the scraper returns an empty India result after validating the live board.',
 }
 
 export default NORWIN_TECHNOLOGIES_CATALOG

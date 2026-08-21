@@ -47,18 +47,18 @@ test('Teachnook sentinel pins the current official routes and parked lander cont
 
   assert.equal(teachnook.SOURCE, 'teachnook')
   assert.equal(teachnook.COMPANY, 'Teachnook')
-  assert.equal(teachnook.HOMEPAGE_URL, 'https://teachnook.com/')
-  assert.equal(teachnook.CAREERS_URL, 'https://teachnook.com/careers')
-  assert.equal(teachnook.LANDER_URL, 'https://teachnook.com/lander')
-  assert.equal(teachnook.ALT_HOMEPAGE_URL, 'https://teachnook.in/')
-  assert.equal(teachnook.ALT_CAREERS_URL, 'https://teachnook.in/careers')
+  assert.equal(teachnook.HOMEPAGE_URL, 'https://teachnook.in/')
+  assert.equal(teachnook.CAREERS_URL, 'https://teachnook.in/careers')
+  assert.equal(teachnook.LANDER_URL, 'https://teachnook.in/lander')
+  assert.equal(teachnook.ALT_HOMEPAGE_URL, 'https://teachnook.com/')
+  assert.equal(teachnook.ALT_CAREERS_URL, 'https://teachnook.com/careers')
   assert.equal(teachnook.APPLY_URL, null)
   assert.deepEqual(teachnook.PRIMARY_URLS, [
-    'https://teachnook.com/',
-    'https://teachnook.com/careers',
-    'https://teachnook.com/lander',
     'https://teachnook.in/',
     'https://teachnook.in/careers',
+    'https://teachnook.in/lander',
+    'https://teachnook.com/',
+    'https://teachnook.com/careers',
   ])
   assert.equal(teachnook.hasOfficialRedirectSignal(officialRedirectHtml), true)
   assert.equal(teachnook.hasParkedLanderSignal(parkedLanderHtml), true)

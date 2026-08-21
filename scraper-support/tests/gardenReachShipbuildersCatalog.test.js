@@ -31,7 +31,7 @@ const buildCatalogReadyProvider = (catalogEntry) => hydrateProviderCatalogEntry(
   modulePath,
 })
 
-test('Garden Reach Shipbuilders local catalog captures the verified first-party careers contract and no-active-openings status on August 2, 2026', async () => {
+test('Garden Reach Shipbuilders local catalog captures the August 15, 2026 GRSE official-careers-plus-reachable-jobapply contract', async () => {
   const { GARDEN_REACH_SHIPBUILDERS_CATALOG } = await loadCatalogModule()
   const gardenReachShipbuilders = await loadScraperModule()
   const provider = buildCatalogReadyProvider(GARDEN_REACH_SHIPBUILDERS_CATALOG)
@@ -41,7 +41,7 @@ test('Garden Reach Shipbuilders local catalog captures the verified first-party 
   assert.equal(provider.officialBrandName, 'Garden Reach Shipbuilders & Engineers Limited')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://www.grse.in/')
-  assert.equal(provider.companyCareerPage, 'https://www.grse.in/career/')
+  assert.equal(provider.companyCareerPage, 'https://www.grse.in/career/index')
   assert.deepEqual(provider.verifiedApplyPortalUrls, [
     'https://jobapply.in/grse2026/',
     'https://jobapply.in/grse2025/',
@@ -49,24 +49,28 @@ test('Garden Reach Shipbuilders local catalog captures the verified first-party 
   assert.equal(provider.companyDomain, 'grse.in')
   assert.equal(provider.atsPlatform, 'official-company-careers-with-linked-public-apply-portal')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page-with-notification-date-filter')
+  assert.equal(
+    provider.paginationStrategy,
+    'reachable-jobapply-portal-index-pages-with-active-notice-detail-fetch',
+  )
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-careers-page+numbered-notification-blocks+effective-closing-date-filter',
+    'verified-grse-careers-contract+reachable-jobapply-portal-indexes+active-notice-detail-pdf-filter',
   )
+  assert.equal(provider.dryRunEnrichPublicExperience, false)
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-02')
+  assert.equal(provider.verifiedOn, '2026-08-15')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /gardenreachshipbuilders[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.grse\.in\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.grse\.in\/career\//i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.grse\.in\/career\/index/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/jobapply\.in\/grse2026\/?/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/jobapply\.in\/grse2025\/?/i)
-  assert.match(provider.verifiedSurfaceSummary, /2026\/03\(O\)/i)
-  assert.match(provider.verifiedSurfaceSummary, /2025\/08\(O\)/i)
-  assert.match(provider.verifiedSurfaceSummary, /March 31, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /no active public openings remained on August 2, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /2026\/04\(O\)/i)
+  assert.match(provider.verifiedSurfaceSummary, /Chief General Manager/i)
+  assert.match(provider.verifiedSurfaceSummary, /August 27, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Connect Timeout Error/i)
+  assert.match(provider.verifiedSurfaceSummary, /one active public opening remained on August 15, 2026/i)
 
   assert.equal(gardenReachShipbuilders.PROVIDER_METADATA.source, provider.source)
   assert.equal(gardenReachShipbuilders.PROVIDER_METADATA.companyName, provider.companyName)

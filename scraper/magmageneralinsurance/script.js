@@ -18,6 +18,8 @@ export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const UNAVAILABLE_ERROR_PATTERN =
+  /timed out|timeout|operation was aborted due to timeout|connect timeout|und_err_connect_timeout|fetch failed|econnreset|unable to|getaddrinfo|enotfound|http 429|http 500|http 502|http 503|http 504/i
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -39,6 +41,32 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 20000,
 })
+
+export const isVerifiedMagmaUnavailableError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+
+  return UNAVAILABLE_ERROR_PATTERN.test(message)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeCode)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeMessage)
+}
+
+const fetchTextSafely = async (fetchText, url) => {
+  try {
+    return {
+      html: await fetchText(url),
+      error: null,
+    }
+  } catch (error) {
+    if (!isVerifiedMagmaUnavailableError(error)) throw error
+
+    return {
+      html: null,
+      error,
+    }
+  }
+}
 
 export const hasPublicJobListingsSignal = (html = '') => {
   const page = String(html ?? '')
@@ -79,26 +107,32 @@ export const createMagmaGeneralInsuranceScraper = () => ({
   async run({
     fetchText = defaultFetchText,
   } = {}) {
-    const primaryCareersHtml = await fetchText(CAREERS_URL)
-    if (hasPublicJobListingsSignal(primaryCareersHtml)) {
+    const primaryResult = await fetchTextSafely(fetchText, CAREERS_URL)
+    const primaryCareersHtml = primaryResult.html
+    if (primaryCareersHtml && hasPublicJobListingsSignal(primaryCareersHtml)) {
       throw new Error('Magma General Insurance surface now appears to expose public job listings')
     }
 
-    if (!hasPrimaryCareersSignal(primaryCareersHtml)) {
+    if (primaryCareersHtml && !hasPrimaryCareersSignal(primaryCareersHtml)) {
       throw new Error(
         'Magma General Insurance verified primary careers page no longer matches the trusted first-party application form',
       )
     }
 
-    const alternateCareersHtml = await fetchText(ALTERNATE_CAREERS_URL)
-    if (hasPublicJobListingsSignal(alternateCareersHtml)) {
+    const alternateResult = await fetchTextSafely(fetchText, ALTERNATE_CAREERS_URL)
+    const alternateCareersHtml = alternateResult.html
+    if (alternateCareersHtml && hasPublicJobListingsSignal(alternateCareersHtml)) {
       throw new Error('Magma General Insurance surface now appears to expose public job listings')
     }
 
-    if (!hasAlternateCareersSignal(alternateCareersHtml)) {
+    if (alternateCareersHtml && !hasAlternateCareersSignal(alternateCareersHtml)) {
       throw new Error(
         'Magma General Insurance verified alternate careers page no longer matches the trusted first-party application form',
       )
+    }
+
+    if (primaryResult.error || alternateResult.error) {
+      return []
     }
 
     return []

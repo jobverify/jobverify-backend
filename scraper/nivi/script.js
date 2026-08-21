@@ -74,7 +74,7 @@ export const extractBundleAssetPath = (html) => {
 export const hasOfficialHomepageShellSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>\s*Nivi[^<]*Messaging-First Health Platform for Emerging Markets\s*<\/title>/i.test(page)
+  return /<title>\s*Nivi:\s*outcomes driven by insight\s*<\/title>/i.test(page)
     && /<meta[^>]+name=["']description["'][^>]+content=["']Nivi is a messaging-first health platform delivering consumer insights, engagement innovation, and health outcomes at scale across emerging markets\./i.test(page)
     && /<meta[^>]+name=["']author["'][^>]+content=["']Nivi Inc\.["']/i.test(page)
     && /<div id=["']root["']><\/div>/i.test(page)
@@ -121,7 +121,7 @@ export const createNiviScraper = () => ({
     }
 
     const bundleUrl = new URL(bundleAssetPath, HOMEPAGE_URL).toString()
-    if (bundleUrl !== CLIENT_BUNDLE_URL) {
+    if (!/^https:\/\/nivi\.io\/assets\/index-[^/]+\.js$/i.test(bundleUrl)) {
       throw new Error('NIVI homepage shell no longer exposes the verified client bundle URL')
     }
 
@@ -132,7 +132,7 @@ export const createNiviScraper = () => ({
       }
     }
 
-    const bundleText = await fetchText(CLIENT_BUNDLE_URL)
+    const bundleText = await fetchText(bundleUrl)
 
     if (!hasVerifiedAboutCtaSignal(bundleText) || !hasVerifiedNoOpenPositionsSignal(bundleText)) {
       throw new Error('NIVI client bundle no longer matches the verified no-open-positions careers contract')

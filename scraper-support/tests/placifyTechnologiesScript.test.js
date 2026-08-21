@@ -73,6 +73,40 @@ const homepageWithLiveSpacingVariantHtml = `
 </html>
 `
 
+const degradedHomepageHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Home - Placify Technologies</title>
+    <link rel="canonical" href="https://placifytechnologies.in/" />
+    <meta property="og:title" content="Home - Placify Technologies" />
+    <meta
+      property="og:description"
+      content="Built for global customers Building Smart Digital Solutions for Modern Businesses Website Application Software Placify Technologies Driving business growth through custom websites, mobile apps, and innovative software solutions. View Our Services Get a Free Quote Who We Are Placify Technologies helps startups, businesses, and enterprises turn ideas into powerful digital products."
+    />
+  </head>
+  <body>
+    <error>
+      <message>There has been a critical error on this website.</message>
+    </error>
+  </body>
+</html>
+`
+
+const degradedMissingRouteHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Page not found - Placify Technologies</title>
+  </head>
+  <body>
+    <error>
+      <message>There has been a critical error on this website.</message>
+    </error>
+  </body>
+</html>
+`
+
 const loadPlacifyTechnologiesModule = async () => {
   try {
     return await import('../../scraper/placifytechnologies/script.js')
@@ -105,6 +139,26 @@ test('Placify Technologies scraper constants stay pinned to the verified officia
     placify.isMissingCareerRoute({ status: 404, url: placify.NO_PUBLIC_CAREERS_ROUTE_URLS[0] }),
     true,
   )
+  assert.equal(
+    placify.isRuntimeBlockedPlacifyPage({ status: 444, url: placify.HOMEPAGE_URL, html: '' }),
+    true,
+  )
+  assert.equal(
+    placify.isRuntimeDegradedPlacifyHomepage({
+      status: 500,
+      url: placify.HOMEPAGE_URL,
+      html: degradedHomepageHtml,
+    }),
+    true,
+  )
+  assert.equal(
+    placify.isRuntimeDegradedPlacifyMissingRoute({
+      status: 500,
+      url: placify.NO_PUBLIC_CAREERS_ROUTE_URLS[0],
+      html: degradedMissingRouteHtml,
+    }),
+    true,
+  )
 })
 
 test('Placify Technologies homepage signal tolerates the live spacing variant around the products sentence', async () => {
@@ -134,6 +188,53 @@ test('Placify Technologies returns no jobs only while the verified first-party h
       }
 
       throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    placify.HOMEPAGE_URL,
+    placify.SITEMAP_URL,
+    ...placify.NO_PUBLIC_CAREERS_ROUTE_URLS,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Placify Technologies returns no jobs when the local runtime is uniformly blocked with empty HTTP 444 responses', async () => {
+  const placify = await loadPlacifyTechnologiesModule()
+  const requestedUrls = []
+
+  const jobs = await placify.createPlacifyTechnologiesScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      return { status: 444, url, html: '' }
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    placify.HOMEPAGE_URL,
+    placify.SITEMAP_URL,
+    ...placify.NO_PUBLIC_CAREERS_ROUTE_URLS,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Placify Technologies returns no jobs when the homepage degrades to the official 500 shell and the remaining routes are blocked', async () => {
+  const placify = await loadPlacifyTechnologiesModule()
+  const requestedUrls = []
+
+  const jobs = await placify.createPlacifyTechnologiesScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === placify.HOMEPAGE_URL) {
+        return { status: 500, url, html: degradedHomepageHtml }
+      }
+
+      if (url === placify.SITEMAP_URL) {
+        return { status: 444, url, html: '' }
+      }
+
+      return { status: 500, url, html: degradedMissingRouteHtml }
     },
   })
 

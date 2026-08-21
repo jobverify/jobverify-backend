@@ -62,6 +62,18 @@ export const hasCompromisedHomepageSignal = (html = '') => {
     || hasCurrentBigSkySignal
 }
 
+export const isVerifiedFirstParty404Route = (page = {}) => {
+  const html = String(page?.html ?? '')
+  const normalized = normalizeWhitespace(html)
+
+  return Number(page?.status) === 404
+    && !redirectsOutsideOfficialDomain(page?.url || HOMEPAGE_URL)
+    && /<title>\s*404 Not Found\s*<\/title>/i.test(html)
+    && normalized.includes('the resource requested could not be found on this server!')
+    && normalized.includes('proudly powered by litespeed web server')
+    && normalized.includes('please be advised that litespeed technologies inc. is not a web hosting company')
+}
+
 const redirectsOutsideOfficialDomain = (url) => {
   try {
     return new URL(url).hostname !== 'www.ayninfotech.com'
@@ -78,13 +90,13 @@ export const isVerifiedUntrustedRoute = (page = {}) =>
 export const createAynInfotechScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
-    if (!isVerifiedUntrustedRoute(homepage)) {
+    if (!isVerifiedUntrustedRoute(homepage) && !isVerifiedFirstParty404Route(homepage)) {
       throw new Error('AYN InfoTech verified untrusted domain state changed on the first-party homepage')
     }
 
     for (const routeUrl of CHECKED_ROUTE_URLS) {
       const routePage = await fetchPage(routeUrl)
-      if (!isVerifiedUntrustedRoute(routePage)) {
+      if (!isVerifiedUntrustedRoute(routePage) && !isVerifiedFirstParty404Route(routePage)) {
         throw new Error(`AYN InfoTech verified untrusted domain state changed: ${routePage.url || routeUrl}`)
       }
     }

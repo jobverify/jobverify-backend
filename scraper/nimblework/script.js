@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { normalizeScrapedJob } from '../../scraper-support/utils/normalizeScrapedJob.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -18,13 +17,41 @@ const APPLY_EMAIL = 'careers@nimblework.com'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'User-Agent': USER_AGENT,
-  },
-  label: 'nimblework-text',
-  timeoutMs: 45000,
+const createTimeoutSignal = (timeoutMs) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return undefined
+  }
+
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs)
+  }
+
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), timeoutMs)
+  return controller.signal
+}
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'User-Agent': USER_AGENT,
+    },
+    redirect: 'follow',
+    signal: createTimeoutSignal(45000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    html: await response.text(),
+  }
+}
+
+const createFetchPageFromText = (fetchText) => async (url) => ({
+  status: 200,
+  url,
+  html: await fetchText(url),
 })
 
 const SECTION_DEFINITIONS = [
@@ -191,6 +218,15 @@ export const hasOfficialCurrentOpeningsSignal = (html) => {
     && extractApplyEmail(page) === APPLY_EMAIL
     && extractAccordionItems(page).length > 0
   )
+}
+
+export const hasVerifiedCloudflareChallengeSignal = (page = {}) => {
+  const html = String(page?.html ?? '')
+  const normalized = normalizeWhitespace(html)?.toLowerCase() || ''
+
+  return Number(page?.status) === 403
+    && /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(html)
+    && normalized.includes('enable javascript and cookies to continue')
 }
 
 const buildSectionMatchers = () => SECTION_DEFINITIONS.map((definition) => ({
@@ -370,25 +406,45 @@ export const extractPublicJobs = (html) => {
 }
 
 export const createNimbleWorkScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: nowOverride } = {}) {
+  async run({ fetchPage, fetchText, now: nowOverride } = {}) {
     const getNow = nowOverride || now
+    const effectiveFetchPage = typeof fetchPage === 'function'
+      ? fetchPage
+      : typeof fetchText === 'function'
+        ? createFetchPageFromText(fetchText)
+        : defaultFetchPage
 
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
+    const homepagePage = await effectiveFetchPage(HOMEPAGE_URL)
+    let careersPage = null
+    let currentOpeningsPage = null
+
+    if (hasVerifiedCloudflareChallengeSignal(homepagePage)) {
+      careersPage = await effectiveFetchPage(CAREERS_URL)
+      currentOpeningsPage = await effectiveFetchPage(CURRENT_OPENINGS_URL)
+
+      if (
+        hasVerifiedCloudflareChallengeSignal(careersPage)
+        && hasVerifiedCloudflareChallengeSignal(currentOpeningsPage)
+      ) {
+        return []
+      }
+    }
+
+    if (!hasOfficialHomepageSignal(homepagePage.html)) {
       throw new Error('Nimble Work, Inc verified official homepage no longer matches the known first-party surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
+    careersPage ||= await effectiveFetchPage(CAREERS_URL)
+    if (!hasOfficialCareersSignal(careersPage.html)) {
       throw new Error('Nimble Work, Inc verified first-party careers page no longer matches the known handoff surface')
     }
 
-    const currentOpeningsHtml = await fetchText(CURRENT_OPENINGS_URL)
-    if (!hasOfficialCurrentOpeningsSignal(currentOpeningsHtml)) {
+    currentOpeningsPage ||= await effectiveFetchPage(CURRENT_OPENINGS_URL)
+    if (!hasOfficialCurrentOpeningsSignal(currentOpeningsPage.html)) {
       throw new Error('Nimble Work, Inc verified first-party current openings page no longer matches the known accordion listings surface')
     }
 
-    return extractPublicJobs(currentOpeningsHtml).map((job) => normalizeJobForProvider(job, {
+    return extractPublicJobs(currentOpeningsPage.html).map((job) => normalizeJobForProvider(job, {
       now: getNow,
     }))
   },

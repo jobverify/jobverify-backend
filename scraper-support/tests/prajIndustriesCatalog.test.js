@@ -13,7 +13,7 @@ const loadPrajIndustriesCatalog = async () => {
   }
 }
 
-test('Praj Industries catalog captures the verified first-party Darwinbox public board metadata', async () => {
+test('Praj Industries catalog captures the verified first-party careers page plus the current blocked Darwinbox runtime state', async () => {
   const { PRAJ_INDUSTRIES_CATALOG } = await loadPrajIndustriesCatalog()
 
   assert.equal(PRAJ_INDUSTRIES_CATALOG.source, 'prajindustries')
@@ -23,25 +23,37 @@ test('Praj Industries catalog captures the verified first-party Darwinbox public
   assert.equal(PRAJ_INDUSTRIES_CATALOG.homepageUrl, 'https://www.praj.net/')
   assert.equal(PRAJ_INDUSTRIES_CATALOG.companyCareerPage, 'https://www.praj.net/careers/')
   assert.equal(PRAJ_INDUSTRIES_CATALOG.companyDomain, 'praj.net')
-  assert.equal(PRAJ_INDUSTRIES_CATALOG.atsPlatform, 'darwinbox')
+  assert.equal(PRAJ_INDUSTRIES_CATALOG.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(PRAJ_INDUSTRIES_CATALOG.countryFilter, 'India')
   assert.equal(
     PRAJ_INDUSTRIES_CATALOG.paginationStrategy,
-    'official-careers-page-plus-public-darwinbox-candidateapi-pagination',
+    'verified-careers-page-plus-darwinbox-shell-and-blocked-api-validation',
   )
   assert.equal(
     PRAJ_INDUSTRIES_CATALOG.extractionStrategy,
-    'verified-careers-page+darwinbox-public-listing-api+darwinbox-public-job-detail-api',
+    'verified-first-party-careers-page+verified-darwinbox-handoff+reachable-public-shells+blocked-listing-api-return-empty',
   )
   assert.equal(PRAJ_INDUSTRIES_CATALOG.officialCareersHandoffUrl, 'https://praj.darwinbox.in/ms/candidate/careers')
   assert.equal(PRAJ_INDUSTRIES_CATALOG.darwinboxOrigin, 'https://praj.darwinbox.in')
   assert.equal(PRAJ_INDUSTRIES_CATALOG.darwinboxCompanyId, 'main')
-  assert.equal(PRAJ_INDUSTRIES_CATALOG.officialListingApiUrl, 'https://praj.darwinbox.in/ms/candidateapi/job?page=1')
-  assert.equal(PRAJ_INDUSTRIES_CATALOG.officialJobDetailApiUrl, 'https://praj.darwinbox.in/ms/candidateapi/job/{id}')
-  assert.equal(PRAJ_INDUSTRIES_CATALOG.verifiedOn, '2026-07-17')
-  assert.match(PRAJ_INDUSTRIES_CATALOG.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.equal(PRAJ_INDUSTRIES_CATALOG.darwinboxJobsUrl, 'https://praj.darwinbox.in/jobs')
+  assert.equal(PRAJ_INDUSTRIES_CATALOG.darwinboxCandidateCareersUrl, 'https://praj.darwinbox.in/ms/candidate/careers')
+  assert.equal(PRAJ_INDUSTRIES_CATALOG.darwinboxPublicHomeUrl, 'https://praj.darwinbox.in/ms/candidatev2/main/careers/home')
+  assert.equal(PRAJ_INDUSTRIES_CATALOG.darwinboxPublicAllJobsUrl, 'https://praj.darwinbox.in/ms/candidatev2/main/careers/allJobs')
+  assert.equal(PRAJ_INDUSTRIES_CATALOG.darwinboxListingApiUrl, 'https://praj.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main')
+  assert.deepEqual(PRAJ_INDUSTRIES_CATALOG.darwinboxShellRouteUrls, [
+    'https://praj.darwinbox.in/jobs',
+    'https://praj.darwinbox.in/ms/candidate/careers',
+    'https://praj.darwinbox.in/ms/candidatev2/main/careers/home',
+    'https://praj.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+  ])
+  assert.equal(Object.prototype.hasOwnProperty.call(PRAJ_INDUSTRIES_CATALOG, 'officialListingApiUrl'), false)
+  assert.equal(Object.prototype.hasOwnProperty.call(PRAJ_INDUSTRIES_CATALOG, 'officialJobDetailApiUrl'), false)
+  assert.equal(PRAJ_INDUSTRIES_CATALOG.verifiedOn, '2026-08-14')
+  assert.match(PRAJ_INDUSTRIES_CATALOG.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
   assert.match(PRAJ_INDUSTRIES_CATALOG.verifiedSurfaceSummary, /SEARCH FOR JOB/i)
-  assert.match(PRAJ_INDUSTRIES_CATALOG.verifiedSurfaceSummary, /jobscount 12/i)
+  assert.match(PRAJ_INDUSTRIES_CATALOG.verifiedSurfaceSummary, /Cloudflare 403/i)
+  assert.match(PRAJ_INDUSTRIES_CATALOG.verifiedSurfaceSummary, /no trustworthy public Praj jobs surface/i)
   assert.match(PRAJ_INDUSTRIES_CATALOG.modulePath, /scraper[\\/]prajindustries[\\/]script\.js$/i)
   assert.match(PRAJ_INDUSTRIES_CATALOG.dryRunFile, /prajindustries[\\/]jobs\.json$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Praj Industries'), false)

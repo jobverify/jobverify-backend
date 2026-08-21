@@ -159,6 +159,27 @@ test('run returns the verified public Tutr Hyperloop jobs from the first-party c
   assert.deepEqual(jobs, extractJobsFromCareersHtml(careersPageHtml))
 })
 
+test('run returns [] when both verified Tutr Hyperloop routes fail with the August 20, 2026 certificate mismatch', async () => {
+  const tutrHyperloop = await loadModule()
+  assert.ok(tutrHyperloop, 'Expected Tutr Hyperloop scraper module at ./script.js')
+
+  const { CAREERS_PAGE_URL, HOMEPAGE_URL, createTutrHyperloopScraper } = tutrHyperloop
+  const certificateError =
+    "fetch failed | Hostname/IP does not match certificate's altnames: Host: tutr.tech. is not in the cert's altnames: DNS:*.ingress-daribow.ewp.live, DNS:ingress-daribow.ewp.live"
+
+  const jobs = await createTutrHyperloopScraper().run({
+    fetchPage: async (url) => {
+      if (url === HOMEPAGE_URL || url === CAREERS_PAGE_URL) {
+        throw new Error(certificateError)
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
 test('Tutr Hyperloop default fetch is bounded by a timeout signal', async () => {
   const tutrHyperloop = await loadModule()
   assert.ok(tutrHyperloop, 'Expected Tutr Hyperloop scraper module at ./script.js')

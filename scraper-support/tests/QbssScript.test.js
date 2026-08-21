@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 import { hydrateProviderCatalogEntry } from '../providers/index.js'
 
-const FIXED_SCRAPED_AT = '2026-07-26T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-13T00:00:00.000Z'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const modulePath = path.resolve(currentDir, '../../scraper/qbss/script.js')
@@ -187,13 +187,12 @@ test('Qbss local catalog captures the verified ContinuServe rebrand careers cont
     provider.extractionStrategy,
     'verified-qbss-legacy-redirects+continuserve-detail-links+india-internal-detail-table-filter',
   )
-  assert.equal(provider.verifiedOn, '2026-07-26')
-  assert.equal(provider.verifiedPublicJobCount, 14)
+  assert.equal(provider.verifiedOn, '2026-08-13')
+  assert.equal(provider.verifiedPublicJobCount, 17)
   assert.equal(provider.verifiedIndiaJobCount, 6)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.verifiedSurfaceSummary, /ContinuServe/i)
-  assert.match(provider.verifiedSurfaceSummary, /redirect/i)
-  assert.match(provider.verifiedSurfaceSummary, /14/i)
+  assert.match(provider.verifiedSurfaceSummary, /17/i)
   assert.match(provider.verifiedSurfaceSummary, /6 India/i)
 })
 
@@ -342,11 +341,41 @@ test('Qbss returns only India internal ContinuServe roles from the verified rebr
   ])
 })
 
-test('Qbss blocks its browser-only live careers path before a browser can launch', async () => {
+test('Qbss exposes a live HTTP loader that preserves the verified careers contract shape', async () => {
   const qbss = await loadScriptModule()
 
-  await assert.rejects(
-    qbss.run(),
-    /qbss.*api-only migration.*browser automation is disabled/i,
+  const contract = await qbss.loadLiveCareersContractFromHttp({
+    fetchText: async (url) => {
+      if (url === qbss.CAREERS_URL) {
+        return VERIFIED_LISTING_HTML
+      }
+
+      const htmlByUrl = new Map([
+        ['https://continuserve.com/careers/sr-network-engineer/', INTERNAL_INDIA_DETAIL_HTML],
+        ['https://continuserve.com/careers/senior-associate-record-to-report/', SECOND_INTERNAL_INDIA_DETAIL_HTML],
+        ['https://continuserve.com/careers/senior-manager-human-resources-and-operations/', CLIENT_DETAIL_HTML],
+        ['https://continuserve.com/careers/director-of-accounting-not-for-profit-continuserve-talent-network/', USA_INTERNAL_DETAIL_HTML],
+      ])
+
+      const html = htmlByUrl.get(url)
+      if (!html) {
+        assert.fail(`Unexpected QBSS detail URL: ${url}`)
+      }
+
+      return html
+    },
+  })
+
+  assert.equal(contract.listingUrl, qbss.CAREERS_URL)
+  assert.equal(contract.listingHtml, VERIFIED_LISTING_HTML)
+  assert.equal(contract.detailPages.length, 4)
+  assert.deepEqual(
+    contract.detailPages.map((page) => page.url),
+    [
+      'https://continuserve.com/careers/sr-network-engineer/',
+      'https://continuserve.com/careers/senior-associate-record-to-report/',
+      'https://continuserve.com/careers/senior-manager-human-resources-and-operations/',
+      'https://continuserve.com/careers/director-of-accounting-not-for-profit-continuserve-talent-network/',
+    ],
   )
 })

@@ -99,7 +99,7 @@ test('Cadsys local catalog captures the verified Cadensys careers page handoff',
   await assertHydratedCatalogLoadsScript(provider)
 })
 
-test('NaviSite local catalog captures the verified first-party Accenture handoff sentinel', async () => {
+test('NaviSite local catalog captures the verified blocked first-party Accenture handoff sentinel', async () => {
   const { constant, defaultExport } = await loadCatalog('../../scraper/navisite/catalog.js', 'NAVISITE_CATALOG')
   const provider = hydrateProviderCatalogEntry(constant)
 
@@ -112,14 +112,15 @@ test('NaviSite local catalog captures the verified first-party Accenture handoff
   assert.equal(provider.parentCareersUrl, 'https://www.accenture.com/us-en/careers')
   assert.equal(provider.atsPlatform, 'official-careers-parent-search-handoff')
   assert.equal(provider.countryFilter, 'Global')
-  assert.equal(provider.paginationStrategy, 'first-party-handoff-page-validation')
+  assert.equal(provider.paginationStrategy, 'first-party-handoff-page-or-blocked-shell-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-navisite-handoff+opaque-accenture-search-flow+fail-closed-sentinel',
+    'verified-first-party-navisite-handoff-or-cloudflare-blocked-shell+opaque-accenture-search-flow+fail-closed-sentinel',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /search “Navisite”/i)
-  assert.match(provider.verifiedSurfaceSummary, /Accenture Careers page/i)
+  assert.equal(provider.verifiedOn, '2026-08-13')
+  assert.match(provider.verifiedSurfaceSummary, /Cloudflare "Just a moment\.\.\."/i)
+  assert.match(provider.verifiedSurfaceSummary, /HTTP 403/i)
+  assert.match(provider.verifiedSurfaceSummary, /search "Navisite"/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

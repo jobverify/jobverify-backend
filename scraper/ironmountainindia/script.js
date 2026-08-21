@@ -2,7 +2,6 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { defaultShouldUseBrowserNetworkFallback } from '../../scraper-support/shared/browserNetworkFallback.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { IRON_MOUNTAIN_INDIA_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -47,17 +46,27 @@ const uppercaseShortWord = (word) => {
   return capitalizeWord(normalized)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: `${SOURCE}-html`,
-  timeoutMs: 15000,
-})
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    html: await response.text(),
+  }
+}
 
 const shouldUseBrowserFallback = (error) =>
   defaultShouldUseBrowserNetworkFallback(error)
+
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
 
 export const hasOfficialAboutPageCareersSignal = (html = '') => {
   const page = String(html ?? '')
@@ -72,20 +81,24 @@ export const hasOfficialAboutPageCareersSignal = (html = '') => {
 
 export const hasOfficialJobsBoardSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(page)
 
   return /<title>\s*Home \| Iron Mountain\s*<\/title>/i.test(page)
-    && /<h1>\s*Search jobs\s*<\/h1>/i.test(page)
-    && text.includes('Search jobs')
     && /"job-folder"\s*:\s*"ironmountain-jobs"/i.test(page)
     && /"x-origin"\s*:\s*"ironmountain\.jobs"/i.test(page)
+}
+
+export const hasVercelSecurityCheckpointSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page)
+
+  return /<title>\s*Vercel Security Checkpoint\s*<\/title>/i.test(page)
+    && text.includes('Vercel Security Checkpoint')
 }
 
 const hasOfficialJobDetailSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title>\s*Job \| Iron Mountain\s*<\/title>/i.test(page)
-    && /"job-folder"\s*:\s*"ironmountain-jobs"/i.test(page)
+  return /"job-folder"\s*:\s*"ironmountain-jobs"/i.test(page)
     && /"x-origin"\s*:\s*"ironmountain\.jobs"/i.test(page)
     && /id=["']__NUXT_DATA__["']/i.test(page)
 }
@@ -164,39 +177,62 @@ export const createIronMountainIndiaScraper = ({
   maxJobs = null,
 } = {}) => ({
   async run({
-    fetchText = defaultFetchText,
+    fetchPage,
+    fetchText,
     fetchBrowserText,
   } = {}) {
-    const loadText = async (url) => {
-      try {
-        return await fetchText(url)
-      } catch (error) {
-        if (typeof fetchBrowserText === 'function' && shouldUseBrowserFallback(error)) {
-          return fetchBrowserText(url)
-        }
-
-        throw error
+    const loadPage = async (url) => {
+      if (typeof fetchPage === 'function') {
+        return fetchPage(url)
       }
+
+      if (typeof fetchText === 'function') {
+        try {
+          return {
+            status: 200,
+            url,
+            html: await fetchText(url),
+          }
+        } catch (error) {
+          if (typeof fetchBrowserText === 'function' && shouldUseBrowserFallback(error)) {
+            return {
+              status: 200,
+              url,
+              html: await fetchBrowserText(url),
+            }
+          }
+
+          throw error
+        }
+      }
+
+      return defaultFetchPage(url)
     }
 
-    const aboutPageHtml = await loadText(ABOUT_PAGE_URL)
-    if (!hasOfficialAboutPageCareersSignal(aboutPageHtml)) {
+    const aboutPage = await loadPage(ABOUT_PAGE_URL)
+    const aboutPageHtml = getPageHtml(aboutPage)
+    const aboutPageIsCheckpointed =
+      Number(aboutPage.status) === 429
+      && String(aboutPage.url || ABOUT_PAGE_URL) === ABOUT_PAGE_URL
+      && hasVercelSecurityCheckpointSignal(aboutPageHtml)
+
+    if (!aboutPageIsCheckpointed && !hasOfficialAboutPageCareersSignal(aboutPageHtml)) {
       throw new Error('Iron Mountain India verified about page changed materially')
     }
 
-    const jobsBoardHtml = await loadText(CAREERS_URL)
+    const jobsBoardHtml = getPageHtml(await loadPage(CAREERS_URL))
     if (!hasOfficialJobsBoardSignal(jobsBoardHtml)) {
       throw new Error('Iron Mountain India verified jobs board changed materially')
     }
 
-    const sitemapXml = await loadText(JOBS_SITEMAP_URL)
+    const sitemapXml = getPageHtml(await loadPage(JOBS_SITEMAP_URL))
     const indiaEntries = extractSitemapEntries(sitemapXml).filter((entry) => isIndiaJobUrl(entry.url))
     const selectedEntries = Number.isInteger(maxJobs) ? indiaEntries.slice(0, maxJobs) : indiaEntries
     const scrapedAt = now()
     const jobs = []
 
     for (const entry of selectedEntries) {
-      const detailHtml = await loadText(entry.url)
+      const detailHtml = getPageHtml(await loadPage(entry.url))
       if (!hasOfficialJobDetailSignal(detailHtml)) {
         throw new Error(`Iron Mountain India verified jobs board changed materially at ${entry.url}`)
       }

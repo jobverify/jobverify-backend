@@ -55,6 +55,33 @@ const verifiedPaloAltoIndiaHtml = `
 </html>
 `
 
+const redirectedPaloAltoIndiaErrorHtml = `
+<!doctype html>
+<html>
+  <head>
+    <title>Error</title>
+  </head>
+  <body>
+    <nav>
+      <p>Locations</p>
+      <p>EMEA</p>
+      <p>India</p>
+      <p>Israel</p>
+      <p>JAPAC</p>
+      <p>Japan</p>
+      <p>LATAM</p>
+      <p>North America</p>
+    </nav>
+    <h1>Error</h1>
+    <p>An error has occurred. Please use your browser back button to return to the previous page, start a new search above, or go back to the homepage.</p>
+    <section>
+      <h2>Featured Jobs</h2>
+      <h2>Recently Viewed Jobs</h2>
+    </section>
+  </body>
+</html>
+`
+
 const verifiedPaloAltoIndiaSearchHtml = `
 <!doctype html>
 <html>
@@ -101,6 +128,10 @@ test('CyberArk India sentinel recognizes the verified CyberArk-to-Palo-Alto care
   )
   assert.equal(cyberArkIndia.hasCyberArkCareersHandoffSignal(verifiedCyberArkCareersHtml), true)
   assert.equal(cyberArkIndia.hasPaloAltoIndiaLocationSignal(verifiedPaloAltoIndiaHtml), true)
+  assert.equal(cyberArkIndia.hasPaloAltoIndiaErrorFallbackSignal({
+    html: redirectedPaloAltoIndiaErrorHtml,
+    finalUrl: 'https://jobs.paloaltonetworks.com/en/error',
+  }), true)
   assert.equal(cyberArkIndia.hasExpectedIndiaSearchHandoff(verifiedPaloAltoIndiaHtml), false)
   assert.equal(cyberArkIndia.hasPaloAltoIndiaSearchSignal(verifiedPaloAltoIndiaSearchHtml), true)
   assert.equal(cyberArkIndia.hasCyberArkSpecificJobsSignal(verifiedPaloAltoIndiaSearchHtml), false)
@@ -177,9 +208,9 @@ test('CyberArk India sentinel accepts the current Friday, August 7, 2026 redirec
       if (url === cyberArkIndia.PALO_ALTO_INDIA_URL) {
         return {
           status: 200,
-          url,
+          url: 'https://jobs.paloaltonetworks.com/en/error',
           headers: {},
-          html: verifiedPaloAltoIndiaHtml,
+          html: redirectedPaloAltoIndiaErrorHtml,
         }
       }
 

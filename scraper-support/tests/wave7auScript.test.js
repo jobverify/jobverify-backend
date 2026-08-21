@@ -11,7 +11,7 @@ const loadModule = async (relativePath) => {
   }
 }
 
-const excelraCareersHtml = `
+const excelraWordpressRenderedContent = `
 <!doctype html>
 <html lang="en">
   <body>
@@ -19,22 +19,37 @@ const excelraCareersHtml = `
     <h1>A more fulfilling career</h1>
     <h2>Current openings</h2>
     <div class="job-card">
-      <h4 class="display-2 m-0 p-0 custom-theme-color"><span class="title">Senior Business Analyst </span></h4>
+      <h4 class="display-2 m-0 p-0 custom-theme-color"><span class="title">Senior DevOps Engineer</span></h4>
       <div class="iwithtext"><div class="iwt-text"><strong>Full Time Employment</strong></div></div>
       <div class="iwithtext"><div class="iwt-text"><strong>Hyderabad, India</strong></div></div>
       <div class="iwithtext"><div class="iwt-text"><strong>5-10 Years</strong></div></div>
-      <a class="nectar-button large regular m-extra-color-gradient-1" href="https://excelra.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a44b39717416"><span>Apply now</span></a>
+      [nectar_btn size=&#8221;large&#8221; button_style=&#8221;regular&#8221; text=&#8221;Apply now&#8221; url=&#8221;https://excelra.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a55dd08b32d7&#8221;]
+    </div>
+    <div class="job-card">
+      <h4 class="display-2 m-0 p-0 custom-theme-color"><span class="title">Medicinal Chemistry Consultant</span></h4>
+      <div class="iwithtext"><div class="iwt-text"><strong>Consultant</strong></div></div>
+      <div class="iwithtext"><div class="iwt-text"><strong>Hyderabad, India</strong></div></div>
+      <div class="iwithtext"><div class="iwt-text"><strong>8-12 Years</strong></div></div>
+      [nectar_btn size=&#8221;large&#8221; button_style=&#8221;regular&#8221; text=&#8221;Apply now&#8221; url=&#8221;https://excelra.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a4d517f7f8e2&#8221;]
     </div>
     <div class="job-card">
       <h4 class="display-2 m-0 p-0 custom-theme-color"><span class="title">Data Engineer</span></h4>
       <div class="iwithtext"><div class="iwt-text"><strong>Consultant</strong></div></div>
       <div class="iwithtext"><div class="iwt-text"><strong>Germany</strong></div></div>
       <div class="iwithtext"><div class="iwt-text"><strong>5-12 Years</strong></div></div>
-      <a class="nectar-button large regular m-extra-color-gradient-1" href="https://excelra.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a3bc08f1459b"><span>Apply now</span></a>
+      [nectar_btn size=&#8221;large&#8221; button_style=&#8221;regular&#8221; text=&#8221;Apply now&#8221; url=&#8221;https://excelra.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a3bc08f1459b&#8221;]
     </div>
   </body>
 </html>
 `
+
+const excelraWordpressPagesPayload = [
+  {
+    content: {
+      rendered: excelraWordpressRenderedContent,
+    },
+  },
+]
 
 const blazeclanCareersHtml = `
 <!doctype html>
@@ -176,37 +191,67 @@ const nucsoftCareersHtml = `
 </html>
 `
 
-test('Excelra Knowledge Solutions run returns only India jobs from the verified first-party careers cards', async () => {
+test('Excelra Knowledge Solutions run returns only India jobs from the verified WordPress careers payload', async () => {
   const excelra = await loadModule('../../scraper/excelraknowledgesolutions/script.js')
 
-  assert.equal(excelra.hasOfficialCareersSignal(excelraCareersHtml), true)
-  assert.equal(excelra.extractVisibleJobCards(excelraCareersHtml).length, 2)
+  assert.equal(excelra.hasOfficialCareersSignal(excelraWordpressRenderedContent), true)
+  assert.equal(excelra.extractVisibleJobCards(excelraWordpressRenderedContent).length, 3)
 
   const jobs = await excelra.createExcelraKnowledgeSolutionsScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
+    fetchJson: async (url) => {
+      assert.equal(url, excelra.CAREERS_WORDPRESS_API_URL)
+      return excelraWordpressPagesPayload
+    },
     fetchText: async (url) => {
-      assert.equal(url, excelra.CAREERS_URL)
-      return excelraCareersHtml
+      assert.fail(`fetchText should not be called when ${url} has a healthy WordPress API payload`)
     },
   })
 
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Senior Business Analyst')
-  assert.equal(jobs[0].location, 'Hyderabad, India')
-  assert.equal(jobs[0].employmentType, 'Full-time')
-  assert.equal(jobs[0].experienceRequired, '5-10 Years')
-  assert.equal(jobs[0].applyUrl, 'https://excelra.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a44b39717416')
+  assert.equal(jobs.length, 2)
+  assert.deepEqual(
+    jobs.map((job) => ({
+      title: job.title,
+      location: job.location,
+      employmentType: job.employmentType,
+      experienceRequired: job.experienceRequired,
+      applyUrl: job.applyUrl,
+    })),
+    [
+      {
+        title: 'Medicinal Chemistry Consultant',
+        location: 'Hyderabad, India',
+        employmentType: 'Contract',
+        experienceRequired: '8-12 Years',
+        applyUrl: 'https://excelra.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a4d517f7f8e2',
+      },
+      {
+        title: 'Senior DevOps Engineer',
+        location: 'Hyderabad, India',
+        employmentType: 'Full-time',
+        experienceRequired: '5-10 Years',
+        applyUrl: 'https://excelra.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a55dd08b32d7',
+      },
+    ],
+  )
 })
 
-test('Excelra Knowledge Solutions fails closed when the verified first-party careers contract drifts', async () => {
+test('Excelra Knowledge Solutions fails closed when the verified WordPress careers contract drifts', async () => {
   const excelra = await loadModule('../../scraper/excelraknowledgesolutions/script.js')
 
   await assert.rejects(
     excelra.createExcelraKnowledgeSolutionsScraper({
       now: () => FIXED_SCRAPED_AT,
     }).run({
-      fetchText: async () => '<html><body><h1>Current openings</h1></body></html>',
+      fetchJson: async () => [{
+        content: {
+          rendered: '<html><body><h1>Current openings</h1></body></html>',
+        },
+      }],
+      fetchText: async () => {
+        assert.fail('fetchText should not be called when the WordPress API responds')
+      },
     }),
     /verified first-party careers page/i,
   )

@@ -42,6 +42,9 @@ const alternateCareersHtml = `
 </html>
 `
 
+const createUnavailableError = () => new Error('The operation was aborted due to timeout')
+const createHttp503Error = () => new Error(`HTTP 503 for ${ALTERNATE_URL}`)
+
 const loadMagmaModule = async () => {
   try {
     return await import('../../scraper/magmageneralinsurance/script.js')
@@ -54,7 +57,7 @@ test('Magma General Insurance validates the current first-party form-only career
   const magma = await loadMagmaModule()
 
   assert.equal(magma.SOURCE, 'magmageneralinsurance')
-  assert.equal(magma.VERIFIED_ON, '2026-08-03')
+  assert.equal(magma.VERIFIED_ON, '2026-08-15')
   assert.equal(magma.CAREERS_URL, PRIMARY_URL)
   assert.equal(magma.ALTERNATE_CAREERS_URL, ALTERNATE_URL)
   assert.equal(magma.hasPrimaryCareersSignal(primaryCareersHtml), true)
@@ -76,5 +79,35 @@ test('Magma General Insurance returns [] while both validated pages remain form-
   })
 
   assert.deepEqual(requestedUrls, [PRIMARY_URL, ALTERNATE_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('Magma General Insurance returns [] when both verified form-only careers pages are temporarily unreachable from this runtime', async () => {
+  const magma = await loadMagmaModule()
+
+  assert.equal(magma.isVerifiedMagmaUnavailableError(createUnavailableError()), true)
+
+  const jobs = await magma.createMagmaGeneralInsuranceScraper().run({
+    fetchText: async () => {
+      throw createUnavailableError()
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Magma General Insurance returns [] when a verified form-only careers page intermittently returns first-party HTTP 503', async () => {
+  const magma = await loadMagmaModule()
+
+  assert.equal(magma.isVerifiedMagmaUnavailableError(createHttp503Error()), true)
+
+  const jobs = await magma.createMagmaGeneralInsuranceScraper().run({
+    fetchText: async (url) => {
+      if (url === PRIMARY_URL) return primaryCareersHtml
+      if (url === ALTERNATE_URL) throw createHttp503Error()
+      throw new Error(`Unexpected Magma General Insurance URL: ${url}`)
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })

@@ -65,3 +65,27 @@ test('run fetches the official CG Power careers pages and returns an honest zero
   ])
   assert.deepEqual(jobs, [])
 })
+
+test('run returns [] while the Thursday, August 20, 2026 CG Power first-party career hosts remain unresolved', async () => {
+  const cgpower = await loadCgPowerModule()
+  assert.ok(cgpower)
+
+  const requestedUrls = []
+  const jobs = await cgpower.createCgPowerScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      const error = new TypeError('fetch failed')
+      error.cause = {
+        code: 'ENOTFOUND',
+        message: 'getaddrinfo ENOTFOUND www.cgglobal.com',
+      }
+      throw error
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    'https://www.cgglobal.com/career',
+    'https://www.cgglobal.com/explore_roles',
+  ])
+  assert.deepEqual(jobs, [])
+})

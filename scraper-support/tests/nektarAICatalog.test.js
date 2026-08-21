@@ -46,16 +46,14 @@ test('Nektar AI catalog captures the verified first-party careers redirect and C
   assert.equal(provider.paginationStrategy, 'first-party-careers-redirect-plus-coda-surface-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-redirect+verified-coda-open-roles-doc+verified-coda-apply-form-without-public-listings-return-empty',
+    'verified-timeout-only-first-party-routes+legacy-first-party-careers-redirect-and-coda-handoff-without-public-listings-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
-  assert.match(provider.verifiedSurfaceSummary, /Thursday, July 16, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/nektar\.ai\/careers\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/coda\.io\/@anusha-laksh\/open-roles-for-website-publication/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/coda\.io\/form\/Kick-start-your-career-with-us_dfLGyijCu1N/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy current public job listings/i)
+  assert.equal(provider.verifiedOn, '2026-08-13')
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /repeated connect timeouts/i)
+  assert.match(provider.verifiedSurfaceSummary, /docs\.superhuman\.com/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /nektarai[\\/]jobs\.json$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Nektar AI'), false)

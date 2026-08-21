@@ -93,6 +93,7 @@ const buildCanonicalGreenhouseJobUrl = (jobId) =>
   `${GREENHOUSE_JOB_BASE_URL}/${jobId}?gh_jid=${jobId}`
 
 const normalizeLocationLabel = (value) => normalizeWhitespace(value)
+const INDIA_LOCATION_PATTERN = /\bindia\b/i
 
 const getLocationSegments = (location) =>
   normalizeLocationLabel(location)
@@ -151,28 +152,42 @@ export const hasOfficialCareersSignal = (html) => {
     && extractGreenhouseJobUrls(page).length > 0
 }
 
-export const extractGreenhouseJobUrls = (html) => {
+export const extractVisibleGreenhouseJobs = (html) => {
   const matches = String(html ?? '').matchAll(
-    /https:\/\/boards\.greenhouse\.io\/figma\/jobs\/(\d+)(?:\?gh_jid=(\d+))?/gi,
+    /<a[^>]+href=["'](https:\/\/boards\.greenhouse\.io\/figma\/jobs\/(\d+)(?:\?gh_jid=(\d+))?)["'][^>]*>([\s\S]*?)<\/a>/gi,
   )
 
-  const urls = []
+  const jobs = []
   const seen = new Set()
 
   for (const match of matches) {
-    const [, jobId, ghJobId] = match
+    const [, rawUrl, jobId, ghJobId, rawTitle] = match
     if (!jobId) continue
     if (ghJobId && ghJobId !== jobId) continue
 
-    const normalized = buildCanonicalGreenhouseJobUrl(jobId)
+    const normalized = normalizeGreenhouseJobUrl(rawUrl, jobId)
+    if (!normalized) continue
     if (seen.has(normalized)) continue
 
     seen.add(normalized)
-    urls.push(normalized)
+    jobs.push({
+      sourceUrl: normalized,
+      title: stripTags(decodeRepeatedHtmlEntities(rawTitle)) || '',
+    })
   }
 
-  return urls
+  return jobs
 }
+
+export const extractGreenhouseJobUrls = (html) =>
+  extractVisibleGreenhouseJobs(html).map((job) => job.sourceUrl)
+
+const isIndiaLocation = (value) => INDIA_LOCATION_PATTERN.test(String(value ?? ''))
+
+const extractIndiaApiJobUrls = (jobs) =>
+  jobs
+    .filter((job) => isIndiaLocation(job.country) || isIndiaLocation(job.location))
+    .map((job) => job.sourceUrl)
 
 export const normalizeGreenhouseJobUrl = (value, jobId) => {
   const canonicalJobId = normalizeWhitespace(jobId)
@@ -273,8 +288,12 @@ export const createFigmaScraper = ({
     )
 
     const visibleJobUrlSet = new Set(visibleJobUrls)
-    if (!jobs.every((job) => visibleJobUrlSet.has(job.sourceUrl))) {
-      throw new Error('Figma verified public Greenhouse job links no longer match the verified Greenhouse jobs API surface')
+    const apiIndiaJobUrlSet = new Set(extractIndiaApiJobUrls(jobs))
+    const indiaJobLinkSetsDiffer =
+      [...apiIndiaJobUrlSet].some((url) => !visibleJobUrlSet.has(url))
+
+    if (indiaJobLinkSetsDiffer) {
+      throw new Error('Figma verified public Greenhouse job links for India no longer match the verified Greenhouse jobs API surface')
     }
 
     return Number.isFinite(maxJobs) ? jobs.slice(0, maxJobs) : jobs

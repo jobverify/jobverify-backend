@@ -22,6 +22,16 @@ const PUBLIC_JOB_LINK_PATTERNS = [
   /\bview details\b/i,
 ]
 
+const HOMEPAGE_PRIMARY_SIGNALS = [
+  "the world's largest producer of value-added spices",
+  "the world's leading producer of botanical extracts",
+]
+
+const HOMEPAGE_SUPPORTING_SIGNALS = [
+  '50+ years. 90+ countries. 1 mission.',
+  'built on experience engineered for impact',
+]
+
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -61,8 +71,8 @@ const defaultFetchText = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes("the world's largest producer of value-added spices")
-    && normalized.includes('50+ years. 90+ countries. 1 mission.')
+  return HOMEPAGE_PRIMARY_SIGNALS.some((signal) => normalized.includes(signal))
+    && HOMEPAGE_SUPPORTING_SIGNALS.some((signal) => normalized.includes(signal))
     && /href=["'](?:https:\/\/www\.synthite\.com)?\/careers\/["']/i.test(String(html ?? ''))
 }
 

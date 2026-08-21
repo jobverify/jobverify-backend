@@ -46,6 +46,14 @@ const normalizeUrl = (value) => {
   }
 }
 
+const isLegacyRouteFetchFailure = (error) => {
+  const code = String(error?.code || error?.cause?.code || '').trim().toUpperCase()
+  const message = String(error?.message || error?.cause?.message || '').trim()
+
+  return ['ENOTFOUND', 'EAI_AGAIN', 'ETIMEDOUT', 'ECONNRESET', 'ECONNREFUSED'].includes(code)
+    || /getaddrinfo ENOTFOUND|timed out|timeout|ECONNRESET|ECONNREFUSED/i.test(message)
+}
+
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -109,7 +117,15 @@ export const createFincareScraper = () => ({
     }
 
     for (const routeUrl of CHECKED_REDIRECT_ROUTE_URLS) {
-      const page = await fetchPage(routeUrl)
+      let page
+      try {
+        page = await fetchPage(routeUrl)
+      } catch (error) {
+        if (isLegacyRouteFetchFailure(error)) {
+          continue
+        }
+        throw error
+      }
 
       if (!isVerifiedLegacyRedirect(page)) {
         throw new Error(`Fincare verified exact-name route changed: ${routeUrl}`)

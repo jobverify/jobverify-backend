@@ -52,6 +52,21 @@ const publicJobsHtml = `
 </html>
 `
 
+const vercelSecurityCheckpointHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Vercel Security Checkpoint</title>
+  </head>
+  <body>
+    <main>
+      <h1>Vercel Security Checkpoint</h1>
+      <p>Your request has been flagged by Vercel.</p>
+    </main>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/rephraseai/script.js')
@@ -66,12 +81,13 @@ test('Rephrase.ai sentinel stays pinned to the verified exact-name first-party h
   assert.equal(rephraseAi.SOURCE, 'rephraseai')
   assert.equal(rephraseAi.COMPANY, 'Rephrase.ai')
   assert.equal(rephraseAi.OFFICIAL_BRAND_NAME, 'Rephrase AI')
-  assert.equal(rephraseAi.VERIFIED_ON, '2026-07-17')
+  assert.equal(rephraseAi.VERIFIED_ON, '2026-08-13')
   assert.equal(rephraseAi.HOMEPAGE_URL, 'https://www.rephraseai.com/')
   assert.equal(rephraseAi.ABOUT_URL, 'https://www.rephraseai.com/about')
   assert.equal(rephraseAi.CAREERS_URL, 'https://www.rephraseai.com/careers')
   assert.equal(rephraseAi.JOBS_URL, 'https://www.rephraseai.com/jobs')
   assert.equal(rephraseAi.hasHomepageSignal(homepageHtml), true)
+  assert.equal(rephraseAi.hasVercelSecurityCheckpointSignal(vercelSecurityCheckpointHtml), true)
   assert.equal(rephraseAi.hasHomepageSignal('<html><title>Other</title></html>'), false)
   assert.equal(rephraseAi.hasNotFoundSignal(notFoundHtml), true)
   assert.equal(rephraseAi.hasNotFoundSignal(publicJobsHtml), false)
@@ -90,6 +106,30 @@ test('Rephrase.ai sentinel returns [] only while the verified homepage stays job
     fetchText: async (url) => {
       requestedUrls.push(url)
       return url === rephraseAi.HOMEPAGE_URL ? homepageHtml : notFoundHtml
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    rephraseAi.HOMEPAGE_URL,
+    rephraseAi.ABOUT_URL,
+    rephraseAi.CAREERS_URL,
+    rephraseAi.JOBS_URL,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Rephrase.ai sentinel returns [] while the site stays behind the verified Vercel checkpoint on Thursday, August 13, 2026', async () => {
+  const rephraseAi = await loadModule()
+  const requestedUrls = []
+
+  const jobs = await rephraseAi.createRephraseAiScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      return {
+        status: 429,
+        url,
+        html: vercelSecurityCheckpointHtml,
+      }
     },
   })
 

@@ -50,6 +50,19 @@ const careersHtml = `
 </html>
 `
 
+const missingRoute404Html = `
+<!doctype html>
+<html lang="en">
+  <head></head>
+  <body>
+    <main>
+      <h1>404</h1>
+      <p>Page not found</p>
+    </main>
+  </body>
+</html>
+`
+
 const loadMercerMettlModule = async () => {
   try {
     return await import('../../scraper/mercermettl/script.js')
@@ -100,6 +113,48 @@ test('Mercer | Mettl sentinel returns [] only while both first-party careers pag
       }
       if (mercerMettl.METTL_SITE.missingRouteUrls.includes(url)) {
         return { status: 200, url: mercerMettl.METTL_SITE.homepageUrl, html: mettlHomepageHtml }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    mercerMettl.MERCER_METTL_SITE.homepageUrl,
+    mercerMettl.MERCER_METTL_SITE.careersUrl,
+    ...mercerMettl.MERCER_METTL_SITE.missingRouteUrls,
+    mercerMettl.METTL_SITE.homepageUrl,
+    mercerMettl.METTL_SITE.careersUrl,
+    ...mercerMettl.METTL_SITE.missingRouteUrls,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Mercer | Mettl sentinel also returns [] when same-domain missing routes now resolve to verified 404 pages', async () => {
+  const mercerMettl = await loadMercerMettlModule()
+  const requestedUrls = []
+
+  const jobs = await mercerMettl.createMercerMettlScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === mercerMettl.MERCER_METTL_SITE.homepageUrl) {
+        return { status: 200, url, html: mercerHomepageHtml }
+      }
+      if (url === mercerMettl.MERCER_METTL_SITE.careersUrl) {
+        return { status: 200, url, html: careersHtml }
+      }
+      if (mercerMettl.MERCER_METTL_SITE.missingRouteUrls.includes(url)) {
+        return { status: 404, url: `${url}/`, html: missingRoute404Html }
+      }
+      if (url === mercerMettl.METTL_SITE.homepageUrl) {
+        return { status: 200, url, html: mettlHomepageHtml }
+      }
+      if (url === mercerMettl.METTL_SITE.careersUrl) {
+        return { status: 200, url, html: careersHtml }
+      }
+      if (mercerMettl.METTL_SITE.missingRouteUrls.includes(url)) {
+        return { status: 404, url: `${url}/`, html: missingRoute404Html }
       }
 
       throw new Error(`Unexpected URL: ${url}`)

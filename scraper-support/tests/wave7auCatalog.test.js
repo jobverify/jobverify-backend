@@ -40,7 +40,7 @@ const assertHydratedCatalogLoadsScript = async (provider) => {
   assert.equal(typeof module.run, 'function')
 }
 
-test('Excelra Knowledge Solutions local catalog captures the verified first-party careers cards and Darwinbox apply links', async () => {
+test('Excelra Knowledge Solutions local catalog captures the verified WordPress careers payload and Darwinbox apply links', async () => {
   const { constant, defaultExport } = await loadCatalog(
     '../../scraper/excelraknowledgesolutions/catalog.js',
     'EXCELRA_KNOWLEDGE_SOLUTIONS_CATALOG',
@@ -53,17 +53,21 @@ test('Excelra Knowledge Solutions local catalog captures the verified first-part
   assert.equal(provider.homepageUrl, 'https://www.excelra.com/')
   assert.equal(provider.companyCareerPage, 'https://www.excelra.com/careers/')
   assert.equal(provider.careersPortalBaseUrl, 'https://excelra.darwinbox.in/ms/candidatev2/main/careers/')
-  assert.equal(provider.atsPlatform, 'first-party-careers-page-darwinbox-job-links')
-  assert.equal(provider.paginationStrategy, 'single-first-party-current-openings-page-via-browser-rendered-html')
+  assert.equal(provider.careersWordpressApiUrl, 'https://www.excelra.com/wp-json/wp/v2/pages?slug=careers')
+  assert.equal(provider.atsPlatform, 'first-party-wordpress-json-darwinbox-job-links')
+  assert.equal(provider.paginationStrategy, 'single-first-party-wordpress-careers-page-endpoint')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+browser-rendered-opening-cards+darwinbox-apply-links+india-location-filter',
+    'verified-wordpress-careers-page+shortcode-opening-cards+darwinbox-apply-links+india-location-filter',
   )
-  assert.equal(provider.verifiedOn, '2026-08-02')
+  assert.equal(provider.verifiedOn, '2026-08-13')
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /Current openings/i)
+  assert.match(provider.verifiedSurfaceSummary, /wp-json\/wp\/v2\/pages\?slug=careers/i)
   assert.match(provider.verifiedSurfaceSummary, /Cloudflare 403 challenge/i)
   assert.match(provider.verifiedSurfaceSummary, /excelra\.darwinbox\.in/i)
-  assert.match(provider.verifiedSurfaceSummary, /Hyderabad, India/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior DevOps Engineer/i)
+  assert.match(provider.verifiedSurfaceSummary, /Medicinal Chemistry Consultant/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

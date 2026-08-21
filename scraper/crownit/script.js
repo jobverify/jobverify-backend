@@ -5,11 +5,10 @@ export const COMPANY = 'Crownit'
 export const OFFICIAL_BRAND = 'Crownit'
 export const VERIFIED_ON = '2026-07-25'
 export const CAREERS_URL = 'https://crownit.in/en/careers'
-export const RESUME_EMAIL = 'hr@crownit.in'
 export const DISPOSITION =
-  'verified-first-party-careers-surface-with-non-enumerable-apply-flow-and-resume-email'
+  'verified-first-party-careers-surface-with-non-enumerable-apply-flow'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://crownit.in/en/careers was the live first-party Crownit careers surface reviewed for this workbook source, that it presented an internal non-enumerable Apply for job flow rendered through Crownit\'s own contact component, and that it directed referrals to hr@crownit.in. The reviewed surface exposed no trustworthy enumerable public jobs contract, no first-party public job inventory, and no handoff to a stable public ATS or exact-company public jobs board, so this company-local scraper stays fail-closed and returns no jobs until a stable exact-company public openings flow is verified.'
+  'Verified on Saturday, August 15, 2026 that https://crownit.in/en/careers remained the live first-party Crownit careers surface reviewed for this workbook source, that it still presented a non-enumerable Apply for job flow rendered through Crownit\'s own contact component, and that it did not expose a stable exact-company public ATS or job inventory. The page now links to Crownit\'s LinkedIn company presence without surfacing a public jobs board, so this company-local scraper remains fail-closed and returns no jobs until a stable exact-company public openings flow is verified.'
 
 const REQUIRED_SURFACE_PATTERNS = [
   /\bLooking for career opportunities with us\?/i,
@@ -18,14 +17,12 @@ const REQUIRED_SURFACE_PATTERNS = [
   /\bWe are always on the lookout for like-minded individuals with strong work ethics and a passion to create something\./i,
   /\bIf our vision moves you too, come and join our awe-inspiring team\./i,
   /\bApply for job\b/i,
-  /Now you can earn Crowns when you refer your friends for our open positions!/i,
-  /\bhr@crownit\.in\b/i,
+  /(?:Now you can earn Crowns when you refer your friends for our open positions!|Ipsos Research Private Limited)/i,
 ]
 
 const APPLY_FLOW_PATTERNS = [
   /<app-contactus\b[^>]*\bcareer="2"[^>]*\bsource="career"/i,
   /<button[^>]*class="contact-btn"[^>]*>\s*Apply for job\s*<\/button>/i,
-  /href="mailto:hr@crownit\.in"/i,
 ]
 
 const TRUSTED_ATS_HOST_PATTERNS = [

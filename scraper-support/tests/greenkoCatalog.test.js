@@ -35,6 +35,8 @@ test('getScraperCatalog includes Greenko as a verified Darwinbox script provider
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.match(provider.verifiedSurfaceSummary, /29 India jobs/i)
   assert.match(provider.modulePath, /greenko[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /greenko[\\/]jobs\.json$/i)
 

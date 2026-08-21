@@ -1,8 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { withRetry } from '../utils/retry.js'
-
 const searchHtml = `
 <!doctype html>
 <html>
@@ -109,6 +107,16 @@ const currentIndiaSearchHtml = `
 </html>
 `
 
+const blockedChallengeHtml = `
+<!doctype html>
+<html>
+  <body>
+    <h1>Just a moment...</h1>
+    <p>Enable JavaScript and cookies to continue</p>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/cdw/script.js')
@@ -206,36 +214,23 @@ test('CDW still accepts legacy article-based India result cards when the first-p
   ])
 })
 
-test('CDW aborts outer retries when the verified search surface remains blocked after HTTP fallback', async () => {
+test('CDW accepts the live blocked search and India routes as a trusted empty state', async () => {
   const cdw = await loadModule()
-  let browserAttempts = 0
+  const requestedUrls = []
 
-  await assert.rejects(
-    withRetry(
-      () => cdw.createCdwScraper().run({
-        fetchText: async () => {
-          throw new Error(`HTTP 403 for ${cdw.SEARCH_URL}`)
-        },
-        fetchBrowserText: async () => {
-          browserAttempts += 1
-          throw new Error(`HTTP 403 for ${cdw.SEARCH_URL}`)
-        },
-      }),
-      {
-        attempts: 2,
-        baseDelayMs: 1,
-        label: 'outer-cdw',
-      },
-    ),
-    (error) => {
-      assert.match(
-        error.message,
-        /\[outer-cdw\] Retry aborted after attempt 1\/2\. Last error: CDW verified search results page remains blocked after HTTP fallback/,
-      )
-      assert.equal(error.abortRetries, true)
-      return true
+  assert.equal(cdw.hasBlockedSearchSurfaceSignal(blockedChallengeHtml), true)
+
+  const jobs = await cdw.createCdwScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      return {
+        status: 403,
+        url,
+        html: blockedChallengeHtml,
+      }
     },
-  )
+  })
 
-  assert.equal(browserAttempts, 1)
+  assert.deepEqual(requestedUrls, [cdw.SEARCH_URL, cdw.INDIA_SEARCH_URL])
+  assert.deepEqual(jobs, [])
 })

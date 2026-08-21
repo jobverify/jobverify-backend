@@ -222,3 +222,43 @@ test('New Street Technologies fails closed when the verified zero-job contract c
     /verified 404 zero-job state/i,
   )
 })
+
+test('New Street Technologies retries the verified homepage through the scoped insecure TLS fallback when the certificate is expired', async () => {
+  const newStreetTechnologies = await loadNewStreetTechnologiesModule()
+  const requestedUrls = []
+
+  const certificateError = new TypeError('fetch failed')
+  certificateError.cause = { code: 'CERT_HAS_EXPIRED', message: 'certificate has expired' }
+
+  const fetchPage = newStreetTechnologies.createDefaultFetchPage({
+    fetchImpl: async (url) => {
+      requestedUrls.push(`fetch:${url}`)
+      if (url === newStreetTechnologies.HOMEPAGE_URL) {
+        throw certificateError
+      }
+
+      throw new Error(`Unexpected direct fetch URL: ${url}`)
+    },
+    fetchInsecurePageImpl: async (url) => {
+      requestedUrls.push(`insecure:${url}`)
+
+      if (url === newStreetTechnologies.HOMEPAGE_URL) {
+        return {
+          status: 200,
+          url,
+          html: verifiedHomepageHtml,
+        }
+      }
+
+      throw new Error(`Unexpected insecure fetch URL: ${url}`)
+    },
+  })
+
+  const page = await fetchPage(newStreetTechnologies.HOMEPAGE_URL)
+  assert.equal(page.status, 200)
+  assert.equal(page.html, verifiedHomepageHtml)
+  assert.deepEqual(requestedUrls, [
+    `fetch:${newStreetTechnologies.HOMEPAGE_URL}`,
+    `insecure:${newStreetTechnologies.HOMEPAGE_URL}`,
+  ])
+})

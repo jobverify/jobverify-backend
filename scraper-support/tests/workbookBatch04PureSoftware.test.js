@@ -8,11 +8,13 @@ const {
   COMPANY,
   DISPOSITION,
   HANDOFF_URL,
+  HAPPIEST_MINDS_CAREERS_URL,
   MOVED_URL,
   OFFICIAL_BRAND,
   SOURCE,
   VERIFIED_SURFACE_SUMMARY,
   createPureSoftwareScraper,
+  isVerifiedHappiestMindsHomepageHandoffPage,
   isVerifiedKnownNoJobsSurface,
   isVerifiedMovedPage,
   isVerifiedPlaceholderPage,
@@ -47,13 +49,38 @@ const VERIFIED_PLACEHOLDER_PAGE = {
   html: 'TEST DIMPLE',
 }
 
-test('PureSoftware validates the verified placeholder surface and returns []', async () => {
+const VERIFIED_HAPPIEST_MINDS_HANDOFF_PAGE = {
+  status: 200,
+  url: HANDOFF_URL,
+  headers: {
+    'content-type': 'text/html; charset=UTF-8',
+  },
+  html: `
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <title>Happiest Minds | AI First Customer-Centric Digital Engineering and Mindful IT Company</title>
+      </head>
+      <body>
+        <nav>
+          <a href="${HAPPIEST_MINDS_CAREERS_URL}">Careers</a>
+        </nav>
+        <section>
+          <h2>Experience The Culture Of Happiness At Happiest Minds</h2>
+          <a href="${HAPPIEST_MINDS_CAREERS_URL}">JOIN US</a>
+        </section>
+      </body>
+    </html>
+  `,
+}
+
+test('PureSoftware validates the current Happiest Minds homepage handoff and returns []', async () => {
   const requestedUrls = []
 
   const jobs = await run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
-      return VERIFIED_PLACEHOLDER_PAGE
+      return VERIFIED_HAPPIEST_MINDS_HANDOFF_PAGE
     },
   })
 
@@ -62,11 +89,16 @@ test('PureSoftware validates the verified placeholder surface and returns []', a
   assert.equal(SOURCE, 'puresoftware')
   assert.equal(COMPANY, 'PureSoftware')
   assert.equal(OFFICIAL_BRAND, 'PureSoftware')
-  assert.equal(DISPOSITION, 'verified-first-party-placeholder-no-public-careers')
-  assert.match(VERIFIED_SURFACE_SUMMARY, /Tuesday, August 4, 2026/)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /TEST DIMPLE/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /Sucuri\/Cloudproxy/i)
+  assert.equal(DISPOSITION, 'verified-first-party-happiestminds-handoff-no-public-careers')
+  assert.match(VERIFIED_SURFACE_SUMMARY, /Friday, August 14, 2026/)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /Happiest Minds/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /careers\.happiestminds\.com/i)
   assert.equal(typeof createPureSoftwareScraper, 'function')
+  assert.equal(isVerifiedHappiestMindsHomepageHandoffPage(VERIFIED_HAPPIEST_MINDS_HANDOFF_PAGE), true)
+  assert.equal(isVerifiedKnownNoJobsSurface(VERIFIED_HAPPIEST_MINDS_HANDOFF_PAGE), true)
+})
+
+test('PureSoftware still accepts the legacy Sucuri placeholder surface if it reappears', async () => {
   assert.equal(isVerifiedPlaceholderPage(VERIFIED_PLACEHOLDER_PAGE), true)
   assert.equal(isVerifiedKnownNoJobsSurface(VERIFIED_PLACEHOLDER_PAGE), true)
 })

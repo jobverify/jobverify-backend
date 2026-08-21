@@ -14,9 +14,9 @@
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   greenhouseBoardSlugs: ['headoutcareers', 'headoutreferrals'],
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-15',
   verifiedSurfaceSummary:
-    'Verified on July 16, 2026 that https://www.headout.com/careers/ is the live first-party Headout careers page, that its first-party open-roles loader script fetches Greenhouse data for the public boards headoutcareers and headoutreferrals, and that the live Greenhouse jobs API currently exposes India roles including Software Engineer, Apps in Bengaluru and Photo Editor (Remote) in Remote (India).',
+    'Verified on Saturday, August 15, 2026 that https://www.headout.com/careers/ remains the live first-party Headout careers page, that it now loads its open-roles JavaScript chunks from the first-party asset host https://assets.headout.com/hobrandpages/_next/static/chunks/, and that those chunks still reference the public Greenhouse boards headoutcareers and headoutreferrals. The live Greenhouse jobs API still exposes India roles including Analytics Manager, Product in Bengaluru, Associate/Senior Associate, Customer Experience in Remote (India), and Data Analyst in Bengaluru.',
   dryRunFile: 'headout/jobs.json',
 }
 

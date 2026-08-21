@@ -64,7 +64,7 @@ export const hasPublicJobsSignal = (html = '') =>
   /<article\b/i.test(String(html ?? ''))
   || /class=["'][^"']*job[-\s]?card/i.test(String(html ?? ''))
   || /<a[^>]+>\s*Apply now\s*<\/a>/i.test(String(html ?? ''))
-  || /href=["'][^"']*(?:\/jobs?\/|\/careers?\/)[^"']*["']/i.test(String(html ?? ''))
+  || /href=["'][^"']*(?:\/jobs?\/[^"']+|\/careers?\/[^"']+)["']/i.test(String(html ?? ''))
 
 export const createTechFireflyScraper = () => ({
   async run({

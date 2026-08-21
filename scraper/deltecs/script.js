@@ -23,6 +23,13 @@ export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+const collectErrorDetails = (error) => [
+  error?.message,
+  error?.cause?.message,
+  error?.code,
+  error?.cause?.code,
+].filter(Boolean).join(' ')
+
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -252,6 +259,14 @@ export const hasOfficialJobDetailSignal = (html = '', listing = {}) => {
     && /Must-Have Skills/i.test(page)
 }
 
+const isBrandedMissingJobDetailPage = (html = '') =>
+  /<title>\s*Page not found - DronaHQ\s*<\/title>/i.test(String(html ?? ''))
+
+const isExpectedMissingJobDetailError = (error, url) => {
+  const details = collectErrorDetails(error)
+  return /HTTP 404/i.test(details) && String(details).includes(String(url))
+}
+
 export const extractJobDetail = (html = '', listing = {}) => {
   if (!hasOfficialJobDetailSignal(html, listing)) {
     throw new Error('Deltecs verified job detail no longer matches the trusted first-party surface')
@@ -350,7 +365,22 @@ export const createDeltecsScraper = ({
     const jobs = []
 
     for (const listing of limitedListings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
+      let detailHtml
+
+      try {
+        detailHtml = await fetchText(listing.sourceUrl)
+      } catch (error) {
+        if (isExpectedMissingJobDetailError(error, listing.sourceUrl)) {
+          continue
+        }
+
+        throw error
+      }
+
+      if (isBrandedMissingJobDetailPage(detailHtml)) {
+        continue
+      }
+
       const job = extractJobDetail(detailHtml, listing)
 
       if (job.country === 'India') {

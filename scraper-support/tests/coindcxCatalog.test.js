@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+import {
+  buildScrapers,
+  getScraperCatalog,
+} from '../providers/index.js'
+
+test('getScraperCatalog includes CoinDCX as a verified no-public-listings sentinel on Thursday, August 13, 2026', () => {
+  const catalog = getScraperCatalog()
+  const provider = catalog.find((item) => item.source === 'coindcx')
+
+  assert.ok(provider)
+  assert.equal(provider.companyName, 'CoinDCX')
+  assert.equal(provider.adapter, 'script')
+  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.companyCareerPage, 'https://careers.coindcx.com/opportunities')
+  assert.equal(provider.companyDomain, 'coindcx.com')
+  assert.equal(provider.parser, 'custom-script')
+  assert.equal(provider.verifiedOn, '2026-08-13')
+  assert.match(provider.verifiedSurfaceSummary, /Cloudflare/i)
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
+  assert.match(provider.modulePath, /coindcx[\\/]script\.js$/i)
+})
+
+test('buildScrapers exposes a runnable CoinDCX scraper without changing the runner contract', () => {
+  const scrapers = buildScrapers()
+  const provider = scrapers.find((scraper) => scraper.name === 'coindcx')
+
+  assert.ok(provider)
+  assert.equal(typeof provider.run, 'function')
+  assert.equal(provider.provider.adapter, 'script')
+  assert.equal(provider.provider.parser, 'custom-script')
+  assert.equal(provider.provider.companyCareerPage, 'https://careers.coindcx.com/opportunities')
+})

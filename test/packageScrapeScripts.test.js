@@ -14,6 +14,7 @@ for (const scriptName of [
   'scrape:dry',
   'scrape:parallel',
   'scrape:parallel:dry',
+  'scrape:parallel:dry:monitored',
   'scrape:csv',
 ]) {
   test(`${scriptName} enables system CA support`, () => {

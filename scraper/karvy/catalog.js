@@ -1,5 +1,5 @@
-﻿export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on August 2, 2026 that the exact-name Karvy domain at https://www.karvy.com/ no longer serves a public employer surface and instead returns a non-job 403 response, that https://www.karvyonline.com/ is a live first-party Karvy Online financial-services site with a Join Us careers handoff to https://www.karvyonline.com/join-us/career/, and that the linked career page still shows stale resume-only copy instead of structured public job listings. There is no trustworthy public jobs surface for exact-name Karvy on the verified date.'
+export const VERIFIED_SURFACE_SUMMARY =
+  'Verified on Thursday, August 13, 2026 that the exact-name Karvy domain at https://www.karvy.com/ now resolves to a Porkbun for-sale marketplace without public jobs, while both https://www.karvyonline.com/ and https://www.karvyonline.com/join-us/career/ return the same JavaScript redirect shell to /lander. The parked page at https://www.karvyonline.com/lander is a GoDaddy-style parking lander with no trustworthy public jobs surface. The scraper still tolerates the older Karvy Online homepage and stale resume-only career page when those legacy surfaces reappear without public job listings.'
 
 export const KARVY_CATALOG = {
   source: 'karvy',
@@ -22,12 +22,11 @@ export const KARVY_CATALOG = {
   paginationStrategy:
     'inactive-exact-domain-plus-first-party-legacy-root-handoff-plus-stale-resume-page-validation',
   extractionStrategy:
-    'verified-exact-name-domain-not-jobs+verified-first-party-legacy-root-handoff+verified-stale-resume-only-career-page-return-empty',
+    'verified-exact-name-domain-not-jobs+verified-legacy-redirect-shell-and-parked-lander+legacy-first-party-root-and-stale-resume-page-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-02',
+  verifiedOn: '2026-08-13',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 
 export default KARVY_CATALOG
-

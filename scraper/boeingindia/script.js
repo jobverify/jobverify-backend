@@ -238,13 +238,20 @@ export const hasCareersLandingSignal = (html = '') => {
 export const hasIndiaSearchResultsSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
+  const visibleText = htmlToText(rawHtml) || ''
+  const hasListingCards = /class="search-results__job-link"/i.test(rawHtml)
+  const hasVerifiedZeroResultsState =
+    /data-no-results="true"/i.test(rawHtml)
+    && /class="search-results__no-results-msg"/i.test(rawHtml)
+    && visibleText.includes('0 results found in India')
+    && visibleText.includes('Please try a different keyword/location combination or broaden your search criteria.')
 
   return extractTitle(rawHtml) === SEARCH_TITLE
     && /data-location="India"/i.test(rawHtml)
     && /data-location-path="1269750"/i.test(rawHtml)
     && /data-total-job-results="(\d+)"/i.test(rawHtml)
-    && normalized.includes('India')
-    && /class="search-results__job-link"/i.test(rawHtml)
+    && visibleText.includes('India')
+    && (hasListingCards || hasVerifiedZeroResultsState)
 }
 
 export const extractPaginationSummary = (html = '') => {
@@ -413,6 +420,14 @@ export const createBoeingIndiaScraper = ({
 
       const listings = extractSearchResults(searchPage.html)
       const summary = extractPaginationSummary(searchPage.html)
+
+      if (summary.totalJobCount === 0) {
+        if (listings.length !== 0) {
+          throw new Error('Boeing India verified India search results no longer match the known public jobs surface')
+        }
+
+        break
+      }
 
       if (listings.length === 0 || !summary.totalJobCount || summary.totalJobCount < listings.length) {
         throw new Error('Boeing India verified India search results no longer match the known public jobs surface')

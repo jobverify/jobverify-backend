@@ -18,6 +18,66 @@ const verifiedCurrentOpeningsHtml = readFixture('current-openings.html')
 const hrExecutiveDetailHtml = readFixture('hr-executive-recruiter-generalist.html')
 const salesDetailHtml = readFixture('field-sales-representative-executive.html')
 const customerSupportDetailHtml = readFixture('customer-support-executive-required-chennai.html')
+const currentHomepageWithoutCareersLinkHtml = verifiedHomepageHtml
+  .replace('href="https://maxsell.co.in/careers/"', 'href="https://maxsell.co.in/contact/"')
+const currentOpeningsShellHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Current Job Openings at Maxsell India - Chennai &amp; PAN India Roles</title>
+    <link rel="canonical" href="https://maxsell.co.in/current-openings/" />
+  </head>
+  <body>
+    <main>
+      <h1>Current Openings</h1>
+      <p>Browse current job openings at Maxsell.</p>
+    </main>
+  </body>
+</html>
+`
+const currentOpeningsSitemapXml = `
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://maxsell.co.in/current-opening/customer-support-executive-required-chennai/</loc>
+  </url>
+  <url>
+    <loc>https://maxsell.co.in/current-opening/opening-for-freshers/</loc>
+  </url>
+</urlset>
+`
+const customerSupportLiveDetailHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>&rarr; Customer Support Executive (Hindi + English) Urgent Hiring &#8212; Maxsell</title>
+    <link rel="canonical" href="https://maxsell.co.in/current-opening/customer-support-executive-required-chennai/" />
+    <meta property="og:site_name" content="Maxsell" />
+    <meta name="description" content="Join Maxsell as a Customer Support Executive in Chennai. We're hiring passionate individuals with great communication skills." />
+  </head>
+  <body>
+    <main>
+      <h1 class="entry-title">Customer Support Executive (Hindi + English) Urgent Hiring</h1>
+      <p>How to Apply: Send your resume to hr@maxsell.co.in.</p>
+    </main>
+  </body>
+</html>
+`
+const filledRoleLiveDetailHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Opening for Freshers (Vacancy filled, Do Not Apply) - Maxsell</title>
+    <link rel="canonical" href="https://maxsell.co.in/current-opening/opening-for-freshers/" />
+    <meta property="og:site_name" content="Maxsell" />
+  </head>
+  <body>
+    <main>
+      <h1 class="entry-title">Opening for Freshers (Vacancy filled, Do Not Apply)</h1>
+    </main>
+  </body>
+</html>
+`
 
 const loadModule = async () => {
   try {
@@ -186,6 +246,53 @@ test('Arihant Maxsell run validates the first-party flow, skips the filled role,
   )
 })
 
+test('Arihant Maxsell falls back to the first-party current-opening sitemap when the openings page becomes a shell', async () => {
+  const arihantMaxsell = await loadModule()
+  const requestedUrls = []
+
+  const jobs = await arihantMaxsell.createArihantMaxsellTechnologiesPvtLtdScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === arihantMaxsell.HOMEPAGE_URL) return currentHomepageWithoutCareersLinkHtml
+      if (url === arihantMaxsell.CAREERS_URL) return verifiedCareersHtml
+      if (url === arihantMaxsell.CURRENT_OPENINGS_URL) return currentOpeningsShellHtml
+      if (url === 'https://maxsell.co.in/current-opening-sitemap.xml') return currentOpeningsSitemapXml
+      if (url === 'https://maxsell.co.in/current-opening/customer-support-executive-required-chennai/') {
+        return customerSupportLiveDetailHtml
+      }
+      if (url === 'https://maxsell.co.in/current-opening/opening-for-freshers/') {
+        return filledRoleLiveDetailHtml
+      }
+
+      throw new Error(`Unexpected Arihant Maxsell URL: ${url}`)
+    },
+    now: () => '2026-08-20T18:50:00.000Z',
+  })
+
+  assert.deepEqual(requestedUrls, [
+    arihantMaxsell.HOMEPAGE_URL,
+    arihantMaxsell.CAREERS_URL,
+    arihantMaxsell.CURRENT_OPENINGS_URL,
+    'https://maxsell.co.in/current-opening-sitemap.xml',
+    'https://maxsell.co.in/current-opening/customer-support-executive-required-chennai/',
+    'https://maxsell.co.in/current-opening/opening-for-freshers/',
+  ])
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Customer Support Executive (Hindi + English) Urgent Hiring')
+  assert.equal(jobs[0].company, 'Arihant Maxsell Technologies Pvt Ltd')
+  assert.equal(jobs[0].source, 'arihantmaxselltechnologiespvtltd')
+  assert.equal(
+    jobs[0].sourceUrl,
+    'https://maxsell.co.in/current-opening/customer-support-executive-required-chennai/',
+  )
+  assert.equal(
+    jobs[0].applyUrl,
+    'https://maxsell.co.in/current-opening/customer-support-executive-required-chennai/',
+  )
+})
+
 test('Arihant Maxsell fails closed when the verified homepage, careers handoff, openings page, or detail page drift', async () => {
   const arihantMaxsell = await loadModule()
 
@@ -222,7 +329,7 @@ test('Arihant Maxsell fails closed when the verified homepage, careers handoff, 
         if (url === arihantMaxsell.HOMEPAGE_URL) return verifiedHomepageHtml
         if (url === arihantMaxsell.CAREERS_URL) return verifiedCareersHtml
         if (url === arihantMaxsell.CURRENT_OPENINGS_URL) {
-          return verifiedCurrentOpeningsHtml.replaceAll('Apply Now', 'Submit Resume')
+          return '<html><head><title>Broken openings</title></head><body>Missing trusted current openings shell</body></html>'
         }
 
         throw new Error(`Unexpected Arihant Maxsell URL: ${url}`)

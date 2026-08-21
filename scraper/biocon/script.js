@@ -2,6 +2,17 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import {
+  buildInitialSearchDwrBody,
+  buildPaginatedSearchDwrBody,
+  buildSuccessFactorsPostingFieldMap,
+  createSuccessFactorsScriptSessionId,
+  extractDwrPayload,
+  fetchSuccessFactorsSearchSession,
+  hasSuccessFactorsDwrBootstrapShellSignal,
+  hasSuccessFactorsDwrResponseSignal,
+  postSuccessFactorsDwr,
+} from '../../scraper-support/shared/successFactorsDwr.js'
 
 import { BIOCON_CATALOG } from './catalog.js'
 
@@ -52,7 +63,16 @@ const toIsoDate = (value) => {
 
   if (!match) return normalized
 
-  const [, month, day, year] = match
+  const [, first, second, year] = match
+  const firstNumber = Number.parseInt(first, 10)
+  const secondNumber = Number.parseInt(second, 10)
+
+  if (firstNumber > 12 && secondNumber <= 12) {
+    return `${year}-${second}-${first}`
+  }
+
+  const month = first
+  const day = second
   return `${year}-${month}-${day}`
 }
 
@@ -76,6 +96,14 @@ export const hasSuccessFactorsSearchPageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
 
+  return hasStaticSuccessFactorsSearchPageSignal(rawHtml)
+    || hasSuccessFactorsDwrResponseSignal(rawHtml)
+}
+
+export const hasStaticSuccessFactorsSearchPageSignal = (html) => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml) || ''
+
   return /<title>\s*Career Opportunities\s*<\/title>/i.test(rawHtml)
     && /Search Results/i.test(normalized)
     && new RegExp(`company=${SUCCESSFACTORS_COMPANY_TOKEN}`, 'i').test(rawHtml)
@@ -92,6 +120,11 @@ export const hasZeroResultsSignal = (html) => {
   return /\b0\s+Jobs?\s+match the selections\b/i.test(normalized)
     || /\b0\s+Jobs?\s+matched your search\b/i.test(normalized)
 }
+
+export const hasSuccessFactorsDwrBootstrapSignal = (html) => hasSuccessFactorsDwrBootstrapShellSignal({
+  html,
+  companyToken: SUCCESSFACTORS_COMPANY_TOKEN,
+})
 
 const hasNextPage = (html) => /<a[^>]+title=["']Next Page["'][^>]*>/i.test(String(html ?? ''))
 
@@ -131,6 +164,10 @@ const parseSearchRow = (rowHtml) => {
 }
 
 export const extractSearchResults = (html) => {
+  if (hasSuccessFactorsDwrResponseSignal(html)) {
+    return extractDwrSearchResults(html)
+  }
+
   const rows = []
 
   for (const match of String(html ?? '').matchAll(/<tr[^>]*class=["']jobResultItem["'][^>]*>([\s\S]*?)<\/tr>/gi)) {
@@ -139,6 +176,43 @@ export const extractSearchResults = (html) => {
   }
 
   return rows
+}
+
+export const extractDwrSearchResults = (responseText) => {
+  const payload = extractDwrPayload(responseText, {
+    parseErrorMessage: 'Biocon verified SuccessFactors DWR search payload could not be parsed',
+    missingResultsErrorMessage: 'Biocon verified SuccessFactors DWR payload no longer exposes postings',
+  })
+
+  return payload.results.postings
+    .map((posting) => {
+      const fields = buildSuccessFactorsPostingFieldMap(posting, { normalize: normalizeWhitespace })
+      const requisitionId = normalizeWhitespace(posting?.id)
+
+      if (!requisitionId) return null
+
+      const country = fields.get('filter1') || 'India'
+      const detailUrl = buildDetailUrl(requisitionId)
+
+      return {
+        title: normalizeWhitespace(posting?.title),
+        company: COMPANY_NAME,
+        hiringEntity: fields.get('legalEntity_obj') || null,
+        department: fields.get('department_obj') || null,
+        location: country,
+        city: null,
+        state: null,
+        country,
+        jobId: requisitionId,
+        requisitionId,
+        sourceUrl: detailUrl,
+        applyUrl: detailUrl,
+        link: detailUrl,
+        postingDate: toIsoDate(posting?.postingDate),
+        jobDescription: null,
+      }
+    })
+    .filter(Boolean)
 }
 
 const extractSectionText = (html, heading) => {
@@ -247,19 +321,100 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const getLiveSearchPages = async ({
   fetchText = defaultFetchText,
   searchUrl = SUCCESSFACTORS_SEARCH_URL,
+  fetchSearchSession = (options = {}) => fetchSuccessFactorsSearchSession(options),
+  fetchDwrText = (options = {}) => postSuccessFactorsDwr(options),
 } = {}) => {
   const html = await fetchText(searchUrl)
 
-  if (hasNextPage(html)) {
-    throw new Error(
-      'Biocon API-only migration required: the verified SuccessFactors board requires pagination, but no HTTP pagination request contract is available; browser automation is disabled.',
-    )
+  if (hasStaticSuccessFactorsSearchPageSignal(html)) {
+    if (hasNextPage(html)) {
+      throw new Error(
+        'Biocon API-only migration required: the verified SuccessFactors board requires pagination, but no HTTP pagination request contract is available; browser automation is disabled.',
+      )
+    }
+
+    return [html]
   }
 
-  return [html]
+  if (!hasSuccessFactorsDwrBootstrapSignal(html)) {
+    return [html]
+  }
+
+  const session = await fetchSearchSession({
+    searchUrl,
+    userAgent: USER_AGENT,
+    label: `${SOURCE}-successfactors-bootstrap`,
+    missingAjaxTokenErrorMessage:
+      'Biocon verified SuccessFactors search bootstrap no longer exposes an ajaxSecKey token',
+  })
+
+  if (!hasSuccessFactorsDwrBootstrapSignal(session.html)) {
+    throw new Error('Biocon verified public SuccessFactors search surface no longer matches the known page')
+  }
+
+  const scriptSessionId = createSuccessFactorsScriptSessionId()
+  const initialResponse = await fetchDwrText({
+    searchUrl,
+    endpoint: 'getInitialJobSearchData',
+    body: buildInitialSearchDwrBody({ searchUrl, scriptSessionId }),
+    csrfToken: session.csrfToken,
+    cookieHeader: session.cookieHeader,
+    companyToken: SUCCESSFACTORS_COMPANY_TOKEN,
+    userAgent: USER_AGENT,
+    label: `${SOURCE}-successfactors-getInitialJobSearchData`,
+    responseContractErrorMessage:
+      'Biocon verified SuccessFactors getInitialJobSearchData response no longer matches the expected DWR contract',
+    subaction: 0,
+  })
+  const initialPayload = extractDwrPayload(initialResponse, {
+    parseErrorMessage: 'Biocon verified SuccessFactors DWR search payload could not be parsed',
+    missingResultsErrorMessage: 'Biocon verified SuccessFactors DWR payload no longer exposes postings',
+  })
+  const initialPagination = initialPayload.results.options?.pagination || {}
+  const pageSize = Math.max(
+    1,
+    Number.parseInt(initialPagination.pageSize, 10) || initialPayload.results.postings.length || 10,
+  )
+  const totalCount = Math.max(
+    initialPayload.results.postings.length,
+    Number.parseInt(initialPagination.totalCount, 10)
+      || Number.parseInt(initialPayload.results.postingCount, 10)
+      || initialPayload.results.postings.length,
+  )
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  const sortByColumn = normalizeWhitespace(initialPayload.results.options?.sortByColumn) || undefined
+  const sortOrder = normalizeWhitespace(initialPayload.results.options?.sortOrder) || undefined
+  const pages = [initialResponse]
+
+  for (let currentPage = 2; currentPage <= totalPages; currentPage += 1) {
+    pages.push(await fetchDwrText({
+      searchUrl,
+      endpoint: 'search',
+      body: buildPaginatedSearchDwrBody({
+        searchUrl,
+        scriptSessionId,
+        currentPage,
+        pageSize,
+        totalCount,
+        sortByColumn,
+        sortOrder,
+        batchId: currentPage - 1,
+      }),
+      csrfToken: session.csrfToken,
+      cookieHeader: session.cookieHeader,
+      companyToken: SUCCESSFACTORS_COMPANY_TOKEN,
+      userAgent: USER_AGENT,
+      label: `${SOURCE}-successfactors-search`,
+      responseContractErrorMessage:
+        'Biocon verified SuccessFactors search response no longer matches the expected DWR contract',
+      subaction: currentPage - 1,
+    }))
+  }
+
+  return pages
 }
 
-const collectSummaryPages = (pages) => {
+export const collectSummaryPages = (pages) => {
   const listings = []
   const seenRequisitionIds = new Set()
 
@@ -279,7 +434,6 @@ const collectSummaryPages = (pages) => {
       seenRequisitionIds.add(job.requisitionId)
       listings.push(job)
     }
-
   }
 
   return listings

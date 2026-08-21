@@ -26,6 +26,25 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Revolt Electric Bikes- EV Bike Price India and Latest Models</title>
+    <meta
+      name="description"
+      content="Find the best electric bikes in India with modern features, strong range, and affordable electric bike prices. Explore top EV motorcycles for daily commuting."
+    />
+    <meta property="og:site_name" content="Revolt Motors" />
+    <meta property="og:title" content="Revolt Electric Bikes- EV Bike Price India and Latest Models" />
+    <link rel="canonical" href="https://www.revoltmotors.com" />
+  </head>
+  <body>
+    <a href="https://www.rattanindia.com/">RattanIndia</a>
+  </body>
+</html>
+`
+
 const careersHtml = `
 <!doctype html>
 <html lang="en">
@@ -138,6 +157,7 @@ test('Revolt helpers validate the official public careers surface and parse stru
   assert.equal(revolt.HOMEPAGE_URL, 'https://www.revoltmotors.com/')
   assert.equal(revolt.CAREERS_URL, 'https://www.revoltmotors.com/career-with-us')
   assert.equal(revolt.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(revolt.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(revolt.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(revolt.extractStructuredInitialJobs(careersHtml).length, 2)
 

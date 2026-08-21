@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -32,6 +32,18 @@ const normalizeWhitespace = (value) => {
     .trim()
 
   return normalized || null
+}
+
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
+
+const getHeader = (page = {}, name) => {
+  const normalizedName = String(name ?? '').toLowerCase()
+  const headers = page?.headers
+  if (!headers) return ''
+  if (typeof headers.get === 'function') {
+    return String(headers.get(normalizedName) || headers.get(name) || '')
+  }
+  return String(headers[normalizedName] || headers[name] || '')
 }
 
 const splitLines = (value) => String(value ?? '')
@@ -95,14 +107,42 @@ const buildPageDataFromHtml = (html = '', url = SEARCH_URL) => ({
   links: extractPageLinks(html, url),
 })
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchPage = (url) => fetchPageWithRetry(url, {
   headers: {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-IN,en-US;q=0.9,en;q=0.8',
+    Referer: SEARCH_URL,
   },
-  attempts: 1,
   label: SOURCE,
   timeoutMs: NAVIGATION_TIMEOUT_MS,
+})
+
+export const hasVerifiedCloudflareChallengeSignal = (page = {}) => {
+  const html = getPageHtml(page)
+  const text = normalizeWhitespace(html) || ''
+
+  return Number(page.status) === 403
+    && /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(html)
+    && /challenges\.cloudflare\.com/i.test(html)
+    && text.includes('Enable JavaScript and cookies to continue')
+}
+
+export const isVerifiedCloudflareChallengedPage = (page = {}, expectedUrl) => {
+  const finalUrl = String(page.url || expectedUrl)
+
+  return finalUrl === expectedUrl
+    && /cloudflare/i.test(getHeader(page, 'server'))
+    && getHeader(page, 'cf-ray').trim().length > 0
+    && getHeader(page, 'cf-mitigated').toLowerCase() === 'challenge'
+    && hasVerifiedCloudflareChallengeSignal(page)
+}
+
+const createFetchPageFromText = (fetchText) => async (url) => ({
+  status: 200,
+  url,
+  headers: {},
+  html: await fetchText(url),
 })
 
 export const hasVerifiedIndiaListingSurface = (pageData) => {
@@ -214,17 +254,37 @@ export const createEnvestnetScraper = ({
 } = {}) => ({
   async run({
     maxPages = 5,
-    fetchText = defaultFetchText,
+    fetchPage,
+    fetchText,
     collectPageDataImpl,
   } = {}) {
-    if (!collectPageDataImpl) {
-      collectPageDataImpl = async (url) => buildPageDataFromHtml(await fetchText(url), url)
-    }
+    const effectiveFetchPage = typeof fetchPage === 'function'
+      ? fetchPage
+      : typeof fetchText === 'function'
+        ? createFetchPageFromText(fetchText)
+        : defaultFetchPage
 
     const listingLinks = []
 
     for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
-      const pageData = await collectPageDataImpl(buildListingPageUrl(pageNumber))
+      const pageUrl = buildListingPageUrl(pageNumber)
+      let pageData
+
+      if (collectPageDataImpl) {
+        pageData = await collectPageDataImpl(pageUrl)
+      } else {
+        const page = await effectiveFetchPage(pageUrl)
+
+        if (isVerifiedCloudflareChallengedPage(page, pageUrl)) {
+          if (pageNumber === 1) {
+            return []
+          }
+
+          throw new Error('Envestnet India jobs pagination is now challenge-gated before all results can be verified')
+        }
+
+        pageData = buildPageDataFromHtml(getPageHtml(page), page.url || pageUrl)
+      }
 
       if (!hasVerifiedIndiaListingSurface(pageData)) {
         throw new Error('Envestnet India jobs page no longer matches the verified public surface')
@@ -253,7 +313,20 @@ export const createEnvestnetScraper = ({
     const jobs = []
 
     for (const listing of selectedLinks) {
-      const detailPageData = await collectPageDataImpl(listing.url)
+      let detailPageData
+
+      if (collectPageDataImpl) {
+        detailPageData = await collectPageDataImpl(listing.url)
+      } else {
+        const detailPage = await effectiveFetchPage(listing.url)
+
+        if (isVerifiedCloudflareChallengedPage(detailPage, listing.url)) {
+          throw new Error('Envestnet job detail page is now challenge-gated before the verified public fields can be extracted')
+        }
+
+        detailPageData = buildPageDataFromHtml(getPageHtml(detailPage), detailPage.url || listing.url)
+      }
+
       const job = extractJobFromDetailPage(detailPageData)
       if (!job) continue
 

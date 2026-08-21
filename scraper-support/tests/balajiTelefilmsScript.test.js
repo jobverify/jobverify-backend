@@ -49,6 +49,33 @@ const missingRouteHtml = `
 </html>
 `
 
+const incapsulaBlockedShellHtml = `
+<html style="height:100%">
+  <head>
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  </head>
+  <body style="margin:0px;height:100%">
+    <iframe
+      id="main-iframe"
+      src="/_Incapsula_Resource?SWUDNSAI=31&incident_id=1652000270182916016-590217034444572368"
+    ></iframe>
+  </body>
+</html>
+`
+
+const incapsulaScriptShellHtml = `
+<html>
+  <head>
+    <meta name="robots" content="noindex,nofollow">
+    <script src="/_Incapsula_Resource?SWJIYLWA=5074a744e2e3d891814e9a2dace20bd4,719d34d31c8e3a6e6fffd425f7e032f3"></script>
+  </head>
+  <body></body>
+</html>
+`
+
 const loadBalajiTelefilmsModule = async () => {
   try {
     return await import('../../scraper/balajitelefilms/script.js')
@@ -72,6 +99,8 @@ test('Balaji Telefilms verifies the official homepage, email-only careers page, 
   assert.equal(balaji.hasEmailOnlyCareersSignal(careersHtml), true)
   assert.equal(balaji.isVerifiedMissingRoute({ status: 404, html: missingRouteHtml }), true)
   assert.equal(balaji.hasUnexpectedPublicJobsSignal(careersHtml), false)
+  assert.equal(balaji.hasVerifiedIncapsulaBlockedShell(incapsulaBlockedShellHtml), true)
+  assert.equal(balaji.hasVerifiedIncapsulaBlockedShell(incapsulaScriptShellHtml), true)
 })
 
 test('Balaji Telefilms returns an honest zero-job result while the careers surface remains email-only', async () => {
@@ -139,5 +168,48 @@ test('Balaji Telefilms can recover with browser-backed pages when direct request
     'https://www.balajitelefilms.com/careers',
     'https://www.balajitelefilms.com/career',
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Balaji Telefilms falls back to the verified TLS-bypassing transport when Node fetch fails certificate validation', async () => {
+  const balaji = await loadBalajiTelefilmsModule()
+
+  const requestedUrls = []
+  const fetchPage = balaji.createDefaultFetchPage({
+    fetchImpl: async () => {
+      const error = new TypeError('fetch failed')
+      error.cause = { code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' }
+      throw error
+    },
+    fetchInsecurePageImpl: async (url) => {
+      requestedUrls.push(url)
+      return { status: 200, url, html: incapsulaScriptShellHtml }
+    },
+  })
+
+  const homepage = await fetchPage(balaji.HOMEPAGE_URL)
+  const careers = await fetchPage(balaji.CAREERS_URL)
+
+  assert.deepEqual(requestedUrls, [
+    balaji.HOMEPAGE_URL,
+    balaji.CAREERS_URL,
+  ])
+  assert.equal(balaji.hasVerifiedIncapsulaBlockedShell(homepage.html), true)
+  assert.equal(balaji.hasVerifiedIncapsulaBlockedShell(careers.html), true)
+})
+
+test('Balaji Telefilms stays empty when the Thursday, August 13, 2026 surface is currently hidden behind the verified Incapsula shell', async () => {
+  const balaji = await loadBalajiTelefilmsModule()
+
+  const jobs = await balaji.createBalajiTelefilmsScraper().run({
+    fetchPage: async (url) => {
+      if (url === balaji.HOMEPAGE_URL || url === balaji.CAREERS_URL) {
+        return { status: 200, url, html: incapsulaScriptShellHtml }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })

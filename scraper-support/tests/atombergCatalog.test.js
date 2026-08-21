@@ -30,7 +30,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Atomberg local catalog captures the verified homepage, email-only careers page, and no-public-jobs sentinel state', async () => {
+test('Atomberg local catalog captures the August 17, 2026 Shopify homepage and resume-only careers contract', async () => {
   const { ATOMBERG_CATALOG } = await loadCatalogModule()
   const atomberg = await loadScriptModule()
 
@@ -44,7 +44,6 @@ test('Atomberg local catalog captures the verified homepage, email-only careers 
   assert.equal(ATOMBERG_CATALOG.applicationUrl, 'mailto:career@atomberg.com')
   assert.deepEqual(ATOMBERG_CATALOG.noPublicJobRouteUrls, [
     'https://atomberg.com/jobs',
-    'https://atomberg.com/pages/careers',
   ])
   assert.equal(ATOMBERG_CATALOG.brokenCareerRouteUrl, 'https://atomberg.com/career')
   assert.equal(ATOMBERG_CATALOG.companyDomain, 'atomberg.com')
@@ -52,24 +51,25 @@ test('Atomberg local catalog captures the verified homepage, email-only careers 
   assert.equal(ATOMBERG_CATALOG.countryFilter, 'India')
   assert.equal(
     ATOMBERG_CATALOG.paginationStrategy,
-    'verified-homepage-plus-resume-only-careers-page-plus-missing-route-validation',
+    'verified-shopify-homepage-plus-resume-only-careers-page-plus-shopify-404-validation',
   )
   assert.equal(
     ATOMBERG_CATALOG.extractionStrategy,
-    'verified-homepage+verified-careers-page-email-resume-handoff-without-public-listings+verified-missing-job-routes-return-empty',
+    'verified-shopify-homepage+verified-careers-page-email-resume-handoff-without-public-listings+verified-shopify-404-routes-return-empty',
   )
   assert.equal(ATOMBERG_CATALOG.parser, 'custom-script')
   assert.equal(ATOMBERG_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(ATOMBERG_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(ATOMBERG_CATALOG.verifiedOn, '2026-08-17')
   assert.equal(ATOMBERG_CATALOG.dryRunFile, 'atomberg/jobs.json')
   assert.equal(ATOMBERG_CATALOG.modulePath, atombergModulePath)
   assert.match(ATOMBERG_CATALOG.verifiedSurfaceSummary, /https:\/\/atomberg\.com\//i)
   assert.match(ATOMBERG_CATALOG.verifiedSurfaceSummary, /https:\/\/atomberg\.com\/careers/i)
+  assert.match(ATOMBERG_CATALOG.verifiedSurfaceSummary, /https:\/\/atomberg\.com\/pages\/careers/i)
   assert.match(ATOMBERG_CATALOG.verifiedSurfaceSummary, /career@atomberg\.com/i)
   assert.match(ATOMBERG_CATALOG.verifiedSurfaceSummary, /https:\/\/atomberg\.com\/jobs/i)
   assert.match(ATOMBERG_CATALOG.verifiedSurfaceSummary, /https:\/\/atomberg\.com\/career/i)
   assert.match(ATOMBERG_CATALOG.verifiedSurfaceSummary, /404/i)
-  assert.match(ATOMBERG_CATALOG.verifiedSurfaceSummary, /500/i)
+  assert.doesNotMatch(ATOMBERG_CATALOG.verifiedSurfaceSummary, /500/i)
   assert.match(ATOMBERG_CATALOG.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
 
   assert.equal(atomberg.PROVIDER_METADATA.source, ATOMBERG_CATALOG.source)

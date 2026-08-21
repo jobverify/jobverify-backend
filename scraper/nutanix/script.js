@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import NUTANIX_CATALOG from './catalog.js'
@@ -19,6 +18,7 @@ export const PROVIDER_METADATA = NUTANIX_CATALOG
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const REQUEST_TIMEOUT_MS = 20000
 
 const INDIA_SIGNAL_PATTERN =
   /\b(india|bangalore|bengaluru|pune|mumbai|delhi|gurugram|gurgaon|noida|hyderabad|chennai)\b/i
@@ -288,99 +288,84 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
 })
 
-const isBrowserFallbackError = (error) =>
-  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
-    .test(String(error?.message ?? error ?? ''))
+const defaultFetchPage = async (url) => {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
-const buildBlockedPublicSurfaceError = (surfaceLabel, error) => {
-  const upstreamError = new Error(
-    `Nutanix verified ${surfaceLabel} remains blocked after HTTP fallback`,
-    { cause: error },
-  )
-  upstreamError.softFailure = true
-  upstreamError.upstreamOutage = true
-  upstreamError.failureKind = 'network_or_timeout'
-  upstreamError.abortRetries = true
-  return upstreamError
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeout)
+
+    return {
+      status: response.status,
+      url,
+      finalUrl: response.url,
+      html: await response.text(),
+      errorKind: null,
+    }
+  } catch (error) {
+    clearTimeout(timeout)
+
+    return {
+      status: null,
+      url,
+      finalUrl: url,
+      html: null,
+      errorKind: error?.name === 'AbortError' ? 'timeout' : 'network',
+      errorMessage: String(error?.message ?? error),
+    }
+  }
 }
 
 export const createNutanixScraper = ({
   now: defaultNow = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText, now = defaultNow } = {}) {
-    let browserSession = null
-
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
-      }
-
-      return browserSession
+  async run({ fetchPage = defaultFetchPage, fetchText = defaultFetchText, now = defaultNow } = {}) {
+    const officialPage = await fetchPage(OFFICIAL_CAREERS_URL)
+    if (officialPage.errorKind || !officialPage.html) {
+      throw new Error('Nutanix verified official careers page could not be fetched from this runtime')
     }
 
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchText(url)
-    })
-
-    const fetchPageText = async (url, surfaceLabel) => {
-      try {
-        return await fetchText(url)
-      } catch (error) {
-        if (!isBrowserFallbackError(error)) {
-          throw error
-        }
-
-        try {
-          return await browserTextFetcher(url)
-        } catch (browserError) {
-          if (isBrowserFallbackError(browserError)) {
-            throw buildBlockedPublicSurfaceError(surfaceLabel, browserError)
-          }
-          throw browserError
-        }
-      }
+    if (!isCloudflareChallengePage(officialPage.html) && !hasOfficialCareersSurfaceSignal(officialPage.html)) {
+      throw new Error('Nutanix verified official careers page no longer matches the trusted surface')
     }
 
-    try {
-      const officialHtml = await fetchPageText(OFFICIAL_CAREERS_URL, 'official careers page')
-      if (!isCloudflareChallengePage(officialHtml) && !hasOfficialCareersSurfaceSignal(officialHtml)) {
-        throw new Error('Nutanix verified official careers page no longer matches the trusted surface')
-      }
-
-      const jobviteHomeHtml = await fetchPageText(JOBVITE_HOME_URL, 'Jobvite home bridge')
-      if (!hasJobviteHomeSignal(jobviteHomeHtml)) {
-        throw new Error('Nutanix verified Jobvite home no longer matches the trusted public jobs bridge')
-      }
-
-      if (extractOfficialCareersUrlFromJobviteHome(jobviteHomeHtml) !== OFFICIAL_CAREERS_URL) {
-        throw new Error('Nutanix Jobvite home no longer points back to the verified official current openings page')
-      }
-
-      const listingsHtml = await fetchPageText(JOB_LISTINGS_URL, 'Jobvite listings page')
-      if (!hasJobListingsSignal(listingsHtml)) {
-        throw new Error('Nutanix verified Jobvite listings no longer match the trusted public jobs surface')
-      }
-
-      const listings = extractJobListings(listingsHtml)
-      const jobs = []
-
-      for (const listing of listings) {
-        const detailHtml = await fetchPageText(listing.detailUrl, `Jobvite detail page for ${listing.title || listing.jobId}`)
-        jobs.push(extractJobDetail(detailHtml, listing))
-      }
-
-      return jobs.map((job) => ({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl || job.sourceUrl,
-        scrapedAt: now(),
-      }))
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
+    const jobviteHomeHtml = await fetchText(JOBVITE_HOME_URL)
+    if (!hasJobviteHomeSignal(jobviteHomeHtml)) {
+      throw new Error('Nutanix verified Jobvite home no longer matches the trusted public jobs bridge')
     }
+
+    if (extractOfficialCareersUrlFromJobviteHome(jobviteHomeHtml) !== OFFICIAL_CAREERS_URL) {
+      throw new Error('Nutanix Jobvite home no longer points back to the verified official current openings page')
+    }
+
+    const listingsHtml = await fetchText(JOB_LISTINGS_URL)
+    if (!hasJobListingsSignal(listingsHtml)) {
+      throw new Error('Nutanix verified Jobvite listings no longer match the trusted public jobs surface')
+    }
+
+    const listings = extractJobListings(listingsHtml)
+    const jobs = []
+
+    for (const listing of listings) {
+      const detailHtml = await fetchText(listing.detailUrl)
+      jobs.push(extractJobDetail(detailHtml, listing))
+    }
+
+    return jobs.map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.applyUrl || job.sourceUrl,
+      scrapedAt: now(),
+    }))
   },
 })
 

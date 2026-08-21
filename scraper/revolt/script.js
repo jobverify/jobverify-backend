@@ -76,13 +76,19 @@ const formatLocation = (location) => {
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
+  const hasLegacyTrustSignals =
+    /href="\/career-with-us"/i.test(page)
+    && normalized.includes('contact@revoltmotors.com')
+    && normalized.includes('Revolt Intellicorp Private Limited')
+  const hasCurrentTrustSignals =
+    /<link[^>]+rel="canonical"[^>]+href="https:\/\/www\.revoltmotors\.com\/?"/i.test(page)
+    && /<meta[^>]+property="og:title"[^>]+content="Revolt Electric Bikes- EV Bike Price India and Latest Models"/i.test(page)
+    && /rattanindia/i.test(page)
 
   return /<title>\s*Revolt Electric Bikes- EV Bike Price India and Latest Models\s*<\/title>/i.test(page)
     && /<meta[^>]+name="description"[^>]+Find the best electric bikes in India/i.test(page)
     && /<meta[^>]+property="og:site_name"[^>]+content="Revolt Motors"/i.test(page)
-    && /href="\/career-with-us"/i.test(page)
-    && normalized.includes('contact@revoltmotors.com')
-    && normalized.includes('Revolt Intellicorp Private Limited')
+    && (hasLegacyTrustSignals || hasCurrentTrustSignals)
 }
 
 export const hasOfficialCareersSignal = (html) => {

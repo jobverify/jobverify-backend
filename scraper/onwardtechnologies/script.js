@@ -65,7 +65,7 @@ const buildHeaders = (cookie = null) => ({
   ...(cookie ? { Cookie: cookie } : {}),
 })
 
-const defaultFetchText = async (url, options = {}) => {
+export const defaultFetchText = async (url, options = {}) => {
   const response = await fetch(url, {
     redirect: 'follow',
     headers: {
@@ -74,11 +74,22 @@ const defaultFetchText = async (url, options = {}) => {
     },
   })
 
+  const text = await response.text()
+
   if (!response.ok) {
+    // Onward's Sucuri edge currently returns the JavaScript challenge in a 307
+    // response body, without exposing a usable Location header.
+    if (
+      response.status === 307
+      && hasSucuriChallengeSignal(text)
+    ) {
+      return text
+    }
+
     throw new Error(`HTTP ${response.status} for ${url}`)
   }
 
-  return response.text()
+  return text
 }
 
 export const hasSucuriChallengeSignal = (html) =>

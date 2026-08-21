@@ -104,7 +104,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
   return /<title>\s*YlogX\s*-\s*AI-Driven Digital Transformation\s*<\/title>/i.test(page)
-    && /<div id=["']root["']><\/div>/i.test(page)
+    && /<div id=["']root["'][^>]*>[\s\S]*<\/div>/i.test(page)
     && extractMainBundleAssetPath(page) !== null
 }
 
@@ -120,7 +120,7 @@ export const hasVerifiedBundleIdentity = (bundleText) => {
 
   return BUNDLE_REQUIRED_SIGNALS.every((signal) => source.includes(signal))
     && /path:\s*["']\*["']/i.test(source)
-    && /NotFound-[A-Za-z0-9]+\.js/i.test(source)
+    && /NotFound-[A-Za-z0-9_-]+\.js/i.test(source)
 }
 
 export const hasBundleJobsSignal = (bundleText) =>

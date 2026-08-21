@@ -2,11 +2,10 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
-  GREENHOUSE_EMBED_URL,
   buildGreenhouseJobsApiUrl,
-  extractGreenhouseEmbedUrl,
   extractIndiaJobsFromGreenhousePayload,
   hasVerifiedCareersPageSignal,
+  hasVerifiedGreenhouseBoardSignal,
   normalizeGreenhouseJobUrl,
 } from './script.js'
 
@@ -17,7 +16,7 @@ test('Kaseya India builds the verified Greenhouse jobs API URL', () => {
   )
 })
 
-test('Kaseya India verifies the current first-party careers shell and Greenhouse embed', () => {
+test('Kaseya India verifies the current first-party careers shell and Greenhouse board handoff', () => {
   const html = `<!DOCTYPE html>
   <html>
   <head>
@@ -25,19 +24,18 @@ test('Kaseya India verifies the current first-party careers shell and Greenhouse
     <link rel="canonical" href="https://www.kaseya.com/careers/jobs/" />
   </head>
   <body>
-    <div class="alert">
-      All legitimate Kaseya communications come from <strong>@kaseya.com</strong> email addresses only.
-    </div>
-    <div class="description">
-      Exciting career opportunities await you at our Bengaluru campus.
-    </div>
-    <div id="grnhse_app"></div>
-    <script src="https://boards.greenhouse.io/embed/job_board/js?for=kaseya"></script>
+    <nav>
+      <a href="/careers/life-at-kaseya/">Life at Kaseya</a>
+    </nav>
+    <main>
+      <a href="/careers/jobs/id/6015830004/?gh_jid=6015830004">Staff Software Engineer</a>
+      <a href="https://my.greenhouse.io/users/sign_in?job_board=kaseya&amp;source=job_alert_board">Create alert</a>
+    </main>
   </body>
   </html>`
 
   assert.equal(hasVerifiedCareersPageSignal(html), true)
-  assert.equal(extractGreenhouseEmbedUrl(html), GREENHOUSE_EMBED_URL)
+  assert.equal(hasVerifiedGreenhouseBoardSignal(html), true)
 })
 
 test('Kaseya India normalizes first-party Greenhouse job URLs', () => {

@@ -225,6 +225,20 @@ test('Indeed returns [] when all verified first-party routes serve the current J
   assert.deepEqual(jobs, [])
 })
 
+test('Indeed returns [] when the live first-party routes serve the current 403 Security Check interstitial', async () => {
+  const indeed = await loadModule()
+
+  const jobs = await indeed.createIndeedScraper().run({
+    fetchPage: async (url) => ({
+      status: 403,
+      url,
+      html: challengeHtml,
+    }),
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
 test('Indeed fails closed when the verified careers handoff or jobs page contract drifts', async () => {
   const indeed = await loadModule()
 

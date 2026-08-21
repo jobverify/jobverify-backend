@@ -36,7 +36,7 @@ const jobsPageHtml = `
       <script>
         fetch("/api/next/jobs")
       </script>
-      <p>Find your next role @Snyk</p>
+      <p>Open security, developer, sales, marketing, leadership, technical support, and creative roles at Snyk.</p>
     </body>
   </html>
 `

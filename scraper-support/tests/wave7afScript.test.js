@@ -213,6 +213,61 @@ const xoxodayKekaShellHtml = `
 </html>
 `
 
+const currentThinkbridgeCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Job Search | thinkbridge - there&#x27;s a new way there</title>
+  </head>
+  <body>
+    <div role="listitem" class="c-jobitem w-dyn-item">
+      <div class="career-card _w-100">
+        <div class="j0-div">
+          <div class="career-deets-wrap no-gap">
+            <div class="category-tag country">India</div>
+            <div class="category-tag static hide">App Dev</div>
+            <div class="category-tag gray career hide">4 + Years</div>
+          </div>
+          <h3 class="space-top-small">Developer - C#.NET &amp; Firebase (Store &amp; Functions)</h3>
+          <div class="opacity-dark-text summary">Build and evolve modern product integrations.</div>
+          <div class="margin-top-20px left-align"><div class="category-tag transparent">C#.NET, Firebase, Store, Functions</div></div>
+        </div>
+        <a href="/jobs/developer-csharp-dotnet-firebase" class="arrow-link w-inline-block"><div>Read more</div></a>
+      </div>
+    </div>
+    <div role="listitem" class="c-jobitem w-dyn-item">
+      <div class="career-card _w-100">
+        <div class="j0-div">
+          <div class="career-deets-wrap no-gap">
+            <div class="category-tag country">Singapore</div>
+            <div class="category-tag static hide">Growth</div>
+            <div class="category-tag gray career hide">5 + Years</div>
+          </div>
+          <h3 class="space-top-small">Business Development Specialist</h3>
+          <div class="opacity-dark-text summary">Drive expansion with enterprise prospects across the region.</div>
+          <div class="margin-top-20px left-align"><div class="category-tag transparent">Enterprise Sales, Partnerships</div></div>
+        </div>
+        <a href="/jobs/business-development-specialist" class="arrow-link w-inline-block"><div>Read more</div></a>
+      </div>
+    </div>
+    <div><h4>Sorry! No matching jobs found.</h4></div>
+  </body>
+</html>
+`
+
+const xoxodayBlockedCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Vercel Security Checkpoint</title>
+  </head>
+  <body>
+    <h1>Vercel Security Checkpoint</h1>
+    <p>Please enable JavaScript to continue.</p>
+  </body>
+</html>
+`
+
 const xoxodayPayload = [
   {
     id: 135128,
@@ -267,6 +322,39 @@ test('thinkbridge run returns normalized global jobs from the first-party job-se
     ],
   )
   assert.deepEqual(jobs[0].requiredSkills, ['ServiceNow Architect', 'CMDB', 'Discovery'])
+})
+
+test('thinkbridge accepts the Monday, August 17, 2026 first-party job-search cards after the sample role refresh', async () => {
+  const thinkbridge = await loadModule('../../scraper/thinkbridge/script.js')
+
+  assert.equal(thinkbridge.hasOfficialCareersSignal(currentThinkbridgeCareersHtml), true)
+
+  const jobs = await thinkbridge.createThinkbridgeScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async (url) => {
+      assert.equal(url, thinkbridge.CAREERS_URL)
+      return currentThinkbridgeCareersHtml
+    },
+  })
+
+  assert.deepEqual(
+    jobs.map((job) => [job.title, job.location, job.department, job.sourceUrl]),
+    [
+      [
+        'Developer - C#.NET & Firebase (Store & Functions)',
+        'India',
+        'App Dev',
+        'https://www.thinkbridge.com/jobs/developer-csharp-dotnet-firebase',
+      ],
+      [
+        'Business Development Specialist',
+        'Singapore',
+        'Growth',
+        'https://www.thinkbridge.com/jobs/business-development-specialist',
+      ],
+    ],
+  )
 })
 
 test('Algonomy run returns grouped public jobs from the embedded Paycor board', async () => {
@@ -385,4 +473,49 @@ test('Xoxoday run returns global jobs from the verified Keka shell and embed job
       ['Strategic Account Manager', 'Philippines, ABR', 'Philippines'],
     ],
   )
+})
+
+test('Xoxoday accepts the current blocked first-party careers page while the Keka shell and jobs API remain live', async () => {
+  const xoxoday = await loadModule('../../scraper/xoxoday/script.js')
+  const requestedUrls = []
+
+  assert.equal(xoxoday.hasVercelSecurityCheckpointSignal(xoxodayBlockedCareersHtml), true)
+
+  const jobs = await xoxoday.createXoxodayScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      if (url === xoxoday.CAREERS_URL) {
+        return {
+          status: 429,
+          url,
+          html: xoxodayBlockedCareersHtml,
+        }
+      }
+
+      if (url === xoxoday.KEKA_CAREERS_URL) {
+        return {
+          status: 200,
+          url,
+          html: xoxodayKekaShellHtml,
+        }
+      }
+
+      throw new Error(`Unexpected Xoxoday page URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      requestedUrls.push(url)
+      assert.equal(url, xoxoday.JOBS_API_URL)
+      return xoxodayPayload
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    xoxoday.CAREERS_URL,
+    xoxoday.KEKA_CAREERS_URL,
+    xoxoday.JOBS_API_URL,
+  ])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].source, 'xoxoday')
 })

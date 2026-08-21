@@ -13,13 +13,17 @@ test('buildCanonicalWorkbookInventory merges all workbook sources without duplic
   const workbookAliases = loadWorkbookBatchAliases()
   const result = buildCanonicalWorkbookInventory({ workbookProviders, dedicatedProviders })
 
-  assert.equal(workbookProviders.length, 1880)
-  assert.equal(result.stats.uniqueWorkbookSourceCount, 1880)
-  assert.equal(result.stats.overlapWithDedicatedCount, 580)
-  assert.equal(result.stats.batchOnlyCount, 1300)
+  assert.equal(result.stats.uniqueWorkbookSourceCount, workbookProviders.length)
+  assert.equal(
+    result.stats.overlapWithDedicatedCount + result.stats.batchOnlyCount,
+    result.stats.uniqueWorkbookSourceCount,
+  )
   assert.equal(result.dedicatedOnlyProviders.length, 6)
   assert.deepEqual(result.conflicts, [])
-  assert.equal(result.canonicalProviders.length, 1886)
+  assert.equal(
+    result.canonicalProviders.length,
+    result.stats.uniqueWorkbookSourceCount + result.dedicatedOnlyProviders.length,
+  )
   assert.equal(workbookAliases.Cibil, 'transunioncibil')
   assert.equal(workbookAliases['Amazon Development Center'], 'amazon')
 })

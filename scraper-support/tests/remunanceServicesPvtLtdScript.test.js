@@ -243,6 +243,36 @@ test('extractJobDetail reads the Remunance detail table, posting date, and inlin
   })
 })
 
+test('extractJobDetail accepts legacy Remunance archive slugs when the live detail page rewrites to a verified first-party canonical URL', async () => {
+  const remunance = await loadRemunanceModule()
+
+  const redirectedDetail = remunance.extractJobDetail(DETAIL_HTML, {
+    title: 'New Product Introduction Buyer',
+    company: 'Remunance Services Pvt. Ltd.',
+    department: null,
+    location: null,
+    city: null,
+    country: 'India',
+    jobId: '13246',
+    requisitionId: '13246',
+    sourceUrl: 'https://remunance.com/jobs/piping-detailer-senior-6/',
+    applyUrl: 'https://remunance.com/jobs/piping-detailer-senior-6/',
+    employmentType: null,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    closingDate: null,
+    jobDescription: null,
+    remoteStatus: 'On-site',
+  })
+
+  assert.equal(redirectedDetail.sourceUrl, 'https://remunance.com/jobs/new-product-introduction-buyer/')
+  assert.equal(redirectedDetail.applyUrl, 'https://remunance.com/jobs/new-product-introduction-buyer/')
+  assert.equal(redirectedDetail.title, 'New Product Introduction Buyer')
+})
+
 test('run uses browser-backed first-party HTML when direct HTTP access is blocked', async () => {
   const remunance = await loadRemunanceModule()
   const attempts = []

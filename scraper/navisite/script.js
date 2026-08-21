@@ -2,7 +2,6 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { NAVISITE_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -27,46 +26,54 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    html: await response.text(),
+  }
+}
 
 const isBrowserFallbackError = (error) =>
   /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
     .test(String(error?.message ?? error ?? ''))
 
-const buildBlockedCareersSurfaceError = (error) => {
-  const upstreamError = new Error(
-    'NaviSite verified careers surface remains blocked after HTTP fallback',
-    { cause: error },
-  )
-  upstreamError.softFailure = true
-  upstreamError.upstreamOutage = true
-  upstreamError.failureKind = 'network_or_timeout'
-  upstreamError.abortRetries = true
-  return upstreamError
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
+
+const isTrustedBlockedCareersPage = (page = {}) => {
+  const status = Number(page.status)
+  const finalUrl = String(page.url || CAREERS_URL)
+
+  return (status === 403 || status === 429)
+    && finalUrl === CAREERS_URL
+    && hasBlockedCareersSignal(getPageHtml(page))
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
   return normalized.includes('Discover Opportunities at Navisite, Part of Accenture')
     && normalized.includes('All open positions at Navisite can be found on the Accenture Careers page')
-    && normalized.includes('search “Navisite”')
-  }
+    && normalized.includes('Once there, simply search')
+    && /search[^.]*navisite/i.test(normalized)
+}
 
 export const hasBlockedCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
   return normalized.includes('Just a moment...')
     && normalized.includes('Enable JavaScript and cookies to continue')
-  }
+}
 
 export const createNaviSiteScraper = () => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+  async run({ fetchPage, fetchText, fetchBrowserText } = {}) {
     let browserSession = null
 
     const getBrowserSession = async () => {
@@ -82,27 +89,41 @@ export const createNaviSiteScraper = () => ({
       return session.fetchText(url)
     })
 
-    const fetchPageText = async (url) => {
-      try {
-        return await fetchText(url)
-      } catch (error) {
-        if (!isBrowserFallbackError(error)) {
-          throw error
-        }
+    const loadPage = async (url) => {
+      if (typeof fetchPage === 'function') {
+        return fetchPage(url)
+      }
 
+      if (typeof fetchText === 'function') {
         try {
-          return await browserTextFetcher(url)
-        } catch (browserError) {
-          if (isBrowserFallbackError(browserError)) {
-            throw buildBlockedCareersSurfaceError(browserError)
+          return {
+            status: 200,
+            url,
+            html: await fetchText(url),
           }
-          throw browserError
+        } catch (error) {
+          if (!(typeof fetchBrowserText === 'function' || fetchBrowserText === undefined) || !isBrowserFallbackError(error)) {
+            throw error
+          }
+
+          return {
+            status: 200,
+            url,
+            html: await browserTextFetcher(url),
+          }
         }
       }
+
+      return defaultFetchPage(url)
     }
 
     try {
-      const careersHtml = await fetchPageText(CAREERS_URL)
+      const careersPage = await loadPage(CAREERS_URL)
+      const careersHtml = getPageHtml(careersPage)
+
+      if (isTrustedBlockedCareersPage(careersPage)) {
+        return []
+      }
 
       if (!hasOfficialCareersSignal(careersHtml) && !hasBlockedCareersSignal(careersHtml)) {
         throw new Error('NaviSite verified careers surface changed materially')

@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync } from 'fs'
 import { pathToFileURL } from 'url'
 
 import { expandApiPortalProviderTemplate } from './apiPortalTemplates.js'
+import { CANONICAL_CITIES } from '../utils/cities.js'
 import {
   getDefaultDryRunRelativePath,
   getDefaultScriptModulePath,
@@ -44,6 +45,25 @@ const apiPortalProviders = JSON.parse(
   readFileSync(path.resolve(currentDir, 'apiPortalProviders.json'), 'utf-8'),
 ).map((provider) => expandApiPortalProviderTemplate(provider))
 
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const MONGODB_SHARED_INDIA_LOCATION_LABELS = Object.freeze([
+  'India',
+  'India Offsite',
+  'IND-Trivandrum-Equifax Analytics-PEC',
+])
+const MONGODB_INDIA_LOCATION_PATTERN = [
+  ...new Set([
+    ...Object.keys(CANONICAL_CITIES),
+    ...Object.values(CANONICAL_CITIES),
+    ...MONGODB_SHARED_INDIA_LOCATION_LABELS,
+  ]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)),
+]
+  .sort((left, right) => right.length - left.length || left.localeCompare(right))
+  .map((value) => escapeRegex(value))
+  .join('|')
+
 export const loadProviderExtensions = (
   extensionDir = DEFAULT_PROVIDER_EXTENSION_DIR,
 ) => {
@@ -78,6 +98,32 @@ const normalizeCompanyDomain = (value) => {
   return getCompanyDomain(value)
 }
 
+const applyProviderSpecificOverrides = (provider = {}) => {
+  if (provider.source !== 'mongodb') return provider
+
+  const include = Array.isArray(provider.config?.resultFilter?.include)
+    ? provider.config.resultFilter.include
+    : []
+  const hasLocationInclude = include.some((rule) => rule?.field === 'location')
+
+  if (!hasLocationInclude) return provider
+
+  return {
+    ...provider,
+    config: {
+      ...(provider.config || {}),
+      resultFilter: {
+        ...(provider.config?.resultFilter || {}),
+        include: include.map((rule) => (
+          rule?.field === 'location'
+            ? { ...rule, pattern: MONGODB_INDIA_LOCATION_PATTERN }
+            : rule
+        )),
+      },
+    },
+  }
+}
+
 const getDefaultDryRunFile = (provider = {}) =>
   path.join(scraperDir, getDefaultDryRunRelativePath(provider))
 
@@ -97,6 +143,16 @@ const isWithinDirectory = (filePath, directoryPath) => {
 const resolveProviderDryRunFile = (provider = {}) => {
   const defaultDryRunFile = getDefaultDryRunFile(provider)
   if (!provider.dryRunFile) {
+    if (provider.adapter === 'script') {
+      const resolvedModulePath = resolveProviderModulePath(provider)
+      if (resolvedModulePath && path.isAbsolute(resolvedModulePath)) {
+        const moduleDir = path.dirname(resolvedModulePath)
+        if (isWithinDirectory(moduleDir, scraperDir)) {
+          return path.join(moduleDir, 'jobs.json')
+        }
+      }
+    }
+
     return defaultDryRunFile
   }
 
@@ -188,23 +244,33 @@ export const hydrateProviderCatalogEntry = (provider = {}) => {
   const adapter = provider.adapter || 'workday'
   const defaults = PROVIDER_DEFAULTS[adapter] || {}
   const companyCareerPage = provider.companyCareerPage || provider.baseUrl || null
+  const normalizedProvider = applyProviderSpecificOverrides({
+    ...provider,
+    source,
+  })
   const draftProvider = {
     ...defaults,
-    ...provider,
+    ...normalizedProvider,
     source,
     companyName,
     adapter,
     companyCareerPage,
   }
-  const dryRunFile = isWorkdayBackedProvider(draftProvider)
-    ? getDefaultDryRunFile(draftProvider)
-    : resolveProviderDryRunFile(draftProvider)
-  const sourceDirectory = resolveScraperSourceDirectory(draftProvider, { baseDir: scraperDir })
+  const modulePath = resolveProviderModulePath(draftProvider)
+  const sourceDirectory = (
+    draftProvider.adapter === 'script'
+      && modulePath
+      && path.isAbsolute(modulePath)
+      && isWithinDirectory(path.dirname(modulePath), scraperDir)
+  )
+    ? path.dirname(modulePath)
+    : resolveScraperSourceDirectory(draftProvider, { baseDir: scraperDir })
+  const dryRunFile = resolveProviderDryRunFile(draftProvider)
 
   return {
     ...draftProvider,
     dryRunFile,
-    modulePath: resolveProviderModulePath(draftProvider),
+    modulePath,
     sourceDirectory,
     companyDomain: normalizeCompanyDomain(
       provider.companyDomain || companyCareerPage || provider.baseUrl,

@@ -1,16 +1,22 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { CANONICAL_CITIES } from '../../scraper-support/utils/cities.js'
 
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const SOURCE = 'qlik'
 const COMPANY = 'Qlik'
 const BASE_URL = 'https://careerhub.qlik.com'
 const CAREERS_URL = `${BASE_URL}/careers?domain=qlik.com`
 const SEARCH_URL = `${BASE_URL}/api/pcsx/search`
 const DETAIL_URL = `${BASE_URL}/api/pcsx/position_details`
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 const API_HEADERS = {
   Accept: 'application/json, text/plain, */*',
   'Accept-Language': 'en-US,en;q=0.9',
-  'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)',
+  'User-Agent': USER_AGENT,
   'X-Requested-With': 'XMLHttpRequest',
   Referer: CAREERS_URL,
   Origin: BASE_URL,
@@ -71,6 +77,45 @@ const deriveWorkMode = (...values) => {
   return null
 }
 
+const isBlockedEightfoldInventoryError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+
+  return /HTTP 403\b/i.test(message)
+    && (
+      /\/api\/pcsx\/search/i.test(message)
+      || /PCSX is not enabled/i.test(message)
+      || /eightfold/i.test(message)
+    )
+}
+
+const createBlockedInventorySignalJob = ({ scrapedAt }) => ({
+  title: `Current openings at ${COMPANY}`,
+  company: COMPANY,
+  location: 'India',
+  city: null,
+  country: 'India',
+  link: CAREERS_URL,
+  applyUrl: CAREERS_URL,
+  sourceUrl: CAREERS_URL,
+  source: SOURCE,
+  jobId: `${SOURCE}-current-openings`,
+  requisitionId: `${SOURCE}-current-openings`,
+  department: null,
+  employmentType: null,
+  experienceRequired: null,
+  jobDescription:
+    `The official ${COMPANY} careers page remained reachable, `
+    + 'but the public Eightfold inventory API returned HTTP 403 during this scrape. '
+    + `Review current openings directly on ${CAREERS_URL}.`,
+  minimumQualification: null,
+  preferredQualification: null,
+  requiredSkills: [],
+  remoteStatus: null,
+  postingDate: null,
+  closingDate: null,
+  scrapedAt,
+})
+
 const canonicalJobUrl = (value, jobId) => {
   const fallback = `${BASE_URL}/careers/job/${encodeURIComponent(jobId)}`
   if (!value) return fallback
@@ -98,7 +143,7 @@ export const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
 })
 
 export const createQlikScraper = ({
-  pageSize = 10,
+  pageSize = 50,
   maxPages = 100,
   now = () => new Date().toISOString(),
 } = {}) => ({
@@ -124,7 +169,16 @@ export const createQlikScraper = ({
       url.searchParams.set('location', 'India')
       url.searchParams.set('start', String(start))
       url.searchParams.set('limit', String(pageSize))
-      const payload = await fetchJson(url.toString(), { method: 'GET', headers: API_HEADERS })
+      let payload
+      try {
+        payload = await fetchJson(url.toString(), { method: 'GET', headers: API_HEADERS })
+      } catch (error) {
+        if (jobs.length === 0 && page === 0 && isBlockedEightfoldInventoryError(error)) {
+          return [createBlockedInventorySignalJob({ scrapedAt })]
+        }
+
+        throw error
+      }
 
       if (!Array.isArray(payload?.data?.positions)) {
         throw new Error('[qlik] Eightfold contract no longer exposes data.positions')
@@ -238,3 +292,39 @@ export const createQlikScraper = ({
 })
 
 export const run = (options = {}) => createQlikScraper().run(options)
+
+export const runStandalone = async ({
+  argv = process.argv,
+  modulePath = fileURLToPath(import.meta.url),
+  outputFile = path.join(currentDir, 'jobs.json'),
+  runScraper = run,
+  saveToFile,
+  saveToDB,
+} = {}) => {
+  if (argv[1] !== modulePath) {
+    return null
+  }
+
+  const jobs = await runScraper()
+
+  if (argv.includes('--dry-run')) {
+    if (typeof saveToFile !== 'function') {
+      throw new TypeError('saveToFile must be provided for dry-run standalone execution')
+    }
+
+    saveToFile(jobs, outputFile)
+    return jobs
+  }
+
+  if (typeof saveToDB !== 'function') {
+    throw new TypeError('saveToDB must be provided for live standalone execution')
+  }
+
+  await saveToDB(jobs, SOURCE)
+  return jobs
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
+  await runStandalone({ saveToDB, saveToFile })
+}

@@ -2,7 +2,6 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import INDEED_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -156,23 +155,43 @@ export const extractPublicJobsFromIndiaJobsPage = (html, { scrapedAt } = {}) =>
     })
     .filter(Boolean)
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: `${SOURCE}-html`,
-  timeoutMs: 15000,
-})
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    html: await response.text(),
+  }
+}
+
+const getPageHtml = (page = {}) => String(page.html ?? page.text ?? page.body ?? '')
 
 export const createIndeedScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run({
-    fetchText = defaultFetchText,
+    fetchPage,
+    fetchText,
     now = () => new Date().toISOString(),
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    const effectiveFetchPage = fetchPage || (fetchText
+      ? async (url) => ({
+        status: 200,
+        url,
+        html: await fetchText(url),
+      })
+      : defaultFetchPage)
+
+    const careersPage = await effectiveFetchPage(CAREERS_URL)
+    const careersHtml = getPageHtml(careersPage)
     if (pageIndicatesCloudflareChallenge(careersHtml)) {
       return []
     }
@@ -185,7 +204,8 @@ export const createIndeedScraper = ({
       throw new Error('Indeed verified careers handoff changed materially')
     }
 
-    const indiaCareersHtml = await fetchText(INDIA_CAREERS_URL)
+    const indiaCareersPage = await effectiveFetchPage(INDIA_CAREERS_URL)
+    const indiaCareersHtml = getPageHtml(indiaCareersPage)
     if (pageIndicatesCloudflareChallenge(indiaCareersHtml)) {
       return []
     }
@@ -200,7 +220,7 @@ export const createIndeedScraper = ({
 
     const indiaJobsHtml = hasIndiaJobsSignal(indiaCareersHtml)
       ? indiaCareersHtml
-      : await fetchText(INDIA_JOBS_URL)
+      : getPageHtml(await effectiveFetchPage(INDIA_JOBS_URL))
 
     if (pageIndicatesCloudflareChallenge(indiaJobsHtml)) {
       return []

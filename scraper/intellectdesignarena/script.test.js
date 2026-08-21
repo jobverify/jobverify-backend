@@ -13,12 +13,14 @@ const officialHomepageHtml = `
 <!doctype html>
 <html lang="en-US">
   <head>
-    <title>AI-First Banking &amp; Financial Technology Platforms | Intellect Design Arena - Intellect Design Arena</title>
+    <title>Enterprise Open Finance &amp; AI-First Banking Platform - Intellect Design Arena</title>
+    <link rel="canonical" href="https://www.intellectdesign.com/" />
   </head>
   <body>
     <nav>
       <a href="https://www.intellectdesign.com/careers/">Careers</a>
     </nav>
+    <p>eMACH.ai powers the next era of enterprise banking transformation.</p>
     <h1>Banking, Rebuilt from First Principles</h1>
   </body>
 </html>

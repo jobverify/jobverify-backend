@@ -19,7 +19,7 @@ const OFFICIAL_TITLE_PATTERN = /<title>\s*Careers\s*<\/title>/i
 const OFFICIAL_HEADING_PATTERN = /Join our team at Clootrack to be at the forefront of AI-driven customer experience analytics\./i
 const REMOTE_WORK_PATTERN = /organizational culture can thrive regardless of physical office locations/i
 const REMOTE_PRACTICES_PATTERN = /remote work practices/i
-const REACH_OUT_PATTERN = /Think you(?:'|â€™)?re a fit\?\s*Reach out and let(?:'|â€™)s explore\./i
+const REACH_OUT_PATTERN = /Think you(?:'|\u2019|\u00e2\u20ac\u2122)?re a fit\?\s*Reach out and let(?:'|\u2019|\u00e2\u20ac\u2122)s explore\./i
 const PUBLIC_LISTING_PATTERN = /\bjob[-\s_]?(?:card|listing|result)s?\b|\bcurrent\s+openings?\b|\bopen\s+positions?\b|<article[^>]+class=["'][^"']*job[^"']*["'][^>]*>|<a[^>]+href=["'][^"']*\/careers\/[^"']+["'][^>]*>\s*(?:apply|view)\s+(?:now|job)s?\s*<\/a>/i
 
 export const hasOfficialCareersSignal = (html) => {

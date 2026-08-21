@@ -27,7 +27,6 @@ test('Kissflow catalog captures the verified official careers page and live firs
   assert.deepEqual(KISSFLOW_CATALOG.verifiedRoleUrls, [
     'https://careers.kissflow.com/solution-advisor',
     'https://careers.kissflow.com/client-director',
-    'https://careers.kissflow.com/manager-digital-marketing',
   ])
   assert.equal(KISSFLOW_CATALOG.companyDomain, 'kissflow.com')
   assert.equal(KISSFLOW_CATALOG.atsPlatform, 'official-company-site')
@@ -43,11 +42,11 @@ test('Kissflow catalog captures the verified official careers page and live firs
   assert.equal(KISSFLOW_CATALOG.parser, 'custom-script')
   assert.equal(KISSFLOW_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(KISSFLOW_CATALOG.dryRunFile, 'kissflow/jobs.json')
-  assert.equal(KISSFLOW_CATALOG.verifiedOn, '2026-07-16')
+  assert.equal(KISSFLOW_CATALOG.verifiedOn, '2026-08-15')
   assert.match(KISSFLOW_CATALOG.verifiedSurfaceSummary, /https:\/\/careers\.kissflow\.com\//i)
   assert.match(KISSFLOW_CATALOG.verifiedSurfaceSummary, /Solution Advisor/i)
   assert.match(KISSFLOW_CATALOG.verifiedSurfaceSummary, /Client Director/i)
-  assert.match(KISSFLOW_CATALOG.verifiedSurfaceSummary, /Manager - Digital Marketing/i)
+  assert.match(KISSFLOW_CATALOG.verifiedSurfaceSummary, /2 public role cards/i)
   assert.match(KISSFLOW_CATALOG.modulePath, /kissflow[\\/]script\.js$/i)
 })
 

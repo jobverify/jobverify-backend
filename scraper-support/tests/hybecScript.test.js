@@ -27,7 +27,27 @@ test('Hybec sentinels recognize the verified official homepage placeholder shell
 
   assert.equal(hybec.SOURCE, 'hybec')
   assert.equal(hybec.COMPANY, 'Hybec')
+  assert.equal(hybec.COMPANY_DOMAIN, 'hybec.co.in')
+  assert.equal(hybec.VERIFIED_AT, '2026-08-15')
   assert.equal(hybec.HOMEPAGE_URL, 'https://hybec.co.in/')
+  assert.equal(
+    hybec.isExpectedUnreachableSurface({
+      errorKind: 'timeout',
+      status: null,
+      html: null,
+    }),
+    true,
+  )
+  assert.equal(hybec.isExpectedUnreachableSurface({ errorKind: 'dns' }), false)
+  assert.equal(hybec.isUnexpectedReachableSurface({ status: 200, html: verifiedHomepageHtml }), true)
+  assert.equal(
+    hybec.isUnexpectedReachableSurface({
+      errorKind: 'timeout',
+      status: null,
+      html: null,
+    }),
+    false,
+  )
   assert.equal(hybec.hasOfficialHomepageSignal(verifiedHomepageHtml), true)
   assert.equal(hybec.hasFirstPartyCareerLikeLink(verifiedHomepageHtml), false)
   assert.equal(hybec.hasPublicJobsSignal(verifiedHomepageHtml), false)
@@ -53,6 +73,26 @@ test('Hybec returns no jobs only while the verified first-party homepage shell e
         status: 200,
         url,
         html: verifiedHomepageHtml,
+      }
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [hybec.HOMEPAGE_URL])
+  assert.deepEqual(jobs, [])
+})
+
+test('Hybec returns no jobs when the verified first-party homepage is temporarily unreachable with a connect-timeout sentinel', async () => {
+  const hybec = await loadHybecModule()
+  const requestedUrls = []
+
+  const jobs = await hybec.createHybecScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      return {
+        status: null,
+        url,
+        html: null,
+        errorKind: 'timeout',
       }
     },
   })

@@ -1,8 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-
 import BRAINIUM_INFORMATION_TECHNOLOGIES_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -14,19 +12,29 @@ export const PROVIDER_METADATA = BRAINIUM_INFORMATION_TECHNOLOGIES_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY_NAME = PROVIDER_METADATA.companyName
 export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
+export const OFFICIAL_HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const OFFICIAL_CAREERS_URL = PROVIDER_METADATA.officialCareersPageUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 export const OPEN_POSITIONS_URL = `${OFFICIAL_CAREERS_URL}#open-positions`
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    headers: Object.fromEntries(response.headers.entries()),
+    html: await response.text(),
+  }
+}
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
@@ -39,6 +47,18 @@ const normalizeWhitespace = (value) => decodeHtmlEntities(String(value ?? ''))
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
+
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
+
+const getHeader = (page = {}, name) => {
+  const normalizedName = String(name ?? '').toLowerCase()
+  const headers = page?.headers
+  if (!headers) return ''
+  if (typeof headers.get === 'function') {
+    return String(headers.get(normalizedName) || headers.get(name) || '')
+  }
+  return String(headers[normalizedName] || headers[name] || '')
+}
 
 const slugify = (value) => normalizeWhitespace(value)
   .toLowerCase()
@@ -56,6 +76,26 @@ export const hasOfficialBrainiumCareersSignals = (html = '') => {
       /Build AI-First\. Work with people who care about craft\./i.test(normalized)
       || /Roles we're hiring for right now\./i.test(normalized)
     )
+}
+
+export const hasCloudflareBlockSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+
+  return /<title>\s*Attention Required!\s*\|\s*Cloudflare\s*<\/title>/i.test(page)
+    && normalized.includes('Please enable cookies.')
+    && normalized.includes('Sorry, you have been blocked')
+    && normalized.includes('You are unable to access brainiuminfotech.com')
+    && normalized.includes('Cloudflare Ray ID')
+}
+
+export const isVerifiedCloudflareBlockedPage = (page = {}, expectedUrl) => {
+  const finalUrl = String(page.url || expectedUrl)
+  return Number(page.status) === 403
+    && finalUrl === expectedUrl
+    && /cloudflare/i.test(getHeader(page, 'server'))
+    && getHeader(page, 'cf-ray').trim().length > 0
+    && hasCloudflareBlockSignal(getPageHtml(page))
 }
 
 const normalizeRoleUrl = (value) => {
@@ -160,11 +200,35 @@ export const extractRoleCards = (html = '') => {
   return extractLegacyRoleCards(html)
 }
 
+const createFetchPageFromText = (fetchText) => async (url) => ({
+  status: 200,
+  url,
+  headers: {},
+  html: await fetchText(url),
+})
+
 export const createBrainiumInformationTechnologiesScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
+  async run({ fetchText, fetchPage } = {}) {
+    const effectiveFetchPage = typeof fetchPage === 'function'
+      ? fetchPage
+      : typeof fetchText === 'function'
+        ? createFetchPageFromText(fetchText)
+        : defaultFetchPage
+
+    const careersPage = await effectiveFetchPage(OFFICIAL_CAREERS_URL)
+
+    if (isVerifiedCloudflareBlockedPage(careersPage, OFFICIAL_CAREERS_URL)) {
+      const homepagePage = await effectiveFetchPage(OFFICIAL_HOMEPAGE_URL)
+      if (isVerifiedCloudflareBlockedPage(homepagePage, OFFICIAL_HOMEPAGE_URL)) {
+        return []
+      }
+
+      throw new Error('Brainium Information Technologies careers route no longer matches the verified public or fully blocked surface')
+    }
+
+    const careersHtml = getPageHtml(careersPage)
 
     if (!hasOfficialBrainiumCareersSignals(careersHtml)) {
       throw new Error('Brainium Information Technologies verified official careers page no longer matches the verified public surface')

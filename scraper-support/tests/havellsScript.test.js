@@ -152,3 +152,23 @@ test('Havells scraper normalizes India Oracle CE requisitions and enriches them 
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
   assert.equal(jobs[0].title, 'Software Engineer')
 })
+
+test('Havells returns no jobs when the verified listing endpoint is temporarily unavailable with a 503 outage', async () => {
+  const havells = await import('../../scraper/havells/script.js')
+  const requestedUrls = []
+
+  const jobs = await havells.createHavellsScraper({
+    fetchJson: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === havells.buildSearchUrl({ page: 0 })) {
+        throw new Error(`HTTP 503 for ${url}`)
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  }).run()
+
+  assert.deepEqual(requestedUrls, [havells.buildSearchUrl({ page: 0 })])
+  assert.deepEqual(jobs, [])
+})

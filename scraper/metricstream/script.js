@@ -2,6 +2,18 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import {
+  buildInitialSearchDwrBody,
+  buildPaginatedSearchDwrBody,
+  buildSuccessFactorsPostingFieldMap,
+  createSuccessFactorsScriptSessionId,
+  extractDwrPayload,
+  fetchSuccessFactorsSearchSession,
+  hasSuccessFactorsDwrBootstrapShellSignal,
+  hasSuccessFactorsDwrResponseSignal,
+  parseSuccessFactorsDialogValue,
+  postSuccessFactorsDwr,
+} from '../../scraper-support/shared/successFactorsDwr.js'
 
 import { METRICSTREAM_CATALOG } from './catalog.js'
 
@@ -53,7 +65,16 @@ const toIsoDate = (value) => {
 
   if (!match) return normalized
 
-  const [, month, day, year] = match
+  const [, first, second, year] = match
+  const firstNumber = Number.parseInt(first, 10)
+  const secondNumber = Number.parseInt(second, 10)
+
+  if (firstNumber > 12 && secondNumber <= 12) {
+    return `${year}-${second}-${first}`
+  }
+
+  const month = first
+  const day = second
   return `${year}-${month}-${day}`
 }
 
@@ -196,12 +217,25 @@ export const hasSuccessFactorsSearchPageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = stripTags(rawHtml) || ''
 
+  return hasStaticSuccessFactorsSearchPageSignal(rawHtml)
+    || hasSuccessFactorsDwrResponseSignal(rawHtml)
+}
+
+export const hasStaticSuccessFactorsSearchPageSignal = (html) => {
+  const rawHtml = String(html ?? '')
+  const normalized = stripTags(rawHtml) || ''
+
   return /<title>\s*Career Opportunities\s*<\/title>/i.test(rawHtml)
     && /Search for Openings/i.test(normalized)
     && /Jobs matched your search/i.test(normalized)
     && /class=["']jobResultItem["']/i.test(rawHtml)
     && /company=metricstre/i.test(rawHtml)
 }
+
+export const hasSuccessFactorsDwrBootstrapSignal = (html) => hasSuccessFactorsDwrBootstrapShellSignal({
+  html,
+  companyToken: SUCCESSFACTORS_COMPANY_TOKEN,
+})
 
 export const extractSearchSummary = (html) => {
   const normalized = stripTags(html) || ''
@@ -249,6 +283,10 @@ const parseSearchRow = (rowHtml) => {
 }
 
 export const extractSearchResults = (html) => {
+  if (hasSuccessFactorsDwrResponseSignal(html)) {
+    return extractDwrSearchResults(html)
+  }
+
   const rows = []
 
   for (const match of String(html ?? '').matchAll(/<tr[^>]*class=["']jobResultItem["'][^>]*>([\s\S]*?)<\/tr>/gi)) {
@@ -257,6 +295,40 @@ export const extractSearchResults = (html) => {
   }
 
   return rows
+}
+
+export const extractDwrSearchResults = (responseText) => {
+  const payload = extractDwrPayload(responseText, {
+    parseErrorMessage: 'MetricStream verified SuccessFactors DWR search payload could not be parsed',
+    missingResultsErrorMessage: 'MetricStream verified SuccessFactors DWR payload no longer exposes postings',
+  })
+
+  return payload.results.postings
+    .map((posting) => {
+      const fields = buildSuccessFactorsPostingFieldMap(posting, { normalize: normalizeWhitespace })
+      const requisitionId = normalizeWhitespace(posting?.id)
+      const department = fields.get('filter2') || null
+      const country = parseSuccessFactorsDialogValue(fields.get('mfield1'))
+      const city = parseSuccessFactorsDialogValue(fields.get('mfield2'))
+
+      if (!requisitionId || !country || !city) return null
+
+      const sourceUrl = buildDetailUrl(requisitionId)
+
+      return {
+        title: normalizeWhitespace(posting?.title),
+        department,
+        location: buildLocation(city, country),
+        city,
+        country,
+        jobId: requisitionId,
+        requisitionId,
+        sourceUrl,
+        applyUrl: sourceUrl,
+        postingDate: toIsoDate(posting?.postingDate),
+      }
+    })
+    .filter(Boolean)
 }
 
 export const hasOfficialJobDetailSignal = (html) => {
@@ -312,23 +384,113 @@ export const extractJobDetail = (html, listing = {}) => {
 export const getLiveSearchPages = async ({
   searchUrl = SUCCESSFACTORS_SEARCH_URL,
   fetchText = defaultFetchText,
+  maxPages = DEFAULT_MAX_PAGES,
+  fetchSearchSession = (options = {}) => fetchSuccessFactorsSearchSession(options),
+  fetchDwrText = (options = {}) => postSuccessFactorsDwr(options),
 } = {}) => {
   const html = await fetchText(searchUrl)
-  const summary = extractSearchSummary(html)
-  const hasEnabledNextPage = /<a(?![^>]*\bdisabled\b)[^>]+title=["']Next Page["'][^>]*>/i.test(html)
 
-  if ((summary.totalPages ?? 1) > 1 || hasEnabledNextPage) {
+  if (hasStaticSuccessFactorsSearchPageSignal(html)) {
+    const summary = extractSearchSummary(html)
+    const hasEnabledNextPage = /<a(?![^>]*\bdisabled\b)[^>]+title=["']Next Page["'][^>]*>/i.test(html)
+
+    if ((summary.totalPages ?? 1) > 1 || hasEnabledNextPage) {
+      throw new Error(
+        'MetricStream API-only migration required: the verified SuccessFactors board requires pagination, but no HTTP pagination request contract is available; browser automation is disabled.',
+      )
+    }
+
+    return [html]
+  }
+
+  if (!hasSuccessFactorsDwrBootstrapSignal(html)) {
+    return [html]
+  }
+
+  const session = await fetchSearchSession({
+    searchUrl,
+    userAgent: USER_AGENT,
+    label: `${SOURCE}-successfactors-bootstrap`,
+    missingAjaxTokenErrorMessage:
+      'MetricStream verified SuccessFactors search bootstrap no longer exposes an ajaxSecKey token',
+  })
+
+  if (!hasSuccessFactorsDwrBootstrapSignal(session.html)) {
+    throw new Error('MetricStream verified public SuccessFactors search surface changed materially')
+  }
+
+  const scriptSessionId = createSuccessFactorsScriptSessionId()
+  const initialResponse = await fetchDwrText({
+    searchUrl,
+    endpoint: 'getInitialJobSearchData',
+    body: buildInitialSearchDwrBody({ searchUrl, scriptSessionId }),
+    csrfToken: session.csrfToken,
+    cookieHeader: session.cookieHeader,
+    companyToken: SUCCESSFACTORS_COMPANY_TOKEN,
+    userAgent: USER_AGENT,
+    label: `${SOURCE}-successfactors-getInitialJobSearchData`,
+    responseContractErrorMessage:
+      'MetricStream verified SuccessFactors getInitialJobSearchData response no longer matches the expected DWR contract',
+    subaction: 0,
+  })
+  const initialPayload = extractDwrPayload(initialResponse, {
+    parseErrorMessage: 'MetricStream verified SuccessFactors DWR search payload could not be parsed',
+    missingResultsErrorMessage: 'MetricStream verified SuccessFactors DWR payload no longer exposes postings',
+  })
+  const initialPagination = initialPayload.results.options?.pagination || {}
+  const pageSize = Math.max(
+    1,
+    Number.parseInt(initialPagination.pageSize, 10) || initialPayload.results.postings.length || 10,
+  )
+  const totalCount = Math.max(
+    initialPayload.results.postings.length,
+    Number.parseInt(initialPagination.totalCount, 10)
+      || Number.parseInt(initialPayload.results.postingCount, 10)
+      || initialPayload.results.postings.length,
+  )
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+
+  if (totalPages > maxPages) {
     throw new Error(
-      'MetricStream API-only migration required: the verified SuccessFactors board requires pagination, but no HTTP pagination request contract is available; browser automation is disabled.',
+      `MetricStream API-only migration required: the verified SuccessFactors board spans ${totalPages} pages, which exceeds the configured safe page limit of ${maxPages}.`,
     )
   }
 
-  return [html]
+  const sortByColumn = normalizeWhitespace(initialPayload.results.options?.sortByColumn) || undefined
+  const sortOrder = normalizeWhitespace(initialPayload.results.options?.sortOrder) || undefined
+  const pages = [initialResponse]
+
+  for (let currentPage = 2; currentPage <= totalPages; currentPage += 1) {
+    pages.push(await fetchDwrText({
+      searchUrl,
+      endpoint: 'search',
+      body: buildPaginatedSearchDwrBody({
+        searchUrl,
+        scriptSessionId,
+        currentPage,
+        pageSize,
+        totalCount,
+        sortByColumn,
+        sortOrder,
+        batchId: currentPage - 1,
+      }),
+      csrfToken: session.csrfToken,
+      cookieHeader: session.cookieHeader,
+      companyToken: SUCCESSFACTORS_COMPANY_TOKEN,
+      userAgent: USER_AGENT,
+      label: `${SOURCE}-successfactors-search`,
+      responseContractErrorMessage:
+        'MetricStream verified SuccessFactors search response no longer matches the expected DWR contract',
+      subaction: currentPage - 1,
+    }))
+  }
+
+  return pages
 }
 
 export const createMetricStreamScraper = ({
   fetchText = defaultFetchText,
-  getSearchPages = (options = {}) => getLiveSearchPages(options),
+  getSearchPages = (options = {}) => getLiveSearchPages({ ...options, fetchText }),
   now = () => new Date().toISOString(),
   maxPages = DEFAULT_MAX_PAGES,
 } = {}) => ({

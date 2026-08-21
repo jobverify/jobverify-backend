@@ -21,10 +21,10 @@ export const XOXODAY_CATALOG = {
   extractionStrategy: 'verified-first-party-careers-page+verified-keka-shell+official-keka-embed-jobs-api+global-roles',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
-  verifiedPublicJobCount: 39,
+  verifiedOn: '2026-08-13',
+  verifiedPublicJobCount: 51,
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.xoxoday.com/careers remained the first-party Xoxoday careers page with the "Live listings, straight from our applicant tracking system" section, that https://nreach.keka.com/careers/ remained the public Keka shell tied to identifier 1d58bf68-c78d-495e-8a38-d17ff1298707, and that the live Keka jobs payload returned 39 public openings including Key Account Manager - Enetrprise Sales, Mumbai and SDET Engineer - Automation.',
+    'Verified on Thursday, August 13, 2026 that https://www.xoxoday.com/careers currently returns a Vercel Security Checkpoint shell with HTTP 429, while the public Keka shell at https://nreach.keka.com/careers/ remains tied to identifier 1d58bf68-c78d-495e-8a38-d17ff1298707 and the live Keka embed jobs payload returns 51 public openings including Product Manager - Empuls and Senior Manager - Business & Commercial Intelligence.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

@@ -1,0 +1,65 @@
+import { filterIndiaJobs } from './indiaLocationFilter.js'
+import {
+  buildJobPostedAtCutoff,
+  normalizeLifecycleDate,
+  resolveJobPostedAt,
+  resolveJobRetentionDays,
+  startOfUtcDay,
+} from '../../src/utils/jobLifecycle.js'
+
+export const normalizeHttpUrl = (value) => {
+  try {
+    const parsed = new URL(value)
+    if (!['http:', 'https:'].includes(parsed.protocol)) return null
+    return parsed.toString()
+  } catch {
+    return null
+  }
+}
+
+export const analyzePublishableJobs = (jobs = [], { now = new Date(), retentionDays } = {}) => {
+  const resolvedNow = normalizeLifecycleDate(now) || new Date()
+  const resolvedRetentionDays = resolveJobRetentionDays(retentionDays)
+  const postedAtCutoff = buildJobPostedAtCutoff(resolvedNow, resolvedRetentionDays)
+  const today = startOfUtcDay(resolvedNow)
+  const filterCounts = {
+    nonIndia: 0,
+    old: 0,
+    closed: 0,
+    invalidUrl: 0,
+  }
+
+  const indiaJobs = filterIndiaJobs(jobs)
+  filterCounts.nonIndia = Math.max(0, jobs.length - indiaJobs.length)
+
+  const eligibleJobs = indiaJobs.filter((job) => {
+    if (!normalizeHttpUrl(job?.applyUrl || job?.link || job?.sourceUrl)) {
+      filterCounts.invalidUrl += 1
+      return false
+    }
+
+    const postedAt = resolveJobPostedAt(job)
+    if (postedAt && startOfUtcDay(postedAt) < postedAtCutoff) {
+      filterCounts.old += 1
+      return false
+    }
+
+    const closingDate = normalizeLifecycleDate(job?.closingDate)
+    if (closingDate && startOfUtcDay(closingDate) < today) {
+      filterCounts.closed += 1
+      return false
+    }
+
+    return true
+  })
+
+  return {
+    now: resolvedNow,
+    retentionDays: resolvedRetentionDays,
+    postedAtCutoff,
+    today,
+    filterCounts,
+    indiaJobs,
+    eligibleJobs,
+  }
+}

@@ -15,6 +15,8 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const MIN_VERIFIED_JOB_GRAPH_COUNT = 2
+const CAREERS_TITLE_PATTERN =
+  /<title>\s*(?:Tech Careers at Cypherox\s*\|\s*Software Job Openings & Hiring|Engineering Careers\s*\|\s*Join a Growing AI Development Team)\s*<\/title>/i
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -82,7 +84,7 @@ const formatLocation = (city, country) => {
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title>\s*Tech Careers at Cypherox\s*\|\s*Software Job Openings & Hiring\s*<\/title>/i.test(page)
+  return CAREERS_TITLE_PATTERN.test(page)
     && /Current Opportunities/i.test(page)
     && /Apply Now/i.test(page)
 }

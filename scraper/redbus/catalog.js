@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Tuesday, August 4, 2026 that https://www.redbus.in/careers is the live official redBus careers page, that https://www.redbus.in/careers/jobs is the live official redBus public jobs route, that both pages now encode their verification copy inside the inline page payload, that the current jobs bundle there still exposes a Darwinbox apply handoff to https://gommt.darwinbox.in/ms/candidatev2/main/careers/jobDetails/<jobId>?from=all, that https://gommt.darwinbox.in/ms/candidatev2/main/careers/allJobs now serves the live public Darwinbox candidate shell with the current candidatev2 app assets, and that the shared Darwinbox board exposed 6 public RedBus jobs identifiable by the RedBus-specific subtype marker "RB - Employee" during verification.'
+  'Verified on Friday, August 14, 2026 that https://www.redbus.in/careers is the live official redBus careers page, that https://www.redbus.in/careers/jobs is the live official redBus public jobs route, that the current jobs bundle there still exposes both the signed first-party jobs APIs at https://www.redbus.in/careers/api/getJobsList and https://www.redbus.in/careers/api/getJobDesc plus the Darwinbox apply handoff to https://gommt.darwinbox.in/ms/candidatev2/main/careers/jobDetails/<jobId>?from=all, and that direct runtime-style calls to the shared Darwinbox inventory endpoint returned a Cloudflare-backed HTTP 403 while the signed first-party RedBus APIs remained reachable and exposed 11 public RedBus jobs identifiable by live RB_MMT / RBMR markers during verification.'
 
 export const REDBUS_CATALOG = {
   source: 'redbus',
@@ -19,16 +19,16 @@ export const REDBUS_CATALOG = {
   darwinboxOrigin: 'https://gommt.darwinbox.in',
   darwinboxCompanyId: 'main',
   darwinboxAllJobsUrl: 'https://gommt.darwinbox.in/ms/candidatev2/main/careers/allJobs',
-  companyDomain: 'gommt.darwinbox.in',
-  atsPlatform: 'darwinbox',
+  companyDomain: 'redbus.in',
+  atsPlatform: 'signed-first-party-jobs-api',
   countryFilter: 'India',
-  verifiedPublicJobCount: 6,
-  paginationStrategy: 'official-redbus-careers-plus-shared-darwinbox-browser-session',
+  verifiedPublicJobCount: 11,
+  paginationStrategy: 'official-redbus-jobs-page-plus-signed-first-party-api',
   extractionStrategy:
-    'official-redbus-careers+jobs-page+bundle-verified-darwinbox-handoff+shared-darwinbox-rb-employee-filter',
+    'official-redbus-careers+jobs-page+bundle-verified-signed-jobs-api+redbus-only-detail-api',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-04',
+  verifiedOn: '2026-08-14',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

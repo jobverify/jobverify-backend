@@ -35,6 +35,39 @@ const officialCareersHtml = `
 </html>
 `
 
+const brandedWafHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title></title>
+  </head>
+  <body>
+    <script type="text/javascript">
+      window.awsWafCookieDomainList = [];
+      window.gokuProps = { "context": "sample" };
+    </script>
+  </body>
+</html>
+`
+
+const workdayBoardHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title></title>
+    <meta property="og:url" content="https://wd3.myworkdaysite.com/en-US/recruiting/yokogawa/yokogawa-career-site">
+  </head>
+  <body>
+    <script>
+      window.boardConfig = {
+        tenant: 'wd3.myworkdaysite.com',
+        path: '/en-US/recruiting/yokogawa/yokogawa-career-site'
+      };
+    </script>
+  </body>
+</html>
+`
+
 const sampleJobsPayload = {
   total: 3,
   jobPostings: [
@@ -148,6 +181,7 @@ test('Yokogawa India validates the official careers handoff page and extracts th
     yokogawaIndia.extractVerifiedWorkdayBoardUrl(officialCareersHtml),
     'https://wd3.myworkdaysite.com/en-US/recruiting/yokogawa/yokogawa-career-site?locationCountry=c4f78be1a8f14da0ab49ce1162348a5e',
   )
+  assert.equal(yokogawaIndia.hasVerifiedWorkdayBoardSignal(workdayBoardHtml), true)
 })
 
 test.skip('rendered official careers fetch is retired for API-only operation', async () => {
@@ -214,6 +248,7 @@ test('run uses the official Yokogawa India careers handoff plus the public Workd
       requestedTextUrls.push(url)
 
       if (url === yokogawaIndia.CAREERS_URL) return officialCareersHtml
+      if (url === yokogawaIndia.WORKDAY_BOARD_URL) return workdayBoardHtml
       if (url.endsWith('/job/New-Delhi/Account-Manager_R-11798')) return accountManagerDetailHtml
       if (url.endsWith('/job/Bangalore/GET-DET_R-11721')) return groupedIndiaDetailHtml
       if (url.endsWith('/job/Houston/Regional-Sales-Director_R-11999')) return nonIndiaDetailHtml
@@ -227,6 +262,7 @@ test('run uses the official Yokogawa India careers handoff plus the public Workd
   ])
   assert.deepEqual(requestedTextUrls, [
     yokogawaIndia.CAREERS_URL,
+    yokogawaIndia.WORKDAY_BOARD_URL,
     'https://wd3.myworkdaysite.com/en-US/recruiting/yokogawa/yokogawa-career-site/job/New-Delhi/Account-Manager_R-11798',
     'https://wd3.myworkdaysite.com/en-US/recruiting/yokogawa/yokogawa-career-site/job/Bangalore/GET-DET_R-11721',
   ])
@@ -277,37 +313,79 @@ test('run returns an honest zero-job result only while the verified official Yok
 
   const jobs = await yokogawaIndia.createYokogawaIndiaScraper({ maxPages: 1 }).run({
     fetchJson: async () => ({ total: 0, jobPostings: [] }),
-    fetchText: async () => officialCareersHtml,
+    fetchText: async (url) => {
+      if (url === yokogawaIndia.CAREERS_URL) return officialCareersHtml
+      if (url === yokogawaIndia.WORKDAY_BOARD_URL) return workdayBoardHtml
+      throw new Error(`Unexpected Yokogawa India zero-jobs fixture URL: ${url}`)
+    },
   })
 
   assert.deepEqual(jobs, [])
 })
 
-test('run fails closed when the official Yokogawa India careers surface changes', async () => {
+test('run bypasses the branded WAF gate when the verified Workday board and jobs API remain healthy', async () => {
+  const yokogawaIndia = await loadYokogawaIndiaModule()
+  const requestedTextUrls = []
+
+  const jobs = await yokogawaIndia.createYokogawaIndiaScraper({ maxPages: 1 }).run({
+    fetchJson: async () => sampleJobsPayload,
+    fetchText: async (url) => {
+      requestedTextUrls.push(url)
+
+      if (url === yokogawaIndia.CAREERS_URL) return brandedWafHtml
+      if (url === yokogawaIndia.WORKDAY_BOARD_URL) return workdayBoardHtml
+      if (url.endsWith('/job/New-Delhi/Account-Manager_R-11798')) return accountManagerDetailHtml
+      if (url.endsWith('/job/Bangalore/GET-DET_R-11721')) return groupedIndiaDetailHtml
+      if (url.endsWith('/job/Houston/Regional-Sales-Director_R-11999')) return nonIndiaDetailHtml
+
+      throw new Error(`Unexpected Yokogawa India WAF fixture URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedTextUrls, [
+    yokogawaIndia.CAREERS_URL,
+    yokogawaIndia.WORKDAY_BOARD_URL,
+    'https://wd3.myworkdaysite.com/en-US/recruiting/yokogawa/yokogawa-career-site/job/New-Delhi/Account-Manager_R-11798',
+    'https://wd3.myworkdaysite.com/en-US/recruiting/yokogawa/yokogawa-career-site/job/Bangalore/GET-DET_R-11721',
+  ])
+  assert.equal(jobs.length, 2)
+})
+
+test('run fails closed when the verified Yokogawa Workday board no longer matches the known public source', async () => {
   const yokogawaIndia = await loadYokogawaIndiaModule()
 
   await assert.rejects(
     yokogawaIndia.createYokogawaIndiaScraper().run({
-      fetchText: async () => '<html><body><h1>Join Us</h1></body></html>',
+      fetchText: async (url) => {
+        if (url === yokogawaIndia.CAREERS_URL) return '<html><body><h1>Join Us</h1></body></html>'
+        if (url === yokogawaIndia.WORKDAY_BOARD_URL) return '<html><body>unexpected</body></html>'
+        throw new Error(`Unexpected Yokogawa India changed-surface fixture URL: ${url}`)
+      },
       fetchJson: async () => ({ total: 0, jobPostings: [] }),
     }),
-    /official careers surface changed/i,
+    /verified Workday board changed/i,
   )
 
   await assert.rejects(
     yokogawaIndia.createYokogawaIndiaScraper().run({
-      fetchText: async () => `
-        <html>
-          <head><title>Career Opportunities | Yokogawa India</title></head>
-          <body>
-            <h1>Career Opportunities</h1>
-            <p>At Yokogawa India, we are committed to fostering a culture of excellence.</p>
-            <a href="https://example.com/jobs">Click here</a>
-          </body>
-        </html>
-      `,
+      fetchText: async (url) => {
+        if (url === yokogawaIndia.CAREERS_URL) {
+          return `
+            <html>
+              <head><title>Career Opportunities | Yokogawa India</title></head>
+              <body>
+                <h1>Career Opportunities</h1>
+                <p>At Yokogawa India, we are committed to fostering a culture of excellence.</p>
+                <a href="https://example.com/jobs">Click here</a>
+              </body>
+            </html>
+          `
+        }
+        if (url === yokogawaIndia.WORKDAY_BOARD_URL) return '<html><body>unexpected</body></html>'
+        throw new Error(`Unexpected Yokogawa India bad-handoff fixture URL: ${url}`)
+      },
       fetchJson: async () => ({ total: 0, jobPostings: [] }),
     }),
-    /verified workday handoff changed/i,
+    /verified workday handoff changed|verified Workday board changed/i,
   )
 })

@@ -16,7 +16,8 @@ const homepageHtml = `
     <title>Global Leader in MADTECH Resource Planning and Execution™</title>
   </head>
   <body>
-    <h1>Global Leader in MADTECH Resource Planning and Execution™</h1>
+    <h1>MADTECH (MarTech, AdTech &amp; DataTech) is complex, expensive, time-consuming, and hard to staff.</h1>
+    <p>Picking the right business partner is crucial.</p>
     <a href="https://isocrates.com/careers/">Careers</a>
   </body>
 </html>
@@ -56,6 +57,25 @@ const careersLinkOnlyHtml = `
 </html>
 `
 
+const kekaShellHtml = `
+<!doctype html>
+<html>
+  <head>
+    <script>window.isCareersPage = true;</script>
+  </head>
+  <body>
+    <div id="content-container"></div>
+    <script>
+      fetch('/ats/documents/53772be4-e756-4beb-b9d6-91966b560812/careerportal/838f8bc6f3204cfc8d13e6fe4f352bc7.html')
+        .then((response) => response.text())
+        .then((data) => {
+          document.getElementById('content-container').innerHTML = data
+        })
+    </script>
+  </body>
+</html>
+`
+
 test('iSOCRATES verifies the official homepage and resolves the first-party Keka careers config', async () => {
   const isocrates = await loadIsocratesModule()
 
@@ -68,6 +88,10 @@ test('iSOCRATES verifies the official homepage and resolves the first-party Keka
 
   assert.equal(isocrates.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(isocrates.hasOfficialCareersPageSignal(careersHtml), true)
+  assert.equal(
+    isocrates.extractEmbeddedCareersDocumentPath(kekaShellHtml),
+    '/ats/documents/53772be4-e756-4beb-b9d6-91966b560812/careerportal/838f8bc6f3204cfc8d13e6fe4f352bc7.html',
+  )
   assert.deepEqual(isocrates.extractCareerConfig(careersHtml), {
     identifier: '53772be4-e756-4beb-b9d6-91966b560812',
     domain: 'https://isocrates.keka.com/careers/',
@@ -205,12 +229,14 @@ test('iSOCRATES can recover with browser-backed homepage, careers page, and Keka
 test('iSOCRATES can resolve the verified Keka config from a first-party direct board handoff', async () => {
   const isocrates = await loadIsocratesModule()
   const activeJobsUrl = 'https://isocrates.keka.com/careers/api/embedjobs/default/active/53772be4-e756-4beb-b9d6-91966b560812'
+  const embeddedDocumentUrl = 'https://isocrates.keka.com/ats/documents/53772be4-e756-4beb-b9d6-91966b560812/careerportal/838f8bc6f3204cfc8d13e6fe4f352bc7.html'
 
   const jobs = await isocrates.createIsocratesScraper({ maxJobs: 1 }).run({
     fetchText: async (url) => {
       if (url === isocrates.HOMEPAGE_URL) return homepageHtml
       if (url === isocrates.CAREER_PAGE_URL) return careersLinkOnlyHtml
-      if (url === isocrates.EXPECTED_KEKA_DOMAIN) return careersHtml
+      if (url === isocrates.EXPECTED_KEKA_DOMAIN) return kekaShellHtml
+      if (url === embeddedDocumentUrl) return careersHtml
       throw new Error(`Unexpected text URL: ${url}`)
     },
     fetchJson: async (url) => {

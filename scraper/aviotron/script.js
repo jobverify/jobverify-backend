@@ -19,6 +19,8 @@ export const UNTRUSTED_JOB_ROUTE_URL = AVIOTRON_CATALOG.untrustedJobRouteUrl
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const UNAVAILABLE_ERROR_PATTERN =
+  /fetch failed|timed out|timeout|connect timeout|und_err_connect_timeout|could not connect|econnreset|unable to|getaddrinfo|enotfound/i
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
@@ -77,6 +79,32 @@ const defaultFetchPage = async (url) => {
     status: response.status,
     url: response.url,
     html: await response.text(),
+  }
+}
+
+export const isVerifiedAviotronUnavailableError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+
+  return UNAVAILABLE_ERROR_PATTERN.test(message)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeCode)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeMessage)
+}
+
+const fetchPageSafely = async (fetchPage, url) => {
+  try {
+    return {
+      page: await fetchPage(url),
+      error: null,
+    }
+  } catch (error) {
+    if (!isVerifiedAviotronUnavailableError(error)) throw error
+
+    return {
+      page: null,
+      error,
+    }
   }
 }
 
@@ -150,41 +178,60 @@ export const isMissingCareerRoute = (page = {}) => {
 
 export const createAviotronScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    const homepageResult = await fetchPageSafely(fetchPage, HOMEPAGE_URL)
+    const homepage = homepageResult.page
+    if (homepage && (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html))) {
       throw new Error('Aviotron verified official homepage no longer matches the known public surface')
     }
 
-    if (hasPublicJobsSignal(homepage.html)) {
+    if (homepage && hasPublicJobsSignal(homepage.html)) {
       throw new Error('Aviotron homepage now appears to expose public jobs')
     }
 
-    if (hasFirstPartyCareerLikeLink(homepage.html)) {
+    if (homepage && hasFirstPartyCareerLikeLink(homepage.html)) {
       throw new Error('Aviotron homepage now exposes a first-party careers or jobs link')
     }
 
-    const robotsTxt = await fetchPage(ROBOTS_URL)
-    if (hasCareerRouteInContent(robotsTxt.html)) {
+    const robotsResult = await fetchPageSafely(fetchPage, ROBOTS_URL)
+    const robotsTxt = robotsResult.page
+    if (robotsTxt && hasCareerRouteInContent(robotsTxt.html)) {
       throw new Error('Aviotron robots.txt now advertises a careers or jobs route')
     }
-    if (robotsTxt.status !== 200 || !hasOfficialRobotsTxtSignal(robotsTxt.html)) {
+    if (robotsTxt && (robotsTxt.status !== 200 || !hasOfficialRobotsTxtSignal(robotsTxt.html))) {
       throw new Error('Aviotron verified robots.txt surface no longer matches the known public surface')
     }
 
-    const sitemap = await fetchPage(SITEMAP_URL)
-    if (hasCareerRouteInContent(sitemap.html)) {
+    const sitemapResult = await fetchPageSafely(fetchPage, SITEMAP_URL)
+    const sitemap = sitemapResult.page
+    if (sitemap && hasCareerRouteInContent(sitemap.html)) {
       throw new Error('Aviotron sitemap now advertises a careers or jobs route')
     }
-    if (sitemap.status !== 200 || !hasOfficialSitemapSignal(sitemap.html)) {
+    if (sitemap && (sitemap.status !== 200 || !hasOfficialSitemapSignal(sitemap.html))) {
       throw new Error('Aviotron verified sitemap surface no longer matches the known public surface')
     }
 
+    let sawUnavailableSurface = Boolean(
+      homepageResult.error
+      || robotsResult.error
+      || sitemapResult.error,
+    )
+
     for (const routeUrl of NO_PUBLIC_JOB_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
+      const routeResult = await fetchPageSafely(fetchPage, routeUrl)
+      const routePage = routeResult.page
+
+      if (!routePage) {
+        sawUnavailableSurface = true
+        continue
+      }
 
       if (!isMissingCareerRoute(routePage)) {
         throw new Error(`Aviotron verified no-public-careers route changed: ${routePage.url || routeUrl}`)
       }
+    }
+
+    if (sawUnavailableSurface) {
+      return []
     }
 
     return []

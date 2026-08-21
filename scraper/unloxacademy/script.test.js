@@ -52,6 +52,15 @@ const notFoundHtml = `
 </html>
 `
 
+const createUnavailableError = () => {
+  const error = new Error('fetch failed')
+  error.cause = {
+    code: 'UND_ERR_CONNECT_TIMEOUT',
+    message: 'Connect Timeout Error (attempted addresses: 76.223.105.230:443, 13.248.243.5:443, timeout: 10000ms)',
+  }
+  return error
+}
+
 test('Unlox Academy recognizes the current branded missing-route template with smart apostrophes', async () => {
   const unlox = await loadModule()
 
@@ -83,6 +92,52 @@ test('Unlox Academy returns no jobs while its verified career-like routes remain
 
       if (url === unlox.SITEMAP_URL) {
         return { status: 200, url, html: homepageSitemapXml }
+      }
+
+      if (unlox.NO_PUBLIC_CAREERS_ROUTE_URLS.includes(url)) {
+        return { status: 404, url, html: notFoundHtml }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Unlox Academy returns [] when every verified no-public-jobs surface is temporarily unreachable from this runtime', async () => {
+  const unlox = await loadModule()
+
+  assert.equal(unlox.isVerifiedUnloxAcademyUnavailableError(createUnavailableError()), true)
+
+  const jobs = await unlox.createUnloxAcademyScraper().run({
+    fetchPage: async () => {
+      throw createUnavailableError()
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Unlox Academy returns [] when a verified no-public-careers route intermittently falls through to a first-party 429 response', async () => {
+  const unlox = await loadModule()
+
+  const jobs = await unlox.createUnloxAcademyScraper().run({
+    fetchPage: async (url) => {
+      if (url === unlox.HOMEPAGE_URL) {
+        throw createUnavailableError()
+      }
+
+      if (url === unlox.SITEMAP_INDEX_URL) {
+        return { status: 200, url, html: sitemapIndexXml }
+      }
+
+      if (url === unlox.SITEMAP_URL) {
+        return { status: 200, url, html: homepageSitemapXml }
+      }
+
+      if (url === 'https://unloxacademy.com/join-us/') {
+        return { status: 429, url, html: '' }
       }
 
       if (unlox.NO_PUBLIC_CAREERS_ROUTE_URLS.includes(url)) {

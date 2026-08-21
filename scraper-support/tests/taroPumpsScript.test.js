@@ -254,6 +254,32 @@ test('run falls back to the Texmo group careers board when the branded Taro page
   assert.equal(jobs[0].scrapedAt, '2026-08-05T00:00:00.000Z')
 })
 
+test('run falls back to the Texmo group careers board when the branded Taro page returns HTTP 503', async () => {
+  const taroPumps = await loadTaroPumpsModule()
+  const requestedUrls = []
+
+  const jobs = await taroPumps.createTaroPumpsScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === taroPumps.CAREERS_URL) {
+        throw new Error(`HTTP 503 for ${url}`)
+      }
+      if (url === taroPumps.TEXMO_CAREERS_URL) return texmoCareersHtml
+      throw new Error(`Unexpected Taro Pumps fixture URL: ${url}`)
+    },
+    now: () => '2026-08-14T00:00:00.000Z',
+  })
+
+  assert.deepEqual(requestedUrls, [
+    taroPumps.CAREERS_URL,
+    taroPumps.TEXMO_CAREERS_URL,
+  ])
+  assert.equal(jobs.length, 4)
+  assert.equal(jobs[0].company, 'Taro Pumps')
+  assert.equal(jobs[0].source, 'taropumps')
+  assert.equal(jobs[0].scrapedAt, '2026-08-14T00:00:00.000Z')
+})
+
 test('run creates a browser fallback session by default when both HTTP surfaces time out', async () => {
   const taroPumps = await loadTaroPumpsModule()
   const fetchCalls = []

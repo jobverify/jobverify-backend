@@ -70,6 +70,23 @@ const contactHtml = `
 </html>
 `
 
+const siteNotFoundHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Site Not Found</title>
+  </head>
+  <body>
+    <main>
+      <h1>Site Not Found</h1>
+      <p>You haven't deployed an app yet.</p>
+      <p>You may have deployed an empty directory.</p>
+      <p>This is a custom domain, but we haven't finished setting it up yet.</p>
+    </main>
+  </body>
+</html>
+`
+
 test('Red Balloon scraper validates the verified homepage, jobs resume-form surface, and contact page', async () => {
   const redBalloon = await loadModule()
   assert.ok(redBalloon, 'Red Balloon scraper module should load')
@@ -157,4 +174,15 @@ test('Red Balloon scraper fails closed when the homepage, jobs form, or contact 
     }),
     /contact page/i,
   )
+})
+
+test('Red Balloon scraper returns no jobs when the verified first-party domain now serves the shared site-not-found shell', async () => {
+  const redBalloon = await loadModule()
+  assert.ok(redBalloon, 'Red Balloon scraper module should load')
+
+  const jobs = await redBalloon.createRedBalloonAerospaceScraper().run({
+    fetchPage: async (url) => ({ status: 404, url, html: siteNotFoundHtml }),
+  })
+
+  assert.deepEqual(jobs, [])
 })

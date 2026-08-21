@@ -21,6 +21,11 @@ test('getScraperCatalog includes Tata Power as a SuccessFactors script provider 
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'careers.tatapower.com')
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.equal(provider.verifiedPublicJobCount, 0)
+  assert.equal(provider.verifiedIndiaJobCount, 0)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /There are currently no open positions matching/i)
   assert.match(provider.modulePath, /tatapower[\\/]script\.js$/i)
 })
 

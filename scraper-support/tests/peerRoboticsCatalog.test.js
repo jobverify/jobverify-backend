@@ -13,12 +13,19 @@ test('getScraperCatalog includes Peer Robotics as a verified Wellfound handoff p
   assert.equal(provider.companyCareerPage, 'https://peerrobotics.ai/about')
   assert.equal(provider.companyDomain, 'peerrobotics.ai')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'first-party-about-hiring-handoff-plus-challenge-gated-board')
+  assert.equal(provider.paginationStrategy, 'first-party-about-hiring-handoff-plus-readable-wellfound-board')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-about-hiring-handoff+verified-wellfound-challenge-gate-return-empty',
+    'verified-homepage+verified-about-hiring-handoff+verified-wellfound-public-board-listing-extraction',
   )
   assert.equal(provider.parser, 'custom-script')
+  assert.equal(provider.verifiedOn, '2026-08-15')
+  assert.equal(provider.verifiedPublicJobCount, 1)
+  assert.equal(provider.verifiedIndiaJobCount, 1)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/peerrobotics\.ai\/about/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/wellfound\.com\/company\/peer-robotics\/jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /View 1 job/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior Hardware Systems Engineer/i)
   assert.match(provider.modulePath, /peerrobotics[\\/]script\.js$/i)
 })
 

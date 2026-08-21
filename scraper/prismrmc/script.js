@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import fetchPageWithRetry from '../../scraper-support/utils/fetchPageWithRetry.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { normalizeScrapedJob } from '../../scraper-support/utils/normalizeScrapedJob.js'
 
@@ -139,6 +140,29 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 15000,
 })
+
+const defaultFetchPageSitemap = (url) => fetchPageWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
+
+const normalizePageSitemapResponse = (response) => {
+  if (typeof response === 'string') {
+    return {
+      status: 200,
+      text: response,
+    }
+  }
+
+  return {
+    status: Number(response?.status || 0),
+    text: String(response?.text ?? response?.html ?? ''),
+  }
+}
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
@@ -289,14 +313,22 @@ export const extractJobDetail = (html, listing = {}) => {
 }
 
 export const createPrismRmcScraper = ({ maxJobs = null } = {}) => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
+  async run({
+    fetchText = defaultFetchText,
+    fetchPageSitemap = defaultFetchPageSitemap,
+    now = () => new Date().toISOString(),
+  } = {}) {
     const homepageHtml = await fetchText(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Prism RMC verified official homepage no longer matches the known public surface')
     }
 
-    const pageSitemapXml = await fetchText(PAGE_SITEMAP_URL)
-    if (!hasVerifiedPageSitemapSignal(pageSitemapXml)) {
+    const pageSitemapResponse = normalizePageSitemapResponse(await fetchPageSitemap(PAGE_SITEMAP_URL))
+    const pageSitemapXml = pageSitemapResponse.text
+    if (
+      ![200, 404].includes(pageSitemapResponse.status)
+      || !hasVerifiedPageSitemapSignal(pageSitemapXml)
+    ) {
       throw new Error('Prism RMC verified first-party page sitemap no longer matches the known public surface')
     }
 

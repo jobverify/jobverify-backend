@@ -25,46 +25,49 @@ const loadScraperModule = async () => {
   }
 }
 
-test('InstaSafe local catalog captures the verified first-party careers page and Zoho Recruit API surface', async () => {
+test('InstaSafe local catalog captures the verified first-party careers page and restored Zoho Recruit contract', async () => {
   const { INSTASAFE_CATALOG } = await loadCatalogModule()
   const instasafe = await loadScraperModule()
 
   assert.equal(INSTASAFE_CATALOG.source, 'instasafe')
   assert.equal(INSTASAFE_CATALOG.companyName, 'InstaSafe')
-  assert.equal(INSTASAFE_CATALOG.officialBrandName, 'Instasafe Technologies Pvt Ltd')
+  assert.equal(INSTASAFE_CATALOG.officialBrandName, 'InstaSafe')
   assert.equal(INSTASAFE_CATALOG.adapter, 'script')
   assert.equal(INSTASAFE_CATALOG.companyCareerPage, 'https://instasafe.com/careers/')
   assert.equal(INSTASAFE_CATALOG.homepageUrl, 'https://instasafe.com/')
   assert.equal(INSTASAFE_CATALOG.careersPageUrl, 'https://instasafe.com/careers/')
-  assert.equal(INSTASAFE_CATALOG.careersPortalUrl, 'https://instasafe.zohorecruit.com/jobs/Careers/')
+  assert.equal(INSTASAFE_CATALOG.careersPortalUrl, 'https://instasafe.zohorecruit.com/jobs/Careers')
   assert.equal(
     INSTASAFE_CATALOG.careersApiUrl,
-    'https://instasafe.zohorecruit.com/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite',
+    'https://instasafe.zohorecruit.com/recruit/v2/public/Job_Openings?source=CareerSite&pagename=Careers&extra_fields=%5B%22Date_Opened%22,%22Job_Description%22,%22Work_Experience%22,%22Job_Type%22,%22Required_Skills%22%5D',
   )
   assert.equal(INSTASAFE_CATALOG.atsPlatform, 'zohorecruit')
   assert.equal(INSTASAFE_CATALOG.countryFilter, 'India')
-  assert.equal(INSTASAFE_CATALOG.paginationStrategy, 'official-careers-page-embed-plus-public-zoho-api')
+  assert.equal(
+    INSTASAFE_CATALOG.paginationStrategy,
+    'single-first-party-careers-page-plus-zohorecruit-portal-plus-public-api',
+  )
   assert.equal(
     INSTASAFE_CATALOG.extractionStrategy,
-    'official-careers-page+embedded-zohorecruit-site+public-job-openings-api',
+    'verified-first-party-careers-page+verified-zohorecruit-portal+public-job-openings-api+india-country-filter',
   )
   assert.equal(INSTASAFE_CATALOG.parser, 'custom-script')
   assert.equal(INSTASAFE_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(INSTASAFE_CATALOG.companyDomain, 'instasafe.com')
-  assert.equal(INSTASAFE_CATALOG.verifiedOn, '2026-08-02')
+  assert.equal(INSTASAFE_CATALOG.verifiedOn, '2026-08-20')
   assert.equal(INSTASAFE_CATALOG.verifiedPublicPostingCount, 14)
-  assert.match(INSTASAFE_CATALOG.verifiedSurfaceSummary, /August 2, 2026/i)
+  assert.equal(INSTASAFE_CATALOG.verifiedIndiaJobCount, 12)
+  assert.match(INSTASAFE_CATALOG.verifiedSurfaceSummary, /August 20, 2026/i)
   assert.match(INSTASAFE_CATALOG.verifiedSurfaceSummary, /https:\/\/instasafe\.com\/careers\//i)
-  assert.match(INSTASAFE_CATALOG.verifiedSurfaceSummary, /https:\/\/instasafe\.zohorecruit\.com\/jobs\/Careers\//i)
-  assert.match(INSTASAFE_CATALOG.verifiedSurfaceSummary, /public Zoho Recruit portal/i)
+  assert.match(INSTASAFE_CATALOG.verifiedSurfaceSummary, /https:\/\/instasafe\.zohorecruit\.com\/jobs\/Careers/i)
+  assert.match(INSTASAFE_CATALOG.verifiedSurfaceSummary, /14 public postings/i)
+  assert.match(INSTASAFE_CATALOG.verifiedSurfaceSummary, /12 India jobs/i)
   assert.equal(INSTASAFE_CATALOG.modulePath, modulePath)
   assert.match(INSTASAFE_CATALOG.dryRunFile, /instasafe[\\/]jobs\.json$/i)
 
   assert.equal(instasafe.PROVIDER_METADATA.source, INSTASAFE_CATALOG.source)
   assert.equal(instasafe.PROVIDER_METADATA.companyName, INSTASAFE_CATALOG.companyName)
   assert.equal(instasafe.PROVIDER_METADATA.companyCareerPage, INSTASAFE_CATALOG.companyCareerPage)
-  assert.equal(instasafe.PROVIDER_METADATA.careersPortalUrl, INSTASAFE_CATALOG.careersPortalUrl)
-  assert.equal(instasafe.PROVIDER_METADATA.careersApiUrl, INSTASAFE_CATALOG.careersApiUrl)
 })
 
 test('InstaSafe local catalog covers the exact backlog row without aliases', async () => {
@@ -82,7 +85,7 @@ test('InstaSafe local catalog covers the exact backlog row without aliases', asy
   )
 })
 
-test('getScraperCatalog includes InstaSafe as a verified Zoho Recruit provider', () => {
+test('getScraperCatalog includes InstaSafe as a verified Zoho Recruit-backed careers provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'instasafe')
 
   assert.ok(provider)

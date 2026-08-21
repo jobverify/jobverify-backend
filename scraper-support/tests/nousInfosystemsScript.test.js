@@ -19,6 +19,20 @@ const ROOT_HTML = `
 </html>
 `
 
+const CAREERS_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers | Artizent</title>
+    <script src="/runtime-config.js"></script>
+    <script type="module" src="/assets/index-live.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+`
+
 const MAIN_BUNDLE = `
 const __vite__mapDeps=(i)=>i;
 const deps=["assets/Careers-live.js","assets/JobOpenings-live.js","assets/jobs-live.js","assets/JobDetail-live.js"];
@@ -109,7 +123,7 @@ test('Nous Infosystems helpers stay pinned to the verified Artizent jobs-asset c
   assert.equal(nous.extractJobsAssetPath(MAIN_BUNDLE), 'assets/jobs-live.js')
   assert.equal(nous.extractJobOpeningsAssetPath(MAIN_BUNDLE), 'assets/JobOpenings-live.js')
   assert.equal(nous.extractJobDetailAssetPath(MAIN_BUNDLE), 'assets/JobDetail-live.js')
-  assert.equal(nous.routeMatchesVerifiedShell(ROOT_HTML, '/assets/index-live.js'), true)
+  assert.equal(nous.routeMatchesVerifiedShell(CAREERS_HTML, '/assets/index-live.js'), true)
   assert.equal(nous.hasVerifiedJobOpeningsAssetSignal(JOB_OPENINGS_ASSET), true)
   assert.equal(nous.hasVerifiedJobDetailAssetSignal(JOB_DETAIL_ASSET), true)
 
@@ -155,7 +169,7 @@ test('Nous Infosystems run verifies the Artizent asset contract and maps current
         return { status: 200, url: nous.HOMEPAGE_REDIRECT_URL, html: ROOT_HTML }
       }
       if (url === nous.CAREERS_URL) {
-        return { status: 200, url: nous.CAREERS_URL, html: ROOT_HTML }
+        return { status: 200, url: nous.CAREERS_URL, html: CAREERS_HTML }
       }
       throw new Error(`Unexpected page URL: ${url}`)
     },
@@ -222,7 +236,7 @@ test('Nous Infosystems fails closed when the verified jobs asset contract drifts
         if (url === nous.LEGACY_HOMEPAGE_URL) {
           return { status: 200, url: nous.HOMEPAGE_REDIRECT_URL, html: ROOT_HTML }
         }
-        return { status: 200, url: nous.CAREERS_URL, html: ROOT_HTML }
+        return { status: 200, url: nous.CAREERS_URL, html: CAREERS_HTML }
       },
       fetchText: async (url) => {
         if (url === 'https://www.artizent.com/assets/index-live.js') return MAIN_BUNDLE

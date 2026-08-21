@@ -38,11 +38,14 @@ test('getScraperCatalog includes Clover Infotech as a verified first-party jobs 
   assert.equal(sharedProvider.paginationStrategy, 'official-job-openings-page-pagination')
   assert.equal(
     sharedProvider.extractionStrategy,
-    'verified-first-party-job-openings-page+india-role-filter+detail-pages+embedded-first-party-application-form',
+    'verified-cloudflare-challenge-empty+preserve-first-party-job-openings-and-detail-parser',
   )
   assert.equal(sharedProvider.parser, 'custom-script')
   assert.equal(sharedProvider.normalizationProfile, 'engineering-default')
   assert.equal(sharedProvider.companyDomain, 'cloverinfotech.com')
+  assert.equal(sharedProvider.verifiedOn, '2026-08-14')
+  assert.match(sharedProvider.verifiedSurfaceSummary, /Just a moment/i)
+  assert.match(sharedProvider.verifiedSurfaceSummary, /Checking your browser/i)
   assert.match(sharedProvider.dryRunFile, /cloverinfotech[\\/]jobs\.json$/i)
 
   assert.equal(provider.source, sharedProvider.source)

@@ -5,7 +5,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'aadinathconsultancy'
 export const COMPANY = 'Aadinath Consultancy'
-export const VERIFIED_AT = '2026-07-14'
+export const VERIFIED_AT = '2026-08-13'
 export const HOMEPAGE_URL = 'https://aadinathconsultants.com/'
 export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
   'https://aadinathconsultants.com/careers',
@@ -17,9 +17,12 @@ export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
   'https://aadinathconsultants.com/work-with-us',
   'https://aadinathconsultants.com/openings',
 ]
+export const FIRST_PARTY_TIMEOUT_URLS = [HOMEPAGE_URL, ...NO_PUBLIC_CAREERS_ROUTE_URLS]
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const REQUEST_TIMEOUT_MS = 10000
+const TIMEOUT_ERROR_PATTERN = /timed out|timeout|etimedout|connect timeout|und_err_connect_timeout/i
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /\bwe(?:'|’)re hiring\b/i,
@@ -55,6 +58,26 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const isTimeoutError = (error) => {
+  if (error?.name === 'AbortError') return true
+
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const message = String(error?.message ?? error ?? '')
+
+  return /UND_ERR_CONNECT_TIMEOUT|ETIMEDOUT/i.test(causeCode)
+    || TIMEOUT_ERROR_PATTERN.test(causeMessage)
+    || TIMEOUT_ERROR_PATTERN.test(message)
+}
+
+const isReachableSurface = (surface = {}) =>
+  Number.isInteger(surface?.status) && surface.status > 0
+
+export const isExpectedTimedOutSurface = (surface = {}) =>
+  surface?.errorKind === 'timeout'
+  && !Number.isInteger(surface?.status)
+  && surface?.html == null
+
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
@@ -86,35 +109,67 @@ export const isVerifiedMissingCareerRoute = (page = {}) => {
 }
 
 const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeout)
+
+    return {
+      status: response.status,
+      url: response.url,
+      html: await response.text(),
+      errorKind: null,
+    }
+  } catch (error) {
+    clearTimeout(timeout)
+
+    if (isTimeoutError(error)) {
+      return {
+        status: null,
+        url,
+        html: null,
+        errorKind: 'timeout',
+      }
+    }
+
+    throw error
   }
 }
 
 export const createAadinathConsultancyScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    if (!isExpectedTimedOutSurface(homepage) && (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html))) {
+      if (isReachableSurface(homepage) && (hasPublicJobsSignal(homepage.html) || hasCareerRouteLinkSignal(homepage.html))) {
+        throw new Error('Aadinath Consultancy homepage now appears to expose a public jobs surface')
+      }
+
       throw new Error('Aadinath Consultancy verified official homepage no longer matches the trusted first-party surface')
     }
 
-    if (hasPublicJobsSignal(homepage.html) || hasCareerRouteLinkSignal(homepage.html)) {
+    if (isReachableSurface(homepage) && (hasPublicJobsSignal(homepage.html) || hasCareerRouteLinkSignal(homepage.html))) {
       throw new Error('Aadinath Consultancy homepage now appears to expose a public jobs surface')
     }
 
     for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
       const routePage = await fetchPage(routeUrl)
+      if (isExpectedTimedOutSurface(routePage)) continue
+
       if (!isVerifiedMissingCareerRoute(routePage)) {
+        if (isReachableSurface(routePage) && (hasPublicJobsSignal(routePage.html) || hasCareerRouteLinkSignal(routePage.html))) {
+          throw new Error(`Aadinath Consultancy homepage now appears to expose a public jobs surface: ${routePage.url || routeUrl}`)
+        }
+
         throw new Error(`Aadinath Consultancy verified no-public-careers surface changed: ${routePage.url || routeUrl}`)
       }
     }

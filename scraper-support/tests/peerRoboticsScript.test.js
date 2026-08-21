@@ -62,6 +62,51 @@ const wellfoundChallengeHtml = `
   </html>
 `
 
+const currentWellfoundChallengeHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="robots" content="noindex, nofollow" />
+      <title>Security Check | Wellfound</title>
+    </head>
+    <body>
+      <h1>Security Check</h1>
+      <p>Before you continue, please verify your request.</p>
+      <p>Enable JavaScript and cookies to continue</p>
+      <div>Cloudflare Ray ID: a2b63193396b9bed</div>
+      <script>
+        window._cf_chl_opt = { cZone: 'wellfound.com' }
+      </script>
+      <script src="/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1"></script>
+    </body>
+  </html>
+`
+
+const accessibleWellfoundBoardHtml = `
+  <html>
+    <head><title>Jobs at Peer Robotics: Explore current Opportunities</title></head>
+    <body>
+      <p>Peer Robotics</p>
+      <p>View 1 job</p>
+      <h1>Jobs at Peer Robotics</h1>
+      <a href="https://wellfound.com/jobs/4457983-senior-hardware-systems-engineer">
+        Senior Hardware Systems Engineer
+      </a>
+      <p>Engineering</p>
+      <p>In office • Khed Shivapur</p>
+      <p>₹10L – ₹30L • No equity</p>
+      <p>3 years of exp</p>
+      <p>Full Time</p>
+      <p>
+        Safety PLC integration, including personnel detection, e-stop,
+        velocity/position monitoring, safety stop, restart/recovery behavior,
+        and PLC-to-robot communication.
+      </p>
+    </body>
+  </html>
+`
+
 const loadPeerRoboticsModule = async () => {
   try {
     return await import('../../scraper/peerrobotics/script.js')
@@ -70,7 +115,7 @@ const loadPeerRoboticsModule = async () => {
   }
 }
 
-test('Peer Robotics validates the verified homepage, about-page hiring handoff, and Wellfound challenge gate', async () => {
+test('Peer Robotics validates the verified homepage, about-page hiring handoff, and current Wellfound challenge gate', async () => {
   const peerRobotics = await loadPeerRoboticsModule()
 
   assert.equal(peerRobotics.SOURCE, 'peerrobotics')
@@ -78,6 +123,7 @@ test('Peer Robotics validates the verified homepage, about-page hiring handoff, 
   assert.equal(peerRobotics.HOMEPAGE_URL, 'https://peerrobotics.ai/')
   assert.equal(peerRobotics.ABOUT_URL, 'https://peerrobotics.ai/about')
   assert.equal(peerRobotics.WELLFOUND_JOBS_URL, 'https://wellfound.com/company/peer-robotics/jobs')
+  assert.equal(peerRobotics.VERIFIED_ON, '2026-08-15')
   assert.equal(peerRobotics.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(peerRobotics.hasOfficialAboutSignal(aboutHtml), true)
   assert.equal(
@@ -88,7 +134,28 @@ test('Peer Robotics validates the verified homepage, about-page hiring handoff, 
     peerRobotics.isVerifiedWellfoundChallenge({
       status: 403,
       url: 'https://wellfound.com/company/peer-robotics/jobs',
+      headers: {},
       html: wellfoundChallengeHtml,
+    }),
+    true,
+  )
+  assert.equal(
+    peerRobotics.isVerifiedWellfoundChallenge({
+      status: 403,
+      url: 'https://wellfound.com/company/peer-robotics/jobs',
+      headers: {
+        server: 'cloudflare',
+        'cf-mitigated': 'challenge',
+      },
+      html: currentWellfoundChallengeHtml,
+    }),
+    true,
+  )
+  assert.equal(
+    peerRobotics.hasAccessibleWellfoundJobsSignal({
+      status: 200,
+      url: 'https://wellfound.com/company/peer-robotics/jobs',
+      html: accessibleWellfoundBoardHtml,
     }),
     true,
   )
@@ -111,7 +178,15 @@ test('Peer Robotics returns no jobs while the verified Wellfound board remains c
       }
 
       if (url === peerRobotics.WELLFOUND_JOBS_URL) {
-        return { status: 403, url, html: wellfoundChallengeHtml }
+        return {
+          status: 403,
+          url,
+          headers: {
+            server: 'cloudflare',
+            'cf-mitigated': 'challenge',
+          },
+          html: currentWellfoundChallengeHtml,
+        }
       }
 
       throw new Error(`Unexpected URL: ${url}`)
@@ -124,6 +199,71 @@ test('Peer Robotics returns no jobs while the verified Wellfound board remains c
     peerRobotics.WELLFOUND_JOBS_URL,
   ])
   assert.deepEqual(jobs, [])
+})
+
+test('Peer Robotics returns the live public Wellfound job when the board is readable', async () => {
+  const peerRobotics = await loadPeerRoboticsModule()
+  const requestedUrls = []
+
+  const jobs = await peerRobotics.createPeerRoboticsScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === peerRobotics.HOMEPAGE_URL) {
+        return { status: 200, url, html: homepageHtml }
+      }
+
+      if (url === peerRobotics.ABOUT_URL) {
+        return { status: 200, url, html: aboutHtml }
+      }
+
+      if (url === peerRobotics.WELLFOUND_JOBS_URL) {
+        return {
+          status: 200,
+          url,
+          html: accessibleWellfoundBoardHtml,
+        }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    peerRobotics.HOMEPAGE_URL,
+    peerRobotics.ABOUT_URL,
+    peerRobotics.WELLFOUND_JOBS_URL,
+  ])
+  assert.deepEqual(
+    jobs.map((job) => ({
+      title: job.title,
+      location: job.location,
+      city: job.city,
+      country: job.country,
+      department: job.department,
+      employmentType: job.employmentType,
+      experienceRequired: job.experienceRequired,
+      remoteStatus: job.remoteStatus,
+      sourceUrl: job.sourceUrl,
+      applyUrl: job.applyUrl,
+      link: job.link,
+    })),
+    [
+      {
+        title: 'Senior Hardware Systems Engineer',
+        location: 'Khed Shivapur, India',
+        city: 'Khed Shivapur',
+        country: 'India',
+        department: 'Engineering',
+        employmentType: 'Full Time',
+        experienceRequired: '3 years of exp',
+        remoteStatus: 'On-site',
+        sourceUrl: 'https://wellfound.com/jobs/4457983-senior-hardware-systems-engineer',
+        applyUrl: 'https://wellfound.com/jobs/4457983-senior-hardware-systems-engineer',
+        link: 'https://wellfound.com/jobs/4457983-senior-hardware-systems-engineer',
+      },
+    ],
+  )
 })
 
 test('Peer Robotics fails closed when the verified homepage, hiring handoff, or challenge gate drifts', async () => {
@@ -188,6 +328,6 @@ test('Peer Robotics fails closed when the verified homepage, hiring handoff, or 
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /wellfound jobs board/i,
+    /verified public jobs board/i,
   )
 })

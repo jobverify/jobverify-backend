@@ -291,9 +291,24 @@ const filterSkillNamesTagsForSource = (skills = [], source) => {
 const isPartTimeLabel = (value) => /part[\s_-]?time/i.test(String(value ?? ''))
 const hasInternshipCue = (value) => /intern|internship|trainee|apprentice/i.test(String(value ?? ''))
 
+const normalizeEmploymentType = (value) => {
+  const label = normalizeString(value)
+  if (!label) return null
+  if (isPartTimeLabel(label)) return null
+
+  const normalized = label.toLowerCase().replace(/[\s_-]+/g, ' ').trim()
+  if (/\b(contract|contractual|contractor|freelance|temporary|fixed term)\b/.test(normalized)) return 'Contract'
+  if (/\b(intern|internship|trainee|apprentice)\b/.test(normalized)) return 'Internship'
+  if (/\b(full ?time|fulltime|permanent|regular|unlimited|staff|employee|professional|white collar|on ?roll|on site with flexibility|fte)\b/.test(normalized)) {
+    return 'Full-time'
+  }
+
+  return 'Others'
+}
+
 const inferEmploymentType = (job = {}) => {
-  const explicitType = normalizeString(job.employmentType)
-  if (explicitType) return isPartTimeLabel(explicitType) ? null : explicitType
+  const explicitType = normalizeEmploymentType(job.employmentType)
+  if (explicitType) return explicitType
 
   const title = normalizeString(job.title) || ''
   if (hasInternshipCue(title)) return 'Internship'
@@ -621,41 +636,6 @@ const SOURCE_ENGINEERING_DOMAIN_RULES = [
   {
     sources: new Set(['hitachienergy']),
     pattern: /\bbim\b/i,
-    value: 'Construction',
-  },
-  {
-    sources: new Set(['larsentoubro']),
-    pattern: /\b(ptd-power transmission & distribution - ic|ltpo-l&t energy-carbonlite solutions)\b/i,
-    value: 'Power Systems',
-  },
-  {
-    sources: new Set(['larsentoubro']),
-    pattern: /\b(bnf-buildings & factories)\b/i,
-    value: 'Construction',
-  },
-  {
-    sources: new Set(['larsentoubro']),
-    pattern: /\b(deic-l&t precision engineering & systems ic)\b/i,
-    value: 'Electrical',
-  },
-  {
-    sources: new Set(['larsentoubro']),
-    pattern: /\b(wet-water & effluent treatment ic)\b/i,
-    value: 'Process',
-  },
-  {
-    sources: new Set(['larsentoubro']),
-    pattern: /\b(heng-heavy engineering)\b/i,
-    value: 'Manufacturing',
-  },
-  {
-    sources: new Set(['larsentoubro']),
-    pattern: /\b(hvac|mep)\b/i,
-    value: 'Mechanical',
-  },
-  {
-    sources: new Set(['larsentoubro']),
-    pattern: /\b(structural steel|formwork|finishing|planning - site|site|package engineer|architect|ehs engineer|tooling|precision components)\b/i,
     value: 'Construction',
   },
   {

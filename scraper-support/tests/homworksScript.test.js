@@ -23,6 +23,41 @@ const loadHomworksModule = async () => {
   }
 }
 
+const currentCareersHtml = `
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <title>Careers | Join Our Interior Design Team | Homworks</title>
+  </head>
+  <body>
+    <nav>
+      <a href="https://www.homworks.com/">Home</a>
+      <a href="https://www.homworks.com/careers-homworks/">Careers</a>
+    </nav>
+    <main>
+      <h1>CAREERS</h1>
+      <p>Welcome to Homworks!</p>
+      <p>
+        If you're passionate about interior design, have a creative eye, and are looking for a
+        challenging and rewarding career, we'd love to hear from you.
+      </p>
+      <h2>Apply Now</h2>
+      <p>Take the Next Step in Your Career, Contact Us Today!</p>
+      <label>Full Name*</label>
+      <label>Email Address*</label>
+      <label>Phone Number*</label>
+      <label>Subject*</label>
+      <button>Submit Details</button>
+      <h3>Corporate Office</h3>
+      <p>538/2, Airport Service Rd, Peelamedu, Alagu Nagar, Civil Aerodrome Post, Coimbatore – 641014</p>
+      <p>Phone +91-8925811898 0422-4643862 1800 121 3110</p>
+      <p>Email [email&#160;protected]</p>
+      <p>HOMWORKS - STYLCOVE MODULARS PRIVATE LIMITED | Copyright 2026 | Homworks-Stylcove.</p>
+    </main>
+  </body>
+</html>
+`
+
 test('extractSearchResults returns no jobs when Homworks only exposes a first-party apply form with no public listings', async () => {
   const homworks = await loadHomworksModule()
   const careersHtml = readFixture('careers-page.html')
@@ -30,6 +65,7 @@ test('extractSearchResults returns no jobs when Homworks only exposes a first-pa
   assert.equal(homworks.CAREERS_URL, 'https://www.homworks.com/careers-homworks/')
   assert.equal(homworks.HOMEPAGE_URL, 'https://www.homworks.com/')
   assert.equal(homworks.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(homworks.hasOfficialCareersSignal(currentCareersHtml), true)
   assert.equal(homworks.hasPublicJobBoardSignal(careersHtml), false)
   assert.deepEqual(homworks.extractSearchResults(careersHtml), [])
 })

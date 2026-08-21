@@ -20,6 +20,15 @@ const careersHtml = readFileSync(path.join(fixturesDir, 'careers.html'), 'utf8')
 const currentOpeningsHtml = readFileSync(path.join(fixturesDir, 'current-openings.html'), 'utf8')
 const candidateHomeHtml = readFileSync(path.join(fixturesDir, 'candidate-home.html'), 'utf8')
 
+const createUnavailableError = (url) => {
+  const error = new Error(`fetch failed | Connect Timeout Error (attempted address: ${url.includes('careerxai') ? 'careerxai.kgisl.com:443' : 'www.kgisl.com:443'}, timeout: 10000ms)`)
+  error.cause = {
+    code: 'UND_ERR_CONNECT_TIMEOUT',
+    message: `Connect Timeout Error (attempted address: ${url.includes('careerxai') ? 'careerxai.kgisl.com:443' : 'www.kgisl.com:443'}, timeout: 10000ms)`,
+  }
+  return error
+}
+
 test('KGISL scraper keeps the verified first-party URLs and public job surface pinned', async () => {
   const kgisl = await loadKgislModule()
 
@@ -32,7 +41,7 @@ test('KGISL scraper keeps the verified first-party URLs and public job surface p
     kgisl.CANDIDATE_HOME_URL,
     'https://careerxai.kgisl.com/ajax/candidate_home?form=wepportal',
   )
-  assert.equal(kgisl.VERIFIED_ON, '2026-08-07')
+  assert.equal(kgisl.VERIFIED_ON, '2026-08-15')
   assert.equal(kgisl.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(kgisl.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(kgisl.hasOfficialCandidateHomeSignal(candidateHomeHtml), true)
@@ -192,4 +201,18 @@ test('KGISL scraper fails closed when the verified first-party surface drifts', 
     }),
     /candidate portal no longer matches the verified public surface/i,
   )
+})
+
+test('KGISL returns [] when both the verified wrappers and candidate portal are temporarily unreachable from this runtime', async () => {
+  const kgisl = await loadKgislModule()
+
+  assert.equal(kgisl.isVerifiedKgislUnavailableError(createUnavailableError(kgisl.CANDIDATE_HOME_URL)), true)
+
+  const jobs = await kgisl.createKgislScraper().run({
+    fetchText: async (url) => {
+      throw createUnavailableError(url)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })

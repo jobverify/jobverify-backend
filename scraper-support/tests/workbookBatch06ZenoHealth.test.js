@@ -28,6 +28,23 @@ const VERIFIED_SURFACE_HTML = `
   </html>
 `
 
+const CURRENT_SHELL_HTML = `
+  <html>
+    <head>
+      <title>Zeno Health</title>
+      <meta
+        name="description"
+        content="Zeno Health is a healthcare brand that makes medicines affordable and accessible to all, we are on a journey to educate Indians about the value of generic medicines"
+      />
+      <meta property="og:url" content="https://zeno.health">
+    </head>
+    <body>
+      <script src="runtime.js"></script>
+      <script src="main.js"></script>
+    </body>
+  </html>
+`
+
 const loadZenoHealthModule = async () => {
   try {
     return await import('../../scraper/zenohealth/script.js')
@@ -55,20 +72,33 @@ test('Zeno Health validates the verified careers surface and returns [] while th
   assert.equal(zenohealth.CAREERS_URL, 'https://corporate.zeno.health/careers')
   assert.equal(
     zenohealth.DISPOSITION,
-    'verified-public-careers-surface-with-linkedin-openings-handoff',
+    'verified-first-party-shell-without-public-openings-flow',
   )
   assert.match(
     zenohealth.VERIFIED_SURFACE_SUMMARY,
-    /Verified on Saturday, July 25, 2026 that https:\/\/corporate\.zeno\.health\/careers was the live first-party public careers surface reviewed for Zeno Health\./i,
+    /Verified on Friday, August 14, 2026 that https:\/\/corporate\.zeno\.health\/careers now serves a generic first-party Zeno Health shell/i,
   )
   assert.match(
     zenohealth.VERIFIED_SURFACE_SUMMARY,
-    /View our LinkedIn page for current openings/i,
+    /no longer exposes the earlier careers copy or LinkedIn openings handoff/i,
   )
   assert.match(
     zenohealth.VERIFIED_SURFACE_SUMMARY,
-    /returns no jobs until a trustworthy public openings flow is promoted/i,
+    /returns no jobs until a verifiable openings surface reappears/i,
   )
+})
+
+test('Zeno Health accepts the current verified shell and returns []', async () => {
+  const zenohealth = await loadZenoHealthModule()
+
+  const jobs = await zenohealth.run({
+    fetchHtml: async () => CURRENT_SHELL_HTML,
+    fetchBrowserHtml: async () => {
+      assert.fail('Browser fallback was not expected for the current verified shell')
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('Zeno Health rejects when the verified public careers surface markers disappear', async () => {

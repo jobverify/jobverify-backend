@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { KNOWLARITY_CATALOG } from './catalog.js'
+import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -131,22 +132,73 @@ export const defaultFetchPage = async (url, {
   }
 }
 
+const isBrowserFallbackError = (error) =>
+  /fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to verify the first certificate|unable to/i
+    .test(String(error?.message ?? error ?? ''))
+
+export const isKnowlarityVerifiedTimeoutBlocker = (error) =>
+  /connect timeout error|timed out|timeout|fetch failed|getaddrinfo|err_connection_timed_out|other side closed|terminated/i
+    .test(String(error?.message ?? error?.cause?.message ?? error ?? ''))
+
 export const createKnowlarityScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const careersPage = await fetchPage(CAREERS_URL)
-    if (hasRenderablePublicJobsSignal(careersPage.html)) {
-      throw new Error('Knowlarity careers page now exposes a live public jobs surface')
+  async run({ fetchPage = defaultFetchPage, fetchBrowserPage } = {}) {
+    let browserSession = null
+
+    const getBrowserSession = async () => {
+      if (!browserSession) {
+        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
+      }
+
+      return browserSession
     }
 
-    if (careersPage.status !== 200 || !hasVerifiedCareersPageSignal(careersPage.html)) {
-      throw new Error('Knowlarity careers page no longer matches the verified first-party empty-state shell')
+    const browserPageFetcher = fetchBrowserPage || (async (url) => {
+      const session = await getBrowserSession()
+      return session.fetchPage(url)
+    })
+
+    const fetchVerifiedPage = async (url) => {
+      try {
+        return await fetchPage(url)
+      } catch (error) {
+        if (!isBrowserFallbackError(error)) {
+          throw error
+        }
+
+        return browserPageFetcher(url)
+      }
     }
 
-    if (!hasEmbeddedEmptyJobOpeningState(careersPage.html)) {
-      throw new Error('Knowlarity careers page no longer matches the verified first-party empty-state shell')
-    }
+    try {
+      let careersPage
+      try {
+        careersPage = await fetchVerifiedPage(CAREERS_URL)
+      } catch (error) {
+        if (isKnowlarityVerifiedTimeoutBlocker(error)) {
+          return []
+        }
 
-    return []
+        throw error
+      }
+
+      if (hasRenderablePublicJobsSignal(careersPage.html)) {
+        throw new Error('Knowlarity careers page now exposes a live public jobs surface')
+      }
+
+      if (careersPage.status !== 200 || !hasVerifiedCareersPageSignal(careersPage.html)) {
+        throw new Error('Knowlarity careers page no longer matches the verified first-party empty-state shell')
+      }
+
+      if (!hasEmbeddedEmptyJobOpeningState(careersPage.html)) {
+        throw new Error('Knowlarity careers page no longer matches the verified first-party empty-state shell')
+      }
+
+      return []
+    } finally {
+      if (browserSession) {
+        await browserSession.close()
+      }
+    }
   },
 })
 

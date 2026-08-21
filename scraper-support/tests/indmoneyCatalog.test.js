@@ -46,17 +46,17 @@ test('INDmoney local catalog captures the verified about-page LinkedIn handoff a
   )
   assert.equal(
     INDMONEY_CATALOG.extractionStrategy,
-    'verified-official-about-page+verified-linkedin-handoff+no-first-party-public-jobs-return-empty',
+    'verified-cloudflare-challenge-on-homepage-and-about-page+legacy-official-about-page-linkedin-handoff+no-first-party-public-jobs-return-empty',
   )
   assert.equal(INDMONEY_CATALOG.parser, 'custom-script')
   assert.equal(INDMONEY_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(INDMONEY_CATALOG.verifiedOn, '2026-08-02')
+  assert.equal(INDMONEY_CATALOG.verifiedOn, '2026-08-13')
   assert.match(INDMONEY_CATALOG.dryRunFile, /indmoney[\\/]jobs\.json$/i)
   assert.equal(INDMONEY_CATALOG.modulePath, modulePath)
+  assert.match(INDMONEY_CATALOG.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
+  assert.match(INDMONEY_CATALOG.verifiedSurfaceSummary, /Just a moment/i)
+  assert.match(INDMONEY_CATALOG.verifiedSurfaceSummary, /Cloudflare/i)
   assert.match(INDMONEY_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.indmoney\.com\/about/i)
-  assert.match(INDMONEY_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.linkedin\.com\/company\/indmoney\/jobs\//i)
-  assert.match(INDMONEY_CATALOG.verifiedSurfaceSummary, /still hands applicants to https:\/\/www\.linkedin\.com\/company\/indmoney\/jobs\//i)
-  assert.match(INDMONEY_CATALOG.verifiedSurfaceSummary, /does not expose a trustworthy first-party public jobs surface/i)
 
   assert.equal(indmoney.PROVIDER_METADATA.source, INDMONEY_CATALOG.source)
   assert.equal(indmoney.PROVIDER_METADATA.companyName, INDMONEY_CATALOG.companyName)

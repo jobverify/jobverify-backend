@@ -7,18 +7,18 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes NeST Digital as an official careers script provider', () => {
+test('getScraperCatalog includes NeST Digital as a careers-plus-Zappyhire script provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'nestdigital')
 
   assert.ok(provider)
   assert.equal(provider.companyName, 'NeST Digital')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.atsPlatform, 'zappyhire')
   assert.equal(provider.companyCareerPage, 'https://nestdigital.com/career/')
   assert.equal(provider.companyDomain, 'nestdigital.com')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-public-careers-page')
-  assert.equal(provider.extractionStrategy, 'official-careers-page+inline-latest-job-cards')
+  assert.equal(provider.paginationStrategy, 'official-careers-page-plus-zappyhire-api-pagination')
+  assert.equal(provider.extractionStrategy, 'official-careers-page+zappyhire-config+zappyhire-filter-params+zappyhire-jobsearch+zappyhire-job-detail')
   assert.equal(provider.parser, 'custom-script')
   assert.match(provider.modulePath, /nestdigital[\\/]script\.js$/i)
 })

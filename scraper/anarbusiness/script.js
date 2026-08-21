@@ -13,6 +13,7 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const NO_PUBLIC_JOB_ROUTE_URLS = PROVIDER_METADATA.verifiedMissingCareersUrls
+export const REPURPOSED_DOMAIN_URL = 'https://myragems.com/'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -70,6 +71,16 @@ const defaultFetchPage = async (url) => {
 
 const getFinalUrl = (page, fallbackUrl) => page?.url || page?.finalUrl || fallbackUrl
 
+const normalizeUrl = (value) => {
+  try {
+    const url = new URL(String(value ?? ''))
+    url.hash = ''
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    return String(value ?? '').replace(/\/$/, '')
+  }
+}
+
 export const pageExposesPublicJobListings = (html = '') =>
   PUBLIC_JOB_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
@@ -83,6 +94,16 @@ export const hasShutdownExplainerSignal = (html = '') => {
     && /Anar Business App/i.test(normalized)
 }
 
+export const hasRepurposedDomainSignal = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+
+  return /<title>\s*Myra Gems:\s*Buy Certified Gemstone Rings for Men(?:\s|&|&amp;)+Women\s*<\/title>/i.test(rawHtml)
+    && /myragems\.com/i.test(rawHtml)
+    && /Certified Gemstone Rings/i.test(normalized)
+    && /20\+\s*Years Expertise in Gemstone Jewellery/i.test(normalized)
+}
+
 export const isVerifiedMissingCareersRoute = (page = {}, requestedUrl) => {
   const rawHtml = String(page.html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
@@ -94,12 +115,21 @@ export const isVerifiedMissingCareersRoute = (page = {}, requestedUrl) => {
     && !pageExposesPublicJobListings(rawHtml)
 }
 
+export const isVerifiedRepurposedDomainRedirect = (page = {}) =>
+  Number(page.status) === 200
+  && normalizeUrl(getFinalUrl(page, REPURPOSED_DOMAIN_URL)) === normalizeUrl(REPURPOSED_DOMAIN_URL)
+  && hasRepurposedDomainSignal(page.html)
+  && !pageExposesPublicJobListings(page.html)
+
 export const createAnarBusinessScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
     if (
       homepage.status !== 200
-      || !hasShutdownExplainerSignal(homepage.html)
+      || (
+        !hasShutdownExplainerSignal(homepage.html)
+        && !isVerifiedRepurposedDomainRedirect(homepage)
+      )
       || pageExposesPublicJobListings(homepage.html)
     ) {
       throw new Error('Anar Business verified shutdown homepage no longer matches the trusted first-party surface')
@@ -107,7 +137,10 @@ export const createAnarBusinessScraper = () => ({
 
     for (const routeUrl of NO_PUBLIC_JOB_ROUTE_URLS) {
       const routePage = await fetchPage(routeUrl)
-      if (!isVerifiedMissingCareersRoute(routePage, routeUrl)) {
+      if (
+        !isVerifiedMissingCareersRoute(routePage, routeUrl)
+        && !isVerifiedRepurposedDomainRedirect(routePage)
+      ) {
         throw new Error(`Anar Business verified missing careers route changed materially or now exposes public jobs: ${getFinalUrl(routePage, routeUrl)}`)
       }
     }

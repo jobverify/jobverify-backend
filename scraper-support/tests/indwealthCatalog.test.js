@@ -25,7 +25,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('INDwealth local catalog captures the verified redirect to INDmoney and the official LinkedIn handoff', async () => {
+test('INDwealth local catalog captures the verified blocked first-party routes and the still-reachable LinkedIn jobs surface', async () => {
   const { INDWEALTH_CATALOG } = await loadCatalogModule()
   const indwealth = await loadScriptModule()
 
@@ -42,23 +42,24 @@ test('INDwealth local catalog captures the verified redirect to INDmoney and the
   assert.equal(INDWEALTH_CATALOG.publicLinkedInJobsUrl, 'https://in.linkedin.com/jobs/indmoney-jobs')
   assert.equal(INDWEALTH_CATALOG.atsPlatform, 'linkedin-guest-search')
   assert.equal(INDWEALTH_CATALOG.countryFilter, 'India')
-  assert.equal(INDWEALTH_CATALOG.paginationStrategy, 'single-public-company-search-page')
+  assert.equal(INDWEALTH_CATALOG.paginationStrategy, 'blocked-first-party-redirect-and-about-plus-public-company-search-page')
   assert.equal(
     INDWEALTH_CATALOG.extractionStrategy,
-    'official-brand-redirect+official-about-linkedin-handoff+public-linkedin-company-search+public-detail-jsonld',
+    'verified-blocked-brand-redirect+verified-blocked-about-page+verified-linkedin-company-page+public-linkedin-company-search+optional-public-detail-jsonld',
   )
   assert.equal(INDWEALTH_CATALOG.parser, 'custom-script')
   assert.equal(INDWEALTH_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(INDWEALTH_CATALOG.companyDomain, 'indmoney.com')
-  assert.equal(INDWEALTH_CATALOG.verifiedOn, '2026-07-16')
+  assert.equal(INDWEALTH_CATALOG.verifiedOn, '2026-08-15')
   assert.match(INDWEALTH_CATALOG.dryRunFile, /indwealth[\\/]jobs\.json$/i)
   assert.match(INDWEALTH_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.indwealth\.in\//i)
-  assert.match(INDWEALTH_CATALOG.verifiedSurfaceSummary, /redirects to https:\/\/www\.indmoney\.com\//i)
+  assert.match(INDWEALTH_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.indmoney\.com\//i)
   assert.match(INDWEALTH_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.indmoney\.com\/about/i)
   assert.match(INDWEALTH_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.linkedin\.com\/company\/indmoney\/jobs\//i)
   assert.match(INDWEALTH_CATALOG.verifiedSurfaceSummary, /https:\/\/in\.linkedin\.com\/jobs\/indmoney-jobs/i)
-  assert.match(INDWEALTH_CATALOG.verifiedSurfaceSummary, /Associate Product Manager/i)
-  assert.match(INDWEALTH_CATALOG.verifiedSurfaceSummary, /Platform Engineer-SRE/i)
+  assert.match(INDWEALTH_CATALOG.verifiedSurfaceSummary, /Just a moment/i)
+  assert.match(INDWEALTH_CATALOG.verifiedSurfaceSummary, /Founder's Office - Growth/i)
+  assert.match(INDWEALTH_CATALOG.verifiedSurfaceSummary, /Product Manager - Lending/i)
   assert.equal(INDWEALTH_CATALOG.modulePath, indwealthModulePath)
 
   assert.equal(indwealth.PROVIDER_METADATA.source, INDWEALTH_CATALOG.source)
@@ -84,7 +85,7 @@ test('INDwealth backlog row matches directly from the local catalog without alia
   )
 })
 
-test('getScraperCatalog includes INDwealth as a verified LinkedIn guest-search provider', () => {
+test('getScraperCatalog includes INDwealth as a verified LinkedIn guest-search provider with blocked first-party validation', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'indwealth')
 
   assert.ok(provider)
@@ -93,6 +94,7 @@ test('getScraperCatalog includes INDwealth as a verified LinkedIn guest-search p
   assert.equal(provider.companyCareerPage, 'https://www.indmoney.com/about')
   assert.equal(provider.companyDomain, 'indmoney.com')
   assert.equal(provider.atsPlatform, 'linkedin-guest-search')
+  assert.equal(provider.verifiedOn, '2026-08-15')
   assert.match(provider.modulePath, /indwealth[\\/]script\.js$/i)
 })
 
