@@ -1,6 +1,6 @@
 # Jobverify Backend
 
-## Test Release:  26.07.04
+## Release: 26.08.02
 
 Express and MongoDB backend for Jobverify, with a separate scraper runtime that collects public job listings and writes normalized jobs into MongoDB.
 
