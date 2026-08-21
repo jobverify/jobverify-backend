@@ -184,8 +184,17 @@ export const hasPublicJobsSignal = (html) =>
   /(current openings|all open positions|open positions|job openings|join our team|apply now|see current openings|view roles|see jobs)/i
     .test(String(html ?? ''))
 
+const hasVerifiedPlaceholderCareersAliasSignal = (page = {}) =>
+  Number(page.status) === 200
+  && hasOfficialHomepageSignal(page.html)
+  && !hasPublicJobsSignal(page.html)
+
 export const isVerifiedNoPublicCareersRoute = (page = {}) =>
-  Number(page.status) === 404 && !hasPublicJobsSignal(page.html)
+  (
+    Number(page.status) === 404
+    && !hasPublicJobsSignal(page.html)
+  )
+  || hasVerifiedPlaceholderCareersAliasSignal(page)
 
 const verifyPlaceholderSurface = (page, label) => {
   if (page?.errorKind) {

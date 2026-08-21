@@ -28,12 +28,18 @@ const isBrowserFallbackError = (error) =>
 export const hasVerifiedHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
+  const hasVerifiedHandoff = /(?:angel\.co\/company\/koinx|wellfound\.com\/company\/koinx(?:\/jobs)?)/i.test(page)
 
   return /<title\b[^>]*>\s*Unleash Your Potential\s*\|\s*Exciting Career Opportunities At KoinX\s*\|\s*Join Our Team\s*<\/title>/i.test(page)
-    && text.includes('Careers At KoinX')
-    && text.includes('The Core of KoinX')
-    && text.includes('Committed To Your Success')
-    && /href=["']https:\/\/(?:angel\.co\/company\/koinx|wellfound\.com\/company\/koinx(?:\/jobs)?)["']/i.test(page)
+    && hasVerifiedHandoff
+    && (
+      (
+        text.includes('Careers At KoinX')
+        && text.includes('The Core of KoinX')
+        && text.includes('Committed To Your Success')
+      )
+      || /<iframe/i.test(page)
+    )
 }
 
 export const hasEmptyJobsSurfaceSignal = (html = '') => {

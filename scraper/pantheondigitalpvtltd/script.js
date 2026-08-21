@@ -92,20 +92,21 @@ const parseNextData = (html) => {
 export const hasOfficialHomepageSignal = (html) => {
   const page = normalizeWhitespace(html).toLowerCase()
 
-  return page.includes('pantheon digital')
-    && page.includes('projects')
-    && page.includes('about us')
-    && page.includes('contact us')
+  return page.includes('pantheon digital | web, software & digital marketing agency in delhi ncr')
+    && page.includes('initializing digital excellence')
+    && page.includes('we deliver the best customer experience')
+    && page.includes('we build websites, apps, and custom software that help your business grow.')
+    && page.includes('book a free call')
 }
 
 export const hasOfficialAboutSignal = (html) => {
   const page = normalizeWhitespace(html).toLowerCase()
 
-  return page.includes('about pantheon digital')
-    && page.includes('creative digital experts')
-    && page.includes('meet pantheon digitals')
-    && page.includes('welcome to pantheon digital, where innovation meets excellence')
-    && page.includes('contact us')
+  return page.includes('about pantheon digital | technology, products & customer growth | pantheon digital')
+    && page.includes('initializing digital excellence')
+    && page.includes('we deliver the best customer experience')
+    && page.includes('we build websites, apps, and custom software that help your business grow.')
+    && page.includes('book a free call')
 }
 
 export const hasOfficialContactSignal = (html) => {

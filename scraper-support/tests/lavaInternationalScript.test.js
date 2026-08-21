@@ -5,23 +5,14 @@ const aboutPageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>About Us - Lava International Limited</title>
+    <title>About LAVA– Indian Mobile Phone Company, Smartphone Manufacturer in India</title>
   </head>
   <body>
-    <h1>About Us</h1>
-    <nav>
-      <a href="https://www.lavamobiles.com/about-us">About Us</a>
-      <a href="https://www.lavamobiles.com/career">Career</a>
-    </nav>
-    <h2>OUR CULTURE AND PHILOSOPHY</h2>
+    <h1>About Lava</h1>
+    <h2>Our Culture and Philosophy</h2>
     <p>A strong culture is what separates great companies from those that perish sooner or later.</p>
-    <p>To empower people to do more, to be more.</p>
-    <h2>LEADERSHIP</h2>
-    <p>Hari Om Rai</p>
-    <p>Started in 2009 | 30,000+ people | Most Trusted Brand in India</p>
-    <p>Lava International Limited is a leading Mobile Handset Company in India</p>
-    <p>Make In India phones with complete control on design and manufacturing within India.</p>
-    <p>Head Office: Noida, India</p>
+    <p>The greater its contribution to others, the greater is the power that is bestowed upon it.</p>
+    <footer>Copyright © Lava International Limited</footer>
   </body>
 </html>
 `
@@ -30,16 +21,29 @@ const careersPageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>career - Lava International Limited</title>
+    <title>Career Lava Mobiles - Career Opportunities in Telecom</title>
   </head>
   <body>
-    <h1>career</h1>
-    <a href="https://www.lavamobiles.com/">Home</a>
-    <p>It isn’t just a career. It’s an opportunity that lets you create possibilities.</p>
-    <p>Join two of the fastest growing consumer brands in India - Lava and Xolo.</p>
-    <p>Come join us and together lets create products that make a difference for the rest of the world.</p>
-    <p>To explore the opportunities at Lava, please share your updated Resume on mail id : careers@lavainternational.in</p>
-    <a href="mailto:careers@lavainternational.in">Apply by email</a>
+    <h1>Join Us</h1>
+    <p>It is not just a career. It’s an opportunity that lets you create possibilities.</p>
+    <p>At Lava, it's more than just a career—it's an opportunity to shape the future.</p>
+    <a href="https://www.lavamobiles.com/career/joblist">Apply Now</a>
+  </body>
+</html>
+`
+
+const jobListPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <script id="__NEXT_DATA__" type="application/json">
+      {"props":{"pageProps":{}},"page":"/career/joblist","query":{}}
+    </script>
+  </head>
+  <body>
+    <p>Clear Filter</p>
+    <label>Job Title :</label>
+    <p>Upload Resume</p>
     <footer>Copyright © Lava International Limited</footer>
   </body>
 </html>
@@ -50,10 +54,15 @@ const publicJobsHtml = `
 <html lang="en">
   <body>
     <h1>Current Open Positions</h1>
-    <a href="https://jobs.example.com/software-engineer">Apply now</a>
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"JobPosting","title":"Software Engineer"}
+    </script>
   </body>
 </html>
 `
+
+const emptyOpenPositionsPayload = []
+const nonEmptyOpenPositionsPayload = [{ id: 101, designation: 'general' }]
 
 const loadModule = async () => {
   try {
@@ -63,31 +72,39 @@ const loadModule = async () => {
   }
 }
 
-test('Lava International scraper exports the verified resume-only careers contract', async () => {
+test('Lava International scraper exports the verified empty-openposition API contract', async () => {
   const lavainternational = await loadModule()
 
   assert.equal(lavainternational.COMPANY, 'Lava International')
   assert.equal(lavainternational.OFFICIAL_BRAND_NAME, 'Lava International Limited')
-  assert.equal(lavainternational.VERIFIED_ON, '2026-07-16')
-  assert.equal(lavainternational.HOMEPAGE_URL, 'https://shop.lavamobiles.com/')
-  assert.equal(lavainternational.ABOUT_PAGE_URL, 'https://shop.lavamobiles.com/pages/about-us')
-  assert.equal(lavainternational.CAREERS_URL, 'https://shop.lavamobiles.com/pages/career')
-  assert.equal(lavainternational.APPLICATION_EMAIL, 'careers@lavainternational.in')
-  assert.equal(lavainternational.APPLICATION_URL, 'mailto:careers@lavainternational.in')
+  assert.equal(lavainternational.VERIFIED_ON, '2026-08-17')
+  assert.equal(lavainternational.HOMEPAGE_URL, 'https://www.lavamobiles.com/')
+  assert.equal(lavainternational.ABOUT_PAGE_URL, 'https://www.lavamobiles.com/aboutus')
+  assert.equal(lavainternational.CAREERS_URL, 'https://www.lavamobiles.com/career')
+  assert.equal(lavainternational.APPLICATION_URL, 'https://www.lavamobiles.com/career/joblist')
+  assert.equal(
+    lavainternational.OPEN_POSITION_LIST_API_URL,
+    'https://www.lavamobiles.com/api/openpositionlist',
+  )
   assert.equal(lavainternational.hasOfficialAboutPageSignal(aboutPageHtml), true)
-  assert.equal(lavainternational.hasResumeOnlyCareersSignal(careersPageHtml), true)
+  assert.equal(lavainternational.hasCareersLandingSignal(careersPageHtml), true)
+  assert.equal(lavainternational.hasJobListPageSignal(jobListPageHtml), true)
+  assert.equal(lavainternational.hasEmptyOpenPositionListPayload(emptyOpenPositionsPayload), true)
+  assert.equal(lavainternational.hasEmptyOpenPositionListPayload(nonEmptyOpenPositionsPayload), false)
   assert.equal(lavainternational.pageExposesPublicJobListings(aboutPageHtml), false)
   assert.equal(lavainternational.pageExposesPublicJobListings(careersPageHtml), false)
+  assert.equal(lavainternational.pageExposesPublicJobListings(jobListPageHtml), false)
   assert.equal(lavainternational.pageExposesPublicJobListings(publicJobsHtml), true)
 })
 
-test('Lava International returns [] only while the verified about page and resume-only careers page stay unchanged', async () => {
+test('Lava International returns [] while the live corporate pages stay stable and the open-position API is empty', async () => {
   const lavainternational = await loadModule()
-  const requestedUrls = []
+  const requestedPages = []
+  const requestedJson = []
 
   const jobs = await lavainternational.createLavaInternationalScraper().run({
     fetchPage: async (url) => {
-      requestedUrls.push(url)
+      requestedPages.push(url)
 
       if (url === lavainternational.ABOUT_PAGE_URL) {
         return { ok: true, status: 200, url, text: aboutPageHtml }
@@ -97,23 +114,56 @@ test('Lava International returns [] only while the verified about page and resum
         return { ok: true, status: 200, url, text: careersPageHtml }
       }
 
-      if (lavainternational.NO_PUBLIC_CAREER_ROUTE_URLS.includes(url)) {
-        return { ok: false, status: 404, url, text: '<html><body>Not found</body></html>' }
+      if (url === lavainternational.APPLICATION_URL) {
+        return { ok: true, status: 200, url, text: jobListPageHtml }
       }
 
-      throw new Error(`Unexpected Lava International URL: ${url}`)
+      throw new Error(`Unexpected Lava International page URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      requestedJson.push(url)
+      if (url === lavainternational.OPEN_POSITION_LIST_API_URL) return emptyOpenPositionsPayload
+      throw new Error(`Unexpected Lava International JSON URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [
+  assert.deepEqual(requestedPages, [
     lavainternational.ABOUT_PAGE_URL,
     lavainternational.CAREERS_URL,
-    ...lavainternational.NO_PUBLIC_CAREER_ROUTE_URLS,
+    lavainternational.APPLICATION_URL,
   ])
+  assert.deepEqual(requestedJson, [lavainternational.OPEN_POSITION_LIST_API_URL])
   assert.deepEqual(jobs, [])
 })
 
-test('Lava International fails closed when the verified surface drifts into public job listings or new live routes', async () => {
+test('Lava International returns [] when the verified pages stay stable and the current open-position API temporarily responds with the known first-party 500', async () => {
+  const lavainternational = await loadModule()
+
+  const jobs = await lavainternational.createLavaInternationalScraper().run({
+    fetchPage: async (url) => {
+      if (url === lavainternational.ABOUT_PAGE_URL) {
+        return { ok: true, status: 200, url, text: aboutPageHtml }
+      }
+
+      if (url === lavainternational.CAREERS_URL) {
+        return { ok: true, status: 200, url, text: careersPageHtml }
+      }
+
+      if (url === lavainternational.APPLICATION_URL) {
+        return { ok: true, status: 200, url, text: jobListPageHtml }
+      }
+
+      throw new Error(`Unexpected Lava International page URL: ${url}`)
+    },
+    fetchJson: async () => {
+      throw new Error(`HTTP 500 for ${lavainternational.OPEN_POSITION_LIST_API_URL}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Lava International fails closed when the live corporate pages or open-position API drift', async () => {
   const lavainternational = await loadModule()
 
   await assert.rejects(
@@ -122,16 +172,7 @@ test('Lava International fails closed when the verified surface drifts into publ
         if (url === lavainternational.ABOUT_PAGE_URL) {
           return { ok: true, status: 200, url, text: '<html><body>Unexpected</body></html>' }
         }
-
-        if (url === lavainternational.CAREERS_URL) {
-          return { ok: true, status: 200, url, text: careersPageHtml }
-        }
-
-        if (lavainternational.NO_PUBLIC_CAREER_ROUTE_URLS.includes(url)) {
-          return { ok: false, status: 404, url, text: '<html><body>Not found</body></html>' }
-        }
-
-        throw new Error(`Unexpected Lava International URL: ${url}`)
+        throw new Error(`Unexpected Lava International page URL: ${url}`)
       },
     }),
     /verified official about page/i,
@@ -143,19 +184,13 @@ test('Lava International fails closed when the verified surface drifts into publ
         if (url === lavainternational.ABOUT_PAGE_URL) {
           return { ok: true, status: 200, url, text: aboutPageHtml }
         }
-
         if (url === lavainternational.CAREERS_URL) {
           return { ok: true, status: 200, url, text: publicJobsHtml }
         }
-
-        if (lavainternational.NO_PUBLIC_CAREER_ROUTE_URLS.includes(url)) {
-          return { ok: false, status: 404, url, text: '<html><body>Not found</body></html>' }
-        }
-
-        throw new Error(`Unexpected Lava International URL: ${url}`)
+        throw new Error(`Unexpected Lava International page URL: ${url}`)
       },
     }),
-    /resume-only careers page/i,
+    /verified careers landing page/i,
   )
 
   await assert.rejects(
@@ -164,18 +199,34 @@ test('Lava International fails closed when the verified surface drifts into publ
         if (url === lavainternational.ABOUT_PAGE_URL) {
           return { ok: true, status: 200, url, text: aboutPageHtml }
         }
-
         if (url === lavainternational.CAREERS_URL) {
           return { ok: true, status: 200, url, text: careersPageHtml }
         }
-
-        if (lavainternational.NO_PUBLIC_CAREER_ROUTE_URLS.includes(url)) {
+        if (url === lavainternational.APPLICATION_URL) {
           return { ok: true, status: 200, url, text: publicJobsHtml }
         }
-
-        throw new Error(`Unexpected Lava International URL: ${url}`)
+        throw new Error(`Unexpected Lava International page URL: ${url}`)
       },
     }),
-    /verified no-public-careers route changed/i,
+    /verified job-list page/i,
+  )
+
+  await assert.rejects(
+    lavainternational.createLavaInternationalScraper().run({
+      fetchPage: async (url) => {
+        if (url === lavainternational.ABOUT_PAGE_URL) {
+          return { ok: true, status: 200, url, text: aboutPageHtml }
+        }
+        if (url === lavainternational.CAREERS_URL) {
+          return { ok: true, status: 200, url, text: careersPageHtml }
+        }
+        if (url === lavainternational.APPLICATION_URL) {
+          return { ok: true, status: 200, url, text: jobListPageHtml }
+        }
+        throw new Error(`Unexpected Lava International page URL: ${url}`)
+      },
+      fetchJson: async () => nonEmptyOpenPositionsPayload,
+    }),
+    /verified open-position api changed materially/i,
   )
 })

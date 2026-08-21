@@ -86,10 +86,11 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
   return /<title[^>]*>\s*Careers\s*\|\s*Railway\s*<\/title>/i.test(rawHtml)
     && normalized.includes('Redefine the future of infrastructure')
     && normalized.includes('See open positions')
-    && normalized.includes('Senior Infra Engineer: Baremetal Orchestration')
+    && normalized.includes('Senior Infra Engineer: Platform')
+    && normalized.includes('Senior Infra Engineer: Storage')
+    && normalized.includes('Senior Infra Engineer: Observability')
     && normalized.includes('Senior Infra Engineer: Datacenters')
-    && normalized.includes('Senior Product Engineer: Scalability')
-    && normalized.includes('Anywhere')
+    && normalized.includes('Remote (anywhere)')
     && /href=["']\/careers\/[^"'#?]+["']/i.test(rawHtml)
 }
 

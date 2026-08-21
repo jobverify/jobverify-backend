@@ -32,16 +32,19 @@ test('Brainium Information Technologies local catalog captures the verified firs
   assert.equal(provider.companyDomain, 'brainiuminfotech.com')
   assert.equal(provider.atsPlatform, 'first-party-html-open-roles')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-public-page')
-  assert.equal(provider.extractionStrategy, 'verified-first-party-careers-page+html-open-roles')
+  assert.equal(provider.paginationStrategy, 'single-public-page-or-verified-cloudflare-blocked-empty')
+  assert.equal(
+    provider.extractionStrategy,
+    'verified-first-party-careers-page+html-open-roles-or-verified-cloudflare-blocked-empty',
+  )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-14')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /brainiuminformationtechnologies[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /Open Positions/i)
-  assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Brainium Information Technologies'), false)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Attention Required! \| Cloudflare/i)
+  assert.equal(companyAliases.Brainium, 'brainiuminformationtechnologies')
 })
 
 test('Brainium Information Technologies exact backlog row matches from the local catalog entry', async () => {

@@ -4,13 +4,13 @@ import test from 'node:test'
 const CAREERS_HTML = `
   <html>
     <head>
-      <title>Careers - ASC International</title>
+      <title>Careers - Join the ASC International Team | Inspection &amp; Metrology Jobs | ASC International</title>
     </head>
     <body>
       <main>
-        <h1>Careers</h1>
-        <p>Join Our Continuously Growing Team</p>
-        <h3>Current Career Opportunities</h3>
+        <h1>Join Our Continuously <span>Growing Team</span></h1>
+        <h2>Why Build Your Career Here</h2>
+        <h3>Current Openings</h3>
         <h4>Automated Optical Inspection (AOI) Engineer</h4>
         <ul>
           <li>Apply software and troubleshooting techniques to solve computer-related Mechatronics AOI systems product issues.</li>

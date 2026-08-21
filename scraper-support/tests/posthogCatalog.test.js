@@ -29,7 +29,7 @@ test('getScraperCatalog includes PostHog as a first-party script provider pinned
   assert.equal(provider.companyCareerPage, 'https://posthog.com/careers')
   assert.equal(
     provider.discoveryCareerPageDataUrl,
-    'https://posthog.com/page-data/careers/ai-research-engineer/page-data.json',
+    'https://posthog.com/page-data/careers/backend-engineer-ingestion-(europeuk-timezone)/page-data.json',
   )
   assert.equal(provider.companyDomain, 'posthog.com')
   assert.equal(provider.atsPlatform, 'posthog-first-party-gatsby-page-data')
@@ -44,16 +44,17 @@ test('getScraperCatalog includes PostHog as a first-party script provider pinned
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-25')
+  assert.equal(provider.verifiedOn, '2026-08-17')
   assert.match(provider.modulePath, /posthog[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /posthog[\\/]jobs\.json$/i)
   assert.equal(POSTHOG_CATALOG.modulePath, posthogModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 25, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 17, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/posthog\.com\/careers/i)
   assert.match(
     provider.verifiedSurfaceSummary,
-    /https:\/\/posthog\.com\/page-data\/careers\/ai-research-engineer\/page-data\.json/i,
+    /https:\/\/posthog\.com\/page-data\/careers\/backend-engineer-ingestion-\(europeuk-timezone\)\/page-data\.json/i,
   )
+  assert.match(provider.verifiedSurfaceSummary, /Backend Engineer - Ingestion \(Europe\/UK timezone\)/i)
   assert.match(provider.verifiedSurfaceSummary, /Technical Account Manager - EMEA/i)
   assert.match(provider.verifiedSurfaceSummary, /Technical Customer Success Manager - Americas/i)
   assert.match(provider.verifiedSurfaceSummary, /zero India/i)

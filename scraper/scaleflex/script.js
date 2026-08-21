@@ -144,9 +144,15 @@ export const hasOfficialHomepageSignal = (html) => {
     && normalized.includes('Dynamic Media Optimization')
   const hasCurrentHomepageSignal = title === 'Digital Asset Management Software | Scaleflex'
     && normalized.includes('One place for every visual. Days back in your week.')
-    && normalized.includes('Turn visuals into high-converting digital experiences at scale.')
-    && normalized.includes('Dynamic Media Optimization')
-    && normalized.includes('Trusted by enterprises.')
+    && (
+      normalized.includes('Turn visuals into high-converting digital experiences at scale.')
+      || normalized.includes('Turns visuals into high-converting digital experiences')
+    )
+    && (
+      normalized.includes('Dynamic Media Optimization')
+      || normalized.includes('Trusted by enterprises.')
+      || normalized.includes('Trusted by 1,300+ brands worldwide')
+    )
 
   return (
     (normalized.includes('Turning billions of assets into engaging digital masterpieces')

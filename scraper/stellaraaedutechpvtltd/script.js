@@ -266,15 +266,37 @@ export const searchPageShowsZeroResults = (html) => {
     )
 }
 
-export const extractSearchResults = (html) => [...String(html ?? '').matchAll(
-  /<div class="base-card[\s\S]*?job-search-card"[\s\S]*?data-entity-urn="urn:li:jobPosting:([0-9]+)"[\s\S]*?<a class="base-card__full-link[^"]*" href="([^"]+)"[\s\S]*?<h3 class="base-search-card__title">\s*([\s\S]*?)\s*<\/h3>[\s\S]*?<h4 class="base-search-card__subtitle">[\s\S]*?<a[^>]*>\s*([\s\S]*?)\s*<\/a>[\s\S]*?<span class="job-search-card__location">\s*([\s\S]*?)\s*<\/span>[\s\S]*?<time class="job-search-card__listdate" datetime="([^"]+)"[^>]*>/gi,
-)]
-  .map((match) => {
-    const [, jobId, rawHref, rawTitle, rawCompany, rawLocation, postingDate] = match
-    const title = stripTags(rawTitle)
-    const company = stripTags(rawCompany)
-    const locationData = parseLocation(stripTags(rawLocation))
-    const sourceUrl = decodeAttribute(rawHref)
+const extractLinkedInJobCardSegments = (html) =>
+  String(html ?? '')
+    .split(/data-entity-urn="urn:li:jobPosting:/i)
+    .slice(1)
+    .map((segment) => segment.split('</li>')[0] || segment)
+
+const extractLinkedInCardField = (segment, pattern) =>
+  stripTags(String(segment ?? '').match(pattern)?.[1] || null)
+
+export const extractSearchResults = (html) => extractLinkedInJobCardSegments(html)
+  .map((segment) => {
+    const jobId = normalizeWhitespace(String(segment).match(/^([0-9]+)/)?.[1])
+    const sourceUrl = decodeAttribute(
+      String(segment).match(/<a[^>]+class="base-card__full-link[^"]*"[^>]+href="([^"]+)"/i)?.[1],
+    )
+    const title = extractLinkedInCardField(
+      segment,
+      /<h3 class="base-search-card__title">\s*([\s\S]*?)\s*<\/h3>/i,
+    )
+    const company = extractLinkedInCardField(
+      segment,
+      /<h4 class="base-search-card__subtitle">[\s\S]*?<a[^>]*>\s*([\s\S]*?)\s*<\/a>/i,
+    )
+    const rawLocation = extractLinkedInCardField(
+      segment,
+      /<span class="job-search-card__location">\s*([\s\S]*?)\s*<\/span>/i,
+    )
+    const postingDate = normalizeWhitespace(
+      String(segment).match(/<time[^>]+datetime="([^"]+)"/i)?.[1] || null,
+    )
+    const locationData = parseLocation(rawLocation)
 
     if (!title || !jobId || !sourceUrl) return null
     if (company?.toLowerCase() !== BRAND.toLowerCase()) return null
@@ -296,7 +318,7 @@ export const extractSearchResults = (html) => [...String(html ?? '').matchAll(
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: normalizeWhitespace(postingDate),
+      postingDate,
       closingDate: null,
       jobDescription: null,
     }

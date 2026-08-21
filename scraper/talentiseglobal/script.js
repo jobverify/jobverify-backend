@@ -6,109 +6,48 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = 'talentiseglobal'
 export const COMPANY = 'TALENTISE GLOBAL'
 export const HOMEPAGE_URL = 'https://talentiseglobal.com/'
-export const CANDIDATE_PORTAL_URL = 'https://talentiseglobal.com/content/mobile_login_view'
-export const CANDIDATE_LOGIN_URL = 'https://talentiseglobal.com/student/login'
-export const CANDIDATE_SIGNUP_URL = 'https://talentiseglobal.com/student'
-export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
-  'https://talentiseglobal.com/careers',
-  'https://talentiseglobal.com/careers/',
-  'https://talentiseglobal.com/career',
-  'https://talentiseglobal.com/career/',
-  'https://talentiseglobal.com/jobs',
-  'https://talentiseglobal.com/jobs/',
-  'https://talentiseglobal.com/openings',
-  'https://talentiseglobal.com/openings/',
-  'https://talentiseglobal.com/current-openings',
-  'https://talentiseglobal.com/current-openings/',
-  'https://talentiseglobal.com/join-us',
-  'https://talentiseglobal.com/join-us/',
-]
+export const CAREERS_URL = 'https://talentiseglobal.com/careers'
+export const CANDIDATE_LOGIN_URL = 'https://talentiseglobal.com/front/login'
+export const CANDIDATE_SIGNUP_URL = 'https://talentiseglobal.com/student-registration'
 
 const OFFICIAL_TITLE = 'Talentise Global Pvt. Ltd'
-
+const CAREERS_TITLE = 'TGPL | Careers'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const HOMEPAGE_SIGNALS = [
-  'Connecting Talents',
-  'With Opportunities',
-  'Welcome to Talentise Global Pvt. Ltd',
-  'We are a young and creative company and we offer you fresh HR ideas.',
-  'End to End Campus Recruitment Support',
-  'Customized Talent Acquisition',
-  'Proctored Examination Service',
-  'Training & Development',
-  'Services We Provide',
-  'Corporates',
-  'Institutes',
-  'Students',
-]
-
-const CANDIDATE_PORTAL_SIGNALS = [
-  'Are you Looking for a Job?',
-  'You can register or Login on Talentise Global Pvt. Ltd to start your job search.',
-  'Jobseeker Login',
-  'I am an Employer',
-  'I am an Institute',
-]
-
-const CANDIDATE_LOGIN_SIGNALS = [
-  'Candidate Login',
-  'Login to continue to our application',
-]
-
-const CANDIDATE_SIGNUP_SIGNALS = [
-  'Sign Up As Candidate',
-  'Appeared class 12 ?',
-  'Are you a Corporate',
-  'Are you an Institute',
-]
-
-const MISSING_ROUTE_SIGNALS = [
-  'Error 404',
-  'Oops! Page not found.',
-  'Quick Links',
+  'Home',
+  'Who We Are',
   'Services',
-  'FAQ',
-  'Important Links',
+  'Talent Acquisition & Related Solutions',
+  'Employer Branding Strategies',
+  'Examination Management Systems',
+  'Learning & Development Services',
+  'Testimonials',
 ]
+
+const CAREERS_SIGNALS = [
+  'Latest Career Opportunities',
+]
+
+const DETAIL_LABELS = {
+  qualification: 'Qualification :',
+  department: 'Department :',
+  experience: 'Experience :',
+  location: 'Job Location :',
+  employmentType: 'Employment Type :',
+  description: 'Job Description :',
+}
 
 const PUBLIC_JOB_LISTINGS_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
   /\bcurrent openings\b/i,
-  /\bopen positions\b/i,
-  /\bopen roles\b/i,
-  /\bjob openings\b/i,
-  /\bjob listings?\b/i,
-  /\bsearch jobs\b/i,
-  /\bview jobs\b/i,
-  /\bavailable positions\b/i,
   /\bcareer opportunities\b/i,
-  /\bemployment opportunities\b/i,
-  /\brequisition id\b/i,
   /\bjob id\b/i,
-  /\bjob category\b/i,
   /\bjob location\b/i,
   /\bapply now\b/i,
-  /jobs\.lever\.co/i,
-  /boards\.greenhouse\.io/i,
-  /job-boards\.greenhouse\.io/i,
-  /ashbyhq\.com/i,
-  /workable/i,
-  /myworkdayjobs/i,
-  /workdayjobs/i,
-  /smartrecruiters/i,
-  /jobvite/i,
-  /breezy\.hr/i,
-  /freshteam/i,
-  /zohorecruit/i,
+  /\/career-details\//i,
 ]
-
-const EXTERNAL_ATS_LINK_PATTERN =
-  /(lever|greenhouse|ashbyhq|workable|myworkdayjobs|workdayjobs|smartrecruiters|jobvite|breezy\.hr|freshteam|zohorecruit)/i
-
-const FIRST_PARTY_CAREER_PATH_PATTERN =
-  /^\/(?:careers?|jobs?|job|openings?|current-openings|join-us)(?:\/|$)/i
 
 const BASIC_ENTITY_MAP = new Map([
   ['&nbsp;', ' '],
@@ -170,26 +109,23 @@ const hasRequiredLinks = (html, baseUrl, requiredUrls) => {
   return requiredUrls.every((requiredUrl) => anchorUrls.includes(requiredUrl))
 }
 
-const isSameOrigin = (value, baseUrl) => {
-  try {
-    return new URL(value).origin === new URL(baseUrl).origin
-  } catch {
-    return false
-  }
+const DETAIL_LABEL_VALUES = Object.values(DETAIL_LABELS)
+
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const extractFieldValue = (text, label) => {
+  const otherLabels = DETAIL_LABEL_VALUES.filter((value) => value !== label).map((value) => escapeRegExp(value))
+  const pattern = new RegExp(
+    `${escapeRegExp(label)}\\s*([\\s\\S]*?)(?=\\s+(?:${otherLabels.join('|')})|$)`,
+    'i',
+  )
+
+  return normalizeWhitespace(text.match(pattern)?.[1] ?? '') || null
 }
 
 export const hasUnexpectedCareerOrAtsLink = (html, baseUrl = HOMEPAGE_URL) =>
-  extractAnchorUrls(html, baseUrl).some((absoluteUrl) => {
-    if (!isSameOrigin(absoluteUrl, baseUrl)) {
-      return EXTERNAL_ATS_LINK_PATTERN.test(absoluteUrl)
-    }
-
-    try {
-      return FIRST_PARTY_CAREER_PATH_PATTERN.test(new URL(absoluteUrl).pathname)
-    } catch {
-      return false
-    }
-  })
+  extractAnchorUrls(html, baseUrl)
+    .some((absoluteUrl) => /lever|greenhouse|ashbyhq|workable|myworkdayjobs|smartrecruiters|jobvite/i.test(absoluteUrl))
 
 export const hasPublicJobListingsSignal = (html) =>
   PUBLIC_JOB_LISTINGS_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
@@ -198,41 +134,83 @@ export const hasOfficialHomepageSignal = (html) =>
   extractTitle(html) === OFFICIAL_TITLE
   && hasAllSignals(html, HOMEPAGE_SIGNALS)
   && hasRequiredLinks(html, HOMEPAGE_URL, [
-    CANDIDATE_PORTAL_URL,
     CANDIDATE_LOGIN_URL,
     CANDIDATE_SIGNUP_URL,
+    CAREERS_URL,
   ])
 
-export const hasCandidatePortalSignal = (html) =>
-  extractTitle(html) === OFFICIAL_TITLE
-  && hasAllSignals(html, CANDIDATE_PORTAL_SIGNALS)
-  && hasRequiredLinks(html, HOMEPAGE_URL, [
-    CANDIDATE_LOGIN_URL,
-    CANDIDATE_SIGNUP_URL,
-  ])
+export const hasPublicCareersSignal = (html) =>
+  extractTitle(html) === CAREERS_TITLE
+  && hasAllSignals(html, CAREERS_SIGNALS)
+  && extractAnchorUrls(html, CAREERS_URL).some((url) => /\/career-details\//i.test(url))
 
-export const hasCandidateLoginSignal = (html) =>
-  extractTitle(html) === OFFICIAL_TITLE
-  && hasAllSignals(html, CANDIDATE_LOGIN_SIGNALS)
-  && /<form[^>]+action=["'](?:https?:\/\/talentiseglobal\.com)?\/student\/login["']/i.test(String(html ?? ''))
-  && hasRequiredLinks(html, HOMEPAGE_URL, [CANDIDATE_SIGNUP_URL])
+export const extractCareerListings = (html) => {
+  const listings = []
+  const seen = new Set()
+  const page = String(html ?? '')
 
-export const hasCandidateSignupSignal = (html) =>
-  extractTitle(html) === OFFICIAL_TITLE
-  && hasAllSignals(html, CANDIDATE_SIGNUP_SIGNALS)
-  && hasRequiredLinks(html, HOMEPAGE_URL, [CANDIDATE_LOGIN_URL])
+  for (const match of page.matchAll(/href=["']([^"']*\/career-details\/[^"']+)["']/gi)) {
+    const detailUrl = getAbsoluteUrl(match[1], CAREERS_URL)
+    if (!detailUrl || seen.has(detailUrl)) continue
+    seen.add(detailUrl)
 
-export const isVerifiedMissingCareersRoute = (page = {}) =>
-  Number(page?.status) === 200
-  && extractTitle(page?.html) === OFFICIAL_TITLE
-  && hasAllSignals(page?.html, MISSING_ROUTE_SIGNALS)
-  && hasRequiredLinks(page?.html, HOMEPAGE_URL, [
-    CANDIDATE_PORTAL_URL,
-    CANDIDATE_LOGIN_URL,
-    CANDIDATE_SIGNUP_URL,
-  ])
-  && !hasPublicJobListingsSignal(page?.html)
-  && !hasUnexpectedCareerOrAtsLink(page?.html, HOMEPAGE_URL)
+    const contextStart = Math.max(0, (match.index ?? 0) - 2000)
+    const context = page.slice(contextStart, (match.index ?? 0) + 400)
+    const headingMatches = [...context.matchAll(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi)]
+    const textDivMatches = [...context.matchAll(/<(?:div|p)[^>]*>([\s\S]*?)<\/(?:div|p)>/gi)]
+      .map((item) => normalizeWhitespace(item[1]))
+      .filter(Boolean)
+    const title = normalizeWhitespace(headingMatches.at(-1)?.[1] ?? '')
+    const location = textDivMatches
+      .filter((value) => value && !/teacher|read more|career opportunities/i.test(value))
+      .at(-1)
+      || null
+
+    if (!title) continue
+
+    listings.push({
+      title,
+      location: location || null,
+      detailUrl,
+    })
+  }
+
+  return listings
+}
+
+const normalizeEmploymentType = (value) => {
+  const normalized = normalizeWhitespace(value)?.toLowerCase()
+  if (!normalized) return null
+  if (normalized.includes('full')) return 'Full-time'
+  if (normalized.includes('part')) return 'Part-time'
+  if (normalized.includes('contract')) return 'Contract'
+  return normalizeWhitespace(value)
+}
+
+const buildIndiaLocation = (value) => {
+  const city = normalizeWhitespace(value)
+  if (!city) return 'India'
+  return /india$/i.test(city) ? city : `${city}, India`
+}
+
+export const extractCareerDetail = (html, listing = {}) => {
+  const text = stripHtmlToText(html)
+  const title = extractTitle(html) || listing.title || null
+  const city = extractFieldValue(text, DETAIL_LABELS.location) || listing.location || null
+
+  return {
+    title,
+    department: extractFieldValue(text, DETAIL_LABELS.department),
+    experienceRequired: extractFieldValue(text, DETAIL_LABELS.experience),
+    location: buildIndiaLocation(city),
+    city: normalizeWhitespace(city),
+    employmentType: normalizeEmploymentType(extractFieldValue(text, DETAIL_LABELS.employmentType)),
+    minimumQualification: extractFieldValue(text, DETAIL_LABELS.qualification),
+    jobDescription: extractFieldValue(text, DETAIL_LABELS.description),
+    applyUrl: listing.detailUrl || null,
+    sourceUrl: listing.detailUrl || null,
+  }
+}
 
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
@@ -250,49 +228,63 @@ const defaultFetchPage = async (url) => {
   }
 }
 
-const verifyNoPublicListings = (html, pageLabel) => {
-  if (hasPublicJobListingsSignal(html) || hasUnexpectedCareerOrAtsLink(html, HOMEPAGE_URL)) {
-    throw new Error(`Talentise Global ${pageLabel} now appears to expose public job listings`)
-  }
-}
-
 export const createTalentiseGlobalScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Talentise Global verified official homepage no longer matches the known public surface')
     }
-    verifyNoPublicListings(homepage.html, 'homepage')
-
-    const candidatePortal = await fetchPage(CANDIDATE_PORTAL_URL)
-    if (candidatePortal.status !== 200 || !hasCandidatePortalSignal(candidatePortal.html)) {
-      throw new Error('Talentise Global verified candidate portal no longer matches the known first-party jobseeker surface')
+    if (hasUnexpectedCareerOrAtsLink(homepage.html, HOMEPAGE_URL)) {
+      throw new Error('Talentise Global homepage now points to an unexpected ATS or careers surface')
     }
-    verifyNoPublicListings(candidatePortal.html, 'candidate portal')
 
-    const candidateLogin = await fetchPage(CANDIDATE_LOGIN_URL)
-    if (candidateLogin.status !== 200 || !hasCandidateLoginSignal(candidateLogin.html)) {
-      throw new Error('Talentise Global verified candidate login page no longer matches the known first-party surface')
+    const careersPage = await fetchPage(CAREERS_URL)
+    if (careersPage.status !== 200 || !hasPublicCareersSignal(careersPage.html)) {
+      throw new Error('Talentise Global verified public careers page no longer matches the known public surface')
     }
-    verifyNoPublicListings(candidateLogin.html, 'candidate login page')
 
-    const candidateSignup = await fetchPage(CANDIDATE_SIGNUP_URL)
-    if (candidateSignup.status !== 200 || !hasCandidateSignupSignal(candidateSignup.html)) {
-      throw new Error('Talentise Global verified candidate sign-up page no longer matches the known first-party surface')
+    const listings = extractCareerListings(careersPage.html)
+    if (listings.length === 0) {
+      throw new Error('Talentise Global verified public careers page no longer exposes public career details')
     }
-    verifyNoPublicListings(candidateSignup.html, 'candidate sign-up page')
 
-    for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
+    const jobs = []
+    for (const listing of listings) {
+      const detailPage = await fetchPage(listing.detailUrl)
+      const detail = extractCareerDetail(detailPage.html, listing)
 
-      if (!isVerifiedMissingCareersRoute(routePage)) {
-        throw new Error(
-          `Talentise Global verified no-public-careers route changed materially or now exposes public job listings: ${routePage.url || routeUrl}`,
-        )
+      if (detailPage.status !== 200 || !detail.title || !detail.location || !detail.jobDescription) {
+        throw new Error(`Talentise Global career detail page changed materially: ${listing.detailUrl}`)
       }
+
+      jobs.push({
+        title: detail.title,
+        company: COMPANY,
+        department: detail.department,
+        location: detail.location,
+        city: detail.city,
+        state: null,
+        country: 'India',
+        workplaceType: null,
+        jobId: listing.detailUrl.split('/').at(-1) || detail.title,
+        requisitionId: listing.detailUrl.split('/').at(-1) || detail.title,
+        sourceUrl: detail.sourceUrl,
+        applyUrl: detail.applyUrl,
+        link: detail.applyUrl,
+        source: SOURCE,
+        employmentType: detail.employmentType,
+        experienceRequired: detail.experienceRequired,
+        minimumQualification: detail.minimumQualification,
+        preferredQualification: null,
+        requiredSkills: [],
+        postingDate: null,
+        closingDate: null,
+        jobDescription: detail.jobDescription,
+        scrapedAt: new Date().toISOString(),
+      })
     }
 
-    return []
+    return jobs
   },
 })
 

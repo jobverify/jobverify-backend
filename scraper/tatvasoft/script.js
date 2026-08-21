@@ -88,7 +88,7 @@ export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = (normalizeWhitespace(stripTagsWithLineBreaks(page)) || '').toLowerCase()
 
-  return /TatvaSoft Career and Culture/i.test(extractTitle(page) || '')
+  return /(?:TatvaSoft Career and Culture|Careers at TatvaSoft)/i.test(extractTitle(page) || '')
     && text.includes('technology evolves, challenges grow')
     && (text.includes('jobs at tatvasoft') || text.includes('current openings'))
     && text.includes('business development executive')
@@ -123,7 +123,7 @@ export const hasOfficialDetailSignal = (html = '') => {
   const title = extractTitle(html) || ''
   const text = (normalizeWhitespace(stripTagsWithLineBreaks(html)) || '').toLowerCase()
 
-  return /TatvaSoft Career and Culture/i.test(title)
+  return /(?:TatvaSoft Career and Culture|Careers at TatvaSoft)/i.test(title)
     && Boolean(extractApplicationEmail(html))
     && text.includes('to apply for this position mail your updated resume on career@tatvasoft.com')
     && (

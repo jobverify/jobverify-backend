@@ -26,6 +26,19 @@ const brandPageHtml = `
     </body>
   </html>
 `
+const brandPageChallengeHtml = `
+  <html>
+    <head>
+      <title>You are being redirected...</title>
+    </head>
+    <body>
+      <noscript>Javascript is required. Please enable javascript before you are allowed to see this page.</noscript>
+      <script>
+        var sucuri_cloudproxy_js = '';
+      </script>
+    </body>
+  </html>
+`
 const jobsPageHtml = `
 <!doctype html>
 <html lang="en">
@@ -202,6 +215,80 @@ test('run returns India jobs from the verified Marut Air jobs board and detail p
   assert.equal(jobs[0].source, 'marutair')
   assert.equal(jobs[0].scrapedAt, '2026-08-15T00:00:00.000Z')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
+})
+
+test('run accepts the verified Marut Air brand-page challenge shell when the jobs board remains live', async () => {
+  const marutAir = await loadMarutAirModule()
+  const requestedUrls = []
+  const requestedBrandFallbackUrls = []
+
+  const jobs = await marutAir.createMarutAirScraper({ maxJobs: 1 }).run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === marutAir.BRAND_PAGE_URL) {
+        const error = new Error(`HTTP 307 for ${url}`)
+        error.status = 307
+        throw error
+      }
+
+      if (url === marutAir.JOBS_PAGE_URL) return jobsPageHtml
+      if (url === 'https://crm.marutair.com/jobs/full-stack-developer-32') {
+        return fullStackDeveloperDetailHtml
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    fetchBrandPageText: async (url) => {
+      requestedBrandFallbackUrls.push(url)
+      return brandPageChallengeHtml
+    },
+    now: () => '2026-08-17T00:00:00.000Z',
+  })
+
+  assert.deepEqual(requestedUrls, [
+    marutAir.BRAND_PAGE_URL,
+    marutAir.JOBS_PAGE_URL,
+    'https://crm.marutair.com/jobs/full-stack-developer-32',
+  ])
+  assert.deepEqual(requestedBrandFallbackUrls, [marutAir.BRAND_PAGE_URL])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Full Stack Developer')
+  assert.equal(jobs[0].scrapedAt, '2026-08-17T00:00:00.000Z')
+})
+
+test('run also accepts the wrapped retry error when the verified Marut Air brand page is challenge-gated', async () => {
+  const marutAir = await loadMarutAirModule()
+  const requestedBrandFallbackUrls = []
+
+  const jobs = await marutAir.createMarutAirScraper({ maxJobs: 1 }).run({
+    fetchText: async (url) => {
+      if (url === marutAir.BRAND_PAGE_URL) {
+        const cause = new Error(`HTTP 307 for ${url}`)
+        cause.status = 307
+
+        const error = new Error(`[marutair] All 3 attempts failed. Last error: HTTP 307 for ${url}`, { cause })
+        error.abortRetries = true
+        throw error
+      }
+
+      if (url === marutAir.JOBS_PAGE_URL) return jobsPageHtml
+      if (url === 'https://crm.marutair.com/jobs/full-stack-developer-32') {
+        return fullStackDeveloperDetailHtml
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    fetchBrandPageText: async (url) => {
+      requestedBrandFallbackUrls.push(url)
+      return brandPageChallengeHtml
+    },
+    now: () => '2026-08-17T00:00:00.000Z',
+  })
+
+  assert.deepEqual(requestedBrandFallbackUrls, [marutAir.BRAND_PAGE_URL])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Full Stack Developer')
 })
 
 test('Marut Air fails closed when the verified jobs board drifts materially', async () => {

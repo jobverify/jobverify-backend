@@ -16,11 +16,11 @@ test('Mozark is registered as a verified first-party zero-job sentinel without a
   assert.equal(provider.countryFilter, 'Global')
   assert.equal(
     provider.paginationStrategy,
-    'homepage-plus-sitemap-index-plus-pages-sitemap-plus-missing-careers-routes',
+    'homepage-plus-missing-sitemap-endpoints-plus-missing-careers-routes',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-sitemap-index+verified-pages-sitemap-without-careers+missing-careers-routes-return-empty',
+    'verified-homepage+verified-missing-sitemap-endpoints+missing-careers-routes-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

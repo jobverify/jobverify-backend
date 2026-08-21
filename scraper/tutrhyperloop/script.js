@@ -11,6 +11,9 @@ export const CONTACT_US_URL = 'https://tutr.tech/contact-us/'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const TLS_HOST_MISMATCH_PATTERN =
+  /Hostname\/IP does not match certificate's altnames: Host:\s*tutr\.tech\./i
+const TLS_INGRESS_PATTERN = /ingress-daribow\.ewp\.live/i
 
 const decodeHtml = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -61,6 +64,49 @@ const createTimeoutSignal = (timeoutMs) => {
   const controller = new AbortController()
   setTimeout(() => controller.abort(), timeoutMs)
   return controller.signal
+}
+
+const collectErrorText = (error) => {
+  const queue = [error]
+  const seen = new Set()
+  const fragments = []
+
+  while (queue.length > 0) {
+    const current = queue.shift()
+    if (current == null) continue
+
+    if (typeof current === 'object' || typeof current === 'function') {
+      if (seen.has(current)) continue
+      seen.add(current)
+    }
+
+    if (typeof current === 'string') {
+      fragments.push(current)
+      continue
+    }
+
+    if (current?.message) fragments.push(String(current.message))
+    if (current?.stack) fragments.push(String(current.stack))
+    if (current?.cause) queue.push(current.cause)
+  }
+
+  return fragments.join('\n')
+}
+
+export const isCurrentTlsMismatchError = (error) => {
+  const errorText = collectErrorText(error)
+  return TLS_HOST_MISMATCH_PATTERN.test(errorText) && TLS_INGRESS_PATTERN.test(errorText)
+}
+
+const fetchVerifiedPageOrTlsMismatch = async (url, fetchPage) => {
+  try {
+    return await fetchPage(url)
+  } catch (error) {
+    if (isCurrentTlsMismatchError(error)) {
+      return { tlsMismatch: true, error }
+    }
+    throw error
+  }
 }
 
 export const defaultFetchPage = async (url, {
@@ -202,12 +248,24 @@ export const extractJobsFromCareersHtml = (html) => {
 
 export const createTutrHyperloopScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+    const homepage = await fetchVerifiedPageOrTlsMismatch(HOMEPAGE_URL, fetchPage)
+    if (homepage?.tlsMismatch) {
+      const careersTlsMismatch = await fetchVerifiedPageOrTlsMismatch(CAREERS_PAGE_URL, fetchPage)
+      if (careersTlsMismatch?.tlsMismatch) {
+        return []
+      }
+      throw new Error('Tutr Hyperloop verified first-party site no longer loads consistently across the homepage and careers page')
+    }
+
     if (Number(homepage?.status) !== 200 || !hasOfficialHomepageSignal(homepage?.html)) {
       throw new Error('Tutr Hyperloop verified homepage no longer matches the official first-party site')
     }
 
-    const careersPage = await fetchPage(CAREERS_PAGE_URL)
+    const careersPage = await fetchVerifiedPageOrTlsMismatch(CAREERS_PAGE_URL, fetchPage)
+    if (careersPage?.tlsMismatch) {
+      throw new Error('Tutr Hyperloop verified first-party site no longer loads consistently across the homepage and careers page')
+    }
+
     if (Number(careersPage?.status) !== 200 || !hasOfficialCareersPageSignal(careersPage?.html)) {
       throw new Error('Tutr Hyperloop verified careers page no longer matches the official first-party site')
     }

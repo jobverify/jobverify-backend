@@ -17,6 +17,7 @@ export const JOBS_PAGE_URL = `${BASE_URL}/jobs`
 export const PRIMARY_USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 export const FALLBACK_USER_AGENT = 'curl/8.7.1'
+const REQUEST_TIMEOUT_MS = 15000
 
 const decodeHtml = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 16)))
@@ -87,12 +88,27 @@ const fetchTextWithUserAgent = (url, userAgent, fetchTextImpl = fetchTextWithRet
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
-  timeoutMs: 15000,
+  timeoutMs: REQUEST_TIMEOUT_MS,
 })
 
 export const isMarutAirFallbackableTransportError = (error) =>
   /connect timeout error|timed out|timeout|fetch failed|getaddrinfo|other side closed|terminated/i
     .test(String(error?.message ?? error?.cause?.message ?? error ?? ''))
+
+const errorHasHttpStatus = (error, status) => {
+  const seen = new Set()
+  let current = error
+
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    if (Number(current?.status) === status) {
+      return true
+    }
+    current = current?.cause
+  }
+
+  return false
+}
 
 export const createMarutAirFetchText = ({
   fetchTextImpl = fetchTextWithRetry,
@@ -119,6 +135,60 @@ export const hasBrandPageSignal = (html) => {
     && /All Rights Reserved by Marut Air/i.test(text)
     && /\bCareer\b/i.test(text)
 }
+
+const hasBrandPageChallengeSignal = (html) => {
+  const page = String(html ?? '')
+  const text = stripTags(page)
+
+  return /<title[^>]*>\s*You are being redirected\.\.\.\s*<\/title>/i.test(page)
+    && /javascript is required/i.test(text)
+    && /please enable javascript before you are allowed to see this page/i.test(text)
+    && /sucuri_cloudproxy_js/i.test(page)
+}
+
+const fetchBrandPageTextWithUserAgent = async (url, userAgent, fetchImpl = fetch) => {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
+  try {
+    const response = await fetchImpl(url, {
+      headers: {
+        'User-Agent': userAgent,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'manual',
+      signal: controller.signal,
+    })
+    const html = await response.text()
+
+    if (response.ok) return html
+    if (response.status === 307 && hasBrandPageChallengeSignal(html)) {
+      return html
+    }
+
+    const error = new Error(`HTTP ${response.status} for ${url}`)
+    error.status = response.status
+    throw error
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+export const createMarutAirBrandPageFetchText = ({
+  fetchImpl = fetch,
+} = {}) => async (url) => {
+  try {
+    return await fetchBrandPageTextWithUserAgent(url, PRIMARY_USER_AGENT, fetchImpl)
+  } catch (error) {
+    if (!isMarutAirFallbackableTransportError(error)) {
+      throw error
+    }
+
+    return fetchBrandPageTextWithUserAgent(url, FALLBACK_USER_AGENT, fetchImpl)
+  }
+}
+
+const defaultFetchBrandPageText = createMarutAirBrandPageFetchText()
 
 export const hasJobsPageSignal = (html) => {
   const page = String(html ?? '')
@@ -221,10 +291,22 @@ export const createMarutAirScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, maxJobs: overrideMaxJobs, now: overrideNow } = {}) {
-    const brandPageHtml = await fetchText(BRAND_PAGE_URL)
+  async run({
+    fetchText = defaultFetchText,
+    fetchBrandPageText = defaultFetchBrandPageText,
+    maxJobs: overrideMaxJobs,
+    now: overrideNow,
+  } = {}) {
+    let brandPageHtml
 
-    if (!hasBrandPageSignal(brandPageHtml)) {
+    try {
+      brandPageHtml = await fetchText(BRAND_PAGE_URL)
+    } catch (error) {
+      if (!errorHasHttpStatus(error, 307)) throw error
+      brandPageHtml = await fetchBrandPageText(BRAND_PAGE_URL)
+    }
+
+    if (!hasBrandPageSignal(brandPageHtml) && !hasBrandPageChallengeSignal(brandPageHtml)) {
       throw new Error('Marut Air brand page no longer exposes the verified first-party signals')
     }
 

@@ -13,81 +13,47 @@ const officialHomepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Mozark | AI-Native Synthetic Testing - Built for Enterprise &amp; Public Sector</title>
-    <meta property="og:site_name" content="Mozark">
+    <title>Mozark.ai</title>
     <meta
       name="description"
-      content="Monitor the user experience on your app or network without privacy intrusive end user data collection agents or expensive backend telemetry data collection"
+      content="Digital experience intelligence across user, application and network layers."
     >
   </head>
   <body>
     <main>
-      <h1>AI-Native Synthetic Testing</h1>
-      <a href="/contact-us">Contact Us</a>
+      <nav>
+        <a href="/application-experience">Application Experience</a>
+        <a href="/network-experience">Network Experience</a>
+        <a href="/about-us">About Us</a>
+        <a href="/contact-us">Contact Us</a>
+      </nav>
+      <p>DIGITAL EXPERIENCE ASSURANCE</p>
+      <h1>Experience Is All</h1>
+      <p>Digital experience assurance across user, application and network layers.</p>
+      <p>Great User Experience Requires Great Apps and Great Networks. Mozark Assures That.</p>
+      <p>Ready to elevate your digital experience? Join hundreds of enterprises using Mozark AI.</p>
     </main>
   </body>
 </html>
 `
 
-const officialSitemapIndexXml = `
-<?xml version="1.0" encoding="UTF-8"?>
-<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" generatedBy="WIX">
-  <sitemap>
-    <loc>https://www.mozark.ai/pages-sitemap.xml</loc>
-    <lastmod>2026-05-20</lastmod>
-  </sitemap>
-</sitemapindex>
-`
-
-const officialPagesSitemapXml = `
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" generatedBy="WIX">
-  <url>
-    <loc>https://www.mozark.ai/privacy-policy-general</loc>
-    <lastmod>2026-05-20</lastmod>
-  </url>
-  <url>
-    <loc>https://www.mozark.ai/blank</loc>
-    <lastmod>2026-05-20</lastmod>
-  </url>
-  <url>
-    <loc>https://www.mozark.ai/contact-us</loc>
-    <lastmod>2026-05-20</lastmod>
-  </url>
-  <url>
-    <loc>https://www.mozark.ai/home-1</loc>
-    <lastmod>2026-05-20</lastmod>
-  </url>
-  <url>
-    <loc>https://www.mozark.ai/privacy-policy-5gmark</loc>
-    <lastmod>2026-05-20</lastmod>
-  </url>
-  <url>
-    <loc>https://www.mozark.ai/testmozark01082024</loc>
-    <lastmod>2026-05-20</lastmod>
-  </url>
-  <url>
-    <loc>https://www.mozark.ai/blank-1</loc>
-    <lastmod>2026-05-20</lastmod>
-  </url>
-  <url>
-    <loc>https://www.mozark.ai</loc>
-    <lastmod>2026-05-20</lastmod>
-  </url>
-</urlset>
-`
-
-const officialMissingRouteHtml = `
+const officialMissingSurfaceHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>404 Error: Page Not Found</title>
+    <title>404: This page could not be found.</title>
   </head>
-  <body></body>
+  <body>
+    <main>
+      <a href="/">Mozark.ai</a>
+      <h1>404</h1>
+      <p>This page could not be found.</p>
+    </main>
+  </body>
 </html>
 `
 
-test('Mozark scraper constants stay pinned to the verified homepage, sitemap handoff, and missing careers routes', async () => {
+test('Mozark scraper constants stay pinned to the verified homepage and missing public-surface endpoints', async () => {
   const mozark = await loadMozarkModule()
 
   assert.equal(mozark.SOURCE, 'mozark')
@@ -107,13 +73,19 @@ test('Mozark scraper constants stay pinned to the verified homepage, sitemap han
   ])
   assert.equal(mozark.hasOfficialHomepageSignal(officialHomepageHtml), true)
   assert.equal(mozark.hasPublicJobsSignal(officialHomepageHtml), false)
-  assert.equal(mozark.extractPagesSitemapUrl(officialSitemapIndexXml), mozark.PAGES_SITEMAP_URL)
-  assert.equal(mozark.sitemapHasCareerLikeUrl(officialPagesSitemapXml), false)
   assert.equal(
     mozark.isVerifiedMissingCareersRoute({
       status: 404,
       url: mozark.NO_PUBLIC_CAREERS_ROUTE_URLS[0],
-      html: officialMissingRouteHtml,
+      html: officialMissingSurfaceHtml,
+    }),
+    true,
+  )
+  assert.equal(
+    mozark.isVerifiedMissingCareersRoute({
+      status: 404,
+      url: mozark.SITEMAP_INDEX_URL,
+      html: officialMissingSurfaceHtml,
     }),
     true,
   )
@@ -127,7 +99,7 @@ test('Mozark scraper constants stay pinned to the verified homepage, sitemap han
   )
 })
 
-test('Mozark returns no jobs only while the verified homepage, sitemap, and careers routes stay unchanged', async () => {
+test('Mozark returns no jobs only while the verified homepage and missing public-surface endpoints stay unchanged', async () => {
   const mozark = await loadMozarkModule()
   const requestedUrls = []
 
@@ -139,16 +111,12 @@ test('Mozark returns no jobs only while the verified homepage, sitemap, and care
         return { status: 200, url, html: officialHomepageHtml }
       }
 
-      if (url === mozark.SITEMAP_INDEX_URL) {
-        return { status: 200, url, html: officialSitemapIndexXml }
-      }
-
-      if (url === mozark.PAGES_SITEMAP_URL) {
-        return { status: 200, url, html: officialPagesSitemapXml }
+      if (url === mozark.SITEMAP_INDEX_URL || url === mozark.PAGES_SITEMAP_URL) {
+        return { status: 404, url, html: officialMissingSurfaceHtml }
       }
 
       if (mozark.NO_PUBLIC_CAREERS_ROUTE_URLS.includes(url)) {
-        return { status: 404, url, html: officialMissingRouteHtml }
+        return { status: 404, url, html: officialMissingSurfaceHtml }
       }
 
       throw new Error(`Unexpected URL: ${url}`)
@@ -191,17 +159,14 @@ test('Mozark fails closed when the verified no-public-careers contract drifts', 
           return {
             status: 200,
             url,
-            html: officialSitemapIndexXml.replace(
-              'https://www.mozark.ai/pages-sitemap.xml',
-              'https://www.mozark.ai/jobs-sitemap.xml',
-            ),
+            html: '<?xml version="1.0"?><urlset><url><loc>https://www.mozark.ai/careers</loc></url></urlset>',
           }
         }
 
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /verified sitemap index/i,
+    /verified sitemap endpoint/i,
   )
 
   await assert.rejects(
@@ -211,40 +176,8 @@ test('Mozark fails closed when the verified no-public-careers contract drifts', 
           return { status: 200, url, html: officialHomepageHtml }
         }
 
-        if (url === mozark.SITEMAP_INDEX_URL) {
-          return { status: 200, url, html: officialSitemapIndexXml }
-        }
-
-        if (url === mozark.PAGES_SITEMAP_URL) {
-          return {
-            status: 200,
-            url,
-            html: officialPagesSitemapXml.replace(
-              '</urlset>',
-              '<url><loc>https://www.mozark.ai/careers</loc></url></urlset>',
-            ),
-          }
-        }
-
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /verified pages sitemap/i,
-  )
-
-  await assert.rejects(
-    mozark.createMozarkScraper().run({
-      fetchPage: async (url) => {
-        if (url === mozark.HOMEPAGE_URL) {
-          return { status: 200, url, html: officialHomepageHtml }
-        }
-
-        if (url === mozark.SITEMAP_INDEX_URL) {
-          return { status: 200, url, html: officialSitemapIndexXml }
-        }
-
-        if (url === mozark.PAGES_SITEMAP_URL) {
-          return { status: 200, url, html: officialPagesSitemapXml }
+        if (url === mozark.SITEMAP_INDEX_URL || url === mozark.PAGES_SITEMAP_URL) {
+          return { status: 404, url, html: officialMissingSurfaceHtml }
         }
 
         if (url === mozark.NO_PUBLIC_CAREERS_ROUTE_URLS[0]) {
@@ -255,7 +188,7 @@ test('Mozark fails closed when the verified no-public-careers contract drifts', 
           }
         }
 
-        return { status: 404, url, html: officialMissingRouteHtml }
+        return { status: 404, url, html: officialMissingSurfaceHtml }
       },
     }),
     /careers routes changed materially|public jobs/i,

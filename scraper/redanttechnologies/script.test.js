@@ -110,6 +110,28 @@ test('RedAnt Technologies sentinel returns no jobs while the verified first-part
   assert.deepEqual(jobs, [])
 })
 
+test('RedAnt Technologies returns no jobs when the verified homepage is temporarily unavailable', async () => {
+  const redAntTechnologies = await loadRedAntTechnologiesModule()
+
+  const jobs = await redAntTechnologies.createRedAntTechnologiesScraper().run({
+    fetchPage: async (url) => {
+      if (url === redAntTechnologies.HOMEPAGE_URL) {
+        const error = new Error('fetch failed')
+        error.cause = {
+          code: 'EAI_AGAIN',
+          hostname: 'www.redanttech.com',
+          message: 'getaddrinfo EAI_AGAIN www.redanttech.com',
+        }
+        throw error
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
 test('RedAnt Technologies sentinel fails closed when the homepage or missing-route surface drifts', async () => {
   const redAntTechnologies = await loadRedAntTechnologiesModule()
 

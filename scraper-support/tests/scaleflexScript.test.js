@@ -22,6 +22,26 @@ const HOMEPAGE_HTML = `
 </html>
 `
 
+const CURRENT_HOMEPAGE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Digital Asset Management Software | Scaleflex</title>
+  </head>
+  <body>
+    <main>
+      <h1>One place for every visual. Days back in your week.</h1>
+      <p>Turns visuals into high-converting digital experiences for modern teams.</p>
+      <p>Trusted by 1,300+ brands worldwide.</p>
+    </main>
+    <footer>
+      <a href="https://portals.scaleflex.com/s/GNQy1BKc/en/home">Media Kit</a>
+      <a href="https://portals.scaleflex.com/s/xJfYX5yl/en/home">We are Hiring</a>
+    </footer>
+  </body>
+</html>
+`
+
 const LEGACY_HOMEPAGE_HTML = `
 <!doctype html>
 <html lang="en">
@@ -103,6 +123,16 @@ test('Scaleflex sentinel recognizes the verified homepage, official careers hand
       html: FIRST_PARTY_404_HTML,
     }),
     true,
+  )
+})
+
+test('Scaleflex accepts the Monday, August 17, 2026 homepage copy refresh while preserving the official hiring handoff', async () => {
+  const scaleflex = await loadModule()
+
+  assert.equal(scaleflex.hasOfficialHomepageSignal(CURRENT_HOMEPAGE_HTML), true)
+  assert.equal(
+    scaleflex.extractOfficialCareersHandoffUrl(CURRENT_HOMEPAGE_HTML),
+    'https://portals.scaleflex.com/s/xJfYX5yl/en/home',
   )
 })
 

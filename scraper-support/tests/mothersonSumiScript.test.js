@@ -13,7 +13,7 @@ const officialCareersLandingHtml = `
       <a href="https://careers.motherson.com/en">More about life at Motherson</a>
       <a href="https://careers.motherson.com/en">Your career opportunities</a>
     </main>
-    <footer>Copyright © Motherson. All rights reserved.</footer>
+    <footer>Copyright Motherson. All rights reserved.</footer>
   </body>
 </html>
 `
@@ -67,7 +67,7 @@ const jobsBoardHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Jobs — Motherson Careers</title>
+    <title>Jobs - Motherson Careers</title>
   </head>
   <body>
     <main>
@@ -98,6 +98,49 @@ const jobsBoardHtmlWithTextDrift = `
           jobsListing: {
             allJobs: jobsBoardData.props.pageProps.allJobs,
           },
+        },
+      },
+    })}</script>
+  </body>
+</html>
+`
+
+const jobsBoardHtmlWithStaleIndiaDetail = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Jobs - Motherson Careers</title>
+  </head>
+  <body>
+    <main>
+      <h1>All jobs</h1>
+      <h2>Job portal</h2>
+      <p>Wecome to our careers platform</p>
+    </main>
+    <script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+      props: {
+        pageProps: {
+          allJobs: [
+            ...jobsBoardData.props.pageProps.allJobs,
+            {
+              id: 'stale-india-detail',
+              slug: 'senior-engineer-ped-5875',
+              title: 'Senior Engineer PED',
+              searchTerms: 'Senior Engineer PED Chennai India Engineering Experienced',
+              location: {
+                name: 'Chennai',
+                country: {
+                  name: 'India',
+                },
+              },
+              businessDivision: null,
+              company: null,
+              functionalAreas: [],
+              careerLevel: {
+                name: 'Experienced',
+              },
+            },
+          ],
         },
       },
     })}</script>
@@ -143,7 +186,7 @@ const detailPageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Assistant Manager Paintshop — Motherson Careers</title>
+    <title>Assistant Manager Paintshop - Motherson Careers</title>
   </head>
   <body>
     <script id="__NEXT_DATA__" type="application/json">${JSON.stringify(detailPageData)}</script>
@@ -284,6 +327,63 @@ test('Motherson Sumi run follows the verified careers handoff, board page, and I
       source: 'mothersonsumi',
       link: 'https://career55.sapsf.eu/career?company=smrautomot&career_ns=job_application&career_job_req_id=5510',
       scrapedAt: '2026-07-16T00:00:00.000Z',
+    },
+  ])
+})
+
+test('Motherson Sumi skips stale India listings whose public detail pages now return 404 while keeping healthy jobs', async () => {
+  const motherson = await loadMothersonSumiModule()
+  const requestedUrls = []
+
+  const jobs = await motherson.createMothersonSumiScraper({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === motherson.CAREERS_LANDING_URL) return officialCareersLandingHtml
+      if (url === motherson.JOBS_BOARD_URL) return jobsBoardHtmlWithStaleIndiaDetail
+      if (url === 'https://careers.motherson.com/en/job/assistant-manager-paintshop-5510') {
+        return detailPageHtml
+      }
+      if (url === 'https://careers.motherson.com/en/job/senior-engineer-ped-5875') {
+        const error = new Error(`HTTP 404 for ${url}`)
+        error.status = 404
+        throw error
+      }
+
+      throw new Error(`Unexpected Motherson Sumi URL: ${url}`)
+    },
+    now: () => '2026-08-20T00:00:00.000Z',
+  }).run()
+
+  assert.deepEqual(requestedUrls, [
+    motherson.CAREERS_LANDING_URL,
+    motherson.JOBS_BOARD_URL,
+    'https://careers.motherson.com/en/job/assistant-manager-paintshop-5510',
+    'https://careers.motherson.com/en/job/senior-engineer-ped-5875',
+  ])
+  assert.deepEqual(jobs, [
+    {
+      title: 'Assistant Manager Paintshop',
+      company: 'Motherson Sumi',
+      department: 'Manufacturing/Operations',
+      location: 'Chennai, India',
+      city: 'Chennai',
+      country: 'India',
+      jobId: 'dM7p8Gg0SPGUtG1ZwfZFwQ',
+      requisitionId: '5510',
+      sourceUrl: 'https://careers.motherson.com/en/job/assistant-manager-paintshop-5510',
+      applyUrl: 'https://career55.sapsf.eu/career?company=smrautomot&career_ns=job_application&career_job_req_id=5510',
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: 'Introduction: This position replacement for Mr. Abdul Wahid Ansari A L- Assistant manager (Paint Shop Production)\n\nTasks: Develop, program, and fine-tune robotic painting processes (ABB, Fanuc, Durr systems). Troubleshoot robot paths, spray parameters, and sequencing issues.\n\nProfile: BE/B.Tech & Diploma in Paint Technology, Mechanical, Chemical, or relevant field.\n\nWhat we offer: The team is growing at the same time our Group grows.',
+      source: 'mothersonsumi',
+      link: 'https://career55.sapsf.eu/career?company=smrautomot&career_ns=job_application&career_job_req_id=5510',
+      scrapedAt: '2026-08-20T00:00:00.000Z',
     },
   ])
 })

@@ -27,6 +27,17 @@ const formatPercent = (numerator, denominator) => (
   `${(denominator > 0 ? (numerator / denominator) * 100 : 0).toFixed(1)}%`
 )
 
+const toValidDate = (value) => {
+  if (value == null) return null
+  const date = value instanceof Date ? value : new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+const formatUtcTimestamp = (value) => {
+  const date = toValidDate(value)
+  return date ? date.toISOString().replace('.000Z', ' UTC').replace('T', ' ') : 'unavailable'
+}
+
 const formatAsciiTable = (headers, rows) => {
   const normalizedRows = rows.map((row) => row.map((value) => String(value)))
   const widths = headers.map((header, index) => Math.max(
@@ -74,7 +85,7 @@ const groupFailures = (attention) => {
     ])
 }
 
-export const formatFinalSummaryTable = (summary = {}, { previousRun = null } = {}) => {
+export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runTiming = null } = {}) => {
   const rows = Object.entries(summary).map(([source, result = {}]) => ({ source, result }))
   const processed = rows.length
   const counts = rows.reduce((total, { result }) => {
@@ -93,9 +104,32 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null } = {
   const slowest = sortByMetricThenSource(rows, ({ result }) => toFiniteNonNegative(result.durationMs))[0]
   const attention = rows.filter(({ result }) => ['Upstream', 'Fail'].includes(formatStatus(result)))
   const timedOutSources = attention.filter(({ result }) => isTimedOut(result)).length
+  const dataQuality = rows.reduce((total, { result }) => ({
+    missingTitle: total.missingTitle + toFiniteNonNegative(result.dataQuality?.missingTitle),
+    missingLocation: total.missingLocation + toFiniteNonNegative(result.dataQuality?.missingLocation),
+    missingApplyUrl: total.missingApplyUrl + toFiniteNonNegative(result.dataQuality?.missingApplyUrl),
+  }), { missingTitle: 0, missingLocation: 0, missingApplyUrl: 0 })
+  const publishableFilters = rows.reduce((total, { result }) => ({
+    eligibleJobs: total.eligibleJobs + toFiniteNonNegative(result.eligibleJobs),
+    filteredNonIndia: total.filteredNonIndia + toFiniteNonNegative(result.filteredNonIndia),
+    filteredOld: total.filteredOld + toFiniteNonNegative(result.filteredOld),
+    filteredClosed: total.filteredClosed + toFiniteNonNegative(result.filteredClosed),
+    filteredInvalidUrl: total.filteredInvalidUrl + toFiniteNonNegative(result.filteredInvalidUrl),
+  }), {
+    eligibleJobs: 0,
+    filteredNonIndia: 0,
+    filteredOld: 0,
+    filteredClosed: 0,
+    filteredInvalidUrl: 0,
+  })
   const retriedRows = rows.filter(({ result }) => Number(result.retry?.retries) > 0)
   const totalAttempts = rows.reduce((total, { result }) => total + Number(result.retry?.attemptsUsed || 1), 0)
   const retryDelayMs = rows.reduce((total, { result }) => total + toFiniteNonNegative(result.retry?.retryDelayMs), 0)
+  const startedAt = toValidDate(runTiming?.startedAt)
+  const completedAt = toValidDate(runTiming?.completedAt)
+  const elapsedMs = startedAt && completedAt
+    ? Math.max(0, completedAt.getTime() - startedAt.getTime())
+    : null
   const previousSources = previousRun?.sources || null
   const previousEntries = previousSources ? Object.entries(previousSources) : []
   const previousJobs = previousRun?.overall?.totalJobs ?? null
@@ -131,6 +165,13 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null } = {
 
   const sections = [
     'Analytical Pipeline Summary',
+    'RUN TIMING',
+    formatAsciiTable(['Metric', 'Value'], [
+      ['Start time', formatUtcTimestamp(startedAt)],
+      ['End time', formatUtcTimestamp(completedAt)],
+      ['Total time taken', elapsedMs == null ? 'unavailable' : formatSeconds(elapsedMs)],
+      ['Cumulative worker time', formatSeconds(cumulativeDuration)],
+    ]),
     'RUN HEALTH',
     formatAsciiTable(['Metric', 'Value'], [
       ['Sources processed', processed],
@@ -139,25 +180,45 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null } = {
       ['Upstream issues', counts.Upstream],
       ['Failed', counts.Fail],
       ['Success rate', formatPercent(counts.OK, processed)],
+      ['Successful-source rate', formatPercent(counts.OK, processed)],
       ['Zero-job successes', zeroJobSuccesses],
     ]),
     'JOB YIELD',
     formatAsciiTable(['Metric', 'Value'], [
       ['India jobs returned', totalJobs],
       ['Sources with jobs', sourcesWithJobs],
+      ['Job-yield rate', formatPercent(sourcesWithJobs, processed)],
       ['Average jobs/source', processed > 0 ? (totalJobs / processed).toFixed(1) : '0.0'],
       ['Median jobs/source', median(jobsPerSource).toFixed(1)],
       ['Top-5 source share', formatPercent(topJobShare, totalJobs)],
       ['New jobs', totalNew],
       ['Updated jobs', totalUpdated],
     ]),
+    'PUBLISHABLE FILTERS',
+    formatAsciiTable(['Metric', 'Value'], [
+      ['Publishable jobs', publishableFilters.eligibleJobs],
+      ['Publishable rate', formatPercent(publishableFilters.eligibleJobs, totalJobs)],
+      ['Rejected outside India', publishableFilters.filteredNonIndia],
+      ['Rejected older than retention', publishableFilters.filteredOld],
+      ['Rejected past closing date', publishableFilters.filteredClosed],
+      ['Rejected invalid URL', publishableFilters.filteredInvalidUrl],
+    ]),
     'PERFORMANCE',
     formatAsciiTable(['Metric', 'Value'], [
-      ['Cumulative worker time', formatSeconds(cumulativeDuration)],
+      ['Parallelism factor', elapsedMs && elapsedMs > 0 ? `${(cumulativeDuration / elapsedMs).toFixed(1)}x` : 'unavailable'],
       ['Median source runtime', formatSeconds(median(durations))],
       ['P95 source runtime', formatSeconds(percentile(durations, 95))],
       ['Slowest source', slowest ? `${slowest.source} (${formatSeconds(toFiniteNonNegative(slowest.result.durationMs))})` : 'none'],
       ['Timed-out sources', timedOutSources],
+    ]),
+    'DATA QUALITY',
+    formatAsciiTable(['Metric', 'Value'], [
+      ['Missing title', dataQuality.missingTitle],
+      ['Missing-title rate', formatPercent(dataQuality.missingTitle, totalJobs)],
+      ['Missing location', dataQuality.missingLocation],
+      ['Missing-location rate', formatPercent(dataQuality.missingLocation, totalJobs)],
+      ['Missing application URL', dataQuality.missingApplyUrl],
+      ['Missing-application-URL rate', formatPercent(dataQuality.missingApplyUrl, totalJobs)],
     ]),
     'RETRY AND TIMEOUT PRESSURE',
     formatAsciiTable(['Metric', 'Value'], [

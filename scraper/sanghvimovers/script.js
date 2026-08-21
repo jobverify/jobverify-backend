@@ -20,17 +20,19 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const LABELS = [
-  'Job ID :',
-  'Job Title :',
-  'Job Description :',
-  'Key Skills :',
-  'Roles & Responsibilities :',
-  'Work Experience (Min & Max in years) :',
-  'Qualification :',
-  'Job Location :',
-  'No. of Positions :',
-]
+const LABEL_ALIASES = {
+  title: ['Job Title :', 'Position:'],
+  description: ['Job Description :', 'Job Summary:'],
+  skills: ['Key Skills :', 'Must have skills'],
+  responsibilities: ['Roles & Responsibilities :', 'Key Responsibilities :', 'Job Role'],
+  experience: ['Work Experience (Min & Max in years) :', 'Experience:'],
+  qualification: ['Qualification :', 'Education :'],
+  location: ['Job Location :', 'Location:'],
+  employmentType: ['Job Type:'],
+  reportsTo: ['Reports To:'],
+}
+
+const LABELS = Object.values(LABEL_ALIASES).flat()
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
@@ -80,10 +82,28 @@ const extractRawField = (block, label) => {
 
 const extractField = (block, label) => normalizeString(extractRawField(block, label))
 
+const extractFirstAvailableField = (block, labels = []) => {
+  for (const label of labels) {
+    const value = extractField(block, label)
+    if (value) return value
+  }
+
+  return null
+}
+
 const extractListField = (block, label) => (extractRawField(block, label) || '')
   .split('\n')
   .map((item) => normalizeString(item))
   .filter(Boolean)
+
+const extractFirstAvailableListField = (block, labels = []) => {
+  for (const label of labels) {
+    const values = extractListField(block, label)
+    if (values.length > 0) return values
+  }
+
+  return []
+}
 
 const buildJobId = (title, location) => `${slugify(title)}-${slugify(location || 'india')}`
 
@@ -219,7 +239,11 @@ const extractBlocks = (html = '') => {
   return jobsText
     .split(/\bApply Now\b/i)
     .map((block) => block.trim())
-    .filter((block) => /Job Title\s*:/i.test(block))
+    .filter((block) => (
+      /Job Title\s*:/i.test(block)
+      || /Position\s*:/i.test(block)
+      || (/Location\s*:/i.test(block) && /(?:Job\s*Summary|Job\s*Role|Key Responsibilities)/i.test(block))
+    ))
 }
 
 export const hasVerifiedCareersPageSignal = (html = '') => {
@@ -232,7 +256,12 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
 
 export const hasPublicJobSignals = (html = '') => {
   const text = htmlToText(html)
-  return /Job Title\s*:/i.test(text) && /\bApply Now\b/i.test(text)
+  return /\bApply Now\b/i.test(text)
+    && (
+      /Job Title\s*:/i.test(text)
+      || /Position\s*:/i.test(text)
+      || /Job\s*Role/i.test(text)
+    )
 }
 
 export const extractStaticJobs = (
@@ -242,11 +271,17 @@ export const extractStaticJobs = (
   } = {},
 ) => extractBlocks(html)
   .map((block) => {
-    const title = extractField(block, 'Job Title :')
-    const location = extractField(block, 'Job Location :') || 'India'
+    const title = extractFirstAvailableField(block, LABEL_ALIASES.title)
+      || normalizeString(block.split('\n')[0])
+    const location = extractFirstAvailableField(block, LABEL_ALIASES.location) || 'India'
     const jobId = buildJobId(title, location)
 
     if (!title) return null
+
+    const requiredSkills = [
+      ...extractFirstAvailableListField(block, LABEL_ALIASES.skills),
+      ...extractFirstAvailableListField(block, LABEL_ALIASES.responsibilities),
+    ]
 
     return {
       title,
@@ -263,14 +298,14 @@ export const extractStaticJobs = (
       applyUrl: CAREERS_URL,
       link: CAREERS_URL,
       source: SOURCE,
-      employmentType: null,
-      experienceRequired: extractField(block, 'Work Experience (Min & Max in years) :'),
-      minimumQualification: extractField(block, 'Qualification :'),
+      employmentType: extractFirstAvailableField(block, LABEL_ALIASES.employmentType),
+      experienceRequired: extractFirstAvailableField(block, LABEL_ALIASES.experience),
+      minimumQualification: extractFirstAvailableField(block, LABEL_ALIASES.qualification),
       preferredQualification: null,
-      requiredSkills: extractListField(block, 'Key Skills :'),
+      requiredSkills,
       postingDate: null,
       closingDate: null,
-      jobDescription: extractField(block, 'Job Description :'),
+      jobDescription: extractFirstAvailableField(block, LABEL_ALIASES.description),
       scrapedAt,
     }
   })

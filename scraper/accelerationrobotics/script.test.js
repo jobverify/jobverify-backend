@@ -51,6 +51,8 @@ const buildConnectTimeoutError = () => {
   return error
 }
 
+const buildHttp530Error = () => new Error('HTTP 530 for https://recruit.accelerationrobotics.in/')
+
 test('extractJobListings maps official Acceleration Robotics career cards', async () => {
   const accelerationRobotics = await loadModule()
   assert.ok(accelerationRobotics)
@@ -69,6 +71,7 @@ test('extractJobListings maps official Acceleration Robotics career cards', asyn
   assert.equal(SOURCE, 'accelerationrobotics')
   assert.equal(VERIFIED_ON, '2026-08-15')
   assert.equal(hasConnectTimeoutFailure(buildConnectTimeoutError()), true)
+  assert.equal(hasConnectTimeoutFailure(buildHttp530Error()), true)
   assert.equal(hasOfficialCareersSignal(careersHtml), true)
 
   assert.deepEqual(extractJobListings(careersHtml), [{
@@ -135,7 +138,7 @@ test('run keeps the listing when an Acceleration Robotics detail page times out'
   assert.equal(jobs[0].link, jobs[0].sourceUrl)
 })
 
-test('run returns [] when the verified Acceleration Robotics careers page times out in the current runtime', async () => {
+test('run returns [] when the verified Acceleration Robotics careers page is temporarily unavailable in the current runtime', async () => {
   const accelerationRobotics = await loadModule()
   assert.ok(accelerationRobotics)
   const { CAREERS_URL, createAccelerationRoboticsScraper } = accelerationRobotics
@@ -145,7 +148,7 @@ test('run returns [] when the verified Acceleration Robotics careers page times 
   const jobs = await scraper.run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      throw buildConnectTimeoutError()
+      throw buildHttp530Error()
     },
   })
 

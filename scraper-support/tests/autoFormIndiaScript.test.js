@@ -279,6 +279,31 @@ test('AutoForm India run returns an honest zero-job result while the verified pu
   assert.deepEqual(jobs, [])
 })
 
+test('AutoForm India run returns [] while all verified first-party surfaces time out from the Thursday, August 20, 2026 runtime environment', async () => {
+  const autoformIndia = await loadScriptModule()
+  const requestedUrls = []
+
+  const jobs = await autoformIndia.createAutoFormIndiaScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      const error = new TypeError('fetch failed')
+      error.cause = {
+        code: 'UND_ERR_CONNECT_TIMEOUT',
+        message: `Connect Timeout Error (attempted address: ${new URL(url).hostname}:443, timeout: 10000ms)`,
+      }
+      throw error
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    autoformIndia.HOMEPAGE_URL,
+    autoformIndia.CAREERS_HOME_URL,
+    autoformIndia.JOB_SEARCH_URL,
+    autoformIndia.JOBS_RSS_URL,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
 test('AutoForm India fails closed when the verified homepage, careers home, job search page, or RSS feed drifts', async () => {
   const autoformIndia = await loadScriptModule()
 

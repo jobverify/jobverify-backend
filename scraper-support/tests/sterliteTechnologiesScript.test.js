@@ -378,3 +378,58 @@ test('run verifies the STL careers handoff, fetches the RippleHire listings and 
   assert.equal(jobs[2].publicExperienceChecked, true)
   assert.equal(typeof jobs[0].scrapedAt, 'string')
 })
+
+test('run accepts the current stl.tech timeout when the linked RippleHire board and APIs still validate', async () => {
+  const sterliteTechnologies = await loadModule()
+  const requested = []
+  const scraper = sterliteTechnologies.createSterliteTechnologiesScraper()
+
+  const jobs = await scraper.run({
+    maxPages: 1,
+    fetchText: async (url, options = {}) => {
+      requested.push({
+        url,
+        method: options.method || 'GET',
+        body: options.body ? String(options.body) : null,
+      })
+
+      if (url === sterliteTechnologies.CAREERS_URL) {
+        const error = new TypeError('fetch failed')
+        error.cause = new Error('Connect Timeout Error (attempted address: stl.tech:443, timeout: 10000ms)')
+        throw error
+      }
+
+      if (url === sterliteTechnologies.LINKED_JOBS_PORTAL_URL) {
+        return RIPPLEHIRE_BOARD_HTML
+      }
+
+      if (url === sterliteTechnologies.JOBS_API_URL) {
+        return SEARCH_RESULTS_XML
+      }
+
+      if (url.includes('jobSeq=888717')) {
+        return ENGINEERING_MANAGER_DETAIL_XML
+      }
+
+      if (url.includes('jobSeq=463281')) {
+        return SENIOR_EXECUTIVE_DETAIL_XML
+      }
+
+      if (url.includes('jobSeq=873668')) {
+        return SR_TECH_LEAD_DETAIL_XML
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requested.map((entry) => entry.url), [
+    sterliteTechnologies.CAREERS_URL,
+    sterliteTechnologies.LINKED_JOBS_PORTAL_URL,
+    sterliteTechnologies.JOBS_API_URL,
+    `${sterliteTechnologies.PORTAL_ORIGIN}${sterliteTechnologies.DETAIL_PATH}?token=${sterliteTechnologies.TOKEN}&source=${sterliteTechnologies.PORTAL_SOURCE}&lang=en&jobSeq=888717`,
+    `${sterliteTechnologies.PORTAL_ORIGIN}${sterliteTechnologies.DETAIL_PATH}?token=${sterliteTechnologies.TOKEN}&source=${sterliteTechnologies.PORTAL_SOURCE}&lang=en&jobSeq=463281`,
+    `${sterliteTechnologies.PORTAL_ORIGIN}${sterliteTechnologies.DETAIL_PATH}?token=${sterliteTechnologies.TOKEN}&source=${sterliteTechnologies.PORTAL_SOURCE}&lang=en&jobSeq=873668`,
+  ])
+  assert.equal(jobs.length, 3)
+})

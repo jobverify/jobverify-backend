@@ -129,20 +129,21 @@ export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeText(rawHtml)
 
-  return /<title>\s*Mammoth Analytics:\s*Data Ops Platform for Business Teams\s*<\/title>/i.test(rawHtml)
+  return /<title>\s*Mammoth Analytics\s*(?:&mdash;|&#8212;|—)\s*Data Prep,\s*Automation\s*&amp;\s*Dashboards\s*<\/title>/i.test(rawHtml)
     && normalized.includes('your whole data journey. one platform.')
     && normalized.includes('connect, prepare, automate, govern, share')
-    && normalized.includes('data preparation and automation for business teams. made in london since 2017.')
+    && normalized.includes('no shuttling files between tools. no handoffs. no waiting on a ticket.')
+    && normalized.includes('no credit card to start')
 }
 
 export const hasOfficialAboutSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeText(rawHtml)
 
-  return /<title>\s*About Us\s*\|\s*Mammoth\s*<\/title>/i.test(rawHtml)
-    && normalized.includes('made in london since 2017. our story and mission.')
-    && normalized.includes('mammoth started as one conviction')
-    && normalized.includes('we founded the company in london in 2017.')
+  return /<title>\s*About\s*·\s*Mammoth\s*<\/title>/i.test(rawHtml)
+    && normalized.includes('made in london since 2017. mammoth builds data preparation and automation for business teams.')
+    && normalized.includes('four opinions the product is built on.')
+    && normalized.includes('the handoffs are the problem')
 }
 
 export const isVerifiedMissingFirstPartyRoute = (page = {}) => {
@@ -151,18 +152,10 @@ export const isVerifiedMissingFirstPartyRoute = (page = {}) => {
 
   return page.status === 404
     && isOfficialDomainUrl(page.url || '')
-    && (
-      /<title>\s*Not Found\s*<\/title>/i.test(rawHtml)
-      || /<title>\s*Page not found\s*(?:&#8211;|&ndash;|-)\s*Mammoth\s*<\/title>/i.test(rawHtml)
-    )
-    && (
-      normalized.includes('404')
-      || /The page can(?:&rsquo;|&#8217;|'|’)t be found/i.test(rawHtml)
-    )
-    && (
-      normalized.includes('not found')
-      || /page not found/i.test(rawHtml)
-    )
+    && /<title>\s*Mammoth Analytics\s*(?:&mdash;|&#8212;|—)\s*Data Prep,\s*Automation\s*&amp;\s*Dashboards\s*<\/title>/i.test(rawHtml)
+    && normalized.includes('404')
+    && normalized.includes("that page doesn't exist.")
+    && normalized.includes("here's where most people are heading.")
     && !hasPublicJobsSignal(rawHtml)
     && !hasFirstPartyCareerLikeLink(rawHtml)
 }

@@ -73,6 +73,21 @@ npm run scrape:dry
 npm run scrape:csv -- --parallel --dry-run
 ```
 
+## Cloudflare Turnstile
+
+Login is protected by Turnstile when `TURNSTILE_SECRET_KEY` is configured. Set
+the following backend environment variables in the deployment platform; never
+put the secret in the frontend bundle:
+
+```text
+TURNSTILE_SECRET_KEY=<widget secret from Cloudflare>
+TURNSTILE_ALLOWED_HOSTNAMES=<comma-separated frontend hostnames>
+TURNSTILE_EXPECTED_ACTION=login
+```
+
+Use deployment hostnames only in production. The local defaults are
+`localhost,127.0.0.1`.
+
 ## Razorpay Standard Checkout
 
 To use Razorpay Test Mode, configure the backend environment with these variable

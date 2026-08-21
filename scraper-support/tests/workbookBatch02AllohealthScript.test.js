@@ -25,8 +25,8 @@ const CURRENT_HOMEPAGE_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Allo Health India&#x27;s Sexual Health Provider</title>
-    <meta name="description" content="India's sexual health provider. Private, judgement-free consultations with qualified doctors.">
+    <title>Allo Health - India&#x27;s #1 Sexual Health Provider</title>
+    <meta name="description" content="Expert treatment for ED, PE, low libido &amp; more at 70+ clinics and online across India. Private, judgement-free consultations. Book today.">
     <link rel="canonical" href="https://www.allohealth.com"/>
     <meta property="og:url" content="https://www.allohealth.com"/>
     <meta property="og:type" content="website"/>
@@ -62,8 +62,8 @@ const CURRENT_ABOUT_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>About Allo Health | India&#x27;s Leading Sexual Health Provider</title>
-    <meta name="description" content="Learn more about Allo Health.">
+    <title>About Allo Health | Leading Sexual Health Care</title>
+    <meta name="description" content="Allo Health&#x27;s mission to make sexual health care accessible, private, and judgement-free across India. Meet our team and approach.">
     <link rel="canonical" href="https://www.allohealth.com/about"/>
     <meta property="og:url" content="https://www.allohealth.com/about"/>
     <meta property="og:type" content="website"/>

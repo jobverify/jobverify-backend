@@ -137,8 +137,8 @@ export const hasOfficialContactSignal = (html) => {
     && normalized.includes('Contact Us')
     && normalized.includes('Schedule a Demo')
     && normalized.includes('sales@nativeorange.ai')
-    && normalized.includes('(408) 596 3079')
-    && normalized.includes('San Francisco, California, 94105')
+    && normalized.includes('+1 (925) 399-6005')
+    && normalized.includes('Our team is ready to help you transform your business with cutting-edge technologies.')
     && normalized.includes('Fill out the form below')
 }
 

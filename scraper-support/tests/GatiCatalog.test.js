@@ -48,7 +48,7 @@ test('Gati local catalog captures the verified redirected first-party Darwinbox 
   assert.equal(GATI_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(
     GATI_CATALOG.officialCareersHandoffUrl,
-    'https://gatikwe.darwinbox.in/ms/candidate/careers',
+    'https://allcargologistics.darwinbox.in/ms/candidatev2/main/careers/home',
   )
   assert.equal(GATI_CATALOG.darwinboxOrigin, 'https://gatikwe.darwinbox.in')
   assert.equal(GATI_CATALOG.darwinboxCompanyId, 'main')
@@ -60,7 +60,7 @@ test('Gati local catalog captures the verified redirected first-party Darwinbox 
   )
   assert.match(
     GATI_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/gatikwe\.darwinbox\.in\/ms\/candidate\/careers/i,
+    /https:\/\/allcargologistics\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/home/i,
   )
   assert.match(GATI_CATALOG.verifiedSurfaceSummary, /invalid subdomain: gatikwe/i)
   assert.equal(GATI_CATALOG.modulePath, gatiModulePath)

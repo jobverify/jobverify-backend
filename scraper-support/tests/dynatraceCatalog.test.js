@@ -22,7 +22,7 @@ const LOCATIONS_OVERVIEW_HTML = `
       <h1>Our locations</h1>
       <section>
         <h2>Asia Pacific</h2>
-        <p>India Bengaluru 2 jobs See more</p>
+        <p>India Bengaluru 1 job See more</p>
         <p>India Mumbai 2 jobs See more</p>
       </section>
     </body>
@@ -33,7 +33,7 @@ const BENGALURU_HTML = `
   <html>
     <body>
       <h1>Careers in Bengaluru</h1>
-      <p>No open roles right now, but we're always on the lookout for great talent. Check back soon for new opportunities!</p>
+      <p>Benefits and perks empower you to thrive in your career while staying happy, healthy, and balancing what's important to you outside of work.</p>
       <a href="/careers/jobs/">Explore all jobs</a>
       <address>
         Dynatrace India Software Operations Pvt. Ltd.
@@ -49,7 +49,7 @@ const MUMBAI_HTML = `
   <html>
     <body>
       <h1>Careers in Mumbai</h1>
-      <p>No open roles right now, but we're always on the lookout for great talent. Check back soon for new opportunities!</p>
+      <p>Join our remote team in Mumbai and help redefine the future of digital innovation.</p>
       <a href="/careers/jobs/">Explore all jobs</a>
       <address>
         Dynatrace India Software Operations Pvt. Ltd.
@@ -118,12 +118,12 @@ test('Dynatrace catalog captures the contradictory first-party India careers sur
   )
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.companyDomain, 'dynatrace.com')
-  assert.equal(provider.verifiedOn, '2026-07-25')
+  assert.equal(provider.verifiedOn, '2026-08-17')
   assert.match(provider.modulePath, /dynatrace[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /dynatrace[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 25, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 17, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /0 open positions/i)
-  assert.match(provider.verifiedSurfaceSummary, /India Bengaluru 2 jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /India Bengaluru 1 job/i)
   assert.match(provider.verifiedSurfaceSummary, /India Mumbai 2 jobs/i)
   assert.match(provider.verifiedSurfaceSummary, /returns an empty verified slice/i)
   assert.equal(aliases['Dynatrace India'], 'dynatrace')
@@ -139,6 +139,7 @@ test('Dynatrace scraper verifies the contradictory first-party India surface and
   assert.equal(dynatrace.hasLocationPageSignal(BENGALURU_HTML, 'Bengaluru'), true)
   assert.equal(dynatrace.hasLocationPageSignal(MUMBAI_HTML, 'Mumbai'), true)
   assert.equal(dynatrace.hasNoOpenRolesMessage(BENGALURU_HTML), true)
+  assert.equal(dynatrace.hasNoOpenRolesMessage(MUMBAI_HTML), true)
   assert.equal(dynatrace.hasOfficeLocationsSignal(OFFICE_LOCATIONS_HTML), true)
 
   const jobs = await dynatrace.createDynatraceScraper().run({

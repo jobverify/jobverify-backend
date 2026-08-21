@@ -12,8 +12,8 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: path.resolve(currentDir, '../.env'), quiet: true })
 
 import { deleteAllJobsFromDB, saveDryRunSnapshot, saveToDB } from './utils/saveToDB.js'
-import { filterIndiaJobs } from './utils/indiaLocationFilter.js'
 import { getRetryMetadata, withRetry } from './utils/retry.js'
+import { analyzePublishableJobs } from './utils/publishableJobMetrics.js'
 import {
   upsertScraperStatus,
   writeScraperRun,
@@ -532,6 +532,9 @@ const formatPersistenceSummary = (result) => {
   const closed = result.filteredClosed
     ? ` | ${result.filteredClosed} past closing date`
     : ''
+  const invalidUrl = result.filteredInvalidUrl
+    ? ` | ${result.filteredInvalidUrl} invalid URL filtered`
+    : ''
   const lifecycle = result.missed
     ? ` | ${result.missed} lifecycle misses`
     : ''
@@ -541,7 +544,7 @@ const formatPersistenceSummary = (result) => {
   const staleCheck = result.staleCheckSkipped
     ? ` | stale cleanup skipped: ${result.staleCheckReason || 'previous source jobs preserved'}`
     : ''
-  return `${base}${updated}${nonIndia}${closed}${lifecycle}${expired} | ${result.filteredOld || 0} older than ${result.retentionDays || DEFAULT_JOB_RETENTION_DAYS}d removed${staleCheck}`
+  return `${base}${updated}${nonIndia}${closed}${invalidUrl}${lifecycle}${expired} | ${result.filteredOld || 0} older than ${result.retentionDays || DEFAULT_JOB_RETENTION_DAYS}d removed${staleCheck}`
 }
 
 export const isFailureCountedForAbort = (result = {}) => (
@@ -674,7 +677,8 @@ export const runAll = async () => {
           label: scraper.name,
         },
       )
-      const indiaJobs = filterIndiaJobs(jobs)
+      const publishableAnalysis = analyzePublishableJobs(jobs)
+      const indiaJobs = publishableAnalysis.indiaJobs
       const cities = [...new Set(indiaJobs.map(j => j.city).filter(Boolean))].sort()
 
       let result
@@ -686,7 +690,12 @@ export const runAll = async () => {
         )
         result = {
           jobs: indiaJobs.length,
-          filteredNonIndia: Math.max(0, jobs.length - indiaJobs.length),
+          eligibleJobs: publishableAnalysis.eligibleJobs.length,
+          filteredNonIndia: publishableAnalysis.filterCounts.nonIndia,
+          filteredOld: publishableAnalysis.filterCounts.old,
+          filteredClosed: publishableAnalysis.filterCounts.closed,
+          filteredInvalidUrl: publishableAnalysis.filterCounts.invalidUrl,
+          retentionDays: publishableAnalysis.retentionDays,
           cities,
           mode: 'dry-run',
           file: scraper.dryRunFile,
@@ -792,6 +801,9 @@ export const runAll = async () => {
     }
   }
 
+  Object.defineProperty(summary, 'runTiming', {
+    value: { startedAt, completedAt: new Date() },
+  })
   return summary
 }
 
@@ -830,7 +842,13 @@ export const runScraper = async (
       },
     )
     const retry = getRetryMetadata(jobs)
-    const indiaJobs = filterIndiaJobs(jobs)
+    const publishableAnalysis = analyzePublishableJobs(jobs)
+    const indiaJobs = publishableAnalysis.indiaJobs
+    const dataQuality = indiaJobs.reduce((total, job = {}) => ({
+      missingTitle: total.missingTitle + (!String(job.title || '').trim() ? 1 : 0),
+      missingLocation: total.missingLocation + (!String(job.location || job.city || '').trim() ? 1 : 0),
+      missingApplyUrl: total.missingApplyUrl + (!String(job.applyUrl || job.link || '').trim() ? 1 : 0),
+    }), { missingTitle: 0, missingLocation: 0, missingApplyUrl: 0 })
     const cities = [...new Set(indiaJobs.map(j => j.city).filter(Boolean))].sort()
 
     let result
@@ -842,7 +860,12 @@ export const runScraper = async (
       )
       result = {
         jobs: indiaJobs.length,
-        filteredNonIndia: Math.max(0, jobs.length - indiaJobs.length),
+        eligibleJobs: publishableAnalysis.eligibleJobs.length,
+        filteredNonIndia: publishableAnalysis.filterCounts.nonIndia,
+        filteredOld: publishableAnalysis.filterCounts.old,
+        filteredClosed: publishableAnalysis.filterCounts.closed,
+        filteredInvalidUrl: publishableAnalysis.filterCounts.invalidUrl,
+        retentionDays: publishableAnalysis.retentionDays,
         cities,
         mode: 'dry-run',
         file: scraper.dryRunFile,
@@ -864,6 +887,7 @@ export const runScraper = async (
 
     if (cities.length) console.log(`  Cities: ${cities.join(', ')}`)
     result.retry = retry
+    result.dataQuality = dataQuality
     result.durationMs = Date.now() - scraperStart
     const successResult = { success: true, ...result }
 
@@ -1041,7 +1065,10 @@ const runAllParallel = async ({
     }
   }
 
-  Object.defineProperty(summary, 'previousRun', { value: previousRun })
+  Object.defineProperties(summary, {
+    previousRun: { value: previousRun },
+    runTiming: { value: { startedAt, completedAt: new Date() } },
+  })
   return summary
 }
 
@@ -1080,7 +1107,10 @@ if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
     })
 
     console.log('\nFinal Pipeline Summary:')
-    console.log(formatFinalSummaryTable(summary, { previousRun: summary.previousRun }))
+    console.log(formatFinalSummaryTable(summary, {
+      previousRun: summary.previousRun,
+      runTiming: summary.runTiming,
+    }))
 
     const totalFailures = Object.values(summary).filter(isFailureCountedForAbort).length
     const failureAbortThreshold = resolveFailureAbortThreshold()

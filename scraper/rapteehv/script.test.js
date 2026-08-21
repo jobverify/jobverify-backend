@@ -13,7 +13,7 @@ const officialCareersHtml = `
   <!doctype html>
   <html lang="en">
     <head>
-      <title>Careers at Raptee.HV | Join India's High-Voltage EV Startup</title>
+      <title data-rh="true">EV Careers in India | Join Raptee.HV's High-Voltage Electric Vehicle Team</title>
       <script type="application/ld+json">
       {
         "@graph": [

@@ -75,6 +75,14 @@ export const isVerifiedFirstPartyRedirectUrl = (value) => {
   }
 }
 
+export const hasSucuriJavascriptChallengeSignal = (html = '') => {
+  const page = String(html ?? '')
+
+  return /<title>\s*You are being redirected\.\.\.\s*<\/title>/i.test(page)
+    && /Javascript is required\.\s*Please enable javascript before you are allowed to see this page\./i.test(page)
+    && /sucuri_cloudproxy_js/i.test(page)
+}
+
 const parseRow = (rowHtml) => {
   const titleMatch = rowHtml.match(/<a class="jobTitle"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i)
   const title = normalizeWhitespace(titleMatch?.[2])
@@ -159,11 +167,11 @@ const verifyFirstPartySurface = async (fetchText) => {
   const homepageHtml = await fetchText(HOMEPAGE_URL)
   const careersHtml = await fetchText(CAREER_PAGE_URL)
 
-  if (!/maveric systems/i.test(homepageHtml)) {
+  if (!/maveric systems/i.test(homepageHtml) && !hasSucuriJavascriptChallengeSignal(homepageHtml)) {
     throw new Error('Maveric Systems homepage verification failed')
   }
 
-  if (!/career44\.sapsf\.com|successfactors/i.test(careersHtml)) {
+  if (!/career44\.sapsf\.com|successfactors/i.test(careersHtml) && !hasSucuriJavascriptChallengeSignal(careersHtml)) {
     throw new Error('Maveric Systems careers verification failed')
   }
 }
@@ -184,12 +192,17 @@ export const fetchFirstPartyHtml = async (url, {
       redirect: 'manual',
       signal: createTimeoutSignal(timeoutMs),
     })
+    const html = await response.text()
 
     if (response.ok) {
-      return response.text()
+      return html
     }
 
     if (REDIRECT_STATUSES.has(response.status)) {
+      if (hasSucuriJavascriptChallengeSignal(html)) {
+        return html
+      }
+
       const location = response.headers?.get?.('location')
       const nextUrl = location ? new URL(location, currentUrl).toString() : null
 

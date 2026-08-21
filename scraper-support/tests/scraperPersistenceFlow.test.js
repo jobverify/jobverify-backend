@@ -6,7 +6,11 @@ import Job from '../../src/models/Job.js'
 import ScraperRun from '../../src/models/ScraperRun.js'
 import ScraperStatus from '../../src/models/ScraperStatus.js'
 import { FatalScraperPersistenceError, runAll } from '../runner.js'
-import { upsertScraperStatus, writeScraperRun } from '../utils/scraperPersistence.js'
+import {
+  upsertScraperStatus,
+  writeScraperRun,
+  readPreviousScraperRun,
+} from '../utils/scraperPersistence.js'
 import { generateFingerprint, saveToDB } from '../utils/saveToDB.js'
 import { DEFAULT_JOB_RETENTION_DAYS } from '../../src/utils/jobLifecycle.js'
 import { jobAlertService } from '../../src/services/jobAlertService.js'
@@ -824,6 +828,101 @@ test('writeScraperRun stores when stale cleanup was skipped for a partial source
     )
   } finally {
     ScraperRun.create = originalCreate
+    restoreReadyState()
+  }
+})
+
+test('writeScraperRun encodes Mongo-unsafe source keys before creating run history', async () => {
+  const restoreReadyState = setReadyState(1)
+  const originalCreate = ScraperRun.create
+
+  let capturedPayload = null
+
+  ScraperRun.create = async (payload) => {
+    capturedPayload = payload
+    const validationError = new ScraperRun(payload).validateSync()
+    if (validationError) throw validationError
+    return payload
+  }
+
+  try {
+    await writeScraperRun(new Date('2026-08-17T00:00:00.000Z'), {
+      'sinch.himalayas.app': {
+        success: true,
+        jobs: 3,
+        eligibleJobs: 3,
+        inserted: 3,
+        updated: 0,
+        deleted: 0,
+      },
+      '$internal.source': {
+        success: false,
+        error: 'synthetic failure',
+      },
+    })
+
+    assert.ok(capturedPayload)
+    assert.equal(
+      Object.prototype.hasOwnProperty.call(capturedPayload.sources, 'sinch.himalayas.app'),
+      false,
+    )
+    assert.equal(
+      Object.prototype.hasOwnProperty.call(capturedPayload.sources, '$internal.source'),
+      false,
+    )
+    assert.equal(
+      capturedPayload.sources['sinch\uFF0Ehimalayas\uFF0Eapp'].jobsFound,
+      3,
+    )
+    assert.equal(
+      capturedPayload.sources['\uFF04internal\uFF0Esource'].error,
+      'synthetic failure',
+    )
+  } finally {
+    ScraperRun.create = originalCreate
+    restoreReadyState()
+  }
+})
+
+test('readPreviousScraperRun decodes persisted Mongo-safe source keys', async () => {
+  const restoreReadyState = setReadyState(1)
+  const originalFindOne = ScraperRun.findOne
+
+  const createQueryDouble = (value) => ({
+    sort() {
+      return this
+    },
+    lean() {
+      return this
+    },
+    exec: async () => value,
+  })
+
+  ScraperRun.findOne = () => createQueryDouble({
+    ranAt: new Date('2026-08-17T00:00:00.000Z'),
+    sources: {
+      'sinch\uFF0Ehimalayas\uFF0Eapp': { success: true, jobsFound: 3 },
+      '\uFF04internal\uFF0Esource': { success: false, error: 'synthetic failure' },
+    },
+    overall: {
+      totalJobs: 3,
+      sourcesSucceeded: 1,
+      sourcesFailed: 1,
+    },
+  })
+
+  try {
+    const previousRun = await readPreviousScraperRun(new Date('2026-08-18T00:00:00.000Z'))
+
+    assert.ok(previousRun)
+    assert.equal(previousRun.sources['sinch.himalayas.app'].jobsFound, 3)
+    assert.equal(previousRun.sources['$internal.source'].error, 'synthetic failure')
+    assert.equal(
+      Object.prototype.hasOwnProperty.call(previousRun.sources, 'sinch\uFF0Ehimalayas\uFF0Eapp'),
+      false,
+    )
+  } finally {
+    ScraperRun.findOne = originalFindOne
     restoreReadyState()
   }
 })

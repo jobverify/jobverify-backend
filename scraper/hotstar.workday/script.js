@@ -160,8 +160,9 @@ export const hasBlockedJiostarCareersSignal = (html = '') => {
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
+  const normalizedTitlePage = page.replace(/\u2019/g, "'")
 
-  return /<title>\s*JioStar\s*-\s*India(?:'|â€™|&#8217;|Ã¢â‚¬â„¢)?s Largest Media Conglomerate\s*\|\s*Entertainment Reimagined\s*<\/title>/i.test(page)
+  return /<title>\s*JioStar\s*-\s*India(?:'|â€™|&#8217;|Ã¢â‚¬â„¢)?s Largest Media Conglomerate\s*\|\s*Entertainment Reimagined\s*<\/title>/i.test(normalizedTitlePage)
     && /jiostar\.wd102\.myworkdayjobs\.com\/JioStar/i.test(page)
     && (
       /Jio Hotstar streaming platform/i.test(normalized)

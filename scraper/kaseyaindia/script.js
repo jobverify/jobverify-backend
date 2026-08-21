@@ -164,13 +164,16 @@ export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?conte
 
 export const hasVerifiedCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = stripTags(page) || ''
 
   return /<title>\s*Careers at Kaseya \| Open Positions(?: &amp;| &) Job Opportunities\s*<\/title>/i.test(page)
     && /<link rel="canonical" href="https:\/\/www\.kaseya\.com\/careers\/jobs\/"\s*\/?>/i.test(page)
-    && text.includes('All legitimate Kaseya communications come from @kaseya.com email addresses only.')
-    && text.includes('Exciting career opportunities await you at our Bengaluru campus.')
-    && /<div id="grnhse_app"><\/div>/i.test(page)
+}
+
+export const hasVerifiedGreenhouseBoardSignal = (html = '') => {
+  const page = String(html ?? '')
+
+  return /href=["']\/careers\/jobs\/id\/\d+\/\?gh_jid=\d+["']/i.test(page)
+    && /href=["']https:\/\/my\.greenhouse\.io\/users\/sign_in\?job_board=kaseya(?:&amp;|&)source=job_alert_board["']/i.test(page)
 }
 
 export const extractGreenhouseEmbedUrl = (html = '') => {
@@ -318,8 +321,8 @@ export const createKaseyaIndiaScraper = () => ({
       throw new Error('Kaseya India verified first-party careers page no longer matches the trusted public surface')
     }
 
-    if (extractGreenhouseEmbedUrl(careersHtml) !== GREENHOUSE_EMBED_URL) {
-      throw new Error('Kaseya India careers page no longer exposes the verified Greenhouse embed')
+    if (!hasVerifiedGreenhouseBoardSignal(careersHtml)) {
+      throw new Error('Kaseya India careers page no longer exposes the verified first-party Greenhouse board handoff')
     }
 
     return extractIndiaJobsFromGreenhousePayload(

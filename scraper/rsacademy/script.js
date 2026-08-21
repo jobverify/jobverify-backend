@@ -122,9 +122,41 @@ export const hasSoft404NonListingSignal = (html, pageUrl) => {
     && !hasPublicJobsSignal(rawHtml, pageUrl)
 }
 
+export const isVerifiedForbiddenHomepage = (page = {}) => {
+  const rawHtml = String(page?.html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+
+  return Number(page?.status) === 403
+    && /<title[^>]*>\s*403 Forbidden\s*<\/title>/i.test(rawHtml)
+    && normalized.includes('403 forbidden')
+    && normalized.includes("you don't have permission to access this resource")
+}
+
+export const isVerifiedMissingRouteShell = (page = {}) => {
+  const rawHtml = String(page?.html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+
+  return Number(page?.status) === 404
+    && /<title[^>]*>\s*404 Not Found\s*<\/title>/i.test(rawHtml)
+    && normalized.includes('404 not found')
+    && normalized.includes('the requested url was not found on this server')
+    && !hasPublicJobsSignal(rawHtml, page?.url || HOMEPAGE_URL)
+}
+
 export const createRsAcademyScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
+
+    if (isVerifiedForbiddenHomepage(homepage)) {
+      for (const routeUrl of NON_LISTING_ROUTE_URLS) {
+        const routePage = await fetchPage(routeUrl)
+        if (!isVerifiedMissingRouteShell(routePage)) {
+          throw new Error(`RS Academy verified missing-route shell changed: ${routePage.url || routeUrl}`)
+        }
+      }
+
+      return []
+    }
 
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('RS Academy verified official homepage no longer matches the known public surface')

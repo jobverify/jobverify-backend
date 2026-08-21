@@ -399,6 +399,27 @@ const vserveCareersHtml = `
 </html>
 `
 
+const currentVserveCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Current Job Openings and Opportunities in Vserve Ebusiness Solutions</title>
+  </head>
+  <body>
+    <h1>Careers</h1>
+    <nav>
+      <a href="/about-us/">About Us</a>
+      <a href="/why-us/">Why Us</a>
+      <a href="/careers/">Careers</a>
+      <a href="/resources/">Resources</a>
+    </nav>
+    <p>Life at Vserve</p>
+    <p>Our WorkCulture</p>
+    <iframe data-lazy-src="https://recruit.zoho.com/recruit/Portal.na?iframe=false&#038;digest=test-digest"></iframe>
+  </body>
+</html>
+`
+
 const vserveZohoPortalHtml = `
 <!doctype html>
 <html lang="en">
@@ -654,4 +675,29 @@ test('Vserve Ebusiness Solutions run validates the first-party careers page, ext
   assert.equal(jobs[1].title, 'Technical Project Manager')
   assert.equal(jobs[1].location, 'Coimbatore, Tamil Nadu, India')
   assert.equal(jobs[1].department, 'Project Management')
+})
+
+test('Vserve Ebusiness Solutions accepts the Monday, August 17, 2026 careers-page copy refresh while preserving the embedded Zoho portal', async () => {
+  const vserve = await loadModule('../../scraper/vserveebusinesssolutions/script.js')
+
+  assert.equal(vserve.hasOfficialCareersSignal(currentVserveCareersHtml), true)
+
+  const jobs = await vserve.createVserveEbusinessSolutionsScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async (url) => {
+      if (url === vserve.CAREERS_URL) return currentVserveCareersHtml
+      if (url === 'https://recruit.zoho.com/recruit/Portal.na?iframe=false&digest=test-digest') return vserveZohoPortalHtml
+      if (url === 'https://recruit.zoho.com/recruit/PortalDetail.na?iframe=true&digest=test-digest&jobid=561596000068496005&widgetid=561596000000290237&embedsource=CareerSite') return vserveSeniorFullStackDetailHtml
+      if (url === 'https://recruit.zoho.com/recruit/PortalDetail.na?iframe=true&digest=test-digest&jobid=561596000068137073&widgetid=561596000000290237&embedsource=CareerSite') return vserveTechnicalProjectManagerDetailHtml
+      if (url === 'https://recruit.zoho.com/recruit/PortalDetail.na?iframe=true&digest=test-digest&jobid=561596000068474016&widgetid=561596000000290237&embedsource=CareerSite') return vserveBusinessInsightsAnalystDetailHtml
+      throw new Error(`Unexpected Vserve URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 2)
+  assert.deepEqual(
+    jobs.map((job) => job.title),
+    ['Senior Full Stack Developer', 'Technical Project Manager'],
+  )
 })

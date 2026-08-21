@@ -11,7 +11,7 @@ export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Saturday, August 15, 2026 that https://recruit.accelerationrobotics.in/ remains the official Acceleration Robotics careers page and publicly advertises 12 live roles, but direct requests from this runtime currently fail with UND_ERR_CONNECT_TIMEOUT before the page can be rendered. The scraper preserves the verified careers-page and detail-page parser whenever that trusted public surface is reachable and now returns an authoritative empty result while it remains temporarily unreachable from this environment.'
 const JOBS_URL = 'https://recruit.accelerationrobotics.in/jobs/'
 const UNAVAILABLE_ERROR_PATTERN =
-  /fetch failed|timed out|timeout|connect timeout|und_err_connect_timeout|could not connect|econnreset|unable to|getaddrinfo|enotfound/i
+  /fetch failed|timed out|timeout|connect timeout|und_err_connect_timeout|could not connect|econnreset|unable to|getaddrinfo|enotfound|http (?:403|429|5\d\d)\b|cloudflare|site currently unavailable|just a moment/i
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null

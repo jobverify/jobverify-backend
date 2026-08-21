@@ -61,7 +61,6 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return /careers at rubrik\s*\|\s*discover the power of you/i.test(title || '')
     && /explore cybersecurity and ai careers at rubrik\./i.test(description || '')
-    && /together,\s*we(?:â€™|')re unstoppable/i.test(text)
     && /view openings/i.test(text)
 }
 

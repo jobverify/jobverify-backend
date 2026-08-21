@@ -30,6 +30,30 @@ const blockedCareersHtml = `
 </html>
 `
 
+const liveCareersHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>JioStar - India’s Largest Media Conglomerate | Entertainment Reimagined</title>
+    <meta property="og:title" content="JioStar - India’s Largest Media Conglomerate | Entertainment Reimagined" />
+  </head>
+  <body>
+    <nav>
+      <a target="_blank" href="https://jiostar.wd102.myworkdayjobs.com/JioStar">Careers</a>
+    </nav>
+    <p>
+      Perched firmly at the nucleus of spellbinding content and innovative technology, JioStar is a leading global media &amp; entertainment company that is reimagining the way audiences consume entertainment and sports.
+    </p>
+    <script type="application/ld+json">
+      {
+        "name": "JioStar — India's Largest Media Conglomerate | Entertainment Reimagined",
+        "description": "JioStar is India's largest media and entertainment conglomerate, formed through the merger of Reliance's Viacom18 and Disney Star India. It operates 120+ television channels and Jio Hotstar streaming platform, reaching over 800 million viewers weekly."
+      }
+    </script>
+  </body>
+</html>
+`
+
 const workdayBoardPage = {
   status: 200,
   url: 'https://jiostar.wd102.myworkdayjobs.com/JioStar',
@@ -114,7 +138,7 @@ const loadModule = async () => {
   }
 }
 
-test('Hotstar pins the verified Friday, August 14, 2026 JioHotstar homepage, blocked JioStar corporate page, and Workday API contract', async () => {
+test('Hotstar pins the verified Monday, August 17, 2026 JioHotstar homepage, live JioStar careers page, and Workday API contract', async () => {
   const hotstar = await loadModule()
 
   assert.equal(hotstar.SOURCE, 'hotstar')
@@ -128,8 +152,13 @@ test('Hotstar pins the verified Friday, August 14, 2026 JioHotstar homepage, blo
     'https://jiostar.wd102.myworkdayjobs.com/wday/cxs/jiostar/JioStar/jobs',
   )
   assert.equal(hotstar.VERIFIED_KEYWORD, 'JioHotstar')
-  assert.equal(hotstar.VERIFIED_ON, '2026-08-14')
+  assert.equal(hotstar.VERIFIED_ON, '2026-08-17')
   assert.equal(hotstar.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(hotstar.hasOfficialCareersSignal(liveCareersHtml), true)
+  assert.equal(
+    hotstar.extractVerifiedWorkdayBoardUrl(liveCareersHtml),
+    'https://jiostar.wd102.myworkdayjobs.com/JioStar',
+  )
   assert.equal(hotstar.hasBlockedJiostarCareersSignal(blockedCareersHtml), true)
   assert.equal(hotstar.hasOfficialWorkdayBoardSignal(workdayBoardPage), true)
   assert.deepEqual(
@@ -200,6 +229,54 @@ test('Hotstar pins the verified Friday, August 14, 2026 JioHotstar homepage, blo
       },
     ],
   )
+})
+
+test('Hotstar run accepts the live JioStar corporate page and paginates keyworded Workday results', async () => {
+  const hotstar = await loadModule()
+  const requestedPages = []
+  const requestedBodies = []
+
+  const jobs = await hotstar.createHotstarScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchPage: async (url) => {
+      requestedPages.push(url)
+
+      if (url === hotstar.HOMEPAGE_URL) {
+        return { status: 200, url: 'https://www.hotstar.com/in', html: homepageHtml }
+      }
+
+      if (url === hotstar.CAREERS_URL) {
+        return { status: 200, url, html: liveCareersHtml }
+      }
+
+      if (url === hotstar.WORKDAY_BOARD_URL) {
+        return workdayBoardPage
+      }
+
+      throw new Error(`Unexpected Hotstar page URL: ${url}`)
+    },
+    fetchJson: async (url, body) => {
+      assert.equal(url, hotstar.JOBS_API_URL)
+      requestedBodies.push(JSON.parse(body))
+
+      if (requestedBodies.length === 1) return firstPagePayload
+      if (requestedBodies.length === 2) return secondPagePayload
+
+      throw new Error(`Unexpected Hotstar jobs API call #${requestedBodies.length}`)
+    },
+  })
+
+  assert.deepEqual(requestedPages, [
+    hotstar.HOMEPAGE_URL,
+    hotstar.CAREERS_URL,
+    hotstar.WORKDAY_BOARD_URL,
+  ])
+  assert.deepEqual(requestedBodies, [
+    JSON.parse(hotstar.buildKeywordSearchRequestBody({ offset: 0 })),
+    JSON.parse(hotstar.buildKeywordSearchRequestBody({ offset: 20 })),
+  ])
+  assert.equal(jobs.length, 22)
 })
 
 test('Hotstar run accepts the blocked JioStar corporate page and paginates keyworded Workday results', async () => {

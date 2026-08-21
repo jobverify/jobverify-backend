@@ -19,6 +19,11 @@ const careersHtml = `
 </html>
 `
 
+const careersHtmlWithSiteTitlePrefix = careersHtml.replace(
+  '<title>Careers at Quick Heal | Cybersecurity Jobs &amp; Career Opportunities</title>',
+  '<title>Cybersecurity, Antivirus &amp; Network Security Software Company Careers at Quick Heal | Cybersecurity Jobs &amp; Career Opportunities</title>',
+)
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/quickheal/script.js')
@@ -37,4 +42,14 @@ test('Quick Heal official careers verifier accepts the current first-party page 
     'https://lifecycleqhtl.darwinbox.in/ms/candidate/careers',
   )
   assert.equal(quickheal.hasOfficialQuickHealCareersSignals(careersHtml), true)
+})
+
+test('Quick Heal official careers verifier accepts the current .com page title prefix while preserving the Darwinbox handoff', async () => {
+  const quickheal = await loadModule()
+
+  assert.equal(
+    quickheal.extractOfficialDarwinboxUrl(careersHtmlWithSiteTitlePrefix),
+    'https://lifecycleqhtl.darwinbox.in/ms/candidate/careers',
+  )
+  assert.equal(quickheal.hasOfficialQuickHealCareersSignals(careersHtmlWithSiteTitlePrefix), true)
 })

@@ -117,6 +117,16 @@ export const hasOfficialContactSignal = (html) => {
     && normalized.includes('andhra pradesh')
 }
 
+export const isVerifiedSiteNotFoundShell = (page = {}) => {
+  const normalized = normalizeWhitespace(page?.html).toLowerCase()
+  return Number(page?.status) === 404
+    && normalizeWhitespace(String(page?.html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '') === 'Site Not Found'
+    && normalized.includes('site not found')
+    && normalized.includes("you haven't deployed an app yet")
+    && normalized.includes('you may have deployed an empty directory')
+    && normalized.includes("we haven't finished setting it up yet")
+}
+
 export const extractSuspiciousPublicJobLinks = (html) => {
   const suspiciousLinks = []
   const seen = new Set()
@@ -162,6 +172,17 @@ export const hasUnexpectedPublicJobsSignal = (html) =>
 export const createRedBalloonAerospaceScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
+    if (isVerifiedSiteNotFoundShell(homepage)) {
+      const jobsPage = await fetchPage(JOBS_URL)
+      const contactPage = await fetchPage(CONTACT_URL)
+
+      if (!isVerifiedSiteNotFoundShell(jobsPage) || !isVerifiedSiteNotFoundShell(contactPage)) {
+        throw new Error('Red Balloon Aerospace verified site-not-found shell no longer matches across the first-party surface')
+      }
+
+      return []
+    }
+
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Red Balloon Aerospace verified official homepage no longer matches the known first-party surface')
     }

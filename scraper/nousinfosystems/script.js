@@ -166,7 +166,9 @@ export const isVerifiedHomepageRedirect = (page = {}) =>
   && hasOfficialHomepageSignal(page?.html)
 
 export const routeMatchesVerifiedShell = (html, bundlePath) =>
-  hasOfficialHomepageSignal(html)
+  /<title>\s*Careers\s*\|\s*Artizent\s*<\/title>/i.test(String(html ?? ''))
+  && /<script src=["']\/runtime-config\.js["']><\/script>/i.test(String(html ?? ''))
+  && /<div id=["']root["']><\/div>/i.test(String(html ?? ''))
   && extractBundleAssetPath(html) === bundlePath
 
 export const hasVerifiedJobOpeningsAssetSignal = (assetText) => {

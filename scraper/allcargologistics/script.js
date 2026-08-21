@@ -6,7 +6,8 @@ import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const CAREERS_PAGE_URL = 'https://www.allcargologistics.com/about-us/careers'
-export const DARWINBOX_HANDOFF_URL = 'https://gatikwe.darwinbox.in/ms/candidate/careers'
+export const DARWINBOX_HANDOFF_URL = 'https://allcargologistics.darwinbox.in/ms/candidatev2/main/careers/home'
+export const LEGACY_DARWINBOX_HANDOFF_URL = 'https://gatikwe.darwinbox.in/ms/candidate/careers'
 export const LISTING_API_URL = 'https://gatikwe.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main'
 
 const USER_AGENT =
@@ -53,7 +54,7 @@ const defaultProbeListingApi = async (url) => {
 
 export const extractOfficialDarwinboxUrl = (html = '') => {
   const match = String(html ?? '').match(
-    /https:\/\/gatikwe\.darwinbox\.in\/ms\/candidate\/careers/i,
+    /https:\/\/(?:allcargologistics\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/home|gatikwe\.darwinbox\.in\/ms\/candidate\/careers)/i,
   )
 
   return match?.[0] ?? null
@@ -72,7 +73,7 @@ export const hasOfficialCareersSignal = (html = '') => {
       || text.includes('explore job openings')
       || text.includes('join our team')
     )
-    && extractOfficialDarwinboxUrl(page) === DARWINBOX_HANDOFF_URL
+    && [DARWINBOX_HANDOFF_URL, LEGACY_DARWINBOX_HANDOFF_URL].includes(extractOfficialDarwinboxUrl(page))
   )
 }
 

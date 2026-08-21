@@ -68,6 +68,25 @@ const VERIFIED_EMPLOYER_REGISTER_HTML = `
   </html>
 `
 
+const CURRENT_EMPLOYER_REGISTER_HTML = `
+  <html>
+    <head>
+      <title>Boon.ai Employer</title>
+    </head>
+    <body>
+      <main>
+        <h1>How would you like to register?</h1>
+        <h3>Agency</h3>
+        <p>A Licensed Overseas Recruitment Agency.</p>
+        <h3>Foreign Employer</h3>
+        <p>An Employer Hiring Expacts</p>
+        <button disabled="">Continue</button>
+        <p>Already have an account ? <a href="/login">Login</a></p>
+      </main>
+    </body>
+  </html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/boonai/script.js')
@@ -119,6 +138,10 @@ test('BoonAI validates the verified public platform and recruiter surfaces and r
   assert.equal(boonai.hasVerifiedPricingSurface(VERIFIED_PRICING_HTML), true)
   assert.equal(
     boonai.hasVerifiedEmployerRegisterSurface(VERIFIED_EMPLOYER_REGISTER_HTML),
+    true,
+  )
+  assert.equal(
+    boonai.hasVerifiedEmployerRegisterSurface(CURRENT_EMPLOYER_REGISTER_HTML),
     true,
   )
   assert.equal(boonai.detectExactCompanyJobsSurface(VERIFIED_HOME_HTML, boonai.HOME_URL), null)

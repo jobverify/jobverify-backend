@@ -14,7 +14,11 @@ const USER_AGENT =
 const OFFICIAL_BRAND_PATTERN = /\bHomworks\b/i
 const CAREERS_PATTERN = /\bCAREERS\b/i
 const APPLY_FORM_PATTERN = /Apply Now|Full Name\*|Email Address\*|Phone Number\*|Subject\*|Submit Details/i
-const CONTACT_SIGNAL_PATTERN = /mailto:\[email protected\]|PWDS Extrusions Pvt Ltd/i
+const LEGACY_CONTACT_SIGNAL_PATTERN = /mailto:\[email protected\]|PWDS Extrusions Pvt Ltd/i
+const CURRENT_TITLE_PATTERN = /<title>\s*Careers\s*\|\s*Join Our Interior Design Team\s*\|\s*Homworks\s*<\/title>/i
+const CURRENT_WELCOME_PATTERN = /Welcome to Homworks!/i
+const CURRENT_CONTACT_COPY_PATTERN = /Take the Next Step in Your Career,\s*Contact Us Today!/i
+const CURRENT_COMPANY_SIGNAL_PATTERN = /Homworks-Stylcove|STYLCOVE MODULARS PRIVATE LIMITED/i
 const PUBLIC_JOB_BOARD_PATTERN =
   /boards\.greenhouse\.io|jobs\.lever\.co|ashbyhq\.com|workdayjobs|smartrecruiters|job openings|current openings|open positions|vacancies|job[-_\s]?id/i
 
@@ -22,10 +26,18 @@ const normalizeWhitespace = (value) => String(value ?? '').replace(/\s+/g, ' ').
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
+
+  const hasLegacyContactSignals = LEGACY_CONTACT_SIGNAL_PATTERN.test(page)
+  const hasCurrentContactSignals =
+    CURRENT_TITLE_PATTERN.test(page)
+    && CURRENT_WELCOME_PATTERN.test(page)
+    && CURRENT_CONTACT_COPY_PATTERN.test(page)
+    && CURRENT_COMPANY_SIGNAL_PATTERN.test(page)
+
   return OFFICIAL_BRAND_PATTERN.test(page)
     && CAREERS_PATTERN.test(page)
     && APPLY_FORM_PATTERN.test(page)
-    && CONTACT_SIGNAL_PATTERN.test(page)
+    && (hasLegacyContactSignals || hasCurrentContactSignals)
 }
 
 export const hasPublicJobBoardSignal = (html) => PUBLIC_JOB_BOARD_PATTERN.test(String(html ?? ''))

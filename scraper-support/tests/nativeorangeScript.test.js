@@ -43,11 +43,10 @@ const CONTACT_HTML = `
   </head>
   <body>
     <h1>Contact Us</h1>
+    <p>Our team is ready to help you transform your business with cutting-edge technologies.</p>
     <p>Fill out the form below and our team will get back to you shortly.</p>
-    <p>Head Office</p>
-    <p>San Francisco, California, 94105</p>
     <p>sales@nativeorange.ai</p>
-    <p>(408) 596 3079</p>
+    <p>+1 (925) 399-6005</p>
   </body>
 </html>
 `

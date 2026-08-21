@@ -104,7 +104,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
   return /<title>\s*YlogX\s*-\s*AI-Driven Digital Transformation\s*<\/title>/i.test(page)
-    && /<div id=["']root["']><\/div>/i.test(page)
+    && /<div id=["']root["'][^>]*>[\s\S]*<\/div>/i.test(page)
     && extractMainBundleAssetPath(page) !== null
 }
 

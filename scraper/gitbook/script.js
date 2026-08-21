@@ -55,6 +55,9 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+const extractTitle = (html = '') =>
+  normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
+
 const normalizeEmploymentType = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
@@ -106,12 +109,14 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
 export const hasOfficialCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
+  const title = extractTitle(rawHtml) || ''
 
-  return /gitbook careers/i.test(rawHtml)
-    && normalized.includes('Help build the future of docs for technical teams')
+  return /gitbook careers/i.test(title)
     && normalized.includes('Open roles')
-    && normalized.includes('Growth & Data (IC)')
-    && normalized.includes('Security Engineer')
+    && (
+      normalized.includes('See open roles')
+      || normalized.includes('Help build the future of docs for technical teams')
+    )
 }
 
 export const extractVerifiedAshbyPublicBoardUrl = (html = '') =>

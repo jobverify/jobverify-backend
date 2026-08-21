@@ -31,6 +31,20 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
+const createTimeoutSignal = (timeoutMs) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return undefined
+  }
+
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs)
+  }
+
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), timeoutMs)
+  return controller.signal
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -52,6 +66,22 @@ const defaultFetchJson = (url, body) => fetchJsonWithRetry(url, {
   timeoutMs: 20000,
 })
 
+const fetchCareersTextAllowingChallenge = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: createTimeoutSignal(15000),
+  })
+
+  return {
+    status: response.status,
+    html: await response.text(),
+  }
+}
+
 const escapeForRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 export const hasOfficialCareersSignal = (html = '') => {
@@ -63,12 +93,21 @@ export const hasOfficialCareersSignal = (html = '') => {
     && /Contact Us/i.test(page)
 }
 
+export const hasCloudflareChallengeSignal = (html = '') => {
+  const page = String(html ?? '')
+
+  return /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(page)
+    && /(cloudflare|verify you are human|verify your browser|checking if the site connection is secure|challenge-running)/i.test(page)
+}
+
 export const hasOfficialWorkdayBoardSignal = (html = '') => {
   const page = String(html ?? '')
 
   return new RegExp(`<link\\s+rel=["']canonical["']\\s+href=["']${escapeForRegex(WORKDAY_BOARD_URL)}["']`, 'i').test(page)
     && /epicorjobs\/assets\/logo/i.test(page)
 }
+
+const isHttp403Error = (error) => Number(error?.status) === 403 || /HTTP 403\b/i.test(String(error?.message ?? ''))
 
 export const buildJobsRequestBody = ({
   offset = 0,
@@ -185,8 +224,19 @@ export const createEpicorSoftwareCorporationScraper = ({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
+    let careersHtml
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (!isHttp403Error(error)) {
+        throw error
+      }
+
+      const fallbackPage = await fetchCareersTextAllowingChallenge(CAREERS_URL)
+      careersHtml = fallbackPage.html
+    }
+
+    if (!hasOfficialCareersSignal(careersHtml) && !hasCloudflareChallengeSignal(careersHtml)) {
       throw new Error('The verified Epicor jobs shell no longer matches the trusted first-party surface')
     }
 

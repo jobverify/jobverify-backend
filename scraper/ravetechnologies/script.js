@@ -73,14 +73,68 @@ const slugify = (value) => normalizeWhitespace(value)
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '') || ''
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 20000,
-})
+const createManualFetchSignal = () =>
+  typeof AbortSignal?.timeout === 'function'
+    ? AbortSignal.timeout(20000)
+    : undefined
+
+const findErrorInChain = (error, predicate) => {
+  const seen = new Set()
+  let current = error
+
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    if (predicate(current)) {
+      return current
+    }
+    current = current?.cause
+  }
+
+  return null
+}
+
+const hasHttpStatus = (error, status) =>
+  Boolean(findErrorInChain(error, (candidate) => Number(candidate?.status) === status))
+
+const fetchTextWithCapturedHttpBody = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'manual',
+    signal: createManualFetchSignal(),
+  })
+  const html = await response.text()
+
+  if (response.ok) {
+    return html
+  }
+
+  const error = new Error(`HTTP ${response.status} for ${url}`)
+  error.status = response.status
+  error.responseBody = html
+  throw error
+}
+
+const defaultFetchText = async (url) => {
+  try {
+    return await fetchTextWithRetry(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      label: SOURCE,
+      timeoutMs: 20000,
+    })
+  } catch (error) {
+    if (!hasHttpStatus(error, 307)) {
+      throw error
+    }
+
+    return fetchTextWithCapturedHttpBody(url)
+  }
+}
 
 const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
   headers: {
@@ -114,6 +168,23 @@ export const hasSmartRecruitersBoardSignal = (html = '') => {
     && /window\._jsErrorTrackerOptions/i.test(page)
     && /career-site-ui/i.test(page)
 }
+
+export const hasBlockedSuccessorHomepageSignal = (html = '') => {
+  const page = String(html ?? '')
+  return /<title>\s*You are being redirected\.\.\.\s*<\/title>/i.test(page)
+    && /Javascript is required\./i.test(page)
+    && /sucuri_cloudproxy_js/i.test(page)
+}
+
+const hasVerifiedBlockedSuccessorHomepageError = (error) =>
+  Boolean(
+    findErrorInChain(
+      error,
+      (candidate) =>
+        Number(candidate?.status) === 307
+        && hasBlockedSuccessorHomepageSignal(candidate?.responseBody),
+    ),
+  )
 
 const buildListingApiUrl = (offset = 0) => {
   const url = new URL(SMARTRECRUITERS_LISTING_API_URL)
@@ -208,8 +279,20 @@ export const createRaveTechnologiesScraper = ({
     fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
   } = {}) {
-    const successorHomepageHtml = await fetchText(SUCCESSOR_HOMEPAGE_URL)
-    if (!hasSuccessorHomepageSignal(successorHomepageHtml)) {
+    let successorHomepageHtml = null
+    try {
+      successorHomepageHtml = await fetchText(SUCCESSOR_HOMEPAGE_URL)
+    } catch (error) {
+      if (!hasVerifiedBlockedSuccessorHomepageError(error)) {
+        throw error
+      }
+    }
+
+    if (
+      successorHomepageHtml != null
+      && !hasSuccessorHomepageSignal(successorHomepageHtml)
+      && !hasBlockedSuccessorHomepageSignal(successorHomepageHtml)
+    ) {
       throw new Error(
         'Rave Technologies verified successor homepage no longer matches the trusted NEC India surface',
       )

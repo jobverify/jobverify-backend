@@ -26,9 +26,7 @@ export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 export const APPLICATION_EMAIL = 'careers@nhost.io'
 export const APPLICATION_URL = `mailto:${APPLICATION_EMAIL}`
 export const VERIFIED_ROLE_URLS = [
-  'https://nhost.io/careers/senior-software-engineer-backend-operations',
-  'https://nhost.io/careers/senior-software-engineer-frontend-product',
-  'https://nhost.io/careers/developer-relations-engineer',
+  'https://nhost.io/careers/infrastructure-engineer',
 ]
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
@@ -140,7 +138,7 @@ const getRoleSlug = (roleUrl) => {
 const getDepartment = (html = '') =>
   normalizeWhitespace(
     String(html ?? '').match(
-      /<(?:p|div|span)[^>]*>([\s\S]*?)<\/(?:p|div|span)>\s*<h1/i,
+      /<(?:p|div|span)[^>]*>\s*([^<]{1,160}?)\s*<\/(?:p|div|span)>\s*<h1/i,
     )?.[1],
   )
 
@@ -208,12 +206,15 @@ export const extractCareerRoleUrls = (html = '') => uniqueUrls(
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = stripTags(page) || ''
+  const expectedRoleCountLabel = VERIFIED_ROLE_URLS.length === 1
+    ? '1 open role'
+    : `${VERIFIED_ROLE_URLS.length} open roles`
 
   return extractTitle(page) === 'Careers and Open Positions | Nhost'
     && normalized.includes('Build the future of application development with us')
     && normalized.includes('Remote, global, async')
     && normalized.includes('Open positions')
-    && normalized.includes('3 open roles')
+    && normalized.includes(expectedRoleCountLabel)
     && new RegExp(escapeRegex(APPLICATION_EMAIL), 'i').test(page)
     && JSON.stringify(extractCareerRoleUrls(page)) === JSON.stringify(VERIFIED_ROLE_URLS)
 }

@@ -269,6 +269,83 @@ const qaLeadDetailHtml = `
 </html>
 `
 
+const legalExecutiveDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Legal Executive - DronaHQ</title>
+  </head>
+  <body>
+    <main>
+      <div class="job-hero-banner-wrapper">
+        <div class="job-title-and-description">
+          <h1 class="job-title">Legal Executive</h1>
+          <div class="job-location-wrapper-and-othre-info">
+            <div class="job-location-wrapper">
+              <span class="location">Location</span>
+              <span>
+                <span>Mumbai, Maharashtra, India</span>
+                <span class="wokr-type">Hybrid</span>
+              </span>
+            </div>
+            <div class="job-type-wrapper">
+              <span>Job type</span>
+              <span>Full-time</span>
+            </div>
+            <div class="job-experience">
+              <span>Experience</span>
+              <span>2 - 3 years</span>
+            </div>
+          </div>
+          <div class="apply-and-share-url-wrapper">
+            <a data-job-title="Legal Executive" class="apply-btn">Apply now</a>
+            <div class="job-url-wrapper">https://www.dronahq.com/career/legal-executive/</div>
+          </div>
+        </div>
+      </div>
+      <div class="job-summary-wrapper">
+        <h2>Role Overview</h2>
+        <div class="summary-description">
+          <p>
+            Support commercial and product teams with contract drafting, review, and negotiation.<br />
+            Help build repeatable legal processes for a fast-moving SaaS business.
+          </p>
+        </div>
+      </div>
+      <div class="job-responsibilities-wrapper">
+        <h2>Key Responsibilities</h2>
+        <div class="job-section-description">
+          <ul>
+            <li>Review NDAs, MSAs, vendor agreements, and procurement terms.</li>
+            <li>Coordinate with external counsel and internal stakeholders on compliance tasks.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="job-responsibilities-wrapper">
+        <div class="job-section-with-title-description">
+          <h3 class="title-wrapper">Must-Have Skills</h3>
+        </div>
+        <div class="job-section-description">
+          <ul>
+            <li>Strong drafting and contract review fundamentals.</li>
+            <li>Comfort working with business teams in a fast-paced software company.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="job-responsibilities-wrapper">
+        <h2><b>Why join us?</b></h2>
+        <div class="job-section-description">
+          <ul>
+            <li>Work closely with founders and GTM teams on product and commercial initiatives.</li>
+            <li>Help shape scalable legal operations for an AI and low-code platform.</li>
+          </ul>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
+`
+
 const loadDeltecsModule = async () => {
   try {
     return await import('../../scraper/deltecs/script.js')
@@ -539,4 +616,48 @@ test('Deltecs fails closed when the verified homepage, careers page, or job deta
     }),
     /verified job detail/i,
   )
+})
+
+test('Deltecs skips branded DronaHQ 404 job cards and keeps still-live India roles on Thursday, August 20, 2026', async () => {
+  const deltecs = await loadDeltecsModule()
+  const requestedUrls = []
+
+  const jobs = await deltecs.createDeltecsScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === deltecs.HOMEPAGE_URL) return homepageHtml
+      if (url === deltecs.CAREERS_URL) return careersHtml
+      if (url === 'https://www.dronahq.com/career/legal-executive/') return legalExecutiveDetailHtml
+
+      if (
+        url === 'https://www.dronahq.com/career/b2b-tech-marketing-intern-developer-platform/'
+        || url === 'https://www.dronahq.com/career/qa-lead/'
+        || url === 'https://www.dronahq.com/career/b2b-saas-marketer/'
+      ) {
+        throw new Error(`HTTP 404 for ${url}`)
+      }
+
+      throw new Error(`Unexpected Deltecs URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    deltecs.HOMEPAGE_URL,
+    deltecs.CAREERS_URL,
+    'https://www.dronahq.com/career/b2b-tech-marketing-intern-developer-platform/',
+    'https://www.dronahq.com/career/qa-lead/',
+    'https://www.dronahq.com/career/legal-executive/',
+    'https://www.dronahq.com/career/b2b-saas-marketer/',
+  ])
+  assert.deepEqual(
+    jobs.map((job) => job.title),
+    ['Legal Executive'],
+  )
+  assert.equal(jobs[0]?.jobId, 'deltecs-legal-executive')
+  assert.equal(jobs[0]?.sourceUrl, 'https://www.dronahq.com/career/legal-executive/')
+  assert.equal(jobs[0]?.source, 'deltecs')
+  assert.equal(jobs[0]?.scrapedAt, FIXED_SCRAPED_AT)
 })

@@ -18,7 +18,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('Hotstar local catalog captures the verified blocked JioStar page and keyworded Workday surface', async () => {
+test('Hotstar local catalog captures the verified live JioStar page and keyworded Workday surface', async () => {
   const {
     HOTSTAR_CATALOG,
     VERIFIED_SURFACE_SUMMARY,
@@ -58,19 +58,20 @@ test('Hotstar local catalog captures the verified blocked JioStar page and keywo
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'verified-homepage-plus-blocked-careers-page-plus-keyworded-workday-search',
+    'verified-homepage-plus-live-careers-page-plus-keyworded-workday-search',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-hotstar-brand-homepage+verified-blocked-jiostar-page+verified-workday-board+keyworded-workday-jobs-api',
+    'verified-hotstar-brand-homepage+verified-live-jiostar-page+verified-workday-board+keyworded-workday-jobs-api',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.equal(provider.verifiedOn, '2026-08-17')
   assert.equal(provider.verifiedSurfaceSummary, VERIFIED_SURFACE_SUMMARY)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.hotstar\.com\//i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.jiostar\.com\//i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /errors\.edgesuite\.net/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /live JioStar corporate page/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /public Workday careers handoff/i)
   assert.match(
     VERIFIED_SURFACE_SUMMARY,
     /https:\/\/jiostar\.wd102\.myworkdayjobs\.com\/JioStar/i,

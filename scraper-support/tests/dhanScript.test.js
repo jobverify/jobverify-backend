@@ -229,6 +229,37 @@ test('Dhan run validates the verified first-party handoff and returns normalized
   assert.equal(jobs[0].scrapedAt, '2026-07-15T12:00:00.000Z')
 })
 
+test('Dhan returns [] when the verified official Zappyhire board shell is live but its board APIs currently 404', async () => {
+  const dhan = await loadDhanModule()
+
+  const jobs = await dhan.createDhanScraper().run({
+    fetchPage: async (url) => {
+      if (url === dhan.HOMEPAGE_URL) {
+        return { status: 200, url, html: homepageHtml }
+      }
+
+      if (url === dhan.CAREERS_URL) {
+        return { status: 200, url, html: careersHtml }
+      }
+
+      if (url === dhan.CAREERS_HANDOFF_URL) {
+        return { status: 200, url, html: boardShellHtml }
+      }
+
+      throw new Error(`Unexpected Dhan page URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      if (url === dhan.CAREERS_CONFIG_URL) {
+        throw new Error(`HTTP 404 for ${url}`)
+      }
+
+      throw new Error(`Unexpected Dhan JSON URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
 test('Dhan fails closed when the verified first-party handoff or Zappyhire payloads drift', async () => {
   const dhan = await loadDhanModule()
 

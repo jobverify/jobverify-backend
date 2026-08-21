@@ -6,10 +6,10 @@
 import crypto from "node:crypto";
 import Razorpay from "razorpay";
 
-const PAYMENT_PROVIDER = String(process.env.PAYMENT_PROVIDER || "mock")
+const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
+const normalizeProviderName = (value) => String(value || "mock")
   .trim()
   .toLowerCase();
-const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 
 const isMockPaymentsAllowed = (env = process.env) =>
   String(env.NODE_ENV || "").trim().toLowerCase() === "test"
@@ -173,17 +173,22 @@ export const createRazorpayProvider = ({
   },
 });
 
+export const getPaymentProviderName = (env = process.env) =>
+  normalizeProviderName(env.PAYMENT_PROVIDER);
+
 export const getPaymentProvider = (
-  name = PAYMENT_PROVIDER,
+  name,
   env = process.env,
   razorpayOptions = {},
 ) => {
-  if (name === "razorpay") {
+  const providerName = typeof name === "string" && name.trim()
+    ? normalizeProviderName(name)
+    : getPaymentProviderName(env);
+
+  if (providerName === "razorpay") {
     return createRazorpayProvider(razorpayOptions);
   }
 
   return createMockProvider(env);
 };
-
-export const getPaymentProviderName = () => PAYMENT_PROVIDER;
 export { isMockPaymentsAllowed };

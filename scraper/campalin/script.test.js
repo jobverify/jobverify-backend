@@ -121,6 +121,13 @@ const missingRouteWithGenericCareersCopy = {
   `,
 }
 
+const placeholderCareersAliasPage = {
+  status: 200,
+  url: 'https://campalin.in/work-with-us',
+  finalUrl: 'https://campalin.in/',
+  html: homepageHtml,
+}
+
 test('Campalin sentinel pins the verified Campalin placeholder-or-timeout first-party surface', async () => {
   const campalin = await loadCampalinModule()
 
@@ -164,6 +171,7 @@ test('Campalin sentinel recognizes the verified no-public-careers routes', async
 
   assert.equal(campalin.isVerifiedNoPublicCareersRoute(missingCareersPage), true)
   assert.equal(campalin.isVerifiedNoPublicCareersRoute(missingRouteWithGenericCareersCopy), true)
+  assert.equal(campalin.isVerifiedNoPublicCareersRoute(placeholderCareersAliasPage), true)
   assert.equal(campalin.isVerifiedNoPublicCareersRoute(publicJobsPage), false)
 })
 

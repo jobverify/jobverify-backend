@@ -79,9 +79,13 @@ export const isExpectedMainSiteTimeout = (page = {}) =>
 
 export const hasCurrentOpeningsSignal = (html) => {
   const page = String(html ?? '')
-  return /EIL Recruitment Portal/i.test(page)
+  return /EIL Recruitment Portal|<title>\s*EIL\s*\|\s*Recruitment\s*<\/title>/i.test(page)
     && /Current Openings/i.test(page)
-    && /Recruitment of Fresher \/ Experienced Candidates/i.test(page)
+    && (
+      /Recruitment of Fresher \/ Experienced Candidates/i.test(page)
+      || /Live Advertisements \/ Print Outs/i.test(page)
+      || /\(Adv No:/i.test(page)
+    )
 }
 
 export const hasOfficialHomepageSignal = (html) => {
@@ -129,12 +133,7 @@ export const hasPublicOpeningsOnMainSite = (html) => {
 
 export const extractOpenings = (html) => {
   const page = String(html ?? '')
-  const sectionMatch = page.match(
-    /Recruitment of Fresher \/ Experienced Candidates:[\s\S]*?Live Advertisements \/ Print Outs([\s\S]*?)(?:\*\s*\*\s*\*|<\/body>|$)/i,
-  )
-  const section = sectionMatch?.[1] || ''
-
-  const jobs = [...section.matchAll(
+  const jobs = [...page.matchAll(
     /(\d+)\.\s*([^<\n]+?)\s*\(Adv No:\s*([^)]+)\)/gi,
   )]
     .map((match) => {

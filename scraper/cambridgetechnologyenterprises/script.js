@@ -165,12 +165,20 @@ export const extractFreshteamJobsUrl = (html) => {
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
+  const directFreshteamHandoff = extractFreshteamJobsUrl(rawHtml)
+  const hasKnownTitle = /<title>\s*(?:AI Cloud Solutions|Enterprise AI,\s*Data\s*&\s*SaaS Applications|Agentic AI Solutions for Enterprise Workflows)\s*\|\s*Cambridge(?: Technology(?: Inc\.)?)?\s*<\/title>/i.test(rawHtml)
+  const hasKnownHero =
+    /\bLeap to The Future with AI at Your Core\b/i.test(normalized)
+    || /\bUnlock Hidden Opportunities with Data and AI\b/i.test(normalized)
+    || /\bAgentic AI for Smarter, Better Enterprise Workflows\b/i.test(normalized)
+    || /\bAI-Driven Enterprise Transformation\b/i.test(normalized)
+  const hasCareersRoute = /href="(?:https:\/\/www\.(?:ctepl|cambridgetech)\.com)?\/careers\/"/i.test(rawHtml)
 
-  return /<title>\s*AI Cloud Solutions\s*\|\s*Cambridge Technology Inc\.\s*<\/title>/i.test(rawHtml)
+  return hasKnownTitle
     && /\bCambridge Technology\b/i.test(normalized)
-    && /\bLeap to The Future with AI at Your Core\b/i.test(normalized)
-    && /\bCareers\b/i.test(normalized)
-    && /href="(?:https:\/\/www\.ctepl\.com)?\/careers\/"/i.test(rawHtml)
+    && (hasCareersRoute || isVerifiedFreshteamJobsUrl(directFreshteamHandoff))
+    && (/\bCareers\b/i.test(normalized) || isVerifiedFreshteamJobsUrl(directFreshteamHandoff))
+    && (hasKnownHero || isVerifiedFreshteamJobsUrl(directFreshteamHandoff))
 }
 
 export const hasOfficialCareersLandingSignal = (html) => {
@@ -376,18 +384,26 @@ export const createCambridgeTechnologyEnterprisesScraper = ({
       )
     }
 
-    const careersLandingHtml = await fetchText(CAREERS_LANDING_URL)
-    if (!hasOfficialCareersLandingSignal(careersLandingHtml)) {
-      throw new Error(
-        'Cambridge Technology Enterprises verified first-party careers landing no longer matches the trusted public surface',
-      )
-    }
+    let listingUrl = null
+    const directListingUrl = extractFreshteamJobsUrl(officialHtml)
+    if (isVerifiedFreshteamJobsUrl(directListingUrl)) {
+      listingUrl = LISTING_URL
+    } else {
+      const careersLandingHtml = await fetchText(CAREERS_LANDING_URL)
+      if (!hasOfficialCareersLandingSignal(careersLandingHtml)) {
+        throw new Error(
+          'Cambridge Technology Enterprises verified first-party careers landing no longer matches the trusted public surface',
+        )
+      }
 
-    const listingUrl = extractFreshteamJobsUrl(careersLandingHtml)
-    if (!isVerifiedFreshteamJobsUrl(listingUrl)) {
-      throw new Error(
-        'Verified first-party careers landing no longer points to the known Cambridge Technology Freshteam board',
-      )
+      const landingListingUrl = extractFreshteamJobsUrl(careersLandingHtml)
+      if (!isVerifiedFreshteamJobsUrl(landingListingUrl)) {
+        throw new Error(
+          'Verified first-party careers landing no longer points to the known Cambridge Technology Freshteam board',
+        )
+      }
+
+      listingUrl = LISTING_URL
     }
 
     const listingHtml = await fetchText(listingUrl)

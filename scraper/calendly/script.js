@@ -100,8 +100,17 @@ export const hasOfficialCareersPageSignal = (html = '') => {
   return /<title>\s*Let(?:'|&#x27;|&#39;|&apos;)s make meetings better together \| Calendly\s*<\/title>/i.test(page)
     && normalized.includes('Careers at Calendly')
     && normalized.includes('Join us in creating better meeting experiences')
-    && normalized.includes('Open roles')
-    && normalized.includes('Take a look at our open positions and join us on our mission to make people love meetings.')
+    && (
+      (
+        normalized.includes('Filter by location')
+        && normalized.includes('Filter by department')
+        && normalized.includes('Featured')
+        && /boards\.greenhouse\.io/i.test(page)
+      ) || (
+        normalized.includes('Open roles')
+        && normalized.includes('Take a look at our open positions and join us on our mission to make people love meetings.')
+      )
+    )
     && normalized.includes('Copyright Calendly')
 }
 

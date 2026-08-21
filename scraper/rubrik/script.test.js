@@ -27,6 +27,11 @@ const careersHtml = String.raw`
 </html>
 `
 
+const careersHtmlWithoutTogetherCopy = careersHtml.replace(
+  "<h1>Together, we're unstoppable.</h1>",
+  '<h1>Discover The Power of You</h1>',
+)
+
 const peopleDepartmentHtml = String.raw`
 <!DOCTYPE html>
 <html>
@@ -119,6 +124,20 @@ test('Rubrik validates the verified official careers page and extracts departmen
     [
       { title: 'Senior People Partner - APAC', url: 'https://www.rubrik.com/company/careers/departments/job.2333116' },
       { title: 'Senior People Partner, GTM', url: 'https://www.rubrik.com/company/careers/departments/job.5555555' },
+    ],
+  )
+})
+
+test('Rubrik accepts the current careers page shape when department links remain but the old hero copy is gone', async () => {
+  const rubrik = await loadRubrikModule()
+  assert.ok(rubrik, 'Expected Rubrik scraper module at ./script.js')
+
+  assert.equal(rubrik.hasOfficialCareersSignal(careersHtmlWithoutTogetherCopy), true)
+  assert.deepEqual(
+    rubrik.extractDepartmentLinks(careersHtmlWithoutTogetherCopy),
+    [
+      { name: 'People', url: 'https://www.rubrik.com/company/careers/departments/people' },
+      { name: 'Product', url: 'https://www.rubrik.com/company/careers/departments/product' },
     ],
   )
 })

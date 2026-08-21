@@ -75,6 +75,39 @@ const defaultFetchPage = async (url) => {
   }
 }
 
+export const isTemporaryAkulakuSurfaceError = (error) => {
+  const diagnostic = [
+    error?.message,
+    error?.cause?.message,
+    error?.code,
+    error?.cause?.code,
+  ]
+    .filter(Boolean)
+    .join('\n')
+
+  return /fetch failed/i.test(diagnostic)
+    || /connect timeout error/i.test(diagnostic)
+    || /und_err_connect_timeout/i.test(diagnostic)
+    || /socket hang up/i.test(diagnostic)
+    || /econnreset/i.test(diagnostic)
+    || /etimedout/i.test(diagnostic)
+    || /eai_again/i.test(diagnostic)
+    || /enotfound/i.test(diagnostic)
+    || /operation was aborted/i.test(diagnostic)
+}
+
+const fetchVerifiedAkulakuPage = async (fetchPage, url) => {
+  try {
+    return await fetchPage(url)
+  } catch (error) {
+    if (isTemporaryAkulakuSurfaceError(error)) {
+      return null
+    }
+
+    throw error
+  }
+}
+
 export const extractOfficialJobsBoardUrl = (html = '') => {
   const match = String(html ?? '').match(
     /<a[^>]+href=["'](https:\/\/akulaku\.zhiye\.com\/[^"']*)["'][^>]*>[\s\S]*?<\/a>/i,
@@ -303,20 +336,32 @@ export const createAkulakuScraper = ({
   maxPages = 50,
 } = {}) => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const careersPage = await fetchPage(FIRST_PARTY_CAREERS_URL)
+    const careersPage = await fetchVerifiedAkulakuPage(fetchPage, FIRST_PARTY_CAREERS_URL)
+
+    if (!careersPage) {
+      return []
+    }
 
     if (Number(careersPage.status) !== 200 || !hasFirstPartyCareersSignal(careersPage.html)) {
       throw new Error('Akulaku verified first-party careers shell no longer matches the public surface')
     }
 
-    const boardHomePage = await fetchPage(OFFICIAL_JOBS_BOARD_URL)
+    const boardHomePage = await fetchVerifiedAkulakuPage(fetchPage, OFFICIAL_JOBS_BOARD_URL)
+
+    if (!boardHomePage) {
+      return []
+    }
 
     if (Number(boardHomePage.status) !== 200) {
       throw new Error('Akulaku verified official jobs board no longer matches the public surface')
     }
 
     if (hasMaintenanceBoardSignal(boardHomePage.html)) {
-      const maintenanceListingsPage = await fetchPage(JOB_LISTINGS_URL)
+      const maintenanceListingsPage = await fetchVerifiedAkulakuPage(fetchPage, JOB_LISTINGS_URL)
+
+      if (!maintenanceListingsPage) {
+        return []
+      }
 
       if (Number(maintenanceListingsPage.status) !== 200 || !hasMaintenanceBoardSignal(maintenanceListingsPage.html)) {
         throw new Error('Akulaku verified maintenance board surface changed materially')
@@ -338,7 +383,11 @@ export const createAkulakuScraper = ({
         throw new Error('Akulaku listing pagination exceeded the verified safety limit')
       }
 
-      const listingPage = await fetchPage(nextPageUrl)
+      const listingPage = await fetchVerifiedAkulakuPage(fetchPage, nextPageUrl)
+
+      if (!listingPage) {
+        return []
+      }
 
       if (Number(listingPage.status) !== 200 || !hasJobListingsPageSignal(listingPage.html)) {
         throw new Error(`Akulaku listing page surface changed: ${nextPageUrl}`)
@@ -361,7 +410,11 @@ export const createAkulakuScraper = ({
     const jobs = []
 
     for (const listing of indiaCards) {
-      const detailPage = await fetchPage(listing.detailUrl)
+      const detailPage = await fetchVerifiedAkulakuPage(fetchPage, listing.detailUrl)
+
+      if (!detailPage) {
+        return []
+      }
 
       if (Number(detailPage.status) !== 200 || !hasJobDetailSignal(detailPage.html)) {
         throw new Error(`Akulaku detail page surface changed: ${listing.detailUrl}`)

@@ -24,8 +24,8 @@ const verifiedCareersHtml = `
     <body>
       <div>AllCargo Gati</div>
       <h1>Spotting future logistics leaders, now</h1>
-      <a href="https://gatikwe.darwinbox.in/ms/candidate/careers">Join Our Team</a>
-      <a href="https://gatikwe.darwinbox.in/ms/candidate/careers">Explore job openings today!</a>
+      <a href="https://allcargologistics.darwinbox.in/ms/candidatev2/main/careers/home">Join Our Team</a>
+      <a href="https://allcargologistics.darwinbox.in/ms/candidatev2/main/careers/home">Explore job openings today!</a>
     </body>
   </html>
 `
@@ -51,7 +51,7 @@ test('Gati scraper pins the verified redirecting homepage, parent careers page, 
   assert.equal(gati.HOMEPAGE_URL, 'https://www.gati.com/')
   assert.equal(gati.REDIRECT_HOMEPAGE_URL, 'https://www.allcargologistics.com/')
   assert.equal(gati.CAREERS_PAGE_URL, 'https://www.allcargologistics.com/about-us/careers')
-  assert.equal(gati.DARWINBOX_HANDOFF_URL, 'https://gatikwe.darwinbox.in/ms/candidate/careers')
+  assert.equal(gati.DARWINBOX_HANDOFF_URL, 'https://allcargologistics.darwinbox.in/ms/candidatev2/main/careers/home')
   assert.equal(
     gati.LISTING_API_URL,
     'https://gatikwe.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main',

@@ -140,6 +140,44 @@ const searchResultsHtml = `
   </section>
 `
 
+const currentGuestSearchCardHtml = `
+  <li>
+    <div class="base-card base-search-card job-search-card" data-entity-urn="urn:li:jobPosting:4455607809" data-impression-id="jobs-search-desktop-0">
+      <a
+        class="base-card__full-link absolute top-0 right-0 bottom-0 left-0 p-0 z-[2] outline-offset-[4px]"
+        href="https://in.linkedin.com/jobs/view/corporate-development-intern-at-stellaraa-4455607809?position=1&amp;pageNum=0&amp;refId=aPeLjRRa%2B6KvC9Ca%2FOJBcg%3D%3D&amp;trackingId=p0xXkmCz717w5%2Fx07SEkUg%3D%3D"
+      >
+        <span class="sr-only">Corporate Development Intern</span>
+      </a>
+      <div class="search-entity-media"></div>
+      <div class="base-search-card__info">
+        <h3 class="base-search-card__title">
+          Corporate Development Intern
+        </h3>
+        <h4 class="base-search-card__subtitle">
+          <a
+            class="hidden-nested-link"
+            href="https://in.linkedin.com/company/stellaraa?trk=public_jobs_jserp-result_job-search-card-subtitle"
+          >
+            Stellaraa
+          </a>
+        </h4>
+        <div class="base-search-card__metadata">
+          <span class="job-search-card__location">
+            Salem, Tamil Nadu, India
+          </span>
+          <div class="job-posting-benefits text-sm">
+            <span class="job-posting-benefits__text">Be an early applicant</span>
+          </div>
+          <time class="job-search-card__listdate--new" datetime="2026-08-20">
+            10 hours ago
+          </time>
+        </div>
+      </div>
+    </div>
+  </li>
+`
+
 const detailHtml = `
   <html>
     <head>
@@ -209,6 +247,29 @@ test('extractSearchResults keeps only Stellaraa India jobs from the public Linke
     preferredQualification: null,
     requiredSkills: [],
     postingDate: '2026-06-30',
+    closingDate: null,
+    jobDescription: null,
+  }])
+})
+
+test('extractSearchResults handles the current LinkedIn guest-search card markup for Stellaraa India jobs', () => {
+  assert.deepEqual(extractSearchResults(currentGuestSearchCardHtml), [{
+    title: 'Corporate Development Intern',
+    company: 'Stellaraa Edutech Pvt. Ltd.',
+    department: null,
+    location: 'Salem, Tamil Nadu, India',
+    city: 'Salem',
+    country: 'India',
+    jobId: '4455607809',
+    requisitionId: '4455607809',
+    sourceUrl: 'https://in.linkedin.com/jobs/view/corporate-development-intern-at-stellaraa-4455607809?position=1&pageNum=0&refId=aPeLjRRa%2B6KvC9Ca%2FOJBcg%3D%3D&trackingId=p0xXkmCz717w5%2Fx07SEkUg%3D%3D',
+    applyUrl: 'https://in.linkedin.com/jobs/view/corporate-development-intern-at-stellaraa-4455607809?position=1&pageNum=0&refId=aPeLjRRa%2B6KvC9Ca%2FOJBcg%3D%3D&trackingId=p0xXkmCz717w5%2Fx07SEkUg%3D%3D',
+    employmentType: null,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: '2026-08-20',
     closingDate: null,
     jobDescription: null,
   }])

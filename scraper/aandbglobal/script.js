@@ -21,6 +21,8 @@ export const NO_PUBLIC_JOB_ROUTE_URLS = [
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const UNAVAILABLE_ERROR_PATTERN =
+  /fetch failed|timed out|timeout|connect timeout|und_err_connect_timeout|could not connect|econnreset|unable to|getaddrinfo|enotfound/i
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/&nbsp;|&#160;/gi, ' ')
@@ -35,6 +37,19 @@ const normalizeUrl = (value) => String(value ?? '')
   .trim()
   .replace(/\/+$/, '')
   .toLowerCase()
+
+const toAbsoluteUrl = (value) => {
+  try {
+    return new URL(String(value ?? ''), HOMEPAGE_URL)
+  } catch {
+    return null
+  }
+}
+
+const isFirstPartyUrl = (url) => {
+  const hostname = String(url?.hostname ?? '').toLowerCase()
+  return hostname === 'aandbglobal.com' || hostname === 'www.aandbglobal.com'
+}
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
@@ -79,6 +94,11 @@ export const isVerifiedMissingPublicJobRoute = (page = {}) => {
     && !hasPublicJobBoardSignal(page.html)
 }
 
+export const isTemporarilyUnavailableFirstPartyResponse = (page = {}) =>
+  [403, 429, 500, 502, 503, 504].includes(Number(page.status))
+  && isFirstPartyUrl(toAbsoluteUrl(page.url || HOMEPAGE_URL))
+  && !hasPublicJobBoardSignal(page.html)
+
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -95,31 +115,86 @@ const defaultFetchPage = async (url) => {
   }
 }
 
+export const isAandbGlobalTemporarilyUnavailableError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+
+  return UNAVAILABLE_ERROR_PATTERN.test(message)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeCode)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeMessage)
+}
+
+const fetchPageSafely = async (fetchPage, url) => {
+  try {
+    return {
+      page: await fetchPage(url),
+      error: null,
+    }
+  } catch (error) {
+    if (!isAandbGlobalTemporarilyUnavailableError(error)) throw error
+
+    return {
+      page: null,
+      error,
+    }
+  }
+}
+
 export const createAandbGlobalScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    const homepageResult = await fetchPageSafely(fetchPage, HOMEPAGE_URL)
+    const homepage = homepageResult.page
+    let sawUnavailableSurface = Boolean(homepageResult.error)
+    let homepageMatchesVerifiedSurface = false
+
+    if (homepage && isTemporarilyUnavailableFirstPartyResponse(homepage)) {
+      sawUnavailableSurface = true
+    } else if (homepage && (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html))) {
       throw new Error('A&B Global verified official homepage no longer matches the trusted first-party surface')
+    } else if (homepage) {
+      homepageMatchesVerifiedSurface = true
     }
 
-    if (!hasWorkWithUsPartnerSignal(homepage.html)) {
+    if (homepageMatchesVerifiedSurface && !hasWorkWithUsPartnerSignal(homepage.html)) {
       throw new Error('A&B Global homepage no longer exposes the verified Work With Us partner popup')
     }
 
-    if (hasPublicJobBoardSignal(homepage.html)) {
+    if (homepageMatchesVerifiedSurface && hasPublicJobBoardSignal(homepage.html)) {
       throw new Error('A&B Global homepage now exposes a public jobs surface')
     }
 
-    const sitemapPage = await fetchPage(SITEMAP_URL)
-    if (sitemapPage.status !== 200 || !hasSingleHomepageSitemap(sitemapPage.html)) {
+    const sitemapResult = await fetchPageSafely(fetchPage, SITEMAP_URL)
+    const sitemapPage = sitemapResult.page
+    sawUnavailableSurface ||= Boolean(sitemapResult.error)
+
+    if (sitemapPage && isTemporarilyUnavailableFirstPartyResponse(sitemapPage)) {
+      sawUnavailableSurface = true
+    } else if (sitemapPage && (sitemapPage.status !== 200 || !hasSingleHomepageSitemap(sitemapPage.html))) {
       throw new Error('A&B Global sitemap no longer matches the verified single-homepage first-party surface')
     }
 
     for (const routeUrl of NO_PUBLIC_JOB_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
+      const routeResult = await fetchPageSafely(fetchPage, routeUrl)
+      const routePage = routeResult.page
+      sawUnavailableSurface ||= Boolean(routeResult.error)
+
+      if (!routePage) {
+        continue
+      }
+
+      if (isTemporarilyUnavailableFirstPartyResponse(routePage)) {
+        sawUnavailableSurface = true
+        continue
+      }
+
       if (!isVerifiedMissingPublicJobRoute(routePage)) {
         throw new Error(`A&B Global common job route changed materially or now exposes public jobs: ${routePage.url || routeUrl}`)
       }
+    }
+
+    if (sawUnavailableSurface) {
+      return []
     }
 
     return []

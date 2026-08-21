@@ -16,12 +16,15 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
-const PUBLIC_JOBS_SIGNAL_PATTERNS = [
+const BODY_PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /\bcurrent openings\b/i,
   /\bopen positions?\b/i,
   /\bjob openings?\b/i,
   /\bsearch jobs\b/i,
   /\bapply now\b/i,
+]
+
+const RAW_PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /boards\.greenhouse\.io/i,
   /jobs\.lever\.co/i,
   /ashbyhq\.com/i,
@@ -56,6 +59,9 @@ const extractTitle = (html = '') => {
   return normalizeWhitespace(match?.[1])
 }
 
+const extractBodyHtml = (html = '') =>
+  String(html ?? '').match(/<body\b[^>]*>([\s\S]*?)<\/body>/i)?.[1] || String(html ?? '')
+
 export const isCloudflareInterstitial = (html = '') => {
   const text = normalizeWhitespace(html) || ''
 
@@ -64,8 +70,13 @@ export const isCloudflareInterstitial = (html = '') => {
     || /__cf_chl/i.test(String(html ?? ''))
 }
 
-export const hasPublicJobsSignal = (html = '') =>
-  PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+export const hasPublicJobsSignal = (html = '') => {
+  const page = String(html ?? '')
+  const visibleBodyText = normalizeWhitespace(extractBodyHtml(page)) || ''
+
+  return BODY_PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(visibleBodyText))
+    || RAW_PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(page))
+}
 
 export const hasKhazanaCareersSignal = (html = '') => {
   const text = normalizeWhitespace(html) || ''

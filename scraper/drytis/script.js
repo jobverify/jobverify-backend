@@ -57,9 +57,23 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/&amp;/gi, '&')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/[‘’]/g, "'")
+  .replace(/[“”]/g, '"')
+  .replace(/[—–]/g, '-')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
+
+const hasCurrentShellOrganizationSignal = (html) => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page).toLowerCase()
+
+  return /"@type"\s*:\s*"Organization"/i.test(page)
+    && /"name"\s*:\s*"Drytis"/i.test(page)
+    && /"url"\s*:\s*"https:\/\/drytis\.com\/"/i.test(page)
+    && normalized.includes('solutions pricing about blog')
+    && /https:\/\/studio\.drytis\.ai\/login/i.test(page)
+}
 
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
@@ -89,10 +103,18 @@ export const hasOfficialHomepageSignal = (html) => {
     normalized.includes("ai only gets you started. it doesn't get you finished.")
     && normalized.includes('a real human engineer steps in.')
     && normalized.includes('you build something that actually works.')
+  const hasAugust2026HeroCopy =
+    hasCurrentShellOrganizationSignal(page)
+    && /the gap between\s+[‘’'"]?it works[‘’'"]?\s+and\s+[‘’'"]?it['’]s ready[‘’'"]?\s+is an engineer/i.test(normalized)
+    && normalized.includes('ai can start a project. only a real engineer can finish one.')
+    && normalized.includes('ai writes software. humans build companies.')
+    && /the moment ai says it['’]s done,\s+a drytis engineer takes over/i.test(normalized)
 
-  return /^Drytis\b/i.test(title)
+  return (
+    /^Drytis\b/i.test(title)
     && /AI builds prototypes\.\s*Humans build companies\./i.test(title)
     && (hasLegacyHeroCopy || hasCurrentHeroCopy)
+  ) || hasAugust2026HeroCopy
 }
 
 export const hasOfficialAboutSignal = (html) => {
@@ -107,11 +129,20 @@ export const hasOfficialAboutSignal = (html) => {
     normalized.includes("you didn't fail. ai was not enough .")
     && normalized.includes('what no ai has ever done.')
     && normalized.includes('everyone has a prototype. almost nobody has a product.')
+  const hasAugust2026AboutCopy =
+    hasCurrentShellOrganizationSignal(page)
+    && normalized.includes("we turned 'hire an engineer' into something you can buy by the token.")
+    && normalized.includes('drytis is human intelligence')
+    && normalized.includes('tokenized and accessible')
+    && normalized.includes('ai writes software. drytis gives you the engineer behind it.')
+    && normalized.includes('we believe the future is built by engineers. ai just made them more powerful.')
+    && normalized.includes('engineers deliver outcomes.')
 
-  return (
+  return ((
     /<title>\s*Drytis\s*[\u2014-]\s*About\s*<\/title>/i.test(page)
       || /<title>\s*About\s*\|\s*Drytis\s*<\/title>/i.test(page)
-  ) && (hasLegacyAboutCopy || hasCurrentAboutCopy)
+  ) && (hasLegacyAboutCopy || hasCurrentAboutCopy))
+    || hasAugust2026AboutCopy
 }
 
 export const pageHasExpectedEngineersLink = (html) =>
@@ -183,12 +214,16 @@ export const sitemapHasUnexpectedCareerLikeUrl = (xml) => {
 
 export const isVerifiedMissingCareerRoute = (page = {}) => {
   const normalized = normalizeWhitespace(page?.html).toLowerCase()
-
-  return Number(page?.status) === 404
-    && normalized.includes('error response')
+  const hasLegacy404Surface =
+    normalized.includes('error response')
     && normalized.includes('error code: 404')
     && normalized.includes('message: file not found.')
     && normalized.includes('nothing matches the given uri.')
+  const hasCurrentPlain404Surface =
+    /^404(?:\s*[—-]\s*|\s+)page not found\.?$/i.test(normalized)
+
+  return Number(page?.status) === 404
+    && (hasLegacy404Surface || hasCurrentPlain404Surface)
     && !hasPublicJobsSignal(page?.html)
 }
 
@@ -211,31 +246,47 @@ export const createDrytisScraper = () => ({
     }
 
     const privacy = await fetchPage(PRIVACY_URL)
-    if (privacy.status !== 200 || !hasOfficialPrivacySignal(privacy.html)) {
+    if (privacy.status === 404) {
+      if (!isVerifiedMissingCareerRoute(privacy)) {
+        throw new Error('DRYTIS verified privacy page no longer matches the known first-party surface')
+      }
+    } else if (privacy.status !== 200 || !hasOfficialPrivacySignal(privacy.html)) {
       throw new Error('DRYTIS verified privacy page no longer matches the known first-party surface')
     }
-    if (hasPublicJobsSignal(privacy.html)) {
+    if (privacy.status === 200 && hasPublicJobsSignal(privacy.html)) {
       throw new Error('DRYTIS privacy page now appears to expose a public jobs surface')
     }
 
     const terms = await fetchPage(TERMS_URL)
-    if (terms.status !== 200 || !hasOfficialTermsSignal(terms.html)) {
+    if (terms.status === 404) {
+      if (!isVerifiedMissingCareerRoute(terms)) {
+        throw new Error('DRYTIS verified terms page no longer matches the known first-party surface')
+      }
+    } else if (terms.status !== 200 || !hasOfficialTermsSignal(terms.html)) {
       throw new Error('DRYTIS verified terms page no longer matches the known first-party surface')
     }
-    if (hasPublicJobsSignal(terms.html)) {
+    if (terms.status === 200 && hasPublicJobsSignal(terms.html)) {
       throw new Error('DRYTIS terms page now appears to expose a public jobs surface')
     }
 
     const engineers = await fetchPage(ENGINEERS_URL)
-    if (engineers.status !== 200 || !hasOfficialEngineersSignal(engineers.html)) {
+    if (engineers.status === 404) {
+      if (!isVerifiedMissingCareerRoute(engineers)) {
+        throw new Error('DRYTIS verified engineers page no longer matches the known first-party surface')
+      }
+    } else if (engineers.status !== 200 || !hasOfficialEngineersSignal(engineers.html)) {
       throw new Error('DRYTIS verified engineers page no longer matches the known first-party surface')
     }
-    if (hasPublicJobsSignal(engineers.html)) {
+    if (engineers.status === 200 && hasPublicJobsSignal(engineers.html)) {
       throw new Error('DRYTIS engineers page now appears to expose a public jobs surface')
     }
 
     const sitemap = await fetchPage(SITEMAP_URL)
-    if (sitemap.status !== 200 || sitemapHasUnexpectedCareerLikeUrl(sitemap.html)) {
+    if (sitemap.status === 404) {
+      if (!isVerifiedMissingCareerRoute(sitemap)) {
+        throw new Error('DRYTIS verified sitemap no longer matches the known careers-free surface')
+      }
+    } else if (sitemap.status !== 200 || sitemapHasUnexpectedCareerLikeUrl(sitemap.html)) {
       throw new Error('DRYTIS verified sitemap no longer matches the known careers-free surface')
     }
 

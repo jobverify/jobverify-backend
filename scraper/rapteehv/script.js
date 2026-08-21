@@ -47,7 +47,7 @@ const parseQuotedConfigValue = (block, key) => {
 export const hasOfficialCareersSignal = (html) => {
   const rawHtml = String(html ?? '')
 
-  return /<title>(?:Raptee\.HV - India's First Motorcycle with Electric Car DNA \| HV-TEC|Careers at Raptee\.HV \| Join India's High-Voltage EV Startup|Raptee\.HV \| India(?:'|&#39;|&rsquo;)?s First High-Voltage Electric Motorcycle)<\/title>/i.test(rawHtml)
+  return /<title[^>]*>(?:Raptee\.HV - India's First Motorcycle with Electric Car DNA \| HV-TEC|Careers at Raptee\.HV \| Join India's High-Voltage EV Startup|EV Careers in India \| Join Raptee\.HV(?:'|&#39;|&rsquo;)?s High-Voltage Electric Vehicle Team|Raptee\.HV \| India(?:'|&#39;|&rsquo;)?s First High-Voltage Electric Motorcycle)<\/title>/i.test(rawHtml)
     && /"name":\s*"Careers",\s*"url":\s*"https:\/\/www\.rapteehv\.com\/careers\/?"/i.test(rawHtml)
     && /https:\/\/raptee\.keka\.com\/careers\/api\/embedjobs\/js\/3d03878f-6bf4-4fe3-9090-2989304de3b4/i.test(rawHtml)
 }

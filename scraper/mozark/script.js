@@ -46,6 +46,15 @@ const PUBLIC_JOBS_SIGNAL_PATTERNS = [
 const CAREER_LIKE_URL_PATTERN =
   /\/(?:career|careers|job|jobs|opening|openings|join-us)(?:[/?#-]|$)/i
 
+const normalizeText = (value) =>
+  String(value ?? '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -63,12 +72,15 @@ const defaultFetchPage = async (url) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
+  const normalized = normalizeText(rawHtml)
 
-  return rawHtml.includes('Mozark | AI-Native Synthetic Testing')
-    && rawHtml.includes('Public Sector')
-    && rawHtml.includes('property="og:site_name" content="Mozark"')
-    && rawHtml.includes('Monitor the user experience on your app or network without privacy intrusive end user data collection agents or expensive backend telemetry data collection')
-    && rawHtml.includes('AI-Native Synthetic Testing')
+  return /<title>\s*Mozark\.ai\s*<\/title>/i.test(rawHtml)
+    && /<meta[^>]+name=["']description["'][^>]+content=["']Digital experience intelligence across user, application and network layers\./i.test(rawHtml)
+    && normalized.includes('digital experience assurance')
+    && normalized.includes('experience is all')
+    && normalized.includes('great user experience requires great apps and great networks. mozark assures that.')
+    && normalized.includes('ready to elevate your digital experience')
+    && normalized.includes('join hundreds of enterprises using mozark ai')
 }
 
 export const hasPublicJobsSignal = (html) =>
@@ -84,7 +96,11 @@ export const sitemapHasCareerLikeUrl = (xml) => {
 
 export const isVerifiedMissingCareersRoute = (page = {}) =>
   Number(page?.status) === 404
-  && /<title>\s*404 Error:\s*Page Not Found\s*<\/title>/i.test(String(page?.html ?? ''))
+  && (
+    /<title>\s*404 Error:\s*Page Not Found\s*<\/title>/i.test(String(page?.html ?? ''))
+    || /<title>\s*404:\s*This page could not be found\.\s*<\/title>/i.test(String(page?.html ?? ''))
+  )
+  && normalizeText(page?.html).includes('mozark.ai')
   && !hasPublicJobsSignal(page?.html)
 
 export const createMozarkScraper = () => ({
@@ -99,14 +115,15 @@ export const createMozarkScraper = () => ({
       throw new Error('Mozark homepage now appears to expose a public jobs surface')
     }
 
-    const sitemapIndex = await fetchPage(SITEMAP_INDEX_URL)
-    if (sitemapIndex.status !== 200 || extractPagesSitemapUrl(sitemapIndex.html) !== PAGES_SITEMAP_URL) {
-      throw new Error('Mozark verified sitemap index no longer matches the known pages sitemap handoff')
-    }
+    for (const sitemapUrl of [SITEMAP_INDEX_URL, PAGES_SITEMAP_URL]) {
+      const sitemapPage = await fetchPage(sitemapUrl)
+      if (!isVerifiedMissingCareersRoute(sitemapPage)) {
+        if (hasPublicJobsSignal(sitemapPage.html)) {
+          throw new Error('Mozark sitemap endpoints changed materially or now expose public jobs')
+        }
 
-    const pagesSitemap = await fetchPage(PAGES_SITEMAP_URL)
-    if (pagesSitemap.status !== 200 || sitemapHasCareerLikeUrl(pagesSitemap.html)) {
-      throw new Error('Mozark verified pages sitemap no longer matches the no-public-careers surface')
+        throw new Error(`Mozark verified sitemap endpoint no longer matches the missing public surface: ${sitemapPage.url || sitemapUrl}`)
+      }
     }
 
     for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {

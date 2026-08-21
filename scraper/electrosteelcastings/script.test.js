@@ -61,12 +61,12 @@ const missingRouteHtml = `
   </html>
 `
 
-test('validates the Friday, August 14, 2026 Electrosteel homepage, careers hub, and branded legacy 404 routes', async () => {
+test('validates the Thursday, August 20, 2026 Electrosteel homepage, careers hub, and accepted legacy no-openings routes', async () => {
   const requestedUrls = []
   const scraper = createElectrosteelCastingsScraper()
 
   assert.equal(SOURCE, 'electrosteelcastings')
-  assert.equal(VERIFIED_ON, '2026-08-14')
+  assert.equal(VERIFIED_ON, '2026-08-20')
   assert.equal(hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(hasCareerInfoOnlySignal(careerInfoHtml), true)
   assert.equal(hasBrandedMissingRouteSignal(missingRouteHtml), true)
@@ -97,6 +97,31 @@ test('validates the Friday, August 14, 2026 Electrosteel homepage, careers hub, 
     LEGACY_CAREERS_ENQUIRY_URL,
     LEGACY_LIFE_AT_URL,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('accepts the current Electrosteel legacy route redirects when they still resolve to verified official no-openings surfaces', async () => {
+  const scraper = createElectrosteelCastingsScraper()
+
+  const jobs = await scraper.run({
+    fetchText: async (url) => {
+      if (url === HOMEPAGE_URL) return homepageHtml
+      if (url === CAREERS_URL) return careerInfoHtml
+      throw new Error(`Unexpected text URL: ${url}`)
+    },
+    fetchPage: async (url) => {
+      if (url === LEGACY_CAREERS_ENQUIRY_URL) {
+        return { status: 200, url: CAREERS_URL, html: careerInfoHtml }
+      }
+
+      if (url === LEGACY_LIFE_AT_URL) {
+        return { status: 200, url: HOMEPAGE_URL, html: homepageHtml }
+      }
+
+      throw new Error(`Unexpected page URL: ${url}`)
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })
 
@@ -141,6 +166,6 @@ test('fails closed when the Electrosteel homepage, careers hub, or legacy 404 ro
         return { status: 404, url, html: missingRouteHtml }
       },
     }),
-    /legacy careers routes no longer match the verified first-party missing-page surface/i,
+    /legacy careers routes no longer match the verified official no-openings surfaces/i,
   )
 })

@@ -5,6 +5,7 @@ import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import { runApiPortalScraper } from '../apiPortal/engine.js'
+import { getScraperCatalog } from '../providers/index.js'
 
 const fixturesDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -97,4 +98,59 @@ test('runApiPortalScraper maps MongoDB Greenhouse jobs and keeps only India role
   assert.match(jobs[0].jobDescription, /Come to MongoDB and get your Masters in Sales/i)
   assert.match(jobs[0].jobDescription, /&lt;h3&gt;The Opportunity&lt;\/h3&gt;/i)
   assert.ok(jobs.every((job) => /india|bengaluru|bangalore|gurugram|gurgaon|mumbai|pune|hyderabad|chennai|noida/i.test(job.location)))
+})
+
+test('runApiPortalScraper keeps MongoDB India roles whose locations use shared India city labels outside the legacy regex', async () => {
+  const hydratedProvider = getScraperCatalog().find((entry) => entry.source === 'mongodb')
+  assert.ok(hydratedProvider)
+
+  const jobs = await runApiPortalScraper({
+    provider: hydratedProvider,
+    fetchJson: async () => ({
+      jobs: [
+        {
+          id: 1,
+          requisition_id: 'REQ-DELHI',
+          title: 'Developer Advocate',
+          location: { name: 'Delhi' },
+          absolute_url: 'https://www.mongodb.com/careers/job/?gh_jid=1',
+          departments: [{ name: 'Engineering' }],
+          metadata: [{ name: 'Employment Type', value: 'Full-time' }],
+          content: '<p>Delhi role</p>',
+          updated_at: '2026-08-18T10:00:00-04:00',
+        },
+        {
+          id: 2,
+          requisition_id: 'REQ-TRV',
+          title: 'Solutions Architect',
+          location: { name: 'Trivandrum' },
+          absolute_url: 'https://www.mongodb.com/careers/job/?gh_jid=2',
+          departments: [{ name: 'Sales Engineering' }],
+          metadata: [{ name: 'Employment Type', value: 'Full-time' }],
+          content: '<p>Trivandrum role</p>',
+          updated_at: '2026-08-18T10:00:00-04:00',
+        },
+        {
+          id: 3,
+          requisition_id: 'REQ-US',
+          title: 'Account Executive',
+          location: { name: 'New York, United States' },
+          absolute_url: 'https://www.mongodb.com/careers/job/?gh_jid=3',
+          departments: [{ name: 'Sales' }],
+          metadata: [{ name: 'Employment Type', value: 'Full-time' }],
+          content: '<p>US role</p>',
+          updated_at: '2026-08-18T10:00:00-04:00',
+        },
+      ],
+      hasMore: false,
+    }),
+  })
+
+  assert.deepEqual(
+    jobs.map((job) => ({ title: job.title, location: job.location })),
+    [
+      { title: 'Developer Advocate', location: 'Delhi' },
+      { title: 'Solutions Architect', location: 'Trivandrum' },
+    ],
+  )
 })

@@ -34,6 +34,10 @@ const careersHtml = `
   <html lang="en">
     <head>
       <title>Careers at Optym | Join Our Team</title>
+      <meta
+        name="description"
+        content="Build your career in logistics technology. Explore open roles and see how you can help optimize global transportation at Optym."
+      />
     </head>
     <body>
       <main>
@@ -51,10 +55,6 @@ const careersHtml = `
         <section>
           <p>250+</p>
           <p>Optymers around the world</p>
-          <h2>You might be the perfect fit.</h2>
-        </section>
-        <section>
-          <h2>Find your lane.</h2>
         </section>
       </main>
     </body>
@@ -66,6 +66,10 @@ const publicJobsHtml = `
   <html lang="en">
     <head>
       <title>Careers at Optym | Join Our Team</title>
+      <meta
+        name="description"
+        content="Build your career in logistics technology. Explore open roles and see how you can help optimize global transportation at Optym."
+      />
     </head>
     <body>
       <main>
@@ -82,9 +86,6 @@ const publicJobsHtml = `
         <section>
           <p>250+</p>
           <p>Optymers around the world</p>
-        </section>
-        <section>
-          <h2>Find your lane.</h2>
         </section>
         <article class="job-listing">
           <h2>Software Engineer</h2>

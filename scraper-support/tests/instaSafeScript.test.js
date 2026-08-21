@@ -5,66 +5,95 @@ const verifiedCareersPageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers at InstaSafe | InstaSafe</title>
+    <title>Instasafe Careers | Instasafe Jobs</title>
     <link rel="canonical" href="https://instasafe.com/careers/" />
     <meta
       name="description"
-      content="Join a global, remote-friendly team simplifying cybersecurity for enterprises across five continents."
+      content="Discover InstaSafe: a cybersecurity leader offering innovative solutions for secure access to enterprise applications. Explore our offerings and join our team!"
     />
   </head>
   <body>
     <main id="main">
-      <h1 class="izsc-h1">
-        <span>Build</span>
-        <span> </span>
-        <span>the</span>
-        <span> </span>
-        <em class="izsc-hl">Future</em>
-        <span> </span>
-        <em class="izsc-hl">of</em>
-        <span> </span>
-        <em class="izsc-hl">Access.</em>
-      </h1>
-      <p>
-        Join a global, remote-friendly team simplifying cybersecurity for enterprises across five continents.
-      </p>
+      <h1>Grow with InstaSafe.</h1>
+      <p>Working at InstaSafe is more than just a Job.</p>
       <a href="/book-a-demo">Book a demo</a>
       <a href="https://docs.instasafe.com/">Read the docs</a>
-      <a href="mailto:sales@instasafe.com">Talk to sales</a>
       <a href="https://support.instasafe.com/portal/en/home">Contact support</a>
+      <a href="https://instasafe.zohorecruit.com/jobs/Careers">Browse current openings</a>
     </main>
   </body>
 </html>
 `
 
-const verifiedCareersPageWithLegacyZohoHandoffHtml = `
+const verifiedCareersPageWithUnexpectedJobsHandoffHtml = `
 ${verifiedCareersPageHtml.replace(
-  '</main>',
-  `
-      <a href="https://instasafe.zohorecruit.com/jobs/Careers/">View jobs</a>
-    </main>`,
+  'https://instasafe.zohorecruit.com/jobs/Careers',
+  'https://instasafe.zohorecruit.com/jobs/OtherPortal',
 )}
 `
 
-const verifiedCareersPageWithSameOriginJobsRouteHtml = `
+const verifiedPortalHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers at InstaSafe | InstaSafe</title>
-    <link rel="canonical" href="https://instasafe.com/careers/" />
-    <meta
-      name="description"
-      content="Join a global, remote-friendly team simplifying cybersecurity for enterprises across five continents."
-    />
+    <title>Jobs at Instasafe Technologies Pvt Ltd</title>
+    <meta property="og:url" content="https://instasafe.zohorecruit.com/jobs/Careers">
   </head>
   <body>
-    <main id="main">
-      <h1>Build the <em>Future</em> of <em>Access.</em></h1>
-      <a href="/careers/open-roles">Open roles</a>
-    </main>
+    <input type="hidden" id="pageJson" value="{}">
+    <input type="hidden" id="moduleMeta" value="[]">
+    <input type="hidden" id="jobs" value="[]">
   </body>
 </html>
 `
+
+const apiPayload = {
+  code: 'success',
+  data: [
+    {
+      id: '435765000017272887',
+      Posting_Title: 'Graduate Engineer Trainee',
+      City: 'Bangalore North',
+      State: 'Karnataka',
+      Country: 'India',
+      Job_Type: 'Full time',
+      Work_Experience: 'Fresher',
+      Required_Skills: 'Java, Linux',
+      Date_Opened: '10/30/2025',
+      Remote_Job: false,
+      Job_Description: 'Build and optimize secure systems.',
+      $url: 'https://instasafe.zohorecruit.com/jobs/Careers/435765000017272887/Graduate-Engineer-Trainee?source=CareerSite',
+    },
+    {
+      id: '435765000018685001',
+      Posting_Title: 'Junior QA Analyst (Security, Automation & AI-Driven Testing)',
+      City: 'Bhubaneswar',
+      State: 'Odisha',
+      Country: 'India',
+      Job_Type: 'Full time',
+      Work_Experience: null,
+      Required_Skills: 'QA, Automation',
+      Date_Opened: '02/22/2026',
+      Remote_Job: false,
+      Job_Description: 'Test secure access workflows.',
+      $url: 'https://instasafe.zohorecruit.com/jobs/Careers/435765000018685001/Junior-QA-Analyst-Security-Automation-AI-Driven-Testing?source=CareerSite',
+    },
+    {
+      id: '435765000018430001',
+      Posting_Title: 'Sales Development Representative (SDR)',
+      City: '',
+      State: '',
+      Country: '',
+      Job_Type: 'Full time',
+      Work_Experience: '4-5 years',
+      Required_Skills: 'Prospecting, CRM',
+      Date_Opened: '01/20/2026',
+      Remote_Job: 'Yes',
+      Job_Description: 'Drive outbound pipeline.',
+      $url: 'https://instasafe.zohorecruit.com/jobs/Careers/435765000018430001/Sales-Development-Representative-SDR?source=CareerSite',
+    },
+  ],
+}
 
 const loadModule = async () => {
   try {
@@ -74,34 +103,84 @@ const loadModule = async () => {
   }
 }
 
-test('InstaSafe constants stay pinned to the verified first-party careers surface and fail-closed empty-state contract', async () => {
+test('InstaSafe constants stay pinned to the verified first-party careers page and restored Zoho Recruit portal', async () => {
   const instasafe = await loadModule()
 
   assert.equal(instasafe.SOURCE, 'instasafe')
   assert.equal(instasafe.COMPANY, 'InstaSafe')
   assert.equal(instasafe.OFFICIAL_BRAND_NAME, 'InstaSafe')
-  assert.equal(instasafe.VERIFIED_ON, '2026-08-15')
+  assert.equal(instasafe.VERIFIED_ON, '2026-08-20')
   assert.equal(instasafe.HOMEPAGE_URL, 'https://instasafe.com/')
   assert.equal(instasafe.CAREERS_PAGE_URL, 'https://instasafe.com/careers/')
-  assert.match(instasafe.VERIFIED_SURFACE_SUMMARY, /no trustworthy public jobs inventory/i)
-  assert.match(instasafe.VERIFIED_SURFACE_SUMMARY, /fails closed/i)
+  assert.equal(instasafe.CAREERS_PORTAL_URL, 'https://instasafe.zohorecruit.com/jobs/Careers')
+  assert.equal(
+    instasafe.CAREERS_API_URL,
+    'https://instasafe.zohorecruit.com/recruit/v2/public/Job_Openings?source=CareerSite&pagename=Careers&extra_fields=%5B%22Date_Opened%22,%22Job_Description%22,%22Work_Experience%22,%22Job_Type%22,%22Required_Skills%22%5D',
+  )
+  assert.match(instasafe.VERIFIED_SURFACE_SUMMARY, /August 20, 2026/i)
+  assert.match(instasafe.VERIFIED_SURFACE_SUMMARY, /instasafe\.zohorecruit\.com\/jobs\/Careers/i)
+  assert.match(instasafe.VERIFIED_SURFACE_SUMMARY, /14 public postings/i)
+  assert.match(instasafe.VERIFIED_SURFACE_SUMMARY, /12 India jobs/i)
   assert.equal(instasafe.hasOfficialCareersPageSignal(verifiedCareersPageHtml), true)
-  assert.equal(instasafe.detectPublicJobsSurface(verifiedCareersPageHtml), null)
+  assert.equal(instasafe.hasOfficialPortalSignal(verifiedPortalHtml), true)
+  assert.equal(
+    instasafe.detectPublicJobsSurface(verifiedCareersPageHtml),
+    'https://instasafe.zohorecruit.com/jobs/Careers',
+  )
 })
 
-test('detectPublicJobsSurface flags reappearing ATS and same-origin openings routes for review', async () => {
+test('extractIndiaJobs maps official InstaSafe India openings and excludes remote records without an India location contract', async () => {
   const instasafe = await loadModule()
-  assert.equal(
-    instasafe.detectPublicJobsSurface(verifiedCareersPageWithLegacyZohoHandoffHtml),
-    'https://instasafe.zohorecruit.com/jobs/Careers/',
-  )
-  assert.equal(
-    instasafe.detectPublicJobsSurface(verifiedCareersPageWithSameOriginJobsRouteHtml),
-    'https://instasafe.com/careers/open-roles',
-  )
+
+  assert.deepEqual(instasafe.extractIndiaJobs(apiPayload), [
+    {
+      title: 'Graduate Engineer Trainee',
+      company: 'InstaSafe',
+      department: null,
+      location: 'Bangalore North, Karnataka, India',
+      city: 'Bangalore North',
+      state: 'Karnataka',
+      country: 'India',
+      jobId: '435765000017272887',
+      requisitionId: '435765000017272887',
+      sourceUrl: 'https://instasafe.zohorecruit.com/jobs/Careers/435765000017272887/Graduate-Engineer-Trainee?source=CareerSite',
+      applyUrl: 'https://instasafe.zohorecruit.com/jobs/Careers/435765000017272887/Graduate-Engineer-Trainee?source=CareerSite',
+      employmentType: 'Full-time',
+      experienceRequired: 'Fresher',
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: ['Java', 'Linux'],
+      postingDate: '10/30/2025',
+      closingDate: null,
+      jobDescription: 'Build and optimize secure systems.',
+      remoteStatus: 'On-site',
+    },
+    {
+      title: 'Junior QA Analyst (Security, Automation & AI-Driven Testing)',
+      company: 'InstaSafe',
+      department: null,
+      location: 'Bhubaneswar, Odisha, India',
+      city: 'Bhubaneswar',
+      state: 'Odisha',
+      country: 'India',
+      jobId: '435765000018685001',
+      requisitionId: '435765000018685001',
+      sourceUrl: 'https://instasafe.zohorecruit.com/jobs/Careers/435765000018685001/Junior-QA-Analyst-Security-Automation-AI-Driven-Testing?source=CareerSite',
+      applyUrl: 'https://instasafe.zohorecruit.com/jobs/Careers/435765000018685001/Junior-QA-Analyst-Security-Automation-AI-Driven-Testing?source=CareerSite',
+      employmentType: 'Full-time',
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: ['QA', 'Automation'],
+      postingDate: '02/22/2026',
+      closingDate: null,
+      jobDescription: 'Test secure access workflows.',
+      remoteStatus: 'On-site',
+    },
+  ])
 })
 
-test('run returns an honest empty result when the verified careers page exposes no trustworthy public jobs surface', async () => {
+test('run validates the official InstaSafe careers page, portal, and public jobs API before decorating India jobs', async () => {
   const instasafe = await loadModule()
   const requestedUrls = []
 
@@ -109,15 +188,32 @@ test('run returns an honest empty result when the verified careers page exposes 
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === instasafe.CAREERS_PAGE_URL) return verifiedCareersPageHtml
+      if (url === instasafe.CAREERS_PORTAL_URL) return verifiedPortalHtml
       assert.fail(`Unexpected InstaSafe HTML request: ${url}`)
     },
+    fetchJson: async (url) => {
+      requestedUrls.push(url)
+      if (url === instasafe.CAREERS_API_URL) return apiPayload
+      assert.fail(`Unexpected InstaSafe JSON request: ${url}`)
+    },
+    now: () => '2026-08-20T12:00:00.000Z',
   })
 
-  assert.deepEqual(requestedUrls, [instasafe.CAREERS_PAGE_URL])
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedUrls, [
+    instasafe.CAREERS_PAGE_URL,
+    instasafe.CAREERS_PORTAL_URL,
+    instasafe.CAREERS_API_URL,
+  ])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].source, 'instasafe')
+  assert.equal(jobs[0].companyDomain, 'instasafe.com')
+  assert.equal(jobs[0].atsPlatform, 'zohorecruit')
+  assert.equal(jobs[0].companyCareerPage, 'https://instasafe.com/careers/')
+  assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(jobs[0].scrapedAt, '2026-08-20T12:00:00.000Z')
 })
 
-test('run preserves the honest empty result when the verified InstaSafe careers page is temporarily timeout-blocked', async () => {
+test('run preserves an honest empty result when the verified InstaSafe careers page is temporarily timeout-blocked', async () => {
   const instasafe = await loadModule()
   const requestedUrls = []
 
@@ -132,7 +228,7 @@ test('run preserves the honest empty result when the verified InstaSafe careers 
   assert.deepEqual(jobs, [])
 })
 
-test('run fails closed when the verified InstaSafe careers page markers drift', async () => {
+test('run fails closed when the verified first-party InstaSafe careers page markers drift', async () => {
   const instasafe = await loadModule()
 
   await assert.rejects(
@@ -142,7 +238,7 @@ test('run fails closed when the verified InstaSafe careers page markers drift', 
           return '<html><body>Broken careers page</body></html>'
         }
 
-        return portalHtml
+        return verifiedPortalHtml
       },
       fetchJson: async () => apiPayload,
     }),
@@ -150,13 +246,49 @@ test('run fails closed when the verified InstaSafe careers page markers drift', 
   )
 })
 
-test('run fails closed when the verified InstaSafe page starts exposing a public jobs surface again', async () => {
+test('run fails closed when the first-party page no longer hands off to the verified InstaSafe Zoho Recruit portal', async () => {
   const instasafe = await loadModule()
 
   await assert.rejects(
     instasafe.createInstaSafeScraper().run({
-      fetchText: async () => verifiedCareersPageWithLegacyZohoHandoffHtml,
+      fetchText: async (url) => {
+        if (url === instasafe.CAREERS_PAGE_URL) return verifiedCareersPageWithUnexpectedJobsHandoffHtml
+        return verifiedPortalHtml
+      },
+      fetchJson: async () => apiPayload,
     }),
     /public jobs surface changed materially/i,
+  )
+})
+
+test('run fails closed when the official InstaSafe Zoho Recruit portal signal disappears', async () => {
+  const instasafe = await loadModule()
+
+  await assert.rejects(
+    instasafe.createInstaSafeScraper().run({
+      fetchText: async (url) => {
+        if (url === instasafe.CAREERS_PAGE_URL) return verifiedCareersPageHtml
+        if (url === instasafe.CAREERS_PORTAL_URL) return '<html><body>Unexpected board</body></html>'
+        assert.fail(`Unexpected InstaSafe HTML request: ${url}`)
+      },
+      fetchJson: async () => apiPayload,
+    }),
+    /official InstaSafe careers portal/i,
+  )
+})
+
+test('run fails closed when the official InstaSafe jobs API payload drifts', async () => {
+  const instasafe = await loadModule()
+
+  await assert.rejects(
+    instasafe.createInstaSafeScraper().run({
+      fetchText: async (url) => {
+        if (url === instasafe.CAREERS_PAGE_URL) return verifiedCareersPageHtml
+        if (url === instasafe.CAREERS_PORTAL_URL) return verifiedPortalHtml
+        assert.fail(`Unexpected InstaSafe HTML request: ${url}`)
+      },
+      fetchJson: async () => ({ code: 'success', data: null }),
+    }),
+    /public jobs API/i,
   )
 })

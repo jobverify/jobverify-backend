@@ -44,7 +44,7 @@ const EMPLOYER_REGISTER_REQUIRED_PATTERNS = [
   /\bboon\.ai\b/i,
   /\bhow would you like to register\?/i,
   /\bagency\b/i,
-  /\bclient\s*\/\s*foreign employer\b/i,
+  /\b(?:client\s*\/\s*)?foreign employer\b/i,
   /\bcontinue\b/i,
   /\balready have an account\s*\?\s*login\b/i,
 ]

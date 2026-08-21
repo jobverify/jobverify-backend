@@ -102,9 +102,36 @@ export const isVerifiedMissingRoute = (page = {}) => {
     && normalized.includes('The resource requested could not be found on this server!')
 }
 
+export const isTemporaryHomepageUnavailableError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const causeHostname = String(error?.cause?.hostname ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const diagnostic = `${message}\n${causeMessage}\n${causeHostname}\n${causeCode}`
+
+  return diagnostic.includes('redanttech.com')
+    && (
+      /fetch failed/i.test(diagnostic)
+      || /getaddrinfo/i.test(diagnostic)
+      || /eai_again/i.test(diagnostic)
+      || /enotfound/i.test(diagnostic)
+      || /timeout/i.test(diagnostic)
+      || /socket hang up/i.test(diagnostic)
+    )
+}
+
 export const createRedAntTechnologiesScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+    let homepage
+    try {
+      homepage = await fetchPage(HOMEPAGE_URL)
+    } catch (error) {
+      if (isTemporaryHomepageUnavailableError(error)) {
+        return []
+      }
+
+      throw error
+    }
 
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('RedAnt Technologies verified official homepage no longer matches the known public surface')

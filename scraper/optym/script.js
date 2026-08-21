@@ -19,10 +19,10 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
 
   return /<title>\s*Careers at Optym\s*\|\s*Join Our Team\s*<\/title>/i.test(page)
+    && /Build your career in logistics technology\. Explore open roles and see how you can help optimize global transportation at Optym\./i.test(page)
     && /Optym is where amazing people \(like you\) do their best work\./i.test(page)
     && /Optymers around the world/i.test(page)
     && /See open roles/i.test(page)
-    && /Find your lane\./i.test(page)
 }
 
 export const pageExposesPublicJobListings = (html) => (

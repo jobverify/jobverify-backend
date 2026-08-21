@@ -9,7 +9,7 @@ export const HOMEPAGE_URL = 'https://www.electrosteel.com/'
 export const CAREERS_URL = 'https://www.electrosteel.com/career'
 export const LEGACY_CAREERS_ENQUIRY_URL = 'https://www.electrosteel.com/careers-enquiry.php'
 export const LEGACY_LIFE_AT_URL = 'https://www.electrosteel.com/careers/life_electrosteel.php'
-export const VERIFIED_ON = '2026-08-14'
+export const VERIFIED_ON = '2026-08-20'
 
 export const SOURCE = 'electrosteelcastings'
 
@@ -27,6 +27,18 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
+
+const normalizeComparableUrl = (value) => {
+  try {
+    const url = new URL(String(value ?? ''))
+    url.hash = ''
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    return String(value ?? '').replace(/\/$/, '')
+  }
+}
+
+const sameUrl = (left, right) => normalizeComparableUrl(left) === normalizeComparableUrl(right)
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
@@ -60,6 +72,32 @@ export const hasBrandedMissingRouteSignal = (html) => {
     && text.includes('THIS PAGE IS OFF THE GRID.')
     && text.includes('Routing Status 404')
     && text.includes('Destination unavailable.')
+}
+
+export const hasAcceptedLegacyNoOpeningsSurface = (legacyUrl, page = {}) => {
+  if (Number(page?.status) === 404 && hasBrandedMissingRouteSignal(page?.html)) {
+    return true
+  }
+
+  if (
+    legacyUrl === LEGACY_CAREERS_ENQUIRY_URL
+    && Number(page?.status) === 200
+    && sameUrl(page?.url, CAREERS_URL)
+    && hasCareerInfoOnlySignal(page?.html)
+  ) {
+    return true
+  }
+
+  if (
+    legacyUrl === LEGACY_LIFE_AT_URL
+    && Number(page?.status) === 200
+    && sameUrl(page?.url, HOMEPAGE_URL)
+    && hasOfficialHomepageSignal(page?.html)
+  ) {
+    return true
+  }
+
+  return false
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
@@ -105,8 +143,8 @@ export const createElectrosteelCastingsScraper = () => ({
 
     for (const legacyUrl of [LEGACY_CAREERS_ENQUIRY_URL, LEGACY_LIFE_AT_URL]) {
       const legacyPage = await fetchPage(legacyUrl)
-      if (Number(legacyPage?.status) !== 404 || !hasBrandedMissingRouteSignal(legacyPage?.html)) {
-        throw new Error('Electrosteel legacy careers routes no longer match the verified first-party missing-page surface')
+      if (!hasAcceptedLegacyNoOpeningsSurface(legacyUrl, legacyPage)) {
+        throw new Error('Electrosteel legacy careers routes no longer match the verified official no-openings surfaces')
       }
     }
 

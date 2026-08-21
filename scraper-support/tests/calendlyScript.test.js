@@ -149,3 +149,34 @@ test('Calendly fails closed when the verified careers page or Greenhouse company
     /verified company identity/i,
   )
 })
+
+test('Calendly accepts the live filter-based careers surface while the Greenhouse feed still has no India roles', async () => {
+  const calendly = await loadCalendlyModule()
+
+  const liveCareersHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Let&#39;s make meetings better together | Calendly</title>
+    </head>
+    <body>
+      <p>Careers at Calendly</p>
+      <h1>Join us in creating better meeting experiences</h1>
+      <p>Filter by location</p>
+      <p>Filter by department</p>
+      <h2>Featured</h2>
+      <a href="https://boards.greenhouse.io/embed/job_app?for=calendly&token=1">Customer Success Manager II</a>
+      <a href="https://boards.greenhouse.io/embed/job_app?for=calendly&token=2">Senior Director, Product Growth</a>
+      <footer>
+        <p>© Copyright Calendly 2026</p>
+      </footer>
+    </body>
+  </html>
+  `
+
+  assert.equal(calendly.hasOfficialCareersPageSignal(liveCareersHtml), true)
+  assert.deepEqual(
+    calendly.extractIndiaJobsFromGreenhousePayload(greenhousePayload, { scrapedAt: FIXED_SCRAPED_AT }),
+    [],
+  )
+})

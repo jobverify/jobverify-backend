@@ -69,8 +69,8 @@ export const hasZeroOpenPositions = (html = '') => getOpenPositionCount(html) ==
 
 export const hasIndiaLocationCounts = (html = '') => {
   const normalized = normalizeWhitespace(html)
-  return /India Bengaluru (?:\d+\s+jobs|No current jobs)/i.test(normalized)
-    && /India Mumbai (?:\d+\s+jobs|No current jobs)/i.test(normalized)
+  return /India Bengaluru (?:\d+\s+job(?:s)?|No current jobs)/i.test(normalized)
+    && /India Mumbai (?:\d+\s+job(?:s)?|No current jobs)/i.test(normalized)
 }
 
 export const hasIndiaLegalEntity = (html = '') =>

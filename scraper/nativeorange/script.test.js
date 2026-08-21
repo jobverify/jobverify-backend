@@ -50,11 +50,10 @@ const contactHtml = `
   </head>
   <body>
     <h1>Contact Us</h1>
+    <p>Our team is ready to help you transform your business with cutting-edge technologies.</p>
     <p>Fill out the form below and our team will get back to you shortly.</p>
-    <p>Head Office</p>
-    <p>San Francisco, California, 94105</p>
     <p>sales@nativeorange.ai</p>
-    <p>(408) 596 3079</p>
+    <p>+1 (925) 399-6005</p>
   </body>
 </html>
 `
@@ -102,7 +101,7 @@ test('Native orange sentinel validates the verified homepage, about page, contac
 
   assert.equal(nativeorange.SOURCE, 'nativeorange')
   assert.equal(nativeorange.COMPANY, 'Native orange')
-  assert.equal(nativeorange.VERIFIED_ON, '2026-08-03')
+  assert.equal(nativeorange.VERIFIED_ON, '2026-08-13')
   assert.equal(nativeorange.HOMEPAGE_URL, 'https://nativeorange.ai/')
   assert.equal(nativeorange.ABOUT_URL, 'https://nativeorange.ai/about/')
   assert.equal(nativeorange.CONTACT_URL, 'https://nativeorange.ai/contact/')

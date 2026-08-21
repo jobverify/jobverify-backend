@@ -191,6 +191,64 @@ const LIVE_SHAPED_BACKEND_HTML = `
 </html>
 `
 
+const LIVE_CAREERS_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers and Open Positions | Nhost</title>
+  </head>
+  <body>
+    <main>
+      <h1>Build the future of application development with us</h1>
+      <p>Remote, global, async</p>
+      <h2>Open positions</h2>
+      <p>1 open role — find the one that fits.</p>
+      <a href="https://nhost.io/careers/infrastructure-engineer">Infrastructure Engineer</a>
+      <p>Questions? Email <a href="mailto:careers@nhost.io">careers@nhost.io</a>.</p>
+    </main>
+  </body>
+</html>
+`
+
+const INFRASTRUCTURE_URL = 'https://nhost.io/careers/infrastructure-engineer'
+const INFRASTRUCTURE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Infrastructure Engineer | Nhost</title>
+  </head>
+  <body>
+    <a href="/careers">All open positions</a>
+    <span>Engineering</span>
+    <h1>Infrastructure Engineer</h1>
+    <div>Remote Full-time 25-30 days vacation</div>
+    <a href="mailto:careers@nhost.io?subject=Infrastructure%20Engineer">Apply for this role</a>
+    <h2>About the role</h2>
+    <div>Own the infrastructure that every Nhost project runs on.</div>
+    <h2>What will you do?</h2>
+    <ul>
+      <li>Design, build, and operate our multi-account, multi-region AWS infrastructure.</li>
+    </ul>
+    <h2>What are we looking for?</h2>
+    <ul>
+      <li>4+ years of relevant experience building and operating production cloud infrastructure</li>
+      <li>Deep experience running Kubernetes in production, including cluster upgrades, autoscaling, and networking</li>
+      <li>Excellent communication skills</li>
+    </ul>
+    <h2>Nice to haves</h2>
+    <ul>
+      <li>BSc or MSc in Computer Engineering, Computer Science or relevant field</li>
+    </ul>
+    <h2>What we offer</h2>
+    <ul>
+      <li>Remote</li>
+    </ul>
+    <h2>How to apply</h2>
+    <div>Does this role sound like a good fit? Email us at careers@nhost.io.</div>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/nhost/script.js')
@@ -207,57 +265,54 @@ test('Nhost helpers stay pinned to the verified first-party careers page and rol
   assert.equal(nhost.CAREERS_URL, 'https://nhost.io/careers')
   assert.equal(nhost.APPLICATION_EMAIL, 'careers@nhost.io')
   assert.equal(nhost.APPLICATION_URL, 'mailto:careers@nhost.io')
-  assert.deepEqual(nhost.VERIFIED_ROLE_URLS, [BACKEND_URL, FRONTEND_URL, DEVREL_URL])
-  assert.equal(nhost.hasOfficialCareersPageSignal(CAREERS_HTML), true)
-  assert.deepEqual(nhost.extractCareerRoleUrls(CAREERS_HTML), [BACKEND_URL, FRONTEND_URL, DEVREL_URL])
-  assert.equal(nhost.hasOfficialRoleDetailSignal(BACKEND_HTML, BACKEND_URL), true)
-  assert.equal(nhost.hasOfficialRoleDetailSignal(FRONTEND_HTML, FRONTEND_URL), true)
-  assert.equal(nhost.hasOfficialRoleDetailSignal(DEVREL_HTML, DEVREL_URL), true)
+  assert.deepEqual(nhost.VERIFIED_ROLE_URLS, [INFRASTRUCTURE_URL])
+  assert.equal(nhost.hasOfficialCareersPageSignal(LIVE_CAREERS_HTML), true)
+  assert.deepEqual(nhost.extractCareerRoleUrls(LIVE_CAREERS_HTML), [INFRASTRUCTURE_URL])
+  assert.equal(nhost.hasOfficialRoleDetailSignal(INFRASTRUCTURE_HTML, INFRASTRUCTURE_URL), true)
 
-  assert.deepEqual(nhost.extractRoleDetail(BACKEND_HTML, BACKEND_URL), {
-    title: 'Senior Software Engineer Backend / Operations',
+  assert.deepEqual(nhost.extractRoleDetail(INFRASTRUCTURE_HTML, INFRASTRUCTURE_URL), {
+    title: 'Infrastructure Engineer',
     company: 'Nhost',
     department: 'Engineering',
     location: 'Remote',
     city: null,
     state: null,
     country: 'Global',
-    jobId: 'senior-software-engineer-backend-operations',
-    requisitionId: 'senior-software-engineer-backend-operations',
-    sourceUrl: BACKEND_URL,
+    jobId: 'infrastructure-engineer',
+    requisitionId: 'infrastructure-engineer',
+    sourceUrl: INFRASTRUCTURE_URL,
     applyUrl: 'mailto:careers@nhost.io',
     employmentType: 'Full-time',
     workplaceType: 'Remote',
-    experienceRequired: '5+ years of backend engineering experience in production systems.',
+    experienceRequired: '4+ years of relevant experience building and operating production cloud infrastructure',
     minimumQualification: null,
-    preferredQualification: 'Experience with Elixir, Kubernetes, or developer tooling.',
+    preferredQualification: 'BSc or MSc in Computer Engineering, Computer Science or relevant field',
     requiredSkills: [
-      'Strong experience with TypeScript, Node.js, PostgreSQL, and cloud infrastructure.',
-      'Comfort working in a remote, async environment with high ownership.',
+      'Deep experience running Kubernetes in production, including cluster upgrades, autoscaling, and networking',
+      'Excellent communication skills',
     ],
     postingDate: null,
     closingDate: null,
     remoteStatus: 'Remote',
     jobDescription: [
-      "Help design, operate, and improve the backend systems powering Nhost's developer platform.",
+      'Own the infrastructure that every Nhost project runs on.',
       '',
       'What will you do?',
-      '- Own backend and infrastructure improvements across our platform.',
-      '- Improve observability, reliability, and deployment automation.',
+      '- Design, build, and operate our multi-account, multi-region AWS infrastructure.',
       '',
       'What are we looking for?',
-      '- 5+ years of backend engineering experience in production systems.',
-      '- Strong experience with TypeScript, Node.js, PostgreSQL, and cloud infrastructure.',
-      '- Comfort working in a remote, async environment with high ownership.',
+      '- 4+ years of relevant experience building and operating production cloud infrastructure',
+      '- Deep experience running Kubernetes in production, including cluster upgrades, autoscaling, and networking',
+      '- Excellent communication skills',
       '',
       'Nice to haves',
-      '- Experience with Elixir, Kubernetes, or developer tooling.',
+      '- BSc or MSc in Computer Engineering, Computer Science or relevant field',
       '',
       'What we offer',
-      '- Remote, global, async collaboration.',
+      '- Remote',
       '',
       'How to apply',
-      '- Email us at careers@nhost.io with a short note and links to your work.',
+      '- Does this role sound like a good fit? Email us at careers@nhost.io.',
     ].join('\n'),
   })
 })
@@ -265,24 +320,24 @@ test('Nhost helpers stay pinned to the verified first-party careers page and rol
 test('Nhost detail parsing handles the live combined metadata line and non-paragraph wrappers', async () => {
   const nhost = await loadModule()
 
-  assert.equal(nhost.hasOfficialRoleDetailSignal(LIVE_SHAPED_BACKEND_HTML, BACKEND_URL), true)
+  assert.equal(nhost.hasOfficialRoleDetailSignal(INFRASTRUCTURE_HTML, INFRASTRUCTURE_URL), true)
 
-  const detail = nhost.extractRoleDetail(LIVE_SHAPED_BACKEND_HTML, BACKEND_URL)
+  const detail = nhost.extractRoleDetail(INFRASTRUCTURE_HTML, INFRASTRUCTURE_URL)
 
-  assert.equal(detail.title, 'Senior Software Engineer, Backend & Operations')
+  assert.equal(detail.title, 'Infrastructure Engineer')
   assert.equal(detail.department, 'Engineering')
   assert.equal(detail.workplaceType, 'Remote')
   assert.equal(detail.employmentType, 'Full-time')
   assert.equal(
     detail.experienceRequired,
-    '4+ years of relevant experience developing, testing, and shipping well-engineered code (preferably with Go)',
+    '4+ years of relevant experience building and operating production cloud infrastructure',
   )
   assert.equal(
     detail.preferredQualification,
     'BSc or MSc in Computer Engineering, Computer Science or relevant field',
   )
   assert.deepEqual(detail.requiredSkills, [
-    'Experience with testing, automating, operating, and troubleshooting production systems',
+    'Deep experience running Kubernetes in production, including cluster upgrades, autoscaling, and networking',
     'Excellent communication skills',
   ])
 })
@@ -297,10 +352,8 @@ test('Nhost run validates the verified first-party careers flow and returns norm
     fetchText: async (url) => {
       requestedUrls.push(url)
 
-      if (url === nhost.CAREERS_URL) return CAREERS_HTML
-      if (url === BACKEND_URL) return BACKEND_HTML
-      if (url === FRONTEND_URL) return FRONTEND_HTML
-      if (url === DEVREL_URL) return DEVREL_HTML
+      if (url === nhost.CAREERS_URL) return LIVE_CAREERS_HTML
+      if (url === INFRASTRUCTURE_URL) return INFRASTRUCTURE_HTML
 
       throw new Error(`Unexpected Nhost fixture URL: ${url}`)
     },
@@ -308,160 +361,53 @@ test('Nhost run validates the verified first-party careers flow and returns norm
 
   assert.deepEqual(requestedUrls, [
     nhost.CAREERS_URL,
-    BACKEND_URL,
-    FRONTEND_URL,
-    DEVREL_URL,
+    INFRASTRUCTURE_URL,
   ])
 
   assert.deepEqual(jobs, [
     {
-      title: 'Senior Software Engineer Backend / Operations',
+      title: 'Infrastructure Engineer',
       company: 'Nhost',
       department: 'Engineering',
       location: 'Remote',
       city: null,
       state: null,
       country: 'Global',
-      jobId: 'senior-software-engineer-backend-operations',
-      requisitionId: 'senior-software-engineer-backend-operations',
-      sourceUrl: BACKEND_URL,
+      jobId: 'infrastructure-engineer',
+      requisitionId: 'infrastructure-engineer',
+      sourceUrl: INFRASTRUCTURE_URL,
       applyUrl: 'mailto:careers@nhost.io',
       employmentType: 'Full-time',
       workplaceType: 'Remote',
-      experienceRequired: '5+ years of backend engineering experience in production systems.',
+      experienceRequired: '4+ years of relevant experience building and operating production cloud infrastructure',
       minimumQualification: null,
-      preferredQualification: 'Experience with Elixir, Kubernetes, or developer tooling.',
+      preferredQualification: 'BSc or MSc in Computer Engineering, Computer Science or relevant field',
       requiredSkills: [
-        'Strong experience with TypeScript, Node.js, PostgreSQL, and cloud infrastructure.',
-        'Comfort working in a remote, async environment with high ownership.',
+        'Deep experience running Kubernetes in production, including cluster upgrades, autoscaling, and networking',
+        'Excellent communication skills',
       ],
       postingDate: null,
       closingDate: null,
       remoteStatus: 'Remote',
       jobDescription: [
-        "Help design, operate, and improve the backend systems powering Nhost's developer platform.",
+        'Own the infrastructure that every Nhost project runs on.',
         '',
         'What will you do?',
-        '- Own backend and infrastructure improvements across our platform.',
-        '- Improve observability, reliability, and deployment automation.',
+        '- Design, build, and operate our multi-account, multi-region AWS infrastructure.',
         '',
         'What are we looking for?',
-        '- 5+ years of backend engineering experience in production systems.',
-        '- Strong experience with TypeScript, Node.js, PostgreSQL, and cloud infrastructure.',
-        '- Comfort working in a remote, async environment with high ownership.',
+        '- 4+ years of relevant experience building and operating production cloud infrastructure',
+        '- Deep experience running Kubernetes in production, including cluster upgrades, autoscaling, and networking',
+        '- Excellent communication skills',
         '',
         'Nice to haves',
-        '- Experience with Elixir, Kubernetes, or developer tooling.',
+        '- BSc or MSc in Computer Engineering, Computer Science or relevant field',
         '',
         'What we offer',
-        '- Remote, global, async collaboration.',
+        '- Remote',
         '',
         'How to apply',
-        '- Email us at careers@nhost.io with a short note and links to your work.',
-      ].join('\n'),
-      source: 'nhost',
-      companyCareerPage: 'https://nhost.io/careers',
-      companyDomain: 'nhost.io',
-      atsPlatform: 'official-first-party-careers-page',
-      link: 'mailto:careers@nhost.io',
-      scrapedAt: FIXED_SCRAPED_AT,
-    },
-    {
-      title: 'Senior Software Engineer Frontend / Product',
-      company: 'Nhost',
-      department: 'Engineering',
-      location: 'Remote',
-      city: null,
-      state: null,
-      country: 'Global',
-      jobId: 'senior-software-engineer-frontend-product',
-      requisitionId: 'senior-software-engineer-frontend-product',
-      sourceUrl: FRONTEND_URL,
-      applyUrl: 'mailto:careers@nhost.io',
-      employmentType: 'Full-time',
-      workplaceType: 'Remote',
-      experienceRequired: '5+ years building user-facing web applications in React and TypeScript.',
-      minimumQualification: null,
-      preferredQualification: 'Experience with developer tools, design systems, or GraphQL clients.',
-      requiredSkills: [
-        'Strong product taste and attention to UX details.',
-        'Comfort working in a remote, async environment with high ownership.',
-      ],
-      postingDate: null,
-      closingDate: null,
-      remoteStatus: 'Remote',
-      jobDescription: [
-        'Build thoughtful product experiences for developers using Nhost.',
-        '',
-        'What will you do?',
-        '- Ship frontend product features from idea to production.',
-        '- Collaborate closely with design and product to refine the user experience.',
-        '',
-        'What are we looking for?',
-        '- 5+ years building user-facing web applications in React and TypeScript.',
-        '- Strong product taste and attention to UX details.',
-        '- Comfort working in a remote, async environment with high ownership.',
-        '',
-        'Nice to haves',
-        '- Experience with developer tools, design systems, or GraphQL clients.',
-        '',
-        'What we offer',
-        '- Remote, global, async collaboration.',
-        '',
-        'How to apply',
-        '- Email us at careers@nhost.io with a short note and links to your work.',
-      ].join('\n'),
-      source: 'nhost',
-      companyCareerPage: 'https://nhost.io/careers',
-      companyDomain: 'nhost.io',
-      atsPlatform: 'official-first-party-careers-page',
-      link: 'mailto:careers@nhost.io',
-      scrapedAt: FIXED_SCRAPED_AT,
-    },
-    {
-      title: 'Developer Relations Engineer',
-      company: 'Nhost',
-      department: 'Developer Relations',
-      location: 'Remote',
-      city: null,
-      state: null,
-      country: 'Global',
-      jobId: 'developer-relations-engineer',
-      requisitionId: 'developer-relations-engineer',
-      sourceUrl: DEVREL_URL,
-      applyUrl: 'mailto:careers@nhost.io',
-      employmentType: 'Full-time',
-      workplaceType: 'Remote',
-      experienceRequired: '3+ years in developer advocacy, DevRel, technical writing, or community engineering.',
-      minimumQualification: null,
-      preferredQualification: 'Experience speaking at conferences or leading developer communities.',
-      requiredSkills: [
-        'Strong written communication and public-facing technical storytelling.',
-        'Comfort working in a remote, async environment with high ownership.',
-      ],
-      postingDate: null,
-      closingDate: null,
-      remoteStatus: 'Remote',
-      jobDescription: [
-        'Help developers succeed with Nhost by teaching, documenting, and building examples.',
-        '',
-        'What will you do?',
-        '- Create technical content, demos, and example apps.',
-        '- Partner with engineering and product to improve developer experience.',
-        '',
-        'What are we looking for?',
-        '- 3+ years in developer advocacy, DevRel, technical writing, or community engineering.',
-        '- Strong written communication and public-facing technical storytelling.',
-        '- Comfort working in a remote, async environment with high ownership.',
-        '',
-        'Nice to haves',
-        '- Experience speaking at conferences or leading developer communities.',
-        '',
-        'What we offer',
-        '- Remote, global, async collaboration.',
-        '',
-        'How to apply',
-        '- Email us at careers@nhost.io with a short note and links to your work.',
+        '- Does this role sound like a good fit? Email us at careers@nhost.io.',
       ].join('\n'),
       source: 'nhost',
       companyCareerPage: 'https://nhost.io/careers',
@@ -480,7 +426,7 @@ test('Nhost fails closed when the verified careers list or role detail surface d
     nhost.createNhostScraper().run({
       fetchText: async (url) => {
         if (url === nhost.CAREERS_URL) {
-          return CAREERS_HTML.replace('3 open roles', '4 open roles')
+          return LIVE_CAREERS_HTML.replace('1 open role', '2 open roles')
         }
 
         throw new Error(`Unexpected Nhost fixture URL: ${url}`)
@@ -493,7 +439,7 @@ test('Nhost fails closed when the verified careers list or role detail surface d
     nhost.createNhostScraper().run({
       fetchText: async (url) => {
         if (url === nhost.CAREERS_URL) {
-          return CAREERS_HTML.replace(DEVREL_URL, 'https://nhost.io/careers/site-reliability-engineer')
+          return LIVE_CAREERS_HTML.replace(INFRASTRUCTURE_URL, 'https://nhost.io/careers/site-reliability-engineer')
         }
 
         throw new Error(`Unexpected Nhost fixture URL: ${url}`)
@@ -504,12 +450,12 @@ test('Nhost fails closed when the verified careers list or role detail surface d
 
   await assert.rejects(
     nhost.createNhostScraper({
-      roleUrlsToFetch: [BACKEND_URL],
+      roleUrlsToFetch: [INFRASTRUCTURE_URL],
     }).run({
       fetchText: async (url) => {
-        if (url === nhost.CAREERS_URL) return CAREERS_HTML
-        if (url === BACKEND_URL) {
-          return BACKEND_HTML.replace('careers@nhost.io', 'jobs@example.com')
+        if (url === nhost.CAREERS_URL) return LIVE_CAREERS_HTML
+        if (url === INFRASTRUCTURE_URL) {
+          return INFRASTRUCTURE_HTML.replace('careers@nhost.io', 'jobs@example.com')
         }
 
         throw new Error(`Unexpected Nhost fixture URL: ${url}`)

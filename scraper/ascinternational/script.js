@@ -118,9 +118,15 @@ export const hasOfficialCareersPageSignal = (html) => {
   const title = extractHtmlTitle(page)
   const text = htmlToText(page)
 
-  return title === 'Careers - ASC International'
+  return (
+    title === 'Careers - ASC International'
+    || title === 'Careers - Join the ASC International Team | Inspection & Metrology Jobs | ASC International'
+  )
     && text?.includes('Join Our Continuously Growing Team')
-    && text?.includes('Current Career Opportunities')
+    && (
+      text?.includes('Current Career Opportunities')
+      || text?.includes('Current Openings')
+    )
 }
 
 export const hasLegacyJobPostingSignal = (html) => {

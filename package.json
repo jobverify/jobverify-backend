@@ -26,6 +26,7 @@
     "backfill:job-filters": "node scripts/backfillJobFilterSignals.js",
     "backfill:job-posted-at": "node scripts/backfillMissingPostedAt.js",
     "backfill:job-search-keys": "node scripts/backfillJobSearchKeys.js",
+    "backfill:job-types": "node scripts/backfillJobTypes.js",
     "db:clear": "node scripts/clearJobs.js",
     "db:clean-non-india": "node scripts/removeNonIndiaJobs.js",
     "db:delete-user": "node scripts/sweepDeleteUser.js",

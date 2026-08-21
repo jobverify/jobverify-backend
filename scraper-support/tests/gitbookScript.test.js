@@ -236,3 +236,31 @@ test('GitBook fails closed when the verified careers page, Ashby handoff, or pay
     /verified ashby payload/i,
   )
 })
+
+test('GitBook accepts the current role-agnostic careers page while the Ashby handoff remains stable', async () => {
+  const gitbook = await loadModule()
+
+  const liveCareersHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>GitBook Careers</title>
+    </head>
+    <body>
+      <a href="#open-roles">See open roles</a>
+      <h2 id="open-roles">Open roles</h2>
+      <article>
+        <h3>Enterprise Migrations Engineer</h3>
+        <p>Europe (+/- 3 hours)</p>
+        <a href="https://jobs.ashbyhq.com/GitBook">Apply now</a>
+      </article>
+    </body>
+  </html>
+  `
+
+  assert.equal(gitbook.hasOfficialCareersSignal(liveCareersHtml), true)
+  assert.equal(
+    gitbook.extractVerifiedAshbyPublicBoardUrl(liveCareersHtml),
+    'https://jobs.ashbyhq.com/GitBook',
+  )
+})

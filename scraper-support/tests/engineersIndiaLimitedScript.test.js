@@ -18,6 +18,22 @@ const legacyOpeningsHtml = `
   </html>
 `
 
+const currentLegacyOpeningsHtml = `
+  <html>
+    <head>
+      <title>EIL | Recruitment</title>
+    </head>
+    <body>
+      <h1>Current Openings</h1>
+      <p>Live Advertisements / Print Outs</p>
+      1. SRD FOR SC, ST &amp; OBCs (Adv No:HRD/RECTT./ADVT./2026-27/04)
+      <a href="/applicnExpRecruitment/Printout_regno.aspx?adv=HRD%2FRECTT.%2FADVT.%2F2026-27%2F04">Print Application</a>
+      2. FIXED TERM HIRING (Adv No:HRD/RECTT./ADVT./2026-27/02)
+      <a href="/applicnExpRecruitment/Printout_regno.aspx?adv=HRD%2FRECTT.%2FADVT.%2F2026-27%2F02">Print Application</a>
+    </body>
+  </html>
+`
+
 const homepageHtml = `
   <!doctype html>
   <html lang="en">
@@ -98,11 +114,13 @@ test('Engineers India Limited exports the verified legacy-portal-or-main-domain 
   assert.equal(eil.APPLYING_URL, 'https://www.engineersindia.com/applying-to-eil')
   assert.equal(eil.VERIFIED_ON, '2026-08-15')
   assert.equal(eil.hasCurrentOpeningsSignal(legacyOpeningsHtml), true)
+  assert.equal(eil.hasCurrentOpeningsSignal(currentLegacyOpeningsHtml), true)
   assert.equal(eil.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(eil.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(eil.hasOfficialApplyingSignal(applyingHtml), true)
   assert.equal(eil.hasPublicOpeningsOnMainSite('<main><h2>Current Openings</h2></main>'), true)
   assert.equal(eil.isExpectedLegacyPortalTimeout(timeoutPage(eil.CURRENT_OPENINGS_URL)), true)
+  assert.equal(eil.extractOpenings(currentLegacyOpeningsHtml).length, 2)
 })
 
 test('Engineers India Limited extracts legacy portal openings and decorates them when the old portal is reachable', async () => {

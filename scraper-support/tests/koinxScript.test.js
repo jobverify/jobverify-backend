@@ -165,3 +165,25 @@ test('KoinX sentinel returns [] when Wellfound serves the current security-check
   assert.deepEqual(requestedUrls, [koinx.HOMEPAGE_URL, koinx.CAREERS_URL])
   assert.deepEqual(jobs, [])
 })
+
+test('KoinX homepage verification accepts the live iframe-based AngelList handoff', async () => {
+  const koinx = await loadModule()
+
+  const liveHomepageHtml = `
+  <!doctype html>
+  <html>
+    <head>
+      <title>Unleash Your Potential | Exciting Career Opportunities At KoinX | Join Our Team</title>
+    </head>
+    <body>
+      <h1>Careers At KoinX</h1>
+      <p>The Core of KoinX</p>
+      <p>Committed To Your Success</p>
+      <p>Job Openings</p>
+      <iframe src="https://angel.co/company/koinx/jobs"></iframe>
+    </body>
+  </html>
+  `
+
+  assert.equal(koinx.hasVerifiedHomepageSignal(liveHomepageHtml), true)
+})

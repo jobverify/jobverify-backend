@@ -211,6 +211,29 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
+export const isMissingPublicDetailPageError = (error, sourceUrl) => {
+  const targetUrl = normalizeWhitespace(sourceUrl)
+  const visited = new Set()
+  let current = error
+
+  while (current && !visited.has(current)) {
+    visited.add(current)
+
+    if (current?.status === 404) {
+      return true
+    }
+
+    const message = normalizeWhitespace(current?.message)
+    if (targetUrl && message?.includes(`HTTP 404 for ${targetUrl}`)) {
+      return true
+    }
+
+    current = current?.cause
+  }
+
+  return false
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -238,17 +261,30 @@ export const createMothersonSumiScraper = ({
     const listings = extractIndiaJobListings(jobsBoardHtml)
     const scrapedAt = now()
     const jobs = []
+    let skippedMissingDetailCount = 0
 
     for (const listing of listings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const detail = extractJobDetail(detailHtml, listing)
+      try {
+        const detailHtml = await fetchText(listing.sourceUrl)
+        const detail = extractJobDetail(detailHtml, listing)
 
-      jobs.push({
-        ...detail,
-        source: SOURCE,
-        link: detail.applyUrl || detail.sourceUrl,
-        scrapedAt,
-      })
+        jobs.push({
+          ...detail,
+          source: SOURCE,
+          link: detail.applyUrl || detail.sourceUrl,
+          scrapedAt,
+        })
+      } catch (error) {
+        if (isMissingPublicDetailPageError(error, listing.sourceUrl)) {
+          skippedMissingDetailCount += 1
+          continue
+        }
+        throw error
+      }
+    }
+
+    if (skippedMissingDetailCount > 0 && jobs.length === 0 && listings.length > 0) {
+      throw new Error('Motherson Sumi India listings no longer expose any live public detail pages')
     }
 
     return jobs
