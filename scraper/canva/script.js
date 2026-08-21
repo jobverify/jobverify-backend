@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -40,6 +39,18 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<(p|div|li|ul|ol|section|article|h[1-6])\b[^>]*>/gi, '\n')
     .replace(/<[^>]+>/g, ' '),
 )
+
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
+
+const getHeader = (page = {}, name) => {
+  const normalizedName = String(name ?? '').toLowerCase()
+  const headers = page?.headers
+  if (!headers) return ''
+  if (typeof headers.get === 'function') {
+    return String(headers.get(normalizedName) || headers.get(name) || '')
+  }
+  return String(headers[normalizedName] || headers[name] || '')
+}
 
 const isIndiaLocation = (value) => /\bIndia\b/i.test(normalizeWhitespace(value) || '')
 
@@ -182,13 +193,49 @@ export const extractIndiaJobCardsFromPage = (html) => {
   return jobs
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    headers: Object.fromEntries(response.headers.entries()),
+    html: await response.text(),
+  }
+}
+
+export const hasVerifiedCloudflareChallengeSignal = (page = {}) => {
+  const html = getPageHtml(page)
+  const text = normalizeWhitespace(html) || ''
+
+  return Number(page.status) === 403
+    && /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(html)
+    && /challenges\.cloudflare\.com/i.test(html)
+    && text.includes('Enable JavaScript and cookies to continue')
+}
+
+export const isVerifiedCloudflareChallengedPage = (page = {}, expectedUrl) => {
+  const finalUrl = String(page.url || expectedUrl)
+
+  return finalUrl === expectedUrl
+    && /cloudflare/i.test(getHeader(page, 'server'))
+    && getHeader(page, 'cf-ray').trim().length > 0
+    && getHeader(page, 'cf-mitigated').toLowerCase() === 'challenge'
+    && hasVerifiedCloudflareChallengeSignal(page)
+}
+
+const createFetchPageFromText = (fetchText) => async (url) => ({
+  status: 200,
+  url,
+  headers: {},
+  html: await fetchText(url),
 })
 
 export const createCanvaScraper = ({
@@ -196,9 +243,16 @@ export const createCanvaScraper = ({
   maxPages = null,
 } = {}) => ({
   async run({
-    fetchText = defaultFetchText,
+    fetchPage,
+    fetchText,
     now = () => new Date().toISOString(),
   } = {}) {
+    const effectiveFetchPage = typeof fetchPage === 'function'
+      ? fetchPage
+      : typeof fetchText === 'function'
+        ? createFetchPageFromText(fetchText)
+        : defaultFetchPage
+
     const selectedMaxPages = Number.isInteger(maxPages) && maxPages > 0
       ? maxPages
       : Number.POSITIVE_INFINITY
@@ -209,7 +263,23 @@ export const createCanvaScraper = ({
 
     while (currentPage <= selectedMaxPages) {
       const pageUrl = buildJobsPageUrl({ page: currentPage })
-      const html = await fetchText(pageUrl)
+      const page = await effectiveFetchPage(pageUrl)
+
+      if (isVerifiedCloudflareChallengedPage(page, pageUrl)) {
+        if (currentPage !== 1) {
+          throw new Error('Canva pagination route no longer matches the verified official Canva jobs surface')
+        }
+
+        const secondPageUrl = buildJobsPageUrl({ page: 2 })
+        const secondPage = await effectiveFetchPage(secondPageUrl)
+        if (isVerifiedCloudflareChallengedPage(secondPage, secondPageUrl)) {
+          return []
+        }
+
+        throw new Error('Canva pagination route no longer matches the verified official Canva jobs surface')
+      }
+
+      const html = getPageHtml(page)
 
       if (!hasOfficialJobsPageSignal(html)) {
         throw new Error('Canva jobs page no longer matches the verified official Canva jobs surface')

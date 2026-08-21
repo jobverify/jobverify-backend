@@ -68,12 +68,14 @@ const cityFromLocation = (location = '') =>
   CITY_PATTERNS.find((candidate) => new RegExp(`\\b${candidate}\\b`, 'i').test(location)) ?? null
 
 export const hasOfficialCareersSignal = (html = '') => {
-  const normalized = normalizeWhitespace(html)
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page)
+  const title = extractFirstMatch(page, /<title[^>]*>([\s\S]*?)<\/title>/i)
 
-  return /<title>\s*Careers\s*<\/title>/i.test(String(html ?? ''))
+  return /careers/i.test(title || '')
+    && /newage/i.test(title || '')
     && normalized.includes('Learn and Grow With Us')
     && normalized.includes('Join Newage and be part of a global team driving innovation')
-    && normalized.includes('Senior Associate')
     && normalized.includes('APPLY NOW')
   }
 

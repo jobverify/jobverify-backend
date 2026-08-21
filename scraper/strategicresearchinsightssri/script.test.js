@@ -4,7 +4,7 @@ import test from 'node:test'
 const homepageHtml = `
   <html>
     <head>
-      <title>Top Life Sciences Consulting Firm - Actionable Insights, SRI</title>
+      <title>Best Consulting Firm in Life Sciences Industry &#8211; Drive pharma success with SRI — a leading healthcare market research firm combining AI and expert insight to power data-driven decisions.</title>
     </head>
     <body>
       <a href="https://www.srinsights.com/careers/">Careers</a>
@@ -22,7 +22,7 @@ const homepageHtml = `
 const careersHtml = `
   <html>
     <head>
-      <title>Careers | Strategic Research Insights</title>
+      <title>Careers &#8211; Best Consulting Firm in Life Sciences Industry</title>
       <link rel="canonical" href="https://www.srinsights.com/careers/" />
     </head>
     <body>

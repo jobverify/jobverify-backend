@@ -10,14 +10,13 @@ const careersPageHtml = `<!DOCTYPE html>
     <link rel="canonical" href="https://www.kaseya.com/careers/jobs/" />
   </head>
   <body>
-    <div class="alert">
-      All legitimate Kaseya communications come from <strong>@kaseya.com</strong> email addresses only.
-    </div>
-    <div class="description">
-      Exciting career opportunities await you at our Bengaluru campus.
-    </div>
-    <div id="grnhse_app"></div>
-    <script src="https://boards.greenhouse.io/embed/job_board/js?for=kaseya"></script>
+    <nav>
+      <a href="/careers/life-at-kaseya/">Life at Kaseya</a>
+    </nav>
+    <main>
+      <a href="/careers/jobs/id/6015830004/?gh_jid=6015830004">Staff Software Engineer</a>
+      <a href="https://my.greenhouse.io/users/sign_in?job_board=kaseya&amp;source=job_alert_board">Create alert</a>
+    </main>
   </body>
 </html>`
 
@@ -48,10 +47,7 @@ test('Kaseya India scraper constants and helpers stay pinned to the verified fir
   assert.equal(kaseyaIndia.VERIFIED_ON, '2026-08-04')
 
   assert.equal(kaseyaIndia.hasVerifiedCareersPageSignal(careersPageHtml), true)
-  assert.equal(
-    kaseyaIndia.extractGreenhouseEmbedUrl(careersPageHtml),
-    kaseyaIndia.GREENHOUSE_EMBED_URL,
-  )
+  assert.equal(kaseyaIndia.hasVerifiedGreenhouseBoardSignal(careersPageHtml), true)
   assert.equal(
     kaseyaIndia.normalizeGreenhouseJobUrl(
       'https://www.kaseya.com/careers/jobs/id/6015830004/?gh_jid=6015830004',

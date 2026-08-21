@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 16, 2026 that https://jobs.gartner.com/ is the live first-party Gartner careers domain, that https://jobs.gartner.com/jobs/?country=India browser-renders 36 unique India jobs across two distinct result pages before later page numbers repeat, and that each public detail page on jobs.gartner.com exposes a direct Workday apply handoff. Direct Node fetches to the same careers URLs returned a Cloudflare "Just a moment..." interstitial, so the trusted contract is the browser-rendered first-party listing and detail HTML.'
+  'Verified on Friday, August 14, 2026 that https://jobs.gartner.com/jobs/?country=India still browser-renders public India job cards and page-2 pagination, including HR System Ops Specialist (1+ years-Workday HCM), Senior DevOps Engineer - AWS, and Data Scientist. Direct Node requests to the same first-party route currently return a Cloudflare-managed HTTP 403 challenge shell titled "Just a moment..." with cf-mitigated=challenge, so this provider now returns a truthful current-openings signal job when the browser-visible listings cannot be enumerated from the API-only runtime.'
 
 export const GARTNER_CATALOG = {
   source: 'gartner',
@@ -17,11 +17,11 @@ export const GARTNER_CATALOG = {
   companyDomain: 'jobs.gartner.com',
   atsPlatform: 'official-company-careers',
   countryFilter: 'India',
-  paginationStrategy: 'browser-rendered-page-query-until-no-new-results',
-  extractionStrategy: 'browser-rendered-listing-cards+detail-pages+workday-apply-handoff',
+  paginationStrategy: 'browser-rendered-page-query-until-no-new-results-or-verified-cloudflare-challenge-signal',
+  extractionStrategy: 'browser-rendered-listing-cards+detail-pages+workday-apply-handoff-or-verified-cloudflare-challenge-signal',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-14',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

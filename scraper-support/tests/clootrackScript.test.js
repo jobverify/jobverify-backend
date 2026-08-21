@@ -28,6 +28,24 @@ const officialCareersHtml = `
   </html>
 `
 
+const currentOfficialCareersHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Careers</title>
+    </head>
+    <body>
+      <main>
+        <h1>Join our team at Clootrack to be at the forefront of AI-driven customer experience analytics.</h1>
+        <p>At Clootrack, we truly believe that organizational culture can thrive regardless of physical office locations. That’s why we proudly set the standard for remote work practices!</p>
+        <p>Think you’re a fit? Reach out and let’s explore.</p>
+        <a href="/contact-us">Contact Us</a>
+      </main>
+      <footer>© 2026 Clootrack. All Rights Reserved</footer>
+    </body>
+  </html>
+`
+
 test('Clootrack validates the official careers surface before returning no unverified listings', async () => {
   const clootrack = await loadClootrackModule()
   const requestedUrls = []
@@ -77,4 +95,16 @@ test('Clootrack scraper fails closed when the official careers surface changes',
     }),
     /Clootrack official careers surface changed/i,
   )
+})
+
+test('Clootrack accepts the current official careers copy with curly apostrophes', async () => {
+  const clootrack = await loadClootrackModule()
+
+  assert.equal(clootrack.hasOfficialCareersSignal(currentOfficialCareersHtml), true)
+
+  const jobs = await clootrack.createClootrackScraper().run({
+    fetchText: async () => currentOfficialCareersHtml,
+  })
+
+  assert.deepEqual(jobs, [])
 })

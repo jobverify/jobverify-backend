@@ -29,6 +29,21 @@ const HOMEPAGE_HTML = `
 </html>
 `
 
+const BLOCKED_HOMEPAGE_HTML = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Just a moment...</title>
+  </head>
+  <body>
+    <main>
+      <p>Cloudflare</p>
+      <script src="/cdn-cgi/challenge-platform/scripts/jsd/main.js"></script>
+    </main>
+  </body>
+</html>
+`
+
 const BLOCKED_CAREERS_HTML = `
 <!doctype html>
 <html lang="en-US">
@@ -52,6 +67,13 @@ test('Zivame recognizes the verified homepage, blocked careers route, and dead l
   assert.equal(zivame.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
   assert.equal(zivame.hasPublicJobsSignal(HOMEPAGE_HTML), false)
   assert.equal(zivame.hasCloudflareChallengeSignal(BLOCKED_CAREERS_HTML), true)
+  assert.equal(
+    zivame.isBlockedHomepageRoute({
+      status: 403,
+      html: BLOCKED_HOMEPAGE_HTML,
+    }),
+    true,
+  )
   assert.equal(zivame.hasDnsResolutionFailure('fetch failed | getaddrinfo ENOTFOUND careers.zivame.com'), true)
 })
 
@@ -69,6 +91,54 @@ test('Zivame returns [] while the live homepage points to a Cloudflare-blocked c
           status: 200,
           url,
           html: HOMEPAGE_HTML,
+          errorMessage: '',
+        }
+      }
+
+      if (url === zivame.CAREERS_URL) {
+        return {
+          status: 403,
+          url,
+          html: BLOCKED_CAREERS_HTML,
+          errorMessage: '',
+        }
+      }
+
+      if (url === zivame.LEGACY_CAREERS_URL) {
+        return {
+          status: 'ERROR',
+          url,
+          html: '',
+          errorMessage: 'fetch failed | getaddrinfo ENOTFOUND careers.zivame.com',
+        }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    zivame.HOMEPAGE_URL,
+    zivame.CAREERS_URL,
+    zivame.LEGACY_CAREERS_URL,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Zivame returns [] while both the homepage and careers route remain Cloudflare-blocked and the legacy host is dead', async () => {
+  const zivame = await loadModule()
+  assert.ok(zivame, 'Zivame scraper module should load')
+
+  const requestedUrls = []
+  const jobs = await zivame.createZivameScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === zivame.HOMEPAGE_URL) {
+        return {
+          status: 403,
+          url,
+          html: BLOCKED_HOMEPAGE_HTML,
           errorMessage: '',
         }
       }

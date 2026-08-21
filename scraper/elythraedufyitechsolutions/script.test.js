@@ -246,3 +246,17 @@ test('Elythra sentinel fails closed if the sitemap or careers route no longer ma
     /careers route/i,
   )
 })
+
+test('Elythra sentinel returns an empty result when the verified zero-jobs surface is temporarily timeout-blocked', async () => {
+  const elythra = await loadModule()
+
+  const jobs = await elythra.createElythraEdufyiTechSolutionsScraper().run({
+    fetchPage: async () => {
+      throw new Error(
+        'fetch failed | Connect Timeout Error (attempted addresses: 76.223.105.230:443, 13.248.243.5:443, timeout: 10000ms)',
+      )
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})

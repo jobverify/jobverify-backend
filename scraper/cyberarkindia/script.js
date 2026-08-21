@@ -25,8 +25,8 @@ export const CATALOG_METADATA = {
   normalizationProfile: 'engineering-default',
   companyDomain: 'cyberark.com',
   workspaceDomain: 'jobs.paloaltonetworks.com',
-  verifiedOn: '2026-08-07',
-  verifiedSurfaceSummary: 'Verified on Friday, August 7, 2026 that https://www.cyberark.com/careers/ now redirects to https://www.paloaltonetworks.com/idira, whose footer still links to https://jobs.paloaltonetworks.com/en/. Verified that the shared Palo Alto Networks India location page and India-filtered search shell remain live and do not expose a CyberArk-specific public jobs board.',
+  verifiedOn: '2026-08-15',
+  verifiedSurfaceSummary: 'Verified on Saturday, August 15, 2026 that https://www.cyberark.com/careers/ redirects to https://www.paloaltonetworks.com/idira, whose footer still links to https://jobs.paloaltonetworks.com/en/. Verified on the same date that the India-filtered shared Palo Alto Networks search shell at https://jobs.paloaltonetworks.com/en/search-jobs/?alcpm=1269750&orgIds=47263 remains live, while the older India location landing route at https://jobs.paloaltonetworks.com/en/india currently falls through to the first-party /en/error page rather than a distinct location story page. The shared parent surfaces still do not expose a CyberArk-specific public jobs board.',
 }
 
 const USER_AGENT =
@@ -99,6 +99,20 @@ export const hasPaloAltoIndiaLocationSignal = (html) => {
     && visibleText.includes('Latest Jobs in India')
 }
 
+export const hasPaloAltoIndiaErrorFallbackSignal = ({ html, finalUrl }) => {
+  const rawHtml = String(html ?? '')
+  const visibleText = normalizeVisibleText(rawHtml)
+  const normalizedFinalUrl = String(finalUrl ?? '').replace(/\/+$/, '')
+
+  return normalizedFinalUrl === 'https://jobs.paloaltonetworks.com/en/error'
+    && /<title[^>]*>\s*Error\s*<\/title>/i.test(rawHtml)
+    && visibleText.includes('Locations')
+    && visibleText.includes('India')
+    && visibleText.includes('An error has occurred.')
+    && visibleText.includes('Featured Jobs')
+    && visibleText.includes('Recently Viewed Jobs')
+}
+
 export const hasPaloAltoIndiaSearchSignal = (html) => {
   const rawHtml = String(html ?? '')
   const visibleText = normalizeVisibleText(rawHtml)
@@ -141,7 +155,13 @@ export const createCyberArkIndiaScraper = () => ({
 
     if (
       paloAltoIndiaPage.status !== 200
-      || !hasPaloAltoIndiaLocationSignal(paloAltoIndiaPage.html)
+      || (
+        !hasPaloAltoIndiaLocationSignal(paloAltoIndiaPage.html)
+        && !hasPaloAltoIndiaErrorFallbackSignal({
+          html: paloAltoIndiaPage.html,
+          finalUrl: paloAltoIndiaPage.url,
+        })
+      )
     ) {
       throw new Error('CyberArk verified Palo Alto Networks India location page no longer matches the known shared-parent handoff')
     }

@@ -38,7 +38,7 @@ export const hasOfficialCareersShellSignal = (html = '') => {
   return /CBNITS/i.test(raw)
     && /Agentic AI, Cybersecurity & Intelligent Enterprise Solutions/i.test(raw)
     && /<div id="root"><\/div>/i.test(raw)
-    && /\/assets\/index-[A-Za-z0-9]+\.js/i.test(raw)
+    && /\/assets\/index-[A-Za-z0-9_-]+\.js/i.test(raw)
 }
 
 export const hasServerRenderedJobsSignal = (html = '') =>

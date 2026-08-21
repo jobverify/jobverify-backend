@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises'
+import { realpathSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -8,6 +9,16 @@ import { saveDryRunSnapshot } from '../scraper-support/utils/saveToDB.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const defaultScraperDir = path.resolve(currentDir, '../scraper')
+const resolveExecutionPath = (value) => {
+  if (value == null || value === '') return null
+
+  const absolutePath = path.resolve(String(value))
+  try {
+    return realpathSync.native(absolutePath)
+  } catch {
+    return absolutePath
+  }
+}
 const BROWSER_USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
@@ -261,7 +272,6 @@ const collectTargets = async ({ includeVerifiedMissing = false } = {}) => {
       targets.push({
         source: entry.name,
         jobsPath,
-        jobs,
         totalJobs: jobs.length,
         missingBefore,
         verifiedMissingBefore,
@@ -327,8 +337,9 @@ const closeSharedBrowserSession = async () => {
 }
 
 const processTarget = async (target) => {
+  const jobs = await loadJobs(target.jobsPath)
   const selectedJobs = maxJobsPerSource > 0
-    ? selectUncheckedMissingExperienceJobs(target.jobs, maxJobsPerSource)
+    ? selectUncheckedMissingExperienceJobs(jobs, maxJobsPerSource)
     : []
 
   if (maxJobsPerSource > 0 && selectedJobs.length === 0) {
@@ -342,7 +353,7 @@ const processTarget = async (target) => {
     }
   }
 
-  const rewrittenJobs = await saveDryRunSnapshot(target.jobs, target.jobsPath, {
+  const rewrittenJobs = await saveDryRunSnapshot(jobs, target.jobsPath, {
     experienceEnrichmentConcurrency,
     fetchBrowserText: useSharedBrowserFallback ? fetchSharedBrowserText : null,
     maxJobsToEnrich: maxJobsPerSource > 0 ? maxJobsPerSource : undefined,
@@ -482,8 +493,8 @@ async function main() {
   }, null, 2))
 }
 
-const isEntrypoint = process.argv[1] != null
-  && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+const directExecutionModulePath = resolveExecutionPath(fileURLToPath(import.meta.url))
+const isEntrypoint = resolveExecutionPath(process.argv[1]) === directExecutionModulePath
 
 if (isEntrypoint) {
   try {

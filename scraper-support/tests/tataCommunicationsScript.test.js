@@ -11,139 +11,113 @@ const loadTataCommunicationsModule = async () => {
 
 const workflowBootstrapPayload = {
   data: {
-    workflowId: 'wf-tcl-42',
+    workspaceId: 'TCLPROD-c62po',
+    workflowId: 'WFU_BOOTSTRAP_42',
   },
 }
+
+const plainTextBootstrapPayload = 'TCLPROD-c62po'
 
 const listingPageOnePayload = {
-  data: {
-    page: 1,
-    limit: 2,
-    totalRecords: 3,
-    totalPages: 2,
-    aggregations: {
-      country: [
-        { key: 'India', count: 2 },
-        { key: 'Singapore', count: 1 },
-      ],
-    },
-    requisitions: [
-      {
-        id: 'REQ-1001',
-        displayId: 'TC-1001',
-        title: 'Lead Engineer - Networks',
-        department: 'Engineering',
-        employmentType: 'Full Time',
-        summary: 'Build carrier network automation.',
-        postedDate: '2026-07-07T10:15:00Z',
-        locations: [
-          {
-            city: 'Pune',
-            state: 'Maharashtra',
-            country: 'India',
-          },
-        ],
-      },
-      {
-        id: 'REQ-9999',
-        displayId: 'TC-9999',
-        title: 'Regional Program Manager',
-        department: 'Operations',
-        locations: [
-          {
-            city: 'Singapore',
-            country: 'Singapore',
-          },
-        ],
-      },
-    ],
-  },
-}
-
-const listingPageTwoPayload = {
-  data: {
-    page: 2,
-    limit: 2,
-    totalRecords: 3,
-    totalPages: 2,
-    aggregations: {
-      country: [
-        { key: 'India', count: 2 },
-        { key: 'Singapore', count: 1 },
-      ],
-    },
-    requisitions: [
-      {
-        id: 'REQ-1002',
-        displayId: 'TC-1002',
-        title: 'Platform Engineer',
-        department: 'Engineering',
-        employmentType: 'Full Time',
-        summary: 'Scale internal platform services.',
-        postedDate: '2026-07-08T09:00:00Z',
-        locations: [
-          {
-            city: 'Chennai',
-            state: 'Tamil Nadu',
-            country: 'India',
-          },
-        ],
-      },
-    ],
-  },
-}
-
-const detailPayloadByDisplayId = {
-  'TC-1001': {
-    data: {
+  entities: [
+    {
       id: 'REQ-1001',
       displayId: 'TC-1001',
-      title: 'Lead Engineer - Networks',
-      department: 'Engineering',
+      jobTitle: 'Lead Engineer - Networks',
+      departmentName: 'Engineering',
       employmentType: 'Full Time',
-      minimumQualification: 'Bachelor of Engineering',
-      experienceRequired: '6-9 years',
-      postedDate: '2026-07-07T10:15:00Z',
-      closingDate: '2026-08-01T00:00:00Z',
-      description: '<p>Build carrier network automation.</p><ul><li>Design resilient platforms</li></ul>',
-      skills: ['Python', 'Network Automation'],
-      locations: [
+      requiredEducation: 'Bachelor of Engineering',
+      requiredExperienceInMonths: {
+        from: 72,
+        to: 108,
+      },
+      jobStatus: {
+        statusCode: 'OPEN',
+      },
+      jobPosting: {
+        startDate: '2026-07-07T10:15:00Z',
+        endDate: '2026-08-01T00:00:00Z',
+      },
+      jobDescription: '<p>Build carrier network automation.</p><ul><li>Design resilient platforms</li></ul>',
+      skills: [
+        { skill: 'Python' },
+        { skill: 'Network Automation' },
+      ],
+      jobLocation: [
         {
           city: 'Pune',
           state: 'Maharashtra',
           country: 'India',
+          fqLocationName: 'Pune, Maharashtra, India',
         },
       ],
     },
-  },
-  'TC-1002': {
-    data: {
+    {
+      id: 'REQ-9999',
+      displayId: 'TC-9999',
+      jobTitle: 'Regional Program Manager',
+      departmentName: 'Operations',
+      jobStatus: {
+        statusCode: 'OPEN',
+      },
+      jobPosting: {
+        startDate: '2026-07-08T09:00:00Z',
+      },
+      jobLocation: [
+        {
+          city: 'Singapore',
+          country: 'Singapore',
+          fqLocationName: 'Singapore, Singapore',
+        },
+      ],
+    },
+  ],
+  total: 3,
+}
+
+const listingPageTwoPayload = {
+  entities: [
+    {
       id: 'REQ-1002',
       displayId: 'TC-1002',
-      title: 'Platform Engineer',
-      department: 'Engineering',
+      jobTitle: 'Platform Engineer',
+      departmentName: 'Engineering',
       employmentType: 'Full Time',
-      minimumQualification: 'Bachelor of Technology',
-      experienceRequired: '4-7 years',
-      postedDate: '2026-07-08T09:00:00Z',
-      closingDate: '2026-08-05T00:00:00Z',
-      description: '<p>Scale internal platform services.</p><p>Improve reliability.</p>',
-      skills: ['Go', 'Kubernetes'],
-      locations: [
+      requiredEducation: 'Bachelor of Technology',
+      requiredExperienceInMonths: {
+        from: 48,
+        to: 84,
+      },
+      jobStatus: {
+        statusCode: 'OPEN',
+      },
+      jobPosting: {
+        startDate: '2026-07-08T09:00:00Z',
+        endDate: '2026-08-05T00:00:00Z',
+      },
+      jobDescription: '<p>Scale internal platform services.</p><p>Improve reliability.</p>',
+      skills: [
+        { skill: 'Go' },
+        { skill: 'Kubernetes' },
+      ],
+      jobLocation: [
         {
           city: 'Chennai',
           state: 'Tamil Nadu',
           country: 'India',
+          fqLocationName: 'Chennai, Tamil Nadu, India',
         },
       ],
     },
-  },
+  ],
+  total: 3,
 }
 
-test('Tata Communications scraper builds the Spire2Grow bootstrap, search, detail, and header contract', async () => {
+test('Tata Communications scraper builds the public Spire bootstrap, search, and header contract', async () => {
   const tata = await loadTataCommunicationsModule()
 
   assert.equal(tata.CAREER_PAGE_URL, 'https://jobs.tatacommunications.com/')
+  assert.equal(tata.HOME_URL, 'https://jobs.tatacommunications.com/home')
   assert.equal(tata.WORKSPACE_DOMAIN, 'jobs.tatacommunications.com')
   assert.equal(tata.WORKSPACE_ID, 'TCLPROD-c62po')
   assert.equal(tata.API_BASE, 'https://io.spire2grow.com/ies/v1/p')
@@ -152,12 +126,24 @@ test('Tata Communications scraper builds the Spire2Grow bootstrap, search, detai
     'https://io.spire2grow.com/ies/v1/p/workspaceId?domain=jobs.tatacommunications.com',
   )
   assert.equal(
+    tata.buildJobsCountUrl(),
+    'https://io.spire2grow.com/ies/v1/p/requisition/_count',
+  )
+  assert.equal(
     tata.buildListingApiUrl(),
-    'https://io.spire2grow.com/ies/v1/p/TCLPROD-c62po/requisition/_search',
+    'https://io.spire2grow.com/ies/v1/p/requisition/_search?page=1&size=25&selectedSortOrder=desc&selectedSortField=postedOn',
+  )
+  assert.equal(
+    tata.buildListingApiUrl({ page: 3, pageSize: 10 }),
+    'https://io.spire2grow.com/ies/v1/p/requisition/_search?page=3&size=10&selectedSortOrder=desc&selectedSortField=postedOn',
+  )
+  assert.equal(
+    tata.buildJobUrl('TC-1001'),
+    'https://jobs.tatacommunications.com/jobs/TC-1001?tenantId=TCLPROD-c62po&ref=job-share-direct-link',
   )
   assert.equal(
     tata.buildDetailApiUrl('TC-1001'),
-    'https://io.spire2grow.com/ies/v1/p/TCLPROD-c62po/requisition/displayId/TC-1001',
+    'https://jobs.tatacommunications.com/jobs/TC-1001?tenantId=TCLPROD-c62po&ref=job-share-direct-link',
   )
   assert.deepEqual(tata.buildBootstrapHeaders(), {
     Accept: 'application/json, text/plain, */*',
@@ -167,11 +153,14 @@ test('Tata Communications scraper builds the Spire2Grow bootstrap, search, detai
     Referer: 'https://jobs.tatacommunications.com/',
     'User-Agent': tata.DEFAULT_USER_AGENT,
   })
-  assert.deepEqual(tata.buildRequestHeaders({ workflowId: 'wf-tcl-42' }), {
+  assert.deepEqual(tata.buildRequestHeaders({
+    workspaceId: 'TCLPROD-c62po',
+    workflowId: 'WFU_BOOTSTRAP_42',
+  }), {
     Accept: 'application/json, text/plain, */*',
     'Content-Type': 'application/json',
     WorkspaceId: 'TCLPROD-c62po',
-    workflowId: 'wf-tcl-42',
+    workflowId: 'WFU_BOOTSTRAP_42',
     language: 'en',
     Origin: 'https://jobs.tatacommunications.com',
     Referer: 'https://jobs.tatacommunications.com/',
@@ -179,27 +168,23 @@ test('Tata Communications scraper builds the Spire2Grow bootstrap, search, detai
   })
   assert.deepEqual(tata.buildListingRequestBody(), {
     page: 1,
-    limit: 25,
-    searchText: '',
-    filters: {
-      country: ['India'],
-    },
-    aggregations: ['country'],
+    size: 25,
+    selectedSortOrder: 'desc',
+    selectedSortField: 'postedOn',
   })
   assert.deepEqual(tata.buildListingRequestBody({ page: 3, pageSize: 10 }), {
     page: 3,
-    limit: 10,
-    searchText: '',
-    filters: {
-      country: ['India'],
-    },
-    aggregations: ['country'],
+    size: 10,
+    selectedSortOrder: 'desc',
+    selectedSortField: 'postedOn',
   })
-  assert.equal(tata.extractWorkflowId(workflowBootstrapPayload), 'wf-tcl-42')
-  assert.equal(tata.extractWorkflowId('TCLPROD-c62po'), 'TCLPROD-c62po')
+  assert.equal(tata.extractWorkspaceId(workflowBootstrapPayload), 'TCLPROD-c62po')
+  assert.equal(tata.extractWorkflowId(workflowBootstrapPayload), 'WFU_BOOTSTRAP_42')
+  assert.equal(tata.extractWorkspaceId('TCLPROD-c62po'), 'TCLPROD-c62po')
+  assert.equal(tata.generateWorkflowId({ now: 1786730313463000 }), 'WFU_1786730313463000')
 })
 
-test('run bootstraps the Tata Communications workspace, paginates from page 1, filters India roles, and falls back to the detail API URL', async () => {
+test('run bootstraps the Tata Communications workspace, paginates from page 1, filters India roles, and emits public job links', async () => {
   const tata = await loadTataCommunicationsModule()
   const scraper = tata.createTataCommunicationsScraper({
     maxPages: 3,
@@ -209,24 +194,20 @@ test('run bootstraps the Tata Communications workspace, paginates from page 1, f
   const requests = []
 
   const jobs = await scraper.run({
+    createWorkflowId: () => 'WFU_1786730313463000',
     fetchJson: async (url, options = {}) => {
       requests.push({ url, options })
 
       if (url === tata.WORKSPACE_BOOTSTRAP_URL) {
-        return workflowBootstrapPayload
+        return plainTextBootstrapPayload
       }
 
-      if (url === tata.buildListingApiUrl()) {
-        if (options.body?.page === 1) return listingPageOnePayload
-        if (options.body?.page === 2) return listingPageTwoPayload
+      if (url === tata.buildListingApiUrl({ page: 1, pageSize: 2 })) {
+        return listingPageOnePayload
       }
 
-      if (url === tata.buildDetailApiUrl('TC-1001')) {
-        return detailPayloadByDisplayId['TC-1001']
-      }
-
-      if (url === tata.buildDetailApiUrl('TC-1002')) {
-        return detailPayloadByDisplayId['TC-1002']
+      if (url === tata.buildListingApiUrl({ page: 2, pageSize: 2 })) {
+        return listingPageTwoPayload
       }
 
       throw new Error(`Unexpected Tata Communications URL: ${url}`)
@@ -241,31 +222,23 @@ test('run bootstraps the Tata Communications workspace, paginates from page 1, f
       },
     },
     {
-      url: tata.buildListingApiUrl(),
+      url: tata.buildListingApiUrl({ page: 1, pageSize: 2 }),
       options: {
-        method: 'POST',
-        headers: tata.buildRequestHeaders({ workflowId: 'wf-tcl-42' }),
-        body: tata.buildListingRequestBody({ page: 1, pageSize: 2 }),
+        method: 'GET',
+        headers: tata.buildRequestHeaders({
+          workspaceId: tata.WORKSPACE_ID,
+          workflowId: 'WFU_1786730313463000',
+        }),
       },
     },
     {
-      url: tata.buildDetailApiUrl('TC-1001'),
+      url: tata.buildListingApiUrl({ page: 2, pageSize: 2 }),
       options: {
-        headers: tata.buildRequestHeaders({ workflowId: 'wf-tcl-42' }),
-      },
-    },
-    {
-      url: tata.buildListingApiUrl(),
-      options: {
-        method: 'POST',
-        headers: tata.buildRequestHeaders({ workflowId: 'wf-tcl-42' }),
-        body: tata.buildListingRequestBody({ page: 2, pageSize: 2 }),
-      },
-    },
-    {
-      url: tata.buildDetailApiUrl('TC-1002'),
-      options: {
-        headers: tata.buildRequestHeaders({ workflowId: 'wf-tcl-42' }),
+        method: 'GET',
+        headers: tata.buildRequestHeaders({
+          workspaceId: tata.WORKSPACE_ID,
+          workflowId: 'WFU_1786730313463000',
+        }),
       },
     },
   ])
@@ -280,18 +253,20 @@ test('run bootstraps the Tata Communications workspace, paginates from page 1, f
   assert.equal(jobs[0].requisitionId, 'REQ-1001')
   assert.equal(
     jobs[0].sourceUrl,
-    'https://io.spire2grow.com/ies/v1/p/TCLPROD-c62po/requisition/displayId/TC-1001',
+    'https://jobs.tatacommunications.com/jobs/TC-1001?tenantId=TCLPROD-c62po&ref=job-share-direct-link',
   )
   assert.equal(jobs[0].applyUrl, jobs[0].sourceUrl)
   assert.equal(jobs[0].link, jobs[0].sourceUrl)
   assert.equal(jobs[0].minimumQualification, 'Bachelor of Engineering')
   assert.deepEqual(jobs[0].requiredSkills, ['Python', 'Network Automation'])
+  assert.equal(jobs[0].experienceRequired, '6-9 years')
   assert.equal(jobs[0].postingDate, '2026-07-07')
   assert.equal(jobs[0].closingDate, '2026-08-01')
   assert.match(jobs[0].jobDescription, /Build carrier network automation/i)
   assert.match(jobs[0].jobDescription, /Design resilient platforms/i)
   assert.equal(jobs[1].jobId, 'TC-1002')
   assert.equal(jobs[1].city, 'Chennai')
+  assert.equal(jobs[1].experienceRequired, '4-7 years')
   assert.match(jobs[1].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
 })
 
@@ -310,12 +285,8 @@ test('run accepts the Tata Communications bootstrap endpoint when it returns the
       })
     }
 
-    if (url === tata.buildListingApiUrl()) {
+    if (url === tata.buildListingApiUrl({ page: 1, pageSize: 2 })) {
       return Response.json(listingPageOnePayload)
-    }
-
-    if (url === tata.buildDetailApiUrl('TC-1001')) {
-      return Response.json(detailPayloadByDisplayId['TC-1001'])
     }
 
     throw new Error(`Unexpected Tata Communications URL: ${url}`)
@@ -330,8 +301,9 @@ test('run accepts the Tata Communications bootstrap endpoint when it returns the
 
     assert.equal(jobs.length, 1)
     assert.equal(requests[0].url, tata.WORKSPACE_BOOTSTRAP_URL)
-    assert.equal(requests[1].url, tata.buildListingApiUrl())
-    assert.equal(requests[1].options.headers.workflowId, tata.WORKSPACE_ID)
+    assert.equal(requests[1].url, tata.buildListingApiUrl({ page: 1, pageSize: 2 }))
+    assert.equal(requests[1].options.headers.WorkspaceId, tata.WORKSPACE_ID)
+    assert.match(requests[1].options.headers.workflowId, /^WFU_\d+$/)
     assert.equal(jobs[0].jobId, 'TC-1001')
   } finally {
     globalThis.fetch = originalFetch

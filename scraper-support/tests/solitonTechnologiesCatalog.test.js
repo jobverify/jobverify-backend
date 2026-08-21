@@ -13,13 +13,13 @@ test('getScraperCatalog includes Soliton Technologies as an official careers scr
   assert.ok(provider)
   assert.equal(provider.companyName, 'Soliton Technologies')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyCareerPage, 'https://www.solitontech.com/job-openings/')
+  assert.equal(provider.companyCareerPage, 'https://www.solitontech.com/careers')
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'single-page')
   assert.equal(
     provider.extractionStrategy,
-    'public-html-listings+detail-pages+same-page-apply-handoff',
+    'public-html-cards+detail-pages+same-page-apply-state',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.companyDomain, 'solitontech.com')

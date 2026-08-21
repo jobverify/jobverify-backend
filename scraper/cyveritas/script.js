@@ -29,6 +29,7 @@ const UNRESOLVED_HOST_PATTERNS = [
   /\bENOTFOUND\b/i,
   /\bEAI_AGAIN\b/i,
   /\bETIMEOUT\b/i,
+  /\bECONNREFUSED\b/i,
   /\bDNS name does not exist\b/i,
   /\bCould not resolve host\b/i,
   /\bName or service not known\b/i,

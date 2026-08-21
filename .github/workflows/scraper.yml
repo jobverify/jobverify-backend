@@ -35,7 +35,7 @@ jobs:
           NODE_ENV: production
           NODE_OPTIONS: '--use-system-ca'
           MONGO_URI: ${{ secrets.MONGO_URI }}
-          SCRAPER_CONCURRENCY: ${{secrets.SCRAPER_CONCURRENCY}}
+          SCRAPER_CONCURRENCY: ${{ vars.SCRAPER_CONCURRENCY }}
           WORKDAY_SCRAPER_TIMEOUT_MS: '90000'
           WORKDAY_REQUEST_TIMEOUT_MS: '20000'
           WORKDAY_DETAIL_FETCH_CONCURRENCY: '1'

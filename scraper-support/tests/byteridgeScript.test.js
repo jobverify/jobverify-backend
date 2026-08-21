@@ -49,3 +49,26 @@ test('run fetches the Byteridge careers page and returns no jobs when no live op
   assert.deepEqual(requestedUrls, [byteridge.CAREER_PAGE_URL])
   assert.deepEqual(jobs, [])
 })
+
+test('run reports Byteridge transport timeouts as soft upstream failures', async () => {
+  const byteridge = await loadByteridgeModule()
+  assert.ok(byteridge)
+
+  await assert.rejects(
+    byteridge.createByteridgeScraper().run({
+      fetchText: async () => {
+        const error = new Error('connect ETIMEDOUT 82.112.233.102:443')
+        error.code = 'ETIMEDOUT'
+        throw error
+      },
+    }),
+    (error) => {
+      assert.match(error.message, /ETIMEDOUT/i)
+      assert.equal(error.softFailure, true)
+      assert.equal(error.upstreamOutage, true)
+      assert.equal(error.abortRetries, true)
+      assert.equal(error.failureKind, 'network_or_timeout')
+      return true
+    },
+  )
+})

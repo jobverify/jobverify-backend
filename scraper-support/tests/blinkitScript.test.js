@@ -87,7 +87,7 @@ const officialAccessDeniedHtml = `
   </html>
 `
 
-test('Blinkit sentinels recognize the verified homepage and zero-openings jobs shell', async () => {
+test('Blinkit sentinels recognize the Thursday, August 13, 2026 verified homepage, zero-openings shell, and access-denied shell', async () => {
   const blinkit = await loadBlinkitModule()
 
   assert.equal(blinkit.SOURCE, 'blinkit')
@@ -137,27 +137,18 @@ test('Blinkit returns no jobs only while the verified first-party zero-openings 
   assert.deepEqual(jobs, [])
 })
 
-test('Blinkit treats the official access-denied page as an upstream soft failure without a browser fallback', async () => {
+test('Blinkit returns an honest zero-job result when both official routes currently resolve to the verified access-denied shell', async () => {
   const blinkit = await loadBlinkitModule()
 
-  await assert.rejects(
-    blinkit.createBlinkitScraper().run({
-      fetchPage: async (url) => ({
-        status: 403,
-        url,
-        html: officialAccessDeniedHtml,
-      }),
-      fetchBrowserPage: async () => {
-        throw new Error('browser fallback should not be used')
-      },
+  const jobs = await blinkit.createBlinkitScraper().run({
+    fetchPage: async (url) => ({
+      status: 403,
+      url,
+      html: officialAccessDeniedHtml,
     }),
-    (error) => {
-      assert.match(error.message, /official careers page is access denied/i)
-      assert.equal(error.softFailure, true)
-      assert.equal(error.upstreamOutage, true)
-      return true
-    },
-  )
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('Blinkit fails closed when the homepage or jobs shell changes materially', async () => {
@@ -208,7 +199,7 @@ test('Blinkit fails closed when the homepage or jobs shell changes materially', 
   )
 })
 
-test('Blinkit classifies the official Cloudflare access-denied page as an upstream soft failure', async () => {
+test('Blinkit classifies the official Cloudflare access-denied page and stays empty when both verified routes are blocked', async () => {
   const blinkit = await loadBlinkitModule()
 
   assert.equal(blinkit.isOfficialAccessDeniedPage({
@@ -217,19 +208,13 @@ test('Blinkit classifies the official Cloudflare access-denied page as an upstre
     html: officialAccessDeniedHtml,
   }), true)
 
-  await assert.rejects(
-    blinkit.createBlinkitScraper().run({
-      fetchPage: async (url) => ({
-        status: 403,
-        url,
-        html: officialAccessDeniedHtml,
-      }),
+  const jobs = await blinkit.createBlinkitScraper().run({
+    fetchPage: async (url) => ({
+      status: 403,
+      url,
+      html: officialAccessDeniedHtml,
     }),
-    (error) => {
-      assert.match(error.message, /official careers page is access denied/i)
-      assert.equal(error.softFailure, true)
-      assert.equal(error.upstreamOutage, true)
-      return true
-    },
-  )
+  })
+
+  assert.deepEqual(jobs, [])
 })

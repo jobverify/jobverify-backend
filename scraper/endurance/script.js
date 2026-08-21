@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
@@ -14,11 +14,13 @@ export const SOURCE = ENDURANCE_CATALOG.source
 export const COMPANY = ENDURANCE_CATALOG.companyName
 export const OFFICIAL_BRAND_NAME = ENDURANCE_CATALOG.officialBrandName
 export const VERIFIED_ON = ENDURANCE_CATALOG.verifiedOn
+export const VERIFIED_SURFACE_SUMMARY = ENDURANCE_CATALOG.verifiedSurfaceSummary
 export const HOMEPAGE_URL = ENDURANCE_CATALOG.officialHomepageUrl
 export const CAREERS_URL = ENDURANCE_CATALOG.officialCareersLandingUrl
 export const JOB_PORTAL_URL = ENDURANCE_CATALOG.companyCareerPage
 export const PROVIDER_METADATA = ENDURANCE_CATALOG
 
+const DEFAULT_TIMEOUT_MS = 120000
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
@@ -106,6 +108,18 @@ const extractJobPortalUrl = (html) => {
   return toAbsoluteUrl(directMatch?.[1], CAREERS_URL)
 }
 
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
+
+const getHeader = (page = {}, name) => {
+  const normalizedName = String(name ?? '').toLowerCase()
+  const headers = page?.headers
+  if (!headers) return ''
+  if (typeof headers.get === 'function') {
+    return String(headers.get(normalizedName) || headers.get(name) || '')
+  }
+  return String(headers[normalizedName] || headers[name] || '')
+}
+
 export const normalizeDetailUrl = (value) => {
   const normalized = toAbsoluteUrl(value, HOMEPAGE_URL)
   if (!normalized) return null
@@ -158,6 +172,26 @@ export const hasOfficialJobDetailSignal = (html) => {
     && /Apply Now/i.test(page)
     && /Upload Resume\*/i.test(page)
     && /Technical/i.test(page)
+}
+
+export const hasVerifiedCloudflareChallengeSignal = (page = {}) => {
+  const html = getPageHtml(page)
+  const text = normalizeWhitespace(html) || ''
+
+  return Number(page.status) === 403
+    && /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(html)
+    && /challenges\.cloudflare\.com/i.test(html)
+    && text.includes('Enable JavaScript and cookies to continue')
+}
+
+export const isVerifiedCloudflareChallengedPage = (page = {}, expectedUrl) => {
+  const finalUrl = String(page.url || expectedUrl)
+
+  return finalUrl === expectedUrl
+    && /cloudflare/i.test(getHeader(page, 'server'))
+    && getHeader(page, 'cf-ray').trim().length > 0
+    && getHeader(page, 'cf-mitigated').toLowerCase() === 'challenge'
+    && hasVerifiedCloudflareChallengeSignal(page)
 }
 
 export const extractJobCards = (html) => {
@@ -245,96 +279,99 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchPage = (url) => fetchPageWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-IN,en-US;q=0.9,en;q=0.8',
+    Referer: HOMEPAGE_URL,
   },
   label: SOURCE,
-  timeoutMs: 15000,
+  timeoutMs: DEFAULT_TIMEOUT_MS,
 })
 
-const isDeterministicHttpBlock = (error) =>
-  /HTTP\s+(?:401|403|404|410|451)\b/i.test(String(error?.message ?? error ?? ''))
-
-const wrapApiOnlyFetchError = (url, error) => {
-  const wrapped = new Error(
-    `Endurance API-only migration could not fetch ${url}: ${error?.message ?? error}`,
-    { cause: error },
-  )
-
-  for (const key of ['abortRetries', 'softFailure', 'upstreamOutage', 'failureKind', 'localTimeout', 'retryDelayMs']) {
-    if (error?.[key] != null) {
-      wrapped[key] = error[key]
-    }
-  }
-
-  if (wrapped.abortRetries !== true && isDeterministicHttpBlock(error)) {
-    wrapped.abortRetries = true
-    wrapped.softFailure ??= true
-    wrapped.upstreamOutage ??= true
-    wrapped.failureKind ??= 'network_or_timeout'
-  }
-
-  return wrapped
-}
+const createFetchPageFromText = (fetchText) => async (url) => ({
+  status: 200,
+  url,
+  headers: {},
+  html: await fetchText(url),
+})
 
 export const createEnduranceScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({
-    fetchText = defaultFetchText,
+    fetchPage,
+    fetchText,
   } = {}) {
-    const fetchApiOnlyText = async (url) => {
-      try {
-        return await fetchText(url)
-      } catch (error) {
-        throw wrapApiOnlyFetchError(url, error)
-      }
+    const effectiveFetchPage = typeof fetchPage === 'function'
+      ? fetchPage
+      : typeof fetchText === 'function'
+        ? createFetchPageFromText(fetchText)
+        : defaultFetchPage
+
+    const homepagePage = await effectiveFetchPage(HOMEPAGE_URL)
+    if (isVerifiedCloudflareChallengedPage(homepagePage, HOMEPAGE_URL)) {
+      return []
     }
 
-      const homepageHtml = await fetchApiOnlyText(HOMEPAGE_URL)
-      if (!hasOfficialHomepageSignal(homepageHtml)) {
-        throw new Error('Endurance verified official homepage no longer matches the first-party contract')
+    const homepageHtml = getPageHtml(homepagePage)
+    if (!hasOfficialHomepageSignal(homepageHtml)) {
+      throw new Error('Endurance verified official homepage no longer matches the first-party contract')
+    }
+
+    const careersPage = await effectiveFetchPage(CAREERS_URL)
+    if (isVerifiedCloudflareChallengedPage(careersPage, CAREERS_URL)) {
+      return []
+    }
+
+    const careersHtml = getPageHtml(careersPage)
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Endurance verified first-party careers page no longer matches the official contract')
+    }
+
+    const careersJobPortalUrl = extractJobPortalUrl(careersHtml)
+    if (careersJobPortalUrl && ![JOB_PORTAL_URL, ALTERNATE_JOB_PORTAL_URL].includes(careersJobPortalUrl)) {
+      throw new Error('Endurance verified first-party careers page no longer exposes the official job portal handoff')
+    }
+
+    const jobPortalPage = await effectiveFetchPage(JOB_PORTAL_URL)
+    if (isVerifiedCloudflareChallengedPage(jobPortalPage, JOB_PORTAL_URL)) {
+      return []
+    }
+
+    const jobPortalHtml = getPageHtml(jobPortalPage)
+    if (!hasOfficialJobPortalSignal(jobPortalHtml)) {
+      throw new Error('Endurance verified job portal no longer matches the first-party public jobs surface')
+    }
+
+    const listings = extractJobCards(jobPortalHtml)
+    const selectedListings = maxJobs ? listings.slice(0, maxJobs) : listings
+    const jobs = []
+
+    for (const listing of selectedListings) {
+      const detailPage = await effectiveFetchPage(listing.sourceUrl)
+      if (isVerifiedCloudflareChallengedPage(detailPage, listing.sourceUrl)) {
+        return []
       }
 
-      const careersHtml = await fetchApiOnlyText(CAREERS_URL)
-      if (!hasOfficialCareersSignal(careersHtml)) {
-        throw new Error('Endurance verified first-party careers page no longer matches the official contract')
+      const detailHtml = getPageHtml(detailPage)
+      if (!hasOfficialJobDetailSignal(detailHtml)) {
+        throw new Error('Endurance verified first-party job detail no longer matches the public apply surface')
       }
 
-      const careersJobPortalUrl = extractJobPortalUrl(careersHtml)
-      if (careersJobPortalUrl && ![JOB_PORTAL_URL, ALTERNATE_JOB_PORTAL_URL].includes(careersJobPortalUrl)) {
-        throw new Error('Endurance verified first-party careers page no longer exposes the official job portal handoff')
-      }
+      const detail = extractJobDetail(detailHtml, listing)
 
-      const jobPortalHtml = await fetchApiOnlyText(JOB_PORTAL_URL)
-      if (!hasOfficialJobPortalSignal(jobPortalHtml)) {
-        throw new Error('Endurance verified job portal no longer matches the first-party public jobs surface')
-      }
+      jobs.push({
+        ...detail,
+        source: SOURCE,
+        link: detail.applyUrl || detail.sourceUrl,
+        scrapedAt: now(),
+      })
+    }
 
-      const listings = extractJobCards(jobPortalHtml)
-      const selectedListings = maxJobs ? listings.slice(0, maxJobs) : listings
-      const jobs = []
-
-      for (const listing of selectedListings) {
-        const detailHtml = await fetchApiOnlyText(listing.sourceUrl)
-        if (!hasOfficialJobDetailSignal(detailHtml)) {
-          throw new Error('Endurance verified first-party job detail no longer matches the public apply surface')
-        }
-
-        const detail = extractJobDetail(detailHtml, listing)
-
-        jobs.push({
-          ...detail,
-          source: SOURCE,
-          link: detail.applyUrl || detail.sourceUrl,
-          scrapedAt: now(),
-        })
-      }
-
-      return jobs
+    return jobs
   },
 })
 

@@ -12,6 +12,7 @@ const JOB_PATH_PATTERN = /^\/jobs\/([a-z0-9-]+)\/?$/i
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const REDIRECT_LOOP_ERROR_PATTERN = /redirect count exceeded/i
 
 const normalizeText = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -87,6 +88,30 @@ export const hasCloudflareProtectedCareersSignal = (html = '') => {
     && normalized.includes('wpewaf.com')
 }
 
+export const hasRedirectLoopError = (error) =>
+  REDIRECT_LOOP_ERROR_PATTERN.test(String(error?.message ?? error ?? ''))
+
+const resolveUrl = (value, base = CAREERS_URL) => {
+  try {
+    const url = new URL(value, base)
+    url.hash = ''
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
+export const hasVerifiedSelfRedirectingCareersUrl = (response = {}) => {
+  const status = Number(response?.status)
+  if (![301, 302, 307, 308].includes(status)) return false
+
+  const responseUrl = resolveUrl(response?.url, CAREERS_URL)
+  const locationUrl = resolveUrl(response?.location, response?.url || CAREERS_URL)
+
+  return responseUrl === CAREERS_URL
+    && locationUrl === CAREERS_URL
+}
+
 export const extractTrakstarListings = (html = '') => {
   const page = String(html ?? '')
   const listings = []
@@ -156,13 +181,46 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultProbeCareersRedirect = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'manual',
+    signal: AbortSignal.timeout(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    location: response.headers.get('location'),
+  }
+}
+
 export const createNorwinTechnologiesScraper = () => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({
+    fetchText = defaultFetchText,
+    probeCareersRedirect = defaultProbeCareersRedirect,
+    now = () => new Date().toISOString(),
+  } = {}) {
+    let careersHtml = ''
+    let hasSelfRedirectingCareersUrl = false
+
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (!hasRedirectLoopError(error)) throw error
+
+      const redirectProbe = await probeCareersRedirect(CAREERS_URL)
+      hasSelfRedirectingCareersUrl = hasVerifiedSelfRedirectingCareersUrl(redirectProbe)
+      if (!hasSelfRedirectingCareersUrl) throw error
+    }
+
     const hasOfficialCareersPage = hasOfficialCareersSignal(careersHtml)
     const hasProtectedCareersPage = hasCloudflareProtectedCareersSignal(careersHtml)
 
-    if (!hasOfficialCareersPage && !hasProtectedCareersPage) {
+    if (!hasOfficialCareersPage && !hasProtectedCareersPage && !hasSelfRedirectingCareersUrl) {
       throw new Error('Norwin Technologies verified careers page no longer matches the pinned first-party surface')
     }
 

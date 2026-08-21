@@ -254,3 +254,34 @@ test('NewVision Software & Consultancy fails closed when the verified handoff dr
     /verified official careers page/i,
   )
 })
+
+test('NewVision Software & Consultancy propagates the runner abort signal through page and API fetches', async () => {
+  const newVision = await loadScriptModule()
+  const controller = new AbortController()
+  const pageSignals = []
+  const apiSignals = []
+
+  await newVision.createNewVisionSoftwareConsultancyScraper().run({
+    signal: controller.signal,
+    fetchPage: async (url, { signal } = {}) => {
+      pageSignals.push(signal)
+
+      if (url === newVision.CAREERS_PAGE_URL) {
+        return { status: 200, url, html: careersPageHtml }
+      }
+
+      if (url === newVision.JOB_LISTINGS_URL) {
+        return { status: 200, url, html: portalShellHtml }
+      }
+
+      throw new Error(`Unexpected NewVision page URL: ${url}`)
+    },
+    fetchJson: async (_url, options = {}) => {
+      apiSignals.push(options.signal)
+      return samplePayload
+    },
+  })
+
+  assert.deepEqual(pageSignals, [controller.signal, controller.signal])
+  assert.deepEqual(apiSignals, [controller.signal])
+})

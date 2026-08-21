@@ -14,9 +14,16 @@ test('Workhall is registered as an official-site empty-sentinel provider', () =>
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'homepage-plus-common-careers-route-validation')
-  assert.equal(provider.extractionStrategy, 'verified-official-homepage-plus-missing-public-jobs-surface-return-empty')
+  assert.equal(
+    provider.extractionStrategy,
+    'verified-cloudflare-522-first-party-routes+legacy-official-homepage-plus-missing-public-jobs-surface-return-empty',
+  )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.companyDomain, 'workhall.co')
+  assert.equal(provider.verifiedOn, '2026-08-13')
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /522/i)
+  assert.match(provider.verifiedSurfaceSummary, /Cloudflare/i)
   assert.match(provider.modulePath, /workhall[\\/]script\.js$/i)
 })
 

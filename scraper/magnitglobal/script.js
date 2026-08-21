@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import MAGNIT_GLOBAL_CATALOG from './catalog.js'
 
@@ -46,6 +46,9 @@ const stripTags = (html) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
+const extractTitle = (html = '') =>
+  normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
+
 const firstNonEmpty = (...values) => {
   for (const value of values) {
     const normalized = normalizeWhitespace(value)
@@ -74,6 +77,8 @@ export const buildSearchRequestPayload = (paginationStart = 0, location = 'India
 export const buildJobDetailUrl = (jobPostingId) =>
   `${OFFICIAL_DAYFORCE_URL}/jobs/${jobPostingId}`
 
+export const buildCsrfUrl = () => `${DAYFORCE_ORIGIN}/api/auth/csrf`
+
 export const normalizeDayforceBaseUrl = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
@@ -101,10 +106,50 @@ export const hasOfficialMagnitCareersSignals = (html = '') => {
     && extractOfficialDayforceUrl(page) === normalizeDayforceBaseUrl(OFFICIAL_DAYFORCE_URL)
 }
 
+const extractDayforceBoardPayload = (html = '') => {
+  const payload = String(html ?? '').match(
+    /<script id=["']__NEXT_DATA__["'] type=["']application\/json["']>([\s\S]*?)<\/script>/i,
+  )?.[1]
+  if (!payload) return null
+
+  try {
+    return JSON.parse(payload)
+  } catch {
+    return null
+  }
+}
+
+export const extractDayforceSiteInfoFromBoardHtml = (html = '') => {
+  const dehydratedQueries =
+    extractDayforceBoardPayload(html)?.props?.pageProps?.dehydratedState?.queries
+
+  if (!Array.isArray(dehydratedQueries)) return null
+
+  return dehydratedQueries
+    .map((query) => query?.state?.data)
+    .find((data) => normalizeWhitespace(data?.clientNamespace) && normalizeWhitespace(data?.jobBoardCode))
+    || null
+}
+
+export const hasVerifiedDayforceSiteContext = (siteInfo = {}) =>
+  normalizeWhitespace(siteInfo?.clientNamespace)?.toLowerCase() === DAYFORCE_CLIENT_NAMESPACE
+  && normalizeWhitespace(siteInfo?.jobBoardCode)?.toLowerCase() === DAYFORCE_JOB_BOARD_CODE.toLowerCase()
+  && normalizeWhitespace(siteInfo?.cultureCode)?.toLowerCase() === DAYFORCE_LOCALE.toLowerCase()
+  && Number(siteInfo?.jobBoardId) === DAYFORCE_JOB_BOARD_ID
+
 export const extractSearchPostings = (payload = {}) => {
   if (Array.isArray(payload.jobPostings)) return payload.jobPostings
   if (Array.isArray(payload.postings)) return payload.postings
   return []
+}
+
+const getTotalCount = (payload = {}) => {
+  const count = payload?.totalCount
+    ?? payload?.totalJobCount
+    ?? payload?.count
+    ?? payload?.maxCount
+
+  return Number.isFinite(count) ? count : Number.parseInt(count, 10) || 0
 }
 
 export const normalizeSearchPosting = (posting = {}) => {
@@ -152,11 +197,81 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
+  ...options,
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json,text/plain,*/*',
+    ...(options.headers || {}),
+  },
+  label: options.label || `${SOURCE}-json`,
+  timeoutMs: options.timeoutMs || 15000,
+})
+
+export const extractCookieHeaderFromResponse = (response) => {
+  const headers = response?.headers
+  if (!headers) return null
+
+  const setCookies = typeof headers.getSetCookie === 'function'
+    ? headers.getSetCookie()
+    : String(headers.get?.('set-cookie') || '')
+      .split(/,(?=\s*[^;,=\s]+=[^;]+)/)
+      .filter(Boolean)
+
+  const cookieHeader = setCookies
+    .map((line) => normalizeWhitespace(String(line).split(';')[0]))
+    .filter(Boolean)
+    .join('; ')
+
+  return cookieHeader || null
+}
+
+export const buildDayforceSessionHeaders = (
+  session = {},
+  { includeContentType = false } = {},
+) => ({
+  'User-Agent': USER_AGENT,
+  Accept: 'application/json,text/plain,*/*',
+  Cookie: session.cookieHeader,
+  'X-CSRF-Token': session.csrfToken,
+  Referer: OFFICIAL_DAYFORCE_URL,
+  Origin: DAYFORCE_ORIGIN,
+  ...(includeContentType ? { 'Content-Type': 'application/json;charset=UTF-8' } : {}),
+})
+
+export const createDayforceSession = async ({
+  fetchJson = defaultFetchJson,
+} = {}) => {
+  let csrfResponse = null
+  const payload = await fetchJson(buildCsrfUrl(), {
+    label: `${SOURCE}-dayforce-csrf`,
+    fetchImpl: async (url, requestInit) => {
+      const response = await fetch(url, requestInit)
+      csrfResponse = response
+      return response
+    },
+  })
+
+  const csrfToken = firstNonEmpty(payload?.csrfToken)
+  const cookieHeader = extractCookieHeaderFromResponse(csrfResponse)
+
+  if (!csrfToken || !cookieHeader) {
+    throw new Error('Magnit Global Dayforce public session bootstrap no longer exposes a CSRF token and cookie contract')
+  }
+
+  return {
+    csrfToken,
+    cookieHeader,
+  }
+}
+
 export const createMagnitGlobalScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
+    fetchJson = defaultFetchJson,
+    createDayforceSessionImpl = createDayforceSession,
     searchJobPostings,
   } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
@@ -164,16 +279,54 @@ export const createMagnitGlobalScraper = ({
       throw new Error('Magnit verified first-party careers page no longer matches the pinned Dayforce handoff')
     }
 
-    if (!searchJobPostings) {
-      throw new Error(
-        'Magnit Global API-only migration incomplete: no session-free Dayforce search contract has been demonstrated',
-      )
+    const dayforceBoardHtml = await fetchText(OFFICIAL_DAYFORCE_URL)
+    if (extractTitle(dayforceBoardHtml) !== 'Job Board | Dayforce Jobs') {
+      throw new Error('Magnit verified Dayforce public jobs board no longer matches the pinned public board title')
     }
 
-    const payload = await searchJobPostings(buildSearchRequestPayload(0))
-    const jobs = extractSearchPostings(payload)
-      .map((posting) => normalizeSearchPosting(posting))
-      .filter(Boolean)
+    const dayforceSiteInfo = extractDayforceSiteInfoFromBoardHtml(dayforceBoardHtml)
+    if (!hasVerifiedDayforceSiteContext(dayforceSiteInfo)) {
+      throw new Error('Magnit verified Dayforce public jobs surface no longer matches the pinned site context')
+    }
+
+    let dayforceSessionPromise = null
+    const getDayforceSession = async () => {
+      if (!dayforceSessionPromise) {
+        dayforceSessionPromise = Promise.resolve(createDayforceSessionImpl({ fetchJson }))
+      }
+
+      return dayforceSessionPromise
+    }
+
+    const sessionBackedSearchJobPostings = searchJobPostings || (async (payload) => {
+      const session = await getDayforceSession()
+      return fetchJson(buildSearchApiUrl(), {
+        method: 'POST',
+        headers: buildDayforceSessionHeaders(session, { includeContentType: true }),
+        body: JSON.stringify(payload),
+        label: `${SOURCE}-dayforce-search`,
+      })
+    })
+
+    const jobs = []
+    const seenJobIds = new Set()
+    let paginationStart = 0
+
+    while (true) {
+      const payload = await sessionBackedSearchJobPostings(buildSearchRequestPayload(paginationStart))
+      const postings = extractSearchPostings(payload)
+      if (!postings.length) break
+
+      for (const posting of postings) {
+        const job = normalizeSearchPosting(posting)
+        if (!job?.jobId || seenJobIds.has(job.jobId)) continue
+        seenJobIds.add(job.jobId)
+        jobs.push(job)
+      }
+
+      paginationStart += postings.length
+      if (paginationStart >= getTotalCount(payload)) break
+    }
 
     return jobs.map((job) => ({
       ...job,

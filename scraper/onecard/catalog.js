@@ -15,15 +15,15 @@ export const ONECARD_CATALOG = {
   officialJobsApiKey: 'hr-read-only',
   officialApplyUrl: 'mailto:careers@getonecard.app',
   companyDomain: 'getonecard.app',
-  atsPlatform: 'official-careers-page-plus-public-read-only-api',
+  atsPlatform: 'official-careers-page-plus-gated-handoff-plus-broken-public-api',
   countryFilter: 'India',
-  paginationStrategy: 'single-public-jobs-api-response',
-  extractionStrategy: 'verified-official-careers-page+fpl-handoff+embedded-public-jobs-api+mailto-apply',
+  paginationStrategy: 'verified-gated-handoff-plus-broken-public-jobs-api',
+  extractionStrategy: 'verified-official-careers-page+verified-fpl-handoff-js-gate+verified-broken-public-jobs-api-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-08-14',
   verifiedSurfaceSummary:
-    'Verified on July 17, 2026 that https://www.getonecard.app/careers/ is the official OneCard careers page, that it links applicants to https://www.fplabs.tech/careers/, and that the page itself embeds the public read-only jobs API at https://ibffpublic6f2461135ffd1b6a80db296ec15abf.onrender.com/hr/jobs with x-api-key hr-read-only plus the official apply mailto careers@getonecard.app. The verified public API returned 0 public openings at the time of verification.',
+    'Verified on Friday, August 14, 2026 that https://www.getonecard.app/careers/ still exposed the official OneCard careers page, the handoff to https://www.fplabs.tech/careers/, the embedded public jobs API at https://ibffpublic6f2461135ffd1b6a80db296ec15abf.onrender.com/hr/jobs with x-api-key hr-read-only, and the apply mailto careers@getonecard.app. The FPL handoff route returned HTTP 307 with the "You are being redirected..." JavaScript-required gate, and the embedded public jobs API returned HTTP 500 with an invalid-json error referencing https://paa.fplabs.tech/proxy/CRUD/api/test-jobs?populate=*. There is no trustworthy public OneCard jobs listing surface in this environment on the verified date.',
   dryRunFile: 'onecard/jobs.json',
 }
 

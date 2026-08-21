@@ -50,25 +50,26 @@ test('Biocon local catalog captures the verified first-party careers handoff to 
   )
   assert.equal(
     provider.verifiedSampleJobUrl,
-    'https://career10.successfactors.com/career?career_ns=job_listing&company=bioconlimi&navBarLevel=JOB_SEARCH&rcm_site_locale=en_US&career_job_req_id=20811&selected_lang=en_US&jobAlertController_jobAlertId=&jobAlertController_jobAlertName=&browserTimeZone=Asia/Calcutta',
+    'https://career10.successfactors.com/career?career_ns=job_listing&company=bioconlimi&navBarLevel=JOB_SEARCH&rcm_site_locale=en_US&career_job_req_id=20915&selected_lang=en_US&jobAlertController_jobAlertId=&jobAlertController_jobAlertName=&browserTimeZone=Asia/Calcutta',
   )
   assert.equal(provider.companyDomain, 'biocon.com')
   assert.equal(provider.atsPlatform, 'successfactors')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'successfactors-next-page')
+  assert.equal(provider.paginationStrategy, 'successfactors-dwr-initial-search')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-biocon-careers-page+successfactors-public-search-results+detail-pages',
+    'verified-first-party-biocon-careers-page+successfactors-bootstrap+dwr-search-results+detail-pages',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-08-13')
   assert.match(provider.dryRunFile, /biocon[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.biocon\.com\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/career10\.successfactors\.com\/career\?company=bioconlimi/i)
-  assert.match(provider.verifiedSurfaceSummary, /51 Jobs match the selections/i)
-  assert.match(provider.verifiedSurfaceSummary, /20811/i)
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /39 India postings/i)
+  assert.match(provider.verifiedSurfaceSummary, /20915/i)
 
   assert.equal(biocon.PROVIDER_METADATA.source, provider.source)
   assert.equal(biocon.PROVIDER_METADATA.companyName, provider.companyName)

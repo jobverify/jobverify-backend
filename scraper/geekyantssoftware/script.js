@@ -104,10 +104,10 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html) || ''
+  const listings = extractListingJobs(html)
+
   return /Join GeekyAnts/i.test(normalized)
-    && /Showing 8 results/i.test(normalized)
-    && /Senior Backend Engineer/i.test(normalized)
-    && /Legal Associate/i.test(normalized)
+    && listings.length >= 2
     && new RegExp(`topgeek\\.io/company/${TOPGEEK_COMPANY_SLUG}/openings`, 'i').test(String(html ?? ''))
 }
 

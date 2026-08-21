@@ -131,3 +131,17 @@ test('Movidu Technology Private Limited sentinel fails closed when the parked do
     /careers route no longer matches|public jobs/i,
   )
 })
+
+test('Movidu Technology Private Limited returns an empty result when the verified no-jobs surface is temporarily timeout-blocked', async () => {
+  const movidu = await loadModule()
+
+  const jobs = await movidu.createMoviduTechnologyPrivateLimitedScraper().run({
+    fetchPage: async () => {
+      throw new Error(
+        'fetch failed | Connect Timeout Error (attempted address: movidu.com:80, timeout: 10000ms)',
+      )
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})

@@ -48,16 +48,17 @@ test('Karvy local catalog captures the verified no-trustworthy-public-jobs senti
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-exact-name-domain-not-jobs+verified-first-party-legacy-root-handoff+verified-stale-resume-only-career-page-return-empty',
+    'verified-exact-name-domain-not-jobs+verified-legacy-redirect-shell-and-parked-lander+legacy-first-party-root-and-stale-resume-page-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-02')
+  assert.equal(provider.verifiedOn, '2026-08-13')
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.karvy\.com\//i)
-  assert.match(provider.verifiedSurfaceSummary, /403/i)
+  assert.match(provider.verifiedSurfaceSummary, /Porkbun/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.karvyonline\.com\//i)
+  assert.match(provider.verifiedSurfaceSummary, /\/lander/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.karvyonline\.com\/join-us\/career\//i)
-  assert.match(provider.verifiedSurfaceSummary, /join us careers handoff/i)
+  assert.match(provider.verifiedSurfaceSummary, /redirect/i)
   assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
 
   assert.equal(karvy.PROVIDER_METADATA.source, provider.source)

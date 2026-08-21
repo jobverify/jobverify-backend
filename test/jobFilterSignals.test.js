@@ -426,6 +426,20 @@ test("extractJobFilterSignals captures meaningful non-numeric experience require
   assert.equal(signals.experienceBucket, "unspecified");
 });
 
+test("extractJobFilterSignals treats generic explicit experience labels as specified experience", () => {
+  const signals = extractJobFilterSignals({
+    title: "Software Engineer",
+    experienceRequired: "Experienced",
+  });
+
+  assert.equal(signals.experienceProfile.evidence, "Experienced");
+  assert.equal(signals.experienceProfile.hasExplicitExperience, true);
+  assert.equal(signals.experienceProfile.confidence, "medium");
+  assert.equal(signals.experienceProfile.minimumYears, null);
+  assert.equal(signals.experienceProfile.maximumYears, null);
+  assert.equal(signals.experienceBucket, "unspecified");
+});
+
 test("extractJobFilterSignals captures preferred non-numeric experience requirements", () => {
   const signals = extractJobFilterSignals({
     title: "Content Writer - Tamil - Remote",

@@ -2,7 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -10,6 +10,7 @@ const config = loadConfig(currentDir)
 export const SOURCE = 'trustedaerospaceengineering'
 export const COMPANY = 'Trusted Aerospace Engineering Private Limited'
 export const CAREERS_URL = 'https://www.taseglobal.com/career.php'
+export const VERIFIED_ON = '2026-08-14'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -128,14 +129,30 @@ export const extractIndiaJobs = (html) => {
   return jobs
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+export const fetchCareersPageText = async (url, {
+  fetchPage = fetchPageWithRetry,
+} = {}) => {
+  const page = await fetchPage(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    label: SOURCE,
+    timeoutMs: 15000,
+    allowInsecureTlsHosts: ['taseglobal.com'],
+  })
+
+  const status = Number(page?.status ?? 0)
+  if (status < 200 || status >= 300) {
+    const error = new Error(`HTTP ${page?.status ?? 'unknown'} for ${url}`)
+    error.status = page?.status
+    throw error
+  }
+
+  return String(page?.html ?? '')
+}
+
+const defaultFetchText = (url) => fetchCareersPageText(url)
 
 export const createTrustedAerospaceEngineeringScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,

@@ -11,7 +11,8 @@ const USER_AGENT =
 
 const REQUIRED_SAMPLE_TITLES = [
   'AI Research Engineer',
-  'Technical Account Manager - EMEA',
+  'Backend Engineer - Ingestion (Europe/UK timezone)',
+  'Technical Account Executive - EMEA',
   'Technical Customer Success Manager - Americas',
 ]
 
@@ -122,13 +123,14 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
 
   return /content="Careers - PostHog"/i.test(rawHtml)
     && /increase the number of successful products in the world/i.test(rawHtml)
-    && normalized.includes('Location')
-    && normalized.includes('Remote (Hybrid UK)')
-    && normalized.includes('Timezone(s)')
-    && normalized.includes('GMT 0')
+    && normalized.includes("Who's hiring?")
+    && /Our small teams are looking to add \d+ team members/i.test(normalized)
+    && normalized.includes('Select a role')
+    && normalized.includes('AI Research Engineer')
+    && normalized.includes('Backend Engineer - Ingestion (Europe/UK timezone)')
     && normalized.includes('Technical Customer Success Manager - Americas')
-    && normalized.includes('Technical Account Manager - EMEA')
-    && /href="\/careers\/[^"#?]+"/i.test(rawHtml)
+    && normalized.includes('Technical Account Executive - EMEA')
+    && /href="\/careers\/ai-research-engineer"/i.test(rawHtml)
 }
 
 export const extractVerifiedRoleSlug = (html = '') => {

@@ -29,6 +29,33 @@ const jobsHtml = `
 </html>
 `
 
+const noListingsJobsHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Jobs - Webkul Software</title>
+  </head>
+  <body>
+    <h1>Open Positions</h1>
+    <p>Here is the list of open positions that we are currently hiring.</p>
+    <section class="wk-open-position text-left">
+      <section class="wk-openjobs-tabs text-center">
+        <span data-content="engineering" class="job-group">Engineering</span>
+        <span data-content="business" class="job-group">Business</span>
+        <span data-content="design" class="job-group">Design</span>
+        <span data-content="quality-analyst" class="job-group">Quality Analyst</span>
+        <span data-content="finance" class="job-group">Finance</span>
+      </section>
+      <div class="wk-follow-us">
+        <p>You can follow us on Linkedin to recieve job updates.</p>
+      </div>
+    </section>
+    <h2>Didn't find relevant opportunity?</h2>
+    <p>We’re always looking forward to work with great ideas and top talent.</p>
+  </body>
+</html>
+`
+
 const itCloudEngineerHtml = `
 <!doctype html>
 <html lang="en">
@@ -118,8 +145,9 @@ test('Webkul Software validates the first-party jobs page and parses inline job 
   assert.equal(webkul.SOURCE, 'webkulsoftware')
   assert.equal(webkul.COMPANY, 'Webkul Software')
   assert.equal(webkul.JOBS_URL, 'https://webkul.com/jobs/')
-  assert.equal(webkul.VERIFIED_ON, '2026-07-18')
+  assert.equal(webkul.VERIFIED_ON, '2026-08-15')
   assert.equal(webkul.hasOfficialJobsPageSignal(jobsHtml), true)
+  assert.equal(webkul.hasOfficialNoListingsShellSignal(noListingsJobsHtml), true)
 
   const cards = webkul.extractJobCards(jobsHtml)
   assert.equal(cards.length, 2)
@@ -150,6 +178,21 @@ test('Webkul Software run returns jobs from the verified first-party listing and
   assert.equal(jobs[1].title, 'Performance Marketing Specialist')
   assert.equal(jobs[1].location, 'Noida (Work From Office)')
   assert.equal(jobs[1].employmentType, 'FULL_TIME')
+})
+
+test('Webkul Software returns [] when the verified first-party jobs page degrades to the current no-listings shell', async () => {
+  const webkul = await loadModule()
+
+  const jobs = await webkul.createWebkulSoftwareScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async (url) => {
+      if (url === webkul.JOBS_URL) return noListingsJobsHtml
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('Webkul Software fails closed when the verified first-party jobs contract changes', async () => {

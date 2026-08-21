@@ -46,6 +46,44 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<!doctype html>
+<html>
+  <head>
+    <title>Central Board Of Irrigation And Power</title>
+  </head>
+  <body>
+    <a href="https://hrms.cbip.org/login">Employee Login</a>
+    <section>
+      <h2>ABOUT CBIP</h2>
+      <p>
+        The Central Board of Irrigation and Power (CBIP) is a premier institution
+        established by the Government of India in 1927.
+      </p>
+    </section>
+
+    <div class="tab-tab-item w-p-active-tab-item tab-menu-item-active">
+      <div class="tab-content-text">
+        <h3 style="margin-bottom: 17px;background: #fff;padding: 12px;border-bottom: 3px solid #4ef2aa;">Recruitment Notice</h3>
+        <div class="col-lg-7"></div>
+      </div>
+    </div>
+
+    <div class="tab-tab-item">
+      <div class="tab-content-text">
+        <h3>Training Partners</h3>
+        <p>Training partner content</p>
+      </div>
+    </div>
+
+    <div class="tab-content-text">
+      <h3>Expert Registration</h3>
+      <p>Invitation for Empanelment of Experts in Power including RE and Water Resources Sectors</p>
+    </div>
+  </body>
+</html>
+`
+
 const hrmsLoginHtml = `
 <!doctype html>
 <html lang="en">
@@ -77,8 +115,10 @@ test('Central Board of Irrigation and Power validates the verified first-party e
   assert.equal(cbip.HOMEPAGE_URL, 'https://cbip.org/')
   assert.equal(cbip.HRMS_LOGIN_URL, 'https://hrms.cbip.org/login')
   assert.equal(cbip.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(cbip.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(cbip.extractEmployeeLoginUrl(homepageHtml), 'https://hrms.cbip.org/login')
   assert.equal(cbip.hasEmptyRecruitmentNoticeSignal(homepageHtml), true)
+  assert.equal(cbip.hasEmptyRecruitmentNoticeSignal(currentHomepageHtml), true)
   assert.equal(cbip.pageExposesPublicJobListings(homepageHtml), false)
   assert.equal(cbip.hasHrmsLoginSignal(hrmsLoginHtml), true)
   assert.deepEqual(cbip.extractSearchResults(homepageHtml), [])

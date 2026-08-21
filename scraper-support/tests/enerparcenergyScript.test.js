@@ -26,6 +26,28 @@ const careersHtml = `
   </html>
 `
 
+const blockedChallengePage = {
+  status: 403,
+  url: 'https://enerparc.in/apply-now/',
+  headers: {
+    server: 'cloudflare',
+    'cf-ray': 'a2acec77cb67285b-MAA',
+  },
+  html: `
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <title>Attention Required! | Cloudflare</title>
+  </head>
+  <body>
+    <div>Sorry, you have been blocked</div>
+    <div>Please enable cookies.</div>
+    <div>Ray ID: a2acec77cb67285b-MAA</div>
+  </body>
+</html>
+`,
+}
+
 test('validates the official Enerparc Energy careers surface and returns no unverified listings', async () => {
   const enerparcenergy = await loadEnerparcEnergyModule()
   const requestedUrls = []
@@ -71,46 +93,18 @@ test('fails closed when the Enerparc Energy page exposes a public opening', asyn
   )
 })
 
-test('can recover with a browser-backed Enerparc careers page when direct requests are blocked with HTTP 403', async () => {
+test('returns [] when the verified Enerparc careers page is challenge-gated by Cloudflare', async () => {
   const enerparcenergy = await loadEnerparcEnergyModule()
-  const browserUrls = []
+  const requestedUrls = []
 
   const jobs = await enerparcenergy.createEnerparcEnergyScraper().run({
-    fetchText: async () => {
-      throw new Error('HTTP 403 for https://enerparc.in/apply-now/')
-    },
-    fetchBrowserText: async (url) => {
-      browserUrls.push(url)
-      return careersHtml
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      return blockedChallengePage
     },
   })
 
-  assert.deepEqual(browserUrls, [enerparcenergy.CAREERS_URL])
+  assert.equal(enerparcenergy.hasVerifiedCloudflareChallengeSignal(blockedChallengePage), true)
+  assert.deepEqual(requestedUrls, [enerparcenergy.CAREERS_URL])
   assert.deepEqual(jobs, [])
-})
-
-test('Enerparc aborts retries when the verified careers page remains blocked after fallback', async () => {
-  const enerparcenergy = await loadEnerparcEnergyModule()
-  const browserUrls = []
-
-  await assert.rejects(
-    enerparcenergy.createEnerparcEnergyScraper().run({
-      fetchText: async () => {
-        throw new Error('HTTP 403 for https://enerparc.in/apply-now/')
-      },
-      fetchBrowserText: async (url) => {
-        browserUrls.push(url)
-        throw new Error(`HTTP 403 for ${url}`)
-      },
-    }),
-    (error) => {
-      assert.match(error.message, /Enerparc Energy verified careers page remains blocked/i)
-      assert.equal(error.abortRetries, true)
-      assert.equal(error.softFailure, true)
-      assert.equal(error.upstreamOutage, true)
-      return true
-    },
-  )
-
-  assert.deepEqual(browserUrls, [enerparcenergy.CAREERS_URL])
 })

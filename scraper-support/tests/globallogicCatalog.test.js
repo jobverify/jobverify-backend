@@ -7,7 +7,7 @@ import {
 } from '../providers/index.js'
 import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
 
-test('getScraperCatalog includes GlobalLogic as an official careers listings scraper', () => {
+test('getScraperCatalog includes GlobalLogic as a verified challenge-gated official careers scraper', () => {
   const catalog = getScraperCatalog()
   const provider = catalog.find((item) => item.source === 'globallogic')
 
@@ -16,6 +16,11 @@ test('getScraperCatalog includes GlobalLogic as an official careers listings scr
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.companyCareerPage, 'https://www.globallogic.com/careers/')
   assert.equal(provider.companyDomain, 'globallogic.com')
+  assert.equal(provider.officialCareersPageUrl, 'https://www.globallogic.com/career-search-page/')
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.match(provider.paginationStrategy, /incapsula/i)
+  assert.match(provider.extractionStrategy, /return-empty/i)
+  assert.match(provider.verifiedSurfaceSummary, /Incapsula/i)
   assert.match(provider.modulePath, /globallogic[\\/]script\.js$/i)
   assert.equal(companyAliases['Global Logic'], 'globallogic')
 })

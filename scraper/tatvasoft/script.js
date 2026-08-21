@@ -86,13 +86,13 @@ export const extractApplicationEmail = (html = '') => {
 
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = normalizeWhitespace(stripTagsWithLineBreaks(page)) || ''
+  const text = (normalizeWhitespace(stripTagsWithLineBreaks(page)) || '').toLowerCase()
 
-  return /TatvaSoft Career and Culture/i.test(extractTitle(page) || '')
-    && text.includes('Technology evolves, Challenges grow')
-    && text.includes('Jobs at TatvaSoft')
-    && text.includes('Business Development Executive')
-    && text.includes('Java Developer')
+  return /(?:TatvaSoft Career and Culture|Careers at TatvaSoft)/i.test(extractTitle(page) || '')
+    && text.includes('technology evolves, challenges grow')
+    && (text.includes('jobs at tatvasoft') || text.includes('current openings'))
+    && text.includes('business development executive')
+    && text.includes('java developer')
     && text.includes('@tatvasoft.com')
   }
 
@@ -100,14 +100,20 @@ export const extractOpeningLinks = (html = '') => {
   const links = []
   const seen = new Set()
 
-  for (const match of String(html ?? '').matchAll(
+  const patterns = [
+    /<h3>\s*<a href=["'](https:\/\/www\.tatvasoft\.com\/career\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>\s*<\/h3>/gi,
     /<h3>([^<]+)<\/h3>[\s\S]*?<a href=["'](https:\/\/www\.tatvasoft\.com\/career\/[^"']+)["'][^>]*>\s*Read More\s*<\/a>/gi,
-  )) {
-    const title = normalizeWhitespace(match[1])
-    const url = normalizeWhitespace(match[2])
-    if (!title || !url || seen.has(url)) continue
-    seen.add(url)
-    links.push({ title, url })
+  ]
+
+  for (const pattern of patterns) {
+    for (const match of String(html ?? '').matchAll(pattern)) {
+      const url = normalizeWhitespace(patterns.indexOf(pattern) === 0 ? match[1] : match[2])
+      const rawTitle = patterns.indexOf(pattern) === 0 ? match[2] : match[1]
+      const title = normalizeWhitespace(stripTagsWithLineBreaks(rawTitle))
+      if (!title || !url || seen.has(url)) continue
+      seen.add(url)
+      links.push({ title, url })
+    }
   }
 
   return links
@@ -115,14 +121,14 @@ export const extractOpeningLinks = (html = '') => {
 
 export const hasOfficialDetailSignal = (html = '') => {
   const title = extractTitle(html) || ''
-  const text = normalizeWhitespace(stripTagsWithLineBreaks(html)) || ''
+  const text = (normalizeWhitespace(stripTagsWithLineBreaks(html)) || '').toLowerCase()
 
-  return /TatvaSoft Career and Culture/i.test(title)
+  return /(?:TatvaSoft Career and Culture|Careers at TatvaSoft)/i.test(title)
     && Boolean(extractApplicationEmail(html))
-    && text.includes('To apply for this position mail your updated Resume on career@tatvasoft.com')
+    && text.includes('to apply for this position mail your updated resume on career@tatvasoft.com')
     && (
-      text.includes('Qualification:')
-      || text.includes('Required Specifications and Qualifications')
+      text.includes('qualification:')
+      || text.includes('required specifications and qualifications')
     )
   }
 

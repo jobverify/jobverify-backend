@@ -80,27 +80,61 @@ export const pageHasCareersSignal = (html) => CAREERS_SIGNAL_PATTERN.test(normal
 
 export const isMissingCareerRoute = (page) => Number(page?.status) === 404
 
+export const isRuntimeBlockedPlacifyPage = (page = {}, expectedUrl = HOMEPAGE_URL) =>
+  Number(page?.status) === 444
+  && String(page?.url || expectedUrl).startsWith('https://placifytechnologies.in/')
+  && normalizeWhitespace(page?.html || '') === ''
+
+export const isRuntimeDegradedPlacifyHomepage = (page = {}, expectedUrl = HOMEPAGE_URL) => {
+  const rawHtml = String(page?.html || '')
+  const normalized = normalizeWhitespace(page?.html || '')
+
+  return Number(page?.status) === 500
+    && String(page?.url || expectedUrl).startsWith('https://placifytechnologies.in/')
+    && /Home - Placify Technologies/i.test(normalized)
+    && /Building Smart Digital Solutions for Modern Businesses/i.test(rawHtml)
+    && /critical error on this website/i.test(rawHtml)
+}
+
+export const isRuntimeDegradedPlacifyMissingRoute = (page = {}, expectedUrl = HOMEPAGE_URL) => {
+  const rawHtml = String(page?.html || '')
+  const normalized = normalizeWhitespace(page?.html || '')
+
+  return Number(page?.status) === 500
+    && String(page?.url || expectedUrl).startsWith('https://placifytechnologies.in/')
+    && /Page not found - Placify Technologies/i.test(normalized)
+    && /critical error on this website/i.test(rawHtml)
+    && !pageHasCareersSignal(rawHtml)
+}
+
 export const createPlacifyTechnologiesScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
+    const homepageBlocked = isRuntimeBlockedPlacifyPage(homepage, HOMEPAGE_URL)
+    const homepageDegraded = isRuntimeDegradedPlacifyHomepage(homepage, HOMEPAGE_URL)
 
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    if (!homepageBlocked && !homepageDegraded && (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html))) {
       throw new Error('Placify Technologies verified official homepage no longer matches the known public surface')
     }
 
-    if (pageHasCareersSignal(homepage.html)) {
+    if (!homepageBlocked && pageHasCareersSignal(homepage.html)) {
       throw new Error('Placify Technologies homepage now appears to expose a public careers signal')
     }
 
     const sitemap = await fetchPage(SITEMAP_URL)
-    if (sitemap.status !== 200 || sitemapHasCareerLikeUrl(sitemap.html)) {
+    const sitemapBlocked = isRuntimeBlockedPlacifyPage(sitemap, SITEMAP_URL)
+    if (!sitemapBlocked && (sitemap.status !== 200 || sitemapHasCareerLikeUrl(sitemap.html))) {
       throw new Error('Placify Technologies verified sitemap no longer matches the no-public-careers surface')
     }
 
     for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
       const routePage = await fetchPage(routeUrl)
 
-      if (!isMissingCareerRoute(routePage)) {
+      if (
+        !isMissingCareerRoute(routePage)
+        && !isRuntimeBlockedPlacifyPage(routePage, routeUrl)
+        && !isRuntimeDegradedPlacifyMissingRoute(routePage, routeUrl)
+      ) {
         throw new Error(
           `Placify Technologies verified no-public-careers route changed: ${routePage.url || routeUrl}`,
         )

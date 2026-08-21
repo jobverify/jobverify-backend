@@ -54,6 +54,37 @@ const searchResultsHtml = `
   </section>
 `
 
+const currentSearchResultsHtml = `
+  <section class="two-pane-serp-page__results-list">
+    <ul class="jobs-search__results-list">
+      <li>
+        <div class="base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card" data-entity-urn="urn:li:jobPosting:4453582344">
+          <a class="base-card__full-link absolute top-0 right-0 bottom-0 left-0 p-0 z-[2] outline-offset-[4px]" href="https://in.linkedin.com/jobs/view/data-analyst-at-vedantu-4453582344?position=2&amp;pageNum=0&amp;refId=current-shape&amp;trackingId=current-shape"></a>
+          <div class="base-search-card__info">
+            <h3 class="base-search-card__title">
+              Data Analyst
+            </h3>
+            <h4 class="base-search-card__subtitle">
+              <a class="hidden-nested-link" href="https://in.linkedin.com/company/vedantu?trk=public_jobs_jserp-result_job-search-card-subtitle">Vedantu</a>
+            </h4>
+            <div class="base-search-card__metadata">
+              <span class="job-search-card__location">
+                Bengaluru, Karnataka, India
+              </span>
+              <div class="job-posting-benefits text-sm">
+                <span class="job-posting-benefits__text">Actively Hiring</span>
+              </div>
+              <time class="job-search-card__listdate--new" datetime="2026-08-20">
+                13 hours ago
+              </time>
+            </div>
+          </div>
+        </div>
+      </li>
+    </ul>
+  </section>
+`
+
 const detailHtml = `
   <html>
     <head>
@@ -120,6 +151,32 @@ test('Vedantu scraper validates the official careers handoff and keeps only Indi
     closingDate: null,
     jobDescription: null,
   })
+})
+
+test('Vedantu scraper accepts the current LinkedIn jobs card markup with the new listdate class', async () => {
+  const vedantu = await loadVedantuModule()
+  const jobs = vedantu.extractSearchResults(currentSearchResultsHtml)
+
+  assert.deepEqual(jobs, [{
+    title: 'Data Analyst',
+    company: 'Vedantu',
+    department: null,
+    location: 'Bengaluru, Karnataka, India',
+    city: 'Bengaluru',
+    country: 'India',
+    jobId: '4453582344',
+    requisitionId: '4453582344',
+    sourceUrl: 'https://in.linkedin.com/jobs/view/data-analyst-at-vedantu-4453582344?position=2&pageNum=0&refId=current-shape&trackingId=current-shape',
+    applyUrl: 'https://in.linkedin.com/jobs/view/data-analyst-at-vedantu-4453582344?position=2&pageNum=0&refId=current-shape&trackingId=current-shape',
+    employmentType: null,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: '2026-08-20',
+    closingDate: null,
+    jobDescription: null,
+  }])
 })
 
 test('Vedantu scraper enriches a public LinkedIn detail page via JobPosting JSON-LD', async () => {

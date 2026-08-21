@@ -29,17 +29,19 @@ const ASHBY_BOARD_HTML = `
 <html lang="en">
   <head>
     <title>Airbyte Jobs</title>
+    <meta name="description" content="Airbyte Jobs" />
+    <meta property="og:url" content="https://jobs.ashbyhq.com/airbyte" />
+    <meta property="og:title" content="Airbyte Jobs" />
   </head>
   <body>
-    <main>
-      <h1>Airbyte Jobs</h1>
-      <a href="https://jobs.ashbyhq.com/airbyte/efe55756-f28b-4030-b9a0-539f6c8ed8ff">
-        Engineering Manager, Platform
-      </a>
-      <a href="https://jobs.ashbyhq.com/airbyte/b59bbc91-fb77-4a08-9c47-0fca7f755942">
-        Senior AI Platform Engineer
-      </a>
-    </main>
+    <div id="root"></div>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <script>
+      window.__ASHBY_JOB_BOARD__ = {
+        company: 'Airbyte',
+        featuredRole: 'Engineering Manager, Platform',
+      }
+    </script>
   </body>
 </html>
 `
@@ -178,7 +180,10 @@ test('Airbyte fails closed when the verified careers page, Ashby board shell, or
       fetchText: async (url) => {
         if (url === airbyte.CAREERS_PAGE_URL) return CAREERS_HTML
         if (url === airbyte.ASHBY_PUBLIC_BOARD_URL) {
-          return ASHBY_BOARD_HTML.replaceAll('Engineering Manager, Platform', 'Unexpected Role')
+          return ASHBY_BOARD_HTML.replace(
+            'https://jobs.ashbyhq.com/airbyte',
+            'https://jobs.ashbyhq.com/unexpected',
+          )
         }
         throw new Error(`Unexpected Airbyte text URL: ${url}`)
       },

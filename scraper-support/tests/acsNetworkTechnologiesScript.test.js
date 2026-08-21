@@ -12,8 +12,12 @@ const loadAcsNetworkTechnologiesModule = async () => {
 const listingPageHtml = `
 <!doctype html>
 <html>
+  <head>
+    <title>Jobs in Acs Networks & Technologies Dehradun | ID-1140592-Recruiters in Dehradun</title>
+  </head>
   <body>
-    <h2><span>6</span> Acs Networks & Technologies Jobs and Careers</h2>
+    <h1>Acs Networks & Technologies Dehradun, Uttarakhand</h1>
+    <h2>6 current job vacancies at Acs Networks & Technologies</h2>
     <div class="sjc-list" id="more_results">
       <div class="sjc-iteam pr_list" data-url="https://www.placementindia.com/job-detail/team-leader-sales-in-acs-network-technology-private-limited-at-dehradun-1265304.htm">
         <div class="sjci">
@@ -105,9 +109,27 @@ const detailPageHtml = `
 </html>
 `
 
+const buildConnectTimeoutError = () => {
+  const error = new TypeError('fetch failed')
+  error.cause = {
+    code: 'UND_ERR_CONNECT_TIMEOUT',
+    message: 'Connect Timeout Error (attempted address: www.placementindia.com:443, timeout: 10000ms)',
+  }
+  return error
+}
+
 test('extractSearchResults maps ACS recruiter cards into shared scraper fields', async () => {
   const acsNetworkTechnologies = await loadAcsNetworkTechnologiesModule()
   assert.ok(acsNetworkTechnologies)
+
+  assert.equal(acsNetworkTechnologies.SOURCE, 'acsnetworktechnologies')
+  assert.equal(acsNetworkTechnologies.COMPANY, 'ACS Network & Technologies')
+  assert.equal(acsNetworkTechnologies.VERIFIED_ON, '2026-08-15')
+  assert.equal(
+    acsNetworkTechnologies.isVerifiedAcsNetworkTechnologiesUnavailableError(buildConnectTimeoutError()),
+    true,
+  )
+  assert.equal(acsNetworkTechnologies.hasOfficialRecruiterPageSignal(listingPageHtml), true)
 
   const jobs = acsNetworkTechnologies.extractSearchResults(listingPageHtml)
 
@@ -196,4 +218,22 @@ test('run fetches the ACS recruiter page, enriches each job with detail metadata
   assert.equal(jobs[0].employmentType, 'Full Time')
   assert.equal(jobs[0].salary, '2.3 - 3.0 Lac/Yr')
   assert.equal(typeof jobs[0].scrapedAt, 'string')
+})
+
+test('run returns [] when the verified PlacementIndia recruiter page times out in the current runtime', async () => {
+  const acsNetworkTechnologies = await loadAcsNetworkTechnologiesModule()
+  assert.ok(acsNetworkTechnologies)
+
+  const requestedUrls = []
+  const scraper = acsNetworkTechnologies.createAcsNetworkTechnologiesScraper()
+
+  const jobs = await scraper.run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      throw buildConnectTimeoutError()
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [acsNetworkTechnologies.CAREER_PAGE_URL])
+  assert.deepEqual(jobs, [])
 })

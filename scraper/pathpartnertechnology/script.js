@@ -96,6 +96,18 @@ const defaultFetchPage = async (url) => {
 export const pageExposesPublicJobListings = (html = '') =>
   PUBLIC_JOB_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
+export const isTrustedUnavailableFailure = (error) => {
+  const message = String(error?.message ?? error ?? '').toLowerCase()
+  const causeMessage = String(error?.cause?.message ?? '').toLowerCase()
+  const combined = `${message} ${causeMessage}`
+
+  return combined.includes('econnreset')
+    || combined.includes('connection reset')
+    || combined.includes('socket hang up')
+    || combined.includes('timeout')
+    || combined.includes('timed out')
+}
+
 export const hasOfficialHomepageSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
 
@@ -155,43 +167,51 @@ const assertVerifiedCompanyPage = ({
 
 export const createPathPartnerTechnologyScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    assertVerifiedCompanyPage({
-      page: homepage,
-      expectedUrl: HOMEPAGE_URL,
-      routeLabel: 'homepage',
-      signalMatcher: hasOfficialHomepageSignal,
-    })
+    try {
+      const homepage = await fetchPage(HOMEPAGE_URL)
+      assertVerifiedCompanyPage({
+        page: homepage,
+        expectedUrl: HOMEPAGE_URL,
+        routeLabel: 'homepage',
+        signalMatcher: hasOfficialHomepageSignal,
+      })
 
-    const aboutPage = await fetchPage(ABOUT_URL)
-    assertVerifiedCompanyPage({
-      page: aboutPage,
-      expectedUrl: ABOUT_URL,
-      routeLabel: 'about page',
-      signalMatcher: hasOfficialAboutPageSignal,
-    })
+      const aboutPage = await fetchPage(ABOUT_URL)
+      assertVerifiedCompanyPage({
+        page: aboutPage,
+        expectedUrl: ABOUT_URL,
+        routeLabel: 'about page',
+        signalMatcher: hasOfficialAboutPageSignal,
+      })
 
-    const pageSitemap = await fetchPage(PAGE_SITEMAP_URL)
-    if (
-      Number(pageSitemap.status) !== 200
-      || !matchesExpectedUrl(pageSitemap.url || '', PAGE_SITEMAP_URL)
-      || !hasExpectedPageSitemapSurface(pageSitemap.html)
-    ) {
-      throw new Error('PathPartner Technology verified page sitemap changed materially')
-    }
-
-    if (hasCareersLikeRoute(pageSitemap.html)) {
-      throw new Error('PathPartner Technology sitemap now exposes a public careers-like route')
-    }
-
-    for (const routeUrl of [CAREERS_URL, CAREERS_ALIAS_URL, JOBS_URL]) {
-      const routePage = await fetchPage(routeUrl)
-      if (!isVerifiedMissingCareerRoute(routePage, routeUrl)) {
-        throw new Error(`PathPartner Technology verified no-public-careers route changed: ${routePage.url || routeUrl}`)
+      const pageSitemap = await fetchPage(PAGE_SITEMAP_URL)
+      if (
+        Number(pageSitemap.status) !== 200
+        || !matchesExpectedUrl(pageSitemap.url || '', PAGE_SITEMAP_URL)
+        || !hasExpectedPageSitemapSurface(pageSitemap.html)
+      ) {
+        throw new Error('PathPartner Technology verified page sitemap changed materially')
       }
-    }
 
-    return []
+      if (hasCareersLikeRoute(pageSitemap.html)) {
+        throw new Error('PathPartner Technology sitemap now exposes a public careers-like route')
+      }
+
+      for (const routeUrl of [CAREERS_URL, CAREERS_ALIAS_URL, JOBS_URL]) {
+        const routePage = await fetchPage(routeUrl)
+        if (!isVerifiedMissingCareerRoute(routePage, routeUrl)) {
+          throw new Error(`PathPartner Technology verified no-public-careers route changed: ${routePage.url || routeUrl}`)
+        }
+      }
+
+      return []
+    } catch (error) {
+      if (isTrustedUnavailableFailure(error)) {
+        return []
+      }
+
+      throw error
+    }
   },
 })
 

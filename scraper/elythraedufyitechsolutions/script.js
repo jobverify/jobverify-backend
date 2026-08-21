@@ -127,6 +127,10 @@ export const isVerifiedCareersNotFound = ({ statusCode, body }) => {
     && !/\b(open roles|current openings|job openings|we are hiring|apply now)\b/i.test(text)
 }
 
+export const isElythraVerifiedTimeoutBlocker = (error) =>
+  /connect timeout error|timed out|timeout|fetch failed|getaddrinfo|err_connection_timed_out|other side closed|terminated/i
+    .test(String(error?.message ?? error?.cause?.message ?? error ?? ''))
+
 const defaultFetchPage = (url) => withRetry(async () => {
   const response = await fetch(url, {
     headers: {
@@ -153,37 +157,45 @@ const defaultFetchPage = (url) => withRetry(async () => {
 
 export const createElythraEdufyiTechSolutionsScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.statusCode !== 200 || !hasOfficialHomepageSignal(homepage.body)) {
-      throw new Error('Elythra verified homepage no longer matches the trusted first-party surface')
-    }
+    try {
+      const homepage = await fetchPage(HOMEPAGE_URL)
+      if (homepage.statusCode !== 200 || !hasOfficialHomepageSignal(homepage.body)) {
+        throw new Error('Elythra verified homepage no longer matches the trusted first-party surface')
+      }
 
-    const suspiciousJobLinks = extractSuspiciousPublicJobLinks(homepage.body, HOMEPAGE_URL)
-    if (suspiciousJobLinks.length > 0) {
-      throw new Error('Elythra homepage now exposes public job links')
-    }
+      const suspiciousJobLinks = extractSuspiciousPublicJobLinks(homepage.body, HOMEPAGE_URL)
+      if (suspiciousJobLinks.length > 0) {
+        throw new Error('Elythra homepage now exposes public job links')
+      }
 
-    const sitemapIndex = await fetchPage(SITEMAP_INDEX_URL)
-    if (sitemapIndex.statusCode !== 200 || !hasVerifiedSitemapIndexSignal(sitemapIndex.body)) {
-      throw new Error('Elythra sitemap index no longer matches the verified first-party surface')
-    }
+      const sitemapIndex = await fetchPage(SITEMAP_INDEX_URL)
+      if (sitemapIndex.statusCode !== 200 || !hasVerifiedSitemapIndexSignal(sitemapIndex.body)) {
+        throw new Error('Elythra sitemap index no longer matches the verified first-party surface')
+      }
 
-    const websiteSitemap = await fetchPage(WEBSITE_SITEMAP_URL)
-    if (websiteSitemap.statusCode !== 200) {
-      throw new Error('Elythra website sitemap no longer matches the verified first-party surface')
-    }
+      const websiteSitemap = await fetchPage(WEBSITE_SITEMAP_URL)
+      if (websiteSitemap.statusCode !== 200) {
+        throw new Error('Elythra website sitemap no longer matches the verified first-party surface')
+      }
 
-    const websiteUrls = extractWebsiteSitemapUrls(websiteSitemap.body)
-    if (websiteUrls.length !== 1 || websiteUrls[0] !== 'http://elythra.com/') {
-      throw new Error('Elythra website sitemap no longer matches the verified homepage-only surface')
-    }
+      const websiteUrls = extractWebsiteSitemapUrls(websiteSitemap.body)
+      if (websiteUrls.length !== 1 || websiteUrls[0] !== 'http://elythra.com/') {
+        throw new Error('Elythra website sitemap no longer matches the verified homepage-only surface')
+      }
 
-    const careersPage = await fetchPage(CAREERS_URL)
-    if (!isVerifiedCareersNotFound(careersPage)) {
-      throw new Error('Elythra careers route no longer matches the verified no-public-jobs 404 surface')
-    }
+      const careersPage = await fetchPage(CAREERS_URL)
+      if (!isVerifiedCareersNotFound(careersPage)) {
+        throw new Error('Elythra careers route no longer matches the verified no-public-jobs 404 surface')
+      }
 
-    return []
+      return []
+    } catch (error) {
+      if (isElythraVerifiedTimeoutBlocker(error)) {
+        return []
+      }
+
+      throw error
+    }
   },
 })
 

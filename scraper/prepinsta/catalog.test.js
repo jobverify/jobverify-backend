@@ -20,16 +20,17 @@ test('PrepInsta is registered against the verified first-party careers page with
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-angel-handoff+verified-wellfound-blocked-surface-return-empty',
+    'verified-first-party-careers-page+verified-angel-handoff+verified-wellfound-empty-board-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'prepinsta.com')
-  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.equal(provider.verifiedOn, '2026-08-15')
   assert.equal(provider.verifiedPublicJobCount, 0)
   assert.equal(provider.verifiedIndiaJobCount, 0)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /Cloudflare/i)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 15, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /View 0 jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /PrepInsta hasn't added any jobs yet/i)
   assert.match(provider.modulePath, /prepinsta[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Prepinsta'), false)
 })

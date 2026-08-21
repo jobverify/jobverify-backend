@@ -96,16 +96,31 @@ const structuredSearchPayload = {
   jobErrorMessage: null,
 }
 
-const indiaZeroPayload = {
+const indiaKeywordNoLocatedHitsPayload = {
   query: 'India',
-  jobs: [],
-  totalJobs: 0,
-  jobFilters: `primaryLocationCountry == 'IN' AND ${expectedPopulationFilter}`,
+  jobs: [{
+    id: 'R-2591343-External',
+    text: 'Job Posting Title: Senior Manager, Communications',
+    metadata: {
+      jobId: 'R-2591343',
+      title: 'Senior Manager, Communications',
+      primaryLocationCity: 'BENTONVILLE',
+      primaryLocationCountry: 'US',
+      brand: 'Walmart',
+      areas: ['Corporate'],
+      categories: ['Communications'],
+      employmentTypes: ['Full time'],
+      population: 'WALMART_EXT_CAMPUS_US',
+    },
+    score: 0.92,
+  }],
+  totalJobs: 20,
+  jobFilters: expectedPopulationFilter,
   jobSearchSucceeded: true,
   jobErrorMessage: null,
 }
 
-const indiaEnumerablePayload = {
+const indiaLocatedPayload = {
   query: 'India',
   jobs: [{
     id: 'R-2428432-External',
@@ -129,7 +144,7 @@ const indiaEnumerablePayload = {
   jobErrorMessage: null,
 }
 
-test('Walmart sentinel pins the verified modern first-party careers surface and zero-India search contract', async () => {
+test('Walmart sentinel pins the verified first-party careers surface and rejects only actual India-located keyword hits', async () => {
   const walmart = await loadWalmartModule()
 
   assert.ok(walmart, 'Expected Walmart scraper module at ./script.js')
@@ -149,10 +164,12 @@ test('Walmart sentinel pins the verified modern first-party careers surface and 
   assert.equal(walmart.hasTechnologyPageSignal(technologyHtml), true)
   assert.equal(walmart.hasCorporatePageSignal(corporateHtml), true)
   assert.equal(walmart.hasStructuredSearchProbe(structuredSearchPayload), true)
-  assert.equal(walmart.hasVerifiedIndiaZeroResult(indiaZeroPayload), true)
+  assert.equal(walmart.hasVerifiedIndiaQueryWithoutLocatedHits(indiaKeywordNoLocatedHitsPayload), true)
+  assert.deepEqual(walmart.extractIndiaLocatedSearchHits(indiaKeywordNoLocatedHitsPayload), [])
+  assert.equal(walmart.extractIndiaLocatedSearchHits(indiaLocatedPayload).length, 1)
 })
 
-test('run returns an empty list while Walmart keeps the verified zero-India public results slice', async () => {
+test('run returns an empty list while Walmart keeps the verified no-India-located public keyword probe', async () => {
   const walmart = await loadWalmartModule()
   assert.ok(walmart, 'Expected Walmart scraper module at ./script.js')
 
@@ -169,7 +186,7 @@ test('run returns an empty list while Walmart keeps the verified zero-India publ
     searchJobs: async (query) => {
       requestedQueries.push(query)
       if (query === walmart.STRUCTURED_PROBE_QUERY) return structuredSearchPayload
-      if (query === walmart.INDIA_PROBE_QUERY) return indiaZeroPayload
+      if (query === walmart.INDIA_PROBE_QUERY) return indiaKeywordNoLocatedHitsPayload
       throw new Error(`Unexpected search query: ${query}`)
     },
   })
@@ -243,9 +260,9 @@ test('run fails closed when the verified Walmart surface drifts or starts exposi
       searchJobs: async (query) => (
         query === walmart.STRUCTURED_PROBE_QUERY
           ? structuredSearchPayload
-          : indiaEnumerablePayload
+          : indiaLocatedPayload
       ),
     }),
-    /now exposes enumerable India jobs/i,
+    /public India keyword probe now returns India-located jobs/i,
   )
 })

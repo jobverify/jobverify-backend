@@ -7,10 +7,11 @@ import {
   SOURCE,
   createK7ComputingScraper,
   extractK7ComputingJobs,
+  hasVerifiedEmptyCareersSignal,
   hasOfficialCareersSignal,
 } from '../../scraper/k7computing/script.js'
 
-const careersHtml = `
+const careersWithOpeningHtml = `
   <html>
     <head><title>Careers - K7 Security</title></head>
     <body>
@@ -42,12 +43,23 @@ const careersHtml = `
   </html>
 `
 
-test('K7 Computing recognizes the verified first-party careers surface and extracts its opening', () => {
+const emptyCareersHtml = `
+  <html>
+    <head><title>Careers &#8211; K7 Security</title></head>
+    <body>
+      <h1>Careers at K7 Computing</h1>
+      <h2>Current Openings</h2>
+      <p>We currently have no job openings</p>
+    </body>
+  </html>
+`
+
+test('K7 Computing recognizes the verified first-party careers surface and can still parse legacy openings', () => {
   assert.equal(SOURCE, 'k7computing')
   assert.equal(COMPANY, 'K7 Computing')
   assert.equal(CAREERS_URL, 'https://careers.k7computing.com/')
-  assert.equal(hasOfficialCareersSignal(careersHtml), true)
-  assert.deepEqual(extractK7ComputingJobs(careersHtml), [
+  assert.equal(hasOfficialCareersSignal(careersWithOpeningHtml), true)
+  assert.deepEqual(extractK7ComputingJobs(careersWithOpeningHtml), [
     {
       title: 'Sales Manager',
       location: 'Abu Dhabi',
@@ -59,18 +71,21 @@ test('K7 Computing recognizes the verified first-party careers surface and extra
   ])
 })
 
-test('K7 Computing scraper fetches the verified careers page and returns current openings', async () => {
+test('K7 Computing recognizes the verified empty careers state and returns []', async () => {
+  assert.equal(hasOfficialCareersSignal(emptyCareersHtml), true)
+  assert.equal(hasVerifiedEmptyCareersSignal(emptyCareersHtml), true)
+  assert.deepEqual(extractK7ComputingJobs(emptyCareersHtml), [])
+
   const requestedUrls = []
   const jobs = await createK7ComputingScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      return careersHtml
+      return emptyCareersHtml
     },
   })
 
   assert.deepEqual(requestedUrls, [CAREERS_URL])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Sales Manager')
+  assert.deepEqual(jobs, [])
 })
 
 test('K7 Computing fails closed when the trusted careers surface changes', async () => {

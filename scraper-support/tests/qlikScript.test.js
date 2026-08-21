@@ -9,7 +9,7 @@ const loadModule = async () => {
   }
 }
 
-test('Qlik surfaces a 403 from the Eightfold API instead of recovering through a browser', async () => {
+test('Qlik defaultFetchJson surfaces a 403 from the Eightfold API', async () => {
   const qlik = await loadModule()
   const originalFetch = globalThis.fetch
 
@@ -30,6 +30,29 @@ test('Qlik surfaces a 403 from the Eightfold API instead of recovering through a
   } finally {
     globalThis.fetch = originalFetch
   }
+})
+
+test('Qlik returns an aggregate signal job when the first Eightfold listing request is hard-blocked', async () => {
+  const qlik = await loadModule()
+  const seenUrls = []
+
+  const jobs = await qlik.createQlikScraper({
+    now: () => '2026-08-13T18:00:00.000Z',
+  }).run({
+    fetchJson: async (url) => {
+      seenUrls.push(url)
+      throw new Error(`HTTP 403 for ${url}`)
+    },
+  })
+
+  assert.equal(seenUrls.length, 1)
+  assert.equal(new URL(seenUrls[0]).searchParams.get('limit'), '50')
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Current openings at Qlik')
+  assert.equal(jobs[0].link, 'https://careerhub.qlik.com/careers?domain=qlik.com')
+  assert.equal(jobs[0].jobId, 'qlik-current-openings')
+  assert.match(jobs[0].jobDescription, /Eightfold inventory API returned HTTP 403/i)
+  assert.equal(jobs[0].scrapedAt, '2026-08-13T18:00:00.000Z')
 })
 
 test('Qlik skips malformed India-filtered positions and keeps valid jobs', async () => {
@@ -138,4 +161,34 @@ test('Qlik recognizes India jobs when the live payload uses standardized IN coun
       { jobId: '12', location: 'Mumbai', remoteStatus: 'Hybrid' },
     ],
   )
+})
+
+test('Qlik standalone dry-run writes jobs.json when invoked as the entry script', async () => {
+  const qlik = await loadModule()
+  const savedFiles = []
+  const jobs = [{ jobId: 'Q26022', title: 'Principal Solution Architect' }]
+
+  const result = await qlik.runStandalone({
+    argv: ['node', 'C:/repo/jobverify-backend/scraper/qlik/script.js', '--dry-run'],
+    modulePath: 'C:/repo/jobverify-backend/scraper/qlik/script.js',
+    outputFile: 'C:/repo/jobverify-backend/scraper/qlik/jobs.json',
+    runScraper: async () => jobs,
+    saveToFile: (savedJobs, outputFile) => {
+      savedFiles.push({ savedJobs, outputFile })
+    },
+    saveToDB: async () => {
+      assert.fail('Qlik dry-run should not write to DB')
+    },
+    consoleImpl: {
+      log: () => {},
+    },
+  })
+
+  assert.deepEqual(result, jobs)
+  assert.deepEqual(savedFiles, [
+    {
+      savedJobs: jobs,
+      outputFile: 'C:/repo/jobverify-backend/scraper/qlik/jobs.json',
+    },
+  ])
 })

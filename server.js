@@ -12,6 +12,7 @@ import authRoutes from "./src/routes/authRoutes.js";
 import helmet from "helmet";
 import jobRoutes from "./src/routes/jobRoutes.js";
 import userRoutes from "./src/routes/userRoutes.js";
+import telegramRoutes from "./src/routes/telegramRoutes.js";
 import scrapeRoutes from "./src/routes/scrapeRoutes.js";
 import adminRoutes from "./src/routes/adminRoutes.js";
 import billingRoutes from "./src/routes/billingRoutes.js";
@@ -77,16 +78,6 @@ if (nodeEnv === "production") {
   resolvePublicApiOrigin();
 }
 
-app.use(express.json({
-  limit: "32kb",
-  verify: (req, _res, buffer) => {
-    if (req.originalUrl === "/api/billing/webhook") {
-      req.rawBody = buffer.toString("utf8");
-    }
-  },
-}));
-app.use(express.urlencoded({ extended: true, limit: "32kb" }));
-
 // Middleware
 app.use(
   helmet({
@@ -126,13 +117,30 @@ app.use(
     credentials: true,
   }),
 );
+
+// Telegram authenticates the webhook before its route-local JSON parser runs.
+app.use("/api/integrations/telegram", telegramRoutes);
+
+app.use(express.json({
+  limit: "32kb",
+  verify: (req, _res, buffer) => {
+    if (req.originalUrl === "/api/billing/webhook") {
+      req.rawBody = buffer.toString("utf8");
+    }
+  },
+}));
+app.use(express.urlencoded({ extended: true, limit: "32kb" }));
+
 app.use("/api", requireJsonMutation);
 app.use(
   "/api",
   createCsrfProtection({
     allowedOrigins,
     allowDevLoopback: nodeEnv !== "production",
-    exemptPaths: ["/api/billing/webhook"],
+    exemptPaths: [
+      "/api/billing/webhook",
+      "/api/integrations/telegram/webhook",
+    ],
   }),
 );
 

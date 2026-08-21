@@ -16,19 +16,15 @@ const USER_AGENT =
 
 const OFFICIAL_CAREERS_SIGNALS = [
   'gate careers | crypto & web3 jobs at gate | gate.com',
-  'career opportunities',
-  'start your career journey with gate and explore unlimited opportunities.',
-  'job openings',
-  'view linkedin',
-  'positions open, waiting just for you!',
-  'product',
-  'engineering',
-  'technical support',
-  'legal & compliance',
-  'investment products',
-  'risk control & aml',
-  'finance',
-  'internship',
+  'join gate & shape a new career chapter',
+  'join global innovators to shape the future of crypto finance and create your own impact.',
+  'our culture, one gate',
+  'our core values',
+  'why gate',
+  'unlock your next career chapter',
+  'view all positions',
+  'gate news & insights',
+  'linkedin',
 ]
 
 const LEVER_BOARD_SIGNALS = [

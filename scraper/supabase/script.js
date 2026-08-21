@@ -14,7 +14,7 @@ const USER_AGENT =
 
 export const SOURCE = 'supabase'
 export const COMPANY = 'Supabase'
-export const VERIFIED_ON = '2026-07-25'
+export const VERIFIED_ON = '2026-08-13'
 export const CAREERS_PAGE_URL = 'https://supabase.com/careers'
 export const ASHBY_PUBLIC_BOARD_URL = 'https://jobs.ashbyhq.com/supabase'
 export const ASHBY_JOB_BOARD_URL = 'https://api.ashbyhq.com/posting-api/job-board/supabase'
@@ -114,9 +114,6 @@ export const hasOfficialCareersSignal = (html) => {
     && normalized.includes("We're on a mission to build the best developer platform")
     && normalized.includes('Explore remote opportunities and join our team to help us achieve it.')
     && normalized.includes('Open positions')
-    && normalized.includes('Product Manager - Marketplace')
-    && normalized.includes('Customer Solution Architect (APAC)')
-    && normalized.includes('Support Engineer (APAC)')
     && normalized.includes('Apply for position')
 }
 

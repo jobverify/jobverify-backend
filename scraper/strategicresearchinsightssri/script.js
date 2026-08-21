@@ -11,7 +11,16 @@ export const HOMEPAGE_URL = 'https://www.srinsights.com/'
 export const CAREERS_URL = 'https://www.srinsights.com/careers/'
 
 const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36'
+
+const REQUEST_HEADERS = {
+  'User-Agent': USER_AGENT,
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Upgrade-Insecure-Requests': '1',
+  'sec-ch-ua': '"Not=A?Brand";v="99", "Google Chrome";v="151", "Chromium";v="151"',
+  'sec-ch-ua-mobile': '?0',
+  'sec-ch-ua-platform': '"Windows"',
+}
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 10)))
@@ -154,7 +163,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
 
-  return /<title>\s*Top Life Sciences Consulting Firm - Actionable Insights,\s*SRI\s*<\/title>/i.test(page)
+  return /<title>\s*(?:Top Life Sciences Consulting Firm - Actionable Insights,\s*SRI|Best Consulting Firm in Life Sciences Industry[\s\S]*?)\s*<\/title>/i.test(page)
     && /href=["']https:\/\/www\.srinsights\.com\/careers\/["'][^>]*>\s*Careers\s*<\/a>/i.test(page)
     && /Highly Innovative Analytical Consulting Firm in the Life Sciences Industry/i.test(text)
     && /Strategic Research Insights\s*\(SRI\)/i.test(text)
@@ -166,7 +175,7 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
 
-  return /<title>\s*Careers\s*\|\s*Strategic Research Insights\s*<\/title>/i.test(page)
+  return /<title>\s*Careers(?:\s*(?:\||&#8211;|–|-)\s*(?:Strategic Research Insights|Best Consulting Firm in Life Sciences Industry))?[\s\S]*?<\/title>/i.test(page)
     && /Careers at SRI/i.test(text)
     && /Available Positions/i.test(text)
     && /data-query-vars="{&quot;post_type&quot;:\[&quot;job&quot;]/i.test(page)
@@ -284,10 +293,7 @@ export const extractJobDetail = (html, listing = {}) => {
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
+  headers: REQUEST_HEADERS,
   label: SOURCE,
   timeoutMs: 15000,
 })

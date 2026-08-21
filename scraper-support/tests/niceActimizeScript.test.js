@@ -151,7 +151,7 @@ test('NICE Actimize helpers stay pinned to the verified handoff page, filtered N
   assert.equal(niceActimize.SOURCE, 'niceactimize')
   assert.equal(niceActimize.COMPANY, 'NICE Actimize')
   assert.equal(niceActimize.OFFICIAL_BRAND_NAME, 'NICE Actimize')
-  assert.equal(niceActimize.VERIFIED_ON, '2026-08-03')
+  assert.equal(niceActimize.VERIFIED_ON, '2026-08-13')
   assert.equal(niceActimize.ACTIMIZE_HANDOFF_URL, 'https://www.niceactimize.com/get-in-touch')
   assert.equal(
     niceActimize.NICE_FILTERED_CAREERS_URL,

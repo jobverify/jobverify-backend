@@ -42,12 +42,12 @@ test('Planful local catalog captures the verified first-party Planful careers pa
   assert.equal(provider.companyCareerPage, 'https://planful.com/jobs/careers-list/')
   assert.equal(provider.officialCareersLandingUrl, 'https://planful.com/jobs/')
   assert.equal(provider.greenhouseJobsApiUrl, 'https://boards-api.greenhouse.io/v1/boards/hostanalytics/jobs')
-  assert.equal(provider.verifiedPublicJobCount, 11)
-  assert.equal(provider.verifiedIndiaJobCount, 2)
-  assert.equal(provider.verifiedSampleJobTitle, 'Product Manager, Planning')
+  assert.equal(provider.verifiedPublicJobCount, 12)
+  assert.equal(provider.verifiedIndiaJobCount, 0)
+  assert.equal(provider.verifiedSampleJobTitle, 'Customer Success Advocate')
   assert.equal(
     provider.verifiedSampleJobUrl,
-    'https://planful.com/jobs/careers-list/?gh_jid=8617451002',
+    'https://planful.com/jobs/careers-list/?gh_jid=8644621002',
   )
   assert.equal(provider.atsPlatform, 'greenhouse')
   assert.equal(provider.countryFilter, 'India')
@@ -59,13 +59,14 @@ test('Planful local catalog captures the verified first-party Planful careers pa
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'planful.com')
-  assert.equal(provider.verifiedOn, '2026-07-26')
+  assert.equal(provider.verifiedOn, '2026-08-14')
   assert.equal(provider.modulePath, planfulModulePath)
   assert.match(provider.dryRunFile, /planful[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Sunday, July 26, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/planful\.com\/jobs\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/planful\.com\/jobs\/careers-list\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/boards-api\.greenhouse\.io\/v1\/boards\/hostanalytics\/jobs\?content=true/i)
+  assert.match(provider.verifiedSurfaceSummary, /0 India roles/i)
   assert.equal(companyAliases['Planful India'], 'planful')
 
   assert.equal(planful.PROVIDER_METADATA.source, PLANFUL_CATALOG.source)

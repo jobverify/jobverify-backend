@@ -11,10 +11,10 @@ export const KARNIVAL_CATALOG = {
   modulePath: path.join(currentDir, 'script.js'),
   companyCareerPage: 'https://www.karnival.com/',
   homepageUrl: 'https://www.karnival.com/',
-  sitemapUrl: 'https://www.karnival.com/sitemap.xml',
+  sitemapUrl: 'https://karnival.com/sitemap.xml',
   missingJobsRouteUrls: [
-    'https://www.karnival.com/careers',
-    'https://www.karnival.com/jobs',
+    'https://karnival.com/careers',
+    'https://karnival.com/jobs',
   ],
   companyDomain: 'karnival.com',
   atsPlatform: 'official-company-site-no-public-careers',
@@ -25,9 +25,9 @@ export const KARNIVAL_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   dryRunFile: 'karnival/jobs.json',
-  verifiedOn: '2026-08-02',
+  verifiedOn: '2026-08-15',
   verifiedSurfaceSummary:
-    'Verified on Sunday, August 2, 2026 that the official Karnival homepage at https://www.karnival.com/ remains a marketing site with navigation for Solutions, Success, Resources, and Contact us plus a Get a demo CTA, while the public sitemap at https://www.karnival.com/sitemap.xml now includes additional non-jobs URLs such as DPA and blog pages but still includes no careers or jobs routes. Also verified that https://www.karnival.com/careers and https://www.karnival.com/jobs return the same first-party 404 shell. There is no trustworthy public jobs surface to scrape.',
+    'Verified on Saturday, August 15, 2026 that the official Karnival homepage at https://www.karnival.com/ remains a marketing site with navigation for Solutions, Success, Resources, and Contact us plus a Get a demo CTA, while the public sitemap at https://karnival.com/sitemap.xml includes additional non-jobs URLs such as DPA and blog pages but still includes no careers or jobs routes. Also verified that https://karnival.com/careers and https://karnival.com/jobs return the same first-party 404 shell. There is no trustworthy public jobs surface to scrape.',
 }
 
 export default KARNIVAL_CATALOG

@@ -40,6 +40,18 @@ const stripTags = (value) =>
       .replace(/<[^>]+>/g, ' '),
   )
 
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
+
+const getHeader = (page = {}, name) => {
+  const normalizedName = String(name ?? '').toLowerCase()
+  const headers = page?.headers
+  if (!headers) return ''
+  if (typeof headers.get === 'function') {
+    return String(headers.get(normalizedName) || headers.get(name) || '')
+  }
+  return String(headers[normalizedName] || headers[name] || '')
+}
+
 const extractTextLines = (value) =>
   String(value ?? '')
     .replace(/<(br|\/p|\/div|\/section|\/article|\/li|\/ul|\/ol|\/h[1-6])\b[^>]*>/gi, '\n')
@@ -179,6 +191,44 @@ export const extractIndiaJobCardsFromCareersPage = (html) => {
   return fallbackJobs
 }
 
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    headers: Object.fromEntries(response.headers.entries()),
+    html: await response.text(),
+  }
+}
+
+export const hasVerifiedCloudflareChallengeSignal = (page = {}) => {
+  const html = getPageHtml(page)
+  const text = stripTags(html) || ''
+
+  return Number(page.status) === 403
+    && /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(html)
+    && /challenges\.cloudflare\.com/i.test(html)
+    && text.includes('Enable JavaScript and cookies to continue')
+}
+
+export const isVerifiedCloudflareChallengedPage = (page = {}, expectedUrl) => {
+  const finalUrl = String(page.url || expectedUrl)
+
+  return finalUrl === expectedUrl
+    && /cloudflare/i.test(getHeader(page, 'server'))
+    && getHeader(page, 'cf-ray').trim().length > 0
+    && getHeader(page, 'cf-mitigated').toLowerCase() === 'challenge'
+    && hasVerifiedCloudflareChallengeSignal(page)
+}
+
 const extractDetailTitle = (html) => stripTags(
   String(html ?? '').match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1],
 )
@@ -277,6 +327,7 @@ export const createCoinbaseScraper = ({
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
+    fetchPage = defaultFetchPage,
     fetchBrowserText,
     now = () => new Date().toISOString(),
   } = {}) {
@@ -287,7 +338,17 @@ export const createCoinbaseScraper = ({
     })
 
     try {
-      const careersHtml = await textFetcher.fetchText(CAREERS_URL)
+      let careersHtml
+      try {
+        careersHtml = await textFetcher.fetchText(CAREERS_URL)
+      } catch (error) {
+        const blockedPage = await fetchPage(CAREERS_URL)
+        if (isVerifiedCloudflareChallengedPage(blockedPage, CAREERS_URL)) {
+          return []
+        }
+
+        throw error
+      }
 
       if (!hasOfficialCareersSignal(careersHtml)) {
         throw new Error('Coinbase careers page no longer matches the verified official Coinbase careers surface')

@@ -81,12 +81,18 @@ const matchesExpectedUrl = (value, expected) => {
   }
 }
 
+const HTML_APOSTROPHE = "(?:'|&#39;|&#x27;|&apos;)"
+
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Best STI Doctors in India \|\s*Allo Health\s*<\/title>/i.test(page)
-    && /<meta name="description" content="Connect with best STI doctors in India\./i.test(page)
+  return (
+    /<title>\s*Best STI Doctors in India \|\s*Allo Health\s*<\/title>/i.test(page)
+    || new RegExp(`<title>\\s*Allo Health India${HTML_APOSTROPHE}?s Sexual Health Provider\\s*<\\/title>`, 'i').test(page)
+    || new RegExp(`<title>\\s*Allo Health\\s*-\\s*India${HTML_APOSTROPHE}?s\\s*#1 Sexual Health Provider\\s*<\\/title>`, 'i').test(page)
+  )
+    && /<meta name="description" content="/i.test(page)
     && /<link rel="canonical" href="https:\/\/www\.allohealth\.com"\/?>/i.test(page)
     && /<meta property="og:url" content="https:\/\/www\.allohealth\.com"/i.test(page)
     && /<meta property="og:type" content="website"/i.test(page)
@@ -98,7 +104,11 @@ export const hasOfficialAboutPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Best STI Doctors in India \|\s*Allo Health\s*<\/title>/i.test(page)
+  return (
+    /<title>\s*Best STI Doctors in India \|\s*Allo Health\s*<\/title>/i.test(page)
+    || new RegExp(`<title>\\s*About Allo Health \\|\\s*India${HTML_APOSTROPHE}?s Leading Sexual Health Provider\\s*<\\/title>`, 'i').test(page)
+    || /<title>\s*About Allo Health \|\s*Leading Sexual Health Care\s*<\/title>/i.test(page)
+  )
     && /<link rel="canonical" href="https:\/\/www\.allohealth\.com\/about"\/?>/i.test(page)
     && /<meta property="og:url" content="https:\/\/www\.allohealth\.com\/about"/i.test(page)
     && /<meta property="og:type" content="website"/i.test(page)
@@ -117,8 +127,8 @@ export const isVerifiedMissingCareerRoute = (page = {}, expectedUrl = '') => {
   return Number(page.status) === 404
     && matchesExpectedUrl(page.url || '', expectedUrl)
     && /<title>\s*Allo Health\s*<\/title>/i.test(html)
-    && /India(?:'|&#39;|&#x27;|’)?s #1 sexual health provider/i.test(html)
     && normalized.includes('Not Found')
+    && normalized.includes('About Us')
     && !pageExposesPublicJobListings(html)
 }
 

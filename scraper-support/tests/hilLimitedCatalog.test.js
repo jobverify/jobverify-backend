@@ -8,7 +8,7 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('HIL Limited is registered against the verified BirlaNu people page', () => {
+test('HIL Limited is registered against the verified BirlaNu people page and Darwinbox handoff sentinel', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'hillimited')
 
   assert.ok(provider, 'Expected HIL Limited provider to be registered in customProviders.json')
@@ -20,11 +20,13 @@ test('HIL Limited is registered against the verified BirlaNu people page', () =>
   assert.equal(provider.paginationStrategy, 'single-first-party-careers-landing')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+linkedin-handoff-no-first-party-job-records',
+    'verified-first-party-careers-page+darwinbox-handoff-no-first-party-job-records',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'birlanu.com')
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.match(provider.verifiedSurfaceSummary, /Darwinbox/i)
   assert.match(provider.modulePath, /hillimited[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'HIL Limited'), false)
 })

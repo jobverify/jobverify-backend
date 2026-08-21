@@ -21,6 +21,13 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
+const PLANFUL_LEGACY_CAREERS_TITLE_PATTERN =
+  /<title[^>]*>\s*Join the Planful Team \| Planful Jobs\s*<\/title>/i
+const PLANFUL_CURRENT_CAREERS_TITLE_PATTERN =
+  /<title[^>]*>\s*Open Roles at Planful \| Planful Careers\s*<\/title>/i
+const PLANFUL_LEGACY_LIST_TITLE_PATTERN =
+  /<title[^>]*>\s*Careers List - Planful\s*<\/title>/i
+
 const normalizeWhitespace = (value) => {
   if (value == null) return null
 
@@ -107,16 +114,17 @@ export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?conte
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
 
-  const hasVerifiedTitle = /<title[^>]*>\s*Join the Planful Team \| Planful Jobs\s*<\/title>/i.test(page)
+  const hasVerifiedTitle =
+    PLANFUL_LEGACY_CAREERS_TITLE_PATTERN.test(page)
+    || PLANFUL_CURRENT_CAREERS_TITLE_PATTERN.test(page)
   const hasCareersListLink = /\/jobs\/careers-list\//i.test(page)
   const hasLegacyShell = /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/planful\.com\/jobs\/["']/i.test(page)
     && /Planful is hiring!/i.test(page)
     && /Join Our Team/i.test(page)
-  const hasCurrentShell = /Planful is hiring!/i.test(page)
-    && /A Team of Champions/i.test(page)
+  const hasCurrentShell = /Join Our Team/i.test(page)
     && /Your ideas\.\s*Your actions\.\s*Your spirit\./i.test(page)
     && /We Take Care of Our People/i.test(page)
-    && /Your Planful Journey Begins Today/i.test(page)
+    && /Learn About Life at Planful/i.test(page)
 
   return hasVerifiedTitle
     && hasCareersListLink
@@ -125,16 +133,21 @@ export const hasOfficialCareersSignal = (html) => {
 
 export const hasVerifiedJobListingSignal = (html) => {
   const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page) || ''
 
-  const hasVerifiedTitle = /<title[^>]*>\s*Careers List - Planful\s*<\/title>/i.test(page)
+  const hasVerifiedTitle =
+    PLANFUL_LEGACY_LIST_TITLE_PATTERN.test(page)
+    || PLANFUL_CURRENT_CAREERS_TITLE_PATTERN.test(page)
   const hasGreenhouseMount = /id=["']grnhse_app["']/i.test(page)
   const hasLegacyShell = /Join Our Journey/i.test(page)
   const hasCurrentShell = /Your Planful Journey Begins Today/i.test(page)
-    && /Get Started with Planful/i.test(page)
+    && /\bTeam\b/i.test(normalized)
+    && /\bLocation\b/i.test(normalized)
+    && /\bReset\b/i.test(normalized)
+    && /greenhouse/i.test(page)
 
   return hasVerifiedTitle
-    && hasGreenhouseMount
-    && (hasLegacyShell || hasCurrentShell)
+    && ((hasGreenhouseMount && hasLegacyShell) || hasCurrentShell)
 }
 
 export const normalizeGreenhouseJobUrl = (value, jobId) => {

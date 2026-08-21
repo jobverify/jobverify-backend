@@ -19,23 +19,39 @@ const CAREERS_HTML = `
     <main>
       <h1>Join Our Team</h1>
       <article>
-        <div>Job ID :</div>
-        <div>SM-001</div>
-        <div>Job Title :</div>
-        <div>Lead Engineers Civil (Solar)</div>
-        <div>Job Description :</div>
-        <div>Lead civil engineering execution for solar projects.</div>
-        <div>Key Skills :</div>
-        <div>AutoCAD</div>
-        <div>Project planning</div>
-        <div>Work Experience (Min & Max in years) :</div>
-        <div>8 - 12 years</div>
-        <div>Qualification :</div>
-        <div>B.E. / B.Tech Civil</div>
-        <div>Job Location :</div>
-        <div>PAN India</div>
-        <div>No. of Positions :</div>
-        <div>3</div>
+        <h2>Fundraising &amp; Investment - Treasury</h2>
+        <div>Position: Fundraising &amp; Investment - Treasury</div>
+        <div>Reports To: Head of Treasurer</div>
+        <div>Location: Pune, SML Corporate Office</div>
+        <div>Job Type: Full-Time</div>
+        <div>Job Summary: We are seeking a highly analytical and experienced person for our fundraising initiatives.</div>
+        <div>Required Qualifications and Skills</div>
+        <div>Education: MBA or CA</div>
+        <div>Experience: 4-5+ years of experience in corporate treasury.</div>
+        <div>Fundraising Expertise: Proven track record in securing debt/equity financing.</div>
+        <a href="/apply">Apply Now</a>
+      </article>
+      <article>
+        <h2>Electronics Engineer</h2>
+        <div>Position: Electronics Engineer</div>
+        <div>Location: Jamnagar, Gujarat</div>
+        <div>Job Type: Full-Time</div>
+        <div>Job Summary: Diagnose, repair, and maintain electronic systems used in cranes.</div>
+        <div>Key Responsibilities :</div>
+        <div>Maintain, calibrate, and repair electronic devices.</div>
+        <a href="/apply">Apply Now</a>
+      </article>
+      <article>
+        <h2>Manager / Dy Manager Learning and Development</h2>
+        <div>Location: Pune Tathawade Pimpri Chinchwad</div>
+        <div>Experience: 7yrs -14yrs .</div>
+        <div>Job Role</div>
+        <div>Design Training Modules.</div>
+        <div>Training Need identification.</div>
+        <div>Qualification: Graduation /Post Graduation in HR.</div>
+        <div>Must have skills</div>
+        <div>Good Knowledge of HR Process Norms.</div>
+        <div>Good Communication skills both verbal and written.</div>
         <a href="/apply">Apply Now</a>
       </article>
     </main>
@@ -85,9 +101,9 @@ test('Sanghvi Movers uses browser fallback when the direct fetch fails on a cert
     },
   })
 
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Lead Engineers Civil (Solar)')
-  assert.equal(jobs[0].location, 'PAN India')
+  assert.equal(jobs.length, 3)
+  assert.equal(jobs[0].title, 'Fundraising & Investment - Treasury')
+  assert.equal(jobs[0].location, 'Pune, SML Corporate Office')
   assert.equal(jobs[0].scrapedAt, '2026-08-04T00:00:00.000Z')
   assert.deepEqual(calls, [
     ['raw', CAREERS_URL],

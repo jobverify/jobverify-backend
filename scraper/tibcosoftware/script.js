@@ -32,7 +32,11 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchText = async (url) => {
+const hasAllMarkers = (text, markers = []) => markers.every((marker) => text.includes(marker))
+
+const countMarkers = (text, markers = []) => markers.filter((marker) => text.includes(marker)).length
+
+const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
@@ -41,17 +45,40 @@ const defaultFetchText = async (url) => {
     redirect: 'follow',
   })
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+  return {
+    status: response.status,
+    url: response.url || url,
+    html: await response.text(),
+  }
+}
+
+const defaultFetchText = async (url) => {
+  const page = await defaultFetchPage(url)
+
+  if (page.status < 200 || page.status >= 300) {
+    throw new Error(`HTTP ${page.status} for ${url}`)
   }
 
-  return response.text()
+  return page.html
 }
 
 const isJavaScriptChallengePage = (html = '') => {
   const normalized = normalizeWhitespace(html)
   return normalized.includes('JavaScript is disabled')
     && normalized.includes("we need to verify that you're not a robot")
+}
+
+export const isCloudCareersAccessChallengePage = (page = {}) => {
+  const normalized = normalizeWhitespace(page?.html).toLowerCase()
+
+  return Number(page?.status) === 202
+    && (
+      normalized.length === 0
+      || (
+        normalized.includes('javascript is disabled')
+        && normalized.includes("we need to verify that you're not a robot")
+      )
+    )
 }
 
 export const hasOfficialContactPageSignal = (html = '') => {
@@ -73,10 +100,17 @@ export const hasGenericCloudCareersHubSignal = (html = '') => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
   return /<title>\s*Careers Home - Cloud Software Group\s*<\/title>/i.test(rawHtml)
-    && normalized.includes('cloud software group')
-    && normalized.includes('100 million users around the globe')
-    && normalized.includes('ready to apply? search for open roles.')
-    && normalized.includes('see all opportunities')
+    && hasAllMarkers(normalized, [
+      'innovate and grow within cloud software group',
+      'search by job title, location, department, category, etc.',
+      'inside cloud software group',
+    ])
+    && countMarkers(normalized, [
+      'about us',
+      '100 million users around the globe',
+      'ready to apply? search for open roles.',
+      'see all opportunities',
+    ]) >= 2
 }
 
 export const hasGenericCloudCareersSearchSignal = (html = '') => {
@@ -96,45 +130,67 @@ export const hasGenericCloudCareersSearchSignal = (html = '') => {
 
 export const createTibcoSoftwareScraper = () => ({
   async run({
-    fetchText = defaultFetchText,
+    fetchText = null,
+    fetchPage = null,
     fetchBrowserText = null,
+    fetchBrowserPage = null,
   } = {}) {
     let browserSession = null
-    const browserFetch = fetchBrowserText || (async (url) => {
+    const directFetchText = fetchText || defaultFetchText
+    const directFetchPage = fetchPage || (async (url) => ({
+      status: 200,
+      url,
+      html: await directFetchText(url),
+    }))
+    const browserFetchPage = fetchBrowserPage || (async (url) => {
+      if (fetchBrowserText) {
+        return {
+          status: 200,
+          url,
+          html: await fetchBrowserText(url),
+        }
+      }
+
       browserSession ||= await createBrowserFetchSession({
         userAgent: USER_AGENT,
         timeoutMs: 90000,
         settleTimeMs: 5000,
       })
 
-      return browserSession.fetchText(url)
+      return browserSession.fetchPage(url)
     })
 
     const fetchMaybeChallengedPage = async (url) => {
-      const html = await fetchText(url)
-      if (isJavaScriptChallengePage(html)) {
-        return browserFetch(url)
+      const page = await directFetchPage(url)
+      if (isJavaScriptChallengePage(page.html) || isCloudCareersAccessChallengePage(page)) {
+        return browserFetchPage(url)
       }
-      return html
+      return page
     }
 
     try {
-      const contactPageHtml = await fetchText(CAREERS_URL)
-      if (!hasOfficialContactPageSignal(contactPageHtml)) {
+      const contactPage = await directFetchPage(CAREERS_URL)
+      if (Number(contactPage?.status) !== 200 || !hasOfficialContactPageSignal(contactPage.html)) {
         throw new Error('TIBCO verified official contact page no longer matches the known public surface')
       }
 
-      if (extractOfficialCareersHubUrl(contactPageHtml) !== CAREERS_HUB_URL) {
+      if (extractOfficialCareersHubUrl(contactPage.html) !== CAREERS_HUB_URL) {
         throw new Error('TIBCO official contact page no longer points to the verified careers hub')
       }
 
-      const careersHubHtml = await fetchMaybeChallengedPage(CAREERS_HUB_URL)
-      if (!hasGenericCloudCareersHubSignal(careersHubHtml)) {
+      const careersHubPage = await fetchMaybeChallengedPage(CAREERS_HUB_URL)
+      if (
+        !isCloudCareersAccessChallengePage(careersHubPage)
+        && !hasGenericCloudCareersHubSignal(careersHubPage.html)
+      ) {
         throw new Error('TIBCO linked careers hub no longer matches the verified generic Cloud Software Group surface')
       }
 
-      const careersSearchHtml = await fetchMaybeChallengedPage(CAREERS_SEARCH_URL)
-      if (!hasGenericCloudCareersSearchSignal(careersSearchHtml)) {
+      const careersSearchPage = await fetchMaybeChallengedPage(CAREERS_SEARCH_URL)
+      if (
+        !isCloudCareersAccessChallengePage(careersSearchPage)
+        && !hasGenericCloudCareersSearchSignal(careersSearchPage.html)
+      ) {
         throw new Error('TIBCO linked careers search page no longer matches the verified generic multi-brand search surface')
       }
 

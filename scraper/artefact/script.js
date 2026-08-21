@@ -1,6 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
+
 import { ARTEFACT_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -9,9 +12,13 @@ export const SOURCE = ARTEFACT_CATALOG.source
 export const COMPANY = ARTEFACT_CATALOG.companyName
 export const HOMEPAGE_URL = ARTEFACT_CATALOG.homepageUrl
 export const CAREERS_URL = ARTEFACT_CATALOG.companyCareerPage
+export const GREENHOUSE_BOARD_URL = ARTEFACT_CATALOG.greenhouseBoardUrl
+export const GREENHOUSE_JOBS_API_URL = ARTEFACT_CATALOG.greenhouseJobsApiUrl
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const PAGE_FETCH_CONCURRENCY = 4
+const DETAIL_FETCH_CONCURRENCY = 4
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;|&#160;/gi, ' ')
@@ -63,6 +70,19 @@ const slugify = (value) => normalizeWhitespace(value)
 
 const textIncludesAll = (text, fragments) => fragments.every((fragment) => text.includes(fragment))
 
+const inferCity = (location) => {
+  const firstToken = normalizeWhitespace(location)?.split(',')[0]?.trim()
+  if (!firstToken || /^india$/i.test(firstToken)) return null
+  return firstToken
+}
+
+const extractMetadataValue = (metadata, name) => {
+  if (!Array.isArray(metadata)) return null
+
+  const match = metadata.find((entry) => normalizeText(entry?.name)?.toLowerCase() === normalizeText(name)?.toLowerCase())
+  return normalizeText(match?.value)
+}
+
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
@@ -85,6 +105,26 @@ export const hasOfficialCareersPageSignal = (html) => {
     && /https:\/\/www\.artefact\.com\/careers\/explore-our-jobs\/page\/\d+\//i.test(rawHtml)
     && /https:\/\/www\.artefact\.com\/job\//i.test(rawHtml)
     && /https:\/\/job-boards\.greenhouse\.io\/artefact\/jobs\/\d+/i.test(rawHtml)
+}
+
+export const hasBunkerWebBotDetectionSignal = (html) => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml) || ''
+
+  return /<title>\s*Bot Detection\s*<\/title>/i.test(rawHtml)
+    && textIncludesAll(normalized, [
+      'Please wait while we check if you are a Human',
+      'BunkerWeb',
+    ])
+}
+
+export const hasOfficialGreenhouseBoardSignal = (html) => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml) || ''
+
+  return /<title>\s*Jobs at Artefact\s*<\/title>/i.test(rawHtml)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https?:\/\/job-boards\.greenhouse\.io\/artefact\/?["']/i.test(rawHtml)
+    && /Artefact/i.test(normalized)
 }
 
 export const extractPaginationUrls = (html) => unique(
@@ -129,6 +169,24 @@ export const hasOfficialDetailPageSignal = (html) => {
 export const extractApplyUrlFromDetailPage = (html) => {
   const match = String(html ?? '').match(/href=["'](https:\/\/job-boards\.greenhouse\.io\/artefact\/jobs\/\d+)["'][^>]*>\s*APPLY NOW/i)
   return match ? match[1] : null
+}
+
+export const normalizeGreenhouseJobUrl = (value, jobId) => {
+  const canonicalJobId = normalizeText(jobId)
+  if (!canonicalJobId) return null
+
+  try {
+    const url = new URL(value)
+    const hostname = url.hostname.replace(/^www\./i, '').toLowerCase()
+    const pathname = url.pathname.replace(/\/+$/, '')
+
+    if (hostname !== 'job-boards.greenhouse.io') return null
+    if (pathname !== `/artefact/jobs/${canonicalJobId}`) return null
+
+    return `https://job-boards.greenhouse.io/artefact/jobs/${canonicalJobId}`
+  } catch {
+    return null
+  }
 }
 
 const extractContentLines = (html) => {
@@ -178,6 +236,70 @@ const extractRequiredSkills = (lines = []) => {
     if (/^Data Architect$/i.test(line)) return false
     if (/^Artefact$/i.test(line)) return false
     return /Python|SQL|Tableau|PowerBI|Web Applications|data models|data warehousing|cloud data platforms|logical and physical data models|communication skills/i.test(line)
+  })
+}
+
+export const extractIndiaJobsFromGreenhousePayload = (
+  payload,
+  { scrapedAt = new Date().toISOString() } = {},
+) => {
+  const jobs = Array.isArray(payload?.jobs) ? payload.jobs : null
+  if (!jobs) {
+    throw new Error('Artefact Greenhouse jobs API response no longer matches the expected payload')
+  }
+
+  const seenJobIds = new Set()
+
+  return jobs.flatMap((job) => {
+    const title = normalizeText(job?.title)
+    const companyName = normalizeText(job?.company_name)
+    const location = normalizeText(job?.location?.name)
+    const sourceUrl = normalizeGreenhouseJobUrl(job?.absolute_url, job?.id)
+    const jobId = normalizeText(job?.id)
+
+    if (companyName && companyName.toLowerCase() !== COMPANY.toLowerCase()) {
+      throw new Error('Artefact Greenhouse payload no longer maps to the verified company identity')
+    }
+
+    if (!location || !/\bindia\b/i.test(location)) {
+      return []
+    }
+
+    if (!title || !sourceUrl || !jobId) {
+      throw new Error('Artefact Greenhouse payload no longer exposes the verified Greenhouse detail route')
+    }
+
+    if (seenJobIds.has(jobId)) {
+      return []
+    }
+    seenJobIds.add(jobId)
+
+    const lines = extractContentLines(job?.content)
+    const applyUrl = sourceUrl
+
+    return [{
+      title,
+      company: COMPANY,
+      department: normalizeText(job?.departments?.[0]?.name),
+      location,
+      city: inferCity(location),
+      country: 'India',
+      jobId,
+      requisitionId: normalizeText(job?.requisition_id) || jobId,
+      sourceUrl,
+      applyUrl,
+      employmentType: extractMetadataValue(job?.metadata, 'Employment Type'),
+      experienceRequired: extractExperienceRequired(lines),
+      minimumQualification: extractMinimumQualification(lines),
+      preferredQualification: null,
+      requiredSkills: extractRequiredSkills(lines),
+      postingDate: normalizeText(job?.updated_at || job?.first_published),
+      closingDate: null,
+      jobDescription: buildJobDescription(lines, title),
+      link: applyUrl,
+      source: SOURCE,
+      scrapedAt,
+    }]
   })
 }
 
@@ -233,43 +355,74 @@ const dedupeListings = (listings = []) => {
   return deduped
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  redirect: 'follow',
+  label: SOURCE,
+  attempts: 2,
+  timeoutMs: 15000,
+  signal,
+})
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
+const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
+  method: 'GET',
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json,text/plain,*/*',
+    Referer: GREENHOUSE_BOARD_URL,
+  },
+  redirect: 'follow',
+  label: SOURCE,
+  attempts: 2,
+  timeoutMs: 15000,
+  signal,
+})
 
 export const createArtefactScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
+  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson, signal } = {}) {
+    const homepageHtml = await fetchText(HOMEPAGE_URL, { signal })
+    const homepageBlocked = hasBunkerWebBotDetectionSignal(homepageHtml)
+    if (!homepageBlocked && !hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Artefact verified official homepage no longer matches the trusted first-party surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersPageSignal(careersHtml)) {
+    const careersHtml = await fetchText(CAREERS_URL, { signal })
+    const careersBlocked = hasBunkerWebBotDetectionSignal(careersHtml)
+    if (!careersBlocked && !hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('Artefact verified official careers page no longer matches the trusted first-party surface')
     }
 
-    const pageUrls = [CAREERS_URL, ...extractPaginationUrls(careersHtml)]
-    const pageHtmlEntries = [{ url: CAREERS_URL, html: careersHtml }]
+    if (homepageBlocked || careersBlocked) {
+      const greenhouseBoardHtml = await fetchText(GREENHOUSE_BOARD_URL, { signal })
+      if (!hasOfficialGreenhouseBoardSignal(greenhouseBoardHtml)) {
+        throw new Error('Artefact verified public Greenhouse board no longer matches the trusted fallback surface')
+      }
 
-    for (const url of pageUrls.slice(1)) {
-      pageHtmlEntries.push({
-        url,
-        html: await fetchText(url),
-      })
+      const jobs = extractIndiaJobsFromGreenhousePayload(
+        await fetchJson(GREENHOUSE_JOBS_API_URL, { signal }),
+        { scrapedAt: now() },
+      )
+
+      if (jobs.length === 0) {
+        throw new Error('Artefact Greenhouse API no longer exposes verified India jobs')
+      }
+
+      return jobs.sort((left, right) => left.title.localeCompare(right.title))
     }
+
+    const pageUrls = [CAREERS_URL, ...extractPaginationUrls(careersHtml)]
+    const additionalPageEntries = await mapWithConcurrency(
+      pageUrls.slice(1),
+      PAGE_FETCH_CONCURRENCY,
+      async (url) => ({
+        url,
+        html: await fetchText(url, { signal }),
+      }),
+    )
+    const pageHtmlEntries = [{ url: CAREERS_URL, html: careersHtml }, ...additionalPageEntries]
 
     const allListings = pageHtmlEntries.flatMap((entry) => extractListingCards(entry.html))
     const indiaListings = dedupeListings(filterIndiaListings(allListings))
@@ -278,18 +431,20 @@ export const createArtefactScraper = ({ now = () => new Date().toISOString() } =
       throw new Error('Artefact careers page no longer exposes verified first-party India job listings')
     }
 
-    const jobs = []
-
-    for (const listing of indiaListings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const job = extractJobFromDetailPage(detailHtml, listing)
-      jobs.push({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl || job.sourceUrl,
-        scrapedAt: now(),
-      })
-    }
+    const jobs = await mapWithConcurrency(
+      indiaListings,
+      DETAIL_FETCH_CONCURRENCY,
+      async (listing) => {
+        const detailHtml = await fetchText(listing.sourceUrl, { signal })
+        const job = extractJobFromDetailPage(detailHtml, listing)
+        return {
+          ...job,
+          source: SOURCE,
+          link: job.applyUrl || job.sourceUrl,
+          scrapedAt: now(),
+        }
+      },
+    )
 
     return jobs.sort((left, right) => left.title.localeCompare(right.title))
   },

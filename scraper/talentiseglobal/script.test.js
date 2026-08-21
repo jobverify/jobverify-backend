@@ -17,113 +17,62 @@ const officialHomepageHtml = `
   </head>
   <body>
     <header>
-      <a href="https://talentiseglobal.com/content/mobile_login_view">Login | Register</a>
-      <a href="https://talentiseglobal.com/student/login">Candidate Login</a>
-      <a href="https://talentiseglobal.com/student">Candidate Register</a>
+      <a href="https://talentiseglobal.com/front/login">Login</a>
+      <a href="https://talentiseglobal.com/student-registration">Talent Pro +</a>
+      <a href="https://talentiseglobal.com/careers">Careers</a>
       <a href="mailto:teamtalentise@talentiseglobal.com">teamtalentise@talentiseglobal.com</a>
     </header>
     <main>
-      <h1>Connecting Talents</h1>
-      <h2>With Opportunities</h2>
-      <section>
-        <h3>Welcome to Talentise Global Pvt. Ltd</h3>
-        <p>We are a young and creative company and we offer you fresh HR ideas.</p>
-      </section>
-      <ul>
-        <li>End to End Campus Recruitment Support</li>
-        <li>Customized Talent Acquisition</li>
-        <li>Proctored Examination Service</li>
-        <li>Training &amp; Development</li>
-      </ul>
-      <section>
-        <h3>Services We Provide</h3>
-        <p>Corporates</p>
-        <p>Institutes</p>
-        <p>Students</p>
-      </section>
-    </main>
-  </body>
-</html>
-`
-
-const candidatePortalHtml = `
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>Talentise Global Pvt. Ltd</title>
-  </head>
-  <body>
-    <main>
-      <h1>Are you Looking for a Job?</h1>
-      <p>You can register or Login on Talentise Global Pvt. Ltd to start your job search.</p>
-      <p>Jobseeker Login</p>
-      <a href="https://talentiseglobal.com/student/login">Candidate Login</a>
-      <a href="https://talentiseglobal.com/student">Register</a>
-      <h2>I am an Employer</h2>
-      <h2>I am an Institute</h2>
-    </main>
-  </body>
-</html>
-`
-
-const candidateLoginHtml = `
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>Talentise Global Pvt. Ltd</title>
-  </head>
-  <body>
-    <main>
-      <h1>Candidate Login</h1>
-      <p>Login to continue to our application</p>
-      <form action="https://talentiseglobal.com/student/login" method="post">
-        <input type="email" name="email">
-        <input type="password" name="password">
-      </form>
-      <a href="https://talentiseglobal.com/student">Create your candidate profile</a>
-    </main>
-  </body>
-</html>
-`
-
-const candidateSignupHtml = `
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>Talentise Global Pvt. Ltd</title>
-  </head>
-  <body>
-    <main>
-      <h1>Sign Up As Candidate</h1>
-      <p>Appeared class 12 ?</p>
-      <p>Are you a Corporate</p>
-      <p>Are you an Institute</p>
-      <a href="https://talentiseglobal.com/student/login">Already registered? Login</a>
-    </main>
-  </body>
-</html>
-`
-
-const missingCareersRouteHtml = `
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>Talentise Global Pvt. Ltd</title>
-  </head>
-  <body>
-    <main>
-      <h1>Error 404</h1>
-      <h2>Oops! Page not found.</h2>
-      <a href="https://talentiseglobal.com/content/mobile_login_view">Login | Register</a>
-      <a href="https://talentiseglobal.com/student/login">Candidate Login</a>
-      <a href="https://talentiseglobal.com/student">Candidate Register</a>
-    </main>
-    <footer>
-      <h3>Quick Links</h3>
+      <h1>Home</h1>
+      <h2>Who We Are</h2>
       <h3>Services</h3>
-      <h3>FAQ</h3>
-      <h3>Important Links</h3>
-    </footer>
+      <p>Talent Acquisition &amp; Related Solutions</p>
+      <p>Employer Branding Strategies</p>
+      <p>Examination Management Systems</p>
+      <p>Learning &amp; Development Services</p>
+      <p>Testimonials</p>
+      <p>Institute Event Gallery</p>
+    </main>
+  </body>
+</html>
+`
+
+const careersHtml = `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>TGPL | Careers</title>
+  </head>
+  <body>
+    <main>
+      <h1>Latest Career Opportunities</h1>
+      <article>
+        <h2>Teacher</h2>
+        <p>Campus recruitment is the strategy to source, engage and hire young talents for entry-level positions.</p>
+        <p>Kolkata</p>
+        <a href="https://talentiseglobal.com/career-details/teacher">Read More</a>
+      </article>
+    </main>
+  </body>
+</html>
+`
+
+const detailHtml = `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Teacher</title>
+  </head>
+  <body>
+    <main>
+      <h1>Teacher</h1>
+      <p>Qualification : 12th</p>
+      <p>Department : Computer, AI &amp; Robotics</p>
+      <p>Experience : 5</p>
+      <p>Job Location : Kolkata</p>
+      <p>Employment Type : Full time</p>
+      <p>Job Description : Campus recruitment is the strategy to source, engage and hire young talents for entry-level positions.</p>
+    </main>
   </body>
 </html>
 `
@@ -132,63 +81,58 @@ const publicJobsHtml = `
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Talentise Global Careers</title>
-    <script type="application/ld+json">
-      {"@context":"https://schema.org","@type":"JobPosting","title":"Campus Recruiter"}
-    </script>
+    <title>TGPL | Careers</title>
   </head>
   <body>
     <main>
       <h1>Current Openings</h1>
       <p>Search jobs across our public hiring board.</p>
       <p>Job ID: TG-101</p>
-      <a href="https://jobs.lever.co/talentiseglobal/campus-recruiter">Apply now</a>
+      <a href="https://talentiseglobal.com/career-details/teacher">Apply now</a>
     </main>
   </body>
 </html>
 `
 
-test('Talentise Global sentinel exports the verified first-party no-public-jobs contract', async () => {
+test('Talentise Global exports the refreshed first-party public careers contract', async () => {
   const talentiseGlobal = await loadTalentiseGlobalModule()
 
   assert.equal(talentiseGlobal.SOURCE, 'talentiseglobal')
   assert.equal(talentiseGlobal.COMPANY, 'TALENTISE GLOBAL')
   assert.equal(talentiseGlobal.HOMEPAGE_URL, 'https://talentiseglobal.com/')
-  assert.equal(talentiseGlobal.CANDIDATE_PORTAL_URL, 'https://talentiseglobal.com/content/mobile_login_view')
-  assert.equal(talentiseGlobal.CANDIDATE_LOGIN_URL, 'https://talentiseglobal.com/student/login')
-  assert.equal(talentiseGlobal.CANDIDATE_SIGNUP_URL, 'https://talentiseglobal.com/student')
-  assert.deepEqual(talentiseGlobal.NO_PUBLIC_CAREERS_ROUTE_URLS, [
-    'https://talentiseglobal.com/careers',
-    'https://talentiseglobal.com/careers/',
-    'https://talentiseglobal.com/career',
-    'https://talentiseglobal.com/career/',
-    'https://talentiseglobal.com/jobs',
-    'https://talentiseglobal.com/jobs/',
-    'https://talentiseglobal.com/openings',
-    'https://talentiseglobal.com/openings/',
-    'https://talentiseglobal.com/current-openings',
-    'https://talentiseglobal.com/current-openings/',
-    'https://talentiseglobal.com/join-us',
-    'https://talentiseglobal.com/join-us/',
-  ])
+  assert.equal(talentiseGlobal.CAREERS_URL, 'https://talentiseglobal.com/careers')
+  assert.equal(talentiseGlobal.CANDIDATE_LOGIN_URL, 'https://talentiseglobal.com/front/login')
+  assert.equal(talentiseGlobal.CANDIDATE_SIGNUP_URL, 'https://talentiseglobal.com/student-registration')
   assert.equal(talentiseGlobal.hasOfficialHomepageSignal(officialHomepageHtml), true)
-  assert.equal(talentiseGlobal.hasCandidatePortalSignal(candidatePortalHtml), true)
-  assert.equal(talentiseGlobal.hasCandidateLoginSignal(candidateLoginHtml), true)
-  assert.equal(talentiseGlobal.hasCandidateSignupSignal(candidateSignupHtml), true)
+  assert.equal(talentiseGlobal.hasPublicCareersSignal(careersHtml), true)
+  assert.deepEqual(talentiseGlobal.extractCareerListings(careersHtml), [
+    {
+      title: 'Teacher',
+      location: 'Kolkata',
+      detailUrl: 'https://talentiseglobal.com/career-details/teacher',
+    },
+  ])
+  assert.deepEqual(talentiseGlobal.extractCareerDetail(detailHtml, {
+    title: 'Teacher',
+    location: 'Kolkata',
+    detailUrl: 'https://talentiseglobal.com/career-details/teacher',
+  }), {
+    title: 'Teacher',
+    department: 'Computer, AI & Robotics',
+    experienceRequired: '5',
+    location: 'Kolkata, India',
+    city: 'Kolkata',
+    employmentType: 'Full-time',
+    minimumQualification: '12th',
+    jobDescription: 'Campus recruitment is the strategy to source, engage and hire young talents for entry-level positions.',
+    applyUrl: 'https://talentiseglobal.com/career-details/teacher',
+    sourceUrl: 'https://talentiseglobal.com/career-details/teacher',
+  })
   assert.equal(talentiseGlobal.hasPublicJobListingsSignal(officialHomepageHtml), false)
-  assert.equal(talentiseGlobal.hasPublicJobListingsSignal(candidatePortalHtml), false)
   assert.equal(talentiseGlobal.hasPublicJobListingsSignal(publicJobsHtml), true)
-  assert.equal(
-    talentiseGlobal.isVerifiedMissingCareersRoute({
-      status: 200,
-      url: talentiseGlobal.NO_PUBLIC_CAREERS_ROUTE_URLS[0],
-      html: missingCareersRouteHtml,
-    }),
-    true,
-  )
 })
 
-test('Talentise Global sentinel returns no jobs only while the verified first-party candidate surface and branded 404 routes stay stable', async () => {
+test('Talentise Global returns India jobs from the public careers surface', async () => {
   const talentiseGlobal = await loadTalentiseGlobalModule()
   const requestedUrls = []
 
@@ -200,20 +144,12 @@ test('Talentise Global sentinel returns no jobs only while the verified first-pa
         return { status: 200, url, html: officialHomepageHtml }
       }
 
-      if (url === talentiseGlobal.CANDIDATE_PORTAL_URL) {
-        return { status: 200, url, html: candidatePortalHtml }
+      if (url === talentiseGlobal.CAREERS_URL) {
+        return { status: 200, url, html: careersHtml }
       }
 
-      if (url === talentiseGlobal.CANDIDATE_LOGIN_URL) {
-        return { status: 200, url, html: candidateLoginHtml }
-      }
-
-      if (url === talentiseGlobal.CANDIDATE_SIGNUP_URL) {
-        return { status: 200, url, html: candidateSignupHtml }
-      }
-
-      if (talentiseGlobal.NO_PUBLIC_CAREERS_ROUTE_URLS.includes(url)) {
-        return { status: 200, url, html: missingCareersRouteHtml }
+      if (url === 'https://talentiseglobal.com/career-details/teacher') {
+        return { status: 200, url, html: detailHtml }
       }
 
       throw new Error(`Unexpected URL: ${url}`)
@@ -222,15 +158,16 @@ test('Talentise Global sentinel returns no jobs only while the verified first-pa
 
   assert.deepEqual(requestedUrls, [
     talentiseGlobal.HOMEPAGE_URL,
-    talentiseGlobal.CANDIDATE_PORTAL_URL,
-    talentiseGlobal.CANDIDATE_LOGIN_URL,
-    talentiseGlobal.CANDIDATE_SIGNUP_URL,
-    ...talentiseGlobal.NO_PUBLIC_CAREERS_ROUTE_URLS,
+    talentiseGlobal.CAREERS_URL,
+    'https://talentiseglobal.com/career-details/teacher',
   ])
-  assert.deepEqual(jobs, [])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Teacher')
+  assert.equal(jobs[0].location, 'Kolkata, India')
+  assert.equal(jobs[0].minimumQualification, '12th')
 })
 
-test('Talentise Global sentinel fails closed when the verified surface changes or starts exposing public jobs', async () => {
+test('Talentise Global fails closed when the homepage, careers list, or detail contract drifts', async () => {
   const talentiseGlobal = await loadTalentiseGlobalModule()
 
   await assert.rejects(
@@ -253,14 +190,14 @@ test('Talentise Global sentinel fails closed when the verified surface changes o
           return { status: 200, url, html: officialHomepageHtml }
         }
 
-        if (url === talentiseGlobal.CANDIDATE_PORTAL_URL) {
+        if (url === talentiseGlobal.CAREERS_URL) {
           return { status: 200, url, html: publicJobsHtml }
         }
 
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /candidate portal/i,
+    /verified public careers page/i,
   )
 
   await assert.rejects(
@@ -270,29 +207,17 @@ test('Talentise Global sentinel fails closed when the verified surface changes o
           return { status: 200, url, html: officialHomepageHtml }
         }
 
-        if (url === talentiseGlobal.CANDIDATE_PORTAL_URL) {
-          return { status: 200, url, html: candidatePortalHtml }
+        if (url === talentiseGlobal.CAREERS_URL) {
+          return { status: 200, url, html: careersHtml }
         }
 
-        if (url === talentiseGlobal.CANDIDATE_LOGIN_URL) {
-          return { status: 200, url, html: candidateLoginHtml }
-        }
-
-        if (url === talentiseGlobal.CANDIDATE_SIGNUP_URL) {
-          return { status: 200, url, html: candidateSignupHtml }
-        }
-
-        if (url === talentiseGlobal.NO_PUBLIC_CAREERS_ROUTE_URLS[0]) {
-          return { status: 200, url, html: publicJobsHtml }
-        }
-
-        if (talentiseGlobal.NO_PUBLIC_CAREERS_ROUTE_URLS.slice(1).includes(url)) {
-          return { status: 200, url, html: missingCareersRouteHtml }
+        if (url === 'https://talentiseglobal.com/career-details/teacher') {
+          return { status: 200, url, html: '<html><head><title>Teacher</title></head><body><main><h1>Teacher</h1></main></body></html>' }
         }
 
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /no-public-careers route changed materially|public job listings/i,
+    /career detail page/i,
   )
 })

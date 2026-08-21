@@ -215,6 +215,42 @@ test('getMappedFieldValue supports template selectors with runtime values', () =
   )
 })
 
+test('getMappedFieldValue supports suffix selectors for populated values', () => {
+  const payload = {
+    yearsOfExperience: '5',
+    singleYear: '1',
+    emptyYears: '',
+  }
+
+  assert.equal(
+    getMappedFieldValue(payload, {
+      strategy: 'suffix',
+      value: 'yearsOfExperience',
+      suffix: ' years',
+    }),
+    '5 years',
+  )
+
+  assert.equal(
+    getMappedFieldValue(payload, {
+      strategy: 'suffix',
+      value: 'singleYear',
+      singularSuffix: ' year',
+      suffix: ' years',
+    }),
+    '1 year',
+  )
+
+  assert.equal(
+    getMappedFieldValue(payload, {
+      strategy: 'suffix',
+      value: 'emptyYears',
+      suffix: ' years',
+    }),
+    null,
+  )
+})
+
 test('getMappedFieldValue supports fallback selector arrays', () => {
   const payload = {
     standardizedLocations: ['IN', 'Bengaluru, KA, IN'],

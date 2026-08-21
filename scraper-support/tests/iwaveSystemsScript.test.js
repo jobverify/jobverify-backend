@@ -13,6 +13,13 @@ const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 
 const HOMEPAGE_HTML = readFixture('homepage.html')
 const CAREERS_HTML = readFixture('career.html')
+const BLOCKED_HOMEPAGE_HTML = `
+<html>
+  <title>You are being redirected...</title>
+  <noscript>Javascript is required. Please enable javascript before you are allowed to see this page.</noscript>
+  <script>var sucuri_cloudproxy_js='enabled';</script>
+</html>
+`
 
 const loadIWaveSystemsModule = async () => {
   try {
@@ -107,4 +114,62 @@ test('iWave Systems scraper fails closed when the official surface changes mater
     }),
     /verified iWave Systems careers surface/i,
   )
+})
+
+test('iWave Systems tolerates the verified homepage interstitial when the careers page still matches the trusted public surface', async () => {
+  const iwave = await loadIWaveSystemsModule()
+
+  const blockedHomepageError = new Error(`HTTP 307 for ${iwave.HOMEPAGE_URL}`)
+  blockedHomepageError.status = 307
+  blockedHomepageError.responseBody = BLOCKED_HOMEPAGE_HTML
+
+  const retryWrappedError = new Error(
+    `[${iwave.SOURCE}] All 3 attempts failed. Last error: HTTP 307 for ${iwave.HOMEPAGE_URL}`,
+  )
+  retryWrappedError.abortRetries = true
+  retryWrappedError.cause = blockedHomepageError
+
+  const jobs = await iwave.createIWaveSystemsScraper().run({
+    fetchText: async (url) => {
+      if (url === iwave.HOMEPAGE_URL) {
+        throw retryWrappedError
+      }
+      if (url === iwave.CAREERS_URL) {
+        return CAREERS_HTML
+      }
+      throw new Error(`Unexpected fixture URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'iwavesystems')
+  assert.equal(jobs[0].title, 'Junior Accountant')
+})
+
+test('iWave Systems returns [] when the careers page is currently blocked by the verified Sucuri interstitial', async () => {
+  const iwave = await loadIWaveSystemsModule()
+
+  const blockedCareersError = new Error(`HTTP 307 for ${iwave.CAREERS_URL}`)
+  blockedCareersError.status = 307
+  blockedCareersError.responseBody = BLOCKED_HOMEPAGE_HTML
+
+  const retryWrappedError = new Error(
+    `[${iwave.SOURCE}] All 3 attempts failed. Last error: HTTP 307 for ${iwave.CAREERS_URL}`,
+  )
+  retryWrappedError.abortRetries = true
+  retryWrappedError.cause = blockedCareersError
+
+  const jobs = await iwave.createIWaveSystemsScraper().run({
+    fetchText: async (url) => {
+      if (url === iwave.HOMEPAGE_URL) {
+        return HOMEPAGE_HTML
+      }
+      if (url === iwave.CAREERS_URL) {
+        throw retryWrappedError
+      }
+      throw new Error(`Unexpected fixture URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })

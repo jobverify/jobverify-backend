@@ -214,6 +214,38 @@ const currentTechnicalSupportDetailHtml = `
   </html>
 `
 
+const incapsulaLoadingShellHtml = `
+  <html>
+    <head>
+      <title>Loading</title>
+    </head>
+    <body bgcolor="#ffffff">
+      <h3 style="color:#ffffff">Loading</h3>
+    </body>
+  </html>
+`
+
+const incapsulaIframeChallengeHtml = `
+  <html style="height:100%">
+    <head>
+      <meta name="robots" content="NOINDEX, NOFOLLOW" />
+      <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+      <script type="text/javascript" src="/_Incapsula_Resource?SWJIYLWA=719d34d31c8e3a6e6fffd425f7e032f3"></script>
+    </head>
+    <body style="margin:0px;height:100%">
+      <iframe
+        id="main-iframe"
+        src="/_Incapsula_Resource?CWUDNSAI=23&incident_id=2702000450106232523-22502042510429024&edet=15"
+        frameborder="0"
+        width="100%"
+        height="100%"
+      >
+        Request unsuccessful. Incapsula incident ID: 2702000450106232523-22502042510429024
+      </iframe>
+    </body>
+  </html>
+`
+
 test('buildSearchPageUrl keeps GlobalLogic on the official paginated careers route', async () => {
   const {
     CAREERS_PAGE_URL,
@@ -376,13 +408,16 @@ test('run paginates the official GlobalLogic search pages and decorates shared r
 })
 
 test('run bounds default GlobalLogic fetches with abort signals', async () => {
-  const { buildSearchPageUrl, createGlobalLogicScraper } = await loadGlobalLogicModule()
+  const { CAREERS_PAGE_URL, buildSearchPageUrl, createGlobalLogicScraper } = await loadGlobalLogicModule()
   const originalFetch = globalThis.fetch
   const requests = []
 
   globalThis.fetch = async (url, init = {}) => {
     requests.push({ url: String(url), signal: init.signal })
 
+    if (url === CAREERS_PAGE_URL) {
+      return { ok: true, status: 200, text: async () => '<html><body>Careers at GlobalLogic</body></html>' }
+    }
     if (url === buildSearchPageUrl(1)) {
       return { ok: true, status: 200, text: async () => searchPageOneHtml }
     }
@@ -434,4 +469,50 @@ test('run falls back to browser text when GlobalLogic blocks direct HTTP fetches
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].title, 'AWS DevOps Lead')
   assert.equal(jobs[0].city, 'Noida')
+})
+
+test('run returns an honest empty result when the official GlobalLogic careers routes are gated by the verified Incapsula challenge', async () => {
+  const {
+    CAREERS_PAGE_URL,
+    buildSearchPageUrl,
+    createGlobalLogicScraper,
+  } = await loadGlobalLogicModule()
+
+  const requestedUrls = []
+  const jobs = await createGlobalLogicScraper({ maxJobs: 1, maxPages: 1 }).run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === CAREERS_PAGE_URL) {
+        return {
+          status: 302,
+          url,
+          headers: {
+            location: CAREERS_PAGE_URL,
+            'set-cookie': [
+              'visid_incap_1279438=abc; path=/; HttpOnly',
+              'incap_ses_2702_1279438=def; path=/',
+            ],
+          },
+          html: incapsulaLoadingShellHtml,
+        }
+      }
+
+      if (url === buildSearchPageUrl(1)) {
+        return {
+          status: 403,
+          url,
+          headers: {},
+          html: incapsulaIframeChallengeHtml,
+        }
+      }
+
+      throw new Error(`Unexpected GlobalLogic page URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    CAREERS_PAGE_URL,
+  ])
+  assert.deepEqual(jobs, [])
 })

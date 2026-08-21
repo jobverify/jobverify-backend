@@ -30,6 +30,26 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>BeeForce by BlueTree: Labour Management Software</title>
+    <meta
+      name="description"
+      content="BeeForce by BlueTree is India’s Best Labour Management Software, helping enterprise companies manage gig, piece-rate and contract labour."
+    />
+  </head>
+  <body>
+    <main>
+      <h1>Beeforce by BlueTree</h1>
+      <p>Your companion to External Workforce & Labour Management</p>
+      <p>One Platform to manage Contract Labour, Gig & Piece Rate Workforce with full compliance & labour laws tracking.</p>
+    </main>
+  </body>
+</html>
+`
+
 const aboutHtml = `
 <!doctype html>
 <html lang="en">
@@ -129,6 +149,7 @@ test('Blue Tree sentinel recognizes the verified homepage, about page, contact p
     'https://www.getbluetree.com/careers-at-bluetree',
   ])
   assert.equal(blueTree.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(blueTree.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(blueTree.hasOfficialAboutSignal(aboutHtml), true)
   assert.equal(blueTree.hasOfficialContactSignal(contactHtml), true)
   assert.equal(blueTree.hasPublicJobsSignal(homepageHtml), false)
@@ -145,6 +166,35 @@ test('Blue Tree sentinel returns no jobs only while the verified public surface 
     fetchPage: async (url) => {
       requestedUrls.push(url)
       if (url === blueTree.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
+      if (url === blueTree.ABOUT_URL) return { status: 200, url, html: aboutHtml }
+      if (url === blueTree.CONTACT_URL) return { status: 200, url, html: contactHtml }
+      if (url === blueTree.SITEMAP_URL) return { status: 200, url, html: sitemapXml }
+      if (blueTree.NO_PUBLIC_CAREERS_ROUTE_URLS.includes(url)) return { ...missingCareerRoutePage, url }
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    blueTree.HOMEPAGE_URL,
+    blueTree.ABOUT_URL,
+    blueTree.CONTACT_URL,
+    blueTree.SITEMAP_URL,
+    ...blueTree.NO_PUBLIC_CAREERS_ROUTE_URLS,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Blue Tree sentinel preserves the zero-public-careers contract when verified routes are temporarily timeout-blocked', async () => {
+  const blueTree = await loadBlueTreeModule()
+  assert.ok(blueTree, 'Expected scraper module at ./script.js')
+
+  const requestedUrls = []
+  const jobs = await blueTree.createBlueTreeScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      if (url === blueTree.HOMEPAGE_URL) {
+        throw new Error('fetch failed | Connect Timeout Error (attempted addresses: 31.43.161.6:443, timeout: 10000ms)')
+      }
       if (url === blueTree.ABOUT_URL) return { status: 200, url, html: aboutHtml }
       if (url === blueTree.CONTACT_URL) return { status: 200, url, html: contactHtml }
       if (url === blueTree.SITEMAP_URL) return { status: 200, url, html: sitemapXml }

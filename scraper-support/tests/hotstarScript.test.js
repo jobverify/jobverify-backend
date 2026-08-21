@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-16T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-14T00:00:00.000Z'
 
 const homepageHtml = `
 <!doctype html>
@@ -17,22 +17,39 @@ const homepageHtml = `
 </html>
 `
 
-const currentHomepageHtml = homepageHtml.replace(
-  /content="JioHotstar is [\s\S]*?global sporting event"/,
-  'content="JioHotstar is India’s largest premium streaming platform with more than 100,000 hours of drama and movies in 17 languages, and coverage of every major global sporting event"',
-)
+const blockedCareersHtml = `
+<html>
+  <head>
+    <title>Error</title>
+  </head>
+  <body>
+    An error occurred while processing your request.
+    <p>Reference&#32;&#35;219&#46;e361ab8&#46;1786751774&#46;4c73dedd</p>
+    <p>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;219&#46;e361ab8&#46;1786751774&#46;4c73dedd</p>
+  </body>
+</html>
+`
 
-const careersPageHtml = `
+const liveCareersHtml = `
 <!doctype html>
 <html lang="en-US">
   <head>
     <title>JioStar - India’s Largest Media Conglomerate | Entertainment Reimagined</title>
+    <meta property="og:title" content="JioStar - India’s Largest Media Conglomerate | Entertainment Reimagined" />
   </head>
   <body>
+    <nav>
+      <a target="_blank" href="https://jiostar.wd102.myworkdayjobs.com/JioStar">Careers</a>
+    </nav>
+    <p>
+      Perched firmly at the nucleus of spellbinding content and innovative technology, JioStar is a leading global media &amp; entertainment company that is reimagining the way audiences consume entertainment and sports.
+    </p>
     <script type="application/ld+json">
-      {"description":"JioStar is India's largest media and entertainment conglomerate, formed through the merger of Reliance's Viacom18 and Disney Star India. It operates 120+ television channels and Jio Hotstar streaming platform, reaching over 800 million viewers weekly."}
+      {
+        "name": "JioStar — India's Largest Media Conglomerate | Entertainment Reimagined",
+        "description": "JioStar is India's largest media and entertainment conglomerate, formed through the merger of Reliance's Viacom18 and Disney Star India. It operates 120+ television channels and Jio Hotstar streaming platform, reaching over 800 million viewers weekly."
+      }
     </script>
-    <a target="_blank" href="https://jiostar.wd102.myworkdayjobs.com/JioStar">Careers</a>
   </body>
 </html>
 `
@@ -70,18 +87,18 @@ const firstPagePayload = {
   total: 22,
   jobPostings: [
     {
-      title: 'Assistant Manager - Marketing, JioHotstar (South)',
-      externalPath: '/job/Chennai---Kochar-Jade/Assistant-Manager---Marketing--JioHotstar--South-_JR11910',
-      locationsText: 'Chennai - Kochar Jade',
-      postedOn: 'Posted 30 Days Ago',
-      bulletFields: ['JR11910'],
-    },
-    {
       title: 'Senior Director - Marketing, JioHotstar (South)',
       externalPath: '/job/Bengaluru---EGL/Senior-Director---Marketing--JioHotstar--South-_JR12076',
       locationsText: 'Bengaluru - EGL',
-      postedOn: 'Posted Today',
+      postedOn: 'Posted Yesterday',
       bulletFields: ['JR12076'],
+    },
+    {
+      title: 'Creative Director - Creative and Content (JioHotstar), Telugu',
+      externalPath: '/job/Hyderabad---Kohinoor/Creative-Director---Creative-and-Content--JioHotstar---Telugu_JR12322',
+      locationsText: 'Hyderabad - Kohinoor',
+      postedOn: 'Posted Today',
+      bulletFields: ['JR12322'],
     },
     ...Array.from({ length: 18 }, (_, index) => ({
       title: `Mock Hotstar Role ${index + 3}`,
@@ -121,7 +138,7 @@ const loadModule = async () => {
   }
 }
 
-test('Hotstar pins the verified JioHotstar homepage, JioStar careers handoff, and keyworded Workday API contract', async () => {
+test('Hotstar pins the verified Monday, August 17, 2026 JioHotstar homepage, live JioStar careers page, and Workday API contract', async () => {
   const hotstar = await loadModule()
 
   assert.equal(hotstar.SOURCE, 'hotstar')
@@ -135,12 +152,14 @@ test('Hotstar pins the verified JioHotstar homepage, JioStar careers handoff, an
     'https://jiostar.wd102.myworkdayjobs.com/wday/cxs/jiostar/JioStar/jobs',
   )
   assert.equal(hotstar.VERIFIED_KEYWORD, 'JioHotstar')
-  assert.equal(hotstar.hasOfficialHomepageSignal(currentHomepageHtml), true)
-  assert.equal(hotstar.hasOfficialCareersSignal(careersPageHtml), true)
+  assert.equal(hotstar.VERIFIED_ON, '2026-08-17')
+  assert.equal(hotstar.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(hotstar.hasOfficialCareersSignal(liveCareersHtml), true)
   assert.equal(
-    hotstar.extractVerifiedWorkdayBoardUrl(careersPageHtml),
+    hotstar.extractVerifiedWorkdayBoardUrl(liveCareersHtml),
     'https://jiostar.wd102.myworkdayjobs.com/JioStar',
   )
+  assert.equal(hotstar.hasBlockedJiostarCareersSignal(blockedCareersHtml), true)
   assert.equal(hotstar.hasOfficialWorkdayBoardSignal(workdayBoardPage), true)
   assert.deepEqual(
     JSON.parse(hotstar.buildKeywordSearchRequestBody({ offset: 20 })),
@@ -161,30 +180,6 @@ test('Hotstar pins the verified JioHotstar homepage, JioStar careers handoff, an
     }, FIXED_SCRAPED_AT),
     [
       {
-        jobId: 'JR11910',
-        title: 'Assistant Manager - Marketing, JioHotstar (South)',
-        company: 'Hotstar',
-        department: null,
-        location: 'Chennai, India',
-        city: 'Chennai',
-        state: null,
-        country: 'India',
-        sourceUrl: 'https://jiostar.wd102.myworkdayjobs.com/JioStar/job/Chennai---Kochar-Jade/Assistant-Manager---Marketing--JioHotstar--South-_JR11910',
-        applyUrl: 'https://jiostar.wd102.myworkdayjobs.com/JioStar/job/Chennai---Kochar-Jade/Assistant-Manager---Marketing--JioHotstar--South-_JR11910/apply',
-        employmentType: null,
-        experienceRequired: null,
-        minimumQualification: null,
-        preferredQualification: null,
-        requiredSkills: [],
-        postingDate: 'Posted 30 Days Ago',
-        closingDate: null,
-        jobDescription: null,
-        requisitionId: 'JR11910',
-        source: 'hotstar',
-        link: 'https://jiostar.wd102.myworkdayjobs.com/JioStar/job/Chennai---Kochar-Jade/Assistant-Manager---Marketing--JioHotstar--South-_JR11910/apply',
-        scrapedAt: FIXED_SCRAPED_AT,
-      },
-      {
         jobId: 'JR12076',
         title: 'Senior Director - Marketing, JioHotstar (South)',
         company: 'Hotstar',
@@ -200,7 +195,7 @@ test('Hotstar pins the verified JioHotstar homepage, JioStar careers handoff, an
         minimumQualification: null,
         preferredQualification: null,
         requiredSkills: [],
-        postingDate: 'Posted Today',
+        postingDate: 'Posted Yesterday',
         closingDate: null,
         jobDescription: null,
         requisitionId: 'JR12076',
@@ -208,11 +203,35 @@ test('Hotstar pins the verified JioHotstar homepage, JioStar careers handoff, an
         link: 'https://jiostar.wd102.myworkdayjobs.com/JioStar/job/Bengaluru---EGL/Senior-Director---Marketing--JioHotstar--South-_JR12076/apply',
         scrapedAt: FIXED_SCRAPED_AT,
       },
+      {
+        jobId: 'JR12322',
+        title: 'Creative Director - Creative and Content (JioHotstar), Telugu',
+        company: 'Hotstar',
+        department: null,
+        location: 'Hyderabad, India',
+        city: 'Hyderabad',
+        state: null,
+        country: 'India',
+        sourceUrl: 'https://jiostar.wd102.myworkdayjobs.com/JioStar/job/Hyderabad---Kohinoor/Creative-Director---Creative-and-Content--JioHotstar---Telugu_JR12322',
+        applyUrl: 'https://jiostar.wd102.myworkdayjobs.com/JioStar/job/Hyderabad---Kohinoor/Creative-Director---Creative-and-Content--JioHotstar---Telugu_JR12322/apply',
+        employmentType: null,
+        experienceRequired: null,
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: [],
+        postingDate: 'Posted Today',
+        closingDate: null,
+        jobDescription: null,
+        requisitionId: 'JR12322',
+        source: 'hotstar',
+        link: 'https://jiostar.wd102.myworkdayjobs.com/JioStar/job/Hyderabad---Kohinoor/Creative-Director---Creative-and-Content--JioHotstar---Telugu_JR12322/apply',
+        scrapedAt: FIXED_SCRAPED_AT,
+      },
     ],
   )
 })
 
-test('Hotstar run validates the verified handoff and paginates keyworded Workday results', async () => {
+test('Hotstar run accepts the live JioStar corporate page and paginates keyworded Workday results', async () => {
   const hotstar = await loadModule()
   const requestedPages = []
   const requestedBodies = []
@@ -224,11 +243,59 @@ test('Hotstar run validates the verified handoff and paginates keyworded Workday
       requestedPages.push(url)
 
       if (url === hotstar.HOMEPAGE_URL) {
-        return { status: 200, url: 'https://www.hotstar.com/in', html: currentHomepageHtml }
+        return { status: 200, url: 'https://www.hotstar.com/in', html: homepageHtml }
       }
 
       if (url === hotstar.CAREERS_URL) {
-        return { status: 200, url, html: careersPageHtml }
+        return { status: 200, url, html: liveCareersHtml }
+      }
+
+      if (url === hotstar.WORKDAY_BOARD_URL) {
+        return workdayBoardPage
+      }
+
+      throw new Error(`Unexpected Hotstar page URL: ${url}`)
+    },
+    fetchJson: async (url, body) => {
+      assert.equal(url, hotstar.JOBS_API_URL)
+      requestedBodies.push(JSON.parse(body))
+
+      if (requestedBodies.length === 1) return firstPagePayload
+      if (requestedBodies.length === 2) return secondPagePayload
+
+      throw new Error(`Unexpected Hotstar jobs API call #${requestedBodies.length}`)
+    },
+  })
+
+  assert.deepEqual(requestedPages, [
+    hotstar.HOMEPAGE_URL,
+    hotstar.CAREERS_URL,
+    hotstar.WORKDAY_BOARD_URL,
+  ])
+  assert.deepEqual(requestedBodies, [
+    JSON.parse(hotstar.buildKeywordSearchRequestBody({ offset: 0 })),
+    JSON.parse(hotstar.buildKeywordSearchRequestBody({ offset: 20 })),
+  ])
+  assert.equal(jobs.length, 22)
+})
+
+test('Hotstar run accepts the blocked JioStar corporate page and paginates keyworded Workday results', async () => {
+  const hotstar = await loadModule()
+  const requestedPages = []
+  const requestedBodies = []
+
+  const jobs = await hotstar.createHotstarScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchPage: async (url) => {
+      requestedPages.push(url)
+
+      if (url === hotstar.HOMEPAGE_URL) {
+        return { status: 200, url: 'https://www.hotstar.com/in', html: homepageHtml }
+      }
+
+      if (url === hotstar.CAREERS_URL) {
+        return { status: 403, url, html: blockedCareersHtml }
       }
 
       if (url === hotstar.WORKDAY_BOARD_URL) {
@@ -261,8 +328,8 @@ test('Hotstar run validates the verified handoff and paginates keyworded Workday
   assert.deepEqual(
     jobs.slice(0, 2).map((job) => [job.title, job.location, job.requisitionId, job.source, job.scrapedAt]),
     [
-      ['Assistant Manager - Marketing, JioHotstar (South)', 'Chennai, India', 'JR11910', 'hotstar', FIXED_SCRAPED_AT],
       ['Senior Director - Marketing, JioHotstar (South)', 'Bangalore, India', 'JR12076', 'hotstar', FIXED_SCRAPED_AT],
+      ['Creative Director - Creative and Content (JioHotstar), Telugu', 'Hyderabad, India', 'JR12322', 'hotstar', FIXED_SCRAPED_AT],
     ],
   )
   assert.deepEqual(
@@ -271,5 +338,60 @@ test('Hotstar run validates the verified handoff and paginates keyworded Workday
       ['Manager - Analytics', 'Mumbai, India', 'JR10336'],
       ['Software Development Engineer II (Web) - VX', 'Bangalore, India', 'JR10213'],
     ],
+  )
+})
+
+test('Hotstar fails closed when the verified homepage, blocked JioStar page, or Workday board drifts', async () => {
+  const hotstar = await loadModule()
+
+  await assert.rejects(
+    hotstar.createHotstarScraper().run({
+      fetchPage: async (url) => {
+        if (url === hotstar.HOMEPAGE_URL) {
+          return { status: 200, url, html: '<html><body><h1>Unexpected</h1></body></html>' }
+        }
+        if (url === hotstar.CAREERS_URL) {
+          return { status: 403, url, html: blockedCareersHtml }
+        }
+        return workdayBoardPage
+      },
+      fetchJson: async () => firstPagePayload,
+    }),
+    /verified homepage surface changed materially/i,
+  )
+
+  await assert.rejects(
+    hotstar.createHotstarScraper().run({
+      fetchPage: async (url) => {
+        if (url === hotstar.HOMEPAGE_URL) {
+          return { status: 200, url: 'https://www.hotstar.com/in', html: homepageHtml }
+        }
+        if (url === hotstar.CAREERS_URL) {
+          return { status: 200, url, html: '<html><body><h1>JioStar</h1></body></html>' }
+        }
+        return workdayBoardPage
+      },
+      fetchJson: async () => firstPagePayload,
+    }),
+    /verified JioStar careers surface changed materially/i,
+  )
+
+  await assert.rejects(
+    hotstar.createHotstarScraper().run({
+      fetchPage: async (url) => {
+        if (url === hotstar.HOMEPAGE_URL) {
+          return { status: 200, url: 'https://www.hotstar.com/in', html: homepageHtml }
+        }
+        if (url === hotstar.CAREERS_URL) {
+          return { status: 403, url, html: blockedCareersHtml }
+        }
+        if (url === hotstar.WORKDAY_BOARD_URL) {
+          return { status: 200, url, html: '<html><body><h1>Unexpected</h1></body></html>' }
+        }
+        throw new Error(`Unexpected Hotstar page URL: ${url}`)
+      },
+      fetchJson: async () => firstPagePayload,
+    }),
+    /verified public Workday board changed materially/i,
   )
 })

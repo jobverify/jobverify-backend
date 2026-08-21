@@ -143,9 +143,11 @@ test('Xoxoday local catalog captures the verified first-party shell and Keka job
   assert.equal(provider.kekaCareerPageUrl, 'https://nreach.keka.com/careers/')
   assert.equal(provider.jobsApiUrl, 'https://nreach.keka.com/careers/api/embedjobs/default/active/1d58bf68-c78d-495e-8a38-d17ff1298707')
   assert.equal(provider.atsPlatform, 'keka-embed-api')
-  assert.equal(provider.verifiedPublicJobCount, 39)
-  assert.match(provider.verifiedSurfaceSummary, /Key Account Manager - Enetrprise Sales, Mumbai/i)
-  assert.match(provider.verifiedSurfaceSummary, /SDET\s+Engineer - Automation/i)
+  assert.equal(provider.verifiedPublicJobCount, 51)
+  assert.match(provider.verifiedSurfaceSummary, /Vercel Security Checkpoint/i)
+  assert.match(provider.verifiedSurfaceSummary, /HTTP 429/i)
+  assert.match(provider.verifiedSurfaceSummary, /Product Manager - Empuls/i)
+  assert.match(provider.verifiedSurfaceSummary, /Senior Manager - Business & Commercial Intelligence/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

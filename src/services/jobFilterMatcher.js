@@ -17,7 +17,7 @@ const MAX_REGEX_FILTER_LENGTH = 80;
 const MAX_TEXT_QUERY_LENGTH = 200;
 const MAX_EXPERIENCE_FILTER_YEAR = 15;
 const EXPERIENCE_UNSPECIFIED_VALUE = "unspecified";
-const EXPERIENCE_TEXT_HINT_PATTERN = /(^|[^0-9.])(?:\d+(?:\.\d+)?\s*(?:(?:-|to)\s*\d+(?:\.\d+)?\s*)?(?:(?:\+|plus)\s*)?(?:years?|yrs?)\b|\d+(?:\.\d+)?\s*(?:years?|yrs?)\s*(?:and above|or above)\b|(?:at least|min(?:imum)?(?: of)?|minimum|required|preferred)\s*\d+(?:\.\d+)?\s*(?:years?|yrs?)\b|no prior experience required|no experience required|freshers? can apply|freshers?|entry[- ]level applicants are encouraged)/i;
+const EXPERIENCE_TEXT_HINT_PATTERN = /(^|[^0-9.])(?:\d+(?:\.\d+)?\s*(?:(?:-|to)\s*\d+(?:\.\d+)?\s*)?(?:(?:\+|plus)\s*)?(?:years?|yrs?)\b|\d+(?:\.\d+)?\s*(?:years?|yrs?)\s*(?:and above|or above)\b|(?:at least|min(?:imum)?(?: of)?|minimum|required|preferred)\s*\d+(?:\.\d+)?\s*(?:years?|yrs?)\b|no prior experience required|no experience required|freshers? can apply|freshers?|entry[- ]level applicants are encouraged|experienced(?: professionals?)?|entry[- ]level|junior level|mid(?:-| )level|senior(?:-| )level|associate(?: level)?)/i;
 
 const normalizeFilterText = (value, maxLength = MAX_TEXT_QUERY_LENGTH) => String(value ?? "")
   .trim()
@@ -87,6 +87,8 @@ const buildUnspecifiedExperienceConstraint = () => ({
     ],
   }, {
     $or: [
+      { "experienceProfile.hasExplicitExperience": { $exists: false } },
+      { "experienceProfile.hasExplicitExperience": false },
       { experienceRequired: { $exists: false } }, { experienceRequired: null }, { experienceRequired: "" },
       { experienceRequired: { $not: EXPERIENCE_TEXT_HINT_PATTERN } },
     ],

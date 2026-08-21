@@ -3,9 +3,12 @@ import test from 'node:test'
 
 import {
   CAREER_PAGE_URL,
+  INDIA_SEARCH_URL,
   SEARCH_URL,
   createAmpereComputingScraper,
   extractSearchResults,
+  hasOfficialSearchResultsSignal,
+  hasVerifiedCloudflareChallengeSignal,
 } from './script.js'
 
 const searchHtml = `
@@ -33,6 +36,35 @@ const detailHtml = `
 </html>
 `
 
+const blockedChallengePage = {
+  status: 403,
+  url: SEARCH_URL,
+  headers: {
+    server: 'cloudflare',
+    'cf-ray': 'a2abc87858e29f61-MAA',
+    'cf-mitigated': 'challenge',
+  },
+  html: `
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <title>Just a moment...</title>
+  </head>
+  <body>
+    <noscript>
+      <div>Enable JavaScript and cookies to continue</div>
+    </noscript>
+    <script src="https://challenges.cloudflare.com"></script>
+  </body>
+</html>
+`,
+}
+
+const blockedIndiaChallengePage = {
+  ...blockedChallengePage,
+  url: INDIA_SEARCH_URL,
+}
+
 test('extractSearchResults keeps India jobs and maps official detail URLs', () => {
   assert.deepEqual(extractSearchResults(searchHtml), [
     {
@@ -43,6 +75,7 @@ test('extractSearchResults keeps India jobs and maps official detail URLs', () =
       sourceUrl: 'https://careers.amperecomputing.com/jobs/17948977-principal-cloud-and-devops-engineer',
     },
   ])
+  assert.equal(hasOfficialSearchResultsSignal(searchHtml), true)
 })
 
 test('run enriches India listings from official detail pages', async () => {
@@ -88,4 +121,23 @@ test('run enriches India listings from official detail pages', async () => {
     scrapedAt: jobs[0].scrapedAt,
   })
   assert.equal(CAREER_PAGE_URL, 'https://careers.amperecomputing.com/')
+})
+
+test('run returns [] when both Ampere search routes match the verified Cloudflare challenge shell', async () => {
+  const requestedUrls = []
+  const scraper = createAmpereComputingScraper()
+
+  assert.equal(hasVerifiedCloudflareChallengeSignal(blockedChallengePage), true)
+
+  const jobs = await scraper.run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      if (url === SEARCH_URL) return blockedChallengePage
+      if (url === INDIA_SEARCH_URL) return blockedIndiaChallengePage
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [SEARCH_URL, INDIA_SEARCH_URL])
+  assert.deepEqual(jobs, [])
 })

@@ -82,6 +82,19 @@ test('returns no jobs when HAL careers API redirects to a loopback host', async 
   assert.deepEqual(jobs, [])
 })
 
+test('returns no jobs when the verified HAL careers surface is temporarily unavailable', async () => {
+  const jobs = await createHindustanAeronauticsScraper().run({
+    fetchText: async () => {
+      throw new Error(`Request timed out for ${CAREERS_URL}`)
+    },
+    fetchJson: async () => {
+      throw new Error('fetchJson should not be called when the careers page is unavailable')
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
 test('extracts an open HAL recruitment notice when careers and detail payloads are available', async () => {
   const requestedUrls = []
   const jobs = await createHindustanAeronauticsScraper({

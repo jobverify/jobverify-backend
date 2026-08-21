@@ -34,11 +34,11 @@ test('Mastek local catalog captures the verified mixed-global board with India-o
   assert.equal(provider.officialCareersHandoffUrl, 'https://careers.mastek.com/search/')
   assert.equal(
     provider.verifiedSampleJobUrl,
-    'https://careers.mastek.com/job/Pune-Oracle-HCM-Functional-Consultant-%28Payroll%29/47800844/',
+    'https://careers.mastek.com/job/Oracle-FCCS-Functional-Consultant/57886344/',
   )
   assert.equal(provider.atsPlatform, 'successfactors')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.verifiedPublicJobCount, 31)
+  assert.equal(provider.verifiedPublicJobCount, 56)
   assert.equal(provider.paginationStrategy, 'first-party-search-startrow-query')
   assert.equal(
     provider.extractionStrategy,
@@ -47,16 +47,17 @@ test('Mastek local catalog captures the verified mixed-global board with India-o
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'careers.mastek.com')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-08-13')
   assert.match(provider.dryRunFile, /mastek[\\/]jobs\.json$/i)
   assert.match(provider.modulePath, /mastek[\\/]script\.js$/i)
   assert.equal(provider.modulePath, mastekModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Thursday, July 16, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.mastek\.com\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.mastek\.com\/search\//i)
-  assert.match(provider.verifiedSurfaceSummary, /Showing 1 to 12 of 31 Jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /mixed global/i)
-  assert.match(provider.verifiedSurfaceSummary, /Pune, IN/i)
+  assert.match(provider.verifiedSurfaceSummary, /Just a moment/i)
+  assert.match(provider.verifiedSurfaceSummary, /Showing 1 to 12 of 56 Jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /28 India-coded postings/i)
+  assert.match(provider.verifiedSurfaceSummary, /Oracle FCCS Functional Consultant/i)
 })
 
 test('Mastek exact backlog row matches directly from the local catalog without aliases', async () => {

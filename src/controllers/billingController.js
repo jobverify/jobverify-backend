@@ -8,13 +8,18 @@ import ReferralCode from "../models/ReferralCode.js";
 import ReferralRedemption from "../models/ReferralRedemption.js";
 import {
   activateWebhookPurchase,
+  BillingRequestError,
   buildBillingSummary,
+  cancelActivePlan,
   createCheckout,
   getOrCreateReferralCodeForUser,
   listBillingPlans,
   verifyAndActivatePurchase,
 } from "../services/planService.js";
-import { getPaymentProvider } from "../services/paymentProvider.js";
+import {
+  getPaymentProvider,
+  PaymentProviderError,
+} from "../services/paymentProvider.js";
 
 export const getBillingPlans = async (_req, res) => {
   res.status(200).json({
@@ -24,9 +29,9 @@ export const getBillingPlans = async (_req, res) => {
   });
 };
 
-export const createPlanCheckout = async (req, res) => {
+export const createPlanCheckoutHandler = (checkoutService) => async (req, res) => {
   try {
-    const result = await createCheckout({
+    const result = await checkoutService({
       user: req.user,
       planId: req.body.planId,
       referralCode: req.body.referralCode,
@@ -42,17 +47,58 @@ export const createPlanCheckout = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(400).json({
-      code: 400,
+    const statusCode = error instanceof BillingRequestError
+      ? 400
+      : error instanceof PaymentProviderError && error.statusCode === 401
+        ? 401
+        : 500;
+    return res.status(statusCode).json({
+      code: statusCode,
       success: false,
-      message: error.message,
+      message: statusCode === 500
+        ? "Unable to create checkout at this time."
+        : error.message,
     });
   }
 };
 
-export const verifyPlanCheckout = async (req, res) => {
+export const createPlanCheckout = createPlanCheckoutHandler(createCheckout);
+
+const respondWithBillingError = (res, error, genericMessage) => {
+  const statusCode = error instanceof BillingRequestError ? 400 : 500;
+  return res.status(statusCode).json({
+    code: statusCode,
+    success: false,
+    message: statusCode === 400 ? error.message : genericMessage,
+  });
+};
+
+export const createCancelPlanHandler = (cancelPlan) => async (req, res) => {
   try {
-    const result = await verifyAndActivatePurchase({
+    const result = await cancelPlan({ userId: req.user._id });
+    return res.status(200).json({
+      code: 200,
+      success: true,
+      message: "Plan cancelled. Your account is now on the Free plan.",
+      data: {
+        access: result.access,
+        accessRole: result.user.accessRole,
+      },
+    });
+  } catch (error) {
+    return respondWithBillingError(
+      res,
+      error,
+      "Unable to cancel your plan at this time.",
+    );
+  }
+};
+
+export const cancelPlan = createCancelPlanHandler(cancelActivePlan);
+
+export const verifyPlanCheckoutHandler = (verifyPurchase) => async (req, res) => {
+  try {
+    const result = await verifyPurchase({
       purchaseId: req.body.purchaseId,
       providerOrderId: req.body.providerOrderId,
       providerPaymentId: req.body.providerPaymentId,
@@ -73,17 +119,22 @@ export const verifyPlanCheckout = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(400).json({
-      code: 400,
-      success: false,
-      message: error.message,
-    });
+    return respondWithBillingError(
+      res,
+      error,
+      "Unable to verify purchase at this time.",
+    );
   }
 };
 
-export const handleBillingWebhook = async (req, res) => {
+export const verifyPlanCheckout = verifyPlanCheckoutHandler(verifyAndActivatePurchase);
+
+export const handleBillingWebhookHandler = ({
+  getProvider,
+  activatePurchase,
+}) => async (req, res) => {
   try {
-    const provider = getPaymentProvider();
+    const provider = getProvider();
     const signature = req.headers["x-razorpay-signature"];
 
     if (
@@ -101,7 +152,15 @@ export const handleBillingWebhook = async (req, res) => {
 
     if (req.body?.event === "payment.captured") {
       const payload = req.body?.payload?.payment?.entity ?? {};
-      await activateWebhookPurchase({
+      if (!payload.order_id || !payload.id) {
+        return res.status(400).json({
+          code: 400,
+          success: false,
+          message: "Webhook payment identifiers are required.",
+        });
+      }
+
+      await activatePurchase({
         providerOrderId: payload.order_id,
         providerPaymentId: payload.id,
       });
@@ -112,13 +171,18 @@ export const handleBillingWebhook = async (req, res) => {
       success: true,
     });
   } catch (error) {
-    return res.status(400).json({
-      code: 400,
-      success: false,
-      message: error.message,
-    });
+    return respondWithBillingError(
+      res,
+      error,
+      "Unable to process billing webhook at this time.",
+    );
   }
 };
+
+export const handleBillingWebhook = handleBillingWebhookHandler({
+  getProvider: getPaymentProvider,
+  activatePurchase: activateWebhookPurchase,
+});
 
 export const getMyBillingSummary = async (req, res) => {
   const user = await User.findById(req.user._id);

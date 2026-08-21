@@ -65,4 +65,5 @@ test('generateDedicatedScraperFolderBackfill writes dedicated providers, aliases
   assert.deepEqual(aliases, { 'Banyan Cloud Careers': 'banyancloud' })
   assert.equal(existsSync(path.join(scraperBaseDir, 'banyancloud', 'script.js')), true)
   assert.equal(existsSync(path.join(scraperBaseDir, 'banyancloud', 'failClosedSentinel.js')), true)
+  assert.equal(existsSync(path.join(scraperBaseDir, 'banyancloud', 'jobs.json')), true)
 })

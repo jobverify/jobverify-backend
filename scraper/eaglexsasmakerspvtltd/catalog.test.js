@@ -21,11 +21,15 @@ test('Eaglex SAS Makers Pvt Ltd is registered as a verified no-public-careers se
   assert.equal(provider.paginationStrategy, 'homepage-plus-about-contact-and-common-careers-route-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-about+verified-contact+verified-soft-404-careers-routes-return-empty',
+    'verified-homepage+verified-current-about-contact+verified-hard-404-careers-routes+legacy-soft-404-careers-routes-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'eaglex.co.in')
+  assert.equal(provider.verifiedOn, '2026-08-13')
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.eagle-x\.in\/about/i)
+  assert.match(provider.verifiedSurfaceSummary, /404/i)
   assert.match(provider.modulePath, /eaglexsasmakerspvtltd[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, COMPANY), false)
 })

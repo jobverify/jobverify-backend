@@ -80,10 +80,18 @@ export const hasFirstPartyAboutSignal = (html = '') => {
 export const hasGoodfitHandoffSignal = (html = '') => {
   const normalized = stripTags(html).toLowerCase()
   const title = (extractTitle(html) || '').toLowerCase()
+  const rawHtml = String(html ?? '').toLowerCase()
 
-  return title.includes('springworks at springworks')
-    && normalized.includes('goodfit')
-    && String(html ?? '').toLowerCase().includes('noindex')
+  return (
+    title.includes('springworks at springworks')
+      && normalized.includes('goodfit')
+      && rawHtml.includes('noindex')
+  ) || (
+    title.includes('goodfit')
+      && normalized.includes('open positions')
+      && rawHtml.includes('https://jobs.goodfit.so/jobs/springworks')
+      && /\/jobs\/springworks\//i.test(String(html ?? ''))
+  )
 }
 
 export const hasGoodfitJobsSignal = (html = '') => {

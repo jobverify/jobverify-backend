@@ -30,7 +30,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('OneCard local catalog captures the verified official careers page and embedded public jobs API', async () => {
+test('OneCard local catalog captures the verified Friday, August 14, 2026 gated-handoff and broken-public-api contract', async () => {
   const { ONECARD_CATALOG } = await loadCatalogModule()
   const oneCard = await loadScriptModule()
   const provider = hydrateProviderCatalogEntry(ONECARD_CATALOG)
@@ -41,12 +41,12 @@ test('OneCard local catalog captures the verified official careers page and embe
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://www.getonecard.app/careers/')
   assert.equal(provider.companyDomain, 'getonecard.app')
-  assert.equal(provider.atsPlatform, 'official-careers-page-plus-public-read-only-api')
+  assert.equal(provider.atsPlatform, 'official-careers-page-plus-gated-handoff-plus-broken-public-api')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-public-jobs-api-response')
+  assert.equal(provider.paginationStrategy, 'verified-gated-handoff-plus-broken-public-jobs-api')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-careers-page+fpl-handoff+embedded-public-jobs-api+mailto-apply',
+    'verified-official-careers-page+verified-fpl-handoff-js-gate+verified-broken-public-jobs-api-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
@@ -57,17 +57,23 @@ test('OneCard local catalog captures the verified official careers page and embe
   )
   assert.equal(provider.officialJobsApiKey, 'hr-read-only')
   assert.equal(provider.officialApplyUrl, 'mailto:careers@getonecard.app')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-14')
   assert.match(provider.dryRunFile, /onecard[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, oneCardModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.getonecard\.app\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.fplabs\.tech\/careers\//i)
   assert.match(
     provider.verifiedSurfaceSummary,
     /https:\/\/ibffpublic6f2461135ffd1b6a80db296ec15abf\.onrender\.com\/hr\/jobs/i,
   )
-  assert.match(provider.verifiedSurfaceSummary, /0 public openings/i)
+  assert.match(
+    provider.verifiedSurfaceSummary,
+    /https:\/\/paa\.fplabs\.tech\/proxy\/CRUD\/api\/test-jobs\?populate=\*/i,
+  )
+  assert.match(provider.verifiedSurfaceSummary, /HTTP 307/i)
+  assert.match(provider.verifiedSurfaceSummary, /HTTP 500/i)
+  assert.match(provider.verifiedSurfaceSummary, /There is no trustworthy public OneCard jobs listing surface/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'OneCard'), false)
 
   assert.equal(oneCard.PROVIDER_METADATA.source, ONECARD_CATALOG.source)

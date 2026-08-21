@@ -122,9 +122,13 @@ export const hasVerifiedAshbyBoardShellSignal = (html) => {
 
   return /<title>\s*Airbyte Jobs\s*<\/title>/i.test(rawHtml)
     && /Airbyte Jobs/i.test(normalized)
-    && /Engineering Manager, Platform/i.test(rawHtml)
-    && /Senior AI Platform Engineer/i.test(rawHtml)
-  }
+    && /<meta[^>]+property=["']og:url["'][^>]+content=["']https:\/\/jobs\.ashbyhq\.com\/airbyte["']/i.test(rawHtml)
+    && /<meta[^>]+property=["']og:title["'][^>]+content=["']Airbyte Jobs["']/i.test(rawHtml)
+    && /<meta[^>]+name=["']description["'][^>]+content=["']Airbyte Jobs["']/i.test(rawHtml)
+    && /you need to enable javascript to run this app\./i.test(rawHtml)
+    && /<div[^>]+id=["']root["']/i.test(rawHtml)
+    && /window\.__/i.test(rawHtml)
+}
 
 export const buildAshbyJobBoardUrl = (publicBoardUrl) => {
   try {

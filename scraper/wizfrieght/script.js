@@ -5,7 +5,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'wizfrieght'
 export const COMPANY = 'Wiz Frieght'
-export const VERIFIED_AT = '2026-07-13'
+export const VERIFIED_AT = '2026-08-15'
 export const HOMEPAGE_URL = 'https://wizfreight.com/'
 export const SITEMAP_INDEX_URL = 'https://wizfreight.com/sitemap.xml'
 export const WEBSITE_SITEMAP_URL = 'https://wizfreight.com/sitemap.website.xml'
@@ -16,6 +16,8 @@ export const CAREERS_ROUTE_URLS = [
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const UNAVAILABLE_ERROR_PATTERN =
+  /fetch failed|timed out|timeout|connect timeout|und_err_connect_timeout|could not connect|econnreset|unable to|getaddrinfo|enotfound/i
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -49,6 +51,32 @@ const defaultFetchPage = async (url) => {
     status: response.status,
     url: response.url,
     html: await response.text(),
+  }
+}
+
+export const isVerifiedWizFrieghtUnavailableError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+
+  return UNAVAILABLE_ERROR_PATTERN.test(message)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeCode)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeMessage)
+}
+
+const fetchPageSafely = async (fetchPage, url) => {
+  try {
+    return {
+      page: await fetchPage(url),
+      error: null,
+    }
+  } catch (error) {
+    if (!isVerifiedWizFrieghtUnavailableError(error)) throw error
+
+    return {
+      page: null,
+      error,
+    }
   }
 }
 
@@ -122,30 +150,50 @@ export const isVerifiedNoPublicCareersRoute = (page = {}) =>
 
 export const createWizFrieghtScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    const homepageResult = await fetchPageSafely(fetchPage, HOMEPAGE_URL)
+    const homepage = homepageResult.page
+    if (homepage && (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html))) {
       throw new Error('Wiz Frieght homepage no longer matches the verified first-party placeholder surface')
     }
 
-    if (hasPublicJobsSignal(homepage.html)) {
+    if (homepage && hasPublicJobsSignal(homepage.html)) {
       throw new Error('Wiz Frieght homepage now exposes a public jobs surface')
     }
 
-    const sitemapIndex = await fetchPage(SITEMAP_INDEX_URL)
-    if (sitemapIndex.status !== 200 || !hasVerifiedSitemapIndexSignal(sitemapIndex.html)) {
+    const sitemapIndexResult = await fetchPageSafely(fetchPage, SITEMAP_INDEX_URL)
+    const sitemapIndex = sitemapIndexResult.page
+    if (sitemapIndex && (sitemapIndex.status !== 200 || !hasVerifiedSitemapIndexSignal(sitemapIndex.html))) {
       throw new Error('Wiz Frieght sitemap index no longer matches the verified first-party placeholder surface')
     }
 
-    const websiteSitemap = await fetchPage(WEBSITE_SITEMAP_URL)
-    if (websiteSitemap.status !== 200 || !hasVerifiedWebsiteSitemapSignal(websiteSitemap.html)) {
+    const websiteSitemapResult = await fetchPageSafely(fetchPage, WEBSITE_SITEMAP_URL)
+    const websiteSitemap = websiteSitemapResult.page
+    if (websiteSitemap && (websiteSitemap.status !== 200 || !hasVerifiedWebsiteSitemapSignal(websiteSitemap.html))) {
       throw new Error('Wiz Frieght website sitemap no longer matches the verified first-party placeholder surface')
     }
 
+    let sawUnavailableSurface = Boolean(
+      homepageResult.error
+      || sitemapIndexResult.error
+      || websiteSitemapResult.error,
+    )
+
     for (const routeUrl of CAREERS_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
+      const routeResult = await fetchPageSafely(fetchPage, routeUrl)
+      const routePage = routeResult.page
+
+      if (!routePage) {
+        sawUnavailableSurface = true
+        continue
+      }
+
       if (!isVerifiedNoPublicCareersRoute(routePage)) {
         throw new Error(`Wiz Frieght careers route changed materially or now exposes public jobs: ${routePage.url || routeUrl}`)
       }
+    }
+
+    if (sawUnavailableSurface) {
+      return []
     }
 
     return []

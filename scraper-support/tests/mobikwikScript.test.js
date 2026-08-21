@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  ALTERNATE_CAREERS_URL,
   CAREERS_URL,
   COMPANY,
   DARWINBOX_ORIGIN,
@@ -10,6 +11,7 @@ import {
   createMobiKwikScraper,
   extractDarwinboxHandoffUrl,
   hasExternalJobsHandoffSignal,
+  hasCollapsedHomepageShellSignal,
   hasOfficialCareersSignal,
 } from '../../scraper/mobikwik/script.js'
 
@@ -27,6 +29,18 @@ const officialCareersSurface = {
   anchors: [
     { href: OFFICIAL_CAREERS_HANDOFF_URL, text: 'View Job Openings' },
     { href: 'https://www.linkedin.com/company/mobikwik', text: '' },
+  ],
+}
+
+const collapsedHomepageShellSurface = {
+  title: 'Online Mobile & DTH Recharge, Bill Payments, Easy Recharge',
+  text: `
+    Online Mobile & DTH Recharge, Bill Payments, Easy Recharge
+    MobiKwik
+    This website requires JavaScript.
+  `,
+  anchors: [
+    { href: 'https://www.mobikwik.com/app/', text: 'Get App' },
   ],
 }
 
@@ -48,6 +62,7 @@ test('MobiKwik validates the rendered careers surface and Darwinbox handoff befo
   assert.equal(hasOfficialCareersSignal(officialCareersSurface), true)
   assert.equal(hasExternalJobsHandoffSignal(officialCareersSurface), true)
   assert.equal(extractDarwinboxHandoffUrl(officialCareersSurface), OFFICIAL_CAREERS_HANDOFF_URL)
+  assert.equal(hasCollapsedHomepageShellSignal(officialCareersSurface), false)
 
   const jobs = await createMobiKwikScraper({
     now: () => FIXED_SCRAPED_AT,
@@ -74,6 +89,31 @@ test('MobiKwik validates the rendered careers surface and Darwinbox handoff befo
       scrapedAt: FIXED_SCRAPED_AT,
     },
   ])
+})
+
+test('MobiKwik returns [] while multiple career-like routes collapse to the verified generic homepage shell', async () => {
+  const requestedUrls = []
+  const runCalls = []
+
+  assert.equal(hasCollapsedHomepageShellSignal(collapsedHomepageShellSurface), true)
+
+  const jobs = await createMobiKwikScraper({
+    darwinboxScraper: {
+      run: async (options) => {
+        runCalls.push(options)
+        return []
+      },
+    },
+  }).run({
+    loadRenderedCareersSurface: async (url) => {
+      requestedUrls.push(url)
+      return collapsedHomepageShellSurface
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [CAREERS_URL, ALTERNATE_CAREERS_URL])
+  assert.deepEqual(runCalls, [])
+  assert.deepEqual(jobs, [])
 })
 
 test('MobiKwik fails closed when the rendered careers surface changes', async () => {

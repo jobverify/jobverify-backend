@@ -21,12 +21,49 @@ const HOMEPAGE_HTML = `
 </html>
 `
 
+const CURRENT_HOMEPAGE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Allo Health - India&#x27;s #1 Sexual Health Provider</title>
+    <meta name="description" content="Expert treatment for ED, PE, low libido &amp; more at 70+ clinics and online across India. Private, judgement-free consultations. Book today.">
+    <link rel="canonical" href="https://www.allohealth.com"/>
+    <meta property="og:url" content="https://www.allohealth.com"/>
+    <meta property="og:type" content="website"/>
+  </head>
+  <body>
+    <nav>
+      <a href="/about">About Us</a>
+    </nav>
+    <h1>Allo Health</h1>
+  </body>
+</html>
+`
+
 const ABOUT_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
     <title>Best STI Doctors in India | Allo Health</title>
     <meta name="description" content="Connect with best STI doctors in India. Explore doctor profiles, book appointments online, read user reviews to make informed choices about your sexual health.">
+    <link rel="canonical" href="https://www.allohealth.com/about"/>
+    <meta property="og:url" content="https://www.allohealth.com/about"/>
+    <meta property="og:type" content="website"/>
+  </head>
+  <body>
+    <h2>About Us</h2>
+    <p>We're building India's first structured healthcare ecosystem to help people take charge of their health.</p>
+    <p>Operating in 70+ cities across India.</p>
+  </body>
+</html>
+`
+
+const CURRENT_ABOUT_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>About Allo Health | Leading Sexual Health Care</title>
+    <meta name="description" content="Allo Health&#x27;s mission to make sexual health care accessible, private, and judgement-free across India. Meet our team and approach.">
     <link rel="canonical" href="https://www.allohealth.com/about"/>
     <meta property="og:url" content="https://www.allohealth.com/about"/>
     <meta property="og:type" content="website"/>
@@ -82,7 +119,9 @@ test('Allo Health helper signals stay pinned to the verified homepage, about pag
   assert.equal(allohealth.CAREERS_URL, 'https://www.allohealth.com/careers')
   assert.equal(allohealth.NON_WWW_CAREERS_URL, 'https://allohealth.com/careers')
   assert.equal(allohealth.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
+  assert.equal(allohealth.hasOfficialHomepageSignal(CURRENT_HOMEPAGE_HTML), true)
   assert.equal(allohealth.hasOfficialAboutPageSignal(ABOUT_HTML), true)
+  assert.equal(allohealth.hasOfficialAboutPageSignal(CURRENT_ABOUT_HTML), true)
   assert.equal(allohealth.pageExposesPublicJobListings(HOMEPAGE_HTML), false)
   assert.equal(allohealth.pageExposesPublicJobListings(ABOUT_HTML), false)
   assert.equal(allohealth.pageExposesPublicJobListings(PUBLIC_JOBS_HTML), true)

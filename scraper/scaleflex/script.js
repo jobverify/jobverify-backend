@@ -43,6 +43,8 @@ const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /bamboohr/i,
 ]
 
+const CAREERS_HANDOFF_TEXT_PATTERN = /\b(career|careers|hiring|we are hiring|job openings?)\b/i
+
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
@@ -108,35 +110,54 @@ export const hasPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
 export const extractOfficialCareersHandoffUrl = (html) => {
+  let matchingPortalUrl = null
+
   for (const match of String(html ?? '').matchAll(/<a[^>]+href="([^"]*portals\.scaleflex\.com[^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)) {
     const anchorText = normalizeWhitespace(match[2]) || ''
-    if (!/career/i.test(anchorText)) continue
 
     try {
-      return new URL(match[1], HOMEPAGE_URL).toString()
+      const absoluteUrl = new URL(match[1], HOMEPAGE_URL).toString()
+      if (absoluteUrl !== CAREERS_HANDOFF_URL) continue
+
+      if (CAREERS_HANDOFF_TEXT_PATTERN.test(anchorText)) {
+        return absoluteUrl
+      }
+
+      if (!matchingPortalUrl) {
+        matchingPortalUrl = absoluteUrl
+      }
     } catch {
       return null
     }
   }
 
-  return null
+  return matchingPortalUrl
 }
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
   const title = extractTitle(page)
+  const hasLegacyHomepageSignal = title === 'Cloud-based Visual Asset Management for Enterprise'
+    && normalized.includes('1300+ brands trust us with their visual content')
+    && normalized.includes('Visual Asset Management')
+    && normalized.includes('Dynamic Media Optimization')
+  const hasCurrentHomepageSignal = title === 'Digital Asset Management Software | Scaleflex'
+    && normalized.includes('One place for every visual. Days back in your week.')
+    && (
+      normalized.includes('Turn visuals into high-converting digital experiences at scale.')
+      || normalized.includes('Turns visuals into high-converting digital experiences')
+    )
+    && (
+      normalized.includes('Dynamic Media Optimization')
+      || normalized.includes('Trusted by enterprises.')
+      || normalized.includes('Trusted by 1,300+ brands worldwide')
+    )
 
   return (
-    (
-      normalized.includes('Turning billions of assets into engaging digital masterpieces')
-      || (
-        title === 'Cloud-based Visual Asset Management for Enterprise'
-        && normalized.includes('1300+ brands trust us with their visual content')
-        && normalized.includes('Visual Asset Management')
-        && normalized.includes('Dynamic Media Optimization')
-      )
-    )
+    (normalized.includes('Turning billions of assets into engaging digital masterpieces')
+      || hasLegacyHomepageSignal
+      || hasCurrentHomepageSignal)
     && extractOfficialCareersHandoffUrl(page) === CAREERS_HANDOFF_URL
   )
 }

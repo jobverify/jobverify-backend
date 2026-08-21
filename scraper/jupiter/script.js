@@ -134,8 +134,10 @@ const normalizeScrapedAt = (value) => {
 }
 
 export const extractKekaBoardUrl = (html) => {
-  for (const match of String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
-    const href = toAbsoluteUrl(match[1], CAREERS_PAGE_URL)
+  for (const match of String(html ?? '').matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
+    const hrefAttribute = match[1]?.match(/href\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/i)
+    const hrefValue = hrefAttribute?.[1] || hrefAttribute?.[2] || hrefAttribute?.[3] || null
+    const href = toAbsoluteUrl(hrefValue, CAREERS_PAGE_URL)
     const text = normalizeWhitespace(match[2])?.toLowerCase() || ''
 
     if (href === JOBS_BOARD_URL) return href

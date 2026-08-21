@@ -19,6 +19,23 @@ const careersHtml = `
 </html>
 `
 
+const cloudflareChallengeHtml = `
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <title>Just a moment...</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="robots" content="noindex,nofollow" />
+  </head>
+  <body>
+    <div id="challenge-running">
+      <h1>Please wait while we verify your browser</h1>
+    </div>
+  </body>
+</html>
+`
+
 const workdayBoardHtml = `
 <!doctype html>
 <html lang="en-US">
@@ -125,6 +142,29 @@ test('Epicor Software Corporation run returns only India jobs from the public Wo
   assert.equal(jobs[0].location, 'Bangalore, India')
   assert.equal(jobs[1].location, 'Hyderabad, India')
   assert.equal(jobs[1].scrapedAt, FIXED_SCRAPED_AT)
+})
+
+test('Epicor Software Corporation run accepts the verified careers URL when Cloudflare blocks the local shell but the board and API still validate', async () => {
+  const epicor = await loadModule()
+  let requestCount = 0
+
+  const jobs = await epicor.createEpicorSoftwareCorporationScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async (url) => {
+      if (url === epicor.CAREERS_URL) return cloudflareChallengeHtml
+      if (url === epicor.WORKDAY_BOARD_URL) return workdayBoardHtml
+      throw new Error(`Unexpected text URL: ${url}`)
+    },
+    fetchJson: async () => {
+      requestCount += 1
+      return requestCount === 1 ? firstPagePayload : secondPagePayload
+    },
+  })
+
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].jobId, 'JR104298')
+  assert.equal(jobs[1].jobId, 'JR104299')
 })
 
 test('Epicor Software Corporation fails closed when the shell or board contract changes', async () => {

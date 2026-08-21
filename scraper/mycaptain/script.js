@@ -1,14 +1,23 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'mycaptain'
 export const COMPANY = 'MyCaptain'
 export const HOMEPAGE_URL = 'https://mycaptain.in/'
 export const CAREER_URL = 'https://mycaptain.in/career'
+export const CAREERS_URL = 'https://mycaptain.in/careers'
+export const JOB_URL = 'https://mycaptain.in/job'
+export const JOBS_URL = 'https://mycaptain.in/jobs'
+export const VERIFIED_ON = '2026-08-15'
+export const VERIFIED_ROUTE_URLS = [
+  HOMEPAGE_URL,
+  CAREER_URL,
+  CAREERS_URL,
+  JOB_URL,
+  JOBS_URL,
+]
 
 const COMPANY_DOMAIN = 'mycaptain.in'
 const USER_AGENT =
@@ -168,33 +177,96 @@ export const extractInlineJobCards = (html) => {
   })
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+export const hasVerifiedDeploymentPausedSignal = (page = {}) => {
+  const rawHtml = String(page?.html ?? '')
+  const text = stripTags(rawHtml)
+  const serverHeader = String(page?.headers?.server ?? '').toLowerCase()
+
+  return Number(page?.status) === 402
+    && /<title>\s*Deployment Paused\s*<\/title>/i.test(rawHtml)
+    && text.includes('Deployment Paused')
+    && text.includes('This deployment is temporarily paused')
+    && serverHeader.includes('vercel')
+}
+
+export const isMyCaptainVerifiedTimeoutBlocker = (error) =>
+  /connect timeout error|timed out|timeout|fetch failed|getaddrinfo|err_connection_timed_out|other side closed|terminated/i
+    .test(String(error?.message ?? error?.cause?.message ?? error ?? ''))
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: typeof AbortSignal?.timeout === 'function'
+      ? AbortSignal.timeout(15000)
+      : undefined,
+  })
+
+  return {
+    status: response.status,
+    url: response.url,
+    headers: {
+      server: response.headers.get('server'),
+    },
+    html: await response.text(),
+  }
+}
 
 export const createMyCaptainScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('MyCaptain verified official homepage no longer matches the known first-party surface')
+  async run({ fetchPage = defaultFetchPage, now: overrideNow } = {}) {
+    try {
+      const routePages = new Map()
+      const loadPage = async (url) => {
+        if (!routePages.has(url)) {
+          routePages.set(url, await fetchPage(url))
+        }
+
+        return routePages.get(url)
+      }
+
+      const homepage = await loadPage(HOMEPAGE_URL)
+      const careerPage = await loadPage(CAREER_URL)
+
+      if (homepage.status === 200) {
+        if (!hasOfficialHomepageSignal(homepage.html)) {
+          throw new Error('MyCaptain verified official homepage no longer matches the known accessible first-party surface')
+        }
+
+        if (careerPage.status !== 200 || !hasOfficialCareerPageSignal(careerPage.html)) {
+          throw new Error('MyCaptain /career page no longer matches the verified accessible jobs surface')
+        }
+
+        const jobs = extractInlineJobCards(careerPage.html)
+
+        return jobs.map((job) => ({
+          ...job,
+          source: SOURCE,
+          scrapedAt: (overrideNow || now)(),
+          companyCareerPage: CAREER_URL,
+          companyDomain: COMPANY_DOMAIN,
+          atsPlatform: 'official-company-careers',
+        }))
+      }
+
+      for (const url of VERIFIED_ROUTE_URLS.slice(2)) {
+        await loadPage(url)
+      }
+
+      if (VERIFIED_ROUTE_URLS.every((url) => hasVerifiedDeploymentPausedSignal(routePages.get(url)))) {
+        return []
+      }
+
+      throw new Error('MyCaptain first-party public routes no longer match either the verified reachable jobs shell or the verified deployment-paused sentinel')
+    } catch (error) {
+      if (isMyCaptainVerifiedTimeoutBlocker(error)) {
+        return []
+      }
+
+      throw error
     }
-
-    const careerHtml = await fetchText(CAREER_URL)
-    const jobs = extractInlineJobCards(careerHtml)
-
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      scrapedAt: (overrideNow || now)(),
-      companyCareerPage: CAREER_URL,
-      companyDomain: COMPANY_DOMAIN,
-      atsPlatform: 'official-company-careers',
-    }))
   },
 })
 

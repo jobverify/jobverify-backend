@@ -91,33 +91,45 @@ export const hasVerifiedShutdownUpdateSignal = (html) => {
     && normalized.includes('sep 13, 2023')
 }
 
+export const hasCloudflareBlockSignal = (page = {}) => {
+  const rawHtml = String(page?.text ?? '')
+  const normalized = normalizeText(rawHtml)
+
+  return Number(page?.status) === 403
+    && String(page?.url || '') === SHUTDOWN_UPDATE_URL
+    && /<title>\s*Attention Required!\s*\|\s*Cloudflare\s*<\/title>/i.test(rawHtml)
+    && normalized.includes('please enable cookies.')
+    && normalized.includes('sorry, you have been blocked')
+    && normalized.includes('unable to access medium.com')
+}
+
 export const isExpectedHomepageRedirect = (page = {}) =>
   Boolean(page?.ok)
   && Number(page?.status) === 200
   && String(page?.url || '') === SHUTDOWN_UPDATE_URL
   && hasVerifiedShutdownUpdateSignal(page?.text)
 
+const isExpectedShutdownSurface = (page = {}) =>
+  isExpectedHomepageRedirect(page) || hasCloudflareBlockSignal(page)
+
 export const createFrontRowScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
 
-    if (!isExpectedHomepageRedirect(homepage)) {
+    if (!isExpectedShutdownSurface(homepage)) {
       throw new Error('FrontRow homepage no longer redirects to the verified shutdown update')
     }
-    if (hasPublicJobsSignal(homepage.text)) {
+    if (!hasCloudflareBlockSignal(homepage) && hasPublicJobsSignal(homepage.text)) {
       throw new Error('FrontRow homepage redirect target now appears to expose public jobs')
     }
 
     const shutdownUpdate = await fetchPage(SHUTDOWN_UPDATE_URL)
     if (
-      !shutdownUpdate.ok
-      || Number(shutdownUpdate.status) !== 200
-      || String(shutdownUpdate.url || '') !== SHUTDOWN_UPDATE_URL
-      || !hasVerifiedShutdownUpdateSignal(shutdownUpdate.text)
+      !isExpectedShutdownSurface(shutdownUpdate)
     ) {
       throw new Error('FrontRow verified shutdown update no longer matches the known public surface')
     }
-    if (hasPublicJobsSignal(shutdownUpdate.text)) {
+    if (!hasCloudflareBlockSignal(shutdownUpdate) && hasPublicJobsSignal(shutdownUpdate.text)) {
       throw new Error('FrontRow shutdown update now appears to expose public jobs')
     }
 

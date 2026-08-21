@@ -71,6 +71,42 @@ const jobDetailShellHtml = `
   </html>
 `
 
+const currentJobDetailShellHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title></title>
+    </head>
+    <body>
+      <script>
+        window.__NUXT__ = {};
+        window.__NUXT__.config = {
+          public: {
+            "job-folder": "ironmountain-jobs",
+            source: "solr",
+            "x-origin": "ironmountain.jobs"
+          }
+        };
+      </script>
+      <script type="application/json" data-nuxt-data="nuxt-app" data-ssr="false" id="__NUXT_DATA__">[{"prerenderedAt":1,"serverRendered":2},1782489944046,false]</script>
+    </body>
+  </html>
+`
+
+const vercelSecurityCheckpointHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Vercel Security Checkpoint</title>
+    </head>
+    <body>
+      <main>
+        <h1>Vercel Security Checkpoint</h1>
+      </main>
+    </body>
+  </html>
+`
+
 const sitemapXml = `
   <?xml version="1.0" encoding="UTF-8"?>
   <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -112,6 +148,7 @@ test('Iron Mountain India pins the verified first-party careers handoff and site
   assert.equal(ironMountainIndia.hasOfficialAboutPageCareersSignal('<html><title>About Another Company</title></html>'), false)
   assert.equal(ironMountainIndia.hasOfficialJobsBoardSignal(jobsBoardHtml), true)
   assert.equal(ironMountainIndia.hasOfficialJobsBoardSignal('<html><title>Jobs</title></html>'), false)
+  assert.equal(ironMountainIndia.hasVercelSecurityCheckpointSignal(vercelSecurityCheckpointHtml), true)
   assert.deepEqual(ironMountainIndia.extractSitemapEntries(sitemapXml), [
     {
       url: 'https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/',
@@ -307,6 +344,47 @@ test('Iron Mountain India can recover with browser-backed first-party HTML when 
   ])
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'ironmountainindia')
+})
+
+test('Iron Mountain India also runs when the first-party about page is Vercel-checkpointed but the NLX board stays public', async () => {
+  const ironMountainIndia = await loadIronMountainIndiaModule()
+  const requestedUrls = []
+
+  const jobs = await ironMountainIndia.createIronMountainIndiaScraper({
+    now: () => '2026-08-13T18:30:00.000Z',
+  }).run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === ABOUT_PAGE_URL) {
+        return { status: 429, url, html: vercelSecurityCheckpointHtml }
+      }
+
+      if (url === CAREERS_URL) {
+        return { status: 200, url, html: jobsBoardHtml }
+      }
+
+      if (url === JOBS_SITEMAP_URL) {
+        return { status: 200, url, html: sitemapXml }
+      }
+
+      if (/^https:\/\/ironmountain\.jobs\/.+\/job\/$/i.test(url)) {
+        return { status: 200, url, html: currentJobDetailShellHtml }
+      }
+
+      throw new Error(`Unexpected Iron Mountain India fixture URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    ABOUT_PAGE_URL,
+    CAREERS_URL,
+    JOBS_SITEMAP_URL,
+    'https://ironmountain.jobs/mumbai-ind/business-development-manager-psu/CA3B2FE418DD4D93BA414E6E9A0A9EE8/job/',
+    'https://ironmountain.jobs/bangalore-ind/information-security-lead/20AC18A6C9E94DC496CD2CF69B073684/job/',
+  ])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].scrapedAt, '2026-08-13T18:30:00.000Z')
 })
 
 test('Iron Mountain India also falls back to browser-backed HTML when direct requests time out', async () => {

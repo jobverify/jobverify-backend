@@ -14,6 +14,7 @@ const homepageHtml = `
 <html lang="en">
   <head>
     <title>CreatED | Inspiring the Innovators of Tomorrow</title>
+    <link rel="canonical" href="https://www.create-ed.in"/>
   </head>
   <body>
     <main>
@@ -32,6 +33,7 @@ const aboutHtml = `
 <html lang="en">
   <head>
     <title>About | CreatED</title>
+    <link rel="canonical" href="https://www.create-ed.in/about"/>
   </head>
   <body>
     <main>

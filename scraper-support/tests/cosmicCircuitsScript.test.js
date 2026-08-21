@@ -90,34 +90,51 @@ test('Cosmic Circuits falls back to browser text when the verified parent career
   assert.deepEqual(jobs, [])
 })
 
-test('Cosmic Circuits aborts retries when the verified parent careers page remains blocked after fallback', async () => {
+test('Cosmic Circuits returns [] when the verified parent careers page remains Cloudflare-blocked after fallback', async () => {
   const cosmic = await loadModule()
   const requested = []
 
-  await assert.rejects(
-    cosmic.createCosmicCircuitsScraper().run({
-      fetchText: async (url) => {
-        requested.push({ type: 'text', url })
-        throw new Error(`HTTP 403 for ${url}`)
-      },
-      fetchBrowserText: async (url) => {
-        requested.push({ type: 'browser', url })
-        throw new Error(`HTTP 403 for ${url}`)
-      },
-    }),
-    (error) => {
-      assert.match(error.message, /Cadence parent careers surface remains blocked/i)
-      assert.equal(error.abortRetries, true)
-      assert.equal(error.softFailure, true)
-      assert.equal(error.upstreamOutage, true)
-      return true
+  const fetchPageCalls = []
+  const jobs = await cosmic.createCosmicCircuitsScraper().run({
+    fetchText: async (url) => {
+      requested.push({ type: 'text', url })
+      throw new Error(`HTTP 403 for ${url}`)
     },
-  )
+    fetchBrowserText: async (url) => {
+      requested.push({ type: 'browser', url })
+      throw new Error(`HTTP 403 for ${url}`)
+    },
+    fetchPage: async (url) => {
+      fetchPageCalls.push(url)
+      return {
+        status: 403,
+        url,
+        headers: {
+          server: 'cloudflare',
+          'cf-ray': 'a2abf7655991a91a-MAA',
+          'cf-mitigated': 'challenge',
+        },
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head><title>Just a moment...</title></head>
+            <body>
+              <main class="main-content">
+                <h1>Enable JavaScript and cookies to continue</h1>
+              </main>
+            </body>
+          </html>
+        `,
+      }
+    },
+  })
 
   assert.deepEqual(requested, [
     { type: 'text', url: cosmic.CAREERS_URL },
     { type: 'browser', url: cosmic.CAREERS_URL },
   ])
+  assert.deepEqual(fetchPageCalls, [cosmic.CAREERS_URL])
+  assert.deepEqual(jobs, [])
 })
 
 test('Cosmic Circuits fails closed when the parent careers surface drifts or becomes brand-specific', async () => {

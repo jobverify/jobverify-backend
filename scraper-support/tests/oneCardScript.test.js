@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-17T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-14T00:00:00.000Z'
 
 const officialCareersHtml = `
 <!doctype html>
@@ -40,6 +40,21 @@ const officialCareersHtml = `
 </html>
 `
 
+const verifiedHandoffGateHtml = `
+<html>
+  <title>You are being redirected...</title>
+  <noscript>Javascript is required. Please enable javascript before you are allowed to see this page.</noscript>
+  <script>
+    var sucuri_cloudproxy_js = '';
+  </script>
+</html>
+`
+
+const verifiedBrokenJobsApiText = JSON.stringify({
+  success: false,
+  error: 'invalid json response body at https://paa.fplabs.tech/proxy/CRUD/api/test-jobs?populate=* reason: Unexpected token \'<\', "<!DOCTYPE "... is not valid JSON',
+})
+
 const jobsPayload = {
   success: true,
   data: {
@@ -51,7 +66,7 @@ const jobsPayload = {
           location: null,
           experience: '2-4 years',
           description: '<p>Build credit insights.</p>',
-          publishedAt: '2026-07-10T11:52:00.000Z',
+          publishedAt: '2026-08-10T11:52:00.000Z',
         },
       },
       {
@@ -61,7 +76,7 @@ const jobsPayload = {
           location: 'Bengaluru',
           experience: null,
           description: null,
-          publishedAt: '2026-07-15T08:00:00.000Z',
+          publishedAt: '2026-08-12T08:00:00.000Z',
         },
       },
     ],
@@ -76,28 +91,6 @@ const jobsPayload = {
   },
 }
 
-const emptyJobsPayload = {
-  success: true,
-  data: {
-    data: [],
-    meta: {
-      pagination: {
-        page: 1,
-        pageSize: 25,
-        pageCount: 0,
-        total: 0,
-      },
-    },
-  },
-}
-
-const inaccessibleJobsPayload = {
-  success: true,
-  data: {
-    data: null,
-  },
-}
-
 const loadOneCardModule = async () => {
   try {
     return await import('../../scraper/onecard/script.js')
@@ -109,7 +102,7 @@ const loadOneCardModule = async () => {
 const replaceJobsApiKey = (html, replacement) =>
   html.replace(/hr-read-only/g, replacement)
 
-test('OneCard scraper pins the verified official careers surface and embedded public jobs API config', async () => {
+test('OneCard scraper pins the verified Friday, August 14, 2026 careers page, FPL handoff gate, and broken public jobs API contract', async () => {
   const {
     COMPANY,
     OFFICIAL_APPLY_URL,
@@ -118,13 +111,16 @@ test('OneCard scraper pins the verified official careers surface and embedded pu
     OFFICIAL_JOBS_API_KEY,
     OFFICIAL_JOBS_API_URL,
     SOURCE,
-    createOneCardScraper,
+    VERIFIED_AT,
     extractOfficialJobsApiConfig,
     hasOfficialOneCardCareersSignals,
+    hasVerifiedFplHandoffGateSignal,
+    hasVerifiedBrokenPublicJobsApiError,
   } = await loadOneCardModule()
 
   assert.equal(COMPANY, 'OneCard')
   assert.equal(SOURCE, 'onecard')
+  assert.equal(VERIFIED_AT, '2026-08-14')
   assert.equal(OFFICIAL_CAREERS_URL, 'https://www.getonecard.app/careers/')
   assert.equal(OFFICIAL_CAREERS_HANDOFF_URL, 'https://www.fplabs.tech/careers/')
   assert.equal(
@@ -139,41 +135,112 @@ test('OneCard scraper pins the verified official careers surface and embedded pu
   })
   assert.equal(hasOfficialOneCardCareersSignals(officialCareersHtml), true)
   assert.equal(hasOfficialOneCardCareersSignals(replaceJobsApiKey(officialCareersHtml, 'wrong-key')), false)
-
-  const scraper = createOneCardScraper({
-    now: () => FIXED_SCRAPED_AT,
-  })
-
-  await assert.rejects(
-    scraper.run({
-      fetchText: async () => replaceJobsApiKey(officialCareersHtml, 'wrong-key'),
-      fetchJson: async () => emptyJobsPayload,
-    }),
-    /verified official careers page no longer matches the trusted public surface/i,
-  )
+  assert.equal(hasVerifiedFplHandoffGateSignal(verifiedHandoffGateHtml), true)
+  assert.equal(hasVerifiedFplHandoffGateSignal('<html><title>Jobs</title></html>'), false)
+  assert.equal(hasVerifiedBrokenPublicJobsApiError(500, verifiedBrokenJobsApiText), true)
+  assert.equal(hasVerifiedBrokenPublicJobsApiError(500, JSON.stringify({ success: false, error: 'unexpected' })), false)
 })
 
-test('run maps verified OneCard jobs payload into Jobverify jobs and uses the official careers page as the source link', async () => {
-  const { createOneCardScraper } = await loadOneCardModule()
+test('OneCard returns an honest empty list while the verified FPL handoff remains gated and the embedded public jobs API keeps returning the same broken 500 contract', async () => {
+  const { createOneCardScraper, OFFICIAL_CAREERS_URL, OFFICIAL_CAREERS_HANDOFF_URL, OFFICIAL_JOBS_API_URL } = await loadOneCardModule()
   const scraper = createOneCardScraper({
     now: () => FIXED_SCRAPED_AT,
   })
   const requestedUrls = []
-  const requestedHeaders = []
+  const requestedOptions = []
 
   const jobs = await scraper.run({
-    fetchText: async () => officialCareersHtml,
-    fetchJson: async (url, options = {}) => {
+    fetchPage: async (url, options = {}) => {
       requestedUrls.push(url)
-      requestedHeaders.push(options.headers ?? {})
-      return jobsPayload
+      requestedOptions.push(options)
+
+      if (url === OFFICIAL_CAREERS_URL) {
+        return {
+          status: 200,
+          url,
+          finalUrl: url,
+          body: officialCareersHtml,
+          errorKind: null,
+        }
+      }
+
+      if (url === OFFICIAL_CAREERS_HANDOFF_URL) {
+        return {
+          status: 307,
+          url,
+          finalUrl: url,
+          body: verifiedHandoffGateHtml,
+          errorKind: null,
+        }
+      }
+
+      if (url === OFFICIAL_JOBS_API_URL) {
+        return {
+          status: 500,
+          url,
+          finalUrl: url,
+          body: verifiedBrokenJobsApiText,
+          errorKind: null,
+        }
+      }
+
+      assert.fail(`Unexpected URL requested: ${url}`)
     },
   })
 
   assert.deepEqual(requestedUrls, [
-    'https://ibffpublic6f2461135ffd1b6a80db296ec15abf.onrender.com/hr/jobs',
+    OFFICIAL_CAREERS_URL,
+    OFFICIAL_CAREERS_HANDOFF_URL,
+    OFFICIAL_JOBS_API_URL,
   ])
-  assert.equal(requestedHeaders[0]['x-api-key'], 'hr-read-only')
+  assert.equal(requestedOptions[2].headers['x-api-key'], 'hr-read-only')
+  assert.equal(requestedOptions[2].headers['Content-Type'], 'application/json')
+  assert.match(requestedOptions[2].accept, /application\/json/i)
+  assert.deepEqual(jobs, [])
+})
+
+test('OneCard still extracts jobs if the verified embedded public jobs API recovers and returns a healthy payload again', async () => {
+  const { createOneCardScraper, OFFICIAL_CAREERS_URL, OFFICIAL_CAREERS_HANDOFF_URL, OFFICIAL_JOBS_API_URL } = await loadOneCardModule()
+  const scraper = createOneCardScraper({
+    now: () => FIXED_SCRAPED_AT,
+  })
+
+  const jobs = await scraper.run({
+    fetchPage: async (url) => {
+      if (url === OFFICIAL_CAREERS_URL) {
+        return {
+          status: 200,
+          url,
+          finalUrl: url,
+          body: officialCareersHtml,
+          errorKind: null,
+        }
+      }
+
+      if (url === OFFICIAL_CAREERS_HANDOFF_URL) {
+        return {
+          status: 307,
+          url,
+          finalUrl: url,
+          body: verifiedHandoffGateHtml,
+          errorKind: null,
+        }
+      }
+
+      if (url === OFFICIAL_JOBS_API_URL) {
+        return {
+          status: 200,
+          url,
+          finalUrl: url,
+          body: JSON.stringify(jobsPayload),
+          errorKind: null,
+        }
+      }
+
+      assert.fail(`Unexpected URL requested: ${url}`)
+    },
+  })
+
   assert.deepEqual(jobs, [
     {
       title: 'Product Analyst',
@@ -191,7 +258,7 @@ test('run maps verified OneCard jobs payload into Jobverify jobs and uses the of
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: '2026-07-10',
+      postingDate: '2026-08-10',
       closingDate: null,
       jobDescription: 'Build credit insights.',
       source: 'onecard',
@@ -214,7 +281,7 @@ test('run maps verified OneCard jobs payload into Jobverify jobs and uses the of
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: '2026-07-15',
+      postingDate: '2026-08-12',
       closingDate: null,
       jobDescription: null,
       source: 'onecard',
@@ -224,24 +291,112 @@ test('run maps verified OneCard jobs payload into Jobverify jobs and uses the of
   ])
 })
 
-test('OneCard returns [] for the verified empty-board response and fails closed on malformed API payloads', async () => {
-  const { createOneCardScraper } = await loadOneCardModule()
+test('OneCard fails closed when the verified careers, handoff, or API surfaces drift materially', async () => {
+  const { createOneCardScraper, OFFICIAL_CAREERS_URL, OFFICIAL_CAREERS_HANDOFF_URL, OFFICIAL_JOBS_API_URL } = await loadOneCardModule()
   const scraper = createOneCardScraper({
     now: () => FIXED_SCRAPED_AT,
   })
 
-  const jobs = await scraper.run({
-    fetchText: async () => officialCareersHtml,
-    fetchJson: async () => emptyJobsPayload,
-  })
+  await assert.rejects(
+    scraper.run({
+      fetchPage: async (url) => {
+        if (url === OFFICIAL_CAREERS_URL) {
+          return {
+            status: 200,
+            url,
+            finalUrl: url,
+            body: replaceJobsApiKey(officialCareersHtml, 'wrong-key'),
+            errorKind: null,
+          }
+        }
 
-  assert.deepEqual(jobs, [])
+        return {
+          status: 307,
+          url,
+          finalUrl: url,
+          body: verifiedHandoffGateHtml,
+          errorKind: null,
+        }
+      },
+    }),
+    /verified onecard careers surfaces changed materially/i,
+  )
 
   await assert.rejects(
     scraper.run({
-      fetchText: async () => officialCareersHtml,
-      fetchJson: async () => inaccessibleJobsPayload,
+      fetchPage: async (url) => {
+        if (url === OFFICIAL_CAREERS_URL) {
+          return {
+            status: 200,
+            url,
+            finalUrl: url,
+            body: officialCareersHtml,
+            errorKind: null,
+          }
+        }
+
+        if (url === OFFICIAL_CAREERS_HANDOFF_URL) {
+          return {
+            status: 200,
+            url,
+            finalUrl: url,
+            body: '<html><title>Careers</title><body>Open positions</body></html>',
+            errorKind: null,
+          }
+        }
+
+        if (url === OFFICIAL_JOBS_API_URL) {
+          return {
+            status: 500,
+            url,
+            finalUrl: url,
+            body: verifiedBrokenJobsApiText,
+            errorKind: null,
+          }
+        }
+
+        assert.fail(`Unexpected URL requested: ${url}`)
+      },
     }),
-    /public jobs api no longer exposes the expected data array/i,
+    /verified onecard careers surfaces changed materially/i,
+  )
+
+  await assert.rejects(
+    scraper.run({
+      fetchPage: async (url) => {
+        if (url === OFFICIAL_CAREERS_URL) {
+          return {
+            status: 200,
+            url,
+            finalUrl: url,
+            body: officialCareersHtml,
+            errorKind: null,
+          }
+        }
+
+        if (url === OFFICIAL_CAREERS_HANDOFF_URL) {
+          return {
+            status: 307,
+            url,
+            finalUrl: url,
+            body: verifiedHandoffGateHtml,
+            errorKind: null,
+          }
+        }
+
+        if (url === OFFICIAL_JOBS_API_URL) {
+          return {
+            status: 500,
+            url,
+            finalUrl: url,
+            body: '{"success":false,"error":"unexpected"}',
+            errorKind: null,
+          }
+        }
+
+        assert.fail(`Unexpected URL requested: ${url}`)
+      },
+    }),
+    /verified onecard careers surfaces changed materially/i,
   )
 })

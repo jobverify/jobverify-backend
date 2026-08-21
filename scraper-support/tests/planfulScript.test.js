@@ -26,19 +26,19 @@ const currentOfficialCareersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title data-react-helmet="true">Join the Planful Team | Planful Jobs</title>
-    <meta name="description" content="Planful is hiring! Join the team building the future of financial performance management." />
+    <title data-react-helmet="true">Open Roles at Planful | Planful Careers</title>
+    <meta name="description" content="Open Roles at Planful and join the team building the future of financial performance management." />
   </head>
   <body>
     <main>
-      <h2>A Team of Champions</h2>
+      <h2>A team of Champions</h2>
+      <a href="/jobs/careers-list/">Join Our Team</a>
       <p>Your ideas. Your actions. Your spirit.</p>
       <section>
-        <h3>We Take Care of Our People</h3>
+        <h3>We take care of our people</h3>
       </section>
       <section>
-        <h2>Your Planful Journey Begins Today</h2>
-        <a href="/jobs/careers-list/">Explore Careers</a>
+        <a href="/life-at-planful/">Learn About Life at Planful</a>
       </section>
     </main>
   </body>
@@ -65,13 +65,15 @@ const currentCareersListHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title data-react-helmet="true">Careers List - Planful</title>
+    <title data-react-helmet="true">Open Roles at Planful | Planful Careers</title>
   </head>
   <body>
     <main>
       <h1>Your Planful Journey Begins Today</h1>
-      <p>Get Started with Planful</p>
-      <div id="grnhse_app"></div>
+      <span>Team</span>
+      <span>Location</span>
+      <button>Reset</button>
+      <script>window.__PLANFUL_GREENHOUSE__ = true;</script>
     </main>
   </body>
 </html>
@@ -140,7 +142,7 @@ test('Planful helpers stay pinned to the verified first-party careers pages and 
   )
 })
 
-test('Planful accepts the current July 26, 2026 first-party careers shells', async () => {
+test('Planful accepts the current August 14, 2026 first-party careers shells', async () => {
   const planful = await loadPlanfulModule()
 
   assert.equal(planful.hasOfficialCareersSignal(currentOfficialCareersHtml), true)

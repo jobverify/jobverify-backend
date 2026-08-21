@@ -5,7 +5,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'wttinternationalprivatelimited'
 export const COMPANY = 'WTT International Private Limited'
-export const VERIFIED_AT = '2026-07-13'
+export const VERIFIED_AT = '2026-08-14'
 export const PARKED_ROUTE_URLS = [
   'https://wttinternational.com/',
   'https://www.wttinternational.com/',
@@ -61,6 +61,14 @@ const DNS_RESOLUTION_FAILURE_PATTERNS = [
   /\bnxdomain\b/i,
 ]
 
+const UNREACHABLE_FIRST_PARTY_PATTERNS = [
+  /\bconnect timeout\b/i,
+  /\bund_err_connect_timeout\b/i,
+  /\betimedout\b/i,
+  /\btimed out\b/i,
+  /\baborted due to timeout\b/i,
+]
+
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
@@ -96,6 +104,9 @@ export const hasPublicJobsSignal = (value) =>
 export const hasDnsResolutionFailure = (value) =>
   DNS_RESOLUTION_FAILURE_PATTERNS.some((pattern) => pattern.test(String(value ?? '')))
 
+export const hasUnreachableFirstPartyError = (value) =>
+  UNREACHABLE_FIRST_PARTY_PATTERNS.some((pattern) => pattern.test(String(value ?? '')))
+
 export const hasVerifiedRedirectShell = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
@@ -125,6 +136,22 @@ export const isVerifiedUnresolvedFirstPartySurface = (page = {}) => {
       String(page?.status) === 'FETCH_ERROR'
       && hasDnsResolutionFailure(page?.errorMessage)
       && normalizedText === ''
+    )
+}
+
+export const hasVerifiedUnavailableFirstPartySurface = (page = {}) => {
+  const normalizedText = normalizeWhitespace(page?.html)
+
+  return normalizedText === ''
+    && (
+      (
+        String(page?.status) === 'FETCH_ERROR'
+        && hasUnreachableFirstPartyError(page?.errorMessage)
+      )
+      || (
+        String(page?.status) === 'DNS_ERROR'
+        && hasDnsResolutionFailure(page?.errorMessage)
+      )
     )
 }
 
@@ -166,6 +193,10 @@ export const createWttInternationalPrivateLimitedScraper = () => ({
         throw new Error(`WTT International candidate parked route now appears to expose public jobs: ${page?.url || url}`)
       }
 
+      if (hasVerifiedUnavailableFirstPartySurface(page)) {
+        continue
+      }
+
       if (Number(page?.status) !== 200 || !hasVerifiedRedirectShell(page?.html)) {
         throw new Error(`WTT International verified parked first-party route changed: ${page?.url || url}`)
       }
@@ -174,6 +205,10 @@ export const createWttInternationalPrivateLimitedScraper = () => ({
     for (const url of LANDER_URLS) {
       const page = await fetchPage(url)
 
+      if (hasVerifiedUnavailableFirstPartySurface(page)) {
+        continue
+      }
+
       if (!hasVerifiedGoDaddyLanderRedirect(page, getExpectedForSaleHost(url))) {
         throw new Error(`WTT International verified lander redirect changed: ${page?.url || url}`)
       }
@@ -181,6 +216,10 @@ export const createWttInternationalPrivateLimitedScraper = () => ({
 
     for (const url of UNRESOLVED_DOMAIN_URLS) {
       const page = await fetchPage(url)
+
+      if (hasVerifiedUnavailableFirstPartySurface(page)) {
+        continue
+      }
 
       if (!isVerifiedUnresolvedFirstPartySurface(page)) {
         throw new Error(`WTT International verified unresolved first-party surface changed: ${page?.url || url}`)

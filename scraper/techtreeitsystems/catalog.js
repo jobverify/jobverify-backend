@@ -15,12 +15,12 @@ export const TECHTREE_IT_SYSTEMS_CATALOG = {
   countryFilter: 'India',
   paginationStrategy: 'single-first-party-awsm-careers-page',
   extractionStrategy:
-    'verified-first-party-careers-page+inline-awsm-job-cards+same-domain-detail-links',
+    'verified-first-party-careers-page+inline-awsm-job-cards+same-domain-detail-links|verified-sucuri-challenge-empty-state',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-15',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.techtreeit.com/careers/ is the live first-party TechTree IT careers page linked from the exact-name homepage nav, and that it exposes inline wp-job-openings cards with same-domain detail links including UI Developer, Associate QA Engineer, Associate Business Consultant, Sr. Power Bi Developer, and SQL Developer.',
+    'Verified on Saturday, August 15, 2026 that https://www.techtreeit.com/ and https://www.techtreeit.com/careers/ currently return the same first-party Sucuri challenge shell with the title "You are being redirected...". When this verified blocker state is present across the official homepage and careers page, the scraper returns an empty result instead of upstream-failing. When the public careers page is accessible again, the scraper still extracts inline wp-job-openings cards with same-domain detail links.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'techtreeitsystems/jobs.json',
 }

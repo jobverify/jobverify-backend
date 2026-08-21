@@ -9,7 +9,7 @@ export const CBNITS_CATALOG = {
   officialBrandName: 'CBNITS',
   adapter: 'script',
   homepageUrl: 'https://www.cbnits.com/',
-  companyCareerPage: 'https://www.cbnits.com/career',
+  companyCareerPage: 'https://www.cbnits.com/careers',
   atsPlatform: 'first-party-spa-careers-shell-no-public-jobs-html',
   countryFilter: 'India',
   paginationStrategy: 'first-party-careers-spa-shell-validation',
@@ -17,9 +17,9 @@ export const CBNITS_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'cbnits.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-08-14',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.cbnits.com/career remained the exact-name first-party CBNITS careers route, that search-engine rendering still described "Current career opportunities at CBNITS", and that the raw first-party HTML response fetched on the verified date was only a client-rendered SPA shell with a title for CBNITS, a module bundle, and <div id="root"></div> rather than any trustworthy server-rendered public jobs payload.',
+    'Verified on Friday, August 14, 2026 that https://www.cbnits.com/careers is the live first-party CBNITS careers route, and that the raw first-party HTML response remains a client-rendered SPA shell with the title "Agentic AI, Cybersecurity & Intelligent Enterprise Solutions | CBNITS", a current /assets/index-*.js module bundle, and <div id="root"></div> rather than any trustworthy server-rendered public jobs payload.',
   dryRunFile: 'cbnits/jobs.json',
   modulePath: path.join(currentDir, 'script.js'),
 }

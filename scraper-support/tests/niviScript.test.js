@@ -5,13 +5,13 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Nivi — Messaging-First Health Platform for Emerging Markets</title>
+    <title>Nivi: outcomes driven by insight</title>
     <meta
       name="description"
       content="Nivi is a messaging-first health platform delivering consumer insights, engagement innovation, and health outcomes at scale across emerging markets."
     />
     <meta name="author" content="Nivi Inc." />
-    <script type="module" crossorigin src="/assets/index-CKl-480x.js"></script>
+    <script type="module" crossorigin src="/assets/index-tmZUd8-T.js"></script>
   </head>
   <body>
     <div id="root"></div>
@@ -61,15 +61,15 @@ test('NIVI sentinel stays pinned to the verified homepage shell and client-bundl
   assert.equal(nivi.SOURCE, 'nivi')
   assert.equal(nivi.COMPANY, 'NIVI')
   assert.equal(nivi.OFFICIAL_BRAND_NAME, 'Nivi')
-  assert.equal(nivi.VERIFIED_ON, '2026-07-16')
+  assert.equal(nivi.VERIFIED_ON, '2026-08-21')
   assert.equal(nivi.HOMEPAGE_URL, 'https://nivi.io/')
   assert.equal(nivi.ABOUT_URL, 'https://nivi.io/about')
   assert.equal(nivi.CAREERS_URL, 'https://nivi.io/careers')
-  assert.equal(nivi.CLIENT_BUNDLE_URL, 'https://nivi.io/assets/index-CKl-480x.js')
+  assert.equal(nivi.CLIENT_BUNDLE_URL, 'https://nivi.io/assets/index-tmZUd8-T.js')
   assert.match(nivi.VERIFIED_SURFACE_SUMMARY, /No Open Positions/i)
 
   assert.equal(nivi.hasOfficialHomepageShellSignal(homepageHtml), true)
-  assert.equal(nivi.extractBundleAssetPath(homepageHtml), '/assets/index-CKl-480x.js')
+  assert.equal(nivi.extractBundleAssetPath(homepageHtml), '/assets/index-tmZUd8-T.js')
   assert.equal(nivi.hasVerifiedAboutCtaSignal(aboutBundleSnippet), true)
   assert.equal(nivi.hasVerifiedNoOpenPositionsSignal(aboutBundleSnippet), true)
   assert.equal(nivi.bundleExposesPublicJobListings(aboutBundleSnippet), false)
@@ -98,7 +98,7 @@ test('NIVI returns [] only while the verified client bundle keeps the no-open-po
     fetchText: async (url) => {
       requestedText.push(url)
 
-      if (url === nivi.CLIENT_BUNDLE_URL) {
+      if (url === 'https://nivi.io/assets/index-tmZUd8-T.js') {
         return aboutBundleSnippet
       }
 
@@ -111,7 +111,7 @@ test('NIVI returns [] only while the verified client bundle keeps the no-open-po
     nivi.ABOUT_URL,
     nivi.CAREERS_URL,
   ])
-  assert.deepEqual(requestedText, [nivi.CLIENT_BUNDLE_URL])
+  assert.deepEqual(requestedText, ['https://nivi.io/assets/index-tmZUd8-T.js'])
   assert.deepEqual(jobs, [])
 })
 

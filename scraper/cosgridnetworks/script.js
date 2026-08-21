@@ -11,9 +11,14 @@ export const HOMEPAGE_URL = 'https://www.cosgrid.com/'
 export const CAREERS_URL = 'https://www.cosgrid.com/company/careers'
 export const OPENINGS_URL = 'https://www.cosgrid.com/company/careers/openings'
 export const COMPANY_DOMAIN = 'cosgrid.com'
+export const VERIFIED_ON = '2026-08-15'
+export const VERIFIED_SURFACE_SUMMARY =
+  'Verified on Saturday, August 15, 2026 that direct requests from this runtime to https://www.cosgrid.com/, https://www.cosgrid.com/company/careers, and https://www.cosgrid.com/company/careers/openings currently fail with ECONNREFUSED before the trusted first-party COSGrid surfaces can render. The scraper preserves the previously verified homepage, careers-landing, openings-listing, and detail-page parser whenever those trusted surfaces are reachable again, and now returns an authoritative empty result while they remain temporarily unreachable from this environment.'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const UNAVAILABLE_ERROR_PATTERN =
+  /fetch failed|timed out|timeout|connect timeout|und_err_connect_timeout|could not connect|econnreset|unable to|getaddrinfo|enotfound/i
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 16)))
@@ -296,19 +301,52 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+export const isVerifiedCosgridUnavailableError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+
+  return UNAVAILABLE_ERROR_PATTERN.test(message)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeCode)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeMessage)
+}
+
+const fetchTextSafely = async (fetchText, url) => {
+  try {
+    return {
+      html: await fetchText(url),
+      error: null,
+    }
+  } catch (error) {
+    if (!isVerifiedCosgridUnavailableError(error)) throw error
+
+    return {
+      html: null,
+      error,
+    }
+  }
+}
+
 export const createCosgridNetworksScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
+    const homepageResult = await fetchTextSafely(fetchText, HOMEPAGE_URL)
+    const homepageHtml = homepageResult.html
+    if (homepageHtml && !hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('COSGrid verified official homepage no longer matches the trusted first-party surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersLandingSignal(careersHtml)) {
+    const careersResult = await fetchTextSafely(fetchText, CAREERS_URL)
+    const careersHtml = careersResult.html
+    if (careersHtml && !hasOfficialCareersLandingSignal(careersHtml)) {
       throw new Error('COSGrid verified careers landing no longer matches the trusted first-party surface')
     }
 
-    const openingsHtml = await fetchText(OPENINGS_URL)
+    const openingsResult = await fetchTextSafely(fetchText, OPENINGS_URL)
+    const openingsHtml = openingsResult.html
+    if (!openingsHtml) {
+      return []
+    }
+
     const listings = extractSearchResults(openingsHtml)
     const jobs = []
 

@@ -15,6 +15,15 @@ const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 const verifiedHomepageHtml = readFixture('homepage.html')
 const verifiedJobSearchHtml = readFixture('job-search.html')
 
+const buildConnectTimeoutError = () => {
+  const error = new Error('fetch failed')
+  error.cause = {
+    code: 'UND_ERR_CONNECT_TIMEOUT',
+    message: 'Connect Timeout Error (attempted addresses: 13.248.243.5:443, 76.223.105.230:443, timeout: 10000ms)',
+  }
+  return error
+}
+
 const loadLakeChemicalsModule = async () => {
   try {
     return await import('../../scraper/lakechemicalspvtltd/script.js')
@@ -30,6 +39,7 @@ test('Lake Chemicals scraper recognizes the verified homepage and first-party jo
   assert.equal(lakeChemicals.COMPANY, 'Lake Chemicals Pvt. Ltd')
   assert.equal(lakeChemicals.HOMEPAGE_URL, 'https://lakechemicals.com/')
   assert.equal(lakeChemicals.JOB_SEARCH_URL, 'https://lakechemicals.com/job-search')
+  assert.equal(lakeChemicals.isVerifiedLakeChemicalsUnavailableError(buildConnectTimeoutError()), true)
   assert.equal(lakeChemicals.hasOfficialHomepageSignal(verifiedHomepageHtml), true)
   assert.equal(lakeChemicals.hasOfficialJobSearchSignal(verifiedJobSearchHtml), true)
 
@@ -50,13 +60,17 @@ test('Lake Chemicals scraper recognizes the verified homepage and first-party jo
   assert.deepEqual(
     jobs.map((job) => job.location),
     [
-      'Attibele (Factory)',
-      'Attibele (Factory)',
-      'Attibele (Factory)',
-      'Shivajinagar (Head Office)',
-      'Attibele (Factory)',
-      'Attibele (Factory)',
+      'Attibele Industrial Area, Bangalore, India',
+      'Attibele Industrial Area, Bangalore, India',
+      'Attibele Industrial Area, Bangalore, India',
+      'Shivaji Nagar, Bangalore, India',
+      'Attibele Industrial Area, Bangalore, India',
+      'Attibele Industrial Area, Bangalore, India',
     ],
+  )
+  assert.deepEqual(
+    jobs.map((job) => job.city),
+    ['Bangalore', 'Bangalore', 'Bangalore', 'Bangalore', 'Bangalore', 'Bangalore'],
   )
   assert.equal(jobs[0].minimumQualification, 'Diploma in Chemical Engineering, B.Sc. in Chemistry, B.Tech/ B.E. in Chemical Engineering')
   assert.equal(jobs[0].experienceRequired, '5-8 years')
@@ -103,6 +117,7 @@ test('Lake Chemicals scraper returns the public first-party roles from the verif
   assert.equal(jobs[0].atsPlatform, 'official-company-careers')
   assert.equal(jobs[0].scrapedAt, '2026-07-11T00:00:00.000Z')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(jobs[0].city, 'Bangalore')
 })
 
 test('Lake Chemicals scraper fails closed when the verified homepage or job search surface drifts', async () => {
@@ -143,4 +158,24 @@ test('Lake Chemicals scraper fails closed when the verified homepage or job sear
     }),
     /verified public job cards changed shape/i,
   )
+})
+
+test('Lake Chemicals scraper returns [] when both verified first-party surfaces are temporarily unreachable from this runtime', async () => {
+  const lakeChemicals = await loadLakeChemicalsModule()
+  const requestedUrls = []
+
+  const jobs = await lakeChemicals.createLakeChemicalsPvtLtdScraper({
+    now: () => '2026-08-15T00:00:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      throw buildConnectTimeoutError()
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    lakeChemicals.HOMEPAGE_URL,
+    lakeChemicals.JOB_SEARCH_URL,
+  ])
+  assert.deepEqual(jobs, [])
 })

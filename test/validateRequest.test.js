@@ -9,6 +9,7 @@ import {
 } from "../src/middleware/validateRequest.js";
 import {
   forgotPasswordValidation,
+  billingVerifyValidation,
   jobQueryValidation,
   registerValidation,
   resetPasswordValidation,
@@ -35,6 +36,35 @@ const runValidationChain = async (validators, req) => {
     await validator.run(req);
   }
 };
+
+for (const missingField of [
+  "providerOrderId",
+  "providerPaymentId",
+  "providerSignature",
+]) {
+  test(`billingVerifyValidation rejects requests missing ${missingField}`, async () => {
+    const req = {
+      body: {
+        purchaseId: "507f1f77bcf86cd799439011",
+        providerOrderId: "order_checkout_123",
+        providerPaymentId: "pay_checkout_123",
+        providerSignature: "a".repeat(64),
+      },
+    };
+    delete req.body[missingField];
+    const res = createResponseDouble();
+    let nextCalled = false;
+
+    await runValidationChain(billingVerifyValidation, req);
+    validateRequest(req, res, () => {
+      nextCalled = true;
+    });
+
+    assert.equal(nextCalled, false);
+    assert.equal(res.statusCode, 400);
+    assert.ok(res.body.errors.some((error) => error.path === missingField));
+  });
+}
 
 test("formatValidationErrors omits values for sensitive fields only", () => {
   const errors = formatValidationErrors([

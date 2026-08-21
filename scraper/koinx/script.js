@@ -6,7 +6,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'koinx'
 export const COMPANY = 'KoinX'
-export const VERIFIED_ON = '2026-08-02'
+export const VERIFIED_ON = '2026-08-14'
 export const HOMEPAGE_URL = 'https://www.koinx.com/careers'
 export const CAREERS_URL = 'https://wellfound.com/company/koinx/jobs'
 
@@ -28,12 +28,18 @@ const isBrowserFallbackError = (error) =>
 export const hasVerifiedHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
+  const hasVerifiedHandoff = /(?:angel\.co\/company\/koinx|wellfound\.com\/company\/koinx(?:\/jobs)?)/i.test(page)
 
   return /<title\b[^>]*>\s*Unleash Your Potential\s*\|\s*Exciting Career Opportunities At KoinX\s*\|\s*Join Our Team\s*<\/title>/i.test(page)
-    && text.includes('Careers At KoinX')
-    && text.includes('The Core of KoinX')
-    && text.includes('Committed To Your Success')
-    && /href=["']https:\/\/(?:angel\.co\/company\/koinx|wellfound\.com\/company\/koinx(?:\/jobs)?)["']/i.test(page)
+    && hasVerifiedHandoff
+    && (
+      (
+        text.includes('Careers At KoinX')
+        && text.includes('The Core of KoinX')
+        && text.includes('Committed To Your Success')
+      )
+      || /<iframe/i.test(page)
+    )
 }
 
 export const hasEmptyJobsSurfaceSignal = (html = '') => {
@@ -47,11 +53,32 @@ export const hasExpectedBlockedWellfoundSurface = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /<title\b[^>]*>\s*wellfound\.com\s*<\/title>/i.test(page)
-    && (
-      text.includes('Please enable JS and disable any ad blocker')
-      || /captcha-delivery\.com|challenge-platform\/scripts\/jsd\/main\.js/i.test(page)
-    )
+  return (
+    /<title\b[^>]*>\s*wellfound\.com\s*<\/title>/i.test(page)
+      && (
+        text.includes('Please enable JS and disable any ad blocker')
+        || /captcha-delivery\.com|challenge-platform\/scripts\/jsd\/main\.js/i.test(page)
+      )
+  ) || (
+    /<title\b[^>]*>\s*Just a moment\.\.\.\s*<\/title>/i.test(page)
+      && (
+        text.includes('Checking if the site connection is secure')
+        || text.includes('Enable JavaScript and cookies to continue')
+        || /Cloudflare Ray ID/i.test(text)
+      )
+  ) || (
+    /<title\b[^>]*>\s*Security Check\s*\|\s*Wellfound\s*<\/title>/i.test(page)
+      && (
+        text.includes('403 / Security check')
+        || text.includes('Before you continue, please verify your request.')
+        || text.includes('We need to confirm that this request is coming from a real browser before we send you to Wellfound.')
+      )
+      && (
+        text.includes('Enable JavaScript and cookies to continue')
+        || /Cloudflare Ray ID/i.test(text)
+        || text.includes('Back to Wellfound')
+      )
+  )
 }
 
 const defaultFetchPage = async (url) => {

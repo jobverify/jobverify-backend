@@ -50,6 +50,17 @@ const SMARTRECRUITERS_BOARD_HTML = `
 </html>
 `
 
+const SUCCESSOR_HOMEPAGE_INTERSTITIAL_HTML = `
+<!doctype html>
+<html>
+  <head><title>You are being redirected...</title></head>
+  <body>
+    <noscript>Javascript is required. Please enable javascript before you are allowed to see this page.</noscript>
+    <script>var sucuri_cloudproxy_js='enabled';</script>
+  </body>
+</html>
+`
+
 const smartRecruitersListingsPayload = {
   offset: 0,
   limit: 100,
@@ -368,4 +379,55 @@ test('Rave Technologies fails closed when the verified successor or SmartRecruit
     }),
     /no public India jobs/i,
   )
+})
+
+test('Rave Technologies tolerates the verified successor homepage interstitial when the careers handoff and SmartRecruiters board still match', async () => {
+  const rave = await loadScriptModule()
+
+  const successorHomepageBlocked = new Error(`HTTP 307 for ${rave.SUCCESSOR_HOMEPAGE_URL}`)
+  successorHomepageBlocked.status = 307
+  successorHomepageBlocked.responseBody = SUCCESSOR_HOMEPAGE_INTERSTITIAL_HTML
+
+  const retryWrappedError = new Error(
+    `[${rave.SOURCE}] All 3 attempts failed. Last error: HTTP 307 for ${rave.SUCCESSOR_HOMEPAGE_URL}`,
+  )
+  retryWrappedError.abortRetries = true
+  retryWrappedError.cause = successorHomepageBlocked
+
+  const jobs = await rave.createRaveTechnologiesScraper({ maxJobs: 1 }).run({
+    fetchText: async (url) => {
+      if (url === rave.SUCCESSOR_HOMEPAGE_URL) {
+        throw retryWrappedError
+      }
+      if (url === rave.CAREERS_URL) {
+        return SUCCESSOR_CAREERS_HTML
+      }
+      if (url === rave.SMARTRECRUITERS_BOARD_URL) {
+        return SMARTRECRUITERS_BOARD_HTML
+      }
+
+      throw new Error(`Unexpected Rave Technologies HTML fixture URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      if (
+        url
+        === 'https://api.smartrecruiters.com/v1/companies/NECSWS/postings?limit=100&country=in&offset=0'
+      ) {
+        return smartRecruitersListingsPayload
+      }
+      if (
+        url
+        === 'https://api.smartrecruiters.com/v1/companies/NECSWS/postings/744000140869519'
+      ) {
+        return smartRecruitersDetailPayload
+      }
+
+      throw new Error(`Unexpected Rave Technologies JSON fixture URL: ${url}`)
+    },
+    now: () => '2026-08-18T00:00:00.000Z',
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'ravetechnologies')
+  assert.equal(jobs[0].jobId, '744000140869519')
 })

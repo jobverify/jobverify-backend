@@ -5,6 +5,7 @@
 import { loadConfig } from '../utils/loadConfig.js'
 import { normalizeCity } from '../utils/cityNormalizer.js'
 import { extractJobDetail } from '../detailExtractors/index.js'
+import { parseRetryAfterHeader } from '../utils/fetch.js'
 import { isGroupedLocationLabel } from '../../src/utils/jobLocations.js'
 import { isJobInPublicLocationScope } from '../../src/utils/publicJobLocationScope.js'
 import { extractWorkdayDetailLocations } from './locationDetails.js'
@@ -12,8 +13,9 @@ import { extractWorkdayDetailLocations } from './locationDetails.js'
 const DEFAULT_COUNTRY_FACET_PARAMETER = 'locationCountry'
 const DEFAULT_WORKDAY_DETAIL_FETCH_CONCURRENCY = 4
 const DEFAULT_WORKDAY_REQUEST_TIMEOUT_MS = 20 * 1000
+const DEFAULT_WORKDAY_RATE_LIMIT_RETRY_DELAY_MS = 5 * 1000
 const WORKDAY_JOBS_API_PAGE_SIZE = 20
-const WORKDAY_JOBS_API_RETRY_ATTEMPTS = 2
+const WORKDAY_JOBS_API_RETRY_ATTEMPTS = 3
 const WORKDAY_JOBS_API_RETRY_BASE_DELAY_MS = 1000
 const WORKDAY_HOST_FAILURE_THRESHOLD = 2
 const WORKDAY_HOST_CIRCUIT_COOLDOWN_MS = 5 * 60 * 1000
@@ -33,6 +35,11 @@ const WORKDAY_OUTAGE_URL_PATTERNS = [
 ]
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const logRecoverableWorkdayNotice = (message) => {
+  // PowerShell rewrites stderr from native commands into NativeCommandError blocks.
+  console.log(message)
+}
 
 const createAuthoritativeWorkdayEmptyResult = () => {
   const jobs = []
@@ -279,6 +286,30 @@ const buildWorkdayOutageError = (source, url, cause = null) => (
   )
 )
 
+const applyWorkdayRetryDelayHint = (
+  error,
+  {
+    httpStatus = Number(error?.jobsApiHttpStatus ?? error?.httpStatus),
+    responseHeaders = null,
+  } = {},
+) => {
+  if (httpStatus !== 429) return error
+
+  const retryDelayMs = parseRetryAfterHeader(responseHeaders?.get?.('retry-after'))
+    ?? DEFAULT_WORKDAY_RATE_LIMIT_RETRY_DELAY_MS
+  error.retryDelayMs = retryDelayMs
+  return error
+}
+
+const resolveWorkdayRetryDelayMs = (
+  error,
+  attempt,
+  baseDelayMs = WORKDAY_JOBS_API_RETRY_BASE_DELAY_MS,
+) => Math.max(
+  baseDelayMs * (2 ** Math.max(0, attempt - 1)),
+  Number(error?.retryDelayMs) || 0,
+)
+
 const parseWorkdayApiErrorPayload = (bodyText) => {
   try {
     const payload = JSON.parse(bodyText)
@@ -324,6 +355,7 @@ const buildWorkdayApiFailureError = (source, url, payload, cause = null) => {
     error.softFailure = true
     error.upstreamOutage = true
     error.failureKind = 'network_or_timeout'
+    applyWorkdayRetryDelayHint(error, { httpStatus })
   } else if (httpStatus >= 400 && httpStatus <= 499) {
     error.abortRetries = true
   }
@@ -331,11 +363,20 @@ const buildWorkdayApiFailureError = (source, url, payload, cause = null) => {
   return error
 }
 
-const buildWorkdayHttpFailureError = (source, url, status) => (
+const buildWorkdayHttpFailureError = (
+  source,
+  url,
+  status,
+  responseHeaders = null,
+) => applyWorkdayRetryDelayHint(
   buildWorkdayApiFailureError(source, url, {
     errorCode: `HTTP_${status}`,
     httpStatus: status,
-  })
+  }),
+  {
+    httpStatus: status,
+    responseHeaders,
+  },
 )
 
 const validateWorkdayJobsApiPayload = (payload, {
@@ -603,6 +644,15 @@ export const extractCity = (location) => {
     if (areaMatch) {
       cityCandidate = areaMatch[1].trim();
     } else {
+      const normalizedWholeLocation = normalizeCity(loc);
+      if (
+        normalizedWholeLocation
+        && !/^india$/i.test(normalizedWholeLocation)
+        && normalizedWholeLocation !== loc
+      ) {
+        return normalizedWholeLocation;
+      }
+
       const commaParts = loc.split(',');
       if (commaParts.length > 1) {
         cityCandidate = /^india$/i.test(commaParts[0].trim())
@@ -762,7 +812,7 @@ const maybeDisableWorkdayDetailEnrichment = (detailPayload, detailEnrichmentStat
   detailEnrichmentState.disabled = true
   if (!detailEnrichmentState.noticeLogged) {
     detailEnrichmentState.noticeLogged = true
-    console.warn(`  [${source}] Workday detail requests became unstable; continuing with listing-backed data for the remaining jobs on this source.`)
+    logRecoverableWorkdayNotice(`  [${source}] Workday detail requests became unstable; continuing with listing-backed data for the remaining jobs on this source.`)
   }
 }
 
@@ -815,6 +865,24 @@ const isRetryableWorkdayJobsApiError = (error) => {
   return status === 429 || (status >= 500 && status <= 599)
 }
 
+const shouldCountWorkdayHostCircuitFailure = (error) => {
+  const status = Number(error?.jobsApiHttpStatus ?? error?.httpStatus)
+  if (status === 429) return false
+  return isTransientWorkdayError(error)
+}
+
+const didWorkdayHostCircuitOpen = (circuitBreaker, url, source) => {
+  try {
+    circuitBreaker.assertRequestAllowed(url, source)
+    return false
+  } catch (error) {
+    if (error?.name === 'WorkdayHostCircuitOpenError') {
+      return true
+    }
+    throw error
+  }
+}
+
 const getSetCookieHeaders = (headers) => {
   if (!headers) return []
   if (typeof headers.getSetCookie === 'function') {
@@ -845,33 +913,55 @@ const bootstrapWorkdayJobsApiSession = async ({
   source = 'workday',
   signal = null,
   requestTimeoutMs = DEFAULT_WORKDAY_REQUEST_TIMEOUT_MS,
+  retryBaseDelayMs = WORKDAY_JOBS_API_RETRY_BASE_DELAY_MS,
   circuitBreaker = workdayHostCircuitBreaker,
 }) => {
   if (!bootstrapUrl) return null
 
-  circuitBreaker.assertRequestAllowed(jobsApiUrl, source)
-  try {
-    const { response, html } = await fetchWorkdayResource(
-      bootstrapUrl,
-      {
-        headers: {
-          accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'accept-language': 'en-US',
-          'user-agent': WORKDAY_FETCH_USER_AGENT,
-        },
-      },
-      {
-        signal,
-        timeoutMs: requestTimeoutMs,
-        source,
-      },
-      async (response) => ({
-        response,
-        html: await response.text(),
-      }),
-    )
+  let lastError = null
 
-    if (!response.ok) {
+  for (let attempt = 1; attempt <= WORKDAY_JOBS_API_RETRY_ATTEMPTS; attempt += 1) {
+    throwIfAborted(signal)
+    circuitBreaker.assertRequestAllowed(jobsApiUrl, source)
+
+    try {
+      const { response, html } = await fetchWorkdayResource(
+        bootstrapUrl,
+        {
+          headers: {
+            accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'accept-language': 'en-US',
+            'user-agent': WORKDAY_FETCH_USER_AGENT,
+          },
+        },
+        {
+          signal,
+          timeoutMs: requestTimeoutMs,
+          source,
+        },
+        async (response) => ({
+          response,
+          html: await response.text(),
+        }),
+      )
+
+      if (!response.ok) {
+        if (hasWorkdayOutageSignal({
+          title: extractHtmlTitle(html),
+          html,
+          url: response.url,
+        })) {
+          throw buildWorkdayOutageError(source, bootstrapUrl)
+        }
+
+        throw buildWorkdayHttpFailureError(
+          source,
+          bootstrapUrl,
+          response.status,
+          response.headers,
+        )
+      }
+
       if (hasWorkdayOutageSignal({
         title: extractHtmlTitle(html),
         html,
@@ -880,28 +970,42 @@ const bootstrapWorkdayJobsApiSession = async ({
         throw buildWorkdayOutageError(source, bootstrapUrl)
       }
 
-      throw buildWorkdayHttpFailureError(source, bootstrapUrl, response.status)
-    }
+      const setCookies = getSetCookieHeaders(response.headers)
+      return {
+        bootstrapUrl,
+        origin: new URL(jobsApiUrl).origin,
+        cookieHeader: buildCookieHeader(setCookies),
+        csrfToken: extractCookieValue(setCookies, 'CALYPSO_CSRF_TOKEN'),
+      }
+    } catch (error) {
+      throwIfAborted(signal)
+      lastError = error
+      const retryableError = isRetryableWorkdayJobsApiError(error)
+      const countTowardHostCircuit = shouldCountWorkdayHostCircuitFailure(error)
 
-    if (hasWorkdayOutageSignal({
-      title: extractHtmlTitle(html),
-      html,
-      url: response.url,
-    })) {
-      throw buildWorkdayOutageError(source, bootstrapUrl)
-    }
+      if (retryableError && countTowardHostCircuit) {
+        circuitBreaker.recordFailure(jobsApiUrl, error)
+        if (didWorkdayHostCircuitOpen(circuitBreaker, jobsApiUrl, source)) {
+          throw markWorkdayTransportFailure(error)
+        }
+      }
 
-    const setCookies = getSetCookieHeaders(response.headers)
-    return {
-      bootstrapUrl,
-      origin: new URL(jobsApiUrl).origin,
-      cookieHeader: buildCookieHeader(setCookies),
-      csrfToken: extractCookieValue(setCookies, 'CALYPSO_CSRF_TOKEN'),
+      if (
+        error?.abortRetries === true
+        || attempt >= WORKDAY_JOBS_API_RETRY_ATTEMPTS
+        || !retryableError
+      ) {
+        if (!retryableError && countTowardHostCircuit) {
+          circuitBreaker.recordFailure(jobsApiUrl, error)
+        }
+        throw markWorkdayTransportFailure(error)
+      }
+
+      await delay(resolveWorkdayRetryDelayMs(error, attempt, retryBaseDelayMs))
     }
-  } catch (error) {
-    circuitBreaker.recordFailure(jobsApiUrl, error)
-    throw error
   }
+
+  throw lastError
 }
 
 export const fetchWorkdayJobsApiPage = async ({
@@ -926,6 +1030,7 @@ export const fetchWorkdayJobsApiPage = async ({
     source,
     signal,
     requestTimeoutMs,
+    retryBaseDelayMs,
     circuitBreaker,
   })
 
@@ -991,7 +1096,13 @@ export const fetchWorkdayJobsApiPage = async ({
           : null
 
         if (workdayApiFailure) {
-          throw buildWorkdayApiFailureError(source, jobsApiUrl, workdayApiFailure)
+          throw applyWorkdayRetryDelayHint(
+            buildWorkdayApiFailureError(source, jobsApiUrl, workdayApiFailure),
+            {
+              httpStatus: workdayApiFailure.httpStatus,
+              responseHeaders: response.headers,
+            },
+          )
         }
 
         if (hasWorkdayOutageSignal({
@@ -1002,7 +1113,12 @@ export const fetchWorkdayJobsApiPage = async ({
           throw buildWorkdayOutageError(source, jobsApiUrl)
         }
 
-        throw buildWorkdayHttpFailureError(source, jobsApiUrl, response.status)
+        throw buildWorkdayHttpFailureError(
+          source,
+          jobsApiUrl,
+          response.status,
+          response.headers,
+        )
       }
 
       if (/text\/html/i.test(contentType)) {
@@ -1027,18 +1143,29 @@ export const fetchWorkdayJobsApiPage = async ({
     } catch (error) {
       throwIfAborted(signal)
       lastError = error
-      circuitBreaker.recordFailure(jobsApiUrl, error)
+      const retryableError = isRetryableWorkdayJobsApiError(error)
+      const countTowardHostCircuit = shouldCountWorkdayHostCircuitFailure(error)
+
+      if (retryableError && countTowardHostCircuit) {
+        circuitBreaker.recordFailure(jobsApiUrl, error)
+        if (didWorkdayHostCircuitOpen(circuitBreaker, jobsApiUrl, source)) {
+          throw markWorkdayTransportFailure(error)
+        }
+      }
 
       if (
         error?.abortRetries === true
         ||
         attempt >= WORKDAY_JOBS_API_RETRY_ATTEMPTS
-        || !isRetryableWorkdayJobsApiError(error)
+        || !retryableError
       ) {
+        if (!retryableError && countTowardHostCircuit) {
+          circuitBreaker.recordFailure(jobsApiUrl, error)
+        }
         throw markWorkdayTransportFailure(error)
       }
 
-      await delay(retryBaseDelayMs * (2 ** (attempt - 1)))
+      await delay(resolveWorkdayRetryDelayMs(error, attempt, retryBaseDelayMs))
       throwIfAborted(signal)
     }
   }
@@ -1070,7 +1197,7 @@ const extractDetailedJobPayload = async (page, jobUrl, config, source) => {
       ...(await extractJobDetail({ provider: 'workday', html })),
     }
   } catch (error) {
-    console.warn(`  [${source}] Failed to enrich details for ${jobUrl}: ${error.message}`)
+    logRecoverableWorkdayNotice(`  [${source}] Failed to enrich details for ${jobUrl}: ${error.message}`)
     return emptyDetailPayload()
   }
 }
@@ -1169,7 +1296,7 @@ const fetchDetailedJobPayload = async (
     throwIfAborted(signal)
     circuitBreaker.recordFailure(jobUrl, error)
     if (shouldFallbackToListingDataAfterDetailFailure(error)) {
-      console.warn(`  [${source}] Failed to enrich details for ${jobUrl}; keeping listing data when summary location remains safely in scope: ${error.message}`)
+      logRecoverableWorkdayNotice(`  [${source}] Failed to enrich details for ${jobUrl}; keeping listing data when summary location remains safely in scope: ${error.message}`)
       return createFallbackDetailPayload(error)
     }
 
@@ -1177,7 +1304,7 @@ const fetchDetailedJobPayload = async (
       throw markWorkdayTransportFailure(error)
     }
 
-    console.warn(`  [${source}] Failed to enrich details for ${jobUrl}: ${error.message}`)
+    logRecoverableWorkdayNotice(`  [${source}] Failed to enrich details for ${jobUrl}: ${error.message}`)
     return emptyDetailPayload()
   }
 }
@@ -1226,6 +1353,7 @@ const runWorkdayJobsApiScraper = async ({
       source,
       signal,
       requestTimeoutMs,
+      retryBaseDelayMs,
       circuitBreaker,
     })
 

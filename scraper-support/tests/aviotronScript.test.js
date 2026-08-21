@@ -63,6 +63,15 @@ const publicJobsHtml = `
 </html>
 `
 
+const createUnavailableError = () => {
+  const error = new Error('fetch failed')
+  error.cause = {
+    code: 'UND_ERR_CONNECT_TIMEOUT',
+    message: 'Connect Timeout Error (attempted addresses: 76.223.105.230:443, 13.248.243.5:443, timeout: 10000ms)',
+  }
+  return error
+}
+
 const loadAviotronModule = async () => {
   try {
     return await import('../../scraper/aviotron/script.js')
@@ -77,7 +86,7 @@ test('Aviotron scraper constants stay pinned to the verified first-party no-publ
   assert.equal(aviotron.SOURCE, 'aviotron')
   assert.equal(aviotron.COMPANY, 'Aviotron')
   assert.equal(aviotron.OFFICIAL_BRAND_NAME, 'Aviotron')
-  assert.equal(aviotron.VERIFIED_ON, '2026-07-15')
+  assert.equal(aviotron.VERIFIED_ON, '2026-08-15')
   assert.equal(aviotron.HOMEPAGE_URL, 'https://aviotron.com/')
   assert.equal(aviotron.ROBOTS_URL, 'https://aviotron.com/robots.txt')
   assert.equal(aviotron.SITEMAP_URL, 'https://aviotron.com/sitemap.xml')
@@ -89,7 +98,7 @@ test('Aviotron scraper constants stay pinned to the verified first-party no-publ
     'https://aviotron.com/work-with-us',
     'https://aviotron.com/openings',
   ])
-  assert.match(aviotron.VERIFIED_SURFACE_SUMMARY, /no trustworthy public jobs surface/i)
+  assert.match(aviotron.VERIFIED_SURFACE_SUMMARY, /temporarily unreachable from this environment/i)
   assert.equal(aviotron.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(aviotron.hasPublicJobsSignal(homepageHtml), false)
   assert.equal(aviotron.hasFirstPartyCareerLikeLink(homepageHtml), false)
@@ -230,4 +239,18 @@ test('Aviotron fails closed when the verified homepage, crawl surfaces, or missi
     }),
     /verified no-public-careers route changed/i,
   )
+})
+
+test('Aviotron returns [] when every verified no-public-jobs surface is temporarily unreachable from this runtime', async () => {
+  const aviotron = await loadAviotronModule()
+
+  assert.equal(aviotron.isVerifiedAviotronUnavailableError(createUnavailableError()), true)
+
+  const jobs = await aviotron.createAviotronScraper().run({
+    fetchPage: async () => {
+      throw createUnavailableError()
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })

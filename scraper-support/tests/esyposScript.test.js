@@ -53,6 +53,22 @@ test('ESYPOS accepts the current broken frameset redirect surface and returns no
   assert.deepEqual(jobs, [])
 })
 
+test('ESYPOS accepts the August 20, 2026 loopback-refused official host and returns no jobs', async () => {
+  const esypos = await loadModule()
+
+  const jobs = await esypos.createEsyposScraper().run({
+    fetchText: async (url) => {
+      if (url === esypos.HOMEPAGE_URL || url === esypos.CAREERS_URL) {
+        throw new Error('fetch failed | connect ECONNREFUSED 127.0.0.1:80')
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
 test('ESYPOS fails closed if the official host starts serving a readable site again', async () => {
   const esypos = await loadModule()
 

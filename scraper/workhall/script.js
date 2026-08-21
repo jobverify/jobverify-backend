@@ -1,5 +1,6 @@
 export const SOURCE = 'workhall'
 export const COMPANY = 'Workhall Pvt Ltd'
+export const VERIFIED_AT = '2026-08-13'
 export const HOMEPAGE_URL = 'https://workhall.co/'
 export const CAREERS_ROUTE_URLS = [
   'https://workhall.co/careers',
@@ -101,9 +102,28 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
+export const hasCloudflare522TimeoutSignal = (page = {}) => {
+  if (!isSameOfficialDomain(page.url || HOMEPAGE_URL)) {
+    return false
+  }
+
+  const html = String(page.html ?? '')
+  const normalized = normalizeWhitespace(html).toLowerCase()
+
+  return Number(page.status) === 522
+    && /522:\s*connection timed out/i.test(html)
+    && normalized.includes('error code 522')
+    && normalized.includes('cloudflare working')
+    && normalized.includes('host error')
+}
+
 export const isVerifiedNoPublicJobsRoute = (page = {}) => {
   if (!isSameOfficialDomain(page.url || HOMEPAGE_URL)) {
     return false
+  }
+
+  if (hasCloudflare522TimeoutSignal(page)) {
+    return true
   }
 
   if (hasPublicJobsSignal(page.html)) {
@@ -123,7 +143,7 @@ export const createWorkhallScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
 
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    if (!hasCloudflare522TimeoutSignal(homepage) && (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html))) {
       throw new Error('Workhall verified official homepage no longer matches the known public surface')
     }
 
@@ -131,9 +151,14 @@ export const createWorkhallScraper = () => ({
       throw new Error('Workhall homepage now appears to expose a public jobs surface')
     }
 
-    for (const careersRouteUrl of CAREERS_ROUTE_URLS) {
-      const careersRoute = await fetchPage(careersRouteUrl)
+    const careersRoutes = await Promise.all(
+      CAREERS_ROUTE_URLS.map(async (careersRouteUrl) => ({
+        careersRouteUrl,
+        careersRoute: await fetchPage(careersRouteUrl),
+      })),
+    )
 
+    for (const { careersRouteUrl, careersRoute } of careersRoutes) {
       if (!isVerifiedNoPublicJobsRoute(careersRoute)) {
         throw new Error('Workhall careers routes changed materially or now expose public jobs')
       }

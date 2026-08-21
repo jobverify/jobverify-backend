@@ -5,6 +5,19 @@ const SEARCH_PAGE_URL = 'https://careers.hitachi.com/search/hitachi-india-pvt-lt
 const DETAIL_URL = 'https://careers.hitachi.com/jobs/17948031-marketing-communications-specialist-hitachi-high-tech-india-pvt-ltd'
 const PUBLIC_APPLY_URL = `${DETAIL_URL}/apply?tm_src=0`
 const FINAL_APPLY_URL = 'https://hitachi.wd1.myworkdayjobs.com/hitachi/job/Gurgaon-Haryana-India/Marketing-Communications-Specialist---Hitachi-High-Tech-India-Pvt-Ltd_R0134902/apply'
+const challengeHtml = `
+  <!doctype html>
+  <html>
+    <head>
+      <title>Just a moment...</title>
+    </head>
+    <body>
+      <h1>Just a moment...</h1>
+      <p>Enable JavaScript and cookies to continue</p>
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
+    </body>
+  </html>
+`
 
 const listingHtml = `
   <main>
@@ -173,6 +186,43 @@ test('resolveApplyUrl falls back to the browser-readable final URL when the publ
   })
 
   assert.equal(applyUrl, FINAL_APPLY_URL)
+})
+
+test('Hitachi India treats the verified Cloudflare challenge shell as an honest empty state', async () => {
+  const { createHitachiIndiaScraper, hasVerifiedCloudflareChallengeSignal } = await loadHitachiIndiaModule()
+  const requestedUrls = []
+
+  assert.equal(hasVerifiedCloudflareChallengeSignal({
+    status: 403,
+    url: SEARCH_PAGE_URL,
+    headers: {
+      server: 'cloudflare',
+      'cf-ray': '92ab1234abcd1234-BOM',
+      'cf-mitigated': 'challenge',
+    },
+    html: challengeHtml,
+  }), true)
+
+  const jobs = await createHitachiIndiaScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      return {
+        status: 403,
+        url,
+        headers: {
+          server: 'cloudflare',
+          'cf-ray': '92ab1234abcd1234-BOM',
+          'cf-mitigated': 'challenge',
+        },
+        html: challengeHtml,
+      }
+    },
+    fetchText: async () => assert.fail('Hitachi India must stop after the verified listing challenge shell'),
+    fetchImpl: async () => assert.fail('Hitachi India must not resolve apply URLs when the listing page is challenge-gated'),
+  })
+
+  assert.deepEqual(requestedUrls, [SEARCH_PAGE_URL])
+  assert.deepEqual(jobs, [])
 })
 
 test('run keeps Hitachi India on the filtered listing page, enriches detail pages, and stores the final Workday apply URL', async () => {

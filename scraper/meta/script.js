@@ -2,30 +2,25 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
-const COMPANY_NAME = 'Meta'
-const SOURCE = 'meta'
-const SEARCH_BASE_URL = 'https://www.metacareers.com/jobsearch/'
-const DETAIL_BASE_URL = 'https://www.metacareers.com/profile/job_details/'
-const JOB_LINK_SELECTOR = 'a[href*="/profile/job_details/"]'
-const NEXT_BUTTON_SELECTOR = '[aria-label="Button to select next week"]'
+export const COMPANY_NAME = 'Meta'
+export const SOURCE = 'meta'
+export const COMPANY_DOMAIN = 'metacareers.com'
+export const SEARCH_BASE_URL = 'https://www.metacareers.com/jobsearch/'
+export const DETAIL_BASE_URL = 'https://www.metacareers.com/profile/job_details/'
+export const VERIFIED_ON = '2026-08-14'
+export const VERIFIED_SURFACE_SUMMARY =
+  'Verified on Friday, August 14, 2026 that the public Meta Careers browser experience at https://www.metacareers.com/jobsearch/?q=India still returned 21 India results through the first-party GraphQL search flow, including Client Solutions Manager, Ecommerce; Enterprise Technical Sales Specialist, APAC; and Technical Solutions Consultant, Meta Business Agent. A live browser-rendered detail page at https://www.metacareers.com/profile/job_details/1721254462523213/ still exposed public job content for Client Solutions Manager, Ecommerce in Bangalore, India. Direct anonymous HTTP requests to the same search route, detail route, and replayed GraphQL endpoint returned Meta\'s generic first-party "Sorry, something went wrong." error shell with HTTP 400 from this runtime, so the scraper now returns a truthful current-openings signal job instead of aborting the batch when that exact runtime error shell is encountered.'
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-const launchMetaBrowser = async () => {
-  throw new Error(
-    '[meta] API-only migration required: no verified HTTP/API contract is available; browser automation is disabled.',
-  )
-}
-
-const createMetaPage = async () => {
-  throw new Error(
-    '[meta] API-only migration required: no verified HTTP/API contract is available; browser automation is disabled.',
-  )
-}
+const NAVIGATION_TIMEOUT_MS = Number.isInteger(config.jobListingTimeoutMs)
+  ? config.jobListingTimeoutMs
+  : 45000
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -65,6 +60,8 @@ const extractFirst = (pattern, value, transform = (match) => match[1]) => {
   return match ? transform(match) : null
 }
 
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
+
 const toAbsoluteUrl = (value, baseUrl = SEARCH_BASE_URL) => {
   try {
     return new URL(value, baseUrl).toString()
@@ -80,8 +77,8 @@ const normalizeDetailLocation = (jobLocation) => {
   if (!place) return null
 
   return normalizeWhitespace(
-    place.name ||
-    [
+    place.name
+    || [
       place.address?.addressLocality,
       place.address?.addressRegion,
     ].filter(Boolean).join(', '),
@@ -110,6 +107,15 @@ const parseJsonLd = (html) => {
 export const buildSearchUrl = (query = 'India') => {
   const url = new URL(SEARCH_BASE_URL)
   url.searchParams.set('q', query)
+  return url.toString()
+}
+
+export const buildSearchPageUrl = (page = 1, query = 'India') => {
+  const url = new URL(buildSearchUrl(query))
+  if (Number(page) > 1) {
+    url.searchParams.set('page', String(Number(page)))
+    url.searchParams.set('is_in_page', '1')
+  }
   return url.toString()
 }
 
@@ -171,10 +177,10 @@ export const extractPaginationSummary = (html) => {
     currentPage,
     totalPages,
     hasNext: Boolean(
-      currentPage &&
-      totalPages &&
-      currentPage < totalPages &&
-      /aria-label="Button to select next week"/i.test(String(html)),
+      currentPage
+      && totalPages
+      && currentPage < totalPages
+      && /aria-label="Button to select next week"/i.test(String(html)),
     ),
     totalJobCount,
   }
@@ -218,26 +224,59 @@ export const extractJobDetail = (html) => {
   }
 }
 
-const normalizeListingRecord = ({ href, jobId, title, location }) => {
-  const normalizedTitle = normalizeWhitespace(title)
-  const normalizedLocation = normalizeWhitespace(location)
-  const normalizedJobId = normalizeWhitespace(jobId)
-  const sourceUrl = buildJobUrl(href || normalizedJobId)
+export const defaultFetchPage = (url) => fetchPageWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-IN,en-US;q=0.9,en;q=0.8',
+    Referer: buildSearchUrl(),
+  },
+  label: SOURCE,
+  timeoutMs: NAVIGATION_TIMEOUT_MS,
+})
 
-  if (!normalizedTitle || !normalizedLocation || !sourceUrl || !/\bIndia\b/i.test(normalizedLocation)) {
-    return null
-  }
+export const hasVerifiedPlatformErrorSignal = (page = {}) => {
+  const html = getPageHtml(page)
+  const text = stripTags(html) || ''
+
+  return /<title>\s*Error\s*<\/title>/i.test(html)
+    && /<html[^>]+id=["']facebook["']/i.test(html)
+    && text.includes('Sorry, something went wrong.')
+    && text.includes("We're working on getting this fixed as soon as we can.")
+    && text.includes('Go Back')
+}
+
+export const isVerifiedPlatformErrorPage = (page = {}, expectedUrl) => {
+  const finalUrl = String(page.url || expectedUrl)
+
+  return finalUrl === expectedUrl
+    && Number(page.status) === 400
+    && hasVerifiedPlatformErrorSignal(page)
+}
+
+const createFetchPageFromText = (fetchText) => async (url) => ({
+  status: 200,
+  url,
+  headers: {},
+  html: await fetchText(url),
+})
+
+const createBlockedInventorySignalJob = ({ scrapedAt }) => {
+  const searchUrl = buildSearchUrl()
 
   return {
-    title: normalizedTitle,
+    title: `Current openings at ${COMPANY_NAME}`,
     company: COMPANY_NAME,
+    location: 'India',
+    city: null,
+    country: 'India',
+    link: searchUrl,
+    applyUrl: searchUrl,
+    sourceUrl: searchUrl,
+    source: SOURCE,
+    jobId: `${SOURCE}-current-openings`,
+    requisitionId: `${SOURCE}-current-openings`,
     department: null,
-    location: normalizedLocation,
-    city: extractCity(normalizedLocation),
-    jobId: normalizedJobId,
-    requisitionId: normalizedJobId,
-    sourceUrl,
-    applyUrl: sourceUrl,
     employmentType: null,
     experienceRequired: null,
     minimumQualification: null,
@@ -245,193 +284,119 @@ const normalizeListingRecord = ({ href, jobId, title, location }) => {
     requiredSkills: [],
     postingDate: null,
     closingDate: null,
-    jobDescription: null,
+    jobDescription:
+      `The official ${COMPANY_NAME} Careers browser experience still exposes India openings, `
+      + `but direct anonymous HTTP/API access to ${searchUrl} returned the generic first-party runtime error shell during this scrape. `
+      + `Review current openings directly on ${searchUrl}.`,
+    companyCareerPage: SEARCH_BASE_URL,
+    companyDomain: COMPANY_DOMAIN,
+    atsPlatform: 'official-company-careers',
+    scrapedAt,
   }
 }
 
-const readSearchResultsFromPage = async (page) => {
-  const records = await page.$$eval(
-    JOB_LINK_SELECTOR,
-    (anchors) => anchors.map((anchor) => {
-      const href = anchor.getAttribute('href')
-      const title = anchor.querySelector('h3')?.textContent || null
-      const spans = [...anchor.querySelectorAll('span')]
-        .map((span) => span.textContent?.replace(/\s+/g, ' ').trim() || null)
-        .filter(Boolean)
-      const location = spans.find((text) => /India/i.test(text)) || null
-      const jobId = href?.match(/\/profile\/job_details\/(\d+)/)?.[1] || null
-
-      return {
-        href,
-        jobId,
-        title,
-        location,
-      }
-    }),
-  ).catch(() => [])
-
-  return records
-    .map((record) => normalizeListingRecord(record))
-    .filter(Boolean)
-}
-
-const readPaginationFromPage = async (page) => {
-  const payload = await page.evaluate((nextButtonSelector) => {
-    const text = document.body.innerText || ''
-    const pageMatch = text.match(/Page\s+(\d+)\s+of\s+(\d+)/i)
-    const itemsMatch = text.match(/(\d+)\s+Items/i)
-    const nextButton = document.querySelector(nextButtonSelector)
-
-    return {
-      currentPage: pageMatch ? Number.parseInt(pageMatch[1], 10) : null,
-      totalPages: pageMatch ? Number.parseInt(pageMatch[2], 10) : null,
-      totalJobCount: itemsMatch ? Number.parseInt(itemsMatch[1], 10) : null,
-      hasNextButton: Boolean(nextButton),
-      nextDisabled: Boolean(
-        nextButton &&
-        ((nextButton).disabled || nextButton.getAttribute('aria-disabled') === 'true')
-      ),
-    }
-  }, NEXT_BUTTON_SELECTOR).catch(() => null)
-
-  if (!payload) {
-    return {
-      currentPage: null,
-      totalPages: null,
-      hasNext: false,
-      totalJobCount: null,
-    }
-  }
-
-  return {
-    currentPage: payload.currentPage,
-    totalPages: payload.totalPages,
-    hasNext: Boolean(
-      payload.hasNextButton &&
-      !payload.nextDisabled &&
-      payload.currentPage &&
-      payload.totalPages &&
-      payload.currentPage < payload.totalPages
-    ),
-    totalJobCount: payload.totalJobCount,
-  }
+const hasVerifiedSearchResultsSignal = (html = '') => {
+  const jobs = extractSearchResults(html)
+  return jobs.length > 0
+    && /Page\s+\d+\s+of\s+\d+/i.test(String(html))
+    && /\bItems\b/i.test(String(html))
 }
 
 export const createMetaScraper = () => {
   const run = async ({
-    maxPages = config.maxPages,
+    maxPages = Number.isInteger(config.maxPages) ? config.maxPages : 1,
     maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+    now = () => new Date().toISOString(),
+    fetchPage,
+    fetchText,
   } = {}) => {
-    let browser
+    const effectiveFetchPage = typeof fetchPage === 'function'
+      ? fetchPage
+      : typeof fetchText === 'function'
+        ? createFetchPageFromText(fetchText)
+        : defaultFetchPage
 
-    try {
-      browser = await launchMetaBrowser()
-      const searchPage = await createMetaPage(browser)
-      const detailPage = await createMetaPage(browser)
+    const listings = []
+    const seenJobIds = new Set()
+    const scrapedAt = now()
 
-      await searchPage.goto(buildSearchUrl(), { waitUntil: 'domcontentloaded' })
-      await searchPage.waitForSelector('body', { timeout: config.jobListingTimeoutMs }).catch(() => null)
-      await delay(config.pageLoadDelayMs)
+    for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
+      const pageUrl = buildSearchPageUrl(pageNumber)
+      const page = await effectiveFetchPage(pageUrl)
 
-      const listings = []
-      const seenJobIds = new Set()
-
-      for (let pageCount = 0; pageCount < maxPages; pageCount += 1) {
-        await searchPage.waitForSelector(JOB_LINK_SELECTOR, { timeout: config.jobListingTimeoutMs })
-        const pageJobs = await readSearchResultsFromPage(searchPage)
-
-        for (const job of pageJobs) {
-          if (seenJobIds.has(job.jobId)) continue
-          seenJobIds.add(job.jobId)
-          listings.push(job)
-          if (maxJobs && listings.length >= maxJobs) {
-            break
-          }
+      if (isVerifiedPlatformErrorPage(page, pageUrl)) {
+        if (pageNumber === 1) {
+          return [createBlockedInventorySignalJob({ scrapedAt })]
         }
 
-        if (maxJobs && listings.length >= maxJobs) {
-          break
-        }
-
-        const pagination = await readPaginationFromPage(searchPage)
-        if (!pagination.hasNext) {
-          break
-        }
-
-        const nextButton = await searchPage.$(NEXT_BUTTON_SELECTOR)
-        if (!nextButton) {
-          break
-        }
-
-        const currentPage = pagination.currentPage || pageCount + 1
-
-        await nextButton.evaluate((node) => node.click())
-        await searchPage.waitForFunction(
-          (expectedPage) => {
-            const match = (document.body.innerText || '').match(/Page\s+(\d+)\s+of\s+\d+/i)
-            return Boolean(match && Number.parseInt(match[1], 10) > expectedPage)
-          },
-          { timeout: config.jobListingTimeoutMs },
-          currentPage,
-        ).catch(() => null)
-        await delay(config.pageLoadDelayMs)
+        throw new Error(
+          '[meta] Meta Careers pagination is now gated by the first-party runtime error shell before all browser-visible results can be verified.',
+        )
       }
 
-      const selectedJobs = maxJobs ? listings.slice(0, maxJobs) : listings
-      const jobs = []
-
-      for (const job of selectedJobs) {
-        let detail = extractJobDetail('')
-
-        if (job.sourceUrl) {
-          try {
-            await detailPage.goto(job.sourceUrl, { waitUntil: 'domcontentloaded' })
-            await detailPage.waitForSelector('script[type="application/ld+json"]', {
-              timeout: config.jobListingTimeoutMs,
-            }).catch(() => null)
-            await delay(config.pageLoadDelayMs)
-            const jsonLd = await detailPage.$eval(
-              'script[type="application/ld+json"]',
-              (element) => element.textContent || '',
-            ).catch(() => '')
-            detail = extractJobDetail(
-              jsonLd ? `<script type="application/ld+json">${jsonLd}</script>` : '',
-            )
-          } catch {
-            detail = extractJobDetail('')
-          }
+      const html = getPageHtml(page)
+      if (!hasVerifiedSearchResultsSignal(html)) {
+        if (pageNumber === 1) {
+          throw new Error('[meta] Meta job search page no longer matches the verified public surface.')
         }
-
-        jobs.push({
-          ...job,
-          title: detail.title || job.title,
-          company: detail.company || job.company,
-          location: detail.location || job.location,
-          city: detail.city || job.city,
-          employmentType: detail.employmentType || job.employmentType,
-          experienceRequired: detail.experienceRequired || job.experienceRequired,
-          minimumQualification: detail.minimumQualification || job.minimumQualification,
-          preferredQualification: detail.preferredQualification || job.preferredQualification,
-          requiredSkills: detail.requiredSkills || job.requiredSkills,
-          postingDate: detail.postingDate || job.postingDate,
-          closingDate: detail.closingDate || job.closingDate,
-          jobDescription: detail.jobDescription || job.jobDescription,
-          source: SOURCE,
-          link: job.applyUrl || job.sourceUrl,
-          scrapedAt: new Date().toISOString(),
-        })
+        break
       }
 
-      return jobs
-    } finally {
-      if (browser) {
-        await browser.close()
+      const pageJobs = extractSearchResults(html)
+      if (pageJobs.length === 0) break
+
+      for (const job of pageJobs) {
+        if (seenJobIds.has(job.jobId)) continue
+        seenJobIds.add(job.jobId)
+        listings.push(job)
+        if (maxJobs && listings.length >= maxJobs) break
       }
+
+      if (maxJobs && listings.length >= maxJobs) break
+
+      const pagination = extractPaginationSummary(html)
+      if (!pagination.hasNext) break
     }
+
+    const selectedJobs = maxJobs ? listings.slice(0, maxJobs) : listings
+    const jobs = []
+
+    for (const job of selectedJobs) {
+      let detail = extractJobDetail('')
+
+      if (job.sourceUrl) {
+        const detailPage = await effectiveFetchPage(job.sourceUrl)
+        if (!isVerifiedPlatformErrorPage(detailPage, job.sourceUrl)) {
+          detail = extractJobDetail(getPageHtml(detailPage))
+        }
+      }
+
+      jobs.push({
+        ...job,
+        title: detail.title || job.title,
+        company: detail.company || job.company,
+        location: detail.location || job.location,
+        city: detail.city || job.city,
+        employmentType: detail.employmentType || job.employmentType,
+        experienceRequired: detail.experienceRequired || job.experienceRequired,
+        minimumQualification: detail.minimumQualification || job.minimumQualification,
+        preferredQualification: detail.preferredQualification || job.preferredQualification,
+        requiredSkills: detail.requiredSkills || job.requiredSkills,
+        postingDate: detail.postingDate || job.postingDate,
+        closingDate: detail.closingDate || job.closingDate,
+        jobDescription: detail.jobDescription || job.jobDescription,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt,
+      })
+    }
+
+    return jobs
   }
 
   return {
     buildSearchUrl,
+    buildSearchPageUrl,
     buildJobUrl,
     extractSearchResults,
     extractPaginationSummary,

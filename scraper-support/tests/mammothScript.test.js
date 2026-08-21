@@ -5,13 +5,14 @@ const homepageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Mammoth Analytics: Data Ops Platform for Business Teams</title>
+    <title>Mammoth Analytics — Data Prep, Automation &amp; Dashboards</title>
   </head>
   <body>
     <h1>Your whole data journey. One platform.</h1>
-    <p>Connect, prepare, automate, govern, share - every step in one place.</p>
-    <p>Data preparation and automation for business teams. Made in London since 2017.</p>
-    <a href="https://mammoth.io/about-us/">About</a>
+    <p>Connect, prepare, automate, govern, share — every step in one place.</p>
+    <p>No shuttling files between tools. No handoffs. No waiting on a ticket.</p>
+    <p>No credit card to start</p>
+    <a href="https://mammoth.io/about/">About</a>
     <a href="https://mammoth.io/book-demo/">Book a demo</a>
   </body>
 </html>
@@ -21,12 +22,12 @@ const aboutHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>About Us | Mammoth</title>
+    <title>About · Mammoth</title>
   </head>
   <body>
-    <p>Made in London since 2017. Our story and mission.</p>
-    <p>Mammoth started as one conviction: the person with the data problem should be the one who solves it.</p>
-    <p>We founded the company in London in 2017.</p>
+    <p>Made in London since 2017. Mammoth builds data preparation and automation for business teams.</p>
+    <p>Four opinions the product is built on.</p>
+    <p>The handoffs are the problem.</p>
   </body>
 </html>
 `
@@ -35,10 +36,12 @@ const missingRouteHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Page not found &#8211; Mammoth</title>
+    <title>Mammoth Analytics — Data Prep, Automation &amp; Dashboards</title>
   </head>
   <body>
-    <h1>The page can&rsquo;t be found.</h1>
+    <h1>404</h1>
+    <p>That page doesn&apos;t exist.</p>
+    <p>Here&apos;s where most people are heading.</p>
   </body>
 </html>
 `

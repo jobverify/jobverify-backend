@@ -9,8 +9,13 @@ test('Ampere Computing is registered against its official careers search page', 
 
   assert.ok(provider)
   assert.equal(provider.companyName, 'Ampere Computing')
+  assert.equal(provider.homepageUrl, 'https://careers.amperecomputing.com/')
   assert.equal(provider.companyCareerPage, 'https://careers.amperecomputing.com/search/jobs')
+  assert.equal(provider.officialIndiaSearchResultsUrl, 'https://careers.amperecomputing.com/search/jobs/in/country/india')
   assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.match(provider.extractionStrategy, /verified-cloudflare-challenge-empty/i)
+  assert.match(provider.verifiedSurfaceSummary, /Just a moment/i)
   assert.equal(provider.companyDomain, 'amperecomputing.com')
   assert.equal(companyAliases['Ampere Computing'], 'amperecomputing')
 })

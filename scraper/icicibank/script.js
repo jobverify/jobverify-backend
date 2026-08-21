@@ -24,8 +24,11 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const shouldUseBrowserFallback = (error) =>
-  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
+  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to|blocked html error page/i
     .test(String(error?.message ?? error ?? ''))
+
+const shouldCheckBlockedFirstPartySurface = (error) =>
+  /blocked html error page|invalid API payload/i.test(String(error?.message ?? error ?? ''))
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -79,6 +82,8 @@ export const buildSearchRequestPayload = (pageNo = 0) => ({
 export const buildPublicJobUrl = (jobId) => `${PUBLIC_JOB_DETAIL_BASE_URL}/${encodeURIComponent(jobId)}`
 
 export const buildDetailApiUrl = (jobId) => `${DETAIL_API_BASE_URL}/${encodeURIComponent(jobId)}`
+
+const sameUrl = (left, right) => String(left ?? '').replace(/\/$/, '') === String(right ?? '').replace(/\/$/, '')
 
 export const encryptApiPayload = (value) => {
   const iv = buildRandomIv()
@@ -202,6 +207,34 @@ export const extractJobDetail = (payload, listing = {}) => {
   }
 }
 
+export const hasBlockedIncidentPageSignal = (page = {}) => {
+  const html = String(page?.html ?? page ?? '')
+  const text = stripHtml(html) || ''
+
+  return /<title>\s*Error\s*<\/title>/i.test(html)
+    && text.includes("This page can't be displayed. Contact support for additional information.")
+    && /The incident ID is:/i.test(text)
+}
+
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-IN,en-US;q=0.9,en;q=0.8',
+      Referer: CAREERS_PORTAL_URL,
+    },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(30000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    html: await response.text(),
+  }
+}
+
 const defaultFetchJson = async (url, options = {}) => {
   const response = await fetch(url, {
     method: options.method || 'GET',
@@ -254,6 +287,7 @@ export const createIciciBankScraper = ({
   async run(options = {}) {
     const fetchJson = options.fetchJson || defaultFetchJson
     const fetchBrowserJson = options.fetchBrowserJson
+    const fetchPage = options.fetchPage || defaultFetchPage
     const now = options.now || (() => new Date().toISOString())
     const effectiveMaxJobs = Number.isInteger(options.maxJobs) ? options.maxJobs : maxJobs
     const effectiveMaxPages = Number.isInteger(options.maxPages) ? options.maxPages : maxPages
@@ -298,6 +332,20 @@ export const createIciciBankScraper = ({
       }
     }
 
+    const hasVerifiedBlockedFirstPartySurface = async () => {
+      const pages = await Promise.all([
+        fetchPage(CAREERS_PORTAL_URL),
+        fetchPage(JOB_LISTING_URL),
+      ])
+
+      return pages.every((page, index) => {
+        const expectedUrl = index === 0 ? CAREERS_PORTAL_URL : JOB_LISTING_URL
+        return Number(page?.status) === 200
+          && sameUrl(page?.url, expectedUrl)
+          && hasBlockedIncidentPageSignal(page)
+      })
+    }
+
     try {
       for (let pageNo = 0; pageNo < maxPageCount; pageNo += 1) {
         const searchRequestOptions = {
@@ -305,11 +353,20 @@ export const createIciciBankScraper = ({
           headers: createSearchHeaders(),
           body: wrapEncryptedSearchPayload(buildSearchRequestPayload(pageNo)),
         }
-        const searchResponse = await fetchJsonWithBrowserFallback(
-          SEARCH_API_URL,
-          searchRequestOptions,
-          browserJsonPrimed ? null : CAREERS_PORTAL_URL,
-        )
+        let searchResponse
+        try {
+          searchResponse = await fetchJsonWithBrowserFallback(
+            SEARCH_API_URL,
+            searchRequestOptions,
+            browserJsonPrimed ? null : CAREERS_PORTAL_URL,
+          )
+        } catch (error) {
+          if (shouldCheckBlockedFirstPartySurface(error) && await hasVerifiedBlockedFirstPartySurface()) {
+            return []
+          }
+
+          throw error
+        }
         browserJsonPrimed = browserJsonPrimed || Boolean(fetchBrowserJson)
         const { totalRows, records } = extractSearchRecords(searchResponse)
         const listings = extractSearchResults(searchResponse)

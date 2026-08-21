@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
@@ -49,6 +50,18 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
   .replace(/\s+/g, ' ')
   .trim() || null
+
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
+
+const getHeader = (page = {}, name) => {
+  const normalizedName = String(name ?? '').toLowerCase()
+  const headers = page?.headers
+  if (!headers) return ''
+  if (typeof headers.get === 'function') {
+    return String(headers.get(normalizedName) || headers.get(name) || '')
+  }
+  return String(headers[normalizedName] || headers[name] || '')
+}
 
 const escapeRegex = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -177,6 +190,12 @@ const normalizePostingDate = (value) => {
 const isBrowserFallbackError = (error) =>
   /HTTP 403|timed out|timeout|fetch failed|certificate|blocked/i.test(String(error?.message ?? error ?? ''))
 
+const defaultFetchPage = (url) => fetchPageWithRetry(url, {
+  headers: DEFAULT_HEADERS,
+  label: 'hitachiindia-page',
+  timeoutMs: 15000,
+})
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: DEFAULT_HEADERS,
   label: 'hitachiindia-text',
@@ -191,7 +210,34 @@ const defaultFetchImpl = (url, options = {}) => fetch(url, {
   redirect: options.redirect || 'follow',
 })
 
+const createFetchPageFromText = (fetchText) => async (url) => ({
+  status: 200,
+  url,
+  headers: {},
+  html: await fetchText(url),
+})
+
 export const buildSearchPageUrl = () => SEARCH_PAGE_URL
+
+export const hasVerifiedCloudflareChallengeSignal = (page = {}) => {
+  const html = getPageHtml(page)
+  const text = normalizeWhitespace(html) || ''
+
+  return Number(page.status) === 403
+    && /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(html)
+    && /challenges\.cloudflare\.com/i.test(html)
+    && text.includes('Enable JavaScript and cookies to continue')
+}
+
+export const isVerifiedCloudflareChallengedPage = (page = {}, expectedUrl) => {
+  const finalUrl = String(page.url || expectedUrl)
+
+  return finalUrl === expectedUrl
+    && /cloudflare/i.test(getHeader(page, 'server'))
+    && getHeader(page, 'cf-ray').trim().length > 0
+    && getHeader(page, 'cf-mitigated').toLowerCase() === 'challenge'
+    && hasVerifiedCloudflareChallengeSignal(page)
+}
 
 export const extractListings = (html = '') => {
   const source = String(html ?? '')
@@ -328,11 +374,13 @@ export const resolveApplyUrl = async (
 }
 
 export const createHitachiIndiaScraper = ({
+  fetchPage = defaultFetchPage,
   fetchText = defaultFetchText,
   fetchImpl = defaultFetchImpl,
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   } = {}) => ({
   async run({
+    fetchPage: overrideFetchPage,
     fetchText: overrideFetchText,
     fetchBrowserText,
     fetchBrowserFinalUrl,
@@ -358,7 +406,19 @@ export const createHitachiIndiaScraper = ({
       }
     }
 
-    const listingHtml = await fetchPageText(buildSearchPageUrl())
+    const fetchPageImpl = overrideFetchPage
+      || (overrideFetchText ? createFetchPageFromText(fetchPageText) : fetchPage)
+
+    const listingPageUrl = buildSearchPageUrl()
+    const listingPage = await fetchPageImpl(listingPageUrl)
+    if (isVerifiedCloudflareChallengedPage(listingPage, listingPageUrl)) {
+      return []
+    }
+    if (Number(listingPage?.status || 0) >= 400) {
+      throw new Error(`HTTP ${listingPage.status} for ${listingPageUrl}`)
+    }
+
+    const listingHtml = getPageHtml(listingPage)
     const listings = extractListings(listingHtml)
     const jobs = []
 

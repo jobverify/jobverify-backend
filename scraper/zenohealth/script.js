@@ -6,11 +6,11 @@ export const SOURCE = 'zenohealth'
 export const COMPANY = 'Zeno Health'
 export const OFFICIAL_BRAND = 'Zeno Health'
 export const CAREERS_URL = 'https://corporate.zeno.health/careers'
-export const DISPOSITION = 'verified-public-careers-surface-with-linkedin-openings-handoff'
+export const DISPOSITION = 'verified-first-party-shell-without-public-openings-flow'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://corporate.zeno.health/careers was the live first-party public careers surface reviewed for Zeno Health. The verified surface presented brand and culture content, including the copy "View our LinkedIn page for current openings", but no stable first-party enumerable public jobs contract was verified, so this company-local scraper stays fail-closed and returns no jobs until a trustworthy public openings flow is promoted.'
+  'Verified on Friday, August 14, 2026 that https://corporate.zeno.health/careers now serves a generic first-party Zeno Health shell with the title "Zeno Health", the healthcare-brand meta description, and first-party runtime assets, but no longer exposes the earlier careers copy or LinkedIn openings handoff. No trustworthy public openings flow or ATS links were present in the fetched public contract, so this company-local scraper stays fail-closed and returns no jobs until a verifiable openings surface reappears.'
 
-const REQUIRED_SURFACE_PATTERNS = [
+const LEGACY_REQUIRED_SURFACE_PATTERNS = [
   /\bHelping the world is perhaps the most rewarding way to grow in your career and life\b/i,
   /\bWork culture at Zeno Health\b/i,
   /\bJoin us\b/i,
@@ -18,6 +18,14 @@ const REQUIRED_SURFACE_PATTERNS = [
 
 const LINKEDIN_OPENINGS_COPY_PATTERN =
   /\bView our LinkedIn page for current openings\b/i
+
+const CURRENT_SHELL_PATTERNS = [
+  /<title>\s*Zeno Health\s*<\/title>/i,
+  /Zeno Health is a healthcare brand that makes medicines affordable and accessible to all/i,
+  /<meta\s+property="og:url"\s+content="https:\/\/zeno\.health">/i,
+  /(?:href|src)="[^"]*runtime\.js"/i,
+  /(?:href|src)="[^"]*main\.js"/i,
+]
 
 const TRUSTED_ATS_HOST_PATTERNS = [
   /boards\.greenhouse\.io/i,
@@ -98,10 +106,14 @@ const hasJobPostingMarkup = (html = '') => {
   return false
 }
 
+const isCurrentVerifiedShell = (html = '') =>
+  CURRENT_SHELL_PATTERNS.every((pattern) => pattern.test(String(html)))
+
 export const assertVerifiedPublicCareersSurface = (html = '') => {
   const text = normalizeText(html)
 
-  if (REQUIRED_SURFACE_PATTERNS.every((pattern) => pattern.test(text))) return
+  if (LEGACY_REQUIRED_SURFACE_PATTERNS.every((pattern) => pattern.test(text))) return
+  if (isCurrentVerifiedShell(html)) return
 
   throw new Error(
     'Zeno Health verified public careers surface changed; review the public contract before promoting a real parser.',
@@ -109,6 +121,7 @@ export const assertVerifiedPublicCareersSurface = (html = '') => {
 }
 
 export const assertVerifiedLinkedInOpeningsHandoff = (html = '') => {
+  if (isCurrentVerifiedShell(html)) return
   if (LINKEDIN_OPENINGS_COPY_PATTERN.test(normalizeText(html))) return
 
   throw new Error(

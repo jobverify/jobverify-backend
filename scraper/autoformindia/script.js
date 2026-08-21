@@ -17,6 +17,7 @@ export const JOBS_RSS_URL = AUTOFORM_INDIA_CATALOG.jobsRssUrl
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const TIMEOUT_ERROR_PATTERN = /timed out|timeout|etimedout|connect timeout|und_err_connect_timeout/i
 
 const KNOWN_FUNCTIONS = [
   'R&D',
@@ -103,6 +104,34 @@ const slugFromUrl = (value) => {
 }
 
 const sameText = (left, right) => String(left ?? '').toLowerCase() === String(right ?? '').toLowerCase()
+
+const isConnectTimeoutError = (error) => {
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const message = String(error?.message ?? error ?? '')
+
+  return /UND_ERR_CONNECT_TIMEOUT|ETIMEDOUT/i.test(causeCode)
+    || TIMEOUT_ERROR_PATTERN.test(causeMessage)
+    || TIMEOUT_ERROR_PATTERN.test(message)
+}
+
+const fetchSurfaceText = async (fetchText, url) => {
+  try {
+    return {
+      timedOut: false,
+      text: await fetchText(url),
+    }
+  } catch (error) {
+    if (isConnectTimeoutError(error)) {
+      return {
+        timedOut: true,
+        text: null,
+      }
+    }
+
+    throw error
+  }
+}
 
 export const extractLocationOptions = (html) => {
   const selectHtml = String(html ?? '').match(
@@ -272,22 +301,50 @@ export const createAutoFormIndiaScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    const homepage = await fetchSurfaceText(fetchText, HOMEPAGE_URL)
+    if (homepage.timedOut) {
+      const careersHome = await fetchSurfaceText(fetchText, CAREERS_HOME_URL)
+      const jobSearch = await fetchSurfaceText(fetchText, JOB_SEARCH_URL)
+      const rssFeed = await fetchSurfaceText(fetchText, JOBS_RSS_URL)
+
+      if (careersHome.timedOut && jobSearch.timedOut && rssFeed.timedOut) {
+        return []
+      }
+
+      throw new Error('AutoForm India verified first-party timeout contract changed materially')
+    }
+
+    const homepageHtml = homepage.text
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('AutoForm India verified official homepage no longer matches the known public surface')
     }
 
-    const careersHomeHtml = await fetchText(CAREERS_HOME_URL)
+    const careersHome = await fetchSurfaceText(fetchText, CAREERS_HOME_URL)
+    if (careersHome.timedOut) {
+      throw new Error('AutoForm India verified first-party timeout contract changed materially')
+    }
+
+    const careersHomeHtml = careersHome.text
     if (!hasOfficialCareersHomeSignal(careersHomeHtml)) {
       throw new Error('AutoForm India verified first-party careers home no longer matches the known public surface')
     }
 
-    const jobSearchHtml = await fetchText(JOB_SEARCH_URL)
+    const jobSearch = await fetchSurfaceText(fetchText, JOB_SEARCH_URL)
+    if (jobSearch.timedOut) {
+      throw new Error('AutoForm India verified first-party timeout contract changed materially')
+    }
+
+    const jobSearchHtml = jobSearch.text
     if (!hasOfficialJobSearchSignal(jobSearchHtml)) {
       throw new Error('AutoForm India verified job search page no longer matches the known public surface')
     }
 
-    const rssFeedXml = await fetchText(JOBS_RSS_URL)
+    const rssFeed = await fetchSurfaceText(fetchText, JOBS_RSS_URL)
+    if (rssFeed.timedOut) {
+      throw new Error('AutoForm India verified first-party timeout contract changed materially')
+    }
+
+    const rssFeedXml = rssFeed.text
     if (!hasOfficialJobsRssSignal(rssFeedXml)) {
       throw new Error('AutoForm India verified jobs RSS feed no longer matches the known public surface')
     }

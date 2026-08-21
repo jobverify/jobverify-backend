@@ -31,6 +31,22 @@ const currentCompromisedHomepageHtml = `
 </html>
 `
 
+const currentFirstParty404Html = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>404 Not Found</title>
+  </head>
+  <body>
+    <center><h1>404 Not Found</h1></center>
+    <p>The resource requested could not be found on this server!</p>
+    <hr>
+    <center>Proudly powered by LiteSpeed Web Server</center>
+    <p>Please be advised that LiteSpeed Technologies Inc. is not a web hosting company and, as such, has no control over content found on this site.</p>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/ayninfotech/script.js')
@@ -74,6 +90,28 @@ test('AYN InfoTech sentinel returns [] only while every checked first-party rout
         status: 200,
         url: 'https://account.umbrellainabox.com/',
         html: compromisedHomepageHtml,
+      }
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    aynInfotech.HOMEPAGE_URL,
+    ...aynInfotech.CHECKED_ROUTE_URLS,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('AYN InfoTech sentinel returns [] while the Thursday, August 20, 2026 first-party 404 shell remains unchanged across checked routes', async () => {
+  const aynInfotech = await loadModule()
+  const requestedUrls = []
+
+  const jobs = await aynInfotech.createAynInfotechScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      return {
+        status: 404,
+        url,
+        html: currentFirstParty404Html,
       }
     },
   })

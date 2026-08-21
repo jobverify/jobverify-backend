@@ -54,11 +54,34 @@ export const hasOfficialAppShellSignal = (html) => {
 
 export const hasOfficialCareersBundleSignal = (text) => {
   const bundle = String(text ?? '')
-
-  return /Career Opportunities at ACME Solar|For career opportunities/i.test(bundle)
+  const hasVerifiedBranding = /Career Opportunities at ACME Solar|Careers at ACME Solar/i.test(bundle)
     && /ACME Solar/i.test(bundle)
     && /\/career_form/i.test(bundle)
-    && new RegExp(escapeRegex(APPLY_EMAIL), 'i').test(bundle)
+  const hasLegacyContactSignal = new RegExp(escapeRegex(APPLY_EMAIL), 'i').test(bundle)
+  const hasVerifiedFormFlowSignal = /Upload CV/i.test(bundle)
+    && /Email ID/i.test(bundle)
+    && /Send Message/i.test(bundle)
+
+  return hasVerifiedBranding
+    && (hasLegacyContactSignal || hasVerifiedFormFlowSignal)
+}
+
+export const hasOfficialCareersPageSignal = (html) => {
+  const page = normalizeWhitespace(html)
+
+  return /Career Opportunities at ACME Solar/i.test(page)
+    && /Careers at ACME Solar/i.test(page)
+    && /Join us/i.test(page)
+    && /\/career_form/i.test(String(html ?? ''))
+}
+
+export const hasOfficialCareerFormPageSignal = (html) => {
+  const page = normalizeWhitespace(html)
+
+  return /Upload CV/i.test(page)
+    && /Email ID/i.test(page)
+    && /Send Message/i.test(page)
+    && new RegExp(escapeRegex(APPLY_EMAIL), 'i').test(page)
 }
 
 export const hasPublicJobListingsSignal = (text) => {
@@ -118,11 +141,19 @@ export const createAcmeSolarScraper = () => ({
     }
 
     const bundleText = await fetchText(bundleUrl)
-    if (!hasOfficialCareersBundleSignal(bundleText)) {
+    const careersPage = pages.find(({ url }) => url === CAREERS_URL)?.html || ''
+    const careerFormPage = pages.find(({ url }) => url === CAREER_FORM_URL)?.html || ''
+    const hasVerifiedNoJobsSurface = hasOfficialCareersBundleSignal(bundleText)
+      || (
+        hasOfficialCareersPageSignal(careersPage)
+        && hasOfficialCareerFormPageSignal(careerFormPage)
+      )
+
+    if (!hasVerifiedNoJobsSurface) {
       throw new Error(`${COMPANY} careers bundle no longer matches the verified no-public-jobs career form surface`)
     }
 
-    if (hasPublicJobListingsSignal(bundleText)) {
+    if (hasPublicJobListingsSignal([bundleText, careersPage, careerFormPage].join('\n'))) {
       throw new Error(`${COMPANY} public jobs surface now appears available in the official careers bundle`)
     }
 

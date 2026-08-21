@@ -384,6 +384,37 @@ test('Rocket Software uses the verified careers page over direct HTTP and delega
   ])
 })
 
+test('Rocket Software tolerates the known Cloudflare gate and still delegates to the live Workday board', async () => {
+  const rocket = await loadModule('../../scraper/rocketsoftware/script.js')
+  const requestedUrls = []
+
+  const jobs = await rocket.createRocketSoftwareScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      assert.equal(url, rocket.CAREERS_URL)
+      throw new Error(`HTTP 403 for ${url}`)
+    },
+    runWorkday: async (options) => {
+      assert.equal(options.company, 'Rocket Software')
+      assert.equal(options.baseUrl, rocket.WORKDAY_BOARD_URL)
+      assert.equal(options.locationCountry, 'India')
+      assert.equal(options.source, 'rocketsoftware')
+      return rocketWorkdayJobs
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [rocket.CAREERS_URL])
+  assert.deepEqual(jobs, [
+    {
+      ...rocketWorkdayJobs[0],
+      company: 'Rocket Software',
+      source: 'rocketsoftware',
+      sourceUrl: 'https://rocket.wd5.myworkdayjobs.com/rocket_careers/job/Pune-India/Software-Engineer-III_R2026-6454',
+      applyUrl: 'https://rocket.wd5.myworkdayjobs.com/rocket_careers/job/Pune-India/Software-Engineer-III_R2026-6454',
+    },
+  ])
+})
+
 test('Rocket Software fails closed when the verified careers page drifts', async () => {
   const rocket = await loadModule('../../scraper/rocketsoftware/script.js')
 

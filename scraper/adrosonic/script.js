@@ -76,11 +76,13 @@ export const hasOfficialHomepageSignal = (html) => {
   const hasLegacyPositioning = /Your Partner for Your Digital Transformation/i.test(page)
   const hasCurrentPositioning = /We Transform Companies That Transform the World/i.test(page)
     && /Driven by Care,\s*Defined by Innovation/i.test(page)
+  const hasCurrentBrandStory = /Driven By Care,\s*Defined By Innovation/i.test(page)
+    && /ADROSONIC empowers enterprises to accelerate growth through innovation, insight and automation/i.test(page)
 
   return /<title>\s*Home Page - Adrosonic\s*<\/title>/i.test(page)
     && /href=["']https:\/\/adrosonic\.com\/careers\/["']/i.test(page)
     && />\s*Careers\s*</i.test(page)
-    && (hasLegacyPositioning || hasCurrentPositioning)
+    && (hasLegacyPositioning || hasCurrentPositioning || hasCurrentBrandStory)
 }
 
 export const hasOfficialCareersPageSignal = (html) => {

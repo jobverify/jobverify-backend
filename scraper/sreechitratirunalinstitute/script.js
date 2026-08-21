@@ -196,7 +196,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
-  timeoutMs: 15000,
+  timeoutMs: 60000,
 })
 
 export const createSreeChitraTirunalInstituteScraper = ({

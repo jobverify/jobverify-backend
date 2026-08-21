@@ -323,6 +323,19 @@ export const hasOfficialCareersSignal = (html) => {
   return /<title>\s*HAL(?:\s*[–-]\s*Hindustan Aeronautics Limited)?\s*<\/title>/i.test(page)
 }
 
+export const isTemporaryCareersSurfaceError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+
+  return message.includes(CAREERS_URL)
+    && (
+      /Request timed out/i.test(message)
+      || /socket hang up/i.test(message)
+      || /fetch failed/i.test(message)
+      || /ECONNRESET/i.test(message)
+      || /ETIMEDOUT/i.test(message)
+    )
+}
+
 export const extractCareerListings = (payload = {}) =>
   (Array.isArray(payload?.career) ? payload.career : []).map((item) => ({
     id: normalizeWhitespace(item?.id),
@@ -420,7 +433,16 @@ export const createHindustanAeronauticsScraper = ({
     const fetchText = options.fetchText || transport.fetchText
     const fetchJson = options.fetchJson || transport.fetchJson
 
-    const careersHtml = await fetchText(CAREERS_URL)
+    let careersHtml
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (isTemporaryCareersSurfaceError(error)) {
+        return []
+      }
+
+      throw error
+    }
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error(
         'The verified Hindustan Aeronautics careers page no longer matches the trusted public surface',

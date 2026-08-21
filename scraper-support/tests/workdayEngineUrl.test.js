@@ -253,6 +253,14 @@ test('extractCity prefers the city segment for country-first Workday locations a
   assert.equal(extractCity('Virtual India'), 'Remote')
 })
 
+test('extractCity ignores leading country codes in comma-separated Workday locations', () => {
+  assert.equal(extractCity('IND, Bangalore, KA'), 'Bangalore')
+})
+
+test('extractCity prefers the canonical city over campus labels in India locations', () => {
+  assert.equal(extractCity('Phoenix Building, Bangalore, India'), 'Bangalore')
+})
+
 test('matchesWorkdayLocationPattern can enforce India-only results when Workday query params are insufficient', () => {
   assert.equal(
     matchesWorkdayLocationPattern(
@@ -2374,6 +2382,217 @@ test('runWorkdayScraper preserves a prefiltered Location_Country facet before re
     global.fetch = originalFetch
     console.log = originalConsoleLog
     console.warn = originalConsoleWarn
+  }
+})
+
+test('runWorkdayScraper logs HTTP 500 detail fallbacks to stdout without warning-stream noise', async () => {
+  const originalFetch = global.fetch
+  const originalConsoleLog = console.log
+  const originalConsoleWarn = console.warn
+  const logMessages = []
+  const warnMessages = []
+  const detailUrls = []
+
+  console.log = (...args) => {
+    logMessages.push(args.join(' '))
+  }
+  console.warn = (...args) => {
+    warnMessages.push(args.join(' '))
+  }
+
+  global.fetch = async (url, options = {}) => {
+    const requestUrl = String(url)
+    const method = options.method || 'GET'
+
+    if (method === 'GET' && !requestUrl.includes('/job/')) {
+      return {
+        ok: true,
+        status: 200,
+        url: requestUrl,
+        headers: {
+          getSetCookie: () => [],
+          get: () => 'text/html; charset=UTF-8',
+        },
+        text: async () => '<html><body>GE Appliances Workday shell</body></html>',
+      }
+    }
+
+    if (method === 'POST') {
+      return {
+        ok: true,
+        status: 200,
+        url: requestUrl,
+        headers: { get: () => 'application/json;charset=ISO-8859-1' },
+        json: async () => ({
+          total: 1,
+          jobPostings: [
+            {
+              title: 'Intern - Intellectual Property',
+              externalPath: '/job/IND-Bangalore-KA/Intern---Intellectual-Property_REQ-26215',
+              locationsText: 'Bangalore, India',
+              postedOn: 'Today',
+            },
+          ],
+        }),
+      }
+    }
+
+    if (requestUrl.includes('/job/')) {
+      detailUrls.push(requestUrl)
+      return {
+        ok: false,
+        status: 500,
+        url: requestUrl,
+        headers: { get: () => 'text/html; charset=UTF-8' },
+        text: async () => '<html><body>Internal Server Error</body></html>',
+      }
+    }
+
+    throw new Error(`Unexpected fetch URL: ${requestUrl}`)
+  }
+
+  try {
+    const jobs = await runWorkdayScraper({
+      company: 'GE Appliances',
+      baseUrl: 'https://haier.wd3.myworkdayjobs.com/en-US/GE_Appliances',
+      locationCountry: 'c4f78be1a8f14da0ab49ce1162348a5e',
+      source: 'geappliances',
+      scraperDir: path.join(testsDir, '../../scraper/geappliances.workday'),
+    })
+
+    assert.equal(jobs.length, 1)
+    assert.equal(jobs[0].title, 'Intern - Intellectual Property')
+    assert.equal(jobs[0].location, 'Bangalore, India')
+    assert.equal(detailUrls.length, 1)
+    assert.match(
+      logMessages.join('\n'),
+      /Failed to enrich details for .*Intern---Intellectual-Property_REQ-26215; keeping listing data when summary location remains safely in scope: \[geappliances\] Workday jobs API returned HTTP_500/,
+    )
+    assert.equal(
+      warnMessages.some((message) => message.includes('Failed to enrich details for')),
+      false,
+    )
+  } finally {
+    global.fetch = originalFetch
+    console.log = originalConsoleLog
+    console.warn = originalConsoleWarn
+  }
+})
+
+test('runWorkdayScraper logs HTTP 429 detail fallback notices to stdout and disables later detail fetches', async () => {
+  const originalFetch = global.fetch
+  const originalConsoleLog = console.log
+  const originalConsoleWarn = console.warn
+  const originalDetailConcurrency = process.env.WORKDAY_DETAIL_FETCH_CONCURRENCY
+  const logMessages = []
+  const warnMessages = []
+  const detailUrls = []
+
+  process.env.WORKDAY_DETAIL_FETCH_CONCURRENCY = '1'
+  console.log = (...args) => {
+    logMessages.push(args.join(' '))
+  }
+  console.warn = (...args) => {
+    warnMessages.push(args.join(' '))
+  }
+
+  global.fetch = async (url, options = {}) => {
+    const requestUrl = String(url)
+    const method = options.method || 'GET'
+
+    if (method === 'GET' && !requestUrl.includes('/job/')) {
+      return {
+        ok: true,
+        status: 200,
+        url: requestUrl,
+        headers: {
+          getSetCookie: () => [],
+          get: () => 'text/html; charset=UTF-8',
+        },
+        text: async () => '<html><body>GE Appliances Workday shell</body></html>',
+      }
+    }
+
+    if (method === 'POST') {
+      return {
+        ok: true,
+        status: 200,
+        url: requestUrl,
+        headers: { get: () => 'application/json;charset=ISO-8859-1' },
+        json: async () => ({
+          total: 2,
+          jobPostings: [
+            {
+              title: 'Senior Engineer',
+              externalPath: '/job/IND-Bangalore-KA/Senior-Engineer_REQ-1',
+              locationsText: 'Bangalore, India',
+              postedOn: 'Today',
+            },
+            {
+              title: 'Principal Engineer',
+              externalPath: '/job/IND-Hyderabad-TS/Principal-Engineer_REQ-2',
+              locationsText: 'Hyderabad, India',
+              postedOn: 'Today',
+            },
+          ],
+        }),
+      }
+    }
+
+    if (requestUrl.includes('/job/')) {
+      detailUrls.push(requestUrl)
+      return {
+        ok: false,
+        status: 429,
+        url: requestUrl,
+        headers: { get: () => 'text/html; charset=UTF-8' },
+        text: async () => '<html><body>Too Many Requests</body></html>',
+      }
+    }
+
+    throw new Error(`Unexpected fetch URL: ${requestUrl}`)
+  }
+
+  try {
+    const jobs = await runWorkdayScraper({
+      company: 'GE Appliances',
+      baseUrl: 'https://haier.wd3.myworkdayjobs.com/en-US/GE_Appliances',
+      locationCountry: 'c4f78be1a8f14da0ab49ce1162348a5e',
+      source: 'geappliances',
+      scraperDir: path.join(testsDir, '../../scraper/geappliances.workday'),
+    })
+
+    assert.equal(jobs.length, 2)
+    assert.deepEqual(
+      jobs.map((job) => job.location),
+      ['Bangalore, India', 'Hyderabad, India'],
+    )
+    assert.equal(detailUrls.length, 1)
+    assert.match(
+      logMessages.join('\n'),
+      /Failed to enrich details for .*Senior-Engineer_REQ-1; keeping listing data when summary location remains safely in scope: \[geappliances\] Workday jobs API returned HTTP_429/,
+    )
+    assert.match(
+      logMessages.join('\n'),
+      /Workday detail requests became unstable; continuing with listing-backed data for the remaining jobs on this source\./,
+    )
+    assert.equal(
+      warnMessages.some((message) => message.includes('Failed to enrich details for')),
+      false,
+    )
+    assert.equal(
+      warnMessages.some((message) => message.includes('Workday detail requests became unstable')),
+      false,
+    )
+  } finally {
+    global.fetch = originalFetch
+    console.log = originalConsoleLog
+    console.warn = originalConsoleWarn
+    if (originalDetailConcurrency == null) {
+      delete process.env.WORKDAY_DETAIL_FETCH_CONCURRENCY
+    } else {
+      process.env.WORKDAY_DETAIL_FETCH_CONCURRENCY = originalDetailConcurrency
+    }
   }
 })
 

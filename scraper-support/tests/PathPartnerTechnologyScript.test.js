@@ -19,6 +19,8 @@ test('PathPartner Technology recognizes the verified no-public-careers surface',
   assert.equal(pathpartner.CAREERS_URL, 'https://pathpartnertech.com/career/')
   assert.equal(pathpartner.CAREERS_ALIAS_URL, 'https://pathpartnertech.com/careers/')
   assert.equal(pathpartner.JOBS_URL, 'https://pathpartnertech.com/jobs/')
+  assert.equal(pathpartner.isTrustedUnavailableFailure(new Error('fetch failed | read ECONNRESET')), true)
+  assert.equal(pathpartner.isTrustedUnavailableFailure(new Error('fetch failed | connect timeout')), true)
   assert.equal(
     pathpartner.hasOfficialHomepageSignal(`
       <title>Home - Pathpartnertech</title>
@@ -146,6 +148,21 @@ test('PathPartner Technology returns [] only while the verified first-party surf
     },
   })
 
+  assert.deepEqual(jobs, [])
+})
+
+test('PathPartner Technology returns [] when the trusted first-party host is currently unavailable', async () => {
+  const pathpartner = await loadScriptModule()
+  const requestedUrls = []
+
+  const jobs = await pathpartner.createPathPartnerTechnologyScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      throw new Error('fetch failed | read ECONNRESET')
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [pathpartner.HOMEPAGE_URL])
   assert.deepEqual(jobs, [])
 })
 

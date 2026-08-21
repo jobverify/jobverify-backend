@@ -30,6 +30,12 @@ const cloudflareBlockedCareersHtml = `
 </html>
 `
 
+const verifiedRedirectLoopProbe = {
+  status: 302,
+  url: 'https://norwintechnologies.com/careers/',
+  location: 'https://norwintechnologies.com/careers/',
+}
+
 const boardHtml = `
 <!doctype html>
 <html lang="en">
@@ -54,6 +60,32 @@ const boardHtml = `
     </div>
     <div class="js-card list-item list-item-clickable js-careers-page-job-list-item" data-href="/jobs/fk0us1/">
       <a href="https://norwin.hire.trakstar.com/jobs/fk0us1/">
+        <div class="row">
+          <div class="col-md-6 col-xs-6">
+            <h3 class="rb-h3 js-job-list-opening-name">Sr, Storage Ops</h3>
+            <div class="rb-text-6 js-job-list-opening-loc">
+              <span class="meta-job-location-city">Atlanta</span>,
+              <span class="meta-job-location-state">GA</span>,
+              <span class="meta-job-location-country">United States</span>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+  </body>
+</html>
+`
+
+const usOnlyBoardHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Norwin Technologies jobs | Norwin Technologies openings | Norwin Technologies careers</title>
+  </head>
+  <body>
+    <h1>Jobs at Norwin Technologies</h1>
+    <div class="js-card list-item list-item-clickable js-careers-page-job-list-item" data-href="/jobs/fk0p3z/">
+      <a href="https://norwin.hire.trakstar.com/jobs/fk0p3z/">
         <div class="row">
           <div class="col-md-6 col-xs-6">
             <h3 class="rb-h3 js-job-list-opening-name">Sr, Storage Ops</h3>
@@ -100,6 +132,8 @@ test('Norwin Technologies validates the careers page and extracts Trakstar job l
   assert.equal(norwin.BOARD_URL, 'https://norwin.hire.trakstar.com/')
   assert.equal(norwin.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(norwin.hasCloudflareProtectedCareersSignal(cloudflareBlockedCareersHtml), true)
+  assert.equal(norwin.hasRedirectLoopError(new Error('fetch failed | redirect count exceeded')), true)
+  assert.equal(norwin.hasVerifiedSelfRedirectingCareersUrl(verifiedRedirectLoopProbe), true)
   assert.equal(norwin.hasVerifiedTrakstarBoardSignal(boardHtml), true)
   assert.deepEqual(
     norwin.extractTrakstarListings(boardHtml).map((job) => [job.title, job.location, job.jobId]),
@@ -153,6 +187,32 @@ test('Norwin Technologies accepts a Cloudflare-protected careers page when the N
     jobs.map((job) => [job.title, job.location, job.country]),
     [['Principal Engineer', 'Bengaluru, Karnataka, India', 'India']],
   )
+})
+
+test('Norwin Technologies accepts the Friday, August 14, 2026 careers redirect loop when the Norwin board stays public with no India roles', async () => {
+  const norwin = await loadModule()
+  const requestedUrls = []
+  const probedUrls = []
+
+  const jobs = await norwin.createNorwinTechnologiesScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === norwin.CAREERS_URL) {
+        throw new Error('fetch failed | redirect count exceeded')
+      }
+      if (url === norwin.BOARD_URL) return usOnlyBoardHtml
+      throw new Error(`Unexpected Norwin URL: ${url}`)
+    },
+    probeCareersRedirect: async (url) => {
+      probedUrls.push(url)
+      return verifiedRedirectLoopProbe
+    },
+    now: () => '2026-08-14T00:00:00.000Z',
+  })
+
+  assert.deepEqual(requestedUrls, [norwin.CAREERS_URL, norwin.BOARD_URL])
+  assert.deepEqual(probedUrls, [norwin.CAREERS_URL])
+  assert.deepEqual(jobs, [])
 })
 
 test('Norwin Technologies fails closed when the verified board contract drifts', async () => {

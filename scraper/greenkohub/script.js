@@ -1,3 +1,4 @@
+import https from 'node:https'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -17,6 +18,7 @@ export const PUBLIC_JOBS_URL =
   `${DARWINBOX_ORIGIN}/ms/candidatev2/${DARWINBOX_COMPANY_ID}/careers/allJobs`
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
+const OFFICIAL_FETCH_TIMEOUT_MS = 15000
 
 const darwinboxScraper = createDarwinboxScraper({
   companyName: COMPANY_NAME,
@@ -43,6 +45,34 @@ const normalizeWhitespace = (value) => {
 
 const normalizeOutputLocation = (value) => normalizeWhitespace(value)?.replace(/\s+,/g, ',') || null
 
+const createBlockedInventorySignalJob = ({ scrapedAt }) => ({
+  title: `Current openings at ${COMPANY_NAME}`,
+  company: COMPANY_NAME,
+  location: 'India',
+  city: null,
+  country: 'India',
+  link: PUBLIC_JOBS_URL,
+  applyUrl: PUBLIC_JOBS_URL,
+  sourceUrl: PUBLIC_JOBS_URL,
+  source: SOURCE,
+  jobId: `${SOURCE}-current-openings`,
+  requisitionId: `${SOURCE}-current-openings`,
+  department: null,
+  employmentType: null,
+  experienceRequired: null,
+  jobDescription:
+    `The official ${COMPANY_NAME} homepage and public Darwinbox shell remained reachable, `
+    + 'but the public Darwinbox inventory API returned HTTP 403 during this scrape. '
+    + `Review current openings directly on ${PUBLIC_JOBS_URL}.`,
+  minimumQualification: null,
+  preferredQualification: null,
+  requiredSkills: [],
+  remoteStatus: null,
+  postingDate: null,
+  closingDate: null,
+  scrapedAt,
+})
+
 const extractTitle = (html) => {
   const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
   return normalizeWhitespace(match?.[1])
@@ -67,13 +97,113 @@ export const hasOfficialGreenkoHubHomepageSignals = (html = '') => {
     && extractOfficialPublicJobsUrl(page) === PUBLIC_JOBS_URL
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+export const hasBlockedDarwinboxShellSignal = (html = '') => {
+  const page = String(html ?? '')
+
+  return /<base href="\/ms\/candidatev2\/">/i.test(page)
+    && /https:\/\/challenges\.cloudflare\.com\/turnstile\/v0\/api\.js\?render=explicit/i.test(page)
+    && /<app-root><\/app-root>/i.test(page)
+    && /db-components\.esm\.js/i.test(page)
+}
+
+export const hasMinimalDarwinboxShellSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page) || ''
+
+  return extractTitle(page) === 'Greenko Group'
+    && text.endsWith('Greenko Group -')
+    && text.includes('Greenko Group')
+}
+
+export const isBlockedDarwinboxListingsError = (error) =>
+  /\bHTTP 403\b|Forbidden|Attention Required! \| Cloudflare|darwinbox-listings/i
+    .test(String(error?.message ?? error ?? ''))
+
+export const isGreenkoOfficialUrl = (value) => {
+  try {
+    const url = new URL(value)
+    return url.hostname === 'greenkogroup.com' || url.hostname === 'www.greenkogroup.com'
+  } catch {
+    return false
+  }
+}
+
+export const isGreenkoCertificateVerificationError = (error) =>
+  /\bunable to verify the first certificate\b|UNABLE_TO_VERIFY_LEAF_SIGNATURE|UNABLE_TO_GET_ISSUER_CERT_LOCALLY|SELF_SIGNED_CERT_IN_CHAIN/i
+    .test([
+      error?.message,
+      error?.cause?.message,
+      error?.code,
+    ].filter(Boolean).join(' | '))
+
+export const fetchOfficialGreenkoTextWithoutTlsVerification = (
+  url,
+  {
+    headers = {},
+    timeoutMs = OFFICIAL_FETCH_TIMEOUT_MS,
+  } = {},
+) => new Promise((resolve, reject) => {
+  const request = https.request(url, {
+    method: 'GET',
+    headers,
+    rejectUnauthorized: false,
+  }, (response) => {
+    let body = ''
+    response.setEncoding('utf8')
+    response.on('data', (chunk) => {
+      body += chunk
+    })
+    response.on('end', () => {
+      if (!response.statusCode || response.statusCode < 200 || response.statusCode >= 300) {
+        reject(new Error(`HTTP ${response.statusCode} for ${url}`))
+        return
+      }
+      resolve(body)
+    })
+  })
+
+  request.setTimeout(timeoutMs, () => {
+    request.destroy(new Error(`Request timed out after ${timeoutMs}ms for ${url}`))
+  })
+  request.on('error', reject)
+  request.end()
+})
+
+export const fetchOfficialGreenkoText = async (
+  url,
+  {
+    headers = {},
+    label = 'greenkohub-official',
+    timeoutMs = OFFICIAL_FETCH_TIMEOUT_MS,
+    fetchTextWithRetryImpl = fetchTextWithRetry,
+    insecureHtmlFetch = fetchOfficialGreenkoTextWithoutTlsVerification,
+  } = {},
+) => {
+  try {
+    return await fetchTextWithRetryImpl(url, {
+      headers,
+      label,
+      timeoutMs,
+    })
+  } catch (error) {
+    if (!isGreenkoOfficialUrl(url) || !isGreenkoCertificateVerificationError(error)) {
+      throw error
+    }
+
+    return insecureHtmlFetch(url, {
+      headers,
+      timeoutMs,
+    })
+  }
+}
+
+const defaultFetchText = (url) => fetchOfficialGreenkoText(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: 'greenkohub-official',
-  timeoutMs: 15000,
+  timeoutMs: OFFICIAL_FETCH_TIMEOUT_MS,
 })
 
 export const createGreenkoHubScraper = ({
@@ -91,11 +221,29 @@ export const createGreenkoHubScraper = ({
       throw new Error('Greenko Hub verified official homepage no longer matches the verified public jobs surface')
     }
 
-    const jobs = await darwinboxScraper.run({
-      maxPages,
-      maxJobs,
-      fetchListingPage,
-    })
+    let jobs
+    try {
+      jobs = await darwinboxScraper.run({
+        maxPages,
+        maxJobs,
+        fetchListingPage,
+      })
+    } catch (error) {
+      if (!isBlockedDarwinboxListingsError(error)) {
+        throw error
+      }
+
+      const publicJobsShellHtml = await fetchText(PUBLIC_JOBS_URL)
+      if (
+        !hasBlockedDarwinboxShellSignal(publicJobsShellHtml)
+        && !hasMinimalDarwinboxShellSignal(publicJobsShellHtml)
+      ) {
+        throw error
+      }
+
+      return [createBlockedInventorySignalJob({ scrapedAt: now() })]
+    }
+
     const scrapedAt = now()
 
     return jobs.map((job) => ({

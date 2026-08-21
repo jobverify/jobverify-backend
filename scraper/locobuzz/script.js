@@ -47,6 +47,24 @@ const ensureIndiaLocation = (location) => {
 
 const isIndiaLocation = (location) => INDIA_LOCATION_PATTERN.test(location || '')
 
+const findErrorInChain = (error, predicate) => {
+  const seen = new Set()
+  let current = error
+
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    if (predicate(current)) {
+      return current
+    }
+    current = current?.cause
+  }
+
+  return null
+}
+
+const hasHttpStatus = (error, status) =>
+  Boolean(findErrorInChain(error, (candidate) => Number(candidate?.status) === status))
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -55,6 +73,82 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 15000,
 })
+
+const extractTextLines = (html = '') => decodeHtmlEntities(String(html ?? ''))
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<br\s*\/?>/gi, '\n')
+  .replace(/<\/(p|div|section|article|li|ul|ol|h[1-6])>/gi, '\n')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\u00a0/g, ' ')
+  .split('\n')
+  .map((line) => line.replace(/\s+/g, ' ').trim())
+  .filter(Boolean)
+
+const parseHeadingOpeningDetails = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  const match = normalized.match(
+    /^(.+?)\s+(\d+(?:\s*[+\-–]\s*\d+)?\+?\s*(?:Years?|years|Yrs?|yrs?))$/i,
+  )
+
+  if (!match) return null
+
+  return {
+    location: normalizeWhitespace(match[1]),
+    experience: normalizeWhitespace(match[2]),
+  }
+}
+
+const extractHeadingOpenings = (html = '', sourceUrl = CAREERS_URL) => {
+  const lines = extractTextLines(html)
+  const startIndex = lines.findIndex((line) => /^Open Positions$/i.test(line))
+  if (startIndex < 0) return []
+
+  const endIndex = lines.findIndex((line, index) =>
+    index > startIndex && /^See Locobuzz in action$/i.test(line))
+  const sectionLines = lines
+    .slice(startIndex + 1, endIndex > startIndex ? endIndex : undefined)
+    .filter((line) =>
+      !/^Find your fit/i.test(line)
+      && !/careers@locobuzz\.com/i.test(line))
+
+  const jobs = []
+  for (let index = 0; index < sectionLines.length - 1; index += 1) {
+    const title = normalizeWhitespace(sectionLines[index])
+    const details = parseHeadingOpeningDetails(sectionLines[index + 1])
+
+    if (!title || !details || !isIndiaLocation(details.location)) {
+      continue
+    }
+
+    const location = ensureIndiaLocation(details.location)
+    jobs.push({
+      title,
+      company: PROVIDER_METADATA.companyName,
+      department: null,
+      location,
+      city: location?.split(/[\/,]/)[0]?.trim() || null,
+      country: 'India',
+      jobId: slugify(title),
+      requisitionId: slugify(title),
+      sourceUrl,
+      applyUrl: APPLICATION_URL,
+      employmentType: null,
+      experienceRequired: details.experience,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: null,
+    })
+    index += 1
+  }
+
+  return jobs
+}
 
 export const hasOfficialCareersSignal = (html = '') => {
   const rawHtml = String(html)
@@ -65,7 +159,7 @@ export const hasOfficialCareersSignal = (html = '') => {
     && normalized.includes('careers@locobuzz.com')
 }
 
-export const extractOpenings = (html = '') => {
+export const extractOpenings = (html = '', { sourceUrl = CAREERS_URL } = {}) => {
   const jobs = []
 
   for (const match of String(html).matchAll(
@@ -87,7 +181,7 @@ export const extractOpenings = (html = '') => {
       country: 'India',
       jobId: slugify(title),
       requisitionId: slugify(title),
-      sourceUrl: CAREERS_URL,
+      sourceUrl,
       applyUrl: APPLICATION_URL,
       employmentType: null,
       experienceRequired: experience,
@@ -100,18 +194,37 @@ export const extractOpenings = (html = '') => {
     })
   }
 
-  return jobs
+  return jobs.length > 0 ? jobs : extractHeadingOpenings(html, sourceUrl)
+}
+
+const loadCareersPage = async (fetchText) => {
+  try {
+    return {
+      careersUrl: CAREERS_URL,
+      careersHtml: await fetchText(CAREERS_URL),
+    }
+  } catch (error) {
+    if (CAREERS_URL.endsWith('/') || !hasHttpStatus(error, 307)) {
+      throw error
+    }
+
+    const canonicalUrl = `${CAREERS_URL}/`
+    return {
+      careersUrl: canonicalUrl,
+      careersHtml: await fetchText(canonicalUrl),
+    }
+  }
 }
 
 export const createLocobuzzScraper = () => ({
   async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    const { careersUrl, careersHtml } = await loadCareersPage(fetchText)
 
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Locobuzz careers page no longer matches the verified first-party public jobs surface')
     }
 
-    return extractOpenings(careersHtml).map((job) => ({
+    return extractOpenings(careersHtml, { sourceUrl: careersUrl }).map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,

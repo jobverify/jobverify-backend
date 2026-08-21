@@ -10,6 +10,8 @@ import { DEFAULT_JOB_RETENTION_DAYS } from "../../src/utils/jobLifecycle.js";
 let ScraperStatus;
 let ScraperRun;
 export const PIPELINE_SOURCE = "__pipeline__";
+const MONGO_MAP_DOT_ESCAPE = "\uFF0E";
+const MONGO_MAP_DOLLAR_ESCAPE = "\uFF04";
 
 const PIPELINE_STATUS_DEFAULTS = {
   lastJobsFound: 0,
@@ -25,6 +27,29 @@ const PIPELINE_STATUS_DEFAULTS = {
   lastPartialAt: null,
   lastPartialReason: null,
   lastRetentionDays: DEFAULT_JOB_RETENTION_DAYS,
+};
+
+export const encodeScraperRunSourceKey = (value) => String(value ?? "")
+  .replaceAll("$", MONGO_MAP_DOLLAR_ESCAPE)
+  .replaceAll(".", MONGO_MAP_DOT_ESCAPE);
+
+export const decodeScraperRunSourceKey = (value) => String(value ?? "")
+  .replaceAll(MONGO_MAP_DOLLAR_ESCAPE, "$")
+  .replaceAll(MONGO_MAP_DOT_ESCAPE, ".");
+
+const decodeScraperRunSources = (sources) => {
+  if (!sources) return sources;
+
+  const entries = sources instanceof Map
+    ? [...sources.entries()]
+    : Object.entries(sources);
+
+  return Object.fromEntries(
+    entries.map(([sourceKey, sourceSummary]) => [
+      decodeScraperRunSourceKey(sourceKey),
+      sourceSummary,
+    ]),
+  );
 };
 
 // Lazy-loads the ScraperStatus mongoose model.
@@ -141,7 +166,7 @@ export const writeScraperRun = async (ranAt, summary) => {
   let sourcesFailed = 0;
 
   for (const [sourceName, sourceSummary] of Object.entries(summary)) {
-    sourcesMap[sourceName] = {
+    sourcesMap[encodeScraperRunSourceKey(sourceName)] = {
       success: sourceSummary.success,
       jobsFound: sourceSummary.jobs || 0,
       eligibleJobsFound: sourceSummary.eligibleJobs ?? sourceSummary.jobs ?? 0,
@@ -175,6 +200,22 @@ export const writeScraperRun = async (ranAt, summary) => {
       sourcesFailed,
     },
   });
+};
+
+export const readPreviousScraperRun = async (before = new Date()) => {
+  await ensureConnected();
+  const ScraperRunModel = await getScraperRunModel();
+  const previousRun = await ScraperRunModel.findOne({ ranAt: { $lt: before } })
+    .sort({ ranAt: -1 })
+    .lean()
+    .exec();
+
+  if (!previousRun) return previousRun;
+
+  return {
+    ...previousRun,
+    sources: decodeScraperRunSources(previousRun.sources),
+  };
 };
 
 // Marks the shared pipeline status document as actively running.

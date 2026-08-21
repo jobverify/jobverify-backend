@@ -107,6 +107,12 @@ export const hasVerifiedSitemapIndexSignal = (xml = '') => {
     && /https:\/\/www\.eazydiner\.com\/sitemap\/city-delhi-ncr\.xml/i.test(text)
 }
 
+export const isMissingSitemapPlaceholder = (page = {}) =>
+  Number(page?.status) === 404
+  && String(page?.url || '') === SITEMAP_URL
+  && /Sitemap not found/i.test(String(page?.html ?? ''))
+  && !hasPublicJobListingSignal(page?.html)
+
 export const extractCareerLikeUrlsFromSitemap = (xml = '') => (
   [...String(xml ?? '').matchAll(/<loc>([^<]+)<\/loc>/gi)]
     .map((match) => match[1]?.trim() || null)
@@ -145,7 +151,12 @@ export const createEazyDinerScraper = () => ({
     }
 
     const sitemapPage = await fetchPage(SITEMAP_URL)
-    if (sitemapPage.status !== 200 || !hasVerifiedSitemapIndexSignal(sitemapPage.html)) {
+    if (
+      !(
+        (sitemapPage.status === 200 && hasVerifiedSitemapIndexSignal(sitemapPage.html))
+        || isMissingSitemapPlaceholder(sitemapPage)
+      )
+    ) {
       throw new Error('EazyDiner verified sitemap index no longer matches the known public surface')
     }
 

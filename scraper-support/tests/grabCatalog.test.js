@@ -30,7 +30,7 @@ const buildCatalogReadyProvider = (catalogEntry) => hydrateProviderCatalogEntry(
   modulePath,
 })
 
-test('Grab local catalog captures the verified first-party jobs board and India location surfaces', async () => {
+test('Grab local catalog captures the verified first-party jobs board, jobs RSS feed, and India location surfaces', async () => {
   const { GRAB_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const grab = await loadScriptModule()
   const provider = buildCatalogReadyProvider(GRAB_CATALOG)
@@ -42,32 +42,34 @@ test('Grab local catalog captures the verified first-party jobs board and India 
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://www.grab.careers/en/')
   assert.equal(provider.companyCareerPage, 'https://www.grab.careers/jobs')
+  assert.equal(provider.jobsRssFeedUrl, 'https://www.grab.careers/en/jobs/xml/?rss=true')
   assert.equal(provider.indiaLocationPageUrl, 'https://www.grab.careers/en/locations/india/')
   assert.equal(
     provider.sampleIndiaJobUrl,
-    'https://www.grab.careers/en/jobs/744000109177995/senior-techno-functional-oracle-integration-specialist/',
+    'https://www.grab.careers/en/jobs/744000143229150/lead-software-engineer-backend/',
   )
   assert.equal(
     provider.sampleSecondaryIndiaJobUrl,
-    'https://www.grab.careers/en/jobs/744000138121215/solutions-specialist-epm-finance-systems/',
+    'https://www.grab.careers/en/jobs/744000138554499/solutions-specialist-epm-finance-systems/',
   )
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'first-party-jobs-board-plus-india-location-page-html-cards')
+  assert.equal(provider.paginationStrategy, 'first-party-jobs-board-plus-jobs-rss-feed-plus-india-location-overview-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-jobs-board+verified-india-location-page+india-location-filter',
+    'verified-first-party-jobs-board+verified-jobs-rss-feed+verified-india-location-page+india-location-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'grab.careers')
-  assert.equal(provider.verifiedOn, '2026-07-17')
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.grab\.careers\/en\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.grab\.careers\/jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.grab\.careers\/en\/jobs\/xml\/\?rss=true/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.grab\.careers\/en\/locations\/india\//i)
-  assert.match(provider.verifiedSurfaceSummary, /Senior Techno-Functional Oracle Integration Specialist/i)
-  assert.match(provider.verifiedSurfaceSummary, /Bengaluru, India/i)
+  assert.match(provider.verifiedSurfaceSummary, /lead-software-engineer-backend/i)
+  assert.match(provider.verifiedSurfaceSummary, /Bangalore workplace/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /grab[\\/]jobs\.json$/i)
 

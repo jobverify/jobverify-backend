@@ -124,6 +124,14 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
 export const hasExplicitNoOpenPositionsSignal = (html = '') =>
   /don't have any open positions|do not have any open positions/i.test(String(html ?? ''))
 
+export const hasImplicitNoOpenPositionsSignal = (html = '') => {
+  const page = String(html ?? '')
+
+  return !/<a\b[^>]+href="[^"]*\/job\/[^"]+"/i.test(page)
+    && /Current Jobs/i.test(page)
+    && /What you can expect from iQ IMAGE/i.test(page)
+}
+
 export const extractJobCardsFromCareersPage = (html = '') => {
   const cards = []
   const seenUrls = new Set()
@@ -224,7 +232,7 @@ export const createImageInformationSystemsScraper = ({
 
     const jobCards = extractJobCardsFromCareersPage(careersHtml)
     if (jobCards.length === 0) {
-      if (hasExplicitNoOpenPositionsSignal(careersHtml)) return []
+      if (hasExplicitNoOpenPositionsSignal(careersHtml) || hasImplicitNoOpenPositionsSignal(careersHtml)) return []
       throw new Error('Image Information Systems careers page no longer exposes the expected visible job detail links')
     }
 

@@ -27,26 +27,31 @@ const SEARCH_PAGE_HTML = `
       phApp.ddo = {
         "eagerLoadRefineSearch":{
           "status":200,
-          "hits":59,
-          "totalHits":59,
+          "hits":80,
+          "totalHits":80,
           "data":{
             "jobs":[
               {
-                "title":"Splunk Regional Sales Manager",
-                "location":"Research Triangle Park, United States",
-                "country":"United States of America",
-                "jobId":"2010001"
+                "title":"Solution Test Technical Lead | Python/Java Programming | UI Automation | Network Protocols | AWS | Splunk | Kubernetes | Linux | Wireshark | AI - 8 to 12 years - Bangalore",
+                "location":"Bangalore, India",
+                "city":"Bangalore",
+                "country":"India",
+                "type":"Full time",
+                "jobId":"2021623",
+                "reqId":"2021623",
+                "postedDate":"2026-08-12T00:00:00.000+0000",
+                "applyUrl":"https://cisco.wd5.myworkdayjobs.com/Cisco_Careers/job/Bangalore-India/Solution-Test-Technical-Lead---Python-Java-Programming---UI-Automation---Network-Protocols---AWS---Splunk---Kubernetes---Linux---Wireshark---AI---8-to-12-years---Bangalore_2021623/apply"
               },
               {
-                "title":"Splunk Solutions Engineer Intern",
+                "title":"Account Executive - Splunk",
                 "location":"London, United Kingdom",
                 "country":"United Kingdom",
-                "jobId":"2012855"
+                "jobId":"2013485"
               }
             ],
             "aggregations":[
-              {"field":"country","value":{"United States of America":31,"United Kingdom":5,"Japan":7}},
-              {"field":"type","value":{"Full time":59}}
+              {"field":"country","value":{"United States of America":38,"Japan":10,"India":1,"United Kingdom":4}},
+              {"field":"type","value":{"Full time":80}}
             ]
           },
           "eid":{
@@ -74,13 +79,31 @@ const INDIA_PAGE_HTML = `
       phApp.ddo = {
         "eagerLoadRefineSearch":{
           "status":200,
-          "hits":0,
-          "totalHits":0,
+          "hits":1,
+          "totalHits":1,
           "data":{
-            "jobs":[],
+            "jobs":[
+              {
+                "title":"Solution Test Technical Lead | Python/Java Programming | UI Automation | Network Protocols | AWS | Splunk | Kubernetes | Linux | Wireshark | AI - 8 to 12 years - Bangalore",
+                "location":"Bangalore, India",
+                "city":"Bangalore",
+                "country":"India",
+                "type":"Full time",
+                "jobId":"2021623",
+                "reqId":"2021623",
+                "department":"CXEPI-AIOps-COGS-US 2 (Anup Reddy Challa)",
+                "category":"Product and Engineering",
+                "ml_skills":["python", "playwright", "splunk"],
+                "descriptionTeaser":"We are expanding our team.",
+                "postedDate":"2026-08-12T00:00:00.000+0000",
+                "applyUrl":"https://cisco.wd5.myworkdayjobs.com/Cisco_Careers/job/Bangalore-India/Solution-Test-Technical-Lead---Python-Java-Programming---UI-Automation---Network-Protocols---AWS---Splunk---Kubernetes---Linux---Wireshark---AI---8-to-12-years---Bangalore_2021623/apply",
+                "multi_location":["Bangalore, India"],
+                "multi_location_array":[{"location":"Bangalore, India"}]
+              }
+            ],
             "aggregations":[
-              {"field":"country","value":{"India":0}},
-              {"field":"type","value":{}}
+              {"field":"country","value":{"India":1}},
+              {"field":"type","value":{"Full time":1}}
             ],
             "ui_selections":{"country":["India"]}
           },
@@ -113,7 +136,7 @@ test('Splunk helpers recognize the verified first-party entry, global search res
   assert.equal(splunk.CAREERS_ENTRY_URL, 'https://www.splunk.com/en_us/careers/search-jobs.hml.html')
   assert.equal(splunk.SEARCH_PAGE_URL, 'https://careers.cisco.com/global/en/splunk/search-page')
   assert.equal(splunk.INDIA_PAGE_URL, 'https://careers.cisco.com/global/en/splunk/india')
-  assert.equal(splunk.VERIFIED_ON, '2026-07-25')
+  assert.equal(splunk.VERIFIED_ON, '2026-08-14')
   assert.equal(splunk.hasLegacyCareersEntrySignal(LEGACY_ENTRY_HTML), true)
   assert.equal(splunk.hasSearchPageSignal(SEARCH_PAGE_HTML), true)
   assert.equal(splunk.hasIndiaPageSignal(INDIA_PAGE_HTML), true)
@@ -121,17 +144,42 @@ test('Splunk helpers recognize the verified first-party entry, global search res
   const searchState = splunk.extractRefineSearchState(SEARCH_PAGE_HTML)
   const indiaState = splunk.extractRefineSearchState(INDIA_PAGE_HTML)
 
-  assert.equal(searchState.totalHits, 59)
-  assert.equal(indiaState.totalHits, 0)
+  assert.equal(searchState.totalHits, 80)
+  assert.equal(indiaState.totalHits, 1)
   assert.equal(splunk.searchPageShowsLiveGlobalResults(searchState), true)
-  assert.equal(splunk.indiaPageShowsVerifiedEmptySlice(indiaState), true)
+  assert.equal(splunk.indiaPageShowsLiveIndiaResults(indiaState), true)
+
+  const indiaJobs = splunk.extractIndiaJobs(indiaState)
+  assert.equal(indiaJobs.length, 1)
+  assert.deepEqual(indiaJobs[0], {
+    title: 'Solution Test Technical Lead | Python/Java Programming | UI Automation | Network Protocols | AWS | Splunk | Kubernetes | Linux | Wireshark | AI - 8 to 12 years - Bangalore',
+    company: 'Splunk',
+    department: 'CXEPI-AIOps-COGS-US 2 (Anup Reddy Challa)',
+    location: 'Bangalore, India',
+    city: 'Bangalore',
+    country: 'India',
+    jobId: '2021623',
+    requisitionId: '2021623',
+    sourceUrl: 'https://careers.cisco.com/global/en/job/2021623/Solution-Test-Technical-Lead-Python-Java-Programming-UI-Automation-Network-Protocols-AWS-Splunk-Kubernetes-Linux-Wireshark-AI-8-to-12-years-Bangalore',
+    applyUrl: 'https://cisco.wd5.myworkdayjobs.com/Cisco_Careers/job/Bangalore-India/Solution-Test-Technical-Lead---Python-Java-Programming---UI-Automation---Network-Protocols---AWS---Splunk---Kubernetes---Linux---Wireshark---AI---8-to-12-years---Bangalore_2021623/apply',
+    employmentType: 'Full-time',
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: ['python', 'playwright', 'splunk'],
+    postingDate: '2026-08-12',
+    closingDate: null,
+    jobDescription: 'We are expanding our team.',
+    locations: ['Bangalore, India'],
+  })
 })
 
-test('Splunk returns [] only while the verified India page stays empty and the global page stays live', async () => {
+test('Splunk returns the verified India jobs from the first-party embedded payload', async () => {
   const splunk = await loadModule()
   const requestedUrls = []
 
   const jobs = await splunk.createSplunkScraper().run({
+    now: () => '2026-08-14T17:02:09.529Z',
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === splunk.CAREERS_ENTRY_URL) return LEGACY_ENTRY_HTML
@@ -146,7 +194,12 @@ test('Splunk returns [] only while the verified India page stays empty and the g
     splunk.SEARCH_PAGE_URL,
     splunk.INDIA_PAGE_URL,
   ])
-  assert.deepEqual(jobs, [])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, '2021623')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].source, 'splunk')
+  assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(jobs[0].scrapedAt, '2026-08-14T17:02:09.529Z')
 })
 
 test('Splunk fails closed when the public India slice or global search payload changes materially', async () => {
@@ -166,11 +219,11 @@ test('Splunk fails closed when the public India slice or global search payload c
                   ddo: {
                     "eagerLoadRefineSearch":{
                       "status":200,
-                      "hits":1,
-                      "totalHits":1,
+                      "hits":0,
+                      "totalHits":0,
                       "data":{
-                        "jobs":[{"title":"Splunk Software Engineer","country":"India"}],
-                        "aggregations":[{"field":"country","value":{"India":1}}],
+                        "jobs":[],
+                        "aggregations":[{"field":"country","value":{"India":0}}],
                         "ui_selections":{"country":["India"]}
                       },
                       "eid":{"query":"(title.title_phenom:(\\"Splunk\\") AND country.country_sort:(\\"India\\"))"}
@@ -186,6 +239,6 @@ test('Splunk fails closed when the public India slice or global search payload c
         `
       },
     }),
-    /India empty slice/i,
+    /India results/i,
   )
 })

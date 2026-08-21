@@ -9,129 +9,90 @@ const loadScioModule = async () => {
   }
 }
 
-const careersHtml = `
+const placeholderShellHtml = `
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>SCIO Management Solutions – Intelligent, Automated RCM Services</title>
-  </head>
-  <body>
-    <nav>
-      <a href="careers.php#life-at-scio">Life at SCIO</a>
-      <a href="careers.php#Current-Openings">Current Openings</a>
-      <a href="careers.php#Growth-Pathways">Growth Pathways</a>
-      <a href="careers.php#Recognition">Recognition</a>
-    </nav>
-    <section id="Current-Openings">
-      <h2>Current Openings</h2>
-      <ul>
-        <li>Roles across Operations</li>
-        <li>Tech</li>
-        <li>Analytics</li>
-      </ul>
-    </section>
-    <footer>
-      <p>SCIO Management Solutions empowers healthcare organizations with data-driven insights and smart analytics.</p>
-    </footer>
-  </body>
-</html>
-`
-
-const applyHtml = `
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>SCIO Management Solutions – Intelligent, Automated RCM Services</title>
+    <title>SCIO Management Solutions - Intelligent, Automated RCM Services</title>
+    <link rel="canonical" href="https://www.scioms.com/index.php" />
   </head>
   <body>
     <main>
-      <h1>Apply Now</h1>
-      <form>
-        <select id="position" name="position">
-          <option value="">-- Select Position --</option>
-        </select>
-        <label>Upload Resume (PDF/DOC/DOCX)</label>
-        <button type="submit">Submit</button>
-      </form>
+      <h1>Request a Consultation</h1>
+      <button type="submit">Submit</button>
+      <button type="button">Close</button>
     </main>
   </body>
 </html>
 `
 
-test('SCIO sentinel pins the current first-party careers and apply shells', async () => {
+test('SCIO sentinel pins the current canonical placeholder shells', async () => {
   const scio = await loadScioModule()
 
   assert.equal(scio.SOURCE, 'sciomanagementsolutions')
   assert.equal(scio.COMPANY, 'SCIO Management Solutions')
-  assert.equal(scio.CAREERS_URL, 'https://www.scioms.com/careers.php')
-  assert.equal(scio.APPLY_URL, 'https://www.scioms.com/apply-now')
-  assert.equal(scio.VERIFIED_ON, '2026-08-04')
+  assert.equal(scio.CAREERS_URL, 'https://scioms.com/careers.php')
+  assert.equal(scio.APPLY_URL, 'https://scioms.com/apply-now.php')
+  assert.equal(scio.VERIFIED_ON, '2026-08-14')
 
-  assert.equal(scio.hasVerifiedCareersSignal(careersHtml), true)
-  assert.equal(scio.hasVerifiedApplyFormSignal(applyHtml), true)
-  assert.deepEqual(scio.extractPositionOptions(applyHtml), [])
-  assert.equal(scio.hasPublicJobListingsSignal(careersHtml), false)
-  assert.equal(scio.hasPublicJobListingsSignal(applyHtml), false)
+  assert.equal(scio.hasVerifiedPlaceholderShellSignal(placeholderShellHtml), true)
+  assert.equal(scio.hasVerifiedCareersSignal(placeholderShellHtml), true)
+  assert.equal(scio.hasVerifiedApplyFormSignal(placeholderShellHtml), true)
+  assert.deepEqual(scio.extractPositionOptions(placeholderShellHtml), [])
+  assert.equal(scio.hasPublicJobListingsSignal(placeholderShellHtml), false)
 })
 
-test('SCIO sentinel detects real public job signals once positions are populated', async () => {
+test('SCIO sentinel detects real public job signals once positions or job routes appear', async () => {
   const scio = await loadScioModule()
 
-  const populatedApplyHtml = applyHtml.replace(
-    '</select>',
-    '<option value="Senior Analyst - RCM">Senior Analyst - RCM</option></select>',
+  assert.equal(
+    scio.hasPublicJobListingsSignal(
+      '<main><h1>Current Openings</h1><a href="/job/senior-analyst-rcm">Senior Analyst - RCM</a></main>',
+    ),
+    true,
   )
-
-  assert.deepEqual(scio.extractPositionOptions(populatedApplyHtml), ['Senior Analyst - RCM'])
-  assert.equal(scio.hasPublicJobListingsSignal(populatedApplyHtml), true)
   assert.equal(scio.hasPublicJobListingsSignal('<div>Job ID: SCIO-101</div>'), true)
 })
 
-test('SCIO sentinel returns [] while the verified apply form remains a placeholder over direct HTTP', async () => {
+test('SCIO sentinel returns [] while the canonical careers and apply routes stay on the verified placeholder shell', async () => {
   const scio = await loadScioModule()
   const requested = []
 
   const jobs = await scio.createScioManagementSolutionsScraper().run({
     fetchText: async (url) => {
       requested.push(url)
-      if (url === scio.CAREERS_URL) return careersHtml
-      if (url === scio.APPLY_URL) return applyHtml
+      if (url === scio.CAREERS_URL) return placeholderShellHtml
+      if (url === scio.APPLY_URL) return placeholderShellHtml
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requested, [
-    scio.CAREERS_URL,
-    scio.APPLY_URL,
-  ])
+  assert.deepEqual(requested, [scio.CAREERS_URL, scio.APPLY_URL])
   assert.deepEqual(jobs, [])
 })
 
-test('SCIO aborts retries when the verified first-party shells break HTTP parsing over direct HTTP', async () => {
+test('SCIO falls back to the lenient transport when direct HTTP parsing breaks', async () => {
   const scio = await loadScioModule()
   const protocolError = new TypeError('fetch failed')
   protocolError.cause = new Error(
     'Response does not match the HTTP/1.1 protocol (Invalid header value char)',
   )
 
-  await assert.rejects(
-    scio.createScioManagementSolutionsScraper().run({
-      fetchText: async () => {
-        throw protocolError
-      },
-    }),
-    (error) => {
-      assert.match(
-        error.message,
-        /SCIO Management Solutions verified careers shell currently returns a broken HTTP\/1\.1 response/i,
-      )
-      assert.equal(error.abortRetries, true)
-      assert.equal(error.softFailure, true)
-      assert.equal(error.upstreamOutage, true)
-      assert.equal(error.failureKind, 'network_or_timeout')
-      return true
+  const requested = []
+  const jobs = await scio.createScioManagementSolutionsScraper().run({
+    fetchText: async () => {
+      throw protocolError
     },
-  )
+    fetchLenientText: async (url) => {
+      requested.push(url)
+      if (url === scio.CAREERS_URL) return placeholderShellHtml
+      if (url === scio.APPLY_URL) return placeholderShellHtml
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requested, [scio.CAREERS_URL, scio.APPLY_URL])
+  assert.deepEqual(jobs, [])
 })
 
 test('SCIO sentinel fails closed when the verified shell drifts or positions appear', async () => {
@@ -153,12 +114,9 @@ test('SCIO sentinel fails closed when the verified shell drifts or positions app
   await assert.rejects(
     scio.createScioManagementSolutionsScraper().run({
       fetchText: async (url) => {
-        if (url === scio.CAREERS_URL) return careersHtml
+        if (url === scio.CAREERS_URL) return placeholderShellHtml
         if (url === scio.APPLY_URL) {
-          return applyHtml.replace(
-            '</select>',
-            '<option value="Associate, Coding">Associate, Coding</option></select>',
-          )
+          return '<html><body><h1>Current Openings</h1><a href="/job/associate-coding">Associate, Coding</a></body></html>'
         }
 
         throw new Error(`Unexpected URL: ${url}`)

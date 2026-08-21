@@ -10,10 +10,31 @@ test('getScraperCatalog includes Infinite Computer Solutions as an official care
   assert.ok(provider)
   assert.equal(provider.companyName, 'Infinite Computer Solutions')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'brassring')
+  assert.equal(provider.atsPlatform, 'brassring-public-search-api-location-filter')
   assert.equal(provider.companyCareerPage, 'https://www.infinite.com/careers')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.companyDomain, 'infinite.com')
+  assert.equal(
+    provider.searchResultsUrl,
+    'https://sjobs.brassring.com/TGNewUI/Search/Home/Home?partnerid=26656&siteid=5008#keyWordSearch=&locationSearch=India',
+  )
+  assert.equal(
+    provider.searchApiUrl,
+    'https://sjobs.brassring.com/TgNewUI/Search/Ajax/ProcessSortAndShowMoreJobs',
+  )
+  assert.equal(
+    provider.paginationStrategy,
+    'official-careers-page-plus-public-brassring-search-api-pagination',
+  )
+  assert.equal(
+    provider.extractionStrategy,
+    'official-careers-page+brassring-landing-session+public-search-api+formtext4-india-location-filter',
+  )
+  assert.equal(provider.verifiedOn, '2026-08-15')
+  assert.equal(provider.verifiedPublicJobCount, 577)
+  assert.equal(provider.verifiedIndiaJobCount, 170)
+  assert.match(provider.verifiedSurfaceSummary, /August 15, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /ProcessSortAndShowMoreJobs/i)
   assert.match(provider.modulePath, /infinitecomputersolutions[\\/]script\.js$/i)
 })
 

@@ -25,7 +25,7 @@ const loadScraperModule = async () => {
   }
 }
 
-test('Lava International local catalog captures the verified resume-only careers sentinel state', async () => {
+test('Lava International local catalog captures the verified empty-openposition corporate careers contract', async () => {
   const { LAVA_INTERNATIONAL_CATALOG } = await loadCatalogModule()
   const lavainternational = await loadScraperModule()
   const provider = hydrateProviderCatalogEntry(LAVA_INTERNATIONAL_CATALOG)
@@ -34,34 +34,32 @@ test('Lava International local catalog captures the verified resume-only careers
   assert.equal(provider.companyName, 'Lava International')
   assert.equal(provider.officialBrandName, 'Lava International Limited')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.homepageUrl, 'https://shop.lavamobiles.com/')
-  assert.equal(provider.aboutPageUrl, 'https://shop.lavamobiles.com/pages/about-us')
-  assert.equal(provider.companyCareerPage, 'https://shop.lavamobiles.com/pages/career')
-  assert.equal(provider.applicationEmail, 'careers@lavainternational.in')
-  assert.equal(provider.applicationUrl, 'mailto:careers@lavainternational.in')
+  assert.equal(provider.homepageUrl, 'https://www.lavamobiles.com/')
+  assert.equal(provider.aboutPageUrl, 'https://www.lavamobiles.com/aboutus')
+  assert.equal(provider.companyCareerPage, 'https://www.lavamobiles.com/career')
+  assert.equal(provider.applicationUrl, 'https://www.lavamobiles.com/career/joblist')
   assert.equal(provider.companyDomain, 'lavamobiles.com')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'official-company-site-openposition-api')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'verified-about-page-plus-resume-only-careers-page-plus-common-route-404-validation',
+    'verified-about-page-plus-careers-landing-plus-joblist-plus-empty-openposition-api',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-about-page+verified-resume-only-careers-page+verified-missing-common-job-routes-return-empty',
+    'verified-about-page+verified-careers-landing+verified-joblist-page+empty-openposition-api-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-08-17')
   assert.match(provider.dryRunFile, /lavainternational[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /July 16, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/shop\.lavamobiles\.com\/pages\/about-us/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/shop\.lavamobiles\.com\/pages\/career/i)
-  assert.match(provider.verifiedSurfaceSummary, /careers@lavainternational\.in/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/shop\.lavamobiles\.com\/careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/shop\.lavamobiles\.com\/jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public job listings/i)
+  assert.match(provider.verifiedSurfaceSummary, /Monday, August 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.lavamobiles\.com\/aboutus/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.lavamobiles\.com\/career/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.lavamobiles\.com\/career\/joblist/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.lavamobiles\.com\/api\/openpositionlist/i)
+  assert.match(provider.verifiedSurfaceSummary, /\[\]/i)
 
   assert.equal(lavainternational.PROVIDER_METADATA.source, LAVA_INTERNATIONAL_CATALOG.source)
   assert.equal(lavainternational.PROVIDER_METADATA.companyName, LAVA_INTERNATIONAL_CATALOG.companyName)
@@ -93,9 +91,9 @@ test('Lava International hydrated local catalog stays script-runner compatible f
 
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Lava International')
-  assert.equal(provider.companyCareerPage, 'https://shop.lavamobiles.com/pages/career')
+  assert.equal(provider.companyCareerPage, 'https://www.lavamobiles.com/career')
   assert.equal(provider.companyDomain, 'lavamobiles.com')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'official-company-site-openposition-api')
   assert.match(provider.modulePath, /lavainternational[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /lavainternational[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')

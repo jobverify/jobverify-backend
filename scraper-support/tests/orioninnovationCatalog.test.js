@@ -7,21 +7,27 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes Orion Innovation as an official API-only careers scraper', () => {
+test('getScraperCatalog includes Orion Innovation as a verified blocked-route sentinel', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'orioninnovation')
 
   assert.ok(provider)
   assert.equal(provider.companyName, 'Orion Innovation')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
-  assert.equal(provider.companyCareerPage, 'https://www.orioninnovation.com/careers/job/')
+  assert.equal(provider.atsPlatform, 'official-company-site-blocked-no-public-careers')
+  assert.equal(provider.companyCareerPage, 'https://www.orioninnovation.com/careers/life-at-orion/')
+  assert.equal(provider.openJobsPageUrl, 'https://www.orioninnovation.com/careers/job/')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-official-jobs-page-plus-greenhouse-feed')
+  assert.equal(provider.paginationStrategy, 'verified-blocked-careers-routes')
   assert.equal(
     provider.extractionStrategy,
-    'official-jobs-page-html-cards+greenhouse-public-api-details+india-location-filter',
+    'verified-cloudflare-403-careers-routes-return-empty',
   )
   assert.equal(provider.companyDomain, 'orioninnovation.com')
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /life-at-orion/i)
+  assert.match(provider.verifiedSurfaceSummary, /careers\/job/i)
+  assert.match(provider.verifiedSurfaceSummary, /gh_jid/i)
   assert.match(provider.modulePath, /orioninnovation[\\/]script\.js$/i)
 })
 

@@ -109,6 +109,55 @@ const summaryPageTwoHtml = `
 </html>
 `
 
+const buildDwrSummaryResponse = ({
+  currentPage = 1,
+  pageSize = 10,
+  totalCount,
+  postings,
+  wrapInPayload = true,
+}) => {
+  const normalizedPostings = postings.map((posting) => ({
+    id: Number(posting.requisitionId),
+    title: posting.title,
+    postingDate: posting.postingDate,
+    otherValues: [
+      [
+        { fieldId: 'legalEntity_obj', shortVal: posting.hiringEntity },
+        { fieldId: 'department_obj', shortVal: posting.department },
+        { fieldId: 'filter1', shortVal: posting.country || 'India' },
+      ],
+      [
+        { fieldId: 'filter3', shortVal: '' },
+        { fieldId: 'filter4', shortVal: '' },
+      ],
+    ],
+  }))
+
+  const payload = {
+    results: {
+      postingCount: totalCount ?? normalizedPostings.length,
+      options: {
+        pagination: {
+          currentPage,
+          pageSize,
+          totalCount: totalCount ?? normalizedPostings.length,
+          startRow: ((currentPage - 1) * pageSize) + 1,
+          endRow: Math.min(currentPage * pageSize, totalCount ?? normalizedPostings.length),
+          increaseCandSummaryPagination: false,
+        },
+      },
+      postings: normalizedPostings,
+    },
+  }
+
+  const callbackValue = wrapInPayload ? { payload } : payload
+
+  return `
+throw 'allowScriptTagRemoting is false.';
+dwr.engine._remoteHandleCallback('0', '0', ${JSON.stringify(callbackValue)});
+`
+}
+
 const buildDetailHtml = ({
   requisitionId,
   title,
@@ -201,6 +250,53 @@ test('extractSearchResults parses the verified Biocon SuccessFactors result rows
     applyUrl: 'https://career10.successfactors.com/career?career_ns=job_listing&company=bioconlimi&navBarLevel=JOB_SEARCH&rcm_site_locale=en_US&career_job_req_id=20811&selected_lang=en_US&jobAlertController_jobAlertId=&jobAlertController_jobAlertName=&browserTimeZone=Asia/Calcutta',
     link: 'https://career10.successfactors.com/career?career_ns=job_listing&company=bioconlimi&navBarLevel=JOB_SEARCH&rcm_site_locale=en_US&career_job_req_id=20811&selected_lang=en_US&jobAlertController_jobAlertId=&jobAlertController_jobAlertName=&browserTimeZone=Asia/Calcutta',
     postingDate: '2026-07-14',
+    jobDescription: null,
+  })
+})
+
+test('extractSearchResults parses the verified Biocon SuccessFactors DWR response pages', async () => {
+  const biocon = await loadModule()
+
+  const jobs = biocon.extractSearchResults(
+    buildDwrSummaryResponse({
+      currentPage: 2,
+      totalCount: 39,
+      postings: [
+        {
+          requisitionId: '20915',
+          title: 'ASSISTANT MANAGER',
+          postingDate: '31/07/2026',
+          hiringEntity: 'BIOCON PHARMA LIMITED',
+          department: 'GENERIC FORMULATION QC',
+        },
+        {
+          requisitionId: '21071',
+          title: 'SENIOR MANAGER',
+          postingDate: '13/07/2026',
+          hiringEntity: 'BIOCON LIMITED',
+          department: 'WAREHOUSE MANAGEMENT',
+        },
+      ],
+      wrapInPayload: false,
+    }),
+  )
+
+  assert.equal(jobs.length, 2)
+  assert.deepEqual(jobs[0], {
+    title: 'ASSISTANT MANAGER',
+    company: 'Biocon',
+    hiringEntity: 'BIOCON PHARMA LIMITED',
+    department: 'GENERIC FORMULATION QC',
+    location: 'India',
+    city: null,
+    state: null,
+    country: 'India',
+    jobId: '20915',
+    requisitionId: '20915',
+    sourceUrl: biocon.buildDetailUrl('20915'),
+    applyUrl: biocon.buildDetailUrl('20915'),
+    link: biocon.buildDetailUrl('20915'),
+    postingDate: '2026-07-31',
     jobDescription: null,
   })
 })

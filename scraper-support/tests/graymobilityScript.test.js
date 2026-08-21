@@ -175,3 +175,17 @@ test('Graymobility fails closed when the homepage or missing careers route contr
     /careers routes changed materially or now expose public jobs/i,
   )
 })
+
+test('Graymobility returns an empty result when the verified no-jobs surface is temporarily timeout-blocked', async () => {
+  const graymobility = await loadGraymobilityModule()
+
+  const jobs = await graymobility.createGraymobilityScraper().run({
+    fetchPage: async () => {
+      throw new Error(
+        'fetch failed | Connect Timeout Error (attempted addresses: 76.223.105.230:443, 13.248.243.5:443, timeout: 10000ms)',
+      )
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})

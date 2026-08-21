@@ -17,6 +17,9 @@ test('getScraperCatalog includes Capillary Technologies as an official careers s
   assert.equal(provider.companyCareerPage, 'https://www.capillarytech.com/careers/')
   assert.equal(provider.companyDomain, 'capillarytech.com')
   assert.equal(provider.parser, 'custom-script')
+  assert.equal(provider.verifiedOn, '2026-08-13')
+  assert.match(provider.verifiedSurfaceSummary, /Cloudflare/i)
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
   assert.match(provider.modulePath, /capillarytechnologies[\\/]script\.js$/i)
 })
 

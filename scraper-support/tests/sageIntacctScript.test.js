@@ -80,6 +80,22 @@ const locationsHtml = `
 </html>
 `
 
+const blockedCloudflareHtml = (host = 'www.sage.com') => `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Attention Required! | Cloudflare</title>
+  </head>
+  <body>
+    <p>Please enable cookies.</p>
+    <h1>Sorry, you have been blocked</h1>
+    <p>You are unable to access ${host}</p>
+    <p>Why have I been blocked?</p>
+    <p>This website is using a security service to protect itself from online attacks.</p>
+  </body>
+</html>
+`
+
 const loadSageIntacctModule = async () => {
   try {
     return await import('../../scraper/sageintacct/script.js')
@@ -94,7 +110,7 @@ test('Sage Intacct scraper exports the verified shared Sage careers-hub sentinel
   assert.equal(sageIntacct.SOURCE, 'sageintacct')
   assert.equal(sageIntacct.COMPANY, 'Sage Intacct')
   assert.equal(sageIntacct.OFFICIAL_BRAND_NAME, 'Sage Intacct')
-  assert.equal(sageIntacct.VERIFIED_ON, '2026-08-04')
+  assert.equal(sageIntacct.VERIFIED_ON, '2026-08-14')
   assert.equal(sageIntacct.PRODUCT_PAGE_URL, 'https://www.sage.com/en-us/sage-business-cloud/intacct/')
   assert.equal(sageIntacct.CAREERS_PAGE_URL, 'https://www.sage.com/en-us/company/careers/')
   assert.equal(
@@ -109,17 +125,44 @@ test('Sage Intacct scraper exports the verified shared Sage careers-hub sentinel
   assert.equal(typeof sageIntacct.hasVerifiedCareersHubSignal, 'function')
   assert.equal(typeof sageIntacct.hasVerifiedCareerSearchSignal, 'function')
   assert.equal(typeof sageIntacct.hasVerifiedIndiaLocationsSignal, 'function')
+  assert.equal(typeof sageIntacct.hasBlockedCloudflareSurfaceSignal, 'function')
   assert.equal(typeof sageIntacct.createSageIntacctScraper, 'function')
   assert.equal(sageIntacct.hasVerifiedProductPageSignal(productPageHtml), true)
   assert.equal(sageIntacct.hasVerifiedCareersHubSignal(careersHubHtml), true)
   assert.equal(sageIntacct.hasVerifiedCareerSearchSignal(careerSearchHtml), true)
   assert.equal(sageIntacct.hasVerifiedIndiaLocationsSignal(locationsHtml), true)
+  assert.equal(sageIntacct.hasBlockedCloudflareSurfaceSignal(blockedCloudflareHtml()), true)
 })
 
 test('Sage Intacct recognizes the current live shared Sage careers hub title encoding', async () => {
   const sageIntacct = await loadSageIntacctModule()
 
   assert.equal(sageIntacct.hasVerifiedCareersHubSignal(currentCareersHubHtml), true)
+})
+
+test('Sage Intacct default fetch keeps the direct Cloudflare 403 body instead of shelling out to curl', async () => {
+  const sageIntacct = await loadSageIntacctModule()
+  const calls = []
+  const fetchText = sageIntacct.createDefaultFetchText({
+    fetchImpl: async (url, options) => {
+      calls.push({ type: 'fetch', url, options })
+      return {
+        ok: false,
+        status: 403,
+        text: async () => blockedCloudflareHtml(),
+      }
+    },
+    execFileImpl: (command, args, callback) => {
+      calls.push({ type: 'curl', command, args })
+      callback(null, `${productPageHtml}\n__SAGE_STATUS__200`, '')
+    },
+  })
+
+  const html = await fetchText(sageIntacct.PRODUCT_PAGE_URL)
+
+  assert.equal(html.includes('Attention Required! | Cloudflare'), true)
+  assert.equal(calls[0].type, 'fetch')
+  assert.equal(calls.length, 1)
 })
 
 test('Sage Intacct run returns [] after validating the shared Sage careers hub and India locations contract', async () => {
@@ -177,6 +220,26 @@ test('Sage Intacct falls back to browser-backed fetches when the verified Sage s
     'https://www.sage.com/en-us/company/careers/locations/',
   ])
   assert.deepEqual(browserRequests, primaryRequests)
+  assert.deepEqual(jobs, [])
+})
+
+test('Sage Intacct returns [] when all verified Sage surfaces are currently blocked by the same Cloudflare 403 interstitial', async () => {
+  const sageIntacct = await loadSageIntacctModule()
+  const requests = []
+
+  const jobs = await sageIntacct.createSageIntacctScraper().run({
+    fetchText: async (url) => {
+      requests.push(url)
+      return blockedCloudflareHtml()
+    },
+  })
+
+  assert.deepEqual(requests, [
+    sageIntacct.PRODUCT_PAGE_URL,
+    sageIntacct.CAREERS_PAGE_URL,
+    sageIntacct.CAREER_SEARCH_URL,
+    sageIntacct.LOCATIONS_URL,
+  ])
   assert.deepEqual(jobs, [])
 })
 

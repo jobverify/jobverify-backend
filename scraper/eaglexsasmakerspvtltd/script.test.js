@@ -8,8 +8,11 @@ import {
   CONTACT_URL,
   HOMEPAGE_URL,
   SOURCE,
+  VERIFIED_AT,
   createEaglexSasMakersScraper,
-  hasOfficialPageSignal,
+  hasOfficialAboutPageSignal,
+  hasOfficialContactPageSignal,
+  hasOfficialHomepageSignal,
   hasPublicJobsSignal,
   isVerifiedMissingCareersRoute,
 } from './script.js'
@@ -93,6 +96,72 @@ const buildCurrentOfficialPageHtml = ({
   </html>
 `
 
+const buildCurrentAboutPageHtml = ({
+  body = '',
+} = {}) => `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Eagle X | We Engineer Dominance</title>
+    </head>
+    <body>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/work">Our Work</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+      </nav>
+      <main>
+        <p>SYSTEM_OVERRIDE // 0 %</p>
+        <h1>System Identity // Eagle X</h1>
+        <h2>The Architects Of The New Order</h2>
+        <p>We are not just a dev shop.</p>
+        <p>We are a high-performance engineering unit dedicated to building digital dominance.</p>
+        <p>While others follow trends, we forge the infrastructure that defines them.</p>
+        <p>50+ // Projects Deployed</p>
+        <p>08+ // Global Partners</p>
+        <p>24/7 // System Monitor</p>
+        <p>The Operatives</p>
+        ${body}
+      </main>
+    </body>
+  </html>
+`
+
+const buildCurrentContactPageHtml = ({
+  body = '',
+} = {}) => `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Eagle X | We Engineer Dominance</title>
+    </head>
+    <body>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/work">Our Work</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+      </nav>
+      <main>
+        <p>SYSTEM_OVERRIDE // 0 %</p>
+        <p>// Get In Touch</p>
+        <h1>Contact Us</h1>
+        <p>We'd love to hear from you.</p>
+        <p>Send us a message and we'll get back to you within 24 hours.</p>
+        <p>Delhi, India</p>
+        <p>Support Team</p>
+        <p>Send Message</p>
+        <p>Building professional web solutions for early-stage startups.</p>
+        <p>Part of our 2026 launch initiative supporting the entrepreneurial ecosystem.</p>
+        <p>Email Us eaglexdevelopment@gmail.com</p>
+        <p>Location Indore, Madhya Pradesh, India</p>
+        ${body}
+      </main>
+    </body>
+  </html>
+`
+
 const buildMissingCareersRouteHtml = () => `
   ${buildCurrentOfficialPageHtml({
     body: `
@@ -102,9 +171,36 @@ const buildMissingCareersRouteHtml = () => `
   })}
 `
 
+const buildCurrentMissingCareersRouteHtml = () => `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>404: This page could not be found.</title>
+    </head>
+    <body>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/work">Our Work</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+      </nav>
+      <main>
+        <p>SYSTEM_OVERRIDE // 0 %</p>
+        <h1>404</h1>
+        <p>This page could not be found.</p>
+        <p>Building professional web solutions for early-stage startups.</p>
+        <p>Part of our 2026 launch initiative supporting the entrepreneurial ecosystem.</p>
+        <p>Email Us eaglexdevelopment@gmail.com</p>
+        <p>Location Indore, Madhya Pradesh, India</p>
+      </main>
+    </body>
+  </html>
+`
+
 test('exports the verified first-party surface metadata for Eaglex SAS Makers Pvt Ltd', () => {
   assert.equal(SOURCE, 'eaglexsasmakerspvtltd')
   assert.equal(COMPANY, 'Eaglex SAS Makers Pvt Ltd')
+  assert.equal(VERIFIED_AT, '2026-08-13')
   assert.equal(HOMEPAGE_URL, 'https://eaglex.co.in/')
   assert.equal(ABOUT_URL, 'https://eagle-x.in/about')
   assert.equal(CONTACT_URL, 'https://eagle-x.in/contact')
@@ -119,8 +215,10 @@ test('exports the verified first-party surface metadata for Eaglex SAS Makers Pv
 })
 
 test('distinguishes the verified marketing surface from a public jobs surface', () => {
-  assert.equal(hasOfficialPageSignal(buildOfficialPageHtml()), true)
-  assert.equal(hasOfficialPageSignal(buildCurrentOfficialPageHtml()), true)
+  assert.equal(hasOfficialHomepageSignal(buildOfficialPageHtml()), true)
+  assert.equal(hasOfficialHomepageSignal(buildCurrentOfficialPageHtml()), true)
+  assert.equal(hasOfficialAboutPageSignal(buildCurrentAboutPageHtml()), true)
+  assert.equal(hasOfficialContactPageSignal(buildCurrentContactPageHtml()), true)
   assert.equal(hasPublicJobsSignal(buildOfficialPageHtml()), false)
   assert.equal(hasPublicJobsSignal(buildCurrentOfficialPageHtml()), false)
   assert.equal(
@@ -147,6 +245,14 @@ test('recognizes the verified missing careers routes', () => {
 
   assert.equal(
     isVerifiedMissingCareersRoute({
+      status: 404,
+      html: buildCurrentMissingCareersRouteHtml(),
+    }),
+    true,
+  )
+
+  assert.equal(
+    isVerifiedMissingCareersRoute({
       status: 200,
       html: buildOfficialPageHtml({
         body: '<h2>Current Openings</h2><p>Join our team</p>',
@@ -157,6 +263,26 @@ test('recognizes the verified missing careers routes', () => {
 })
 
 test('run returns [] only while the verified first-party marketing surface and missing careers routes still match', async () => {
+  const responses = new Map([
+    [HOMEPAGE_URL, { status: 200, html: buildCurrentOfficialPageHtml() }],
+    [ABOUT_URL, { status: 200, html: buildCurrentAboutPageHtml() }],
+    [CONTACT_URL, { status: 200, html: buildCurrentContactPageHtml() }],
+    ...CAREERS_ROUTE_URLS.map((url) => [url, { status: 404, html: buildCurrentMissingCareersRouteHtml() }]),
+  ])
+
+  const scraper = createEaglexSasMakersScraper()
+  const jobs = await scraper.run({
+    fetchPage: async (url) => {
+      const response = responses.get(url)
+      assert.ok(response, `Unexpected URL: ${url}`)
+      return { ...response, url }
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('run still accepts the legacy verified marketing surface and soft-404 careers routes', async () => {
   const responses = new Map([
     [HOMEPAGE_URL, { status: 200, html: buildOfficialPageHtml() }],
     [ABOUT_URL, { status: 200, html: buildOfficialPageHtml({ body: '<h2>About</h2>' }) }],

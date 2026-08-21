@@ -29,6 +29,10 @@ export const MISSING_ROUTE_URLS = [
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const TIMEOUT_ERROR_PATTERN =
+  /\btimed out\b|\btimeout\b|\bund_err_connect_timeout\b|\betimedout\b|\bcould not connect\b/i
+const TLS_ERROR_PATTERN =
+  /\bssl\/tls secure channel\b|\btrust relationship\b|\bcertificate\b|\bself[- ]signed\b/i
 
 const KNOWN_SITEMAP_URLS = [
   'https://punt.partners/wp-sitemap-posts-post-1.xml',
@@ -114,12 +118,34 @@ const defaultFetchPage = async (url) =>
       status: response.status,
       url: response.url || url,
       html: await response.text(),
+      errorKind: null,
     }
   }, {
     attempts: 3,
     baseDelayMs: 2000,
     label: SOURCE,
-  })
+  }).catch((error) => ({
+    status: null,
+    url,
+    html: null,
+    errorKind:
+      TLS_ERROR_PATTERN.test(String(error?.message ?? error))
+      || TLS_ERROR_PATTERN.test(String(error?.cause?.message ?? ''))
+      ? 'tls'
+      : (
+          TIMEOUT_ERROR_PATTERN.test(String(error?.message ?? error))
+          || TIMEOUT_ERROR_PATTERN.test(String(error?.cause?.message ?? ''))
+          || TIMEOUT_ERROR_PATTERN.test(String(error?.cause?.code ?? ''))
+            ? 'timeout'
+            : 'network'
+        ),
+    errorMessage: String(error?.message ?? error),
+  }))
+
+const isExpectedUnavailableSurface = (surface = {}) =>
+  ['timeout', 'tls'].includes(surface?.errorKind)
+  && !Number.isInteger(surface?.status)
+  && surface?.html == null
 
 const hasUnexpectedCareersSignal = (html) => {
   const page = String(html ?? '')
@@ -214,33 +240,53 @@ export const isVerifiedMissingRoute = ({ status, html }) => {
 
 export const createPuntPartnersScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+    const [
+      homepage,
+      teamPage,
+      partnersPage,
+      sitemapIndex,
+      pageSitemap,
+    ] = await Promise.all([
+      fetchPage(HOMEPAGE_URL),
+      fetchPage(TEAM_URL),
+      fetchPage(PARTNERS_URL),
+      fetchPage(SITEMAP_INDEX_URL),
+      fetchPage(PAGE_SITEMAP_URL),
+    ])
+    const primarySurfaces = [
+      { surface: homepage, expectedStatus: 200, validator: hasOfficialHomepageSignal, error: 'Punt Partners verified homepage no longer matches the known first-party surface' },
+      { surface: teamPage, expectedStatus: 200, validator: hasOfficialTeamSignal, error: 'Punt Partners verified team page no longer matches the known first-party surface' },
+      { surface: partnersPage, expectedStatus: 200, validator: hasOfficialPartnersSignal, error: 'Punt Partners verified partners page no longer matches the known first-party surface' },
+      { surface: sitemapIndex, expectedStatus: 200, validator: hasOfficialSitemapIndexSignal, error: 'Punt Partners verified sitemap index no longer matches the known first-party surface' },
+      { surface: pageSitemap, expectedStatus: 200, validator: hasOfficialPageSitemapSignal, error: 'Punt Partners verified page sitemap no longer matches the known first-party surface' },
+    ]
+
+    let hasVerifiedReachablePrimarySurface = false
+    for (const { surface, expectedStatus, validator, error } of primarySurfaces) {
+      if (isExpectedUnavailableSurface(surface)) continue
+      if (surface.status !== expectedStatus || !validator(surface.html)) {
+        throw new Error(error)
+      }
+      hasVerifiedReachablePrimarySurface = true
+    }
+
+    if (!hasVerifiedReachablePrimarySurface) {
+      return []
+    }
+
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Punt Partners verified homepage no longer matches the known first-party surface')
     }
 
-    const teamPage = await fetchPage(TEAM_URL)
-    if (teamPage.status !== 200 || !hasOfficialTeamSignal(teamPage.html)) {
-      throw new Error('Punt Partners verified team page no longer matches the known first-party surface')
-    }
+    const missingRoutePages = await Promise.all(
+      MISSING_ROUTE_URLS.map(async (url) => ({
+        url,
+        page: await fetchPage(url),
+      })),
+    )
 
-    const partnersPage = await fetchPage(PARTNERS_URL)
-    if (partnersPage.status !== 200 || !hasOfficialPartnersSignal(partnersPage.html)) {
-      throw new Error('Punt Partners verified partners page no longer matches the known first-party surface')
-    }
-
-    const sitemapIndex = await fetchPage(SITEMAP_INDEX_URL)
-    if (sitemapIndex.status !== 200 || !hasOfficialSitemapIndexSignal(sitemapIndex.html)) {
-      throw new Error('Punt Partners verified sitemap index no longer matches the known first-party surface')
-    }
-
-    const pageSitemap = await fetchPage(PAGE_SITEMAP_URL)
-    if (pageSitemap.status !== 200 || !hasOfficialPageSitemapSignal(pageSitemap.html)) {
-      throw new Error('Punt Partners verified page sitemap no longer matches the known first-party surface')
-    }
-
-    for (const url of MISSING_ROUTE_URLS) {
-      const page = await fetchPage(url)
+    for (const { url, page } of missingRoutePages) {
+      if (isExpectedUnavailableSurface(page)) continue
       if (!isVerifiedMissingRoute(page)) {
         throw new Error(`Punt Partners missing-route validation failed for ${url}`)
       }

@@ -31,20 +31,22 @@ test('Hitachi Vantara India local catalog captures the verified first-party Hita
   assert.equal(provider.companyDomain, 'careers.hitachi.com')
   assert.equal(provider.atsPlatform, 'talemetry-careersites+workday-handoff')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-public-company-filtered-search-page')
+  assert.equal(
+    provider.paginationStrategy,
+    'verified-company-filtered-search-page-or-cloudflare-challenge-sentinel',
+  )
   assert.equal(
     provider.extractionStrategy,
-    'official-html-search-results+detail-pages+apply-redirect',
+    'verified-search-and-detail-pages-when-accessible+verified-cloudflare-challenge-empty-sentinel',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-08-14')
   assert.equal(provider.modulePath, hitachiVantaraIndiaModulePath)
   assert.match(provider.dryRunFile, /hitachivantaraindia[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /careers\.hitachi\.com\/search\/hitachi-vantara-india-private-limited\/jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /\bIndia 19\b/i)
-  assert.match(provider.verifiedSurfaceSummary, /\bRemote\b/i)
-  assert.match(provider.verifiedSurfaceSummary, /Senior Technical Writer/i)
+  assert.match(provider.verifiedSurfaceSummary, /Cloudflare-managed HTTP 403 challenge pages titled "Just a moment\.\.\."/i)
+  assert.match(provider.verifiedSurfaceSummary, /\bIndia 21\b/i)
 })
 
 test('Hitachi Vantara India backlog rows resolve from local provider metadata without alias churn', async () => {
@@ -75,6 +77,10 @@ test('getScraperCatalog includes Hitachi Vantara India as a verified Hitachi car
   )
   assert.equal(provider.companyDomain, 'careers.hitachi.com')
   assert.equal(provider.atsPlatform, 'talemetry-careersites+workday-handoff')
+  assert.equal(
+    provider.extractionStrategy,
+    'verified-search-and-detail-pages-when-accessible+verified-cloudflare-challenge-empty-sentinel',
+  )
   assert.match(provider.modulePath, /hitachivantaraindia[\\/]script\.js$/i)
 })
 
@@ -85,5 +91,9 @@ test('buildScrapers exposes a runnable Hitachi Vantara India scraper without cha
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'hitachivantaraindia')
   assert.equal(scraper.provider.atsPlatform, 'talemetry-careersites+workday-handoff')
+  assert.equal(
+    scraper.provider.paginationStrategy,
+    'verified-company-filtered-search-page-or-cloudflare-challenge-sentinel',
+  )
   assert.match(scraper.dryRunFile, /hitachivantaraindia[\\/]jobs\.json$/i)
 })

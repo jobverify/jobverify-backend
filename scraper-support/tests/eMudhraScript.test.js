@@ -131,7 +131,7 @@ test('eMudhra helpers stay pinned to the verified India careers surface and brok
   assert.equal(emudhra.SOURCE, 'emudhra')
   assert.equal(emudhra.COMPANY, 'eMudhra')
   assert.equal(emudhra.OFFICIAL_BRAND_NAME, 'eMudhra')
-  assert.equal(emudhra.VERIFIED_ON, '2026-07-15')
+  assert.equal(emudhra.VERIFIED_ON, '2026-08-15')
   assert.equal(emudhra.HOMEPAGE_URL, 'https://emudhra.com/en-in/')
   assert.equal(emudhra.CAREER_PAGE_URL, 'https://emudhra.com/en-in/careers')
   assert.equal(emudhra.GLOBAL_CAREER_PAGE_URL, 'https://emudhra.com/en/careers')
@@ -190,6 +190,80 @@ test('eMudhra returns [] only while the verified careers pages keep the broken f
     ...emudhra.CHECKED_BROKEN_OPENINGS_URLS,
     emudhra.SITEMAP_URL,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('eMudhra falls back to browser-backed page fetches when direct TLS validation fails', async () => {
+  const emudhra = await loadEmudhraModule()
+  const requestedUrls = []
+
+  const jobs = await emudhra.createEmudhraScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(`direct:${url}`)
+      throw new Error(
+        'fetch failed | unable to verify the first certificate; if the root CA is installed locally, try running Node.js with --use-system-ca',
+      )
+    },
+    fetchBrowserPage: async (url) => {
+      requestedUrls.push(`browser:${url}`)
+
+      if (url === emudhra.HOMEPAGE_URL) {
+        return { status: 200, url, html: homepageHtml }
+      }
+
+      if (url === emudhra.CAREER_PAGE_URL) {
+        return { status: 200, url, html: indiaCareersHtml }
+      }
+
+      if (url === emudhra.GLOBAL_CAREER_PAGE_URL) {
+        return { status: 200, url, html: globalCareersHtml }
+      }
+
+      if (emudhra.CHECKED_BROKEN_OPENINGS_URLS.includes(url)) {
+        return { status: 404, url, html: brokenOpeningsHtml }
+      }
+
+      if (url === emudhra.SITEMAP_URL) {
+        return { status: 200, url, html: sitemapXml }
+      }
+
+      throw new Error(`Unexpected eMudhra URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    `direct:${emudhra.HOMEPAGE_URL}`,
+    `browser:${emudhra.HOMEPAGE_URL}`,
+    `direct:${emudhra.CAREER_PAGE_URL}`,
+    `browser:${emudhra.CAREER_PAGE_URL}`,
+    `direct:${emudhra.GLOBAL_CAREER_PAGE_URL}`,
+    `browser:${emudhra.GLOBAL_CAREER_PAGE_URL}`,
+    `direct:${emudhra.CHECKED_BROKEN_OPENINGS_URLS[0]}`,
+    `browser:${emudhra.CHECKED_BROKEN_OPENINGS_URLS[0]}`,
+    `direct:${emudhra.CHECKED_BROKEN_OPENINGS_URLS[1]}`,
+    `browser:${emudhra.CHECKED_BROKEN_OPENINGS_URLS[1]}`,
+    `direct:${emudhra.SITEMAP_URL}`,
+    `browser:${emudhra.SITEMAP_URL}`,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('eMudhra returns an empty result when the verified careers surfaces are temporarily timeout-blocked', async () => {
+  const emudhra = await loadEmudhraModule()
+
+  const jobs = await emudhra.createEmudhraScraper().run({
+    fetchPage: async () => {
+      throw new Error(
+        'fetch failed | Connect Timeout Error (attempted addresses: 18.245.86.16:443, 18.245.86.80:443, 18.245.86.2:443, 18.245.86.50:443, timeout: 10000ms)',
+      )
+    },
+    fetchBrowserPage: async () => {
+      throw new Error(
+        'fetch failed | Connect Timeout Error (attempted addresses: 18.245.86.16:443, 18.245.86.80:443, 18.245.86.2:443, 18.245.86.50:443, timeout: 10000ms)',
+      )
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })
 

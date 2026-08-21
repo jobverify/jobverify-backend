@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+
 import { QBSS_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -15,6 +17,15 @@ export const WORKING_AT_URL = PROVIDER_METADATA.workingAtUrl
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const REQUEST_HEADERS = {
+  'User-Agent': USER_AGENT,
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Cache-Control': 'no-cache',
+  Pragma: 'no-cache',
+  'Upgrade-Insecure-Requests': '1',
+}
 
 const REQUIRED_SURFACE_PATTERNS = [
   /\bgrow professionally\. contribute meaningfully\. succeed together\./i,
@@ -214,11 +225,34 @@ export const extractContinuServeJob = ({
   }
 }
 
-const defaultLoadLiveCareersContract = async () => {
-  throw new Error(
-    '[qbss] API-only migration required: no verified HTTP/API contract is available for the ContinuServe careers surface; browser automation is disabled.',
-  )
+const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  headers: REQUEST_HEADERS,
+  label: SOURCE,
+  timeoutMs: 20000,
+})
+
+export const loadLiveCareersContractFromHttp = async ({
+  fetchText = defaultFetchText,
+} = {}) => {
+  const listingHtml = await fetchText(CAREERS_URL)
+  const detailUrls = extractContinuServeDetailUrls(listingHtml)
+  const detailPages = []
+
+  for (const detailUrl of detailUrls) {
+    detailPages.push({
+      url: detailUrl,
+      html: await fetchText(detailUrl),
+    })
+  }
+
+  return {
+    listingUrl: CAREERS_URL,
+    listingHtml,
+    detailPages,
+  }
 }
+
+const defaultLoadLiveCareersContract = async () => loadLiveCareersContractFromHttp()
 
 export const createQbssScraper = ({
   now = () => new Date().toISOString(),

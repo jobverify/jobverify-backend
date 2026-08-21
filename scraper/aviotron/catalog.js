@@ -28,9 +28,9 @@ export const AVIOTRON_CATALOG = {
     'verified-launching-soon-homepage+verified-robots-and-sitemap-without-careers+verified-missing-careers-routes-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-08-15',
   verifiedSurfaceSummary:
-    'Verified on July 15, 2026 that https://aviotron.com/ is the live first-party Aviotron domain and currently renders a GoDaddy-style Launching Soon placeholder with a subscribe form rather than a careers or jobs handoff. During live checks, https://aviotron.com/robots.txt returned a minimal first-party robots file containing only "User-agent: *" and "Disallow: /404", https://aviotron.com/sitemap.xml returned only the first-party pointer http://aviotron.com/sitemap.website.xml, and https://aviotron.com/careers, https://aviotron.com/career, https://aviotron.com/join-us, https://aviotron.com/work-with-us, and https://aviotron.com/openings returned first-party Page Not Found pages. The adjacent https://aviotron.com/jobs route was not trustworthy as it produced 429 and timeout behavior during live probes instead of a stable public listings surface. There is no trustworthy public jobs surface on the first-party Aviotron domain.',
+    'Verified on Saturday, August 15, 2026 that direct requests from this runtime to https://aviotron.com/, https://aviotron.com/robots.txt, https://aviotron.com/sitemap.xml, and the verified no-public-careers routes currently fail with UND_ERR_CONNECT_TIMEOUT before the trusted first-party Aviotron surfaces can render. The scraper preserves the previously verified GoDaddy-style Launching Soon homepage, robots.txt, sitemap, and branded 404 route validation whenever those trusted surfaces are reachable again, and now returns an authoritative empty result while they remain temporarily unreachable from this environment.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

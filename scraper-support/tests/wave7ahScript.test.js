@@ -323,3 +323,29 @@ test('Atidiv run returns normalized jobs from the verified server-rendered curre
   assert.equal(jobs[0].workplaceType, 'Remote')
   assert.equal(jobs[0].applyUrl, 'https://www.atidiv.com/job/senior-campaign-manager/')
 })
+
+test('Atidiv run falls back to the certificate-tolerant page fetch when TLS verification fails on the primary fetch path', async () => {
+  const atidiv = await loadModule('../../scraper/atidiv/script.js')
+
+  const tlsError = new TypeError('fetch failed')
+  tlsError.cause = {
+    code: 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+    message: 'unable to verify the first certificate',
+  }
+
+  const jobs = await atidiv.createAtidivScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async () => {
+      throw tlsError
+    },
+    fetchFallbackText: async (url) => {
+      assert.equal(url, atidiv.CAREERS_URL)
+      return atidivCareersHtml
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Senior Campaign Manager')
+  assert.equal(jobs[0].source, 'atidiv')
+})

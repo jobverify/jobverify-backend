@@ -26,7 +26,7 @@ const loadBoeingIndiaModule = async () => {
   }
 }
 
-test('Boeing India local catalog captures the verified first-party careers redirect, India search route, and detail-page handoff', async () => {
+test('Boeing India local catalog captures the Thursday, August 13, 2026 first-party careers redirect, India search route, and detail-page handoff', async () => {
   const { BOEING_INDIA_CATALOG } = await loadBoeingIndiaCatalog()
   const boeingIndia = await loadBoeingIndiaModule()
 
@@ -58,7 +58,7 @@ test('Boeing India local catalog captures the verified first-party careers redir
   )
   assert.equal(BOEING_INDIA_CATALOG.parser, 'custom-script')
   assert.equal(BOEING_INDIA_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(BOEING_INDIA_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(BOEING_INDIA_CATALOG.verifiedOn, '2026-08-13')
   assert.equal(BOEING_INDIA_CATALOG.dryRunFile, 'boeingindia/jobs.json')
   assert.match(BOEING_INDIA_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.boeing\.com\/careers\//i)
   assert.match(BOEING_INDIA_CATALOG.verifiedSurfaceSummary, /https:\/\/jobs\.boeing\.com\//i)
@@ -70,7 +70,7 @@ test('Boeing India local catalog captures the verified first-party careers redir
     BOEING_INDIA_CATALOG.verifiedSurfaceSummary,
     /https:\/\/jobs\.boeing\.com\/job\/bengaluru\/experienced-software-engineer-ui-ux-designer\/185\/97595724928/i,
   )
-  assert.match(BOEING_INDIA_CATALOG.verifiedSurfaceSummary, /14 public India job cards/i)
+  assert.match(BOEING_INDIA_CATALOG.verifiedSurfaceSummary, /0 results found in India/i)
   assert.match(BOEING_INDIA_CATALOG.verifiedSurfaceSummary, /Workday/i)
   assert.equal(BOEING_INDIA_CATALOG.modulePath, boeingIndiaModulePath)
 

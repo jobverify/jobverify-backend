@@ -9,8 +9,8 @@ const CAREERS_PAGE_HTML = `
   </head>
   <body>
     <p>Trusted by 30 Lakh+ Indians</p>
-    <h1>Join us as we improve financial wellness for millions</h1>
-    <a href="https://jupiter.keka.com/careers">View all openings</a>
+    <h1><span>Join us </span><span>as we improve</span><span>financial wellness </span><span>for millions</span><span>●</span></h1>
+    <a href=https://jupiter.keka.com/careers target="_blank">View all openings</a>
     <p>Explore open roles</p>
   </body>
 </html>

@@ -14,7 +14,7 @@ const careersPageHtml = `
 <html lang="en">
   <head>
     <title>Careers - Kissflow</title>
-    <link rel="canonical" href="https://careers.kissflow.com/" />
+    <link rel="canonical" href="https://careers.kissflow.com" />
   </head>
   <body>
     <header>
@@ -35,13 +35,6 @@ const careersPageHtml = `
         <a href="https://careers.kissflow.com/client-director" class="career-in-row">
           <h6 class="mb-24 h6 medium text-decoration-none link-charcoal700">Client Director</h6>
           <p class="m-0">Experience: 14 - 18 years</p>
-          <span class="caree-aply btn btn-md btn-outline-blue">Explore More</span>
-        </a>
-      </div>
-      <div class="career-link career-col">
-        <a href="https://careers.kissflow.com/manager-digital-marketing" class="career-in-row">
-          <h6 class="mb-24 h6 medium text-decoration-none link-charcoal700">Manager - Digital Marketing</h6>
-          <p class="m-0">Experience: 8 - 12 years</p>
           <span class="caree-aply btn btn-md btn-outline-blue">Explore More</span>
         </a>
       </div>
@@ -74,12 +67,6 @@ const currentCareersPageHtml = `
         <a href="https://careers.kissflow.com/client-director" class="career-in-row">
           <h6>Client Director</h6>
           <p>Experience: 14 - 18 years</p>
-        </a>
-      </div>
-      <div class="career-link career-col">
-        <a href="https://careers.kissflow.com/manager-digital-marketing" class="career-in-row">
-          <h6>Manager - Digital Marketing</h6>
-          <p>Experience: 8 - 12 years</p>
         </a>
       </div>
     </main>
@@ -222,13 +209,12 @@ test('Kissflow pins the verified careers index, listing cards, and live first-pa
 
   assert.equal(kissflow.SOURCE, 'kissflow')
   assert.equal(kissflow.COMPANY, 'Kissflow')
-  assert.equal(kissflow.VERIFIED_ON, '2026-07-16')
+  assert.equal(kissflow.VERIFIED_ON, '2026-08-15')
   assert.equal(kissflow.HOMEPAGE_URL, 'https://kissflow.com/')
   assert.equal(kissflow.CAREERS_URL, 'https://careers.kissflow.com/')
   assert.deepEqual(kissflow.VERIFIED_ROLE_URLS, [
     'https://careers.kissflow.com/solution-advisor',
     'https://careers.kissflow.com/client-director',
-    'https://careers.kissflow.com/manager-digital-marketing',
   ])
 
   assert.equal(kissflow.hasVerifiedCareersPageSignal(careersPageHtml), true)
@@ -242,11 +228,6 @@ test('Kissflow pins the verified careers index, listing cards, and live first-pa
       title: 'Client Director',
       sourceUrl: 'https://careers.kissflow.com/client-director',
       experienceRequired: '14 - 18 years',
-    },
-    {
-      title: 'Manager - Digital Marketing',
-      sourceUrl: 'https://careers.kissflow.com/manager-digital-marketing',
-      experienceRequired: '8 - 12 years',
     },
   ])
 
@@ -304,7 +285,6 @@ test('Kissflow scraper returns the verified first-party India jobs from the care
       if (url === kissflow.CAREERS_URL) return careersPageHtml
       if (url === 'https://careers.kissflow.com/solution-advisor') return solutionAdvisorHtml
       if (url === 'https://careers.kissflow.com/client-director') return clientDirectorHtml
-      if (url === 'https://careers.kissflow.com/manager-digital-marketing') return managerDigitalMarketingHtml
 
       throw new Error(`Unexpected URL: ${url}`)
     },
@@ -315,7 +295,7 @@ test('Kissflow scraper returns the verified first-party India jobs from the care
     kissflow.CAREERS_URL,
     ...kissflow.VERIFIED_ROLE_URLS,
   ])
-  assert.equal(jobs.length, 3)
+  assert.equal(jobs.length, 2)
   assert.deepEqual(
     jobs.map((job) => ({
       title: job.title,
@@ -345,16 +325,6 @@ test('Kissflow scraper returns the verified first-party India jobs from the care
         sourceUrl: 'https://careers.kissflow.com/client-director',
         applyUrl: 'https://careers.kissflow.com/client-director',
         experienceRequired: '14 - 18 years',
-        source: 'kissflow',
-        scrapedAt: '2026-07-16T12:00:00.000Z',
-      },
-      {
-        title: 'Manager - Digital Marketing',
-        location: 'Chennai, India',
-        city: 'Chennai',
-        sourceUrl: 'https://careers.kissflow.com/manager-digital-marketing',
-        applyUrl: 'https://careers.kissflow.com/manager-digital-marketing',
-        experienceRequired: '8 - 12 years',
         source: 'kissflow',
         scrapedAt: '2026-07-16T12:00:00.000Z',
       },

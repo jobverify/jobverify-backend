@@ -5,7 +5,7 @@ import companyAliases from '../providers/companyAliases.json' with { type: 'json
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 
-test('Hybec is registered as a verified zero-job first-party sentinel without alias churn', () => {
+test('Hybec is registered as a verified placeholder-or-timeout zero-job first-party sentinel without alias churn', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'hybec')
 
   assert.ok(provider, 'Expected Hybec provider to be registered in customProviders.json')
@@ -14,14 +14,21 @@ test('Hybec is registered as a verified zero-job first-party sentinel without al
   assert.equal(provider.companyCareerPage, 'https://hybec.co.in/')
   assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-homepage-validation')
+  assert.equal(provider.paginationStrategy, 'single-first-party-homepage-placeholder-or-timeout-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-homepage-shell-zero-public-job-listings',
+    'verified-first-party-homepage-placeholder-shell-or-timeout-without-public-job-listings-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'hybec.co.in')
+  assert.equal(provider.verifiedOn, '2026-08-15')
+  assert.equal(provider.verifiedPublicJobCount, 0)
+  assert.equal(provider.verifiedIndiaJobCount, 0)
+  assert.equal(provider.officialCareersPageUrl, 'https://hybec.co.in/')
+  assert.match(provider.verifiedSurfaceSummary, /hybec\.co\.in/i)
+  assert.match(provider.verifiedSurfaceSummary, /connect-timeout errors/i)
+  assert.match(provider.verifiedSurfaceSummary, /returns no jobs until hybec exposes a stable public careers surface/i)
   assert.match(provider.modulePath, /hybec[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Hybec'), false)
 })

@@ -65,13 +65,28 @@ const detailHtml = ({ title, location, reqId }) => `
 const accessDeniedHtml = `
 <!doctype html>
 <html lang="en">
+  <head>
+    <title>Access Denied</title>
+  </head>
   <body>
     <h1>Access Denied</h1>
-    <p>You don't have permission to access "http://www.tesla.com/careers" on this server.</p>
-    <p>https://errors.edgesuite.net/18.example</p>
+    <p>You don't have permission to access "http&#58;&#47;&#47;www&#46;tesla&#46;com&#47;careers" on this server.</p>
+    <p>Reference&#32;&#35;18&#46;c5543f17&#46;1786674653&#46;8dee6e09</p>
+    <p>https&#58;&#47;&#47;errors&#46;edgesuite&#46;net&#47;18&#46;c5543f17&#46;1786674653&#46;8dee6e09</p>
   </body>
 </html>
 `
+
+test('Tesla detects the encoded Akamai access-denied surface now returned on Friday, August 14, 2026', async () => {
+  const tesla = await loadModule()
+
+  assert.equal(tesla.hasAkamaiAccessDeniedSignal(accessDeniedHtml), true)
+  assert.equal(tesla.isVerifiedEnvironmentBlockedPage({
+    status: 403,
+    url: tesla.CAREERS_URL,
+    html: accessDeniedHtml,
+  }), true)
+})
 
 test('Tesla run falls back to browser-backed fetches when direct requests return 403', async () => {
   const tesla = await loadModule()

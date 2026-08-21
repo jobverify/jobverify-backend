@@ -71,6 +71,30 @@ const detailPageData = {
   ],
 }
 
+const blockedChallengePage = {
+  status: 403,
+  url: 'https://careers.envestnet.com/search/jobs/in/country/india',
+  headers: {
+    server: 'cloudflare',
+    'cf-ray': 'a2abc87858e29f61-MAA',
+    'cf-mitigated': 'challenge',
+  },
+  html: `
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <title>Just a moment...</title>
+  </head>
+  <body>
+    <noscript>
+      <div>Enable JavaScript and cookies to continue</div>
+    </noscript>
+    <script src="https://challenges.cloudflare.com"></script>
+  </body>
+</html>
+`,
+}
+
 test('Envestnet scraper validates and extracts India listing links from the verified public listing surface', async () => {
   const envestnet = await loadModule()
   assert.ok(envestnet, 'Envestnet scraper module should load')
@@ -229,4 +253,29 @@ test('Envestnet scraper rejects unsupported listing or detail page changes', asy
     }),
     /verified public surface/i,
   )
+})
+
+test('Envestnet returns [] when the India jobs route matches the verified Cloudflare challenge shell', async () => {
+  const envestnet = await loadModule()
+  assert.ok(envestnet, 'Envestnet scraper module should load')
+
+  const {
+    INDIA_SEARCH_URL,
+    createEnvestnetScraper,
+    hasVerifiedCloudflareChallengeSignal,
+  } = envestnet
+
+  assert.equal(hasVerifiedCloudflareChallengeSignal(blockedChallengePage), true)
+
+  const requestedUrls = []
+  const jobs = await createEnvestnetScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      if (url === INDIA_SEARCH_URL) return blockedChallengePage
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [INDIA_SEARCH_URL])
+  assert.deepEqual(jobs, [])
 })

@@ -219,7 +219,7 @@ test('Mastek scraper exports the verified first-party careers handoff and search
 
   assert.equal(mastek.SOURCE, 'mastek')
   assert.equal(mastek.COMPANY, 'Mastek')
-  assert.equal(mastek.VERIFIED_ON, '2026-07-16')
+  assert.equal(mastek.VERIFIED_ON, '2026-08-13')
   assert.equal(mastek.OFFICIAL_CAREERS_URL, 'https://www.mastek.com/careers/')
   assert.equal(mastek.SEARCH_PAGE_URL, 'https://careers.mastek.com/search/')
   assert.equal(mastek.BASE_URL, 'https://careers.mastek.com')
@@ -477,6 +477,49 @@ test('run falls back to a browser fetch when the official Mastek careers handoff
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].jobId, '47800844')
   assert.equal(jobs[0].scrapedAt, '2026-07-26T00:00:00.000Z')
+})
+
+test('run tolerates the official Mastek careers 403 on Thursday, August 13, 2026 when the first-party jobs board is still healthy', async () => {
+  const mastek = await loadMastekModule()
+  const requestedTextUrls = []
+
+  const jobs = await mastek.createMastekScraper().run({
+    maxPages: 1,
+    maxJobs: 1,
+    now: () => '2026-08-13T18:30:00.000Z',
+    fetchText: async (url) => {
+      requestedTextUrls.push(url)
+
+      if (url === mastek.OFFICIAL_CAREERS_URL) {
+        throw new Error(`HTTP 403 for ${url}`)
+      }
+      if (url === mastek.buildSearchUrl()) return currentSearchPageHtml
+      if (url === 'https://careers.mastek.com/job/Sr_-Specialist-I/58191144/') {
+        return detailPage1Html.replace(
+          'Oracle HCM Functional Consultant (Payroll) Job Details | Mastek Limited',
+          'Sr. Specialist I Job Details | Mastek Limited',
+        ).replace(
+          'Oracle HCM Functional Consultant (Payroll)',
+          'Sr. Specialist I',
+        ).replace(
+          'Pune, India',
+          'India',
+        )
+      }
+
+      throw new Error(`Unexpected Mastek URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedTextUrls, [
+    mastek.OFFICIAL_CAREERS_URL,
+    mastek.buildSearchUrl(),
+    'https://careers.mastek.com/job/Sr_-Specialist-I/58191144/',
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Sr. Specialist I')
+  assert.equal(jobs[0].location, 'India')
+  assert.equal(jobs[0].scrapedAt, '2026-08-13T18:30:00.000Z')
 })
 
 test('Mastek fails closed when the verified official careers handoff disappears', async () => {

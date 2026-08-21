@@ -11,7 +11,9 @@ export const SOURCE = INTERACTIVE_AVENUES_CATALOG.source
 export const COMPANY = INTERACTIVE_AVENUES_CATALOG.companyName
 export const PROVIDER_METADATA = INTERACTIVE_AVENUES_CATALOG
 export const CAREERS_LANDING_URL = INTERACTIVE_AVENUES_CATALOG.officialCareersLandingUrl
+export const JOBS_HUB_URL = INTERACTIVE_AVENUES_CATALOG.officialJobsHubUrl
 export const JOBS_PAGE_URL = INTERACTIVE_AVENUES_CATALOG.companyCareerPage
+export const GREENHOUSE_JOBS_BASE_URL = INTERACTIVE_AVENUES_CATALOG.greenhouseJobsBaseUrl
 export const GREENHOUSE_BOARD_EMBED_URL = INTERACTIVE_AVENUES_CATALOG.greenhouseBoardEmbedUrl
 
 const USER_AGENT =
@@ -57,6 +59,37 @@ const normalizeComparableUrl = (value) => {
   }
 }
 
+const canonicalizePostingQueryUrl = (url) => {
+  const normalizedPathname = url.pathname.replace(/\/+$/, '/')
+  const isInteractiveAvenuesPostingPath = normalizedPathname === '/postings/' || normalizedPathname === '/posting-greenhouse/'
+  const isMediabrandsCareersHost = /^careers\.ipgmediabrands\.com$/i.test(url.hostname)
+
+  if (!isInteractiveAvenuesPostingPath) {
+    return url.toString()
+  }
+
+  const canonicalOrigin = isMediabrandsCareersHost
+    ? `https://${url.hostname}`
+    : url.origin
+  const canonicalUrl = new URL(`${canonicalOrigin}${normalizedPathname}`)
+  const params = new URLSearchParams(url.search)
+  const orderedKeys = ['gh_search', 'department', 'interest', 'location', 'job_id']
+
+  for (const key of orderedKeys) {
+    if (params.has(key)) {
+      canonicalUrl.searchParams.set(key, params.get(key) ?? '')
+    }
+  }
+
+  for (const [key, value] of params.entries()) {
+    if (!orderedKeys.includes(key)) {
+      canonicalUrl.searchParams.set(key, value)
+    }
+  }
+
+  return canonicalUrl.toString()
+}
+
 const toAbsoluteUrl = (value, baseUrl = JOBS_PAGE_URL) => {
   if (!value) return null
 
@@ -74,7 +107,7 @@ const normalizeUrlWithoutHash = (value) => {
   try {
     const url = new URL(absoluteUrl)
     url.hash = ''
-    return url.toString()
+    return canonicalizePostingQueryUrl(url)
   } catch {
     return absoluteUrl
   }
@@ -134,12 +167,42 @@ export const hasOfficialCareersLandingSignal = (html) => {
     && /Interactive\+Avenues\+-\+India/i.test(rawHtml)
 }
 
-export const extractVerifiedJobsPageUrl = (html) => {
+export const extractVerifiedJobsHubUrl = (html) => {
   const match = String(html ?? '').match(
     /href="([^"]*careers\.ipgmediabrands\.com\/postings\/\?[^"]*department=Interactive\+Avenues\+-\+India[^"]*)"/i,
   )
 
   return normalizeUrlWithoutHash(match?.[1])
+}
+
+export const hasOfficialJobsHubSignal = (html) => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml) || ''
+
+  return /id="gh_jobs"/i.test(rawHtml)
+    && /US \| Canada \| UK/i.test(rawHtml)
+    && /All other Locations/i.test(rawHtml)
+    && /posting-greenhouse/i.test(rawHtml)
+    && normalized.includes('Your Future Starts Here: Lead the New Era of Media and Marketing with us')
+}
+
+export const extractGreenhouseJobsBaseUrl = (html) => {
+  const match = String(html ?? '').match(
+    /href="([^"]*careers\.ipgmediabrands\.com\/posting-greenhouse\/[^"]*)"[^>]*>\s*All other Locations\s*<\/a>/i,
+  )
+
+  return normalizeUrlWithoutHash(match?.[1])
+}
+
+export const buildFilteredJobsPageUrl = (baseUrl = GREENHOUSE_JOBS_BASE_URL) => {
+  const url = new URL(baseUrl)
+  url.hash = ''
+  url.search = ''
+  url.searchParams.set('gh_search', '')
+  url.searchParams.set('department', 'Interactive Avenues - India')
+  url.searchParams.set('interest', '')
+  url.searchParams.set('location', 'India')
+  return url.toString()
 }
 
 export const hasOfficialJobsPageSignal = (html) => {
@@ -150,6 +213,7 @@ export const hasOfficialJobsPageSignal = (html) => {
     && /Interactive Avenues - India/i.test(rawHtml)
     && /India \(All\)/i.test(rawHtml)
     && /Apply Now/i.test(rawHtml)
+    && normalized.includes('Position')
     && normalized.includes('Agency')
     && normalized.includes('Location')
 }
@@ -261,19 +325,34 @@ export const createInteractiveAvenuesScraper = ({
       throw new Error('Interactive Avenues careers landing page no longer matches the verified first-party surface')
     }
 
-    const jobsPageUrl = extractVerifiedJobsPageUrl(careersLandingHtml)
+    const jobsHubUrl = extractVerifiedJobsHubUrl(careersLandingHtml)
+    if (jobsHubUrl !== JOBS_HUB_URL) {
+      throw new Error('Interactive Avenues careers landing page no longer hands off to the verified jobs hub')
+    }
+
+    const jobsHubHtml = await fetchText(JOBS_HUB_URL)
+    if (!hasOfficialJobsHubSignal(jobsHubHtml)) {
+      throw new Error('Interactive Avenues verified jobs hub no longer matches the first-party surface')
+    }
+
+    const greenhouseJobsBaseUrl = extractGreenhouseJobsBaseUrl(jobsHubHtml)
+    if (greenhouseJobsBaseUrl !== GREENHOUSE_JOBS_BASE_URL) {
+      throw new Error('Interactive Avenues verified jobs hub no longer links to the first-party greenhouse listings page')
+    }
+
+    const jobsPageUrl = buildFilteredJobsPageUrl(greenhouseJobsBaseUrl)
     if (jobsPageUrl !== JOBS_PAGE_URL) {
-      throw new Error('Interactive Avenues careers landing page no longer hands off to the verified filtered jobs page')
+      throw new Error('Interactive Avenues verified jobs hub no longer resolves to the filtered greenhouse jobs page')
     }
 
     const jobsPageHtml = await fetchText(JOBS_PAGE_URL)
     if (!hasOfficialJobsPageSignal(jobsPageHtml)) {
-      throw new Error('Interactive Avenues verified filtered jobs page no longer matches the first-party surface')
+      throw new Error('Interactive Avenues verified filtered greenhouse jobs page no longer matches the first-party surface')
     }
 
     const listings = extractListingCards(jobsPageHtml)
     if (listings.length === 0) {
-      throw new Error('Interactive Avenues verified filtered jobs page no longer exposes public job rows')
+      throw new Error('Interactive Avenues verified filtered greenhouse jobs page no longer exposes public job rows')
     }
 
     const selectedListings = Number.isFinite(maxJobs) ? listings.slice(0, maxJobs) : listings

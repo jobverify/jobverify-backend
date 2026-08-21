@@ -12,6 +12,7 @@ export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const JOBS_URL = PROVIDER_METADATA.companyCareerPage
+export const JOBS_RSS_URL = PROVIDER_METADATA.jobsRssFeedUrl
 export const INDIA_LOCATION_URL = PROVIDER_METADATA.indiaLocationPageUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
@@ -141,6 +142,13 @@ const toNormalizedJob = (card, { scrapedAt }) => {
   }
 }
 
+const extractXmlField = (xml, tagName) =>
+  normalizeWhitespace(
+    String(xml ?? '').match(new RegExp(`<${tagName}><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tagName}>`, 'i'))?.[1]
+      ?? String(xml ?? '').match(new RegExp(`<${tagName}>([\\s\\S]*?)<\\/${tagName}>`, 'i'))?.[1]
+      ?? null,
+  )
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -160,12 +168,23 @@ export const hasOfficialJobsBoardSignal = (html = '') => {
     && text.includes('location cambodia china india indonesia malaysia philippines romania singapore thailand vietnam')
 }
 
+export const hasOfficialJobsRssSignal = (xml = '') => {
+  const feed = String(xml ?? '')
+
+  return /<publisher>\s*Grab\s*<\/publisher>/i.test(feed)
+    && /<publisherUrl>\s*https:\/\/www\.grab\.com\/sg\/\s*<\/publisherUrl>/i.test(feed)
+    && /<lastBuildDate>/i.test(feed)
+    && /<job>/i.test(feed)
+  }
+
 export const hasOfficialIndiaLocationSignal = (html = '') => {
   const text = (stripTags(html) || '').toLowerCase()
 
   return text.includes('welcome to india!')
-    && text.includes('join our team in india')
-    && text.includes('see all jobs')
+    && text.includes('our teams in india are putting fintech in the fast lane')
+    && text.includes('where we work from in india')
+    && text.includes('teams in india')
+    && text.includes('see all teams')
     && text.includes('bangalore')
 }
 
@@ -177,6 +196,53 @@ export const extractJobsFromJobsBoardHtml = (
 ) => extractListingCards(html, HOMEPAGE_URL)
   .filter((card) => isIndiaLocation(card.location))
   .map((card) => toNormalizedJob(card, { scrapedAt }))
+  .filter(Boolean)
+
+export const extractJobsFromJobsRssXml = (
+  xml,
+  {
+    scrapedAt = new Date().toISOString(),
+  } = {},
+) => [...String(xml ?? '').matchAll(/<job>([\s\S]*?)<\/job>/gi)]
+  .map((match) => match[1])
+  .map((jobXml) => {
+    const title = extractXmlField(jobXml, 'title')
+    const detailUrl = extractXmlField(jobXml, 'url')
+    const jobId = extractXmlField(jobXml, 'apijobid') || extractJobIdFromUrl(detailUrl)
+    const city = extractXmlField(jobXml, 'city')
+    const country = extractXmlField(jobXml, 'country')
+    const department = extractXmlField(jobXml, 'category')
+    const location = normalizeWhitespace([city, country].filter(Boolean).join(', '))
+
+    if (!title || !detailUrl || !jobId || !location || !isIndiaLocation(location)) {
+      return null
+    }
+
+    return {
+      title,
+      company: COMPANY,
+      department,
+      location,
+      city: extractCity(location),
+      country: 'India',
+      link: detailUrl,
+      applyUrl: detailUrl,
+      sourceUrl: detailUrl,
+      source: SOURCE,
+      jobId,
+      requisitionId: jobId,
+      employmentType: null,
+      experienceRequired: null,
+      jobDescription: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      remoteStatus: null,
+      scrapedAt,
+    }
+  })
   .filter(Boolean)
 
 export const extractJobsFromIndiaLocationHtml = (
@@ -215,6 +281,11 @@ export const createGrabScraper = ({
       throw new Error('Grab verified Grab jobs board no longer matches the official first-party surface')
     }
 
+    const jobsRssXml = await fetchText(JOBS_RSS_URL)
+    if (!hasOfficialJobsRssSignal(jobsRssXml)) {
+      throw new Error('Grab verified Grab jobs rss feed no longer matches the official first-party surface')
+    }
+
     const indiaLocationHtml = await fetchText(INDIA_LOCATION_URL)
     if (!hasOfficialIndiaLocationSignal(indiaLocationHtml)) {
       throw new Error('Grab verified Grab India location page no longer matches the official first-party surface')
@@ -223,6 +294,7 @@ export const createGrabScraper = ({
     const scrapedAt = now()
     const jobs = mergeJobs(
       extractJobsFromJobsBoardHtml(jobsBoardHtml, { scrapedAt }),
+      extractJobsFromJobsRssXml(jobsRssXml, { scrapedAt }),
       extractJobsFromIndiaLocationHtml(indiaLocationHtml, { scrapedAt }),
     ).map((job) => ({
       ...job,

@@ -49,11 +49,9 @@ const extractCountry = (value) => normalizeText(value)
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page)
 
   return /<title>\s*Job Search \| thinkbridge/i.test(page)
-    && normalized.includes('Sorry! No matching jobs found.')
-    && normalized.includes('ServiceNow Architect')
+    && extractJobCards(page).length > 0
 }
 
 export const extractJobCards = (html = '') => {

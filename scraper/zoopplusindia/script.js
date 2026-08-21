@@ -4,16 +4,28 @@ export const SOURCE = 'zoopplusindia'
 export const COMPANY = 'ZoopPlus India'
 export const OFFICIAL_BRAND = 'ZOOP'
 export const CAREERS_URL = 'https://www.zoop.one/career'
-export const DISPOSITION = 'verified-official-brand-careers-surface-plus-first-party-role-cards'
+export const DISPOSITION = 'verified-official-brand-careers-surface-with-current-empty-shell'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Sunday, August 2, 2026 that https://www.zoop.one/career was the live official ZOOP careers surface reviewed for workbook company ZoopPlus India, and that the rendered first-party page now exposed public role cards for Pune openings such as ML Lead, SDE2- Backend Developer, and Quality Analyst, all applying through the current shared Google Forms route. This scraper validates the current first-party careers surface and returns the rendered India role cards while that public contract remains stable.'
+  'Verified on Friday, August 14, 2026 that https://www.zoop.one/career remains the live official ZOOP careers surface reviewed for workbook company ZoopPlus India, but the page now renders a branded no-openings shell with the title "Career | Join Our Team", footer contact markers such as sales@zoop.one and grievance@zoop.one, and no current public role cards or Google Forms apply links. This scraper preserves the historical rendered role-card parser if first-party cards reappear, while returning an honest empty result for the current verified shell.'
 
-const REQUIRED_SURFACE_PATTERNS = [
+const LEGACY_REQUIRED_SURFACE_PATTERNS = [
   /\bCareer\s*\|\s*Join Our Team\b/i,
   /\bDo Work That Matters\.\s*With People Who Care\./i,
   /\bView Openings\b/i,
   /\bAbout ZOOP\b/i,
   /\bWhy Join Us\?/i,
+]
+
+const CURRENT_EMPTY_SHELL_PATTERNS = [
+  /<title[^>]*>\s*Career\s*\|\s*Join Our Team\s*<\/title>/i,
+  /\bView Openings\b/i,
+  /\bAbout ZOOP\b/i,
+  /\bWhy Join Us\?/i,
+  /\bTower B,\s*Panchsheel Business Park\b/i,
+  /\bsales@zoop\.one\b/i,
+  /\bgrievance@zoop\.one\b/i,
+  /\bJoin our journey today!/i,
+  /\bQuagga Tech Pvt\. Ltd\./i,
 ]
 
 const GOOGLE_FORMS_HOST_PATTERN = /^https:\/\/forms\.gle\//i
@@ -50,14 +62,19 @@ const slugify = (value = '') =>
     .replace(/^-+|-+$/g, '')
 
 export const assertVerifiedOfficialBrandCareersSurface = (html = '') => {
+  const rawHtml = String(html)
   const text = normalizeText(html)
 
-  if (REQUIRED_SURFACE_PATTERNS.every((pattern) => pattern.test(text))) return
+  if (LEGACY_REQUIRED_SURFACE_PATTERNS.every((pattern) => pattern.test(text))) return
+  if (CURRENT_EMPTY_SHELL_PATTERNS.every((pattern) => pattern.test(rawHtml))) return
 
   throw new Error(
     'ZoopPlus India verified official brand careers surface changed; review the ZOOP public contract before promoting a real parser.',
   )
 }
+
+const isCurrentVerifiedEmptyShell = (html = '') =>
+  CURRENT_EMPTY_SHELL_PATTERNS.every((pattern) => pattern.test(String(html)))
 
 export const extractRenderedRoleCards = (html = '') => {
   const cards = []
@@ -161,6 +178,10 @@ export const createZoopPlusIndiaScraper = () => ({
     assertVerifiedOfficialBrandCareersSurface(html)
 
     if (cards.length === 0) {
+      if (isCurrentVerifiedEmptyShell(html)) {
+        return []
+      }
+
       throw new Error(
         'ZoopPlus India rendered careers surface no longer exposes the verified first-party role-card contract.',
       )

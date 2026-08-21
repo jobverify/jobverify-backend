@@ -152,6 +152,30 @@ const currentCareersShellHtml = `
 </html>
 `
 
+const blockedChallengePage = {
+  status: 403,
+  url: 'https://www.coinbase.com/careers/positions',
+  headers: {
+    server: 'cloudflare',
+    'cf-ray': 'a2abdc0e7f7c28bc-MAA',
+    'cf-mitigated': 'challenge',
+  },
+  html: `
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <title>Just a moment...</title>
+  </head>
+  <body>
+    <noscript>
+      <div>Enable JavaScript and cookies to continue</div>
+    </noscript>
+    <script src="https://challenges.cloudflare.com"></script>
+  </body>
+</html>
+`,
+}
+
 test('Coinbase constants stay pinned to the verified first-party careers page and positions detail URLs', async () => {
   const coinbase = await loadCoinbaseModule()
 
@@ -320,6 +344,30 @@ test('Coinbase falls back to browser-backed pages when direct requests return 40
     'https://www.coinbase.com/careers/positions/7739592',
     'https://www.coinbase.com/careers/positions/7654321',
   ])
+})
+
+test('Coinbase returns [] when the live careers page matches the verified Cloudflare challenge shell', async () => {
+  const coinbase = await loadCoinbaseModule()
+  const requestedPages = []
+
+  assert.equal(coinbase.hasVerifiedCloudflareChallengeSignal(blockedChallengePage), true)
+
+  const jobs = await coinbase.createCoinbaseScraper().run({
+    fetchText: async () => {
+      throw new Error(`HTTP 403 for ${coinbase.CAREERS_URL}`)
+    },
+    fetchPage: async (url) => {
+      requestedPages.push(url)
+      if (url === coinbase.CAREERS_URL) {
+        return blockedChallengePage
+      }
+
+      throw new Error(`Unexpected page URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedPages, [coinbase.CAREERS_URL])
+  assert.deepEqual(jobs, [])
 })
 
 test('Coinbase extracts India roles from the current first-party card layout with sibling location labels', async () => {

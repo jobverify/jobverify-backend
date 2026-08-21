@@ -1,7 +1,152 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-11T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-14T12:00:00.000Z'
+
+const SEARCH_URL =
+  'https://careers.safran-group.com/offre-de-emploi/liste-toutes-offres.aspx?Keywords=Safran%20Engineering%20Services&LCID=1033'
+
+const SEARCH_PAGE_HTML = `
+  <html>
+    <head>
+      <title>Safran - Search results (7 job openings 1) - Keywords : Safran Engineering Services</title>
+    </head>
+    <body>
+      <a
+        class="ts-ol-criterias-keep__link ts-ol-criterias-keep__link--rss"
+        href="../handlers/offerRss.ashx?lcid=1033&amp;Keywords=Safran%20Engineering%20Services"
+      >
+        RSS
+      </a>
+
+      <li class="ts-offer-list-item offerlist-item ">
+        <a
+          href="/job/job-sw-architect-techlead-1-position-p1-boostit-indirect_160060.aspx"
+          class="ts-offer-list-item__title-link"
+        >
+          SW Architect / TechLead (1 Position) P1 - BoostIT - Indirect
+        </a>
+        <ul class="ts-offer-list-item__description ">
+          <li>SW Architect / TechLead (1 Position) P1 - BoostIT - Indirect Ref. : 2025-160060</li>
+          <li>6/9/2026</li>
+          <li>Permanent</li>
+          <li>Bangalore</li>
+        </ul>
+      </li>
+
+      <li class="ts-offer-list-item offerlist-item ">
+        <a
+          href="/job/job-engine-mechanic-in-fal-airbus-hamburg-m-f-d-_181390.aspx"
+          class="ts-offer-list-item__title-link"
+        >
+          Engine Mechanic in FAL AIRBUS Hamburg (m/f/d)
+        </a>
+        <ul class="ts-offer-list-item__description ">
+          <li>Engine Mechanic in FAL AIRBUS Hamburg (m/f/d) Ref. : 2026-181390</li>
+          <li>6/8/2026</li>
+          <li>Permanent</li>
+          <li>Hamburg</li>
+        </ul>
+      </li>
+
+      <li class="ts-offer-list-item offerlist-item ">
+        <a
+          href="/job/job-architect-infrastructure-it-1-position-p1-boostit-indirect_160766.aspx"
+          class="ts-offer-list-item__title-link"
+        >
+          Architect - Infrastructure IT (1 Position) P1 - BoostIT - Indirect
+        </a>
+        <ul class="ts-offer-list-item__description ">
+          <li>Architect - Infrastructure IT (1 Position) P1 - BoostIT - Indirect Ref. : 2025-160766</li>
+          <li>12/17/2025</li>
+          <li>Permanent</li>
+          <li>Bangalore</li>
+        </ul>
+      </li>
+    </body>
+  </html>
+`
+
+const INDIA_DETAIL_HTML = `
+  <html>
+    <head>
+      <title>Safran - SW Architect / TechLead (1 Position) P1 - BoostIT - Indirect</title>
+      <meta
+        name="Description"
+        content="Offre d&#39;emploi Safran Engineering Services - India de &#39;SW Architect / TechLead (1 Position) P1 - BoostIT - Indirect&#39;. Lieu : Bangalore. Date : 09/06/2026. Ref : 2025-160060."
+      >
+    </head>
+    <body>
+      <p id="fldjobdescription_primaryprofile">Software - Software for product information systems</p>
+      <p id="fldjobdescription_jobtitle">SW Architect / TechLead (1 Position) P1 - BoostIT - Indirect</p>
+      <p id="fldjobdescription_contract">Permanent</p>
+      <p id="fldjobdescription_description1">
+        Reporting to the IS Automation and Innovation team of Safran Engineering Services, the Software architect's missions are to define application design and solutions.
+      </p>
+      <p id="fldjobdescription_longtext2">
+        Transversal skills • English • design methods and documentation
+      </p>
+      <p id="fldjobdescription_description2">
+        The candidate must demonstrate strong development skills in .NET and good knowledge of AWS architectures and services.
+      </p>
+      <p id="fldlocation_location_geographicalareacollection">Asia, India</p>
+      <p id="fldlocation_joblocation">Bangalore</p>
+      <p id="fldapplicantcriteria_educationlevel">Bachelor's Degree</p>
+      <p id="fldapplicantcriteria_experiencelevel">More than 8 years</p>
+    </body>
+  </html>
+`
+
+const SECOND_INDIA_DETAIL_HTML = `
+  <html>
+    <head>
+      <title>Safran - Architect - Infrastructure IT (1 Position) P1 - BoostIT - Indirect</title>
+      <meta
+        name="Description"
+        content="Offre d&#39;emploi Safran Engineering Services - India de &#39;Architect - Infrastructure IT (1 Position) P1 - BoostIT - Indirect&#39;. Lieu : Bangalore. Date : 17/12/2025. Ref : 2025-160766."
+      >
+    </head>
+    <body>
+      <p id="fldjobdescription_primaryprofile">Software - Software for product information systems</p>
+      <p id="fldjobdescription_jobtitle">Architect - Infrastructure IT (1 Position) P1 - BoostIT - Indirect</p>
+      <p id="fldjobdescription_contract">Permanent</p>
+      <p id="fldjobdescription_description1">
+        Reporting to the IS Automation and Innovation team of Safran Engineering Services, the IT architect's missions are to define infrastructure design and solutions.
+      </p>
+      <p id="fldjobdescription_description2">
+        The candidate must demonstrate advanced network and system architecture skills and AWS infrastructure knowledge.
+      </p>
+      <p id="fldlocation_location_geographicalareacollection">Asia, India</p>
+      <p id="fldlocation_joblocation">Bangalore</p>
+      <p id="fldapplicantcriteria_educationlevel">Bachelor's Degree</p>
+      <p id="fldapplicantcriteria_experiencelevel">More than 8 years</p>
+    </body>
+  </html>
+`
+
+const GERMANY_DETAIL_HTML = `
+  <html>
+    <head>
+      <title>Safran - Engine Mechanic in FAL AIRBUS Hamburg (m/f/d)</title>
+      <meta
+        name="Description"
+        content="Offre d&#39;emploi Safran Engineering Services - Germany de &#39;Engine Mechanic in FAL AIRBUS Hamburg (m/f/d)&#39;. Lieu : Hamburg. Date : 08/06/2026. Ref : 2026-181390."
+      >
+    </head>
+    <body>
+      <p id="fldjobdescription_primaryprofile">Mechanics - Mechanical system architecture</p>
+      <p id="fldjobdescription_jobtitle">Engine Mechanic in FAL AIRBUS Hamburg (m/f/d)</p>
+      <p id="fldjobdescription_contract">Permanent</p>
+      <p id="fldjobdescription_description1">
+        Safran Engineering Services offers high-technology engineering services in the fields of aerospace, energy and ground transportation.
+      </p>
+      <p id="fldlocation_location_geographicalareacollection">Europe, Germany</p>
+      <p id="fldlocation_joblocation">Hamburg</p>
+      <p id="fldapplicantcriteria_educationlevel">Vocational/Trade School</p>
+      <p id="fldapplicantcriteria_experiencelevel">More than 3 years</p>
+    </body>
+  </html>
+`
 
 const loadSafranEngineeringServicesIndiaModule = async () => {
   try {
@@ -11,315 +156,161 @@ const loadSafranEngineeringServicesIndiaModule = async () => {
   }
 }
 
-const companyPageHtml = `
-  <html>
-    <head>
-      <title>Safran Engineering Services - Engineering partner for the Aerospace, Defense, Automotive and Rail industries | Safran</title>
-      <script type="application/ld+json">
-        {
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "Organization",
-              "@id": "https://www.safran-group.com/companies/safran-engineering-services",
-              "url": "https://www.safran-group.com/companies/safran-engineering-services",
-              "name": "Safran Engineering Services"
-            }
-          ]
-        }
-      </script>
-    </head>
-    <body>
-      <a href="/countries/india">India</a>
-      <p class="c-structured-job-offers__title">Join Safran Engineering Services and take a look at our <strong>158</strong> positions</p>
-      <a class="c-btn c-btn--arrow-btn" href="/jobs?companies%5B%5D=636-safran-engineering-services">See all the job openings</a>
-    </body>
-  </html>
-`
-
-const listingPageOneHtml = `
-  <html>
-    <head>
-      <title>Job openings | Safran</title>
-    </head>
-    <body class="node list_job_offers">
-      <span class="c-structured-news-list__results--nb">51</span>&nbsp;result(s)
-
-      <div class="c-offer-item js-block-link">
-        <div class="c-offer-item__content">
-          <a href="https://www.safran-group.com/jobs/india/bangalore/sw-architect-techlead-1-position-p1-boostit-indirect-160060" class="c-offer-item__title js-block-link--href">SW Architect - TechLead (1 Position) P1 - BoostIT - Indirect</a>
-          <span class="c-offer-item__date">12.17.2025</span>
-          <div class="c-offer-item__infos">
-            <span class="c-offer-item__infos__item">Safran Engineering Services</span>
-            <span class="c-offer-item__infos__item">Bangalore, India</span>
-            <span class="c-offer-item__infos__item">Professional, Engineer &amp; Manager</span>
-            <span class="c-offer-item__infos__item">Permanent</span>
-            <span class="c-offer-item__infos__item">Software</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="c-offer-item js-block-link">
-        <div class="c-offer-item__content">
-          <a href="https://www.safran-group.com/jobs/india/bangalore/harness-integration-dmu-validation-engineer-173083" class="c-offer-item__title js-block-link--href">Harness Integration &amp; DMU Validation Engineer</a>
-          <span class="c-offer-item__date">12.16.2025</span>
-          <div class="c-offer-item__infos">
-            <span class="c-offer-item__infos__item">Safran Engineering Services</span>
-            <span class="c-offer-item__infos__item">Bangalore, India</span>
-            <span class="c-offer-item__infos__item">Professional, Engineer &amp; Manager</span>
-            <span class="c-offer-item__infos__item">Permanent</span>
-            <span class="c-offer-item__infos__item">Architecture and systems engineering</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="o-grid o-grid--center c-structured-search-results__pagination-wrapper no-print">
-        <div class="pagination">
-          <div class="pagination__pages">
-            <div class="pagination__nav-btn pagination__nav-btn--disabled"></div>
-            <div>
-              <button class="pagination__page pagination__page--active" aria-current="page" aria-label="Page 1">1</button>
-              <a href="?companies%5B0%5D=636-safran-engineering-services&amp;countries%5B0%5D=1083-india&amp;page=1" title="Go to page 2" class="pagination__page"><span class="visually-hidden">Page</span>2</a>
-              <a href="?companies%5B0%5D=636-safran-engineering-services&amp;countries%5B0%5D=1083-india&amp;page=2" title="Go to page 3" class="pagination__page"><span class="visually-hidden">Page</span>3</a>
-              <span class="pagination__ellipsis">...</span>
-              <a href="?companies%5B0%5D=636-safran-engineering-services&amp;countries%5B0%5D=1083-india&amp;page=4" title="Go to last page" class="pagination__page">5</a>
-            </div>
-            <a href="?companies%5B0%5D=636-safran-engineering-services&amp;countries%5B0%5D=1083-india&amp;page=1" title="Go to next page" class="pagination__nav-btn pagination__nav-btn--next" rel="next"></a>
-          </div>
-        </div>
-      </div>
-    </body>
-  </html>
-`
-
-const listingPageTwoHtml = `
-  <html>
-    <head>
-      <title>Job openings | Safran</title>
-    </head>
-    <body class="node list_job_offers">
-      <span class="c-structured-news-list__results--nb">51</span>&nbsp;result(s)
-
-      <div class="c-offer-item js-block-link">
-        <div class="c-offer-item__content">
-          <a href="https://www.safran-group.com/jobs/india/bangalore/plc-programmer-2-167752" class="c-offer-item__title js-block-link--href">PLC Programmer - 2</a>
-          <span class="c-offer-item__date">12.17.2025</span>
-          <div class="c-offer-item__infos">
-            <span class="c-offer-item__infos__item">Safran Engineering Services</span>
-            <span class="c-offer-item__infos__item">Bangalore, India</span>
-            <span class="c-offer-item__infos__item">Employees - Staff</span>
-            <span class="c-offer-item__infos__item">Permanent</span>
-            <span class="c-offer-item__infos__item">Software</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="o-grid o-grid--center c-structured-search-results__pagination-wrapper no-print">
-        <div class="pagination">
-          <div class="pagination__pages">
-            <a href="?companies%5B0%5D=636-safran-engineering-services&amp;countries%5B0%5D=1083-india" title="Go to previous page" class="pagination__nav-btn pagination__nav-btn--prev" rel="prev"></a>
-            <div>
-              <a href="?companies%5B0%5D=636-safran-engineering-services&amp;countries%5B0%5D=1083-india" title="Go to page 1" class="pagination__page"><span class="visually-hidden">Page</span>1</a>
-              <button class="pagination__page pagination__page--active" aria-current="page" aria-label="Page 2">2</button>
-              <a href="?companies%5B0%5D=636-safran-engineering-services&amp;countries%5B0%5D=1083-india&amp;page=2" title="Go to page 3" class="pagination__page"><span class="visually-hidden">Page</span>3</a>
-            </div>
-            <a href="?companies%5B0%5D=636-safran-engineering-services&amp;countries%5B0%5D=1083-india&amp;page=2" title="Go to next page" class="pagination__nav-btn pagination__nav-btn--next" rel="next"></a>
-          </div>
-        </div>
-      </div>
-    </body>
-  </html>
-`
-
-const detailPageHtml = `
-  <html>
-    <head>
-      <title>SW Architect / TechLead (1 Position) P1 - BoostIT - Indirect - India, Bangalore - 160060 | Safran</title>
-      <meta name="description" content="Reporting to the IS Automation and Innovation team of Safran Engineering Services, the Software architect's missions are to define application design and solutions and improve common technical framework resources.">
-      <script type="application/ld+json">
-        {
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "JobPosting",
-              "title": "SW Architect / TechLead (1 Position) P1 - BoostIT - Indirect",
-              "employmentType": "Permanent",
-              "identifier": "2025-160060",
-              "jobLocation": {
-                "@type": "Place",
-                "address": {
-                  "@type": "PostalAddress",
-                  "addressLocality": "Bangalore",
-                  "addressCountry": "India"
-                }
-              },
-              "description": "Reporting to the IS Automation and Innovation team of Safran Engineering Services, the Software architect's missions are to define application design and solutions and improve common technical framework resources.",
-              "industry": "Software",
-              "occupationalCategory": "Professional, Engineer & Manager"
-            }
-          ]
-        }
-      </script>
-    </head>
-    <body class="node job_offer">
-      <div class="c-references-block-container__details">
-        <span>Software</span>
-        <span>Bangalore</span>
-        <span>India</span>
-        <span>Permanent</span>
-        <span>Professional, Engineer &amp; Manager</span>
-        <span># 2025-160060</span>
-      </div>
-      <a id="simple-apply" href="/jobs/india/bangalore/sw-architect-techlead-1-position-p1-boostit-indirect-160060/jobapplication" class="c-btn c-btn--primary c-btn--full-width" rel="nofollow">Apply</a>
-      <a id="one-click-apply" href="/jobs/india/bangalore/sw-architect-techlead-1-position-p1-boostit-indirect-160060/one-click-jobapplication" class="c-btn c-btn--primary-inverted c-btn--full-width" rel="nofollow">Apply with one click</a>
-      <div class="c-structured-text-and-image__text-container">
-        <h2>Job Description</h2>
-        <p>Reporting to the IS Automation and Innovation team of Safran Engineering Services, the Software architect's missions are to:</p>
-        <ul>
-          <li>define application design and solutions</li>
-          <li>improve common technical framework implementation and resources</li>
-        </ul>
-      </div>
-    </body>
-  </html>
-`
-
-test('Safran Engineering Services India constants stay pinned to the verified Safran company and India jobs routes', async () => {
+test('Safran Engineering Services India constants and helpers stay pinned to the accessible first-party careers search surface', async () => {
   const safran = await loadSafranEngineeringServicesIndiaModule()
 
   assert.equal(safran.SOURCE, 'safranengineeringservicesindia')
   assert.equal(safran.COMPANY, 'Safran Engineering Services India')
   assert.equal(safran.PUBLIC_COMPANY_NAME, 'Safran Engineering Services')
-  assert.equal(safran.COMPANY_PAGE_URL, 'https://www.safran-group.com/companies/safran-engineering-services')
+  assert.equal(safran.SEARCH_KEYWORDS, 'Safran Engineering Services')
+  assert.equal(safran.SEARCH_URL, SEARCH_URL)
+  assert.equal(safran.buildSearchUrl(), SEARCH_URL)
   assert.equal(
-    safran.LISTING_URL,
-    'https://www.safran-group.com/jobs?companies%5B%5D=636-safran-engineering-services&countries%5B%5D=1083-india',
+    safran.buildSearchUrl(2),
+    'https://careers.safran-group.com/offre-de-emploi/liste-toutes-offres.aspx?Keywords=Safran%20Engineering%20Services&LCID=1033&page=2',
   )
-  assert.equal(safran.buildListingUrl(), safran.LISTING_URL)
-  assert.equal(
-    safran.buildListingUrl(3),
-    'https://www.safran-group.com/jobs?companies%5B%5D=636-safran-engineering-services&countries%5B%5D=1083-india&page=2',
-  )
-  assert.equal(safran.hasVerifiedCompanyPageSignal(companyPageHtml), true)
-  assert.equal(safran.hasVerifiedListingPageSignal(listingPageOneHtml), true)
-})
-
-test('extractSearchResults keeps only verified Safran India cards and reads total page count from pagination', async () => {
-  const safran = await loadSafranEngineeringServicesIndiaModule()
-
-  assert.equal(safran.extractTotalPages(listingPageOneHtml), 5)
-  assert.deepEqual(safran.extractSearchResults(listingPageOneHtml), [
+  assert.equal(safran.hasVerifiedSearchPageSignal(SEARCH_PAGE_HTML), true)
+  assert.equal(safran.hasVerifiedDetailSignal(INDIA_DETAIL_HTML), true)
+  assert.equal(safran.extractTotalPages(SEARCH_PAGE_HTML), 1)
+  assert.deepEqual(safran.extractSearchResults(SEARCH_PAGE_HTML), [
     {
-      title: 'SW Architect - TechLead (1 Position) P1 - BoostIT - Indirect',
+      title: 'SW Architect / TechLead (1 Position) P1 - BoostIT - Indirect',
       company: 'Safran Engineering Services India',
-      department: 'Software',
-      location: 'Bangalore, India',
+      department: null,
+      location: 'Bangalore',
       city: 'Bangalore',
-      country: 'India',
+      country: null,
       jobId: '160060',
-      requisitionId: '160060',
-      sourceUrl: 'https://www.safran-group.com/jobs/india/bangalore/sw-architect-techlead-1-position-p1-boostit-indirect-160060',
-      applyUrl: 'https://www.safran-group.com/jobs/india/bangalore/sw-architect-techlead-1-position-p1-boostit-indirect-160060',
+      requisitionId: '2025-160060',
+      sourceUrl: 'https://careers.safran-group.com/job/job-sw-architect-techlead-1-position-p1-boostit-indirect_160060.aspx',
+      applyUrl: 'https://careers.safran-group.com/job/job-sw-architect-techlead-1-position-p1-boostit-indirect_160060.aspx',
       employmentType: 'Permanent',
       experienceRequired: null,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: '12.17.2025',
+      postingDate: '2026-06-09',
       closingDate: null,
       jobDescription: null,
     },
     {
-      title: 'Harness Integration & DMU Validation Engineer',
+      title: 'Engine Mechanic in FAL AIRBUS Hamburg (m/f/d)',
       company: 'Safran Engineering Services India',
-      department: 'Architecture and systems engineering',
-      location: 'Bangalore, India',
-      city: 'Bangalore',
-      country: 'India',
-      jobId: '173083',
-      requisitionId: '173083',
-      sourceUrl: 'https://www.safran-group.com/jobs/india/bangalore/harness-integration-dmu-validation-engineer-173083',
-      applyUrl: 'https://www.safran-group.com/jobs/india/bangalore/harness-integration-dmu-validation-engineer-173083',
+      department: null,
+      location: 'Hamburg',
+      city: 'Hamburg',
+      country: null,
+      jobId: '181390',
+      requisitionId: '2026-181390',
+      sourceUrl: 'https://careers.safran-group.com/job/job-engine-mechanic-in-fal-airbus-hamburg-m-f-d-_181390.aspx',
+      applyUrl: 'https://careers.safran-group.com/job/job-engine-mechanic-in-fal-airbus-hamburg-m-f-d-_181390.aspx',
       employmentType: 'Permanent',
       experienceRequired: null,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: '12.16.2025',
+      postingDate: '2026-06-08',
+      closingDate: null,
+      jobDescription: null,
+    },
+    {
+      title: 'Architect - Infrastructure IT (1 Position) P1 - BoostIT - Indirect',
+      company: 'Safran Engineering Services India',
+      department: null,
+      location: 'Bangalore',
+      city: 'Bangalore',
+      country: null,
+      jobId: '160766',
+      requisitionId: '2025-160766',
+      sourceUrl: 'https://careers.safran-group.com/job/job-architect-infrastructure-it-1-position-p1-boostit-indirect_160766.aspx',
+      applyUrl: 'https://careers.safran-group.com/job/job-architect-infrastructure-it-1-position-p1-boostit-indirect_160766.aspx',
+      employmentType: 'Permanent',
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: '2025-12-17',
       closingDate: null,
       jobDescription: null,
     },
   ])
 })
 
-test('extractJobDetail prefers Safran first-party JobPosting metadata and first-party apply links', async () => {
+test('Safran Engineering Services India default fetch keeps direct responses and never shells out to curl', async () => {
   const safran = await loadSafranEngineeringServicesIndiaModule()
-  const [listing] = safran.extractSearchResults(listingPageOneHtml)
+  const calls = []
+  const fetchText = safran.createDefaultFetchText({
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options })
+      return {
+        ok: true,
+        text: async () => SEARCH_PAGE_HTML,
+      }
+    },
+  })
 
-  assert.deepEqual(safran.extractJobDetail(detailPageHtml, listing), {
+  const html = await fetchText(safran.SEARCH_URL)
+
+  assert.equal(html, SEARCH_PAGE_HTML)
+  assert.equal(calls.length, 1)
+  await assert.rejects(
+    safran.createDefaultFetchText({
+      fetchImpl: async () => ({
+        ok: false,
+        status: 403,
+      }),
+    })(safran.SEARCH_URL),
+    /HTTP 403/i,
+  )
+})
+
+test('extractJobDetail prefers the accessible first-party Safran careers detail fields', async () => {
+  const safran = await loadSafranEngineeringServicesIndiaModule()
+  const [listing] = safran.extractSearchResults(SEARCH_PAGE_HTML)
+
+  assert.deepEqual(safran.extractJobDetail(INDIA_DETAIL_HTML, listing), {
     title: 'SW Architect / TechLead (1 Position) P1 - BoostIT - Indirect',
     company: 'Safran Engineering Services India',
-    department: 'Software',
+    department: 'Software - Software for product information systems',
     location: 'Bangalore, India',
     city: 'Bangalore',
     country: 'India',
     jobId: '160060',
     requisitionId: '2025-160060',
-    sourceUrl: 'https://www.safran-group.com/jobs/india/bangalore/sw-architect-techlead-1-position-p1-boostit-indirect-160060',
-    applyUrl: 'https://www.safran-group.com/jobs/india/bangalore/sw-architect-techlead-1-position-p1-boostit-indirect-160060/jobapplication',
+    sourceUrl: 'https://careers.safran-group.com/job/job-sw-architect-techlead-1-position-p1-boostit-indirect_160060.aspx',
+    applyUrl: 'https://careers.safran-group.com/job/job-sw-architect-techlead-1-position-p1-boostit-indirect_160060.aspx',
     employmentType: 'Permanent',
-    experienceRequired: null,
-    minimumQualification: null,
+    experienceRequired: 'More than 8 years',
+    minimumQualification: "Bachelor's Degree",
     preferredQualification: null,
     requiredSkills: [],
-    postingDate: '12.17.2025',
+    postingDate: '2026-06-09',
     closingDate: null,
-    jobDescription: "Reporting to the IS Automation and Innovation team of Safran Engineering Services, the Software architect's missions are to define application design and solutions and improve common technical framework resources.",
+    jobDescription:
+      "Reporting to the IS Automation and Innovation team of Safran Engineering Services, the Software architect's missions are to define application design and solutions. Transversal skills • English • design methods and documentation The candidate must demonstrate strong development skills in .NET and good knowledge of AWS architectures and services.",
   })
 })
 
-test('run walks verified Safran India pagination and decorates shared runner fields', async () => {
+test('run walks the accessible first-party search results, verifies detail pages, and keeps only India jobs', async () => {
   const safran = await loadSafranEngineeringServicesIndiaModule()
   const requestedUrls = []
 
-  const secondDetailPageHtml = detailPageHtml
-    .replaceAll('160060', '167752')
-    .replaceAll(
-      'SW Architect / TechLead (1 Position) P1 - BoostIT - Indirect',
-      'PLC Programmer - 2',
-    )
-    .replaceAll(
-      'Reporting to the IS Automation and Innovation team of Safran Engineering Services, the Software architect\'s missions are to define application design and solutions and improve common technical framework resources.',
-      'The PLC programmer role focuses on industrial automation software delivery for Safran Engineering Services.',
-    )
-
   const jobs = await safran.createSafranEngineeringServicesIndiaScraper({
-    maxPages: 2,
+    maxPages: 1,
     maxJobs: 2,
   }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
 
-      if (url === safran.COMPANY_PAGE_URL) return companyPageHtml
-      if (url === safran.buildListingUrl(1)) return listingPageOneHtml
-      if (url === safran.buildListingUrl(2)) return listingPageTwoHtml
-      if (url === 'https://www.safran-group.com/jobs/india/bangalore/sw-architect-techlead-1-position-p1-boostit-indirect-160060') {
-        return detailPageHtml
+      if (url === safran.SEARCH_URL) return SEARCH_PAGE_HTML
+      if (url === 'https://careers.safran-group.com/job/job-sw-architect-techlead-1-position-p1-boostit-indirect_160060.aspx') {
+        return INDIA_DETAIL_HTML
       }
-      if (url === 'https://www.safran-group.com/jobs/india/bangalore/harness-integration-dmu-validation-engineer-173083') {
-        return detailPageHtml
-          .replaceAll('160060', '173083')
-          .replaceAll(
-            'SW Architect / TechLead (1 Position) P1 - BoostIT - Indirect',
-            'Harness Integration & DMU Validation Engineer',
-          )
-          .replaceAll(
-            'Software',
-            'Architecture and systems engineering',
-          )
+      if (url === 'https://careers.safran-group.com/job/job-engine-mechanic-in-fal-airbus-hamburg-m-f-d-_181390.aspx') {
+        return GERMANY_DETAIL_HTML
       }
-      if (url === 'https://www.safran-group.com/jobs/india/bangalore/plc-programmer-2-167752') {
-        return secondDetailPageHtml
+      if (url === 'https://careers.safran-group.com/job/job-architect-infrastructure-it-1-position-p1-boostit-indirect_160766.aspx') {
+        return SECOND_INDIA_DETAIL_HTML
       }
 
       throw new Error(`Unexpected Safran fixture URL: ${url}`)
@@ -328,50 +319,82 @@ test('run walks verified Safran India pagination and decorates shared runner fie
   })
 
   assert.deepEqual(requestedUrls, [
-    safran.COMPANY_PAGE_URL,
-    safran.buildListingUrl(1),
-    'https://www.safran-group.com/jobs/india/bangalore/sw-architect-techlead-1-position-p1-boostit-indirect-160060',
-    'https://www.safran-group.com/jobs/india/bangalore/harness-integration-dmu-validation-engineer-173083',
+    safran.SEARCH_URL,
+    'https://careers.safran-group.com/job/job-sw-architect-techlead-1-position-p1-boostit-indirect_160060.aspx',
+    'https://careers.safran-group.com/job/job-engine-mechanic-in-fal-airbus-hamburg-m-f-d-_181390.aspx',
+    'https://careers.safran-group.com/job/job-architect-infrastructure-it-1-position-p1-boostit-indirect_160766.aspx',
   ])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'safranengineeringservicesindia')
-  assert.equal(jobs[0].company, 'Safran Engineering Services India')
-  assert.equal(
-    jobs[0].applyUrl,
-    'https://www.safran-group.com/jobs/india/bangalore/sw-architect-techlead-1-position-p1-boostit-indirect-160060/jobapplication',
+  assert.deepEqual(
+    jobs.map((job) => ({
+      title: job.title,
+      country: job.country,
+      city: job.city,
+      jobId: job.jobId,
+      source: job.source,
+      scrapedAt: job.scrapedAt,
+    })),
+    [
+      {
+        title: 'SW Architect / TechLead (1 Position) P1 - BoostIT - Indirect',
+        country: 'India',
+        city: 'Bangalore',
+        jobId: '160060',
+        source: 'safranengineeringservicesindia',
+        scrapedAt: FIXED_SCRAPED_AT,
+      },
+      {
+        title: 'Architect - Infrastructure IT (1 Position) P1 - BoostIT - Indirect',
+        country: 'India',
+        city: 'Bangalore',
+        jobId: '160766',
+        source: 'safranengineeringservicesindia',
+        scrapedAt: FIXED_SCRAPED_AT,
+      },
+    ],
   )
-  assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
-  assert.equal(jobs[1].jobId, '173083')
-  assert.equal(jobs[1].department, 'Architecture and systems engineering')
+  assert.equal(
+    jobs[0].link,
+    'https://careers.safran-group.com/job/job-sw-architect-techlead-1-position-p1-boostit-indirect_160060.aspx',
+  )
+  assert.equal(
+    jobs[1].link,
+    'https://careers.safran-group.com/job/job-architect-infrastructure-it-1-position-p1-boostit-indirect_160766.aspx',
+  )
 })
 
-test('Safran Engineering Services India fails closed when the verified company or listing identity drifts', async () => {
+test('Safran Engineering Services India fails closed when the accessible search or detail pages drift', async () => {
   const safran = await loadSafranEngineeringServicesIndiaModule()
 
   await assert.rejects(
     safran.createSafranEngineeringServicesIndiaScraper().run({
       fetchText: async (url) => {
-        if (url === safran.COMPANY_PAGE_URL) {
-          return companyPageHtml.replace('Safran Engineering Services', 'Different Company')
+        if (url === safran.SEARCH_URL) {
+          return '<html><body><h1>Unexpected</h1></body></html>'
         }
 
         throw new Error(`Unexpected Safran fixture URL: ${url}`)
       },
     }),
-    /verified Safran Engineering Services company page/i,
+    /verified accessible Safran Engineering Services search page/i,
   )
 
   await assert.rejects(
     safran.createSafranEngineeringServicesIndiaScraper().run({
       fetchText: async (url) => {
-        if (url === safran.COMPANY_PAGE_URL) return companyPageHtml
-        if (url === safran.buildListingUrl(1)) {
-          return listingPageOneHtml.replaceAll('Safran Engineering Services', 'Different Company')
+        if (url === safran.SEARCH_URL) return SEARCH_PAGE_HTML
+        if (url === 'https://careers.safran-group.com/job/job-sw-architect-techlead-1-position-p1-boostit-indirect_160060.aspx') {
+          return '<html><body><h1>Unexpected</h1></body></html>'
+        }
+        if (url === 'https://careers.safran-group.com/job/job-engine-mechanic-in-fal-airbus-hamburg-m-f-d-_181390.aspx') {
+          return GERMANY_DETAIL_HTML
+        }
+        if (url === 'https://careers.safran-group.com/job/job-architect-infrastructure-it-1-position-p1-boostit-indirect_160766.aspx') {
+          return SECOND_INDIA_DETAIL_HTML
         }
 
         throw new Error(`Unexpected Safran fixture URL: ${url}`)
       },
     }),
-    /verified Safran India jobs listing/i,
+    /verified Safran Engineering Services detail page/i,
   )
 })

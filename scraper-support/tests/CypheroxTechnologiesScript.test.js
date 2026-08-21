@@ -60,6 +60,11 @@ const careersPageHtml = `
 </html>
 `
 
+const currentCareersPageHtml = careersPageHtml.replace(
+  'Tech Careers at Cypherox | Software Job Openings & Hiring',
+  'Engineering Careers | Join a Growing AI Development Team',
+)
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/cypherox/script.js')
@@ -76,6 +81,7 @@ test('Cypherox helpers stay pinned to the verified first-party careers page and 
   assert.equal(cypherox.CAREERS_URL, 'https://www.cypherox.com/career')
   assert.equal(cypherox.VERIFIED_ON, '2026-07-17')
   assert.equal(cypherox.hasOfficialCareersSignal(careersPageHtml), true)
+  assert.equal(cypherox.hasOfficialCareersSignal(currentCareersPageHtml), true)
   assert.deepEqual(
     cypherox.extractJobsFromStructuredData(careersPageHtml, { scrapedAt: FIXED_SCRAPED_AT }),
     [

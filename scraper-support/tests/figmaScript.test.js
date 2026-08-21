@@ -65,6 +65,31 @@ const greenhousePayload = {
   ],
 }
 
+const officialCareersHtmlWithNonIndiaDrift = officialCareersHtml.replace(
+  '</main>',
+  `
+      <a href="https://boards.greenhouse.io/figma/jobs/7000000004?gh_jid=7000000004">
+        Product Manager, AI Platform (United States)
+      </a>
+    </main>
+  `,
+)
+
+const greenhousePayloadWithNonIndiaDrift = {
+  jobs: [
+    greenhousePayload.jobs[0],
+    {
+      ...greenhousePayload.jobs[1],
+      id: 8000000004,
+      title: 'Technical Account Manager (Singapore)',
+      location: { name: 'Singapore' },
+      absolute_url: 'https://boards.greenhouse.io/figma/jobs/8000000004?gh_jid=8000000004',
+      requisition_id: '2422',
+      updated_at: '2026-08-10T08:00:00-04:00',
+    },
+  ],
+}
+
 const loadFigmaModule = async () => {
   try {
     return await import('../../scraper/figma/script.js')
@@ -219,5 +244,25 @@ test('Figma run fails closed when the verified careers page or Greenhouse detail
       }),
     }),
     /verified public Greenhouse detail URLs/i,
+  )
+})
+
+test('Figma run tolerates non-India page and API drift while India job links stay aligned', async () => {
+  const figma = await loadFigmaModule()
+
+  const jobs = await figma.createFigmaScraper().run({
+    fetchText: async () => officialCareersHtmlWithNonIndiaDrift,
+    fetchJson: async () => greenhousePayloadWithNonIndiaDrift,
+    now: () => '2026-08-10T00:00:00.000Z',
+  })
+
+  assert.equal(jobs.length, 2)
+  assert.equal(
+    jobs.filter((job) => job.country === 'India').length,
+    1,
+  )
+  assert.equal(
+    jobs.some((job) => job.sourceUrl === 'https://boards.greenhouse.io/figma/jobs/8000000004?gh_jid=8000000004'),
+    true,
   )
 })

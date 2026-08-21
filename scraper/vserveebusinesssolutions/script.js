@@ -126,8 +126,7 @@ export const extractEmbeddedZohoPortalUrl = (html = '') => {
 export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
   return normalized.includes('Current Job Openings and Opportunities in Vserve Ebusiness Solutions')
-    && normalized.includes('If you are passionate enough to work towards one common goal')
-    && normalized.includes('interesting position.')
+    && normalized.includes('Careers')
     && Boolean(extractEmbeddedZohoPortalUrl(html))
 }
 

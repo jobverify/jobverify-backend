@@ -224,3 +224,36 @@ test('createDefaultFetchText treats Cognizant Cloudflare challenge pages as upst
   assert.equal(calls.length, 1)
   assert.equal(calls[0].type, 'fetch')
 })
+
+test('run returns [] when the live Cognizant careers route matches the verified Cloudflare challenge shell', async () => {
+  const { CAREER_PAGE_URL, createCognizantScraper } = await loadCognizantModule()
+  const requestedPages = []
+  const scraper = createCognizantScraper({ maxPages: 1 })
+
+  const jobs = await scraper.run({
+    fetchText: async () => {
+      const error = new Error(`Cognizant careers page returned HTTP 403 Cloudflare challenge (Just a moment...) for ${CAREER_PAGE_URL}`)
+      error.softFailure = true
+      error.upstreamOutage = true
+      error.failureKind = 'blocked_or_access_denied'
+      error.abortRetries = true
+      throw error
+    },
+    fetchPage: async (url) => {
+      requestedPages.push(url)
+      return {
+        status: 403,
+        url,
+        headers: {
+          server: 'cloudflare',
+          'cf-ray': 'a2abdc0e7f7c28bc-MAA',
+          'cf-mitigated': 'challenge',
+        },
+        html: '<!DOCTYPE html><html><head><title>Just a moment...</title></head><body>Enable JavaScript and cookies to continue <script src="https://challenges.cloudflare.com"></script></body></html>',
+      }
+    },
+  })
+
+  assert.deepEqual(requestedPages, [CAREER_PAGE_URL])
+  assert.deepEqual(jobs, [])
+})

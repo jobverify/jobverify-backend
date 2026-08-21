@@ -1,57 +1,44 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-08-01T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-14T00:00:00.000Z'
 
-const officialCareersSurface = {
+const officialCareersShellHtml = `
+  <html>
+    <head>
+      <meta property="og:image" content="https://www.delhivery.com/banner/careersV2.webp" />
+      <title>Build Your Career with Delhivery – Join India's Leading Logistics Innovator</title>
+    </head>
+    <body>
+      <div id="__nuxt">
+        <style>#nuxt-loading{visibility:hidden;}</style>
+        Loading...
+      </div>
+    </body>
+  </html>
+`
+
+const officialCareersShellSurface = {
   url: 'https://www.delhivery.com/careers',
   title: "Build Your Career with Delhivery – Join India's Leading Logistics Innovator",
-  text: [
-    'Build a career at Delhivery',
-    'Join a dynamic team of over 74,000 employees shaping the future of logistics in India',
-    'Jobs at Delhivery',
-    'Delivery Partner Jobs',
-    'Corporate Jobs',
-    'Warehouse Jobs',
-    'Delivery Jobs',
-  ].join(' '),
-  links: [
-    { text: 'Jobs at Delhivery', href: 'https://delhivery.darwinbox.in/ms/candidate/careers' },
-    { text: 'Corporate Jobs', href: 'https://delhivery.darwinbox.in/ms/candidate/careers' },
-    { text: 'Delivery Partner Jobs', href: 'https://www.delhivery.com/partner/delivery-partner' },
-    { text: 'Apply Now', href: 'https://www.delhivery.com/skills-development-program' },
-    { text: 'Warehouse Jobs', href: 'https://www.delhivery.com/skills-development-program' },
-    { text: 'Delivery Jobs', href: 'https://www.delhivery.com/partner/delivery-partner' },
-  ],
-}
-
-const officialCareersSurfaceWithoutVisibleJobsLabel = {
-  ...officialCareersSurface,
-  text: [
-    'Build a career at Delhivery',
-    'Join a dynamic team of over 74,000 employees shaping the future of logistics in India',
-    'Corporate Jobs',
-    'Warehouse Jobs',
-    'Delivery Jobs',
-  ].join(' '),
-}
-
-const publicDarwinboxHomeSurface = {
-  url: 'https://delhivery.darwinbox.in/ms/candidatev2/main/careers/home',
-  title: 'Delhivery Limited',
-  text: 'Thank you for choosing us for your next chapter! We Have 10 Open Jobs Search by role, department or location Powered by: darwinbox | Privacy Policy',
-  links: [
-    {
-      text: 'We Have 10 Open Jobs',
-      href: 'https://delhivery.darwinbox.in/ms/candidatev2/main/careers/allJobs',
-    },
-  ],
+  text: "Build Your Career with Delhivery – Join India's Leading Logistics Innovator Loading...",
+  html: officialCareersShellHtml,
+  links: [],
 }
 
 const minimalPublicDarwinboxHomeSurface = {
   url: 'https://delhivery.darwinbox.in/ms/candidatev2/main/careers/home',
   title: 'Delhivery Limited',
   text: 'Delhivery Limited -',
+  html: '<html><head><title>Delhivery Limited</title></head><body>Delhivery Limited -</body></html>',
+  links: [],
+}
+
+const minimalPublicDarwinboxAllJobsSurface = {
+  url: 'https://delhivery.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+  title: 'Delhivery Limited',
+  text: 'Delhivery Limited -',
+  html: '<html><head><title>Delhivery Limited</title></head><body>Delhivery Limited -</body></html>',
   links: [],
 }
 
@@ -141,13 +128,13 @@ const loadDelhiveryModule = async () => {
   }
 }
 
-test('Delhivery scraper keeps the verified first-party careers handoff and public Darwinbox routes explicit', async () => {
+test('Delhivery scraper keeps the verified August 14 careers app shell and Darwinbox routes explicit', async () => {
   const delhivery = await loadDelhiveryModule()
 
   assert.equal(delhivery.COMPANY_NAME, 'Delhivery')
   assert.equal(delhivery.SOURCE, 'delhivery')
   assert.equal(delhivery.OFFICIAL_BRAND_NAME, 'Delhivery Limited')
-  assert.equal(delhivery.VERIFIED_ON, '2026-08-01')
+  assert.equal(delhivery.VERIFIED_ON, '2026-08-14')
   assert.equal(delhivery.HOMEPAGE_URL, 'https://www.delhivery.com/')
   assert.equal(delhivery.OFFICIAL_CAREERS_URL, 'https://www.delhivery.com/careers')
   assert.equal(
@@ -171,27 +158,13 @@ test('Delhivery scraper keeps the verified first-party careers handoff and publi
     delhivery.buildJobDetailUrl('dbx-job-1'),
     'https://delhivery.darwinbox.in/ms/candidatev2/main/careers/jobDetails/dbx-job-1',
   )
-  assert.equal(delhivery.hasOfficialDelhiveryCareersSignals(officialCareersSurface), true)
-  assert.equal(
-    delhivery.hasOfficialDelhiveryCareersSignals(officialCareersSurfaceWithoutVisibleJobsLabel),
-    true,
-  )
-  assert.equal(delhivery.hasPublicDarwinboxHomeSignal(publicDarwinboxHomeSurface), true)
+  assert.equal(delhivery.hasOfficialDelhiveryCareersSignals(officialCareersShellSurface), true)
   assert.equal(delhivery.hasPublicDarwinboxHomeSignal(minimalPublicDarwinboxHomeSurface), true)
+  assert.equal(delhivery.hasPublicDarwinboxAllJobsSignal(minimalPublicDarwinboxAllJobsSurface), true)
   assert.equal(
     delhivery.hasOfficialDelhiveryCareersSignals({
-      ...officialCareersSurface,
-      links: officialCareersSurface.links.map((link) =>
-        link.text === 'Corporate Jobs'
-          ? { ...link, href: 'https://example.com/jobs' }
-          : link),
-    }),
-    false,
-  )
-  assert.equal(
-    delhivery.hasPublicDarwinboxHomeSignal({
-      ...publicDarwinboxHomeSurface,
-      links: [{ text: 'We Have 10 Open Jobs', href: 'https://example.com/allJobs' }],
+      ...officialCareersShellSurface,
+      html: officialCareersShellHtml.replace('careersV2.webp', 'about-us.webp'),
     }),
     false,
   )
@@ -255,7 +228,7 @@ test('Delhivery scraper keeps the verified first-party careers handoff and publi
   assert.equal(delhivery.transformDelhiveryJob(listingPayload.data[3]), null)
 })
 
-test('Delhivery official surface capture parses the careers proof over native HTTP', async () => {
+test('Delhivery official surface capture parses the current careers app shell over native HTTP', async () => {
   const delhivery = await loadDelhiveryModule()
   const requestedUrls = []
 
@@ -265,14 +238,9 @@ test('Delhivery official surface capture parses the careers proof over native HT
       return {
         ok: true,
         status: 200,
+        url,
         headers: { get: () => 'text/html' },
-        text: async () => `
-          <html><head><title>${officialCareersSurface.title}</title></head><body>
-            <h1>Build a career at Delhivery</h1>
-            <a href="${delhivery.OFFICIAL_CAREERS_HANDOFF_URL}">Jobs at Delhivery</a>
-            <a href="${delhivery.OFFICIAL_CAREERS_HANDOFF_URL}">Corporate Jobs</a>
-          </body></html>
-        `,
+        text: async () => officialCareersShellHtml,
       }
     },
   })
@@ -281,16 +249,16 @@ test('Delhivery official surface capture parses the careers proof over native HT
   assert.deepEqual(requestedUrls, [delhivery.OFFICIAL_CAREERS_URL])
 })
 
-test('Delhivery run verifies the careers handoff, verifies the public Darwinbox home shell, and returns normalized India jobs', async () => {
+test('Delhivery run accepts the verified careers app shell, verifies the Darwinbox home shell, and returns normalized India jobs', async () => {
   const delhivery = await loadDelhiveryModule()
   const requestedPages = []
 
   const jobs = await delhivery.createDelhiveryScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
-    getOfficialCareersSurface: async () => officialCareersSurface,
+    getOfficialCareersSurface: async () => officialCareersShellSurface,
     getListingContext: async () => ({
-      surface: publicDarwinboxHomeSurface,
+      surface: minimalPublicDarwinboxHomeSurface,
       fetchListingPage: async ({ page }) => {
         requestedPages.push(page)
         return listingPayload
@@ -320,20 +288,61 @@ test('Delhivery run verifies the careers handoff, verifies the public Darwinbox 
   assert.equal(jobs[0].link, jobs[0].applyUrl)
 })
 
-test('Delhivery scraper fails closed when the first-party careers surface or public Darwinbox home shell drifts', async () => {
+test('Delhivery returns a current-openings signal job when the public Darwinbox inventory API is blocked but both verified shells remain reachable', async () => {
+  const delhivery = await loadDelhiveryModule()
+
+  const jobs = await delhivery.createDelhiveryScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    getOfficialCareersSurface: async () => officialCareersShellSurface,
+    getListingContext: async () => ({
+      surface: minimalPublicDarwinboxHomeSurface,
+      fetchListingPage: async () => {
+        throw new Error(`HTTP 403 for ${delhivery.LISTING_API_URL}`)
+      },
+    }),
+    getAllJobsSurface: async () => minimalPublicDarwinboxAllJobsSurface,
+  })
+
+  assert.deepEqual(jobs, [
+    {
+      title: 'Current openings at Delhivery',
+      company: 'Delhivery',
+      location: 'India',
+      city: null,
+      country: 'India',
+      link: 'https://delhivery.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+      applyUrl: 'https://delhivery.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+      sourceUrl: 'https://delhivery.darwinbox.in/ms/candidatev2/main/careers/allJobs',
+      source: 'delhivery',
+      jobId: 'delhivery-current-openings',
+      requisitionId: 'delhivery-current-openings',
+      department: null,
+      employmentType: null,
+      experienceRequired: null,
+      jobDescription: 'The official Delhivery careers page and public Darwinbox shell remained reachable, but the public Darwinbox inventory API returned HTTP 403 during this scrape. Review current openings directly on https://delhivery.darwinbox.in/ms/candidatev2/main/careers/allJobs.',
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      remoteStatus: null,
+      postingDate: null,
+      closingDate: null,
+      scrapedAt: FIXED_SCRAPED_AT,
+    },
+  ])
+})
+
+test('Delhivery scraper fails closed when the careers shell or Darwinbox home shell drifts', async () => {
   const delhivery = await loadDelhiveryModule()
 
   await assert.rejects(
     delhivery.createDelhiveryScraper().run({
       getOfficialCareersSurface: async () => ({
-        ...officialCareersSurface,
-        links: officialCareersSurface.links.map((link) =>
-          link.text === 'Jobs at Delhivery'
-            ? { ...link, href: 'https://example.com/jobs' }
-            : link),
+        ...officialCareersShellSurface,
+        html: '<html><head><title>Placeholder</title></head><body>Loading...</body></html>',
       }),
       getListingContext: async () => ({
-        surface: publicDarwinboxHomeSurface,
+        surface: minimalPublicDarwinboxHomeSurface,
         fetchListingPage: async () => listingPayload,
       }),
     }),
@@ -342,11 +351,11 @@ test('Delhivery scraper fails closed when the first-party careers surface or pub
 
   await assert.rejects(
     delhivery.createDelhiveryScraper().run({
-      getOfficialCareersSurface: async () => officialCareersSurface,
+      getOfficialCareersSurface: async () => officialCareersShellSurface,
       getListingContext: async () => ({
         surface: {
-          ...publicDarwinboxHomeSurface,
-          links: [{ text: 'Broken', href: 'https://example.com/jobs' }],
+          ...minimalPublicDarwinboxHomeSurface,
+          text: 'Broken shell',
         },
         fetchListingPage: async () => listingPayload,
       }),

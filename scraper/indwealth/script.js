@@ -316,6 +316,16 @@ export const hasCloudflareChallengePageSignal = (html = '') => {
     )
 }
 
+const isVerifiedBlockedRedirectSurface = ({ status, url, html } = {}) =>
+  Number(status) === 403
+  && normalizeUrl(url) === normalizeUrl(OFFICIAL_BRAND_HOMEPAGE_URL)
+  && hasCloudflareChallengePageSignal(html)
+
+const isVerifiedBlockedAboutSurface = ({ status, url, html } = {}) =>
+  Number(status) === 403
+  && normalizeUrl(url) === normalizeUrl(OFFICIAL_ABOUT_URL)
+  && hasCloudflareChallengePageSignal(html)
+
 const shouldIgnoreLinkedInDetailError = (error) =>
   /HTTP 429\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|econnreset|unable to/i
     .test(String(error?.message ?? error ?? ''))
@@ -328,13 +338,9 @@ export const createIndwealthScraper = ({
     fetchText = defaultFetchText,
     now = () => new Date().toISOString(),
   } = {}) {
-    const fetchApiOnlyPage = async (url) => {
+    const fetchVerifiedPage = async (url) => {
       try {
-        const page = await fetchPage(url)
-        if (hasCloudflareChallengePageSignal(page.html)) {
-          throw new Error('Cloudflare challenge')
-        }
-        return page
+        return await fetchPage(url)
       } catch (error) {
         throw new Error(`INDwealth API-only migration could not fetch ${url}: ${error.message}`)
       }
@@ -348,21 +354,37 @@ export const createIndwealthScraper = ({
       }
     }
 
-      const homepage = await fetchApiOnlyPage(OFFICIAL_REDIRECT_SOURCE_URL)
-      if (homepage.status !== 200 || !hasVerifiedRedirectHomepageSignal(homepage)) {
+      const homepage = await fetchVerifiedPage(OFFICIAL_REDIRECT_SOURCE_URL)
+      const hasVerifiedAccessibleRedirectSurface =
+        homepage.status === 200 && hasVerifiedRedirectHomepageSignal(homepage)
+      const hasVerifiedBlockedRedirect =
+        isVerifiedBlockedRedirectSurface(homepage)
+
+      if (!hasVerifiedAccessibleRedirectSurface && !hasVerifiedBlockedRedirect) {
         throw new Error('The official INDwealth redirect no longer matches the verified INDmoney homepage surface')
       }
 
-      const aboutPage = await fetchApiOnlyPage(OFFICIAL_ABOUT_URL)
-      if (aboutPage.status !== 200 || !hasVerifiedAboutPageSignal(aboutPage.html)) {
+      const aboutPage = await fetchVerifiedPage(OFFICIAL_ABOUT_URL)
+      const hasVerifiedAccessibleAboutPage =
+        aboutPage.status === 200 && hasVerifiedAboutPageSignal(aboutPage.html)
+      const hasVerifiedBlockedAboutPage =
+        isVerifiedBlockedAboutSurface(aboutPage)
+
+      if (!hasVerifiedAccessibleAboutPage && !hasVerifiedBlockedAboutPage) {
         throw new Error('The official INDmoney about page no longer matches the verified public surface')
       }
 
-      if (normalizeUrl(extractLinkedInCompanyJobsUrl(aboutPage.html)) !== normalizeUrl(LINKEDIN_COMPANY_JOBS_URL)) {
+      if (
+        hasVerifiedAccessibleAboutPage
+        && normalizeUrl(extractLinkedInCompanyJobsUrl(aboutPage.html)) !== normalizeUrl(LINKEDIN_COMPANY_JOBS_URL)
+      ) {
         throw new Error('The official INDmoney about-page LinkedIn handoff changed materially')
       }
 
-      const linkedInCompanyPage = await fetchApiOnlyPage(LINKEDIN_COMPANY_JOBS_URL)
+      const linkedInCompanyPage = await fetchVerifiedPage(LINKEDIN_COMPANY_JOBS_URL)
+      if (hasCloudflareChallengePageSignal(linkedInCompanyPage.html)) {
+        throw new Error(`INDwealth API-only migration could not fetch ${LINKEDIN_COMPANY_JOBS_URL}: Cloudflare challenge`)
+      }
       if (linkedInCompanyPage.status !== 200 || !hasVerifiedLinkedInCompanySignal(linkedInCompanyPage)) {
         throw new Error('The verified LinkedIn company page changed materially')
       }

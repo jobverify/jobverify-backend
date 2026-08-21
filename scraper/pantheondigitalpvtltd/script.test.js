@@ -23,7 +23,7 @@ const homepageHtml = `
   <!DOCTYPE html>
   <html lang="en">
     <head>
-      <title>Pantheon Digital</title>
+      <title>Pantheon Digital | Web, Software &amp; Digital Marketing Agency in Delhi NCR</title>
       <meta property="og:description" content="Empowering your business with end-to-end digital solutions" />
     </head>
     <body>
@@ -34,7 +34,10 @@ const homepageHtml = `
         <a href="/Contact_Us">Contact Us</a>
       </header>
       <main>
-        <p>Welcome to Pantheon Digital, where innovation meets excellence.</p>
+        <p>Initializing Digital Excellence</p>
+        <p>We deliver the best customer experience</p>
+        <p>We build websites, apps, and custom software that help your business grow.</p>
+        <a href="/Book-a-call">Book a Free Call</a>
       </main>
       <footer>
         <a href="https://www.instagram.com/pantheondigitals/">Instagram</a>
@@ -48,16 +51,18 @@ const aboutHtml = `
   <!DOCTYPE html>
   <html lang="en">
     <head>
-      <title>About Pantheon Digital | Creative Digital Experts &amp; Innovators | Pantheon Digital</title>
+      <title>About Pantheon Digital | Technology, Products &amp; Customer Growth | Pantheon Digital</title>
       <meta
         name="description"
-        content="Meet Pantheon Digitals: a passionate team of digital experts delivering creative solutions"
+        content="Pantheon Digital builds websites, apps, software products, and growth systems for modern businesses."
       />
     </head>
     <body>
       <h1>About Us</h1>
-      <p>Welcome to Pantheon Digital, where innovation meets excellence.</p>
-      <p>Meet Pantheon Digitals: a passionate team of digital experts delivering creative solutions.</p>
+      <p>Initializing Digital Excellence</p>
+      <p>We deliver the best customer experience</p>
+      <p>We build websites, apps, and custom software that help your business grow.</p>
+      <a href="/Book-a-call">Book a Free Call</a>
       <a href="/Contact_Us">Contact Us</a>
     </body>
   </html>

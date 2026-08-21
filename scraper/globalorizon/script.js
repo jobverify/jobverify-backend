@@ -1,10 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import {
-  fetchJsonWithRetry,
-  fetchTextWithRetry,
-} from '../../scraper-support/utils/fetch.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -12,6 +9,8 @@ export const OUR_DATA_TEAM_URL = 'https://www.globalorizon.com/our-data-team-com
 export const OUR_HIRING_PARTNER_URL = 'https://www.globalorizon.com/the-hiring-partner-com'
 export const PUBLIC_ORGANIZATION_URL =
   'https://api.thehiringpartner.com/public/organizations/by-slug/global-orizon-9ma3d'
+export const SOURCE = 'globalorizon'
+export const COMPANY = 'Global Orizon'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
@@ -23,6 +22,34 @@ const normalizeDomain = (value) => {
     return null
   }
 }
+
+const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\u00a0/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const makeAbsoluteUrl = (value, baseUrl) => {
+  if (!value) return null
+
+  try {
+    return new URL(value, baseUrl).toString()
+  } catch {
+    return null
+  }
+}
+
+const slugify = (value) => normalizeWhitespace(value)
+  .toLowerCase()
+  .replace(/['’]/g, '')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '')
 
 const pageIncludesAll = (html, patterns) => {
   const page = String(html ?? '')
@@ -44,16 +71,49 @@ export const hasOfficialHiringPartnerSignal = (html) =>
     /thehiringpartner\.com/i,
   ])
 
-export const organizationHasZeroPublicJobs = (payload) => {
-  if (payload?.success !== true || !payload.data) return false
+export const extractHiringPartnerJobs = (
+  html,
+  {
+    scrapedAt = new Date().toISOString(),
+  } = {},
+) => {
+  const jobs = []
 
-  const organization = payload.data
-  return organization.slug === 'global-orizon-9ma3d'
-    && organization.name === 'Global Orizon'
-    && normalizeDomain(organization.website) === 'globalorizon.com'
-    && Number(organization.jobsAvailable) === 0
-    && Array.isArray(organization.jobs)
-    && organization.jobs.length === 0
+  for (const match of String(html ?? '').matchAll(
+    /<h3[^>]*>\s*(?:<span[^>]*>)?([^<]+?)(?:<\/span>)?\s*<\/h3>[\s\S]{0,1200}?<p[^>]*>\s*(?:<span[^>]*>)?\s*India\s*(?:<\/span>)?\s*<\/p>[\s\S]{0,1200}?<a[^>]+href=["']([^"']*thehiringpartner\.com\/?[^"']*)["'][^>]*>/gi,
+  )) {
+    const title = normalizeWhitespace(match[1])
+    const applyUrl = makeAbsoluteUrl(match[2], OUR_HIRING_PARTNER_URL)
+    if (!title || !applyUrl) continue
+
+    const jobId = `${SOURCE}-${slugify(title)}`
+    jobs.push({
+      title,
+      company: COMPANY,
+      department: null,
+      location: 'India',
+      city: null,
+      country: 'India',
+      link: OUR_HIRING_PARTNER_URL,
+      applyUrl,
+      sourceUrl: OUR_HIRING_PARTNER_URL,
+      source: SOURCE,
+      jobId,
+      requisitionId: jobId,
+      employmentType: null,
+      experienceRequired: null,
+      jobDescription: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      remoteStatus: null,
+      scrapedAt,
+    })
+  }
+
+  return jobs
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
@@ -61,21 +121,12 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
-  label: 'globalorizon',
-  timeoutMs: 15000,
-})
-
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'application/json,text/plain;q=0.9,*/*;q=0.8',
-  },
-  label: 'globalorizon',
+  label: SOURCE,
   timeoutMs: 15000,
 })
 
 export const createGlobalOrizonScraper = () => ({
-  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
+  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
     const ourDataTeamHtml = await fetchText(OUR_DATA_TEAM_URL)
     if (!hasOfficialOurDataTeamSignal(ourDataTeamHtml)) {
       throw new Error('Global Orizon Our Data Team surface changed; refusing to assume zero public jobs')
@@ -86,12 +137,20 @@ export const createGlobalOrizonScraper = () => ({
       throw new Error('Global Orizon Hiring Partner surface changed; refusing to assume zero public jobs')
     }
 
-    const organizationPayload = await fetchJson(PUBLIC_ORGANIZATION_URL)
-    if (!organizationHasZeroPublicJobs(organizationPayload)) {
-      throw new Error('Global Orizon public organization profile now exposes jobs or changed shape')
+    const jobs = extractHiringPartnerJobs(hiringPartnerHtml, {
+      scrapedAt: now(),
+    }).map((job) => ({
+      ...job,
+      companyCareerPage: OUR_HIRING_PARTNER_URL,
+      companyDomain: normalizeDomain(OUR_DATA_TEAM_URL),
+      atsPlatform: 'official-company-careers',
+    }))
+
+    if (jobs.length === 0) {
+      throw new Error('Global Orizon hiring partner page no longer exposes parseable public roles')
     }
 
-    return []
+    return jobs
   },
 })
 
@@ -105,6 +164,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (isDryRun) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
   } else {
-    await saveToDB(jobs, 'globalorizon')
+    await saveToDB(jobs, SOURCE)
   }
 }

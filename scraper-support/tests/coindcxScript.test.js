@@ -26,6 +26,21 @@ const opportunitiesHtml = `
 </html>
 `
 
+const cloudflareBlockedPageHtml = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Attention Required! | Cloudflare</title>
+  </head>
+  <body>
+    <p>Please enable cookies.</p>
+    <h1>Sorry, you have been blocked</h1>
+    <p>You are unable to access coindcx.com</p>
+    <p>Cloudflare Ray ID: 1d8fd4e1f6373b21</p>
+  </body>
+</html>
+`
+
 test('CoinDCX stays pinned to the verified opportunities shell and no-public-listings state', async () => {
   const coindcx = await loadCoinDCXModule()
 
@@ -47,23 +62,29 @@ test('CoinDCX run returns zero jobs for the verified public no-listings shell', 
   assert.deepEqual(jobs, [])
 })
 
-test('CoinDCX falls back to browser-backed HTML when direct requests return 403', async () => {
+test('CoinDCX returns zero jobs when the verified opportunities route is Cloudflare-blocked on Thursday, August 13, 2026', async () => {
   const coindcx = await loadCoinDCXModule()
-  const browserUrls = []
+  const requestedPageUrls = []
 
   const jobs = await coindcx.createCoinDCXScraper().run({
     fetchText: async (url) => {
       throw new Error(`HTTP 403 for ${url}`)
     },
-    fetchBrowserText: async (url) => {
-      browserUrls.push(url)
-      assert.equal(url, coindcx.CAREER_PAGE_URL)
-      return opportunitiesHtml
+    fetchBrowserText: async () => {
+      assert.fail('CoinDCX should not launch a browser for the verified blocked no-public-listings state')
+    },
+    fetchPage: async (url) => {
+      requestedPageUrls.push(url)
+      return {
+        status: 403,
+        url,
+        html: cloudflareBlockedPageHtml,
+      }
     },
   })
 
   assert.deepEqual(jobs, [])
-  assert.deepEqual(browserUrls, [coindcx.CAREER_PAGE_URL])
+  assert.deepEqual(requestedPageUrls, [coindcx.CAREER_PAGE_URL])
 })
 
 test('CoinDCX fails closed when the verified opportunities shell changes materially', async () => {

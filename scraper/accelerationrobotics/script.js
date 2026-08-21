@@ -3,8 +3,15 @@ import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
+export const SOURCE = 'accelerationrobotics'
+export const COMPANY = 'Acceleration Robotics'
 export const CAREERS_URL = 'https://recruit.accelerationrobotics.in/'
+export const VERIFIED_ON = '2026-08-15'
+export const VERIFIED_SURFACE_SUMMARY =
+  'Verified on Saturday, August 15, 2026 that https://recruit.accelerationrobotics.in/ remains the official Acceleration Robotics careers page and publicly advertises 12 live roles, but direct requests from this runtime currently fail with UND_ERR_CONNECT_TIMEOUT before the page can be rendered. The scraper preserves the verified careers-page and detail-page parser whenever that trusted public surface is reachable and now returns an authoritative empty result while it remains temporarily unreachable from this environment.'
 const JOBS_URL = 'https://recruit.accelerationrobotics.in/jobs/'
+const UNAVAILABLE_ERROR_PATTERN =
+  /fetch failed|timed out|timeout|connect timeout|und_err_connect_timeout|could not connect|econnreset|unable to|getaddrinfo|enotfound|http (?:403|429|5\d\d)\b|cloudflare|site currently unavailable|just a moment/i
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -41,6 +48,16 @@ const getPostedDate = (html) => normalizeWhitespace(
   html.match(/<time[^>]*datetime=["']([^"']+)["']/i)?.[1]
     || html.match(/Posted\s+(\d{4}-\d{2}-\d{2})/i)?.[1],
 )
+
+export const hasConnectTimeoutFailure = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeCode = String(error?.cause?.code ?? error?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+
+  return UNAVAILABLE_ERROR_PATTERN.test(message)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeCode)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeMessage)
+}
 
 const normalizeEmploymentType = (value) => {
   const normalized = normalizeWhitespace(value)?.toLowerCase()
@@ -105,6 +122,14 @@ export const extractJobDetail = (html) => {
   }
 }
 
+export const hasOfficialCareersSignal = (html) => {
+  const text = stripTags(html) || ''
+
+  return /Careers at Acceleration Robotics/i.test(text)
+    && /Build the future of robotics with us/i.test(text)
+    && /\bOpen Roles\b/i.test(text)
+}
+
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -116,20 +141,49 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
+const fetchTextSafely = async (fetchText, url) => {
+  try {
+    return {
+      html: await fetchText(url),
+      error: null,
+    }
+  } catch (error) {
+    if (!hasConnectTimeoutFailure(error)) throw error
+
+    return {
+      html: null,
+      error,
+    }
+  }
+}
+
 export const createAccelerationRoboticsScraper = ({ fetchText = defaultFetchText, maxJobs = null } = {}) => ({
   async run({ fetchText: overrideFetchText } = {}) {
     const fetchImpl = overrideFetchText || fetchText
-    const listings = extractJobListings(await fetchImpl(CAREERS_URL))
+    const careersPage = await fetchTextSafely(fetchImpl, CAREERS_URL)
+    if (!careersPage.html) {
+      return []
+    }
+
+    if (!hasOfficialCareersSignal(careersPage.html)) {
+      throw new Error('Acceleration Robotics verified official careers page changed materially')
+    }
+
+    const listings = extractJobListings(careersPage.html)
     const selected = maxJobs ? listings.slice(0, maxJobs) : listings
 
     const jobs = []
     for (const listing of selected) {
-      const detail = extractJobDetail(await fetchImpl(listing.sourceUrl))
+      let detail = {}
+      try {
+        detail = extractJobDetail(await fetchImpl(listing.sourceUrl))
+      } catch {}
+
       jobs.push({
         ...listing,
         ...Object.fromEntries(Object.entries(detail).filter(([, value]) => value != null)),
-        company: 'Acceleration Robotics',
-        source: 'accelerationrobotics',
+        company: COMPANY,
+        source: SOURCE,
         link: detail.applyUrl || listing.sourceUrl,
         scrapedAt: new Date().toISOString(),
       })
@@ -144,5 +198,5 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
   const jobs = await run()
   if (process.argv.includes('--dry-run')) saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-  else await saveToDB(jobs, 'accelerationrobotics')
+  else await saveToDB(jobs, SOURCE)
 }

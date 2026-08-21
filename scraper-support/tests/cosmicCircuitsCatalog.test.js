@@ -30,10 +30,13 @@ test('getScraperCatalog includes Cosmic Circuits as a verified Cadence parent-ca
   assert.equal(provider.paginationStrategy, 'verified-parent-careers-page-handoff-monitor')
   assert.equal(
     provider.extractionStrategy,
-    'verified-cadence-careers-page+generic-parent-workday-handoff-without-brand-specific-jobs-return-empty',
+    'verified-parent-careers-cloudflare-challenge-empty+preserve-parent-handoff-monitor',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.match(provider.verifiedSurfaceSummary, /Just a moment/i)
+  assert.match(provider.verifiedSurfaceSummary, /Enable JavaScript and cookies to continue/i)
   assert.match(provider.modulePath, /cosmiccircuits[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /cosmiccircuits[\\/]jobs\.json$/i)
 
@@ -46,10 +49,12 @@ test('getScraperCatalog includes Cosmic Circuits as a verified Cadence parent-ca
     atsPlatform: 'official-parent-company-careers',
     countryFilter: 'India',
     paginationStrategy: 'verified-parent-careers-page-handoff-monitor',
-    extractionStrategy: 'verified-cadence-careers-page+generic-parent-workday-handoff-without-brand-specific-jobs-return-empty',
+    extractionStrategy: 'verified-parent-careers-cloudflare-challenge-empty+preserve-parent-handoff-monitor',
     parser: 'custom-script',
     normalizationProfile: 'engineering-default',
     companyDomain: 'cadence.com',
+    verifiedOn: '2026-08-14',
+    verifiedSurfaceSummary: 'Verified on Friday, August 14, 2026 that https://www.cadence.com/en_US/home/company/life-at-cadence/careers.html currently returns a Cloudflare "Just a moment..." challenge with HTTP 403, cf-mitigated=challenge, and the visible "Enable JavaScript and cookies to continue" blocker instead of the previously reachable parent careers page. This provider preserves the verified Cadence parent-company route and returns an honest empty result while that blocked contract remains in place.',
   })
   assert.equal(cosmic.SOURCE, provider.source)
   assert.equal(cosmic.COMPANY, provider.companyName)

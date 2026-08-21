@@ -13,6 +13,7 @@ export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const REDIRECT_HOMEPAGE_URL = 'https://www.allcargologistics.com/'
 export const CAREERS_PAGE_URL = PROVIDER_METADATA.companyCareerPage
 export const DARWINBOX_HANDOFF_URL = PROVIDER_METADATA.officialCareersHandoffUrl
+export const LEGACY_DARWINBOX_HANDOFF_URL = 'https://gatikwe.darwinbox.in/ms/candidate/careers'
 export const LISTING_API_URL = `${PROVIDER_METADATA.darwinboxOrigin}/ms/candidateapi/job/alljobs?companyId=${PROVIDER_METADATA.darwinboxCompanyId}`
 
 const USER_AGENT =
@@ -97,7 +98,7 @@ export const hasOfficialHomepageSignal = ({ status, url, html } = {}) => {
 
 export const extractOfficialDarwinboxUrl = (html = '') => {
   const match = String(html ?? '').match(
-    /https:\/\/gatikwe\.darwinbox\.in\/ms\/candidate\/careers/i,
+    /https:\/\/(?:allcargologistics\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/home|gatikwe\.darwinbox\.in\/ms\/candidate\/careers)/i,
   )
 
   return match?.[0] ?? null
@@ -105,7 +106,7 @@ export const extractOfficialDarwinboxUrl = (html = '') => {
 
 const countOfficialDarwinboxLinks = (html = '') =>
   String(html ?? '').match(
-    /https:\/\/gatikwe\.darwinbox\.in\/ms\/candidate\/careers/gi,
+    /https:\/\/(?:allcargologistics\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/home|gatikwe\.darwinbox\.in\/ms\/candidate\/careers)/gi,
   )?.length ?? 0
 
 export const hasBrokenDarwinboxTenantSignal = (payload) =>
@@ -115,7 +116,7 @@ export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
   return normalized.includes('spotting future logistics leaders, now')
-    && extractOfficialDarwinboxUrl(html) === DARWINBOX_HANDOFF_URL
+    && [DARWINBOX_HANDOFF_URL, LEGACY_DARWINBOX_HANDOFF_URL].includes(extractOfficialDarwinboxUrl(html))
     && countOfficialDarwinboxLinks(html) >= 2
 }
 

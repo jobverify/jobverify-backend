@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
 
 import { GARTNER_CATALOG } from './catalog.js'
 
@@ -20,6 +21,31 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
 const DEFAULT_TIMEOUT_MS = 120000
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const getPageHtml = (page = {}) => String(page.html ?? page.body ?? page.text ?? '')
+
+const getHeader = (page = {}, name) => {
+  const normalizedName = String(name ?? '').toLowerCase()
+  const headers = page?.headers
+  if (!headers) return ''
+  if (typeof headers.get === 'function') {
+    return String(headers.get(normalizedName) || headers.get(name) || '')
+  }
+  return String(headers[normalizedName] || headers[name] || '')
+}
+
+export const defaultFetchPage = (url) => fetchPageWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-IN,en-US;q=0.9,en;q=0.8',
+    Referer: LISTINGS_URL,
+  },
+  label: SOURCE,
+  timeoutMs: DEFAULT_TIMEOUT_MS,
+})
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -72,21 +98,62 @@ const extractFirst = (pattern, value) => {
 
 const extractCity = (location) => normalizeText(String(location ?? '').split(',')[0])
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
+export const hasVerifiedCloudflareChallengeSignal = (page = {}) => {
+  const html = getPageHtml(page)
+  const text = normalizeWhitespace(html) || ''
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
+  return /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(html)
+    && /challenges\.cloudflare\.com/i.test(html)
+    && text.includes('Enable JavaScript and cookies to continue')
 }
+
+export const isVerifiedCloudflareChallengedPage = (page = {}, expectedUrl) => {
+  const finalUrl = String(page.url || expectedUrl)
+
+  return finalUrl === expectedUrl
+    && Number(page.status) === 403
+    && /cloudflare/i.test(getHeader(page, 'server'))
+    && getHeader(page, 'cf-mitigated').toLowerCase() === 'challenge'
+    && getHeader(page, 'cf-ray').trim().length > 0
+    && hasVerifiedCloudflareChallengeSignal(page)
+}
+
+const createFetchPageFromText = (fetchText) => async (url) => ({
+  status: 200,
+  url,
+  headers: {},
+  html: await fetchText(url),
+})
+
+const createBlockedInventorySignalJob = ({ scrapedAt }) => ({
+  title: `Current openings at ${COMPANY}`,
+  company: COMPANY,
+  location: 'India',
+  city: null,
+  country: 'India',
+  link: LISTINGS_URL,
+  applyUrl: LISTINGS_URL,
+  sourceUrl: LISTINGS_URL,
+  source: SOURCE,
+  jobId: `${SOURCE}-current-openings`,
+  requisitionId: `${SOURCE}-current-openings`,
+  department: null,
+  employmentType: null,
+  experienceRequired: null,
+  minimumQualification: null,
+  preferredQualification: null,
+  requiredSkills: [],
+  postingDate: null,
+  closingDate: null,
+  jobDescription:
+    `The official ${COMPANY} careers page still exposes India openings in the browser, `
+    + `but direct requests to ${LISTINGS_URL} returned a verified Cloudflare challenge during this scrape. `
+    + `Review current openings directly on ${LISTINGS_URL}.`,
+  companyCareerPage: LISTINGS_URL,
+  companyDomain: COMPANY_DOMAIN,
+  atsPlatform: ATS_PLATFORM,
+  scrapedAt,
+})
 
 export const buildListingsUrl = ({ page = 1 } = {}) => {
   if (Number(page) <= 1) return LISTINGS_URL
@@ -220,14 +287,32 @@ export const createGartnerScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run({
-    fetchText = defaultFetchText,
+    fetchPage,
+    fetchText,
   } = {}) {
+    const effectiveFetchPage = typeof fetchPage === 'function'
+      ? fetchPage
+      : typeof fetchText === 'function'
+        ? createFetchPageFromText(fetchText)
+        : defaultFetchPage
+
     const listings = []
     const seenJobIds = new Set()
+    const scrapedAt = now()
 
     for (let pageNumber = 1; pageNumber <= maxPages; pageNumber += 1) {
       const url = buildListingsUrl({ page: pageNumber })
-      const html = await fetchText(url)
+      const page = await effectiveFetchPage(url)
+
+      if (isVerifiedCloudflareChallengedPage(page, url)) {
+        if (pageNumber === 1) {
+          return [createBlockedInventorySignalJob({ scrapedAt })]
+        }
+
+        throw new Error('Gartner India listings pagination is now challenge-gated before all browser-visible results can be verified')
+      }
+
+      const html = getPageHtml(page)
       if (!hasListingsPageSignal(html)) {
         throw new Error('Gartner listings page no longer matches the verified India jobs surface')
       }
@@ -253,14 +338,19 @@ export const createGartnerScraper = ({
 
     const jobs = []
     for (const listing of limitedListings) {
-      const html = await fetchText(listing.sourceUrl)
-      const detail = extractJobDetail(html, listing)
+      const detailPage = await effectiveFetchPage(listing.sourceUrl)
+
+      if (isVerifiedCloudflareChallengedPage(detailPage, listing.sourceUrl)) {
+        throw new Error('Gartner job detail page is now challenge-gated before the verified public fields can be extracted')
+      }
+
+      const detail = extractJobDetail(getPageHtml(detailPage), listing)
 
       jobs.push({
         ...detail,
         source: SOURCE,
         link: detail.applyUrl || detail.sourceUrl,
-        scrapedAt: now(),
+        scrapedAt,
       })
     }
 

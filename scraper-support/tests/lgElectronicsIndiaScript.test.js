@@ -13,15 +13,13 @@ const locationPageHtml = `
     <main>
       <h1>India</h1>
       <button>Explore Jobs</button>
-      <div role="tablist" aria-label="gcr-tab">
-        <button role="tab" aria-selected="true">LG Electronics India</button>
-        <button role="tab">Noida Factory</button>
-        <button role="tab">Pune Factory</button>
-        <button role="tab">R&D Office</button>
-      </div>
       <section aria-label="LG Electronics India">
         <h2>Overview</h2>
         <p>LG Electronics India has been certified as a Great Place To Work.</p>
+      </section>
+      <section aria-label="Equal Opportunity">
+        <h2>Equal Opportunity</h2>
+        <p>Dedicated to creating an inclusive workplace that values diversity and reflects the communities we serve.</p>
       </section>
     </main>
   </body>
@@ -130,7 +128,7 @@ test('LG Electronics India scraper pins the verified browser-rendered India page
   assert.equal(lgElectronicsIndia.SOURCE, 'lgelectronicsindia')
   assert.equal(lgElectronicsIndia.COMPANY, 'LG Electronics India')
   assert.equal(lgElectronicsIndia.OFFICIAL_BRAND_NAME, 'LG Electronics India')
-  assert.equal(lgElectronicsIndia.VERIFIED_ON, '2026-08-02')
+  assert.equal(lgElectronicsIndia.VERIFIED_ON, '2026-08-14')
   assert.equal(
     lgElectronicsIndia.LOCATIONS_PAGE_URL,
     'https://globalcareers.lge.com/locations/IN',
@@ -247,7 +245,16 @@ test('LG Electronics India fails closed when the rendered location page, jobs se
 
   await assert.rejects(
     lgElectronicsIndia.createLgElectronicsIndiaScraper().run({
-      fetchBrowserText: async () => '<html><body><h1>India</h1></body></html>',
+      fetchBrowserText: async () => `
+        <html>
+          <head><title>Jobs at LG India | LG Global Careers</title></head>
+          <body>
+            <h1>India</h1>
+            <button>Explore Jobs</button>
+            <section>LG Electronics India</section>
+          </body>
+        </html>
+      `,
       fetchText: async () => jobsSearchHtml,
       fetchJson: async () => pageOnePayload,
     }),

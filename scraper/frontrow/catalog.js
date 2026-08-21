@@ -18,9 +18,9 @@ export const FRONTROW_CATALOG = {
   extractionStrategy: 'verified-homepage-redirect-to-official-shutdown-update-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-08-13',
   verifiedSurfaceSummary:
-    'Verified on July 15, 2026 that https://frontrow.co.in/ resolves to FrontRow’s official shutdown notice at https://medium.com/@frontrowblog/frontrow-update-6ac848595ed2, where the FrontRow-authored update says the company "shut down a few months ago." No trustworthy public jobs surface was discoverable for FrontRow on the verified date.',
+    'Verified on Thursday, August 13, 2026 that both https://frontrow.co.in/ and https://medium.com/@frontrowblog/frontrow-update-6ac848595ed2 currently resolve to the same HTTP 403 Cloudflare block on medium.com at the official FrontRow shutdown-update URL. The trusted shutdown notice is no longer readable from this environment, but the exact-name homepage still hands off only to that blocked Medium update and no trustworthy public jobs surface was discoverable on the verified date.',
   dryRunFile: 'frontrow/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

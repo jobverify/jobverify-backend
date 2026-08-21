@@ -45,7 +45,7 @@ test('Fincare local catalog captures the verified AU handoff and no-public-jobs 
   )
   assert.equal(namedCatalog.parser, 'custom-script')
   assert.equal(namedCatalog.normalizationProfile, 'engineering-default')
-  assert.equal(namedCatalog.verifiedOn, '2026-08-02')
+  assert.equal(namedCatalog.verifiedOn, '2026-08-14')
   assert.equal(namedCatalog.dryRunFile, 'fincare/jobs.json')
   assert.equal(namedCatalog.modulePath, modulePath)
   assert.match(namedCatalog.verifiedSurfaceSummary, /https:\/\/fincarebank\.in\//i)

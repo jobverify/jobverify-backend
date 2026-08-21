@@ -14,7 +14,6 @@ export const KISSFLOW_CATALOG = {
   verifiedRoleUrls: [
     'https://careers.kissflow.com/solution-advisor',
     'https://careers.kissflow.com/client-director',
-    'https://careers.kissflow.com/manager-digital-marketing',
   ],
   companyDomain: 'kissflow.com',
   atsPlatform: 'official-company-site',
@@ -24,9 +23,9 @@ export const KISSFLOW_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   dryRunFile: 'kissflow/jobs.json',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-15',
   verifiedSurfaceSummary:
-    'Verified on Thursday, July 16, 2026 that the official Kissflow homepage at https://kissflow.com/ links Careers to the first-party jobs site https://careers.kissflow.com/, and that the live Open Positions section on that same first-party careers domain exposes public role cards plus role detail pages for Solution Advisor, Client Director, and Manager - Digital Marketing. Each verified role detail page exposes a title, experience band, India work location, job description, and inline apply form on the same first-party domain.',
+    'Verified on Saturday, August 15, 2026 that the official Kissflow careers route at https://kissflow.com/careers/ redirects to the first-party jobs site https://careers.kissflow.com/, and that the live Open Positions section on that same first-party careers domain currently exposes 2 public role cards with detail pages: Solution Advisor and Client Director. Each verified role detail page exposes a title, experience band, India work location, job description, and inline apply form on the same first-party domain.',
 }
 
 export default KISSFLOW_CATALOG

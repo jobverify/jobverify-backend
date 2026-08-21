@@ -20,7 +20,7 @@ test('BirlaNu is registered against the verified first-party people page without
   assert.equal(provider.paginationStrategy, 'single-first-party-careers-landing')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+linkedin-handoff-no-first-party-job-records',
+    'verified-first-party-careers-page+darwinbox-handoff-no-first-party-job-records',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

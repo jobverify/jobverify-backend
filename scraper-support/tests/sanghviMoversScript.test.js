@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-17T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-08-14T00:00:00.000Z'
 
 const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers at Sanghvi Movers | Join Asia's Largest Crane Leader</title>
+    <title>Careers at Sanghvi Movers | Join Asia&#039;s Largest Crane Leader</title>
   </head>
   <body>
     <main>
@@ -66,7 +66,7 @@ const noJobsHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers at Sanghvi Movers | Join Asia's Largest Crane Leader</title>
+    <title>Careers at Sanghvi Movers | Join Asia&#039;s Largest Crane Leader</title>
   </head>
   <body>
     <main>
@@ -91,7 +91,7 @@ test('Sanghvi Movers pins the verified first-party static careers page contract'
   assert.equal(sanghviMovers.SOURCE, 'sanghvimovers')
   assert.equal(sanghviMovers.COMPANY, 'Sanghvi Movers')
   assert.equal(sanghviMovers.CAREERS_URL, 'https://sanghvicranes.com/careers/')
-  assert.equal(sanghviMovers.VERIFIED_ON, '2026-07-17')
+  assert.equal(sanghviMovers.VERIFIED_ON, '2026-08-14')
   assert.equal(sanghviMovers.hasVerifiedCareersPageSignal(careersHtml), true)
   assert.equal(sanghviMovers.hasPublicJobSignals(careersHtml), true)
   assert.equal(sanghviMovers.hasPublicJobSignals(noJobsHtml), false)
@@ -203,6 +203,26 @@ test('Sanghvi Movers run validates the official careers page and returns normali
   assert.equal(jobs.length, 3)
   assert.equal(jobs[0].source, 'sanghvimovers')
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+})
+
+test('Sanghvi Movers default fetch falls back to lenient HTTPS on certificate failures', async () => {
+  const sanghviMovers = await loadSanghviMoversModule()
+  const certificateError = new TypeError('fetch failed')
+  certificateError.cause = new Error('unable to verify the first certificate')
+  certificateError.cause.code = 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+
+  const html = await sanghviMovers.defaultFetchText(sanghviMovers.CAREERS_URL, {
+    fetchImpl: async () => {
+      throw certificateError
+    },
+    lenientFetchText: async (url, { timeoutMs }) => {
+      assert.equal(url, sanghviMovers.CAREERS_URL)
+      assert.equal(timeoutMs, 15000)
+      return careersHtml
+    },
+  })
+
+  assert.equal(html, careersHtml)
 })
 
 test('Sanghvi Movers fails closed when the verified careers surface drifts or stops exposing public jobs', async () => {

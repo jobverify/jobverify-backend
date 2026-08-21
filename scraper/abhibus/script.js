@@ -101,6 +101,11 @@ const isIndiaPosting = (posting = {}) => {
 const isPublicPosting = (posting = {}) =>
   normalizeWhitespace(posting.visibility)?.toUpperCase() === 'PUBLIC'
 
+export const hasVerifiedZeroListingsState = (payload = {}) =>
+  Number(payload?.totalFound ?? 0) === 0
+  && Array.isArray(payload?.content)
+  && payload.content.length === 0
+
 const getRemoteStatus = (posting = {}) => {
   if (posting.location?.remote) return 'Remote'
   if (posting.location?.hybrid) return 'Hybrid'
@@ -260,6 +265,10 @@ export const createAbhiBusScraper = ({
 
       if (!postings) {
         throw new Error('AbhiBus SmartRecruiters listings payload no longer returns content[]')
+      }
+
+      if (offset === 0 && hasVerifiedZeroListingsState(payload)) {
+        return []
       }
 
       for (const posting of postings) {

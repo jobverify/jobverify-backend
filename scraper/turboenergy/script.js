@@ -14,10 +14,14 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const normalizeWhitespace = (value) => String(value ?? '')
+  .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
   .replace(/&amp;/gi, '&')
+  .replace(/&#39;|&apos;/gi, "'")
   .replace(/\u00a0/g, ' ')
+  .replace(/[–—]/g, '-')
   .replace(/\s+/g, ' ')
   .trim()
 
@@ -30,25 +34,6 @@ const toAbsoluteUrl = (value, baseUrl) => {
     return null
   }
 }
-
-const HOMEPAGE_SIGNALS = [
-  'turbo energy private limited (tel), a leading name in the manufacturing of turbochargers, has become synonymous with quality, affordability and dependability.',
-  'copyright ©',
-  'turbo energy private limited',
-]
-
-const CAREERS_SHELL_SIGNALS = [
-  'careers - turbo energy private limited',
-  'company',
-  'about tel',
-  'manufacturing and quality',
-  'sustainability and csr',
-  'product & technology',
-  'partner zone',
-  'contact us',
-  'copyright ©',
-  'turbo energy private limited',
-]
 
 const PUBLIC_JOB_BOARD_PATTERNS = [
   /jobs\.lever\.co/i,
@@ -82,12 +67,24 @@ export const extractCareersUrl = (html) => {
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return HOMEPAGE_SIGNALS.every((signal) => normalized.includes(signal))
+  return normalized.includes('turbo energy private limited (tel), a leading name in the manufacturing of turbochargers, has become synonymous with quality, affordability and dependability.')
+    && normalized.includes('copyright')
+    && normalized.includes('turbo energy private limited')
 }
 
 export const hasOfficialCareersShellSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
-  return CAREERS_SHELL_SIGNALS.every((signal) => normalized.includes(signal))
+
+  return normalized.includes('careers - turbo energy private limited')
+    && normalized.includes('company')
+    && normalized.includes('about tel')
+    && normalized.includes('manufacturing and quality')
+    && normalized.includes('sustainability and csr')
+    && (normalized.includes('product & technology') || normalized.includes('product and technology'))
+    && normalized.includes('partner zone')
+    && normalized.includes('contact us')
+    && normalized.includes('copyright')
+    && normalized.includes('turbo energy private limited')
 }
 
 export const hasPublicJobBoardSignal = (html) =>

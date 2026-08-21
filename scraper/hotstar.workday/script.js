@@ -33,19 +33,23 @@ const HOMEPAGE_ACCEPTED_URLS = [
   'https://www.hotstar.com/in/',
 ]
 
-export const WORKDAY_BOARD_ACCEPTED_URLS = [
+const WORKDAY_BOARD_ACCEPTED_URLS = [
   WORKDAY_BOARD_URL,
   'https://jiostar.wd102.myworkdayjobs.com/JioStar/',
   'https://jiostar.wd102.myworkdayjobs.com/en-US/JioStar',
   'https://jiostar.wd102.myworkdayjobs.com/en-US/JioStar/',
 ]
 
+const decodeHtmlEntities = (value) => String(value ?? '')
+  .replace(/&#(\d+);/g, (_, codePoint) => String.fromCodePoint(Number(codePoint)))
+  .replace(/&#x([0-9a-f]+);/gi, (_, hexCodePoint) => String.fromCodePoint(parseInt(hexCodePoint, 16)))
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&#038;|&amp;/gi, '&')
+
 const normalizeWhitespace = (value) => {
   if (value == null) return null
 
-  const normalized = String(value)
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&#038;|&amp;/gi, '&')
+  const normalized = decodeHtmlEntities(value)
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -134,7 +138,7 @@ export const hasOfficialHomepageSignal = (html = '') => {
   return (
     (
       /<title>\s*JioHotstar\s*-\s*Watch TV Shows, Movies, Specials, Live Cricket\s*&amp;\s*Football\s*<\/title>/i.test(page)
-      && /JioHotstar is India(?:'|’|&#8217;|â€™)?s largest premium streaming platform/i.test(normalized)
+      && /JioHotstar is India(?:'|â€™|&#8217;|Ã¢â‚¬â„¢)?s largest premium streaming platform/i.test(normalized)
     )
     || (
       /Looks like you are connecting through a VPN, proxy or 'unblocker' service\./i.test(page)
@@ -143,11 +147,22 @@ export const hasOfficialHomepageSignal = (html = '') => {
   )
 }
 
-export const hasOfficialCareersSignal = (html = '') => {
+export const hasBlockedJiostarCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
 
-  return /<title>\s*JioStar\s*-\s*India(?:'|’|&#8217;|â€™)?s Largest Media Conglomerate\s*\|\s*Entertainment Reimagined\s*<\/title>/i.test(page)
+  return /<title>\s*Error\s*<\/title>/i.test(page)
+    && normalized.includes('An error occurred while processing your request.')
+    && /errors\.edgesuite\.net/i.test(normalized)
+    && /Reference\s+#/i.test(normalized)
+}
+
+export const hasOfficialCareersSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page) || ''
+  const normalizedTitlePage = page.replace(/\u2019/g, "'")
+
+  return /<title>\s*JioStar\s*-\s*India(?:'|â€™|&#8217;|Ã¢â‚¬â„¢)?s Largest Media Conglomerate\s*\|\s*Entertainment Reimagined\s*<\/title>/i.test(normalizedTitlePage)
     && /jiostar\.wd102\.myworkdayjobs\.com\/JioStar/i.test(page)
     && (
       /Jio Hotstar streaming platform/i.test(normalized)
@@ -177,7 +192,7 @@ export const hasOfficialWorkdayBoardSignal = (page = {}) => {
     && /tenant:\s*"jiostar"/i.test(html)
     && /siteId:\s*"JioStar"/i.test(html)
     && /appName:\s*"cxs"/i.test(html)
-  }
+}
 
 export const buildKeywordSearchRequestBody = ({
   offset = 0,
@@ -310,17 +325,22 @@ export const createHotstarScraper = ({
     }
 
     const careersPage = await fetchPage(CAREERS_URL)
-    if (
-      careersPage.status !== 200
-      || !sameUrl(careersPage.url, CAREERS_URL)
-      || !hasOfficialCareersSignal(careersPage.html)
-    ) {
+    const hasVerifiedBlockedCareersPage = careersPage.status === 403
+      && sameUrl(careersPage.url, CAREERS_URL)
+      && hasBlockedJiostarCareersSignal(careersPage.html)
+    const hasVerifiedLiveCareersPage = careersPage.status === 200
+      && sameUrl(careersPage.url, CAREERS_URL)
+      && hasOfficialCareersSignal(careersPage.html)
+
+    if (!hasVerifiedBlockedCareersPage && !hasVerifiedLiveCareersPage) {
       throw new Error('Hotstar verified JioStar careers surface changed materially')
     }
 
-    const verifiedWorkdayBoardUrl = extractVerifiedWorkdayBoardUrl(careersPage.html)
-    if (!sameUrl(verifiedWorkdayBoardUrl, WORKDAY_BOARD_URL)) {
-      throw new Error('Hotstar verified Workday careers handoff changed materially')
+    if (hasVerifiedLiveCareersPage) {
+      const verifiedWorkdayBoardUrl = extractVerifiedWorkdayBoardUrl(careersPage.html)
+      if (!sameUrl(verifiedWorkdayBoardUrl, WORKDAY_BOARD_URL)) {
+        throw new Error('Hotstar verified Workday careers handoff changed materially')
+      }
     }
 
     const workdayBoardPage = await fetchPage(WORKDAY_BOARD_URL)

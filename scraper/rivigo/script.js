@@ -95,14 +95,28 @@ export const hasVerifiedParentCareersSignal = ({ url = '', html = '' } = {}) => 
     && linkedUrls.some((linkedUrl) => linkedUrl.toString() === PARENT_DARWINBOX_URL)
 }
 
+export const hasVerifiedParentDarwinboxJavascriptShellSignal = ({ url = '', html = '' } = {}) => {
+  const page = String(html ?? '')
+
+  return String(url).startsWith(PARENT_DARWINBOX_URL)
+    && /<base href="\/ms\/candidate\/">/i.test(page)
+    && /<noscript>\s*Please enable Javascript!\s*<\/noscript>/i.test(page)
+    && /<app-root\b/i.test(page)
+    && /db-components\.esm\.js/i.test(page)
+    && /turnstile\/v0\/api\.js/i.test(page)
+}
+
 export const hasVerifiedParentDarwinboxSignal = ({ url = '', html = '' } = {}) => {
   const title = extractTitle(html)
   const text = normalizeText(html)
 
-  return String(url).startsWith(PARENT_DARWINBOX_HOME_URL)
-    && title === 'Mahindra Logistics and Subsidiaries'
-    && /\bWe Have \d+ Open Jobs\b/i.test(text)
-    && /\bOpen Jobs\b/i.test(text)
+  return hasVerifiedParentDarwinboxJavascriptShellSignal({ url, html })
+    || (
+      String(url).startsWith(PARENT_DARWINBOX_HOME_URL)
+      && title === 'Mahindra Logistics and Subsidiaries'
+      && /\bWe Have \d+ Open Jobs\b/i.test(text)
+      && /\bOpen Jobs\b/i.test(text)
+    )
 }
 
 export const createRivigoScraper = () => ({

@@ -63,9 +63,15 @@ export const hasOfficialHomepageSignal = (html) => {
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/suryalogix\.com\/["']/i.test(markup)
     && /href=["'][^"']*\/career-opportunities\/["']/i.test(markup)
     && text.includes('SMART | RELIABLE | SUSTAINABLE')
-    && text.includes('Smart Renewable Energy Monitoring & Control Solutions')
+    && (
+      text.includes('Smart Renewable Energy Monitoring & Control Solutions')
+      || /Smart Renewable Energy monitoring\s*&\s*Control\s*Solutions/i.test(text)
+    )
     && text.includes('Trusted Across 30+ Countries')
-    && text.includes('Welcome to SuryaLogix Innovative Energy Solutions')
+    && (
+      text.includes('Welcome to SuryaLogix Innovative Energy Solutions')
+      || text.includes('Engineering the Future of Renewable Intelligence')
+    )
     && text.includes('sales@suryalogix.com')
   }
 

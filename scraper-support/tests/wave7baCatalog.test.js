@@ -74,7 +74,7 @@ test('Novigo Solutions local catalog captures the verified first-party careers p
   await assertHydratedCatalogLoadsScript(provider)
 })
 
-test('Applied Cloud Computing local catalog captures the verified exact-name SmartRecruiters board and API contract', async () => {
+test('Applied Cloud Computing local catalog captures the current SmartRecruiters board shell and API contract', async () => {
   const { constant, defaultExport } = await loadCatalog(
     '../../scraper/appliedcloudcomputing/catalog.js',
     'APPLIED_CLOUD_COMPUTING_CATALOG',
@@ -93,9 +93,11 @@ test('Applied Cloud Computing local catalog captures the verified exact-name Sma
     provider.extractionStrategy,
     'verified-exact-name-smartrecruiters-board+official-homepage-link+smartrecruiters-jobs-api+detail-api',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Cloud Operations Engineer \(GCP & Kubernetes\)/i)
-  assert.match(provider.verifiedSurfaceSummary, /L3 Cloud Engineer/i)
+  assert.equal(provider.verifiedOn, '2026-08-13')
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /4 India postings/i)
+  assert.match(provider.verifiedSurfaceSummary, /Cloud Network Security Engineer/i)
+  assert.match(provider.verifiedSurfaceSummary, /L2 CDN & Edge Security Engineer/i)
   assert.match(provider.verifiedSurfaceSummary, /appliedcloudcomputing\.com/i)
   assert.match(provider.config.discovery.listingApiUrl, /api\.smartrecruiters\.com\/v1\/companies\/AppliedCloudComputing\/postings/i)
   assert.match(provider.config.detail.urlTemplate, /api\.smartrecruiters\.com\/v1\/companies\/AppliedCloudComputing\/postings\/\{\{jobId\}\}/i)

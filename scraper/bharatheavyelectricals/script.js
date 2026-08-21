@@ -119,6 +119,8 @@ const isTrustedOpeningUrl = (value) => {
   try {
     const url = new URL(canonicalUrl)
     return TRUSTED_OPENING_HOSTS.includes(url.hostname)
+      || url.hostname.endsWith('.bhel.com')
+      || url.hostname.endsWith('.bhel.in')
   } catch {
     return false
   }

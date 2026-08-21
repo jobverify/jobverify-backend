@@ -53,6 +53,27 @@ const careersHtml = `
 </html>
 `
 
+const currentCareersHtml = `
+<!doctype html>
+<html>
+  <head>
+    <title>Careers at Locobuzz | Join Our CX AI Team | Locobuzz</title>
+  </head>
+  <body>
+    <h1>Dreamers. Learners. Hustlers. Achievers.</h1>
+    <h2>Open Positions</h2>
+    <p>Find your fit and apply directly. Don't see a role for you? Email careers@locobuzz.com.</p>
+    <h3>SDR</h3>
+    <p>Mumbai / Gurugram / Bangalore 2+ Years</p>
+    <h3>Senior Python Developer</h3>
+    <p>Mumbai 3+ Years</p>
+    <h3>Partnership Manager</h3>
+    <p>Mumbai 3+ Years</p>
+    <h2>See Locobuzz in action</h2>
+  </body>
+</html>
+`
+
 test('Locobuzz local catalog captures the inline first-party openings surface and mailto application handoff', async () => {
   const { LOCOBUZZ_CATALOG, default: defaultCatalog } = await loadCatalog()
   const provider = hydrateProviderCatalogEntry(LOCOBUZZ_CATALOG)
@@ -137,4 +158,56 @@ test('Locobuzz run decorates inline openings and fails closed when the first-par
     }),
     /Locobuzz careers page/i,
   )
+})
+
+test('Locobuzz retries the canonical careers route and parses the current heading-based openings section', async () => {
+  const locobuzz = await loadScript()
+  const redirectError = new Error(`HTTP 307 for ${locobuzz.CAREERS_URL}`)
+  redirectError.status = 307
+  const requestedUrls = []
+
+  const jobs = await locobuzz.createLocobuzzScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === locobuzz.CAREERS_URL) {
+        throw redirectError
+      }
+      if (url === `${locobuzz.CAREERS_URL}/`) {
+        return currentCareersHtml
+      }
+
+      throw new Error(`Unexpected Locobuzz fixture URL: ${url}`)
+    },
+    now: () => '2026-08-18T00:00:00.000Z',
+  })
+
+  assert.deepEqual(requestedUrls, [
+    locobuzz.CAREERS_URL,
+    `${locobuzz.CAREERS_URL}/`,
+  ])
+  assert.equal(locobuzz.hasOfficialCareersSignal(currentCareersHtml), true)
+  assert.equal(jobs.length, 3)
+  assert.deepEqual(jobs[0], {
+    title: 'SDR',
+    company: 'Locobuzz',
+    department: null,
+    location: 'Mumbai / Gurugram / Bangalore, India',
+    city: 'Mumbai',
+    country: 'India',
+    jobId: 'sdr',
+    requisitionId: 'sdr',
+    sourceUrl: 'https://locobuzz.com/careers/',
+    applyUrl: 'mailto:careers@locobuzz.com',
+    employmentType: null,
+    experienceRequired: '2+ Years',
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    closingDate: null,
+    jobDescription: null,
+    source: 'locobuzz',
+    link: 'mailto:careers@locobuzz.com',
+    scrapedAt: '2026-08-18T00:00:00.000Z',
+  })
 })

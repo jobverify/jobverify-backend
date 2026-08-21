@@ -52,6 +52,15 @@ const extractTitle = (html) => {
   return normalizeWhitespace(match?.[1])
 }
 
+const hasAcceptedQuickHealCareersTitle = (title) => {
+  const normalizedTitle = normalizeWhitespace(title)
+  if (!normalizedTitle) return false
+
+  return normalizedTitle === 'Quick Heal Careers - Be Part of Our Security Innovations'
+    || normalizedTitle === 'Careers at Quick Heal | Cybersecurity Jobs & Career Opportunities'
+    || normalizedTitle.endsWith('Careers at Quick Heal | Cybersecurity Jobs & Career Opportunities')
+}
+
 export const extractOfficialDarwinboxUrl = (html = '') => {
   const match = String(html ?? '').match(
     /https:\/\/lifecycleqhtl\.darwinbox\.in\/ms\/candidate\/careers/i,
@@ -64,10 +73,7 @@ export const hasOfficialQuickHealCareersSignals = (html = '') => {
   const text = (normalizeWhitespace(page) || '').toLowerCase()
   const title = extractTitle(page)
 
-  return (
-    title === 'Quick Heal Careers - Be Part of Our Security Innovations'
-      || title === 'Careers at Quick Heal | Cybersecurity Jobs & Career Opportunities'
-  )
+  return hasAcceptedQuickHealCareersTitle(title)
     && text.includes('work with purpose. grow from the experience. innovate to shape the future with quick heal')
     && text.includes('innovator. curious. growth-mindset. positive. sounds like you?')
     && text.includes('apply for a job')

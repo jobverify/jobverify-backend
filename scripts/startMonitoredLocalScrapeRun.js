@@ -5,11 +5,23 @@ import process from 'node:process'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { buildLocalScrapeRunEnv } from './localScrapeRunEnv.js'
+import { buildScrapers } from '../scraper-support/providers/index.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(currentDir, '..', '..')
 const backendDir = path.resolve(currentDir, '..')
 const runLogsRoot = path.join(repoRoot, 'artifacts', 'run-logs')
+export const DEFAULT_DRY_RUN_EXPERIENCE_MONITOR_SLEEP_SECONDS = 180
+const resolveExecutionPath = (value) => {
+  if (value == null || value === '') return null
+
+  const absolutePath = path.resolve(String(value))
+  try {
+    return fs.realpathSync.native(absolutePath)
+  } catch {
+    return absolutePath
+  }
+}
 
 const formatTimestamp = (value = new Date()) => {
   const pad = (segment) => String(segment).padStart(2, '0')
@@ -25,11 +37,13 @@ const formatTimestamp = (value = new Date()) => {
   ].join('')
 }
 
-const parseArgs = (argv) => {
+export const parseArgs = (argv) => {
   const options = {
     runDir: null,
     parallel: true,
     dryRun: true,
+    experienceMonitor: true,
+    experienceMonitorSleepSeconds: DEFAULT_DRY_RUN_EXPERIENCE_MONITOR_SLEEP_SECONDS,
     runnerArgs: [],
     replaySourceLog: null,
     replaySourceListFile: null,
@@ -61,6 +75,20 @@ const parseArgs = (argv) => {
 
     if (arg === '--dry-run') {
       options.dryRun = true
+      continue
+    }
+
+    if (arg === '--no-experience-monitor') {
+      options.experienceMonitor = false
+      continue
+    }
+
+    if (arg === '--experience-monitor-sleep-seconds') {
+      const parsed = Number.parseInt(argv[index + 1] || '', 10)
+      if (Number.isFinite(parsed) && parsed > 0) {
+        options.experienceMonitorSleepSeconds = parsed
+      }
+      index += 1
       continue
     }
 
@@ -120,6 +148,84 @@ const ensureDirectory = (directoryPath) => {
   fs.mkdirSync(directoryPath, { recursive: true })
 }
 
+export const resolveDryRunScraperDir = ({
+  scrapers = buildScrapers(),
+  fallbackDir = path.join(backendDir, 'scraper'),
+} = {}) => {
+  const dryRunRoots = new Set()
+
+  for (const scraper of scrapers) {
+    const dryRunFile = String(scraper?.dryRunFile || '').trim()
+    if (!dryRunFile || !path.isAbsolute(dryRunFile)) continue
+
+    dryRunRoots.add(path.dirname(path.dirname(dryRunFile)))
+    if (dryRunRoots.size > 1) break
+  }
+
+  return dryRunRoots.size === 1
+    ? [...dryRunRoots][0]
+    : fallbackDir
+}
+
+export const buildDryRunExperienceMonitorConfig = ({
+  dryRun = true,
+  experienceMonitor = true,
+  platform = process.platform,
+  runDir,
+  stdoutPath,
+  backendDir: effectiveBackendDir = backendDir,
+  scraperDir = resolveDryRunScraperDir({
+    fallbackDir: path.join(effectiveBackendDir, 'scraper'),
+  }),
+  backfillScriptPath = path.join(effectiveBackendDir, 'scripts', 'backfillDryRunExperience.js'),
+  sleepSeconds = DEFAULT_DRY_RUN_EXPERIENCE_MONITOR_SLEEP_SECONDS,
+} = {}) => {
+  if (!dryRun || !experienceMonitor || platform !== 'win32') {
+    return null
+  }
+
+  const monitorScript = path.join(currentDir, 'monitorCurrentDryRunExperience.ps1')
+  return {
+    command: 'powershell.exe',
+    args: [
+      '-NoProfile',
+      '-ExecutionPolicy', 'Bypass',
+      '-File', monitorScript,
+      '-LogPath', stdoutPath,
+      '-BackendDir', effectiveBackendDir,
+      '-ScraperDir', scraperDir,
+      '-BackfillScriptPath', backfillScriptPath,
+      '-SleepSeconds', String(sleepSeconds),
+    ],
+    pidPath: path.join(runDir, 'experience-monitor.pid'),
+    stdoutPath: path.join(runDir, 'experience-monitor.log'),
+    stderrPath: path.join(runDir, 'experience-monitor.err.log'),
+    monitorScript,
+    scraperDir,
+    backfillScriptPath,
+    sleepSeconds,
+  }
+}
+
+const waitForChildExit = async (child) => {
+  if (!child || child.exitCode !== null) return
+  await once(child, 'exit')
+}
+
+const finalizePipedChildLogs = async (child, stdoutStream, stderrStream) => {
+  if (!child || !stdoutStream || !stderrStream) return
+
+  child.stdout?.unpipe(stdoutStream)
+  child.stderr?.unpipe(stderrStream)
+  stdoutStream.end()
+  stderrStream.end()
+
+  await Promise.all([
+    once(stdoutStream, 'finish'),
+    once(stderrStream, 'finish'),
+  ])
+}
+
 const main = () => {
   const options = parseArgs(process.argv.slice(2))
   if (options.replaySourceLog && options.replaySourceListFile) {
@@ -147,6 +253,33 @@ const main = () => {
   child.stdout.pipe(stdoutStream)
   child.stderr.pipe(stderrStream)
 
+  const experienceMonitorConfig = buildDryRunExperienceMonitorConfig({
+    dryRun: options.dryRun,
+    experienceMonitor: options.experienceMonitor,
+    runDir,
+    stdoutPath,
+    backendDir,
+    sleepSeconds: options.experienceMonitorSleepSeconds,
+  })
+  let experienceMonitorChild = null
+  let experienceMonitorStdoutStream = null
+  let experienceMonitorStderrStream = null
+
+  if (experienceMonitorConfig) {
+    experienceMonitorStdoutStream = fs.createWriteStream(experienceMonitorConfig.stdoutPath, { flags: 'a' })
+    experienceMonitorStderrStream = fs.createWriteStream(experienceMonitorConfig.stderrPath, { flags: 'a' })
+    experienceMonitorChild = spawn(experienceMonitorConfig.command, experienceMonitorConfig.args, {
+      cwd: backendDir,
+      env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      windowsHide: true,
+    })
+
+    experienceMonitorChild.stdout.pipe(experienceMonitorStdoutStream)
+    experienceMonitorChild.stderr.pipe(experienceMonitorStderrStream)
+    fs.writeFileSync(experienceMonitorConfig.pidPath, String(experienceMonitorChild.pid))
+  }
+
   fs.writeFileSync(path.join(runDir, 'runner.pid'), String(child.pid))
   fs.writeFileSync(path.join(runDir, 'launcher.pid'), String(process.pid))
   writeJsonFile(metadataPath, {
@@ -173,6 +306,27 @@ const main = () => {
             ? { type: 'source-list-file', path: options.replaySourceListFile }
             : null
         ),
+    experienceMonitor: experienceMonitorConfig
+      ? {
+          enabled: true,
+        command: experienceMonitorConfig.command,
+        args: experienceMonitorConfig.args,
+        stdoutPath: experienceMonitorConfig.stdoutPath,
+        stderrPath: experienceMonitorConfig.stderrPath,
+        scraperDir: experienceMonitorConfig.scraperDir,
+        backfillScriptPath: experienceMonitorConfig.backfillScriptPath,
+        sleepSeconds: experienceMonitorConfig.sleepSeconds,
+      }
+      : {
+          enabled: false,
+          reason: !options.dryRun
+            ? 'disabled-for-live-runs'
+            : (
+                !options.experienceMonitor
+                  ? 'disabled-by-flag'
+                  : `unsupported-platform:${process.platform}`
+              ),
+        },
   })
 
   const stopChild = () => {
@@ -180,8 +334,15 @@ const main = () => {
     child.kill(process.platform === 'win32' ? undefined : 'SIGTERM')
   }
 
+  const stopExperienceMonitor = () => {
+    if (!experienceMonitorChild || experienceMonitorChild.exitCode !== null) return
+    experienceMonitorChild.kill(process.platform === 'win32' ? undefined : 'SIGTERM')
+  }
+
   process.on('SIGINT', stopChild)
   process.on('SIGTERM', stopChild)
+  process.on('SIGINT', stopExperienceMonitor)
+  process.on('SIGTERM', stopExperienceMonitor)
 
   child.on('exit', async (code, signal) => {
     writeJsonFile(path.join(runDir, 'run-exit.json'), {
@@ -189,16 +350,25 @@ const main = () => {
       code,
       signal,
     })
-    child.stdout.unpipe(stdoutStream)
-    child.stderr.unpipe(stderrStream)
-    stdoutStream.end()
-    stderrStream.end()
-    await Promise.all([
-      once(stdoutStream, 'finish'),
-      once(stderrStream, 'finish'),
-    ])
+
+    await finalizePipedChildLogs(child, stdoutStream, stderrStream)
+
+    if (experienceMonitorChild) {
+      await waitForChildExit(experienceMonitorChild)
+      await finalizePipedChildLogs(
+        experienceMonitorChild,
+        experienceMonitorStdoutStream,
+        experienceMonitorStderrStream,
+      )
+    }
+
     process.exit(code ?? (signal ? 1 : 0))
   })
 }
 
-main()
+const directExecutionModulePath = resolveExecutionPath(fileURLToPath(import.meta.url))
+const isEntrypoint = resolveExecutionPath(process.argv[1]) === directExecutionModulePath
+
+if (isEntrypoint) {
+  main()
+}

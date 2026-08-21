@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { NETOMI_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -26,11 +26,27 @@ const DEFAULT_JSON_HEADERS = {
   Accept: 'application/json',
 }
 
+const createTimeoutSignal = (timeoutMs) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return undefined
+  }
+
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs)
+  }
+
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), timeoutMs)
+  return controller.signal
+}
+
 const normalizeWhitespace = (value) => {
   if (value == null) return null
 
   const normalized = String(value)
     .replace(/\u00a0/g, ' ')
+    .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
+    .replace(/â€”|â€“/g, '-')
     .replace(/[\u2018\u2019]/g, "'")
     .replace(/[\u2013\u2014]/g, '-')
     .replace(/\s*,\s*/g, ', ')
@@ -103,12 +119,30 @@ export const extractLeverApiUrl = (html = '') =>
     String(html ?? '').match(/https:\/\/api\.lever\.co\/v0\/postings\/netomi\?mode=json/i)?.[0],
   )
 
-export const hasOfficialNetomiCareersSignal = (html = '') => {
+export const hasReferralOnlyHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeText(page)
   const title = (extractTitle(page) || '').toLowerCase()
 
-  return (title === 'careers - netomi' || title === 'careers - netomi')
+  return title === 'netomi'
+    && text.includes("we create intelligent experiences for the world's most ambitious companies.")
+    && text.includes('new engagements are by referral.')
+    && extractLeverApiUrl(page) == null
+    && !text.includes('careers at netomi')
+    && !text.includes('view open roles')
+  }
+
+export const isVerifiedReferralOnlyHomepageRedirect = (page = {}) =>
+  Number(page?.status) === 200
+  && String(page?.url || '') === HOMEPAGE_URL
+  && hasReferralOnlyHomepageSignal(page?.html)
+
+export const hasOfficialNetomiCareersSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = normalizeText(page)
+  const title = normalizeWhitespace(extractTitle(page))?.toLowerCase() || ''
+
+  return /^careers\s*-\s*netomi$/i.test(title)
     && text.includes('careers at netomi')
     && text.includes('join the team')
     && text.includes('view open roles')
@@ -119,18 +153,32 @@ export const hasOfficialNetomiCareersSignal = (html = '') => {
 const hasExpectedLeverUrl = (value) =>
   normalizeWhitespace(value)?.startsWith(`${LEVER_BOARD_URL}/`) || false
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: `${SOURCE}-careers`,
-  timeoutMs: 15000,
-})
+const defaultFetchPage = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
+    signal: createTimeoutSignal(15000),
+  })
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    html: await response.text(),
+  }
+}
 
 const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
   headers: DEFAULT_JSON_HEADERS,
   label: `${SOURCE}-lever`,
+})
+
+const createFetchPageFromText = (fetchText) => async (url) => ({
+  status: 200,
+  url,
+  html: await fetchText(url),
 })
 
 export const extractLeverJobs = (leverJobs = []) => {
@@ -183,11 +231,23 @@ export const createNetomiScraper = ({
   now: defaultNow = () => new Date().toISOString(),
 } = {}) => ({
   async run({
-    fetchText = defaultFetchText,
+    fetchPage,
+    fetchText,
     fetchJson = defaultFetchJson,
     now = defaultNow,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    const effectiveFetchPage = typeof fetchPage === 'function'
+      ? fetchPage
+      : typeof fetchText === 'function'
+        ? createFetchPageFromText(fetchText)
+        : defaultFetchPage
+    const careersPage = await effectiveFetchPage(CAREERS_URL)
+
+    if (isVerifiedReferralOnlyHomepageRedirect(careersPage)) {
+      return []
+    }
+
+    const careersHtml = String(careersPage?.html ?? '')
 
     if (!hasOfficialNetomiCareersSignal(careersHtml)) {
       throw new Error('Netomi verified official careers surface changed materially')

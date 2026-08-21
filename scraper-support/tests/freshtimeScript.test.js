@@ -22,6 +22,21 @@ const CURRENT_INFO_PAGE_HTML = `
 </html>
 `
 
+const CURRENT_NOT_FOUND_PAGE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Page not found - Greencore</title>
+  </head>
+  <body>
+    <h1>Page not found</h1>
+    <a href="https://www.greencore.com/careers/">Careers</a>
+    <a href="https://www.greencore.com/careers/work-with-greencore/">Work With Greencore</a>
+    <p>Greencore</p>
+  </body>
+</html>
+`
+
 const ACTUAL_PUBLIC_JOBS_HTML = `
 <!doctype html>
 <html lang="en">
@@ -53,6 +68,21 @@ test('Freshtime stays fail-closed on the informational Greencore surface even wh
   assert.doesNotThrow(() => freshtime.assertVerifiedOfficialPublicSurface(CURRENT_INFO_PAGE_HTML))
   assert.doesNotThrow(() =>
     freshtime.assertNoPublicJobsSurface(CURRENT_INFO_PAGE_HTML, freshtime.CAREERS_URL),
+  )
+})
+
+test('Freshtime stays fail-closed on the current Greencore not-found surface for the exact company route', async () => {
+  const freshtime = await loadModule()
+
+  assert.doesNotThrow(() => freshtime.assertVerifiedOfficialPublicSurface(CURRENT_NOT_FOUND_PAGE_HTML))
+  assert.doesNotThrow(() =>
+    freshtime.assertNoPublicJobsSurface(CURRENT_NOT_FOUND_PAGE_HTML, freshtime.CAREERS_URL),
+  )
+  assert.deepEqual(
+    await freshtime.createFreshtimeScraper().run({
+      fetchPage: async () => ({ status: 404, html: CURRENT_NOT_FOUND_PAGE_HTML }),
+    }),
+    [],
   )
 })
 

@@ -126,6 +126,68 @@ const currentAboutHtml = `
 </html>
 `
 
+const august2026HomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"Organization","name":"Drytis","url":"https://drytis.com/"}
+    </script>
+  </head>
+  <body>
+    <header class="nav">
+      <a href="/">drytis</a>
+      <a href="/solutions">Solutions</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/about">About</a>
+      <a href="/blog">Blog</a>
+      <a href="https://studio.drytis.ai/login">Log In</a>
+      <a href="https://studio.drytis.ai/login">Start Building</a>
+    </header>
+    <main>
+      <h1>The gap between ‘it works’ and ‘it’s ready’ is an engineer</h1>
+      <p>AI can start a project. Only a real engineer can finish one.</p>
+      <p>AI writes software. Humans build companies.</p>
+      <p>The moment AI says it’s done, a Drytis engineer takes over.</p>
+      <p>No queue. No ticket. No waiting.</p>
+    </main>
+  </body>
+</html>
+`
+
+const august2026AboutHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"Organization","name":"Drytis","url":"https://drytis.com/"}
+    </script>
+  </head>
+  <body>
+    <header class="nav">
+      <a href="/">drytis</a>
+      <a href="/solutions">Solutions</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/about">About</a>
+      <a href="/blog">Blog</a>
+      <a href="https://studio.drytis.ai/login">Log In</a>
+      <a href="https://studio.drytis.ai/login">Start Building</a>
+    </header>
+    <main>
+      <h1>WHAT DRYTIS IS</h1>
+      <p>We turned 'hire an engineer' into something you can buy by the token.</p>
+      <p>Drytis is human intelligence, tokenized and accessible.</p>
+      <p>AI writes software. Drytis gives you the engineer behind it.</p>
+      <p>We believe the future is built by engineers. AI just made them more powerful.</p>
+      <p>Engineers deliver outcomes.</p>
+      <p>To give anyone with ingenuity access to the engineering talent needed to release their vision to the world.</p>
+    </main>
+  </body>
+</html>
+`
+
 const privacyHtml = `
 <!doctype html>
 <html lang="en">
@@ -351,6 +413,12 @@ const missingCareerRoutePage = {
   `,
 }
 
+const august2026MissingRoutePage = {
+  status: 404,
+  url: 'https://drytis.com/careers',
+  html: '404 - page not found.',
+}
+
 const publicJobsPage = {
   status: 200,
   url: 'https://drytis.com/careers',
@@ -388,8 +456,10 @@ test('DRYTIS sentinel recognizes the verified homepage, legal pages, engineers r
   ])
   assert.equal(drytis.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(drytis.hasOfficialHomepageSignal(currentHomepageHtml), true)
+  assert.equal(drytis.hasOfficialHomepageSignal(august2026HomepageHtml), true)
   assert.equal(drytis.hasOfficialAboutSignal(aboutHtml), true)
   assert.equal(drytis.hasOfficialAboutSignal(currentAboutHtml), true)
+  assert.equal(drytis.hasOfficialAboutSignal(august2026AboutHtml), true)
   assert.equal(drytis.hasOfficialPrivacySignal(privacyHtml), true)
   assert.equal(drytis.hasOfficialPrivacySignal(currentPrivacyHtml), true)
   assert.equal(drytis.hasOfficialTermsSignal(termsHtml), true)
@@ -403,6 +473,7 @@ test('DRYTIS sentinel recognizes the verified homepage, legal pages, engineers r
   assert.equal(drytis.hasPublicJobsSignal(engineersHtml), false)
   assert.equal(drytis.sitemapHasUnexpectedCareerLikeUrl(sitemapXml), false)
   assert.equal(drytis.isVerifiedMissingCareerRoute(missingCareerRoutePage), true)
+  assert.equal(drytis.isVerifiedMissingCareerRoute(august2026MissingRoutePage), true)
 })
 
 test('DRYTIS sentinel returns no jobs only while the verified first-party surfaces stay public-jobs-free', async () => {
@@ -431,6 +502,38 @@ test('DRYTIS sentinel returns no jobs only while the verified first-party surfac
     drytis.TERMS_URL,
     drytis.ENGINEERS_URL,
     drytis.SITEMAP_URL,
+    ...drytis.NO_PUBLIC_CAREERS_ROUTE_URLS,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('DRYTIS sentinel accepts the August 20, 2026 redesign while the retired routes stay missing', async () => {
+  const drytis = await loadDrytisModule()
+  assert.ok(drytis, 'Expected scraper module at ./script.js')
+
+  const requestedUrls = []
+  const retiredRouteUrls = [
+    drytis.PRIVACY_URL,
+    drytis.TERMS_URL,
+    drytis.ENGINEERS_URL,
+    drytis.SITEMAP_URL,
+  ]
+
+  const jobs = await drytis.createDrytisScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      if (url === drytis.HOMEPAGE_URL) return { status: 200, url, html: august2026HomepageHtml }
+      if (url === drytis.ABOUT_URL) return { status: 200, url, html: august2026AboutHtml }
+      if (retiredRouteUrls.includes(url)) return { ...august2026MissingRoutePage, url }
+      if (drytis.NO_PUBLIC_CAREERS_ROUTE_URLS.includes(url)) return { ...august2026MissingRoutePage, url }
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    drytis.HOMEPAGE_URL,
+    drytis.ABOUT_URL,
+    ...retiredRouteUrls,
     ...drytis.NO_PUBLIC_CAREERS_ROUTE_URLS,
   ])
   assert.deepEqual(jobs, [])

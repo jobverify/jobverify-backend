@@ -9,22 +9,37 @@ const config = loadConfig(currentDir)
 
 const ORIGIN = 'https://www.globallogic.com'
 const FETCH_TIMEOUT_MS = 15000
+const EXIT_SETTLE_DELAY_MS = 250
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
-const createFetchTimeoutSignal = (timeoutMs = FETCH_TIMEOUT_MS) => {
-  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return undefined
-
-  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
-    return AbortSignal.timeout(timeoutMs)
+const createFetchTimeoutController = (timeoutMs = FETCH_TIMEOUT_MS) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return {
+      signal: undefined,
+      cancel() {},
+    }
   }
 
   const controller = new AbortController()
-  setTimeout(() => controller.abort(), timeoutMs)
-  return controller.signal
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+
+  return {
+    signal: controller.signal,
+    cancel() {
+      clearTimeout(timeout)
+    },
+  }
 }
 
 export const CAREERS_PAGE_URL = `${ORIGIN}/careers/`
 export const SEARCH_PAGE_URL = `${ORIGIN}/career-search-page/`
+
+const buildHeaders = (cookieHeader = null, extraHeaders = {}) => ({
+  'User-Agent': USER_AGENT,
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+  ...extraHeaders,
+})
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -209,20 +224,151 @@ const extractOverviewValue = (html, label) => stripTags(
   ),
 )
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    signal: createFetchTimeoutSignal(),
-  })
+const getHeader = (headers, name) => {
+  if (!headers || !name) return null
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+  if (typeof headers.get === 'function') {
+    return headers.get(name)
   }
 
-  return response.text()
+  const directValue = headers[name] ?? headers[name.toLowerCase()]
+  if (Array.isArray(directValue)) {
+    return directValue.join(', ')
+  }
+
+  return directValue ?? null
+}
+
+const getSetCookieValues = (headers) => {
+  if (!headers) return []
+
+  if (typeof headers.getSetCookie === 'function') {
+    return headers.getSetCookie()
+      .map((value) => String(value).trim())
+      .filter(Boolean)
+  }
+
+  const directValue = headers['set-cookie'] ?? headers['Set-Cookie']
+  if (Array.isArray(directValue)) {
+    return directValue
+      .map((value) => String(value).trim())
+      .filter(Boolean)
+  }
+
+  return directValue ? [String(directValue).trim()] : []
+}
+
+const mergeCookiePairs = (existingPairs, newPairs) => {
+  const cookieJar = new Map()
+
+  for (const pair of [...existingPairs, ...newPairs]) {
+    const [cookiePair] = String(pair ?? '').split(';', 1)
+    const separatorIndex = cookiePair.indexOf('=')
+    if (separatorIndex <= 0) continue
+
+    const name = cookiePair.slice(0, separatorIndex).trim()
+    const value = cookiePair.slice(separatorIndex + 1).trim()
+    if (!name || !value) continue
+
+    cookieJar.set(name, value)
+  }
+
+  return [...cookieJar.entries()].map(([name, value]) => `${name}=${value}`)
+}
+
+const buildCookieHeader = (cookiePairs) => cookiePairs.join('; ')
+
+const settleNetworkCleanup = async () => new Promise((resolve) => {
+  setTimeout(resolve, EXIT_SETTLE_DELAY_MS)
+})
+
+const normalizeUrl = (value) => {
+  try {
+    const url = new URL(String(value ?? ''))
+    url.hash = ''
+    return url.toString()
+  } catch {
+    return String(value ?? '')
+  }
+}
+
+export const isIncapsulaLoadingShellPage = (page = {}) => {
+  const html = String(page.html ?? '')
+  const location = getHeader(page.headers, 'location')
+  const setCookies = getSetCookieValues(page.headers)
+
+  return Number(page.status) === 302
+    && normalizeUrl(location) === normalizeUrl(page.url)
+    && /<title>\s*Loading\s*<\/title>/i.test(html)
+    && /<h3[^>]*>\s*Loading\s*<\/h3>/i.test(html)
+    && setCookies.some((value) => /^visid_incap_/i.test(value))
+    && setCookies.some((value) => /^incap_ses_/i.test(value))
+}
+
+export const isIncapsulaIframeChallengePage = (page = {}) => {
+  const html = String(page.html ?? '')
+
+  return Number(page.status) === 403
+    && html.includes('/_Incapsula_Resource?SWJIYLWA=')
+    && html.includes('/_Incapsula_Resource?CWUDNSAI=')
+    && /Request unsuccessful\.\s*Incapsula incident ID:/i.test(html)
+}
+
+const defaultFetchText = async (url) => {
+  const timeout = createFetchTimeoutController()
+  try {
+    const response = await fetch(url, {
+      headers: buildHeaders(),
+      signal: timeout.signal,
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} for ${url}`)
+    }
+
+    return response.text()
+  } finally {
+    timeout.cancel()
+  }
+}
+
+const readPageResponse = async (response, requestedUrl) => ({
+  status: response.status,
+  url: requestedUrl,
+  headers: response.headers,
+  html: await response.text(),
+})
+
+const defaultFetchPage = async (url) => {
+  const cookiePairs = []
+  let currentUrl = url
+
+  for (let redirectCount = 0; redirectCount < 8; redirectCount += 1) {
+    const timeout = createFetchTimeoutController()
+    const response = await fetch(currentUrl, {
+      headers: buildHeaders(buildCookieHeader(cookiePairs)),
+      redirect: 'manual',
+      signal: timeout.signal,
+    })
+    const page = await readPageResponse(response, currentUrl)
+    timeout.cancel()
+    const nextCookiePairs = mergeCookiePairs(cookiePairs, getSetCookieValues(page.headers))
+    cookiePairs.splice(0, cookiePairs.length, ...nextCookiePairs)
+
+    if (isIncapsulaLoadingShellPage(page)) {
+      continue
+    }
+
+    const location = getHeader(page.headers, 'location')
+    if ([301, 302, 303, 307, 308].includes(Number(page.status)) && location) {
+      currentUrl = new URL(location, currentUrl).toString()
+      continue
+    }
+
+    return page
+  }
+
+  throw new Error(`Too many redirects while requesting GlobalLogic URL: ${url}`)
 }
 
 const isBrowserFallbackError = (error) =>
@@ -369,6 +515,7 @@ export const createGlobalLogicScraper = ({
   maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
 } = {}) => ({
   async run(options = {}) {
+    const fetchPage = options.fetchPage || defaultFetchPage
     const fetchText = options.fetchText || defaultFetchText
     const browserTextFallback = createBrowserTextFallback({
       fetchText,
@@ -378,8 +525,72 @@ export const createGlobalLogicScraper = ({
     })
     const jobs = []
     const seenJobIds = new Set()
+    const finalizePagePathResult = async (result) => {
+      // Let the undici transport settle before the runner forces process.exit on Windows.
+      await settleNetworkCleanup()
+      return result
+    }
 
     try {
+      if (typeof options.fetchPage === 'function' || !options.fetchText) {
+        const careersPage = await fetchPage(CAREERS_PAGE_URL)
+        if (isIncapsulaLoadingShellPage(careersPage) || isIncapsulaIframeChallengePage(careersPage)) {
+          return finalizePagePathResult([])
+        }
+
+        if (Number(careersPage.status) !== 200) {
+          throw new Error(`HTTP ${careersPage.status} for ${CAREERS_PAGE_URL}`)
+        }
+
+        for (let page = 1; page <= maxPages; page += 1) {
+          const searchPage = await fetchPage(buildSearchPageUrl(page))
+          if (isIncapsulaLoadingShellPage(searchPage) || isIncapsulaIframeChallengePage(searchPage)) {
+            return finalizePagePathResult([])
+          }
+
+          if (Number(searchPage.status) !== 200) {
+            throw new Error(`HTTP ${searchPage.status} for ${buildSearchPageUrl(page)}`)
+          }
+
+          const listings = extractSearchResults(searchPage.html)
+
+          for (const listing of listings) {
+            if (seenJobIds.has(listing.jobId)) continue
+            seenJobIds.add(listing.jobId)
+
+            let job = listing
+            try {
+              const detailPage = await fetchPage(listing.sourceUrl)
+              if (Number(detailPage.status) === 200) {
+                job = {
+                  ...listing,
+                  ...extractJobDetail(detailPage.html, listing),
+                }
+              }
+            } catch {
+              job = listing
+            }
+
+            jobs.push({
+              ...job,
+              source: 'globallogic',
+              link: job.applyUrl || job.sourceUrl,
+              scrapedAt: new Date().toISOString(),
+            })
+
+            if (maxJobs && jobs.length >= maxJobs) {
+              return finalizePagePathResult(jobs)
+            }
+          }
+
+          if (!hasNextSearchPage(searchPage.html)) {
+            break
+          }
+        }
+
+        return finalizePagePathResult(jobs)
+      }
+
       for (let page = 1; page <= maxPages; page += 1) {
         const searchHtml = await browserTextFallback.fetchText(buildSearchPageUrl(page))
         const listings = extractSearchResults(searchHtml)

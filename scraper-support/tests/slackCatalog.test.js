@@ -33,21 +33,26 @@ test('Slack local catalog captures the verified first-party careers surface and 
   assert.equal(provider.officialJobBoardDomain, 'salesforce.wd12.myworkdayjobs.com')
   assert.equal(provider.atsPlatform, 'official-company-careers-page+public-workday-apply-links')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page-current-empty-india-slice')
+  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page+verified-india-role-links')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-location-filter+verified-public-workday-apply-links+return-empty-when-no-india-locations',
+    'verified-first-party-careers-page+verified-location-filter+verified-india-role-tags+public-workday-jobposting-detail-pages',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.equal(provider.verifiedPublicJobCount, 11)
+  assert.equal(provider.verifiedIndiaJobCount, 1)
   assert.match(provider.dryRunFile, /slack[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, expectedModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/slack\.com\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/slack\.com\/intl\/en-in\/careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /\b10 open positions\b/i)
-  assert.match(provider.verifiedSurfaceSummary, /zero India locations/i)
+  assert.match(provider.verifiedSurfaceSummary, /\b11 open positions\b/i)
+  assert.match(provider.verifiedSurfaceSummary, /India - Bangalore/i)
+  assert.match(provider.verifiedSurfaceSummary, /India - Hyderabad/i)
+  assert.match(provider.verifiedSurfaceSummary, /Technical Success Architect - Slack/i)
+  assert.match(provider.verifiedSurfaceSummary, /JR356029/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Slack'), false)
 })
 

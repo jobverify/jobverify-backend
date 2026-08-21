@@ -1,10 +1,14 @@
 import express from "express";
 import {
+  createTelegramAlertLink,
+  deleteTelegramAlertSettings,
+  getTelegramAlertSettings,
   getWhatsappAlertSettings,
   getUserProfile,
   getSavedJobs,
   removeSavedJob,
   saveJob,
+  updateTelegramAlertSettings,
   updateWhatsappAlertSettings,
   updateUserProfile,
 } from "../controllers/userController.js";
@@ -13,6 +17,7 @@ import { validateRequest } from "../middleware/validateRequest.js";
 import { createRateLimiter } from "../utils/rateLimit.js";
 import {
   mongoIdParamValidation,
+  telegramAlertsValidation,
   userProfileValidation,
   whatsappAlertsValidation,
 } from "../validation/requestValidators.js";
@@ -70,5 +75,18 @@ router
     validateRequest,
     updateWhatsappAlertSettings,
   );
+
+router.post("/telegram-alerts/link", protect, createTelegramAlertLink);
+
+router
+  .route("/telegram-alerts")
+  .get(protect, getTelegramAlertSettings)
+  .put(
+    protect,
+    telegramAlertsValidation,
+    validateRequest,
+    updateTelegramAlertSettings,
+  )
+  .delete(protect, deleteTelegramAlertSettings);
 
 export default router;

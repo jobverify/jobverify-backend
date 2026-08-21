@@ -1,18 +1,22 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const careersHtml = `
+const buildVerifiedChallengeHtml = (url) => `
 <!doctype html>
-<html lang="en">
+<html lang="en-US">
   <head>
-    <title>Careers | Start Your Career at EOX Vantage</title>
+    <title>Just a moment...</title>
+    <meta charset="utf-8" />
   </head>
   <body>
-    <h1>Start Your Career at EOX Vantage</h1>
-    <p>A tech company doing genuinely interesting work.</p>
-    <p>Two simple ways to take the next step.</p>
-    <a href="https://eoxvantage.com/current-openings/">Apply to a Current Opening</a>
-    <a href="https://eoxvantage.com/job-inquiry/">Send Us Your Resume</a>
+    <span id="challenge-error-text">Enable JavaScript and cookies to continue</span>
+    <script>
+      window._cf_chl_opt = {
+        cZone: 'eoxvantage.com',
+        cUPMDTk: '${url}',
+      }
+    </script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>
   </body>
 </html>
 `
@@ -33,7 +37,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('EOX Vantage exports local provider metadata for the redesigned first-party careers page without public openings', async () => {
+test('EOX Vantage exports local provider metadata for the verified Friday, August 14, 2026 blocked first-party surfaces', async () => {
   const providerModule = await loadProviderModule()
   const scriptModule = await loadScriptModule()
 
@@ -45,34 +49,88 @@ test('EOX Vantage exports local provider metadata for the redesigned first-party
     modulePath: '../../scraper/eoxvantage/script.js',
     homepageUrl: 'https://eoxvantage.com/',
     companyCareerPage: 'https://eoxvantage.com/careers/',
-    atsPlatform: 'official-company-careers-no-public-openings',
+    atsPlatform: 'official-company-site-blocked-no-public-careers',
     countryFilter: 'India',
-    paginationStrategy: 'browser-rendered-single-page-no-public-openings-validation',
-    extractionStrategy: 'verified-first-party-redesigned-careers-page+no-public-role-cards+india-filter-returns-empty',
+    paginationStrategy: 'verified-homepage-and-careers-routes-blocked',
+    extractionStrategy: 'verified-cloudflare-403-homepage+careers-return-empty',
     parser: 'custom-script',
     normalizationProfile: 'engineering-default',
     companyDomain: 'eoxvantage.com',
-    verifiedOn: '2026-08-02',
+    verifiedOn: '2026-08-14',
     verifiedSurfaceSummary:
-      'Verified on Sunday, August 2, 2026 that https://eoxvantage.com/careers/ is the live first-party EOX Vantage careers page, that the page now presents a redesigned employer-branding surface headed by "Start Your Career at EOX Vantage" with prompts to apply to a current opening or send a resume, and that it no longer exposes public role cards, location-specific openings, or Apply Now job handoffs on the page. No trustworthy India-located public opening was exposed during live verification.',
+      'Verified on Friday, August 14, 2026 that both https://eoxvantage.com/ and https://eoxvantage.com/careers/ returned the same Cloudflare HTTP 403 "Just a moment..." challenge with no scraper-visible public careers content. There is no trustworthy public EOX Vantage jobs surface in this environment on the verified date.',
     dryRunFile: 'eoxvantage/jobs.json',
   })
 
   assert.equal(scriptModule.SOURCE, providerModule.provider.source)
   assert.equal(scriptModule.COMPANY, providerModule.provider.companyName)
+  assert.equal(scriptModule.HOMEPAGE_URL, providerModule.provider.homepageUrl)
   assert.equal(scriptModule.CAREERS_URL, providerModule.provider.companyCareerPage)
+  assert.equal(scriptModule.VERIFIED_AT, providerModule.provider.verifiedOn)
   assert.deepEqual(scriptModule.PROVIDER_METADATA, providerModule.provider)
 })
 
-test('EOX Vantage validates the redesigned first-party careers page and returns no India jobs when no public role cards are exposed', async () => {
+test('EOX Vantage recognizes the verified Cloudflare block and returns an honest empty list while both first-party routes remain gated', async () => {
   const eox = await loadScriptModule()
+  const requestedUrls = []
 
-  assert.equal(eox.hasOfficialCareersSignal(careersHtml), true)
-  assert.deepEqual(eox.extractOpenings(careersHtml), [])
+  assert.equal(
+    eox.hasVerifiedCloudflareChallengeSignal(buildVerifiedChallengeHtml('https://eoxvantage.com/careers/')),
+    true,
+  )
+  assert.equal(
+    eox.exposesStructuredPublicJobs(buildVerifiedChallengeHtml('https://eoxvantage.com/careers/')),
+    false,
+  )
 
   const jobs = await eox.run({
-    fetchText: async () => careersHtml,
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      return {
+        status: 403,
+        url,
+        finalUrl: url,
+        html: buildVerifiedChallengeHtml(url),
+        errorKind: null,
+      }
+    },
   })
 
+  assert.deepEqual(requestedUrls, [
+    eox.HOMEPAGE_URL,
+    eox.CAREERS_URL,
+  ])
   assert.deepEqual(jobs, [])
+})
+
+test('EOX Vantage fails closed when the verified blocked routes drift or begin exposing public jobs', async () => {
+  const eox = await loadScriptModule()
+
+  await assert.rejects(
+    eox.run({
+      fetchPage: async (url) => ({
+        status: 403,
+        url,
+        finalUrl: url,
+        html: '<html><body><h1>Unexpected</h1></body></html>',
+        errorKind: null,
+      }),
+    }),
+    /verified eox vantage first-party careers surfaces changed materially/i,
+  )
+
+  await assert.rejects(
+    eox.run({
+      fetchPage: async (url) => ({
+        status: 403,
+        url,
+        finalUrl: url,
+        html: url === eox.CAREERS_URL
+          ? `${buildVerifiedChallengeHtml(url)}<a href="https://eoxvantage.com/current-openings/">Apply to a Current Opening</a>`
+          : buildVerifiedChallengeHtml(url),
+        errorKind: null,
+      }),
+    }),
+    /scraper-visible public jobs/i,
+  )
 })

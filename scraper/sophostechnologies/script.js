@@ -93,12 +93,15 @@ const chooseIndiaLocation = (locations, country) => {
   ))
   if (specificIndiaLocation) return specificIndiaLocation
 
+  const genericIndiaLocation = locations.find((location) => /\bindia\b/i.test(location))
+  if (genericIndiaLocation) return genericIndiaLocation
+
   if (!isIndiaCountry(country)) return null
 
   const cityOnlyLocation = locations.find((location) => (
     isRecognizedIndiaLocation(location) && !isGenericIndiaLocation(location)
   ))
-  return cityOnlyLocation || locations.find((location) => /\bindia\b/i.test(location)) || 'India'
+  return cityOnlyLocation || 'India'
 }
 
 const deriveCity = (location, country) => {

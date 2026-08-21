@@ -142,6 +142,15 @@ const indiaAnalystDetailHtml = `
 </html>
 `
 
+const createConnectTimeoutError = () => {
+  const cause = new Error(
+    'Connect Timeout Error (attempted addresses: 101.201.70.32:443, 59.110.171.205:443, timeout: 10000ms)',
+  )
+  cause.code = 'UND_ERR_CONNECT_TIMEOUT'
+
+  return new TypeError('fetch failed', { cause })
+}
+
 const loadAkulakuModule = async () => {
   try {
     return await import('../../scraper/akulaku/script.js')
@@ -226,6 +235,26 @@ test('Akulaku returns [] when the official Beisen board is in the verified maint
 
       if (url === akulaku.OFFICIAL_JOBS_BOARD_URL || url === akulaku.JOB_LISTINGS_URL) {
         return { status: 200, url, html: maintenanceBoardHtml }
+      }
+
+      throw new Error(`Unexpected Akulaku URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Akulaku returns [] when the verified official Beisen board is temporarily unreachable', async () => {
+  const akulaku = await loadAkulakuModule()
+
+  const jobs = await akulaku.createAkulakuScraper().run({
+    fetchPage: async (url) => {
+      if (url === akulaku.FIRST_PARTY_CAREERS_URL) {
+        return { status: 200, url, html: firstPartyCareersHtml }
+      }
+
+      if (url === akulaku.OFFICIAL_JOBS_BOARD_URL) {
+        throw createConnectTimeoutError()
       }
 
       throw new Error(`Unexpected Akulaku URL: ${url}`)

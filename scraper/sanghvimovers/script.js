@@ -1,4 +1,6 @@
+import https from 'node:https'
 import path from 'node:path'
+import zlib from 'node:zlib'
 import { fileURLToPath } from 'node:url'
 
 import { SANGHVI_MOVERS_CATALOG } from './catalog.js'
@@ -18,17 +20,19 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const LABELS = [
-  'Job ID :',
-  'Job Title :',
-  'Job Description :',
-  'Key Skills :',
-  'Roles & Responsibilities :',
-  'Work Experience (Min & Max in years) :',
-  'Qualification :',
-  'Job Location :',
-  'No. of Positions :',
-]
+const LABEL_ALIASES = {
+  title: ['Job Title :', 'Position:'],
+  description: ['Job Description :', 'Job Summary:'],
+  skills: ['Key Skills :', 'Must have skills'],
+  responsibilities: ['Roles & Responsibilities :', 'Key Responsibilities :', 'Job Role'],
+  experience: ['Work Experience (Min & Max in years) :', 'Experience:'],
+  qualification: ['Qualification :', 'Education :'],
+  location: ['Job Location :', 'Location:'],
+  employmentType: ['Job Type:'],
+  reportsTo: ['Reports To:'],
+}
+
+const LABELS = Object.values(LABEL_ALIASES).flat()
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
@@ -78,10 +82,28 @@ const extractRawField = (block, label) => {
 
 const extractField = (block, label) => normalizeString(extractRawField(block, label))
 
+const extractFirstAvailableField = (block, labels = []) => {
+  for (const label of labels) {
+    const value = extractField(block, label)
+    if (value) return value
+  }
+
+  return null
+}
+
 const extractListField = (block, label) => (extractRawField(block, label) || '')
   .split('\n')
   .map((item) => normalizeString(item))
   .filter(Boolean)
+
+const extractFirstAvailableListField = (block, labels = []) => {
+  for (const label of labels) {
+    const values = extractListField(block, label)
+    if (values.length > 0) return values
+  }
+
+  return []
+}
 
 const buildJobId = (title, location) => `${slugify(title)}-${slugify(location || 'india')}`
 
@@ -101,21 +123,31 @@ const createTimeoutSignal = (timeoutMs) => {
 
 export const defaultFetchText = async (url, {
   fetchImpl = fetch,
+  lenientFetchText = null,
   timeoutMs = 15000,
 } = {}) => {
-  const response = await fetchImpl(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    signal: createTimeoutSignal(timeoutMs),
-  })
+  try {
+    const response = await fetchImpl(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      signal: createTimeoutSignal(timeoutMs),
+    })
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} for ${url}`)
+    }
+
+    return response.text()
+  } catch (error) {
+    if (!isCertificateError(error)) {
+      throw error
+    }
+
+    const fetchLenientText = lenientFetchText || fetchTextIgnoringTlsErrors
+    return fetchLenientText(url, { timeoutMs })
   }
-
-  return response.text()
 }
 
 const shouldUseBrowserFallback = (error) => {
@@ -128,6 +160,77 @@ const shouldUseBrowserFallback = (error) => {
     || /unable to verify the first certificate|certificate|ssl|tls|trust relationship|unable_to_verify_leaf_signature/i.test(combined)
 }
 
+const isCertificateError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const combined = `${message} ${causeCode} ${causeMessage}`
+
+  return /unable to verify the first certificate|certificate|ssl|tls|trust relationship|unable_to_verify_leaf_signature/i.test(combined)
+}
+
+const fetchTextIgnoringTlsErrors = async (url, {
+  timeoutMs = 15000,
+  maxRedirects = 5,
+} = {}) => {
+  if (maxRedirects < 0) {
+    throw new Error(`Too many redirects for ${url}`)
+  }
+
+  return new Promise((resolve, reject) => {
+    const request = https.request(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+      },
+      rejectUnauthorized: false,
+      signal: createTimeoutSignal(timeoutMs),
+    }, (response) => {
+      const statusCode = response.statusCode ?? 0
+
+      if ([301, 302, 303, 307, 308].includes(statusCode) && response.headers.location) {
+        response.resume()
+        const nextUrl = new URL(response.headers.location, url).toString()
+        fetchTextIgnoringTlsErrors(nextUrl, {
+          timeoutMs,
+          maxRedirects: maxRedirects - 1,
+        }).then(resolve, reject)
+        return
+      }
+
+      if (statusCode >= 400) {
+        response.resume()
+        reject(new Error(`HTTP ${statusCode} for ${url}`))
+        return
+      }
+
+      const encoding = String(response.headers['content-encoding'] ?? '').toLowerCase()
+      let stream = response
+
+      if (encoding.includes('br')) {
+        stream = response.pipe(zlib.createBrotliDecompress())
+      } else if (encoding.includes('gzip')) {
+        stream = response.pipe(zlib.createGunzip())
+      } else if (encoding.includes('deflate')) {
+        stream = response.pipe(zlib.createInflate())
+      }
+
+      const chunks = []
+      stream.on('data', (chunk) => {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+      })
+      stream.on('error', reject)
+      stream.on('end', () => {
+        resolve(Buffer.concat(chunks).toString('utf8'))
+      })
+    })
+
+    request.on('error', reject)
+    request.end()
+  })
+}
+
 const extractBlocks = (html = '') => {
   const text = htmlToText(html)
   const startIndex = text.indexOf('Join Our Team')
@@ -136,20 +239,29 @@ const extractBlocks = (html = '') => {
   return jobsText
     .split(/\bApply Now\b/i)
     .map((block) => block.trim())
-    .filter((block) => /Job Title\s*:/i.test(block))
+    .filter((block) => (
+      /Job Title\s*:/i.test(block)
+      || /Position\s*:/i.test(block)
+      || (/Location\s*:/i.test(block) && /(?:Job\s*Summary|Job\s*Role|Key Responsibilities)/i.test(block))
+    ))
 }
 
 export const hasVerifiedCareersPageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const text = htmlToText(rawHtml)
 
-  return /<title[^>]*>\s*Careers at Sanghvi Movers\s*\|\s*Join Asia(?:&#x27;|'|’)s Largest Crane Leader\s*<\/title>/i.test(rawHtml)
+  return /<title[^>]*>\s*Careers at Sanghvi Movers\s*\|\s*Join Asia(?:&#x27;|&#0*39;|'|’)s Largest Crane Leader\s*<\/title>/i.test(rawHtml)
     && text.includes('Join Our Team')
 }
 
 export const hasPublicJobSignals = (html = '') => {
   const text = htmlToText(html)
-  return /Job Title\s*:/i.test(text) && /\bApply Now\b/i.test(text)
+  return /\bApply Now\b/i.test(text)
+    && (
+      /Job Title\s*:/i.test(text)
+      || /Position\s*:/i.test(text)
+      || /Job\s*Role/i.test(text)
+    )
 }
 
 export const extractStaticJobs = (
@@ -159,11 +271,17 @@ export const extractStaticJobs = (
   } = {},
 ) => extractBlocks(html)
   .map((block) => {
-    const title = extractField(block, 'Job Title :')
-    const location = extractField(block, 'Job Location :') || 'India'
+    const title = extractFirstAvailableField(block, LABEL_ALIASES.title)
+      || normalizeString(block.split('\n')[0])
+    const location = extractFirstAvailableField(block, LABEL_ALIASES.location) || 'India'
     const jobId = buildJobId(title, location)
 
     if (!title) return null
+
+    const requiredSkills = [
+      ...extractFirstAvailableListField(block, LABEL_ALIASES.skills),
+      ...extractFirstAvailableListField(block, LABEL_ALIASES.responsibilities),
+    ]
 
     return {
       title,
@@ -180,14 +298,14 @@ export const extractStaticJobs = (
       applyUrl: CAREERS_URL,
       link: CAREERS_URL,
       source: SOURCE,
-      employmentType: null,
-      experienceRequired: extractField(block, 'Work Experience (Min & Max in years) :'),
-      minimumQualification: extractField(block, 'Qualification :'),
+      employmentType: extractFirstAvailableField(block, LABEL_ALIASES.employmentType),
+      experienceRequired: extractFirstAvailableField(block, LABEL_ALIASES.experience),
+      minimumQualification: extractFirstAvailableField(block, LABEL_ALIASES.qualification),
       preferredQualification: null,
-      requiredSkills: extractListField(block, 'Key Skills :'),
+      requiredSkills,
       postingDate: null,
       closingDate: null,
-      jobDescription: extractField(block, 'Job Description :'),
+      jobDescription: extractFirstAvailableField(block, LABEL_ALIASES.description),
       scrapedAt,
     }
   })

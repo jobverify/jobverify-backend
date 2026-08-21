@@ -1,0 +1,50 @@
+import mongoose from "mongoose";
+
+import connectDB from "../db/db.js";
+import Job from "../src/models/Job.js";
+import { resolveJobType } from "../scraper-support/utils/normalizeScrapedJob.js";
+
+const shouldApply = process.argv.includes("--apply");
+const canonicalJobTypes = ["Intern", "Internship", "Full-time Fresher", "Full-time Experienced", "Full-time", "Contract", "Others"];
+const cursor = Job.find({ status: "active", jobType: { $nin: canonicalJobTypes } })
+  .select("employmentType experienceLevel title department description jobDescription minimumQualification preferredQualification experienceRequired jobType")
+  .lean()
+  .cursor();
+
+let scanned = 0;
+let changed = 0;
+let operations = [];
+
+const flush = async () => {
+  if (operations.length === 0 || !shouldApply) return;
+  await Job.bulkWrite(operations, { ordered: false });
+  operations = [];
+};
+
+try {
+  await connectDB();
+
+  for await (const job of cursor) {
+    scanned += 1;
+    const sourceEmploymentType = job.employmentType || job.jobType;
+    const jobType = sourceEmploymentType
+      ? resolveJobType({ ...job, employmentType: sourceEmploymentType })
+      : "Others";
+    if (!jobType || jobType === job.jobType) continue;
+
+    changed += 1;
+    operations.push({
+      updateOne: {
+        filter: { _id: job._id, jobType: job.jobType },
+        update: { $set: { jobType } },
+      },
+    });
+
+    if (operations.length >= 500) await flush();
+  }
+
+  await flush();
+  console.log(JSON.stringify({ mode: shouldApply ? "applied" : "dry-run", scanned, changed }));
+} finally {
+  await mongoose.disconnect();
+}

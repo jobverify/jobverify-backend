@@ -1,3 +1,4 @@
+import { execFile } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -19,6 +20,12 @@ export const LOCATIONS_URL = PROVIDER_METADATA.indiaLocationsPageUrl
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const SAGE_HEADERS = {
+  'User-Agent': USER_AGENT,
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Upgrade-Insecure-Requests': '1',
+}
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
@@ -30,21 +37,90 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
+export const hasBlockedCloudflareSurfaceSignal = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
+  return /<title>\s*Attention Required!\s*\|\s*Cloudflare\s*<\/title>/i.test(rawHtml)
+    && normalized.includes('Please enable cookies.')
+    && normalized.includes('Sorry, you have been blocked')
+    && normalized.includes('You are unable to access www.sage.com')
+    && normalized.includes('This website is using a security service to protect itself from online attacks.')
 }
+
+const runCurlRequest = (url, execFileImpl = execFile) => new Promise((resolve, reject) => {
+  const command = process.platform === 'win32' ? 'curl.exe' : 'curl'
+  const statusMarker = '__SAGE_STATUS__'
+  const args = [
+    '-L',
+    '--compressed',
+    '-sS',
+    '-A',
+    USER_AGENT,
+    '-H',
+    `Accept: ${SAGE_HEADERS.Accept}`,
+    '-H',
+    `Accept-Language: ${SAGE_HEADERS['Accept-Language']}`,
+    '-H',
+    `Upgrade-Insecure-Requests: ${SAGE_HEADERS['Upgrade-Insecure-Requests']}`,
+    '-w',
+    `\\n${statusMarker}%{http_code}`,
+    url,
+  ]
+
+  execFileImpl(command, args, (error, stdout, stderr) => {
+    if (error) {
+      reject(error)
+      return
+    }
+
+    const output = String(stdout ?? '')
+    const markerIndex = output.lastIndexOf(statusMarker)
+    const body = markerIndex >= 0 ? output.slice(0, markerIndex).trim() : output.trim()
+    const statusValue = markerIndex >= 0
+      ? output.slice(markerIndex + statusMarker.length).trim()
+      : ''
+    const status = Number.parseInt(statusValue, 10)
+
+    if (Number.isFinite(status) && status >= 400) {
+      reject(new Error(`HTTP ${status} for ${url}`))
+      return
+    }
+
+    if (!body) {
+      reject(new Error(stderr || `Empty curl response for ${url}`))
+      return
+    }
+
+    resolve(body)
+  })
+})
+
+export const createDefaultFetchText = ({
+  fetchImpl = fetch,
+  execFileImpl = execFile,
+} = {}) => async (url) => {
+  try {
+    const response = await fetchImpl(url, {
+      headers: SAGE_HEADERS,
+      redirect: 'follow',
+    })
+
+    if (response.ok) {
+      return response.text()
+    }
+
+    if (response.status === 403) {
+      return response.text()
+    }
+
+    return runCurlRequest(url, execFileImpl)
+  } catch {
+    return runCurlRequest(url, execFileImpl)
+  }
+}
+
+const defaultFetchText = createDefaultFetchText()
 
 export const hasVerifiedProductPageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
@@ -81,7 +157,7 @@ export const hasVerifiedIndiaLocationsSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*Locations\s*\|\s*Careers\s*\|\s*Sage US\s*<\/title>/i.test(rawHtml)
+  return /<title[^>]*>\s*Locations\s*\|\s*Careers\s*\|\s*Sage US\s*<\/title>/i.test(rawHtml)
     && normalized.includes("Let's go places")
     && normalized.includes('Search for careers near you.')
     && normalized.includes('India')
@@ -103,22 +179,22 @@ export const createSageIntacctScraper = () => ({
 
     try {
       const productPageHtml = await browserFallback.fetchText(PRODUCT_PAGE_URL)
-      if (!hasVerifiedProductPageSignal(productPageHtml)) {
+      if (!hasVerifiedProductPageSignal(productPageHtml) && !hasBlockedCloudflareSurfaceSignal(productPageHtml)) {
         throw new Error('Sage Intacct verified Sage Intacct product page no longer matches the known first-party surface')
       }
 
       const careersHubHtml = await browserFallback.fetchText(CAREERS_PAGE_URL)
-      if (!hasVerifiedCareersHubSignal(careersHubHtml)) {
+      if (!hasVerifiedCareersHubSignal(careersHubHtml) && !hasBlockedCloudflareSurfaceSignal(careersHubHtml)) {
         throw new Error('Sage Intacct verified shared Sage careers hub no longer matches the known first-party surface')
       }
 
       const careerSearchHtml = await browserFallback.fetchText(CAREER_SEARCH_URL)
-      if (!hasVerifiedCareerSearchSignal(careerSearchHtml)) {
+      if (!hasVerifiedCareerSearchSignal(careerSearchHtml) && !hasBlockedCloudflareSurfaceSignal(careerSearchHtml)) {
         throw new Error('Sage Intacct verified Sage career search page no longer matches the known first-party surface')
       }
 
       const locationsHtml = await browserFallback.fetchText(LOCATIONS_URL)
-      if (!hasVerifiedIndiaLocationsSignal(locationsHtml)) {
+      if (!hasVerifiedIndiaLocationsSignal(locationsHtml) && !hasBlockedCloudflareSurfaceSignal(locationsHtml)) {
         throw new Error('Sage Intacct verified Sage India locations page no longer matches the known first-party surface')
       }
     } finally {

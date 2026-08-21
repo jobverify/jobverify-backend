@@ -44,12 +44,12 @@ test('Endurance local catalog captures the verified first-party careers and job 
   assert.equal(ENDURANCE_CATALOG.paginationStrategy, 'single-first-party-job-portal-html')
   assert.equal(
     ENDURANCE_CATALOG.extractionStrategy,
-    'verified-first-party-homepage+careers-page+job-portal+job-detail-pages',
+    'verified-browser-rendered-careers-page+job-portal+same-domain-detail-pages',
   )
   assert.equal(ENDURANCE_CATALOG.parser, 'custom-script')
   assert.equal(ENDURANCE_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(ENDURANCE_CATALOG.companyDomain, 'endurancegroup.com')
-  assert.equal(ENDURANCE_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(ENDURANCE_CATALOG.verifiedOn, '2026-08-14')
   assert.match(ENDURANCE_CATALOG.dryRunFile, /endurance[\\/]jobs\.json$/i)
   assert.equal(ENDURANCE_CATALOG.modulePath, enduranceModulePath)
   assert.match(ENDURANCE_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.endurancegroup\.com\/$/i)
@@ -65,6 +65,8 @@ test('Endurance local catalog captures the verified first-party careers and job 
     ENDURANCE_CATALOG.verifiedSurfaceSummary,
     /https:\/\/www\.endurancegroup\.com\/career\/technical-architect\//i,
   )
+  assert.match(ENDURANCE_CATALOG.verifiedSurfaceSummary, /\b403\b/i)
+  assert.match(ENDURANCE_CATALOG.verifiedSurfaceSummary, /Just a moment/i)
   assert.match(ENDURANCE_CATALOG.verifiedSurfaceSummary, /Technical Architect/i)
   assert.match(ENDURANCE_CATALOG.verifiedSurfaceSummary, /Technical Lead - Hardware/i)
 

@@ -321,6 +321,19 @@ test('Samsung Display Noida parses the exact-company public listing HTML and fil
   assert.equal(jobs[1].country, 'India')
 })
 
+test('Samsung Display Noida fails closed when the listing drifts to the parent-brand Korean company label', async () => {
+  const sdn = await loadSamsungDisplayNoidaModule()
+
+  const koreanListingHtml = LIST_HTML
+    .replace('Samsung Display', '삼성디스플레이')
+    .replace('Engineer Hiring', 'R&D분야 외국인 경력사원 채용')
+
+  assert.throws(
+    () => sdn.extractListingCards(koreanListingHtml),
+    /listing html no longer resolves to the exact company/i,
+  )
+})
+
 test('Samsung Display Noida run() validates the route chain, posts the exact company filter, and returns only India jobs', async () => {
   const sdn = await loadSamsungDisplayNoidaModule()
   const requestedText = []

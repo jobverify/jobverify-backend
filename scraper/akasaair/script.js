@@ -1,6 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { composeAbortSignals } from '../../scraper-support/utils/fetch.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
+
 import { AKASA_AIR_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -19,6 +22,7 @@ export const PILOT_APPLY_URL = PROVIDER_METADATA.pilotApplyUrl
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const PAGE_REQUEST_TIMEOUT_MS = 30000
 
 const VERIFIED_ROLE_PAGES = [
   {
@@ -82,21 +86,43 @@ const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&quot;/gi, '"')
   .replace(/&#39;|&apos;/gi, "'")
 
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-  })
+const createTimeoutSignal = (timeoutMs) => {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) return undefined
 
-  return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs)
   }
+
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), timeoutMs)
+  return controller.signal
 }
+
+const defaultFetchPage = async (url, { signal } = {}) =>
+  withRetry(async () => {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+      signal: composeAbortSignals(
+        signal,
+        createTimeoutSignal(PAGE_REQUEST_TIMEOUT_MS),
+      ),
+    })
+
+    return {
+      status: response.status,
+      url: response.url,
+      html: await response.text(),
+    }
+  }, {
+    attempts: 3,
+    baseDelayMs: 2000,
+    label: `${SOURCE}-page`,
+    signal,
+  })
 
 export const extractTitle = (html = '') => {
   const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
@@ -224,8 +250,8 @@ const mapRolePageToJob = (page, role, now) => ({
 export const createAkasaAirScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const landingPage = await fetchPage(CAREERS_REDIRECT_URL)
+  async run({ fetchPage = defaultFetchPage, signal } = {}) {
+    const landingPage = await fetchPage(CAREERS_REDIRECT_URL, { signal })
 
     if (
       Number(landingPage.status) !== 200
@@ -235,7 +261,7 @@ export const createAkasaAirScraper = ({
       throw new Error('Akasa Air verified careers landing page no longer matches the public surface')
     }
 
-    const sitemapPage = await fetchPage(SITEMAP_URL)
+    const sitemapPage = await fetchPage(SITEMAP_URL, { signal })
     const sitemapRoleUrls = extractCareerRoleUrlsFromSitemap(sitemapPage.html)
 
     if (
@@ -248,13 +274,13 @@ export const createAkasaAirScraper = ({
     const jobs = []
 
     for (const role of VERIFIED_ROLE_PAGES) {
-      const rolePage = await fetchPage(role.url)
+      const rolePage = await fetchPage(role.url, { signal })
 
       if (!hasVerifiedRolePageSurface(rolePage, role)) {
         throw new Error(`Akasa Air verified role page surface changed: ${role.url}`)
       }
 
-      const applyPage = await fetchPage(role.expectedApplyUrl)
+      const applyPage = await fetchPage(role.expectedApplyUrl, { signal })
 
       if (normalizeUrl(role.expectedApplyUrl) === PILOT_APPLY_URL) {
         if (!isWorkingOfficeFormSurface(applyPage)) {

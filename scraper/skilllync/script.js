@@ -2,7 +2,7 @@ export const SOURCE = 'skilllync'
 export const COMPANY = 'Skill-Lync'
 export const CAREERS_URL = 'https://www.skill-lync.com/careers'
 export const JOBS_URL = 'https://skill-lync.com/careers/jobs'
-export const ACCEPTED_UNAVAILABLE_STATUSES = [503]
+export const ACCEPTED_UNAVAILABLE_STATUSES = [502, 503]
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -89,7 +89,10 @@ export const isVerifiedUnavailablePage = (page = {}) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
   return ACCEPTED_UNAVAILABLE_STATUSES.includes(Number(page?.status))
-    && normalized.includes('503 service temporarily unavailable')
+    && (
+      normalized.includes('503 service temporarily unavailable')
+      || normalized.includes('502 bad gateway')
+    )
     && !hasRenderedPublicJobCards(html)
 }
 

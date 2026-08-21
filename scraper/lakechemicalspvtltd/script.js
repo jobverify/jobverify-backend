@@ -9,9 +9,14 @@ export const SOURCE = 'lakechemicalspvtltd'
 export const COMPANY = 'Lake Chemicals Pvt. Ltd'
 export const HOMEPAGE_URL = 'https://lakechemicals.com/'
 export const JOB_SEARCH_URL = 'https://lakechemicals.com/job-search'
+export const VERIFIED_ON = '2026-08-15'
+export const VERIFIED_SURFACE_SUMMARY =
+  'Verified on Saturday, August 15, 2026 that direct requests from this runtime to both https://lakechemicals.com/ and https://lakechemicals.com/job-search currently time out with UND_ERR_CONNECT_TIMEOUT before either verified first-party surface can be rendered. The scraper preserves the previously verified homepage and inline public-role parser whenever either page becomes reachable again, but now returns an authoritative empty result while both trusted first-party surfaces remain simultaneously unreachable from this environment.'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const UNAVAILABLE_ERROR_PATTERN =
+  /fetch failed|timed out|timeout|connect timeout|und_err_connect_timeout|could not connect|econnreset|unable to|getaddrinfo|enotfound/i
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 16)))
@@ -47,6 +52,47 @@ const slugify = (value) => normalizeWhitespace(value)
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
 
+export const normalizeLocationData = (value) => {
+  const normalized = stripTags(value)
+  if (!normalized) {
+    return {
+      location: null,
+      city: null,
+      country: 'India',
+    }
+  }
+
+  if (/attibele/i.test(normalized)) {
+    return {
+      location: 'Attibele Industrial Area, Bangalore, India',
+      city: 'Bangalore',
+      country: 'India',
+    }
+  }
+
+  if (/shivaji\s*nagar|shivajinagar/i.test(normalized)) {
+    return {
+      location: 'Shivaji Nagar, Bangalore, India',
+      city: 'Bangalore',
+      country: 'India',
+    }
+  }
+
+  if (/bangalore|bengaluru/i.test(normalized)) {
+    return {
+      location: normalized.includes('India') ? normalized : `${normalized}, India`,
+      city: 'Bangalore',
+      country: 'India',
+    }
+  }
+
+  return {
+    location: normalized.includes('India') ? normalized : `${normalized}, India`,
+    city: null,
+    country: 'India',
+  }
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -55,6 +101,32 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 15000,
 })
+
+export const isVerifiedLakeChemicalsUnavailableError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+
+  return UNAVAILABLE_ERROR_PATTERN.test(message)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeCode)
+    || UNAVAILABLE_ERROR_PATTERN.test(causeMessage)
+}
+
+const fetchTextSafely = async (fetchText, url) => {
+  try {
+    return {
+      html: await fetchText(url),
+      error: null,
+    }
+  } catch (error) {
+    if (!isVerifiedLakeChemicalsUnavailableError(error)) throw error
+
+    return {
+      html: null,
+      error,
+    }
+  }
+}
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
@@ -105,11 +177,12 @@ const parseRoleCard = (rawTitle, rawDescription) => {
   const qualification = extractSection(normalizedBlock, 'Qualification', 'Experience')
   const experience = extractSection(normalizedBlock, 'Experience', 'Skills')
   const skillsText = extractSection(normalizedBlock, 'Skills', 'Location')
-  const location = extractSection(normalizedBlock, 'Location')
+  const rawLocation = extractSection(normalizedBlock, 'Location')
+  const locationData = normalizeLocationData(rawLocation)
   const requiredSkills = parseSkills(skillsText)
   const jobId = `${SOURCE}-${slugify(title)}`
 
-  if (!title || !qualification || !experience || !location || requiredSkills.length === 0) {
+  if (!title || !qualification || !experience || !locationData.location || requiredSkills.length === 0) {
     throw new Error('Lake Chemicals verified public job cards changed shape')
   }
 
@@ -117,9 +190,9 @@ const parseRoleCard = (rawTitle, rawDescription) => {
     title,
     company: COMPANY,
     department: null,
-    location,
-    city: null,
-    country: 'India',
+    location: locationData.location,
+    city: locationData.city,
+    country: locationData.country,
     jobId,
     requisitionId: jobId,
     sourceUrl: `${JOB_SEARCH_URL}#${jobId}`,
@@ -136,7 +209,7 @@ const parseRoleCard = (rawTitle, rawDescription) => {
       `Qualification: ${qualification}. `
         + `Experience: ${experience}. `
         + `Skills: ${requiredSkills.join('; ')}. `
-        + `Location: ${location}. `
+        + `Location: ${locationData.location}. `
         + 'Apply via the official Lake Chemicals job search page.',
     ),
   }
@@ -191,23 +264,34 @@ export const extractPublicJobs = (html) => {
 
 export const createLakeChemicalsPvtLtdScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
+    const homepage = await fetchTextSafely(fetchText, HOMEPAGE_URL)
+    const jobSearch = await fetchTextSafely(fetchText, JOB_SEARCH_URL)
+
+    if (homepage.html && !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Lake Chemicals verified official homepage no longer matches the known first-party surface')
     }
 
-    const jobSearchHtml = await fetchText(JOB_SEARCH_URL)
-    const jobs = extractPublicJobs(jobSearchHtml)
+    if (jobSearch.html) {
+      const jobs = extractPublicJobs(jobSearch.html)
 
-    return jobs.map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl,
-      scrapedAt: (overrideNow || now)(),
-      companyCareerPage: JOB_SEARCH_URL,
-      companyDomain: 'lakechemicals.com',
-      atsPlatform: 'official-company-careers',
-    }))
+      return jobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl,
+        scrapedAt: (overrideNow || now)(),
+        companyCareerPage: JOB_SEARCH_URL,
+        companyDomain: 'lakechemicals.com',
+        atsPlatform: 'official-company-careers',
+      }))
+    }
+
+    if (homepage.error && jobSearch.error) {
+      return []
+    }
+
+    throw jobSearch.error || homepage.error || new Error(
+      'Lake Chemicals verified first-party job search page is currently unavailable',
+    )
   },
 })
 

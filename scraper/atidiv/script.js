@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { ATIDIV_CATALOG } from './catalog.js'
@@ -13,6 +14,8 @@ export const CAREERS_URL = ATIDIV_CATALOG.companyCareerPage
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const CERTIFICATE_ERROR_PATTERN =
+  /unable to verify the first certificate|unable to get local issuer certificate|self[- ]signed certificate|certificate(?:'s)? altnames|certificate has expired/i
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([a-f0-9]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -111,9 +114,52 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFallbackFetchText = async (url) => {
+  const response = await fetchPageWithRetry(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    label: `${SOURCE}-fallback`,
+    timeoutMs: 20000,
+    allowInsecureTlsHosts: ['atidiv.com'],
+  })
+
+  if (response.status < 200 || response.status >= 300) {
+    throw new Error(`HTTP ${response.status} for ${url}`)
+  }
+
+  return response.html
+}
+
+export const hasCertificateVerificationFailure = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const code = String(error?.code ?? error?.cause?.code ?? '')
+
+  return CERTIFICATE_ERROR_PATTERN.test(message)
+    || CERTIFICATE_ERROR_PATTERN.test(causeMessage)
+    || /UNABLE_TO_GET_ISSUER_CERT_LOCALLY|UNABLE_TO_VERIFY_LEAF_SIGNATURE|SELF_SIGNED_CERT_IN_CHAIN/i.test(code)
+}
+
 export const createAtidivScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({
+    fetchText = defaultFetchText,
+    fetchFallbackText = defaultFallbackFetchText,
+    now: overrideNow,
+  } = {}) {
+    let careersHtml
+
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (!fetchFallbackText || !hasCertificateVerificationFailure(error)) {
+        throw error
+      }
+
+      careersHtml = await fetchFallbackText(CAREERS_URL)
+    }
+
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('The verified Atidiv careers page no longer matches the trusted first-party surface')
     }

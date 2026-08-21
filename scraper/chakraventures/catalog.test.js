@@ -17,11 +17,13 @@ test('Chakra Ventures is registered as a verified parked-domain sentinel without
   assert.equal(provider.paginationStrategy, 'homepage-plus-careers-jobs-and-lander-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-redirect-shell-on-first-party-routes+verified-parked-lander-return-empty',
+    'verified-timeout-only-first-party-routes+legacy-redirect-shell-and-parked-lander-fallback-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'chakraventures.com')
+  assert.equal(provider.verifiedOn, '2026-08-13')
+  assert.match(provider.verifiedSurfaceSummary, /repeated connect timeouts/i)
   assert.match(provider.modulePath, /chakraventures[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Chakra Ventures'), false)
 })

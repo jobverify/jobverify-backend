@@ -22,6 +22,16 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
+const toTitleFromJobUrl = (value) => {
+  const slug = String(value ?? '').match(/\/jobs\/\d+-([a-z0-9-]+)/i)?.[1]
+  if (!slug) return null
+
+  return slug
+    .split('-')
+    .map((part) => part ? `${part[0].toUpperCase()}${part.slice(1)}` : part)
+    .join(' ')
+}
+
 const createTimeoutSignal = (timeoutMs) => {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
     return undefined
@@ -54,6 +64,8 @@ export const defaultFetchPage = async (url, {
     url: response.url,
     headers: {
       location: response.headers.get('location'),
+      server: response.headers.get('server'),
+      'cf-mitigated': response.headers.get('cf-mitigated'),
     },
     html: await response.text(),
   }
@@ -117,13 +129,23 @@ export const isVerifiedWellfoundChallenge = (page = {}) => {
   const rawHtml = String(page?.html ?? '')
   const normalized = normalizeWhitespace(rawHtml).toLowerCase()
   const responseUrl = String(page?.url ?? '')
+  const challengeHeader = String(page?.headers?.['cf-mitigated'] ?? '').toLowerCase()
+  const serverHeader = String(page?.headers?.server ?? '').toLowerCase()
   const isVerifiedWellfoundUrl =
     responseUrl === WELLFOUND_JOBS_URL
     || responseUrl.startsWith('https://wellfound.com/')
   const hasLegacyChallengeSignal =
     normalized.includes('please enable js and disable any ad blocker')
     && rawHtml.toLowerCase().includes('captcha-delivery.com')
-  const hasCloudflareChallengeSignal =
+  const hasCurrentCloudflareChallengeSignal =
+    /<title>\s*Security Check\s*\|\s*Wellfound\s*<\/title>/i.test(rawHtml)
+    && normalized.includes('security check')
+    && normalized.includes('enable javascript and cookies to continue')
+    && rawHtml.toLowerCase().includes('window._cf_chl_opt')
+    && rawHtml.toLowerCase().includes('challenge-platform')
+    && normalized.includes('ray id')
+    && normalized.includes('wellfound')
+  const hasLegacyCloudflareChallengeSignal =
     /<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(rawHtml)
     && /noindex,nofollow/i.test(rawHtml)
     && normalized.includes('enable javascript and cookies to continue')
@@ -133,14 +155,99 @@ export const isVerifiedWellfoundChallenge = (page = {}) => {
     )
     && rawHtml.toLowerCase().includes('challenge-platform')
     && normalized.includes('ray id')
+  const hasCloudflareHeaders =
+    challengeHeader === 'challenge'
+    && serverHeader.includes('cloudflare')
 
   return Number(page?.status) === 403
     && isVerifiedWellfoundUrl
-    && (hasLegacyChallengeSignal || hasCloudflareChallengeSignal)
+    && (
+      hasLegacyChallengeSignal
+      || ((hasCurrentCloudflareChallengeSignal || hasLegacyCloudflareChallengeSignal) && hasCloudflareHeaders)
+    )
+}
+
+export const hasAccessibleWellfoundJobsSignal = (page = {}) => {
+  const rawHtml = String(page?.html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+
+  return Number(page?.status) === 200
+    && String(page?.url ?? '').replace(/\/+$/, '') === WELLFOUND_JOBS_URL
+    && /<title>\s*Jobs at IQnext:\s*Explore current Opportunities\s*<\/title>/i.test(rawHtml)
+    && /Jobs at IQnext/i.test(normalized)
+    && /View\s+\d+\s+job/i.test(normalized)
+}
+
+export const extractAccessibleWellfoundJobs = (page = {}) => {
+  if (!hasAccessibleWellfoundJobsSignal(page)) {
+    throw new Error('IQnext (Synconext) verified public jobs board no longer matches the known Wellfound surface')
+  }
+
+  const rawHtml = String(page?.html ?? '')
+  const matches = Array.from(
+    rawHtml.matchAll(/<a[^>]+href=["'](https:\/\/wellfound\.com\/jobs\/\d+-[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi),
+  )
+
+  return matches.map((match, index) => {
+    const nextIndex = matches[index + 1]?.index ?? rawHtml.length
+    const chunk = rawHtml.slice(match.index, nextIndex)
+    const paragraphs = Array.from(
+      chunk.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi),
+      (paragraphMatch) => normalizeWhitespace(paragraphMatch[1]),
+    ).filter(Boolean)
+    const sourceUrl = match[1]
+    const title = normalizeWhitespace(match[2]) || toTitleFromJobUrl(sourceUrl)
+    const department = paragraphs.find((value) =>
+      /^(Sales|Engineering|Product|Marketing|Operations|Design|People|Finance|Customer Success|Business Development)$/i.test(value),
+    ) || null
+    const locationLine = paragraphs.find((value) => /^(In office|On-site|Onsite|Remote only|Hybrid)\s+[•|]\s+/i.test(value)) || null
+    const city = normalizeWhitespace(locationLine?.replace(/^(In office|On-site|Onsite|Remote only|Hybrid)\s+[•|]\s+/i, '')) || null
+    const remoteStatus = locationLine?.toLowerCase().startsWith('remote')
+      ? 'Remote'
+      : locationLine?.toLowerCase().startsWith('hybrid')
+        ? 'Hybrid'
+        : 'On-site'
+    const employmentType = paragraphs.find((value) => /^(Full Time|Part Time|Contract|Internship|Freelance)$/i.test(value)) || null
+    const summaryParagraphs = paragraphs.filter((value) =>
+      value !== department
+      && value !== locationLine
+      && value !== employmentType,
+    )
+    const jobId = String(sourceUrl.match(/\/jobs\/(\d+)-/i)?.[1] ?? '').trim() || null
+
+    if (!title || !city || !jobId) {
+      throw new Error('IQnext (Synconext) verified public jobs board no longer exposes the expected job fields')
+    }
+
+    return {
+      title,
+      company: COMPANY,
+      location: `${city}, India`,
+      city,
+      country: 'India',
+      jobId,
+      requisitionId: jobId,
+      department,
+      employmentType,
+      experienceRequired: null,
+      jobDescription: summaryParagraphs.join(' ') || null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      remoteStatus,
+      sourceUrl,
+      applyUrl: sourceUrl,
+      link: sourceUrl,
+    }
+  })
 }
 
 export const createIqnextSynconextScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
+  async run({
+    fetchPage = defaultFetchPage,
+    now = () => new Date().toISOString(),
+  } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
 
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
@@ -159,11 +266,19 @@ export const createIqnextSynconextScraper = () => ({
     }
 
     const wellfoundBoard = await fetchPage(WELLFOUND_JOBS_URL)
-    if (!isVerifiedWellfoundChallenge(wellfoundBoard)) {
-      throw new Error('IQnext (Synconext) Wellfound jobs board no longer matches the verified challenge-gated public surface')
+    if (isVerifiedWellfoundChallenge(wellfoundBoard)) {
+      return []
     }
 
-    return []
+    if (hasAccessibleWellfoundJobsSignal(wellfoundBoard)) {
+      return extractAccessibleWellfoundJobs(wellfoundBoard).map((job) => ({
+        ...job,
+        source: SOURCE,
+        scrapedAt: now(),
+      }))
+    }
+
+    throw new Error('IQnext (Synconext) verified public jobs board no longer matches the known Wellfound surface')
   },
 })
 

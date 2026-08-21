@@ -66,10 +66,7 @@ const defaultFetchPage = async (url) => {
   }
 }
 
-const defaultFetchDarwinboxBoardText = async (url = DARWINBOX_PUBLIC_BOARD_URL) => {
-  const response = await defaultFetchPage(url)
-  return normalizeWhitespace(response.html)
-}
+const defaultFetchDarwinboxBoardPage = async (url = DARWINBOX_PUBLIC_BOARD_URL) => defaultFetchPage(url)
 
 export const extractOfficialDarwinboxHandoffUrl = (html = '') => {
   const match = String(html ?? '').match(
@@ -112,6 +109,41 @@ export const hasVerifiedDarwinboxEmptyBoardSignal = (text = '') => {
     && normalized.includes('Powered by: darwinbox')
 }
 
+export const hasVerifiedDarwinboxShellSignal = (page = {}) => {
+  const rawHtml = String(page?.html ?? '')
+  const normalizedText = normalizeWhitespace(rawHtml)
+  const normalizedUrl = normalizeComparableUrl(page?.url ?? DARWINBOX_PUBLIC_BOARD_URL)
+
+  if (Number(page?.status) !== 200) {
+    return false
+  }
+
+  if (
+    normalizedUrl !== normalizeComparableUrl(DARWINBOX_PUBLIC_BOARD_URL)
+    && normalizedUrl !== 'https://msd.darwinbox.in/ms/candidate/careers'
+  ) {
+    return false
+  }
+
+  const hasLegacyCandidateShell = /<base href="\/ms\/candidate(?:v2)?\/">/i.test(rawHtml)
+    && (
+      /\/ms\/db-components\/formbuilder\//i.test(rawHtml)
+      || /\/ms\/dboxuilibrary\//i.test(rawHtml)
+      || /\/ms\/formbuilder\//i.test(rawHtml)
+      || /db-components\.esm\.js/i.test(rawHtml)
+      || /db-form\.js/i.test(rawHtml)
+    )
+
+  const hasBrandedStubShell = /<title>\s*Mad Street Den\s*<\/title>/i.test(rawHtml)
+    && /meta property="og:title"\s+content="Mad Street Den\s*"/i.test(rawHtml)
+    && /meta property="og:image:alt"\s+content="Mad Street Den"/i.test(rawHtml)
+    && /darwinbox-data/i.test(rawHtml)
+    && /Mad Street Den\s*-\s*/i.test(normalizedText)
+
+  return (hasLegacyCandidateShell || hasBrandedStubShell)
+    && !hasVerifiedDarwinboxEmptyBoardSignal(normalizedText)
+}
+
 export const textExposesPublicJobs = (text = '') => {
   const normalized = normalizeWhitespace(text)
   if (!normalized) return false
@@ -125,7 +157,7 @@ export const textExposesPublicJobs = (text = '') => {
 export const createMadStreetDenScraper = () => ({
   async run({
     fetchPage = defaultFetchPage,
-    fetchDarwinboxBoardText = defaultFetchDarwinboxBoardText,
+    fetchDarwinboxBoardPage = defaultFetchDarwinboxBoardPage,
   } = {}) {
     const careersPage = await fetchPage(CAREERS_URL)
 
@@ -142,12 +174,15 @@ export const createMadStreetDenScraper = () => ({
       throw new Error('Mad Street Den joblist API no longer matches the verified invalid-url contract')
     }
 
-    const darwinboxBoardText = await fetchDarwinboxBoardText(DARWINBOX_PUBLIC_BOARD_URL)
-    if (textExposesPublicJobs(darwinboxBoardText)) {
+    const darwinboxBoardPage = await fetchDarwinboxBoardPage(DARWINBOX_PUBLIC_BOARD_URL)
+    const darwinboxBoardText = normalizeWhitespace(darwinboxBoardPage.html)
+    const hasVerifiedShell = hasVerifiedDarwinboxShellSignal(darwinboxBoardPage)
+
+    if (!hasVerifiedShell && textExposesPublicJobs(darwinboxBoardText)) {
       throw new Error('Mad Street Den Darwinbox board now exposes public jobs')
     }
 
-    if (!hasVerifiedDarwinboxEmptyBoardSignal(darwinboxBoardText)) {
+    if (!hasVerifiedShell && !hasVerifiedDarwinboxEmptyBoardSignal(darwinboxBoardText)) {
       throw new Error('Mad Street Den Darwinbox board no longer matches the verified empty-state surface')
     }
 

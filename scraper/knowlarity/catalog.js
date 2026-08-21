@@ -20,9 +20,9 @@ export const KNOWLARITY_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   dryRunFile: 'knowlarity/jobs.json',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-08-15',
   verifiedSurfaceSummary:
-    'Verified on Thursday, July 16, 2026 that https://www.knowlarity.com/careers is the official first-party Knowlarity careers page, but the visible JOB OPENINGS section only exposes Location and Department dropdowns plus the empty-state CTA EMAIL US YOUR RESUME with Not Matched any profile. The embedded Next.js page data on that same official page contains jobOpening: [], so there is no trustworthy public jobs surface to scrape.',
+    'Verified on Saturday, August 15, 2026 that https://www.knowlarity.com/careers still resolves to the official first-party Knowlarity careers page, that the visible JOB OPENINGS section still only exposes Location and Department dropdowns plus the empty-state CTA EMAIL US YOUR RESUME with Not Matched any profile, and that the embedded Next.js page data still contains jobOpening: []. Direct Node fetches from this runtime currently fail certificate verification, but the first-party page remains reachable through the shared browser-backed HTTPS fallback and still exposes no trustworthy public jobs surface to scrape.',
 }
 
 export default KNOWLARITY_CATALOG

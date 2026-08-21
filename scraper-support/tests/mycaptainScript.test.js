@@ -114,15 +114,40 @@ const verifiedCareerHtml = `
 </html>
 `
 
-test('MyCaptain validates the verified official homepage and first-party /career jobs surface', async () => {
+const deploymentPausedPage = (url) => ({
+  status: 402,
+  url,
+  headers: {
+    server: 'Vercel',
+  },
+  html: `
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <title>Deployment Paused</title>
+      </head>
+      <body>
+        <h1>Deployment Paused</h1>
+        <p>This deployment is temporarily paused</p>
+      </body>
+    </html>
+  `,
+})
+
+test('MyCaptain validates the legacy first-party careers shell and the current verified deployment-paused sentinel', async () => {
   const mycaptain = await loadMyCaptainModule()
 
   assert.equal(mycaptain.SOURCE, 'mycaptain')
   assert.equal(mycaptain.COMPANY, 'MyCaptain')
   assert.equal(mycaptain.HOMEPAGE_URL, 'https://mycaptain.in/')
   assert.equal(mycaptain.CAREER_URL, 'https://mycaptain.in/career')
+  assert.equal(mycaptain.CAREERS_URL, 'https://mycaptain.in/careers')
+  assert.equal(mycaptain.JOB_URL, 'https://mycaptain.in/job')
+  assert.equal(mycaptain.JOBS_URL, 'https://mycaptain.in/jobs')
+  assert.equal(mycaptain.VERIFIED_ON, '2026-08-15')
   assert.equal(mycaptain.hasOfficialHomepageSignal(verifiedHomepageHtml), true)
   assert.equal(mycaptain.hasOfficialCareerPageSignal(verifiedCareerHtml), true)
+  assert.equal(mycaptain.hasVerifiedDeploymentPausedSignal(deploymentPausedPage(mycaptain.HOMEPAGE_URL)), true)
 
   assert.deepEqual(mycaptain.extractInlineJobCards(verifiedCareerHtml), [
     {
@@ -196,10 +221,10 @@ test('MyCaptain run fetches the verified homepage and /career page and returns t
   const requestedUrls = []
 
   const jobs = await mycaptain.createMyCaptainScraper().run({
-    fetchText: async (url) => {
+    fetchPage: async (url) => {
       requestedUrls.push(url)
-      if (url === mycaptain.HOMEPAGE_URL) return verifiedHomepageHtml
-      if (url === mycaptain.CAREER_URL) return verifiedCareerHtml
+      if (url === mycaptain.HOMEPAGE_URL) return { status: 200, url, headers: {}, html: verifiedHomepageHtml }
+      if (url === mycaptain.CAREER_URL) return { status: 200, url, headers: {}, html: verifiedCareerHtml }
       throw new Error(`Unexpected URL: ${url}`)
     },
     now: () => '2026-07-11T00:00:00.000Z',
@@ -218,14 +243,57 @@ test('MyCaptain run fetches the verified homepage and /career page and returns t
   assert.equal(jobs[2].jobId, 'mycaptain-finance-controller-bangalore-2')
 })
 
-test('MyCaptain fails closed when the verified homepage or /career jobs shell drifts materially', async () => {
+test('MyCaptain returns [] when the verified first-party public routes all show the deployment-paused shell', async () => {
+  const mycaptain = await loadMyCaptainModule()
+  const requestedUrls = []
+
+  const jobs = await mycaptain.createMyCaptainScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      return deploymentPausedPage(url)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    mycaptain.HOMEPAGE_URL,
+    mycaptain.CAREER_URL,
+    mycaptain.CAREERS_URL,
+    mycaptain.JOB_URL,
+    mycaptain.JOBS_URL,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('MyCaptain returns an empty result when the verified blocked first-party routes are temporarily timeout-blocked', async () => {
+  const mycaptain = await loadMyCaptainModule()
+
+  const jobs = await mycaptain.createMyCaptainScraper().run({
+    fetchPage: async () => {
+      throw new Error(
+        'fetch failed | Connect Timeout Error (attempted address: mycaptain.in:443, timeout: 10000ms)',
+      )
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('MyCaptain fails closed when the verified reachable-or-blocked contract drifts materially', async () => {
   const mycaptain = await loadMyCaptainModule()
 
   await assert.rejects(
     mycaptain.createMyCaptainScraper().run({
-      fetchText: async (url) => {
-        if (url === mycaptain.HOMEPAGE_URL) return '<html><title>Unexpected</title></html>'
-        return verifiedCareerHtml
+      fetchPage: async (url) => {
+        if (url === mycaptain.HOMEPAGE_URL) {
+          return { status: 200, url, headers: {}, html: '<html><title>Unexpected</title></html>' }
+        }
+        if (url === mycaptain.CAREER_URL) {
+          return { status: 200, url, headers: {}, html: verifiedCareerHtml }
+        }
+        if ([mycaptain.CAREERS_URL, mycaptain.JOB_URL, mycaptain.JOBS_URL].includes(url)) {
+          return deploymentPausedPage(url)
+        }
+        throw new Error(`Unexpected URL: ${url}`)
       },
     }),
     /verified official homepage/i,
@@ -233,21 +301,49 @@ test('MyCaptain fails closed when the verified homepage or /career jobs shell dr
 
   await assert.rejects(
     mycaptain.createMyCaptainScraper().run({
-      fetchText: async (url) => {
-        if (url === mycaptain.HOMEPAGE_URL) return verifiedHomepageHtml
-        return verifiedCareerHtml.replace('Current Job Openings', 'Join our team')
+      fetchPage: async (url) => {
+        if (url === mycaptain.HOMEPAGE_URL) {
+          return { status: 200, url, headers: {}, html: verifiedHomepageHtml }
+        }
+        if (url === mycaptain.CAREER_URL) {
+          return {
+            status: 200,
+            url,
+            headers: {},
+            html: verifiedCareerHtml.replace('Current Job Openings', 'Join our team'),
+          }
+        }
+        if ([mycaptain.CAREERS_URL, mycaptain.JOB_URL, mycaptain.JOBS_URL].includes(url)) {
+          return deploymentPausedPage(url)
+        }
+        throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /verified first-party \/career page/i,
+    /no longer matches the verified accessible jobs surface/i,
   )
 
   await assert.rejects(
     mycaptain.createMyCaptainScraper().run({
-      fetchText: async (url) => {
-        if (url === mycaptain.HOMEPAGE_URL) return verifiedHomepageHtml
-        return verifiedCareerHtml.replace(/jobOpenings_jobCards__jbc_0 card/g, 'job-card')
+      fetchPage: async (url) => {
+        if (url === mycaptain.HOMEPAGE_URL) {
+          return deploymentPausedPage(url)
+        }
+        if (url === mycaptain.CAREER_URL) {
+          return {
+            status: 503,
+            url,
+            headers: {
+              server: 'Vercel',
+            },
+            html: '<html><head><title>Unexpected</title></head><body><h1>Temporarily unavailable</h1></body></html>',
+          }
+        }
+        if ([mycaptain.CAREERS_URL, mycaptain.JOB_URL, mycaptain.JOBS_URL].includes(url)) {
+          return deploymentPausedPage(url)
+        }
+        throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /inline job cards/i,
+    /reachable jobs shell or the verified deployment-paused sentinel/i,
   )
 })

@@ -40,7 +40,7 @@ const stripTags = (value) => normalizeWhitespace(
 
 const resolveUrl = (value, baseUrl = CAREERS_URL) => {
   try {
-    return new URL(value, baseUrl).toString()
+    return new URL(decodeHtmlEntities(value), baseUrl).toString()
   } catch {
     return null
   }
@@ -174,7 +174,9 @@ const extractFieldValue = (boxHtml, labelPatterns) => {
 }
 
 export const extractVacancyCards = (html) => (
-  [...String(html ?? '').matchAll(/<div\b[^>]*class="[^"]*\bvacancy-box\b[^"]*"[^>]*>([\s\S]*?)<\/div>/gi)]
+  [...String(html ?? '').matchAll(
+    /<div\b[^>]*class=["']vacancy-boxes["'][^>]*>([\s\S]*?<div\b[^>]*class=["']vacancy-box-bottom["'][^>]*>[\s\S]*?<\/div>)\s*<\/div>/gi,
+  )]
     .map((match) => {
       const boxHtml = match[1]
       const title = stripTags(

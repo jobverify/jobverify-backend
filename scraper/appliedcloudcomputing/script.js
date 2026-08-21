@@ -42,8 +42,6 @@ export const hasVerifiedBoardSignal = (html = '') => {
   return normalized.includes('Applied Cloud Computing')
     && normalized.includes('Careers at Applied Cloud Computing')
     && normalized.includes('Jobs at Applied Cloud Computing')
-    && normalized.includes('Cloud Operations Engineer (GCP & Kubernetes)')
-    && normalized.includes('L3 Cloud Engineer - Applied Cloud Computing')
     && /https:\/\/www\.appliedcloudcomputing\.com\//i.test(page)
   }
 

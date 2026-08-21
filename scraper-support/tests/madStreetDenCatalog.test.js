@@ -50,22 +50,23 @@ test('Mad Street Den local catalog captures the verified exact-name empty-board 
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'verified-careers-page-plus-joblist-401-plus-darwinbox-empty-board-validation',
+    'verified-careers-page-plus-joblist-401-plus-darwinbox-board-validation',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-joblist-invalid-url-response+verified-darwinbox-empty-board-return-empty',
+    'verified-first-party-careers-page+verified-joblist-invalid-url-response+verified-darwinbox-empty-signal-or-shell-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-08-15')
   assert.match(provider.dryRunFile, /madstreetden[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Thursday, July 16, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 15, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.madstreetden\.com\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.madstreetden\.com\/api\/joblist\.php/i)
   assert.match(provider.verifiedSurfaceSummary, /Invalid Url/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/msd\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/allJobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /raw shell or branded stub/i)
   assert.match(provider.verifiedSurfaceSummary, /No jobs found/i)
 
   assert.equal(madStreetDen.PROVIDER_METADATA.source, MAD_STREET_DEN_CATALOG.source)
