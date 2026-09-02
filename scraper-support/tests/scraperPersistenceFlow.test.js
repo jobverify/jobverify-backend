@@ -36,7 +36,7 @@ const setReadyState = (value) => {
   }
 }
 
-test('runAll clears the existing jobs collection before a full live run', async () => {
+test('runAll preserves the existing jobs collection during a full live run', async () => {
   const restoreReadyState = setReadyState(1)
   const originalDeleteMany = Job.deleteMany
   const originalFindOneAndUpdate = ScraperStatus.findOneAndUpdate
@@ -63,7 +63,7 @@ test('runAll clears the existing jobs collection before a full live run', async 
   try {
     await runAll()
 
-    assert.deepEqual(deleteFilters, [{}])
+    assert.deepEqual(deleteFilters, [])
   } finally {
     Job.deleteMany = originalDeleteMany
     ScraperStatus.findOneAndUpdate = originalFindOneAndUpdate
@@ -79,13 +79,19 @@ test('runAll aborts before starting scrapers when Atlas storage quota blocks sta
   const originalFindOneAndUpdate = ScraperStatus.findOneAndUpdate
   const originalFindOne = ScraperStatus.findOne
   const originalCreate = ScraperRun.create
+  const originalDeleteMany = Job.deleteMany
 
   let activeStatusReads = 0
   let pipelineStatusWrites = 0
+  const deleteFilters = []
   const quotaError = new Error(
     'you are over your space quota, using 521 MB of 512 MB. Writes are blocked on your cluster.',
   )
 
+  Job.deleteMany = async (filter) => {
+    deleteFilters.push(filter)
+    return { deletedCount: 0 }
+  }
   ScraperStatus.bulkWrite = async () => {
     throw quotaError
   }
@@ -117,7 +123,9 @@ test('runAll aborts before starting scrapers when Atlas storage quota blocks sta
     )
     assert.equal(pipelineStatusWrites, 0)
     assert.equal(activeStatusReads, 0)
+    assert.deepEqual(deleteFilters, [])
   } finally {
+    Job.deleteMany = originalDeleteMany
     ScraperStatus.bulkWrite = originalBulkWrite
     ScraperStatus.findOneAndUpdate = originalFindOneAndUpdate
     ScraperStatus.findOne = originalFindOne
@@ -444,8 +452,8 @@ test('saveToDB preserves existing jobs when a scrape yields an untrusted zero el
         {
           title: 'Staff Engineer',
           company: 'Example',
-          location: 'Remote',
-          city: 'Remote',
+          location: 'Berlin, Germany',
+          city: 'Berlin',
           link: 'https://example.com/staff-role',
         },
       ],

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  CAREERS_URL,
   CONTACT_URL,
   HOMEPAGE_URL,
   createLakshmiElectricalControlSystemsScraper,
@@ -41,6 +42,17 @@ const CONTACT_HTML = `<!DOCTYPE html>
 </body>
 </html>`
 
+const CAREERS_HTML = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Careers | LECS India</title>
+</head>
+<body>
+  <nav>Menu Home About Us Product Industries Investors Partner with Us Photo Gallery Careers News Contact Us LECS</nav>
+  <h1>Careers | LECS India</h1>
+</body>
+</html>`
+
 test('Lakshmi Electrical Control Systems verifies the official homepage and contact shells', () => {
   assert.equal(hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
   assert.equal(hasOfficialContactSignal(CONTACT_HTML), true)
@@ -57,11 +69,12 @@ test('Lakshmi Electrical Control Systems falls back to the extended-timeout fetc
     fetchTextWithExtendedTimeout: async (url) => {
       requestedByExtendedFetch.push(url)
       if (url === HOMEPAGE_URL) return HOMEPAGE_HTML
+      if (url === CAREERS_URL) return CAREERS_HTML
       if (url === CONTACT_URL) return CONTACT_HTML
       throw new Error(`Unexpected extended-timeout fetch for ${url}`)
     },
   })
 
   assert.deepEqual(jobs, [])
-  assert.deepEqual(requestedByExtendedFetch, [HOMEPAGE_URL, CONTACT_URL])
+  assert.deepEqual(requestedByExtendedFetch, [HOMEPAGE_URL, CAREERS_URL, CONTACT_URL])
 })

@@ -11,7 +11,7 @@ import dotenv from 'dotenv'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: path.resolve(currentDir, '../.env'), quiet: true })
 
-import { deleteAllJobsFromDB, saveDryRunSnapshot, saveToDB } from './utils/saveToDB.js'
+import { saveDryRunSnapshot, saveToDB } from './utils/saveToDB.js'
 import { getRetryMetadata, withRetry } from './utils/retry.js'
 import { analyzePublishableJobs } from './utils/publishableJobMetrics.js'
 import {
@@ -570,6 +570,43 @@ const clearDryRunArtifact = (filePath) => {
   fs.rmSync(filePath, { force: true })
 }
 
+const NON_RETRIABLE_SOFT_FAILURE_KINDS = new Set([
+  'blocked_or_access_denied',
+  'surface_drift_or_fail_closed',
+])
+
+export const applyRetryPolicyToScraperError = (error) => {
+  if (error == null || (typeof error !== 'object' && typeof error !== 'function')) {
+    return error
+  }
+
+  const classification = classifyScraperError(error)
+  if (classification.softFailure !== true) {
+    return error
+  }
+
+  error.softFailure = true
+  error.upstreamOutage = classification.upstreamOutage
+  error.failureKind = classification.failureKind
+
+  if (
+    error.abortRetries !== true
+    && NON_RETRIABLE_SOFT_FAILURE_KINDS.has(classification.failureKind)
+  ) {
+    error.abortRetries = true
+  }
+
+  return error
+}
+
+const runScraperAttemptWithRetryPolicy = async (scraper) => {
+  try {
+    return await runScraperWithTimeout(scraper)
+  } catch (error) {
+    throw applyRetryPolicyToScraperError(error)
+  }
+}
+
 // Runs all scrapers sequentially and saves results to MongoDB.
 export const runAll = async () => {
   const { scrapers, resumeMessage } = selectScrapersForRun(buildScrapers())
@@ -602,20 +639,9 @@ export const runAll = async () => {
   }
 
   if (!isDryRun && shouldClearExistingJobsBeforeRun()) {
-    try {
-      const deletedJobs = await deleteAllJobsFromDB()
-      console.log(`[runner] Cleared ${deletedJobs} live jobs before the full scraper run.\n`)
-    } catch (cleanupError) {
-      const fatalPersistenceError = toFatalScraperPersistenceError(
-        '[pipeline] MongoDB writes are blocked while clearing jobs for a full run; aborting run',
-        cleanupError,
-      )
-      if (fatalPersistenceError) {
-        console.error(`  ${fatalPersistenceError.message}`)
-        throw fatalPersistenceError
-      }
-      throw cleanupError
-    }
+    console.log(
+      '[runner] Preserving existing live jobs during the full scraper run; stale roles expire source-by-source after successful persistence.\n',
+    )
   }
 
   if (!isDryRun) {
@@ -670,7 +696,7 @@ export const runAll = async () => {
       if (isDryRun) clearDryRunArtifact(scraper.dryRunFile)
 
       const jobs = await withRetry(
-        () => runScraperWithTimeout(scraper),
+        () => runScraperAttemptWithRetryPolicy(scraper),
         {
           attempts: resolveScraperRetryAttempts(scraper),
           baseDelayMs: 2000,
@@ -834,7 +860,7 @@ export const runScraper = async (
     if (isDryRun) clearDryRunArtifact(scraper.dryRunFile)
 
     const jobs = await withRetry(
-      () => runScraperWithTimeout(scraper),
+      () => runScraperAttemptWithRetryPolicy(scraper),
       {
         attempts: resolveScraperRetryAttempts(scraper),
         baseDelayMs: 2000,
