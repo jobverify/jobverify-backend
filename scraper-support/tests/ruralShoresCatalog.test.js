@@ -26,7 +26,7 @@ const loadScraperModule = async () => {
   }
 }
 
-test('RuralShores local catalog captures the verified first-party HTML job board', async () => {
+test('RuralShores local catalog captures the verified first-party talent-network shell contract', async () => {
   const { RURALSHORES_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const ruralShores = await loadScraperModule()
   const provider = hydrateProviderCatalogEntry(RURALSHORES_CATALOG)
@@ -36,27 +36,27 @@ test('RuralShores local catalog captures the verified first-party HTML job board
   assert.equal(provider.companyName, 'RuralShores')
   assert.equal(provider.officialBrandName, 'RuralShores')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyCareerPage, 'https://www.ruralshores.com/career.html')
-  assert.equal(provider.officialCareersPageUrl, 'https://www.ruralshores.com/career.html')
+  assert.equal(provider.companyCareerPage, 'https://www.ruralshores.com/career.aspx')
+  assert.equal(provider.officialCareersPageUrl, 'https://www.ruralshores.com/career.aspx')
   assert.equal(provider.companyDomain, 'ruralshores.com')
   assert.equal(provider.atsPlatform, 'first-party-html-board')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'single-public-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+html-jobcards+mailto-apply-links',
+    'verified-first-party-careers-page+empty-talent-network-shell-or-html-jobcards',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-08-13')
   assert.match(provider.dryRunFile, /ruralshores[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.ruralshores\.com\/career\.html/i)
-  assert.match(provider.verifiedSurfaceSummary, /Current Openings/i)
-  assert.match(provider.verifiedSurfaceSummary, /Deputy Manager - Service Delivery/i)
-  assert.match(provider.verifiedSurfaceSummary, /Assistant Manager - Projects/i)
-  assert.match(provider.verifiedSurfaceSummary, /RSBS\/REC\/2026026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.ruralshores\.com\/career\.aspx/i)
+  assert.match(provider.verifiedSurfaceSummary, /career\.html route now returns 404/i)
+  assert.match(provider.verifiedSurfaceSummary, /Build a Rewarding Career with RuralShores/i)
+  assert.match(provider.verifiedSurfaceSummary, /Join Our Talent Network/i)
+  assert.match(provider.verifiedSurfaceSummary, /careers@ruralshores\.com/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'RuralShores'), false)
 
   assert.equal(ruralShores.PROVIDER_METADATA.source, RURALSHORES_CATALOG.source)
@@ -85,7 +85,7 @@ test('RuralShores hydrated local catalog stays script-runner compatible for cent
 
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'RuralShores')
-  assert.equal(provider.companyCareerPage, 'https://www.ruralshores.com/career.html')
+  assert.equal(provider.companyCareerPage, 'https://www.ruralshores.com/career.aspx')
   assert.equal(provider.companyDomain, 'ruralshores.com')
   assert.equal(provider.atsPlatform, 'first-party-html-board')
   assert.match(provider.modulePath, /ruralshores[\\/]script\.js$/i)

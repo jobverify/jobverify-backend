@@ -54,6 +54,37 @@ test('Brihaspathi constants stay pinned to the verified first-party careers page
   assert.equal(brihaspathi.hasOfficialCareersSignal(officialCareersHtml), true)
 })
 
+test('Brihaspathi accepts the current first-party careers-page shell', async () => {
+  const brihaspathi = await loadBrihaspathiModule()
+
+  const careersHtml = `
+    <!doctype html>
+    <html lang="en">
+      <head><title>Brihaspathi technologies limited</title></head>
+      <body>
+        <main>
+          <h1>Careers at Brihaspathi Technologies, Hyderabad</h1>
+          <p>Build what the country runs on.</p>
+        </main>
+      </body>
+    </html>
+  `
+
+  assert.equal(brihaspathi.hasOfficialCareersSignal(careersHtml), true)
+})
+
+test('Brihaspathi ignores public API placeholder records', async () => {
+  const brihaspathi = await loadBrihaspathiModule()
+
+  assert.deepEqual(brihaspathi.extractJobsFromPayload({
+    data: [{
+      id: 29,
+      title: 'bwhhbdwhd',
+      location: 'wdbdhbwdbhw',
+    }],
+  }), [])
+})
+
 test('Brihaspathi run returns an honest zero-job result only while the verified official careers page and public API remain empty', async () => {
   const brihaspathi = await loadBrihaspathiModule()
   const requested = []

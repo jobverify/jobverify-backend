@@ -236,6 +236,35 @@ test('Aindra Systems scraper pins the verified first-party homepage careers surf
   })
 })
 
+test('Aindra Systems extracts the current first-party modal careers card', async () => {
+  const aindra = await loadModule()
+  const openings = aindra.extractOpenings(`
+    <html><head><title>AINDRA1 | Home</title></head><body>
+      <a href="#careers">Careers</a>
+      <p>We are an AI powered MedTech company</p><h2>Join us at Aindra</h2>
+      <p>contactus@aindra.in</p>
+      <div class="blogDiv careers" data-target="#myModal3"><p><b>Senior Software Developer</b></p></div>
+      <div id="myModal3"><div class="modal-body">
+        <p>Are you a passionate engineer with 3 - 6 yrs of experience?</p>
+        <p>Company Profile:</p><p>Aindra Systems is based out of Bangalore.</p>
+        <li>JavaScript</li><li>Node.js</li>
+      </div></div>
+    </body></html>
+  `)
+
+  assert.deepEqual(openings.map((job) => ({
+    title: job.title,
+    location: job.location,
+    experienceRequired: job.experienceRequired,
+    applyUrl: job.applyUrl,
+  })), [{
+    title: 'Senior Software Developer',
+    location: 'Bangalore, Karnataka, India',
+    experienceRequired: '3 - 6 yrs',
+    applyUrl: 'mailto:contactus@aindra.in',
+  }])
+})
+
 test('Aindra Systems run validates the verified homepage and decorates the extracted openings', async () => {
   const aindra = await loadModule()
   const requestedUrls = []

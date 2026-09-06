@@ -98,10 +98,22 @@ export const hasRepurposedDomainSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
+  if (
+    /<title[^>]*>\s*Myra Gems:/i.test(rawHtml)
+    && /myragems\.com/i.test(rawHtml)
+    && /gemstone rings/i.test(rawHtml)
+    && /Shopify/i.test(rawHtml)
+  ) {
+    return true
+  }
+
   return /<title>\s*Myra Gems:\s*Buy Certified Gemstone Rings for Men(?:\s|&|&amp;)+Women\s*<\/title>/i.test(rawHtml)
     && /myragems\.com/i.test(rawHtml)
     && /Certified Gemstone Rings/i.test(normalized)
-    && /20\+\s*Years Expertise in Gemstone Jewellery/i.test(normalized)
+    && (
+      /20\+\s*Years Expertise in Gemstone Jewellery/i.test(normalized)
+      || /Shop gemstone rings for men and women/i.test(normalized)
+    )
 }
 
 export const isVerifiedMissingCareersRoute = (page = {}, requestedUrl) => {

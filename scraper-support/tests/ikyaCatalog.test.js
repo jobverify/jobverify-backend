@@ -36,20 +36,20 @@ test('Ikya local catalog captures the verified SmartRecruiters empty-board senti
   assert.equal(IKYA_CATALOG.countryFilter, 'India')
   assert.equal(
     IKYA_CATALOG.paginationStrategy,
-    'single-smartrecruiters-board-verification-plus-homepage-coming-soon-check',
+    'single-smartrecruiters-board-verification-plus-homepage-browser-check',
   )
   assert.equal(
     IKYA_CATALOG.extractionStrategy,
-    'verified-empty-smartrecruiters-board+coming-soon-homepage-return-empty',
+    'verified-empty-smartrecruiters-board+homepage-browser-check-return-empty',
   )
   assert.equal(IKYA_CATALOG.parser, 'custom-script')
   assert.equal(IKYA_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(IKYA_CATALOG.modulePath, '../../scraper/ikya/script.js')
   assert.equal(IKYA_CATALOG.dryRunFile, 'ikya/jobs.json')
-  assert.equal(IKYA_CATALOG.verifiedOn, '2026-08-02')
+  assert.equal(IKYA_CATALOG.verifiedOn, '2026-09-03')
   assert.match(IKYA_CATALOG.verifiedSurfaceSummary, /careers\.smartrecruiters\.com\/Ikya1/i)
   assert.match(IKYA_CATALOG.verifiedSurfaceSummary, /No job postings are currently available/i)
-  assert.match(IKYA_CATALOG.verifiedSurfaceSummary, /Coming Soon/i)
+  assert.match(IKYA_CATALOG.verifiedSurfaceSummary, /Checking your browser/i)
 
   assert.equal(provider.source, 'ikya')
   assert.equal(provider.companyName, 'Ikya')

@@ -29,6 +29,8 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = homepageHtml.replace('Copyright Â© 2026 G10X', 'Copyright Â© <span id="year"></span> G10X')
+
 const careersHtml = `
 <!DOCTYPE html>
 <html lang="en">
@@ -111,6 +113,7 @@ test('G10X pins the verified Friday, August 7, 2026 zero-openings surface', asyn
   assert.equal(g10x.VERIFIED_ON, '2026-08-07')
   assert.match(g10x.VERIFIED_SURFACE_SUMMARY, /Friday, August 7, 2026/i)
   assert.equal(g10x.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(g10x.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(g10x.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(g10x.hasOfficialJobsSignal(jobsHtml), true)
   assert.deepEqual(g10x.extractJobs(jobsHtml), [])

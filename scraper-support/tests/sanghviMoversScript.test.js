@@ -176,7 +176,10 @@ test('Sanghvi Movers pins the verified first-party static careers page contract'
       experienceRequired: '3 to 7 yrs',
       minimumQualification: null,
       preferredQualification: null,
-      requiredSkills: [],
+      requiredSkills: [
+        'Supervise the installation works and on-site QA.',
+        'Provide support for installation manager.',
+      ],
       postingDate: null,
       closingDate: null,
       jobDescription: null,

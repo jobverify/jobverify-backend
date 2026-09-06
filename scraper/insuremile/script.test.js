@@ -3,7 +3,7 @@ import test from 'node:test'
 
 const loadInsureMileModule = async () => import('./script.js')
 
-const careersPageHtml = `
+const legacyCareersPageHtml = `
 <!doctype html>
 <html lang="en-US">
   <head>
@@ -19,6 +19,23 @@ const careersPageHtml = `
           ajaxurl: 'https://insuremile.in/wp-admin/admin-ajax.php'
         };
       </script>
+    </main>
+  </body>
+</html>
+`
+
+const currentZeroJobsCareersPageHtml = `
+<!doctype html>
+<html lang="en-IN">
+  <head>
+    <title>Build Insurance Products That Make Sense | Insuremile Careers | Insuremile</title>
+  </head>
+  <body>
+    <main>
+      <p>CAREERS AT INSUREMILE</p>
+      <h1>Build insurance products that actually make sense.</h1>
+      <p>While we don't have active job listings right now, we are always keen to speak with extraordinary engineers, insurance specialists, and customer champions.</p>
+      <a href="mailto:careers@insuremile.in">careers@insuremile.in</a>
     </main>
   </body>
 </html>
@@ -86,15 +103,18 @@ const listingPayload = [
   },
 ]
 
-test('InsureMile helpers stay pinned to the verified first-party careers page and AWSM REST feed', async () => {
+test('InsureMile helpers recognize both the legacy AWSM surface and the current zero-jobs page', async () => {
   const insuremile = await loadInsureMileModule()
 
   assert.equal(insuremile.SOURCE, 'insuremile')
   assert.equal(insuremile.COMPANY, 'InsureMile')
-  assert.equal(insuremile.VERIFIED_ON, '2026-07-16')
-  assert.equal(insuremile.CAREERS_URL, 'https://insuremile.in/careers/')
+  assert.equal(insuremile.VERIFIED_ON, '2026-09-03')
+  assert.equal(insuremile.CAREERS_URL, 'https://insuremile.in/careers')
   assert.equal(insuremile.CAREERS_API_URL, 'https://insuremile.in/wp-json/wp/v2/awsm_job_openings')
-  assert.equal(insuremile.hasVerifiedCareersPageSignal(careersPageHtml), true)
+  assert.equal(insuremile.hasLegacyAwsmCareersPageSignal(legacyCareersPageHtml), true)
+  assert.equal(insuremile.hasCurrentZeroJobsCareersPageSignal(currentZeroJobsCareersPageHtml), true)
+  assert.equal(insuremile.hasVerifiedCareersPageSignal(legacyCareersPageHtml), true)
+  assert.equal(insuremile.hasVerifiedCareersPageSignal(currentZeroJobsCareersPageHtml), true)
   assert.equal(
     insuremile.buildSearchUrl(1),
     'https://insuremile.in/wp-json/wp/v2/awsm_job_openings?_fields=id%2Clink%2Ctitle%2Ccontent%2Cclass_list&per_page=100&page=1',
@@ -146,7 +166,25 @@ test('InsureMile helpers stay pinned to the verified first-party careers page an
   ])
 })
 
-test('InsureMile run validates the verified careers shell and paginates the AWSM REST feed', async () => {
+test('InsureMile run preserves an honest empty result on the current first-party zero-jobs page', async () => {
+  const insuremile = await loadInsureMileModule()
+  const requestedTextUrls = []
+
+  const jobs = await insuremile.createInsureMileScraper().run({
+    fetchText: async (url) => {
+      requestedTextUrls.push(url)
+      assert.equal(url, insuremile.CAREERS_URL)
+      return currentZeroJobsCareersPageHtml
+    },
+  })
+
+  assert.deepEqual(requestedTextUrls, [
+    'https://insuremile.in/careers',
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('InsureMile run still paginates the legacy AWSM REST feed when that verified surface is returned', async () => {
   const insuremile = await loadInsureMileModule()
   const requestedTextUrls = []
   const requestedJsonUrls = []
@@ -155,7 +193,7 @@ test('InsureMile run validates the verified careers shell and paginates the AWSM
     fetchText: async (url) => {
       requestedTextUrls.push(url)
       assert.equal(url, insuremile.CAREERS_URL)
-      return careersPageHtml
+      return legacyCareersPageHtml
     },
     fetchJson: async (url) => {
       requestedJsonUrls.push(url)
@@ -163,11 +201,11 @@ test('InsureMile run validates the verified careers shell and paginates the AWSM
       if (url === insuremile.buildSearchUrl(2, 2)) return []
       throw new Error(`Unexpected JSON URL: ${url}`)
     },
-    now: () => '2026-07-16T07:00:00.000Z',
+    now: () => '2026-09-03T07:00:00.000Z',
   })
 
   assert.deepEqual(requestedTextUrls, [
-    'https://insuremile.in/careers/',
+    'https://insuremile.in/careers',
   ])
   assert.deepEqual(requestedJsonUrls, [
     'https://insuremile.in/wp-json/wp/v2/awsm_job_openings?_fields=id%2Clink%2Ctitle%2Ccontent%2Cclass_list&per_page=2&page=1',
@@ -176,10 +214,10 @@ test('InsureMile run validates the verified careers shell and paginates the AWSM
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'insuremile')
   assert.equal(jobs[0].link, 'https://insuremile.in/career/telesales-executive/')
-  assert.equal(jobs[0].scrapedAt, '2026-07-16T07:00:00.000Z')
+  assert.equal(jobs[0].scrapedAt, '2026-09-03T07:00:00.000Z')
 })
 
-test('InsureMile fails closed when the verified first-party careers shell or REST feed drifts', async () => {
+test('InsureMile fails closed when the verified first-party careers shell or legacy REST feed drifts', async () => {
   const insuremile = await loadInsureMileModule()
 
   await assert.rejects(
@@ -192,7 +230,7 @@ test('InsureMile fails closed when the verified first-party careers shell or RES
 
   await assert.rejects(
     insuremile.createInsureMileScraper().run({
-      fetchText: async () => careersPageHtml,
+      fetchText: async () => legacyCareersPageHtml,
       fetchJson: async () => [{ id: 1, link: 'https://example.com/job/1', class_list: ['type-awsm_job_openings'] }],
     }),
     /verified awsm rest feed/i,

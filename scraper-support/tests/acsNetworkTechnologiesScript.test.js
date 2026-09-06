@@ -160,6 +160,13 @@ test('extractSearchResults maps ACS recruiter cards into shared scraper fields',
   assert.equal(jobs[1].jobId, '1257006')
   assert.equal(jobs[1].location, 'Dehradun, Sahastradhara Road Dehradun, India')
   assert.deepEqual(jobs[1].requiredSkills, ['Software Sales'])
+
+  const currentCardMarkup = listingPageHtml.replace(/<p class="job-cname">[\s\S]*?<\/p>/g, '')
+  assert.equal(acsNetworkTechnologies.hasOfficialRecruiterPageSignal(currentCardMarkup), true)
+  assert.equal(
+    acsNetworkTechnologies.extractSearchResults(currentCardMarkup)[0].company,
+    'ACS Network & Technologies',
+  )
 })
 
 test('extractJobDetails enriches ACS detail pages with recruiter metadata', async () => {

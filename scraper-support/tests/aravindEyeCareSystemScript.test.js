@@ -243,7 +243,7 @@ test('Aravind Eye Care System scraper constants stay pinned to the verified firs
   assert.equal(aravind.COMPANY, 'Aravind Eye Care System')
   assert.equal(aravind.HOMEPAGE_URL, 'https://aravind.org/')
   assert.equal(aravind.CAREERS_PAGE_URL, 'https://aravind.org/careers/')
-  assert.equal(aravind.PAGE_SITEMAP_URL, 'https://aravind.org/page-sitemap.xml')
+  assert.equal(aravind.PAGE_SITEMAP_URL, 'https://aravind.org/wp-sitemap.xml')
   assert.equal(aravind.JOB_LISTINGS_AJAX_URL, 'https://aravind.org/jm-ajax/get_listings/')
   assert.equal(aravind.JOB_LISTINGS_API_URL, 'https://aravind.org/wp-json/wp/v2/job-listings')
   assert.equal(aravind.hasOfficialHomepageSignal(homepageHtml), true)
@@ -286,6 +286,26 @@ test('Aravind Eye Care System scraper constants stay pinned to the verified firs
   ])
   assert.equal(aravind.hasExpectedAjaxListingsSignal(ajaxPayload), true)
   assert.equal(aravind.hasExpectedJobListingsApiSignal(sampleRestPayload), true)
+})
+
+test('Aravind Eye Care System accepts the current official homepage title variant', async () => {
+  const aravind = await loadScriptModule()
+
+  assert.equal(aravind.hasOfficialHomepageSignal(`
+    <html><head><title>Aravind Eye Care</title></head><body>
+      <link rel="canonical" href="https://aravind.org/" />
+      <a href="https://aravind.org/careers/">Careers</a>
+      <footer>© 2026 Aravind Eye Care System | All rights reserved</footer>
+    </body></html>
+  `), true)
+})
+
+test('Aravind Eye Care System accepts the current official careers-page title variant', async () => {
+  const aravind = await loadScriptModule()
+
+  assert.equal(aravind.hasOfficialCareersPageSignal(
+    careersPageHtml.replace('Careers - Aravind Eye Care System', 'Aravind Eye Care'),
+  ), true)
 })
 
 test('Aravind Eye Care System maps the verified first-party REST payload into normalized jobs', async () => {

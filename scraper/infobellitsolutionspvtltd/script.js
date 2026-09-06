@@ -84,6 +84,22 @@ const extractMailtoApplyUrl = (html) => {
   return match?.[1] || null
 }
 
+const extractCloudflareProtectedEmail = (html) => {
+  const encoded = String(html ?? '').match(/data-cfemail=["']([0-9a-f]+)["']/i)?.[1]
+  if (!encoded || encoded.length < 4) return null
+
+  const key = Number.parseInt(encoded.slice(0, 2), 16)
+  let email = ''
+  for (let index = 2; index < encoded.length; index += 2) {
+    email += String.fromCharCode(Number.parseInt(encoded.slice(index, index + 2), 16) ^ key)
+  }
+
+  return email || null
+}
+
+const extractApplyEmail = (html) => extractMailtoApplyUrl(html)?.replace(/^mailto:/i, '')
+  || extractCloudflareProtectedEmail(html)
+
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
@@ -144,7 +160,7 @@ export const hasVerifiedDetailSignal = (html) => {
   const text = stripTags(html) || ''
   return /Job Responsibilities\s*\/\s*Skill-Set/i.test(text)
     && /Apply today/i.test(text)
-    && extractMailtoApplyUrl(html) === 'mailto:info@infobellit.com'
+    && extractApplyEmail(html) === 'info@infobellit.com'
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
@@ -178,6 +194,8 @@ export const createInfobellItSolutionsScraper = () => ({
       }
 
       const detail = extractJobDetail(detailHtml)
+      // The current CTA is Cloudflare-obfuscated mailto; retain the public detail page as the usable application link.
+      const applyUrl = listing.detailUrl
 
       jobs.push({
         title: detail.title || listing.title,
@@ -189,7 +207,7 @@ export const createInfobellItSolutionsScraper = () => ({
         jobId: listing.jobId,
         requisitionId: listing.requisitionId,
         sourceUrl: listing.sourceUrl,
-        applyUrl: detail.applyUrl,
+        applyUrl,
         employmentType: null,
         experienceRequired: null,
         minimumQualification: null,
@@ -199,7 +217,7 @@ export const createInfobellItSolutionsScraper = () => ({
         closingDate: null,
         jobDescription: detail.description,
         source: SOURCE,
-        link: detail.applyUrl || listing.sourceUrl,
+        link: applyUrl,
         scrapedAt: new Date().toISOString(),
       })
     }

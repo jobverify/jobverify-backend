@@ -1086,9 +1086,10 @@ test('getScraperCatalog includes apiPortal providers with official metadata and 
 
   assert.ok(phonepe)
   assert.equal(phonepe.adapter, 'apiPortal')
-  assert.equal(phonepe.atsPlatform, 'greenhouse')
+  assert.equal(phonepe.atsPlatform, 'phonepe-first-party-json')
   assert.match(phonepe.companyCareerPage, /phonepe\.com\/careers\/job-openings/i)
   assert.equal(phonepe.companyDomain, 'phonepe.com')
+  assert.match(phonepe.config.discovery.listingApiUrl, /phonepe\.com\/apollo\/job-postings\/latest\.json/i)
 
   assert.ok(postman)
   assert.equal(postman.adapter, 'apiPortal')

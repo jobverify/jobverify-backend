@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 16, 2026 that https://insuremile.in/careers/ is the live first-party InsureMile careers page, that it serves wp-job-openings public assets plus inline awsmJobsPublic configuration on the official domain, and that the public REST feed at https://insuremile.in/wp-json/wp/v2/awsm_job_openings?_fields=id,link,title,content,class_list&per_page=100&page=1 returned five live openings on the same first-party /career/ detail URLs while omitting the separately expired Team Lead-Renewal Service card shown in the archive HTML.'
+  'Verified on September 3, 2026 that https://insuremile.in/careers is the live first-party InsureMile careers page, that it now says "While we don\'t have active job listings right now", and that it directs resumes to careers@insuremile.in on the official domain. The historical wp-job-openings assets and AWSM REST feed are no longer present on the public page, so this provider now returns an empty array until a trustworthy public jobs surface reappears.'
 
 export const INSUREMILE_CATALOG = {
   source: 'insuremile',
@@ -12,16 +12,15 @@ export const INSUREMILE_CATALOG = {
   officialBrandName: 'Insuremile',
   adapter: 'script',
   homepageUrl: 'https://insuremile.in/',
-  companyCareerPage: 'https://insuremile.in/careers/',
-  careerApiUrl: 'https://insuremile.in/wp-json/wp/v2/awsm_job_openings',
+  companyCareerPage: 'https://insuremile.in/careers',
   companyDomain: 'insuremile.in',
-  atsPlatform: 'wp-job-openings',
+  atsPlatform: 'official-company-site-no-public-jobs',
   countryFilter: 'India',
-  paginationStrategy: 'wp-json-page-query',
-  extractionStrategy: 'verified-first-party-careers-page+awsm-rest-api',
+  paginationStrategy: 'single-first-party-careers-page-verification',
+  extractionStrategy: 'verified-first-party-careers-page-no-open-roles-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-09-03',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'insuremile/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

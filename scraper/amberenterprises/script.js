@@ -15,7 +15,7 @@ export const EXTERNAL_JOBS_HOST = 'www.naukri.com'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const HOMEPAGE_TITLE_PATTERN = /<title>\s*Amber Group India\s*\|\s*AC,\s*Electronics\s*&amp;\s*Mobility Solutions\s*<\/title>/i
+const HOMEPAGE_TITLE_PATTERN = /<title>\s*Amber Group India\s*\|\s*AC,\s*(?:Electronics\s*&amp;\s*)?Mobility Solutions(?:\s+Manufacturer)?\s*<\/title>/i
 const HOMEPAGE_MOBILITY_PATTERN = /Mobility Solutions/i
 const HOMEPAGE_CAREERS_LINK_PATTERN = /href=["'][^"']*\/careers\/?["']/i
 

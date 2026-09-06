@@ -17,19 +17,19 @@ const homepageHtml = `
   <!doctype html>
   <html lang="de">
     <head>
-      <title>ZenDiS Startseite: Gemeinsam. Digital. Souverän. - ZenDiS | Zentrum Digitale Souveränität</title>
+      <title>ZenDiS Startseite: Gemeinsam. Digital. SouverÃ¤n. - ZenDiS | Zentrum Digitale SouverÃ¤nitÃ¤t</title>
       <link rel="canonical" href="https://www.zendis.de/">
     </head>
     <body>
       <header>
-        <a href="/">Logo Zendis – Zur Startseite</a>
+        <a href="/">Logo Zendis â€“ Zur Startseite</a>
         <nav>
           <a href="/karriere">Karriere</a>
         </nav>
       </header>
       <main>
-        <h1>Digitale Souveränität ist Handlungsfähigkeit</h1>
-        <p>Mit einem umfassenden Souveränitätspaket aus Plattform, Produkten und Beratung unterstützt das Zentrum für Digitale Souveränität der Öffentlichen Verwaltung (ZenDiS) Bund, Länder und Kommunen.</p>
+        <h1>Digitale SouverÃ¤nitÃ¤t ist HandlungsfÃ¤higkeit</h1>
+        <p>Mit einem umfassenden SouverÃ¤nitÃ¤tspaket aus Plattform, Produkten und Beratung unterstÃ¼tzt das Zentrum fÃ¼r Digitale SouverÃ¤nitÃ¤t der Ã–ffentlichen Verwaltung (ZenDiS) Bund, LÃ¤nder und Kommunen.</p>
       </main>
     </body>
   </html>
@@ -39,22 +39,27 @@ const careersHtml = `
   <!doctype html>
   <html lang="de">
     <head>
-      <title>Karriere: Digitale Souveränität ist Teamwork - ZenDiS | Zentrum Digitale Souveränität</title>
+      <title>Karriere: Digitale SouverÃ¤nitÃ¤t ist Teamwork - ZenDiS | Zentrum Digitale SouverÃ¤nitÃ¤t</title>
       <link rel="canonical" href="https://www.zendis.de/karriere">
     </head>
     <body>
       <header>
-        <a href="/">Logo Zendis – Zur Startseite</a>
+        <a href="/">Logo Zendis â€“ Zur Startseite</a>
       </header>
       <main>
-        <h1>Digitale Souveränität ist Teamwork</h1>
+        <h1>Digitale SouverÃ¤nitÃ¤t ist Teamwork</h1>
         <h2>Offene Stellen</h2>
-        <p>Wir freuen uns auf Gestalterinnen und Weiterdenkerinnen mit Gründergeist und Eigenverantwortung.</p>
+        <p>Wir freuen uns auf Gestalterinnen und Weiterdenkerinnen mit GrÃ¼ndergeist und Eigenverantwortung.</p>
         <h2>Recruiting Kontakt</h2>
-        <p>Esther André</p>
+        <p>Esther AndrÃ©</p>
         <p>Recruiterin</p>
         <a href="mailto:recruiting@zendis.de">recruiting@zendis.de</a>
         <a href="/faq">Hast Du Fragen? Finde eine Antwort in unseren FAQ.</a>
+        <div id="recruitee-careers"></div>
+        <script>
+          window.recruitee = { companies: [105958] }
+        </script>
+        <script src="https://jobs-widget.recruiteecdn.com/widget.js"></script>
       </main>
     </body>
   </html>
@@ -79,11 +84,18 @@ test('ZenDiS sentinel returns [] only while the verified careers page remains a 
       requestedUrls.push(url)
       if (url === HOMEPAGE_URL) return homepageHtml
       if (url === CAREERS_URL) return careersHtml
+      if (url === 'https://api.recruitee.com/c/105958/careers/offers/') {
+        return JSON.stringify({ offers: [] })
+      }
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [HOMEPAGE_URL, CAREERS_URL])
+  assert.deepEqual(requestedUrls, [
+    HOMEPAGE_URL,
+    CAREERS_URL,
+    'https://api.recruitee.com/c/105958/careers/offers/',
+  ])
   assert.deepEqual(jobs, [])
 })
 

@@ -70,8 +70,11 @@ const hasInputWithId = (html, id) =>
 export const hasOfficialCareersPageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /https:\/\/jobs\.securdi\.com/i.test(page)
-    || /https:\/\/securdi\.com\/job-openings\//i.test(page)
+  return /<title>\s*Identity Security Careers\s*&amp;\s*Open Roles\s*\|\s*SecurDI\s*<\/title>/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/securdi\.com\/careers\/["']/i.test(page)
+    && /Careers at SecurDI/i.test(page)
+    && /View open roles/i.test(page)
+    && /href=["']\/job-openings\/["']/i.test(page)
 }
 
 export const hasOfficialPortalSignal = (html) => {

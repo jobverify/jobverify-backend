@@ -33,6 +33,17 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim() || null
 
+const normalizeEmploymentType = (value) => {
+  const normalized = normalizeWhitespace(value)
+  if (!normalized) return null
+
+  if (/^full[\s_-]*time$/i.test(normalized)) return 'FULL_TIME'
+  if (/^part[\s_-]*time$/i.test(normalized)) return 'PART_TIME'
+  if (/^contract$/i.test(normalized)) return 'CONTRACT'
+
+  return normalized
+}
+
 const slugify = (value) => normalizeWhitespace(value)
   ?.toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
@@ -67,6 +78,53 @@ const normalizeComparableUrl = (value) => {
     return null
   }
 }
+
+const extractQueryParam = (value, parameterName) => {
+  try {
+    return new URL(String(value ?? '')).searchParams.get(parameterName)
+  } catch {
+    return null
+  }
+}
+
+const extractJsonLdPayloads = (html = '') => Array.from(
+  String(html ?? '').matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi),
+)
+  .flatMap(([, rawPayload]) => {
+    try {
+      const parsed = JSON.parse(rawPayload)
+      return Array.isArray(parsed) ? parsed : [parsed]
+    } catch {
+      return []
+    }
+  })
+
+const toIndiaLocation = ({ city, state, country } = {}) => {
+  const normalizedCountry = normalizeWhitespace(country)
+  const countryLabel = normalizedCountry === 'IN' ? 'India' : normalizedCountry
+  const parts = [
+    normalizeWhitespace(city),
+    normalizeWhitespace(state),
+    countryLabel,
+  ].filter(Boolean)
+
+  return {
+    city: normalizeWhitespace(city),
+    state: normalizeWhitespace(state),
+    country: countryLabel || null,
+    location: parts.join(', ') || null,
+  }
+}
+
+const mergeJobCards = (existing = {}, candidate = {}) => Object.fromEntries(
+  [...new Set([
+    ...Object.keys(existing),
+    ...Object.keys(candidate),
+  ])].map((key) => [
+    key,
+    candidate[key] ?? existing[key] ?? null,
+  ]),
+)
 
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
@@ -211,11 +269,61 @@ const extractArticleJobCards = (html) =>
     })
     .filter(Boolean)
 
+const extractJsonLdJobCards = (html) => extractJsonLdPayloads(html)
+  .filter((payload) => String(payload?.['@type'] ?? '').toLowerCase() === 'jobposting')
+  .map((payload) => {
+    const applyUrl = normalizeWhitespace(payload?.url)
+    const requisitionId = normalizeWhitespace(
+      payload?.identifier?.value
+      || extractQueryParam(applyUrl, 'job_id'),
+    )
+    const { city, state, country, location } = toIndiaLocation({
+      city: payload?.jobLocation?.address?.addressLocality,
+      state: payload?.jobLocation?.address?.addressRegion,
+      country: payload?.jobLocation?.address?.addressCountry,
+    })
+    const title = normalizeWhitespace(payload?.title)
+    const jobDescription = normalizeWhitespace(payload?.description)
+
+    if (!title || !requisitionId || !applyUrl || !location) {
+      return null
+    }
+
+    return {
+      title,
+      company: COMPANY,
+      department: null,
+      location,
+      city,
+      state,
+      country,
+      jobId: `${SOURCE}-${requisitionId}`,
+      requisitionId,
+      sourceUrl: applyUrl,
+      applyUrl,
+      employmentType: normalizeEmploymentType(payload?.employmentType) || inferEmploymentType(title, jobDescription),
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: normalizeWhitespace(payload?.datePosted),
+      closingDate: normalizeWhitespace(payload?.validThrough),
+      jobDescription,
+      remoteStatus: 'On-site',
+    }
+  })
+  .filter(Boolean)
+
 export const extractJobCards = (html) => {
   const dedupedJobs = new Map()
 
-  for (const job of [...extractLegacyJobCards(html), ...extractArticleJobCards(html)]) {
-    dedupedJobs.set(job.jobId, job)
+  for (const job of [
+    ...extractLegacyJobCards(html),
+    ...extractArticleJobCards(html),
+    ...extractJsonLdJobCards(html),
+  ]) {
+    const existing = dedupedJobs.get(job.jobId)
+    dedupedJobs.set(job.jobId, existing ? mergeJobCards(existing, job) : job)
   }
 
   return [...dedupedJobs.values()]

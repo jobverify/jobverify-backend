@@ -26,10 +26,9 @@ import {
   setAuthCookie,
 } from "../utils/authCookies.js";
 import {
-  createOpaqueToken,
   createVerificationTokenPair,
-  hashOpaqueToken,
   hashVerificationToken,
+  isAllowedAccountEmail,
   normalizeEmailAddress,
 } from "../utils/authSecurity.js";
 import {
@@ -38,11 +37,12 @@ import {
 } from "../utils/accessControl.js";
 import { googleIdentity } from "../utils/googleAuth.js";
 import { normalizePhoneE164 } from "../utils/phoneNumbers.js";
+import { resolveFrontendOrigin } from "../utils/runtimeConfig.js";
 
 const GENERIC_REGISTRATION_MESSAGE = "If this email can be registered, a verification email will be sent.";
 const GENERIC_RESEND_MESSAGE = "If a pending registration exists for this email, a verification email will be sent when eligible.";
 const GENERIC_PASSWORD_RESET_MESSAGE = "If an account exists for this email, a password reset link will be sent.";
-const PASSWORD_SETUP_REQUIRED_MESSAGE = "Choose a password to finish account setup.";
+const PENDING_PASSWORD_MISSING_MESSAGE = "Your registration is missing a password. Please register again.";
 const PASSWORD_RESET_SUCCESS_MESSAGE = "Password reset successfully. You can now sign in.";
 
 const buildSessionUserPayload = (user) => ({
@@ -59,6 +59,9 @@ const GOOGLE_SIGN_IN_REQUIRED_MESSAGE = "This account uses Google sign-in. Conti
 const GOOGLE_AUTH_FAILURE_MESSAGE = "Google sign-in failed. Please try again.";
 const GOOGLE_EMAIL_VERIFICATION_MESSAGE = "Use a Google account with a verified email address to continue.";
 const GOOGLE_ACCOUNT_LINK_CONFLICT_MESSAGE = "This account is already linked to a different Google sign-in.";
+const RESEND_COOLDOWN_MS = 60 * 1000;
+const RESEND_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
+const RESEND_LIMIT_REACHED_MESSAGE = "You have used both verification resends. Please try again tomorrow.";
 
 // Generates a JWT token valid for 7 days.
 const generateToken = (id, role, sessionVersion = 0) => {
@@ -75,20 +78,7 @@ const getTokenExpiresAt = (token) => {
   return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 };
 
-const normalizeOrigin = (value, name) => {
-  const origin = String(value || "").split(",")[0]?.trim().replace(/\/+$/, "");
-  if (!origin) {
-    throw new Error(`${name} environment variable is not defined.`);
-  }
-
-  const parsed = new URL(origin);
-  if (!["http:", "https:"].includes(parsed.protocol)) {
-    throw new Error(`${name} must be an http(s) origin.`);
-  }
-  return parsed.origin;
-};
-
-const getFrontendOrigin = () => normalizeOrigin(process.env.FRONTEND_ORIGIN || process.env.CORS_ORIGIN, "FRONTEND_ORIGIN or CORS_ORIGIN");
+const getFrontendOrigin = () => resolveFrontendOrigin(process.env);
 
 const buildFrontendVerifySuccessUrl = () => {
   const url = new URL("/verify-email", getFrontendOrigin());
@@ -183,13 +173,11 @@ export const register = async (req, res) => {
     }
 
     const verificationToken = createVerificationTokenPair();
-    const browserBindingToken = createOpaqueToken();
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const pending = new PendingUser({
       email: normalizedEmail,
       password: hashedPassword,
-      pendingBrowserNonceHash: hashOpaqueToken(browserBindingToken),
       profile: {
         name,
         phoneE164: normalizedPhoneE164,
@@ -205,8 +193,6 @@ export const register = async (req, res) => {
     sendVerificationEmail(normalizedEmail, magicLink).catch((err) => {
       console.error(`[Email Delivery Error] Failed to send email to ${normalizedEmail}:`, err.message);
     });
-    setPendingRegistrationCookie(res, browserBindingToken);
-
     res.status(201).json({
       code: 201,
       success: true,
@@ -239,14 +225,14 @@ export const redirectVerifyEmail = async (req, res) => {
   return res.redirect(buildVerificationLink(token));
 };
 
-// Completes email verification only after the verified user submits a password.
+// Completes email verification with the password captured during registration.
 export const verifyEmail = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return sendValidationError(res, errors);
   }
 
-  const { token, password } = req.body;
+  const { token } = req.body;
 
   try {
     const tokenHash = hashVerificationToken(token);
@@ -282,32 +268,17 @@ export const verifyEmail = async (req, res) => {
       });
     }
 
-    const browserBindingToken = getRequestCookie(req, PENDING_REGISTRATION_COOKIE_NAME);
-    const isTrustedPendingBrowser = Boolean(
-      pendingUser.pendingBrowserNonceHash
-      && browserBindingToken
-      && hashOpaqueToken(browserBindingToken) === pendingUser.pendingBrowserNonceHash,
-    );
-
-    let finalPasswordHash = null;
-
-    if (typeof password === "string" && password.length > 0) {
-      const salt = await bcrypt.genSalt(10);
-      finalPasswordHash = await bcrypt.hash(password, salt);
-    } else if (isTrustedPendingBrowser && pendingUser.password) {
-      finalPasswordHash = pendingUser.password;
-    } else {
+    if (!pendingUser.password) {
       return res.status(400).json({
         code: 400,
         success: false,
-        requiresPassword: true,
-        message: PASSWORD_SETUP_REQUIRED_MESSAGE,
+        message: PENDING_PASSWORD_MISSING_MESSAGE,
       });
     }
 
     const user = new User({
       email: pendingUser.email,
-      password: finalPasswordHash,
+      password: pendingUser.password,
       profile: pendingUser.profile ? { name: pendingUser.profile.name } : {},
       contact: {
         phoneE164: pendingUser.profile?.phoneE164 ?? null,
@@ -373,18 +344,24 @@ export const resendVerification = async (req, res) => {
       });
     }
 
-    // Exhaustion check (Max 2 resends)
+    const now = new Date();
+    const resendWindowStartedAt = pendingUser.resendWindowStartedAt;
+    if (resendWindowStartedAt && now - resendWindowStartedAt >= RESEND_LIMIT_WINDOW_MS) {
+      pendingUser.resendCount = 0;
+      pendingUser.resendWindowStartedAt = null;
+    }
+
+    // Exhaustion check (Max 2 resends per rolling 24-hour window)
     if (pendingUser.resendCount >= 2) {
-      return res.status(200).json({
-        code: 200,
-        success: true,
-        message: GENERIC_RESEND_MESSAGE,
+      return res.status(429).json({
+        code: 429,
+        success: false,
+        message: RESEND_LIMIT_REACHED_MESSAGE,
       });
     }
 
-    // 120 second cooldown check between resends
-    const secondsElapsed = Math.floor((Date.now() - pendingUser.lastResentAt.getTime()) / 1000);
-    if (secondsElapsed < 120) {
+    // 60 second cooldown check between resends
+    if (now - pendingUser.lastResentAt < RESEND_COOLDOWN_MS) {
       return res.status(200).json({
         code: 200,
         success: true,
@@ -397,9 +374,10 @@ export const resendVerification = async (req, res) => {
     pendingUser.verificationToken = null;
     pendingUser.verificationTokenHash = verificationToken.tokenHash;
     pendingUser.verificationTokenExpiresAt = verificationToken.expiresAt;
+    pendingUser.resendWindowStartedAt ??= now;
     pendingUser.resendCount += 1;
-    pendingUser.lastResentAt = new Date();
-    pendingUser.createdAt = new Date();
+    pendingUser.lastResentAt = now;
+    pendingUser.createdAt = now;
     await pendingUser.save();
 
     const magicLink = buildVerificationLink(verificationToken.token);
@@ -604,6 +582,13 @@ export const authenticateWithGoogle = async (req, res) => {
     }
 
     const normalizedEmail = normalizeEmailAddress(identity.email);
+    if (!isAllowedAccountEmail(normalizedEmail)) {
+      return res.status(400).json({
+        code: 400,
+        success: false,
+        message: "Use a Gmail or educational email address.",
+      });
+    }
     const existingUser = await User.findOne({ email: normalizedEmail });
 
     if (existingUser) {
@@ -623,6 +608,11 @@ export const authenticateWithGoogle = async (req, res) => {
         });
       }
 
+      const profileName = String(existingUser.profile?.name ?? "").trim().toLowerCase();
+      if (identity.name && (!profileName || profileName === normalizedEmail)) {
+        existingUser.profile ??= {};
+        existingUser.profile.name = identity.name;
+      }
       existingUser.google = buildGoogleMetadata(identity, existingUser.google);
       existingUser.isVerified = true;
       return issueAuthenticatedSession(existingUser, res, "Logged in successfully");

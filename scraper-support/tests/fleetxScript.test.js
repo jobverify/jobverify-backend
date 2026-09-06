@@ -34,6 +34,24 @@ const reachableHtml = `
 </html>
 `
 
+const currentCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head><title>Career Opportunities At Fleetx | Fleetx</title></head>
+  <body>
+    <section id="current-openings">
+      <div>Current Openings</div>
+      <div class="flex flex-col items-start text-left rounded bg-white p-6 shadow col-span-2">
+        <h3>Area Sales Manager</h3>
+        <p>Minimum Exp.: 5-7 yrs</p>
+        <p>Key Skills: Field Sales, B2B Sales</p>
+        <p>Location: Bangalore, Chennai</p>
+      </div>
+    </section>
+  </body>
+</html>
+`
+
 const loadFleetxModule = async () => {
   try {
     return await import('../../scraper/fleetx/script.js')
@@ -110,8 +128,30 @@ test('Fleetx returns no jobs only while the verified first-party routes remain u
     },
   })
 
-  assert.deepEqual(requestedUrls, fleetx.TIMEOUT_PROBE_URLS)
+  assert.deepEqual(requestedUrls, [fleetx.CURRENT_CAREERS_URL, ...fleetx.TIMEOUT_PROBE_URLS])
   assert.deepEqual(jobs, [])
+})
+
+test('Fleetx extracts the current first-party careers cards at fleetx.ai', async () => {
+  const fleetx = await loadFleetxModule()
+  const jobs = await fleetx.run({
+    now: () => '2026-09-03T00:00:00.000Z',
+    fetchPage: async (url) => {
+      if (url === fleetx.CURRENT_CAREERS_URL) {
+        return { ok: true, status: 200, url, html: currentCareersHtml }
+      }
+
+      throw new Error(`Unexpected page URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs.map((job) => ({ title: job.title, location: job.location, sourceUrl: job.sourceUrl })), [
+    {
+      title: 'Area Sales Manager',
+      location: 'Bangalore, Chennai, India',
+      sourceUrl: fleetx.CURRENT_CAREERS_URL,
+    },
+  ])
 })
 
 test('Fleetx fails closed when the verified homepage, careers routes, or discovery routes become reachable or otherwise drift', async () => {

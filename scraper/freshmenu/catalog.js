@@ -21,9 +21,9 @@ export const FRESHMENU_CATALOG = {
     'verified-apex-homepage-no-public-jobs+verified-generic-app-shell-routes-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-02',
+  verifiedOn: '2026-09-03',
   verifiedSurfaceSummary:
-    'Verified on August 2, 2026 that the working FreshMenu first-party apex host is https://freshmenu.com/. The homepage at https://freshmenu.com/ still exposes the consumer ordering shell and no trustworthy public careers handoff, while https://freshmenu.com/about, https://freshmenu.com/careers, and https://freshmenu.com/jobs all resolve to the same generic consumer app shell without JobPosting markup or public job-listing signals. No trustworthy public jobs surface is currently available.',
+    'Verified on September 3, 2026 that the working FreshMenu first-party apex host is https://freshmenu.com/. The homepage at https://freshmenu.com/ and https://freshmenu.com/about, https://freshmenu.com/careers, and https://freshmenu.com/jobs now resolve to the same branded FreshMenu Vite app shell without JobPosting markup or public job-listing signals. No trustworthy public jobs surface is currently available.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

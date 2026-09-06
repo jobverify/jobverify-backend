@@ -115,12 +115,12 @@ export const extractVerifiedCareersBundleUrl = (html) => {
 export const hasVerifiedCareersBundleSignal = (scriptText) => {
   const text = String(scriptText ?? '')
 
-  return /jobs\.ashbyhq\.com\/exa\/41eb773d-9909-422c-b6b8-5bbdc407d318/i.test(text)
-    && /jobs\.ashbyhq\.com\/exa\/e3e0cd05-d71a-491d-a553-2a991741915c/i.test(text)
-    && /jobs\.ashbyhq\.com\/exa\/11cd06ca-db50-4821-a920-07071f8ce0b4/i.test(text)
+  return /jobs\.ashbyhq\.com\/exa/i.test(text)
     && /SF:"San Francisco"/i.test(text)
     && /NYC:"New York(?: City)?"/i.test(text)
     && /SG:"Singapore"/i.test(text)
+    && /LDN:"London"/i.test(text)
+    && /SYD:"Sydney"/i.test(text)
     && !/\b(?:Bangalore|Bengaluru|India)\b/i.test(text)
 }
 

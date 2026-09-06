@@ -10,6 +10,7 @@ import {
   authenticateWithGoogle,
   login,
   register,
+  resendVerification,
   requestPasswordReset,
   redirectVerifyEmail,
   resetPassword,
@@ -68,6 +69,35 @@ test("redirectVerifyEmail forwards legacy verification links into the frontend f
     );
   } finally {
     process.env.FRONTEND_ORIGIN = originalFrontendOrigin;
+  }
+});
+
+test("redirectVerifyEmail skips loopback frontend origins in production", async () => {
+  const originalFrontendOrigin = process.env.FRONTEND_ORIGIN;
+  const originalCorsOrigin = process.env.CORS_ORIGIN;
+  const originalNodeEnv = process.env.NODE_ENV;
+  process.env.FRONTEND_ORIGIN = "http://localhost:5173,https://jobverify.in";
+  process.env.CORS_ORIGIN = "https://jobverify.in";
+  process.env.NODE_ENV = "production";
+
+  try {
+    const res = createResponseDouble();
+
+    await redirectVerifyEmail(
+      {
+        query: { token: "prod-verification-token" },
+      },
+      res,
+    );
+
+    assert.equal(
+      res.redirectUrl,
+      "https://jobverify.in/verify-email#token=prod-verification-token",
+    );
+  } finally {
+    process.env.FRONTEND_ORIGIN = originalFrontendOrigin;
+    process.env.CORS_ORIGIN = originalCorsOrigin;
+    process.env.NODE_ENV = originalNodeEnv;
   }
 });
 
@@ -295,12 +325,13 @@ test("resetPassword rejects expired or unknown reset tokens", async () => {
   }
 });
 
-test("verifyEmail creates the account only after password submission", async () => {
+test("verifyEmail creates the account with the password recorded at registration", async () => {
   const originalFrontendOrigin = process.env.FRONTEND_ORIGIN;
   process.env.FRONTEND_ORIGIN = "http://localhost:5173";
 
   const pendingUser = {
     email: "student@example.com",
+    password: await bcrypt.hash("StrongerPass123", 10),
     profile: { name: "Student" },
   };
 
@@ -330,7 +361,6 @@ test("verifyEmail creates the account only after password submission", async () 
       {
         body: {
           token: "raw-verification-token",
-          password: "StrongerPass123",
         },
       },
       res,
@@ -342,8 +372,7 @@ test("verifyEmail creates the account only after password submission", async () 
     assert.deepEqual(deletedFilter, { email: "student@example.com" });
     assert.equal(savedUser.email, "student@example.com");
     assert.equal(savedUser.profile.name, "Student");
-    assert.notEqual(savedUser.password, "StrongerPass123");
-    assert.equal(await bcrypt.compare("StrongerPass123", savedUser.password), true);
+    assert.equal(savedUser.password, pendingUser.password);
   } finally {
     PendingUser.findOne = originalPendingFindOne;
     PendingUser.deleteOne = originalPendingDeleteOne;
@@ -362,6 +391,7 @@ test("verifyEmail copies the pending phone number into the verified user contact
 
   const pendingUser = {
     email: "student@example.com",
+    password: await bcrypt.hash("StrongerPass123", 10),
     profile: { name: "Student", phoneE164: "+919876543210" },
   };
   let savedUser = null;
@@ -377,7 +407,7 @@ test("verifyEmail copies the pending phone number into the verified user contact
   try {
     const res = createResponseDouble();
     await verifyEmail(
-      { body: { token: "raw-verification-token", password: "StrongerPass123" } },
+      { body: { token: "raw-verification-token" } },
       res,
     );
 
@@ -392,16 +422,14 @@ test("verifyEmail copies the pending phone number into the verified user contact
   }
 });
 
-test("verifyEmail reuses the pending password when the verification link opens in the original browser", async () => {
+test("verifyEmail promotes the pending password without requiring the registration browser", async () => {
   const originalFrontendOrigin = process.env.FRONTEND_ORIGIN;
   process.env.FRONTEND_ORIGIN = "http://localhost:5173";
 
-  const browserNonce = "browser-bound-registration-nonce";
   const hashedPassword = await bcrypt.hash("StrongerPass123", 10);
   const pendingUser = {
     email: "student@example.com",
     password: hashedPassword,
-    pendingBrowserNonceHash: hashVerificationToken(browserNonce),
     profile: { name: "Student" },
   };
 
@@ -428,9 +456,6 @@ test("verifyEmail reuses the pending password when the verification link opens i
         body: {
           token: "raw-verification-token",
         },
-        headers: {
-          cookie: `jobverify_pending_registration=${browserNonce}`,
-        },
       },
       res,
     );
@@ -446,7 +471,7 @@ test("verifyEmail reuses the pending password when the verification link opens i
   }
 });
 
-test("authenticateWithGoogle links an existing user by matching verified email", async () => {
+test("authenticateWithGoogle replaces an email placeholder with the Google account name", async () => {
   const originalJwtSecret = process.env.JWT_SECRET;
   const originalVerifyCredential = googleIdentity.verifyCredential;
   const originalUserFindOne = User.findOne;
@@ -460,7 +485,7 @@ test("authenticateWithGoogle links an existing user by matching verified email",
     role: "user",
     accessRole: "free",
     google: { sub: null, picture: null, linkedAt: null },
-    profile: { name: "Student" },
+    profile: { name: "student@example.com" },
     premium: { planId: "free", status: "inactive", expiresAt: null, whatsappAlertsEnabled: false },
     onboardingCompleted: false,
     deactivated: false,
@@ -496,6 +521,7 @@ test("authenticateWithGoogle links an existing user by matching verified email",
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.success, true);
     assert.equal(res.body.user.email, "student@example.com");
+    assert.equal(existingUser.profile.name, "Student User");
     assert.equal(existingUser.google.sub, "google-sub-123");
     assert.equal(existingUser.google.picture, "https://example.com/avatar.png");
     assert.equal(existingUser.google.linkedAt instanceof Date, true);
@@ -695,6 +721,93 @@ test("authenticateWithGoogle rejects unverified Google email addresses", async (
 
     assert.equal(res.statusCode, 401);
     assert.match(res.body.message, /verified/i);
+    assert.equal(userLookups, 0);
+  } finally {
+    googleIdentity.verifyCredential = originalVerifyCredential;
+    User.findOne = originalUserFindOne;
+  }
+});
+
+test("resendVerification tells users to try tomorrow after two resends in 24 hours", async () => {
+  const originalUserFindOne = User.findOne;
+  const originalPendingFindOne = PendingUser.findOne;
+  const pendingUser = {
+    email: "student@gmail.com",
+    resendCount: 2,
+    resendWindowStartedAt: new Date(Date.now() - 60_000),
+    lastResentAt: new Date(Date.now() - 61_000),
+  };
+
+  User.findOne = async () => null;
+  PendingUser.findOne = async () => pendingUser;
+
+  try {
+    const res = createResponseDouble();
+    await resendVerification({ body: { email: "student@gmail.com" } }, res);
+
+    assert.equal(res.statusCode, 429);
+    assert.equal(res.body.message, "You have used both verification resends. Please try again tomorrow.");
+  } finally {
+    User.findOne = originalUserFindOne;
+    PendingUser.findOne = originalPendingFindOne;
+  }
+});
+
+test("resendVerification starts a new allowance after the 24-hour window", async () => {
+  const originalFrontendOrigin = process.env.FRONTEND_ORIGIN;
+  const originalUserFindOne = User.findOne;
+  const originalPendingFindOne = PendingUser.findOne;
+  const pendingUser = {
+    email: "student@gmail.com",
+    resendCount: 2,
+    resendWindowStartedAt: new Date(Date.now() - 86_400_001),
+    lastResentAt: new Date(Date.now() - 61_000),
+    save: async function save() {
+      return this;
+    },
+  };
+
+  process.env.FRONTEND_ORIGIN = "http://localhost:5173";
+  User.findOne = async () => null;
+  PendingUser.findOne = async () => pendingUser;
+
+  try {
+    const res = createResponseDouble();
+    await resendVerification({ body: { email: "student@gmail.com" } }, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(pendingUser.resendCount, 1);
+    assert.ok(pendingUser.resendWindowStartedAt instanceof Date);
+  } finally {
+    process.env.FRONTEND_ORIGIN = originalFrontendOrigin;
+    User.findOne = originalUserFindOne;
+    PendingUser.findOne = originalPendingFindOne;
+  }
+});
+
+test("authenticateWithGoogle rejects verified accounts outside the allowed email domains", async () => {
+  const originalVerifyCredential = googleIdentity.verifyCredential;
+  const originalUserFindOne = User.findOne;
+  let userLookups = 0;
+
+  googleIdentity.verifyCredential = async () => ({
+    email: "student@temporary-mail.example",
+    emailVerified: true,
+    name: "Student",
+    picture: null,
+    sub: "google-sub-temp-mail",
+  });
+  User.findOne = async () => {
+    userLookups += 1;
+    return null;
+  };
+
+  try {
+    const res = createResponseDouble();
+    await authenticateWithGoogle({ body: { credential: "google-id-token" } }, res);
+
+    assert.equal(res.statusCode, 400);
+    assert.equal(res.body.message, "Use a Gmail or educational email address.");
     assert.equal(userLookups, 0);
   } finally {
     googleIdentity.verifyCredential = originalVerifyCredential;

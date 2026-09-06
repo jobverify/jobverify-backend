@@ -12,6 +12,14 @@ const fixturesDir = path.resolve(
 const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 
 const verifiedHomepageHtml = readFixture('homepage.html')
+const currentAppShellHtml = `
+<!doctype html>
+<html lang="en"><head>
+  <meta name="description" content="Haveloc — the placement system for campuses and recruiters. From job posts to offer letters." />
+  <title>Haveloc — Placement Operations Software</title>
+  <script type="module" src="/assets/index-C1orAJ7r.js"></script>
+</head><body><div id="root"></div></body></html>
+`
 
 const loadHavelocModule = async () => {
   try {
@@ -40,6 +48,7 @@ test('Haveloc sentinels recognize the verified homepage and missing first-party 
     'https://haveloc.com/join-us/',
   ])
   assert.equal(haveloc.hasOfficialHomepageSignal(verifiedHomepageHtml), true)
+  assert.equal(haveloc.hasOfficialHomepageSignal(currentAppShellHtml), true)
   assert.equal(haveloc.hasFirstPartyCareerLikeLink(verifiedHomepageHtml), false)
   assert.equal(
     haveloc.hasFirstPartyCareerLikeLink(
@@ -48,6 +57,7 @@ test('Haveloc sentinels recognize the verified homepage and missing first-party 
     true,
   )
   assert.equal(haveloc.isMissingCareerRoute({ status: 404 }), true)
+  assert.equal(haveloc.isMissingCareerRoute({ status: 200, html: currentAppShellHtml }), true)
   assert.equal(haveloc.isMissingCareerRoute({ status: 200 }), false)
 })
 

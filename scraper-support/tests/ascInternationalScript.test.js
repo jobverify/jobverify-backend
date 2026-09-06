@@ -53,6 +53,15 @@ test('buildSearchUrl keeps ASC International on the official careers page', asyn
   assert.equal(buildSearchUrl(), 'https://ascinternational.com/careers/')
 })
 
+test('ASC International accepts the current official careers title variant', async () => {
+  const { hasOfficialCareersPageSignal } = await loadAscInternationalModule()
+
+  assert.equal(hasOfficialCareersPageSignal(`
+    <html><head><title>Careers - Inspection &amp; Metrology Jobs | ASC International</title></head>
+    <body><h1>Join Our Continuously Growing Team</h1><h2>Current Openings</h2></body></html>
+  `), true)
+})
+
 test('extractSearchResults maps ASC International static careers markup into shared scraper fields', async () => {
   const { CAREER_PAGE_URL, extractSearchResults } = await loadAscInternationalModule()
   const jobs = extractSearchResults(CAREERS_HTML)

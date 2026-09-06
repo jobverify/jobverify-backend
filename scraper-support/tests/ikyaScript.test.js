@@ -53,6 +53,22 @@ const comingSoonHomepageHtml = `
 </html>
 `
 
+const browserChallengeHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Checking your browser...</title>
+  </head>
+  <body>
+    <h1>Checking your browser</h1>
+    <p>Verification</p>
+    <p>Security check</p>
+    <p>Before you can access this site, we need to verify you're human.</p>
+    <p>Verification failed. Please refresh and try again.</p>
+  </body>
+</html>
+`
+
 const realHomepageHtml = `
 <!doctype html>
 <html lang="en">
@@ -73,14 +89,14 @@ const loadIkyaModule = async () => {
   }
 }
 
-test('Ikya pins the verified empty SmartRecruiters board and placeholder homepage signals', async () => {
+test('Ikya pins the verified empty SmartRecruiters board and homepage blocker signals', async () => {
   const ikya = await loadIkyaModule()
 
   assert.equal(ikya.SOURCE, 'ikya')
   assert.equal(ikya.COMPANY_NAME, 'Ikya')
   assert.equal(ikya.CAREERS_URL, 'https://careers.smartrecruiters.com/Ikya1')
   assert.equal(ikya.HOMEPAGE_URL, 'http://www.ikya.com/')
-  assert.equal(ikya.VERIFIED_ON, '2026-08-02')
+  assert.equal(ikya.VERIFIED_ON, '2026-09-03')
   assert.equal(ikya.hasVerifiedEmptyBoardSignal(careersBoardHtml), true)
   assert.deepEqual(
     ikya.extractPublicJobLinksFromBoard(careersBoardHtml),
@@ -92,10 +108,11 @@ test('Ikya pins the verified empty SmartRecruiters board and placeholder homepag
   )
   assert.equal(ikya.hasHomepagePlaceholderSignal(placeholderHomepageBody), true)
   assert.equal(ikya.hasHomepagePlaceholderSignal(comingSoonHomepageHtml), true)
+  assert.equal(ikya.hasHomepagePlaceholderSignal(browserChallengeHomepageHtml), true)
   assert.equal(ikya.hasHomepagePlaceholderSignal(realHomepageHtml), false)
 })
 
-test('Ikya returns [] only while the SmartRecruiters board stays empty and the homepage stays a placeholder', async () => {
+test('Ikya returns [] only while the SmartRecruiters board stays empty and the homepage stays blocked', async () => {
   const ikya = await loadIkyaModule()
   const requestedUrls = []
 
@@ -103,7 +120,7 @@ test('Ikya returns [] only while the SmartRecruiters board stays empty and the h
     fetchPage: async (url) => {
       requestedUrls.push(url)
       if (url === ikya.CAREERS_URL) return { status: 200, url, html: careersBoardHtml }
-      if (url === ikya.HOMEPAGE_URL) return { status: 200, url, html: comingSoonHomepageHtml }
+      if (url === ikya.HOMEPAGE_URL) return { status: 200, url, html: browserChallengeHomepageHtml }
       throw new Error(`Unexpected Ikya URL: ${url}`)
     },
   })
@@ -122,7 +139,7 @@ test('Ikya fails closed when the public board starts listing jobs or the homepag
     ikya.createIkyaScraper().run({
       fetchPage: async (url) => {
         if (url === ikya.CAREERS_URL) return { status: 200, url, html: activeBoardHtml }
-        if (url === ikya.HOMEPAGE_URL) return { status: 200, url, html: comingSoonHomepageHtml }
+        if (url === ikya.HOMEPAGE_URL) return { status: 200, url, html: browserChallengeHomepageHtml }
         throw new Error(`Unexpected Ikya URL: ${url}`)
       },
     }),

@@ -23,6 +23,20 @@ const percentile = (values, percentileValue) => {
 
 const formatSeconds = (milliseconds) => `${(milliseconds / 1000).toFixed(1)}s`
 
+const formatDuration = (milliseconds) => {
+  const tenthsOfSeconds = Math.round(milliseconds / 100)
+  const hours = Math.floor(tenthsOfSeconds / 36_000)
+  const minutes = Math.floor((tenthsOfSeconds % 36_000) / 600)
+  const seconds = ((tenthsOfSeconds % 600) / 10).toFixed(1)
+  const parts = []
+
+  if (hours > 0) parts.push(`${hours}h`)
+  if (minutes > 0) parts.push(`${minutes}m`)
+  parts.push(`${seconds}s`)
+
+  return parts.join(' ')
+}
+
 const formatPercent = (numerator, denominator) => (
   `${(denominator > 0 ? (numerator / denominator) * 100 : 0).toFixed(1)}%`
 )
@@ -33,9 +47,12 @@ const toValidDate = (value) => {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
-const formatUtcTimestamp = (value) => {
+const formatIstTimestamp = (value) => {
   const date = toValidDate(value)
-  return date ? date.toISOString().replace('.000Z', ' UTC').replace('T', ' ') : 'unavailable'
+  if (!date) return 'unavailable'
+
+  const istDate = new Date(date.getTime() + (5.5 * 60 * 60 * 1000))
+  return `${istDate.toISOString().slice(0, 19).replace('T', ' ')} IST`
 }
 
 const formatAsciiTable = (headers, rows) => {
@@ -167,10 +184,10 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
     'Analytical Pipeline Summary',
     'RUN TIMING',
     formatAsciiTable(['Metric', 'Value'], [
-      ['Start time', formatUtcTimestamp(startedAt)],
-      ['End time', formatUtcTimestamp(completedAt)],
-      ['Total time taken', elapsedMs == null ? 'unavailable' : formatSeconds(elapsedMs)],
-      ['Cumulative worker time', formatSeconds(cumulativeDuration)],
+      ['Start time', formatIstTimestamp(startedAt)],
+      ['End time', formatIstTimestamp(completedAt)],
+      ['Total time taken', elapsedMs == null ? 'unavailable' : formatDuration(elapsedMs)],
+      ['Cumulative worker time', formatDuration(cumulativeDuration)],
     ]),
     'RUN HEALTH',
     formatAsciiTable(['Metric', 'Value'], [

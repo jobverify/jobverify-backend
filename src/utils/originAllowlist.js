@@ -23,6 +23,11 @@ export const normalizeOrigin = (value) => {
 const isLoopbackHostname = (hostname) =>
   LOOPBACK_HOSTNAMES.has(String(hostname || "").trim().toLowerCase());
 
+export const isLoopbackOrigin = (value) => {
+  const parsed = parseOrigin(value);
+  return Boolean(parsed && isLoopbackHostname(parsed.hostname));
+};
+
 export const createOriginAllowlist = (
   allowedOrigins = [],
   { allowDevLoopback = false } = {},
@@ -33,6 +38,10 @@ export const createOriginAllowlist = (
   for (const origin of allowedOrigins) {
     const normalizedOrigin = normalizeOrigin(origin);
     if (!normalizedOrigin) continue;
+
+    if (isLoopbackOrigin(normalizedOrigin) && !allowDevLoopback) {
+      continue;
+    }
 
     exactOrigins.add(normalizedOrigin);
 

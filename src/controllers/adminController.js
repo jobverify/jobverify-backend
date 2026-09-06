@@ -22,6 +22,7 @@ import { getScraperCatalog } from "../../scraper-support/providers/index.js";
 import { getDiskBackedScraperSources } from "../../scraper-support/providers/sourceInventory.js";
 import { classifyScraperError } from "../../scraper-support/utils/failureClassification.js";
 import { refreshJobDatasetSummary } from "../services/jobDatasetSummaryService.js";
+import { respondWithInternalError } from "../utils/respondWithInternalError.js";
 
 const MAX_REGEX_FILTER_LENGTH = 80;
 const MAX_PAGE = 500;
@@ -120,6 +121,11 @@ const normalizeScraperStatusForAdmin = (status) => {
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 const isSameUser = (requestUser, targetUser) => String(requestUser?._id) === String(targetUser?._id);
+const respondWithAdminInternalError = (res, error) => (
+  respondWithInternalError(res, error, {
+    logLabel: "[adminController] Request failed:",
+  })
+);
 
 const ensureFreshScraperStatusCatalog = async () => {
   const now = Date.now();
@@ -224,7 +230,7 @@ export const getDashboardStats = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return respondWithAdminInternalError(res, err);
   }
 };
 
@@ -264,7 +270,7 @@ export const getClickTimeSeries = async (req, res) => {
 
     res.status(200).json({ success: true, data: result });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return respondWithAdminInternalError(res, err);
   }
 };
 
@@ -280,7 +286,7 @@ export const getTopJobs = async (req, res) => {
 
     res.status(200).json({ success: true, data: topJobs });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return respondWithAdminInternalError(res, err);
   }
 };
 
@@ -320,7 +326,7 @@ export const getClicksByLocation = async (req, res) => {
 
     res.status(200).json({ success: true, data: formattedStats });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return respondWithAdminInternalError(res, err);
   }
 };
 
@@ -360,7 +366,7 @@ export const getUserGrowthTimeSeries = async (req, res) => {
 
     res.status(200).json({ success: true, data: result });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return respondWithAdminInternalError(res, err);
   }
 };
 
@@ -425,7 +431,7 @@ export const getUsersTable = async (req, res) => {
       data,
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return respondWithAdminInternalError(res, err);
   }
 };
 
@@ -459,7 +465,7 @@ export const getUserById = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return respondWithAdminInternalError(res, err);
   }
 };
 
@@ -500,7 +506,7 @@ export const updateUserRole = async (req, res) => {
       data: { id: user._id, role: user.role },
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return respondWithAdminInternalError(res, err);
   }
 };
 
@@ -561,7 +567,7 @@ export const updateUserAccess = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return respondWithAdminInternalError(res, err);
   }
 };
 
@@ -623,7 +629,7 @@ export const getJobsTable = async (req, res) => {
       data,
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return respondWithAdminInternalError(res, err);
   }
 };
 
@@ -662,7 +668,7 @@ export const updateJobStatus = async (req, res) => {
       data: { id: job._id, status: job.status },
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return respondWithAdminInternalError(res, err);
   }
 };
 
@@ -702,7 +708,7 @@ export const getAuditLog = async (req, res) => {
       data,
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return respondWithAdminInternalError(res, err);
   }
 };
 
@@ -783,7 +789,7 @@ export const getScrapeStatus = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return respondWithAdminInternalError(res, err);
   }
 };
 
@@ -883,7 +889,7 @@ export const toggleScraperActive = async (req, res) => {
       data: { id: scraper._id, source: scraper.source, isActive: scraper.isActive },
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return respondWithAdminInternalError(res, err);
   }
 };
 
@@ -922,6 +928,7 @@ export const toggleUserStatus = async (req, res) => {
       data: { id: user._id, deactivated: user.deactivated },
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return respondWithAdminInternalError(res, err);
   }
 };
+

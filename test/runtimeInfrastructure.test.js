@@ -7,6 +7,7 @@ import {
   createOriginAllowlist,
   normalizeOrigin,
 } from "../src/utils/originAllowlist.js";
+import { resolveFrontendOrigin } from "../src/utils/runtimeConfig.js";
 
 test("connectDB rethrows connection errors instead of exiting the process", async () => {
   const originalConnect = mongoose.connect;
@@ -49,12 +50,22 @@ test("normalizeOrigin returns an empty string for invalid values", () => {
   assert.equal(normalizeOrigin("not-a-url"), "");
 });
 
-test("createOriginAllowlist matches configured origins exactly by default", () => {
-  const allowlist = createOriginAllowlist(["http://localhost:5173"]);
+test("createOriginAllowlist matches configured non-loopback origins exactly by default", () => {
+  const allowlist = createOriginAllowlist(["https://app.jobverify.test"]);
 
-  assert.equal(allowlist.has("http://localhost:5173"), true);
+  assert.equal(allowlist.has("https://app.jobverify.test"), true);
+  assert.equal(allowlist.has("https://admin.jobverify.test"), false);
+});
+
+test("createOriginAllowlist ignores configured loopback origins outside development mode", () => {
+  const allowlist = createOriginAllowlist([
+    "http://localhost:5173",
+    "https://app.jobverify.test",
+  ]);
+
+  assert.equal(allowlist.has("http://localhost:5173"), false);
   assert.equal(allowlist.has("http://127.0.0.1:4173"), false);
-  assert.equal(allowlist.has("https://app.jobverify.test"), false);
+  assert.equal(allowlist.has("https://app.jobverify.test"), true);
 });
 
 test("createOriginAllowlist accepts loopback origin variants in development mode", () => {
@@ -67,4 +78,25 @@ test("createOriginAllowlist accepts loopback origin variants in development mode
   assert.equal(allowlist.has("https://127.0.0.1:4173"), false);
   assert.equal(allowlist.has("https://localhost:4173"), false);
   assert.equal(allowlist.has("https://evil.example"), false);
+});
+
+test("resolveFrontendOrigin skips loopback entries in production", () => {
+  assert.equal(
+    resolveFrontendOrigin({
+      NODE_ENV: "production",
+      FRONTEND_ORIGIN: "http://localhost:5173,https://jobverify.in",
+      CORS_ORIGIN: "https://jobverify.in,https://jobverifyin.vercel.app",
+    }),
+    "https://jobverify.in",
+  );
+});
+
+test("resolveFrontendOrigin keeps loopback entries during development", () => {
+  assert.equal(
+    resolveFrontendOrigin({
+      NODE_ENV: "development",
+      FRONTEND_ORIGIN: "http://localhost:5173,https://jobverify.in",
+    }),
+    "http://localhost:5173",
+  );
 });

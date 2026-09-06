@@ -9,12 +9,14 @@ export const SOURCE = 'germancentreforopensource'
 export const COMPANY = 'German centre for open source'
 export const HOMEPAGE_URL = 'https://www.zendis.de/'
 export const CAREERS_URL = 'https://www.zendis.de/karriere'
+export const RECRUITEE_COMPANY_ID = '105958'
+export const RECRUITEE_OFFERS_URL = `https://api.recruitee.com/c/${RECRUITEE_COMPANY_ID}/careers/offers/`
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const PUBLIC_JOBS_SIGNAL_PATTERN =
-  /\b(current openings|open roles|open positions|job openings|vacancies|stellenangebote|apply now|apply here|job description|view jobs|join our team)\b|jobs\.lever\.co|boards\.greenhouse\.io|job-boards\.greenhouse\.io|ashbyhq\.com|myworkdayjobs|workdayjobs|smartrecruiters|jobvite|workable\.com|personio\.[^"' ]*\/job/i
+  /\b(current openings|open roles|open positions|job openings|vacancies|apply now|apply here|job description|view jobs|join our team)\b|jobs\.lever\.co|boards\.greenhouse\.io|job-boards\.greenhouse\.io|ashbyhq\.com|myworkdayjobs|workdayjobs|smartrecruiters|jobvite|workable\.com|personio\.[^"' ]*\/job/i
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
@@ -41,31 +43,63 @@ export const hasOfficialHomepageSignal = (html) => {
   const normalized = stripHtml(html).toLowerCase()
 
   return normalized.includes('zendis')
-    && normalized.includes('digitale souveränität ist handlungsfähigkeit')
-    && normalized.includes('zentrum für digitale souveränität der öffentlichen verwaltung')
+    && /digitale souver/i.test(normalized)
+    && /handlungsf/i.test(normalized)
+    && /zentrum/i.test(normalized)
+    && /verwaltung/i.test(normalized)
     && (normalized.includes('karriere') || String(html ?? '').includes('/karriere'))
 }
 
 export const hasOfficialCareersSignal = (html) => {
   const normalized = stripHtml(html).toLowerCase()
 
-  return normalized.includes('digitale souveränität ist teamwork')
+  return /digitale souver/i.test(normalized)
+    && normalized.includes('teamwork')
     && normalized.includes('offene stellen')
     && normalized.includes('recruiting kontakt')
-    && normalized.includes('esther andré')
     && normalized.includes('recruiting@zendis.de')
 }
 
 export const hasPublicJobsSignal = (html) => PUBLIC_JOBS_SIGNAL_PATTERN.test(String(html ?? ''))
+
+export const hasVerifiedRecruiteeWidget = (html) =>
+  /id=["']recruitee-careers["']/i.test(String(html ?? ''))
+  && new RegExp(`["']?companies["']?\\s*:\\s*\\[${RECRUITEE_COMPANY_ID}\\]`).test(String(html ?? ''))
+  && /jobs-widget\.recruiteecdn\.com\/widget\.js/i.test(String(html ?? ''))
+
+const extractIndiaOffers = (payload) => (Array.isArray(payload?.offers) ? payload.offers : [])
+  .filter((offer) => String(offer?.country_code ?? '').toUpperCase() === 'IN')
+  .map((offer) => ({
+    title: offer.sharing_title || offer.title || offer.slug,
+    company: COMPANY,
+    department: offer.category_code || null,
+    location: offer.location || 'India',
+    city: String(offer.location || '').split(',')[0].trim() || null,
+    country: 'India',
+    jobId: String(offer.id || offer.slug),
+    requisitionId: String(offer.id || offer.slug),
+    sourceUrl: offer.careers_url,
+    applyUrl: offer.careers_url,
+    employmentType: offer.employment_type || null,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: offer.created_at || null,
+    closingDate: offer.close_at || null,
+    jobDescription: null,
+    remoteStatus: offer.on_site === false ? 'Remote' : 'On-site',
+  }))
 
 export const matchesVerifiedNoJobsSurface = (homepageHtml, careersHtml) =>
   hasOfficialHomepageSignal(homepageHtml)
   && hasOfficialCareersSignal(careersHtml)
   && !hasPublicJobsSignal(homepageHtml)
   && !hasPublicJobsSignal(careersHtml)
+  && hasVerifiedRecruiteeWidget(careersHtml)
 
 export const createGermanCentreForOpenSourceScraper = () => ({
-  async run({ fetchText: fetchTextImpl = fetchText } = {}) {
+  async run({ fetchText: fetchTextImpl = fetchText, now = () => new Date().toISOString() } = {}) {
     const homepageHtml = await fetchTextImpl(HOMEPAGE_URL)
 
     if (!hasOfficialHomepageSignal(homepageHtml)) {
@@ -74,7 +108,11 @@ export const createGermanCentreForOpenSourceScraper = () => ({
 
     const careersHtml = await fetchTextImpl(CAREERS_URL)
 
-    if (hasPublicJobsSignal(homepageHtml) || hasPublicJobsSignal(careersHtml)) {
+    if (hasPublicJobsSignal(homepageHtml)) {
+      throw new Error('ZenDiS homepage now appears to expose job listings')
+    }
+
+    if (hasPublicJobsSignal(careersHtml)) {
       throw new Error('ZenDiS public careers page now appears to expose job listings')
     }
 
@@ -82,7 +120,18 @@ export const createGermanCentreForOpenSourceScraper = () => ({
       throw new Error('ZenDiS careers page no longer matches the verified no-listings public surface')
     }
 
-    return []
+    const offersPayload = JSON.parse(await fetchTextImpl(RECRUITEE_OFFERS_URL))
+    const jobs = extractIndiaOffers(offersPayload)
+
+    return jobs.map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.applyUrl,
+      scrapedAt: now(),
+      companyCareerPage: CAREERS_URL,
+      companyDomain: 'zendis.recruitee.com',
+      atsPlatform: 'recruitee',
+    }))
   },
 })
 

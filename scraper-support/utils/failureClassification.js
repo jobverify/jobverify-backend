@@ -8,10 +8,10 @@ const getErrorText = (error = {}) => [
   .join(' ')
 
 const BLOCKED_OR_ACCESS_DENIED_PATTERN =
-  /http[\s_:-]*(?:401|403|406|429)\b|\b403\b|forbidden|blocked html|blocked response|captcha|challenge|unauthorized|access denied|too many requests|authorizationtoken/i
+  /http[\s_:-]*(?:401|403|406|429)\b|http[\s_:-]*405\b.*icims\.com|\b403\b|forbidden|blocked html|blocked response|captcha|challenge|human verification|please enable cookies|verify (?:you are )?human|unauthorized|access denied|too many requests|authorizationtoken/i
 
 const NETWORK_OR_TIMEOUT_PATTERN =
-  /http[\s_:-]*5\d\d\b|timeout|timed out|targetclose|target closed|execution context was destroyed|socket|econn|enotfound|eai_again|fetch failed|net::err_[a-z_]+|\bnetwork\b|tls|und_err_connect_timeout/i
+  /http[\s_:-]*5\d\d\b|timeout|timed out|etimedout|targetclose|target closed|execution context was destroyed|socket|econn|enotfound|eai_again|fetch failed|net::err_[a-z_]+|\bnetwork\b|tls|und_err_connect_timeout/i
 
 const SURFACE_DRIFT_OR_FAIL_CLOSED_PATTERN =
   /http[\s_:-]*3\d\d\b|http[\s_:-]*404\b|no longer|changed|drift|verified|re-verify|before trusting \[\]|no-jobs contract|no jobs contract|does not match|no longer matches|no longer exposes|now appears|now exposes|publicly enumerable|needs a structured scraper|no structured public job cards|emerged|reachable again|must be revalidated|validation failed|unable to validate|unable to find .* context|unable to resolve .* keka embed configuration/i

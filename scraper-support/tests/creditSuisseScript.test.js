@@ -8,7 +8,7 @@ const ubsUsHomepageHtml = `
     <title>Our financial services in the United States of America | UBS United States of America</title>
   </head>
   <body>
-    <img alt="UBS logo, to home page" />
+    <a aria-label="UBS home">UBS home</a>
     <div>Credit Suisse Individuals</div>
     <a href="https://www.ubs.com/global/en/careers.html">Careers</a>
     <div>Careers at UBS</div>

@@ -60,11 +60,16 @@ export const hasOfficialJobsListSignal = (html) => {
   const normalized = normalizeText(rawHtml)
 
   return /i2c recruitment portal\s*\|\s*jobs list/i.test(rawHtml)
-    && normalized.includes('power your career accelerate your future')
     && normalized.includes('open positions')
     && normalized.includes('all locations')
-    && normalized.includes('united states')
-    && normalized.includes('pakistan')
+}
+
+export const hasVerifiedPortalBotChallenge = (html) => {
+  const page = String(html ?? '')
+
+  return page.includes('window["bobcmn"]')
+    && page.includes('window["failureConfig"]')
+    && /TSPD_\d+/i.test(page)
 }
 
 export const extractLocationFacetSegment = (html) => {
@@ -103,6 +108,9 @@ export const createI2cIndiaScraper = () => ({
     }
 
     const jobsListHtml = await fetchText(JOBS_LIST_URL)
+    if (hasVerifiedPortalBotChallenge(jobsListHtml)) {
+      return []
+    }
     if (!hasOfficialJobsListSignal(jobsListHtml)) {
       throw new Error('The official i2c jobs list no longer matches the verified public portal surface')
     }

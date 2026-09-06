@@ -58,17 +58,25 @@ export const pageExposesDedicatedBridgei2iJobs = (html = '') => {
       || /\/jobs\/[a-z0-9-]+/i.test(String(html ?? '')))
 }
 
+const isRetiredLegacyDomainError = (error) => /HTTP 404 for https:\/\/bridgei2i\.com\/?/i.test(
+  String(error?.message ?? error ?? ''),
+)
+
 export const createBridgei2iAnalyticsSolutionsScraper = () => ({
   async run({
     fetchText = defaultFetchText,
   } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasRedirectedHomepageSignal(homepageHtml)) {
-      throw new Error('The verified Bridgei2i homepage no longer matches the redirected Accenture parent surface')
-    }
+    try {
+      const homepageHtml = await fetchText(HOMEPAGE_URL)
+      if (!hasRedirectedHomepageSignal(homepageHtml)) {
+        throw new Error('The verified Bridgei2i homepage no longer matches the redirected Accenture parent surface')
+      }
 
-    if (pageExposesDedicatedBridgei2iJobs(homepageHtml)) {
-      throw new Error('Bridgei2i now appears to expose dedicated public openings and needs a real scraper')
+      if (pageExposesDedicatedBridgei2iJobs(homepageHtml)) {
+        throw new Error('Bridgei2i now appears to expose dedicated public openings and needs a real scraper')
+      }
+    } catch (error) {
+      if (!isRetiredLegacyDomainError(error)) throw error
     }
 
     const acquisitionNoticeHtml = await fetchText(ACQUISITION_NOTICE_URL)

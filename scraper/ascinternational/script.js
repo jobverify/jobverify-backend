@@ -120,6 +120,7 @@ export const hasOfficialCareersPageSignal = (html) => {
 
   return (
     title === 'Careers - ASC International'
+    || title === 'Careers - Inspection & Metrology Jobs | ASC International'
     || title === 'Careers - Join the ASC International Team | Inspection & Metrology Jobs | ASC International'
   )
     && text?.includes('Join Our Continuously Growing Team')

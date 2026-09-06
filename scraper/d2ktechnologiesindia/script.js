@@ -75,14 +75,13 @@ export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
 
   return /<title>\s*Careers\s*\|\s*D2K Technologies\s*<\/title>/i.test(String(html ?? ''))
-    && normalized.includes('Why D2K?')
     && normalized.includes('Current Openings')
     && normalized.includes('D2K Technologies India Pvt. Ltd.')
 }
 
 export const extractJobCards = (html = '') => {
   const jobs = []
-  const applyPattern = /<a[^>]*href="(https:\/\/www\.d2ktechnologies\.com\/[^"]+)"[^>]*aria-label="Apply Now"[^>]*>/gi
+  const applyPattern = /<a[^>]*href="([^"]+)"[^>]*aria-label="Apply Now"[^>]*>/gi
 
   for (const match of String(html ?? '').matchAll(applyPattern)) {
     const applyUrl = toAbsoluteUrl(match[1])

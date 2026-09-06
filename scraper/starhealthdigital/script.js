@@ -109,6 +109,7 @@ const extractSameOriginLinks = (html = '', pageUrl = CAREERS_URL) => {
 
   for (const match of matches) {
     const href = match[1] || match[2] || match[3] || null
+    if (!href) continue
 
     try {
       const url = new URL(decodeEntities(href), baseUrl)

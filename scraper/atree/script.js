@@ -22,6 +22,7 @@ export const WORK_WITH_US_URL = PROVIDER_METADATA.workWithUsUrl
 export const SITEMAP_URL = PROVIDER_METADATA.sitemapUrl
 export const CAREER_POST_SITEMAP_URL = PROVIDER_METADATA.careerPostSitemapUrl
 export const CHECKED_MISSING_ROUTE_URLS = [...PROVIDER_METADATA.checkedMissingRouteUrls]
+export const ERP_JOBS_URL = 'https://erp.atree.org/jobs'
 export const VERIFIED_JOB_DETAIL_URLS_CONST = [...VERIFIED_JOB_DETAIL_URLS]
 export const VERIFIED_APPLY_URLS_CONST = [...VERIFIED_APPLY_URLS]
 export { VERIFIED_JOB_DETAIL_URLS_CONST as VERIFIED_JOB_DETAIL_URLS }
@@ -217,7 +218,9 @@ const defaultFetchPage = async (url) => {
 export const extractCareersUrl = (html = '') => {
   const anchors = extractAllAnchors(html, HOMEPAGE_URL)
 
-  const matchedAnchor = anchors.find((anchor) => anchor.absoluteUrl && sameUrl(anchor.absoluteUrl, CAREERS_URL))
+  const matchedAnchor = anchors.find((anchor) =>
+    anchor.absoluteUrl
+    && (sameUrl(anchor.absoluteUrl, CAREERS_URL) || sameUrl(anchor.absoluteUrl, ERP_JOBS_URL)))
   return matchedAnchor?.absoluteUrl ?? null
 }
 
@@ -229,6 +232,18 @@ export const hasOfficialHomepageSignal = (html = '') => {
     && normalized.includes('ATREE')
     && /href=["']https:\/\/www\.atree\.org\/get-involved\/["']/i.test(rawHtml)
 }
+
+export const hasErpJobsPageSignal = (html = '') => {
+  const rawHtml = String(html ?? '')
+
+  return /<title>\s*Job Openings\s*<\/title>/i.test(rawHtml)
+    && /Built on Frappe/i.test(rawHtml)
+    && /class=["']jobs-page["']/i.test(rawHtml)
+    && /id=["']search-box["']/i.test(rawHtml)
+}
+
+export const erpJobsPageHasPublicListings = (html = '') =>
+  /<a\b[^>]+href=["'][^"']*\/jobs\/[^"']+["']/i.test(String(html ?? ''))
 
 export const extractListingCards = (html = '') =>
   [...String(html ?? '').matchAll(
@@ -377,7 +392,24 @@ export const createAtreeScraper = ({
     }
 
     if (extractCareersUrl(homepage.html) !== CAREERS_URL) {
-      throw new Error('Atree verified homepage careers link changed materially')
+      if (extractCareersUrl(homepage.html) !== ERP_JOBS_URL) {
+        throw new Error('Atree verified homepage careers link changed materially')
+      }
+
+      const erpJobsPage = await fetchPage(ERP_JOBS_URL)
+      if (
+        erpJobsPage.status !== 200
+        || !sameUrl(erpJobsPage.url, ERP_JOBS_URL)
+        || !hasErpJobsPageSignal(erpJobsPage.html)
+      ) {
+        throw new Error('Atree verified ERP jobs portal no longer matches the trusted first-party surface')
+      }
+
+      if (erpJobsPageHasPublicListings(erpJobsPage.html)) {
+        throw new Error('Atree ERP jobs portal now exposes public listings that require a dedicated parser')
+      }
+
+      return []
     }
 
     const careersPage = await fetchPage(CAREERS_URL)

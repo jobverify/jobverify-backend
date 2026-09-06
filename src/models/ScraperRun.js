@@ -104,7 +104,9 @@ const ScraperRunSchema = new Schema(
   }
 );
 
-ScraperRunSchema.index({ ranAt: -1 });
+// Keep the audit trail bounded on Atlas free tiers. MongoDB's TTL monitor
+// removes documents after this age without affecting active job listings.
+ScraperRunSchema.index({ ranAt: 1 }, { expireAfterSeconds: 90 * 24 * 60 * 60 });
 
 ScraperRunSchema.set("toJSON", {
   // Transforms database document representation for API JSON responses.

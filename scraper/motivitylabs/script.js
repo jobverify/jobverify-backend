@@ -75,7 +75,7 @@ const extractSectionLines = (lines, startLabels, endLabels) => {
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
-  const normalized = (normalizeWhitespace(stripScriptsAndStyles(html)) || '').toLowerCase()
+  const normalized = htmlToLines(html).join(' ').toLowerCase()
 
   return normalized.includes('join the circle of motivating innovators')
     && normalized.includes('current roles available')
@@ -148,7 +148,6 @@ export const extractJobDetail = (html = '', card = {}, { scrapedAt } = {}) => {
     ['Required Competencies'],
     ['Technical Skill Set / Competencies', 'Please share your references to Talent@motivitylabs.com / referrals@motivitylabs.com', 'Experience:', 'Job Type:', 'Job Location:'],
   ).filter(Boolean)
-  const applyEmail = String(html ?? '').match(/Talent@motivitylabs\.com/i) ? 'mailto:talent@motivitylabs.com' : null
   const jobId = String(card.detailUrl ?? '').split('/').filter(Boolean).at(-1) || null
 
   if (!title || !jobId) return null
@@ -163,7 +162,8 @@ export const extractJobDetail = (html = '', card = {}, { scrapedAt } = {}) => {
     jobId,
     requisitionId: jobId,
     sourceUrl: card.detailUrl,
-    applyUrl: applyEmail,
+    // Applications are submitted by email, with instructions on this canonical job page.
+    applyUrl: card.detailUrl,
     employmentType: normalizeWhitespace(employmentType),
     experienceRequired: normalizeWhitespace(experienceRequired),
     minimumQualification: null,

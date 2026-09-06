@@ -28,6 +28,7 @@ const LABEL_ALIASES = {
   experience: ['Work Experience (Min & Max in years) :', 'Experience:'],
   qualification: ['Qualification :', 'Education :'],
   location: ['Job Location :', 'Location:'],
+  positions: ['No. of Positions :'],
   employmentType: ['Job Type:'],
   reportsTo: ['Reports To:'],
 }

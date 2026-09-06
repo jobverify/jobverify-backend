@@ -8,7 +8,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = 'stridelysolutions'
 export const COMPANY = 'Stridely Solutions'
 export const HOMEPAGE_URL = 'https://www.stridelysolutions.com/'
-export const CAREERS_URL = 'https://www.stridelysolutions.com/insights/blog/jobs/'
+export const CAREERS_URL = 'https://www.stridelysolutions.com/careers/current-openings/'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -36,6 +36,13 @@ export const PROVIDER_METADATA = {
 
 const normalizeWhitespace = (value) => String(value ?? '').replace(/\s+/g, ' ').trim()
 
+const toTitleCase = (value) => String(value ?? '')
+  .split('-')
+  .map((part) => part ? `${part[0].toUpperCase()}${part.slice(1).toLowerCase()}` : '')
+  .join(' ')
+
+const NON_INDIA_LOCATION_SLUGS = new Set(['canada', 'usa', 'united-states'])
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -47,14 +54,47 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
-  return /Job Openings Archive - Stridely Solutions/i.test(page)
-    && /awsm-jobs-archive-title/i.test(page)
-    && /awsm-job-post-title/i.test(page)
+  return /<title>\s*Current Job Openings\s*-\s*Stridely Solutions\s*<\/title>/i.test(page)
+    && /<h1[^>]*>\s*Job Openings\s*<\/h1>/i.test(page)
+    && /Build meaningful careers with people who value ownership learning/i.test(page)
+    && /awsm_job_openings/i.test(page)
 }
 
 export const extractJobCards = (html) => {
   const page = String(html ?? '')
   const jobs = []
+  const currentCards = [...page.matchAll(
+    /<article\b([^>]*\bawsm_job_openings\b[^>]*)>([\s\S]*?)<\/article>/gi,
+  )]
+
+  if (currentCards.length > 0) {
+    for (const [, attributes, cardHtml] of currentCards) {
+      const title = normalizeWhitespace(
+        cardHtml.match(/elementor-post__title[^>]*>\s*<a[^>]+href=["']([^"']+)["'][^>]*>\s*([\s\S]*?)\s*<\/a>/i)?.[2],
+      )
+      const sourceUrl = normalizeWhitespace(
+        cardHtml.match(/elementor-post__title[^>]*>\s*<a[^>]+href=["']([^"']+)["']/i)?.[1],
+      )
+      const cities = [...String(attributes).matchAll(/\bjob-location-([a-z0-9-]+)/gi)]
+        .map((match) => match[1].toLowerCase())
+        .filter((slug) => !NON_INDIA_LOCATION_SLUGS.has(slug))
+        .map(toTitleCase)
+        .filter(Boolean)
+
+      if (!title || !sourceUrl || cities.length === 0) continue
+
+      jobs.push({
+        title,
+        location: `${cities.join(', ')}, India`,
+        city: cities[0],
+        sourceUrl,
+        applyUrl: sourceUrl,
+      })
+    }
+
+    return jobs
+  }
+
   const cardStarts = [...page.matchAll(/<div class="awsm-job-listing-item\b/gi)].map((match) => match.index)
   const cards = cardStarts.map((start, index) => {
     const end = cardStarts[index + 1] ?? page.length
@@ -90,6 +130,7 @@ export const extractJobCards = (html) => {
     jobs.push({
       title,
       location,
+      city: normalizeWhitespace(location.split(',')[0]) || null,
       sourceUrl,
       applyUrl: sourceUrl,
     })

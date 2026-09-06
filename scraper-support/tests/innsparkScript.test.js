@@ -41,30 +41,36 @@ test('Innspark helpers recognize the verified careers and apply surfaces', async
   ])
 })
 
-test('Innspark run falls back to browser-backed fetches when the origin breaks HTTP parsing', async () => {
+test('Innspark run falls back to a tolerant HTTP parser when the live first-party pages return the broken HTTP/1.1 response shape', async () => {
   const innspark = await loadModule()
-  const browserRequestedUrls = []
+  const requestedPrimaryUrls = []
+  const requestedTolerantUrls = []
 
   const jobs = await innspark.createInnsparkScraper().run({
-    fetchText: async () => {
-      throw new Error('fetch failed | Response does not match the HTTP/1.1 protocol (Missing expected CR after header value)')
+    fetchText: async (url) => {
+      requestedPrimaryUrls.push(url)
+      throw new TypeError('fetch failed | Response does not match the HTTP/1.1 protocol (Missing expected CR after header value)')
     },
-    fetchBrowserText: async (url) => {
-      browserRequestedUrls.push(url)
+    fetchProtocolTolerantText: async (url) => {
+      requestedTolerantUrls.push(url)
       if (url === innspark.CAREERS_URL) return careersHtml
       if (url === innspark.APPLY_URL) return applyHtml
-      throw new Error(`Unexpected Innspark URL: ${url}`)
+      throw new Error(`Unexpected tolerant URL: ${url}`)
     },
   })
 
-  assert.deepEqual(browserRequestedUrls, [
+  assert.deepEqual(requestedPrimaryUrls, [
+    innspark.CAREERS_URL,
+    innspark.APPLY_URL,
+  ])
+  assert.deepEqual(requestedTolerantUrls, [
     innspark.CAREERS_URL,
     innspark.APPLY_URL,
   ])
   assert.equal(jobs.length, 11)
   assert.equal(jobs[0].source, 'innspark')
   assert.equal(jobs[0].link, innspark.APPLY_URL)
-  assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
+  assert.equal(jobs[0].company, 'Innspark')
 })
 
 test('Innspark aborts retries when the verified first-party surface still breaks HTTP parsing after fallback', async () => {
@@ -80,7 +86,7 @@ test('Innspark aborts retries when the verified first-party surface still breaks
       fetchText: async () => {
         throw protocolError
       },
-      fetchBrowserText: async (url) => {
+      fetchProtocolTolerantText: async (url) => {
         requestedUrls.push(url)
         throw protocolError
       },

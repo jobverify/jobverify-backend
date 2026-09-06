@@ -125,7 +125,7 @@ export const hasReferralOnlyHomepageSignal = (html = '') => {
   const title = (extractTitle(page) || '').toLowerCase()
 
   return title === 'netomi'
-    && text.includes("we create intelligent experiences for the world's most ambitious companies.")
+    && text.includes("we power intelligent experiences for the world's most ambitious companies.")
     && text.includes('new engagements are by referral.')
     && extractLeverApiUrl(page) == null
     && !text.includes('careers at netomi')

@@ -10,7 +10,8 @@ export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
@@ -28,10 +29,11 @@ const defaultFetchText = async (url) => {
 }
 
 export const hasVerifiedCareersPageSignal = (html = '') => {
-  const rawHtml = String(html ?? '')
-  return /NCSi Careers/i.test(rawHtml)
-    && /YOUR CAREER\. OUR COMMITMENT\./i.test(rawHtml)
-    && /Join our renowned team/i.test(rawHtml)
+  const rawHtml = String(html ?? '').toLowerCase()
+  return rawHtml.includes('ncsi employment opportunities - careers')
+    && rawHtml.includes('https://www.ncsi.us/careers/')
+    && rawHtml.includes('ncsi careers employment opportunities and jobs')
+    && rawHtml.includes('take your career to the next level at ncsi')
   }
 
 export const createNcsitechnologiespvtltdScraper = () => ({

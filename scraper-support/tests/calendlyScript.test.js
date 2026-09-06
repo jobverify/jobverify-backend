@@ -161,7 +161,7 @@ test('Calendly accepts the live filter-based careers surface while the Greenhous
     </head>
     <body>
       <p>Careers at Calendly</p>
-      <h1>Join us in creating better meeting experiences</h1>
+      <h1>Join us in helping people make space for what matters</h1>
       <p>Filter by location</p>
       <p>Filter by department</p>
       <h2>Featured</h2>

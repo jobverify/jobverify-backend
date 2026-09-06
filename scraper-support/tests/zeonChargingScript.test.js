@@ -104,6 +104,65 @@ const careersHtml = `
 </html>
 `
 
+const nextJsCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>EV Charging Jobs in India | Careers at Zeon Charging</title>
+  </head>
+  <body>
+    <main>
+      <section>
+        <h1>Join Us in Building the Future of EV Charging</h1>
+        <h2>Open Positions</h2>
+        <script type="application/ld+json">
+          {
+            "@context": "https://schema.org",
+            "@type": "JobPosting",
+            "title": "Network Operations Executive",
+            "description": "<p>Support charger uptime and field issue triage across Zeon sites.</p>",
+            "employmentType": "FULL_TIME",
+            "jobLocation": {
+              "@type": "Place",
+              "address": {
+                "@type": "PostalAddress",
+                "addressCountry": "IN",
+                "addressLocality": "Tiruppur",
+                "addressRegion": "Tamil Nadu"
+              }
+            },
+            "url": "https://zeoncharging.com/forms/apply_job?job_id=186002",
+            "datePosted": "2026-08-25",
+            "validThrough": "2026-11-23"
+          }
+        </script>
+        <script type="application/ld+json">
+          {
+            "@context": "https://schema.org",
+            "@type": "JobPosting",
+            "title": "Accounts Manager",
+            "description": "<p>Lead accounting operations, compliance, and audits for Zeon International.</p>",
+            "employmentType": "FULL_TIME",
+            "jobLocation": {
+              "@type": "Place",
+              "address": {
+                "@type": "PostalAddress",
+                "addressCountry": "IN",
+                "addressLocality": "Tiruppur",
+                "addressRegion": "Tamil Nadu"
+              }
+            },
+            "url": "https://zeoncharging.com/forms/apply_job?job_id=186001",
+            "datePosted": "2026-08-20",
+            "validThrough": "2026-11-18"
+          }
+        </script>
+      </section>
+    </main>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/zeoncharging/script.js')
@@ -204,4 +263,56 @@ test.skip('Zeon Charging run verifies homepage, about, contact, and careers surf
   assert.equal(jobs[0].source, 'zeoncharging')
   assert.equal(jobs[0].scrapedAt, '2026-08-01T00:00:00.000Z')
   assert.equal(jobs[1].jobId, 'zeoncharging-184655')
+})
+
+test('Zeon Charging also extracts live Next.js JSON-LD job cards from the official careers page', async () => {
+  const zeon = await loadModule()
+
+  assert.equal(zeon.hasOfficialCareersSignal(nextJsCareersHtml), true)
+  assert.deepEqual(zeon.extractJobCards(nextJsCareersHtml), [
+    {
+      title: 'Network Operations Executive',
+      company: 'Zeon Electric Pvt Ltd',
+      department: null,
+      location: 'Tiruppur, Tamil Nadu, India',
+      city: 'Tiruppur',
+      state: 'Tamil Nadu',
+      country: 'India',
+      jobId: 'zeoncharging-186002',
+      requisitionId: '186002',
+      sourceUrl: 'https://zeoncharging.com/forms/apply_job?job_id=186002',
+      applyUrl: 'https://zeoncharging.com/forms/apply_job?job_id=186002',
+      employmentType: 'FULL_TIME',
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: '2026-08-25',
+      closingDate: '2026-11-23',
+      jobDescription: 'Support charger uptime and field issue triage across Zeon sites.',
+      remoteStatus: 'On-site',
+    },
+    {
+      title: 'Accounts Manager',
+      company: 'Zeon Electric Pvt Ltd',
+      department: null,
+      location: 'Tiruppur, Tamil Nadu, India',
+      city: 'Tiruppur',
+      state: 'Tamil Nadu',
+      country: 'India',
+      jobId: 'zeoncharging-186001',
+      requisitionId: '186001',
+      sourceUrl: 'https://zeoncharging.com/forms/apply_job?job_id=186001',
+      applyUrl: 'https://zeoncharging.com/forms/apply_job?job_id=186001',
+      employmentType: 'FULL_TIME',
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: '2026-08-20',
+      closingDate: '2026-11-18',
+      jobDescription: 'Lead accounting operations, compliance, and audits for Zeon International.',
+      remoteStatus: 'On-site',
+    },
+  ])
 })

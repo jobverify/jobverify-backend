@@ -17,7 +17,7 @@ test('Native orange is registered as a verified first-party marketing-shell sent
   assert.equal(provider.paginationStrategy, 'homepage-plus-about-contact-plus-marketing-routes-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-about-join-team-contact-handoff+verified-contact-page+marketing-careers-routes-return-empty',
+    'verified-current-or-legacy-homepage+verified-about-join-team-contact-handoff+verified-contact-page+marketing-careers-routes-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

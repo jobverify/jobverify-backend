@@ -99,7 +99,6 @@ export const hasOfficialCareersPageSignal = (html = '') => {
     && /Help change manufacturing for the better/i.test(page)
     && page.includes(WORKABLE_BOARD_URL)
     && /See Openings/i.test(page)
-    && /Some job openings/i.test(page)
 }
 
 export const hasOfficialWorkableBoardSignal = (html = '') => {

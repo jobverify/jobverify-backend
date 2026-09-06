@@ -25,8 +25,8 @@ const legacyCareersHtml = `
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <link rel="preload" as="script" href="https://assets.dripcapital.com/_nuxt/static/1784800988/careers/state.js">
-    <link rel="preload" as="script" href="https://assets.dripcapital.com/_nuxt/static/1784800988/careers/payload.js">
+    <link rel="preload" as="script" href="https://assets.dripcapital.com/_nuxt/static/1786337464/careers/state.js">
+    <link rel="preload" as="script" href="https://assets.dripcapital.com/_nuxt/static/1786337464/careers/payload.js">
   </head>
   <body>
     <div id="__nuxt">
@@ -40,8 +40,8 @@ const indiaCareersHtml = `
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <link rel="preload" as="script" href="https://assets.dripcapital.com/_nuxt/static/1784800988/en-in/careers/state.js">
-    <link rel="preload" as="script" href="https://assets.dripcapital.com/_nuxt/static/1784800988/en-in/careers/payload.js">
+    <link rel="preload" as="script" href="https://assets.dripcapital.com/_nuxt/static/1786337464/en-in/careers/state.js">
+    <link rel="preload" as="script" href="https://assets.dripcapital.com/_nuxt/static/1786337464/en-in/careers/payload.js">
   </head>
   <body>
     <div id="__nuxt">
@@ -59,8 +59,8 @@ const usCareersHtml = `
     <meta name="description" content="Join the Drip Capital team. Build the future of working capital access for SMBs. We are hiring engineers, analysts, and operators.">
     <link rel="canonical" href="https://www.dripcapital.com/en-us/careers/">
     <meta property="og:title" content="Careers | Join Drip Capital">
-    <link rel="preload" as="script" href="https://assets.dripcapital.com/_nuxt/static/1784800988/en-us/careers/state.js">
-    <link rel="preload" as="script" href="https://assets.dripcapital.com/_nuxt/static/1784800988/en-us/careers/payload.js">
+    <link rel="preload" as="script" href="https://assets.dripcapital.com/_nuxt/static/1786337464/en-us/careers/state.js">
+    <link rel="preload" as="script" href="https://assets.dripcapital.com/_nuxt/static/1786337464/en-us/careers/payload.js">
   </head>
   <body>
     <div id="__nuxt">
@@ -137,22 +137,22 @@ test('Drip Capital helpers stay pinned to the verified homepage, careers shells,
   assert.equal(dripCapital.SOURCE, 'dripcapital')
   assert.equal(dripCapital.COMPANY, 'Drip Capital')
   assert.equal(dripCapital.OFFICIAL_BRAND_NAME, 'Drip Capital')
-  assert.equal(dripCapital.VERIFIED_ON, '2026-08-02')
+  assert.equal(dripCapital.VERIFIED_ON, '2026-08-13')
   assert.equal(dripCapital.HOMEPAGE_URL, 'https://www.dripcapital.com/')
   assert.equal(dripCapital.CAREERS_PAGE_URL, 'https://www.dripcapital.com/en-in/careers/')
   assert.equal(dripCapital.LEGACY_CAREERS_URL, 'https://www.dripcapital.com/careers/')
   assert.equal(dripCapital.US_CAREERS_URL, 'https://www.dripcapital.com/en-us/careers/')
   assert.equal(
     dripCapital.LEGACY_CAREERS_PAYLOAD_URL,
-    'https://assets.dripcapital.com/_nuxt/static/1784800988/careers/payload.js',
+    'https://assets.dripcapital.com/_nuxt/static/1786337464/careers/payload.js',
   )
   assert.equal(
     dripCapital.INDIA_CAREERS_PAYLOAD_URL,
-    'https://assets.dripcapital.com/_nuxt/static/1784800988/en-in/careers/payload.js',
+    'https://assets.dripcapital.com/_nuxt/static/1786337464/en-in/careers/payload.js',
   )
   assert.equal(
     dripCapital.US_CAREERS_PAYLOAD_URL,
-    'https://assets.dripcapital.com/_nuxt/static/1784800988/en-us/careers/payload.js',
+    'https://assets.dripcapital.com/_nuxt/static/1786337464/en-us/careers/payload.js',
   )
   assert.equal(dripCapital.JOBS_URL, 'https://www.dripcapital.com/jobs')
   assert.equal(dripCapital.ROBOTS_TXT_URL, 'https://www.dripcapital.com/robots.txt')

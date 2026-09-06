@@ -88,9 +88,9 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const text = normalizeText(page)
 
-  return text.includes('sonatype careers')
-    && text.includes('join our workplace of innovators')
-    && /href=["'][^"']*jobs\.lever\.co\/sonatype\/?["']/i.test(page)
+  return page.includes('<title>Sonatype Careers &amp; Current Job Openings | Sonatype</title>')
+    && text.includes('sonatype careers')
+    && page.includes('jobs.lever.co/sonatype')
 }
 
 export const hasOfficialLeverBoardSignal = (html) => {

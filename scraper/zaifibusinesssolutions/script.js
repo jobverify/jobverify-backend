@@ -5,7 +5,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'zaifibusinesssolutions'
 export const COMPANY = 'ZAi-Fi Business Solutions'
-export const VERIFIED_ON = '2026-07-13'
+export const VERIFIED_ON = '2026-09-03'
 export const FIRST_PARTY_ROOT_URL = 'https://zai-fi.com'
 export const HOMEPAGE_URL = `${FIRST_PARTY_ROOT_URL}/`
 export const ROBOTS_URL = `${FIRST_PARTY_ROOT_URL}/robots.txt`
@@ -19,7 +19,7 @@ export const CAREER_PATHS = [
   '/openings',
 ]
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified the public ZAi-Fi marketing site at https://zai-fi.com on July 13, 2026; it exposes no careers route in the sitemap, no careers keywords on the homepage, and common careers URLs return 404.'
+  'Verified the public ZAi-Fi site at https://zai-fi.com on September 3, 2026. Its current Home Intelligence homepage, robots.txt, and sitemap expose no careers route, and common careers URLs return 404.'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -46,6 +46,8 @@ const stripTags = (value) => normalizeWhitespace(
 const CAREER_ROUTE_PATTERN = /\/(?:career|careers|jobs|join-us|work-with-us|openings)(?:\/|$)/i
 const CAREER_KEYWORD_PATTERN = /\b(?:career|careers|job openings|join us|work with us|hiring)\b/i
 const EXPECTED_HOMEPAGE_TITLE = 'ZAi-Fi | AI Solutions for Business & Manufacturing'
+const CURRENT_HOMEPAGE_TITLE = 'HOME INTELLIGENCE - One Home. One AI. Every Room.'
+const CURRENT_HOMEPAGE_DESCRIPTION = 'A distributed Home AI system. Central Home AI Hub + Lightweight Voice Nodes. The AI follows the user, not the device.'
 const EXPECTED_CANONICAL_URL = 'https://zaifi.co'
 const EXPECTED_CONTACT_EMAIL = 'contact@zai-fi.com'
 const EXPECTED_SITEMAP_HINT = 'Sitemap: https://zaifi.co/sitemap.xml'
@@ -56,12 +58,21 @@ export const buildCandidateCareerUrls = () =>
 export const isVerifiedHomepage = (html) => {
   const page = String(html ?? '')
   const title = normalizeWhitespace(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '')
+    .replace(/[\u2013\u2014]/g, '-')
   const canonical = normalizeWhitespace(page.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i)?.[1] ?? '')
+  const description = normalizeWhitespace(page.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i)?.[1] ?? '')
   const text = stripTags(page)
 
-  return title === EXPECTED_HOMEPAGE_TITLE
-    && canonical === EXPECTED_CANONICAL_URL
+  const isLegacyBusinessHomepage = title === EXPECTED_HOMEPAGE_TITLE
     && text.includes(EXPECTED_CONTACT_EMAIL)
+  const isCurrentHomeIntelligenceHomepage = title === CURRENT_HOMEPAGE_TITLE
+    && description === CURRENT_HOMEPAGE_DESCRIPTION
+    && /<meta[^>]+name=["'](?:author|creator|publisher)["'][^>]+content=["']ZAi-Fi["']/i.test(page)
+    // The redesigned site publishes the verified contact only in Organization JSON-LD.
+    && page.includes(EXPECTED_CONTACT_EMAIL)
+
+  return (isLegacyBusinessHomepage || isCurrentHomeIntelligenceHomepage)
+    && canonical === EXPECTED_CANONICAL_URL
 }
 
 export const sitemapHasCareerRoutes = (xml) =>

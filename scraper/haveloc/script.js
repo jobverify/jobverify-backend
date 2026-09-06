@@ -69,7 +69,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(rawHtml)
   const hasResumeProductLink = /href="https:\/\/(?:jobsurf|resume)\.haveloc\.com\/?"/i.test(rawHtml)
 
-  return /<title[^>]*>\s*Haveloc \| Placement Automation Software\s*<\/title>/i.test(rawHtml)
+  const hasLegacyHomepageSignal = /<title[^>]*>\s*Haveloc \| Placement Automation Software\s*<\/title>/i.test(rawHtml)
     && /href="https:\/\/placements\.haveloc\.com"/i.test(rawHtml)
     && /href="https:\/\/insider\.haveloc\.com"/i.test(rawHtml)
     && hasResumeProductLink
@@ -77,6 +77,13 @@ export const hasOfficialHomepageSignal = (html) => {
     && /management@haveloc\.com/i.test(rawHtml)
     && normalized.includes('finally all your job postings students in one place')
     && normalized.includes('from crazy ideas to code the haveloc story')
+
+  const hasCurrentAppShellSignal = /<title[^>]*>\s*Haveloc\s+—\s+Placement Operations Software\s*<\/title>/i.test(rawHtml)
+    && /content="Haveloc\s+—\s+the placement system for campuses and recruiters\. From job posts to offer letters\."/i.test(rawHtml)
+    && /<script[^>]+src="\/assets\/index-[^"]+\.js"/i.test(rawHtml)
+    && /<div[^>]+id="root"[^>]*><\/div>/i.test(rawHtml)
+
+  return hasLegacyHomepageSignal || hasCurrentAppShellSignal
 }
 
 export const hasFirstPartyCareerLikeLink = (html) => {
@@ -95,6 +102,7 @@ export const hasFirstPartyCareerLikeLink = (html) => {
 }
 
 export const isMissingCareerRoute = (page) => Number(page?.status) === 404
+  || (Number(page?.status) === 200 && hasOfficialHomepageSignal(page?.html))
 
 export const createHavelocScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {

@@ -85,10 +85,15 @@ export const hasVerifiedLegalIdentitySignal = (html = '') => {
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
+  const hasVerifiedTitle = /<title[^>]*>\s*Turso\s*-\s*(?:Databases Everywhere|Millions of Databases\. One Architecture\.)\s*<\/title>/i.test(page)
+  const hasVerifiedHeroCopy = text.includes('Millions of Databases. One Architecture.')
+    && (
+      text.includes('Built on SQLite. Lightweight enough to multiply, fast enough to run anywhere.')
+      || text.includes('Built on SQLite. Fast and lightweight to multiply and run anywhere.')
+    )
 
-  return /<title[^>]*>\s*Turso\s*-\s*Databases Everywhere\s*<\/title>/i.test(page)
-    && text.includes('Millions of Databases. One Architecture.')
-    && text.includes('Built on SQLite. Lightweight enough to multiply, fast enough to run anywhere.')
+  return hasVerifiedTitle
+    && hasVerifiedHeroCopy
     && text.includes('Company')
     && text.includes('About')
     && text.includes('Contact Us')

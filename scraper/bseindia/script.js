@@ -83,8 +83,7 @@ export const hasOfficialBundleSignal = (bundleJs) => {
   const normalized = normalizeWhitespace(script)
 
   return normalized.includes('/static/about/careers')
-    && normalized.includes('Careers at BSE')
-    && normalized.includes('careers@bseindia.com')
+    && normalized.includes('Careers')
     && !hasUnexpectedAtsSignal(script)
 }
 

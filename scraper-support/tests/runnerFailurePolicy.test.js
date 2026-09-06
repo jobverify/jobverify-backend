@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  applyRetryPolicyToScraperError,
   classifyScraperError,
   FatalScraperPersistenceError,
   formatIstTimestamp,
@@ -204,6 +205,24 @@ test('classifyScraperError recognizes remaining external and transient failure s
   )
 
   assert.deepEqual(
+    classifyScraperError(new Error('HTTP 405 for https://globalcareers-lennox.icims.com/jobs/search?ss=1&in_iframe=1')),
+    {
+      softFailure: true,
+      upstreamOutage: true,
+      failureKind: 'blocked_or_access_denied',
+    },
+  )
+
+  assert.deepEqual(
+    classifyScraperError(new Error('connect ETIMEDOUT 45.114.246.99:443')),
+    {
+      softFailure: true,
+      upstreamOutage: true,
+      failureKind: 'network_or_timeout',
+    },
+  )
+
+  assert.deepEqual(
     classifyScraperError(new Error(
       'OdNest Company canonical first-party hosts now resolve; re-verify the official careers surface before trusting []',
     )),
@@ -213,6 +232,63 @@ test('classifyScraperError recognizes remaining external and transient failure s
       failureKind: 'surface_drift_or_fail_closed',
     },
   )
+})
+
+test('retryAfterMongoQuotaRecovery retries the blocked write after deleting expired jobs', async () => {
+  const runner = await import('../runner.js')
+  let writes = 0
+  let purges = 0
+  const quotaError = new Error(
+    'you are over your space quota, using 521 MB of 512 MB. Writes are blocked on your cluster.',
+  )
+
+  const result = await runner.retryAfterMongoQuotaRecovery(
+    async () => {
+      writes += 1
+      if (writes === 1) throw quotaError
+      return 'persisted'
+    },
+    {
+      purgeExpiredJobs: async () => {
+        purges += 1
+        return { deletedCount: 4, estimatedBytes: 10 * 1024 * 1024 }
+      },
+    },
+  )
+
+  assert.equal(result, 'persisted')
+  assert.equal(writes, 2)
+  assert.equal(purges, 1)
+})
+
+test('applyRetryPolicyToScraperError stops retries for definitive upstream soft failures', () => {
+  const blockedError = new Error('HTTP 405 for https://globalcareers-lennox.icims.com/jobs/search?ss=1&in_iframe=1')
+  const driftError = new Error('Akbar Travels verified India homepage no longer matches the known public surface')
+
+  assert.deepEqual(applyRetryPolicyToScraperError(blockedError), Object.assign(blockedError, {
+    softFailure: true,
+    upstreamOutage: true,
+    failureKind: 'blocked_or_access_denied',
+    abortRetries: true,
+  }))
+
+  assert.deepEqual(applyRetryPolicyToScraperError(driftError), Object.assign(driftError, {
+    softFailure: true,
+    upstreamOutage: false,
+    failureKind: 'surface_drift_or_fail_closed',
+    abortRetries: true,
+  }))
+})
+
+test('applyRetryPolicyToScraperError keeps transient network failures retriable', () => {
+  const timeoutError = new Error('connect ETIMEDOUT 45.114.246.99:443')
+  const classifiedError = applyRetryPolicyToScraperError(timeoutError)
+
+  assert.equal(classifiedError, timeoutError)
+  assert.equal(classifiedError.softFailure, true)
+  assert.equal(classifiedError.upstreamOutage, true)
+  assert.equal(classifiedError.failureKind, 'network_or_timeout')
+  assert.equal(classifiedError.abortRetries, undefined)
 })
 
 test('classifyScraperError keeps runner-enforced source timeouts as local hard failures', () => {

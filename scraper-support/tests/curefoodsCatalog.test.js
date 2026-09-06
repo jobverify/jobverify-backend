@@ -13,7 +13,7 @@ test('getScraperCatalog includes Curefoods as a verified LinkedIn-handoff sentin
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Curefoods')
-  assert.equal(provider.companyCareerPage, 'https://curefoods.in/careers')
+  assert.equal(provider.companyCareerPage, 'https://www.curefoods.in/pages/careers')
   assert.equal(provider.atsPlatform, 'official-company-careers-linkedin-handoff')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')

@@ -9,7 +9,7 @@ export const D2K_TECHNOLOGIES_INDIA_CATALOG = {
   officialBrandName: 'D2K Technologies India Pvt. Ltd.',
   adapter: 'script',
   homepageUrl: 'https://www.d2ktechnologies.com/',
-  companyCareerPage: 'https://www.d2ktechnologies.com/careers',
+  companyCareerPage: 'https://www.d2ktechnologies.com/careerold.html',
   companyDomain: 'd2ktechnologies.com',
   atsPlatform: 'official-company-site-job-cards',
   countryFilter: 'India',

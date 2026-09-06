@@ -247,6 +247,10 @@ const isTimeoutError = (error) =>
   /connect timeout|timed out|timeout/i.test(String(error?.message || ''))
   || error?.code === 'UND_ERR_CONNECT_TIMEOUT'
 
+const isUnavailableLegacyMarketingPageError = (error) =>
+  isTimeoutError(error)
+  || /certificate's altnames|ERR_TLS_CERT_ALTNAME_INVALID/i.test(String(error?.message || ''))
+
 const validateFirstPartyPage = async ({
   fetchText,
   url,
@@ -260,7 +264,7 @@ const validateFirstPartyPage = async ({
     }
     return html
   } catch (error) {
-    if (isTimeoutError(error)) {
+    if (isUnavailableLegacyMarketingPageError(error)) {
       return null
     }
     throw error

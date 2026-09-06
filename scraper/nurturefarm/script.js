@@ -240,15 +240,22 @@ const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
 
 export const createNurtureFarmScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const joinUsHtml = await fetchText(CAREERS_URL)
-
-    if (!hasOfficialJoinUsSignal(joinUsHtml)) {
-      throw new Error('Nurture.Farm join-us page no longer matches the verified first-party careers handoff')
+    let jobsUrl = JOBS_URL
+    try {
+      const joinUsHtml = await fetchText(CAREERS_URL)
+      if (!hasOfficialJoinUsSignal(joinUsHtml)) {
+        throw new Error('Nurture.Farm join-us page no longer matches the verified first-party careers handoff')
+      }
+      jobsUrl = extractJobsUrl(joinUsHtml)
+    } catch (error) {
+      if (!/HTTP 404 for https:\/\/nurture\.farm\/join-us-2\/?/i.test(String(error?.message ?? error ?? ''))) {
+        throw error
+      }
     }
 
     let html
     try {
-      html = await fetchText(extractJobsUrl(joinUsHtml), { attempts: 1 })
+      html = await fetchText(jobsUrl, { attempts: 1 })
     } catch (error) {
       if (!isExpectedJobsBoardTimeout(error)) {
         throw error

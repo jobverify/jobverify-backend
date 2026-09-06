@@ -76,7 +76,7 @@ const SYSTECH_CAREERS_HTML = `
 const NEWAGE_CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
-  <head><title>Careers</title></head>
+  <head><title>Careers | Newage</title></head>
   <body>
     <h1>Learn and Grow With Us</h1>
     <h2>Join Newage and be part of a global team driving innovation in cloud technology, where your ideas are valued and your growth is supported.</h2>

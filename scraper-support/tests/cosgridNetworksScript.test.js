@@ -26,6 +26,28 @@ test('COSGrid careers landing accepts live h1 markup with attributes', async () 
   assert.equal(cosgrid.hasOfficialCareersLandingSignal(careersHtml), true)
 })
 
+test('COSGrid careers landing accepts the current rendered openings link', async () => {
+  const cosgrid = await loadCosgridNetworksModule()
+
+  const careersHtml = `
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <title>Join the COSGrid Team: Build a Brighter Digital Future</title>
+      </head>
+      <body>
+        <main>
+          <h1 class="hero-title">Join Our Team</h1>
+          <p>Take a look at our latest job opportunities</p>
+          <a href="/company/careers/openings">View openings</a>
+        </main>
+      </body>
+    </html>
+  `
+
+  assert.equal(cosgrid.hasOfficialCareersLandingSignal(careersHtml), true)
+})
+
 test('COSGrid openings parser accepts live attribute-heavy card markup', async () => {
   const cosgrid = await loadCosgridNetworksModule()
 

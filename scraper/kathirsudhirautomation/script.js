@@ -109,12 +109,8 @@ export const hasOfficialCareersSignal = (html) => {
   const text = stripTags(page).toLowerCase()
 
   return /<title>\s*Career opportunities in Electronics Core Company in Chennai\s*<\/title>/i.test(page)
-    && text.includes('electronics core company jobs')
-    && text.includes('sales & business development executive')
-    && text.includes('graduate engineer trainee (get)')
-    && text.includes('accounts & customer support executive')
-    && text.includes('scm engineer & lead')
-    && /hr@kathirsudhirautomation\.com/i.test(page)
+    && text.includes('kathir sudhir automation india pvt ltd')
+    && text.includes('electronics instruments manufacturer')
 }
 
 const JOB_SECTION_PATTERN =
@@ -123,6 +119,10 @@ const JOB_SECTION_PATTERN =
 export const extractPublicJobs = (html) => {
   if (!hasOfficialCareersSignal(html)) {
     throw new Error('Kathir Sudhir Automation verified careers page no longer matches the known public first-party surface')
+  }
+
+  if (!/Job Title:|apply here/i.test(String(html ?? ''))) {
+    return []
   }
 
   const jobs = [...String(html ?? '').matchAll(JOB_SECTION_PATTERN)].map((match) => {

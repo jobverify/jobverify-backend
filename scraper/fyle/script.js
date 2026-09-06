@@ -138,7 +138,7 @@ export const hasExpectedRobotsTxtSignal = (text = '') => {
     && /Allow:\s*\/\s*$/im.test(normalized)
     && /Allow:\s*\/blog\//i.test(normalized)
     && /Disallow:\s*\/thank-you/i.test(normalized)
-    && /Sitemap:\s*https:\/\/www\.fylehq\.com\/sitemap\.xml/i.test(normalized)
+    && /Sitemap:\s*https:\/\/www\.fylehq\.com\/sitemap(?:-index)?\.xml/i.test(normalized)
 }
 
 export const extractCareerLikeUrlsFromSitemap = (xml = '') =>

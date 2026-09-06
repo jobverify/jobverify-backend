@@ -49,6 +49,11 @@ const images = [
 ];
 `
 
+const CURRENT_BUNDLE_JS = `
+const route = "/static/about/careers";
+const navigation = ["About BSE", "Contact us", "Careers", "Feedback"];
+`
+
 const loadBseIndiaModule = async () => {
   try {
     return await import('../../scraper/bseindia/script.js')
@@ -70,6 +75,7 @@ test('BSE India keeps the verified careers shell, sitemap, and bundle signals pi
   assert.equal(bse.hasVerifiedSitemapSignal(SITEMAP_XML), true)
   assert.equal(bse.sitemapExposesPublicJobsRoute(SITEMAP_XML), false)
   assert.equal(bse.hasOfficialBundleSignal(BUNDLE_JS), true)
+  assert.equal(bse.hasOfficialBundleSignal(CURRENT_BUNDLE_JS), true)
   assert.deepEqual(
     bse.extractCurrentOpeningsFromBundle(BUNDLE_JS).map((job) => [job.title, job.department]),
     [

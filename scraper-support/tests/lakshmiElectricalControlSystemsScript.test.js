@@ -14,24 +14,66 @@ const contactHtml = readFixture('contact-us.html')
 const currentContactHtml = `
   <html>
     <head>
-      <title>Circuit breaker Manufacturers | Plastic parts Manufacturers - Contact Us</title>
+      <title>Contact Us - LECS</title>
     </head>
     <body>
+      <nav>
+        <a href="https://www.lecsindia.com/careers">Careers</a>
+      </nav>
       <main>
-        <h1>Contact Us</h1>
+        <h1>Let's Connect</h1>
+        <p>Email us at</p>
+        <p>info@lecsindia.com</p>
+        <p>Give us a call at</p>
+        <p>Phone: +91-422-6616500</p>
+        <p>Non-Business Queries Only</p>
+        <p>contact@lecsindia.com</p>
+        <h2>Get In touch</h2>
+        <p>Main Address</p>
+        <p>Lakshmi Electrical Control Systems Limited, Arasur, Coimbatore - 641 407, Tamilnadu, India</p>
       </main>
-      <footer>
-        <h2>Get In Touch</h2>
-        <div class="address-box">
-          <span>Factory Address</span>
-          Lakshmi Electrical Control Systems Limited<br>
-          Arasur, Coimbatore - 641 407 Tamilnadu, India
-        </div>
-        <ul class="c-details">
-          <li>Phone: <a href="tel:+91-422-6616500">+91-422-6616500</a></li>
-          <li><a href="mailto:info@lecsindia.com">info@lecsindia.com</a></li>
-        </ul>
-      </footer>
+    </body>
+  </html>
+`
+
+const currentHomepageHtml = `
+  <html>
+    <head>
+      <title>LECS</title>
+    </head>
+    <body>
+      <nav>
+        Menu HOME ABOUT US PRODUCT INDUSTRIES INVESTORS PARTNER WITH US PHOTO GALLERY
+        <a href="https://www.lecsindia.com/careers">CAREERS</a>
+        NEWS CONTACT US LECS
+      </nav>
+      <main>
+        <h1>EV CHARGERS</h1>
+        <h2>WHAT WE OFFER</h2>
+        <h2>Industries We Serve</h2>
+        <h2>CREDENTIALS</h2>
+        <p>LECS excels in providing unmatched solutions in all major lines of business.</p>
+        <p>Annual Turnover</p>
+        <p>Let's discuss how our solutions can drive your business forward with reliability and innovation.</p>
+      </main>
+    </body>
+  </html>
+`
+
+const currentCareersHtml = `
+  <html>
+    <head>
+      <title>Careers | LECS India</title>
+    </head>
+    <body>
+      <nav>
+        Menu HOME ABOUT US PRODUCT INDUSTRIES INVESTORS PARTNER WITH US PHOTO GALLERY CAREERS NEWS CONTACT US LECS
+      </nav>
+      <main>
+        <h1>Careers</h1>
+        <p>Careers | LECS India</p>
+        <a href="https://www.linkedin.com/company/lecsindia/">LinkedIn</a>
+      </main>
     </body>
   </html>
 `
@@ -46,24 +88,31 @@ const loadModule = async () => {
   }
 }
 
-test('Lakshmi Electrical Control Systems recognizes the verified official homepage and contact zero-job surfaces', async () => {
+test('Lakshmi Electrical Control Systems recognizes the verified official homepage, careers shell, and contact zero-job surfaces', async () => {
   const lecs = await loadModule()
 
   assert.equal(lecs.SOURCE, 'lakshmielectricalcontrolsystems')
   assert.equal(lecs.COMPANY, 'Lakshmi Electrical Control Systems')
   assert.equal(lecs.HOMEPAGE_URL, 'https://www.lecsindia.com/')
+  assert.equal(lecs.CAREERS_URL, 'https://www.lecsindia.com/careers')
   assert.equal(lecs.CONTACT_URL, 'https://www.lecsindia.com/contact-us/')
+  assert.equal(lecs.VERIFIED_ON, '2026-09-03')
 
   assert.equal(lecs.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(lecs.hasOfficialHomepageSignal(currentHomepageHtml), true)
+  assert.equal(lecs.hasOfficialCareersPageSignal(currentCareersHtml), true)
   assert.equal(lecs.hasOfficialContactSignal(contactHtml), true)
   assert.equal(lecs.hasOfficialContactSignal(currentContactHtml), true)
   assert.equal(lecs.hasFirstPartyCareerLikeLink(homepageHtml), false)
+  assert.equal(lecs.hasFirstPartyCareerLikeLink(currentHomepageHtml), true)
+  assert.equal(lecs.hasFirstPartyCareerLikeLink(currentContactHtml), true)
   assert.equal(lecs.hasFirstPartyCareerLikeLink(contactHtml), false)
   assert.equal(lecs.hasPublicJobsSignal(homepageHtml), false)
+  assert.equal(lecs.hasPublicJobsSignal(currentCareersHtml), false)
   assert.equal(lecs.hasPublicJobsSignal(contactHtml), false)
 })
 
-test('Lakshmi Electrical Control Systems returns no jobs while the verified first-party public surface exposes no careers or jobs path', async () => {
+test('Lakshmi Electrical Control Systems returns no jobs while the verified first-party careers shell exposes no public jobs', async () => {
   const lecs = await loadModule()
   const requestedUrls = []
 
@@ -71,8 +120,9 @@ test('Lakshmi Electrical Control Systems returns no jobs while the verified firs
     fetchText: async (url) => {
       requestedUrls.push(url)
 
-      if (url === lecs.HOMEPAGE_URL) return homepageHtml
-      if (url === lecs.CONTACT_URL) return contactHtml
+      if (url === lecs.HOMEPAGE_URL) return currentHomepageHtml
+      if (url === lecs.CAREERS_URL) return currentCareersHtml
+      if (url === lecs.CONTACT_URL) return currentContactHtml
 
       throw new Error(`Unexpected URL: ${url}`)
     },
@@ -80,6 +130,7 @@ test('Lakshmi Electrical Control Systems returns no jobs while the verified firs
 
   assert.deepEqual(requestedUrls, [
     lecs.HOMEPAGE_URL,
+    lecs.CAREERS_URL,
     lecs.CONTACT_URL,
   ])
   assert.deepEqual(jobs, [])
@@ -98,8 +149,9 @@ test('Lakshmi Electrical Control Systems falls back to a slower verified-page fe
     fetchTextWithExtendedTimeout: async (url) => {
       slowRequests.push(url)
 
-      if (url === lecs.HOMEPAGE_URL) return homepageHtml
-      if (url === lecs.CONTACT_URL) return contactHtml
+      if (url === lecs.HOMEPAGE_URL) return currentHomepageHtml
+      if (url === lecs.CAREERS_URL) return currentCareersHtml
+      if (url === lecs.CONTACT_URL) return currentContactHtml
 
       throw new Error(`Unexpected URL: ${url}`)
     },
@@ -107,6 +159,7 @@ test('Lakshmi Electrical Control Systems falls back to a slower verified-page fe
 
   assert.deepEqual(primaryRequests, [
     lecs.HOMEPAGE_URL,
+    lecs.CAREERS_URL,
     lecs.CONTACT_URL,
   ])
   assert.deepEqual(slowRequests, primaryRequests)
@@ -132,34 +185,33 @@ test('Lakshmi Electrical Control Systems fails closed when the verified zero-job
   await assert.rejects(
     lecs.createLakshmiElectricalControlSystemsScraper().run({
       fetchText: async (url) => {
-        if (url === lecs.HOMEPAGE_URL) return homepageHtml
-        if (url === lecs.CONTACT_URL) {
-          return contactHtml.replace(
-            '</main>',
-            '<p><a href="/careers/">Careers</a></p></main>',
-          )
+        if (url === lecs.HOMEPAGE_URL) return currentHomepageHtml
+        if (url === lecs.CAREERS_URL) {
+          return '<html><body><h1>Broken careers page</h1></body></html>'
         }
+        if (url === lecs.CONTACT_URL) return currentContactHtml
 
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /contact surface now exposes a first-party careers or jobs path/i,
+    /official careers page/i,
   )
 
   await assert.rejects(
     lecs.createLakshmiElectricalControlSystemsScraper().run({
       fetchText: async (url) => {
-        if (url === lecs.HOMEPAGE_URL) return homepageHtml
-        if (url === lecs.CONTACT_URL) {
-          return contactHtml.replace(
+        if (url === lecs.HOMEPAGE_URL) return currentHomepageHtml
+        if (url === lecs.CAREERS_URL) {
+          return currentCareersHtml.replace(
             '</main>',
             '<section><h2>Current Openings</h2><a href="/jobs/design-engineer">Apply now</a></section></main>',
           )
         }
+        if (url === lecs.CONTACT_URL) return currentContactHtml
 
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /contact surface now exposes public jobs/i,
+    /careers page now exposes public jobs/i,
   )
 })

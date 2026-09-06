@@ -11,7 +11,11 @@ import dotenv from 'dotenv'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: path.resolve(currentDir, '../.env'), quiet: true })
 
-import { saveDryRunSnapshot, saveToDB } from './utils/saveToDB.js'
+import {
+  purgeExpiredJobsForQuotaRecovery,
+  saveDryRunSnapshot,
+  saveToDB,
+} from './utils/saveToDB.js'
 import { getRetryMetadata, withRetry } from './utils/retry.js'
 import { analyzePublishableJobs } from './utils/publishableJobMetrics.js'
 import {
@@ -570,6 +574,43 @@ const clearDryRunArtifact = (filePath) => {
   fs.rmSync(filePath, { force: true })
 }
 
+/**
+ * Make one bounded expired-job purge attempt, then re-run the original write
+ * once. Earlier sources remain committed because source persistence is
+ * independent and idempotent.
+ */
+export const retryAfterMongoQuotaRecovery = async (
+  operation,
+  {
+    purgeExpiredJobs = purgeExpiredJobsForQuotaRecovery,
+  } = {},
+) => {
+  try {
+    return await operation()
+  } catch (error) {
+    if (!isMongoStorageQuotaWriteBlockError(error)) throw error
+
+    let recovery
+    try {
+      recovery = await purgeExpiredJobs()
+    } catch (purgeError) {
+      console.error('[pipeline] Atlas quota recovery purge failed:', purgeError.message)
+      throw error
+    }
+
+    if (!recovery || recovery.deletedCount <= 0) {
+      console.error('[pipeline] Atlas quota recovery found no eligible expired jobs to remove.')
+      throw error
+    }
+
+    console.warn(
+      `[pipeline] Atlas quota recovery removed ${recovery.deletedCount} expired jobs ` +
+      `(~${(recovery.estimatedBytes / (1024 * 1024)).toFixed(1)} MB); retrying the blocked write once.`,
+    )
+    return operation()
+  }
+}
+
 const NON_RETRIABLE_SOFT_FAILURE_KINDS = new Set([
   'blocked_or_access_denied',
   'surface_drift_or_fail_closed',
@@ -624,7 +665,7 @@ export const runAll = async () => {
   // Ensure active scrapers are seeded in the database
   if (!isDryRun) {
     try {
-      await ensureScrapersSeeded()
+      await retryAfterMongoQuotaRecovery(() => ensureScrapersSeeded())
     } catch (seedErr) {
       const fatalPersistenceError = toFatalScraperPersistenceError(
         '[pipeline] MongoDB writes are blocked while seeding scraper status records; aborting run',
@@ -646,7 +687,7 @@ export const runAll = async () => {
 
   if (!isDryRun) {
     try {
-      await markPipelineRunStarted(startedAt)
+      await retryAfterMongoQuotaRecovery(() => markPipelineRunStarted(startedAt))
     } catch (pipelineErr) {
       const fatalPersistenceError = toFatalScraperPersistenceError(
         '[pipeline] MongoDB writes are blocked while marking the pipeline as running; aborting run',
@@ -728,10 +769,10 @@ export const runAll = async () => {
         }
         console.log(`  OK [${scraper.name}] ${indiaJobs.length} India jobs -> ${scraper.dryRunFile}`)
       } else {
-        result = await saveToDB(jobs, scraper.name, {
+        result = await retryAfterMongoQuotaRecovery(() => saveToDB(jobs, scraper.name, {
           refreshDatasetSummary: false,
           authoritativeEmpty: isAuthoritativeEmptyScrape(scraper, jobs),
-        })
+        }))
         result.jobs = indiaJobs.length
         result.cities = cities
         console.log(
@@ -769,7 +810,7 @@ export const runAll = async () => {
 
     if (!isDryRun) {
       try {
-        await upsertScraperStatus(scraper.name, summary[scraper.name])
+        await retryAfterMongoQuotaRecovery(() => upsertScraperStatus(scraper.name, summary[scraper.name]))
       } catch (dbErr) {
         const fatalPersistenceError = toFatalScraperPersistenceError(
           `[pipeline] MongoDB writes are blocked while saving status for [${scraper.name}]; aborting run`,
@@ -806,7 +847,7 @@ export const runAll = async () => {
 
   if (!isDryRun) {
     try {
-      await writeScraperRun(new Date(startTime), summary)
+      await retryAfterMongoQuotaRecovery(() => writeScraperRun(new Date(startTime), summary))
     } catch (dbErr) {
       console.error(`  ERROR Failed to save run history to DB:`, dbErr.message)
     }
@@ -814,14 +855,14 @@ export const runAll = async () => {
 
   if (!isDryRun) {
     try {
-      await markPipelineRunFinished({
+      await retryAfterMongoQuotaRecovery(() => markPipelineRunFinished({
         startedAt,
         completedAt: new Date(),
         aborted: shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold),
         error: shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold)
           ? `Pipeline aborted due to too many scraper errors (>= ${failureAbortThreshold}).`
           : null,
-      })
+      }))
     } catch (pipelineErr) {
       console.error(`  [pipeline] Failed to mark pipeline as complete:`, pipelineErr.message)
     }
@@ -898,11 +939,11 @@ export const runScraper = async (
       }
       console.log(`  OK [${scraper.name}] ${indiaJobs.length} India jobs -> ${scraper.dryRunFile}`)
     } else {
-      result = await saveToDB(jobs, scraper.name, {
+      result = await retryAfterMongoQuotaRecovery(() => saveToDB(jobs, scraper.name, {
         refreshDatasetSummary: false,
         authoritativeEmpty: isAuthoritativeEmptyScrape(scraper, jobs),
         ...persistenceOptions,
-      })
+      }))
       result.jobs = indiaJobs.length
       result.cities = cities
       console.log(
@@ -919,7 +960,7 @@ export const runScraper = async (
 
     if (!isDryRun) {
       try {
-        await upsertScraperStatus(scraper.name, successResult)
+        await retryAfterMongoQuotaRecovery(() => upsertScraperStatus(scraper.name, successResult))
       } catch (dbErr) {
         const fatalPersistenceError = toFatalScraperPersistenceError(
           `[pipeline] MongoDB writes are blocked while saving status for [${scraper.name}]; aborting run`,
@@ -955,7 +996,7 @@ export const runScraper = async (
 
     if (!isDryRun) {
       try {
-        await upsertScraperStatus(scraper.name, failResult)
+        await retryAfterMongoQuotaRecovery(() => upsertScraperStatus(scraper.name, failResult))
       } catch (dbErr) {
         const fatalPersistenceError = toFatalScraperPersistenceError(
           `[pipeline] MongoDB writes are blocked while saving status for [${scraper.name}]; aborting run`,
@@ -1068,7 +1109,7 @@ const runAllParallel = async ({
 
   if (!isDryRun) {
     try {
-      await writeScraperRun(new Date(startTime), summary)
+      await retryAfterMongoQuotaRecovery(() => writeScraperRun(new Date(startTime), summary))
     } catch (dbErr) {
       console.error(`  ERROR Failed to save run history to DB:`, dbErr.message)
     }
@@ -1078,14 +1119,14 @@ const runAllParallel = async ({
     const totalFailures = Object.values(summary).filter(isFailureCountedForAbort).length
 
     try {
-      await markPipelineRunFinished({
+      await retryAfterMongoQuotaRecovery(() => markPipelineRunFinished({
         startedAt,
         completedAt: new Date(),
         aborted: shouldAbortPipelineAfterFailures(totalFailures, failureAbortThreshold),
         error: shouldAbortPipelineAfterFailures(totalFailures, failureAbortThreshold)
           ? `Pipeline aborted due to too many scraper errors (>= ${failureAbortThreshold}).`
           : null,
-      })
+      }))
     } catch (pipelineErr) {
       console.error(`  [pipeline] Failed to mark pipeline as complete:`, pipelineErr.message)
     }

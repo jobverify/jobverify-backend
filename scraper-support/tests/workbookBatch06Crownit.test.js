@@ -59,22 +59,21 @@ test('Crownit validates the verified first-party careers surface and returns [] 
   assert.equal(crownit.SOURCE, 'crownit')
   assert.equal(crownit.COMPANY, 'Crownit')
   assert.equal(crownit.OFFICIAL_BRAND, 'Crownit')
-  assert.equal(crownit.VERIFIED_ON, '2026-07-25')
+  assert.equal(crownit.VERIFIED_ON, '2026-08-15')
   assert.equal(crownit.CAREERS_URL, 'https://crownit.in/en/careers')
-  assert.equal(crownit.RESUME_EMAIL, 'hr@crownit.in')
   assert.equal(
     crownit.DISPOSITION,
-    'verified-first-party-careers-surface-with-non-enumerable-apply-flow-and-resume-email',
+    'verified-first-party-careers-surface-with-non-enumerable-apply-flow',
   )
   assert.match(
     crownit.VERIFIED_SURFACE_SUMMARY,
-    /Verified on Saturday, July 25, 2026 that https:\/\/crownit\.in\/en\/careers was the live first-party Crownit careers surface/i,
+    /Verified on Saturday, August 15, 2026 that https:\/\/crownit\.in\/en\/careers remained the live first-party Crownit careers surface/i,
   )
   assert.match(crownit.VERIFIED_SURFACE_SUMMARY, /Apply for job/i)
-  assert.match(crownit.VERIFIED_SURFACE_SUMMARY, /hr@crownit\.in/i)
+  assert.match(crownit.VERIFIED_SURFACE_SUMMARY, /LinkedIn company presence/i)
   assert.match(
     crownit.VERIFIED_SURFACE_SUMMARY,
-    /no trustworthy enumerable public jobs contract/i,
+    /stable exact-company public ATS or job inventory/i,
   )
 })
 

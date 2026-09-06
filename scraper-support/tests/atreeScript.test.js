@@ -397,6 +397,20 @@ test('Atree helpers stay pinned to the verified homepage, careers listing, sitem
   )
 })
 
+test('Atree recognizes the current first-party ERP jobs portal with no rendered vacancy links', async () => {
+  const atree = await loadAtreeModule()
+  const erpJobsHtml = [
+    '<html><head><title> Job Openings </title></head>',
+    '<body class="jobs-page">Built on Frappe',
+    '<input id="search-box" type="search" />',
+    '</body></html>',
+  ].join('')
+
+  assert.equal(atree.ERP_JOBS_URL, 'https://erp.atree.org/jobs')
+  assert.equal(atree.hasErpJobsPageSignal(erpJobsHtml), true)
+  assert.equal(atree.erpJobsPageHasPublicListings(erpJobsHtml), false)
+})
+
 test('Atree run returns the three verified first-party jobs and preserves their mixed public apply handoffs', async () => {
   const atree = await loadAtreeModule()
   const requestedUrls = []

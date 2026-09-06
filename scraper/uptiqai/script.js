@@ -10,17 +10,19 @@ export const CAREERS_URL = 'https://www.uptiq.ai/careers'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
-const OFFICIAL_BRAND_PATTERN = /\bCareers at Uptiq\b/i
-const APPLY_BY_EMAIL_PATTERN = /mailto:careers@uptiq\.ai|careers@uptiq\.ai/i
-const ROLE_FAMILY_PATTERN = /\bOpen Roles\b[\s\S]*\bTo Apply\b/i
+const OFFICIAL_BRAND_PATTERN = /<title>\s*Careers at Uptiq\s*\|\s*Join AI in Financial Services\s*<\/title>/i
+const CAREERS_PAGE_PATTERN = /Careers at Uptiq/i
+const ROLE_FAMILY_PATTERN = /View Open Roles/i
+const CAREER_FORM_PATTERN = /id=["']wf-form-Career-Form["']/i
 const PUBLIC_JOB_BOARD_PATTERN =
   /jobs\.lever\.co|boards\.greenhouse\.io|ashbyhq\.com|workable\.com|smartrecruiters|job-boards\.greenhouse\.io|myworkdayjobs|job openings\/search|\/jobs\/[a-z0-9-]+/i
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   return OFFICIAL_BRAND_PATTERN.test(page)
-    && APPLY_BY_EMAIL_PATTERN.test(page)
+    && CAREERS_PAGE_PATTERN.test(page)
     && ROLE_FAMILY_PATTERN.test(page)
+    && CAREER_FORM_PATTERN.test(page)
 }
 
 export const hasPublicJobBoardSignal = (html) => PUBLIC_JOB_BOARD_PATTERN.test(String(html ?? ''))
