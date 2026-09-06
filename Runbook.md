@@ -9,7 +9,7 @@ The HTTP examples use PowerShell syntax and `curl.exe`. In PowerShell, plain `cu
 - Node.js 18 or newer.
 - npm.
 - MongoDB connection string.
-- Brevo transactional email credentials if registration emails must be delivered.
+- Gmail SMTP credentials if registration emails must be delivered.
 - GitHub token and repository name only if using the admin endpoint that triggers scraper GitHub Actions.
 - A public frontend origin and public backend origin when running outside localhost.
 
@@ -50,9 +50,12 @@ TRUST_PROXY=0
 NODE_ENV=development
 SCRAPER_CONCURRENCY=3
 
-BREVO_API_KEY=<brevo-api-key>
-BREVO_SENDER_NAME=Jobverify
-BREVO_SENDER_EMAIL=<verified-sender-email>
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=jobverify.in@gmail.com
+SMTP_PASS=<google-app-password>
+SMTP_FROM=Jobverify <jobverify.in@gmail.com>
 
 GITHUB_PAT=<optional-github-token>
 GITHUB_REPO=<optional-owner/repository>
@@ -484,10 +487,9 @@ Check:
 
 Check:
 
-- `BREVO_API_KEY`
-- `BREVO_SENDER_NAME`
-- `BREVO_SENDER_EMAIL`
-- Brevo sender verification.
+- `SMTP_HOST`, `SMTP_PORT`, and `SMTP_SECURE`.
+- `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`.
+- The Gmail account has two-step verification enabled and `SMTP_PASS` is a Google App Password.
 - Backend logs for `[Email Failure]`.
 
 ### Scraper fails because Puppeteer modules are missing
@@ -528,8 +530,8 @@ Required Render environment variables:
 - `MONGO_URI`
 - `CORS_ORIGIN`
 - `FRONTEND_ORIGIN`
-- `BREVO_API_KEY`
-- `BREVO_SENDER_EMAIL`
+- `SMTP_USER`
+- `SMTP_PASS`
 
 Recommended Render values:
 

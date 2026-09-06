@@ -190,13 +190,16 @@ const assertStablePage = ({
 export const isVerifiedHomepageRedirectRoute = (page = {}, routeUrl) => {
   const requestedUrl = canonicalizeUrl(routeUrl)
   const finalUrl = canonicalizeUrl(page?.url)
+  const isVerifiedFirstParty404 = Number(page?.status) === 404
+    && finalUrl === requestedUrl
+    && /<title>\s*Page Not Found\s*-\s*Laukika\s*<\/title>/i.test(String(page?.html ?? ''))
 
-  return Number(page?.status) === 200
+  return isVerifiedFirstParty404 || (Number(page?.status) === 200
     && finalUrl === HOMEPAGE_URL
     && finalUrl !== requestedUrl
     && hasOfficialHomepageSignal(page?.html)
     && !hasPublicJobsSignal(page?.html)
-    && extractSuspiciousPublicJobLinks(page?.html, HOMEPAGE_URL).length === 0
+    && extractSuspiciousPublicJobLinks(page?.html, HOMEPAGE_URL).length === 0)
 }
 
 export const createLaukikaScraper = () => ({

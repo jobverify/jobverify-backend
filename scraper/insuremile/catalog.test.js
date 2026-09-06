@@ -5,24 +5,25 @@ import { generateCompanyCoverageReport } from '../../scraper-support/providers/c
 import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 import INSUREMILE_CATALOG, { VERIFIED_SURFACE_SUMMARY } from './catalog.js'
 
-test('InsureMile catalog metadata captures the verified first-party WP Job Openings surface without aliases', () => {
+test('InsureMile catalog metadata captures the current first-party zero-jobs page without aliases', () => {
   assert.equal(INSUREMILE_CATALOG.source, 'insuremile')
   assert.equal(INSUREMILE_CATALOG.companyName, 'InsureMile')
   assert.equal(INSUREMILE_CATALOG.adapter, 'script')
-  assert.equal(INSUREMILE_CATALOG.companyCareerPage, 'https://insuremile.in/careers/')
-  assert.equal(INSUREMILE_CATALOG.careerApiUrl, 'https://insuremile.in/wp-json/wp/v2/awsm_job_openings')
-  assert.equal(INSUREMILE_CATALOG.atsPlatform, 'wp-job-openings')
+  assert.equal(INSUREMILE_CATALOG.companyCareerPage, 'https://insuremile.in/careers')
+  assert.equal(INSUREMILE_CATALOG.atsPlatform, 'official-company-site-no-public-jobs')
   assert.equal(INSUREMILE_CATALOG.countryFilter, 'India')
-  assert.equal(INSUREMILE_CATALOG.paginationStrategy, 'wp-json-page-query')
+  assert.equal(INSUREMILE_CATALOG.paginationStrategy, 'single-first-party-careers-page-verification')
   assert.equal(
     INSUREMILE_CATALOG.extractionStrategy,
-    'verified-first-party-careers-page+awsm-rest-api',
+    'verified-first-party-careers-page-no-open-roles-return-empty',
   )
   assert.equal(INSUREMILE_CATALOG.parser, 'custom-script')
   assert.equal(INSUREMILE_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(INSUREMILE_CATALOG.companyDomain, 'insuremile.in')
-  assert.equal(INSUREMILE_CATALOG.verifiedOn, '2026-07-16')
+  assert.equal(INSUREMILE_CATALOG.verifiedOn, '2026-09-03')
   assert.equal(INSUREMILE_CATALOG.verifiedSurfaceSummary, VERIFIED_SURFACE_SUMMARY)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /don't have active job listings right now/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /careers@insuremile\.in/i)
   assert.match(INSUREMILE_CATALOG.modulePath, /insuremile[\\/]script\.js$/i)
 })
 
@@ -41,15 +42,15 @@ test('InsureMile exact-name coverage resolves directly from local catalog metada
   )
 })
 
-test('getScraperCatalog includes InsureMile as a verified wp-job-openings provider', () => {
+test('getScraperCatalog includes InsureMile as a verified first-party zero-jobs provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'insuremile')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'InsureMile')
-  assert.equal(provider.companyCareerPage, 'https://insuremile.in/careers/')
+  assert.equal(provider.companyCareerPage, 'https://insuremile.in/careers')
   assert.equal(provider.companyDomain, 'insuremile.in')
-  assert.equal(provider.atsPlatform, 'wp-job-openings')
+  assert.equal(provider.atsPlatform, 'official-company-site-no-public-jobs')
   assert.match(provider.modulePath, /insuremile[\\/]script\.js$/i)
 })
 
@@ -59,6 +60,6 @@ test('buildScrapers exposes a runnable InsureMile scraper without changing the r
   assert.ok(scraper)
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'insuremile')
-  assert.equal(scraper.provider.atsPlatform, 'wp-job-openings')
+  assert.equal(scraper.provider.atsPlatform, 'official-company-site-no-public-jobs')
   assert.match(scraper.dryRunFile, /insuremile[\\/]jobs\.json$/i)
 })

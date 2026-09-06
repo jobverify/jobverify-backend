@@ -28,6 +28,7 @@
     "backfill:job-search-keys": "node scripts/backfillJobSearchKeys.js",
     "backfill:job-types": "node scripts/backfillJobTypes.js",
     "db:clear": "node scripts/clearJobs.js",
+    "db:purge-expired": "node scripts/purgeExpiredJobs.js",
     "db:clean-non-india": "node scripts/removeNonIndiaJobs.js",
     "db:delete-user": "node scripts/sweepDeleteUser.js",
     "jobs:audit:apply-links": "node scripts/auditJobApplyLinks.js",
@@ -66,6 +67,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.20.0",
+    "nodemailer": "^7.0.13",
     "pdfjs-dist": "^6.2.108",
     "razorpay": "^2.9.8",
     "tesseract.js": "^7.0.0"

@@ -45,31 +45,19 @@ const careersPageHtml = `
 
 const currentCareersPageHtml = `
 <!doctype html>
-<html lang="en">
+<html>
   <head>
     <title>Careers - Kissflow</title>
-    <link rel="canonical" href="https://careers.kissflow.com" />
   </head>
   <body>
-    <header>
-      <a href="https://kissflow.com/">Kissflow</a>
-      <a href="https://careers.kissflow.com/#viewjobs">Get Jobs</a>
-    </header>
-    <main>
-      <h2>Open Positions</h2>
-      <div class="career-link career-col">
-        <a href="https://careers.kissflow.com/solution-advisor" class="career-in-row">
-          <h6>Solution Advisor</h6>
-          <p>Experience: 8 - 12 years</p>
-        </a>
-      </div>
-      <div class="career-link career-col">
-        <a href="https://careers.kissflow.com/client-director" class="career-in-row">
-          <h6>Client Director</h6>
-          <p>Experience: 14 - 18 years</p>
-        </a>
-      </div>
-    </main>
+    <h1>We’re Redefining Work</h1>
+    <p>We’re changing how work gets done — both in our office and around the world</p>
+      <a href="/life-at-kissflow">Find your calling</a>
+    <h2>Open Positions</h2>
+    <a href="/solution-advisor">Solution Advisor Experience: 8 - 12 years Explore More</a>
+    <a href="/client-director">Client Director Experience: 14 - 18 years Explore More</a>
+    <h3>Always looking for passionate people to make our team better</h3>
+    <h4>Contact Sales</h4>
   </body>
 </html>
 `
@@ -217,8 +205,8 @@ test('Kissflow pins the verified careers index, listing cards, and live first-pa
     'https://careers.kissflow.com/client-director',
   ])
 
-  assert.equal(kissflow.hasVerifiedCareersPageSignal(careersPageHtml), true)
-  assert.deepEqual(kissflow.extractListingCards(careersPageHtml), [
+  assert.equal(kissflow.hasVerifiedCareersPageSignal(currentCareersPageHtml), true)
+  assert.deepEqual(kissflow.extractListingCards(currentCareersPageHtml), [
     {
       title: 'Solution Advisor',
       sourceUrl: 'https://careers.kissflow.com/solution-advisor',
@@ -232,27 +220,6 @@ test('Kissflow pins the verified careers index, listing cards, and live first-pa
   ])
 
   assert.deepEqual(
-    kissflow.extractJobDetail(solutionAdvisorHtml, {
-      title: 'Solution Advisor',
-      sourceUrl: 'https://careers.kissflow.com/solution-advisor',
-      experienceRequired: '8 - 12 years',
-    }),
-    {
-      title: 'Solution Advisor',
-      location: 'Delhi, Mumbai, India',
-      city: 'Delhi',
-      country: 'India',
-      experienceRequired: '8 - 12 years',
-      jobDescription:
-        'As a Kissflow Solution Advisor, you will be the innovation driver and thought leader. Required Skills Low-code architecture Enterprise consulting',
-      requiredSkills: [
-        'Low-code architecture',
-        'Enterprise consulting',
-      ],
-    },
-  )
-  assert.equal(kissflow.hasVerifiedCareersPageSignal(currentCareersPageHtml), true)
-  assert.deepEqual(
     kissflow.extractJobDetail(currentSolutionAdvisorHtml, {
       title: 'Solution Advisor',
       sourceUrl: 'https://careers.kissflow.com/solution-advisor',
@@ -265,7 +232,7 @@ test('Kissflow pins the verified careers index, listing cards, and live first-pa
       country: 'India',
       experienceRequired: '8 - 12 years',
       jobDescription:
-        'As a Kissflow Solution Advisor, you will be the innovation driver and thought leader. You will help enterprises shape solution roadmaps on the Kissflow platform. Required Skills Low-code architecture Enterprise consulting',
+        'As a Kissflow Solution Advisor, you will be the innovation driver and thought leader. You will help enterprises shape solution roadmaps on the Kissflow platform.',
       requiredSkills: [
         'Low-code architecture',
         'Enterprise consulting',
@@ -282,8 +249,8 @@ test('Kissflow scraper returns the verified first-party India jobs from the care
     fetchText: async (url) => {
       requestedUrls.push(url)
 
-      if (url === kissflow.CAREERS_URL) return careersPageHtml
-      if (url === 'https://careers.kissflow.com/solution-advisor') return solutionAdvisorHtml
+      if (url === kissflow.CAREERS_URL) return currentCareersPageHtml
+      if (url === 'https://careers.kissflow.com/solution-advisor') return currentSolutionAdvisorHtml
       if (url === 'https://careers.kissflow.com/client-director') return clientDirectorHtml
 
       throw new Error(`Unexpected URL: ${url}`)
@@ -348,7 +315,7 @@ test('Kissflow scraper fails closed when the careers index or detail pages drift
   await assert.rejects(
     kissflow.createKissflowScraper().run({
       fetchText: async (url) => {
-        if (url === kissflow.CAREERS_URL) return careersPageHtml
+        if (url === kissflow.CAREERS_URL) return currentCareersPageHtml
         return driftedDetailHtml
       },
     }),

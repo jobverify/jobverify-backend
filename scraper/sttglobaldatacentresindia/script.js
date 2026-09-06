@@ -7,16 +7,17 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'sttglobaldatacentresindia'
 export const COMPANY = 'STT Global Data Centres India Private Limited'
-export const HOMEPAGE_URL = 'https://www.sttelemediagdc.com/in-en'
-export const ABOUT_URL = 'https://www.sttelemediagdc.com/in-en/about-us/the-company'
-export const CAREERS_URL = 'https://www.sttelemediagdc.com/in-en/about-us/careers'
-export const CONTACT_URL = 'https://www.sttelemediagdc.com/contact'
+export const HOMEPAGE_URL = 'https://www.sttgdc.com/in-en'
+export const ABOUT_URL = 'https://www.sttgdc.com/in-en/about-us/the-company'
+export const CAREERS_URL = 'https://www.sttgdc.com/in-en/about-us/careers'
+export const CONTACT_URL = 'https://www.sttgdc.com/contact'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const HOMEPAGE_SIGNAL_PATTERNS = [
-  /\bbest data centre colocation services provider in india\b/i,
+  /\bsttgdc\b/i,
+  /\bstt gdc india\b/i,
   /\bbuilt for ai\b/i,
   /\bservices\b/i,
   /\blocations\b/i,
@@ -40,10 +41,10 @@ const CAREERS_SIGNAL_PATTERNS = [
 ]
 
 const CONTACT_SIGNAL_PATTERNS = [
-  /\bcontact us\b/i,
+  /\bcontact\b/i,
   /\blet us know how we can help you\b/i,
   /\bhow can we help you\??\b/i,
-  /\bst telemedia global data centres\b/i,
+  /\bsttgdc\b/i,
 ]
 
 const PUBLIC_JOB_LISTING_PATTERNS = [

@@ -54,6 +54,99 @@ const ensureConnected = async () => {
 
 const hasLiveDatabaseHandle = () => mongoose.connection.readyState === 1 && mongoose.connection.db != null
 
+export const DEFAULT_EXPIRED_JOB_PURGE_RETENTION_DAYS = 30
+export const DEFAULT_QUOTA_RECOVERY_TARGET_BYTES = 10 * 1024 * 1024
+
+const resolvePositiveInteger = (value, fallback) => {
+  const parsed = Number.parseInt(String(value ?? '').trim(), 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+export const estimateJobDocumentBytes = (job) => Buffer.byteLength(
+  JSON.stringify(job),
+  'utf8',
+)
+
+/**
+ * Physically deletes the oldest expired jobs, bounded by an estimated document
+ * size. This is deliberately limited to expired records so quota recovery can
+ * never remove listings that are still publicly visible.
+ */
+export const purgeExpiredJobsForQuotaRecovery = async ({
+  jobModel = null,
+  now = new Date(),
+  retentionDays = DEFAULT_EXPIRED_JOB_PURGE_RETENTION_DAYS,
+  targetBytes = DEFAULT_QUOTA_RECOVERY_TARGET_BYTES,
+  batchSize = 100,
+  dryRun = false,
+} = {}) => {
+  const JobModel = jobModel || await getJobModel()
+  if (!jobModel) await ensureConnected()
+
+  const normalizedNow = normalizeLifecycleDate(now) || new Date()
+  const normalizedRetentionDays = resolvePositiveInteger(
+    retentionDays,
+    DEFAULT_EXPIRED_JOB_PURGE_RETENTION_DAYS,
+  )
+  const normalizedTargetBytes = resolvePositiveInteger(
+    targetBytes,
+    DEFAULT_QUOTA_RECOVERY_TARGET_BYTES,
+  )
+  const normalizedBatchSize = resolvePositiveInteger(batchSize, 100)
+  const cutoff = new Date(normalizedNow)
+  cutoff.setUTCDate(cutoff.getUTCDate() - normalizedRetentionDays)
+
+  let deletedCount = 0
+  let estimatedBytes = 0
+
+  while (estimatedBytes < normalizedTargetBytes) {
+    const candidates = await JobModel.find({
+      status: 'expired',
+      lastSeenAt: { $lt: cutoff },
+    })
+      .sort({ lastSeenAt: 1, _id: 1 })
+      .limit(normalizedBatchSize)
+      .lean()
+      .exec()
+
+    if (!candidates.length) break
+
+    const selected = []
+    for (const candidate of candidates) {
+      selected.push(candidate)
+      estimatedBytes += estimateJobDocumentBytes(candidate)
+      if (estimatedBytes >= normalizedTargetBytes) break
+    }
+
+    if (!dryRun) {
+      const deletion = JobModel.deleteMany({
+        _id: { $in: selected.map((job) => job._id) },
+        status: 'expired',
+      })
+      const deleteResult = typeof deletion?.exec === 'function'
+        ? await deletion.exec()
+        : await deletion
+      deletedCount += deleteResult.deletedCount ?? 0
+    } else {
+      deletedCount += selected.length
+    }
+
+    // A preview must not fetch the same rows repeatedly because it does not
+    // mutate them. The live quota-recovery path always runs with dryRun=false.
+    if (dryRun) break
+    if (selected.length < candidates.length || estimatedBytes >= normalizedTargetBytes) break
+  }
+
+  return {
+    dryRun,
+    deletedCount,
+    estimatedBytes,
+    targetBytes: normalizedTargetBytes,
+    retentionDays: normalizedRetentionDays,
+    cutoff,
+  }
+}
+
 /**
  * Generates a stable fingerprint for a job based on its semantic identity.
  * Strategy: SHA-256(company | title | canonicalCity) — normalised to lowercase.

@@ -96,10 +96,13 @@ export const normalizeGreenhouseJobUrl = (value, jobId) => {
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
+  const hasVerifiedHeroCopy =
+    normalized.includes('Join us in creating better meeting experiences')
+    || normalized.includes('Join us in helping people make space for what matters')
 
   return /<title>\s*Let(?:'|&#x27;|&#39;|&apos;)s make meetings better together \| Calendly\s*<\/title>/i.test(page)
     && normalized.includes('Careers at Calendly')
-    && normalized.includes('Join us in creating better meeting experiences')
+    && hasVerifiedHeroCopy
     && (
       (
         normalized.includes('Filter by location')

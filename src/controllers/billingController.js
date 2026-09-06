@@ -20,6 +20,7 @@ import {
   getPaymentProvider,
   PaymentProviderError,
 } from "../services/paymentProvider.js";
+import { respondWithInternalError } from "../utils/respondWithInternalError.js";
 
 export const getBillingPlans = async (_req, res) => {
   res.status(200).json({
@@ -251,10 +252,10 @@ export const createOrGetMyReferralCode = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(400).json({
-      code: 400,
-      success: false,
-      message: error.message,
+    return respondWithInternalError(res, error, {
+      code: 500,
+      message: "Unable to create referral code at this time.",
+      logLabel: "[billingController] createOrGetMyReferralCode failed:",
     });
   }
 };

@@ -23,7 +23,10 @@ const careersHubHtml = `
     <title>Careers Home - Cloud Software Group</title>
   </head>
   <body>
-    <h1>Cloud Software Group</h1>
+    <h1>Innovate and grow within Cloud Software Group</h1>
+    <p>Search by job title, location, department, category, etc.</p>
+    <h2>Inside Cloud Software Group</h2>
+    <p>About us</p>
     <p>100 million users around the globe</p>
     <p>Ready to apply? Search for open roles.</p>
     <a href="https://careers.cloud.com/jobs/search">See all opportunities</a>

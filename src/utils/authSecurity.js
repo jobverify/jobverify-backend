@@ -9,6 +9,16 @@ const PASSWORD_POLICY =
 export const normalizeEmailAddress = (value) =>
   String(value ?? "").trim().toLowerCase();
 
+export const isAllowedAccountEmail = (value) => {
+  const email = normalizeEmailAddress(value);
+  const domain = email.slice(email.lastIndexOf("@") + 1);
+
+  return domain === "gmail.com"
+    || domain.endsWith(".edu")
+    || domain.endsWith(".edu.in")
+    || domain.endsWith(".ac.in");
+};
+
 export const isStrongPassword = (value) =>
   PASSWORD_POLICY.test(String(value ?? ""));
 

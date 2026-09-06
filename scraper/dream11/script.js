@@ -16,6 +16,7 @@ export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const PARENT_CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const PARENT_CAREERS_LANDING_URL = PROVIDER_METADATA.parentCareersLandingUrl
 export const LINKED_CAREERS_URL = PROVIDER_METADATA.linkedCareersUrl
+export const LINKED_LEVER_BOARD_URL = 'https://jobs.lever.co/dreamsports'
 export const DREAM11_REDIRECT_ROUTE_URLS = [
   'https://www.dream11.com/careers',
   'https://www.dream11.com/careers/',
@@ -129,9 +130,9 @@ export const hasParentCareersLandingSignal = (html = '') => {
     && /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/www\.dreamsports\.group\/careers["']/i.test(rawHtml)
     && /\bLIFE AT DREAM SPORTS\b/i.test(normalized)
     && /Game On\.\s*Build Big\./i.test(normalized)
-    && /Solving real problems across sports,\s*technology,\s*and financial empowerment\./i.test(normalized)
+    && /jobs\.lever\.co\/dreamsports/i.test(rawHtml)
     && /\bSporta Technologies Pvt Ltd\b/i.test(normalized)
-    && !hasPublicJobSignal(rawHtml)
+    && !PUBLIC_JOB_SIGNAL_PATTERNS.some((pattern) => pattern.test(normalized))
 }
 
 export const createDream11Scraper = () => ({
@@ -163,9 +164,13 @@ export const createDream11Scraper = () => ({
       parentCareersPage.status !== 200
       || getFinalUrl(parentCareersPage, PARENT_CAREERS_URL) !== PARENT_CAREERS_LANDING_URL
       || !hasParentCareersLandingSignal(parentCareersPage.html)
-      || hasPublicJobSignal(parentCareersPage.html)
     ) {
       throw new Error('Dream11 verified Dream Sports careers landing page no longer matches the known public surface or now exposes public jobs')
+    }
+
+    const linkedBoardPage = await fetchPage(LINKED_LEVER_BOARD_URL)
+    if (linkedBoardPage.status !== 404 || getFinalUrl(linkedBoardPage, LINKED_LEVER_BOARD_URL) !== LINKED_LEVER_BOARD_URL) {
+      throw new Error('Dream11 linked Lever board changed materially or now exposes public jobs')
     }
 
     for (const routeUrl of PARENT_MISSING_ROUTE_URLS) {

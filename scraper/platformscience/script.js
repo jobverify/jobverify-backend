@@ -50,10 +50,10 @@ export const pageIndicatesOfficialJobsSurface = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /open positions/i.test(normalized)
-    && /view job/i.test(normalized)
+  return /<title>\s*Open Jobs at Platform Science \| Technology &amp; Fleet Innovation Careers\s*<\/title>/i.test(page)
+    && /open positions/i.test(normalized)
     && /contact us/i.test(normalized)
-    && /chennai,\s*tamil nadu,\s*india/i.test(normalized)
+    && /fleet tech innovation/i.test(normalized)
     && /boards\.greenhouse\.io/i.test(page)
   }
 
@@ -98,7 +98,8 @@ const mapJob = (job = {}) => {
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
-    postingDate: normalizeWhitespace(job?.first_published)?.slice(0, 10) || null,
+    // Greenhouse's first_published timestamp can predate an active repost by years.
+    postingDate: null,
     closingDate: null,
     jobDescription: decodeHtml(job?.content),
   }

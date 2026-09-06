@@ -21,6 +21,9 @@ export const CAREERS_CONFIG_URL = DHAN_CATALOG.careersConfigUrl
 export const CAREERS_FILTER_PARAMS_URL = DHAN_CATALOG.careersFilterParamsUrl
 export const JOBS_API_URL = DHAN_CATALOG.jobsApiUrl
 export const DEFAULT_PAGE_SIZE = 12
+export const KEKA_TENANT_ID = '7669ff3a-2b35-4442-9bac-9f9ae4b718b3'
+export const KEKA_JOBS_API_URL = `https://dhan.keka.com/careers/api/embedjobs/default/active/${KEKA_TENANT_ID}`
+export const KEKA_JOB_DETAILS_URL = 'https://dhan.keka.com/careers/jobdetails/'
 const VERIFIED_BOARD_API_404_PATHS = [
   '/api/careers/configurations/',
   '/api/careers/filter-params/',
@@ -184,7 +187,7 @@ export const hasOfficialCareersPageSignal = (html) => {
     && /Raise is a team of 550\+\s+and hiring more\./i.test(page)
     && /Apply now!/i.test(page)
     && /Explore Careers at Raise/i.test(page)
-    && /href=["']https:\/\/recruitcareers\.zappyhire\.com\/en\/dhan["']/i.test(page)
+    && /href=["']https:\/\/dhan\.keka\.com\/careers\/["']/i.test(page)
     && /Explore on Linkedin/i.test(page)
 }
 
@@ -199,6 +202,43 @@ export const extractOfficialCareersHandoffUrl = (html) => {
   }
 
   return null
+}
+
+export const normalizeKekaJob = (record = {}) => {
+  const title = normalizeWhitespace(record.title)
+  const locationRecord = Array.isArray(record.jobLocations)
+    ? record.jobLocations.find((location) => location?.countryCode === 'IN' || location?.countryName === 'India')
+    : null
+  const location = normalizeWhitespace(locationRecord?.name || locationRecord?.city)
+  const city = getValidIndiaCityForJob({ location, country: locationRecord?.countryName || 'India' })
+  const jobId = Number(record.id)
+
+  if (!title || !location || !city || !Number.isFinite(jobId)) {
+    return null
+  }
+
+  const applyUrl = `${KEKA_JOB_DETAILS_URL}${jobId}`
+  return {
+    title,
+    company: COMPANY,
+    department: normalizeWhitespace(record.departmentName),
+    location,
+    city,
+    country: 'India',
+    jobId: `${SOURCE}-${jobId}`,
+    requisitionId: String(jobId),
+    sourceUrl: applyUrl,
+    applyUrl,
+    employmentType: Number(record.jobType) === 2 ? 'Full-time' : null,
+    workplaceType: null,
+    experienceRequired: normalizeWhitespace(record.experience),
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: Array.isArray(record.skillNames) ? record.skillNames.map(normalizeWhitespace).filter(Boolean) : [],
+    postingDate: normalizeWhitespace(record.publishedOn),
+    closingDate: null,
+    jobDescription: stripTags(record.description),
+  }
 }
 
 export const hasZappyhireBoardShell = (html) => {
@@ -359,9 +399,29 @@ export const createDhanScraper = ({
     }
 
     const careersHandoffUrl = extractOfficialCareersHandoffUrl(careersPage.html)
-    if (!sameUrl(careersHandoffUrl, CAREERS_HANDOFF_URL)) {
+    if (!sameUrl(careersHandoffUrl, 'https://dhan.keka.com/careers/')) {
       throw new Error('Dhan verified careers handoff changed materially')
     }
+
+    const kekaJobs = await fetchJson(KEKA_JOBS_API_URL)
+    if (!Array.isArray(kekaJobs)) {
+      throw new Error('Dhan verified Keka jobs API changed materially')
+    }
+
+    const normalizedKekaJobs = kekaJobs.map(normalizeKekaJob).filter(Boolean)
+    if (kekaJobs.length > 0 && normalizedKekaJobs.length === 0) {
+      throw new Error('Dhan verified Keka jobs API no longer produces India jobs')
+    }
+
+    return normalizedKekaJobs.map((job) => ({
+      ...job,
+      source: SOURCE,
+      companyDomain: PROVIDER_METADATA.companyDomain,
+      atsPlatform: 'keka',
+      companyCareerPage: CAREERS_URL,
+      link: job.applyUrl,
+      scrapedAt: (overrideNow || now)(),
+    }))
 
     const boardShell = await fetchPage(CAREERS_HANDOFF_URL)
     if (

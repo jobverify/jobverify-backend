@@ -46,7 +46,7 @@ test('Fyle catalog captures the verified careers redirect shell, crawl surfaces,
   )
   assert.equal(namedCatalog.parser, 'custom-script')
   assert.equal(namedCatalog.normalizationProfile, 'engineering-default')
-  assert.equal(namedCatalog.verifiedOn, '2026-07-15')
+  assert.equal(namedCatalog.verifiedOn, '2026-09-03')
   assert.equal(namedCatalog.dryRunFile, 'fyle/jobs.json')
   assert.equal(namedCatalog.modulePath, modulePath)
   assert.equal(PROVIDER_METADATA.source, namedCatalog.source)

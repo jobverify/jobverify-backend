@@ -49,7 +49,7 @@ export const hasOfficialLeptonCareersSignals = (html = '') => {
   const text = normalizeWhitespace(page) || ''
   const hasLegacyApiShell = text.includes('For job-related queries email us at')
     && /https:\/\/leptonsoftware\.keka\.com\/careers\/api\/jobs\/default\/active/i.test(page)
-  const hasCurrentRenderedCareersShell = text.includes('Build the geo-stack behind 425 enterprises.')
+  const hasCurrentRenderedCareersShell = text.includes('Build the geo-stack behind')
     && text.includes('Open roles')
     && text.includes('hr@leptonmaps.com')
     && /https:\/\/leptonsoftware\.keka\.com\/careers\/jobdetails\/\d+/i.test(page)

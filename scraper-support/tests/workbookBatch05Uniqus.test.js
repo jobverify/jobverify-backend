@@ -8,6 +8,7 @@ import {
   DISPOSITION,
   SOURCE,
   VIEW_OPPORTUNITIES_CTA,
+  hasAntiRobotBlockerSignal,
   createUniqusScraper,
   run,
 } from '../../scraper/uniqus/script.js'
@@ -23,6 +24,18 @@ const VERIFIED_HANDOFF_HTML = `
         </p>
         <a href="https://jobs.example.com/uniqus">View Opportunities</a>
       </section>
+    </body>
+  </html>
+`
+
+const ANTI_ROBOT_BLOCKER_HTML = `
+  <html>
+    <head>
+      <title>Visitor anti-robot validation</title>
+    </head>
+    <body>
+      <p>JavaScript must be enabled to complete the challenge.</p>
+      <p>Please enable JavaScript and reload this page to complete the verification.</p>
     </body>
   </html>
 `
@@ -43,6 +56,18 @@ test('Uniqus validates its verified email-handoff careers surface and stays fail
   assert.equal(CONTACT_EMAIL, 'careers@uniqus.com')
   assert.equal(VIEW_OPPORTUNITIES_CTA, 'View Opportunities')
   assert.equal(DISPOSITION, 'verified-email-handoff-careers-surface')
+  assert.equal(hasAntiRobotBlockerSignal(ANTI_ROBOT_BLOCKER_HTML), true)
+})
+
+test('Uniqus returns an honest empty result when the official careers page is temporarily anti-bot blocked', async () => {
+  const jobs = await run({
+    fetchHtml: async () => ({
+      status: 403,
+      html: ANTI_ROBOT_BLOCKER_HTML,
+    }),
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('Uniqus throws when the verified email handoff disappears', async () => {

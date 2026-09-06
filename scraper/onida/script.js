@@ -108,13 +108,13 @@ export const extractCurrentOpeningsHref = (html) =>
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeText(rawHtml)
-  const title = normalizeTitleDashes(extractTitle(rawHtml))
 
-  return title === 'Onida - Leading Home Appliance Brand in India | India ka Onida'
-    && /href=["']https:\/\/onida\.com\/life-at-onida["']/i.test(rawHtml)
+  return /href=["']https:\/\/onida\.com\/life-at-onida["']/i.test(rawHtml)
     && normalizeWhitespace(extractCurrentOpeningsHref(rawHtml)) === ONIDA_CATALOG.currentOpeningsPlaceholderHref
     && normalized.includes('life@onida')
     && normalized.includes('current openings')
+    && /onida/i.test(rawHtml)
+    && !hasPublicJobBoardSignal(rawHtml)
 }
 
 export const hasOfficialLifeAtOnidaSignal = (html) => {
@@ -123,11 +123,10 @@ export const hasOfficialLifeAtOnidaSignal = (html) => {
     /<meta[^>]+name=["']description["'][^>]+content=["']Explore life at Onida, our vibrant work culture, growth opportunities, and employee stories/i.test(rawHtml)
     || /<meta[^>]+content=["']Explore life at Onida, our vibrant work culture, growth opportunities, and employee stories[^"']*["'][^>]+name=["']description["']/i.test(rawHtml)
 
-  return extractTitle(rawHtml) === 'Life at Onida | Culture, Careers & Employee Experiences'
-    && /href=["']https:\/\/onida\.com\/life-at-onida["']/i.test(rawHtml)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/onida\.com\/life-at-onida\/["']/i.test(rawHtml)
+  return /href=["']https:\/\/onida\.com\/life-at-onida["']/i.test(rawHtml)
     && normalizeWhitespace(extractCurrentOpeningsHref(rawHtml)) === ONIDA_CATALOG.currentOpeningsPlaceholderHref
-    && descriptionMatches
+    && (descriptionMatches || normalizeText(rawHtml).includes('life@onida'))
+    && /onida/i.test(rawHtml)
     && !hasPublicJobBoardSignal(rawHtml)
 }
 

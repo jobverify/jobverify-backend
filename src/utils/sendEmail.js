@@ -1,58 +1,52 @@
 /**
- * @file Email delivery utility using Brevo's transactional email HTTP API.
+ * @file Email delivery utility using an authenticated SMTP server.
  * @module utils/sendEmail
  */
 
-const BREVO_SEND_EMAIL_URL = "https://api.brevo.com/v3/smtp/email";
+import nodemailer from "nodemailer";
+import { lookup } from "node:dns/promises";
+import { isIP } from "node:net";
 
-const ensureEmailConfig = () => {
-  if (!process.env.BREVO_API_KEY) {
-    console.error("[Email Error] BREVO_API_KEY is not defined or cannot be accessed in the .env configuration.");
-    throw new Error("BREVO_API_KEY environment variable is not defined.");
+const requireEmailConfig = (name) => {
+  const value = String(process.env[name] ?? "").trim();
+  if (!value) {
+    console.error(`[Email Error] ${name} is not defined or cannot be accessed in the .env configuration.`);
+    throw new Error(`${name} environment variable is not defined.`);
   }
-  if (!process.env.BREVO_SENDER_EMAIL) {
-    console.error("[Email Error] BREVO_SENDER_EMAIL is not defined or cannot be accessed in the .env configuration.");
-    throw new Error("BREVO_SENDER_EMAIL environment variable is not defined.");
-  }
-  if (!process.env.BREVO_SENDER_NAME) {
-    console.error("[Email Error] BREVO_SENDER_NAME is not defined or cannot be accessed in the .env configuration.");
-    throw new Error("BREVO_SENDER_NAME environment variable is not defined.");
-  }
+  return value;
 };
 
-const createBaseEmail = (to, subject) => ({
-  sender: {
-    name: process.env.BREVO_SENDER_NAME,
-    email: process.env.BREVO_SENDER_EMAIL,
-  },
-  to: [{ email: to }],
-  subject,
-});
-
-const sendEmail = async (to, subject, htmlContent, successLabel) => {
-  ensureEmailConfig();
-
-  const response = await fetch(BREVO_SEND_EMAIL_URL, {
-    method: "POST",
-    headers: {
-      "Accept": "application/json",
-      "Content-Type": "application/json",
-      "api-key": process.env.BREVO_API_KEY,
-    },
-    body: JSON.stringify({
-      ...createBaseEmail(to, subject),
-      htmlContent,
-    }),
-  });
-
-  const result = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    const apiMessage = result?.message || result?.code || response.statusText;
-    const error = new Error(apiMessage || "Failed to send email.");
-    console.error(`[Email Failure] Failed to send email to ${to}. Error: ${error.message}`);
-    throw error;
+const getSmtpConfig = async () => {
+  const port = Number.parseInt(requireEmailConfig("SMTP_PORT"), 10);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error("SMTP_PORT must be a valid TCP port number.");
   }
+
+  const hostname = requireEmailConfig("SMTP_HOST");
+  const host = isIP(hostname)
+    ? hostname
+    : (await lookup(hostname, { family: 4 })).address;
+
+  return {
+    host,
+    port,
+    secure: String(process.env.SMTP_SECURE ?? "").trim().toLowerCase() === "true",
+    auth: {
+      user: requireEmailConfig("SMTP_USER"),
+      pass: requireEmailConfig("SMTP_PASS"),
+    },
+    tls: isIP(hostname) ? undefined : { servername: hostname },
+  };
+};
+
+const sendEmail = async (to, subject, html, successLabel) => {
+  const transporter = nodemailer.createTransport(await getSmtpConfig());
+  const result = await transporter.sendMail({
+    from: requireEmailConfig("SMTP_FROM"),
+    to,
+    subject,
+    html,
+  });
 
   console.log(`[Email Success] ${successLabel} sent to ${to}. Message ID: ${result.messageId ?? "unknown"}`);
   return result;

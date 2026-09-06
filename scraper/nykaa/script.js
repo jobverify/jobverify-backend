@@ -110,7 +110,10 @@ export const hasOfficialBoardSignal = (html) => {
 
   return /<title>\s*Careers \| Nykaa\s*<\/title>/i.test(page)
     && /careers\.nykaa\.com\.skima\.ai/i.test(page)
-    && /Showing\s+\d+\s+of\s+\d+\s+-\s+Jobs/i.test(normalized)
+    && (
+      /Showing\s+\d+\s+of\s+\d+\s+-\s+Jobs/i.test(normalized)
+      || normalized.toLowerCase().includes('currently there are no job postings available.')
+    )
 }
 
 const extractCardBlocks = (html) => [...String(html ?? '').matchAll(

@@ -24,6 +24,19 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Fireflies.ai | #1 AI Teammate for Meetings, Email, Chat & CRM</title>
+    <meta content="Fireflies.ai" property="og:site_name" />
+  </head>
+  <body>
+    <p>Fireflies takes notes, manages tasks, and automates workflows across meetings, email, chat, CRM, and your apps.</p>
+  </body>
+</html>
+`
+
 const gemBoardPage = {
   status: 200,
   url: 'https://jobs.gem.com/fireflies',
@@ -389,6 +402,7 @@ test('Fireflies.ai helpers stay pinned to the verified first-party careers redir
   assert.match(firefliesAi.LIST_QUERY, /query JobBoardList/i)
   assert.match(firefliesAi.DETAIL_QUERY, /query ExternalJobPostingQuery/i)
   assert.equal(firefliesAi.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(firefliesAi.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(firefliesAi.hasOfficialGemBoardSignal(gemBoardPage), true)
   assert.equal(firefliesAi.hasValidJobBoardListPayload(jobBoardListPayload), true)
   assert.equal(

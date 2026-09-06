@@ -169,6 +169,32 @@ test("updateUserAccess lets an admin set a premium plan with a manual expiry ove
   }
 });
 
+test("updateJobStatus hides unexpected persistence failures behind a generic 500", async () => {
+  const originalFindById = Job.findById;
+  const rawErrorMessage = "database exploded with internal topology details";
+
+  Job.findById = async () => {
+    throw new Error(rawErrorMessage);
+  };
+
+  try {
+    const res = createResponseDouble();
+
+    await updateJobStatus({
+      params: { id: "507f1f77bcf86cd799439011" },
+      body: { status: "hidden" },
+      user: { _id: "admin-1" },
+    }, res);
+
+    assert.equal(res.statusCode, 500);
+    assert.equal(res.body.success, false);
+    assert.equal(res.body.message, "Internal Server Error");
+    assert.equal(JSON.stringify(res.body).includes(rawErrorMessage), false);
+  } finally {
+    Job.findById = originalFindById;
+  }
+});
+
 test("getScrapeStatus backfills newly added catalog scrapers before building the admin summary", async () => {
   const restoreReadyState = setReadyState(1);
   const originalFind = ScraperStatus.find;

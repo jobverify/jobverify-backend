@@ -1,411 +1,356 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const SOURCE = 'safrandatasystems'
-const COMPANY = 'Safran Data Systems'
-const COMPANY_PAGE_URL = 'https://www.safran-group.com/fr/societes/safran-data-systems'
-const FILTERED_JOBS_URL = 'https://www.safran-group.com/fr/offres?companies%5B%5D=609-safran-data-systems'
-const NEXT_PAGE_URL = 'https://www.safran-group.com/fr/offres?companies%5B0%5D=609-safran-data-systems&page=1'
+const FIXED_SCRAPED_AT = '2026-08-14T12:00:00.000Z'
 
-const loadSafranDataSystemsModule = async () => import('./script.js')
-
-const COMPANY_PAGE_HTML = `
+const SEARCH_PAGE_1_HTML = `
 <!doctype html>
 <html lang="fr">
   <head>
-    <title>Safran Data Systems - Leader mondial en instrumentation dâ€™essais, tÃ©lÃ©mesure et communications pour lâ€™espace | Safran</title>
+    <title>Safran - Résultat de votre recherche (3 offres, page 1) / Mots clés : Safran Data Systems</title>
   </head>
   <body>
-    <h1>Safran Data Systems</h1>
-    <p>Rejoignez Safran Data Systems et dÃ©couvrez nos <strong>52</strong> opportunitÃ©s</p>
-    <a class="c-btn c-btn--arrow-btn" href="/fr/offres?companies%5B%5D=609-safran-data-systems">
-      Voir nos offres d'emplois
-    </a>
+    <ul>
+      <li class="ts-ol-criterias-list__item">Safran Data Systems</li>
+    </ul>
+    <a href="../handlers/offerRss.ashx?lcid=1036&amp;Keywords=Safran%20Data%20Systems">Flux RSS</a>
+    <a href="liste-toutes-offres.aspx?Keywords=Safran%20Data%20Systems&amp;page=2">2</a>
+
+    <li class="ts-offer-list-item offerlist-item " title="" onclick="location.href='/offre-de-emploi/emploi-bid-manager-f-h_185635.aspx';">
+      <h3 class="ts-offer-list-item__title styleh3">
+        <a class="ts-offer-list-item__title-link " href="/offre-de-emploi/emploi-bid-manager-f-h_185635.aspx" title="Bid Manager F/H (Réf. : 2026-185635) - Support contractuel">
+          Bid Manager F/H
+        </a>
+      </h3>
+      <ul class="ts-offer-list-item__description ">
+        <li>Réf. : 2026-185635</li>
+        <li>14/08/2026</li>
+        <li>CDI</li>
+        <li class="noBorder">AERODROME D'ARCACHON VILLEMARIE 33260 LA TESTE DE BUCH</li>
+      </ul>
+    </li>
+
+    <li class="ts-offer-list-item offerlist-item " title="" onclick="location.href='/offre-de-emploi/emploi-export-control-manager-f-h_184115.aspx';">
+      <h3 class="ts-offer-list-item__title styleh3">
+        <a class="ts-offer-list-item__title-link " href="/offre-de-emploi/emploi-export-control-manager-f-h_184115.aspx" title="Export Control Manager F/H (Réf. : 2026-184115) - Contrôle des exportations">
+          Export Control Manager F/H
+        </a>
+      </h3>
+      <ul class="ts-offer-list-item__description ">
+        <li>Réf. : 2026-184115</li>
+        <li>13/08/2026</li>
+        <li>CDD</li>
+        <li class="noBorder">ZONE D'ACTIVITE COURTABOEUF - 5 Avenue des Andes 91940 Les Ulis</li>
+      </ul>
+    </li>
   </body>
 </html>
 `
 
-const FILTERED_PAGE_1_HTML = `
+const SEARCH_PAGE_2_HTML = `
 <!doctype html>
 <html lang="fr">
   <head>
-    <title>Offres d&#039;emploi | Safran</title>
-    <link rel="canonical" href="https://www.safran-group.com/fr/offres" />
+    <title>Safran - Résultat de votre recherche (3 offres, page 2) / Mots clés : Safran Data Systems</title>
   </head>
   <body>
-    <select name="companies[]" id="edit-companies">
-      <option value="609-safran-data-systems" selected="selected">Safran Data Systems</option>
-    </select>
-    <span class="c-structured-news-list__results--nb">3</span>&nbsp;rÃ©sultat(s)
+    <ul>
+      <li class="ts-ol-criterias-list__item">Safran Data Systems</li>
+    </ul>
+    <a href="../handlers/offerRss.ashx?lcid=1036&amp;Keywords=Safran%20Data%20Systems">Flux RSS</a>
+    <a href="liste-toutes-offres.aspx?Keywords=Safran%20Data%20Systems&amp;page=2">2</a>
 
-    <div class="c-offer-item js-block-link">
-      <div class="c-offer-item__content">
-        <a href="https://www.safran-group.com/fr/offres/france/ulis/ingenieur-qualite-logicielprojet-fh-183425" class="c-offer-item__title js-block-link--href">IngÃ©nieur qualitÃ© logiciel/projet F/H</a>
-        <span class="c-offer-item__date">11.07.2026</span>
-        <div class="c-offer-item__infos">
-          <span class="c-offer-item__infos__item">Safran Data Systems</span>
-          <span class="c-offer-item__infos__item">Les Ulis, Ile de France, France</span>
-          <span class="c-offer-item__infos__item">IngÃ©nieur &amp; Cadre</span>
-          <span class="c-offer-item__infos__item">CDI</span>
-          <span class="c-offer-item__infos__item">QualitÃ©</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="c-offer-item js-block-link">
-      <div class="c-offer-item__content">
-        <a href="https://www.safran-group.com/fr/offres/france/ulis/responsable-test-informatique-industrielle-fh-175733" class="c-offer-item__title js-block-link--href">Responsable Test et Informatique Industrielle F/H</a>
-        <span class="c-offer-item__date">11.07.2026</span>
-        <div class="c-offer-item__infos">
-          <span class="c-offer-item__infos__item">Safran Data Systems</span>
-          <span class="c-offer-item__infos__item">Les Ulis, Ile de France, France</span>
-          <span class="c-offer-item__infos__item">IngÃ©nieur &amp; Cadre</span>
-          <span class="c-offer-item__infos__item">CDI</span>
-          <span class="c-offer-item__infos__item">IngÃ©nierie Industrielle</span>
-        </div>
-      </div>
-    </div>
-
-    <a href="?companies%5B0%5D=609-safran-data-systems&amp;page=1" title="Aller Ã  la page suivante" class="pagination__nav-btn pagination__nav-btn--next" rel="next"></a>
+    <li class="ts-offer-list-item offerlist-item " title="" onclick="location.href='/offre-de-emploi/emploi-planificateur-trice-pdp-f-h_183901.aspx';">
+      <h3 class="ts-offer-list-item__title styleh3">
+        <a class="ts-offer-list-item__title-link " href="/offre-de-emploi/emploi-planificateur-trice-pdp-f-h_183901.aspx" title="Planificateur / trice PDP F/H (Réf. : 2026-183901) - Supply chain">
+          Planificateur / trice PDP F/H
+        </a>
+      </h3>
+      <ul class="ts-offer-list-item__description ">
+        <li>Réf. : 2026-183901</li>
+        <li>12/08/2026</li>
+        <li>CDI</li>
+        <li class="noBorder">Le Gerhoui 35510 Cesson-Sevigne</li>
+      </ul>
+    </li>
   </body>
 </html>
 `
 
-const FILTERED_PAGE_2_HTML = `
+const BID_MANAGER_URL =
+  'https://careers.safran-group.com/offre-de-emploi/emploi-bid-manager-f-h_185635.aspx'
+const EXPORT_CONTROL_URL =
+  'https://careers.safran-group.com/offre-de-emploi/emploi-export-control-manager-f-h_184115.aspx'
+const PLANIFICATEUR_URL =
+  'https://careers.safran-group.com/offre-de-emploi/emploi-planificateur-trice-pdp-f-h_183901.aspx'
+
+const BID_MANAGER_DETAIL_HTML = `
 <!doctype html>
 <html lang="fr">
   <head>
-    <title>Offres d&#039;emploi | Safran</title>
+    <title>Safran - Bid Manager F/H</title>
+    <meta name="Description" content="Offre d'emploi Safran Data Systems SAS - La Teste de 'Bid Manager F/H'. Lieu : AERODROME D'ARCACHON VILLEMARIE 33260 LA TESTE DE BUCH. Date : 14/08/2026. Ref : 2026-185635." />
   </head>
   <body>
-    <select name="companies[]" id="edit-companies">
-      <option value="609-safran-data-systems" selected="selected">Safran Data Systems</option>
-    </select>
-    <span class="c-structured-news-list__results--nb">3</span>&nbsp;rÃ©sultat(s)
-
-    <div class="c-offer-item js-block-link">
-      <div class="c-offer-item__content">
-        <a href="https://www.safran-group.com/fr/offres/france/colombelles/architecte-base-donnees-fh-182282" class="c-offer-item__title js-block-link--href">Architecte en base de donnÃ©es F/H</a>
-        <span class="c-offer-item__date">10.07.2026</span>
-        <div class="c-offer-item__infos">
-          <span class="c-offer-item__infos__item">Safran Data Systems</span>
-          <span class="c-offer-item__infos__item">Colombelles, Normandie, France</span>
-          <span class="c-offer-item__infos__item">IngÃ©nieur &amp; Cadre</span>
-          <span class="c-offer-item__infos__item">CDI</span>
-          <span class="c-offer-item__infos__item">SystÃ¨mes d&#039;information</span>
-        </div>
-      </div>
-    </div>
+    <input type="submit" value="Je postule à cette offre" />
+    <h2>Description du poste</h2>
+    <p id="fldjobdescription_jobtitle">Bid Manager F/H</p>
+    <p id="fldjobdescription_contract">CDI</p>
+    <p id="fldjobdescription_description1">Safran Data Systems recrute un-e Bid Manager pour rejoindre l'equipe commerciale des stations sols pour suivi des satellites.</p>
+    <p id="fldjobdescription_longtext2">Vous repondez a des appels d'offres francais ou internationaux.</p>
+    <p id="fldjobdescription_description2">Une experience solide dans la gestion de reponse aux appels d'offres complexes est requise.</p>
+    <h2>Localisation du poste</h2>
+    <p id="fldlocation_location_geographicalareacollection">Europe, France, Nouvelle Aquitaine, Gironde</p>
+    <p id="fldlocation_joblocation"><div>AERODROME D'ARCACHON VILLEMARIE 33260 LA TESTE DE BUCH</div></p>
+    <p id="fldapplicantcriteria_educationlevel">BAC+5</p>
+    <p id="fldapplicantcriteria_experiencelevel">Superieure a 8 ans</p>
   </body>
 </html>
 `
 
-const createDetailHtml = ({
-  title,
-  identifier,
-  city,
-  state,
-  country = 'France',
-  description,
-  qualifications,
-  industry,
-  occupationalCategory = 'IngÃ©nieur & Cadre',
-  employmentType = 'CDI',
-  datePosted = '2026-07-11',
-  sourceUrl,
-}) => `
+const EXPORT_CONTROL_DETAIL_HTML = `
 <!doctype html>
 <html lang="fr">
   <head>
-    <title>${title} - ${country}, ${city} - ${identifier.split('-').at(-1)} | Safran</title>
-    <link rel="canonical" href="${sourceUrl}" />
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "JobPosting",
-        "title": ${JSON.stringify(title)},
-        "employmentType": ${JSON.stringify(employmentType)},
-        "datePosted": ${JSON.stringify(datePosted)},
-        "identifier": ${JSON.stringify(identifier)},
-        "hiringOrganization": {
-          "@type": "Organization",
-          "name": "Safran Data Systems"
-        },
-        "jobLocation": {
-          "@type": "Place",
-          "address": {
-            "@type": "PostalAddress",
-            "addressLocality": ${JSON.stringify(city)},
-            "addressRegion": ${JSON.stringify(state)},
-            "addressCountry": ${JSON.stringify(country)}
-          }
-        },
-        "description": ${JSON.stringify(description)},
-        "industry": ${JSON.stringify(industry)},
-        "occupationalCategory": ${JSON.stringify(occupationalCategory)},
-        "qualifications": ${JSON.stringify(qualifications)}
-      }
-    </script>
+    <title>Safran - Export Control Manager F/H</title>
+    <meta name="Description" content="Offre d'emploi Safran Data Systems SAS - Les Ulis de 'Export Control Manager F/H'. Lieu : ZONE D'ACTIVITE COURTABOEUF - 5 Avenue des Andes 91940 Les Ulis. Date : 13/08/2026. Ref : 2026-184115." />
   </head>
   <body>
-    <div class="c-references-block-container__details">
-      <span><a href="/fr/societes/safran-data-systems">Safran Data Systems</a></span>
-    </div>
-    <div class="c-references-block-container__button">
-      <a id="simple-apply" href="${new URL('jobapplication', `${sourceUrl}/`).pathname}" class="c-btn c-btn--primary c-btn--full-width" rel="nofollow">Postuler</a>
-      <a id="one-click-apply" href="${new URL('one-click-jobapplication', `${sourceUrl}/`).pathname}" class="c-btn c-btn--primary-inverted c-btn--full-width" rel="nofollow">Postuler en un clic</a>
-    </div>
-    <div class="c-details-offers-container__description--text">
-      <p>${description}</p>
-    </div>
+    <input type="submit" value="Je postule à cette offre" />
+    <h2>Description du poste</h2>
+    <p id="fldjobdescription_jobtitle">Export Control Manager F/H</p>
+    <p id="fldjobdescription_contract">CDD</p>
+    <p id="fldjobdescription_description1">Safran Data Systems gere les contraintes de controle des exportations pour ses activites spatiales critiques.</p>
+    <p id="fldjobdescription_description2">Vous serez rattache au Responsable controle des exportations et douanes.</p>
+    <h2>Localisation du poste</h2>
+    <p id="fldlocation_location_geographicalareacollection">Europe, France, Ile de France, Essonne</p>
+    <p id="fldlocation_joblocation"><div>ZONE D'ACTIVITE COURTABOEUF - 5 Avenue des Andes 91940 Les Ulis</div></p>
+    <p id="fldapplicantcriteria_educationlevel">BAC+5</p>
+    <p id="fldapplicantcriteria_experiencelevel">Superieure a 5 ans</p>
   </body>
 </html>
 `
 
-const DETAIL_HTML_BY_URL = {
-  'https://www.safran-group.com/fr/offres/france/ulis/ingenieur-qualite-logicielprojet-fh-183425': createDetailHtml({
-    title: 'IngÃ©nieur qualitÃ© logiciel/projet F/H',
-    identifier: '2026-183425',
-    city: 'Les Ulis',
-    state: 'Ile de France',
-    industry: 'QualitÃ©',
-    description: 'Dans un contexte de forte croissance, Safran Data Systems crÃ©e un nouveau poste clÃ© au sein de lâ€™Ã©quipe QualitÃ©.',
-    qualifications: 'â€¢ 5+ years in software quality assurance\nâ€¢ DO-178 / DO-254 experience\nâ€¢ Strong communication skills',
-    sourceUrl: 'https://www.safran-group.com/fr/offres/france/ulis/ingenieur-qualite-logicielprojet-fh-183425',
-  }),
-  'https://www.safran-group.com/fr/offres/france/ulis/responsable-test-informatique-industrielle-fh-175733': createDetailHtml({
-    title: 'Responsable Test et Informatique Industrielle F/H',
-    identifier: '2026-175733',
-    city: 'Les Ulis',
-    state: 'Ile de France',
-    industry: 'IngÃ©nierie Industrielle',
-    description: 'Safran Data Systems recherche un responsable test et informatique industrielle pour ses activitÃ©s spatiales.',
-    qualifications: 'â€¢ Industrial test leadership\nâ€¢ Lab and automation experience',
-    sourceUrl: 'https://www.safran-group.com/fr/offres/france/ulis/responsable-test-informatique-industrielle-fh-175733',
-  }),
-  'https://www.safran-group.com/fr/offres/france/colombelles/architecte-base-donnees-fh-182282': createDetailHtml({
-    title: 'Architecte en base de donnÃ©es F/H',
-    identifier: '2026-182282',
-    city: 'Colombelles',
-    state: 'Normandie',
-    industry: 'SystÃ¨mes dâ€™information',
-    description: 'Safran Data Systems dÃ©veloppe ses plateformes de donnÃ©es critiques pour les communications spatiales.',
-    qualifications: 'â€¢ Database architecture\nâ€¢ Cloud and resilience design',
-    sourceUrl: 'https://www.safran-group.com/fr/offres/france/colombelles/architecte-base-donnees-fh-182282',
-  }),
-}
+const PLANIFICATEUR_DETAIL_HTML = `
+<!doctype html>
+<html lang="fr">
+  <head>
+    <title>Safran - Planificateur / trice PDP F/H</title>
+    <meta name="Description" content="Offre d'emploi Safran Data Systems SAS - Cesson-Sevigne de 'Planificateur / trice PDP F/H'. Lieu : Le Gerhoui 35510 Cesson-Sevigne. Date : 12/08/2026. Ref : 2026-183901." />
+  </head>
+  <body>
+    <input type="submit" value="Je postule à cette offre" />
+    <h2>Description du poste</h2>
+    <p id="fldjobdescription_jobtitle">Planificateur / trice PDP F/H</p>
+    <p id="fldjobdescription_contract">CDI</p>
+    <p id="fldjobdescription_description1">Safran Data Systems renforce son pilotage industriel pour les communications spatiales.</p>
+    <p id="fldjobdescription_description2">Vous orchestrez le plan directeur de production avec les equipes supply chain.</p>
+    <h2>Localisation du poste</h2>
+    <p id="fldlocation_location_geographicalareacollection">Europe, France, Bretagne, Ille-et-Vilaine</p>
+    <p id="fldlocation_joblocation"><div>Le Gerhoui 35510 Cesson-Sevigne</div></p>
+    <p id="fldapplicantcriteria_educationlevel">BAC+3</p>
+    <p id="fldapplicantcriteria_experiencelevel">Entre 3 et 5 ans</p>
+  </body>
+</html>
+`
 
-test('Safran Data Systems scraper locks the exact first-party company page and filtered jobs surface', async () => {
-  const safranDataSystems = await loadSafranDataSystemsModule()
+const loadScriptModule = async () => import('./script.js')
 
-  assert.equal(safranDataSystems.SOURCE, SOURCE)
-  assert.equal(safranDataSystems.COMPANY, COMPANY)
-  assert.equal(safranDataSystems.COMPANY_PAGE_URL, COMPANY_PAGE_URL)
-  assert.equal(safranDataSystems.FILTERED_JOBS_URL, FILTERED_JOBS_URL)
-  assert.equal(safranDataSystems.COMPANY_FILTER_VALUE, '609-safran-data-systems')
-  assert.equal(safranDataSystems.hasOfficialCompanyPageSignal(COMPANY_PAGE_HTML), true)
-  assert.equal(safranDataSystems.extractCompanyJobsUrl(COMPANY_PAGE_HTML), FILTERED_JOBS_URL)
-  assert.equal(safranDataSystems.hasFilteredJobsPageSignal(FILTERED_PAGE_1_HTML), true)
-  assert.equal(safranDataSystems.extractResultCount(FILTERED_PAGE_1_HTML), 3)
-  assert.equal(safranDataSystems.extractNextPageUrl(FILTERED_PAGE_1_HTML), NEXT_PAGE_URL)
-})
+test('Safran Data Systems pins the accessible keyword search surface and detail extraction contract', async () => {
+  const safranDataSystems = await loadScriptModule()
 
-test('Safran Data Systems default fetch falls back to curl before browser rendering when the first-party site returns HTTP 403', async () => {
-  const safranDataSystems = await loadSafranDataSystemsModule()
-  const calls = []
-  const fetchText = safranDataSystems.createDefaultFetchText({
-    fetchImpl: async (url, options) => {
-      calls.push({ type: 'fetch', url, options })
-      return {
-        ok: false,
-        status: 403,
-      }
-    },
-    execFileImpl: (command, args, callback) => {
-      calls.push({ type: 'curl', command, args })
-      callback(null, `${COMPANY_PAGE_HTML}\n__SAFRAN_STATUS__200`, '')
-    },
-    fetchBrowserText: async (url) => {
-      calls.push({ type: 'browser', url })
-      return '<html>ok</html>'
-    },
-  })
+  assert.equal(safranDataSystems.SOURCE, 'safrandatasystems')
+  assert.equal(safranDataSystems.COMPANY, 'Safran Data Systems')
+  assert.equal(safranDataSystems.OFFICIAL_BRAND_NAME, 'Safran Data Systems SAS')
+  assert.equal(safranDataSystems.VERIFIED_ON, '2026-08-14')
+  assert.equal(
+    safranDataSystems.SEARCH_URL,
+    'https://careers.safran-group.com/offre-de-emploi/liste-toutes-offres.aspx?Keywords=Safran%20Data%20Systems',
+  )
+  assert.equal(
+    safranDataSystems.buildSearchUrl(),
+    'https://careers.safran-group.com/offre-de-emploi/liste-toutes-offres.aspx?Keywords=Safran+Data+Systems',
+  )
+  assert.equal(
+    safranDataSystems.buildSearchUrl(2),
+    'https://careers.safran-group.com/offre-de-emploi/liste-toutes-offres.aspx?Keywords=Safran+Data+Systems&page=2',
+  )
+  assert.equal(safranDataSystems.hasVerifiedSearchPageSignal(SEARCH_PAGE_1_HTML), true)
+  assert.equal(safranDataSystems.hasVerifiedDetailSignal(BID_MANAGER_DETAIL_HTML), true)
+  assert.equal(safranDataSystems.extractTotalPages(SEARCH_PAGE_1_HTML), 2)
 
-  const html = await fetchText(COMPANY_PAGE_URL)
-
-  assert.equal(html.includes('Safran Data Systems'), true)
-  assert.equal(calls[0].type, 'fetch')
-  assert.equal(calls[1].type, 'curl')
-  assert.match(calls[1].command, /curl(?:\.exe)?$/i)
-  assert.equal(calls.some((call) => call.type === 'browser'), false)
-})
-
-test('Safran Data Systems scraper extracts exact-company cards and detail metadata from first-party pages', async () => {
-  const safranDataSystems = await loadSafranDataSystemsModule()
-  const cards = safranDataSystems.extractJobCards(FILTERED_PAGE_1_HTML)
-
+  const cards = safranDataSystems.extractJobCards(SEARCH_PAGE_1_HTML)
   assert.deepEqual(cards, [
     {
-      title: 'IngÃ©nieur qualitÃ© logiciel/projet F/H',
-      sourceUrl: 'https://www.safran-group.com/fr/offres/france/ulis/ingenieur-qualite-logicielprojet-fh-183425',
-      company: COMPANY,
-      location: 'Les Ulis, Ile de France, France',
-      city: 'Les Ulis',
-      state: 'Ile de France',
+      title: 'Bid Manager F/H',
+      company: 'Safran Data Systems',
+      department: 'Support contractuel',
+      location: "AERODROME D'ARCACHON VILLEMARIE 33260 LA TESTE DE BUCH",
+      city: 'LA TESTE DE BUCH',
+      state: null,
       country: 'France',
-      jobId: '183425',
-      requisitionId: '183425',
-      applyUrl: 'https://www.safran-group.com/fr/offres/france/ulis/ingenieur-qualite-logicielprojet-fh-183425',
+      jobId: '185635',
+      requisitionId: '2026-185635',
+      sourceUrl: BID_MANAGER_URL,
+      applyUrl: BID_MANAGER_URL,
       employmentType: 'CDI',
-      department: 'QualitÃ©',
-      postingDate: '11.07.2026',
+      postingDate: '2026-08-14',
       jobDescription: null,
     },
     {
-      title: 'Responsable Test et Informatique Industrielle F/H',
-      sourceUrl: 'https://www.safran-group.com/fr/offres/france/ulis/responsable-test-informatique-industrielle-fh-175733',
-      company: COMPANY,
-      location: 'Les Ulis, Ile de France, France',
+      title: 'Export Control Manager F/H',
+      company: 'Safran Data Systems',
+      department: 'Contrôle des exportations',
+      location: "ZONE D'ACTIVITE COURTABOEUF - 5 Avenue des Andes 91940 Les Ulis",
       city: 'Les Ulis',
-      state: 'Ile de France',
+      state: null,
       country: 'France',
-      jobId: '175733',
-      requisitionId: '175733',
-      applyUrl: 'https://www.safran-group.com/fr/offres/france/ulis/responsable-test-informatique-industrielle-fh-175733',
-      employmentType: 'CDI',
-      department: 'IngÃ©nierie Industrielle',
-      postingDate: '11.07.2026',
+      jobId: '184115',
+      requisitionId: '2026-184115',
+      sourceUrl: EXPORT_CONTROL_URL,
+      applyUrl: EXPORT_CONTROL_URL,
+      employmentType: 'CDD',
+      postingDate: '2026-08-13',
       jobDescription: null,
     },
   ])
 
-  const detail = safranDataSystems.extractJobDetail(cards[0], DETAIL_HTML_BY_URL[cards[0].sourceUrl])
-
-  assert.deepEqual(detail, {
-    title: 'IngÃ©nieur qualitÃ© logiciel/projet F/H',
-    company: COMPANY,
-    department: 'QualitÃ©',
-    location: 'Les Ulis, Ile de France, France',
-    city: 'Les Ulis',
-    state: 'Ile de France',
+  assert.deepEqual(safranDataSystems.extractJobDetail(BID_MANAGER_DETAIL_HTML, cards[0]), {
+    title: 'Bid Manager F/H',
+    company: 'Safran Data Systems',
+    department: 'Support contractuel',
+    location: "AERODROME D'ARCACHON VILLEMARIE 33260 LA TESTE DE BUCH, France",
+    city: 'LA TESTE DE BUCH',
+    state: 'Nouvelle Aquitaine',
     country: 'France',
-    jobId: '2026-183425',
-    requisitionId: '2026-183425',
-    sourceUrl: 'https://www.safran-group.com/fr/offres/france/ulis/ingenieur-qualite-logicielprojet-fh-183425',
-    applyUrl: 'https://www.safran-group.com/fr/offres/france/ulis/ingenieur-qualite-logicielprojet-fh-183425/jobapplication',
+    jobId: '185635',
+    requisitionId: '2026-185635',
+    sourceUrl: BID_MANAGER_URL,
+    applyUrl: BID_MANAGER_URL,
     employmentType: 'CDI',
-    experienceRequired: '5+ years',
-    minimumQualification: null,
+    experienceRequired: 'Superieure a 8 ans',
+    minimumQualification: 'BAC+5',
     preferredQualification: null,
-    requiredSkills: [
-      'â€¢ 5+ years in software quality assurance',
-      'â€¢ DO-178 / DO-254 experience',
-      'â€¢ Strong communication skills',
-    ],
-    postingDate: '2026-07-11',
+    requiredSkills: [],
+    postingDate: '2026-08-14',
     closingDate: null,
-    jobDescription: 'Dans un contexte de forte croissance, Safran Data Systems crÃ©e un nouveau poste clÃ© au sein de lâ€™Ã©quipe QualitÃ©.',
-    remoteStatus: 'On-site',
-    occupationalCategory: 'IngÃ©nieur & Cadre',
+    jobDescription:
+      "Safran Data Systems recrute un-e Bid Manager pour rejoindre l'equipe commerciale des stations sols pour suivi des satellites. Vous repondez a des appels d'offres francais ou internationaux. Une experience solide dans la gestion de reponse aux appels d'offres complexes est requise.",
   })
 })
 
-test('Safran Data Systems scraper falls back to listing data when detail pages are Cloudflare-blocked', async () => {
-  const safranDataSystems = await loadSafranDataSystemsModule()
-
-  const jobs = await safranDataSystems.createSafranDataSystemsScraper({
-    now: () => '2026-07-11T08:00:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      if (url === COMPANY_PAGE_URL) return COMPANY_PAGE_HTML
-      if (url === FILTERED_JOBS_URL) return FILTERED_PAGE_1_HTML
-      if (url === NEXT_PAGE_URL) return FILTERED_PAGE_2_HTML
-      if (DETAIL_HTML_BY_URL[url]) {
-        throw new Error(`Safran Data Systems curl fetch returned HTTP 403 for ${url}`)
+test('Safran Data Systems default fetch uses the accessible careers host response directly and throws on HTTP errors', async () => {
+  const safranDataSystems = await loadScriptModule()
+  const calls = []
+  const fetchText = safranDataSystems.createDefaultFetchText({
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options })
+      return {
+        ok: true,
+        text: async () => SEARCH_PAGE_1_HTML,
       }
-
-      throw new Error(`Unexpected URL ${url}`)
     },
   })
 
-  assert.equal(jobs.length, 3)
-  assert.equal(jobs[0].applyUrl, jobs[0].sourceUrl)
-  assert.equal(jobs[0].jobDescription, null)
-  assert.equal(jobs[0].employmentType, 'CDI')
+  const html = await fetchText(safranDataSystems.SEARCH_URL)
+
+  assert.equal(html, SEARCH_PAGE_1_HTML)
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0].url, safranDataSystems.SEARCH_URL)
+  assert.equal(calls[0].options.redirect, 'follow')
+  assert.equal(calls[0].options.headers['Accept-Language'], 'fr-FR,fr;q=0.9,en;q=0.8')
+
+  await assert.rejects(
+    safranDataSystems.createDefaultFetchText({
+      fetchImpl: async () => ({
+        ok: false,
+        status: 403,
+      }),
+    })(safranDataSystems.SEARCH_URL),
+    /HTTP 403/i,
+  )
 })
 
-test('Safran Data Systems scraper run() follows the exact company page, paginated filter, and same-domain detail pages', async () => {
-  const safranDataSystems = await loadSafranDataSystemsModule()
+test('Safran Data Systems run() follows the accessible keyword search pagination and same-domain detail pages', async () => {
+  const safranDataSystems = await loadScriptModule()
   const requestedUrls = []
 
   const jobs = await safranDataSystems.createSafranDataSystemsScraper({
-    now: () => '2026-07-11T08:00:00.000Z',
+    now: () => FIXED_SCRAPED_AT,
   }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
 
-      if (url === COMPANY_PAGE_URL) return COMPANY_PAGE_HTML
-      if (url === FILTERED_JOBS_URL) return FILTERED_PAGE_1_HTML
-      if (url === NEXT_PAGE_URL) return FILTERED_PAGE_2_HTML
-      if (DETAIL_HTML_BY_URL[url]) return DETAIL_HTML_BY_URL[url]
+      if (url === safranDataSystems.buildSearchUrl(1)) return SEARCH_PAGE_1_HTML
+      if (url === safranDataSystems.buildSearchUrl(2)) return SEARCH_PAGE_2_HTML
+      if (url === BID_MANAGER_URL) return BID_MANAGER_DETAIL_HTML
+      if (url === EXPORT_CONTROL_URL) return EXPORT_CONTROL_DETAIL_HTML
+      if (url === PLANIFICATEUR_URL) return PLANIFICATEUR_DETAIL_HTML
 
-      throw new Error(`Unexpected URL ${url}`)
+      throw new Error(`Unexpected Safran Data Systems URL: ${url}`)
     },
   })
 
   assert.deepEqual(requestedUrls, [
-    COMPANY_PAGE_URL,
-    FILTERED_JOBS_URL,
-    NEXT_PAGE_URL,
-    'https://www.safran-group.com/fr/offres/france/ulis/ingenieur-qualite-logicielprojet-fh-183425',
-    'https://www.safran-group.com/fr/offres/france/ulis/responsable-test-informatique-industrielle-fh-175733',
-    'https://www.safran-group.com/fr/offres/france/colombelles/architecte-base-donnees-fh-182282',
+    safranDataSystems.buildSearchUrl(1),
+    BID_MANAGER_URL,
+    EXPORT_CONTROL_URL,
+    safranDataSystems.buildSearchUrl(2),
+    PLANIFICATEUR_URL,
   ])
-  assert.equal(jobs.length, 3)
-  assert.deepEqual(jobs[0], {
-    title: 'Architecte en base de donnÃ©es F/H',
-    company: COMPANY,
-    department: 'SystÃ¨mes dâ€™information',
-    location: 'Colombelles, Normandie, France',
-    city: 'Colombelles',
-    state: 'Normandie',
-    country: 'France',
-    jobId: '2026-182282',
-    requisitionId: '2026-182282',
-    sourceUrl: 'https://www.safran-group.com/fr/offres/france/colombelles/architecte-base-donnees-fh-182282',
-    applyUrl: 'https://www.safran-group.com/fr/offres/france/colombelles/architecte-base-donnees-fh-182282/jobapplication',
-    employmentType: 'CDI',
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [
-      'â€¢ Database architecture',
-      'â€¢ Cloud and resilience design',
+  assert.deepEqual(
+    jobs.map((job) => ({
+      title: job.title,
+      requisitionId: job.requisitionId,
+      location: job.location,
+      source: job.source,
+      scrapedAt: job.scrapedAt,
+    })),
+    [
+      {
+        title: 'Bid Manager F/H',
+        requisitionId: '2026-185635',
+        location: "AERODROME D'ARCACHON VILLEMARIE 33260 LA TESTE DE BUCH, France",
+        source: 'safrandatasystems',
+        scrapedAt: FIXED_SCRAPED_AT,
+      },
+      {
+        title: 'Export Control Manager F/H',
+        requisitionId: '2026-184115',
+        location: "ZONE D'ACTIVITE COURTABOEUF - 5 Avenue des Andes 91940 Les Ulis, France",
+        source: 'safrandatasystems',
+        scrapedAt: FIXED_SCRAPED_AT,
+      },
+      {
+        title: 'Planificateur / trice PDP F/H',
+        requisitionId: '2026-183901',
+        location: 'Le Gerhoui 35510 Cesson-Sevigne, France',
+        source: 'safrandatasystems',
+        scrapedAt: FIXED_SCRAPED_AT,
+      },
     ],
-    postingDate: '2026-07-11',
-    closingDate: null,
-    jobDescription: 'Safran Data Systems dÃ©veloppe ses plateformes de donnÃ©es critiques pour les communications spatiales.',
-    remoteStatus: 'On-site',
-    occupationalCategory: 'IngÃ©nieur & Cadre',
-    source: SOURCE,
-    link: 'https://www.safran-group.com/fr/offres/france/colombelles/architecte-base-donnees-fh-182282/jobapplication',
-    scrapedAt: '2026-07-11T08:00:00.000Z',
-  })
+  )
+  assert.equal(jobs[0].link, BID_MANAGER_URL)
+  assert.equal(jobs[2].link, PLANIFICATEUR_URL)
 })
 
-test('Safran Data Systems scraper fails closed when the exact company filter is missing', async () => {
-  const safranDataSystems = await loadSafranDataSystemsModule()
+test('Safran Data Systems fails closed when the accessible search page or detail page drifts', async () => {
+  const safranDataSystems = await loadScriptModule()
+
+  await assert.rejects(
+    safranDataSystems.createSafranDataSystemsScraper().run({
+      fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
+    }),
+    /verified keyword search page/i,
+  )
 
   await assert.rejects(
     safranDataSystems.createSafranDataSystemsScraper().run({
       fetchText: async (url) => {
-        if (url === COMPANY_PAGE_URL) return COMPANY_PAGE_HTML
-        if (url === FILTERED_JOBS_URL) {
-          return FILTERED_PAGE_1_HTML.replace(' selected="selected"', '')
-        }
-        throw new Error(`Unexpected URL ${url}`)
+        if (url === safranDataSystems.buildSearchUrl(1)) return SEARCH_PAGE_1_HTML
+        return '<html><head><title>Unexpected</title></head><body>Placeholder</body></html>'
       },
     }),
-    /exact company filter/i,
+    /detail page no longer matches/i,
   )
 })

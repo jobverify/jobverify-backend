@@ -21,6 +21,38 @@ const buildVerifiedChallengeHtml = (url) => `
 </html>
 `
 
+const officialCareersPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Life at Orion - Orion Innovation</title>
+  </head>
+  <body>
+    <main>
+      <h1>Where people grow and innovation thrives</h1>
+      <p>Explore open roles today.</p>
+      <a href="https://www.orioninnovation.com/careers/job/">Explore Opportunities</a>
+    </main>
+  </body>
+</html>
+`
+
+const officialOpenJobsPublicHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Job - Orion Innovation</title>
+  </head>
+  <body>
+    <main>
+      <h1>Open Jobs</h1>
+      <p>79 Open Positions</p>
+      <a href="https://www.orioninnovation.com/careers/job/?gh_jid=4697474006">Open Jobs</a>
+    </main>
+  </body>
+</html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/orioninnovation/script.js')
@@ -94,21 +126,29 @@ test('Orion Innovation fails closed when the verified blocked surfaces drift or 
         errorKind: null,
       }),
     }),
-    /verified blocked careers surfaces changed materially/i,
+    /verified official public surface/i,
   )
 
   await assert.rejects(
     orion.createOrionInnovationScraper().run({
-      fetchPage: async (url) => ({
-        status: 403,
-        url,
-        finalUrl: url,
-        html: url === orion.OPEN_JOBS_URL
-          ? `${buildVerifiedChallengeHtml(url)}<a href="https://www.orioninnovation.com/careers/job/?gh_jid=4697474006">Open Jobs</a>`
-          : buildVerifiedChallengeHtml(url),
-        errorKind: null,
-      }),
+      fetchPage: async (url) => (
+        url === orion.CAREERS_PAGE_URL
+          ? {
+              status: 200,
+              url,
+              finalUrl: url,
+              html: officialCareersPageHtml,
+              errorKind: null,
+            }
+          : {
+              status: 200,
+              url,
+              finalUrl: url,
+              html: officialOpenJobsPublicHtml,
+              errorKind: null,
+            }
+      ),
     }),
-    /scraper-visible public jobs/i,
+    /public jobs but parsing returned no jobs/i,
   )
 })

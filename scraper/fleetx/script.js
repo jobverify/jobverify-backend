@@ -94,7 +94,6 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return extractTitle(html) === 'Career Opportunities At Fleetx | Fleetx'
     && text.includes('Current Openings')
-    && text.includes('Please email your resume to talent@fleetx.io')
     && /id=["']current-openings["']/i.test(String(html ?? ''))
 }
 
@@ -143,8 +142,8 @@ export const extractFleetxJobs = (html = '') => {
       postingDate: null,
       closingDate: null,
       jobDescription: requiredSkills.length > 0
-        ? `Key Skills: ${requiredSkills.join(', ')}. Apply by emailing talent@fleetx.io.`
-        : 'Apply by emailing talent@fleetx.io.',
+        ? `Key Skills: ${requiredSkills.join(', ')}. Apply through the Fleetx careers page.`
+        : 'Apply through the Fleetx careers page.',
       remoteStatus: 'On-site',
     })
   }
@@ -233,6 +232,20 @@ export const createFleetxScraper = () => ({
     fetchPage = defaultFetchPage,
     now = () => new Date().toISOString(),
   } = {}) {
+    const currentCareersPage = await fetchPage(CURRENT_CAREERS_URL)
+    if (
+      currentCareersPage?.status === 200
+      && isFleetxFirstPartyUrl(currentCareersPage.url)
+      && hasOfficialCareersSignal(currentCareersPage.html)
+    ) {
+      return extractFleetxJobs(currentCareersPage.html).map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt: now(),
+      }))
+    }
+
     const resultEntries = await Promise.all(
       TIMEOUT_PROBE_URLS.map(async (url) => [url, await fetchPage(url)]),
     )

@@ -32,16 +32,16 @@ test('Curefoods sentinel validates the verified first-party page and LinkedIn ha
 
   assert.equal(curefoods.SOURCE, 'curefoods')
   assert.equal(curefoods.COMPANY, 'Curefoods')
-  assert.equal(curefoods.CAREERS_URL, 'https://curefoods.in/careers')
+  assert.equal(curefoods.CAREERS_URL, 'https://www.curefoods.in/pages/careers')
   assert.equal(curefoods.APPLICATION_EMAIL, 'careers@curefoods.in')
   assert.equal(
     curefoods.VERIFIED_LINKEDIN_URL,
-    'https://www.linkedin.com/company/curefoods/jobs/?viewAsMember=true',
+    'https://www.linkedin.com/company/curefoods/',
   )
   assert.equal(curefoods.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(
     curefoods.extractLinkedInJobsUrl(careersHtml),
-    'https://www.linkedin.com/company/curefoods/jobs/?viewAsMember=true',
+    'https://www.linkedin.com/company/curefoods/',
   )
   assert.equal(curefoods.pageExposesFirstPartyJobRecords(careersHtml), false)
 })

@@ -192,7 +192,7 @@ const normalizeRouteUrl = (value = '') => {
 export const isVerifiedNoTrustPublicJobRoute = (page = {}, requestedUrl) =>
   Number(page?.status) === 404
   && normalizeRouteUrl(page?.url ?? requestedUrl) === normalizeRouteUrl(requestedUrl)
-  && /(?:\b404 Not Found\b|\b404\s*-\s*Error\b|Like The Fact That This Page Doesn't Exist)/i.test(String(page?.html ?? ''))
+  && /(?:\b404 Not Found\b|\b404\s*-\s*Error\b|\bPage Not Found\b|unable to serve your request as the page you requested could not be found|Like The Fact That This Page Doesn't Exist)/i.test(String(page?.html ?? ''))
   && !careerPageExposesTrustworthyPublicJobs(page?.html ?? '')
 
 export const createAvanseScraper = () => ({

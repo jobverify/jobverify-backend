@@ -222,9 +222,27 @@ export const isVerifiedMissingCareerRoute = (page = {}) => {
   const hasCurrentPlain404Surface =
     /^404(?:\s*[—-]\s*|\s+)page not found\.?$/i.test(normalized)
 
-  return Number(page?.status) === 404
+  const isKnownHomepageShell = Number(page?.status) === 200
+    && hasOfficialHomepageSignal(page?.html)
+
+  return (isKnownHomepageShell || (
+    Number(page?.status) === 404
     && (hasLegacy404Surface || hasCurrentPlain404Surface)
-    && !hasPublicJobsSignal(page?.html)
+  )) && !hasPublicJobsSignal(page?.html)
+}
+
+export const hasVerifiedUnpublishableCareersLanding = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page).toLowerCase()
+
+  return normalized.includes('careers at drytis')
+    && normalized.includes('5 open roles')
+    && /<section\s+id=["']roles["']/i.test(page)
+    && /class=["'][^"']*dr-role-card/i.test(page)
+    && /href=["']#apply["']/i.test(page)
+    && /<section\s+id=["']apply["']/i.test(page)
+    && /mailto:careers@drytis\.ai/i.test(page)
+    && normalized.includes('remote-first. real ownership.')
 }
 
 export const createDrytisScraper = () => ({
@@ -290,12 +308,20 @@ export const createDrytisScraper = () => ({
       throw new Error('DRYTIS verified sitemap no longer matches the known careers-free surface')
     }
 
+    let hasUnpublishableCareersLanding = false
     for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
       const routePage = await fetchPage(routeUrl)
+      if (routeUrl === 'https://drytis.com/careers' && routePage.status === 200 && hasVerifiedUnpublishableCareersLanding(routePage.html)) {
+        hasUnpublishableCareersLanding = true
+        continue
+      }
+
       if (!isVerifiedMissingCareerRoute(routePage)) {
         throw new Error(`DRYTIS verified no-public-careers route changed: ${routePage.url || routeUrl}`)
       }
     }
+
+    if (hasUnpublishableCareersLanding) return []
 
     return []
   },

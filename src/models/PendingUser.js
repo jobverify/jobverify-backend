@@ -32,6 +32,10 @@ const PendingUserSchema = new Schema(
       type: Number,
       default: 0, // counts number of resend requests (excludes initial register email)
     },
+    resendWindowStartedAt: {
+      type: Date,
+      default: null,
+    },
     lastResentAt: {
       type: Date,
       default: Date.now, // initialized to register time

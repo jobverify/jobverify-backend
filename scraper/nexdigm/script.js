@@ -165,8 +165,8 @@ export const extractInlineJobs = (html = '', { scrapedAt = new Date().toISOStrin
   const jobsById = new Map()
 
   for (const cardHtml of cards) {
-    const sourceUrl = extractFirst(/<div class="result-heading result-heading3[^"]*">\s*<a href="([^"]+)"/i, cardHtml)
-    const title = extractFirst(/<div class="result-heading result-heading3[^"]*">\s*<a href="[^"]+">([\s\S]*?)<\/a>/i, cardHtml)
+    const sourceUrl = extractFirst(/<a\b[^>]*href="([^"]*career-details\?id=[^"]+)"[^>]*>/i, cardHtml)
+    const title = extractFirst(/<a\b[^>]*href="[^"]*career-details\?id=[^"]+"[^>]*>([\s\S]*?)<\/a>/i, cardHtml)
     const city = extractFirst(/<span><b>Location City<\/b><\/span>\s*<span>([\s\S]*?)<\/span>/i, cardHtml)
     const employmentType = extractFirst(/<span><b>Employee Type<\/b><\/span>\s*<span>([\s\S]*?)<\/span>/i, cardHtml)
     const posted = extractFirst(/<span><b>Posted<\/b><\/span>\s*<span>([\s\S]*?)<\/span>/i, cardHtml)

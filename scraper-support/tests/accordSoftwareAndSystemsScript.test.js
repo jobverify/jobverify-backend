@@ -58,6 +58,21 @@ const careersPageHtml = `
 </html>
 `
 
+const currentCareersPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Explore Career Opportunities | Accord Software &amp; Systems Pvt Ltd</title>
+    <meta name="description" content="Discover rewarding careers at Accord Soft. Join a dynamic team of experts and grow your skills in cutting-edge technology solutions." />
+  </head>
+  <body>
+    <p>Full Time - Embedded Software Engineer</p>
+    <p>Full Time - Systems Engineer FPGA</p>
+    <a href="career-form.php">Apply Now</a>
+  </body>
+</html>
+`
+
 const applyFormHtml = `
 <!doctype html>
 <html lang="en">
@@ -87,8 +102,10 @@ test('Accord Software & Systems helpers stay pinned to the verified first-party 
   assert.equal(accord.COMPANY, 'Accord Software & Systems')
   assert.equal(accord.CAREERS_URL, 'https://www.accord-soft.com/career.php')
   assert.equal(accord.APPLY_FORM_URL, 'https://www.accord-soft.com/career-form.php')
-  assert.equal(accord.VERIFIED_ON, '2026-07-17')
+  assert.equal(accord.VERIFIED_ON, '2026-09-03')
+  assert.equal(accord.normalizeAccordLocation('Banagalore'), 'Bangalore')
   assert.equal(accord.hasOfficialCareersSignal(careersPageHtml), true)
+  assert.equal(accord.hasOfficialCareersSignal(currentCareersPageHtml), true)
   assert.equal(accord.hasOfficialApplyFormSignal(applyFormHtml), true)
   assert.deepEqual(
     accord.extractJobCards(careersPageHtml),

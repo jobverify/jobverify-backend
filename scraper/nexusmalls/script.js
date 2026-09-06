@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'nexusmalls'
+export const COMPANY = 'Nexus Select Trust'
 export const HOMEPAGE_URL = 'https://www.nexusselecttrust.com/'
 export const CAREERS_URL = 'https://www.nexusselecttrust.com/careers'
 export const JOBS_URL = 'https://www.nexusselecttrust.com/jobs'
@@ -71,6 +72,61 @@ export const extractCareerLikeLinks = (html) => {
   return [...matches].map((match) => match[1])
 }
 
+const extractFirst = (pattern, html) => normalizeWhitespace(String(html ?? '').match(pattern)?.[1]) || null
+
+export const hasOfficialCareerPageSignal = (html) => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page)
+
+  return /<title>\s*Career at nexus\s*<\/title>/i.test(page)
+    && text.includes('Our Featured Jobs')
+    && text.includes('Be a part of Nexus')
+    && text.includes('Your next opportunity starts here.')
+    && /mailto:careers@nexusmalls\.com/i.test(page)
+}
+
+export const extractCareerJobs = (html, { scrapedAt = new Date().toISOString() } = {}) =>
+  String(html ?? '').split('<div class="job-card">').slice(1).map((card) => {
+    const title = extractFirst(/<h2\b[^>]*class=["'][^"']*job-title[^"']*["'][^>]*>([\s\S]*?)<\/h2>/i, card)
+    const jobDescription = extractFirst(/<p\b[^>]*class=["'][^"']*job-desc[^"']*["'][^>]*>([\s\S]*?)<\/p>/i, card)
+    const detailUrl = extractFirst(/<a\b[^>]*href=["']([^"']*\/career\/job-details\/[^"']+)["'][^>]*class=["'][^"']*btn-view-details/i, card)
+    const tags = [...card.matchAll(/<span\b[^>]*class=["'][^"']*tag[^"']*["'][^>]*>([\s\S]*?)<\/span>/gi)]
+      .map((match) => normalizeWhitespace(match[1]))
+      .filter(Boolean)
+    const [location, employmentType, department, experienceRequired] = tags
+
+    if (!title || !detailUrl || !location) return null
+
+    const jobId = detailUrl.split('/').filter(Boolean).at(-1)
+    return {
+      title,
+      company: COMPANY,
+      department: department || null,
+      location: `${location}, India`,
+      city: location.split(',').at(-1)?.trim() || location,
+      country: 'India',
+      jobId: `${SOURCE}-${jobId}`,
+      requisitionId: jobId,
+      sourceUrl: detailUrl,
+      applyUrl: detailUrl,
+      employmentType: employmentType || null,
+      experienceRequired: experienceRequired || null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription,
+      remoteStatus: 'On-site',
+      source: SOURCE,
+      link: detailUrl,
+      scrapedAt,
+      companyCareerPage: CAREERS_URL,
+      companyDomain: 'nexusselecttrust.com',
+      atsPlatform: 'official-company-careers',
+    }
+  }).filter(Boolean)
+
 export const hasMissingRouteSignal = ({ status, html }) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
@@ -85,8 +141,24 @@ export const createNexusMallsScraper = () => ({
       throw new Error('Nexus Malls homepage no longer matches the verified official public surface')
     }
 
+    const careerUrl = extractCareerLikeLinks(homepage.html)
+      .find((href) => new URL(href, HOMEPAGE_URL).pathname === '/career')
+    if (careerUrl) {
+      const careersPage = await fetchPage(careerUrl)
+      if (careersPage.status !== 200 || !hasOfficialCareerPageSignal(careersPage.html)) {
+        throw new Error('Nexus Malls careers page no longer matches the verified first-party jobs surface')
+      }
+
+      const jobs = extractCareerJobs(careersPage.html)
+      if (jobs.length === 0) {
+        throw new Error('Nexus Malls careers page no longer exposes verified public job cards')
+      }
+
+      return jobs
+    }
+
     if (extractCareerLikeLinks(homepage.html).length > 0) {
-      throw new Error('Nexus Malls homepage now appears to expose a public careers surface')
+      throw new Error('Nexus Malls homepage now exposes an unverified careers surface')
     }
 
     const routes = await Promise.all([

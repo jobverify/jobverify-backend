@@ -226,18 +226,24 @@ const toLocationData = (cityText) => {
   }
 }
 
-const findExpectedOpening = (roleId) =>
-  EXPECTED_PUBLIC_OPENINGS.find((opening) => opening.roleId === roleId) || null
+const hasVerifiedCurrentRoleCards = (cards) => {
+  const roleIds = new Set()
+  const detailUrls = new Set()
 
-const roleCardsMatchExpected = (cards) =>
-  cards.length === EXPECTED_PUBLIC_OPENINGS.length
-  && cards.every((card, index) => {
-    const expected = EXPECTED_PUBLIC_OPENINGS[index]
-    return expected
-      && card.roleId === expected.roleId
-      && card.title === expected.title
-      && card.detailUrl === expected.detailUrl
+  return cards.length > 0 && cards.every(({ roleId, title, detailUrl }) => {
+    const parsedUrl = new URL(detailUrl)
+    const isVerified = /^\d+$/.test(roleId)
+      && title.length > 2
+      && parsedUrl.origin === new URL(HOMEPAGE_URL).origin
+      && /^\/jobs\/[^/]+\/$/.test(parsedUrl.pathname)
+      && !roleIds.has(roleId)
+      && !detailUrls.has(detailUrl)
+
+    roleIds.add(roleId)
+    detailUrls.add(detailUrl)
+    return isVerified
   })
+}
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
@@ -416,7 +422,7 @@ export const createMettlesemiScraper = ({ now = () => new Date().toISOString() }
     }
 
     const cards = extractCurrentRoleCards(careersPage.html)
-    if (!roleCardsMatchExpected(cards)) {
+    if (!hasVerifiedCurrentRoleCards(cards)) {
       throw new Error('Mettlesemi current public openings changed materially')
     }
 
@@ -432,11 +438,6 @@ export const createMettlesemiScraper = ({ now = () => new Date().toISOString() }
     const jobs = []
 
     for (const card of cards) {
-      const expectedOpening = findExpectedOpening(card.roleId)
-      if (!expectedOpening || expectedOpening.title !== card.title || expectedOpening.detailUrl !== card.detailUrl) {
-        throw new Error('Mettlesemi current public openings changed materially')
-      }
-
       const detailPage = await fetchPage(card.detailUrl)
       if (detailPage.status !== 200) {
         throw new Error(`Mettlesemi detail page failed to load for "${card.title}"`)

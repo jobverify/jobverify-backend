@@ -123,7 +123,6 @@ export const hasOfficialHomepageSignal = (html = '') => {
 
   return /<title>\s*FreshToHome - Order Fresh Fish, Chicken and Mutton Online\.\s*<\/title>/i.test(rawHtml)
     && /customercare@freshtohome\.com/i.test(rawHtml)
-    && /Sell-With-Us/i.test(rawHtml)
     && /Certificates/i.test(rawHtml)
     && normalized.includes('fish & seafood')
     && /Poultry/i.test(rawHtml)

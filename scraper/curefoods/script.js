@@ -7,9 +7,9 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'curefoods'
 export const COMPANY = 'Curefoods'
-export const CAREERS_URL = 'https://curefoods.in/careers'
+export const CAREERS_URL = 'https://www.curefoods.in/pages/careers'
 export const APPLICATION_EMAIL = 'careers@curefoods.in'
-export const VERIFIED_LINKEDIN_URL = 'https://www.linkedin.com/company/curefoods/jobs/?viewAsMember=true'
+export const VERIFIED_LINKEDIN_URL = 'https://www.linkedin.com/company/curefoods/'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -54,16 +54,15 @@ const normalizeLinkedInJobsUrl = (value) => {
     const url = new URL(absoluteUrl)
     const hostname = url.hostname.replace(/^www\./i, '').toLowerCase()
 
-    if (hostname !== 'linkedin.com') return null
+    if (!/(?:^|\.)linkedin\.com$/i.test(hostname)) return null
 
     if (/^\/authwall\/?$/i.test(url.pathname)) {
       const redirected = url.searchParams.get('sessionRedirect')
       return redirected ? normalizeLinkedInJobsUrl(redirected) : null
     }
 
-    if (/^\/company\/curefoods\/jobs\/?$/i.test(url.pathname)) {
-      const normalized = new URL('https://www.linkedin.com/company/curefoods/jobs/')
-      normalized.searchParams.set('viewAsMember', url.searchParams.get('viewAsMember') || 'true')
+    if (/^\/company\/curefoods(?:\/jobs)?\/?$/i.test(url.pathname)) {
+      const normalized = new URL('https://www.linkedin.com/company/curefoods/')
       return normalized.toString()
     }
   } catch {
@@ -76,7 +75,7 @@ const normalizeLinkedInJobsUrl = (value) => {
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
-  const hasCanonical = /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/curefoods\.in\/careers["']/i.test(page)
+  const hasCanonical = /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/(?:www\.)?curefoods\.in\/(?:pages\/)?careers["']/i.test(page)
   const hasCurrentNextPage = /<title[^>]*>\s*Careers\s*-\s*Curefoods\s*<\/title>/i.test(page)
     && /<meta[^>]+name=["']description["'][^>]+content=["']Career opportunities at Curefoods["']/i.test(page)
     && /Careers at Curefoods/i.test(text)

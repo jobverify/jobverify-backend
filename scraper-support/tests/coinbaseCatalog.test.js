@@ -16,8 +16,11 @@ test('getScraperCatalog includes Coinbase as a verified first-party careers sour
   assert.equal(provider.atsPlatform, 'greenhouse')
   assert.equal(provider.companyCareerPage, 'https://www.coinbase.com/careers/positions')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-page+detail-pages')
-  assert.equal(provider.extractionStrategy, 'verified-first-party-positions-page+india-role-cards+first-party-detail-pages+greenhouse-apply-handoff')
+  assert.equal(provider.paginationStrategy, 'single-page+detail-pages-or-verified-cloudflare-challenge-empty')
+  assert.equal(
+    provider.extractionStrategy,
+    'verified-first-party-positions-page+india-role-cards+first-party-detail-pages+greenhouse-apply-handoff-or-verified-cloudflare-challenge-empty',
+  )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'coinbase.com')

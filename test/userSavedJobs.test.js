@@ -4,8 +4,6 @@ import test from "node:test";
 import Job from "../src/models/Job.js";
 import User from "../src/models/User.js";
 
-const PUBLIC_SCOPE_NOW_PLACEHOLDER = "__PUBLIC_SCOPE_NOW__";
-
 const createResponseDouble = () => {
   const result = {
     statusCode: 200,
@@ -23,34 +21,24 @@ const createResponseDouble = () => {
   return result;
 };
 
-const normalizePublishedDateScope = (value) => {
-  if (value instanceof Date) return PUBLIC_SCOPE_NOW_PLACEHOLDER;
-  if (Array.isArray(value)) return value.map(normalizePublishedDateScope);
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, nestedValue]) => [
-        key,
-        normalizePublishedDateScope(nestedValue),
-      ]),
-    );
-  }
-  return value;
-};
+const assertHasPublicSavedJobScope = (scope) => {
+  const [postedLowerBound, postedUpperBound, closingLowerBound, lastSeenLowerBound] =
+    scope?.$expr?.$and ?? [];
+  const postedCutoff = postedLowerBound?.$gte?.[1];
+  const now = postedUpperBound?.$lte?.[1];
+  const today = closingLowerBound?.$gte?.[1];
+  const lastSeenCutoff = lastSeenLowerBound?.$gte?.[1];
 
-const assertHasPublishedDateScope = (scope) => {
-  const lowerBound = scope?.$expr?.$lte?.[0]?.$ifNull?.[1];
-  const upperBound = scope?.$expr?.$lte?.[1];
-
-  assert.ok(lowerBound instanceof Date);
-  assert.ok(upperBound instanceof Date);
-  assert.equal(lowerBound.getTime(), upperBound.getTime());
-  assert.equal(JSON.stringify(scope).includes("$$NOW"), false);
-  assert.deepEqual(normalizePublishedDateScope(scope.$expr), {
-    $lte: [
-      { $ifNull: ["$postedAt", PUBLIC_SCOPE_NOW_PLACEHOLDER] },
-      PUBLIC_SCOPE_NOW_PLACEHOLDER,
-    ],
-  });
+  assert.equal(scope?.isPublicIndia, true);
+  assert.equal(scope?.status, "active");
+  assert.ok(postedCutoff instanceof Date);
+  assert.ok(now instanceof Date);
+  assert.ok(today instanceof Date);
+  assert.ok(lastSeenCutoff instanceof Date);
+  assert.equal(lastSeenCutoff.getTime(), postedCutoff.getTime());
+  assert.ok(postedCutoff.getTime() <= now.getTime());
+  assert.equal(today.getUTCHours(), 0);
+  assert.equal(today.getUTCMinutes(), 0);
 };
 
 test("user schema stores saved job references", () => {
@@ -165,7 +153,7 @@ test("getSavedJobs drops unavailable saved jobs and returns a consistent count",
   }
 });
 
-test("getSavedJobs excludes future-posted jobs from the saved-jobs view", async () => {
+test("getSavedJobs applies the public job visibility scope", async () => {
   const { getSavedJobs } = await import("../src/controllers/userController.js");
   const originalFindById = User.findById;
   const originalJobFind = Job.find;
@@ -185,7 +173,58 @@ test("getSavedJobs excludes future-posted jobs from the saved-jobs view", async 
   try {
     await getSavedJobs({ user: { _id: "user-1" } }, createResponseDouble());
 
-    assertHasPublishedDateScope(capturedFilter);
+    assertHasPublicSavedJobScope(capturedFilter);
+  } finally {
+    User.findById = originalFindById;
+    Job.find = originalJobFind;
+  }
+});
+
+test("getSavedJobs returns the public job card shape instead of raw job documents", async () => {
+  const { getSavedJobs } = await import("../src/controllers/userController.js");
+  const originalFindById = User.findById;
+  const originalJobFind = Job.find;
+
+  const user = {
+    _id: "user-1",
+    savedJobs: ["507f191e810c19729de860ea"],
+    async save() { return this; },
+  };
+  User.findById = () => ({ select: async () => user });
+  Job.find = async () => ([
+    {
+      _id: "507f191e810c19729de860ea",
+      title: "Security Engineer",
+      company: "Example Corp",
+      city: "Pune",
+      jobType: "Full-time",
+      status: "active",
+      isPublicIndia: true,
+      applyUrl: "https://example.com/apply",
+      clickCount: 42,
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      sortDate: new Date("2026-01-02T00:00:00.000Z"),
+      _cursorDate: new Date("2026-01-03T00:00:00.000Z"),
+      workdayApplicationStatus: "open",
+      workdayApplicationStatusReason: "available",
+      workdayApplicationStatusCheckedAt: new Date("2026-01-04T00:00:00.000Z"),
+    },
+  ]);
+
+  try {
+    const res = createResponseDouble();
+
+    await getSavedJobs({ user: { _id: "user-1" } }, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.data.length, 1);
+    assert.equal("clickCount" in res.body.data[0], false);
+    assert.equal("createdAt" in res.body.data[0], false);
+    assert.equal("sortDate" in res.body.data[0], false);
+    assert.equal("_cursorDate" in res.body.data[0], false);
+    assert.equal("workdayApplicationStatus" in res.body.data[0], false);
+    assert.equal("workdayApplicationStatusReason" in res.body.data[0], false);
+    assert.equal("workdayApplicationStatusCheckedAt" in res.body.data[0], false);
   } finally {
     User.findById = originalFindById;
     Job.find = originalJobFind;
@@ -196,6 +235,7 @@ test("saveJob adds a job only once and returns the updated overview count", asyn
   const { saveJob } = await import("../src/controllers/userController.js");
   const originalUserFindById = User.findById;
   const originalJobFindById = Job.findById;
+  const originalJobFindOne = Job.findOne;
   const originalCountDocuments = Job.countDocuments;
 
   const user = {
@@ -208,6 +248,11 @@ test("saveJob adds a job only once and returns the updated overview count", asyn
 
   User.findById = async () => user;
   Job.findById = async (jobId) => (jobId === "507f191e810c19729de860ea" ? { _id: jobId } : null);
+  Job.findOne = async (filter) => (
+    filter?._id === "507f191e810c19729de860ea"
+      ? { _id: filter._id }
+      : null
+  );
   Job.countDocuments = async () => user.savedJobs.length;
 
   try {
@@ -241,7 +286,53 @@ test("saveJob adds a job only once and returns the updated overview count", asyn
   } finally {
     User.findById = originalUserFindById;
     Job.findById = originalJobFindById;
+    Job.findOne = originalJobFindOne;
     Job.countDocuments = originalCountDocuments;
+  }
+});
+
+test("saveJob only accepts jobs that are still publicly visible", async () => {
+  const { saveJob } = await import("../src/controllers/userController.js");
+  const originalUserFindById = User.findById;
+  const originalJobFindById = Job.findById;
+  const originalJobFindOne = Job.findOne;
+
+  let capturedFilter = null;
+  const user = {
+    _id: "user-1",
+    savedJobs: [],
+    async save() {
+      return this;
+    },
+  };
+
+  User.findById = async () => user;
+  Job.findById = async () => {
+    throw new Error("saveJob must apply the public job visibility scope");
+  };
+  Job.findOne = async (filter) => {
+    capturedFilter = filter;
+    return null;
+  };
+
+  try {
+    const res = createResponseDouble();
+
+    await saveJob(
+      {
+        user: { _id: "user-1" },
+        params: { jobId: "507f191e810c19729de860ea" },
+      },
+      res,
+    );
+
+    assert.equal(res.statusCode, 404);
+    assert.equal(res.body.message, "Job not found");
+    assertHasPublicSavedJobScope(capturedFilter);
+  } finally {
+    User.findById = originalUserFindById;
+    Job.findById = originalJobFindById;
+    Job.findOne = originalJobFindOne;
   }
 });
 
@@ -279,5 +370,30 @@ test("removeSavedJob removes the saved job and returns the updated overview coun
   } finally {
     User.findById = originalFindById;
     Job.countDocuments = originalCountDocuments;
+  }
+});
+
+test("getSavedJobs hides unexpected storage errors behind a generic 500", async () => {
+  const { getSavedJobs } = await import("../src/controllers/userController.js");
+  const originalFindById = User.findById;
+  const rawErrorMessage = "Mongo topology details should stay server-side";
+
+  User.findById = () => ({
+    select: async () => {
+      throw new Error(rawErrorMessage);
+    },
+  });
+
+  try {
+    const res = createResponseDouble();
+
+    await getSavedJobs({ user: { _id: "user-1" } }, res);
+
+    assert.equal(res.statusCode, 500);
+    assert.equal(res.body.code, 500);
+    assert.equal(res.body.message, "Internal Server Error");
+    assert.equal(JSON.stringify(res.body).includes(rawErrorMessage), false);
+  } finally {
+    User.findById = originalFindById;
   }
 });

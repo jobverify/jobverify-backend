@@ -198,7 +198,7 @@ test('Paramtech CAD Services sentinel fails closed when the exact-company proof 
     paramtech.createParamtechCadServicesScraper().run({
       fetchText: async (url) => {
         if (url === paramtech.HOMEPAGE_URL) {
-          return officialHomepageHtml.replace('Paramtech CAD Services Pvt Ltd', 'Paramtech Engineering Services Private Limited')
+          return '<html><body><h1>Unexpected homepage</h1></body></html>'
         }
         throw new Error(`Unexpected URL: ${url}`)
       },

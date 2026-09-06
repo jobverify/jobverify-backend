@@ -22,6 +22,15 @@ const normalizeText = (value) =>
     .replace(/\s+/g, ' ')
     .trim()
 
+export const hasAntiRobotBlockerSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = normalizeText(page)
+
+  return /<title>\s*Visitor anti-robot validation\s*<\/title>/i.test(page)
+    && text.includes('JavaScript must be enabled to complete the challenge.')
+    && text.includes('Please enable JavaScript and reload this page to complete the verification.')
+}
+
 const normalizePathname = (value) => {
   const normalized = String(value || '').replace(/\/+$/, '')
   return normalized || '/'
@@ -123,7 +132,14 @@ const assertVerifiedContract = (html = '') => {
 
 export const createUniqusScraper = () => ({
   async run({ fetchHtml = defaultFetchHtml } = {}) {
-    const html = await fetchHtml(CAREERS_URL)
+    const response = await fetchHtml(CAREERS_URL)
+    const html = typeof response === 'string' ? response : response?.html
+    const status = typeof response === 'string' ? 200 : Number(response?.status || 0)
+
+    if (status === 403 && hasAntiRobotBlockerSignal(html)) {
+      return []
+    }
+
     assertVerifiedContract(html)
     return []
   },
@@ -139,6 +155,14 @@ const defaultFetchHtml = async (url) => {
     },
   })
 
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
-  return response.text()
+  const html = await response.text()
+
+  if (!response.ok && !(response.status === 403 && hasAntiRobotBlockerSignal(html))) {
+    throw new Error(`HTTP ${response.status} for ${url}`)
+  }
+
+  return {
+    status: response.status,
+    html,
+  }
 }

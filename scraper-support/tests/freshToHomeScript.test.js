@@ -46,6 +46,8 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = homepageHtml.replace('<a href="/sell-with-us">Sell-With-Us</a>', '')
+
 const robotsTxt = `
 ## GENERAL SETTINGS ##
 User-agent: *
@@ -120,7 +122,7 @@ test('FreshToHome helpers stay pinned to the verified homepage, sitemap, and mis
   assert.equal(SOURCE, 'freshtohome')
   assert.equal(COMPANY, 'FreshToHome')
   assert.equal(OFFICIAL_BRAND_NAME, 'FreshToHome')
-  assert.equal(VERIFIED_ON, '2026-07-15')
+  assert.equal(VERIFIED_ON, '2026-09-03')
   assert.equal(HOMEPAGE_URL, 'https://www.freshtohome.com/')
   assert.equal(ROBOTS_TXT_URL, 'https://www.freshtohome.com/robots.txt')
   assert.equal(SITEMAP_URL, 'https://www.freshtohome.com/sitemap/sitemap.xml')
@@ -134,6 +136,7 @@ test('FreshToHome helpers stay pinned to the verified homepage, sitemap, and mis
     'https://www.freshtohome.com/current-openings',
   ])
   assert.equal(hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(hasExpectedRobotsTxtSignal(robotsTxt), true)
   assert.equal(hasFirstPartyCareerLikeLink(homepageHtml), false)
   assert.equal(hasFirstPartyCareerLikeLink('<a href="/careers">Careers</a>'), true)

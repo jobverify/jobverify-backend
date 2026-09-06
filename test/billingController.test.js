@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import test from "node:test";
 
+import ReferralCode from "../src/models/ReferralCode.js";
+import ReferralRedemption from "../src/models/ReferralRedemption.js";
+
 const createResponseDouble = () => ({
   statusCode: 200,
   body: null,
@@ -383,4 +386,37 @@ test("handleBillingWebhook rejects captured payments missing provider identifier
   assert.equal(res.statusCode, 400);
   assert.equal(res.body.code, 400);
   assert.equal(res.body.message, "Webhook payment identifiers are required.");
+});
+
+test("createOrGetMyReferralCode hides unexpected referral store failures", async () => {
+  const controller = await import(`../src/controllers/billingController.js?case=referral-store-error-${Date.now()}`);
+  const originalFindOne = ReferralCode.findOne;
+  const originalCountDocuments = ReferralRedemption.countDocuments;
+  const rawErrorMessage = "index unavailable with storage diagnostics";
+
+  ReferralCode.findOne = async () => {
+    throw new Error(rawErrorMessage);
+  };
+  ReferralRedemption.countDocuments = async () => {
+    throw new Error("countDocuments must not run after the first failure");
+  };
+
+  try {
+    const res = createResponseDouble();
+
+    await controller.createOrGetMyReferralCode(
+      {
+        user: { _id: "user_1" },
+      },
+      res,
+    );
+
+    assert.equal(res.statusCode, 500);
+    assert.equal(res.body.code, 500);
+    assert.equal(res.body.message, "Unable to create referral code at this time.");
+    assert.equal(JSON.stringify(res.body).includes(rawErrorMessage), false);
+  } finally {
+    ReferralCode.findOne = originalFindOne;
+    ReferralRedemption.countDocuments = originalCountDocuments;
+  }
 });

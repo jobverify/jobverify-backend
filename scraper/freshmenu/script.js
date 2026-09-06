@@ -19,6 +19,9 @@ const USER_AGENT =
 
 const HOMEPAGE_TITLE = 'Order food online. Get fresh food delivery from FreshMenu.'
 const GENERIC_APP_SHELL_TITLE = 'Fresh food online. Order Tasty food from FreshMenu.'
+const CURRENT_APP_SHELL_TITLE = 'FreshMenu \u2014 Made fresh. Served fresh.'
+const CURRENT_APP_SHELL_DESCRIPTION =
+  'Chef-made world cuisine, ranked by what people actually order. Browse the FreshMenu board and plan bulk orders for your team or party.'
 
 const PUBLIC_JOB_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
@@ -88,23 +91,35 @@ const hasSharedApexShellSignal = (rawHtml, normalized) =>
   && /corporate discount/i.test(normalized)
   && !hasPublicJobListingSignal(rawHtml)
 
+const hasCurrentAppShellSignal = (rawHtml) =>
+  new RegExp(`<title>\\s*${escapeRegExp(CURRENT_APP_SHELL_TITLE)}\\s*<\\/title>`, 'i').test(rawHtml)
+  && rawHtml.includes(CURRENT_APP_SHELL_DESCRIPTION)
+  && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']FreshMenu["']/i.test(rawHtml)
+  && /<script[^>]+src=["']\/assets\/index-[^"']+\.js["']/i.test(rawHtml)
+  && /<div[^>]+id=["']root["'][^>]*><\/div>/i.test(rawHtml)
+  && !hasPublicJobListingSignal(rawHtml)
+
 export const hasOfficialHomepageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return new RegExp(`<title>\\s*${escapeRegExp(HOMEPAGE_TITLE)}\\s*<\\/title>`, 'i').test(rawHtml)
+  return (
+    new RegExp(`<title>\\s*${escapeRegExp(HOMEPAGE_TITLE)}\\s*<\\/title>`, 'i').test(rawHtml)
     && hasSharedApexShellSignal(rawHtml, normalized)
     && /freshmenu cares/i.test(normalized)
     && /freshpass/i.test(normalized)
     && /open the link in mobile browser for better experience/i.test(normalized)
+  ) || hasCurrentAppShellSignal(rawHtml)
 }
 
 export const hasOfficialAboutPageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return new RegExp(`<title>\\s*${escapeRegExp(GENERIC_APP_SHELL_TITLE)}\\s*<\\/title>`, 'i').test(rawHtml)
+  return (
+    new RegExp(`<title>\\s*${escapeRegExp(GENERIC_APP_SHELL_TITLE)}\\s*<\\/title>`, 'i').test(rawHtml)
     && hasSharedApexShellSignal(rawHtml, normalized)
+  ) || hasCurrentAppShellSignal(rawHtml)
 }
 
 export const isKnownMissingJobRoute = (page = {}, requestedUrl) =>

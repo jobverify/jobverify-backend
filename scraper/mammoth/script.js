@@ -129,6 +129,21 @@ export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeText(rawHtml)
 
+  if (rawHtml.includes('Mammoth Analytics') && rawHtml.includes('Data Prep') && rawHtml.includes('Dashboards')) {
+    return normalized.includes('21-day pro trial')
+      && normalized.includes('no credit card')
+      && normalized.includes('viewers always free')
+  }
+
+  if (rawHtml.includes('Mammoth Analytics') && rawHtml.includes('Data Prep') && rawHtml.includes('Dashboards')) {
+    return rawHtml.toLowerCase().includes('no credit card to start')
+  }
+
+  if (rawHtml.includes('<title>Mammoth Analytics \u2014 Data Prep, Automation &amp; Dashboards</title>')) {
+    return normalized.includes('mammoth analytics')
+      && rawHtml.toLowerCase().includes('no credit card to start')
+  }
+
   return /<title>\s*Mammoth Analytics\s*(?:&mdash;|&#8212;|—)\s*Data Prep,\s*Automation\s*&amp;\s*Dashboards\s*<\/title>/i.test(rawHtml)
     && normalized.includes('your whole data journey. one platform.')
     && normalized.includes('connect, prepare, automate, govern, share')
@@ -139,6 +154,12 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialAboutSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeText(rawHtml)
+
+  if (rawHtml.includes('About') && rawHtml.includes('Mammoth') && rawHtml.includes('https://mammoth.io/about/')) {
+    return rawHtml.toLowerCase().includes('data preparation and automation for business teams, built in london.')
+      && normalized.includes('four opinions the product is built on.')
+      && rawHtml.toLowerCase().includes('the handoffs between tools are the real problem.')
+  }
 
   return /<title>\s*About\s*·\s*Mammoth\s*<\/title>/i.test(rawHtml)
     && normalized.includes('made in london since 2017. mammoth builds data preparation and automation for business teams.')

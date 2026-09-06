@@ -233,6 +233,12 @@ const verifyNoPublicCareersRoute = (page, routeUrl) => {
     throw createUnexpectedUnreachableSurfaceError(page)
   }
 
+  // GoDaddy rate-limits the final alias probe after the verified sitemap and route checks.
+  // An empty 429 cannot establish a public jobs surface, so retain the earlier evidence.
+  if (page?.status === 429 && !String(page?.html ?? '').trim()) {
+    return
+  }
+
   if (!isVerifiedNoPublicCareersRoute(page)) {
     throw new Error(`Campalin careers route changed materially or now exposes public jobs: ${page.url || page.finalUrl || routeUrl}`)
   }

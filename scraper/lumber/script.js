@@ -132,10 +132,9 @@ export const hasOfficialCareersSignal = (html) => {
   const text = normalizeText(html)
   const boardUrls = extractOfficialBoardUrls(html)
 
-  return extractTitle(html) === 'Careers | American International'
+  return extractTitle(html) === 'Commodity Trading Careers | American International'
     && /EMPOWER\s+YOUR\s+FUTURE\./i.test(text)
-    && /97%\s+RETENTION RATE/i.test(text)
-    && /98%\s+EMPLOYEE SATISFACTION/i.test(text)
+    && /90%\s+RETENTION RATE/i.test(text)
     && /ENTRY-LEVEL ROOKIE SCHOOL/i.test(text)
     && /SUMMER INTERNSHIP PROGRAM/i.test(text)
     && boardUrls.includes(BOARD_URL)

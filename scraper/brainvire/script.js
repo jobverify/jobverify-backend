@@ -46,10 +46,16 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
 
-  return /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.brainvire\.com\/careers\/["']/i.test(page)
-    && normalized.includes('Current Openings')
+  const hasCanonicalUrl = /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.brainvire\.com\/careers\/["']/i.test(page)
+  const hasLegacyListingsShell = normalized.includes('Current Openings')
     && normalized.includes('Upload Resume')
     && normalized.includes('Find Jobs')
+  const hasCurrentCareersShell = /<title>\s*Elevate Your Career With Brainvire\s*-\s*Join Us\s*<\/title>/i.test(page)
+    && /Explore current openings at Brainvire/i.test(page)
+    && /href=["']\/careers\/#openings["']/i.test(page)
+    && normalized.includes('Open Roles')
+
+  return hasCanonicalUrl && (hasLegacyListingsShell || hasCurrentCareersShell)
 }
 
 export const extractPublicListings = (html) => [...String(html ?? '').matchAll(

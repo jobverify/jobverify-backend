@@ -3,7 +3,7 @@ import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
 export const SOURCE = 'crownit'
 export const COMPANY = 'Crownit'
 export const OFFICIAL_BRAND = 'Crownit'
-export const VERIFIED_ON = '2026-07-25'
+export const VERIFIED_ON = '2026-08-15'
 export const CAREERS_URL = 'https://crownit.in/en/careers'
 export const DISPOSITION =
   'verified-first-party-careers-surface-with-non-enumerable-apply-flow'

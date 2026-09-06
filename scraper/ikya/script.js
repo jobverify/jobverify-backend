@@ -78,6 +78,11 @@ export const hasVerifiedEmptyBoardSignal = (html = '') => {
 export const hasHomepagePlaceholderSignal = (body = '') => {
   const rawBody = String(body ?? '')
   const normalized = normalizeWhitespace(stripTags(rawBody))
+  const hasBrowserChallengeSignal =
+    /<title>\s*Checking your browser\.\.\.\s*<\/title>/i.test(rawBody)
+    && /Security check/i.test(rawBody)
+    && /Before you can access this site,\s*we need to verify/i.test(rawBody)
+    && /Verification failed\.\s*Please refresh and try again\./i.test(rawBody)
 
   if (
     normalized.length > 0
@@ -87,8 +92,11 @@ export const hasHomepagePlaceholderSignal = (body = '') => {
     return true
   }
 
-  return /<title>\s*www\.ikya\.com\s*-\s*Coming Soon\s*<\/title>/i.test(rawBody)
-    && /This domain is coming soon\./i.test(normalized)
+  return hasBrowserChallengeSignal
+    || (
+      /<title>\s*www\.ikya\.com\s*-\s*Coming Soon\s*<\/title>/i.test(rawBody)
+      && /This domain is coming soon\./i.test(normalized)
+    )
 }
 
 export const createIkyaScraper = () => ({

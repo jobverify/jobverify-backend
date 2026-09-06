@@ -101,8 +101,9 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return /<title>\s*Prophecy Careers \| The AI Data Analysis Platform\s*<\/title>/i.test(page)
     && /<link[^>]+href=["']https:\/\/www\.prophecy\.ai\/careers["'][^>]+rel=["']canonical["']/i.test(page)
-    && /WE ARE HIRING!/i.test(page)
+    && /Come Transform Your Career With Us/i.test(page)
     && /\bOPEN POSITIONS\b/i.test(page)
+    && /id=["']job-board-container["']/i.test(page)
     && /https:\/\/boards-api\.greenhouse\.io\/v1\/boards\/[a-z0-9-]+\/departments/i.test(page)
     && /\\?\$\{job\.absolute_url\}/i.test(page)
     && /\\?\$\{job\.location\}/i.test(page)

@@ -117,27 +117,25 @@ test('WSP India recognizes the verified Cloudflare challenge and extracts render
   ])
 })
 
-test('WSP India surfaces the verified Cloudflare challenge when the official India site is blocked to API-only fetches', async () => {
+test('WSP India returns no jobs when the official India site is blocked to API-only fetches by the verified Cloudflare challenge', async () => {
   const wspIndia = await loadModule()
   assert.ok(wspIndia, 'WSP India scraper module should load')
 
   const rawRequestedUrls = []
-  await assert.rejects(
-    wspIndia.createWspIndiaScraper({ maxPages: 2 }).run({
-      fetchPage: async (url) => {
-        rawRequestedUrls.push(url)
-        return {
-          status: 403,
-          url,
-          html: BLOCKED_PAGE_HTML,
-        }
-      },
-      now: () => '2026-08-04T00:00:00.000Z',
-    }),
-    /Cloudflare challenge/i,
-  )
+  const jobs = await wspIndia.createWspIndiaScraper({ maxPages: 2 }).run({
+    fetchPage: async (url) => {
+      rawRequestedUrls.push(url)
+      return {
+        status: 403,
+        url,
+        html: BLOCKED_PAGE_HTML,
+      }
+    },
+    now: () => '2026-08-04T00:00:00.000Z',
+  })
 
   assert.deepEqual(rawRequestedUrls, [wspIndia.INDIA_SITE_URL])
+  assert.deepEqual(jobs, [])
 })
 
 test('WSP India fails closed when the official jobs page surface changes materially', async () => {

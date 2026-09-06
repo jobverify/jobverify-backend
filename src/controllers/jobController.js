@@ -777,7 +777,7 @@ const normalizeResponseJob = (job) => {
   };
 };
 
-const normalizeJobListResponseJob = (job) => {
+export const normalizeJobListResponseJob = (job) => {
   const normalized = normalizeResponseJob(job);
   if (!normalized) return normalized;
 
@@ -1687,8 +1687,10 @@ export const trackJobClick = async (req, res) => {
       : { job: id, user: null, ip: req.ip, userAgent, clickedAt: { $gte: recentClickCutoff } };
 
     const existingClick = await Click.findOne(clickQuery).lean().exec();
+    const publicJobFilter = applyPublicJobLocationScope({ _id: id, status: "active" });
+
     if (existingClick) {
-      const existingJob = await Job.findOne({ _id: id, status: "active" }).select("clickCount").lean().exec();
+      const existingJob = await Job.findOne(publicJobFilter).select("clickCount").lean().exec();
       if (!existingJob) {
         return res.status(404).json({
           code: 404,
@@ -1709,7 +1711,7 @@ export const trackJobClick = async (req, res) => {
     }
 
     const job = await Job.findOneAndUpdate(
-      { _id: id, status: "active" },
+      publicJobFilter,
       { $inc: { clickCount: 1 } },
       { new: true }
     );

@@ -17,7 +17,7 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const HOMEPAGE_SIGNAL_PATTERNS = [
-  /<title>\s*Megara Robotics\s*<\/title>/i,
+  /<title>\s*Megara Robotics \| Intelligent Robotics Solutions\s*<\/title>/i,
   /href="\/megaraLogo\.png"/i,
   /hero-poster_kgvbtu\.webp/i,
   /<div id="root"><\/div>/i,
@@ -27,23 +27,17 @@ const HOMEPAGE_SIGNAL_PATTERNS = [
 
 const BUNDLE_IDENTITY_PATTERNS = [
   /Megara Robotics/i,
-  /No:\s*11B\/14\s*Periyar Salai/i,
-  /Ayanavaram,\s*Chennai,\s*India/i,
-  /Phone:\s*\+91 8086673701/i,
-  /https:\/\/www\.linkedin\.com\/company\/megararobotics\//i,
-  /Our Robots/i,
+  /Periyar Salai/i,
+  /Ayanavaram/i,
+  /Chennai,\s*India/i,
+  /linkedin\.com\/company\/megararobotics/i,
   /Get in Touch/i,
-  /You can count on us/i,
 ]
 
 const BUNDLE_ROUTE_PATTERNS = [
-  /path:\s*"\/"/i,
-  /path:\s*"\/products"/i,
-  /path:\s*"\/about"/i,
-  /path:\s*"\/contact"/i,
-  /path:\s*"\/wheelchair"/i,
-  /path:\s*"\/warehouse"/i,
-  /path:\s*"\/education"/i,
+  /\/products/i,
+  /\/about/i,
+  /\/contact/i,
 ]
 
 const PUBLIC_CAREERS_SIGNAL_PATTERNS = [

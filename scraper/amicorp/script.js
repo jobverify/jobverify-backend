@@ -141,7 +141,7 @@ export const hasOfficialPageSitemapSurface = (xml) => {
 
 const extractPostingDate = (html) => {
   const match = String(html ?? '').match(
-    /<meta[^>]+property="article:published_time"[^>]+content="([^"]+)"/i,
+    /<meta[^>]+property=["'](?:article:published_time|og:updated_time)["'][^>]+content=["']([^"']+)["']/i,
   )
 
   return match ? normalizeWhitespace(match[1]) : null
@@ -195,7 +195,7 @@ const parseLocationLabel = (value) => {
 
 const extractApplyFormUrl = (html) => {
   const match = String(html ?? '').match(
-    /<iframe[^>]+src=['"]([^'"]*CareerPageForm[^'"]+)['"]/i,
+    /<iframe[^>]+src=["']([^"']*CareerPageForm[^"']+)["']/i,
   )
 
   return match ? decodeHtmlEntities(match[1]) : null

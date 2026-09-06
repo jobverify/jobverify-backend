@@ -66,6 +66,20 @@ test('Brainvire verifies the official first-party careers page and extracts inli
   assert.equal(jobs[1].title, 'Project Manager')
 })
 
+test('Brainvire accepts the current first-party careers shell when it exposes no inline role cards', async () => {
+  const brainvire = await loadBrainvireModule()
+  const currentCareersHtml = [
+    '<html><head>',
+    '<title>Elevate Your Career With Brainvire - Join Us</title>',
+    '<meta name="description" content="Explore current openings at Brainvire" />',
+    '<link rel="canonical" href="https://www.brainvire.com/careers/" />',
+    '</head><body><a href="/careers/#openings">Open Roles</a></body></html>',
+  ].join('')
+
+  assert.equal(brainvire.hasOfficialCareersSignal(currentCareersHtml), true)
+  assert.deepEqual(brainvire.extractPublicListings(currentCareersHtml), [])
+})
+
 test('Brainvire run maps inline first-party roles into Jobverify jobs', async () => {
   const brainvire = await loadBrainvireModule()
 

@@ -28,35 +28,45 @@ const officialCareersHtml = `
     <body>
       <section>
         <h2>Current vacancies</h2>
-        <div class="vacancy-box">
-          <h3>Assistant Professor - CSE</h3>
-          <p>Job function: Education</p>
-          <p>Experience: 2 - 5</p>
-          <p>Number of openings: 100</p>
-          <p>Preferred work mode: Work from office</p>
-          <p>Job location: Bengaluru</p>
-          <a
-            class="download-button-link white-link"
-            href="https://career.hrone.cloud/apply-job?appId=i-1ZSLehiu226AHFQVbzeMDkGYFMTIRfsjt9lUu6eKDPO8PmcYlH2iMTYmBNnLgGTJ76WhrZ9wrB3cljQGz-tXkUpSYrZJH0ibCY0ULtGqQHxPDKgw8SptRM0rrp857j&dc=presidency&rqt=m8jH4bpBQbccEU8MZpSP5Q&cc=Jpj2OLMqPsPorue5M3XT_A&pid=qeyloSzhxH2-qK4vv_WogQ&dptc=r0_XPJmvFT_oCLGRN8jpfg&st=-n_C2-YChNaZnubp3_OPew&fm=CR&headerColor=%23110037&fontSize=&buttonColor=%23070037"
-            target="_blank"
-            rel="noopener"
-          >
-            Apply Here
-          </a>
-        </div>
-        <div class="vacancy-box">
-          <h3>Dean - Research</h3>
-          <p>Job function: Administrative</p>
-          <p>Experience: 15 - 20</p>
-          <p>Number of openings: 1</p>
-          <a
-            class="download-button-link white-link"
-            href="https://career.hrone.cloud/apply-job?appId=i-1ZSLehiu226AHFQVbzeMDkGYFMTIRfsjt9lUu6eKDPO8PmcYlH2iMTYmBNnLgGTJ76WhrZ9wrB3cljQGz-tXkUpSYrZJH0ibCY0ULtGqQHxPDKgw8SptRM0rrp857j&dc=presidency&rqt=m8jH4bpBQbccEU8MZpSP5Q&cc=Jpj2OLMqPsPorue5M3XT_A&pid=TKkqq_e6uK0uBEsUkYg_mA&dptc=r0_XPJmvFT_oCLGRN8jpfg&st=-n_C2-YChNaZnubp3_OPew&fm=CR&headerColor=%23110037&fontSize=&buttonColor=%23070037"
-            target="_blank"
-            rel="noopener"
-          >
-            Apply Here
-          </a>
+        <div class="vacancy-boxes-wrap">
+          <div class="vacancy-boxes">
+            <div class="vacancy-box-top">
+              <h3>Assistant Professor - CSE</h3>
+              <p>Job function: Education</p>
+              <p>Experience: 2 - 5</p>
+              <p>Number of openings: 100</p>
+              <p>Preferred work mode: Work from office</p>
+              <p>Job location: Bengaluru</p>
+            </div>
+            <div class="vacancy-box-bottom">
+              <a
+                class="download-button-link white-link"
+                href="https://career.hrone.cloud/apply-job?appId=i-1ZSLehiu226AHFQVbzeMDkGYFMTIRfsjt9lUu6eKDPO8PmcYlH2iMTYmBNnLgGTJ76WhrZ9wrB3cljQGz-tXkUpSYrZJH0ibCY0ULtGqQHxPDKgw8SptRM0rrp857j&amp;dc=presidency&amp;rqt=m8jH4bpBQbccEU8MZpSP5Q&amp;cc=Jpj2OLMqPsPorue5M3XT_A&amp;pid=qeyloSzhxH2-qK4vv_WogQ&amp;dptc=r0_XPJmvFT_oCLGRN8jpfg&amp;st=-n_C2-YChNaZnubp3_OPew&amp;fm=CR&amp;headerColor=%23110037&amp;fontSize=&amp;buttonColor=%23070037"
+                target="_blank"
+                rel="noopener"
+              >
+                Apply Here
+              </a>
+            </div>
+          </div>
+          <div class="vacancy-boxes">
+            <div class="vacancy-box-top">
+              <h3>Dean - Research</h3>
+              <p>Job function: Administrative</p>
+              <p>Experience: 15 - 20</p>
+              <p>Number of openings: 1</p>
+            </div>
+            <div class="vacancy-box-bottom">
+              <a
+                class="download-button-link white-link"
+                href="https://career.hrone.cloud/apply-job?appId=i-1ZSLehiu226AHFQVbzeMDkGYFMTIRfsjt9lUu6eKDPO8PmcYlH2iMTYmBNnLgGTJ76WhrZ9wrB3cljQGz-tXkUpSYrZJH0ibCY0ULtGqQHxPDKgw8SptRM0rrp857j&amp;dc=presidency&amp;rqt=m8jH4bpBQbccEU8MZpSP5Q&amp;cc=Jpj2OLMqPsPorue5M3XT_A&amp;pid=TKkqq_e6uK0uBEsUkYg_mA&amp;dptc=r0_XPJmvFT_oCLGRN8jpfg&amp;st=-n_C2-YChNaZnubp3_OPew&amp;fm=CR&amp;headerColor=%23110037&amp;fontSize=&amp;buttonColor=%23070037"
+                target="_blank"
+                rel="noopener"
+              >
+                Apply Here
+              </a>
+            </div>
+          </div>
         </div>
         <a href="https://hr-1.in/b42a6e" class="new_design_btn" target="_blank" rel="noopener">
           See All Vacancies

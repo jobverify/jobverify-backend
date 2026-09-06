@@ -96,8 +96,8 @@ export const hasOfficialIndiaCareersSignal = (html = '') => {
     && /property=["']og:site_name["']\s+content=["']Nuvento["']/i.test(rawHtml)
     && normalized.includes('naseeba.parvin@nuvento.com')
     && normalized.includes('anindita.ghosal@nuvento.com')
-    && /(Team Lead\s*-?\s*Python|IT\/Sr\/JR Recruiter|US Finance & Accounts \/ Senior Executive)/i.test(normalized)
-    && /(Sales and Marketing Intern \(Paid Internship\)|Digital Marketing Lead)/i.test(normalized)
+    && /(Senior DevOps \/ Platform Engineer|Senior Release Manager)/i.test(normalized)
+    && /Location\s*:\s*Kochi/i.test(normalized)
 }
 
 const extractLegacyRoleSections = (html = '') => {

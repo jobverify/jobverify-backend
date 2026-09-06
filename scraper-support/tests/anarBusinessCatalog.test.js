@@ -48,15 +48,15 @@ test('Anar Business local catalog captures the verified shutdown homepage and mi
   assert.equal(ANAR_BUSINESS_CATALOG.countryFilter, 'India')
   assert.equal(
     ANAR_BUSINESS_CATALOG.paginationStrategy,
-    'homepage-plus-shutdown-markers-plus-common-route-validation',
+    'retired-domain-redirect-plus-common-route-validation',
   )
   assert.equal(
     ANAR_BUSINESS_CATALOG.extractionStrategy,
-    'verified-homepage-shutdown-explainer+verified-missing-careers-routes-return-empty',
+    'verified-repurposed-former-domain-redirect+verified-no-public-jobs-surface-return-empty',
   )
   assert.equal(ANAR_BUSINESS_CATALOG.parser, 'custom-script')
   assert.equal(ANAR_BUSINESS_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(ANAR_BUSINESS_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(ANAR_BUSINESS_CATALOG.verifiedOn, '2026-08-13')
   assert.equal(ANAR_BUSINESS_CATALOG.modulePath, scriptModulePath)
   assert.deepEqual(ANAR_BUSINESS_CATALOG.verifiedMissingCareersUrls, [
     'https://www.anar.biz/career',
@@ -65,9 +65,10 @@ test('Anar Business local catalog captures the verified shutdown homepage and mi
     'https://www.anar.biz/join-us',
     'https://www.anar.biz/work-with-us',
   ])
-  assert.match(ANAR_BUSINESS_CATALOG.verifiedSurfaceSummary, /A Journey Concluded/i)
-  assert.match(ANAR_BUSINESS_CATALOG.verifiedSurfaceSummary, /Why We Shut Down/i)
-  assert.match(ANAR_BUSINESS_CATALOG.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(ANAR_BUSINESS_CATALOG.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
+  assert.match(ANAR_BUSINESS_CATALOG.verifiedSurfaceSummary, /myragems\.com/i)
+  assert.match(ANAR_BUSINESS_CATALOG.verifiedSurfaceSummary, /Buy Certified Gemstone Rings for Men & Women/i)
+  assert.match(ANAR_BUSINESS_CATALOG.verifiedSurfaceSummary, /No trustworthy public Anar jobs surface is currently available/i)
 
   assert.equal(anar.PROVIDER_METADATA.source, ANAR_BUSINESS_CATALOG.source)
   assert.equal(anar.PROVIDER_METADATA.companyName, ANAR_BUSINESS_CATALOG.companyName)

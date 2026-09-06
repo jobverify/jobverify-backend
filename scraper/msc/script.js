@@ -153,18 +153,13 @@ export const buildVacanciesUrl = (jobLocationId) => {
 
 export const hasVerifiedMscCareersSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = (normalizeWhitespace(page) || '').toLowerCase()
-  const title = extractTitle(page)?.toLowerCase() || ''
+  const markup = page.toLowerCase()
 
-  return title.includes('work with us')
-    && title.includes('careers')
-    && title.includes('vacancies')
-    && title.includes('msc')
-    && text.includes('careers at msc')
-    && text.includes('a world of opportunities')
-    && text.includes('explore our vacant positions')
-    && /data-api-url-job-locations="\/api\/feature\/Career\/GetJobLocationsList"/i.test(page)
-    && /data-api-url="\/api\/feature\/Career\/GetJobVacanciesJobLocationId"/i.test(page)
+  return markup.includes('work with us - careers &amp; vacancies | msc')
+    && markup.includes('https://www.msc.com/en/careers')
+    && markup.includes('og:site_name')
+    && markup.includes('content="msc"')
+    && markup.includes('work for the leader in shipping and logistics')
 }
 
 export const hasVerifiedMscAccessDeniedSignal = (html = '') => {

@@ -135,8 +135,7 @@ export const hasAnnouncementsPayloadSignal = (payload = {}) => {
   if (announcements.length === 0) return false
 
   return announcements.every((item) =>
-    normalizeMeaningfulText(item?.JobRole || item?.Title)
-    && normalizeMeaningfulText(item?.Location),
+    normalizeMeaningfulText(item?.JobRole || item?.Title),
   )
 }
 
@@ -153,7 +152,7 @@ const resolveExperience = (announcement = {}) => {
 export const normalizeAnnouncement = (announcement = {}, scrapedAt = new Date().toISOString()) => {
   const title = normalizeMeaningfulText(announcement.JobRole || announcement.Title)
   const city = normalizeMeaningfulText(announcement.Location)
-  if (!title || !city) return null
+  if (!title) return null
 
   const minimumQualification = normalizeMeaningfulText(
     announcement.QualificationDisplay || announcement.Qualification,
@@ -173,7 +172,7 @@ export const normalizeAnnouncement = (announcement = {}, scrapedAt = new Date().
     title,
     company: COMPANY,
     department: null,
-    location: `${city}, India`,
+    location: city ? `${city}, India` : 'India',
     city,
     country: 'India',
     jobId: `${SOURCE}-${identifier}`,

@@ -226,8 +226,7 @@ export const hasOfficialDetailPageSignal = (html) => {
   const page = String(html ?? '')
 
   return /job in [^<]+ \| Dr Reddy/i.test(page)
-    && /jobad-jobdescription/i.test(page)
-    && /jobad-qualifications/i.test(page)
+    && (/jobad-jobdescription/i.test(page) || /aria-label=["']Job description["']/i.test(page))
     && /(jobApplyBtn|\/Workflow\?workflowId=)/i.test(page)
 }
 

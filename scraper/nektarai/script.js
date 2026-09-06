@@ -184,8 +184,6 @@ export const pageExposesPublicJobListings = (html = '') => {
   return /"@type"\s*:\s*"JobPosting"/i.test(rawHtml)
     || /\bapply now\b/i.test(text)
     || /\bjob description\b/i.test(text)
-    || /\bresponsibilities\b/i.test(text)
-    || /\brequirements\b/i.test(text)
     || ROLE_TITLE_PATTERN.test(rawHtml)
 }
 

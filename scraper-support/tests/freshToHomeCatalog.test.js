@@ -44,7 +44,7 @@ test('FreshToHome catalog captures the verified homepage, crawl surfaces, and no
   )
   assert.equal(namedCatalog.parser, 'custom-script')
   assert.equal(namedCatalog.normalizationProfile, 'engineering-default')
-  assert.equal(namedCatalog.verifiedOn, '2026-07-15')
+  assert.equal(namedCatalog.verifiedOn, '2026-09-03')
   assert.equal(namedCatalog.dryRunFile, 'freshtohome/jobs.json')
   assert.equal(namedCatalog.modulePath, modulePath)
   assert.equal(PROVIDER_METADATA.source, namedCatalog.source)

@@ -64,12 +64,10 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
 
-  return normalized.includes('accelerate your career')
-    && normalized.includes('career opportunities')
-    && normalized.includes('all jobs')
-    && normalized.includes('experienced professionals')
-    && OFFICIAL_CAREERS_SEARCH_LINK_PATTERN.test(page)
-    && OFFICIAL_CAREERS_JOBS_HOME_LINK_PATTERN.test(page)
+  return /<title[^>]*>\s*Accelerate your career\s*<\/title>/i.test(page)
+    && normalized.includes('advance your career at ntt data')
+    && normalized.includes('digital innovation, it consulting, and managed services')
+    && /ntt[\s_]*data/i.test(page)
 }
 
 export const hasOfficialJobsHomeSignal = (html) => {

@@ -4,6 +4,11 @@
  */
 
 import Job from "../models/Job.js";
+import Click from "../models/Click.js";
+import JobAlertDelivery from "../models/JobAlertDelivery.js";
+import PlanPurchase from "../models/PlanPurchase.js";
+import ReferralCode from "../models/ReferralCode.js";
+import ReferralRedemption from "../models/ReferralRedemption.js";
 import Subscription from "../models/Subscription.js";
 import TelegramLinkToken from "../models/TelegramLinkToken.js";
 import User from "../models/User.js";
@@ -19,9 +24,12 @@ import {
   canUseTelegramAlerts,
   canUseWhatsappAlerts,
 } from "../utils/accessControl.js";
+import { normalizeJobListResponseJob } from "./jobController.js";
 import { normalizePhoneE164 } from "../utils/phoneNumbers.js";
-import { buildPublishedJobDateScope } from "../utils/publicJobLocationScope.js";
+import { applyPublicJobLocationScope } from "../utils/publicJobLocationScope.js";
+import { respondWithInternalError } from "../utils/respondWithInternalError.js";
 import { createTelegramLinkToken } from "../services/telegramLinkService.js";
+import { clearAuthCookie } from "../utils/authCookies.js";
 
 const MAX_PROFILE_TEXT_LENGTH = 80;
 const MAX_PROFILE_ITEMS = 20;
@@ -54,11 +62,17 @@ const normalizePassingYear = (value) => {
 
 const getSavedJobIds = (user) => (user.savedJobs ?? []).map((jobId) => String(jobId));
 
-const buildSavedJobsFilter = (savedJobIds) => ({
+const buildSavedJobsFilter = (savedJobIds) => applyPublicJobLocationScope({
   _id: { $in: savedJobIds },
-  status: { $ne: "hidden" },
-  ...buildPublishedJobDateScope(),
+  status: "active",
 });
+
+const respondWithUserInternalError = (res, error) => (
+  respondWithInternalError(res, error, {
+    code: 500,
+    logLabel: "[userController] Request failed:",
+  })
+);
 
 const countAvailableSavedJobs = async (user) => {
   const savedJobIds = getSavedJobIds(user);
@@ -205,11 +219,7 @@ export const getUserProfile = async (req, res) => {
       });
     }
   } catch (error) {
-    res.status(500).json({
-      code: 500,
-      success: false,
-      message: error.message
-    });
+    return respondWithUserInternalError(res, error);
   }
 };
 
@@ -270,11 +280,34 @@ export const updateUserProfile = async (req, res) => {
       });
     }
   } catch (error) {
-    res.status(500).json({
-      code: 500,
-      success: false,
-      message: error.message
+    return respondWithUserInternalError(res, error);
+  }
+};
+
+// Permanently removes the authenticated account and records that identify or track it.
+export const deleteUserAccount = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    await Subscription.deleteMany({ user: userId });
+    await Click.deleteMany({ user: userId });
+    await JobAlertDelivery.deleteMany({ user: userId });
+    await PlanPurchase.deleteMany({ user: userId });
+    await ReferralCode.deleteMany({ owner: userId });
+    await ReferralRedemption.deleteMany({
+      $or: [{ referrer: userId }, { referredUser: userId }],
     });
+    await TelegramLinkToken.deleteMany({ user: userId });
+    await User.deleteOne({ _id: userId });
+    clearAuthCookie(res);
+
+    res.status(200).json({
+      code: 200,
+      success: true,
+      message: "Account deleted successfully",
+    });
+  } catch (error) {
+    return respondWithUserInternalError(res, error);
   }
 };
 
@@ -306,7 +339,10 @@ export const getSavedJobs = async (req, res) => {
 
     const jobs = await Job.find(buildSavedJobsFilter(savedJobIds));
 
-    const jobsById = new Map(jobs.map((job) => [String(job._id), job]));
+    const jobsById = new Map(jobs.map((job) => [
+      String(job._id),
+      normalizeJobListResponseJob(job.toObject ? job.toObject() : job),
+    ]));
     const availableSavedJobIds = savedJobIds.filter((jobId) => jobsById.has(jobId));
 
     if (availableSavedJobIds.length !== savedJobIds.length) {
@@ -327,11 +363,7 @@ export const getSavedJobs = async (req, res) => {
       profileOverview: buildProfileOverview(user, availableSavedJobIds.length),
     });
   } catch (error) {
-    res.status(500).json({
-      code: 500,
-      success: false,
-      message: error.message,
-    });
+    return respondWithUserInternalError(res, error);
   }
 };
 
@@ -340,7 +372,7 @@ export const saveJob = async (req, res) => {
     const { jobId } = req.params;
     const [user, job] = await Promise.all([
       User.findById(req.user._id),
-      Job.findById(jobId),
+      Job.findOne(applyPublicJobLocationScope({ _id: jobId, status: "active" })),
     ]);
 
     if (!user) {
@@ -381,11 +413,7 @@ export const saveJob = async (req, res) => {
       profileOverview: buildProfileOverview(user, savedJobsCount),
     });
   } catch (error) {
-    res.status(500).json({
-      code: 500,
-      success: false,
-      message: error.message,
-    });
+    return respondWithUserInternalError(res, error);
   }
 };
 
@@ -423,11 +451,7 @@ export const removeSavedJob = async (req, res) => {
       profileOverview: buildProfileOverview(user, savedJobsCount),
     });
   } catch (error) {
-    res.status(500).json({
-      code: 500,
-      success: false,
-      message: error.message,
-    });
+    return respondWithUserInternalError(res, error);
   }
 };
 
@@ -457,11 +481,7 @@ export const getWhatsappAlertSettings = async (req, res) => {
       data: buildWhatsappAlertSettingsData(user),
     });
   } catch (error) {
-    return res.status(500).json({
-      code: 500,
-      success: false,
-      message: error.message,
-    });
+    return respondWithUserInternalError(res, error);
   }
 };
 
@@ -538,11 +558,7 @@ export const updateWhatsappAlertSettings = async (req, res) => {
       data: buildWhatsappAlertSettingsData(user),
     });
   } catch (error) {
-    return res.status(500).json({
-      code: 500,
-      success: false,
-      message: error.message,
-    });
+    return respondWithUserInternalError(res, error);
   }
 };
 
@@ -587,11 +603,7 @@ export const createTelegramAlertLink = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({
-      code: 500,
-      success: false,
-      message: error.message,
-    });
+    return respondWithUserInternalError(res, error);
   }
 };
 
@@ -615,11 +627,7 @@ export const getTelegramAlertSettings = async (req, res) => {
       data: buildTelegramAlertSettingsData(user),
     });
   } catch (error) {
-    return res.status(500).json({
-      code: 500,
-      success: false,
-      message: error.message,
-    });
+    return respondWithUserInternalError(res, error);
   }
 };
 
@@ -672,11 +680,7 @@ export const updateTelegramAlertSettings = async (req, res) => {
       data: buildTelegramAlertSettingsData(user),
     });
   } catch (error) {
-    return res.status(500).json({
-      code: 500,
-      success: false,
-      message: error.message,
-    });
+    return respondWithUserInternalError(res, error);
   }
 };
 
@@ -707,10 +711,6 @@ export const deleteTelegramAlertSettings = async (req, res) => {
       data: buildTelegramAlertSettingsData(user),
     });
   } catch (error) {
-    return res.status(500).json({
-      code: 500,
-      success: false,
-      message: error.message,
-    });
+    return respondWithUserInternalError(res, error);
   }
 };

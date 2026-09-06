@@ -1030,15 +1030,40 @@
     "companyCareerPage": "https://www.arcadia.com/careers",
     "companyDomain": "arcadia.com",
     "countryFilter": "India",
-    "atsPlatform": "greenhouse",
+    "atsPlatform": "official-company-careers-rippling-api",
     "paginationStrategy": "single-page",
-    "extractionStrategy": "api",
+    "extractionStrategy": "verified-first-party-careers-page+first-party-rippling-jobs-api+india-location-filter",
     "parser": "api-portal",
     "normalizationProfile": "engineering-default",
-    "template": "greenhouse",
-    "templateOptions": {
-      "boardToken": "arcadiacareers",
-      "locationPattern": "india|bengaluru|bangalore|pune|hyderabad|gurgaon|gurugram|mumbai|chennai|noida|delhi"
+    "verifiedSurfaceSummary": "Verified on Thursday, September 3, 2026 that https://www.arcadia.com/careers is the live first-party careers page and it loads current openings from https://www.arcadia.com/api/rippling-jobs. The first-party feed exposes public Arcadia Rippling detail URLs and current Chennai, India roles.",
+    "config": {
+      "request": {
+        "method": "GET"
+      },
+      "pagination": {
+        "strategy": "single-page",
+        "resultsPath": "items"
+      },
+      "mapping": {
+        "title": "name",
+        "location": "locations.0.name",
+        "jobId": "id",
+        "requisitionId": "id",
+        "sourceUrl": "url",
+        "applyUrl": "url",
+        "department": "department.name"
+      },
+      "resultFilter": {
+        "include": [
+          {
+            "field": "location",
+            "pattern": "india|bengaluru|bangalore|pune|hyderabad|gurgaon|gurugram|mumbai|chennai|noida|delhi"
+          }
+        ]
+      },
+      "discovery": {
+        "listingApiUrl": "https://www.arcadia.com/api/rippling-jobs"
+      }
     }
   },
   {
@@ -1062,7 +1087,7 @@
     "companyName": "PhonePe",
     "companyCareerPage": "https://www.phonepe.com/careers/job-openings/",
     "countryFilter": "India",
-    "atsPlatform": "greenhouse",
+    "atsPlatform": "phonepe-first-party-json",
     "paginationStrategy": "single-page",
     "extractionStrategy": "api",
     "parser": "api-portal",
@@ -1070,48 +1095,35 @@
     "config": {
       "discovery": {
         "careerPageUrl": "https://www.phonepe.com/careers/job-openings/",
-        "listingApiUrl": "https://boards-api.greenhouse.io/v1/boards/phonepe/jobs"
+        "listingApiUrl": "https://www.phonepe.com/apollo/job-postings/latest.json"
       },
       "request": {
         "method": "GET",
-        "query": {
-          "content": "true"
-        }
+        "query": {}
       },
       "pagination": {
         "strategy": "single-page",
-        "resultsPath": "jobs",
+        "resultsPath": "results",
         "hasMorePath": "hasMore"
       },
       "mapping": {
         "title": "title",
-        "location": {
-          "path": "metadata",
-          "find": {
-            "key": "name",
-            "value": "Requisition Location"
-          },
-          "valuePath": "value"
-        },
-        "jobId": "id",
-        "requisitionId": "requisition_id",
-        "applyUrl": "absolute_url",
-        "department": "departments.0.name",
-        "employmentType": {
-          "path": "metadata",
-          "find": {
-            "key": "name",
-            "value": "Requisition Type"
-          },
-          "valuePath": "value",
-          "valueMap": {
-            "FTE - Regular": "Full-time",
-            "Service Contract": "Contract",
-            "Intern": "Internship"
+        "location": "location",
+        "jobId": "applyUrl",
+        "requisitionId": "applyUrl",
+        "sourceUrl": "applyUrl",
+        "applyUrl": "applyUrl",
+        "department": "department",
+        "employmentType": "type",
+        "postingDate": "updatedAt"
+      },
+      "resultFilter": {
+        "include": [
+          {
+            "field": "applyUrl",
+            "pattern": "^https://jobs\\.smartrecruiters\\.com/PHONEPELIMITED/"
           }
-        },
-        "jobDescription": "content",
-        "postingDate": "updated_at"
+        ]
       }
     }
   },

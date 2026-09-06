@@ -79,6 +79,30 @@ export const hasVerifiedCloudflareChallengeSignal = (page = {}) => {
 
 export const isVerifiedTimeoutBlockedRoute = (page = {}) => page?.errorKind === 'timeout'
 
+export const hasVerifiedAccessibleSurface = (page = {}, url = page?.url) => {
+  const html = String(page?.html ?? '')
+  const normalized = normalizeWhitespace(html).toLowerCase()
+
+  if (page?.status === 404 && (url === CAREERS_URL || url === JOBS_URL)) {
+    return normalized.includes('page not found - celette')
+      && normalized.includes('collision repair equipment')
+  }
+
+  if (page?.status !== 200) return false
+
+  if (url === HOMEPAGE_URL) {
+    return normalized.includes('global collision repair equipment supplier')
+      && normalized.includes('usa & worldwide')
+  }
+
+  if (url === CONTACT_US_URL) {
+    return normalized.includes('contact us - celette')
+      && normalized.includes('collision repair equipment')
+  }
+
+  return false
+}
+
 export const exposesStructuredPublicJobs = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
@@ -88,8 +112,7 @@ export const exposesStructuredPublicJobs = (html = '') => {
     || normalized.includes('job openings')
     || normalized.includes('join our team')
     || normalized.includes('browse open roles')
-    || /<article[\s\S]*job/i.test(page)
-    || /href=["'][^"']*\/(?:careers|jobs)\/[^"']+["']/i.test(page)
+    || /<article[^>]+(?:class|id)=["'][^"']*\bjob(?:[-_\s]|$)[^"']*["']/i.test(page)
     || />\s*Apply now\s*</i.test(page)
 }
 
@@ -149,7 +172,7 @@ export const createCeletteScraper = () => ({
         throw new Error('Celette blocked first-party routes now expose scraper-visible public jobs')
       }
 
-      if (!hasVerifiedCloudflareChallengeSignal(page)) {
+      if (!hasVerifiedCloudflareChallengeSignal(page) && !hasVerifiedAccessibleSurface(page, url)) {
         throw buildMaterialSurfaceChangeError()
       }
     }

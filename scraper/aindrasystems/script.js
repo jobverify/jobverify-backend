@@ -99,6 +99,57 @@ const buildJobDescription = ({ summary, companyProfile }) => normalizeWhitespace
   `${summary} ${companyProfile} Apply via ${APPLICATION_EMAIL}.`,
 )
 
+const extractModalOpenings = (html, { sourceUrl }) => {
+  const page = String(html ?? '')
+  const cards = [...page.matchAll(
+    /data-target=["']#(myModal\d+)["'][\s\S]*?<p>\s*<b>([\s\S]*?)<\/b>\s*<\/p>/gi,
+  )]
+
+  return cards.map((match) => {
+    const modalId = match[1]
+    const title = normalizeWhitespace(match[2])
+    const modalStart = page.indexOf(`id="${modalId}"`)
+    const nextModalStart = page.indexOf('id="myModal', modalStart + modalId.length + 4)
+    const modalHtml = modalStart < 0
+      ? ''
+      : page.slice(modalStart, nextModalStart < 0 ? page.length : nextModalStart)
+    const summary = extractFirst(modalHtml, /<div class="modal-body"[^>]*>\s*<p>([\s\S]*?)<\/p>/i)
+    const companyProfile = extractFirst(
+      modalHtml,
+      /<p>\s*Company Profile:\s*<\/p>\s*<p>([\s\S]*?)<\/p>/i,
+    )
+    const experienceRequired = normalizeWhitespace(
+      summary?.match(/with\s+([0-9]+\s*-\s*[0-9]+\s*(?:yrs?|years?))/i)?.[1],
+    )
+    const requiredSkills = extractListItems(modalHtml)
+    const identity = slugify(title)
+    const { location, city, country } = inferLocation(`${summary} ${companyProfile}`)
+
+    if (!title || !summary || !companyProfile || !identity) return null
+
+    return {
+      title,
+      company: COMPANY,
+      department: null,
+      location: location || BANGALORE_LOCATION,
+      city: city || 'Bangalore',
+      country,
+      jobId: `${SOURCE}-${identity}`,
+      requisitionId: `${SOURCE}-${identity}`,
+      sourceUrl,
+      applyUrl: APPLICATION_URL,
+      employmentType: null,
+      experienceRequired,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills,
+      postingDate: null,
+      closingDate: null,
+      jobDescription: buildJobDescription({ summary, companyProfile }),
+    }
+  }).filter(Boolean)
+}
+
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
@@ -115,7 +166,7 @@ export const extractOpenings = (html, { sourceUrl = HOMEPAGE_URL } = {}) => {
     throw new Error('Aindra Systems verified official homepage changed')
   }
 
-  const openings = [...String(html ?? '').matchAll(/<article class="career-opening">([\s\S]*?)<\/article>/gi)]
+  const legacyOpenings = [...String(html ?? '').matchAll(/<article class="career-opening">([\s\S]*?)<\/article>/gi)]
     .map((match) => {
       const articleHtml = match[1]
       const title = extractFirst(articleHtml, /<h3>([\s\S]*?)<\/h3>/i)
@@ -160,6 +211,9 @@ export const extractOpenings = (html, { sourceUrl = HOMEPAGE_URL } = {}) => {
       }
     })
     .filter(Boolean)
+  const openings = legacyOpenings.length > 0
+    ? legacyOpenings
+    : extractModalOpenings(html, { sourceUrl })
 
   if (openings.length === 0) {
     throw new Error('Aindra Systems verified public role list changed or disappeared')

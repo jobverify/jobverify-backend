@@ -125,14 +125,20 @@ const hasJobPostingMarkup = (html = '') => {
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeText(page)
+  const hasLegacyCareersCopy =
+    text.includes('Grow with InstaSafe')
+    && text.includes('Working at InstaSafe is more than just a Job.')
+  const hasCurrentServerRenderedCopy =
+    text.includes('See open roles')
+    && text.includes('Our Openings')
+    && text.includes('Loading open roles.')
 
   return /<title>\s*Instasafe Careers\s*\|\s*Instasafe Jobs\s*<\/title>/i.test(page)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/(?:www\.)?instasafe\.com\/careers\/["']/i.test(page)
-    && text.includes('Grow with InstaSafe')
-    && text.includes('Working at InstaSafe is more than just a Job.')
     && text.includes('Book a demo')
     && text.includes('Read the docs')
     && text.includes('Contact support')
+    && (hasLegacyCareersCopy || hasCurrentServerRenderedCopy)
 }
 
 const hasInputWithId = (html, id) => new RegExp(

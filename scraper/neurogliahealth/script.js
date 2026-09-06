@@ -97,7 +97,7 @@ const buildJobDescription = ({ responsibilities, requirements }) => {
 }
 
 const extractListingSlug = (listing) => {
-  const raw = normalizeText(listing?.url)
+  const raw = normalizeText(listing?.url).replace(/^<base_url>\/?/i, '')
   if (!raw) return null
 
   try {
@@ -225,6 +225,8 @@ const normalizeDetailPayload = (payload, { fallbackTitle, fallbackTeam } = {}) =
   }
 }
 
+const isVerifiedAbsentDetailPayload = (payload) => payload?.job_details?.exists === false
+
 const buildProfileApiUrl = ({ slug, context }) =>
   `${context === 'doctor' ? DOCTOR_PROFILE_API_BASE_URL : CAREERS_PROFILE_API_BASE_URL}/${encodeURIComponent(slug)}`
 
@@ -279,6 +281,7 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
     Referer: CAREERS_URL,
+    Origin: 'https://dailyrounds.org',
   },
   label: SOURCE,
   timeoutMs: 15000,
@@ -324,11 +327,12 @@ export const createNeurogliaHealthScraper = ({ now = () => new Date().toISOStrin
       .filter(Boolean)
 
     const generalJobs = await Promise.all(
-      generalListings.map(async (listing) => buildNormalizedJob({
-        listing,
-        context: 'general',
-        detailPayload: await fetchJson(buildProfileApiUrl({ slug: listing.slug, context: 'general' })),
-      })),
+      generalListings.map(async (listing) => {
+        const detailPayload = await fetchJson(buildProfileApiUrl({ slug: listing.slug, context: 'general' }))
+        if (isVerifiedAbsentDetailPayload(detailPayload)) return null
+
+        return buildNormalizedJob({ listing, context: 'general', detailPayload })
+      }),
     )
 
     const doctorJobs = await Promise.all(
@@ -340,6 +344,7 @@ export const createNeurogliaHealthScraper = ({ now = () => new Date().toISOStrin
     )
 
     return [...generalJobs, ...doctorJobs]
+      .filter(Boolean)
       .sort((left, right) => left.title.localeCompare(right.title) || left.jobId.localeCompare(right.jobId))
       .map((job) => ({
         ...job,

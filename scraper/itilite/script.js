@@ -97,10 +97,9 @@ export const pageHasOfficialItiliteSignals = (html) => {
 
   return /<title>\s*Careers at ITILITE India \| Join Our Team\s*<\/title>/i.test(page)
     && normalized.includes('view jobs')
-    && normalized.includes('open positions at itilite')
     && (
-      normalized.includes('join the #itilite revolution')
-      || normalized.includes('500+ 5-star g2 reviews')
+      normalized.includes('open positions at itilite')
+      || page.toLowerCase().includes('looking for a career in b2b saas? explore open roles at itilite india and be part of a team transforming corporate travel management.')
     )
     && /car_job-card/i.test(page)
     && /linkedin\.com\/jobs\/view\/\d+/i.test(page)

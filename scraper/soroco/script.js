@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import SOROCO_CATALOG from './catalog.js'
 
@@ -12,6 +12,7 @@ export const COMPANY = SOROCO_CATALOG.companyName
 export const CAREERS_URL = SOROCO_CATALOG.companyCareerPage
 export const ALL_OPENINGS_URL = SOROCO_CATALOG.allOpeningsUrl
 export const EMBEDDED_GREENHOUSE_API_URL = SOROCO_CATALOG.embeddedGreenhouseApiUrl
+export const ZOHO_JOBS_API_URL = 'https://soroco.zohorecruit.com/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite'
 export const VERIFIED_ON = SOROCO_CATALOG.verifiedOn
 export const COMPANY_DOMAIN = SOROCO_CATALOG.companyDomain
 export const PROVIDER_METADATA = SOROCO_CATALOG
@@ -41,10 +42,76 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json,text/plain,*/*',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
+
 export const hasOfficialSorocoCareersSignal = (html) =>
-  /Grow with Soroco/i.test(String(html))
+  /<title>\s*Grow with Soroco\s*<\/title>/i.test(String(html))
   && /View Career Opportunities/i.test(String(html))
-  && /Account Based Marketing Manager/i.test(String(html))
+  && /href=["']\/all-job-openings\/["']/i.test(String(html))
+
+export const hasOfficialAllOpeningsSignal = (html) => {
+  const page = String(html ?? '')
+
+  return /<title>\s*Job openings at Soroco\s*<\/title>/i.test(page)
+    && /static\.zohocdn\.com\/recruit\/embed_careers_site\/javascript\/v1\.1\/embed_jobs\.js/i.test(page)
+    && /site\s*:\s*["']https:\/\/soroco\.zohorecruit\.com["']/i.test(page)
+    && /page_name\s*:\s*["']Careers["']/i.test(page)
+}
+
+const normalizeLocation = (record = {}) => {
+  const city = normalizeWhitespace(record.City)
+  const state = normalizeWhitespace(record.State)
+  const country = normalizeWhitespace(record.Country)
+
+  return {
+    city,
+    state,
+    country,
+    location: [city, state, country].filter(Boolean).join(', ') || null,
+  }
+}
+
+export const extractIndiaJobsFromZohoPayload = (payload = {}) => (Array.isArray(payload?.data) ? payload.data : [])
+  .filter((record) => /^india$/i.test(normalizeWhitespace(record?.Country) || ''))
+  .map((record) => {
+    const title = normalizeWhitespace(record?.Posting_Title || record?.Job_Opening_Name)
+    const jobId = normalizeWhitespace(record?.id)
+    const sourceUrl = normalizeWhitespace(record?.$url)
+    const { location, city, state, country } = normalizeLocation(record)
+
+    if (!title || !jobId || !sourceUrl || !location) return null
+
+    return {
+      title,
+      company: COMPANY,
+      department: null,
+      location,
+      city,
+      state,
+      country,
+      jobId,
+      requisitionId: jobId,
+      sourceUrl,
+      applyUrl: sourceUrl,
+      employmentType: normalizeWhitespace(record?.Job_Type),
+      experienceRequired: normalizeWhitespace(record?.Work_Experience),
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: normalizeWhitespace(record?.Job_Description),
+      remoteStatus: record?.Remote_Job === true ? 'Remote' : null,
+    }
+  })
+  .filter(Boolean)
 
 export const extractSorocoJobs = (html) => {
   const matches = String(html).matchAll(
@@ -96,16 +163,23 @@ export const extractSorocoJobs = (html) => {
 }
 
 export const createSorocoScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
     if (!hasOfficialSorocoCareersSignal(careersHtml)) {
       throw new Error('Soroco verified official careers surface changed')
     }
 
-    const jobs = extractSorocoJobs(careersHtml)
-    if (jobs.length === 0) {
-      throw new Error('Soroco visible role card HTML no longer yields jobs')
+    const allOpeningsHtml = await fetchText(ALL_OPENINGS_URL)
+    if (!hasOfficialAllOpeningsSignal(allOpeningsHtml)) {
+      throw new Error('Soroco official all-openings page no longer exposes the verified Zoho careers handoff')
     }
+
+    const payload = await fetchJson(ZOHO_JOBS_API_URL)
+    if (payload?.code !== 'success' || !Array.isArray(payload?.data)) {
+      throw new Error('Soroco public Zoho jobs API no longer returns the verified success payload')
+    }
+
+    const jobs = extractIndiaJobsFromZohoPayload(payload)
 
     return jobs.map((job) => ({
       ...job,

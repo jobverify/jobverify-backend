@@ -47,7 +47,7 @@ test('FrontRow sentinel constants stay pinned to the verified shutdown redirect 
   assert.equal(frontRow.SOURCE, 'frontrow')
   assert.equal(frontRow.COMPANY, 'FrontRow')
   assert.equal(frontRow.OFFICIAL_BRAND_NAME, 'FrontRow')
-  assert.equal(frontRow.VERIFIED_ON, '2026-07-15')
+  assert.equal(frontRow.VERIFIED_ON, '2026-08-13')
   assert.equal(frontRow.HOMEPAGE_URL, 'https://frontrow.co.in/')
   assert.equal(
     frontRow.SHUTDOWN_UPDATE_URL,

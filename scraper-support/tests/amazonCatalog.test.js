@@ -16,6 +16,7 @@ test('getScraperCatalog includes Amazon on the official Amazon Jobs India search
   assert.match(amazon.companyCareerPage, /amazon\.jobs\/en\/search/i)
   assert.equal(amazon.companyDomain, 'amazon.jobs')
   assert.match(amazon.modulePath, /amazon[\\/]script\.js$/i)
+  assert.equal(amazon.scraperTimeoutMs, 1200000)
 })
 
 test('buildScrapers exposes a runnable Amazon scraper without changing the runner contract', () => {
@@ -27,4 +28,5 @@ test('buildScrapers exposes a runnable Amazon scraper without changing the runne
   assert.match(amazon.dryRunFile, /amazon[\\/]jobs\.json$/)
   assert.equal(amazon.provider.source, 'amazon')
   assert.equal(amazon.provider.atsPlatform, 'official-company-careers')
+  assert.equal(amazon.provider.scraperTimeoutMs, 1200000)
 })

@@ -43,6 +43,19 @@ const aboutPageHtml = `
 </html>
 `
 
+const currentAppShellHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>FreshMenu \u2014 Made fresh. Served fresh.</title>
+    <meta name="description" content="Chef-made world cuisine, ranked by what people actually order. Browse the FreshMenu board and plan bulk orders for your team or party.">
+    <meta property="og:site_name" content="FreshMenu">
+    <script type="module" crossorigin src="/assets/index-DzWmoqGd.js"></script>
+  </head>
+  <body><div id="root"></div></body>
+</html>
+`
+
 const publicJobsHtml = `
 <!doctype html>
 <html lang="en">
@@ -82,10 +95,12 @@ test('FreshMenu helpers stay pinned to the verified no-public-jobs apex-domain c
     'https://freshmenu.com/careers',
     'https://freshmenu.com/jobs',
   ])
-  assert.equal(freshMenu.VERIFIED_ON, '2026-08-02')
+  assert.equal(freshMenu.VERIFIED_ON, '2026-09-03')
   assert.match(freshMenu.VERIFIED_SURFACE_SUMMARY, /no trustworthy public jobs surface/i)
   assert.equal(freshMenu.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(freshMenu.hasOfficialAboutPageSignal(aboutPageHtml), true)
+  assert.equal(freshMenu.hasOfficialHomepageSignal(currentAppShellHtml), true)
+  assert.equal(freshMenu.hasOfficialAboutPageSignal(currentAppShellHtml), true)
   assert.equal(freshMenu.hasPublicJobListingSignal(homepageHtml), false)
   assert.equal(freshMenu.hasPublicJobListingSignal(aboutPageHtml), false)
   assert.equal(freshMenu.hasPublicJobListingSignal(publicJobsHtml), true)

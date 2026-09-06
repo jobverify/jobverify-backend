@@ -134,6 +134,16 @@ export const hasOfficialCareersSignal = (html) => {
     && /https:\/\/tensorgo\.com\/jobs\//i.test(page)
 }
 
+export const hasVerifiedRetiredCareersSignal = (html = '') => {
+  const page = String(html ?? '')
+
+  return /<title>\s*HumAIn by TensorGo \| The World's First Pre-AGI Teammates\s*<\/title>/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/humains\.one\/["']/i.test(page)
+    && /"name"\s*:\s*"TensorGo"/i.test(page)
+    && !/id=["']job-results["']/i.test(page)
+    && !/Explore Open Positions/i.test(page)
+}
+
 export const hasOfficialJobDetailSignal = (html) => {
   const page = String(html ?? '')
 
@@ -248,6 +258,7 @@ export const createTensorGoSoftwarePvtLtdScraper = ({
   } = {}) {
     const careersHtml = await fetchText(CAREERS_PAGE_URL)
     if (!hasOfficialCareersSignal(careersHtml)) {
+      if (hasVerifiedRetiredCareersSignal(careersHtml)) return []
       throw new Error('Response is not the verified official TensorGo careers surface')
     }
 

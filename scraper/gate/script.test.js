@@ -20,21 +20,30 @@ const officialCareersHtml = `
       <title>Gate Careers | Crypto & Web3 Jobs at Gate | Gate.com</title>
     </head>
     <body>
-      <h1>Career Opportunities</h1>
-      <p>Start your career journey with Gate and explore unlimited opportunities.</p>
-      <a href="https://jobs.lever.co/gate">Job Openings</a>
-      <a href="https://www.linkedin.com/company/gate-group/">View LinkedIn</a>
-      <h2>Positions open, waiting just for you!</h2>
-      <section>
-        <p>Product</p>
-        <p>Engineering</p>
-        <p>Technical Support</p>
-        <p>Legal &amp; Compliance</p>
-        <p>Investment Products</p>
-        <p>Risk Control &amp; AML</p>
-        <p>Finance</p>
-        <p>Internship</p>
-      </section>
+      <main>
+        <h1>Join Gate &amp; Shape A New Career Chapter</h1>
+        <p>Join global innovators to shape the future of crypto finance and create your own impact.</p>
+        <section>
+          <h2>Our Culture, One Gate</h2>
+          <p>Direct communication, clear ownership, and results-driven collaboration.</p>
+        </section>
+        <section>
+          <h2>Our Core Values</h2>
+          <p>Innovation, cooperation, insight, curiosity, and integrity are the principles that guide how we work.</p>
+        </section>
+        <section>
+          <h2>Why Gate</h2>
+          <p>Rewards, growth, flexibility, and a global stage all belong here.</p>
+        </section>
+        <section>
+          <h2>Unlock Your Next Career Chapter</h2>
+          <p>View All Positions (0)</p>
+        </section>
+        <section>
+          <h2>Gate News &amp; Insights</h2>
+          <a href="https://www.linkedin.com/company/gateio/">LinkedIn</a>
+        </section>
+      </main>
     </body>
   </html>
 `
