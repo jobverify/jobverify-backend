@@ -21,13 +21,13 @@ const HOMEPAGE_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Turso - Databases Everywhere</title>
+    <title>Turso - Millions of Databases. One Architecture.</title>
     <meta name="description" content="Turso is the lightweight database that scales to millions of agents." />
   </head>
   <body>
     <main>
       <h1>Millions of Databases. One Architecture.</h1>
-      <p>Built on SQLite. Lightweight enough to multiply, fast enough to run anywhere.</p>
+      <p>Built on SQLite. Fast and lightweight to multiply and run anywhere.</p>
       <footer>
         <h2>Company</h2>
         <a href="/about">About</a>

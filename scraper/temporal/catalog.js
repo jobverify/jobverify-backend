@@ -20,9 +20,9 @@ export const TEMPORAL_CATALOG = {
     'verified-first-party-about-page+official-greenhouse-board+official-greenhouse-board-api+india-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-25',
+  verifiedOn: '2026-09-03',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 25, 2026 that https://temporal.io/about was the live first-party Temporal about page, that its Join Now and View All Openings links handed candidates to the official Greenhouse board at https://job-boards.greenhouse.io/temporaltechnologies, and that the companion public Greenhouse API feed at https://boards-api.greenhouse.io/v1/boards/temporaltechnologies/jobs?content=true was live. The verified feed exposed the India role Events & Field Marketing Manager - India on the verified date.',
+    'Verified on September 3, 2026 that https://temporal.io/about remained the live first-party Temporal about page and still handed candidates to https://job-boards.greenhouse.io/temporaltechnologies. The linked Greenhouse board and companion public API at https://boards-api.greenhouse.io/v1/boards/temporaltechnologies/jobs?content=true both now return 404, confirming the previously public board has been retired. This scraper returns no jobs only while the verified first-party handoff remains present and the exact public API continues to return 404.',
   dryRunFile: 'temporal/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

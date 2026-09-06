@@ -85,7 +85,7 @@ export const hasUbsHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /UBS logo/i.test(rawHtml)
+  return /UBS (?:logo|home)/i.test(rawHtml)
     && /UBS United States of America/i.test(normalized)
     && /Credit Suisse Individuals/i.test(normalized)
     && /Careers at UBS/i.test(normalized)

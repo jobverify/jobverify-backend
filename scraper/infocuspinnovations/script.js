@@ -168,6 +168,48 @@ export const extractSearchResults = (payload, { domain } = {}) =>
     .map((job) => mapJob(job, { domain }))
     .filter(Boolean)
 
+export const extractServerRenderedJobs = (html = '') => {
+  const page = String(html ?? '')
+  const jobs = []
+  const seen = new Set()
+  const cards = page.matchAll(/<div class=["']job-card\b[\s\S]*?(?=<div class=["']job-card\b|<\/section>|$)/gi)
+
+  for (const match of cards) {
+    const card = match[0]
+    const jobId = card.match(/data-job-id=["']([^"']+)["']/i)?.[1]
+    const title = normalizeWhitespace(card.match(/<h4[^>]*>([\s\S]*?)<\/h4>/i)?.[1])
+    const locations = normalizeWhitespace(card.match(/data-locations=["']([^"']+)["']/i)?.[1])
+    const applicationEmail = card.match(/href=["']mailto:careers@infocusp\.com[^"']*["']/i)?.[0]
+
+    if (!jobId || !title || !locations || !applicationEmail || seen.has(jobId)) continue
+    seen.add(jobId)
+
+    jobs.push({
+      title,
+      company: COMPANY,
+      department: null,
+      location: `${locations}, India`,
+      city: locations,
+      country: 'India',
+      jobId,
+      requisitionId: jobId,
+      sourceUrl: CAREERS_URL,
+      // Applications are role-specific mailto links embedded on the verified careers page.
+      applyUrl: CAREERS_URL,
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: normalizeWhitespace(card),
+    })
+  }
+
+  return jobs
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -218,6 +260,19 @@ export const createInfoCuspInnovationsScraper = ({
       const careersHtml = await browserFallback.fetchText(CAREERS_URL)
       if (!hasVerifiedCareersPageSignal(careersHtml)) {
         throw new Error('InfoCusp Innovations verified careers page changed materially')
+      }
+
+      const renderedJobs = extractServerRenderedJobs(careersHtml)
+      if (renderedJobs.length > 0) {
+        const selectedJobs = maxJobs ? renderedJobs.slice(0, maxJobs) : renderedJobs
+        const scrapedAt = now()
+
+        return selectedJobs.map((job) => ({
+          ...job,
+          source: SOURCE,
+          link: job.applyUrl || job.sourceUrl,
+          scrapedAt,
+        }))
       }
 
       const bundlePath = extractCareersBundlePath(careersHtml)

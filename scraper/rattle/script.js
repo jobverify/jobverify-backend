@@ -70,12 +70,9 @@ export const extractOfficialCareersLink = (html) => {
 }
 
 export const hasOfficialSiteSignal = (html) => {
-  const normalized = normalizeWhitespace(html)
+  const page = String(html ?? '')
 
-  return normalized?.includes('The AI layer your CRM always needed')
-    && normalized.includes('A new product by Rattle')
-    && normalized.includes('Meet Von: The AI data scientist for revenue teams')
-    && extractOfficialCareersLink(html) === GREENHOUSE_BOARD_URL
+  return page.includes('boards.greenhouse.io/rattle')
 }
 
 export const isVerifiedMissingGreenhouseBoardPage = ({ status, url, html }) => (

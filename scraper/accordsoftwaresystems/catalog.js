@@ -19,9 +19,9 @@ export const ACCORD_SOFTWARE_AND_SYSTEMS_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'accord-soft.com',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-09-03',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.accord-soft.com/career.php was the live first-party Accord Software & Systems careers page, that it publicly listed roles including Lead Production Engineer, Team Lead- Accounts Payable & Payroll, Purchase Executive, Systems Engineer FPGA, Desktop Support Engineer, PCB Designer, and Technical Support Executive in Bangalore, and that every opening handed applicants to the shared first-party apply form at https://www.accord-soft.com/career-form.php.',
+    'Verified on Thursday, September 3, 2026 that https://www.accord-soft.com/career.php is the live first-party Accord Software & Systems careers page, that it publicly lists current Bangalore roles including Embedded Software Engineer, Team Lead- Accounts Payable & Payroll, Purchase Executive, Systems Engineer FPGA, and Desktop Support Engineer, and that every opening hands applicants to the shared first-party apply form at https://www.accord-soft.com/career-form.php.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'accordsoftwaresystems/jobs.json',
 }

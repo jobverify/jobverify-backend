@@ -88,3 +88,19 @@ test('Thence run returns the public role list from the official careers page', a
   assert.equal(jobs[0].experienceRequired, null)
   assert.ok(jobs.every((job) => job.publicExperienceChecked === true))
 })
+
+test('Thence returns [] when its verified homepage retains only the retired careers route', async () => {
+  const thence = await loadModule()
+
+  const jobs = await thence.createThenceScraper().run({
+    fetchText: async (url) => {
+      if (url === thence.HOMEPAGE_URL) return homepageHtml
+      if (url === thence.CAREERS_URL) {
+        throw new Error(`HTTP 404 for ${thence.CAREERS_URL}`)
+      }
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})

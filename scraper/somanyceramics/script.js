@@ -102,7 +102,7 @@ export const hasOfficialCareersPageSignal = (html) => {
   const title = extractTitle(html) || ''
   const normalized = normalizeWhitespace(html) || ''
 
-  return title === 'Careers - Somany Ceramics'
+  return (title === 'Careers - Somany Ceramics' || title === 'Careers at Somany Ceramics | Work With Us')
     && normalized.includes('Opportunities that grow with you.')
     && normalized.includes('Work With Us')
     && normalized.includes('What are you looking for today? Begin your exploration below.')

@@ -5,14 +5,17 @@ const redirectedHomepagePage = {
   url: 'https://mahindralogistics.com/b2b-express/',
   html: `
     <!doctype html>
-    <html lang="en">
+    <html lang="en-US">
       <head>
-        <title>B2B Express Services: Fastest Courier & Parcel Deliveries</title>
+        <title>B2B Express Services: Fastest Courier &amp; Parcel Deliveries</title>
       </head>
       <body>
+        <header>
+          <a href="https://mahindralogistics.com/work-with-us/">Work With Us</a>
+        </header>
         <main>
-          <h1>B2B Express That Delivers</h1>
-          <p>Mahindra Logistics helps businesses move parcels quickly.</p>
+          <h1>B2B Express That Delivers â€” Every Single Time</h1>
+          <p>Mahindra Logistics serves customers across India.</p>
         </main>
       </body>
     </html>
@@ -23,14 +26,20 @@ const parentCareersPage = {
   url: 'https://mahindralogistics.com/work-with-us/',
   html: `
     <!doctype html>
-    <html lang="en">
+    <html lang="en-US">
       <head>
         <title>Work With Us - Mahindra Logistics</title>
       </head>
       <body>
         <main>
           <h1>Work With Us: Igniting Mutual Success & Growth</h1>
-          <a href="https://nectar.darwinbox.in/ms/candidate/careers">Apply now</a>
+          <p>
+            Whether you are a seasoned professional or just starting your career, we have a diverse range of job
+            opportunities available.
+          </p>
+          <a href="https://nectar.darwinbox.in/ms/candidate/careers" target="_blank" rel="noopener">
+            Explore Opportunities
+          </a>
         </main>
       </body>
     </html>
@@ -41,15 +50,14 @@ const parentDarwinboxPage = {
   url: 'https://nectar.darwinbox.in/ms/candidatev2/main/careers/home',
   html: `
     <!doctype html>
-    <html lang="en">
+    <html lang="en-US">
       <head>
         <title>Mahindra Logistics and Subsidiaries</title>
       </head>
       <body>
         <main>
-          <h1>Mahindra Logistics and Subsidiaries</h1>
-          <p>We Have 52 Open Jobs</p>
-          <p>Open Jobs</p>
+          <a href="https://nectar.darwinbox.in/ms/candidatev2/main/careers/allJobs">Open Jobs</a>
+          <p>We Have 31 Open Jobs</p>
         </main>
       </body>
     </html>
@@ -65,10 +73,12 @@ const parentDarwinboxJavascriptShellPage = {
         <meta charset="utf-8">
         <title></title>
         <base href="/ms/candidate/">
+        <noscript>Please enable Javascript!</noscript>
+        <script type="module" src="/ms/dboxuilibrary/assets/dboxuilib_dist/www/build/db-components.esm.js"></script>
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
       </head>
       <body>
-        <noscript>Please enable Javascript!</noscript>
-        <script src="runtime-es2015.darwinbox.js"></script>
+        <app-root ng-class="clearfix"></app-root>
       </body>
     </html>
   `,

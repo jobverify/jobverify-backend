@@ -1,4 +1,7 @@
-import { normalizeOrigin } from "./originAllowlist.js";
+import {
+  isLoopbackOrigin,
+  normalizeOrigin,
+} from "./originAllowlist.js";
 
 export const requireEnv = (name, env = process.env) => {
   const value = String(env[name] ?? "").trim();
@@ -55,4 +58,30 @@ export const resolvePublicApiOrigin = (env = process.env) => {
   }
 
   return "";
+};
+
+const splitConfiguredOrigins = (value) =>
+  String(value ?? "")
+    .split(",")
+    .map((entry) => normalizeOrigin(entry))
+    .filter(Boolean);
+
+export const resolveFrontendOrigin = (env = process.env) => {
+  const configuredOrigins = [
+    ...splitConfiguredOrigins(env.FRONTEND_ORIGIN),
+    ...splitConfiguredOrigins(env.CORS_ORIGIN),
+  ];
+
+  const uniqueOrigins = [...new Set(configuredOrigins)];
+  const isProduction = String(env.NODE_ENV ?? "").trim().toLowerCase() === "production";
+  const allowedOrigins = isProduction
+    ? uniqueOrigins.filter((origin) => !isLoopbackOrigin(origin))
+    : uniqueOrigins;
+  const selectedOrigin = allowedOrigins[0] ?? uniqueOrigins[0] ?? "";
+
+  if (!selectedOrigin) {
+    throw new Error("FRONTEND_ORIGIN or CORS_ORIGIN environment variable is not defined.");
+  }
+
+  return selectedOrigin;
 };

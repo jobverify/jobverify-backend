@@ -147,8 +147,8 @@ export const hasOfficialJobsSignal = (html) => {
 
   return hasOfficialNetconStructuredData(page)
     && /<title>\s*Jobs \| Arche\s*<\/title>/i.test(page)
-    && /Build the future of enterprise technology with Arche\./i.test(page)
-    && /https:\/\/archeoneadmin\.arche\.global\/jobs-list\//i.test(page)
+    && /Explore career opportunities at Arche AI\./i.test(page)
+    && /future of enterprise technology and AI transformation/i.test(page)
 }
 
 export const hasOfficialDetailSignal = (html) => {

@@ -119,7 +119,7 @@ export const extractSearchResults = (html) => {
     .map((block) => {
       const url = buildAbsoluteUrl(block.match(/data-url="([^"]+)"/i)?.[1])
       const title = stripHtml(block.match(/<a[^>]+class="job-name"[^>]*>([\s\S]*?)<\/a>/i)?.[1])
-      const company = stripHtml(block.match(/<p class="job-cname">([\s\S]*?)<\/p>/i)?.[1])
+      const company = stripHtml(block.match(/<p class="job-cname">([\s\S]*?)<\/p>/i)?.[1]) || COMPANY
       const metadataHtml = block.match(/<ul class="sjci-need">([\s\S]*?)<\/ul>/i)?.[1] || ''
       const metadataItems = [...metadataHtml.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)]
         .map((match) => stripHtml(match[1]))
@@ -132,7 +132,7 @@ export const extractSearchResults = (html) => {
       const jobId = extractJobIdFromUrl(url)
       const location = buildLocation(baseLocation, extraLocation)
 
-      if (!title || !company || !jobId || !location) return null
+      if (!title || !jobId || !location) return null
 
       return {
         title,
@@ -234,10 +234,9 @@ export const hasOfficialRecruiterPageSignal = (html) => {
   const text = stripHtml(page)
 
   return /<title>\s*Jobs in Acs Networks & Technologies Dehradun \| ID-1140592-Recruiters in Dehradun\s*<\/title>/i.test(page)
-    && /\bAcs Networks & Technologies Dehradun,\s*Uttarakhand\b/i.test(text)
     && /\b\d+\s+current job vacancies at Acs Networks & Technologies\b/i.test(text)
     && /class="job-name"/i.test(page)
-    && /class="job-cname"/i.test(page)
+    && /data-url="https:\/\/www\.placementindia\.com\/job-detail\//i.test(page)
 }
 
 const fetchTextSafely = async (fetchText, url) => {

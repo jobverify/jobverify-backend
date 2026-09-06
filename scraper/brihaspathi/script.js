@@ -31,13 +31,35 @@ const normalizeLocation = (value) => {
   return /india/i.test(normalized) ? normalized : `${normalized}, India`
 }
 
+const isPlaceholderRecord = (attributes) => {
+  const title = normalizeWhitespace(
+    attributes?.title
+    || attributes?.jobTitle
+    || attributes?.position
+    || attributes?.role,
+  )
+  const location = normalizeWhitespace(
+    attributes?.location
+    || attributes?.officeLocation
+    || attributes?.jobLocation
+    || attributes?.city,
+  )
+
+  // The current public API has a single keyboard-smash test record. Do not publish it as a vacancy.
+  return Boolean(title && location && !/[aeiou]/i.test(title) && !/[aeiou]/i.test(location))
+}
+
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
 
-  return /<title[^>]*>\s*(?:Brihaspathi Careers|Brihaspathi technologies limited)\s*<\/title>/i.test(page)
-    && normalized.includes('Open Vacancies')
+  const hasLegacyVacanciesShell = normalized.includes('Open Vacancies')
     && normalized.includes('Careers')
+  const hasCurrentCareersShell = normalized.includes('Careers at Brihaspathi Technologies, Hyderabad')
+    && normalized.includes('Build what the country runs on.')
+
+  return /<title[^>]*>\s*(?:Brihaspathi Careers|Brihaspathi technologies limited)\s*<\/title>/i.test(page)
+    && (hasLegacyVacanciesShell || hasCurrentCareersShell)
 }
 
 export const hasZeroVacanciesSignal = (html = '') => {
@@ -49,6 +71,10 @@ export const extractJobsFromPayload = (payload, { scrapedAt } = {}) => {
   const rows = Array.isArray(payload?.data) ? payload.data : null
   if (!rows) return null
   if (rows.length === 0) return []
+
+  if (rows.every((row) => isPlaceholderRecord(row?.attributes ?? row))) {
+    return []
+  }
 
   const jobs = rows
     .map((row) => {

@@ -80,6 +80,10 @@ export const extractGreenhouseBoardUrl = (html = '') => {
 
 export const buildGreenhouseJobsApiUrl = () => `${GREENHOUSE_JOBS_API_URL}?content=true`
 
+const isRetiredGreenhouseBoardError = (error) =>
+  new RegExp(`HTTP 404 for ${GREENHOUSE_JOBS_API_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i')
+    .test(String(error?.message ?? error ?? ''))
+
 const metadataIncludesIndia = (metadata = []) =>
   (Array.isArray(metadata) ? metadata : []).some((entry) => {
     const haystack = `${entry?.name ?? ''} ${Array.isArray(entry?.value) ? entry.value.join(' ') : entry?.value ?? ''}`
@@ -157,9 +161,16 @@ export const createTemporalScraper = ({
       throw new Error('Verified Temporal Greenhouse board handoff changed materially')
     }
 
-    const jobs = extractIndiaJobsFromGreenhousePayload(
-      await fetchJson(buildGreenhouseJobsApiUrl()),
-    )
+    let payload
+    try {
+      payload = await fetchJson(buildGreenhouseJobsApiUrl())
+    } catch (error) {
+      // The still-linked Greenhouse board is retired and confirms no public roles remain.
+      if (isRetiredGreenhouseBoardError(error)) return []
+      throw error
+    }
+
+    const jobs = extractIndiaJobsFromGreenhousePayload(payload)
 
     return jobs.map((job) => ({
       ...job,

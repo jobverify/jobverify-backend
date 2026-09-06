@@ -77,6 +77,27 @@ test('Celette returns an honest zero-openings result while the verified first-pa
   assert.deepEqual(jobs, [])
 })
 
+test('Celette accepts the current accessible homepage, contact page, and branded careers 404s', async () => {
+  const celette = await loadCeletteModule()
+  assert.ok(celette)
+
+  const pageFor = (url) => ({
+    status: url === celette.HOMEPAGE_URL || url === celette.CONTACT_US_URL ? 200 : 404,
+    url,
+    finalUrl: url,
+    errorKind: null,
+    headers: { server: 'cloudflare' },
+    html: url === celette.HOMEPAGE_URL
+      ? '<title>Global Collision Repair Equipment Supplier | USA &amp; Worldwide</title><p>Collision repair equipment</p>'
+      : url === celette.CONTACT_US_URL
+        ? '<title>Contact Us - Celette | A Leader in Collision Repair Equipment</title><p>Contact Celette</p>'
+        : '<title>Page Not Found - Celette | A Leader in Collision Repair Equipment</title><p>Celette</p>',
+  })
+
+  const jobs = await celette.createCeletteScraper().run({ fetchPage: async (url) => pageFor(url) })
+  assert.deepEqual(jobs, [])
+})
+
 test('Celette preserves the zero-openings sentinel when the verified first-party routes are temporarily timeout-blocked', async () => {
   const celette = await loadCeletteModule()
   assert.ok(celette)

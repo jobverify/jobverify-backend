@@ -179,6 +179,21 @@ export const extractRoleSummaries = (html = '') => {
 export const hasIndiaRole = (roles = []) =>
   roles.some((role) => /\bindia\b/i.test(String(role.location ?? '')))
 
+export const hasVerifiedCurrentNoIndiaBoard = (html = '') => {
+  const lines = extractVisibleLines(html)
+  const countryIndex = lines.indexOf(COUNTRY_HEADING)
+  const stateIndex = lines.indexOf('State')
+  const countries = countryIndex >= 0 && stateIndex > countryIndex
+    ? lines.slice(countryIndex + 1, stateIndex)
+    : []
+
+  return lines.includes('PagerDuty Open Roles')
+    && lines.includes("We're Hiring!")
+    && lines.includes('Search countries')
+    && countries.some((value) => /^(Canada|Chile|Portugal|United Kingdom|United States)$/i.test(value))
+    && !countries.some((value) => /^India$/i.test(value))
+}
+
 export const createPagerDutyScraper = () => ({
   async run({
     fetchText = defaultFetchText,
@@ -186,6 +201,9 @@ export const createPagerDutyScraper = () => ({
     const careersHtml = await fetchText(CAREERS_PAGE_URL)
 
     if (!hasVerifiedCareersPageSignal(careersHtml)) {
+      if (hasVerifiedCurrentNoIndiaBoard(careersHtml)) {
+        return []
+      }
       throw new Error('Verified PagerDuty careers page changed materially')
     }
 

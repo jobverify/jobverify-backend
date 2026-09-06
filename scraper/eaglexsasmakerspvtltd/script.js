@@ -87,7 +87,22 @@ export const hasOfficialHomepageSignal = (html) => {
       || lower.includes('elite software engineering studio systems')
     )
 
-  return hasLegacySurface || hasCurrentSurface
+  const hasRebrandedHomepageSurface =
+    lower.includes('eaglex | the team that builds, guards & grows')
+    && rawHtml.includes('Organization')
+    && rawHtml.includes('alternateName')
+
+  return hasLegacySurface || hasCurrentSurface || hasRebrandedHomepageSurface
+}
+
+const hasOfficialRebrandedPageSignal = (html) => {
+  const rawHtml = String(html ?? '')
+  const lower = normalizeWhitespace(rawHtml).toLowerCase()
+
+  return /<title>\s*Eagle X \| We Engineer Dominance\s*<\/title>/i.test(rawHtml)
+    && rawHtml.includes('https://eagle-x.in/#organization')
+    && lower.includes('high-performance software engineering studio')
+    && lower.includes('eagle x systems')
 }
 
 export const hasOfficialAboutPageSignal = (html) => {
@@ -96,6 +111,7 @@ export const hasOfficialAboutPageSignal = (html) => {
   const rawHtml = String(html ?? '')
 
   return hasOfficialHomepageSignal(html)
+    || hasOfficialRebrandedPageSignal(html)
     || (
       /<title>\s*Eagle X \| We Engineer Dominance\s*<\/title>/i.test(rawHtml)
     && lower.includes('system identity')
@@ -114,6 +130,7 @@ export const hasOfficialContactPageSignal = (html) => {
   const rawHtml = String(html ?? '')
 
   return hasOfficialHomepageSignal(html)
+    || hasOfficialRebrandedPageSignal(html)
     || (
       /<title>\s*Eagle X \| We Engineer Dominance\s*<\/title>/i.test(rawHtml)
     && lower.includes('get in touch')

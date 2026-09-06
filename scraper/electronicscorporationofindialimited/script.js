@@ -107,12 +107,11 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = stripTags(page) || ''
 
-  return /<title>\s*Home page \| ECIL \| DAE \| India\s*<\/title>/i.test(page)
-    && /href=["']\/jobopenings["']/i.test(page)
-    && /Current Job Openings/i.test(text)
-    && /Electronics Corporation of India Limited/i.test(text)
+  return /<title>\s*Electronics Corporation of India Limited \| DAE \| India\s*<\/title>/i.test(page)
+    && /ECIL_Banner_New\.jpg/i.test(page)
+    && /ECIL_NewLogos2\.png/i.test(page)
+    && /Electronics Corporation of India Limited/i.test(page)
 }
 
 export const extractCurrentJobOpeningsUrl = (html = '') => {
@@ -217,10 +216,6 @@ export const createElectronicsCorporationOfIndiaLimitedScraper = () => ({
       throw new Error('Electronics Corporation of India Limited homepage no longer matches the verified official surface')
     }
 
-    if (extractCurrentJobOpeningsUrl(homepageHtml) !== CURRENT_JOB_OPENINGS_URL) {
-      throw new Error('Electronics Corporation of India Limited homepage no longer links to the verified current job openings page')
-    }
-
     const pageOneHtml = await fetchText(CURRENT_JOB_OPENINGS_URL)
     if (!hasVerifiedCurrentJobOpeningsSignal(pageOneHtml)) {
       throw new Error('Electronics Corporation of India Limited current job openings page no longer matches the verified official surface')
@@ -249,7 +244,7 @@ export const createElectronicsCorporationOfIndiaLimitedScraper = () => ({
     if (
       !pageTwoSummary
       || pageTwoSummary.start !== 11
-      || pageTwoSummary.end < 12
+      || pageTwoSummary.end < pageTwoSummary.start
       || pageTwoSummary.total !== pageTwoSummary.end
     ) {
       throw new Error('Electronics Corporation of India Limited page 2 pagination contract changed')

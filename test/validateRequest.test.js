@@ -11,6 +11,7 @@ import {
   forgotPasswordValidation,
   billingVerifyValidation,
   jobQueryValidation,
+  loginValidation,
   registerValidation,
   resetPasswordValidation,
   userProfileValidation,
@@ -252,6 +253,56 @@ test("registerValidation accepts an optional normalized phone number", async () 
   await runValidationChain(registerValidation, req);
   validateRequest(req, createResponseDouble(), () => {});
   assert.equal(req.body.phoneE164, "+919876543210");
+});
+
+test("registration accepts Gmail and recognized educational email domains", async () => {
+  for (const email of [
+    "Student@Gmail.com ",
+    "student@university.edu",
+    "student@university.edu.in",
+    "student@college.ac.in",
+  ]) {
+    const req = {
+      body: {
+        name: "Student",
+        email,
+        password: "StrongerPass123",
+      },
+    };
+    const res = createResponseDouble();
+    let nextCalled = false;
+
+    await runValidationChain(registerValidation, req);
+    validateRequest(req, res, () => {
+      nextCalled = true;
+    });
+
+    assert.equal(nextCalled, true, `${email} should be accepted`);
+    assert.equal(res.statusCode, 200);
+  }
+});
+
+test("registration and login reject non-Gmail, non-educational email domains", async () => {
+  for (const validators of [registerValidation, loginValidation]) {
+    const req = {
+      body: {
+        name: "Student",
+        email: "student@temporary-mail.example",
+        password: "StrongerPass123",
+      },
+    };
+    const res = createResponseDouble();
+    let nextCalled = false;
+
+    await runValidationChain(validators, req);
+    validateRequest(req, res, () => {
+      nextCalled = true;
+    });
+
+    assert.equal(nextCalled, false);
+    assert.equal(res.statusCode, 400);
+    assert.ok(res.body.errors.some((error) => error.msg === "Use a Gmail or educational email address."));
+  }
 });
 
 test("registerValidation rejects a malformed optional phone number", async () => {

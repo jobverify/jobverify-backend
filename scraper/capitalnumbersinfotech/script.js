@@ -27,11 +27,9 @@ const normalizeWhitespace = (value) => String(value ?? '')
 export const hasOfficialCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
-  return normalized.includes('Stable, Rewarding Remote Work Opportunities from Capital Numbers')
-    && normalized.includes('Build Your Career with Capital Numbers')
-    && normalized.includes('See Current Openings')
-    && normalized.includes('Rated 4.2 out of 5 on Glassdoor')
-    && normalized.includes('Beware of Fake Job or Freelancing Offers')
+  return /<title>Careers at Capital Numbers \| Explore Current Opportunities<\/title>/i.test(rawHtml)
+    && normalized.includes('Capital Numbers')
+    && normalized.includes('Explore Current Opportunities')
     && (normalized.includes('jobs@capitalnumbers.com') || /mailto:jobs@capitalnumbers\.com/i.test(rawHtml))
   }
 
@@ -42,6 +40,42 @@ export const hasPublicJobListingSignal = (html = '') => {
   return /href=["'][^"']*(jobview|jobid=|openings?|current-openings?|applycareer)[^"']*["']/i.test(rawHtml)
     || /no\. of vacancies|location:\s|job description|view details/i.test(normalized)
 }
+
+export const extractJobs = (html = '') => [...String(html ?? '').matchAll(
+  /<li class=["']rounded-\[10px\][^"']*["'][\s\S]*?<\/li>/gi,
+)].map((match) => {
+  const card = match[0]
+  const title = normalizeWhitespace(card.match(/<p[^>]*text-base[^>]*>([\s\S]*?)<\/p>/i)?.[1])
+  const location = normalizeWhitespace(card.match(/<dt[^>]*>\s*Location\s*<\/dt>\s*<dd[^>]*>([\s\S]*?)<\/dd>/i)?.[1])
+  const experienceRequired = normalizeWhitespace(card.match(/font-mono[^>]*>([\s\S]*?)<\/span>/i)?.[1])
+  const href = card.match(/href=["'](\/careers\/[^"']+)["']/i)?.[1]
+  const sourceUrl = href ? new URL(href, CAREERS_URL).toString() : null
+
+  if (!title || !location || !sourceUrl) return null
+  const jobId = href.split('/').filter(Boolean).at(-1)
+
+  return {
+    title,
+    company: PROVIDER_METADATA.companyName,
+    department: null,
+    location: `${location}, India`,
+    city: location,
+    country: 'India',
+    jobId,
+    requisitionId: jobId,
+    sourceUrl,
+    applyUrl: sourceUrl,
+    employmentType: null,
+    experienceRequired,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    closingDate: null,
+    jobDescription: null,
+    remoteStatus: null,
+  }
+}).filter(Boolean)
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -59,11 +93,17 @@ export const createCapitalNumbersInfotechScraper = () => ({
       throw new Error('Capital Numbers Infotech careers page no longer matches the verified first-party surface')
     }
 
-    if (hasPublicJobListingSignal(careersHtml)) {
-      throw new Error('Capital Numbers Infotech now appears to expose public job listings and needs a verified scraper')
+    if (!hasPublicJobListingSignal(careersHtml)) {
+      throw new Error('Capital Numbers Infotech public job listings changed materially')
     }
 
-    return []
+    const scrapedAt = new Date().toISOString()
+    return extractJobs(careersHtml).map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.applyUrl,
+      scrapedAt,
+    }))
   },
 })
 

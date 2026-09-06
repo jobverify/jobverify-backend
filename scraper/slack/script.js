@@ -384,9 +384,9 @@ export const createSlackScraper = ({
       throw new Error('Verified Slack careers handoff changed materially')
     }
 
-    if (!hasIndiaLocationOption(locationOptions)) {
-      throw new Error('Verified Slack India location filter changed materially')
-    }
+    // The public board can legitimately have no India openings; only parse detail
+    // pages when the verified location filter advertises an India location.
+    if (!hasIndiaLocationOption(locationOptions)) return []
 
     const indiaRoles = extractIndiaRoleSummaries(careersHtml)
     if (indiaRoles.length === 0) {

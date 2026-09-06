@@ -179,11 +179,18 @@ export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml).toLowerCase()
 
-  return normalized.includes('fireflies.ai | #1 ai assistant for meetings, email, chat & crm')
+  const hasLegacyHomepageCopy = normalized.includes('fireflies.ai | #1 ai assistant for meetings, email, chat & crm')
     && normalized.includes('the #1 ai assistant for your meetings')
     && normalized.includes('transcribe, summarize, search, and analyze all your team conversations')
-    && /href="https:\/\/fireflies\.ai\/?"/i.test(rawHtml)
-    && /"name":"Fireflies\.ai"/i.test(rawHtml)
+  const hasCurrentHomepageTitle = normalized.includes('fireflies.ai | #1 ai teammate for meetings, email, chat & crm')
+  const hasCurrentBrandMetadata = rawHtml.toLowerCase().includes('property="og:site_name"')
+    && rawHtml.toLowerCase().includes('content="fireflies.ai"')
+
+  return (hasLegacyHomepageCopy || hasCurrentHomepageTitle)
+    && (
+      /"name":"Fireflies\.ai"/i.test(rawHtml)
+      || hasCurrentBrandMetadata
+    )
 }
 
 export const hasOfficialGemBoardSignal = (page = {}) => {

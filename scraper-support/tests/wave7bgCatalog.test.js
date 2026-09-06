@@ -199,20 +199,26 @@ test('Juego Studio local catalog captures the verified first-party open-position
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://www.juegostudio.com/')
   assert.equal(provider.companyCareerPage, 'https://www.juegostudio.com/careers')
+  assert.equal(
+    provider.publicApplicationUrl,
+    'https://jhub.juegostudio.com/?module=interview&component=application',
+  )
   assert.equal(provider.companyDomain, 'juegostudio.com')
-  assert.equal(provider.atsPlatform, 'first-party-open-positions-page')
+  assert.equal(provider.atsPlatform, 'first-party-open-positions-page-with-jhub-application-fallback')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'single-first-party-open-positions-page')
   assert.equal(
     provider.extractionStrategy,
-    'first-party-html-opening-sections+apply-link-extraction+india-location-filter',
+    'first-party-html-opening-sections-or-jhub-application-options+apply-link-extraction+india-location-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-08-13')
+  assert.equal(provider.verifiedPublicJobCount, 6)
   assert.match(provider.verifiedSurfaceSummary, /OPEN POSITIONS/i)
   assert.match(provider.verifiedSurfaceSummary, /3D Artist I \/ II/i)
-  assert.match(provider.verifiedSurfaceSummary, /UI UX Designer/i)
+  assert.match(provider.verifiedSurfaceSummary, /Lead Animator/i)
+  assert.match(provider.verifiedSurfaceSummary, /JHub/i)
 
   assertBacklogRowMatches({
     provider,

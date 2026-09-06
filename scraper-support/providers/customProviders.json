@@ -316,10 +316,10 @@
     "atsPlatform": "official-first-party-job-cards",
     "countryFilter": "India",
     "paginationStrategy": "single-page-filtered-india-listing",
-    "extractionStrategy": "job-card-listing",
+    "extractionStrategy": "nextjs-flight-current-openings",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-17",
+    "verifiedOn": "2026-09-03",
     "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.42gears.com/careers/?selected_jobtype=-1&selected_location=india was the live first-party India-filtered 42Gears Mobility Systems careers page and that it publicly exposed a Current Openings listing including Intern – Admin and facilities and Lead Software Engineer on the verified date.",
     "dryRunFile": "42gears/jobs.json",
     "modulePath": "../42gears/script.js"
@@ -1286,7 +1286,8 @@
     "paginationStrategy": "single-official-careers-page",
     "extractionStrategy": "verified-official-careers-page-plus-dynamic-handoff-no-public-listings",
     "parser": "custom-script",
-    "normalizationProfile": "engineering-default"
+    "normalizationProfile": "engineering-default",
+    "scraperTimeoutMs": 1200000
   },
   {
     "source": "adanicement",
@@ -1390,7 +1391,8 @@
     "paginationStrategy": "offset-query",
     "extractionStrategy": "embedded-json+detail-page",
     "parser": "custom-script",
-    "normalizationProfile": "engineering-default"
+    "normalizationProfile": "engineering-default",
+    "scraperTimeoutMs": 1200000
   },
   {
     "source": "ador",
@@ -2562,6 +2564,7 @@
     "paginationStrategy": "offset-query",
     "extractionStrategy": "json-search-api",
     "parser": "custom-script",
+    "scraperTimeoutMs": 1200000,
     "normalizationProfile": "engineering-default"
   },
   {
@@ -2652,6 +2655,7 @@
     "paginationStrategy": "offset-query",
     "extractionStrategy": "oracle-cloud-finder-api",
     "parser": "custom-script",
+    "scraperTimeoutMs": 1200000,
     "normalizationProfile": "engineering-default"
   },
   {
@@ -8986,7 +8990,7 @@
     "companyName": "Curefoods",
     "adapter": "script",
     "modulePath": "../curefoods/script.js",
-    "companyCareerPage": "https://curefoods.in/careers",
+    "companyCareerPage": "https://www.curefoods.in/pages/careers",
     "atsPlatform": "official-company-careers-linkedin-handoff",
     "countryFilter": "India",
     "paginationStrategy": "single-first-party-careers-page",
@@ -16212,8 +16216,8 @@
     "companyName": "Havas India",
     "officialBrandName": "Havas",
     "adapter": "script",
-    "modulePath": "../havasindia/script.js",
-    "dryRunFile": "havasindia/jobs.json",
+    "modulePath": "../havasindia.workday/script.js",
+    "dryRunFile": "havasindia.workday/jobs.json",
     "companyCareerPage": "https://in.havas.com/careers/",
     "officialHomepageUrl": "https://in.havas.com/",
     "companyDomain": "havas.com",
@@ -16881,8 +16885,8 @@
     "companyName": "Hotstar",
     "officialBrandName": "JioHotstar",
     "adapter": "script",
-    "modulePath": "../hotstar/script.js",
-    "dryRunFile": "hotstar/jobs.json",
+    "modulePath": "../hotstar.workday/script.js",
+    "dryRunFile": "hotstar.workday/jobs.json",
     "homepageUrl": "https://www.hotstar.com/",
     "companyCareerPage": "https://www.jiostar.com/",
     "officialWorkdayBoardUrl": "https://jiostar.wd102.myworkdayjobs.com/JioStar",
@@ -17519,14 +17523,14 @@
     "companyDomain": "ikya.com",
     "atsPlatform": "smartrecruiters-empty-board",
     "countryFilter": "India",
-    "paginationStrategy": "single-smartrecruiters-board-verification-plus-homepage-coming-soon-check",
-    "extractionStrategy": "verified-empty-smartrecruiters-board+coming-soon-homepage-return-empty",
+    "paginationStrategy": "single-smartrecruiters-board-verification-plus-homepage-browser-check",
+    "extractionStrategy": "verified-empty-smartrecruiters-board+homepage-browser-check-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "modulePath": "../ikya/script.js",
     "dryRunFile": "ikya/jobs.json",
-    "verifiedOn": "2026-08-02",
-    "verifiedSurfaceSummary": "Verified on August 2, 2026 that https://careers.smartrecruiters.com/Ikya1 is still the live first-party Ikya public careers board and that it explicitly says \"No job postings are currently available.\" The linked homepage at http://www.ikya.com/ now serves a branded \"Coming Soon\" HTML placeholder rather than a real company careers site, so this provider still returns an empty array until a trustworthy public jobs surface appears."
+    "verifiedOn": "2026-09-03",
+    "verifiedSurfaceSummary": "Verified on September 3, 2026 that https://careers.smartrecruiters.com/Ikya1 is still the live first-party Ikya public careers board and that it explicitly says \"No job postings are currently available.\" The linked homepage at http://www.ikya.com/ now serves a browser-verification challenge titled \"Checking your browser...\" rather than a real company careers site, so this provider still returns an empty array until a trustworthy public jobs surface appears."
   },
   {
     "source": "imageinformationsystems",
@@ -18492,10 +18496,10 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "instasafe.com",
-    "verifiedOn": "2026-08-20",
+    "verifiedOn": "2026-09-03",
     "verifiedPublicPostingCount": 14,
     "verifiedIndiaJobCount": 12,
-    "verifiedSurfaceSummary": "Verified on Thursday, August 20, 2026 that https://instasafe.com/careers/ is InstaSafe's live first-party careers page with the current title \"Instasafe Careers | Instasafe Jobs\", refreshed careers copy including \"Grow with InstaSafe\" and \"Working at InstaSafe is more than just a Job.\", and a restored official handoff to the branded Zoho Recruit board at https://instasafe.zohorecruit.com/jobs/Careers. Verified the linked public Zoho Recruit API at https://instasafe.zohorecruit.com/recruit/v2/public/Job_Openings?source=CareerSite&pagename=Careers&extra_fields=%5B%22Date_Opened%22,%22Job_Description%22,%22Work_Experience%22,%22Job_Type%22,%22Required_Skills%22%5D returned 14 public postings, including 12 India jobs with explicit India location metadata during the verification run.",
+    "verifiedSurfaceSummary": "Verified on September 3, 2026 that https://instasafe.com/careers/ is InstaSafe's live first-party careers page with the current title \"Instasafe Careers | Instasafe Jobs\", server-rendered \"See open roles\" and \"Our Openings\" sections, and an official handoff to the branded Zoho Recruit board at https://instasafe.zohorecruit.com/jobs/Careers. Verified the linked public Zoho Recruit API at https://instasafe.zohorecruit.com/recruit/v2/public/Job_Openings?source=CareerSite&pagename=Careers&extra_fields=%5B%22Date_Opened%22,%22Job_Description%22,%22Work_Experience%22,%22Job_Type%22,%22Required_Skills%22%5D returned 14 public postings, including 12 India jobs with explicit India location metadata during the verification run.",
     "dryRunFile": "instasafe/jobs.json"
   },
   {
@@ -18505,17 +18509,16 @@
     "adapter": "script",
     "modulePath": "../insuremile/script.js",
     "homepageUrl": "https://insuremile.in/",
-    "companyCareerPage": "https://insuremile.in/careers/",
-    "careerApiUrl": "https://insuremile.in/wp-json/wp/v2/awsm_job_openings",
+    "companyCareerPage": "https://insuremile.in/careers",
     "companyDomain": "insuremile.in",
-    "atsPlatform": "wp-job-openings",
+    "atsPlatform": "official-company-site-no-public-jobs",
     "countryFilter": "India",
-    "paginationStrategy": "wp-json-page-query",
-    "extractionStrategy": "verified-first-party-careers-page+awsm-rest-api",
+    "paginationStrategy": "single-first-party-careers-page-verification",
+    "extractionStrategy": "verified-first-party-careers-page-no-open-roles-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-16",
-    "verifiedSurfaceSummary": "Verified on July 16, 2026 that https://insuremile.in/careers/ is the live first-party InsureMile careers page, that it serves wp-job-openings public assets plus inline awsmJobsPublic configuration on the official domain, and that the public REST feed at https://insuremile.in/wp-json/wp/v2/awsm_job_openings?_fields=id,link,title,content,class_list&per_page=100&page=1 returned five live openings on the same first-party /career/ detail URLs while omitting the separately expired Team Lead-Renewal Service card shown in the archive HTML.",
+    "verifiedOn": "2026-09-03",
+    "verifiedSurfaceSummary": "Verified on September 3, 2026 that https://insuremile.in/careers is the live first-party InsureMile careers page, that it now says \"While we don't have active job listings right now\", and that it directs resumes to careers@insuremile.in on the official domain. The historical wp-job-openings assets and AWSM REST feed are no longer present on the public page, so this provider now returns an empty array until a trustworthy public jobs surface reappears.",
     "dryRunFile": "insuremile/jobs.json"
   },
   {
@@ -19165,8 +19168,8 @@
     "companyName": "Jade Global",
     "officialBrandName": "Jade Global",
     "adapter": "script",
-    "modulePath": "../jadeglobal/script.js",
-    "dryRunFile": "jadeglobal/jobs.json",
+    "modulePath": "../jadeglobal.workday/script.js",
+    "dryRunFile": "jadeglobal.workday/jobs.json",
     "companyCareerPage": "https://www.jadeglobal.com/careers",
     "workdayBoardUrl": "https://jadeglobal.wd5.myworkdayjobs.com/Jade_Careers",
     "jobsApiUrl": "https://jadeglobal.wd5.myworkdayjobs.com/wday/cxs/jadeglobal/Jade_Careers/jobs",
@@ -20829,16 +20832,16 @@
     "companyName": "Lakshmi Electrical Control Systems",
     "adapter": "script",
     "modulePath": "../lakshmielectricalcontrolsystems/script.js",
-    "companyCareerPage": "https://www.lecsindia.com/",
-    "atsPlatform": "official-company-site-no-public-careers",
+    "companyCareerPage": "https://www.lecsindia.com/careers",
+    "atsPlatform": "official-first-party-careers-page-no-public-jobs",
     "countryFilter": "India",
-    "paginationStrategy": "homepage-plus-contact-page-validation-with-slow-page-fallback",
-    "extractionStrategy": "verified-official-homepage+verified-contact-page-without-careers-or-jobs+slow-first-party-fallback-return-empty",
+    "paginationStrategy": "homepage-plus-careers-plus-contact-page-validation-with-slow-page-fallback",
+    "extractionStrategy": "verified-official-homepage+verified-first-party-careers-shell+verified-contact-page+slow-first-party-fallback-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "lecsindia.com",
-    "verifiedOn": "2026-08-07",
-    "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://www.lecsindia.com/ and https://www.lecsindia.com/contact-us/ remained the live first-party Lakshmi Electrical Control Systems public surfaces. Both verified pages remained slow enough to require a direct extended-timeout fallback during live dry-run verification, but neither exposed a trustworthy careers link, public ATS handoff, role cards, or JobPosting markup. This provider therefore remains an honest first-party zero-job sentinel and returns an empty result until the public surface changes."
+    "verifiedOn": "2026-09-03",
+    "verifiedSurfaceSummary": "Verified on September 3, 2026 that https://www.lecsindia.com/, https://www.lecsindia.com/careers, and https://www.lecsindia.com/contact-us remain the live first-party Lakshmi Electrical Control Systems public surfaces. The homepage and contact page now link to a dedicated first-party careers shell titled \"Careers | LECS India\", but that shell still exposes no public openings, ATS handoff, role cards, application CTA, or JobPosting markup."
   },
   {
     "source": "lakshmigroupofcompanies",

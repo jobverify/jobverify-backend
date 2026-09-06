@@ -119,19 +119,48 @@ const APPCINO_SENTINEL_HTML = `
 </html>
 `
 
-const LOTUS_SENTINEL_HTML = `
+const LOTUS_CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>LWT Careers</title>
+    <title>Careers at Lotus Wireless | Build Engineering Systems</title>
   </head>
   <body>
-    <main>
-      <h1>Why Join LWT</h1>
-      <p>Engineering-Led Environment</p>
-      <p>Apply at hr@lotuswireless.com</p>
-      <p>Lotus Wireless Technologies India Pvt. Ltd.</p>
-    </main>
+    <h1>Work At LWT</h1>
+    <p>Apply at careers@lotuswireless.com</p>
+    <h2>Current Openings</h2>
+    <a>
+      <div data-framer-name="Senior Embedded Systems Engineer" data-framer-component-type="RichTextContainer">
+        <p>Senior Embedded Systems Engineer</p>
+      </div>
+      <div data-framer-name="Full Time Employment" data-framer-component-type="RichTextContainer">
+        <p>Full Time Employment</p>
+      </div>
+      <div data-framer-name="BANGALORE, INDIA" data-framer-component-type="RichTextContainer">
+        <p>bangalore, INDIA</p>
+      </div>
+      <div data-framer-name="ENGINEERING" data-framer-component-type="RichTextContainer">
+        <p>ENGINEERING</p>
+      </div>
+    </a>
+    <a>
+      <div data-framer-name="Senior Embedded Systems Engineer" data-framer-component-type="RichTextContainer">
+        <p>Senior Embedded Systems Engineer</p>
+      </div>
+      <div data-framer-name="Full Time Employment" data-framer-component-type="RichTextContainer">
+        <p>Full Time Employment</p>
+      </div>
+      <div data-framer-name="BANGALORE, INDIA" data-framer-component-type="RichTextContainer">
+        <p>bangalore, INDIA</p>
+      </div>
+      <div data-framer-name="ENGINEERING" data-framer-component-type="RichTextContainer">
+        <p>ENGINEERING</p>
+      </div>
+    </a>
+    <h3>Why Join LWT</h3>
+    <p>Engineering-Led Environment</p>
+    <p>Work on Real-World Impact</p>
+    <h3>Our Work Culture</h3>
   </body>
 </html>
 `
@@ -284,22 +313,26 @@ test('Appcino Technologies stays fail-closed while recruiting remains on the gen
   )
 })
 
-test('Lotus Wireless Technologies stays fail-closed while the first-party page remains apply-via-email only', async () => {
+test('Lotus Wireless Technologies extracts the verified visible opening card and email apply handoff', async () => {
   const lotus = await loadModule('../../scraper/lotuswirelesstechnologies/script.js')
 
   assert.equal(lotus.SOURCE, 'lotuswirelesstechnologies')
   assert.equal(lotus.COMPANY, 'Lotus Wireless Technologies')
-  assert.equal(lotus.CAREERS_URL, 'https://www.lotuswireless.com/careers.html')
-  assert.equal(lotus.VERIFIED_ON, '2026-07-18')
-  assert.equal(lotus.hasOfficialCareersSignal(LOTUS_SENTINEL_HTML), true)
-  assert.equal(lotus.hasPublicJobSignals(LOTUS_SENTINEL_HTML), false)
-  assert.equal(lotus.hasPublicJobSignals(PUBLIC_JOB_HTML), true)
+  assert.equal(lotus.CAREERS_URL, 'https://lotuswireless.com/careers-page')
+  assert.equal(lotus.VERIFIED_ON, '2026-08-15')
+  assert.equal(lotus.hasOfficialCareersSignal(LOTUS_CAREERS_HTML), true)
+  assert.equal(lotus.hasPublicJobSignals(LOTUS_CAREERS_HTML), true)
+  assert.equal(lotus.extractOpeningCards(LOTUS_CAREERS_HTML).length, 1)
 
   const jobs = await lotus.createLotusWirelessTechnologiesScraper().run({
-    fetchText: async () => LOTUS_SENTINEL_HTML,
+    fetchText: async () => LOTUS_CAREERS_HTML,
   })
 
-  assert.deepEqual(jobs, [])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Senior Embedded Systems Engineer')
+  assert.equal(jobs[0].location, 'Bangalore, India')
+  assert.equal(jobs[0].applyUrl, 'mailto:careers@lotuswireless.com')
+  assert.equal(jobs[0].sourceUrl, lotus.CAREERS_URL)
 
   await assert.rejects(
     lotus.createLotusWirelessTechnologiesScraper().run({

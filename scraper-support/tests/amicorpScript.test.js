@@ -153,13 +153,13 @@ const loadAmicorpModule = async () => {
   }
 }
 
-test('Amicorp scraper constants stay pinned to the verified first-party careers hub and detail-page apply surface from July 15, 2026', async () => {
+test('Amicorp scraper constants stay pinned to the verified first-party careers hub and detail-page apply surface from September 3, 2026', async () => {
   const amicorp = await loadAmicorpModule()
 
   assert.equal(amicorp.SOURCE, 'amicorp')
   assert.equal(amicorp.COMPANY, 'Amicorp')
   assert.equal(amicorp.OFFICIAL_BRAND_NAME, 'Amicorp')
-  assert.equal(amicorp.VERIFIED_ON, '2026-07-15')
+  assert.equal(amicorp.VERIFIED_ON, '2026-09-03')
   assert.equal(amicorp.HOMEPAGE_URL, 'https://amicorp.com/')
   assert.equal(amicorp.CAREERS_URL, 'https://amicorp.com/ami-news/careers/')
   assert.equal(amicorp.PAGE_SITEMAP_URL, 'https://amicorp.com/page-sitemap1.xml')
@@ -241,6 +241,30 @@ test('extractJobDetail maps a verified Amicorp first-party detail page into shar
     jobDescription: 'The role holder is primarily accountable for ensuring compliance with statutory requirements for all internal entities, protect the interests of the Group and minimizing legal risk.',
     remoteStatus: null,
   })
+})
+
+test('extractJobDetail accepts the current Amicorp updated-time metadata and single-quoted Zoho iframe', async () => {
+  const amicorp = await loadAmicorpModule()
+  const listing = {
+    title: 'Senior Local Fund Operations (AMIF)',
+    subtitle: 'Bangalore (India) - 04 Aug 2026',
+    sourceUrl: 'https://amicorp.com/ami-news/careers/senior-local-fund-operations-amif-jd1551/',
+  }
+
+  const job = amicorp.extractJobDetail({
+    listing,
+    html: `
+      <meta property="og:updated_time" content="2026-08-04T09:45:08+00:00" />
+      <div><span class="colored" style="color:#152968">Bangalore (India)</span>
+      <span class="colored" style="color:#6F82C1">(04 Aug 2026)</span><span>JD1551</span></div>
+      <a href="#form"><p>Current first-party Amicorp role description.</p></a>
+      <iframe aria-label='Career Page Form' src='https://forms.zohopublic.eu/zohopeople40/form/CareerPageForm/formperma/eclRamd2dWW4rbcIcyYbA0ooIb_3CA2MBYGp_56EYyY'></iframe>
+    `,
+  })
+
+  assert.equal(job.requisitionId, 'JD1551')
+  assert.equal(job.postingDate, '2026-08-04T09:45:08+00:00')
+  assert.equal(job.applyUrl, amicorp.TRUSTED_APPLY_FORM_URL)
 })
 
 test('run validates the verified Amicorp careers hub, sitemap, and detail pages before decorating India jobs', async () => {

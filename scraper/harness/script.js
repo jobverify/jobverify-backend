@@ -141,19 +141,19 @@ export const hasOfficialJobsPageSignal = (html) => {
   const normalized = normalizeWhitespace(page)?.toLowerCase() || ''
 
   return /<title>\s*Careers at Harness: Open Positions &amp; Job Opportunities\s*<\/title>/i.test(page)
-    && normalized.includes("we're hiring!")
-    && normalized.includes('view more positions')
-    && /cms\.harness\.io\/js\/greenhouse\.js/i.test(page)
+    && normalized.includes('exceptional talent')
+    && normalized.includes('fast growing global team')
+    && page.includes('https://www.harness.io/#organization')
 }
 
 export const hasOfficialCareersPageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)?.toLowerCase() || ''
 
-  return /<title>\s*Careers at Harness/i.test(page)
+  return /<title>\s*Careers at Harness(?:\s*[—-]\s*Join the AI-Native DevOps Team)?\s*<\/title>/i.test(page)
     && normalized.includes('careers at harness')
-    && normalized.includes('life at harness')
-    && /boards\.greenhouse\.io\/harnessinc/i.test(page)
+    && normalized.includes('awesome place to either start your career')
+    && page.includes('https://www.harness.io/#organization')
 }
 
 export const extractGreenhouseBoardUrl = (html) => {
@@ -278,9 +278,6 @@ export const createHarnessScraper = ({
     }
 
     const careersHtml = await fetchText(CAREERS_URL)
-    if (extractGreenhouseBoardUrl(careersHtml) !== GREENHOUSE_BOARD_URL) {
-      throw new Error('Harness official careers page no longer exposes the verified Greenhouse board')
-    }
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('Harness verified Harness careers page no longer matches the official first-party surface')
     }

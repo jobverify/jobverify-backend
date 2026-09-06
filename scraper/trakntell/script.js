@@ -95,7 +95,7 @@ export const hasOfficialContactSignal = (page = {}) => {
     && normalized.includes('get in touch')
     && normalized.includes('8010-80-8010')
     && normalized.includes('care@trakntell.com')
-    && normalized.includes('gurgaon')
+    && normalized.includes('gurugram')
 }
 
 export const hasPublicJobsSignal = (html = '') => (

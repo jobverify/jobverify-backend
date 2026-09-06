@@ -8,10 +8,13 @@ const OFFICIAL_HOMEPAGE_HTML = `
     <title>Modern Data Orchestrator Platform | Dagster</title>
   </head>
   <body>
-    <div>Dagster is joining Prefect</div>
-    <main>
-      <h1>Modern Data Orchestrator Platform</h1>
-      <a href="/company/careers">Careers</a>
+    <p>AI-native DataOps platform</p>
+    <h1>Data your team trusts. AI that runs on it.</h1>
+    <p>
+      Dagster is the operational layer that structures how data is built, observed, and delivered,
+      so both teams and AI agents can rely on it.
+    </p>
+    <a href="https://dagster.plus/">Get started for free</a>
       <footer>
         <p>Copyright Â© 2026 Elementl, Inc. d.b.a. Dagster Labs. All rights reserved.</p>
       </footer>
@@ -134,7 +137,7 @@ test('Dagster fails closed when the verified homepage, redirect target, or empty
     dagster.createDagsterScraper().run({
       fetchText: async (url) => {
         if (url === dagster.HOMEPAGE_URL) {
-          return OFFICIAL_HOMEPAGE_HTML.replace('Dagster is joining Prefect', 'Dagster only')
+          return OFFICIAL_HOMEPAGE_HTML.replace('AI-native DataOps platform', 'Modern data company')
         }
         return GREENHOUSE_BOARD_HTML
       },

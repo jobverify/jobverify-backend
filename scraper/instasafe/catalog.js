@@ -22,11 +22,11 @@ export const INSTASAFE_CATALOG = {
   normalizationProfile: 'engineering-default',
   companyDomain: 'instasafe.com',
   dryRunFile: 'instasafe/jobs.json',
-  verifiedOn: '2026-08-20',
+  verifiedOn: '2026-09-03',
   verifiedPublicPostingCount: 14,
   verifiedIndiaJobCount: 12,
   verifiedSurfaceSummary:
-    'Verified on Thursday, August 20, 2026 that https://instasafe.com/careers/ is InstaSafe\'s live first-party careers page with the current title "Instasafe Careers | Instasafe Jobs", refreshed careers copy including "Grow with InstaSafe" and "Working at InstaSafe is more than just a Job.", and a restored official handoff to the branded Zoho Recruit board at https://instasafe.zohorecruit.com/jobs/Careers. Verified the linked public Zoho Recruit API at https://instasafe.zohorecruit.com/recruit/v2/public/Job_Openings?source=CareerSite&pagename=Careers&extra_fields=%5B%22Date_Opened%22,%22Job_Description%22,%22Work_Experience%22,%22Job_Type%22,%22Required_Skills%22%5D returned 14 public postings, including 12 India jobs with explicit India location metadata during the verification run.',
+    'Verified on September 3, 2026 that https://instasafe.com/careers/ is InstaSafe\'s live first-party careers page with the current title "Instasafe Careers | Instasafe Jobs", server-rendered "See open roles" and "Our Openings" sections, and an official handoff to the branded Zoho Recruit board at https://instasafe.zohorecruit.com/jobs/Careers. Verified the linked public Zoho Recruit API at https://instasafe.zohorecruit.com/recruit/v2/public/Job_Openings?source=CareerSite&pagename=Careers&extra_fields=%5B%22Date_Opened%22,%22Job_Description%22,%22Work_Experience%22,%22Job_Type%22,%22Required_Skills%22%5D returned 14 public postings, including 12 India jobs with explicit India location metadata during the verification run.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

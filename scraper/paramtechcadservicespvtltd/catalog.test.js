@@ -17,7 +17,7 @@ test('Paramtech Cad Services Pvt. Ltd. is registered as a verified first-party z
   assert.equal(provider.paginationStrategy, 'homepage-plus-about-plus-contact-plus-single-public-careers-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+exact-company-homepage-proof+verified-about+verified-contact+verified-empty-careers-shell-zero-public-job-listings',
+    'verified-homepage+verified-about+verified-contact+verified-empty-careers-shell-zero-public-job-listings',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

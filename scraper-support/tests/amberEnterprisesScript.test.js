@@ -50,6 +50,20 @@ test('Amber Enterprises validates the verified official homepage and careers han
   assert.deepEqual(jobs, [])
 })
 
+test('Amber Enterprises accepts the current first-party homepage title variant', async () => {
+  const amberEnterprises = await loadAmberEnterprisesModule()
+
+  assert.equal(
+    amberEnterprises.hasOfficialHomepageSignal(`
+      <html>
+        <head><title>Amber Group India | AC, Mobility Solutions Manufacturer</title></head>
+        <body><a href="/careers/">Careers</a><p>Mobility Solutions</p></body>
+      </html>
+    `),
+    true,
+  )
+})
+
 test('Amber Enterprises fails closed when the verified homepage or careers handoff changes', async () => {
   const amberEnterprises = await loadAmberEnterprisesModule()
   const careersHtml = await readFixture('careers.html')

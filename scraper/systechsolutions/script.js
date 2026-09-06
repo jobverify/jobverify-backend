@@ -60,6 +60,36 @@ export const extractEmbeddedJobsListApiUrl = (html = '') =>
 export const extractEmbeddedJobsDetailApiUrl = (html = '') =>
   String(html ?? '').match(/https:\/\/prod-125\.westus\.logic\.azure\.com:[^"']+/i)?.[0] ?? null
 
+export const extractIndiaJobs = (payload = []) => (Array.isArray(payload) ? payload : [])
+  .map((job) => {
+    const title = normalizeWhitespace(job?.cr21b_jobname)
+    const jobId = normalizeWhitespace(job?.cr21b_jobid)
+    if (!title || !jobId) return null
+
+    return {
+      title,
+      company: COMPANY,
+      department: null,
+      location: 'Chennai, India',
+      city: 'Chennai',
+      country: 'India',
+      jobId,
+      requisitionId: jobId,
+      sourceUrl: CAREERS_URL,
+      applyUrl: CAREERS_URL,
+      employmentType: null,
+      experienceRequired: normalizeWhitespace(job?.['cr21b_minyearsofexperience@OData.Community.Display.V1.FormattedValue']),
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: null,
+      remoteStatus: null,
+    }
+  })
+  .filter(Boolean)
+
 export const createSystechSolutionsScraper = ({
   fetchText = defaultFetchText,
   fetchJson = defaultFetchJson,
@@ -86,11 +116,13 @@ export const createSystechSolutionsScraper = ({
       throw new Error('Systech Solutions embedded jobs API no longer returns the verified array payload')
     }
 
-    if (jobs.length > 0) {
-      throw new Error('Systech Solutions verified empty embedded jobs endpoint now exposes public jobs; re-verify before scraping')
-    }
-
-    return []
+    const scrapedAt = new Date().toISOString()
+    return extractIndiaJobs(jobs).map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.applyUrl,
+      scrapedAt,
+    }))
   },
 })
 

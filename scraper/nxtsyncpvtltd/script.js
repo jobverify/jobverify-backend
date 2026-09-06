@@ -81,12 +81,12 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const markup = page.toLowerCase()
 
-  return /<title>\s*NxtSync\s*-\s*Courses\s*&(?:amp;)?\s*Internships\s*<\/title>/i.test(page)
-    && normalized.includes('support@nxtsync.in')
+  return markup.includes('nxtsync - courses & internships')
     && /\+91\s*63026\s*55033/i.test(normalized)
-    && page.includes('https://lms.nxtsync.in/')
-    && /https:\/\/linkedin\.com\/company\/nxtsync\/?/i.test(page)
+    && markup.includes('https://lms.nxtsync.in/')
+    && markup.includes('https://linkedin.com/company/nxtsync')
 }
 
 export const hasFirstPartyCareerLikeLink = (html) => {

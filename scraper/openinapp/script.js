@@ -9,6 +9,9 @@ export const CAREER_PAGE_URL = 'https://openinapp.com/'
 export const CAREERS_ROUTE_URL = 'https://openinapp.com/careers'
 export const CAREER_ROUTE_URL = 'https://openinapp.com/career'
 export const JOBS_ROUTE_URL = 'https://openinapp.com/jobs'
+export const FRESHTEAM_JOBS_URL = 'https://openinapp.freshteam.com/jobs'
+export const SOURCE = 'openinapp'
+export const COMPANY = 'OpeninApp'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -24,6 +27,57 @@ export const hasOfficialSiteSignal = (html) => {
 }
 
 export const hasCareersSignal = (html) => CAREERS_SIGNAL_PATTERN.test(String(html ?? ''))
+
+export const hasOfficialFreshteamBoardSignal = (html) => {
+  const page = String(html ?? '')
+  const text = page.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')
+
+  return /<title>\s*OpeninApp\s*-\s*Careers\s*<\/title>/i.test(page)
+    && /\bOpen Positions\b/i.test(text)
+    && /data-portal-id=["']job-role-list["']/i.test(page)
+}
+
+export const extractFreshteamJobs = (html, { scrapedAt = new Date().toISOString() } = {}) =>
+  [...String(html ?? '').matchAll(/<a\b[^>]*href=["']([^"']*\/jobs\/([^/"']+)\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
+    .map((match) => {
+      const sourceUrl = new URL(match[1], FRESHTEAM_JOBS_URL).toString()
+      const jobId = match[2]
+      const body = match[3]
+      const title = body.match(/<div[^>]*class=["'][^"']*job-title[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1]
+        ?.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+      const location = match[0].match(/data-portal-location=["']([^"']+)["']/i)?.[1]?.trim() || null
+      const employmentType = match[0].match(/data-portal-job-type=["']?(\d+)/i)?.[1]
+
+      if (!title || !location) return null
+      return {
+        title,
+        company: COMPANY,
+        department: null,
+        location,
+        city: location.split(',')[0]?.trim() || null,
+        country: 'India',
+        jobId: `${SOURCE}-${jobId}`,
+        requisitionId: jobId,
+        sourceUrl,
+        applyUrl: sourceUrl,
+        employmentType: employmentType === '3' ? 'Internship' : null,
+        experienceRequired: null,
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: [],
+        postingDate: null,
+        closingDate: null,
+        jobDescription: null,
+        remoteStatus: 'On-site',
+        source: SOURCE,
+        link: sourceUrl,
+        scrapedAt,
+        companyCareerPage: FRESHTEAM_JOBS_URL,
+        companyDomain: 'openinapp.com',
+        atsPlatform: 'freshteam',
+      }
+    })
+    .filter(Boolean)
 
 export const isMissingCareerRoute = (html) => {
   const page = String(html ?? '')
@@ -65,6 +119,15 @@ export const createOpeninAppScraper = () => ({
 
     if (!hasOfficialSiteSignal(homepageHtml)) {
       throw new Error('OpeninApp homepage no longer matches the verified official public surface')
+    }
+
+    if (new RegExp(FRESHTEAM_JOBS_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(homepageHtml)) {
+      const boardHtml = await fetchText(FRESHTEAM_JOBS_URL)
+      if (!hasOfficialFreshteamBoardSignal(boardHtml)) {
+        throw new Error('OpeninApp official Freshteam board no longer matches the verified public surface')
+      }
+
+      return extractFreshteamJobs(boardHtml)
     }
 
     if (hasCareersSignal(homepageHtml)) {

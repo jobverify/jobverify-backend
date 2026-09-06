@@ -2,6 +2,7 @@ import express from "express";
 import {
   createTelegramAlertLink,
   deleteTelegramAlertSettings,
+  deleteUserAccount,
   getTelegramAlertSettings,
   getWhatsappAlertSettings,
   getUserProfile,
@@ -46,6 +47,8 @@ router
     profileUpdateLimiter,
     updateUserProfile,
   );
+
+router.delete("/account", protect, deleteUserAccount);
 
 router
   .route("/saved-jobs")

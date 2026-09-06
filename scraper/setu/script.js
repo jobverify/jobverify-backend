@@ -185,14 +185,13 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
-  const text = (normalizeWhitespace(page) || '').toLowerCase()
   const title = (extractTitle(page) || '').toLowerCase()
+  const markup = page.toLowerCase()
 
-  return title === 'careers at setu | join our fintech team'
-    && text.includes("come tackle india's toughest fintech problems with an exceptional set of people.")
-    && text.includes("we are completely overhauling our country's dated fintech architecture")
-    && text.includes('current openings')
-    && text.includes('brokentusk technologies pvt. ltd')
+  return title.startsWith('careers')
+    && title.endsWith('setu')
+    && markup.includes('open roles at setu')
+    && markup.includes("build the financial infrastructure that powers india's payments, verification and credit.")
 }
 
 export const hasPlaceholderOpeningsSignal = (html = '') =>

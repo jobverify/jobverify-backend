@@ -136,6 +136,12 @@ export const hasOfficialSearchSurface = (html) => {
 export const extractFeedConfig = (html) => {
   const source = String(html ?? '')
   const actionUrl = normalizeWhitespace(source.match(/ActionUrl\s*=\s*['"]([^'"]+)['"]/i)?.[1])
+    || (
+      /shazamme\.ready\(/i.test(source)
+      && /action\s*:\s*['"]Get Jobs['"]/i.test(source)
+        ? ACTION_URL
+        : null
+    )
   const siteAlias = normalizeWhitespace(
     source.match(/SiteAlias\s*[:=]\s*['"]([a-z0-9]+)['"]/i)?.[1]
       || source.match(/_dm_gaq\.siteAlias\s*=\s*['"]([a-z0-9]+)['"]/i)?.[1],

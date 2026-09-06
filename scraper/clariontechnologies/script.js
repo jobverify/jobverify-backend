@@ -62,10 +62,10 @@ export const hasFeaturedJobsSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return text.includes('Featured Jobs')
-    && page.includes('open-position-detail?jobid=2674')
-    && text.includes('SQL Database Developer')
-    && page.includes(OPENINGS_URL)
+  return extractTitle(page) === 'Careers | Clarion Technologies'
+    && text.includes('Featured Jobs')
+    && text.includes('Apply Now')
+    && /open-position-detail\?jobid=\d+/i.test(page)
 }
 
 export const createClarionTechnologiesScraper = () => ({

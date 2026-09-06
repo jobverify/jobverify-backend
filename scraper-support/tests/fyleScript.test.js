@@ -77,6 +77,8 @@ Disallow: /thank-you
 Sitemap: https://www.fylehq.com/sitemap.xml
 `
 
+const currentRobotsTxt = robotsTxt.replace('Sitemap: https://www.fylehq.com/sitemap.xml', 'Sitemap: https://www.fylehq.com/sitemap-index.xml')
+
 const sitemapXml = `
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -138,7 +140,7 @@ test('Fyle helpers stay pinned to the verified homepage, careers shell, and miss
   assert.equal(SOURCE, 'fyle')
   assert.equal(COMPANY, 'Fyle')
   assert.equal(OFFICIAL_BRAND_NAME, 'Sage Expense Management (formerly Fyle)')
-  assert.equal(VERIFIED_ON, '2026-07-15')
+  assert.equal(VERIFIED_ON, '2026-09-03')
   assert.equal(HOMEPAGE_URL, 'https://www.fylehq.com/')
   assert.equal(CAREERS_URL, 'https://www.fylehq.com/careers')
   assert.equal(RESOLVED_CAREERS_URL, 'https://www.fylehq.com/company/team/join')
@@ -158,6 +160,7 @@ test('Fyle helpers stay pinned to the verified homepage, careers shell, and miss
   assert.equal(extractHomepageCareersUrl(homepageHtml), RESOLVED_CAREERS_URL)
   assert.equal(hasOfficialCareersPageSignal(careersHtml), true)
   assert.equal(hasExpectedRobotsTxtSignal(robotsTxt), true)
+  assert.equal(hasExpectedRobotsTxtSignal(currentRobotsTxt), true)
   assert.equal(hasPublicJobsSignal(homepageHtml), false)
   assert.equal(hasPublicJobsSignal(publicJobsHtml), true)
   assert.deepEqual(extractCareerLikeUrlsFromSitemap(sitemapXml), [

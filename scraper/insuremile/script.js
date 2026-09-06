@@ -13,7 +13,7 @@ export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
-export const CAREERS_API_URL = PROVIDER_METADATA.careerApiUrl
+export const CAREERS_API_URL = 'https://insuremile.in/wp-json/wp/v2/awsm_job_openings'
 export const PAGE_SIZE = 100
 
 const USER_AGENT =
@@ -93,7 +93,7 @@ const isSameDomainJobRecord = (value) => {
   }
 }
 
-export const hasVerifiedCareersPageSignal = (html = '') => {
+export const hasLegacyAwsmCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)?.toLowerCase() || ''
 
@@ -104,6 +104,19 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
     && (/awsm-job-listings/i.test(page) || /awsm-job-listing-item/i.test(page))
     && normalized.includes('careers')
 }
+
+export const hasCurrentZeroJobsCareersPageSignal = (html = '') => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page) || ''
+
+  return /<title[^>]*>\s*Build Insurance Products That Make Sense\s*\|\s*Insuremile Careers\s*\|\s*Insuremile\s*<\/title>/i.test(page)
+    && normalized.includes('CAREERS AT INSUREMILE')
+    && normalized.includes("While we don't have active job listings right now")
+    && normalized.includes('careers@insuremile.in')
+}
+
+export const hasVerifiedCareersPageSignal = (html = '') =>
+  hasLegacyAwsmCareersPageSignal(html) || hasCurrentZeroJobsCareersPageSignal(html)
 
 const assertVerifiedFeed = (records) => {
   if (!Array.isArray(records)) {
@@ -204,6 +217,10 @@ export const createInsureMileScraper = ({
     const careersHtml = await fetchText(CAREERS_URL)
     if (!hasVerifiedCareersPageSignal(careersHtml)) {
       throw new Error('InsureMile verified first-party careers page no longer matches the known public surface')
+    }
+
+    if (hasCurrentZeroJobsCareersPageSignal(careersHtml)) {
+      return []
     }
 
     const jobs = []

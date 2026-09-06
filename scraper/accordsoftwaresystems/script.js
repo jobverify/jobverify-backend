@@ -70,8 +70,14 @@ const slugify = (value) => String(value ?? '')
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
 
-const formatLocation = (location) => {
+export const normalizeAccordLocation = (location) => {
   const normalized = normalizeWhitespace(location)
+  if (/^banagalore$/i.test(normalized || '')) return 'Bangalore'
+  return normalized
+}
+
+const formatLocation = (location) => {
+  const normalized = normalizeAccordLocation(location)
   if (!normalized) return 'India'
   if (/\bindia\b/i.test(normalized)) return normalized
   return `${normalized}, India`
@@ -84,12 +90,21 @@ const extractTextField = (lines, startIndex, label) => {
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
+  const page = String(html ?? '')
   const normalized = stripTags(html) || ''
 
-  return normalized.includes('Careers at Accord')
+  const isLegacyCareersSurface = normalized.includes('Careers at Accord')
     && normalized.includes('Creating cutting-edge technology is a way of life at Accord.')
     && normalized.includes('Lead Production Engineer')
     && normalized.includes('Apply Now')
+
+  const isCurrentCareersSurface = /<title>\s*Explore Career Opportunities \| Accord Software &(?:amp;)? Systems Pvt Ltd\s*<\/title>/i.test(page)
+    && /<meta[^>]+name=["']description["'][^>]+content=["']Discover rewarding careers at Accord Soft\. Join a dynamic team of experts and grow your skills in cutting-edge technology solutions\.["']/i.test(page)
+    && normalized.includes('Embedded Software Engineer')
+    && normalized.includes('Systems Engineer FPGA')
+    && /href=["']career-form\.php["'][^>]*>\s*Apply Now\s*</i.test(page)
+
+  return isLegacyCareersSurface || isCurrentCareersSurface
 }
 
 export const hasOfficialApplyFormSignal = (html = '') => {
@@ -168,14 +183,15 @@ export const createAccordSoftwareAndSystemsScraper = ({
     }
 
     return extractJobCards(careersHtml).map((card) => {
-      const jobId = buildJobId(card.title, card.location)
+      const normalizedLocation = normalizeAccordLocation(card.location)
+      const jobId = buildJobId(card.title, normalizedLocation)
 
       return {
         title: card.title,
         company: COMPANY,
         department: null,
         location: formatLocation(card.location),
-        city: normalizeWhitespace(card.location),
+        city: normalizedLocation,
         country: 'India',
         sourceUrl: CAREERS_URL,
         applyUrl: card.applyUrl,

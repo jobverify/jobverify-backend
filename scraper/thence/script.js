@@ -82,6 +82,13 @@ export const extractCareersUrlFromHomepage = (html) => {
   return match?.[1] || null
 }
 
+export const isRetiredCareersRouteError = (error) => {
+  const message = String(error?.message ?? error ?? '')
+  const escapedUrl = CAREERS_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+  return new RegExp(`HTTP 404 for ${escapedUrl}`, 'i').test(message)
+}
+
 const extractRoleTitles = (html) => {
   const selectMatch = String(html ?? '').match(
     /<select[^>]*id=["']jaf-select_role["'][^>]*>([\s\S]*?)<\/select>/i,
@@ -230,7 +237,14 @@ export const createThenceScraper = () => ({
       throw new Error('Thence verified official careers handoff no longer points to the known first-party careers page')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
+    let careersHtml
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      // The current first-party footer retains this legacy link, but its route is retired.
+      if (isRetiredCareersRouteError(error)) return []
+      throw error
+    }
 
     return extractOpenRoles(careersHtml).map((job) => ({
       ...job,

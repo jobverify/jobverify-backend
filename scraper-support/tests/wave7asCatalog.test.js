@@ -27,7 +27,7 @@ const assertBacklogRowMatches = ({ provider, companyName, modulePath }) => {
   assert.equal(provider.modulePath, modulePath)
 }
 
-test('Techtree It Systems local catalog captures the verified first-party wp-job-openings careers surface', async () => {
+test('Techtree It Systems local catalog captures the verified first-party Sucuri blocker and wp-job-openings fallback contract', async () => {
   const modulePath = path.resolve(currentDir, '../../scraper/techtreeitsystems/script.js')
   const {
     TECHTREE_IT_SYSTEMS_CATALOG,
@@ -47,11 +47,11 @@ test('Techtree It Systems local catalog captures the verified first-party wp-job
   assert.equal(provider.paginationStrategy, 'single-first-party-awsm-careers-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+inline-awsm-job-cards+same-domain-detail-links',
+    'verified-first-party-careers-page+inline-awsm-job-cards+same-domain-detail-links|verified-sucuri-challenge-empty-state',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /UI Developer/i)
-  assert.match(provider.verifiedSurfaceSummary, /Associate QA Engineer/i)
+  assert.equal(provider.verifiedOn, '2026-08-15')
+  assert.match(provider.verifiedSurfaceSummary, /You are being redirected\.\.\./i)
+  assert.match(provider.verifiedSurfaceSummary, /inline wp-job-openings cards/i)
 
   assertBacklogRowMatches({
     provider,

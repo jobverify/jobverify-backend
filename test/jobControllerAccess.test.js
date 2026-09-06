@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import Click from "../src/models/Click.js";
 import Job from "../src/models/Job.js";
 import { ACCESS_ROLES, PLAN_IDS } from "../src/constants/accessPlans.js";
-import { getAllJobs, getJobMeta } from "../src/controllers/jobController.js";
+import {
+  getAllJobs,
+  getJobMeta,
+  trackJobClick,
+} from "../src/controllers/jobController.js";
 
 const createResponseDouble = () => ({
   statusCode: 200,
@@ -151,6 +156,45 @@ test("unauthenticated users cannot unlock premium sorting through direct API acc
 
   assert.equal(res.statusCode, 403);
   assert.equal(res.body.premiumRequired, true);
+});
+
+test("trackJobClick keeps analytics updates inside the public job scope", async () => {
+  const originalClickFindOne = Click.findOne;
+  const originalJobFindOneAndUpdate = Job.findOneAndUpdate;
+  let capturedFilter = null;
+
+  Click.findOne = () => ({
+    lean() {
+      return this;
+    },
+    exec: async () => null,
+  });
+  Job.findOneAndUpdate = async (filter) => {
+    capturedFilter = filter;
+    return null;
+  };
+
+  try {
+    const res = createResponseDouble();
+
+    await trackJobClick(
+      {
+        params: { id: "507f191e810c19729de860ea" },
+        headers: {},
+        ip: "127.0.0.1",
+        user: null,
+      },
+      res,
+    );
+
+    assert.equal(res.statusCode, 404);
+    assert.equal(res.body.message, "Job not found");
+    assert.equal(capturedFilter?.status, "active");
+    assert.equal(capturedFilter?.isPublicIndia, true);
+  } finally {
+    Click.findOne = originalClickFindOne;
+    Job.findOneAndUpdate = originalJobFindOneAndUpdate;
+  }
 });
 
 test("free users can request the public 2000-card limit on the legacy jobs route", async () => {

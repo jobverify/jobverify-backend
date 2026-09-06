@@ -128,7 +128,7 @@ export const hasOfficialHomepageSignal = (html) => {
   return /<title>\s*G10X\s*\|\s*End-to-end digital and AI solutions\s*<\/title>/i.test(page)
     && text.includes('end-to-end digital and ai solutions')
     && text.includes('driven by customer obsession')
-    && /copyright[^0-9]*\d{4}\s+g10x\s+\|\s+all rights reserved/i.test(normalizeVisibleText(page))
+    && /copyright[\s\S]{0,40}?g10x\s+\|\s+all rights reserved/i.test(normalizeVisibleText(page))
     && hasVerifiedCareersLink(page)
     && /href=["']\/who-we-are["']/i.test(page)
 }

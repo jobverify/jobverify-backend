@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import fs from "node:fs/promises";
+import net from "node:net";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -25,19 +26,21 @@ import { runIndexManagement } from "./indexes.js";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(currentDir, "..", "..");
-const frontendDir = path.resolve(repoRoot, "Jobverify-frontend");
-const backendDir = path.resolve(repoRoot, "Jobverify-backend");
+const frontendDir = path.resolve(repoRoot, "jobverify-frontend");
+const backendDir = path.resolve(repoRoot, "jobverify-backend");
 const mongoBinaryCacheDir = path.resolve(repoRoot, "artifacts", "mongodb-binaries");
 
 process.env.MONGOMS_DOWNLOAD_DIR = process.env.MONGOMS_DOWNLOAD_DIR || mongoBinaryCacheDir;
 process.env.MONGOMS_PREFER_GLOBAL_PATH = "false";
 
 const FRONTEND_HOST = process.env.JOBVERIFY_FRONTEND_HOST || "127.0.0.1";
-const FRONTEND_PORT = Number(process.env.JOBVERIFY_FRONTEND_PORT || 4173);
 const BACKEND_HOST = process.env.JOBVERIFY_BACKEND_HOST || "127.0.0.1";
-const BACKEND_PORT = Number(process.env.JOBVERIFY_BACKEND_PORT || 5090);
-const FRONTEND_ORIGIN = `http://${FRONTEND_HOST}:${FRONTEND_PORT}`;
-const BACKEND_ORIGIN = `http://${BACKEND_HOST}:${BACKEND_PORT}`;
+const hasRequestedFrontendPort = Boolean(process.env.JOBVERIFY_FRONTEND_PORT);
+const hasRequestedBackendPort = Boolean(process.env.JOBVERIFY_BACKEND_PORT);
+let FRONTEND_PORT = Number(process.env.JOBVERIFY_FRONTEND_PORT || 4173);
+let BACKEND_PORT = Number(process.env.JOBVERIFY_BACKEND_PORT || 5090);
+let FRONTEND_ORIGIN = `http://${FRONTEND_HOST}:${FRONTEND_PORT}`;
+let BACKEND_ORIGIN = `http://${BACKEND_HOST}:${BACKEND_PORT}`;
 const TOTAL_JOBS = Number(process.env.JOBVERIFY_E2E_TOTAL_JOBS || 1800);
 const E2E_EMAIL = normalizeEmailAddress(
   process.env.JOBVERIFY_E2E_EMAIL || "student@example.com",
@@ -53,6 +56,7 @@ const AUDIT_SOURCE_URL = "https://example.com/jobs/audit-signal-frontend-intern"
 const HEALTH_POLL_INTERVAL_MS = 500;
 const HEALTH_TIMEOUT_MS = 120_000;
 const STACK_SHUTDOWN_TIMEOUT_MS = 10_000;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const STRONG_JWT_SECRET =
   process.env.JOBVERIFY_E2E_JWT_SECRET || "12345678901234567890123456789012";
 
@@ -63,6 +67,45 @@ let shuttingDown = false;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const waitForChildExit = (child) => once(child, "exit").catch(() => null);
+const daysFromNow = (days) => new Date(Date.now() + days * DAY_IN_MS);
+const reserveAvailablePort = (host, preferredPort, { allowFallback, label }) =>
+  new Promise((resolve, reject) => {
+    const tryReserve = (port) => {
+      const server = net.createServer();
+      server.unref();
+
+      server.once("error", (error) => {
+        if (error?.code === "EADDRINUSE" && allowFallback && port !== 0) {
+          tryReserve(0);
+          return;
+        }
+
+        if (error?.code === "EADDRINUSE") {
+          reject(new Error(`${label} port ${preferredPort} is already in use.`));
+          return;
+        }
+
+        reject(new Error(`Could not reserve a ${label} port: ${error?.message ?? error}`));
+      });
+
+      server.listen(port, host, () => {
+        const address = server.address();
+        const reservedPort =
+          typeof address === "object" && address ? address.port : preferredPort;
+
+        server.close((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          resolve(reservedPort);
+        });
+      });
+    };
+
+    tryReserve(preferredPort);
+  });
 
 const prefixOutput = (stream, label) => {
   if (!stream) return;
@@ -177,6 +220,29 @@ const waitForHealthyUrl = async (url, label) => {
   );
 };
 
+const spawnNpmProcess = (args, options) => {
+  if (process.platform === "win32") {
+    return spawn("cmd.exe", ["/c", npmCommand, ...args], {
+      ...options,
+      windowsHide: true,
+    });
+  }
+
+  return spawn(npmCommand, args, options);
+};
+
+const runForegroundCommand = async (name, command, args, options) => {
+  const child = spawn(command, args, options);
+  prefixOutput(child.stdout, name);
+  prefixOutput(child.stderr, `${name}:err`);
+
+  const [code, signal] = await once(child, "exit");
+  if (code !== 0) {
+    const detail = signal ? `signal ${signal}` : `code ${code ?? "unknown"}`;
+    throw new Error(`${name} exited unexpectedly with ${detail}`);
+  }
+};
+
 const createAuditSentinelJob = async () => {
   const baseJob = await Job.findOne({
     title: "Frontend Developer Intern",
@@ -187,7 +253,8 @@ const createAuditSentinelJob = async () => {
     throw new Error("Could not locate the canonical fixture job used for the local audit.");
   }
 
-  const postedAt = new Date("2026-07-20T10:00:00.000Z");
+  // Keep the sentinel job recent so latest-sort and date-posted filters stay stable over time.
+  const postedAt = daysFromNow(-2);
   const nextJob = {
     ...baseJob,
     _id: new mongoose.Types.ObjectId(),
@@ -238,16 +305,16 @@ const seedLocalState = async () => {
   await refreshJobDatasetSummary();
 
   const hashedPassword = await bcrypt.hash(E2E_PASSWORD, 10);
-  const premiumStartedAt = new Date("2026-07-01T00:00:00.000Z");
-  const premiumExpiresAt = new Date("2026-08-01T00:00:00.000Z");
+  const premiumStartedAt = daysFromNow(-14);
+  const premiumExpiresAt = daysFromNow(365);
 
   await User.create({
     email: E2E_EMAIL,
     password: hashedPassword,
     role: "user",
-    accessRole: ACCESS_ROLES.MONTHLY,
+    accessRole: ACCESS_ROLES.SEMESTER,
     premium: {
-      planId: PLAN_IDS.MONTHLY,
+      planId: PLAN_IDS.SEMESTER,
       status: "active",
       startedAt: premiumStartedAt,
       expiresAt: premiumExpiresAt,
@@ -273,7 +340,7 @@ const seedLocalState = async () => {
     onboardingCompleted: true,
     isVerified: true,
     deactivated: false,
-    lastLoginAt: new Date("2026-07-22T10:00:00.000Z"),
+    lastLoginAt: daysFromNow(-1),
   });
 
   if (E2E_ADMIN_EMAIL && E2E_ADMIN_PASSWORD) {
@@ -311,12 +378,14 @@ const seedLocalState = async () => {
       onboardingCompleted: true,
       isVerified: true,
       deactivated: false,
-      lastLoginAt: new Date("2026-07-22T10:00:00.000Z"),
+      lastLoginAt: daysFromNow(-1),
     });
   }
 
   const previousAck = process.env.JOBVERIFY_ACKNOWLEDGE_INDEX_MUTATIONS;
+  const previousNodeEnv = process.env.NODE_ENV;
   process.env.JOBVERIFY_ACKNOWLEDGE_INDEX_MUTATIONS = "true";
+  process.env.NODE_ENV = "test";
   try {
     await runIndexManagement({
       mode: "apply",
@@ -331,6 +400,12 @@ const seedLocalState = async () => {
       delete process.env.JOBVERIFY_ACKNOWLEDGE_INDEX_MUTATIONS;
     } else {
       process.env.JOBVERIFY_ACKNOWLEDGE_INDEX_MUTATIONS = previousAck;
+    }
+
+    if (previousNodeEnv == null) {
+      delete process.env.NODE_ENV;
+    } else {
+      process.env.NODE_ENV = previousNodeEnv;
     }
   }
 
@@ -361,19 +436,35 @@ const spawnBackend = (mongoUri) => {
   return child;
 };
 
+const createFrontendEnv = () => ({
+  ...process.env,
+  VITE_API_BASE_URL: BACKEND_ORIGIN,
+  VITE_DISABLE_TURNSTILE: "true",
+  VITE_TURNSTILE_SITE_KEY: "",
+});
+
+const buildFrontend = async () => {
+  const child = spawnNpmProcess(["run", "build", "--", "--mode", "local-e2e"], {
+    cwd: frontendDir,
+    env: createFrontendEnv(),
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  prefixOutput(child.stdout, "frontend:build");
+  prefixOutput(child.stderr, "frontend:build:err");
+
+  const [code, signal] = await once(child, "exit");
+  if (code !== 0) {
+    const detail = signal ? `signal ${signal}` : `code ${code ?? "unknown"}`;
+    throw new Error(`frontend:build exited unexpectedly with ${detail}`);
+  }
+};
+
 const spawnFrontend = () => {
-  const child = spawn(
-    npmCommand,
-    ["run", "dev", "--", "--host", FRONTEND_HOST, "--port", String(FRONTEND_PORT)],
+  const child = spawnNpmProcess(
+    ["run", "preview", "--", "--mode", "local-e2e", "--host", FRONTEND_HOST, "--port", String(FRONTEND_PORT), "--strictPort"],
     {
       cwd: frontendDir,
-      env: {
-        ...process.env,
-        VITE_API_BASE_URL: BACKEND_ORIGIN,
-        VITE_DISABLE_TURNSTILE: "true",
-        VITE_TURNSTILE_SITE_KEY: "",
-      },
-      shell: process.platform === "win32",
+      env: createFrontendEnv(),
       stdio: ["ignore", "pipe", "pipe"],
     },
   );
@@ -389,6 +480,17 @@ async function main() {
   process.on("SIGTERM", () => {
     void cleanup(0);
   });
+
+  FRONTEND_PORT = await reserveAvailablePort(FRONTEND_HOST, FRONTEND_PORT, {
+    allowFallback: !hasRequestedFrontendPort,
+    label: "frontend",
+  });
+  BACKEND_PORT = await reserveAvailablePort(BACKEND_HOST, BACKEND_PORT, {
+    allowFallback: !hasRequestedBackendPort,
+    label: "backend",
+  });
+  FRONTEND_ORIGIN = `http://${FRONTEND_HOST}:${FRONTEND_PORT}`;
+  BACKEND_ORIGIN = `http://${BACKEND_HOST}:${BACKEND_PORT}`;
 
   await fs.mkdir(mongoBinaryCacheDir, { recursive: true });
   mongoServer = await MongoMemoryServer.create({
@@ -406,6 +508,7 @@ async function main() {
   const { seedInfo, auditJob } = await seedLocalState();
   await mongoose.disconnect();
 
+  await buildFrontend();
   spawnBackend(mongoUri);
   spawnFrontend();
 

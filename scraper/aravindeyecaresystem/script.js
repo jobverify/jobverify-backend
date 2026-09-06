@@ -151,10 +151,18 @@ export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeText(rawHtml)
 
-  return /<title>\s*Home - Aravind Eye Care System Aravind Eye Care System\s*<\/title>/i.test(rawHtml)
+  if (
+    /<title>\s*Aravind Eye Care\s*<\/title>/i.test(rawHtml)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/aravind\.org\/["']/i.test(rawHtml)
     && /href=["']https:\/\/aravind\.org\/careers\/["']/i.test(rawHtml)
-    && /href=["']https:\/\/aravind\.org\/aop-recruitment\/["']/i.test(rawHtml)
+    && /2026 Aravind Eye Care System \| All rights reserved/i.test(normalized)
+  ) {
+    return true
+  }
+
+  return /<title>\s*(?:Home - Aravind Eye Care System Aravind Eye Care System|Aravind Eye Care)\s*<\/title>/i.test(rawHtml)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/aravind\.org\/["']/i.test(rawHtml)
+    && /href=["']https:\/\/aravind\.org\/careers\/["']/i.test(rawHtml)
     && /Providing compassionate and quality eye care affordable to all/i.test(normalized)
     && /© 2026 Aravind Eye Care System \| All rights reserved/i.test(normalized)
 }
@@ -163,7 +171,7 @@ export const hasOfficialCareersPageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeText(rawHtml)
 
-  return /<title>\s*Careers - Aravind Eye Care System\s*<\/title>/i.test(rawHtml)
+  return /<title>\s*(?:Careers - Aravind Eye Care System|Aravind Eye Care)\s*<\/title>/i.test(rawHtml)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/aravind\.org\/careers\/["']/i.test(rawHtml)
     && /Click here to apply for any other post/i.test(normalized)
     && /Current Openings/i.test(normalized)
@@ -182,10 +190,15 @@ export const hasOfficialCareersPageSignal = (html) => {
 export const hasExpectedPageSitemapSignal = (xml) => {
   const urls = extractSitemapUrls(xml)
 
-  return urls.includes('https://aravind.org/')
+  return (
+    urls.includes('https://aravind.org/wp-sitemap-posts-page-1.xml')
+    || (
+      urls.includes('https://aravind.org/')
     && urls.includes('https://aravind.org/post-jobs/')
     && urls.includes('https://aravind.org/careers/')
     && urls.includes('https://aravind.org/aop-recruitment/')
+    )
+  )
 }
 
 export const extractAjaxListings = (payload = {}) => (

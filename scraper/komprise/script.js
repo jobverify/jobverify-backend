@@ -146,13 +146,17 @@ export const hasOfficialCareersPageSignal = (html = '') => {
 
 export const hasJobListingSitemapSignal = (xml = '') =>
   VERIFIED_JOB_DETAIL_URLS.every((url) => String(xml ?? '').includes(url))
+    && extractSitemapEntries(xml).length >= VERIFIED_JOB_DETAIL_URLS.length
 
 export const extractSitemapEntries = (xml = '') =>
-  [...String(xml ?? '').matchAll(/<url>\s*<loc>([^<]+)<\/loc>\s*<lastmod>([^<]+)<\/lastmod>\s*<\/url>/gi)]
-    .map((match) => ({
-      url: normalizeWhitespace(match[1]),
-      lastmod: normalizeWhitespace(match[2]),
-    }))
+  [...String(xml ?? '').matchAll(/<url>([\s\S]*?)<\/url>/gi)]
+    .map((match) => {
+      const entry = match[1]
+      return {
+        url: normalizeWhitespace(entry.match(/<loc>([^<]+)<\/loc>/i)?.[1]),
+        lastmod: normalizeWhitespace(entry.match(/<lastmod>([^<]+)<\/lastmod>/i)?.[1]),
+      }
+    })
     .filter((entry) => entry.url && entry.lastmod)
 
 export const extractJobFromDetailPage = ({ url, lastmod, html } = {}) => {
@@ -185,7 +189,8 @@ export const extractJobFromDetailPage = ({ url, lastmod, html } = {}) => {
     jobId,
     requisitionId: jobId,
     sourceUrl,
-    applyUrl,
+    // Komprise exposes its verified email CTA on this canonical first-party detail page.
+    applyUrl: sourceUrl,
     employmentType: extractEmploymentTypeFromDescription(description),
     experienceRequired: null,
     minimumQualification: null,

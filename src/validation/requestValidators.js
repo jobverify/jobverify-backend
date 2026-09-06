@@ -1,5 +1,6 @@
 import { body, param, query } from "express-validator";
 import {
+  isAllowedAccountEmail,
   isStrongPassword,
   normalizeEmailAddress,
   PASSWORD_MIN_LENGTH,
@@ -34,6 +35,19 @@ const VALID_JOB_STATUSES = ["active", "hidden", "expired"];
 
 const trimIfString = (value) =>
   (typeof value === "string" ? value.trim() : value);
+
+const allowedAccountEmailRule = (chain) =>
+  chain
+    .customSanitizer(normalizeEmailAddress)
+    .isEmail()
+    .withMessage("Please include a valid email.")
+    .bail()
+    .custom((value) => {
+      if (!isAllowedAccountEmail(value)) {
+        throw new Error("Use a Gmail or educational email address.");
+      }
+      return true;
+    });
 
 const boundedStringRule = (chain, label, maxLength = MAX_TEXT_LENGTH) =>
   chain
@@ -265,10 +279,7 @@ const telegramAlertFiltersValidationRules = () =>
 
 export const registerValidation = [
   boundedStringRule(body("name"), "Name"),
-  body("email")
-    .customSanitizer(normalizeEmailAddress)
-    .isEmail()
-    .withMessage("Please include a valid email."),
+  allowedAccountEmailRule(body("email")),
   body("password").custom((value) => {
     if (typeof value !== "string" || value.length === 0) {
       throw new Error("Password is required.");
@@ -294,10 +305,7 @@ export const registerValidation = [
 ];
 
 export const loginValidation = [
-  body("email")
-    .customSanitizer(normalizeEmailAddress)
-    .isEmail()
-    .withMessage("Please include a valid email."),
+  allowedAccountEmailRule(body("email")),
   body("password")
     .isString()
     .isLength({ min: 1 })

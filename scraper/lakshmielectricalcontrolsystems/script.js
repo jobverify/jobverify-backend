@@ -8,9 +8,10 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = 'lakshmielectricalcontrolsystems'
 export const COMPANY = 'Lakshmi Electrical Control Systems'
 export const HOMEPAGE_URL = 'https://www.lecsindia.com/'
+export const CAREERS_URL = 'https://www.lecsindia.com/careers'
 export const CONTACT_URL = 'https://www.lecsindia.com/contact-us/'
-export const VERIFIED_ON = '2026-08-07'
-export const VERIFIED_SURFACE_SUMMARY = 'Verified on Friday, August 7, 2026 that https://www.lecsindia.com/ and https://www.lecsindia.com/contact-us/ remained the live first-party Lakshmi Electrical Control Systems public surfaces. Both verified pages remained slow enough to require a direct extended-timeout fallback during live dry-run verification, but neither exposed a trustworthy careers link, public ATS handoff, role cards, or JobPosting markup.'
+export const VERIFIED_ON = '2026-09-03'
+export const VERIFIED_SURFACE_SUMMARY = 'Verified on September 3, 2026 that https://www.lecsindia.com/, https://www.lecsindia.com/careers, and https://www.lecsindia.com/contact-us remain the live first-party Lakshmi Electrical Control Systems public surfaces. The homepage and contact page now link to a dedicated first-party careers shell titled "Careers | LECS India", but that shell still exposes no public openings, ATS handoff, role cards, application CTA, or JobPosting markup.'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -26,6 +27,8 @@ const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /\bjob openings\b/i,
   /\bsearch jobs\b/i,
   /\bapply now\b/i,
+  /\bview all openings\b/i,
+  /\bopen roles\b/i,
   /\bjob description\b/i,
   /\bjoin our team\b/i,
   /\bvacanc(?:y|ies)\b/i,
@@ -49,6 +52,7 @@ const normalizeWhitespace = (value) =>
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&#39;|&apos;|&rsquo;|&lsquo;|&#x27;/gi, "'")
+    .replace(/[’‘]/g, "'")
     .replace(/&quot;/gi, '"')
     .replace(/&amp;/gi, '&')
     .replace(/\u00a0/g, ' ')
@@ -98,9 +102,9 @@ const fetchVerifiedText = async (
 }
 
 export const hasOfficialHomepageSignal = (html) => {
+  const page = String(html ?? '')
   const normalized = normalizeText(html)
-
-  return normalized.includes('control panel manufacturers | smart meter manufacturers - lecs ltd')
+  const hasLegacyHomepageSignal = normalized.includes('control panel manufacturers | smart meter manufacturers - lecs ltd')
     && normalized.includes('lakshmi electrical control systems limited (lecs)')
     && normalized.includes('control panels')
     && normalized.includes('engineering plastic components')
@@ -109,10 +113,31 @@ export const hasOfficialHomepageSignal = (html) => {
     && normalized.includes('factory address lakshmi electrical control systems limited')
     && normalized.includes('arasur, coimbatore - 641 407 tamilnadu, india')
     && normalized.includes('info@lecsindia.com')
+
+  const hasCurrentHomepageSignal = /<title>\s*lecs\s*<\/title>/i.test(page)
+    && normalized.includes('ev chargers')
+    && normalized.includes('what we offer')
+    && normalized.includes('industries we serve')
+    && normalized.includes('credentials')
+    && normalized.includes('lecs excels in providing unmatched solutions')
+
+  return hasLegacyHomepageSignal || hasCurrentHomepageSignal
+}
+
+export const hasOfficialCareersPageSignal = (html) => {
+  const page = String(html ?? '')
+  const normalized = normalizeText(page)
+
+  return /<title>\s*careers\s*\|\s*lecs india\s*<\/title>/i.test(page)
+    && normalized.includes('menu home about us product industries investors partner with us photo gallery careers news contact us lecs')
+    && normalized.includes('careers | lecs india')
 }
 
 export const hasOfficialContactSignal = (html) => {
   const normalized = normalizeText(html)
+  const hasPhoneSignal =
+    normalized.includes('phone: +91-422-6616500')
+    || normalized.includes('+91-422-6616500')
 
   const hasLegacyContactBlock = normalized.includes('lakshmi electrical control systems limited, arasur, coimbatore - 641 407, tamilnadu, india')
     && normalized.includes("let's talk")
@@ -123,10 +148,17 @@ export const hasOfficialContactSignal = (html) => {
     && normalized.includes('factory address')
     && normalized.includes('arasur, coimbatore - 641 407 tamilnadu, india')
 
-  return normalized.includes('contact us')
-    && normalized.includes('phone: +91-422-6616500')
+  const hasCurrentContactExperience = normalized.includes("let's connect")
+    && normalized.includes('email us at')
+    && normalized.includes('give us a call at')
+    && normalized.includes('contact@lecsindia.com')
+    && normalized.includes('lakshmi electrical control systems limited')
+    && normalized.includes('arasur, coimbatore')
+
+  return (normalized.includes('contact us') || normalized.includes("let's connect"))
+    && hasPhoneSignal
     && normalized.includes('info@lecsindia.com')
-    && (hasLegacyContactBlock || hasCurrentContactBlock)
+    && (hasLegacyContactBlock || hasCurrentContactBlock || hasCurrentContactExperience)
 }
 
 export const hasFirstPartyCareerLikeLink = (html) =>
@@ -154,8 +186,17 @@ export const createLakshmiElectricalControlSystemsScraper = () => ({
       throw new Error('Lakshmi Electrical Control Systems homepage now exposes public jobs')
     }
 
-    if (hasFirstPartyCareerLikeLink(homepageHtml)) {
-      throw new Error('Lakshmi Electrical Control Systems homepage now exposes a first-party careers or jobs path')
+    const careersHtml = await fetchVerifiedText(
+      CAREERS_URL,
+      fetchText,
+      fetchTextWithExtendedTimeout,
+    )
+    if (!hasOfficialCareersPageSignal(careersHtml)) {
+      throw new Error('Lakshmi Electrical Control Systems verified official careers page no longer matches the known public surface')
+    }
+
+    if (hasPublicJobsSignal(careersHtml)) {
+      throw new Error('Lakshmi Electrical Control Systems careers page now exposes public jobs')
     }
 
     const contactHtml = await fetchVerifiedText(
@@ -169,10 +210,6 @@ export const createLakshmiElectricalControlSystemsScraper = () => ({
 
     if (hasPublicJobsSignal(contactHtml)) {
       throw new Error('Lakshmi Electrical Control Systems contact surface now exposes public jobs')
-    }
-
-    if (hasFirstPartyCareerLikeLink(contactHtml)) {
-      throw new Error('Lakshmi Electrical Control Systems contact surface now exposes a first-party careers or jobs path')
     }
 
     return []

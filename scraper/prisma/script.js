@@ -12,7 +12,8 @@ export const SOURCE = 'prisma'
 export const COMPANY = 'Prisma'
 export const VERIFIED_ON = '2026-07-25'
 export const OFFICIAL_SITE_URL = 'https://www.prisma.io/'
-export const CAREERS_PAGE_URL = 'https://www.prisma.io/careers'
+export const CAREERS_PAGE_URL = 'https://www.prisma.io/company/careers'
+export const RIPPLING_JOBS_URL = 'https://api.rippling.com/platform/api/ats/v1/board/prisma-careers/jobs'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -36,40 +37,79 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchJson = async (url) => JSON.parse(await defaultFetchText(url))
+
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
   return /<title[^>]*>\s*Careers\s*\|\s*Prisma\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.prisma\.io\/careers\/?["']/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.prisma\.io\/company\/careers["']/i.test(page)
     && text.includes('Join Prisma')
     && text.includes('Help us empower developers to build data-driven applications.')
-    && text.includes('Prisma is building the data access layer for modern applications.')
-    && text.includes(
-      'Our team is globally distributed and everyone can work from any location within the UTC -5 to UTC +3 timezones.',
-    )
+    && text.includes('Open roles')
+    && page.includes('OpenRoles')
 }
 
-export const hasZeroOpenRolesSignal = (html = '') => {
-  const text = normalizeWhitespace(html)
+export const hasOfficialRipplingJobsSignal = (records) => Array.isArray(records)
+  && records.every((record) => (
+    typeof record?.uuid === 'string'
+    && typeof record?.name === 'string'
+    && /^https:\/\/ats\.rippling\.com\/prisma-careers\/jobs\/[a-f0-9-]+$/i.test(record?.url || '')
+    && typeof record?.workLocation?.label === 'string'
+  ))
 
-  return text.includes('View open positions')
-    && /Open roles Filter by department All 0 Subscribe to our newsletter/i.test(text)
-}
+const isIndiaLocation = (value) => /\bindia\b/i.test(normalizeWhitespace(value))
+
+export const extractIndiaJobs = (records = []) => records
+  .filter((record) => isIndiaLocation(record?.workLocation?.label))
+  .map((record) => {
+    const location = normalizeWhitespace(record.workLocation.label)
+    const jobId = normalizeWhitespace(record.uuid)
+
+    return {
+      title: normalizeWhitespace(record.name),
+      company: COMPANY,
+      location,
+      city: location.replace(/,\s*India\s*$/i, '') || null,
+      state: null,
+      country: 'India',
+      jobId,
+      requisitionId: jobId,
+      sourceUrl: record.url,
+      applyUrl: record.url,
+      department: normalizeWhitespace(record?.department?.label) || null,
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: null,
+    }
+  })
 
 export const createPrismaScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson, now = () => new Date() } = {}) {
     const careersHtml = await fetchText(CAREERS_PAGE_URL)
 
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('Prisma careers page no longer matches the verified first-party surface')
     }
 
-    if (!hasZeroOpenRolesSignal(careersHtml)) {
-      throw new Error('Prisma careers page changed and may now expose public roles')
+    const records = await fetchJson(RIPPLING_JOBS_URL)
+    if (!hasOfficialRipplingJobsSignal(records)) {
+      throw new Error('Prisma Rippling board no longer matches the verified public jobs surface')
     }
 
-    return []
+    const scrapedAt = now().toISOString()
+    return extractIndiaJobs(records).map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.applyUrl,
+      scrapedAt,
+    }))
   },
 })
 

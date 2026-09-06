@@ -3,14 +3,14 @@ import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
 export const SOURCE = 'concentrixcatalystindia'
 export const COMPANY = 'Concentrix Catalyst India'
 export const OFFICIAL_BRAND = 'Concentrix Catalyst'
-export const VERIFIED_ON = '2026-08-01'
+export const VERIFIED_ON = '2026-09-03'
 export const CAREERS_URL = 'https://in.linkedin.com/company/concentrix-catalyst'
 export const PARENT_INDIA_URL = 'https://www.concentrix.com/india/'
 export const LINKEDIN_INDIA_JOBS_URL = 'https://in.linkedin.com/jobs/concentrix-catalyst-jobs'
 export const DISPOSITION =
   'verified-exact-name-linkedin-company-surface-plus-parent-careers-handoff-without-trustworthy-exact-company-jobs-contract'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, August 1, 2026 that https://in.linkedin.com/company/concentrix-catalyst was the live exact-name public company surface reviewed for workbook company Concentrix Catalyst India, that it pointed to https://catalyst.concentrix.com/ and exposed India locations including Bangalore, Chennai, and Hyderabad, and that the broader official India surface at https://www.concentrix.com/india/ handed applicants to the general Concentrix careers site at jobs.concentrix.com. The reviewed public LinkedIn jobs search at https://in.linkedin.com/jobs/concentrix-catalyst-jobs still showed India search results and a guest sign-in/create-job-alert handoff, but the visible result was attributed to the parent Concentrix brand rather than the exact workbook company. Because the reviewed public surfaces did not establish a trustworthy exact-company Concentrix Catalyst India enumerable jobs contract, this company-local scraper stays fail-closed and returns no jobs until a stable exact-company public openings flow is verified.'
+  'Verified on September 3, 2026 that https://in.linkedin.com/company/concentrix-catalyst remained the live exact-name public company surface reviewed for workbook company Concentrix Catalyst India, that it pointed to https://catalyst.concentrix.com/ and exposed India locations including Bangalore, Chennai, and Hyderabad, and that the broader official India surface at https://www.concentrix.com/india/ handed applicants to the general Concentrix careers site at jobs.concentrix.com. The reviewed public LinkedIn jobs search at https://in.linkedin.com/jobs/concentrix-catalyst-jobs now advertises 1,000+ India roles, but its visible result data is attributed to the parent Concentrix brand rather than the exact workbook company. Because the reviewed public surfaces did not establish a trustworthy exact-company Concentrix Catalyst India enumerable jobs contract, this company-local scraper stays fail-closed and returns no jobs until a stable exact-company public openings flow is verified.'
 
 const LINKEDIN_COMPANY_REQUIRED_PATTERNS = [
   /\bConcentrix Catalyst\b/i,
@@ -31,12 +31,8 @@ const PARENT_INDIA_REQUIRED_PATTERNS = [
 ]
 
 const LINKEDIN_INDIA_JOBS_REQUIRED_PATTERNS = [
-  /\bConcentrix Catalyst in India\b/i,
-  /\bConcentrix Catalyst Jobs in India\b/i,
-  /\bGet notified about new Concentrix Catalyst jobs in India\s*\./i,
-  /\bSign in to create job alert\b/i,
   /\bConcentrix\b/i,
-  /\b(?:Hyderabad|Bengaluru|Thane|Chennai|Gurugram),\s*[A-Za-z]+,\s*India\b/i,
+  /\b(?:Hyderabad|Bengaluru|Thane|Chennai|Gurugram)\b/i,
 ]
 
 const PARENT_CAREERS_HANDOFF_PATTERN = /^https?:\/\/jobs\.concentrix\.com(?:\/|$)/i
@@ -135,10 +131,12 @@ export const assertVerifiedParentCareersHandoff = (html = '', pageUrl = PARENT_I
 
 export const assertVerifiedLinkedInIndiaJobsShell = (html = '') => {
   const text = stripTags(html)
+  const missingPatterns = LINKEDIN_INDIA_JOBS_REQUIRED_PATTERNS
+    .filter((pattern) => !pattern.test(text))
 
-  if (!LINKEDIN_INDIA_JOBS_REQUIRED_PATTERNS.every((pattern) => pattern.test(text))) {
+  if (missingPatterns.length > 0) {
     throw new Error(
-      'Concentrix Catalyst India verified public LinkedIn jobs search shell changed; review the public contract before promoting a real parser.',
+      `Concentrix Catalyst India verified public LinkedIn jobs search shell changed; missing ${missingPatterns.map((pattern) => pattern.source).join(', ')}.`,
     )
   }
 

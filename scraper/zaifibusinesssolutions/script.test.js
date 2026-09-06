@@ -33,6 +33,19 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>HOME INTELLIGENCE — One Home. One AI. Every Room.</title>
+    <meta name="description" content="A distributed Home AI system. Central Home AI Hub + Lightweight Voice Nodes. The AI follows the user, not the device." />
+    <meta name="publisher" content="ZAi-Fi" />
+    <link rel="canonical" href="https://zaifi.co" />
+  </head>
+  <body><a href="mailto:contact@zai-fi.com">contact@zai-fi.com</a></body>
+</html>
+`
+
 const robotsTxt = `
 User-Agent: *
 Allow: /
@@ -63,7 +76,7 @@ test('ZAi-Fi Business Solutions sentinel pins the verified first-party no-career
 
   assert.equal(zaifi.SOURCE, 'zaifibusinesssolutions')
   assert.equal(zaifi.COMPANY, 'ZAi-Fi Business Solutions')
-  assert.equal(zaifi.VERIFIED_ON, '2026-07-13')
+  assert.equal(zaifi.VERIFIED_ON, '2026-09-03')
   assert.equal(zaifi.FIRST_PARTY_ROOT_URL, 'https://zai-fi.com')
   assert.equal(zaifi.HOMEPAGE_URL, 'https://zai-fi.com/')
   assert.equal(zaifi.ROBOTS_URL, 'https://zai-fi.com/robots.txt')
@@ -78,9 +91,10 @@ test('ZAi-Fi Business Solutions sentinel pins the verified first-party no-career
   ])
   assert.equal(
     zaifi.VERIFIED_SURFACE_SUMMARY,
-    'Verified the public ZAi-Fi marketing site at https://zai-fi.com on July 13, 2026; it exposes no careers route in the sitemap, no careers keywords on the homepage, and common careers URLs return 404.',
+    'Verified the public ZAi-Fi site at https://zai-fi.com on September 3, 2026. Its current Home Intelligence homepage, robots.txt, and sitemap expose no careers route, and common careers URLs return 404.',
   )
   assert.equal(zaifi.isVerifiedHomepage(homepageHtml), true)
+  assert.equal(zaifi.isVerifiedHomepage(currentHomepageHtml), true)
   assert.equal(zaifi.sitemapHasCareerRoutes(sitemapXml), false)
 })
 

@@ -12,7 +12,6 @@ test('formatFinalSummaryTable renders bounded operational analytics tables', () 
       filteredNonIndia: 25,
       filteredOld: 10,
       filteredClosed: 2,
-      filteredSenior: 2,
       filteredInvalidUrl: 1,
       inserted: 0,
       updated: 0,
@@ -59,7 +58,6 @@ test('formatFinalSummaryTable renders bounded operational analytics tables', () 
       filteredNonIndia: 1,
       filteredOld: 4,
       filteredClosed: 1,
-      filteredSenior: 3,
       filteredInvalidUrl: 1,
       inserted: 4,
       updated: 2,
@@ -79,7 +77,6 @@ test('formatFinalSummaryTable renders bounded operational analytics tables', () 
   assert.match(output, /Rejected outside India\s+\| 26/)
   assert.match(output, /Rejected older than retention\s+\| 14/)
   assert.match(output, /Rejected past closing date\s+\| 3/)
-  assert.match(output, /Rejected senior\s+\| 5/)
   assert.match(output, /Rejected invalid URL\s+\| 2/)
   assert.match(output, /PERFORMANCE/)
   assert.match(output, /P95 source runtime\s+\| 20\.0s/)
@@ -132,22 +129,22 @@ test('formatFinalSummaryTable reports wall-clock run timing and operational rate
     alpha: {
       success: true,
       jobs: 8,
-      durationMs: 2_000,
+      durationMs: 49_805_800,
       dataQuality: { missingLocation: 2 },
     },
     beta: { success: false, softFailure: true, jobs: 0, durationMs: 1_000 },
   }, {
     runTiming: {
       startedAt: new Date('2026-08-18T01:30:00.000Z'),
-      completedAt: new Date('2026-08-18T01:32:30.000Z'),
+      completedAt: new Date('2026-08-18T03:07:36.700Z'),
     },
   })
 
   assert.match(output, /RUN TIMING/)
-  assert.match(output, /Start time\s+\| 2026-08-18 01:30:00 UTC/)
-  assert.match(output, /End time\s+\| 2026-08-18 01:32:30 UTC/)
-  assert.match(output, /Total time taken\s+\| 150\.0s/)
-  assert.match(output, /Cumulative worker time\s+\| 3\.0s/)
+  assert.match(output, /Start time\s+\| 2026-08-18 07:00:00 IST/)
+  assert.match(output, /End time\s+\| 2026-08-18 08:37:36 IST/)
+  assert.match(output, /Total time taken\s+\| 1h 37m 36\.7s/)
+  assert.match(output, /Cumulative worker time\s+\| 13h 50m 6\.8s/)
   assert.match(output, /Successful-source rate\s+\| 50\.0%/)
   assert.match(output, /Job-yield rate\s+\| 50\.0%/)
   assert.match(output, /Missing-location rate\s+\| 25\.0%/)

@@ -139,7 +139,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Coupa Software Inc local catalog captures the verified first-party jobs contract', async () => {
+test('Coupa Software Inc local catalog captures the verified blocked-shell contract while preserving the first-party jobs route', async () => {
   const { COUPA_SOFTWARE_INC_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(COUPA_SOFTWARE_INC_CATALOG)
 
@@ -156,11 +156,11 @@ test('Coupa Software Inc local catalog captures the verified first-party jobs co
   assert.equal(provider.paginationStrategy, 'first-party-html-pagination')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-jobs-page+html-job-cards+country-filtered-pagination',
+    'verified-cloudflare-challenge-empty+preserve-first-party-html-job-card-parser',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Displaying 1 to 20 of 101 matching jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /Manager, Software Engineering/i)
+  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.match(provider.verifiedSurfaceSummary, /Just a moment/i)
+  assert.match(provider.verifiedSurfaceSummary, /Enable JavaScript and cookies to continue/i)
   assert.match(provider.modulePath, /coupasoftwareinc[\\/]script\.js$/i)
 })
 
@@ -173,13 +173,13 @@ test('Coupa Software Inc hydrated local catalog stays script-runner compatible',
   assert.equal(typeof module.run, 'function')
 })
 
-test('Coupa Software Inc helpers stay pinned to the verified first-party jobs page', async () => {
+test('Coupa Software Inc helpers preserve the verified first-party jobs page parsers', async () => {
   const coupa = await loadScriptModule()
 
   assert.equal(coupa.SOURCE, 'coupasoftwareinc')
   assert.equal(coupa.COMPANY, 'Coupa Software Inc')
   assert.equal(coupa.JOBS_PAGE_URL, 'https://careers.coupa.com/en/jobs/')
-  assert.equal(coupa.VERIFIED_ON, '2026-07-18')
+  assert.equal(coupa.VERIFIED_ON, '2026-08-14')
   assert.equal(coupa.hasOfficialJobsPageSignal(jobsPageOneHtml), true)
   assert.deepEqual(coupa.extractIndiaJobsFromPage(jobsPageOneHtml), [
     {
@@ -260,17 +260,38 @@ test('Coupa Software Inc run paginates the verified first-party jobs pages and r
   assert.equal(jobs[2].employmentType, 'Remote')
 })
 
-test('Coupa Software Inc stays HTTP-only when direct requests fail', async () => {
+test('Coupa Software Inc returns [] when direct requests fall back to the verified Cloudflare challenge shell', async () => {
   const coupa = await loadScriptModule()
+  const verifiedChallengeHtml = `
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <title>Just a moment...</title>
+      </head>
+      <body>
+        <h1>Just a moment...</h1>
+        <p>Enable JavaScript and cookies to continue</p>
+      </body>
+    </html>
+  `
 
-  await assert.rejects(
-    coupa.createCoupaSoftwareIncScraper().run({
+  const jobs = await coupa.createCoupaSoftwareIncScraper().run({
       fetchText: async (url) => {
         throw new Error(`HTTP 403 for ${url}`)
       },
-    }),
-    /HTTP 403 for https:\/\/careers\.coupa\.com\/en\/jobs\//i,
-  )
+      fetchPage: async (url) => ({
+        status: 403,
+        url,
+        headers: {
+          server: 'cloudflare',
+          'cf-ray': 'abc123',
+          'cf-mitigated': 'challenge',
+        },
+        html: verifiedChallengeHtml,
+      }),
+    })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('Coupa Software Inc fails closed when the verified jobs shell changes materially', async () => {
