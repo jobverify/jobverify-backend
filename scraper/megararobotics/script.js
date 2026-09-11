@@ -17,7 +17,7 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const HOMEPAGE_SIGNAL_PATTERNS = [
-  /<title>\s*Megara Robotics \| Intelligent Robotics Solutions\s*<\/title>/i,
+  /<title>\s*Megara Robotics(?: \| Intelligent Robotics Solutions)?\s*<\/title>/i,
   /href="\/megaraLogo\.png"/i,
   /hero-poster_kgvbtu\.webp/i,
   /<div id="root"><\/div>/i,

@@ -30,6 +30,14 @@ const ADMIN_ROLES = ["user", "admin"];
 const JOB_STATUSES = ["active", "expired", "hidden"];
 const MANAGED_ACCESS_ROLES = Object.values(ACCESS_ROLES);
 const SCRAPER_STATUS_SEED_WINDOW_MS = 5 * 60 * 1000;
+const ADMIN_USER_PRIVATE_FIELD_EXCLUSIONS = [
+  "-password",
+  "-resetPasswordTokenHash",
+  "-resetPasswordExpiresAt",
+  "-passwordChangedAt",
+  "-sessionVersion",
+  "-__v",
+].join(" ");
 const REMEDIATED_LEGACY_FAILURE_SIGNATURES = new Map([
   ["accelyasolutionsindialimited", [/HTTP 400 .*accelya\.wd103\.myworkdayjobs\.com/i]],
   ["eoxvantage", [/fetchText is not a function/i]],
@@ -406,7 +414,7 @@ export const getUsersTable = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum)
-      .select("-password -__v")
+      .select(ADMIN_USER_PRIVATE_FIELD_EXCLUSIONS)
       .lean()
       .exec();
 
@@ -442,7 +450,10 @@ export const getUserById = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid user ID" });
     }
 
-    const user = await User.findById(req.params.id).select("-password -__v").lean().exec();
+    const user = await User.findById(req.params.id)
+      .select(ADMIN_USER_PRIVATE_FIELD_EXCLUSIONS)
+      .lean()
+      .exec();
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }

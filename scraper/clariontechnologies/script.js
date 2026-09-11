@@ -18,10 +18,6 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-export const ALLOW_INSECURE_TLS_HOSTS = [
-  'jobs.clariontechnologies.co.in',
-]
-
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&amp;/gi, '&')
@@ -41,7 +37,6 @@ export const defaultFetchPage = (url, {
   },
   label: SOURCE,
   timeoutMs: 15000,
-  allowInsecureTlsHosts: ALLOW_INSECURE_TLS_HOSTS,
 })
 
 export const defaultFetchText = async (url, options = {}) => {

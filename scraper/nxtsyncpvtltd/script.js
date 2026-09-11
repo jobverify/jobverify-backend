@@ -83,7 +83,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(page)
   const markup = page.toLowerCase()
 
-  return markup.includes('nxtsync - courses & internships')
+  return normalized.toLowerCase().includes('nxtsync - courses & internships')
     && /\+91\s*63026\s*55033/i.test(normalized)
     && markup.includes('https://lms.nxtsync.in/')
     && markup.includes('https://linkedin.com/company/nxtsync')

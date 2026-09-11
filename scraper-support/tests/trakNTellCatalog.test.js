@@ -30,7 +30,7 @@ const buildCatalogReadyProvider = (catalogEntry) => hydrateProviderCatalogEntry(
   modulePath,
 })
 
-test('Trak N Tell local catalog captures the verified August 14 product and contact surfaces without a public jobs page', async () => {
+test('Trak N Tell local catalog captures the verified September 3 product and contact surfaces without a public jobs page', async () => {
   const { TRAK_N_TELL_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const trakNTell = await loadScriptModule()
   const provider = buildCatalogReadyProvider(TRAK_N_TELL_CATALOG)
@@ -56,14 +56,14 @@ test('Trak N Tell local catalog captures the verified August 14 product and cont
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'trakntell.com')
-  assert.equal(provider.verifiedOn, '2026-08-14')
-  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-09-03')
+  assert.match(provider.verifiedSurfaceSummary, /September 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.trakntell\.com\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.trakntell\.com\/contact-us\//i)
   assert.match(provider.verifiedSurfaceSummary, /Experience India's 1st OEM GPS Vehicle Tracker/i)
   assert.match(provider.verifiedSurfaceSummary, /care@trakntell\.com/i)
   assert.match(provider.verifiedSurfaceSummary, /8010-80-8010/i)
-  assert.match(provider.verifiedSurfaceSummary, /Gurgaon/i)
+  assert.match(provider.verifiedSurfaceSummary, /Gurugram/i)
   assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /trakntell[\\/]jobs\.json$/i)

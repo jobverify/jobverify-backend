@@ -3,30 +3,6 @@ import https from 'node:https'
 
 import { withRetry } from './retry.js'
 
-const CERTIFICATE_ERROR_CODES = new Set([
-  'CERT_HAS_EXPIRED',
-  'ERR_TLS_CERT_ALTNAME_INVALID',
-  'SELF_SIGNED_CERT_IN_CHAIN',
-  'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
-  'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
-])
-
-const matchesHostname = (hostname, matcher) =>
-  hostname === matcher || hostname.endsWith(`.${matcher}`)
-
-const shouldAllowInsecureTls = (url, allowInsecureTlsHosts) => {
-  if (!Array.isArray(allowInsecureTlsHosts) || allowInsecureTlsHosts.length === 0) {
-    return false
-  }
-
-  try {
-    const hostname = new URL(url).hostname.toLowerCase()
-    return allowInsecureTlsHosts.some((value) => matchesHostname(hostname, String(value).toLowerCase()))
-  } catch {
-    return false
-  }
-}
-
 const buildTimeoutError = (url, timeoutMs) => {
   const error = new Error(`Request timed out after ${timeoutMs}ms for ${url}`)
   error.code = 'ETIMEDOUT'
@@ -39,19 +15,10 @@ const buildRedirectError = (url, maxRedirects) => {
   return error
 }
 
-const shouldRetryWithoutTlsVerification = (error) => {
-  const code = String(error?.code || error?.cause?.code || '').trim()
-  const message = String(error?.message || error?.cause?.message || '').trim()
-
-  return CERTIFICATE_ERROR_CODES.has(code)
-    || /Hostname\/IP does not match certificate's altnames/i.test(message)
-}
-
 const requestPageOnce = (url, {
   headers = {},
   timeoutMs = 15000,
   maxRedirects = 5,
-  insecureTls = false,
 } = {}) => new Promise((resolve, reject) => {
   let urlObject
 
@@ -71,7 +38,7 @@ const requestPageOnce = (url, {
       'Accept-Encoding': 'identity',
       ...headers,
     },
-    rejectUnauthorized: isHttps ? !insecureTls : undefined,
+    rejectUnauthorized: isHttps ? true : undefined,
   }, (response) => {
     const status = Number(response.statusCode || 0)
     const redirectLocation = response.headers.location
@@ -89,11 +56,10 @@ const requestPageOnce = (url, {
       const nextUrl = new URL(redirectLocation, urlObject).toString()
       response.resume()
       requestPageOnce(nextUrl, {
-        headers,
-        timeoutMs,
-        maxRedirects: maxRedirects - 1,
-        insecureTls,
-      }).then(resolve, reject)
+      headers,
+      timeoutMs,
+      maxRedirects: maxRedirects - 1,
+    }).then(resolve, reject)
       return
     }
 
@@ -128,29 +94,15 @@ export const fetchPageWithRetry = async (url, {
   headers = {},
   label = 'fetch-page',
   maxRedirects = 5,
-  allowInsecureTlsHosts = [],
 } = {}) => withRetry(async () => {
   try {
     return await requestPageOnce(url, {
       headers,
       timeoutMs,
       maxRedirects,
-      insecureTls: false,
     })
   } catch (error) {
-    if (
-      !shouldAllowInsecureTls(url, allowInsecureTlsHosts)
-      || !shouldRetryWithoutTlsVerification(error)
-    ) {
-      throw error
-    }
-
-    return requestPageOnce(url, {
-      headers,
-      timeoutMs,
-      maxRedirects,
-      insecureTls: true,
-    })
+    throw error
   }
 }, {
   attempts,

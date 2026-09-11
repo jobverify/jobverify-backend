@@ -41,8 +41,8 @@ Create or confirm a `.env` file in the repository root:
 
 ```dotenv
 PORT=5000
-MONGO_URI=<mongodb-connection-string>
-JWT_SECRET=<long-random-secret>
+MONGO_URI=
+JWT_SECRET=
 CORS_ORIGIN=http://localhost:5173,http://localhost:5174
 FRONTEND_ORIGIN=http://localhost:5173
 PUBLIC_API_ORIGIN=http://localhost:5000
@@ -53,12 +53,12 @@ SCRAPER_CONCURRENCY=3
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=465
 SMTP_SECURE=true
-SMTP_USER=jobverify.in@gmail.com
-SMTP_PASS=<google-app-password>
-SMTP_FROM=Jobverify <jobverify.in@gmail.com>
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
 
-GITHUB_PAT=<optional-github-token>
-GITHUB_REPO=<optional-owner/repository>
+GITHUB_PAT=
+GITHUB_REPO=
 ```
 
 Notes:

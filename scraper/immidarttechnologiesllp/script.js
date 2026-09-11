@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { parseJavaScriptLiteral } from '../../scraper-support/utils/safeLiteral.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -147,7 +148,7 @@ export const extractEmbeddedJobs = (bundleJs) => {
   }
 
   const arrayLiteral = script.slice(arrayStart, arrayEnd + 1)
-  const parsed = Function(`return (${arrayLiteral})`)()
+  const parsed = parseJavaScriptLiteral(arrayLiteral)
 
   if (!Array.isArray(parsed) || parsed.length === 0) {
     throw new Error('Immidart embedded first-party job payload no longer contains public openings')

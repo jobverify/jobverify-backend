@@ -203,7 +203,7 @@ test('Rubrik runs through first-party browser-free HTML surfaces and keeps only 
   })
 
   assert.deepEqual(
-    requests,
+    [...requests].sort(),
     [
       'https://www.rubrik.com/company/careers',
       'https://www.rubrik.com/company/careers/departments/people',
@@ -211,7 +211,7 @@ test('Rubrik runs through first-party browser-free HTML surfaces and keeps only 
       'https://www.rubrik.com/company/careers/departments/job.5555555',
       'https://www.rubrik.com/company/careers/departments/product',
       'https://www.rubrik.com/company/careers/departments/job.7540806',
-    ],
+    ].sort(),
   )
   assert.equal(jobs.length, 2)
   assert.deepEqual(

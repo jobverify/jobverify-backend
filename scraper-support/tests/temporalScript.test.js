@@ -69,7 +69,7 @@ test('Temporal validates the verified first-party about page and official Greenh
   assert.equal(temporal.SOURCE, 'temporal')
   assert.equal(temporal.COMPANY, 'Temporal')
   assert.equal(temporal.OFFICIAL_BRAND_NAME, 'Temporal')
-  assert.equal(temporal.VERIFIED_ON, '2026-07-25')
+  assert.equal(temporal.VERIFIED_ON, '2026-09-03')
   assert.equal(temporal.CAREERS_PAGE_URL, 'https://temporal.io/about')
   assert.equal(temporal.GREENHOUSE_BOARD_URL, 'https://job-boards.greenhouse.io/temporaltechnologies')
   assert.equal(

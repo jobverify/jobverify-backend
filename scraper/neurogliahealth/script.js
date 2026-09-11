@@ -329,7 +329,9 @@ export const createNeurogliaHealthScraper = ({ now = () => new Date().toISOStrin
     const generalJobs = await Promise.all(
       generalListings.map(async (listing) => {
         const detailPayload = await fetchJson(buildProfileApiUrl({ slug: listing.slug, context: 'general' }))
-        if (isVerifiedAbsentDetailPayload(detailPayload)) return null
+        if (isVerifiedAbsentDetailPayload(detailPayload)) {
+          throw new Error(`Neuroglia Health detail payload is absent for verified listing ${listing.slug}`)
+        }
 
         return buildNormalizedJob({ listing, context: 'general', detailPayload })
       }),

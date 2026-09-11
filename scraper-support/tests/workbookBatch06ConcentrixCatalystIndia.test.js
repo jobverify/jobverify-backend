@@ -110,7 +110,7 @@ test('Concentrix Catalyst India validates the reviewed exact-company and parent 
   assert.equal(concentrixCatalystIndia.SOURCE, 'concentrixcatalystindia')
   assert.equal(concentrixCatalystIndia.COMPANY, 'Concentrix Catalyst India')
   assert.equal(concentrixCatalystIndia.OFFICIAL_BRAND, 'Concentrix Catalyst')
-  assert.equal(concentrixCatalystIndia.VERIFIED_ON, '2026-08-01')
+  assert.equal(concentrixCatalystIndia.VERIFIED_ON, '2026-09-03')
   assert.equal(
     concentrixCatalystIndia.CAREERS_URL,
     'https://in.linkedin.com/company/concentrix-catalyst',
@@ -129,7 +129,7 @@ test('Concentrix Catalyst India validates the reviewed exact-company and parent 
   )
   assert.match(
     concentrixCatalystIndia.VERIFIED_SURFACE_SUMMARY,
-    /Verified on Saturday, August 1, 2026 that https:\/\/in\.linkedin\.com\/company\/concentrix-catalyst was the live exact-name public company surface/i,
+    /Verified on September 3, 2026 that https:\/\/in\.linkedin\.com\/company\/concentrix-catalyst remained the live exact-name public company surface/i,
   )
   assert.match(
     concentrixCatalystIndia.VERIFIED_SURFACE_SUMMARY,
@@ -137,7 +137,7 @@ test('Concentrix Catalyst India validates the reviewed exact-company and parent 
   )
   assert.match(
     concentrixCatalystIndia.VERIFIED_SURFACE_SUMMARY,
-    /visible result was attributed to the parent Concentrix brand rather than the exact workbook company/i,
+    /visible result data is attributed to the parent Concentrix brand rather than the exact workbook company/i,
   )
   assert.match(
     concentrixCatalystIndia.VERIFIED_SURFACE_SUMMARY,
@@ -146,7 +146,7 @@ test('Concentrix Catalyst India validates the reviewed exact-company and parent 
   assert.equal(concentrixCatalystIndiaCatalog.source, 'concentrixcatalystindia')
   assert.equal(concentrixCatalystIndiaCatalog.companyName, 'Concentrix Catalyst India')
   assert.equal(concentrixCatalystIndiaCatalog.companyCareerPage, concentrixCatalystIndia.CAREERS_URL)
-  assert.equal(concentrixCatalystIndiaCatalog.verifiedOn, '2026-08-01')
+  assert.equal(concentrixCatalystIndiaCatalog.verifiedOn, '2026-09-03')
   assert.equal(
     concentrixCatalystIndiaCatalog.atsPlatform,
     concentrixCatalystIndia.DISPOSITION,
@@ -157,7 +157,7 @@ test('Concentrix Catalyst India validates the reviewed exact-company and parent 
   )
   assert.match(
     concentrixCatalystIndiaCatalog.verifiedSurfaceSummary,
-    /Verified on Saturday, August 1, 2026/i,
+    /Verified on September 3, 2026/i,
   )
 })
 

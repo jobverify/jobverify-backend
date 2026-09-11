@@ -12,8 +12,8 @@ const USER_AGENT =
 
 const OFFICIAL_BRAND_PATTERN = /<title>\s*Careers at Uptiq\s*\|\s*Join AI in Financial Services\s*<\/title>/i
 const CAREERS_PAGE_PATTERN = /Careers at Uptiq/i
-const ROLE_FAMILY_PATTERN = /View Open Roles/i
-const CAREER_FORM_PATTERN = /id=["']wf-form-Career-Form["']/i
+const ROLE_FAMILY_PATTERN = /Open Roles - USA & India/i
+const CAREER_FORM_PATTERN = /mailto:careers@uptiq\.ai/i
 const PUBLIC_JOB_BOARD_PATTERN =
   /jobs\.lever\.co|boards\.greenhouse\.io|ashbyhq\.com|workable\.com|smartrecruiters|job-boards\.greenhouse\.io|myworkdayjobs|job openings\/search|\/jobs\/[a-z0-9-]+/i
 

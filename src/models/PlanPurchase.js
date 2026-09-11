@@ -114,12 +114,20 @@ PlanPurchaseSchema.index(
   },
 );
 
+const hideInternalPurchaseFields = (_doc, ret) => {
+  delete ret.providerSignature;
+  delete ret.metadata;
+  delete ret.__v;
+  if (ret._id) ret.id = ret._id;
+  return ret;
+};
+
 PlanPurchaseSchema.set("toJSON", {
-  transform: (_doc, ret) => {
-    delete ret.__v;
-    if (ret._id) ret.id = ret._id;
-    return ret;
-  },
+  transform: hideInternalPurchaseFields,
+});
+
+PlanPurchaseSchema.set("toObject", {
+  transform: hideInternalPurchaseFields,
 });
 
 const PlanPurchase = model("PlanPurchase", PlanPurchaseSchema);

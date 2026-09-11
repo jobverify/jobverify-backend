@@ -97,8 +97,8 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return page.includes('<title>Loco: Go all in on live streaming</title>')
-    && normalized.includes('Loco: Go all in on live streaming')
+  return /<title>\s*Loco:\s*(?:Go all in on live streaming|Free Online Gaming, Esports Tournaments &amp; Live Streaming)\s*<\/title>/i.test(page)
+    && /Loco:\s*(?:Go all in on live streaming|Free Online Gaming, Esports Tournaments (?:&|&amp;) Live Streaming)/i.test(normalized)
     && /static\.loco\.gg\/next-assets/i.test(page)
   }
 

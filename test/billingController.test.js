@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import test from "node:test";
 
+import PlanPurchase from "../src/models/PlanPurchase.js";
 import ReferralCode from "../src/models/ReferralCode.js";
 import ReferralRedemption from "../src/models/ReferralRedemption.js";
 
@@ -17,6 +18,8 @@ const createResponseDouble = () => ({
     return this;
   },
 });
+
+const serializePayload = (payload) => JSON.parse(JSON.stringify(payload));
 
 test("cancelPlan returns free access after a successful cancellation", async () => {
   const controller = await import(`../src/controllers/billingController.js?case=cancel-success-${Date.now()}`);
@@ -242,6 +245,50 @@ test("createPlanCheckout preserves marked provider authentication failures as sa
   assert.equal(res.body.message, "Payment provider authentication failed.");
 });
 
+test("createPlanCheckout does not expose stored payment signature or metadata", async () => {
+  const controller = await import(`../src/controllers/billingController.js?case=checkout-redact-purchase-${Date.now()}`);
+  const createPlanCheckout = controller.createPlanCheckoutHandler(async () => ({
+    purchase: {
+      _id: "purchase_1",
+      planId: "monthly",
+      accessRole: "monthly_premium_user",
+      amount: 199,
+      currency: "INR",
+      status: "pending",
+      provider: "razorpay",
+      providerOrderId: "order_1",
+      providerPaymentId: null,
+      providerSignature: "a".repeat(64),
+      metadata: {
+        checkout: {
+          keyId: "razorpay_internal_key",
+          order: { id: "order_1" },
+        },
+      },
+      __v: 0,
+    },
+    checkout: {
+      keyId: "rzp_live_public",
+      order: { id: "order_1" },
+    },
+  }));
+  const res = createResponseDouble();
+
+  await createPlanCheckout(
+    { user: { _id: "user_1" }, body: { planId: "monthly" } },
+    res,
+  );
+
+  const publicBody = serializePayload(res.body);
+
+  assert.equal(res.statusCode, 201);
+  assert.equal(publicBody.data.purchase.providerOrderId, "order_1");
+  assert.equal(publicBody.data.purchase.providerSignature, undefined);
+  assert.equal(publicBody.data.purchase.metadata, undefined);
+  assert.equal(publicBody.data.purchase.__v, undefined);
+  assert.equal(publicBody.data.checkout.keyId, "rzp_live_public");
+});
+
 test("verifyPlanCheckout hides unexpected verification failures behind a generic 500", async () => {
   const controller = await import(`../src/controllers/billingController.js?case=verify-server-error-${Date.now()}`);
   const rawErrorMessage = "Razorpay secret is not configured.";
@@ -293,6 +340,56 @@ test("verifyPlanCheckout preserves safe 400 verification failures", async () => 
   assert.equal(res.statusCode, 400);
   assert.equal(res.body.code, 400);
   assert.equal(res.body.message, "Payment verification failed.");
+});
+
+test("verifyPlanCheckout does not expose stored payment signature or metadata", async () => {
+  const controller = await import(`../src/controllers/billingController.js?case=verify-redact-purchase-${Date.now()}`);
+  const purchase = new PlanPurchase({
+    user: "507f1f77bcf86cd799439011",
+    planId: "monthly",
+    accessRole: "monthly_premium_user",
+    amount: 199,
+    currency: "INR",
+    status: "paid",
+    provider: "razorpay",
+    providerOrderId: "order_1",
+    providerPaymentId: "payment_1",
+    providerSignature: "a".repeat(64),
+    metadata: {
+      checkout: {
+        keyId: "razorpay_internal_key",
+        order: { id: "order_1" },
+      },
+      internalNote: "not-for-clients",
+    },
+  });
+  const verifyPlanCheckout = controller.verifyPlanCheckoutHandler(async () => ({
+    purchase,
+    access: { planId: "monthly", isPremium: true },
+    user: { accessRole: "monthly_premium_user" },
+  }));
+  const res = createResponseDouble();
+
+  await verifyPlanCheckout(
+    {
+      user: { _id: "507f1f77bcf86cd799439011" },
+      body: {
+        purchaseId: String(purchase._id),
+        providerOrderId: "order_1",
+        providerPaymentId: "payment_1",
+        providerSignature: "a".repeat(64),
+      },
+    },
+    res,
+  );
+
+  const publicBody = serializePayload(res.body);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(publicBody.data.purchase.providerOrderId, "order_1");
+  assert.equal(publicBody.data.purchase.providerPaymentId, "payment_1");
+  assert.equal(publicBody.data.purchase.providerSignature, undefined);
+  assert.equal(publicBody.data.purchase.metadata, undefined);
 });
 
 test("verifyPlanCheckout does not expose arbitrary upstream errors tagged 400", async () => {

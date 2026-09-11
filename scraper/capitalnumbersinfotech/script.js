@@ -27,9 +27,15 @@ const normalizeWhitespace = (value) => String(value ?? '')
 export const hasOfficialCareersSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
-  return /<title>Careers at Capital Numbers \| Explore Current Opportunities<\/title>/i.test(rawHtml)
+  return (
+    /<title>Careers at Capital Numbers \| Explore Current Opportunities<\/title>/i.test(rawHtml)
+    || normalized.includes('Build Your Career with Capital Numbers')
+  )
     && normalized.includes('Capital Numbers')
-    && normalized.includes('Explore Current Opportunities')
+    && (
+      normalized.includes('Explore Current Opportunities')
+      || normalized.includes('See Current Openings')
+    )
     && (normalized.includes('jobs@capitalnumbers.com') || /mailto:jobs@capitalnumbers\.com/i.test(rawHtml))
   }
 
@@ -93,17 +99,11 @@ export const createCapitalNumbersInfotechScraper = () => ({
       throw new Error('Capital Numbers Infotech careers page no longer matches the verified first-party surface')
     }
 
-    if (!hasPublicJobListingSignal(careersHtml)) {
-      throw new Error('Capital Numbers Infotech public job listings changed materially')
+    if (hasPublicJobListingSignal(careersHtml)) {
+      throw new Error('Capital Numbers Infotech now exposes public job listings; review before publishing')
     }
 
-    const scrapedAt = new Date().toISOString()
-    return extractJobs(careersHtml).map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl,
-      scrapedAt,
-    }))
+    return []
   },
 })
 

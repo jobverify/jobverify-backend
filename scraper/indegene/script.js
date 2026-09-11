@@ -165,7 +165,7 @@ const requestIndegeneText = (
   const request = transport.request(urlObject, {
     method,
     headers: requestHeaders,
-    rejectUnauthorized: urlObject.protocol === 'https:' ? false : undefined,
+    rejectUnauthorized: urlObject.protocol === 'https:' ? true : undefined,
   }, (response) => {
     const status = Number(response.statusCode || 0)
     const location = response.headers.location

@@ -126,7 +126,6 @@ const defaultFetchText = async (url) => {
     },
     label: SOURCE,
     timeoutMs: 15000,
-    allowInsecureTlsHosts: ['madisonindia.com'],
   })
 
   return page.html

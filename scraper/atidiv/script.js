@@ -122,7 +122,6 @@ const defaultFallbackFetchText = async (url) => {
     },
     label: `${SOURCE}-fallback`,
     timeoutMs: 20000,
-    allowInsecureTlsHosts: ['atidiv.com'],
   })
 
   if (response.status < 200 || response.status >= 300) {

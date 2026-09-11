@@ -55,7 +55,9 @@ export const hasVerifiedOpeningsSignal = (html = '') => {
   return /<title>\s*IT Companies in Pune for Freshers \| Experience\s*<\/title>/i.test(String(html ?? ''))
     && normalized.includes('Current Openings')
     && normalized.includes('ta@iprogrammer.co')
-    && normalized.includes('AI Practice Head')
+    && normalized.includes('DevOps Engineer')
+    && normalized.includes('Odoo QA Engineer')
+    && normalized.includes('Lead NodeJS Engineer')
     && normalized.includes('ReactJS Developer')
 }
 

@@ -12,9 +12,10 @@ const careersHtml = `
 
 const featuredHtml = `
 <!doctype html>
-<html><body>
+<html><head><title>Careers | Clarion Technologies</title></head><body>
   <h1>Featured Jobs</h1>
   <a href="https://www.clariontech.com/open-position-detail?jobid=2674">SQL Database Developer</a>
+  <a href="https://www.clariontech.com/open-position-detail?jobid=2674">Apply Now</a>
   <a href="https://www.clariontech.com/open-positions">View All Openings</a>
 </body></html>
 `
@@ -34,7 +35,7 @@ test('Clarion Technologies validators stay pinned to the verified featured-jobs 
   assert.equal(clarion.VERIFIED_ON, '2026-08-07')
 })
 
-test('Clarion Technologies default fetch page keeps the insecure TLS retry scoped to the verified iframe host', async () => {
+test('Clarion Technologies default fetch page keeps verified TLS and scraper headers for the iframe host', async () => {
   const clarion = await loadModule()
   let capturedUrl = null
   let capturedOptions = null
@@ -48,7 +49,7 @@ test('Clarion Technologies default fetch page keeps the insecure TLS retry scope
   })
 
   assert.equal(capturedUrl, clarion.FEATURED_JOBS_URL)
-  assert.deepEqual(capturedOptions.allowInsecureTlsHosts, ['jobs.clariontechnologies.co.in'])
+  assert.equal(Object.hasOwn(capturedOptions, 'allowInsecureTlsHosts'), false)
   assert.equal(capturedOptions.label, 'clariontechnologies')
   assert.match(capturedOptions.headers['User-Agent'], /Mozilla\/5\.0/)
 })

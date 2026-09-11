@@ -57,7 +57,7 @@ export const hasOfficialCareersSignal = (html = '') => {
   return /<title>\s*Career Opportunities\s*<\/title>/i.test(page)
     && /class=["']jobsList\b/i.test(page)
     && /Director - Open Source/i.test(page)
-    && /Solution Architect - Artificial Intelligence/i.test(page)
+    && /AI Architect - Artificial Intelligence/i.test(page)
     && /Intern - Software Engineering/i.test(page)
   }
 

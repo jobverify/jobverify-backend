@@ -4,15 +4,19 @@ import mongoose from "mongoose";
 
 import User from "../src/models/User.js";
 import Job from "../src/models/Job.js";
+import Click from "../src/models/Click.js";
 import JobDatasetSummary from "../src/models/JobDatasetSummary.js";
 import AdminAudit from "../src/models/AdminAudit.js";
 import ScraperRun from "../src/models/ScraperRun.js";
 import ScraperStatus from "../src/models/ScraperStatus.js";
+import Subscription from "../src/models/Subscription.js";
 import {
   ACCESS_ROLES,
   PLAN_IDS,
 } from "../src/constants/accessPlans.js";
 import {
+  getUserById,
+  getUsersTable,
   getScrapeStatus,
   triggerScrapeAdmin,
   updateJobStatus,
@@ -57,6 +61,17 @@ const setReadyState = (value) => {
 
     delete mongoose.connection.readyState;
   };
+};
+
+const applyTopLevelExclusionSelect = (record, selectValue) => {
+  const selected = { ...record };
+  String(selectValue || "")
+    .split(/\s+/u)
+    .filter((field) => field.startsWith("-"))
+    .forEach((field) => {
+      delete selected[field.slice(1)];
+    });
+  return selected;
 };
 
 const getDiskBackedCatalogSources = () => getDiskBackedScraperSources({
@@ -166,6 +181,122 @@ test("updateUserAccess lets an admin set a premium plan with a manual expiry ove
   } finally {
     User.findById = originalFindById;
     AdminAudit.create = originalAdminAuditCreate;
+  }
+});
+
+test("getUsersTable omits password reset internals from admin list payloads", async () => {
+  const originalCountDocuments = User.countDocuments;
+  const originalFind = User.find;
+  const originalSubscriptionFind = Subscription.find;
+
+  const sensitiveUser = {
+    _id: "507f1f77bcf86cd799439011",
+    email: "managed-user@example.com",
+    role: "user",
+    accessRole: ACCESS_ROLES.FREE,
+    profile: { name: "Managed User" },
+    resetPasswordTokenHash: "stored-reset-token-hash",
+    resetPasswordExpiresAt: new Date("2026-12-31T00:00:00.000Z"),
+    passwordChangedAt: new Date("2026-06-01T00:00:00.000Z"),
+    sessionVersion: 4,
+    __v: 0,
+  };
+  let selectValue = "";
+
+  User.countDocuments = async () => 1;
+  User.find = () => ({
+    sort() { return this; },
+    skip() { return this; },
+    limit() { return this; },
+    select(value) {
+      selectValue = value;
+      return this;
+    },
+    lean() { return this; },
+    exec: async () => [applyTopLevelExclusionSelect(sensitiveUser, selectValue)],
+  });
+  Subscription.find = () => ({
+    lean() {
+      return { exec: async () => [] };
+    },
+  });
+
+  try {
+    const res = createResponseDouble();
+
+    await getUsersTable({ query: {} }, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.data[0].email, "managed-user@example.com");
+    assert.equal(res.body.data[0].resetPasswordTokenHash, undefined);
+    assert.equal(res.body.data[0].resetPasswordExpiresAt, undefined);
+    assert.equal(res.body.data[0].passwordChangedAt, undefined);
+    assert.equal(res.body.data[0].sessionVersion, undefined);
+  } finally {
+    User.countDocuments = originalCountDocuments;
+    User.find = originalFind;
+    Subscription.find = originalSubscriptionFind;
+  }
+});
+
+test("getUserById omits password reset internals from admin detail payloads", async () => {
+  const originalFindById = User.findById;
+  const originalSubscriptionFindOne = Subscription.findOne;
+  const originalClickFind = Click.find;
+
+  const sensitiveUser = {
+    _id: "507f1f77bcf86cd799439011",
+    email: "managed-user@example.com",
+    role: "user",
+    accessRole: ACCESS_ROLES.FREE,
+    profile: { name: "Managed User" },
+    resetPasswordTokenHash: "stored-reset-token-hash",
+    resetPasswordExpiresAt: new Date("2026-12-31T00:00:00.000Z"),
+    passwordChangedAt: new Date("2026-06-01T00:00:00.000Z"),
+    sessionVersion: 4,
+    __v: 0,
+  };
+  let selectValue = "";
+
+  User.findById = () => ({
+    select(value) {
+      selectValue = value;
+      return this;
+    },
+    lean() { return this; },
+    exec: async () => applyTopLevelExclusionSelect(sensitiveUser, selectValue),
+  });
+  Subscription.findOne = () => ({
+    lean() {
+      return { exec: async () => null };
+    },
+  });
+  Click.find = () => ({
+    sort() { return this; },
+    limit() { return this; },
+    populate() { return this; },
+    lean() { return this; },
+    exec: async () => [],
+  });
+
+  try {
+    const res = createResponseDouble();
+
+    await getUserById(
+      { params: { id: "507f1f77bcf86cd799439011" } },
+      res,
+    );
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.data.email, "managed-user@example.com");
+    assert.equal(res.body.data.resetPasswordTokenHash, undefined);
+    assert.equal(res.body.data.resetPasswordExpiresAt, undefined);
+    assert.equal(res.body.data.passwordChangedAt, undefined);
+    assert.equal(res.body.data.sessionVersion, undefined);
+  } finally {
+    User.findById = originalFindById;
+    Subscription.findOne = originalSubscriptionFindOne;
+    Click.find = originalClickFind;
   }
 });
 

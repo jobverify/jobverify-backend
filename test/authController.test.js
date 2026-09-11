@@ -481,11 +481,11 @@ test("authenticateWithGoogle replaces an email placeholder with the Google accou
 
   const existingUser = {
     _id: "user-1",
-    email: "student@example.com",
+    email: "student@gmail.com",
     role: "user",
     accessRole: "free",
     google: { sub: null, picture: null, linkedAt: null },
-    profile: { name: "student@example.com" },
+    profile: { name: "student@gmail.com" },
     premium: { planId: "free", status: "inactive", expiresAt: null, whatsappAlertsEnabled: false },
     onboardingCompleted: false,
     deactivated: false,
@@ -496,7 +496,7 @@ test("authenticateWithGoogle replaces an email placeholder with the Google accou
   };
 
   googleIdentity.verifyCredential = async () => ({
-    email: " Student@Example.com ",
+    email: " Student@Gmail.com ",
     emailVerified: true,
     name: "Student User",
     picture: "https://example.com/avatar.png",
@@ -520,7 +520,7 @@ test("authenticateWithGoogle replaces an email placeholder with the Google accou
 
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.success, true);
-    assert.equal(res.body.user.email, "student@example.com");
+    assert.equal(res.body.user.email, "student@gmail.com");
     assert.equal(existingUser.profile.name, "Student User");
     assert.equal(existingUser.google.sub, "google-sub-123");
     assert.equal(existingUser.google.picture, "https://example.com/avatar.png");
@@ -547,7 +547,7 @@ test("authenticateWithGoogle promotes a matching pending registration into a ver
 
   const pendingPassword = await bcrypt.hash("StrongerPass123", 10);
   const pendingUser = {
-    email: "student@example.com",
+    email: "student@gmail.com",
     password: pendingPassword,
     profile: { name: "Student", phoneE164: "+919876543210" },
   };
@@ -556,7 +556,7 @@ test("authenticateWithGoogle promotes a matching pending registration into a ver
   let savedUser = null;
 
   googleIdentity.verifyCredential = async () => ({
-    email: "student@example.com",
+    email: "student@gmail.com",
     emailVerified: true,
     name: "Google Student",
     picture: "https://example.com/avatar.png",
@@ -585,12 +585,12 @@ test("authenticateWithGoogle promotes a matching pending registration into a ver
     );
 
     assert.equal(res.statusCode, 200);
-    assert.equal(savedUser.email, "student@example.com");
+    assert.equal(savedUser.email, "student@gmail.com");
     assert.equal(savedUser.password, pendingPassword);
     assert.equal(savedUser.contact.phoneE164, "+919876543210");
     assert.equal(savedUser.google.sub, "google-sub-456");
     assert.equal(savedUser.isVerified, true);
-    assert.deepEqual(deletedFilter, { email: "student@example.com" });
+    assert.deepEqual(deletedFilter, { email: "student@gmail.com" });
     assert.equal(res.clearedCookies.length, 1);
   } finally {
     process.env.JWT_SECRET = originalJwtSecret;
@@ -614,7 +614,7 @@ test("authenticateWithGoogle creates a verified user when no account exists yet"
   let savedUser = null;
 
   googleIdentity.verifyCredential = async () => ({
-    email: "student@example.com",
+    email: "student@gmail.com",
     emailVerified: true,
     name: "Google Student",
     picture: null,
@@ -639,7 +639,7 @@ test("authenticateWithGoogle creates a verified user when no account exists yet"
     );
 
     assert.equal(res.statusCode, 200);
-    assert.equal(savedUser.email, "student@example.com");
+    assert.equal(savedUser.email, "student@gmail.com");
     assert.equal(savedUser.password, null);
     assert.equal(savedUser.profile.name, "Google Student");
     assert.equal(savedUser.google.sub, "google-sub-789");
@@ -658,14 +658,14 @@ test("authenticateWithGoogle rejects deactivated users", async () => {
   const originalUserFindOne = User.findOne;
 
   googleIdentity.verifyCredential = async () => ({
-    email: "student@example.com",
+    email: "student@gmail.com",
     emailVerified: true,
     name: "Google Student",
     picture: null,
     sub: "google-sub-789",
   });
   User.findOne = async () => ({
-    email: "student@example.com",
+    email: "student@gmail.com",
     deactivated: true,
     google: { sub: null, picture: null, linkedAt: null },
   });
@@ -820,14 +820,14 @@ test("authenticateWithGoogle rejects accounts already linked to a different Goog
   const originalUserFindOne = User.findOne;
 
   googleIdentity.verifyCredential = async () => ({
-    email: "student@example.com",
+    email: "student@gmail.com",
     emailVerified: true,
     name: "Google Student",
     picture: null,
     sub: "new-google-sub",
   });
   User.findOne = async () => ({
-    email: "student@example.com",
+    email: "student@gmail.com",
     deactivated: false,
     google: { sub: "old-google-sub", picture: null, linkedAt: new Date() },
   });

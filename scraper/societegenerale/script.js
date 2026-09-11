@@ -14,6 +14,7 @@ const COMPANY_NAME = 'Societe Generale'
 const SOURCE = 'societegenerale'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const DEFAULT_DETAIL_CONCURRENCY = 12
 
 const CONTRACT_PATTERNS = [
   'Apprenticeship',
@@ -87,6 +88,36 @@ const extractFirst = (pattern, value, transform = (match) => match[1]) => {
 }
 
 const extractLocationCity = (location) => normalizeWhitespace(location)?.split(',')[0] || null
+
+const resolvePositiveInteger = (value, fallback) => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback
+}
+
+const throwIfAborted = (signal) => {
+  if (!signal?.aborted) return
+  throw signal.reason || new DOMException('The operation was aborted', 'AbortError')
+}
+
+const mapWithConcurrency = async (items, limit, iteratee) => {
+  const concurrency = Math.max(1, Number.isInteger(limit) ? limit : 1)
+  const results = new Array(items.length)
+  let cursor = 0
+
+  const worker = async () => {
+    while (cursor < items.length) {
+      const currentIndex = cursor
+      cursor += 1
+      results[currentIndex] = await iteratee(items[currentIndex], currentIndex)
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, () => worker()),
+  )
+
+  return results
+}
 
 const normalizeEmploymentType = (contractType) => {
   const normalized = normalizeWhitespace(contractType)?.toLowerCase() || ''
@@ -241,42 +272,47 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
+  signal,
   timeoutMs: 15000,
 })
 
 export const createSocieteGeneraleScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+  detailConcurrency = resolvePositiveInteger(config.detailConcurrency, DEFAULT_DETAIL_CONCURRENCY),
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
     const limit = Number.isInteger(options.maxJobs) ? options.maxJobs : maxJobs
-    const listings = extractSearchResults(await fetchText(CAREER_PAGE_URL))
+    const signal = options.signal
+    const listings = extractSearchResults(await fetchText(CAREER_PAGE_URL, { signal }))
     const selected = limit ? listings.slice(0, limit) : listings
-    const jobs = []
 
-    for (const listing of selected) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const detail = extractJobDetail(detailHtml, listing)
-      jobs.push({
-        ...listing,
-        ...detail,
-        source: SOURCE,
-        link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
-        scrapedAt: new Date().toISOString(),
-      })
-    }
-
-    return jobs
+    return mapWithConcurrency(
+      selected,
+      resolvePositiveInteger(detailConcurrency, DEFAULT_DETAIL_CONCURRENCY),
+      async (listing) => {
+        throwIfAborted(signal)
+        const detailHtml = await fetchText(listing.sourceUrl, { signal })
+        const detail = extractJobDetail(detailHtml, listing)
+        return {
+          ...listing,
+          ...detail,
+          source: SOURCE,
+          link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
+          scrapedAt: new Date().toISOString(),
+        }
+      },
+    )
   },
 })
 
-export const run = async () => createSocieteGeneraleScraper().run()
+export const run = async (options = {}) => createSocieteGeneraleScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

@@ -59,8 +59,10 @@ export const pageIndicatesWhiteMatrixCompany = (html) => {
 export const jobsPageShowsZeroResults = (html) => {
   const normalized = normalizeWhitespace(html)?.toLowerCase() || ''
 
-  return normalized.includes('jobs jobs at whitematrix in united states')
-    && normalized.includes('urltype=jserp_custom')
+  return (
+    normalized.includes('jobs jobs at whitematrix in united states')
+    || /\b0 jobs jobs in united states\b/i.test(normalized)
+  )
     && !guestJobsApiShowsListings(html)
 }
 

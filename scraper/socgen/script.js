@@ -7,6 +7,7 @@ import {
   extractJobDetail,
   extractSearchResults,
 } from '../societegenerale/script.js'
+import { composeAbortSignals } from '../../scraper-support/utils/fetch.js'
 
 import { SOCGEN_CATALOG } from './catalog.js'
 
@@ -14,6 +15,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const FETCH_TIMEOUT_MS = 15000
 
 export const PROVIDER_METADATA = SOCGEN_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
@@ -32,13 +34,24 @@ const SIGNAL_PATTERNS = [
   /Chennai,\s*India/i,
 ]
 
-const defaultFetchPage = async (url) => {
+const createTimeoutSignal = (timeoutMs) => {
+  if (typeof AbortSignal?.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs)
+  }
+
+  const controller = new AbortController()
+  setTimeout(() => controller.abort(), timeoutMs)
+  return controller.signal
+}
+
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
+    signal: composeAbortSignals(signal, createTimeoutSignal(FETCH_TIMEOUT_MS)),
   })
 
   return {
@@ -80,8 +93,9 @@ export const createSocGenScraper = ({
   async run({
     fetchPage = defaultFetchPage,
     fetchText,
+    signal = undefined,
   } = {}) {
-    const careersPage = await fetchPage(CAREERS_URL)
+    const careersPage = await fetchPage(CAREERS_URL, { signal })
     if (
       Number(careersPage?.status) !== 200
       || String(careersPage?.url ?? '') !== CAREERS_URL
@@ -90,7 +104,7 @@ export const createSocGenScraper = ({
       throw new Error('SocGen verified SocGen careers page no longer matches the pinned public Societe Generale surface')
     }
 
-    const jobs = await createSocieteGeneraleScraper({ maxJobs }).run({ fetchText })
+    const jobs = await createSocieteGeneraleScraper({ maxJobs }).run({ fetchText, signal })
     const scrapedAt = now()
     return jobs.map((job) => decorateSocGenJob(job, scrapedAt))
   },

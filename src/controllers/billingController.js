@@ -22,6 +22,24 @@ import {
 } from "../services/paymentProvider.js";
 import { respondWithInternalError } from "../utils/respondWithInternalError.js";
 
+const toPublicPurchase = (purchase) => {
+  if (!purchase) return purchase;
+
+  const rawPurchase = typeof purchase.toJSON === "function"
+    ? purchase.toJSON()
+    : typeof purchase.toObject === "function"
+      ? purchase.toObject()
+      : { ...purchase };
+
+  delete rawPurchase.providerSignature;
+  delete rawPurchase.metadata;
+  delete rawPurchase.__v;
+  if (rawPurchase._id && !rawPurchase.id) {
+    rawPurchase.id = rawPurchase._id;
+  }
+  return rawPurchase;
+};
+
 export const getBillingPlans = async (_req, res) => {
   res.status(200).json({
     code: 200,
@@ -43,7 +61,7 @@ export const createPlanCheckoutHandler = (checkoutService) => async (req, res) =
       success: true,
       message: "Checkout created successfully.",
       data: {
-        purchase: result.purchase,
+        purchase: toPublicPurchase(result.purchase),
         checkout: result.checkout,
       },
     });
@@ -114,7 +132,7 @@ export const verifyPlanCheckoutHandler = (verifyPurchase) => async (req, res) =>
         ? "Purchase was already activated."
         : "Purchase verified and activated successfully.",
       data: {
-        purchase: result.purchase,
+        purchase: toPublicPurchase(result.purchase),
         access: result.access,
         accessRole: result.user.accessRole,
       },

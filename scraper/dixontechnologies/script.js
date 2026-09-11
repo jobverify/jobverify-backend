@@ -124,7 +124,7 @@ const fetchTextIgnoringTlsErrors = (url, {
   const request = requestImpl.request(parsedUrl, {
     method: 'GET',
     headers,
-    rejectUnauthorized: false,
+    rejectUnauthorized: true,
   }, (response) => {
     const status = Number(response.statusCode) || 0
     const location = response.headers?.location

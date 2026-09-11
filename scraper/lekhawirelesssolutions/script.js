@@ -232,7 +232,7 @@ export const createLekhaWirelessSolutionsScraper = ({ now = () => new Date().toI
       browserSessionOptions: {
         timeoutMs: 90000,
         settleTimeMs: 12000,
-        ignoreHTTPSErrors: true,
+        ignoreHTTPSErrors: false,
       },
       shouldUseBrowserFallback: (error) =>
         defaultShouldUseBrowserNetworkFallback(error)

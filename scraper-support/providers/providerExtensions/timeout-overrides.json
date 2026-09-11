@@ -1,6 +1,14 @@
 [
   {
     "source": "accenture",
-    "scraperTimeoutMs": 300000
+    "scraperTimeoutMs": 1200000
+  },
+  {
+    "source": "cadence",
+    "scraperTimeoutMs": 1200000
+  },
+  {
+    "source": "mastercard",
+    "scraperTimeoutMs": 1200000
   }
 ]

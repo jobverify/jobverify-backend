@@ -32,3 +32,12 @@ test('scraper workflow runs the scraper with system CA support enabled', () => {
 
   assert.match(workflow, /NODE_OPTIONS:\s*['"]--use-system-ca['"]/)
 })
+
+test('scraper workflow bounds the job and per-source public enrichment budgets', () => {
+  const workflow = readScraperWorkflow()
+
+  assert.match(workflow, /\n\s+scrape:\s*\n(?:.*\n)*?\s+timeout-minutes:\s*150/)
+  assert.match(workflow, /SCRAPER_SOURCE_LIFECYCLE_TIMEOUT_MS:\s*['"]1800000['"]/)
+  assert.match(workflow, /PUBLIC_EXPERIENCE_FETCH_TIMEOUT_MS:\s*['"]15000['"]/)
+  assert.match(workflow, /PDF_TEXT_EXTRACTION_TIMEOUT_MS:\s*['"]30000['"]/)
+})

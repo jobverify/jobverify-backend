@@ -108,7 +108,7 @@ const insecureFetchText = (
   const request = https.request(url, {
     method: 'GET',
     headers,
-    rejectUnauthorized: false,
+    rejectUnauthorized: true,
   }, (response) => {
     const statusCode = Number(response.statusCode || 0)
     const location = response.headers.location

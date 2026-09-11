@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { parseJavaScriptLiteral } from '../../scraper-support/utils/safeLiteral.js'
 import { withRetry } from '../../scraper-support/utils/retry.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -247,7 +248,7 @@ const extractJobsArrayLiteral = (chunkText) => {
 
 export const parseJobsBundle = (chunkText) => {
   const literal = extractJobsArrayLiteral(chunkText)
-  const roles = Function(`"use strict"; return (${literal});`)()
+  const roles = parseJavaScriptLiteral(literal)
 
   if (!Array.isArray(roles) || roles.length === 0) {
     throw new Error('Celebal first-party jobs bundle no longer exposes any roles')

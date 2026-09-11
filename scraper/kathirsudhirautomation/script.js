@@ -109,8 +109,10 @@ export const hasOfficialCareersSignal = (html) => {
   const text = stripTags(page).toLowerCase()
 
   return /<title>\s*Career opportunities in Electronics Core Company in Chennai\s*<\/title>/i.test(page)
-    && text.includes('kathir sudhir automation india pvt ltd')
-    && text.includes('electronics instruments manufacturer')
+    && text.includes('electronics core company jobs')
+    && /hr@kathirsudhirautomation\.com/i.test(page)
+    && /Job Title:/i.test(page)
+    && /apply here/i.test(page)
 }
 
 const JOB_SECTION_PATTERN =

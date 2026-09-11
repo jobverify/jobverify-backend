@@ -231,3 +231,66 @@ test('run enriches PwC jobs from provider detail APIs before falling back to ren
   assert.match(darwinboxJob.jobDescription || '', /agentic workflows/i)
   assert.equal(darwinboxJob.publicExperienceChecked, true)
 })
+
+test('run bounds PwC detail enrichment while returning every parsed job', async () => {
+  const { buildSearchUrl, createPwcScraper } = await loadPwcModule()
+  const searchHtml = `
+    <!-- DBDATA -->
+    var dbdata = [
+      {
+        "jobid":"job-a",
+        "reqid":"JobA",
+        "title":"A Advisory Associate",
+        "location":"Bangalore",
+        "los":"Advisory",
+        "apply":"https://pwc.darwinbox.com/ms/candidatev2/main/careers/jobDetails/job-a"
+      },
+      {
+        "jobid":"job-b",
+        "reqid":"JobB",
+        "title":"B Advisory Associate",
+        "location":"Mumbai",
+        "los":"Advisory",
+        "apply":"https://pwc.darwinbox.com/ms/candidatev2/main/careers/jobDetails/job-b"
+      },
+      {
+        "jobid":"job-c",
+        "reqid":"JobC",
+        "title":"C Advisory Associate",
+        "location":"Kolkata",
+        "los":"Advisory",
+        "apply":"https://pwc.darwinbox.com/ms/candidatev2/main/careers/jobDetails/job-c"
+      }
+    ] ;
+  `
+  const detailApiRequests = []
+  const scraper = createPwcScraper({ detailMaxJobs: 1 })
+
+  const jobs = await scraper.run({
+    fetchText: async (url) => {
+      if (url === buildSearchUrl()) return searchHtml
+      throw new Error(`Unexpected rendered PwC detail URL: ${url}`)
+    },
+    fetchDetailText: async (url) => {
+      detailApiRequests.push(url)
+      return JSON.stringify({
+        status: 'success',
+        message: {
+          job: [{
+            designation_display_name: 'A Advisory Associate',
+            experience: '2 - 4 Years',
+            jd: '<p>Build advisory delivery playbooks.</p>',
+          }],
+        },
+      })
+    },
+  })
+
+  assert.equal(jobs.length, 3)
+  assert.deepEqual(detailApiRequests, [
+    'https://pwc.darwinbox.com/ms/candidateapi/job/job-a?companyId=main',
+  ])
+  assert.equal(jobs.find((job) => job.jobId === 'job-a')?.publicExperienceChecked, true)
+  assert.equal(jobs.find((job) => job.jobId === 'job-b')?.publicExperienceChecked, undefined)
+  assert.equal(jobs.find((job) => job.jobId === 'job-c')?.publicExperienceChecked, undefined)
+})

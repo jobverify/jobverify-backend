@@ -1,4 +1,4 @@
-﻿import path from 'node:path'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createBrowserNetworkFallback } from '../../scraper-support/shared/browserNetworkFallback.js'
@@ -66,7 +66,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
 
-  return /<title[^>]*>\s*Global Leader in MADTECH Resource Planning and Execution(?:™|&#x2122;)?\s*<\/title>/i.test(rawHtml)
+  return /<title[^>]*>\s*Global Leader in MADTECH Resource Planning and Execution(?:�|&#x2122;)?\s*<\/title>/i.test(rawHtml)
     && /MADTECH \(MarTech, AdTech [&] DataTech\) is complex, expensive, time-consuming, and hard to staff\./i.test(normalized)
     && /Picking the right business partner is crucial\./i.test(normalized)
     && /https:\/\/isocrates\.com\/careers\/?/i.test(rawHtml)
@@ -218,7 +218,7 @@ export const createIsocratesScraper = ({
       browserSessionOptions: {
         timeoutMs: 90000,
         settleTimeMs: 12000,
-        ignoreHTTPSErrors: true,
+        ignoreHTTPSErrors: false,
       },
     })
 

@@ -156,10 +156,11 @@ export const hasVerifiedMscCareersSignal = (html = '') => {
   const markup = page.toLowerCase()
 
   return markup.includes('work with us - careers &amp; vacancies | msc')
-    && markup.includes('https://www.msc.com/en/careers')
-    && markup.includes('og:site_name')
-    && markup.includes('content="msc"')
-    && markup.includes('work for the leader in shipping and logistics')
+    && markup.includes('careers at msc')
+    && markup.includes('a world of opportunities')
+    && markup.includes('explore our vacant positions')
+    && markup.includes('data-api-url-job-locations="/api/feature/career/getjoblocationslist"')
+    && markup.includes('data-api-url="/api/feature/career/getjobvacanciesjoblocationid"')
 }
 
 export const hasVerifiedMscAccessDeniedSignal = (html = '') => {

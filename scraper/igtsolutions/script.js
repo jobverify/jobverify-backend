@@ -73,9 +73,6 @@ const defaultFetchPage = async (url) => {
     attempts: 1,
     label: SOURCE,
     timeoutMs: 15000,
-    allowInsecureTlsHosts: [
-      'careers.igtsolutions.com',
-    ],
   })
 
   return page

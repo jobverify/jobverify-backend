@@ -163,7 +163,7 @@ test('Infobell IT Solutions scraper validates the verified first-party careers p
   ])
 })
 
-test('Infobell IT Solutions run decorates first-party listings with detail-page descriptions and mailto apply links', async () => {
+test('Infobell IT Solutions run decorates first-party listings with detail-page descriptions and application links', async () => {
   const infobell = await loadInfobellModule()
   const requestedUrls = []
 
@@ -204,24 +204,24 @@ test('Infobell IT Solutions run decorates first-party listings with detail-page 
         title: 'Server Performance Benchmark Engineers',
         location: 'Bengaluru, India',
         city: 'Bangalore',
-        applyUrl: 'mailto:info@infobellit.com',
-        link: 'mailto:info@infobellit.com',
+        applyUrl: 'https://www.infobellit.com/careers-detail.html',
+        link: 'https://www.infobellit.com/careers-detail.html',
         jobId: 'careers-detail',
       },
       {
         title: 'DevOps & DevSecOps',
         location: 'Bengaluru, India',
         city: 'Bangalore',
-        applyUrl: 'mailto:info@infobellit.com',
-        link: 'mailto:info@infobellit.com',
+        applyUrl: 'https://www.infobellit.com/Devops.html',
+        link: 'https://www.infobellit.com/Devops.html',
         jobId: 'devops',
       },
       {
         title: 'UI Developer',
         location: 'Bengaluru, India',
         city: 'Bangalore',
-        applyUrl: 'mailto:info@infobellit.com',
-        link: 'mailto:info@infobellit.com',
+        applyUrl: 'https://www.infobellit.com/UI.html',
+        link: 'https://www.infobellit.com/UI.html',
         jobId: 'ui',
       },
     ],

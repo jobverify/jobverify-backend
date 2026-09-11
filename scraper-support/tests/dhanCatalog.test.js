@@ -21,7 +21,7 @@ const loadDhanCatalog = async () => {
   }
 }
 
-test('Dhan catalog captures the verified first-party career handoff and Zappyhire jobs API surface', async () => {
+test('Dhan catalog captures the verified first-party career handoff and Keka jobs API surface', async () => {
   const { DHAN_CATALOG } = await loadDhanCatalog()
   const provider = hydrateProviderCatalogEntry(DHAN_CATALOG)
 
@@ -31,46 +31,32 @@ test('Dhan catalog captures the verified first-party career handoff and Zappyhir
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://dhan.co/')
   assert.equal(provider.companyCareerPage, 'https://dhan.co/career/')
-  assert.equal(provider.officialCareersHandoffUrl, 'https://recruitcareers.zappyhire.com/en/dhan')
-  assert.equal(provider.careersApiOrigin, 'https://dhan.zappyhire-multitenant-be-prod.zappyhire.com')
-  assert.equal(
-    provider.careersConfigUrl,
-    'https://dhan.zappyhire-multitenant-be-prod.zappyhire.com/api/careers/configurations/',
-  )
-  assert.equal(
-    provider.careersFilterParamsUrl,
-    'https://dhan.zappyhire-multitenant-be-prod.zappyhire.com/api/careers/filter-params/',
-  )
+  assert.equal(provider.officialCareersHandoffUrl, 'https://dhan.keka.com/careers/')
+  assert.equal(provider.careersApiOrigin, 'https://dhan.keka.com/careers/api')
+  assert.equal(provider.careersConfigUrl, null)
+  assert.equal(provider.careersFilterParamsUrl, null)
   assert.equal(
     provider.jobsApiUrl,
-    'https://dhan.zappyhire-multitenant-be-prod.zappyhire.com/api/jobs/jobsearch/?page=1&page_size=12',
+    'https://dhan.keka.com/careers/api/embedjobs/default/active/7669ff3a-2b35-4442-9bac-9f9ae4b718b3',
   )
   assert.equal(provider.companyDomain, 'dhan.co')
-  assert.equal(provider.atsPlatform, 'zappyhire')
+  assert.equal(provider.atsPlatform, 'keka')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'zappyhire-jobsearch-page-parameter')
+  assert.equal(provider.paginationStrategy, 'keka-active-jobs-feed')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+zappyhire-board-shell+zappyhire-config-api+zappyhire-jobsearch-api',
+    'verified-first-party-careers-page+keka-careers-handoff+keka-active-jobs-api',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-09-03')
   assert.equal(provider.modulePath, dhanModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /July 15, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /September 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/dhan\.co\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/dhan\.co\/career\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/recruitcareers\.zappyhire\.com\/en\/dhan/i)
-  assert.match(
-    provider.verifiedSurfaceSummary,
-    /https:\/\/dhan\.zappyhire-multitenant-be-prod\.zappyhire\.com\/api\/careers\/configurations\//i,
-  )
-  assert.match(
-    provider.verifiedSurfaceSummary,
-    /https:\/\/dhan\.zappyhire-multitenant-be-prod\.zappyhire\.com\/api\/jobs\/jobsearch\/\?page=1&page_size=12/i,
-  )
-  assert.match(provider.verifiedSurfaceSummary, /Raise Careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /Product & Growth Marketing - fuzz \(Raise AI\)/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/dhan\.keka\.com\/careers\//i)
+  assert.match(provider.verifiedSurfaceSummary, /Keka active-jobs endpoint/i)
+  assert.match(provider.verifiedSurfaceSummary, /Keka job-detail application URLs/i)
 })
 
 test('Dhan backlog row matches directly from provider metadata without aliases', async () => {

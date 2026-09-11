@@ -16,7 +16,7 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const HOMEPAGE_SIGNAL_PATTERNS = [
-  /\bsttgdc\b/i,
+  /\bstt\s*gdc\b/i,
   /\bstt gdc india\b/i,
   /\bbuilt for ai\b/i,
   /\bservices\b/i,
@@ -44,7 +44,7 @@ const CONTACT_SIGNAL_PATTERNS = [
   /\bcontact\b/i,
   /\blet us know how we can help you\b/i,
   /\bhow can we help you\??\b/i,
-  /\bsttgdc\b/i,
+  /\bstt\s*gdc\b|stt? telemedia global data centres/i,
 ]
 
 const PUBLIC_JOB_LISTING_PATTERNS = [

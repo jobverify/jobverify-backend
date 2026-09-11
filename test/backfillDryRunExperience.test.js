@@ -41,19 +41,19 @@ test('buildRequestedSourceDirectoryNames resolves logical source ids to dry-run 
 
 test('prioritizeBackfillTargets preserves explicit requested source order for targeted reruns', () => {
   const targets = [
-    { source: 'railtel', missingBefore: 245 },
+    { source: 'mindtree', missingBefore: 245 },
     { source: 'cmscomputers', missingBefore: 227 },
     { source: 'questglobal', missingBefore: 227 },
   ]
 
   const prioritized = prioritizeBackfillTargets(
     targets,
-    ['cmscomputers', 'questglobal', 'railtel'],
+    ['cmscomputers', 'questglobal', 'mindtree'],
   )
 
   assert.deepEqual(
     prioritized.map((target) => target.source),
-    ['cmscomputers', 'questglobal', 'railtel'],
+    ['cmscomputers', 'questglobal', 'mindtree'],
   )
 })
 

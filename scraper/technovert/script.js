@@ -224,7 +224,7 @@ const defaultLoadBrowserContract = async () => {
     waitUntil: 'domcontentloaded',
     settleTimeMs: 5000,
     timeoutMs: 90000,
-    ignoreHTTPSErrors: true,
+    ignoreHTTPSErrors: false,
   })
 
   try {

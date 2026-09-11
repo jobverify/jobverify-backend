@@ -31,86 +31,28 @@ const careersHtml = `
       <p>Raise is a team of 550+ and hiring more.</p>
       <p>Apply now!</p>
       <a href="https://www.linkedin.com/company/raise-financial-services/jobs/">Explore on Linkedin</a>
-      <a href="https://recruitcareers.zappyhire.com/en/dhan">Explore Careers at Raise</a>
+      <a href="https://dhan.keka.com/careers/">Explore Careers at Raise</a>
     </main>
   </body>
 </html>
 `
 
-const boardShellHtml = `
-<!doctype html>
-<html lang="en" dir="ltr">
-  <head>
-    <title>Careers</title>
-    <base href="/en/">
-  </head>
-  <body>
-    <app-root></app-root>
-    <script src="https://utilities.zappyhire.com/zoey.js"></script>
-    <script src="main.88782a04241d923c.js" type="module"></script>
-  </body>
-</html>
-`
-
-const careersConfigPayload = {
-  status: 1,
-  errors: '',
-  results: {
-    name: 'Dhan',
-    career_text_heading: 'Raise Careers',
-    website: 'https://raiseholding.co/',
-    linkedin: 'https://www.linkedin.com/company/raise-financial-services/jobs/',
-    career_filters: [
-      { slug: 'departments', label: 'Departments', filter: true },
-      { slug: 'locations', label: 'Locations', filter: true },
-      { slug: 'job_types', label: 'Job Types', filter: true },
-    ],
-  },
-}
-
-const filterParamsPayload = {
-  status: 1,
-  errors: '',
-  results: {
-    locations: ['Mumbai'],
-    groups: ['Dhan'],
-    departments: ['Design'],
-    job_types: [
-      { value: 'full_time', label: 'Full Time' },
-      { value: 'part_time', label: 'Part Time' },
-      { value: 'contract', label: 'Contract' },
-      { value: 'intern', label: 'Intern' },
-    ],
-  },
-}
-
-const jobsPayload = {
-  status: 1,
-  errors: '',
-  results: {
-    total: { value: 1, relation: 'eq' },
-    max_score: null,
-    hits: [
-      {
-        _index: 'reindexed-v8-jobdb-prod',
-        _id: '34dhan',
-        _score: null,
-        _source: {
-          client: 'dhan',
-          job: 34,
-          title: 'Product & Growth Marketing - fuzz (Raise AI)',
-          location: 'Mumbai',
-          industry: 'Dhan',
-          department: 'Design',
-          entity: 'Raise',
-          job_type: 'Full Time',
-        },
-        sort: [1778248272000],
-      },
-    ],
-    departments: ['Design'],
-  },
-}
+const jobsPayload = [{
+  id: 73365,
+  title: 'Product & Growth Marketing - fuzz (Raise AI)',
+  departmentName: 'Design',
+  jobLocations: [{
+    name: 'Mumbai, Maharashtra, India',
+    city: 'Mumbai',
+    countryCode: 'IN',
+    countryName: 'India',
+  }],
+  jobType: 2,
+  experience: '3-5 years',
+  skillNames: ['Growth Marketing'],
+  publishedOn: '2026-09-03',
+  description: '<p>Help Raise grow its investing products.</p>',
+}]
 
 const loadDhanModule = async () => {
   try {
@@ -120,67 +62,56 @@ const loadDhanModule = async () => {
   }
 }
 
-test('Dhan scraper constants and helpers stay pinned to the verified first-party and Zappyhire surfaces', async () => {
+test('Dhan scraper constants and helpers stay pinned to the verified first-party and Keka surfaces', async () => {
   const dhan = await loadDhanModule()
 
   assert.equal(dhan.SOURCE, 'dhan')
   assert.equal(dhan.COMPANY, 'Dhan')
   assert.equal(dhan.OFFICIAL_BRAND_NAME, 'Dhan')
-  assert.equal(dhan.VERIFIED_ON, '2026-07-15')
+  assert.equal(dhan.VERIFIED_ON, '2026-09-03')
   assert.equal(dhan.HOMEPAGE_URL, 'https://dhan.co/')
   assert.equal(dhan.CAREERS_URL, 'https://dhan.co/career/')
-  assert.equal(dhan.CAREERS_HANDOFF_URL, 'https://recruitcareers.zappyhire.com/en/dhan')
-  assert.equal(
-    dhan.CAREERS_CONFIG_URL,
-    'https://dhan.zappyhire-multitenant-be-prod.zappyhire.com/api/careers/configurations/',
-  )
-  assert.equal(
-    dhan.CAREERS_FILTER_PARAMS_URL,
-    'https://dhan.zappyhire-multitenant-be-prod.zappyhire.com/api/careers/filter-params/',
-  )
+  assert.equal(dhan.CAREERS_HANDOFF_URL, 'https://dhan.keka.com/careers/')
+  assert.equal(dhan.CAREERS_CONFIG_URL, null)
+  assert.equal(dhan.CAREERS_FILTER_PARAMS_URL, null)
   assert.equal(
     dhan.JOBS_API_URL,
-    'https://dhan.zappyhire-multitenant-be-prod.zappyhire.com/api/jobs/jobsearch/?page=1&page_size=12',
+    'https://dhan.keka.com/careers/api/embedjobs/default/active/7669ff3a-2b35-4442-9bac-9f9ae4b718b3',
   )
   assert.match(dhan.VERIFIED_SURFACE_SUMMARY, /https:\/\/dhan\.co\/career\//i)
-  assert.equal(
-    dhan.buildJobsApiUrl({ page: 2, pageSize: 24 }),
-    'https://dhan.zappyhire-multitenant-be-prod.zappyhire.com/api/jobs/jobsearch/?page=2&page_size=24',
-  )
+  assert.equal(dhan.KEKA_JOBS_API_URL, dhan.JOBS_API_URL)
+  assert.equal(dhan.KEKA_JOB_DETAILS_URL, 'https://dhan.keka.com/careers/jobdetails/')
   assert.equal(dhan.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(dhan.extractHomepageCareerUrl(homepageHtml), 'https://dhan.co/career/')
   assert.equal(dhan.hasOfficialCareersPageSignal(careersHtml), true)
-  assert.equal(dhan.extractOfficialCareersHandoffUrl(careersHtml), 'https://recruitcareers.zappyhire.com/en/dhan')
-  assert.equal(dhan.hasZappyhireBoardShell(boardShellHtml), true)
-  assert.equal(dhan.hasZappyhireConfigSignal(careersConfigPayload), true)
-  assert.equal(dhan.hasZappyhireFilterParamsSignal(filterParamsPayload), true)
-  assert.deepEqual(dhan.extractJobHits(jobsPayload), jobsPayload.results.hits)
+  assert.equal(dhan.extractOfficialCareersHandoffUrl(careersHtml), 'https://dhan.keka.com/careers/')
 
-  const job = dhan.normalizeZappyhireJob(jobsPayload.results.hits[0])
+  const job = dhan.normalizeKekaJob(jobsPayload[0])
   assert.ok(job)
   assert.equal(job.title, 'Product & Growth Marketing - fuzz (Raise AI)')
   assert.equal(job.company, 'Dhan')
   assert.equal(job.department, 'Design')
-  assert.equal(job.location, 'Mumbai')
+  assert.equal(job.location, 'Mumbai, Maharashtra, India')
   assert.equal(job.city, 'Mumbai')
   assert.equal(job.country, 'India')
-  assert.equal(job.jobId, 'dhan-34')
-  assert.equal(job.requisitionId, '34')
-  assert.equal(job.sourceUrl, 'https://recruitcareers.zappyhire.com/en/dhan/apply?job=34')
-  assert.equal(job.applyUrl, 'https://recruitcareers.zappyhire.com/en/dhan/apply?job=34')
+  assert.equal(job.jobId, 'dhan-73365')
+  assert.equal(job.requisitionId, '73365')
+  assert.equal(job.sourceUrl, 'https://dhan.keka.com/careers/jobdetails/73365')
+  assert.equal(job.applyUrl, 'https://dhan.keka.com/careers/jobdetails/73365')
   assert.equal(job.employmentType, 'Full-time')
-  assert.equal(job.postingDate, '2026-05-08T13:51:12.000Z')
-  assert.deepEqual(job.requiredSkills, [])
-  assert.match(job.jobDescription, /Raise/i)
+  assert.equal(job.experienceRequired, '3-5 years')
+  assert.equal(job.postingDate, '2026-09-03')
+  assert.deepEqual(job.requiredSkills, ['Growth Marketing'])
+  assert.match(job.jobDescription, /Help Raise grow/i)
 })
 
-test('Dhan run validates the verified first-party handoff and returns normalized Zappyhire jobs', async () => {
+test('Dhan run validates the verified first-party handoff and returns normalized Keka jobs', async () => {
   const dhan = await loadDhanModule()
   const requestedPageUrls = []
   const requestedJsonUrls = []
 
   const jobs = await dhan.createDhanScraper({
-    now: () => '2026-07-15T12:00:00.000Z',
+    now: () => '2026-09-03T12:00:00.000Z',
   }).run({
     fetchPage: async (url) => {
       requestedPageUrls.push(url)
@@ -193,17 +124,11 @@ test('Dhan run validates the verified first-party handoff and returns normalized
         return { status: 200, url, html: careersHtml }
       }
 
-      if (url === dhan.CAREERS_HANDOFF_URL) {
-        return { status: 200, url, html: boardShellHtml }
-      }
-
       throw new Error(`Unexpected Dhan page URL: ${url}`)
     },
     fetchJson: async (url) => {
       requestedJsonUrls.push(url)
 
-      if (url === dhan.CAREERS_CONFIG_URL) return careersConfigPayload
-      if (url === dhan.CAREERS_FILTER_PARAMS_URL) return filterParamsPayload
       if (url === dhan.JOBS_API_URL) return jobsPayload
 
       throw new Error(`Unexpected Dhan JSON URL: ${url}`)
@@ -213,23 +138,20 @@ test('Dhan run validates the verified first-party handoff and returns normalized
   assert.deepEqual(requestedPageUrls, [
     'https://dhan.co/',
     'https://dhan.co/career/',
-    'https://recruitcareers.zappyhire.com/en/dhan',
   ])
   assert.deepEqual(requestedJsonUrls, [
-    'https://dhan.zappyhire-multitenant-be-prod.zappyhire.com/api/careers/configurations/',
-    'https://dhan.zappyhire-multitenant-be-prod.zappyhire.com/api/careers/filter-params/',
-    'https://dhan.zappyhire-multitenant-be-prod.zappyhire.com/api/jobs/jobsearch/?page=1&page_size=12',
+    'https://dhan.keka.com/careers/api/embedjobs/default/active/7669ff3a-2b35-4442-9bac-9f9ae4b718b3',
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].title, 'Product & Growth Marketing - fuzz (Raise AI)')
   assert.equal(jobs[0].companyDomain, 'dhan.co')
-  assert.equal(jobs[0].atsPlatform, 'zappyhire')
+  assert.equal(jobs[0].atsPlatform, 'keka')
   assert.equal(jobs[0].companyCareerPage, 'https://dhan.co/career/')
-  assert.equal(jobs[0].link, 'https://recruitcareers.zappyhire.com/en/dhan/apply?job=34')
-  assert.equal(jobs[0].scrapedAt, '2026-07-15T12:00:00.000Z')
+  assert.equal(jobs[0].link, 'https://dhan.keka.com/careers/jobdetails/73365')
+  assert.equal(jobs[0].scrapedAt, '2026-09-03T12:00:00.000Z')
 })
 
-test('Dhan returns [] when the verified official Zappyhire board shell is live but its board APIs currently 404', async () => {
+test('Dhan returns [] when the verified Keka jobs feed has no active India roles', async () => {
   const dhan = await loadDhanModule()
 
   const jobs = await dhan.createDhanScraper().run({
@@ -242,16 +164,10 @@ test('Dhan returns [] when the verified official Zappyhire board shell is live b
         return { status: 200, url, html: careersHtml }
       }
 
-      if (url === dhan.CAREERS_HANDOFF_URL) {
-        return { status: 200, url, html: boardShellHtml }
-      }
-
       throw new Error(`Unexpected Dhan page URL: ${url}`)
     },
     fetchJson: async (url) => {
-      if (url === dhan.CAREERS_CONFIG_URL) {
-        throw new Error(`HTTP 404 for ${url}`)
-      }
+      if (url === dhan.JOBS_API_URL) return []
 
       throw new Error(`Unexpected Dhan JSON URL: ${url}`)
     },
@@ -260,7 +176,7 @@ test('Dhan returns [] when the verified official Zappyhire board shell is live b
   assert.deepEqual(jobs, [])
 })
 
-test('Dhan fails closed when the verified first-party handoff or Zappyhire payloads drift', async () => {
+test('Dhan fails closed when the verified first-party handoff or Keka payloads drift', async () => {
   const dhan = await loadDhanModule()
 
   await assert.rejects(
@@ -304,21 +220,15 @@ test('Dhan fails closed when the verified first-party handoff or Zappyhire paylo
           return { status: 200, url, html: careersHtml }
         }
 
-        if (url === dhan.CAREERS_HANDOFF_URL) {
-          return { status: 200, url, html: boardShellHtml }
-        }
-
         throw new Error(`Unexpected Dhan page URL: ${url}`)
       },
       fetchJson: async (url) => {
-        if (url === dhan.CAREERS_CONFIG_URL) {
-          return { status: 1, errors: '', results: { name: 'Unexpected' } }
-        }
+        if (url === dhan.JOBS_API_URL) return { jobs: [] }
 
         throw new Error(`Unexpected Dhan JSON URL: ${url}`)
       },
     }),
-    /configuration/i,
+    /Keka jobs API/i,
   )
 
   await assert.rejects(
@@ -326,19 +236,14 @@ test('Dhan fails closed when the verified first-party handoff or Zappyhire paylo
       fetchPage: async (url) => {
         if (url === dhan.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
         if (url === dhan.CAREERS_URL) return { status: 200, url, html: careersHtml }
-        if (url === dhan.CAREERS_HANDOFF_URL) return { status: 200, url, html: boardShellHtml }
         throw new Error(`Unexpected Dhan page URL: ${url}`)
       },
       fetchJson: async (url) => {
-        if (url === dhan.CAREERS_CONFIG_URL) return careersConfigPayload
-        if (url === dhan.CAREERS_FILTER_PARAMS_URL) return filterParamsPayload
-        if (url === dhan.JOBS_API_URL) {
-          return { status: 1, errors: '', results: { total: { value: 1, relation: 'eq' }, hits: [{}] } }
-        }
+        if (url === dhan.JOBS_API_URL) return [{ id: 73365, title: 'Unexpected location', jobLocations: [] }]
 
         throw new Error(`Unexpected Dhan JSON URL: ${url}`)
       },
     }),
-    /jobs api/i,
+    /no longer produces India jobs/i,
   )
 })

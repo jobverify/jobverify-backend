@@ -1,7 +1,7 @@
 {
-  "totalRows": 5707,
-  "candidateRows": 5707,
-  "matchedCount": 5707,
+  "totalRows": 5706,
+  "candidateRows": 5706,
+  "matchedCount": 5706,
   "unmatchedCount": 0,
   "matched": [
     {
@@ -121205,35 +121205,6 @@
       }
     },
     {
-      "row": "4167",
-      "companyName": "RailTel",
-      "normalizedCompanyName": "railtel",
-      "source": "railtel",
-      "provider": {
-        "atsPlatform": "official-current-openings-page",
-        "countryFilter": "India",
-        "paginationStrategy": "single-first-party-current-openings-page",
-        "extractionStrategy": "verified-first-party-current-openings-page+inline-vacancy-tables+first-party-pdf-notices+optional-digialm-apply",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "railtel",
-        "companyName": "RailTel",
-        "officialBrandName": "RailTel",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release_26.08.02\\jobverify-backend\\scraper\\railtel\\script.js",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release_26.08.02\\jobverify-backend\\scraper\\railtel\\jobs.json",
-        "companyCareerPage": "https://www.railtel.in/current-job-openings.html",
-        "officialCareersHubUrl": "https://www.railtel.in/career.html",
-        "companyDomain": "railtel.in",
-        "currentOpeningsTitle": "Current Job Openings",
-        "verifiedSampleJobTitle": "DEPUTATION/Re-employment for 1 post of Junior Translator/ E-0 at Corporate Office, Delhi",
-        "verifiedSampleApplyTitle": "Click here to apply",
-        "verifiedOn": "2026-07-17",
-        "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.railtel.in/current-job-openings.html is the live official RailTel current openings page and exposes first-party vacancy tables for roles including DEPUTATION/Re-employment for 1 post of Junior Translator/ E-0 at Corporate Office, Delhi, DEPUTATION for 1 post of Deputy Manager/Manager (E-1, E-2) at Prayagraj, Northern Region, and current recruitment notices that include Detailed Vacancy Notice No. RCIL/2025/P&A/44/3 plus the Digialm apply handoff. During live checks, Node default HTTPS validation failed on the official host with UNABLE_TO_VERIFY_LEAF_SIGNATURE, so the scraper uses a narrow first-party TLS fallback while staying on the verified RailTel domain.",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release_26.08.02\\jobverify-backend\\scraper\\railtel"
-      }
-    },
-    {
       "row": "4168",
       "companyName": "Railway",
       "normalizedCompanyName": "railway",
@@ -146486,28 +146457,6 @@
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release_26.08.02\\jobverify-backend\\scraper\\techouts\\jobs.json",
         "modulePath": "C:\\Users\\mohv\\GitHub\\Release_26.08.02\\jobverify-backend\\scraper\\techouts\\script.js",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release_26.08.02\\jobverify-backend\\scraper\\techouts"
-      }
-    },
-    {
-      "row": "5053",
-      "companyName": "Techcovery Solutions",
-      "normalizedCompanyName": "techcovery",
-      "source": "techrecoverysolutions",
-      "provider": {
-        "atsPlatform": "official-company-site-no-public-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "homepage-plus-about-contact-and-common-careers-route-validation",
-        "extractionStrategy": "verified-homepage+verified-about+verified-contact+verified-missing-first-party-careers-routes-return-empty",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "techrecoverysolutions",
-        "companyName": "Techcovery Solutions",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release_26.08.02\\jobverify-backend\\scraper\\techrecoverysolutions\\script.js",
-        "companyCareerPage": "https://techcovery.in/",
-        "companyDomain": "techcovery.in",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release_26.08.02\\jobverify-backend\\scraper\\techrecoverysolutions\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release_26.08.02\\jobverify-backend\\scraper\\techrecoverysolutions"
       }
     },
     {

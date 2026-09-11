@@ -75,7 +75,7 @@ test('resolveDryRunScraperDir prefers the shared absolute dry-run root from the 
   const resolved = resolveDryRunScraperDir({
     fallbackDir,
     scrapers: [
-      { dryRunFile: 'C:/external/jobverify-backend/scraper/railtel/jobs.json' },
+      { dryRunFile: 'C:/external/jobverify-backend/scraper/alpha/jobs.json' },
       { dryRunFile: 'C:/external/jobverify-backend/scraper/virtusa/jobs.json' },
     ],
   })
@@ -88,7 +88,7 @@ test('resolveDryRunScraperDir falls back when absolute dry-run roots disagree', 
   const resolved = resolveDryRunScraperDir({
     fallbackDir,
     scrapers: [
-      { dryRunFile: 'C:/external-a/jobverify-backend/scraper/railtel/jobs.json' },
+      { dryRunFile: 'C:/external-a/jobverify-backend/scraper/alpha/jobs.json' },
       { dryRunFile: 'C:/external-b/jobverify-backend/scraper/virtusa/jobs.json' },
     ],
   })

@@ -15,8 +15,8 @@ const homepageHtml = `
     <body>
       <main>
         <h1>Best Data Centre Colocation Services Provider in India | STT GDC India</h1>
-        <a href="https://www.sttelemediagdc.com/contact">Contact</a>
-        <a href="https://www.sttelemediagdc.com/in-en/about-us/careers">Careers</a>
+        <a href="https://www.sttgdc.com/contact">Contact</a>
+        <a href="https://www.sttgdc.com/in-en/about-us/careers">Careers</a>
         <p>Built for AI</p>
         <p>Services</p>
         <p>Locations</p>
@@ -80,10 +80,10 @@ test('STT sentinel validates the verified India homepage, about page, careers pa
 
   assert.equal(stt.SOURCE, 'sttglobaldatacentresindia')
   assert.equal(stt.COMPANY, 'STT Global Data Centres India Private Limited')
-  assert.equal(stt.HOMEPAGE_URL, 'https://www.sttelemediagdc.com/in-en')
-  assert.equal(stt.ABOUT_URL, 'https://www.sttelemediagdc.com/in-en/about-us/the-company')
-  assert.equal(stt.CAREERS_URL, 'https://www.sttelemediagdc.com/in-en/about-us/careers')
-  assert.equal(stt.CONTACT_URL, 'https://www.sttelemediagdc.com/contact')
+  assert.equal(stt.HOMEPAGE_URL, 'https://www.sttgdc.com/in-en')
+  assert.equal(stt.ABOUT_URL, 'https://www.sttgdc.com/in-en/about-us/the-company')
+  assert.equal(stt.CAREERS_URL, 'https://www.sttgdc.com/in-en/about-us/careers')
+  assert.equal(stt.CONTACT_URL, 'https://www.sttgdc.com/contact')
   assert.equal(stt.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(stt.hasOfficialAboutSignal(aboutHtml), true)
   assert.equal(stt.hasOfficialCareersSignal(careersHtml), true)
@@ -109,10 +109,10 @@ test('STT run returns an empty list while the verified India careers page expose
   })
 
   assert.deepEqual(requestedUrls, [
-    'https://www.sttelemediagdc.com/in-en',
-    'https://www.sttelemediagdc.com/in-en/about-us/the-company',
-    'https://www.sttelemediagdc.com/in-en/about-us/careers',
-    'https://www.sttelemediagdc.com/contact',
+    'https://www.sttgdc.com/in-en',
+    'https://www.sttgdc.com/in-en/about-us/the-company',
+    'https://www.sttgdc.com/in-en/about-us/careers',
+    'https://www.sttgdc.com/contact',
   ])
   assert.deepEqual(jobs, [])
 })
