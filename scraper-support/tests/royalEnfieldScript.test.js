@@ -188,3 +188,34 @@ test('run keeps Royal Enfield on the public India Phenom lane and enriches jobs 
   assert.match(jobs[0].minimumQualification, /Bachelor degree/i)
   assert.match(jobs[0].jobDescription, /Chennai manufacturing campus/i)
 })
+
+test('run passes the caller abort signal to Royal Enfield page fetches', async () => {
+  const {
+    buildSearchResultsPageUrl,
+    run,
+  } = await loadRoyalEnfieldModule()
+  const controller = new AbortController()
+  const signals = []
+
+  const jobs = await run({
+    maxPages: 1,
+    maxJobs: 1,
+    signal: controller.signal,
+    fetchText: async (url, options = {}) => {
+      signals.push(options.signal)
+
+      if (url === buildSearchResultsPageUrl()) {
+        return ROYAL_ENFIELD_SEARCH_HTML
+      }
+
+      if (url === 'https://careers.royalenfield.com/us/en/job/P-101057/Canteen-Incharge') {
+        return ROYAL_ENFIELD_DETAIL_HTML
+      }
+
+      throw new Error(`Unexpected Royal Enfield fixture URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.deepEqual(signals, [controller.signal, controller.signal])
+})

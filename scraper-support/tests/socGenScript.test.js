@@ -166,3 +166,33 @@ test('SocGen fails closed when the verified careers page drifts materially', asy
     /verified SocGen careers page/i,
   )
 })
+
+test('SocGen run passes caller signal through validation and delegated fetches', async () => {
+  const socgen = await loadModule()
+  const controller = new AbortController()
+  const signals = []
+
+  const jobs = await socgen.createSocGenScraper({
+    maxJobs: 1,
+    now: () => '2026-07-27T19:30:00.000Z',
+  }).run({
+    signal: controller.signal,
+    fetchPage: async (url, options = {}) => {
+      signals.push(options.signal)
+      return {
+        status: 200,
+        url,
+        html: careersPageHtml,
+      }
+    },
+    fetchText: async (url, options = {}) => {
+      signals.push(options.signal)
+      if (url === 'https://careers.societegenerale.com/en/Technical/all-job-offers') return listingHtml
+      if (url === 'https://careers.societegenerale.com/en/job-offers/delivery-manager-25000FP8-en') return detailHtml
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.deepEqual(signals, [controller.signal, controller.signal, controller.signal])
+})

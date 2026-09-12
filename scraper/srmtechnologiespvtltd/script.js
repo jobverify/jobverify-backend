@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { decodeJavaScriptStringLiteral } from '../../scraper-support/utils/safeLiteral.js'
 
 import { SRM_TECHNOLOGIES_PVT_LTD_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -46,23 +47,9 @@ const normalizeEmploymentType = (value) => {
   return normalizeWhitespace(value)
 }
 
-const decodeJavaScriptEscapes = (value) => String(value ?? '')
-  .replace(/\\x([0-9a-f]{2})/gi, (_, code) => String.fromCharCode(Number.parseInt(code, 16)))
-  .replace(/\\u([0-9a-f]{4})/gi, (_, code) => String.fromCharCode(Number.parseInt(code, 16)))
-  .replace(/\\([^"\\/bfnrtux])/g, '$1')
-  .replace(/\\\//g, '/')
-  .replace(/\\"/g, '"')
-
 const decodeEmbeddedJobsPayload = (serialized = '') => {
   const jsStringLiteral = String(serialized ?? '')
-
-  try {
-    // Zoho wraps JSON text in a JS string literal and sometimes ships legacy escape runs
-    // that the browser accepts but a hand-rolled JSON-style decoder does not.
-    return Function("return '" + jsStringLiteral + "'")()
-  } catch {
-    return decodeJavaScriptEscapes(jsStringLiteral)
-  }
+  return decodeJavaScriptStringLiteral(`'${jsStringLiteral}'`)
 }
 
 const hasInputWithId = (html, id) =>

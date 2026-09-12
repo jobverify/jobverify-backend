@@ -158,7 +158,7 @@ export const createNexusMallsScraper = () => ({
     }
 
     if (extractCareerLikeLinks(homepage.html).length > 0) {
-      throw new Error('Nexus Malls homepage now exposes an unverified careers surface')
+      throw new Error('Nexus Malls homepage now exposes an unverified public careers surface')
     }
 
     const routes = await Promise.all([

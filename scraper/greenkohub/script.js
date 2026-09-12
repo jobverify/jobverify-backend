@@ -146,7 +146,7 @@ export const fetchOfficialGreenkoTextWithoutTlsVerification = (
   const request = https.request(url, {
     method: 'GET',
     headers,
-    rejectUnauthorized: false,
+    rejectUnauthorized: true,
   }, (response) => {
     let body = ''
     response.setEncoding('utf8')

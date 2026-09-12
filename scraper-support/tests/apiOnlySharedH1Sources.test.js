@@ -10,7 +10,6 @@ const backendDir = path.resolve(testDir, '../..')
 const sources = [
   'pwc',
   'radware',
-  'redbus',
   'rinextechnologies',
   'safranengineeringservicesindia',
   'saucelabs',

@@ -38,17 +38,17 @@ test('Temporal local catalog captures the verified first-party about page and Gr
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-25')
+  assert.equal(provider.verifiedOn, '2026-09-03')
   assert.match(provider.modulePath, /temporal[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /temporal[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 25, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /September 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/temporal\.io\/about/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/job-boards\.greenhouse\.io\/temporaltechnologies/i)
   assert.match(
     provider.verifiedSurfaceSummary,
     /https:\/\/boards-api\.greenhouse\.io\/v1\/boards\/temporaltechnologies\/jobs\?content=true/i,
   )
-  assert.match(provider.verifiedSurfaceSummary, /Events & Field Marketing Manager - India/i)
+  assert.match(provider.verifiedSurfaceSummary, /previously public board has been retired/i)
 })
 
 test('getScraperCatalog includes Temporal as a runnable script provider and resolves exact-name aliases', () => {

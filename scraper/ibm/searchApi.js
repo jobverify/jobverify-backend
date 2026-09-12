@@ -198,6 +198,7 @@ export const runIbmSearch = async ({
   pageSize = 100,
   maxJobs = null,
   maxPages = Number.POSITIVE_INFINITY,
+  signal = null,
   fetchJson = fetchSearchResults,
 } = {}) => {
   const jobs = []
@@ -221,6 +222,7 @@ export const runIbmSearch = async ({
         Referer: normalizedQueryReferrer(query),
       },
       body: JSON.stringify(body),
+      signal,
     })
     const listings = extractSearchResults(payload, { companyName })
     totalCount = getTotalCount(payload)

@@ -69,13 +69,13 @@ test('formatFinalSummaryTable renders bounded operational analytics tables', () 
   assert.match(output, /Start time\s+\| unavailable/)
   assert.match(output, /RUN HEALTH/)
   assert.match(output, /Success rate\s+\| 50\.0%/)
-  assert.match(output, /Zero-job successes\s+\| 1/)
+  assert.match(output, /Zero India-job results\s+\| 1/)
   assert.match(output, /JOB YIELD/)
   assert.match(output, /Top-5 source share\s+\| 100\.0%/)
   assert.match(output, /PUBLISHABLE FILTERS/)
   assert.match(output, /Publishable jobs\s+\| 70/)
   assert.match(output, /Rejected outside India\s+\| 26/)
-  assert.match(output, /Rejected older than retention\s+\| 14/)
+  assert.doesNotMatch(output, /Rejected older than retention/)
   assert.match(output, /Rejected past closing date\s+\| 3/)
   assert.match(output, /Rejected invalid URL\s+\| 2/)
   assert.match(output, /PERFORMANCE/)
@@ -106,6 +106,21 @@ test('formatFinalSummaryTable highlights the largest source job-count changes', 
   assert.match(output, /SOURCE-CHANGE ANOMALIES/)
   assert.match(output, /alpha\s+\| 5\s+\| 30\s+\| \+25/)
   assert.match(output, /beta\s+\| 40\s+\| 2\s+\| -38/)
+})
+
+test('formatFinalSummaryTable separates verified empty pages from unverified zero results', () => {
+  const output = formatFinalSummaryTable({
+    verified: { success: true, jobs: 0, zeroJobEvidence: 'verified-empty', durationMs: 100 },
+    fetched: { success: true, jobs: 0, zeroJobEvidence: 'fetched-zero', durationMs: 100 },
+    blocked: { success: true, jobs: 0, zeroJobEvidence: 'blocked-zero', durationMs: 100 },
+    placeholder: { success: true, jobs: 0, zeroJobEvidence: 'unverified-zero', durationMs: 100 },
+  })
+
+  assert.match(output, /Zero India-job results\s+\| 4/)
+  assert.match(output, /Verified empty career surfaces\s+\| 1/)
+  assert.match(output, /Fetched zero India-job results\s+\| 1/)
+  assert.match(output, /Blocked or failed zero results\s+\| 1/)
+  assert.match(output, /Unverified zero results\s+\| 1/)
 })
 
 test('formatFinalSummaryTable totals missing required job fields', () => {

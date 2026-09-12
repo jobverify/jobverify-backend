@@ -6,6 +6,7 @@ import {
   inferExperienceFromPublicPageHtml,
 } from '../utils/publicExperienceEnrichment.js'
 import { normalizeScrapedJob } from '../utils/normalizeScrapedJob.js'
+import { extractTextFromPdfBuffer } from '../shared/pdfText.js'
 
 const buildPdfBuffer = (text) => {
   const objects = []
@@ -557,9 +558,9 @@ test('inferExperienceFromPublicPageHtml marks structured title-matched metadata 
 test('inferExperienceFromPublicPageHtml marks structured vacancy notices as checked even when OCR text does not expose clean experience years', () => {
   const enriched = inferExperienceFromPublicPageHtml({
     title: 'Vacancy Notice for 2 Posts of Jr Translator (E-0) Rajbhasha',
-    company: 'RailTel',
-    applyUrl: 'https://www.railtel.in/images/careers/jr-translator.pdf',
-    sourceUrl: 'https://www.railtel.in/images/careers/jr-translator.pdf',
+    company: 'Example Infrastructure Board',
+    applyUrl: 'https://careers.example-infra.test/notices/jr-translator.pdf',
+    sourceUrl: 'https://careers.example-infra.test/notices/jr-translator.pdf',
     experienceRequired: null,
   }, `
     <html>
@@ -570,7 +571,7 @@ test('inferExperienceFromPublicPageHtml marks structured vacancy notices as chec
         <h1>Vacancy Notice for 2 Posts of Jr Translator (E-0) Rajbhasha</h1>
         <article>
           VACANCY NOTICE NO: 13/2026
-          ORGANIZATION RAILTEL CORPORATION OF INDIA LTD (RCIL)
+          ORGANIZATION EXAMPLE INFRASTRUCTURE BOARD
           TITLE & NO OF POSTS JR TRANSLATOR (E-0) - 02 POSTS
           TERM OF APPOINTMENT DEPUTATION / RE-EMPLOYMENT
           SPECIFIC REQUIREMENTS PROFICIENCY IN TRANSLATION WORK FROM ENGLISH TO HINDI
@@ -587,9 +588,9 @@ test('inferExperienceFromPublicPageHtml marks structured vacancy notices as chec
 test('inferExperienceFromPublicPageHtml does not treat shortlisted-candidate result notices as verified job-detail evidence', () => {
   const enriched = inferExperienceFromPublicPageHtml({
     title: 'Engagement of Experienced Medical Consultant for BHISHM Cube Project on Contract Basis.',
-    company: 'RailTel',
-    applyUrl: 'https://www.railtel.in/images/careers/medical-consultant-shortlist.pdf',
-    sourceUrl: 'https://www.railtel.in/images/careers/medical-consultant-shortlist.pdf',
+    company: 'Example Infrastructure Board',
+    applyUrl: 'https://careers.example-infra.test/notices/medical-consultant-shortlist.pdf',
+    sourceUrl: 'https://careers.example-infra.test/notices/medical-consultant-shortlist.pdf',
     experienceRequired: null,
   }, `
     <html>
@@ -600,7 +601,7 @@ test('inferExperienceFromPublicPageHtml does not treat shortlisted-candidate res
         <h1>Engagement of Experienced Medical Consultant for BHISHM Cube Project on Contract Basis.</h1>
         <article>
           NOTICE REGARDING LIST OF PROVISIONALLY SHORTLISTED CANDIDATES FOR INTERVIEW
-          Vacancy Notice No. RCIL-CO0/HR(RECR)/2/2026
+          Vacancy Notice No. EIB-HR-2/2026
           The following candidates have been provisionally shortlisted to appear in interview.
           The interview call letters have been sent to the provisionally shortlisted candidates.
         </article>
@@ -1138,9 +1139,9 @@ test('enrichJobWithPublicExperience extracts experience from application/pdf res
   const originalFetch = globalThis.fetch
   const job = {
     title: 'Junior Translator',
-    company: 'RailTel',
-    applyUrl: 'https://www.railtel.in/images/careers/JR-translator.pdf',
-    sourceUrl: 'https://www.railtel.in/images/careers/JR-translator.pdf',
+    company: 'Example Infrastructure Board',
+    applyUrl: 'https://careers.example-infra.test/notices/JR-translator.pdf',
+    sourceUrl: 'https://careers.example-infra.test/notices/JR-translator.pdf',
     experienceRequired: null,
   }
 
@@ -1169,6 +1170,67 @@ test('enrichJobWithPublicExperience extracts experience from application/pdf res
   } finally {
     globalThis.fetch = originalFetch
   }
+})
+
+test('enrichJobWithPublicExperience aborts default public fetches after the configured budget', async () => {
+  const originalFetch = globalThis.fetch
+  const job = {
+    title: 'Cloud Engineer',
+    company: 'Example Infra',
+    applyUrl: 'https://careers.jobverify.dev/jobs/cloud-engineer',
+    sourceUrl: 'https://careers.jobverify.dev/jobs/cloud-engineer',
+    experienceRequired: null,
+  }
+  const fetchSignals = []
+
+  globalThis.fetch = async (_url, options = {}) => {
+    fetchSignals.push(options.signal)
+    return new Promise((resolve, reject) => {
+      if (!options.signal) return
+      if (options.signal.aborted) {
+        reject(options.signal.reason)
+        return
+      }
+      options.signal.addEventListener('abort', () => {
+        reject(options.signal.reason)
+      }, { once: true })
+    })
+  }
+
+  try {
+    const enriched = await Promise.race([
+      enrichJobWithPublicExperience(job, {
+        fetchTimeoutMs: 5,
+        useBrowserFallback: false,
+      }),
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('default public fetch did not abort')), 200)
+      }),
+    ])
+
+    assert.equal(enriched.experienceRequired, null)
+    assert.equal(enriched.publicExperienceChecked, undefined)
+    assert.ok(fetchSignals[0]?.aborted)
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
+test('extractTextFromPdfBuffer rejects before parsing when the caller signal is already aborted', async () => {
+  const controller = new AbortController()
+  const abortReason = new Error('pdf extraction aborted')
+  controller.abort(abortReason)
+
+  await assert.rejects(
+    extractTextFromPdfBuffer(
+      buildPdfBuffer('Experience: 5 years in translation work'),
+      { signal: controller.signal },
+    ),
+    (error) => {
+      assert.equal(error, abortReason)
+      return true
+    },
+  )
 })
 
 test('enrichJobWithPublicExperience preserves fetched job text for later engineeringDomain inference', async () => {

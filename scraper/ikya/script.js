@@ -46,9 +46,6 @@ const defaultFetchPage = (url) => fetchPageWithRetry(url, {
   },
   label: SOURCE,
   timeoutMs: 15000,
-  allowInsecureTlsHosts: [
-    'careers.smartrecruiters.com',
-  ],
 })
 
 export const extractPublicJobLinksFromBoard = (html = '') => {

@@ -130,7 +130,7 @@ test('Trusted Aerospace parser keeps the verified India accordion roles on the o
   ])
 })
 
-test('Trusted Aerospace uses the narrow taseglobal TLS fallback and returns normalized India jobs', async () => {
+test('Trusted Aerospace uses verified TLS and returns normalized India jobs', async () => {
   let capturedUrl = null
   let capturedOptions = null
 
@@ -148,7 +148,7 @@ test('Trusted Aerospace uses the narrow taseglobal TLS fallback and returns norm
 
   assert.equal(html, careersHtml)
   assert.equal(capturedUrl, CAREERS_URL)
-  assert.deepEqual(capturedOptions.allowInsecureTlsHosts, ['taseglobal.com'])
+  assert.equal(Object.hasOwn(capturedOptions, 'allowInsecureTlsHosts'), false)
 
   const jobs = await createTrustedAerospaceEngineeringScraper().run({
     fetchText: async (url) => {

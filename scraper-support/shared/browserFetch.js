@@ -80,7 +80,7 @@ const shouldUseInsecureHttpsFallback = (url, error, ignoreHTTPSErrors) => {
     return false
   }
 
-  return ignoreHTTPSErrors || isCertificateVerificationFailure(error)
+  return false
 }
 
 const serializeRequestBody = (body) => {
@@ -129,7 +129,7 @@ const requestWithInsecureHttps = (url, {
   const request = transport.request(targetUrl, {
     method,
     headers: requestHeaders,
-    rejectUnauthorized: false,
+    rejectUnauthorized: true,
   }, (response) => {
     const chunks = []
 
@@ -197,7 +197,9 @@ const requestWithInsecureHttps = (url, {
   request.end()
 })
 
-const readResponseContent = async (response) => {
+const readResponseContent = async (response, {
+  pdfTextExtractionTimeoutMs = DEFAULT_BROWSER_TIMEOUT_MS,
+} = {}) => {
   const contentType = response.headers?.get?.('content-type') || ''
   const responseUrl = response.url || ''
 
@@ -207,7 +209,10 @@ const readResponseContent = async (response) => {
 
   if (PDF_CONTENT_TYPE_PATTERN.test(contentType) || /\.pdf(?:$|\?)/i.test(responseUrl)) {
     try {
-      return await extractTextFromPdfBuffer(new Uint8Array(await response.arrayBuffer()))
+      return await extractTextFromPdfBuffer(
+        new Uint8Array(await response.arrayBuffer()),
+        { timeoutMs: pdfTextExtractionTimeoutMs },
+      )
     } catch {
       return ''
     }
@@ -265,7 +270,7 @@ export const createBrowserFetchSession = async ({
         throw new Error(`HTTP ${response.status} for ${url}`)
       }
 
-      return readResponseContent(response)
+      return readResponseContent(response, { pdfTextExtractionTimeoutMs: timeoutMs })
     },
     fetchPage: async (url, options = {}) => {
       const response = await request(url, options)
@@ -273,7 +278,7 @@ export const createBrowserFetchSession = async ({
       return {
         status: response.status,
         url: response.url,
-        html: await readResponseContent(response),
+        html: await readResponseContent(response, { pdfTextExtractionTimeoutMs: timeoutMs }),
       }
     },
     fetchFinalUrl: async (url, options = {}) => {

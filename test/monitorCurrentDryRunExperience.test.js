@@ -8,18 +8,19 @@ import test from 'node:test'
 const repoRoot = path.resolve(import.meta.dirname, '..')
 const monitorScriptPath = path.join(repoRoot, 'scripts', 'monitorCurrentDryRunExperience.ps1')
 
-test('monitorCurrentDryRunExperience stops after one repair pass when the runner already exited', () => {
+test('monitorCurrentDryRunExperience stops after one repair pass when the runner already exited', (t) => {
   if (process.platform !== 'win32') {
-    test.skip('PowerShell dry-run experience monitor is only used on Windows')
+    t.skip('PowerShell dry-run experience monitor is only used on Windows')
     return
   }
 
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'monitor-current-dry-run-experience-'))
+  t.after(() => fs.rmSync(tempDir, { recursive: true, force: true }))
   const runDir = path.join(tempDir, 'local-scrape-test')
   const scraperDir = path.join(tempDir, 'scraper')
   const pipelineLogPath = path.join(runDir, 'pipeline.log')
   const invocationPath = path.join(tempDir, 'invocations.txt')
-  const stubBackfillScriptPath = path.join(tempDir, 'stub-backfill.js')
+  const stubBackfillScriptPath = path.join(tempDir, 'stub-backfill.mjs')
 
   fs.mkdirSync(runDir, { recursive: true })
   fs.mkdirSync(scraperDir, { recursive: true })
@@ -74,7 +75,10 @@ test('monitorCurrentDryRunExperience stops after one repair pass when the runner
     {
       cwd: repoRoot,
       encoding: 'utf8',
-      timeout: 5000,
+      // A cold PowerShell + Node launch exceeds five seconds under suite load.
+      // Keep a bounded deadline while asserting the repair still runs exactly once.
+      timeout: 30_000,
+      windowsHide: true,
       env: {
         ...process.env,
         MONITOR_TEST_INVOCATION_PATH: invocationPath,

@@ -62,7 +62,7 @@ const hasJsonContentType = (req) =>
   String(req.headers?.["content-type"] ?? "")
     .trim()
     .toLowerCase()
-    .startsWith("application/json");
+    .split(";", 1)[0].trim() === "application/json";
 
 export const validateRequest = (req, res, next) => {
   const errors = validationResult(req);

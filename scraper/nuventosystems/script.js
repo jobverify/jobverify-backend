@@ -96,7 +96,7 @@ export const hasOfficialIndiaCareersSignal = (html = '') => {
     && /property=["']og:site_name["']\s+content=["']Nuvento["']/i.test(rawHtml)
     && normalized.includes('naseeba.parvin@nuvento.com')
     && normalized.includes('anindita.ghosal@nuvento.com')
-    && /(Senior DevOps \/ Platform Engineer|Senior Release Manager)/i.test(normalized)
+    && /(Senior DevOps \/ Platform Engineer|Senior Release Manager|Team Lead\s*-?\s*Python|IT\/Sr\/JR Recruiter)/i.test(normalized)
     && /Location\s*:\s*Kochi/i.test(normalized)
 }
 

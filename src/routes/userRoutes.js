@@ -1,16 +1,15 @@
 import express from "express";
+import { telegramAlertScheduleValidation, getUserTelegramAlertSchedule, updateUserTelegramAlertSchedule } from "../controllers/alertScheduleController.js";
 import {
   createTelegramAlertLink,
   deleteTelegramAlertSettings,
   deleteUserAccount,
   getTelegramAlertSettings,
-  getWhatsappAlertSettings,
   getUserProfile,
   getSavedJobs,
   removeSavedJob,
   saveJob,
   updateTelegramAlertSettings,
-  updateWhatsappAlertSettings,
   updateUserProfile,
 } from "../controllers/userController.js";
 import { protect } from "../middleware/authMiddleware.js";
@@ -20,7 +19,6 @@ import {
   mongoIdParamValidation,
   telegramAlertsValidation,
   userProfileValidation,
-  whatsappAlertsValidation,
 } from "../validation/requestValidators.js";
 
 const profileUpdateLimiter = createRateLimiter({
@@ -50,6 +48,10 @@ router
 
 router.delete("/account", protect, deleteUserAccount);
 
+router.route("/telegram-alerts/schedule")
+  .get(protect, getUserTelegramAlertSchedule)
+  .put(protect, profileUpdateLimiter, telegramAlertScheduleValidation, validateRequest, updateUserTelegramAlertSchedule);
+
 router
   .route("/saved-jobs")
   .get(protect, getSavedJobs);
@@ -67,16 +69,6 @@ router
     ...mongoIdParamValidation("jobId", "job ID"),
     validateRequest,
     removeSavedJob,
-  );
-
-router
-  .route("/whatsapp-alerts")
-  .get(protect, getWhatsappAlertSettings)
-  .put(
-    protect,
-    whatsappAlertsValidation,
-    validateRequest,
-    updateWhatsappAlertSettings,
   );
 
 router.post("/telegram-alerts/link", protect, createTelegramAlertLink);

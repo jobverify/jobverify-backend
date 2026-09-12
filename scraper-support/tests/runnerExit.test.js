@@ -4,6 +4,7 @@ import test from 'node:test'
 import {
   finalizeDirectRunnerExit,
   formatParallelProgressLog,
+  refreshVisibleDatasetSummaryWithLogging,
 } from '../runner.js'
 
 test('parallel progress log converts its timestamp to IST', () => {
@@ -28,6 +29,21 @@ test('finalizeDirectRunnerExit forces a clean zero exit when no failure was reco
   assert.equal(capturedCode, 0)
 })
 
+test('finalizeDirectRunnerExit uses the process exit function by default', () => {
+  let capturedCode = null
+
+  finalizeDirectRunnerExit({
+    processRef: {
+      exitCode: undefined,
+      exit: (code) => {
+        capturedCode = code
+      },
+    },
+  })
+
+  assert.equal(capturedCode, 0)
+})
+
 test('finalizeDirectRunnerExit preserves a non-zero exit code', () => {
   let capturedCode = null
 
@@ -39,4 +55,18 @@ test('finalizeDirectRunnerExit preserves a non-zero exit code', () => {
   })
 
   assert.equal(capturedCode, 1)
+})
+
+test('refreshVisibleDatasetSummaryWithLogging emits finalizer stage boundaries', async () => {
+  const stages = []
+
+  await refreshVisibleDatasetSummaryWithLogging({
+    refresh: async () => {},
+    logStage: (event) => stages.push(`${event.stage}:${event.status}`),
+  })
+
+  assert.deepEqual(stages, [
+    'dataset summary:start',
+    'dataset summary:done',
+  ])
 })

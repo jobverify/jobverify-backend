@@ -318,7 +318,7 @@ const seedLocalState = async () => {
       status: "active",
       startedAt: premiumStartedAt,
       expiresAt: premiumExpiresAt,
-      whatsappAlertsEnabled: false,
+      telegramAlertsEnabled: false,
     },
     profile: {
       name: E2E_USER_NAME,
@@ -356,7 +356,7 @@ const seedLocalState = async () => {
         status: "active",
         startedAt: premiumStartedAt,
         expiresAt: premiumExpiresAt,
-        whatsappAlertsEnabled: false,
+        telegramAlertsEnabled: false,
       },
       profile: {
         name: E2E_ADMIN_NAME,

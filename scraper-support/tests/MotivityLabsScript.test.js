@@ -145,7 +145,7 @@ test('MotivityLabs helpers stay pinned to the verified openings list and same-do
       jobId: 'sr-test-engineer',
       requisitionId: 'sr-test-engineer',
       sourceUrl: 'https://motivitylabs.com/jobs/sr-test-engineer/',
-      applyUrl: 'mailto:talent@motivitylabs.com',
+      applyUrl: 'https://motivitylabs.com/jobs/sr-test-engineer/',
       employmentType: 'Full Time',
       experienceRequired: '5+ Years',
       minimumQualification: null,

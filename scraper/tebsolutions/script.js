@@ -132,10 +132,17 @@ const hasBrandedSoft404Signal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
+  const knownMissingPageCopy = (
+    normalized.includes('404 Page not found')
+      && normalized.includes('The page you are looking for no longer exists.')
+      && normalized.includes('Back Home')
+  ) || (
+    normalized.includes('Article & News Category:')
+      && normalized.includes("It seems we can't find what you're looking for.")
+  )
+
   return /<title>\s*Page Not Found - TEB Solutions\s*<\/title>/i.test(page)
-    && normalized.includes('404 Page not found')
-    && normalized.includes('The page you are looking for no longer exists.')
-    && normalized.includes('Back Home')
+    && knownMissingPageCopy
     && normalized.includes('Seamless Communication, Global Impact.')
     && normalized.includes('Transforming Ideas into Digital Excellence.')
     && normalized.includes('Send us a message')

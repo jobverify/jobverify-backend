@@ -253,6 +253,49 @@ test("free users can request the public 2000-card limit on the legacy jobs route
   }
 });
 
+test("legacy jobs route does not clamp page numbers above 2000", async () => {
+  const originalCountDocuments = Job.countDocuments;
+  const originalDistinct = Job.distinct;
+  const originalFind = Job.find;
+  let capturedSkip = null;
+
+  Job.countDocuments = async () => 24_012;
+  Job.distinct = async () => ["Example Corp"];
+  Job.find = () => ({
+    select() {
+      return this;
+    },
+    sort() {
+      return this;
+    },
+    skip(value) {
+      capturedSkip = value;
+      return this;
+    },
+    limit() {
+      return this;
+    },
+    lean() {
+      return this;
+    },
+    exec: async () => [],
+  });
+
+  try {
+    const res = createResponseDouble();
+
+    await getAllJobs({ query: { page: "2001" }, user: null }, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(capturedSkip, 24_000);
+    assert.equal(res.body.pagination.page, 2001);
+  } finally {
+    Job.countDocuments = originalCountDocuments;
+    Job.distinct = originalDistinct;
+    Job.find = originalFind;
+  }
+});
+
 test("premium users can keep using existing filters while requesting larger job pages", async () => {
   const originalCountDocuments = Job.countDocuments;
   const originalDistinct = Job.distinct;

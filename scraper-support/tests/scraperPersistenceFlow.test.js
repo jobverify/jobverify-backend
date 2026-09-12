@@ -36,8 +36,23 @@ const setReadyState = (value) => {
   }
 }
 
+const setMongoUri = (value = 'mongodb://127.0.0.1:27017/jobverify-test') => {
+  const original = process.env.MONGO_URI
+  process.env.MONGO_URI = value
+
+  return () => {
+    if (original === undefined) {
+      delete process.env.MONGO_URI
+      return
+    }
+
+    process.env.MONGO_URI = original
+  }
+}
+
 test('runAll preserves the existing jobs collection during a full live run', async () => {
   const restoreReadyState = setReadyState(1)
+  const restoreMongoUri = setMongoUri()
   const originalDeleteMany = Job.deleteMany
   const originalFindOneAndUpdate = ScraperStatus.findOneAndUpdate
   const originalFindOne = ScraperStatus.findOne
@@ -69,12 +84,14 @@ test('runAll preserves the existing jobs collection during a full live run', asy
     ScraperStatus.findOneAndUpdate = originalFindOneAndUpdate
     ScraperStatus.findOne = originalFindOne
     ScraperRun.create = originalCreate
+    restoreMongoUri()
     restoreReadyState()
   }
 })
 
 test('runAll aborts before starting scrapers when Atlas storage quota blocks status seeding', async () => {
   const restoreReadyState = setReadyState(1)
+  const restoreMongoUri = setMongoUri()
   const originalBulkWrite = ScraperStatus.bulkWrite
   const originalFindOneAndUpdate = ScraperStatus.findOneAndUpdate
   const originalFindOne = ScraperStatus.findOne
@@ -130,6 +147,7 @@ test('runAll aborts before starting scrapers when Atlas storage quota blocks sta
     ScraperStatus.findOneAndUpdate = originalFindOneAndUpdate
     ScraperStatus.findOne = originalFindOne
     ScraperRun.create = originalCreate
+    restoreMongoUri()
     restoreReadyState()
   }
 })
@@ -296,7 +314,7 @@ test('saveToDB only enqueues inserted active jobs for WhatsApp alerts', async ()
   }
 })
 
-test('saveToDB applies retention to normalized postingDate values', async () => {
+test('saveToDB preserves open roles regardless of their normalized postingDate age', async () => {
   const restoreReadyState = setReadyState(1)
   const originalBulkWrite = Job.bulkWrite
   const originalDeleteMany = Job.deleteMany
@@ -347,12 +365,12 @@ test('saveToDB applies retention to normalized postingDate values', async () => 
         },
       ],
       'example-source',
-      { retentionDays: 10, replaceExisting: false },
+      { retentionDays: 10, replaceExisting: false, enrichPublicExperience: false },
     )
 
-    assert.equal(result.filteredOld, 2)
-    assert.equal(result.eligibleJobs, 1)
-    assert.equal(capturedBulkOps.length, 1)
+    assert.equal(result.filteredOld, 0)
+    assert.equal(result.eligibleJobs, 3)
+    assert.equal(capturedBulkOps.length, 3)
     assert.equal(
       capturedBulkOps[0].updateOne.update.$set.applyUrl,
       'https://example.com/jobs/fresh',
@@ -934,3 +952,4 @@ test('readPreviousScraperRun decodes persisted Mongo-safe source keys', async ()
     restoreReadyState()
   }
 })
+  const stages = []

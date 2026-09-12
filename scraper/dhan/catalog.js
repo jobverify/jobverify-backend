@@ -23,7 +23,7 @@ export const DHAN_CATALOG = {
     'verified-first-party-careers-page+keka-careers-handoff+keka-active-jobs-api',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-09-03',
   verifiedSurfaceSummary:
     'Verified on September 3, 2026 that https://dhan.co/career/ is the live first-party Dhan careers page and hands off to https://dhan.keka.com/careers/. The Keka active-jobs endpoint is publicly available, is linked by the career portal tenant document, and returns live Raise/Dhan roles with India locations and Keka job-detail application URLs.',
   modulePath: path.join(currentDir, 'script.js'),

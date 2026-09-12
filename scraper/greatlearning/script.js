@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { createDarwinboxScraper } from '../darwinbox/script.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -11,9 +12,12 @@ const USER_AGENT =
 export const SOURCE = 'greatlearning'
 export const COMPANY_NAME = 'Great Learning'
 export const COMPANY = COMPANY_NAME
+export const COMPANY_ID = 'main'
 export const VERIFIED_ON = '2026-07-25'
 export const OFFICIAL_SITE_URL = 'https://www.mygreatlearning.com/'
 export const CAREERS_PAGE_URL = 'https://www.mygreatlearning.com/careers'
+export const DARWINBOX_ORIGIN = 'https://greatlearning.darwinbox.in'
+export const PUBLIC_ALL_JOBS_URL = `${DARWINBOX_ORIGIN}/ms/candidatev2/${COMPANY_ID}/careers/allJobs`
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -52,8 +56,14 @@ export const hasOfficialCareersPageSignal = (html = '') => {
     && text.includes('team of impact-makers!')
     && /career-openings__list/i.test(page)
     && (page.match(/career-openings__item/gi) || []).length >= 3
-    && (page.match(/data-job-link=["']https:\/\/(?:forms\.gle|docs\.google\.com\/forms)\//gi) || []).length >= 3
+    && (page.match(/data-job-link=["']https:\/\/greatlearning\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/jobDetails\//gi) || []).length >= 3
 }
+
+export const extractDarwinboxJobDetailUrls = (html = '') => [
+  ...String(html ?? '').matchAll(
+    /data-job-link=["'](https:\/\/greatlearning\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/jobDetails\/[^"']+)["']/gi,
+  ),
+].map((match) => decodeHtmlEntities(match[1]))
 
 const slugify = (value) => normalizeWhitespace(value)
   .toLowerCase()
@@ -153,21 +163,27 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const createGreatLearningScraper = ({
   now = () => new Date().toISOString(),
+  darwinboxScraper = createDarwinboxScraper({
+    source: SOURCE,
+    companyName: COMPANY_NAME,
+    origin: DARWINBOX_ORIGIN,
+    companyId: COMPANY_ID,
+  }),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText = defaultFetchText, ...darwinboxOptions } = {}) {
     const careersHtml = await fetchText(CAREERS_PAGE_URL)
 
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('The verified Great Learning careers page changed materially')
     }
 
-    const jobs = extractGreatLearningJobs(careersHtml)
+    const jobs = await darwinboxScraper.run(darwinboxOptions)
     const scrapedAt = now()
 
     return jobs.map((job) => ({
       ...job,
       source: SOURCE,
-      link: job.applyUrl,
+      link: job.link || job.applyUrl || job.sourceUrl,
       scrapedAt,
     }))
   },

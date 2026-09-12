@@ -32,43 +32,36 @@ Scraper runner
 
 ## Runtime Entry Points
 
-### `server.js`
+### HTTP composition and process lifecycle
 
-`server.js` is the HTTP entry point for the API. It:
+`src/app.js` exports `createApp()`. It composes security headers, CORS,
+32 KB body parsing, JSON-only mutations, CSRF, rate-limit profiles, route groups,
+JSON API 404s, and error handling. Constructing it does not open a socket or
+connect MongoDB. Configuration is loaded by the entry point before importing
+the app; tests provide temporary process configuration before import.
 
-- loads environment variables with `dotenv/config`
-- validates required env vars such as `PORT`, `JWT_SECRET`, and `CORS_ORIGIN`
-- applies production-only checks for strong JWT secrets and required public origin config
-- sets `trust proxy` from `TRUST_PROXY`
-- disables `x-powered-by`
-- enables JSON and URL-encoded parsing with a `32kb` limit
-- applies `helmet` with a strict baseline CSP
-- configures dynamic CORS from an origin allowlist
-- requires JSON content for mutating `/api` requests
-- enforces CSRF on mutating `/api` requests
-- applies a global `/api` rate limiter
-- mounts route groups:
-  - `/api/auth`
-  - `/api/jobs`
-  - `/api/user`
-  - `/api/scrape`
-  - `/api/admin`
-- exposes:
-  - `GET /`
-  - `GET /health`
-- connects to MongoDB before listening
+`src/config/http.js` parses ports and proxy policy without confusing CIDR
+addresses with numeric hop counts. Only configure proxy hops/networks that the
+deployment actually controls.
 
-`/api/auth`, `/api/user`, `/api/scrape`, and `/api/admin` are mounted behind a small `no-store` response header helper.
+`server.js` connects MongoDB, starts HTTP, and owns termination signals.
+`src/runtime/lifecycle.js` serializes each recurring maintenance task and drains
+HTTP requests and maintenance before disconnecting MongoDB. Shutdown fails
+after ten seconds if work cannot finish, allowing the process supervisor to
+observe unsuccessful termination.
+
+- `GET /health`: process liveness, independent of database availability.
+- `GET /ready`: returns 200 only while MongoDB is connected and shutdown has not
+  begun; otherwise returns 503. Responses are not cached.
+- `/api/auth`, `/api/user`, `/api/billing`, `/api/scrape`, and
+  `/api/admin` use `Cache-Control: no-store`.
 
 ### `scraper-support/runner.js`
 
 `scraper-support/runner.js` is the job collection entry point. It:
 
 - loads the root `.env`
-- builds the scraper list from:
-  - `scraper-support/myworkday/companies.json`
-  - `scraper/rubrik/script.js`
-  - `scraper/google/script.js`
+- builds the scraper list from the provider registry and disk-backed catalog
 - supports:
   - normal live mode
   - `--dry-run`
@@ -78,7 +71,7 @@ Scraper runner
 - writes per-source status into `ScraperStatus`
 - writes per-run history into `ScraperRun`
 
-Parallel mode uses `SCRAPER_CONCURRENCY` and stops launching new work after three scraper failures.
+Parallel mode uses `SCRAPER_CONCURRENCY`. Fatal persistence failures and escaped lifecycle errors cancel the worker pool and stop dequeueing work; cancellation is bounded and recorded. Ordinary source failures follow the configured failure threshold, which is disabled by default.
 
 ## Security and Request Pipeline
 

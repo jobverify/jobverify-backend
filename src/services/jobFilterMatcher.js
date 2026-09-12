@@ -1,6 +1,7 @@
 import { getPreferredJobTypeMatches } from "../constants/preferredJobTypes.js";
 import {
   DATE_POSTED_NA_VALUE,
+  DATE_POSTED_OLDER_THAN_30_VALUE,
   DATE_POSTED_OPTIONS,
   EXPERIENCE_BUCKET_VALUES,
   ROLE_DOMAIN_OPTIONS,
@@ -53,6 +54,10 @@ const buildDatePostedFilter = (values) => {
     if (value === DATE_POSTED_NA_VALUE) return { postedAt: null };
     const start = new Date();
     start.setHours(0, 0, 0, 0);
+    if (value === DATE_POSTED_OLDER_THAN_30_VALUE) {
+      start.setDate(start.getDate() - 30);
+      return { postedAt: { $lt: start } };
+    }
     start.setDate(start.getDate() - value);
     const end = new Date(start);
     end.setDate(end.getDate() + 1);
@@ -108,6 +113,16 @@ const isPostedInCalendarDayWindow = (postedAt, days, now) => {
   return postedDate >= start && postedDate < end;
 };
 
+const isPostedMoreThanThirtyDaysAgo = (postedAt, now) => {
+  const postedDate = new Date(postedAt);
+  if (Number.isNaN(postedDate.getTime())) return false;
+
+  const cutoff = new Date(now);
+  cutoff.setHours(0, 0, 0, 0);
+  cutoff.setDate(cutoff.getDate() - 30);
+  return postedDate < cutoff;
+};
+
 export const buildJobFilterConditions = (queryParams = {}, { includeExperienceYear = true } = {}) => {
   const { query, location, company, city, jobType, batch, branch, skills, skillMatchMode, skillScope, experienceYear, experienceBucket, roleDomain, seniority, workArrangement, datePostedDays } = queryParams;
   const filters = { status: "active" };
@@ -149,7 +164,9 @@ export const buildJobFilterConditions = (queryParams = {}, { includeExperienceYe
   if (seniorityValue) filters.seniority = seniorityValue;
   const postedValues = [...new Set(normalizeList(datePostedDays, { maxItems: DATE_POSTED_OPTIONS.length, maxLength: 8 }).map((value) => {
     const normalized = value.toLowerCase();
-    return normalized === DATE_POSTED_NA_VALUE ? normalized : /^\d+$/u.test(normalized) && DATE_POSTED_OPTIONS.includes(Number(normalized)) ? Number(normalized) : null;
+    return normalized === DATE_POSTED_NA_VALUE || normalized === DATE_POSTED_OLDER_THAN_30_VALUE
+      ? normalized
+      : /^\d+$/u.test(normalized) && DATE_POSTED_OPTIONS.includes(Number(normalized)) ? Number(normalized) : null;
   }).filter((value) => value != null))];
   if (postedValues.length) Object.assign(filters, buildDatePostedFilter(postedValues));
   const cleanQuery = normalizeFilterText(query);
@@ -196,6 +213,8 @@ export const jobMatchesSavedFilters = ({ job, filters, userProfile = {}, now = n
     && (normalized.datePostedDays.length === 0 || normalized.datePostedDays.some((value) => (
       value === DATE_POSTED_NA_VALUE
         ? !job.postedAt
+        : value === DATE_POSTED_OLDER_THAN_30_VALUE
+          ? job.postedAt && isPostedMoreThanThirtyDaysAgo(job.postedAt, now)
         : job.postedAt && isPostedInCalendarDayWindow(job.postedAt, value, now)
     )))
   );

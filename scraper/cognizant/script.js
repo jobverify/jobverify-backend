@@ -206,6 +206,7 @@ const runCurlRequest = (url, execFileImpl = execFile) => new Promise((resolve, r
     COGNIZANT_HEADERS['User-Agent'],
     '-H',
     `Accept: ${COGNIZANT_HEADERS.Accept}`,
+    '--',
     url,
   ]
 

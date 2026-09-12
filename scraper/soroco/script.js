@@ -169,6 +169,19 @@ export const createSorocoScraper = ({ now = () => new Date().toISOString() } = {
       throw new Error('Soroco verified official careers surface changed')
     }
 
+    const visibleJobs = extractSorocoJobs(careersHtml)
+    if (visibleJobs.length > 0) {
+      return visibleJobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl,
+        scrapedAt: now(),
+        companyCareerPage: CAREERS_URL,
+        companyDomain: COMPANY_DOMAIN,
+        atsPlatform: 'official-company-careers',
+      }))
+    }
+
     const allOpeningsHtml = await fetchText(ALL_OPENINGS_URL)
     if (!hasOfficialAllOpeningsSignal(allOpeningsHtml)) {
       throw new Error('Soroco official all-openings page no longer exposes the verified Zoho careers handoff')

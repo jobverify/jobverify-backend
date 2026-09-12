@@ -30,10 +30,10 @@ const defaultFetchText = async (url) => {
 
 export const hasVerifiedCareersPageSignal = (html = '') => {
   const rawHtml = String(html ?? '').toLowerCase()
-  return rawHtml.includes('ncsi employment opportunities - careers')
-    && rawHtml.includes('https://www.ncsi.us/careers/')
-    && rawHtml.includes('ncsi careers employment opportunities and jobs')
-    && rawHtml.includes('take your career to the next level at ncsi')
+  return rawHtml.includes('<title>ncsi careers</title>')
+    && rawHtml.includes('join our renowned team')
+    && rawHtml.includes('your career. our commitment.')
+    && rawHtml.includes('culture at ncsi')
   }
 
 export const createNcsitechnologiespvtltdScraper = () => ({

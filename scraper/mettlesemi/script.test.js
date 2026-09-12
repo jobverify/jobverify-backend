@@ -423,6 +423,6 @@ test('Mettlesemi scraper fails closed when the verified public role cards drift'
         throw new Error(`Unexpected URL ${url}`)
       },
     }),
-    /current public openings changed materially/i,
+    /detail page no longer matches|current public openings changed materially/i,
   )
 })

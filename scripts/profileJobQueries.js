@@ -4,7 +4,6 @@ import { performance } from "node:perf_hooks";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import mongoose from "mongoose";
 
-import connectDB from "../db/db.js";
 import Job from "../src/models/Job.js";
 import {
   JOB_CARD_PAGE_LIMIT,
@@ -344,6 +343,7 @@ export const runJobQueryProfile = async ({
   shouldDisconnect = true,
 } = {}) => {
   if (shouldConnect) {
+    const { default: connectDB } = await import("../db/db.js");
     await connectDB();
   }
 

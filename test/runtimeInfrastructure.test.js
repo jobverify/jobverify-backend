@@ -12,7 +12,10 @@ import { resolveFrontendOrigin } from "../src/utils/runtimeConfig.js";
 test("connectDB rethrows connection errors instead of exiting the process", async () => {
   const originalConnect = mongoose.connect;
   const originalExit = process.exit;
+  const originalMongoUri = process.env.MONGO_URI;
   const exitCalls = [];
+
+  process.env.MONGO_URI = "mongodb://127.0.0.1:27017/jobverify-test";
 
   mongoose.connect = async () => {
     throw new Error("atlas unavailable");
@@ -28,6 +31,27 @@ test("connectDB rethrows connection errors instead of exiting the process", asyn
   } finally {
     mongoose.connect = originalConnect;
     process.exit = originalExit;
+    if (originalMongoUri === undefined) {
+      delete process.env.MONGO_URI;
+    } else {
+      process.env.MONGO_URI = originalMongoUri;
+    }
+  }
+});
+
+test("connectDB reports missing database configuration when a connection is attempted", async () => {
+  const originalMongoUri = process.env.MONGO_URI;
+  delete process.env.MONGO_URI;
+
+  try {
+    await assert.rejects(
+      connectDB(),
+      /MONGO_URI environment variable is not defined/,
+    );
+  } finally {
+    if (originalMongoUri !== undefined) {
+      process.env.MONGO_URI = originalMongoUri;
+    }
   }
 });
 

@@ -97,10 +97,10 @@ test('extractWellfoundJobs maps public Wellfound job links into Jobverify job re
   ])
 })
 
-test('Wellfound-directory scraper falls back to a truthful aggregate hiring signal when listings are challenge-gated', async () => {
+test('Wellfound-directory scraper reports challenge-gated listings as failures', async () => {
   const requestedUrls = []
   const scraper = createWellfoundDirectoryScraper(provider)
-  const jobs = await scraper.run({
+  await assert.rejects(scraper.run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === provider.companyCareerPage) return directoryHtml
@@ -109,18 +109,42 @@ test('Wellfound-directory scraper falls back to a truthful aggregate hiring sign
       }
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), /challenge|javascript/i)
 
   assert.deepEqual(requestedUrls, [
     provider.companyCareerPage,
     'https://wellfound.com/company/applied-intuition/jobs',
   ])
+})
+
+test('Wellfound supports both linked and direct company job pages', async () => {
+  const linked = await createWellfoundDirectoryScraper(provider).run({ fetchText: async (url) => url === provider.companyCareerPage ? directoryHtml : jobsHtml })
+  const direct = await createWellfoundDirectoryScraper({ ...provider, companyCareerPage: 'https://wellfound.com/company/applied-intuition/jobs' }).run({ fetchText: async () => jobsHtml })
+  assert.deepEqual(linked, direct)
+  assert.equal(direct.length, 2)
+})
+
+test('Wellfound confirmed empty pages return zero jobs, while unknown pages and network errors fail', async () => {
+  const scraper = createWellfoundDirectoryScraper({ ...provider, companyCareerPage: 'https://wellfound.com/company/applied-intuition/jobs' })
+  assert.deepEqual(await scraper.run({ fetchText: async () => '<main>Applied Intuition has no open positions.</main>' }), [])
+  await assert.rejects(scraper.run({ fetchText: async () => '<main>Loading jobs...</main>' }), /could not|unrecognized/i)
+  await assert.rejects(scraper.run({ fetchText: async () => { throw new Error('HTTP 503') } }), /HTTP 503/)
+})
+
+test('Wellfound does not use an unrelated unlabeled company link', async () => {
+  assert.equal(findCompanyJobsUrl({ html: '<a href="/company/unrelated/jobs"></a>', companyName: provider.companyName, baseUrl: provider.companyCareerPage }), null)
+  await assert.rejects(createWellfoundDirectoryScraper(provider).run({ fetchText: async () => '<main>No matching company</main>' }), /company.*jobs|could not/i)
+})
+
+test('Wellfound does not invent India eligibility for overseas locations', () => {
+  const html = '<article><a href="/jobs/7654321-engineer">Engineer</a><span data-location>Remote, United States</span></article>'
+  assert.deepEqual(extractWellfoundJobs({ html, provider, jobsUrl: 'https://wellfound.com/company/applied-intuition/jobs' }), [])
+})
+
+test('Wellfound reports missing listing location as a parser failure instead of successful empty', async () => {
+  const scraper = createWellfoundDirectoryScraper({ ...provider, companyCareerPage: 'https://wellfound.com/company/applied-intuition/jobs' })
+  await assert.rejects(scraper.run({ fetchText: async () => '<article><a href="/jobs/1234567-engineer">Engineer</a><span class="unknown-field">Mumbai, India</span></article>' }), /location|parse/i)
+  const jobs = await scraper.run({ fetchText: async () => '<article><a href="/jobs/1234567-engineer">Engineer</a><span class="workplace">Mumbai, India</span></article>' })
   assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Current openings at Applied Intuition')
-  assert.equal(jobs[0].company, 'Applied Intuition')
-  assert.equal(jobs[0].location, 'Bangalore, India')
-  assert.equal(jobs[0].source, 'applied-intuition.wellfoundDirectory')
-  assert.equal(jobs[0].sourceUrl, 'https://wellfound.com/company/applied-intuition/jobs')
-  assert.equal(jobs[0].publicExperienceChecked, true)
-  assert.match(jobs[0].jobDescription, /231 current openings/i)
+  assert.equal(jobs[0].location, 'Mumbai, India')
 })

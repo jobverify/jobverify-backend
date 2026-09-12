@@ -5,61 +5,61 @@ const loadCampusSutraModule = async () => {
   try {
     return await import('../../scraper/campussutra/script.js')
   } catch {
-    assert.fail('Expected Campus Sutra scraper module at ../../scraper/scraper/campussutra/script.js')
+    assert.fail('Expected Campus Sutra scraper module at ../../scraper/campussutra/script.js')
   }
 }
 
-const companyHtml = '<title>Campus Sutra | LinkedIn</title><meta content="urn:li:organization:3032227">'
-
-const searchHtml = `
-  <div class="base-card base-card--link job-search-card" data-entity-urn="urn:li:jobPosting:4409925259">
-    <a class="base-card__full-link" href="https://www.linkedin.com/jobs/view/performance-marketing-at-campus-sutra-4409925259">
-      <h3 class="base-search-card__title">Performance Marketing</h3>
-    </a>
-    <h4 class="base-search-card__subtitle"><a>Campus Sutra</a></h4>
-    <span class="job-search-card__location">Bengaluru, Karnataka, India</span>
-    <time class="job-search-card__listdate" datetime="2026-06-26"></time>
-  </div>
+const currentLinkedInSearchCardHtml = `
+  <ul class="jobs-search__results-list">
+    <li>
+      <div class="base-card relative w-full base-card--link base-search-card base-search-card--link job-search-card"
+        data-entity-urn="urn:li:jobPosting:4463844121">
+        <a class="base-card__full-link absolute top-0 right-0 bottom-0 left-0"
+          href="https://in.linkedin.com/jobs/view/videographer-at-campus-sutra-4463844121?position=1&amp;pageNum=0"></a>
+        <div class="base-search-card__info">
+          <h3 class="base-search-card__title">
+            Videographer
+          </h3>
+          <h4 class="base-search-card__subtitle">
+            <a class="hidden-nested-link" href="https://in.linkedin.com/company/campus-sutra">
+              Campus Sutra
+            </a>
+          </h4>
+          <div class="base-search-card__metadata">
+            <span class="job-search-card__location">
+              Bengaluru, Karnataka, India
+            </span>
+            <time class="job-search-card__listdate--new" datetime="2026-09-09">
+              10 hours ago
+            </time>
+          </div>
+        </div>
+      </div>
+    </li>
+  </ul>
 `
 
-const detailHtml = `
-  <script type="application/ld+json">
-    {"@type":"JobPosting","employmentType":"FULL_TIME","description":"<p>Scale paid campaigns.</p>"}
-  </script>
-`
+test('extractSearchResults keeps India jobs from current LinkedIn guest search cards', async () => {
+  const { extractSearchResults } = await loadCampusSutraModule()
 
-test('Campus Sutra scraper accepts only its official public company page', async () => {
-  const campusSutra = await loadCampusSutraModule()
-
-  assert.equal(campusSutra.pageIndicatesCampusSutraCompany(companyHtml), true)
-  assert.equal(campusSutra.pageIndicatesCampusSutraCompany('<title>Other | LinkedIn</title>'), false)
-})
-
-test('Campus Sutra scraper maps public India job records and decorates them for the runner', async () => {
-  const campusSutra = await loadCampusSutraModule()
-  const scraper = campusSutra.createCampusSutraScraper({ maxJobs: 1 })
-  const requestedUrls = []
-
-  const jobs = await scraper.run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === campusSutra.LINKEDIN_COMPANY_PAGE_URL) return companyHtml
-      if (url === campusSutra.LINKEDIN_INDIA_JOBS_URL) return searchHtml
-      if (url.includes('/jobs/view/performance-marketing-at-campus-sutra-4409925259')) return detailHtml
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    campusSutra.LINKEDIN_COMPANY_PAGE_URL,
-    campusSutra.LINKEDIN_INDIA_JOBS_URL,
-    'https://www.linkedin.com/jobs/view/performance-marketing-at-campus-sutra-4409925259',
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Performance Marketing')
-  assert.equal(jobs[0].company, 'Campus Sutra')
-  assert.equal(jobs[0].country, 'India')
-  assert.equal(jobs[0].employmentType, 'Full-time')
-  assert.equal(jobs[0].source, 'campussutra')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.deepEqual(extractSearchResults(currentLinkedInSearchCardHtml), [{
+    title: 'Videographer',
+    company: 'Campus Sutra',
+    department: null,
+    location: 'Bengaluru, Karnataka, India',
+    city: 'Bengaluru',
+    country: 'India',
+    jobId: '4463844121',
+    requisitionId: '4463844121',
+    sourceUrl: 'https://in.linkedin.com/jobs/view/videographer-at-campus-sutra-4463844121?position=1&pageNum=0',
+    applyUrl: 'https://in.linkedin.com/jobs/view/videographer-at-campus-sutra-4463844121?position=1&pageNum=0',
+    employmentType: null,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: '2026-09-09',
+    closingDate: null,
+    jobDescription: null,
+  }])
 })

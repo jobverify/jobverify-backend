@@ -7,7 +7,7 @@ import test from 'node:test'
 
 import { regenerateCompanyCoverageReport } from '../scripts/regenerateCompanyCoverageReport.js'
 
-test('regenerateCompanyCoverageReport includes every backend scraper directory when csvPath is omitted', () => {
+test('regenerateCompanyCoverageReport includes every registered provider when csvPath is omitted', () => {
   const tempDir = mkdtempSync(path.join(os.tmpdir(), 'jobverify-regenerate-coverage-default-'))
 
   try {
@@ -25,7 +25,7 @@ test('regenerateCompanyCoverageReport includes every backend scraper directory w
       scraperDirectories: ['beta', 'helpers', 'alpha'],
     })
 
-    assert.equal(summary.sourceType, 'scraper-directory-inventory')
+    assert.equal(summary.sourceType, 'provider-catalog')
     assert.equal(summary.totalRows, 3)
     assert.equal(summary.candidateRows, 3)
     assert.equal(summary.matchedCount, 3)
@@ -41,10 +41,13 @@ test('regenerateCompanyCoverageReport includes every backend scraper directory w
       [
         ['Alpha Inc.', 'alpha'],
         ['Beta Labs', 'beta'],
-        ['helpers', 'helpers'],
+        ['Gamma Systems', 'gamma'],
       ],
     )
-    assert.equal(backendReport.matched[2].provider, null)
+    assert.deepEqual(backendReport.matched[2].provider, {
+      source: 'gamma',
+      companyName: 'Gamma Systems',
+    })
   } finally {
     rmSync(tempDir, { recursive: true, force: true })
   }

@@ -6,7 +6,7 @@ The HTTP examples use PowerShell syntax and `curl.exe`. In PowerShell, plain `cu
 
 ## Prerequisites
 
-- Node.js 18 or newer.
+- Node.js 24.14 or newer in the 24.x line; .node-version pins the validated development runtime.
 - npm.
 - MongoDB connection string.
 - Gmail SMTP credentials if registration emails must be delivered.
@@ -18,16 +18,10 @@ The HTTP examples use PowerShell syntax and `curl.exe`. In PowerShell, plain `cu
 Install root backend dependencies:
 
 ```powershell
-npm install
+npm ci
 ```
 
-Install scraper dependencies from the nested scraper package:
-
-```powershell
-npm install --prefix scraper
-```
-
-The scraper has its own `package.json` because Puppeteer dependencies are declared under `scraper/`.
+All dependencies are declared in the root package. The scraper directory does not contain a separate package manifest.
 
 Remove local-only generated artifacts when the backend folder gets noisy:
 
@@ -41,8 +35,8 @@ Create or confirm a `.env` file in the repository root:
 
 ```dotenv
 PORT=5000
-MONGO_URI=<mongodb-connection-string>
-JWT_SECRET=<long-random-secret>
+MONGO_URI=
+JWT_SECRET=
 CORS_ORIGIN=http://localhost:5173,http://localhost:5174
 FRONTEND_ORIGIN=http://localhost:5173
 PUBLIC_API_ORIGIN=http://localhost:5000
@@ -53,12 +47,12 @@ SCRAPER_CONCURRENCY=3
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=465
 SMTP_SECURE=true
-SMTP_USER=jobverify.in@gmail.com
-SMTP_PASS=<google-app-password>
-SMTP_FROM=Jobverify <jobverify.in@gmail.com>
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
 
-GITHUB_PAT=<optional-github-token>
-GITHUB_REPO=<optional-owner/repository>
+GITHUB_PAT=
+GITHUB_REPO=
 ```
 
 Notes:
@@ -266,6 +260,36 @@ npm run scrape:parallel:dry:monitored
 ```
 
 This launcher writes `stdout.log`, `stderr.log`, and `experience-monitor.log` under a timestamped `artifacts/run-logs/local-scrape-<stamp>` folder.
+
+For long live MongoDB runs, use the resilient detached launcher instead of piping the scraper through an interactive PowerShell session:
+
+```powershell
+cd C:\Users\mohv\GitHub\Release-26.09.02\jobverify-backend
+npm run scrape:parallel:live:resilient
+```
+
+The launcher defaults to scraper concurrency `10`, Workday detail concurrency `1`, eight automatic restarts, and a 60-second restart delay. It cleans generated workspace artifacts only when starting a new run. An interrupted invocation reuses the active run directory and `run-state.json`, skips sources already checkpointed as complete, and retries only unfinished sources.
+
+To override the defaults:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\startResilientMongoScrape.ps1 `
+  -Live `
+  -Concurrency 10 `
+  -WorkdayDetailFetchConcurrency 1 `
+  -MaxRestarts 8 `
+  -RestartDelaySeconds 60
+```
+
+The command returns after starting a hidden supervisor. It prints the exact run directory and monitoring command. The run directory contains `pipeline.log`, separate stdout/stderr logs, process IDs, metadata, an exit record, and the atomic `run-state.json` checkpoint.
+
+Request a graceful stop without killing the supervisor or runner:
+
+```powershell
+npm run scrape:resilient:stop
+```
+
+The first stop request prevents new sources from starting and allows active sources to finish. Re-running the live resilient start command resumes the same incomplete checkpoint. A MongoDB-backed lease prevents two live pipelines from writing concurrently; a stale lease expires after two minutes if a process is killed forcibly.
 
 ```powershell
 cd jobverify-backend

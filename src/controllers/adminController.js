@@ -30,6 +30,14 @@ const ADMIN_ROLES = ["user", "admin"];
 const JOB_STATUSES = ["active", "expired", "hidden"];
 const MANAGED_ACCESS_ROLES = Object.values(ACCESS_ROLES);
 const SCRAPER_STATUS_SEED_WINDOW_MS = 5 * 60 * 1000;
+const ADMIN_USER_PRIVATE_FIELD_EXCLUSIONS = [
+  "-password",
+  "-resetPasswordTokenHash",
+  "-resetPasswordExpiresAt",
+  "-passwordChangedAt",
+  "-sessionVersion",
+  "-__v",
+].join(" ");
 const REMEDIATED_LEGACY_FAILURE_SIGNATURES = new Map([
   ["accelyasolutionsindialimited", [/HTTP 400 .*accelya\.wd103\.myworkdayjobs\.com/i]],
   ["eoxvantage", [/fetchText is not a function/i]],
@@ -406,7 +414,7 @@ export const getUsersTable = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum)
-      .select("-password -__v")
+      .select(ADMIN_USER_PRIVATE_FIELD_EXCLUSIONS)
       .lean()
       .exec();
 
@@ -442,7 +450,10 @@ export const getUserById = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid user ID" });
     }
 
-    const user = await User.findById(req.params.id).select("-password -__v").lean().exec();
+    const user = await User.findById(req.params.id)
+      .select(ADMIN_USER_PRIVATE_FIELD_EXCLUSIONS)
+      .lean()
+      .exec();
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
@@ -540,7 +551,7 @@ export const updateUserAccess = async (req, res) => {
     user.premium.status = nextState.premium.status;
     user.premium.startedAt = nextState.premium.startedAt;
     user.premium.expiresAt = nextState.premium.expiresAt;
-    user.premium.whatsappAlertsEnabled = nextState.premium.whatsappAlertsEnabled;
+    user.premium.telegramAlertsEnabled = nextState.premium.telegramAlertsEnabled;
     await user.save();
 
     await AdminAudit.create({
@@ -562,7 +573,7 @@ export const updateUserAccess = async (req, res) => {
           status: user.premium?.status ?? null,
           startedAt: user.premium?.startedAt?.toISOString?.() ?? null,
           expiresAt: user.premium?.expiresAt?.toISOString?.() ?? null,
-          whatsappAlertsEnabled: Boolean(user.premium?.whatsappAlertsEnabled),
+          telegramAlertsEnabled: Boolean(user.premium?.telegramAlertsEnabled),
         },
       },
     });

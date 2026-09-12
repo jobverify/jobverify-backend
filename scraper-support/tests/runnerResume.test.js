@@ -2,13 +2,21 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  assertLiveMongoUriConfigured,
+  getZeroJobEvidence,
   isAuthoritativeEmptyScrape,
+  MissingMongoUriError,
+  resolveLivePublicExperienceEnabled,
   resolveScraperRetryAttempts,
   resolveScraperTimeoutMs,
+  resolveSourceLifecycleTimeoutMs,
+  ScraperSourceLifecycleTimeoutError,
   runScraperWithTimeout,
   selectScrapersForRun,
   shouldClearExistingJobsBeforeRun,
+  withSourceLifecycleTimeout,
 } from '../runner.js'
+import { buildScrapers } from '../providers/index.js'
 
 const sampleScrapers = [
   { name: 'alpha' },
@@ -128,6 +136,27 @@ test('shouldClearExistingJobsBeforeRun clears only a full live run', () => {
   assert.equal(shouldClearExistingJobsBeforeRun({ startAfter: 'danfoss' }), false)
 })
 
+test('assertLiveMongoUriConfigured fails fast for live runs without Mongo credentials', () => {
+  assert.throws(
+    () => assertLiveMongoUriConfigured({ dryRun: false, value: '' }),
+    (error) => {
+      assert.ok(error instanceof MissingMongoUriError)
+      assert.match(error.message, /MONGO_URI environment variable is required/)
+      assert.equal(error.abortPipeline, true)
+      return true
+    },
+  )
+  assert.throws(
+    () => assertLiveMongoUriConfigured({ dryRun: false, value: '   ' }),
+    MissingMongoUriError,
+  )
+})
+
+test('assertLiveMongoUriConfigured allows dry runs and configured live runs', () => {
+  assert.doesNotThrow(() => assertLiveMongoUriConfigured({ dryRun: true, value: '' }))
+  assert.doesNotThrow(() => assertLiveMongoUriConfigured({ dryRun: false, value: 'mongodb://localhost/test' }))
+})
+
 test('resolveScraperTimeoutMs keeps a bounded default and accepts explicit values', () => {
   assert.equal(resolveScraperTimeoutMs(), 300000)
   assert.equal(resolveScraperTimeoutMs('0'), 0)
@@ -168,6 +197,89 @@ test('resolveScraperTimeoutMs honors provider timeout overrides before falling b
 
   assert.equal(resolveScraperTimeoutMs(null, workdayScraper, null), 300000)
   assert.equal(resolveScraperTimeoutMs(undefined, workdayScraper, '180000'), 300000)
+})
+
+test('resolveScraperTimeoutMs uses extended catalog budgets for high-volume Workday sources', () => {
+  const scrapersByName = new Map(
+    buildScrapers().map((scraper) => [scraper.name, scraper]),
+  )
+
+  assert.deepEqual(
+    Object.fromEntries(
+      [
+        'accenture',
+        'cadence',
+        'mastercard',
+        'nvidia',
+        'northerntrust',
+        'nxp',
+        'paloalto',
+        'roche',
+        'salesforce',
+        'target',
+        'valeo',
+        'visa',
+      ].map((source) => {
+        const scraper = scrapersByName.get(source)
+        assert.ok(scraper, `${source} scraper should exist`)
+        return [source, resolveScraperTimeoutMs(null, scraper, null)]
+      }),
+    ),
+    {
+      accenture: 1200000,
+      cadence: 1200000,
+      mastercard: 1200000,
+      nvidia: 1200000,
+      northerntrust: 1200000,
+      nxp: 1200000,
+      paloalto: 1200000,
+      roche: 1200000,
+      salesforce: 1200000,
+      target: 1200000,
+      valeo: 1200000,
+      visa: 1200000,
+    },
+  )
+})
+
+test('resolveSourceLifecycleTimeoutMs bounds the full per-source lifecycle by default', () => {
+  assert.equal(resolveSourceLifecycleTimeoutMs(null), 1800000)
+  assert.equal(resolveSourceLifecycleTimeoutMs('0'), 0)
+  assert.equal(resolveSourceLifecycleTimeoutMs('45000'), 45000)
+  assert.equal(resolveSourceLifecycleTimeoutMs('not-a-number'), 1800000)
+  assert.equal(resolveSourceLifecycleTimeoutMs('-1'), 1800000)
+  assert.equal(
+    resolveSourceLifecycleTimeoutMs(null, {
+      name: 'long-source',
+      provider: { sourceLifecycleTimeoutMs: 900000 },
+    }),
+    900000,
+  )
+})
+
+test('resolveLivePublicExperienceEnabled honors provider opt-outs for live persistence', () => {
+  assert.equal(resolveLivePublicExperienceEnabled(null, ''), true)
+  assert.equal(resolveLivePublicExperienceEnabled(null, 'true'), false)
+  assert.equal(resolveLivePublicExperienceEnabled({ provider: { enrichPublicExperience: false } }, ''), false)
+  assert.equal(resolveLivePublicExperienceEnabled({ provider: { enrichPublicExperience: true } }, 'true'), true)
+})
+
+test('resolveLivePublicExperienceEnabled skips shared-shell enrichment for AMNS public vacancies', () => {
+  const scraper = buildScrapers().find(
+    (candidate) => candidate.name === 'arcelormittalnipponsteelindia',
+  )
+
+  assert.ok(scraper)
+  assert.equal(resolveLivePublicExperienceEnabled(scraper, ''), false)
+})
+
+test('resolveLivePublicExperienceEnabled skips redundant enrichment for high-volume API sources', () => {
+  for (const source of ['ibm', 'pwc']) {
+    const scraper = buildScrapers().find((candidate) => candidate.name === source)
+
+    assert.ok(scraper, `missing ${source} scraper`)
+    assert.equal(resolveLivePublicExperienceEnabled(scraper, ''), false, source)
+  }
 })
 
 test('resolveScraperRetryAttempts avoids multiplying the Workday source budget', () => {
@@ -273,4 +385,82 @@ test('runScraperWithTimeout can be disabled for explicitly unbounded local probe
   }, 0)
 
   assert.deepEqual(jobs, [{ title: 'Role' }])
+})
+
+test('getZeroJobEvidence does not treat an ordinary empty array as a verified empty career page', () => {
+  const confirmedEmpty = []
+  Object.defineProperty(
+    confirmedEmpty,
+    Symbol.for('jobverify.workday.authoritative-empty'),
+    { value: true },
+  )
+
+  assert.equal(
+    getZeroJobEvidence({ provider: { adapter: 'script', atsPlatform: 'custom' } }, [], []),
+    'unverified-zero',
+  )
+  assert.equal(
+    getZeroJobEvidence({ provider: { adapter: 'workday', atsPlatform: 'workday' } }, confirmedEmpty, []),
+    'verified-empty',
+  )
+  assert.equal(
+    getZeroJobEvidence({ provider: { adapter: 'workday', atsPlatform: 'workday' } }, confirmedEmpty, [{ title: 'Engineer' }]),
+    null,
+  )
+})
+
+test('withSourceLifecycleTimeout aborts hung lifecycle work with the source label', async () => {
+  let abortSeen = false
+
+  await assert.rejects(
+    withSourceLifecycleTimeout(
+      { name: 'hung-lifecycle' },
+      ({ signal }) => new Promise((resolve, reject) => {
+        signal.addEventListener('abort', () => {
+          abortSeen = true
+          reject(signal.reason)
+        }, { once: true })
+      }),
+      5,
+      { abortGraceMs: 50 },
+    ),
+    (error) => {
+      assert.ok(error instanceof ScraperSourceLifecycleTimeoutError)
+      assert.match(error.message, /\[hung-lifecycle\] lifecycle timed out after 5ms/)
+      assert.equal(error.localTimeout, true)
+      assert.equal(error.abortRetries, true)
+      assert.equal(error.failureKind, 'runner_lifecycle_timeout')
+      return true
+    },
+  )
+
+  assert.equal(abortSeen, true)
+})
+
+test('withSourceLifecycleTimeout preserves the timeout outcome when work resolves after abort', async () => {
+  let abortSeen = false
+
+  await assert.rejects(
+    withSourceLifecycleTimeout(
+      { name: 'late-success-lifecycle' },
+      ({ signal }) => new Promise((resolve) => {
+        signal.addEventListener('abort', () => {
+          abortSeen = true
+          setTimeout(() => {
+            resolve({ success: true, ignoredAbort: true })
+          }, 10)
+        }, { once: true })
+      }),
+      5,
+      { abortGraceMs: 50 },
+    ),
+    (error) => {
+      assert.ok(error instanceof ScraperSourceLifecycleTimeoutError)
+      assert.match(error.message, /\[late-success-lifecycle\] lifecycle timed out after 5ms/)
+      assert.equal(error.failureKind, 'runner_lifecycle_timeout')
+      return true
+    },
+  )
+
+  assert.equal(abortSeen, true)
 })

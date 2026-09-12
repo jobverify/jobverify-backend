@@ -23,7 +23,7 @@ const normalizeDatePostedList = (value) => {
   return [...new Set(
     list
       .map((item) => String(item ?? "").trim().toLowerCase())
-      .filter((item) => item === "na" || (/^\d+$/u.test(item) && Number(item) >= 0 && Number(item) <= 30)),
+      .filter((item) => item === "na" || item === "older-than-30" || (/^\d+$/u.test(item) && Number(item) >= 0 && Number(item) <= 30)),
   )].slice(0, MAX_PROFILE_ITEMS);
 };
 

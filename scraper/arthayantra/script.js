@@ -163,7 +163,7 @@ const requestPage = (url, redirectCount = 0) =>
         'User-Agent': USER_AGENT,
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.7',
       },
-      rejectUnauthorized: false,
+      rejectUnauthorized: true,
     }, (response) => {
       const chunks = []
 
