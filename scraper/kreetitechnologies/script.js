@@ -96,10 +96,9 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
 
-  return /<title>\s*Kawach\s*\|\s*Kreeti Technologies Pvt\. Ltd\.\s*<\/title>/i.test(page)
-    && /Kreeti Technologies is a full-stack design and development firm specializing in mobile and web apps\./i.test(page)
-    && /Built by engineers who ship/i.test(text)
-    && /150\+\s*Kreeti projects/i.test(text)
+  return /<title>\s*Web Development and Custom Application Development Company\s*<\/title>/i.test(page)
+    && /Kreeti Technologies/i.test(text)
+    && /150\+\s*Successful Projects/i.test(text)
     && /href="https:\/\/careers\.kreeti\.com\/candidates"/i.test(page)
 }
 

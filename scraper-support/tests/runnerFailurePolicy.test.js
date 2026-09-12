@@ -223,6 +223,15 @@ test('classifyScraperError recognizes remaining external and transient failure s
   )
 
   assert.deepEqual(
+    classifyScraperError(new Error('unable to verify the first certificate; if the root CA is installed locally, try running Node.js with --use-system-ca')),
+    {
+      softFailure: true,
+      upstreamOutage: true,
+      failureKind: 'network_or_timeout',
+    },
+  )
+
+  assert.deepEqual(
     classifyScraperError(new Error(
       'OdNest Company canonical first-party hosts now resolve; re-verify the official careers surface before trusting []',
     )),

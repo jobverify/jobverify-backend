@@ -108,10 +108,9 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /<title>\s*Electronics Corporation of India Limited \| DAE \| India\s*<\/title>/i.test(page)
-    && /ECIL_Banner_New\.jpg/i.test(page)
-    && /ECIL_NewLogos2\.png/i.test(page)
+  return /<title>\s*(?:Electronics Corporation of India Limited|Home page) \| ECIL \| DAE \| India\s*<\/title>/i.test(page)
     && /Electronics Corporation of India Limited/i.test(page)
+    && extractCurrentJobOpeningsUrl(page) === CURRENT_JOB_OPENINGS_URL
 }
 
 export const extractCurrentJobOpeningsUrl = (html = '') => {

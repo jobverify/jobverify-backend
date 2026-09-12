@@ -4,7 +4,7 @@ import JobDatasetSummary from "../models/JobDatasetSummary.js";
 import { applyPublicJobLocationScope } from "../utils/publicJobLocationScope.js";
 
 export const JOB_DATASET_SUMMARY_KEY = "public-active";
-export const JOB_DATASET_LIFECYCLE_VERSION = 2;
+export const JOB_DATASET_LIFECYCLE_VERSION = 3;
 const NATIVE_SUMMARY_FIND_ONE = JobDatasetSummary.findOne;
 
 const asSortedUniqueStrings = (values = []) => [...new Set(

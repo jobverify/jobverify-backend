@@ -220,9 +220,6 @@ JobSchema.index(
   {
     title: "text",
     company: "text",
-    description: "text",
-    minimumQualification: "text",
-    preferredQualification: "text",
     experienceRequired: "text",
     requiredSkills: "text",
   },
@@ -233,9 +230,6 @@ JobSchema.index(
       company: 8,
       requiredSkills: 5,
       experienceRequired: 3,
-      minimumQualification: 2,
-      preferredQualification: 2,
-      description: 1,
     },
   },
 );

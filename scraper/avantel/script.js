@@ -271,7 +271,7 @@ export const extractEmbeddedJobListings = (bundle = '') => {
 
   let parsed
   try {
-    parsed = vm.runInNewContext(arrayLiteral, Object.create(null))
+    parsed = vm.runInNewContext(arrayLiteral, Object.create(null), { timeout: 1000 })
   } catch {
     return []
   }

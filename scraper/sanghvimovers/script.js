@@ -185,7 +185,7 @@ const fetchTextIgnoringTlsErrors = async (url, {
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Encoding': 'gzip, deflate, br',
       },
-      rejectUnauthorized: false,
+      rejectUnauthorized: true,
       signal: createTimeoutSignal(timeoutMs),
     }, (response) => {
       const statusCode = response.statusCode ?? 0

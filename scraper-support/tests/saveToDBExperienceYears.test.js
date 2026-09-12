@@ -134,3 +134,106 @@ test('saveToDB enriches missing experience from the official public job page bef
     restoreReadyState()
   }
 })
+
+test('saveToDB reports enrichment and bulk write stage boundaries', async () => {
+  const restoreReadyState = setReadyState(1)
+  const originalBulkWrite = Job.bulkWrite
+  const originalDeleteMany = Job.deleteMany
+  const stages = []
+
+  Job.bulkWrite = async (operations) => ({
+    upsertedCount: operations.length,
+    modifiedCount: 0,
+  })
+  Job.deleteMany = async () => ({ deletedCount: 0 })
+
+  try {
+    await saveToDB([{
+      title: 'Cloud Engineer',
+      company: 'Virtusa',
+      location: 'Hyderabad, India',
+      city: 'Hyderabad',
+      link: 'https://www.virtusa.com/careers/job-search/in/cloud-engineer-vrt-123',
+      applyUrl: 'https://www.virtusa.com/careers/job-search/in/cloud-engineer-vrt-123',
+      sourceUrl: 'https://www.virtusa.com/careers/job-search/in/cloud-engineer-vrt-123',
+      experienceRequired: null,
+    }], 'virtusa', {
+      refreshDatasetSummary: false,
+      replaceExisting: false,
+      useBrowserFallback: false,
+      onStage: (event) => stages.push(`${event.stage}:${event.status}`),
+      fetchText: async () => `
+        <html>
+          <body>
+            <h1>Cloud Engineer</h1>
+            <section>
+              <h6>Required Experience</h6>
+              <div>5</div>
+            </section>
+          </body>
+        </html>
+      `,
+    })
+
+    assert.deepEqual(stages, [
+      'enrichment:start',
+      'enrichment:done',
+      'bulkWrite:start',
+      'bulkWrite:done',
+    ])
+  } finally {
+    Job.bulkWrite = originalBulkWrite
+    Job.deleteMany = originalDeleteMany
+    restoreReadyState()
+  }
+})
+
+test('saveToDB does not start bulk write after a lifecycle abort', async () => {
+  const restoreReadyState = setReadyState(1)
+  const originalBulkWrite = Job.bulkWrite
+  const originalDeleteMany = Job.deleteMany
+  const controller = new AbortController()
+  const abortReason = new Error('source lifecycle expired')
+  const stages = []
+  let bulkWriteStarted = false
+
+  Job.bulkWrite = async () => {
+    bulkWriteStarted = true
+    return { upsertedCount: 1, modifiedCount: 0 }
+  }
+  Job.deleteMany = async () => ({ deletedCount: 0 })
+
+  try {
+    await assert.rejects(
+      saveToDB([{
+        title: 'Cloud Engineer',
+        company: 'Virtusa',
+        location: 'Hyderabad, India',
+        city: 'Hyderabad',
+        link: 'https://www.virtusa.com/careers/job-search/in/cloud-engineer-vrt-123',
+        applyUrl: 'https://www.virtusa.com/careers/job-search/in/cloud-engineer-vrt-123',
+        sourceUrl: 'https://www.virtusa.com/careers/job-search/in/cloud-engineer-vrt-123',
+        experienceRequired: '5 years',
+      }], 'virtusa', {
+        refreshDatasetSummary: false,
+        replaceExisting: false,
+        enrichPublicExperience: false,
+        signal: controller.signal,
+        onStage: (event) => {
+          stages.push(`${event.stage}:${event.status}`)
+          if (event.stage === 'enrichment' && event.status === 'skipped') {
+            controller.abort(abortReason)
+          }
+        },
+      }),
+      abortReason,
+    )
+
+    assert.equal(bulkWriteStarted, false)
+    assert.deepEqual(stages, ['enrichment:skipped'])
+  } finally {
+    Job.bulkWrite = originalBulkWrite
+    Job.deleteMany = originalDeleteMany
+    restoreReadyState()
+  }
+})

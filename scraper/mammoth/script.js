@@ -130,12 +130,6 @@ export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeText(rawHtml)
 
   if (rawHtml.includes('Mammoth Analytics') && rawHtml.includes('Data Prep') && rawHtml.includes('Dashboards')) {
-    return normalized.includes('21-day pro trial')
-      && normalized.includes('no credit card')
-      && normalized.includes('viewers always free')
-  }
-
-  if (rawHtml.includes('Mammoth Analytics') && rawHtml.includes('Data Prep') && rawHtml.includes('Dashboards')) {
     return rawHtml.toLowerCase().includes('no credit card to start')
   }
 
@@ -155,6 +149,13 @@ export const hasOfficialAboutSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeText(rawHtml)
 
+  if (
+    /<title>[^<]*About[^<]*Mammoth[^<]*<\/title>/i.test(rawHtml)
+    && normalized.includes('mammoth builds data preparation and automation for business teams.')
+    && normalized.includes('four opinions the product is built on.')
+    && normalized.includes('the handoffs are the problem.')
+  ) return true
+
   if (rawHtml.includes('About') && rawHtml.includes('Mammoth') && rawHtml.includes('https://mammoth.io/about/')) {
     return rawHtml.toLowerCase().includes('data preparation and automation for business teams, built in london.')
       && normalized.includes('four opinions the product is built on.')
@@ -173,7 +174,7 @@ export const isVerifiedMissingFirstPartyRoute = (page = {}) => {
 
   return page.status === 404
     && isOfficialDomainUrl(page.url || '')
-    && /<title>\s*Mammoth Analytics\s*(?:&mdash;|&#8212;|—)\s*Data Prep,\s*Automation\s*&amp;\s*Dashboards\s*<\/title>/i.test(rawHtml)
+    && /<title>[^<]*Mammoth Analytics[^<]*Data Prep,\s*Automation\s*&amp;\s*Dashboards[^<]*<\/title>/i.test(rawHtml)
     && normalized.includes('404')
     && normalized.includes("that page doesn't exist.")
     && normalized.includes("here's where most people are heading.")

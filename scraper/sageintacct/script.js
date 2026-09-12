@@ -65,6 +65,7 @@ const runCurlRequest = (url, execFileImpl = execFile) => new Promise((resolve, r
     `Upgrade-Insecure-Requests: ${SAGE_HEADERS['Upgrade-Insecure-Requests']}`,
     '-w',
     `\\n${statusMarker}%{http_code}`,
+    '--',
     url,
   ]
 

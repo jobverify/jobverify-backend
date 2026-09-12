@@ -1,39 +1,37 @@
 # Jobverify Backend
 
-## Release: 26.09.01
-
 Express and MongoDB backend for Jobverify, with a separate scraper runtime that collects public job listings and writes normalized jobs into MongoDB.
 
 ## Tech Stack
 
-- Node.js
+- Node.js 24 (see .node-version)
 - Express 5
 - MongoDB with Mongoose
 - JWT-based authentication
-- Puppeteer-based scraper runtime under `scraper/`
+- Provider scrapers under `scraper/`, orchestrated by `scraper-support/`
 
 ## Repository Layout
 
 ```text
 Jobverify-backend/
 |-- src/                  Application source code
+|   |-- app.js            HTTP composition without database startup
+|   |-- config/           Validated HTTP process configuration
+|   |-- runtime/          Maintenance scheduling and bounded shutdown
 |   |-- controllers/      Route handlers
 |   |-- middleware/       Auth, CSRF, validation, error handling
 |   |-- models/           Mongoose models
 |   |-- routes/           API route modules
 |   |-- services/         Business logic
 |   `-- utils/            Shared helpers and runtime config
-|-- scraper/              Scraper runner, source scrapers, shared engines
-|   |-- <company>/        Company-specific scraper and local test files when needed
-|   |-- providers/        Provider registry and aliases
-|   |-- tests/            Shared scraper regression tests, fixtures, and legacy scraper tests
-|   `-- utils/            Scraper-specific helpers
+|-- scraper/              Company-specific source adapters and nearby tests
+|-- scraper-support/      Shared orchestration, engines, providers, and tests
 |-- test/                 Backend API and service tests
 |-- scripts/              Maintenance and reporting scripts
 |-- db/                   Database bootstrap code
-|-- server.js             API entry point
-|-- RUNBOOK.md            Setup and operational commands
-`-- ARCHITECTURE.md       Runtime and design notes
+|-- server.js             Database/socket/background-task lifecycle
+|-- Runbook.md            Setup and operational commands
+`-- architecture.md       Runtime and design notes
 ```
 
 ## Testing Conventions
@@ -41,12 +39,16 @@ Jobverify-backend/
 - Backend API and service tests live in `test/`.
 - Shared scraper engine, fixture-based regression tests, and legacy scraper tests live in `scraper-support/tests/`.
 - New scraper-specific tests can stay next to the scraper as `scraper/<company>/script.test.js`.
-- Avoid reintroducing a top-level `tests/` folder. Keep backend tests in `test/` and scraper test assets under `scraper/`.
+- Avoid reintroducing a top-level `tests/` folder. Keep backend tests in `test/` and shared scraper test assets under `scraper-support/tests/`.
 
-Run all tests:
+Install dependencies with `npm ci`, then provision the local test database binary
+when running MongoDB-backed checks. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ```bash
+npm run test:provision-mongo
+npm run check
 npm test
+npm run test:integration
 ```
 
 Remove local-only workspace artifacts:
@@ -57,11 +59,8 @@ npm run clean:workspace
 
 This removes common generated noise such as `.cache/`, `coverage/`, `playwright-report/`, `test-results/`, `tmp/`, scraper `jobs.json` snapshots, and temporary scraper fixtures.
 
-Install scraper dependencies if needed:
-
-```bash
-npm install --prefix scraper
-```
+Install the locked dependencies from the repository root with `npm ci`.
+There is no separate scraper package to install.
 
 ## Useful Commands
 
@@ -127,6 +126,17 @@ webhook secret to the frontend.
 
 ## Scraper company coverage
 
+The scheduled workflow runs every day at 02:08 IST (20:38 UTC on the previous
+calendar day). Himalayas and Wellfound publish individual vacancies only;
+directory hiring signals are not jobs. Empty API results return no rows, while
+network, challenge, malformed-page and incomplete-pagination failures remain
+source failures. A Wellfound HTML snapshot can be incomplete, so its extracted
+vacancies are upserted without recording misses for unseen jobs. Historic
+`*-current-openings` aggregate records are rejected on ingestion and hidden
+from public queries and alert delivery, including already-stored placeholders.
+The summary version is bumped so cached public counts rebuild with this scope.
+This change does not delete existing database records.
+
 `company_coverage_report.json` is the authoritative inventory of cataloged,
 disk-backed scraper providers. Refresh it after adding or removing a scraper:
 
@@ -176,17 +186,42 @@ Operational notes:
 - A Cloudflare WAF or rate-limit rule can be added later as a separate manual production step, but this repository does not assume that Cloudflare protection is already configured.
 
 For full setup, environment variables, and operational steps, see [Runbook.md](./Runbook.md).
-## WhatsApp alerts
+## Telegram alert schedules
 
-- `WHATSAPP_PROVIDER` selects `mock` or `meta`
-- `WHATSAPP_ENABLED=true` enables live delivery
-- `WHATSAPP_DEFAULT_COUNTRY_CODE=IN` normalizes local 10-digit mobile numbers
-- `WHATSAPP_RETRY_COUNT` and `WHATSAPP_RETRY_DELAY_MS` control bounded retries
-- `WHATSAPP_SEND_TIMEOUT_MS` bounds each provider attempt and aborts Meta sends that overrun that limit
-- `WHATSAPP_CLAIM_TTL_MS` controls how long a claimed delivery row stays owned before recovery may reclaim it
-- `WHATSAPP_ALLOW_LEGACY_QUEUE_RECLAIM=false` keeps pre-lease `queued + lastAttemptAt` rows fenced off by default during mixed-version rollouts
+After linking Telegram, enabling alerts and saving at least one matching filter,
+Profile shows **Telegram alert schedule**. Users can select immediate delivery,
+a daily time, or a weekly weekday and time. All times use **Asia/Kolkata (IST)**.
+Existing accounts retain their previous cadence until they save a Telegram
+schedule.
 
-Legacy reclaim rollout note:
+Authenticated `GET` and CSRF-protected `PUT /api/user/telegram-alerts/schedule`
+read and update the schedule. PUT accepts, for example:
 
-- Leave `WHATSAPP_ALLOW_LEGACY_QUEUE_RECLAIM=false` while any older backend worker that still uses `queued + lastAttemptAt` ownership might be alive.
-- After older workers are drained, operators can temporarily set the flag to any accepted true value (`1`, `true`, `yes`, `on`) to recover stranded legacy rows, then return it to `false`.
+```json
+{"frequency":"weekly","isActive":true,"deliveryTime":"18:45","weeklyDay":"Friday"}
+```
+
+`deliveryTime` must be a 24-hour `HH:mm` time, and `weeklyDay` a full English
+weekday name. Both fields remain saved when changing frequency. Setup must be
+complete before using this endpoint. Pausing preserves matching queued jobs;
+resuming or editing the schedule updates their due times.
+
+The backend checks due alerts every minute and catches up after downtime. Only
+matching queued jobs produce a message. Temporary Telegram failures stay queued
+with retry backoff; an unavailable chat disables delivery until the user restores
+Telegram access. Successfully acknowledged Telegram delivery rows are deleted
+completely, including their snapshots and provider metadata. If deletion fails,
+the sent state prevents a resend while the next recovery retries cleanup. Unsent
+records, user accounts, preferences and source job listings are retained. Jobs
+that are no longer active or no longer match are retained as skipped.
+
+No sent-delivery receipt is retained: manually enqueueing an already-sent job
+can send it again. The scraper normally enqueues only newly inserted jobs.
+
+Deploy both frontend and backend, and apply the model index plan for the new
+queue fields. No additional Telegram environment variables are required.
+MongoDB must support replica-set transactions. Reliable delivery near the chosen
+minute requires a continuously running backend: this repository's Render
+blueprint uses the Free plan, which [spins down after 15 minutes without inbound
+traffic](https://render.com/docs/free#spinning-down-on-idle). An idle instance
+will catch up only when it starts again.

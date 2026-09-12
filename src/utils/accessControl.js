@@ -44,7 +44,6 @@ export const applyExpiredAccessDowngrade = (user, now = new Date()) => {
     ...user.premium,
     planId: PLAN_IDS.FREE,
     status: "expired",
-    whatsappAlertsEnabled: false,
     telegramAlertsEnabled: false,
   };
 
@@ -62,10 +61,6 @@ export const getEffectiveAccess = (user, now = new Date()) => {
   const isPremium = isAdmin || (planId !== PLAN_IDS.FREE && !expired);
   const canUseFilters = isAdmin || Boolean(planConfig.hasFilters && !expired);
   const shouldShowAdsValue = !isAdmin && Boolean(planConfig.hasAds || expired);
-  const canUseWhatsapp =
-    !expired
-    && planConfig.hasWhatsAppAlerts
-    && Boolean(safeUser?.premium?.whatsappAlertsEnabled);
   const telegramLinkedAt = safeUser?.telegram?.linkedAt;
   const telegramOptedOutAt = safeUser?.telegram?.optedOutAt;
   const hasLinkedTelegram = Boolean(
@@ -75,7 +70,7 @@ export const getEffectiveAccess = (user, now = new Date()) => {
       || new Date(telegramLinkedAt).getTime() > new Date(telegramOptedOutAt).getTime()),
   );
   const canUseTelegram =
-    (isAdmin || (!expired && planConfig.hasWhatsAppAlerts && safeUser?.premium?.status === "active"))
+    (isAdmin || (!expired && planConfig.hasTelegramAlerts && safeUser?.premium?.status === "active"))
     && Boolean(safeUser?.premium?.telegramAlertsEnabled)
     && hasLinkedTelegram;
 
@@ -90,19 +85,15 @@ export const getEffectiveAccess = (user, now = new Date()) => {
     expiresAt: safeUser?.premium?.expiresAt ?? null,
     canUseFilters,
     shouldShowAds: shouldShowAdsValue,
-    canUseWhatsappAlerts: canUseWhatsapp,
     canUseTelegramAlerts: canUseTelegram,
   };
 };
 
-export const canUsePremiumFilters = (user, now = new Date()) =>
-  getEffectiveAccess(user, now).canUseFilters;
+export const canUsePremiumFilters = (user, now = new Date(), siteSettings) =>
+  siteSettings?.billingEnabled === false || getEffectiveAccess(user, now).canUseFilters;
 
 export const shouldShowAds = (user, now = new Date()) =>
   getEffectiveAccess(user, now).shouldShowAds;
-
-export const canUseWhatsappAlerts = (user, now = new Date()) =>
-  getEffectiveAccess(user, now).canUseWhatsappAlerts;
 
 export const canUseTelegramAlerts = (user, now = new Date()) =>
   getEffectiveAccess(user, now).canUseTelegramAlerts;
@@ -120,7 +111,7 @@ export const buildAccessSummary = (user, now = new Date()) => {
     isPremium: access.isPremium,
     canUseFilters: access.canUseFilters,
     canSkipAds: !access.shouldShowAds,
-    hasWhatsappAlerts: access.canUseWhatsappAlerts,
+    hasTelegramAlerts: access.isAdmin || Boolean(access.planConfig.hasTelegramAlerts && !access.isExpired && access.status === "active"),
     expiresAt,
     daysRemaining,
     status: access.status,

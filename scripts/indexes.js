@@ -11,7 +11,6 @@ import mongoose from "mongoose";
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(currentDir, "../.env"), quiet: true });
 
-const { default: connectDB } = await import("../db/db.js");
 const { default: Job } = await import("../src/models/Job.js");
 const { default: User } = await import("../src/models/User.js");
 const { default: Click } = await import("../src/models/Click.js");
@@ -136,6 +135,7 @@ export async function runIndexManagement({
   try {
     ensureSafeApply({ applyMode, dryRun });
     if (shouldConnect) {
+      const { default: connectDB } = await import("../db/db.js");
       await connectDB();
     }
 

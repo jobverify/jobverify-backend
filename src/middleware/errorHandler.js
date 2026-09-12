@@ -7,9 +7,15 @@ export class APIError extends Error {
 }
 
 export const errorHandler = (err, req, res, next) => {
-  const statusCode = err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
-  const details = err.details || null;
+  if (res.headersSent) return next(err);
+
+  const requestedStatus = err.statusCode ?? err.status;
+  const statusCode = Number.isInteger(requestedStatus) && requestedStatus >= 400 && requestedStatus <= 599
+    ? requestedStatus
+    : 500;
+  const isInvalidJson = err.type === "entity.parse.failed";
+  const message = isInvalidJson ? "Invalid JSON request body." : err.message || "Internal Server Error";
+  const details = isInvalidJson ? null : err.details || null;
   const isProduction = process.env.NODE_ENV === "production";
   const isSafeClientError =
     err instanceof APIError || (statusCode >= 400 && statusCode < 500);
@@ -20,7 +26,8 @@ export const errorHandler = (err, req, res, next) => {
     statusCode,
     message,
     details,
-    stack: err.stack,
+    // Parser error stacks may include fragments of the submitted body.
+    stack: isInvalidJson ? undefined : err.stack,
   });
 
   const payload = {

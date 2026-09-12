@@ -77,7 +77,7 @@ export const fetchPageAllowingExpiredCertificate = (url, redirectCount = 0) => n
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7',
     },
-    rejectUnauthorized: false,
+    rejectUnauthorized: true,
   }, (response) => {
     const status = response.statusCode ?? 0
     const location = response.headers.location

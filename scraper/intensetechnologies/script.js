@@ -259,7 +259,7 @@ export const createIntenseTechnologiesScraper = ({
       browserSessionOptions: {
         timeoutMs: 90000,
         settleTimeMs: 12000,
-        ignoreHTTPSErrors: true,
+        ignoreHTTPSErrors: false,
       },
     })
 

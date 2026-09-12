@@ -4,6 +4,7 @@
  */
 
 import express from "express";
+import { loadSiteSettings } from "../middleware/siteSettings.js";
 import {
   getAllJobs,
   getJobSearch,
@@ -39,6 +40,7 @@ const clickLimiter = createRateLimiter({
 
 const router = express.Router();
 const publicJobAbuseGuard = createPublicJobAbuseGuard();
+router.use(loadSiteSettings);
 
 router.get("/", publicJobAbuseGuard, jobQueryValidation, validateRequest, optionalProtect, getAllJobs);
 router.get("/search", publicJobAbuseGuard, optionalProtect, getJobSearch);

@@ -4,6 +4,15 @@
  */
 
 import { Schema, model } from "mongoose";
+import { ALERT_FREQUENCIES, ALERT_WEEKDAYS, ALERT_TIME_PATTERN, DEFAULT_ALERT_TIME, DEFAULT_ALERT_DAY } from "../constants/alertSchedule.js";
+
+const TelegramScheduleSchema = new Schema({
+  frequency: { type: String, enum: ALERT_FREQUENCIES, default: "immediate" },
+  isActive: { type: Boolean, default: true },
+  deliveryTime: { type: String, match: ALERT_TIME_PATTERN, default: DEFAULT_ALERT_TIME },
+  weeklyDay: { type: String, enum: ALERT_WEEKDAYS, default: DEFAULT_ALERT_DAY },
+  scheduleVersion: { type: Number, default: 0 },
+}, { _id: false });
 
 const FiltersSchema = new Schema(
   {
@@ -28,30 +37,15 @@ const SubscriptionSchema = new Schema(
       type: FiltersSchema,
       default: () => ({}),
     },
-    frequency: {
-      type: String,
-      enum: ["immediate", "daily", "weekly"],
-      default: "daily",
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-    lastSentAt: {
-      type: Date,
-    },
+    dispatchRevision: { type: Number, default: 0 },
+    telegramSchedule: { type: TelegramScheduleSchema, default: () => ({}) },
+    telegramLastSentAt: { type: Date },
   },
   {
     timestamps: true,
     strict: true,
   }
 );
-
-SubscriptionSchema.index({
-  isActive: 1,
-  frequency: 1,
-  lastSentAt: 1,
-});
 
 SubscriptionSchema.set("toJSON", {
   // Transforms database document representation for API JSON responses.

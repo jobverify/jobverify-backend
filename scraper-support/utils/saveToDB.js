@@ -176,7 +176,7 @@ export const generateFingerprint = (job) => {
  * - Upserts the latest scraped set for the scraper source first.
  * - Soft-expires unseen jobs only after consecutive successful scraper misses.
  * - Keeps jobs with no posted date, because the scraper cannot prove they are stale.
- * - Drops scraped jobs whose posted date is older than the retention window.
+ * - Keeps open scraped jobs regardless of their posting date.
  *
  * @param {object[]} jobs   Array of job objects from a scraper's run()
  * @param {string}   source Scraper identifier e.g. 'airbus', 'rubrik', 'google'
@@ -192,9 +192,63 @@ const inferJobType = (title = '') => {
   return 'Full-time'
 }
 
+const emitStage = (source, onStage, event = {}) => {
+  if (typeof onStage !== 'function') return
+
+  onStage({
+    source,
+    ...event,
+  })
+}
+
+const getAbortReason = (signal, fallbackMessage) => (
+  signal?.reason || new Error(fallbackMessage)
+)
+
+const throwIfAborted = (signal, fallbackMessage = 'Scraper persistence aborted') => {
+  if (signal?.aborted) {
+    throw getAbortReason(signal, fallbackMessage)
+  }
+}
+
+const runStage = async (source, onStage, stage, operation, details = {}, { signal = null } = {}) => {
+  throwIfAborted(signal)
+  const startedAt = Date.now()
+  emitStage(source, onStage, {
+    stage,
+    status: 'start',
+    ...details,
+  })
+
+  try {
+    throwIfAborted(signal)
+    const result = await operation()
+    throwIfAborted(signal)
+    emitStage(source, onStage, {
+      stage,
+      status: 'done',
+      durationMs: Date.now() - startedAt,
+      ...details,
+    })
+    return result
+  } catch (error) {
+    emitStage(source, onStage, {
+      stage,
+      status: 'error',
+      durationMs: Date.now() - startedAt,
+      error: error?.message || String(error),
+      ...details,
+    })
+    throw error
+  }
+}
+
 export const saveToDB = async (jobs, source, options = {}) => {
   await ensureConnected()
   const JobModel = await getJobModel()
+  const onStage = options.onStage
+  const signal = options.signal || null
+  throwIfAborted(signal)
 
   const now = normalizeLifecycleDate(options.now) || new Date()
   const missesBeforeExpiry = resolveJobMissesBeforeExpiry(
@@ -203,21 +257,36 @@ export const saveToDB = async (jobs, source, options = {}) => {
   const {
     eligibleJobs,
     filterCounts,
-    postedAtCutoff,
-    retentionDays,
   } = analyzePublishableJobs(jobs, {
     now,
-    retentionDays: options.retentionDays ?? process.env.SCRAPER_JOB_POSTED_WITHIN_DAYS,
   })
 
   const jobsForPersistence = options.enrichPublicExperience === false
-    ? eligibleJobs
-    : await enrichJobsWithPublicExperience(eligibleJobs, {
-        fetchText: options.fetchText,
-        fetchBrowserText: options.fetchBrowserText,
-        concurrency: options.experienceEnrichmentConcurrency,
-        useBrowserFallback: options.useBrowserFallback,
-      })
+    ? (() => {
+        emitStage(source, onStage, {
+          stage: 'enrichment',
+          status: 'skipped',
+          jobs: eligibleJobs.length,
+        })
+        return eligibleJobs
+      })()
+    : await runStage(
+        source,
+        onStage,
+        'enrichment',
+        () => enrichJobsWithPublicExperience(eligibleJobs, {
+          fetchText: options.fetchText,
+          fetchBrowserText: options.fetchBrowserText,
+          concurrency: options.experienceEnrichmentConcurrency,
+          useBrowserFallback: options.useBrowserFallback,
+          signal,
+          fetchTimeoutMs: options.fetchTimeoutMs,
+          pdfTextExtractionTimeoutMs: options.pdfTextExtractionTimeoutMs,
+        }),
+        { jobs: eligibleJobs.length },
+        { signal },
+      )
+  throwIfAborted(signal)
 
   const operations = jobsForPersistence.map((job) => {
     const normalizedJob = normalizeScrapedJob(job, { source })
@@ -325,9 +394,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
     missed: 0,
     expired: 0,
     eligibleJobs: eligibleJobs.length,
-    retentionDays,
     missesBeforeExpiry,
-    postedAtCutoff: postedAtCutoff.toISOString(),
     staleCheckSkipped: false,
     staleCheckReason: null,
   }
@@ -335,7 +402,15 @@ export const saveToDB = async (jobs, source, options = {}) => {
   const currentFingerprints = operations.map((operation) => operation.updateOne.filter.fingerprint)
 
   if (operations.length > 0) {
-    const bulkResult = await JobModel.bulkWrite(operations, { ordered: false })
+    const bulkResult = await runStage(
+      source,
+      onStage,
+      'bulkWrite',
+      () => JobModel.bulkWrite(operations, { ordered: false }),
+      { operations: operations.length },
+      { signal },
+    )
+    throwIfAborted(signal)
     result.inserted = bulkResult.upsertedCount ?? 0
     result.updated = bulkResult.modifiedCount ?? 0
 
@@ -359,11 +434,21 @@ export const saveToDB = async (jobs, source, options = {}) => {
   }
 
   let shouldRefreshDatasetSummary = operations.length > 0
+  const incompleteListing = jobs.some((job) => job?.sourceListingComplete === false)
   const authoritativeEmpty = currentFingerprints.length === 0
     && options.authoritativeEmpty === true
 
   if (
     options.replaceExisting !== false
+    && incompleteListing
+  ) {
+    result.staleCheckSkipped = true
+    result.staleCheckReason = 'Incomplete source listing; previous vacancies were preserved without recording lifecycle misses.'
+  }
+
+  if (
+    options.replaceExisting !== false
+    && !incompleteListing
     && currentFingerprints.length === 0
     && !authoritativeEmpty
   ) {
@@ -374,6 +459,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
 
   if (
     options.replaceExisting !== false
+    && !incompleteListing
     && (currentFingerprints.length > 0 || authoritativeEmpty)
   ) {
     const unseenFilter = options.replaceAllJobs
@@ -384,21 +470,35 @@ export const saveToDB = async (jobs, source, options = {}) => {
       unseenFilter.fingerprint = { $nin: currentFingerprints }
     }
 
-    const expireResult = await JobModel.updateMany(
-      {
-        ...unseenFilter,
-        missedScrapeCount: { $gte: missesBeforeExpiry - 1 },
-      },
-      {
-        $inc: { missedScrapeCount: 1 },
-        $set: { status: 'expired' },
-      },
-    ).exec()
+    const expireResult = await runStage(
+      source,
+      onStage,
+      'expireUnseen',
+      () => JobModel.updateMany(
+        {
+          ...unseenFilter,
+          missedScrapeCount: { $gte: missesBeforeExpiry - 1 },
+        },
+        {
+          $inc: { missedScrapeCount: 1 },
+          $set: { status: 'expired' },
+        },
+      ).exec(),
+      {},
+      { signal },
+    )
 
-    const missResult = await JobModel.updateMany(
-      unseenFilter,
-      { $inc: { missedScrapeCount: 1 } },
-    ).exec()
+    const missResult = await runStage(
+      source,
+      onStage,
+      'recordMisses',
+      () => JobModel.updateMany(
+        unseenFilter,
+        { $inc: { missedScrapeCount: 1 } },
+      ).exec(),
+      {},
+      { signal },
+    )
 
     result.expired = expireResult.modifiedCount ?? 0
     result.missed = result.expired + (missResult.modifiedCount ?? 0)
@@ -406,7 +506,14 @@ export const saveToDB = async (jobs, source, options = {}) => {
   }
 
   if (shouldRefreshDatasetSummary && options.refreshDatasetSummary !== false && hasLiveDatabaseHandle()) {
-    await refreshJobDatasetSummary()
+    await runStage(
+      source,
+      onStage,
+      'datasetSummary',
+      () => refreshJobDatasetSummary(),
+      {},
+      { signal },
+    )
   }
 
   return result

@@ -116,11 +116,10 @@ export const hasVerifiedCareersBundleSignal = (scriptText) => {
   const text = String(scriptText ?? '')
 
   return /jobs\.ashbyhq\.com\/exa/i.test(text)
+    && !/jobs\.ashbyhq\.com\/(?!exa(?:\/|["']))/i.test(text)
     && /SF:"San Francisco"/i.test(text)
     && /NYC:"New York(?: City)?"/i.test(text)
     && /SG:"Singapore"/i.test(text)
-    && /LDN:"London"/i.test(text)
-    && /SYD:"Sydney"/i.test(text)
     && !/\b(?:Bangalore|Bengaluru|India)\b/i.test(text)
 }
 

@@ -50,6 +50,13 @@ export const pageIndicatesOfficialJobsSurface = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
+  if (
+    /\bOpen Positions\b/i.test(normalized)
+    && /platformscience\.com\/careers\?gh_jid=/i.test(page)
+    && /\bContact Us\b/i.test(normalized)
+    && /greenhouse\.io\/platformscience/i.test(page)
+  ) return true
+
   return /<title>\s*Open Jobs at Platform Science \| Technology &amp; Fleet Innovation Careers\s*<\/title>/i.test(page)
     && /open positions/i.test(normalized)
     && /contact us/i.test(normalized)

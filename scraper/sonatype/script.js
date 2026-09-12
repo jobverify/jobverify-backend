@@ -88,7 +88,7 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const text = normalizeText(page)
 
-  return page.includes('<title>Sonatype Careers &amp; Current Job Openings | Sonatype</title>')
+  return /<title>Sonatype Careers &(?:amp;)? Current Job Openings(?: \| Sonatype)?<\/title>/i.test(page)
     && text.includes('sonatype careers')
     && page.includes('jobs.lever.co/sonatype')
 }

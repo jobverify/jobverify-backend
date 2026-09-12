@@ -124,7 +124,7 @@ test('getScraperCatalog merges workday and official portal providers into one re
   assert.match(accenture.companyCareerPage, /accenture\.com\/in-en\/careers/i)
   assert.equal(accenture.companyDomain, 'accenture.com')
   assert.match(accenture.baseUrl, /accenture\.wd103\.myworkdayjobs\.com\/AccentureCareers/i)
-  assert.equal(accenture.scraperTimeoutMs, 300000)
+  assert.equal(accenture.scraperTimeoutMs, 1200000)
 
   assert.ok(adobe)
   assert.equal(adobe.adapter, 'script')
@@ -163,6 +163,7 @@ test('getScraperCatalog merges workday and official portal providers into one re
   assert.match(cadence.companyCareerPage, /cadence\.com\/.*careers\.html/i)
   assert.equal(cadence.companyDomain, 'cadence.com')
   assert.match(cadence.baseUrl, /cadence\.wd1\.myworkdayjobs\.com\/External_Careers/i)
+  assert.equal(cadence.scraperTimeoutMs, 1200000)
 
   assert.ok(cognizant)
   assert.equal(cognizant.adapter, 'script')
@@ -300,6 +301,7 @@ test('getScraperCatalog merges workday and official portal providers into one re
   assert.match(mastercard.companyCareerPage, /careers\.mastercard\.com/i)
   assert.equal(mastercard.companyDomain, 'careers.mastercard.com')
   assert.match(mastercard.baseUrl, /mastercard\.wd1\.myworkdayjobs\.com\/CorporateCareers/i)
+  assert.equal(mastercard.scraperTimeoutMs, 1200000)
 
   assert.ok(meta)
   assert.equal(meta.adapter, 'script')
@@ -657,7 +659,7 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   assert.match(accenture.dryRunFile, /accenture.workday[\\/]jobs\.json$/)
   assert.equal(accenture.provider.source, 'accenture')
   assert.equal(accenture.provider.companyDomain, 'accenture.com')
-  assert.equal(accenture.provider.scraperTimeoutMs, 300000)
+  assert.equal(accenture.provider.scraperTimeoutMs, 1200000)
 
   assert.ok(adobe)
   assert.equal(typeof adobe.run, 'function')
@@ -728,6 +730,7 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   assert.equal(cadence.provider.source, 'cadence')
   assert.equal(cadence.provider.companyDomain, 'cadence.com')
   assert.match(cadence.provider.baseUrl, /cadence\.wd1\.myworkdayjobs\.com\/External_Careers/i)
+  assert.equal(cadence.provider.scraperTimeoutMs, 1200000)
 
   assert.ok(cognizant)
   assert.equal(typeof cognizant.run, 'function')
@@ -800,6 +803,7 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   assert.match(mastercard.dryRunFile, /mastercard.workday[\\/]jobs\.json$/)
   assert.equal(mastercard.provider.source, 'mastercard')
   assert.match(mastercard.provider.baseUrl, /mastercard\.wd1\.myworkdayjobs\.com\/CorporateCareers/i)
+  assert.equal(mastercard.provider.scraperTimeoutMs, 1200000)
 
   assert.ok(meta)
   assert.equal(typeof meta.run, 'function')

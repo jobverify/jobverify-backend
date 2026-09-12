@@ -106,7 +106,7 @@ export const extractSucuriCookie = (html) => {
   }
 
   vm.createContext(context)
-  vm.runInContext(scriptMatch[1], context)
+  vm.runInContext(scriptMatch[1], context, { timeout: 1000 })
 
   const cookie = String(context.document.cookie ?? '').split(';')[0]
   if (!/^sucuri_cloudproxy_uuid_[a-z0-9]+=.+$/i.test(cookie)) {

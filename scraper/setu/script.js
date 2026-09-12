@@ -188,10 +188,11 @@ export const hasOfficialCareersSignal = (html = '') => {
   const title = (extractTitle(page) || '').toLowerCase()
   const markup = page.toLowerCase()
 
-  return title.startsWith('careers')
-    && title.endsWith('setu')
-    && markup.includes('open roles at setu')
-    && markup.includes("build the financial infrastructure that powers india's payments, verification and credit.")
+  return title.includes('careers at setu')
+    && markup.includes("come tackle india's toughest fintech problems")
+    && markup.includes("overhauling our country's dated fintech architecture")
+    && markup.includes('current openings')
+    && markup.includes('brokentusk technologies pvt. ltd')
 }
 
 export const hasPlaceholderOpeningsSignal = (html = '') =>

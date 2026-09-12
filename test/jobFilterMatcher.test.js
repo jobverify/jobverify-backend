@@ -97,3 +97,18 @@ test("jobMatchesSavedFilters uses calendar-day date-posted windows", () => {
     now,
   }), true);
 });
+
+test("jobMatchesSavedFilters supports the more-than-thirty-days date-posted option", () => {
+  const now = new Date(2026, 6, 31, 12);
+
+  assert.equal(jobMatchesSavedFilters({
+    filters: { datePostedDays: ["older-than-30"] },
+    job: { postedAt: new Date(2026, 5, 30, 12) },
+    now,
+  }), true);
+  assert.equal(jobMatchesSavedFilters({
+    filters: { datePostedDays: ["older-than-30"] },
+    job: { postedAt: new Date(2026, 6, 1, 12) },
+    now,
+  }), false);
+});

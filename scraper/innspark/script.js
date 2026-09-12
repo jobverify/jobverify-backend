@@ -366,7 +366,7 @@ export const createInnsparkScraper = () => ({
       browserSessionOptions: {
         timeoutMs: 90000,
         settleTimeMs: 4000,
-        ignoreHTTPSErrors: true,
+        ignoreHTTPSErrors: false,
       },
     })
 

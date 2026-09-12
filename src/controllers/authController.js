@@ -36,7 +36,6 @@ import {
   buildAccessSummary,
 } from "../utils/accessControl.js";
 import { googleIdentity } from "../utils/googleAuth.js";
-import { normalizePhoneE164 } from "../utils/phoneNumbers.js";
 import { resolveFrontendOrigin } from "../utils/runtimeConfig.js";
 
 const GENERIC_REGISTRATION_MESSAGE = "If this email can be registered, a verification email will be sent.";
@@ -145,9 +144,8 @@ export const register = async (req, res) => {
     return sendValidationError(res, errors);
   }
 
-  const { name, email, password, phoneE164 } = req.body;
+  const { name, email, password } = req.body;
   const normalizedEmail = normalizeEmailAddress(email);
-  const normalizedPhoneE164 = normalizePhoneE164(phoneE164);
 
   try {
     const user = await User.findOne({ email: normalizedEmail });
@@ -178,10 +176,7 @@ export const register = async (req, res) => {
     const pending = new PendingUser({
       email: normalizedEmail,
       password: hashedPassword,
-      profile: {
-        name,
-        phoneE164: normalizedPhoneE164,
-      },
+      profile: { name },
       verificationTokenHash: verificationToken.tokenHash,
       verificationTokenExpiresAt: verificationToken.expiresAt,
       lastResentAt: new Date(), // initialized to register time
@@ -280,9 +275,6 @@ export const verifyEmail = async (req, res) => {
       email: pendingUser.email,
       password: pendingUser.password,
       profile: pendingUser.profile ? { name: pendingUser.profile.name } : {},
-      contact: {
-        phoneE164: pendingUser.profile?.phoneE164 ?? null,
-      },
       isVerified: true,
       lastLoginAt: new Date(),
     });
@@ -622,13 +614,10 @@ export const authenticateWithGoogle = async (req, res) => {
     if (pendingUser) {
       const promotedUser = new User({
         email: normalizedEmail,
-        password: pendingUser.password ?? null,
-        profile: {
-          name: pendingUser.profile?.name ?? identity.name ?? undefined,
-        },
-        contact: {
-          phoneE164: pendingUser.profile?.phoneE164 ?? null,
-        },
+        // Pending registration data may belong to someone else. Trust only the
+        // verified Google identity; email sign-in can be added by password reset.
+        password: null,
+        profile: identity.name ? { name: identity.name } : {},
         google: buildGoogleMetadata(identity),
         isVerified: true,
       });

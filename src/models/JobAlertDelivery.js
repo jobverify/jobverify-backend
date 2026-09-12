@@ -19,8 +19,8 @@ const JobAlertDeliverySchema = new Schema(
     },
     channel: {
       type: String,
-      enum: ["whatsapp", "telegram"],
-      default: "whatsapp",
+      enum: ["telegram"],
+      default: "telegram",
     },
     status: {
       type: String,
@@ -36,6 +36,10 @@ const JobAlertDeliverySchema = new Schema(
       type: Date,
       default: null,
     },
+    scheduledFor: { type: Date, default: null },
+    schedulePaused: { type: Boolean, default: false },
+    scheduleVersion: { type: Number, default: 0 },
+    retryAt: { type: Date, default: null },
     claimToken: {
       type: String,
       default: null,
@@ -84,6 +88,8 @@ JobAlertDeliverySchema.index(
 JobAlertDeliverySchema.index(
   { channel: 1, status: 1, createdAt: 1 },
 );
+JobAlertDeliverySchema.index({ status: 1, schedulePaused: 1, scheduledFor: 1 });
+JobAlertDeliverySchema.index({ channel: 1, status: 1, retryAt: 1 });
 JobAlertDeliverySchema.index(
   { channel: 1, status: 1, claimExpiresAt: 1, createdAt: 1 },
 );

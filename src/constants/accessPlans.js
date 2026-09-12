@@ -26,7 +26,7 @@ export const PLAN_CONFIG = Object.freeze({
     accessRole: ACCESS_ROLES.FREE,
     hasFilters: false,
     hasAds: true,
-    hasWhatsAppAlerts: false,
+    hasTelegramAlerts: false,
   },
   [PLAN_IDS.MONTHLY]: {
     id: PLAN_IDS.MONTHLY,
@@ -36,7 +36,7 @@ export const PLAN_CONFIG = Object.freeze({
     accessRole: ACCESS_ROLES.MONTHLY,
     hasFilters: true,
     hasAds: false,
-    hasWhatsAppAlerts: false,
+    hasTelegramAlerts: false,
   },
   [PLAN_IDS.SEMESTER]: {
     id: PLAN_IDS.SEMESTER,
@@ -46,7 +46,7 @@ export const PLAN_CONFIG = Object.freeze({
     accessRole: ACCESS_ROLES.SEMESTER,
     hasFilters: true,
     hasAds: false,
-    hasWhatsAppAlerts: true,
+    hasTelegramAlerts: true,
   },
   [PLAN_IDS.YEARLY]: {
     id: PLAN_IDS.YEARLY,
@@ -56,7 +56,7 @@ export const PLAN_CONFIG = Object.freeze({
     accessRole: ACCESS_ROLES.YEARLY,
     hasFilters: true,
     hasAds: false,
-    hasWhatsAppAlerts: true,
+    hasTelegramAlerts: true,
   },
 });
 

@@ -71,6 +71,7 @@ export const WORK_ARRANGEMENT_OPTIONS = Object.freeze([
 ]);
 
 export const DATE_POSTED_NA_VALUE = "na";
+export const DATE_POSTED_OLDER_THAN_30_VALUE = "older-than-30";
 
 export const DATE_POSTED_WINDOW_OPTIONS = Object.freeze(
   Array.from({ length: 31 }, (_, index) => index),
@@ -78,6 +79,7 @@ export const DATE_POSTED_WINDOW_OPTIONS = Object.freeze(
 
 export const DATE_POSTED_OPTIONS = Object.freeze([
   ...DATE_POSTED_WINDOW_OPTIONS,
+  DATE_POSTED_OLDER_THAN_30_VALUE,
   DATE_POSTED_NA_VALUE,
 ]);
 

@@ -38,7 +38,7 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /<title>Careers at Maxgen Technologies \| IT Jobs &amp; Internship in Pune Ahmedabad \| Maxgen Technologies<\/title>/i.test(page)
+  return /<title>(?:Careers at Maxgen Technologies \| IT Jobs &amp; Internship in Pune Ahmedabad \| Maxgen Technologies|Maxgen Technologies Pvt Ltd)<\/title>/i.test(page)
     && text.includes('Open Job Positions at Maxgen')
     && text.includes('No jobs available.')
 }

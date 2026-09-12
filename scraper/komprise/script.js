@@ -189,8 +189,7 @@ export const extractJobFromDetailPage = ({ url, lastmod, html } = {}) => {
     jobId,
     requisitionId: jobId,
     sourceUrl,
-    // Komprise exposes its verified email CTA on this canonical first-party detail page.
-    applyUrl: sourceUrl,
+    applyUrl,
     employmentType: extractEmploymentTypeFromDescription(description),
     experienceRequired: null,
     minimumQualification: null,

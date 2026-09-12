@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { parseJavaScriptLiteral } from '../../scraper-support/utils/safeLiteral.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -200,7 +201,7 @@ export const extractJobsFromAssetText = (assetText) => {
     throw new Error('Nous Infosystems jobs asset no longer matches the verified exported array contract')
   }
 
-  const records = Function(`"use strict"; return (${match[1]});`)()
+  const records = parseJavaScriptLiteral(match[1])
   if (!Array.isArray(records)) {
     throw new Error('Nous Infosystems jobs asset no longer evaluates to a jobs array')
   }

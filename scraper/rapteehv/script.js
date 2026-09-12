@@ -223,7 +223,7 @@ export const createRapteeHvScraper = ({
       browserSessionOptions: {
         timeoutMs: 90000,
         settleTimeMs: 12000,
-        ignoreHTTPSErrors: true,
+        ignoreHTTPSErrors: false,
       },
     })
 

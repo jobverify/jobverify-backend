@@ -32,9 +32,8 @@ const { default: Click } = await import("../src/models/Click.js");
 
 // Connects to the database and executes a cascade delete on the specified email.
 const runSweepDelete = async () => {
-  await connectDB();
-
   try {
+    await connectDB();
     console.log(`Starting sweep delete for user: ${email}...`);
 
     // 1. Delete from PendingUsers (verification limbo)
@@ -56,7 +55,7 @@ const runSweepDelete = async () => {
       console.log(`- Clicks: Deleted ${clickResult.deletedCount} job click record(s).`);
 
       // 5. Delete User Account
-      const userResult = await User.deleteOne({ _id: userId });
+      await User.deleteOne({ _id: userId });
       console.log(`- Users: Deleted user account.`);
     } else {
       console.log("- Users: No active account found in the standard Users collection.");
@@ -64,10 +63,11 @@ const runSweepDelete = async () => {
 
     console.log("✓ Sweep delete completed successfully.");
   } catch (err) {
+    process.exitCode = 1;
     console.error("✕ Sweep delete failed:", err.message);
   } finally {
     await mongoose.disconnect();
-    process.exit(0);
+
   }
 };
 

@@ -92,7 +92,7 @@ const getJobIdFromUrl = (url) => {
 }
 
 const isIndiaLocation = (value = '') =>
-  /\bindia\b|bengaluru|bangalore|remote/i.test(value)
+  /\bindia\b|bengaluru|bangalore|hyderabad|pune|chennai|mumbai|gurugram|gurgaon|noida|delhi|worldwide|anywhere in the world/i.test(value)
 
 const getCityFromLocation = (value = '') => {
   const normalized = String(value || '').trim()
@@ -147,7 +147,7 @@ export const findCompanyJobsUrl = ({ html, companyName, baseUrl }) => {
 
     return path.includes(`/company/${companySlug}/jobs`)
       || text.includes(normalizedCompanyName)
-      || normalizedCompanyName.includes(text)
+      || (text && normalizedCompanyName.includes(text))
   })
 
   if (matchingJobsLink) return matchingJobsLink.href
@@ -182,17 +182,18 @@ export const extractWellfoundJobs = ({ html, provider, jobsUrl }) => {
     const snippet = extractJobSnippet({ html: String(html || ''), anchorIndex: anchor.index })
     const location = extractFieldText(snippet, [
       /<[^>]+\bdata-location\b[^>]*>([\s\S]*?)<\/[^>]+>/i,
-      /<[^>]+class=["'][^"']*(?:location|job-location)[^"']*["'][^>]*>([\s\S]*?)<\/[^>]+>/i,
+      /<[^>]+class=["'][^"']*(?:location|job-location|workplace)[^"']*["'][^>]*>([\s\S]*?)<\/[^>]+>/i,
       /\b((?:Bengaluru|Bangalore|Remote)[^<]{0,80}India)\b/i,
     ])
 
-    if (location && !isIndiaLocation(location)) continue
+    if (!location) throw new Error('Could not parse Wellfound job location')
+    if (!isIndiaLocation(location)) continue
 
     const title = anchor.text
     if (!title) continue
 
     const jobId = getJobIdFromUrl(anchor.href)
-    const jobLocation = location || 'Bangalore, India'
+    const jobLocation = location
 
     jobs.push({
       title,
@@ -226,32 +227,6 @@ export const isChallengeGatedDirectoryPage = (html = '') =>
   /please enable javascript|verify you are human|captcha|challenge-platform|cf-browser-verification/i
     .test(String(html))
 
-export const createAggregateHiringSignalJob = ({ provider, sourceUrl }) => {
-  const openingCount = Number(provider.wellfoundOpeningsShown || 0)
-  const openingText = `${openingCount} current opening${openingCount === 1 ? '' : 's'}`
-  const locationEvidence = provider.locationEvidence || 'Bangalore hiring signal'
-
-  return {
-    title: `Current openings at ${provider.companyName}`,
-    company: provider.companyName,
-    location: 'Bangalore, India',
-    city: 'Bangalore',
-    country: 'India',
-    link: sourceUrl,
-    applyUrl: sourceUrl,
-    sourceUrl,
-    source: provider.source,
-    jobId: `${provider.source}-current-openings`,
-    requisitionId: `${provider.source}-current-openings`,
-    department: null,
-    employmentType: null,
-    jobDescription: `${provider.companyName} showed ${openingText} on ${provider.directorySourceType || 'the verified hiring directory'} at ${provider.companyCareerPage}. ${locationEvidence}. Verified on ${provider.verifiedOn}.`,
-    publicExperienceChecked: true,
-    remoteStatus: null,
-    atsPlatform: provider.atsPlatform || 'wellfound-directory',
-  }
-}
-
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -271,25 +246,22 @@ export const createWellfoundDirectoryScraper = (provider) => ({
   async run({ fetchText = defaultFetchText } = {}) {
     let jobsUrl = provider.companyCareerPage
 
-    try {
-      const directoryHtml = await fetchText(provider.companyCareerPage)
-      jobsUrl = findCompanyJobsUrl({
-        html: directoryHtml,
-        companyName: provider.companyName,
-        baseUrl: provider.companyCareerPage,
-      }) || provider.companyCareerPage
-
-      if (jobsUrl !== provider.companyCareerPage) {
-        const jobsHtml = await fetchText(jobsUrl)
-        if (!isChallengeGatedDirectoryPage(jobsHtml)) {
-          const jobs = extractWellfoundJobs({ html: jobsHtml, provider, jobsUrl })
-          if (jobs.length > 0) return jobs
-        }
-      }
-    } catch {
-      jobsUrl = provider.companyCareerPage
+    const directoryHtml = await fetchText(provider.companyCareerPage)
+    if (isChallengeGatedDirectoryPage(directoryHtml)) throw new Error('Wellfound directory is challenge-gated')
+    let jobsHtml = directoryHtml
+    if (!isWellfoundCompanyJobsUrl(jobsUrl)) {
+      jobsUrl = findCompanyJobsUrl({ html: directoryHtml, companyName: provider.companyName, baseUrl: provider.companyCareerPage })
+      if (!jobsUrl) throw new Error('Could not find the matching Wellfound company jobs page')
+      jobsHtml = await fetchText(jobsUrl)
     }
-
-    return [createAggregateHiringSignalJob({ provider, sourceUrl: jobsUrl })]
+    if (isChallengeGatedDirectoryPage(jobsHtml)) throw new Error('Wellfound jobs page is challenge-gated')
+    const jobs = extractWellfoundJobs({ html: jobsHtml, provider, jobsUrl })
+    // The public HTML can expose only the initial page of vacancies. Keep real
+    // roles, but do not let this unproven snapshot expire unseen jobs.
+    if (jobs.length > 0) return jobs.map((job) => ({ ...job, sourceListingComplete: false }))
+    const text = stripTags(jobsHtml)
+    if (/\bno (?:open |available |current )?(?:positions|jobs|openings)\b|\bnot (?:currently )?hiring\b/i.test(text)) return []
+    if (extractAnchors({ html: jobsHtml, baseUrl: jobsUrl }).some((anchor) => isWellfoundJobUrl(anchor.href))) return []
+    throw new Error('Could not parse Wellfound jobs: unrecognized or incomplete listing page')
   },
 })

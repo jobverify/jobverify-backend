@@ -76,7 +76,7 @@ const fetchPageWithInvalidCertificate = (url, redirectCount = 0) => new Promise(
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
-    rejectUnauthorized: false,
+    rejectUnauthorized: true,
     timeout: 15000,
   }, (response) => {
     const status = response.statusCode || 0

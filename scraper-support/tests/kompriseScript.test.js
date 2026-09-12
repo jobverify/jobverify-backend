@@ -31,8 +31,16 @@ const JOB_LISTING_SITEMAP_XML = `
     <lastmod>2026-06-17T21:57:44+00:00</lastmod>
   </url>
   <url>
-    <loc>https://www.komprise.com/job/software-development-engineer-productivity/</loc>
-    <lastmod>2026-07-10T15:37:25+00:00</lastmod>
+    <loc>https://www.komprise.com/job/product-management-vp/</loc>
+    <lastmod>2026-09-01T15:37:25+00:00</lastmod>
+  </url>
+  <url>
+    <loc>https://www.komprise.com/job/sales-ops-analyst/</loc>
+    <lastmod>2026-09-01T15:37:25+00:00</lastmod>
+  </url>
+  <url>
+    <loc>https://www.komprise.com/job/ux-designer/</loc>
+    <lastmod>2026-09-01T15:37:25+00:00</lastmod>
   </url>
   <url>
     <loc>https://www.komprise.com/job/implementation-engineer-2/</loc>
@@ -159,7 +167,7 @@ test('Komprise helpers stay pinned to the verified careers page, job sitemap, an
 
   assert.equal(komprise.SOURCE, 'komprise')
   assert.equal(komprise.COMPANY, 'Komprise')
-  assert.equal(komprise.VERIFIED_ON, '2026-08-02')
+  assert.equal(komprise.VERIFIED_ON, '2026-09-03')
   assert.equal(komprise.HOMEPAGE_URL, 'https://www.komprise.com/')
   assert.equal(komprise.CAREERS_URL, 'https://www.komprise.com/careers/')
   assert.equal(komprise.SITEMAP_INDEX_URL, 'https://www.komprise.com/sitemap_index.xml')
@@ -168,9 +176,12 @@ test('Komprise helpers stay pinned to the verified careers page, job sitemap, an
     'https://www.komprise.com/job_listing-sitemap.xml',
   )
   assert.deepEqual(komprise.VERIFIED_JOB_DETAIL_URLS, [
-    'https://www.komprise.com/job/software-development-engineer-productivity/',
+    'https://www.komprise.com/job/account-executive/',
     'https://www.komprise.com/job/implementation-engineer-2/',
     'https://www.komprise.com/job/technical-support-engineer/',
+    'https://www.komprise.com/job/product-management-vp/',
+    'https://www.komprise.com/job/sales-ops-analyst/',
+    'https://www.komprise.com/job/ux-designer/',
   ])
   assert.equal(komprise.hasOfficialCareersPageSignal(CAREERS_HTML), true)
   assert.equal(komprise.hasJobListingSitemapSignal(JOB_LISTING_SITEMAP_XML), true)
@@ -182,8 +193,16 @@ test('Komprise helpers stay pinned to the verified careers page, job sitemap, an
         lastmod: '2026-06-17T21:57:44+00:00',
       },
       {
-        url: 'https://www.komprise.com/job/software-development-engineer-productivity/',
-        lastmod: '2026-07-10T15:37:25+00:00',
+        url: 'https://www.komprise.com/job/product-management-vp/',
+        lastmod: '2026-09-01T15:37:25+00:00',
+      },
+      {
+        url: 'https://www.komprise.com/job/sales-ops-analyst/',
+        lastmod: '2026-09-01T15:37:25+00:00',
+      },
+      {
+        url: 'https://www.komprise.com/job/ux-designer/',
+        lastmod: '2026-09-01T15:37:25+00:00',
       },
       {
         url: 'https://www.komprise.com/job/implementation-engineer-2/',
@@ -248,9 +267,11 @@ test('Komprise run validates the verified careers shell, consumes the job sitema
       if (url === komprise.CAREERS_URL) return CAREERS_HTML
       if (url === komprise.JOB_LISTING_SITEMAP_URL) return JOB_LISTING_SITEMAP_XML
       if (url === 'https://www.komprise.com/job/account-executive/') return ACCOUNT_EXECUTIVE_DETAIL_HTML
-      if (url === 'https://www.komprise.com/job/software-development-engineer-productivity/') return PRODUCTIVITY_DETAIL_HTML
       if (url === 'https://www.komprise.com/job/implementation-engineer-2/') return IMPLEMENTATION_ENGINEER_DETAIL_HTML
       if (url === 'https://www.komprise.com/job/technical-support-engineer/') return TECH_SUPPORT_DETAIL_HTML
+      if (url === 'https://www.komprise.com/job/product-management-vp/') return ACCOUNT_EXECUTIVE_DETAIL_HTML
+      if (url === 'https://www.komprise.com/job/sales-ops-analyst/') return ACCOUNT_EXECUTIVE_DETAIL_HTML
+      if (url === 'https://www.komprise.com/job/ux-designer/') return ACCOUNT_EXECUTIVE_DETAIL_HTML
 
       throw new Error(`Unexpected Komprise URL: ${url}`)
     },
@@ -260,21 +281,16 @@ test('Komprise run validates the verified careers shell, consumes the job sitema
     komprise.CAREERS_URL,
     komprise.JOB_LISTING_SITEMAP_URL,
     'https://www.komprise.com/job/account-executive/',
-    'https://www.komprise.com/job/software-development-engineer-productivity/',
+    'https://www.komprise.com/job/product-management-vp/',
+    'https://www.komprise.com/job/sales-ops-analyst/',
+    'https://www.komprise.com/job/ux-designer/',
     'https://www.komprise.com/job/implementation-engineer-2/',
     'https://www.komprise.com/job/technical-support-engineer/',
   ])
-  assert.equal(jobs.length, 3)
+  assert.equal(jobs.length, 2)
   assert.deepEqual(
     jobs.map((job) => [job.title, job.location, job.applyUrl, job.source, job.scrapedAt]),
     [
-      [
-        'Software Development Engineer - Productivity',
-        'Bangalore, India',
-        'mailto:india_careers@komprise.com?subject=Application%20via%20Software%20Development%20Engineer%20-%20Productivity%20listing%20on%20https%3A%2F%2Fwww.komprise.com',
-        'komprise',
-        FIXED_SCRAPED_AT,
-      ],
       [
         'Implementation Engineer',
         'Bangalore, India',
@@ -292,5 +308,5 @@ test('Komprise run validates the verified careers shell, consumes the job sitema
     ],
   )
   assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.match(jobs[2].jobDescription, /Komprise unlocks unstructured data for AI/i)
+  assert.match(jobs[1].jobDescription, /Komprise unlocks unstructured data for AI/i)
 })

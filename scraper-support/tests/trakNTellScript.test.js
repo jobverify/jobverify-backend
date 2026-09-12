@@ -37,7 +37,7 @@ const contactPage = {
           <h2>Get In touch</h2>
           <p>8010-80-8010</p>
           <p>care@TrakNTell.com</p>
-          <p>Address- A20, Info Technology Park, Sector 34, Gurgaon, Haryana 122001</p>
+          <p>Address- A20, Info Technology Park, Sector 34, Gurugram, Haryana 122001</p>
         </main>
       </body>
     </html>
@@ -69,14 +69,14 @@ const loadModule = async () => {
   }
 }
 
-test('Trak N Tell helpers stay pinned to the verified first-party product and contact surfaces from Friday, August 14, 2026', async () => {
+test('Trak N Tell helpers stay pinned to the verified first-party product and contact surfaces from September 3, 2026', async () => {
   const trakNTell = await loadModule()
 
   assert.equal(trakNTell.SOURCE, 'trakntell')
   assert.equal(trakNTell.COMPANY, 'Trak N Tell')
   assert.equal(trakNTell.HOMEPAGE_URL, 'https://www.trakntell.com/')
   assert.equal(trakNTell.CONTACT_URL, 'https://www.trakntell.com/contact-us/')
-  assert.equal(trakNTell.VERIFIED_ON, '2026-08-14')
+  assert.equal(trakNTell.VERIFIED_ON, '2026-09-03')
   assert.equal(trakNTell.hasOfficialHomepageSignal(homepagePage), true)
   assert.equal(trakNTell.hasOfficialContactSignal(contactPage), true)
   assert.equal(trakNTell.hasPublicJobsSignal(jobsSignalPage.html), true)

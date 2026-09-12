@@ -144,3 +144,33 @@ test('Societe Generale scraper parses India listings, enriches detail pages, and
   )
   assert.equal(typeof jobs[0].scrapedAt, 'string')
 })
+
+test('Societe Generale run passes caller signal and fetches detail pages concurrently', async () => {
+  const socgen = await import('../../scraper/societegenerale/script.js')
+  const controller = new AbortController()
+  const signals = []
+  let activeDetailFetches = 0
+  let maxActiveDetailFetches = 0
+
+  const jobs = await socgen.createSocieteGeneraleScraper().run({
+    signal: controller.signal,
+    fetchText: async (url, options = {}) => {
+      signals.push(options.signal)
+
+      if (url === socgen.CAREER_PAGE_URL) return listingHtml
+      if (url.includes('/en/job-offers/')) {
+        activeDetailFetches += 1
+        maxActiveDetailFetches = Math.max(maxActiveDetailFetches, activeDetailFetches)
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        activeDetailFetches -= 1
+        return detailHtml
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 2)
+  assert.ok(maxActiveDetailFetches > 1)
+  assert.deepEqual(signals, [controller.signal, controller.signal, controller.signal])
+})

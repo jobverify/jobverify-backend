@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -11,6 +12,10 @@ export const CAREER_PAGE_URL = 'https://www.pwc.in/careers/experienced-jobs.html
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 const DETAIL_API_CONCURRENCY = 16
+const DETAIL_ENRICHMENT_LIMIT = 96
+const SEARCH_REQUEST_TIMEOUT_MS = 30000
+const DETAIL_API_REQUEST_TIMEOUT_MS = 10000
+const DETAIL_PAGE_REQUEST_TIMEOUT_MS = 8000
 const EXPLICIT_YEARS_PATTERN = /\b(\d+(?:\.\d+)?)(\+)?(?:\s*-\s*(\d+(?:\.\d+)?))?\s*(years?|yrs?)\b/gi
 
 const decodeHtmlEntities = (value) => String(value ?? '')
@@ -273,6 +278,19 @@ const mapWithConcurrency = async (items, limit, iteratee) => {
   return results
 }
 
+const resolveLimit = (value, fallback) => {
+  if (value == null) return fallback
+
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback
+  return Math.floor(parsed)
+}
+
+const throwIfAborted = (signal) => {
+  if (!signal?.aborted) return
+  throw signal.reason || new DOMException('The operation was aborted', 'AbortError')
+}
+
 const resolveJobUrl = (job = {}) => job.sourceUrl || job.applyUrl || null
 
 const isWorkdayJob = (job = {}) => /(?:my)?workdayjobs\.com/i.test(resolveJobUrl(job) || '')
@@ -411,37 +429,48 @@ const createDetailApiFetcher = async (jobs = [], fetchDetailText = null) => {
   }
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
-}
+const defaultFetchText = async (url, {
+  signal = undefined,
+  timeoutMs = SEARCH_REQUEST_TIMEOUT_MS,
+  accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+} = {}) => fetchTextWithRetry(url, {
+  attempts: 1,
+  timeoutMs,
+  label: 'pwc fetch',
+  signal,
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: accept,
+  },
+})
 
 export const createPwcScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+  detailMaxJobs = resolveLimit(config.detailMaxJobs, DETAIL_ENRICHMENT_LIMIT),
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
+    const signal = options.signal
     let detailApiFetcher = null
 
     try {
-      const html = await fetchText(buildSearchUrl())
+      const html = await fetchText(buildSearchUrl(), {
+        signal,
+        timeoutMs: SEARCH_REQUEST_TIMEOUT_MS,
+      })
       const jobs = extractSearchResults(html)
       const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+      const detailLimit = resolveLimit(detailMaxJobs, DETAIL_ENRICHMENT_LIMIT)
       detailApiFetcher = await createDetailApiFetcher(selectedJobs, options.fetchDetailText)
       const enrichedJobs = await mapWithConcurrency(
         selectedJobs,
         DETAIL_API_CONCURRENCY,
-        async (job) => {
+        async (job, index) => {
+          throwIfAborted(signal)
+          if (index >= detailLimit) {
+            return job
+          }
+
           if (!job.applyUrl || (job.jobDescription && job.experienceRequired)) {
             return job
           }
@@ -449,20 +478,30 @@ export const createPwcScraper = ({
           const detailApiRequest = resolveDetailApiRequest(job)
           if (detailApiRequest) {
             try {
-              const detailPayload = await detailApiFetcher.fetchText(detailApiRequest.url, detailApiRequest)
+              const detailPayload = await detailApiFetcher.fetchText(detailApiRequest.url, {
+                ...detailApiRequest,
+                signal,
+                timeoutMs: DETAIL_API_REQUEST_TIMEOUT_MS,
+                accept: 'application/json,text/plain,*/*',
+              })
               const apiEnrichedJob = enrichJobFromDetailApiPayload(job, detailApiRequest, detailPayload)
               if (apiEnrichedJob) {
                 return apiEnrichedJob
               }
-            } catch {
+            } catch (error) {
+              throwIfAborted(signal)
               // Fall through to the rendered detail page when the provider API is unavailable.
             }
           }
 
           try {
-            const detailHtml = await fetchText(job.sourceUrl || job.applyUrl)
+            const detailHtml = await fetchText(job.sourceUrl || job.applyUrl, {
+              signal,
+              timeoutMs: DETAIL_PAGE_REQUEST_TIMEOUT_MS,
+            })
             return enrichJobFromDetailPage(job, detailHtml)
-          } catch {
+          } catch (error) {
+            throwIfAborted(signal)
             return job
           }
         },

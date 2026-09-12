@@ -21,7 +21,10 @@ const homepageHtml = `
     <a href="https://isocrates.com/careers/">Careers</a>
   </body>
 </html>
-`
+`.replace(
+  /<title>[^<]*<\/title>/i,
+  '<title>Global Leader in MADTECH Resource Planning and Execution&#x2122;</title>',
+)
 
 const careersHtml = `
 <!doctype html>

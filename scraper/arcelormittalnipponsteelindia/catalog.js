@@ -11,6 +11,7 @@ export const ARCELORMITTAL_NIPPON_STEEL_INDIA_CATALOG = {
   companyName: 'ArcelorMittal Nippon Steel India',
   officialBrandName: 'AM/NS India',
   adapter: 'script',
+  enrichPublicExperience: false,
   modulePath: path.join(currentDir, 'script.js'),
   dryRunFile: 'arcelormittalnipponsteelindia/jobs.json',
   companyCareerPage: 'https://www.amns.in/careers',

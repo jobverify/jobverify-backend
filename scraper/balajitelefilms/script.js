@@ -113,7 +113,7 @@ export const fetchPageIgnoringTlsErrors = (url, redirectCount = 0) => new Promis
     port: target.port || 443,
     path: `${target.pathname}${target.search}`,
     method: 'GET',
-    rejectUnauthorized: false,
+    rejectUnauthorized: true,
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',

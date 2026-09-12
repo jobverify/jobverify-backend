@@ -1,4 +1,7 @@
 import { loadConfig } from '../utils/loadConfig.js'
+import { fetchTextWithRetry } from '../utils/fetch.js'
+
+const DEFAULT_FETCH_TIMEOUT_MS = 15000
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
@@ -481,30 +484,21 @@ export const createPhenomScraper = ({
     }
   }
 
-  const fetchText = async (url, attempt = 0) => {
-    try {
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} for ${url}`)
-      }
-
-      return response.text()
-    } catch (error) {
-      if (attempt >= ((config.retryAttempts || 1) - 1)) throw error
-      const delay = (config.retryBaseDelayMs || 1000) * (attempt + 1)
-      await new Promise((resolve) => setTimeout(resolve, delay))
-      return fetchText(url, attempt + 1)
-    }
-  }
+  const fetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    attempts: config.retryAttempts || 1,
+    baseDelayMs: config.retryBaseDelayMs || 1000,
+    label: source,
+    signal,
+    timeoutMs: config.fetchTimeoutMs || DEFAULT_FETCH_TIMEOUT_MS,
+  })
 
   const run = async (options = {}) => {
     const getPage = options.fetchText || fetchText
+    const signal = options.signal
     const maxPages = Number.isInteger(options.maxPages)
       ? options.maxPages
       : (Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY)
@@ -519,7 +513,7 @@ export const createPhenomScraper = ({
     let totalHits = null
 
     for (let pageNumber = 0; pageNumber < maxPages; pageNumber += 1) {
-      const pageHtml = await getPage(buildSearchResultsPageUrl(offset))
+      const pageHtml = await getPage(buildSearchResultsPageUrl(offset), { signal })
       const payload = extractSearchPayload(pageHtml)
       const listings = extractSearchResults(payload)
       const rawJobsCount = Array.isArray(payload.jobs) ? payload.jobs.length : 0
@@ -535,7 +529,7 @@ export const createPhenomScraper = ({
         if (seenJobIds.has(listing.jobId)) continue
         seenJobIds.add(listing.jobId)
 
-        const detailHtml = await getPage(listing.sourceUrl)
+        const detailHtml = await getPage(listing.sourceUrl, { signal })
         const detail = extractJobDetail(detailHtml, listing)
 
         jobs.push({

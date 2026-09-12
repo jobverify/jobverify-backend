@@ -22,8 +22,9 @@ const HOMEPAGE_SIGNALS = [
 
 const CAREERS_SIGNALS = [
   /<title>\s*Career opportunities \| Proton\s*<\/title>/i,
-  /Explore career opportunities at Proton/i,
-  /https:\/\/proton\.me\/careers\//i,
+  /Working at Proton/i,
+  /JobsListSection\.js/i,
+  /https:\/\/boards-api\.greenhouse\.io\/v1\/boards\/proton\/jobs\?content=true/i,
 ]
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [

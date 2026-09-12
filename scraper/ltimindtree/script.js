@@ -209,10 +209,6 @@ const defaultFetchPage = (url) => fetchPageWithRetry(url, {
   },
   label: SOURCE,
   timeoutMs: 15000,
-  allowInsecureTlsHosts: [
-    'careers.ltimindtree.com',
-    'careers.ltm.com',
-  ],
 })
 
 export const createLtimindtreeScraper = () => ({

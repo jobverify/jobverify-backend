@@ -88,7 +88,9 @@ const main = async () => {
     backendDir,
     getFlag("output-dir", "../artifacts/local-job-query-profile"),
   );
-  const mongoDownloadDir = path.join(outputDir, "mongodb-binaries");
+  const mongoDownloadDir = path.resolve(
+    process.env.MONGOMS_DOWNLOAD_DIR || path.join(backendDir, ".cache", "mongodb-binaries"),
+  );
   const beforeOutputDir = path.join(outputDir, "before-indexes");
   const afterOutputDir = path.join(outputDir, "after-indexes");
 
@@ -101,6 +103,8 @@ const main = async () => {
   const mongoServer = await MongoMemoryServer.create({
     instance: {
       dbName: "jobverify_profile",
+      ip: "127.0.0.1",
+      launchTimeout: 60_000,
       storageEngine: "wiredTiger",
     },
   });

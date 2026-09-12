@@ -3,6 +3,7 @@ import test from "node:test";
 
 import Job from "../src/models/Job.js";
 import User from "../src/models/User.js";
+import { buildAggregateHiringSignalFilter } from "../src/utils/jobListingEvidence.js";
 
 const createResponseDouble = () => {
   const result = {
@@ -22,21 +23,17 @@ const createResponseDouble = () => {
 };
 
 const assertHasPublicSavedJobScope = (scope) => {
-  const [postedLowerBound, postedUpperBound, closingLowerBound, lastSeenLowerBound] =
+  const [postedUpperBound, closingLowerBound] =
     scope?.$expr?.$and ?? [];
-  const postedCutoff = postedLowerBound?.$gte?.[1];
   const now = postedUpperBound?.$lte?.[1];
   const today = closingLowerBound?.$gte?.[1];
-  const lastSeenCutoff = lastSeenLowerBound?.$gte?.[1];
 
   assert.equal(scope?.isPublicIndia, true);
   assert.equal(scope?.status, "active");
-  assert.ok(postedCutoff instanceof Date);
   assert.ok(now instanceof Date);
   assert.ok(today instanceof Date);
-  assert.ok(lastSeenCutoff instanceof Date);
-  assert.equal(lastSeenCutoff.getTime(), postedCutoff.getTime());
-  assert.ok(postedCutoff.getTime() <= now.getTime());
+  assert.equal(scope.$expr.$and.length, 2);
+  assert.deepEqual(scope.$nor, [buildAggregateHiringSignalFilter()]);
   assert.equal(today.getUTCHours(), 0);
   assert.equal(today.getUTCMinutes(), 0);
 };

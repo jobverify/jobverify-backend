@@ -59,10 +59,46 @@ export const pageIndicatesCampusSutraCompany = (html) => {
     && normalized.includes('urn:li:organization:3032227')
 }
 
-export const extractSearchResults = (html) => [...String(html ?? '').matchAll(
-  /<div class="base-card[\s\S]*?job-search-card"[\s\S]*?data-entity-urn="urn:li:jobPosting:([0-9]+)"[\s\S]*?<a class="base-card__full-link[^"]*" href="([^"]+)"[\s\S]*?<h3 class="base-search-card__title">\s*([\s\S]*?)\s*<\/h3>[\s\S]*?<h4 class="base-search-card__subtitle">[\s\S]*?<a[^>]*>\s*([\s\S]*?)\s*<\/a>[\s\S]*?<span class="job-search-card__location">\s*([\s\S]*?)\s*<\/span>[\s\S]*?<time class="job-search-card__listdate" datetime="([^"]+)"/gi,
-)]
-  .map(([, jobId, href, rawTitle, rawCompany, rawLocation, postingDate]) => {
+const extractFirst = (pattern, value, transform = (match) => match[1]) => {
+  const match = pattern.exec(String(value ?? ''))
+  return match ? transform(match) : null
+}
+
+const extractLinkedInResultCards = (html) => String(html ?? '')
+  .split(/<li\b[^>]*>/i)
+  .slice(1)
+  .map((section) => section.split(/<\/li>/i)[0] || '')
+  .filter((section) => (
+    /\bjob-search-card\b/i.test(section)
+    && /data-entity-urn="urn:li:jobPosting:/i.test(section)
+  ))
+
+export const extractSearchResults = (html) => extractLinkedInResultCards(html)
+  .map((cardHtml) => {
+    const jobId = normalizeWhitespace(extractFirst(
+      /data-entity-urn="urn:li:jobPosting:([0-9]+)"/i,
+      cardHtml,
+    ))
+    const href = extractFirst(
+      /<a\b(?=[^>]*\bbase-card__full-link\b)[^>]*\bhref="([^"]+)"/i,
+      cardHtml,
+    )
+    const rawTitle = extractFirst(
+      /<h3\b(?=[^>]*\bbase-search-card__title\b)[^>]*>\s*([\s\S]*?)\s*<\/h3>/i,
+      cardHtml,
+    )
+    const rawCompany = normalizeWhitespace(extractFirst(
+      /<h4\b(?=[^>]*\bbase-search-card__subtitle\b)[^>]*>\s*([\s\S]*?)\s*<\/h4>/i,
+      cardHtml,
+    ))
+    const rawLocation = extractFirst(
+      /<span\b(?=[^>]*\bjob-search-card__location\b)[^>]*>\s*([\s\S]*?)\s*<\/span>/i,
+      cardHtml,
+    )
+    const postingDate = extractFirst(
+      /<time\b(?=[^>]*\bjob-search-card__listdate(?:--new)?\b)[^>]*\bdatetime="([^"]+)"/i,
+      cardHtml,
+    )
     const location = parseLocation(rawLocation)
     const sourceUrl = normalizeWhitespace(href)
     const title = normalizeWhitespace(rawTitle)

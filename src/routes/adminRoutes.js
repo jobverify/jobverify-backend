@@ -4,6 +4,7 @@
  */
 
 import express from "express";
+import { updateSiteSettings } from "../controllers/siteSettingsController.js";
 import {
   getDashboardStats,
   getClickTimeSeries,
@@ -58,6 +59,7 @@ const scrapeTriggerLimiter = createRateLimiter({
 // Apply authentication and administrator role guard to all routes
 router.use(protect);
 router.use(authorize("admin"));
+router.put("/site-settings", updateSiteSettings);
 
 // Dashboard Overview and Time-Series Analytics
 router.get("/stats", getDashboardStats);

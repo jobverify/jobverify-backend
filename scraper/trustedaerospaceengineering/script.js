@@ -139,7 +139,6 @@ export const fetchCareersPageText = async (url, {
     },
     label: SOURCE,
     timeoutMs: 15000,
-    allowInsecureTlsHosts: ['taseglobal.com'],
   })
 
   const status = Number(page?.status ?? 0)

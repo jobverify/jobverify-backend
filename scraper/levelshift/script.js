@@ -172,7 +172,7 @@ const insecureFetchJson = (url, {
   const request = https.request(url, {
     method,
     headers: requestHeaders,
-    rejectUnauthorized: false,
+    rejectUnauthorized: true,
   }, (response) => {
     const chunks = []
 

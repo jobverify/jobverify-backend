@@ -45,6 +45,11 @@ const ProfilePreferenceFiltersSchema = new Schema(
 const ProfileSchema = new Schema(
   {
     name: { type: String, maxlength: MAX_PROFILE_TEXT_LENGTH },
+    graduateEducation: {
+      type: String,
+      enum: ["Undergraduate", "Postgraduate", "PhD", ""],
+      default: "",
+    },
     branch: { type: String, maxlength: MAX_PROFILE_TEXT_LENGTH },
     passingYear: { type: Number },
     preferredJobTypes: {
@@ -54,10 +59,6 @@ const ProfileSchema = new Schema(
     },
     locationPreference: { type: [String], default: [], validate: boundedStringList },
     profilePreferenceFilters: {
-      type: ProfilePreferenceFiltersSchema,
-      default: () => ({}),
-    },
-    whatsappAlertFilters: {
       type: ProfilePreferenceFiltersSchema,
       default: () => ({}),
     },
@@ -88,32 +89,9 @@ const PremiumSchema = new Schema(
       ref: "PlanPurchase",
       default: null,
     },
-    whatsappAlertsEnabled: {
-      type: Boolean,
-      default: false,
-    },
     telegramAlertsEnabled: {
       type: Boolean,
       default: false,
-    },
-  },
-  { _id: false },
-);
-
-const ContactSchema = new Schema(
-  {
-    phoneE164: {
-      type: String,
-      trim: true,
-      default: null,
-    },
-    whatsappOptInAt: {
-      type: Date,
-      default: null,
-    },
-    whatsappOptOutAt: {
-      type: Date,
-      default: null,
     },
   },
   { _id: false },
@@ -173,10 +151,6 @@ const UserSchema = new Schema(
       type: PremiumSchema,
       default: () => ({}),
     },
-    contact: {
-      type: ContactSchema,
-      default: () => ({}),
-    },
     google: {
       type: GoogleAuthSchema,
       default: () => ({}),
@@ -213,7 +187,6 @@ UserSchema.index({ accessRole: 1 });
 UserSchema.index({ createdAt: -1 });
 UserSchema.index({ "profile.passingYear": 1 });
 UserSchema.index({ "premium.expiresAt": 1 });
-UserSchema.index({ "contact.phoneE164": 1 }, { sparse: true });
 UserSchema.index({ "google.sub": 1 }, { sparse: true });
 UserSchema.index(
   { "telegram.chatId": 1 },

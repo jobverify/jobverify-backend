@@ -11,11 +11,11 @@ const readScraperWorkflow = () => readFileSync(
   'utf8',
 )
 
-test('scraper workflow runs on Monday through Friday at 02:08 AM IST', () => {
+test('scraper workflow runs every day at 02:08 AM IST', () => {
   const workflow = readScraperWorkflow()
 
-  assert.match(workflow, /cron:\s*['"]38 20 \* \* 0,1,2,3,4['"]/)
-  assert.match(workflow, /Monday to Friday at 02:08 AM IST/)
+  assert.match(workflow, /cron:\s*['"]38 20 \* \* \*['"]/)
+  assert.match(workflow, /Every day at 02:08 AM IST/)
 })
 
 test('scraper workflow leaves failure-abort handling disabled', () => {
@@ -31,4 +31,13 @@ test('scraper workflow runs the scraper with system CA support enabled', () => {
   const workflow = readScraperWorkflow()
 
   assert.match(workflow, /NODE_OPTIONS:\s*['"]--use-system-ca['"]/)
+})
+
+test('scraper workflow bounds the job and per-source public enrichment budgets', () => {
+  const workflow = readScraperWorkflow()
+
+  assert.match(workflow, /\n\s+scrape:\s*\n(?:.*\n)*?\s+timeout-minutes:\s*150/)
+  assert.match(workflow, /SCRAPER_SOURCE_LIFECYCLE_TIMEOUT_MS:\s*['"]1800000['"]/)
+  assert.match(workflow, /PUBLIC_EXPERIENCE_FETCH_TIMEOUT_MS:\s*['"]15000['"]/)
+  assert.match(workflow, /PDF_TEXT_EXTRACTION_TIMEOUT_MS:\s*['"]30000['"]/)
 })

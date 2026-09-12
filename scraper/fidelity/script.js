@@ -193,6 +193,7 @@ const runCurlRequest = (url, execFileImpl = execFile) => new Promise((resolve, r
     FIDELITY_HEADERS['User-Agent'],
     '-H',
     `Accept: ${FIDELITY_HEADERS.Accept}`,
+    '--',
     url,
   ]
 

@@ -4,11 +4,10 @@
  */
 
 import { normalizeCity } from "../../scraper-support/utils/cityNormalizer.js";
+import { buildAggregateHiringSignalFilter } from "./jobListingEvidence.js";
 import { CANONICAL_CITIES } from "../../scraper-support/utils/cities.js";
 import {
-  buildJobPostedAtCutoff,
   normalizeLifecycleDate,
-  resolveJobRetentionDays,
   startOfUtcDay,
 } from "./jobLifecycle.js";
 
@@ -203,24 +202,15 @@ export const buildPublishedJobDateScope = (
 
 export const buildPublicJobLifecycleDateScope = (
   now = new Date(),
-  { retentionDays } = {},
 ) => {
   const resolvedNow = normalizeLifecycleDate(now) || new Date();
-  const resolvedRetentionDays = resolveJobRetentionDays(retentionDays);
-  const postedAtCutoff = buildJobPostedAtCutoff(resolvedNow, resolvedRetentionDays);
   const today = startOfUtcDay(resolvedNow);
 
   return {
     // Unknown dates are not proof that a role has closed, so they remain visible.
-    // Known dates must be recent, not future-dated, and not past their closing day.
+    // Keep open jobs regardless of posting age; only exclude future or closed roles.
     $expr: {
       $and: [
-        {
-          $gte: [
-            { $ifNull: ["$postedAt", postedAtCutoff] },
-            postedAtCutoff,
-          ],
-        },
         {
           $lte: [
             { $ifNull: ["$postedAt", resolvedNow] },
@@ -233,12 +223,6 @@ export const buildPublicJobLifecycleDateScope = (
             today,
           ],
         },
-        {
-          $gte: [
-            { $ifNull: ["$lastSeenAt", postedAtCutoff] },
-            postedAtCutoff,
-          ],
-        },
       ],
     },
   };
@@ -246,6 +230,7 @@ export const buildPublicJobLifecycleDateScope = (
 
 export const buildPublicJobLocationScope = (now = new Date(), options = {}) => ({
   isPublicIndia: true,
+  $nor: [buildAggregateHiringSignalFilter()],
   ...buildPublicJobLifecycleDateScope(now, options),
 });
 
@@ -256,4 +241,5 @@ export const applyPublicJobLocationScope = (
 ) => ({
   ...filters,
   ...buildPublicJobLocationScope(now, options),
+  $nor: [...(filters.$nor || []), buildAggregateHiringSignalFilter()],
 });

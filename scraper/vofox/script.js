@@ -76,7 +76,10 @@ const extractListBlock = (label, sectionHtml) => {
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = stripTags(html) || ''
 
-  return normalized.includes('Software development company in India | Vofox Solution')
+  return (
+    normalized.includes('Software development company in India | Vofox Solution')
+    || normalized.includes('Vofox Solutions | Software development company')
+  )
     && normalized.includes('Offshore Development Company in India')
     && /href=["'](?:https?:\/\/vofoxsolutions\.com)?\/career-at-vofox\/?["']/i.test(String(html ?? ''))
 }

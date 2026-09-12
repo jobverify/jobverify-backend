@@ -13,6 +13,9 @@ export const CAREERS_URL = 'https://www.rubrik.com/company/careers'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const DEFAULT_FETCH_TIMEOUT_MS = 15000
+const DEPARTMENT_PAGE_CONCURRENCY = 4
+const JOB_DETAIL_PAGE_CONCURRENCY = 8
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -129,6 +132,36 @@ const extractJobId = (link) => {
 }
 
 const isIndiaLocation = (location) => /\bindia\b/i.test(location || '')
+
+const resolvePositiveInteger = (value, fallback) => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback
+}
+
+const throwIfAborted = (signal) => {
+  if (!signal?.aborted) return
+  throw signal.reason || new DOMException('The operation was aborted', 'AbortError')
+}
+
+const mapWithConcurrency = async (items, limit, iteratee) => {
+  const concurrency = Math.max(1, Number.isInteger(limit) ? limit : 1)
+  const results = new Array(items.length)
+  let cursor = 0
+
+  const worker = async () => {
+    while (cursor < items.length) {
+      const currentIndex = cursor
+      cursor += 1
+      results[currentIndex] = await iteratee(items[currentIndex], currentIndex)
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, () => worker()),
+  )
+
+  return results
+}
 
 const extractCity = (location) => {
   const normalized = normalizeWhitespace(location)
@@ -252,24 +285,34 @@ export const extractJobFromHtml = ({
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.9',
   },
   label: SOURCE,
-  timeoutMs: 15000,
+  signal,
+  timeoutMs: config.fetchTimeoutMs || DEFAULT_FETCH_TIMEOUT_MS,
 })
 
 export const createRubrikScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+  departmentPageConcurrency = resolvePositiveInteger(
+    config.departmentPageConcurrency,
+    DEPARTMENT_PAGE_CONCURRENCY,
+  ),
+  jobDetailPageConcurrency = resolvePositiveInteger(
+    config.jobDetailPageConcurrency,
+    JOB_DETAIL_PAGE_CONCURRENCY,
+  ),
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
     now = () => new Date().toISOString(),
+    signal = undefined,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    const careersHtml = await fetchText(CAREERS_URL, { signal })
 
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Rubrik careers page no longer matches the verified official public surface')
@@ -280,18 +323,36 @@ export const createRubrikScraper = ({
       throw new Error('Rubrik official careers page no longer exposes department links for browser-free scraping')
     }
 
-    const jobs = []
+    const departmentPages = await mapWithConcurrency(
+      departments,
+      resolvePositiveInteger(departmentPageConcurrency, DEPARTMENT_PAGE_CONCURRENCY),
+      async (department) => {
+        throwIfAborted(signal)
+        const departmentHtml = await fetchText(department.url, { signal })
+        return {
+          department,
+          jobLinks: extractJobLinks(departmentHtml),
+        }
+      },
+    )
+
+    const jobRequests = []
     const seenJobUrls = new Set()
 
-    for (const department of departments) {
-      const departmentHtml = await fetchText(department.url)
-      const jobLinks = extractJobLinks(departmentHtml)
-
-      for (const jobLink of jobLinks) {
+    for (const { department, jobLinks } of departmentPages) {
+      for (const jobLink of jobLinks || []) {
         if (seenJobUrls.has(jobLink.url)) continue
         seenJobUrls.add(jobLink.url)
+        jobRequests.push({ department, jobLink })
+      }
+    }
 
-        const jobHtml = await fetchText(jobLink.url)
+    const parsedJobs = await mapWithConcurrency(
+      jobRequests,
+      resolvePositiveInteger(jobDetailPageConcurrency, JOB_DETAIL_PAGE_CONCURRENCY),
+      async ({ department, jobLink }) => {
+        throwIfAborted(signal)
+        const jobHtml = await fetchText(jobLink.url, { signal })
         const job = extractJobFromHtml({
           html: jobHtml,
           department: department.name,
@@ -299,16 +360,13 @@ export const createRubrikScraper = ({
           now,
         })
 
-        if (!job || !isIndiaLocation(job.location)) continue
-        jobs.push(job)
+        return job && isIndiaLocation(job.location) ? job : null
+      },
+    )
 
-        if (Number.isInteger(maxJobs) && jobs.length >= maxJobs) {
-          return jobs
-        }
-      }
-    }
+    const jobs = parsedJobs.filter(Boolean)
 
-    return jobs
+    return Number.isInteger(maxJobs) ? jobs.slice(0, maxJobs) : jobs
   },
 })
 

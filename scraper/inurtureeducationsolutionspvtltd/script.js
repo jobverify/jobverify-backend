@@ -15,7 +15,7 @@ export const EMBEDDED_CAREERS_IFRAME_URL = 'https://careers.inurture.co.in/'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const insecureHttpsAgent = new https.Agent({ rejectUnauthorized: false })
+const insecureHttpsAgent = new https.Agent({ rejectUnauthorized: true })
 
 const PUBLIC_JOBS_HOST_PATTERN =
   /(greenhouse|job-boards\.greenhouse|lever|workday|myworkdayjobs|smartrecruiters|ashby|workable|darwinbox|jobvite|teamtailor|recruitcrm|keka|bamboohr|oraclecloud|icims|phenompeople|successfactors|taleo|ceipal|rippling|jobs\.)/i

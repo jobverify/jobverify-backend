@@ -16,7 +16,7 @@ export const runIbmCompanySearch = async (options = {}) => runIbmSearch({
   ...options,
 })
 
-export const run = async () => runIbmCompanySearch()
+export const run = async (options = {}) => runIbmCompanySearch(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

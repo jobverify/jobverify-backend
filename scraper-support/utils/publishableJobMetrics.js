@@ -1,9 +1,7 @@
 import { filterIndiaJobs } from './indiaLocationFilter.js'
+import { isAggregateHiringSignalJob } from '../../src/utils/jobListingEvidence.js'
 import {
-  buildJobPostedAtCutoff,
   normalizeLifecycleDate,
-  resolveJobPostedAt,
-  resolveJobRetentionDays,
   startOfUtcDay,
 } from '../../src/utils/jobLifecycle.js'
 
@@ -17,30 +15,27 @@ export const normalizeHttpUrl = (value) => {
   }
 }
 
-export const analyzePublishableJobs = (jobs = [], { now = new Date(), retentionDays } = {}) => {
+export const analyzePublishableJobs = (jobs = [], { now = new Date() } = {}) => {
   const resolvedNow = normalizeLifecycleDate(now) || new Date()
-  const resolvedRetentionDays = resolveJobRetentionDays(retentionDays)
-  const postedAtCutoff = buildJobPostedAtCutoff(resolvedNow, resolvedRetentionDays)
   const today = startOfUtcDay(resolvedNow)
   const filterCounts = {
     nonIndia: 0,
     old: 0,
     closed: 0,
     invalidUrl: 0,
+    nonJob: 0,
   }
 
   const indiaJobs = filterIndiaJobs(jobs)
   filterCounts.nonIndia = Math.max(0, jobs.length - indiaJobs.length)
 
   const eligibleJobs = indiaJobs.filter((job) => {
-    if (!normalizeHttpUrl(job?.applyUrl || job?.link || job?.sourceUrl)) {
-      filterCounts.invalidUrl += 1
+    if (isAggregateHiringSignalJob(job)) {
+      filterCounts.nonJob += 1
       return false
     }
-
-    const postedAt = resolveJobPostedAt(job)
-    if (postedAt && startOfUtcDay(postedAt) < postedAtCutoff) {
-      filterCounts.old += 1
+    if (!normalizeHttpUrl(job?.applyUrl || job?.link || job?.sourceUrl)) {
+      filterCounts.invalidUrl += 1
       return false
     }
 
@@ -55,8 +50,6 @@ export const analyzePublishableJobs = (jobs = [], { now = new Date(), retentionD
 
   return {
     now: resolvedNow,
-    retentionDays: resolvedRetentionDays,
-    postedAtCutoff,
     today,
     filterCounts,
     indiaJobs,

@@ -1,5 +1,8 @@
 import { createBrowserFetchSession } from '../shared/browserFetch.js'
-import { extractTextFromPdfBuffer } from '../shared/pdfText.js'
+import {
+  extractTextFromPdfBuffer,
+  resolvePdfTextExtractionTimeoutMs,
+} from '../shared/pdfText.js'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 import { normalizeScrapedJob } from './normalizeScrapedJob.js'
 
@@ -8,6 +11,7 @@ const USER_AGENT =
 const BROWSER_FALLBACK_WAIT_UNTIL = 'networkidle2'
 const BROWSER_FALLBACK_SETTLE_TIME_MS = 3000
 const DEFAULT_BROWSER_FALLBACK_SESSION_LIMIT = 4
+const DEFAULT_PUBLIC_EXPERIENCE_FETCH_TIMEOUT_MS = 15 * 1000
 const PDF_CONTENT_TYPE_PATTERN = /application\/pdf/i
 
 const BLOCK_TAG_PATTERN = /<\/?(?:article|aside|blockquote|br|dd|div|dl|dt|figcaption|figure|footer|form|h[1-6]|header|hr|li|main|nav|ol|p|section|table|tbody|td|tfoot|th|thead|tr|ul)\b[^>]*>/gi
@@ -24,6 +28,83 @@ const SKIP_HOSTNAMES = new Set([
 const oracleCandidateExperienceDetailCache = new Map()
 const fountainBoardConfigCache = new Map()
 const ceipalCareerPortalJobsCache = new Map()
+
+export class PublicExperienceFetchTimeoutError extends Error {
+  constructor(url, timeoutMs) {
+    super(`Public experience fetch timed out after ${timeoutMs}ms for ${url}`)
+    this.name = 'PublicExperienceFetchTimeoutError'
+    this.localTimeout = true
+    this.failureKind = 'public_experience_fetch_timeout'
+  }
+}
+
+export const resolvePublicExperienceFetchTimeoutMs = (
+  value = process.env.PUBLIC_EXPERIENCE_FETCH_TIMEOUT_MS,
+  fallback = DEFAULT_PUBLIC_EXPERIENCE_FETCH_TIMEOUT_MS,
+) => {
+  const parsed = Number.parseInt(String(value ?? '').trim(), 10)
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback
+  return parsed
+}
+
+const getAbortReason = (signal, fallbackMessage) => (
+  signal?.reason || new Error(fallbackMessage)
+)
+
+const throwIfAborted = (signal, fallbackMessage = 'Public experience enrichment aborted') => {
+  if (signal?.aborted) {
+    throw getAbortReason(signal, fallbackMessage)
+  }
+}
+
+const createLinkedRequestSignal = ({
+  url,
+  timeoutMs,
+  signal,
+} = {}) => {
+  if (
+    (!Number.isFinite(timeoutMs) || timeoutMs <= 0)
+    && !signal
+  ) {
+    return { signal: undefined, dispose: () => {} }
+  }
+
+  const controller = new AbortController()
+  let timeoutId = null
+  let removeParentAbort = null
+
+  const abort = (reason) => {
+    if (!controller.signal.aborted) {
+      controller.abort(reason)
+    }
+  }
+
+  if (signal) {
+    if (signal.aborted) {
+      abort(getAbortReason(signal, 'Public experience enrichment aborted'))
+    } else {
+      const onParentAbort = () => {
+        abort(getAbortReason(signal, 'Public experience enrichment aborted'))
+      }
+      signal.addEventListener('abort', onParentAbort, { once: true })
+      removeParentAbort = () => signal.removeEventListener('abort', onParentAbort)
+    }
+  }
+
+  if (Number.isFinite(timeoutMs) && timeoutMs > 0) {
+    timeoutId = setTimeout(() => {
+      abort(new PublicExperienceFetchTimeoutError(url, timeoutMs))
+    }, timeoutMs)
+  }
+
+  return {
+    signal: controller.signal,
+    dispose: () => {
+      if (timeoutId) clearTimeout(timeoutId)
+      if (removeParentAbort) removeParentAbort()
+    },
+  }
+}
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
@@ -717,42 +798,69 @@ const looksLikeMultiJobListingPage = (pageText) => {
     && /\bJob Details Apply\b/i.test(normalized)
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
+const defaultFetchText = async (url, {
+  signal = null,
+  timeoutMs = resolvePublicExperienceFetchTimeoutMs(),
+  pdfTextExtractionTimeoutMs = resolvePdfTextExtractionTimeoutMs(),
+} = {}) => {
+  throwIfAborted(signal)
+  const request = createLinkedRequestSignal({ url, timeoutMs, signal })
+  let response
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+  try {
+    response = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      ...(request.signal ? { signal: request.signal } : {}),
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} for ${url}`)
+    }
+
+    const contentType = response.headers?.get?.('content-type') || ''
+    if (PDF_CONTENT_TYPE_PATTERN.test(contentType) || /\.pdf(?:$|\?)/i.test(String(url))) {
+      return await extractTextFromPdfBuffer(await response.arrayBuffer(), {
+        signal,
+        timeoutMs: pdfTextExtractionTimeoutMs,
+      })
+    }
+
+    return await response.text()
+  } finally {
+    request.dispose()
   }
-
-  const contentType = response.headers?.get?.('content-type') || ''
-  if (PDF_CONTENT_TYPE_PATTERN.test(contentType) || /\.pdf(?:$|\?)/i.test(String(url))) {
-    return extractTextFromPdfBuffer(await response.arrayBuffer())
-  }
-
-  return response.text()
 }
 
 const defaultFetchJson = async (url, options = {}) => {
-  const response = await fetch(url, {
-    method: options.method || 'GET',
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'application/json,text/plain,*/*',
-      ...(options.headers || {}),
-    },
-    ...(options.body != null ? { body: options.body } : {}),
-  })
+  const signal = options.signal || null
+  const timeoutMs = options.fetchTimeoutMs ?? options.timeoutMs ?? resolvePublicExperienceFetchTimeoutMs()
+  throwIfAborted(signal)
+  const request = createLinkedRequestSignal({ url, timeoutMs, signal })
+  let response
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+  try {
+    response = await fetch(url, {
+      method: options.method || 'GET',
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'application/json,text/plain,*/*',
+        ...(options.headers || {}),
+      },
+      ...(options.body != null ? { body: options.body } : {}),
+      ...(request.signal ? { signal: request.signal } : {}),
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} for ${url}`)
+    }
+
+    return await response.json()
+  } finally {
+    request.dispose()
   }
-
-  return response.json()
 }
 
 const shouldSkipDefaultFetch = (jobUrl) => {
@@ -1406,14 +1514,22 @@ export const enrichJobWithPublicExperience = async (job = {}, {
   fetchJson = null,
   fetchBrowserText = null,
   getBrowserText = null,
+  fetchTimeoutMs = resolvePublicExperienceFetchTimeoutMs(),
+  pdfTextExtractionTimeoutMs = resolvePdfTextExtractionTimeoutMs(),
+  signal = null,
 } = {}) => {
+  throwIfAborted(signal)
   const promotedJob = promoteExistingPublicEvidence(job)
   if (!shouldRefreshPublicJobEvidence(promotedJob)) return promotedJob
 
   const jobUrl = resolvePublicJobUrl(promotedJob)
   if (!jobUrl) return promotedJob
 
-  const fetchImpl = fetchText || defaultFetchText
+  const fetchImpl = fetchText || ((url) => defaultFetchText(url, {
+    signal,
+    timeoutMs: fetchTimeoutMs,
+    pdfTextExtractionTimeoutMs,
+  }))
   const canUseDefaultFetch = !fetchText && !shouldSkipDefaultFetch(jobUrl)
   const canUseBrowserFetch = Boolean(fetchBrowserText || getBrowserText)
   if (!fetchText && !canUseDefaultFetch && !canUseBrowserFetch) return promotedJob
@@ -1421,11 +1537,13 @@ export const enrichJobWithPublicExperience = async (job = {}, {
   let enriched = promotedJob
   let rawFetchedHtml = null
   try {
+    throwIfAborted(signal)
     if (fetchText || canUseDefaultFetch) {
       rawFetchedHtml = await fetchImpl(jobUrl)
       enriched = inferExperienceFromPublicPageHtml(promotedJob, rawFetchedHtml)
     }
-  } catch {
+  } catch (error) {
+    if (signal?.aborted) throw getAbortReason(signal, error?.message || 'Public experience enrichment aborted')
     enriched = promotedJob
   }
 
@@ -1438,6 +1556,7 @@ export const enrichJobWithPublicExperience = async (job = {}, {
     && !hasSufficientPublicJobEvidence(enriched)
   ) {
     try {
+      throwIfAborted(signal)
       const embeddedHtml = await fetchImpl(embeddedPublicJobUrl)
       enriched = inferExperienceFromPublicPageHtml({
         ...enriched,
@@ -1445,13 +1564,21 @@ export const enrichJobWithPublicExperience = async (job = {}, {
         applyUrl: embeddedPublicJobUrl,
         link: embeddedPublicJobUrl,
       }, embeddedHtml)
-    } catch {
+    } catch (error) {
+      if (signal?.aborted) throw getAbortReason(signal, error?.message || 'Public experience enrichment aborted')
       // Keep the wrapper-page result when the embedded board cannot be fetched.
     }
   }
 
-  const providerFetchJson = fetchJson || (!fetchText ? defaultFetchJson : null)
+  const providerFetchJson = fetchJson || (!fetchText
+    ? (url, requestOptions = {}) => defaultFetchJson(url, {
+        ...requestOptions,
+        signal,
+        fetchTimeoutMs,
+      })
+    : null)
   if (!hasSufficientPublicJobEvidence(enriched) && providerFetchJson) {
+    throwIfAborted(signal)
     enriched = await enrichJobWithProviderSpecificPublicData(enriched, {
       fetchText: fetchImpl,
       fetchJson: providerFetchJson,
@@ -1477,6 +1604,7 @@ export const enrichJobWithPublicExperience = async (job = {}, {
   }
 
   try {
+    throwIfAborted(signal)
     const browserFetchImpl = fetchBrowserText || await getBrowserText?.()
     if (!browserFetchImpl) return enriched
 
@@ -1492,7 +1620,8 @@ export const enrichJobWithPublicExperience = async (job = {}, {
     }
 
     return preserveListingOnlyPublicVerification(job, promotedJob, browserEnriched)
-  } catch {
+  } catch (error) {
+    if (signal?.aborted) throw getAbortReason(signal, error?.message || 'Public experience enrichment aborted')
     return enriched
   }
 }
@@ -1582,6 +1711,7 @@ export const enrichJobsWithPublicExperience = async (jobs = [], options = {}) =>
 
   const worker = async () => {
     while (cursor < jobs.length) {
+      throwIfAborted(options.signal)
       const currentIndex = cursor
       cursor += 1
       results[currentIndex] = await enrichJobWithPublicExperience(jobs[currentIndex], {
@@ -1594,6 +1724,7 @@ export const enrichJobsWithPublicExperience = async (jobs = [], options = {}) =>
               return browserHandler?.fetchBrowserText || null
             },
       })
+      throwIfAborted(options.signal)
     }
   }
 

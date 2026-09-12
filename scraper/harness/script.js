@@ -140,20 +140,36 @@ export const hasOfficialJobsPageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)?.toLowerCase() || ''
 
+  if (
+    /<title>\s*Careers at Harness: Open Positions &amp; Job Opportunities\s*<\/title>/i.test(page)
+    && /\bhiring\b/i.test(page)
+    && /career opportunity at Harness/i.test(page)
+    && /View More Positions/i.test(page)
+    && /cms\.harness\.io\/js\/greenhouse\.js/i.test(page)
+  ) return true
+
   return /<title>\s*Careers at Harness: Open Positions &amp; Job Opportunities\s*<\/title>/i.test(page)
-    && normalized.includes('exceptional talent')
-    && normalized.includes('fast growing global team')
-    && page.includes('https://www.harness.io/#organization')
+    && normalized.includes('weâ€™re hiring!')
+    && normalized.includes('career opportunity at harness')
+    && normalized.includes('view more positions')
+    && /cms\.harness\.io\/js\/greenhouse\.js/i.test(page)
 }
 
 export const hasOfficialCareersPageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)?.toLowerCase() || ''
 
-  return /<title>\s*Careers at Harness(?:\s*[—-]\s*Join the AI-Native DevOps Team)?\s*<\/title>/i.test(page)
+  if (
+    /<title>[^<]*Careers at Harness[^<]*Join the AI-Native DevOps Team[^<]*<\/title>/i.test(page)
     && normalized.includes('careers at harness')
-    && normalized.includes('awesome place to either start your career')
-    && page.includes('https://www.harness.io/#organization')
+    && normalized.includes('life at harness')
+    && extractGreenhouseBoardUrl(page) === GREENHOUSE_BOARD_URL
+  ) return true
+
+  return /<title>\s*Careers at Harness(?:\s*(?:—|â€”|-)\s*Join the AI-Native DevOps Team)?\s*<\/title>/i.test(page)
+    && normalized.includes('careers at harness')
+    && normalized.includes('life at harness')
+    && extractGreenhouseBoardUrl(page) === GREENHOUSE_BOARD_URL
 }
 
 export const extractGreenhouseBoardUrl = (html) => {
@@ -279,7 +295,7 @@ export const createHarnessScraper = ({
 
     const careersHtml = await fetchText(CAREERS_URL)
     if (!hasOfficialCareersPageSignal(careersHtml)) {
-      throw new Error('Harness verified Harness careers page no longer matches the official first-party surface')
+      throw new Error('Harness official careers page no longer exposes the verified Greenhouse board')
     }
 
     const jobs = extractIndiaJobsFromGreenhousePayload(

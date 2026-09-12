@@ -116,6 +116,10 @@ export const createSystechSolutionsScraper = ({
       throw new Error('Systech Solutions embedded jobs API no longer returns the verified array payload')
     }
 
+    if (jobs.length > 0) {
+      throw new Error('Systech Solutions verified embedded jobs API now exposes public jobs; review before publishing')
+    }
+
     const scrapedAt = new Date().toISOString()
     return extractIndiaJobs(jobs).map((job) => ({
       ...job,

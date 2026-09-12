@@ -8,7 +8,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = 'stridelysolutions'
 export const COMPANY = 'Stridely Solutions'
 export const HOMEPAGE_URL = 'https://www.stridelysolutions.com/'
-export const CAREERS_URL = 'https://www.stridelysolutions.com/careers/current-openings/'
+export const CAREERS_URL = 'https://www.stridelysolutions.com/insights/blog/jobs/'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -54,10 +54,9 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
-  return /<title>\s*Current Job Openings\s*-\s*Stridely Solutions\s*<\/title>/i.test(page)
+  return /<title>\s*Job Openings Archive\s*-\s*Stridely Solutions\s*<\/title>/i.test(page)
     && /<h1[^>]*>\s*Job Openings\s*<\/h1>/i.test(page)
-    && /Build meaningful careers with people who value ownership learning/i.test(page)
-    && /awsm_job_openings/i.test(page)
+    && /awsm-job-listing-item/i.test(page)
 }
 
 export const extractJobCards = (html) => {
@@ -130,7 +129,6 @@ export const extractJobCards = (html) => {
     jobs.push({
       title,
       location,
-      city: normalizeWhitespace(location.split(',')[0]) || null,
       sourceUrl,
       applyUrl: sourceUrl,
     })
