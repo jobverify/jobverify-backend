@@ -1,10 +1,9 @@
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { generateCompanyCoverageReport, getCompanyAliasMap, normalizeCompanyName } from '../scraper-support/providers/companyCoverage.js'
 import { getScraperCatalog } from '../scraper-support/providers/index.js'
-import { getScraperSourceDirectoryName } from '../scraper-support/providers/sourcePaths.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const backendDir = path.resolve(currentDir, '..')
@@ -12,20 +11,11 @@ const scraperDir = path.join(backendDir, 'scraper')
 export const DEFAULT_BACKEND_REPORT_PATH = path.join(backendDir, 'company_coverage_report.json')
 export const DEFAULT_FRONTEND_REPORT_PATH = null
 
-const buildReportFromScraperInventory = ({
-  catalog,
-  scraperDirectories = readdirSync(scraperDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name),
-} = {}) => {
-  const providersByDirectory = new Map(
-    catalog.map((provider) => [getScraperSourceDirectoryName(provider), provider]),
-  )
-  const sourceDirs = [...scraperDirectories].sort((left, right) => left.localeCompare(right))
-  const matched = sourceDirs.map((directoryName, index) => {
-    const provider = providersByDirectory.get(directoryName) || null
-    const source = provider?.source || directoryName
-    const companyName = provider?.companyName || provider?.company || directoryName
+const buildReportFromProviderCatalog = ({ catalog } = {}) => {
+  const providers = [...catalog].sort((left, right) => left.source.localeCompare(right.source))
+  const matched = providers.map((provider, index) => {
+    const source = provider.source
+    const companyName = provider.companyName || provider.company || source
 
     return {
       row: String(index + 1),
@@ -37,8 +27,8 @@ const buildReportFromScraperInventory = ({
   })
 
   return {
-    totalRows: sourceDirs.length,
-    candidateRows: sourceDirs.length,
+    totalRows: providers.length,
+    candidateRows: providers.length,
     matchedCount: matched.length,
     unmatchedCount: 0,
     matched,
@@ -52,7 +42,6 @@ export const regenerateCompanyCoverageReport = ({
   frontendReportPath = DEFAULT_FRONTEND_REPORT_PATH,
   catalog = getScraperCatalog(),
   aliasMap = getCompanyAliasMap(),
-  scraperDirectories,
   scraperDirectoryPath = scraperDir,
 } = {}) => {
   const resolvedBackendReportPath = path.resolve(backendReportPath)
@@ -67,10 +56,7 @@ export const regenerateCompanyCoverageReport = ({
       catalog,
       aliasMap,
     })
-    : buildReportFromScraperInventory({
-      catalog,
-      scraperDirectories,
-    })
+    : buildReportFromProviderCatalog({ catalog })
 
   const serializedReport = `${JSON.stringify(report, null, 2)}\n`
   writeFileSync(resolvedBackendReportPath, serializedReport)
@@ -79,8 +65,8 @@ export const regenerateCompanyCoverageReport = ({
   }
 
   return {
-    sourceType: resolvedCsvPath ? 'csv-file' : 'scraper-directory-inventory',
-    source: resolvedCsvPath || resolvedScraperDirectoryPath,
+    sourceType: resolvedCsvPath ? 'csv-file' : 'provider-catalog',
+    source: resolvedCsvPath || path.join(resolvedScraperDirectoryPath, '..', 'scraper-support', 'providers', 'index.js'),
     backendReportPath: resolvedBackendReportPath,
     frontendReportPath: resolvedFrontendReportPath,
     totalRows: report.totalRows,

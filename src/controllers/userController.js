@@ -7,8 +7,6 @@ import Job from "../models/Job.js";
 import Click from "../models/Click.js";
 import JobAlertDelivery from "../models/JobAlertDelivery.js";
 import PlanPurchase from "../models/PlanPurchase.js";
-import ReferralCode from "../models/ReferralCode.js";
-import ReferralRedemption from "../models/ReferralRedemption.js";
 import Subscription from "../models/Subscription.js";
 import TelegramLinkToken from "../models/TelegramLinkToken.js";
 import User from "../models/User.js";
@@ -22,10 +20,8 @@ import {
   applyExpiredAccessDowngrade,
   buildAccessSummary,
   canUseTelegramAlerts,
-  canUseWhatsappAlerts,
 } from "../utils/accessControl.js";
 import { normalizeJobListResponseJob } from "./jobController.js";
-import { normalizePhoneE164 } from "../utils/phoneNumbers.js";
 import { applyPublicJobLocationScope } from "../utils/publicJobLocationScope.js";
 import { respondWithInternalError } from "../utils/respondWithInternalError.js";
 import { createTelegramLinkToken } from "../services/telegramLinkService.js";
@@ -88,11 +84,6 @@ const buildProfileOverview = (user, savedJobsCount = user.savedJobs?.length ?? 0
   savedJobs: savedJobsCount,
 });
 
-const WHATSAPP_ELIGIBLE_ACCESS_ROLES = new Set([
-  ACCESS_ROLES.SEMESTER,
-  ACCESS_ROLES.YEARLY,
-]);
-
 const TELEGRAM_ELIGIBLE_ACCESS_ROLES = new Set([
   ACCESS_ROLES.SEMESTER,
   ACCESS_ROLES.YEARLY,
@@ -153,17 +144,6 @@ const persistExpiredAccessDowngrade = async (user) => {
   return true;
 };
 
-const buildWhatsappAlertSettingsData = (user) => ({
-  phoneE164: user.contact?.phoneE164 ?? null,
-  whatsappOptInAt: user.contact?.whatsappOptInAt ?? null,
-  whatsappOptOutAt: user.contact?.whatsappOptOutAt ?? null,
-  enabled: Boolean(user.premium?.whatsappAlertsEnabled),
-  canUseWhatsappAlerts: canUseWhatsappAlerts(user),
-  accessRole: user.accessRole,
-  access: buildAccessSummary(user),
-  whatsappAlertFilters: normalizeProfilePreferenceFilters(user.profile?.whatsappAlertFilters),
-});
-
 const buildTelegramAlertSettingsData = (user) => ({
   linked: hasLinkedTelegram(user),
   username: user.telegram?.username ?? null,
@@ -188,7 +168,6 @@ const buildProfilePayload = (user, savedJobsCount) => ({
   accessRole: user.accessRole,
   access: buildAccessSummary(user),
   profile: user.profile,
-  contact: user.contact,
   profileOverview: buildProfileOverview(user, savedJobsCount),
   onboardingCompleted: user.onboardingCompleted,
   lastLoginAt: user.lastLoginAt,
@@ -231,6 +210,7 @@ export const updateUserProfile = async (req, res) => {
     if (user) {
       // Update profile fields if provided
       if (req.body.name !== undefined) user.profile.name = normalizeProfileText(req.body.name);
+      if (req.body.graduateEducation !== undefined) user.profile.graduateEducation = normalizeProfileText(req.body.graduateEducation);
       if (req.body.branch !== undefined) user.profile.branch = normalizeProfileText(req.body.branch);
       if (req.body.passingYear !== undefined) {
         const passingYear = normalizePassingYear(req.body.passingYear);
@@ -293,10 +273,6 @@ export const deleteUserAccount = async (req, res) => {
     await Click.deleteMany({ user: userId });
     await JobAlertDelivery.deleteMany({ user: userId });
     await PlanPurchase.deleteMany({ user: userId });
-    await ReferralCode.deleteMany({ owner: userId });
-    await ReferralRedemption.deleteMany({
-      $or: [{ referrer: userId }, { referredUser: userId }],
-    });
     await TelegramLinkToken.deleteMany({ user: userId });
     await User.deleteOne({ _id: userId });
     clearAuthCookie(res);
@@ -449,113 +425,6 @@ export const removeSavedJob = async (req, res) => {
       saved: false,
       jobId,
       profileOverview: buildProfileOverview(user, savedJobsCount),
-    });
-  } catch (error) {
-    return respondWithUserInternalError(res, error);
-  }
-};
-
-export const getWhatsappAlertSettings = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-
-    if (!user) {
-      return res.status(404).json({
-        code: 404,
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    if (applyExpiredAccessDowngrade(user)) {
-      await Subscription.updateOne(
-        { user: user._id },
-        { $set: { isActive: false } },
-      ).catch(() => null);
-      await user.save();
-    }
-
-    return res.status(200).json({
-      code: 200,
-      success: true,
-      data: buildWhatsappAlertSettingsData(user),
-    });
-  } catch (error) {
-    return respondWithUserInternalError(res, error);
-  }
-};
-
-export const updateWhatsappAlertSettings = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    const enabled = [true, "true", "1"].includes(req.body.enabled)
-      ? true
-      : [false, "false", "0"].includes(req.body.enabled)
-        ? false
-        : undefined;
-
-    if (!user) {
-      return res.status(404).json({
-        code: 404,
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    if (req.body.phoneE164 !== undefined) {
-      user.contact.phoneE164 = normalizePhoneE164(req.body.phoneE164);
-    }
-
-    if (req.body.whatsappAlertFilters !== undefined) {
-      user.profile.whatsappAlertFilters = normalizeProfilePreferenceFilters(
-        req.body.whatsappAlertFilters,
-      );
-    }
-
-    if (enabled === true) {
-      if (
-        user.role !== "admin"
-        && !WHATSAPP_ELIGIBLE_ACCESS_ROLES.has(user.accessRole)
-      ) {
-        return res.status(403).json({
-          code: 403,
-          success: false,
-          message: "WhatsApp alerts require an active semester or yearly plan.",
-        });
-      }
-
-      const normalizedWhatsappPhone = normalizePhoneE164(user.contact?.phoneE164);
-      if (!normalizedWhatsappPhone) {
-        return res.status(400).json({
-          code: 400,
-          success: false,
-          message: "A valid WhatsApp phone number is required.",
-        });
-      }
-
-      user.contact.phoneE164 = normalizedWhatsappPhone;
-      user.contact.whatsappOptInAt = new Date();
-      user.premium.whatsappAlertsEnabled = true;
-    }
-
-    if (enabled === false) {
-      user.contact.whatsappOptOutAt = new Date();
-      user.premium.whatsappAlertsEnabled = false;
-    }
-
-    if (applyExpiredAccessDowngrade(user)) {
-      await Subscription.updateOne(
-        { user: user._id },
-        { $set: { isActive: false } },
-      ).catch(() => null);
-    }
-    await user.save();
-
-    return res.status(200).json({
-      code: 200,
-      success: true,
-      message: "WhatsApp alert settings updated successfully.",
-      data: buildWhatsappAlertSettingsData(user),
     });
   } catch (error) {
     return respondWithUserInternalError(res, error);

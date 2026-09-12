@@ -165,40 +165,6 @@ const mapHimalayasJob = ({ job, provider }) => {
   }
 }
 
-export const createAggregateHimalayasSignalJob = ({ provider, sourceUrl }) => {
-  const location = provider.locationEvidence || 'India eligible remote'
-
-  return {
-    title: `Current remote openings at ${provider.companyName}`,
-    company: provider.companyName,
-    location,
-    city: deriveCity(location),
-    country: 'India',
-    locations: [location].filter(Boolean),
-    link: sourceUrl,
-    applyUrl: sourceUrl,
-    sourceUrl,
-    source: provider.source,
-    jobId: `${provider.source}-current-openings`,
-    requisitionId: `${provider.source}-current-openings`,
-    department: null,
-    employmentType: null,
-    experienceRequired: null,
-    postingDate: null,
-    expiresAt: null,
-    jobDescription: [
-      `${provider.companyName} had current Himalayas hiring evidence for ${provider.exampleOpening || 'an India-eligible remote opening'}.`,
-      `Location evidence: ${location}.`,
-      `Directory source: ${provider.directorySourceType || 'Himalayas India remote jobs directory'}.`,
-      `Verified on ${provider.verifiedOn || 'the workbook checked date'}.`,
-    ].join(' '),
-    publicExperienceChecked: true,
-    remoteStatus: deriveRemoteStatus(location),
-    atsPlatform: provider.atsPlatform || 'himalayas-remote-jobs-api',
-    scrapedAt: new Date().toISOString(),
-  }
-}
-
 const defaultFetchJson = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -226,36 +192,39 @@ export const createHimalayasDirectoryScraper = (provider) => ({
     const maxPages = Number.parseInt(provider.maxPages || DEFAULT_MAX_PAGES, 10)
     const jobs = []
     const seen = new Set()
-    let seenApiRecords = 0
+    const seenApiRecords = new Set()
+    let reportedTotal = null
 
-    try {
-      for (let page = 1; page <= maxPages; page += 1) {
-        const payload = await fetchJson(buildHimalayasSearchUrl({ provider, page }))
-        const records = Array.isArray(payload?.jobs) ? payload.jobs : []
-        if (records.length === 0) break
-
-        seenApiRecords += records.length
-        for (const record of records) {
-          const mapped = mapHimalayasJob({ job: record, provider })
-          const key = mapped?.sourceUrl || mapped?.jobId
-          if (!mapped || seen.has(key)) continue
-
-          jobs.push(mapped)
-          seen.add(key)
+    if (!Number.isInteger(maxPages) || maxPages < 1) throw new Error('Invalid Himalayas page limit')
+    for (let page = 1; page <= maxPages; page += 1) {
+      const payload = await fetchJson(buildHimalayasSearchUrl({ provider, page }))
+      if (!Array.isArray(payload?.jobs)) throw new Error('Invalid Himalayas response: expected a jobs array')
+      const records = payload.jobs
+      const totalCount = Number.parseInt(payload?.totalCount, 10)
+      if (Number.isFinite(totalCount)) reportedTotal = Math.max(reportedTotal ?? 0, totalCount)
+      if (records.length === 0) {
+        if (reportedTotal !== null && seenApiRecords.size < reportedTotal) {
+          throw new Error('Incomplete Himalayas listing: empty page before the reported total')
         }
-
-        const totalCount = Number.parseInt(payload?.totalCount, 10)
-        if (Number.isFinite(totalCount) && seenApiRecords >= totalCount) break
+        return jobs
       }
-    } catch {
-      if (jobs.length > 0) return jobs
+      const previousCount = seenApiRecords.size
+      for (const record of records) {
+        const recordId = record?.guid || record?.applicationLink
+        if (!recordId || !record?.title || !record?.companyName || !record?.applicationLink) {
+          throw new Error('Invalid Himalayas job record: required listing fields are missing')
+        }
+        seenApiRecords.add(String(recordId))
+        const mapped = mapHimalayasJob({ job: record, provider })
+        const key = mapped?.sourceUrl || mapped?.jobId
+        if (!mapped || seen.has(key)) continue
+        jobs.push(mapped)
+        seen.add(key)
+      }
+      if (seenApiRecords.size === previousCount) throw new Error('Incomplete Himalayas listing: repeated page')
+      if (reportedTotal !== null && seenApiRecords.size >= reportedTotal) return jobs
     }
-
-    if (jobs.length > 0) return jobs
-
-    return [createAggregateHimalayasSignalJob({
-      provider,
-      sourceUrl: provider.companyCareerPage,
-    })]
+    // Never allow a partial listing to record lifecycle misses for unseen jobs.
+    throw new Error('Incomplete Himalayas listing: page limit reached')
   },
 })

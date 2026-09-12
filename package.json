@@ -1,8 +1,8 @@
 {
   "name": "jobverify-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Jobverify API, account access, billing, and job collection services.",
+  "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
@@ -15,6 +15,9 @@
     "scrape:parallel": "node --use-system-ca scraper-support/runner.js --parallel",
     "scrape:parallel:dry": "node --use-system-ca scraper-support/runner.js --parallel --dry-run",
     "scrape:parallel:dry:monitored": "node --use-system-ca scripts/startMonitoredLocalScrapeRun.js --parallel --dry-run",
+    "scrape:parallel:live:resilient": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/startResilientMongoScrape.ps1 -Live",
+    "scrape:parallel:dry:resilient": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/startResilientMongoScrape.ps1 -DryRun",
+    "scrape:resilient:stop": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/stopResilientMongoScrape.ps1 -Live",
     "scrape:backfill-missing:dry": "node --use-system-ca scripts/backfillMissingDryRunArtifacts.js",
     "scrape:csv": "node --use-system-ca scripts/scrapeCompaniesFromCsv.js",
     "validate:live-uncovered-500": "node scripts/validateLiveUncovered500Manifest.js",
@@ -28,6 +31,7 @@
     "backfill:job-search-keys": "node scripts/backfillJobSearchKeys.js",
     "backfill:job-types": "node scripts/backfillJobTypes.js",
     "db:clear": "node scripts/clearJobs.js",
+    "db:purge-retired-companies": "node scripts/purgeRetiredCompanyJobs.js",
     "db:purge-expired": "node scripts/purgeExpiredJobs.js",
     "db:clean-non-india": "node scripts/removeNonIndiaJobs.js",
     "db:delete-user": "node scripts/sweepDeleteUser.js",
@@ -40,9 +44,15 @@
     "db:indexes:plan": "node scripts/indexes.js plan",
     "db:indexes:apply": "node scripts/indexes.js apply",
     "db:migrate:plan-purchase-indexes": "node scripts/migratePlanPurchaseRazorpayIndexes.js",
+    "db:remove-referrals": "node scripts/removeReferralSystemData.js",
     "db:verify-indexes": "npm run db:indexes:plan",
     "jobs:profile": "node scripts/profileJobQueries.js",
-    "jobs:profile:local": "node scripts/profileLocalJobQueries.js"
+    "jobs:profile:local": "node scripts/profileLocalJobQueries.js",
+    "test:api": "node --test --test-concurrency=4 \"test/**/*.test.js\"",
+    "test:scraper": "node --test --test-concurrency=4 \"scraper/**/*.test.js\" \"scraper-support/**/*.test.js\"",
+    "check": "npm run lint && npm run test:api",
+    "test:integration": "node --test test/integration/*.integration.js",
+    "test:provision-mongo": "node scripts/provisionTestMongo.js"
   },
   "repository": {
     "type": "git",
@@ -75,5 +85,9 @@
   "devDependencies": {
     "mongodb-memory-server": "^11.2.0",
     "nodemon": "^3.1.11"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=24.14.0 <25"
   }
 }

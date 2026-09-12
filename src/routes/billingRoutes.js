@@ -1,11 +1,10 @@
 import express from "express";
+import { requireBillingEnabled } from "../middleware/siteSettings.js";
 import {
   cancelPlan,
-  createOrGetMyReferralCode,
   createPlanCheckout,
   getBillingPlans,
   getMyBillingSummary,
-  getMyReferralStatus,
   handleBillingWebhook,
   verifyPlanCheckout,
 } from "../controllers/billingController.js";
@@ -18,16 +17,15 @@ import {
 
 const router = express.Router();
 
-router.get("/plans", getBillingPlans);
+router.get("/plans", requireBillingEnabled, getBillingPlans);
 router.post("/webhook", handleBillingWebhook);
 
 router.use(protect);
 router.post("/cancel", cancelPlan);
 router.get("/me", getMyBillingSummary);
-router.get("/referrals/me", getMyReferralStatus);
-router.post("/referrals/code", createOrGetMyReferralCode);
 router.post(
   "/checkout",
+  requireBillingEnabled,
   billingCheckoutValidation,
   validateRequest,
   createPlanCheckout,

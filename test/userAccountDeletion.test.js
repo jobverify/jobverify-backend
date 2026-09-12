@@ -5,8 +5,6 @@ import { deleteUserAccount } from "../src/controllers/userController.js";
 import Click from "../src/models/Click.js";
 import JobAlertDelivery from "../src/models/JobAlertDelivery.js";
 import PlanPurchase from "../src/models/PlanPurchase.js";
-import ReferralCode from "../src/models/ReferralCode.js";
-import ReferralRedemption from "../src/models/ReferralRedemption.js";
 import Subscription from "../src/models/Subscription.js";
 import TelegramLinkToken from "../src/models/TelegramLinkToken.js";
 import User from "../src/models/User.js";
@@ -36,8 +34,6 @@ test("deleteUserAccount removes the authenticated user's account-linked data and
     clicks: Click.deleteMany,
     deliveries: JobAlertDelivery.deleteMany,
     purchases: PlanPurchase.deleteMany,
-    referralCodes: ReferralCode.deleteMany,
-    redemptions: ReferralRedemption.deleteMany,
     telegramTokens: TelegramLinkToken.deleteMany,
   };
   const removals = [];
@@ -47,8 +43,6 @@ test("deleteUserAccount removes the authenticated user's account-linked data and
   Click.deleteMany = async (filter) => { removals.push(["click", filter]); };
   JobAlertDelivery.deleteMany = async (filter) => { removals.push(["delivery", filter]); };
   PlanPurchase.deleteMany = async (filter) => { removals.push(["purchase", filter]); };
-  ReferralCode.deleteMany = async (filter) => { removals.push(["referralCode", filter]); };
-  ReferralRedemption.deleteMany = async (filter) => { removals.push(["redemption", filter]); };
   TelegramLinkToken.deleteMany = async (filter) => { removals.push(["telegramToken", filter]); };
 
   try {
@@ -69,8 +63,6 @@ test("deleteUserAccount removes the authenticated user's account-linked data and
       ["click", { user: userId }],
       ["delivery", { user: userId }],
       ["purchase", { user: userId }],
-      ["referralCode", { owner: userId }],
-      ["redemption", { $or: [{ referrer: userId }, { referredUser: userId }] }],
       ["telegramToken", { user: userId }],
       ["user", { _id: userId }],
     ]);
@@ -80,8 +72,6 @@ test("deleteUserAccount removes the authenticated user's account-linked data and
     Click.deleteMany = originalMethods.clicks;
     JobAlertDelivery.deleteMany = originalMethods.deliveries;
     PlanPurchase.deleteMany = originalMethods.purchases;
-    ReferralCode.deleteMany = originalMethods.referralCodes;
-    ReferralRedemption.deleteMany = originalMethods.redemptions;
     TelegramLinkToken.deleteMany = originalMethods.telegramTokens;
   }
 });

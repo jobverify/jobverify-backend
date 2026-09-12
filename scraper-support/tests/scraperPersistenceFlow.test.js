@@ -314,7 +314,7 @@ test('saveToDB only enqueues inserted active jobs for WhatsApp alerts', async ()
   }
 })
 
-test('saveToDB applies retention to normalized postingDate values', async () => {
+test('saveToDB preserves open roles regardless of their normalized postingDate age', async () => {
   const restoreReadyState = setReadyState(1)
   const originalBulkWrite = Job.bulkWrite
   const originalDeleteMany = Job.deleteMany
@@ -365,12 +365,12 @@ test('saveToDB applies retention to normalized postingDate values', async () => 
         },
       ],
       'example-source',
-      { retentionDays: 10, replaceExisting: false },
+      { retentionDays: 10, replaceExisting: false, enrichPublicExperience: false },
     )
 
-    assert.equal(result.filteredOld, 2)
-    assert.equal(result.eligibleJobs, 1)
-    assert.equal(capturedBulkOps.length, 1)
+    assert.equal(result.filteredOld, 0)
+    assert.equal(result.eligibleJobs, 3)
+    assert.equal(capturedBulkOps.length, 3)
     assert.equal(
       capturedBulkOps[0].updateOne.update.$set.applyUrl,
       'https://example.com/jobs/fresh',

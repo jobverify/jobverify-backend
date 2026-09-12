@@ -114,6 +114,17 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
   const jobsPerSource = rows.map(({ result }) => toFiniteNonNegative(result.jobs))
   const sourcesWithJobs = rows.filter(({ result }) => toFiniteNonNegative(result.jobs) > 0).length
   const zeroJobSuccesses = successfulRows.filter(({ result }) => toFiniteNonNegative(result.jobs) === 0).length
+  const zeroJobRows = successfulRows.filter(({ result }) => toFiniteNonNegative(result.jobs) === 0)
+  const zeroJobEvidenceCount = (evidence) => zeroJobRows.filter(({ result }) => (
+    (result.zeroJobEvidence || 'unverified-zero') === evidence
+  )).length
+  const verifiedEmptySources = zeroJobEvidenceCount('verified-empty')
+  const fetchedZeroSources = zeroJobEvidenceCount('fetched-zero')
+  const blockedZeroSources = zeroJobEvidenceCount('blocked-zero')
+  const unverifiedZeroSources = zeroJobRows.length
+    - verifiedEmptySources
+    - fetchedZeroSources
+    - blockedZeroSources
   const totalNew = rows.reduce((total, { result }) => total + toFiniteNonNegative(result.inserted), 0)
   const totalUpdated = rows.reduce((total, { result }) => total + toFiniteNonNegative(result.updated), 0)
   const durations = rows.map(({ result }) => toFiniteNonNegative(result.durationMs))
@@ -129,13 +140,11 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
   const publishableFilters = rows.reduce((total, { result }) => ({
     eligibleJobs: total.eligibleJobs + toFiniteNonNegative(result.eligibleJobs),
     filteredNonIndia: total.filteredNonIndia + toFiniteNonNegative(result.filteredNonIndia),
-    filteredOld: total.filteredOld + toFiniteNonNegative(result.filteredOld),
     filteredClosed: total.filteredClosed + toFiniteNonNegative(result.filteredClosed),
     filteredInvalidUrl: total.filteredInvalidUrl + toFiniteNonNegative(result.filteredInvalidUrl),
   }), {
     eligibleJobs: 0,
     filteredNonIndia: 0,
-    filteredOld: 0,
     filteredClosed: 0,
     filteredInvalidUrl: 0,
   })
@@ -198,7 +207,7 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
       ['Failed', counts.Fail],
       ['Success rate', formatPercent(counts.OK, processed)],
       ['Successful-source rate', formatPercent(counts.OK, processed)],
-      ['Zero-job successes', zeroJobSuccesses],
+      ['Zero India-job results', zeroJobSuccesses],
     ]),
     'JOB YIELD',
     formatAsciiTable(['Metric', 'Value'], [
@@ -216,7 +225,6 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
       ['Publishable jobs', publishableFilters.eligibleJobs],
       ['Publishable rate', formatPercent(publishableFilters.eligibleJobs, totalJobs)],
       ['Rejected outside India', publishableFilters.filteredNonIndia],
-      ['Rejected older than retention', publishableFilters.filteredOld],
       ['Rejected past closing date', publishableFilters.filteredClosed],
       ['Rejected invalid URL', publishableFilters.filteredInvalidUrl],
     ]),
@@ -247,9 +255,13 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
     ]),
     'ZERO-YIELD WATCHLIST',
     formatAsciiTable(['Metric', 'Value'], [
-      ['Successful zero-job sources', zeroNowSources.length],
-      ['Known empty sources', knownEmpty == null ? 'unavailable' : knownEmpty.length],
-      ['Needs review', needsReview == null ? 'unavailable' : needsReview.length],
+      ['Zero India-job results', zeroNowSources.length],
+      ['Verified empty career surfaces', verifiedEmptySources],
+      ['Fetched zero India-job results', fetchedZeroSources],
+      ['Blocked or failed zero results', blockedZeroSources],
+      ['Unverified zero results', unverifiedZeroSources],
+      ['Previously zero India-job results', knownEmpty == null ? 'unavailable' : knownEmpty.length],
+      ['New zero India-job results', needsReview == null ? 'unavailable' : needsReview.length],
       ['Prior-non-empty examples', needsReview == null ? 'unavailable' : (needsReview.slice(0, 5).join(', ') || 'none')],
     ]),
     'RUN-OVER-RUN CHANGE',

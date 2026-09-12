@@ -9,16 +9,16 @@ export const SISENSE_CATALOG = {
   adapter: 'script',
   companyCareerPage: 'https://www.sisense.com/about/careers/',
   companyDomain: 'sisense.com',
-  atsPlatform: 'greenhouse-board-api',
+  atsPlatform: 'ashby-job-board-api',
   countryFilter: 'India',
-  paginationStrategy: 'single-greenhouse-board-feed',
+  paginationStrategy: 'single-ashby-job-board-feed',
   extractionStrategy:
-    'verified-first-party-careers-page+official-greenhouse-board+official-greenhouse-board-api+india-filter',
+    'verified-first-party-careers-page+official-ashby-board+official-ashby-job-board-api+india-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-25',
+  verifiedOn: '2026-09-12',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 25, 2026 that https://www.sisense.com/about/careers/ remained the first-party Sisense careers page, that its public open-roles surface resolved to the official Greenhouse board at https://job-boards.greenhouse.io/embed/job_board?for=sisense, and that the companion public Greenhouse API feed at https://boards-api.greenhouse.io/v1/boards/sisense/jobs?content=true was live. The verified board exposed 3 public openings on the verified date: Site Reliability Engineer in Kyiv, Account Executive in Tel Aviv-Yafo, and Head of Sales in New York, NY, with zero India openings.',
+    'Verified on September 12, 2026 that https://www.sisense.com/about/careers/ remains the first-party Sisense careers page and its current public roles use the Ashby board at https://jobs.ashbyhq.com/sisense. The legacy Greenhouse board now returns HTTP 404, while current publicly indexed Sisense role URLs resolve under the official Ashby board. The corresponding public Ashby feed is https://api.ashbyhq.com/posting-api/job-board/sisense; the scraper keeps the India-only filter and returns an honest empty set when no India roles are listed.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

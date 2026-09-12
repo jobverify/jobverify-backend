@@ -4,7 +4,6 @@ import test from 'node:test'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 
 const RESTORED_SHARED_COVERAGE_SOURCES = [
-  'redbus',
   'rephraseai',
   'remunanceservicespvtltd',
 ]

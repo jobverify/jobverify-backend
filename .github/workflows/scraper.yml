@@ -1,9 +1,12 @@
-name: Jobify Scraper Cron
+name: Jobverify Scraper Cron
 
 on:
   schedule:
-    - cron: '38 20 * * 0,1,2,3,4' # Monday to Friday at 02:08 AM IST
+    - cron: '38 20 * * *' # Every day at 02:08 AM IST
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: jobverify-production-scraper
@@ -26,16 +29,14 @@ jobs:
       - name: Install Backend Dependencies
         run: npm ci
 
-      - name: Install Scraper Dependencies
-        run: npm install
-        working-directory: ./scraper
-
       - name: Run Scraper
         run: npm run scrape:parallel
         env:
           NODE_ENV: production
           NODE_OPTIONS: '--use-system-ca'
           MONGO_URI: ${{ secrets.MONGO_URI }}
+          TELEGRAM_ENABLED: ${{ vars.TELEGRAM_ENABLED }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           SCRAPER_CONCURRENCY: ${{ vars.SCRAPER_CONCURRENCY }}
           SCRAPER_SOURCE_LIFECYCLE_TIMEOUT_MS: '1800000'
           PUBLIC_EXPERIENCE_FETCH_TIMEOUT_MS: '15000'

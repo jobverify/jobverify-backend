@@ -17,7 +17,6 @@ import {
   SKILL_SCOPE_OPTIONS,
   WORK_ARRANGEMENT_OPTIONS,
 } from "../constants/jobFilterTaxonomy.js";
-import { normalizePhoneE164 } from "../utils/phoneNumbers.js";
 
 const MAX_TEXT_LENGTH = 80;
 const MAX_QUERY_LENGTH = 200;
@@ -115,8 +114,8 @@ const optionalDatePostedListRule = (chain) =>
       for (const item of list) {
         const rawValue = String(item ?? "").trim().toLowerCase();
         const numericValue = /^\d+$/u.test(rawValue) ? Number(rawValue) : null;
-        const normalized = rawValue === DATE_POSTED_NA_VALUE
-          ? DATE_POSTED_NA_VALUE
+        const normalized = rawValue === DATE_POSTED_NA_VALUE || rawValue === "older-than-30"
+          ? rawValue
           : numericValue;
         if (!DATE_POSTED_OPTIONS.includes(normalized)) {
           throw new Error("Date posted filter is invalid.");
@@ -207,8 +206,8 @@ const validateProfilePreferenceDatePostedList = (value) => {
   for (const item of list) {
     const rawValue = String(item ?? "").trim().toLowerCase();
     const numericValue = /^\d+$/u.test(rawValue) ? Number(rawValue) : null;
-    const normalized = rawValue === DATE_POSTED_NA_VALUE
-      ? DATE_POSTED_NA_VALUE
+    const normalized = rawValue === DATE_POSTED_NA_VALUE || rawValue === "older-than-30"
+      ? rawValue
       : numericValue;
     if (!DATE_POSTED_OPTIONS.includes(normalized)) {
       throw new Error("Profile preference date posted is invalid.");
@@ -271,9 +270,6 @@ const alertFiltersValidationRules = (field, label) => [
     .withMessage(`${label} sort must be one of: all, popularity, latest, oldest.`),
 ];
 
-const whatsappAlertFiltersValidationRules = () =>
-  alertFiltersValidationRules("whatsappAlertFilters", "WhatsApp alert");
-
 const telegramAlertFiltersValidationRules = () =>
   alertFiltersValidationRules("telegramAlertFilters", "Telegram alert");
 
@@ -291,17 +287,6 @@ export const registerValidation = [
     }
     return true;
   }),
-  body("phoneE164")
-    .optional()
-    .customSanitizer(trimIfString)
-    .isLength({ min: 8, max: 20 })
-    .withMessage("phoneE164 must be between 8 and 20 characters.")
-    .custom((value) => {
-      if (!normalizePhoneE164(value)) {
-        throw new Error("phoneE164 must be a valid phone number.");
-      }
-      return true;
-    }),
 ];
 
 export const loginValidation = [
@@ -378,8 +363,8 @@ export const resetPasswordValidation = [
 export const jobQueryValidation = [
   query("page")
     .optional()
-    .isInt({ min: 1, max: MAX_PAGE })
-    .withMessage(`Page must be between 1 and ${MAX_PAGE}.`),
+    .isInt({ min: 1 })
+    .withMessage("Page must be at least 1."),
   query("limit")
     .optional()
     .isInt({ min: 1, max: MAX_JOB_LIMIT })
@@ -477,7 +462,6 @@ export const userProfileValidation = [
     .optional()
     .isIn(["all", "popularity", "latest", "oldest"])
     .withMessage("Profile preference sort must be one of: all, popularity, latest, oldest."),
-  ...whatsappAlertFiltersValidationRules(),
 ];
 
 export const adminUsersQueryValidation = [
@@ -557,11 +541,6 @@ export const billingCheckoutValidation = [
   body("planId")
     .isIn([PLAN_IDS.MONTHLY, PLAN_IDS.SEMESTER, PLAN_IDS.YEARLY])
     .withMessage("Plan must be monthly, semester, or yearly."),
-  body("referralCode")
-    .optional()
-    .customSanitizer(trimIfString)
-    .isLength({ min: 3, max: 40 })
-    .withMessage("Referral code must be between 3 and 40 characters."),
 ];
 
 export const billingVerifyValidation = [
@@ -596,27 +575,6 @@ export const billingVerifyValidation = [
     }
     return true;
   }),
-];
-
-export const whatsappAlertsValidation = [
-  body("phoneE164")
-    .optional()
-    .customSanitizer(trimIfString)
-    .isLength({ min: 8, max: 20 })
-    .withMessage("phoneE164 must be between 8 and 20 characters.")
-    .custom((value) => {
-      if (normalizePhoneE164(value) !== value) {
-        throw new Error("phoneE164 must be a valid normalized E.164 phone number.");
-      }
-      return true;
-    }),
-  body("enabled")
-    .optional()
-    .isBoolean()
-    .withMessage("enabled must be a boolean.")
-    .bail()
-    .toBoolean(),
-  ...whatsappAlertFiltersValidationRules(),
 ];
 
 export const telegramAlertsValidation = [

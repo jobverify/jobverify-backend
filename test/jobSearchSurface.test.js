@@ -248,7 +248,7 @@ test("cursor job search requests one extra projected row and returns an opaque n
     assert.deepEqual(capturedOptions, { maxTimeMS: 800 });
     assert.equal(capturedPipeline[0].$match.status, "active");
     assert.equal(capturedPipeline[0].$match.isPublicIndia, true);
-    assert.equal(capturedPipeline[0].$match.$expr.$and.length, 4);
+    assert.equal(capturedPipeline[0].$match.$expr.$and.length, 2);
     assert.equal(capturedPipeline.at(-2).$limit, 2);
     assert.deepEqual(capturedPipeline.at(-3).$sort, { sortDate: -1, _id: -1 });
     assert.equal(capturedPipeline.at(-1).$project.title, 1);
@@ -416,7 +416,7 @@ test("job metadata hides the legacy NA date-posted option from public filters", 
     await getJobMeta({ query: {} }, res);
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.data.datePostedOptions.includes("na"), false);
-    assert.deepEqual(res.body.data.datePostedOptions, Array.from({ length: 31 }, (_, index) => index));
+    assert.deepEqual(res.body.data.datePostedOptions, [...Array.from({ length: 31 }, (_, index) => index), "older-than-30"]);
   } finally {
     JobDatasetSummary.findOne = originalFindOne;
   }

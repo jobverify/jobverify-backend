@@ -56,16 +56,16 @@ test("Job schema can advance source lifecycle misses without scanning all jobs",
   );
 });
 
-test("Job text search index covers card search and job-detail text", () => {
-  const textIndex = getJobIndexes().find(({ key }) => (
-    key.title === "text"
-    && key.company === "text"
-    && key.description === "text"
-    && key.minimumQualification === "text"
-    && key.preferredQualification === "text"
-    && key.experienceRequired === "text"
-    && key.requiredSkills === "text"
+test("Job text search index stays bounded to card-sized search fields", () => {
+  const textIndex = getJobIndexes().find(({ options }) => (
+    options.name === "job_search_text"
   ));
 
   assert.ok(textIndex);
+  assert.deepEqual(textIndex.key, {
+    title: "text",
+    company: "text",
+    experienceRequired: "text",
+    requiredSkills: "text",
+  });
 });

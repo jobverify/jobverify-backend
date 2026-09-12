@@ -10,6 +10,6 @@ export const scrapeStatus = async (_req, res) => {
     code: 200,
     success: true,
     message: 'Scrape endpoint is active.',
-    scheduledAt: '02:00 IST daily',
+    scheduledAt: '02:08 IST daily',
   })
 }

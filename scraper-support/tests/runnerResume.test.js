@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import {
   assertLiveMongoUriConfigured,
+  getZeroJobEvidence,
   isAuthoritativeEmptyScrape,
   MissingMongoUriError,
   resolveLivePublicExperienceEnabled,
@@ -205,7 +206,20 @@ test('resolveScraperTimeoutMs uses extended catalog budgets for high-volume Work
 
   assert.deepEqual(
     Object.fromEntries(
-      ['accenture', 'cadence', 'mastercard'].map((source) => {
+      [
+        'accenture',
+        'cadence',
+        'mastercard',
+        'nvidia',
+        'northerntrust',
+        'nxp',
+        'paloalto',
+        'roche',
+        'salesforce',
+        'target',
+        'valeo',
+        'visa',
+      ].map((source) => {
         const scraper = scrapersByName.get(source)
         assert.ok(scraper, `${source} scraper should exist`)
         return [source, resolveScraperTimeoutMs(null, scraper, null)]
@@ -215,6 +229,15 @@ test('resolveScraperTimeoutMs uses extended catalog budgets for high-volume Work
       accenture: 1200000,
       cadence: 1200000,
       mastercard: 1200000,
+      nvidia: 1200000,
+      northerntrust: 1200000,
+      nxp: 1200000,
+      paloalto: 1200000,
+      roche: 1200000,
+      salesforce: 1200000,
+      target: 1200000,
+      valeo: 1200000,
+      visa: 1200000,
     },
   )
 })
@@ -239,6 +262,24 @@ test('resolveLivePublicExperienceEnabled honors provider opt-outs for live persi
   assert.equal(resolveLivePublicExperienceEnabled(null, 'true'), false)
   assert.equal(resolveLivePublicExperienceEnabled({ provider: { enrichPublicExperience: false } }, ''), false)
   assert.equal(resolveLivePublicExperienceEnabled({ provider: { enrichPublicExperience: true } }, 'true'), true)
+})
+
+test('resolveLivePublicExperienceEnabled skips shared-shell enrichment for AMNS public vacancies', () => {
+  const scraper = buildScrapers().find(
+    (candidate) => candidate.name === 'arcelormittalnipponsteelindia',
+  )
+
+  assert.ok(scraper)
+  assert.equal(resolveLivePublicExperienceEnabled(scraper, ''), false)
+})
+
+test('resolveLivePublicExperienceEnabled skips redundant enrichment for high-volume API sources', () => {
+  for (const source of ['ibm', 'pwc']) {
+    const scraper = buildScrapers().find((candidate) => candidate.name === source)
+
+    assert.ok(scraper, `missing ${source} scraper`)
+    assert.equal(resolveLivePublicExperienceEnabled(scraper, ''), false, source)
+  }
 })
 
 test('resolveScraperRetryAttempts avoids multiplying the Workday source budget', () => {
@@ -344,6 +385,28 @@ test('runScraperWithTimeout can be disabled for explicitly unbounded local probe
   }, 0)
 
   assert.deepEqual(jobs, [{ title: 'Role' }])
+})
+
+test('getZeroJobEvidence does not treat an ordinary empty array as a verified empty career page', () => {
+  const confirmedEmpty = []
+  Object.defineProperty(
+    confirmedEmpty,
+    Symbol.for('jobverify.workday.authoritative-empty'),
+    { value: true },
+  )
+
+  assert.equal(
+    getZeroJobEvidence({ provider: { adapter: 'script', atsPlatform: 'custom' } }, [], []),
+    'unverified-zero',
+  )
+  assert.equal(
+    getZeroJobEvidence({ provider: { adapter: 'workday', atsPlatform: 'workday' } }, confirmedEmpty, []),
+    'verified-empty',
+  )
+  assert.equal(
+    getZeroJobEvidence({ provider: { adapter: 'workday', atsPlatform: 'workday' } }, confirmedEmpty, [{ title: 'Engineer' }]),
+    null,
+  )
 })
 
 test('withSourceLifecycleTimeout aborts hung lifecycle work with the source label', async () => {

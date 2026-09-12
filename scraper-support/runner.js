@@ -32,6 +32,9 @@ import {
   resolveParallelWorkerConcurrency,
 } from './utils/parallelConcurrency.js'
 import { formatFinalSummaryTable } from './finalSummaryFormatter.js'
+import { installGracefulShutdownHandlers } from './utils/gracefulShutdown.js'
+import { openRunCheckpoint } from './utils/runCheckpoint.js'
+import { acquireMongoRunLease } from './utils/runLease.js'
 import { refreshJobDatasetSummary } from '../src/services/jobDatasetSummaryService.js'
 import { DEFAULT_JOB_RETENTION_DAYS } from '../src/utils/jobLifecycle.js'
 import ScraperStatus from '../src/models/ScraperStatus.js'
@@ -451,6 +454,13 @@ export const isAuthoritativeEmptyScrape = (scraper, jobs) => (
   && jobs[WORKDAY_AUTHORITATIVE_EMPTY] === true
 )
 
+export const getZeroJobEvidence = (scraper, jobs, indiaJobs) => {
+  if (!Array.isArray(indiaJobs) || indiaJobs.length > 0) return null
+  return isAuthoritativeEmptyScrape(scraper, jobs)
+    ? 'verified-empty'
+    : 'unverified-zero'
+}
+
 export const resolveScraperRetryAttempts = (scraper) => (
   isWorkdayScraper(scraper) ? 1 : 4
 )
@@ -597,45 +607,59 @@ export const withSourceLifecycleTimeout = async (
   scraper,
   operation,
   timeoutMs = resolveSourceLifecycleTimeoutMs(undefined, scraper),
-  { abortGraceMs = DEFAULT_ABORT_GRACE_MS } = {},
+  { abortGraceMs = DEFAULT_ABORT_GRACE_MS, signal = null } = {},
 ) => {
-  if (!timeoutMs) {
+  if (!timeoutMs && !signal) {
     return operation({ signal: null })
   }
 
   let timeoutId
   let timeoutError = null
   const controller = new AbortController()
-  const runPromise = Promise.resolve().then(() => operation({ signal: controller.signal }))
+  let parentAbortReason = null
+  let rejectParentAbort
+  const parentAbortPromise = new Promise((_, reject) => { rejectParentAbort = reject })
+  const detachParentAbort = attachParentAbort(signal, controller, (reason) => {
+    parentAbortReason = reason
+    rejectParentAbort(reason)
+  })
+  const runPromise = Promise.resolve().then(() => {
+    throwIfAborted(controller.signal)
+    return operation({ signal: controller.signal })
+  })
 
   try {
     return await Promise.race([
       runPromise,
-      new Promise((_, reject) => {
-        timeoutId = setTimeout(() => {
-          timeoutError = new ScraperSourceLifecycleTimeoutError(scraper.name, timeoutMs)
-          controller.abort(timeoutError)
-          reject(timeoutError)
-        }, timeoutMs)
-      }),
+      timeoutMs
+        ? new Promise((_, reject) => {
+            timeoutId = setTimeout(() => {
+              timeoutError = new ScraperSourceLifecycleTimeoutError(scraper.name, timeoutMs)
+              controller.abort(timeoutError)
+              reject(timeoutError)
+            }, timeoutMs)
+          })
+        : new Promise(() => {}),
+      parentAbortPromise,
     ])
   } catch (error) {
-    if (error === timeoutError) {
+    if (error === timeoutError || error === parentAbortReason) {
       const settlement = await waitForAbortSettlement(runPromise, abortGraceMs)
       if (settlement.settled) {
         if (settlement.error?.persistenceBlocked === true) throw settlement.error
         if (
           settlement.value?.success === false
-          && settlement.value?.failureKind === timeoutError.failureKind
+          && settlement.value?.failureKind === error.failureKind
         ) {
           return settlement.value
         }
       }
-      throw timeoutError
+      throw error
     }
     throw error
   } finally {
     clearTimeout(timeoutId)
+    detachParentAbort()
   }
 }
 
@@ -707,7 +731,7 @@ const formatPersistenceSummary = (result) => {
   const staleCheck = result.staleCheckSkipped
     ? ` | stale cleanup skipped: ${result.staleCheckReason || 'previous source jobs preserved'}`
     : ''
-  return `${base}${updated}${nonIndia}${closed}${invalidUrl}${lifecycle}${expired} | ${result.filteredOld || 0} older than ${result.retentionDays || DEFAULT_JOB_RETENTION_DAYS}d removed${staleCheck}`
+  return `${base}${updated}${nonIndia}${closed}${invalidUrl}${lifecycle}${expired}${staleCheck}`
 }
 
 const formatStageDuration = (durationMs) => (
@@ -899,14 +923,39 @@ const runScraperAttemptWithRetryPolicy = async (scraper, { signal = null } = {})
 }
 
 // Runs all scrapers sequentially and saves results to MongoDB.
-export const runAll = async () => {
+export const runAll = async ({ stopSignal = null } = {}) => {
   assertLiveMongoUriConfigured()
 
-  const { scrapers, resumeMessage } = selectScrapersForRun(buildScrapers())
-  const summary = {}
+  const selected = selectScrapersForRun(buildScrapers())
+  const checkpoint = process.env.SCRAPER_CHECKPOINT_FILE
+    ? openRunCheckpoint({
+        filePath: process.env.SCRAPER_CHECKPOINT_FILE,
+        sources: selected.scrapers.map((scraper) => scraper.name),
+        mode: isDryRun ? 'dry-run' : 'live',
+        parallel: isParallel,
+        runId: process.env.SCRAPER_RUN_ID,
+      })
+    : null
+  const pendingSourceNames = new Set(
+    checkpoint?.pendingSources(selected.scrapers.map((scraper) => scraper.name))
+      ?? selected.scrapers.map((scraper) => scraper.name),
+  )
+  const scrapers = selected.scrapers.filter((scraper) => pendingSourceNames.has(scraper.name))
+  const resumeMessage = checkpoint && scrapers.length < selected.scrapers.length
+    ? `Checkpoint resume: ${scrapers.length}/${selected.scrapers.length} sources remain.`
+    : selected.resumeMessage
+  const summary = checkpoint?.completedSummary() || {}
   const startTime = Date.now()
   const startedAt = new Date(startTime)
   const failureAbortThreshold = resolveFailureAbortThreshold()
+  const checkpointHeartbeat = checkpoint
+    ? setInterval(() => checkpoint.heartbeat({
+        pid: process.pid,
+        rssBytes: process.memoryUsage().rss,
+        heapUsedBytes: process.memoryUsage().heapUsed,
+      }), 30_000)
+    : null
+  checkpointHeartbeat?.unref?.()
 
   console.log(`\n${'='.repeat(60)}`)
   console.log(`  Jobverify Scraper Pipeline - ${isDryRun ? 'DRY RUN' : 'LIVE'} | ${isParallel ? 'PARALLEL' : 'SEQUENTIAL'}`)
@@ -954,21 +1003,45 @@ export const runAll = async () => {
   }
 
   if (isParallel) {
-    return runAllParallel({
-      startedAt,
-      scrapers,
-      resumeMessage,
-    })
+    try {
+      const parallelSummary = await runAllParallel({
+        startedAt,
+        scrapers,
+        resumeMessage,
+        summary,
+        checkpoint,
+        stopSignal,
+      })
+      const abortedByFailureThreshold = shouldAbortPipelineAfterFailures(
+        Object.values(parallelSummary).filter(isFailureCountedForAbort).length,
+        failureAbortThreshold,
+      )
+      checkpoint?.finish({
+        interruptedBy: stopSignal?.aborted ? (stopSignal.reason?.signalName || 'signal') : null,
+        error: abortedByFailureThreshold
+          ? `Pipeline aborted due to too many scraper errors (>= ${failureAbortThreshold}).`
+          : null,
+        restartable: !abortedByFailureThreshold,
+      })
+      return parallelSummary
+    } catch (error) {
+      checkpoint?.finish({ error: error.message })
+      throw error
+    } finally {
+      if (checkpointHeartbeat) clearInterval(checkpointHeartbeat)
+    }
   }
 
-  let failedCount = 0
+  let failedCount = Object.values(summary).filter(isFailureCountedForAbort).length
   let startedCount = 0
   const totalScrapers = scrapers.length
 
   for (const scraper of scrapers) {
+    if (stopSignal?.aborted) break
     startedCount++
     const progressStr = `[${startedCount}/${totalScrapers}] `
     const scraperStart = Date.now()
+    checkpoint?.markSourceStarted(scraper.name)
 
     // Skip execution if the scraper has been deactivated by an administrator
     if (!isDryRun) {
@@ -976,6 +1049,14 @@ export const runAll = async () => {
         const status = await ScraperStatus.findOne({ source: scraper.name }).lean().exec()
         if (status && status.isActive === false) {
           console.log(`  WARN ${progressStr}[${scraper.name}] is currently deactivated (isActive = false). Skipping run.\n`)
+          const skippedResult = {
+            success: true,
+            skipped: true,
+            jobs: 0,
+            durationMs: Date.now() - scraperStart,
+          }
+          summary[scraper.name] = skippedResult
+          checkpoint?.markSourceCompleted(scraper.name, skippedResult)
           continue
         }
       } catch (dbErr) {
@@ -998,6 +1079,7 @@ export const runAll = async () => {
       )
       const publishableAnalysis = analyzePublishableJobs(jobs)
       const indiaJobs = publishableAnalysis.indiaJobs
+      const zeroJobEvidence = getZeroJobEvidence(scraper, jobs, indiaJobs)
       const cities = [...new Set(indiaJobs.map(j => j.city).filter(Boolean))].sort()
 
       let result
@@ -1011,10 +1093,8 @@ export const runAll = async () => {
           jobs: indiaJobs.length,
           eligibleJobs: publishableAnalysis.eligibleJobs.length,
           filteredNonIndia: publishableAnalysis.filterCounts.nonIndia,
-          filteredOld: publishableAnalysis.filterCounts.old,
           filteredClosed: publishableAnalysis.filterCounts.closed,
           filteredInvalidUrl: publishableAnalysis.filterCounts.invalidUrl,
-          retentionDays: publishableAnalysis.retentionDays,
           cities,
           mode: 'dry-run',
           file: scraper.dryRunFile,
@@ -1034,6 +1114,7 @@ export const runAll = async () => {
       }
 
       if (cities.length) console.log(`  Cities: ${cities.join(', ')}`)
+      if (zeroJobEvidence) result.zeroJobEvidence = zeroJobEvidence
       result.durationMs = Date.now() - scraperStart
       summary[scraper.name] = { success: true, ...result }
     } catch (err) {
@@ -1076,6 +1157,8 @@ export const runAll = async () => {
       }
     }
 
+    checkpoint?.markSourceCompleted(scraper.name, summary[scraper.name])
+
     console.log()
 
     if (shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold)) {
@@ -1086,7 +1169,7 @@ export const runAll = async () => {
 
   const totalMs = Date.now() - startTime
   console.log(`${'='.repeat(60)}`)
-  console.log(`  Pipeline complete in ${(totalMs / 1000).toFixed(1)}s`)
+  console.log(`  Pipeline ${stopSignal?.aborted ? 'stopped' : 'complete'} in ${(totalMs / 1000).toFixed(1)}s`)
   console.log(`${'='.repeat(60)}\n`)
 
   if (!isDryRun) {
@@ -1106,10 +1189,14 @@ export const runAll = async () => {
       await retryAfterMongoQuotaRecovery(() => markPipelineRunFinished({
         startedAt,
         completedAt: new Date(),
-        aborted: shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold),
-        error: shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold)
-          ? `Pipeline aborted due to too many scraper errors (>= ${failureAbortThreshold}).`
-          : null,
+        aborted: stopSignal?.aborted || shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold),
+        error: stopSignal?.aborted
+          ? `Pipeline stopped by ${stopSignal.reason?.signalName || 'signal'}.`
+          : (
+              shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold)
+                ? `Pipeline aborted due to too many scraper errors (>= ${failureAbortThreshold}).`
+                : null
+            ),
       }))
     } catch (pipelineErr) {
       console.error(`  [pipeline] Failed to mark pipeline as complete:`, pipelineErr.message)
@@ -1119,6 +1206,14 @@ export const runAll = async () => {
   Object.defineProperty(summary, 'runTiming', {
     value: { startedAt, completedAt: new Date() },
   })
+  checkpoint?.finish({
+    interruptedBy: stopSignal?.aborted ? (stopSignal.reason?.signalName || 'signal') : null,
+    error: shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold)
+      ? `Pipeline aborted due to too many scraper errors (>= ${failureAbortThreshold}).`
+      : null,
+    restartable: !shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold),
+  })
+  if (checkpointHeartbeat) clearInterval(checkpointHeartbeat)
   return summary
 }
 
@@ -1137,7 +1232,7 @@ export const runScraper = async (
       const status = await ScraperStatus.findOne({ source: scraper.name }).lean().exec()
       if (status && status.isActive === false) {
         console.log(`  WARN ${progressStr}[${scraper.name}] is currently deactivated (isActive = false). Skipping run.\n`)
-        return { success: true, skipped: true, jobs: 0, eligibleJobs: 0, inserted: 0, updated: 0, deleted: 0, filteredOld: 0, missed: 0, expired: 0, durationMs: 0 }
+        return { name: scraper.name, success: true, skipped: true, jobs: 0, eligibleJobs: 0, inserted: 0, updated: 0, deleted: 0, filteredOld: 0, missed: 0, expired: 0, durationMs: 0 }
       }
     } catch (dbErr) {
       console.error(`  ERROR ${progressStr}[${scraper.name}] Failed to verify active status from DB:`, dbErr.message)
@@ -1159,6 +1254,7 @@ export const runScraper = async (
         attempts: resolveScraperRetryAttempts(scraper),
         baseDelayMs: 2000,
         label: scraper.name,
+        signal: lifecycleSignal,
       },
     )
     logStage({
@@ -1171,6 +1267,7 @@ export const runScraper = async (
     const retry = getRetryMetadata(jobs)
     const publishableAnalysis = analyzePublishableJobs(jobs)
     const indiaJobs = publishableAnalysis.indiaJobs
+    const zeroJobEvidence = getZeroJobEvidence(scraper, jobs, indiaJobs)
     const dataQuality = indiaJobs.reduce((total, job = {}) => ({
       missingTitle: total.missingTitle + (!String(job.title || '').trim() ? 1 : 0),
       missingLocation: total.missingLocation + (!String(job.location || job.city || '').trim() ? 1 : 0),
@@ -1189,10 +1286,8 @@ export const runScraper = async (
         jobs: indiaJobs.length,
         eligibleJobs: publishableAnalysis.eligibleJobs.length,
         filteredNonIndia: publishableAnalysis.filterCounts.nonIndia,
-        filteredOld: publishableAnalysis.filterCounts.old,
         filteredClosed: publishableAnalysis.filterCounts.closed,
         filteredInvalidUrl: publishableAnalysis.filterCounts.invalidUrl,
-        retentionDays: publishableAnalysis.retentionDays,
         cities,
         mode: 'dry-run',
         file: scraper.dryRunFile,
@@ -1215,7 +1310,9 @@ export const runScraper = async (
       )
     }
 
+    throwIfAborted(lifecycleSignal)
     if (cities.length) console.log(`  Cities: ${cities.join(', ')}`)
+    if (zeroJobEvidence) result.zeroJobEvidence = zeroJobEvidence
     result.retry = retry
     result.dataQuality = dataQuality
     result.durationMs = Date.now() - scraperStart
@@ -1254,6 +1351,9 @@ const runAllParallel = async ({
   startedAt = new Date(),
   scrapers = selectScrapersForRun(buildScrapers()).scrapers,
   resumeMessage = null,
+  summary = {},
+  checkpoint = null,
+  stopSignal = null,
 } = {}) => {
   const startTime = Date.now()
   let previousRun = null
@@ -1269,29 +1369,32 @@ const runAllParallel = async ({
   } = resolveParallelWorkerConcurrency()
   const failureAbortThreshold = resolveFailureAbortThreshold()
   const queue = [...scrapers]
-  const summary = {}
-
   if (resumeMessage) console.log(`[runner] ${resumeMessage}`)
   console.log(`[runner] Launching parallel worker pool with concurrency limit: ${concurrencyLimit}`)
 
-  let failedCount = 0
+  let failedCount = Object.values(summary).filter(isFailureCountedForAbort).length
   let startedCount = 0
   let completedCount = 0
   const totalScrapers = scrapers.length
   let fatalWorkerError = null
+  const pipelineController = new AbortController()
 
   // Worker loop that drains the shared queue
   const worker = async () => {
     while (queue.length > 0) {
       if (fatalWorkerError) break
+      if (stopSignal?.aborted) break
       if (shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold)) break
 
       const scraper = queue.shift()
       if (!scraper) continue
 
       startedCount++
+      const sourceStartedAt = Date.now()
       const progressStr = `[${startedCount}/${totalScrapers}] `
       let result
+      let escapedError = null
+      checkpoint?.markSourceStarted(scraper.name)
       try {
         result = await withSourceLifecycleTimeout(
           scraper,
@@ -1301,17 +1404,26 @@ const runAllParallel = async ({
             { signal },
           ),
           resolveSourceLifecycleTimeoutMs(undefined, scraper),
+          { signal: pipelineController.signal },
         )
       } catch (error) {
-        if (error?.persistenceBlocked === true) {
-          fatalWorkerError ||= error
-          queue.length = 0
-          break
+        // Escaped lifecycle failures can leave non-cooperative work behind.
+        // Stop the queue and bound peer cleanup before finalizing this run.
+        fatalWorkerError ||= error
+        escapedError = error
+        queue.length = 0
+        pipelineController.abort(fatalWorkerError)
+        result = {
+          name: scraper.name,
+          success: false,
+          error: error.message,
+          durationMs: Date.now() - sourceStartedAt,
+          ...classifyScraperError(error),
         }
-        throw error
       }
       const { name, ...rest } = result
       summary[name] = rest
+      if (!escapedError) checkpoint?.markSourceCompleted(name, rest)
       
       completedCount++
       console.log(`${formatParallelProgressLog(completedCount, totalScrapers)}\n`)
@@ -1335,7 +1447,6 @@ const runAllParallel = async ({
 
   // Wait for all workers to finish draining the queue
   await Promise.all(activeWorkers)
-  if (fatalWorkerError) throw fatalWorkerError
 
   if (!isDryRun) {
     await refreshVisibleDatasetSummaryWithLogging()
@@ -1356,10 +1467,16 @@ const runAllParallel = async ({
       await retryAfterMongoQuotaRecovery(() => markPipelineRunFinished({
         startedAt,
         completedAt: new Date(),
-        aborted: shouldAbortPipelineAfterFailures(totalFailures, failureAbortThreshold),
-        error: shouldAbortPipelineAfterFailures(totalFailures, failureAbortThreshold)
-          ? `Pipeline aborted due to too many scraper errors (>= ${failureAbortThreshold}).`
-          : null,
+        aborted: stopSignal?.aborted || Boolean(fatalWorkerError) || shouldAbortPipelineAfterFailures(totalFailures, failureAbortThreshold),
+        error: fatalWorkerError?.message || (
+          stopSignal?.aborted
+            ? `Pipeline stopped by ${stopSignal.reason?.signalName || 'signal'}.`
+            : (
+                shouldAbortPipelineAfterFailures(totalFailures, failureAbortThreshold)
+                  ? `Pipeline aborted due to too many scraper errors (>= ${failureAbortThreshold}).`
+                  : null
+              )
+        ),
       }))
     } catch (pipelineErr) {
       console.error(`  [pipeline] Failed to mark pipeline as complete:`, pipelineErr.message)
@@ -1370,6 +1487,7 @@ const runAllParallel = async ({
     previousRun: { value: previousRun },
     runTiming: { value: { startedAt, completedAt: new Date() } },
   })
+  if (fatalWorkerError) throw fatalWorkerError
   return summary
 }
 
@@ -1377,8 +1495,21 @@ const directExecutionModulePath = resolveExecutionPath(fileURLToPath(import.meta
 
 // Run when invoked directly: node scraper-support/runner.js [--dry-run] [--parallel]
 if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
+  const shutdown = installGracefulShutdownHandlers()
+  let runLease = null
   try {
-    const summary = await runAll()
+    if (!isDryRun && !/^(?:0|false|no)$/i.test(String(process.env.SCRAPER_RUN_LEASE || '1'))) {
+      runLease = await retryAfterMongoQuotaRecovery(() => acquireMongoRunLease({
+        runId: process.env.SCRAPER_RUN_ID || null,
+        onLost: (error) => {
+          console.error(`[runner] MongoDB run lease lost: ${error.message}`)
+          shutdown.request('SIGTERM')
+        },
+      }))
+      console.log(`[runner] Acquired exclusive live-run lease (${runLease.ownerId}).`)
+    }
+
+    const summary = await runAll({ stopSignal: shutdown.signal })
     const legacyTableData = Object.keys(summary).map((source) => ({
       Source: source,
       Status: summary[source].success ? '✅ OK' : (summary[source].skipped ? '⏭️ Skip' : '❌ Fail'),
@@ -1419,9 +1550,18 @@ if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
       console.error(`\nPipeline aborted due to too many errors (>= ${failureAbortThreshold}).`)
       process.exitCode = 1
     }
+    if (shutdown.requested) process.exitCode = shutdown.exitCode
   } catch (err) {
     console.error('Pipeline error:', err)
-    process.exitCode = 1
+    process.exitCode = Number.isInteger(err?.exitCode) ? err.exitCode : 1
+  } finally {
+    try {
+      await runLease?.release()
+    } catch (error) {
+      console.error('[runner] Failed to release MongoDB run lease:', error.message)
+      process.exitCode = process.exitCode || 1
+    }
+    shutdown.dispose()
   }
 
   finalizeDirectRunnerExit()

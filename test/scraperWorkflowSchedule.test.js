@@ -11,11 +11,11 @@ const readScraperWorkflow = () => readFileSync(
   'utf8',
 )
 
-test('scraper workflow runs on Monday through Friday at 02:08 AM IST', () => {
+test('scraper workflow runs every day at 02:08 AM IST', () => {
   const workflow = readScraperWorkflow()
 
-  assert.match(workflow, /cron:\s*['"]38 20 \* \* 0,1,2,3,4['"]/)
-  assert.match(workflow, /Monday to Friday at 02:08 AM IST/)
+  assert.match(workflow, /cron:\s*['"]38 20 \* \* \*['"]/)
+  assert.match(workflow, /Every day at 02:08 AM IST/)
 })
 
 test('scraper workflow leaves failure-abort handling disabled', () => {

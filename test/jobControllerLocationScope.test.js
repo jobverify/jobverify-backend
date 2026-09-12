@@ -9,6 +9,7 @@ import mongoose from 'mongoose'
 
 import Job from '../src/models/Job.js'
 import JobDatasetSummary from '../src/models/JobDatasetSummary.js'
+import { buildAggregateHiringSignalFilter } from '../src/utils/jobListingEvidence.js'
 import { ACCESS_ROLES, PLAN_IDS } from '../src/constants/accessPlans.js'
 import {
   JOB_LIST_CARD_PROJECTION,
@@ -60,41 +61,23 @@ const stripPublishedDateScope = (scope = {}) => {
 
 const assertHasPublishedDateScope = (scope) => {
   const [
-    postedLowerBound,
     postedUpperBound,
     closingLowerBound,
-    lastSeenLowerBound,
   ] = scope?.$expr?.$and ?? []
-  const postedCutoff = postedLowerBound?.$gte?.[1]
-  const postedCutoffFallback = postedLowerBound?.$gte?.[0]?.$ifNull?.[1]
   const now = postedUpperBound?.$lte?.[1]
   const nowFallback = postedUpperBound?.$lte?.[0]?.$ifNull?.[1]
   const today = closingLowerBound?.$gte?.[1]
   const todayFallback = closingLowerBound?.$gte?.[0]?.$ifNull?.[1]
-  const lastSeenCutoff = lastSeenLowerBound?.$gte?.[1]
-  const lastSeenCutoffFallback = lastSeenLowerBound?.$gte?.[0]?.$ifNull?.[1]
 
-  assert.ok(postedCutoff instanceof Date)
   assert.ok(now instanceof Date)
   assert.ok(today instanceof Date)
-  assert.ok(lastSeenCutoff instanceof Date)
-  assert.equal(postedCutoffFallback?.getTime(), postedCutoff.getTime())
   assert.equal(nowFallback?.getTime(), now.getTime())
   assert.equal(todayFallback?.getTime(), today.getTime())
-  assert.equal(lastSeenCutoffFallback?.getTime(), lastSeenCutoff.getTime())
-  assert.equal(lastSeenCutoff.getTime(), postedCutoff.getTime())
   assert.equal(today.getUTCHours(), 0)
   assert.equal(today.getUTCMinutes(), 0)
-  assert.ok(postedCutoff.getTime() <= now.getTime())
   assert.equal(JSON.stringify(scope).includes('$$NOW'), false)
   assert.deepEqual(scope.$expr, {
     $and: [
-      {
-        $gte: [
-          { $ifNull: ['$postedAt', postedCutoff] },
-          postedCutoff,
-        ],
-      },
       {
         $lte: [
           { $ifNull: ['$postedAt', now] },
@@ -107,12 +90,6 @@ const assertHasPublishedDateScope = (scope) => {
           today,
         ],
       },
-      {
-        $gte: [
-          { $ifNull: ['$lastSeenAt', lastSeenCutoff] },
-          lastSeenCutoff,
-        ],
-      },
     ],
   })
 }
@@ -122,6 +99,7 @@ const assertMatchesPublicJobScope = (scope, expectedFilters = {}) => {
   assert.deepEqual(stripPublishedDateScope(scope), {
     ...expectedFilters,
     isPublicIndia: true,
+    $nor: [buildAggregateHiringSignalFilter()],
   })
   assertHasPublishedDateScope(scope)
 }
@@ -186,26 +164,18 @@ test('buildPublicJobLocationScope relies on the stored public-visibility flag', 
   assert.equal(scope.isPublicIndia, true)
 })
 
-test('buildPublicJobLocationScope excludes stale, future, past-closing, and long-unverified jobs while preserving missing dates', () => {
+test('buildPublicJobLocationScope keeps old open jobs while excluding future and past-closing jobs', () => {
   const now = new Date('2026-07-25T12:00:00.000Z')
-  const scope = buildPublicJobLocationScope(now, { retentionDays: 10 })
+  const scope = buildPublicJobLocationScope(now)
 
   assertMatchesPublicJobScope(scope)
   assert.equal(
-    scope.$expr.$and[0].$gte[1].toISOString(),
-    '2026-07-15T00:00:00.000Z',
-  )
-  assert.equal(
-    scope.$expr.$and[1].$lte[1].toISOString(),
+    scope.$expr.$and[0].$lte[1].toISOString(),
     '2026-07-25T12:00:00.000Z',
   )
   assert.equal(
-    scope.$expr.$and[2].$gte[1].toISOString(),
+    scope.$expr.$and[1].$gte[1].toISOString(),
     '2026-07-25T00:00:00.000Z',
-  )
-  assert.equal(
-    scope.$expr.$and[3].$gte[1].toISOString(),
-    '2026-07-15T00:00:00.000Z',
   )
 })
 

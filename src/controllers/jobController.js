@@ -4,12 +4,14 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
 import mongoose from "mongoose";
 import Job from "../models/Job.js";
 import Click from "../models/Click.js";
 import { getPreferredJobTypeMatches } from "../constants/preferredJobTypes.js";
 import {
   DATE_POSTED_NA_VALUE,
+  DATE_POSTED_OLDER_THAN_30_VALUE,
   DATE_POSTED_OPTIONS,
   DATE_POSTED_WINDOW_OPTIONS,
   EXPERIENCE_BUCKET_OPTIONS,
@@ -25,6 +27,7 @@ import {
 import { resolveJobType } from "../../scraper-support/utils/normalizeScrapedJob.js";
 
 import { applyPublicJobLocationScope } from "../utils/publicJobLocationScope.js";
+import { buildAggregateHiringSignalFilter } from "../utils/jobListingEvidence.js";
 import { canUsePremiumFilters } from "../utils/accessControl.js";
 import {
   formatStoredLocationLabel,
@@ -50,8 +53,6 @@ import { buildJobFilterConditions } from "../services/jobFilterMatcher.js";
 const MAX_REGEX_FILTER_LENGTH = 80;
 const MAX_TEXT_QUERY_LENGTH = 200;
 const MAX_RECOMMENDATION_TERMS = 20;
-// Keep the controller clamp aligned with the public request validator.
-const MAX_PAGE = 2000;
 const CLICK_DEDUPE_WINDOW_MS = 24 * 60 * 60 * 1000;
 const MAX_REASONABLE_EXPERIENCE_YEARS = 40;
 const PUBLIC_CACHE_HEADER =
@@ -211,8 +212,9 @@ const resolvePublicJobDatasetTotals = async () => {
 const isDefaultPublicJobListFilter = (filters = {}) => (
   filters?.status === "active"
   && filters?.isPublicIndia === true
-  && Object.keys(filters).length === 3
+  && Object.keys(filters).length === 4
   && Object.hasOwn(filters, "$expr")
+  && isDeepStrictEqual(filters.$nor, [buildAggregateHiringSignalFilter()])
 );
 
 const workdayApplicationStatusCache = new Map();
@@ -380,10 +382,19 @@ const buildDatePostedRange = (days) => {
   return { $gte: start, $lt: end };
 };
 
+const buildOlderThanThirtyDaysRange = () => {
+  const cutoff = new Date();
+  cutoff.setHours(0, 0, 0, 0);
+  cutoff.setDate(cutoff.getDate() - 30);
+  return { $lt: cutoff };
+};
+
 const buildDatePostedFilter = (values) => {
   const clauses = values.map((value) => (
     value === DATE_POSTED_NA_VALUE
       ? { postedAt: null }
+      : value === DATE_POSTED_OLDER_THAN_30_VALUE
+        ? { postedAt: buildOlderThanThirtyDaysRange() }
       : { postedAt: buildDatePostedRange(value) }
   ));
 
@@ -1098,7 +1109,7 @@ const resolveScopedDatePostedOptions = async (queryParams = {}) => {
   const baseConditions = buildJobFilterConditions(withoutQueryKeys(queryParams, ["datePostedDays"]));
 
   const matchesByWindow = await Promise.all(
-    DATE_POSTED_WINDOW_OPTIONS.map(async (days) => {
+    [...DATE_POSTED_WINDOW_OPTIONS, DATE_POSTED_OLDER_THAN_30_VALUE].map(async (days) => {
       const count = await Job.countDocuments(
         applyPublicJobLocationScope({
           ...baseConditions,
@@ -1366,7 +1377,7 @@ export const getAllJobs = async (req, res) => {
     res.set("Deprecation", "true");
     res.set("Link", '</api/jobs/search>; rel="successor-version"');
     const { page, limit, sort } = req.query;
-    const hasPremiumAccess = canUsePremiumFilters(req.user);
+    const hasPremiumAccess = canUsePremiumFilters(req.user, new Date(), req.siteSettings);
 
     if (!hasPremiumAccess && hasPremiumJobFilters(req.query)) {
       return res.status(403).json({
@@ -1384,7 +1395,7 @@ export const getAllJobs = async (req, res) => {
     const DEFAULT_LIMIT = JOB_CARD_PAGE_LIMIT;
     const MAX_LIMIT = MAX_JOB_CARD_PAGE_LIMIT;
 
-    let pageNum = Math.min(MAX_PAGE, Math.max(1, parseInt(page) || DEFAULT_PAGE));
+    let pageNum = Math.max(1, parseInt(page) || DEFAULT_PAGE);
     let limitNum = Math.min(MAX_LIMIT, Math.max(1, parseInt(limit) || DEFAULT_LIMIT));
     if (sort === "recommended") {
       limitNum = Math.min(limitNum, JOB_CARD_PAGE_LIMIT);
@@ -1549,7 +1560,7 @@ export const getJobSearch = async (req, res) => {
     res.set("X-Request-Id", requestId);
     const searchInput = req.method === "GET" ? req.query : req.body;
     const request = buildJobSearchRequest(searchInput);
-    const hasPremiumAccess = canUsePremiumFilters(req.user);
+    const hasPremiumAccess = canUsePremiumFilters(req.user, new Date(), req.siteSettings);
 
     if (!hasPremiumAccess && Object.keys(request.filters).length > 0) {
       return res.status(403).json({
@@ -1763,7 +1774,7 @@ export const getJobMeta = async (req, res) => {
 
     res.set("Cache-Control", hasScopedFilters ? PRIVATE_CACHE_HEADER : PUBLIC_CACHE_HEADER);
 
-    if (hasScopedFilters && !canUsePremiumFilters(req.user)) {
+    if (hasScopedFilters && !canUsePremiumFilters(req.user, new Date(), req.siteSettings)) {
       return res.status(403).json({
         success: false,
         premiumRequired: true,
@@ -1798,7 +1809,7 @@ export const getJobMeta = async (req, res) => {
             roleDomains: ROLE_DOMAIN_OPTIONS,
             seniorityLevels: SENIORITY_LEVELS,
             workArrangements: WORK_ARRANGEMENT_OPTIONS,
-            datePostedOptions: DATE_POSTED_WINDOW_OPTIONS,
+            datePostedOptions: [...DATE_POSTED_WINDOW_OPTIONS, DATE_POSTED_OLDER_THAN_30_VALUE],
           },
         });
       }
@@ -1849,7 +1860,7 @@ export const getJobMeta = async (req, res) => {
         : Promise.resolve(WORK_ARRANGEMENT_OPTIONS),
       hasScopedFilters
         ? resolveScopedDatePostedOptions(queryParams)
-        : Promise.resolve(DATE_POSTED_WINDOW_OPTIONS),
+        : Promise.resolve([...DATE_POSTED_WINDOW_OPTIONS, DATE_POSTED_OLDER_THAN_30_VALUE]),
     ]);
 
     return res.status(200).json({
@@ -1896,7 +1907,7 @@ export const getJobCompanySuggestions = async (req, res) => {
 
     res.set("Cache-Control", hasScopedFilters ? PRIVATE_CACHE_HEADER : PUBLIC_CACHE_HEADER);
 
-    if (hasScopedFilters && !canUsePremiumFilters(req.user)) {
+    if (hasScopedFilters && !canUsePremiumFilters(req.user, new Date(), req.siteSettings)) {
       return res.status(403).json({
         success: false,
         premiumRequired: true,

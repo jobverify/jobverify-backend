@@ -48,3 +48,11 @@ services:
         sync: false
       - key: TURNSTILE_EXPECTED_ACTION
         sync: false
+      - key: TELEGRAM_BOT_USERNAME
+        value: jobverifying_bot
+      - key: TELEGRAM_ENABLED
+        value: "true"
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        sync: false

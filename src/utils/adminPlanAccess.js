@@ -39,17 +39,6 @@ const resolveBaseStart = (user, now) => {
   return hasActivePremium ? currentExpiry : now;
 };
 
-const hasWhatsappOptIn = (user) =>
-  Boolean(
-    user?.contact?.phoneE164
-    && user?.contact?.whatsappOptInAt
-    && (
-      !user?.contact?.whatsappOptOutAt
-      || new Date(user.contact.whatsappOptInAt).getTime()
-        > new Date(user.contact.whatsappOptOutAt).getTime()
-    ),
-  );
-
 export const buildAdminManagedAccessState = ({
   user,
   accessRole,
@@ -71,7 +60,7 @@ export const buildAdminManagedAccessState = ({
         status: "inactive",
         startedAt: null,
         expiresAt: null,
-        whatsappAlertsEnabled: false,
+        telegramAlertsEnabled: false,
       },
     };
   }
@@ -87,7 +76,7 @@ export const buildAdminManagedAccessState = ({
       status: "active",
       startedAt,
       expiresAt: nextExpiry,
-      whatsappAlertsEnabled: planConfig.hasWhatsAppAlerts && hasWhatsappOptIn(user),
+      telegramAlertsEnabled: planConfig.hasTelegramAlerts && Boolean(user?.premium?.telegramAlertsEnabled),
     },
   };
 };

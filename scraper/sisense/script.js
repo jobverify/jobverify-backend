@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { extractAshbyJobs } from '../uipath/script.js'
 
 import SISENSE_CATALOG from './catalog.js'
 
@@ -10,8 +11,8 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = SISENSE_CATALOG.source
 export const COMPANY = SISENSE_CATALOG.companyName
 export const CAREERS_URL = SISENSE_CATALOG.companyCareerPage
-export const GREENHOUSE_BOARD_URL = 'https://job-boards.greenhouse.io/embed/job_board?for=sisense'
-export const GREENHOUSE_API_URL = 'https://boards-api.greenhouse.io/v1/boards/sisense/jobs?content=true'
+export const ASHBY_PUBLIC_BOARD_URL = 'https://jobs.ashbyhq.com/sisense'
+export const ASHBY_JOB_BOARD_URL = 'https://api.ashbyhq.com/posting-api/job-board/sisense'
 export const VERIFIED_ON = SISENSE_CATALOG.verifiedOn
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
@@ -37,63 +38,13 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const metadataIncludesIndia = (metadata = []) =>
-  (Array.isArray(metadata) ? metadata : []).some((entry) =>
-    /country/i.test(String(entry?.name ?? ''))
-    && String(entry?.value ?? '').includes('India'))
-
-export const isIndiaJob = (job = {}) => {
-  const locationText = [
-    job?.location?.name,
-    ...(Array.isArray(job?.offices) ? job.offices.map((office) => office?.location ?? office?.name) : []),
-  ]
-    .filter(Boolean)
-    .join(' ')
-
-  return /india/i.test(locationText) || metadataIncludesIndia(job.metadata)
-}
-
-const inferCity = (locationName) => normalizeWhitespace(String(locationName ?? '').split(',')[0]) || null
-
-const mapJob = (job = {}) => {
-  const location = normalizeWhitespace(job?.location?.name)
-  const sourceUrl = normalizeWhitespace(job?.absolute_url)
-  const title = normalizeWhitespace(job?.title)
-
-  if (!title || !location || !sourceUrl) return null
-
-  return {
-    title,
-    company: COMPANY,
-    department: normalizeWhitespace(job?.departments?.[0]?.name) || null,
-    location,
-    city: inferCity(location),
-    country: 'India',
-    jobId: String(job?.id ?? ''),
-    requisitionId: normalizeWhitespace(job?.requisition_id) || null,
-    sourceUrl,
-    applyUrl: sourceUrl,
-    employmentType: null,
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: normalizeWhitespace(job?.first_published)?.slice(0, 10) || null,
-    closingDate: null,
-    jobDescription: decodeHtml(job?.content),
-  }
-}
-
-export const extractJobsFromGreenhousePayload = (payload = {}) =>
-  (Array.isArray(payload?.jobs) ? payload.jobs : [])
-    .filter(isIndiaJob)
-    .map(mapJob)
-    .filter(Boolean)
+export const extractJobsFromAshbyPayload = (payload = {}) =>
+  extractAshbyJobs(payload).map((job) => ({ ...job, company: COMPANY }))
 
 export const createSisenseScraper = () => ({
   async run({ fetchJson = defaultFetchJson, now = () => new Date().toISOString() } = {}) {
-    const payload = await fetchJson(GREENHOUSE_API_URL)
-    const jobs = extractJobsFromGreenhousePayload(payload)
+    const payload = await fetchJson(ASHBY_JOB_BOARD_URL)
+    const jobs = extractJobsFromAshbyPayload(payload)
 
     return jobs.map((job) => ({
       ...job,

@@ -176,7 +176,7 @@ export const generateFingerprint = (job) => {
  * - Upserts the latest scraped set for the scraper source first.
  * - Soft-expires unseen jobs only after consecutive successful scraper misses.
  * - Keeps jobs with no posted date, because the scraper cannot prove they are stale.
- * - Drops scraped jobs whose posted date is older than the retention window.
+ * - Keeps open scraped jobs regardless of their posting date.
  *
  * @param {object[]} jobs   Array of job objects from a scraper's run()
  * @param {string}   source Scraper identifier e.g. 'airbus', 'rubrik', 'google'
@@ -257,11 +257,8 @@ export const saveToDB = async (jobs, source, options = {}) => {
   const {
     eligibleJobs,
     filterCounts,
-    postedAtCutoff,
-    retentionDays,
   } = analyzePublishableJobs(jobs, {
     now,
-    retentionDays: options.retentionDays ?? process.env.SCRAPER_JOB_POSTED_WITHIN_DAYS,
   })
 
   const jobsForPersistence = options.enrichPublicExperience === false
@@ -397,9 +394,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
     missed: 0,
     expired: 0,
     eligibleJobs: eligibleJobs.length,
-    retentionDays,
     missesBeforeExpiry,
-    postedAtCutoff: postedAtCutoff.toISOString(),
     staleCheckSkipped: false,
     staleCheckReason: null,
   }
@@ -439,11 +434,21 @@ export const saveToDB = async (jobs, source, options = {}) => {
   }
 
   let shouldRefreshDatasetSummary = operations.length > 0
+  const incompleteListing = jobs.some((job) => job?.sourceListingComplete === false)
   const authoritativeEmpty = currentFingerprints.length === 0
     && options.authoritativeEmpty === true
 
   if (
     options.replaceExisting !== false
+    && incompleteListing
+  ) {
+    result.staleCheckSkipped = true
+    result.staleCheckReason = 'Incomplete source listing; previous vacancies were preserved without recording lifecycle misses.'
+  }
+
+  if (
+    options.replaceExisting !== false
+    && !incompleteListing
     && currentFingerprints.length === 0
     && !authoritativeEmpty
   ) {
@@ -454,6 +459,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
 
   if (
     options.replaceExisting !== false
+    && !incompleteListing
     && (currentFingerprints.length > 0 || authoritativeEmpty)
   ) {
     const unseenFilter = options.replaceAllJobs

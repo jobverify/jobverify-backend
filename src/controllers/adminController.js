@@ -551,7 +551,7 @@ export const updateUserAccess = async (req, res) => {
     user.premium.status = nextState.premium.status;
     user.premium.startedAt = nextState.premium.startedAt;
     user.premium.expiresAt = nextState.premium.expiresAt;
-    user.premium.whatsappAlertsEnabled = nextState.premium.whatsappAlertsEnabled;
+    user.premium.telegramAlertsEnabled = nextState.premium.telegramAlertsEnabled;
     await user.save();
 
     await AdminAudit.create({
@@ -573,7 +573,7 @@ export const updateUserAccess = async (req, res) => {
           status: user.premium?.status ?? null,
           startedAt: user.premium?.startedAt?.toISOString?.() ?? null,
           expiresAt: user.premium?.expiresAt?.toISOString?.() ?? null,
-          whatsappAlertsEnabled: Boolean(user.premium?.whatsappAlertsEnabled),
+          telegramAlertsEnabled: Boolean(user.premium?.telegramAlertsEnabled),
         },
       },
     });

@@ -3,7 +3,6 @@ import test from 'node:test'
 
 import {
   buildHimalayasSearchUrl,
-  createAggregateHimalayasSignalJob,
   createHimalayasDirectoryScraper,
 } from '../himalayasDirectory/engine.js'
 
@@ -122,42 +121,45 @@ test('Himalayas scraper maps matching India-eligible API jobs and skips unrelate
   assert.equal(jobs[1].publicExperienceChecked, true)
 })
 
-test('Himalayas scraper falls back to the workbook hiring signal when API search is empty', async () => {
+test('Himalayas scraper returns no fabricated jobs when API search is empty', async () => {
   const scraper = createHimalayasDirectoryScraper(provider)
   const jobs = await scraper.run({
     fetchJson: async () => ({ jobs: [], totalCount: 0 }),
   })
 
-  const expectedJob = createAggregateHimalayasSignalJob({
-    provider,
-    sourceUrl: provider.companyCareerPage,
-  })
-
-  assert.equal(jobs.length, 1)
-  assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)
-  assert.deepEqual(jobs[0], {
-    ...expectedJob,
-    scrapedAt: jobs[0].scrapedAt,
-  })
-  assert.equal(jobs[0].title, 'Current remote openings at ACV Auctions')
-  assert.equal(jobs[0].location, 'India eligible remote')
-  assert.equal(jobs[0].city, 'Remote')
-  assert.equal(jobs[0].publicExperienceChecked, true)
-  assert.match(jobs[0].jobDescription, /Software Engineer V, ACVMax/)
-  assert.match(jobs[0].jobDescription, /Verified on 2026-07-23/)
+  assert.deepEqual(jobs, [])
 })
 
-test('Himalayas scraper falls back to the workbook hiring signal when the API is unavailable', async () => {
+test('Himalayas scraper reports API failures instead of returning success', async () => {
   const scraper = createHimalayasDirectoryScraper(provider)
-  const jobs = await scraper.run({
+  await assert.rejects(scraper.run({
     fetchJson: async () => {
       throw new Error('The operation was aborted due to timeout')
     },
-  })
+  }), /timeout/)
+})
 
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Current remote openings at ACV Auctions')
-  assert.equal(jobs[0].sourceUrl, provider.companyCareerPage)
-  assert.equal(jobs[0].publicExperienceChecked, true)
-  assert.match(jobs[0].jobDescription, /Software Engineer V, ACVMax/)
+const realRecord = { title: 'Engineer', companyName: provider.companyName, applicationLink: 'https://example.test/jobs/1', guid: '1' }
+
+test('Himalayas partial pages fail the source so unseen real jobs are preserved', async () => {
+  const scraper = createHimalayasDirectoryScraper(provider)
+  await assert.rejects(scraper.run({ fetchJson: async (url) => {
+    if (new URL(url).searchParams.get('page') === '1') return { jobs: [realRecord], totalCount: 2 }
+    throw new Error('Second page timeout')
+  } }), /Second page timeout/)
+})
+
+test('Himalayas does not treat a capped or malformed listing as a complete scrape', async () => {
+  const scraper = createHimalayasDirectoryScraper({ ...provider, maxPages: 1 })
+  await assert.rejects(scraper.run({ fetchJson: async () => ({ jobs: [realRecord], totalCount: 2 }) }), /incomplete|page limit/i)
+  await assert.rejects(scraper.run({ fetchJson: async () => ({ error: 'Access denied' }) }), /invalid|jobs array/i)
+  await assert.rejects(scraper.run({ fetchJson: async () => ({ jobs: [], totalCount: 2 }) }), /incomplete/i)
+})
+
+test('Himalayas rejects repeated pages and retains earlier reported totals', async () => {
+  const scraper = createHimalayasDirectoryScraper(provider)
+  for (const laterPage of [{ jobs: [realRecord], totalCount: 2 }, { jobs: [] }]) {
+    await assert.rejects(scraper.run({ fetchJson: async (url) => new URL(url).searchParams.get('page') === '1'
+      ? { jobs: [realRecord], totalCount: 2 } : laterPage }), /incomplete|repeat/i)
+  }
 })

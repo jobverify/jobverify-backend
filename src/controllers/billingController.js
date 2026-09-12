@@ -1,26 +1,24 @@
 /**
- * @file Controllers for premium plan pricing, checkout, payment verification, and referrals.
+ * @file Controllers for premium plan pricing, checkout, payment verification, and refunds.
  * @module controllers/billingController
  */
 
 import User from "../models/User.js";
-import ReferralCode from "../models/ReferralCode.js";
-import ReferralRedemption from "../models/ReferralRedemption.js";
 import {
   activateWebhookPurchase,
   BillingRequestError,
   buildBillingSummary,
   cancelActivePlan,
   createCheckout,
-  getOrCreateReferralCodeForUser,
+  failWebhookPurchase,
   listBillingPlans,
+  reconcileWebhookRefund,
   verifyAndActivatePurchase,
 } from "../services/planService.js";
 import {
   getPaymentProvider,
   PaymentProviderError,
 } from "../services/paymentProvider.js";
-import { respondWithInternalError } from "../utils/respondWithInternalError.js";
 
 const toPublicPurchase = (purchase) => {
   if (!purchase) return purchase;
@@ -53,7 +51,6 @@ export const createPlanCheckoutHandler = (checkoutService) => async (req, res) =
     const result = await checkoutService({
       user: req.user,
       planId: req.body.planId,
-      referralCode: req.body.referralCode,
     });
 
     return res.status(201).json({
@@ -128,7 +125,9 @@ export const verifyPlanCheckoutHandler = (verifyPurchase) => async (req, res) =>
     return res.status(200).json({
       code: 200,
       success: true,
-      message: result.idempotent
+      message: result.purchase.status === "refunded"
+        ? "Purchase was refunded."
+        : result.idempotent
         ? "Purchase was already activated."
         : "Purchase verified and activated successfully.",
       data: {
@@ -151,6 +150,8 @@ export const verifyPlanCheckout = verifyPlanCheckoutHandler(verifyAndActivatePur
 export const handleBillingWebhookHandler = ({
   getProvider,
   activatePurchase,
+  failPurchase = failWebhookPurchase,
+  reconcileRefund = reconcileWebhookRefund,
 }) => async (req, res) => {
   try {
     const provider = getProvider();
@@ -182,6 +183,20 @@ export const handleBillingWebhookHandler = ({
       await activatePurchase({
         providerOrderId: payload.order_id,
         providerPaymentId: payload.id,
+        provider: provider.name,
+        payment: payload,
+      });
+    } else if (req.body?.event === "payment.failed") {
+      await failPurchase({
+        provider: provider.name,
+        payment: req.body?.payload?.payment?.entity,
+      });
+    } else if (["refund.created", "refund.processed", "refund.failed"].includes(req.body?.event)) {
+      await reconcileRefund({
+        provider: provider.name,
+        event: req.body.event,
+        payment: req.body?.payload?.payment?.entity,
+        refund: req.body?.payload?.refund?.entity,
       });
     }
 
@@ -219,61 +234,4 @@ export const getMyBillingSummary = async (req, res) => {
     success: true,
     data: summary,
   });
-};
-
-export const getMyReferralStatus = async (req, res) => {
-  const referralCode = await ReferralCode.findOne({ owner: req.user._id }).lean().exec();
-  if (!referralCode) {
-    return res.status(200).json({
-      code: 200,
-      success: true,
-      data: null,
-    });
-  }
-
-  const progress = await ReferralRedemption.countDocuments({
-    referralCode: referralCode._id,
-    status: "counted",
-  });
-
-  return res.status(200).json({
-    code: 200,
-    success: true,
-    data: {
-      code: referralCode.code,
-      status: referralCode.status,
-      targetPlan: referralCode.targetPlan,
-      progress,
-      requiredConversions: referralCode.requiredConversions,
-      rewardedAt: referralCode.rewardedAt,
-    },
-  });
-};
-
-export const createOrGetMyReferralCode = async (req, res) => {
-  try {
-    const referralCode = await getOrCreateReferralCodeForUser(req.user._id);
-    const progress = await ReferralRedemption.countDocuments({
-      referralCode: referralCode._id,
-      status: "counted",
-    });
-
-    return res.status(201).json({
-      code: 201,
-      success: true,
-      data: {
-        code: referralCode.code,
-        status: referralCode.status,
-        targetPlan: referralCode.targetPlan,
-        progress,
-        requiredConversions: referralCode.requiredConversions,
-      },
-    });
-  } catch (error) {
-    return respondWithInternalError(res, error, {
-      code: 500,
-      message: "Unable to create referral code at this time.",
-      logLabel: "[billingController] createOrGetMyReferralCode failed:",
-    });
-  }
 };

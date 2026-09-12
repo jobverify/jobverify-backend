@@ -1,10 +1,20 @@
 /**
- * @file Schema for paid and rewarded premium plan purchases.
+ * @file Schema for paid premium plan purchases.
  * @module models/PlanPurchase
  */
 
 import { Schema, model } from "mongoose";
 import { ACCESS_ROLES, PLAN_IDS } from "../constants/accessPlans.js";
+
+const RefundSchema = new Schema({
+  providerRefundId: { type: String, required: true },
+  amountMinor: { type: Number, required: true, min: 1 },
+  currency: { type: String, required: true },
+  status: { type: String, enum: ["pending", "failed", "processed"], required: true },
+  receivedAt: { type: Date, required: true },
+  updatedAt: { type: Date, required: true },
+  processedAt: { type: Date, default: null },
+}, { _id: false });
 
 const PlanPurchaseSchema = new Schema(
   {
@@ -42,14 +52,13 @@ const PlanPurchaseSchema = new Schema(
         "failed",
         "cancelled",
         "refunded",
-        "free_referral",
       ],
       default: "created",
       index: true,
     },
     provider: {
       type: String,
-      enum: ["razorpay", "mock", "manual"],
+      enum: ["razorpay", "mock"],
       default: "mock",
     },
     providerOrderId: {
@@ -66,17 +75,6 @@ const PlanPurchaseSchema = new Schema(
       type: String,
       default: null,
     },
-    referralCodeUsed: {
-      type: String,
-      default: null,
-      trim: true,
-    },
-    referredBy: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
-      index: true,
-    },
     startsAt: {
       type: Date,
       default: null,
@@ -85,6 +83,11 @@ const PlanPurchaseSchema = new Schema(
       type: Date,
       default: null,
     },
+    failedAt: { type: Date, default: null },
+    refundedAt: { type: Date, default: null },
+    // Same major currency units as amount; provider arithmetic uses integer paise.
+    refundedAmount: { type: Number, min: 0, default: 0 },
+    refunds: { type: [RefundSchema], default: [] },
     metadata: {
       type: Schema.Types.Mixed,
       default: {},
@@ -118,6 +121,14 @@ const hideInternalPurchaseFields = (_doc, ret) => {
   delete ret.providerSignature;
   delete ret.metadata;
   delete ret.__v;
+  ret.refunds = (ret.refunds || []).map((refund) => ({
+    providerRefundId: refund.providerRefundId,
+    amount: refund.amountMinor / 100,
+    currency: refund.currency,
+    status: refund.status,
+    receivedAt: refund.receivedAt,
+    processedAt: refund.processedAt,
+  }));
   if (ret._id) ret.id = ret._id;
   return ret;
 };
