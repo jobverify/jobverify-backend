@@ -1,7 +1,26 @@
 import { loadConfig } from '../utils/loadConfig.js'
-import { fetchTextWithRetry } from '../utils/fetch.js'
+import { fetchTextWithRetry, fetchJsonWithRetry } from '../utils/fetch.js'
 
 const DEFAULT_FETCH_TIMEOUT_MS = 15000
+const DEFAULT_LISTING_BUDGET_MS = 120000
+const DEFAULT_DETAIL_BUDGET_MS = 30000
+const nonnegativeBudget = (value, fallback) => Number.isFinite(Number(value)) && Number(value) >= 0 ? Number(value) : fallback
+const incompleteSnapshot = message => Object.assign(new Error('PHENOM_INCOMPLETE_SNAPSHOT: ' + message), { code: 'PHENOM_INCOMPLETE_SNAPSHOT' })
+const requestWithSignal = async (fetcher, url, signal, requestOptions = {}) => {
+  signal?.throwIfAborted()
+  let onAbort
+  const aborted = signal && new Promise((_, reject) => {
+    onAbort = () => reject(signal.reason)
+    signal.addEventListener('abort', onAbort, { once: true })
+  })
+  try {
+    const request = Promise.resolve().then(() => { signal?.throwIfAborted(); return fetcher(url, { ...requestOptions, signal }) })
+    return await (aborted ? Promise.race([request, aborted]) : request)
+  } finally {
+    if (onAbort) signal.removeEventListener('abort', onAbort)
+    signal?.throwIfAborted()
+  }
+}
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
@@ -304,23 +323,32 @@ export const createPhenomScraper = ({
     return normalized
   }
 
-  const countryMatchesTarget = (value) => {
-    const normalizedValue = normalizeWhitespace(value)
-    const normalizedTarget = normalizeWhitespace(targetCountry)
-    if (!normalizedValue || !normalizedTarget) return false
-    return normalizedValue.toLowerCase() === normalizedTarget.toLowerCase()
+  const countryParts = value => (normalizeWhitespace(value) || '').split(/\s*\/\s*/).filter(Boolean)
+  const countryMatchesTarget = value => {
+    const parts = countryParts(value)
+    return parts.length > 0 && parts.every(part => part.toLowerCase() === targetCountry.toLowerCase())
   }
-
-  const getTargetCountryCount = (aggregationValue) => {
+  const countryIsUnknown = value => {
+    const parts = countryParts(value)
+    return !parts.length || parts.some(part => /^(?:remote|global|worldwide|unknown|multiple locations?)$/i.test(part))
+      || !countryMatchesTarget(value) && parts.some(part => part.toLowerCase() === targetCountry.toLowerCase())
+  }
+  const resolveListingScope = raw => {
+    const locations = [...new Set([
+      ...(Array.isArray(raw.multi_location) ? raw.multi_location : []),
+      ...(Array.isArray(raw.multi_location_array) ? raw.multi_location_array.map(item => item?.location) : []),
+    ].filter(value => typeof value === 'string').map(normalizeWhitespace).filter(Boolean))]
+    const targetLocations = locations.filter(location => countryMatchesTarget(location.split(',').at(-1)))
+    const target = countryMatchesTarget(raw.country) || targetLocations.length > 0
+    const primary = normalizeWhitespace(raw.cityStateCountry || raw.location || raw.cityState)
+    const location = targetLocations[0] || primary || (target ? targetCountry : null)
+    return { target, unknown: !target && countryIsUnknown(raw.country), location, locations }
+  }
+  const getTargetCountryCount = aggregationValue => {
     if (!aggregationValue || typeof aggregationValue !== 'object') return null
-
-    for (const [countryName, count] of Object.entries(aggregationValue)) {
-      if (countryMatchesTarget(countryName) && Number.isInteger(count)) {
-        return count
-      }
-    }
-
-    return null
+    const matches = Object.entries(aggregationValue).filter(([country]) => countryMatchesTarget(country))
+    return matches.length && matches.every(([, count]) => Number.isInteger(count) && count >= 0)
+      ? matches.reduce((sum, [, count]) => sum + count, 0) : null
   }
 
   const resolveJobPathPrefix = () => {
@@ -347,6 +375,7 @@ export const createPhenomScraper = ({
   const extractSearchPayload = (html) => {
     const ddo = extractPhAppDdo(html)
     const payload = ddo?.eagerLoadRefineSearch || ddo?.targetedJobs || {}
+    if (!Array.isArray(payload.data?.jobs) && !Array.isArray(payload.jobs)) throw incompleteSnapshot('unrecognized jobs payload')
     const jobs = Array.isArray(payload.data?.jobs)
       ? payload.data.jobs
       : (Array.isArray(payload.jobs) ? payload.jobs : [])
@@ -496,76 +525,177 @@ export const createPhenomScraper = ({
     timeoutMs: config.fetchTimeoutMs || DEFAULT_FETCH_TIMEOUT_MS,
   })
 
+  const resolveWidgetRequest = html => {
+    const searchUrl = new URL(searchPath, baseUrl)
+    // Preserve supported keyword scope; arbitrary filters still use their original HTML route.
+    if ([...searchUrl.searchParams.keys()].some(key => key !== 'keywords')
+      || searchUrl.searchParams.getAll('keywords').length > 1
+      || searchUrl.hash || !searchUrl.pathname.endsWith('/search-results')) return null
+    const app = parseJson(extractJsonObjectAfterMarker(html, 'var phApp = phApp || '))
+    if (!app?.widgetApiEndpoint || !app.locale || !app.deviceType || !app.country || app.pageName !== 'search-results') return null
+    try {
+      const url = new URL(app.widgetApiEndpoint)
+      if (url.origin !== new URL(baseUrl).origin || url.pathname !== '/widgets' || url.search || url.hash) return null
+      const countryAggregation = extractSearchPayload(html).aggregations.country || {}
+      const countries = Object.keys(countryAggregation).filter(countryMatchesTarget)
+      // Fetch a bounded country inventory in one page when possible to avoid overlaps at date-sort ties.
+      const pageSize = Math.min(500, Math.max(100, getTargetCountryCount(countryAggregation) ?? 0))
+      const sortField = normalizeWhitespace(extractPhAppDdo(html)?.siteConfig?.data?.refineSearch?.sort?.field) || 'postedDate'
+      return { url: url.toString(), body: { lang: app.locale, deviceType: app.deviceType, country: app.country,
+        pageName: app.pageName, ddoKey: 'refineSearch', jobs: true, counts: true, all_fields: ['country'], size: pageSize,
+        global: true, keywords: searchUrl.searchParams.get('keywords') || '', sortBy: 'Most recent', sort: { field: sortField, order: 'desc' },
+        ...(countries.length ? { selected_fields: { country: countries } } : {}),
+      } }
+
+    } catch { return null }
+  }
+  const fetchWidgetJson = (url, options = {}) => fetchJsonWithRetry(url, {
+    ...options,
+    attempts: config.retryAttempts || 1,
+    baseDelayMs: config.retryBaseDelayMs || 1000,
+    label: source + ' Phenom listings',
+    timeoutMs: config.fetchTimeoutMs || DEFAULT_FETCH_TIMEOUT_MS,
+  })
+
   const run = async (options = {}) => {
     const getPage = options.fetchText || fetchText
     const signal = options.signal
-    const maxPages = Number.isInteger(options.maxPages)
-      ? options.maxPages
-      : (Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY)
-    const maxJobs = Number.isInteger(options.maxJobs)
-      ? options.maxJobs
-      : Number.POSITIVE_INFINITY
-
-    const jobs = []
-    const seenJobIds = new Set()
-    let offset = Number.isInteger(options.initialFrom) ? options.initialFrom : 0
-    let targetCountryCount = null
+    signal?.throwIfAborted()
+    // The central maxPages setting belongs to DOM scrapers, not this API-backed inventory.
+    const maxPages = Number.isInteger(options.maxPages) ? Math.max(0, options.maxPages)
+      : Number.isInteger(config.phenomMaxPages) ? Math.max(0, config.phenomMaxPages) : Infinity
+    const maxJobs = Number.isInteger(options.maxJobs) ? Math.max(0, options.maxJobs) : Infinity
+    const listingBudgetMs = nonnegativeBudget(options.listingBudgetMs ?? process.env.PHENOM_LISTING_BUDGET_MS, DEFAULT_LISTING_BUDGET_MS)
+    const detailBudgetMs = nonnegativeBudget(options.detailEnrichmentBudgetMs ?? process.env.PHENOM_DETAIL_ENRICHMENT_BUDGET_MS, DEFAULT_DETAIL_BUDGET_MS)
+    if (maxPages === 0 || maxJobs === 0) throw incompleteSnapshot('nonpositive listing limit cannot establish an empty inventory')
+    const seenRawIds = new Set()
+    const targetListings = []
+    let offset = Number.isInteger(options.initialFrom) ? Math.max(0, options.initialFrom) : 0
     let totalHits = null
-
-    for (let pageNumber = 0; pageNumber < maxPages; pageNumber += 1) {
-      const pageHtml = await getPage(buildSearchResultsPageUrl(offset), { signal })
-      const payload = extractSearchPayload(pageHtml)
-      const listings = extractSearchResults(payload)
-      const rawJobsCount = Array.isArray(payload.jobs) ? payload.jobs.length : 0
-      const pageSize = payload.hits || rawJobsCount || listings.length
-
-      if (!pageSize || (rawJobsCount === 0 && listings.length === 0)) break
-
-      totalHits = payload.totalHits ?? totalHits
-      targetCountryCount = getTargetCountryCount(payload.aggregations?.country) ?? targetCountryCount
-
-      for (const listing of listings) {
-        if (!countryMatchesTarget(listing.country)) continue
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
-
-        const detailHtml = await getPage(listing.sourceUrl, { signal })
-        const detail = extractJobDetail(detailHtml, listing)
-
-        jobs.push({
-          jobId: detail.jobId || listing.jobId,
-          requisitionId: detail.requisitionId || listing.requisitionId,
-          title: detail.title || listing.title,
-          company: companyName,
-          department: detail.department || listing.department,
-          location: detail.location || listing.location,
-          city: detail.city || listing.city,
-          country: detail.country || listing.country,
-          link: detail.applyUrl || listing.applyUrl || listing.sourceUrl,
-          applyUrl: detail.applyUrl || listing.applyUrl || listing.sourceUrl,
-          sourceUrl: detail.sourceUrl || listing.sourceUrl,
-          source,
-          employmentType: detail.employmentType || listing.employmentType,
-          experienceRequired: detail.experienceRequired || listing.experienceRequired,
-          publicExperienceChecked: detail.publicExperienceChecked === true || listing.publicExperienceChecked === true,
-          jobDescription: detail.jobDescription || listing.jobDescription,
-          minimumQualification: detail.minimumQualification,
-          preferredQualification: detail.preferredQualification,
-          requiredSkills: detail.requiredSkills?.length
-            ? detail.requiredSkills
-            : listing.requiredSkills,
-          postingDate: detail.postingDate || listing.postingDate,
-          scrapedAt: new Date().toISOString(),
-        })
-
-        if (jobs.length >= maxJobs) return jobs
-        if (Number.isInteger(targetCountryCount) && jobs.length >= targetCountryCount) return jobs
+    let targetCountryCount = null
+    let complete = false
+    let uncertainScope = offset > 0
+    let budgetExpired = false
+    let widgetRequest = null
+    const useWidgetApi = options.useWidgetApi ?? Boolean(options.fetchJson || !options.fetchText)
+    const listingController = new AbortController()
+    const listingSignal = signal ? AbortSignal.any([signal, listingController.signal]) : listingController.signal
+    const listingTimer = setTimeout(() => {
+      budgetExpired = true
+      listingController.abort(incompleteSnapshot('listing budget expired'))
+    }, listingBudgetMs)
+    try {
+      for (let pageNumber = 0; pageNumber < maxPages; pageNumber += 1) {
+        let payload
+        let pageHtml
+        if (!widgetRequest) {
+          pageHtml = await requestWithSignal(getPage, buildSearchResultsPageUrl(offset), listingSignal)
+          if (pageNumber === 0 && useWidgetApi) widgetRequest = resolveWidgetRequest(pageHtml)
+        }
+        if (widgetRequest) {
+          const response = await requestWithSignal(options.fetchJson || fetchWidgetJson, widgetRequest.url, listingSignal, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({ ...widgetRequest.body, from: offset }),
+          })
+          const data = response?.refineSearch
+          if (data?.status !== 200 || !Array.isArray(data?.data?.jobs)) throw incompleteSnapshot('invalid widget listing payload')
+          payload = { jobs: data.data.jobs, totalHits: data.totalHits, hits: data.hits, aggregations: normalizeAggregationMap(data.data.aggregations) }
+        } else {
+          payload = extractSearchPayload(pageHtml)
+        }
+        if (!Number.isInteger(payload.totalHits) || payload.totalHits < 0) throw incompleteSnapshot('unrecognized listing payload or total')
+        totalHits = Math.max(totalHits ?? 0, payload.totalHits)
+        const count = getTargetCountryCount(payload.aggregations?.country)
+        if (count != null) targetCountryCount = Math.max(targetCountryCount ?? 0, count)
+        const rawJobs = payload.jobs
+        if (!rawJobs.length) {
+          if (totalHits === 0 && !seenRawIds.size && !(targetCountryCount > 0)) { complete = true; break }
+          throw incompleteSnapshot('empty page at offset ' + offset + ' after ' + seenRawIds.size + ' unique records of ' + totalHits)
+        }
+        let added = 0
+        for (const raw of rawJobs) {
+          const rawId = normalizeWhitespace(raw?.jobSeqNo || raw?.jobId || raw?.reqId)
+          if (!rawId || !normalizeWhitespace(raw?.reqId) || !normalizeWhitespace(raw?.title)) throw incompleteSnapshot('malformed listing identity')
+          if (seenRawIds.has(rawId)) continue
+          seenRawIds.add(rawId)
+          added += 1
+          const scope = resolveListingScope(raw)
+          if (scope.unknown) uncertainScope = true
+          if (!scope.target) continue
+          const scopedRaw = { ...raw, country: targetCountry, cityStateCountry: scope.location,
+            city: scope.location ? extractCity(scope.location) : raw.city }
+          if (typeof listingPredicate === 'function' && !listingPredicate(scopedRaw)) continue
+          const [listing] = extractSearchResults({ jobs: [scopedRaw] })
+          if (!listing) throw incompleteSnapshot('unparsed target-country listing')
+          targetListings.push({ ...listing, country: targetCountry, ...(scope.locations.length > 1 ? { locations: scope.locations } : {}) })
+        }
+        if (!added) throw incompleteSnapshot('duplicate page before inventory completion')
+        if (seenRawIds.size > totalHits) throw incompleteSnapshot('reported total is smaller than the unique listing inventory')
+        offset += rawJobs.length
+        if (seenRawIds.size === totalHits) {
+          complete = true
+          if (typeof listingPredicate !== 'function' && targetCountryCount != null && targetListings.length < targetCountryCount) uncertainScope = true
+          break
+        }
+        if (targetListings.length >= maxJobs) break
       }
-
-      offset += pageSize
-      if (Number.isInteger(totalHits) && offset >= totalHits) break
+    } catch (error) {
+      signal?.throwIfAborted()
+      if (!budgetExpired || !targetListings.length) throw error
+    } finally {
+      clearTimeout(listingTimer)
     }
-
+    signal?.throwIfAborted()
+    const selected = targetListings.slice(0, maxJobs)
+    const incomplete = !complete || uncertainScope || selected.length < targetListings.length
+    if (incomplete && !selected.length) throw incompleteSnapshot('no verified target jobs before listing completion')
+    if (incomplete) console.warn('[' + source + '] Incomplete Phenom listing; preserving previous vacancies (' + selected.length + ' verified target jobs).')
+    const jobs = selected.map(listing => ({
+      ...listing, company: companyName, source, link: listing.applyUrl || listing.sourceUrl,
+      applyUrl: listing.applyUrl || listing.sourceUrl, publicExperienceChecked: listing.publicExperienceChecked === true,
+      ...(incomplete ? { sourceListingComplete: false } : {}), scrapedAt: new Date().toISOString(),
+    }))
+    if (!jobs.length || detailBudgetMs === 0) return jobs
+    const detailController = new AbortController()
+    const detailSignal = signal ? AbortSignal.any([signal, detailController.signal]) : detailController.signal
+    const detailTimer = setTimeout(() => detailController.abort(new Error('Phenom optional detail budget expired')), detailBudgetMs)
+    try {
+      for (let index = 0; index < jobs.length; index += 1) {
+        if (detailSignal.aborted) break
+        const listing = selected[index]
+        try {
+          const detailHtml = await requestWithSignal(getPage, listing.sourceUrl, detailSignal)
+          const structured = extractStructuredJobDetail(detailHtml)
+          const posting = extractJobPostingJsonLd(detailHtml)
+          // Optional detail HTML must belong to the listing before it can change job identity or fields.
+          const identifiers = [structured?.jobId, structured?.reqId].map(normalizeWhitespace).filter(Boolean)
+          const expectedIds = [listing.jobId, listing.requisitionId]
+          const canonical = normalizeWhitespace(extractFirst(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i, detailHtml))
+          if (identifiers.length ? !identifiers.some(id => expectedIds.includes(id))
+            : !posting || canonical !== listing.sourceUrl) continue
+          const detail = extractJobDetail(detailHtml, listing)
+          const enriched = { ...jobs[index] }
+          for (const [key, value] of Object.entries(detail)) {
+            if (value != null && value !== '' && (!Array.isArray(value) || value.length)) enriched[key] = value
+          }
+          // The verified listing identity and country remain authoritative.
+          enriched.jobId = listing.jobId
+          enriched.requisitionId = listing.requisitionId
+          enriched.title = listing.title
+          enriched.country = listing.country
+          enriched.sourceUrl = listing.sourceUrl
+          enriched.link = enriched.applyUrl
+          jobs[index] = enriched
+        } catch (error) {
+          signal?.throwIfAborted()
+          if (detailSignal.aborted) break
+          // Listing collection is complete independently of optional detail availability.
+        }
+      }
+    } finally {
+      clearTimeout(detailTimer)
+    }
+    signal?.throwIfAborted()
     return jobs
   }
 

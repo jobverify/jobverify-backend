@@ -29,11 +29,11 @@ test('buildSearchResultsPageUrl keeps Rocket listings on the official Phenom sea
 
   assert.equal(
     rocketIndia.buildSearchResultsPageUrl(),
-    'https://careers.rocket.com/us/en/search-results',
+    'https://careers.rocket.com/in/en/search-results',
   )
   assert.equal(
     rocketIndia.buildSearchResultsPageUrl(10),
-    'https://careers.rocket.com/us/en/search-results?from=10',
+    'https://careers.rocket.com/in/en/search-results?from=10',
   )
 })
 
@@ -62,6 +62,6 @@ test('run returns no jobs when Rocket public listings do not include India', asy
     },
   })
 
-  assert.deepEqual(requestedUrls, ['https://careers.rocket.com/us/en/search-results'])
+  assert.deepEqual(requestedUrls, ['https://careers.rocket.com/in/en/search-results'])
   assert.deepEqual(jobs, [])
 })

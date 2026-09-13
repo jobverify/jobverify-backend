@@ -1,4 +1,5 @@
 import express from "express";
+import { loadSiteSettings } from "../middleware/siteSettings.js";
 import { telegramAlertScheduleValidation, getUserTelegramAlertSchedule, updateUserTelegramAlertSchedule } from "../controllers/alertScheduleController.js";
 import {
   createTelegramAlertLink,
@@ -12,11 +13,13 @@ import {
   updateTelegramAlertSettings,
   updateUserProfile,
 } from "../controllers/userController.js";
+import { submitUserSuggestion } from "../controllers/userSuggestionController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { validateRequest } from "../middleware/validateRequest.js";
 import { createRateLimiter } from "../utils/rateLimit.js";
 import {
   mongoIdParamValidation,
+  suggestionSubmissionValidation,
   telegramAlertsValidation,
   userProfileValidation,
 } from "../validation/requestValidators.js";
@@ -37,16 +40,25 @@ const router = express.Router();
 
 router
   .route("/profile")
-  .get(protect, getUserProfile)
+  .get(protect, loadSiteSettings, getUserProfile)
   .put(
     protect,
     userProfileValidation,
     validateRequest,
     profileUpdateLimiter,
+    loadSiteSettings,
     updateUserProfile,
   );
 
 router.delete("/account", protect, deleteUserAccount);
+
+router.post(
+  "/suggestions",
+  protect,
+  suggestionSubmissionValidation,
+  validateRequest,
+  submitUserSuggestion,
+);
 
 router.route("/telegram-alerts/schedule")
   .get(protect, getUserTelegramAlertSchedule)
@@ -54,7 +66,7 @@ router.route("/telegram-alerts/schedule")
 
 router
   .route("/saved-jobs")
-  .get(protect, getSavedJobs);
+  .get(protect, loadSiteSettings, getSavedJobs);
 
 router
   .route("/saved-jobs/:jobId")
@@ -62,12 +74,14 @@ router
     protect,
     ...mongoIdParamValidation("jobId", "job ID"),
     validateRequest,
+    loadSiteSettings,
     saveJob,
   )
   .delete(
     protect,
     ...mongoIdParamValidation("jobId", "job ID"),
     validateRequest,
+    loadSiteSettings,
     removeSavedJob,
   );
 

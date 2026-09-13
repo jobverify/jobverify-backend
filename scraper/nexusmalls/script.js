@@ -81,7 +81,7 @@ export const hasOfficialCareerPageSignal = (html) => {
   return /<title>\s*Career at nexus\s*<\/title>/i.test(page)
     && text.includes('Our Featured Jobs')
     && text.includes('Be a part of Nexus')
-    && text.includes('Your next opportunity starts here.')
+    && text.includes('Your dream job starts here.')
     && /mailto:careers@nexusmalls\.com/i.test(page)
 }
 

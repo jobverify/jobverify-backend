@@ -8,7 +8,7 @@ const careersHtml = `
     <main>
       <h1>Work With Us</h1>
       <p>Come make music beautiful.</p>
-      <a href="/careers">Find Your Dream Job</a>
+      <a href="/careers">Find Authentic Jobs</a>
       <section>
         <h2>Life At JioSaavn</h2>
       </section>

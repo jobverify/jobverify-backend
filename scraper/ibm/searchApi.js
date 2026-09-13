@@ -13,6 +13,7 @@ const SOURCE_FIELDS = [
   'title',
   'url',
   'description',
+  'body',
   'language',
   'entitled',
   'field_keyword_05',
@@ -136,6 +137,8 @@ export const extractSearchResults = (payload, { companyName = 'IBM' } = {}) => {
       const source = hit?._source || {}
       const sourceUrl = normalizeWhitespace(source.url)
       const title = normalizeWhitespace(source.title)
+      const fullBody = normalizeWhitespace(source.body)
+      const hasCompleteBody = Boolean(fullBody && !/(?:\.\.\.|\u2026)\s*$/.test(fullBody))
       const jobId = extractJobId(sourceUrl)
       const country = normalizeCountry(source.field_keyword_05)
       const location = normalizeLocation(source.field_keyword_19 || source.field_keyword_05, country)
@@ -160,7 +163,8 @@ export const extractSearchResults = (payload, { companyName = 'IBM' } = {}) => {
         requiredSkills: [],
         postingDate: null,
         closingDate: null,
-        jobDescription: normalizeWhitespace(source.description),
+        jobDescription: fullBody || normalizeWhitespace(source.description),
+        ...(hasCompleteBody ? { publicExperienceChecked: true } : {}),
       }
     })
     .filter(Boolean)
@@ -181,6 +185,7 @@ const fetchSearchResults = async (url, options = {}) => {
       ...options.headers,
     },
     body: options.body,
+    signal: options.signal,
   })
 
   if (!response.ok) {
@@ -208,6 +213,7 @@ export const runIbmSearch = async ({
   let page = 0
 
   while (page < maxPages) {
+    signal?.throwIfAborted()
     page += 1
     const body = buildSearchRequestBody({
       query,

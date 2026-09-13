@@ -20,10 +20,10 @@ export const THREE_PILLAR_GLOBAL_CATALOG = {
     'verified-first-party-careers-page+verified-official-lever-board+global-lever-postings',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
-  verifiedPublicJobCount: 92,
+  verifiedOn: "2026-09-13",
+  verifiedPublicJobCount: 0,
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026: https://www.3pillar.ai/careers/career-opportunities/ resolved with the public 3Pillar Career Opportunities page, https://jobs.lever.co/3pillarglobal resolved with the official 3Pillar Lever board, and https://api.lever.co/v0/postings/3pillarglobal?mode=json returned 92 public postings.',
+    "Verified September 13, 2026: the official 3Pillar careers page and linked Lever board retain their company identity, and the official Lever postings API returns an empty array. Validated empty arrays are accepted; malformed or incomplete payloads are rejected.",
   modulePath: path.join(currentDir, 'script.js'),
   dryRunFile: path.join(currentDir, 'jobs.json'),
 }

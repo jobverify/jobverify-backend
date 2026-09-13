@@ -131,7 +131,9 @@ export const createMfineScraper = () => ({
 
     const apiResult = await probeListingApi(DARWINBOX_LISTING_API_URL)
     if (hasDarwinboxTenantInfoError(apiResult)) {
-      return []
+      throw Object.assign(new Error('Mfine Darwinbox listing API has a tenant outage; refusing an empty job snapshot'), {
+        code: 'MFINE_BOARD_UNAVAILABLE', failureType: 'upstream_unavailable', abortRetries: true,
+      })
     }
 
     throw new Error('The verified Mfine Darwinbox listing API error state changed')

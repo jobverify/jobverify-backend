@@ -72,16 +72,23 @@ const normalizeDate = (value) => {
 }
 
 const normalizeLocation = (record = {}) => {
+  const rawLocations = Array.isArray(record.Job_Location) ? record.Job_Location : record.Job_Location ? [record.Job_Location] : []
+  if (rawLocations.length) {
+    const places = rawLocations.map(normalizeWhitespace)
+    if (places.some(place => !place)) throw new Error('QuadEye incomplete public location values')
+    const indiaPlaces = places.filter(place => /^(?:Gurugram|Gurgaon)(?:,\s*(?:Haryana,\s*)?India)?$/i.test(place))
+    const foreignPlaces = places.filter(place => /^(?:New York|Chicago|Hong Kong|Singapore|South Korea|Romania)$/i.test(place))
+    if (indiaPlaces.length + foreignPlaces.length !== places.length) throw Object.assign(new Error('QuadEye incomplete location scope'), { code: 'incomplete_location_scope' })
+    if (!indiaPlaces.length) return null
+    const cities = [...new Set(indiaPlaces.map(place => place.replace(/,.*$/, '')))]
+    return { city: cities.join(', '), state: null, country: 'India', location: cities.join(', ') + ', India' }
+  }
   const city = normalizeWhitespace(record.City)
   const state = normalizeWhitespace(record.State)
   const country = normalizeWhitespace(record.Country)
-
-  return {
-    city,
-    state,
-    country,
-    location: [city, state, country].filter(Boolean).join(', ') || null,
-  }
+  if (!country) throw Object.assign(new Error('QuadEye incomplete location scope'), { code: 'incomplete_location_scope' })
+  if (!/^India$/i.test(country)) return null
+  return { city, state, country: 'India', location: [city, state, 'India'].filter(Boolean).join(', ') }
 }
 
 const normalizeQualification = (value) => {
@@ -91,8 +98,6 @@ const normalizeQualification = (value) => {
 
   return normalizeWhitespace(value)
 }
-
-const isIndiaJob = (record = {}) => /india/i.test(normalizeWhitespace(record.Country) || '')
 
 const isPublishedRecord = (record = {}) => record.Publish !== false
 
@@ -109,6 +114,15 @@ const isExpectedDetailHost = (value) => {
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
+
+  if (
+    /<title>\s*Jobs\s*\|\s*quadeye\s*<\/title>/i.test(page)
+    && /rel=["']canonical["'][^>]+href=["']https:\/\/www\.quadeye\.com\/jobs["']/i.test(page)
+    && text.includes('Open Roles')
+    && text.includes('Loading roles')
+    && /href=["']\/career["']/i.test(page)
+    && /href=["']\/contact-us["']/i.test(page)
+  ) return true
 
   return /<title>\s*Careers\s*-\s*Quadeye\s*<\/title>/i.test(page)
     && /meta[^>]+name=["']description["'][^>]+Careers at Quadeye Securities\. Join our Team!/i.test(page)
@@ -148,19 +162,23 @@ export const hasVerifiedJobDetailPage = (html = '', job = {}) => {
     && !/position filled|joblist has been removed|sign in to your zoho account/i.test(page)
 }
 
-export const extractIndiaJobs = (payload = {}) =>
-  (Array.isArray(payload?.data) ? payload.data : [])
-    .filter((record) => isIndiaJob(record) && isPublishedRecord(record) && isUnlockedRecord(record))
+export const extractIndiaJobs = (payload = {}) => {
+  if (!Array.isArray(payload?.data)) throw new Error('QuadEye incomplete API inventory')
+  const seen = new Set()
+  return payload.data
+    .filter((record) => isPublishedRecord(record) && isUnlockedRecord(record))
     .map((record) => {
       const title = normalizeWhitespace(record.Posting_Title || record.Job_Opening_Name)
       const jobId = normalizeWhitespace(record.id)
       const sourceUrl = normalizeWhitespace(record.$url)
       const department = normalizeWhitespace(record.Department || record.Industry || record?.Client_Name?.name)
-      const { location, city, state, country } = normalizeLocation(record)
-
-      if (!title || !jobId || !sourceUrl || !location || !country) {
-        return null
-      }
+      if (!title || !jobId || !sourceUrl || !isExpectedDetailHost(sourceUrl) || seen.has(jobId)) throw new Error('QuadEye incomplete or invalid role identity/application')
+      const url = new URL(sourceUrl)
+      if (url.protocol !== 'https:' || !url.pathname.startsWith('/jobs/Careers/' + jobId + '/') || url.username || url.password) throw new Error('QuadEye invalid application URL')
+      seen.add(jobId)
+      const scope = normalizeLocation(record)
+      if (!scope) return null
+      const { location, city, state, country } = scope
 
       return {
         title,
@@ -186,9 +204,26 @@ export const extractIndiaJobs = (payload = {}) =>
       }
     })
     .filter(Boolean)
+}
 
-const defaultFetchText = async (url) => {
+const assertCompletePortalInventory = (html, payload) => {
+  const tag = [...String(html).matchAll(/<input\b(?:"[^"]*"|'[^']*'|[^'">])*>/gi)]
+    .map(match => match[0]).find(tag => /\bid=["']jobs["']/i.test(tag))
+  const raw = tag?.match(/\bvalue=(["'])([\s\S]*?)\1/i)?.[2]
+  let embedded
+  try { embedded = JSON.parse(decodeHtml(raw)) } catch {}
+  if (!Array.isArray(embedded)) throw new Error('QuadEye incomplete portal inventory')
+  const ids = records => records.map(record => normalizeWhitespace(record?.id))
+  const expected = ids(embedded)
+  const actual = ids(payload.data)
+  if (expected.some(id => !id) || actual.some(id => !id)
+    || new Set(expected).size !== expected.length || new Set(actual).size !== actual.length
+    || expected.length !== actual.length || actual.some(id => !expected.includes(id))) throw new Error('QuadEye incomplete API/portal inventory')
+}
+
+const defaultFetchText = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -203,8 +238,9 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
-const defaultFetchJson = async (url) => {
+const defaultFetchJson = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'application/json,text/plain,*/*',
@@ -227,32 +263,38 @@ export const createQuadEyeScraper = ({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
     now: overrideNow,
+    signal,
   } = {}) {
-    const careersPageHtml = await fetchText(CAREERS_PAGE_URL)
+    signal?.throwIfAborted()
+    const careersPageHtml = await fetchText(CAREERS_PAGE_URL, { signal })
     if (!hasOfficialCareersPageSignal(careersPageHtml)) {
       throw new Error('Response is not the verified official QuadEye careers page')
     }
 
-    const portalHtml = await fetchText(CAREERS_PORTAL_URL)
+    const portalHtml = await fetchText(CAREERS_PORTAL_URL, { signal })
     if (!hasOfficialPortalSignal(portalHtml)) {
       throw new Error('Response is not the verified QuadEye careers portal')
     }
 
-    const payload = await fetchJson(CAREERS_API_URL)
+    const payload = await fetchJson(CAREERS_API_URL, { signal })
     if (payload?.code !== 'success' || !Array.isArray(payload?.data)) {
       throw new Error('QuadEye public jobs API no longer returns the verified success payload')
     }
 
+    signal?.throwIfAborted()
+    assertCompletePortalInventory(portalHtml, payload)
     const jobs = extractIndiaJobs(payload)
     const selectedJobs = Number.isInteger(maxJobs) && maxJobs > 0 ? jobs.slice(0, maxJobs) : jobs
 
     if (selectedJobs.length > 0) {
-      const detailHtml = await fetchText(selectedJobs[0].sourceUrl)
+      const detailHtml = await fetchText(selectedJobs[0].sourceUrl, { signal })
       if (!hasVerifiedJobDetailPage(detailHtml, selectedJobs[0])) {
         throw new Error('QuadEye public job detail pages no longer match the verified contract')
       }
     }
 
+    signal?.throwIfAborted()
+    if (selectedJobs.length < jobs.length) for (const job of selectedJobs) job.sourceListingComplete = false
     const getNow = overrideNow || now
 
     return selectedJobs.map((job) => ({

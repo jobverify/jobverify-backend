@@ -42,7 +42,7 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
 
-  return /<title>\s*careers\s*-\s*intellect design arena\s*<\/title>/i.test(page)
+  return /<title>\s*careers\s*(?:-|\|)\s*intellect design arena\s*<\/title>/i.test(page)
     && normalized.includes('work at the heart of change')
     && normalized.includes('our customer-first approach drives us to deliver innovative solutions')
 }
@@ -97,7 +97,8 @@ const extractVacancyRecords = (payload) => {
   return records
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -118,13 +119,16 @@ const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
 })
 
 export const createIntellectDesignArenaScraper = () => ({
-  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson, signal } = {}) {
+    signal?.throwIfAborted()
+    const homepageHtml = await fetchText(HOMEPAGE_URL, { signal })
+    signal?.throwIfAborted()
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Intellect Design Arena homepage no longer matches the verified official careers handoff')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
+    const careersHtml = await fetchText(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Intellect Design Arena careers page no longer matches the verified official careers surface')
     }
@@ -134,12 +138,14 @@ export const createIntellectDesignArenaScraper = () => ({
       throw new Error('Intellect Design Arena careers page no longer exposes the verified CandidateMAX handoff')
     }
 
-    const tenantConfig = await fetchJson(TENANT_CONFIG_URL)
+    const tenantConfig = await fetchJson(TENANT_CONFIG_URL, { signal })
+    signal?.throwIfAborted()
     if (!hasVerifiedTenantConfig(tenantConfig)) {
       throw new Error('Intellect Design Arena CandidateMAX tenant config no longer matches the verified public tenant')
     }
 
     const vacancyResponse = await fetchJson(VACANCY_API_URL, {
+      signal,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -150,10 +156,11 @@ export const createIntellectDesignArenaScraper = () => ({
       }),
     })
 
-    if (
-      isVerifiedPublicVacancyDenied(vacancyResponse)
-      || isVerifiedPublicVacancyEmptyResponse(vacancyResponse)
-    ) {
+    signal?.throwIfAborted()
+    if (isVerifiedPublicVacancyDenied(vacancyResponse)) {
+      throw new Error('Intellect Design Arena public CandidateMAX inventory is unavailable: access denied')
+    }
+    if (isVerifiedPublicVacancyEmptyResponse(vacancyResponse)) {
       return []
     }
 

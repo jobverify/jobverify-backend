@@ -38,9 +38,21 @@ jobs:
           TELEGRAM_ENABLED: ${{ vars.TELEGRAM_ENABLED }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           SCRAPER_CONCURRENCY: ${{ vars.SCRAPER_CONCURRENCY }}
+          SCRAPER_CHECKPOINT_FILE: '.cache/scraper-actions/run-state.json'
           SCRAPER_SOURCE_LIFECYCLE_TIMEOUT_MS: '1800000'
           PUBLIC_EXPERIENCE_FETCH_TIMEOUT_MS: '15000'
           PDF_TEXT_EXTRACTION_TIMEOUT_MS: '30000'
-          WORKDAY_SCRAPER_TIMEOUT_MS: '90000'
+          WORKDAY_SCRAPER_TIMEOUT_MS: '210000'
+          WORKDAY_DETAIL_ENRICHMENT_BUDGET_MS: '30000'
           WORKDAY_REQUEST_TIMEOUT_MS: '20000'
           WORKDAY_DETAIL_FETCH_CONCURRENCY: '1'
+
+      - name: Upload scraper run diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: scraper-run-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .cache/scraper-actions/run-state.json
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14

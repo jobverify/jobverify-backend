@@ -28,7 +28,7 @@ const decodeHtml = (value = '') => String(value)
   .replace(/&amp;/gi, '&')
   .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
   .replace(/&#39;|&apos;|&rsquo;|&#8217;|&#x27;/gi, "'")
-  .replace(/[\u201c\u201d]/g, '"')
+  .replace(/[\u201c\u201d\u2033]/g, '"')
   .replace(/[\u2018\u2019]/g, "'")
 
 const stripTags = (value = '') => String(value).replace(/<[^>]+>/g, ' ')
@@ -48,117 +48,90 @@ const normalizeEmploymentType = (value) => {
   return normalizeWhitespace(value)
 }
 
-const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
+const toApplicationUrl = (value) => {
+  if (!value) return null
   try {
-    return new URL(value, baseUrl).toString()
-  } catch {
-    return null
-  }
+    const url = new URL(value)
+    return url.origin === 'https://excelra.darwinbox.in'
+      && /^\/ms\/candidatev2\/main\/careers\/(?:allJobs\/?|jobDetails\/[^/]+)$/.test(url.pathname)
+      && !url.username && !url.password ? url.toString() : null
+  } catch { return null }
 }
 
 const parseLocation = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) {
-    return {
-      location: null,
-      city: null,
-      state: null,
-      country: null,
-    }
-  }
-
-  const parts = normalized.split(',').map((part) => part.trim()).filter(Boolean)
-  if (parts.length >= 3) {
-    const [city, state, country] = parts
-    return {
-      location: [city, state, country].filter(Boolean).join(', '),
-      city,
-      state,
-      country,
-    }
-  }
-
-  if (parts.length === 2 && /india/i.test(parts[1])) {
-    return {
-      location: `${parts[0]}, ${parts[1]}`,
-      city: parts[0],
-      state: null,
-      country: 'India',
-    }
-  }
-
-  return {
-    location: normalized,
-    city: null,
-    state: null,
-    country: /india/i.test(normalized) ? 'India' : null,
-  }
+  const location = normalizeWhitespace(value)
+  const country = /(?:^|,)\s*India\s*$/i.test(location) ? 'India'
+    : /(?:^|,)\s*(United States|United Kingdom|Germany|Singapore|Canada|Australia)\s*$/i.exec(location)?.[1] ?? null
+  if (!country) throw Object.assign(new Error('Excelra incomplete location scope: ' + location), { code: 'incomplete_location_scope' })
+  const parts = location.split(',').map(part => part.trim()).filter(Boolean)
+  return { location, city: parts.length > 1 ? parts[0] : null, state: parts.length > 2 ? parts.slice(1, -1).join(', ') : null, country }
 }
 
-const isIndiaLocation = (value) => {
-  const normalized = normalizeWhitespace(value)
-  return /india/i.test(normalized) || INDIA_CITY_PATTERN.test(normalized)
+const applicationLinks = (html) => {
+  const urls = []
+  for (const match of html.matchAll(/\[nectar_btn\b[^\]]*\]/gi)) {
+    if (!/\btext\s*=\s*["']Apply now["']/i.test(match[0])) continue
+    urls.push(match[0].match(/\burl\s*=\s*["']([^"']*)["']/i)?.[1] ?? null)
+  }
+  for (const match of html.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/gi)) {
+    if (!/^Apply now$/i.test(normalizeWhitespace(match[0]))) continue
+    urls.push(match[0].match(/\bhref\s*=\s*["']([^"']*)["']/i)?.[1] ?? null)
+  }
+  return urls
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
-  const page = String(html)
+  const page = decodeHtml(String(html))
   return /Excelra job opportunities/i.test(page)
     && /A more fulfilling career/i.test(page)
     && /Current openings/i.test(page)
-    && /excelra\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/jobDetails\//i.test(page)
+    && applicationLinks(page).some(url => toApplicationUrl(url))
 }
 
 export const extractVisibleJobCards = (html = '') => {
   const page = decodeHtml(String(html))
-  const cardPattern = /<h4 class="display-2 m-0 p-0 custom-theme-color"[^>]*>([\s\S]*?)<\/h4>([\s\S]*?)(?=<h4 class="display-2 m-0 p-0 custom-theme-color"|$)/gi
-  const jobs = []
-
-  for (const match of page.matchAll(cardPattern)) {
-    const title = normalizeWhitespace(match[1])
-    const cardHtml = match[2]
-    const fields = [...cardHtml.matchAll(/<strong>([^<]+)<\/strong>/gi)]
-      .map((fieldMatch) => normalizeWhitespace(fieldMatch[1]))
-      .filter(Boolean)
+  const heading = /<h2\b[^>]*>\s*Current openings\s*<\/h2>/i.exec(page)
+  if (!heading) throw new Error('Excelra incomplete current openings section')
+  const rest = page.slice(heading.index + heading[0].length)
+  const section = rest.split(/<h2\b/i)[0]
+  const headings = [...section.matchAll(/<h4\b[^>]*class=["']([^"']*)["'][^>]*>([\s\S]*?)<\/h4>/gi)]
+    .filter(match => match[1].split(/\s+/).includes('custom-theme-color'))
+  const expectedApplications = applicationLinks(section).length
+  if (!headings.length || headings.length !== expectedApplications) throw new Error('Excelra incomplete public role cards')
+  const seen = new Set()
+  return headings.map((heading, index) => {
+    const title = normalizeWhitespace(heading[2])
+    const card = section.slice(heading.index + heading[0].length, headings[index + 1]?.index ?? section.length)
+    const fields = [...card.matchAll(/<strong\b[^>]*>([\s\S]*?)<\/strong>/gi)].map(match => normalizeWhitespace(match[1]))
     const employmentType = normalizeEmploymentType(fields[0])
+    if (!title || !employmentType || !fields[1]) throw new Error('Excelra incomplete public role card')
     const locationDetails = parseLocation(fields[1])
-    const experienceRequired = normalizeWhitespace(fields[2])
-    const applyUrlMatch = cardHtml.match(
-      /<a[^>]+href="(https:\/\/excelra\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/jobDetails\/[^"]+)"[^>]*>\s*(?:<span[^>]*>)?\s*Apply now\b/i,
-    ) || cardHtml.match(
-      /\[nectar_btn[^\]]*?\burl=(?:"|')?(https:\/\/excelra\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/jobDetails\/[^"' \]]+)(?:"|')?[^\]]*\]/i,
-    )
-    const applyUrl = toAbsoluteUrl(applyUrlMatch?.[1])
-
-    if (!title || !employmentType || !locationDetails.location || !experienceRequired || !applyUrl) {
-      continue
+    const experienceRequired = normalizeWhitespace(fields[2]) || null
+    const urls = applicationLinks(card)
+    const applyUrl = urls.length === 1 ? toApplicationUrl(urls[0]) : null
+    if (!applyUrl) throw new Error('Excelra incomplete or invalid role application link')
+    const jobId = (title + '-' + locationDetails.location).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+    if (seen.has(jobId)) throw new Error('Excelra duplicate public role card')
+    seen.add(jobId)
+    const applicationUrlIsGeneric = /\/allJobs\/?$/.test(new URL(applyUrl).pathname)
+    return {
+      title, employmentType, experienceRequired, ...locationDetails,
+      jobId, requisitionId: jobId, applicationUrlIsGeneric,
+      sourceUrl: applicationUrlIsGeneric ? CAREERS_URL : applyUrl, applyUrl,
     }
-
-    jobs.push({
-      title,
-      employmentType,
-      experienceRequired,
-      ...locationDetails,
-      sourceUrl: applyUrl,
-      applyUrl,
-    })
-  }
-
-  return jobs
+  })
 }
 
-const buildJobDescription = (job) => {
-  const lines = [
-    `Official Excelra careers-page opening for ${job.title}.`,
-    `Employment type: ${job.employmentType}.`,
-    `Location: ${job.location}.`,
-    `Experience: ${job.experienceRequired}.`,
-    'Applications route through the linked official Excelra Darwinbox detail page.',
-  ]
+const buildJobDescription = (job) => [
+  'Official Excelra careers-page opening for ' + job.title + '.',
+  'Employment type: ' + job.employmentType + '.',
+  'Location: ' + job.location + '.',
+  job.experienceRequired ? 'Experience: ' + job.experienceRequired + '.' : null,
+  'Applications route through the linked official Excelra careers portal.',
+].filter(Boolean).join(' ')
 
-  return lines.join(' ')
-}
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -167,7 +140,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
@@ -178,7 +152,7 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
 
 export const extractWordpressRenderedContent = (payload) => {
   const pages = Array.isArray(payload) ? payload : []
-  const careersPage = pages.find((page) => normalizeWhitespace(page?.slug) === 'careers') || pages[0]
+  const careersPage = pages.find((page) => page?.slug === 'careers' && page?.link === CAREERS_URL && page?.status === 'publish')
   return String(careersPage?.content?.rendered ?? '')
 }
 
@@ -188,22 +162,26 @@ export const createExcelraKnowledgeSolutionsScraper = ({
   async run({
     fetchJson = defaultFetchJson,
     fetchText = defaultFetchText,
+    signal,
   } = {}) {
+    signal?.throwIfAborted()
     let careersHtml = ''
 
     try {
-      const careersPayload = await fetchJson(CAREERS_WORDPRESS_API_URL)
+      const careersPayload = await fetchJson(CAREERS_WORDPRESS_API_URL, { signal })
       careersHtml = extractWordpressRenderedContent(careersPayload)
     } catch {
-      careersHtml = await fetchText(CAREERS_URL)
+      signal?.throwIfAborted()
+      careersHtml = await fetchText(CAREERS_URL, { signal })
     }
+    signal?.throwIfAborted()
 
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Excelra Knowledge Solutions verified first-party careers page no longer matches the trusted contract')
     }
 
     const jobs = extractVisibleJobCards(careersHtml)
-      .filter((job) => isIndiaLocation(job.location))
+      .filter((job) => job.country === 'India')
       .map((job) => ({
         ...job,
         company: COMPANY,

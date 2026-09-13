@@ -73,6 +73,27 @@ export const hasOfficialKotakSecuritiesCareersSignals = (html = '') => {
     && extractOfficialDarwinboxUrl(page) === OFFICIAL_CAREERS_HANDOFF_URL
 }
 
+export const normalizeKotakListingPayload = (payload = {}) => ({
+  ...payload,
+  data: Array.isArray(payload.data)
+    ? payload.data.map((record) => {
+      if (normalizeWhitespace(record?.locations) || normalizeWhitespace(record?.country)) {
+        return record
+      }
+
+      const officeLocations = Array.isArray(record?.officelocation_show_arr_list)
+        ? record.officelocation_show_arr_list
+          .map(normalizeWhitespace)
+          .filter((location) => /\bindia\b/i.test(location || ''))
+        : []
+
+      return officeLocations.length > 0
+        ? { ...record, locations: officeLocations.join('; ') }
+        : record
+    })
+    : payload.data,
+})
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -97,10 +118,13 @@ export const createKotakSecuritiesScraper = ({
       throw new Error('Kotak Securities verified official careers page no longer matches the verified public surface')
     }
 
+    const sourceFetchListingPage = fetchListingPage || darwinboxScraper.fetchListingPageFromApi
     const jobs = await darwinboxScraper.run({
       maxPages,
       maxJobs,
-      fetchListingPage,
+      fetchListingPage: async (request) => normalizeKotakListingPayload(
+        await sourceFetchListingPage(request),
+      ),
     })
     const scrapedAt = now()
 

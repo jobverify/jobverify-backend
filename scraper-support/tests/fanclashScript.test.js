@@ -297,3 +297,39 @@ test('Fanclash accepts the current parked-domain redirect even when Atom now ret
     true,
   )
 })
+
+test('Fanclash uses HTTP only when the www HTTPS certificate is self-signed', async () => {
+  const fanclash = await loadFanclashModule()
+  const requested = []
+  const fetchPage = fanclash.createFetchPage({
+    fetchImpl: async (url) => {
+      requested.push(url)
+      if (url.startsWith('https://')) {
+        const error = new TypeError('fetch failed')
+        error.cause = { code: 'DEPTH_ZERO_SELF_SIGNED_CERT', message: 'self-signed certificate' }
+        throw error
+      }
+      return {
+        status: 403,
+        url: fanclash.PARKED_DOMAIN_REDIRECT_URL,
+        text: async () => '<title>Just a moment...</title><meta name=robots content=noindex,nofollow><script src=https://challenges.cloudflare.com/challenge.js></script>',
+      }
+    },
+  })
+
+  const page = await fetchPage('https://www.fanclash.com/')
+  assert.deepEqual(requested, ['https://www.fanclash.com/', 'http://www.fanclash.com/'])
+  assert.equal(fanclash.hasVerifiedAtomParkedRedirect(page), true)
+
+  const noFallbackRequests = []
+  const noFallbackPage = await fanclash.createFetchPage({
+    fetchImpl: async (url) => {
+      noFallbackRequests.push(url)
+      const error = new TypeError('fetch failed')
+      error.cause = { code: 'ECONNRESET', message: 'socket hang up' }
+      throw error
+    },
+  })('https://www.fanclash.com/')
+  assert.deepEqual(noFallbackRequests, ['https://www.fanclash.com/'])
+  assert.equal(noFallbackPage.status, 'FETCH_ERROR')
+})

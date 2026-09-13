@@ -16,7 +16,6 @@ const EXPECTED_PROVIDER_SOURCES = [
   'sumupindia',
   'supergaming',
   'suprdaily',
-  'suryoday',
   'synup',
   'techjockey',
   'technovert',
@@ -52,7 +51,6 @@ const NON_GENERIC_PROVIDER_SOURCES = new Set([
   'sumupindia',
   'supergaming',
   'suprdaily',
-  'suryoday',
   'synup',
   'techjockey',
   'technovert',
@@ -77,6 +75,7 @@ const NON_GENERIC_PROVIDER_SOURCES = new Set([
 ])
 
 const EXPECTED_VERIFIED_ON_BY_SOURCE = {
+  verygoodsecurityindia: '2026-09-13',
   sukoon: '2026-08-04',
   suprdaily: '2026-08-04',
   urbanpiper: '2026-08-01',

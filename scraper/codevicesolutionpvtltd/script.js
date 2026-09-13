@@ -6,6 +6,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = 'codevicesolutionpvtltd'
 export const COMPANY = 'Codevice Solution Pvt Ltd'
 export const HOMEPAGE_URL = 'https://codevicesolution.in/'
+export const REQUEST_TIMEOUT_MS = 15000
 export const CAREERS_ROUTE_URLS = [
   'https://codevicesolution.in/careers',
   'https://codevicesolution.in/careers/',
@@ -84,8 +85,9 @@ const BUNDLE_JOBS_SIGNAL_PATTERNS = [
   /zohorecruit/i,
 ]
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal,
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -102,8 +104,9 @@ const defaultFetchPage = async (url) => {
   }
 }
 
-const defaultFetchText = async (url) => {
+const defaultFetchText = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal,
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'application/javascript,text/javascript,text/plain;q=0.9,*/*;q=0.8',
@@ -152,10 +155,32 @@ export const isVerifiedCareersShell = (page = {}) =>
 
 export const createCodeviceSolutionPvtLtdScraper = () => ({
   async run({
+    signal,
     fetchPage = defaultFetchPage,
     fetchText = defaultFetchText,
+    requestTimeoutMs = REQUEST_TIMEOUT_MS,
   } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+    if (!Number.isSafeInteger(requestTimeoutMs) || requestTimeoutMs <= 0) {
+      throw new Error('Invalid Codevice Solution Pvt Ltd request deadline')
+    }
+    signal?.throwIfAborted()
+    const request = async (fetchSurface, url) => {
+      signal?.throwIfAborted()
+      const deadline = AbortSignal.timeout(requestTimeoutMs)
+      const requestSignal = signal ? AbortSignal.any([signal, deadline]) : deadline
+      try {
+        const result = await fetchSurface(url, { signal: requestSignal })
+        signal?.throwIfAborted()
+        requestSignal.throwIfAborted()
+        return result
+      } catch (error) {
+        signal?.throwIfAborted()
+        requestSignal.throwIfAborted()
+        throw error
+      }
+    }
+
+    const homepage = await request(fetchPage, HOMEPAGE_URL)
 
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Codevice Solution Pvt Ltd verified official homepage no longer matches the known public surface')
@@ -171,14 +196,14 @@ export const createCodeviceSolutionPvtLtdScraper = () => ({
     }
 
     const bundleUrl = new URL(bundleAssetPath, HOMEPAGE_URL).toString()
-    const bundleText = await fetchText(bundleUrl)
+    const bundleText = await request(fetchText, bundleUrl)
 
     if (!hasVerifiedBundleSignal(bundleText) || hasBundleJobsSignal(bundleText)) {
       throw new Error('Codevice Solution Pvt Ltd client bundle changed materially or now exposes a public jobs surface')
     }
 
     for (const careersRouteUrl of CAREERS_ROUTE_URLS) {
-      const careersRoute = await fetchPage(careersRouteUrl)
+      const careersRoute = await request(fetchPage, careersRouteUrl)
 
       if (!isVerifiedCareersShell(careersRoute)) {
         throw new Error('Codevice Solution Pvt Ltd careers routes changed materially or now expose public jobs')
@@ -189,7 +214,14 @@ export const createCodeviceSolutionPvtLtdScraper = () => ({
       }
     }
 
-    return []
+    throw Object.assign(new Error(
+      'Codevice Solution Pvt Ltd public job inventory is unavailable: verified company pages do not prove zero openings',
+    ), {
+      code: 'CODEVICE_INVENTORY_UNAVAILABLE',
+      softFailure: true,
+      failureKind: 'upstream_inventory_unavailable',
+      abortRetries: true,
+    })
   },
 })
 

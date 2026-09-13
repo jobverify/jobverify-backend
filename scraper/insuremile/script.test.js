@@ -108,7 +108,7 @@ test('InsureMile helpers recognize both the legacy AWSM surface and the current 
 
   assert.equal(insuremile.SOURCE, 'insuremile')
   assert.equal(insuremile.COMPANY, 'InsureMile')
-  assert.equal(insuremile.VERIFIED_ON, '2026-09-03')
+  assert.equal(insuremile.VERIFIED_ON, '2026-09-13')
   assert.equal(insuremile.CAREERS_URL, 'https://insuremile.in/careers')
   assert.equal(insuremile.CAREERS_API_URL, 'https://insuremile.in/wp-json/wp/v2/awsm_job_openings')
   assert.equal(insuremile.hasLegacyAwsmCareersPageSignal(legacyCareersPageHtml), true)
@@ -166,7 +166,7 @@ test('InsureMile helpers recognize both the legacy AWSM surface and the current 
   ])
 })
 
-test('InsureMile run preserves an honest empty result on the current first-party zero-jobs page', async () => {
+test('InsureMile run preserves an honest empty result on the historical explicit zero-jobs page', async () => {
   const insuremile = await loadInsureMileModule()
   const requestedTextUrls = []
 

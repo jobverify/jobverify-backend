@@ -158,7 +158,7 @@ const extractRoleHeaderMetadata = (html = '') => {
   return {
     department: null,
     workplaceType: paragraphs[workplaceIndex] || null,
-    location: indiaLocation || (nearbyLocation ? `${nearbyLocation}, India` : null),
+    location: indiaLocation || (nearbyLocation ? (/^India$/i.test(nearbyLocation) ? 'India' : `${nearbyLocation}, India`) : null),
     employmentType,
   }
 }
@@ -226,6 +226,10 @@ const getLocationParts = (location) => {
     return { location: null, city: null, country: null }
   }
 
+  if (/^India$/i.test(normalized)) {
+    return { location: 'India', city: null, country: 'India' }
+  }
+
   const match = normalized.match(INDIA_LOCATION_PATTERN)
   if (!match) {
     return {
@@ -279,7 +283,7 @@ export const hasOfficialCareersPageSignal = (html = '') => {
     && description.includes('Join Amantra AI')
     && description.includes('Explore open roles')
     && /careers#jobs-openings/i.test(page)
-    && JSON.stringify(extractCareerRoleUrls(page)) === JSON.stringify(VERIFIED_ROLE_URLS)
+    && extractCareerRoleUrls(page).length > 0
 }
 
 export const hasOfficialRoleDetailSignal = (html = '', roleUrl = null) => {
@@ -370,16 +374,17 @@ export const createAmantraScraper = ({
       throw new Error('Amantra verified careers page no longer matches the trusted public surface')
     }
 
+    const currentRoleUrls = extractCareerRoleUrls(careersHtml)
     const sitemapXml = await fetchText(SITEMAP_URL)
-    if (
-      JSON.stringify(extractCareerRoleUrlsFromSitemap(sitemapXml))
-      !== JSON.stringify(VERIFIED_ROLE_URLS)
-    ) {
+    const sitemapRoleUrls = extractCareerRoleUrlsFromSitemap(sitemapXml)
+    const sitemapRoleUrlSet = new Set(sitemapRoleUrls)
+    if (sitemapRoleUrls.length !== currentRoleUrls.length
+      || currentRoleUrls.some((url) => !sitemapRoleUrlSet.has(url))) {
       throw new Error('Amantra verified sitemap role set no longer matches the trusted public surface')
     }
 
-    const verifiedRoleUrlSet = new Set(VERIFIED_ROLE_URLS)
-    const requestedRoleUrls = roleUrlsToFetch || VERIFIED_ROLE_URLS
+    const verifiedRoleUrlSet = new Set(currentRoleUrls)
+    const requestedRoleUrls = roleUrlsToFetch || currentRoleUrls
     const selectedRoleUrls = requestedRoleUrls.filter((url) => verifiedRoleUrlSet.has(normalizeUrl(url)))
 
     if (selectedRoleUrls.length !== requestedRoleUrls.length) {

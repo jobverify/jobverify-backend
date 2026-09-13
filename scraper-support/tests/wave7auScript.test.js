@@ -45,6 +45,7 @@ const excelraWordpressRenderedContent = `
 
 const excelraWordpressPagesPayload = [
   {
+    slug: 'careers', status: 'publish', link: 'https://www.excelra.com/careers/',
     content: {
       rendered: excelraWordpressRenderedContent,
     },
@@ -257,24 +258,23 @@ test('Excelra Knowledge Solutions fails closed when the verified WordPress caree
   )
 })
 
-test('Blazeclan Technologies sentinel validates the broken Zoho handoff before returning []', async () => {
+test('Blazeclan Technologies reports a missing Zoho tenant as typed upstream unavailability', async () => {
   const blazeclan = await loadModule('../../scraper/blazeclantechnologies/script.js')
   const requestedUrls = []
 
   assert.equal(blazeclan.hasOfficialCareersSignal(blazeclanCareersHtml), true)
   assert.equal(blazeclan.isBrokenZohoBoardPage(blazeclanBrokenBoardHtml), true)
 
-  const jobs = await blazeclan.createBlazeclanTechnologiesScraper().run({
+  await assert.rejects(blazeclan.createBlazeclanTechnologiesScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === blazeclan.CAREERS_URL) return blazeclanCareersHtml
       if (url === blazeclan.BROKEN_BOARD_URL) return blazeclanBrokenBoardHtml
       throw new Error(`Unexpected Blazeclan URL: ${url}`)
     },
-  })
+  }), error => error.code === 'BLAZECLAN_BOARD_UNAVAILABLE' && error.failureKind === 'upstream_unavailable' && error.abortRetries === true)
 
   assert.deepEqual(requestedUrls, [blazeclan.CAREERS_URL, blazeclan.BROKEN_BOARD_URL])
-  assert.deepEqual(jobs, [])
 })
 
 test('Reserve Bank Information Technology run authenticates against the first-party careers API and returns current openings with experience', async () => {

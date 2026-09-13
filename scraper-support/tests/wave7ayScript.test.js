@@ -316,7 +316,7 @@ test('Systech Solutions stays fail-closed while the verified embedded jobs API r
       fetchText: async () => SYSTECH_CAREERS_HTML,
       fetchJson: async () => [{ cr21b_id: '25995', cr21b_jobname: 'Data Engineer' }],
     }),
-    /now exposes public jobs/i,
+    /incomplete structured jobs payload/i,
   )
 })
 

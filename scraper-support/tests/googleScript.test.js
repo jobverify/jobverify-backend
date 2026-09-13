@@ -194,3 +194,49 @@ test('Google helpers extract cards and next-page URLs from server-rendered HTML'
   assert.equal(cards[0].link, 'https://www.google.com/about/careers/applications/jobs/results/456789012345678901-network-engineer')
   assert.equal(google.extractGoogleNextPageUrl(html, PAGE_ONE_URL), PAGE_TWO_URL)
 })
+
+
+test('Google stops before requests when the caller has cancelled', async () => {
+  const google = await loadGoogleModule()
+  const reason = new Error('Google cancelled')
+  let requests = 0
+  await assert.rejects(google.run({ signal: AbortSignal.abort(reason), fetchListingsText: async () => { requests++; return '' } }), error => error === reason)
+  assert.equal(requests, 0)
+})
+
+test('Google bounds optional detail work while completing subsequent listing pages', async () => {
+  const google = await loadGoogleModule()
+  const listingRequests = []
+  let detailRequests = 0
+  const jobs = await google.createGoogleScraper({ detailConcurrency: 1 }).run({
+    detailEnrichmentBudgetMs: 5,
+    fetchListingsText: async url => {
+      listingRequests.push(url)
+      return listingPageHtml({ cards: [listingCardHtml({ title: 'Engineer', location: 'Bengaluru, India', href: url === PAGE_ONE_URL ? FIRST_JOB_URL : SECOND_JOB_URL, minimumQualification: '5 years of experience' })], nextUrl: url === PAGE_ONE_URL ? PAGE_TWO_URL : null })
+    },
+    fetchText: async (_url, { signal } = {}) => {
+      detailRequests++
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('Detail exceeded test bound')), 1000)
+        signal?.addEventListener('abort', () => { clearTimeout(timer); reject(signal.reason) }, { once: true })
+      })
+    },
+  })
+  assert.deepEqual(listingRequests, [PAGE_ONE_URL, PAGE_TWO_URL])
+  assert.equal(detailRequests, 1)
+  assert.equal(jobs.length, 2)
+  assert.ok(jobs.every(job => /5 years/.test(job.minimumQualification)))
+})
+
+test('Google propagates cancellation during optional detail work without fetching another listing page', async () => {
+  const google = await loadGoogleModule()
+  const controller = new AbortController()
+  const reason = new Error('Stop Google details')
+  let listingRequests = 0
+  await assert.rejects(google.run({
+    signal: controller.signal,
+    fetchListingsText: async () => { listingRequests++; return listingPageHtml({ cards: [listingCardHtml({ title: 'Engineer', location: 'Bengaluru, India', href: FIRST_JOB_URL, minimumQualification: '5 years of experience' })], nextUrl: PAGE_TWO_URL }) },
+    fetchText: async (_url, { signal } = {}) => { controller.abort(reason); assert.equal(signal?.aborted, true); throw reason },
+  }), error => error === reason)
+  assert.equal(listingRequests, 1)
+})

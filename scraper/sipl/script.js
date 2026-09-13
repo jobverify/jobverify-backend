@@ -8,7 +8,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
 export const CAREER_PAGE_URL = 'https://www.sipl-sustainability.com/'
-export const CONTACT_PAGE_URL = 'https://www.sipl-sustainability.com/contact-us/'
+export const CONTACT_PAGE_URL = 'https://www.sipl-sustainability.com/contact.html'
 
 const OFFICIAL_SITE_SIGNAL_PATTERN = /<title>\s*SIPL\s*-\s*SIPL Pvt Ltd\s*<\/title>|SIPL Pvt Ltd/i
 const CONTACT_SIGNAL_PATTERN = /support@siplsustainability\.onmicrosoft\.com|\+91\s*9911921666|Contact Us - SIPL Pvt Ltd/i

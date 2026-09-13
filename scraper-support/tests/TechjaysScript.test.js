@@ -27,7 +27,7 @@ const homepageHtml = `
 </html>
 `
 
-test('Techjays validates the verified no-public-careers homepage and careers redirect', async () => {
+test('Techjays retains helpers for identifying its legacy homepage and careers redirect', async () => {
   const techjays = await loadModule()
 
   assert.equal(techjays.hasOfficialHomepageSignal(homepageHtml), true)
@@ -42,11 +42,11 @@ test('Techjays validates the verified no-public-careers homepage and careers red
   )
 })
 
-test('Techjays run returns no jobs while the verified first-party no-public-careers surface remains unchanged', async () => {
+test('Techjays does not treat its legacy careers redirect as evidence of an empty listing', async () => {
   const techjays = await loadModule()
   const requestedUrls = []
 
-  const jobs = await techjays.run({
+  await assert.rejects(techjays.run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
       if (url === techjays.HOMEPAGE_URL) {
@@ -57,13 +57,12 @@ test('Techjays run returns no jobs while the verified first-party no-public-care
       }
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), /redirect is not an empty listing/i)
 
   assert.deepEqual(requestedUrls, [
     techjays.HOMEPAGE_URL,
     techjays.CAREERS_URL,
   ])
-  assert.deepEqual(jobs, [])
 })
 
 test('Techjays default fetch handles careers redirects with a timeout signal', async () => {
@@ -92,7 +91,7 @@ test('Techjays default fetch handles careers redirects with a timeout signal', a
   assert.equal(capturedInit.signal instanceof AbortSignal, true)
 })
 
-test('Techjays fails closed when the homepage starts exposing careers links or the careers route stops redirecting to /about', async () => {
+test('Techjays rejects the legacy careers redirect and an unverified replacement page', async () => {
   const techjays = await loadModule()
 
   await assert.rejects(
@@ -109,7 +108,7 @@ test('Techjays fails closed when the homepage starts exposing careers links or t
         return { status: 308, url, headers: { location: '/about' }, html: '' }
       },
     }),
-    /verified homepage no-public-careers surface/i,
+    /current careers public surface/i,
   )
 
   await assert.rejects(
@@ -121,6 +120,6 @@ test('Techjays fails closed when the homepage starts exposing careers links or t
         return { status: 200, url, headers: {}, html: '<html><body><h1>Jobs</h1></body></html>' }
       },
     }),
-    /verified careers redirect changed/i,
+    /current careers page/i,
   )
 })

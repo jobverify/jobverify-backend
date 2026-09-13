@@ -2,10 +2,11 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { parseJavaScriptLiteral } from '../../scraper-support/utils/safeLiteral.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-export const CAREERS_PAGE_URL = 'https://anoralabs.com/careers.html'
+export const CAREERS_PAGE_URL = 'http://anoralabs.com/careers'
 
 const SOURCE = 'anorainstrumentation'
 const COMPANY = 'Anora Instrumentation Private Limited'
@@ -94,6 +95,176 @@ export const extractJobUrls = (html) => {
   return [...urls]
 }
 
+const isAnoraUrl = (value) => {
+  try {
+    return /^(?:www\.)?anoralabs\.com$/i.test(new URL(value).hostname)
+  } catch {
+    return false
+  }
+}
+
+export const extractReactBundleUrl = (html, pageUrl = CAREERS_PAGE_URL) => {
+  for (const match of String(html ?? '').matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi)) {
+    try {
+      const url = new URL(decodeHtml(match[1]), pageUrl)
+      if (
+        isAnoraUrl(url.toString())
+        && /^\/static\/js\/main\.[a-z0-9]+\.js$/i.test(url.pathname)
+      ) {
+        return url.toString()
+      }
+    } catch {
+      // Ignore unrelated malformed script URLs while looking for the first-party application bundle.
+    }
+  }
+
+  return null
+}
+
+const hasOfficialReactShellSignal = (html) => {
+  const page = String(html ?? '')
+  return /<title>\s*Anora Website\s*<\/title>/i.test(page)
+    && /<div\b[^>]*\bid=["']root["'][^>]*>/i.test(page)
+    && /You need to enable JavaScript to run this app/i.test(page)
+    && Boolean(extractReactBundleUrl(page))
+}
+
+const extractBalancedArray = (source, start) => {
+  let depth = 0
+  let quote = null
+  let escaped = false
+
+  for (let index = start; index < source.length; index += 1) {
+    const character = source[index]
+    if (quote) {
+      if (escaped) escaped = false
+      else if (character === '\\') escaped = true
+      else if (character === quote) quote = null
+      continue
+    }
+
+    if (character === '"' || character === "'" || character === '`') {
+      quote = character
+      continue
+    }
+
+    if (character === '[') depth += 1
+    if (character === ']') {
+      depth -= 1
+      if (depth === 0) return source.slice(start, index + 1)
+    }
+  }
+
+  throw new Error('Anora React careers bundle contains an unterminated jobs array')
+}
+
+const replaceMinifiedBooleanLiterals = (source) => {
+  let normalized = ''
+  let quote = null
+  let escaped = false
+
+  for (let index = 0; index < source.length; index += 1) {
+    const character = source[index]
+    if (quote) {
+      normalized += character
+      if (escaped) escaped = false
+      else if (character === '\\') escaped = true
+      else if (character === quote) quote = null
+      continue
+    }
+
+    if (character === '"' || character === "'" || character === '`') {
+      quote = character
+      normalized += character
+      continue
+    }
+
+    const next = source[index + 1]
+    const after = source[index + 2]
+    const before = source[index - 1]
+    if (
+      character === '!'
+      && (next === '0' || next === '1')
+      && !/[A-Za-z0-9_$!]/.test(before || '')
+      && !/[A-Za-z0-9_$]/.test(after || '')
+    ) {
+      normalized += next === '0' ? 'true' : 'false'
+      index += 1
+      continue
+    }
+
+    normalized += character
+  }
+
+  return normalized
+}
+
+const normalizeReactJob = (record) => {
+  if (
+    !Number.isInteger(record?.id)
+    || record.id <= 0
+    || typeof record?.experienced !== 'boolean'
+    || !Array.isArray(record?.requirements)
+    || record.requirements.some((requirement) => !normalizeWhitespace(requirement))
+    || typeof record?.preferredSkills !== 'string'
+  ) {
+    return null
+  }
+
+  const title = normalizeWhitespace(record.title)
+  const location = normalizeLocation(record.location)
+  const category = normalizeWhitespace(record.category)
+  const years = normalizeWhitespace(record.years)
+  const description = normalizeWhitespace(record.description)
+  const requirements = record.requirements.map((requirement) => normalizeWhitespace(requirement))
+  if (!title || !location || !category || !description) return null
+
+  return {
+    id: record.id,
+    title,
+    location,
+    category,
+    experienced: record.experienced,
+    years,
+    description,
+    requirements,
+    preferredSkills: normalizeWhitespace(record.preferredSkills) || '',
+  }
+}
+
+export const extractReactJobOpenings = (bundle) => {
+  const source = String(bundle ?? '')
+  if (
+    !/["']\/careers["']/i.test(source)
+    || !/["']\/job-details\/:id["']/i.test(source)
+    || !/["']\/api\/apply["']/i.test(source)
+    || !/APPLY FOR THIS ROLE/i.test(source)
+  ) {
+    throw new Error('Anora React careers bundle no longer matches the verified public routes')
+  }
+
+  const candidates = [...source.matchAll(/\[\s*\{\s*id\s*:\s*\d+\s*,\s*title\s*:/g)]
+  if (candidates.length !== 1) {
+    throw new Error('Anora React careers bundle no longer exposes one unambiguous jobs array')
+  }
+
+  try {
+    const literal = extractBalancedArray(source, candidates[0].index)
+    const parsed = parseJavaScriptLiteral(replaceMinifiedBooleanLiterals(literal))
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      throw new Error('Expected at least one job record')
+    }
+
+    const jobs = parsed.map(normalizeReactJob)
+    if (jobs.some((job) => !job) || new Set(jobs.map((job) => job.id)).size !== jobs.length) {
+      throw new Error('Expected complete unique job records')
+    }
+    return jobs
+  } catch (error) {
+    throw new Error(`Anora React careers bundle contains malformed job data: ${error.message}`)
+  }
+}
+
 export const extractJobDetail = (html, sourceUrl) => {
   const title = normalizeWhitespace(
     String(html ?? '').match(/<h2[^>]*>\s*([^<]+?)\s*<\/h2>/i)?.[1],
@@ -139,6 +310,40 @@ export const extractJobDetail = (html, sourceUrl) => {
   }
 }
 
+const isIndiaLocation = (location) =>
+  /\b(?:India|Chennai|Bengaluru|Bangalore|Hyderabad|Pune|Mumbai|Noida|Gurugram|Gurgaon|Delhi)\b/i
+    .test(String(location ?? ''))
+
+const mapReactJob = (opening) => {
+  const jobKey = `${SOURCE}-${opening.id}`
+  const sourceUrl = new URL(`/job-details/${opening.id}`, CAREERS_PAGE_URL).toString()
+  const requirements = [...opening.requirements]
+
+  return {
+    title: opening.title,
+    company: COMPANY,
+    department: opening.category,
+    location: /\bIndia\b/i.test(opening.location)
+      ? opening.location
+      : `${opening.location}, India`,
+    city: normalizeCity(opening.location.split(',')[0].trim()),
+    country: 'India',
+    jobId: jobKey,
+    requisitionId: jobKey,
+    sourceUrl,
+    applyUrl: sourceUrl,
+    employmentType: 'Full-time',
+    experienceRequired: opening.experienced && opening.years ? `${opening.years} years` : null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: requirements,
+    postingDate: null,
+    closingDate: null,
+    jobDescription: normalizeWhitespace([opening.description, ...requirements].join(' ')),
+    remoteStatus: /\bremote\b/i.test(opening.location) ? 'Remote' : 'On-site',
+  }
+}
+
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -160,11 +365,19 @@ export const createAnoraInstrumentationScraper = ({ fetchText = defaultFetchText
     const listingHtml = await fetcher(CAREERS_PAGE_URL)
     const jobUrls = extractJobUrls(listingHtml)
 
-    if (jobUrls.length === 0) {
+    if (jobUrls.length === 0 && !hasOfficialReactShellSignal(listingHtml)) {
       throw new Error('Expected verified Anora careers surface with public opportunities')
     }
 
-    const jobs = []
+    let jobs = []
+
+    if (jobUrls.length === 0) {
+      const bundleUrl = extractReactBundleUrl(listingHtml)
+      const bundle = await fetcher(bundleUrl)
+      jobs = extractReactJobOpenings(bundle)
+        .filter((opening) => isIndiaLocation(opening.location))
+        .map(mapReactJob)
+    }
 
     for (const jobUrl of jobUrls) {
       const detailHtml = await fetcher(jobUrl)
@@ -172,15 +385,15 @@ export const createAnoraInstrumentationScraper = ({ fetchText = defaultFetchText
 
       if (!detail.title || !detail.jobId) continue
 
-      jobs.push({
-        ...detail,
-        source: SOURCE,
-        link: detail.applyUrl || detail.sourceUrl,
-        scrapedAt: (overrideNow || now)(),
-      })
+      jobs.push(detail)
     }
 
-    return jobs
+    return jobs.map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.applyUrl || job.sourceUrl,
+      scrapedAt: (overrideNow || now)(),
+    }))
   },
 })
 

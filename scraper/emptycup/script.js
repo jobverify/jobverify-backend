@@ -14,6 +14,45 @@ export const hasOfficialSiteSignal = (html) =>
 
 export const isMissingCareerRoute = (html) => MISSING_ROUTE_PATTERN.test(html || '')
 
+export const extractAppBundleUrl = (html) => {
+  const match = String(html ?? '').match(
+    /(?:href|src)=["']([^"']*\/_app\/immutable\/entry\/app\.[a-z0-9]+\.js)["']/i,
+  )
+
+  if (!match?.[1]) return null
+
+  try {
+    return new URL(match[1], CAREER_PAGE_URL).toString()
+  } catch {
+    return null
+  }
+}
+
+export const hasOfficialSpaShell = (html) => {
+  const page = String(html ?? '')
+
+  return hasOfficialSiteSignal(page)
+    && /id=["']app-container["']/i.test(page)
+    && /\/_app\/immutable\/entry\/start\.[a-z0-9]+\.js/i.test(page)
+    && extractAppBundleUrl(page) !== null
+}
+
+const hasManifestRoute = (bundle, routeName) => new RegExp(
+  `["']\\/(?:\\([^"']+\\)\\/)?${routeName}(?:\\/[^"']*)?["']`,
+  'i',
+).test(String(bundle ?? ''))
+
+export const hasVerifiedNoPublicCareersRouteDictionary = (bundle) => {
+  const source = String(bundle ?? '')
+  const hasDictionaryExport = /\bas\s+dictionary\b|export\s*\{\s*dictionary\s*\}/i.test(source)
+  const hasKnownPublicRoutes = ['about', 'contact-us', 'pricing', 'privacy']
+    .every((routeName) => hasManifestRoute(source, routeName))
+  const hasCareerRoute = ['career', 'careers', 'job', 'jobs', 'join-us', 'work-with-us', 'openings']
+    .some((routeName) => hasManifestRoute(source, routeName))
+
+  return hasDictionaryExport && hasKnownPublicRoutes && !hasCareerRoute
+}
+
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -40,8 +79,23 @@ export const createEmptyCupScraper = () => ({
       throw new Error('EmptyCup official site no longer matches the verified public surface')
     }
 
-    if (!careersRouteMissing || !jobsRouteMissing) {
+    if (careersRouteMissing && jobsRouteMissing) {
+      return []
+    }
+
+    const appBundleUrl = extractAppBundleUrl(homepageHtml)
+    const careersUseFallbackShell = hasOfficialSpaShell(careersHtml)
+      && extractAppBundleUrl(careersHtml) === appBundleUrl
+    const jobsUseFallbackShell = hasOfficialSpaShell(jobsHtml)
+      && extractAppBundleUrl(jobsHtml) === appBundleUrl
+
+    if (!appBundleUrl || !careersUseFallbackShell || !jobsUseFallbackShell) {
       throw new Error('EmptyCup careers routes no longer match the verified no-public-listings surface')
+    }
+
+    const appBundle = await fetchText(appBundleUrl)
+    if (!hasVerifiedNoPublicCareersRouteDictionary(appBundle)) {
+      throw new Error('EmptyCup route dictionary changed or exposes careers/jobs')
     }
 
     return []

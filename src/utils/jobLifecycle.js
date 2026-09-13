@@ -9,7 +9,12 @@ const parseIntegerAtLeast = (value, fallback, minimum) => {
 export const normalizeLifecycleDate = (value) => {
   if (value == null || value === "") return null;
 
-  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  const timestamp = typeof value === "number"
+    && Math.abs(value) >= 1_000_000_000
+    && Math.abs(value) < 100_000_000_000
+    ? value * 1_000
+    : value;
+  const date = value instanceof Date ? new Date(value.getTime()) : new Date(timestamp);
   return Number.isNaN(date.getTime()) ? null : date;
 };
 

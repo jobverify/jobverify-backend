@@ -20,18 +20,18 @@ test('Panacea Medical Technologies is registered against its verified first-part
   assert.equal(provider.companyCareerPage, CAREERS_URL)
   assert.equal(provider.atsPlatform, 'official-first-party-careers-portal')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'join-us-handoff-plus-first-party-paginated-jobs-board')
+  assert.equal(provider.paginationStrategy, 'counted-first-party-pages-with-canonical-page-one')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-join-us-handoff+paginated-first-party-job-cards+detail-page-enrichment+first-party-apply-links',
+    'verified-homepage+join-us-handoff+complete-counted-job-cards+matching-full-details+unique-listing-ids+validated-india-locations',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'panaceamedical.in')
-  assert.equal(provider.verifiedOn, '2026-08-07')
-  assert.equal(provider.verifiedPublicJobCount, 22)
-  assert.equal(provider.verifiedIndiaJobCount, 22)
-  assert.match(provider.verifiedSurfaceSummary, /22 public job postings across three paginated pages/i)
+  assert.equal(provider.verifiedOn, '2026-09-13')
+  assert.equal(provider.verifiedPublicJobCount, 11)
+  assert.equal(provider.verifiedIndiaJobCount, 11)
+  assert.match(provider.verifiedSurfaceSummary, /11 public job postings across two paginated pages/i)
   assert.match(provider.modulePath, /panaceamedicaltechnologiespvtltd[\\/]script\.js$/i)
 })
 

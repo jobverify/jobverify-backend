@@ -8,6 +8,7 @@ import PlanPurchase from "../src/models/PlanPurchase.js";
 import Subscription from "../src/models/Subscription.js";
 import TelegramLinkToken from "../src/models/TelegramLinkToken.js";
 import User from "../src/models/User.js";
+import UserSuggestion from "../src/models/UserSuggestion.js";
 
 const createResponseDouble = () => ({
   statusCode: 200,
@@ -34,6 +35,7 @@ test("deleteUserAccount removes the authenticated user's account-linked data and
     clicks: Click.deleteMany,
     deliveries: JobAlertDelivery.deleteMany,
     purchases: PlanPurchase.deleteMany,
+    suggestions: UserSuggestion.deleteMany,
     telegramTokens: TelegramLinkToken.deleteMany,
   };
   const removals = [];
@@ -43,6 +45,7 @@ test("deleteUserAccount removes the authenticated user's account-linked data and
   Click.deleteMany = async (filter) => { removals.push(["click", filter]); };
   JobAlertDelivery.deleteMany = async (filter) => { removals.push(["delivery", filter]); };
   PlanPurchase.deleteMany = async (filter) => { removals.push(["purchase", filter]); };
+  UserSuggestion.deleteMany = async (filter) => { removals.push(["suggestion", filter]); };
   TelegramLinkToken.deleteMany = async (filter) => { removals.push(["telegramToken", filter]); };
 
   try {
@@ -64,6 +67,7 @@ test("deleteUserAccount removes the authenticated user's account-linked data and
       ["delivery", { user: userId }],
       ["purchase", { user: userId }],
       ["telegramToken", { user: userId }],
+      ["suggestion", { user: userId }],
       ["user", { _id: userId }],
     ]);
   } finally {
@@ -72,6 +76,7 @@ test("deleteUserAccount removes the authenticated user's account-linked data and
     Click.deleteMany = originalMethods.clicks;
     JobAlertDelivery.deleteMany = originalMethods.deliveries;
     PlanPurchase.deleteMany = originalMethods.purchases;
+    UserSuggestion.deleteMany = originalMethods.suggestions;
     TelegramLinkToken.deleteMany = originalMethods.telegramTokens;
   }
 });

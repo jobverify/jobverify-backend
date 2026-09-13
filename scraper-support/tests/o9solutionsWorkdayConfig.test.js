@@ -19,6 +19,7 @@ test('o9 Solutions Workday local config uses the jobs API against the public ext
     config.detailUrlBase,
     'https://o9solutions.wd5.myworkdayjobs.com/en-US/o9SolutionsExternal',
   )
-  assert.equal(config.searchText, 'India')
+  assert.equal(config.locationCountry, null)
+  assert.equal(config.searchText, undefined)
   assert.equal(config.maxPages, 20)
 })

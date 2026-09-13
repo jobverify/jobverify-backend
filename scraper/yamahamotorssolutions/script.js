@@ -95,7 +95,7 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return /<title>\s*Yamaha - Careers\s*<\/title>/i.test(page)
     && (
-      /Find your Dream Job at Yamaha Motor Solutions/i.test(page)
+      /Find Authentic Jobs at Yamaha Motor Solutions/i.test(page)
       || /Be Cautious/i.test(page)
     )
     && /does not authorize any third party/i.test(page)

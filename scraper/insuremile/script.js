@@ -115,6 +115,39 @@ export const hasCurrentZeroJobsCareersPageSignal = (html = '') => {
     && normalized.includes('careers@insuremile.in')
 }
 
+const hasCurrentPublicRolesSignal = (html = '') => {
+  const page = String(html)
+  return /<title[^>]*>\s*Careers at Insuremile:[\s\S]*?\|\s*Insuremile\s*<\/title>/i.test(page)
+    && /CAREERS AT INSUREMILE/i.test(page) && /id=["']openings["']/i.test(page)
+}
+
+export const extractCurrentPublicRoles = (html = '') => {
+  if (!hasCurrentPublicRolesSignal(html)) throw new Error('InsureMile current careers identity changed')
+  const page = String(html).replace(/<!--[^]*?-->/g, '')
+  const section = page.match(/<section[^>]*id=["']openings["'][^>]*>([\s\S]*?)<\/section>/i)?.[1] || ''
+  const total = Number(stripHtml(page).match(/\b(\d+) Open Roles\b/i)?.[1])
+  const cards = [...section.matchAll(/<h3\b[^>]*>([\s\S]*?)<\/h3>([\s\S]*?<a\b[^>]*>\s*Apply for Position[\s\S]*?<\/a>)/gi)]
+  const knownCities = new Set(['mysore', 'salem', 'palakkad', 'nagpur', 'vizag', 'bangalore'])
+  const jobs = cards.map(([, heading, body]) => {
+    const title = stripHtml(heading)?.replace(/^\d+\s*\.\s*/, '')
+    const locationText = stripHtml(body.match(/<\/svg>\s*<span[^>]*>([\s\S]*?)<\/span>/i)?.[1]
+      || body.match(/<div[^>]*>\s*<span[^>]*>([\s\S]*?)<\/span>\s*<\/div>/i)?.[1])
+    const locations = String(locationText || '').split(/\s*\u2022\s*/).filter(Boolean)
+    const india = locations.length > 0 && locations.every(city => knownCities.has(city.toLowerCase()))
+    const applyUrl = decodeHtml(body.match(/<a\b[^>]*href=["']([^"']+)["']/i)?.[1])
+    if (!title || !locationText || !/^mailto:hr@insuremile\.in\?subject=/.test(applyUrl)) throw new Error('InsureMile incomplete public role card')
+    const jobId = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    return { title, company: COMPANY, location: india ? locations.join(' / ') + ', India' : locationText,
+      city: india && locations.length === 1 ? locations[0] : null, country: india ? 'India' : null,
+      jobId, requisitionId: jobId, sourceUrl: CAREERS_URL, applyUrl,
+      jobDescription: stripHtml(body.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i)?.[1]), remoteStatus: 'On-site' }
+  })
+  if (!Number.isInteger(total) || total <= 0 || total !== jobs.length || new Set(jobs.map(job => job.jobId)).size !== jobs.length) {
+    throw new Error('InsureMile incomplete current public listing')
+  }
+  return jobs
+}
+
 export const hasVerifiedCareersPageSignal = (html = '') =>
   hasLegacyAwsmCareersPageSignal(html) || hasCurrentZeroJobsCareersPageSignal(html)
 
@@ -187,7 +220,8 @@ export const extractSearchResults = (records) => assertVerifiedFeed(records)
   })
   .filter((job) => job.title && job.jobId && job.sourceUrl)
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -196,7 +230,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 30000,
 })
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
@@ -209,12 +244,20 @@ export const createInsureMileScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   pageSize = PAGE_SIZE,
 } = {}) => ({
-  async run({
+  async run({ signal,
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    const request = async (fetcher, url, options = {}) => {
+      signal?.throwIfAborted()
+      try { return await fetcher(url, { ...options, signal }) }
+      finally { signal?.throwIfAborted() }
+    }
+    const careersHtml = await request(fetchText, CAREERS_URL)
+    if (hasCurrentPublicRolesSignal(careersHtml)) {
+      return extractCurrentPublicRoles(careersHtml).map(job => ({ ...job, source: SOURCE, link: job.applyUrl, scrapedAt: now() }))
+    }
     if (!hasVerifiedCareersPageSignal(careersHtml)) {
       throw new Error('InsureMile verified first-party careers page no longer matches the known public surface')
     }
@@ -226,7 +269,7 @@ export const createInsureMileScraper = ({
     const jobs = []
 
     for (let page = 1; ; page += 1) {
-      const pageRecords = assertVerifiedFeed(await fetchJson(buildSearchUrl(page, pageSize)))
+      const pageRecords = assertVerifiedFeed(await request(fetchJson, buildSearchUrl(page, pageSize)))
       jobs.push(...extractSearchResults(pageRecords).map((job) => ({
         ...job,
         source: SOURCE,

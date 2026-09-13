@@ -40,10 +40,11 @@ const slugify = (value) => normalizeWhitespace(value)
   .replace(/^-+|-+$/g, '')
 
 const normalizeDepartment = (title) => normalizeWhitespace(title)
-  .replace(/\s+standardised aptitude test$/i, '')
+  .replace(/\s*(?:standardised\s+)?aptitude\s+test$/i, '')
   .trim()
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -80,19 +81,76 @@ export const hasOfficialHomepageSignal = (html) => {
     && normalized.includes('research[at]technotreon[dot]in')
 }
 
+const hasCurrentCareersSignal = (html) => {
+  const page = String(html ?? '')
+  const title = stripTags(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
+  const text = stripTags(page)
+  // The title scopes these role cards to Pune, rather than inferring location from a footer.
+  return /^Careers at Technotreon\s*\|.*\bJobs in Pune$/i.test(title)
+    && text.includes('CAREERS AT TECHNOTREON')
+    && text.includes('hr@technotreon.in')
+    && /data-ux=["']ContentCard["']/i.test(page)
+}
+
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
-
-  return /<title>\s*CAREERS\s*<\/title>/i.test(page)
-    && normalized.includes('Open call for all humans who are not machines')
+  const legacy = /<title>\s*CAREERS\s*<\/title>/i.test(page)
     && normalized.includes('DEPARTMENTS AT TECHNOTREON')
     && normalized.includes('STANDARDISED Aptitude Test')
+  return (legacy || hasCurrentCareersSignal(page))
+    && normalized.includes('Open call for all humans who are not machines')
     && /href=["']https:\/\/forms\.gle\//i.test(page)
 }
 
+const extractCurrentListings = (page) => {
+  const listings = []
+  // Each responsive card contains stale hidden headings. The numbered primary
+  // heading, description and button identify the actual role within that card.
+  for (const start of page.matchAll(/<div\b[^>]*\bdata-ux=["']ContentCard["'][^>]*>/gi)) {
+    const tags = /<\/?div\b[^>]*>/gi
+    tags.lastIndex = start.index + start[0].length
+    let depth = 1
+    let end = null
+    for (let tag; (tag = tags.exec(page));) {
+      depth += /^<\//.test(tag[0]) ? -1 : 1
+      if (depth === 0) { end = tag.index; break }
+    }
+    if (end === null) throw new Error('Technotreon incomplete role card markup')
+    const card = page.slice(start.index + start[0].length, end)
+    const hasApplication = /href=["']https:\/\/forms\.gle\//i.test(card)
+    const heading = card.match(/<h[2-6]\b[^>]*\bdata-aid=["']CONTENT_HEADLINE(\d+)_RENDERED["'][^>]*>([\s\S]*?)<\/h[2-6]>/i)
+    if (!heading) {
+      if (hasApplication || /aptitude\s+test/i.test(stripTags(card))) throw new Error('Technotreon incomplete role card heading')
+      continue
+    }
+    const title = stripTags(heading[2])
+    if (!/aptitude\s+test$/i.test(title)) {
+      if (hasApplication) throw new Error('Technotreon incomplete role card title')
+      continue
+    }
+    const number = heading[1]
+    const description = card.match(new RegExp('<div\\b[^>]*\\bdata-aid=["\']CONTENT_DESCRIPTION' + number + '_RENDERED["\'][^>]*>([\\s\\S]*?)<\\/div>', 'i'))?.[1]
+    const button = card.match(new RegExp('<a\\b[^>]*\\bdata-aid=["\']CONTENT_CTA_BTN' + number + '_RENDERED["\'][^>]*>([\\s\\S]*?)<\\/a>', 'i'))
+    const rawApplyUrl = button?.[0].match(/\bhref=["']([^"']+)["']/i)?.[1]
+    const paragraphs = Array.from(String(description || '').matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi), ([, value]) => stripTags(value)).filter(Boolean)
+    let applyUrl = null
+    try {
+      const url = new URL(rawApplyUrl)
+      if (url.protocol === 'https:' && url.hostname === 'forms.gle' && url.pathname !== '/') applyUrl = url.toString()
+    } catch {}
+    if (!applyUrl || !paragraphs.length || !/^apply$/i.test(stripTags(button?.[1]))) {
+      throw new Error('Technotreon incomplete role card ' + number)
+    }
+    listings.push({ title, applyUrl, department: normalizeDepartment(title),
+      description: paragraphs.join(' '), location: 'Pune, India', city: 'Pune' })
+  }
+  return listings
+}
+
 export const extractListings = (html) => {
-  const page = String(html ?? '')
+  const page = String(html ?? '').replace(/<script[\s\S]*?<\/script>/gi, '')
+  if (hasCurrentCareersSignal(page)) return extractCurrentListings(page)
   const pattern = /<h2[^>]*>\s*([^<]*STANDARDISED Aptitude Test)\s*<\/h2>([\s\S]*?)<a[^>]+href=["']([^"']+)["'][^>]*>\s*Apply\s*<\/a>/gi
   const listings = []
 
@@ -121,70 +179,66 @@ export const extractListings = (html) => {
 }
 
 export const createTechnotreonScraper = () => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
+  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString(), signal } = {}) {
+    signal?.throwIfAborted()
+    let homepageHtml = null
+
     try {
-      let homepageHtml = null
-
-      try {
-        homepageHtml = await fetchText(HOMEPAGE_URL)
-      } catch (error) {
-        if (!hasTransportFailure(error)) {
-          throw error
-        }
-      }
-
-      if (homepageHtml && !hasOfficialHomepageSignal(homepageHtml)) {
-        throw new Error('Technotreon verified official homepage changed; refusing to scrape guessed jobs')
-      }
-
-      const careersHtml = await fetchText(CAREERS_URL)
-      if (!hasOfficialCareersSignal(careersHtml)) {
-        throw new Error('Technotreon verified official careers page changed; refusing to scrape guessed jobs')
-      }
-
-      const listings = extractListings(careersHtml)
-      if (listings.length === 0) {
-        throw new Error('Technotreon verified official careers page no longer exposes parseable public openings')
-      }
-
-      return listings.map((listing) => {
-        const requisitionId = `${SOURCE}-${slugify(listing.title)}`
-
-        return {
-          title: listing.title,
-          company: COMPANY,
-          location: listing.location,
-          city: null,
-          country: 'India',
-          source: SOURCE,
-          sourceUrl: CAREERS_URL,
-          applyUrl: listing.applyUrl,
-          link: listing.applyUrl,
-          companyCareerPage: CAREERS_URL,
-          companyDomain: COMPANY_DOMAIN,
-          atsPlatform: ATS_PLATFORM,
-          jobId: requisitionId,
-          requisitionId,
-          department: listing.department,
-          employmentType: null,
-          remoteStatus: null,
-          experienceRequired: null,
-          jobDescription: listing.description,
-          requiredSkills: [],
-          preferredQualification: null,
-          minimumQualification: null,
-          closingDate: null,
-          postingDate: null,
-          scrapedAt: now(),
-        }
-      })
+      homepageHtml = await fetchText(HOMEPAGE_URL, { signal })
+      signal?.throwIfAborted()
     } catch (error) {
-      if (hasTransportFailure(error)) {
-        return []
+      signal?.throwIfAborted()
+      if (!hasTransportFailure(error)) {
+        throw error
       }
-
-      throw error
     }
+
+    if (homepageHtml && !hasOfficialHomepageSignal(homepageHtml)) {
+      throw new Error('Technotreon verified official homepage changed; refusing to scrape guessed jobs')
+    }
+
+    const careersHtml = await fetchText(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Technotreon verified official careers page changed; refusing to scrape guessed jobs')
+    }
+
+    const listings = extractListings(careersHtml)
+    if (listings.length === 0) {
+      throw new Error('Technotreon verified official careers page no longer exposes parseable public openings')
+    }
+
+    return listings.map((listing) => {
+      const requisitionId = `${SOURCE}-${slugify(listing.title)}`
+
+      return {
+        title: listing.title,
+        company: COMPANY,
+        location: listing.location,
+        city: listing.city || null,
+        country: 'India',
+        source: SOURCE,
+        sourceUrl: CAREERS_URL,
+        applyUrl: listing.applyUrl,
+        link: listing.applyUrl,
+        companyCareerPage: CAREERS_URL,
+        companyDomain: COMPANY_DOMAIN,
+        atsPlatform: ATS_PLATFORM,
+        jobId: requisitionId,
+        requisitionId,
+        department: listing.department,
+        employmentType: null,
+        remoteStatus: null,
+        experienceRequired: null,
+        jobDescription: listing.description,
+        requiredSkills: [],
+        preferredQualification: null,
+        minimumQualification: null,
+        closingDate: null,
+        postingDate: null,
+        scrapedAt: now(),
+      }
+    })
   },
 })
 

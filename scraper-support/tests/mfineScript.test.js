@@ -133,12 +133,12 @@ test('Mfine sentinel constants stay pinned to the verified contact-page handoff 
   )
 })
 
-test('Mfine sentinel returns [] only while the verified first-party contact-page handoff still lands on the verified Darwinbox public shell', async () => {
+test('Mfine preserves saved jobs when its listing API reports a tenant outage', async () => {
   const mfine = await loadModule()
   const requestedPages = []
   const requestedApis = []
 
-  const jobs = await mfine.createMfineScraper().run({
+  const pending = mfine.createMfineScraper().run({
     fetchPage: async (url) => {
       requestedPages.push(url)
 
@@ -168,6 +168,7 @@ test('Mfine sentinel returns [] only while the verified first-party contact-page
       }
     },
   })
+  await assert.rejects(pending, { code: 'MFINE_BOARD_UNAVAILABLE', failureType: 'upstream_unavailable', abortRetries: true })
 
   assert.deepEqual(requestedPages, [
     mfine.CONTACT_PAGE_URL,
@@ -175,7 +176,6 @@ test('Mfine sentinel returns [] only while the verified first-party contact-page
     ...mfine.DARWINBOX_SHELL_ROUTE_URLS,
   ])
   assert.deepEqual(requestedApis, [mfine.DARWINBOX_LISTING_API_URL])
-  assert.deepEqual(jobs, [])
 })
 
 test('Mfine sentinel fails closed when the contact page, handoff target, shell routes, or listing API drift materially', async () => {

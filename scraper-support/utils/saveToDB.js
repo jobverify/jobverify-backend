@@ -148,20 +148,22 @@ export const purgeExpiredJobsForQuotaRecovery = async ({
 }
 
 /**
- * Generates a stable fingerprint for a job based on its semantic identity.
- * Strategy: SHA-256(company | title | canonicalCity) — normalised to lowercase.
- *
- * Using the CANONICAL city means Bangalore and Bengaluru produce the same
- * fingerprint — the same job posted by different scrapers is correctly deduped.
+ * Generates a stable identity from company, application URL and canonical city.
+ * Generic application forms additionally require a stable role identity so
+ * distinct vacancies in one city do not overwrite each other. Role-specific
+ * application URLs keep their existing fingerprint across title changes.
  */
 export const generateFingerprint = (job) => {
   const primaryLocation = getPrimaryStoredLocation(job)
   const canonicalCity = normalizeCity(primaryLocation || job.city || job.location || '') || ''
-  const identity =
-    normalizeHttpUrl(job.applyUrl || job.sourceUrl || job.link)
-    || job.requisitionId
-    || job.jobId
-    || job.title
+  const rawApplicationUrl = job.applyUrl || job.sourceUrl || job.link
+  const hasEmailApplication = /^mailto:/i.test(String(job.applyUrl || job.link || rawApplicationUrl || '').trim())
+  const applicationUrl = normalizeHttpUrl(rawApplicationUrl)
+    || (hasEmailApplication ? normalizeHttpUrl(job.sourceUrl) : null)
+  const roleIdentity = job.requisitionId || job.jobId || job.title
+  const identity = (job.applicationUrlIsGeneric === true || hasEmailApplication) && applicationUrl
+    ? [applicationUrl, roleIdentity].join('|')
+    : applicationUrl || roleIdentity
   const raw = [
     (job.company || '').toLowerCase().trim(),
     String(identity || '').toLowerCase().trim(),
@@ -297,10 +299,11 @@ export const saveToDB = async (jobs, source, options = {}) => {
     const closingDate = normalizeLifecycleDate(normalizedJob.closingDate)
     const locations = normalizeStoredLocations(normalizedJob)
     const locationLabel = formatStoredLocationLabel(normalizedJob)
+    const primaryLocation = getPrimaryStoredLocation(normalizedJob)
     const finalCity = getValidIndiaCityForJob(normalizedJob)
     const persistedJob = {
       ...normalizedJob,
-      location: locationLabel || normalizedJob.location || null,
+      location: locationLabel || primaryLocation || null,
       locations,
       city: finalCity,
       postedAt,
@@ -308,6 +311,35 @@ export const saveToDB = async (jobs, source, options = {}) => {
     }
     const searchKeys = buildJobSearchKeys(persistedJob)
     const derivedFields = buildJobDerivedFields(persistedJob)
+    const preserveExistingSourceContent = normalizedJob.preserveExistingSourceContent === true
+    const sourceContentUpdates = preserveExistingSourceContent
+      ? {}
+      : {
+          description: normalizedJob.jobDescription,
+          minimumQualification: normalizedJob.minimumQualification,
+          preferredQualification: normalizedJob.preferredQualification,
+          requiredSkills: normalizedJob.requiredSkills,
+          experienceRequired: normalizedJob.experienceRequired,
+          publicExperienceChecked: normalizedJob.publicExperienceChecked === true,
+          salary: normalizedJob.salary,
+          engineeringDomain: normalizedJob.engineeringDomain,
+          experienceLevel: normalizedJob.experienceLevel,
+          seniority: normalizedJob.seniority || 'Unknown',
+          primaryRoleDomain: normalizedJob.primaryRoleDomain || 'Other',
+          secondaryRoleDomains: normalizedJob.secondaryRoleDomains || [],
+          workArrangement: normalizedJob.workArrangement || 'Not specified',
+          skillIds: normalizedJob.skillIds || [],
+          requiredSkillIds: normalizedJob.requiredSkillIds || [],
+          preferredSkillIds: normalizedJob.preferredSkillIds || [],
+          jobSkills: normalizedJob.jobSkills || [],
+          experienceBucket: normalizedJob.experienceBucket || 'unspecified',
+          experienceYears: normalizedJob.experienceYears || [],
+          experienceProfile: normalizedJob.experienceProfile || {},
+          filterSignals: normalizedJob.filterSignals || {},
+          taxonomyVersion: normalizedJob.taxonomyVersion || null,
+          extractionVersion: normalizedJob.extractionVersion || null,
+          extractedAt: normalizedJob.extractedAt || now,
+        }
 
     return {
       updateOne: {
@@ -320,11 +352,9 @@ export const saveToDB = async (jobs, source, options = {}) => {
             originalTitle: normalizedJob.originalTitle,
             normalizedTitle: normalizedJob.normalizedTitle,
             jobCategory: normalizedJob.jobCategory,
-            engineeringDomain: normalizedJob.engineeringDomain,
             employmentType: normalizedJob.employmentType,
-            experienceLevel: normalizedJob.experienceLevel,
             department: normalizedJob.department || null,
-            location: locationLabel || normalizedJob.location || null,
+            location: locationLabel || primaryLocation || null,
             locations,
             city: finalCity,
             cityKey: searchKeys.cityKey,
@@ -343,28 +373,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
             atsPlatform: normalizedJob.atsPlatform,
             jobId: normalizedJob.jobId,
             requisitionId: normalizedJob.requisitionId,
-            description: normalizedJob.jobDescription,
-            minimumQualification: normalizedJob.minimumQualification,
-            preferredQualification: normalizedJob.preferredQualification,
-            requiredSkills: normalizedJob.requiredSkills,
-            experienceRequired: normalizedJob.experienceRequired,
-            publicExperienceChecked: normalizedJob.publicExperienceChecked === true,
-            salary: normalizedJob.salary,
-            skillIds: normalizedJob.skillIds || [],
-            requiredSkillIds: normalizedJob.requiredSkillIds || [],
-            preferredSkillIds: normalizedJob.preferredSkillIds || [],
-            jobSkills: normalizedJob.jobSkills || [],
-            experienceBucket: normalizedJob.experienceBucket || 'unspecified',
-            experienceYears: normalizedJob.experienceYears || [],
-            experienceProfile: normalizedJob.experienceProfile || {},
-            seniority: normalizedJob.seniority || 'Unknown',
-            primaryRoleDomain: normalizedJob.primaryRoleDomain || 'Other',
-            secondaryRoleDomains: normalizedJob.secondaryRoleDomains || [],
-            workArrangement: normalizedJob.workArrangement || 'Not specified',
-            filterSignals: normalizedJob.filterSignals || {},
-            taxonomyVersion: normalizedJob.taxonomyVersion || null,
-            extractionVersion: normalizedJob.extractionVersion || null,
-            extractedAt: normalizedJob.extractedAt || now,
+            ...sourceContentUpdates,
             fingerprint,
             scrapedAt: now,
             scrapedTimestamp: normalizedJob.scrapedTimestamp || now,
@@ -435,7 +444,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
 
   let shouldRefreshDatasetSummary = operations.length > 0
   const incompleteListing = jobs.some((job) => job?.sourceListingComplete === false)
-  const authoritativeEmpty = currentFingerprints.length === 0
+  const authorizedEmptyLifecycle = currentFingerprints.length === 0
     && options.authoritativeEmpty === true
 
   if (
@@ -450,7 +459,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
     options.replaceExisting !== false
     && !incompleteListing
     && currentFingerprints.length === 0
-    && !authoritativeEmpty
+    && !authorizedEmptyLifecycle
   ) {
     result.staleCheckSkipped = true
     result.staleCheckReason =
@@ -460,7 +469,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
   if (
     options.replaceExisting !== false
     && !incompleteListing
-    && (currentFingerprints.length > 0 || authoritativeEmpty)
+    && (currentFingerprints.length > 0 || authorizedEmptyLifecycle)
   ) {
     const unseenFilter = options.replaceAllJobs
       ? { status: 'active' }
@@ -622,6 +631,8 @@ const writeDryRunSnapshotIfChanged = async (filePath, content, options = {}) => 
 }
 
 export const saveDryRunSnapshot = async (jobs, filePath, options = {}) => {
+  const signal = options.signal || null
+  throwIfAborted(signal)
   const filteredJobs = filterIndiaJobs(jobs)
   const hasTargetedSelection = typeof options.shouldEnrichJob === 'function'
     || (Number.isInteger(options.maxJobsToEnrich) && options.maxJobsToEnrich > 0)
@@ -641,6 +652,9 @@ export const saveDryRunSnapshot = async (jobs, filePath, options = {}) => {
         fetchBrowserText: options.fetchBrowserText,
         concurrency: options.experienceEnrichmentConcurrency,
         useBrowserFallback: options.useBrowserFallback,
+        signal,
+        fetchTimeoutMs: options.fetchTimeoutMs,
+        pdfTextExtractionTimeoutMs: options.pdfTextExtractionTimeoutMs,
       })
     } else {
       const selectedIndices = []
@@ -660,6 +674,9 @@ export const saveDryRunSnapshot = async (jobs, filePath, options = {}) => {
           fetchBrowserText: options.fetchBrowserText,
           concurrency: options.experienceEnrichmentConcurrency,
           useBrowserFallback: options.useBrowserFallback,
+          signal,
+          fetchTimeoutMs: options.fetchTimeoutMs,
+          pdfTextExtractionTimeoutMs: options.pdfTextExtractionTimeoutMs,
         })
 
         enrichedJobs = [...filteredJobs]
@@ -670,6 +687,7 @@ export const saveDryRunSnapshot = async (jobs, filePath, options = {}) => {
     }
   }
 
+  throwIfAborted(signal)
   const normalizedJobs = normalizeDryRunJobs(enrichedJobs)
   await writeDryRunSnapshotIfChanged(filePath, JSON.stringify(normalizedJobs, null, 2), {
     allowInPlaceRewriteOnEnospc: options.allowInPlaceRewriteOnEnospc === true,

@@ -31,7 +31,7 @@ const careersPageHtml = `
               <span>5–10 yrs · Full-time</span>
             </div>
           </div>
-          <span>View role</span>
+          <span>View job</span>
         </button>
         <button type="button" class="group flex items-center justify-between gap-4 p-5 sm:p-6 bg-white border border-g200 rounded-[12px] hover:border-burg/40 hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all min-h-[44px] text-left">
           <div class="min-w-0 flex-1">
@@ -43,7 +43,7 @@ const careersPageHtml = `
               <span>5–10 yrs · Full-time</span>
             </div>
           </div>
-          <span>View role</span>
+          <span>View job</span>
         </button>
         <button type="button" class="group flex items-center justify-between gap-4 p-5 sm:p-6 bg-white border border-g200 rounded-[12px] hover:border-burg/40 hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all min-h-[44px] text-left">
           <div class="min-w-0 flex-1">
@@ -55,7 +55,7 @@ const careersPageHtml = `
               <span>3+ yrs · Full-time</span>
             </div>
           </div>
-          <span>View role</span>
+          <span>View job</span>
         </button>
         <button type="button" class="group flex items-center justify-between gap-4 p-5 sm:p-6 bg-white border border-g200 rounded-[12px] hover:border-burg/40 hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all min-h-[44px] text-left">
           <div class="min-w-0 flex-1">
@@ -67,7 +67,7 @@ const careersPageHtml = `
               <span>4–8 yrs · Full-time</span>
             </div>
           </div>
-          <span>View role</span>
+          <span>View job</span>
         </button>
         <button type="button" class="group flex items-center justify-between gap-4 p-5 sm:p-6 bg-white border border-g200 rounded-[12px] hover:border-burg/40 hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all min-h-[44px] text-left">
           <div class="min-w-0 flex-1">
@@ -79,7 +79,7 @@ const careersPageHtml = `
               <span>4–8 yrs · Full-time</span>
             </div>
           </div>
-          <span>View role</span>
+          <span>View job</span>
         </button>
         <button type="button" class="group flex items-center justify-between gap-4 p-5 sm:p-6 bg-white border border-g200 rounded-[12px] hover:border-burg/40 hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all min-h-[44px] text-left">
           <div class="min-w-0 flex-1">
@@ -91,7 +91,7 @@ const careersPageHtml = `
               <span>7–10 yrs · Full-time</span>
             </div>
           </div>
-          <span>View role</span>
+          <span>View job</span>
         </button>
       </section>
       <section>

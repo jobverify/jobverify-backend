@@ -17,7 +17,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Techjays exports local provider metadata for the verified no-public-careers first-party surface', async () => {
+test('Techjays exports local provider metadata for the counted first-party roles and incomplete location scope', async () => {
   const providerModule = await loadProviderModule()
   const scriptModule = await loadScriptModule()
 
@@ -29,16 +29,16 @@ test('Techjays exports local provider metadata for the verified no-public-career
     modulePath: '../../scraper/techjays/script.js',
     homepageUrl: 'https://www.techjays.com/',
     companyCareerPage: 'https://www.techjays.com/careers',
-    atsPlatform: 'official-company-site-no-public-careers',
+    atsPlatform: 'official-company-careers',
     countryFilter: 'India',
-    paginationStrategy: 'homepage-plus-careers-redirect-validation',
-    extractionStrategy: 'verified-homepage-without-careers-link+verified-careers-route-redirect-to-about',
+    paginationStrategy: 'first-party-counted-roles-plus-details',
+    extractionStrategy: 'first-party-role-cards-and-details+explicit-india-location+incomplete-scope-preserves-prior-jobs',
     parser: 'custom-script',
     normalizationProfile: 'engineering-default',
     companyDomain: 'techjays.com',
-    verifiedOn: '2026-07-17',
+    verifiedOn: '2026-09-13',
     verifiedSurfaceSummary:
-      'Verified on Friday, July 17, 2026 that https://www.techjays.com/ did not expose a public careers or jobs link, and that https://www.techjays.com/careers currently redirected candidates to /about instead of a public openings page.',
+      'Verified on 2026-09-13 that the official Techjays careers page lists six public roles with matching first-party detail pages and hireflow.techjays.com applications. Two roles explicitly identify Coimbatore / Hybrid; four lack role-level location evidence and remain diagnostic-only. Published India jobs carry incomplete-listing metadata so prior vacancies are preserved.',
     dryRunFile: 'techjays/jobs.json',
   })
 

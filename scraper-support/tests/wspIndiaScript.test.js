@@ -27,7 +27,7 @@ const jobsPageOneHtml = `
 <html lang="en">
   <body>
     <main>
-      <h1>Find your next opportunity</h1>
+      <h1>Find your dream job</h1>
       <a href="https://emit.fa.ca3.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_2001/requisitions/preview/85341">
         <span>Principal Engineer - Audio Visual Systems</span>
         <span>Noida | Bengaluru</span>
@@ -48,7 +48,7 @@ const jobsPageTwoHtml = `
 <html lang="en">
   <body>
     <main>
-      <h1>Find your next opportunity</h1>
+      <h1>Find your dream job</h1>
       <a href="https://emit.fa.ca3.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_2001/requisitions/preview/85343">
         <span>Analyst Consultant - Emissions Inventories</span>
         <span>Other cities in India | Mumbai | Noida</span>

@@ -16,16 +16,16 @@ test('getScraperCatalog includes NTT Data Services as a verified Phenom script p
   assert.equal(provider.atsPlatform, 'phenom')
   assert.equal(
     provider.companyCareerPage,
-    'https://careers.services.global.ntt/global/en/search-results',
+    'https://careers.nttdata.com/global/en/search-results',
   )
-  assert.equal(provider.companyDomain, 'careers.services.global.ntt')
+  assert.equal(provider.companyDomain, 'careers.nttdata.com')
   assert.equal(
     provider.paginationStrategy,
-    'verified-first-party-handoff-plus-embedded-json-detail-pages',
+    'verified-first-party-handoff-plus-complete-phenom-widget-pagination',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-nttdata-homepage-handoff+verified-nttdata-careers-handoff+phenom-search+detail-enrichment',
+    'verified-nttdata-homepage-handoff+verified-nttdata-careers-handoff+country-filtered-phenom-widget+bounded-detail-enrichment',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.match(provider.modulePath, /nttdataservices[\\/]script\.js$/i)

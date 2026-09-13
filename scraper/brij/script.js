@@ -114,10 +114,15 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeText(page)
 
-  return /^Brij Careers\b/i.test(extractTitle(page) || '')
-    && /\bWork with us\b/i.test(text)
+  const title = extractTitle(page) || ''
+  const legacySignal = /\bWork with us\b/i.test(text)
     && /\bfuture of digital product experiences\b/i.test(text)
     && /\bApply Now\b/i.test(text)
+  const currentSignal = /^Brij Careers\s*\|\s*Open Roles in NYC & Remote$/i.test(title)
+    && /\bBrij Careers\b/i.test(text)
+    && /\bBuild the Future of Product Experience\b/i.test(text)
+
+  return /^Brij Careers\b/i.test(title) && (legacySignal || currentSignal)
 }
 
 export const extractOfficialApplyUrls = (html = '') => {
@@ -126,9 +131,7 @@ export const extractOfficialApplyUrls = (html = '') => {
 
   for (const match of String(html ?? '').matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
     const url = toAbsoluteBoardUrl(match[1], CAREERS_URL)
-    const text = normalizeText(match[2])
-
-    if (!url || !/\bapply\b/i.test(text || '')) continue
+    if (!url) continue
     if (seen.has(url)) continue
 
     seen.add(url)
@@ -149,6 +152,15 @@ export const hasVerifiedBoardSignal = (html = '') => {
       /\bPowered by JazzHR\b/i.test(text)
       || /Please review our open positions and apply to the positions that match your qualifications\.?/i.test(text)
     )
+}
+
+export const hasInactiveBoardSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = normalizeText(page)
+  return extractTitle(page) === 'JazzHR - Inactive Career Page'
+    && /\bThis account is no longer active\.?\b/i.test(text)
+    && /\bLearn more about JazzHR\.?\b/i.test(text)
+    && /https:\/\/info\.jazzhr\.com\/job-seekers\.html/i.test(page)
 }
 
 export const extractBoardJobs = (html = '') => {
@@ -282,6 +294,12 @@ export const createBrijScraper = () => ({
     }
 
     const boardHtml = await fetchText(BOARD_URL)
+    if (hasInactiveBoardSignal(boardHtml)) {
+      throw Object.assign(new Error('Brij application board account is inactive; current job inventory is unavailable'), {
+        code: 'BRIJ_BOARD_UNAVAILABLE', failureType: 'upstream_unavailable', abortRetries: true,
+      })
+    }
+
     if (!hasVerifiedBoardSignal(boardHtml)) {
       throw new Error('The verified Brij ApplyToJob board no longer matches the trusted public surface')
     }

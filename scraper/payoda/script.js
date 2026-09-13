@@ -93,7 +93,7 @@ export const hasOfficialCareersSignal = (html) => {
   return /Careers\s*·\s*Build the future of agentic AI at Payoda/i.test(page)
     && /Open Roles|Where we'?re hiring right now\./i.test(page)
     && PAYODA_APPLICATION_EMAIL_PATTERN.test(page)
-    && /View role/i.test(page)
+    && /View job/i.test(page)
 }
 
 export const extractRoleCards = (html) => {
@@ -101,7 +101,7 @@ export const extractRoleCards = (html) => {
   const applyUrl = extractApplyUrl(page)
   const jobs = []
 
-  for (const match of page.matchAll(/<button\b[^>]*>[\s\S]*?<h4[^>]*>([\s\S]*?)<\/h4>([\s\S]*?)View role[\s\S]*?<\/button>/gi)) {
+  for (const match of page.matchAll(/<button\b[^>]*>[\s\S]*?<h4[^>]*>([\s\S]*?)<\/h4>([\s\S]*?)View job[\s\S]*?<\/button>/gi)) {
     const title = stripTags(match[1])
     const body = String(match[2] ?? '')
     const spanValues = [...body.matchAll(/<span\b[^>]*>([\s\S]*?)<\/span>/gi)]

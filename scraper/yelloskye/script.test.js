@@ -45,12 +45,12 @@ test('YelloSKYE constants and helpers stay pinned to the verified official redir
   assert.equal(yelloskye.hasPublicJobSignals(careersHtml), false)
 })
 
-test('YelloSKYE run returns no jobs while the verified official homepage and careers-like routes stay on the same first-party app shell', async () => {
+test('YelloSKYE rejects unavailable inventory while the verified official homepage and careers-like routes stay on the same first-party app shell', async () => {
   const yelloskye = await loadModule()
   assert.ok(yelloskye, 'YelloSKYE scraper module should load')
 
   const requestedUrls = []
-  const jobs = await yelloskye.createYelloSkyeScraper().run({
+  await assert.rejects(yelloskye.createYelloSkyeScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
@@ -88,7 +88,7 @@ test('YelloSKYE run returns no jobs while the verified official homepage and car
 
       throw new Error(`Unexpected YelloSKYE URL: ${url}`)
     },
-  })
+  }), error => error.code === 'YELLOSKYE_INVENTORY_UNAVAILABLE' && error.abortRetries === true)
 
   assert.deepEqual(requestedUrls, [
     yelloskye.HOMEPAGE_URL,
@@ -96,7 +96,6 @@ test('YelloSKYE run returns no jobs while the verified official homepage and car
     'https://yelloskye.com/career/',
     'https://yelloskye.com/jobs/',
   ])
-  assert.deepEqual(jobs, [])
 })
 
 test('YelloSKYE fails closed when the redirect target, app shell, or no-public-jobs contract drifts', async () => {

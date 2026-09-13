@@ -59,7 +59,7 @@ export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(page)
 
   return /<title>\s*Careers\s*\|\s*SpiceJet Airlines\s*<\/title>/i.test(page)
-    && normalized.includes('Cabin Crew Interview February 2026 Calendar')
+    && /Cabin Crew Interview\s+[A-Za-z]+(?:\s+\d{4})?\s+Calendar/i.test(normalized)
     && normalized.includes('https://application.spicestaracademy.edu.in/')
     && normalized.includes('Public Notice')
     && normalized.includes(CAREERS_EMAIL)

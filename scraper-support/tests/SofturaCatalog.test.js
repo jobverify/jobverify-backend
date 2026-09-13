@@ -12,16 +12,17 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('Softura local catalog captures the verified Cloudflare-blocked careers route', async () => {
+test('Softura local catalog captures the verified same-page India listings', async () => {
   const { SOFTURA_CATALOG } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(SOFTURA_CATALOG)
 
   assert.equal(provider.source, 'softura')
   assert.equal(provider.companyName, 'Softura')
   assert.equal(provider.companyCareerPage, 'https://www.softura.com/careers/')
-  assert.equal(provider.atsPlatform, 'first-party-detail-pages-plus-zoho-links')
-  assert.match(provider.verifiedSurfaceSummary, /Apply Now links/i)
-  assert.match(provider.verifiedSurfaceSummary, /Java Developer in Chennai/i)
+  assert.equal(provider.atsPlatform, 'first-party-inline-job-listings-plus-zoho-links')
+  assert.equal(provider.verifiedOn, '2026-09-13')
+  assert.match(provider.verifiedSurfaceSummary, /33 distinct India job rows/i)
+  assert.match(provider.verifiedSurfaceSummary, /HTTP 429/i)
 })
 
 test('Softura backlog row matches directly through the local catalog', async () => {

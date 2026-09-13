@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../darwinbox/script.js'
+import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
@@ -102,16 +103,23 @@ const extractJobIdFromUrl = (value) => {
   }
 }
 
+const extractInlineLocation = (html) => {
+  const details = normalizeWhitespace(html)
+  const location = details?.match(/^(.+?)\s+\d+\s*-\s*\d+\s+Years\b/i)?.[1]
+  return normalizeWhitespace(location)
+}
+
 export const extractInlineJobsFromOfficialCareersPage = (html = '') => {
   const page = String(html ?? '')
   const jobs = []
   const seenJobIds = new Set()
-  const pattern = /(?:<h3[^>]*>([\s\S]*?)<\/h3>[\s\S]*?)?<a[^>]+href=["']([^"']*\/ms\/candidatev2\/main\/careers\/jobDetails\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi
+  const pattern = /(?:<h3[^>]*>([\s\S]*?)<\/h3>([\s\S]*?))?<a[^>]+href=["']([^"']*\/ms\/candidatev2\/main\/careers\/jobDetails\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi
 
   for (const match of page.matchAll(pattern)) {
     const titleFromHeading = normalizeWhitespace(match[1])
-    const titleFromAnchor = normalizeWhitespace(match[3])
-    const sourceUrl = normalizeDarwinboxJobUrl(match[2])
+    const location = extractInlineLocation(match[2])
+    const titleFromAnchor = normalizeWhitespace(match[4])
+    const sourceUrl = normalizeDarwinboxJobUrl(match[3])
     const title = titleFromHeading || (
       /^(apply now|view job|view details|learn more)$/i.test(titleFromAnchor || '')
         ? null
@@ -128,8 +136,8 @@ export const extractInlineJobsFromOfficialCareersPage = (html = '') => {
       title,
       company: COMPANY_NAME,
       department: null,
-      location: null,
-      city: null,
+      location,
+      city: normalizeCity(location?.split(',')[0]) || null,
       jobId,
       requisitionId: null,
       sourceUrl,

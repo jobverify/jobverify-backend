@@ -156,12 +156,12 @@ test('dry-run runner reports publishable job counts and rejection totals for sum
 
     assert.equal(result.success, true)
     assert.equal(result.jobs, 5)
-    assert.equal(result.eligibleJobs, 2)
+    assert.equal(result.eligibleJobs, 3)
     assert.equal(result.filteredNonIndia, 1)
     assert.equal(result.filteredSenior, undefined)
     assert.equal(result.filteredInvalidUrl, 1)
     assert.equal(result.filteredClosed, 1)
-    assert.equal(result.filteredOld, 1)
+    assert.equal(result.filteredOld, undefined)
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true })
   }
@@ -384,4 +384,11 @@ test('dry-run runner skips public-page refetch when the provider disables enrich
     globalThis.fetch = originalFetch
     fs.rmSync(tempDir, { recursive: true, force: true })
   }
+})
+
+
+test('dry-run snapshot options forward lifecycle cancellation', async () => {
+  const runner = await loadDryRunRunner()
+  const controller = new AbortController()
+  assert.equal(runner.buildDryRunSnapshotOptions({ signal: controller.signal }).signal, controller.signal)
 })

@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+
 import { NETCORE_CLOUD_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -16,7 +18,9 @@ export const VERIFIED_ON = NETCORE_CLOUD_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = NETCORE_CLOUD_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = NETCORE_CLOUD_CATALOG
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/138.0.0.0 Safari/537.36'
+export const LISTING_API_URL = 'https://netcoreai.mynexthire.com/employer/careers/reqlist/get'
+const BOARD_URL = 'https://netcoreai.mynexthire.com/employer/jobs/careers'
 
 const PUBLIC_JOB_PATTERNS = [
   /\bapply now\b/i,
@@ -98,13 +102,13 @@ const createTimeoutSignal = (timeoutMs) => {
   return controller.signal
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
-    signal: createTimeoutSignal(15000),
+    signal: signal ? AbortSignal.any([signal, createTimeoutSignal(15000)]) : createTimeoutSignal(15000),
   })
 
   return {
@@ -114,41 +118,85 @@ const defaultFetchPage = async (url) => {
   }
 }
 
-const isVerifiedCareersSurface = (page) =>
-  page?.status === 200
-  && hasVerifiedNetcoreCareersSignal(page.html)
+const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
+  ...options,
+  headers: { 'User-Agent': USER_AGENT, Accept: 'application/json', ...options.headers },
+  timeoutMs: 15000,
+  label: SOURCE,
+})
 
-const isVerifiedCareersListSurface = (page) =>
-  (page?.status === 200 && hasVerifiedNetcoreRedirectShellSignal(page.html))
-  || (page?.status === 403 && hasVerifiedNetcoreForbiddenSignal(page.html))
+const isOfficialUrl = (actual, expected) => {
+  try {
+    const url = new URL(actual)
+    const target = new URL(expected)
+    return ['netcorecloud.com', 'netcore.ai'].includes(url.hostname)
+      && url.pathname.replace(/\/$/, '') === target.pathname.replace(/\/$/, '')
+      && url.search === target.search
+  } catch { return false }
+}
+
+export const hasMyNextHireHandoff = (html = '') =>
+  /<title>\s*Careers list - Netcore\s*<\/title>/i.test(html)
+  && html.includes('https://netcoreai.mynexthire.com/employer/ui/js/jobboard/careers-integration.js')
+  && /mnh_ci_onreadystatechange\(["']careers["'],\s*["']netcoreai["']\)/i.test(html)
+  && /<iframe[^>]*id=["']mnhembedded["']/i.test(html)
+
+const buildJobUrl = (id) => {
+  const context = { pageType: 'jd', cvSource: 'careers', reqId: Number(id), requester: { id: '', code: '', name: '' }, page: 'careers', bufilter: -1, customFields: {} }
+  const url = new URL(BOARD_URL)
+  url.searchParams.set('src', 'careers')
+  url.searchParams.set('p', Buffer.from(JSON.stringify(context)).toString('base64'))
+  return url.toString()
+}
+
+export const extractNetcoreJobs = (payload) => {
+  if (!Array.isArray(payload?.reqDetailsBOList) || payload.errorMessage) throw new Error('Netcore incomplete MyNextHire inventory: invalid jobs array')
+  const seen = new Set()
+  const jobs = []
+  for (const row of payload.reqDetailsBOList) {
+    const id = normalizeWhitespace(row?.reqId)
+    const title = normalizeWhitespace(row?.reqTitle)
+    const location = normalizeWhitespace(row?.location)
+    if (!/^\d+$/.test(id || '') || !title || !location || !normalizeWhitespace(row?.jdDisplay)) throw new Error('Netcore incomplete MyNextHire inventory: invalid job')
+    if (seen.has(id)) throw new Error('Netcore incomplete MyNextHire inventory: duplicate job ID')
+    seen.add(id)
+    const countryText = [location, row.locationAddress, ...(Array.isArray(row.locationGroup) ? row.locationGroup : [])].join(' ')
+    const india = /^IN$/i.test(row.countryCode || '') || /\b(?:India|Mumbai|Bengaluru|Bangalore|Thane|Gurugram|Gurgaon|Pune|Chennai|Hyderabad|Noida|Delhi)\b/i.test(countryText)
+    if (!india) {
+      if (/\b(?:Philippines|Manila|Singapore|Indonesia|Jakarta|Vietnam|Malaysia|Thailand|United States|USA|United Kingdom|London|Australia|UAE|Dubai)\b/i.test(countryText) || /^[A-Z]{2}$/i.test(row.countryCode || '')) continue
+      throw new Error('Netcore incomplete MyNextHire inventory: unknown job country')
+    }
+    const sourceUrl = buildJobUrl(id)
+    jobs.push({
+      title, company: COMPANY, source: SOURCE, jobId: id, requisitionId: id,
+      location: /\bIndia\b/i.test(location) ? location : location + ', India', city: location, country: 'India',
+      department: normalizeWhitespace(row.buName), sourceUrl, applyUrl: sourceUrl,
+      postingDate: normalizeWhitespace(row.approvedOn)?.slice(0, 10) || null,
+      employmentType: normalizeWhitespace(row.employmentType),
+      experienceRequired: Number.isFinite(row.expMin) && Number.isFinite(row.expMax) ? row.expMin + '-' + row.expMax + ' years' : null,
+      jobDescription: normalizeWhitespace(row.jdDisplay),
+    })
+  }
+  return jobs
+}
 
 export const createNetcoreCloudScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const careersPage = await fetchPage(CAREERS_URL)
-
-    if (hasPublicNetcoreJobSignals(careersPage?.html)) {
-      throw new Error('Netcore Cloud careers landing now appears to expose a public jobs surface')
+  async run({ fetchPage = defaultFetchPage, fetchJson = defaultFetchJson, signal, now = () => new Date().toISOString() } = {}) {
+    signal?.throwIfAborted()
+    const careersPage = await fetchPage(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
+    if (careersPage.status !== 200 || !isOfficialUrl(careersPage.url, CAREERS_URL)
+      || !/<title>\s*Careers - Netcore\s*<\/title>/i.test(careersPage.html)
+      || !String(careersPage.html).includes('https://careerpagenetcore.lovable.app/')) {
+      throw new Error('Netcore Cloud verified official careers surface is unavailable or missing its current careers handoff')
     }
-
-    if (!isVerifiedCareersSurface(careersPage)) {
-      throw new Error(
-        'Netcore Cloud verified official careers surface no longer matches the known blocked-shell state',
-      )
-    }
-
-    const careersListPage = await fetchPage(CAREERS_LIST_URL)
-
-    if (hasPublicNetcoreJobSignals(careersListPage?.html)) {
-      throw new Error('Netcore Cloud careers-list surface now appears to expose a public jobs surface')
-    }
-
-    if (!isVerifiedCareersListSurface(careersListPage)) {
-      throw new Error(
-        'Netcore Cloud verified careers-list surface no longer matches the known blocked-shell state',
-      )
-    }
-
-    return []
+    const careersListPage = await fetchPage(CAREERS_LIST_URL, { signal })
+    signal?.throwIfAborted()
+    if (careersListPage.status !== 200) throw new Error('Netcore careers-list blocked or unavailable: HTTP ' + careersListPage.status)
+    if (!isOfficialUrl(careersListPage.url, CAREERS_LIST_URL) || !hasMyNextHireHandoff(careersListPage.html)) throw new Error('Netcore incomplete careers-list surface: verified MyNextHire handoff is unavailable')
+    const payload = await fetchJson(LISTING_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source: 'careers', code: '', filterByBuId: -1 }), signal })
+    signal?.throwIfAborted()
+    return extractNetcoreJobs(payload).map(job => ({ ...job, link: job.applyUrl, scrapedAt: now() }))
   },
 })
 

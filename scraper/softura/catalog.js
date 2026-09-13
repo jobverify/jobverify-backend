@@ -11,16 +11,16 @@ export const SOFTURA_CATALOG = {
   homepageUrl: 'https://www.softura.com/',
   companyCareerPage: 'https://www.softura.com/careers/',
   companyDomain: 'softura.com',
-  atsPlatform: 'first-party-detail-pages-plus-zoho-links',
+  atsPlatform: 'first-party-inline-job-listings-plus-zoho-links',
   countryFilter: 'India',
-  paginationStrategy: 'single-first-party-careers-page-plus-public-apply-links',
+  paginationStrategy: 'single-first-party-careers-page',
   extractionStrategy:
-    'verified-first-party-careers-page+public-apply-now-links+first-party-detail-pages+zoho-detail-pages+india-filter',
+    'verified-first-party-careers-page+inline-india-location-groups+zoho-linked-india-rows',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-04',
+  verifiedOn: '2026-09-13',
   verifiedSurfaceSummary:
-    'Verified on Tuesday, August 4, 2026 that the first-party Softura careers route at https://www.softura.com/careers/ was publicly reachable again, exposed public Apply Now links to first-party Softura detail pages plus public Zoho Recruit detail pages, and included India-facing roles such as Java Senior Developer in Ahmedabad, Python Senior Software Engineer in Chennai, and Java Developer in Chennai.',
+    'Verified on Sunday, September 13, 2026 that https://www.softura.com/careers/ publicly lists 33 distinct India job rows across its linked Zoho group and Chennai, Ahmedabad, Pune, and Coimbatore sections. The scraper now reads those complete same-page rows directly because sequential first-party detail requests trigger Cloudflare HTTP 429 responses; apply URLs remain the listed first-party or Softura Zoho Recruit links.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'softura/jobs.json',
 }

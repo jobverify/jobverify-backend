@@ -16,6 +16,7 @@ import {
   SUPPORT_PROVIDER_DIR,
 } from '../supportPaths.js'
 import { TARGETED_OPENING_PROVIDERS } from './targetedOpeningProviders.js'
+import { attachInventoryEvidence, readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const currentDir = SUPPORT_PROVIDER_DIR
 const scraperDir = SCRAPER_DIR
@@ -26,20 +27,6 @@ const workdayCompanies = JSON.parse(
 )
 const customProviders = JSON.parse(
   readFileSync(path.resolve(currentDir, 'customProviders.json'), 'utf-8'),
-)
-const wellfoundProviders = JSON.parse(
-  readFileSync(path.resolve(currentDir, 'wellfoundProviders.json'), 'utf-8'),
-)
-const himalayasProviderFiles = [
-  'himalayasProviders.batch1.json',
-  'himalayasProviders.batch2.json',
-  'himalayasProviders.batch3.json',
-  'himalayasProviders.batch4.json',
-  'himalayasProviders.batch5.json',
-  'himalayasProviders.batch6.json',
-]
-const himalayasProviders = himalayasProviderFiles.flatMap((fileName) =>
-  JSON.parse(readFileSync(path.resolve(currentDir, fileName), 'utf-8')),
 )
 const apiPortalProviders = JSON.parse(
   readFileSync(path.resolve(currentDir, 'apiPortalProviders.json'), 'utf-8'),
@@ -219,23 +206,29 @@ const PROVIDER_DEFAULTS = {
     parser: 'api-portal',
     normalizationProfile: 'engineering-default',
   },
-  wellfoundDirectory: {
-    atsPlatform: 'wellfound-directory',
-    countryFilter: 'India',
-    cityFilter: 'Bangalore',
-    paginationStrategy: 'single-directory-company-jobs-link-or-aggregate-signal',
-    extractionStrategy: 'directory-hiring-signal+optional-public-job-links+challenge-gated-aggregate-fallback',
-    parser: 'directory-hiring-signal',
-    normalizationProfile: 'engineering-default',
-  },
-  himalayasDirectory: {
-    atsPlatform: 'himalayas-remote-jobs-api',
-    countryFilter: 'India',
-    paginationStrategy: 'himalayas-search-api-company-query-pages',
-    extractionStrategy: 'himalayas-public-json-api+company-match+india-or-worldwide-filter+workbook-signal-fallback',
-    parser: 'himalayas-api',
-    normalizationProfile: 'engineering-default',
-  },
+}
+
+const ZERO_RESULT_POLICIES = new Set([
+  'coverage-gap',
+  'discovery-only',
+  'evidence-required',
+])
+
+export const resolveZeroResultPolicy = (provider = {}) => {
+  if (ZERO_RESULT_POLICIES.has(provider.zeroResultPolicy)) {
+    return provider.zeroResultPolicy
+  }
+
+  const inventoryMetadata = [
+    provider.atsPlatform,
+    provider.backfillMode,
+    provider.extractionStrategy,
+    provider.paginationStrategy,
+  ].filter(Boolean).join(' ')
+
+  return /sentinel|verified-empty-state|exact-name-sentinel/i.test(inventoryMetadata)
+    ? 'coverage-gap'
+    : 'evidence-required'
 }
 
 export const hydrateProviderCatalogEntry = (provider = {}) => {
@@ -269,6 +262,7 @@ export const hydrateProviderCatalogEntry = (provider = {}) => {
 
   return {
     ...draftProvider,
+    zeroResultPolicy: resolveZeroResultPolicy(draftProvider),
     dryRunFile,
     modulePath,
     sourceDirectory,
@@ -282,7 +276,7 @@ const decorateJobWithProviderMetadata = (job, provider) => ({
   ...job,
   company: job.company || provider.companyName,
   source: job.source || provider.source,
-  country: job.country || provider.countryFilter || 'India',
+  country: Object.hasOwn(job, 'country') ? job.country : provider.countryFilter || 'India',
   companyCareerPage: job.companyCareerPage || provider.companyCareerPage,
   companyDomain: job.companyDomain || provider.companyDomain,
   atsPlatform: job.atsPlatform || provider.atsPlatform,
@@ -404,8 +398,6 @@ export const getScraperCatalog = ({
   })),
   ...customProviders,
   ...providerExtensions,
-  ...wellfoundProviders,
-  ...himalayasProviders,
   ...apiPortalProviders.map((item) => ({
     ...item,
     adapter: 'apiPortal',
@@ -413,8 +405,10 @@ export const getScraperCatalog = ({
   ...TARGETED_OPENING_PROVIDERS.map((item) => expandApiPortalProviderTemplate(item)),
 ]).map((provider) => hydrateProviderCatalogEntry(provider))
 
-const decorateJobsWithProviderMetadata = (jobs, provider) => {
+export const decorateJobsWithProviderMetadata = (jobs, provider) => {
   const decoratedJobs = jobs.map((job) => decorateJobWithProviderMetadata(job, provider))
+  const inventoryEvidence = readInventoryEvidence(jobs)
+  if (inventoryEvidence) attachInventoryEvidence(decoratedJobs, inventoryEvidence)
   if (jobs[WORKDAY_AUTHORITATIVE_EMPTY] === true) {
     Object.defineProperty(decoratedJobs, WORKDAY_AUTHORITATIVE_EMPTY, {
       value: true,
@@ -435,6 +429,7 @@ const createWorkdayScraper = (provider) => ({
       locationCountry: provider.locationCountry,
       source: provider.source,
       scraperDir: provider.sourceDirectory,
+      boardIdentityVerified: provider.boardIdentityVerified === true,
       ...(signal === undefined ? {} : { signal }),
     })
 
@@ -487,36 +482,10 @@ const createApiPortalScraper = (provider) => ({
   },
 })
 
-const createWellfoundDirectoryAdapterScraper = (provider) => ({
-  name: provider.source,
-  dryRunFile: provider.dryRunFile,
-  provider,
-  run: async () => {
-    const { createWellfoundDirectoryScraper } = await import('../wellfoundDirectory/engine.js')
-    const scraper = createWellfoundDirectoryScraper(provider)
-    const jobs = await scraper.run()
-    return jobs.map((job) => decorateJobWithProviderMetadata(job, provider))
-  },
-})
-
-const createHimalayasDirectoryAdapterScraper = (provider) => ({
-  name: provider.source,
-  dryRunFile: provider.dryRunFile,
-  provider,
-  run: async () => {
-    const { createHimalayasDirectoryScraper } = await import('../himalayasDirectory/engine.js')
-    const scraper = createHimalayasDirectoryScraper(provider)
-    const jobs = await scraper.run()
-    return jobs.map((job) => decorateJobWithProviderMetadata(job, provider))
-  },
-})
-
 const ADAPTER_FACTORIES = {
   workday: createWorkdayScraper,
   script: createScriptScraper,
   apiPortal: createApiPortalScraper,
-  wellfoundDirectory: createWellfoundDirectoryAdapterScraper,
-  himalayasDirectory: createHimalayasDirectoryAdapterScraper,
 }
 
 const dedupeCatalogBySource = (providers = []) => {

@@ -40,6 +40,8 @@ const legacyLoginHtml = `
 </html>
 `
 
+const retiredRootHtml = '<title>It works! Apache httpd</title><p>It works!</p>'
+
 const publicJobsHtml = `
 <!doctype html>
 <html lang="en">
@@ -68,6 +70,7 @@ test('InsideView scraper constants stay pinned to the verified Demandbase redire
   assert.equal(insideview.REDIRECTED_HOMEPAGE_URL, 'https://www.demandbase.com/')
   assert.equal(insideview.LEGACY_LOGIN_URL, 'https://my.insideview.com/iv/login/forgot_password.jsp')
   assert.equal(insideview.hasRedirectedDemandbaseHomepageSignal(redirectedDemandbaseHomepageHtml), true)
+  assert.equal(insideview.hasRetiredInsideViewRootSignal({ status: 403, url: insideview.ROOT_URL, html: retiredRootHtml }), true)
   assert.equal(insideview.hasLegacyInsideViewLoginSignal(legacyLoginHtml), true)
   assert.equal(insideview.hasPublicJobsSignal(redirectedDemandbaseHomepageHtml), false)
   assert.equal(insideview.hasPublicJobsSignal(legacyLoginHtml), false)
@@ -106,6 +109,14 @@ test('InsideView returns [] only while the exact-name root redirects to Demandba
     insideview.ROOT_URL,
     insideview.LEGACY_LOGIN_URL,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('InsideView accepts the current retired root only while the legacy exact-name login remains live', async () => {
+  const insideview = await loadInsideViewModule()
+  const jobs = await insideview.createInsideViewScraper().run({ fetchPage: async (url) => url === insideview.ROOT_URL
+    ? { status: 403, url, html: retiredRootHtml }
+    : { status: 200, url, html: legacyLoginHtml } })
   assert.deepEqual(jobs, [])
 })
 

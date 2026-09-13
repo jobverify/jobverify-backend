@@ -227,6 +227,12 @@ const normalizeDetailPayload = (payload, { fallbackTitle, fallbackTeam } = {}) =
 
 const isVerifiedAbsentDetailPayload = (payload) => payload?.job_details?.exists === false
 
+const isEmptyProfilePayload = (payload) => {
+  const detail = payload?.job_details
+  return payload?.previous_context === 'all' && detail !== null
+    && typeof detail === 'object' && !Array.isArray(detail) && Object.keys(detail).length === 0
+}
+
 const buildProfileApiUrl = ({ slug, context }) =>
   `${context === 'doctor' ? DOCTOR_PROFILE_API_BASE_URL : CAREERS_PROFILE_API_BASE_URL}/${encodeURIComponent(slug)}`
 
@@ -326,11 +332,24 @@ export const createNeurogliaHealthScraper = ({ now = () => new Date().toISOStrin
       .map((listing) => normalizeListingRecord(listing))
       .filter(Boolean)
 
+    let incomplete = false
+    const fetchProfileData = async (profile) => {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const payload = await fetchJson(buildProfileApiUrl(profile))
+        if (!isEmptyProfilePayload(payload)) return payload
+        if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)))
+      }
+      // A listed role with repeatedly empty data may recover later. Preserve
+      // existing source jobs while still returning the verified live roles.
+      incomplete = true
+      return null
+    }
+
     const generalJobs = await Promise.all(
       generalListings.map(async (listing) => {
-        const detailPayload = await fetchJson(buildProfileApiUrl({ slug: listing.slug, context: 'general' }))
-        if (isVerifiedAbsentDetailPayload(detailPayload)) {
-          throw new Error(`Neuroglia Health detail payload is absent for verified listing ${listing.slug}`)
+        const detailPayload = await fetchProfileData({ slug: listing.slug, context: 'general' })
+        if (detailPayload === null || isVerifiedAbsentDetailPayload(detailPayload)) {
+          return null
         }
 
         return buildNormalizedJob({ listing, context: 'general', detailPayload })
@@ -338,18 +357,21 @@ export const createNeurogliaHealthScraper = ({ now = () => new Date().toISOStrin
     )
 
     const doctorJobs = await Promise.all(
-      doctorListings.map(async (listing) => buildNormalizedJob({
-        listing,
-        context: 'doctor',
-        detailPayload: await fetchJson(buildProfileApiUrl({ slug: listing.slug, context: 'doctor' })),
-      })),
+      doctorListings.map(async (listing) => {
+        const detailPayload = await fetchProfileData({ slug: listing.slug, context: 'doctor' })
+        if (detailPayload === null || isVerifiedAbsentDetailPayload(detailPayload)) return null
+        return buildNormalizedJob({ listing, context: 'doctor', detailPayload })
+      }),
     )
 
-    return [...generalJobs, ...doctorJobs]
-      .filter(Boolean)
+    const liveJobs = [...generalJobs, ...doctorJobs].filter(Boolean)
+    const jobs = [...new Map(liveJobs.map(job => [
+      `${job.jobId}|${job.applyUrl || job.sourceUrl}`, job,
+    ])).values()]
       .sort((left, right) => left.title.localeCompare(right.title) || left.jobId.localeCompare(right.jobId))
       .map((job) => ({
         ...job,
+        ...(incomplete ? { sourceListingComplete: false } : {}),
         company: COMPANY,
         source: SOURCE,
         companyDomain: COMPANY_DOMAIN,
@@ -357,6 +379,8 @@ export const createNeurogliaHealthScraper = ({ now = () => new Date().toISOStrin
         link: job.applyUrl || job.sourceUrl,
         scrapedAt: (overrideNow || now)(),
       }))
+    if (incomplete && jobs.length === 0) throw new Error('Neuroglia Health listing is incomplete: empty job profile data')
+    return jobs
   },
 })
 

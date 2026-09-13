@@ -20,10 +20,6 @@ export const BP_ALGOLIA_INDEX_NAME = 'production_bp_jobs'
 export const BP_ALGOLIA_QUERY_URL =
   `https://${BP_ALGOLIA_APP_ID}-dsn.algolia.net/1/indexes/${BP_ALGOLIA_INDEX_NAME}/query`
 
-const MERI_CASTROL_KAHAANI_PATH =
-  '/en_in/india/home/about-castrol/careers/meri-castrol-kahaani.html'
-const POWER_UP_PATH = '/en_in/india/home/about-castrol/careers/power-up.html'
-
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
@@ -144,9 +140,6 @@ export const hasOfficialSitemapSignal = (html) => {
 
   return normalized.includes('sitemap | castrol india')
     && page.includes('/en_in/india/home/about-castrol/careers.html')
-    && page.includes('/en_in/india/home/about-castrol/careers/graduate-programmes.html')
-    && page.includes(MERI_CASTROL_KAHAANI_PATH)
-    && page.includes(POWER_UP_PATH)
 }
 
 export const hasOfficialCareersPageSignal = (html) => {
@@ -157,9 +150,7 @@ export const hasOfficialCareersPageSignal = (html) => {
     && normalized.includes('find a job at castrol and build a career with no limit')
     && normalized.includes('be part of our story')
     && normalized.includes('working with us offers reward, prestige and the opportunity to do brilliant things.')
-    && page.includes('/en_in/india/home/about-castrol/careers/graduate-programmes.html')
-    && page.includes('https://www.bp.com/en/global/corporate/careers/search-and-apply.html')
-    && page.includes(MERI_CASTROL_KAHAANI_PATH)
+    && page.includes('/en_in/india/home/about-castrol/careers.html')
 }
 
 export const hasOfficialGraduateProgrammesSignal = (html) => {
@@ -298,27 +289,24 @@ export const createCastrolIndiaScraper = () => ({
     fetchAlgoliaJobs = defaultFetchAlgoliaJobs,
   } = {}) {
     const sitemapPage = await fetchPage(SITEMAP_URL)
-    if (sitemapPage.status !== 200 || !hasOfficialSitemapSignal(sitemapPage.html)) {
+    if (
+      sitemapPage.status !== 200
+      || sitemapPage.url !== SITEMAP_URL
+      || !hasOfficialSitemapSignal(sitemapPage.html)
+    ) {
       throw new Error('Castrol India careers sitemap no longer matches the verified official surface')
     }
 
     const careersPage = await fetchPage(CAREERS_PAGE_URL)
-    if (careersPage.status !== 200 || !hasOfficialCareersPageSignal(careersPage.html)) {
+    if (
+      careersPage.status !== 200
+      || careersPage.url !== CAREERS_PAGE_URL
+      || !hasOfficialCareersPageSignal(careersPage.html)
+    ) {
       throw new Error('Castrol India careers page no longer matches the verified official surface')
     }
     if (hasPublicJobListingsSignal(careersPage.html)) {
       throw new Error('Castrol India careers page now appears to expose public job listings')
-    }
-
-    const graduateProgrammesPage = await fetchPage(GRADUATE_PROGRAMMES_URL)
-    if (
-      graduateProgrammesPage.status !== 200
-      || !hasOfficialGraduateProgrammesSignal(graduateProgrammesPage.html)
-    ) {
-      throw new Error('Castrol India graduate programmes page no longer matches the verified official surface')
-    }
-    if (hasPublicJobListingsSignal(graduateProgrammesPage.html)) {
-      throw new Error('Castrol India graduate programmes page now appears to expose public job listings')
     }
 
     const bpSearchPage = await fetchPage(BP_SEARCH_APPLY_URL)

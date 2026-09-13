@@ -380,6 +380,44 @@ test('Belzabar run validates the homepage, the canonical listing page, and detai
   )
 })
 
+test('Belzabar retries transient homepage proxy errors before validating the official surface', async () => {
+  const belzabar = await loadBelzabarModule()
+  const requestedUrls = []
+  let homepageAttempts = 0
+
+  const jobs = await belzabar.createBelzabarScraper({
+    maxJobs: 1,
+    now: () => FIXED_SCRAPED_AT,
+    homepageRetryDelayMs: 0,
+  }).run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === belzabar.HOMEPAGE_URL) {
+        homepageAttempts += 1
+        if (homepageAttempts < 3) return { status: 502, url, html: proxyErrorHtml }
+        return { status: 200, url, html: homepageHtml }
+      }
+      if (url === belzabar.CAREERS_URL) return { status: 200, url, html: careersOutputHtml }
+      if (url === 'https://www.belzabar.com/jobs/senior-infrastructure-engineer-linux') {
+        return { status: 200, url, html: devOpsDetailHtml }
+      }
+
+      throw new Error(`Unexpected Belzabar URL: ${url}`)
+    },
+  })
+
+  assert.equal(homepageAttempts, 3)
+  assert.deepEqual(jobs.map((job) => job.title), ['Senior DevOps Engineer'])
+  assert.deepEqual(requestedUrls, [
+    belzabar.HOMEPAGE_URL,
+    belzabar.HOMEPAGE_URL,
+    belzabar.HOMEPAGE_URL,
+    belzabar.CAREERS_URL,
+    'https://www.belzabar.com/jobs/senior-infrastructure-engineer-linux',
+  ])
+})
+
 test('Belzabar fails closed when the verified homepage link, careers listing, or detail apply surface drifts', async () => {
   const belzabar = await loadBelzabarModule()
 

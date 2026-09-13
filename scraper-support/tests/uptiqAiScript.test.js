@@ -1,5 +1,11 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
+
+const currentOpeningsHtml = readFileSync(
+  new URL('./fixtures/uptiqai/current-openings.html', import.meta.url),
+  'utf8',
+)
 
 const loadUptiqAiModule = async () => {
   try {
@@ -59,4 +65,19 @@ test('Uptiq.ai returns an empty set when the official careers page only exposes 
 
   assert.deepEqual(requestedUrls, [uptiq.CAREERS_URL])
   assert.deepEqual(jobs, [])
+})
+
+test('Uptiq.ai extracts the current role cards when the verified CTA says View Role/Apply', async () => {
+  const uptiq = await loadUptiqAiModule()
+  const liveRoleLabelHtml = currentOpeningsHtml.replaceAll('View job/Apply', 'View Role/Apply')
+
+  assert.notEqual(liveRoleLabelHtml, currentOpeningsHtml)
+  const jobs = uptiq.extractSearchResults(liveRoleLabelHtml)
+
+  assert.equal(jobs.length, 3)
+  assert.deepEqual(jobs.map(({ title, country }) => [title, country]), [
+    ['Site Reliability Engineer', 'India'],
+    ['Technical Support Engineer', 'India'],
+    ['SBA Loan Specialist — Senior Financial Analyst', 'India'],
+  ])
 })

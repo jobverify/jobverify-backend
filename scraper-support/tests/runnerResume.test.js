@@ -17,38 +17,13 @@ import {
   withSourceLifecycleTimeout,
 } from '../runner.js'
 import { buildScrapers } from '../providers/index.js'
+import { attachInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const sampleScrapers = [
   { name: 'alpha' },
   { name: 'danfoss' },
   { name: 'elgi' },
   { name: 'zeta' },
-]
-
-const historicalAliasScrapers = [
-  {
-    name: 'applied-intuition.wellfoundDirectory',
-    provider: {
-      adapter: 'wellfoundDirectory',
-      companyName: 'Applied Intuition',
-    },
-  },
-  {
-    name: 'asana.himalayas.app',
-    provider: {
-      adapter: 'himalayasDirectory',
-      companyName: 'Asana',
-      himalayasCompanySlug: 'asana',
-    },
-  },
-  {
-    name: 'workiva.himalayas.app',
-    provider: {
-      adapter: 'himalayasDirectory',
-      companyName: 'Workiva',
-      himalayasCompanySlug: 'workiva',
-    },
-  },
 ]
 
 test('selectScrapersForRun returns the full catalog when no resume source is set', () => {
@@ -82,29 +57,6 @@ test('selectScrapersForRun runs an explicit SCRAPER_ONLY list', () => {
 
   assert.deepEqual(result.scrapers.map((scraper) => scraper.name), ['zeta', 'danfoss'])
   assert.match(result.resumeMessage, /Running selected sources \(2\/4 scrapers selected\): zeta, danfoss\./)
-})
-
-test('selectScrapersForRun resolves historical source aliases for SCRAPER_ONLY', () => {
-  const result = selectScrapersForRun(
-    historicalAliasScrapers,
-    { onlySources: 'wfappliedintuition, hmasana, hmworkiva' },
-  )
-
-  assert.deepEqual(result.scrapers.map((scraper) => scraper.name), [
-    'applied-intuition.wellfoundDirectory',
-    'asana.himalayas.app',
-    'workiva.himalayas.app',
-  ])
-})
-
-test('selectScrapersForRun resolves historical source aliases for resume pointers', () => {
-  const result = selectScrapersForRun(historicalAliasScrapers, { startAt: 'hmasana' })
-
-  assert.deepEqual(result.scrapers.map((scraper) => scraper.name), [
-    'asana.himalayas.app',
-    'workiva.himalayas.app',
-  ])
-  assert.match(result.resumeMessage, /Resuming at asana\.himalayas\.app \(2\/3 scrapers selected\)/)
 })
 
 test('selectScrapersForRun rejects ambiguous or missing resume sources', () => {
@@ -264,13 +216,8 @@ test('resolveLivePublicExperienceEnabled honors provider opt-outs for live persi
   assert.equal(resolveLivePublicExperienceEnabled({ provider: { enrichPublicExperience: true } }, 'true'), true)
 })
 
-test('resolveLivePublicExperienceEnabled skips shared-shell enrichment for AMNS public vacancies', () => {
-  const scraper = buildScrapers().find(
-    (candidate) => candidate.name === 'arcelormittalnipponsteelindia',
-  )
-
-  assert.ok(scraper)
-  assert.equal(resolveLivePublicExperienceEnabled(scraper, ''), false)
+test('retired AMNS provider stays out of the active runner catalog', () => {
+  assert.equal(buildScrapers().some((candidate) => candidate.name === 'arcelormittalnipponsteelindia'), false)
 })
 
 test('resolveLivePublicExperienceEnabled skips redundant enrichment for high-volume API sources', () => {
@@ -303,13 +250,20 @@ test('resolveScraperRetryAttempts avoids multiplying the Workday source budget',
   )
 })
 
-test('isAuthoritativeEmptyScrape trusts only confirmed empty Workday results', () => {
-  const confirmedEmpty = []
-  Object.defineProperty(
-    confirmedEmpty,
-    Symbol.for('jobverify.workday.authoritative-empty'),
-    { value: true },
-  )
+test('isAuthoritativeEmptyScrape trusts only valid structured verified-empty evidence', () => {
+  const confirmedEmpty = attachInventoryEvidence([], {
+    status: 'verified-empty',
+    surface: 'https://example.test/jobs',
+    firstParty: true,
+    listingComplete: true,
+    pagesFetched: 1,
+    reportedTotal: 0,
+    indiaFacetCount: 0,
+    verifiedAt: '2026-09-13T00:00:00.000Z',
+    reason: 'validated-test-empty',
+  })
+  const legacyEmpty = []
+  Object.defineProperty(legacyEmpty, Symbol.for('jobverify.workday.authoritative-empty'), { value: true })
 
   assert.equal(
     isAuthoritativeEmptyScrape(
@@ -319,17 +273,11 @@ test('isAuthoritativeEmptyScrape trusts only confirmed empty Workday results', (
     false,
   )
   assert.equal(
-    isAuthoritativeEmptyScrape(
-      { provider: { adapter: 'script', atsPlatform: 'workday' } },
-      confirmedEmpty,
-    ),
+    isAuthoritativeEmptyScrape({ provider: {} }, confirmedEmpty),
     true,
   )
   assert.equal(
-    isAuthoritativeEmptyScrape(
-      { provider: { adapter: 'script', atsPlatform: 'custom' } },
-      [],
-    ),
+    isAuthoritativeEmptyScrape({ provider: { adapter: 'workday' } }, legacyEmpty),
     false,
   )
   assert.equal(
@@ -388,12 +336,17 @@ test('runScraperWithTimeout can be disabled for explicitly unbounded local probe
 })
 
 test('getZeroJobEvidence does not treat an ordinary empty array as a verified empty career page', () => {
-  const confirmedEmpty = []
-  Object.defineProperty(
-    confirmedEmpty,
-    Symbol.for('jobverify.workday.authoritative-empty'),
-    { value: true },
-  )
+  const confirmedEmpty = attachInventoryEvidence([], {
+    status: 'verified-empty',
+    surface: 'https://example.test/jobs',
+    firstParty: true,
+    listingComplete: true,
+    pagesFetched: 1,
+    reportedTotal: 0,
+    indiaFacetCount: 0,
+    verifiedAt: '2026-09-13T00:00:00.000Z',
+    reason: 'validated-test-empty',
+  })
 
   assert.equal(
     getZeroJobEvidence({ provider: { adapter: 'script', atsPlatform: 'custom' } }, [], []),

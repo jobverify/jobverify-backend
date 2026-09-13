@@ -4,6 +4,14 @@
     "scraperTimeoutMs": 1200000
   },
   {
+    "source": "artechinfosystems",
+    "scraperTimeoutMs": 600000
+  },
+  {
+    "source": "asterdmhealthcare",
+    "scraperTimeoutMs": 600000
+  },
+  {
     "source": "cadence",
     "scraperTimeoutMs": 1200000
   },

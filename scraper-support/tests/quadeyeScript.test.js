@@ -48,6 +48,22 @@ const CAREERS_PAGE_HTML = `
 </html>
 `
 
+const CURRENT_JOBS_PAGE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Jobs | quadeye</title>
+    <meta name="description" content="Jobs for contacting us." />
+    <link rel="canonical" href="https://www.quadeye.com/jobs" />
+  </head>
+  <body>
+    <nav><a href="/career">Careers</a><a href="/contact-us">Contact Us</a></nav>
+    <h2>Open Roles</h2><p>Loading roles…</p>
+    <a href="mailto:career@quadeye.com">career@quadeye.com</a>
+  </body>
+</html>
+`
+
 const PORTAL_HTML = `
 <!doctype html>
 <html lang="en">
@@ -59,7 +75,7 @@ const PORTAL_HTML = `
   <body>
     <input id="pageJson" type="hidden" value="{}" />
     <input id="moduleMeta" type="hidden" value="{}" />
-    <input id="jobs" type="hidden" value="[]" />
+    <input id="jobs" type="hidden" value="[{&quot;id&quot;:&quot;199893000002318440&quot;},{&quot;id&quot;:&quot;199893000002318430&quot;},{&quot;id&quot;:&quot;199893000002318371&quot;}]" />
   </body>
 </html>
 `
@@ -140,7 +156,7 @@ test('QuadEye helper exports stay pinned to the verified official careers page, 
   assert.equal(quadeye.SOURCE, 'quadeye')
   assert.equal(quadeye.COMPANY, 'QuadEye')
   assert.equal(quadeye.OFFICIAL_BRAND_NAME, 'Quadeye')
-  assert.equal(quadeye.VERIFIED_ON, '2026-08-04')
+  assert.equal(quadeye.VERIFIED_ON, '2026-09-13')
   assert.equal(quadeye.HOMEPAGE_URL, 'https://www.quadeye.com/')
   assert.equal(quadeye.CAREERS_PAGE_URL, 'https://www.quadeye.com/careers/')
   assert.equal(quadeye.CAREERS_PORTAL_URL, 'https://quadeye.zohorecruit.in/jobs/Careers/')
@@ -149,6 +165,7 @@ test('QuadEye helper exports stay pinned to the verified official careers page, 
     'https://quadeye.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite',
   )
   assert.equal(quadeye.hasOfficialCareersPageSignal(CAREERS_PAGE_HTML), true)
+  assert.equal(quadeye.hasOfficialCareersPageSignal(CURRENT_JOBS_PAGE_HTML), true)
   assert.equal(quadeye.hasOfficialPortalSignal(PORTAL_HTML), true)
   assert.equal(
     quadeye.hasVerifiedJobDetailPage(DETAIL_HTML, {

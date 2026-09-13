@@ -54,7 +54,6 @@ const buildSessionUserPayload = (user) => ({
   onboardingCompleted: user.onboardingCompleted,
 });
 
-const GOOGLE_SIGN_IN_REQUIRED_MESSAGE = "This account uses Google sign-in. Continue with Google or reset your password to add email sign-in.";
 const GOOGLE_AUTH_FAILURE_MESSAGE = "Google sign-in failed. Please try again.";
 const GOOGLE_EMAIL_VERIFICATION_MESSAGE = "Use a Google account with a verified email address to continue.";
 const GOOGLE_ACCOUNT_LINK_CONFLICT_MESSAGE = "This account is already linked to a different Google sign-in.";
@@ -516,7 +515,7 @@ export const login = async (req, res) => {
       return res.status(401).json({
         code: 401,
         success: false,
-        message: GOOGLE_SIGN_IN_REQUIRED_MESSAGE,
+        message: "Invalid credentials",
       });
     }
 

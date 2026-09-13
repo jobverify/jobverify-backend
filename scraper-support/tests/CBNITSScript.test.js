@@ -6,13 +6,15 @@ const careersShellHtml = `
 <html lang="en">
   <head>
     <title> Agentic AI, Cybersecurity & Intelligent Enterprise Solutions | CBNITS</title>
-    <script type="module" crossorigin src="/assets/index-B340XxxU.js"></script>
+    <script type="module" crossorigin src="/assets/index-BOK9jS_3.js"></script>
   </head>
   <body>
     <div id="root"></div>
   </body>
 </html>
 `
+
+const careersBundle = 'const API_BASE_URL="https://api.cbnits.com"; const endpoints={GET_CAREER_POST:"getAllCareerPost"}; function Career(){return "Join The CBNITS Team Current career opportunities at CBNITS";} const routes=[{path:"/career",element:Career}];'
 
 const loadModule = async () => {
   try {
@@ -27,10 +29,12 @@ test('CBNITS sentinel helpers stay pinned to the verified SPA careers shell', as
 
   assert.equal(cbnits.SOURCE, 'cbnits')
   assert.equal(cbnits.COMPANY, 'CBNITS')
-  assert.equal(cbnits.CAREERS_URL, 'https://www.cbnits.com/careers')
-  assert.equal(cbnits.VERIFIED_ON, '2026-08-14')
+  assert.equal(cbnits.CAREERS_URL, 'https://cbnits.com/')
+  assert.equal(cbnits.VERIFIED_ON, '2026-09-13')
   assert.equal(cbnits.hasOfficialCareersShellSignal(careersShellHtml), true)
   assert.equal(cbnits.hasServerRenderedJobsSignal(careersShellHtml), false)
+  assert.equal(cbnits.extractBundleUrl(careersShellHtml), 'https://cbnits.com/assets/index-BOK9jS_3.js')
+  assert.equal(cbnits.hasOfficialCareersBundleSignal(careersBundle), true)
 })
 
 test('CBNITS returns [] only while the verified first-party careers page remains a raw SPA shell', async () => {
@@ -41,11 +45,15 @@ test('CBNITS returns [] only while the verified first-party careers page remains
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === cbnits.CAREERS_URL) return careersShellHtml
+      if (url === 'https://cbnits.com/assets/index-BOK9jS_3.js') return careersBundle
       throw new Error(`Unexpected CBNITS URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [cbnits.CAREERS_URL])
+  assert.deepEqual(requestedUrls, [
+    cbnits.CAREERS_URL,
+    'https://cbnits.com/assets/index-BOK9jS_3.js',
+  ])
   assert.deepEqual(jobs, [])
 })
 
@@ -64,5 +72,14 @@ test('CBNITS fails closed when server-rendered public jobs appear or the shell c
       fetchText: async () => '<html><body><h1>Unexpected</h1></body></html>',
     }),
     /verified first-party careers shell/i,
+  )
+
+  await assert.rejects(
+    cbnits.run({
+      fetchText: async (url) => url === cbnits.CAREERS_URL
+        ? careersShellHtml
+        : 'const routes=[]',
+    }),
+    /careers route bundle/i,
   )
 })

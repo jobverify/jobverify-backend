@@ -97,6 +97,16 @@ export const hasRedirectedDemandbaseHomepageSignal = (html) => {
     && /Careers/i.test(normalized)
   }
 
+export const hasRetiredInsideViewRootSignal = (page = {}) => {
+  const rawHtml = String(page.html ?? '')
+  const normalized = normalizeWhitespace(rawHtml)
+  return Number(page.status) === 403
+    && matchesExpectedUrl(page.url, ROOT_URL)
+    && /<title>\s*It works! Apache httpd\s*<\/title>/i.test(rawHtml)
+    && /^It works! Apache httpd It works!$/i.test(normalized)
+    && !hasPublicJobsSignal(rawHtml)
+}
+
 export const hasLegacyInsideViewLoginSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
@@ -114,11 +124,13 @@ export const hasLegacyInsideViewLoginSignal = (html) => {
 export const createInsideViewScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const rootPage = await fetchPage(ROOT_URL)
-    if (
+    const matchesDemandbaseRedirect = (
       rootPage.status !== 200
-      || !matchesExpectedUrl(rootPage.url, REDIRECTED_HOMEPAGE_URL)
-      || !hasRedirectedDemandbaseHomepageSignal(rootPage.html)
-    ) {
+        ? false
+        : matchesExpectedUrl(rootPage.url, REDIRECTED_HOMEPAGE_URL)
+          && hasRedirectedDemandbaseHomepageSignal(rootPage.html)
+    )
+    if (!matchesDemandbaseRedirect && !hasRetiredInsideViewRootSignal(rootPage)) {
       throw new Error('InsideView verified legacy root redirect no longer matches the Demandbase homepage surface')
     }
 

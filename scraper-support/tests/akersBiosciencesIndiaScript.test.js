@@ -156,6 +156,77 @@ test('Akers Biosciences India sentinel returns [] only while checked public rout
   assert.deepEqual(jobs, [])
 })
 
+test('Akers Biosciences India retries parked-domain routes over HTTP only after an HTTPS connect timeout', async () => {
+  const akers = await loadAkersModule()
+  const requestedUrls = []
+  const connectTimeoutError = Object.assign(new TypeError('fetch failed'), {
+    cause: {
+      code: 'UND_ERR_CONNECT_TIMEOUT',
+      message: 'Connect Timeout Error',
+    },
+  })
+  const parkedDestinationUrl = 'https://www.hugedomains.com/domain_profile.cfm?d=akersbiosciences.com'
+  const response = (status, url, html, headers = {}) => ({
+    status,
+    url,
+    headers: {
+      get: (name) => headers[String(name).toLowerCase()] ?? null,
+    },
+    text: async () => html,
+  })
+  const fetchPage = akers.createFetchPage({
+    fetchImpl: async (url) => {
+      requestedUrls.push(url)
+
+      if (akers.PARKED_ROUTE_URLS.includes(url)) throw connectTimeoutError
+      if (akers.PARKED_ROUTE_URLS.map((routeUrl) => routeUrl.replace('https://', 'http://')).includes(url)) {
+        return response(302, url, '', { location: parkedDestinationUrl })
+      }
+      if (url === parkedDestinationUrl) {
+        return response(200, parkedDestinationUrl, parkedDomainHtml)
+      }
+      if (url === 'https://akersbio.com/') {
+        return response(200, 'https://www.akersbio.com/', officialHomepageHtml)
+      }
+      if (url === 'https://akersbio.com/sitemap.xml') {
+        return response(200, 'https://www.akersbio.com/sitemap.xml', sitemapXml)
+      }
+      if (url === 'https://akersbio.com/contact-us') {
+        return response(200, 'https://www.akersbio.com/contact-us', contactPageHtml)
+      }
+      if (akers.MISSING_JOB_ROUTE_URLS.includes(url)) {
+        return response(404, url.replace('akersbio.com', 'www.akersbio.com'), missingRouteHtml)
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  const jobs = await akers.run({ fetchPage })
+
+  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedUrls, [
+    ...akers.PARKED_ROUTE_URLS.flatMap((url) => [
+      url,
+      url.replace('https://', 'http://'),
+      parkedDestinationUrl,
+    ]),
+    ...akers.OFFICIAL_SURFACE_URLS,
+    ...akers.MISSING_JOB_ROUTE_URLS,
+  ])
+
+  const officialHostRequests = []
+  const fetchWithoutFallback = akers.createFetchPage({
+    fetchImpl: async (url) => {
+      officialHostRequests.push(url)
+      throw connectTimeoutError
+    },
+  })
+
+  await assert.rejects(fetchWithoutFallback(akers.OFFICIAL_HOST_URL), /fetch failed/)
+  assert.deepEqual(officialHostRequests, [akers.OFFICIAL_HOST_URL])
+})
+
 test('Akers Biosciences India sentinel fails closed when any checked route drifts into a jobs surface', async () => {
   const akers = await loadAkersModule()
 

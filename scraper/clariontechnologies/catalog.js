@@ -16,14 +16,14 @@ export const CLARION_TECHNOLOGIES_CATALOG = {
   atsPlatform: 'official-careers-page-plus-featured-jobs-iframe',
   countryFilter: 'India',
   paginationStrategy: 'official-careers-handoff-plus-single-featured-jobs-surface-validation',
-  extractionStrategy: 'verified-careers-page+verified-featured-jobs-iframe-with-scoped-insecure-tls-fallback-return-empty-until-parser-is-promoted',
+  extractionStrategy: 'verified-careers-page+verified-full-jobs-listing-with-scoped-native-https-fallback',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'clariontech.com',
   dryRunFile: 'clariontechnologies/jobs.json',
   verifiedOn: '2026-08-07',
   verifiedSurfaceSummary:
-    'Verified on Friday, August 7, 2026 that https://www.clariontech.com/careers was the live first-party Clarion Technologies careers page, that it still embedded the public featured-jobs iframe at https://jobs.clariontechnologies.co.in:444/featured-job, that the iframe still exposed current openings with Apply Now links into https://www.clariontech.com/open-position-detail, and that the iframe host currently requires a scoped insecure-TLS retry because its certificate chain does not verify in Node.',
+    'Verified on Sunday, September 13, 2026 that https://www.clariontech.com/careers embeds the public Clarion jobs host, whose full listing exposed 10 current openings with explicit Pune locations and Apply Now links into https://www.clariontech.com/open-position-detail. Node cannot verify the jobs-host certificate chain, while Windows Schannel validates it; the scraper uses a scoped native HTTPS fallback without disabling certificate verification.',
 }
 
 export default CLARION_TECHNOLOGIES_CATALOG

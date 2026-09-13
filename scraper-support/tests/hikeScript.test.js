@@ -1,168 +1,65 @@
 import assert from 'node:assert/strict'
-import path from 'node:path'
 import test from 'node:test'
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
 
-const fixturesDir = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  'fixtures',
-  'hike',
-)
+const careersHtml = `
+<!doctype html><html><head><title>Open roles — Hike Careers</title></head><body>
+  <h1>Build what a billion people feel.</h1>
+  <p>Hike is building a family of apps — Messenger, Cinema, Travel and Sports.</p>
+  <div class="public-job-card"><div><div class="title"><a href="/jobs/JOB-ONE">Senior Android Engineer</a></div><div class="meta"><span>Engineering</span><span class="meta-dot"></span><span>India</span></div></div><div class="actions"><a class="btn btn-primary" href="/jobs/JOB-ONE/apply">Apply</a></div></div>
+  <div class="public-job-card"><div><div class="title"><a href="/jobs/JOB-TWO">Product Intern</a></div><div class="meta"><span>Product</span><span class="meta-dot"></span><span>India</span></div></div><div class="actions"><a class="btn btn-primary" href="/jobs/JOB-TWO/apply">Apply</a></div></div>
+</body></html>
+`
 
-const readHtmlFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
+const buildDetail = ({ title, location, experience }) => `
+<!doctype html><html><head><title>${title} — Hike Careers</title></head><body>
+  <h1>${title}</h1><h3>About the role</h3>
+  <div class="jd">Job Title: ${title}\nLocation: ${location}\nExperience: ${experience}\nBuild products for Hike users.</div>
+  <a class="btn btn-primary" href="/jobs/apply">Apply</a>
+</body></html>
+`
 
-const verifiedHomepageHtml = readHtmlFixture('homepage-502.html')
-const verifiedCareersHtml = readHtmlFixture('careers-502.html')
+const loadHikeModule = async () => import('../../scraper/hike/script.js')
 
-const loadHikeModule = async () => {
-  try {
-    return await import('../../scraper/hike/script.js')
-  } catch {
-    assert.fail('Expected Hike scraper module at ../../scraper/hike/script.js')
-  }
-}
-
-test('Hike sentinels recognize the verified first-party outage shell', async () => {
+test('Hike parses current first-party careers cards and role-level detail locations', async () => {
   const hike = await loadHikeModule()
+  assert.equal(hike.CAREERS_URL, 'https://careers.hikeapp.com/jobs')
+  assert.equal(hike.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(hike.extractJobCards(careersHtml).length, 2)
 
-  assert.equal(hike.SOURCE, 'hike')
-  assert.equal(hike.COMPANY, 'Hike')
-  assert.equal(hike.HOMEPAGE_URL, 'https://www.hike.in/')
-  assert.deepEqual(hike.CAREERS_ROUTE_URLS, [
-    'https://www.hike.in/careers',
-    'https://www.hike.in/careers/',
-    'https://www.hike.in/jobs',
-    'https://www.hike.in/jobs/',
-    'https://www.hike.in/career',
-    'https://www.hike.in/career/',
-  ])
-  assert.equal(hike.hasVerifiedFirstPartyOutageSignal(verifiedHomepageHtml), true)
-  assert.equal(hike.hasPublicJobsSignal(verifiedHomepageHtml), false)
-  assert.equal(
-    hike.isVerifiedOutagePage({ status: 502, html: verifiedCareersHtml }),
-    true,
-  )
-  assert.equal(
-    hike.isRecoverableCertificateError({
-      message: 'fetch failed',
-      cause: {
-        code: 'CERT_HAS_EXPIRED',
-        message: 'certificate has expired',
-      },
-    }),
-    true,
-  )
-})
-
-test('Hike returns no jobs only while the verified first-party outage shell holds', async () => {
-  const hike = await loadHikeModule()
-  const requestedUrls = []
-
-  const jobs = await hike.createHikeScraper().run({
+  const jobs = await hike.createHikeScraper({
+    now: () => '2026-09-13T00:00:00.000Z',
+  }).run({
     fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === hike.HOMEPAGE_URL) {
-        return {
-          status: 502,
-          url,
-          html: verifiedHomepageHtml,
-        }
+      if (url === hike.CAREERS_URL) return { status: 200, url, html: careersHtml }
+      if (url.endsWith('/JOB-ONE')) {
+        return { status: 200, url, html: buildDetail({ title: 'Senior Android Engineer', location: 'Gurgaon, India (Onsite)', experience: '6-9 Years' }) }
       }
-
-      if (hike.CAREERS_ROUTE_URLS.includes(url)) {
-        return {
-          status: 502,
-          url,
-          html: verifiedCareersHtml,
-        }
+      if (url.endsWith('/JOB-TWO')) {
+        return { status: 200, url, html: buildDetail({ title: 'Product Intern', location: 'India', experience: '0-1 Years' }) }
       }
-
-      throw new Error(`Unexpected page URL: ${url}`)
+      throw new Error(`Unexpected URL ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [
-    hike.HOMEPAGE_URL,
-    ...hike.CAREERS_ROUTE_URLS,
+  assert.deepEqual(jobs.map(({ title, location, city, remoteStatus, experienceRequired }) => ({ title, location, city, remoteStatus, experienceRequired })), [
+    { title: 'Senior Android Engineer', location: 'Gurgaon, India', city: 'Gurgaon', remoteStatus: 'On-site', experienceRequired: '6-9 Years' },
+    { title: 'Product Intern', location: 'India', city: null, remoteStatus: null, experienceRequired: '0-1 Years' },
   ])
-  assert.deepEqual(jobs, [])
 })
 
-test('Hike falls back to an expired-certificate fetch only for the verified first-party outage pages', async () => {
+test('Hike fails closed when its careers listing or a role detail drifts', async () => {
   const hike = await loadHikeModule()
-  const primaryRequests = []
-  const insecureRequests = []
-
-  const jobs = await hike.createHikeScraper().run({
-    fetchPage: async (url) => {
-      primaryRequests.push(url)
-      throw Object.assign(new TypeError('fetch failed'), {
-        cause: {
-          code: 'CERT_HAS_EXPIRED',
-          message: 'certificate has expired',
-        },
-      })
-    },
-    fetchPageAllowingExpiredCertificate: async (url) => {
-      insecureRequests.push(url)
-      return {
-        status: 502,
-        url,
-        html: url === hike.HOMEPAGE_URL ? verifiedHomepageHtml : verifiedCareersHtml,
-      }
-    },
-  })
-
-  assert.deepEqual(primaryRequests, [
-    hike.HOMEPAGE_URL,
-    ...hike.CAREERS_ROUTE_URLS,
-  ])
-  assert.deepEqual(insecureRequests, primaryRequests)
-  assert.deepEqual(jobs, [])
-})
-
-test('Hike fails closed when the verified outage shell changes or starts exposing jobs', async () => {
-  const hike = await loadHikeModule()
-
   await assert.rejects(
-    hike.createHikeScraper().run({
-      fetchPage: async (url) => ({
-        status: url === hike.HOMEPAGE_URL ? 200 : 502,
-        url,
-        html: verifiedHomepageHtml,
-      }),
-    }),
-    /verified official homepage surface/i,
+    hike.run({ fetchPage: async (url) => ({ status: 200, url, html: '<html>No jobs</html>' }) }),
+    /official careers page/i,
   )
 
   await assert.rejects(
-    hike.createHikeScraper().run({
-      fetchPage: async (url) => ({
-        status: 502,
-        url,
-        html: url === hike.HOMEPAGE_URL
-          ? verifiedHomepageHtml
-          : verifiedCareersHtml.replace(
-            '</body>',
-            '<a href="https://jobs.lever.co/hike">Open positions</a></body>',
-          ),
-      }),
+    hike.run({
+      fetchPage: async (url) => url === hike.CAREERS_URL
+        ? { status: 200, url, html: careersHtml }
+        : { status: 404, url, html: 'gone' },
     }),
-    /careers routes changed materially or now expose public jobs/i,
-  )
-
-  await assert.rejects(
-    hike.createHikeScraper().run({
-      fetchPage: async (url) => ({
-        status: 502,
-        url,
-        html: url === hike.HOMEPAGE_URL
-          ? verifiedHomepageHtml
-          : verifiedCareersHtml.replace('Please try again in 30 seconds.', 'Unexpected copy.'),
-      }),
-    }),
-    /careers routes changed materially or now expose public jobs/i,
+    /job detail/i,
   )
 })

@@ -208,7 +208,7 @@ test('Filo run returns the verified public roles from the careers page and publi
     department: 'Analytics',
     location: null,
     city: null,
-    country: 'India',
+    country: null,
     jobId: 'business-analyst',
     requisitionId: 'business-analyst',
     sourceUrl: 'https://docs.google.com/document/d/e/2PACX-1vQ1ZORwPdib8TbiQLbMT0oB9-cYCJSOk99RG9GWbaz4GGoeBbCZt7hvkFLm-fnSR_wwUIo89UiP6--C/pub',

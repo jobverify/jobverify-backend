@@ -50,6 +50,8 @@ const applyFormHtml = `
 </html>
 `
 
+const confirmedEmptyOpenRolesHtml = openRolesHtml.replace('</body>', '<p>There are currently no open roles.</p></body>')
+
 const openRolesHtmlWithJob = `
 ${openRolesHtml}
 <section>
@@ -66,13 +68,40 @@ const loadModule = async () => {
   }
 }
 
+test('Nektar ignores product demo text inside scripts when detecting public roles', async () => {
+  const nektar = await loadModule()
+  const shell = `<script>window.demo = '<p>Reader Reactions shows you how your writing might come across before you turn it in. Pick your reader (like your manager), and it suggests what they might take away and what questions they might have.</p>';</script>`
+  assert.equal(nektar.pageExposesPublicJobListings(openRolesHtml + shell), false)
+  assert.equal(nektar.pageExposesPublicJobListings(openRolesHtmlWithJob + shell), true)
+  assert.equal(nektar.pageExposesPublicJobListings(openRolesHtml + '<script type="application/ld+json">{"@type":"JobPosting","title":"Engineer"}</script>'), true)
+})
+
+test('Nektar culture and application pages do not establish an authoritative empty jobs listing', async () => {
+  const nektar = await loadModule()
+  await assert.rejects(
+    nektar.run({ fetchPage: async url => ({ status: 200,
+      url: url === nektar.CAREERS_URL ? nektar.OPEN_ROLES_URL : url,
+      html: url === nektar.CAREERS_URL ? openRolesHtml : applyFormHtml,
+    }) }),
+    (error) => {
+      assert.match(error.message, /incomplete|cannot verify|complete.*listing/i)
+      assert.equal(error.code, 'NEKTAR_INVENTORY_UNAVAILABLE')
+      assert.equal(error.softFailure, true)
+      assert.equal(error.upstreamOutage, false)
+      assert.equal(error.failureKind, 'upstream_inventory_unavailable')
+      assert.equal(error.abortRetries, true)
+      return true
+    },
+  )
+})
+
 test('Nektar AI helper contract stays pinned to the verified careers landing page and Coda handoff', async () => {
   const nektar = await loadModule()
 
   assert.equal(nektar.SOURCE, 'nektarai')
   assert.equal(nektar.COMPANY, 'Nektar AI')
   assert.equal(nektar.OFFICIAL_BRAND_NAME, 'Nektar.ai')
-  assert.equal(nektar.VERIFIED_ON, '2026-08-13')
+  assert.equal(nektar.VERIFIED_ON, '2026-09-13')
   assert.equal(nektar.HOMEPAGE_URL, 'https://nektar.ai/')
   assert.equal(nektar.CAREERS_URL, 'https://nektar.ai/careers/')
   assert.deepEqual(nektar.FIRST_PARTY_TIMEOUT_URLS, [
@@ -87,7 +116,7 @@ test('Nektar AI helper contract stays pinned to the verified careers landing pag
     nektar.APPLY_FORM_URL,
     'https://coda.io/form/Kick-start-your-career-with-us_dfLGyijCu1N',
   )
-  assert.match(nektar.VERIFIED_SURFACE_SUMMARY, /repeated connect timeouts/i)
+  assert.match(nektar.VERIFIED_SURFACE_SUMMARY, /culture and contact copy/i)
 
   assert.equal(nektar.hasOfficialCareersLandingSignal(careersLandingHtml), true)
   assert.deepEqual(nektar.extractOfficialCodaTargets(careersLandingHtml), {
@@ -102,7 +131,7 @@ test('Nektar AI helper contract stays pinned to the verified careers landing pag
   assert.equal(nektar.isExpectedTimedOutSurface({ errorKind: 'dns' }), false)
 })
 
-test('Nektar AI returns [] when the current first-party routes time out but the verified Coda handoff stays in the no-listings state', async () => {
+test('Nektar AI returns [] when the current first-party routes time out but the verified Coda handoff stays in an explicit current no-open-roles state', async () => {
   const nektar = await loadModule()
   const requestedUrls = []
 
@@ -123,7 +152,7 @@ test('Nektar AI returns [] when the current first-party routes time out but the 
         return {
           status: 200,
           url: 'https://docs.superhuman.com/@anusha-laksh/open-roles-for-website-publication',
-          html: openRolesHtml,
+          html: confirmedEmptyOpenRolesHtml,
         }
       }
 
@@ -148,7 +177,7 @@ test('Nektar AI returns [] when the current first-party routes time out but the 
   assert.deepEqual(jobs, [])
 })
 
-test('Nektar AI returns [] while the verified careers redirect and Coda pages stay in the no-listings state', async () => {
+test('Nektar AI returns [] while the verified careers redirect and Coda pages stay in an explicit current no-open-roles state', async () => {
   const nektar = await loadModule()
   const requestedUrls = []
 
@@ -160,7 +189,7 @@ test('Nektar AI returns [] while the verified careers redirect and Coda pages st
         return {
           status: 200,
           url: nektar.OPEN_ROLES_URL,
-          html: openRolesHtml,
+          html: confirmedEmptyOpenRolesHtml,
         }
       }
 

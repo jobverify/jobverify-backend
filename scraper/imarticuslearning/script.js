@@ -105,7 +105,7 @@ export const hasVerifiedHomepageSignals = (html) => {
 
   return normalized.includes('Real Learning that delivers your career goals')
     && normalized.includes('Unmatched Outcomes from job-ready, certification, and executive programs')
-    && normalized.includes("ISFB - India's First Finance Focused School")
+    && /ISFB - India's First Finance Focused (?:B-)?School/i.test(normalized)
     && normalized.includes('All Programs')
 }
 

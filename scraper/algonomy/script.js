@@ -153,7 +153,8 @@ export const extractJobsFromPaycorBoard = (html = '') => {
   return jobs
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -163,21 +164,30 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const createAlgonomyScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, now: overrideNow, signal } = {}) {
+    signal?.throwIfAborted()
+    const careersHtml = await fetchText(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
+    if (/<title[^>]*>[^<]*ADA Global<\/title>/i.test(careersHtml)
+      && String(careersHtml).includes('https://adaglobal.darwinbox.com/ms/candidatev2/main/careers/allJobs')) {
+      throw Object.assign(new Error('Algonomy careers migrated to ADA Global Darwinbox; a complete Algonomy-specific inventory is not verified. Parent-company jobs cannot establish an Algonomy snapshot.'), {
+        code: 'ALGONOMY_SCOPE_UNVERIFIED', failureKind: 'upstream_source_migration', softFailure: true, abortRetries: true,
+      })
+    }
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Algonomy verified first-party careers page changed materially')
     }
 
     const embeddedPaycorScriptUrl = extractPaycorScriptUrl(careersHtml)
     if (
-      embeddedPaycorScriptUrl
-      && normalizeComparableUrl(embeddedPaycorScriptUrl) !== normalizeComparableUrl(PAYCOR_SCRIPT_URL)
+      !embeddedPaycorScriptUrl
+      || normalizeComparableUrl(embeddedPaycorScriptUrl) !== normalizeComparableUrl(PAYCOR_SCRIPT_URL)
     ) {
       throw new Error('Algonomy verified Paycor handoff changed materially')
     }
 
-    const boardHtml = await fetchText(PAYCOR_BOARD_URL)
+    const boardHtml = await fetchText(PAYCOR_BOARD_URL, { signal })
+    signal?.throwIfAborted()
     if (!hasOfficialPaycorBoardSignal(boardHtml)) {
       throw new Error('Algonomy verified Paycor board changed materially')
     }

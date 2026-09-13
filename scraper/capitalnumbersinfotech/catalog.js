@@ -12,16 +12,16 @@ export const CAPITAL_NUMBERS_INFOTECH_CATALOG = {
   companyCareerPage: 'https://www.capitalnumbers.com/careers.php',
   contactEmail: 'jobs@capitalnumbers.com',
   companyDomain: 'capitalnumbers.com',
-  atsPlatform: 'first-party-careers-page-email-resume-only',
+  atsPlatform: "official-first-party-careers",
   countryFilter: 'India',
   paginationStrategy: 'single-first-party-careers-page',
   extractionStrategy:
-    'verified-first-party-careers-page+resume-email-handoff-without-public-openings+fail-closed-sentinel',
+    "complete-public-role-cards+email-apply",
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-01',
+  verifiedOn: "2026-09-13",
   verifiedSurfaceSummary:
-    'Verified on Saturday, August 1, 2026 that https://www.capitalnumbers.com/careers.php remained the live Capital Numbers careers page, that it prominently says Build Your Career with Capital Numbers, shows the current Beware of Fake Job or Freelancing Offers notice plus the Rated 4.2 out of 5 on Glassdoor marker, and that it instructs candidates to email their current resume and a cover letter to jobs@capitalnumbers.com. No trustworthy public role cards or detail pages were exposed on the verified first-party careers page, so this provider stays fail-closed.',
+    "Verified September 13, 2026: the official Capital Numbers careers page publishes four current role cards. Every advertised card and identifier is validated, and only verified India locations are included.",
   modulePath: path.join(currentDir, 'script.js'),
   dryRunFile: 'capitalnumbersinfotech/jobs.json',
 }

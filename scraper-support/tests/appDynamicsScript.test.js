@@ -25,11 +25,11 @@ test('buildSearchResultsPageUrl keeps AppDynamics listings on the verified Cisco
 
   assert.equal(
     appDynamics.buildSearchResultsPageUrl(),
-    'https://careers.cisco.com/global/en/splunk/search-page',
+    'https://careers.cisco.com/global/en/splunk/search-page?sortBy=Most+recent&size=100',
   )
   assert.equal(
     appDynamics.buildSearchResultsPageUrl(10),
-    'https://careers.cisco.com/global/en/splunk/search-page?from=10',
+    'https://careers.cisco.com/global/en/splunk/search-page?sortBy=Most+recent&size=100&from=10',
   )
 })
 

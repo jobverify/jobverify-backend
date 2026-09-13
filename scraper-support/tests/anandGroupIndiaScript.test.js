@@ -24,6 +24,23 @@ const homepageHtml = `
 </html>
 `
 
+const redesignedHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>ANAND Group | Driving Tomorrow — Automotive Conglomerate</title>
+    <link rel="canonical" href="https://www.anandgroupindia.com/">
+  </head>
+  <body>
+    <nav>
+      <a href="https://www.anandgroupindia.com/careers-at-anand/">CAREER AT ANAND</a>
+      <a href="https://www.anandgroupindia.com/careers-at-anand/join-usnew/">Join Us</a>
+    </nav>
+    <a href="https://www.anandgroupindia.com/careers-at-anand/">Explore Careers</a>
+  </body>
+</html>
+`
+
 const careersLandingHtml = `
 <!doctype html>
 <html lang="en">
@@ -217,6 +234,11 @@ test('Anand Group India scraper constants stay pinned to the verified first-part
   assert.equal(anandGroupIndia.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(
     anandGroupIndia.extractHomepageCareerUrl(homepageHtml),
+    'https://www.anandgroupindia.com/careers-at-anand/',
+  )
+  assert.equal(anandGroupIndia.hasOfficialHomepageSignal(redesignedHomepageHtml), true)
+  assert.equal(
+    anandGroupIndia.extractHomepageCareerUrl(redesignedHomepageHtml),
     'https://www.anandgroupindia.com/careers-at-anand/',
   )
   assert.equal(anandGroupIndia.hasOfficialCareersLandingSignal(careersLandingHtml), true)

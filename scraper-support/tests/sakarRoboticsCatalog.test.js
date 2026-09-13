@@ -13,7 +13,7 @@ test('getScraperCatalog includes Sakar Robotics as an official Zoho Recruit scri
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.atsPlatform, 'zohorecruit')
   assert.equal(provider.companyName, 'Sakar Robotics')
-  assert.equal(provider.companyCareerPage, 'https://www.sakarrobotics.com/careers')
+  assert.equal(provider.companyCareerPage, 'https://www.sakarrobotics.com/company/careers')
   assert.equal(provider.companyDomain, 'sakarrobotics.com')
   assert.match(provider.modulePath, /sakarrobotics[\\/]script\.js$/i)
 })

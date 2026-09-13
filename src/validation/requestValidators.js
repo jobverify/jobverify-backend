@@ -17,6 +17,10 @@ import {
   SKILL_SCOPE_OPTIONS,
   WORK_ARRANGEMENT_OPTIONS,
 } from "../constants/jobFilterTaxonomy.js";
+import {
+  countSuggestionWords,
+  MAX_SUGGESTION_WORDS,
+} from "../utils/userSuggestion.js";
 
 const MAX_TEXT_LENGTH = 80;
 const MAX_QUERY_LENGTH = 200;
@@ -464,6 +468,25 @@ export const userProfileValidation = [
     .withMessage("Profile preference sort must be one of: all, popularity, latest, oldest."),
 ];
 
+export const suggestionSubmissionValidation = [
+  body("message")
+    .isString()
+    .withMessage("Suggestion must be text.")
+    .bail()
+    .customSanitizer(trimIfString)
+    .notEmpty()
+    .withMessage("Suggestion is required.")
+    .bail()
+    .custom((value) => {
+      if (countSuggestionWords(value) > MAX_SUGGESTION_WORDS) {
+        throw new Error(
+          `Suggestion must be ${MAX_SUGGESTION_WORDS} words or fewer.`,
+        );
+      }
+      return true;
+    }),
+];
+
 export const adminUsersQueryValidation = [
   query("page")
     .optional()
@@ -478,6 +501,17 @@ export const adminUsersQueryValidation = [
   query("role").optional().isIn(["user", "admin"])
     .withMessage("Role filter is invalid."),
   query("verified").optional().isBoolean().withMessage("Verified must be true or false."),
+];
+
+export const adminSuggestionsQueryValidation = [
+  query("page")
+    .optional()
+    .isInt({ min: 1, max: MAX_PAGE })
+    .withMessage(`Page must be between 1 and ${MAX_PAGE}.`),
+  query("limit")
+    .optional()
+    .isInt({ min: 1, max: MAX_ADMIN_LIMIT })
+    .withMessage(`Limit must be between 1 and ${MAX_ADMIN_LIMIT}.`),
 ];
 
 export const adminJobsQueryValidation = [

@@ -168,8 +168,8 @@ test('ABB run reads India jobs from the official ABB Phenom search pages while p
   ]
 
   const pageOneHtml = buildSearchResultsHtml({
-    totalHits: 20,
-    hits: 10,
+    totalHits: 4,
+    hits: 2,
     jobs: pageOneJobs,
     countryCounts: {
       India: 2,
@@ -178,8 +178,8 @@ test('ABB run reads India jobs from the official ABB Phenom search pages while p
     },
   })
   const pageTwoHtml = buildSearchResultsHtml({
-    totalHits: 20,
-    hits: 10,
+    totalHits: 4,
+    hits: 2,
     jobs: pageTwoJobs,
     countryCounts: {
       India: 2,
@@ -220,7 +220,7 @@ test('ABB run reads India jobs from the official ABB Phenom search pages while p
       requestedUrls.push(url)
 
       if (url === abb.buildSearchResultsPageUrl(0)) return pageOneHtml
-      if (url === abb.buildSearchResultsPageUrl(10)) return pageTwoHtml
+      if (url === abb.buildSearchResultsPageUrl(2)) return pageTwoHtml
       if (detailHtmlByUrl.has(url)) return detailHtmlByUrl.get(url)
 
       throw new Error(`Unexpected ABB fixture URL: ${url}`)
@@ -230,8 +230,8 @@ test('ABB run reads India jobs from the official ABB Phenom search pages while p
 
   assert.deepEqual(requestedUrls, [
     abb.buildSearchResultsPageUrl(0),
+    abb.buildSearchResultsPageUrl(2),
     abb.buildJobDetailUrl(pageOneJobs[0]),
-    abb.buildSearchResultsPageUrl(10),
     abb.buildJobDetailUrl(pageTwoJobs[0]),
   ])
   assert.deepEqual(

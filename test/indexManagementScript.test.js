@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -26,4 +27,14 @@ test("index management can be imported without a configured database URI", () =>
     0,
     `Expected a side-effect-free import.\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`,
   );
+});
+
+test("managed index planning includes the user suggestion quota indexes", () => {
+  const source = fs.readFileSync(
+    path.join(backendDir, "scripts", "indexes.js"),
+    "utf8",
+  );
+
+  assert.match(source, /models\/UserSuggestion\.js/);
+  assert.match(source, /\["UserSuggestion", UserSuggestion\]/);
 });

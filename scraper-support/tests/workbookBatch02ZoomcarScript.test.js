@@ -44,6 +44,14 @@ const PUBLIC_JOBS_HTML = `
 </html>
 `
 
+const CURRENT_ORGANIZATION_SHELL_HTML = MARKETING_SHELL_HTML
+  .replace('<meta property="og:type" content="product">', '<meta property="og:type" content="website">')
+  .replace(/\{\s*"@type": "Product",\s*"name": "Book Self-Drive Car Rental with Zoomcar"\s*\}/, `{
+    "@type": "Service",
+    "@id": "https://www.zoomcar.com/#self-drive-car-rental-service",
+    "name": "Book Self-Drive Car Rental with Zoomcar"
+  }`)
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/zoomcar/script.js')
@@ -63,15 +71,16 @@ test('Zoomcar helper signals stay pinned to the verified consumer marketing shel
   assert.equal(zoomcar.JOBS_URL, 'https://www.zoomcar.com/jobs')
   assert.equal(zoomcar.NON_WWW_CAREERS_URL, 'https://zoomcar.com/careers')
   assert.equal(zoomcar.hasOfficialMarketingShellSignal(MARKETING_SHELL_HTML), true)
+  assert.equal(zoomcar.hasOfficialMarketingShellSignal(CURRENT_ORGANIZATION_SHELL_HTML), true)
   assert.equal(zoomcar.pageExposesPublicJobListings(MARKETING_SHELL_HTML), false)
   assert.equal(zoomcar.pageExposesPublicJobListings(PUBLIC_JOBS_HTML), true)
 })
 
-test('Zoomcar returns [] only while homepage, careers, and jobs all serve the same verified marketing shell', async () => {
+test('Zoomcar marketing shells cannot establish an empty vacancy inventory', async () => {
   const zoomcar = await loadModule()
   const requestedUrls = []
 
-  const jobs = await zoomcar.createZoomcarScraper().run({
+  const pending = zoomcar.createZoomcarScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
@@ -94,6 +103,7 @@ test('Zoomcar returns [] only while homepage, careers, and jobs all serve the sa
       throw new Error(`Unexpected Zoomcar URL: ${url}`)
     },
   })
+  await assert.rejects(pending, { code: 'ZOOMCAR_INVENTORY_UNAVAILABLE', failureType: 'upstream_unavailable', abortRetries: true })
 
   assert.deepEqual(requestedUrls, [
     zoomcar.HOMEPAGE_URL,
@@ -101,7 +111,6 @@ test('Zoomcar returns [] only while homepage, careers, and jobs all serve the sa
     zoomcar.NON_WWW_CAREERS_URL,
     zoomcar.JOBS_URL,
   ])
-  assert.deepEqual(jobs, [])
 })
 
 test('Zoomcar fails closed when any verified marketing-shell route changes into a public jobs surface', async () => {

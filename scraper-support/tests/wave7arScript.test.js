@@ -402,7 +402,7 @@ test('Technosoft Corporation scraper fails closed on the verified legacy redirec
   assert.equal(technosoft.COMPANY, 'Technosoft Corporation')
   assert.equal(technosoft.HOMEPAGE_URL, 'http://www.technosoftcorp.com/')
   assert.equal(technosoft.LEGACY_REDIRECT_URL, 'https://www.apexon.com/')
-  assert.equal(technosoft.VERIFIED_ON, '2026-07-18')
+  assert.equal(technosoft.VERIFIED_ON, '2026-09-13')
   assert.equal(technosoft.hasLegacyHomepageSignal(technosoftHomepageHtml), true)
   assert.equal(technosoft.hasLegacyHomepageSignal('<html><body>Unexpected</body></html>'), false)
   assert.equal(
@@ -413,7 +413,7 @@ test('Technosoft Corporation scraper fails closed on the verified legacy redirec
     true,
   )
   assert.equal(technosoft.isVerifiedMissingCareerRoute({ status: 404, html: '' }), true)
-  assert.equal(technosoft.isVerifiedMissingCareerRoute({ status: 403, html: '403 Forbidden' }), true)
+  assert.equal(technosoft.isVerifiedMissingCareerRoute({ status: 403, html: '403 Forbidden' }), false)
   assert.equal(technosoft.isVerifiedMissingCareerRoute({ status: 200, html: '' }), false)
 
   const jobs = await technosoft.createTechnosoftCorporationScraper().run({
@@ -438,18 +438,11 @@ test('Technosoft Corporation scraper fails closed on the verified legacy redirec
     /verified technosoft corporation exact-name surface changed/i,
   )
 
-  const transportFallbackJobs = await technosoft.createTechnosoftCorporationScraper().run({
-    fetchPage: async () => {
-      const error = new TypeError('fetch failed')
-      error.cause = {
-        code: 'ENOTFOUND',
-        message: 'getaddrinfo ENOTFOUND www.technosoftcorp.com',
-      }
-      throw error
-    },
-  })
+  const transportError = Object.assign(new Error('DNS unavailable'), { code: 'ENOTFOUND' })
+  await assert.rejects(technosoft.createTechnosoftCorporationScraper().run({
+    fetchPage: async () => { throw transportError },
+  }), error => error === transportError)
 
-  assert.deepEqual(transportFallbackJobs, [])
 })
 
 test('Infrabeat Technologies scraper stays pinned to the first-party WordPress careers archive', async () => {

@@ -132,18 +132,6 @@
     "verifiedSurfaceSummary": "Verified on Tuesday, August 4, 2026 that https://www.suprdaily.com/ no longer resolved to a trustworthy first-party Supr Daily surface and instead redirected off-domain to https://www.keluarantotomacau.it.com/, where no trustworthy public jobs inventory or ATS handoff was exposed. This provider stays fail-closed and throws if a real public jobs surface returns."
   },
   {
-    "source": "suryoday",
-    "companyName": "Suryoday",
-    "adapter": "script",
-    "modulePath": "../workbookbatch05/suryoday.js",
-    "companyCareerPage": "https://suryoday.bank.in/careers/",
-    "atsPlatform": "verified-workline-general-openings-table",
-    "paginationStrategy": "single-first-party-handoff+workline-general-openings-table",
-    "extractionStrategy": "verified-first-party-careers-page+public-workline-general-openings-table+listing-row-parser",
-    "verifiedOn": "2026-07-25",
-    "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://suryoday.bank.in/careers/ was the live Suryoday careers surface and that its \"Find the right-fit job role for you\" handoff pointed to the public Workline General Openings board at https://suryoday.workline.hr/Candidate/GeneralOpening.aspx?Flag=C. The batch parser emits rows directly from the verified Reference No. / Position / Product / Function / Location / Action table."
-  },
-  {
     "source": "synup",
     "companyName": "Synup",
     "adapter": "script",
@@ -355,11 +343,11 @@
     "adapter": "script",
     "modulePath": "../workbookbatch05/verygoodsecurityindia.js",
     "companyCareerPage": "https://www.verygoodsecurity.com/careers",
-    "atsPlatform": "verified-non-enumerable-careers-surface",
-    "paginationStrategy": "single-first-party-careers-page",
-    "extractionStrategy": "verified-first-party-careers-surface+non-enumerable-public-careers-page+fail-closed",
-    "verifiedOn": "2026-07-25",
-    "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.verygoodsecurity.com/careers was the live Very Good Security careers surface and that it exposed the trusted culture-copy contract, but no trustworthy same-origin job pages, ATS embed, or JobPosting markup. This provider returns no jobs until a stable public listings surface appears."
+    "atsPlatform": "lever",
+    "paginationStrategy": "public-lever-api-limit-skip-plus-board-inventory-equality",
+    "extractionStrategy": "verified-first-party-careers+matching-vgs-lever-board+complete-public-postings+explicit-india-locations",
+    "verifiedOn": "2026-09-13",
+    "verifiedSurfaceSummary": "Verified on Sunday, September 13, 2026 that https://www.verygoodsecurity.com/careers exposes the current VGS careers surface and its careers component identifies Lever account verygoodsecurity. The branded public board https://jobs.lever.co/verygoodsecurity and paginated public API https://api.lever.co/v0/postings/verygoodsecurity?mode=json expose matching inventories of 16 public roles and 0 India roles. Every public identity and location is validated before India filtering; unknown locations, pagination truncation, or mismatched inventories fail closed."
   },
   {
     "source": "vervotech",

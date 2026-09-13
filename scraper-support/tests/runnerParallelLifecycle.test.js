@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url'
 
 const fixture = fileURLToPath(new URL('./fixtures/runnerParallelLifecycle.js', import.meta.url))
 
-const runScenario = (scenario) => {
-  const child = spawnSync(process.execPath, [fixture, scenario, '--parallel'], {
+const runScenario = (scenario, parallel = true) => {
+  const child = spawnSync(process.execPath, [fixture, scenario, ...(parallel ? ['--parallel'] : [])], {
     encoding: 'utf8',
     timeout: 15_000,
   })
@@ -96,4 +96,25 @@ test('checkpointed failures still enforce the configured abort threshold after r
   assert.equal(result.checkpoint.status, 'interrupted')
   assert.equal(result.checkpoint.restartable, false)
   assert.equal(result.checkpoint.completedCount, 1)
+})
+
+for (const parallel of [true, false]) {
+  test(`${parallel ? 'parallel' : 'sequential'} runner preserves failed retry telemetry in run history`, () => {
+    const result = runScenario('failed-retry-telemetry', parallel)
+    assert.equal(result.error, null)
+    assert.deepEqual(result.started, ['unavailable', 'unavailable'])
+    assert.equal(result.history.unavailable.success, false)
+    assert.deepEqual(result.history.unavailable.retry, { attemptsUsed: 2, retries: 1, retryDelayMs: 2000 })
+  })
+}
+
+
+test('a peer cancelled by another source timeout remains incomplete for checkpoint resume', () => {
+  const result = runScenario('checkpoint-cancelled-peer')
+  assert.equal(result.error.name, 'ScraperSourceLifecycleTimeoutError')
+  assert.equal(result.peerSettled, true)
+  assert.deepEqual(Object.keys(result.checkpoint.completed), [])
+  assert.equal(result.checkpoint.completedCount, 0)
+  assert.equal(result.checkpoint.remainingCount, 3)
+  assert.equal(result.checkpoint.status, 'interrupted')
 })

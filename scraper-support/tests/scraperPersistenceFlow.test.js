@@ -5,7 +5,7 @@ import mongoose from 'mongoose'
 import Job from '../../src/models/Job.js'
 import ScraperRun from '../../src/models/ScraperRun.js'
 import ScraperStatus from '../../src/models/ScraperStatus.js'
-import { FatalScraperPersistenceError, runAll } from '../runner.js'
+import { FatalScraperPersistenceError, resolveZeroJobOutcome, runAll } from '../runner.js'
 import {
   upsertScraperStatus,
   writeScraperRun,
@@ -14,6 +14,7 @@ import {
 import { generateFingerprint, saveToDB } from '../utils/saveToDB.js'
 import { DEFAULT_JOB_RETENTION_DAYS } from '../../src/utils/jobLifecycle.js'
 import { jobAlertService } from '../../src/services/jobAlertService.js'
+import { attachInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const setReadyState = (value) => {
   const hadOwn = Object.prototype.hasOwnProperty.call(mongoose.connection, 'readyState')
@@ -532,6 +533,58 @@ test('saveToDB can record lifecycle misses for an explicitly authoritative empty
   }
 })
 
+test('unverified, discovery-only, and coverage-gap zeros preserve previous jobs', async () => {
+  const restoreReadyState = setReadyState(1)
+  const originalUpdateMany = Job.updateMany
+  const capturedLifecycleUpdates = []
+
+  Job.updateMany = (filter, update) => {
+    capturedLifecycleUpdates.push({ filter, update })
+    return { exec: async () => ({ matchedCount: 0, modifiedCount: 0 }) }
+  }
+
+  const cases = [
+    { policy: 'evidence-required', jobs: [] },
+    {
+      policy: 'discovery-only',
+      jobs: attachInventoryEvidence([], {
+        status: 'discovery-only',
+        surface: 'https://directory.example.test/jobs',
+        firstParty: false,
+        listingComplete: true,
+        pagesFetched: 1,
+        reportedTotal: 0,
+        indiaFacetCount: 0,
+        verifiedAt: null,
+        reason: 'third-party-directory',
+      }),
+    },
+    { policy: 'coverage-gap', jobs: [] },
+  ]
+
+  try {
+    for (const [index, entry] of cases.entries()) {
+      const outcome = resolveZeroJobOutcome(
+        { provider: { zeroResultPolicy: entry.policy } },
+        entry.jobs,
+        [],
+      )
+      const result = await saveToDB(entry.jobs, `zero-source-${index}`, {
+        authoritativeEmpty: outcome === 'verified-empty',
+        missesBeforeExpiry: 2,
+      })
+
+      assert.equal(result.staleCheckSkipped, true, outcome)
+      assert.match(result.staleCheckReason, /preserved without recording lifecycle misses/i)
+    }
+
+    assert.deepEqual(capturedLifecycleUpdates, [])
+  } finally {
+    Job.updateMany = originalUpdateMany
+    restoreReadyState()
+  }
+})
+
 test('saveToDB filters jobs whose advertised closing date has passed', async () => {
   const restoreReadyState = setReadyState(1)
   const originalBulkWrite = Job.bulkWrite
@@ -873,7 +926,7 @@ test('writeScraperRun encodes Mongo-unsafe source keys before creating run histo
 
   try {
     await writeScraperRun(new Date('2026-08-17T00:00:00.000Z'), {
-      'sinch.himalayas.app': {
+      'source.with.dots': {
         success: true,
         jobs: 3,
         eligibleJobs: 3,
@@ -889,7 +942,7 @@ test('writeScraperRun encodes Mongo-unsafe source keys before creating run histo
 
     assert.ok(capturedPayload)
     assert.equal(
-      Object.prototype.hasOwnProperty.call(capturedPayload.sources, 'sinch.himalayas.app'),
+      Object.prototype.hasOwnProperty.call(capturedPayload.sources, 'source.with.dots'),
       false,
     )
     assert.equal(
@@ -897,7 +950,7 @@ test('writeScraperRun encodes Mongo-unsafe source keys before creating run histo
       false,
     )
     assert.equal(
-      capturedPayload.sources['sinch\uFF0Ehimalayas\uFF0Eapp'].jobsFound,
+      capturedPayload.sources['source\uFF0Ewith\uFF0Edots'].jobsFound,
       3,
     )
     assert.equal(
@@ -927,7 +980,7 @@ test('readPreviousScraperRun decodes persisted Mongo-safe source keys', async ()
   ScraperRun.findOne = () => createQueryDouble({
     ranAt: new Date('2026-08-17T00:00:00.000Z'),
     sources: {
-      'sinch\uFF0Ehimalayas\uFF0Eapp': { success: true, jobsFound: 3 },
+      'source\uFF0Ewith\uFF0Edots': { success: true, jobsFound: 3 },
       '\uFF04internal\uFF0Esource': { success: false, error: 'synthetic failure' },
     },
     overall: {
@@ -941,10 +994,10 @@ test('readPreviousScraperRun decodes persisted Mongo-safe source keys', async ()
     const previousRun = await readPreviousScraperRun(new Date('2026-08-18T00:00:00.000Z'))
 
     assert.ok(previousRun)
-    assert.equal(previousRun.sources['sinch.himalayas.app'].jobsFound, 3)
+    assert.equal(previousRun.sources['source.with.dots'].jobsFound, 3)
     assert.equal(previousRun.sources['$internal.source'].error, 'synthetic failure')
     assert.equal(
-      Object.prototype.hasOwnProperty.call(previousRun.sources, 'sinch\uFF0Ehimalayas\uFF0Eapp'),
+      Object.prototype.hasOwnProperty.call(previousRun.sources, 'source\uFF0Ewith\uFF0Edots'),
       false,
     )
   } finally {

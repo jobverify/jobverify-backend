@@ -33,37 +33,45 @@ test('SuryaLogix pins the verified first-party homepage and resume-submission ca
   assert.equal(suryalogix.hasUnexpectedPublicJobsSignal(careersHtml), false)
   assert.equal(
     suryalogix.hasUnexpectedPublicJobsSignal(
+      careersHtml.replace('</body>', '<script>const route = "/jobs/preview"</script></body>'),
+    ),
+    false,
+  )
+  assert.equal(
+    suryalogix.hasUnexpectedPublicJobsSignal(
       `${careersHtml}<section><h2>Current Openings</h2><a href="/jobs/firmware-engineer">View Details</a></section>`,
     ),
     true,
   )
 })
 
-test('SuryaLogix returns no jobs while the verified first-party careers page stays a non-listing application form', async () => {
+test('SuryaLogix rejects a generic application form without a complete job inventory', async () => {
   const suryalogix = await loadModule()
-  const requestedUrls = []
+  await assert.rejects(suryalogix.run({
+    fetchPage: async url => ({ status: 200, url, html: url === suryalogix.HOMEPAGE_URL ? homepageHtml : careersHtml }),
+  }), /complete job inventory/i)
+})
 
-  const jobs = await suryalogix.createSuryaLogixScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === suryalogix.HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageHtml }
-      }
-
-      if (url === suryalogix.CAREERS_URL) {
-        return { status: 200, url, html: careersHtml }
-      }
-
-      throw new Error(`Unexpected SuryaLogix fixture URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    suryalogix.HOMEPAGE_URL,
-    suryalogix.CAREERS_URL,
+test('SuryaLogix extracts current inline first-party openings instead of treating them as an empty sentinel', async () => {
+  const suryalogix = await loadModule()
+  const currentOpening = `
+    <section class="elementor-section elementor-inner-section">
+      <h2 class="elementor-heading-title">Embedded Hardware Engineer</h2>
+      <span class="elementor-icon-list-text">Pune, Maharashtra <i></i> Experience: 2–4 Years</span>
+      <span class="elementor-icon-list-text"><b>Expertise</b> - Embedded Hardware Design, Microcontrollers, Circuit Debugging</span>
+      <span class="elementor-icon-list-text">Openings: 1</span>
+      <a href="#form">Apply Now</a>
+    </section>
+  `
+  const jobs = suryalogix.extractPublicOpenings(currentOpening)
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Embedded Hardware Engineer')
+  assert.equal(jobs[0].location, 'Pune, Maharashtra, India')
+  assert.deepEqual(jobs[0].requiredSkills, [
+    'Embedded Hardware Design',
+    'Microcontrollers',
+    'Circuit Debugging',
   ])
-  assert.deepEqual(jobs, [])
 })
 
 test('SuryaLogix fails closed when the homepage, careers copy, or non-listing contract drifts', async () => {
@@ -105,6 +113,6 @@ test('SuryaLogix fails closed when the homepage, careers copy, or non-listing co
           : `${careersHtml}<section><h2>Open Positions</h2><a href="https://jobs.lever.co/suryalogix">Apply</a></section>`,
       }),
     }),
-    /public jobs|non-listing/i,
+    /public jobs|non-listing|handoff|incomplete/i,
   )
 })

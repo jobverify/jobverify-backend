@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { decodeJavaScriptStringLiteral } from '../../scraper-support/utils/safeLiteral.js'
+
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { LUMIQ_CATALOG as PROVIDER_METADATA } from './catalog.js'
@@ -47,31 +49,45 @@ const hasInputWithId = (html, id) => new RegExp(
   'i',
 ).test(String(html ?? ''))
 
-export const hasOfficialCareersPageSignal = (html = '') => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page) || ''
-  const title = normalizeWhitespace(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
+export const hasOfficialCareersPageSignal = (html = '') =>
+  /href=["']https:\/\/lumiq\.zohorecruit\.in\/(?:careers|jobs\/Careers)\/?["']/i.test(html)
+  && /LUMIQ|See All Open Positions/i.test(html)
 
-  return (
-    title === 'Lumiq | Succeed in Data Transformation'
-    || /https:\/\/lumiq\.zohorecruit\.in\/jobs\/Careers/i.test(page)
-  )
-    && /See All Open Positions/i.test(normalized)
-    && /Apply For All Open Positions/i.test(normalized)
+export const hasOfficialPortalSignal = (html = '') =>
+  (/<title>Jobs at Lumiq<\/title>/i.test(html) || /https:\/\/lumiq\.zohorecruit\.in\/jobs\/Careers/i.test(html))
+  && ['pageJson', 'moduleMeta', 'jobs'].every(id => hasInputWithId(html, id))
+
+const readEmbeddedJobs = (html) => {
+  const tag = String(html).match(/<input\b(?=[^>]*\bid=["']jobs["'])[^>]*>/i)?.[0]
+  const value = tag?.match(/\bvalue=["']([^"']*)["']/i)?.[1]
+  try {
+    const records = JSON.parse(normalizeWhitespace(value))
+    if (!Array.isArray(records)) throw new Error('array required')
+    return records
+  } catch { throw new Error('Lumiq invalid embedded board inventory') }
 }
 
-const hasBlockedCareersPageSignal = (html = '') => /banned permanently|access denied/i.test(String(html ?? ''))
-
-export const hasOfficialPortalSignal = (html = '') => {
-  const page = String(html ?? '')
-
-  return /https:\/\/lumiq\.zohorecruit\.in\/jobs\/Careers/i.test(page)
-    && hasInputWithId(page, 'pageJson')
-    && hasInputWithId(page, 'moduleMeta')
-    && hasInputWithId(page, 'jobs')
+const validateRecords = (records) => {
+  const ids = new Set()
+  for (const record of records) {
+    const id = normalizeWhitespace(record?.id)
+    if (!id || !normalizeWhitespace(record.Posting_Title || record.Job_Opening_Name) || !normalizeWhitespace(record.Country)) throw new Error('Lumiq invalid record or unknown country scope')
+    if (ids.has(id)) throw new Error('Lumiq duplicate job identifier')
+    ids.add(id)
+  }
+  return ids
 }
 
-const isIndiaJob = (record = {}) => /india/i.test(normalizeWhitespace(record.Country) || '')
+const readDetail = (html, listing) => {
+  const literal = String(html).match(/(?:var|let|const)\s+jobs\s*=\s*JSON\.parse\(\s*((?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'))\s*\)/)?.[1]
+  let records
+  try { records = JSON.parse(decodeJavaScriptStringLiteral(literal)) } catch { throw new Error('Lumiq invalid job detail data') }
+  const record = records?.[0]
+  if (!Array.isArray(records) || records.length !== 1 || record?.id !== listing.id || record.Country !== listing.Country || record.Posting_Title !== listing.Posting_Title || !normalizeWhitespace(record.Job_Description)) throw new Error('Lumiq incomplete or mismatched job detail')
+  return { ...record, $url: listing.$url }
+}
+
+const isIndiaJob = (record = {}) => /^india$/i.test(normalizeWhitespace(record.Country) || '')
 
 const buildApplyUrl = (sourceUrl) =>
   sourceUrl?.includes('$apply=true') ? sourceUrl : `${sourceUrl}&$apply=true`
@@ -122,8 +138,9 @@ export const extractIndiaJobs = (payload) => (Array.isArray(payload?.data) ? pay
   })
   .filter(Boolean)
 
-const defaultFetchText = async (url) => {
+const defaultFetchText = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -134,8 +151,9 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
-const defaultFetchJson = async (url) => {
+const defaultFetchJson = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'application/json,text/plain,*/*',
@@ -153,53 +171,51 @@ export const createLumiqScraper = ({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
+    signal,
   } = {}) {
-    let careersHtml = null
-    let careersPageBlocked = false
-    try {
-      careersHtml = await fetchText(CAREERS_PAGE_URL)
-    } catch (error) {
-      if (!/HTTP 403\b/i.test(String(error?.message || ''))) {
-        throw error
-      }
-      careersPageBlocked = true
+    signal?.throwIfAborted()
+    const read = async (url) => {
+      signal?.throwIfAborted()
+      const html = await fetchText(url, { signal })
+      signal?.throwIfAborted()
+      return html
     }
-
-    if (
-      careersHtml
-      && !hasOfficialCareersPageSignal(careersHtml)
-      && !hasBlockedCareersPageSignal(careersHtml)
-    ) {
-      throw new Error('Response is not the verified official Lumiq careers page')
+    const careersHtml = await read(CAREERS_PAGE_URL)
+    if (!hasOfficialCareersPageSignal(careersHtml)) throw new Error('Response is not the verified official Lumiq careers page')
+    const portalHtml = await read(CAREERS_PORTAL_URL)
+    if (!hasOfficialPortalSignal(portalHtml)) throw new Error('Response is not the verified official Lumiq careers portal')
+    const boardRecords = readEmbeddedJobs(portalHtml)
+    const boardIds = validateRecords(boardRecords)
+    const payload = await fetchJson(CAREERS_API_URL, { signal })
+    signal?.throwIfAborted()
+    if (payload?.code !== 'success' || !Array.isArray(payload?.data)) throw new Error('Lumiq invalid public jobs API payload')
+    if (payload.info?.more_records || (payload.info?.page_name && payload.info.page_name !== 'Careers')) throw new Error('Lumiq incomplete or unexpected pagination contract')
+    const ids = validateRecords(payload.data)
+    if (boardIds.size !== ids.size || [...ids].some(id => !boardIds.has(id))) throw new Error('Lumiq incomplete API inventory does not match embedded board')
+    for (const record of payload.data) {
+      const url = new URL(record.$url || 'https://invalid.example/')
+      if (url.origin !== 'https://lumiq.zohorecruit.in' || !url.pathname.startsWith('/jobs/Careers/' + record.id + '/')) throw new Error('Lumiq invalid job tenant or identifier URL')
+      const board = boardRecords.find(row => row.id === record.id)
+      if (board.Country !== record.Country || (board.Posting_Title || board.Job_Opening_Name) !== (record.Posting_Title || record.Job_Opening_Name)) throw new Error('Lumiq incomplete snapshot changed between board and API')
     }
-
-    const portalHtml = await fetchText(CAREERS_PORTAL_URL)
-    if (!hasOfficialPortalSignal(portalHtml)) {
-      throw new Error('Response is not the verified official Lumiq careers portal')
-    }
-
-    if (!careersHtml && !careersPageBlocked) {
-      throw new Error('Response is not the verified official Lumiq careers page')
-    }
-
-    const payload = await fetchJson(CAREERS_API_URL)
-    if (payload?.code !== 'success' || !Array.isArray(payload?.data)) {
-      throw new Error('Lumiq public jobs API no longer returns the verified success payload')
-    }
-
-    const jobs = extractIndiaJobs(payload)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    const indiaRecords = payload.data.filter(isIndiaJob)
+    const selectedRecords = Number.isInteger(maxJobs) && maxJobs > 0 ? indiaRecords.slice(0, maxJobs) : indiaRecords
+    const detailedRecords = []
+    for (const record of selectedRecords) detailedRecords.push(normalizeWhitespace(record.Job_Description) ? record : readDetail(await read(record.$url), record))
+    const selectedJobs = extractIndiaJobs({ data: detailedRecords })
+    if (selectedJobs.length !== selectedRecords.length) throw new Error('Lumiq incomplete India job normalization')
 
     return selectedJobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: now(),
+      ...(selectedRecords.length < indiaRecords.length ? { sourceListingComplete: false } : {}),
     }))
   },
 })
 
-export const run = async () => createLumiqScraper().run()
+export const run = async (options = {}) => createLumiqScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

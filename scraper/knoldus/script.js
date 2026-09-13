@@ -22,7 +22,7 @@ const REQUIRED_BUNDLE_PATTERNS = [
   /fetch\(["']\/wp-json\/ntc\/taxonomy\/get["'],\s*\{[\s\S]*?method\s*:\s*["']POST["']/i,
   /fetch\(["']\/wp-json\/ntc\/job\/get\/v2["'],\s*\{[\s\S]*?method\s*:\s*["']POST["']/i,
   /window\.history\.pushState/i,
-  /Find your dream job in NashTech/i,
+  /Find Authentic Jobs in NashTech/i,
   /Open jobs/i,
 ]
 

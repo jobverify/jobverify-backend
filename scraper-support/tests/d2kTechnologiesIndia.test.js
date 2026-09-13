@@ -42,7 +42,7 @@ test('D2K Technologies India catalog captures the verified first-party careers c
 
   assert.equal(D2K_TECHNOLOGIES_INDIA_CATALOG.source, 'd2ktechnologiesindia')
   assert.equal(D2K_TECHNOLOGIES_INDIA_CATALOG.companyName, 'D2K Technologies India')
-  assert.equal(D2K_TECHNOLOGIES_INDIA_CATALOG.companyCareerPage, 'https://www.d2ktechnologies.com/careers')
+  assert.equal(D2K_TECHNOLOGIES_INDIA_CATALOG.companyCareerPage, 'https://www.d2ktechnologies.com/careerold.html')
   assert.equal(D2K_TECHNOLOGIES_INDIA_CATALOG.atsPlatform, 'official-company-site-job-cards')
   assert.match(D2K_TECHNOLOGIES_INDIA_CATALOG.verifiedSurfaceSummary, /MSBI Developer/i)
 })
@@ -54,9 +54,9 @@ test('D2K Technologies India extracts same-domain careers cards', async () => {
   assert.deepEqual(d2k.extractJobCards(careersHtml), [
     {
       title: 'SQL Developer',
-      location: 'Navi Mumbai, Maharashtra, India',
-      city: 'Navi Mumbai',
-      country: 'India',
+      location: null,
+      city: null,
+      country: null,
       sourceUrl: 'https://www.d2ktechnologies.com/sqldeveloper',
       applyUrl: 'https://www.d2ktechnologies.com/sqldeveloper',
       employmentType: 'Full Time',
@@ -66,9 +66,9 @@ test('D2K Technologies India extracts same-domain careers cards', async () => {
     },
     {
       title: 'Python Developer',
-      location: 'Navi Mumbai, Maharashtra, India',
-      city: 'Navi Mumbai',
-      country: 'India',
+      location: null,
+      city: null,
+      country: null,
       sourceUrl: 'https://www.d2ktechnologies.com/pythondeveloper',
       applyUrl: 'https://www.d2ktechnologies.com/pythondeveloper',
       employmentType: 'Full Time',
@@ -81,13 +81,18 @@ test('D2K Technologies India extracts same-domain careers cards', async () => {
 
 test('D2K Technologies India run normalizes job records and fails closed on drift', async () => {
   const d2k = await loadScript()
+  const requestedUrls = []
 
   const jobs = await d2k.run({
-    fetchText: async () => careersHtml,
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      return careersHtml.replaceAll('Experience:', 'Job Location: Navi Mumbai, Maharashtra, India</p><p>Experience:')
+    },
     now: () => '2026-07-18T00:00:00.000Z',
   })
 
   assert.equal(jobs.length, 2)
+  assert.deepEqual(requestedUrls, ['https://www.d2ktechnologies.com/careerold.html'])
   assert.equal(jobs[0].source, 'd2ktechnologiesindia')
   assert.equal(jobs[0].link, 'https://www.d2ktechnologies.com/sqldeveloper')
   assert.equal(jobs[0].scrapedAt, '2026-07-18T00:00:00.000Z')
@@ -96,4 +101,15 @@ test('D2K Technologies India run normalizes job records and fails closed on drif
     d2k.run({ fetchText: async () => '<html><body>Unexpected</body></html>' }),
     /verified d2k careers page/i,
   )
+})
+
+test('D2K does not infer role geography from its registered office',async()=>{
+ const d2k=await loadScript();const jobs=d2k.extractJobCards(careersHtml)
+ assert.ok(jobs.every(job=>job.country===null&&job.location===null))
+ await assert.rejects(d2k.run({fetchText:async()=>careersHtml}),error=>error.code==='D2K_LOCATION_UNVERIFIED'&&error.failureType==='upstream_unavailable'&&error.abortRetries===true)
+})
+test('D2K stops before requests when the source is cancelled',async()=>{
+ const d2k=await loadScript(),reason=new Error('Source cancelled');let calls=0
+ await assert.rejects(d2k.run({signal:AbortSignal.abort(reason),fetchText:async()=>{calls++;return careersHtml}}),error=>error===reason)
+ assert.equal(calls,0)
 })

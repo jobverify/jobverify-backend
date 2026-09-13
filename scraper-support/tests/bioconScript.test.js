@@ -229,6 +229,58 @@ test('Biocon scraper exports the verified first-party careers and public Success
   assert.equal(biocon.hasSuccessFactorsSearchPageSignal(summaryPageOneHtml), true)
 })
 
+test('Biocon retries only a first-party certificate-chain failure through verified native HTTPS', async () => {
+  const biocon = await loadModule()
+  const calls = []
+  const certificateError = new TypeError('fetch failed', {
+    cause: Object.assign(new Error('unable to verify the first certificate'), {
+      code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+    }),
+  })
+
+  const html = await biocon.fetchBioconFirstPartyText(biocon.CAREERS_PAGE_URL, {
+    fetchText: async () => {
+      throw certificateError
+    },
+    execFile: async (file, args, options) => {
+      calls.push({ file, args, options })
+      return { stdout: officialCareersHtml }
+    },
+  })
+
+  assert.equal(biocon.hasOfficialCareersPageSignal(html), true)
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0].file, 'curl.exe')
+  assert.equal(calls[0].args[0], '--disable')
+  assert.deepEqual(calls[0].args.slice(-3), ['--proto-redir', '=https', biocon.CAREERS_PAGE_URL])
+  assert.equal(calls[0].args.includes('--insecure'), false)
+  assert.equal(calls[0].args.includes('-k'), false)
+  assert.equal(calls[0].options.windowsHide, true)
+})
+
+test('Biocon never invokes the native transport fallback for a non-Biocon URL', async () => {
+  const biocon = await loadModule()
+  const certificateError = Object.assign(new Error('unable to verify leaf signature'), {
+    code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  })
+  let nativeCalls = 0
+
+  await assert.rejects(
+    biocon.fetchBioconFirstPartyText(biocon.SUCCESSFACTORS_BOARD_URL, {
+      fetchText: async () => {
+        throw certificateError
+      },
+      execFile: async () => {
+        nativeCalls += 1
+        return { stdout: '' }
+      },
+    }),
+    /verify leaf signature/i,
+  )
+
+  assert.equal(nativeCalls, 0)
+})
+
 test('extractSearchResults parses the verified Biocon SuccessFactors result rows', async () => {
   const biocon = await loadModule()
 

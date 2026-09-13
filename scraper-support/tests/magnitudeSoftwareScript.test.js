@@ -148,6 +148,14 @@ test('Magnitude Software helpers stay pinned to the verified homepage redirect, 
   assert.equal(magnitude.WORKDAY_BOARD_URL, 'https://magnitudesoftware.wd1.myworkdayjobs.com/External')
   assert.equal(magnitude.VERIFIED_ON, '2026-08-01')
   assert.equal(magnitude.hasRedirectedMagnitudePageSignal(REDIRECTED_MAGNITUDE_PAGE), true)
+  assert.equal(
+    magnitude.hasRedirectedMagnitudePageSignal({
+      ...REDIRECTED_MAGNITUDE_PAGE,
+      url: 'https://www.insightsoftware.com/magnitude/',
+      html: REDIRECTED_MAGNITUDE_PAGE.html.replace('Work With Us', 'Products'),
+    }),
+    true,
+  )
   assert.equal(magnitude.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(magnitude.hasOfficialCareersSignal(CURRENT_EMPTY_CAREERS_HTML), true)
   assert.equal(magnitude.hasOfficialWorkdayBoardSignal(WORKDAY_BOARD_HTML), true)

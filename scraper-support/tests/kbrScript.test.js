@@ -48,7 +48,7 @@ test('extractSearchPayload reads KBR embedded Phenom search payloads and India a
   const { extractSearchPayload } = await loadKbrModule()
   const payload = extractSearchPayload(readFixture('search-results-page-0.html'))
 
-  assert.equal(payload.totalHits, 1)
+  assert.equal(payload.totalHits, 2)
   assert.equal(payload.hits, 10)
   assert.equal(payload.jobs.length, 2)
   assert.equal(payload.aggregations.country.India, 1)

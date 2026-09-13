@@ -80,12 +80,22 @@ export const hasPublicJobsSignal = (html) =>
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  const rawLower = page.toLowerCase()
   const normalized = normalizeText(page)
 
-  return /Managed Data Services & AI-Powered Operations for SMBs \| Shore Group/i.test(page)
+  const hasLegacyBodyIdentity = /Managed Data Services & AI-Powered Operations for SMBs \| Shore Group/i.test(page)
     && normalized.includes('managed data services that simplify your operations')
     && normalized.includes('small and medium-sized businesses.')
     && normalized.includes('sla-backed outcomes')
+
+  const hasCurrentHeadIdentity = /<title>\s*Managed Data Services (?:&|&amp;) AI-Powered Operations for SMBs \| Shore Group\s*<\/title>/i.test(page)
+    && /<meta\b[^>]+property=["']og:site_name["'][^>]+content=["']Shore Group["']/i.test(page)
+    && /<link\b[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.shoregrp\.com\/?["']/i.test(page)
+    && rawLower.includes('fully managed data services and ai-powered document processing for smbs')
+    && rawLower.includes('sla-backed outcomes')
+    && rawLower.includes('polaris platform')
+
+  return hasLegacyBodyIdentity || hasCurrentHeadIdentity
 }
 
 export const hasOfficialContactSignal = (html) => {
@@ -95,7 +105,8 @@ export const hasOfficialContactSignal = (html) => {
   return /Schedule a Free Discovery Call \| Shore Group/i.test(page)
     && normalized.includes('we respond within 24 hours')
     && normalized.includes("schedule your discovery call and let's discuss how we can solve your biggest operational or strategic challenge.")
-    && normalized.includes('hyderabad, india - operations, r&d')
+    && normalized.includes('hyderabad, india')
+    && normalized.includes('operations, r&d')
 }
 
 const isVerifiedMissingFirstPartyRoute = (page = {}) => {
@@ -103,8 +114,16 @@ const isVerifiedMissingFirstPartyRoute = (page = {}) => {
   const normalized = normalizeText(html)
 
   return page.status === 404
-    && /<title>\s*(?:404:\s*)?not[\s_-]*found\s*<\/title>/i.test(html)
-    && normalized.includes('404')
+    && (
+      (
+        /<title>\s*(?:404:\s*)?not[\s_-]*found\s*<\/title>/i.test(html)
+        && normalized.includes('404')
+      )
+      || (
+        normalized.includes('the page could not be found')
+        && normalized.includes('not_found')
+      )
+    )
     && !hasPublicJobsSignal(html)
 }
 

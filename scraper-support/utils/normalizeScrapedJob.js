@@ -57,7 +57,9 @@ const normalizeDescription = (value) => {
 
   normalized = normalized
     .replace(/^about\s+(?:this|the)\s+role\s*:?\s*/i, '')
-    .replace(/\s+/g, ' ')
+    .replace(/[^\S\n]+/g, ' ')
+    .replace(/ *\n */g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
     .trim()
 
   for (const label of DESCRIPTION_SECTION_LABELS) {
@@ -1487,6 +1489,7 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
   const normalizedTitle = normalizeTitle(originalTitle)
   const applyUrl = normalizeUrl(job.applyUrl || job.link || job.sourceUrl)
   const sourceUrl = normalizeUrl(job.sourceUrl || job.link || job.applyUrl)
+  const hasEmailApplication = /^mailto:/i.test(String(job.applyUrl || job.link || '').trim())
   const scrapedTimestamp = normalizeDate(job.scrapedTimestamp || job.scrapedAt) || new Date()
   const publicExperienceChecked = (
     job.publicExperienceChecked === true
@@ -1536,6 +1539,7 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
     postingDate: resolvedPostedAt,
     closingDate: normalizeDate(job.closingDate),
     applyUrl,
+    ...(hasEmailApplication && sourceUrl ? { applicationUrlIsGeneric: true } : {}),
     sourceUrl: sourceUrl || applyUrl,
     companyCareerPage: normalizeUrl(job.companyCareerPage || provider.companyCareerPage),
     companyDomain: extractCompanyDomain(job, provider),

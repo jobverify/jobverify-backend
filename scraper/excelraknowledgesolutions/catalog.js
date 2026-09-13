@@ -17,12 +17,12 @@ export const EXCELRA_KNOWLEDGE_SOLUTIONS_CATALOG = {
   countryFilter: 'India',
   paginationStrategy: 'single-first-party-wordpress-careers-page-endpoint',
   extractionStrategy:
-    'verified-wordpress-careers-page+shortcode-opening-cards+darwinbox-apply-links+india-location-filter',
+    'verified-wordpress-careers-page+complete-opening-cards+official-darwinbox-applications+explicit-country-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-13',
+  verifiedOn: '2026-09-13',
   verifiedSurfaceSummary:
-    'Verified on Thursday, August 13, 2026 that https://www.excelra.com/careers/ is still the live exact-name Excelra careers page for the backlog row Excelra Knowledge Solutions, that direct raw HTTP now returns a Cloudflare 403 challenge, and that the first-party WordPress API endpoint at https://www.excelra.com/wp-json/wp/v2/pages?slug=careers still exposes the Current openings content with official Darwinbox apply links under https://excelra.darwinbox.in/ms/candidatev2/main/careers/jobDetails/. The verified India-visible roles in the returned content include Senior DevOps Engineer, Software Tester, and Medicinal Chemistry Consultant in Hyderabad, India.',
+    'Verified September 13, 2026: the first-party WordPress endpoint https://www.excelra.com/wp-json/wp/v2/pages?slug=careers identifies the published Excelra careers page and exposes eleven role cards under Current openings. The cards contain seven India roles and four United States roles. All application links now use https://excelra.darwinbox.in/ms/candidatev2/main/careers/allJobs. Complete card coverage, explicit country scope and stable identities preserve distinct roles sharing that application page; absent experience remains unknown.',
   modulePath: path.join(currentDir, 'script.js'),
   dryRunFile: 'excelraknowledgesolutions/jobs.json',
 }

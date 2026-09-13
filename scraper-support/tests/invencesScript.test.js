@@ -13,6 +13,7 @@ const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 
 const homepageHtml = readFixture('homepage.html')
 const careerHtml = readFixture('career.html')
+const currentHomepageHtml = '<title>Connectivity &amp; Data Center Infrastructure | Invences</title><nav>Solutions Services Products Industries Contact</nav><h1>Engineering intelligent infrastructure.</h1><p>info@invences.com</p><footer>2026 Invences</footer>'
 
 const loadInvencesModule = async () => {
   try {
@@ -28,6 +29,7 @@ test('Invences validates the official homepage and career table before extractin
   assert.equal(invences.HOMEPAGE_URL, 'https://invences.com/')
   assert.equal(invences.CAREERS_URL, 'https://invences.com/career')
   assert.equal(invences.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(invences.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(invences.hasOfficialCareersSignal(careerHtml), true)
 
   assert.deepEqual(invences.extractJobs(careerHtml), [
@@ -96,6 +98,110 @@ test('Invences scraper fetches the verified homepage and careers page and decora
     invences.CAREERS_URL,
   ])
   assert.deepEqual(jobs, [])
+})
+
+test('Invences reports India inventory unavailable when the current official homepage has retired its careers handoff', async () => {
+  const invences = await loadInvencesModule()
+  const requestedUrls = []
+
+  await assert.rejects(invences.createInvencesScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === invences.HOMEPAGE_URL) return currentHomepageHtml
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  }), (error) => {
+    assert.equal(error.code, 'INVENCES_INVENTORY_UNAVAILABLE')
+    assert.equal(error.softFailure, true)
+    assert.equal(error.upstreamOutage, false)
+    assert.equal(error.failureKind, 'upstream_inventory_unavailable')
+    assert.equal(error.abortRetries, true)
+    assert.equal(error.inventoryScope, 'India')
+    assert.match(error.message, /official homepage.*no.*careers handoff/i)
+    return true
+  })
+
+  assert.deepEqual(requestedUrls, [invences.HOMEPAGE_URL])
+})
+
+test('Invences makes no first-party request when the caller signal is already aborted', async () => {
+  const invences = await loadInvencesModule()
+  const controller = new AbortController()
+  const reason = new Error('runner stopped before Invences started')
+  controller.abort(reason)
+  let requests = 0
+
+  await assert.rejects(invences.createInvencesScraper().run({
+    signal: controller.signal,
+    fetchText: async () => {
+      requests += 1
+      return homepageHtml
+    },
+  }), (error) => error === reason)
+
+  assert.equal(requests, 0)
+})
+
+test('Invences preserves cancellation that arrives during the homepage response', async () => {
+  const invences = await loadInvencesModule()
+  const controller = new AbortController()
+  const reason = new Error('runner stopped during Invences homepage')
+  const requestedUrls = []
+
+  await assert.rejects(invences.createInvencesScraper().run({
+    signal: controller.signal,
+    fetchText: async (url, options) => {
+      requestedUrls.push(url)
+      assert.equal(options.signal, controller.signal)
+      controller.abort(reason)
+      return homepageHtml
+    },
+  }), (error) => error === reason)
+
+  assert.deepEqual(requestedUrls, ['https://invences.com/'])
+})
+
+test('Invences preserves cancellation that arrives during the careers handoff response', async () => {
+  const invences = await loadInvencesModule()
+  const controller = new AbortController()
+  const reason = new Error('runner stopped during Invences careers handoff')
+  const requestedUrls = []
+
+  await assert.rejects(invences.createInvencesScraper().run({
+    signal: controller.signal,
+    fetchText: async (url, options) => {
+      requestedUrls.push(url)
+      assert.equal(options.signal, controller.signal)
+      if (url === 'https://invences.com/') return homepageHtml
+      if (url === 'https://invences.com/career') {
+        controller.abort(reason)
+        return careerHtml
+      }
+      throw new Error(`Unexpected URL ${url}`)
+    },
+  }), (error) => error === reason)
+
+  assert.deepEqual(requestedUrls, [
+    'https://invences.com/',
+    'https://invences.com/career',
+  ])
+})
+
+test('Invences preserves the caller abort reason when a fetch rejects after cancellation', async () => {
+  const invences = await loadInvencesModule()
+  const controller = new AbortController()
+  const reason = new Error('runner stopped while Invences fetch was failing')
+  const secondaryError = new Error('socket closed after cancellation')
+
+  await assert.rejects(invences.createInvencesScraper().run({
+    signal: controller.signal,
+    fetchText: async (url, options) => {
+      assert.equal(url, 'https://invences.com/')
+      assert.equal(options.signal, controller.signal)
+      controller.abort(reason)
+      throw secondaryError
+    },
+  }), (error) => error === reason)
 })
 
 test('Invences scraper fails closed when the verified careers table contract changes', async () => {

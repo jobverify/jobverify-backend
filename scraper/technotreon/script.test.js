@@ -227,19 +227,11 @@ test('run returns jobs when the homepage transport fails but the verified career
   assert.equal(jobs[0].scrapedAt, '2026-08-05T00:00:00.000Z')
 })
 
-test('run returns [] when the Technotreon careers surface times out in the current runtime', async () => {
+test('run fails when the Technotreon careers surface times out in the current runtime', async () => {
   const technotreon = await loadTechnotreonModule()
-
-  const jobs = await technotreon.createTechnotreonScraper().run({
-    fetchText: async () => {
-      const error = new TypeError('fetch failed')
-      error.cause = {
-        code: 'UND_ERR_CONNECT_TIMEOUT',
-        message: 'Connect Timeout Error (attempted address: technotreon.in:443, timeout: 10000ms)',
-      }
-      throw error
-    },
-  })
-
-  assert.deepEqual(jobs, [])
+  const error = new TypeError('fetch failed')
+  error.cause = { code: 'UND_ERR_CONNECT_TIMEOUT', message: 'Connect Timeout Error' }
+  await assert.rejects(technotreon.createTechnotreonScraper().run({
+    fetchText: async () => { throw error },
+  }), actual => actual === error)
 })

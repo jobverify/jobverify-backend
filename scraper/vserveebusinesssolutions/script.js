@@ -117,10 +117,11 @@ const parseIndiaLocation = ({ city, state, location, country }) => {
 
 export const extractEmbeddedZohoPortalUrl = (html = '') => {
   const page = String(html)
-  const rawPortalUrl = page.match(/data-lazy-src="(https:\/\/recruit\.zoho\.com\/recruit\/Portal\.na\?iframe=false[^"]+)"/i)?.[1]
+  const rawPortalUrl = page.match(/<iframe\b[^>]*\bsrc="(https:\/\/recruit\.zoho\.com\/recruit\/Portal\.na\?iframe=false[^"]+)"/i)?.[1]
+    || page.match(/data-lazy-src="(https:\/\/recruit\.zoho\.com\/recruit\/Portal\.na\?iframe=false[^"]+)"/i)?.[1]
     || page.match(/<noscript><iframe[^>]+src="(https:\/\/recruit\.zoho\.com\/recruit\/Portal\.na\?iframe=false[^"]+)"/i)?.[1]
 
-  return rawPortalUrl ? rawPortalUrl.replace(/&#038;/g, '&') : null
+  return rawPortalUrl ? rawPortalUrl.replace(/(?:&amp;|&#0*38;)/gi, '&') : null
 }
 
 export const hasOfficialCareersSignal = (html = '') => {

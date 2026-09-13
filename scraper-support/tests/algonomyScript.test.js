@@ -86,7 +86,7 @@ test('Algonomy returns Paycor-backed jobs from the verified first-party careers 
   }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
-      if (url === algonomy.CAREERS_URL) return CAREERS_HTML
+      if (url === algonomy.CAREERS_URL) return CAREERS_HTML + `<script src="${algonomy.PAYCOR_SCRIPT_URL}"></script>`
       if (url === algonomy.PAYCOR_BOARD_URL) return PAYCOR_BOARD_HTML
       throw new Error(`Unexpected Algonomy URL: ${url}`)
     },
@@ -101,4 +101,19 @@ test('Algonomy returns Paycor-backed jobs from the verified first-party careers 
   assert.equal(jobs[0].company, 'Algonomy')
   assert.equal(jobs[0].country, 'India')
   assert.equal(jobs[0].scrapedAt, '2026-07-26T04:45:00.000Z')
+})
+
+
+test('Algonomy reports the official ADA migration without relabeling parent jobs or accepting an empty marketing page', async () => {
+  const a = await loadModule()
+  const html = '<title>Careers | Build What the Next Era Runs On | ADA Global</title><h1>Careers at ADA</h1><a href="https://adaglobal.darwinbox.com/ms/candidatev2/main/careers/allJobs">Explore open roles</a>'
+  await assert.rejects(a.run({fetchText: async url => { assert.equal(url, a.CAREERS_URL); return html }}), error => error.code === 'ALGONOMY_SCOPE_UNVERIFIED' && error.abortRetries === true)
+})
+
+test('Algonomy refuses an unlinked legacy Paycor board even if old marketing copy remains', async () => {
+  const a = await loadModule()
+  await assert.rejects(a.run({ fetchText: async url => {
+    if (url === a.CAREERS_URL) return CAREERS_HTML
+    return PAYCOR_BOARD_HTML
+  } }), /Paycor handoff/i)
 })

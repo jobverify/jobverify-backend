@@ -60,7 +60,9 @@ export const createBlazeclanTechnologiesScraper = () => ({
       throw new Error('Blazeclan Technologies current openings handoff no longer matches the verified dead-board state')
     }
 
-    return []
+    throw Object.assign(new Error('Blazeclan official Zoho handoff is unavailable: the tenant does not exist; no complete job snapshot can be established'), {
+      code: 'BLAZECLAN_BOARD_UNAVAILABLE', failureKind: 'upstream_unavailable', softFailure: true, upstreamOutage: true, abortRetries: true,
+    })
   },
 })
 

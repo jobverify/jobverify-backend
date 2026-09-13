@@ -71,7 +71,7 @@ const verifiedBundleJs = `
   });
   fetch("/wp-json/ntc/job/get/v2", { method: "POST" });
   window.history.pushState(null, null, window.location.pathname + "?keywords=data");
-  const banner = "Find your dream job in NashTech";
+  const banner = "Find Authentic Jobs in NashTech";
   const title = "Open jobs";
 `
 

@@ -120,7 +120,7 @@ test('Lumiq local catalog captures the verified first-party careers page and pub
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://www.lumiq.ai/')
   assert.equal(provider.companyCareerPage, 'https://www.lumiq.ai/careers/')
-  assert.equal(provider.officialZohoBoardUrl, 'https://lumiq.zohorecruit.in/jobs/Careers')
+  assert.equal(provider.officialZohoBoardUrl, 'https://lumiq.zohorecruit.in/careers')
   assert.equal(
     provider.jobsApiUrl,
     'https://lumiq.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite',
@@ -128,17 +128,17 @@ test('Lumiq local catalog captures the verified first-party careers page and pub
   assert.equal(provider.companyDomain, 'lumiq.ai')
   assert.equal(provider.atsPlatform, 'zohorecruit')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'zoho-public-job-openings-api')
+  assert.equal(provider.paginationStrategy, 'complete-embedded-board-and-public-api-id-reconciliation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-zohorecruit-board+public-job-openings-api+india-location-filter',
+    'verified-first-party-current-zoho-handoff+embedded-board-and-api-id-match+india-job-details',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /See All Open Positions/i)
-  assert.match(provider.verifiedSurfaceSummary, /lumiq\.zohorecruit\.in\/jobs\/Careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /AI Engineer/i)
+  assert.equal(provider.verifiedOn, '2026-09-13')
+  assert.match(provider.verifiedSurfaceSummary, /complete seven-job collection/i)
+  assert.match(provider.verifiedSurfaceSummary, /lumiq\.zohorecruit\.in\/careers/i)
+  assert.match(provider.verifiedSurfaceSummary, /Lead DevOps Engineer/i)
 
   assertBacklogRowMatches({
     provider,

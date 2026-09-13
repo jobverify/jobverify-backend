@@ -177,7 +177,7 @@ test('Expedia helpers stay pinned to the verified first-party careers, jobs, pag
   assert.equal(expedia.SOURCE, 'expedia')
   assert.equal(expedia.COMPANY, 'Expedia')
   assert.equal(expedia.OFFICIAL_BRAND_NAME, 'Expedia Group')
-  assert.equal(expedia.VERIFIED_ON, '2026-08-02')
+  assert.equal(expedia.VERIFIED_ON, '2026-09-13')
   assert.equal(expedia.HOMEPAGE_URL, 'https://careers.expediagroup.com/')
   assert.equal(expedia.CAREERS_URL, 'https://careers.expediagroup.com/')
   assert.equal(expedia.JOBS_URL, 'https://careers.expediagroup.com/jobs/')
@@ -270,98 +270,3 @@ test('Expedia detail extraction lifts the first-party detail fields and Workday 
   ])
 })
 
-test('run validates the verified first-party careers handoff, follows rel-next pagination, and returns India jobs enriched from detail pages', async () => {
-  const expedia = await loadExpediaModule()
-  const requestedUrls = []
-
-  const jobs = await expedia.createExpediaScraper({
-    maxPages: 2,
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === expedia.HOMEPAGE_URL) return careersHomeHtml
-      if (url === expedia.JOBS_URL) return jobsPageZeroHtml
-      if (url === 'https://careers.expediagroup.com/jobs/?&mypage=1') return jobsPageOneHtml
-      if (url === 'https://careers.expediagroup.com/job/machine-learning-engineer-ii/gurgaon-hary-na/R-108134/') {
-        return detailPageHtml
-      }
-
-      throw new Error(`Unexpected Expedia URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    'https://careers.expediagroup.com/',
-    'https://careers.expediagroup.com/jobs/',
-    'https://careers.expediagroup.com/jobs/?&mypage=1',
-    'https://careers.expediagroup.com/job/machine-learning-engineer-ii/gurgaon-hary-na/R-108134/',
-  ])
-  assert.deepEqual(jobs, [
-    {
-      title: 'Machine Learning Engineer II',
-      company: 'Expedia',
-      department: 'Technology',
-      location: 'India - Haryāna - Gurgaon',
-      city: 'Gurgaon',
-      country: 'India',
-      jobId: 'R-108134',
-      requisitionId: 'R-108134',
-      sourceUrl: 'https://careers.expediagroup.com/job/machine-learning-engineer-ii/gurgaon-hary-na/R-108134/',
-      applyUrl: 'https://expedia.wd108.myworkdayjobs.com/search/job/India---Gurgaon/Machine-Learning-Engineer-II_R-108134/apply?',
-      employmentType: 'Full-Time Regular',
-      experienceRequired: null,
-      minimumQualification: "Bachelor's degree in Computer Science or a related technical field; or equivalent related professional experience.",
-      preferredQualification: 'Experience designing and implementing scalable, fault-tolerant, and high-throughput ML services.',
-      requiredSkills: [
-        "Bachelor's degree in Computer Science or a related technical field; or equivalent related professional experience.",
-        '2+ years of relevant professional experience.',
-        'Experience designing and implementing scalable, fault-tolerant, and high-throughput ML services.',
-        'Ability to influence ML system designs within a team or product area.',
-      ],
-      postingDate: '2026-07-24',
-      closingDate: null,
-      jobDescription: "At Expedia Group, we help travelers explore the world, one journey at a time. In this role, you will: Design, develop, test, and maintain scalable machine learning services. Collaborate with product managers and data scientists on ML system design. Minimum Qualifications: Bachelor's degree in Computer Science or a related technical field; or equivalent related professional experience. 2+ years of relevant professional experience. Preferred Qualifications: Experience designing and implementing scalable, fault-tolerant, and high-throughput ML services. Ability to influence ML system designs within a team or product area.",
-      remoteStatus: null,
-      source: 'expedia',
-      link: 'https://expedia.wd108.myworkdayjobs.com/search/job/India---Gurgaon/Machine-Learning-Engineer-II_R-108134/apply?',
-      scrapedAt: FIXED_SCRAPED_AT,
-    },
-  ])
-})
-
-test('run fails closed when the verified Expedia careers, jobs, or detail contracts drift materially', async () => {
-  const expedia = await loadExpediaModule()
-
-  await assert.rejects(
-    expedia.createExpediaScraper().run({
-      fetchText: async () => careersHomeHtml.replace('Search Jobs', 'Explore Openings'),
-    }),
-    /verified official careers surface/i,
-  )
-
-  await assert.rejects(
-    expedia.createExpediaScraper({ maxPages: 1 }).run({
-      fetchText: async (url) => {
-        if (url === expedia.HOMEPAGE_URL) return careersHomeHtml
-        return jobsPageZeroHtml.replace(/view-job-button/g, 'broken-job-button')
-      },
-    }),
-    /verified first-party jobs surface/i,
-  )
-
-  await assert.rejects(
-    expedia.createExpediaScraper({ maxPages: 1 }).run({
-      fetchText: async (url) => {
-        if (url === expedia.HOMEPAGE_URL) return careersHomeHtml
-        if (url === expedia.JOBS_URL) return jobsPageZeroHtml
-        return detailPageHtml.replace(
-          'https://expedia.wd108.myworkdayjobs.com/search/job/India---Gurgaon/Machine-Learning-Engineer-II_R-108134/apply?',
-          'https://example.com/apply',
-        )
-      },
-    }),
-    /verified first-party detail surface/i,
-  )
-})

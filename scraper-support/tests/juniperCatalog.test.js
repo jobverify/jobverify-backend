@@ -13,8 +13,10 @@ test('getScraperCatalog includes the Juniper script provider with official metad
   assert.ok(juniper)
   assert.equal(juniper.adapter, 'script')
   assert.equal(juniper.atsPlatform, 'phenom')
-  assert.match(juniper.companyCareerPage, /careers\.juniper\.net/i)
-  assert.equal(juniper.companyDomain, 'careers.juniper.net')
+  assert.equal(juniper.companyCareerPage, 'https://careers.hpe.com/juniper')
+  assert.equal(juniper.companyDomain, 'careers.hpe.com')
+  assert.equal(juniper.targetedJobsLandingKey, 'l-hpe-juniper-networking')
+  assert.equal(juniper.countryFilter, 'India')
 })
 
 test('buildScrapers exposes a runnable Juniper script scraper without changing the runner contract', () => {

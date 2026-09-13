@@ -13,6 +13,31 @@ export const INDIA_JOBS_URL = 'https://jobs.renesas.com/Jobs?options=659&page='
 export const INDIA_CAREERS_URL = 'https://jobs.renesas.com/india'
 export const BASE_URL = 'https://jobs.renesas.com'
 
+const DEFAULT_DETAIL_CONCURRENCY = 4
+const MAX_DETAIL_CONCURRENCY = 8
+const MAX_LISTING_PAGES = 100
+const INCOMPLETE_DESCRIPTION_PATTERN = /^(?:no\s+)?(?:job\s+)?description(?:\s+is)?\s+(?:currently\s+)?(?:unavailable|not available|coming soon|available soon|pending|to be (?:added|provided|updated))[\s.!]*$/i
+
+const decodeHtmlEntities = (value) => String(value ?? '')
+  .replace(/&#(\d+);/g, (entity, code) => {
+    const codePoint = Number.parseInt(code, 10)
+    return Number.isInteger(codePoint) && codePoint <= 0x10ffff
+      ? String.fromCodePoint(codePoint)
+      : entity
+  })
+  .replace(/&#x([0-9a-f]+);/gi, (entity, code) => {
+    const codePoint = Number.parseInt(code, 16)
+    return Number.isInteger(codePoint) && codePoint <= 0x10ffff
+      ? String.fromCodePoint(codePoint)
+      : entity
+  })
+  .replace(/&nbsp;/gi, ' ')
+  .replace(/&quot;/gi, '"')
+  .replace(/&#39;|&apos;/gi, "'")
+  .replace(/&amp;/gi, '&')
+  .replace(/&lt;/gi, '<')
+  .replace(/&gt;/gi, '>')
+
 const stripTags = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
@@ -25,6 +50,75 @@ const stripTags = (value) => String(value ?? '')
   .replace(/&gt;/gi, '>')
   .replace(/\s+/g, ' ')
   .trim()
+
+const htmlToParagraphText = (value) => {
+  const text = decodeHtmlEntities(
+    String(value ?? '')
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .replace(/<br\s*\/?>/gi, '\n\n')
+      .replace(/<li\b[^>]*>/gi, '\n- ')
+      .replace(/<\/li>/gi, '')
+      .replace(/<\/(?:p|div|h[1-6])>/gi, '\n\n')
+      .replace(/<(?:p|div|h[1-6])\b[^>]*>/gi, '')
+      .replace(/<\/?(?:ul|ol)\b[^>]*>/gi, '')
+      .replace(/<[^>]+>/g, ' '),
+  )
+    .replace(/[^\S\n]+/g, ' ')
+    .replace(/ *\n */g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+
+  return text || null
+}
+
+const extractJobDescriptionHtml = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const openingTag = /<div\b[^>]*\baria-label\s*=\s*["']Job description["'][^>]*>/i.exec(rawHtml)
+  if (!openingTag) return null
+
+  const contentStart = openingTag.index + openingTag[0].length
+  const divTags = /<\/?div\b[^>]*>/gi
+  divTags.lastIndex = contentStart
+  let depth = 1
+
+  for (let tag = divTags.exec(rawHtml); tag; tag = divTags.exec(rawHtml)) {
+    if (/^<\/div/i.test(tag[0])) {
+      depth -= 1
+      if (depth === 0) return rawHtml.slice(contentStart, tag.index)
+    } else if (!/\/>$/.test(tag[0])) {
+      depth += 1
+    }
+  }
+
+  return null
+}
+
+const mapWithConcurrency = async (items, concurrency, mapper) => {
+  const parsedConcurrency = Number.parseInt(concurrency, 10)
+  const limit = Math.min(
+    MAX_DETAIL_CONCURRENCY,
+    Math.max(1, Number.isInteger(parsedConcurrency) ? parsedConcurrency : DEFAULT_DETAIL_CONCURRENCY),
+  )
+  const results = new Array(items.length)
+  let cursor = 0
+
+  const worker = async () => {
+    while (cursor < items.length) {
+      const index = cursor
+      cursor += 1
+      results[index] = await mapper(items[index], index)
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, worker),
+  )
+
+  return results
+}
 
 const match = (value, pattern) => value.match(pattern)?.[1] || ''
 
@@ -98,10 +192,33 @@ export const extractRenesasJobs = (html = '') => {
       remoteStatus: field(card, 'remote') || null,
       jobDescription: description || null,
       experienceRequired: inferExperienceFromDescription(description),
-      publicExperienceChecked: Boolean(description),
+      publicExperienceChecked: false,
       source: SOURCE,
     }
   }).filter(Boolean)
+}
+
+export const extractRenesasJobDetail = (html = '') => {
+  const descriptionHtml = extractJobDescriptionHtml(html)
+  const description = htmlToParagraphText(descriptionHtml)
+  const descriptionBody = description
+    ?.replace(/^job description\s*:?\s*/i, '')
+    .trim()
+
+  if (
+    !description
+    || !descriptionBody
+    || !/^job description\b/i.test(description)
+    || INCOMPLETE_DESCRIPTION_PATTERN.test(descriptionBody)
+  ) {
+    return null
+  }
+
+  return {
+    jobDescription: description,
+    experienceRequired: inferExperienceFromDescription(description),
+    publicExperienceChecked: true,
+  }
 }
 
 const getTotalResults = (html) => Number.parseInt(
@@ -109,7 +226,13 @@ const getTotalResults = (html) => Number.parseInt(
   10,
 )
 
-export const createRenesasScraper = () => ({
+export const createRenesasScraper = ({
+  detailConcurrency = DEFAULT_DETAIL_CONCURRENCY,
+  now = () => new Date().toISOString(),
+  onDetailError = (error, job) => {
+    console.warn(`[renesas] retaining listing without description after detail fetch failed for ${job.sourceUrl}: ${error.message}`)
+  },
+} = {}) => ({
   async run({
     fetchText = (url, options = {}) => fetchTextWithRetry(url, {
       headers: {
@@ -131,6 +254,9 @@ export const createRenesasScraper = () => ({
 
     const pageSize = firstPageJobs.length
     const pageCount = Math.ceil(totalResults / pageSize)
+    if (pageCount > MAX_LISTING_PAGES) {
+      throw new Error(`[renesas] official India jobs page reported ${pageCount} pages, above the safety limit of ${MAX_LISTING_PAGES}`)
+    }
     const pages = [firstPageJobs]
 
     for (let page = 2; page <= pageCount; page += 1) {
@@ -142,11 +268,45 @@ export const createRenesasScraper = () => ({
     }
 
     const seen = new Set()
-    return pages.flat().filter((job) => {
+    const uniqueJobs = pages.flat().filter((job) => {
       const identity = String(job.jobId || job.sourceUrl)
       if (seen.has(identity)) return false
       seen.add(identity)
       return true
+    })
+
+    return mapWithConcurrency(uniqueJobs, detailConcurrency, async (job) => {
+      try {
+        const detailHtml = await fetchText(job.sourceUrl)
+        const detail = extractRenesasJobDetail(detailHtml)
+        if (!detail) {
+          throw new Error('official detail page did not contain a recognizable complete job description')
+        }
+        const sourceCheckedAt = now()
+
+        return {
+          ...job,
+          ...detail,
+          scrapedAt: sourceCheckedAt,
+          scrapedTimestamp: sourceCheckedAt,
+        }
+      } catch (error) {
+        const sourceCheckedAt = now()
+        try {
+          onDetailError(error, job)
+        } catch {
+          // Reporting a detail failure must not discard an otherwise valid listing.
+        }
+        return {
+          ...job,
+          jobDescription: null,
+          experienceRequired: null,
+          publicExperienceChecked: false,
+          preserveExistingSourceContent: true,
+          scrapedAt: sourceCheckedAt,
+          scrapedTimestamp: sourceCheckedAt,
+        }
+      }
     })
   },
 })

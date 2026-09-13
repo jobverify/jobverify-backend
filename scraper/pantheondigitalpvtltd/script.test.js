@@ -89,6 +89,19 @@ const contactHtml = `
   </html>
 `
 
+const currentContactHtml = `
+  <html>
+    <head>
+      <title>Contact Us | Pantheon Digital | Pantheon Digital</title>
+      <meta name="description" content="Get in touch with Pantheon Digital. Book a discovery call, request a software or web development quote, or connect with our Saket, New Delhi team." />
+      <meta property="og:title" content="Contact Us | Pantheon Digital" />
+      <meta property="og:url" content="https://pantheondigitals.com/contact-us" />
+      <meta property="og:site_name" content="Pantheon Digital" />
+    </head>
+    <body><h1>Contact Us</h1><a href="/About">About</a></body>
+  </html>
+`
+
 const cutshortPageData = {
   pageData: {
     company: {
@@ -204,6 +217,7 @@ test('Pantheon Digital verified signals and structured Cutshort payload stay anc
   assert.equal(hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(hasOfficialAboutSignal(aboutHtml), true)
   assert.equal(hasOfficialContactSignal(contactHtml), true)
+  assert.equal(hasOfficialContactSignal(currentContactHtml), true)
   assert.equal(hasOfficialCutshortSignal(cutshortHtml), true)
   assert.deepEqual(extractCompanyPageData(cutshortHtml), cutshortPageData.pageData)
 })
@@ -310,4 +324,34 @@ test('run fails closed when the first-party site or official Cutshort handoff dr
     }),
     /official cutshort surface/i,
   )
+})
+
+const runPantheonPayload = (data,options={}) => createPantheonDigitalScraper().run({ ...options, fetchText:async url=>{
+  if(url===HOMEPAGE_URL)return homepageHtml
+  if(url===ABOUT_URL)return aboutHtml
+  if(url===CONTACT_URL)return contactHtml
+  if(url===CAREERS_URL||url===JOBS_URL)throw Error('HTTP 404 for '+url)
+  return cutshortHtml.replace(JSON.stringify(cutshortData),JSON.stringify({success:true,data:{pageData:data},status:200}))
+}})
+
+test('Pantheon excludes explicit foreign jobs and refuses unknown geography instead of appending India',async()=>{
+  const data=structuredClone(cutshortPageData.pageData)
+  data.companyJobs.jobs[0].locations=['London']
+  data.companyJobs.jobs[0].locationsText='London'
+  assert.deepEqual(await runPantheonPayload(data),[])
+  data.companyJobs.jobs[0].locations=['Remote']
+  data.companyJobs.jobs[0].locationsText='Remote'
+  await assert.rejects(runPantheonPayload(data),/geography|scope/i)
+})
+
+test('Pantheon rejects additional pages, malformed jobs, duplicate IDs and unrelated job owners',async()=>{
+  for(const change of [data=>data.companyJobs.totalPages=2,data=>data.companyJobs.jobs.push({...data.companyJobs.jobs[0]}),data=>data.companyJobs.jobs.push({_id:'bad'}),data=>data.companyJobs.jobs[0].companyId.alias='other-company']){
+    const data=structuredClone(cutshortPageData.pageData);change(data)
+    await assert.rejects(runPantheonPayload(data),/incomplete|pagination|duplicate|identity|malformed/i)
+  }
+})
+
+test('Pantheon honors cancellation before networking',async()=>{
+  const reason=Error('Cancelled Pantheon')
+  await assert.rejects(runPantheonPayload(cutshortPageData.pageData,{signal:AbortSignal.abort(reason)}),error=>error===reason)
 })

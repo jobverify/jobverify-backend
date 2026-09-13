@@ -54,6 +54,59 @@ const loadModule = async () => {
   }
 }
 
+const opening = {
+  jobVacancyId: '13351237674', companyIdentifier: 'ixigo',
+  publicationId: '744000148960834', destinationCode: 'WIDGET',
+  uuid: 'f7bae47a-f4b8-4ef1-bf37-cab734479a36', urlJobName: 'full-stack-intern-b2b',
+  vacancyName: 'Full-Stack Intern - B2B', companyName: 'ixigo', refNumber: 'REF392P',
+  typeOfEmployment: 'Full-time', departmentId: null, department: null,
+  location: 'Gurugram', locationRemote: false, locationHybrid: false,
+  locationHybridDescription: null, releasedDate: 1789116667416,
+  customFieldValues: [{ fieldId: 'COUNTRY', fieldLabel: 'Country/Region', valueId: 'in', valueLabel: 'India' }],
+  regionAbbreviation: 'HR', countryAbbreviation: 'in', countryName: 'India', languageCode: 'en',
+}
+const apiUrl = 'https://careers.ixigo.com/api/openings'
+
+test('ixigo reads the public openings API even when server HTML says No Jobs Found', async () => {
+  const ixigo = await loadModule()
+  const requested = []
+  const jobs = await ixigo.run({ fetchPage: async url => {
+    requested.push(url)
+    if (url === ixigo.CURRENT_CAREERS_URL) return { status: 200, url, html: currentCareersHtml }
+    if (url === apiUrl) return { status: 200, url, html: JSON.stringify({ data: { results: [opening], numFound: 1 } }) }
+    throw new Error('Retired legacy careers redirect should not be required')
+  } })
+  assert.deepEqual(requested, [ixigo.CURRENT_CAREERS_URL, apiUrl])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Full-Stack Intern - B2B')
+  assert.equal(jobs[0].link, 'https://jobs.smartrecruiters.com/ixigo/13351237674')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].location, 'Gurugram')
+  assert.equal(jobs[0].requisitionId, 'REF392P')
+})
+
+test('ixigo rejects API errors, malformed records, and truncated results despite the empty HTML placeholder', async () => {
+  const ixigo = await loadModule()
+  for (const response of [
+    { status: 503, html: 'Unavailable' },
+    { status: 200, html: JSON.stringify({ error: 'unavailable' }) },
+    { status: 200, html: JSON.stringify({ data: { results: [opening], numFound: 2 } }) },
+    { status: 200, html: JSON.stringify({ data: { results: [{ ...opening, companyIdentifier: 'unrelated' }], numFound: 1 } }) },
+    { status: 200, html: JSON.stringify({ data: { results: [{ ...opening, countryAbbreviation: '' }], numFound: 1 } }) },
+  ]) await assert.rejects(ixigo.run({ fetchPage: async url => url === apiUrl
+    ? { url, ...response } : { status: 200, url: ixigo.CURRENT_CAREERS_URL, html: currentCareersHtml },
+  }), /openings|incomplete|record|company|country/i)
+})
+
+test('ixigo only returns empty after a complete API response and filters country eligibility', async () => {
+  const ixigo = await loadModule()
+  for (const results of [[], [{ ...opening, location: 'Indianapolis, IN', countryAbbreviation: 'us', countryName: 'United States' }]]) {
+    assert.deepEqual(await ixigo.run({ fetchPage: async url => ({ status: 200, url,
+      html: url === apiUrl ? JSON.stringify({ data: { results, numFound: results.length } }) : currentCareersHtml,
+    }) }), [])
+  }
+})
+
 test('ixigo sentinel pins the verified legacy redirect and current no-jobs careers page URLs', async () => {
   const ixigo = await loadModule()
 
@@ -67,82 +120,14 @@ test('ixigo sentinel pins the verified legacy redirect and current no-jobs caree
   assert.equal(ixigo.hasVerifiedNoJobsSignal(currentCareersWithJobsHtml), false)
 })
 
-test('ixigo returns no jobs only while the verified official careers surface remains a no-jobs sentinel', async () => {
+test('ixigo validates the current first-party page before requesting openings', async () => {
   const ixigo = await loadModule()
-  const requested = []
-
-  const jobs = await ixigo.createIxigoScraper().run({
-    fetchPage: async (url) => {
-      requested.push(url)
-
-      if (url === ixigo.LEGACY_CAREERS_URL) {
-        return {
-          status: 200,
-          url: ixigo.CURRENT_CAREERS_URL,
-          html: currentCareersHtml,
-        }
-      }
-
-      if (url === ixigo.CURRENT_CAREERS_URL) {
-        return {
-          status: 200,
-          url: ixigo.CURRENT_CAREERS_URL,
-          html: currentCareersHtml,
-        }
-      }
-
-      throw new Error(`Unexpected ixigo fixture URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requested, [
-    ixigo.LEGACY_CAREERS_URL,
-    ixigo.CURRENT_CAREERS_URL,
-  ])
-  assert.deepEqual(jobs, [])
-})
-
-test('ixigo fails closed when the legacy redirect drifts or the current careers page stops being a no-jobs sentinel', async () => {
-  const ixigo = await loadModule()
-
-  await assert.rejects(
-    ixigo.createIxigoScraper().run({
-      fetchPage: async (url) => {
-        if (url === ixigo.LEGACY_CAREERS_URL) {
-          return {
-            status: 200,
-            url: 'https://www.ixigo.com/about/careers/',
-            html: currentCareersHtml,
-          }
-        }
-
-        throw new Error(`Unexpected ixigo fixture URL: ${url}`)
-      },
-    }),
-    /legacy careers redirect/i,
-  )
-
-  await assert.rejects(
-    ixigo.createIxigoScraper().run({
-      fetchPage: async (url) => ({
-        status: 200,
-        url: ixigo.CURRENT_CAREERS_URL,
-        html: url === ixigo.CURRENT_CAREERS_URL
-          ? '<html><body><h1>Careers</h1></body></html>'
-          : currentCareersHtml,
-      }),
-    }),
-    /official ixigo careers page/i,
-  )
-
-  await assert.rejects(
-    ixigo.createIxigoScraper().run({
-      fetchPage: async () => ({
-        status: 200,
-        url: ixigo.CURRENT_CAREERS_URL,
-        html: currentCareersWithJobsHtml,
-      }),
-    }),
-    /now exposes public jobs|verified no-jobs surface/i,
-  )
+  for (const page of [
+    { status: 503, url: ixigo.CURRENT_CAREERS_URL, html: currentCareersHtml },
+    { status: 200, url: ixigo.LEGACY_CAREERS_URL, html: currentCareersHtml },
+    { status: 200, url: ixigo.CURRENT_CAREERS_URL, html: '<main>Unexpected page</main>' },
+  ]) await assert.rejects(ixigo.run({ fetchPage: async url => {
+    assert.equal(url, ixigo.CURRENT_CAREERS_URL)
+    return page
+  } }), /current careers page|official ixigo careers page/i)
 })

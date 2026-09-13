@@ -40,7 +40,7 @@ const assertHydratedCatalogLoadsScript = async (provider) => {
   assert.equal(typeof module.run, 'function')
 }
 
-test('Muvi Entertainment local catalog captures the verified first-party Simple Job Board careers surface', async () => {
+test('Muvi Entertainment local catalog captures the verified first-party paginated careers surface', async () => {
   const { constant, defaultExport } = await loadCatalog(
     '../../scraper/muvientertainment/catalog.js',
     'MUVI_ENTERTAINMENT_CATALOG',
@@ -52,15 +52,15 @@ test('Muvi Entertainment local catalog captures the verified first-party Simple 
   assert.equal(provider.officialBrandName, 'Muvi')
   assert.equal(provider.homepageUrl, 'https://www.muvi.com/')
   assert.equal(provider.companyCareerPage, 'https://www.muvi.com/career/')
-  assert.equal(provider.atsPlatform, 'simple-job-board-wordpress')
-  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')
+  assert.equal(provider.atsPlatform, 'first-party-careers-pagination-plus-job-details')
+  assert.equal(provider.paginationStrategy, 'complete-first-party-numbered-listing-pages')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+simple-job-board-listing',
+    'verified-first-party-careers-handoff+all-listing-pages+validated-job-details+explicit-india-scope',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Email Outreach Manager/i)
-  assert.match(provider.verifiedSurfaceSummary, /Senior JAVA developer/i)
+  assert.equal(provider.verifiedOn, '2026-09-13')
+  assert.match(provider.verifiedSurfaceSummary, /Automation Engineer/i)
+  assert.match(provider.verifiedSurfaceSummary, /sourceListingComplete:false/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

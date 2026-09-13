@@ -48,28 +48,29 @@ test('Expedia local catalog captures the verified first-party careers homepage, 
     'https://expedia.wd108.myworkdayjobs.com/search/job/India---Gurgaon/Machine-Learning-Engineer-II_R-108134/apply?',
   )
   assert.equal(EXPEDIA_CATALOG.companyDomain, 'expediagroup.com')
-  assert.equal(EXPEDIA_CATALOG.atsPlatform, 'official-company-careers')
+  assert.equal(EXPEDIA_CATALOG.atsPlatform, 'workday-jobs-api')
   assert.equal(EXPEDIA_CATALOG.countryFilter, 'India')
   assert.equal(
     EXPEDIA_CATALOG.paginationStrategy,
-    'verified-first-party-jobs-page-plus-rel-next-pagination',
+    'workday-cxs-offset-with-complete-inventory-check',
   )
   assert.equal(
     EXPEDIA_CATALOG.extractionStrategy,
-    'verified-first-party-careers-page+verified-first-party-jobs-pages+india-card-filter+first-party-detail-pages+workday-apply-handoff',
+    'officially-linked-workday-cxs+verified-india-location-facets+workday-detail-enrichment',
   )
   assert.equal(EXPEDIA_CATALOG.parser, 'custom-script')
   assert.equal(EXPEDIA_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(EXPEDIA_CATALOG.verifiedOn, '2026-08-02')
+  assert.equal(EXPEDIA_CATALOG.verifiedOn, '2026-09-13')
   assert.equal(EXPEDIA_CATALOG.dryRunFile, 'expedia/jobs.json')
   assert.equal(EXPEDIA_CATALOG.modulePath, expediaModulePath)
-  assert.match(EXPEDIA_CATALOG.verifiedSurfaceSummary, /https:\/\/careers\.expediagroup\.com\/jobs\//i)
-  assert.match(EXPEDIA_CATALOG.verifiedSurfaceSummary, /mypage=1/i)
-  assert.match(EXPEDIA_CATALOG.verifiedSurfaceSummary, /India - Haryana - Gurgaon/i)
-  assert.match(EXPEDIA_CATALOG.verifiedSurfaceSummary, /R-108134/i)
+  assert.match(EXPEDIA_CATALOG.verifiedSurfaceSummary, /WordPress index/i)
+  assert.match(EXPEDIA_CATALOG.verifiedSurfaceSummary, /HTTP 403 Access denied/i)
+  assert.match(EXPEDIA_CATALOG.verifiedSurfaceSummary, /India - Bangalore and India - Gurgaon/i)
+  assert.equal(EXPEDIA_CATALOG.jobsApiUrl, 'https://expedia.wd108.myworkdayjobs.com/wday/cxs/expedia/search/jobs')
+  assert.equal(new URL(EXPEDIA_CATALOG.baseUrl).searchParams.getAll('locations').length, 2)
   assert.match(
     EXPEDIA_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/expedia\.wd108\.myworkdayjobs\.com/i,
+    /expedia\.wd108\.myworkdayjobs\.com/i,
   )
 
   assert.equal(expedia.PROVIDER_METADATA.source, EXPEDIA_CATALOG.source)

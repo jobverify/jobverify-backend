@@ -113,9 +113,14 @@ const getExpectedMissingRootFinalUrl = (requestedUrl) =>
 export const isKnownMissingJobRoute = (page = {}, requestedUrl) => {
   const finalUrl = getFinalUrl(page, requestedUrl)
 
-  if (Number(page.status) !== 403 || hasPublicJobListingSignal(page.html)) {
-    return false
+  if (hasPublicJobListingSignal(page.html)) return false
+
+  if (Number(page.status) === 404) {
+    return finalUrl === requestedUrl
+      && [...ROOT_MISSING_JOB_ROUTE_URLS, ...LOCALIZED_MISSING_JOB_ROUTE_URLS].includes(requestedUrl)
   }
+
+  if (Number(page.status) !== 403) return false
 
   if (ROOT_MISSING_JOB_ROUTE_URLS.includes(requestedUrl)) {
     return finalUrl === getExpectedMissingRootFinalUrl(requestedUrl)

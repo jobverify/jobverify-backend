@@ -18,15 +18,15 @@ export const QUADEYE_CATALOG = {
   companyDomain: 'quadeye.com',
   atsPlatform: 'zohorecruit',
   countryFilter: 'India',
-  paginationStrategy: 'official-careers-page-plus-embedded-zoho-handoff-plus-public-zoho-api',
+  paginationStrategy: 'official-careers-page-plus-portal-api-inventory-equality',
   extractionStrategy:
-    'verified-first-party-careers-page+embedded-zohorecruit-widget+public-job-openings-api',
+    'verified-first-party-careers-page+public-zoho-api+job-location-scope',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   dryRunFile: 'quadeye/jobs.json',
-  verifiedOn: '2026-08-04',
+  verifiedOn: '2026-09-13',
   verifiedSurfaceSummary:
-    'Verified on Tuesday, August 4, 2026 that the official first-party careers page at https://www.quadeye.com/careers/ still embeds a Zoho Recruit widget via rec_embed_js.load with site:"https://quadeye.zohorecruit.in" and empty_job_msg:"No current Openings", while the public portal at https://quadeye.zohorecruit.in/jobs/Careers/ remained live with the current title "Jobs at PeoplePlus" and og:site_name "Quadeye". The public jobs API at https://quadeye.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite returned 7 current public India roles, with branded public detail pages still served on career.quadeye.com.',
+    "Verified on Sunday, September 13, 2026 that https://www.quadeye.com/careers/ redirects to the current Jobs | quadeye surface at https://www.quadeye.com/jobs. The official frontend uses Job_Location from its Zoho-backed public feed. The branded public portal https://quadeye.zohorecruit.in/jobs/Careers/ (Jobs at PeoplePlus) and https://quadeye.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite expose matching inventories of 25 public roles, including 20 current public India roles. Eight India roles have a blank Country field but explicit Gurugram Job_Location; unknown locations and inventory mismatches fail closed. Application links remain on career.quadeye.com.",
 }
 
 export default QUADEYE_CATALOG

@@ -16,7 +16,7 @@ test('Technotreon is registered against the verified first-party careers page', 
   assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-careers-page+standardised-aptitude-test-listings+google-forms-apply',
+    'verified-homepage+Pune-careers-title+numbered-role-cards+google-forms-apply',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

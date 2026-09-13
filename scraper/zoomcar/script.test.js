@@ -34,10 +34,10 @@ test('Zoomcar accepts the current canonical attribute order on the consumer mark
   assert.equal(hasOfficialMarketingShellSignal(marketingShellHtml), true)
 })
 
-test('Zoomcar returns no jobs while homepage, careers, and jobs routes still serve the verified consumer shell', async () => {
+test('Zoomcar consumer shell cannot remove previously saved jobs', async () => {
   const requestedUrls = []
 
-  const jobs = await createZoomcarScraper().run({
+  const pending = createZoomcarScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
       return {
@@ -47,6 +47,7 @@ test('Zoomcar returns no jobs while homepage, careers, and jobs routes still ser
       }
     },
   })
+  await assert.rejects(pending, { code: 'ZOOMCAR_INVENTORY_UNAVAILABLE', failureType: 'upstream_unavailable', abortRetries: true })
 
   assert.deepEqual(requestedUrls, [
     HOMEPAGE_URL,
@@ -54,5 +55,4 @@ test('Zoomcar returns no jobs while homepage, careers, and jobs routes still ser
     NON_WWW_CAREERS_URL,
     JOBS_URL,
   ])
-  assert.deepEqual(jobs, [])
 })

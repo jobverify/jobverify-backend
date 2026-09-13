@@ -201,3 +201,23 @@ test('run fetches TCS search results and detail payloads, then decorates shared 
   assert.ok(jobs.every((job) => job.link === job.applyUrl))
   assert.ok(jobs.every((job) => typeof job.scrapedAt === 'string' && job.scrapedAt.length > 0))
 })
+
+test('TCS identifies the official maintenance document returned with HTTP 404', async (t) => {
+  const { createTcsScraper } = await loadTcsModule()
+  t.mock.method(globalThis, 'fetch', async () => new Response(
+    '<html><title>App Maintenance</title><p>Sorry, iBegin is temporarily under maintenance</p></html>',
+    { status: 404, headers: { 'Content-Type': 'text/html; charset=UTF-8' } },
+  ))
+  await assert.rejects(createTcsScraper({ maxPages: 1 }).run(), (error) => {
+    assert.equal(error.code, 'TCS_MAINTENANCE')
+    assert.equal(error.upstreamOutage, true)
+    assert.equal(error.abortRetries, true)
+    assert.match(error.message, /iBegin.*maintenance/i)
+    return true
+  })
+})
+
+test('TCS refuses a malformed search payload instead of reporting zero jobs', async () => {
+  const { createTcsScraper } = await loadTcsModule()
+  await assert.rejects(createTcsScraper({ maxPages: 1 }).run({ fetchJson: async () => ({ status: 'unavailable' }) }), /invalid.*search response/i)
+})

@@ -147,6 +147,7 @@ test('run keeps BCG jobs on the official Phenom route and decorates shared runne
     applyUrl: 'https://experiencedtalent.bcg.com/careerhub/explore/jobs/58414',
     sourceUrl: 'https://careers.bcg.com/global/en/job/58414/Office-Operations-Coordinator',
     source: 'bcg',
+    sourceListingComplete: false,
     employmentType: 'Full-time',
     experienceRequired: '5+ years',
     publicExperienceChecked: true,

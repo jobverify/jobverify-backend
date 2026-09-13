@@ -4,19 +4,19 @@ import test from 'node:test'
 import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
-test('Genex Space is registered against the verified first-party fellowship page', () => {
+test('Genex Space is registered against the current first-party unavailable inventory', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'genexspace')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Genex Space')
-  assert.equal(provider.companyCareerPage, 'https://genex.space/gsef/')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.companyCareerPage, 'https://genex.space/')
+  assert.equal(provider.atsPlatform, 'official-company-site-inventory-unavailable')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-program-page')
+  assert.equal(provider.paginationStrategy, 'verified-homepage-plus-current-client-bundle')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-gsef-page+single-public-fellowship+same-page-apply-form',
+    'verified-company-and-join-us-bundle+reject-unavailable-inventory',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
@@ -44,6 +44,6 @@ test('Genex Space is runnable through the scraper provider catalog', () => {
   assert.ok(scraper)
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'genexspace')
-  assert.equal(scraper.provider.companyCareerPage, 'https://genex.space/gsef/')
+  assert.equal(scraper.provider.companyCareerPage, 'https://genex.space/')
   assert.match(scraper.dryRunFile, /genexspace[\\/]jobs\.json$/i)
 })

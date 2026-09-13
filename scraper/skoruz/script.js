@@ -183,6 +183,19 @@ export const isTrustedIndiaIframeFailure = (error) => {
     || message.includes('certificate')
 }
 
+export class SkoruzIndiaInventoryUnavailableError extends Error {
+  constructor(cause, { otherRegionJobCount = 0 } = {}) {
+    super(`Skoruz India inventory unavailable: ${normalizeWhitespace(cause?.message ?? cause)}`, { cause })
+    this.name = 'SkoruzIndiaInventoryUnavailableError'
+    this.softFailure = true
+    this.upstreamOutage = true
+    this.abortRetries = true
+    this.failureKind = 'network_or_timeout'
+    this.inventoryScope = 'India'
+    this.otherRegionJobCount = otherRegionJobCount
+  }
+}
+
 export const createSkoruzScraper = () => ({
   async run({
     fetchText = defaultFetchText,
@@ -203,7 +216,9 @@ export const createSkoruzScraper = () => ({
       await fetchText(iframeUrl)
     } catch (error) {
       if (isTrustedIndiaIframeFailure(error)) {
-        return publicUsJobs
+        throw new SkoruzIndiaInventoryUnavailableError(error, {
+          otherRegionJobCount: publicUsJobs.length,
+        })
       }
 
       throw error

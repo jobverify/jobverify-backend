@@ -5,6 +5,7 @@ import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import { createDarwinboxScraper } from '../../scraper/darwinbox/script.js'
+import { classifyScraperError } from '../utils/failureClassification.js'
 
 const fixturesDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -587,7 +588,7 @@ test('run retries a Darwinbox listings page once with a fresh public cookie afte
   )
 })
 
-test('run returns a current-openings signal job when page 1 stays 403-blocked but the public Darwinbox shell is reachable', async () => {
+test('run reports typed upstream failure when page 1 stays 403-blocked despite a reachable public Darwinbox shell', async () => {
   const requests = []
   let seedCount = 0
   const apiOnlyScraper = createDarwinboxScraper({
@@ -622,39 +623,15 @@ test('run returns a current-openings signal job when page 1 stays 403-blocked bu
     },
   })
 
-  const jobs = await apiOnlyScraper.run({ maxPages: 1 })
-
-  assert.equal(jobs.length, 1)
-  assert.equal(typeof jobs[0].scrapedAt, 'string')
-  assert.deepEqual(
-    {
-      ...jobs[0],
-      scrapedAt: '<dynamic>',
-    },
-    {
-      title: 'Current openings at Rockman Industries',
-      company: 'Rockman Industries',
-      location: 'India',
-      city: null,
-      country: 'India',
-      link: 'https://rockman.darwinbox.in/ms/candidatev2/main/careers/allJobs',
-      applyUrl: 'https://rockman.darwinbox.in/ms/candidatev2/main/careers/allJobs',
-      sourceUrl: 'https://rockman.darwinbox.in/ms/candidatev2/main/careers/allJobs',
-      source: 'rockmanindustries',
-      jobId: 'rockmanindustries-current-openings',
-      requisitionId: 'rockmanindustries-current-openings',
-      department: null,
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription: 'The public Rockman Industries Darwinbox shell remained reachable, but the public Darwinbox inventory API returned HTTP 403 during this scrape. Review current openings directly on https://rockman.darwinbox.in/ms/candidatev2/main/careers/allJobs.',
-      scrapedAt: '<dynamic>',
-    },
-  )
+  await assert.rejects(apiOnlyScraper.run({ maxPages: 1 }), (error) => {
+    assert.equal(error.name, 'DarwinboxUpstreamUnavailableError')
+    assert.equal(error.httpStatus, 403)
+    assert.equal(error.abortRetries, true)
+    const classification = classifyScraperError(error)
+    assert.equal(classification.upstreamOutage, true)
+    assert.equal(classification.failureKind, 'blocked_or_access_denied')
+    return true
+  })
   assert.deepEqual(
     requests.map(({ url, options = {} }) => ({
       method: options.method || 'GET',
@@ -707,4 +684,61 @@ test('run still throws the Darwinbox listings error when page 1 is 403-blocked a
     apiOnlyScraper.run({ maxPages: 1 }),
     /HTTP 403 for https:\/\/rapido\.darwinbox\.in\/ms\/candidateapi\/job\/alljobs\?companyId=main/i,
   )
+})
+
+
+test('run rejects malformed Darwinbox payloads instead of returning successful empty jobs', async () => {
+  for (const payload of [{ error: 'Forbidden' }, { data: [] , job_counts: 2 }, { data: [], job_counts: 'unavailable' }]) {
+    await assert.rejects(
+      createDarwinboxScraper().run({ fetchListingPage: async () => payload }),
+      (error) => error.name === 'DarwinboxListingContractError' && error.abortRetries === true,
+    )
+  }
+  assert.deepEqual(await createDarwinboxScraper().run({
+    fetchListingPage: async () => ({ status: 'success', data: [], job_counts: 0 }),
+  }), [])
+})
+
+test('run rejects a pre-aborted Darwinbox source before any request', async () => {
+  const reason = new Error('source stopped')
+  let calls = 0
+  const scraper = createDarwinboxScraper({ fetchImpl: async () => {
+    calls += 1
+    return new Response(JSON.stringify({ data: [], job_counts: 0 }), { headers: { 'content-type': 'application/json' } })
+  } })
+  await assert.rejects(scraper.run({ signal: AbortSignal.abort(reason) }), (error) => error === reason)
+  assert.equal(calls, 0)
+})
+
+test('run propagates cancellation during Darwinbox cookie seeding without starting a listing request', async () => {
+  const controller = new AbortController()
+  const reason = new Error('cancel during seed')
+  const methods = []
+  const scraper = createDarwinboxScraper({ fetchImpl: async (_url, options = {}) => {
+    methods.push(options.method || 'GET')
+    if ((options.method || 'GET') === 'GET') {
+      controller.abort(reason)
+      return new Response('<html>Darwinbox</html>')
+    }
+    return new Response(JSON.stringify({ data: [], job_counts: 0 }), { headers: { 'content-type': 'application/json' } })
+  } })
+  await assert.rejects(scraper.run({ signal: controller.signal }), (error) => error === reason)
+  assert.deepEqual(methods, ['GET'])
+})
+
+test('run propagates cancellation from the Darwinbox listing transport without refreshing cookies or returning jobs', async () => {
+  const controller = new AbortController()
+  const reason = new Error('cancel during listing')
+  const methods = []
+  let listingSignal
+  const scraper = createDarwinboxScraper({ fetchImpl: async (_url, options = {}) => {
+    methods.push(options.method || 'GET')
+    if ((options.method || 'GET') === 'GET') return new Response('<html>Darwinbox</html>')
+    listingSignal = options.signal
+    controller.abort(reason)
+    return new Response(JSON.stringify({ data: [], job_counts: 0 }), { headers: { 'content-type': 'application/json' } })
+  } })
+  await assert.rejects(scraper.run({ signal: controller.signal }), (error) => error === reason)
+  assert.deepEqual(methods, ['GET', 'POST'])
+  assert.equal(listingSignal.aborted, true)
 })

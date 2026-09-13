@@ -165,6 +165,21 @@ test('classifyScraperError treats external drift and access errors as soft failu
   }
 })
 
+test('classifyScraperError normalizes the legacy upstream-unavailable contract', () => {
+  const error = Object.assign(new Error('Current inventory is unavailable'), {
+    failureType: 'upstream_unavailable',
+  })
+
+  assert.deepEqual(
+    classifyScraperError(error),
+    {
+      softFailure: true,
+      upstreamOutage: false,
+      failureKind: 'upstream_unavailable',
+    },
+  )
+})
+
 test('classifyScraperError keeps parser and contract errors hard', () => {
   assert.deepEqual(
     classifyScraperError(new TypeError('Cannot read properties of undefined')),
@@ -215,6 +230,15 @@ test('classifyScraperError recognizes remaining external and transient failure s
 
   assert.deepEqual(
     classifyScraperError(new Error('connect ETIMEDOUT 45.114.246.99:443')),
+    {
+      softFailure: true,
+      upstreamOutage: true,
+      failureKind: 'network_or_timeout',
+    },
+  )
+
+  assert.deepEqual(
+    classifyScraperError(new Error('This operation was aborted')),
     {
       softFailure: true,
       upstreamOutage: true,

@@ -44,8 +44,16 @@ const defaultFetchPage = async (url) => {
 export const hasTelekomAffiliateSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
-  return normalized.includes('DT Digital Labs in India is responsible for product development.')
-    && page.includes('https://dtdl.in/')
+  const hasOfficialHostLink = /<a[^>]+href=["']https:\/\/dtdl\.in\/?["'][^>]*>/i.test(page)
+  const hasLegacyAffiliateCopy = normalized.includes(
+    'DT Digital Labs in India is responsible for product development.',
+  )
+  const hasCurrentAffiliateCopy = normalized.includes(
+    'DT Digital Labs create innovative digital products and services, ranging from entertainment and payment solutions to online shopping.',
+  )
+    && /<h3[^>]*>[\s\S]*?\bDigital Labs\b[\s\S]*?<\/h3>/i.test(page)
+
+  return hasOfficialHostLink && (hasLegacyAffiliateCopy || hasCurrentAffiliateCopy)
 }
 
 const hasLegacyExactNameHomepageShellSignal = (html = '') => {

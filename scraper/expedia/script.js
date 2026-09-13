@@ -1,14 +1,12 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { runWorkdayScraper } from '../../scraper-support/myworkday/engine.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 import { EXPEDIA_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
 
 export const SOURCE = EXPEDIA_CATALOG.source
 export const COMPANY = EXPEDIA_CATALOG.companyName
@@ -18,10 +16,8 @@ export const HOMEPAGE_URL = EXPEDIA_CATALOG.homepageUrl
 export const CAREERS_URL = EXPEDIA_CATALOG.companyCareerPage
 export const JOBS_URL = EXPEDIA_CATALOG.jobsPageUrl
 export const WORKDAY_HOST = 'expedia.wd108.myworkdayjobs.com'
+export const WORKDAY_SEARCH_URL = EXPEDIA_CATALOG.baseUrl
 export const PROVIDER_METADATA = EXPEDIA_CATALOG
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -302,86 +298,23 @@ export const extractJobDetail = (html = '', listing = {}) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
-})
-
-export const createExpediaScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-  maxPages = 10,
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-  } = {}) {
-    const careersHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialCareersPageSignal(careersHtml)) {
-      throw new Error('Expedia verified official careers surface no longer matches the first-party contract')
-    }
-
-    const jobsPageUrl = extractJobsPageUrl(careersHtml)
-    if (!sameUrl(jobsPageUrl, JOBS_URL)) {
-      throw new Error('Expedia verified official careers surface no longer links to the expected jobs page')
-    }
-
-    let nextPageUrl = JOBS_URL
-    let visitedPages = 0
-    const seenPageUrls = new Set()
-    const allListings = []
-
-    while (
-      nextPageUrl
-      && !seenPageUrls.has(normalizeComparableUrl(nextPageUrl))
-      && visitedPages < maxPages
-    ) {
-      const jobsHtml = await fetchText(nextPageUrl)
-      const pageListings = extractAllJobCards(jobsHtml)
-      const nextCandidateUrl = extractNextPageUrl(jobsHtml)
-
-      if (
-        !hasOfficialJobsPageSignal(jobsHtml)
-        && !(allListings.length > 0 && pageListings.length === 0 && !nextCandidateUrl)
-      ) {
-        throw new Error('Expedia verified first-party jobs surface no longer matches the public contract')
-      }
-
-      if (pageListings.length === 0) {
-        if (allListings.length > 0) {
-          break
-        }
-        throw new Error('Expedia verified first-party jobs surface no longer exposes the expected job cards')
-      }
-
-      allListings.push(...pageListings)
-      seenPageUrls.add(normalizeComparableUrl(nextPageUrl))
-      nextPageUrl = nextCandidateUrl
-      visitedPages += 1
-    }
-
-    const indiaListings = allListings.filter((listing) => isIndiaLocation(listing.location))
-    const jobs = []
-
-    for (const listing of indiaListings) {
-      const detailHtml = await fetchText(listing.sourceUrl)
-      if (!hasOfficialJobDetailSignal(detailHtml, listing.sourceUrl)) {
-        throw new Error('Expedia verified first-party detail surface no longer matches the public contract')
-      }
-
-      const job = extractJobDetail(detailHtml, listing)
-      jobs.push({
-        ...job,
-        source: SOURCE,
-        link: job.applyUrl || job.sourceUrl,
-        scrapedAt: now(),
-      })
-    }
-
-    return maxJobs ? jobs.slice(0, maxJobs) : jobs
+// The official careers homepage links this public Workday tenant for applications.
+// Its CXS inventory provides complete listings while the WordPress jobs route denies requests.
+export const createExpediaScraper = ({ now = () => new Date().toISOString(), ...defaults } = {}) => ({
+  async run(options = {}) {
+    const jobs = await runWorkdayScraper({
+      ...defaults,
+      ...options,
+      company: COMPANY,
+      source: SOURCE,
+      baseUrl: WORKDAY_SEARCH_URL,
+      scraperDir: currentDir,
+    })
+    return jobs.map(job => {
+      const requisitionId = job.requisitionId || extractRequisitionId(new URL(job.link).pathname.split('_').at(-1))
+      return { ...job, jobId: job.jobId || requisitionId, requisitionId,
+        country: job.country || 'India', sourceUrl: job.link, applyUrl: job.link, scrapedAt: now() }
+    })
   },
 })
 

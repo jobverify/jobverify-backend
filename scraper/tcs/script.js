@@ -241,7 +241,19 @@ const defaultFetchJson = async (url, options = {}) => {
     body: options.body == null ? undefined : JSON.stringify(options.body),
   })
 
-  if (!response.ok) {
+  const contentType = response.headers?.get?.('content-type') || ''
+  if (!response.ok || /text\/html/i.test(contentType)) {
+    const body = await response.text()
+    if (/<title>\s*App Maintenance\s*<\/title>/i.test(body) && /iBegin[\s\S]*temporarily under maintenance/i.test(body)) {
+      const error = new Error('TCS iBegin is temporarily under maintenance; job search is unavailable')
+      error.code = 'TCS_MAINTENANCE'
+      error.softFailure = true
+      error.upstreamOutage = true
+      error.failureKind = 'upstream_maintenance'
+      error.abortRetries = true
+      throw error
+    }
+    if (response.ok) throw new Error(`Expected JSON from TCS but received HTML for ${url}`)
     throw new Error(`HTTP ${response.status} for ${url}`)
   }
 
@@ -262,6 +274,10 @@ export const createTcsScraper = ({
         method: 'POST',
         body: buildSearchPayload({ page }),
       })
+      if (!Array.isArray(payload?.data?.jobs) || !Number.isInteger(Number(payload?.data?.totalJobs))
+        || payload.data.totalJobs == null || Number(payload.data.totalJobs) < 0) {
+        throw new Error('Invalid TCS job search response: expected jobs and totalJobs')
+      }
       const listings = extractSearchResults(payload)
       const summary = extractPaginationSummary(payload, { page })
 

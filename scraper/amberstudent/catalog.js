@@ -1,36 +1,14 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-const PROVIDER_METADATA = {
-  "source": "amberstudent",
-  "companyName": "Amberstudent",
-  "adapter": "script",
-  "modulePath": path.join(currentDir, 'script.js'),
-  "dryRunFile": path.join(currentDir, 'jobs.json'),
-  "companyCareerPage": "https://amberstudent.com/career",
-  "companyDomain": "amberstudent.com",
-  "officialJobsBoardUrl": "https://careers.smartrecruiters.com/amberstudent",
-  "atsPlatform": "smartrecruiters",
-  "countryFilter": "India",
-  "paginationStrategy": "official-first-party-page-plus-smartrecruiters-board-and-api",
-  "extractionStrategy": "verified-first-party-careers-page+public-smartrecruiters-board+detail-api+india-filter",
-  "parser": "custom-script",
-  "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-08-01",
-  "verifiedPublicJobCount": 1,
-  "verifiedIndiaJobCount": 1,
-  "smartRecruitersCompanyIdentifier": "amberstudent",
-  "smartRecruitersListingApiUrl": "https://api.smartrecruiters.com/v1/companies/amberstudent/postings",
-  "smartRecruitersDetailApiUrlTemplate": "https://api.smartrecruiters.com/v1/companies/amberstudent/postings/{{jobId}}",
-  "verifiedSurfaceSummary": "Verified on Saturday, August 1, 2026 that https://amberstudent.com/career remained the live first-party Amber careers page, that it still exposed a Find Roles handoff to the public SmartRecruiters board at https://careers.smartrecruiters.com/amberstudent, and that the public SmartRecruiters board plus postings API returned 1 current India role: Sales Associate in Pune, Maharashtra, India. The first-party page now renders the careers title through a React data-react-helmet title tag while preserving the same public jobs contract. The verified public detail page was https://jobs.smartrecruiters.com/AmberStudent/743999728950415-sales-associate.",
-  "backfillMode": "live-copy",
-  "originalAdapter": "script",
-  "originalAtsPlatform": "smartrecruiters",
-  "originalModulePath": "../workbookbatch02/amberstudent.js",
-  "originalDryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\workbookbatch02\\amberstudent.jobs.json"
+import {fileURLToPath} from 'node:url'
+const currentDir=path.dirname(fileURLToPath(import.meta.url))
+export default {
+ source:'amberstudent',companyName:'Amberstudent',adapter:'script',modulePath:path.join(currentDir,'script.js'),
+ companyCareerPage:'https://amberstudent.com/career',companyDomain:'amberstudent.com',countryFilter:'India',
+ officialJobsBoardUrl:'https://amberstudent.keka.com/careers/',atsPlatform:'keka',
+ paginationStrategy:'complete-public-keka-active-inventory',
+ extractionStrategy:'verified-first-party-jobs-route+public-bundle-keka-handoff+explicit-india-positives',
+ verifiedOn:'2026-09-13',verifiedPublicJobCount:20,verifiedIndiaJobCount:15,
+ verifiedSurfaceSummary:'Verified on September 13, 2026 that Amber careers links /job-opening, whose public jobs bundle embeds the amberstudent.keka.com tenant. The complete public active feed exposes 20 roles, 15 with explicit India locations and five without geography. Only confirmed India jobs are imported; sourceListingComplete:false prevents lifecycle reconciliation while any geography is unknown. The retired SmartRecruiters board is no longer the official handoff.',
+ kekaIdentifier:'228f83f5-48b3-474a-b753-4fce2be7524f',
+ kekaJobsApiUrl:'https://amberstudent.keka.com/careers/api/embedjobs/default/active/228f83f5-48b3-474a-b753-4fce2be7524f',
 }
-
-export default PROVIDER_METADATA
-export { PROVIDER_METADATA }

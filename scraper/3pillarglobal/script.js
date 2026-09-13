@@ -46,7 +46,8 @@ const inferCity = (value) => {
   return location.split(',')[0]?.trim() || null
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml',
@@ -55,7 +56,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
@@ -78,7 +80,7 @@ export const extractLeverJobs = (jobs = []) =>
       const sourceUrl = normalizeWhitespace(job?.hostedUrl)
       const applyUrl = normalizeWhitespace(job?.applyUrl) || sourceUrl
 
-      if (!title || !location || !sourceUrl) return null
+      if (!title || !location || !sourceUrl || !normalizeWhitespace(job?.id)) return null
 
       return {
         title,
@@ -108,29 +110,60 @@ export const extractLeverJobs = (jobs = []) =>
     })
     .filter(Boolean)
 
+const extractBoardPostingIds = (html) => {
+  const board = new URL(LEVER_BOARD_URL)
+  const prefix = board.pathname.replace(/\/+$/, '') + '/'
+  const ids = new Set()
+  for (const match of String(html).matchAll(/<a\b[^>]*href=["']([^"']+)["']/gi)) {
+    try {
+      const url = new URL(normalizeWhitespace(match[1]), LEVER_BOARD_URL)
+      if (url.origin !== board.origin || !url.pathname.startsWith(prefix)) continue
+      const parts = url.pathname.slice(prefix.length).split('/').filter(Boolean)
+      if (parts.length === 1 || parts.length === 2 && parts[1] === 'apply') ids.add(parts[0])
+    } catch { /* Ignore unrelated invalid navigation links. */ }
+  }
+  return ids
+}
+
 export const createThreePillarGlobalScraper = ({
   now = () => new Date().toISOString(),
   maxJobs = Number.POSITIVE_INFINITY,
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ signal, fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
+    if (maxJobs !== Infinity && (!Number.isInteger(maxJobs) || maxJobs <= 0)) {
+      throw new Error('3Pillar maxJobs must be a positive integer or Infinity')
+    }
+    const request = async (fetcher, url, options = {}) => {
+      signal?.throwIfAborted()
+      try { return await fetcher(url, { ...options, signal }) }
+      finally { signal?.throwIfAborted() }
+    }
+    const careersHtml = await request(fetchText, CAREERS_URL)
     if (!hasOfficialThreePillarCareersSignal(careersHtml)) {
       throw new Error('3Pillar Global verified official careers surface changed')
     }
 
-    const boardHtml = await fetchText(LEVER_BOARD_URL)
+    const boardHtml = await request(fetchText, LEVER_BOARD_URL)
     if (!hasOfficialThreePillarLeverBoardSignal(boardHtml)) {
       throw new Error('3Pillar Global official Lever board changed')
     }
 
-    const payload = await fetchJson(LEVER_API_URL)
+    const payload = await request(fetchJson, LEVER_API_URL)
+    if (!Array.isArray(payload)) throw new Error('3Pillar Global Lever postings payload is not an array')
     const jobs = extractLeverJobs(payload)
-    if (jobs.length === 0) {
-      throw new Error('3Pillar Global Lever postings payload no longer yields jobs')
+    if (jobs.length !== payload.length || new Set(jobs.map((job) => job.jobId)).size !== jobs.length) {
+      throw new Error('3Pillar Global incomplete Lever postings payload')
+    }
+
+    const boardIds = extractBoardPostingIds(boardHtml)
+    const apiIds = new Set(jobs.map(job => job.jobId))
+    if (boardIds.size && (boardIds.size !== apiIds.size || [...boardIds].some(id => !apiIds.has(id)))) {
+      throw new Error('3Pillar Global incomplete Lever inventory: board and API job IDs disagree')
     }
 
     return jobs.slice(0, maxJobs).map((job) => ({
       ...job,
+      ...(jobs.length > maxJobs ? { sourceListingComplete: false } : {}),
       source: SOURCE,
       link: job.applyUrl,
       scrapedAt: now(),

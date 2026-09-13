@@ -5,6 +5,7 @@
 
 import express from "express";
 import { updateSiteSettings } from "../controllers/siteSettingsController.js";
+import { getUserSuggestions } from "../controllers/userSuggestionController.js";
 import {
   getDashboardStats,
   getClickTimeSeries,
@@ -16,6 +17,7 @@ import {
   updateUserRole,
   updateUserAccess,
   getJobsTable,
+  purgeAllJobs,
   updateJobStatus,
   getAuditLog,
   getScrapeStatus,
@@ -31,6 +33,7 @@ import {
 } from "../utils/rateLimit.js";
 import {
   adminJobsQueryValidation,
+  adminSuggestionsQueryValidation,
   adminJobStatusValidation,
   adminRoleUpdateValidation,
   adminAccessUpdateValidation,
@@ -90,8 +93,17 @@ router.put(
   toggleUserStatus,
 );
 
+// User-submitted company and platform suggestions
+router.get(
+  "/suggestions",
+  adminSuggestionsQueryValidation,
+  validateRequest,
+  getUserSuggestions,
+);
+
 // Job Listing Management
 router.get("/jobs", adminJobsQueryValidation, validateRequest, getJobsTable);
+router.delete("/jobs", purgeAllJobs);
 router.put("/jobs/:id/status", adminJobStatusValidation, validateRequest, updateJobStatus);
 
 // Administrative Action Audit Logging

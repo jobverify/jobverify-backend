@@ -210,7 +210,14 @@ export const extractOpeningsFromPage = (html = '') => {
 
 export const createElectronicsCorporationOfIndiaLimitedScraper = () => ({
   async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    let homepageHtml = await fetchText(HOMEPAGE_URL)
+    const landingTitle = String(homepageHtml).match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] || ''
+    if (/^\s*Electronics Corporation of India Limited \| DAE \| India\s*$/i.test(landingTitle)
+      && /id=["']language-switcher-form["']/i.test(homepageHtml)
+      && /alt=["']ECIL Logo["']/i.test(homepageHtml)
+      && /<a\b[^>]*href=["']\/home["'][^>]*>/i.test(homepageHtml)) {
+      homepageHtml = await fetchText(new URL('/home', HOMEPAGE_URL).href)
+    }
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Electronics Corporation of India Limited homepage no longer matches the verified official surface')
     }

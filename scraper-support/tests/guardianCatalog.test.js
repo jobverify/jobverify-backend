@@ -82,7 +82,7 @@ test('buildScrapers and company coverage resolve both Guardian and Guardian Indi
   )
 })
 
-test('Guardian local Workday config switches the shared runner onto jobs-api searchText filtering for India roles', () => {
+test('Guardian local Workday config uses the verified India hiring-company facet', () => {
   const config = loadConfig(path.join(testsDir, '../../scraper/guardian.workday'))
 
   assert.equal(config.listingStrategy, 'jobs-api')
@@ -94,7 +94,8 @@ test('Guardian local Workday config switches the shared runner onto jobs-api sea
     config.detailUrlBase,
     'https://guardianlife.wd5.myworkdayjobs.com/en-US/Guardian-Life-Careers',
   )
-  assert.equal(config.locationCountry, null)
-  assert.equal(config.searchText, 'India')
+  assert.equal(config.countryFacetParameter, 'hiringCompany')
+  assert.equal(config.locationCountry, '4d442d4f5d091032118fe34e0ae8f401')
+  assert.equal(config.searchText, undefined)
   assert.equal(config.locationPattern, 'india|chennai|gurgaon|gurugram')
 })

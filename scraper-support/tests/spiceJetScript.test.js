@@ -74,6 +74,12 @@ test('SpiceJet sentinel helpers stay pinned to the verified careers notice and A
   assert.equal(spiceJet.SPICESTAR_REGISTRATION_URL, 'https://application.spicestaracademy.edu.in/')
   assert.equal(spiceJet.CAREERS_EMAIL, 'careers@spicejet.com')
   assert.equal(spiceJet.hasOfficialCareersSignal(CAREERS_NOTICE_HTML), true)
+  assert.equal(
+    spiceJet.hasOfficialCareersSignal(
+      CAREERS_NOTICE_HTML.replace('February 2026', 'September'),
+    ),
+    true,
+  )
   assert.equal(spiceJet.hasOfficialCareersSignal('<html><body>Careers</body></html>'), false)
   assert.equal(spiceJet.hasOfficialAmeRegistrationSignal(AME_REGISTRATION_HTML), true)
   assert.equal(spiceJet.hasOfficialAmeRegistrationSignal('<html><body>AME Registration</body></html>'), false)

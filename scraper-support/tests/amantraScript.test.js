@@ -475,6 +475,41 @@ test('Amantra run validates the verified first-party careers flow and returns no
   ])
 })
 
+test('Amantra discovers added roles and tolerates sitemap ordering changes', async () => {
+  const amantra = await loadModule()
+  const newRoleUrl = 'https://www.amantra.ai/careers/hr-executive'
+  const currentCareers = careersHtml.replace('</main>', '<a href="./careers/hr-executive">HR Executive</a></main>')
+  const currentSitemap = sitemapXml.replace('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://www.amantra.ai/careers/hr-executive</loc></url>')
+  const newRoleHtml = engineeringManagerHtml
+    .replaceAll(ENGINEERING_MANAGER_URL, newRoleUrl)
+    .replaceAll('Engineering Manager', 'HR Executive')
+  const jobs = await amantra.createAmantraScraper({ roleUrlsToFetch: [newRoleUrl] }).run({
+    fetchText: async (url) => {
+      if (url === amantra.HOMEPAGE_URL) return homepageHtml
+      if (url === amantra.CAREERS_URL) return currentCareers
+      if (url === amantra.SITEMAP_URL) return currentSitemap
+      if (url === newRoleUrl) return newRoleHtml
+      throw new Error(`Unexpected Amantra fixture URL: ${url}`)
+    },
+  })
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'HR Executive')
+  assert.equal(jobs[0].sourceUrl, newRoleUrl)
+  assert.equal(jobs[0].location, 'Indore, India')
+})
+
+test('Amantra preserves country-only remote locations without inventing a city', async () => {
+  const amantra = await loadModule()
+  const remoteHtml = engineeringManagerHtml
+    .replace('<p>Indore, India</p>\n    <p>On-site</p>', '<p>Remote</p><p>India</p>')
+  const job = amantra.extractRoleDetail(remoteHtml, ENGINEERING_MANAGER_URL)
+  assert.equal(job.location, 'India')
+  assert.equal(job.city, null)
+  assert.equal(job.country, 'India')
+  assert.equal(job.workplaceType, 'Remote')
+})
+
 test('Amantra fails closed when the homepage, careers list, sitemap role set, or role detail surface drifts', async () => {
   const amantra = await loadModule()
 
@@ -496,7 +531,7 @@ test('Amantra fails closed when the homepage, careers list, sitemap role set, or
       fetchText: async (url) => {
         if (url === amantra.HOMEPAGE_URL) return homepageHtml
         if (url === amantra.CAREERS_URL) {
-          return careersHtml.replace('./careers/nodejs-developer', './careers/frontend-engineer')
+          return careersHtml.replace('Join Our AI Innovation Team | Amantra', 'Unrelated careers page')
         }
 
         throw new Error(`Unexpected Amantra fixture URL: ${url}`)

@@ -8,7 +8,7 @@ import { buildScrapers, getScraperCatalog } from '../../scraper-support/provider
 const SOURCE = 'manycontradingandcontracting'
 const COMPANY = 'Manycon Trading and Contracting'
 
-test('Manycon Trading and Contracting is registered as a verified first-party no-public-careers sentinel without aliases', () => {
+test('Manycon Trading and Contracting is registered as a first-party inventory-unavailable provider without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === SOURCE)
 
   assert.ok(provider, 'Expected Manycon Trading and Contracting provider to be registered in customProviders.json')
@@ -31,12 +31,12 @@ test('Manycon Trading and Contracting is registered as a verified first-party no
     'https://manycon.com/vacancies',
     'https://manycon.com/current-openings',
   ])
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'official-company-site-inventory-unavailable')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'homepage-plus-about-page-plus-sitemaps-and-missing-careers-route-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-about-page+verified-sitemaps+verified-404-careers-routes-return-empty',
+    'verified-homepage+verified-about-page+verified-sitemaps+verified-404-careers-routes+reject-unavailable-inventory',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

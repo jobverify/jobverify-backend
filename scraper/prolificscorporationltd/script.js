@@ -6,7 +6,7 @@ import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
-export const CAREERS_PAGE_URL = 'https://prolifics.com/usa/careers'
+export const CAREERS_PAGE_URL = 'https://prolifics.ai/careers'
 export const CAREERS_PORTAL_URL = 'https://prolifics.zohorecruit.in/jobs/Careers'
 export const CAREERS_API_URL =
   'https://prolifics.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite'
@@ -107,6 +107,14 @@ const toRequiredSkills = (value) => {
 
 export const hasOfficialCareersPageSignal = (html) => {
   const page = String(html ?? '')
+
+  const currentText = normalizeWhitespace(page.replace(/<[^>]+>/g, ' ')) || ''
+  if (
+    /<title>\s*Prolifics Careers\s*\|\s*Digital Engineering\s*&(?:amp;)?\s*IT Jobs\s*<\/title>/i.test(page)
+    && /Discover Who We Are and Why It Matters/i.test(currentText)
+    && /PROLIFICS RESOURCES/i.test(currentText)
+    && /href=["'][^"']*\/careers\/?["']/i.test(page)
+  ) return true
 
   return /<title>\s*(?:Careers\s*(?:-|–|—|&ndash;|&mdash;|&#8211;|&#8212;)\s*Prolifics US|Prolifics Careers\s*\|\s*Digital Engineering\s*&(?:amp;)?\s*IT Jobs)\s*<\/title>/i.test(page)
     && /site\s*:\s*["']https:\/\/prolifics\.zohorecruit\.in["']/i.test(page)

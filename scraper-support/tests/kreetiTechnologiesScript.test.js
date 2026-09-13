@@ -19,6 +19,11 @@ const homepageHtml = readFileSync(path.join(fixturesDir, 'homepage.html'), 'utf8
 const careersHomeHtml = readFileSync(path.join(fixturesDir, 'careers-home.html'), 'utf8')
 const candidatesHtml = readFileSync(path.join(fixturesDir, 'candidates.html'), 'utf8')
 const jobDetailHtml = readFileSync(path.join(fixturesDir, 'job-48.html'), 'utf8')
+const currentHomepageHtml = homepageHtml.replace(
+  '<title>Web Development and Custom Application Development Company</title>',
+  '<title>Kawach | Kreeti Technologies Pvt. Ltd.</title>',
+).replace('150+ Successful Projects', '150 + Successful Projects')
+  .replace('18 Years in Business', '18 Years of Excellence')
 
 test('Kreeti Technologies scraper keeps the verified first-party homepage and careers app pinned', async () => {
   const kreeti = await loadKreetiTechnologiesModule()
@@ -29,37 +34,17 @@ test('Kreeti Technologies scraper keeps the verified first-party homepage and ca
   assert.equal(kreeti.CAREERS_HOME_URL, 'https://careers.kreeti.com/')
   assert.equal(kreeti.CANDIDATES_URL, 'https://careers.kreeti.com/candidates')
   assert.equal(kreeti.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(kreeti.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(kreeti.hasOfficialCareersHomeSignal(careersHomeHtml), true)
   assert.equal(kreeti.hasOfficialCandidatesSignal(candidatesHtml), true)
 
-  const listings = kreeti.extractListings(candidatesHtml)
-  assert.equal(listings.length, 1)
-  assert.deepEqual(listings[0], {
-    title: 'Agile Project Manager',
-    company: 'Kreeti Technologies',
-    department: null,
-    location: null,
-    city: null,
-    country: 'India',
-    jobId: '48',
-    requisitionId: '48',
-    sourceUrl: 'https://careers.kreeti.com/jobs/48',
-    applyUrl: 'https://careers.kreeti.com/candidates/new?job_id=48',
-    employmentType: null,
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: null,
-  })
+  assert.deepEqual(kreeti.extractListings(candidatesHtml), [])
 })
 
 test('Kreeti Technologies scraper enriches the verified first-party detail page into a normalized job record', async () => {
   const kreeti = await loadKreetiTechnologiesModule()
 
-  const listing = kreeti.extractListings(candidatesHtml)[0]
+  const listing = { title: 'Agile Project Manager', jobId: '48', requisitionId: '48' }
   const job = kreeti.extractJobDetail(jobDetailHtml, listing)
 
   assert.equal(job.title, 'Agile Project Manager')
@@ -74,42 +59,18 @@ test('Kreeti Technologies scraper enriches the verified first-party detail page 
   assert.match(job.jobDescription, /Manages technical components of moderately complex IT projects/i)
 })
 
-test('Kreeti Technologies scraper returns normalized first-party jobs from the verified public candidates flow', async () => {
+test('Kreeti Technologies does not fetch stale detail pages linked only by the general-interest form', async () => {
   const kreeti = await loadKreetiTechnologiesModule()
   const requestedUrls = []
-
-  const jobs = await kreeti.createKreetiTechnologiesScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === kreeti.HOMEPAGE_URL) return homepageHtml
-      if (url === kreeti.CAREERS_HOME_URL) return careersHomeHtml
-      if (url === kreeti.CANDIDATES_URL) return candidatesHtml
-      if (url === 'https://careers.kreeti.com/jobs/48') return jobDetailHtml
-
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-    now: () => '2026-07-11T00:00:00.000Z',
-  })
-
-  assert.deepEqual(requestedUrls, [
-    kreeti.HOMEPAGE_URL,
-    kreeti.CAREERS_HOME_URL,
-    kreeti.CANDIDATES_URL,
-    'https://careers.kreeti.com/jobs/48',
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'kreetitechnologies')
-  assert.equal(jobs[0].company, 'Kreeti Technologies')
-  assert.equal(jobs[0].title, 'Agile Project Manager')
-  assert.equal(jobs[0].jobId, '48')
-  assert.equal(jobs[0].atsPlatform, 'official-company-careers')
-  assert.equal(jobs[0].companyCareerPage, 'https://careers.kreeti.com/candidates')
-  assert.equal(jobs[0].companyDomain, 'kreeti.com')
-  assert.equal(jobs[0].country, 'India')
-  assert.equal(jobs[0].employmentType, 'Full-time')
-  assert.equal(jobs[0].jobType, 'Full-time Experienced')
-  assert.equal(jobs[0].scrapedTimestamp?.toISOString(), '2026-07-11T00:00:00.000Z')
+  const jobs = await kreeti.createKreetiTechnologiesScraper().run({ fetchText: async url => {
+    requestedUrls.push(url)
+    if (url === kreeti.HOMEPAGE_URL) return homepageHtml
+    if (url === kreeti.CAREERS_HOME_URL) return careersHomeHtml
+    if (url === kreeti.CANDIDATES_URL) return candidatesHtml
+    assert.fail('General-interest roles are not active vacancies')
+  } })
+  assert.deepEqual(requestedUrls, [kreeti.HOMEPAGE_URL, kreeti.CAREERS_HOME_URL, kreeti.CANDIDATES_URL])
+  assert.deepEqual(jobs, [])
 })
 
 test('Kreeti Technologies scraper returns no jobs when the verified candidates page has no public job options', async () => {
@@ -161,18 +122,5 @@ test('Kreeti Technologies scraper fails closed when the verified first-party sur
     /candidate jobs page/i,
   )
 
-  await assert.rejects(
-    kreeti.createKreetiTechnologiesScraper().run({
-      fetchText: async (url) => {
-        if (url === kreeti.HOMEPAGE_URL) return homepageHtml
-        if (url === kreeti.CAREERS_HOME_URL) return careersHomeHtml
-        if (url === kreeti.CANDIDATES_URL) return candidatesHtml
-        if (url === 'https://careers.kreeti.com/jobs/48') {
-          return '<html><body><h1>Broken detail page</h1></body></html>'
-        }
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /verified first-party detail page/i,
-  )
+
 })

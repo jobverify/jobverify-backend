@@ -588,3 +588,33 @@ Test card
 4100 2800 0000 1007 · CVV: 123 · Expiry: 12/26
 Test UPI
 test@razorpay
+
+# Local MongoDB live parallel Persistent run
+
+cd C:\Users\mohv\GitHub\Release-26.09.02\jobverify-backend
+$env:SCRAPER_CONCURRENCY = "10"
+$env:WORKDAY_DETAIL_FETCH_CONCURRENCY = "1"
+$env:NODE_OPTIONS = "--use-system-ca"
+$runStamp = Get-Date -Format "yyyyMMddTHHmmss"
+$logDir = "..\artifacts\run-logs\local-scrape-$runStamp"
+New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+npm run clean:workspace
+npm run scrape:parallel:live:resilient 2>&1 | Tee-Object -FilePath "$logDir\pipeline.log"
+$active = Get-Content ..\artifacts\run-logs\active-live-scrape.json | ConvertFrom-Json
+Get-Content -Wait -LiteralPath (Join-Path $active.runDir "pipeline.log")
+
+
+# Local Dry parallel Persistent run
+
+cd C:\Users\mohv\GitHub\Release-26.09.02\jobverify-backend
+$env:SCRAPER_CONCURRENCY = "10"
+$env:WORKDAY_DETAIL_FETCH_CONCURRENCY = "1"
+$env:NODE_OPTIONS = "--use-system-ca"
+$runStamp = Get-Date -Format "yyyyMMddTHHmmss"
+$logDir = "..\artifacts\run-logs\local-scrape-$runStamp"
+New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+npm run clean:workspace
+npm run scrape:parallel:dry:resilient 2>&1 | Tee-Object -FilePath "$logDir\pipeline.log"
+$active = Get-Content ..\artifacts\run-logs\active-dry-run-scrape.json | ConvertFrom-Json
+$active
+Get-Content -Wait -LiteralPath "$($active.runDir)\pipeline.log"

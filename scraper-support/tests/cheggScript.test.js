@@ -43,6 +43,31 @@ test('Chegg exposes the expected Workday options and validates the official care
   })
 })
 
+test('Chegg fetches its public careers handoff with a neutral source identifier', async () => {
+  const chegg = await loadCheggModule()
+
+  const html = await chegg.fetchOfficialCareersPage({
+    fetchImpl: async (_url, options) => {
+      const userAgent = options.headers['User-Agent']
+      if (/Mozilla|Chrome|Safari/i.test(userAgent)) {
+        return {
+          ok: false,
+          status: 403,
+          text: async () => '<title>Access to this page has been denied</title>',
+        }
+      }
+
+      return {
+        ok: true,
+        status: 200,
+        text: async () => careersHtml,
+      }
+    },
+  })
+
+  assert.equal(chegg.hasOfficialCareersSignal(html), true)
+})
+
 test('Chegg supplies a source-local Workday jobs API config for the current public job surface', async () => {
   const chegg = await loadCheggModule()
   const configPath = path.join(chegg.SCRAPER_DIR, 'config.json')

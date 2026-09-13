@@ -317,3 +317,63 @@ test('createKpmgScraper aggregates the public KPMG India Oracle Cloud boards', a
   )
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
 })
+
+test('createKpmgScraper bounds concurrent Oracle detail requests and forwards cancellation', async () => {
+  const listingRecords = Array.from({ length: 8 }, (_, index) => ({
+    Id: `INTG${index}`,
+    Title: `Consultant ${index}`,
+    PrimaryLocationCountry: 'IN',
+    PrimaryLocation: 'Bangalore, Karnataka, India',
+  }))
+  const controller = new AbortController()
+  let activeDetails = 0
+  let maximumActiveDetails = 0
+  const detailSignals = []
+
+  const fetchImpl = async (url, options = {}) => {
+    if (url.includes('recruitingCEJobRequisitions?')) {
+      return {
+        ok: true,
+        async json() {
+          return {
+            items: [{
+              TotalJobsCount: listingRecords.length,
+              Limit: 24,
+              requisitionList: listingRecords,
+            }],
+          }
+        },
+      }
+    }
+
+    detailSignals.push(options.signal)
+    activeDetails += 1
+    maximumActiveDetails = Math.max(maximumActiveDetails, activeDetails)
+    await new Promise((resolve) => setImmediate(resolve))
+    activeDetails -= 1
+
+    const jobId = decodeURIComponent(url).match(/Id="([^"]+)"/)?.[1]
+    return {
+      ok: true,
+      async json() {
+        return { items: [{
+          Id: jobId,
+          Title: `Consultant ${jobId.replace('INTG', '')}`,
+          PrimaryLocation: 'Bangalore, Karnataka, India',
+        }] }
+      },
+    }
+  }
+
+  const jobs = await kpmgScript.createKpmgScraper({
+    maxPages: 1,
+    siteNumbers: ['CX_1'],
+    detailConcurrency: 3,
+    fetchImpl,
+  }).run({ signal: controller.signal })
+
+  assert.equal(jobs.length, listingRecords.length)
+  assert.equal(maximumActiveDetails, 3)
+  assert.ok(detailSignals.every((signal) => signal === controller.signal))
+  assert.deepEqual(jobs.map((job) => job.jobId), listingRecords.map((record) => record.Id))
+})

@@ -419,3 +419,42 @@ test('Ksolves scraper fails closed when the careers index or detail pages drift 
     /detail page/i,
   )
 })
+
+
+test('Ksolves verifies the current board without requiring closed vacancy titles', async () => {
+  const ksolves = await loadKsolvesModule()
+  const current = careersPageHtml
+    .replaceAll('Full Stack Developer (React Native, ReactJS, Python)', 'Salesforce Financial Services Cloud Developer')
+    .replaceAll('Senior Software Engineer (Data)', 'Developer Confluent Kafka')
+  assert.equal(ksolves.hasVerifiedCareersPageSignal(current), true)
+  const jobs = await ksolves.createKsolvesScraper({ maxJobs: 1 }).run({
+    fetchText: async (url) => url === ksolves.CAREERS_URL ? current : fullStackDetailHtml
+      .replaceAll('Full Stack Developer (React Native, ReactJS, Python)', 'Salesforce Financial Services Cloud Developer'),
+  })
+  assert.equal(jobs[0].title, 'Salesforce Financial Services Cloud Developer')
+})
+
+test('Ksolves reads current Position Overview, Primary Responsibilities and Must-Have Skills headings', async () => {
+  const ksolves = await loadKsolvesModule()
+  const listing = ksolves.extractListingCards(careersPageHtml)[0]
+  const changed = fullStackDetailHtml
+    .replace('Roles and Responsibilities', 'Primary Responsibilities')
+    .replace('Required Skills', 'Must-Have Skills')
+    .replace('</main>', '<h2 class="ks-career-section-heading">Position Overview</h2><ul><li>Implement Financial Services Cloud.</li></ul></main>')
+  const job = ksolves.extractJobDetail(changed, listing)
+  assert.match(job.jobDescription, /Build cross-platform/)
+  assert.match(job.jobDescription, /Implement Financial Services Cloud/)
+  assert.ok(job.requiredSkills.length > 0)
+})
+
+test('Ksolves rejects incomplete cards and untrusted detail links before fetching a partial listing', async () => {
+  const ksolves = await loadKsolvesModule()
+  assert.throws(() => ksolves.extractListingCards(careersPageHtml.replace('data-location="noida/indore/pune"', 'data-location=""')), /incomplete/i)
+  assert.throws(() => ksolves.extractListingCards(careersPageHtml.replace('https://www.ksolves.com/careers-form?', 'https://other.example/careers-form?')), /first-party/i)
+})
+
+test('Ksolves does not label an unverified overseas detail location as India', async () => {
+  const ksolves = await loadKsolvesModule()
+  const listing = ksolves.extractListingCards(careersPageHtml)[0]
+  assert.throws(() => ksolves.extractJobDetail(fullStackDetailHtml.replace('Noida/Indore/Pune', 'Dubai'), listing), /India|location/i)
+})

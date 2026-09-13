@@ -40,8 +40,9 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/[\u2013\u2014]/g, '-'),
 )
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -127,27 +128,116 @@ const PUBLIC_JOBS_SIGNAL_PATTERNS = [
 ]
 
 export const hasUnexpectedPublicJobsSignal = (html) =>
-  PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(normalizeMarkup(html)))
+  PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(normalizeMarkup(
+    String(html ?? '')
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' '),
+  )))
+
+const slugify = (value) => String(value ?? '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '')
+
+export const extractPublicOpenings = (html) => {
+  const jobsByTitle = new Map()
+  const sections = String(html ?? '').split(
+    /<section\b[^>]*class=["'][^"']*elementor-inner-section[^"']*["'][^>]*>/i,
+  )
+
+  for (const section of sections) {
+    const text = stripTags(section)
+    if (!/\bOpenings:/i.test(text)) continue
+
+    const title = stripTags(section.match(/<h2\b[^>]*class=["'][^"']*elementor-heading-title[^"']*["'][^>]*>([\s\S]*?)<\/h2>/i)?.[1])
+    const locationAndExperience = stripTags(
+      section.match(/<span\b[^>]*class=["'][^"']*elementor-icon-list-text[^"']*["'][^>]*>([\s\S]*?Experience:[\s\S]*?)<\/span>/i)?.[1],
+    )
+    const location = locationAndExperience.match(/^(.+?)\s+Experience:/i)?.[1]?.trim()
+    const experienceRequired = locationAndExperience.match(/Experience:\s*(.+)$/i)?.[1]?.trim()
+    const expertise = text.match(/Expertise\s*-\s*(.+?)\s+Openings:/i)?.[1]?.trim()
+    const openings = text.match(/Openings:\s*(\d+)/i)?.[1]
+
+    if (!title || !location || !experienceRequired || !expertise || !Number(openings) || !/href=["']#form["'][\s\S]*?Apply Now/i.test(section)) throw new Error('SuryaLogix incomplete listing: malformed opening')
+    if (!/^(?:Pune,\s*Maharashtra(?:,\s*India)?|.+,\s*India)$/i.test(location)) throw new Error('SuryaLogix opening location does not prove India scope')
+    if (jobsByTitle.has(title)) throw new Error('SuryaLogix incomplete listing: duplicate opening')
+    const jobId = slugify(title)
+    jobsByTitle.set(title, {
+      title,
+      company: COMPANY,
+      department: null,
+      location: /\bindia\b/i.test(location) ? location : `${location}, India`,
+      city: location.split(',')[0].trim(),
+      country: 'India',
+      jobId,
+      requisitionId: jobId,
+      sourceUrl: CAREERS_URL,
+      applyUrl: `${CAREERS_URL}#form`,
+      employmentType: null,
+      experienceRequired,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: expertise.split(',').map((skill) => skill.trim()).filter(Boolean),
+      postingDate: null,
+      closingDate: null,
+      jobDescription: `${title}. Experience: ${experienceRequired}. Expertise: ${expertise}. Openings: ${openings}.`,
+      source: SOURCE,
+      link: `${CAREERS_URL}#form`,
+    })
+  }
+
+  if ((stripTags(html).match(/\bOpenings:/gi) || []).length !== jobsByTitle.size) throw new Error('SuryaLogix incomplete opening count')
+  return [...jobsByTitle.values()]
+}
+
+const getWalkInDeadline = (html) => {
+  const text = stripTags(html)
+  if (!/Walk-In Interviews/i.test(text)) return null
+  const matches = [...text.matchAll(/Dates\s+(\d{1,2})(?:st|nd|rd|th)?\s+to\s+(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)\s+(\d{4})\s+Time\s+\d{1,2}:\d{2}\s*[ap]m\s+to\s+(\d{1,2}):(\d{2})\s*([ap]m)/gi)]
+  if (matches.length !== 1) throw new Error('SuryaLogix walk-in deadline dates are unrecognized')
+  const [, start, day, monthName, year, hour, minute, period] = matches[0]
+  const month = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].indexOf(monthName.slice(0,3).toLowerCase())
+  const utcDay = new Date(Date.UTC(Number(year), month, Number(day)))
+  if (month < 0 || Number(start) < 1 || Number(start) > Number(day) || utcDay.getUTCDate() !== Number(day) || Number(hour) < 1 || Number(hour) > 12 || Number(minute) > 59) throw new Error('SuryaLogix invalid event deadline date')
+  const closingDate = utcDay.toISOString().slice(0,10)
+  const localHour = Number(hour) % 12 + (period.toLowerCase() === 'pm' ? 12 : 0)
+  return { closingDate, timestamp: Date.parse(closingDate + 'T' + String(localHour).padStart(2,'0') + ':' + minute + ':00+05:30') }
+}
 
 export const createSuryaLogixScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+  async run({ fetchPage = defaultFetchPage, signal, now = () => new Date().toISOString() } = {}) {
+    signal?.throwIfAborted()
+    const homepage = await fetchPage(HOMEPAGE_URL, { signal })
+    signal?.throwIfAborted()
 
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('SuryaLogix verified official homepage no longer matches the verified first-party surface')
     }
 
-    const careersPage = await fetchPage(CAREERS_URL)
+    const careersPage = await fetchPage(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
 
     if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
       throw new Error('SuryaLogix verified official careers page no longer matches the verified first-party surface')
     }
 
-    if (!hasApplicationFormSurface(careersPage.html) || hasUnexpectedPublicJobsSignal(careersPage.html)) {
+    if (!hasApplicationFormSurface(careersPage.html)) {
       throw new Error('SuryaLogix careers page no longer matches the verified non-listing application form surface')
     }
 
-    return []
+    if (!hasUnexpectedPublicJobsSignal(careersPage.html)) throw new Error('SuryaLogix application form does not prove a complete job inventory')
+    const visibleMarkup = String(careersPage.html).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    const links = [...visibleMarkup.matchAll(/href=["']([^"']+)["']/gi)].map(match => match[1])
+    if (links.some(link => /\/jobs\/|lever\.co|greenhouse\.io|ashbyhq|workdayjobs|smartrecruiters|darwinbox|zohorecruit|turbohire|linkedin\.com\/jobs/i.test(link))) throw new Error('SuryaLogix incomplete listing: unexpected public hiring handoff')
+    const jobs = extractPublicOpenings(careersPage.html)
+    if (jobs.length === 0) {
+      throw new Error('SuryaLogix public jobs are present but could not be parsed completely')
+    }
+    const scrapedAt = now()
+    const deadline = getWalkInDeadline(careersPage.html)
+    if (!Number.isFinite(Date.parse(scrapedAt))) throw new Error('SuryaLogix invalid observation date')
+    if (deadline && Date.parse(scrapedAt) > deadline.timestamp) return []
+    return jobs.map((job) => ({ ...job, closingDate: deadline?.closingDate || null, scrapedAt }))
   },
 })
 

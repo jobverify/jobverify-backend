@@ -16,7 +16,7 @@ const careersHtml = `
     <title>Careers &amp; Culture | Gainsight Software</title>
   </head>
   <body>
-    <h1>Find Your Dream Job</h1>
+    <h1>Find Authentic Jobs</h1>
     <p>Gainsight Software</p>
   </body>
 </html>

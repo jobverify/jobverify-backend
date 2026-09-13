@@ -26,12 +26,14 @@ import {
 } from "../constants/jobFilterTaxonomy.js";
 import { resolveJobType } from "../../scraper-support/utils/normalizeScrapedJob.js";
 
-import { applyPublicJobLocationScope } from "../utils/publicJobLocationScope.js";
+import { applyPublicJobVisibility } from "../utils/publicJobVisibility.js";
 import { buildAggregateHiringSignalFilter } from "../utils/jobListingEvidence.js";
 import { canUsePremiumFilters } from "../utils/accessControl.js";
 import {
   formatStoredLocationLabel,
   mergeLocationOptions,
+  normalizeStoredLocations,
+  sanitizeStoredLocationValue,
 } from "../utils/jobLocations.js";
 import { normalizeJobSearchKey } from "../utils/jobSearchKeys.js";
 import { getValidIndiaCityForJob } from "../utils/publicJobLocationScope.js";
@@ -56,8 +58,8 @@ const MAX_RECOMMENDATION_TERMS = 20;
 const CLICK_DEDUPE_WINDOW_MS = 24 * 60 * 60 * 1000;
 const MAX_REASONABLE_EXPERIENCE_YEARS = 40;
 const PUBLIC_CACHE_HEADER =
-  "public, max-age=120, s-maxage=300, stale-while-revalidate=300";
-const PRIVATE_CACHE_HEADER = "private, max-age=120, must-revalidate";
+  "no-store";
+const PRIVATE_CACHE_HEADER = "no-store";
 const FALLBACK_JOB_SLUG = "job";
 const JOB_CARD_PAGE_LIMIT = 12;
 const MAX_JOB_CARD_PAGE_LIMIT = 2000;
@@ -180,7 +182,9 @@ const toValidDate = (value) => {
   return Number.isFinite(next?.getTime?.()) ? next : null;
 };
 
-const resolvePublicJobDatasetSummary = async () => {
+const resolvePublicJobDatasetSummary = async (siteSettings = {}) => {
+  // Stored summaries include all categories. Filtered views query their own scope.
+  if (siteSettings.experiencedJobsEnabled === false) return null;
   const summary = await readJobDatasetSummary();
   const refreshedAt = normalizeLifecycleDate(summary?.refreshedAt);
   const isCurrentLifecycleDay = !refreshedAt
@@ -198,8 +202,8 @@ const resolvePublicJobDatasetSummary = async () => {
   return refreshJobDatasetSummary();
 };
 
-const resolvePublicJobDatasetTotals = async () => {
-  const summary = await resolvePublicJobDatasetSummary();
+const resolvePublicJobDatasetTotals = async (siteSettings) => {
+  const summary = await resolvePublicJobDatasetSummary(siteSettings);
 
   if (!summary) return null;
 
@@ -297,9 +301,10 @@ const resolveActiveCompanyOptions = async (
     searchTerm = "",
     limit = DEFAULT_COMPANY_META_LIMIT,
     maximumLimit = DEFAULT_COMPANY_META_LIMIT,
+    siteSettings,
   } = {},
 ) => {
-  const baseFilter = buildJobMetaFilter(queryParams, excludedKeys, { company: { $ne: null } });
+  const baseFilter = buildJobMetaFilter(queryParams, excludedKeys, { company: { $ne: null } }, siteSettings);
   const safeLimit = Math.max(1, Math.min(limit, maximumLimit));
 
   if (mongoose.connection.readyState !== 1) {
@@ -440,6 +445,7 @@ const normalizeJobTypeLabel = (value) => {
   if (!normalized) return null;
   if (normalized === "intern" || normalized === "internship") return "Intern";
   if (normalized === "contract") return "Contract";
+  if (normalized === "others") return "Others";
   if (normalized === "full-time fresher") return "Full-time Fresher";
   if (normalized === "full-time experienced") return "Full-time Experienced";
   if (normalized === "full-time") return "Full-time";
@@ -779,9 +785,19 @@ const normalizeResponseJob = (job) => {
     workdayApplicationStatusCheckedAt: _workdayApplicationStatusCheckedAt,
     ...publicJob
   } = job;
+  const locations = normalizeStoredLocations(publicJob);
+  const location = locations.length > 0
+    ? formatStoredLocationLabel({ locations })
+    : formatStoredLocationLabel({
+      location: publicJob.location,
+      city: publicJob.city,
+    });
 
   return {
     ...publicJob,
+    location: location || null,
+    city: sanitizeStoredLocationValue(publicJob.city),
+    locations,
     experienceLevel: normalizeResponseExperienceLevel(job),
     jobType: normalizeResponseJobType(job),
     ...buildApplicationState(job),
@@ -1030,8 +1046,8 @@ const resolveJobListSortOption = ({ sort, hasTextSearch = false } = {}) => {
   return { sortDate: -1, _id: -1 };
 };
 
-const jobFilters = (queryParams, options) => applyPublicJobLocationScope(
-  buildJobFilterConditions(queryParams, options),
+const jobFilters = (queryParams, options, siteSettings) => applyPublicJobVisibility(
+  buildJobFilterConditions(queryParams, options), siteSettings,
 );
 
 const normalizeTerms = (
@@ -1067,11 +1083,11 @@ const withoutQueryKeys = (queryParams = {}, excludedKeys = []) => {
   );
 };
 
-const buildJobMetaFilter = (queryParams = {}, excludedKeys = [], extraFilters = {}) => (
-  applyPublicJobLocationScope({
+const buildJobMetaFilter = (queryParams = {}, excludedKeys = [], extraFilters = {}, siteSettings) => (
+  applyPublicJobVisibility({
     ...buildJobFilterConditions(withoutQueryKeys(queryParams, excludedKeys)),
     ...extraFilters,
-  })
+  }, siteSettings)
 );
 
 const normalizeExperienceYearOptions = (values = []) => [...new Set(
@@ -1089,12 +1105,13 @@ const resolveScopedDistinctValues = async (
   field,
   excludedKeys = [],
   extraFilters = {},
-) => Job.distinct(field, buildJobMetaFilter(queryParams, excludedKeys, extraFilters));
+  siteSettings,
+) => Job.distinct(field, buildJobMetaFilter(queryParams, excludedKeys, extraFilters, siteSettings));
 
-const resolveScopedExperienceYearOptions = async (queryParams = {}) => {
+const resolveScopedExperienceYearOptions = async (queryParams = {}, siteSettings) => {
   const experienceYears = await Job.distinct(
     "experienceYears",
-    buildJobMetaFilter(queryParams, ["experienceYear", "experienceBucket"]),
+    buildJobMetaFilter(queryParams, ["experienceYear", "experienceBucket"], {}, siteSettings),
   );
 
   return normalizeExperienceYearOptions(experienceYears);
@@ -1105,16 +1122,16 @@ const filterSupportedOptions = (values = [], supportedOptions = []) => {
   return supportedOptions.filter((option) => valueSet.has(option));
 };
 
-const resolveScopedDatePostedOptions = async (queryParams = {}) => {
+const resolveScopedDatePostedOptions = async (queryParams = {}, siteSettings) => {
   const baseConditions = buildJobFilterConditions(withoutQueryKeys(queryParams, ["datePostedDays"]));
 
   const matchesByWindow = await Promise.all(
     [...DATE_POSTED_WINDOW_OPTIONS, DATE_POSTED_OLDER_THAN_30_VALUE].map(async (days) => {
       const count = await Job.countDocuments(
-        applyPublicJobLocationScope({
+        applyPublicJobVisibility({
           ...baseConditions,
           ...buildDatePostedFilter([days]),
-        }),
+        }, siteSettings),
       );
 
       return count > 0 ? days : null;
@@ -1388,7 +1405,7 @@ export const getAllJobs = async (req, res) => {
       });
     }
 
-    const filters = jobFilters(req.query);
+    const filters = jobFilters(req.query, undefined, req.siteSettings);
     const hasTextSearch = Boolean(filters.$text);
 
     const DEFAULT_PAGE = 1;
@@ -1411,7 +1428,7 @@ export const getAllJobs = async (req, res) => {
         { skip, limit: limitNum },
       );
       const summaryTotalsPromise = canUseSummaryTotals
-        ? resolvePublicJobDatasetTotals().catch(() => null)
+        ? resolvePublicJobDatasetTotals(req.siteSettings).catch(() => null)
         : Promise.resolve(null);
       const jobsPromise = Job.aggregate(recommendationPipeline).exec();
       const summaryTotals = await summaryTotalsPromise;
@@ -1458,7 +1475,7 @@ export const getAllJobs = async (req, res) => {
       .exec();
 
     if (canUseSummaryTotals) {
-      const summaryTotals = await resolvePublicJobDatasetTotals().catch(() => null);
+      const summaryTotals = await resolvePublicJobDatasetTotals(req.siteSettings).catch(() => null);
 
       if (summaryTotals) {
         const jobs = await jobsPromise;
@@ -1572,7 +1589,7 @@ export const getJobSearch = async (req, res) => {
     }
 
     const cursor = searchInput?.cursor ? decodeJobSearchCursor(searchInput.cursor, request) : null;
-    const filters = jobFilters(request.filters);
+    const filters = jobFilters(request.filters, undefined, req.siteSettings);
     const boundary = buildCursorBoundary(cursor, request.sort);
     const pipeline = buildCursorSearchPipeline({
       filters,
@@ -1648,7 +1665,7 @@ export const getJobById = async (req, res) => {
     }
 
     const job = await Job.findOne(
-      applyPublicJobLocationScope({ _id: id, status: "active" }),
+      applyPublicJobVisibility({ _id: id, status: "active" }, req.siteSettings),
     );
 
     if (!job) {
@@ -1698,7 +1715,7 @@ export const trackJobClick = async (req, res) => {
       : { job: id, user: null, ip: req.ip, userAgent, clickedAt: { $gte: recentClickCutoff } };
 
     const existingClick = await Click.findOne(clickQuery).lean().exec();
-    const publicJobFilter = applyPublicJobLocationScope({ _id: id, status: "active" });
+    const publicJobFilter = applyPublicJobVisibility({ _id: id, status: "active" }, req.siteSettings);
 
     if (existingClick) {
       const existingJob = await Job.findOne(publicJobFilter).select("clickCount").lean().exec();
@@ -1784,7 +1801,7 @@ export const getJobMeta = async (req, res) => {
     }
 
     if (!hasScopedFilters) {
-      const summary = await resolvePublicJobDatasetSummary().catch(() => null);
+      const summary = await resolvePublicJobDatasetSummary(req.siteSettings).catch(() => null);
 
       if (summary != null) {
         return res.status(200).json({
@@ -1830,17 +1847,18 @@ export const getJobMeta = async (req, res) => {
           {
             excludedKeys: ["company"],
             limit: DEFAULT_COMPANY_META_LIMIT,
+            siteSettings: req.siteSettings,
           },
         )
         : Promise.resolve([]),
       hasScopedFilters
-        ? resolveScopedDistinctValues(queryParams, "city", ["city", "location"], { city: { $ne: null } })
-        : Job.distinct("city", applyPublicJobLocationScope({ status: "active", city: { $ne: null } })),
+        ? resolveScopedDistinctValues(queryParams, "city", ["city", "location"], { city: { $ne: null } }, req.siteSettings)
+        : Job.distinct("city", applyPublicJobVisibility({ status: "active", city: { $ne: null } }, req.siteSettings)),
       hasScopedFilters
-        ? resolveScopedDistinctValues(queryParams, "jobType", ["jobType"], { jobType: { $ne: null } })
-        : Job.distinct("jobType", applyPublicJobLocationScope({ status: "active", jobType: { $ne: null } })),
+        ? resolveScopedDistinctValues(queryParams, "jobType", ["jobType"], { jobType: { $ne: null } }, req.siteSettings)
+        : Job.distinct("jobType", applyPublicJobVisibility({ status: "active", jobType: { $ne: null } }, req.siteSettings)),
       hasScopedFilters
-        ? resolveScopedExperienceYearOptions(queryParams)
+        ? resolveScopedExperienceYearOptions(queryParams, req.siteSettings)
         : Promise.resolve(EXPERIENCE_FILTER_OPTIONS),
       hasScopedFilters
         ? resolveScopedDistinctValues(
@@ -1848,6 +1866,7 @@ export const getJobMeta = async (req, res) => {
           "primaryRoleDomain",
           ["roleDomain"],
           { primaryRoleDomain: { $ne: null } },
+          req.siteSettings,
         )
         : Promise.resolve(ROLE_DOMAIN_OPTIONS),
       hasScopedFilters
@@ -1856,10 +1875,11 @@ export const getJobMeta = async (req, res) => {
           "workArrangement",
           ["workArrangement"],
           { workArrangement: { $ne: null } },
+          req.siteSettings,
         )
         : Promise.resolve(WORK_ARRANGEMENT_OPTIONS),
       hasScopedFilters
-        ? resolveScopedDatePostedOptions(queryParams)
+        ? resolveScopedDatePostedOptions(queryParams, req.siteSettings)
         : Promise.resolve([...DATE_POSTED_WINDOW_OPTIONS, DATE_POSTED_OLDER_THAN_30_VALUE]),
     ]);
 
@@ -1917,7 +1937,7 @@ export const getJobCompanySuggestions = async (req, res) => {
     }
 
     const summary = !hasScopedFilters
-      ? await resolvePublicJobDatasetSummary().catch(() => null)
+      ? await resolvePublicJobDatasetSummary(req.siteSettings).catch(() => null)
       : null;
     const summaryCompanies = mergeCompanyOptions(summary?.companies ?? []);
     const normalizedSearch = normalizeFilterText(queryParams.q).toLowerCase();
@@ -1930,6 +1950,7 @@ export const getJobCompanySuggestions = async (req, res) => {
         searchTerm: queryParams.q,
         limit: MAX_COMPANY_AUTOCOMPLETE_RESULTS,
         maximumLimit: MAX_COMPANY_AUTOCOMPLETE_RESULTS,
+        siteSettings: req.siteSettings,
       });
 
     return res.status(200).json({
@@ -1949,12 +1970,12 @@ export const getJobCompanySuggestions = async (req, res) => {
   }
 };
 
-export const getLiveHiringCompanies = async (_req, res) => {
+export const getLiveHiringCompanies = async (req, res) => {
   try {
     res.set("Cache-Control", "no-store");
     const companies = await Job.distinct(
       "company",
-      applyPublicJobLocationScope({ status: "active" }),
+      applyPublicJobVisibility({ status: "active" }, req.siteSettings),
     );
 
     return res.status(200).json({
@@ -1978,7 +1999,7 @@ export const getLiveHiringCompanies = async (_req, res) => {
 export const getJobStats = async (req, res) => {
   try {
     res.set("Cache-Control", PUBLIC_CACHE_HEADER);
-    const summary = await resolvePublicJobDatasetSummary().catch(() => null);
+    const summary = await resolvePublicJobDatasetSummary(req.siteSettings).catch(() => null);
 
     if (summary != null) {
       return res.status(200).json({
@@ -1992,8 +2013,8 @@ export const getJobStats = async (req, res) => {
     }
 
     const [totalJobs, companies] = await Promise.all([
-      Job.countDocuments(applyPublicJobLocationScope({ status: "active" })),
-      Job.distinct("company", applyPublicJobLocationScope({ status: "active" })),
+      Job.countDocuments(applyPublicJobVisibility({ status: "active" }, req.siteSettings)),
+      Job.distinct("company", applyPublicJobVisibility({ status: "active" }, req.siteSettings)),
     ]);
 
     return res.status(200).json({
@@ -2014,16 +2035,16 @@ export const getJobStats = async (req, res) => {
   }
 };
 
-export const getJobSeoFeed = async (_req, res) => {
+export const getJobSeoFeed = async (req, res) => {
   try {
     const frontendOrigin = resolveFrontendOrigin();
     res.set("Cache-Control", PUBLIC_CACHE_HEADER);
 
     const jobs = await Job.find(
-      applyPublicJobLocationScope({
+      applyPublicJobVisibility({
         status: "active",
         sourceUrl: { $exists: true, $ne: null },
-      }),
+      }, req.siteSettings),
     )
       .sort({ sortDate: -1, _id: -1 })
       .select("title company postedAt updatedAt closingDate city location locations jobType")

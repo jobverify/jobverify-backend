@@ -9,6 +9,28 @@ const loadCentumElectronicsModule = async () => {
   }
 }
 
+const currentHomepageHtml = `
+  <html>
+    <head><title>Centum &#8211; TEAM WORK | TECHNOLOGY | TRUST</title></head>
+    <body>
+      <a href="http://careers.centumelectronics.com/">Careers – India</a>
+      <h2>Global Presence, Innovative Engineering, Advanced Manufacturing</h2>
+      <h2>CENTUM GROUP, A GLOBAL COMPANY CLOSE TO ITS CUSTOMERS</h2>
+      <footer>© Centum. All rights reserved.</footer>
+    </body>
+  </html>
+`
+
+test('Centum Electronics homepage identity does not depend on the retired Europe careers link', async () => {
+  const centum = await loadCentumElectronicsModule()
+
+  assert.equal(centum.hasCentumHomepageSignal(currentHomepageHtml), true)
+  assert.equal(
+    centum.hasCentumHomepageSignal(currentHomepageHtml.replace(centum.INDIA_CAREERS_HANDOFF_URL, '/careers')),
+    false,
+  )
+})
+
 test('Centum Electronics default resolver dependency does not throw before the first fetch', async () => {
   const centum = await loadCentumElectronicsModule()
 

@@ -37,13 +37,18 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal, requestTimeoutMs = 15000 } = {}) => {
+  const duration = Number(requestTimeoutMs)
+  const deadline = AbortSignal.timeout(Number.isInteger(duration) && duration > 0 ? duration : 15000)
+  const requestSignal = signal ? AbortSignal.any([signal, deadline]) : deadline
+  requestSignal.throwIfAborted()
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
+    signal: requestSignal,
   })
 
   return {
@@ -78,14 +83,24 @@ export const isExpectedMissingCareerRoute = (page = {}) => {
 }
 
 export const createProventechScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+  async run({ fetchPage = defaultFetchPage, signal, requestTimeoutMs } = {}) {
+    signal?.throwIfAborted()
+    const homepage = await fetchPage(HOMEPAGE_URL, { signal, requestTimeoutMs })
+    signal?.throwIfAborted()
+    if (Number(homepage.status) !== 200) {
+      throw new Error(`HTTP ${homepage.status} for ${HOMEPAGE_URL}`)
+    }
     if (Number(homepage.status) !== 200 || !hasVerifiedLoginShellSignal(homepage.html) || hasPublicJobsSignal(homepage.html)) {
       throw new Error('The verified Proventech HRMS login shell changed materially')
     }
 
     for (const routeUrl of CAREERS_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
+      signal?.throwIfAborted()
+      const routePage = await fetchPage(routeUrl, { signal, requestTimeoutMs })
+      signal?.throwIfAborted()
+      if (![200, 404].includes(Number(routePage.status))) {
+        throw new Error(`HTTP ${routePage.status} for ${routeUrl}`)
+      }
       if (!isExpectedMissingCareerRoute(routePage)) {
         throw new Error(`The verified Proventech no-public-careers route changed materially: ${routeUrl}`)
       }

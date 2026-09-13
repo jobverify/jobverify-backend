@@ -9,9 +9,10 @@ const scraper = createPhenomScraper({
   companyName: 'Giant Eagle',
   source: 'gianteagle',
   baseUrl: 'https://jobs.gianteagle.com',
-  searchPath: '/us/en/search-results',
+  searchPath: '/in/hi/search-results',
   scraperDir: currentDir,
-  targetCountry: 'United States of America',
+  // The India locale also lists some US roles, so retain the exact country filter.
+  targetCountry: 'India',
 })
 
 export const {

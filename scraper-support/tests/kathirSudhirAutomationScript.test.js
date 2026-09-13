@@ -108,6 +108,24 @@ const liveStyleCareersHtml = `
   </html>
 `
 
+const currentNoListingsCareersHtml = `
+  <html>
+    <head>
+      <title>Career opportunities in Electronics Core Company in Chennai</title>
+      <link rel="canonical" href="https://www.kathirsudhirautomation.com/career" />
+      <script type="application/ld+json">
+        {"@type":"Organization","name":"Kathir Sudhir Automation India Pvt Ltd","url":"https://www.kathirsudhirautomation.com/"}
+      </script>
+    </head>
+    <body>
+      <h1>Career</h1>
+      <h2>Electronics Core Company Jobs</h2>
+      <p>Open Positions — Kathir Sudhir Automation</p>
+      <footer>For Job : 9025118989 / <a href="mailto:hr@kathirsudhirautomation.com">hr@kathirsudhirautomation.com</a></footer>
+    </body>
+  </html>
+`
+
 const loadKathirSudhirAutomationModule = async () => {
   try {
     return await import('../../scraper/kathirsudhirautomation/script.js')
@@ -243,4 +261,12 @@ test('Kathir Sudhir Automation accepts the live-style Elementor careers markup a
     jobs.find((job) => job.title === 'SCM Engineer & Lead')?.jobDescription || '',
     /optimize inventory levels & lead times/i,
   )
+})
+
+test('Kathir Sudhir Automation rejects absent inventory and role arrays without verified job geography', async () => {
+  const scraperModule = await loadKathirSudhirAutomationModule()
+  assert.equal(scraperModule.hasOfficialCareersSignal(currentNoListingsCareersHtml), true)
+  assert.throws(() => scraperModule.extractPublicJobs(currentNoListingsCareersHtml), error => error.code === 'KATHIR_INVENTORY_UNAVAILABLE')
+  const careers = currentNoListingsCareersHtml + '<script>const jobs=[{title:"Sales Engineer",apply:"https://docs.google.com/forms/d/e/verified/viewform"}];const list=document.getElementById("jobList");</script>'
+  assert.throws(() => scraperModule.extractPublicJobs(careers), error => error.code === 'KATHIR_LOCATION_UNVERIFIED' && error.abortRetries === true)
 })

@@ -13,7 +13,7 @@ const HOMEPAGE_HTML = `
 <!doctype html>
 <html lang="en-US">
   <head>
-    <title>Home - Manycon India | Expert Fire Protection, Coatings &amp; Construction Services</title>
+    <title>Fireproofing and Firestop in Qatar and Saudi Arabia</title>
     <link rel="canonical" href="https://manycon.com/" />
     <meta
       name="description"
@@ -45,7 +45,7 @@ const ABOUT_HTML = `
 <!doctype html>
 <html lang="en-US">
   <head>
-    <title>About Us - Manycon India | Expert Fire Protection, Coatings &amp; Construction Services</title>
+    <title>About Manycon | Saudi Arabian and Qatari Fire Safety</title>
     <link rel="canonical" href="https://manycon.com/about/" />
   </head>
   <body>
@@ -227,6 +227,17 @@ test('Manycon Trading and Contracting accepts the current missing-route shell', 
   )
 })
 
+test('Manycon Trading and Contracting accepts the current branded 404 title without the retired India suffix', async () => {
+  const scraper = await loadModule()
+  assert.equal(
+    scraper.isVerifiedMissingRoute({
+      status: 404,
+      html: CURRENT_MISSING_ROUTE_HTML.replace('Manycon India |', 'Manycon |'),
+    }),
+    true,
+  )
+})
+
 test('Manycon Trading and Contracting preserves expected 404 page snapshots for missing-route validation', async () => {
   const scraper = await loadModule()
 
@@ -248,11 +259,11 @@ test('Manycon Trading and Contracting preserves expected 404 page snapshots for 
   })
 })
 
-test('Manycon Trading and Contracting sentinel returns [] only while the verified first-party surface exposes no public careers board', async () => {
+test('Manycon Trading and Contracting rejects unavailable inventory while the verified first-party surface exposes no public careers board', async () => {
   const scraper = await loadModule()
   const requestedUrls = []
 
-  const jobs = await scraper.createManyconTradingAndContractingScraper().run({
+  await assert.rejects(scraper.createManyconTradingAndContractingScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
@@ -264,7 +275,7 @@ test('Manycon Trading and Contracting sentinel returns [] only while the verifie
 
       throw new Error(`Unexpected URL ${url}`)
     },
-  })
+  }), error => error.code === 'MANYCON_INVENTORY_UNAVAILABLE' && error.abortRetries === true)
 
   assert.deepEqual(
     requestedUrls,
@@ -276,7 +287,6 @@ test('Manycon Trading and Contracting sentinel returns [] only while the verifie
       ...scraper.MISSING_ROUTE_URLS,
     ],
   )
-  assert.deepEqual(jobs, [])
 })
 
 test('Manycon Trading and Contracting sentinel fails closed when the verified public surface drifts into a jobs surface', async () => {

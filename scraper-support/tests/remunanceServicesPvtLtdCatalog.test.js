@@ -9,7 +9,10 @@ test('Remunance Services Pvt. Ltd. is present in the shared catalog when we rest
 
   assert.equal(provider?.source, 'remunanceservicespvtltd')
   assert.equal(provider?.companyName, 'Remunance Services Pvt. Ltd.')
-  assert.equal(provider?.companyCareerPage, 'https://remunance.com/jobs/')
+  assert.equal(provider?.companyCareerPage, 'https://remunance.com/careers/')
+  assert.equal(provider?.atsPlatform, 'elfsight-job-board')
+  assert.equal(provider?.verifiedOn, '2026-09-13')
+  assert.match(provider?.verifiedSurfaceSummary, /29 visible roles.*22 explicit India.*7 Remote/i)
 })
 
 test('Remunance Services Pvt. Ltd. matches company coverage from the shared scraper catalog', () => {

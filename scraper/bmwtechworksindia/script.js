@@ -23,7 +23,7 @@ const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /\bjob id\b/i,
   /\bjob requisition\b/i,
   /\bview job\b/i,
-  /\bview role\b/i,
+  /\bview job\b/i,
   /boards\.greenhouse\.io/i,
   /job-boards\.greenhouse\.io/i,
   /jobs\.lever\.co/i,
