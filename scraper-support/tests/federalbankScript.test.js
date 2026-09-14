@@ -29,6 +29,22 @@ const radwareChallengePage = `
   </html>
 `
 
+const radwareBlockPage = `
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <title>Radware Block Page</title>
+      <link rel="stylesheet" href="https://captcha.perfdrive.com/captcha-public/css/shieldsquare_styles.min.css">
+    </head>
+    <body>
+      <script>
+        var ssk = "botmanager_support@radware.com";
+        window.SSJSConnectorObj = window.SSJSConnectorObj || {};
+      </script>
+    </body>
+  </html>
+`
+
 const careersPortalShell = `
   <html>
     <head><title>Talent Connect</title></head>
@@ -133,6 +149,8 @@ test('Federal Bank accepts the current Radware careers interstitial and returns 
   const federalBank = await loadFederalBankModule()
   const requestedPages = []
   const requestedJson = []
+
+  assert.equal(federalBank.hasRadwareChallengeSignal(radwareBlockPage), true)
 
   const jobs = await federalBank.createFederalBankScraper({
     now: () => '2026-08-17T12:00:00.000Z',

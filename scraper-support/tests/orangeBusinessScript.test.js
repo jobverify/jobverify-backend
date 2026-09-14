@@ -95,7 +95,7 @@ test('buildSearchResultsPageUrl keeps Orange Business listings on the scoped Phe
   assert.equal(pagedSearchUrl.searchParams.get('from'), '20')
 })
 
-test('run keeps Orange Business jobs with uppercase INDIA country values and filters out other Orange entities', async () => {
+test('run supports the legacy companyName field and enriches verified Orange Business India jobs', async () => {
   const {
     buildSearchResultsPageUrl,
     run,
@@ -103,8 +103,15 @@ test('run keeps Orange Business jobs with uppercase INDIA country values and fil
   const requestedUrls = []
 
   const jobs = await run({
-    maxPages: 1,
-    maxJobs: 1,
+    fetchJson: async (url) => {
+      requestedUrls.push(url)
+      const payload = JSON.parse(searchHtml.split('phApp.ddo = ')[1].split(';</script>')[0]).eagerLoadRefineSearch
+      payload.data.jobs = payload.data.jobs.filter(job => job.companyName === 'Orange Business')
+      payload.status = 200
+      payload.totalHits = payload.hits = payload.data.jobs.length
+      payload.data.aggregations = [{ field: 'country', value: { INDIA: payload.totalHits } }]
+      return { refineSearch: payload }
+    },
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === buildSearchResultsPageUrl()) return searchHtml
@@ -116,7 +123,7 @@ test('run keeps Orange Business jobs with uppercase INDIA country values and fil
   })
 
   assert.deepEqual(requestedUrls, [
-    buildSearchResultsPageUrl(),
+    'https://orange.jobs/widgets',
     'https://orange.jobs/gb/en/job/ICM-587014/OSS-Solution-Architect',
   ])
   assert.equal(jobs.length, 1)

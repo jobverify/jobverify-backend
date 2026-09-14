@@ -164,7 +164,32 @@ const parseRoleLabel = (value) => {
   }
 }
 
+const hasCurrentCareersSignal = (html = '') => /<title[^>]*>\s*Morrisons Careers - Be Part of Our Team\s*<\/title>/i.test(html)
+  && /Build Your[\s\S]*?Career[\s\S]*?at Morrisons Lifecare/i.test(html)
+  && /id=["']openings["']/i.test(html)
+
+const extractCurrentCards = (html = '') => {
+  const section = String(html).match(/<section[^>]*id=["']openings["'][^>]*>([\s\S]*?)<\/section>/i)?.[1] || ''
+  const total = Number(normalizeWhitespace(section)?.match(/\b(\d+) roles open\b/i)?.[1])
+  if (!/based across[\s\S]*?facilities in Chennai/i.test(section)) throw new Error('Morrisons current listing location scope changed')
+  const cards = [...section.matchAll(/<a\b([^>]*class=["'][^"']*\bjob-card\b[^"']*["'][^>]*)>([\s\S]*?)<\/a>/gi)]
+  const jobs = cards.map(([, attributes, body]) => {
+    const title = extractFirst(/<h3[^>]*>([\s\S]*?)<\/h3>/i, body)
+    const href = attributes.match(/\bhref=["']([^"']+)["']/i)?.[1]
+    const sourceUrl = href && toAbsoluteUrl(href)
+    if (!title || !sourceUrl || new URL(sourceUrl).origin !== new URL(CAREERS_URL).origin
+      || !/^\/careers\/[a-z0-9_]+\/?$/i.test(new URL(sourceUrl).pathname)) throw new Error('Morrisons incomplete current role identity')
+    const jobId = toJobId(sourceUrl)
+    return { title, location: 'Chennai, India', city: 'Chennai', country: 'India', sourceUrl, applyUrl: sourceUrl,
+      jobId, requisitionId: jobId, jobDescription: extractFirst(/<p[^>]*>([\s\S]*?)<\/p>/i, body),
+      remoteStatus: /On-site/i.test(body) ? 'On-site' : null }
+  })
+  if (!Number.isInteger(total) || total <= 0 || jobs.length !== total || new Set(jobs.map(job => job.jobId)).size !== total) throw new Error('Morrisons incomplete current listing')
+  return jobs
+}
+
 export const extractJobCards = (html) => {
+  if (hasCurrentCareersSignal(html)) return extractCurrentCards(html)
   if (!hasOfficialCareersSignal(html)) {
     throw new Error('Expected verified Morrisons Lifecare careers surface with public job cards')
   }
@@ -201,6 +226,26 @@ export const extractJobCards = (html) => {
 }
 
 export const extractJobDetail = (html, listing = {}) => {
+  if (/class=["'][^"']*\bjob-description-text\b[^"']*["']/i.test(html)) {
+    const role = parseRoleLabel(extractFirst(/<h1[^>]*>([\s\S]*?)<\/h1>/i, html))
+    const canonical = String(html).match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i)?.[1]
+    if (!/Careers at Morrisons Lifecare/i.test(html) || !role?.title || role.title !== listing.title
+      || !canonical || canonical.replace(/\/$/, '') !== String(listing.sourceUrl).replace(/\/$/, '')) throw new Error('Morrisons current detail identity mismatch')
+    const panelItems = (heading) => {
+      const panel = String(html).match(new RegExp('<h3[^>]*>\\s*'+heading+'\\s*</h3>\\s*<ul[^>]*>([\\s\\S]*?)</ul>', 'i'))?.[1] || ''
+      return [...panel.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)].map(([, item]) => normalizeWhitespace(item)).filter(Boolean)
+    }
+    const description = extractFirst(/<p[^>]*class=["'][^"']*\bjob-description-text\b[^"']*["'][^>]*>([\s\S]*?)<\/p>/i, html)
+    const responsibilities = panelItems('Key Responsibilities')
+    const qualifications = panelItems('Qualifications')
+    const application = String(html).match(/<a[^>]*href=["']([^"']+)["'][^>]*>\s*Apply Now[\s\S]*?<\/a>/i)?.[1]
+    const applyUrl = application && toAbsoluteUrl(application)
+    if (!description || applyUrl !== APPLY_URL) throw new Error('Morrisons current detail application or description incomplete')
+    return { ...listing, applyUrl, jobDescription: buildJobDescription({ description, responsibilities, qualifications }),
+      experienceRequired: extractExperienceRequired(qualifications), minimumQualification: extractNonExperienceQualifications(qualifications)[0] || null,
+      publicExperienceChecked: true }
+  }
+  if (!/class=["'][^"']*\bjob__description-text\b[^"']*["']/i.test(html)) throw new Error('Morrisons detail identity changed')
   const role = parseRoleLabel(
     extractFirst(/<h2\b[^>]*class=["'][^"']*\bsection__header\b[^"']*["'][^>]*>([\s\S]*?)<\/h2>/i, html)
       || listing.title,
@@ -243,7 +288,8 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -256,19 +302,26 @@ export const createMorrisonsLifecareScraper = ({
   maxJobs = null,
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const listings = extractJobCards(await fetchText(CAREERS_URL))
+  async run({ signal, fetchText = defaultFetchText, now: overrideNow } = {}) {
+    const request = async (fetcher, url, options = {}) => {
+      signal?.throwIfAborted()
+      try { return await fetcher(url, { ...options, signal }) }
+      finally { signal?.throwIfAborted() }
+    }
+    const listings = extractJobCards(await request(fetchText, CAREERS_URL))
     const selected = Number.isInteger(maxJobs) && maxJobs > 0
       ? listings.slice(0, maxJobs)
       : listings
     const jobs = []
 
     for (const listing of selected) {
-      const detailHtml = await fetchText(listing.sourceUrl)
+      const detailHtml = await request(fetchText, listing.sourceUrl)
       const detail = extractJobDetail(detailHtml, listing)
 
       jobs.push({
         ...detail,
+        applicationUrlIsGeneric: detail.applyUrl === APPLY_URL,
+        ...(selected.length < listings.length ? { sourceListingComplete: false } : {}),
         company: COMPANY,
         department: null,
         country: 'India',

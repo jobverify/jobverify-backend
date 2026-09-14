@@ -13,7 +13,7 @@ const pageOneHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Find your dream job | Canva Careers</title>
+    <title>Find Authentic Jobs | Canva Careers</title>
     <link rel="canonical" href="https://www.lifeatcanva.com/en/jobs/" />
   </head>
   <body>
@@ -69,12 +69,12 @@ const pageTwoHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Find your dream job | Canva Careers - Page 2</title>
+    <title>Find Authentic Jobs | Canva Careers - Page 2</title>
     <link rel="canonical" href="https://www.lifeatcanva.com/en/jobs/?page=2" />
   </head>
   <body>
     <main>
-      <h1>Find your dream job</h1>
+      <h1>Find Authentic Jobs</h1>
       <form>
         <label>Keywords</label>
         <label>Team</label>

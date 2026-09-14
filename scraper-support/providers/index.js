@@ -16,6 +16,7 @@ import {
   SUPPORT_PROVIDER_DIR,
 } from '../supportPaths.js'
 import { TARGETED_OPENING_PROVIDERS } from './targetedOpeningProviders.js'
+import { attachInventoryEvidence, readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const currentDir = SUPPORT_PROVIDER_DIR
 const scraperDir = SCRAPER_DIR
@@ -26,20 +27,6 @@ const workdayCompanies = JSON.parse(
 )
 const customProviders = JSON.parse(
   readFileSync(path.resolve(currentDir, 'customProviders.json'), 'utf-8'),
-)
-const wellfoundProviders = JSON.parse(
-  readFileSync(path.resolve(currentDir, 'wellfoundProviders.json'), 'utf-8'),
-)
-const himalayasProviderFiles = [
-  'himalayasProviders.batch1.json',
-  'himalayasProviders.batch2.json',
-  'himalayasProviders.batch3.json',
-  'himalayasProviders.batch4.json',
-  'himalayasProviders.batch5.json',
-  'himalayasProviders.batch6.json',
-]
-const himalayasProviders = himalayasProviderFiles.flatMap((fileName) =>
-  JSON.parse(readFileSync(path.resolve(currentDir, fileName), 'utf-8')),
 )
 const apiPortalProviders = JSON.parse(
   readFileSync(path.resolve(currentDir, 'apiPortalProviders.json'), 'utf-8'),
@@ -219,23 +206,29 @@ const PROVIDER_DEFAULTS = {
     parser: 'api-portal',
     normalizationProfile: 'engineering-default',
   },
-  wellfoundDirectory: {
-    atsPlatform: 'wellfound-directory',
-    countryFilter: 'India',
-    cityFilter: 'Bangalore',
-    paginationStrategy: 'single-directory-company-jobs-link-or-aggregate-signal',
-    extractionStrategy: 'directory-hiring-signal+optional-public-job-links+challenge-gated-aggregate-fallback',
-    parser: 'directory-hiring-signal',
-    normalizationProfile: 'engineering-default',
-  },
-  himalayasDirectory: {
-    atsPlatform: 'himalayas-remote-jobs-api',
-    countryFilter: 'India',
-    paginationStrategy: 'himalayas-search-api-company-query-pages',
-    extractionStrategy: 'himalayas-public-json-api+company-match+india-or-worldwide-filter+workbook-signal-fallback',
-    parser: 'himalayas-api',
-    normalizationProfile: 'engineering-default',
-  },
+}
+
+const ZERO_RESULT_POLICIES = new Set([
+  'coverage-gap',
+  'discovery-only',
+  'evidence-required',
+])
+
+export const resolveZeroResultPolicy = (provider = {}) => {
+  if (ZERO_RESULT_POLICIES.has(provider.zeroResultPolicy)) {
+    return provider.zeroResultPolicy
+  }
+
+  const inventoryMetadata = [
+    provider.atsPlatform,
+    provider.backfillMode,
+    provider.extractionStrategy,
+    provider.paginationStrategy,
+  ].filter(Boolean).join(' ')
+
+  return /sentinel|verified-empty-state|exact-name-sentinel/i.test(inventoryMetadata)
+    ? 'coverage-gap'
+    : 'evidence-required'
 }
 
 export const hydrateProviderCatalogEntry = (provider = {}) => {
@@ -269,6 +262,7 @@ export const hydrateProviderCatalogEntry = (provider = {}) => {
 
   return {
     ...draftProvider,
+    zeroResultPolicy: resolveZeroResultPolicy(draftProvider),
     dryRunFile,
     modulePath,
     sourceDirectory,
@@ -282,12 +276,140 @@ const decorateJobWithProviderMetadata = (job, provider) => ({
   ...job,
   company: job.company || provider.companyName,
   source: job.source || provider.source,
-  country: job.country || provider.countryFilter || 'India',
+  country: Object.hasOwn(job, 'country') ? job.country : provider.countryFilter || 'India',
   companyCareerPage: job.companyCareerPage || provider.companyCareerPage,
   companyDomain: job.companyDomain || provider.companyDomain,
   atsPlatform: job.atsPlatform || provider.atsPlatform,
   applyUrl: job.applyUrl || job.link || null,
   sourceUrl: job.sourceUrl || job.link || null,
+})
+
+const hasVerifiedEmptySnapshotDisposition = (provider = {}) => {
+  const inventoryMetadata = [
+    provider.atsPlatform,
+    provider.backfillMode,
+    provider.extractionStrategy,
+    provider.paginationStrategy,
+  ].filter(Boolean).join(' ')
+
+  return provider.backfillMode === 'verified-empty-state'
+    || provider.atsPlatform === 'verified-first-party-careers-empty-result'
+    || /no-current-openings|no-openings|official-ats-empty-state|return-empty-when-no-openings|without-current-openings/i.test(inventoryMetadata)
+}
+
+const hasVerifiedEmptyProviderSnapshot = (provider = {}) => (
+  hasVerifiedEmptySnapshotDisposition(provider)
+  && Number(provider.verifiedPublicJobCount) === 0
+  && Number(provider.verifiedIndiaJobCount) === 0
+  && Boolean(provider.companyCareerPage)
+  && Boolean(provider.verifiedOn)
+)
+
+const buildVerifiedEmptyProviderEvidence = (provider = {}) => ({
+  status: 'verified-empty',
+  surface: provider.companyCareerPage,
+  firstParty: true,
+  listingComplete: true,
+  pagesFetched: 1,
+  reportedTotal: 0,
+  indiaFacetCount: 0,
+  verifiedAt: provider.verifiedOn,
+  reason: provider.verifiedSurfaceSummary || `verified-empty-provider-snapshot:${provider.source}`,
+})
+
+const hasCompleteInventoryZeroIndiaSnapshotDisposition = (provider = {}) => {
+  const inventoryMetadata = [
+    provider.atsPlatform,
+    provider.backfillMode,
+    provider.extractionStrategy,
+    provider.paginationStrategy,
+    provider.verifiedSurfaceSummary,
+  ].filter(Boolean).join(' ')
+
+  return /no-verified-india-openings|no india openings|zero india openings|without-enumerable-india-listings|outside india/i.test(inventoryMetadata)
+}
+
+const hasCompleteInventoryZeroIndiaProviderSnapshot = (provider = {}) => (
+  hasCompleteInventoryZeroIndiaSnapshotDisposition(provider)
+  && Number(provider.verifiedPublicJobCount) > 0
+  && Number(provider.verifiedIndiaJobCount) === 0
+  && Boolean(provider.companyCareerPage)
+  && Boolean(provider.verifiedOn)
+)
+
+const buildCompleteInventoryZeroIndiaProviderEvidence = (provider = {}) => ({
+  status: 'complete-inventory',
+  surface: provider.companyCareerPage,
+  firstParty: true,
+  listingComplete: true,
+  pagesFetched: 1,
+  reportedTotal: Number(provider.verifiedPublicJobCount),
+  indiaFacetCount: 0,
+  verifiedAt: provider.verifiedOn,
+  reason: provider.verifiedSurfaceSummary || `complete-inventory-zero-india-provider-snapshot:${provider.source}`,
+})
+
+const hasDiscoveryOnlySnapshotDisposition = (provider = {}) => {
+  const inventoryMetadata = [
+    provider.atsPlatform,
+    provider.backfillMode,
+    provider.extractionStrategy,
+    provider.paginationStrategy,
+  ].filter(Boolean).join(' ')
+
+  return /fail-closed|sentinel|no-verified-official-careers-feed|no-enumerable|without-enumerable|without-public-listings|no-public-listings|no-public-careers|no-public-jobs|without-stable-public-feed|no-trustworthy-jobs-contract|resume-form|form-only|jobylon-shell/i.test(inventoryMetadata)
+}
+
+const hasExplicitZeroVerifiedCounts = (provider = {}) => (
+  Number(provider.verifiedPublicJobCount) === 0
+  && (
+    provider.verifiedIndiaJobCount == null
+    || Number(provider.verifiedIndiaJobCount) === 0
+  )
+)
+
+const hasMissingVerifiedCounts = (provider = {}) => (
+  provider.verifiedPublicJobCount == null
+  && provider.verifiedIndiaJobCount == null
+)
+
+const hasLegacyDiscoveryOnlyZeroSignals = (provider = {}) => {
+  const inventoryMetadata = [
+    provider.atsPlatform,
+    provider.backfillMode,
+    provider.extractionStrategy,
+    provider.paginationStrategy,
+    provider.verifiedSurfaceSummary,
+  ].filter(Boolean).join(' ')
+
+  return /fail-closed|return-empty|empty-state|empty-board|no-current-openings|no-openings|no-vacanc|zero-open|no-public|without-public|without-first-party-job|without-trustworthy|no-trustworthy|no-verified|no-verifiable|unverifiable|blocked|cloudflare|403|522|unreachable|parked|parking|redirect|placeholder|coming-soon|form-only|application-form|email-only|resume|login-only|not-exact-employer|no-exact-name|not a distinct/i.test(inventoryMetadata)
+}
+
+const hasDiscoveryOnlyVerifiedCounts = (provider = {}) => (
+  hasExplicitZeroVerifiedCounts(provider)
+  || (
+    hasMissingVerifiedCounts(provider)
+    && hasLegacyDiscoveryOnlyZeroSignals(provider)
+  )
+)
+
+const hasDiscoveryOnlyProviderSnapshot = (provider = {}) => (
+  !hasVerifiedEmptyProviderSnapshot(provider)
+  && hasDiscoveryOnlySnapshotDisposition(provider)
+  && hasDiscoveryOnlyVerifiedCounts(provider)
+  && Boolean(provider.verifiedOn || provider.verifiedSurfaceSummary)
+)
+
+const buildDiscoveryOnlyProviderEvidence = (provider = {}) => ({
+  status: 'discovery-only',
+  surface: provider.companyCareerPage,
+  firstParty: Boolean(provider.companyCareerPage),
+  listingComplete: false,
+  pagesFetched: 1,
+  reportedTotal: 0,
+  indiaFacetCount: 0,
+  verifiedAt: provider.verifiedOn,
+  reason: provider.verifiedSurfaceSummary || `discovery-only-provider-snapshot:${provider.source}`,
 })
 
 const buildAuthorizedOrigins = (provider = {}) => {
@@ -404,8 +526,6 @@ export const getScraperCatalog = ({
   })),
   ...customProviders,
   ...providerExtensions,
-  ...wellfoundProviders,
-  ...himalayasProviders,
   ...apiPortalProviders.map((item) => ({
     ...item,
     adapter: 'apiPortal',
@@ -413,8 +533,18 @@ export const getScraperCatalog = ({
   ...TARGETED_OPENING_PROVIDERS.map((item) => expandApiPortalProviderTemplate(item)),
 ]).map((provider) => hydrateProviderCatalogEntry(provider))
 
-const decorateJobsWithProviderMetadata = (jobs, provider) => {
+export const decorateJobsWithProviderMetadata = (jobs, provider) => {
   const decoratedJobs = jobs.map((job) => decorateJobWithProviderMetadata(job, provider))
+  const inventoryEvidence = readInventoryEvidence(jobs)
+  if (inventoryEvidence) {
+    attachInventoryEvidence(decoratedJobs, inventoryEvidence)
+  } else if (decoratedJobs.length === 0 && hasVerifiedEmptyProviderSnapshot(provider)) {
+    attachInventoryEvidence(decoratedJobs, buildVerifiedEmptyProviderEvidence(provider))
+  } else if (decoratedJobs.length === 0 && hasCompleteInventoryZeroIndiaProviderSnapshot(provider)) {
+    attachInventoryEvidence(decoratedJobs, buildCompleteInventoryZeroIndiaProviderEvidence(provider))
+  } else if (decoratedJobs.length === 0 && hasDiscoveryOnlyProviderSnapshot(provider)) {
+    attachInventoryEvidence(decoratedJobs, buildDiscoveryOnlyProviderEvidence(provider))
+  }
   if (jobs[WORKDAY_AUTHORITATIVE_EMPTY] === true) {
     Object.defineProperty(decoratedJobs, WORKDAY_AUTHORITATIVE_EMPTY, {
       value: true,
@@ -435,6 +565,7 @@ const createWorkdayScraper = (provider) => ({
       locationCountry: provider.locationCountry,
       source: provider.source,
       scraperDir: provider.sourceDirectory,
+      boardIdentityVerified: provider.boardIdentityVerified === true,
       ...(signal === undefined ? {} : { signal }),
     })
 
@@ -483,31 +614,7 @@ const createApiPortalScraper = (provider) => ({
         : fetchJson,
     })
 
-    return jobs.map((job) => decorateJobWithProviderMetadata(job, provider))
-  },
-})
-
-const createWellfoundDirectoryAdapterScraper = (provider) => ({
-  name: provider.source,
-  dryRunFile: provider.dryRunFile,
-  provider,
-  run: async () => {
-    const { createWellfoundDirectoryScraper } = await import('../wellfoundDirectory/engine.js')
-    const scraper = createWellfoundDirectoryScraper(provider)
-    const jobs = await scraper.run()
-    return jobs.map((job) => decorateJobWithProviderMetadata(job, provider))
-  },
-})
-
-const createHimalayasDirectoryAdapterScraper = (provider) => ({
-  name: provider.source,
-  dryRunFile: provider.dryRunFile,
-  provider,
-  run: async () => {
-    const { createHimalayasDirectoryScraper } = await import('../himalayasDirectory/engine.js')
-    const scraper = createHimalayasDirectoryScraper(provider)
-    const jobs = await scraper.run()
-    return jobs.map((job) => decorateJobWithProviderMetadata(job, provider))
+    return decorateJobsWithProviderMetadata(jobs, provider)
   },
 })
 
@@ -515,8 +622,6 @@ const ADAPTER_FACTORIES = {
   workday: createWorkdayScraper,
   script: createScriptScraper,
   apiPortal: createApiPortalScraper,
-  wellfoundDirectory: createWellfoundDirectoryAdapterScraper,
-  himalayasDirectory: createHimalayasDirectoryAdapterScraper,
 }
 
 const dedupeCatalogBySource = (providers = []) => {

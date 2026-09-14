@@ -156,3 +156,22 @@ test('runIbmSearch paginates official IBM India results and de-duplicates overla
   assert.ok(jobs.every((job) => job.source === 'ibm'))
   assert.ok(jobs.every((job) => job.company === 'IBM'))
 })
+
+
+test('IBM requests and preserves the full public indexed role body instead of the shortened search snippet', () => {
+  assert.ok(buildSearchRequestBody()._source.includes('body'))
+  const payload = readJsonFixture('hashicorp-india-search.json')
+  payload.hits.hits[0]._source.body = 'IBM needs a Cloud Engineer. Responsibilities include Azure delivery. Required experience: 4 years. India IBM India Private Limited.'
+  const [job] = extractSearchResults(payload)
+  assert.equal(job.jobDescription, payload.hits.hits[0]._source.body)
+  assert.equal(job.publicExperienceChecked, true)
+})
+
+test('IBM public search forwards cancellation to its default HTTP transport', async t => {
+  const controller = new AbortController()
+  t.mock.method(globalThis, 'fetch', async (_url, options) => {
+    assert.equal(options.signal, controller.signal)
+    return new Response(JSON.stringify({ hits: { total: 0, hits: [] } }), { headers: { 'Content-Type': 'application/json' } })
+  })
+  assert.deepEqual(await runIbmSearch({ signal: controller.signal }), [])
+})

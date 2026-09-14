@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { composeAbortSignals, fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import SUKI_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -24,6 +25,7 @@ export const VERIFIED_ON = SUKI_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = SUKI_CATALOG.verifiedSurfaceSummary
 export const CAREERS_PAGE_URL = SUKI_CATALOG.officialCareersPageUrl
 export const OFFICIAL_CAREERS_HANDOFF_URL = SUKI_CATALOG.officialCareersHandoffUrl
+export const GREENHOUSE_JOBS_API_URL = SUKI_CATALOG.greenhouseJobsApiUrl
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -52,14 +54,14 @@ const matchesExpectedUrl = (value, expected) => {
   }
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    signal: composeAbortSignals(signal, AbortSignal.timeout(FETCH_TIMEOUT_MS)),
   })
 
   return {
@@ -68,6 +70,17 @@ const defaultFetchPage = async (url) => {
     html: await response.text(),
   }
 }
+
+const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json',
+    Referer: OFFICIAL_CAREERS_HANDOFF_URL,
+  },
+  label: `${SOURCE}-greenhouse`,
+  timeoutMs: FETCH_TIMEOUT_MS,
+  signal,
+})
 
 export const extractOpenPositionsHandoffUrl = (html = '') => {
   const match = String(html ?? '').match(/https:\/\/www\.suki\.ai\/open-positions\/?/i)
@@ -88,23 +101,163 @@ export const hasOfficialCareersSignal = (html = '') => {
     && extractOpenPositionsHandoffUrl(html) === OFFICIAL_CAREERS_HANDOFF_URL
 }
 
-export const matchesVerifiedOpaqueOpenPositionsState = ({ status, url, html } = {}) => {
+export const hasVerifiedGreenhouseShell = (html = '') => {
   const normalized = normalizeWhitespace(html)
 
-  return Number(status) === 200
-    && matchesExpectedUrl(url, OFFICIAL_CAREERS_HANDOFF_URL)
-    && /open positions at suki \| healthcare ai jobs/i.test(String(html ?? ''))
+  return /open positions at suki \| healthcare ai jobs/i.test(String(html ?? ''))
     && normalized.includes('Current Openings')
     && normalized.includes('Company')
     && normalized.includes('Careers')
     && normalized.includes('Policies')
     && normalized.includes('Trust Portal')
-    && !pageExposesPublicJobListings(html)
+    && /id=["']grnhse_app["']/i.test(String(html ?? ''))
+}
+
+const decodeHtml = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;|&rsquo;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/<(br|\/p|\/div|\/li|\/ul|\/ol|\/h[1-6])\b[^>]*>/gi, ' ')
+    .replace(/<[^>]+>/g, ' '),
+)
+
+const isExplicitIndiaLocation = (value) => /(?:^|[,\s])India(?:$|[,\s])/i.test(
+  normalizeWhitespace(value) || '',
+)
+
+const isSukiIndiaOffice = (office) =>
+  normalizeWhitespace(office?.name)?.toLowerCase() === 'suki india'
+
+const isVerifiedForeignOffice = (office) => {
+  const name = normalizeWhitespace(office?.name)?.toLowerCase()
+  const location = normalizeWhitespace(office?.location) || ''
+
+  if (name === 'suki hq') {
+    return /\bRedwood City\b/i.test(location) && /(?:\bCA\b|\bCalifornia\b)/i.test(location)
+  }
+
+  return name === 'suki us remote' && /\bUnited States\b/i.test(location)
+}
+
+const classifyJobScope = ({ primaryLocation, offices }) => {
+  if (isExplicitIndiaLocation(primaryLocation) || offices.some(isSukiIndiaOffice)) return 'india'
+  if (offices.some(isVerifiedForeignOffice)) return 'foreign'
+  return null
+}
+
+const deriveCity = (location) => {
+  const normalized = normalizeWhitespace(location)
+  if (!normalized || /^(?:India|Remote)$/i.test(normalized)) return null
+  return normalizeWhitespace(normalized.split(',')[0])
+}
+
+const normalizeJobUrl = (value, jobId) => {
+  const normalizedJobId = normalizeWhitespace(jobId)
+  if (!normalizedJobId) return null
+
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'https:' || url.hostname.toLowerCase() !== 'www.suki.ai') return null
+    if (url.pathname.replace(/\/+$/, '') !== '/open-positions') return null
+    if (url.searchParams.get('gh_jid') !== normalizedJobId) return null
+    return `${OFFICIAL_CAREERS_HANDOFF_URL.replace(/\/$/, '')}?gh_jid=${encodeURIComponent(normalizedJobId)}`
+  } catch {
+    return null
+  }
+}
+
+export const extractIndiaJobsFromGreenhousePayload = (
+  payload,
+  { scrapedAt = new Date().toISOString() } = {},
+) => {
+  if (!Array.isArray(payload?.jobs) || !Number.isInteger(payload?.meta?.total)) {
+    throw new Error('Suki Greenhouse jobs API no longer exposes the expected complete payload')
+  }
+
+  if (payload.meta.total !== payload.jobs.length) {
+    throw new Error('Suki Greenhouse jobs API total no longer matches the returned jobs')
+  }
+
+  const jobsById = new Map()
+
+  for (const job of payload.jobs) {
+    const primaryLocation = normalizeWhitespace(job?.location?.name)
+    const jobId = normalizeWhitespace(job?.id)
+    const title = normalizeWhitespace(job?.title)
+    const sourceUrl = normalizeJobUrl(job?.absolute_url, jobId)
+    const companyName = normalizeWhitespace(job?.company_name)
+
+    if (companyName?.toLowerCase() !== COMPANY.toLowerCase()) {
+      throw new Error('Suki Greenhouse jobs API no longer maps to the verified company identity')
+    }
+
+    if (!jobId || !title || !primaryLocation || !sourceUrl || !Array.isArray(job?.offices)) {
+      throw new Error('Suki Greenhouse job no longer exposes the verified public job contract')
+    }
+
+    const scope = classifyJobScope({ primaryLocation, offices: job.offices })
+    if (!scope) {
+      throw new Error('Suki Greenhouse job does not establish India or verified foreign location scope')
+    }
+
+    if (jobsById.has(jobId) || scope === 'foreign') continue
+
+    jobsById.set(jobId, {
+      title,
+      company: COMPANY,
+      location: primaryLocation,
+      city: deriveCity(primaryLocation),
+      state: null,
+      country: 'India',
+      department: normalizeWhitespace(job?.departments?.[0]?.name),
+      jobCategory: normalizeWhitespace(job?.departments?.[0]?.name),
+      jobId,
+      requisitionId: normalizeWhitespace(job?.requisition_id),
+      sourceUrl,
+      applyUrl: sourceUrl,
+      link: sourceUrl,
+      source: SOURCE,
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: normalizeWhitespace(job?.first_published || job?.updated_at),
+      closingDate: normalizeWhitespace(job?.application_deadline),
+      jobDescription: decodeHtml(job?.content),
+      remoteStatus: /\bremote\b/i.test(primaryLocation) ? 'Remote' : null,
+      scrapedAt,
+      companyCareerPage: CAREERS_PAGE_URL,
+      companyDomain: SUKI_CATALOG.companyDomain,
+      atsPlatform: SUKI_CATALOG.atsPlatform,
+    })
+  }
+
+  return [...jobsById.values()]
+}
+
+const throwIfAborted = (signal) => {
+  if (signal?.aborted) {
+    throw signal.reason || new DOMException('The operation was aborted', 'AbortError')
+  }
 }
 
 export const createSukiScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const careersPage = await fetchPage(CAREERS_PAGE_URL)
+  async run({
+    fetchPage = defaultFetchPage,
+    fetchJson = defaultFetchJson,
+    now = () => new Date().toISOString(),
+    signal,
+  } = {}) {
+    throwIfAborted(signal)
+    const careersPage = await fetchPage(CAREERS_PAGE_URL, { signal })
+    throwIfAborted(signal)
 
     if (
       Number(careersPage?.status) !== 200
@@ -118,19 +271,21 @@ export const createSukiScraper = () => ({
       throw new Error('The verified Suki open positions handoff changed materially')
     }
 
-    const handoffPage = await fetchPage(OFFICIAL_CAREERS_HANDOFF_URL)
+    const handoffPage = await fetchPage(OFFICIAL_CAREERS_HANDOFF_URL, { signal })
+    throwIfAborted(signal)
 
-    if (pageExposesPublicJobListings(handoffPage?.html)) {
-      throw new Error(
-        'The verified Suki open positions state changed materially and now appears to expose public jobs',
-      )
+    if (
+      Number(handoffPage?.status) !== 200
+      || !matchesExpectedUrl(handoffPage?.url, OFFICIAL_CAREERS_HANDOFF_URL)
+      || !hasVerifiedGreenhouseShell(handoffPage?.html)
+    ) {
+      throw new Error('The verified Suki open positions surface changed materially')
     }
 
-    if (matchesVerifiedOpaqueOpenPositionsState(handoffPage)) {
-      return []
-    }
+    const payload = await fetchJson(GREENHOUSE_JOBS_API_URL, { signal })
+    throwIfAborted(signal)
 
-    throw new Error('The verified Suki open positions state changed materially')
+    return extractIndiaJobsFromGreenhousePayload(payload, { scrapedAt: now() })
   },
 })
 

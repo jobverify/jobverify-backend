@@ -70,6 +70,18 @@ const workdayBoardHtml = `
   </html>
 `
 
+const currentWorkdayBoardHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <link rel="canonical" href="https://alliancewd.wd3.myworkdayjobs.com/renault-group-careers" />
+      <meta property="og:title" content="Careers | Renault Group" />
+      <meta property="og:description" content="Since 1898, Renault Group has relied on a legacy of innovation and unique industrial expertise." />
+      <meta property="og:url" content="https://alliancewd.wd3.myworkdayjobs.com/en-US/renault-group-careers" />
+    </head>
+  </html>
+`
+
 test('Renault Group validates the verified homepage, careers page, and public Workday board', async () => {
   const renault = await loadModule()
 
@@ -88,6 +100,7 @@ test('Renault Group validates the verified homepage, careers page, and public Wo
   assert.equal(renault.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(renault.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(renault.hasOfficialWorkdayBoardSignal(workdayBoardHtml), true)
+  assert.equal(renault.hasOfficialWorkdayBoardSignal(currentWorkdayBoardHtml), true)
 })
 
 test('Renault Group run delegates to the Workday engine after verifying the first-party surfaces', async () => {
@@ -167,4 +180,14 @@ test('Renault Group fails closed when a trusted first-party surface changes mate
     }),
     /verified Workday board/i,
   )
+})
+
+
+test('Renault accepts current footer and corrected founding year while retaining the exact Workday handoff', async () => {
+  const r = await loadModule()
+  const signal = new AbortController().signal
+  const home = '<title>Renault Group</title><a href="/en/careers/">Careers</a><footer>Legal information</footer>'
+  const board = workdayBoardHtml.replace('Since 1889', 'Since 1898')
+  await r.run({signal, fetchPage: async url => ({status:200,url,html:url===r.HOMEPAGE_URL?home:url===r.CAREERS_URL?careersHtml:board}),runWorkday:async options=>{assert.equal(options.signal,signal);return []}})
+  await assert.rejects(r.run({fetchPage:async url=>({status:200,url,html:url===r.HOMEPAGE_URL?home:careersHtml.replaceAll(r.WORKDAY_BOARD_URL,'https://unrelated.wd3.myworkdayjobs.com/en-US/jobs')})}), /handoff|careers page/i)
 })

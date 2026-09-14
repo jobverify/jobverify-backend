@@ -106,6 +106,15 @@ export const hasBrochureShellSignal = (html = '') => {
     && /<div id=["']root["']><\/div>/i.test(page)
 }
 
+export const hasSuspendedAccountSignal = (html = '') => {
+  const text = normalizeWhitespace(html).toLowerCase()
+
+  return text.includes('account suspended')
+    && text.includes('this account has been suspended')
+    && text.includes('contact your hosting provider')
+    && !hasPublicJobsSignal(html)
+}
+
 export const extractBundleUrl = (html = '') => {
   const match = String(html ?? '').match(/<script[^>]+type=["']module["'][^>]+src=["'](?<src>\/assets\/index-[^"']+\.js)["']/i)
   if (!match?.groups?.src) {
@@ -130,6 +139,17 @@ export const hasVerifiedRouteTableSignal = (bundleJs = '') => {
 export const createMindgraphTechnologiesScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
+    if (homepage.status === 200 && hasSuspendedAccountSignal(homepage.html)) {
+      for (const routeUrl of PUBLIC_JOB_ROUTE_URLS) {
+        const routePage = await fetchPage(routeUrl)
+        if (routePage.status !== 200 || !hasSuspendedAccountSignal(routePage.html)) {
+          throw new Error(`Mindgraph Technologies public jobs route ${routeUrl} no longer matches the verified suspended-site shell`)
+        }
+      }
+
+      return []
+    }
+
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Mindgraph Technologies verified official homepage no longer matches the trusted first-party surface')
     }

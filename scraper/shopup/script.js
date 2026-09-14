@@ -65,11 +65,55 @@ export const hasOfficialCareersSignal = (html) => {
 
   return normalized.includes('we are building tomorrow, join us today')
     && normalized.includes('see open roles')
-    && normalized.includes('no available open positions at the moment')
+    && (
+      normalized.includes('no available open positions at the moment')
+      || (
+        normalized.includes('hello@shopup.org')
+        && normalized.includes('dhaka 1208, bangladesh')
+      )
+    )
 }
 
 export const hasPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+
+export const extractPublicRoleLinks = (html) => {
+  const links = []
+  const seen = new Set()
+
+  for (const match of String(html ?? '').matchAll(/href=["']([^"']+)["']/gi)) {
+    let url
+    try {
+      url = new URL(match[1], CAREERS_URL)
+    } catch {
+      continue
+    }
+
+    if (url.protocol !== 'https:' || url.hostname.replace(/^www\./i, '') !== 'shopup.org') continue
+    if (!/^\/job-postings\/[^/]+\/?$/i.test(url.pathname)) continue
+
+    const normalizedUrl = `${url.origin}${url.pathname.replace(/\/$/, '')}`
+    if (seen.has(normalizedUrl)) continue
+    seen.add(normalizedUrl)
+    links.push(normalizedUrl)
+  }
+
+  return links
+}
+
+export const hasVerifiedNonIndiaRoleSignal = (html) => {
+  const normalized = normalizeWhitespace(html).toLowerCase()
+
+  return normalized.includes('shopup')
+    && normalized.includes('job description')
+    && (
+      normalized.includes('shopup hq (tejgaon)')
+      || /\bdhaka\b[^.]{0,100}\bbangladesh\b/i.test(normalized)
+      || /\bdammam\b[^.]{0,100}\b(?:saudi arabia|kingdom of saudi arabia)\b/i.test(normalized)
+      || /\bdubai\b[^.]{0,100}\bunited arab emirates\b/i.test(normalized)
+      || /\bsingapore\s+\d{5,6}\b/i.test(normalized)
+    )
+}
 
 export const createShopUpScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
@@ -80,11 +124,21 @@ export const createShopUpScraper = () => ({
 
     const careersPage = await fetchPage(CAREERS_URL)
     if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
-      throw new Error('ShopUp careers page changed materially or no longer matches the verified empty-board state')
+      throw new Error('ShopUp careers page changed materially or no longer matches the verified public surface')
     }
 
-    if (hasPublicJobsSignal(careersPage.html) && !/no available open positions at the moment/i.test(careersPage.html)) {
-      throw new Error('ShopUp careers page now appears to expose a public jobs surface')
+    if (/no available open positions at the moment/i.test(careersPage.html)) return []
+
+    const roleLinks = extractPublicRoleLinks(careersPage.html)
+    if (roleLinks.length === 0) {
+      throw new Error('ShopUp careers page no longer exposes complete public role links')
+    }
+
+    for (const roleLink of roleLinks) {
+      const rolePage = await fetchPage(roleLink)
+      if (rolePage.status !== 200 || !hasVerifiedNonIndiaRoleSignal(rolePage.html)) {
+        throw new Error(`ShopUp public role country could not be verified: ${roleLink}`)
+      }
     }
 
     return []

@@ -112,7 +112,7 @@ test('Muvi Entertainment run decorates verified jobs with shared metadata', asyn
   assert.equal(jobs[1].title, 'Database Administrator')
   assert.equal(jobs[1].source, 'muvientertainment')
   assert.equal(jobs[1].companyDomain, 'muvi.com')
-  assert.equal(jobs[1].atsPlatform, 'simple-job-board-wordpress')
+  assert.equal(jobs[1].atsPlatform, 'first-party-careers-pagination-plus-job-details')
   assert.equal(jobs[1].companyCareerPage, muvi.CAREERS_URL)
   assert.equal(jobs[1].link, 'https://www.muvi.com/jobs/database-administrator/')
   assert.equal(jobs[1].scrapedAt, FIXED_SCRAPED_AT)

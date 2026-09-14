@@ -17,6 +17,25 @@ const careersHtml = `
   </body>
 </html>
 `
+const currentCareersHtml = `
+  <html><head>
+    <title>Careers - You are the magic ingredient</title>
+    <link rel="canonical" href="https://www.licious.in/careers">
+  </head><body>
+    <a href="/careers/jobs">Start Sizzling</a>
+    <a href="mailto:careers@licious.com">careers@licious.com</a>
+  </body></html>
+`
+const currentJobsHtml = `
+  <html><head>
+    <title>Jobs — Licious Careers</title>
+    <meta name="description" content="Explore open roles at Licious and apply directly through our careers portal.">
+    <link rel="canonical" href="https://www.licious.in/careers/jobs">
+  </head><body>
+    <a href="mailto:careers@licious.com">careers@licious.com</a>
+    <script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{"widgets":[{"type":"closing-cta-footer"}]}}}</script>
+  </body></html>
+`
 
 const loadScriptModule = async () => {
   try {
@@ -53,6 +72,34 @@ test('Licious scraper pins the verified official careers handoff and Darwinbox e
     licious.OFFICIAL_CAREERS_HANDOFF_URL,
   )
   assert.equal(licious.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(licious.hasOfficialCareersSignal(currentCareersHtml), true)
+  assert.equal(licious.hasVerifiedEmptyFirstPartyJobsSignal(currentJobsHtml), true)
+})
+
+test('Licious follows the current first-party jobs route and returns [] only for its verified empty payload', async () => {
+  const licious = await loadScriptModule()
+  const requestedUrls = []
+  const jobs = await licious.createLiciousScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === licious.CAREERS_URL) return currentCareersHtml
+      if (url === licious.CURRENT_JOBS_URL) return currentJobsHtml
+      throw new Error(`Unexpected Licious URL: ${url}`)
+    },
+    fetchListingPage: async () => assert.fail('retired Darwinbox must not be queried'),
+  })
+
+  assert.deepEqual(requestedUrls, [licious.CAREERS_URL, licious.CURRENT_JOBS_URL])
+  assert.deepEqual(jobs, [])
+
+  await assert.rejects(
+    licious.createLiciousScraper().run({
+      fetchText: async (url) => url === licious.CAREERS_URL
+        ? currentCareersHtml
+        : currentJobsHtml.replace('closing-cta-footer', 'job-list'),
+    }),
+    /jobs page changed materially/i,
+  )
 })
 
 test('Licious returns India jobs from the verified public Darwinbox feed and preserves hosted detail URLs', async () => {

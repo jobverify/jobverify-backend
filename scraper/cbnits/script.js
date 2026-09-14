@@ -46,6 +46,25 @@ export const hasServerRenderedJobsSignal = (html = '') =>
     normalizeWhitespace(html),
   )
 
+export const extractBundleUrl = (html = '') => {
+  const match = String(html ?? '').match(
+    /<script[^>]+type=["']module["'][^>]+src=["'](\/assets\/index-[A-Za-z0-9_-]+\.js)["']/i,
+  )
+  if (!match) return null
+
+  return new URL(match[1], CAREERS_URL).toString()
+}
+
+export const hasOfficialCareersBundleSignal = (javascript = '') => {
+  const bundle = String(javascript ?? '')
+
+  return /https:\/\/api\.cbnits\.com/i.test(bundle)
+    && /getAllCareerPost/i.test(bundle)
+    && /path:["']\/career["']/i.test(bundle)
+    && /Join The CBNITS Team/i.test(bundle)
+    && /Current career opportunities at CBNITS/i.test(bundle)
+}
+
 export const run = async ({ fetchText = defaultFetchText } = {}) => {
   const html = await fetchText(CAREERS_URL)
 
@@ -55,6 +74,12 @@ export const run = async ({ fetchText = defaultFetchText } = {}) => {
 
   if (!hasOfficialCareersShellSignal(html)) {
     throw new Error('CBNITS verified first-party careers shell changed materially')
+  }
+
+  const bundleUrl = extractBundleUrl(html)
+  const bundle = bundleUrl ? await fetchText(bundleUrl) : ''
+  if (!hasOfficialCareersBundleSignal(bundle)) {
+    throw new Error('CBNITS verified first-party careers route bundle changed materially')
   }
 
   return []

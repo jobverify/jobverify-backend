@@ -117,7 +117,7 @@ test('getScraperCatalog resolves backfilled sentinel and workday providers to lo
   const amberstudent = catalog.find((provider) => provider.source === 'amberstudent')
   assert.ok(amberstudent)
   assert.equal(amberstudent.adapter, 'script')
-  assert.equal(amberstudent.atsPlatform, 'smartrecruiters')
+  assert.equal(amberstudent.atsPlatform, 'keka')
   assert.match(amberstudent.modulePath, /amberstudent[\\/]script\.js$/i)
 
   const alation = catalog.find((provider) => provider.source === 'alation')

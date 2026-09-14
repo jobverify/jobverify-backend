@@ -139,7 +139,7 @@ test('Yamaha Motors Solutions local catalog captures the verified careers page p
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Find your Dream Job at Yamaha Motor Solutions/i)
+  assert.match(provider.verifiedSurfaceSummary, /Find Authentic Jobs at Yamaha Motor Solutions/i)
   assert.match(provider.verifiedSurfaceSummary, /manageESQueries\/searchJob/i)
   assert.match(provider.verifiedSurfaceSummary, /React Solution Architect/i)
 

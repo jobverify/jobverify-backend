@@ -65,33 +65,63 @@ const normalizeWhitespace = (value) =>
 
 const getFinalUrl = (page, fallbackUrl = '') => page?.finalUrl || page?.url || fallbackUrl
 
-const defaultFetchPage = async (url) => {
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': USER_AGENT,
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.7',
-      },
-      redirect: 'follow',
-    })
+const fetchPageOnce = async (url, fetchImpl) => {
+  const response = await fetchImpl(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.7',
+    },
+    redirect: 'follow',
+  })
 
-    return {
-      status: response.status,
-      url,
-      finalUrl: response.url,
-      html: await response.text(),
-      errorMessage: '',
-    }
+  return {
+    status: response.status,
+    url,
+    finalUrl: response.url,
+    html: await response.text(),
+    errorMessage: '',
+  }
+}
+
+export const hasSelfSignedCertificateFailure = (error) => {
+  const code = String(error?.cause?.code ?? error?.code ?? '')
+  const message = String(error?.cause?.message ?? error?.message ?? error)
+  return code === 'DEPTH_ZERO_SELF_SIGNED_CERT' || /self-signed certificate/i.test(message)
+}
+
+const canUseHttpTransportFallback = (url, error) => {
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'https:'
+      && parsed.hostname === 'www.fanclash.com'
+      && hasSelfSignedCertificateFailure(error)
+  } catch {
+    return false
+  }
+}
+
+export const createFetchPage = ({ fetchImpl = fetch } = {}) => async (url) => {
+  try {
+    return await fetchPageOnce(url, fetchImpl)
   } catch (error) {
+    if (canUseHttpTransportFallback(url, error)) {
+      const fallbackUrl = new URL(url)
+      fallbackUrl.protocol = 'http:'
+      return fetchPageOnce(fallbackUrl.toString(), fetchImpl)
+    }
+
+    const errorMessage = String(error?.cause?.message ?? error?.message ?? error)
     return {
-      status: 'DNS_ERROR',
+      status: hasDnsResolutionFailure(errorMessage) ? 'DNS_ERROR' : 'FETCH_ERROR',
       url,
       finalUrl: '',
       html: '',
-      errorMessage: String(error?.cause?.message ?? error?.message ?? error),
+      errorMessage,
     }
   }
 }
+
+const defaultFetchPage = createFetchPage()
 
 export const hasPublicJobsSignal = (value) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(value ?? '')))
@@ -124,9 +154,10 @@ export const hasVerifiedAtomParkedRedirect = (page = {}) => {
 export const hasVerified404Route = (page = {}, requestedUrl = '') => {
   const finalUrl = getFinalUrl(page, requestedUrl)
   const normalized = normalizeWhitespace(page.html)
+  const httpFallbackUrl = requestedUrl.replace(/^https:/i, 'http:')
 
   return Number(page.status) === 404
-    && finalUrl === requestedUrl
+    && (finalUrl === requestedUrl || finalUrl === httpFallbackUrl)
     && !hasPublicJobsSignal(page.html)
     && (
       normalized.length === 0

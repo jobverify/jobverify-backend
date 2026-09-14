@@ -2,6 +2,7 @@ import path from 'node:path'
 import vm from 'node:vm'
 import { fileURLToPath } from 'node:url'
 
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { AVANTEL_CATALOG, VERIFIED_ROLE_TITLES } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -19,6 +20,8 @@ export { VERIFIED_ROLE_TITLES }
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const DNS_ERROR_CODES = new Set(['ENOTFOUND', 'EAI_AGAIN', 'ERR_NAME_NOT_RESOLVED'])
 
 const VERIFIED_JOB_TOPOLOGY = [
   {
@@ -86,6 +89,41 @@ const normalizeUrl = (value) => {
 }
 
 const sameUrl = (left, right) => normalizeUrl(left) === normalizeUrl(right)
+
+const isDnsResolutionError = (error) => {
+  const seen = new Set()
+  let current = error
+
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    const code = typeof current.code === 'string' ? current.code : ''
+    const message = String(current.message ?? '')
+
+    if (
+      DNS_ERROR_CODES.has(code)
+      || /\b(?:ENOTFOUND|EAI_AGAIN|ERR_NAME_NOT_RESOLVED|getaddrinfo ENOTFOUND)\b/i.test(message)
+    ) {
+      return true
+    }
+
+    current = current.cause
+  }
+
+  return false
+}
+
+const buildDiscoveryOnlyEvidence = (now) =>
+  attachInventoryEvidence([], {
+    status: 'discovery-only',
+    surface: HOMEPAGE_URL,
+    firstParty: true,
+    listingComplete: false,
+    pagesFetched: 0,
+    reportedTotal: null,
+    indiaFacetCount: null,
+    verifiedAt: now(),
+    reason: 'Avantel official homepage hostname cannot be resolved; embedded careers inventory cannot be verified.',
+  })
 
 const isOfficialMainBundleUrl = (value) => {
   try {
@@ -365,57 +403,62 @@ export const createAvantelScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (
-      Number(homepage.status) !== 200
-      || !sameUrl(homepage.url, HOMEPAGE_URL)
-      || !hasOfficialShellSignal(homepage.html)
-    ) {
-      throw new Error('Avantel verified homepage no longer matches the public surface')
-    }
+    try {
+      const homepage = await fetchPage(HOMEPAGE_URL)
+      if (
+        Number(homepage.status) !== 200
+        || !sameUrl(homepage.url, HOMEPAGE_URL)
+        || !hasOfficialShellSignal(homepage.html)
+      ) {
+        throw new Error('Avantel verified homepage no longer matches the public surface')
+      }
 
-    const careersPage = await fetchPage(CAREERS_URL)
-    if (
-      Number(careersPage.status) !== 200
-      || !sameUrl(careersPage.url, CAREERS_URL)
-      || !hasOfficialShellSignal(careersPage.html)
-    ) {
-      throw new Error('Avantel verified careers shell no longer matches the public surface')
-    }
+      const careersPage = await fetchPage(CAREERS_URL)
+      if (
+        Number(careersPage.status) !== 200
+        || !sameUrl(careersPage.url, CAREERS_URL)
+        || !hasOfficialShellSignal(careersPage.html)
+      ) {
+        throw new Error('Avantel verified careers shell no longer matches the public surface')
+      }
 
-    const homepageBundleUrl = extractMainBundleUrl(homepage.html, HOMEPAGE_URL)
-    const careersBundleUrl = extractMainBundleUrl(careersPage.html, CAREERS_URL)
-    if (
-      !isOfficialMainBundleUrl(homepageBundleUrl)
-      || !isOfficialMainBundleUrl(careersBundleUrl)
-      || homepageBundleUrl !== careersBundleUrl
-    ) {
-      throw new Error('Avantel verified bundle URL changed materially')
-    }
+      const homepageBundleUrl = extractMainBundleUrl(homepage.html, HOMEPAGE_URL)
+      const careersBundleUrl = extractMainBundleUrl(careersPage.html, CAREERS_URL)
+      if (
+        !isOfficialMainBundleUrl(homepageBundleUrl)
+        || !isOfficialMainBundleUrl(careersBundleUrl)
+        || homepageBundleUrl !== careersBundleUrl
+      ) {
+        throw new Error('Avantel verified bundle URL changed materially')
+      }
 
-    const bundlePage = await fetchPage(careersBundleUrl)
-    if (
-      Number(bundlePage.status) !== 200
-      || !sameUrl(bundlePage.url, careersBundleUrl)
-      || !hasCareersBundleSignal(bundlePage.html)
-    ) {
-      throw new Error('Avantel verified careers bundle no longer matches the public surface')
-    }
+      const bundlePage = await fetchPage(careersBundleUrl)
+      if (
+        Number(bundlePage.status) !== 200
+        || !sameUrl(bundlePage.url, careersBundleUrl)
+        || !hasCareersBundleSignal(bundlePage.html)
+      ) {
+        throw new Error('Avantel verified careers bundle no longer matches the public surface')
+      }
 
-    const listings = extractEmbeddedJobListings(bundlePage.html)
-    if (!hasUsableListings(listings)) {
-      throw new Error('Avantel embedded jobListings array changed materially')
-    }
+      const listings = extractEmbeddedJobListings(bundlePage.html)
+      if (!hasUsableListings(listings)) {
+        throw new Error('Avantel embedded jobListings array changed materially')
+      }
 
-    const duplicateIdCounts = new Map()
-    for (const listing of listings) {
-      const baseId = normalizeWhitespace(listing.id)
-      if (!baseId) continue
-      duplicateIdCounts.set(baseId, (duplicateIdCounts.get(baseId) ?? 0) + 1)
-    }
+      const duplicateIdCounts = new Map()
+      for (const listing of listings) {
+        const baseId = normalizeWhitespace(listing.id)
+        if (!baseId) continue
+        duplicateIdCounts.set(baseId, (duplicateIdCounts.get(baseId) ?? 0) + 1)
+      }
 
-    return listings.map((listing) =>
-      mapListingToJob(listing, buildStableListingId(listing, duplicateIdCounts), now))
+      return listings.map((listing) =>
+        mapListingToJob(listing, buildStableListingId(listing, duplicateIdCounts), now))
+    } catch (error) {
+      if (isDnsResolutionError(error)) return buildDiscoveryOnlyEvidence(now)
+      throw error
+    }
   },
 })
 

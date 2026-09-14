@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
 
@@ -20,6 +21,7 @@ export const VERIFIED_SURFACE_SUMMARY =
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 const VERIFIED_ON_CUTOFF_ISO = '2026-07-25T00:00:00.000Z'
+const DNS_ERROR_CODES = new Set(['ENOTFOUND', 'EAI_AGAIN', 'ERR_NAME_NOT_RESOLVED'])
 
 const REQUIRED_CAREERS_PATTERNS = [
   /\bForay Into The\b/i,
@@ -113,6 +115,41 @@ const normalizeText = (value = '') =>
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
+
+const isDnsResolutionError = (error) => {
+  const seen = new Set()
+  let current = error
+
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    const code = typeof current.code === 'string' ? current.code : ''
+    const message = String(current.message ?? '')
+
+    if (
+      DNS_ERROR_CODES.has(code)
+      || /\b(?:ENOTFOUND|EAI_AGAIN|ERR_NAME_NOT_RESOLVED|getaddrinfo ENOTFOUND)\b/i.test(message)
+    ) {
+      return true
+    }
+
+    current = current.cause
+  }
+
+  return false
+}
+
+const buildDiscoveryOnlyEvidence = (now) =>
+  attachInventoryEvidence([], {
+    status: 'discovery-only',
+    surface: CAREERS_URL,
+    firstParty: true,
+    listingComplete: false,
+    pagesFetched: 0,
+    reportedTotal: null,
+    indiaFacetCount: null,
+    verifiedAt: now(),
+    reason: 'ForaySoft official careers hostname cannot be resolved; current exact-company inventory cannot be verified.',
+  })
 
 const extractLinkedUrls = (html = '', pageUrl = CAREERS_URL) => {
   const matches = String(html).matchAll(
@@ -247,29 +284,36 @@ const defaultFetchText = (url) =>
     timeoutMs: 15000,
   })
 
-export const createForaySoftScraper = () => ({
+export const createForaySoftScraper = ({
+  now = () => new Date().toISOString(),
+} = {}) => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    assertVerifiedCareersSurface(careersHtml)
-    assertNoUnexpectedExternalJobsSurface(careersHtml, CAREERS_URL)
+    try {
+      const careersHtml = await fetchText(CAREERS_URL)
+      assertVerifiedCareersSurface(careersHtml)
+      assertNoUnexpectedExternalJobsSurface(careersHtml, CAREERS_URL)
 
-    const jobsHtml = await fetchText(JOBS_URL)
-    assertVerifiedJobsArchiveSurface(jobsHtml, JOBS_URL)
-    assertVerifiedThirdPartyPlacementArchive(jobsHtml, JOBS_URL)
-    assertNoUnexpectedExternalJobsSurface(jobsHtml, JOBS_URL)
+      const jobsHtml = await fetchText(JOBS_URL)
+      assertVerifiedJobsArchiveSurface(jobsHtml, JOBS_URL)
+      assertVerifiedThirdPartyPlacementArchive(jobsHtml, JOBS_URL)
+      assertNoUnexpectedExternalJobsSurface(jobsHtml, JOBS_URL)
 
-    const jobsPageTwoHtml = await fetchText(JOBS_PAGE_TWO_URL)
-    assertVerifiedJobsArchiveSurface(jobsPageTwoHtml, JOBS_PAGE_TWO_URL)
-    assertVerifiedThirdPartyPlacementArchive(jobsPageTwoHtml, JOBS_PAGE_TWO_URL)
-    assertNoUnexpectedExternalJobsSurface(jobsPageTwoHtml, JOBS_PAGE_TWO_URL)
+      const jobsPageTwoHtml = await fetchText(JOBS_PAGE_TWO_URL)
+      assertVerifiedJobsArchiveSurface(jobsPageTwoHtml, JOBS_PAGE_TWO_URL)
+      assertVerifiedThirdPartyPlacementArchive(jobsPageTwoHtml, JOBS_PAGE_TWO_URL)
+      assertNoUnexpectedExternalJobsSurface(jobsPageTwoHtml, JOBS_PAGE_TWO_URL)
 
-    assertVerifiedStaleArchiveDates(jobsHtml, jobsPageTwoHtml)
+      assertVerifiedStaleArchiveDates(jobsHtml, jobsPageTwoHtml)
 
-    return createFailClosedSentinelScraper().run()
+      return createFailClosedSentinelScraper().run()
+    } catch (error) {
+      if (isDnsResolutionError(error)) return buildDiscoveryOnlyEvidence(now)
+      throw error
+    }
   },
 })
 
-export const run = async (options = {}) => createForaySoftScraper().run(options)
+export const run = async (options = {}) => createForaySoftScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

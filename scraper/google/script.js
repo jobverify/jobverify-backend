@@ -77,16 +77,17 @@ const toAbsoluteUrl = (href, currentUrl = BASE_URL) => {
   }
 }
 
-const fetchGoogleText = (url, label) =>
+const fetchGoogleText = (url, label, { signal } = {}) =>
   fetchTextWithRetry(url, {
     headers: GOOGLE_HEADERS,
+    signal,
     attempts: config.retryAttempts,
     baseDelayMs: config.retryBaseDelayMs,
     timeoutMs: Math.max(config.jobListingTimeoutMs || 0, 30000),
     label,
   })
 
-const defaultFetchText = (url) => fetchGoogleText(url, 'google-detail')
+const defaultFetchText = (url, options) => fetchGoogleText(url, 'google-detail', options)
 
 const extractTagBlock = (html, openingTagPattern, tagName) => {
   const source = String(html ?? '')
@@ -227,10 +228,18 @@ export const createGoogleScraper = ({
   detailConcurrency = DEFAULT_DETAIL_CONCURRENCY,
 } = {}) => ({
   async run({
-    fetchListingsText = (url) => fetchGoogleText(url, 'google-listings'),
+    fetchListingsText = (url, options) => fetchGoogleText(url, 'google-listings', options),
     fetchText = defaultFetchText,
     now = () => new Date().toISOString(),
+    signal,
+    detailEnrichmentBudgetMs = 45000,
   } = {}) {
+    signal?.throwIfAborted()
+    const detailBudgetMs = Number.isFinite(Number(detailEnrichmentBudgetMs))
+      ? Math.max(0, Math.floor(Number(detailEnrichmentBudgetMs)))
+      : 45000
+    let detailBudgetSignal
+    let detailSignal
     let currentUrl = BASE_URL
 
     try {
@@ -239,7 +248,9 @@ export const createGoogleScraper = ({
       let pageNum = 1
 
       while (currentUrl && pageNum <= config.maxPages) {
-        const html = await fetchListingsText(currentUrl)
+        signal?.throwIfAborted()
+        const html = await fetchListingsText(currentUrl, { signal })
+        signal?.throwIfAborted()
         console.log(`  [google] Scraping page ${pageNum} - ${currentUrl}`)
 
         const jobs = extractGoogleListingCards(html, currentUrl)
@@ -260,18 +271,29 @@ export const createGoogleScraper = ({
           freshJobs,
           detailConcurrency,
           async (job) => {
+            signal?.throwIfAborted()
             const fallbackDetail = await extractJobDetail({
               provider: 'google',
               html: job.cardHtml,
             })
 
             const fetchedDetail = await (async () => {
-              const detailHtml = await fetchText(job.link)
+              signal?.throwIfAborted()
+              if (detailBudgetMs === 0 || detailBudgetSignal?.aborted) return null
+              if (!detailBudgetSignal) {
+                detailBudgetSignal = AbortSignal.timeout(detailBudgetMs)
+                detailSignal = signal ? AbortSignal.any([signal, detailBudgetSignal]) : detailBudgetSignal
+              }
+              const detailHtml = await fetchText(job.link, { signal: detailSignal })
+              signal?.throwIfAborted()
               return extractJobDetail({
                 provider: 'google',
                 html: detailHtml,
               })
-            })().catch(() => null)
+            })().catch(() => {
+              signal?.throwIfAborted()
+              return null
+            })
 
             const detail = mergeJobDetail(fetchedDetail || {}, fallbackDetail)
 
@@ -292,6 +314,7 @@ export const createGoogleScraper = ({
               preferredQualification: detail.preferredQualification,
               requiredSkills: detail.requiredSkills,
               experienceRequired: detail.experienceRequired,
+              publicExperienceChecked: detail.publicExperienceChecked,
               scrapedAt: now(),
             }
           },
@@ -306,8 +329,10 @@ export const createGoogleScraper = ({
         pageNum += 1
       }
 
+      signal?.throwIfAborted()
       return allJobs
     } catch (err) {
+      signal?.throwIfAborted()
       throw new Error(`[google] Scraping failed at ${currentUrl} - ${err.message}`)
     }
   },

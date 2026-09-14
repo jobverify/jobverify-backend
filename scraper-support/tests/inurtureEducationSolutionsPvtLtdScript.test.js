@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { EventEmitter } from 'node:events'
+import https from 'node:https'
 import test from 'node:test'
 
 const homepageHtml = `
@@ -121,6 +123,54 @@ test('iNurture returns no jobs while the official first-party surfaces remain em
     inurture.EMBEDDED_CAREERS_IFRAME_URL,
   ])
   assert.deepEqual(jobs, [])
+})
+
+test('iNurture default fetch uses the insecure TLS agent for the verified expired-certificate surfaces', async () => {
+  const inurture = await loadModule()
+  const originalRequest = https.request
+  const observedRequests = []
+
+  https.request = (targetUrl, options, callback) => {
+    const url = targetUrl.toString()
+    observedRequests.push({ url, options })
+    const request = new EventEmitter()
+    request.setTimeout = () => {}
+    request.end = () => {
+      queueMicrotask(() => {
+        if (url === inurture.EMBEDDED_CAREERS_IFRAME_URL) {
+          request.emit('error', new Error('getaddrinfo ENOTFOUND careers.inurture.co.in'))
+          return
+        }
+
+        const response = new EventEmitter()
+        response.statusCode = 200
+        response.headers = {}
+        callback(response)
+        if (url === inurture.HOMEPAGE_URL) {
+          response.emit('data', Buffer.from(homepageHtml))
+        } else if (url === inurture.LINKED_CAREERS_URL) {
+          response.emit('data', Buffer.from(linkedCareersHtml))
+        } else if (url === inurture.EMBEDDED_CAREERS_URL) {
+          response.emit('data', Buffer.from(embeddedCareersHtml))
+        }
+        response.emit('end')
+      })
+    }
+    return request
+  }
+
+  try {
+    const jobs = await inurture.createInurtureEducationSolutionsScraper().run()
+
+    assert.deepEqual(jobs, [])
+    assert.ok(observedRequests.length > 0)
+    assert.deepEqual(
+      [...new Set(observedRequests.map((request) => request.options.agent.options.rejectUnauthorized))],
+      [false],
+    )
+  } finally {
+    https.request = originalRequest
+  }
 })
 
 test('iNurture fails closed when the verified shell changes or public listings appear', async () => {

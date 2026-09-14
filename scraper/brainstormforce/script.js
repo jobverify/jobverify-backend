@@ -175,8 +175,10 @@ export const detailPageHasExpectedSignals = (html = '', listing = {}) => {
     )
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
+  const timeoutSignal = AbortSignal.timeout(15000)
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal,
     headers: {
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       'User-Agent': USER_AGENT,
@@ -219,8 +221,19 @@ const toJob = (listing, { applyUrl, scrapedAt }) => ({
 })
 
 export const createBrainstormForceScraper = () => ({
-  async run({ fetchPage = defaultFetchPage, now = () => new Date().toISOString() } = {}) {
-    const careersPage = await fetchPage(CAREERS_URL)
+  async run({ fetchPage = defaultFetchPage, now = () => new Date().toISOString(), signal } = {}) {
+    const fetchCheckedPage = async url => {
+      signal?.throwIfAborted()
+      try {
+        const page = await fetchPage(url, { signal })
+        signal?.throwIfAborted()
+        return page
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw error
+      }
+    }
+    const careersPage = await fetchCheckedPage(CAREERS_URL)
 
     if (
       normalizeComparableUrl(careersPage?.url) !== normalizeComparableUrl(CAREERS_URL)
@@ -243,7 +256,7 @@ export const createBrainstormForceScraper = () => ({
     const jobs = []
 
     for (const listing of indiaListings) {
-      const detailPage = await fetchPage(listing.sourceUrl)
+      const detailPage = await fetchCheckedPage(listing.sourceUrl)
 
       if (
         normalizeComparableUrl(detailPage?.url) !== normalizeComparableUrl(listing.sourceUrl)

@@ -130,6 +130,8 @@ test('OneAdvanced validates the official careers shell and extracts India listin
   assert.equal(oneadvanced.COMPANY, 'OneAdvanced')
   assert.equal(oneadvanced.CAREERS_URL, 'https://careers.oneadvanced.com/')
   assert.equal(oneadvanced.SEARCH_PAGE_URL, 'https://careers-oneadvanced.icims.com/jobs/search?ss=1&in_iframe=1')
+  assert.equal(oneadvanced.ICIMS_USER_AGENT, 'Mozilla/5.0')
+  assert.doesNotMatch(oneadvanced.ICIMS_USER_AGENT, /Chrome|Safari|Windows NT/i)
   assert.equal(oneadvanced.hasVerifiedCareersPageSignal(careersHtml), true)
   assert.equal(oneadvanced.hasOfficialSearchPageSignal(listingHtml), true)
   assert.equal(

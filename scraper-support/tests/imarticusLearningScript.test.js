@@ -29,6 +29,11 @@ const careerServicesHtml = `
 </html>
 `
 
+const currentHomepageHtml = homepageHtml.replace(
+  "ISFB - India's First Finance Focused School",
+  "ISFB - India's First Finance Focused B-School",
+)
+
 const homepageWithCareerOpportunitiesCopyHtml = `
 <!doctype html>
 <html lang="en">
@@ -85,6 +90,7 @@ test('Imarticus Learning helpers stay pinned to the verified redirected no-jobs 
   assert.equal(imarticusLearning.VERIFIED_ON, '2026-08-02')
   assert.equal(imarticusLearning.extractCareerPageUrl(homepageHtml), null)
   assert.equal(imarticusLearning.hasVerifiedHomepageSignals(homepageHtml), true)
+  assert.equal(imarticusLearning.hasVerifiedHomepageSignals(currentHomepageHtml), true)
   assert.equal(imarticusLearning.hasVerifiedCareerServicesSignals(careerServicesHtml), true)
   assert.equal(imarticusLearning.hasPublicEmployerJobSignals(careerServicesHtml), false)
   assert.equal(imarticusLearning.hasPublicEmployerJobSignals(homepageWithCareerOpportunitiesCopyHtml), false)

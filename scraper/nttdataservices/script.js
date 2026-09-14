@@ -9,8 +9,8 @@ export const SOURCE = 'nttdataservices'
 export const COMPANY = 'NTT Data Services'
 export const HOMEPAGE_URL = 'https://www.nttdata.com/en-us'
 export const CAREERS_URL = 'https://www.nttdata.com/en-us/careers'
-export const JOBS_HOME_URL = 'https://careers.services.global.ntt/global/en'
-export const SEARCH_RESULTS_URL = 'https://careers.services.global.ntt/global/en/search-results'
+export const JOBS_HOME_URL = 'https://careers.nttdata.com/global/en'
+export const SEARCH_RESULTS_URL = 'https://careers.nttdata.com/global/en/search-results'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
@@ -28,26 +28,28 @@ const OFFICIAL_HOMEPAGE_CANONICAL_PATTERN =
 const OFFICIAL_HOMEPAGE_CAREERS_LINK_PATTERN =
   /href=(["'])(?:https:\/\/www\.nttdata\.com)?\/en-us\/careers\/?\1/i
 const OFFICIAL_CAREERS_SEARCH_LINK_PATTERN =
-  /https:\/\/careers\.services\.global\.ntt\/global\/en\/search-results\b/i
+  /https:\/\/careers\.(?:nttdata\.com|services\.global\.ntt)\/global\/en\/search-results\b/i
 const OFFICIAL_CAREERS_JOBS_HOME_LINK_PATTERN =
-  /https:\/\/careers\.services\.global\.ntt\/global\/en(?=["'])/i
+  /https:\/\/careers\.(?:nttdata\.com|services\.global\.ntt)\/global\/en(?=["'])/i
 const PHENOM_WIDGET_ENDPOINT_PATTERN =
-  /"widgetApiEndpoint":"https:\/\/careers\.services\.global\.ntt\/widgets"/i
+  /"widgetApiEndpoint":"https:\/\/careers\.nttdata\.com\/widgets"/i
 const SEARCH_RESULTS_PAGE_PATTERN = /"pageName":"search-results"/i
 
-const fetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
+const fetchText = async (url, { signal } = {}) => {
+  const timeout = AbortSignal.timeout(20000)
+  const requestSignal = signal ? AbortSignal.any([signal, timeout]) : timeout
+  requestSignal.throwIfAborted()
+  try {
+    const response = await fetch(url, {
+      signal: requestSignal,
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+    })
+    if (!response.ok) throw new Error('HTTP ' + response.status + ' for ' + url)
+    return await response.text()
+  } finally { requestSignal.throwIfAborted() }
 }
 
 export const hasOfficialHomepageSignal = (html) => {
@@ -131,7 +133,7 @@ const assertOfficialSearchResults = (html) => {
 const phenomScraper = createPhenomScraper({
   companyName: COMPANY,
   source: SOURCE,
-  baseUrl: 'https://careers.services.global.ntt',
+  baseUrl: 'https://careers.nttdata.com',
   searchPath: '/global/en/search-results',
   scraperDir: currentDir,
 })
@@ -149,11 +151,14 @@ export const createNttDataServicesScraper = () => ({
     const getPage = options.fetchText || fetchText
     const pageCache = new Map()
 
-    const getCachedPage = async (url) => {
-      if (!pageCache.has(url)) {
-        pageCache.set(url, await getPage(url))
-      }
-      return pageCache.get(url)
+    const getCachedPage = async (url, { signal: requestSignal = options.signal } = {}) => {
+      const signal = options.signal && requestSignal && requestSignal !== options.signal
+        ? AbortSignal.any([options.signal, requestSignal]) : requestSignal || options.signal
+      signal?.throwIfAborted()
+      try {
+        if (!pageCache.has(url)) pageCache.set(url, await getPage(url, { signal }))
+        return pageCache.get(url)
+      } finally { signal?.throwIfAborted() }
     }
 
     assertOfficialHomepage(await getCachedPage(HOMEPAGE_URL))
@@ -163,13 +168,11 @@ export const createNttDataServicesScraper = () => ({
 
     const jobs = await phenomScraper.run({
       ...options,
+      useWidgetApi: options.useWidgetApi ?? !options.fetchText,
       fetchText: getCachedPage,
     })
 
-    return jobs.map((job) => ({
-      ...job,
-      country: job.country || 'India',
-    }))
+    return jobs
   },
 })
 

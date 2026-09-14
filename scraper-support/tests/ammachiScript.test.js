@@ -38,9 +38,21 @@ test('extractSearchResults maps the Ammachi Labs WordPress jobs API into shared 
       position_responsibilities: '<ul><li>Collaborate with content teams</li></ul>',
       position_qualifications: '<ul><li>Instructional design experience</li></ul>',
     },
+    {
+      id: 58603,
+      link: 'https://ammachilabs.org/job/researcher-in-virtual-reality/123',
+      date_gmt: '2026-05-18T06:00:00',
+      title: { rendered: 'Researcher in Virtual Reality' },
+      position_title: 'Researcher in Virtual Reality, Augmented Reality, and Simulation-Based Learning',
+      position_employment_type: ['FULL_TIME'],
+      position_job_location: '',
+      position_description: '<p>Research technology-enhanced learning.</p>',
+      position_responsibilities: '',
+      position_qualifications: '',
+    },
   ])
 
-  assert.equal(jobs.length, 2)
+  assert.equal(jobs.length, 3)
   assert.deepEqual(jobs[0], {
     title: 'Field Investigator in Wayanad district, Kerala',
     company: 'Ammachi Labs',
@@ -66,6 +78,9 @@ test('extractSearchResults maps the Ammachi Labs WordPress jobs API into shared 
   assert.equal(jobs[1].city, null)
   assert.equal(jobs[1].remoteStatus, 'Remote')
   assert.equal(jobs[1].employmentType, 'Contract')
+  assert.equal(jobs[2].location, null)
+  assert.equal(jobs[2].city, null)
+  assert.equal(jobs[2].remoteStatus, null)
 })
 
 test('run fetches the Ammachi Labs jobs API and decorates jobs', async () => {

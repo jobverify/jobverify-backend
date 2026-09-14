@@ -52,7 +52,7 @@ const officialJobsHomeHtml = `
   </head>
   <body>
     <script>
-      var phApp = phApp || {"widgetApiEndpoint":"https://careers.services.global.ntt/widgets"};
+      var phApp = phApp || {"widgetApiEndpoint":"https://careers.nttdata.com/widgets"};
       phApp.pageName = "home";
     </script>
     <main>
@@ -73,7 +73,7 @@ const buildSearchResultsHtml = (jobs) => `
   </head>
   <body>
     <script>
-      var phApp = phApp || {"widgetApiEndpoint":"https://careers.services.global.ntt/widgets","pageName":"search-results"};
+      var phApp = phApp || {"widgetApiEndpoint":"https://careers.nttdata.com/widgets","pageName":"search-results"};
       phApp.ddo = ${JSON.stringify({
         eagerLoadRefineSearch: {
           totalHits: jobs.length,
@@ -167,10 +167,10 @@ test('NTT Data Services scraper exposes the verified first-party surfaces and Ph
   assert.equal(ntt.COMPANY, 'NTT Data Services')
   assert.equal(ntt.HOMEPAGE_URL, 'https://www.nttdata.com/en-us')
   assert.equal(ntt.CAREERS_URL, 'https://www.nttdata.com/en-us/careers')
-  assert.equal(ntt.JOBS_HOME_URL, 'https://careers.services.global.ntt/global/en')
+  assert.equal(ntt.JOBS_HOME_URL, 'https://careers.nttdata.com/global/en')
   assert.equal(
     ntt.SEARCH_RESULTS_URL,
-    'https://careers.services.global.ntt/global/en/search-results',
+    'https://careers.nttdata.com/global/en/search-results',
   )
   assert.equal(ntt.hasOfficialHomepageSignal(officialHomepageHtml), true)
   assert.equal(ntt.hasOfficialCareersSignal(officialCareersHtml), true)
@@ -181,15 +181,15 @@ test('NTT Data Services scraper exposes the verified first-party surfaces and Ph
   )
   assert.equal(
     ntt.buildSearchResultsPageUrl(),
-    'https://careers.services.global.ntt/global/en/search-results',
+    'https://careers.nttdata.com/global/en/search-results',
   )
   assert.equal(
     ntt.buildSearchResultsPageUrl(20),
-    'https://careers.services.global.ntt/global/en/search-results?from=20',
+    'https://careers.nttdata.com/global/en/search-results?from=20',
   )
   assert.equal(
     ntt.buildJobDetailUrl({ reqId: 'P-100131', title: 'SASE ENGINEER ' }),
-    'https://careers.services.global.ntt/global/en/job/P-100131/SASE-ENGINEER',
+    'https://careers.nttdata.com/global/en/job/P-100131/SASE-ENGINEER',
   )
 })
 
@@ -198,7 +198,7 @@ test('NTT Data Services scraper verifies the official surfaces and returns India
   const requestedUrls = []
   const searchResultsUrl = ntt.SEARCH_RESULTS_URL
   const detailUrl =
-    'https://careers.services.global.ntt/global/en/job/P-100131/SASE-ENGINEER'
+    'https://careers.nttdata.com/global/en/job/P-100131/SASE-ENGINEER'
 
   const jobs = await ntt.createNttDataServicesScraper().run({
     fetchText: async (url) => {
@@ -255,7 +255,7 @@ test('NTT Data Services scraper verifies the official surfaces and returns India
   assert.equal(jobs[0].postingDate, '2025-08-12')
   assert.equal(
     jobs[0].applyUrl,
-    'https://careers.services.global.ntt/global/en/job/P-100131/SASE-ENGINEER/apply',
+    'https://careers.nttdata.com/global/en/job/P-100131/SASE-ENGINEER/apply',
   )
   assert.equal(jobs[0].sourceUrl, detailUrl)
   assert.equal(

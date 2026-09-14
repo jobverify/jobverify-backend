@@ -17,9 +17,6 @@ const sitemapHtml = `
   </head>
   <body>
     <a href="/en_in/india/home/about-castrol/careers.html">Careers</a>
-    <a href="/en_in/india/home/about-castrol/careers/graduate-programmes.html">Graduate programmes</a>
-    <a href="/en_in/india/home/about-castrol/careers/meri-castrol-kahaani.html">Meri Castrol kahaani 2.0</a>
-    <a href="/en_in/india/home/about-castrol/careers/power-up.html">Power Up 2.0</a>
   </body>
 </html>
 `
@@ -29,18 +26,13 @@ const careersPageHtml = `
 <html lang="en-IN">
   <head>
     <title>Careers | Castrol India</title>
+    <link rel="canonical" href="https://www.castrol.com/en_in/india/home/about-castrol/careers.html">
   </head>
   <body>
     <main>
       <h1>Find a job at Castrol and build a career with no limit</h1>
       <h2>Be part of our story</h2>
       <p>Working with us offers reward, prestige and the opportunity to do brilliant things.</p>
-      <section>
-        <h3>Related links</h3>
-        <a href="/en_in/india/home/about-castrol/careers/graduate-programmes.html">Our graduate programmes</a>
-        <a href="https://www.bp.com/en/global/corporate/careers/search-and-apply.html">Apply</a>
-        <a href="/en_in/india/home/about-castrol/careers/meri-castrol-kahaani.html">Introducing meri Castrol kahaani</a>
-      </section>
     </main>
   </body>
 </html>
@@ -269,10 +261,6 @@ test('Castrol India scraper follows the verified Castrol handoff and parses publ
         return { status: 200, url, html: careersPageHtml }
       }
 
-      if (url === castrolIndia.GRADUATE_PROGRAMMES_URL) {
-        return { status: 200, url, html: graduateProgrammesHtml }
-      }
-
       if (url === castrolIndia.BP_SEARCH_APPLY_URL) {
         return { status: 200, url: 'https://careers.bp.com/listing', html: bpSearchPageHtml }
       }
@@ -288,7 +276,6 @@ test('Castrol India scraper follows the verified Castrol handoff and parses publ
   assert.deepEqual(requestedUrls, [
     castrolIndia.SITEMAP_URL,
     castrolIndia.CAREERS_PAGE_URL,
-    castrolIndia.GRADUATE_PROGRAMMES_URL,
     castrolIndia.BP_SEARCH_APPLY_URL,
   ])
   assert.equal(algoliaRequests.length, 1)
@@ -314,10 +301,6 @@ test('Castrol India returns [] when the verified BP search surface reports no op
         return { status: 200, url, html: careersPageHtml }
       }
 
-      if (url === castrolIndia.GRADUATE_PROGRAMMES_URL) {
-        return { status: 200, url, html: graduateProgrammesHtml }
-      }
-
       if (url === castrolIndia.BP_SEARCH_APPLY_URL) {
         return { status: 200, url: 'https://careers.bp.com/listing', html: bpSearchNoOpenRolesHtml }
       }
@@ -332,7 +315,6 @@ test('Castrol India returns [] when the verified BP search surface reports no op
   assert.deepEqual(requestedUrls, [
     castrolIndia.SITEMAP_URL,
     castrolIndia.CAREERS_PAGE_URL,
-    castrolIndia.GRADUATE_PROGRAMMES_URL,
     castrolIndia.BP_SEARCH_APPLY_URL,
   ])
   assert.deepEqual(jobs, [])

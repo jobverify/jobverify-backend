@@ -181,7 +181,7 @@ export const hasVerifiedWebsiteSitemapSignal = (xml) => {
 }
 
 export const hasPublicJobsSignal = (html) =>
-  /(current openings|all open positions|open positions|job openings|join our team|apply now|see current openings|view roles|see jobs)/i
+  /(current openings|all open positions|open positions|job openings|join our team|apply now|see current openings|view jobs|see jobs)/i
     .test(String(html ?? ''))
 
 const hasVerifiedPlaceholderCareersAliasSignal = (page = {}) =>

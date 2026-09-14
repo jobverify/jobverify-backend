@@ -268,3 +268,99 @@ test('run fetches Bosch Global Software Technologies listings and details throug
   assert.match(bgst.buildSearchUrl({ page: 1, pageSize: 25 }), /Robert%20Bosch%20Engineering/i)
   assert.equal(bgst.CAREER_PAGE_URL, 'https://jobs.bosch.com/en/?pages=1&country=in')
 })
+
+test('run bounds Bosch detail requests while preserving every listing identity', async () => {
+  const bgst = await loadBgstModule()
+  assert.ok(bgst)
+  const listings = Array.from({ length: 17 }, (_, index) => ({
+    ...sampleListingPayload._embedded['rh:result'][0].data[0],
+    refNumber: 'REF' + String(index + 1).padStart(6, '0'),
+    name: 'Engineer ' + (index + 1),
+    jobUrl: 'REF' + String(index + 1).padStart(6, '0') + '-engineer',
+  }))
+  const listingPayload = {
+    _embedded: { 'rh:result': [{ meta: [{ count: listings.length }], data: listings }] },
+  }
+  let active = 0
+  let maxActive = 0
+  const scraper = bgst.createBoschGlobalSoftwareTechnologiesScraper({ detailConcurrency: 6 })
+  const jobs = await scraper.run({
+    fetchJson: async (url) => {
+      if (url === bgst.buildSearchUrl({ page: 1, pageSize: 25 })) return listingPayload
+      active += 1
+      maxActive = Math.max(maxActive, active)
+      await new Promise((resolve) => setTimeout(resolve, 5))
+      active -= 1
+      return []
+    },
+  })
+  assert.equal(maxActive, 6)
+  assert.equal(jobs.length, listings.length)
+  assert.deepEqual(jobs.map((job) => job.jobId), listings.map((listing) => listing.refNumber))
+})
+
+test('run propagates cancellation to active Bosch details and does not start queued requests', async () => {
+  const bgst = await loadBgstModule()
+  assert.ok(bgst)
+  const listings = Array.from({ length: 18 }, (_, index) => ({
+    ...sampleListingPayload._embedded['rh:result'][0].data[0],
+    refNumber: 'CANCEL' + index,
+    jobUrl: 'CANCEL' + index,
+  }))
+  const controller = new AbortController()
+  const reason = new Error('Bosch source deadline')
+  let detailRequests = 0
+  const scraper = bgst.createBoschGlobalSoftwareTechnologiesScraper({ detailConcurrency: 6 })
+  const runPromise = scraper.run({
+    signal: controller.signal,
+    fetchJson: async (url, { signal } = {}) => {
+      assert.equal(signal, controller.signal)
+      if (url === bgst.buildSearchUrl({ page: 1, pageSize: 25 })) {
+        return { _embedded: { 'rh:result': [{ meta: [{ count: listings.length }], data: listings }] } }
+      }
+      detailRequests += 1
+      if (detailRequests === 6) queueMicrotask(() => controller.abort(reason))
+      return new Promise((resolve, reject) => {
+        signal.addEventListener('abort', () => reject(signal.reason), { once: true })
+      })
+    },
+  })
+  await assert.rejects(runPromise, (error) => error === reason)
+  assert.equal(detailRequests, 6)
+})
+
+test('run stops Bosch workers from dequeuing after a detail failure and settles active requests', async () => {
+  const bgst = await loadBgstModule()
+  assert.ok(bgst)
+  const listings = Array.from({ length: 12 }, (_, index) => ({
+    ...sampleListingPayload._embedded['rh:result'][0].data[0],
+    refNumber: 'FAIL' + index,
+    jobUrl: 'FAIL' + index,
+  }))
+  const failure = new Error('Bosch detail failed')
+  const releaseActive = []
+  let detailRequests = 0
+  let settled = false
+  const scraper = bgst.createBoschGlobalSoftwareTechnologiesScraper({ detailConcurrency: 3 })
+  const runPromise = scraper.run({
+    fetchJson: async (url) => {
+      if (url === bgst.buildSearchUrl({ page: 1, pageSize: 25 })) {
+        return { _embedded: { 'rh:result': [{ meta: [{ count: listings.length }], data: listings }] } }
+      }
+      detailRequests += 1
+      if (detailRequests === 1) {
+        await Promise.resolve()
+        throw failure
+      }
+      return new Promise((resolve) => releaseActive.push(() => resolve([])))
+    },
+  }).finally(() => {
+    settled = true
+  })
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(detailRequests, 3)
+  assert.equal(settled, false)
+  releaseActive.forEach((release) => release())
+  await assert.rejects(runPromise, (error) => error === failure)
+  assert.equal(detailRequests, 3)
+})

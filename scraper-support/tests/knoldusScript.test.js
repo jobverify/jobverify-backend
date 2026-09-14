@@ -71,9 +71,14 @@ const verifiedBundleJs = `
   });
   fetch("/wp-json/ntc/job/get/v2", { method: "POST" });
   window.history.pushState(null, null, window.location.pathname + "?keywords=data");
-  const banner = "Find your dream job in NashTech";
+  const banner = "Find Authentic Jobs in NashTech";
   const title = "Open jobs";
 `
+
+const currentBundleJs = verifiedBundleJs.replace(
+  'Find Authentic Jobs in NashTech',
+  'Find your dream job in NashTech',
+)
 
 const sampleJobsApiResponse = [
   {
@@ -156,6 +161,7 @@ test('Knoldus validates the verified legacy-domain redirect, NashTech careers ha
     'https://careers.nashtechglobal.com/wp-content/reactpress/apps/job-finder/build/static/js/main.adf907c8.js?ver=1',
   )
   assert.equal(knoldus.hasVerifiedJobsBundleSignal(verifiedBundleJs), true)
+  assert.equal(knoldus.hasVerifiedJobsBundleSignal(currentBundleJs), true)
 })
 
 test('Knoldus extracts only India jobs from NashTech first-party jobs API and preserves apply surfaces', async () => {

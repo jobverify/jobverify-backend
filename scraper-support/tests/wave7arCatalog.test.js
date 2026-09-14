@@ -130,7 +130,7 @@ test('Technosoft Corporation local catalog captures the exact-name fail-closed r
     provider.extractionStrategy,
     'verified-legacy-homepage-redirect+verified-empty-first-party-careers-routes+no-exact-name-public-jobs',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-09-13')
   assert.match(provider.verifiedSurfaceSummary, /Technosoft is now Apexon/i)
   assert.match(provider.verifiedSurfaceSummary, /no trustworthy exact-name public jobs surface/i)
   assert.match(provider.verifiedSurfaceSummary, /http:\/\/www\.technosoftcorp\.com\/careers/i)

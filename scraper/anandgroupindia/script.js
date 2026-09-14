@@ -112,6 +112,18 @@ const hasHrefAttribute = (html, expectedUrl) => {
   return false
 }
 
+const hasCanonicalUrl = (html, expectedUrl) => {
+  for (const match of String(html ?? '').matchAll(/<link\b([^>]*)>/gi)) {
+    if (!/\bcanonical\b/i.test(getAttributeValue(match[1], 'rel') ?? '')) continue
+
+    if (sameUrl(toAbsoluteUrl(getAttributeValue(match[1], 'href'), HOMEPAGE_URL), expectedUrl)) {
+      return true
+    }
+  }
+
+  return false
+}
+
 const createTimeoutSignal = (timeoutMs) => {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
     return undefined
@@ -155,19 +167,19 @@ const toAbsoluteUrl = (value, baseUrl) => {
 
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
-  const normalized = normalizeText(page)
+  const title = normalizeWhitespace(page.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
 
-  return /<title>\s*ANAND Group: Automotive Components Manufacturer India \| Best Automobile Company\s*<\/title>/i.test(page)
-    && normalized.includes('careers at anand')
-    && normalized.includes('join us')
+  return /^ANAND Group\b/i.test(title)
+    && hasCanonicalUrl(page, HOMEPAGE_URL)
   }
 
 export const extractHomepageCareerUrl = (html = '') => {
   for (const match of String(html ?? '').matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)) {
     const label = normalizeWhitespace(match[2])
-    if (label !== 'Careers at ANAND') continue
+    const href = toAbsoluteUrl(getAttributeValue(match[1], 'href'), HOMEPAGE_URL)
+    if (!/career/i.test(label) || !sameUrl(href, CAREERS_PAGE_URL)) continue
 
-    return toAbsoluteUrl(getAttributeValue(match[1], 'href'), HOMEPAGE_URL)
+    return href
   }
 
   return null

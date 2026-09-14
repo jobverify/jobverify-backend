@@ -24,6 +24,9 @@ const MISSING_ROUTE_PATTERN = /\b404\b|\bnot found\b|\bdoes not exist\b/i
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&ndash;|&mdash;|&#8211;|&#8212;/gi, '-')
+  .replace(/[\u2013\u2014]/g, '-')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
@@ -81,7 +84,14 @@ export const hasOfficialCareerPageSignal = (html) => {
   return /<title>\s*Career at nexus\s*<\/title>/i.test(page)
     && text.includes('Our Featured Jobs')
     && text.includes('Be a part of Nexus')
-    && text.includes('Your next opportunity starts here.')
+    && (
+      text.includes('Your dream job starts here.')
+      || (
+        text.includes('Where Your Potential Meets Purpose')
+        && text.includes('Join our Team')
+        && text.includes('Find Jobs')
+      )
+    )
     && /mailto:careers@nexusmalls\.com/i.test(page)
 }
 

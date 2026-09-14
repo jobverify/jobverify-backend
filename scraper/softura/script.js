@@ -76,6 +76,7 @@ const inferIndiaLocationFromTitleOrUrl = ({ title, url } = {}) => {
   if (/\bChennai\b/i.test(normalizedTitle)) return 'Chennai'
   if (/\bAhmedabad\b/i.test(normalizedTitle)) return 'Ahmedabad'
   if (/\bPune\b/i.test(normalizedTitle)) return 'Pune'
+  if (/\bCoimbatore\b/i.test(normalizedTitle)) return 'Coimbatore'
 
   const href = String(url ?? '').toLowerCase()
   if (href.includes('chennai')) return 'Chennai'
@@ -152,6 +153,105 @@ export const extractApplyUrls = (html = '', baseUrl = CAREERS_URL) => {
   }
 
   return urls
+}
+
+const extractNearestListingTitle = (html = '') => {
+  const candidates = []
+  const patterns = [
+    /<div\b[^>]*class=["'][^"']*\bwidth-cla\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi,
+    /<div\b[^>]*class=["'][^"']*\bsite-heading\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi,
+  ]
+
+  for (const pattern of patterns) {
+    for (const match of String(html ?? '').matchAll(pattern)) {
+      const value = normalizeWhitespace(match[1])
+      if (!value || /^\d+$/.test(value) || /^(?:Job Title|No\. of Positions|Apply)$/i.test(value)) continue
+      candidates.push({ index: match.index, value })
+    }
+  }
+
+  return candidates.sort((left, right) => left.index - right.index).at(-1)?.value ?? null
+}
+
+const createListingJob = ({ title, location, url }) => {
+  const jobId = url.match(/\/Careers\/(\d+)\//i)?.[1]
+    ?? (title + '-' + location).toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+
+  return {
+    title,
+    company: COMPANY,
+    department: null,
+    location,
+    city: location === 'India' ? null : location,
+    state: null,
+    country: 'India',
+    jobId,
+    requisitionId: jobId,
+    sourceUrl: url,
+    applyUrl: url,
+    employmentType: null,
+    experienceRequired: null,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    closingDate: null,
+    jobDescription: null,
+    workplaceType: null,
+  }
+}
+
+export const extractCurrentListingJobs = (html = '') => {
+  const page = String(html ?? '')
+  const labels = [...page.matchAll(
+    /<span\b[^>]*class=["'][^"']*\bou-accordion-label\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/gi,
+  )]
+  if (labels.length === 0) return []
+
+  const jobs = []
+  const seen = new Set()
+  const collect = (segment, groupLocation, { zohoOnly = false } = {}) => {
+    for (const match of String(segment ?? '').matchAll(
+      /<a\b[^>]*href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>\s*Apply Now\s*<\/a>/gi,
+    )) {
+      const url = toAbsoluteUrl(match[1] || match[2] || match[3])
+        ?.replace(/^http:\/\//i, 'https://')
+        .replace(/\/$/, '')
+      if (!url) continue
+
+      const hostname = new URL(url).hostname.toLowerCase()
+      if (zohoOnly && !hostname.endsWith('softura.zohorecruit.in')) continue
+      if (!hostname.endsWith('softura.com') && !hostname.endsWith('softura.zohorecruit.in')) continue
+
+      const title = extractNearestListingTitle(
+        String(segment).slice(Math.max(0, match.index - 1800), match.index),
+      )
+      if (!title) continue
+
+      const identityKey = title.toLowerCase() + '\u0000' + url
+      if (seen.has(identityKey)) continue
+
+      const inferredLocation = inferIndiaLocationFromTitleOrUrl({ title, url })
+      const location = /^(?:Chennai|Ahmedabad)$/i.test(groupLocation)
+        ? groupLocation
+        : inferredLocation || 'India'
+
+      seen.add(identityKey)
+      jobs.push(createListingJob({ title, location, url }))
+    }
+  }
+
+  collect(page.slice(0, labels[0].index), 'India', { zohoOnly: true })
+  labels.forEach((label, index) => {
+    collect(
+      page.slice(label.index, labels[index + 1]?.index ?? page.length),
+      normalizeWhitespace(label[1]),
+    )
+  })
+
+  return jobs
 }
 
 export const extractFirstPartyJob = ({ url, html } = {}) => {
@@ -262,9 +362,21 @@ export const createSofturaScraper = ({
       throw new Error('Softura careers page no longer exposes public Apply Now links')
     }
 
-    const jobs = []
     const scrapedAt = now()
+    const listingJobs = extractCurrentListingJobs(careersHtml)
+    if (listingJobs.length > 0) {
+      return listingJobs.slice(0, maxJobs || listingJobs.length).map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl || job.sourceUrl,
+        scrapedAt,
+        companyCareerPage: CAREERS_URL,
+        companyDomain: PROVIDER_METADATA.companyDomain,
+        atsPlatform: PROVIDER_METADATA.atsPlatform,
+      }))
+    }
 
+    const jobs = []
     for (const url of applyUrls) {
       let detailHtml
       try {

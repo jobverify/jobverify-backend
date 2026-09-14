@@ -952,6 +952,48 @@ test('normalizes explicit fresher cues without numeric requirements into no expe
   assert.equal(normalized.experienceRequired, 'No experience required')
 })
 
+test('classifies full-time fresher listings with positive experience as experienced', () => {
+  const normalized = normalizeScrapedJob({
+    title: 'Associate Researcher',
+    company: 'Aabasoft',
+    location: 'Kochi, India',
+    sourceUrl: 'https://jobs.example.com/associate-researcher',
+    jobType: 'Full-time Fresher',
+    experienceRequired: '1 year',
+  })
+
+  assert.equal(normalized.jobType, 'Full-time Experienced')
+  assert.equal(normalized.experienceLevel, 'Junior Level')
+})
+
+test('classifies inferred positive experience as experienced before returning normalized jobs', () => {
+  const normalized = normalizeScrapedJob({
+    title: 'Associate Researcher',
+    company: 'Example Labs',
+    location: 'Kochi, India',
+    sourceUrl: 'https://jobs.example.com/inferred-associate-researcher',
+    jobType: 'Full-time Fresher',
+    description: 'Requirements: 2 years of research operations experience.',
+    experienceRequired: null,
+  })
+
+  assert.equal(normalized.experienceRequired, '2 years')
+  assert.equal(normalized.jobType, 'Full-time Experienced')
+})
+
+test('classifies internship-labeled listings with positive experience as experienced', () => {
+  const normalized = normalizeScrapedJob({
+    title: 'Finance Intern',
+    company: 'Aarav Unmanned Systems',
+    location: 'Bengaluru, India',
+    sourceUrl: 'https://jobs.example.com/finance-intern',
+    employmentType: 'Internship',
+    experienceRequired: '1 year',
+  })
+
+  assert.equal(normalized.jobType, 'Full-time Experienced')
+})
+
 test('does not mistake company history for a job experience requirement', () => {
   const normalized = normalizeScrapedJob({
     title: 'Cloud Engineer',

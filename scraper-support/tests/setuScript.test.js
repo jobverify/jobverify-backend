@@ -21,6 +21,35 @@ const staticCareersHtml = `
 </html>
 `
 
+const currentFramerCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers at Setu — Fintech Jobs in India</title>
+    <meta name="description" content="Open roles at Setu. Build the financial infrastructure that powers India's payments, verification and credit.">
+    <link rel="canonical" href="https://setu.co/careers">
+  </head>
+  <body>
+    <h1>Come work with us</h1>
+    <p>Help us build the financial infrastructure India runs on.</p>
+    <h2>Open roles</h2>
+    <p>Every role links straight through to our application portal.</p>
+    <section data-framer-name="CUSTOMER SUCCESS">
+      <a name="Manager - Customer Success" href="https://pinelabsgroup.turbohire.co/get/bG9zTFJ">
+        <h3>Manager - Customer Success</h3>
+        <p>Customer Success</p>
+        <p>Apply</p>
+      </a>
+      <a name="Manager - Customer Success" href="https://pinelabsgroup.turbohire.co/get/bG9zTFJ">
+        <h3>Manager - Customer Success</h3>
+        <p>Customer Success</p>
+        <p>Apply</p>
+      </a>
+    </section>
+  </body>
+</html>
+`
+
 const currentOpeningsCsv = `Role,Description,Link,Category,Sub-category
 SDE - II Fullstack Engineer,https://docs.google.com/document/d/fullstack/edit,https://pinelabsgroup.turbohire.co/get/RFZUclV,Engineering,Payments
 SDE - II Backend Engineer,https://docs.google.com/document/d/backend/edit,https://pinelabsgroup.turbohire.co/get/bGFRMGN,Engineering,Payments
@@ -75,7 +104,7 @@ test('Setu helpers stay pinned to the verified official careers shell and CSV-ba
   assert.equal(setu.SOURCE, 'setu')
   assert.equal(setu.COMPANY_NAME, 'Setu')
   assert.equal(setu.OFFICIAL_BRAND_NAME, 'BrokenTusk Technologies Pvt. Ltd.')
-  assert.equal(setu.VERIFIED_ON, '2026-07-26')
+  assert.equal(setu.VERIFIED_ON, '2026-09-13')
   assert.equal(setu.CAREERS_URL, 'https://setu.co/careers/')
   assert.equal(
     setu.CURRENT_OPENINGS_CSV_URL,
@@ -148,6 +177,42 @@ test('Setu detail enrichment recovers public experience from TurboHire metadata 
   assert.equal(verifiedMissing.experienceRequired, null)
   assert.equal(verifiedMissing.publicExperienceChecked, true)
   assert.match(verifiedMissing.jobDescription, /About Setu/i)
+})
+
+test('Setu reads only the roles exposed by the current first-party Framer careers page', async () => {
+  const setu = await loadModule()
+
+  assert.equal(setu.hasOfficialCareersSignal(currentFramerCareersHtml), true)
+  assert.deepEqual(setu.extractCurrentCareersJobs(currentFramerCareersHtml), [
+    {
+      jobId: 'bG9zTFJ',
+      title: 'Manager - Customer Success',
+      department: 'Customer Success',
+      location: 'India',
+      city: null,
+      country: 'India',
+      sourceUrl: 'https://pinelabsgroup.turbohire.co/get/bG9zTFJ',
+      applyUrl: 'https://pinelabsgroup.turbohire.co/get/bG9zTFJ',
+      jobDescription: null,
+    },
+  ])
+
+  const requestedUrls = []
+  const jobs = await setu.createSetuScraper({ now: () => FIXED_SCRAPED_AT }).run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === setu.CAREERS_URL) return currentFramerCareersHtml
+      if (url === 'https://pinelabsgroup.turbohire.co/get/bG9zTFJ') return detailHtmlWithoutExperience
+      throw new Error(`Unexpected Setu URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    setu.CAREERS_URL,
+    'https://pinelabsgroup.turbohire.co/get/bG9zTFJ',
+  ])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Manager - Customer Success')
 })
 
 test('Setu run validates the official careers page and extracts openings from the verified CSV contract', async () => {

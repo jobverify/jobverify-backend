@@ -50,6 +50,58 @@ const loadModule = async () => {
   }
 }
 
+test('Proventech bounds response-body reads and propagates their timeout', async (t) => {
+  const proventech = await loadModule()
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    assert.ok(options.signal, 'Each request needs an abort signal, including its body read')
+    return {
+      status: 200,
+      url,
+      text: () => new Promise((resolve, reject) => {
+        options.signal.addEventListener('abort', () => reject(options.signal.reason), { once: true })
+      }),
+    }
+  })
+  // Keep the test alive while AbortSignal.timeout's unref'ed deadline runs.
+  const keepAlive = setInterval(() => {}, 1000)
+  t.after(() => clearInterval(keepAlive))
+  await assert.rejects(proventech.run({ requestTimeoutMs: 20 }), { name: 'TimeoutError' })
+})
+
+test('Proventech propagates caller cancellation without requesting later routes', async (t) => {
+  const proventech = await loadModule()
+  const controller = new AbortController()
+  const cancellation = new Error('Source cancelled')
+  let requests = 0
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    requests += 1
+    assert.ok(options.signal, 'The source cancellation signal must reach fetch')
+    controller.abort(cancellation)
+    options.signal.throwIfAborted()
+  })
+  await assert.rejects(proventech.run({ signal: controller.signal }), (error) => error === cancellation)
+  assert.equal(requests, 1)
+})
+
+test('Proventech rejects an already cancelled source before making a request', async (t) => {
+  const proventech = await loadModule()
+  const cancellation = new Error('Source cancelled before start')
+  let requests = 0
+  t.mock.method(globalThis, 'fetch', async () => {
+    requests += 1
+    throw new Error('Unexpected request after cancellation')
+  })
+  await assert.rejects(proventech.run({ signal: AbortSignal.abort(cancellation) }), (error) => error === cancellation)
+  assert.equal(requests, 0)
+})
+
+test('Proventech preserves upstream HTTP status instead of reporting page drift', async () => {
+  const proventech = await loadModule()
+  await assert.rejects(proventech.run({
+    fetchPage: async (url) => ({ status: 503, url, html: 'Service unavailable' }),
+  }), /HTTP 503/)
+})
+
 test('Proventech helpers stay pinned to the verified HRMS login shell and missing careers routes from Tuesday, August 4, 2026', async () => {
   const proventech = await loadModule()
 

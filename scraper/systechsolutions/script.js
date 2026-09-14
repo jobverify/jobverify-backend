@@ -25,7 +25,8 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -34,7 +35,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
+  signal,
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -65,18 +67,23 @@ export const extractIndiaJobs = (payload = []) => (Array.isArray(payload) ? payl
     const title = normalizeWhitespace(job?.cr21b_jobname)
     const jobId = normalizeWhitespace(job?.cr21b_jobid)
     if (!title || !jobId) return null
+    const jobUrl = new URL(CAREERS_URL)
+    jobUrl.searchParams.set('jobId', jobId)
+    jobUrl.hash = 'open-positions'
 
     return {
       title,
       company: COMPANY,
       department: null,
-      location: 'Chennai, India',
-      city: 'Chennai',
-      country: 'India',
+      // The public list does not identify a work location. Office addresses
+      // elsewhere on the careers page are not evidence about this role.
+      location: null,
+      city: null,
+      country: null,
       jobId,
       requisitionId: jobId,
-      sourceUrl: CAREERS_URL,
-      applyUrl: CAREERS_URL,
+      sourceUrl: jobUrl.href,
+      applyUrl: jobUrl.href,
       employmentType: null,
       experienceRequired: normalizeWhitespace(job?.['cr21b_minyearsofexperience@OData.Community.Display.V1.FormattedValue']),
       minimumQualification: null,
@@ -91,11 +98,17 @@ export const extractIndiaJobs = (payload = []) => (Array.isArray(payload) ? payl
   .filter(Boolean)
 
 export const createSystechSolutionsScraper = ({
+  signal: defaultSignal,
   fetchText = defaultFetchText,
   fetchJson = defaultFetchJson,
 } = {}) => ({
-  async run() {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ signal = defaultSignal } = {}) {
+    const request = async (fetcher, url, options = {}) => {
+      signal?.throwIfAborted()
+      try { return await fetcher(url, { ...options, signal }) }
+      finally { signal?.throwIfAborted() }
+    }
+    const careersHtml = await request(fetchText, CAREERS_URL)
 
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Systech Solutions verified first-party careers page no longer matches the trusted surface')
@@ -111,17 +124,18 @@ export const createSystechSolutionsScraper = ({
       throw new Error('Systech Solutions verified embedded jobs detail API changed; refusing to guess the public jobs source')
     }
 
-    const jobs = await fetchJson(JOBS_LIST_API_URL)
+    const jobs = await request(fetchJson, JOBS_LIST_API_URL)
     if (!Array.isArray(jobs)) {
       throw new Error('Systech Solutions embedded jobs API no longer returns the verified array payload')
     }
 
-    if (jobs.length > 0) {
-      throw new Error('Systech Solutions verified embedded jobs API now exposes public jobs; review before publishing')
+    const parsedJobs = extractIndiaJobs(jobs)
+    if (parsedJobs.length !== jobs.length || new Set(parsedJobs.map((job) => job.jobId)).size !== parsedJobs.length) {
+      throw new Error('Systech Solutions incomplete structured jobs payload; refusing to publish a partial snapshot')
     }
 
     const scrapedAt = new Date().toISOString()
-    return extractIndiaJobs(jobs).map((job) => ({
+    return parsedJobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl,

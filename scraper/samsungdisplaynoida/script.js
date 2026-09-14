@@ -88,7 +88,7 @@ const buildApplyUrl = (seqno) => `${CAREERS_DOMAIN}/resume/create?comp=${COMPANY
 const buildDetailUrl = (seq) => `${DETAIL_URL}?seqno=${seq}&strCode=`
 
 const isAcceptedSamsungDisplayIdentity = (value) =>
-  /^Samsung Display(?: Noida Pvt\. Ltd\.)?$/i.test(normalizeWhitespace(value) || '')
+  /^(?:Samsung Display(?: Noida Pvt\. Ltd\.)?|삼성디스플레이)$/i.test(normalizeWhitespace(value) || '')
 
 export const buildListRequestBody = ({
   currentPageNo = 1,
@@ -353,6 +353,14 @@ const isIndiaLocation = (item, locationData) => {
   return locationData.city === 'Noida' || locationData.city === 'Greater Noida'
 }
 
+const hasVerifiedNonIndiaLocation = (item) => {
+  const location = normalizeWhitespace(item.workPlaceEn || item.workPlaceKr)
+  if (!location || /\bindia\b/i.test(location)) return false
+
+  return /[가-힣]/u.test(location)
+    || /\b(?:south korea|korea|united states|usa|vietnam|china|japan|taiwan)\b/i.test(location)
+}
+
 const buildJobDescription = ({
   postingTitle,
   taskEn,
@@ -467,7 +475,8 @@ export const extractJobsFromDetailPayload = ({
     .filter((job, index) => isIndiaLocation(items[index], job))
 
   if (jobs.length === 0) {
-    throw new Error('Samsung Display Noida detail payload no longer exposes any India jobs')
+    if (items.every(hasVerifiedNonIndiaLocation)) return []
+    throw new Error('Samsung Display Noida detail role location could not be verified')
   }
 
   return jobs

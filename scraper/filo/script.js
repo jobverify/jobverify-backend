@@ -15,7 +15,8 @@ export const DISPOSITION =
 export const VERIFIED_SURFACE_SUMMARY =
   'Verified on Sunday, August 2, 2026 that https://askfilo.com/careers was the live first-party Filo careers page, that its public __NEXT_DATA__ payload enumerated 10 current openings across departments including Analytics, Engineering, Growth, Product, Creative, and Design, and that each reviewed opening still linked to a public published Google Docs role description. The live public document URLs now include both direct /document/d/e/.../pub and account-scoped /document/u/3/d/e/.../pub variants, and reviewed roles included Business Analyst, Senior Backend Developer, and Senior Product Designer. The public contract still does not disclose per-role city detail or dedicated application handoffs, so this scraper preserves the exact-name India provider scope with null city detail and returns listing-plus-role-description data conservatively from the public documents.'
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const REQUIRED_CAREERS_PAGE_PATTERNS = [
   /<title[^>]*>\s*Job Opportunities At Filo\. Check For Recent Career Options\s*<\/title>/i,
@@ -204,7 +205,27 @@ export const extractPublicRoles = (html = '') => {
   const payload = parseCareersPayload(html)
   const departmentMap = payload?.props?.pageProps?.data
 
-  if (!departmentMap || typeof departmentMap !== 'object' || Array.isArray(departmentMap)) {
+  if (Array.isArray(departmentMap)) {
+    for (const department of departmentMap) {
+      if (
+        !Number.isInteger(department?.departmentId)
+        || !normalizeWhitespace(department?.departmentName)
+        || !Array.isArray(department?.jobs)
+      ) {
+        throw new Error('Filo verified careers payload changed materially')
+      }
+    }
+
+    if (departmentMap.some((department) => department.jobs.length > 0)) {
+      throw new Error(
+        'Filo non-empty current careers payload requires review before publishing',
+      )
+    }
+
+    return []
+  }
+
+  if (!departmentMap || typeof departmentMap !== 'object') {
     throw new Error('Filo verified careers payload changed materially')
   }
 
@@ -294,9 +315,8 @@ const buildJob = (listing = {}, detail = {}, scrapedAt = new Date().toISOString(
     department: listing.department,
     location: null,
     city: null,
-    // The public Filo careers surface omits per-role city labels, but these
-    // roles are verified from the exact-name India provider's first-party page.
-    country: 'India',
+    // The public listing and role document omit role-level country evidence.
+    country: null,
     jobId,
     requisitionId: jobId,
     sourceUrl: listing.documentUrl,

@@ -30,6 +30,16 @@ const careersPageHtml = `
   </html>
 `
 
+const currentCareersPageHtml = `
+  <html>
+    <head><title>Prolifics Careers | Digital Engineering &amp; IT Jobs</title></head>
+    <body>
+      <h2>Discover Who We Are and Why It Matters</h2>
+      <footer><h5>PROLIFICS RESOURCES</h5><a href="/careers">Careers</a></footer>
+    </body>
+  </html>
+`
+
 const portalMeta = {
   org_info: {
     website: 'https://prolifics.com/',
@@ -107,7 +117,7 @@ const apiPayload = {
 }
 
 test('Prolifics constants stay pinned to the verified official careers handoff and public Zoho jobs feed', () => {
-  assert.equal(CAREERS_PAGE_URL, 'https://prolifics.com/usa/careers')
+  assert.equal(CAREERS_PAGE_URL, 'https://prolifics.ai/careers')
   assert.equal(CAREERS_PORTAL_URL, 'https://prolifics.zohorecruit.in/jobs/Careers')
   assert.equal(
     CAREERS_API_URL,
@@ -116,6 +126,7 @@ test('Prolifics constants stay pinned to the verified official careers handoff a
   assert.equal(COMPANY, 'Prolifics Corporation Private Limited')
   assert.equal(SOURCE, 'prolificscorporationltd')
   assert.equal(hasOfficialCareersPageSignal(careersPageHtml), true)
+  assert.equal(hasOfficialCareersPageSignal(currentCareersPageHtml), true)
   assert.equal(hasOfficialPortalSignal(portalHtml), true)
 })
 
@@ -190,7 +201,7 @@ test('run validates the Prolifics official careers handoff and portal before loa
   })
 
   assert.deepEqual(requestedUrls, [
-    'https://prolifics.com/usa/careers',
+    'https://prolifics.ai/careers',
     'https://prolifics.zohorecruit.in/jobs/Careers',
     'https://prolifics.zohorecruit.in/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite',
   ])

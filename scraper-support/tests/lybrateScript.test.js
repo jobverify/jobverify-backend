@@ -97,7 +97,7 @@ test('Lybrate sentinel pins the verified redirect-loop jobs route and dead embed
   assert.equal(lybrate.isDeadEmbeddedJobsApiResponse(liveEmbeddedApiResponse), false)
 })
 
-test('Lybrate sentinel returns [] only while the first-party jobs route stays in the verified redirect loop and the embedded API remains dead', async () => {
+test('Lybrate sentinel returns [] while the verified first-party jobs surface or redirect sentinel remains and the embedded API is dead', async () => {
   const lybrate = await loadLybrateModule()
   const requestedTextUrls = []
   const requestedPageUrls = []
@@ -126,7 +126,7 @@ test('Lybrate sentinel returns [] only while the first-party jobs route stays in
     },
   })
 
-  assert.deepEqual(requestedTextUrls, [lybrate.ABOUT_PAGE_URL])
+  assert.deepEqual(requestedTextUrls, [])
   assert.deepEqual(requestedPageUrls, [lybrate.JOBS_PAGE_URL])
   assert.deepEqual(requestedJsonUrls, [lybrate.JOBS_API_URL])
   assert.deepEqual(jobs, [])

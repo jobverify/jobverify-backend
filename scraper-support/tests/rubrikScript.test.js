@@ -91,3 +91,18 @@ test('run passes the caller signal and fetches Rubrik job detail pages concurren
   assert.ok(jobs.every((job) => job.company === 'Rubrik'))
   assert.ok(jobs.every((job) => job.city === 'Bengaluru'))
 })
+
+test('Rubrik uses the live banner title when Job Summary precedes descriptive paragraphs', async () => {
+  const { extractJobFromHtml } = await loadRubrikModule()
+  const job = extractJobFromHtml({
+    html: `<h1 class="banner_title">Principal Engineer -Dev Platform(Developer Experience)</h1>
+      <p>Location: Bangalore, India Office</p><h2>Job Summary</h2>
+      <h2><strong>About the role : </strong></h2>
+      <p>The Principal Engineer role is a highly strategic position, operating at the same level as an Engineering Director.</p>`,
+    jobUrl: 'https://www.rubrik.com/company/careers/departments/job.7270376.1929?reqId=INSW9693',
+    department: 'Engineering',
+  })
+  assert.equal(job.title, 'Principal Engineer -Dev Platform(Developer Experience)')
+  assert.equal(job.location, 'Bangalore, India Office')
+  assert.match(job.jobDescription, /highly strategic position/)
+})

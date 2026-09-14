@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
-import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const fixturesDir = path.join(
@@ -260,7 +260,7 @@ test('NYEI scraper fails closed when the verified homepage or careers shell drif
         if (url === nyei.HOMEPAGE_URL) return verifiedHomepageHtml
         return verifiedCareersHtml.replace(
           '<a class="JobApply" href="#JobApply">Apply Now</a>',
-          '<a class="JobApply" href="#JobApply">View Role</a>',
+          '<a class="JobApply" href="#JobApply">View job</a>',
         )
       },
     }),

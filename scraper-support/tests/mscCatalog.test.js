@@ -4,7 +4,7 @@ import test from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { hydrateProviderCatalogEntry } from '../providers/index.js'
+import { hydrateProviderCatalogEntry, getScraperCatalog } from '../providers/index.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const modulePath = path.resolve(currentDir, '../../scraper/msc/script.js')
@@ -25,7 +25,7 @@ const loadScraperModule = async () => {
   }
 }
 
-test('MSC local catalog captures the verified exact-name no-first-party-board contract', async () => {
+test('MSC local catalog captures the verified Cornerstone inventory contract', async () => {
   const { MSC_CATALOG } = await loadCatalogModule()
   const msc = await loadScraperModule()
   const provider = hydrateProviderCatalogEntry(MSC_CATALOG)
@@ -37,23 +37,23 @@ test('MSC local catalog captures the verified exact-name no-first-party-board co
   assert.equal(provider.homepageUrl, 'https://www.msc.com/en')
   assert.equal(provider.companyCareerPage, 'https://www.msc.com/en/careers')
   assert.equal(provider.companyDomain, 'msc.com')
-  assert.equal(provider.atsPlatform, 'official-company-careers-api')
+  assert.equal(provider.atsPlatform, 'cornerstone-csod')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-location-api-request')
+  assert.equal(provider.paginationStrategy, 'complete-csod-requisition-count-pagination')
   assert.equal(
     provider.extractionStrategy,
-    'verified-careers-shell+job-locations-api+location-vacancies-api',
+    'verified-first-party-csod-handoff+exact-tenant+explicit-india-requisitions',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.equal(provider.verifiedOn, '2026-09-13')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /msc[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /September 13, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.msc\.com\/en\/careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /GetJobLocationsList/i)
-  assert.match(provider.verifiedSurfaceSummary, /GetJobVacanciesJobLocationId/i)
-  assert.match(provider.verifiedSurfaceSummary, /unfortunately, we do not have any vacancies published in this country right now/i)
+  assert.match(provider.verifiedSurfaceSummary, /msc\.csod\.com/i)
+  assert.match(provider.verifiedSurfaceSummary, /six India/i)
+  assert.match(provider.verifiedSurfaceSummary, /incomplete or blocked/i)
 
   assert.equal(msc.PROVIDER_METADATA.source, MSC_CATALOG.source)
   assert.equal(msc.PROVIDER_METADATA.companyName, MSC_CATALOG.companyName)
@@ -87,4 +87,10 @@ test('MSC hydrated local catalog stays script-runner compatible for central regi
   assert.match(provider.modulePath, /msc[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /msc[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')
+})
+
+
+test('MSC central metadata matches the current India-only Cornerstone source', async()=>{
+ const {MSC_CATALOG}=await loadCatalogModule();const shared=getScraperCatalog().find(p=>p.source==='msc')
+ for(const key of ['companyCareerPage','countryFilter','atsPlatform','paginationStrategy','extractionStrategy','verifiedOn'])assert.equal(shared[key],MSC_CATALOG[key],key)
 })

@@ -74,9 +74,12 @@ export const hasOfficialCareersSignal = (html = '') => {
     && /info@kumaran\.com/i.test(rawHtml)
     && /Founded in 1992, Kumaran Systems is a global technology partner/i.test(normalized)
     && /Life At Kumaran'?s/i.test(normalized)
+  const hasCurrentAstroCareersShell = /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/kumaran\.com\/careers\/["']/i.test(rawHtml)
+    && /<astro-island[^>]+component-url=["']\/_astro\/Careers\.[A-Za-z0-9_-]+\.js["'][^>]+client=["']only["']/i.test(rawHtml)
+    && /Find our current openings below and initiate the first step towards becoming a Kumaranite/i.test(rawHtml)
 
   return /<title>\s*Jobs at Kumaran Systems Pvt Ltd\s*<\/title>/i.test(rawHtml)
-    && (hasLegacyRecruitingSurface || hasCurrentBrandedShell)
+    && (hasLegacyRecruitingSurface || hasCurrentBrandedShell || hasCurrentAstroCareersShell)
 }
 
 export const extractIndiaJobs = (payload = {}) =>

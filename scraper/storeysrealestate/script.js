@@ -112,7 +112,7 @@ const fetchPageIgnoringTlsErrors = (url, redirectsRemaining = MAX_REDIRECTS) =>
         'User-Agent': USER_AGENT,
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7',
       },
-      rejectUnauthorized: true,
+      rejectUnauthorized: false,
     }, (response) => {
       const status = Number(response.statusCode) || 0
       const location = response.headers.location

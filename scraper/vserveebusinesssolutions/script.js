@@ -117,10 +117,11 @@ const parseIndiaLocation = ({ city, state, location, country }) => {
 
 export const extractEmbeddedZohoPortalUrl = (html = '') => {
   const page = String(html)
-  const rawPortalUrl = page.match(/data-lazy-src="(https:\/\/recruit\.zoho\.com\/recruit\/Portal\.na\?iframe=false[^"]+)"/i)?.[1]
+  const rawPortalUrl = page.match(/<iframe\b[^>]*\bsrc="(https:\/\/recruit\.zoho\.com\/recruit\/Portal\.na\?iframe=false[^"]+)"/i)?.[1]
+    || page.match(/data-lazy-src="(https:\/\/recruit\.zoho\.com\/recruit\/Portal\.na\?iframe=false[^"]+)"/i)?.[1]
     || page.match(/<noscript><iframe[^>]+src="(https:\/\/recruit\.zoho\.com\/recruit\/Portal\.na\?iframe=false[^"]+)"/i)?.[1]
 
-  return rawPortalUrl ? rawPortalUrl.replace(/&#038;/g, '&') : null
+  return rawPortalUrl ? rawPortalUrl.replace(/(?:&amp;|&#0*38;)/gi, '&') : null
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
@@ -138,6 +139,47 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 15000,
 })
+
+const findErrorInChain = (error, predicate) => {
+  const seen = new Set()
+  let current = error
+
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    if (predicate(current)) return current
+    current = current?.cause
+  }
+
+  return null
+}
+
+const hasAnyHttpStatus = (error, statuses) => Boolean(
+  findErrorInChain(error, (candidate) => statuses.includes(Number(candidate?.status))),
+)
+
+const createBlockedAccessError = (label, cause) => Object.assign(
+  new Error(`Vserve Ebusiness Solutions ${label} is currently blocked by upstream access controls`, {
+    cause,
+  }),
+  {
+    code: 'VSERVE_CAREERS_BLOCKED',
+    failureKind: 'blocked_or_access_denied',
+    softFailure: true,
+    upstreamOutage: true,
+    abortRetries: true,
+  },
+)
+
+const fetchTextOrBlocked = async (fetchText, url, label) => {
+  try {
+    return await fetchText(url)
+  } catch (error) {
+    if (hasAnyHttpStatus(error, [307, 403, 429])) {
+      throw createBlockedAccessError(label, error)
+    }
+    throw error
+  }
+}
 
 export const hasZohoJobPortalSignal = (html = '') => {
   const page = String(html)
@@ -227,7 +269,7 @@ export const createVserveEbusinessSolutionsScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    const careersHtml = await fetchTextOrBlocked(fetchText, CAREERS_URL, 'careers route')
 
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Vserve Ebusiness Solutions verified first-party careers page no longer matches the trusted public careers contract')
@@ -238,7 +280,7 @@ export const createVserveEbusinessSolutionsScraper = ({
       throw new Error('Vserve Ebusiness Solutions careers page no longer exposes the embedded Zoho Recruit portal')
     }
 
-    const portalHtml = await fetchText(portalUrl)
+    const portalHtml = await fetchTextOrBlocked(fetchText, portalUrl, 'embedded Zoho portal')
     if (!hasZohoJobPortalSignal(portalHtml)) {
       throw new Error('Vserve Ebusiness Solutions embedded Zoho portal no longer matches the verified public job table')
     }
@@ -249,7 +291,7 @@ export const createVserveEbusinessSolutionsScraper = ({
     }
 
     const jobs = (await Promise.all(listings.map(async (listing) => {
-      const detailHtml = await fetchText(listing.detailUrl)
+      const detailHtml = await fetchTextOrBlocked(fetchText, listing.detailUrl, 'embedded Zoho detail page')
       const detail = extractZohoJobDetail(detailHtml, listing.detailUrl)
       const scopedLocation = parseIndiaLocation({
         city: detail.city || listing.city,

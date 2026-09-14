@@ -58,16 +58,16 @@ test('Excelra Knowledge Solutions local catalog captures the verified WordPress 
   assert.equal(provider.paginationStrategy, 'single-first-party-wordpress-careers-page-endpoint')
   assert.equal(
     provider.extractionStrategy,
-    'verified-wordpress-careers-page+shortcode-opening-cards+darwinbox-apply-links+india-location-filter',
+    'verified-wordpress-careers-page+complete-opening-cards+official-darwinbox-applications+explicit-country-filter',
   )
-  assert.equal(provider.verifiedOn, '2026-08-13')
-  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-09-13')
+  assert.match(provider.verifiedSurfaceSummary, /September 13, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /Current openings/i)
   assert.match(provider.verifiedSurfaceSummary, /wp-json\/wp\/v2\/pages\?slug=careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /Cloudflare 403 challenge/i)
+  assert.match(provider.verifiedSurfaceSummary, /eleven role cards/i)
   assert.match(provider.verifiedSurfaceSummary, /excelra\.darwinbox\.in/i)
-  assert.match(provider.verifiedSurfaceSummary, /Senior DevOps Engineer/i)
-  assert.match(provider.verifiedSurfaceSummary, /Medicinal Chemistry Consultant/i)
+  assert.match(provider.verifiedSurfaceSummary, /seven India/i)
+  assert.match(provider.verifiedSurfaceSummary, /allJobs/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

@@ -4,7 +4,7 @@ import test from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { hydrateProviderCatalogEntry } from '../providers/index.js'
+import { getScraperCatalog, hydrateProviderCatalogEntry } from '../providers/index.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const modulePath = path.resolve(currentDir, '../../scraper/microntechnologyindia/script.js')
@@ -67,6 +67,7 @@ test('Micron Technology India local catalog captures the verified first-party In
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
+  assert.equal(provider.dryRunEnrichPublicExperience, false)
   assert.equal(provider.verifiedOn, '2026-08-04')
   assert.match(provider.dryRunFile, /microntechnologyindia[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
@@ -122,4 +123,11 @@ test('Micron Technology India hydrated local catalog stays script-runner compati
   assert.match(provider.modulePath, /microntechnologyindia[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /microntechnologyindia[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')
+})
+
+test('active Micron Technology India catalog disables dry-run public-page refetch', () => {
+  const provider = getScraperCatalog().find((candidate) => candidate.source === 'microntechnologyindia')
+
+  assert.ok(provider)
+  assert.equal(provider.dryRunEnrichPublicExperience, false)
 })

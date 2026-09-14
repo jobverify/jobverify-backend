@@ -4,6 +4,8 @@ import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
+import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+
 const loadImsLearningResourcesModule = async () => {
   try {
     return await import('./script.js')
@@ -32,7 +34,9 @@ test('IMS Learning Resources scraper returns no jobs while the first-party page 
   const imsLearningResources = await loadImsLearningResourcesModule()
   const requestedUrls = []
 
-  const jobs = await imsLearningResources.createImsLearningResourcesScraper().run({
+  const jobs = await imsLearningResources.createImsLearningResourcesScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       return officialCareersHtml
@@ -41,6 +45,8 @@ test('IMS Learning Resources scraper returns no jobs while the first-party page 
 
   assert.deepEqual(requestedUrls, [imsLearningResources.CAREERS_URL])
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
+  assert.equal(readInventoryEvidence(jobs)?.reason, 'ims-learning-resources-email-only-careers-page')
 })
 
 test('IMS Learning Resources scraper fails closed when the verified page changes or public job links appear', async () => {

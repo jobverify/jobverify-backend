@@ -10,6 +10,7 @@ import PlanPurchase from "../models/PlanPurchase.js";
 import Subscription from "../models/Subscription.js";
 import TelegramLinkToken from "../models/TelegramLinkToken.js";
 import User from "../models/User.js";
+import UserSuggestion from "../models/UserSuggestion.js";
 import { normalizePreferredJobType } from "../constants/preferredJobTypes.js";
 import { ACCESS_ROLES } from "../constants/accessPlans.js";
 import {
@@ -22,7 +23,7 @@ import {
   canUseTelegramAlerts,
 } from "../utils/accessControl.js";
 import { normalizeJobListResponseJob } from "./jobController.js";
-import { applyPublicJobLocationScope } from "../utils/publicJobLocationScope.js";
+import { applyPublicJobVisibility } from "../utils/publicJobVisibility.js";
 import { respondWithInternalError } from "../utils/respondWithInternalError.js";
 import { createTelegramLinkToken } from "../services/telegramLinkService.js";
 import { clearAuthCookie } from "../utils/authCookies.js";
@@ -58,10 +59,10 @@ const normalizePassingYear = (value) => {
 
 const getSavedJobIds = (user) => (user.savedJobs ?? []).map((jobId) => String(jobId));
 
-const buildSavedJobsFilter = (savedJobIds) => applyPublicJobLocationScope({
+const buildSavedJobsFilter = (savedJobIds, siteSettings) => applyPublicJobVisibility({
   _id: { $in: savedJobIds },
   status: "active",
-});
+}, siteSettings);
 
 const respondWithUserInternalError = (res, error) => (
   respondWithInternalError(res, error, {
@@ -70,14 +71,14 @@ const respondWithUserInternalError = (res, error) => (
   })
 );
 
-const countAvailableSavedJobs = async (user) => {
+const countAvailableSavedJobs = async (user, siteSettings) => {
   const savedJobIds = getSavedJobIds(user);
 
   if (savedJobIds.length === 0) {
     return 0;
   }
 
-  return Job.countDocuments(buildSavedJobsFilter(savedJobIds));
+  return Job.countDocuments(buildSavedJobsFilter(savedJobIds, siteSettings));
 };
 
 const buildProfileOverview = (user, savedJobsCount = user.savedJobs?.length ?? 0) => ({
@@ -187,7 +188,7 @@ export const getUserProfile = async (req, res) => {
         await user.save();
       }
 
-      const savedJobsCount = await countAvailableSavedJobs(user);
+      const savedJobsCount = await countAvailableSavedJobs(user, req.siteSettings);
 
       res.status(200).json(buildProfilePayload(user, savedJobsCount));
     } else {
@@ -246,7 +247,7 @@ export const updateUserProfile = async (req, res) => {
         ).catch(() => null);
       }
       const updatedUser = await user.save();
-      const savedJobsCount = await countAvailableSavedJobs(updatedUser);
+      const savedJobsCount = await countAvailableSavedJobs(updatedUser, req.siteSettings);
 
       res.status(200).json({
         ...buildProfilePayload(updatedUser, savedJobsCount),
@@ -274,6 +275,7 @@ export const deleteUserAccount = async (req, res) => {
     await JobAlertDelivery.deleteMany({ user: userId });
     await PlanPurchase.deleteMany({ user: userId });
     await TelegramLinkToken.deleteMany({ user: userId });
+    await UserSuggestion.deleteMany({ user: userId });
     await User.deleteOne({ _id: userId });
     clearAuthCookie(res);
 
@@ -313,7 +315,7 @@ export const getSavedJobs = async (req, res) => {
       return;
     }
 
-    const jobs = await Job.find(buildSavedJobsFilter(savedJobIds));
+    const jobs = await Job.find(buildSavedJobsFilter(savedJobIds, req.siteSettings));
 
     const jobsById = new Map(jobs.map((job) => [
       String(job._id),
@@ -321,7 +323,7 @@ export const getSavedJobs = async (req, res) => {
     ]));
     const availableSavedJobIds = savedJobIds.filter((jobId) => jobsById.has(jobId));
 
-    if (availableSavedJobIds.length !== savedJobIds.length) {
+    if (req.siteSettings?.experiencedJobsEnabled !== false && availableSavedJobIds.length !== savedJobIds.length) {
       user.savedJobs = availableSavedJobIds;
       await user.save();
     }
@@ -348,7 +350,7 @@ export const saveJob = async (req, res) => {
     const { jobId } = req.params;
     const [user, job] = await Promise.all([
       User.findById(req.user._id),
-      Job.findOne(applyPublicJobLocationScope({ _id: jobId, status: "active" })),
+      Job.findOne(applyPublicJobVisibility({ _id: jobId, status: "active" }, req.siteSettings)),
     ]);
 
     if (!user) {
@@ -378,7 +380,7 @@ export const saveJob = async (req, res) => {
       await user.save();
     }
 
-    const savedJobsCount = await countAvailableSavedJobs(user);
+    const savedJobsCount = await countAvailableSavedJobs(user, req.siteSettings);
 
     res.status(200).json({
       code: 200,
@@ -416,7 +418,7 @@ export const removeSavedJob = async (req, res) => {
       await user.save();
     }
 
-    const savedJobsCount = await countAvailableSavedJobs(user);
+    const savedJobsCount = await countAvailableSavedJobs(user, req.siteSettings);
 
     res.status(200).json({
       code: 200,

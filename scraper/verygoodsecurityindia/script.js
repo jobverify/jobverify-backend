@@ -1,157 +1,232 @@
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+
 export const SOURCE = 'verygoodsecurityindia'
 export const COMPANY = 'Very Good Security India'
 export const CAREERS_URL = 'https://www.verygoodsecurity.com/careers'
-export const DISPOSITION = 'verified-non-enumerable-careers-surface'
+export const LEVER_ACCOUNT = 'verygoodsecurity'
+export const LEVER_BOARD_URL = `https://jobs.lever.co/${LEVER_ACCOUNT}`
+export const LEVER_API_URL =
+  `https://api.lever.co/v0/postings/${LEVER_ACCOUNT}?mode=json`
+export const DISPOSITION = 'verified-first-party-careers-plus-public-lever-api'
 
-const REQUIRED_CONTRACT_PATTERNS = [
-  /it takes exceptional people to create vgs/i,
-  /what we are looking for in each teammate/i,
-  /current vgs job openings below/i,
-]
+const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
-const TRUSTED_ATS_HOST_PATTERNS = [
-  /boards\.greenhouse\.io/i,
-  /jobs\.lever\.co/i,
-  /jobs\.ashbyhq\.com/i,
-  /ashbyhq\.com/i,
-  /myworkdayjobs\.com/i,
-  /smartrecruiters\.com/i,
-  /jobvite\.com/i,
-  /workable\.com/i,
-  /bamboohr\.com/i,
-  /applytojob\.com/i,
-  /recruitee\.com/i,
-]
+const decodeEntities = (value = '') => String(value)
+  .replace(/&nbsp;|&#160;/gi, ' ')
+  .replace(/&amp;/gi, '&')
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&#39;|&apos;|&#x27;|&rsquo;|&#8217;/gi, "'")
+  .replace(/&ndash;|&#8211;/gi, '-')
+  .replace(/&mdash;|&#8212;/gi, '-')
 
-const SAME_ORIGIN_JOB_PATH_PATTERNS = [
-  /^\/careers\/[^/?#]+$/i,
-  /^\/jobs?\/[^/?#]+/i,
-  /^\/positions?\/[^/?#]+/i,
-  /^\/openings?\/[^/?#]+/i,
-  /^\/apply\/[^/?#]+/i,
-  /^\/jobpost\/[^/?#]+/i,
-]
-
-const SAME_ORIGIN_FRAMEWORK_ASSET_PATH_PATTERNS = [
-  /(?:^|\/)_payload\.(?:json|js)$/i,
-  /(?:^|\/)_nuxt(?:\/|$)/i,
-]
+const normalizeWhitespace = (value) => {
+  if (value == null) return null
+  return decodeEntities(String(value))
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim() || null
+}
 
 const normalizeText = (value = '') =>
-  String(value)
+  normalizeWhitespace(String(value)
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+    .replace(/<[^>]+>/g, ' ')) || ''
 
-const normalizePathname = (value = '') => {
-  const normalized = String(value).trim().replace(/\/+$/, '')
-  return normalized || '/'
+const normalizeLeverUrl = (value) => {
+  try {
+    const url = new URL(String(value ?? ''))
+    if (url.protocol !== 'https:' || url.hostname !== 'jobs.lever.co' || url.username || url.password) return null
+    if (url.pathname.split('/').filter(Boolean)[0] !== LEVER_ACCOUNT) return null
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    return null
+  }
 }
 
-const extractLinkedUrls = (html = '', pageUrl = CAREERS_URL) => {
-  const matches = String(html).matchAll(
-    /(?:href|src|action|data-url)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi,
-  )
-  const urls = []
+const indiaLocations = (job) => {
+  const primary = normalizeWhitespace(job?.categories?.location)
+  const places = Array.isArray(job?.categories?.allLocations) ? job.categories.allLocations.map(normalizeWhitespace) : [primary]
+  if (!primary || !places.length || places.some(place => !place) || !places.includes(primary)) throw new Error('VGS incomplete location inventory')
+  const country = normalizeWhitespace(job.country)?.toUpperCase()
+  const india = []
+  for (const place of places) {
+    if (/^(?:India|(?:Bengaluru|Bangalore|Hyderabad|Gurugram|Gurgaon|Pune|Mumbai|Chennai|Noida)(?:,\s*India)?)$/i.test(place)) india.push(place)
+    else if (/^(?:United States|Canada|Greece|United Kingdom|Singapore|Australia|Germany)$/i.test(place)) continue
+    else if (place === primary && /^[A-Z]{2}$/.test(country || '') && country !== 'IN') continue
+    else if (place === primary && country === 'IN' && /^Remote$/i.test(place)) india.push('Remote, India')
+    else throw Object.assign(new Error('VGS incomplete location scope: ' + place), { code: 'incomplete_location_scope' })
+  }
+  return [...new Set(india)]
+}
 
-  for (const match of matches) {
-    const rawValue = match[1] || match[2] || match[3] || ''
+const toIsoDateTime = (value) => {
+  const timestamp = Number(value)
+  if (!Number.isFinite(timestamp)) return null
+  const date = new Date(timestamp)
+  return Number.isNaN(date.getTime()) ? null : date.toISOString()
+}
 
-    try {
-      urls.push(new URL(rawValue, pageUrl))
-    } catch {
-      // Ignore malformed URLs and keep the contract fail-closed.
+const toRemoteStatus = (value) => {
+  const normalized = normalizeWhitespace(value)?.toLowerCase()
+  if (normalized === 'remote') return 'Remote'
+  if (normalized === 'hybrid') return 'Hybrid'
+  if (normalized === 'onsite' || normalized === 'on-site') return 'On-site'
+  return null
+}
+
+const extractCity = (location) => {
+  const normalized = normalizeWhitespace(location)
+  if (!normalized || /^remote\b/i.test(normalized) || /^india$/i.test(normalized)) return null
+  return normalized.split(/\s*[,/]\s*/)[0] || null
+}
+
+export const hasOfficialCareersSignal = (html = '') => {
+  const raw = String(html)
+  const text = normalizeText(raw)
+  return /<title[^>]*>\s*Careers\s*\|\s*VGS\s*<\/title>/i.test(raw)
+    && /\bIt Takes Exceptional People to Build VGS\b/i.test(text)
+    && /\bWhat We Look For In Every Teammate\b/i.test(text)
+    && /\bDiscover Opportunities\b/i.test(text)
+    && /href=["']#lever-jobs-container["']/i.test(raw)
+    && /id=["']lever-jobs-container["']/i.test(raw)
+}
+
+export const hasOfficialLeverBoardSignal = (html = '') => {
+  const raw = String(html)
+  const text = normalizeText(raw)
+  return /<title[^>]*>\s*VGS\s*<\/title>/i.test(raw)
+    && /property=["']og:url["'][^>]+content=["']https:\/\/jobs\.lever\.co\/verygoodsecurity\/?["']/i.test(raw)
+    && /\bLocation type\b/i.test(text)
+    && /\bLocation\b/i.test(text)
+    && /\bTeam\b/i.test(text)
+    && /\bWork type\b/i.test(text)
+    && /https:\/\/jobs\.lever\.co\/verygoodsecurity\/[a-z0-9-]+/i.test(raw)
+    && (/\bPowered by Lever\b/i.test(text) || /(?:alt=["']Lever logo["']|lever-logo-refresh)/i.test(raw))
+}
+
+export const extractIndiaLeverJobs = (payload = []) => {
+  if (!Array.isArray(payload)) {
+    throw new Error('VGS invalid Lever postings payload: expected an array')
+  }
+
+  const seen = new Set()
+  return payload.map((job) => {
+    const title = normalizeWhitespace(job?.text)
+    const jobId = normalizeWhitespace(job?.id)
+    const sourceUrl = normalizeLeverUrl(job?.hostedUrl)
+    const applyUrl = job?.applyUrl == null ? sourceUrl : normalizeLeverUrl(job.applyUrl)
+    if (!title || !jobId || !/^[a-z0-9-]+$/i.test(jobId) || !sourceUrl || !applyUrl || seen.has(jobId)
+      || new URL(sourceUrl).pathname !== '/' + LEVER_ACCOUNT + '/' + jobId
+      || !['/' + LEVER_ACCOUNT + '/' + jobId, '/' + LEVER_ACCOUNT + '/' + jobId + '/apply'].includes(new URL(applyUrl).pathname)) {
+      throw new Error('VGS invalid or duplicate Lever role identity/application')
     }
-  }
+    seen.add(jobId)
+    const places = indiaLocations(job)
+    if (!places.length) return null
+    const location = places.join(' / ')
+    const jobDescription = normalizeText([
+      job.descriptionPlain || job.description || job.descriptionBodyPlain || job.descriptionBody,
+      ...(Array.isArray(job.lists) ? job.lists.map(list => [list.text, list.content].filter(Boolean).join(' ')) : []),
+      job.additionalPlain || job.additional,
+    ].filter(Boolean).join(' '))
+    if (!jobDescription) throw new Error('VGS incomplete public job description')
 
-  return urls
+    return {
+      title,
+      company: COMPANY,
+      department: normalizeWhitespace(job?.categories?.team || job?.categories?.department),
+      location,
+      city: extractCity(location),
+      country: 'India',
+      jobId,
+      requisitionId: jobId,
+      sourceUrl,
+      applyUrl,
+      employmentType: normalizeWhitespace(job?.categories?.commitment),
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: toIsoDateTime(job?.createdAt),
+      closingDate: null,
+      jobDescription,
+      remoteStatus: toRemoteStatus(job?.workplaceType),
+    }
+  }).filter(Boolean)
 }
 
-const hasJobPostingMarkup = (html = '') => {
-  const blocks = String(html).matchAll(
-    /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
-  )
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  },
+  label: `${SOURCE}-html`,
+  timeoutMs: 15000,
+})
 
-  for (const block of blocks) {
-    if (/\bJobPosting\b/i.test(block[1])) return true
-  }
-
-  return false
-}
-
-const isSameOriginFrameworkAssetUrl = (url) =>
-  SAME_ORIGIN_FRAMEWORK_ASSET_PATH_PATTERNS.some((pattern) =>
-    pattern.test(normalizePathname(url.pathname)),
-  )
-
-const assertNoTrustedListingsSurface = (html = '', careersUrl = CAREERS_URL) => {
-  if (hasJobPostingMarkup(html)) {
-    throw new Error(
-      'Very Good Security India careers page now exposes a public listings surface via JobPosting markup.',
-    )
-  }
-
-  const careersOrigin = new URL(careersUrl).origin
-  const careersPath = normalizePathname(new URL(careersUrl).pathname)
-  const linkedUrls = extractLinkedUrls(html, careersUrl)
-  const atsBoardUrl = linkedUrls.find((url) =>
-    TRUSTED_ATS_HOST_PATTERNS.some((pattern) => pattern.test(url.hostname)),
-  )
-
-  if (atsBoardUrl) {
-    throw new Error(
-      `Very Good Security India careers page now exposes a public listings surface via ${atsBoardUrl.toString()}.`,
-    )
-  }
-
-  const sameOriginJobUrl = linkedUrls.find((url) => {
-    if (url.origin !== careersOrigin) return false
-
-    const pathname = normalizePathname(url.pathname)
-    if (pathname === careersPath) return false
-    if (isSameOriginFrameworkAssetUrl(url)) return false
-
-    return SAME_ORIGIN_JOB_PATH_PATTERNS.some((pattern) => pattern.test(pathname))
-  })
-
-  if (sameOriginJobUrl) {
-    throw new Error(
-      `Very Good Security India careers page now exposes a public listings surface via ${sameOriginJobUrl.toString()}.`,
-    )
-  }
-}
-
-const assertVerifiedContract = (html = '') => {
-  const text = normalizeText(html)
-
-  if (REQUIRED_CONTRACT_PATTERNS.every((pattern) => pattern.test(text))) return
-
-  throw new Error(
-    'Very Good Security India careers page no longer matches the verified careers contract.',
-  )
-}
-
-const defaultFetchHtml = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'User-Agent': 'Mozilla/5.0 (compatible; Jobverify/1.0)',
-    },
-  })
-
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
-  return response.text()
-}
+const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
+  signal,
+  headers: { 'User-Agent': USER_AGENT, Accept: 'application/json,text/plain,*/*' },
+  label: `${SOURCE}-json`,
+  timeoutMs: 15000,
+})
 
 export const createVeryGoodSecurityIndiaScraper = () => ({
-  async run({ fetchHtml = defaultFetchHtml } = {}) {
-    const html = await fetchHtml(CAREERS_URL)
-    assertVerifiedContract(html)
-    assertNoTrustedListingsSurface(html)
-    return []
+  async run({
+    fetchText = defaultFetchText,
+    fetchJson = defaultFetchJson,
+    now = () => new Date().toISOString(),
+    signal,
+  } = {}) {
+    signal?.throwIfAborted()
+    const careersHtml = await fetchText(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('Very Good Security India official careers surface changed materially')
+    }
+
+    const boardHtml = await fetchText(LEVER_BOARD_URL, { signal })
+    signal?.throwIfAborted()
+    if (!hasOfficialLeverBoardSignal(boardHtml)) {
+      throw new Error('Very Good Security India Lever board changed materially')
+    }
+
+    const expectedIds = new Set()
+    for (const match of boardHtml.matchAll(/<a\b[^>]*href=["']([^"']+)["']/gi)) {
+      const url = normalizeLeverUrl(match[1])
+      const id = url && new URL(url).pathname.match(/^\/verygoodsecurity\/([^/]+)(?:\/apply)?$/)?.[1]
+      if (id) expectedIds.add(id)
+    }
+    if (!expectedIds.size) throw new Error('VGS incomplete public board inventory')
+    const records = []
+    const seen = new Set()
+    let finished = false
+    for (let page = 0; page < 100; page += 1) {
+      const url = new URL(LEVER_API_URL)
+      url.searchParams.set('limit', '100')
+      url.searchParams.set('skip', String(page * 100))
+      const batch = await fetchJson(url.toString(), { signal })
+      signal?.throwIfAborted()
+      if (!Array.isArray(batch) || batch.length > 100) throw new Error('VGS invalid public API page')
+      // Validate every record, including foreign ones, before declaring India empty.
+      extractIndiaLeverJobs(batch)
+      for (const record of batch) {
+        if (seen.has(record.id)) throw new Error('VGS duplicate or repeated API page')
+        seen.add(record.id)
+        records.push(record)
+      }
+      if (batch.length < 100) { finished = true; break }
+    }
+    if (!finished || seen.size !== expectedIds.size || [...seen].some(id => !expectedIds.has(id))) throw new Error('VGS incomplete API/board inventory')
+    const scrapedAt = now()
+    return extractIndiaLeverJobs(records).map((job) => ({
+      ...job,
+      source: SOURCE,
+      link: job.applyUrl || job.sourceUrl,
+      scrapedAt,
+    }))
   },
 })
 

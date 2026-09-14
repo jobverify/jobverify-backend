@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+
 const loadTerraEagleModule = async () => {
   try {
     return await import('./script.js')
@@ -68,6 +70,11 @@ const brokenJobsRoute = {
   html: '<html><head><title>404 - Terraeagle</title></head><body><h1>404</h1><p>Page not found</p></body></html>',
 }
 
+const compromisedHomepageHtml = homepageHtml.replace(
+  '<title>Home - Terraeagle</title>',
+  '<title>Home - hacked by trenggalek6etar</title>',
+)
+
 const publicJobsCareersHtml = `
 <!doctype html>
 <html lang="en">
@@ -100,6 +107,29 @@ test('Terraeagle sentinel recognizes the verified homepage, about page, careers 
   assert.equal(terraeagle.hasVerifiedCareersShellSignal(careersHtml), true)
   assert.equal(terraeagle.hasPublicJobsSignal(publicJobsCareersHtml), true)
   assert.equal(terraeagle.isVerifiedBrokenJobsRoute(brokenJobsRoute), true)
+})
+
+test('Terraeagle marks the compromised official homepage as discovery-only evidence', async () => {
+  const terraeagle = await loadTerraEagleModule()
+  assert.ok(terraeagle, 'Expected scraper module at ./script.js')
+
+  const jobs = await terraeagle.createTerraEagleScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
+      fetchPage: async (url) => {
+        if (url === terraeagle.HOMEPAGE_URL) {
+          return { status: 200, url, html: compromisedHomepageHtml }
+        }
+
+        throw new Error(`Unexpected URL: ${url}`)
+      },
+    })
+
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, terraeagle.HOMEPAGE_URL)
+  assert.match(evidence?.reason || '', /compromised|unavailable/i)
 })
 
 test('Terraeagle sentinel returns no jobs only while the verified official surface exposes no public careers board', async () => {

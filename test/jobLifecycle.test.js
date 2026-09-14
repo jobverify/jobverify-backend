@@ -4,6 +4,7 @@ import test from 'node:test'
 import {
   DEFAULT_JOB_RETENTION_DAYS,
   buildJobPostedAtCutoff,
+  normalizeLifecycleDate,
   resolveJobMissesBeforeExpiry,
   resolveJobPostedAt,
   resolveJobRetentionDays,
@@ -55,5 +56,12 @@ test('job lifecycle boundaries use UTC days and keep the exact cutoff day', () =
   assert.equal(
     buildJobPostedAtCutoff(now, 30).toISOString(),
     '2026-06-25T00:00:00.000Z',
+  )
+})
+
+test('normalizeLifecycleDate interprets ten-digit Unix timestamps as seconds', () => {
+  assert.equal(
+    normalizeLifecycleDate(1782864000)?.toISOString(),
+    '2026-07-01T00:00:00.000Z',
   )
 })

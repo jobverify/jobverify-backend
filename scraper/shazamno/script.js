@@ -69,9 +69,10 @@ export const extractAppleCareersSearchUrl = (html = '') => {
 export const hasVerifiedShazamBrandPageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
+  const hasShazamIdentity = text.includes('Find music, concerts and more with Shazam')
+    || /<meta\b[^>]+property=["']og:site_name["'][^>]+content=["']Shazam["']/i.test(page)
 
-  return text.includes('Shazam - Music Discovery, Charts & Song Lyrics')
-    && text.includes('Find music, concerts and more with Shazam')
+  return hasShazamIdentity
     && text.includes('Shazam Footer')
     && text.includes('Careers')
     && text.includes('Apple Inc. and its affiliates')

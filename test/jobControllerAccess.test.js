@@ -484,12 +484,13 @@ test("job list queries select only fields needed for cards", async () => {
     );
 
     assert.equal(res.statusCode, 200);
-    assert.match(capturedProjection, /\btitle\b/);
-    assert.match(capturedProjection, /\bcompany\b/);
-    assert.match(capturedProjection, /\bjobSkills\b/);
-    assert.doesNotMatch(capturedProjection, /\bdescription\b/);
-    assert.doesNotMatch(capturedProjection, /\bminimumQualification\b/);
-    assert.doesNotMatch(capturedProjection, /\bpreferredQualification\b/);
+    assert.equal(capturedProjection.title, 1);
+    assert.equal(capturedProjection.company, 1);
+    assert.equal(capturedProjection.jobSkills, 1);
+    assert.ok(capturedProjection._publicJobType);
+    assert.equal(capturedProjection.description, undefined);
+    assert.equal(capturedProjection.minimumQualification, undefined);
+    assert.equal(capturedProjection.preferredQualification, undefined);
   } finally {
     Job.countDocuments = originalCountDocuments;
     Job.distinct = originalDistinct;

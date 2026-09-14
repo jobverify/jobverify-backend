@@ -110,11 +110,17 @@ export const hasOfficialAboutSignal = (html) => {
 }
 
 export const hasOfficialContactSignal = (html) => {
+  const rawPage = String(html ?? '')
   const page = normalizeWhitespace(html).toLowerCase()
 
-  return page.includes('pantheon digital')
+  const hasCurrentContactMetadata = /<title>\s*Contact Us \| Pantheon Digital \| Pantheon Digital\s*<\/title>/i.test(rawPage)
+    && /property=["']og:url["'][^>]+content=["']https:\/\/pantheondigitals\.com\/contact-us["']/i.test(rawPage)
+    && /property=["']og:site_name["'][^>]+content=["']Pantheon Digital["']/i.test(rawPage)
+    && /connect with our Saket, New Delhi team/i.test(rawPage)
+
+  return hasCurrentContactMetadata || (page.includes('pantheon digital')
     && page.includes('contact us')
-    && page.includes('empowering your business with end-to-end digital solutions')
+    && page.includes('empowering your business with end-to-end digital solutions'))
 }
 
 export const hasOfficialCutshortSignal = (html) => {
@@ -179,10 +185,16 @@ const normalizeJob = (job, scrapedAt) => {
   const jobId = normalizeWhitespace(job?._id)
   const sourceUrl = normalizeWhitespace(job?.publicUrl)
   const applyUrl = normalizeWhitespace(job?.authApplyUrl) || sourceUrl
-  const location = buildIndiaLocation(job?.locationsText || toArray(job?.locations)[0])
+  const rawLocations = toArray(job?.locations).length ? job.locations : [job?.locationsText]
+  const locations = rawLocations.map(normalizeWhitespace)
+  const india = locations.filter(value => /^(?:india|(?:delhi|new delhi|gurgaon|gurugram|noida|mumbai|pune|hyderabad|chennai|bengaluru|bangalore|kolkata)(?:,?\s+india)?)$/i.test(value))
+  const foreign = /^(?:london|new york|singapore|dubai|united states|united kingdom|usa|uk)(?:,?\s+(?:united states|united kingdom|usa|uk|uae))?$/i
+  if (locations.some(value => !india.includes(value) && !foreign.test(value))) throw new Error('Pantheon unverified job geography scope')
+  if (!india.length) return null
+  const location = india.map(buildIndiaLocation).join('; ')
 
   if (!title || !jobId || !sourceUrl || !location || !INDIA_LOCATION_PATTERN.test(location)) {
-    return null
+    throw new Error('Pantheon malformed job identity')
   }
 
   return {
@@ -224,7 +236,8 @@ const validateOfficialCutshortContext = (data) => {
     && linkedin === normalizeUrl(LINKEDIN_COMPANY_URL)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -237,26 +250,29 @@ export const createPantheonDigitalScraper = () => ({
   async run({
     fetchText = defaultFetchText,
     now = () => new Date().toISOString(),
+    signal,
   } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    signal?.throwIfAborted()
+    const read = async url => { signal?.throwIfAborted(); const value = await fetchText(url, { signal }); signal?.throwIfAborted(); return value }
+    const homepageHtml = await read(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Pantheon Digital verified homepage no longer matches the trusted first-party surface')
     }
 
-    const aboutHtml = await fetchText(ABOUT_URL)
+    const aboutHtml = await read(ABOUT_URL)
     if (!hasOfficialAboutSignal(aboutHtml)) {
       throw new Error('Pantheon Digital verified about page no longer matches the trusted first-party surface')
     }
 
-    const contactHtml = await fetchText(CONTACT_URL)
+    const contactHtml = await read(CONTACT_URL)
     if (!hasOfficialContactSignal(contactHtml)) {
       throw new Error('Pantheon Digital verified contact page no longer matches the trusted first-party surface')
     }
 
-    await assertMissingRoute(fetchText, CAREERS_URL)
-    await assertMissingRoute(fetchText, JOBS_URL)
+    await assertMissingRoute(read, CAREERS_URL)
+    await assertMissingRoute(read, JOBS_URL)
 
-    const cutshortHtml = await fetchText(CUTSHORT_COMPANY_URL)
+    const cutshortHtml = await read(CUTSHORT_COMPANY_URL)
     if (!hasOfficialCutshortSignal(cutshortHtml)) {
       throw new Error('Pantheon Digital official Cutshort surface no longer matches the verified hiring handoff')
     }
@@ -266,13 +282,20 @@ export const createPantheonDigitalScraper = () => ({
       throw new Error('Pantheon Digital official Cutshort surface no longer exposes the verified company identity')
     }
 
-    const jobs = toArray(companyPageData?.companyJobs?.jobs)
-      .map((job) => normalizeJob(job, now()))
-      .filter(Boolean)
-
-    if (!Array.isArray(companyPageData?.companyJobs?.jobs) || jobs.length === 0) {
-      throw new Error('Pantheon Digital official Cutshort jobs payload changed or no longer exposes public openings')
+    const inventory = companyPageData?.companyJobs
+    if (!Array.isArray(inventory?.jobs) || !inventory.jobs.length || inventory.page !== 1 || inventory.totalPages !== 1) throw new Error('Pantheon incomplete or unavailable public inventory pagination')
+    const count = companyPageData.company?.totalJobsOfCompany
+    if (count != null && count !== inventory.jobs.length) throw new Error('Pantheon incomplete counted inventory')
+    const ids = new Set()
+    for (const job of inventory.jobs) {
+      const owner = job?.companyDetails || job?.companyId
+      if (!job?._id || !job.headline || !job.publicUrl || typeof job.sanitizedComment !== 'string' || stripHtml(job.sanitizedComment).length < 40 || owner?.alias !== 'pantheon-digital-96-46NMdJSa' || normalizeWhitespace(owner?.name).toLowerCase() !== 'pantheon digital') throw new Error('Pantheon malformed job or mismatched employer identity')
+      if (ids.has(job._id)) throw new Error('Pantheon duplicate job identity')
+      ids.add(job._id)
+      const url = new URL(job.publicUrl), applyUrl = new URL(job.authApplyUrl || job.publicUrl)
+      if (url.origin !== 'https://cutshort.io' || !url.pathname.startsWith('/job/') || applyUrl.origin !== 'https://cutshort.io' || (applyUrl.pathname !== url.pathname && applyUrl.pathname !== '/profile/view/j/' + job._id)) throw new Error('Pantheon mismatched public job URL identity')
     }
+    const jobs = inventory.jobs.map(job => normalizeJob(job, now())).filter(Boolean)
 
     return jobs
   },

@@ -25,7 +25,7 @@ const loadScraperModule = async () => {
   }
 }
 
-test('Netcore Cloud local catalog captures the verified redirect-shell sentinel contract', async () => {
+test('Netcore Cloud local catalog captures the verified MyNextHire inventory contract', async () => {
   const { NETCORE_CLOUD_CATALOG } = await loadCatalogModule()
   const netcoreCloud = await loadScraperModule()
   const provider = hydrateProviderCatalogEntry(NETCORE_CLOUD_CATALOG)
@@ -41,28 +41,28 @@ test('Netcore Cloud local catalog captures the verified redirect-shell sentinel 
     'https://netcorecloud.com/careers-list?job_category=engineering',
   )
   assert.equal(provider.companyDomain, 'netcorecloud.com')
-  assert.equal(provider.atsPlatform, 'official-company-careers-redirect-shell')
+  assert.equal(provider.atsPlatform, 'mynexthire')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'verified-careers-page-plus-careers-list-shell-validation',
+    'complete-public-reqlist-inventory',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-careers-list-redirect-shell-or-403-return-empty',
+    'first-party-careers-list-handoff+validated-mynexthire-inventory+india-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.equal(provider.verifiedOn, '2026-09-13')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /netcorecloud[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /September 13, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/netcorecloud\.com\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/netcorecloud\.com\/careers-list\?job_category=engineering/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/netcore\.ai\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/netcore\.ai\/careers-list\?job_category=engineering/i)
-  assert.match(provider.verifiedSurfaceSummary, /redirect\/loading shell/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /Loading shells/i)
+  assert.match(provider.verifiedSurfaceSummary, /reject the snapshot/i)
 
   assert.equal(
     netcoreCloud.PROVIDER_METADATA.source,

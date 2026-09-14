@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -108,11 +109,18 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page).toLowerCase()
 
-  return /<title>\s*Career opportunities in Electronics Core Company in Chennai\s*<\/title>/i.test(page)
+  const hasStableCareersIdentity = /<title>\s*Career opportunities in Electronics Core Company in Chennai\s*<\/title>/i.test(page)
     && text.includes('electronics core company jobs')
     && /hr@kathirsudhirautomation\.com/i.test(page)
-    && /Job Title:/i.test(page)
-    && /apply here/i.test(page)
+
+  const hasLegacyJobSections = /Job Title:/i.test(page) && /apply here/i.test(page)
+  const hasCurrentNoListingsSurface = /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/www\.kathirsudhirautomation\.com\/career["']/i.test(page)
+    && /["']@type["']\s*:\s*["']Organization["']/i.test(page)
+    && /["']name["']\s*:\s*["']Kathir Sudhir Automation India Pvt Ltd["']/i.test(page)
+    && /<h1\b[^>]*>\s*Career\s*<\/h1>/i.test(page)
+    && /For Job\s*:/i.test(page)
+
+  return hasStableCareersIdentity && (hasLegacyJobSections || hasCurrentNoListingsSurface)
 }
 
 const JOB_SECTION_PATTERN =
@@ -124,7 +132,13 @@ export const extractPublicJobs = (html) => {
   }
 
   if (!/Job Title:|apply here/i.test(String(html ?? ''))) {
-    return []
+    const hasInlineJobs = /const\s+jobs\s*=\s*\[/i.test(html)
+    throw Object.assign(new Error(hasInlineJobs ? 'Kathir Sudhir Automation job geography is unverified: current inline role geography has not been validated' : 'Kathir Sudhir Automation public inventory is unavailable: a generic careers page does not prove zero openings'), {
+      code: hasInlineJobs ? 'KATHIR_LOCATION_UNVERIFIED' : 'KATHIR_INVENTORY_UNAVAILABLE',
+      softFailure: true,
+      failureKind: hasInlineJobs ? 'upstream_scope_unverified' : 'upstream_inventory_unavailable',
+      abortRetries: true,
+    })
   }
 
   const jobs = [...String(html ?? '').matchAll(JOB_SECTION_PATTERN)].map((match) => {
@@ -171,7 +185,8 @@ export const extractPublicJobs = (html) => {
   return jobs.sort((left, right) => left.title.localeCompare(right.title))
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -181,14 +196,38 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const createKathirSudhirAutomationScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+  async run({ fetchText = defaultFetchText, now: overrideNow, signal } = {}) {
+    signal?.throwIfAborted()
+    const read = async url => { signal?.throwIfAborted(); const value = await fetchText(url, { signal }); signal?.throwIfAborted(); return value }
+    const homepageHtml = await read(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Kathir Sudhir Automation verified official homepage no longer matches the known first-party surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
-    const jobs = extractPublicJobs(careersHtml)
+    const careersHtml = await read(CAREERS_URL)
+    let jobs
+    try {
+      jobs = extractPublicJobs(careersHtml)
+    } catch (error) {
+      if (
+        error?.code === 'KATHIR_LOCATION_UNVERIFIED'
+        || error?.code === 'KATHIR_INVENTORY_UNAVAILABLE'
+      ) {
+        return attachInventoryEvidence([], {
+          status: 'discovery-only',
+          surface: CAREERS_URL,
+          firstParty: true,
+          listingComplete: false,
+          pagesFetched: 2,
+          reportedTotal: null,
+          indiaFacetCount: null,
+          verifiedAt: (overrideNow || now)(),
+          reason: error.message,
+        })
+      }
+
+      throw error
+    }
 
     return jobs.map((job) => ({
       ...job,

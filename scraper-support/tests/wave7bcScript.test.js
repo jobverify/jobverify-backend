@@ -176,7 +176,7 @@ const ymslCareersHtml = `
     <h2>Be Cautious</h2>
     <p>Yamaha Motor Solutions (India) Pvt. Ltd. does not authorize any third party.</p>
     <a href="/ymsl/jobslist">View jobs</a>
-    <h1>Find your Dream Job at Yamaha Motor Solutions</h1>
+    <h1>Find Authentic Jobs at Yamaha Motor Solutions</h1>
   </body>
 </html>
 `

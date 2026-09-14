@@ -56,7 +56,7 @@ const buildDatePostedFilter = (values) => {
     start.setHours(0, 0, 0, 0);
     if (value === DATE_POSTED_OLDER_THAN_30_VALUE) {
       start.setDate(start.getDate() - 30);
-      return { postedAt: { $lt: start } };
+      return { postedAt: { $type: "date", $lt: start } };
     }
     start.setDate(start.getDate() - value);
     const end = new Date(start);
@@ -162,7 +162,7 @@ export const buildJobFilterConditions = (queryParams = {}, { includeExperienceYe
   }
   const seniorityValue = normalizeOptionValue(seniority, SENIORITY_LEVELS);
   if (seniorityValue) filters.seniority = seniorityValue;
-  const postedValues = [...new Set(normalizeList(datePostedDays, { maxItems: DATE_POSTED_OPTIONS.length, maxLength: 8 }).map((value) => {
+  const postedValues = [...new Set(normalizeList(datePostedDays, { maxItems: DATE_POSTED_OPTIONS.length, maxLength: 16 }).map((value) => {
     const normalized = value.toLowerCase();
     return normalized === DATE_POSTED_NA_VALUE || normalized === DATE_POSTED_OLDER_THAN_30_VALUE
       ? normalized

@@ -424,7 +424,7 @@ test("job metadata hides the legacy NA date-posted option from public filters", 
 
 test("unfiltered company suggestions return the full public company directory", () => {
   assert.match(controllerSource, /const MAX_COMPANY_AUTOCOMPLETE_RESULTS = 2000;/);
-  assert.match(controllerSource, /const summary = await resolvePublicJobDatasetSummary\(\)\.catch\(\(\) => null\);/);
+  assert.match(controllerSource, /const summary = await resolvePublicJobDatasetSummary\(req\.siteSettings\)\.catch\(\(\) => null\);/);
   assert.match(controllerSource, /mergeCompanyOptions\(summary\?\.companies \?\? \[\]\)/);
   assert.match(controllerSource, /limit: MAX_COMPANY_AUTOCOMPLETE_RESULTS/);
 });

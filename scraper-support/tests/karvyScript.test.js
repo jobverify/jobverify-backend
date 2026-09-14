@@ -66,6 +66,33 @@ const publicJobsHtml = `
 </html>
 `
 
+const cloudflareTimeoutHtml = `
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <title>karvyonline.com | 522: Connection timed out</title>
+  </head>
+  <body>
+    <h1>Connection timed out</h1>
+    <p>Cloudflare is unable to establish an SSL connection to the origin server.</p>
+  </body>
+</html>
+`
+
+const compromisedLegacyRootHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>KEMBANGTOTO - Totalitas Situs Toto 4D Prediksi Karvy Online Bandar Toto Togel Macau</title>
+  </head>
+  <body>
+    <h1>KEMBANGTOTO</h1>
+    <nav>KEMBANGTOTO LOGIN KEMBANGTOTO ALTERNATIF SITUS KEMBANGTOTO</nav>
+    <p>Bandar Toto Togel Macau</p>
+  </body>
+</html>
+`
+
 const loadKarvyModule = async () => {
   try {
     return await import('../../scraper/karvy/script.js')
@@ -90,6 +117,8 @@ test('Karvy sentinel helpers stay pinned to the verified inactive exact-name dom
   assert.equal(karvy.hasParkedHomepageSignal(parkedHomepageHtml), true)
   assert.equal(karvy.hasOfficialLegacyRootSignal(officialLegacyRootHtml), true)
   assert.equal(karvy.hasStaleCareerPageSignal(staleCareerPageHtml), true)
+  assert.equal(karvy.hasCloudflareTimeoutSignal(cloudflareTimeoutHtml), true)
+  assert.equal(karvy.hasCompromisedLegacyHomepageSignal(compromisedLegacyRootHtml), true)
   assert.equal(karvy.hasPublicJobsSignal(staleCareerPageHtml), false)
   assert.equal(karvy.hasPublicJobsSignal(publicJobsHtml), true)
 })
@@ -177,6 +206,84 @@ test('Karvy returns [] when the current legacy routes redirect into the parked l
     karvy.LANDER_URL,
   ])
   assert.deepEqual(jobs, [])
+})
+
+test('Karvy returns [] when the exact-name domain stays parked and the legacy site returns Cloudflare 522', async () => {
+  const karvy = await loadKarvyModule()
+  const requestedUrls = []
+
+  const jobs = await karvy.createKarvyScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (karvy.PARKED_HOMEPAGE_URLS.includes(url)) {
+        return {
+          status: 200,
+          url,
+          finalUrl: 'https://karvy.com/',
+          html: parkedHomepageHtml,
+        }
+      }
+
+      if (url === karvy.LEGACY_HOMEPAGE_URL) {
+        return {
+          status: 522,
+          url,
+          finalUrl: url,
+          html: cloudflareTimeoutHtml,
+        }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    ...karvy.PARKED_HOMEPAGE_URLS,
+    karvy.LEGACY_HOMEPAGE_URL,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Karvy reports a typed upstream failure when the legacy homepage appears compromised', async () => {
+  const karvy = await loadKarvyModule()
+  const requestedUrls = []
+
+  await assert.rejects(
+    karvy.createKarvyScraper().run({
+      fetchPage: async (url) => {
+        requestedUrls.push(url)
+
+        if (karvy.PARKED_HOMEPAGE_URLS.includes(url)) {
+          return {
+            status: 200,
+            url,
+            finalUrl: 'https://karvy.com/',
+            html: parkedHomepageHtml,
+          }
+        }
+
+        if (url === karvy.LEGACY_HOMEPAGE_URL) {
+          return {
+            status: 200,
+            url,
+            finalUrl: url,
+            html: compromisedLegacyRootHtml,
+          }
+        }
+
+        throw new Error(`Unexpected URL: ${url}`)
+      },
+    }),
+    (error) => error.softFailure === true
+      && error.failureKind === 'upstream_unavailable'
+      && /legacy homepage appears compromised/i.test(error.message),
+  )
+
+  assert.deepEqual(requestedUrls, [
+    ...karvy.PARKED_HOMEPAGE_URLS,
+    karvy.LEGACY_HOMEPAGE_URL,
+  ])
 })
 
 test('Karvy returns [] only while the verified exact-name domain stays inactive and the linked legacy careers page remains resume-only', async () => {

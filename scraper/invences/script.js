@@ -48,6 +48,23 @@ const toAbsoluteUrl = (value) => {
   }
 }
 
+export const extractOfficialCareersUrl = (html = '') => {
+  for (const match of String(html).matchAll(/<a\b[^>]*\bhref\s*=\s*(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi)) {
+    try {
+      const url = new URL(match[2], HOMEPAGE_URL)
+      const text = stripTags(match[3])
+      if (url.origin !== new URL(HOMEPAGE_URL).origin) continue
+      if (!/^\/careers?\/?$/i.test(url.pathname) && !/^careers?$/i.test(text)) continue
+      url.hash = ''
+      return url.toString().replace(/\/$/, '')
+    } catch {
+      // Ignore malformed links while looking for a verified same-origin handoff.
+    }
+  }
+
+  return null
+}
+
 const slugify = (value) => normalizeWhitespace(value)
   ?.toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
@@ -97,11 +114,15 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
 
-  return /<title>\s*Invences\s*-\s*Technology\s+Solutions\s*<\/title>/i.test(page)
+  const hasKnownTitle = /<title>\s*Invences\s*-\s*Technology\s+Solutions\s*<\/title>/i.test(page)
+    || /<title>\s*Connectivity\s*(?:&|&amp;)\s*Data Center Infrastructure\s*\|\s*Invences\s*<\/title>/i.test(page)
+  const hasKnownNavigation = /\bAbout\b/i.test(text) && /\bCapabilities\b/i.test(text)
+    || /\bSolutions\b/i.test(text) && /\bServices\b/i.test(text) && /\bProducts\b/i.test(text) && /\bIndustries\b/i.test(text)
+
+  return hasKnownTitle
     && /info@invences\.com/i.test(page)
-    && /href=["'][^"']*\/career["'][^>]*>\s*Careers\s*</i.test(page)
-    && /\bAbout\b/i.test(text)
-    && /\bCapabilities\b/i.test(text)
+    && /\bInvences\b/i.test(text)
+    && hasKnownNavigation
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -161,23 +182,39 @@ export const extractJobs = (html) => {
 export const filterIndiaJobs = (jobs = []) =>
   jobs.filter((job) => /india/i.test(unique([job.location, job.city, job.state, job.country]).join(' ')))
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
+  signal,
   timeoutMs: 15000,
 })
 
 export const createInvencesScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+  async run({ fetchText = defaultFetchText, signal } = {}) {
+    const fetchOfficialPage = async (url) => {
+      signal?.throwIfAborted()
+      try {
+        const html = await fetchText(url, { signal })
+        signal?.throwIfAborted()
+        return html
+      } catch (error) {
+        signal?.throwIfAborted()
+        throw error
+      }
+    }
+
+    const homepageHtml = await fetchOfficialPage(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Invences homepage no longer matches the verified official public surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
+    const careersUrl = extractOfficialCareersUrl(homepageHtml)
+    if (!careersUrl) return []
+
+    const careersHtml = await fetchOfficialPage(careersUrl)
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Invences verified careers surface no longer matches the expected table contract')
     }
@@ -196,7 +233,7 @@ export const createInvencesScraper = () => ({
   },
 })
 
-export const run = async () => createInvencesScraper().run()
+export const run = async (options = {}) => createInvencesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

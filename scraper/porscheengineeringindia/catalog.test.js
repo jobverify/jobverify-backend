@@ -4,6 +4,7 @@ import test from 'node:test'
 import companyAliases from '../../scraper-support/providers/companyAliases.json' with { type: 'json' }
 import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
+import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import {
   createPorscheEngineeringIndiaScraper,
   hasOfficialCareerPortalShell,
@@ -37,9 +38,14 @@ test('Porsche Engineering India resolves exactly through provider metadata', () 
 test('Porsche Engineering India sentinel returns empty only for the trusted portal shell', async () => {
   assert.equal(hasOfficialCareerPortalShell(PORTAL_SHELL), true)
   assert.equal(hasPublicListingSignal(PORTAL_SHELL), false)
-  assert.deepEqual(await createPorscheEngineeringIndiaScraper().run({
+  const jobs = await createPorscheEngineeringIndiaScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
     fetchText: async () => PORTAL_SHELL,
-  }), [])
+  })
+
+  assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
 })
 
 test('Porsche Engineering India sentinel fails closed when public listings appear or the shell drifts', async () => {

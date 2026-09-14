@@ -2,11 +2,25 @@ const NON_SPECIFIC_LOCATION_REGEX =
   /^(?:\d+\s+locations?|multiple locations|various locations|unknown|none)$/i
 
 const LOCATION_SEPARATOR_REGEX = /\s*(?:\/|\||;)\s*/
+const LOCATION_MARKUP_OR_CODE_REGEXES = Object.freeze([
+  /<\/?\s*[a-z][\w:-]*(?:\s+[^<>]*)?>?/i,
+  /\$\s*\(/,
+  /\.\s*(?:val|text|html)\s*\(/i,
+  /\b(?:document|window|querySelector|getElementById)\s*[.(]/i,
+])
 
-const normalizeLocationValue = (value) => String(value || '').replace(/\s+/g, ' ').trim()
+export const sanitizeStoredLocationValue = (value) => {
+  const normalized = String(value || '').replace(/\s+/g, ' ').trim()
+  if (!normalized || LOCATION_MARKUP_OR_CODE_REGEXES.some((regex) => regex.test(normalized))) return null
+  return normalized
+}
+
+const normalizeLocationValue = sanitizeStoredLocationValue
 
 const formatLocationContext = (value) => {
-  const parts = normalizeLocationValue(value).split(',').map(normalizeLocationValue).filter(Boolean)
+  const normalized = normalizeLocationValue(value)
+  if (!normalized) return ''
+  const parts = normalized.split(',').map(normalizeLocationValue).filter(Boolean)
   if (parts.length < 2) return parts[0] || ''
 
   const [place, ...context] = parts

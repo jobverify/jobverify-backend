@@ -7,7 +7,8 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'ltimindtree'
 export const COMPANY = 'LTIMindtree'
-const BASE_URL = 'https://careers.ltimindtree.com'
+// The official LTM careers page links to this replacement SuccessFactors host.
+const BASE_URL = 'https://careers.ltm.com'
 const SEARCH_PATH = '/search/?createNewAlert=false&q=&optionsFacetsDD_country=&optionsFacetsDD_location=&locationsearch=India'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
@@ -219,6 +220,16 @@ export const createLtimindtreeScraper = () => ({
     }
 
     const listings = extractSearchResults(listingPage.html)
+    const summary = extractResultsSummary(listingPage.html)
+    const rawRows = [...String(listingPage.html).matchAll(/<tr class="data-row">/gi)].length
+    if (!Number.isInteger(summary.totalResults) || summary.currentPage !== 1 || summary.totalPages !== 1
+      || listings.length !== summary.totalResults || rawRows !== listings.length
+      || new Set(listings.map(row => row.jobId)).size !== listings.length) {
+      throw new Error('LTIMindtree incomplete or invalid India listing snapshot')
+    }
+    if (listings.some(row => !/(?:,\s*)(?:IN|India)\s*$/i.test(row.location || ''))) {
+      throw new Error('LTIMindtree invalid country in the India listing snapshot')
+    }
     const jobs = []
     const seenJobIds = new Set()
 
@@ -232,12 +243,14 @@ export const createLtimindtreeScraper = () => ({
       }
 
       const detail = extractJobDetail(detailPage.html, listing)
+      if (!detail.jobDescription) throw new Error('LTIMindtree incomplete job detail snapshot')
 
       jobs.push({
         jobId: detail.jobId || listing.jobId,
         requisitionId: detail.requisitionId || listing.requisitionId,
         title: detail.title || listing.title,
         company: COMPANY,
+        country: 'India',
         department: null,
         location: detail.location || listing.location,
         city: detail.city || listing.city,

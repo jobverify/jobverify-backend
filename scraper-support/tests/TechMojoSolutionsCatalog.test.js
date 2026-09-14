@@ -17,25 +17,27 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('TechMojo Solutions local catalog captures the verified first-party jobs portal contract', async () => {
+test('TechMojo Solutions local catalog captures the verified first-party careers handoff and 9am jobs payload', async () => {
   const { TECHMOJO_SOLUTIONS_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(TECHMOJO_SOLUTIONS_CATALOG)
 
   assert.equal(defaultCatalog, TECHMOJO_SOLUTIONS_CATALOG)
   assert.equal(provider.source, 'techmojosolutions')
   assert.equal(provider.companyName, 'TechMojo Solutions')
-  assert.equal(provider.companyCareerPage, 'https://jobs.techmojo.com/jobs')
-  assert.equal(provider.atsPlatform, 'official-company-jobs-portal')
+  assert.equal(provider.companyCareerPage, 'https://techmojo.com/company/careers/')
+  assert.equal(provider.publicJobsUrl, 'https://9am.careers/')
+  assert.equal(provider.publicCompanyBoardUrl, 'https://9am.careers/jobs/techmojo-solutions')
+  assert.equal(provider.atsPlatform, '9am-careers-public-payload')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-page-first-party-jobs-portal')
+  assert.equal(provider.paginationStrategy, 'first-party-handoff-plus-9am-root-payload')
   assert.equal(
     provider.extractionStrategy,
-    'verified-jobs-portal-shell+anchor-card-extraction+hyderabad-role-normalization',
+    'verified-techmojo-careers-page+9am-embedded-jobsdata+techmojo-slug-filter',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /Java Developer/i)
-  assert.match(provider.verifiedSurfaceSummary, /SRE Lead/i)
+  assert.equal(provider.verifiedOn, '2026-09-14')
+  assert.match(provider.verifiedSurfaceSummary, /Monday, September 14, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/techmojo\.com\/company\/careers\//i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/9am\.careers\//i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /techmojosolutions[\\/]jobs\.json$/i)
 })

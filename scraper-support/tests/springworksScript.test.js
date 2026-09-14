@@ -155,3 +155,16 @@ test('Springworks scraper fails closed when the about, handoff, or jobs surfaces
     /verified SSR jobs surface/i,
   )
 })
+
+
+test('Springworks accepts the current direct jobs handoff and rejects partial counts', async () => {
+  const s = await loadScriptModule()
+  const fetchPage = async (url) => url === s.ABOUT_URL
+    ? { status: 200, url, html: aboutHtml }
+    : { status: 200, url: s.JOBS_URL, html: jobsHtml }
+  assert.equal((await s.run({ fetchPage })).length, 5)
+  await assert.rejects(s.run({ fetchPage: async (url) => {
+    const page = await fetchPage(url)
+    return url === s.ABOUT_URL ? page : { ...page, html: page.html.replace('<span>5</span>', '<span>6</span>') }
+  } }), /incomplete|count/i)
+})

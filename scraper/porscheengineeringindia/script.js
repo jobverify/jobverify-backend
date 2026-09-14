@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import { PORSCHE_ENGINEERING_INDIA_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -33,8 +34,13 @@ export const hasOfficialCareerPortalShell = (html = '') => {
 export const hasPublicListingSignal = (html = '') =>
   /(?:ac=jobad|job-code\s*:)/i.test(String(html ?? ''))
 
-export const createPorscheEngineeringIndiaScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+export const createPorscheEngineeringIndiaScraper = ({
+  now: defaultNow = () => new Date().toISOString(),
+} = {}) => ({
+  async run({
+    fetchText = defaultFetchText,
+    now = defaultNow,
+  } = {}) {
     const html = await fetchText(CAREERS_URL)
 
     if (hasPublicListingSignal(html)) {
@@ -45,7 +51,17 @@ export const createPorscheEngineeringIndiaScraper = () => ({
       throw new Error('Porsche Engineering India official career portal no longer matches the verified non-enumerable shell')
     }
 
-    return []
+    return attachInventoryEvidence([], {
+      status: 'discovery-only',
+      surface: CAREERS_URL,
+      firstParty: true,
+      listingComplete: false,
+      pagesFetched: 1,
+      reportedTotal: 0,
+      indiaFacetCount: 0,
+      verifiedAt: now(),
+      reason: 'porsche-engineering-india-non-enumerable-career-portal-shell',
+    })
   },
 })
 

@@ -13,8 +13,8 @@ const searchResultsHtml = `
   <script>
     phApp.ddo = {
       "eagerLoadRefineSearch": {
-        "totalHits": 101,
-        "hits": 101,
+        "totalHits": 2,
+        "hits": 2,
         "data": {
           "jobs": [
             {
@@ -34,7 +34,7 @@ const searchResultsHtml = `
               "type": "Full time"
             }
           ],
-          "aggregations": [{ "field": "country", "value": { "India": 101 } }]
+          "aggregations": [{ "field": "country", "value": { "India": 1 } }]
         }
       }
     }
@@ -119,6 +119,7 @@ test('Thermo Fisher Scientific stops at its default maximum of 100 jobs', async 
   })
 
   assert.equal(jobs.length, 100)
+  assert.ok(jobs.every(job => job.sourceListingComplete === false))
   assert.equal(detailRequests.length, 100)
   assert.match(detailRequests.at(-1), /TF-INDIA-100/)
 })

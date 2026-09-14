@@ -5,7 +5,7 @@ import companyAliases from '../providers/companyAliases.json' with { type: 'json
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 
-test('Codevice Solution Pvt Ltd is registered as a verified first-party zero-job scraper without alias churn', () => {
+test('Codevice Solution Pvt Ltd is registered as a discovery-only first-party scraper without alias churn', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'codevicesolutionpvtltd')
 
   assert.ok(provider, 'Expected Codevice Solution Pvt Ltd provider to be registered in customProviders.json')
@@ -17,11 +17,14 @@ test('Codevice Solution Pvt Ltd is registered as a verified first-party zero-job
   assert.equal(provider.paginationStrategy, 'homepage-shell-plus-common-careers-route-shell-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-homepage-shell+verified-client-bundle-without-careers-routes-or-public-job-signals+verified-common-careers-route-shells-return-empty',
+    'verified-first-party-homepage-shell+verified-client-bundle+verified-common-route-shells+no-public-listings-discovery-only-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'codevicesolution.in')
+  assert.equal(provider.verifiedOn, '2026-09-14')
+  assert.equal(provider.verifiedPublicJobCount, 0)
+  assert.equal(provider.verifiedIndiaJobCount, 0)
   assert.match(provider.modulePath, /codevicesolutionpvtltd[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Codevice Solution Pvt Ltd'), false)
 })

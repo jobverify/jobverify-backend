@@ -406,3 +406,22 @@ test('ECIL fails closed when the homepage or job openings grid drifts away from 
     /current job openings page no longer matches the verified official surface/i,
   )
 })
+
+test('ECIL follows the official language landing page before validating the careers handoff', async () => {
+  const ecil = await loadModule()
+  const landingHtml = `<title>Electronics Corporation of India Limited | DAE | India</title>
+    <img alt="ECIL Logo"><form id="language-switcher-form">
+    <a href="/home" onclick="changeLang('en'); return false;">English</a></form>`
+  const requests = []
+  const jobs = await ecil.run({ fetchText: async (url) => {
+    requests.push(url)
+    if (url === ecil.HOMEPAGE_URL) return landingHtml
+    if (url === 'https://www.ecil.co.in/home') return HOMEPAGE_HTML
+    if (url === ecil.CURRENT_JOB_OPENINGS_URL) return PAGE_ONE_HTML
+    if (url === ecil.PAGE_TWO_URL) return PAGE_TWO_HTML
+    throw new Error(`Unexpected URL: ${url}`)
+  } })
+  assert.equal(jobs.length, 5)
+  assert.equal(requests[1], 'https://www.ecil.co.in/home')
+  await assert.rejects(ecil.run({ fetchText: async (url) => url === ecil.HOMEPAGE_URL ? landingHtml : '<title>Unrelated</title>' }), /homepage/)
+})

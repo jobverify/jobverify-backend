@@ -28,9 +28,10 @@ test('Clarion Technologies local catalog captures the verified featured-jobs han
   assert.equal(provider.featuredJobsUrl, 'https://jobs.clariontechnologies.co.in:444/featured-job')
   assert.equal(provider.openingsUrl, 'https://www.clariontech.com/open-positions')
   assert.equal(provider.verifiedOn, '2026-08-07')
-  assert.match(provider.extractionStrategy, /scoped-insecure-tls-fallback/i)
+  assert.match(provider.extractionStrategy, /scoped-native-https-fallback/i)
   assert.match(provider.verifiedSurfaceSummary, /Apply Now/i)
-  assert.match(provider.verifiedSurfaceSummary, /certificate chain does not verify in Node/i)
+  assert.match(provider.verifiedSurfaceSummary, /Windows Schannel validates it/i)
+  assert.match(provider.verifiedSurfaceSummary, /10 current openings/i)
 })
 
 test('Clarion Technologies exact backlog row resolves from the local provider contract', async () => {

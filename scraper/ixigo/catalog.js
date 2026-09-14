@@ -13,17 +13,17 @@ export const IXIGO_CATALOG = {
   companyCareerPage: 'https://careers.ixigo.com/',
   legacyCareersUrl: 'https://www.ixigo.com/about/careers/',
   currentCareersUrl: 'https://careers.ixigo.com/',
-  atsPlatform: 'official-company-site-no-public-careers',
+  atsPlatform: 'smartrecruiters',
   countryFilter: 'India',
-  paginationStrategy: 'verified-legacy-careers-redirect-plus-no-public-jobs-sentinel',
+  paginationStrategy: 'first-party-openings-api-with-numFound-completeness-check',
   extractionStrategy:
-    'verified-legacy-careers-redirect+verified-current-careers-no-jobs-page-return-empty',
+    'verified-first-party-careers+openings-api+company-and-country-validation',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'ixigo.com',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-09-13',
   verifiedSurfaceSummary:
-    'Verified on July 16, 2026 that https://www.ixigo.com/about/careers/ redirects to the current first-party careers surface at https://careers.ixigo.com/, that the current careers page shows the public no-openings state with the exact marker "No Jobs Found", and that a legacy first-party detail page such as https://www.ixigo.com/about/careers/research-engineer/ still resolves but hands off to an old Recruiterflow apply route that returned HTTP 404 during verification. There is no trustworthy current public jobs surface for ixigo on the verified date.',
+    'Verified on September 13, 2026 that https://careers.ixigo.com/ renders an initial No Jobs Found placeholder before fetching https://careers.ixigo.com/api/openings. The public API returned eight ixigo India vacancies with numFound=8. Its official client links jobVacancyId values to SmartRecruiters, and https://jobs.smartrecruiters.com/ixigo/13351237674 returned the matching Full-Stack Intern role. The legacy https://www.ixigo.com/about/careers/ redirect is no longer a scrape prerequisite.',
   dryRunFile: 'ixigo/jobs.json',
 }
 

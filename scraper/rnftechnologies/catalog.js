@@ -15,12 +15,12 @@ export const RNF_TECHNOLOGIES_CATALOG = {
   atsPlatform: 'official-first-party-job-table-plus-detail-pages',
   countryFilter: 'India',
   paginationStrategy: 'single-current-openings-page',
-  extractionStrategy: 'job-table+detail-pages',
+  extractionStrategy: 'complete-current-role-cards+jsonld-details+legacy-job-table',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-04',
+  verifiedOn: '2026-09-13',
   verifiedSurfaceSummary:
-    'Verified on August 4, 2026 that https://rnftechnologies.com/join-our-team and https://rnftechnologies.com/join-our-team/current-openings were the live first-party RNF Technologies careers surfaces. The public Current Job Openings page still listed React Native Developer and React Developer in Noida, UP, India with first-party detail pages and apply routes under /join-our-team/current-openings/.',
+    'Verified September 13, 2026: RNF publishes seven current role cards and a matching ItemList count. Each role detail provides exact-employer JobPosting JSON-LD, an India location, canonical job URL and identifier. Incomplete lists and mismatched details are rejected.',
   dryRunFile: 'rnftechnologies/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

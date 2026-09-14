@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const SKORUZ_EMPTY_US_HTML = `
 <!doctype html>
 <html lang="en">
@@ -123,11 +125,13 @@ test('Skoruz recognizes the verified careers page variants and the trusted India
   )
 })
 
-test('Skoruz returns [] only while the verified careers page still depends on an untrusted India iframe and the US tab is empty', async () => {
+test('Skoruz returns discovery-only evidence when the India iframe is inaccessible and the US tab is empty', async () => {
   const skoruz = await loadModule()
   const requestedUrls = []
 
-  const jobs = await skoruz.createSkoruzScraper().run({
+  const jobs = await skoruz.createSkoruzScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
 
@@ -147,13 +151,20 @@ test('Skoruz returns [] only while the verified careers page still depends on an
     skoruz.INDIA_IFRAME_URL,
   ])
   assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, skoruz.INDIA_IFRAME_URL)
+  assert.equal(evidence?.listingComplete, false)
+  assert.equal(evidence?.indiaFacetCount, null)
 })
 
-test('Skoruz returns visible first-party US jobs even when the India iframe remains unreachable', async () => {
+test('Skoruz records discovery-only evidence instead of publishing visible US jobs as India inventory', async () => {
   const skoruz = await loadModule()
   const requestedUrls = []
 
-  const jobs = await skoruz.createSkoruzScraper().run({
+  const jobs = await skoruz.createSkoruzScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
 
@@ -172,11 +183,12 @@ test('Skoruz returns visible first-party US jobs even when the India iframe rema
     skoruz.CAREERS_URL,
     skoruz.INDIA_IFRAME_URL,
   ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Network and Computer Systems Administrator')
-  assert.equal(jobs[0].postedAt, '2026-08-01')
-  assert.equal(jobs[0].applyUrl, 'mailto:hr@skoruz.com')
-  assert.equal(jobs[0].country, 'United States')
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, skoruz.INDIA_IFRAME_URL)
+  assert.equal(evidence?.listingComplete, false)
+  assert.equal(evidence?.indiaFacetCount, null)
 })
 
 test('Skoruz fails closed when the verified careers page drifts or the India iframe becomes reachable', async () => {

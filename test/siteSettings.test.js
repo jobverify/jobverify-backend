@@ -23,11 +23,11 @@ test("settings default to free mode and persist explicit on/off values", async (
     stored = update.$set;
     return { lean: async () => stored };
   });
-  assert.deepEqual(await getSiteSettings(), { billingEnabled: false });
-  assert.deepEqual(await saveSiteSettings(true, "admin-1"), { billingEnabled: true });
-  assert.deepEqual(await getSiteSettings(), { billingEnabled: true });
-  assert.deepEqual(await saveSiteSettings(false, "admin-1"), { billingEnabled: false });
-  assert.deepEqual(await getSiteSettings(), { billingEnabled: false });
+  assert.deepEqual(await getSiteSettings(), { billingEnabled: false, experiencedJobsEnabled: true });
+  assert.deepEqual(await saveSiteSettings(true, "admin-1"), { billingEnabled: true, experiencedJobsEnabled: true });
+  assert.deepEqual(await getSiteSettings(), { billingEnabled: true, experiencedJobsEnabled: true });
+  assert.deepEqual(await saveSiteSettings(false, "admin-1"), { billingEnabled: false, experiencedJobsEnabled: true });
+  assert.deepEqual(await getSiteSettings(), { billingEnabled: false, experiencedJobsEnabled: true });
 });
 
 test("real admin routes enforce authentication, role, boolean validation, and durable changes", async (t) => {

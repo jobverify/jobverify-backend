@@ -77,7 +77,7 @@ export const hasOfficialIndiaSiteSignal = (html) => {
 
 export const hasOfficialJobsPageSignal = (html) => {
   const page = String(html ?? '')
-  return /Find your next opportunity/i.test(page)
+  return /Find your dream job/i.test(page)
     && /emit\.fa\.ca3\.oraclecloud\.com/i.test(page)
 }
 

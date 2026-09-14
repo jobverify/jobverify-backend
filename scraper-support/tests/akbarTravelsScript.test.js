@@ -243,3 +243,13 @@ test('Akbar Travels fails closed when the homepage redirect, careers page, or ad
     /verified no-public-job route changed/i,
   )
 })
+
+
+test('Akbar Travels recognizes same-route HTTP 404 responses without accepting new jobs or redirects', async () => {
+  const source = await loadAkbarTravelsModule()
+  const url = source.LOCALIZED_MISSING_JOB_ROUTE_URLS[0]
+  assert.equal(source.isKnownMissingJobRoute({status:404,url,html:'<html>Not Found</html>'}, url), true)
+  assert.equal(source.isKnownMissingJobRoute({status:404,url,html:publicJobsHtml}, url), false)
+  assert.equal(source.isKnownMissingJobRoute({status:404,url:'https://unrelated.example/jobs',html:''}, url), false)
+  assert.equal(source.isKnownMissingJobRoute({status:404,url,html:''}, 'https://www.akbartravels.com/unverified'), false)
+})

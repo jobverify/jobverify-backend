@@ -70,6 +70,16 @@ const isTimeoutError = (error) => {
     || TIMEOUT_ERROR_PATTERN.test(message)
 }
 
+const isExpiredCertificateError = (error) => {
+  const causeCode = String(error?.cause?.code ?? '')
+  const causeMessage = String(error?.cause?.message ?? '')
+  const message = String(error?.message ?? error ?? '')
+
+  return /CERT_HAS_EXPIRED/i.test(causeCode)
+    || /\bcertificate has expired\b/i.test(causeMessage)
+    || /\bcertificate has expired\b/i.test(message)
+}
+
 const isReachableSurface = (surface = {}) =>
   Number.isInteger(surface?.status) && surface.status > 0
 
@@ -87,7 +97,7 @@ export const hasOfficialHomepageSignal = (html = '') => {
     && /src=["']\/_autoindex\/assets\/js\/tablesort\.js["']/i.test(page)
     && /src=["']\/_autoindex\/assets\/js\/tablesort\.number\.js["']/i.test(page)
     && /<h1[^>]*>\s*Index of \/\s*<\/h1>/i.test(page)
-    && text.includes('Proudly Served by LiteSpeed Web Server at aadinathconsultants.com Port 443')
+    && /Proudly Served by LiteSpeed Web Server at aadinathconsultants\.com Port (?:80|443)/i.test(text)
 }
 
 export const hasPublicJobsSignal = (html = '') =>
@@ -108,43 +118,67 @@ export const isVerifiedMissingCareerRoute = (page = {}) => {
     && !hasPublicJobsSignal(html)
 }
 
-const defaultFetchPage = async (url) => {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+export const createFetchPage = ({ fetchImpl = fetch } = {}) => async (url) => {
+  const fetchResponse = async (targetUrl) => {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
+    try {
+      return await fetchImpl(targetUrl, {
+        headers: {
+          'User-Agent': USER_AGENT,
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+        redirect: 'follow',
+        signal: controller.signal,
+      })
+    } finally {
+      clearTimeout(timeout)
+    }
+  }
+
+  let response
 
   try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': USER_AGENT,
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      },
-      redirect: 'follow',
-      signal: controller.signal,
-    })
-
-    clearTimeout(timeout)
-
-    return {
-      status: response.status,
-      url: response.url,
-      html: await response.text(),
-      errorKind: null,
-    }
+    response = await fetchResponse(url)
   } catch (error) {
-    clearTimeout(timeout)
+    if (isExpiredCertificateError(error) && new URL(url).protocol === 'https:') {
+      const fallbackUrl = new URL(url)
+      fallbackUrl.protocol = 'http:'
 
-    if (isTimeoutError(error)) {
+      try {
+        response = await fetchResponse(fallbackUrl.href)
+      } catch (fallbackError) {
+        if (!isTimeoutError(fallbackError)) throw fallbackError
+
+        return {
+          status: null,
+          url: fallbackUrl.href,
+          html: null,
+          errorKind: 'timeout',
+        }
+      }
+    } else if (isTimeoutError(error)) {
       return {
         status: null,
         url,
         html: null,
         errorKind: 'timeout',
       }
+    } else {
+      throw error
     }
+  }
 
-    throw error
+  return {
+    status: response.status,
+    url: response.url,
+    html: await response.text(),
+    errorKind: null,
   }
 }
+
+const defaultFetchPage = createFetchPage()
 
 export const createAadinathConsultancyScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {

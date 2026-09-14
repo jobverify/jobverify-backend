@@ -1,93 +1,57 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const veryGoodSecurityIndiaModule = await import(
-  '../../scraper/verygoodsecurityindia/script.js'
-).catch(() => ({}))
-
-const {
+import {
   CAREERS_URL,
-  COMPANY,
-  DISPOSITION,
-  SOURCE,
-  createVeryGoodSecurityIndiaScraper,
+  LEVER_BOARD_URL,
   run,
-} = veryGoodSecurityIndiaModule
+} from '../../scraper/verygoodsecurityindia/script.js'
 
-const VERIFIED_NON_ENUMERABLE_HTML = `
-  <main>
-    <h1>It Takes Exceptional People to Create VGS</h1>
-    <section>
-      <h2>What We Are Looking For In Each Teammate</h2>
-      <p>
-        Are you an enthusiastic professional who is passionate about your craft
-        and has the desire to join an expanding team solving crucial payment
-        problems?
-      </p>
-      <p>Current VGS Job Openings Below</p>
-      <img src="/images/vgs-logo.png" alt="VGS Logo" />
-    </section>
-  </main>
+const careersHtml = `
+  <html><head><title>Careers | VGS</title></head><body>
+    <h1>It Takes Exceptional People to Build VGS</h1>
+    <a href="#lever-jobs-container">View All Open Roles</a>
+    <h2>What We Look For In Every Teammate</h2>
+    <p>We're a remote-first company looking for passionate professionals.</p>
+    <section class="lever-jobs"><div id="lever-jobs-container"></div>
+      <h2>Discover Opportunities</h2></section>
+  </body></html>
 `
 
-test('Very Good Security India stays fail-closed on the verified non-enumerable careers surface', async () => {
-  let requestedUrl = null
+const boardHtml = `
+  <html><head><title>VGS</title>
+    <meta property="og:url" content="https://jobs.lever.co/verygoodsecurity">
+  </head><body><p>Location type Location Team Work type</p>
+    <a href="https://jobs.lever.co/verygoodsecurity/us-role">Apply</a>
+    <p>Powered by Lever</p>
+  </body></html>
+`
 
+test('Very Good Security India returns zero when the verified Lever inventory has no India roles', async () => {
   const jobs = await run({
-    fetchHtml: async (url) => {
-      requestedUrl = url
-      return VERIFIED_NON_ENUMERABLE_HTML
-    },
+    fetchText: async (url) => url === CAREERS_URL ? careersHtml : boardHtml,
+    fetchJson: async () => [{
+      id: 'us-role',
+      text: 'Strategic Finance Manager',
+      country: 'US',
+      hostedUrl: 'https://jobs.lever.co/verygoodsecurity/us-role',
+      categories: { location: 'United States / Canada' },
+    }],
   })
-
-  assert.equal(requestedUrl, CAREERS_URL)
-  assert.deepEqual(jobs, [])
-  assert.equal(SOURCE, 'verygoodsecurityindia')
-  assert.equal(COMPANY, 'Very Good Security India')
-  assert.equal(CAREERS_URL, 'https://www.verygoodsecurity.com/careers')
-  assert.equal(DISPOSITION, 'verified-non-enumerable-careers-surface')
-  assert.equal(typeof createVeryGoodSecurityIndiaScraper, 'function')
-})
-
-test('Very Good Security India ignores same-origin Nuxt payload assets when no public jobs surface exists', async () => {
-  const jobs = await run({
-    fetchHtml: async () => `
-      ${VERIFIED_NON_ENUMERABLE_HTML}
-      <link
-        rel="preload"
-        as="fetch"
-        href="/careers/_payload.json?fc098e94-ac75-47d4-88f9-6a172d46b040"
-      >
-    `,
-  })
-
   assert.deepEqual(jobs, [])
 })
 
-test('Very Good Security India rejects when the verified careers contract disappears', async () => {
+test('Very Good Security India rejects stale careers copy and mismatched Lever identity', async () => {
   await assert.rejects(
-    run({
-      fetchHtml: async () => `
-        <main>
-          <h1>Careers</h1>
-          <p>Explore opportunities with VGS.</p>
-        </main>
-      `,
-    }),
-    /verified careers contract/i,
+    run({ fetchText: async () => '<h1>It Takes Exceptional People to Create VGS</h1>' }),
+    /official careers/i,
   )
-})
-
-test('Very Good Security India rejects when a trustworthy public listings surface appears', async () => {
   await assert.rejects(
     run({
-      fetchHtml: async () => `
-        ${VERIFIED_NON_ENUMERABLE_HTML}
-        <section aria-label="Open roles">
-          <iframe src="https://boards.greenhouse.io/embed/job_board?for=vgs"></iframe>
-        </section>
-      `,
+      fetchText: async (url) => url === LEVER_BOARD_URL
+        ? '<title>Another company</title>'
+        : careersHtml,
     }),
-    /public listings surface/i,
+    /Lever board/i,
   )
 })

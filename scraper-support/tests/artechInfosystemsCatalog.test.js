@@ -16,6 +16,7 @@ test('getScraperCatalog includes Artech Infosystems as an Oracle Cloud scraper',
   assert.equal(provider.companyCareerPage, 'https://fa-erqf-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs')
   assert.equal(provider.companyDomain, 'artech.com')
   assert.equal(provider.parser, 'custom-script')
+  assert.equal(provider.scraperTimeoutMs, 600000)
   assert.match(provider.modulePath, /artechinfosystems[\\/]script\.js$/i)
 })
 

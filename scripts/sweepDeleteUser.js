@@ -29,6 +29,7 @@ const { default: User } = await import("../src/models/User.js");
 const { default: PendingUser } = await import("../src/models/PendingUser.js");
 const { default: Subscription } = await import("../src/models/Subscription.js");
 const { default: Click } = await import("../src/models/Click.js");
+const { default: UserSuggestion } = await import("../src/models/UserSuggestion.js");
 
 // Connects to the database and executes a cascade delete on the specified email.
 const runSweepDelete = async () => {
@@ -54,7 +55,11 @@ const runSweepDelete = async () => {
       const clickResult = await Click.deleteMany({ user: userId });
       console.log(`- Clicks: Deleted ${clickResult.deletedCount} job click record(s).`);
 
-      // 5. Delete User Account
+      // 5. Delete suggestions submitted by this account
+      const suggestionResult = await UserSuggestion.deleteMany({ user: userId });
+      console.log(`- User suggestions: Deleted ${suggestionResult.deletedCount} suggestion record(s).`);
+
+      // 6. Delete User Account
       await User.deleteOne({ _id: userId });
       console.log(`- Users: Deleted user account.`);
     } else {

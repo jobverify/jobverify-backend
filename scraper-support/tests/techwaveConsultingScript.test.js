@@ -74,8 +74,9 @@ const unfilteredPayload = {
   ],
 }
 
+// This reduced fixture contains three vacancies, so its total must describe those three.
 const filteredIndiaPayload = {
-  total: 37,
+  total: 3,
   jobPostings: [
     {
       title: 'Sr. Data Architect (Databricks)',
@@ -313,4 +314,29 @@ test('Techwave Consulting fails closed when the careers shell, join-us handoff, 
     }),
     /verified Techwave India Workday facet/i,
   )
+})
+
+
+test('Techwave Consulting follows a short filtered page while the advertised total still has jobs', async () => {
+  const techwave = await loadModule()
+  const offsets = []
+  const jobs = await techwave.createTechwaveConsultingScraper().run({
+    fetchText: async (url) => {
+      if (url === techwave.CAREERS_URL) return careersHtml
+      if (url === techwave.JOIN_US_URL) return joinUsHtml
+      if (url === techwave.WORKDAY_BOARD_URL) return workdayBoardHtml
+      if (detailPageHtmlByUrl[url]) return detailPageHtmlByUrl[url]
+      throw new Error('Unexpected text URL: ' + url)
+    },
+    fetchJson: async (_url, body) => {
+      const request = JSON.parse(body)
+      if (!request.appliedFacets.locations) return unfilteredPayload
+      offsets.push(request.offset)
+      if (request.offset === 0) return { total: 3, jobPostings: filteredIndiaPayload.jobPostings.slice(0, 1) }
+      if (request.offset === 1) return { total: 3, jobPostings: filteredIndiaPayload.jobPostings.slice(1) }
+      throw new Error('Unexpected filtered offset: ' + request.offset)
+    },
+  })
+  assert.equal(jobs.length, 3)
+  assert.deepEqual(offsets, [0, 1])
 })

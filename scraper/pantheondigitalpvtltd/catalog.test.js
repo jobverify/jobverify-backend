@@ -13,10 +13,10 @@ test('Pantheon Digital is registered against the verified first-party and Cutsho
   assert.equal(provider.companyCareerPage, 'https://cutshort.io/company/pantheon-digital-96-46NMdJSa')
   assert.equal(provider.atsPlatform, 'cutshort')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-about-contact-plus-missing-careers-routes-plus-cutshort-company-page')
+  assert.equal(provider.paginationStrategy, 'validated-single-cutshort-page-and-total-count')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-about+verified-contact+verified-missing-first-party-routes+official-cutshort-company-jobs',
+    'verified-first-party-identity+historical-cutshort-association+exact-company-job-owner+complete-page-check+explicit-india-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

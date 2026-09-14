@@ -11,6 +11,24 @@ const readFixture = (name) => readFileSync(path.join(currentDir, 'fixtures', nam
 const homepageHtml = readFixture('homepage.html')
 const missingRouteHtml = readFixture('missing-route-404.html')
 
+const underDevelopmentHomepageHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Website Under Development</title>
+    </head>
+    <body>
+      <main>
+        <h1>Under Development</h1>
+        <h2>This website is coming soon!</h2>
+        <p>We are working hard to bring something amazing. Please check back soon.</p>
+        <p>Managed by <a href="https://www.hwplindia.com">HorizonWebinfo Pvt Ltd</a></p>
+        <p>ERP | CRM | Mobile Application | Website | HRMS</p>
+      </main>
+    </body>
+  </html>
+`
+
 const loadModule = async () => import('./script.js')
 
 test('pins the Gensol Param Renewable / Gensol-Anvi Power sentinel to the verified first-party Gensol placeholder surface', async () => {
@@ -24,6 +42,7 @@ test('pins the Gensol Param Renewable / Gensol-Anvi Power sentinel to the verifi
     'https://www.gensol.in/jobs',
   ])
   assert.equal(scraperModule.hasVerifiedHomepageSignal(homepageHtml), true)
+  assert.equal(scraperModule.hasVerifiedHomepageSignal(underDevelopmentHomepageHtml), true)
   assert.equal(scraperModule.hasPublicJobsSignal(homepageHtml), false)
   assert.equal(
     scraperModule.isVerifiedMissingRoute({
@@ -67,6 +86,34 @@ test('returns no jobs only while the verified first-party placeholder and missin
     scraperModule.HOMEPAGE_URL,
     ...scraperModule.CAREERS_ROUTE_URLS,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('returns no jobs while the current under-development placeholder and missing career routes remain unchanged', async () => {
+  const scraperModule = await loadModule()
+
+  const jobs = await scraperModule.createGensolParamRenewableAnviPowerScraper().run({
+    fetchPage: async (url) => {
+      if (url === scraperModule.HOMEPAGE_URL) {
+        return {
+          status: 200,
+          url,
+          html: underDevelopmentHomepageHtml,
+        }
+      }
+
+      if (scraperModule.CAREERS_ROUTE_URLS.includes(url)) {
+        return {
+          status: 404,
+          url,
+          html: missingRouteHtml,
+        }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })
 

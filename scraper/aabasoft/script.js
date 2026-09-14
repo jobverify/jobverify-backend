@@ -105,13 +105,34 @@ const extractIntroLines = (html) => {
   return extractLines(withoutTitle)
 }
 
-const extractLocationFromSections = (sections, title) => {
-  const locationLine = sections
-    .flatMap((section) => section.items)
-    .find((item) => /job location/i.test(item))
+const extractLocationFromListingSummary = (value) => {
+  const summary = normalizeText(value)
+  if (!summary) return null
+
+  const marker = summary.match(/\s+(?:location|loc)\b/i)
+  if (marker) {
+    const context = summary.slice(0, marker.index)
+    const prepositions = [...context.matchAll(/\b(?:for|in)\s+/gi)]
+    const lastPreposition = prepositions.at(-1)
+
+    if (lastPreposition) {
+      return normalizeText(context.slice(lastPreposition.index + lastPreposition[0].length))
+    }
+  }
+
+  return normalizeText(
+    summary.match(/\b(?:for|in)\s+(Kochi|Kannur(?:\s*\/\s*(?:TVM|Trivandrum))?|TVM|Trivandrum)\b/i)?.[1],
+  )
+}
+
+const extractLocationFromDetailLines = (detailLines, title, listingSummary) => {
+  const locationLine = detailLines
+    .find((item) => /\b(?:job|work)?\s*location\s*[–—:-]/i.test(item))
 
   if (locationLine) {
-    const extracted = normalizeText(locationLine.replace(/^.*?job location\s*[–—:-]\s*/i, ''))
+    const extracted = normalizeText(
+      locationLine.replace(/^.*?\b(?:job|work)?\s*location\s*[–—:-]\s*/i, ''),
+    )
     if (extracted) return extracted
   }
 
@@ -125,7 +146,7 @@ const extractLocationFromSections = (sections, title) => {
     return normalizeText(trailingLocation)
   }
 
-  return null
+  return extractLocationFromListingSummary(listingSummary)
 }
 
 const normalizeLocation = (value) => {
@@ -177,11 +198,12 @@ export const hasOfficialCareersSignal = (html) => {
 }
 
 export const extractListingCards = (html) => [...String(html ?? '').matchAll(
-  /<article\b[^>]*class=["'][^"']*portfolio-item[^"']*["'][\s\S]*?<h3>([\s\S]*?)<\/h3>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<a[^>]+href=["']([^"']+)["'][^>]*>\s*Apply Now\s*<\/a>[\s\S]*?<\/article>/gi,
+  /<article\b[^>]*class=["'][^"']*portfolio-item[^"']*["'][\s\S]*?<h3>([\s\S]*?)<\/h3>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<p\b[^>]*>([\s\S]*?)<\/p>[\s\S]*?<a[^>]+href=["']([^"']+)["'][^>]*>\s*Apply Now\s*<\/a>[\s\S]*?<\/article>/gi,
 )].map((match) => ({
   department: stripTags(match[1]),
   listingTitle: stripTags(match[2]),
-  sourceUrl: toAbsoluteUrl(match[3]),
+  listingSummary: stripTags(match[3]),
+  sourceUrl: toAbsoluteUrl(match[4]),
 })).filter((listing) => listing.department && listing.listingTitle && listing.sourceUrl)
 
 export const hasOfficialDetailPageSignal = (html) => {
@@ -194,7 +216,7 @@ export const hasOfficialDetailPageSignal = (html) => {
     && />\s*Send Application\s*</i.test(page)
 }
 
-const extractDetailPageData = (html, sourceUrl, { department, fallbackTitle }) => {
+const extractDetailPageData = (html, sourceUrl, { department, fallbackTitle, listingSummary }) => {
   if (!hasOfficialDetailPageSignal(html)) {
     throw new Error('Aabasoft detail page no longer matches the verified first-party surface')
   }
@@ -213,8 +235,14 @@ const extractDetailPageData = (html, sourceUrl, { department, fallbackTitle }) =
   const sections = extractSectionPanels(html)
   const requiredSkills = sections
     .flatMap((section) => section.items)
-    .filter((item) => !/job location/i.test(item))
-  const { location, city } = normalizeLocation(extractLocationFromSections(sections, title))
+    .filter((item) => !/\b(?:job|work)?\s*location\s*[–—:-]/i.test(item))
+  const { location, city } = normalizeLocation(
+    extractLocationFromDetailLines(
+      [...introLines, ...sections.flatMap((section) => section.items)],
+      title,
+      listingSummary,
+    ),
+  )
   const slug = decodeURIComponent(new URL(sourceUrl).pathname.split('/').filter(Boolean).at(-1) ?? '')
 
   return {

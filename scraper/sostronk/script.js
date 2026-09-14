@@ -15,6 +15,7 @@ export const COMPANY_DOMAIN = PROVIDER_METADATA.companyDomain
 export const CHANGELOG_URL = PROVIDER_METADATA.changelogUrl
 export const VERIFIED_AT = PROVIDER_METADATA.verifiedOn
 export const FIRST_PARTY_TIMEOUT_URLS = PROVIDER_METADATA.firstPartyTimeoutUrls
+export const PARKING_URL = 'https://www.sostronk.com/lander'
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
@@ -31,6 +32,17 @@ export const hasOfficialChangelogSignal = (html = '') => {
   return normalized.includes('SoStronk release notes')
     && normalized.includes('Karan, Co-Founder & CTO')
     && normalized.includes('www.sostronk.com')
+}
+
+export const hasVerifiedParkingRedirectShell = (html = '') =>
+  /window\.location\.href\s*=\s*["']\/lander["']/i.test(String(html ?? ''))
+
+export const hasVerifiedParkingLander = (html = '') => {
+  const page = String(html ?? '')
+  return /window\.LANDER_SYSTEM\s*=\s*["']PW["']/i.test(page)
+    && /https:\/\/img1\.wsimg\.com\/parking-lander\/static\/js\/main\.[a-z0-9]+\.js/i.test(page)
+    && /https:\/\/img1\.wsimg\.com\/parking-lander\/static\/css\/main\.[a-z0-9]+\.css/i.test(page)
+    && /<div\s+id=["']root["']><\/div>/i.test(page)
 }
 
 export const isExpectedBlockedSurface = ({ errorKind, status } = {}) =>
@@ -85,6 +97,8 @@ const defaultProbeUrl = async (url) => {
 
 export const createSostronkScraper = () => ({
   async run({ probeUrl = defaultProbeUrl } = {}) {
+    let parkingVerified = false
+
     for (const url of FIRST_PARTY_TIMEOUT_URLS) {
       const result = await probeUrl(url)
 
@@ -93,10 +107,25 @@ export const createSostronkScraper = () => ({
           continue
         }
 
+        if (parkingVerified && result?.status == null && result?.errorKind === 'dns') {
+          continue
+        }
+
         throw new Error('Sostronk verified branded changelog surface changed materially')
       }
 
       if (isExpectedBlockedSurface(result)) continue
+
+      if (Number(result?.status) === 200 && hasVerifiedParkingRedirectShell(result?.html)) {
+        if (!parkingVerified) {
+          const parkingPage = await probeUrl(PARKING_URL)
+          if (Number(parkingPage?.status) !== 200 || !hasVerifiedParkingLander(parkingPage?.html)) {
+            throw new Error('Sostronk exact-name domain parking handoff changed materially')
+          }
+          parkingVerified = true
+        }
+        continue
+      }
 
       if (isUnexpectedReachableSurface(result)) {
         if (url.includes('/careers') || url.includes('/jobs') || hasPublicJobsSignal(result.html)) {

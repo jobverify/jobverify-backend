@@ -125,9 +125,59 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const CURRENT_HOMEPAGE_URL = 'https://www.globalorizon.com/'
+const CURRENT_PRODUCT_URL = 'https://www.globalorizon.com/platforms/the-hiring-partner'
+
+const defaultFetchPage = async (url, { signal } = {}) => {
+  const response = await fetch(url, { signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000), headers: { 'User-Agent': USER_AGENT } })
+  return { status: response.status, url: response.url, html: await response.text() }
+}
+
+const hasPlaceholderCareers = (html) => {
+  const anchors = [...String(html).matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
+    .filter(match => /\bcareers?\b/i.test(normalizeWhitespace(match[2])))
+  return anchors.length > 0 && anchors.every(match => match[1] === '#')
+    && !/"@type"\s*:\s*"JobPosting"|jobs\.lever\.co|job-boards\.greenhouse\.io|boards\.greenhouse\.io|myworkdayjobs\.com|jobs\.ashbyhq\.com/i.test(html)
+}
+
+const verifyRetiredPublicListings = async (fetchPage, signal) => {
+  const pages = await Promise.all([CURRENT_HOMEPAGE_URL, CURRENT_PRODUCT_URL, OUR_DATA_TEAM_URL, OUR_HIRING_PARTNER_URL, PUBLIC_ORGANIZATION_URL].map(async url => {
+    signal?.throwIfAborted()
+    const page = await fetchPage(url, { signal })
+    if (page.url !== url) throw new Error('GlobalOrizon current public source redirected unexpectedly')
+    return page
+  }))
+  const [home, product, oldData, oldHiring, organization] = pages
+  if (home.status !== 200 || !/<title>GlobalOrizon\b[^<]*<\/title>/i.test(home.html)
+    || !/<meta\b[^>]*property=["']og:site_name["'][^>]*content=["']GlobalOrizon["']/i.test(home.html)
+    || !/href=["']\/platforms\/the-hiring-partner["']/i.test(home.html)
+    || !hasPlaceholderCareers(home.html)
+    || product.status !== 200 || !/<title>The Hiring Partner \| GlobalOrizon<\/title>/i.test(product.html)
+    || !/href=["']https:\/\/(?:www\.)?thehiringpartner\.com\/?["']/i.test(product.html)
+    || !hasPlaceholderCareers(product.html)) throw new Error('GlobalOrizon current careers surface changed materially')
+  for (const old of [oldData, oldHiring]) {
+    if (old.status !== 404 || !/<title>GlobalOrizon\b[^<]*<\/title>/i.test(old.html)
+      || !/This page could not be found\./i.test(old.html)) throw new Error('GlobalOrizon retired role page is no longer a verified first-party 404')
+  }
+  let payload
+  try { payload = JSON.parse(organization.html) } catch {}
+  if (organization.status !== 404 || payload?.success !== false || payload?.message !== 'Organization not found') {
+    throw new Error('GlobalOrizon organization feed is no longer explicitly removed')
+  }
+  signal?.throwIfAborted()
+  return []
+}
+
 export const createGlobalOrizonScraper = () => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
-    const ourDataTeamHtml = await fetchText(OUR_DATA_TEAM_URL)
+  async run({ fetchText = defaultFetchText, fetchPage = defaultFetchPage, signal, now = () => new Date().toISOString() } = {}) {
+    signal?.throwIfAborted()
+    let ourDataTeamHtml
+    try { ourDataTeamHtml = await fetchText(OUR_DATA_TEAM_URL) }
+    catch (error) {
+      signal?.throwIfAborted()
+      if (error?.status !== 404 && !/HTTP 404\b/.test(error?.message || '')) throw error
+      return verifyRetiredPublicListings(fetchPage, signal)
+    }
     if (!hasOfficialOurDataTeamSignal(ourDataTeamHtml)) {
       throw new Error('Global Orizon Our Data Team surface changed; refusing to assume zero public jobs')
     }

@@ -188,6 +188,25 @@ test('extractJobCards maps the Remunance first-party jobs archive cards', async 
   ])
 })
 
+test('Remunance accepts the current brand-prefixed homepage title while retaining company identity', async () => {
+  const remunance = await loadRemunanceModule()
+  assert.equal(
+    remunance.hasOfficialHomepageSignal(HOMEPAGE_HTML.replace(
+      '<title>Best Employer of Record (EOR) Services Provider India</title>',
+      '<title>Remunance | Best Employer of Record Services Provider India</title>',
+    )),
+    true,
+  )
+})
+
+test('Remunance reports a 200 Cloudflare block as an upstream challenge', async () => {
+  const remunance = await loadRemunanceModule()
+  await assert.rejects(
+    remunance.run({ fetchText: async () => '<title>Attention Required! | Cloudflare</title><h1>Sorry, you have been blocked</h1><p>Cloudflare Ray ID: abc</p>' }),
+    (error) => error?.code === 'REMUNANCE_ACCESS_CHALLENGE' && error?.upstreamOutage === true,
+  )
+})
+
 test('extractJobDetail reads the Remunance detail table, posting date, and inline apply form', async () => {
   const remunance = await loadRemunanceModule()
 

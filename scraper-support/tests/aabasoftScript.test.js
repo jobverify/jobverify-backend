@@ -256,6 +256,64 @@ const cloudSalesDetailHtml = `
 </html>
 `
 
+const kochiListingCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Aabasoft Careers| Aabasoft</title>
+  </head>
+  <body>
+    <h2 class="main-head">Aabasoft <span>Career</span></h2>
+    <h2 class="main-head text-center">Current <span>Openings</span></h2>
+    <section id="careers-list-box">
+      <article class="col-md-3 portfolio-item webmobile">
+        <div class="portfolio-desc">
+          <h3>Web &amp; Mobile</h3>
+          <span>BUSINESS ANALYST</span>
+          <p>We are hiring for Kochi location..</p>
+          <a class="button" href="/in-en/CarrerDetails/Business-Analyst">Apply Now</a>
+        </div>
+      </article>
+    </section>
+  </body>
+</html>
+`
+
+const businessAnalystDetailHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Business Analyst</title>
+  </head>
+  <body>
+    <a href="/in-en/career/">Job List</a>
+    <a href="#">Job Details</a>
+    <div class="col-md-7 career-det-left">
+      <h3 class="career-head">Business Analyst</h3>
+      <p>Translate business needs into clear functional requirements.</p>
+      <div class="panel-group">
+        <div class="panel panel-default">
+          <h4 class="panel-title"><a>Requirements</a></h4>
+          <div class="panel-body"><p>Strong analytical and documentation skills.</p></div>
+        </div>
+      </div>
+    </div>
+    <form action="/in-en/carrerdetails/" method="post">
+      <button type="submit">Send Application</button>
+    </form>
+  </body>
+</html>
+`
+
+const workLocationCareersHtml = kochiListingCareersHtml
+  .replace('We are hiring for Kochi location..', 'We are hiring..')
+
+const workLocationDetailHtml = businessAnalystDetailHtml
+  .replace(
+    'Translate business needs into clear functional requirements.',
+    'Translate business needs into clear functional requirements.</p><p>Work Location: Kochi',
+  )
+
 test('Aabasoft validates the verified homepage, careers page, listing cards, and detail pages', async () => {
   const aabasoft = await loadAabasoftModule()
   assert.ok(aabasoft, 'Expected Aabasoft scraper module at ../../scraper/aabasoft/script.js')
@@ -268,17 +326,63 @@ test('Aabasoft validates the verified homepage, careers page, listing cards, and
       {
         department: 'BPO Services',
         listingTitle: 'SALES AND FINANCE ADVISOR',
+        listingSummary: 'We are hiring..',
         sourceUrl: 'https://www.aabasoft.com/in-en/CarrerDetails/Sales-and-Finance-Advisor89410',
       },
       {
         department: 'Cloud Technologies',
         listingTitle: 'BUSINESS DEVELOPMENT EXECUTIVE – CLOUD SERVICES',
+        listingSummary: 'We are Hiring..',
         sourceUrl: 'https://www.aabasoft.com/in-en/CarrerDetails/Business-Development-Executive-%E2%80%93-Cloud-Services',
       },
     ],
   )
   assert.equal(aabasoft.hasOfficialDetailPageSignal(salesAdvisorDetailHtml), true)
   assert.equal(aabasoft.hasOfficialDetailPageSignal(cloudSalesDetailHtml), true)
+})
+
+test('Aabasoft uses an official listing-card location when the detail page omits location', async () => {
+  const aabasoft = await loadAabasoftModule()
+  assert.ok(aabasoft, 'Expected Aabasoft scraper module at ../../scraper/aabasoft/script.js')
+
+  const jobs = await aabasoft.createAabasoftScraper({
+    now: () => '2026-09-12T10:00:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      if (url === aabasoft.HOMEPAGE_URL) return verifiedHomepageHtml
+      if (url === aabasoft.CAREERS_URL) return kochiListingCareersHtml
+      if (url === 'https://www.aabasoft.com/in-en/CarrerDetails/Business-Analyst') {
+        return businessAnalystDetailHtml
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Business Analyst')
+  assert.equal(jobs[0].location, 'Kochi')
+  assert.equal(jobs[0].city, 'Kochi')
+})
+
+test('Aabasoft extracts an explicit work-location label from detail content', async () => {
+  const aabasoft = await loadAabasoftModule()
+  assert.ok(aabasoft, 'Expected Aabasoft scraper module at ../../scraper/aabasoft/script.js')
+
+  const jobs = await aabasoft.createAabasoftScraper().run({
+    fetchText: async (url) => {
+      if (url === aabasoft.HOMEPAGE_URL) return verifiedHomepageHtml
+      if (url === aabasoft.CAREERS_URL) return workLocationCareersHtml
+      if (url === 'https://www.aabasoft.com/in-en/CarrerDetails/Business-Analyst') {
+        return workLocationDetailHtml
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs[0].location, 'Kochi')
+  assert.equal(jobs[0].city, 'Kochi')
 })
 
 test('Aabasoft run validates the first-party careers flow and returns normalized jobs from detail pages', async () => {

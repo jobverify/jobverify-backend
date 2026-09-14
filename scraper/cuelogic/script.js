@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { CUELOGIC_CATALOG as PROVIDER_METADATA } from './catalog.js'
 import { composeAbortSignals } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { withRetry } from '../../scraper-support/utils/retry.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -196,8 +197,22 @@ const defaultFetchPage = (url, { signal } = {}) => withRetry(async () => {
   signal,
 })
 
-export const createCuelogicScraper = () => ({
-  async run({ fetchPage = defaultFetchPage, signal } = {}) {
+const buildDiscoveryOnlyEvidence = ({ surface, reason, verifiedAt }) => attachInventoryEvidence([], {
+  status: 'discovery-only',
+  surface,
+  firstParty: true,
+  listingComplete: false,
+  pagesFetched: 1,
+  reportedTotal: 0,
+  indiaFacetCount: 0,
+  verifiedAt,
+  reason,
+})
+
+export const createCuelogicScraper = ({
+  now: defaultNow = () => new Date().toISOString(),
+} = {}) => ({
+  async run({ fetchPage = defaultFetchPage, signal, now = defaultNow } = {}) {
     const searchUrl = buildSearchUrl()
     let searchPage
 
@@ -205,7 +220,11 @@ export const createCuelogicScraper = () => ({
       searchPage = await fetchPage(searchUrl, { signal })
     } catch (error) {
       if (isKnownBrokenCareersRedirectTlsFailure(error)) {
-        return []
+        return buildDiscoveryOnlyEvidence({
+          surface: searchUrl,
+          verifiedAt: now(),
+          reason: 'cuelogic-ltimindtree-search-route-broken-tls',
+        })
       }
 
       throw error
@@ -219,7 +238,11 @@ export const createCuelogicScraper = () => ({
       throw new Error('Cuelogic verified LTIMindtree empty-search surface changed or now exposes public jobs')
     }
 
-    return []
+    return buildDiscoveryOnlyEvidence({
+      surface: searchUrl,
+      verifiedAt: now(),
+      reason: 'cuelogic-ltimindtree-empty-search-result',
+    })
   },
 })
 

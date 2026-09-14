@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import SANKALP_SEMICONDUCTOR_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -61,10 +62,18 @@ export const hasPublicJobBoardSignal = (html) => {
 }
 
 export const isConnectivityError = (error) => {
-  const message = normalizeWhitespace(error?.message || error) || ''
+  const messages = []
+  const seen = new Set()
+  let current = error
 
-  return /ENOTFOUND|EAI_AGAIN|getaddrinfo|Could not resolve host|Failed to connect|fetch failed|network/i.test(
-    message,
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    messages.push(`${current.code || ''} ${current.message || current}`)
+    current = current.cause
+  }
+
+  return /ENOTFOUND|EAI_AGAIN|getaddrinfo|Could not resolve host|Failed to connect|fetch failed|network|timeout|UND_ERR_CONNECT_TIMEOUT|HTTP 5\d\d/i.test(
+    normalizeWhitespace(messages.join(' ')) || '',
   )
 }
 
@@ -83,17 +92,61 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
-export const createSankalpSemiconductorScraper = () => ({
+const buildDiscoveryOnlyEvidence = (now, surface) =>
+  attachInventoryEvidence([], {
+    status: 'discovery-only',
+    surface: surface || HOMEPAGE_URL,
+    firstParty: true,
+    listingComplete: false,
+    pagesFetched: 0,
+    reportedTotal: null,
+    indiaFacetCount: null,
+    verifiedAt: now(),
+    reason: 'Sankalp Semiconductor verified first-party surface is currently unavailable; public inventory cannot be verified.',
+  })
+
+export const createSankalpSemiconductorScraper = ({
+  now = () => new Date().toISOString(),
+} = {}) => ({
   async run({
     fetchText = defaultFetchText,
     probeText = defaultFetchText,
   } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    const fetchRequiredText = async (url) => {
+      try {
+        return await fetchText(url)
+      } catch (error) {
+        if (isConnectivityError(error)) {
+          error.inventoryEvidenceSurface = url
+        }
+        throw error
+      }
+    }
+
+    let homepageHtml
+    try {
+      homepageHtml = await fetchRequiredText(HOMEPAGE_URL)
+    } catch (error) {
+      if (isConnectivityError(error)) {
+        return buildDiscoveryOnlyEvidence(now, error.inventoryEvidenceSurface)
+      }
+      throw error
+    }
+
     if (!hasHomepageSignal(homepageHtml)) {
       throw new Error('Sankalp Semiconductor homepage no longer matches the verified public surface')
     }
 
-    const contactHtml = await fetchText(CONTACT_URL)
+    let contactHtml
+    try {
+      contactHtml = await fetchRequiredText(CONTACT_URL)
+    } catch (error) {
+      if (isConnectivityError(error)) {
+        return buildDiscoveryOnlyEvidence(now, error.inventoryEvidenceSurface)
+      }
+      throw error
+    }
+
     if (!hasContactPageSignal(contactHtml)) {
       throw new Error('Sankalp Semiconductor contact page no longer matches the verified public surface')
     }
@@ -118,7 +171,7 @@ export const createSankalpSemiconductorScraper = () => ({
   },
 })
 
-export const run = async (options = {}) => createSankalpSemiconductorScraper().run(options)
+export const run = async (options = {}) => createSankalpSemiconductorScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

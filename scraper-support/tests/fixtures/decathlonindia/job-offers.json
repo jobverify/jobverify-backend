@@ -1,0 +1,29 @@
+{
+  "count": 2,
+  "items": [
+    {
+      "id": "4592987-45143251",
+      "job_ad_id": 4592987,
+      "title": "RFID Engineer / RFID Project Lead (L2/L3)",
+      "contract": "Permanent contract",
+      "location": "Bengaluru",
+      "job": "Operations Engineer",
+      "url": "4592987-rfid-engineer-rfid-project-lead-l2l3-bengaluru",
+      "is_external": false,
+      "is_aggregated": false,
+      "career_domain": "joinus.decathlon.in"
+    },
+    {
+      "id": "4554519-136262573",
+      "job_ad_id": 4554519,
+      "title": "Production Supply Specialist",
+      "contract": "Permanent contract",
+      "location": "Faridabad",
+      "job": "Production Specialist - Procurement",
+      "url": "4554519-production-supply-specialist-faridabad",
+      "is_external": false,
+      "is_aggregated": false,
+      "career_domain": "joinus.decathlon.in"
+    }
+  ]
+}

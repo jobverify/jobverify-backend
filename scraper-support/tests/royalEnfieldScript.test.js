@@ -217,5 +217,9 @@ test('run passes the caller abort signal to Royal Enfield page fetches', async (
   })
 
   assert.equal(jobs.length, 1)
-  assert.deepEqual(signals, [controller.signal, controller.signal])
+  assert.equal(signals.length, 2)
+  assert.ok(signals.every(signal => signal instanceof AbortSignal && !signal.aborted))
+  const reason = new Error('Caller stopped after requests')
+  controller.abort(reason)
+  assert.ok(signals.every(signal => signal.aborted && signal.reason === reason))
 })

@@ -113,9 +113,36 @@ export const isVerifiedMissingCareersRoute = (page = {}) =>
   && /404\s+Not\s+Found|requested URL was not found on this server/i.test(String(page.html ?? ''))
   && !hasPublicJobsSignal(page.html)
 
+const isSucuriAccessChallengePage = (page = {}) => {
+  const html = String(page.html ?? '')
+  const normalized = normalizeWhitespace(html).toLowerCase()
+
+  return Number(page.status) === 307
+    && isFirstPartyUrl(page.url || HOMEPAGE_URL)
+    && /you are being redirected/i.test(html)
+    && normalized.includes('javascript is required')
+    && html.toLowerCase().includes('sucuri_cloudproxy_js')
+    && !hasPublicJobsSignal(html)
+}
+
+const createAccessChallengeError = () => Object.assign(
+  new Error('Nxtsync official site is blocked by an upstream Sucuri access challenge'),
+  {
+    code: 'NXTSYNC_ACCESS_CHALLENGE',
+    failureKind: 'blocked_or_access_denied',
+    upstreamOutage: true,
+    softFailure: true,
+    abortRetries: true,
+  },
+)
+
 export const createNxtsyncScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
+
+    if (isSucuriAccessChallengePage(homepage)) {
+      throw createAccessChallengeError()
+    }
 
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Nxtsync verified official homepage no longer matches the known public surface')
@@ -131,6 +158,10 @@ export const createNxtsyncScraper = () => ({
 
     for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
       const routePage = await fetchPage(routeUrl)
+
+      if (isSucuriAccessChallengePage(routePage)) {
+        throw createAccessChallengeError()
+      }
 
       if (!isVerifiedMissingCareersRoute(routePage)) {
         throw new Error('Nxtsync careers routes changed materially or now expose public jobs')

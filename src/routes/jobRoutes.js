@@ -5,6 +5,7 @@
 
 import express from "express";
 import { loadSiteSettings } from "../middleware/siteSettings.js";
+import { getJobSnapshot } from "../controllers/jobSnapshotController.js";
 import {
   getAllJobs,
   getJobSearch,
@@ -54,6 +55,7 @@ router.get(
 );
 router.get("/meta", jobQueryValidation, validateRequest, optionalProtect, getJobMeta);   // must be before /:id
 router.get("/stats", getJobStats); // public stats for landing page
+router.get("/snapshot", getJobSnapshot);
 router.get("/live-companies", getLiveHiringCompanies);
 router.get("/seo-feed", getJobSeoFeed);
 router.get("/:id", publicJobAbuseGuard, mongoIdParamValidation("id", "job ID"), validateRequest, getJobById);

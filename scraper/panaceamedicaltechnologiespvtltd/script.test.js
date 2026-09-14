@@ -45,6 +45,17 @@ const joinUsHtml = `
   </html>
 `
 
+const currentJoinUsHtml = `
+  <html>
+    <head><title>Join Us &#8211; Panacea</title></head>
+    <body>
+      <h1>Engineering Medicine.</h1><p>Changing Lives.</p>
+      <a href="https://www.panaceamedical.in/careers/">Browse All Open Positions</a>
+      <p>Current Openings</p>
+    </body>
+  </html>
+`
+
 const jobsPageOneHtml = `
   <html>
     <head>
@@ -52,7 +63,7 @@ const jobsPageOneHtml = `
     </head>
     <body>
       <label>Job title or keywords</label>
-      <p>22 open positions found</p>
+      <p>2 open positions found</p>
       <p>Sort by: Newest</p>
       <article class="pmt-job-card" id="job-43" itemscope itemtype="https://schema.org/JobPosting">
         <div class="pmt-job-card__body">
@@ -90,7 +101,7 @@ const jobsPageTwoHtml = `
     </head>
     <body>
       <label>Job title or keywords</label>
-      <p>22 open positions found</p>
+      <p>2 open positions found</p>
       <p>Sort by: Newest</p>
       <article class="pmt-job-card" id="job-44" itemscope itemtype="https://schema.org/JobPosting">
         <div class="pmt-job-card__body">
@@ -212,7 +223,7 @@ const mismatchedListingHtml = `
       <title>Jobs - Panacea Careers</title>
     </head>
     <body>
-      <p>22 open positions found</p>
+      <p>1 open positions found</p>
       <p>Sort by: Newest</p>
       <article class="pmt-job-card" id="job-32" itemscope itemtype="https://schema.org/JobPosting">
         <div class="pmt-job-card__body">
@@ -265,6 +276,7 @@ test('Panacea scraper validates the verified homepage, Join Us handoff, and pagi
   assert.equal(panacea.APPLY_BASE_URL, 'https://www.panaceamedical.in/apply/')
   assert.equal(panacea.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(panacea.hasOfficialJoinUsSignal(joinUsHtml), true)
+  assert.equal(panacea.hasOfficialJoinUsSignal(currentJoinUsHtml), true)
   assert.equal(panacea.hasOfficialJobsBoardSignal(jobsPageOneHtml), true)
   assert.deepEqual(
     panacea.extractJobsListPageUrls(jobsPageOneHtml),
@@ -353,7 +365,7 @@ test('run fetches homepage, Join Us, paginated listings, and detail pages to bui
     city: 'Malur',
     state: 'Karnataka',
     country: 'India',
-    jobId: 'PMT_2026-27-001',
+    jobId: '43',
     requisitionId: 'PMT_2026-27-001',
     sourceUrl: 'https://www.panaceamedical.in/careers/jobs/electrical-testing-engineer/',
     applyUrl: 'https://www.panaceamedical.in/apply/?position=Electrical+testing+Engineer&job_id=43',
@@ -375,7 +387,7 @@ test('run fetches homepage, Join Us, paginated listings, and detail pages to bui
     companyDomain: 'panaceamedical.in',
     atsPlatform: 'official-first-party-careers-portal',
   })
-  assert.equal(jobs[1].jobId, 'PMT_2026-27-002')
+  assert.equal(jobs[1].jobId, '44')
   assert.equal(jobs[1].department, 'Sales & Marketing')
   assert.equal(jobs[1].city, null)
   assert.equal(jobs[1].employmentType, 'Full Time')
@@ -410,26 +422,63 @@ test('run fetches homepage, Join Us, paginated listings, and detail pages to bui
   )
 })
 
-test('run keeps mismatched Panacea listings instead of collapsing or corrupting them when detail pages disagree', async () => {
+test('Panacea rejects mismatched details instead of returning a complete corrupted listing', async () => {
   const panacea = await loadPanaceaModule()
+  await assert.rejects(panacea.run({fetchText: async url => {
+    if (url === panacea.HOMEPAGE_URL) return homepageHtml
+    if (url === panacea.JOIN_US_URL) return joinUsHtml
+    if (url === panacea.CAREERS_URL) return mismatchedListingHtml
+    return mismatchedDetailHtml
+  }}), /detail|mismatch/i)
+})
 
-  const jobs = await panacea.createPanaceaMedicalTechnologiesScraper({
-    now: () => '2026-08-07T12:00:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      if (url === panacea.HOMEPAGE_URL) return homepageHtml
-      if (url === panacea.JOIN_US_URL) return joinUsHtml
-      if (url === panacea.CAREERS_URL) return mismatchedListingHtml
-      if (url === 'https://www.panaceamedical.in/careers/jobs/regulatory-affairs-associate/') return mismatchedDetailHtml
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-  })
+test('Panacea rejects an incomplete counted snapshot before visiting details', async () => {
+  const panacea = await loadPanaceaModule()
+  await assert.rejects(panacea.run({fetchText: async url => {
+    if (url === panacea.HOMEPAGE_URL) return homepageHtml
+    if (url === panacea.JOIN_US_URL) return joinUsHtml
+    if (url === panacea.CAREERS_URL) return jobsPageOneHtml.replace('2 open positions found','3 open positions found')
+    if (url.includes('/page/2/')) return jobsPageTwoHtml.replace('2 open positions found','3 open positions found')
+    return electricalTestingDetailHtml
+  }}), /incomplete|count/i)
+})
 
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'PCB Layout Engineer')
-  assert.equal(jobs[0].jobId, '32')
-  assert.equal(jobs[0].minimumQualification, null)
-  assert.equal(jobs[0].jobDescription, 'Regulatory Affairs - Bengaluru - 1-3 Years')
-  assert.deepEqual(jobs[0].requiredSkills, [])
-  assert.deepEqual(jobs[0].locations, ['Bengaluru'])
+test('Panacea retains separate listing IDs when published reference codes collide', async () => {
+  const panacea = await loadPanaceaModule()
+  const jobs = await panacea.run({fetchText:async url=>{
+    if(url===panacea.HOMEPAGE_URL)return homepageHtml
+    if(url===panacea.JOIN_US_URL)return joinUsHtml
+    if(url===panacea.CAREERS_URL)return jobsPageOneHtml
+    if(url.includes('/page/2/'))return jobsPageTwoHtml
+    if(url.includes('electrical-testing'))return electricalTestingDetailHtml
+    return areaSalesManagerDetailHtml.replace('PMT_2026-27-002','PMT_2026-27-001')
+  }})
+  assert.deepEqual(jobs.map(job=>job.jobId),['43','44'])
+  assert.deepEqual(jobs.map(job=>job.requisitionId),['PMT_2026-27-001','PMT_2026-27-001'])
+})
+
+const runPanaceaLocation = async location => {
+  const panacea = await loadPanaceaModule()
+  return panacea.run({fetchText:async url=>{
+    if(url===panacea.HOMEPAGE_URL)return homepageHtml
+    if(url===panacea.JOIN_US_URL)return currentJoinUsHtml
+    if(url===panacea.CAREERS_URL)return jobsPageOneHtml
+    if(url.includes('/page/2/'))return jobsPageTwoHtml
+    if(url.includes('electrical-testing'))return electricalTestingDetailHtml.replaceAll('Malur (Kolar District) 25 Km from Bangalore',location)
+    return areaSalesManagerDetailHtml
+  }})
+}
+
+test('Panacea rejects entire snapshots with mixed foreign or unknown location labels',async()=>{
+  for(const location of ['Pune, Canada','Bangalore US','Bangalore, United States','Malur / Canada','India, Canada','London, India','Remote','Remote, India','Hyderabad / Jaipur / Toronto']){
+    await assert.rejects(runPanaceaLocation(location),/unverified India job location scope/i,location)
+  }
+})
+
+test('Panacea accepts the observed complete India location labels and explicit country suffix',async()=>{
+  for(const location of ['Malur','Whitefield, Bangalore','Bangalore','Malur/ Bangalore','Malur (Kolar District) 25 Km from Bangalore','Hyderabad / Jaipur','Whitefield - Bangalore / Malur (Kolar District) 25 Km from Bangalore','Punjab, Himachal Pradesh, Jammu & Kashmir','Bengaluru','All Over India','Bangalore, India','India']){
+    const jobs=await runPanaceaLocation(location)
+    assert.equal(jobs[0].country,'India',location)
+    assert.equal(jobs.length,2,location)
+  }
 })

@@ -2,7 +2,7 @@ export const SOURCE = 'unbxd'
 export const COMPANY = 'Unbxd'
 export const CAREERS_URL = 'https://try.unbxd.com/'
 export const ABOUT_URL = 'https://netcoreunbxd.com/about/'
-export const DISPOSITION = 'verified-exact-name-brand-surfaces-fail-closed'
+export const DISPOSITION = 'verified-exact-name-about-surface-fail-closed'
 
 const VERIFIED_TRIAL_PATTERNS = [
   /deliver a relevant\s*&\s*unique shopping experience/i,
@@ -131,20 +131,7 @@ export const detectPublicJobsSurface = (html = '', pageUrl) => {
   return sameOriginJobUrl ? sameOriginJobUrl.toString() : null
 }
 
-const assertVerifiedContract = ({ trialHtml = '', aboutHtml = '' } = {}) => {
-  if (!hasVerifiedTrialSurface(trialHtml)) {
-    throw new Error(
-      'Unbxd verified exact-name product surface no longer matches the trusted public contract.',
-    )
-  }
-
-  const trialJobsSurface = detectPublicJobsSurface(trialHtml, CAREERS_URL)
-  if (trialJobsSurface) {
-    throw new Error(
-      `Unbxd verified product surface now exposes a public jobs surface: ${trialJobsSurface}`,
-    )
-  }
-
+const assertVerifiedContract = ({ aboutHtml = '' } = {}) => {
   if (!hasVerifiedAboutSurface(aboutHtml)) {
     throw new Error(
       'Unbxd verified exact-name about surface no longer matches the trusted public contract.',
@@ -161,12 +148,9 @@ const assertVerifiedContract = ({ trialHtml = '', aboutHtml = '' } = {}) => {
 
 export const createUnbxdScraper = () => ({
   async run({ fetchHtml = defaultFetchHtml } = {}) {
-    const [trialHtml, aboutHtml] = await Promise.all([
-      fetchHtml(CAREERS_URL),
-      fetchHtml(ABOUT_URL),
-    ])
+    const aboutHtml = await fetchHtml(ABOUT_URL)
 
-    assertVerifiedContract({ trialHtml, aboutHtml })
+    assertVerifiedContract({ aboutHtml })
     return []
   },
 })

@@ -2,6 +2,7 @@
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { CANONICAL_CITIES } from '../../scraper-support/utils/cities.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -41,9 +42,8 @@ const toTitleCase = (value) => String(value ?? '')
   .map((part) => part ? `${part[0].toUpperCase()}${part.slice(1).toLowerCase()}` : '')
   .join(' ')
 
-const NON_INDIA_LOCATION_SLUGS = new Set(['canada', 'usa', 'united-states'])
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, options = {}) => fetchTextWithRetry(url, {
+  ...options,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -54,9 +54,92 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
+  if (/<title>\s*Current Job Openings\s*-\s*Stridely Solutions\s*<\/title>/i.test(page)) {
+    return /<link[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/www\.stridelysolutions\.com\/careers\/current-openings\/?["']/i.test(page)
+      && /<h1[^>]*>\s*Job Openings\s*<\/h1>/i.test(page) && /\bawsm_job_openings\b/i.test(page)
+  }
   return /<title>\s*Job Openings Archive\s*-\s*Stridely Solutions\s*<\/title>/i.test(page)
     && /<h1[^>]*>\s*Job Openings\s*<\/h1>/i.test(page)
     && /awsm-job-listing-item/i.test(page)
+}
+
+
+const decodeText = (value) => normalizeWhitespace(String(value ?? '').replace(/<[^>]+>/g, ' ')
+  .replace(/&amp;|&#038;/gi, '&').replace(/&nbsp;/gi, ' ').replace(/&#39;|&apos;/gi, "'").replace(/&quot;/gi, '"'))
+
+const getSafeJobUrl = (value) => {
+  try {
+    const url = new URL(value, HOMEPAGE_URL)
+    if (url.protocol !== 'https:' || url.hostname !== 'www.stridelysolutions.com'
+      || !/^\/(?:insights\/blog\/)?jobs\/[^/]+\/?$/.test(url.pathname)) return null
+    return url.href
+  } catch { return null }
+}
+
+const FOREIGN_COUNTRIES = new Map([
+  ['canada', 'Canada'], ['ca', 'Canada'], ['usa', 'United States'], ['us', 'United States'],
+  ['united states', 'United States'], ['united kingdom', 'United Kingdom'], ['gb', 'United Kingdom'],
+])
+
+const scopeFromLabels = (labels) => {
+  const knownIndia = labels.map(value => {
+    const key = value.toLowerCase()
+    if (['india', 'in', 'ind'].includes(key)) return 'India'
+    const city = CANONICAL_CITIES[key]
+    return city && city !== 'Remote' && city !== 'None' ? city : null
+  }).filter(Boolean)
+  if (knownIndia.length) {
+    const cities = [...new Set(knownIndia.filter(value => value !== 'India'))]
+    return { country: 'India', location: cities.length ? cities.join(', ') + ', India' : 'India', city: cities[0] || null }
+  }
+  const countries = labels.map(value => FOREIGN_COUNTRIES.get(value.toLowerCase()))
+  return { country: labels.length && countries.every(Boolean) ? countries[0] : null,
+    location: labels.length ? labels.join(', ') : null, city: null }
+}
+
+const parseCardDate = (value) => {
+  const match = decodeText(value).match(/^([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})$/)
+  if (!match) return null
+  const month = 'January February March April May June July August September October November December'.split(' ').indexOf(match[1])
+  const day = Number(match[2])
+  const date = new Date(Date.UTC(Number(match[3]), month, day))
+  return month >= 0 && date.getUTCMonth() === month && date.getUTCDate() === day ? date.toISOString() : null
+}
+
+const extractDetailScope = (html, listing) => {
+  const canonical = String(html).match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i)?.[1]
+  const title = decodeText(String(html).match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1])
+  if (!/<title[^>]*>[\s\S]*?Stridely Solutions\s*<\/title>/i.test(html)
+    || !canonical || getSafeJobUrl(canonical)?.replace(/\/$/, '') !== listing.sourceUrl.replace(/\/$/, '')
+    || title !== listing.title) throw new Error('Stridely detail employer or job identity mismatch')
+
+  const structured = [...String(html).matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)]
+    .flatMap(([, value]) => {
+      const record = JSON.parse(value)
+      return Array.isArray(record) ? record : record['@graph'] || [record]
+    }).find(record => record?.['@type'] === 'JobPosting')
+  if (structured) {
+    if (structured.hiringOrganization?.name !== COMPANY || structured.title !== listing.title
+      || (structured.url && getSafeJobUrl(structured.url)?.replace(/\/$/, '') !== listing.sourceUrl.replace(/\/$/, ''))) {
+      throw new Error('Stridely structured detail employer or job identity mismatch')
+    }
+    const entries = (Array.isArray(structured.jobLocation) ? structured.jobLocation : [structured.jobLocation])
+      .map(place => {
+        const address = place?.address || {}
+        const countryValue = String(address.addressCountry?.name || address.addressCountry || '').trim()
+        const country = /^(India|IN|IND)$/i.test(countryValue) ? 'India'
+          : FOREIGN_COUNTRIES.get(countryValue.toLowerCase()) || null
+        const local = decodeText(address.addressLocality)
+        if (country) return { country, location: [local, decodeText(address.addressRegion), country].filter(Boolean).join(', '), city: country === 'India' ? local || null : null }
+        return countryValue ? { country: null } : scopeFromLabels([local].filter(Boolean))
+      })
+    const india = entries.filter(entry => entry.country === 'India')
+    if (india.length) return { country: 'India', location: india.map(entry => entry.location).join(' / '), city: india[0].city }
+    return entries.length && entries.every(entry => entry.country) ? entries[0] : { country: null }
+  }
+  const locationPanel = String(html).match(/awsm-job-specification-job-location[\s\S]*?<\/div>/i)?.[0] || ''
+  const labels = [...locationPanel.matchAll(/awsm-job-specification-term["'][^>]*>([\s\S]*?)<\//gi)].map(([, value]) => decodeText(value)).filter(Boolean)
+  return scopeFromLabels(labels)
 }
 
 export const extractJobCards = (html) => {
@@ -66,31 +149,21 @@ export const extractJobCards = (html) => {
     /<article\b([^>]*\bawsm_job_openings\b[^>]*)>([\s\S]*?)<\/article>/gi,
   )]
 
+  const currentCardCount = [...page.matchAll(/<article\b[^>]*\bawsm_job_openings\b[^>]*>/gi)].length
+  if (currentCards.length !== currentCardCount) throw new Error('Stridely incomplete or malformed current card boundaries')
+
   if (currentCards.length > 0) {
     for (const [, attributes, cardHtml] of currentCards) {
-      const title = normalizeWhitespace(
-        cardHtml.match(/elementor-post__title[^>]*>\s*<a[^>]+href=["']([^"']+)["'][^>]*>\s*([\s\S]*?)\s*<\/a>/i)?.[2],
-      )
-      const sourceUrl = normalizeWhitespace(
-        cardHtml.match(/elementor-post__title[^>]*>\s*<a[^>]+href=["']([^"']+)["']/i)?.[1],
-      )
-      const cities = [...String(attributes).matchAll(/\bjob-location-([a-z0-9-]+)/gi)]
-        .map((match) => match[1].toLowerCase())
-        .filter((slug) => !NON_INDIA_LOCATION_SLUGS.has(slug))
-        .map(toTitleCase)
-        .filter(Boolean)
-
-      if (!title || !sourceUrl || cities.length === 0) continue
-
-      jobs.push({
-        title,
-        location: `${cities.join(', ')}, India`,
-        city: cities[0],
-        sourceUrl,
-        applyUrl: sourceUrl,
-      })
+      const anchor = cardHtml.match(/elementor-post__title[^>]*>\s*<a[^>]+href=["']([^"']+)["'][^>]*>\s*([\s\S]*?)\s*<\/a>/i)
+      const title = decodeText(anchor?.[2])
+      const sourceUrl = getSafeJobUrl(anchor?.[1])
+      if (!title || !sourceUrl) throw new Error('Stridely incomplete current card or job domain identity mismatch')
+      const labels = [...String(attributes).matchAll(/\bjob-location-([a-z0-9-]+)/gi)].map(([, slug]) => toTitleCase(slug))
+      jobs.push({ title, sourceUrl, applyUrl: sourceUrl, ...scopeFromLabels(labels),
+        jobId: new URL(sourceUrl).pathname.split('/').filter(Boolean).at(-1),
+        postingDate: parseCardDate(cardHtml.match(/class=["']elementor-post-date["'][^>]*>([\s\S]*?)<\/span>/i)?.[1]) })
     }
-
+    if (new Set(jobs.map(job => job.sourceUrl)).size !== jobs.length) throw new Error('Stridely incomplete duplicate current role identity')
     return jobs
   }
 
@@ -137,25 +210,45 @@ export const extractJobCards = (html) => {
   return jobs
 }
 
-export const run = async ({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) => {
-  const page = await fetchText(CAREERS_URL)
-  if (!hasOfficialCareersSignal(page)) {
-    throw new Error('Stridely Solutions verified jobs archive changed materially')
+export const run = async ({ fetchText = defaultFetchText, now = () => new Date().toISOString(), signal } = {}) => {
+  const request = async (url, options = {}) => {
+    signal?.throwIfAborted()
+    const value = await fetchText(url, { ...options, signal })
+    signal?.throwIfAborted()
+    return value
   }
-
-  const jobs = extractJobCards(page)
-  if (!jobs.length) {
-    throw new Error('Stridely Solutions jobs archive no longer exposes trusted job cards')
+  const page = await request(CAREERS_URL)
+  if (!hasOfficialCareersSignal(page)) throw new Error('Stridely Solutions verified jobs archive changed materially')
+  const candidates = extractJobCards(page)
+  if (!candidates.length) throw new Error('Stridely Solutions jobs archive no longer exposes trusted job cards')
+  let incomplete = /<(?:a|button|span)\b[^>]*(?:e-load-more-anchor|awsm(?:-b)?-load-more|rel=["']next["'])/i.test(page)
+  const jobs = []
+  for (const candidate of candidates) {
+    signal?.throwIfAborted()
+    let job = candidate
+    if (Object.hasOwn(job, 'country') && !job.country) {
+      let detailHtml
+      try {
+        detailHtml = await request(job.sourceUrl, { attempts: 1 })
+      } catch (error) {
+        signal?.throwIfAborted()
+        incomplete = true
+        console.log('[stridelysolutions] Required location detail unavailable for ' + job.sourceUrl + ': ' + error.message)
+        continue
+      }
+      const scope = extractDetailScope(detailHtml, job)
+      if (!scope.country) { incomplete = true; continue }
+      job = { ...job, ...scope }
+    }
+    if (job.country && job.country !== 'India') continue
+    jobs.push({ ...job, company: COMPANY, country: 'India', link: job.applyUrl, source: SOURCE, scrapedAt: now() })
   }
-
-  return jobs.map((job) => ({
-    ...job,
-    company: COMPANY,
-    country: 'India',
-    link: job.applyUrl,
-    source: SOURCE,
-    scrapedAt: now(),
-  }))
+  if (incomplete) {
+    if (!jobs.length) throw new Error('Stridely incomplete location scope with no verified India jobs')
+    console.log('[stridelysolutions] Returning ' + jobs.length + ' verified India jobs from an incomplete source listing; previous vacancies must be preserved.')
+    for (const job of jobs) job.sourceListingComplete = false
+  }
+  return jobs
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

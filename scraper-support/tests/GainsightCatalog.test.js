@@ -41,7 +41,7 @@ test('Gainsight local catalog captures the verified empty first-party Jibe shell
   assert.equal(provider.verifiedOn, '2026-07-18')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /gainsight[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Find Your Dream Job/i)
+  assert.match(provider.verifiedSurfaceSummary, /Find Authentic Jobs/i)
   assert.match(provider.verifiedSurfaceSummary, /search-results-none/i)
   assert.match(provider.verifiedSurfaceSummary, /No cities/i)
 })

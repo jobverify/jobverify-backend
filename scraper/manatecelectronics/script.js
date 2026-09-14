@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'manatecelectronics'
@@ -9,8 +11,8 @@ export const HOMEPAGE_URL = 'https://manatec.in/'
 export const CAREERS_URL = 'https://manatec.in/career/'
 export const PAGE_SITEMAP_URL = 'https://manatec.in/wp-sitemap-posts-page-1.xml'
 export const MISSING_ROUTE_URL = 'https://manatec.in/join-us'
-export const VERIFIED_ON = '2026-08-07'
-export const VERIFIED_SURFACE_SUMMARY = 'Verified on Friday, August 7, 2026 that https://manatec.in/ remained Manatec Electronics Private Limited\'s official homepage, that https://manatec.in/career/ remained a same-domain application-only careers form with the verified department selector and upload-resume workflow but no public job listings, that https://manatec.in/wp-sitemap-posts-page-1.xml still exposed the homepage and careers URLs, and that https://manatec.in/join-us still returned the verified first-party 404 surface.'
+export const VERIFIED_ON = '2026-09-13'
+export const VERIFIED_SURFACE_SUMMARY = "Verified on Sunday, September 13, 2026 that the captured official homepage retained Manatec company identity and its careers link. A fresh default source check timed out after about 15 seconds on the homepage; no complete public vacancy inventory was established. The previously observed careers form is application-only and cannot prove an empty vacancy inventory. Requests now share a 15-second deadline across the homepage, careers page, connection fallback and response bodies; cancellation and any unavailable surface stop the source immediately with a typed error instead of returning an empty snapshot."
 export const EXPECTED_DEPARTMENTS = [
   'Commercial and Despatch',
   'CSD',
@@ -31,7 +33,7 @@ export const EXPECTED_DEPARTMENTS = [
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-export const DEFAULT_FETCH_TIMEOUT_MS = 60000
+export const DEFAULT_FETCH_TIMEOUT_MS = 15000
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 10)))
@@ -56,18 +58,34 @@ const stripTags = (value) => String(value ?? '')
 
 const normalizeVisibleText = (value) => normalizeWhitespace(stripTags(value)) || ''
 
-const createTimeoutSignal = (timeoutMs) => {
-  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
-    return undefined
-  }
+const unavailableInventory = (message, cause, { surface = null } = {}) => Object.assign(new Error(message), {
+  code: 'MANATEC_INVENTORY_UNAVAILABLE', failureType: 'upstream_unavailable',
+  failureKind: 'upstream_unavailable', softFailure: true, upstreamOutage: true, abortRetries: true,
+  surface,
+  ...(cause ? { cause } : {}),
+})
 
-  if (typeof AbortSignal?.timeout === 'function') {
-    return AbortSignal.timeout(timeoutMs)
-  }
-
+const withRequestDeadline = async (operation, { signal, timeoutMs = DEFAULT_FETCH_TIMEOUT_MS } = {}) => {
+  signal?.throwIfAborted()
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error('Manatec timeoutMs must be positive and finite')
   const controller = new AbortController()
-  setTimeout(() => controller.abort(), timeoutMs)
-  return controller.signal
+  const requestSignal = signal ? AbortSignal.any([signal, controller.signal]) : controller.signal
+  const timer = setTimeout(() => controller.abort(unavailableInventory('Manatec public inventory request timed out after ' + timeoutMs + 'ms')), timeoutMs)
+  let onAbort
+  const aborted = new Promise((_, reject) => {
+    onAbort = () => reject(requestSignal.reason)
+    requestSignal.addEventListener('abort', onAbort, { once: true })
+  })
+  try {
+    return await Promise.race([
+      Promise.resolve().then(() => { requestSignal.throwIfAborted(); return operation(requestSignal) }),
+      aborted,
+    ])
+  } finally {
+    clearTimeout(timer)
+    requestSignal.removeEventListener('abort', onAbort)
+    requestSignal.throwIfAborted()
+  }
 }
 
 const isConnectTimeoutFetchError = (error) => {
@@ -107,36 +125,33 @@ const toWwwFallbackUrl = (value) => {
 export const fetchPageWithWwwFallback = async (url, {
   fetchImpl = fetch,
   timeoutMs = DEFAULT_FETCH_TIMEOUT_MS,
-} = {}) => {
+  signal,
+} = {}) => withRequestDeadline(async requestSignal => {
   const fetchOnce = async (targetUrl) => {
+    requestSignal.throwIfAborted()
     const response = await fetchImpl(targetUrl, {
       headers: {
         'User-Agent': USER_AGENT,
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       },
-      signal: createTimeoutSignal(timeoutMs),
+      signal: requestSignal,
     })
-
-    return {
-      status: response.status,
-      url: response.url,
-      html: await response.text(),
-    }
+    requestSignal.throwIfAborted()
+    const html = await response.text()
+    requestSignal.throwIfAborted()
+    return { status: response.status, url: response.url, html }
   }
-
   try {
     return await fetchOnce(url)
   } catch (error) {
+    requestSignal.throwIfAborted()
     const fallbackUrl = toWwwFallbackUrl(url)
-    if (!fallbackUrl || !isConnectTimeoutFetchError(error)) {
-      throw error
-    }
-
+    if (!fallbackUrl || !isConnectTimeoutFetchError(error)) throw error
     return fetchOnce(fallbackUrl)
   }
-}
+}, { signal, timeoutMs })
 
-const defaultFetchPage = (url) => fetchPageWithWwwFallback(url)
+const defaultFetchPage = (url, options) => fetchPageWithWwwFallback(url, options)
 
 const hasVerifiedCareersLink = (html) =>
   /href=["']https?:\/\/manatec\.in\/career\/["']|href=["']\/career\/["']/i.test(String(html ?? ''))
@@ -209,59 +224,66 @@ export const isVerifiedBlockedShell = ({ status, html } = {}) => {
     && !BLOCKED_PUBLIC_JOB_PATTERN.test(text)
 }
 
-export const createManatecElectronicsScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const fetchVerifiedPage = async (url) => {
-      try {
-        return await fetchPage(url)
-      } catch (error) {
-        if (isVerifiedTimeoutBlockedSurface(error)) {
-          return { status: null, url, html: null, errorKind: 'timeout' }
+const buildDiscoveryOnlyEvidence = (now, surface, error) =>
+  attachInventoryEvidence([], {
+    status: 'discovery-only',
+    surface: surface || HOMEPAGE_URL,
+    firstParty: true,
+    listingComplete: false,
+    pagesFetched: 0,
+    reportedTotal: null,
+    indiaFacetCount: null,
+    verifiedAt: now(),
+    reason: 'Manatec public inventory is currently unavailable or application-only; enumerable vacancies cannot be verified.',
+  })
+
+export const createManatecElectronicsScraper = ({
+  now = () => new Date().toISOString(),
+} = {}) => ({
+  async run({ fetchPage = defaultFetchPage, signal, timeoutMs = DEFAULT_FETCH_TIMEOUT_MS } = {}) {
+    try {
+      return await withRequestDeadline(async requestSignal => {
+        const fetchVerifiedPage = async (url) => {
+          requestSignal.throwIfAborted()
+          try {
+            const page = await fetchPage(url, { signal: requestSignal, timeoutMs })
+            requestSignal.throwIfAborted()
+            if (page?.status !== 200) {
+              throw unavailableInventory(
+                'Manatec public inventory unavailable: HTTP ' + page?.status + ' for ' + url,
+                null,
+                { surface: url },
+              )
+            }
+            return page
+          } catch (error) {
+            requestSignal.throwIfAborted()
+            if (error?.code === 'MANATEC_INVENTORY_UNAVAILABLE') throw error
+            throw unavailableInventory('Manatec public inventory could not be fetched: ' + url, error, {
+              surface: url,
+            })
+          }
         }
-
-        throw error
+        const homepage = await fetchVerifiedPage(HOMEPAGE_URL)
+        if (!hasOfficialHomepageSignal(homepage.html)) throw new Error('Manatec Electronics homepage no longer matches the verified official public site')
+        const careersPage = await fetchVerifiedPage(CAREERS_URL)
+        if (!hasApplicationOnlyCareersSignal(careersPage.html)) throw new Error('Manatec Electronics careers page no longer matches the verified application-only public surface')
+        throw unavailableInventory(
+          'Manatec application-only careers form does not establish an enumerable vacancy inventory',
+          null,
+          { surface: CAREERS_URL },
+        )
+      }, { signal, timeoutMs })
+    } catch (error) {
+      if (error?.code === 'MANATEC_INVENTORY_UNAVAILABLE') {
+        return buildDiscoveryOnlyEvidence(now, error.surface, error)
       }
+      throw error
     }
-
-    const homepage = await fetchVerifiedPage(HOMEPAGE_URL)
-    const pageSitemap = await fetchVerifiedPage(PAGE_SITEMAP_URL)
-    const careersPage = await fetchVerifiedPage(CAREERS_URL)
-    const missingRoute = await fetchVerifiedPage(MISSING_ROUTE_URL)
-
-    if (
-      [homepage, pageSitemap, careersPage, missingRoute]
-        .every((page) => page?.errorKind === 'timeout' || isVerifiedBlockedShell(page))
-    ) {
-      return []
-    }
-
-    if (homepage.errorKind !== 'timeout' && (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html))) {
-      throw new Error('Manatec Electronics homepage no longer matches the verified official public site')
-    }
-
-    if (
-      pageSitemap.errorKind !== 'timeout'
-      && (pageSitemap.status !== 200 || !hasVerifiedPageSitemapSignal(pageSitemap.html))
-    ) {
-      throw new Error('Manatec Electronics page sitemap no longer matches the verified official public structure')
-    }
-
-    if (
-      careersPage.errorKind !== 'timeout'
-      && (careersPage.status !== 200 || !hasApplicationOnlyCareersSignal(careersPage.html))
-    ) {
-      throw new Error('Manatec Electronics careers page no longer matches the verified application-only public surface')
-    }
-
-    if (missingRoute.errorKind !== 'timeout' && !isVerifiedMissingRoute(missingRoute)) {
-      throw new Error('Manatec Electronics missing-route behavior changed materially')
-    }
-
-    return []
   },
 })
 
-export const run = async (options = {}) => createManatecElectronicsScraper().run(options)
+export const run = async (options = {}) => createManatecElectronicsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

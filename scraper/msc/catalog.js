@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Monday, August 3, 2026 that the official MSC careers page https://www.msc.com/en/careers renders the first-party "Work With Us - Careers & Vacancies | MSC" shell with the public career APIs /api/feature/Career/GetJobLocationsList and /api/feature/Career/GetJobVacanciesJobLocationId. The India location is listed in the job-locations API, and the India vacancies API currently returns the official empty-state message "Unfortunately, we do not have any vacancies published in this country right now" with Jobs: []. This provider now validates the careers shell, resolves the India location from the API, and returns an empty array unless the India vacancies payload starts returning inline jobs.'
+  'Verified on September 13, 2026 that https://www.msc.com/en/careers links the official https://msc.csod.com/ux/ats/careersite/4/home board. The exact MSC tenant public search returns six India requisitions. Every page is validated against totalCount and repeated IDs; explicit country filtering preserves India scope. An incomplete or blocked inventory rejects the snapshot.'
 
 export const MSC_CATALOG = {
   source: 'msc',
@@ -14,15 +14,15 @@ export const MSC_CATALOG = {
   homepageUrl: 'https://www.msc.com/en',
   companyCareerPage: 'https://www.msc.com/en/careers',
   companyDomain: 'msc.com',
-  atsPlatform: 'official-company-careers-api',
+  atsPlatform: 'cornerstone-csod',
   countryFilter: 'India',
-  paginationStrategy: 'single-location-api-request',
-  extractionStrategy: 'verified-careers-shell+job-locations-api+location-vacancies-api',
+  paginationStrategy: 'complete-csod-requisition-count-pagination',
+  extractionStrategy: 'verified-first-party-csod-handoff+exact-tenant+explicit-india-requisitions',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'msc/jobs.json',
-  verifiedOn: '2026-08-03',
+  verifiedOn: '2026-09-13',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

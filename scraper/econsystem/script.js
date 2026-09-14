@@ -69,16 +69,12 @@ const getSection = (html, jobId) => {
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 const extractMailtoSubject = (sectionHtml, jobId) => {
-  for (const match of String(sectionHtml ?? '').matchAll(/mailto:[^"']*?\?subject=([^"'&]+(?:&amp;[^"']*)?)/gi)) {
-    const subject = decodeHtml(match[1])
-      .replace(/\s+/g, ' ')
-      .trim()
-
-    if (subject.toLowerCase().startsWith(`${jobId.toLowerCase()}:`)) {
-      return subject
-    }
+  for (const match of String(sectionHtml ?? '').matchAll(/href=["'](mailto:[^"']+)["']/gi)) {
+    try {
+      const subject = new URL(decodeHtml(match[1])).searchParams.get('subject')?.trim()
+      if (subject?.toLowerCase().startsWith(jobId.toLowerCase() + ':')) return subject
+    } catch {}
   }
-
   return null
 }
 
@@ -87,7 +83,11 @@ const getParagraphValue = (sectionHtml, label) => {
   const match = String(sectionHtml ?? '').match(
     new RegExp(`<p[^>]*>\\s*${escapedLabel}\\s*:?\\s*([\\s\\S]*?)<\\/p>`, 'i'),
   )
-  return stripHtml(match?.[1])
+  if (match) return stripHtml(match[1])
+  const cell = String(sectionHtml ?? '').match(new RegExp(
+    '<td\\b[^>]*>\\s*<(?:b|strong)>\\s*' + escapedLabel + '\\s*:?[ \\t]*<\\/(?:b|strong)>\\s*([\\s\\S]*?)<\\/td>', 'i',
+  ))
+  return stripHtml(cell?.[1])
 }
 
 const getDescription = (sectionHtml) => {
@@ -161,9 +161,14 @@ export const extractOpenings = (html) => {
     const city = getParagraphValue(sectionHtml, 'Location')
     const experienceRequired = getParagraphValue(sectionHtml, 'Experience')
     const qualification = getParagraphValue(sectionHtml, 'Educational Qualification')
-    const description = getDescription(sectionHtml)
+    if (!title) throw new Error('e-con Systems job title is missing for ' + jobId)
+    const hasTabularSynopsis = /<td\b[^>]*>\s*<(?:b|strong)>\s*Position\s*:/i.test(sectionHtml)
+    const applyAnchor = /<a\b[^>]*>\s*Apply Here\s*<\/a>/i.exec(sectionHtml)
+    const description = hasTabularSynopsis
+      ? stripHtml(sectionHtml.slice(0, applyAnchor?.index ?? sectionHtml.length))
+      : getDescription(sectionHtml)
     const applyHref = String(sectionHtml.match(/<a[^>]+href=["']([^"']+)["'][^>]*>\s*Apply Here\s*<\/a>/i)?.[1] ?? '')
-    const applyUrl = applyHref ? new URL(applyHref, CAREER_PAGE_URL).toString() : CAREER_PAGE_URL
+    const applyUrl = applyHref ? new URL(decodeHtml(applyHref), CAREER_PAGE_URL).toString() : CAREER_PAGE_URL
     const requiredSkills = [
       ...getSkillsFromHeading(sectionHtml, 'What you will do:'),
       ...getSkillsFromHeading(sectionHtml, 'What We Expect:'),
@@ -180,7 +185,8 @@ export const extractOpenings = (html) => {
       country: 'India',
       jobId,
       requisitionId: jobId,
-      sourceUrl: CAREER_PAGE_URL,
+      sourceUrl: new RegExp('<a[^>]+(?:name|id)=["\']' + escapeRegex(jobId) + '["\']', 'i').test(page)
+        ? CAREER_PAGE_URL + '#' + jobId : CAREER_PAGE_URL,
       applyUrl,
       employmentType: normalizeEmploymentType(title),
       experienceRequired,
@@ -190,6 +196,7 @@ export const extractOpenings = (html) => {
       postingDate: null,
       closingDate: null,
       jobDescription: description,
+      ...(hasTabularSynopsis ? { publicExperienceChecked: true } : {}),
     }
   }).filter(Boolean)
 }

@@ -143,3 +143,35 @@ test('Marquis Technologies returns only India openings from the restored careers
     },
   ])
 })
+
+test('Marquis Technologies reports a typed blocked failure for the current HTTP 307 homepage challenge', async () => {
+  const marquis = await loadModule()
+  const redirectChallenge = Object.assign(
+    new Error(`HTTP 307 for ${marquis.HOMEPAGE_URL}`),
+    { status: 307 },
+  )
+  const requestedUrls = []
+
+  await assert.rejects(
+    marquis.createMarquisTechnologiesScraper().run({
+      fetchText: async (url) => {
+        requestedUrls.push(url)
+        throw redirectChallenge
+      },
+      fetchBrowserText: async () => {
+        assert.fail('Marquis should not treat the verified 307 challenge as browser-recoverable')
+      },
+    }),
+    (error) => {
+      assert.match(error.message, /Marquis Technologies homepage is currently blocked/i)
+      assert.equal(error.cause, redirectChallenge)
+      assert.equal(error.failureKind, 'blocked_or_access_denied')
+      assert.equal(error.softFailure, true)
+      assert.equal(error.upstreamOutage, true)
+      assert.equal(error.abortRetries, true)
+      return true
+    },
+  )
+
+  assert.deepEqual(requestedUrls, [marquis.HOMEPAGE_URL])
+})

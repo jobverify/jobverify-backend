@@ -4,7 +4,6 @@ import test from 'node:test'
 import {
   OFFICIAL_CAREERS_URL,
   SEARCH_PAGE_SIZE,
-  buildDetailApiUrl,
   buildListingApiUrl,
   createMicronTechnologyIndiaScraper,
   hasOfficialMicronIndiaCareersSignal,
@@ -126,9 +125,7 @@ test('Micron Technology India paginates through 10-job Eightfold result pages', 
     seenApiUrls,
     [
       'https://careers.micron.com/api/pcsx/search?domain=micron.com&query=&location=India&start=0&limit=10',
-      ...Array.from({ length: 10 }, (_, index) => buildDetailApiUrl(5001 + index)),
       'https://careers.micron.com/api/pcsx/search?domain=micron.com&query=&location=India&start=10&limit=10',
-      ...Array.from({ length: 3 }, (_, index) => buildDetailApiUrl(5011 + index)),
     ],
   )
   assert.equal(jobs.length, 13)
@@ -151,6 +148,64 @@ test('Micron Technology India paginates through 10-job Eightfold result pages', 
       },
     ],
   )
+})
+
+test('Micron Technology India avoids detail API fan-out so full listing pagination is not rate limited', async () => {
+  const scraper = createMicronTechnologyIndiaScraper()
+  const seenApiUrls = []
+
+  const makePosition = (index) => ({
+    id: 9000 + index,
+    displayJobId: `JR${9900 + index}`,
+    name: `Memory Engineer ${index}`,
+    locations: ['Hyderabad, Telangana, India'],
+    positionUrl: `/careers/job/${9000 + index}`,
+    department: 'Engineering',
+    postedTs: `2026-09-${String(index).padStart(2, '0')}T12:00:00Z`,
+  })
+
+  const jobs = await scraper.run({
+    fetchText: async (url) => {
+      assert.equal(url, OFFICIAL_CAREERS_URL)
+      return CAREERS_HTML
+    },
+    fetchJson: async (url) => {
+      seenApiUrls.push(url)
+      const parsedUrl = new URL(url)
+      assert.equal(parsedUrl.pathname, '/api/pcsx/search')
+
+      const start = parsedUrl.searchParams.get('start')
+      if (start === '0') {
+        return {
+          data: {
+            count: 12,
+            positions: Array.from({ length: 10 }, (_, index) => makePosition(index + 1)),
+          },
+        }
+      }
+
+      if (start === '10') {
+        return {
+          data: {
+            count: 12,
+            positions: Array.from({ length: 2 }, (_, index) => makePosition(index + 11)),
+          },
+        }
+      }
+
+      throw new Error(`Unexpected listing page start=${start}`)
+    },
+  })
+
+  assert.deepEqual(seenApiUrls, [
+    'https://careers.micron.com/api/pcsx/search?domain=micron.com&query=&location=India&start=0&limit=10',
+    'https://careers.micron.com/api/pcsx/search?domain=micron.com&query=&location=India&start=10&limit=10',
+  ])
+  assert.equal(jobs.length, 12)
+  assert.equal(jobs[0].title, 'Memory Engineer 1')
+  assert.equal(jobs[0].sourceUrl, 'https://careers.micron.com/careers/job/9001')
+  assert.equal(jobs[0].jobDescription, null)
+  assert.equal(jobs[0].publicExperienceChecked, false)
 })
 
 test('Micron Technology India keeps successful jobs when its owned browser session reports Target closed while closing', async () => {

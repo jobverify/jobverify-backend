@@ -18,6 +18,7 @@ import {
   getUserById,
   getUsersTable,
   getScrapeStatus,
+  purgeAllJobs,
   triggerScrapeAdmin,
   updateJobStatus,
   updateUserAccess,
@@ -181,6 +182,74 @@ test("updateUserAccess lets an admin set a premium plan with a manual expiry ove
   } finally {
     User.findById = originalFindById;
     AdminAudit.create = originalAdminAuditCreate;
+  }
+});
+
+test("purgeAllJobs refuses to delete jobs without the exact confirmation phrase", async () => {
+  const originalDeleteMany = Job.deleteMany;
+  let deleteAttempted = false;
+
+  Job.deleteMany = async () => {
+    deleteAttempted = true;
+  };
+
+  try {
+    const res = createResponseDouble();
+
+    await purgeAllJobs({ body: { confirmation: "purge all jobs" } }, res);
+
+    assert.equal(res.statusCode, 400);
+    assert.equal(res.body.success, false);
+    assert.match(res.body.message, /PURGE ALL JOBS/);
+    assert.equal(deleteAttempted, false);
+  } finally {
+    Job.deleteMany = originalDeleteMany;
+  }
+});
+
+test("purgeAllJobs deletes every job, refreshes the summary, and records the action", async () => {
+  const originalDeleteMany = Job.deleteMany;
+  const originalAggregate = Job.aggregate;
+  const originalAdminAuditCreate = AdminAudit.create;
+  const originalSummaryFindOneAndUpdate = JobDatasetSummary.findOneAndUpdate;
+  const audits = [];
+  const summaryWrites = [];
+
+  Job.deleteMany = async () => ({ deletedCount: 37 });
+  Job.aggregate = () => ({ exec: async () => [] });
+  AdminAudit.create = async (payload) => {
+    audits.push(payload);
+    return payload;
+  };
+  JobDatasetSummary.findOneAndUpdate = (_filter, update) => {
+    summaryWrites.push(update.$set);
+    return { lean: () => ({ exec: async () => update.$set }) };
+  };
+
+  try {
+    const res = createResponseDouble();
+
+    await purgeAllJobs({
+      body: { confirmation: "PURGE ALL JOBS" },
+      user: { _id: "admin-1" },
+    }, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(res.body, {
+      success: true,
+      message: "All job listings were purged",
+      data: { deletedCount: 37 },
+    });
+    assert.equal(summaryWrites.length, 1);
+    assert.equal(summaryWrites[0].totalJobs, 0);
+    assert.equal(audits.length, 1);
+    assert.equal(audits[0].action, "purgeAllJobs");
+    assert.match(audits[0].details, /37 job listing/);
+  } finally {
+    Job.deleteMany = originalDeleteMany;
+    Job.aggregate = originalAggregate;
+    AdminAudit.create = originalAdminAuditCreate;
+    JobDatasetSummary.findOneAndUpdate = originalSummaryFindOneAndUpdate;
   }
 });
 

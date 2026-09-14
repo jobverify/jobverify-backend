@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+
 import { NCSI_TECHNOLOGIES_PVT_LTD_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -36,9 +38,27 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
     && rawHtml.includes('culture at ncsi')
   }
 
-export const createNcsitechnologiespvtltdScraper = () => ({
+export const hasIncapsulaIncidentSignal = (html = '') =>
+  /Request unsuccessful\.\s*Incapsula incident ID:/i.test(String(html ?? ''))
+  || /\/_Incapsula_Resource\b/i.test(String(html ?? ''))
+
+export const createNcsitechnologiespvtltdScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({ fetchText = defaultFetchText } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
+    if (hasIncapsulaIncidentSignal(careersHtml)) {
+      return attachInventoryEvidence([], {
+        status: 'discovery-only',
+        surface: CAREERS_URL,
+        firstParty: true,
+        listingComplete: false,
+        pagesFetched: 1,
+        reportedTotal: null,
+        indiaFacetCount: null,
+        verifiedAt: now(),
+        reason: 'NCSI careers page is blocked by Incapsula; preserving the existing job snapshot',
+      })
+    }
+
     if (!hasVerifiedCareersPageSignal(careersHtml)) {
       throw new Error('NCSI verified generic careers landing no longer matches the known fail-closed contract')
     }

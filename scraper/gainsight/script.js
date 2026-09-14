@@ -45,7 +45,7 @@ export const hasOfficialCareersPageSignal = (html = '') => {
   const text = normalizeWhitespace(page)
 
   return /Careers & Culture/i.test(text)
-    && /Find Your Dream Job/i.test(text)
+    && /Find (?:Authentic Jobs|Your Dream Job)/i.test(text)
     && /Gainsight Software/i.test(text)
 }
 

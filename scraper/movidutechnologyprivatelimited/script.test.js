@@ -37,6 +37,13 @@ const publicJobsHtml = `
 </html>
 `
 
+const currentParkedHtml = `
+  <html><head>
+    <title>movidu.com&nbsp;-&nbsp;This website is for sale!&nbsp;-&nbsp;movidu Resources and Information.</title>
+    <script src="https://img.sedoparking.com/js/parking.js"></script>
+  </head><body></body></html>
+`
+
 const loadModule = async () => {
   try {
     return await import('./script.js')
@@ -60,7 +67,20 @@ test('Movidu Technology Private Limited sentinel pins the verified parked-domain
   assert.equal(movidu.CAREERS_URL, 'http://movidu.com/careers')
   assert.equal(movidu.hasPublicJobsSignal(parkedHtml), false)
   assert.equal(movidu.hasVerifiedParkedDomainSignal(parkedHtml), true)
+  assert.equal(movidu.hasVerifiedParkedDomainSignal(currentParkedHtml), true)
   assert.equal(movidu.hasPublicJobsSignal(publicJobsHtml), true)
+})
+
+test('Movidu treats an exact upstream 504 gateway timeout as the same bounded timeout blocker', async () => {
+  const movidu = await loadModule()
+  const jobs = await movidu.createMoviduTechnologyPrivateLimitedScraper().run({
+    fetchPage: async (url) => ({
+      status: 504,
+      url,
+      html: '<html><body><h1>504 Gateway Time-out</h1><p>The server did not respond in time.</p></body></html>',
+    }),
+  })
+  assert.deepEqual(jobs, [])
 })
 
 test('Movidu Technology Private Limited sentinel returns no jobs only while the parked first-party surface remains unchanged', async () => {

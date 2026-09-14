@@ -16,6 +16,7 @@ export const DINEOUT_CATALOG = {
   dryRunFile: 'dineout/jobs.json',
   homepageUrl: 'https://www.dineout.co.in/',
   canonicalConsumerSurfaceUrl: 'https://www.swiggy.com/dineout',
+  officialBusinessUrl: 'https://www.swiggy.com/corporate/our-business/',
   companyCareerPage: 'https://careers.swiggy.com/',
   careersIntegrationScriptUrl: 'https://careers.swiggy.com/assets/js/careers-integration.js',
   jobsBoardUrl: 'https://swiggy.mynexthire.com/employer/jobs/careers',

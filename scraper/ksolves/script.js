@@ -82,8 +82,11 @@ const toIndiaLocation = (value) => {
       .map((part) => toDisplayLocationPart(part)),
   )
 
-  if (parts.length === 0) return 'India'
-  return [...parts, 'India'].join(', ')
+  const verifiedIndiaPlaces = /^(?:India|Noida|Indore|Pune|Chennai|Bengaluru|Bangalore|Hyderabad|Mumbai|Delhi|New Delhi|Gurugram|Gurgaon|Kolkata)$/i
+  if (parts.length === 0 || parts.some((part) => !verifiedIndiaPlaces.test(part))) {
+    throw new Error('Ksolves detail location cannot be verified within India')
+  }
+  return [...parts.filter((part) => !/^India$/i.test(part)), 'India'].join(', ')
 }
 
 const extractCity = (location) => normalizeWhitespace(location)?.split(',')?.[0] ?? null
@@ -154,11 +157,17 @@ const extractListingExperience = (cardHtml = '') => {
 }
 
 const extractRequiredSkills = (html = '') =>
-  extractBulletTexts(extractSectionBlock(html, 'Required Skills'))
+  toUniqueArray([
+    ...extractBulletTexts(extractSectionBlock(html, 'Required Skills')),
+    ...extractBulletTexts(extractSectionBlock(html, 'Must-Have Skills')),
+  ])
 
 const extractJobDescription = (html = '') => {
   const lines = toUniqueArray([
     ...extractBulletTexts(extractSectionBlock(html, 'Job Overview')),
+    ...extractBulletTexts(extractSectionBlock(html, 'Position Overview')),
+    ...extractBulletTexts(extractSectionBlock(html, 'Role Overview')),
+    ...extractBulletTexts(extractSectionBlock(html, 'Primary Responsibilities')),
     ...extractBulletTexts(extractSectionBlock(html, 'Roles and Responsibilities')),
     ...extractBulletTexts(extractSectionBlock(html, 'Key Responsibilities')),
   ])
@@ -187,8 +196,7 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.ksolves\.com\/careers["']/i.test(page)
     && text.includes('Location')
     && text.includes('View and Apply Job')
-    && text.includes('Full Stack Developer (React Native, ReactJS, Python)')
-    && text.includes('Senior Software Engineer (Data)')
+    && text.includes('View Current Openings')
   }
 
 export const extractListingCards = (html = '') => {
@@ -210,10 +218,23 @@ export const extractListingCards = (html = '') => {
         workMode: extractAttribute(attributes, 'data-jobtype')?.toLowerCase() ?? null,
       }
     })
-    .filter((card) => card.title && card.sourceUrl && card.rawLocation && card.experienceRequired)
 
-  return cards.filter((card, index, collection) =>
-    collection.findIndex((candidate) => candidate.sourceUrl === card.sourceUrl) === index)
+  const expectedCardCount = [...String(html ?? '').matchAll(/<div\b[^>]*class=["']([^"']*)["'][^>]*>/gi)]
+    .filter((match) => match[1].split(/\s+/).includes('job-card-col')).length
+  if (cards.length !== expectedCardCount
+    || cards.some((card) => !card.title || !card.sourceUrl || !card.rawLocation || !card.experienceRequired)
+    || new Set(cards.map((card) => card.sourceUrl)).size !== cards.length) {
+    throw new Error('Ksolves careers listing is incomplete: not every public job card was parsed')
+  }
+  for (const card of cards) {
+    let url
+    try { url = new URL(card.sourceUrl) } catch { /* Report the same first-party validation error below. */ }
+    if (!url || url.protocol !== 'https:' || url.hostname !== 'www.ksolves.com'
+      || url.pathname !== '/careers-form' || !/^\d+$/.test(url.searchParams.get('jobid') || '')) {
+      throw new Error('Ksolves job card does not point to a verified first-party role URL')
+    }
+  }
+  return cards
 }
 
 export const extractJobDetail = (html = '', listing = {}) => {

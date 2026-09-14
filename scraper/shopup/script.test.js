@@ -7,9 +7,11 @@ import {
   HOMEPAGE_URL,
   SOURCE,
   createShopUpScraper,
+  extractPublicRoleLinks,
   hasOfficialCareersSignal,
   hasOfficialHomepageSignal,
   hasPublicJobsSignal,
+  hasVerifiedNonIndiaRoleSignal,
 } from './script.js'
 
 const homepageHtml = `
@@ -38,6 +40,31 @@ const publicJobsHtml = `
     <body>
       <h1>Current Openings</h1>
       <a href="/apply">Apply now</a>
+    </body>
+  </html>
+`
+
+const currentCareersHtml = `
+  <html>
+    <head><title>ShopUp Careers</title></head>
+    <body>
+      <h1>We are building tomorrow, join us today.</h1>
+      <h2>See open roles</h2>
+      <a href="/job-postings/key-account-manager">Key Account Manager</a>
+      <a href="https://shopup.org/job-postings/sales-performance-executive">Sales Performance Executive</a>
+      <footer>hello@shopup.org · 429–432, Tejgaon I/A, Dhaka 1208, Bangladesh</footer>
+    </body>
+  </html>
+`
+
+const bangladeshRoleHtml = `
+  <html>
+    <head><title>Key Account Manager | ShopUp</title></head>
+    <body>
+      <h1>Key Account Manager</h1>
+      <p>ShopUp HQ (Tejgaon)</p>
+      <h4>Job description</h4>
+      <footer>429–432, Tejgaon I/A, Dhaka 1208, Bangladesh · hello@shopup.org</footer>
     </body>
   </html>
 `
@@ -82,4 +109,44 @@ test('run returns an empty list when the official ShopUp careers page explicitly
 
   assert.deepEqual(requestedUrls, [HOMEPAGE_URL, CAREERS_URL])
   assert.deepEqual(jobs, [])
+})
+
+test('run verifies current public role pages as non-India before returning no India jobs', async () => {
+  assert.equal(hasOfficialCareersSignal(currentCareersHtml), true)
+  assert.deepEqual(extractPublicRoleLinks(currentCareersHtml), [
+    'https://shopup.org/job-postings/key-account-manager',
+    'https://shopup.org/job-postings/sales-performance-executive',
+  ])
+  assert.equal(hasVerifiedNonIndiaRoleSignal(bangladeshRoleHtml), true)
+
+  const requestedUrls = []
+  const jobs = await createShopUpScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+      if (url === HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
+      if (url === CAREERS_URL) return { status: 200, url, html: currentCareersHtml }
+      return { status: 200, url, html: bangladeshRoleHtml }
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    HOMEPAGE_URL,
+    CAREERS_URL,
+    'https://shopup.org/job-postings/key-account-manager',
+    'https://shopup.org/job-postings/sales-performance-executive',
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('run rejects current role links whose country cannot be verified', async () => {
+  await assert.rejects(
+    createShopUpScraper().run({
+      fetchPage: async (url) => {
+        if (url === HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
+        if (url === CAREERS_URL) return { status: 200, url, html: currentCareersHtml }
+        return { status: 200, url, html: '<html><body><h1>Key Account Manager</h1></body></html>' }
+      },
+    }),
+    /country could not be verified/i,
+  )
 })

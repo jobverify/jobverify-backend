@@ -222,10 +222,13 @@ export const extractJobFromHtml = ({
 } = {}) => {
   const lines = extractTextLines(html)
   const summaryIndex = lines.findIndex((line) => /^job summary$/i.test(line))
+  const headingTitle = [...String(html ?? '').matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/gi)]
+    .map((match) => normalizeWhitespace(match[1]))
+    .find((heading) => heading && !/^job summary$/i.test(heading))
   const title = normalizeWhitespace(
-    summaryIndex >= 0
+    headingTitle || (summaryIndex >= 0
       ? lines.slice(summaryIndex + 1).find((line) => !/^location\b/i.test(line) && !/^about\b/i.test(line))
-      : lines.find((line) => !/^careers\s*@\s*rubrik/i.test(line)),
+      : lines.find((line) => !/^careers\s*@\s*rubrik/i.test(line))),
   )
   const locationLine = lines.find((line) => /^location[:\s]/i.test(line) || /\bindia\b/i.test(line))
   const location = normalizeWhitespace(locationLine?.replace(/^location[:\s]*/i, ''))

@@ -144,6 +144,57 @@ test('Aadinath Consultancy sentinel returns no jobs while the verified homepage 
   assert.deepEqual(jobs, [])
 })
 
+test('Aadinath Consultancy retries the same first-party routes over HTTP only when HTTPS has an expired certificate', async () => {
+  const aadinath = await loadAadinathModule()
+  const requestedUrls = []
+  const expiredCertificateError = Object.assign(new TypeError('fetch failed'), {
+    cause: {
+      code: 'CERT_HAS_EXPIRED',
+      message: 'certificate has expired',
+    },
+  })
+  const fetchPage = aadinath.createFetchPage({
+    fetchImpl: async (url) => {
+      requestedUrls.push(url)
+
+      if (url.startsWith('https://')) throw expiredCertificateError
+
+      if (url === 'http://aadinathconsultants.com/') {
+        return {
+          status: 200,
+          url,
+          text: async () => officialHomepageHtml.replace('Port 443', 'Port 80'),
+        }
+      }
+
+      return {
+        status: 404,
+        url,
+        text: async () => missingCareersRouteHtml,
+      }
+    },
+  })
+
+  const jobs = await aadinath.run({ fetchPage })
+
+  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedUrls, aadinath.FIRST_PARTY_TIMEOUT_URLS.flatMap((url) => [
+    url,
+    url.replace('https://', 'http://'),
+  ]))
+
+  const refusedUrls = []
+  const fetchWithoutFallback = aadinath.createFetchPage({
+    fetchImpl: async (url) => {
+      refusedUrls.push(url)
+      throw new Error('connect ECONNREFUSED')
+    },
+  })
+
+  await assert.rejects(fetchWithoutFallback(aadinath.HOMEPAGE_URL), /ECONNREFUSED/)
+  assert.deepEqual(refusedUrls, [aadinath.HOMEPAGE_URL])
+})
+
 test('Aadinath Consultancy sentinel fails closed when the homepage changes or a first-party careers route starts resolving', async () => {
   const aadinath = await loadAadinathModule()
 

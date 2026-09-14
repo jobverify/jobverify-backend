@@ -130,7 +130,7 @@ const isIndiaJob = (record = {}) =>
 
 export const hasVerifiedCareerPageSignals = (html) => {
   const page = String(html ?? '')
-  return /<title>\s*Careers\s*\|\s*Rsystems\s*<\/title>/i.test(page)
+  return /<title>\s*Careers\s*\|\s*R\s*systems\s*<\/title>/i.test(page)
     && /<meta[^>]+name=["']description["'][^>]+innovative technologists/i.test(page)
     && /<base[^>]+href=["']\/rsystems\/["']/i.test(page)
     && /<app-root><\/app-root>/i.test(page)

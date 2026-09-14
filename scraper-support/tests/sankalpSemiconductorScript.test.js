@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const homepageHtml = `
 <!doctype html>
 <html lang="en">
@@ -102,6 +104,25 @@ test('Sankalp Semiconductor sentinel returns [] while the exact-name site stays 
     sankalp.CONTACT_URL,
   ])
   assert.deepEqual(jobs, [])
+})
+
+test('Sankalp Semiconductor returns discovery-only evidence when the verified homepage returns HTTP 500', async () => {
+  const sankalp = await loadModule()
+
+  const jobs = await sankalp.createSankalpSemiconductorScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
+    fetchText: async () => {
+      throw new Error(`HTTP 500 for ${sankalp.HOMEPAGE_URL}`)
+    },
+    probeText: async () => '',
+  })
+
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, sankalp.HOMEPAGE_URL)
+  assert.equal(evidence?.listingComplete, false)
 })
 
 test('Sankalp Semiconductor sentinel fails closed when the verified homepage, contact page, or ATS assumptions drift into a public jobs surface', async () => {

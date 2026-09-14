@@ -44,7 +44,7 @@ const JOBS_PAGE_ONE_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Find your next opportunity | WSP</title>
+    <title>Find your dream job | WSP</title>
   </head>
   <body>
     <section>
@@ -74,7 +74,7 @@ const JOBS_PAGE_TWO_HTML = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Find your next opportunity | WSP</title>
+    <title>Find your dream job | WSP</title>
   </head>
   <body>
     <section>

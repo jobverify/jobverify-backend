@@ -62,7 +62,7 @@ const inferLocationFromTitle = (title) => {
   const normalizedTitle = normalizeWhitespace(title)
   if (!normalizedTitle) return null
 
-  const match = normalizedTitle.match(/\bin\s+(.+)$/i)
+  const match = normalizedTitle.match(/\bin\s+(.+\b(?:district|city),\s*[A-Za-z][A-Za-z ]+)$/i)
   return normalizeWhitespace(match?.[1])
 }
 
@@ -75,6 +75,7 @@ const ensureIndiaLocation = (value) => {
 
 const inferRemoteStatus = (value) => {
   const normalized = normalizeWhitespace(value)?.toLowerCase() || ''
+  if (!normalized) return null
   if (normalized.includes('hybrid')) return 'Hybrid'
   if (normalized.includes('remote')) return 'Remote'
   return 'On-site'

@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 import {
   CAREERS_URL,
   COMPANY,
@@ -91,7 +93,7 @@ test('Manatec Electronics recognizes the verified homepage, sitemap, current car
   assert.equal(CAREERS_URL, 'https://manatec.in/career/')
   assert.equal(PAGE_SITEMAP_URL, 'https://manatec.in/wp-sitemap-posts-page-1.xml')
   assert.equal(MISSING_ROUTE_URL, 'https://manatec.in/join-us')
-  assert.equal(DEFAULT_FETCH_TIMEOUT_MS, 60000)
+  assert.equal(DEFAULT_FETCH_TIMEOUT_MS, 15000)
   assert.equal(hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(hasVerifiedPageSitemapSignal(pageSitemapXml), true)
   assert.equal(hasApplicationOnlyCareersSignal(careersHtml), true)
@@ -105,10 +107,12 @@ test('Manatec Electronics recognizes the verified homepage, sitemap, current car
   )
 })
 
-test('Manatec Electronics returns no jobs while the verified public surface remains application-only', async () => {
+test('Manatec Electronics returns discovery-only evidence for the verified application-only form', async () => {
   const requestedUrls = []
 
-  const jobs = await createManatecElectronicsScraper().run({
+  const jobs = await createManatecElectronicsScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
@@ -132,19 +136,20 @@ test('Manatec Electronics returns no jobs while the verified public surface rema
     },
   })
 
-  assert.deepEqual(requestedUrls, [
-    HOMEPAGE_URL,
-    PAGE_SITEMAP_URL,
-    CAREERS_URL,
-    MISSING_ROUTE_URL,
-  ])
+  assert.deepEqual(requestedUrls, [HOMEPAGE_URL, CAREERS_URL])
   assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, CAREERS_URL)
+  assert.equal(evidence?.listingComplete, false)
 })
 
-test('Manatec Electronics preserves the application-only sentinel while verified routes are temporarily timeout-blocked', async () => {
+test('Manatec Electronics returns discovery-only evidence on the first unavailable route without requesting more blocked surfaces', async () => {
   const requestedUrls = []
 
-  const jobs = await createManatecElectronicsScraper().run({
+  const jobs = await createManatecElectronicsScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
@@ -168,13 +173,12 @@ test('Manatec Electronics preserves the application-only sentinel while verified
     },
   })
 
-  assert.deepEqual(requestedUrls, [
-    HOMEPAGE_URL,
-    PAGE_SITEMAP_URL,
-    CAREERS_URL,
-    MISSING_ROUTE_URL,
-  ])
+  assert.deepEqual(requestedUrls, [HOMEPAGE_URL])
   assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, HOMEPAGE_URL)
+  assert.equal(evidence?.listingComplete, false)
 })
 
 test('Manatec Electronics fails closed when the careers page drifts into a public jobs surface', async () => {

@@ -34,7 +34,14 @@ const currentOfficialCareersHtml = `
       <h2>The perks of being an AgStar</h2>
       <p>If you're ready to make an impact, we'd love to meet you!</p>
       <a href="https://agrostar.darwinbox.in/ms/candidatev2/main/careers/allJobs">View Open Positions</a>
+      <h3>Cluster Manager - Saharanpur</h3>
+      <p>Saharanpur, Uttar Pradesh</p>
+      <p>8 - 10 Years</p>
       <a href="https://agrostar.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a69f8bd0c30c48?from=all">Cluster Manager - Saharanpur</a>
+      <h3>Senior Manager - Crop Protection</h3>
+      <p>Pune, Maharashtra, India</p>
+      <p>8 - 15 Years</p>
+      <a href="https://agrostar.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a681afb8c613ff?from=all">Senior Manager - Crop Protection</a>
     </body>
   </html>
 `
@@ -242,8 +249,8 @@ test('run can use inline official Darwinbox job links when the first-party caree
       title: 'Cluster Manager - Saharanpur',
       company: 'AgroStar',
       department: null,
-      location: null,
-      city: null,
+      location: 'Saharanpur, Uttar Pradesh',
+      city: 'Saharanpur',
       jobId: 'a69f8bd0c30c48',
       requisitionId: null,
       sourceUrl: 'https://agrostar.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a69f8bd0c30c48',
@@ -259,6 +266,29 @@ test('run can use inline official Darwinbox job links when the first-party caree
       publicExperienceChecked: true,
       source: 'agrostar',
       link: 'https://agrostar.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a69f8bd0c30c48',
+      scrapedAt: FIXED_SCRAPED_AT,
+    },
+    {
+      title: 'Senior Manager - Crop Protection',
+      company: 'AgroStar',
+      department: null,
+      location: 'Pune, Maharashtra, India',
+      city: 'Pune',
+      jobId: 'a681afb8c613ff',
+      requisitionId: null,
+      sourceUrl: 'https://agrostar.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a681afb8c613ff',
+      applyUrl: 'https://agrostar.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a681afb8c613ff',
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: null,
+      publicExperienceChecked: true,
+      source: 'agrostar',
+      link: 'https://agrostar.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a681afb8c613ff',
       scrapedAt: FIXED_SCRAPED_AT,
     },
   ])

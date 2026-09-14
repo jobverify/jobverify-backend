@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const loadInctureModule = async () => {
   try {
     return await import('../../scraper/incture/script.js')
@@ -83,6 +85,10 @@ const officialPortalHtml = `
   </html>
 `
 
+const nonIndiaPortalHtml = officialPortalHtml
+  .replace('Location: Bengaluru, India', 'Location: Austin, United States')
+  .replace('Location: Mysuru', 'Location: Berlin, Germany')
+
 test('Incture constants stay pinned to the official careers surfaces and portal markers', async () => {
   const incture = await loadInctureModule()
 
@@ -164,6 +170,26 @@ test('run validates the official careers page before fetching and decorating Inc
     'https://incture.zohorecruit.com/jobs/Careers/90010000000012345/Senior-Software-Engineer?source=CareerSite',
   )
   assert.equal(jobs[0].scrapedAt, '2026-07-09T00:00:00.000Z')
+})
+
+test('run attaches complete-inventory evidence when the official Incture portal has zero India jobs', async () => {
+  const incture = await loadInctureModule()
+
+  const jobs = await incture.createInctureScraper().run({
+    fetchText: async (url) => {
+      if (url === incture.CAREERS_URL) return officialCareersHtml
+      if (url === incture.CAREERS_PORTAL_URL) return nonIndiaPortalHtml
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    now: () => '2026-09-14T00:00:00.000Z',
+  })
+
+  const inventoryEvidence = readInventoryEvidence(jobs)
+
+  assert.deepEqual(jobs, [])
+  assert.equal(inventoryEvidence?.status, 'complete-inventory')
+  assert.equal(inventoryEvidence?.reportedTotal, 3)
+  assert.equal(inventoryEvidence?.indiaFacetCount, 0)
 })
 
 test('run fails closed when the official Incture careers page signal disappears', async () => {

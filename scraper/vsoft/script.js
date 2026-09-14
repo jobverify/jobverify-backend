@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -29,7 +29,7 @@ const USER_AGENT =
 const CAREERS_PAGE_SIGNAL_PATTERNS = [
   /<title>\s*Careers\s*-\s*V-Soft Consulting\s*\|\s*Enterprise AI(?:\s*&amp;\s*|\s*&\s*)Digital Transformation\s*<\/title>/i,
   /https:\/\/www\.vsoftconsulting\.com\/career-portal\/?/i,
-  /\b(?:Browse Open Roles|View Roles)\b/i,
+  /\b(?:Browse Open Roles|View jobs)\b/i,
 ]
 
 const CAREER_PORTAL_SIGNAL_PATTERNS = [

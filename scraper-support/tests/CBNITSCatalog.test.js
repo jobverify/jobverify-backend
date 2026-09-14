@@ -22,22 +22,22 @@ test('CBNITS catalog captures the verified first-party SPA careers shell contrac
   assert.equal(provider.officialBrandName, 'CBNITS')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://www.cbnits.com/')
-  assert.equal(provider.companyCareerPage, 'https://www.cbnits.com/careers')
+  assert.equal(provider.companyCareerPage, 'https://cbnits.com/')
   assert.equal(provider.atsPlatform, 'first-party-spa-careers-shell-no-public-jobs-html')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'first-party-careers-spa-shell-validation')
+  assert.equal(provider.paginationStrategy, 'first-party-spa-shell-and-careers-bundle-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-spa-shell-without-ssr-jobs-return-empty',
+    'verified-first-party-spa-shell+current-careers-route-bundle-without-rendered-jobs',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'cbnits.com')
-  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.equal(provider.verifiedOn, '2026-09-13')
   assert.match(provider.modulePath, /cbnits[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /cbnits[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.cbnits\.com\/careers/i)
+  assert.match(provider.verifiedSurfaceSummary, /Sunday, September 13, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/cbnits\.com\//i)
   assert.match(provider.verifiedSurfaceSummary, /Agentic AI, Cybersecurity & Intelligent Enterprise Solutions \| CBNITS/i)
   assert.match(provider.verifiedSurfaceSummary, /div id="root"/i)
 })

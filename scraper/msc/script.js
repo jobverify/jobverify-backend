@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { MSC_CATALOG } from './catalog.js'
+import { hasMscCornerstoneHandoff, runMscCornerstone } from './cornerstone.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -246,7 +247,8 @@ export const extractMscJobs = (payload = {}, {
   })
   .filter(Boolean)
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -255,12 +257,14 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
+  ...options,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
     Referer: buildCareerUrl(),
     'X-Requested-With': 'XMLHttpRequest',
+    ...options.headers,
   },
   label: 'msc-careers-api',
   timeoutMs: 15000,
@@ -283,20 +287,29 @@ export const createMscScraper = () => ({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
+    signal = null,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    signal?.throwIfAborted()
+    const careersHtml = await fetchText(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
+
+    if (hasMscCornerstoneHandoff(careersHtml)) {
+      return runMscCornerstone({ fetchText, fetchJson, signal, now })
+    }
 
     if (hasVerifiedMscAccessDeniedSignal(careersHtml)) {
-      return []
+      throw new Error('MSC public careers inventory is unavailable: access denied')
     }
 
     if (!hasVerifiedMscCareersSignal(careersHtml)) {
       throw new Error('MSC careers shell no longer matches the verified public careers app surface')
     }
 
-    const jobLocations = await fetchJson(JOB_LOCATIONS_API_URL)
+    const jobLocations = await fetchJson(JOB_LOCATIONS_API_URL, { signal })
+    signal?.throwIfAborted()
     const targetJobLocationId = extractTargetJobLocationId(jobLocations)
-    const indiaVacancies = await fetchJson(buildVacanciesUrl(targetJobLocationId))
+    const indiaVacancies = await fetchJson(buildVacanciesUrl(targetJobLocationId), { signal })
+    signal?.throwIfAborted()
 
     if (hasInlineMscJobs(indiaVacancies)) {
       return extractMscJobs(indiaVacancies, { jobLocationName: TARGET_JOB_LOCATION_NAME, now })

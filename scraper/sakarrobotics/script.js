@@ -1,3 +1,4 @@
+import { readCurrentSakarInventory } from './currentCareers.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -58,23 +59,37 @@ const normalizeLocation = (record = {}) => {
 const hasInputWithId = (html, id) =>
   new RegExp(`<input\\b(?=[^>]*\\bid=["']${id}["'])[^>]*>`, 'i').test(String(html ?? ''))
 
+const hasCurrentOfficialAppShell = (html) => {
+  const page = String(html ?? '')
+  return /<title>\s*Sakar Robotics\s*<\/title>/i.test(page)
+    && /name=["']description["'][^>]+Sakar builds general-purpose robots that perceive, decide, and act/i.test(page)
+    && /property=["']og:url["'][^>]+https:\/\/www\.sakarrobotics\.com\//i.test(page)
+    && /src=["']\/build\/seo\.js\?v=\d+["']/i.test(page)
+    && /src=["']\/build\/pages\/company\.js\?v=\d+["']/i.test(page)
+    && /src=["']\/build\/app\.js\?v=\d+["']/i.test(page)
+}
+
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>\s*Sakar Robotics:\s*Intelligent Automation\s*<\/title>/i.test(page)
+  return hasCurrentOfficialAppShell(page) || (
+    /<title>\s*Sakar Robotics:\s*Intelligent Automation\s*<\/title>/i.test(page)
     && /href=["'](?:https:\/\/www\.sakarrobotics\.com)?\/careers["']/i.test(page)
     && /https:\/\/sakarrobotics\.zohorecruit\.in\/jobs\/Careers/i.test(page)
     && /Unified Autonomous Robotics Platform/i.test(page)
     && /Build the Future with Us/i.test(page)
+  )
 }
 
 export const hasOfficialCareersPageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>\s*Sakar Robotics:\s*Intelligent Automation\s*<\/title>/i.test(page)
+  return hasCurrentOfficialAppShell(page) || (
+    /<title>\s*Sakar Robotics:\s*Intelligent Automation\s*<\/title>/i.test(page)
     && /Join a multidisciplinary team engineering autonomous systems/i.test(page)
     && /View Open Roles/i.test(page)
     && /https:\/\/sakarrobotics\.zohorecruit\.in\/jobs\/Careers/i.test(page)
+  )
 }
 
 export const hasOfficialPortalSignal = (html) => {
@@ -128,7 +143,7 @@ export const extractIndiaJobs = (payload) =>
         requiredSkills: [],
         postingDate: normalizeWhitespace(record.Date_Opened),
         closingDate: null,
-        jobDescription: normalizeWhitespace(record.Job_Description),
+        jobDescription: normalizeWhitespace(String(record.Job_Description || '').replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ')),
         publicExperienceChecked: Boolean(
           normalizeWhitespace(record.Work_Experience) || normalizeWhitespace(record.Job_Description),
         ),
@@ -137,8 +152,9 @@ export const extractIndiaJobs = (payload) =>
     })
     .filter(Boolean)
 
-const defaultFetchText = async (url) => {
+const defaultFetchText = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -149,8 +165,9 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
-const defaultFetchJson = async (url) => {
+const defaultFetchJson = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'application/json,text/plain,*/*',
@@ -168,23 +185,34 @@ export const createSakarRoboticsScraper = ({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
+    signal,
   } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    signal?.throwIfAborted()
+    const readText = async url => { signal?.throwIfAborted(); const value = await fetchText(url, { signal }); signal?.throwIfAborted(); return value }
+    const readJson = async url => { signal?.throwIfAborted(); const value = await fetchJson(url, { signal }); signal?.throwIfAborted(); return value }
+    const homepageHtml = await readText(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Response is not the verified official Sakar Robotics homepage')
     }
 
-    const careersPageHtml = await fetchText(CAREERS_PAGE_URL)
+    if (hasCurrentOfficialAppShell(homepageHtml)) {
+      const payload = await readCurrentSakarInventory({ html: homepageHtml, readText, readJson })
+      const jobs = extractIndiaJobs(payload)
+      const selected = Number.isInteger(maxJobs) && maxJobs > 0 ? jobs.slice(0,maxJobs) : jobs
+      return selected.map(job => ({ ...job, source: SOURCE, link: job.applyUrl || job.sourceUrl, scrapedAt: now(), ...(selected.length < jobs.length ? {sourceListingComplete:false} : {}) }))
+    }
+
+    const careersPageHtml = await readText(CAREERS_PAGE_URL)
     if (!hasOfficialCareersPageSignal(careersPageHtml)) {
       throw new Error('Response is not the verified official Sakar Robotics careers page')
     }
 
-    const portalHtml = await fetchText(CAREERS_PORTAL_URL)
+    const portalHtml = await readText(CAREERS_PORTAL_URL)
     if (!hasOfficialPortalSignal(portalHtml)) {
       throw new Error('Response is not the verified official Sakar Robotics careers portal')
     }
 
-    const payload = await fetchJson(CAREERS_API_URL)
+    const payload = await readJson(CAREERS_API_URL)
     if (payload?.code !== 'success' || !Array.isArray(payload?.data)) {
       throw new Error('Sakar Robotics public jobs API no longer returns the verified success payload')
     }
@@ -201,7 +229,7 @@ export const createSakarRoboticsScraper = ({
   },
 })
 
-export const run = async () => createSakarRoboticsScraper().run()
+export const run = async (options = {}) => createSakarRoboticsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

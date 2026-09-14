@@ -17,8 +17,7 @@ export const SEARCH_WRAPPER_URL = EXPLEO_CATALOG.indiaJobsSearchWrapperUrl
 export const SEARCH_IFRAME_URL = EXPLEO_CATALOG.indiaJobsSearchIframeUrl
 export const OFFICIAL_JOB_DETAIL_EXAMPLE_URL = EXPLEO_CATALOG.officialJobDetailExampleUrl
 
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+export const ICIMS_USER_AGENT = 'Mozilla/5.0'
 
 const ICIMS_HOST = 'https://expleo-jobs-in-en.icims.com'
 
@@ -202,7 +201,7 @@ const buildCanonicalApplyUrl = (rawApplyUrl, fallbackUrl) => {
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': USER_AGENT,
+      'User-Agent': ICIMS_USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',

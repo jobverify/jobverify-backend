@@ -13,7 +13,7 @@ export const SOURCE = 'greatlearning'
 export const COMPANY_NAME = 'Great Learning'
 export const COMPANY = COMPANY_NAME
 export const COMPANY_ID = 'main'
-export const VERIFIED_ON = '2026-07-25'
+export const VERIFIED_ON = '2026-09-13'
 export const OFFICIAL_SITE_URL = 'https://www.mygreatlearning.com/'
 export const CAREERS_PAGE_URL = 'https://www.mygreatlearning.com/careers'
 export const DARWINBOX_ORIGIN = 'https://greatlearning.darwinbox.in'
@@ -55,8 +55,7 @@ export const hasOfficialCareersPageSignal = (html = '') => {
     && (text.includes('Current openings at Great Learning') || text.includes('Join our Tribe'))
     && text.includes('team of impact-makers!')
     && /career-openings__list/i.test(page)
-    && (page.match(/career-openings__item/gi) || []).length >= 3
-    && (page.match(/data-job-link=["']https:\/\/greatlearning\.darwinbox\.in\/ms\/candidatev2\/main\/careers\/jobDetails\//gi) || []).length >= 3
+    && /career-openings__item/i.test(page)
 }
 
 export const extractDarwinboxJobDetailUrls = (html = '') => [
@@ -65,94 +64,90 @@ export const extractDarwinboxJobDetailUrls = (html = '') => [
   ),
 ].map((match) => decodeHtmlEntities(match[1]))
 
-const slugify = (value) => normalizeWhitespace(value)
-  .toLowerCase()
-  .replace(/[^a-z0-9]+/g, '-')
-  .replace(/^-+|-+$/g, '')
+const slugify = (value) => normalizeWhitespace(value).toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 
-const extractAttribute = (html, attribute) => {
-  const match = String(html ?? '').match(
-    new RegExp(`\\b${attribute}=["']([^"']+)["']`, 'i'),
-  )
-  return match?.[1] ?? null
-}
+const extractAttribute = (html, attribute) => String(html ?? '').match(
+  new RegExp('\\b' + attribute + '\\s*=\\s*["\']([^"\']*)["\']', 'i'),
+)?.[1] ?? null
 
-const extractClassContent = (html, className) => {
-  const match = String(html ?? '').match(
-    new RegExp(`<[^>]+class=["'][^"']*\\b${className}\\b[^"']*["'][^>]*>([\\s\\S]*?)<\\/[^>]+>`, 'i'),
-  )
-  return match?.[1] ?? null
+// Balance nested tags so descriptions keep all paragraphs and bullet points.
+const elementsByClass = (html, className) => {
+  const page = String(html ?? '')
+  const elements = []
+  const openings = /<([a-z][\w-]*)\b[^>]*\bclass\s*=\s*["']([^"']*)["'][^>]*>/gi
+  let opening
+  while ((opening = openings.exec(page))) {
+    if (!opening[2].split(/\s+/).includes(className)) continue
+    const tags = new RegExp('<\\/?' + opening[1] + '\\b[^>]*>', 'gi')
+    tags.lastIndex = openings.lastIndex
+    let depth = 1
+    let closing
+    while (depth && (closing = tags.exec(page))) depth += closing[0].startsWith('</') ? -1 : 1
+    if (depth) throw new Error('Great Learning incomplete role card markup')
+    elements.push({ html: page.slice(opening.index, tags.lastIndex), inner: page.slice(openings.lastIndex, closing.index) })
+    openings.lastIndex = tags.lastIndex
+  }
+  return elements
 }
 
 const toGreatLearningUrl = (value) => {
+  if (!value) return null
   try {
-    const url = new URL(value, CAREERS_PAGE_URL)
-    return url.hostname === 'www.mygreatlearning.com' ? url.toString() : null
-  } catch {
-    return null
-  }
+    const url = new URL(decodeHtmlEntities(value), CAREERS_PAGE_URL)
+    return url.origin === 'https://www.mygreatlearning.com' && /^\/careers\/[^/]+\/[^/]+\/?$/.test(url.pathname) ? url.toString() : null
+  } catch { return null }
 }
 
 const toApplicationUrl = (value) => {
+  if (!value) return null
   try {
-    const url = new URL(value)
-    const isGoogleForm = url.hostname === 'forms.gle'
+    const url = new URL(decodeHtmlEntities(value))
+    const isGoogleForm = (url.hostname === 'forms.gle' && /^\/[^/]+$/.test(url.pathname))
       || (url.hostname === 'docs.google.com' && url.pathname.startsWith('/forms/'))
-    return isGoogleForm ? url.toString() : null
-  } catch {
-    return null
-  }
+    return url.protocol === 'https:' && isGoogleForm && !url.username && !url.password ? url.toString() : null
+  } catch { return null }
 }
+
+const indiaCity = '(?:bangalore|bengaluru|gurgaon|gurugram|hyderabad|mumbai|pune|chennai|noida|delhi)'
+const indiaLocations = new RegExp('^' + indiaCity + '(?:\\s*(?:,|and|&|/)\\s*' + indiaCity + ')*(?:,\\s*India)?$', 'i')
 
 export const extractGreatLearningJobs = (html = '') => {
-  const jobs = []
+  const listing = elementsByClass(html, 'career-openings__list')[0]?.inner
+  if (!listing) throw new Error('Great Learning incomplete openings list')
+  const cards = elementsByClass(listing, 'career-openings__item')
+  const expectedApplications = [...listing.matchAll(/\bdata-job-link\s*=/gi)].length
+  if (!cards.length || cards.length !== expectedApplications) throw new Error('Great Learning incomplete application cards')
   const seen = new Set()
-  const cards = String(html ?? '').matchAll(
-    /<li[^>]+class=["'][^"']*career-openings__item[^"']*["'][^>]*>[\s\S]*?<\/li>/gi,
-  )
-
-  for (const cardMatch of cards) {
-    const card = cardMatch[0]
-    const title = normalizeWhitespace(extractClassContent(card, 'job-position'))
+  return cards.map(({ html: card }) => {
+    const content = className => elementsByClass(card, className)[0]?.inner
+    const title = normalizeWhitespace(content('job-position'))
     const applyUrl = toApplicationUrl(extractAttribute(card, 'data-job-link'))
-    const location = normalizeWhitespace(extractClassContent(card, 'location-name'))
-    const locationHref = extractClassContent(card, 'job-location')?.match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1]
-    const sourceUrl = toGreatLearningUrl(locationHref)
-    const jobDescription = normalizeWhitespace(extractClassContent(card, 'job-details'))
-
-    if (!title || !applyUrl || !location || !sourceUrl) continue
-
-    const jobId = slugify(`${title}-${location}`)
-    if (!jobId || seen.has(jobId)) continue
+    const location = normalizeWhitespace(content('location-name'))
+    const sourceUrl = toGreatLearningUrl(extractAttribute(elementsByClass(card, 'job-location')[0]?.html, 'href'))
+    const description = normalizeWhitespace(content('job-details'))
+    const qualifications = normalizeWhitespace(content('job-qualifications'))
+    if (!title || !applyUrl || !sourceUrl || !location || !description) throw new Error('Great Learning incomplete public role card')
+    if (!indiaLocations.test(location)) throw Object.assign(new Error('Great Learning incomplete location scope: ' + location), { code: 'incomplete_location_scope' })
+    const jobId = slugify(decodeURIComponent(new URL(sourceUrl).pathname.slice('/careers/'.length)))
+    if (!jobId || seen.has(jobId)) throw new Error('Great Learning duplicate or incomplete role identity')
     seen.add(jobId)
-
-    jobs.push({
-      title,
-      company: COMPANY_NAME,
-      department: null,
-      location: `${location}, India`,
-      city: location,
-      country: 'India',
-      jobId,
-      requisitionId: jobId,
-      sourceUrl,
-      applyUrl,
+    return {
+      title, company: COMPANY_NAME, department: null,
+      location: /\bIndia\b/i.test(location) ? location : location + ', India',
+      city: location.replace(/,\s*India$/i, ''), country: 'India',
+      jobId, requisitionId: jobId, sourceUrl, applyUrl, applicationUrlIsGeneric: true,
       employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: null,
-      closingDate: null,
-      jobDescription,
-      remoteStatus: null,
-    })
-  }
-
-  return jobs
+      experienceRequired: qualifications?.match(/\b\d+(?:\s*[\u2013-]\s*\d+|\+)?\s*years?\b/i)?.[0] ?? null,
+      minimumQualification: null, preferredQualification: null, requiredSkills: [],
+      postingDate: null, closingDate: null,
+      jobDescription: [description, qualifications].filter(Boolean).join(' '), remoteStatus: null,
+    }
+  })
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -170,14 +165,21 @@ export const createGreatLearningScraper = ({
     companyId: COMPANY_ID,
   }),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, ...darwinboxOptions } = {}) {
-    const careersHtml = await fetchText(CAREERS_PAGE_URL)
+  async run({ fetchText = defaultFetchText, signal, ...darwinboxOptions } = {}) {
+    signal?.throwIfAborted()
+    const careersHtml = await fetchText(CAREERS_PAGE_URL, { signal })
+    signal?.throwIfAborted()
 
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('The verified Great Learning careers page changed materially')
     }
 
-    const jobs = await darwinboxScraper.run(darwinboxOptions)
+    const cards = elementsByClass(careersHtml, 'career-openings__item')
+    const legacyUrls = extractDarwinboxJobDetailUrls(careersHtml)
+    const jobs = legacyUrls.length === cards.length && cards.length > 0
+      ? await darwinboxScraper.run(signal ? { ...darwinboxOptions, signal } : darwinboxOptions)
+      : extractGreatLearningJobs(careersHtml)
+    signal?.throwIfAborted()
     const scrapedAt = now()
 
     return jobs.map((job) => ({

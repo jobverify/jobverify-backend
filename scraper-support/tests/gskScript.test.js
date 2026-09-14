@@ -83,12 +83,12 @@ test('run keeps India jobs from GSK search results and enriches them from detail
   assert.deepEqual(jobs[0].requiredSkills, ['Technology strategy', 'Stakeholder management'])
 })
 
-test('run deduplicates GSK roles that resolve to the same public job after detail enrichment', async () => {
+test('run deduplicates repeated upstream records for the same verified GSK job', async () => {
   const duplicateSearchResultsPage0 = `<!doctype html>
 <html>
 <body>
 <script>
-phApp.ddo = {"eagerLoadRefineSearch":{"totalHits":2,"hits":1,"data":{"jobs":[{"reqId":"Job Code: J003318","title":"Senior Medical Writer","city":"Bengaluru","country":"India","category":"Medical and Clinical","type":"Full time","postedDate":"2026-07-23T00:00:00.000+0000","applyUrl":"https://jobs.gsk.com/in/en/job/443912/Senior-Medical-Writer","cityStateCountry":"Bengaluru, India","location":"Bengaluru, India","ml_skills":["medical writing"]}],"aggregations":[{"field":"country","value":{"India":24}}]}}};
+phApp.ddo = {"eagerLoadRefineSearch":{"totalHits":2,"hits":1,"data":{"jobs":[{"reqId":"Job Code: J003318","jobId":"441912","jobSeqNo":"GSK-441912-A","title":"Senior Medical Writer","city":"Bengaluru","country":"India","category":"Medical and Clinical","type":"Full time","postedDate":"2026-07-23T00:00:00.000+0000","applyUrl":"https://jobs.gsk.com/in/en/job/443912/Senior-Medical-Writer","cityStateCountry":"Bengaluru, India","location":"Bengaluru, India","ml_skills":["medical writing"]}],"aggregations":[{"field":"country","value":{"India":24}}]}}};
 </script>
 </body>
 </html>`
@@ -97,7 +97,7 @@ phApp.ddo = {"eagerLoadRefineSearch":{"totalHits":2,"hits":1,"data":{"jobs":[{"r
 <html>
 <body>
 <script>
-phApp.ddo = {"eagerLoadRefineSearch":{"totalHits":2,"hits":1,"data":{"jobs":[{"reqId":"Job Code: J003318","jobId":"441912","title":"Senior Medical Writer","city":"Bengaluru","country":"India","category":"Medical and Clinical","type":"Full time","postedDate":"2026-07-23T00:00:00.000+0000","applyUrl":"https://jobs.gsk.com/in/en/job/443912/Senior-Medical-Writer","cityStateCountry":"Bengaluru, India","location":"Bengaluru, India","ml_skills":["medical writing"]}],"aggregations":[{"field":"country","value":{"India":24}}]}}};
+phApp.ddo = {"eagerLoadRefineSearch":{"totalHits":2,"hits":1,"data":{"jobs":[{"reqId":"Job Code: J003318","jobId":"441912","jobSeqNo":"GSK-441912-B","title":"Senior Medical Writer","city":"Bengaluru","country":"India","category":"Medical and Clinical","type":"Full time","postedDate":"2026-07-23T00:00:00.000+0000","applyUrl":"https://jobs.gsk.com/in/en/job/443912/Senior-Medical-Writer","cityStateCountry":"Bengaluru, India","location":"Bengaluru, India","ml_skills":["medical writing"]}],"aggregations":[{"field":"country","value":{"India":24}}]}}};
 </script>
 </body>
 </html>`
@@ -115,7 +115,7 @@ phApp.ddo = {"eagerLoadRefineSearch":{"totalHits":2,"hits":1,"data":{"jobs":[{"r
         url === 'https://jobs.gsk.com/us/en/job/Job%20Code:%20J003318/Senior-Medical-Writer'
         || url === 'https://jobs.gsk.com/us/en/job/441912/Senior-Medical-Writer'
       ) {
-        return detailHtml
+        return '<script>phApp.ddo = '+JSON.stringify({jobDetail:{data:{job:{jobId:'441912',reqId:'Job Code: J003318',title:'Senior Medical Writer',ml_Description:'Write medical publications.'}}}})+'</script>'
       }
 
       throw new Error(`Unexpected fixture URL: ${url}`)
@@ -123,5 +123,6 @@ phApp.ddo = {"eagerLoadRefineSearch":{"totalHits":2,"hits":1,"data":{"jobs":[{"r
   })
 
   assert.equal(duplicateJobs.length, 1)
-  assert.equal(duplicateJobs[0].jobId, '443558')
+  assert.equal(duplicateJobs[0].jobId, '441912')
+  assert.equal(duplicateJobs[0].title, 'Senior Medical Writer')
 })

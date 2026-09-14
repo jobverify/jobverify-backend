@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const FIXED_SCRAPED_AT = '2026-07-18T00:00:00.000Z'
 
 const loadModule = async (relativePath) => {
@@ -45,6 +47,7 @@ const excelraWordpressRenderedContent = `
 
 const excelraWordpressPagesPayload = [
   {
+    slug: 'careers', status: 'publish', link: 'https://www.excelra.com/careers/',
     content: {
       rendered: excelraWordpressRenderedContent,
     },
@@ -257,14 +260,16 @@ test('Excelra Knowledge Solutions fails closed when the verified WordPress caree
   )
 })
 
-test('Blazeclan Technologies sentinel validates the broken Zoho handoff before returning []', async () => {
+test('Blazeclan Technologies reports a missing Zoho tenant as discovery-only inventory evidence', async () => {
   const blazeclan = await loadModule('../../scraper/blazeclantechnologies/script.js')
   const requestedUrls = []
 
   assert.equal(blazeclan.hasOfficialCareersSignal(blazeclanCareersHtml), true)
   assert.equal(blazeclan.isBrokenZohoBoardPage(blazeclanBrokenBoardHtml), true)
 
-  const jobs = await blazeclan.createBlazeclanTechnologiesScraper().run({
+  const jobs = await blazeclan.createBlazeclanTechnologiesScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === blazeclan.CAREERS_URL) return blazeclanCareersHtml
@@ -275,6 +280,8 @@ test('Blazeclan Technologies sentinel validates the broken Zoho handoff before r
 
   assert.deepEqual(requestedUrls, [blazeclan.CAREERS_URL, blazeclan.BROKEN_BOARD_URL])
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
+  assert.equal(readInventoryEvidence(jobs)?.surface, blazeclan.CAREERS_URL)
 })
 
 test('Reserve Bank Information Technology run authenticates against the first-party careers API and returns current openings with experience', async () => {

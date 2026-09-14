@@ -110,11 +110,18 @@ export const hasOfficialHomepageSignal = (html) => {
     && normalized.includes('ai writes software. humans build companies.')
     && /the moment ai says it['’]s done,\s+a drytis engineer takes over/i.test(normalized)
 
+  const hasCurrentHomepageIdentity =
+    hasCurrentShellOrganizationSignal(page)
+    && /<a\b[^>]*href=["']\/["'][^>]*>\s*drytis\s*<\/a>/i.test(page)
+    && /<a\b[^>]*href=["']\/careers["'][^>]*>\s*Careers\s*<\/a>/i.test(page)
+    && normalized.includes('ai writes software. humans build companies. drytis is the human part.')
+    && /(?:©|&copy;)\s*2026\s+Drytis\.\s*All rights reserved\./i.test(page)
+
   return (
     /^Drytis\b/i.test(title)
     && /AI builds prototypes\.\s*Humans build companies\./i.test(title)
     && (hasLegacyHeroCopy || hasCurrentHeroCopy)
-  ) || hasAugust2026HeroCopy
+  ) || hasAugust2026HeroCopy || hasCurrentHomepageIdentity
 }
 
 export const hasOfficialAboutSignal = (html) => {

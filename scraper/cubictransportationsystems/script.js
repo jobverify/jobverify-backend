@@ -135,7 +135,12 @@ export const hasOfficialCareersBlockSignal = (html = '') => {
   return /noindex,\s*nofollow/i.test(page)
     && /_Incapsula_Resource/i.test(page)
     && /Incapsula/i.test(page)
-    && /Request unsuccessful\.\s*Incapsula incident ID:/i.test(page)
+    && (
+      /Request unsuccessful\.\s*Incapsula incident ID:/i.test(page)
+      || (/<script\b[^>]*src=["']\/_Incapsula_Resource\?[^"']+["']/i.test(page)
+        && /<body[^>]*>\s*<\/body>/i.test(page)
+        && page.length < 1500)
+    )
 }
 
 export const hasOfficialWorkdayBoardSignal = (html = '') => {

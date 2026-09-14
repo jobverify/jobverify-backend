@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { withRetry } from '../../scraper-support/utils/retry.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -45,7 +46,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const text = normalizeWhitespace(page)
 
   return /<title>\s*Home\s*\|\s*Electrosteel Castings Limited\s*<\/title>/i.test(page)
-    && text.includes('MANUFACTURING EXCELLENCE.')
+
     && text.includes('A proud make in india company With Global Outreach')
     && text.includes('largest manufacturer of Ductile Iron (DI) Pipes')
 }
@@ -109,8 +110,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const defaultFetchPage = async (url) => {
-  const response = await fetch(url, {
+export const createFetchPage = ({ fetchImpl = fetch, attempts = 3, baseDelayMs = 1000 } = {}) => async (url) => withRetry(async () => {
+  const response = await fetchImpl(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -118,13 +119,16 @@ const defaultFetchPage = async (url) => {
     redirect: 'follow',
     signal: AbortSignal.timeout(15000),
   })
-
-  return {
-    status: response.status,
-    url: response.url || url,
-    html: await response.text(),
+  const html = await response.text()
+  if (!response.ok && response.status !== 404) {
+    const error = new Error(`HTTP ${response.status} for ${url}`)
+    error.abortRetries = ![500, 502, 503, 504].includes(response.status)
+    throw error
   }
-}
+  return { status: response.status, url: response.url || url, html }
+}, { attempts, baseDelayMs, label: SOURCE })
+
+const defaultFetchPage = createFetchPage()
 
 export const createElectrosteelCastingsScraper = () => ({
   async run({

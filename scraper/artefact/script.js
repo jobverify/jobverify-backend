@@ -395,7 +395,7 @@ export const createArtefactScraper = ({ now = () => new Date().toISOString() } =
       throw new Error('Artefact verified official careers page no longer matches the trusted first-party surface')
     }
 
-    if (homepageBlocked || careersBlocked) {
+    const fetchVerifiedGreenhouseJobs = async () => {
       const greenhouseBoardHtml = await fetchText(GREENHOUSE_BOARD_URL, { signal })
       if (!hasOfficialGreenhouseBoardSignal(greenhouseBoardHtml)) {
         throw new Error('Artefact verified public Greenhouse board no longer matches the trusted fallback surface')
@@ -413,6 +413,10 @@ export const createArtefactScraper = ({ now = () => new Date().toISOString() } =
       return jobs.sort((left, right) => left.title.localeCompare(right.title))
     }
 
+    if (homepageBlocked || careersBlocked) {
+      return fetchVerifiedGreenhouseJobs()
+    }
+
     const pageUrls = [CAREERS_URL, ...extractPaginationUrls(careersHtml)]
     const additionalPageEntries = await mapWithConcurrency(
       pageUrls.slice(1),
@@ -428,7 +432,7 @@ export const createArtefactScraper = ({ now = () => new Date().toISOString() } =
     const indiaListings = dedupeListings(filterIndiaListings(allListings))
 
     if (indiaListings.length === 0) {
-      throw new Error('Artefact careers page no longer exposes verified first-party India job listings')
+      return fetchVerifiedGreenhouseJobs()
     }
 
     const jobs = await mapWithConcurrency(

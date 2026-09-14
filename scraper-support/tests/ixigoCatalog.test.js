@@ -26,7 +26,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('ixigo local catalog captures the verified no-public-jobs careers surface without alias churn', async () => {
+test('ixigo local catalog captures the verified public openings API without alias churn', async () => {
   const { IXIGO_CATALOG } = await loadCatalogModule()
   const ixigo = await loadScriptModule()
   const provider = hydrateProviderCatalogEntry(IXIGO_CATALOG)
@@ -39,23 +39,23 @@ test('ixigo local catalog captures the verified no-public-jobs careers surface w
   assert.equal(provider.companyCareerPage, 'https://careers.ixigo.com/')
   assert.equal(provider.legacyCareersUrl, 'https://www.ixigo.com/about/careers/')
   assert.equal(provider.currentCareersUrl, 'https://careers.ixigo.com/')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'smartrecruiters')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'verified-legacy-careers-redirect-plus-no-public-jobs-sentinel')
+  assert.equal(provider.paginationStrategy, 'first-party-openings-api-with-numFound-completeness-check')
   assert.equal(
     provider.extractionStrategy,
-    'verified-legacy-careers-redirect+verified-current-careers-no-jobs-page-return-empty',
+    'verified-first-party-careers+openings-api+company-and-country-validation',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'ixigo.com')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-09-13')
   assert.match(provider.dryRunFile, /ixigo[\\/]jobs\.json$/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.ixigo\.com\/about\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.ixigo\.com\//i)
   assert.match(provider.verifiedSurfaceSummary, /No Jobs Found/i)
-  assert.match(provider.verifiedSurfaceSummary, /Recruiterflow/i)
-  assert.match(provider.verifiedSurfaceSummary, /404/i)
+  assert.match(provider.verifiedSurfaceSummary, /SmartRecruiters/i)
+  assert.match(provider.verifiedSurfaceSummary, /numFound=8/i)
   assert.equal(provider.modulePath, ixigoModulePath)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'ixigo'), false)
 
@@ -79,7 +79,7 @@ test('ixigo backlog row matches directly from the local catalog without alias ch
   )
 })
 
-test('getScraperCatalog includes ixigo as a verified no-public-jobs sentinel provider', () => {
+test('getScraperCatalog includes ixigo as a verified public openings API provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'ixigo')
 
   assert.ok(provider)
@@ -87,7 +87,7 @@ test('getScraperCatalog includes ixigo as a verified no-public-jobs sentinel pro
   assert.equal(provider.companyName, 'ixigo')
   assert.equal(provider.companyCareerPage, 'https://careers.ixigo.com/')
   assert.equal(provider.companyDomain, 'ixigo.com')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'smartrecruiters')
   assert.match(provider.modulePath, /ixigo[\\/]script\.js$/i)
 })
 
@@ -97,6 +97,6 @@ test('buildScrapers exposes a runnable ixigo scraper without changing the runner
   assert.ok(scraper)
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'ixigo')
-  assert.equal(scraper.provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(scraper.provider.atsPlatform, 'smartrecruiters')
   assert.match(scraper.dryRunFile, /ixigo[\\/]jobs\.json$/i)
 })

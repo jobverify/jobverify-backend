@@ -194,7 +194,7 @@ test('Softura scraper returns only India jobs from the verified public careers p
   assert.equal(jobs[0].link, 'https://www.softura.com/java-senior-developer-job-in-ahmedabad')
   assert.equal(jobs[0].companyCareerPage, 'https://www.softura.com/careers/')
   assert.equal(jobs[0].companyDomain, 'softura.com')
-  assert.equal(jobs[0].atsPlatform, 'first-party-detail-pages-plus-zoho-links')
+  assert.equal(jobs[0].atsPlatform, 'first-party-inline-job-listings-plus-zoho-links')
   assert.equal(jobs[0].scrapedAt, '2026-08-04T15:30:00.000Z')
   assert.equal(jobs[1].title, 'Java Developer')
   assert.equal(jobs[1].country, 'India')
@@ -249,6 +249,80 @@ test('Softura scraper skips stale detail links that now return 404', async () =>
   assert.equal(jobs[0].title, 'Python Senior Software Engineer Chennai')
   assert.equal(jobs[0].location, 'Chennai')
   assert.equal(jobs[0].country, 'India')
+})
+
+test('Softura uses current India listing rows without requesting rate-limited detail pages', async () => {
+  const softura = await loadScriptModule()
+  const currentListingHtml = [
+    '<html><head><title>Softura Careers - Explore Opportunities</title></head><body>',
+    '<h1>Softura - Careers</h1>',
+    '<p>Building a Culture of Software Excellence and Creating an Open, Fair and Transparent Workplace.</p>',
+    '<p>Find a Position</p>',
+    '<div class="zoho-job-rowd zoho-styless"><div class="width-cla">AI Platform Engineer</div><div>1</div>',
+    '<a href="https://softura.zohorecruit.in/jobs/Careers/217787000001161161/AI-Platform-Engineer?source=CareerSite">Apply Now</a></div>',
+    '<span class="ou-accordion-label">Chennai</span>',
+    '<div><div class="ct-text-block site-heading">Java Software Engineer</div><div class="ct-text-block site-heading">2</div>',
+    '<a href="https://www.softura.com/java-aws-software-engineer/">Apply Now</a></div>',
+    '<span class="ou-accordion-label">Ahmedabad</span>',
+    '<div><div class="ct-text-block site-heading">React Developer</div><div class="ct-text-block site-heading">2</div>',
+    '<a href="https://www.softura.com/react-developer-job-in-ahmedabad/">Apply Now</a></div>',
+    '<span class="ou-accordion-label">Others</span>',
+    '<div><div class="ct-text-block site-heading">Senior QA ( Pune )</div><div class="ct-text-block site-heading">1</div>',
+    '<a href="https://www.softura.com/senior-qa-pune/">Apply Now</a></div>',
+    '<div><div class="ct-text-block site-heading">SQL+ADF Software Engineer ( Coimbatore )</div><div class="ct-text-block site-heading">1</div>',
+    '<a href="https://www.softura.com/senior-qa-pune/">Apply Now</a></div>',
+    '</body></html>',
+  ].join('')
+
+  assert.deepEqual(
+    softura.extractCurrentListingJobs(currentListingHtml).map((job) => ({
+      title: job.title,
+      location: job.location,
+      sourceUrl: job.sourceUrl,
+    })),
+    [
+      {
+        title: 'AI Platform Engineer',
+        location: 'India',
+        sourceUrl: 'https://softura.zohorecruit.in/jobs/Careers/217787000001161161/AI-Platform-Engineer?source=CareerSite',
+      },
+      {
+        title: 'Java Software Engineer',
+        location: 'Chennai',
+        sourceUrl: 'https://www.softura.com/java-aws-software-engineer',
+      },
+      {
+        title: 'React Developer',
+        location: 'Ahmedabad',
+        sourceUrl: 'https://www.softura.com/react-developer-job-in-ahmedabad',
+      },
+      {
+        title: 'Senior QA ( Pune )',
+        location: 'Pune',
+        sourceUrl: 'https://www.softura.com/senior-qa-pune',
+      },
+      {
+        title: 'SQL+ADF Software Engineer ( Coimbatore )',
+        location: 'Coimbatore',
+        sourceUrl: 'https://www.softura.com/senior-qa-pune',
+      },
+    ],
+  )
+
+  const requests = []
+  const jobs = await softura.createSofturaScraper().run({
+    fetchText: async (url) => {
+      requests.push(url)
+      assert.equal(url, softura.CAREERS_URL)
+      return currentListingHtml
+    },
+    now: () => '2026-09-13T00:00:00.000Z',
+  })
+
+  assert.deepEqual(requests, [softura.CAREERS_URL])
+  assert.equal(jobs.length, 5)
+  assert.equal(jobs[2].title, 'React Developer')
+  assert.equal(jobs[2].location, 'Ahmedabad')
 })
 
 test('Softura fails closed if the verified public careers page disappears', async () => {

@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { EventEmitter } from 'node:events'
+import https from 'node:https'
 import test from 'node:test'
 
 const homepageHtml = `
@@ -189,6 +191,61 @@ test('ArthaYantra returns [] only while the verified broken first-party surface 
     ...arthaYantra.BROKEN_CAREER_ROUTE_URLS,
   ])
   assert.deepEqual(jobs, [])
+})
+
+test('ArthaYantra default fetch tolerates the verified expired certificate while validating official pages', async () => {
+  const arthaYantra = await loadArthaYantraModule()
+  const originalRequest = https.request
+  const observedRequests = []
+
+  https.request = (targetUrl, options, callback) => {
+    const url = targetUrl.toString()
+    observedRequests.push({ url, options })
+
+    const response = new EventEmitter()
+    response.headers = {}
+
+    if (url === arthaYantra.HOMEPAGE_URL) {
+      response.statusCode = 301
+      response.headers.location = arthaYantra.LIVE_LOGIN_URL
+    } else if (url === arthaYantra.LIVE_LOGIN_URL) {
+      response.statusCode = 200
+    } else if (url === arthaYantra.SITEMAP_URL) {
+      response.statusCode = 200
+    } else {
+      response.statusCode = 500
+    }
+
+    queueMicrotask(() => {
+      callback(response)
+      if (url === arthaYantra.LIVE_LOGIN_URL) {
+        response.emit('data', Buffer.from(homepageHtml))
+      } else if (url === arthaYantra.SITEMAP_URL) {
+        response.emit('data', Buffer.from(sitemapXml))
+      } else if (response.statusCode === 500) {
+        response.emit('data', Buffer.from(criticalErrorHtml))
+      }
+      response.emit('end')
+    })
+
+    return {
+      on: () => {},
+      end: () => {},
+    }
+  }
+
+  try {
+    const jobs = await arthaYantra.createArthaYantraScraper().run()
+
+    assert.deepEqual(jobs, [])
+    assert.ok(observedRequests.length > 0)
+    assert.deepEqual(
+      [...new Set(observedRequests.map((request) => request.options.rejectUnauthorized))],
+      [false],
+    )
+  } finally {
+    https.request = originalRequest
+  }
 })
 
 test('ArthaYantra fails closed when the homepage, sitemap, robots, or broken career routes drift into a public jobs surface', async () => {

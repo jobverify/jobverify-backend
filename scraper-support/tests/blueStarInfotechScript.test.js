@@ -17,6 +17,17 @@ const REDIRECT_SHELL_HTML = `
 </html>
 `
 
+const PARKED_LANDER_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <script>window.LANDER_SYSTEM = "PW"</script>
+    <script>window._trfd = window._trfd || [], window._trfd.push({ ap: "parking" })</script>
+  </head>
+  <body></body>
+</html>
+`
+
 const loadBlueStarInfotechModule = async () => {
   try {
     return await import('../../scraper/bluestarinfotech/script.js')
@@ -111,6 +122,20 @@ test('Blue Star Infotech accepts the current GoDaddy parked-domain redirect targ
     bsil.hasParkedLanderRedirect({
       status: 307,
       location: 'https://forsale.godaddy.com/forsale/www.bsil.com?utm_source=TDFS_DASLNC',
+    }),
+    true,
+  )
+})
+
+test('Blue Star Infotech accepts the current parked-domain lander HTML', async () => {
+  const bsil = await loadBlueStarInfotechModule()
+
+  assert.equal(
+    bsil.hasParkedLanderRedirect({
+      status: 200,
+      url: 'https://www.bsil.com/lander',
+      location: null,
+      html: PARKED_LANDER_HTML,
     }),
     true,
   )

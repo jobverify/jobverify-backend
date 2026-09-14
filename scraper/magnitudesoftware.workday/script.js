@@ -59,6 +59,18 @@ const makeAbsoluteUrl = (value, baseUrl) => {
   }
 }
 
+const matchesOfficialInsightsoftwareUrl = (value, expected) => {
+  try {
+    const actualUrl = new URL(value)
+    const expectedUrl = new URL(expected)
+    return actualUrl.hostname.replace(/^www\./i, '') === expectedUrl.hostname.replace(/^www\./i, '')
+      && actualUrl.pathname === expectedUrl.pathname
+      && actualUrl.search === expectedUrl.search
+  } catch {
+    return false
+  }
+}
+
 const defaultFetchPage = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -86,7 +98,7 @@ export const buildScraperOptions = () => ({
 export const extractCareersLinkUrl = (html = '', baseUrl = REDIRECT_COMPANY_URL) => {
   for (const match of String(html ?? '').matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>\s*Careers\s*<\/a>/gi)) {
     const absoluteUrl = makeAbsoluteUrl(match[1], baseUrl)
-    if (absoluteUrl === CAREERS_URL) return absoluteUrl
+    if (matchesOfficialInsightsoftwareUrl(absoluteUrl, CAREERS_URL)) return CAREERS_URL
   }
 
   return null
@@ -97,9 +109,8 @@ export const hasRedirectedMagnitudePageSignal = (page = {}) => {
   const text = stripTags(pageHtml) || ''
 
   return page?.status === 200
-    && page?.url === REDIRECT_COMPANY_URL
+    && matchesOfficialInsightsoftwareUrl(page?.url, REDIRECT_COMPANY_URL)
     && text.includes('Magnitude is now part of insightsoftware')
-    && text.includes('Work With Us')
     && text.includes('Careers')
     && extractCareersLinkUrl(pageHtml, page?.url || REDIRECT_COMPANY_URL) === CAREERS_URL
 }
@@ -287,7 +298,7 @@ export const createMagnitudeSoftwareScraper = ({
       careersPage
       && !(
         careersPage.status === 200
-        && careersPage.url === CAREERS_URL
+        && matchesOfficialInsightsoftwareUrl(careersPage.url, CAREERS_URL)
         && hasOfficialCareersSignal(careersPage.html)
       )
     ) {

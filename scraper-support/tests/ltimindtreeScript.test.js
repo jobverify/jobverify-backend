@@ -23,7 +23,7 @@ const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 test('buildIndiaSearchUrl keeps LTIMindtree listing pages on the official India search route', () => {
   assert.equal(
     buildIndiaSearchUrl(),
-    'https://careers.ltimindtree.com/search/?createNewAlert=false&q=&optionsFacetsDD_country=&optionsFacetsDD_location=&locationsearch=India',
+    'https://careers.ltm.com/search/?createNewAlert=false&q=&optionsFacetsDD_country=&optionsFacetsDD_location=&locationsearch=India',
   )
 })
 
@@ -38,7 +38,7 @@ test('extractSearchResults parses LTIMindtree India search rows into shared scra
     city: 'Bengaluru',
     jobId: '679605001',
     requisitionId: '679605001',
-    sourceUrl: 'https://careers.ltimindtree.com/job/Bengaluru-Senior-Software-Engineer/679605001/',
+    sourceUrl: 'https://careers.ltm.com/job/Bengaluru-Senior-Software-Engineer/679605001/',
     postingDate: 'Jun 16, 2026',
   })
   assert.equal(jobs[1].location, 'Chennai, TN, IN')
@@ -57,7 +57,7 @@ test('extractResultsSummary reads LTIMindtree total result and page counts from 
 test('extractJobDetail pulls LTIMindtree apply URL, req id, description, and job segments from the detail page', () => {
   const html = readFixture('job-detail-679605001.html')
   const detail = extractJobDetail(html, {
-    sourceUrl: 'https://careers.ltimindtree.com/job/Bengaluru-Senior-Software-Engineer/679605001/',
+    sourceUrl: 'https://careers.ltm.com/job/Bengaluru-Senior-Software-Engineer/679605001/',
     title: 'Senior Software Engineer',
     location: 'Bengaluru, IN',
     city: 'Bengaluru',
@@ -88,8 +88,8 @@ test('extractJobDetail pulls LTIMindtree apply URL, req id, description, and job
     ],
     postingDate: 'Tue Jun 16 02:00:00 UTC 2026',
     closingDate: null,
-    applyUrl: 'https://careers.ltimindtree.com/talentcommunity/apply/679605001/?locale=en_US',
-    sourceUrl: 'https://careers.ltimindtree.com/job/Bengaluru-Senior-Software-Engineer/679605001/',
+    applyUrl: 'https://careers.ltm.com/talentcommunity/apply/679605001/?locale=en_US',
+    sourceUrl: 'https://careers.ltm.com/job/Bengaluru-Senior-Software-Engineer/679605001/',
   })
 })
 
@@ -119,4 +119,12 @@ test('LTIMindtree run decorates listing and detail pages into shared job records
   assert.equal(jobs[0].jobId, '536167')
   assert.equal(jobs[1].title, 'Specialist - Software Engineering')
   assert.equal(jobs[1].link, jobs[1].applyUrl)
+})
+
+
+test('LTIMindtree rejects incomplete or unrecognized listing snapshots', async () => {
+  const html = readFixture('india-search.html')
+  for (const broken of ['<title>Maintenance</title>', html.replace(/of <b>2<\/b>/, 'of <b>3</b>')]) {
+    await assert.rejects(createLtimindtreeScraper().run({fetchPage: async url => ({status:200,url,html:broken})}), /incomplete|invalid/i)
+  }
 })

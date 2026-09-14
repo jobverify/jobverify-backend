@@ -43,7 +43,7 @@ const cityPageTemplate = (city, department = 'engineering') => `
                 </div>
               </div>
               <div id="how_to_apply">
-                <a class="hf-body__link hf-body__heading-bold" href="http://happyfox.hire.trakstar.com/jobs/fk0xixf">
+                <a class="hf-body__link hf-body__heading-bold" href="https://hiring.happyfox.co/jobs/frontend-engineer-${city.toLowerCase()}/#apply-section">
                   <span>Apply</span>
                 </a>
               </div>
@@ -59,13 +59,16 @@ const cityPageTemplate = (city, department = 'engineering') => `
 const detailHtml = `
 <!doctype html>
 <html lang="en">
+  <head><title>Frontend Engineer - Careers at HappyFox</title></head>
   <body>
-    <h1>Frontend Engineer</h1>
-    <p>Bengaluru, Karnataka, India | Engineering | Full-time</p>
-    <div>
-      <p>Build customer-facing product experiences.</p>
-      <h2>Application Form</h2>
+    <header><a href="https://www.happyfox.com">HappyFox</a><a href="https://www.happyfox.com/jobs/bengaluru/">Back to Bengaluru openings</a></header>
+    <h1 class="job-title">Frontend Engineer</h1>
+    <div class="job-meta"><span>Bengaluru</span><span>Engineering</span><span>In Person</span></div>
+    <div class="job-description">
+      <div class="prose prose-wrapper"><p>Build customer-facing product experiences with at least 3 years of relevant professional experience.</p></div>
+      <div class="job-actions job-actions-wrapper"><button>Apply</button></div>
     </div>
+    <div id="apply-section"><form class="application-form" enctype="multipart/form-data"></form></div>
   </body>
 </html>
 `
@@ -138,11 +141,12 @@ const loadModule = async () => {
   }
 }
 
-test('HappyFox accepts the current jobs hub shell and extracts new city cards with http Trakstar links', async () => {
+test('HappyFox accepts the current jobs hub and extracts first-party hiring links', async () => {
   const happyfox = await loadModule()
 
+  assert.equal(happyfox.HIRING_JOBS_HOST, 'https://hiring.happyfox.co')
   assert.equal(happyfox.hasOfficialJobsHubSignal(jobsHubHtml), true)
-  assert.equal(happyfox.hasTrakstarJobSignal(contractDetailHtml), true)
+  assert.equal(happyfox.hasOfficialJobDetailSignal(detailHtml), true)
   assert.deepEqual(happyfox.extractIndiaCityPageUrls(jobsHubHtml), [
     'https://www.happyfox.com/jobs/chennai/',
   ])
@@ -159,13 +163,13 @@ test('HappyFox accepts the current jobs hub shell and extracts new city cards wi
       {
         title: 'Frontend Engineer',
         department: 'Engineering',
-        detailUrl: 'https://happyfox.hire.trakstar.com/jobs/fk0xixf',
+        detailUrl: 'https://hiring.happyfox.co/jobs/frontend-engineer-bengaluru/',
       },
     ],
   )
 })
 
-test('HappyFox run validates the current jobs hub, walks the trusted city pages, and decorates Trakstar jobs', async () => {
+test('HappyFox run validates the current jobs hub and decorates first-party jobs', async () => {
   const happyfox = await loadModule()
   const requested = []
 
@@ -176,7 +180,7 @@ test('HappyFox run validates the current jobs hub, walks the trusted city pages,
       if (url === 'https://www.happyfox.com/jobs/chennai/') return cityPageTemplate('Chennai')
       if (url === 'https://www.happyfox.com/jobs/bengaluru/') return cityPageTemplate('Bengaluru')
       if (url === 'https://www.happyfox.com/jobs/hyderabad/') return cityPageTemplate('Hyderabad')
-      if (url === 'https://happyfox.hire.trakstar.com/jobs/fk0xixf') return detailHtml
+      if (url === 'https://hiring.happyfox.co/jobs/frontend-engineer-chennai/') return detailHtml
       throw new Error(`Unexpected HappyFox fixture URL: ${url}`)
     },
     now: () => '2026-08-02T00:00:00.000Z',
@@ -187,36 +191,39 @@ test('HappyFox run validates the current jobs hub, walks the trusted city pages,
     'https://www.happyfox.com/jobs/chennai/',
     'https://www.happyfox.com/jobs/bengaluru/',
     'https://www.happyfox.com/jobs/hyderabad/',
-    'https://happyfox.hire.trakstar.com/jobs/fk0xixf',
+    'https://hiring.happyfox.co/jobs/frontend-engineer-chennai/',
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'happyfox')
   assert.equal(jobs[0].company, 'HappyFox')
-  assert.equal(jobs[0].location, 'Bengaluru, Karnataka, India')
-  assert.equal(jobs[0].applyUrl, 'https://happyfox.hire.trakstar.com/jobs/fk0xixf')
-  assert.equal(jobs[0].publicExperienceChecked, true)
+  assert.equal(jobs[0].location, 'Bengaluru, India')
+  assert.equal(jobs[0].employmentType, 'Full-time')
+  assert.equal(jobs[0].applyUrl, 'https://hiring.happyfox.co/jobs/frontend-engineer-chennai/')
+  assert.equal(jobs[0].experienceRequired, '3 years')
+  assert.equal(jobs[0].publicExperienceChecked, false)
 })
 
-test('HappyFox extractJobDetail parses the current live Trakstar JSON-LD and metadata spans', async () => {
+test('HappyFox extractJobDetail parses the current first-party hiring page', async () => {
   const happyfox = await loadModule()
 
-  const detail = happyfox.extractJobDetail(liveLikeDetailHtml, {
+  const detail = happyfox.extractJobDetail(detailHtml, {
     title: 'Frontend Engineer',
     department: 'Engineering',
-    detailUrl: 'https://happyfox.hire.trakstar.com/jobs/fk0xixf',
-    sourceUrl: 'https://happyfox.hire.trakstar.com/jobs/fk0xixf',
-    applyUrl: 'https://happyfox.hire.trakstar.com/jobs/fk0xixf',
-    jobId: 'fk0xixf',
-    requisitionId: 'fk0xixf',
+    locationHint: 'Bengaluru | full time',
+    detailUrl: 'https://hiring.happyfox.co/jobs/frontend-engineer-bengaluru/',
+    sourceUrl: 'https://hiring.happyfox.co/jobs/frontend-engineer-bengaluru/',
+    applyUrl: 'https://hiring.happyfox.co/jobs/frontend-engineer-bengaluru/',
+    jobId: 'frontend-engineer-bengaluru',
+    requisitionId: 'frontend-engineer-bengaluru',
   })
 
   assert.equal(detail.title, 'Frontend Engineer')
   assert.equal(detail.department, 'Engineering')
-  assert.equal(detail.location, 'Bengaluru, Karnataka, India')
+  assert.equal(detail.location, 'Bengaluru, India')
   assert.equal(detail.city, 'Bengaluru')
   assert.equal(detail.country, 'India')
   assert.equal(detail.employmentType, 'Full-time')
   assert.equal(detail.experienceRequired, '3 years')
   assert.equal(detail.publicExperienceChecked, false)
-  assert.match(detail.jobDescription, /experienced Frontend Engineer/i)
+  assert.match(detail.jobDescription, /customer-facing product experiences/i)
 })

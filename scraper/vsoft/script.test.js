@@ -2,28 +2,28 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
-  CAREER_PORTAL_URL,
-  CAREERS_PAGE_URL,
-  COMPANY,
-  DEFAULT_PAGE_SIZE,
-  JOBDIVA_AUTH_URL,
-  JOBDIVA_DETAIL_URL_PREFIX,
-  JOBDIVA_LIST_ALL_URL,
-  JOBDIVA_PORTAL_URL,
-  SOURCE,
-  VERIFIED_ON,
-  buildJobDivaDetailUrl,
-  buildJobDivaJobUrl,
-  buildJobDivaListAllUrl,
-  createVsoftScraper,
-  extractJobDivaIframeUrl,
-  extractJobDivaPortalParams,
-  extractJobs,
-  getRunnerMetadata,
-  hasCareerPortalPageSignal,
-  hasCareersPageSignal,
-  hasJobDivaPortalShellSignal,
-  isIndiaSummaryRecord,
+    buildJobDivaDetailUrl,
+    buildJobDivaJobUrl,
+    buildJobDivaListAllUrl,
+    CAREER_PORTAL_URL,
+    CAREERS_PAGE_URL,
+    COMPANY,
+    createVsoftScraper,
+    DEFAULT_PAGE_SIZE,
+    extractJobDivaIframeUrl,
+    extractJobDivaPortalParams,
+    extractJobs,
+    getRunnerMetadata,
+    hasCareerPortalPageSignal,
+    hasCareersPageSignal,
+    hasJobDivaPortalShellSignal,
+    isIndiaSummaryRecord,
+    JOBDIVA_AUTH_URL,
+    JOBDIVA_DETAIL_URL_PREFIX,
+    JOBDIVA_LIST_ALL_URL,
+    JOBDIVA_PORTAL_URL,
+    SOURCE,
+    VERIFIED_ON,
 } from './script.js'
 
 const careersHtml = `
@@ -34,7 +34,7 @@ const careersHtml = `
 </head>
 <body>
   <main>
-    <a href="https://www.vsoftconsulting.com/career-portal/">View Roles</a>
+    <a href="https://www.vsoftconsulting.com/career-portal/">View jobs</a>
   </main>
 </body>
 </html>

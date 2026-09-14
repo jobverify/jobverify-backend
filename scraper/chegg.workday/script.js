@@ -12,8 +12,7 @@ export const CAREERS_PAGE_URL = 'https://www.chegg.com/about/working-at-chegg/jo
 export const WORKDAY_BASE_URL = 'https://osv-chegg.wd5.myworkdayjobs.com/Chegg'
 export const INDIA_LOCATION_COUNTRY = 'c4f78be1a8f14da0ab49ce1162348a5e'
 
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const USER_AGENT = 'JobverifyCareerScraper/1.0'
 
 const CAREERS_TITLE_PATTERN = /<title>\s*Jobs(?:\s+at\s+Chegg)?\s*(?:\||-|&ndash;|&mdash;|&#8211;|&#8212;)\s*Chegg\s*<\/title>/i
 const WORKDAY_LINK_PATTERN = /href=["']https:\/\/osv-chegg\.wd5\.myworkdayjobs\.com\/Chegg["'][^>]*>\s*View jobs\s*</i
@@ -51,17 +50,23 @@ export const extractVerifiedWorkdayHandoffUrl = (html) => {
   return null
 }
 
-const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+export const fetchOfficialCareersPage = ({ fetchImpl = fetch, signal } = {}) => fetchTextWithRetry(
+  CAREERS_PAGE_URL,
+  {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
+  fetchImpl,
   attempts: 3,
   baseDelayMs: 2000,
   timeoutMs: 20000,
   label: SOURCE,
   signal,
-})
+  },
+)
+
+const defaultFetchText = (_url, { signal } = {}) => fetchOfficialCareersPage({ signal })
 
 export const createCheggScraper = ({
   fetchText = defaultFetchText,

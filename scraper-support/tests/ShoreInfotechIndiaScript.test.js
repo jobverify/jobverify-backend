@@ -42,6 +42,25 @@ const missingRouteHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Managed Data Services &amp; AI-Powered Operations for SMBs | Shore Group</title>
+    <meta name="description" content="Shore Group delivers fully managed data services and AI-powered document processing for SMBs. SLA-backed outcomes, predictable pricing, powered by our Polaris platform.">
+    <meta property="og:site_name" content="Shore Group">
+    <link rel="canonical" href="https://www.shoregrp.com">
+  </head>
+  <body><h1>Operational data services for growing teams</h1></body>
+</html>
+`
+
+const currentMissingRouteHtml = `The page could not be found
+
+NOT_FOUND
+
+bom1::7cx99-1789246426713-132ea6cd6881`
+
 const loadShoreModule = async () => {
   try {
     return await import('../../scraper/shoreinfotechindia/script.js')
@@ -108,4 +127,20 @@ test('Shore Infotech India sentinel fails closed when homepage identity drifts',
     }),
     /homepage surface no longer matches/i,
   )
+})
+
+test('Shore Infotech India accepts the current stable head identity and plain-text first-party 404s', async () => {
+  const shore = await loadShoreModule()
+
+  assert.equal(shore.hasOfficialHomepageSignal(currentHomepageHtml), true)
+  const jobs = await shore.run({
+    fetchPage: async (url) => {
+      if (url === shore.HOMEPAGE_URL) return { status: 200, url, html: currentHomepageHtml }
+      if (url === shore.CONTACT_URL) return { status: 200, url, html: contactHtml }
+      if (shore.CAREERS_ROUTE_URLS.includes(url)) return { status: 404, url, html: currentMissingRouteHtml }
+      throw new Error(`Unexpected Shore URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })

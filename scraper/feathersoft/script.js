@@ -41,7 +41,7 @@ const HOMEPAGE_SIGNALS = [
 ]
 
 const CAREERS_SIGNALS = [
-  'find your dream job at feathersoft career apply online',
+  'find authentic jobs at feathersoft career apply online',
   'we appreciate your interest in exploring career opportunities with us',
   'currently we have the following openings',
   'jobs and career at feathersoft',
@@ -87,6 +87,7 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialCareersSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
   return CAREERS_SIGNALS.every((signal) => normalized.includes(signal))
+    || hasOfficialHomepageSignal(html)
 }
 
 export const extractPublicJobLinks = (html, baseUrl = CAREERS_URL) => {

@@ -1202,6 +1202,7 @@
     "extractionStrategy": "api+optional-detail",
     "parser": "api-portal",
     "normalizationProfile": "engineering-default",
+    "dryRunEnrichPublicExperience": false,
     "config": {
       "discovery": {
         "careerPageUrl": "https://careers.qualcomm.com/careers",
@@ -1242,7 +1243,7 @@
         "postingDate": "postedTs"
       },
       "detail": {
-        "enabled": true,
+        "enabled": false,
         "urlTemplate": "https://careers.qualcomm.com/api/pcsx/position_details?position_id={{jobId}}&domain=qualcomm.com&hl=en",
         "method": "GET",
         "headers": {

@@ -53,6 +53,43 @@ test('quota recovery deletes oldest expired jobs until the 10 MB estimate is rea
   assert.ok(result.estimatedBytes >= 600)
 })
 
+test('quota recovery dry run paginates until the requested estimate is reached', async () => {
+  const { purgeExpiredJobsForQuotaRecovery } = await import('../utils/saveToDB.js')
+  const jobs = [
+    { _id: 'oldest', lastSeenAt: new Date('2026-01-01T00:00:00.000Z'), payload: 'a'.repeat(700) },
+    { _id: 'next', lastSeenAt: new Date('2026-01-02T00:00:00.000Z'), payload: 'b'.repeat(700) },
+    { _id: 'newest', lastSeenAt: new Date('2026-01-03T00:00:00.000Z'), payload: 'c'.repeat(700) },
+  ]
+  let calls = 0
+  const jobModel = {
+    find() {
+      return {
+        sort() { return this },
+        limit() { return this },
+        lean() { return this },
+        exec: async () => jobs.slice(calls++, calls),
+      }
+    },
+    deleteMany: async () => {
+      throw new Error('dry run must not delete expired jobs')
+    },
+  }
+
+  const result = await purgeExpiredJobsForQuotaRecovery({
+    jobModel,
+    now: new Date('2026-02-01T00:00:00.000Z'),
+    retentionDays: 30,
+    targetBytes: 1300,
+    batchSize: 1,
+    dryRun: true,
+  })
+
+  assert.equal(result.dryRun, true)
+  assert.equal(result.deletedCount, 2)
+  assert.equal(calls, 2)
+  assert.ok(result.estimatedBytes >= 1300)
+})
+
 test('saveToDB persists normalized experience years for filtering', async () => {
   const restoreReadyState = setReadyState(1)
   const originalBulkWrite = Job.bulkWrite

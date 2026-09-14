@@ -108,6 +108,16 @@ test('Intellect Design Arena scraper validates the verified first-party careers 
   assert.equal(intellect.isVerifiedPublicVacancyEmptyResponse(emptyVacancyResponse), true)
 })
 
+test('Intellect Design Arena accepts the current canonical careers title separator', async () => {
+  const intellect = await loadIntellectDesignArenaModule()
+  const currentCareersHtml = officialCareersHtml.replace(
+    '<title>Careers - Intellect Design Arena</title>',
+    '<title>Careers | Intellect Design Arena</title>',
+  )
+
+  assert.equal(intellect.hasOfficialCareersSignal(currentCareersHtml), true)
+})
+
 test('Intellect Design Arena scraper returns no jobs while the verified public CandidateMAX vacancy API is empty', async () => {
   const intellect = await loadIntellectDesignArenaModule()
   const requestedTextUrls = []
@@ -212,4 +222,16 @@ test('Intellect Design Arena scraper fails closed when the verified careers hand
     }),
     /public CandidateMAX vacancy API now exposes job records/i,
   )
+})
+
+
+test('Intellect denial is an unavailable snapshot rather than an empty vacancy inventory', async () => {
+  const i = await loadIntellectDesignArenaModule()
+  await assert.rejects(i.run({fetchText:async url=>url===i.HOMEPAGE_URL?officialHomepageHtml:officialCareersHtml,fetchJson:async url=>url===i.TENANT_CONFIG_URL?tenantConfig:{IsValid:false,ErrorMessage:'E001171',Data:[]}}), /denied|unavailable/i)
+})
+
+
+test('intellectdesignarena stops before fetching when the caller is cancelled',async()=>{
+ const {run}=await import('./script.js');const reason=new Error('cancelled');
+ await assert.rejects(run({signal:AbortSignal.abort(reason),fetchText:async()=>assert.fail('no fetch')}),error=>error===reason)
 })

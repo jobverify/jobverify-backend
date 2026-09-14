@@ -18,6 +18,7 @@ const JOBS_API_COLLECTION = 'jobs'
 const JOBS_API_KEY = '2b760fb7-49ef-4e83-b4ba-9c3a8d185e5e'
 const JOB_AD_LINK_PREFIX = 'https://jobs.bosch.com/en/job/'
 const DEFAULT_PAGE_SIZE = 25
+const DEFAULT_DETAIL_CONCURRENCY = 6
 const DEFAULT_SEARCH_TERM = ''
 const DEFAULT_SORT = { releasedDate: -1 }
 
@@ -83,13 +84,14 @@ export const buildDetailUrl = (refNumber) => (
   `${buildContentBaseUrl()}?np&rep=pj&filter=${encodeURIComponent(JSON.stringify({ refNumber }))}`
 )
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
   headers: {
     Authorization: `Bearer ${JOBS_API_KEY}`,
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
     Accept: 'application/json',
   },
   label: 'boschglobalsoftwaretechnologies',
+  signal,
 })
 
 export const extractSearchResultSet = (payload) => (
@@ -270,16 +272,53 @@ export const extractSearchResults = ({
   })
 }
 
+const throwIfAborted = (signal) => {
+  if (signal?.aborted) throw signal.reason || new Error('Bosch scrape cancelled')
+}
+
+const mapWithConcurrency = async (items, concurrency, task, signal) => {
+  let nextIndex = 0
+  let firstError = null
+  const worker = async () => {
+    while (!firstError && nextIndex < items.length) {
+      try {
+        throwIfAborted(signal)
+      } catch (error) {
+        firstError ||= error
+        return
+      }
+      const item = items[nextIndex]
+      nextIndex += 1
+      try {
+        await task(item)
+      } catch (error) {
+        firstError ||= error
+        return
+      }
+    }
+  }
+  const workerCount = Math.min(items.length, concurrency)
+  await Promise.all(Array.from({ length: workerCount }, () => worker()))
+  if (firstError) throw firstError
+  throwIfAborted(signal)
+}
+
 export const createBoschGlobalSoftwareTechnologiesScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   pageSize = DEFAULT_PAGE_SIZE,
+  detailConcurrency = DEFAULT_DETAIL_CONCURRENCY,
 } = {}) => ({
   async run(options = {}) {
     const fetchJson = options.fetchJson || defaultFetchJson
+    const signal = options.signal || null
+    const concurrency = Number.isInteger(detailConcurrency) && detailConcurrency > 0
+      ? detailConcurrency
+      : DEFAULT_DETAIL_CONCURRENCY
     const allListings = []
 
     for (let page = 1; ; page += 1) {
-      const listingPayload = await fetchJson(buildSearchUrl({ page, pageSize }))
+      throwIfAborted(signal)
+      const listingPayload = await fetchJson(buildSearchUrl({ page, pageSize }), { signal })
       const resultSet = extractSearchResultSet(listingPayload)
       const listings = filterListings(resultSet.data || [])
 
@@ -298,11 +337,12 @@ export const createBoschGlobalSoftwareTechnologiesScraper = ({
     const selectedListings = maxJobs ? allListings.slice(0, maxJobs) : allListings
     const detailPayloadByRef = {}
 
-    await Promise.all(selectedListings.map(async (listing) => {
+    await mapWithConcurrency(selectedListings, concurrency, async (listing) => {
       detailPayloadByRef[listing.refNumber] = await fetchJson(
         buildDetailUrl(listing.refNumber),
+        { signal },
       )
-    }))
+    }, signal)
 
     return extractSearchResults({
       listingPayload: {
@@ -325,7 +365,8 @@ export const createBoschGlobalSoftwareTechnologiesScraper = ({
   },
 })
 
-export const run = async () => createBoschGlobalSoftwareTechnologiesScraper().run()
+export const run = async (options = {}) =>
+  createBoschGlobalSoftwareTechnologiesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

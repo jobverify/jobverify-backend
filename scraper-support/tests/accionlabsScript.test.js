@@ -18,8 +18,12 @@ const homepageHtml = `
       <h2>AI-Led Innovation Engineering Company</h2>
       <p>Powered by Semantic Engineering</p>
       <h3>Accion Labs</h3>
-      <p>Graminno: Innovation Rooted in Rural India</p>
-      <p>Impacting Lives By Transforming Businesses Through Innovation</p>
+      <h2>Smarter Enterprises, engineered to hold up in production.</h2>
+      <p>
+        Accion Labs builds new software, modernizes the systems you already run, and puts AI agents
+        to work across your operations. Governed and grounded through Semantic Engineering.
+      </p>
+      <h3>Our Core — Semantic Engineering</h3>
     </main>
   </body>
 </html>
@@ -97,7 +101,7 @@ const loadAccionLabsModule = async () => {
   }
 }
 
-test('Accion Labs recognizes the verified first-party homepage, careers intake page, and Prague spontaneous-application page', async () => {
+test('Accion Labs recognizes the verified first-party surfaces after homepage marketing copy changes', async () => {
   const accionLabs = await loadAccionLabsModule()
   assert.ok(accionLabs, 'Expected Accion Labs scraper module at ../../scraper/accionlabs/script.js')
 

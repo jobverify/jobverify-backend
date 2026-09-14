@@ -8,15 +8,15 @@
   "dryRunFile": "waymo/jobs.json",
   "companyCareerPage": "https://careers.withwaymo.com/jobs/search",
   "companyDomain": "waymo.com",
-  "atsPlatform": "exact-name-fail-closed-sentinel",
+  "atsPlatform": "clinch-first-party-careers",
   "countryFilter": "India",
-  "paginationStrategy": "verified-first-party-careers-page-sentinel",
-  "extractionStrategy": "verified-first-party-careers-page-without-stable-public-feed+return-empty",
+  "paginationStrategy": "country-filtered-server-rendered-search-page",
+  "extractionStrategy": "server-rendered-html-cards+complete-inventory-evidence",
   "parser": "custom-script",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-26",
-  "verifiedPublicJobCount": 405,
-  "verifiedIndiaJobCount": 8,
+  "verifiedOn": "2026-09-14",
+  "verifiedPublicJobCount": 5,
+  "verifiedIndiaJobCount": 5,
   "officialCareersPageUrl": "https://careers.withwaymo.com/jobs/search",
-  "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://careers.withwaymo.com/jobs/search is Waymo's first-party careers surface and lists India openings. The Clinch-rendered surface does not expose a stable, verified public extraction contract in this repository, so this exact-name provider fails closed and returns no jobs until that contract is verified."
+  "verifiedSurfaceSummary": "Verified on Monday, September 14, 2026 that https://careers.withwaymo.com/jobs/search?country_codes%5B%5D=IN is Waymo's first-party Clinch careers search filtered to India and server-renders five India job cards across Bengaluru and Hyderabad. The scraper parses the server-rendered cards and attaches complete-inventory evidence for the filtered India surface."
 }

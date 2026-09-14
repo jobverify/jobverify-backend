@@ -321,17 +321,16 @@ test('Samsung Display Noida parses the exact-company public listing HTML and fil
   assert.equal(jobs[1].country, 'India')
 })
 
-test('Samsung Display Noida fails closed when the listing drifts to the parent-brand Korean company label', async () => {
+test('Samsung Display Noida accepts the current official Korean company label for the exact C90-filtered listing', async () => {
   const sdn = await loadSamsungDisplayNoidaModule()
 
   const koreanListingHtml = LIST_HTML
     .replace('Samsung Display', '삼성디스플레이')
     .replace('Engineer Hiring', 'R&D분야 외국인 경력사원 채용')
 
-  assert.throws(
-    () => sdn.extractListingCards(koreanListingHtml),
-    /listing html no longer resolves to the exact company/i,
-  )
+  const cards = sdn.extractListingCards(koreanListingHtml)
+  assert.equal(cards.length, 1)
+  assert.equal(cards[0].company, '삼성디스플레이')
 })
 
 test('Samsung Display Noida run() validates the route chain, posts the exact company filter, and returns only India jobs', async () => {
@@ -406,7 +405,7 @@ test('Samsung Display Noida returns an empty set when the official C90 listings 
   assert.equal(sdn.hasNoCurrentPostingsSignal(EMPTY_LIST_HTML), true)
 })
 
-test('Samsung Display Noida fails closed when the exact company identity drifts or no India jobs remain', async () => {
+test('Samsung Display Noida fails closed when exact company identity or role locations cannot be verified', async () => {
   const sdn = await loadSamsungDisplayNoidaModule()
 
   await assert.rejects(
@@ -443,24 +442,37 @@ test('Samsung Display Noida fails closed when the exact company identity drifts 
     /listing html/i,
   )
 
-  await assert.rejects(
-    sdn.createSamsungDisplayNoidaScraper().run({
-      fetchText: async (url, options = {}) => {
-        if (url === HOMEPAGE_URL) return HOMEPAGE_HTML
-        if (url === LOCATION_PAGE_URL) return LOCATION_PAGE_HTML
-        if (url === RECRUIT_PAGE_URL) return RECRUIT_PAGE_HTML
-        if (url === COMPANY_PAGE_URL) return COMPANY_PAGE_HTML
-        if (url === LIST_URL && (options.method || 'GET') === 'POST') return LIST_HTML
-        throw new Error(`Unexpected text URL: ${url}`)
-      },
+  const nonIndiaJobs = await sdn.createSamsungDisplayNoidaScraper().run({
+    fetchText: async (url, options = {}) => {
+      if (url === HOMEPAGE_URL) return HOMEPAGE_HTML
+      if (url === LOCATION_PAGE_URL) return LOCATION_PAGE_HTML
+      if (url === RECRUIT_PAGE_URL) return RECRUIT_PAGE_HTML
+      if (url === COMPANY_PAGE_URL) return COMPANY_PAGE_HTML
+      if (url === LIST_URL && (options.method || 'GET') === 'POST') return LIST_HTML
+      throw new Error(`Unexpected text URL: ${url}`)
+    },
     fetchJson: async () => ({
+      ...DETAIL_PAYLOAD,
+      data: {
+        ...DETAIL_PAYLOAD.data,
+        items: DETAIL_PAYLOAD.data.items.filter((item) => !/india/i.test(item.workPlaceEn)),
+      },
+    }),
+  })
+  assert.deepEqual(nonIndiaJobs, [])
+
+  assert.throws(
+    () => sdn.extractJobsFromDetailPayload({
+      payload: {
         ...DETAIL_PAYLOAD,
         data: {
           ...DETAIL_PAYLOAD.data,
-          items: DETAIL_PAYLOAD.data.items.filter((item) => !/india/i.test(item.workPlaceEn)),
+          items: [{ ...DETAIL_PAYLOAD.data.items[0], workPlaceEn: '', workPlaceKr: '' }],
         },
-      }),
+      },
+      listingCard: sdn.extractListingCards(LIST_HTML)[0],
+      scrapedAt: '2026-09-13T00:00:00.000Z',
     }),
-    /india jobs/i,
+    /location could not be verified/i,
   )
 })

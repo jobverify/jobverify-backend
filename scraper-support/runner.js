@@ -39,6 +39,10 @@ import { refreshJobDatasetSummary } from '../src/services/jobDatasetSummaryServi
 import { DEFAULT_JOB_RETENTION_DAYS } from '../src/utils/jobLifecycle.js'
 import ScraperStatus from '../src/models/ScraperStatus.js'
 import { buildScrapers } from './providers/index.js'
+import {
+  isVerifiedEmptyEvidence,
+  readInventoryEvidence,
+} from './utils/inventoryEvidence.js'
 
 const isDryRun = process.argv.includes('--dry-run')
 const isParallel = process.argv.includes('--parallel')
@@ -58,7 +62,6 @@ const DEFAULT_SOURCE_LIFECYCLE_TIMEOUT_MS = 30 * 60 * 1000
 const DEFAULT_ABORT_GRACE_MS = 5 * 1000
 const DRY_RUN_EXPERIENCE_ENRICHMENT_CONCURRENCY = 2
 const DEFAULT_DRY_RUN_MAX_JOBS_TO_ENRICH = null
-const WORKDAY_AUTHORITATIVE_EMPTY = Symbol.for('jobverify.workday.authoritative-empty')
 
 export const isDryRunPublicExperienceEnabled = (
   value = process.env.SCRAPER_DISABLE_DRY_RUN_PUBLIC_EXPERIENCE,
@@ -90,6 +93,7 @@ export const resolveDryRunMaxJobsToEnrich = (
 
 export const buildDryRunSnapshotOptions = ({
   scraper = null,
+  signal = null,
   enrichPublicExperience = resolveDryRunPublicExperienceEnabled({ scraper }),
   experienceEnrichmentConcurrency = DRY_RUN_EXPERIENCE_ENRICHMENT_CONCURRENCY,
   maxJobsToEnrich = resolveDryRunMaxJobsToEnrich(
@@ -99,6 +103,7 @@ export const buildDryRunSnapshotOptions = ({
   enrichPublicExperience,
   experienceEnrichmentConcurrency,
   maxJobsToEnrich,
+  ...(signal ? { signal } : {}),
 })
 
 export const finalizeDirectRunnerExit = ({
@@ -270,74 +275,22 @@ process.on('unhandledRejection', (reason) => {
 })
 
 const normalizeRequestedSource = (value) => String(value || '').trim().toLowerCase()
-const normalizeLegacyAliasPart = (value) => normalizeRequestedSource(value).replace(/[^a-z0-9]/g, '')
-
-const buildLegacySourceAliases = (scraper = {}) => {
-  const source = normalizeRequestedSource(scraper.name)
-  const provider = scraper.provider || {}
-  const aliases = new Set()
-
-  if (source.endsWith('.wellfounddirectory') || provider.adapter === 'wellfoundDirectory') {
-    const sourceBase = source.replace(/\.wellfounddirectory$/, '')
-    const companyAlias = normalizeLegacyAliasPart(provider.companyName)
-    const sourceAlias = normalizeLegacyAliasPart(sourceBase)
-
-    if (companyAlias) aliases.add(`wf${companyAlias}`)
-    if (sourceAlias) aliases.add(`wf${sourceAlias}`)
-  }
-
-  if (source.endsWith('.himalayas.app') || provider.adapter === 'himalayasDirectory') {
-    const sourceBase = source.replace(/\.himalayas\.app$/, '')
-    const companyAlias = normalizeLegacyAliasPart(provider.companyName)
-    const sourceAlias = normalizeLegacyAliasPart(sourceBase)
-    const slugAlias = normalizeLegacyAliasPart(provider.himalayasCompanySlug)
-
-    if (companyAlias) aliases.add(`hm${companyAlias}`)
-    if (sourceAlias) aliases.add(`hm${sourceAlias}`)
-    if (slugAlias) aliases.add(`hm${slugAlias}`)
-  }
-
-  aliases.delete(source)
-  return [...aliases]
-}
 
 const buildScraperSourceLookup = (scrapers = []) => {
   const bySource = new Map()
-  const byAlias = new Map()
-  const ambiguousAliases = new Set()
 
   for (const scraper of scrapers) {
     const source = normalizeRequestedSource(scraper.name)
     bySource.set(source, scraper)
-
-    for (const alias of buildLegacySourceAliases(scraper)) {
-      const existing = byAlias.get(alias)
-      if (existing && normalizeRequestedSource(existing.name) !== source) {
-        byAlias.delete(alias)
-        ambiguousAliases.add(alias)
-        continue
-      }
-
-      if (!ambiguousAliases.has(alias)) {
-        byAlias.set(alias, scraper)
-      }
-    }
   }
 
-  return { bySource, byAlias, ambiguousAliases }
+  return bySource
 }
 
 const resolveRequestedScraper = (source, lookup) => {
   const normalizedSource = normalizeRequestedSource(source)
-  const exact = lookup.bySource.get(normalizedSource)
+  const exact = lookup.get(normalizedSource)
   if (exact) return { scraper: exact }
-
-  if (lookup.ambiguousAliases.has(normalizedSource)) {
-    return { ambiguous: true }
-  }
-
-  const aliasMatch = lookup.byAlias.get(normalizedSource)
-  if (aliasMatch) return { scraper: aliasMatch, viaAlias: true }
 
   return { missing: true }
 }
@@ -370,7 +323,6 @@ export const selectScrapersForRun = (
   if (requestedSources.length) {
     const selected = []
     const missing = []
-    const ambiguous = []
     const seen = new Set()
     const resolvedSources = new Set()
 
@@ -379,10 +331,6 @@ export const selectScrapersForRun = (
       seen.add(source)
 
       const resolution = resolveRequestedScraper(source, lookup)
-      if (resolution.ambiguous) {
-        ambiguous.push(source)
-        continue
-      }
       if (resolution.missing) {
         missing.push(source)
         continue
@@ -393,10 +341,6 @@ export const selectScrapersForRun = (
       if (resolvedSources.has(resolvedSource)) continue
       resolvedSources.add(resolvedSource)
       selected.push(scraper)
-    }
-
-    if (ambiguous.length) {
-      throw new Error(`SCRAPER_ONLY source alias(es) resolved ambiguously: ${ambiguous.join(', ')}.`)
     }
 
     if (missing.length) {
@@ -415,9 +359,6 @@ export const selectScrapersForRun = (
   }
 
   const resumeResolution = resolveRequestedScraper(resumeSource, lookup)
-  if (resumeResolution.ambiguous) {
-    throw new Error(`Resume source "${resumeSource}" resolves ambiguously in the scraper catalog.`)
-  }
   if (resumeResolution.missing) {
     throw new Error(`Resume source "${resumeSource}" was not found in the scraper catalog.`)
   }
@@ -449,17 +390,30 @@ const isWorkdayScraper = (scraper) => (
 export const isAuthoritativeEmptyScrape = (scraper, jobs) => (
   Array.isArray(jobs)
   && jobs.length === 0
-  && isWorkdayScraper(scraper)
-  && Object.prototype.hasOwnProperty.call(jobs, WORKDAY_AUTHORITATIVE_EMPTY)
-  && jobs[WORKDAY_AUTHORITATIVE_EMPTY] === true
+  && isVerifiedEmptyEvidence(readInventoryEvidence(jobs))
 )
 
-export const getZeroJobEvidence = (scraper, jobs, indiaJobs) => {
+export const resolveZeroJobOutcome = (scraper, jobs, indiaJobs) => {
   if (!Array.isArray(indiaJobs) || indiaJobs.length > 0) return null
-  return isAuthoritativeEmptyScrape(scraper, jobs)
-    ? 'verified-empty'
-    : 'unverified-zero'
+
+  const evidence = readInventoryEvidence(jobs)
+  if (isVerifiedEmptyEvidence(evidence)) return 'verified-empty'
+  if (evidence?.status === 'complete-inventory') return 'fetched-zero'
+  if (evidence?.status === 'discovery-only') return 'blocked-zero'
+  if (evidence?.status === 'coverage-gap') return 'coverage-gap'
+  if (scraper?.provider?.zeroResultPolicy === 'coverage-gap') return 'coverage-gap'
+  return 'unverified-zero'
 }
+
+export const getZeroJobEvidence = resolveZeroJobOutcome
+
+export const buildCoverageGapResult = (_source, outcome) => ({
+  success: false,
+  softFailure: true,
+  upstreamOutage: false,
+  failureKind: 'coverage_gap',
+  zeroJobEvidence: outcome,
+})
 
 export const resolveScraperRetryAttempts = (scraper) => (
   isWorkdayScraper(scraper) ? 1 : 4
@@ -648,7 +602,8 @@ export const withSourceLifecycleTimeout = async (
       if (settlement.settled) {
         if (settlement.error?.persistenceBlocked === true) throw settlement.error
         if (
-          settlement.value?.success === false
+          error === timeoutError
+          && settlement.value?.success === false
           && settlement.value?.failureKind === error.failureKind
         ) {
           return settlement.value
@@ -1070,16 +1025,17 @@ export const runAll = async ({ stopSignal = null } = {}) => {
       if (isDryRun) clearDryRunArtifact(scraper.dryRunFile)
 
       const jobs = await withRetry(
-        () => runScraperAttemptWithRetryPolicy(scraper),
+        () => runScraperAttemptWithRetryPolicy(scraper, { signal: stopSignal }),
         {
           attempts: resolveScraperRetryAttempts(scraper),
           baseDelayMs: 2000,
           label: scraper.name,
+          signal: stopSignal,
         },
       )
       const publishableAnalysis = analyzePublishableJobs(jobs)
       const indiaJobs = publishableAnalysis.indiaJobs
-      const zeroJobEvidence = getZeroJobEvidence(scraper, jobs, indiaJobs)
+      const zeroJobEvidence = resolveZeroJobOutcome(scraper, jobs, indiaJobs)
       const cities = [...new Set(indiaJobs.map(j => j.city).filter(Boolean))].sort()
 
       let result
@@ -1087,7 +1043,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
         await saveDryRunSnapshot(
           indiaJobs,
           scraper.dryRunFile,
-          buildDryRunSnapshotOptions({ scraper }),
+          buildDryRunSnapshotOptions({ scraper, signal: stopSignal }),
         )
         result = {
           jobs: indiaJobs.length,
@@ -1103,7 +1059,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
       } else {
         result = await retryAfterMongoQuotaRecovery(() => saveToDB(jobs, scraper.name, {
           refreshDatasetSummary: false,
-          authoritativeEmpty: isAuthoritativeEmptyScrape(scraper, jobs),
+          authoritativeEmpty: zeroJobEvidence === 'verified-empty',
         }))
         result.jobs = indiaJobs.length
         result.cities = cities
@@ -1115,9 +1071,18 @@ export const runAll = async ({ stopSignal = null } = {}) => {
 
       if (cities.length) console.log(`  Cities: ${cities.join(', ')}`)
       if (zeroJobEvidence) result.zeroJobEvidence = zeroJobEvidence
+      result.retry = getRetryMetadata(jobs)
       result.durationMs = Date.now() - scraperStart
-      summary[scraper.name] = { success: true, ...result }
+      summary[scraper.name] = {
+        success: true,
+        ...result,
+        ...(zeroJobEvidence === 'coverage-gap'
+          ? buildCoverageGapResult(scraper.name, zeroJobEvidence)
+          : {}),
+      }
     } catch (err) {
+      // Interrupted work must remain pending so the checkpoint resumes it.
+      if (stopSignal?.aborted) break
       const fatalPersistenceError = toFatalScraperPersistenceError(
         `[pipeline] MongoDB writes are blocked while persisting jobs for [${scraper.name}]; aborting run`,
         err,
@@ -1130,6 +1095,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
       const failureResult = {
         success: false,
         error: err.message,
+        retry: getRetryMetadata(err),
         durationMs: Date.now() - scraperStart,
         ...classification,
       }
@@ -1267,7 +1233,7 @@ export const runScraper = async (
     const retry = getRetryMetadata(jobs)
     const publishableAnalysis = analyzePublishableJobs(jobs)
     const indiaJobs = publishableAnalysis.indiaJobs
-    const zeroJobEvidence = getZeroJobEvidence(scraper, jobs, indiaJobs)
+    const zeroJobEvidence = resolveZeroJobOutcome(scraper, jobs, indiaJobs)
     const dataQuality = indiaJobs.reduce((total, job = {}) => ({
       missingTitle: total.missingTitle + (!String(job.title || '').trim() ? 1 : 0),
       missingLocation: total.missingLocation + (!String(job.location || job.city || '').trim() ? 1 : 0),
@@ -1280,7 +1246,7 @@ export const runScraper = async (
       await saveDryRunSnapshot(
         indiaJobs,
         scraper.dryRunFile,
-        buildDryRunSnapshotOptions({ scraper }),
+        buildDryRunSnapshotOptions({ scraper, signal: lifecycleSignal }),
       )
       result = {
         jobs: indiaJobs.length,
@@ -1295,12 +1261,12 @@ export const runScraper = async (
       console.log(`  OK [${scraper.name}] ${indiaJobs.length} India jobs -> ${scraper.dryRunFile}`)
     } else {
       result = await retryAfterMongoQuotaRecovery(() => saveToDB(jobs, scraper.name, {
+        ...persistenceOptions,
         refreshDatasetSummary: false,
-        authoritativeEmpty: isAuthoritativeEmptyScrape(scraper, jobs),
+        authoritativeEmpty: zeroJobEvidence === 'verified-empty',
         enrichPublicExperience: resolveLivePublicExperienceEnabled(scraper),
         signal: lifecycleSignal,
         onStage: logStage,
-        ...persistenceOptions,
       }))
       result.jobs = indiaJobs.length
       result.cities = cities
@@ -1316,7 +1282,13 @@ export const runScraper = async (
     result.retry = retry
     result.dataQuality = dataQuality
     result.durationMs = Date.now() - scraperStart
-    const successResult = { success: true, ...result }
+    const successResult = {
+      success: true,
+      ...result,
+      ...(zeroJobEvidence === 'coverage-gap'
+        ? buildCoverageGapResult(scraper.name, zeroJobEvidence)
+        : {}),
+    }
 
     await updateLiveScraperStatus(scraper.name, successResult, logStage)
 
@@ -1334,6 +1306,7 @@ export const runScraper = async (
     const failResult = {
       success: false,
       error: err.message,
+      retry: getRetryMetadata(err),
       durationMs: Date.now() - scraperStart,
       ...classification,
     }

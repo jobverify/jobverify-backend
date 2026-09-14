@@ -3,6 +3,8 @@ import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 const SEARCH_URL = 'https://careers.godaddy/jobs/search?query=&location=India'
 const BASE_URL = 'https://careers.godaddy'
 const EMPTY_RESULTS_PATTERN = /\b(?:no jobs?|no results?|0 jobs?)\b|\bdisplaying\s+all\s+0\s+entries\b/i
+const ACCESS_CHALLENGE_PATTERN =
+  /awswaf|challenge\.js|javascript is disabled|verify that you're not a robot|requires javascript|captcha|access denied|forbidden/i
 
 const stripTags = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -56,6 +58,18 @@ export const extractGoDaddySearchResults = (html = '') => {
 
 const isExplicitEmptyPage = (html) => EMPTY_RESULTS_PATTERN.test(stripTags(html))
 
+const isAccessChallengePage = (html) => ACCESS_CHALLENGE_PATTERN.test(`${html}\n${stripTags(html)}`)
+
+const buildSoftAccessChallengeError = () => Object.assign(
+  new Error('[godaddy] API-only migration access challenge prevents HTTP-only India search page parsing'),
+  {
+    softFailure: true,
+    upstreamOutage: true,
+    failureKind: 'blocked_or_access_denied',
+    abortRetries: true,
+  },
+)
+
 export const createGoDaddyScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({
     fetchText = (url) => fetchTextWithRetry(url, {
@@ -75,6 +89,10 @@ export const createGoDaddyScraper = ({ now = () => new Date().toISOString() } = 
     }
 
     const jobs = extractGoDaddySearchResults(html)
+
+    if (jobs.length === 0 && isAccessChallengePage(html)) {
+      throw buildSoftAccessChallengeError()
+    }
 
     if (jobs.length === 0 && !isExplicitEmptyPage(html)) {
       throw new Error('[godaddy] API-only migration requires an HTTP-accessible India search page with recognizable job cards')

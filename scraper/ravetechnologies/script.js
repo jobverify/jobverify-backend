@@ -96,6 +96,19 @@ const findErrorInChain = (error, predicate) => {
 const hasHttpStatus = (error, status) =>
   Boolean(findErrorInChain(error, (candidate) => Number(candidate?.status) === status))
 
+const hasAnyHttpStatus = (error, statuses) => statuses.some((status) => hasHttpStatus(error, status))
+
+const createBlockedAccessError = (message, cause) => Object.assign(
+  new Error(message, { cause }),
+  {
+    code: 'RAVE_CAREERS_BLOCKED',
+    failureKind: 'blocked_or_access_denied',
+    softFailure: true,
+    upstreamOutage: true,
+    abortRetries: true,
+  },
+)
+
 const fetchTextWithCapturedHttpBody = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -298,7 +311,19 @@ export const createRaveTechnologiesScraper = ({
       )
     }
 
-    const careersHtml = await fetchText(CAREERS_URL)
+    let careersHtml
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (hasAnyHttpStatus(error, [307, 403, 429])) {
+        throw createBlockedAccessError(
+          'Rave Technologies NEC careers route is currently blocked by upstream access controls',
+          error,
+        )
+      }
+      throw error
+    }
+
     if (!hasSuccessorCareersSignal(careersHtml)) {
       throw new Error(
         'Rave Technologies verified successor careers page no longer matches the trusted SmartRecruiters handoff',

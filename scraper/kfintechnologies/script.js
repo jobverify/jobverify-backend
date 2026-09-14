@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { KFIN_TECHNOLOGIES_CATALOG } from './catalog.js'
@@ -22,6 +23,14 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const TRANSIENT_ERROR_CODES = new Set([
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'ECONNRESET',
+  'ETIMEDOUT',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'ERR_NAME_NOT_RESOLVED',
+])
 
 const decodeHtml = (value) => String(value ?? '')
   .replace(/&#x([0-9a-f]+);/gi, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 16)))
@@ -67,6 +76,42 @@ const toAbsoluteUrl = (value, baseUrl = CAREERS_URL) => {
 }
 
 const unique = (values) => [...new Set(values.filter(Boolean))]
+
+const isTransientUpstreamError = (error) => {
+  const seen = new Set()
+  let current = error
+
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    const code = typeof current.code === 'string' ? current.code : ''
+    const message = String(current.message ?? current)
+
+    if (
+      TRANSIENT_ERROR_CODES.has(code)
+      || /\bHTTP 5\d\d\b/i.test(message)
+      || /\b(fetch failed|connect timeout|timed out|timeout|getaddrinfo|ENOTFOUND|EAI_AGAIN)\b/i.test(message)
+    ) {
+      return true
+    }
+
+    current = current.cause
+  }
+
+  return false
+}
+
+const buildDiscoveryOnlyEvidence = (now) =>
+  attachInventoryEvidence([], {
+    status: 'discovery-only',
+    surface: CAREERS_URL,
+    firstParty: true,
+    listingComplete: false,
+    pagesFetched: 0,
+    reportedTotal: null,
+    indiaFacetCount: null,
+    verifiedAt: normalizeScrapedAt(now()),
+    reason: 'KFin Technologies verified careers page is currently unavailable; first-party job inventory cannot be verified.',
+  })
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -287,40 +332,45 @@ export const createKFinTechnologiesScraper = ({
   now = () => new Date(),
 } = {}) => ({
   async run({ fetchText = defaultFetchText, maxJobs: overrideMaxJobs, now: overrideNow } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersPageSignal(careersHtml)) {
-      throw new Error('The verified KFin Technologies careers page no longer matches the trusted public surface')
-    }
-
-    const jobLinks = extractJobLinks(careersHtml)
-    if (jobLinks.length === 0) {
-      throw new Error('KFin Technologies careers page no longer exposes the verified first-party job detail links')
-    }
-
-    const limit = Number.isInteger(overrideMaxJobs) ? overrideMaxJobs : maxJobs
-    const selectedLinks = limit ? jobLinks.slice(0, limit) : jobLinks
-    const scrapedAt = normalizeScrapedAt((overrideNow || now)())
-    const jobs = []
-
-    for (const sourceUrl of selectedLinks) {
-      const detailHtml = await fetchText(sourceUrl)
-      if (!hasOfficialJobDetailSignal(detailHtml, sourceUrl)) {
-        throw new Error(`KFin Technologies job detail page no longer matches the trusted public surface: ${sourceUrl}`)
+    try {
+      const careersHtml = await fetchText(CAREERS_URL)
+      if (!hasOfficialCareersPageSignal(careersHtml)) {
+        throw new Error('The verified KFin Technologies careers page no longer matches the trusted public surface')
       }
 
-      jobs.push({
-        ...extractJobFromDetailPage(sourceUrl, detailHtml),
-        source: SOURCE,
-        link: sourceUrl,
-        scrapedAt,
-      })
-    }
+      const jobLinks = extractJobLinks(careersHtml)
+      if (jobLinks.length === 0) {
+        throw new Error('KFin Technologies careers page no longer exposes the verified first-party job detail links')
+      }
 
-    return jobs
+      const limit = Number.isInteger(overrideMaxJobs) ? overrideMaxJobs : maxJobs
+      const selectedLinks = limit ? jobLinks.slice(0, limit) : jobLinks
+      const scrapedAt = normalizeScrapedAt((overrideNow || now)())
+      const jobs = []
+
+      for (const sourceUrl of selectedLinks) {
+        const detailHtml = await fetchText(sourceUrl)
+        if (!hasOfficialJobDetailSignal(detailHtml, sourceUrl)) {
+          throw new Error(`KFin Technologies job detail page no longer matches the trusted public surface: ${sourceUrl}`)
+        }
+
+        jobs.push({
+          ...extractJobFromDetailPage(sourceUrl, detailHtml),
+          source: SOURCE,
+          link: sourceUrl,
+          scrapedAt,
+        })
+      }
+
+      return jobs
+    } catch (error) {
+      if (isTransientUpstreamError(error)) return buildDiscoveryOnlyEvidence(overrideNow || now)
+      throw error
+    }
   },
 })
 
-export const run = async (options = {}) => createKFinTechnologiesScraper(options).run()
+export const run = async (options = {}) => createKFinTechnologiesScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

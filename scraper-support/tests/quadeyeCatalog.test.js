@@ -46,27 +46,27 @@ test('QuadEye local catalog captures the verified first-party careers page and p
   assert.equal(QUADEYE_CATALOG.countryFilter, 'India')
   assert.equal(
     QUADEYE_CATALOG.paginationStrategy,
-    'official-careers-page-plus-embedded-zoho-handoff-plus-public-zoho-api',
+    'official-careers-page-plus-portal-api-inventory-equality',
   )
   assert.equal(
     QUADEYE_CATALOG.extractionStrategy,
-    'verified-first-party-careers-page+embedded-zohorecruit-widget+public-job-openings-api',
+    'verified-first-party-careers-page+public-zoho-api+job-location-scope',
   )
   assert.equal(QUADEYE_CATALOG.parser, 'custom-script')
   assert.equal(QUADEYE_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(QUADEYE_CATALOG.dryRunFile, 'quadeye/jobs.json')
-  assert.equal(QUADEYE_CATALOG.verifiedOn, '2026-08-04')
+  assert.equal(QUADEYE_CATALOG.verifiedOn, '2026-09-13')
   assert.equal(QUADEYE_CATALOG.modulePath, modulePath)
-  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /Tuesday, August 4, 2026/i)
+  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /Sunday, September 13, 2026/i)
   assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.quadeye\.com\/careers\//i)
   assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /https:\/\/quadeye\.zohorecruit\.in\/jobs\/Careers\//i)
   assert.match(
     QUADEYE_CATALOG.verifiedSurfaceSummary,
     /https:\/\/quadeye\.zohorecruit\.in\/recruit\/v2\/public\/Job_Openings/i,
   )
-  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /No current Openings/i)
+  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /Job_Location/i)
   assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /Jobs at PeoplePlus/i)
-  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /\b7 current public India roles\b/i)
+  assert.match(QUADEYE_CATALOG.verifiedSurfaceSummary, /\b20 current public India roles\b/i)
 
   assert.equal(quadeye.PROVIDER_METADATA.source, QUADEYE_CATALOG.source)
   assert.equal(quadeye.PROVIDER_METADATA.companyName, QUADEYE_CATALOG.companyName)

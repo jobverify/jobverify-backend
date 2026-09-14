@@ -9,7 +9,8 @@ const scraper = createPhenomScraper({
   companyName: 'AppDynamics',
   source: 'appdynamics',
   baseUrl: 'https://careers.cisco.com',
-  searchPath: '/global/en/splunk/search-page',
+  // Request larger date-ordered pages to avoid relevance reshuffling across small pages.
+  searchPath: '/global/en/splunk/search-page?sortBy=Most+recent&size=100',
   scraperDir: currentDir,
 })
 

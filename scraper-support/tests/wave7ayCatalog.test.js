@@ -109,7 +109,7 @@ test('Avantha Technologies local catalog captures the parked exact-name domain a
   })
 })
 
-test('Systech Solutions local catalog captures the verified exact-name careers page and empty embedded jobs API contract', async () => {
+test('Systech Solutions local catalog captures the verified exact-name careers page and public embedded jobs API contract', async () => {
   const modulePath = path.resolve(currentDir, '../../scraper/systechsolutions/script.js')
   const catalogModule = await loadModule('../../scraper/systechsolutions/catalog.js', 'catalog module')
   const scriptModule = await loadModule('../../scraper/systechsolutions/script.js', 'scraper module')
@@ -133,20 +133,20 @@ test('Systech Solutions local catalog captures the verified exact-name careers p
   )
   assert.equal(provider.usOpeningsPageUrl, 'https://systechusa.com/careers-us/')
   assert.equal(provider.companyDomain, 'systechusa.com')
-  assert.equal(provider.atsPlatform, 'first-party-careers-page-empty-embedded-jobs-api')
+  assert.equal(provider.atsPlatform, 'first-party-careers-page-embedded-jobs-api')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page-plus-empty-embedded-jobs-api')
+  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page-plus-embedded-jobs-api')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-empty-embedded-jobs-api+fail-closed-sentinel',
+    'verified-first-party-careers-page+complete-embedded-jobs-api+explicit-country-validation',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.equal(provider.verifiedPublicJobCount, 0)
-  assert.match(provider.verifiedSurfaceSummary, /Open positions & life at Systech/i)
-  assert.match(provider.verifiedSurfaceSummary, /Chennai, India/i)
-  assert.match(provider.verifiedSurfaceSummary, /returned an empty array/i)
+  assert.equal(provider.verifiedOn, '2026-09-13')
+  assert.equal(provider.verifiedPublicJobCount, 1)
+  assert.match(provider.verifiedSurfaceSummary, /public jobs API with one role/i)
+  assert.match(provider.verifiedSurfaceSummary, /country remains unknown/i)
+  assert.match(provider.verifiedSurfaceSummary, /excluded from India publication/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /systechsolutions[\\/]jobs\.json$/i)
   assert.equal(scriptModule.PROVIDER_METADATA.source, provider.source)

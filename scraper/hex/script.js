@@ -47,7 +47,7 @@ const defaultFetchText = async (url) => {
 
 export const hasVerifiedCareersLandingSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
-  return /Careers at Hex/i.test(normalized)
+  return /(?:Careers at Hex|Hex Careers)/i.test(normalized)
     && /Make everyone a data person/i.test(normalized)
     && /It's just "Hex"!/i.test(normalized)
     && /We're hiring in San Francisco, New York, and remote\./i.test(normalized)
