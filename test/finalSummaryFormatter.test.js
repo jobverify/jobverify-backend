@@ -123,6 +123,34 @@ test('formatFinalSummaryTable separates verified empty pages from unverified zer
   assert.match(output, /Unverified zero results\s+\| 1/)
 })
 
+test('summary separates coverage gaps from successful inventory runs', () => {
+  const output = formatFinalSummaryTable({
+    jobs: { success: true, jobs: 2, durationMs: 10 },
+    empty: { success: true, jobs: 0, zeroJobEvidence: 'verified-empty', durationMs: 10 },
+    outsideIndia: { success: true, jobs: 0, zeroJobEvidence: 'fetched-zero', durationMs: 10 },
+    unknown: { success: true, jobs: 0, zeroJobEvidence: 'unverified-zero', durationMs: 10 },
+    directory: { success: true, jobs: 0, zeroJobEvidence: 'blocked-zero', durationMs: 10 },
+    placeholder: {
+      success: false,
+      softFailure: true,
+      failureKind: 'coverage_gap',
+      zeroJobEvidence: 'coverage-gap',
+      jobs: 0,
+      durationMs: 10,
+    },
+  })
+
+  assert.match(output, /Successful\s+\| 5/)
+  assert.match(output, /Coverage gaps\s+\| 1/)
+  assert.match(output, /Zero India-job results\s+\| 5/)
+  assert.match(output, /Verified empty career surfaces\s+\| 1/)
+  assert.match(output, /Fetched zero India-job results\s+\| 1/)
+  assert.match(output, /Blocked or failed zero results\s+\| 1/)
+  assert.match(output, /Unverified zero results\s+\| 1/)
+  assert.match(output, /Coverage-gap zero results\s+\| 1/)
+  assert.doesNotMatch(output, /Other\s+\| 1\s+\| placeholder/)
+})
+
 test('formatFinalSummaryTable totals missing required job fields', () => {
   const output = formatFinalSummaryTable({
     alpha: {

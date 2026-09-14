@@ -1,4 +1,5 @@
 import path from 'node:path'
+import http2 from 'node:http2'
 import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -160,21 +161,57 @@ export const extractCurrentOpeningsFromBundle = (bundleJs, {
     .filter(Boolean)
 }
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
+export const fetchTextOverHttp2 = async (url, { timeoutMs = 20000, redirects = 5 } = {}) => {
+  const target = new URL(url)
+  const response = await new Promise((resolve, reject) => {
+    const client = http2.connect(target.origin)
+    let settled = false
+    let status
+    let location
+    let size = 0
+    const chunks = []
+    const finish = (error, value) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      client.destroy()
+      if (error) reject(error)
+      else resolve(value)
+    }
+    const timer = setTimeout(() => finish(new Error(`BSE request timed out after ${timeoutMs}ms at ${url}`)), timeoutMs)
+    client.on('error', (error) => finish(error))
+    const request = client.request({
+      ':path': `${target.pathname}${target.search}`,
+      'user-agent': USER_AGENT,
+      accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    })
+    request.on('response', (headers) => {
+      status = headers[':status']
+      location = headers.location
+    })
+    request.on('data', (chunk) => {
+      size += chunk.length
+      if (size > 16 * 1024 * 1024) return finish(new Error(`BSE response exceeded 16 MB at ${url}`))
+      chunks.push(chunk)
+    })
+    request.on('error', (error) => finish(error))
+    request.on('end', () => finish(null, { status, location, text: Buffer.concat(chunks).toString('utf8') }))
+    request.on('close', () => {
+      if (!settled) finish(new Error(`BSE response closed before completion at ${url}`))
+    })
+    request.end()
   })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+  if ([301, 302, 303, 307, 308].includes(response.status) && response.location) {
+    if (redirects <= 0) throw new Error(`BSE redirect limit exceeded at ${url}`)
+    const nextUrl = new URL(response.location, target)
+    if (target.protocol === 'https:' && nextUrl.protocol !== 'https:') throw new Error('BSE redirect would downgrade HTTPS')
+    return fetchTextOverHttp2(nextUrl.href, { timeoutMs, redirects: redirects - 1 })
   }
-
-  return response.text()
+  if (!(response.status >= 200 && response.status < 300)) throw new Error(`HTTP ${response.status} for ${url}`)
+  return response.text
 }
+
+const defaultFetchText = (url) => fetchTextOverHttp2(url)
 
 export const createBseIndiaScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {

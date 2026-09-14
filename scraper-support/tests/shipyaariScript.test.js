@@ -30,6 +30,22 @@ const careersHtml = `
 </html>
 `
 
+const currentResumeOnlyCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers in Logistics, Shipping and Technology - Shipyaari Jobs</title>
+    <link rel="canonical" href="https://www.shipyaari.com/careers/">
+  </head>
+  <body>
+    <h1>Why Join Shipyaari?</h1>
+    <h2>Join The Crew, We’re Hiring!</h2>
+    <p>Please share your resume with us at <a href="mailto:careers@shipyaari.com">careers@shipyaari.com</a></p>
+    <footer>© 2026 AVN BUSINESS SOLUTIONS PVT LTD. All Right Reserved.</footer>
+  </body>
+</html>
+`
+
 const salesManagerHtml = `
 <!doctype html>
 <html lang="en">
@@ -240,6 +256,23 @@ test('Shipyaari run validates the official careers page, follows first-party rol
     ],
   )
   assert.equal(jobs.length, 3)
+})
+
+test('Shipyaari returns no jobs for the current complete resume-only careers page', async () => {
+  const shipyaari = await loadModule()
+
+  assert.equal(shipyaari.hasOfficialCareersPageSignal(currentResumeOnlyCareersHtml), true)
+  assert.equal(shipyaari.hasCurrentResumeOnlyCareersSignal(currentResumeOnlyCareersHtml), true)
+  assert.deepEqual(shipyaari.extractRoleCardsFromHtml(currentResumeOnlyCareersHtml), [])
+
+  const jobs = await shipyaari.run({
+    fetchText: async (url) => {
+      assert.equal(url, shipyaari.CAREERS_URL)
+      return currentResumeOnlyCareersHtml
+    },
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('Shipyaari fails closed when the verified careers surface drifts materially', async () => {

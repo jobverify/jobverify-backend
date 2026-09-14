@@ -5,27 +5,27 @@ import companyAliases from '../../scraper-support/providers/companyAliases.json'
 import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
-test('SuryaLogix is registered as a verified first-party non-listing careers sentinel without aliases', () => {
+test('SuryaLogix is registered as a verified first-party dated inline openings without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'suryalogix')
 
   assert.ok(provider, 'Expected SuryaLogix provider to be registered in customProviders.json')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'SuryaLogix')
   assert.equal(provider.companyCareerPage, 'https://suryalogix.com/career-opportunities/')
-  assert.equal(provider.atsPlatform, 'official-company-careers-nonlisting')
+  assert.equal(provider.atsPlatform, 'first-party-inline-walk-in-openings')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-careers-page-validation')
+  assert.equal(provider.paginationStrategy, 'complete-inline-opening-count-and-event-deadline')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-homepage+verified-careers-application-form-without-public-openings-return-empty',
+    'verified-first-party-homepage+careers-inline-openings+explicit-india-location+walk-in-deadline',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'suryalogix.com')
-  assert.equal(provider.verifiedOn, '2026-08-14')
-  assert.equal(provider.verifiedPublicJobCount, 0)
+  assert.equal(provider.verifiedOn, '2026-09-13')
+  assert.equal(provider.verifiedPublicJobCount, 3)
   assert.equal(provider.verifiedIndiaJobCount, 0)
-  assert.match(provider.verifiedSurfaceSummary, /non-listing application form/i)
+  assert.match(provider.verifiedSurfaceSummary, /three parsed cards are expired/i)
   assert.match(provider.modulePath, /suryalogix[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'SuryaLogix'), false)
 })

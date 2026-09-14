@@ -20,16 +20,16 @@ const fixturesDir = path.join(
 
 const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 
-test('buildSearchResultsPageUrl keeps Collins Aerospace listings on the official RTX Phenom landing route', async () => {
+test('buildSearchResultsPageUrl keeps Collins Aerospace listings on the official RTX Collins listing route', async () => {
   const { buildSearchResultsPageUrl } = await loadCollinsAerospaceModule()
 
   assert.equal(
     buildSearchResultsPageUrl(),
-    'https://careers.rtx.com/global/en/collins-aerospace?size=100',
+    'https://careers.rtx.com/global/en/collins-aerospace-search-results-general',
   )
   assert.equal(
     buildSearchResultsPageUrl(200),
-    'https://careers.rtx.com/global/en/collins-aerospace?size=100&from=200',
+    'https://careers.rtx.com/global/en/collins-aerospace-search-results-general?from=200',
   )
 })
 
@@ -109,7 +109,7 @@ test('extractJobDetail reads Collins Aerospace job detail metadata and the offic
   assert.match(detail.minimumQualification, /BE\/ Masters Degree/i)
 })
 
-test('run keeps Collins Aerospace jobs on the official RTX Phenom route and decorates shared runner fields', async () => {
+test('run preserves the selected Collins listing when optional detail HTML belongs to another role', async () => {
   const {
     buildSearchResultsPageUrl,
     run,
@@ -120,11 +120,16 @@ test('run keeps Collins Aerospace jobs on the official RTX Phenom route and deco
     initialFrom: 200,
     maxPages: 1,
     maxJobs: 1,
+    fetchJson: async (url, options) => {
+      requestedUrls.push(url)
+      assert.equal(Number(JSON.parse(options.body).from), 200)
+      const { extractSearchPayload } = await loadCollinsAerospaceModule()
+      const payload = extractSearchPayload(readFixture('search-results-page-200-size-100.html'))
+      return { refineSearch: { status: 200, totalHits: payload.totalHits, hits: payload.hits,
+        data: { jobs: payload.jobs, aggregations: [] } } }
+    },
     fetchText: async (url) => {
       requestedUrls.push(url)
-      if (url === buildSearchResultsPageUrl(200)) {
-        return readFixture('search-results-page-200-size-100.html')
-      }
       if (/https:\/\/careers\.rtx\.com\/global\/en\/job\//.test(url)) {
         return readFixture('job-detail-01849281.html')
       }
@@ -132,16 +137,18 @@ test('run keeps Collins Aerospace jobs on the official RTX Phenom route and deco
     },
   })
 
-  assert.equal(requestedUrls[0], buildSearchResultsPageUrl(200))
+  assert.equal(requestedUrls[0], 'https://careers.rtx.com/widgets')
   assert.match(requestedUrls[1], /https:\/\/careers\.rtx\.com\/global\/en\/job\//)
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].company, 'Collins Aerospace')
   assert.equal(jobs[0].source, 'collinsaerospace')
-  assert.equal(jobs[0].jobId, '01849281')
+  assert.equal(jobs[0].jobId, '01853778')
+  assert.equal(jobs[0].title, 'Senior Lead Engineer - Systems (Hybrid)')
+  assert.equal(jobs[0].sourceListingComplete, false)
   assert.equal(jobs[0].country, 'India')
   assert.equal(jobs[0].location, 'bengaluru, Karnātaka, India')
   assert.equal(
     jobs[0].applyUrl,
-    'https://globalhr.wd5.myworkdayjobs.com/REC_RTX_Ext_Gateway/job/IN-KA-BENGALURU-008--Hitech-Defence--Aerospace-Park--HI-TECH-DEFENSE/Manager---SCM_01849281/apply',
+    'https://globalhr.wd5.myworkdayjobs.com/REC_RTX_Ext_Gateway/job/IN-KA-BENGALURU-NORTHGATE--Sy-No-22-Venkatala-Village--SY-NO-22-VENKATALA-VILLAGE-Yelahanka-Hobli/Senior-Lead-Engineer---Systems--Hybrid-_01853778/apply',
   )
 })

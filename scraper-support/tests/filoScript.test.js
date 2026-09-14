@@ -170,7 +170,7 @@ test('Filo run returns listing-backed jobs from the current published Google Doc
       {
         title: 'Business Analyst',
         department: 'Analytics',
-        country: 'India',
+        country: null,
         sourceUrl: ANALYSTS_DOC_URL,
         link: ANALYSTS_DOC_URL,
         scrapedAt: FIXED_SCRAPED_AT,
@@ -178,7 +178,7 @@ test('Filo run returns listing-backed jobs from the current published Google Doc
       {
         title: 'Product Manager',
         department: 'Product',
-        country: 'India',
+        country: null,
         sourceUrl: PRODUCT_DOC_URL,
         link: PRODUCT_DOC_URL,
         scrapedAt: FIXED_SCRAPED_AT,

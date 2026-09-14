@@ -38,6 +38,11 @@ const VERIFIED_APP_SHELL_PATTERNS = [
   /<div\s+id=["']root["']><\/div>/i,
 ]
 
+const hasCurrentAppIdentity = (page) =>
+  /<title>\s*YelloSKYE \| Drone Survey &(?:amp;)? Inspection Company India \| AI Construction Monitoring\s*<\/title>/i.test(page)
+  && /<meta\s+property=["']og:url["']\s+content=["']https:\/\/www\.yelloskye\.ai\/?["']/i.test(page)
+  && /<meta\s+property=["']og:site_name["']\s+content=["']YelloSKYE["']/i.test(page)
+
 const PUBLIC_JOB_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
   /\bcurrent openings\b/i,
@@ -72,8 +77,9 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -91,9 +97,11 @@ export const hasVerifiedAppShell = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return VERIFIED_APP_SHELL_PATTERNS.every((pattern) => pattern.test(rawHtml))
+  return (VERIFIED_APP_SHELL_PATTERNS.every((pattern) => pattern.test(rawHtml))
     && normalized.includes('YelloSKYE')
-    && normalized.includes('AI-Powered Site Intelligence & Digital Twin Platform')
+    && normalized.includes('AI-Powered Site Intelligence & Digital Twin Platform'))
+    || (hasCurrentAppIdentity(rawHtml)
+      && VERIFIED_APP_SHELL_PATTERNS.slice(4).every(pattern => pattern.test(rawHtml)))
 }
 
 export const hasPublicJobSignals = (html) =>
@@ -102,8 +110,10 @@ export const hasPublicJobSignals = (html) =>
 const hasExpectedFinalUrl = (actualUrl, expectedUrl) => String(actualUrl ?? '') === expectedUrl
 
 export const createYelloSkyeScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+  async run({ fetchPage = defaultFetchPage, signal } = {}) {
+    signal?.throwIfAborted()
+    const read = async url => { signal?.throwIfAborted(); const value = await fetchPage(url, { signal }); signal?.throwIfAborted(); return value }
+    const homepage = await read(HOMEPAGE_URL)
 
     if (
       homepage.status !== 200
@@ -118,7 +128,7 @@ export const createYelloSkyeScraper = () => ({
     }
 
     for (const [index, routeUrl] of CAREERS_ROUTE_URLS.entries()) {
-      const routePage = await fetchPage(routeUrl)
+      const routePage = await read(routeUrl)
       const expectedCanonicalUrl = CANONICAL_CAREERS_ROUTE_URLS[index]
 
       if (
@@ -134,6 +144,25 @@ export const createYelloSkyeScraper = () => ({
       }
     }
 
+    // Current Vite routes render on the client; inspect their actual public bundle.
+    if (hasCurrentAppIdentity(homepage.html)) {
+      const assetPath = homepage.html.match(/<script\b[^>]*type=["']module["'][^>]*src=["'](\/assets\/index-[^"']+\.js)["']/i)?.[1]
+      if (!assetPath) throw new Error('YelloSKYE public application bundle is missing')
+      const assetUrl = new URL(assetPath, CANONICAL_HOMEPAGE_URL).href
+      const asset = await read(assetUrl)
+      const bundle = String(asset.html ?? '')
+      if (asset.status !== 200 || asset.url !== assetUrl
+        || !bundle.includes('YelloSKYE') || !/\.HOME=["']\/["']/.test(bundle)
+        || !/\.ABOUT=["']\/about["']/.test(bundle)
+        || !/\.BOOK_DEMO=["']\/book-demo["']/.test(bundle)
+        || !bundle.includes('/solutions/construction-monitoring')
+        || !/document\.getElementById\(["']root["']\)/.test(bundle)) {
+        throw new Error('YelloSKYE public application bundle changed materially')
+      }
+      if (hasPublicJobSignals(bundle) || /["']\/(?:careers?|jobs?|join-us)(?:[\/?#"'])/i.test(bundle)) {
+        throw new Error('YelloSKYE public application bundle now exposes public jobs')
+      }
+    }
     return []
   },
 })

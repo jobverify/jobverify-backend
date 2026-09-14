@@ -105,10 +105,27 @@ export const hasRedirectShellSignal = (html) => {
     && !hasPublicJobsSignal(rawHtml)
 }
 
-export const hasParkedLanderRedirect = (response = {}) =>
-  Number(response?.status) === 307
-  && /^(?:https:\/\/www\.afternic\.com\/forsale\/www\.bsil\.com\b|https:\/\/forsale\.godaddy\.com\/forsale\/www\.bsil\.com\b)/i
-    .test(String(response?.location ?? ''))
+export const hasParkedLanderHtml = (html) => {
+  const rawHtml = String(html ?? '')
+
+  return /window\.LANDER_SYSTEM\s*=\s*["']PW["']/i.test(rawHtml)
+    && /window\._trfd\b/i.test(rawHtml)
+    && /\bparking\b/i.test(rawHtml)
+    && !hasPublicJobsSignal(rawHtml)
+}
+
+export const hasParkedLanderRedirect = (response = {}) => {
+  if (
+    Number(response?.status) === 307
+    && /^(?:https:\/\/www\.afternic\.com\/forsale\/www\.bsil\.com\b|https:\/\/forsale\.godaddy\.com\/forsale\/www\.bsil\.com\b)/i
+      .test(String(response?.location ?? ''))
+  ) {
+    return true
+  }
+
+  return Number(response?.status) === 200
+    && hasParkedLanderHtml(response?.html)
+}
 
 export const createBlueStarInfotechScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {

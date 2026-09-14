@@ -5,19 +5,25 @@ import {
   buildWorkdayAppliedFacets,
   buildWorkdaySearchUrl,
   extractCity,
-  fetchWorkdayJobsApiPage,
+  fetchWorkdayJobsApiPage as fetchWorkdayJobsApiPageImpl,
   hasWorkdayOutageSignal,
   inferWorkdayJobsApiConfig,
   matchesWorkdayLocationPattern,
-  runWorkdayScraper,
+  runWorkdayScraper as runWorkdayScraperImpl,
   shouldFetchWorkdayJobDetail,
   shouldContinueWorkdayJobsApiPagination,
   WorkdayHostCircuitBreaker,
   WorkdayUpstreamOutageError,
 } from '../myworkday/engine.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+// Parser/deadline fixtures isolate pacing, which has its own integration tests.
+const requestScheduler = { acquire: async () => () => {}, recordRateLimit: () => {} }
+const fetchWorkdayJobsApiPage = (options) => fetchWorkdayJobsApiPageImpl({ requestScheduler, ...options })
+const runWorkdayScraper = (options) => runWorkdayScraperImpl({ requestScheduler, ...options })
 
 const testsDir = path.dirname(fileURLToPath(import.meta.url))
 const test = (name, fn) => nodeTest(name, { concurrency: false }, fn)
@@ -969,8 +975,8 @@ test('runWorkdayScraper jobs-api mode does not require Puppeteer when the first 
 
     assert.deepEqual(jobs, [])
     assert.equal(
-      jobs[Symbol.for('jobverify.workday.authoritative-empty')],
-      true,
+      readInventoryEvidence(jobs)?.status,
+      'unverified',
     )
     assert.deepEqual(calls.map((call) => call.method), ['GET', 'POST'])
   } finally {
@@ -1020,10 +1026,7 @@ test('nonempty Workday payloads that produce no valid jobs are not marked author
     })
 
     assert.deepEqual(jobs, [])
-    assert.notEqual(
-      jobs[Symbol.for('jobverify.workday.authoritative-empty')],
-      true,
-    )
+    assert.equal(readInventoryEvidence(jobs)?.status, 'complete-inventory')
   } finally {
     global.fetch = originalFetch
   }

@@ -25,6 +25,24 @@ const homepageHtml = `
   </html>
 `
 
+const underDevelopmentHomepageHtml = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <title>Website Under Development</title>
+    </head>
+    <body>
+      <main>
+        <h1>Under Development</h1>
+        <h2>This website is coming soon!</h2>
+        <p>We are working hard to bring something amazing. Please check back soon.</p>
+        <p>Managed by <a href="https://www.hwplindia.com">HorizonWebinfo Pvt Ltd</a></p>
+        <p>ERP | CRM | Mobile Application | Website | HRMS</p>
+      </main>
+    </body>
+  </html>
+`
+
 const notFoundHtml = `
   <html>
     <head><title>404 Not Found</title></head>
@@ -54,6 +72,7 @@ test('Gensol validates the verified homepage placeholder and 404 career routes b
   assert.ok(gensol)
 
   assert.equal(gensol.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(gensol.hasOfficialHomepageSignal(underDevelopmentHomepageHtml), true)
   assert.equal(gensol.isMissingCareerRoute(notFoundHtml), true)
 
   const requestedUrls = []
@@ -73,6 +92,21 @@ test('Gensol validates the verified homepage placeholder and 404 career routes b
     gensol.CAREERS_URL,
     gensol.JOBS_URL,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Gensol accepts the current under-development placeholder before returning no jobs', async () => {
+  const gensol = await loadGensolModule()
+  assert.ok(gensol)
+
+  const jobs = await gensol.createGensolScraper().run({
+    fetchText: async (url) => {
+      if (url === gensol.HOMEPAGE_URL) return underDevelopmentHomepageHtml
+      if (url === gensol.CAREERS_URL || url === gensol.JOBS_URL) return notFoundHtml
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
   assert.deepEqual(jobs, [])
 })
 

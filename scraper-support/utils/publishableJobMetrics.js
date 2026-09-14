@@ -34,7 +34,12 @@ export const analyzePublishableJobs = (jobs = [], { now = new Date() } = {}) => 
       filterCounts.nonJob += 1
       return false
     }
-    if (!normalizeHttpUrl(job?.applyUrl || job?.link || job?.sourceUrl)) {
+    const applicationUrl = job?.applyUrl || job?.link || job?.sourceUrl
+    // Email applications still have a navigable public role page. Persistence
+    // uses that HTTP source URL when normalizing the application link.
+    const emailSourceUrl = /^mailto:/i.test(String(applicationUrl || '').trim())
+      ? normalizeHttpUrl(job?.sourceUrl) : null
+    if (!normalizeHttpUrl(applicationUrl) && !emailSourceUrl) {
       filterCounts.invalidUrl += 1
       return false
     }

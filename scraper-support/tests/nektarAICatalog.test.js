@@ -41,18 +41,18 @@ test('Nektar AI catalog captures the verified first-party careers redirect and C
     provider.officialApplyFormUrl,
     'https://coda.io/form/Kick-start-your-career-with-us_dfLGyijCu1N',
   )
-  assert.equal(provider.atsPlatform, 'official-careers-redirect-to-coda-no-public-jobs')
+  assert.equal(provider.atsPlatform, 'official-careers-coda-public-document')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'first-party-careers-redirect-plus-coda-surface-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-timeout-only-first-party-routes+legacy-first-party-careers-redirect-and-coda-handoff-without-public-listings-return-empty',
+    'verified-first-party-coda-handoff+explicit-current-empty-statement-required',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-13')
-  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /repeated connect timeouts/i)
+  assert.equal(provider.verifiedOn, '2026-09-13')
+  assert.match(provider.verifiedSurfaceSummary, /September 13, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /culture and contact copy/i)
   assert.match(provider.verifiedSurfaceSummary, /docs\.superhuman\.com/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /nektarai[\\/]jobs\.json$/i)

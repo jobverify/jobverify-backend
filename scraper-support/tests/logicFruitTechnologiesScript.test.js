@@ -179,6 +179,44 @@ test('Logic Fruit Technologies run decorates the official openings with shared s
   assert.notEqual(jobs[0].jobId, jobs[1].jobId)
 })
 
+test('Logic Fruit Technologies accepts the current first-party careers app only while its opening CTA remains non-listing', async () => {
+  const logicFruit = await loadLogicFruitModule()
+  const homepage = `
+    <html><head>
+      <title>Logic Fruit Technologies | Semiconductor Systems Solutions Company</title>
+      <script type="module" crossorigin src="/assets/index-current.js"></script>
+    </head><body><div id="root"></div></body></html>
+  `
+  const bundle = 'label:`Career`,page:`career`,href:`/careers`; Build your Career with Opportunities to Learn, Grow, and Make an Impact; drop in your resume. We’ll get back to you in a flash!; href:`#`,onClick:e=>e.preventDefault(),children:`CURRENT OPENING`'
+  const requestedUrls = []
+  const jobs = await logicFruit.createLogicFruitTechnologiesScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === logicFruit.CAREERS_URL) throw new Error(`HTTP 404 for ${url}`)
+      if (url === logicFruit.HOMEPAGE_URL) return homepage
+      if (url === 'https://www.logic-fruit.com/assets/index-current.js') return bundle
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedUrls, [
+    logicFruit.CAREERS_URL,
+    logicFruit.HOMEPAGE_URL,
+    'https://www.logic-fruit.com/assets/index-current.js',
+  ])
+  await assert.rejects(
+    logicFruit.createLogicFruitTechnologiesScraper().run({
+      fetchText: async (url) => {
+        if (url === logicFruit.CAREERS_URL) throw new Error(`HTTP 404 for ${url}`)
+        if (url === logicFruit.HOMEPAGE_URL) return homepage
+        return bundle.replace('href:`#`', 'href:`/jobs`')
+      },
+    }),
+    /careers app changed materially/i,
+  )
+})
+
 test('Logic Fruit Technologies fails closed when the verified public openings surface changes', async () => {
   const logicFruit = await loadLogicFruitModule()
 

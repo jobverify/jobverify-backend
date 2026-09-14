@@ -15,11 +15,11 @@ const jobsPageHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Find your dream job | Canva Careers</title>
+    <title>Find Authentic Jobs | Canva Careers</title>
   </head>
   <body>
     <main>
-      <h1>Find your dream job</h1>
+      <h1>Find Authentic Jobs</h1>
       <div>Location Type</div>
       <div>Work Type</div>
       <div>1 of 2 Live Results</div>

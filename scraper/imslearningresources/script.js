@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -82,8 +83,13 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createImsLearningResourcesScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+export const createImsLearningResourcesScraper = ({
+  now: defaultNow = () => new Date().toISOString(),
+} = {}) => ({
+  async run({
+    fetchText = defaultFetchText,
+    now = defaultNow,
+  } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
 
     if (!hasOfficialCareersSignal(careersHtml)) {
@@ -95,7 +101,17 @@ export const createImsLearningResourcesScraper = () => ({
       throw new Error('IMS Learning Resources careers page now exposes public job links')
     }
 
-    return []
+    return attachInventoryEvidence([], {
+      status: 'discovery-only',
+      surface: CAREERS_URL,
+      firstParty: true,
+      listingComplete: false,
+      pagesFetched: 1,
+      reportedTotal: 0,
+      indiaFacetCount: 0,
+      verifiedAt: now(),
+      reason: 'ims-learning-resources-email-only-careers-page',
+    })
   },
 })
 

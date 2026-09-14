@@ -27,7 +27,7 @@ test('JM Baxi Heavy keeps the verified first-party careers surface constants pin
     .replace(/Here['’]s to creating opportunities!?/gi, "India's maritime and trade landscape")
   const liveLikeJobSearchHtml = jobSearchHtml
     .replace(/Select Department Engineering/gi, 'Select Department Operations')
-    .replace(/Select Location Navi Mumbai/gi, 'Find your dream job')
+    .replace(/Select Location Navi Mumbai/gi, 'Find Authentic Jobs')
   const liveLikeJobListHtml = jobListHtml.replace(/<title>\s*Job Search \| J M Baxi\s*<\/title>/i, '<title>Job List | J M Baxi</title>')
 
   assert.equal(jmBaxiHeavy.SOURCE, 'jmbaxiheavy')

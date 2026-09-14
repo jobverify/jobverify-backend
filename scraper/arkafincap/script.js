@@ -107,9 +107,10 @@ const hasArkaCareersHref = (html, hrefPath) =>
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
+  const title = page.match(/<title\b[^>]*>[^<]*<\/title>/i)?.[0] || ''
 
   return /<title>[\s\S]*Arka Fincap[\s\S]*(?:&#8211;|&ndash;|â€“|\u2013|-)[\s\S]*Expert Financial Solutions[\s\S]*Services[\s\S]*<\/title>/i.test(
-    page,
+    title,
   )
     && hasArkaCareersHref(page, '/life-at-arka')
     && /https:\/\/arkafincap\.zohorecruit\.in\/jobs\/Careers/i.test(page)
@@ -118,9 +119,10 @@ export const hasOfficialHomepageSignal = (html) => {
 
 export const hasOfficialCareersPageSignal = (html) => {
   const page = String(html ?? '')
+  const title = page.match(/<title\b[^>]*>[^<]*<\/title>/i)?.[0] || ''
 
   return /<title>[\s\S]*Life at Arka[\s\S]*(?:&#8211;|&ndash;|â€“|\u2013|-)[\s\S]*Work Culture,\s*Careers\s*&(?:amp;)?\s*Growth[\s\S]*<\/title>/i.test(
-    page,
+    title,
   )
     && hasArkaCareersHref(page, '/life-at-arka')
     && /https:\/\/arkafincap\.zohorecruit\.in\/jobs\/Careers/i.test(page)

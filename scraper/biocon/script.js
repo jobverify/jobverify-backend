@@ -1,4 +1,6 @@
+import { execFile as execFileCallback } from 'node:child_process'
 import path from 'node:path'
+import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
@@ -17,6 +19,7 @@ import {
 import { BIOCON_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
+const execFile = promisify(execFileCallback)
 
 export const PROVIDER_METADATA = BIOCON_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
@@ -31,6 +34,79 @@ export const DETAIL_URL_PREFIX =
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const isBioconFirstPartyUrl = (value) => {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:'
+      && (url.hostname === 'biocon.com' || url.hostname === 'www.biocon.com')
+  } catch {
+    return false
+  }
+}
+
+const isLeafSignatureError = (error) => {
+  const visited = new Set()
+  let current = error
+
+  while (current && !visited.has(current)) {
+    visited.add(current)
+    if (current.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') return true
+    if (/unable to verify (?:the )?(?:first certificate|leaf signature)/i.test(current.message || '')) {
+      return true
+    }
+    current = current.cause
+  }
+
+  return false
+}
+
+export const fetchBioconFirstPartyText = async (url, {
+  fetchText = fetchTextWithRetry,
+  execFile: runExecFile = execFile,
+  signal,
+} = {}) => {
+  const fetchOptions = {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    attempts: 3,
+    baseDelayMs: 500,
+    timeoutMs: 30000,
+    label: `${SOURCE}-html`,
+    signal,
+  }
+
+  try {
+    return await fetchText(url, fetchOptions)
+  } catch (error) {
+    if (!isBioconFirstPartyUrl(url) || !isLeafSignatureError(error)) throw error
+
+    const { stdout } = await runExecFile('curl.exe', [
+      '--disable',
+      '--fail-with-body',
+      '--silent',
+      '--show-error',
+      '--location',
+      '--max-redirs', '5',
+      '--connect-timeout', '10',
+      '--max-time', '30',
+      '--user-agent', USER_AGENT,
+      '--header', `Accept: ${fetchOptions.headers.Accept}`,
+      '--proto', '=https',
+      '--proto-redir', '=https',
+      url,
+    ], {
+      encoding: 'utf8',
+      maxBuffer: 10 * 1024 * 1024,
+      signal,
+      windowsHide: true,
+    })
+
+    return stdout
+  }
+}
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -307,16 +383,7 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  attempts: 3,
-  baseDelayMs: 500,
-  timeoutMs: 30000,
-  label: `${SOURCE}-html`,
-})
+const defaultFetchText = (url, options = {}) => fetchBioconFirstPartyText(url, options)
 
 export const getLiveSearchPages = async ({
   fetchText = defaultFetchText,

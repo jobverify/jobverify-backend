@@ -126,12 +126,12 @@ test('Vivriti Capital validates the verified homepage, careers page, about page,
   assert.equal(vivriti.extractOfficialDarwinboxUrl(careersHtml), 'https://vivriti.darwinbox.in')
 })
 
-test('Vivriti Capital run returns an empty list only while the verified official site exposes the same Darwinbox handoff contract', async () => {
+test('Vivriti Capital refuses malformed Darwinbox listing payloads instead of publishing empty success', async () => {
   const vivriti = await loadModule()
   assert.ok(vivriti, 'Vivriti Capital scraper module should load')
 
   const requestedUrls = []
-  const jobs = await vivriti.createVivritiCapitalScraper().run({
+  await assert.rejects(vivriti.createVivritiCapitalScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === vivriti.HOMEPAGE_URL) return homepageHtml
@@ -140,7 +140,8 @@ test('Vivriti Capital run returns an empty list only while the verified official
       if (url === vivriti.CONTACT_URL) return contactHtml
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+    fetchListingPage: async () => ({ data: [], job_counts: 'unavailable' }),
+  }), /Darwinbox listings payload is malformed or incomplete/i)
 
   assert.deepEqual(requestedUrls, [
     vivriti.HOMEPAGE_URL,
@@ -148,7 +149,96 @@ test('Vivriti Capital run returns an empty list only while the verified official
     vivriti.ABOUT_URL,
     vivriti.CONTACT_URL,
   ])
-  assert.deepEqual(jobs, [])
+})
+
+test('Vivriti Capital scrapes the current public Darwinbox India inventory after validating the official handoff', async () => {
+  const vivriti = await loadModule()
+  const jobs = await vivriti.createVivritiCapitalScraper().run({
+    fetchText: async (url) => {
+      if (url === vivriti.HOMEPAGE_URL) return homepageHtml
+      if (url === vivriti.CAREERS_URL) return careersHtml
+      if (url === vivriti.ABOUT_URL) return aboutHtml
+      if (url === vivriti.CONTACT_URL) return contactHtml
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    fetchListingPage: async () => ({
+      status: 'success',
+      job_counts: 2,
+      data: [
+        {
+          id: 'vivriti-1',
+          title: 'Senior Manager',
+          department_name: 'Risk',
+          locations: 'Chennai, Tamil Nadu, India',
+          country: 'India',
+          emp_type_name: 'Full Time',
+          jd: '<p>Lead risk engagements.</p>',
+        },
+        {
+          id: 'vivriti-foreign',
+          title: 'Foreign role',
+          locations: 'London, United Kingdom',
+          country: 'United Kingdom',
+        },
+      ],
+    }),
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Senior Manager')
+  assert.equal(jobs[0].company, 'Vivriti Capital')
+  assert.equal(jobs[0].source, 'vivriticapital')
+  assert.equal(jobs[0].location, 'Chennai, Tamil Nadu, India')
+  assert.equal(
+    jobs[0].sourceUrl,
+    'https://vivriti.darwinbox.in/ms/candidatev2/main/careers/jobDetails/vivriti-1',
+  )
+})
+
+test('Vivriti Capital makes no first-party request when the runner signal is already aborted', async () => {
+  const vivriti = await loadModule()
+  const controller = new AbortController()
+  controller.abort(new Error('runner stopped before Vivriti'))
+  let requestCount = 0
+
+  await assert.rejects(
+    vivriti.createVivritiCapitalScraper().run({
+      signal: controller.signal,
+      fetchText: async () => {
+        requestCount += 1
+        return homepageHtml
+      },
+    }),
+    /runner stopped before Vivriti/i,
+  )
+
+  assert.equal(requestCount, 0)
+})
+
+test('Vivriti Capital stops before the next first-party page when cancellation arrives mid-response', async () => {
+  const vivriti = await loadModule()
+  const controller = new AbortController()
+  const requestedUrls = []
+
+  await assert.rejects(
+    vivriti.createVivritiCapitalScraper().run({
+      signal: controller.signal,
+      fetchText: async (url, { signal } = {}) => {
+        requestedUrls.push(url)
+        assert.equal(signal, controller.signal)
+
+        if (url === vivriti.HOMEPAGE_URL) {
+          controller.abort(new Error('runner stopped after Vivriti homepage'))
+          return homepageHtml
+        }
+
+        throw new Error(`Unexpected request after cancellation: ${url}`)
+      },
+    }),
+    /runner stopped after Vivriti homepage/i,
+  )
+
+  assert.deepEqual(requestedUrls, [vivriti.HOMEPAGE_URL])
 })
 
 test('Vivriti Capital fails closed when the homepage, careers page, about page, contact page, or Darwinbox handoff changes materially', async () => {

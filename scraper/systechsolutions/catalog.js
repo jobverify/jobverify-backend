@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 18, 2026 that https://systechusa.com/careers/ is the live first-party Systech Solutions careers page, that it advertises "Open positions & life at Systech" and Chennai, India, and that its embedded Azure Logic Apps jobs-list endpoint returned an empty array while the page still links US Job Openings at https://systechusa.com/careers-us/. Because the exact-name public jobs surface currently exposes no India listings, this local provider remains fail-closed and returns an empty array until the embedded first-party jobs API publishes verifiable openings.'
+  "Verified September 13, 2026: the official careers page embeds a public jobs API with one role. Neither the role nor its detail supplies a country, so country remains unknown and this role is excluded from India publication."
 
 export const SYSTECH_SOLUTIONS_CATALOG = {
   source: 'systechsolutions',
@@ -20,15 +20,15 @@ export const SYSTECH_SOLUTIONS_CATALOG = {
     'https://prod-125.westus.logic.azure.com:443/workflows/9c049c250c2b4aed831092094d3c61f0/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=O_necFuH-pBhqeGk6KKpYwNEP1f0ax4lxGEPWbZ1kBA',
   usOpeningsPageUrl: 'https://systechusa.com/careers-us/',
   companyDomain: 'systechusa.com',
-  atsPlatform: 'first-party-careers-page-empty-embedded-jobs-api',
+  atsPlatform: "first-party-careers-page-embedded-jobs-api",
   countryFilter: 'India',
-  paginationStrategy: 'single-first-party-careers-page-plus-empty-embedded-jobs-api',
+  paginationStrategy: "single-first-party-careers-page-plus-embedded-jobs-api",
   extractionStrategy:
-    'verified-first-party-careers-page+verified-empty-embedded-jobs-api+fail-closed-sentinel',
+    "verified-first-party-careers-page+complete-embedded-jobs-api+explicit-country-validation",
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
-  verifiedPublicJobCount: 0,
+  verifiedOn: "2026-09-13",
+  verifiedPublicJobCount: 1,
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'systechsolutions/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

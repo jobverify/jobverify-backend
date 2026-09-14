@@ -49,14 +49,12 @@ export const hasVerifiedParkedDomainSignal = (html) => {
 
   return normalized.includes('this website is for sale!')
     && normalized.includes('movidu resources and information.')
-    && normalized.includes('movidu.com is your first and best source for information about movidu.')
     && /sedoparking\.com/i.test(markup)
-    && /quickresultonline\.com/i.test(markup)
     && !hasPublicJobsSignal(markup)
 }
 
 export const isMoviduVerifiedTimeoutBlocker = (error) =>
-  /connect timeout error|timed out|timeout|fetch failed|getaddrinfo|err_connection_timed_out|other side closed|terminated/i
+  /connect timeout error|gateway time-out|http 504|timed out|timeout|fetch failed|getaddrinfo|err_connection_timed_out|other side closed|terminated/i
     .test(String(error?.message ?? error?.cause?.message ?? error ?? ''))
 
 const isOfficialMoviduHost = (value) => {
@@ -84,6 +82,10 @@ const defaultFetchPage = async (url) => {
 }
 
 const verifyParkedPage = ({ page, errorMessage }) => {
+  if (page.status === 504 && /\b504 Gateway Time-out\b/i.test(page.html)) {
+    throw new Error('HTTP 504 Gateway Time-out from the verified Movidu host')
+  }
+
   if (page.status !== 200 || !isOfficialMoviduHost(page.url) || !hasVerifiedParkedDomainSignal(page.html)) {
     throw new Error(errorMessage)
   }

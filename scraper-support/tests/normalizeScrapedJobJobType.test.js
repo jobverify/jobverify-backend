@@ -62,8 +62,19 @@ test("resolveJobType classifies the selected permanent and employment labels as 
   }
 });
 
-test("resolveJobType classifies unrecognized source labels as Others", () => {
+test("resolveJobType treats unrecognized employment labels as full-time experienced", () => {
   for (const employmentType of ["Onsite", "Hybrid", "Remote Local", "J"]) {
-    assert.equal(resolveJobType({ employmentType, title: "Software Engineer" }), "Others", employmentType);
+    assert.equal(resolveJobType({ employmentType, title: "Software Engineer" }), "Full-time Experienced", employmentType);
   }
+});
+
+test("resolveJobType classifies zero experience roles by internship and fresher evidence", () => {
+  assert.equal(
+    resolveJobType({ employmentType: "Hybrid", title: "Engineering Intern", experienceRequired: "0 years" }),
+    "Internship",
+  );
+  assert.equal(
+    resolveJobType({ employmentType: "Onsite", title: "Graduate Software Engineer", experienceRequired: "0 years" }),
+    "Full-time Fresher",
+  );
 });

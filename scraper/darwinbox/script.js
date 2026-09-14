@@ -1,7 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+import { composeAbortSignals, fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -106,36 +106,36 @@ const isIndiaJob = (record) => {
   return /india/i.test(location || '') || /india/i.test(country || '')
 }
 
-const createBlockedDarwinboxSignalJob = ({
-  companyName,
-  source,
-  publicJobsUrl,
-}) => ({
-  title: `Current openings at ${companyName}`,
-  company: companyName,
-  location: 'India',
-  city: null,
-  country: 'India',
-  link: publicJobsUrl,
-  applyUrl: publicJobsUrl,
-  sourceUrl: publicJobsUrl,
-  source,
-  jobId: `${source}-current-openings`,
-  requisitionId: `${source}-current-openings`,
-  department: null,
-  employmentType: null,
-  experienceRequired: null,
-  minimumQualification: null,
-  preferredQualification: null,
-  requiredSkills: [],
-  postingDate: null,
-  closingDate: null,
-  jobDescription:
-    `The public ${companyName} Darwinbox shell remained reachable, `
-    + 'but the public Darwinbox inventory API returned HTTP 403 during this scrape. '
-    + `Review current openings directly on ${publicJobsUrl}.`,
-})
+export class DarwinboxUpstreamUnavailableError extends Error {
+  constructor(source, url, cause) {
+    super('[' + source + '] Darwinbox listing unavailable at ' + url + ': ' + cause.message, { cause })
+    this.name = 'DarwinboxUpstreamUnavailableError'
+    this.httpStatus = 403
+    this.status = 403
+    this.softFailure = true
+    this.upstreamOutage = true
+    this.abortRetries = true
+    this.failureKind = 'blocked_or_access_denied'
+  }
+}
 
+const validateListingPayload = (payload, source, pageNumber, pageSize) => {
+  const total = payload?.job_counts == null ? null : Number(payload.job_counts)
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)
+    || !Array.isArray(payload.data)
+    || (payload.status != null && !['success', true, 200].includes(payload.status))
+    || (total != null && (!Number.isInteger(total) || total < 0))
+    || (payload.data.length === 0 && total > (pageNumber - 1) * pageSize)
+    || payload.data.some((record) => !record || !normalizeWhitespace(record.id)
+      || !normalizeWhitespace(record.title) || (!normalizeWhitespace(record.locations) && !normalizeWhitespace(record.country))
+      || (isIndiaJob(record) && !normalizeWhitespace(record.locations)))) {
+    const error = new Error('[' + source + '] Darwinbox listings payload is malformed or incomplete')
+    error.name = 'DarwinboxListingContractError'
+    error.abortRetries = true
+    error.failureKind = 'parser_or_contract_error'
+    throw error
+  }
+}
 export const createDarwinboxScraper = ({
   companyName = DEFAULT_COMPANY_NAME,
   source = DEFAULT_SOURCE,
@@ -147,7 +147,6 @@ export const createDarwinboxScraper = ({
   const portalOrigin = normalizeOrigin(origin)
   const requestTimeoutMs = Math.max(Number(config.jobListingTimeoutMs) || 0, 30000)
   let publicSessionCookieHeader = null
-  let publicCareersShellReachable = false
   const invokeFetchImpl = (url, requestInit) => (
     fetchImpl === globalThis.fetch
       ? globalThis.fetch(url, requestInit)
@@ -179,8 +178,9 @@ export const createDarwinboxScraper = ({
 
   const seedPublicSessionCookie = async (
     targetCompanyId = companyId,
-    { forceRefresh = false } = {},
+    { forceRefresh = false, signal } = {},
   ) => {
+    signal?.throwIfAborted()
     if (!forceRefresh && publicSessionCookieHeader) return publicSessionCookieHeader
 
     try {
@@ -190,13 +190,13 @@ export const createDarwinboxScraper = ({
           'User-Agent': USER_AGENT,
           Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         },
-        signal: createTimeoutSignal(requestTimeoutMs),
+        signal: composeAbortSignals(signal, createTimeoutSignal(requestTimeoutMs)),
       })
 
-      if (response?.ok) {
-        publicCareersShellReachable = true
-      }
+      signal?.throwIfAborted()
+      await response.body?.cancel?.()
     } catch {
+      signal?.throwIfAborted()
       // Best effort only; some tenants may still allow the API without a seeded cookie.
     }
 
@@ -246,6 +246,7 @@ export const createDarwinboxScraper = ({
     page: pageNumber,
     pageSize: targetPageSize = pageSize,
     companyId: targetCompanyId = companyId,
+    signal,
   }) => (async () => {
     const requestBody = JSON.stringify({
       companyId: targetCompanyId,
@@ -255,7 +256,9 @@ export const createDarwinboxScraper = ({
     })
 
     for (let attemptNumber = 1; attemptNumber <= 2; attemptNumber += 1) {
-      const cookieHeader = await seedPublicSessionCookie(targetCompanyId, { forceRefresh: true })
+      signal?.throwIfAborted()
+      const cookieHeader = await seedPublicSessionCookie(targetCompanyId, { forceRefresh: true, signal })
+      signal?.throwIfAborted()
       const headers = {
         'User-Agent': USER_AGENT,
         Accept: 'application/json,text/plain;q=0.9,*/*;q=0.8',
@@ -271,6 +274,7 @@ export const createDarwinboxScraper = ({
       try {
         return await fetchJsonWithRetry(buildListingApiUrl(targetCompanyId), {
           fetchImpl: cookieAwareFetchImpl,
+          signal,
           attempts: 1,
           method: 'POST',
           headers,
@@ -279,6 +283,7 @@ export const createDarwinboxScraper = ({
           timeoutMs: requestTimeoutMs,
         })
       } catch (error) {
+        signal?.throwIfAborted()
         if (attemptNumber >= 2 || !isRetryableDarwinboxListingError(error)) {
           throw error
         }
@@ -292,36 +297,28 @@ export const createDarwinboxScraper = ({
     maxPages = config.maxPages,
     maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
     fetchListingPage = fetchListingPageFromApi,
+    signal,
   } = {}) => {
+    signal?.throwIfAborted()
     const jobs = []
     let pageNumber = 1
-    const publicJobsUrl = buildCareersPageUrl(companyId)
 
     while (pageNumber <= maxPages) {
+      signal?.throwIfAborted()
       let payload
 
       try {
-        payload = await fetchListingPage({ page: pageNumber, pageSize, companyId })
+        payload = await fetchListingPage({ page: pageNumber, pageSize, companyId, signal })
+        signal?.throwIfAborted()
       } catch (error) {
-        if (
-          pageNumber === 1
-          && jobs.length === 0
-          && publicCareersShellReachable
-          && isRetryableDarwinboxListingError(error)
-        ) {
-          return [{
-            ...createBlockedDarwinboxSignalJob({
-              companyName,
-              source,
-              publicJobsUrl,
-            }),
-            scrapedAt: new Date().toISOString(),
-          }]
+        signal?.throwIfAborted()
+        if (isRetryableDarwinboxListingError(error)) {
+          throw new DarwinboxUpstreamUnavailableError(source, buildListingApiUrl(companyId), error)
         }
-
         throw error
       }
 
+      validateListingPayload(payload, source, pageNumber, pageSize)
       const results = extractSearchResults(payload)
 
       for (const job of results) {

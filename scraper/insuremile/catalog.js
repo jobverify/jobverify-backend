@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on September 3, 2026 that https://insuremile.in/careers is the live first-party InsureMile careers page, that it now says "While we don\'t have active job listings right now", and that it directs resumes to careers@insuremile.in on the official domain. The historical wp-job-openings assets and AWSM REST feed are no longer present on the public page, so this provider now returns an empty array until a trustworthy public jobs surface reappears.'
+  'Verified September 13, 2026: the official careers page publishes seven role cards with explicit branch locations and role-specific hr@insuremile.in application links. The current parser checks the advertised total and every card; the historical AWSM parser remains available only for its verified legacy surface.'
 
 export const INSUREMILE_CATALOG = {
   source: 'insuremile',
@@ -14,13 +14,13 @@ export const INSUREMILE_CATALOG = {
   homepageUrl: 'https://insuremile.in/',
   companyCareerPage: 'https://insuremile.in/careers',
   companyDomain: 'insuremile.in',
-  atsPlatform: 'official-company-site-no-public-jobs',
+  atsPlatform: 'official-first-party-careers',
   countryFilter: 'India',
   paginationStrategy: 'single-first-party-careers-page-verification',
-  extractionStrategy: 'verified-first-party-careers-page-no-open-roles-return-empty',
+  extractionStrategy: 'complete-public-role-cards+role-specific-email-apply',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-09-03',
+  verifiedOn: '2026-09-13',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'insuremile/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

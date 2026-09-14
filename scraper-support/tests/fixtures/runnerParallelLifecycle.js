@@ -27,7 +27,14 @@ const source = (name, sourceLifecycleTimeoutMs = 0) => ({
   },
 })
 globalThis.runnerLifecycleFixture = {
-  scrapers: scenario === 'inactive'
+  scrapers: scenario === 'failed-retry-telemetry'
+    ? [{ name: 'unavailable', run: async () => {
+      state.started.push('unavailable')
+      const error = new Error('fetch failed')
+      if (state.started.length === 2) error.abortRetries = true
+      throw error
+    } }]
+    : scenario === 'inactive'
     ? [source('disabled-one'), source('disabled-two')]
     : ['checkpoint-resume', 'checkpoint-failure-threshold'].includes(scenario)
       ? [source('alpha'), source('beta')]
@@ -131,6 +138,10 @@ if (['checkpoint-resume', 'checkpoint-failure-threshold'].includes(scenario)) {
       },
     },
   }))
+}
+if (scenario === 'checkpoint-cancelled-peer') {
+  checkpointDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-runner-resume-'))
+  process.env.SCRAPER_CHECKPOINT_FILE = path.join(checkpointDir, 'run-state.json')
 }
 for (const key of ['SCRAPER_ONLY', 'SCRAPER_START_AT', 'SCRAPER_START_AFTER', 'SCRAPER_SOURCE_LIFECYCLE_TIMEOUT_MS', 'SCRAPER_FAILURE_ABORT_THRESHOLD']) {
   delete process.env[key]

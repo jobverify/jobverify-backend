@@ -95,6 +95,20 @@ test('Shazam? no run returns [] only while the exact row remains a noisy note ra
   assert.deepEqual(jobs, [])
 })
 
+test('Shazam brand verification tolerates the current artist-specific page title', async () => {
+  const shazamNo = await loadModule()
+  const currentArtistHtml = SHAZAM_HTML.replace(
+    '<title>Shazam - Music Discovery, Charts &amp; Song Lyrics</title>',
+    '<title>DtMF - Bad Bunny: Song Lyrics, Music Videos &amp; Concerts</title>',
+  )
+
+  assert.equal(shazamNo.hasVerifiedShazamBrandPageSignal(currentArtistHtml), true)
+  assert.equal(
+    shazamNo.extractAppleCareersSearchUrl(currentArtistHtml),
+    shazamNo.APPLE_CAREERS_SEARCH_URL,
+  )
+})
+
 test('Shazam? no fails closed when the Shazam page, Apple careers handoff, or exact-row-noise evidence changes materially', async () => {
   const shazamNo = await loadModule()
 

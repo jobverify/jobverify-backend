@@ -552,7 +552,27 @@ test('GoDaddy scraper reports an API-only migration error for an AWS WAF challen
       fetchText: async () => '<html><head><script src="https://edge.sdk.awswaf.com/challenge.js"></script></head></html>',
       renderSearchPage: async () => assert.fail('GoDaddy must not launch a browser'),
     }),
-    /\[godaddy\] API-only migration/i,
+    (error) => error.softFailure === true
+      && error.failureKind === 'blocked_or_access_denied'
+      && /\[godaddy\].*access challenge/i.test(error.message),
+  )
+
+  await assert.rejects(
+    createGoDaddyScraper().run({
+      fetchText: async () => `
+        <html>
+          <body>
+            <h1>JavaScript is disabled</h1>
+            <p>In order to continue, we need to verify that you're not a robot.</p>
+            <p>This requires JavaScript.</p>
+          </body>
+        </html>
+      `,
+      renderSearchPage: async () => assert.fail('GoDaddy must not launch a browser'),
+    }),
+    (error) => error.softFailure === true
+      && error.failureKind === 'blocked_or_access_denied'
+      && /\[godaddy\].*access challenge/i.test(error.message),
   )
 
   await assert.rejects(

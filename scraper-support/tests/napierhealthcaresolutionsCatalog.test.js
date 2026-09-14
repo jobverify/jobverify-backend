@@ -17,7 +17,7 @@ const loadProviderModule = async () => {
   }
 }
 
-test('Napier local provider metadata captures the reachable August 3, 2026 first-party careers surface', async () => {
+test('Napier local provider metadata captures the unavailable September 13, 2026 careers route', async () => {
   const { provider, default: defaultProvider } = await loadProviderModule()
   const hydrated = hydrateProviderCatalogEntry(provider)
 
@@ -29,21 +29,22 @@ test('Napier local provider metadata captures the reachable August 3, 2026 first
   assert.equal(hydrated.homepageUrl, 'http://www.napierhealthcare.com/v2/')
   assert.equal(hydrated.companyCareerPage, 'http://www.napierhealthcare.com/v2/careers/')
   assert.equal(hydrated.companyDomain, 'napierhealthcare.com')
-  assert.equal(hydrated.atsPlatform, 'official-careers-marketing-page-no-live-public-openings')
+  assert.equal(hydrated.atsPlatform, 'official-company-careers-unavailable')
   assert.equal(hydrated.countryFilter, 'India')
-  assert.equal(hydrated.paginationStrategy, 'single-first-party-careers-page-validation')
+  assert.equal(hydrated.paginationStrategy, 'single-first-party-careers-route-unavailable-validation')
   assert.equal(
     hydrated.extractionStrategy,
-    'verified-first-party-careers-marketing-copy+no-live-same-domain-opening-links+fail-closed-sentinel',
+    'verified-unavailable-first-party-careers-route+typed-upstream-failure',
   )
   assert.equal(hydrated.parser, 'custom-script')
   assert.equal(hydrated.normalizationProfile, 'engineering-default')
-  assert.equal(hydrated.verifiedOn, '2026-08-03')
+  assert.equal(hydrated.verifiedOn, '2026-09-13')
   assert.equal(hydrated.modulePath, modulePath)
   assert.match(hydrated.dryRunFile, /napierhealthcaresolutions[\\/]jobs\.json$/i)
-  assert.match(hydrated.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
+  assert.match(hydrated.verifiedSurfaceSummary, /Sunday, September 13, 2026/i)
   assert.match(hydrated.verifiedSurfaceSummary, /http:\/\/www\.napierhealthcare\.com\/v2\/careers\//i)
-  assert.match(hydrated.verifiedSurfaceSummary, /https certificate is expired/i)
+  assert.match(hydrated.verifiedSurfaceSummary, /HTTP 404/i)
+  assert.match(hydrated.verifiedSurfaceSummary, /thetransformationhub\.com\.au/i)
 })
 
 test('Napier exact backlog row resolves directly from local provider metadata', async () => {

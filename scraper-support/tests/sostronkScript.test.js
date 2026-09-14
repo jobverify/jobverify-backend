@@ -18,6 +18,15 @@ const changelogHtml = `
 </html>
 `
 
+const parkingRedirectHtml = '<!DOCTYPE html><html><head><script>window.onload=function(){window.location.href="/lander"}</script></head></html>'
+const parkingLanderHtml = `
+<!doctype html><html><head>
+  <script>window.LANDER_SYSTEM="PW"</script>
+  <script defer src="https://img1.wsimg.com/parking-lander/static/js/main.b227b566.js"></script>
+  <link href="https://img1.wsimg.com/parking-lander/static/css/main.52c56e7a.css" rel="stylesheet">
+</head><body><div id="root"></div></body></html>
+`
+
 const loadSostronkModule = async () => {
   try {
     return await import('../../scraper/sostronk/script.js')
@@ -181,4 +190,32 @@ test('Sostronk fails closed when a first-party route becomes reachable or change
     }),
     /verified branded changelog surface changed materially/i,
   )
+})
+
+test('Sostronk accepts the current exact-domain parking handoff only after verifying its lander', async () => {
+  const sostronk = await loadSostronkModule()
+  const requestedUrls = []
+
+  assert.equal(sostronk.hasVerifiedParkingRedirectShell(parkingRedirectHtml), true)
+  assert.equal(sostronk.hasVerifiedParkingLander(parkingLanderHtml), true)
+
+  const jobs = await sostronk.run({
+    probeUrl: async (url) => {
+      requestedUrls.push(url)
+      if (url === sostronk.PARKING_URL) {
+        return { url, finalUrl: url, status: 200, html: parkingLanderHtml, errorKind: null }
+      }
+      if (url === sostronk.CHANGELOG_URL) {
+        return { url, finalUrl: url, status: null, html: null, errorKind: 'dns' }
+      }
+      return { url, finalUrl: url, status: 200, html: parkingRedirectHtml, errorKind: null }
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    sostronk.FIRST_PARTY_TIMEOUT_URLS[0],
+    sostronk.PARKING_URL,
+    ...sostronk.FIRST_PARTY_TIMEOUT_URLS.slice(1),
+  ])
+  assert.deepEqual(jobs, [])
 })

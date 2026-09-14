@@ -110,7 +110,7 @@ test('Quale Infotech local catalog captures the verified homepage-only fail-clos
   await assertHydratedCatalogLoadsScript(provider)
 })
 
-test('Capital Numbers Infotech local catalog captures the verified email-resume-only careers page', async () => {
+test('Capital Numbers Infotech local catalog captures the verified public-role careers page', async () => {
   const { constant, defaultExport } = await loadCatalog(
     '../../scraper/capitalnumbersinfotech/catalog.js',
     'CAPITAL_NUMBERS_INFOTECH_CATALOG',
@@ -124,17 +124,17 @@ test('Capital Numbers Infotech local catalog captures the verified email-resume-
   assert.equal(provider.homepageUrl, 'https://www.capitalnumbers.com/')
   assert.equal(provider.companyCareerPage, 'https://www.capitalnumbers.com/careers.php')
   assert.equal(provider.contactEmail, 'jobs@capitalnumbers.com')
-  assert.equal(provider.atsPlatform, 'first-party-careers-page-email-resume-only')
+  assert.equal(provider.atsPlatform, 'official-first-party-careers')
   assert.equal(provider.paginationStrategy, 'single-first-party-careers-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+resume-email-handoff-without-public-openings+fail-closed-sentinel',
+    'complete-public-role-cards+email-apply',
   )
-  assert.equal(provider.verifiedOn, '2026-08-01')
-  assert.match(provider.verifiedSurfaceSummary, /Build Your Career with Capital Numbers/i)
-  assert.match(provider.verifiedSurfaceSummary, /jobs@capitalnumbers\.com/i)
-  assert.match(provider.verifiedSurfaceSummary, /Beware of Fake Job or Freelancing Offers/i)
-  assert.match(provider.verifiedSurfaceSummary, /Rated 4\.2 out of 5 on Glassdoor/i)
+  assert.equal(provider.verifiedOn, '2026-09-13')
+  assert.match(provider.verifiedSurfaceSummary, /four current role cards/i)
+  assert.match(provider.verifiedSurfaceSummary, /identifier is validated/i)
+  assert.match(provider.verifiedSurfaceSummary, /verified India locations/i)
+  assert.match(provider.verifiedSurfaceSummary, /September 13, 2026/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

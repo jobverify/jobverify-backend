@@ -39,9 +39,9 @@ const toAbsoluteUrl = (value) => {
   }
 }
 
-const detailPattern = /<div[^>]*class=["'][^"']*elementor-widget-wrap[^"']*["'][^>]*>[\s\S]*?<h4[^>]*>\s*<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>\s*<\/h4>[\s\S]*?<p>([\s\S]*?)<\/p>[\s\S]*?<strong>\s*Experience\s*<\/strong>\s*:\s*([^<]+)<[\s\S]*?<strong>\s*Vacancies\s*<\/strong>\s*:\s*([^<]+)<[\s\S]*?<strong>\s*Job Location\s*<\/strong>\s*:\s*([^<]+)<[\s\S]*?<strong>\s*Work Mode\s*<\/strong>\s*:\s*([^<]+)</gi
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+    signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -55,10 +55,7 @@ export const hasVerifiedOpeningsSignal = (html = '') => {
   return /<title>\s*IT Companies in Pune for Freshers \| Experience\s*<\/title>/i.test(String(html ?? ''))
     && normalized.includes('Current Openings')
     && normalized.includes('ta@iprogrammer.co')
-    && normalized.includes('DevOps Engineer')
-    && normalized.includes('Odoo QA Engineer')
-    && normalized.includes('Lead NodeJS Engineer')
-    && normalized.includes('ReactJS Developer')
+    && /<h4[^>]*>\s*<a[^>]*href=["'][^"']*\/current-opening\/[^"']+["']/i.test(html)
 }
 
 const normalizeRemoteStatus = (value) => {
@@ -71,21 +68,33 @@ const normalizeRemoteStatus = (value) => {
 export const extractJobs = (html = '') => {
   const jobs = []
 
-  for (const match of String(html ?? '').matchAll(detailPattern)) {
-    const [, href, rawTitle, rawDescription, rawExperience, rawVacancies, rawLocation, rawWorkMode] = match
+  const page = String(html)
+  const headings = [...page.matchAll(/<h4[^>]*>\s*<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>\s*<\/h4>/gi)]
+  const expectedLinks = new Set([...page.matchAll(/<a[^>]*href=["']([^"']*\/current-opening\/[^"']+)["']/gi)].map(([, href]) => toAbsoluteUrl(href)))
+  for (const [index, heading] of headings.entries()) {
+    const [, href, rawTitle] = heading
+    const body = page.slice(heading.index + heading[0].length, headings[index + 1]?.index ?? page.length)
+    const field = label => body.match(new RegExp('<strong>\\s*'+label+'\\s*</strong>\\s*:\\s*([^<]+)<','i'))?.[1]
+    const rawDescription = body.match(/<div[^>]*class=["'][^"']*\belementor-widget-text-editor\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1]
+      || body.match(/<p[^>]*>([\s\S]*?)<\/p>/i)?.[1]
+    const rawExperience = field('Experience')
+    const rawVacancies = field('Vacancies')
+    const rawLocation = field('Job Location')
+    const rawWorkMode = field('Work Mode')
     const title = normalizeWhitespace(rawTitle)
     const sourceUrl = toAbsoluteUrl(href)
     const location = normalizeWhitespace(rawLocation)
-
-    if (!title || !sourceUrl || !location) continue
+    const india = /^(?:India|Pune(?:,\s*Maharashtra)?(?:,\s*India)?)$/i.test(location)
+    if (!title || !sourceUrl || !location || !rawDescription || !rawExperience || !rawVacancies || !rawWorkMode
+      || !/^\/current-opening\/[a-z0-9-]+\/$/.test(new URL(sourceUrl).pathname)) throw new Error('iProgrammer incomplete public role card')
 
     jobs.push({
       title,
       company: COMPANY,
       department: null,
-      location: `${location}, India`,
+      location: india ? `${location}, India` : location,
       city: location,
-      country: 'India',
+      country: india ? 'India' : null,
       jobId: slugify(title),
       requisitionId: slugify(title),
       sourceUrl,
@@ -103,18 +112,31 @@ export const extractJobs = (html = '') => {
     })
   }
 
+  if (!jobs.length || new Set(jobs.map(job => job.sourceUrl)).size !== expectedLinks.size || jobs.length !== expectedLinks.size || new Set(jobs.map(job => job.jobId)).size !== jobs.length) throw new Error('iProgrammer incomplete current listing')
   return jobs
 }
 
 export const createIprogrammerSolutionsScraper = ({ maxJobs = null } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, signal } = {}) {
+    signal?.throwIfAborted()
+    let careersHtml
+    try { careersHtml = await fetchText(CAREERS_URL, { signal }) }
+    finally { signal?.throwIfAborted() }
     if (!hasVerifiedOpeningsSignal(careersHtml)) {
       throw new Error('The verified iProgrammer Solutions openings surface no longer matches the trusted first-party page')
     }
 
     const jobs = extractJobs(careersHtml)
-    const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
+    if (jobs.some(job => !job.country)) {
+      for (const job of jobs) job.sourceListingComplete = false
+      console.warn('[iprogrammersolutions] Some role locations remain unverified; prior jobs will be preserved.')
+    }
+    const verifiedJobs = jobs.filter(job => job.country === 'India')
+    if (!verifiedJobs.length && jobs.length) throw new Error('iProgrammer incomplete country scope: no verified India roles')
+    const selectedJobs = maxJobs ? verifiedJobs.slice(0, maxJobs) : verifiedJobs
+    if (selectedJobs.length < jobs.length) {
+      for (const job of selectedJobs) job.sourceListingComplete = false
+    }
 
     return selectedJobs.map((job) => ({
       ...job,

@@ -2,6 +2,6 @@
   "listingStrategy": "jobs-api",
   "jobsApiUrl": "https://broadridge.wd5.myworkdayjobs.com/wday/cxs/broadridge/Careers/jobs",
   "detailUrlBase": "https://broadridge.wd5.myworkdayjobs.com/en-US/Careers",
-  "locationCountry": null,
-  "searchText": "India"
+  "locationCountry": "c4f78be1a8f14da0ab49ce1162348a5e",
+  "countryFacetParameter": "Location_Country"
 }

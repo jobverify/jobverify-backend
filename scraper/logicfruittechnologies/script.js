@@ -8,6 +8,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'logicfruittechnologies'
 export const COMPANY = 'Logic Fruit Technologies'
+export const HOMEPAGE_URL = 'https://www.logic-fruit.com/'
 export const CAREERS_URL = 'https://www.logic-fruit.com/career/jobs-current-opening/'
 export const APPLY_URL = 'https://www.logic-fruit.com/career/application-form/'
 
@@ -88,6 +89,33 @@ export const hasOfficialCareersSignal = (html) => {
     && /Open Positions In Logic Fruit/i.test(text)
     && /theplus-tabs-content-wrapper/i.test(page)
     && /jobs-current-opening\//i.test(page)
+}
+
+export const extractCurrentAppBundleUrl = (html = '') => {
+  const source = String(html ?? '').match(/<script[^>]+type=["']module["'][^>]+src=["']([^"']*\/assets\/index-[^"']+\.js)["']/i)?.[1]
+  if (!source) return null
+  try {
+    const url = new URL(source, HOMEPAGE_URL)
+    return url.hostname === 'www.logic-fruit.com' ? url.toString() : null
+  } catch {
+    return null
+  }
+}
+
+export const hasCurrentHomepageSignal = (html = '') => {
+  const page = String(html ?? '')
+  return /<title>\s*Logic Fruit Technologies \| Semiconductor Systems Solutions Company\s*<\/title>/i.test(page)
+    && /<div id=["']root["']><\/div>/i.test(page)
+    && Boolean(extractCurrentAppBundleUrl(page))
+}
+
+export const hasVerifiedCurrentCareersBundleSignal = (bundle = '') => {
+  const source = String(bundle ?? '')
+  return /label:`Career`,page:`career`,href:`\/careers`/.test(source)
+    && /Build your Career with Opportunities to Learn, Grow, and Make an Impact/i.test(source)
+    && /drop in your resume\. We’ll get back to you in a flash!/i.test(source)
+    && /href:`#`,onClick:[^,]+=>[^,]+\.preventDefault\(\),children:`CURRENT OPENING`/.test(source)
+    && !/"@type"\s*:\s*"JobPosting"|boards-api\.greenhouse|jobs\.lever\.co|myworkdayjobs|darwinbox/i.test(source)
 }
 
 export const extractTabbedOpeningSections = (html = '') => {
@@ -201,7 +229,25 @@ export const createLogicFruitTechnologiesScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const html = await fetchText(CAREERS_URL)
+    let html
+    try {
+      html = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (!/HTTP 404 for https:\/\/www\.logic-fruit\.com\/career\/jobs-current-opening\//i.test(String(error?.message))) {
+        throw error
+      }
+
+      const homepageHtml = await fetchText(HOMEPAGE_URL)
+      if (!hasCurrentHomepageSignal(homepageHtml)) {
+        throw new Error('Logic Fruit Technologies current official app shell changed materially')
+      }
+      const bundleUrl = extractCurrentAppBundleUrl(homepageHtml)
+      const bundle = await fetchText(bundleUrl)
+      if (!hasVerifiedCurrentCareersBundleSignal(bundle)) {
+        throw new Error('Logic Fruit Technologies current careers app changed materially or now exposes public jobs')
+      }
+      return []
+    }
     const scrapedAt = now()
 
     return extractOpenings(html).map((job) => {

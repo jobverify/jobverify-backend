@@ -6,7 +6,7 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes Uptiq.ai as a verified empty-board script provider with official metadata', () => {
+test('getScraperCatalog includes Uptiq.ai as a verified first-party role-card script provider with official metadata', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'uptiqai')
 
   assert.ok(provider)

@@ -22,9 +22,8 @@ const HOMEPAGE_SIGNALS = [
 
 const CAREERS_SIGNALS = [
   /<title>\s*Career opportunities \| Proton\s*<\/title>/i,
-  /Working at Proton/i,
-  /JobsListSection\.js/i,
-  /https:\/\/boards-api\.greenhouse\.io\/v1\/boards\/proton\/jobs\?content=true/i,
+  /Working at Proton|Open positions/i,
+  /JobsListSection(?:\.[a-z0-9_-]+)?\.js/i,
 ]
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
@@ -57,8 +56,9 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -72,7 +72,8 @@ const defaultFetchPage = async (url) => {
   }
 }
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
@@ -147,6 +148,7 @@ const normalizeGreenhouseUrl = (value = '', jobId = null) => {
     const url = new URL(String(value ?? ''))
     const host = url.hostname.replace(/^www\./i, '').toLowerCase()
     if (host !== 'job-boards.greenhouse.io' && host !== 'boards.greenhouse.io') return null
+    if (url.pathname !== `/proton/jobs/${normalizedJobId}` || !normalizedJobId) return null
 
     return normalizedJobId
       ? `https://job-boards.greenhouse.io/proton/jobs/${normalizedJobId}`
@@ -170,7 +172,7 @@ export const extractIndiaJobsFromGreenhousePayload = (payload = {}) => {
       const jobId = normalizeWhitespace(job?.id)
       const sourceUrl = normalizeGreenhouseUrl(job?.absolute_url, jobId)
 
-      if (!title || !location || !sourceUrl) return null
+      if (!title || !location || !sourceUrl) throw new Error('Lumo/Proton incomplete snapshot: invalid India job')
 
       return {
         title,
@@ -198,21 +200,36 @@ export const extractIndiaJobsFromGreenhousePayload = (payload = {}) => {
 }
 
 export const createLumoScraper = () => ({
-  async run({ fetchPage = defaultFetchPage, fetchJson = defaultFetchJson, now = () => new Date().toISOString() } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+  async run({ fetchPage = defaultFetchPage, fetchJson = defaultFetchJson, now = () => new Date().toISOString(), signal } = {}) {
+    signal?.throwIfAborted()
+    const homepage = await fetchPage(HOMEPAGE_URL, { signal })
+    signal?.throwIfAborted()
 
     if (!isVerifiedHomepage(homepage)) {
       throw new Error('Lumo verified official homepage no longer matches the known public surface')
     }
 
-    const careersPage = await fetchPage(CAREERS_URL)
+    const careersPage = await fetchPage(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
 
     if (!isVerifiedCareersLandingPage(careersPage)) {
       throw new Error('Lumo careers surface changed materially or now exposes public jobs')
     }
 
-    const jobs = extractIndiaJobsFromGreenhousePayload(await fetchJson(GREENHOUSE_API_URL))
+    const apiBinding = /https:\/\/boards-api\.greenhouse\.io\/v1\/boards\/proton\/jobs(?:\?content=true)?["'`]/
+    if (!apiBinding.test(careersPage.html)) {
+      const componentPath = careersPage.html.match(/component-url=["'](\/_astro\/JobsListSection(?:\.[a-z0-9_-]+)?\.js)["']/i)?.[1]
+      if (!componentPath) throw new Error('Lumo Proton Greenhouse handoff module is missing')
+      const componentUrl = new URL(componentPath, CAREERS_URL).toString()
+      const component = await fetchPage(componentUrl, { signal })
+      signal?.throwIfAborted()
+      if (component.status !== 200 || component.url !== componentUrl || !apiBinding.test(component.html)) {
+        throw new Error('Lumo Proton Greenhouse handoff is no longer verified by the public jobs module')
+      }
+    }
+    const jobs = extractIndiaJobsFromGreenhousePayload(await fetchJson(GREENHOUSE_API_URL, { signal }))
 
+    signal?.throwIfAborted()
     return jobs.map((job) => ({
       ...job,
       source: SOURCE,

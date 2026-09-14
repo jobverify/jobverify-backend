@@ -17,6 +17,10 @@ import {
   SKILL_SCOPE_OPTIONS,
   WORK_ARRANGEMENT_OPTIONS,
 } from "../constants/jobFilterTaxonomy.js";
+import {
+  countSuggestionCharacters,
+  MAX_SUGGESTION_CHARACTERS,
+} from "../utils/userSuggestion.js";
 
 const MAX_TEXT_LENGTH = 80;
 const MAX_QUERY_LENGTH = 200;
@@ -409,6 +413,26 @@ export const jobCompanyAutocompleteValidation = [
     .withMessage(`Company search must be ${MAX_TEXT_LENGTH} characters or fewer.`),
 ];
 
+export const companyDirectoryQueryValidation = [
+  query("q")
+    .optional()
+    .customSanitizer(trimIfString)
+    .isLength({ max: 100 })
+    .withMessage("Company search must be 100 characters or fewer."),
+  query("page")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Page must be at least 1."),
+  query("limit")
+    .optional()
+    .isInt({ min: 1, max: 48 })
+    .withMessage("Limit must be between 1 and 48."),
+];
+
+export const companyKeyParamValidation = [
+  boundedStringRule(param("companyKey"), "Company key", 100),
+];
+
 export const mongoIdParamValidation = (name, label) => [
   param(name).isMongoId().withMessage(`Invalid ${label}.`),
 ];
@@ -464,6 +488,25 @@ export const userProfileValidation = [
     .withMessage("Profile preference sort must be one of: all, popularity, latest, oldest."),
 ];
 
+export const suggestionSubmissionValidation = [
+  body("message")
+    .isString()
+    .withMessage("Suggestion must be text.")
+    .bail()
+    .customSanitizer(trimIfString)
+    .notEmpty()
+    .withMessage("Suggestion is required.")
+    .bail()
+    .custom((value) => {
+      if (countSuggestionCharacters(value) > MAX_SUGGESTION_CHARACTERS) {
+        throw new Error(
+          `Suggestion must be ${MAX_SUGGESTION_CHARACTERS} characters or fewer.`,
+        );
+      }
+      return true;
+    }),
+];
+
 export const adminUsersQueryValidation = [
   query("page")
     .optional()
@@ -478,6 +521,17 @@ export const adminUsersQueryValidation = [
   query("role").optional().isIn(["user", "admin"])
     .withMessage("Role filter is invalid."),
   query("verified").optional().isBoolean().withMessage("Verified must be true or false."),
+];
+
+export const adminSuggestionsQueryValidation = [
+  query("page")
+    .optional()
+    .isInt({ min: 1, max: MAX_PAGE })
+    .withMessage(`Page must be between 1 and ${MAX_PAGE}.`),
+  query("limit")
+    .optional()
+    .isInt({ min: 1, max: MAX_ADMIN_LIMIT })
+    .withMessage(`Limit must be between 1 and ${MAX_ADMIN_LIMIT}.`),
 ];
 
 export const adminJobsQueryValidation = [

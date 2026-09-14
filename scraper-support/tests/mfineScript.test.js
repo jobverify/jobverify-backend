@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const CONTACT_PAGE_HTML = `
 <!doctype html>
 <html lang="en-US">
@@ -16,6 +18,25 @@ const CONTACT_PAGE_HTML = `
         <a href="https://www.mfine.co/join-us/" target="_blank" rel="noopener noreferrer">here</a>.
       </p>
       <p>Email us at <a href="mailto:support@mfine.co">support@mfine.co</a></p>
+    </main>
+  </body>
+</html>
+`
+
+const CURRENT_CONTACT_PAGE_HTML = `
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Contact Us &#8211; mfine</title>
+  </head>
+  <body>
+    <main>
+      <h1>Contact Us</h1>
+      <p>We are here to help. Let us know your concern, and we will get in touch with you.</p>
+      <p>Contact us. <a href="mailto:support@mfine.co">support@mfine.co</a></p>
+      <p>MFine, 1245, 22nd Main Road, 13th Cross, Vanganahalli, 1st Sector, HSR Layout, Bangalore - 560102</p>
+      <p>Consult a doctor online with mfine</p>
+      <p>Careers at mfine</p>
     </main>
   </body>
 </html>
@@ -119,6 +140,8 @@ test('Mfine sentinel constants stay pinned to the verified contact-page handoff 
     mfine.OFFICIAL_CAREERS_HANDOFF_URL,
   )
   assert.equal(mfine.hasOfficialMfineCareersSignal(CONTACT_PAGE_HTML), true)
+  assert.equal(mfine.extractOfficialCareersHandoffUrl(CURRENT_CONTACT_PAGE_HTML), null)
+  assert.equal(mfine.hasOfficialMfineContactSignal(CURRENT_CONTACT_PAGE_HTML), true)
   assert.equal(mfine.hasOfficialMfineCareersSignal('<html><body>unexpected</body></html>'), false)
   assert.equal(mfine.hasBlankDarwinboxShellSignal(BLANK_DARWINBOX_SHELL_HTML), true)
   assert.equal(mfine.hasBlankDarwinboxShellSignal(HANDOFF_DARWINBOX_SHELL_HTML), true)
@@ -133,12 +156,14 @@ test('Mfine sentinel constants stay pinned to the verified contact-page handoff 
   )
 })
 
-test('Mfine sentinel returns [] only while the verified first-party contact-page handoff still lands on the verified Darwinbox public shell', async () => {
+test('Mfine preserves saved jobs when its listing API reports a tenant outage', async () => {
   const mfine = await loadModule()
   const requestedPages = []
   const requestedApis = []
 
-  const jobs = await mfine.createMfineScraper().run({
+  const jobs = await mfine.createMfineScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
     fetchPage: async (url) => {
       requestedPages.push(url)
 
@@ -168,6 +193,9 @@ test('Mfine sentinel returns [] only while the verified first-party contact-page
       }
     },
   })
+  assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
+  assert.equal(readInventoryEvidence(jobs)?.surface, mfine.DARWINBOX_LISTING_API_URL)
 
   assert.deepEqual(requestedPages, [
     mfine.CONTACT_PAGE_URL,
@@ -175,7 +203,50 @@ test('Mfine sentinel returns [] only while the verified first-party contact-page
     ...mfine.DARWINBOX_SHELL_ROUTE_URLS,
   ])
   assert.deepEqual(requestedApis, [mfine.DARWINBOX_LISTING_API_URL])
+})
+
+test('Mfine preserves saved jobs when the current contact page omits the direct careers handoff', async () => {
+  const mfine = await loadModule()
+  const requestedPages = []
+
+  const jobs = await mfine.createMfineScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
+    fetchPage: async (url) => {
+      requestedPages.push(url)
+
+      if (url === mfine.CONTACT_PAGE_URL) {
+        return { status: 200, url, html: CURRENT_CONTACT_PAGE_HTML }
+      }
+
+      if (url === mfine.OFFICIAL_CAREERS_HANDOFF_URL) {
+        return {
+          status: 200,
+          url: mfine.DARWINBOX_CAREERS_URL,
+          html: HANDOFF_DARWINBOX_SHELL_HTML,
+        }
+      }
+
+      if (mfine.DARWINBOX_SHELL_ROUTE_URLS.includes(url)) {
+        return { status: 200, url, html: ACTIVE_DARWINBOX_SHELL_HTML }
+      }
+
+      throw new Error(`Unexpected Mfine URL: ${url}`)
+    },
+    probeListingApi: async () => ({
+      status: 500,
+      body: '{"status":"error","data":{"message":"Internal Server Error - Error while getting tenant info"}}',
+    }),
+  })
+
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
+  assert.equal(readInventoryEvidence(jobs)?.surface, mfine.DARWINBOX_LISTING_API_URL)
+  assert.deepEqual(requestedPages, [
+    mfine.CONTACT_PAGE_URL,
+    mfine.OFFICIAL_CAREERS_HANDOFF_URL,
+    ...mfine.DARWINBOX_SHELL_ROUTE_URLS,
+  ])
 })
 
 test('Mfine sentinel fails closed when the contact page, handoff target, shell routes, or listing API drift materially', async () => {

@@ -1,114 +1,46 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { buildSearchResultsPageUrl, buildJobDetailUrl, run } from './script.js'
 
-const loadModule = async () => {
-  try {
-    return await import('./script.js')
-  } catch {
-    return null
-  }
-}
+const listingUrl = 'https://jobs.gianteagle.com/in/hi/search-results'
+const jobs = Array.from({ length: 9 }, (_, index) => ({
+  reqId: String(390195 + index), jobId: String(390195 + index), jobSeqNo: 'GIEAUS' + (390195 + index) + 'EXTERNALHIIN',
+  title: index < 7 ? 'Engineer ' + index : 'Pharmacy Intern ' + index,
+  country: index < 7 ? 'India' : 'United States of America',
+  cityStateCountry: index < 7 ? 'Karnataka, India' : 'Cleveland, Ohio, United States of America',
+  location: index < 7 ? 'India Corporate Office' : 'US Supermarket',
+  applyUrl: 'https://gianteagle.wd503.myworkdayjobs.com/GEBExternalcareers/job/India-Corporate-Office/Engineer_' + (390195 + index) + '/apply',
+}))
+const payload = items => ({status: 200, totalHits: 9, hits: items.length, data: {jobs: items, aggregations: [{field: 'state', value: {'Karnataka': 7, Ohio: 2}}]}})
+const bootstrap = '<script>var phApp = phApp || ' + JSON.stringify({widgetApiEndpoint: 'https://jobs.gianteagle.com/widgets',country: 'in',locale: 'hi_IN',deviceType: 'desktop',pageName: 'search-results'}) + '; phApp.ddo = ' + JSON.stringify({eagerLoadRefineSearch: payload(jobs)}) + ';</script>'
 
-const searchResultsHtml = `
-  <!doctype html>
-  <html lang="en">
-    <head>
-      <script type="text/javascript">
-        var phApp = phApp || {"widgetApiEndpoint":"https://jobs.gianteagle.com/widgets","country":"us","locale":"en_us","baseUrl":"https://jobs.gianteagle.com/us/en/","baseDomain":"https://jobs.gianteagle.com","pageName":"search-results","siteType":"external"};
-        phApp.ddo = {"eagerLoadRefineSearch":{"totalHits":2,"hits":2,"data":{"jobs":[{"reqId":"383708","jobId":"383708","title":"Chardon Giant Eagle Team Member","cityStateCountry":"Chardon, Ohio, United States of America","country":"United States of America","category":"Supermarket","type":"Part time","postedDate":"2026-01-30T00:00:00.000+0000","descriptionTeaser":"Every Team Member plays a vital role in bringing our core values to life.","applyUrl":"https://gianteagle.wd503.myworkdayjobs.com/GEExternalcareers/job/4098---Chardon---Supermarket/Chardon-Giant-Eagle-Team-Member_383708/apply"},{"reqId":"384000","jobId":"384000","title":"Toronto Team Member","cityStateCountry":"Toronto, Ontario, Canada","country":"Canada","category":"Supermarket","type":"Full time","postedDate":"2026-02-04T00:00:00.000+0000","descriptionTeaser":"Support our Canadian store operations.","applyUrl":"https://example.com/canada/apply"}],"aggregations":[{"field":"country","value":{"United States of America":1,"Canada":1}}]}}};
-      </script>
-    </head>
-    <body></body>
-  </html>
-`
-
-const detailPageHtml = `
-  <!doctype html>
-  <html lang="en">
-    <head>
-      <link rel="canonical" href="https://jobs.gianteagle.com/us/en/job/383708/Chardon-Giant-Eagle-Team-Member">
-      <script type="text/javascript">
-        phApp.ddo = {"jobDetail":{"data":{"job":{"reqId":"383708","jobId":"383708","title":"Chardon Giant Eagle Team Member","category":"Supermarket","type":"Part time","postedDate":"2026-01-30T00:00:00.000+0000","applyUrl":"https://gianteagle.wd503.myworkdayjobs.com/GEExternalcareers/job/4098---Chardon---Supermarket/Chardon-Giant-Eagle-Team-Member_383708/apply","city":"Chardon","country":"United States of America","location":"4098 - Chardon - Supermarket","ml_Description":"<p>Every Team Member plays a vital role in bringing our core values to life and enhancing the shopping experience for our guests.</p><p>Experience Required: 0 to 6 months.</p><p>Education Desired: No High School diploma required.</p>"}}}};
-      </script>
-      <script type="application/ld+json">
-        {
-          "@context": "https://schema.org",
-          "@type": "JobPosting",
-          "title": "Chardon Giant Eagle Team Member",
-          "description": "<p>Every Team Member plays a vital role in bringing our core values to life and enhancing the shopping experience for our guests.</p><p>Experience Required: 0 to 6 months.</p><p>Education Desired: No High School diploma required.</p>",
-          "datePosted": "2026-01-30",
-          "employmentType": "PART_TIME",
-          "jobLocation": {
-            "@type": "Place",
-            "address": {
-              "@type": "PostalAddress",
-              "addressLocality": "Chardon",
-              "addressRegion": "Ohio",
-              "addressCountry": "United States of America"
-            }
-          }
-        }
-      </script>
-    </head>
-    <body></body>
-  </html>
-`
-
-test('Giant Eagle Phenom wrapper keeps listings on the official search route', async () => {
-  const giantEagle = await loadModule()
-  assert.ok(giantEagle, 'Expected scraper module at ./script.js')
-
-  assert.equal(
-    giantEagle.buildSearchResultsPageUrl(),
-    'https://jobs.gianteagle.com/us/en/search-results',
-  )
-  assert.equal(
-    giantEagle.buildSearchResultsPageUrl(10),
-    'https://jobs.gianteagle.com/us/en/search-results?from=10',
-  )
+test('Giant Eagle uses its official India listing and detail routes', () => {
+  assert.equal(buildSearchResultsPageUrl(), listingUrl)
+  assert.equal(buildSearchResultsPageUrl(10), listingUrl + '?from=10')
+  assert.match(buildJobDetailUrl(jobs[0]), /^https:\/\/jobs.gianteagle.com\/in\/hi\/job\//)
 })
 
-test('Giant Eagle Phenom wrapper filters to its configured United States jobs and decorates the shared runner fields', async () => {
-  const giantEagle = await loadModule()
-  assert.ok(giantEagle, 'Expected scraper module at ./script.js')
-
-  const requestedUrls = []
-
-  const jobs = await giantEagle.run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === giantEagle.buildSearchResultsPageUrl()) {
-        return searchResultsHtml
-      }
-
-      if (url === 'https://jobs.gianteagle.com/us/en/job/383708/Chardon-Giant-Eagle-Team-Member') {
-        return detailPageHtml
-      }
-
-      throw new Error(`Unexpected Giant Eagle fixture URL: ${url}`)
+test('Giant Eagle covers all nine locale listings before retaining the seven India roles', async () => {
+  let calls = 0
+  const result = await run({detailEnrichmentBudgetMs: 0,
+    fetchText: async url => {assert.equal(url, listingUrl);return bootstrap},
+    fetchJson: async (url, options) => {
+      calls++; assert.equal(url, 'https://jobs.gianteagle.com/widgets')
+      const body = JSON.parse(options.body)
+      assert.equal(body.lang, 'hi_IN');assert.equal(body.country, 'in');assert.equal(body.from, 0)
+      assert.equal(body.selected_fields, undefined)
+      return {refineSearch: payload(jobs)}
     },
   })
+  assert.equal(calls, 1)
+  assert.equal(result.length, 7)
+  assert.equal(new Set(result.map(job => job.jobId)).size, 7)
+  assert.ok(result.every(job => job.country === 'India' && job.source === 'gianteagle'))
+  assert.ok(result.every(job => job.sourceListingComplete !== false))
+})
 
-  assert.deepEqual(requestedUrls, [
-    giantEagle.buildSearchResultsPageUrl(),
-    'https://jobs.gianteagle.com/us/en/job/383708/Chardon-Giant-Eagle-Team-Member',
-  ])
-
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].company, 'Giant Eagle')
-  assert.equal(jobs[0].source, 'gianteagle')
-  assert.equal(jobs[0].jobId, '383708')
-  assert.equal(jobs[0].country, 'United States of America')
-  assert.equal(jobs[0].city, 'Chardon')
-  assert.equal(jobs[0].employmentType, null)
-  assert.equal(
-    jobs[0].applyUrl,
-    'https://gianteagle.wd503.myworkdayjobs.com/GEExternalcareers/job/4098---Chardon---Supermarket/Chardon-Giant-Eagle-Team-Member_383708/apply',
-  )
-  assert.equal(
-    jobs[0].link,
-    'https://gianteagle.wd503.myworkdayjobs.com/GEExternalcareers/job/4098---Chardon---Supermarket/Chardon-Giant-Eagle-Team-Member_383708/apply',
-  )
-  assert.match(jobs[0].jobDescription, /Every Team Member plays a vital role/i)
-  assert.ok(Date.parse(jobs[0].scrapedAt))
+test('Giant Eagle still rejects a missing raw role even after all seven India positives were seen', async () => {
+  await assert.rejects(run({detailEnrichmentBudgetMs: 0,fetchText: async () => bootstrap,
+    fetchJson: async (_url, options) => ({refineSearch: payload(JSON.parse(options.body).from ? [] : jobs.slice(0, 8))}),
+  }), /PHENOM_INCOMPLETE_SNAPSHOT.*8 unique records of 9/)
 })

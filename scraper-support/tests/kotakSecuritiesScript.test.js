@@ -153,3 +153,30 @@ test('run maps verified Kotak Securities Darwinbox listings into Jobverify jobs 
     },
   ])
 })
+
+test('run recovers a Kotak India location from Darwinbox current office display fields', async () => {
+  const { createKotakSecuritiesScraper } = await loadKotakSecuritiesModule()
+  const scraper = createKotakSecuritiesScraper({ now: () => FIXED_SCRAPED_AT })
+  const jobs = await scraper.run({
+    fetchText: async () => officialCareersHtml,
+    fetchListingPage: async () => ({
+      status: 'success',
+      job_counts: 1,
+      data: [{
+        id: 'a67f50343353a5',
+        title: 'Senior Analyst - North & East',
+        department_name: 'PCG - Cat 2',
+        locations: '',
+        country: '',
+        officelocation_show_arr_list: ['MG Road DLF City, Gurgaon, Haryana, India '],
+        emp_type_name: 'Full Time',
+        jd: '<p>Advise Kotak Securities clients.</p>',
+      }],
+    }),
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, 'a67f50343353a5')
+  assert.equal(jobs[0].location, 'MG Road DLF City, Gurgaon, Haryana, India')
+  assert.equal(jobs[0].city, 'MG Road DLF City')
+})

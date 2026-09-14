@@ -2,12 +2,13 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const CAREERS_URL = 'https://alchemytechsol.com/career/'
 export const LEGACY_CAREERS_URL = 'https://www.alchemytechsol.com/eng/careernew.html'
+export const JOB_LISTINGS_AJAX_URL = 'https://alchemytechsol.com/jm-ajax/get_listings/'
 
 const SOURCE = 'alchemytechsolindia'
 const USER_AGENT =
@@ -56,10 +57,16 @@ const toAbsoluteUrl = (value, baseUrl) => {
 export const pageIndicatesOfficialCareersSurface = (html) => {
   const page = String(html ?? '')
   return (
-    /Join Our Team/i.test(page)
+    /<title>\s*Career\s*-\s*Alchemy Techsol\s*<\/title>/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/alchemytechsol\.com\/career\/["']/i.test(page)
+    && /Join Our Team/i.test(page)
     && /Build Your Future with Alchemy Techsol/i.test(page)
     && /Current Openings/i.test(page)
-    && (/View Position/i.test(page) || /JavaScript must be enabled in order to view listings/i.test(page))
+    && /class=["'][^"']*\bjob_listings\b[^"']*["']/i.test(page)
+    && /job_manager_ajax_filters/i.test(page)
+    && /jm-ajax/i.test(page)
+    && /%%endpoint%%/i.test(page)
+    && /wp-job-manager/i.test(page)
   )
 }
 
@@ -111,6 +118,60 @@ export const extractLegacyCategoryOpenings = (html = '', categoryUrl = LEGACY_CA
     .filter((job) => job.title && job.location && job.applyUrl)
 }
 
+const isOfficialJobUrl = (value) => {
+  try {
+    const url = new URL(String(value ?? ''), CAREERS_URL)
+    return /^(?:www\.)?alchemytechsol\.com$/i.test(url.hostname)
+      && /^\/job\/[^/]+\/?$/i.test(url.pathname)
+  } catch {
+    return false
+  }
+}
+
+export const extractAjaxOpenings = (payload = {}) => {
+  const html = String(payload?.html ?? '')
+  const listingBlocks = [...html.matchAll(
+    /<li\b[^>]*class=["'][^"']*\bjob_listing\b[^"']*["'][^>]*>([\s\S]*?)(?=<li\b[^>]*class=["'][^"']*\bjob_listing\b|$)/gi,
+  )]
+
+  return listingBlocks
+    .map((match) => {
+      const block = match[1]
+      const sourceUrl = toAbsoluteUrl(
+        block.match(/<a\b[^>]*href=["']([^"']+)["']/i)?.[1],
+        CAREERS_URL,
+      )
+
+      return {
+        title: stripTags(block.match(/<h3\b[^>]*>([\s\S]*?)<\/h3>/i)?.[1]),
+        location: stripTags(
+          block.match(/<div\b[^>]*class=["'][^"']*\blocation\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1],
+        ),
+        employmentType: stripTags(
+          block.match(/<li\b[^>]*class=["'][^"']*\bjob-type\b[^"']*["'][^>]*>([\s\S]*?)<\/li>/i)?.[1],
+        ),
+        sourceUrl,
+        applyUrl: sourceUrl,
+      }
+    })
+    .filter((opening) => opening.title && opening.location && isOfficialJobUrl(opening.sourceUrl))
+}
+
+export const hasExpectedAjaxListingsSignal = (payload = {}) => {
+  const openings = extractAjaxOpenings(payload)
+  if (payload?.found_jobs === false) {
+    return Number(payload?.max_num_pages) === 0
+      && /no_job_listings_found/i.test(String(payload?.html ?? ''))
+      && openings.length === 0
+  }
+
+  return payload?.found_jobs === true
+    && Number.isInteger(Number(payload?.max_num_pages))
+    && Number(payload.max_num_pages) >= 1
+    && !/no_job_listings_found/i.test(String(payload?.html ?? ''))
+    && openings.length > 0
+}
+
 const normalizeLocation = (location) => {
   const normalized = normalizeWhitespace(location)
   if (!normalized) return null
@@ -126,7 +187,7 @@ const normalizeOpening = (opening, { now }) => {
   const jobSlug = slugify(`${title}-${rawLocation}`)
   if (!title || !rawLocation || !location || !city || !jobSlug) return null
 
-  const sourceUrl = opening.categoryUrl || CAREERS_URL
+  const sourceUrl = opening.sourceUrl || opening.categoryUrl || CAREERS_URL
   const applyUrl = opening.applyUrl || sourceUrl
 
   return {
@@ -163,28 +224,58 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 30000,
 })
 
+const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
+  ...options,
+  label: SOURCE,
+  timeoutMs: 30000,
+})
+
+const buildListingsRequest = (page) => ({
+  method: 'POST',
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json,text/plain,*/*',
+    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    'X-Requested-With': 'XMLHttpRequest',
+    Referer: CAREERS_URL,
+  },
+  body: new URLSearchParams({
+    search_keywords: '',
+    search_location: '',
+    per_page: '100',
+    orderby: 'featured',
+    order: 'DESC',
+    page: String(page),
+    show_pagination: 'false',
+    post_id: '54',
+  }).toString(),
+})
+
 export const createAlchemyTechsolIndiaScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
     const html = await fetchText(CAREERS_URL)
     const openings = extractCurrentOpenings(html)
-    const legacyHtml = await fetchText(LEGACY_CAREERS_URL)
-    const legacyIndicatesOfficialCareersSurface = pageIndicatesOfficialCareersSurface(legacyHtml)
-    const categoryUrls = extractLegacyCategoryUrls(legacyHtml)
-    if (categoryUrls.length === 0 && openings.length === 0 && !legacyIndicatesOfficialCareersSurface) {
-      throw new Error('Alchemy Techsol legacy careers surface no longer exposes category job links')
+
+    const firstListingsPayload = await fetchJson(JOB_LISTINGS_AJAX_URL, buildListingsRequest(1))
+    if (!hasExpectedAjaxListingsSignal(firstListingsPayload)) {
+      throw new Error('Alchemy Techsol dynamic listings feed no longer matches the verified public contract')
     }
 
-    const legacyOpenings = []
-    for (const categoryUrl of categoryUrls) {
-      const categoryHtml = await fetchText(categoryUrl)
-      legacyOpenings.push(...extractLegacyCategoryOpenings(categoryHtml, categoryUrl))
+    const ajaxOpenings = extractAjaxOpenings(firstListingsPayload)
+    const maxPages = Number(firstListingsPayload.max_num_pages)
+    for (let page = 2; page <= maxPages; page += 1) {
+      const payload = await fetchJson(JOB_LISTINGS_AJAX_URL, buildListingsRequest(page))
+      if (!hasExpectedAjaxListingsSignal(payload) || Number(payload.max_num_pages) !== maxPages) {
+        throw new Error('Alchemy Techsol dynamic listings feed pagination no longer matches the verified public contract')
+      }
+      ajaxOpenings.push(...extractAjaxOpenings(payload))
     }
 
     const seenJobIds = new Set()
 
-    return [...openings, ...legacyOpenings]
+    return [...openings, ...ajaxOpenings]
       .filter((opening) => isIndiaOpening(opening))
       .map((opening) => normalizeOpening(opening, { now }))
       .filter((job) => job && !seenJobIds.has(job.jobId) && seenJobIds.add(job.jobId))

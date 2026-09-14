@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-const FIXED_SCRAPED_AT = '2026-07-25T00:00:00.000Z'
+const FIXED_SCRAPED_AT = '2026-09-13T00:00:00.000Z'
 
 const careersHtml = `
 <!doctype html>
@@ -45,7 +45,7 @@ test('Great Learning pins the live first-party careers page and Darwinbox detail
   assert.equal(greatLearning.COMPANY_NAME, 'Great Learning')
   assert.equal(greatLearning.COMPANY, 'Great Learning')
   assert.equal(greatLearning.COMPANY_ID, 'main')
-  assert.equal(greatLearning.VERIFIED_ON, '2026-07-25')
+  assert.equal(greatLearning.VERIFIED_ON, '2026-09-13')
   assert.equal(greatLearning.OFFICIAL_SITE_URL, 'https://www.mygreatlearning.com/')
   assert.equal(greatLearning.CAREERS_PAGE_URL, 'https://www.mygreatlearning.com/careers')
   assert.equal(greatLearning.DARWINBOX_ORIGIN, 'https://greatlearning.darwinbox.in')

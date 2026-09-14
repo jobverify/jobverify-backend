@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -12,6 +13,7 @@ export const DETAIL_API_BASE_URL = 'https://ejgk.fa.em2.oraclecloud.com/hcmRestA
 const PUBLIC_CAREERS_BASE_URL = 'https://ejgk.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/en/sites'
 const DEFAULT_LOCATION = 'India'
 const DEFAULT_LIMIT = 24
+const DEFAULT_DETAIL_CONCURRENCY = 6
 
 export const SITE_NUMBERS = ['CX_1', 'CX_3', 'CX_3001']
 
@@ -229,12 +231,16 @@ export const extractPaginationSummary = (payload, { page = 0 } = {}) => {
   }
 }
 
-const fetchJson = async (url, fetchImpl = fetch) => {
-  const response = await fetchImpl(url, { headers: REQUEST_HEADERS })
+const fetchJson = async (url, fetchImpl = fetch, { signal } = {}) => {
+  signal?.throwIfAborted()
+  const response = await fetchImpl(url, { headers: REQUEST_HEADERS, signal })
+  signal?.throwIfAborted()
   if (!response.ok) {
     throw new Error(`HTTP ${response.status} for ${url}`)
   }
-  return response.json()
+  const payload = await response.json()
+  signal?.throwIfAborted()
+  return payload
 }
 
 export const createKpmgScraper = ({
@@ -242,43 +248,60 @@ export const createKpmgScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   fetchImpl = fetch,
   siteNumbers = SITE_NUMBERS,
+  detailConcurrency = DEFAULT_DETAIL_CONCURRENCY,
 } = {}) => ({
-  async run() {
+  async run({ signal } = {}) {
     const jobs = []
     const seenUrls = new Set()
 
     for (const siteNumber of siteNumbers) {
       for (let page = 0; page < maxPages; page += 1) {
-        const payload = await fetchJson(buildSearchUrl({ siteNumber, page }), fetchImpl)
+        signal?.throwIfAborted()
+        const payload = await fetchJson(buildSearchUrl({ siteNumber, page }), fetchImpl, { signal })
         const pageJobs = extractSearchResults(payload, { siteNumber })
+        const freshJobs = []
 
         for (const job of pageJobs) {
           const key = job.sourceUrl || `${siteNumber}:${job.jobId}`
           if (seenUrls.has(key)) continue
           seenUrls.add(key)
+          freshJobs.push(job)
 
-          let detail = job
-          try {
-            const detailPayload = await fetchJson(buildJobDetailApiUrl({
-              siteNumber,
-              jobId: job.jobId,
-            }), fetchImpl)
-            detail = extractJobDetail(detailPayload, job, { siteNumber })
-          } catch {
-            detail = job
-          }
-
-          jobs.push({
-            ...detail,
-            source: 'kpmg',
-            link: detail.applyUrl || detail.sourceUrl,
-            scrapedAt: new Date().toISOString(),
-          })
-
-          if (maxJobs && jobs.length >= maxJobs) {
-            return jobs
-          }
+          if (maxJobs && jobs.length + freshJobs.length >= maxJobs) break
         }
+
+        const detailedJobs = await mapWithConcurrency(
+          freshJobs,
+          detailConcurrency,
+          async (job) => {
+            signal?.throwIfAborted()
+            let detail = job
+
+            try {
+              const detailPayload = await fetchJson(buildJobDetailApiUrl({
+                siteNumber,
+                jobId: job.jobId,
+              }), fetchImpl, { signal })
+              detail = extractJobDetail(detailPayload, job, { siteNumber })
+            } catch {
+              signal?.throwIfAborted()
+              detail = job
+            }
+
+            signal?.throwIfAborted()
+            return {
+              ...detail,
+              source: 'kpmg',
+              link: detail.applyUrl || detail.sourceUrl,
+              scrapedAt: new Date().toISOString(),
+            }
+          },
+        )
+
+        jobs.push(...detailedJobs)
+        signal?.throwIfAborted()
+
+        if (maxJobs && jobs.length >= maxJobs) return jobs
 
         const summary = extractPaginationSummary(payload, { page })
 
@@ -288,11 +311,12 @@ export const createKpmgScraper = ({
       }
     }
 
+    signal?.throwIfAborted()
     return jobs
   },
 })
 
-export const run = async () => createKpmgScraper().run()
+export const run = async (options = {}) => createKpmgScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

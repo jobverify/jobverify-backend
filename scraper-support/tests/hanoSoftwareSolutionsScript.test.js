@@ -4,6 +4,8 @@ import test from 'node:test'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const fixturesDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   '../../scraper/hanosoftwaresolutions/fixtures',
@@ -112,6 +114,25 @@ test('Hano Software Solutions returns no jobs only while the verified first-part
   ])
   assert.deepEqual(requestedText, ['https://www.hanosoftwaresolutions.com/assets/index-37e67fdf.js'])
   assert.deepEqual(jobs, [])
+})
+
+test('Hano Software Solutions returns discovery-only evidence when the official hostname cannot be resolved', async () => {
+  const hano = await loadModule()
+  const dnsError = Object.assign(new Error('fetch failed'), {
+    cause: { code: 'ENOTFOUND', message: 'getaddrinfo ENOTFOUND www.hanosoftwaresolutions.com' },
+  })
+
+  const jobs = await hano.createHanoSoftwareSolutionsScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
+    fetchPage: async () => { throw dnsError },
+  })
+
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, hano.HOMEPAGE_URL)
+  assert.equal(evidence?.listingComplete, false)
 })
 
 test('Hano Software Solutions fails closed when the homepage, careers shell, or bundle contract changes', async () => {

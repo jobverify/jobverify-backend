@@ -78,6 +78,12 @@ export const hasOfficialHomepageSignal = (html = '') => {
     && normalized.includes('Find a Store')
     && normalized.includes('Pepperfry in the News')
 
+  const hasLatestHomepageVariant = normalized.includes('Best Furniture & Home Decor Online in India')
+    && normalized.includes('Track Your Order')
+    && normalized.includes('Find a Store')
+    && normalized.includes('Pepperfry in the News')
+    && normalized.includes('Sell on pepperfry')
+
   const hasLegacyHomepageVariant = normalized.includes('Buy Furniture & Home Decor Online')
     && normalized.includes('Browse All Categories')
     && normalized.includes('Partner With Us')
@@ -89,7 +95,7 @@ export const hasOfficialHomepageSignal = (html = '') => {
     && normalized.includes('Find a Store')
     && normalized.includes('Pepperfry in the News')
 
-  return hasCurrentHomepageVariant || hasLegacyHomepageVariant || hasCommerceHomepageVariant
+  return hasCurrentHomepageVariant || hasLatestHomepageVariant || hasLegacyHomepageVariant || hasCommerceHomepageVariant
 }
 
 export const extractVerifiedCareersPageUrl = (html = '') => {

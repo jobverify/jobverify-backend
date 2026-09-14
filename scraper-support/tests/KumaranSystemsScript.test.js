@@ -39,6 +39,24 @@ const currentCareersPageHtml = `
 </html>
 `
 
+const currentAstroCareersPageHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta name="description" content="Find our current openings below and initiate the first step towards becoming a Kumaranite.">
+    <title>Jobs at Kumaran Systems Pvt Ltd</title>
+    <link rel="canonical" href="https://kumaran.com/careers/">
+  </head>
+  <body>
+    <astro-island
+      component-url="/_astro/Careers.Bg-ep3qH.js"
+      component-export="default"
+      client="only"
+    ></astro-island>
+  </body>
+</html>
+`
+
 const jobsApiPayload = {
   code: 'success',
   data: [
@@ -125,6 +143,7 @@ test('Kumaran Systems helpers stay pinned to the verified first-party careers pa
   )
   assert.equal(kumaran.hasOfficialCareersSignal(careersPageHtml), true)
   assert.equal(kumaran.hasOfficialCareersSignal(currentCareersPageHtml), true)
+  assert.equal(kumaran.hasOfficialCareersSignal(currentAstroCareersPageHtml), true)
   assert.equal(kumaran.hasOfficialCareersSignal('<html><body>Unexpected</body></html>'), false)
   assert.deepEqual(kumaran.extractIndiaJobs(jobsApiPayload), [
     {

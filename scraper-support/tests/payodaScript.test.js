@@ -31,7 +31,7 @@ const careersPageHtml = `
               <span>5–10 yrs · Full-time</span>
             </div>
           </div>
-          <span>View role</span>
+          <span>View job</span>
         </button>
         <button type="button" class="group flex items-center justify-between gap-4 p-5 sm:p-6 bg-white border border-g200 rounded-[12px] hover:border-burg/40 hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all min-h-[44px] text-left">
           <div class="min-w-0 flex-1">
@@ -43,7 +43,7 @@ const careersPageHtml = `
               <span>5–10 yrs · Full-time</span>
             </div>
           </div>
-          <span>View role</span>
+          <span>View job</span>
         </button>
         <button type="button" class="group flex items-center justify-between gap-4 p-5 sm:p-6 bg-white border border-g200 rounded-[12px] hover:border-burg/40 hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all min-h-[44px] text-left">
           <div class="min-w-0 flex-1">
@@ -55,7 +55,7 @@ const careersPageHtml = `
               <span>3+ yrs · Full-time</span>
             </div>
           </div>
-          <span>View role</span>
+          <span>View job</span>
         </button>
         <button type="button" class="group flex items-center justify-between gap-4 p-5 sm:p-6 bg-white border border-g200 rounded-[12px] hover:border-burg/40 hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all min-h-[44px] text-left">
           <div class="min-w-0 flex-1">
@@ -67,7 +67,7 @@ const careersPageHtml = `
               <span>4–8 yrs · Full-time</span>
             </div>
           </div>
-          <span>View role</span>
+          <span>View job</span>
         </button>
         <button type="button" class="group flex items-center justify-between gap-4 p-5 sm:p-6 bg-white border border-g200 rounded-[12px] hover:border-burg/40 hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all min-h-[44px] text-left">
           <div class="min-w-0 flex-1">
@@ -79,7 +79,7 @@ const careersPageHtml = `
               <span>4–8 yrs · Full-time</span>
             </div>
           </div>
-          <span>View role</span>
+          <span>View job</span>
         </button>
         <button type="button" class="group flex items-center justify-between gap-4 p-5 sm:p-6 bg-white border border-g200 rounded-[12px] hover:border-burg/40 hover:shadow-[0_8px_28px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all min-h-[44px] text-left">
           <div class="min-w-0 flex-1">
@@ -91,7 +91,7 @@ const careersPageHtml = `
               <span>7–10 yrs · Full-time</span>
             </div>
           </div>
-          <span>View role</span>
+          <span>View job</span>
         </button>
       </section>
       <section>
@@ -101,6 +101,13 @@ const careersPageHtml = `
   </body>
 </html>
 `
+
+const currentCareersPageHtml = careersPageHtml
+  .replaceAll('View job', 'View role')
+  .replaceAll('Â·', '·')
+  .replaceAll('5â€“10 yrs', '5–10 yrs')
+  .replaceAll('4â€“8 yrs', '4–8 yrs')
+  .replaceAll('7â€“10 yrs', '7–10 yrs')
 
 test('Payoda scraper recognizes the verified official careers page and extracts the live public role cards', async () => {
   const payoda = await loadPayodaModule()
@@ -174,6 +181,26 @@ test('Payoda scraper recognizes the verified official careers page and extracts 
       applyUrl: 'mailto:joinus@payoda.com?subject=CV%3A%20open%20application',
     },
   ])
+})
+
+test('Payoda scraper accepts the current View role CTA and Unicode role metadata separators', async () => {
+  const payoda = await loadPayodaModule()
+  assert.ok(payoda, 'Expected Payoda scraper module at ../../scraper/payoda/script.js')
+
+  assert.equal(payoda.hasOfficialCareersSignal(currentCareersPageHtml), true)
+
+  const roles = payoda.extractRoleCards(currentCareersPageHtml)
+  assert.equal(roles.length, 6)
+  assert.deepEqual(roles[0], {
+    title: 'Senior ReactJS Developer',
+    department: 'Engineering',
+    location: 'Coimbatore · Chennai · Bangalore, India',
+    city: 'Coimbatore',
+    experienceRequired: '5-10 yrs',
+    employmentType: 'Full-time',
+    sourceUrl: 'https://www.payoda.com/careers',
+    applyUrl: 'mailto:joinus@payoda.com?subject=CV%3A%20open%20application',
+  })
 })
 
 test('run decorates Payoda jobs with the shared runner fields from the official public careers page', async () => {

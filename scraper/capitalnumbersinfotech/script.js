@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { CANONICAL_CITIES } from '../../scraper-support/utils/cities.js'
+
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { CAPITAL_NUMBERS_INFOTECH_CATALOG } from './catalog.js'
@@ -59,14 +61,15 @@ export const extractJobs = (html = '') => [...String(html ?? '').matchAll(
 
   if (!title || !location || !sourceUrl) return null
   const jobId = href.split('/').filter(Boolean).at(-1)
+  const indiaLocation = Boolean(CANONICAL_CITIES[location.toLowerCase()]) || /\bIndia\b/i.test(location)
 
   return {
     title,
     company: PROVIDER_METADATA.companyName,
     department: null,
-    location: `${location}, India`,
+    location: indiaLocation && !/\bIndia\b/i.test(location) ? `${location}, India` : location,
     city: location,
-    country: 'India',
+    country: indiaLocation ? 'India' : null,
     jobId,
     requisitionId: jobId,
     sourceUrl,
@@ -83,7 +86,8 @@ export const extractJobs = (html = '') => [...String(html ?? '').matchAll(
   }
 }).filter(Boolean)
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -93,17 +97,29 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const createCapitalNumbersInfotechScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ signal, fetchText = defaultFetchText } = {}) {
+    const request = async (fetcher, url, options = {}) => {
+      signal?.throwIfAborted()
+      try { return await fetcher(url, { ...options, signal }) }
+      finally { signal?.throwIfAborted() }
+    }
+    const careersHtml = await request(fetchText, CAREERS_URL)
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Capital Numbers Infotech careers page no longer matches the verified first-party surface')
     }
 
-    if (hasPublicJobListingSignal(careersHtml)) {
-      throw new Error('Capital Numbers Infotech now exposes public job listings; review before publishing')
+    const jobs = extractJobs(careersHtml)
+    const cardCount = [...String(careersHtml).matchAll(/<li class=["']rounded-\[10px\][^"']*["']/gi)].length
+    const reportedCount = normalizeWhitespace(careersHtml).match(/\b(\d+)\s+open positions found\b/i)?.[1]
+    if (jobs.length !== cardCount
+      || new Set(jobs.map((job) => job.jobId)).size !== jobs.length
+      || (reportedCount != null && Number(reportedCount) !== jobs.length)
+      || (jobs.length === 0 && hasPublicJobListingSignal(careersHtml))) {
+      throw new Error('Capital Numbers Infotech incomplete public job listing; refusing to publish a partial snapshot')
     }
 
-    return []
+    const scrapedAt = new Date().toISOString()
+    return jobs.map((job) => ({ ...job, source: SOURCE, link: job.applyUrl, scrapedAt }))
   },
 })
 

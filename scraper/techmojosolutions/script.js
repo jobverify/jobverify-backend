@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { decodeJavaScriptStringLiteral } from '../../scraper-support/utils/safeLiteral.js'
 
 import TECHMOJO_SOLUTIONS_CATALOG from './catalog.js'
 
@@ -11,19 +12,36 @@ export const PROVIDER_METADATA = TECHMOJO_SOLUTIONS_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
+export const PUBLIC_JOBS_URL = PROVIDER_METADATA.publicJobsUrl
+export const PUBLIC_COMPANY_BOARD_URL = PROVIDER_METADATA.publicCompanyBoardUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const decodeHtml = (value) => String(value ?? '')
+  .replace(/&#x([0-9a-f]+);/gi, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 16)))
+  .replace(/&#(\d+);/g, (_, codePoint) => String.fromCodePoint(Number.parseInt(codePoint, 10)))
+  .replace(/&nbsp;|&#160;/gi, ' ')
+  .replace(/&#038;|&amp;/gi, '&')
+  .replace(/&quot;|&#34;/gi, '"')
+  .replace(/&#39;|&apos;|&#x27;/gi, "'")
+  .replace(/&lt;/gi, '<')
+  .replace(/&gt;/gi, '>')
 
 const normalizeWhitespace = (value) =>
-  String(value ?? '')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&#038;|&amp;/gi, '&')
+  decodeHtml(String(value ?? ''))
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 
-const stripTags = (value) => normalizeWhitespace(String(value ?? '').replace(/<[^>]+>/g, ' '))
+const stripTags = (value) => normalizeWhitespace(
+  String(value ?? '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/ul|\/ol)\b[^>]*>/gi, ' ')
+    .replace(/<[^>]+>/g, ' '),
+)
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
@@ -34,62 +52,180 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const hasOfficialJobsPortalSignal = (html = '') => {
-  const text = stripTags(html)
-  return text.includes('TechMojo Career Portal') && text.includes('Open Positions')
+const titleCaseToken = (value) => normalizeWhitespace(value)
+  .toLowerCase()
+  .replace(/\b[a-z]/g, (letter) => letter.toUpperCase())
+
+const unwrapQuotedDescription = (value) => {
+  const normalized = String(value ?? '').trim()
+  if (!normalized) return ''
+
+  if (
+    (normalized.startsWith('"') && normalized.endsWith('"'))
+    || (normalized.startsWith("'") && normalized.endsWith("'"))
+  ) {
+    try {
+      return JSON.parse(normalized)
+    } catch {
+      return normalized.slice(1, -1)
+    }
+  }
+
+  return normalized
 }
 
-const buildAbsoluteUrl = (href) => {
-  try {
-    return new URL(href, CAREERS_URL).toString()
-  } catch {
-    return null
+const extractListItems = (html = '') => [...String(html ?? '').matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)]
+  .map((match) => stripTags(match[1]))
+  .filter(Boolean)
+
+const normalizeEmploymentType = (value) => {
+  const normalized = normalizeWhitespace(value).replace(/_/g, ' ').toLowerCase()
+  if (!normalized) return null
+  if (normalized === 'full time') return 'Full-time'
+  if (normalized === 'part time') return 'Part-time'
+  if (normalized === 'contract') return 'Contract'
+  return titleCaseToken(normalized)
+}
+
+const normalizeWorkMode = (value) => {
+  const normalized = normalizeWhitespace(value).replace(/_/g, ' ').toLowerCase()
+  if (!normalized) return null
+  if (normalized.includes('office')) return 'On-site'
+  if (normalized.includes('remote')) return 'Remote'
+  if (normalized.includes('hybrid')) return 'Hybrid'
+  return titleCaseToken(normalized)
+}
+
+const normalizeLocation = (record = {}) => {
+  const extracted = record.location_extracted || {}
+  const landingLocation = record._landingApplyPayload?.location || {}
+  const city = titleCaseToken(
+    extracted.city_display_name || extracted.city || landingLocation.cityDisplay || landingLocation.city || record.location,
+  )
+  const state = titleCaseToken(extracted.stateName || landingLocation.stateName)
+
+  return {
+    city: city || null,
+    location: [city, state, 'India'].filter(Boolean).join(', '),
   }
 }
 
-export const extractJobs = (html = '', scrapedAt = new Date().toISOString()) => {
-  const jobs = []
-  const seen = new Set()
-  const pattern = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi
+const buildJobUrl = (record = {}) => {
+  const segment = normalizeWhitespace(record.jobUrlSegment)
+  if (!segment) return PUBLIC_COMPANY_BOARD_URL
+  return new URL(`/jobs/${segment}`, PUBLIC_JOBS_URL).toString()
+}
 
-  for (const match of String(html ?? '').matchAll(pattern)) {
-    const url = buildAbsoluteUrl(match[1])
-    const rawAnchor = String(match[2] ?? '')
-    const text = stripTags(rawAnchor)
-    if (!url || !/jobs\.techmojo\.com\/jobs\//i.test(url) || !/Hyderabad,\s*Telangana/i.test(text)) {
+export const hasOfficialCareersSignal = (html = '') => {
+  const text = stripTags(html)
+  const page = String(html ?? '')
+
+  return /Careers at TechMojo/i.test(text)
+    && /Build where engineering is tested by/i.test(text)
+    && page.includes(PUBLIC_COMPANY_BOARD_URL)
+}
+
+const findJobsDataLiteral = (html = '') => {
+  const page = String(html ?? '')
+  const marker = 'const jobsData ='
+  const markerIndex = page.indexOf(marker)
+  if (markerIndex === -1) return null
+
+  let index = markerIndex + marker.length
+  while (/\s/.test(page[index] || '')) index += 1
+  const quote = page[index]
+  if (quote !== '"' && quote !== "'") return null
+
+  let escaped = false
+  for (let cursor = index + 1; cursor < page.length; cursor += 1) {
+    const char = page[cursor]
+    if (escaped) {
+      escaped = false
       continue
     }
 
-    const titleMatch = rawAnchor.match(/^\s*([^<\n][\s\S]*?)\s*(?:<|Hyderabad,\s*Telangana|Full\s+Time|Part\s+Time)/i)
-    const title = normalizeWhitespace(titleMatch?.[1] ?? '')
-      .replace(/\s+$/, '')
-    const employmentType = /full time/i.test(text)
-      ? 'Full Time'
-      : /part time/i.test(text)
-        ? 'Part Time'
-        : null
-    const key = `${title}::${url}`
+    if (char === '\\') {
+      escaped = true
+      continue
+    }
+
+    if (char === quote) {
+      return page.slice(index, cursor + 1)
+    }
+  }
+
+  return null
+}
+
+export const extractPublicJobsPayload = (html = '') => {
+  const literal = findJobsDataLiteral(html)
+  if (!literal) {
+    throw new Error('TechMojo 9am public jobs payload marker disappeared')
+  }
+
+  const decoded = decodeJavaScriptStringLiteral(literal)
+  const parsed = JSON.parse(decoded)
+  if (!Array.isArray(parsed)) {
+    throw new Error('TechMojo 9am public jobs payload is no longer an array')
+  }
+
+  return parsed
+}
+
+export const hasPublicJobsPayloadSignal = (html = '') => (
+  extractPublicJobsPayload(html).some((record) => (
+    record?.displaySlug === 'techmojo-solutions'
+    && /TECHMOJO SOLUTIONS/i.test(String(record?.company ?? ''))
+  ))
+)
+
+export const extractJobs = (html = '', scrapedAt = new Date().toISOString()) => {
+  const records = extractPublicJobsPayload(html)
+  const seen = new Set()
+  const jobs = []
+
+  for (const record of records) {
+    if (
+      record?.displaySlug !== 'techmojo-solutions'
+      || !/TECHMOJO SOLUTIONS/i.test(String(record?.company ?? ''))
+      || String(record?.status ?? '').toLowerCase() !== 'open'
+    ) {
+      continue
+    }
+
+    const title = normalizeWhitespace(record.title)
+    const url = buildJobUrl(record)
+    const key = `${record.id || record.sequenceNo || title}::${url}`
     if (!title || seen.has(key)) continue
+
     seen.add(key)
+    const { city, location } = normalizeLocation(record)
+    const descriptionHtml = unwrapQuotedDescription(record.description || record._landingApplyPayload?.jobDescription)
 
     jobs.push({
       title,
       company: COMPANY,
-      location: 'Hyderabad, Telangana, India',
-      city: 'Hyderabad',
+      location,
+      city,
       country: 'India',
       sourceUrl: url,
       applyUrl: url,
-      employmentType,
+      employmentType: normalizeEmploymentType(record.employment_type || record._landingApplyPayload?.typeOfJob),
       experienceRequired: null,
-      requiredSkills: [],
-      jobDescription: null,
+      requiredSkills: extractListItems(descriptionHtml),
+      jobDescription: stripTags(descriptionHtml) || null,
       source: SOURCE,
       link: url,
       scrapedAt,
       companyCareerPage: CAREERS_URL,
       companyDomain: PROVIDER_METADATA.companyDomain,
       atsPlatform: PROVIDER_METADATA.atsPlatform,
+      jobId: record.id || `${SOURCE}-${record.sequenceNo || record.jobUrlSegment}`,
+      requisitionId: String(record.sequenceNo || record.id || record.jobUrlSegment || ''),
+      department: null,
+      postingDate: record.created_at || null,
+      closingDate: null,
+      remoteStatus: normalizeWorkMode(record.workMode),
     })
   }
 
@@ -100,12 +236,17 @@ export const createTechMojoSolutionsScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const html = await fetchText(CAREERS_URL)
-    if (!hasOfficialJobsPortalSignal(html)) {
-      throw new Error('The verified TechMojo Solutions jobs portal changed materially')
+    const careersHtml = await fetchText(CAREERS_URL)
+    if (!hasOfficialCareersSignal(careersHtml)) {
+      throw new Error('The verified TechMojo Solutions careers page changed materially')
     }
 
-    return extractJobs(html, now())
+    const publicJobsHtml = await fetchText(PUBLIC_JOBS_URL)
+    if (!hasPublicJobsPayloadSignal(publicJobsHtml)) {
+      throw new Error('The verified TechMojo Solutions 9am public jobs payload changed materially')
+    }
+
+    return extractJobs(publicJobsHtml, now())
   },
 })
 

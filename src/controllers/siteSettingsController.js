@@ -8,11 +8,13 @@ export async function readSiteSettings(_req, res, next) {
 }
 
 export async function updateSiteSettings(req, res, next) {
-  if (typeof req.body?.billingEnabled !== "boolean") {
-    return res.status(400).json({ success: false, message: "billingEnabled must be a boolean." });
+  const fields = ["billingEnabled", "experiencedJobsEnabled"];
+  const changes = Object.fromEntries(fields.filter((key) => Object.hasOwn(req.body ?? {}, key)).map((key) => [key, req.body[key]]));
+  if (!Object.keys(changes).length || Object.values(changes).some((value) => typeof value !== "boolean")) {
+    return res.status(400).json({ success: false, message: "Provide billingEnabled or experiencedJobsEnabled as a boolean." });
   }
   try {
-    const data = await saveSiteSettings(req.body.billingEnabled, req.user._id);
+    const data = await saveSiteSettings(changes, req.user._id);
     res.json({ success: true, data });
   } catch (error) { next(error); }
 }

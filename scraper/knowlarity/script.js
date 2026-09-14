@@ -1,10 +1,13 @@
+import { execFile as execFileCallback } from 'node:child_process'
 import path from 'node:path'
+import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
 
 import { KNOWLARITY_CATALOG } from './catalog.js'
 import { createBrowserFetchSession } from '../../scraper-support/shared/browserFetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
+const execFile = promisify(execFileCallback)
 
 export const PROVIDER_METADATA = KNOWLARITY_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
@@ -15,6 +18,7 @@ export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const CURL_METADATA_MARKER = '\n__KNOWLARITY_CURL_METADATA__'
 
 const decodeHtml = (value) => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
@@ -47,6 +51,50 @@ const stripTags = (value) => normalizeWhitespace(
 const extractNextDataText = (html = '') =>
   String(html ?? '').match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i)?.[1] ?? null
 
+const JOB_OPENING_PLACEHOLDER_FIELDS = [
+  'JobTitle',
+  'Tenure',
+  'Location',
+  'LocationPath',
+  'Department',
+  'DepartmentPath',
+  'Experience',
+  'publishDate',
+  'Description',
+  'Responsibility',
+  'DesiredProfile',
+  'FunctionalCompetencies',
+  'Fulltime',
+  'Duration',
+  'DatePublished',
+]
+
+const parseEmbeddedJobOpenings = (html = '') => {
+  const nextData = extractNextDataText(html)
+  if (!nextData) return null
+
+  try {
+    const parsed = JSON.parse(nextData)
+    const jobOpening = parsed?.props?.pageProps?.jobOpening
+    return Array.isArray(jobOpening) ? jobOpening : null
+  } catch {
+    return null
+  }
+}
+
+const isVerifiedNullJobOpeningPlaceholder = (record) => {
+  if (!record || typeof record !== 'object' || Array.isArray(record)) return false
+  if (!Number.isInteger(record.id) || record.id <= 0) return false
+  if (!JOB_OPENING_PLACEHOLDER_FIELDS.every(
+    (field) => Object.prototype.hasOwnProperty.call(record, field) && record[field] === null,
+  )) return false
+
+  return ['published_at', 'created_at', 'updated_at'].every((field) => (
+    typeof record[field] === 'string'
+    && Number.isFinite(Date.parse(record[field]))
+  ))
+}
+
 export const hasVerifiedCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
@@ -63,40 +111,31 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
   }
 
 export const hasEmbeddedEmptyJobOpeningState = (html = '') => {
-  const nextData = extractNextDataText(html)
-  if (!nextData) return false
+  const jobOpenings = parseEmbeddedJobOpenings(html)
+  return Array.isArray(jobOpenings) && jobOpenings.length === 0
+}
 
-  try {
-    const parsed = JSON.parse(nextData)
-    const jobOpening = parsed?.props?.pageProps?.jobOpening
-    return Array.isArray(jobOpening) && jobOpening.length === 0
-  } catch {
-    return /"jobOpening"\s*:\s*\[\s*\]/i.test(nextData)
-  }
+export const hasVerifiedNoRenderableJobOpeningState = (html = '') => {
+  const jobOpenings = parseEmbeddedJobOpenings(html)
+  return Array.isArray(jobOpenings)
+    && (jobOpenings.length === 0 || jobOpenings.every(isVerifiedNullJobOpeningPlaceholder))
 }
 
 export const hasRenderablePublicJobsSignal = (html = '') => {
   const nextData = extractNextDataText(html)
-  let embeddedJobOpeningCount = 0
+  const page = String(html ?? '')
+  const text = stripTags(html) || ''
+
+  if (/accordion-item/i.test(page) || /\bLocation:\s*[A-Za-z]/i.test(text)) {
+    return true
+  }
 
   if (nextData) {
-    try {
-      const parsed = JSON.parse(nextData)
-      const jobOpening = parsed?.props?.pageProps?.jobOpening
-      if (Array.isArray(jobOpening)) embeddedJobOpeningCount = jobOpening.length
-    } catch {
-      if (!/"jobOpening"\s*:\s*\[\s*\]/i.test(nextData)) {
-        embeddedJobOpeningCount = 1
-      }
-    }
+    return !hasVerifiedNoRenderableJobOpeningState(html)
   }
 
-  const text = stripTags(html) || ''
-  return embeddedJobOpeningCount > 0
-    || /accordion-item/i.test(String(html ?? ''))
-    || /\bApply now\b/i.test(text)
-    || /\bLocation:\s*[A-Za-z]/i.test(text)
-  }
+  return /\bApply now\b/i.test(text)
+}
 
 const createTimeoutSignal = (timeoutMs) => {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
@@ -112,18 +151,92 @@ const createTimeoutSignal = (timeoutMs) => {
   return controller.signal
 }
 
+const isLeafSignatureError = (error) => {
+  const visited = new Set()
+  let current = error
+
+  while (current && !visited.has(current)) {
+    visited.add(current)
+    if (current.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') return true
+    if (/unable to verify (?:the )?(?:first certificate|leaf signature)/i.test(current.message || '')) {
+      return true
+    }
+    current = current.cause
+  }
+
+  return false
+}
+
+const isExactKnowlarityCareersUrl = (value) => {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:'
+      && url.hostname === 'www.knowlarity.com'
+      && /^\/careers\/?$/i.test(url.pathname)
+  } catch {
+    return false
+  }
+}
+
+const fetchWithWindowsSchannel = async (url, { runExecFile, signal }) => {
+  const { stdout } = await runExecFile('curl.exe', [
+    '--disable',
+    '--fail-with-body',
+    '--silent',
+    '--show-error',
+    '--location',
+    '--max-redirs', '5',
+    '--connect-timeout', '10',
+    '--max-time', '30',
+    '--user-agent', USER_AGENT,
+    '--header', 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    '--write-out', `${CURL_METADATA_MARKER}%{http_code}\t%{url_effective}`,
+    '--proto', '=https',
+    '--proto-redir', '=https',
+    url,
+  ], {
+    encoding: 'utf8',
+    maxBuffer: 10 * 1024 * 1024,
+    signal,
+    windowsHide: true,
+  })
+
+  const markerIndex = stdout.lastIndexOf(CURL_METADATA_MARKER)
+  if (markerIndex < 0) {
+    throw new Error('Knowlarity Schannel response omitted HTTP metadata')
+  }
+
+  const html = stdout.slice(0, markerIndex)
+  const [statusText, finalUrl] = stdout.slice(markerIndex + CURL_METADATA_MARKER.length).split('\t')
+  const status = Number.parseInt(statusText, 10)
+  if (!Number.isInteger(status) || !isExactKnowlarityCareersUrl(finalUrl)) {
+    throw new Error('Knowlarity Schannel response left the exact first-party careers URL')
+  }
+
+  return { status, url: finalUrl, html }
+}
+
 export const defaultFetchPage = async (url, {
   fetchImpl = fetch,
+  execFile: runExecFile = execFile,
   timeoutMs = 15000,
 } = {}) => {
-  const response = await fetchImpl(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-    redirect: 'follow',
-    signal: createTimeoutSignal(timeoutMs),
-  })
+  const signal = createTimeoutSignal(timeoutMs)
+  let response
+
+  try {
+    response = await fetchImpl(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+      signal,
+    })
+  } catch (error) {
+    if (!isExactKnowlarityCareersUrl(url) || !isLeafSignatureError(error)) throw error
+    return fetchWithWindowsSchannel(url, { runExecFile, signal })
+  }
 
   return {
     status: response.status,
@@ -135,10 +248,6 @@ export const defaultFetchPage = async (url, {
 const isBrowserFallbackError = (error) =>
   /fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to verify the first certificate|unable to/i
     .test(String(error?.message ?? error ?? ''))
-
-export const isKnowlarityVerifiedTimeoutBlocker = (error) =>
-  /connect timeout error|timed out|timeout|fetch failed|getaddrinfo|err_connection_timed_out|other side closed|terminated/i
-    .test(String(error?.message ?? error?.cause?.message ?? error ?? ''))
 
 export const createKnowlarityScraper = () => ({
   async run({ fetchPage = defaultFetchPage, fetchBrowserPage } = {}) {
@@ -170,16 +279,7 @@ export const createKnowlarityScraper = () => ({
     }
 
     try {
-      let careersPage
-      try {
-        careersPage = await fetchVerifiedPage(CAREERS_URL)
-      } catch (error) {
-        if (isKnowlarityVerifiedTimeoutBlocker(error)) {
-          return []
-        }
-
-        throw error
-      }
+      const careersPage = await fetchVerifiedPage(CAREERS_URL)
 
       if (hasRenderablePublicJobsSignal(careersPage.html)) {
         throw new Error('Knowlarity careers page now exposes a live public jobs surface')
@@ -189,7 +289,7 @@ export const createKnowlarityScraper = () => ({
         throw new Error('Knowlarity careers page no longer matches the verified first-party empty-state shell')
       }
 
-      if (!hasEmbeddedEmptyJobOpeningState(careersPage.html)) {
+      if (!hasVerifiedNoRenderableJobOpeningState(careersPage.html)) {
         throw new Error('Knowlarity careers page no longer matches the verified first-party empty-state shell')
       }
 

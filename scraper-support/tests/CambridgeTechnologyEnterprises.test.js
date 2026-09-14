@@ -82,7 +82,7 @@ const LISTING_HTML = `
             <a
               href="/jobs/remote_only/secops-governance-engineer"
               class="heading"
-              data-portal-location="Remote"
+              data-portal-location="Remote, India"
               data-portal-job-type="2"
               data-portal-remote-location="true"
             >
@@ -94,7 +94,7 @@ const LISTING_HTML = `
               </div>
               <div class="job-location">
                 <div class="location-info">
-                  Remote
+                  Remote, India
                   <br/>
                   Full Time
                 </div>

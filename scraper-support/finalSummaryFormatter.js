@@ -1,11 +1,12 @@
 const RANKED_SOURCE_LIMIT = 5
 const FAILURE_EXAMPLE_LIMIT = 3
 
-const formatStatus = (result = {}) => (
-  result.success
-    ? 'OK'
-    : (result.skipped ? 'Skip' : (result.softFailure ? 'Upstream' : 'Fail'))
-)
+const formatStatus = (result = {}) => {
+  if (result.failureKind === 'coverage_gap') return 'Coverage'
+  if (result.success) return 'OK'
+  if (result.skipped) return 'Skip'
+  return result.softFailure ? 'Upstream' : 'Fail'
+}
 
 const toFiniteNonNegative = (value) => {
   const numeric = Number(value)
@@ -72,8 +73,10 @@ const isTimedOut = (result = {}) => /timed?\s*out|timeout|aborted due to timeout
 const classifyFailureGroup = (result = {}) => {
   const error = String(result.error || result.failureKind || '')
   if (isTimedOut(result)) return 'Timeout'
-  if (/\bHTTP\s+4\d\d\b/i.test(error)) return 'HTTP 4xx'
-  if (/\bHTTP\s+5\d\d\b/i.test(error)) return 'HTTP 5xx'
+  if (/http[\s_:-]*429\b|rate.limit|too many requests/i.test(error)) return 'Rate limit'
+  if (/challenge|captcha|human verification|verify (?:you are )?human/i.test(error)) return 'Access challenge'
+  if (/\bHTTP[\s_:-]*4\d\d\b/i.test(error)) return 'HTTP 4xx'
+  if (/\bHTTP[\s_:-]*5\d\d\b/i.test(error)) return 'HTTP 5xx'
   if (/certificate|TLS|SSL|UNABLE_TO_VERIFY_LEAF_SIGNATURE/i.test(error)) return 'TLS/certificate'
   if (/ENOTFOUND|ECONNREFUSED|ECONNRESET|EAI_AGAIN|queryA|fetch failed|network/i.test(error)) return 'DNS/network'
   if (/no longer matches|changed materially|no longer exposes|expected .* shape|verified .* page/i.test(error)) return 'Page contract drift'
@@ -108,23 +111,27 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
   const counts = rows.reduce((total, { result }) => {
     total[formatStatus(result)] += 1
     return total
-  }, { OK: 0, Skip: 0, Upstream: 0, Fail: 0 })
+  }, { OK: 0, Skip: 0, Coverage: 0, Upstream: 0, Fail: 0 })
   const successfulRows = rows.filter(({ result }) => formatStatus(result) === 'OK')
   const totalJobs = rows.reduce((total, { result }) => total + toFiniteNonNegative(result.jobs), 0)
   const jobsPerSource = rows.map(({ result }) => toFiniteNonNegative(result.jobs))
   const sourcesWithJobs = rows.filter(({ result }) => toFiniteNonNegative(result.jobs) > 0).length
-  const zeroJobSuccesses = successfulRows.filter(({ result }) => toFiniteNonNegative(result.jobs) === 0).length
-  const zeroJobRows = successfulRows.filter(({ result }) => toFiniteNonNegative(result.jobs) === 0)
+  const zeroJobRows = rows.filter(({ result }) => (
+    toFiniteNonNegative(result.jobs) === 0
+    && (formatStatus(result) === 'OK' || Boolean(result.zeroJobEvidence))
+  ))
   const zeroJobEvidenceCount = (evidence) => zeroJobRows.filter(({ result }) => (
     (result.zeroJobEvidence || 'unverified-zero') === evidence
   )).length
   const verifiedEmptySources = zeroJobEvidenceCount('verified-empty')
   const fetchedZeroSources = zeroJobEvidenceCount('fetched-zero')
   const blockedZeroSources = zeroJobEvidenceCount('blocked-zero')
+  const coverageGapSources = zeroJobEvidenceCount('coverage-gap')
   const unverifiedZeroSources = zeroJobRows.length
     - verifiedEmptySources
     - fetchedZeroSources
     - blockedZeroSources
+    - coverageGapSources
   const totalNew = rows.reduce((total, { result }) => total + toFiniteNonNegative(result.inserted), 0)
   const totalUpdated = rows.reduce((total, { result }) => total + toFiniteNonNegative(result.updated), 0)
   const durations = rows.map(({ result }) => toFiniteNonNegative(result.durationMs))
@@ -163,7 +170,7 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
   const previousZeroJobSources = previousSources
     ? new Set(previousEntries.filter(([, result]) => Number(result.jobsFound || 0) === 0).map(([source]) => source))
     : null
-  const zeroNowSources = successfulRows.filter(({ result }) => toFiniteNonNegative(result.jobs) === 0).map(({ source }) => source)
+  const zeroNowSources = zeroJobRows.map(({ source }) => source)
   const knownEmpty = previousZeroJobSources ? zeroNowSources.filter((source) => previousZeroJobSources.has(source)) : null
   const needsReview = previousSources ? zeroNowSources.filter((source) => !previousZeroJobSources.has(source)) : null
   const delta = (current, previous) => previous == null ? 'unavailable' : `${current - previous >= 0 ? '+' : ''}${current - previous}`
@@ -203,11 +210,12 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
       ['Sources processed', processed],
       ['Successful', counts.OK],
       ['Skipped', counts.Skip],
+      ['Coverage gaps', counts.Coverage],
       ['Upstream issues', counts.Upstream],
       ['Failed', counts.Fail],
       ['Success rate', formatPercent(counts.OK, processed)],
       ['Successful-source rate', formatPercent(counts.OK, processed)],
-      ['Zero India-job results', zeroJobSuccesses],
+      ['Zero India-job results', zeroJobRows.length],
     ]),
     'JOB YIELD',
     formatAsciiTable(['Metric', 'Value'], [
@@ -260,6 +268,7 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
       ['Fetched zero India-job results', fetchedZeroSources],
       ['Blocked or failed zero results', blockedZeroSources],
       ['Unverified zero results', unverifiedZeroSources],
+      ['Coverage-gap zero results', coverageGapSources],
       ['Previously zero India-job results', knownEmpty == null ? 'unavailable' : knownEmpty.length],
       ['New zero India-job results', needsReview == null ? 'unavailable' : needsReview.length],
       ['Prior-non-empty examples', needsReview == null ? 'unavailable' : (needsReview.slice(0, 5).join(', ') || 'none')],

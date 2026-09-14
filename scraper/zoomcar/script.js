@@ -89,13 +89,20 @@ export const hasOfficialMarketingShellSignal = (html = '') => {
   const hasCanonicalRoot =
     /<link[^>]+href="https:\/\/www\.zoomcar\.com\/"[^>]+rel="canonical"\s*\/?>/i.test(page)
     || /<link[^>]+rel="canonical"[^>]+href="https:\/\/www\.zoomcar\.com\/"\s*\/?>/i.test(page)
+  const hasVerifiedSchema = /"@type"\s*:\s*"Product"/i.test(page)
+    || (
+      /"@type"\s*:\s*"Organization"/i.test(page)
+      && /"name"\s*:\s*"Zoomcar"/i.test(page)
+      && /"url"\s*:\s*"https:\/\/www\.zoomcar\.com\/?"/i.test(page)
+      && /"@type"\s*:\s*"Service"/i.test(page)
+    )
 
   return /<title id="meta-title">Zoomcar Self Drive Car Rentals in India \| Book Online<\/title>/i.test(page)
     && /<meta id="meta-desc" name="description" content="Enjoy affordable self-drive car hire with flexible plans and online booking\. Hire a car for a day or choose monthly car rentals at Zoomcar\."\s*\/?>/i.test(page)
-    && /<meta property="og:type" content="product"/i.test(page)
+    && /<meta property="og:type" content="(?:product|website)"/i.test(page)
     && /<meta property="og:url" content="https:\/\/www\.zoomcar\.com"/i.test(page)
     && hasCanonicalRoot
-    && /"@type"\s*:\s*"Product"/i.test(page)
+    && hasVerifiedSchema
 }
 
 export const pageExposesPublicJobListings = (html = '') =>

@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'terraeagle'
@@ -30,6 +32,9 @@ const NOT_FOUND_SIGNAL_PATTERNS = [
   /\bpage not found\b/i,
   /\bnot found\b/i,
 ]
+
+const COMPROMISED_SITE_SIGNAL_PATTERN =
+  /\bhacked\s+by\b|\bdefaced\b|\bowned\s+by\b/i
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
@@ -84,6 +89,9 @@ export const hasOfficialAboutSignal = (html) => {
 export const hasPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
+export const hasCompromisedOfficialSurfaceSignal = (html) =>
+  COMPROMISED_SITE_SIGNAL_PATTERN.test(normalizeWhitespace(html))
+
 export const hasVerifiedCareersShellSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
@@ -112,19 +120,69 @@ export const isVerifiedBrokenJobsRoute = (page = {}) => {
       && NOT_FOUND_SIGNAL_PATTERNS.some((pattern) => pattern.test(normalized)))
 }
 
-export const createTerraEagleScraper = () => ({
+const buildUpstreamUnavailableError = (surfaceName, page = {}) => Object.assign(
+  new Error(`${COMPANY} official ${surfaceName} appears compromised; current job inventory is unavailable: ${page.url || HOMEPAGE_URL}`),
+  {
+    softFailure: true,
+    upstreamOutage: true,
+    abortRetries: true,
+    failureType: 'upstream_unavailable',
+    failureKind: 'upstream_unavailable',
+  },
+)
+
+const buildDiscoveryOnlyEvidence = ({ surface, reason, now }) => attachInventoryEvidence([], {
+  status: 'discovery-only',
+  surface,
+  firstParty: true,
+  listingComplete: false,
+  pagesFetched: 1,
+  reportedTotal: null,
+  indiaFacetCount: null,
+  verifiedAt: now(),
+  reason,
+})
+
+export const createTerraEagleScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
+    if (hasCompromisedOfficialSurfaceSignal(homepage.html)) {
+      const error = buildUpstreamUnavailableError('homepage', homepage)
+      return buildDiscoveryOnlyEvidence({
+        surface: HOMEPAGE_URL,
+        reason: error.message,
+        now,
+      })
+    }
+
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Terraeagle verified official homepage no longer matches the expected company surface')
     }
 
     const about = await fetchPage(ABOUT_URL)
+    if (hasCompromisedOfficialSurfaceSignal(about.html)) {
+      const error = buildUpstreamUnavailableError('about page', about)
+      return buildDiscoveryOnlyEvidence({
+        surface: ABOUT_URL,
+        reason: error.message,
+        now,
+      })
+    }
+
     if (about.status !== 200 || !hasOfficialAboutSignal(about.html)) {
       throw new Error('Terraeagle verified about page no longer matches the expected company surface')
     }
 
     const careers = await fetchPage(CAREERS_URL)
+    if (hasCompromisedOfficialSurfaceSignal(careers.html)) {
+      const error = buildUpstreamUnavailableError('careers shell', careers)
+      return buildDiscoveryOnlyEvidence({
+        surface: CAREERS_URL,
+        reason: error.message,
+        now,
+      })
+    }
+
     if (careers.status !== 200 || !hasVerifiedCareersShellSignal(careers.html)) {
       throw new Error('Terraeagle verified careers shell changed materially or now exposes public jobs')
     }

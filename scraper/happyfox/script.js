@@ -15,6 +15,7 @@ export const COUNTRY_FILTER = HAPPYFOX_CATALOG.countryFilter
 export const JOBS_HUB_URL = HAPPYFOX_CATALOG.officialJobsHubUrl
 export const INDIA_CITY_PAGE_URLS = HAPPYFOX_CATALOG.indiaCityPageUrls
 export const TRAKSTAR_JOBS_HOST = HAPPYFOX_CATALOG.trakstarJobsHost
+export const HIRING_JOBS_HOST = 'https://hiring.happyfox.co'
 export const VERIFIED_ON = HAPPYFOX_CATALOG.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = HAPPYFOX_CATALOG.verifiedSurfaceSummary
 export const PROVIDER_METADATA = HAPPYFOX_CATALOG
@@ -97,10 +98,13 @@ const toAbsoluteUrl = (value, baseUrl = JOBS_HUB_URL) => {
     const resolved = new URL(value, baseUrl)
 
     if (
-      resolved.hostname === new URL(TRAKSTAR_JOBS_HOST).hostname
+      [TRAKSTAR_JOBS_HOST, HIRING_JOBS_HOST]
+        .map((url) => new URL(url).hostname)
+        .includes(resolved.hostname)
       && /^\/jobs\/[^/]+$/i.test(resolved.pathname.replace(/\/+$/g, ''))
     ) {
       resolved.protocol = 'https:'
+      resolved.hash = ''
     }
 
     return resolved.toString()
@@ -180,6 +184,22 @@ const extractDescriptionHtml = (html) => {
   return match?.[1] || ''
 }
 
+const extractCurrentDescriptionHtml = (html) => {
+  const match = String(html ?? '').match(
+    /<div[^>]*class=["'][^"']*job-description[^"']*["'][^>]*>([\s\S]*?)<div[^>]*class=["'][^"']*job-actions/i,
+  )
+  return match?.[1] || ''
+}
+
+const extractCurrentJobMeta = (html) => {
+  const container = String(html ?? '').match(
+    /<div[^>]*class=["'][^"']*job-meta[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
+  )?.[1] || ''
+  return [...container.matchAll(/<span[^>]*>([\s\S]*?)<\/span>/gi)]
+    .map((match) => normalizeWhitespace(match[1]))
+    .filter(Boolean)
+}
+
 const extractMetaContent = (html, key) => firstMatch(html, [
   new RegExp(`<meta[^>]+property=["']${key}["'][^>]+content=["']([\\s\\S]*?)["']`, 'i'),
   new RegExp(`<meta[^>]+name=["']${key}["'][^>]+content=["']([\\s\\S]*?)["']`, 'i'),
@@ -194,8 +214,10 @@ const isTrackedCityPage = (value) => INDIA_CITY_PAGE_URLS.includes(value)
 const isTrackedDetailUrl = (value) => {
   try {
     const url = new URL(value)
-    const trackedHost = new URL(TRAKSTAR_JOBS_HOST).hostname
-    return url.hostname === trackedHost && /^\/jobs\/[^/]+$/i.test(url.pathname.replace(/\/+$/g, ''))
+    const trackedHosts = [TRAKSTAR_JOBS_HOST, HIRING_JOBS_HOST]
+      .map((host) => new URL(host).hostname)
+    return trackedHosts.includes(url.hostname)
+      && /^\/jobs\/[^/]+$/i.test(url.pathname.replace(/\/+$/g, ''))
   } catch {
     return false
   }
@@ -228,15 +250,21 @@ export const hasCityListingSignal = (html) => {
   const normalized = normalizeWhitespace(html) || ''
   return /Open Positions/i.test(normalized)
     && /Apply/i.test(normalized)
-    && /happyfox\.hire\.trakstar\.com\/jobs\//i.test(String(html ?? ''))
+    && /hiring\.happyfox\.co\/jobs\//i.test(String(html ?? ''))
 }
 
-export const hasTrakstarJobSignal = (html) => {
+export const hasOfficialJobDetailSignal = (html) => {
   const normalized = normalizeWhitespace(html) || ''
-  return /Application Form/i.test(normalized)
-    && /\b(Full-time|Part-time|Contract|Internship)\b/i.test(normalized)
-    && /India/i.test(normalized)
+  return /Careers at HappyFox/i.test(normalized)
+    && /class=["'][^"']*job-title/i.test(String(html ?? ''))
+    && /class=["'][^"']*job-meta/i.test(String(html ?? ''))
+    && /class=["'][^"']*job-description/i.test(String(html ?? ''))
+    && /class=["'][^"']*application-form/i.test(String(html ?? ''))
+    && /href=["']https:\/\/www\.happyfox\.com(?:\/|["'])/i.test(String(html ?? ''))
+    && /\bApply\b/i.test(normalized)
 }
+
+export const hasTrakstarJobSignal = hasOfficialJobDetailSignal
 
 export const extractListingCards = (html, cityPageUrl) => {
   const listings = []
@@ -322,6 +350,10 @@ export const extractListingCards = (html, cityPageUrl) => {
 
 export const extractJobDetail = (html, listing = {}) => {
   const jobPosting = parseJobPostingJsonLd(html)
+  const currentMeta = extractCurrentJobMeta(html)
+  const listingMeta = String(listing.locationHint ?? '')
+    .split('|')
+    .map((part) => normalizeWhitespace(part))
   const title = firstMatch(html, [
     /<h1[^>]*>([\s\S]*?)<\/h1>/i,
     /<title[^>]*>([\s\S]*?)<\/title>/i,
@@ -335,13 +367,16 @@ export const extractJobDetail = (html, listing = {}) => {
   const detailUrl = listing.detailUrl || listing.sourceUrl || listing.applyUrl
   const jobId = listing.jobId || extractJobIdFromUrl(detailUrl)
   const jobDescription = normalizeWhitespace(
-    extractDescriptionHtml(html)
+    extractCurrentDescriptionHtml(html)
+    || extractDescriptionHtml(html)
     || jobPosting?.description
     || extractMetaContent(html, 'og:description'),
   )
   const city = extractLocationPart(html, 'meta-job-location-city')
     || normalizeWhitespace(jobPosting?.jobLocation?.address?.addressLocality)
     || extractCity(legacyLocation)
+    || currentMeta[0]
+    || extractCity(listingMeta[0])
   const state = extractLocationPart(html, 'meta-job-location-state')
     || normalizeWhitespace(jobPosting?.jobLocation?.address?.addressRegion)
   const country = extractLocationPart(html, 'meta-job-location-country')
@@ -350,7 +385,8 @@ export const extractJobDetail = (html, listing = {}) => {
   const location = legacyLocation || [city, state, country].filter(Boolean).join(', ') || null
   const employmentType = normalizeEmploymentType(
     legacyEmploymentType
-    || normalizeWhitespace(jobPosting?.employmentType)?.replace(/_/g, '-'),
+    || normalizeWhitespace(jobPosting?.employmentType)?.replace(/_/g, '-')
+    || listingMeta[1],
   )
   const experienceRequired = extractExperienceRequired(jobDescription)
   const hasPublicDetailEvidence = Boolean(
@@ -364,7 +400,7 @@ export const extractJobDetail = (html, listing = {}) => {
   return {
     title,
     company: COMPANY_NAME,
-    department: legacyDepartment || listing.department || null,
+    department: legacyDepartment || currentMeta[1] || listing.department || null,
     location,
     city: city || extractCity(location),
     country,
@@ -381,7 +417,7 @@ export const extractJobDetail = (html, listing = {}) => {
     closingDate: null,
     jobDescription,
     publicExperienceChecked: hasPublicDetailEvidence && !experienceRequired,
-    remoteStatus: inferRemoteStatus(location, jobDescription),
+    remoteStatus: inferRemoteStatus(currentMeta[2], location, jobDescription),
   }
 }
 
@@ -412,8 +448,8 @@ export const createHappyFoxScraper = ({
 
     for (const listing of selectedListings) {
       const detailHtml = await fetchText(listing.detailUrl)
-      if (!hasTrakstarJobSignal(detailHtml)) {
-        throw new Error(`HappyFox Trakstar job detail drifted from the verified surface: ${listing.detailUrl}`)
+      if (!hasOfficialJobDetailSignal(detailHtml)) {
+        throw new Error(`HappyFox job detail drifted from the verified first-party surface: ${listing.detailUrl}`)
       }
 
       jobs.push({

@@ -41,3 +41,33 @@ test('public job location scope rejects United States remote jobs while keeping 
     ['Platform Engineer', 'Remote Support Specialist'],
   )
 })
+
+test('public job location scope keeps explicitly Indian jobs whose cities are outside the UI allowlist', () => {
+  const jobs = [
+    { title: 'Dehradun role', city: 'Dehradun', location: 'Dehradun', country: 'India' },
+    { title: 'Kanpur role', city: 'Kanpur', location: 'Kanpur, Uttar Pradesh', country: 'IN' },
+    { title: 'Kohima role', location: 'Kohima, India', country: 'IND' },
+  ]
+
+  assert.deepEqual(
+    jobs.map((job) => getValidIndiaCityForJob(job)),
+    ['Dehradun', 'Kanpur', 'Kohima'],
+  )
+  assert.ok(jobs.every((job) => isJobInPublicLocationScope(job)))
+  assert.deepEqual(
+    filterIndiaJobs(jobs).map((job) => job.title),
+    ['Dehradun role', 'Kanpur role', 'Kohima role'],
+  )
+})
+
+test('an explicit non-India country takes precedence over an allowlisted Indian city', () => {
+  const job = {
+    title: 'Mislabeled Bangalore role',
+    city: 'Bangalore',
+    location: 'Bangalore',
+    country: 'United States',
+  }
+
+  assert.equal(getValidIndiaCityForJob(job), null)
+  assert.equal(isJobInPublicLocationScope(job), false)
+})

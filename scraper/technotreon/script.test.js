@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+
 const homepageHtml = `
 <!doctype html>
 <html>
@@ -227,19 +229,19 @@ test('run returns jobs when the homepage transport fails but the verified career
   assert.equal(jobs[0].scrapedAt, '2026-08-05T00:00:00.000Z')
 })
 
-test('run returns [] when the Technotreon careers surface times out in the current runtime', async () => {
+test('run returns discovery-only evidence when the Technotreon careers surface times out in the current runtime', async () => {
   const technotreon = await loadTechnotreonModule()
+  const error = new TypeError('fetch failed')
+  error.cause = { code: 'UND_ERR_CONNECT_TIMEOUT', message: 'Connect Timeout Error' }
 
   const jobs = await technotreon.createTechnotreonScraper().run({
-    fetchText: async () => {
-      const error = new TypeError('fetch failed')
-      error.cause = {
-        code: 'UND_ERR_CONNECT_TIMEOUT',
-        message: 'Connect Timeout Error (attempted address: technotreon.in:443, timeout: 10000ms)',
-      }
-      throw error
-    },
+    fetchText: async () => { throw error },
+    now: () => '2026-09-14T00:00:00.000Z',
   })
 
   assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, technotreon.CAREERS_URL)
+  assert.equal(evidence?.listingComplete, false)
 })

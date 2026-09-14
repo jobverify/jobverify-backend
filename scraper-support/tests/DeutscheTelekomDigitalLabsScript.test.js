@@ -14,6 +14,24 @@ const worldwideHtml = `
 </html>
 `
 
+const currentWorldwideHtml = `
+<!doctype html>
+<html lang="en">
+  <body>
+    <h1>Locations and shareholdings</h1>
+    <section aria-label="Globally connected for international collaboration">
+      <article class="teaser teaser--card">
+        <h3 class="teaser__title">
+          <a href="https://dtdl.in/" class="teaser__link">Digital Labs</a>
+        </h3>
+        <p class="teaser__text">DT Digital Labs create innovative digital products and services, ranging from entertainment and payment solutions to online shopping.</p>
+        <a href="https://dtdl.in/" aria-label="Digital Labs">To website</a>
+      </article>
+    </section>
+  </body>
+</html>
+`
+
 const homepageShellHtml = `
 <!doctype html>
 <html lang="en">
@@ -76,6 +94,7 @@ test('Deutsche Telekom Digital Labs sentinel helpers stay pinned to the verified
     'https://dtdl.in/join-us',
   ])
   assert.equal(dtdl.hasTelekomAffiliateSignal(worldwideHtml), true)
+  assert.equal(dtdl.hasTelekomAffiliateSignal(currentWorldwideHtml), true)
   assert.equal(dtdl.hasExactNameHomepageShellSignal(homepageShellHtml), true)
   assert.equal(dtdl.hasExactNameHomepageShellSignal(modernHomepageShellHtml), true)
   assert.equal(dtdl.hasPublicJobSignals(homepageShellHtml), false)
@@ -91,7 +110,7 @@ test('Deutsche Telekom Digital Labs sentinel returns [] only while the verified 
       requestedUrls.push(url)
 
       if (url === dtdl.TELEKOM_WORLDWIDE_URL) {
-        return { status: 200, url, html: worldwideHtml }
+        return { status: 200, url, html: currentWorldwideHtml }
       }
 
       if (url === dtdl.HOMEPAGE_URL) {

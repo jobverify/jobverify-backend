@@ -34,7 +34,7 @@ test('Zoomcar accepts the current canonical attribute order on the consumer mark
   assert.equal(hasOfficialMarketingShellSignal(marketingShellHtml), true)
 })
 
-test('Zoomcar returns no jobs while homepage, careers, and jobs routes still serve the verified consumer shell', async () => {
+test('Zoomcar consumer shell returns an empty discovery snapshot after every verified route matches', async () => {
   const requestedUrls = []
 
   const jobs = await createZoomcarScraper().run({

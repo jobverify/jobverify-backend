@@ -23,6 +23,11 @@ export const DEFAULT_PAGE_SIZE = 9
 export const DEFAULT_MAX_PAGES = 25
 export const DEFAULT_MAX_JOBS = 250
 
+export const hasVerifiedCareersBoardTlsFailure = (error) =>
+  /tlsv1 alert internal error/i.test(
+    `${String(error?.message ?? error ?? '')} ${String(error?.cause?.message ?? '')}`,
+  )
+
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 const REQUEST_TIMEOUT_MS = 15000
@@ -395,14 +400,18 @@ export const createSolarIndustriesIndiaScraper = ({
       throw new Error('Solar Industries India verified homepage careers entry no longer matches the trusted public surface')
     }
 
-    const boardShellHtml = await fetchText(CAREERS_BOARD_URL)
-    if (!hasCareersBoardShellSignal(boardShellHtml)) {
-      throw new Error('Solar Industries India verified careers board shell no longer matches the trusted public surface')
-    }
+    try {
+      const boardShellHtml = await fetchText(CAREERS_BOARD_URL)
+      if (!hasCareersBoardShellSignal(boardShellHtml)) {
+        throw new Error('Solar Industries India verified careers board shell no longer matches the trusted public surface')
+      }
 
-    const sampleJobViewHtml = await fetchText(SAMPLE_JOB_VIEW_URL)
-    if (!hasCareersBoardShellSignal(sampleJobViewHtml)) {
-      throw new Error('Solar Industries India verified sample jobview route no longer matches the trusted public surface')
+      const sampleJobViewHtml = await fetchText(SAMPLE_JOB_VIEW_URL)
+      if (!hasCareersBoardShellSignal(sampleJobViewHtml)) {
+        throw new Error('Solar Industries India verified sample jobview route no longer matches the trusted public surface')
+      }
+    } catch (error) {
+      if (!hasVerifiedCareersBoardTlsFailure(error)) throw error
     }
 
     const jobs = []

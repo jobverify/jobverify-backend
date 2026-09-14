@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import DEDALUS_CATALOG from './catalog.js'
@@ -133,6 +134,22 @@ const extractCity = (location) => {
   if (!normalized) return null
   return normalized.split(',')[0]?.trim() || null
 }
+
+const completeEmptyWorkdayInventory = ({
+  reportedTotal = 0,
+  verifiedAt,
+  reason,
+} = {}) => attachInventoryEvidence([], {
+  status: 'complete-inventory',
+  surface: JOBS_API_URL,
+  firstParty: true,
+  listingComplete: true,
+  pagesFetched: 1,
+  reportedTotal,
+  indiaFacetCount: 0,
+  verifiedAt,
+  reason,
+})
 
 const extractAdditionalLocations = (description = '') => {
   if (/Chennai\s+and\s+Noida,\s*India/i.test(description)) {
@@ -331,7 +348,11 @@ export const createDedalusScraper = ({
         }
       }
 
-      return []
+      return completeEmptyWorkdayInventory({
+        reportedTotal: Number.isInteger(unfilteredPayload?.total) ? unfilteredPayload.total : 0,
+        verifiedAt: now(),
+        reason: 'dedalus-workday-board-without-india-country-facet',
+      })
     }
 
     const filteredPayload = await fetchJson(
@@ -340,7 +361,11 @@ export const createDedalusScraper = ({
     )
     const postings = Array.isArray(filteredPayload?.jobPostings) ? filteredPayload.jobPostings : []
     if (postings.length === 0) {
-      return []
+      return completeEmptyWorkdayInventory({
+        reportedTotal: Number.isInteger(filteredPayload?.total) ? filteredPayload.total : 0,
+        verifiedAt: now(),
+        reason: 'dedalus-workday-india-filter-empty',
+      })
     }
 
     const scrapedAt = now()

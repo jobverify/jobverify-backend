@@ -4,11 +4,20 @@ export const HOMEPAGE_URL = 'https://www.gensol.in/'
 export const CAREERS_URL = 'https://www.gensol.in/careers'
 export const JOBS_URL = 'https://www.gensol.in/jobs'
 
-const HOMEPAGE_PATTERNS = [
-  /<title>\s*gensol\.in\s*<\/title>/i,
-  /Something amazing will be constructed here/i,
-  /upload your website into the public_html directory/i,
-  /directadmin/i,
+const HOMEPAGE_PATTERN_SETS = [
+  [
+    /<title>\s*gensol\.in\s*<\/title>/i,
+    /Something amazing will be constructed here/i,
+    /upload your website into the public_html directory/i,
+    /directadmin/i,
+  ],
+  [
+    /<title>\s*Website Under Development\s*<\/title>/i,
+    /Under Development/i,
+    /This website is coming soon!/i,
+    /HorizonWebinfo Pvt Ltd/i,
+    /ERP\s*\|\s*CRM\s*\|\s*Mobile Application\s*\|\s*Website\s*\|\s*HRMS/i,
+  ],
 ]
 
 const MISSING_ROUTE_PATTERNS = [
@@ -39,7 +48,7 @@ const fetchRouteText = async (fetchText, url) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
-  return HOMEPAGE_PATTERNS.every((pattern) => pattern.test(page))
+  return HOMEPAGE_PATTERN_SETS.some((patterns) => patterns.every((pattern) => pattern.test(page)))
 }
 
 export const isMissingCareerRoute = (html) => {

@@ -21,6 +21,21 @@ const homepageHtml = `
 </html>
 `
 
+const swiggyBusinessHtml = `
+<!doctype html>
+<html lang="en">
+  <head><title>Our Business - Swiggy</title></head>
+  <body>
+    <main>
+      <h1>Our Businesses</h1>
+      <h2>Dineout</h2>
+      <p>Dineout facilitates a user’s eating-out experience, through which users can discover restaurants, access menus and images, make reservations, benefit from attractive promotions, and make digital payments to such restaurants on our platform.</p>
+    </main>
+    <footer>Swiggy Limited</footer>
+  </body>
+</html>
+`
+
 const redirectedBlockedRouteHtml = `
 <!doctype html>
 <html lang="en">
@@ -190,6 +205,7 @@ test('Dineout constants and helpers stay pinned to the verified no-public-jobs c
   assert.equal(dineout.VERIFIED_AT, '2026-07-15')
   assert.equal(dineout.HOMEPAGE_URL, 'https://www.dineout.co.in/')
   assert.equal(dineout.CANONICAL_CONSUMER_SURFACE_URL, 'https://www.swiggy.com/dineout')
+  assert.equal(dineout.OFFICIAL_BUSINESS_URL, 'https://www.swiggy.com/corporate/our-business/')
   assert.equal(dineout.CAREERS_URL, 'https://careers.swiggy.com/')
   assert.equal(
     dineout.CAREERS_INTEGRATION_SCRIPT_URL,
@@ -211,6 +227,7 @@ test('Dineout constants and helpers stay pinned to the verified no-public-jobs c
   ])
 
   assert.equal(dineout.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(dineout.hasOfficialBusinessSignal(swiggyBusinessHtml), true)
   assert.equal(
     dineout.extractCanonicalConsumerSurfaceUrl(homepageHtml),
     'https://www.swiggy.com/dineout',
@@ -248,16 +265,6 @@ test('Dineout constants and helpers stay pinned to the verified no-public-jobs c
   assert.equal(dineout.hasVerifiedJobBoardDetailsSignal(jobBoardDetailsJson), true)
   assert.equal(dineout.hasVerifiedJobBoardDetailsSignal(nestedJobBoardDetailsJson), true)
   assert.equal(
-    dineout.isRecoverableCertificateError({
-      message: 'fetch failed',
-      cause: {
-        code: 'CERT_HAS_EXPIRED',
-        message: 'certificate has expired',
-      },
-    }),
-    true,
-  )
-  assert.equal(
     dineout.hasDineoutAttributablePublicRoles('Explore Dineout jobs and apply today'),
     true,
   )
@@ -271,16 +278,8 @@ test('Dineout returns no jobs only while the verified Swiggy handoff stays non-a
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
-      if (url === dineout.HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageHtml }
-      }
-
-      if (dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS.includes(url)) {
-        return {
-          status: 200,
-          url: dineout.REDIRECTED_NO_TRUST_ROUTE_URL,
-          html: redirectedRestaurantsRouteHtml,
-        }
+      if (url === dineout.OFFICIAL_BUSINESS_URL) {
+        return { status: 200, url, html: swiggyBusinessHtml }
       }
 
       if (url === dineout.CAREERS_URL) {
@@ -304,8 +303,7 @@ test('Dineout returns no jobs only while the verified Swiggy handoff stays non-a
   })
 
   assert.deepEqual(requestedUrls, [
-    dineout.HOMEPAGE_URL,
-    ...dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS,
+    dineout.OFFICIAL_BUSINESS_URL,
     dineout.CAREERS_URL,
     dineout.CAREERS_INTEGRATION_SCRIPT_URL,
     dineout.JOBS_BOARD_URL,
@@ -314,22 +312,20 @@ test('Dineout returns no jobs only while the verified Swiggy handoff stays non-a
   assert.deepEqual(jobs, [])
 })
 
-test('Dineout falls back to an expired-certificate fetch for the exact-name Dineout routes and keeps validating the Swiggy surfaces', async () => {
+test('Dineout uses secure Swiggy surfaces without requesting the expired legacy Dineout domain', async () => {
   const dineout = await loadModule()
-  const primaryRequests = []
-  const insecureRequests = []
+  const requestedUrls = []
 
   const jobs = await dineout.createDineoutScraper().run({
     fetchPage: async (url) => {
-      primaryRequests.push(url)
+      requestedUrls.push(url)
 
       if (url.startsWith('https://www.dineout.co.in/')) {
-        throw Object.assign(new TypeError('fetch failed'), {
-          cause: {
-            code: 'CERT_HAS_EXPIRED',
-            message: 'certificate has expired',
-          },
-        })
+        throw new Error(`Expired legacy domain must not be requested: ${url}`)
+      }
+
+      if (url === dineout.OFFICIAL_BUSINESS_URL) {
+        return { status: 200, url, html: swiggyBusinessHtml }
       }
 
       if (url === dineout.CAREERS_URL) {
@@ -350,199 +346,100 @@ test('Dineout falls back to an expired-certificate fetch for the exact-name Dine
 
       throw new Error(`Unexpected Dineout URL: ${url}`)
     },
-    fetchPageAllowingExpiredCertificate: async (url) => {
-      insecureRequests.push(url)
-
-      if (url === dineout.HOMEPAGE_URL) {
-        return {
-          status: 200,
-          url: dineout.CANONICAL_CONSUMER_SURFACE_URL,
-          html: homepageHtml,
-        }
-      }
-
-      if (dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS.includes(url)) {
-        return {
-          status: 200,
-          url: dineout.REDIRECTED_NO_TRUST_ROUTE_URL,
-          html: redirectedRestaurantsRouteHtml,
-        }
-      }
-
-      throw new Error(`Unexpected insecure Dineout URL: ${url}`)
-    },
   })
 
-  assert.deepEqual(primaryRequests, [
-    dineout.HOMEPAGE_URL,
-    ...dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS,
+  assert.deepEqual(requestedUrls, [
+    dineout.OFFICIAL_BUSINESS_URL,
     dineout.CAREERS_URL,
     dineout.CAREERS_INTEGRATION_SCRIPT_URL,
     dineout.JOBS_BOARD_URL,
     dineout.JOBS_BOARD_DETAILS_URL,
   ])
-  assert.deepEqual(insecureRequests, [
-    dineout.HOMEPAGE_URL,
-    ...dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS,
-  ])
   assert.deepEqual(jobs, [])
 })
 
-test('Dineout fails closed when the consumer surface, redirected routes, or parent careers surface drift into public Dineout jobs', async () => {
+test('Dineout fails closed when the business or parent careers surfaces drift into public Dineout jobs', async () => {
   const dineout = await loadModule()
 
+  const buildFetchPage = (overrides = {}) => async (url) => {
+    if (Object.hasOwn(overrides, url)) return overrides[url]
+    if (url === dineout.OFFICIAL_BUSINESS_URL) {
+      return { status: 200, url, html: swiggyBusinessHtml }
+    }
+    if (url === dineout.CAREERS_URL) {
+      return { status: 200, url, html: swiggyCareersHtml }
+    }
+    if (url === dineout.CAREERS_INTEGRATION_SCRIPT_URL) {
+      return { status: 200, url, html: careersIntegrationScript }
+    }
+    if (url === dineout.JOBS_BOARD_URL) {
+      return { status: 200, url, html: jobsBoardHtml }
+    }
+    if (url === dineout.JOBS_BOARD_DETAILS_URL) {
+      return { status: 200, url, html: jobBoardDetailsJson }
+    }
+    throw new Error(`Unexpected Dineout URL: ${url}`)
+  }
+
   await assert.rejects(
     dineout.createDineoutScraper().run({
-      fetchPage: async (url) => {
-        if (url === dineout.HOMEPAGE_URL) {
-          return {
-            status: 200,
-            url,
-            html: '<html><head><title>Placeholder</title></head><body>Welcome</body></html>',
-          }
-        }
-
-        throw new Error(`Unexpected Dineout URL: ${url}`)
-      },
+      fetchPage: buildFetchPage({
+        [dineout.OFFICIAL_BUSINESS_URL]: {
+          status: 200,
+          url: dineout.OFFICIAL_BUSINESS_URL,
+          html: '<html><head><title>Placeholder</title></head><body>Welcome</body></html>',
+        },
+      }),
     }),
-    /verified official consumer homepage/i,
+    /verified Swiggy business page/i,
   )
 
   await assert.rejects(
     dineout.createDineoutScraper().run({
-      fetchPage: async (url) => {
-        if (url === dineout.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (url === dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS[0]) {
-          return { status: 200, url, html: trustworthyJobsHtml }
-        }
-
-        if (dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS.slice(1).includes(url)) {
-          return {
-            status: 200,
-            url: dineout.REDIRECTED_NO_TRUST_ROUTE_URL,
-            html: redirectedRestaurantsRouteHtml,
-          }
-        }
-
-        throw new Error(`Unexpected Dineout URL: ${url}`)
-      },
-    }),
-    /verified no-trust Dineout job route changed/i,
-  )
-
-  await assert.rejects(
-    dineout.createDineoutScraper().run({
-      fetchPage: async (url) => {
-        if (url === dineout.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS.includes(url)) {
-          return {
-            status: 200,
-            url: dineout.REDIRECTED_NO_TRUST_ROUTE_URL,
-            html: redirectedRestaurantsRouteHtml,
-          }
-        }
-
-        if (url === dineout.CAREERS_URL) {
-          return {
-            status: 200,
-            url,
-            html: swiggyCareersHtml.replace('Swiggy Careers', 'Swiggy Careers - Dineout roles'),
-          }
-        }
-
-        throw new Error(`Unexpected Dineout URL: ${url}`)
-      },
+      fetchPage: buildFetchPage({
+        [dineout.CAREERS_URL]: {
+          status: 200,
+          url: dineout.CAREERS_URL,
+          html: swiggyCareersHtml.replace('Swiggy Careers', 'Swiggy Careers - Dineout roles'),
+        },
+      }),
     }),
     /Dineout-attributable public roles|verified Swiggy careers landing page/i,
   )
 
   await assert.rejects(
     dineout.createDineoutScraper().run({
-      fetchPage: async (url) => {
-        if (url === dineout.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS.includes(url)) {
-          return {
-            status: 200,
-            url: dineout.REDIRECTED_NO_TRUST_ROUTE_URL,
-            html: redirectedRestaurantsRouteHtml,
-          }
-        }
-
-        if (url === dineout.CAREERS_URL) {
-          return { status: 200, url, html: swiggyCareersHtml }
-        }
-
-        if (url === dineout.CAREERS_INTEGRATION_SCRIPT_URL) {
-          return {
-            status: 200,
-            url,
-            html: careersIntegrationScript.replace(
-              'https://" + clientShortName + ".mynexthire.com/employer/jobs/careers',
-              'https://example.com/jobs',
-            ),
-          }
-        }
-
-        throw new Error(`Unexpected Dineout URL: ${url}`)
-      },
+      fetchPage: buildFetchPage({
+        [dineout.CAREERS_INTEGRATION_SCRIPT_URL]: {
+          status: 200,
+          url: dineout.CAREERS_INTEGRATION_SCRIPT_URL,
+          html: careersIntegrationScript.replace(
+            'https://" + clientShortName + ".mynexthire.com/employer/jobs/careers',
+            'https://example.com/jobs',
+          ),
+        },
+      }),
     }),
     /verified Swiggy careers integration/i,
   )
 
   await assert.rejects(
     dineout.createDineoutScraper().run({
-      fetchPage: async (url) => {
-        if (url === dineout.HOMEPAGE_URL) {
-          return { status: 200, url, html: homepageHtml }
-        }
-
-        if (dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS.includes(url)) {
-          return {
-            status: 200,
-            url: dineout.REDIRECTED_NO_TRUST_ROUTE_URL,
-            html: redirectedRestaurantsRouteHtml,
-          }
-        }
-
-        if (url === dineout.CAREERS_URL) {
-          return { status: 200, url, html: swiggyCareersHtml }
-        }
-
-        if (url === dineout.CAREERS_INTEGRATION_SCRIPT_URL) {
-          return { status: 200, url, html: careersIntegrationScript }
-        }
-
-        if (url === dineout.JOBS_BOARD_URL) {
-          return { status: 200, url, html: jobsBoardHtml }
-        }
-
-        if (url === dineout.JOBS_BOARD_DETAILS_URL) {
-          return {
-            status: 200,
-            url,
-            html: JSON.stringify({
-              clientName: 'Swiggy',
-              career_page_url: {
-                url: {
-                  list: 'https://careers.swiggy.com/#/careers',
-                },
+      fetchPage: buildFetchPage({
+        [dineout.JOBS_BOARD_DETAILS_URL]: {
+          status: 200,
+          url: dineout.JOBS_BOARD_DETAILS_URL,
+          html: JSON.stringify({
+            clientName: 'Swiggy',
+            career_page_url: {
+              url: {
+                list: 'https://careers.swiggy.com/#/careers',
               },
-              note: 'Dineout openings are now live',
-            }),
-          }
-        }
-
-        throw new Error(`Unexpected Dineout URL: ${url}`)
-      },
+            },
+            note: 'Dineout openings are now live',
+          }),
+        },
+      }),
     }),
     /Dineout-attributable public roles|verified Swiggy job board details/i,
   )

@@ -667,6 +667,39 @@ test('Artefact falls back to the verified Greenhouse board and API when the firs
   assert.equal(jobs.every((job) => job.source === 'artefact'), true)
 })
 
+test('Artefact recovers India roles from its verified board when public HTML pages omit them', async () => {
+  const artefact = await loadScriptModule()
+  const jobs = await artefact.run({
+    fetchText: async (url) => {
+      if (url === artefact.HOMEPAGE_URL) return homepageHtml
+      if (url === artefact.CAREERS_URL) return careersPageHtml.replaceAll('India', 'France')
+      if (url === 'https://www.artefact.com/careers/explore-our-jobs/page/2/') return careersPage2Html.replaceAll('India', 'France')
+      if (url === artefact.GREENHOUSE_BOARD_URL) return greenhouseBoardHtml
+      throw new Error(`Unexpected Artefact text URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      assert.equal(url, artefact.GREENHOUSE_JOBS_API_URL)
+      return greenhousePayload
+    },
+  })
+  assert.deepEqual(jobs.map((job) => job.title), ['Data Analyst - India (2026)', 'Data Architect'])
+  assert.equal(jobs.every((job) => job.location === 'Pune, Maharashtra, India'), true)
+})
+
+test('Artefact rejects an unrelated fallback board when public HTML omits India roles', async () => {
+  const artefact = await loadScriptModule()
+  await assert.rejects(artefact.run({
+    fetchText: async (url) => {
+      if (url === artefact.HOMEPAGE_URL) return homepageHtml
+      if (url === artefact.CAREERS_URL) return careersPageHtml.replaceAll('India', 'France')
+      if (url === 'https://www.artefact.com/careers/explore-our-jobs/page/2/') return careersPage2Html.replaceAll('India', 'France')
+      if (url === artefact.GREENHOUSE_BOARD_URL) return '<title>Unrelated employer</title>'
+      throw new Error(`Unexpected Artefact text URL: ${url}`)
+    },
+    fetchJson: async () => { throw new Error('Untrusted board must not be queried') },
+  }), /verified public Greenhouse board/)
+})
+
 test('Artefact fails closed when the verified homepage, careers page, listing cards, or detail pages drift', async () => {
   const artefact = await loadScriptModule()
 

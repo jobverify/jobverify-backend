@@ -45,7 +45,7 @@ test('YelloSKYE constants and helpers stay pinned to the verified official redir
   assert.equal(yelloskye.hasPublicJobSignals(careersHtml), false)
 })
 
-test('YelloSKYE run returns no jobs while the verified official homepage and careers-like routes stay on the same first-party app shell', async () => {
+test('YelloSKYE returns an empty discovery snapshot while the verified official homepage and careers-like routes stay on the same first-party app shell', async () => {
   const yelloskye = await loadModule()
   assert.ok(yelloskye, 'YelloSKYE scraper module should load')
 

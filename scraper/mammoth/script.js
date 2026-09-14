@@ -129,8 +129,13 @@ export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeText(rawHtml)
 
-  if (rawHtml.includes('Mammoth Analytics') && rawHtml.includes('Data Prep') && rawHtml.includes('Dashboards')) {
-    return rawHtml.toLowerCase().includes('no credit card to start')
+  if (
+    /<title>\s*Mammoth Analytics:\s*Data Prep,\s*Automation\s*&amp;\s*Dashboards\s*<\/title>/i.test(rawHtml)
+    && normalized.includes('the data platform that means business')
+  ) {
+    return normalized.includes('pipelines')
+      && normalized.includes('automations')
+      && normalized.includes('dashboards')
   }
 
   if (rawHtml.includes('<title>Mammoth Analytics \u2014 Data Prep, Automation &amp; Dashboards</title>')) {

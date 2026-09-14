@@ -60,7 +60,7 @@ test('Codevice Solution Pvt Ltd validates the verified homepage shell, common ca
   )
 })
 
-test('Codevice Solution Pvt Ltd returns no jobs only while the verified first-party shell and bundle remain unchanged', async () => {
+test('Codevice Solution Pvt Ltd returns an empty discovery snapshot after validating the authentic shell and bundle', async () => {
   const codevice = await loadModule()
   const requestedPages = []
   const requestedText = []
@@ -106,6 +106,58 @@ test('Codevice Solution Pvt Ltd returns no jobs only while the verified first-pa
   ])
   assert.deepEqual(requestedText, ['https://codevicesolution.in/assets/index-DV62x6p4.js'])
   assert.deepEqual(jobs, [])
+})
+
+test('Codevice Solution Pvt Ltd preserves caller cancellation at every verified request boundary', async () => {
+  const codevice = await loadModule()
+
+  for (let stopAt = 0; stopAt < 10; stopAt += 1) {
+    const controller = new AbortController()
+    const reason = new Error('caller stopped Codevice audit')
+    const calls = []
+    const responseFor = (url) => {
+      if (url === codevice.HOMEPAGE_URL) {
+        return { status: 200, url, headers: {}, html: verifiedHomepageHtml }
+      }
+      if (codevice.CAREERS_ROUTE_URLS.includes(url)) {
+        return { status: 200, url, headers: {}, html: verifiedCareersShellHtml }
+      }
+      if (url === 'https://codevicesolution.in/assets/index-DV62x6p4.js') return verifiedAppBundleJs
+      throw new Error(`Unexpected URL: ${url}`)
+    }
+    const fetchSurface = async (url, { signal }) => {
+      assert.ok(signal)
+      calls.push(url)
+      const response = responseFor(url)
+      if (calls.length - 1 === stopAt) controller.abort(reason)
+      return response
+    }
+
+    await assert.rejects(codevice.run({
+      signal: controller.signal,
+      fetchPage: fetchSurface,
+      fetchText: fetchSurface,
+    }), (error) => error === reason)
+    assert.equal(calls.length, stopAt + 1)
+  }
+})
+
+test('Codevice Solution Pvt Ltd applies a bounded deadline to injected requests', async () => {
+  const codevice = await loadModule()
+  const testKeepAlive = setTimeout(() => {}, 1000)
+  const neverCompletes = async (_url, { signal }) => new Promise((resolve, reject) => {
+    signal.addEventListener('abort', () => reject(signal.reason), { once: true })
+  })
+
+  try {
+    await assert.rejects(codevice.run({
+      requestTimeoutMs: 5,
+      fetchPage: neverCompletes,
+      fetchText: neverCompletes,
+    }), (error) => error?.name === 'TimeoutError')
+  } finally {
+    clearTimeout(testKeepAlive)
+  }
 })
 
 test('Codevice Solution Pvt Ltd fails closed when the homepage shell, careers shell, or bundle contract changes', async () => {

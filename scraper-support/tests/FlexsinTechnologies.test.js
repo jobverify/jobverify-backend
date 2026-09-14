@@ -97,13 +97,13 @@ test('Flexsin Technologies local catalog captures the verified first-party caree
   assert.equal(provider.extractionStrategy, 'verified-first-party-inline-job-cards')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-09-13')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /flexsintechnologies[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Director - Open Source/i)
-  assert.match(provider.verifiedSurfaceSummary, /AI Architect - Artificial Intelligence/i)
-  assert.match(provider.verifiedSurfaceSummary, /Intern - Software Engineering/i)
-  assert.match(provider.verifiedSurfaceSummary, /Software Engineer - Python/i)
+  assert.match(provider.verifiedSurfaceSummary, /37 role cards/i)
+  assert.match(provider.verifiedSurfaceSummary, /36 with verified India locations/i)
+  assert.match(provider.verifiedSurfaceSummary, /one without a role location/i)
+  assert.match(provider.verifiedSurfaceSummary, /prevents expiration of previous jobs/i)
 })
 
 test('Flexsin Technologies exact backlog row resolves from the local catalog', async () => {

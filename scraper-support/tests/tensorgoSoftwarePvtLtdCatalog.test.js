@@ -8,17 +8,17 @@ import {
 } from '../providers/index.js'
 import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
 
-test('getScraperCatalog includes TensorGo Software Pvt Ltd as an official WP jobs script provider without aliases', () => {
+test('getScraperCatalog includes TensorGo Software Pvt Ltd as an official current jobs API provider without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'tensorgosoftwarepvtltd')
 
   assert.ok(provider)
   assert.equal(provider.companyName, 'TensorGo Software Pvt Ltd')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'wordpress-jobs-api')
-  assert.equal(provider.companyCareerPage, 'https://tensorgo.com/careers-at-tensorgo/')
+  assert.equal(provider.atsPlatform, 'official-company-jobs-api')
+  assert.equal(provider.companyCareerPage, 'https://tensorgo.com/careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'wp-json-page-query')
-  assert.equal(provider.extractionStrategy, 'official-careers-page+wp-json-jobs-api+detail-pages')
+  assert.equal(provider.paginationStrategy, 'current-client-single-api-inventory-with-completeness-guards')
+  assert.equal(provider.extractionStrategy, 'verified-tensorgo-humain-shell+observed-current-bundle-api-binding+live-api-inventory+matching-full-details+explicit-india-filter')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'tensorgo.com')

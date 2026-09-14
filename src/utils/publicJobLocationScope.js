@@ -39,6 +39,31 @@ const LOCATION_MARKUP_OR_CODE_REGEXES = Object.freeze([
 ]);
 const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const buildExactRegex = (value) => new RegExp(`^${escapeRegex(value)}$`, "i");
+const NON_INDIA_COUNTRY_NAMES = (() => {
+  const displayNames = new Intl.DisplayNames(["en"], { type: "region" });
+  const names = new Set([
+    "United States of America",
+    "USA",
+    "U.S.A.",
+    "U.S.",
+    "UAE",
+    "Great Britain",
+  ]);
+
+  for (let first = 65; first <= 90; first += 1) {
+    for (let second = 65; second <= 90; second += 1) {
+      const code = String.fromCharCode(first, second);
+      const name = displayNames.of(code);
+      if (code !== "IN" && name && name !== code) names.add(name);
+    }
+  }
+
+  return [...names].sort((left, right) => right.length - left.length);
+})();
+const NON_INDIA_LOCATION_MARKER_REGEX = new RegExp(
+  `(?:^|[^\\p{L}])(?:${NON_INDIA_COUNTRY_NAMES.map(escapeRegex).join("|")})(?:$|[^\\p{L}])`,
+  "iu",
+);
 const ALLOWED_CITY_SET = new Set(
   PUBLIC_JOB_ALLOWED_CITIES.map((city) => city.toLowerCase()),
 );
@@ -90,6 +115,11 @@ const matchesIndiaLocationMarker = (value = "") => {
   return INDIA_LOCATION_MARKER_REGEXES.some((regex) => regex.test(trimmed));
 };
 
+const matchesNonIndiaLocationMarker = (value = "") => {
+  const trimmed = String(value || "").trim();
+  return Boolean(trimmed && NON_INDIA_LOCATION_MARKER_REGEX.test(trimmed));
+};
+
 const isNoisyLocationCandidate = (value = "") => {
   const trimmed = String(value || "").replace(/\s+/g, " ").trim();
   if (!trimmed) return false;
@@ -109,6 +139,19 @@ const extractCityCandidate = (value = "") => {
   return ALLOWED_CITY_SET.has(normalized.toLowerCase()) ? normalized : null;
 };
 
+const extractExplicitIndiaCityCandidate = (value = "") => {
+  if (isNoisyLocationCandidate(value)) return null;
+  if (matchesSpecialLocationLabel(value) || matchesPlainRemoteLabel(value)) return "Remote";
+
+  const cityPart = String(value || "")
+    .split(",")
+    .map((part) => part.trim())
+    .find((part) => part && !matchesCountryValue(part));
+  const normalized = normalizeCity(cityPart);
+  if (!normalized || /^india$/i.test(normalized)) return null;
+  return normalized;
+};
+
 const isRemoteCity = (value = "") => /^remote$/i.test(String(value || "").trim());
 
 export const getValidIndiaCityForJob = (job = {}) => {
@@ -123,11 +166,23 @@ export const getValidIndiaCityForJob = (job = {}) => {
     .filter((value) => value && !isNoisyLocationCandidate(value));
   const locationCandidates = locations
     .filter((value) => !isNoisyLocationCandidate(value));
+  const allLocationValues = [city, location, ...locations].filter(Boolean);
+  const hasExplicitIndiaLocation = allLocationValues.some((value) => (
+    matchesSpecialLocationLabel(value) || matchesIndiaLocationMarker(value)
+  ));
+
+  // An explicit country is stronger evidence than a city-name inference.
+  if (country && !explicitIndiaCountry) return null;
+  if (
+    explicitIndiaCountry
+    && !hasExplicitIndiaLocation
+    && allLocationValues.some((value) => matchesNonIndiaLocationMarker(value))
+  ) return null;
+
   const hasIndiaScopeHint = explicitIndiaCountry
     || [...primaryCandidates, ...locationCandidates].some((value) => (
       matchesSpecialLocationLabel(value) || matchesIndiaLocationMarker(value)
     ));
-  const hasLocationHint = [...primaryCandidates, ...locationCandidates].some(Boolean);
   const remoteCandidates = [...primaryCandidates, ...locationCandidates]
     .filter((value) => matchesPlainRemoteLabel(value));
   const hasOnlyPlainRemoteLabels = (
@@ -174,7 +229,15 @@ export const getValidIndiaCityForJob = (job = {}) => {
     if (ALLOWED_CITY_SET.has(normalizedValue.toLowerCase())) return normalizedValue;
   }
 
-  if (explicitIndiaCountry && !hasLocationHint) return "Remote";
+  if (explicitIndiaCountry) {
+    // The UI city allowlist normalizes known cities; it must not reject an
+    // otherwise confirmed India job merely because its city is not listed.
+    for (const value of [...primaryCandidates, ...locationCandidates]) {
+      const normalizedValue = extractExplicitIndiaCityCandidate(value);
+      if (normalizedValue) return normalizedValue;
+    }
+    return "Remote";
+  }
   if (primaryCandidates.some((value) => matchesIndiaLocationMarker(value))) return "Remote";
   if (locationCandidates.some((value) => matchesIndiaLocationMarker(value))) return "Remote";
 

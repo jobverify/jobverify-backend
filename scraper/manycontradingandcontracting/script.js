@@ -61,13 +61,15 @@ const createTimeoutSignal = (timeoutMs) => {
 export const fetchPageWithStatus = async (url, {
   fetchImpl = fetch,
   timeoutMs = 15000,
+  signal,
 } = {}) => {
+  signal?.throwIfAborted()
   const response = await fetchImpl(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
-    signal: createTimeoutSignal(timeoutMs),
+    signal: signal ? AbortSignal.any([signal, createTimeoutSignal(timeoutMs)].filter(Boolean)) : createTimeoutSignal(timeoutMs),
   })
 
   return {
@@ -77,7 +79,7 @@ export const fetchPageWithStatus = async (url, {
   }
 }
 
-const defaultFetchPage = (url) => fetchPageWithStatus(url)
+const defaultFetchPage = (url, options) => fetchPageWithStatus(url, options)
 
 const hasUnexpectedCareersSignal = (html) => {
   const page = String(html ?? '')
@@ -98,7 +100,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = normalizeLower(page)
 
-  return /<title>\s*Home - Manycon India \| Expert Fire Protection, Coatings &amp; Construction Services\s*<\/title>/i.test(page)
+  return /<title>\s*(?:Home - Manycon India \| Expert Fire Protection, Coatings &amp; Construction Services|Fireproofing and Firestop in Qatar and Saudi Arabia)\s*<\/title>/i.test(page)
     && /<link rel="canonical" href="https:\/\/manycon\.com\/"\s*\/?>/i.test(page)
     && text.includes('welcome to manycon')
     && (
@@ -123,7 +125,7 @@ export const hasOfficialAboutSignal = (html) => {
     && text.includes('mega manycon')
     && text.includes('most trusted passive fire protection and firestop contractor')
 
-  return /<title>\s*About Us - Manycon India \| Expert Fire Protection, Coatings &amp; Construction Services\s*<\/title>/i.test(page)
+  return /<title>\s*(?:About Us - Manycon India \| Expert Fire Protection, Coatings &amp; Construction Services|About Manycon \| Saudi Arabian and Qatari Fire Safety)\s*<\/title>/i.test(page)
     && /<link rel="canonical" href="https:\/\/manycon\.com\/about\/"\s*\/?>/i.test(page)
     && text.includes('3,200+ firestop projects in qatar | 100+ in saudi arabia')
     && (hasLegacyAboutSummary || hasCurrentAboutSummary)
@@ -150,7 +152,7 @@ export const hasOfficialPageSitemapSignal = (xml) => {
     && !hasUnexpectedCareersSignal(sitemap)
 }
 
-export const isVerifiedMissingRoute = ({ status, html }) => {
+const isVerifiedMissingRouteWithLegacyTitle = ({ status, html }) => {
   const page = String(html ?? '')
   const text = normalizeLower(page)
   const hasLegacy404Copy = text.includes("oops! that page can't be found")
@@ -165,30 +167,40 @@ export const isVerifiedMissingRoute = ({ status, html }) => {
     && !hasUnexpectedJobsContent(page)
 }
 
+export const isVerifiedMissingRoute = (page = {}) => isVerifiedMissingRouteWithLegacyTitle({
+  ...page,
+  html: String(page.html ?? '').replace(
+    'Manycon | Expert Fire Protection, Coatings &amp; Construction Services',
+    'Manycon India | Expert Fire Protection, Coatings &amp; Construction Services',
+  ),
+})
+
 export const createManyconTradingAndContractingScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+  async run({ fetchPage = defaultFetchPage, signal } = {}) {
+    signal?.throwIfAborted()
+    const read = async url => { signal?.throwIfAborted(); const value = await fetchPage(url, { signal }); signal?.throwIfAborted(); return value }
+    const homepage = await read(HOMEPAGE_URL)
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Manycon Trading and Contracting verified homepage no longer matches the known first-party surface')
     }
 
-    const aboutPage = await fetchPage(ABOUT_URL)
+    const aboutPage = await read(ABOUT_URL)
     if (aboutPage.status !== 200 || !hasOfficialAboutSignal(aboutPage.html)) {
       throw new Error('Manycon Trading and Contracting verified about page no longer matches the known first-party surface')
     }
 
-    const sitemapIndex = await fetchPage(SITEMAP_INDEX_URL)
+    const sitemapIndex = await read(SITEMAP_INDEX_URL)
     if (sitemapIndex.status !== 200 || !hasOfficialSitemapIndexSignal(sitemapIndex.html)) {
       throw new Error('Manycon Trading and Contracting verified sitemap index no longer matches the known first-party surface')
     }
 
-    const pageSitemap = await fetchPage(PAGE_SITEMAP_URL)
+    const pageSitemap = await read(PAGE_SITEMAP_URL)
     if (pageSitemap.status !== 200 || !hasOfficialPageSitemapSignal(pageSitemap.html)) {
       throw new Error('Manycon Trading and Contracting verified page sitemap no longer matches the known first-party surface')
     }
 
     for (const url of MISSING_ROUTE_URLS) {
-      const page = await fetchPage(url)
+      const page = await read(url)
       if (!isVerifiedMissingRoute(page)) {
         throw new Error(`Manycon Trading and Contracting missing-route validation failed for ${url}`)
       }

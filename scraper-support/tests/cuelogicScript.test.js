@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const searchHtml = `
 <!DOCTYPE html>
 <html lang="en">
@@ -74,7 +76,9 @@ test('Cuelogic sentinel returns no jobs while the verified parent board still sh
   const cuelogic = await loadModule()
   const requestedUrls = []
 
-  const jobs = await cuelogic.createCuelogicScraper().run({
+  const jobs = await cuelogic.createCuelogicScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
       return {
@@ -87,6 +91,8 @@ test('Cuelogic sentinel returns no jobs while the verified parent board still sh
 
   assert.deepEqual(requestedUrls, [cuelogic.buildSearchUrl()])
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
+  assert.equal(readInventoryEvidence(jobs)?.reason, 'cuelogic-ltimindtree-empty-search-result')
 })
 
 test('Cuelogic sentinel fails closed when the LTIMindtree search route redirects to a different careers host', async () => {
@@ -115,13 +121,17 @@ test('Cuelogic sentinel returns [] when the verified careers.ltimindtree.com cer
   }
   assert.equal(cuelogic.isKnownBrokenCareersRedirectTlsFailure(tlsError), true)
 
-  const jobs = await cuelogic.createCuelogicScraper().run({
+  const jobs = await cuelogic.createCuelogicScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
     fetchPage: async () => {
       throw tlsError
     },
   })
 
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
+  assert.equal(readInventoryEvidence(jobs)?.reason, 'cuelogic-ltimindtree-search-route-broken-tls')
 })
 
 test('Cuelogic sentinel recognizes wrapped retry errors for the verified careers.ltimindtree.com TLS outage', async () => {
@@ -140,13 +150,16 @@ test('Cuelogic sentinel recognizes wrapped retry errors for the verified careers
 
   assert.equal(cuelogic.isKnownBrokenCareersRedirectTlsFailure(wrappedRetryError), true)
 
-  const jobs = await cuelogic.createCuelogicScraper().run({
+  const jobs = await cuelogic.createCuelogicScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
     fetchPage: async () => {
       throw wrappedRetryError
     },
   })
 
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
 })
 
 test('Cuelogic sentinel fails closed if the parent board no longer exposes the verified empty-state', async () => {

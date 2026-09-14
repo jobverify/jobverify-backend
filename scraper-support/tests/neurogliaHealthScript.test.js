@@ -415,7 +415,7 @@ test('Neuroglia Health fails closed when the verified homepage, careers shell, o
         if (url === neurogliaHealth.CAREERS_API_URL) return verifiedCareersApiPayload
         if (url === neurogliaHealth.DOCTOR_CAREERS_API_URL) return verifiedDoctorCareersApiPayload
         if (url === 'https://dailyrounds.org/api/careers/profile/SDEI') {
-          return { job_details: { exists: false } }
+          return { job_details: { exists: 'unknown' } }
         }
         if (url === 'https://dailyrounds.org/api/careers/profile/QA_Engineer_I') {
           return verifiedGeneralDetailsBySlug.QA_Engineer_I
@@ -431,4 +431,58 @@ test('Neuroglia Health fails closed when the verified homepage, careers shell, o
     }),
     /detail payload/i,
   )
+})
+
+
+test('Neuroglia ignores explicitly absent general and doctor roles while preserving live vacancies', async () => {
+  const m = await loadNeurogliaHealthModule()
+  const jobs = await m.run({
+    fetchText: async url => url === m.HOMEPAGE_URL ? verifiedHomepageHtml : url === m.CAREERS_URL ? verifiedCareersHtml : verifiedDoctorCareersHtml,
+    fetchJson: async url => {
+      if (url === m.CAREERS_API_URL) return verifiedCareersApiPayload
+      if (url === m.DOCTOR_CAREERS_API_URL) return verifiedDoctorCareersApiPayload
+      const slug = url.split('/').at(-1)
+      if (slug === 'SDEI') return { job_details: {}, previous_context: 'all' }
+      if (slug === 'category_manager') return { job_details: { exists: false, updatedOn: '20 July 2020' }, previous_context: 'all' }
+      return url.includes('/doctor_profile/') ? verifiedDoctorDetailsBySlug[slug] : verifiedGeneralDetailsBySlug[slug]
+    },
+  })
+  assert.equal(jobs.length, 2)
+  assert.deepEqual(jobs.map(job => job.jobId).sort(), ['neurogliahealth-medical-writer', 'neurogliahealth-qa-engineer-i'])
+  assert.ok(jobs.every(job => job.sourceListingComplete === false))
+})
+
+
+test('Neuroglia retries transient empty profile data before accepting a partial source', async () => {
+  const m = await loadNeurogliaHealthModule()
+  let attempts = 0
+  const jobs = await m.run({
+    fetchText: async url => url === m.HOMEPAGE_URL ? verifiedHomepageHtml : url === m.CAREERS_URL ? verifiedCareersHtml : verifiedDoctorCareersHtml,
+    fetchJson: async url => {
+      if (url === m.CAREERS_API_URL) return verifiedCareersApiPayload
+      if (url === m.DOCTOR_CAREERS_API_URL) return verifiedDoctorCareersApiPayload
+      const slug = url.split('/').at(-1)
+      if (slug === 'SDEI' && ++attempts === 1) return { job_details: {}, previous_context: 'all' }
+      return url.includes('/doctor_profile/') ? verifiedDoctorDetailsBySlug[slug] : verifiedGeneralDetailsBySlug[slug]
+    },
+  })
+  assert.equal(attempts, 2)
+  assert.equal(jobs.length, 4)
+  assert.ok(jobs.every(job => job.sourceListingComplete !== false))
+})
+
+
+test('Neuroglia returns a vacancy listed in both career sections only once', async () => {
+  const m = await loadNeurogliaHealthModule()
+  const jobs = await m.run({
+    fetchText: async url => url === m.HOMEPAGE_URL ? verifiedHomepageHtml : url === m.CAREERS_URL ? verifiedCareersHtml : verifiedDoctorCareersHtml,
+    fetchJson: async url => {
+      if (url === m.CAREERS_API_URL) return { ...verifiedCareersApiPayload, job_openings: [...verifiedCareersApiPayload.job_openings, { roleNames: 'Medical Editor (Only MBBS Candidates)', team: 'Marrow', url: 'medical_writer' }] }
+      if (url === m.DOCTOR_CAREERS_API_URL) return verifiedDoctorCareersApiPayload
+      const slug = url.split('/').at(-1)
+      return url.includes('/doctor_profile/') || slug === 'medical_writer' ? verifiedDoctorDetailsBySlug[slug] : verifiedGeneralDetailsBySlug[slug]
+    },
+  })
+  assert.equal(jobs.length, 4)
+  assert.equal(jobs.filter(job => job.jobId === 'neurogliahealth-medical-writer').length, 1)
 })

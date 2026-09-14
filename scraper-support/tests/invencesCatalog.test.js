@@ -3,18 +3,21 @@ import test from 'node:test'
 
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 
-test('Invences is registered against its official careers page', () => {
+test('Invences is registered against its official homepage with discovery-only inventory semantics', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'invences')
 
   assert.ok(provider)
   assert.equal(provider.companyName, 'Invences')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyCareerPage, 'https://invences.com/career')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
-  assert.equal(provider.paginationStrategy, 'single-first-party-careers-table')
-  assert.equal(provider.extractionStrategy, 'official-html-table+india-location-filter')
+  assert.equal(provider.companyCareerPage, 'https://invences.com/')
+  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.paginationStrategy, 'first-party-homepage-handoff-validation')
+  assert.equal(provider.extractionStrategy, 'verified-homepage+no-public-listings-discovery-only-without-careers-handoff')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.companyDomain, 'invences.com')
+  assert.equal(provider.verifiedOn, '2026-09-14')
+  assert.equal(provider.verifiedPublicJobCount, 0)
+  assert.equal(provider.verifiedIndiaJobCount, 0)
   assert.match(provider.modulePath, /invences[\\/]script\.js$/i)
 })
 

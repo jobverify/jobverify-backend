@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { withRetry } from '../../scraper-support/utils/retry.js'
 
 import { LYBRATE_CATALOG } from './catalog.js'
@@ -92,15 +91,6 @@ const defaultFetchPage = (url, { redirect = 'follow' } = {}) => withRetry(async 
   baseDelayMs: 2000,
 })
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: 'lybrate-official',
-  timeoutMs: 15000,
-})
-
 export const isVerifiedJobsPageRedirectLoop = (page = {}) => {
   const status = Number(page?.status)
   const responseUrl = String(page?.url ?? '')
@@ -144,14 +134,8 @@ const defaultFetchJson = (url) => withRetry(async () => {
 export const createLybrateScraper = () => ({
   async run({
     fetchPage = defaultFetchPage,
-    fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
   } = {}) {
-    const aboutHtml = await fetchText(ABOUT_PAGE_URL)
-    if (!hasOfficialAboutPageSignal(aboutHtml)) {
-      throw new Error('Lybrate verified official about-page hiring CTA no longer matches the verified public surface')
-    }
-
     const jobsPage = await fetchPage(JOBS_PAGE_URL, { redirect: 'manual' })
     if (
       !isVerifiedJobsPageRedirectLoop(jobsPage)

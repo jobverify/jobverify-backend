@@ -144,3 +144,31 @@ test('run fails closed when the official G7 careers page signal disappears', asy
     /official G7 CR careers page/i,
   )
 })
+
+
+test('G7 CR follows its verified Noventiq migration and enriches current listings from public details', async () => {
+  const g7 = await import('../../scraper/g7cr/script.js')
+  const jobUrl = 'https://noventiqai.com/job-details/senior-cloud-service-engineer/'
+  const pages = new Map([
+    ['https://g7cr.com/', '<link rel="canonical" href="https://noventiqai.com/"><a href="https://www.linkedin.com/company/g7cr-technologies">G7 CR</a>'],
+    ['https://noventiqai.com/job-listings/', '<title>Job Listings ? Noventiq Global AI Solutions</title><link rel="canonical" href="https://noventiqai.com/job-listings/"><h4><a href="' + jobUrl + '">Senior Cloud Service Engineer</a></h4>'],
+    ['https://noventiqai.com/careers-sitemap.xml', '<urlset><url><loc><![CDATA[' + jobUrl + ']]></loc><lastmod>2026-09-01</lastmod></url></urlset>'],
+    [jobUrl, '<section><h2>Senior Cloud Service Engineer</h2><p>G7 CR Technologies India Pvt Ltd</p><ul><li>Industry: IT/Cloud Services Location: Bangalore</li></ul><p>Support Azure customers.</p></section><a href="#career_detail">Apply now</a><div id="career_detail">Application form</div>'],
+  ])
+  const fetchText = async (url) => {
+    if (url === g7.CAREERS_URL) throw new Error('HTTP 403 for ' + url)
+    if (pages.has(url)) return pages.get(url)
+    throw new Error('Unexpected URL: ' + url)
+  }
+  const jobs = await g7.run({ fetchText, now: () => '2026-09-12T00:00:00.000Z' })
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Senior Cloud Service Engineer')
+  assert.equal(jobs[0].city, 'Bangalore')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].applyUrl, jobUrl + '#career_detail')
+  assert.match(jobs[0].jobDescription, /Support Azure customers/)
+  pages.set(jobUrl, '<section><h2>Different role</h2><p>Unrelated employer</p></section>')
+  await assert.rejects(g7.run({ fetchText }), /G7 CR/)
+  pages.set('https://noventiqai.com/careers-sitemap.xml', '<urlset></urlset>')
+  await assert.rejects(g7.run({ fetchText }), /G7 CR/)
+})

@@ -16,17 +16,17 @@ test('Manatec Electronics is registered as a verified application-only scraper w
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'homepage-plus-page-sitemap-plus-careers-page-plus-missing-route-validation',
+    'bounded-homepage-plus-careers-page',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-page-sitemap+verified-application-only-careers-page+verified-missing-route',
+    'verified-official-homepage+application-only-careers+typed-unavailable-inventory',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'manatec.in')
-  assert.equal(provider.verifiedOn, '2026-08-07')
-  assert.match(provider.verifiedSurfaceSummary, /Verified on Friday, August 7, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-09-13')
+  assert.match(provider.verifiedSurfaceSummary, /Verified on Sunday, September 13, 2026/i)
   assert.match(provider.modulePath, /manatecelectronics[\\/]script\.js$/i)
   assert.equal(
     Object.prototype.hasOwnProperty.call(companyAliases, 'Manatec Electronics Private Limited'),

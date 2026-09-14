@@ -28,6 +28,7 @@ const MAX_REGEX_FILTER_LENGTH = 80;
 const MAX_PAGE = 500;
 const ADMIN_ROLES = ["user", "admin"];
 const JOB_STATUSES = ["active", "expired", "hidden"];
+const JOB_PURGE_CONFIRMATION = "PURGE ALL JOBS";
 const MANAGED_ACCESS_ROLES = Object.values(ACCESS_ROLES);
 const SCRAPER_STATUS_SEED_WINDOW_MS = 5 * 60 * 1000;
 const ADMIN_USER_PRIVATE_FIELD_EXCLUSIONS = [
@@ -677,6 +678,36 @@ export const updateJobStatus = async (req, res) => {
       success: true,
       message: "Job status updated successfully",
       data: { id: job._id, status: job.status },
+    });
+  } catch (err) {
+    return respondWithAdminInternalError(res, err);
+  }
+};
+
+// Deletes every job listing after an explicit administrator confirmation.
+export const purgeAllJobs = async (req, res) => {
+  try {
+    if (req.body?.confirmation !== JOB_PURGE_CONFIRMATION) {
+      return res.status(400).json({
+        success: false,
+        message: `Type ${JOB_PURGE_CONFIRMATION} to purge all job listings`,
+      });
+    }
+
+    const { deletedCount } = await Job.deleteMany({});
+    await refreshJobDatasetSummary();
+    await AdminAudit.create({
+      admin: req.user._id,
+      action: "purgeAllJobs",
+      targetType: "Job",
+      targetId: null,
+      details: `Purged ${deletedCount} job listing(s)`,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "All job listings were purged",
+      data: { deletedCount },
     });
   } catch (err) {
     return respondWithAdminInternalError(res, err);

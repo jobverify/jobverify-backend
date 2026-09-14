@@ -73,6 +73,53 @@ const loadModule = async () => {
   }
 }
 
+const modernCareersHtml = `<title>CHITKARA UNIVERSITY - Best University in North India</title>
+  <button>View All Positions</button><section id="positions">All open positions</section>
+  <script src="/_next/static/chunks/app/page-current.js"></script>`
+const modernJob = {
+  id: 'current-role-id', title: 'Professor', category: 'Education',
+  location: 'Rajpura, Chitkara University', schedule: 'Full-Time',
+  summary: 'Teach CSE and ECE.', responsibilities: ['Lead academic research'],
+  qualifications: ['PhD in the relevant discipline'], requiredSkill: ['Teaching'],
+  mandatoryEducation: 'PhD', experience: '20 Years', jobs_created_at: '2026-08-01T00:00:00.000Z',
+}
+
+test('Chitkara follows its current public app handoff and maps API roles without inventing detail URLs', async () => {
+  const chitkara = await loadModule()
+  const requests = []
+  const jobs = await chitkara.run({
+    fetchText: async (url) => {
+      requests.push(url)
+      if (url === chitkara.CAREERS_URL) return modernCareersHtml
+      if (url.endsWith('/page-current.js')) return 'fetch("https://api.chitkara.edu.in/jobpost/getAll").then(r=>r.json())'
+      if (url === 'https://api.chitkara.edu.in/jobpost/getAll') return JSON.stringify({ statusCode: 200, data: [modernJob] })
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    now: () => '2026-09-12T00:00:00.000Z',
+  })
+  assert.equal(requests.length, 3)
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, modernJob.id)
+  assert.equal(jobs[0].title, 'Professor')
+  assert.equal(jobs[0].city, 'Rajpura')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].employmentType, 'Full-time')
+  assert.deepEqual(jobs[0].requiredSkills, ['Teaching'])
+  assert.match(jobs[0].jobDescription, /Lead academic research/)
+  assert.equal(jobs[0].applyUrl, `${chitkara.CAREERS_URL}#positions`)
+  assert.equal(jobs[0].scrapedAt, '2026-09-12T00:00:00.000Z')
+})
+
+test('Chitkara rejects a changed API handoff and malformed or duplicate public roles', async () => {
+  const chitkara = await loadModule()
+  for (const payload of [{ data: [] }, { statusCode: 200, data: [{}] }, { statusCode: 200, data: [modernJob, modernJob] }]) {
+    await assert.rejects(chitkara.run({ fetchText: async (url) => url === chitkara.CAREERS_URL
+      ? modernCareersHtml : url.endsWith('.js') ? 'fetch("https://api.chitkara.edu.in/jobpost/getAll")' : JSON.stringify(payload) }), /Chitkara/)
+  }
+  await assert.rejects(chitkara.run({ fetchText: async (url) => url === chitkara.CAREERS_URL
+    ? modernCareersHtml : 'fetch("https://unrelated.example/jobs")' }), /Chitkara/)
+})
+
 test('Chitkara University exports stable first-party careers pagination helpers', async () => {
   const chitkara = await loadModule()
 

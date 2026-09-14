@@ -146,7 +146,6 @@ export const hasCentumHomepageSignal = (html = '') => {
     && normalized.includes('CENTUM GROUP, A GLOBAL COMPANY CLOSE TO ITS CUSTOMERS')
     && /(?:©|Â©)(?:\s+2023)?\s+Centum\. All rights reserved\./i.test(normalized)
     && extractIndiaCareersHandoffUrl(rawHtml) === INDIA_CAREERS_HANDOFF_URL
-    && extractEuropeNorthAmericaCareersUrl(rawHtml) === EUROPE_NA_CAREERS_URL
 }
 
 export const hasResolvableFirstPartyCareersHost = (addresses) =>

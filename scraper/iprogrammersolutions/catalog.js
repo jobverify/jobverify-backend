@@ -17,9 +17,9 @@ export const IPROGRAMMER_SOLUTIONS_CATALOG = {
   extractionStrategy: 'job-card-listing-with-detail-links',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: "2026-09-13",
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://iprogrammer.com/current-openings-pune/ was the live first-party Iprogrammer Solutions openings page and that it publicly listed Current Openings including DevOps Engineer, Odoo QA Engineer, Lead NodeJS Engineer, and ReactJS Developer with Pune work-mode metadata on the verified date.',
+    "Verified September 13, 2026: the official iProgrammer current-openings page publishes nine role cards. The parser accounts for every unique first-party detail URL and validates role fields and locations without depending on closed vacancy titles.",
   modulePath: path.join(currentDir, 'script.js'),
   dryRunFile: 'iprogrammersolutions/jobs.json',
 }

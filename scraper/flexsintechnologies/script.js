@@ -20,8 +20,9 @@ const LOCATION_MAP = {
   'sector 63, noida': 'Sector 63, Noida, Uttar Pradesh, India',
 }
 
-const defaultFetchText = (url) =>
+const defaultFetchText = (url, { signal } = {}) =>
   fetchTextWithRetry(url, {
+    signal,
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -46,9 +47,11 @@ const slugFromUrl = (url) =>
     .filter(Boolean)
     .at(-1)
 
+const hasVerifiedIndiaLocation = value => /^(?:India|(?:Noida(?:[,\s]+Sector\s*63)?|Sector\s*63(?:,\s*Noida)?)(?:,\s*Uttar Pradesh)?(?:,\s*India)?)$/i.test(normalizeWhitespace(value))
+
 const normalizeLocation = (value) => {
   const raw = normalizeWhitespace(value)
-  return LOCATION_MAP[raw.toLowerCase()] || `${raw}, India`
+  return LOCATION_MAP[raw.toLowerCase()] || (hasVerifiedIndiaLocation(raw) ? `${raw}, India` : raw)
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
@@ -56,15 +59,17 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return /<title>\s*Career Opportunities\s*<\/title>/i.test(page)
     && /class=["']jobsList\b/i.test(page)
-    && /Director - Open Source/i.test(page)
-    && /AI Architect - Artificial Intelligence/i.test(page)
-    && /Intern - Software Engineering/i.test(page)
+    && /href=["']https:\/\/www\.flexsin\.com\/careers\/[a-z0-9-]+\/["']/i.test(page)
   }
 
 export const extractJobs = (html = '') => {
   const jobs = []
+  const listing = String(html).match(/<ul\b[^>]*class=["'][^"']*\bjobsList\b[^"']*["'][^>]*>([\s\S]*?)<\/ul>/i)?.[1]
+  if (!listing) throw new Error('Flexsin incomplete current listing')
+  const expectedUrls = new Set([...listing.matchAll(/<a\b[^>]*href=["']([^"']*\/careers\/[a-z0-9-]+\/)["']/gi)].map(([, href]) => new URL(href, CAREERS_URL).toString()))
+  const expectedCards = [...listing.matchAll(/<a\b[^>]*class=["'](?:[^"']*\s)?inner(?:\s[^"']*)?["'][^>]*>/gi)].length
 
-  for (const match of String(html ?? '').matchAll(/<li>\s*<a[^>]+href="([^"]+)"[^>]*class="inner"[^>]*>([\s\S]*?)<\/a>\s*<\/li>/gi)) {
+  for (const match of listing.matchAll(/<li>\s*<a[^>]+href="([^"]+)"[^>]*class="(?:[^"]*\s)?inner(?:\s[^"]*)?"[^>]*>([\s\S]*?)<\/a>\s*<\/li>/gi)) {
     const sourceUrl = new URL(match[1], CAREERS_URL).toString()
     const block = match[2]
     const title = normalizeWhitespace(block.match(/<div[^>]*class="hd"[^>]*>([\s\S]*?)<\/div>/i)?.[1])
@@ -73,15 +78,16 @@ export const extractJobs = (html = '') => {
     const rawLocation = normalizeWhitespace(infoMatches[1]?.[1])
     const jobId = slugFromUrl(sourceUrl)
 
-    if (!title || !experienceRequired || !rawLocation || !jobId) continue
+    if (!title || !experienceRequired || !jobId || new URL(sourceUrl).origin !== new URL(CAREERS_URL).origin
+      || !/^\/careers\/[a-z0-9-]+\/$/.test(new URL(sourceUrl).pathname)) throw new Error('Flexsin incomplete public role card')
 
     jobs.push({
       title,
       company: COMPANY,
       department: null,
-      location: normalizeLocation(rawLocation),
-      city: rawLocation,
-      country: 'India',
+      location: normalizeLocation(rawLocation) || null,
+      city: rawLocation || null,
+      country: hasVerifiedIndiaLocation(rawLocation) ? 'India' : null,
       jobId,
       requisitionId: jobId,
       sourceUrl,
@@ -98,12 +104,16 @@ export const extractJobs = (html = '') => {
     })
   }
 
+  if (jobs.length !== expectedCards || jobs.length !== expectedUrls.size || jobs.some(job => !expectedUrls.has(job.sourceUrl)) || new Set(jobs.map(job => job.sourceUrl)).size !== expectedCards) throw new Error('Flexsin incomplete current listing')
   return jobs
 }
 
 export const createFlexsinTechnologiesScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, signal } = {}) {
+    signal?.throwIfAborted()
+    let careersHtml
+    try { careersHtml = await fetchText(CAREERS_URL, { signal }) }
+    finally { signal?.throwIfAborted() }
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error(
         'The verified Flexsin Technologies careers surface no longer matches the trusted first-party page',
@@ -111,11 +121,17 @@ export const createFlexsinTechnologiesScraper = () => ({
     }
 
     const jobs = extractJobs(careersHtml)
+    if (jobs.some(job => !job.country)) {
+      for (const job of jobs) job.sourceListingComplete = false
+      console.warn('[flexsintechnologies] Some role locations remain unverified; prior jobs will be preserved.')
+    }
     if (jobs.length === 0) {
       throw new Error('Flexsin Technologies no longer exposes trusted public job cards')
     }
 
-    return jobs.map((job) => ({
+    const verifiedJobs = jobs.filter(job => job.country === 'India')
+    if (!verifiedJobs.length) throw new Error('Flexsin incomplete country scope: no verified India roles')
+    return verifiedJobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl,

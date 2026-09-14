@@ -18,11 +18,20 @@ export const OFFICIAL_SURFACE_URLS = [
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const HOMEPAGE_SIGNAL_PATTERNS = [
-  /<title>\s*gensol\.in\s*<\/title>/i,
-  /Something amazing will be constructed here/i,
-  /upload your website into the public_html directory/i,
-  /https:\/\/www\.directadmin\.com/i,
+const HOMEPAGE_SIGNAL_PATTERN_SETS = [
+  [
+    /<title>\s*gensol\.in\s*<\/title>/i,
+    /Something amazing will be constructed here/i,
+    /upload your website into the public_html directory/i,
+    /https:\/\/www\.directadmin\.com/i,
+  ],
+  [
+    /<title>\s*Website Under Development\s*<\/title>/i,
+    /Under Development/i,
+    /This website is coming soon!/i,
+    /HorizonWebinfo Pvt Ltd/i,
+    /ERP\s*\|\s*CRM\s*\|\s*Mobile Application\s*\|\s*Website\s*\|\s*HRMS/i,
+  ],
 ]
 
 const MISSING_ROUTE_SIGNAL_PATTERNS = [
@@ -65,9 +74,12 @@ const defaultFetchPage = async (url) => {
   }
 }
 
-export const hasVerifiedHomepageSignal = (html) => HOMEPAGE_SIGNAL_PATTERNS.every((pattern) => (
-  pattern.test(String(html ?? ''))
-))
+export const hasVerifiedHomepageSignal = (html) => {
+  const page = String(html ?? '')
+  return HOMEPAGE_SIGNAL_PATTERN_SETS.some((patterns) => (
+    patterns.every((pattern) => pattern.test(page))
+  ))
+}
 
 export const hasPublicJobsSignal = (html) => PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => (
   pattern.test(String(html ?? ''))

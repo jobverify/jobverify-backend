@@ -32,6 +32,8 @@ const PUBLIC_JOB_PATTERNS = [
   /smartrecruiters/i,
   /jobvite/i,
 ]
+const COMPROMISED_LEGACY_HOMEPAGE_PATTERN =
+  /\bkembangtoto\b|\bbandar\s+toto\b|\bsitus\s+toto\b|\btoto\s+4d\b|\btogel\b/i
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -60,6 +62,19 @@ export const hasParkedHomepageSignal = (html = '') => {
     && !hasPublicJobsSignal(html)
   )
 }
+
+export const hasCloudflareTimeoutSignal = (html = '') => {
+  const normalized = normalizeWhitespace(html).toLowerCase()
+
+  return normalized.includes('522: connection timed out')
+    && normalized.includes('connection timed out')
+    && normalized.includes('cloudflare')
+    && !hasPublicJobsSignal(html)
+}
+
+export const hasCompromisedLegacyHomepageSignal = (html = '') =>
+  COMPROMISED_LEGACY_HOMEPAGE_PATTERN.test(normalizeWhitespace(html))
+  && !hasPublicJobsSignal(html)
 
 export const hasRedirectToLanderSignal = (html = '') =>
   /window\.location\.href\s*=\s*["']\/lander["']/i.test(String(html ?? ''))
@@ -115,6 +130,17 @@ const defaultFetchPage = async (url) => {
   }
 }
 
+const buildUpstreamUnavailableError = (surfaceName, page = {}) => Object.assign(
+  new Error(`Karvy ${surfaceName} appears compromised; current job inventory is unavailable: ${page.finalUrl || page.url || LEGACY_HOMEPAGE_URL}`),
+  {
+    softFailure: true,
+    upstreamOutage: true,
+    abortRetries: true,
+    failureType: 'upstream_unavailable',
+    failureKind: 'upstream_unavailable',
+  },
+)
+
 export const createKarvyScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     for (const url of PARKED_HOMEPAGE_URLS) {
@@ -130,6 +156,14 @@ export const createKarvyScraper = () => ({
     const legacyHomepage = await fetchPage(LEGACY_HOMEPAGE_URL)
     if (hasPublicJobsSignal(legacyHomepage.html)) {
       throw new Error('Karvy legacy homepage now exposes public jobs')
+    }
+
+    if (hasCompromisedLegacyHomepageSignal(legacyHomepage.html)) {
+      throw buildUpstreamUnavailableError('legacy homepage', legacyHomepage)
+    }
+
+    if (Number(legacyHomepage.status) === 522 && hasCloudflareTimeoutSignal(legacyHomepage.html)) {
+      return []
     }
 
     if (Number(legacyHomepage.status) === 200 && hasRedirectToLanderSignal(legacyHomepage.html)) {

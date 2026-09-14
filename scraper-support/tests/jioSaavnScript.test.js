@@ -8,7 +8,7 @@ const careersHtml = `
     <main>
       <h1>Work With Us</h1>
       <p>Come make music beautiful.</p>
-      <a href="/careers">Find Your Dream Job</a>
+      <a href="/careers">Find Authentic Jobs</a>
       <section>
         <h2>Life At JioSaavn</h2>
       </section>
@@ -45,6 +45,8 @@ const jobsAppearHtml = careersHtml.replace('Mumbai</h3>\n          <p>0 Openings
 
 const driftHtml = careersHtml.replace('Find Your Gig.', 'Find Your Team.')
 
+const currentCareersHtml = careersHtml.replace('Find Authentic Jobs', 'Find Your Dream Job')
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/jiosaavn/script.js')
@@ -60,6 +62,7 @@ test('JioSaavn recognizes the verified first-party empty careers surface', async
   assert.equal(jiosaavn.COMPANY, 'JioSaavn')
   assert.equal(jiosaavn.CAREERS_URL, 'https://corporate.saavn.com/careers')
   assert.equal(jiosaavn.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(jiosaavn.hasOfficialCareersSignal(currentCareersHtml), true)
   assert.deepEqual(
     jiosaavn.extractLocationOpeningCounts(careersHtml),
     [
@@ -72,6 +75,16 @@ test('JioSaavn recognizes the verified first-party empty careers surface', async
   )
   assert.equal(jiosaavn.hasVerifiedZeroOpeningsSignal(careersHtml), true)
   assert.equal(jiosaavn.pageExposesPublicJobListings(careersHtml), false)
+})
+
+test('JioSaavn accepts the current dream-job heading while location counts remain zero', async () => {
+  const jiosaavn = await loadModule()
+
+  const jobs = await jiosaavn.createJioSaavnScraper().run({
+    fetchText: async () => currentCareersHtml,
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('JioSaavn returns no jobs while the verified first-party careers surface shows zero openings', async () => {

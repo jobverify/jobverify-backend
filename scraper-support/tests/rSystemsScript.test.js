@@ -332,3 +332,10 @@ test('createRSystemsScraper validates the public careers page and decorates Indi
   )
   assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
 })
+
+
+test('R Systems accepts the current spaced brand title while retaining the verified Angular careers shell', async () => {
+  const rSystems = await loadRSystemsModule()
+  assert.equal(rSystems.hasVerifiedCareerPageSignals(careersHtml.replace('Careers | Rsystems', 'Careers | R Systems')), true)
+  assert.equal(rSystems.hasVerifiedCareerPageSignals(careersHtml.replace('/rsystems/', '/another-company/')), false)
+})

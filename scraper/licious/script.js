@@ -15,6 +15,7 @@ export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
+export const CURRENT_JOBS_URL = 'https://www.licious.in/careers/jobs'
 export const OFFICIAL_CAREERS_HANDOFF_URL = PROVIDER_METADATA.officialCareersHandoffUrl
 export const PUBLIC_PORTAL_URL = PROVIDER_METADATA.publicPortalUrl
 export const LISTING_API_URL = PROVIDER_METADATA.darwinboxListingApiUrl
@@ -92,7 +93,7 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = (normalizeWhitespace(page) || '').toLowerCase()
 
-  return extractTitle(page) === 'Licious Careers'
+  const hasLegacyDarwinboxSurface = extractTitle(page) === 'Licious Careers'
     && text.includes('join the mix')
     && (
       text.includes('make an impact.')
@@ -100,6 +101,36 @@ export const hasOfficialCareersSignal = (html = '') => {
       || text.includes('careers@licious.com')
     )
     && extractOfficialDarwinboxUrl(page) === OFFICIAL_CAREERS_HANDOFF_URL
+  const hasCurrentFirstPartySurface =
+    extractTitle(page) === 'Careers - You are the magic ingredient'
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.licious\.in\/careers["']/i.test(page)
+    && /href=["']\/careers\/jobs["'][^>]*>[^<]*(?:Start Sizzling|Join the mix)/i.test(page)
+    && text.includes('careers@licious.com')
+
+  return hasLegacyDarwinboxSurface || hasCurrentFirstPartySurface
+}
+
+export const hasVerifiedEmptyFirstPartyJobsSignal = (html = '') => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page) || ''
+  const dataMatch = page.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i)
+  if (!dataMatch) return false
+
+  let nextData
+  try {
+    nextData = JSON.parse(dataMatch[1])
+  } catch {
+    return false
+  }
+
+  const widgets = nextData?.props?.pageProps?.widgets
+  return /<title[^>]*>\s*Jobs\s+[^<]*Licious Careers\s*<\/title>/i.test(page)
+    && /rel=["']canonical["'][^>]+href=["']https:\/\/www\.licious\.in\/careers\/jobs["']/i.test(page)
+    && /Explore open roles at Licious and apply directly through our careers portal/i.test(page)
+    && Array.isArray(widgets)
+    && widgets.length === 1
+    && widgets[0]?.type === 'closing-cta-footer'
+    && !/"@type"\s*:\s*"JobPosting"|darwinbox|greenhouse|lever\.co|myworkdayjobs/i.test(page)
 }
 
 const defaultFetchListingPage = ({ page, pageSize = 10, companyId = DARWINBOX_COMPANY_ID }) =>
@@ -132,6 +163,14 @@ export const createLiciousScraper = ({
 
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Licious verified official careers page no longer matches the known public surface')
+    }
+
+    if (!extractOfficialDarwinboxUrl(careersHtml)) {
+      const jobsHtml = await fetchText(CURRENT_JOBS_URL)
+      if (!hasVerifiedEmptyFirstPartyJobsSignal(jobsHtml)) {
+        throw new Error('Licious current first-party jobs page changed materially or now exposes public jobs')
+      }
+      return []
     }
 
     const jobs = await darwinboxScraper.run({

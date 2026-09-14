@@ -267,7 +267,7 @@ export const buildMicronTechnologyIndiaApiProvider = () => ({
       postingDate: 'postedTs',
     },
     detail: {
-      enabled: true,
+      enabled: false,
       concurrency: DETAIL_FETCH_CONCURRENCY,
       urlTemplate: buildDetailApiUrl('{{jobId}}'),
       method: 'GET',

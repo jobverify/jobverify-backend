@@ -83,7 +83,8 @@ const extractExperience = (html) =>
 const buildDetailUrl = (jobId) => toAbsoluteUrl(`/jobs/${jobId}`, CANDIDATES_URL)
 const buildApplyUrl = (jobId) => toAbsoluteUrl(`/candidates/new?job_id=${jobId}`, CANDIDATES_URL)
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -95,10 +96,14 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
-
-  return /<title>\s*Web Development and Custom Application Development Company\s*<\/title>/i.test(page)
-    && /Kreeti Technologies/i.test(text)
+  const hasLegacyIdentity = /<title>\s*Web Development and Custom Application Development Company\s*<\/title>/i.test(page)
     && /150\+\s*Successful Projects/i.test(text)
+  const hasCurrentIdentity = /<title>[^<]*Kreeti Technologies[^<]*<\/title>/i.test(page)
+    && /\bSuccessful Projects\b/i.test(text)
+    && /\bYears of Excellence\b/i.test(text)
+
+  return /Kreeti Technologies/i.test(text)
+    && (hasLegacyIdentity || hasCurrentIdentity)
     && /href="https:\/\/careers\.kreeti\.com\/candidates"/i.test(page)
 }
 
@@ -125,52 +130,25 @@ export const hasOfficialCandidatesSignal = (html) => {
 }
 
 export const extractListings = (html) => {
-  if (!hasOfficialCandidatesSignal(html)) {
-    throw new Error('Kreeti Technologies verified candidate jobs page changed materially')
-  }
-
-  const selectHtml = String(html ?? '').match(
-    /<select[^>]*name="job\[job_id\]"[^>]*>([\s\S]*?)<\/select>/i,
-  )?.[1] || ''
-
-  const listings = [...selectHtml.matchAll(/<option value="(\d+)"[^>]*>([\s\S]*?)<\/option>/gi)]
-    .map((match) => {
-      const jobId = normalizeWhitespace(match[1])
-      const title = stripTags(match[2])
-      if (!jobId || !title) return null
-
-      return {
-        title,
-        company: COMPANY,
-        department: null,
-        location: null,
-        city: null,
-        country: 'India',
-        jobId,
-        requisitionId: jobId,
-        sourceUrl: buildDetailUrl(jobId),
-        applyUrl: buildApplyUrl(jobId),
-        employmentType: null,
-        experienceRequired: null,
-        minimumQualification: null,
-        preferredQualification: null,
-        requiredSkills: [],
-        postingDate: null,
-        closingDate: null,
-        jobDescription: null,
-      }
-    })
-    .filter(Boolean)
-
-  if (listings.length === 0) {
-    if (/\bNo Open Positions\b/i.test(String(html ?? ''))) {
-      return []
-    }
-
-    throw new Error('Kreeti Technologies candidate jobs page no longer exposes the verified public job selectors')
-  }
-
-  return listings
+  if (!hasOfficialCandidatesSignal(html)) throw new Error('Kreeti Technologies verified candidate jobs page changed materially')
+  const page = String(html ?? '')
+  const opening = [...page.matchAll(/<section\b[^>]*class=["']([^"']*)["'][^>]*>/gi)]
+    .find(match => match[1].split(/\s+/).includes('jobs'))
+  if (!opening) throw new Error('Kreeti Technologies active openings section is incomplete')
+  const tags = /<\/?section\b[^>]*>/gi
+  tags.lastIndex = opening.index + opening[0].length
+  let depth = 1
+  let closing
+  while (depth && (closing = tags.exec(page))) depth += closing[0].startsWith('</') ? -1 : 1
+  if (depth) throw new Error('Kreeti Technologies active openings section is incomplete')
+  const activeSection = page.slice(opening.index + opening[0].length, closing.index)
+  const explicitlyEmpty = [...activeSection.matchAll(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/gi)]
+    .some(match => /^No Open Positions$/i.test(stripTags(match[1])))
+  const activeLinks = /<a\b[^>]*href=["'][^"']*\/jobs\/\d+/i.test(activeSection)
+  if (explicitlyEmpty && !activeLinks) return []
+  // The separate general-interest select is not evidence that a vacancy is open.
+  // A future active section needs a verified listing parser before it can be a snapshot.
+  throw new Error('Kreeti Technologies candidate jobs page has ambiguous or contradictory active openings')
 }
 
 export const extractJobDetail = (html, listing = {}) => {
@@ -218,18 +196,22 @@ export const extractJobDetail = (html, listing = {}) => {
 }
 
 export const createKreetiTechnologiesScraper = ({ maxJobs = null } = {}) => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString(), signal } = {}) {
+    signal?.throwIfAborted()
+    const homepageHtml = await fetchText(HOMEPAGE_URL, { signal })
+    signal?.throwIfAborted()
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Kreeti Technologies verified official homepage no longer matches the known public surface')
     }
 
-    const careersHomeHtml = await fetchText(CAREERS_HOME_URL)
+    const careersHomeHtml = await fetchText(CAREERS_HOME_URL, { signal })
+    signal?.throwIfAborted()
     if (!hasOfficialCareersHomeSignal(careersHomeHtml)) {
       throw new Error('Kreeti Technologies verified first-party careers home no longer matches the known public surface')
     }
 
-    const candidatesHtml = await fetchText(CANDIDATES_URL)
+    const candidatesHtml = await fetchText(CANDIDATES_URL, { signal })
+    signal?.throwIfAborted()
     const listings = extractListings(candidatesHtml)
     if (listings.length === 0) {
       return []

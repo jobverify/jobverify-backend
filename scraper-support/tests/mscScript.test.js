@@ -106,7 +106,7 @@ test('MSC constants and surface validators stay pinned to the August 3, 2026 car
   assert.equal(msc.JOB_LOCATIONS_API_URL, 'https://www.msc.com/api/feature/Career/GetJobLocationsList')
   assert.equal(msc.VACANCIES_API_URL, 'https://www.msc.com/api/feature/Career/GetJobVacanciesJobLocationId')
   assert.equal(msc.TARGET_JOB_LOCATION_NAME, 'India')
-  assert.equal(msc.VERIFIED_ON, '2026-08-03')
+  assert.equal(msc.VERIFIED_ON, '2026-09-13')
   assert.equal(msc.hasVerifiedMscCareersSignal(VERIFIED_CAREERS_HTML), true)
   assert.equal(msc.hasVerifiedMscAccessDeniedSignal(ACCESS_DENIED_HTML), true)
   assert.equal(msc.hasInlineMscJobs(EMPTY_INDIA_RESPONSE), false)
@@ -120,7 +120,7 @@ test('extractMscJobs converts inline India careers API jobs into the shared runn
   const msc = await loadMscModule()
 
   const jobs = msc.extractMscJobs(INLINE_INDIA_RESPONSE, {
-    now: () => '2026-08-03T10:11:12.000Z',
+    now: () => '2026-09-13T10:11:12.000Z',
   })
 
   assert.equal(jobs.length, 1)
@@ -146,7 +146,7 @@ test('extractMscJobs converts inline India careers API jobs into the shared runn
     remoteStatus: null,
     source: 'msc',
     link: 'https://jobs.example.com/apply/ind-1',
-    scrapedAt: '2026-08-03T10:11:12.000Z',
+    scrapedAt: '2026-09-13T10:11:12.000Z',
   })
 })
 
@@ -187,7 +187,7 @@ test('MSC extracts inline India jobs when the vacancies API returns public Jobs[
       if (url === msc.buildVacanciesUrl('india-id')) return INLINE_INDIA_RESPONSE
       throw new Error(`Unexpected MSC JSON URL: ${url}`)
     },
-    now: () => '2026-08-03T10:11:12.000Z',
+    now: () => '2026-09-13T10:11:12.000Z',
   })
 
   assert.equal(jobs.length, 1)
@@ -198,17 +198,15 @@ test('MSC extracts inline India jobs when the vacancies API returns public Jobs[
   assert.equal(jobs[0].link, 'https://jobs.example.com/apply/ind-1')
 })
 
-test('MSC also returns [] when the first-party careers route is blocked by the verified access-denied gate', async () => {
+test('MSC rejects the first-party access-denied gate as an unavailable snapshot', async () => {
   const msc = await loadMscModule()
 
-  const jobs = await msc.createMscScraper().run({
+  await assert.rejects(msc.createMscScraper().run({
     fetchText: async () => ACCESS_DENIED_HTML,
     fetchJson: async () => {
       throw new Error('MSC should not call the careers APIs when access is denied')
     },
-  })
-
-  assert.deepEqual(jobs, [])
+  }), /access denied|unavailable/i)
 })
 
 test('MSC fails closed when the India vacancies API only exposes external public job links without inline Jobs[] data', async () => {

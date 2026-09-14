@@ -181,6 +181,21 @@ export const extractRoleCardsFromHtml = (html = '') => {
     .filter(Boolean)
 }
 
+export const hasCurrentResumeOnlyCareersSignal = (html = '') => {
+  const rawHtml = String(html ?? '')
+  const normalized = (normalizeWhitespace(stripScriptsAndStyles(rawHtml)) || '').toLowerCase()
+
+  return hasOfficialCareersPageSignal(rawHtml)
+    && /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/www\.shipyaari\.com\/careers\/["']/i.test(rawHtml)
+    && normalized.includes('please share your resume with us at')
+    && (
+      /mailto:careers@shipyaari\.com/i.test(rawHtml)
+      || /\/cdn-cgi\/l\/email-protection#[a-f0-9]+[^>]*>[\s\S]*?class=["']__cf_email__["']/i.test(rawHtml)
+    )
+    && normalized.includes('avn business solutions pvt ltd')
+    && extractRoleCardsFromHtml(rawHtml).length === 0
+}
+
 export const extractJobFromRoleDetailHtml = (html = '', roleCard = {}, { scrapedAt } = {}) => {
   const lines = htmlToLines(html)
   const title =
@@ -272,6 +287,7 @@ export const createShipyaariScraper = ({
 
     const roleCards = extractRoleCardsFromHtml(careersHtml)
     if (roleCards.length === 0) {
+      if (hasCurrentResumeOnlyCareersSignal(careersHtml)) return []
       throw new Error('The official Shipyaari careers page no longer exposes the verified public role links')
     }
 

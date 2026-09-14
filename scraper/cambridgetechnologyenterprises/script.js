@@ -167,18 +167,12 @@ export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(rawHtml) || ''
   const directFreshteamHandoff = extractFreshteamJobsUrl(rawHtml)
   const hasKnownTitle = /<title>\s*(?:AI Cloud Solutions|Enterprise AI,\s*Data\s*&\s*SaaS Applications|Agentic AI Solutions for Enterprise Workflows)\s*\|\s*Cambridge(?: Technology(?: Inc\.)?)?\s*<\/title>/i.test(rawHtml)
-  const hasKnownHero =
-    /\bLeap to The Future with AI at Your Core\b/i.test(normalized)
-    || /\bUnlock Hidden Opportunities with Data and AI\b/i.test(normalized)
-    || /\bAgentic AI for Smarter, Better Enterprise Workflows\b/i.test(normalized)
-    || /\bAI-Driven Enterprise Transformation\b/i.test(normalized)
   const hasCareersRoute = /href="(?:https:\/\/www\.(?:ctepl|cambridgetech)\.com)?\/careers\/"/i.test(rawHtml)
 
   return hasKnownTitle
     && /\bCambridge Technology\b/i.test(normalized)
     && (hasCareersRoute || isVerifiedFreshteamJobsUrl(directFreshteamHandoff))
     && (/\bCareers\b/i.test(normalized) || isVerifiedFreshteamJobsUrl(directFreshteamHandoff))
-    && (hasKnownHero || isVerifiedFreshteamJobsUrl(directFreshteamHandoff))
 }
 
 export const hasOfficialCareersLandingSignal = (html) => {
@@ -230,13 +224,25 @@ const extractDescriptionHtml = (source) => {
   const html = String(source ?? '')
   const sectionStart = html.search(/<div[^>]*class="[^"]*\bjob-details-content\b[^"]*"[^>]*>/i)
   if (sectionStart >= 0) {
-    return html.slice(sectionStart)
+    const openingEnd = html.indexOf('>', sectionStart) + 1
+    const tags = /<div\b[^>]*>|<\/div\s*>/gi
+    tags.lastIndex = openingEnd
+    let depth = 1
+    for (let match; (match = tags.exec(html));) {
+      depth += /^<\//.test(match[0]) ? -1 : 1
+      if (depth === 0) {
+        const content = html.slice(openingEnd, match.index)
+        const formStart = content.search(/<div\b[^>]*(?:class=["'][^"']*\bapplication-form\b|id=["']applicant-form)/i)
+        return formStart >= 0 ? content.slice(0, formStart) : content
+      }
+    }
+    throw new Error('Cambridge detail description is incomplete')
   }
 
   return html
 }
 
-export const extractListingJobs = (html) => {
+const extractLegacyListingJobs = (html) => {
   const jobs = []
   const rolePattern = /<li[^>]*data-portal-role="[^"]+"[^>]*>([\s\S]*?)<\/li>/gi
 
@@ -295,6 +301,55 @@ export const extractListingJobs = (html) => {
   return jobs
 }
 
+const extractAnchors = (html) => [...String(html ?? '').matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)]
+  .map((match) => ({
+    href: match[1].match(/\bhref=["']([^"']+)["']/i)?.[1],
+    classes: (match[1].match(/\bclass=["']([^"']*)["']/i)?.[1] || '').split(/\s+/),
+    html: match[2],
+  }))
+
+export const extractListingJobs = (html) => {
+  const anchors = extractAnchors(html)
+  const expectedUrls = new Set()
+  for (const anchor of anchors) {
+    const detailUrl = toAbsoluteUrl(anchor.href)
+    if (!detailUrl || !extractDetailPathParts(detailUrl).opaqueId) continue
+    const url = new URL(detailUrl)
+    if (url.protocol !== 'https:' || url.hostname !== new URL(LISTING_URL).hostname) {
+      throw new Error('Cambridge listing contains an untrusted first-party detail URL')
+    }
+    expectedUrls.add(detailUrl)
+  }
+  let jobs
+  if (anchors.some((anchor) => anchor.classes.includes('job-title'))) {
+    jobs = []
+    for (const row of String(html ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)) {
+      const rowAnchors = extractAnchors(row[1])
+      const titleAnchor = rowAnchors.find((anchor) => anchor.classes.includes('job-title'))
+      if (!titleAnchor) continue
+      const detailUrl = toAbsoluteUrl(titleAnchor.href)
+      const { opaqueId, slug } = extractDetailPathParts(detailUrl)
+      const locationAnchor = rowAnchors.find((anchor) => anchor.classes.includes('location-info'))
+      const { locationText, employmentType } = extractLocationParts(locationAnchor?.html || '')
+      jobs.push({
+        title: normalizeWhitespace(titleAnchor.html),
+        summary: normalizeWhitespace(rowAnchors.find((anchor) => anchor.classes.includes('job-desc'))?.html),
+        department: null, detailUrl, jobId: opaqueId, requisitionId: opaqueId, slug,
+        locationText, rawLocation: locationText, employmentType, remoteFlag: null,
+      })
+    }
+  } else {
+    jobs = extractLegacyListingJobs(html)
+  }
+  const parsedUrls = new Set(jobs.map((job) => job.detailUrl))
+  if (parsedUrls.size !== jobs.length || parsedUrls.size !== expectedUrls.size
+    || [...expectedUrls].some((url) => !parsedUrls.has(url))
+    || jobs.some((job) => !job.title || !job.jobId || !job.locationText)) {
+    throw new Error('Cambridge listing is incomplete: not every public vacancy was parsed')
+  }
+  return jobs
+}
+
 export const extractJobDetail = (html, listing = {}) => {
   const source = String(html ?? '')
   const detailUrl =
@@ -305,12 +360,16 @@ export const extractJobDetail = (html, listing = {}) => {
   const title = firstMatch(source, [
     /<h1[^>]*>([\s\S]*?)<\/h1>/i,
   ]) || listing.title
+  if (source.trim() && listing.title && title !== normalizeWhitespace(listing.title)) {
+    throw new Error('Cambridge detail identity does not match its listing')
+  }
   const department = listing.department || firstMatch(source, [
     /<a[^>]*class="[^"]*\blink-back\b[^"]*"[^>]*>[\s\S]*?<\/i>\s*([^<]+?)\s*<\/a>/i,
   ])
   const locationText = firstMatch(source, [
     /<div[^>]*class="[^"]*\bstick-hide-in-mobile\b[^"]*"[^>]*>\s*([^<]+?)\s*<div>/i,
-  ]) || listing.locationText
+    /<div[^>]*class="[^"]*\bstick-hide-in-mobile\b[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
+  ])?.split('|')[0]?.trim() || listing.locationText
   const descriptionHtml = extractDescriptionHtml(source)
   const jobDescription = normalizeWhitespace(descriptionHtml) || normalizeWhitespace(listing.summary)
 
@@ -356,9 +415,8 @@ export const extractSearchResults = ({
 
 const isIndiaListing = (listing = {}) => {
   const location = normalizeWhitespace(listing.rawLocation || listing.locationText) || ''
-  return /india/i.test(location)
-    || /hyderabad|bengaluru|bangalore|pune|mumbai|gurugram|gurgaon|chennai|noida|delhi/i.test(location)
-    || /remote/i.test(location)
+  return /\bindia\b/i.test(location)
+    || /\b(?:hyderabad|bengaluru|bangalore|pune|mumbai|gurugram|gurgaon|chennai|noida|delhi)\b/i.test(location)
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
@@ -413,7 +471,14 @@ export const createCambridgeTechnologyEnterprisesScraper = ({
       )
     }
 
-    const listingJobs = extractListingJobs(listingHtml).filter(isIndiaListing)
+    const allListings = extractListingJobs(listingHtml)
+    if (allListings.length === 0 && !/\bNo jobs found\b/i.test(normalizeWhitespace(listingHtml) || '')) {
+      throw new Error('Cambridge listing is incomplete: no verified vacancy or explicit empty state')
+    }
+    if (allListings.some((listing) => !isIndiaListing(listing) && /\bremote\b/i.test(listing.locationText || ''))) {
+      throw new Error('Cambridge listing location scope is incomplete for remote vacancies')
+    }
+    const listingJobs = allListings.filter(isIndiaListing)
     const selectedListings = maxJobs ? listingJobs.slice(0, maxJobs) : listingJobs
     if (selectedListings.length === 0) {
       return []
@@ -421,7 +486,11 @@ export const createCambridgeTechnologyEnterprisesScraper = ({
     const detailHtmlByUrl = {}
 
     await Promise.all(selectedListings.map(async (listing) => {
-      detailHtmlByUrl[listing.detailUrl] = await fetchText(listing.detailUrl)
+      const detailHtml = await fetchText(listing.detailUrl)
+      if (!/<h1\b/i.test(detailHtml) || !/\bjob-details-content\b/i.test(detailHtml)) {
+        throw new Error('Cambridge detail page is incomplete or does not match the verified role shell')
+      }
+      detailHtmlByUrl[listing.detailUrl] = detailHtml
     }))
 
     const jobs = extractSearchResults({

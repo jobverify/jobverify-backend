@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { isIndiaJob as isIndiaJobInScope } from '../../scraper-support/utils/indiaLocationFilter.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -163,6 +164,9 @@ export const extractIndiaJobs = (html) => {
     .filter(Boolean)
 }
 
+export const countPortalJobRecords = (html) =>
+  new Set(Array.from(String(html ?? '').matchAll(DETAIL_URL_REGEX), (match) => normalizeWhitespace(match[1])).filter(Boolean)).size
+
 const defaultFetchText = (url) =>
   fetchTextWithRetry(url, {
     headers: {
@@ -191,6 +195,20 @@ export const createInctureScraper = ({
     }
 
     const jobs = extractIndiaJobs(portalHtml)
+    if (jobs.length === 0) {
+      return attachInventoryEvidence([], {
+        status: 'complete-inventory',
+        surface: CAREERS_PORTAL_URL,
+        firstParty: true,
+        listingComplete: true,
+        pagesFetched: 2,
+        reportedTotal: countPortalJobRecords(portalHtml),
+        indiaFacetCount: 0,
+        verifiedAt: now(),
+        reason: 'incture-official-zoho-portal-zero-india-jobs',
+      })
+    }
+
     const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
 
     return selectedJobs.map((job) => ({

@@ -16,11 +16,11 @@ test('Kreeti Technologies is registered as a verified first-party careers scrape
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'homepage-plus-careers-home-plus-candidate-listing-plus-detail-pages',
+    'homepage-plus-careers-home-plus-active-openings-section',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-first-party-careers-home+verified-candidate-job-select+detail-pages+onsite-apply-form',
+    'verified-official-homepage+verified-first-party-careers-home+explicit-active-openings-state+general-interest-excluded',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

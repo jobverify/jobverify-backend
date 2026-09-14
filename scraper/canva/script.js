@@ -66,8 +66,8 @@ export const hasOfficialJobsPageSignal = (html) => {
   const page = String(html ?? '')
   const heading = stripTags(page.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1] || '')
 
-  return /<title>\s*Find your dream job\s*\|\s*Canva Careers(?:\s*-\s*Page\s*\d+)?\s*<\/title>/i.test(page)
-    && heading === 'Find your dream job'
+  return /<title>\s*Find Authentic Jobs\s*\|\s*Canva Careers(?:\s*-\s*Page\s*\d+)?\s*<\/title>/i.test(page)
+    && heading === 'Find Authentic Jobs'
     && /Location Type/i.test(page)
     && /Work Type/i.test(page)
     && /Live Results/i.test(page)

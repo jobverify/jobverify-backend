@@ -108,3 +108,29 @@ test('Lumo Greenhouse mapper keeps India roles under the shared scraper contract
   assert.equal(jobs[0].country, 'India')
   assert.equal(jobs[0].sourceUrl, 'https://job-boards.greenhouse.io/proton/jobs/202')
 })
+
+
+test('Lumo follows fingerprinted Proton careers module and verifies its exact Greenhouse tenant', async () => {
+  const moduleUrl = 'https://proton.me/_astro/JobsListSection.DNLPAYuG.js'
+  const currentCareersHtml = '<title>Career opportunities | Proton</title><h2>Open positions</h2><astro-island component-url="/_astro/JobsListSection.DNLPAYuG.js"></astro-island>'
+  const seen = []
+  const fetchPage = async (url) => {
+    seen.push(url)
+    return { status: 200, url, html: url === HOMEPAGE_URL ? homepageHtml : url === CAREERS_URL ? currentCareersHtml : 'const endpoint="https://boards-api.greenhouse.io/v1/boards/proton/jobs";' }
+  }
+  assert.deepEqual(await run({ fetchPage, fetchJson: async () => greenhousePayload }), [])
+  assert.ok(seen.includes(moduleUrl))
+  await assert.rejects(run({ fetchPage: async (url) => {
+    const page = await fetchPage(url)
+    return url === moduleUrl ? { ...page, html: 'const endpoint="https://boards-api.greenhouse.io/v1/boards/unrelated/jobs";' } : page
+  }, fetchJson: async () => assert.fail('Must not fetch an unverified board') }), /Greenhouse handoff/i)
+})
+
+test('Lumo rejects malformed India jobs instead of accepting a partial snapshot', () => {
+  const payload = structuredClone(indiaGreenhousePayload)
+  payload.jobs[0].absolute_url = 'https://job-boards.greenhouse.io/unrelated/jobs/202'
+  assert.throws(() => extractIndiaJobsFromGreenhousePayload(payload), /invalid|incomplete/i)
+  payload.jobs[0].absolute_url = indiaGreenhousePayload.jobs[0].absolute_url
+  payload.jobs[0].title = ''
+  assert.throws(() => extractIndiaJobsFromGreenhousePayload(payload), /invalid|incomplete/i)
+})

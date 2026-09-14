@@ -71,7 +71,7 @@ test('3Pillar Global local catalog captures the first-party careers page plus of
   assert.equal(provider.officialLeverBoardUrl, 'https://jobs.lever.co/3pillarglobal')
   assert.equal(provider.leverApiUrl, 'https://api.lever.co/v0/postings/3pillarglobal?mode=json')
   assert.equal(provider.atsPlatform, 'lever')
-  assert.equal(provider.verifiedPublicJobCount, 92)
+  assert.equal(provider.verifiedPublicJobCount, 0)
   assert.equal(threePillar.PROVIDER_METADATA.source, provider.source)
 })
 

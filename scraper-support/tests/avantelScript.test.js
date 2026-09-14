@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const VERIFIED_ROLE_TITLES = [
   'Embedded Senior Engineer',
   'Design Engineer - Parabolic & Earth Station Antennas',
@@ -622,6 +624,25 @@ test('Avantel accepts the current live-style bundle with object skill points and
     jobs[2].minimumQualification,
     'ITI Mechanical',
   )
+})
+
+test('Avantel returns discovery-only evidence when the official hostname cannot be resolved', async () => {
+  const avantel = await loadAvantelModule()
+  const dnsError = Object.assign(new Error('fetch failed'), {
+    cause: { code: 'ENOTFOUND', message: 'getaddrinfo ENOTFOUND www.avantel.in' },
+  })
+
+  const jobs = await avantel.createAvantelScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
+    fetchPage: async () => { throw dnsError },
+  })
+
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, avantel.HOMEPAGE_URL)
+  assert.equal(evidence?.listingComplete, false)
 })
 
 test('Avantel fails closed when the shell, exact bundle URL, bundle signals, or embedded job topology drifts', async () => {

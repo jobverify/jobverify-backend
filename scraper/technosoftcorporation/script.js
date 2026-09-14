@@ -18,9 +18,6 @@ export const NO_PUBLIC_CAREERS_ROUTE_URLS = [
   'http://www.technosoftcorp.com/join-us',
 ]
 
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
@@ -31,14 +28,14 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .trim()
 
 const hasPublicJobsSignal = (html = '') =>
-  /\b(apply now|job openings|current openings|we're hiring|join our team)\b/i.test(String(html ?? ''))
+  /\b(apply now|job openings|current openings|we're hiring|join our team)\b/i.test(normalizeWhitespace(html))
 
-const defaultFetchPage = async (url) => {
+// The retired site serves its verified rebrand/404 pages to the ordinary Node client.
+// Obsolete Chrome impersonation headers trigger a 403 and cannot prove retirement.
+const defaultFetchPage = async (url, { signal } = {}) => {
+  const timeoutSignal = AbortSignal.timeout(15000)
   const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
+    signal: signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal,
     redirect: 'follow',
   })
 
@@ -84,37 +81,35 @@ export const isVerifiedBlockedHomepage = (page = {}) => {
 }
 
 export const isVerifiedMissingCareerRoute = (page = {}) =>
-  [403, 404].includes(Number(page?.status))
+  Number(page?.status) === 404
   && !hasPublicJobsSignal(page?.html ?? '')
-  && /^(|403 Forbidden|403 Forbidden nginx)$/i.test(normalizeWhitespace(page?.html ?? ''))
+  && normalizeWhitespace(page?.html ?? '') === ''
+
+const upstreamHttpError = (page, url) => Object.assign(
+  new Error('Technosoft public surface unavailable: HTTP ' + page.status + ' at ' + url),
+  { code: 'TECHNOSOFT_UPSTREAM_HTTP_ERROR', status: page.status, url },
+)
 
 export const createTechnosoftCorporationScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    try {
-      const homepage = await fetchPage(HOMEPAGE_URL)
-      if (isVerifiedBlockedHomepage(homepage)) {
-        return []
-      }
-
-      if (homepage.status !== 200 || !hasLegacyHomepageSignal(homepage.html)) {
-        throw new Error('The verified Technosoft Corporation exact-name surface changed materially')
-      }
-
-      for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
-        const routePage = await fetchPage(routeUrl)
-        if (!isVerifiedMissingCareerRoute(routePage)) {
-          throw new Error('The verified Technosoft Corporation exact-name surface changed materially')
-        }
-      }
-
-      return []
-    } catch (error) {
-      if (hasTransportFailure(error)) {
-        return []
-      }
-
-      throw error
+  async run({ fetchPage = defaultFetchPage, signal } = {}) {
+    signal?.throwIfAborted()
+    const homepage = await fetchPage(HOMEPAGE_URL, { signal })
+    signal?.throwIfAborted()
+    if (homepage.status !== 200) throw upstreamHttpError(homepage, HOMEPAGE_URL)
+    if (!hasLegacyHomepageSignal(homepage.html) || hasPublicJobsSignal(homepage.html)) {
+      throw new Error('The verified Technosoft Corporation exact-name surface changed materially at ' + HOMEPAGE_URL)
     }
+
+    for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
+      const routePage = await fetchPage(routeUrl, { signal })
+      signal?.throwIfAborted()
+      if (![200, 404].includes(routePage.status)) throw upstreamHttpError(routePage, routeUrl)
+      if (!isVerifiedMissingCareerRoute(routePage)) {
+        throw new Error('The verified Technosoft Corporation exact-name surface changed materially at ' + routeUrl)
+      }
+    }
+
+    return []
   },
 })
 

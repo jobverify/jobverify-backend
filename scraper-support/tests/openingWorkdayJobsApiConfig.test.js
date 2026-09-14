@@ -7,7 +7,7 @@ import { loadConfig } from '../utils/loadConfig.js'
 
 const testsDir = path.dirname(fileURLToPath(import.meta.url))
 
-test('ABB and Airbus keep the verified country facet while Allstate, Philips, and Quantiphi switch to India search text on boards that reject the generic facet', () => {
+test('Workday sources use each tenant verified India scope', () => {
   const abbConfig = loadConfig(path.join(testsDir, '../../scraper/abb.workday'))
   const airbusConfig = loadConfig(path.join(testsDir, '../../scraper/airbus.workday'))
   const allstateConfig = loadConfig(path.join(testsDir, '../../scraper/allstate.workday'))
@@ -47,8 +47,9 @@ test('ABB and Airbus keep the verified country facet while Allstate, Philips, an
     'https://philips.wd3.myworkdayjobs.com/wday/cxs/philips/jobs-and-careers/jobs',
   )
   assert.equal(philipsConfig.detailUrlBase, 'https://philips.wd3.myworkdayjobs.com/en-US/jobs-and-careers')
-  assert.equal(philipsConfig.locationCountry, null)
-  assert.equal(philipsConfig.searchText, 'India')
+  assert.equal(philipsConfig.countryFacetParameter, 'locationHierarchy1')
+  assert.equal(philipsConfig.locationCountry, '6e1b2a934716103c2adde1d57e7700ea')
+  assert.equal(philipsConfig.searchText, undefined)
   assert.match(philipsConfig.locationPattern, /india|bangalore|bengaluru|hyderabad|pune|mumbai|gurgaon|gurugram|chennai|kolkata|noida/i)
 
   assert.equal(quantiphiConfig.listingStrategy, 'jobs-api')

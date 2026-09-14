@@ -10,9 +10,10 @@ export const SEARCH_PAGE_URL = `${INTERNATIONAL_JOBS_URL}&in_iframe=1`
 const COMPANY_NAME = 'MaxLinear'
 const SOURCE = 'maxlinear'
 const ICIMS_HOST = 'https://careersintl-maxlinear.icims.com'
+export const ICIMS_USER_AGENT = 'Mozilla/5.0'
 const DEFAULT_HEADERS = {
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+  'User-Agent': ICIMS_USER_AGENT,
 }
 const DETAIL_SECTION_STOP_LABELS = [
   'Responsibilities',

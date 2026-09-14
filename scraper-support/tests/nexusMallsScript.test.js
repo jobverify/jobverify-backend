@@ -50,6 +50,41 @@ const missingRouteHtml = `
 </html>
 `
 
+const currentCareerHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Career at nexus</title>
+  </head>
+  <body>
+    <h1>Where Your Potential Meets Purpose</h1>
+    <p>Join our Team</p>
+    <p>Our Featured Jobs</p>
+    <p>Be a part of Nexus</p>
+    <p>Find Jobs</p>
+    <a href="mailto:careers@nexusmalls.com">careers@nexusmalls.com</a>
+    <div class="job-card">
+      <h2 class="job-title">Assistant Manager - Finance &amp; Accounts</h2>
+      <p class="job-desc">Own mall finance operations.</p>
+      <span class="tag">Nexus Hyderabad</span>
+      <span class="tag">Full-time</span>
+      <span class="tag">Finance &amp; Accounts</span>
+      <span class="tag">4-6 years</span>
+      <a href="https://www.nexusselecttrust.com/career/job-details/assistant-manager-finance" class="btn-view-details">View Details</a>
+    </div>
+    <div class="job-card">
+      <h2 class="job-title">Executive - Food Court Operations</h2>
+      <p class="job-desc">Manage food court operations.</p>
+      <span class="tag">Nexus Whitefield, Bengaluru</span>
+      <span class="tag">Full-time</span>
+      <span class="tag">Operations</span>
+      <span class="tag">2-4 years</span>
+      <a href="https://www.nexusselecttrust.com/career/job-details/executive-food-court" class="btn-view-details">View Details</a>
+    </div>
+  </body>
+</html>
+`
+
 test('Nexus Malls scraper validates the official public site and verified missing careers routes', async () => {
   const nexus = await loadNexusMallsModule()
 
@@ -98,6 +133,45 @@ test('Nexus Malls scraper returns no jobs when the official public site exposes 
     nexus.JOBS_URL,
   ])
   assert.deepEqual(jobs, [])
+})
+
+test('Nexus Malls scraper returns the current first-party career cards', async () => {
+  const nexus = await loadNexusMallsModule()
+
+  assert.equal(nexus.hasOfficialCareerPageSignal(currentCareerHtml), true)
+
+  const jobs = await nexus.createNexusMallsScraper().run({
+    fetchPage: async (url) => {
+      if (url === nexus.HOMEPAGE_URL) {
+        return {
+          status: 200,
+          url,
+          html: homepageHtml.replace(
+            '<a href="/contact-us">Contact Us</a>',
+            '<a href="https://www.nexusselecttrust.com/career">Careers</a>',
+          ),
+        }
+      }
+
+      if (url === 'https://www.nexusselecttrust.com/career') {
+        return {
+          status: 200,
+          url,
+          html: currentCareerHtml,
+        }
+      }
+
+      throw new Error(`Unexpected Nexus Malls fixture URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(
+    jobs.map((job) => job.title),
+    [
+      'Assistant Manager - Finance & Accounts',
+      'Executive - Food Court Operations',
+    ],
+  )
 })
 
 test('Nexus Malls scraper fails closed when the official surface changes', async () => {

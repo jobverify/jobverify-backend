@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { EventEmitter } from 'node:events'
+import https from 'node:https'
 import test from 'node:test'
 
 const mergerLandingHtml = `
@@ -123,6 +125,43 @@ test('Ecom Express falls back to an expired-certificate fetch only for the verif
   ])
   assert.deepEqual(insecureRequests, primaryRequests)
   assert.deepEqual(jobs, [])
+})
+
+test('Ecom Express expired-certificate fetch disables TLS rejection only in the fallback path', async () => {
+  const ecomExpress = await loadEcomExpressModule()
+  const originalRequest = https.request
+  const observedOptions = []
+
+  https.request = (targetUrl, options, callback) => {
+    observedOptions.push({ targetUrl: targetUrl.toString(), options })
+    const response = new EventEmitter()
+    response.statusCode = 200
+    response.headers = {}
+    response.setEncoding = () => {}
+
+    queueMicrotask(() => {
+      callback(response)
+      response.emit('data', mergerLandingHtml)
+      response.emit('end')
+    })
+
+    return {
+      setTimeout: () => {},
+      on: () => {},
+      end: () => {},
+    }
+  }
+
+  try {
+    const page = await ecomExpress.fetchPageAllowingExpiredCertificate(ecomExpress.HOMEPAGE_URL)
+
+    assert.equal(observedOptions.length, 1)
+    assert.equal(observedOptions[0].options.rejectUnauthorized, false)
+    assert.equal(page.status, 200)
+    assert.equal(page.html, mergerLandingHtml)
+  } finally {
+    https.request = originalRequest
+  }
 })
 
 test('Ecom Express fails closed when the merger landing page or no-public-jobs contract drifts', async () => {

@@ -90,6 +90,15 @@ test('Mammoth sentinel pins the verified first-party no-public-jobs surface from
   )
 })
 
+test('Mammoth accepts the current stable product identity without requiring campaign copy', async () => {
+  const mammoth = await loadMammothModule()
+  const currentHomepage = homepageHtml
+    .replace('Mammoth Analytics — Data Prep, Automation &amp; Dashboards', 'Mammoth Analytics: Data Prep, Automation &amp; Dashboards')
+    .replace('No credit card to start', 'The data platform that means business. Pipelines, Automations, and Dashboards.')
+
+  assert.equal(mammoth.hasOfficialHomepageSignal(currentHomepage), true)
+})
+
 test('Mammoth sentinel returns [] only while the verified first-party surface exposes no public jobs board', async () => {
   const mammoth = await loadMammothModule()
   const requestedUrls = []

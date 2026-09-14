@@ -9,7 +9,8 @@ const scraper = createPhenomScraper({
   companyName: 'Rocket Companies',
   source: 'rocketindia',
   baseUrl: 'https://careers.rocket.com',
-  searchPath: '/us/en/search-results',
+  // Rocket India's homepage links a separate regional board and Workday apply site.
+  searchPath: '/in/en/search-results',
   scraperDir: currentDir,
 })
 

@@ -179,12 +179,16 @@ export const hasOfficialApplyFormSignal = (html = '') => {
 
 export const pageExposesPublicJobListings = (html = '') => {
   const rawHtml = String(html ?? '')
-  const text = normalizeText(rawHtml)
+  const publicHtml = rawHtml
+    .replace(/<script\b([^>]*)>[\s\S]*?<\/script>/gi, (script, attributes) =>
+      /\btype=["']application\/ld\+json["']/i.test(attributes) ? script : '')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
+  const text = normalizeText(publicHtml)
 
-  return /"@type"\s*:\s*"JobPosting"/i.test(rawHtml)
+  return /"@type"\s*:\s*"JobPosting"/i.test(publicHtml)
     || /\bapply now\b/i.test(text)
     || /\bjob description\b/i.test(text)
-    || ROLE_TITLE_PATTERN.test(rawHtml)
+    || ROLE_TITLE_PATTERN.test(publicHtml)
 }
 
 export const createNektarAIScraper = () => ({

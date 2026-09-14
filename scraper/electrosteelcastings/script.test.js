@@ -46,6 +46,12 @@ const careerInfoHtml = `
   </html>
 `
 
+test('homepage identity survives changes to Electrosteel rotating campaign copy', () => {
+  const currentHomepage = homepageHtml.replace('MANUFACTURING EXCELLENCE.', 'SUSTAINABLE TODAY. RESPONSIBLE ALWAYS.')
+  assert.equal(hasOfficialHomepageSignal(currentHomepage), true)
+  assert.equal(hasOfficialHomepageSignal(currentHomepage.replace('Home | Electrosteel Castings Limited', 'Unrelated company')), false)
+})
+
 const missingRouteHtml = `
   <!doctype html>
   <html lang="en">
@@ -168,4 +174,20 @@ test('fails closed when the Electrosteel homepage, careers hub, or legacy 404 ro
     }),
     /legacy careers routes no longer match the verified official no-openings surfaces/i,
   )
+})
+
+
+test('Electrosteel retries transient legacy-route gateway errors and preserves verified 404 responses', async () => {
+  const { createFetchPage } = await import('./script.js')
+  let calls = 0
+  const fetchPage = createFetchPage({ baseDelayMs: 0, fetchImpl: async () => {
+    calls += 1
+    return calls === 1 ? new Response('Proxy Error', { status: 502 }) : new Response(missingRouteHtml, { status: 404 })
+  } })
+  const page = await fetchPage(LEGACY_CAREERS_ENQUIRY_URL)
+  assert.equal(calls, 2)
+  assert.equal(page.status, 404)
+  assert.equal(hasBrandedMissingRouteSignal(page.html), true)
+  await assert.rejects(createFetchPage({ attempts: 2, baseDelayMs: 0,
+    fetchImpl: async () => new Response('Proxy Error', { status: 502 }) })(LEGACY_CAREERS_ENQUIRY_URL), /HTTP 502/)
 })

@@ -122,7 +122,7 @@ const buildRetryError = (
   attemptsUsed,
   attemptsAllowed,
   lastError,
-  { aborted = false } = {},
+  { aborted = false, retryDelayMs = 0 } = {},
 ) => {
   const lastErrorSummary = describeError(lastError)
   const message = aborted
@@ -143,7 +143,7 @@ const buildRetryError = (
     finalErr.code = resolvedCode
   }
 
-  return finalErr
+  return attachRetryMetadata(finalErr, { attemptsUsed, retries: attemptsUsed - 1, retryDelayMs })
 }
 
 /**
@@ -196,7 +196,7 @@ export const withRetry = async (
       console.warn(`  [retry:${label}] Error: ${describeError(err)}`)
 
       if (err?.abortRetries === true) {
-        throw buildRetryError(label, attempt, attempts, err, { aborted: true })
+        throw buildRetryError(label, attempt, attempts, err, { aborted: true, retryDelayMs })
       }
 
       if (!isLastAttempt) {
@@ -211,5 +211,5 @@ export const withRetry = async (
     }
   }
 
-  throw buildRetryError(label, attempts, attempts, lastError)
+  throw buildRetryError(label, attempts, attempts, lastError, { retryDelayMs })
 }

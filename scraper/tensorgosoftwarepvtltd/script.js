@@ -1,3 +1,4 @@
+import { readCurrentCareers } from './currentCareers.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -138,7 +139,7 @@ export const hasVerifiedRetiredCareersSignal = (html = '') => {
   const page = String(html ?? '')
 
   return /<title>\s*HumAIn by TensorGo \| The World's First Pre-AGI Teammates\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/humains\.one\/["']/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/(?:humains\.one|tensorgo\.com)\/["']/i.test(page)
     && /"name"\s*:\s*"TensorGo"/i.test(page)
     && !/id=["']job-results["']/i.test(page)
     && !/Explore Open Positions/i.test(page)
@@ -195,7 +196,8 @@ export const extractJobDetail = (html) => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -204,7 +206,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
@@ -255,10 +258,14 @@ export const createTensorGoSoftwarePvtLtdScraper = ({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
+    signal,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_PAGE_URL)
+    signal?.throwIfAborted()
+    const readText = async url => { signal?.throwIfAborted(); const value = await fetchText(url, { signal }); signal?.throwIfAborted(); return value }
+    const readJson = async url => { signal?.throwIfAborted(); const value = await fetchJson(url, { signal }); signal?.throwIfAborted(); return value }
+    const careersHtml = await readText(CAREERS_PAGE_URL)
     if (!hasOfficialCareersSignal(careersHtml)) {
-      if (hasVerifiedRetiredCareersSignal(careersHtml)) return []
+      if (hasVerifiedRetiredCareersSignal(careersHtml)) return readCurrentCareers({ html: careersHtml, readText, readJson, maxJobs, now })
       throw new Error('Response is not the verified official TensorGo careers surface')
     }
 
@@ -266,7 +273,7 @@ export const createTensorGoSoftwarePvtLtdScraper = ({
     let page = 1
 
     while (true) {
-      const payload = await fetchJson(buildListingsApiUrl(page, pageSize))
+      const payload = await readJson(buildListingsApiUrl(page, pageSize))
       if (!Array.isArray(payload)) {
         throw new Error('Response is not the verified TensorGo jobs feed')
       }
@@ -274,7 +281,7 @@ export const createTensorGoSoftwarePvtLtdScraper = ({
       if (payload.length === 0) break
 
       for (const listing of payload) {
-        const job = await buildJobFromListing(listing, { fetchText })
+        const job = await buildJobFromListing(listing, { fetchText: readText })
         if (!job) continue
 
         jobs.push({
@@ -295,7 +302,7 @@ export const createTensorGoSoftwarePvtLtdScraper = ({
   },
 })
 
-export const run = async (options = {}) => createTensorGoSoftwarePvtLtdScraper().run(options)
+export const run = async (options = {}) => createTensorGoSoftwarePvtLtdScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

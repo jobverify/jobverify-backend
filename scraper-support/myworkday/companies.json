@@ -49,7 +49,7 @@
   {
     "name": "altera",
     "company": "Altera",
-    "baseUrl": "https://altera.wd1.myworkdayjobs.com/Altera",
+    "baseUrl": "https://altera.wd1.myworkdayjobs.com/Altera?locations=7a5690ab19831000af4c51ba7c190000&locations=7a5690ab19831000af4bec9f639a0000",
     "companyCareerPage": "https://www.altera.com/careers"
   },
   {
@@ -262,7 +262,7 @@
   {
     "name": "o9solutions",
     "company": "o9 Solutions",
-    "baseUrl": "https://o9solutions.wd5.myworkdayjobs.com/o9SolutionsExternal",
+    "baseUrl": "https://o9solutions.wd5.myworkdayjobs.com/o9SolutionsExternal?locations=f1067acbdfdc1001082fa42e89560000",
     "companyCareerPage": "https://o9solutions.com/careers"
   },
   {
@@ -289,12 +289,12 @@
   {
     "name": "fractal",
     "company": "Fractal",
-    "baseUrl": "https://fractal.wd1.myworkdayjobs.com/en-US/Careers"
+    "baseUrl": "https://fractal.wd1.myworkdayjobs.com/en-US/Careers?locations=4fedd31659ec01018833637cbf900000&locations=7edfb62955d310014b634f88574d0000&locations=ce4e62e669131000e2dc7e2e78a50000&locations=4fedd31659ec010188335e09918c0000&locations=3b3fb1d62c071000e2a0f48656560000&locations=4fedd31659ec01018833886e5c060000&locations=7babd3b910a21000e841d1c78e770000&locations=7edfb62955d310014b6351f083a60000"
   },
   {
     "name": "mastercard",
     "company": "Mastercard",
-    "baseUrl": "https://mastercard.wd1.myworkdayjobs.com/CorporateCareers",
+    "baseUrl": "https://mastercard.wd1.myworkdayjobs.com/CorporateCareers?locations=8eab563831bf10acb97b7fba5feff76e&locations=8eab563831bf10acbb7b5bf86d570af1&locations=28905a74db1b10019f5bb16c36030000&locations=8eab563831bf10acbc722e4859721571&locations=8ffae25149e210718ae5b2e1cb1993bb&locations=85a5bdf4e1831035984400a2fb698c94",
     "companyCareerPage": "https://careers.mastercard.com"
   },
   {
@@ -350,13 +350,14 @@
   {
     "name": "trellix",
     "company": "Trellix",
-    "baseUrl": "https://trellix.wd1.myworkdayjobs.com/EnterpriseCareers"
+    "baseUrl": "https://trellix.wd1.myworkdayjobs.com/EnterpriseCareers?locations=17473f74f1d501886cf7ba67a101abdd&locations=17473f74f1d501f1ff3fb267a101a6dd"
   },
   {
     "name": "autodesk",
     "company": "Autodesk",
-    "baseUrl": "https://autodesk.wd1.myworkdayjobs.com/en-US/uni",
-    "companyCareerPage": "https://autodesk.wd1.myworkdayjobs.com/EXT"
+    "baseUrl": "https://autodesk.wd1.myworkdayjobs.com/en-US/Ext",
+    "companyCareerPage": "https://autodesk.wd1.myworkdayjobs.com/EXT",
+    "boardIdentityVerified": true
   },
   {
     "name": "calix",
@@ -366,7 +367,7 @@
   {
     "name": "paloalto",
     "company": "Palo Alto Networks",
-    "baseUrl": "https://paloaltonetworks.wd5.myworkdayjobs.com/en-US/panwexternalcareers",
+    "baseUrl": "https://paloaltonetworks.wd5.myworkdayjobs.com/en-US/panwexternalcareers?locations=4c6868193c0310016a33a54db4b20000&locations=4c6868193c0310016a33b01abd8b0000&locations=e62cc4173be310016a98201022730000&locations=e62cc4173be310016a988b977ccd0000&locations=0925b66a7d40107de95dc57546152c93&locations=a4e5dc5cfe170161250a9bd1b000e413&locations=bafc965434591001f048843674030000&locations=45eb6188f3f71001f085c28ca35a0000&locations=9b10db154fdd105cf240db7bb48decbe&locations=9b10db154fdd105cf1ec795200e5ec5f&locations=2e473c9ce0941001603bdcd7043c0000",
     "companyCareerPage": "https://jobs.paloaltonetworks.com/en"
   },
   {
@@ -386,7 +387,7 @@
     "name": "roche",
     "company": "Roche",
     "officialBrandName": "Roche",
-    "baseUrl": "https://roche.wd3.myworkdayjobs.com/en-US/roche-ext",
+    "baseUrl": "https://roche.wd3.myworkdayjobs.com/en-US/roche-ext?locations=763fba0474e70100f99cc4b76b650000&locations=54c59631019f01c1589e94d7e67743a3&locations=e2c616a13c590100f97934cb30d60000&locations=4ae5b8b977ee0100f9037784a2ce0000&locations=54c59631019f01c479dfb787a377c235&locations=8c10cf5604420100f9b96ead92af0000&locations=9d46ecfbea920100f9a45074c42e0000&locations=54c59631019f011278ea85d7e67739a3&locations=54c59631019f01ba6efd80d7e67734a3&locations=54c59631019f017ed6337bd7e6772fa3",
     "companyCareerPage": "https://careers.roche.com/global/en",
     "verifiedOn": "2026-07-25",
     "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://careers.roche.com/global/en was the live first-party Roche careers home, that Roche's official India pages at https://careers.roche.com/global/en/india and https://careers.roche.com/global/en/india-hyderabad were live, and that the Hyderabad page's Discover Open Roles handoff directed applicants to the public Workday board at https://roche.wd3.myworkdayjobs.com/en-US/roche-ext. Verified on the same date that public Roche Workday job pages included Technical Team Lead - Applied & Agentic AI Systems in Hyderabad, Head of Engineering Applied AI in Hyderabad, Head of Forward-Deployed Data Engineer in Hyderabad, ERP Solution Consultant - Asset Management in Pune, and Data Specialist - Payer Intelligence in Hyderabad / Chennai."
@@ -444,7 +445,7 @@
   {
     "name": "kaleris",
     "company": "Kaleris",
-    "baseUrl": "https://kaleris.wd501.myworkdayjobs.com/kaleris_careers"
+    "baseUrl": "https://kaleris.wd501.myworkdayjobs.com/kaleris_careers?locations=39a74440c4f910011fdea2ce8da20000&locations=39a74440c4f910011fdea6685c650000"
   },
   {
     "name": "nissandigitalindia",
@@ -498,7 +499,7 @@
   {
     "name": "verizon",
     "company": "Verizon",
-    "baseUrl": "https://verizon.wd12.myworkdayjobs.com/verizon-careers",
+    "baseUrl": "https://verizon.wd12.myworkdayjobs.com/verizon-careers?locations=4466d54cbeba1000c057b4c460500000&locations=4466d54cbeba1000c05cff9bdacc0000&locations=4466d54cbeba1000c066b6f377040000",
     "companyCareerPage": "https://mycareer.verizon.com/jobs/",
     "locationCountry": "c4f78be1a8f14da0ab49ce1162348a5e"
   },
@@ -559,8 +560,8 @@
   {
     "name": "protiviti",
     "company": "Protiviti",
-    "baseUrl": "https://roberthalf.wd1.myworkdayjobs.com/en-US/ProtivitiNA",
-    "companyCareerPage": "https://www.protiviti.com/in-en/careers",
+    "baseUrl": "https://roberthalf.wd1.myworkdayjobs.com/en-US/ProtivitiIndia",
+    "companyCareerPage": "https://www.protiviti.com/in-pcc/careers",
     "locationCountry": "c4f78be1a8f14da0ab49ce1162348a5e"
   },
   {

@@ -215,3 +215,22 @@ test('Harness fails closed when the first-party pages or Greenhouse payload drif
     /Greenhouse jobs API response no longer matches/i,
   )
 })
+
+
+test('Harness validates its current internal jobs link and the linked Greenhouse script', async () => {
+  const harness = await loadHarnessModule()
+  const currentCareers = '<title>Careers at Harness ? Join the AI-Native DevOps Team</title><p>Life at Harness</p><a href="/company/jobs">View Open Positions</a>'
+  const requested = []
+  const fetchText = async (url) => {
+    requested.push(url)
+    if (url === harness.JOBS_URL) return jobsPageHtml
+    if (url === harness.CAREERS_URL) return currentCareers
+    if (url === 'https://cms.harness.io/js/greenhouse.js') return 'const endpoint="https://boards-api.greenhouse.io/v1/boards/harnessinc/jobs?content=true";'
+    throw new Error('Unexpected URL: ' + url)
+  }
+  const jobs = await harness.run({ fetchText, fetchJson: async () => greenhousePayload })
+  assert.equal(jobs.length, 1)
+  assert.ok(requested.includes('https://cms.harness.io/js/greenhouse.js'))
+  await assert.rejects(harness.run({ fetchText: async (url) => url.endsWith('/greenhouse.js')
+    ? 'const endpoint="https://unrelated.example/jobs"' : fetchText(url), fetchJson: async () => greenhousePayload }), /Greenhouse/)
+})

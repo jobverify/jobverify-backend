@@ -295,13 +295,27 @@ const defaultFetchPage = async (url) => {
   }
 }
 
+const waitFor = (delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs))
+
 export const createBelzabarScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   now = () => new Date().toISOString(),
+  homepageRetryAttempts = 3,
+  homepageRetryDelayMs = 1000,
 } = {}) => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepage.html)) {
+    let homepage
+    for (let attempt = 1; attempt <= homepageRetryAttempts; attempt += 1) {
+      homepage = await fetchPage(HOMEPAGE_URL)
+      if (homepage.status !== 502 || attempt === homepageRetryAttempts) break
+      if (homepageRetryDelayMs > 0) await waitFor(homepageRetryDelayMs)
+    }
+
+    if (
+      homepage.status !== 200
+      || homepage.url !== HOMEPAGE_URL
+      || !hasOfficialHomepageSignal(homepage.html)
+    ) {
       throw new Error('Belzabar verified official homepage no longer matches the known public surface')
     }
 

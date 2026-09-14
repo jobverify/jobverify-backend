@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import SKORUZ_CATALOG from './catalog.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -183,7 +184,35 @@ export const isTrustedIndiaIframeFailure = (error) => {
     || message.includes('certificate')
 }
 
-export const createSkoruzScraper = () => ({
+export class SkoruzIndiaInventoryUnavailableError extends Error {
+  constructor(cause, { otherRegionJobCount = 0 } = {}) {
+    super(`Skoruz India inventory unavailable: ${normalizeWhitespace(cause?.message ?? cause)}`, { cause })
+    this.name = 'SkoruzIndiaInventoryUnavailableError'
+    this.softFailure = true
+    this.upstreamOutage = true
+    this.abortRetries = true
+    this.failureKind = 'network_or_timeout'
+    this.inventoryScope = 'India'
+    this.otherRegionJobCount = otherRegionJobCount
+  }
+}
+
+const buildIndiaDiscoveryOnlyEvidence = (now, { otherRegionJobCount = 0 } = {}) =>
+  attachInventoryEvidence([], {
+    status: 'discovery-only',
+    surface: INDIA_IFRAME_URL,
+    firstParty: false,
+    listingComplete: false,
+    pagesFetched: 1,
+    reportedTotal: null,
+    indiaFacetCount: null,
+    verifiedAt: now(),
+    reason: `Skoruz India iframe is currently unavailable; ${otherRegionJobCount} visible non-India jobs were not published as India inventory.`,
+  })
+
+export const createSkoruzScraper = ({
+  now = () => new Date().toISOString(),
+} = {}) => ({
   async run({
     fetchText = defaultFetchText,
   } = {}) {
@@ -203,7 +232,9 @@ export const createSkoruzScraper = () => ({
       await fetchText(iframeUrl)
     } catch (error) {
       if (isTrustedIndiaIframeFailure(error)) {
-        return publicUsJobs
+        return buildIndiaDiscoveryOnlyEvidence(now, {
+          otherRegionJobCount: publicUsJobs.length,
+        })
       }
 
       throw error
@@ -213,7 +244,7 @@ export const createSkoruzScraper = () => ({
   },
 })
 
-export const run = async (options = {}) => createSkoruzScraper().run(options)
+export const run = async (options = {}) => createSkoruzScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { EventEmitter } from 'node:events'
+import https from 'node:https'
 import test from 'node:test'
 
 import {
@@ -40,6 +42,54 @@ const unavailableApiPage = {
   errorMessage: `timeout for ${CAREERS_API_URL}`,
 }
 
+const createCertificateExpiredError = () => {
+  const cause = new Error('certificate has expired')
+  cause.code = 'CERT_HAS_EXPIRED'
+  return new TypeError('fetch failed', { cause })
+}
+
+const createMockTlsBypassRequest = (pagesByUrl, observedOptions) =>
+  (parsedUrl, options, callback) => {
+    const url = parsedUrl.toString()
+    let errorHandler = null
+
+    return {
+      setTimeout() {},
+      destroy(error) {
+        errorHandler?.(error)
+      },
+      on(event, handler) {
+        if (event === 'error') {
+          errorHandler = handler
+        }
+        return this
+      },
+      end() {
+        observedOptions.push({ url, rejectUnauthorized: options.rejectUnauthorized })
+
+        if (options.rejectUnauthorized !== false) {
+          errorHandler?.(createCertificateExpiredError())
+          return
+        }
+
+        const page = pagesByUrl.get(url)
+        if (!page) {
+          errorHandler?.(new Error(`Unexpected TLS bypass URL: ${url}`))
+          return
+        }
+
+        const response = new EventEmitter()
+        response.statusCode = page.status
+        response.headers = { 'content-type': page.contentType }
+        response.resume = () => {}
+
+        callback(response)
+        response.emit('data', Buffer.from(page.html))
+        response.emit('end')
+      },
+    }
+  }
+
 test('Storeys Real Estate sentinel pins the verified broken first-party WordPress JSON surface and unavailable API contract', () => {
   assert.equal(SOURCE, 'storeysrealestate')
   assert.equal(COMPANY, 'Storeys Real Estate')
@@ -75,6 +125,42 @@ test('Storeys Real Estate sentinel returns no jobs while the official surface st
     CAREERS_API_URL,
   ])
   assert.deepEqual(jobs, [])
+})
+
+test('Storeys Real Estate default fetch validates the broken WordPress JSON behind an expired TLS certificate', async () => {
+  const originalFetch = globalThis.fetch
+  const originalRequest = https.request
+  const observedBypassOptions = []
+  const tlsBypassPages = new Map([
+    [HOMEPAGE_URL, brokenWordPressJson(HOMEPAGE_URL)],
+    [CAREERS_URL, brokenWordPressJson(CAREERS_URL)],
+  ])
+
+  globalThis.fetch = async (url) => {
+    if (url === HOMEPAGE_URL || url === CAREERS_URL) {
+      throw createCertificateExpiredError()
+    }
+
+    if (url === CAREERS_API_URL) {
+      throw new Error(`timeout for ${CAREERS_API_URL}`)
+    }
+
+    throw new Error(`Unexpected URL: ${url}`)
+  }
+  https.request = createMockTlsBypassRequest(tlsBypassPages, observedBypassOptions)
+
+  try {
+    const jobs = await createStoreysRealEstateScraper().run()
+
+    assert.deepEqual(jobs, [])
+    assert.deepEqual(observedBypassOptions, [
+      { url: HOMEPAGE_URL, rejectUnauthorized: false },
+      { url: CAREERS_URL, rejectUnauthorized: false },
+    ])
+  } finally {
+    globalThis.fetch = originalFetch
+    https.request = originalRequest
+  }
 })
 
 test('Storeys Real Estate default fetch attaches a bounded abort signal to every request', async () => {

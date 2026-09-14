@@ -11,6 +11,7 @@ export { PROVIDER_METADATA }
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
+export const JOB_LISTINGS_URL = 'https://www.muvi.com/career/job-listings/'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -54,6 +55,9 @@ const getSlugFromUrl = (value) => {
 
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
+
+  if (/<title>\s*Career\s*-\s*Muvi\s*<\/title>/i.test(page)
+    && /href=["']https:\/\/www\.muvi\.com\/career\/job-listings\/["']/i.test(page)) return true
 
   return /Muvi - Build your Career with us! View current job openings at our various offices/i.test(page)
     && /Current Openings/i.test(page)
@@ -99,7 +103,8 @@ export const extractJobCards = (html = '') => [...String(html ?? '').matchAll(
   })
   .filter(Boolean)
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -108,16 +113,106 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isIndiaLocation = (value) => /\bindia\b|\bbhubaneswar\b/i.test(value)
+
+const extractCurrentCards = (html) => {
+  const blocks = String(html).split(/<div\b[^>]*class=["']job-card["'][^>]*>/i).slice(1)
+  const cards = blocks.map(block => {
+    const sourceUrl = block.match(/<a\b[^>]*href=["']([^"']+)["']/i)?.[1]
+    const title = normalizeText(block.match(/<h6\b[^>]*>([\s\S]*?)<\/h6>/i)?.[1])
+    const tags = [...(block.match(/class=["']job-card-tags["'][^>]*>([\s\S]*?)<\/div>/i)?.[1] || '').matchAll(/<span[^>]*>([\s\S]*?)<\/span>/gi)].map(m => normalizeText(m[1]))
+    if (!sourceUrl || !/^https:\/\/www\.muvi\.com\/career\/jobs\/[a-z0-9-]+\/?$/i.test(sourceUrl) || !title || tags.length !== 4 || !/^\d+ Openings$/i.test(tags[2] || '') || !tags[3]) throw new Error('Muvi incomplete listing: malformed role card')
+    return { title, sourceUrl, experienceRequired: tags[0], location: tags[3] }
+  })
+  if (!cards.length) throw new Error('Muvi incomplete listing: empty jobs page')
+  if (new Set(cards.map(card => card.sourceUrl)).size !== cards.length) throw new Error('Muvi duplicate job card')
+  return cards
+}
+
+const getPageLinks = (html, requestedPage) => {
+  const links = [...String(html).matchAll(/<a\b[^>]*class=["']([^"']*\bpage-link\b[^"']*)["'][^>]*href=["']([^"']+)["'][^>]*>/gi)]
+  if (!links.length) {
+    if (requestedPage !== 1) throw new Error('Muvi incomplete pagination controls')
+    return [1]
+  }
+  const pages = new Set()
+  let activePage = null
+  for (const link of links) {
+    const match = link[2].match(/^https:\/\/www\.muvi\.com\/career\/job-listings\/(?:page\/(\d+)\/)?$/)
+    if (!match) throw new Error('Muvi unexpected pagination URL')
+    const page = Number(match[1] || 1)
+    if (!Number.isSafeInteger(page) || page < 1 || page > 50) throw new Error('Muvi pagination limit exceeded')
+    pages.add(page)
+    if (/\bactive\b/.test(link[1])) {
+      if (activePage !== null && activePage !== page) throw new Error('Muvi conflicting active pagination page')
+      activePage = page
+    }
+  }
+  if (activePage !== requestedPage) throw new Error('Muvi repeated or mismatched pagination page')
+  return [...pages].sort((a,b) => a-b)
+}
+
+const readCurrentDetail = (html, card) => {
+  const title = normalizeText(String(html).match(/<h3\b[^>]*class=["'][^"']*\bdetails-title\b[^"']*["'][^>]*>([\s\S]*?)<\/h3>/i)?.[1])
+  const location = normalizeText(String(html).match(/<div\b[^>]*class=["']location["'][^>]*>([\s\S]*?)<\/div>/i)?.[1])
+  const jobDescription = normalizeText(String(html).match(/<div\b[^>]*class=["']job-abt["'][^>]*>([\s\S]*?)<\/div>/i)?.[1])
+  const id = String(html).match(/<input\b[^>]*name=["']job_id["'][^>]*value=["'](\d+)["']/i)?.[1]
+  if (title !== card.title || location !== card.location || !id || !jobDescription || jobDescription.length < 40 || !/<form\b[^>]*id=["']careerform["']/i.test(html)) throw new Error('Muvi incomplete or mismatched public job detail')
+  return { ...card, jobDescription, jobId: SOURCE + '-' + id, requisitionId: id, applyUrl: card.sourceUrl, company: COMPANY, country: 'India', city: /bhubaneswar/i.test(location) ? 'Bhubaneswar' : null, closingDate: null, postingDate: null }
+}
+
+const readCurrentInventory = async (read) => {
+  const cards = []
+  const seen = new Set()
+  const pending = [1]
+  const visited = new Set()
+  while (pending.length) {
+    const page = pending.shift()
+    const url = page === 1 ? JOB_LISTINGS_URL : JOB_LISTINGS_URL + 'page/' + page + '/'
+    const html = await read(url)
+    if (!/<title>\s*Job Listings\s*-\s*Muvi\s*<\/title>/i.test(html)) throw new Error('Muvi unexpected public listings page')
+    const pageCards = extractCurrentCards(html)
+    const pageLinks = getPageLinks(html, page)
+    visited.add(page)
+    for (const linked of pageLinks) if (!visited.has(linked) && !pending.includes(linked)) pending.push(linked)
+    for (const card of pageCards) {
+      if (seen.has(card.sourceUrl)) throw new Error('Muvi duplicate job across pagination')
+      seen.add(card.sourceUrl)
+      cards.push(card)
+    }
+  }
+  if (Math.max(...visited) !== visited.size) throw new Error('Muvi incomplete pagination coverage')
+  const jobs = []
+  let unknownScope = false
+  for (const card of cards) {
+    const detail = readCurrentDetail(await read(card.sourceUrl), card)
+    if (isIndiaLocation(card.location)) jobs.push(detail)
+    else unknownScope = true
+  }
+  if (unknownScope && !jobs.length) throw new Error('Muvi public roles have unverified India country scope')
+  if (new Set(jobs.map(job => job.jobId)).size !== jobs.length) throw new Error('Muvi duplicate detail job identifier')
+  return jobs.map(job => ({ ...job, ...(unknownScope ? { sourceListingComplete: false } : {}) }))
+}
+
 export const createMuviEntertainmentScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, now: overrideNow, signal } = {}) {
+    signal?.throwIfAborted()
+    const read = async (url) => {
+      signal?.throwIfAborted()
+      const html = await fetchText(url, { signal })
+      signal?.throwIfAborted()
+      return html
+    }
+    const careersHtml = await read(CAREERS_URL)
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Muvi Entertainment verified careers page no longer matches the trusted first-party surface')
     }
 
-    const jobs = extractJobCards(careersHtml)
+    const jobs = /href=["']https:\/\/www\.muvi\.com\/career\/job-listings\/["']/i.test(careersHtml)
+      ? await readCurrentInventory(read)
+      : extractJobCards(careersHtml)
     if (jobs.length === 0) {
       throw new Error('Muvi Entertainment careers page no longer exposes the verified current openings links')
     }

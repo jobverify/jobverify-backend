@@ -38,6 +38,34 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const findErrorInChain = (error, predicate) => {
+  const seen = new Set()
+  let current = error
+
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    if (predicate(current)) return current
+    current = current?.cause
+  }
+
+  return null
+}
+
+const hasAnyHttpStatus = (error, statuses) => Boolean(
+  findErrorInChain(error, (candidate) => statuses.includes(Number(candidate?.status))),
+)
+
+const createBlockedAccessError = (message, cause) => Object.assign(
+  new Error(message, { cause }),
+  {
+    code: 'SRINSOFT_CAREERS_BLOCKED',
+    failureKind: 'blocked_or_access_denied',
+    softFailure: true,
+    upstreamOutage: true,
+    abortRetries: true,
+  },
+)
+
 const toAbsoluteApplyUrl = (value) => {
   if (!value) return null
 
@@ -102,7 +130,19 @@ export const extractIndiaAccordionJobs = (html = '') =>
 
 export const createSrinSoftTechnologiesScraper = () => ({
   async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    let careersHtml
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (hasAnyHttpStatus(error, [307, 403, 429])) {
+        throw createBlockedAccessError(
+          'SrinSoft Technologies careers route is currently blocked by upstream access controls',
+          error,
+        )
+      }
+      throw error
+    }
+
     const jobs = extractIndiaAccordionJobs(careersHtml)
 
     if (!hasOfficialCareersSignal(careersHtml) || jobs.length === 0) {

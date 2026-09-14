@@ -192,6 +192,52 @@ test('TensorGo helpers stay pinned to the verified official careers page, WP job
   })
 })
 
+test('TensorGo rejects unavailable inventory after validating the current canonical app careers handoff', async () => {
+  const tensorgo = await loadTensorGoModule()
+  const bundle = [
+    'const api="https://api.humains.one";',
+    'client.get("/api/jobs");',
+    'client.get("/api/jobs/".concat(slug));',
+    'path:"/careers";',
+    'path:"/careers/:slug";',
+    '"JobPosting";',
+    '"TensorGo";',
+  ].join('')
+  const shell = `
+    <html><head>
+      <title>HumAIn by TensorGo | The World's First Pre-AGI Teammates</title>
+      <link rel="canonical" href="https://tensorgo.com/">
+      <script type="application/ld+json">{"name":"TensorGo"}</script>
+      <script defer src="/static/js/main.current.js"></script>
+    </head><body><div id="root"></div></body></html>
+  `
+  assert.equal(tensorgo.hasVerifiedRetiredCareersSignal(shell), true)
+  const requestedTextUrls = []
+  const requestedJsonUrls = []
+  await assert.rejects(
+    tensorgo.run({
+      fetchText: async (url) => {
+        requestedTextUrls.push(url)
+        if (url === tensorgo.CAREERS_PAGE_URL) return shell
+        if (url === 'https://tensorgo.com/static/js/main.current.js') return bundle
+        throw new Error(`Unexpected TensorGo text URL: ${url}`)
+      },
+      fetchJson: async (url) => {
+        requestedJsonUrls.push(url)
+        if (url === 'https://api.humains.one/api/jobs') return { items: [] }
+        throw new Error(`Unexpected TensorGo JSON URL: ${url}`)
+      },
+    }),
+    (error) => error.code === 'TENSORGO_INVENTORY_UNAVAILABLE'
+      && error.abortRetries === true,
+  )
+  assert.deepEqual(requestedTextUrls, [
+    tensorgo.CAREERS_PAGE_URL,
+    'https://tensorgo.com/static/js/main.current.js',
+  ])
+  assert.deepEqual(requestedJsonUrls, ['https://api.humains.one/api/jobs'])
+})
+
 test('run pages through the verified TensorGo jobs feed, fetches first-party detail pages, and decorates jobs', async () => {
   const tensorgo = await loadTensorGoModule()
   const requestedTextUrls = []

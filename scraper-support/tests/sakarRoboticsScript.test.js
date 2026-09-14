@@ -37,6 +37,23 @@ const careersPageHtml = `
   </html>
 `
 
+const currentAppShellHtml = `
+  <html>
+    <head>
+      <title>Sakar Robotics</title>
+      <meta name="description" content="Sakar builds general-purpose robots that perceive, decide, and act." />
+      <meta property="og:title" content="Sakar Robotics" />
+      <meta property="og:url" content="https://www.sakarrobotics.com/" />
+    </head>
+    <body>
+      <script src="/build/seo.js?v=206"></script>
+      <script src="/build/data.js?v=206"></script>
+      <script src="/build/pages/company.js?v=206"></script>
+      <script src="/build/app.js?v=206"></script>
+    </body>
+  </html>
+`
+
 const portalHtml = `
   <html>
     <head>
@@ -119,6 +136,8 @@ test('Sakar Robotics constants stay pinned to the verified homepage, careers han
   )
   assert.equal(sakarRobotics.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(sakarRobotics.hasOfficialCareersPageSignal(careersPageHtml), true)
+  assert.equal(sakarRobotics.hasOfficialHomepageSignal(currentAppShellHtml), true)
+  assert.equal(sakarRobotics.hasOfficialCareersPageSignal(currentAppShellHtml), true)
   assert.equal(sakarRobotics.hasOfficialPortalSignal(portalHtml), true)
 })
 

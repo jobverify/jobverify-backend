@@ -41,8 +41,9 @@ const extractTitle = (html = '') => {
   return normalizeWhitespace(match?.[1]) || null
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -145,8 +146,10 @@ export const extractSpringworksJobs = (html = '') => {
 }
 
 export const createSpringworksScraper = () => ({
-  async run({ fetchPage = defaultFetchPage, now = () => new Date().toISOString() } = {}) {
-    const aboutPage = await fetchPage(ABOUT_URL)
+  async run({ fetchPage = defaultFetchPage, now = () => new Date().toISOString(), signal } = {}) {
+    signal?.throwIfAborted()
+    const aboutPage = await fetchPage(ABOUT_URL, { signal })
+    signal?.throwIfAborted()
     if (
       aboutPage.status !== 200
       || !sameUrl(aboutPage.url, ABOUT_URL)
@@ -155,16 +158,18 @@ export const createSpringworksScraper = () => ({
       throw new Error('Springworks first-party about page no longer matches the trusted careers handoff surface')
     }
 
-    const handoffPage = await fetchPage(HANDOFF_URL)
+    const handoffPage = await fetchPage(HANDOFF_URL, { signal })
+    signal?.throwIfAborted()
     if (
       handoffPage.status !== 200
-      || !sameUrlAny(handoffPage.url, [HANDOFF_URL, HANDOFF_FINAL_URL])
+      || !sameUrlAny(handoffPage.url, [HANDOFF_URL, HANDOFF_FINAL_URL, JOBS_URL])
       || !hasGoodfitHandoffSignal(handoffPage.html)
     ) {
       throw new Error('Springworks Goodfit handoff page no longer matches the trusted goodfit handoff surface')
     }
 
-    const jobsPage = await fetchPage(JOBS_URL)
+    const jobsPage = await fetchPage(JOBS_URL, { signal })
+    signal?.throwIfAborted()
     if (
       jobsPage.status !== 200
       || !sameUrlAny(jobsPage.url, [JOBS_URL, JOBS_FALLBACK_URL])
@@ -178,7 +183,12 @@ export const createSpringworksScraper = () => ({
       throw new Error('Springworks verified jobs page no longer exposes trusted public role cards')
     }
 
-    return jobs.map((job) => ({
+    const count = normalizeWhitespace(jobsPage.html.match(/<h2[^>]*>([\s\S]*?Open Positions[\s\S]*?)<\/h2>/i)?.[1]).match(/Open Positions\s+(\d+)/i)
+    if (!count || jobs.length !== Number(count[1])) {
+      throw new Error('Springworks incomplete jobs snapshot: public role count does not match parsed cards')
+    }
+
+    return jobs.filter((job) => job.country === 'India').map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,

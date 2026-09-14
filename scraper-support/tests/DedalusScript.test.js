@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const FIXED_SCRAPED_AT = '2026-07-17T18:00:00.000Z'
 
 const careersPageHtml = `
@@ -461,6 +463,17 @@ test('Dedalus returns [] when the public Workday board no longer exposes an Indi
     ...dedalus.VERIFIED_INDIA_JOB_URLS,
   ])
   assert.deepEqual(jobs, [])
+  assert.deepEqual(readInventoryEvidence(jobs), {
+    status: 'complete-inventory',
+    surface: dedalus.JOBS_API_URL,
+    firstParty: true,
+    listingComplete: true,
+    pagesFetched: 1,
+    reportedTotal: 65,
+    indiaFacetCount: 0,
+    verifiedAt: FIXED_SCRAPED_AT,
+    reason: 'dedalus-workday-board-without-india-country-facet',
+  })
 })
 
 test('Dedalus fails closed when the verified careers handoff, country facet, or India detail pages drift', async () => {

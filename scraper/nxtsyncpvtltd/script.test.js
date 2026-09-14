@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { classifyScraperError } from '../../scraper-support/utils/failureClassification.js'
+
 const loadModule = async () => {
   try {
     return await import('./script.js')
@@ -58,6 +60,17 @@ const careers404Html = `
   </html>
 `
 
+const sucuriChallengeHtml = `
+  <html>
+    <title>You are being redirected...</title>
+    <noscript>Javascript is required. Please enable javascript before you are allowed to see this page.</noscript>
+    <script>
+      var sucuri_cloudproxy_js = "";
+      document.cookie = "sucuri_cloudproxy_uuid=verified";
+    </script>
+  </html>
+`
+
 test('Nxtsync sentinel validates the verified homepage and missing careers routes contract', async () => {
   const nxtsync = await loadModule()
   assert.ok(nxtsync, 'Nxtsync scraper module should load')
@@ -112,6 +125,30 @@ test('Nxtsync sentinel returns no jobs only while the verified no-public-jobs co
     ...nxtsync.NO_PUBLIC_CAREERS_ROUTE_URLS,
   ])
   assert.deepEqual(jobs, [])
+})
+
+test('Nxtsync reports the current Sucuri challenge as an upstream access block', async () => {
+  const nxtsync = await loadModule()
+  assert.ok(nxtsync, 'Nxtsync scraper module should load')
+
+  await assert.rejects(
+    nxtsync.createNxtsyncScraper().run({
+      fetchPage: async (url) => ({
+        status: 307,
+        url,
+        html: sucuriChallengeHtml,
+      }),
+    }),
+    (error) => {
+      const classification = classifyScraperError(error)
+
+      assert.match(error.message, /Sucuri access challenge/i)
+      assert.equal(classification.softFailure, true)
+      assert.equal(classification.upstreamOutage, true)
+      assert.equal(classification.failureKind, 'blocked_or_access_denied')
+      return true
+    },
+  )
 })
 
 test('Nxtsync sentinel fails closed when the homepage or careers-route contract changes', async () => {

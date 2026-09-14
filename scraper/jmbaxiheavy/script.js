@@ -127,11 +127,11 @@ export const hasJobSearchPageSignal = (html) => {
     && (
       page.includes('select department engineering')
       || page.includes('select department operations')
-      || page.includes('find your dream job')
+      || page.includes('find authentic jobs')
     )
     && (
       page.includes('select location navi mumbai')
-      || page.includes('find your dream job')
+      || page.includes('find authentic jobs')
       || page.includes('j m baxi prides itself')
     )
 }

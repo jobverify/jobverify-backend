@@ -198,6 +198,26 @@ test('Solar Industries India pins the verified homepage handoff, first-party boa
   })
 })
 
+test('Solar Industries India can use the verified public API during the board host TLS alert without disabling certificate checks', async () => {
+  const solar = await loadSolarIndustriesIndiaModule()
+  const jobs = await solar.createSolarIndustriesIndiaScraper({ maxJobs: 1 }).run({
+    fetchText: async (url) => {
+      if (url === solar.HOMEPAGE_URL) return homepageHtml
+      const error = new Error('fetch failed: tlsv1 alert internal error')
+      throw error
+    },
+    fetchJson: async (url) => {
+      if (url === solar.SEARCH_API_URL) return listingPayload
+      if (url === solar.DETAIL_API_URL) return firstDetailPayload
+      throw new Error(`Unexpected API URL: ${url}`)
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, '520')
+  assert.equal(solar.hasVerifiedCareersBoardTlsFailure(new Error('certificate has expired')), false)
+})
+
 test('Solar Industries India treats the current public Zwayam listing contract as enumerable even when the flags still say Hidden Closed Limited', async () => {
   const solarIndustriesIndia = await loadSolarIndustriesIndiaModule()
 

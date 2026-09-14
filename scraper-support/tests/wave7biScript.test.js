@@ -194,7 +194,7 @@ test('Lumiq run validates the first-party careers handoff and public Zoho board 
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === lumiq.CAREERS_PAGE_URL) return lumiqCareersHtml
-      if (url === lumiq.CAREERS_PORTAL_URL) return lumiqPortalHtml
+      if (url === lumiq.CAREERS_PORTAL_URL) return lumiqPortalHtml.replace('id="jobs" value="[]"', 'id="jobs" value="' + JSON.stringify(lumiqApiPayload.data).replaceAll('"', '&quot;') + '"')
       throw new Error(`Unexpected Lumiq HTML request: ${url}`)
     },
     fetchJson: async (url) => {

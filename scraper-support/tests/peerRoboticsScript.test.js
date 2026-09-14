@@ -38,7 +38,7 @@ const aboutHtml = `
       <section class="section-hire">
         <h4>We’re hiring</h4>
         <p>Our team is growing fast and we’re always looking for smart people.</p>
-        <a href="https://wellfound.com/company/peer-robotics/jobs">View roles</a>
+        <a href="https://wellfound.com/company/peer-robotics/jobs">View jobs</a>
       </section>
       <section class="section-faq">
         <h2>faq<span>s</span></h2>

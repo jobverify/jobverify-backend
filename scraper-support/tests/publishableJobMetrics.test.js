@@ -24,3 +24,19 @@ test('rejects historic aggregate opening sentinels while preserving individual v
   assert.deepEqual(result.eligibleJobs.map((job) => job.jobId), ['real-1'])
   assert.equal(result.filterCounts.nonJob, 2)
 })
+
+test('email application roles remain publishable when the verified public role page is available', () => {
+  const result = analyzePublishableJobs([
+    { title: 'Lead Engineer', location: 'Chennai, India', applyUrl: 'mailto:jobs@example.com?subject=Lead%20Engineer', sourceUrl: 'https://example.com/careers#lead-engineer' },
+    { title: 'Unlinked role', location: 'Chennai, India', applyUrl: 'mailto:jobs@example.com' },
+  ])
+  assert.equal(result.eligibleJobs.length, 1)
+  assert.equal(result.eligibleJobs[0].title, 'Lead Engineer')
+  assert.equal(result.filterCounts.invalidUrl, 1)
+})
+
+test('an unsafe application scheme is rejected even if a source URL exists', () => {
+  const result = analyzePublishableJobs([{ title: 'Engineer', location: 'India', applyUrl: 'javascript:alert(1)', sourceUrl: 'https://example.com/careers' }])
+  assert.equal(result.eligibleJobs.length, 0)
+  assert.equal(result.filterCounts.invalidUrl, 1)
+})

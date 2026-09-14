@@ -99,3 +99,30 @@ test('withRetry honors a longer retryDelayMs hint from rate-limited upstream err
     'Expected retry delay hint to be honored before the second attempt',
   )
 })
+
+
+test('withRetry retains telemetry when all attempts fail', async () => {
+  let attempts = 0
+  await assert.rejects(withRetry(() => {
+    attempts += 1
+    throw new Error('upstream unavailable')
+  }, { attempts: 3, baseDelayMs: 1, label: 'failed-telemetry' }), (error) => {
+    assert.deepEqual(getRetryMetadata(error), { attemptsUsed: 3, retries: 2, retryDelayMs: 3 })
+    return true
+  })
+  assert.equal(attempts, 3)
+})
+
+test('withRetry retains completed retries when a later error aborts further attempts', async () => {
+  let attempts = 0
+  await assert.rejects(withRetry(() => {
+    attempts += 1
+    const error = new Error('upstream unavailable')
+    if (attempts === 2) error.abortRetries = true
+    throw error
+  }, { attempts: 4, baseDelayMs: 1, label: 'aborted-telemetry' }), (error) => {
+    assert.deepEqual(getRetryMetadata(error), { attemptsUsed: 2, retries: 1, retryDelayMs: 1 })
+    return true
+  })
+  assert.equal(attempts, 2)
+})

@@ -10,7 +10,7 @@ export const CAREERS_LANDING_URL = 'https://careers.kbr.com/us/en'
 export const CAREERS_HOMEPAGE_URL = 'https://careers.kbr.com/'
 
 const HOMEPAGE_BRAND_SIGNAL_PATTERN = /Delivering Solutions, Changing the World|KBR/i
-const CAREERS_BRAND_SIGNAL_PATTERN = /Belong,\s*connect and grow at KBR|Find your next opportunity/i
+const CAREERS_BRAND_SIGNAL_PATTERN = /Belong,\s*connect and grow at KBR|Find your dream job/i
 const CAREERS_SEARCH_SIGNAL_PATTERN = /Search results|\/us\/en\/search-results/i
 const HOMEPAGE_ACCEPTED_CAREERS_URLS = [
   CAREERS_HOMEPAGE_URL,

@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import { D2K_TECHNOLOGIES_INDIA_CATALOG } from './catalog.js'
 
@@ -62,7 +63,8 @@ const extractLastBulletsBlock = (input) => {
   return block
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -83,22 +85,27 @@ export const extractJobCards = (html = '') => {
   const jobs = []
   const applyPattern = /<a[^>]*href="([^"]+)"[^>]*aria-label="Apply Now"[^>]*>/gi
 
+  let previousApplyEnd = 0
   for (const match of String(html ?? '').matchAll(applyPattern)) {
     const applyUrl = toAbsoluteUrl(match[1])
-    if (!applyUrl) continue
+    if (!applyUrl) throw new Error('D2K incomplete application identity')
 
-    const snippet = String(html ?? '').slice(Math.max(0, match.index - 3000), match.index)
+    const snippet = String(html ?? '').slice(previousApplyEnd, match.index)
+    previousApplyEnd = match.index + match[0].length
     const title = extractLastMatch(snippet, /letter-spacing:0\.05em;" class="wixui-rich-text__text">([^<]+)<\/span>/gi)
     const experience = extractLastMatch(snippet, /Experience:\s*([^<]+)/gi)
     const bullets = extractBullets(extractLastBulletsBlock(snippet) || '')
 
-    if (!title || !experience) continue
+    if (!title || !experience) throw new Error('D2K incomplete role card')
+    if (/^others?$/i.test(title)) continue
+    const location = extractLastMatch(snippet, /Job Location:\s*([^<]+)/gi)
+    const india = /(?:^|,\s*)India$/i.test(location || '')
 
     jobs.push({
       title,
-      location: 'Navi Mumbai, Maharashtra, India',
-      city: 'Navi Mumbai',
-      country: 'India',
+      location,
+      city: india ? location.split(',')[0].trim() : null,
+      country: india ? 'India' : null,
       sourceUrl: applyUrl,
       applyUrl,
       employmentType: 'Full Time',
@@ -112,8 +119,11 @@ export const extractJobCards = (html = '') => {
 }
 
 export const createD2KScraper = () => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, signal, now = () => new Date().toISOString() } = {}) {
+    signal?.throwIfAborted()
+    let careersHtml
+    try { careersHtml = await fetchText(CAREERS_URL, { signal }) }
+    finally { signal?.throwIfAborted() }
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('The verified D2K careers page no longer matches the trusted first-party surface')
     }
@@ -123,7 +133,22 @@ export const createD2KScraper = () => ({
       throw new Error('The verified D2K careers page no longer exposes trusted first-party job cards')
     }
 
-    return jobs.map((job) => ({
+    const verifiedJobs = jobs.filter(job => job.country === 'India')
+    if (!verifiedJobs.length) {
+      return attachInventoryEvidence([], {
+        status: 'discovery-only',
+        surface: CAREERS_URL,
+        firstParty: true,
+        listingComplete: false,
+        pagesFetched: 1,
+        reportedTotal: jobs.length,
+        indiaFacetCount: null,
+        verifiedAt: now(),
+        reason: 'D2K role locations are unverified; the registered office does not establish job geography',
+      })
+    }
+    return verifiedJobs.map((job) => ({
+      ...(verifiedJobs.length < jobs.length ? { sourceListingComplete: false } : {}),
       ...job,
       company: COMPANY,
       source: SOURCE,

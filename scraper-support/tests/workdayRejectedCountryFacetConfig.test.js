@@ -8,10 +8,10 @@ import { loadConfig } from '../utils/loadConfig.js'
 const testsDir = path.dirname(fileURLToPath(import.meta.url))
 
 const sourcesRejectingGenericCountryFacet = [
-  'brenntagindia', 'broadridge', 'browserstack', 'cadence', 'calix', 'dow',
-  'elsevier', 'epiqsystems', 'fox', 'fractal', 'genpact', 'hpinc', 'intel',
-  'magnaautomotive', 'mastercard', 'ncrvoyix', 'nissandigitalindia', 'nvidia',
-  'nxp', 'protiviti', 'q2ebanking', 'redhat', 'salesforce', 'spgi',
+  'browserstack', 'calix',
+  'epiqsystems', 'fox', 'hpinc', 'intel',
+  'magnaautomotive', 'ncrvoyix', 'nissandigitalindia', 'nvidia',
+  'q2ebanking', 'redhat', 'spgi',
   'thoughtspot', 'weir', 'workday',
 ]
 

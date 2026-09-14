@@ -63,7 +63,7 @@ const hasInputWithId = (html, id) => new RegExp(
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>\s*Noblq\s+Global Digital Solutions Partner\s*<\/title>/i.test(page)
+  return /<title>\s*Noblq\s*(?:Global Digital Solutions Partner|\| Digital Transformation, Enterprise Technology and AI)\s*<\/title>/i.test(page)
     && /reachout@noblq\.com/i.test(page)
     && /\+1\s*972\s*401\s*3771/i.test(page)
     && /href=["'](?:https:\/\/www\.noblq\.com)?\/about-us["']/i.test(page)
@@ -73,8 +73,7 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialAboutUsSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>\s*About Noblq\s+Driven by Purpose,\s+Built to Solve\s*<\/title>/i.test(page)
-    && /Culture and Careers/i.test(page)
+  return /<title>\s*About Noblq\s+(?:\|\s*)?Driven by Purpose,\s+Built to Solve\s*<\/title>/i.test(page)
     && /CAREERS FOR CURIOUS PROBLEM SOLVERS/i.test(page)
     && /Explore Opportunities/i.test(page)
     && /https:\/\/talent\.noblq\.com\/jobs\/Careers/i.test(page)

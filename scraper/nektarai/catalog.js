@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Thursday, August 13, 2026 that https://nektar.ai/ and https://nektar.ai/careers/ each currently fail with repeated connect timeouts, while the historical official handoff pages remain live at https://docs.superhuman.com/@anusha-laksh/open-roles-for-website-publication and https://docs.superhuman.com/form/Kick-start-your-career-with-us_dfLGyijCu1N. Those public docs still expose culture/contact copy and a generic application form with no trustworthy current public job listings.'
+  'Verified on September 13, 2026 that https://nektar.ai/careers/ redirects to https://docs.superhuman.com/@anusha-laksh/open-roles-for-website-publication. The public document exposes culture and contact copy without a vacancy list or an explicit current empty state. Product demo text embedded in client scripts is not a Nektar job listing. This is discovery-only evidence, not an authoritative empty-opening statement.'
 
 export const NEKTAR_AI_CATALOG = {
   source: 'nektarai',
@@ -17,14 +17,16 @@ export const NEKTAR_AI_CATALOG = {
   companyDomain: 'nektar.ai',
   officialOpenRolesUrl: 'https://coda.io/@anusha-laksh/open-roles-for-website-publication',
   officialApplyFormUrl: 'https://coda.io/form/Kick-start-your-career-with-us_dfLGyijCu1N',
-  atsPlatform: 'official-careers-redirect-to-coda-no-public-jobs',
+  atsPlatform: 'official-careers-coda-public-document',
   countryFilter: 'India',
   paginationStrategy: 'first-party-careers-redirect-plus-coda-surface-validation',
   extractionStrategy:
-    'verified-timeout-only-first-party-routes+legacy-first-party-careers-redirect-and-coda-handoff-without-public-listings-return-empty',
+    'verified-first-party-coda-handoff+no-public-listings-discovery-only-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-13',
+  verifiedOn: '2026-09-13',
+  verifiedPublicJobCount: 0,
+  verifiedIndiaJobCount: 0,
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

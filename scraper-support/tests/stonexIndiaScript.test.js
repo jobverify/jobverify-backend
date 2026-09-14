@@ -285,6 +285,8 @@ test('StoneX India URL helpers stay pinned to the live official careers and iCIM
   assert.equal(stoneXIndia.ICIMS_HOST, 'https://english-stonex.icims.com')
   assert.equal(stoneXIndia.SEARCH_WRAPPER_URL, SEARCH_WRAPPER_URL)
   assert.equal(stoneXIndia.SEARCH_RESULTS_URL, SEARCH_RESULTS_URL)
+  assert.equal(stoneXIndia.ICIMS_USER_AGENT, 'Mozilla/5.0')
+  assert.doesNotMatch(stoneXIndia.ICIMS_USER_AGENT, /Chrome|Safari|Windows NT/i)
   assert.equal(stoneXIndia.buildCareerPageUrl(), CAREER_PAGE_URL)
   assert.equal(stoneXIndia.buildSearchWrapperUrl(), SEARCH_WRAPPER_URL)
   assert.equal(stoneXIndia.buildSearchResultsUrl(), SEARCH_RESULTS_URL)

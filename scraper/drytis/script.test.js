@@ -156,6 +156,33 @@ const august2026HomepageHtml = `
 </html>
 `
 
+const currentHomepageRedesignHtml = `
+<!doctype html>
+<html>
+  <head>
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"Organization","name":"Drytis","url":"https://drytis.com/"}
+    </script>
+  </head>
+  <body>
+    <nav>
+      <a href="/">drytis</a>
+      <a href="/solutions">Solutions</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/about">About</a>
+      <a href="/blog">Blog</a>
+      <a href="/careers">Careers</a>
+      <a href="https://studio.drytis.ai/login">Start Building</a>
+    </nav>
+    <main>
+      <h1>Built with AI. Finished by engineers!</h1>
+      <p>AI writes software. Humans build companies. Drytis is the human part.</p>
+    </main>
+    <footer>© 2026 Drytis. All rights reserved.</footer>
+  </body>
+</html>
+`
+
 const august2026AboutHtml = `
 <!doctype html>
 <html lang="en">
@@ -457,6 +484,7 @@ test('DRYTIS sentinel recognizes the verified homepage, legal pages, engineers r
   assert.equal(drytis.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(drytis.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(drytis.hasOfficialHomepageSignal(august2026HomepageHtml), true)
+  assert.equal(drytis.hasOfficialHomepageSignal(currentHomepageRedesignHtml), true)
   assert.equal(drytis.hasOfficialAboutSignal(aboutHtml), true)
   assert.equal(drytis.hasOfficialAboutSignal(currentAboutHtml), true)
   assert.equal(drytis.hasOfficialAboutSignal(august2026AboutHtml), true)

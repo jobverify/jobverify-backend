@@ -19,6 +19,7 @@ const { default: AdminAudit } = await import("../src/models/AdminAudit.js");
 const { default: BlacklistedToken } = await import("../src/models/BlacklistedToken.js");
 const { default: JobDatasetSummary } = await import("../src/models/JobDatasetSummary.js");
 const { default: ScraperRun } = await import("../src/models/ScraperRun.js");
+const { default: UserSuggestion } = await import("../src/models/UserSuggestion.js");
 
 const MODELS = [
   ["Job", Job],
@@ -29,6 +30,7 @@ const MODELS = [
   ["BlacklistedToken", BlacklistedToken],
   ["JobDatasetSummary", JobDatasetSummary],
   ["ScraperRun", ScraperRun],
+  ["UserSuggestion", UserSuggestion],
 ];
 
 const formatIndex = (idx) => {

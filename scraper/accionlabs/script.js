@@ -87,8 +87,6 @@ export const hasOfficialHomepageSignal = (html = '') => {
     && text.includes('AI-Led Innovation Engineering Company')
     && text.includes('Powered by Semantic Engineering')
     && text.includes('Accion Labs')
-    && text.includes('Graminno: Innovation Rooted in Rural India')
-    && text.includes('Impacting Lives By Transforming Businesses Through Innovation')
     && /href=["'](?:https:\/\/www\.accionlabs\.com)?\/careers\/?["']/i.test(page)
 }
 

@@ -88,6 +88,23 @@ const zeroJobsSearchHtml = `
   </html>
 `
 
+const companyScopedZeroJobsSearchHtml = `
+  <html>
+    <head>
+      <title>Jobs Jobs at Stellaraa in India | LinkedIn</title>
+      <meta property="og:url" content="https://www.linkedin.com/jobs/search" />
+    </head>
+    <body>
+      <main>
+        <h1>Jobs in India</h1>
+        <p>We couldn't find a match for Jobs jobs at Stellaraa in India</p>
+        <section class="jobs-search__results-list"></section>
+      </main>
+      <aside>Sign in to view more jobs</aside>
+    </body>
+  </html>
+`
+
 const searchResultsHtml = `
   <section class="two-pane-serp-page__results-list">
     <ul class="jobs-search__results-list">
@@ -227,6 +244,7 @@ test('Stellaraa scraper constants stay pinned to the verified official homepage 
   assert.equal(pageIndicatesStellaraaHomepage(homepageHtml), true)
   assert.equal(pageIndicatesStellaraaCompany(companyPageHtml), true)
   assert.equal(searchPageShowsZeroResults(zeroJobsSearchHtml), true)
+  assert.equal(searchPageShowsZeroResults(companyScopedZeroJobsSearchHtml), true)
 })
 
 test('extractSearchResults keeps only Stellaraa India jobs from the public LinkedIn jobs search page', () => {
@@ -341,6 +359,29 @@ test('run verifies the official surfaces, enriches the public India job, and add
   assert.equal(jobs[0].source, 'stellaraaedutechpvtltd')
   assert.equal(jobs[0].link, 'https://in.linkedin.com/jobs/view/corporate-development-intern-at-stellaraa-4431597269?position=1&pageNum=0')
   assert.match(jobs[0].scrapedAt, /\d{4}-\d{2}-\d{2}T/)
+})
+
+test('run returns no jobs for the current LinkedIn company-scoped zero-results shell', async () => {
+  const requestedUrls = []
+
+  const jobs = await createStellaraaEdutechScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === HOMEPAGE_URL) return homepageHtml
+      if (url === LINKEDIN_COMPANY_PAGE_URL) return companyPageHtml
+      if (url === LINKEDIN_INDIA_JOBS_URL) return companyScopedZeroJobsSearchHtml
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    HOMEPAGE_URL,
+    LINKEDIN_COMPANY_PAGE_URL,
+    LINKEDIN_INDIA_JOBS_URL,
+  ])
+  assert.deepEqual(jobs, [])
 })
 
 test('default Stellaraa fetches pass AbortSignal so homepage and LinkedIn probes are bounded', async () => {

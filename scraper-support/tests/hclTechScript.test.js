@@ -12,6 +12,7 @@ import {
   extractJobDetail,
   extractSearchResults,
   extractSearchSummary,
+  hydrateJobDetails,
 } from '../../scraper/hcltech/script.js'
 
 const fixturesDir = path.join(
@@ -132,5 +133,80 @@ test('normalizeScrapedJob composes HCLTech experienced full-time job types from 
   assert.equal(normalized.employmentType, 'Full-time')
   assert.equal(normalized.experienceLevel, 'Senior Level')
   assert.equal(normalized.jobType, 'Full-time Experienced')
+})
+
+test('hydrateJobDetails preserves serial requests and forwards cancellation', async () => {
+  const listings = Array.from({ length: 7 }, (_, index) => ({
+    title: `Role ${index}`,
+    location: 'Bengaluru, India',
+    city: 'Bengaluru',
+    state: null,
+    jobId: String(120000 + index),
+    requisitionId: String(120000 + index),
+    sourceUrl: `https://careers.hcltech.com/job/Role-${index}/${120000 + index}-en_US/`,
+    applyUrl: buildApplyUrl(String(120000 + index)),
+    postingDate: null,
+    closingDate: null,
+  }))
+  const controller = new AbortController()
+  let activeRequests = 0
+  let maximumActiveRequests = 0
+  const seenSignals = []
+
+  const jobs = await hydrateJobDetails(listings, {
+    signal: controller.signal,
+    fetchDetail: async (_url, { signal }) => {
+      seenSignals.push(signal)
+      activeRequests += 1
+      maximumActiveRequests = Math.max(maximumActiveRequests, activeRequests)
+      await new Promise((resolve) => setImmediate(resolve))
+      activeRequests -= 1
+      return readFixture('job-detail-116250.html')
+    },
+  })
+
+  assert.equal(jobs.length, listings.length)
+  assert.equal(maximumActiveRequests, 1)
+  assert.ok(seenSignals.every((signal) => signal === controller.signal))
+})
+
+test('hydrateJobDetails stops scheduling detail requests after cancellation', async () => {
+  const controller = new AbortController()
+  let requestCount = 0
+  const listings = [
+    { title: 'First role', jobId: '1', sourceUrl: 'https://careers.hcltech.com/job/first/1-en_US/' },
+    { title: 'Second role', jobId: '2', sourceUrl: 'https://careers.hcltech.com/job/second/2-en_US/' },
+  ]
+
+  await assert.rejects(
+    hydrateJobDetails(listings, {
+      signal: controller.signal,
+      fetchDetail: async () => {
+        requestCount += 1
+        controller.abort(new Error('runner stopped'))
+        return readFixture('job-detail-116250.html')
+      },
+    }),
+    /runner stopped/i,
+  )
+
+  assert.equal(requestCount, 1)
+})
+
+test('hydrateJobDetails rejects cancellation raised while the last detail request is resolving', async () => {
+  const controller = new AbortController()
+
+  await assert.rejects(
+    hydrateJobDetails([
+      { title: 'Only role', jobId: '1', sourceUrl: 'https://careers.hcltech.com/job/only/1-en_US/' },
+    ], {
+      signal: controller.signal,
+      fetchDetail: async () => {
+        controller.abort(new Error('runner stopped on last detail'))
+        return readFixture('job-detail-116250.html')
+      },
+    }),
+    /runner stopped on last detail/i,
+  )
 })
 

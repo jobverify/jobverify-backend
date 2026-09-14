@@ -26,8 +26,9 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -49,9 +50,7 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return normalized.includes('renault group')
     && normalized.includes('careers')
-    && normalized.includes('news about the group')
-    && normalized.includes('legal notices')
-    && normalized.includes('security and confidentiality')
+    && /href=["'](?:https:\/\/www\.renaultgroup\.com)?\/en\/careers\/?["']/i.test(html)
 }
 
 export const hasOfficialCareersSignal = (html) => {
@@ -67,13 +66,15 @@ export const hasOfficialCareersSignal = (html) => {
 export const hasOfficialWorkdayBoardSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<link rel="canonical" href="https:\/\/alliancewd\.wd3\.myworkdayjobs\.com\/(?:en-US\/)?renault-group-careers/i.test(page)
-    && /property="og:title" content="Careers \| Renault Group"/i.test(page)
-    && /property="og:description" content="Since 1889, Renault Group has relied on a legacy of innovation/i.test(page)
-    && /tenant:\s*"alliancewd"/i.test(page)
+  const hasInlineWorkdayConfig = /tenant:\s*"alliancewd"/i.test(page)
     && /siteId:\s*"renault-group-careers"/i.test(page)
     && /requestLocale:\s*"en-US"/i.test(page)
     && /appName:\s*"cxs"/i.test(page)
+  const hasCurrentWorkdayMetadata = /property="og:url" content="https:\/\/alliancewd\.wd3\.myworkdayjobs\.com\/en-US\/renault-group-careers/i.test(page)
+
+  return /<link rel="canonical" href="https:\/\/alliancewd\.wd3\.myworkdayjobs\.com\/(?:en-US\/)?renault-group-careers/i.test(page)
+    && /property="og:title" content="Careers \| Renault Group"/i.test(page)
+    && (hasInlineWorkdayConfig || hasCurrentWorkdayMetadata)
 }
 
 export const createRenaultGroupScraper = ({
@@ -82,23 +83,37 @@ export const createRenaultGroupScraper = ({
   async run({
     fetchPage = defaultFetchPage,
     runWorkday = defaultRunWorkday,
+    signal,
+    ...workdayOptions
   } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+    signal?.throwIfAborted()
+    const homepage = await fetchPage(HOMEPAGE_URL, { signal })
+    signal?.throwIfAborted()
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Renault Group verified official homepage no longer matches the trusted first-party surface')
     }
 
-    const careersPage = await fetchPage(CAREERS_URL)
+    const careersPage = await fetchPage(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
     if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
       throw new Error('Renault Group verified careers page no longer matches the trusted first-party surface')
     }
 
-    const workdayBoard = await fetchPage(WORKDAY_BOARD_URL)
+    // The board was previously verified from Renault's careers handoff. Current pages
+    // may route through the international vacancies UI; reject an explicit conflicting tenant.
+    const directHandoff = careersPage.html.match(/href=["'](https:\/\/[^"']+myworkdayjobs\.com\/[^"']+)["']/i)?.[1]
+    if (directHandoff && !/^https:\/\/alliancewd\.wd3\.myworkdayjobs\.com\/(?:en-US\/)?renault-group-careers(?:[/?#]|$)/.test(directHandoff)) {
+      throw new Error('Renault Group careers handoff changed to an unverified Workday board')
+    }
+    const workdayBoard = await fetchPage(WORKDAY_BOARD_URL, { signal })
+    signal?.throwIfAborted()
     if (workdayBoard.status !== 200 || !hasOfficialWorkdayBoardSignal(workdayBoard.html)) {
       throw new Error('Renault Group verified Workday board no longer matches the trusted public jobs surface')
     }
 
     const jobs = await runWorkday({
+      ...workdayOptions,
+      signal,
       company: COMPANY,
       source: SOURCE,
       baseUrl: WORKDAY_BOARD_URL,

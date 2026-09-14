@@ -82,7 +82,7 @@ test('Bikayi fails closed when the redirected careers surface exposes public ATS
         return {
           status: 200,
           url: 'https://bikglobal.notion.site/bikayi-memo',
-          html: notionShellHtml.replace('</body>', '<a href="https://jobs.lever.co/bikayi/1">View role</a></body>'),
+          html: notionShellHtml.replace('</body>', '<a href="https://jobs.lever.co/bikayi/1">View job</a></body>'),
         }
       },
     }),

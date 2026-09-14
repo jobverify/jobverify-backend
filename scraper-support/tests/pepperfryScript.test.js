@@ -19,6 +19,25 @@ const HOMEPAGE_HTML = `
 </html>
 `
 
+const CURRENT_HOMEPAGE_HTML = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Best Furniture &amp; Home Decor Online in India - Up to 70% Off | Pepperfry</title>
+  </head>
+  <body>
+    <h1>Best Furniture &amp; Home Decor Online in India</h1>
+    <div>Track Your Order</div>
+    <div>Find a Store</div>
+    <div>Pepperfry in the News</div>
+    <div>Sell on pepperfry</div>
+    <footer>
+      <a href="https://www.pepperfry.com/pages/careers.html?type=footer">Careers</a>
+    </footer>
+  </body>
+</html>
+`
+
 const CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
@@ -76,8 +95,13 @@ test('Pepperfry parser helpers stay pinned to the verified homepage footer link 
     'https://www.pepperfry.com/pages/careers.html?type=footer',
   )
   assert.equal(pepperfry.hasOfficialHomepageSignal(HOMEPAGE_HTML), true)
+  assert.equal(pepperfry.hasOfficialHomepageSignal(CURRENT_HOMEPAGE_HTML), true)
   assert.equal(
     pepperfry.extractVerifiedCareersPageUrl(HOMEPAGE_HTML),
+    'https://www.pepperfry.com/pages/careers.html?type=footer',
+  )
+  assert.equal(
+    pepperfry.extractVerifiedCareersPageUrl(CURRENT_HOMEPAGE_HTML),
     'https://www.pepperfry.com/pages/careers.html?type=footer',
   )
 

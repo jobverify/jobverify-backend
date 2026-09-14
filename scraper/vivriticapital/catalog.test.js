@@ -5,7 +5,7 @@ import companyAliases from '../../scraper-support/providers/companyAliases.json'
 import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
-test('Vivriti Capital is registered as a verified first-party Darwinbox handoff sentinel without aliases', () => {
+test('Vivriti Capital is registered as a verified first-party Darwinbox inventory provider without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'vivriticapital')
 
   assert.ok(provider)

@@ -9,7 +9,11 @@ import test from 'node:test'
 import Job from '../src/models/Job.js'
 import JobDatasetSummary from '../src/models/JobDatasetSummary.js'
 import { ACCESS_ROLES, PLAN_IDS } from '../src/constants/accessPlans.js'
-import { getAllJobs, getJobMeta } from '../src/controllers/jobController.js'
+import {
+  getAllJobs,
+  getJobMeta,
+  normalizeJobListResponseJob,
+} from '../src/controllers/jobController.js'
 
 // Creates a mock response object for controller tests.
 const createResponseDouble = () => ({
@@ -185,6 +189,23 @@ const matchesExperienceFilters = (job, filter) => {
     && clauses.every((clause) => matchesExperienceClause(job, clause))
   )
 }
+
+test('normalizeJobListResponseJob removes malformed stored location markup from job cards', () => {
+  const job = normalizeJobListResponseJob({
+    title: 'Software Engineer',
+    company: 'Example Company',
+    location: '<span class="jobLocation">DL, India',
+    city: '<span class="jobLocation">DL, India',
+    locations: [
+      '<span class="jobLocation">DL, India',
+      '<span class="jobLocation">Mohali, India',
+    ],
+  })
+
+  assert.equal(job.location, null)
+  assert.equal(job.city, null)
+  assert.deepEqual(job.locations, [])
+})
 
 // Verifies that city filters use normalized keys covering city and locations aliases.
 test('getAllJobs matches city filters against expanded location keys', async () => {

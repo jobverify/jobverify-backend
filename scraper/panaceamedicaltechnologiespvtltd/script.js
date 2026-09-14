@@ -127,6 +127,14 @@ const extractSectionLines = (lines, startPattern, endPatterns) => {
   return dedupeLines(lines.slice(startIndex + 1, endIndex))
 }
 
+// Validate the entire published location, including every place in a list.
+// A city substring cannot establish India scope when other location tokens remain.
+const INDIA_LOCATION_ATOM = String.raw`(?:Malur(?:\s*\(Kolar District\)\s*25\s*Km\s+from\s+Bangalore)?|Whitefield\s*(?:,|-)\s*(?:Bangalore|Bengaluru)|Bangalore|Bengaluru|Hyderabad|Jaipur|Punjab|Himachal Pradesh|Jammu\s*&\s*Kashmir|Pune|Mumbai|Chennai|Delhi)`
+const INDIA_LOCATION_PATTERN = new RegExp(
+  String.raw`^(?:India|All(?:\s+Over)?\s+India|${INDIA_LOCATION_ATOM}(?:\s*(?:/|,)\s*${INDIA_LOCATION_ATOM})*(?:\s*,\s*India)?)$`,
+  'i',
+)
+
 const parseLocation = (value) => {
   const location = normalizeWhitespace(value)
   if (!location) {
@@ -171,7 +179,8 @@ const parseLocation = (value) => {
   return { location, city: null, state: null, locations: [location] }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -195,7 +204,7 @@ export const hasOfficialJoinUsSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
 
-  return /<title>\s*Join Us[^<]*Panacea Medical Technologies Careers\s*<\/title>/i.test(page)
+  return /<title>\s*Join Us(?:[^<]*Panacea Medical Technologies Careers|\s*(?:&#8211;|&ndash;|[-–—])\s*Panacea)\s*<\/title>/i.test(page)
     && /Engineering Medicine\./i.test(text)
     && /Changing Lives\./i.test(text)
     && /Browse All Open Positions/i.test(text)
@@ -218,7 +227,7 @@ export const extractJobsListPageUrls = (html) => {
   for (const match of String(html ?? '').matchAll(/href=["']([^"']*\/careers\/page\/\d+\/)["']/gi)) {
     const url = toAbsoluteUrl(match[1], CAREERS_URL)
     if (url) {
-      urls.add(url)
+      urls.add(url === CAREERS_URL + 'page/1/' ? CAREERS_URL : url)
     }
   }
 
@@ -275,7 +284,7 @@ export const extractJobDetail = (html) => {
 
   const detailTitle = normalizeWhitespace(
     String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || null,
-  )?.replace(/\s*[-]\s*Panacea Careers\s*$/i, '')
+  )?.replace(/\s*[-\u2013\u2014]\s*Panacea Careers\s*$/i, '')
 
   const aboutLines = extractSectionLines(lines, /^About the Role$/i, [
     /^Key Responsibilities$/i,
@@ -351,39 +360,52 @@ export const extractJobDetail = (html) => {
 export const createPanaceaMedicalTechnologiesScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+  async run({ fetchText = defaultFetchText, now: overrideNow, signal } = {}) {
+    signal?.throwIfAborted()
+    const read = async url => { signal?.throwIfAborted(); const value = await fetchText(url, { signal }); signal?.throwIfAborted(); return value }
+    const homepageHtml = await read(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error(HOMEPAGE_ERROR)
     }
 
-    const joinUsHtml = await fetchText(JOIN_US_URL)
+    const joinUsHtml = await read(JOIN_US_URL)
     if (!hasOfficialJoinUsSignal(joinUsHtml)) {
       throw new Error(JOIN_US_ERROR)
     }
 
-    const firstJobsPageHtml = await fetchText(CAREERS_URL)
+    const firstJobsPageHtml = await read(CAREERS_URL)
     if (!hasOfficialJobsBoardSignal(firstJobsPageHtml)) {
       throw new Error(CAREERS_ERROR)
     }
 
+    const expectedCount = Number(stripTags(firstJobsPageHtml).match(/(\d+)\s+open positions found/i)?.[1])
+    if (!Number.isSafeInteger(expectedCount) || expectedCount < 1) throw new Error('Panacea incomplete listing count')
     const jobPageUrls = extractJobsListPageUrls(firstJobsPageHtml)
     const summaries = []
 
     for (const url of jobPageUrls) {
-      const pageHtml = url === CAREERS_URL ? firstJobsPageHtml : await fetchText(url)
+      const pageHtml = url === CAREERS_URL ? firstJobsPageHtml : await read(url)
       if (!hasOfficialJobsBoardSignal(pageHtml)) {
         throw new Error(CAREERS_ERROR)
       }
-      summaries.push(...extractJobSummaries(pageHtml))
+      if (Number(stripTags(pageHtml).match(/(\d+)\s+open positions found/i)?.[1]) !== expectedCount) throw new Error('Panacea inconsistent listing count')
+      const pageJobs = extractJobSummaries(pageHtml)
+      const rawCards = [...String(pageHtml).matchAll(/<article\b[^>]*class=["'][^"']*pmt-job-card[^"']*["']/gi)].length
+      if (!pageJobs.length || pageJobs.length !== rawCards) throw new Error('Panacea incomplete or malformed listing page')
+      summaries.push(...pageJobs)
+      for (const next of extractJobsListPageUrls(pageHtml)) {
+        if (!/^https:\/\/www\.panaceamedical\.in\/careers\/(?:page\/\d+\/)?$/.test(next)) throw new Error('Panacea unverified pagination URL')
+        if (!jobPageUrls.includes(next)) jobPageUrls.push(next)
+        if (jobPageUrls.length > 50) throw new Error('Panacea incomplete pagination limit')
+      }
     }
 
     const uniqueSummaries = [...new Map(
       summaries.map((job) => [job.applyUrl || job.listingJobId || job.detailUrl, job]),
     ).values()]
 
-    if (uniqueSummaries.length === 0) {
-      throw new Error(CAREERS_ERROR)
+    if (uniqueSummaries.length !== summaries.length || uniqueSummaries.length !== expectedCount) {
+      throw new Error('Panacea incomplete or duplicate counted inventory')
     }
 
     const jobs = []
@@ -392,15 +414,20 @@ export const createPanaceaMedicalTechnologiesScraper = ({
       let detail = {}
 
       if (summary.detailUrl) {
-        const detailHtml = await fetchText(summary.detailUrl)
+        const detailHtml = await read(summary.detailUrl)
         detail = extractJobDetail(detailHtml)
-        if (detail.detailTitle && toTitleKey(detail.detailTitle) !== toTitleKey(summary.title)) {
-          detail = {}
+        if (!detail.detailTitle || toTitleKey(detail.detailTitle) !== toTitleKey(summary.title) || !detail.jobDescription || detail.jobDescription.length < 40) {
+          throw new Error('Panacea incomplete or mismatched public job detail')
         }
       }
 
-      const locationFields = parseLocation(detail.location || summary.location)
-      const jobId = detail.jobId || extractApplyJobId(summary.applyUrl) || summary.listingJobId || summary.detailUrl
+      const jobLocation = detail.location || summary.location || ''
+      if (!INDIA_LOCATION_PATTERN.test(normalizeWhitespace(jobLocation) || '')) throw new Error('Panacea unverified India job location scope')
+      const locationFields = parseLocation(jobLocation)
+      const jobId = summary.listingJobId
+      if (!/^\d+$/.test(jobId || '') || extractApplyJobId(summary.applyUrl) !== jobId || jobs.some(job => job.jobId === jobId)) throw new Error('Panacea invalid or duplicate listing identity')
+      const detailUrl = new URL(summary.detailUrl), applyUrl = new URL(summary.applyUrl)
+      if (detailUrl.origin !== new URL(CAREERS_URL).origin || !detailUrl.pathname.startsWith('/careers/jobs/') || applyUrl.origin !== new URL(APPLY_BASE_URL).origin || applyUrl.pathname !== '/apply/') throw new Error('Panacea unverified public job URL')
 
       jobs.push({
         title: summary.title,
@@ -412,7 +439,7 @@ export const createPanaceaMedicalTechnologiesScraper = ({
         state: locationFields.state,
         country: 'India',
         jobId,
-        requisitionId: jobId,
+        requisitionId: detail.jobId || jobId,
         sourceUrl: summary.detailUrl,
         applyUrl: summary.applyUrl,
         employmentType: detail.employmentType || summary.employmentType || null,

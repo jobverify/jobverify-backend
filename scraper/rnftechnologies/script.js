@@ -58,7 +58,8 @@ const extractFirst = (pattern, value) => {
   return match ? match[1] : null
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -67,9 +68,41 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const readStructuredRecords = (html = '') => [...String(html).matchAll(
+  /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+)].flatMap(([, value]) => {
+  const record = JSON.parse(value)
+  return Array.isArray(record) ? record : record['@graph'] || [record]
+})
+const hasCurrentListingsSignal = (html = '') => /<title[^>]*>[\s\S]*RNF Technologies\s*<\/title>/i.test(html)
+  && /Current openings at RNF Technologies/i.test(html) && /class=["']rl-row["']/i.test(html)
+
+const extractCurrentListings = (html = '') => {
+  const collection = readStructuredRecords(html).find(record => record['@type'] === 'ItemList' && record.name === 'Current openings at RNF Technologies')
+  const cards = [...String(html).matchAll(/<div\b[^>]*class=["']rl-row["'][^>]*>([\s\S]*?)<\/div>/gi)]
+  if (!collection || !Array.isArray(collection.itemListElement) || collection.numberOfItems !== cards.length || collection.itemListElement.length !== cards.length || !cards.length) {
+    throw new Error('RNF incomplete current listing')
+  }
+  const records = cards.map(([, card]) => {
+    const anchor = card.match(/<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i)
+    const sourceUrl = toAbsoluteUrl(anchor?.[1])
+    const title = stripTags(anchor?.[2])
+    const fields = [...card.matchAll(/<span[^>]*class=["']rl-c["'][^>]*>([\s\S]*?)<\/span>/gi)].map(([, text]) => stripTags(text))
+    const location = fields[1]
+    const matchingItem = collection.itemListElement.find(item => toAbsoluteUrl(item.url) === sourceUrl && item.name === title)
+    if (!title || !location || !sourceUrl || !matchingItem || !/^\/join-our-team\/current-openings\/[a-z0-9-]+$/.test(new URL(sourceUrl).pathname)) throw new Error('RNF incomplete current role identity')
+    const jobId = new URL(sourceUrl).pathname.split('/').at(-1)
+    return { title, department: fields[0], location, city: stripTags(location.split(',')[0]), country: /\bindia\b/i.test(location) ? 'India' : null,
+      jobId, requisitionId: jobId, employmentType: fields[2], sourceUrl, detailUrl: sourceUrl, link: sourceUrl }
+  })
+  if (new Set(records.map(job => job.jobId)).size !== records.length) throw new Error('RNF incomplete duplicate current role identity')
+  return records
+}
+
 export const hasOfficialListingsSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  if (hasCurrentListingsSignal(page)) return true
 
   return /<title[^>]*>[\s\S]*RNF Technologies\s*<\/title>/i.test(page)
     && normalized.includes('Current Job Openings')
@@ -78,6 +111,7 @@ export const hasOfficialListingsSignal = (html = '') => {
   }
 
 export const extractJobListings = (html = '') => {
+  if (hasCurrentListingsSignal(html)) return extractCurrentListings(html)
   const page = String(html ?? '')
   const jobs = []
 
@@ -129,6 +163,23 @@ export const hasOfficialDetailSignal = (html = '', listing = {}) => {
   }
 
 export const extractJobDetail = (html = '', listing = {}) => {
+  const structured = readStructuredRecords(html).find(record => record['@type'] === 'JobPosting')
+  if (structured) {
+    const employer = structured.hiringOrganization?.name
+    const detailUrl = toAbsoluteUrl(structured.url)
+    if (employer !== 'RNF Technologies' || !detailUrl || detailUrl !== toAbsoluteUrl(listing.sourceUrl)
+      || structured.identifier?.value !== listing.jobId || structured.title !== listing.title) throw new Error('RNF structured detail employer or job identity mismatch')
+    const address = structured.jobLocation?.address
+    const countryValue = address?.addressCountry?.name || address?.addressCountry
+    const countryCode = String(countryValue || '').toUpperCase()
+    const country = /^(IN|INDIA)$/.test(countryCode) ? 'India'
+      : /^[A-Z]{2}$/.test(countryCode) ? new Intl.DisplayNames(['en'], { type: 'region', fallback: 'none' }).of(countryCode) : null
+    if (!address || !country || !address.addressLocality || !structured.description) throw new Error('RNF structured detail location or description incomplete')
+    return { ...listing, title: structured.title, company: COMPANY, city: address.addressLocality, country,
+      location: [address.addressLocality, address.addressRegion, country].filter(Boolean).join(', '),
+      applyUrl: detailUrl, sourceUrl: detailUrl, postingDate: structured.datePosted || null,
+      employmentType: structured.employmentType || null, jobDescription: stripTags(structured.description), remoteStatus: 'On-site' }
+  }
   if (!hasOfficialDetailSignal(html, listing)) {
     throw new Error('The verified RNF Technologies detail page no longer matches the trusted first-party surface')
   }
@@ -183,8 +234,13 @@ export const createRNFTechnologiesScraper = ({
   maxJobs = null,
   now: defaultNow = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, now = defaultNow } = {}) {
-    const listingsHtml = await fetchText(CAREERS_URL)
+  async run({ signal, fetchText = defaultFetchText, now = defaultNow } = {}) {
+    const request = async (fetcher, url, options = {}) => {
+      signal?.throwIfAborted()
+      try { return await fetcher(url, { ...options, signal }) }
+      finally { signal?.throwIfAborted() }
+    }
+    const listingsHtml = await request(fetchText, CAREERS_URL)
     if (!hasOfficialListingsSignal(listingsHtml)) {
       throw new Error('The verified RNF Technologies current openings surface no longer matches the trusted first-party page')
     }
@@ -194,10 +250,12 @@ export const createRNFTechnologiesScraper = ({
     const jobs = []
 
     for (const listing of selectedListings) {
-      const detailHtml = await fetchText(listing.detailUrl)
+      const detailHtml = await request(fetchText, listing.detailUrl)
       const job = extractJobDetail(detailHtml, listing)
+      if (job.country !== 'India') continue
       jobs.push({
         ...job,
+        ...(selectedListings.length < listings.length ? { sourceListingComplete: false } : {}),
         source: SOURCE,
         link: job.applyUrl || job.sourceUrl,
         scrapedAt: now(),

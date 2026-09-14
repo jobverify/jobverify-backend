@@ -46,6 +46,63 @@ const careersPageHtml = `
 </html>
 `
 
+const placeholderJobsHtml = careersPageHtml.replace(
+  '"jobOpening":[]',
+  `"jobOpening":[
+    {
+      "id":15,
+      "JobTitle":null,
+      "Tenure":null,
+      "Location":null,
+      "LocationPath":null,
+      "Department":null,
+      "DepartmentPath":null,
+      "Experience":null,
+      "publishDate":null,
+      "Description":null,
+      "Responsibility":null,
+      "DesiredProfile":null,
+      "FunctionalCompetencies":null,
+      "published_at":"2026-08-29T14:09:34.000Z",
+      "created_at":"2026-08-29T14:09:34.000Z",
+      "updated_at":"2026-08-29T14:09:34.000Z",
+      "Fulltime":null,
+      "Duration":null,
+      "DatePublished":null
+    },
+    {
+      "id":16,
+      "JobTitle":null,
+      "Tenure":null,
+      "Location":null,
+      "LocationPath":null,
+      "Department":null,
+      "DepartmentPath":null,
+      "Experience":null,
+      "publishDate":null,
+      "Description":null,
+      "Responsibility":null,
+      "DesiredProfile":null,
+      "FunctionalCompetencies":null,
+      "published_at":"2026-08-29T14:09:35.000Z",
+      "created_at":"2026-08-29T14:09:35.000Z",
+      "updated_at":"2026-08-29T14:09:35.000Z",
+      "Fulltime":null,
+      "Duration":null,
+      "DatePublished":null
+    }
+  ]`,
+).replace(
+  '<div data-accordion-component="Accordion" class="dropdown_container1___1Wo0"></div>',
+  `<div data-accordion-component="Accordion" class="dropdown_container1___1Wo0">
+    <div data-accordion-component="AccordionItem">
+      <div class="dropdown_manager__OhGO3"></div>
+      <div class="dropdown_location__yLgPF">Location : | Work Experience :</div>
+      <button class="dropdown_button__4H7yd">Apply Now</button>
+    </div>
+  </div>`,
+)
+
 const nonEmptyJobsHtml = `
 <!doctype html>
 <html lang="en">
@@ -91,6 +148,7 @@ test('Knowlarity pins the verified official empty-state careers page and embedde
   assert.equal(knowlarity.hasVerifiedCareersPageSignal(careersPageHtml), true)
   assert.equal(knowlarity.hasEmbeddedEmptyJobOpeningState(careersPageHtml), true)
   assert.equal(knowlarity.hasRenderablePublicJobsSignal(careersPageHtml), false)
+  assert.equal(knowlarity.hasRenderablePublicJobsSignal(placeholderJobsHtml), false)
   assert.equal(knowlarity.hasRenderablePublicJobsSignal(nonEmptyJobsHtml), true)
 })
 
@@ -112,6 +170,27 @@ test('Knowlarity sentinel returns [] only while the official careers page stays 
 
   assert.deepEqual(requestedUrls, [knowlarity.CAREERS_URL])
   assert.deepEqual(jobs, [])
+})
+
+test('Knowlarity accepts only fully null first-party placeholder records as a non-renderable empty state', async () => {
+  const knowlarity = await loadKnowlarityModule()
+
+  const jobs = await knowlarity.createKnowlarityScraper().run({
+    fetchPage: async (url) => ({ status: 200, url, html: placeholderJobsHtml }),
+  })
+
+  assert.deepEqual(jobs, [])
+
+  const partialRecordHtml = placeholderJobsHtml.replace(
+    '"JobTitle":null',
+    '"JobTitle":"Account Executive"',
+  )
+  await assert.rejects(
+    knowlarity.createKnowlarityScraper().run({
+      fetchPage: async (url) => ({ status: 200, url, html: partialRecordHtml }),
+    }),
+    /public jobs surface/i,
+  )
 })
 
 test('Knowlarity falls back to the browser-backed page fetch when direct TLS validation fails', async () => {
@@ -136,23 +215,24 @@ test('Knowlarity falls back to the browser-backed page fetch when direct TLS val
   assert.deepEqual(jobs, [])
 })
 
-test('Knowlarity returns an empty result when the verified careers shell is temporarily timeout-blocked', async () => {
+test('Knowlarity fails closed when both direct and browser-backed careers fetches time out', async () => {
   const knowlarity = await loadKnowlarityModule()
 
-  const jobs = await knowlarity.createKnowlarityScraper().run({
-    fetchPage: async () => {
-      throw new Error(
-        'fetch failed | Connect Timeout Error (attempted address: www.knowlarity.com:443, timeout: 10000ms)',
-      )
-    },
-    fetchBrowserPage: async () => {
-      throw new Error(
-        'fetch failed | Connect Timeout Error (attempted address: www.knowlarity.com:443, timeout: 10000ms)',
-      )
-    },
-  })
-
-  assert.deepEqual(jobs, [])
+  await assert.rejects(
+    knowlarity.createKnowlarityScraper().run({
+      fetchPage: async () => {
+        throw new Error(
+          'fetch failed | Connect Timeout Error (attempted address: www.knowlarity.com:443, timeout: 10000ms)',
+        )
+      },
+      fetchBrowserPage: async () => {
+        throw new Error(
+          'fetch failed | Connect Timeout Error (attempted address: www.knowlarity.com:443, timeout: 10000ms)',
+        )
+      },
+    }),
+    /timeout/i,
+  )
 })
 
 test('Knowlarity sentinel fails closed when the official careers page drifts or starts exposing public jobs', async () => {

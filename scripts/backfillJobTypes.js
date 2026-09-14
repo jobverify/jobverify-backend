@@ -5,7 +5,7 @@ import Job from "../src/models/Job.js";
 import { resolveJobType } from "../scraper-support/utils/normalizeScrapedJob.js";
 
 const shouldApply = process.argv.includes("--apply");
-const canonicalJobTypes = ["Intern", "Internship", "Full-time Fresher", "Full-time Experienced", "Full-time", "Contract", "Others"];
+const canonicalJobTypes = ["Intern", "Internship", "Full-time Fresher", "Full-time Experienced", "Full-time", "Contract"];
 const cursor = Job.find({ status: "active", jobType: { $nin: canonicalJobTypes } })
   .select("employmentType experienceLevel title department description jobDescription minimumQualification preferredQualification experienceRequired jobType")
   .lean()
@@ -27,9 +27,7 @@ try {
   for await (const job of cursor) {
     scanned += 1;
     const sourceEmploymentType = job.employmentType || job.jobType;
-    const jobType = sourceEmploymentType
-      ? resolveJobType({ ...job, employmentType: sourceEmploymentType })
-      : "Others";
+    const jobType = resolveJobType({ ...job, employmentType: sourceEmploymentType });
     if (!jobType || jobType === job.jobType) continue;
 
     changed += 1;

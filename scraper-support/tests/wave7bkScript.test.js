@@ -10,7 +10,7 @@ const izmoCareersHtml = `
   <body>
     <h1>Build the Future of Automotive Tech.</h1>
     <h2>Current Openings.</h2>
-    <p>Find your next opportunity. Filter by department, location, or job type.</p>
+    <p>Find your dream job. Filter by department, location, or job type.</p>
     <article>
       <h3>Associate Graphic Designer (UK Process)</h3>
       <p>Creative / Design</p>

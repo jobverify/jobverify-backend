@@ -46,18 +46,17 @@ test('Unbxd stays fail-closed on the verified exact-name public brand surfaces',
     fetchHtml: async (url) => {
       requestedUrls.push(url)
 
-      if (url === CAREERS_URL) return VERIFIED_TRIAL_HTML
       if (url === ABOUT_URL) return VERIFIED_ABOUT_HTML
 
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [CAREERS_URL, ABOUT_URL])
+  assert.deepEqual(requestedUrls, [ABOUT_URL])
   assert.deepEqual(jobs, [])
   assert.equal(SOURCE, 'unbxd')
   assert.equal(COMPANY, 'Unbxd')
   assert.equal(CAREERS_URL, 'https://try.unbxd.com/')
   assert.equal(ABOUT_URL, 'https://netcoreunbxd.com/about/')
-  assert.equal(DISPOSITION, 'verified-exact-name-brand-surfaces-fail-closed')
+  assert.equal(DISPOSITION, 'verified-exact-name-about-surface-fail-closed')
 })

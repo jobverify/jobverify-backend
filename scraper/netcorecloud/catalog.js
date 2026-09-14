@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Friday, August 7, 2026 that https://netcorecloud.com/careers now resolves to https://netcore.ai/careers and serves a first-party redirect shell with "Netcore Cloud is now Netcore.ai" plus "Please wait while you are redirected to the right page..." instead of a trustworthy public jobs board. Verified on Friday, August 7, 2026 that https://netcorecloud.com/careers-list?job_category=engineering resolves to https://netcore.ai/careers-list?job_category=engineering and continues to serve the same redirect/loading shell rather than public job listings. There is no trustworthy public jobs surface available from the verified first-party careers flow, so this provider fails closed and returns an empty array.'
+  'Verified on September 13, 2026 that https://netcorecloud.com/careers redirects to https://netcore.ai/careers and embeds the official careers presentation. The linked https://netcorecloud.com/careers-list?job_category=engineering redirects to https://netcore.ai/careers-list?job_category=engineering and embeds netcoreai.mynexthire.com. The public MyNextHire reqlist/get inventory supplies all departments; typed records are validated before India filtering. Loading shells, blocked responses, malformed records, and unknown locations reject the snapshot.'
 
 export const NETCORE_CLOUD_CATALOG = {
   source: 'netcorecloud',
@@ -17,14 +17,14 @@ export const NETCORE_CLOUD_CATALOG = {
   companyCareerPage: 'https://netcorecloud.com/careers',
   companyCareersListUrl: 'https://netcorecloud.com/careers-list?job_category=engineering',
   companyDomain: 'netcorecloud.com',
-  atsPlatform: 'official-company-careers-redirect-shell',
+  atsPlatform: 'mynexthire',
   countryFilter: 'India',
-  paginationStrategy: 'verified-careers-page-plus-careers-list-shell-validation',
+  paginationStrategy: 'complete-public-reqlist-inventory',
   extractionStrategy:
-    'verified-first-party-careers-page+verified-careers-list-redirect-shell-or-403-return-empty',
+    'first-party-careers-list-handoff+validated-mynexthire-inventory+india-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-07',
+  verifiedOn: '2026-09-13',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

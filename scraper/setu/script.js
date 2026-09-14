@@ -174,7 +174,8 @@ export const enrichSetuJobFromDetailPage = (job, detailHtml = '') => {
   }
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,text/csv,text/plain;q=0.8,*/*;q=0.7',
@@ -188,11 +189,20 @@ export const hasOfficialCareersSignal = (html = '') => {
   const title = (extractTitle(page) || '').toLowerCase()
   const markup = page.toLowerCase()
 
-  return title.includes('careers at setu')
+  const hasCanonicalCareersRoute = /<link\b[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/setu\.co\/careers\/?["']/i.test(page)
+  const hasCurrentFramerSurface = title.includes('careers at setu')
+    && hasCanonicalCareersRoute
+    && markup.includes('help us build the financial infrastructure india runs on')
+    && markup.includes('open roles')
+    && markup.includes('every role links straight through to our application portal')
+
+  const hasLegacyCsvSurface = title.includes('careers at setu')
     && markup.includes("come tackle india's toughest fintech problems")
     && markup.includes("overhauling our country's dated fintech architecture")
     && markup.includes('current openings')
     && markup.includes('brokentusk technologies pvt. ltd')
+
+  return hasCurrentFramerSurface || hasLegacyCsvSurface
 }
 
 export const hasPlaceholderOpeningsSignal = (html = '') =>
@@ -263,6 +273,42 @@ const extractTurbohireToken = (value) =>
 const isTurbohireApplyUrl = (value) =>
   /^https:\/\/pinelabsgroup\.turbohire\.co\/get\/[^/?#]+$/i.test(normalizeUrl(value))
 
+export const extractCurrentCareersJobs = (html = '') => {
+  const page = String(html ?? '')
+  const jobs = []
+  const seenJobIds = new Set()
+
+  for (const match of page.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+    const applyUrl = normalizeUrl(match[1])
+    const body = match[2]
+    if (!/turbohire\.co\/get\//i.test(applyUrl) && !(/<h[1-6]\b/i.test(body) && /\bApply\b/i.test(normalizeWhitespace(body) || ''))) continue
+    const title = normalizeWhitespace(body.match(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/i)?.[1])
+    const department = normalizeWhitespace(body.match(/<p\b[^>]*>([\s\S]*?)<\/p>/i)?.[1])
+    const jobId = extractTurbohireToken(applyUrl)
+
+    if (!title || !jobId || !isTurbohireApplyUrl(applyUrl)) throw new Error('Setu incomplete listing: malformed role card')
+    if (seenJobIds.has(jobId)) {
+      if (jobs.find(job => job.jobId === jobId)?.title !== title) throw new Error('Setu incomplete listing: conflicting duplicate role')
+      continue
+    }
+
+    seenJobIds.add(jobId)
+    jobs.push({
+      jobId,
+      title,
+      department,
+      location: 'India',
+      city: null,
+      country: 'India',
+      sourceUrl: applyUrl,
+      applyUrl,
+      jobDescription: null,
+    })
+  }
+
+  return jobs
+}
+
 export const hasCurrentOpeningsCsvSignal = (csvText = '') => {
   const { headers, rows } = parseCsvTable(csvText)
 
@@ -317,7 +363,7 @@ export const extractJobsFromCsv = (currentOpeningsCsv = '', categoryDescriptions
       || null
     )
 
-    if (!title || !applyUrl || !jobId || !isTurbohireApplyUrl(applyUrl)) continue
+    if (!title || !applyUrl || !jobId || !isTurbohireApplyUrl(applyUrl)) throw new Error('Setu incomplete CSV inventory: malformed role')
     if (seenJobIds.has(jobId)) continue
 
     seenJobIds.add(jobId)
@@ -343,29 +389,43 @@ export const createSetuScraper = ({
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
+    signal,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    signal?.throwIfAborted()
+    const read = async (url) => {
+      signal?.throwIfAborted()
+      const html = await fetchText(url, { signal })
+      signal?.throwIfAborted()
+      return html
+    }
+    const careersHtml = await read(CAREERS_URL)
 
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('The verified Setu careers page changed materially')
     }
 
-    const currentOpeningsCsv = await fetchText(CURRENT_OPENINGS_CSV_URL)
-    if (!hasCurrentOpeningsCsvSignal(currentOpeningsCsv)) {
-      throw new Error('The verified Setu current openings CSV no longer matches the trusted public surface')
+    let extractedJobs
+    if (hasPlaceholderOpeningsSignal(careersHtml)) {
+      const currentOpeningsCsv = await read(CURRENT_OPENINGS_CSV_URL)
+      if (!hasCurrentOpeningsCsvSignal(currentOpeningsCsv)) {
+        throw new Error('The verified Setu current openings CSV no longer matches the trusted public surface')
+      }
+
+      const categoryDescriptionsCsv = await read(CATEGORY_DESCRIPTIONS_CSV_URL)
+      if (!hasCategoryDescriptionsCsvSignal(categoryDescriptionsCsv)) {
+        throw new Error('The verified Setu category descriptions CSV no longer matches the trusted public surface')
+      }
+
+      extractedJobs = extractJobsFromCsv(currentOpeningsCsv, categoryDescriptionsCsv)
+    } else {
+      extractedJobs = extractCurrentCareersJobs(careersHtml)
     }
 
-    const categoryDescriptionsCsv = await fetchText(CATEGORY_DESCRIPTIONS_CSV_URL)
-    if (!hasCategoryDescriptionsCsvSignal(categoryDescriptionsCsv)) {
-      throw new Error('The verified Setu category descriptions CSV no longer matches the trusted public surface')
-    }
-
-    const extractedJobs = extractJobsFromCsv(currentOpeningsCsv, categoryDescriptionsCsv)
     if (extractedJobs.length === 0) {
-      throw new Error('The verified Setu openings CSV did not expose any public jobs')
+      throw new Error('The verified Setu careers page did not expose any public jobs')
     }
 
-    const limitedJobs = maxJobs ? extractedJobs.slice(0, maxJobs) : extractedJobs
+    const limitedJobs = Number.isInteger(maxJobs) && maxJobs > 0 ? extractedJobs.slice(0, maxJobs) : extractedJobs
     const baseJobs = limitedJobs.map((job) => ({
       title: job.title,
       company: COMPANY_NAME,
@@ -388,14 +448,16 @@ export const createSetuScraper = ({
       source: SOURCE,
       link: job.applyUrl,
       scrapedAt: now(),
+      ...(limitedJobs.length < extractedJobs.length ? { sourceListingComplete: false } : {}),
     }))
 
     const jobs = []
     for (const job of baseJobs) {
       try {
-        const detailHtml = await fetchText(job.sourceUrl)
+        const detailHtml = await read(job.sourceUrl)
         jobs.push(enrichSetuJobFromDetailPage(job, detailHtml))
       } catch (error) {
+        signal?.throwIfAborted()
         if (isUnavailableTurbohireDetailError(error)) {
           jobs.push({
             ...job,

@@ -17,9 +17,9 @@ export const FLEXSIN_TECHNOLOGIES_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'flexsin.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: "2026-09-13",
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.flexsin.com/careers/ is the live first-party Flexsin careers page and that it publicly exposes inline job cards including Director - Open Source, AI Architect - Artificial Intelligence, Intern - Software Engineering, and Software Engineer - Python in Noida.',
+    "Verified September 13, 2026: the official Flexsin careers page publishes 37 role cards, including 36 with verified India locations and one without a role location. All cards are retained for validation and an incomplete snapshot flag prevents expiration of previous jobs while location scope remains unknown.",
   dryRunFile: 'flexsintechnologies/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

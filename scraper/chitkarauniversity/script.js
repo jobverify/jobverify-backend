@@ -7,6 +7,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const BASE_URL = 'https://careers.chitkara.edu.in'
 export const CAREERS_URL = `${BASE_URL}/`
+const JOBS_API_URL = 'https://api.chitkara.edu.in/jobpost/getAll'
 
 const SOURCE = 'chitkarauniversity'
 const COMPANY = 'Chitkara University'
@@ -95,6 +96,50 @@ export const hasOfficialCareersSignal = (html) => {
     && /(gform_wrapper|Apply Now)/i.test(page)
 }
 
+const getPublicAppBundleUrl = (html) => {
+  const page = String(html ?? '')
+  const title = normalizeWhitespace(page.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1]) || ''
+  if (!/^Chitkara University\b/i.test(title)
+    || !/id=["']positions["']/i.test(page)
+    || !/View All Positions/i.test(page)) return null
+  const scriptPath = page.match(/<script\b[^>]*\bsrc=["'](\/_next\/static\/chunks\/app\/page-[\w-]+\.js)["']/i)?.[1]
+  return scriptPath ? new URL(scriptPath, CAREERS_URL).href : null
+}
+
+const extractPublicApiJobs = (payload) => {
+  if (payload?.statusCode !== 200 || !Array.isArray(payload.data)) {
+    throw new Error('Chitkara public jobs API returned an invalid response')
+  }
+  const seen = new Set()
+  return payload.data.map((row) => {
+    if (!row || typeof row.id !== 'string' || !row.id.trim() || seen.has(row.id)
+      || typeof row.title !== 'string' || !normalizeWhitespace(row.title)
+      || ['responsibilities', 'qualifications', 'requiredSkill'].some((key) => !Array.isArray(row[key])
+        || row[key].some((item) => typeof item !== 'string'))) {
+      throw new Error('Chitkara public jobs API returned an invalid or duplicate role')
+    }
+    seen.add(row.id)
+    const location = normalizeWhitespace(row.location)
+    const city = /^(Rajpura|Mohali)\b/i.exec(location || '')?.[1] || null
+    const country = /\b(?:Rajpura|Mohali|Himachal Pradesh|India)\b/i.test(location || '') ? 'India' : null
+    const sourceUrl = `${CAREERS_URL}#positions`
+    return {
+      title: normalizeWhitespace(row.title), company: COMPANY,
+      department: normalizeWhitespace(row.category), location, city, country,
+      jobId: row.id, requisitionId: row.id, sourceUrl, applyUrl: sourceUrl,
+      employmentType: normalizeEmploymentType(row.schedule),
+      experienceRequired: normalizeWhitespace(row.experience),
+      minimumQualification: normalizeWhitespace(row.mandatoryEducation),
+      preferredQualification: normalizeWhitespace(row.qualifications.join(' ')),
+      requiredSkills: row.requiredSkill.map(normalizeWhitespace).filter(Boolean),
+      postingDate: Number.isFinite(Date.parse(row.jobs_created_at)) ? new Date(row.jobs_created_at).toISOString() : null,
+      closingDate: null,
+      jobDescription: normalizeWhitespace([row.summary, ...row.responsibilities, ...row.qualifications].filter(Boolean).join(' ')),
+      remoteStatus: location ? inferRemoteStatus(location) : null,
+    }
+  })
+}
+
 export const extractListings = (html) => [...String(html ?? '').matchAll(
   /<div[^>]+class=["'][^"']*job-posted-box[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi,
 )]
@@ -157,6 +202,17 @@ export const createChitkaraUniversityScraper = ({ maxJobs = null, maxPages = Num
     for (let page = 1; page <= maxPages; page += 1) {
       const pageUrl = buildPageUrl(page)
       const pageHtml = await fetchText(pageUrl)
+
+      const publicAppBundleUrl = page === 1 ? getPublicAppBundleUrl(pageHtml) : null
+      if (publicAppBundleUrl) {
+        const bundle = await fetchText(publicAppBundleUrl)
+        if (!/fetch\(\s*["']https:\/\/api\.chitkara\.edu\.in\/jobpost\/getAll["']\s*\)/.test(bundle)) {
+          throw new Error('Chitkara public careers app no longer confirms the verified jobs API')
+        }
+        const apiJobs = extractPublicApiJobs(JSON.parse(await fetchText(JOBS_API_URL)))
+        const selectedJobs = Number.isInteger(maxJobs) ? apiJobs.slice(0, maxJobs) : apiJobs
+        return selectedJobs.map((job) => ({ ...job, source: SOURCE, link: job.sourceUrl, scrapedAt: now() }))
+      }
 
       if (page === 1 && !hasOfficialCareersSignal(pageHtml)) {
         throw new Error('verified Chitkara University careers surface no longer matches the official public careers page')

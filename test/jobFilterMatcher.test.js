@@ -112,3 +112,10 @@ test("jobMatchesSavedFilters supports the more-than-thirty-days date-posted opti
     now,
   }), false);
 });
+
+test("more-than-thirty-days database filter requires a real historical date", () => {
+  const filters = buildJobFilterConditions({ datePostedDays: ["older-than-30"] });
+
+  assert.equal(filters.postedAt.$type, "date");
+  assert.ok(filters.postedAt.$lt instanceof Date);
+});

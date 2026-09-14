@@ -98,6 +98,7 @@ test('buildScrapers and company coverage resolve Aster DM Healthcare from the sh
   assert.ok(scraper)
   assert.equal(provider.companyName, 'Aster DM Healthcare')
   assert.equal(provider.companyCareerPage, 'https://www.asterdmhealthcare.in/careers')
+  assert.equal(provider.scraperTimeoutMs, 600000)
   assert.match(scraper.dryRunFile, /asterdmhealthcare[\\/]jobs\.json$/i)
 
   const report = generateCompanyCoverageReport({

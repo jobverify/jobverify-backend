@@ -10,6 +10,7 @@ const BASE_URL = 'https://careers.hcltech.com'
 const SEARCH_PAGE_URL = `${BASE_URL}/search/?q=&sortColumn=referencedate&sortDirection=desc`
 const SEARCH_API_PATH = '/services/recruiting/v1/jobs'
 const DEFAULT_LOCALE = 'en_US'
+const REQUEST_TIMEOUT_MS = 30000
 
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
@@ -45,6 +46,11 @@ const extractFirst = (pattern, value, transform = (match) => match[1]) => {
 }
 
 const unique = (values) => [...new Set(values.filter(Boolean))]
+
+const createRequestSignal = (signal, timeoutMs = REQUEST_TIMEOUT_MS) => {
+  const timeoutSignal = AbortSignal.timeout(timeoutMs)
+  return signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal
+}
 
 const normalizeDetailSlug = (value) => {
   const normalized = normalizeWhitespace(value)
@@ -192,6 +198,7 @@ const fetchText = async (url, options = {}) => {
       ...(options.headers || {}),
     },
     body: options.body,
+    signal: createRequestSignal(options.signal),
   })
 
   if (!response.ok) {
@@ -201,12 +208,13 @@ const fetchText = async (url, options = {}) => {
   return response.text()
 }
 
-const fetchSearchPageSession = async () => {
+const fetchSearchPageSession = async (signal) => {
   const response = await fetch(SEARCH_PAGE_URL, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
+    signal: createRequestSignal(signal),
   })
 
   if (!response.ok) {
@@ -239,6 +247,7 @@ const fetchJson = async (url, options = {}) => {
       ...(options.headers || {}),
     },
     body: options.body,
+    signal: createRequestSignal(options.signal),
   })
 
   if (!response.ok) {
@@ -248,13 +257,33 @@ const fetchJson = async (url, options = {}) => {
   return response.json()
 }
 
-export const run = async () => {
+export const hydrateJobDetails = async (listings, {
+  fetchDetail = fetchText,
+  signal,
+} = {}) => {
+  const hydrated = []
+
+  for (const listing of listings) {
+    signal?.throwIfAborted()
+    const detailHtml = await fetchDetail(listing.sourceUrl, { signal })
+    signal?.throwIfAborted()
+    hydrated.push({
+      listing,
+      detail: extractJobDetail(detailHtml, listing),
+    })
+  }
+
+  return hydrated
+}
+
+export const run = async ({ signal } = {}) => {
   const jobs = []
   const seenJobIds = new Set()
   const maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY
-  const session = await fetchSearchPageSession()
+  const session = await fetchSearchPageSession(signal)
 
   for (let pageNumber = 0; pageNumber < maxPages; pageNumber += 1) {
+    signal?.throwIfAborted()
     const listingPayload = await fetchJson(`${BASE_URL}${SEARCH_API_PATH}`, {
       method: 'POST',
       headers: {
@@ -263,18 +292,22 @@ export const run = async () => {
         ...(session.cookieHeader ? { Cookie: session.cookieHeader } : {}),
       },
       body: JSON.stringify(buildSearchRequestPayload(pageNumber)),
+      signal,
     })
     const listings = extractSearchResults(listingPayload)
     const summary = extractSearchSummary(listingPayload)
 
     if (listings.length === 0) break
 
-    for (const listing of listings) {
-      if (seenJobIds.has(listing.jobId)) continue
+    const freshListings = listings.filter((listing) => {
+      if (seenJobIds.has(listing.jobId)) return false
       seenJobIds.add(listing.jobId)
+      return true
+    })
 
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const detail = extractJobDetail(detailHtml, listing)
+    const detailedListings = await hydrateJobDetails(freshListings, { signal })
+
+    for (const { listing, detail } of detailedListings) {
 
       jobs.push({
         jobId: detail.jobId || listing.jobId,
@@ -306,6 +339,7 @@ export const run = async () => {
     if ((pageNumber + 1) * pageSize >= totalJobCount) break
   }
 
+  signal?.throwIfAborted()
   return jobs
 }
 
