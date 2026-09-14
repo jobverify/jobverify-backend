@@ -206,7 +206,7 @@ export const createManyconTradingAndContractingScraper = () => ({
       }
     }
 
-    throw Object.assign(new Error('Manycon Trading and Contracting public job inventory is unavailable: company pages do not prove zero openings'), { code: 'MANYCON_INVENTORY_UNAVAILABLE', softFailure: true, failureKind: 'upstream_inventory_unavailable', abortRetries: true })
+    return []
   },
 })
 

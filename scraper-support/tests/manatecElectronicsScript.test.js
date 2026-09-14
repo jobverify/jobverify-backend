@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 import {
   CAREERS_URL,
   COMPANY,
@@ -105,10 +107,12 @@ test('Manatec Electronics recognizes the verified homepage, sitemap, current car
   )
 })
 
-test('Manatec Electronics rejects an empty snapshot from the verified application-only form', async () => {
+test('Manatec Electronics returns discovery-only evidence for the verified application-only form', async () => {
   const requestedUrls = []
 
-  const pending = createManatecElectronicsScraper().run({
+  const jobs = await createManatecElectronicsScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
@@ -132,14 +136,20 @@ test('Manatec Electronics rejects an empty snapshot from the verified applicatio
     },
   })
 
-  await assert.rejects(pending, { code: 'MANATEC_INVENTORY_UNAVAILABLE' })
   assert.deepEqual(requestedUrls, [HOMEPAGE_URL, CAREERS_URL])
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, CAREERS_URL)
+  assert.equal(evidence?.listingComplete, false)
 })
 
-test('Manatec Electronics stops on the first unavailable route without requesting more blocked surfaces', async () => {
+test('Manatec Electronics returns discovery-only evidence on the first unavailable route without requesting more blocked surfaces', async () => {
   const requestedUrls = []
 
-  const pending = createManatecElectronicsScraper().run({
+  const jobs = await createManatecElectronicsScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
@@ -163,8 +173,12 @@ test('Manatec Electronics stops on the first unavailable route without requestin
     },
   })
 
-  await assert.rejects(pending, { code: 'MANATEC_INVENTORY_UNAVAILABLE' })
   assert.deepEqual(requestedUrls, [HOMEPAGE_URL])
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, HOMEPAGE_URL)
+  assert.equal(evidence?.listingComplete, false)
 })
 
 test('Manatec Electronics fails closed when the careers page drifts into a public jobs surface', async () => {

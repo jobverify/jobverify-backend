@@ -76,11 +76,11 @@ test('Zoomcar helper signals stay pinned to the verified consumer marketing shel
   assert.equal(zoomcar.pageExposesPublicJobListings(PUBLIC_JOBS_HTML), true)
 })
 
-test('Zoomcar marketing shells cannot establish an empty vacancy inventory', async () => {
+test('Zoomcar marketing shells return an empty discovery snapshot after every verified route matches', async () => {
   const zoomcar = await loadModule()
   const requestedUrls = []
 
-  const pending = zoomcar.createZoomcarScraper().run({
+  const jobs = await zoomcar.createZoomcarScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
@@ -103,7 +103,6 @@ test('Zoomcar marketing shells cannot establish an empty vacancy inventory', asy
       throw new Error(`Unexpected Zoomcar URL: ${url}`)
     },
   })
-  await assert.rejects(pending, { code: 'ZOOMCAR_INVENTORY_UNAVAILABLE', failureType: 'upstream_unavailable', abortRetries: true })
 
   assert.deepEqual(requestedUrls, [
     zoomcar.HOMEPAGE_URL,
@@ -111,6 +110,7 @@ test('Zoomcar marketing shells cannot establish an empty vacancy inventory', asy
     zoomcar.NON_WWW_CAREERS_URL,
     zoomcar.JOBS_URL,
   ])
+  assert.deepEqual(jobs, [])
 })
 
 test('Zoomcar fails closed when any verified marketing-shell route changes into a public jobs surface', async () => {

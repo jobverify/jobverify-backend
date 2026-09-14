@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const FIXED_SCRAPED_AT = '2026-07-18T00:00:00.000Z'
 
 const loadModule = async (relativePath) => {
@@ -258,23 +260,28 @@ test('Excelra Knowledge Solutions fails closed when the verified WordPress caree
   )
 })
 
-test('Blazeclan Technologies reports a missing Zoho tenant as typed upstream unavailability', async () => {
+test('Blazeclan Technologies reports a missing Zoho tenant as discovery-only inventory evidence', async () => {
   const blazeclan = await loadModule('../../scraper/blazeclantechnologies/script.js')
   const requestedUrls = []
 
   assert.equal(blazeclan.hasOfficialCareersSignal(blazeclanCareersHtml), true)
   assert.equal(blazeclan.isBrokenZohoBoardPage(blazeclanBrokenBoardHtml), true)
 
-  await assert.rejects(blazeclan.createBlazeclanTechnologiesScraper().run({
+  const jobs = await blazeclan.createBlazeclanTechnologiesScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === blazeclan.CAREERS_URL) return blazeclanCareersHtml
       if (url === blazeclan.BROKEN_BOARD_URL) return blazeclanBrokenBoardHtml
       throw new Error(`Unexpected Blazeclan URL: ${url}`)
     },
-  }), error => error.code === 'BLAZECLAN_BOARD_UNAVAILABLE' && error.failureKind === 'upstream_unavailable' && error.abortRetries === true)
+  })
 
   assert.deepEqual(requestedUrls, [blazeclan.CAREERS_URL, blazeclan.BROKEN_BOARD_URL])
+  assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
+  assert.equal(readInventoryEvidence(jobs)?.surface, blazeclan.CAREERS_URL)
 })
 
 test('Reserve Bank Information Technology run authenticates against the first-party careers API and returns current openings with experience', async () => {

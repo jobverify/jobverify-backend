@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -68,6 +69,19 @@ export const hasTransportFailure = (error) => {
     || /\bdns\b/i.test(message)
     || /\btimeout\b/i.test(message)
 }
+
+const buildDiscoveryOnlyEvidence = (now) =>
+  attachInventoryEvidence([], {
+    status: 'discovery-only',
+    surface: CAREERS_URL,
+    firstParty: true,
+    listingComplete: false,
+    pagesFetched: 0,
+    reportedTotal: null,
+    indiaFacetCount: null,
+    verifiedAt: now(),
+    reason: 'Technotreon verified careers surface is currently unreachable; first-party job inventory cannot be verified.',
+  })
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
@@ -197,7 +211,15 @@ export const createTechnotreonScraper = () => ({
       throw new Error('Technotreon verified official homepage changed; refusing to scrape guessed jobs')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL, { signal })
+    let careersHtml
+    try {
+      careersHtml = await fetchText(CAREERS_URL, { signal })
+    } catch (error) {
+      signal?.throwIfAborted()
+      if (hasTransportFailure(error)) return buildDiscoveryOnlyEvidence(now)
+      throw error
+    }
+
     signal?.throwIfAborted()
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Technotreon verified official careers page changed; refusing to scrape guessed jobs')

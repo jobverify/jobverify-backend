@@ -202,8 +202,8 @@ const TECHNICAL_SKILL_PATTERNS = [
   { pattern: /\bopenai\b/i, value: 'OpenAI' },
 ]
 
-const EXPERIENCE_RANGE_PATTERN = /(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s+years?/i
-const EXPERIENCE_VALUE_PATTERN = /(\d+(?:\.\d+)?)\s*(\+|plus)?\s+years?/i
+const EXPERIENCE_RANGE_PATTERN = /(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b/i
+const EXPERIENCE_VALUE_PATTERN = /(\d+(?:\.\d+)?)\s*(\+|plus)?\s*(?:years?|yrs?)\b/i
 
 const normalizeSourceId = (value) => normalizeString(value)?.toLowerCase() || null
 
@@ -305,7 +305,9 @@ const normalizeEmploymentType = (value) => {
     return 'Full-time'
   }
 
-  return 'Others'
+  // Labels such as "Hybrid" and "Onsite" describe work arrangement, not
+  // employment. Let the experience/title inference determine the job type.
+  return null
 }
 
 const inferEmploymentType = (job = {}) => {
@@ -368,6 +370,7 @@ const getExperienceBounds = (job = {}) => {
     return {
       minimumYears: Number.isFinite(profileMinimumYears) ? Math.floor(profileMinimumYears) : null,
       maximumYears: Number.isFinite(profileMaximumYears) ? Math.ceil(profileMaximumYears) : null,
+      isOpenEnded: job?.experienceProfile?.isOpenEnded === true,
     }
   }
 
@@ -376,6 +379,7 @@ const getExperienceBounds = (job = {}) => {
     return {
       minimumYears: null,
       maximumYears: null,
+      isOpenEnded: false,
     }
   }
 
@@ -384,6 +388,7 @@ const getExperienceBounds = (job = {}) => {
     return {
       minimumYears: Math.floor(Number.parseFloat(rangeMatch[1])),
       maximumYears: Math.ceil(Number.parseFloat(rangeMatch[2])),
+      isOpenEnded: false,
     }
   }
 
@@ -393,32 +398,37 @@ const getExperienceBounds = (job = {}) => {
     return {
       minimumYears: years,
       maximumYears: valueMatch[2] ? null : years,
+      isOpenEnded: Boolean(valueMatch[2]),
     }
   }
 
   return {
     minimumYears: null,
     maximumYears: null,
+    isOpenEnded: false,
   }
 }
 
-const hasNonEntryExperienceRequirement = ({ minimumYears, maximumYears } = {}) =>
-  (Number.isFinite(minimumYears) && minimumYears > 1)
-  || (Number.isFinite(maximumYears) && maximumYears > 1)
+const hasPositiveExperienceRequirement = ({ minimumYears, maximumYears, isOpenEnded } = {}) =>
+  (Number.isFinite(minimumYears) && minimumYears > 0)
+  // A 0-1 range is an entry-level range, not a positive-experience
+  // requirement. A maximum without a stated minimum remains experienced.
+  || (!Number.isFinite(minimumYears) && Number.isFinite(maximumYears) && maximumYears > 0)
+  || (isOpenEnded === true && Number.isFinite(minimumYears) && minimumYears > 0)
 
 const inferExperienceLevel = (job = {}) => {
   const explicitLevel = normalizeString(job.experienceLevel)
   const { minimumYears, maximumYears } = getExperienceBounds(job)
-  const hasExperiencedYears = hasNonEntryExperienceRequirement({ minimumYears, maximumYears })
+  const hasPositiveExperienceYears = hasPositiveExperienceRequirement({ minimumYears, maximumYears })
 
-  if (explicitLevel && !(explicitLevel === 'Entry Level' && hasExperiencedYears)) {
+  if (explicitLevel && !(explicitLevel === 'Entry Level' && hasPositiveExperienceYears)) {
     return explicitLevel
   }
 
-  if (job.jobType === 'Full-time Fresher' && !hasExperiencedYears) return 'Entry Level'
+  if (job.jobType === 'Full-time Fresher' && !hasPositiveExperienceYears) return 'Entry Level'
   if (job.jobType === 'Full-time Experienced') return 'Mid Level'
 
-  if (!hasExperiencedYears && hasFresherCue(job)) return 'Entry Level'
+  if (!hasPositiveExperienceYears && hasFresherCue(job)) return 'Entry Level'
 
   const title = (job.title || '').toLowerCase()
   if (/\b(senior|sr\.?|staff|lead|principal|architect|manager|director|head|vp|vice president)\b/.test(title)) {
@@ -426,23 +436,14 @@ const inferExperienceLevel = (job = {}) => {
   }
 
   if (Number.isFinite(minimumYears) || Number.isFinite(maximumYears)) {
-    if (Number.isFinite(minimumYears) && minimumYears <= 1) {
-      if (
-        minimumYears === 0
-        && Number.isFinite(maximumYears)
-        && maximumYears >= 2
-        && /\b(junior|jr\.?|associate)\b/.test(title)
-      ) {
-        return 'Junior Level'
-      }
-      if (Number.isFinite(maximumYears) && maximumYears > 3) {
-        return 'Mid Level'
-      }
+    if (!hasPositiveExperienceYears) {
       return 'Entry Level'
     }
 
-    const anchorYears = Number.isFinite(minimumYears) ? minimumYears : maximumYears
-    if (anchorYears === 2) return 'Junior Level'
+    const anchorYears = Number.isFinite(minimumYears) && minimumYears > 0
+      ? minimumYears
+      : maximumYears
+    if (anchorYears <= 2) return 'Junior Level'
     if (anchorYears >= 3) return 'Mid Level'
   }
 
@@ -451,9 +452,11 @@ const inferExperienceLevel = (job = {}) => {
   return 'Mid Level'
 }
 
-const composeJobType = ({ employmentType, experienceLevel }) => {
+const composeJobType = ({ employmentType, experienceLevel, hasPositiveExperienceYears = false }) => {
   if (!employmentType) return null
+  if (employmentType === 'Internship' && hasPositiveExperienceYears) return 'Full-time Experienced'
   if (employmentType !== 'Full-time') return employmentType
+  if (hasPositiveExperienceYears) return 'Full-time Experienced'
   return experienceLevel === 'Entry Level'
     ? 'Full-time Fresher'
     : 'Full-time Experienced'
@@ -462,7 +465,8 @@ const composeJobType = ({ employmentType, experienceLevel }) => {
 export const resolveJobType = (job = {}) => {
   const employmentType = inferEmploymentType(job)
   const experienceLevel = inferExperienceLevel(job)
-  return composeJobType({ employmentType, experienceLevel })
+  const hasPositiveExperienceYears = hasPositiveExperienceRequirement(getExperienceBounds(job))
+  return composeJobType({ employmentType, experienceLevel, hasPositiveExperienceYears })
 }
 
 const TITLE_NORMALIZATION_RULES = [
@@ -1561,10 +1565,19 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
         experienceRequired: inferredExperienceRequired,
       }))
     : signals
-
-  return {
+  const finalJob = {
     ...normalizedJob,
     experienceRequired: inferredExperienceRequired,
     ...finalSignals,
+  }
+  const finalExperienceLevel = inferExperienceLevel(finalJob)
+
+  return {
+    ...finalJob,
+    experienceLevel: finalExperienceLevel,
+    jobType: resolveJobType({
+      ...finalJob,
+      experienceLevel: finalExperienceLevel,
+    }),
   }
 }

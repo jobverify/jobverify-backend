@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const SKORUZ_EMPTY_US_HTML = `
 <!doctype html>
 <html lang="en">
@@ -123,80 +125,70 @@ test('Skoruz recognizes the verified careers page variants and the trusted India
   )
 })
 
-test('Skoruz reports typed upstream-unavailable when the India iframe is inaccessible and the US tab is empty', async () => {
+test('Skoruz returns discovery-only evidence when the India iframe is inaccessible and the US tab is empty', async () => {
   const skoruz = await loadModule()
   const requestedUrls = []
 
-  await assert.rejects(
-    skoruz.createSkoruzScraper().run({
-      fetchText: async (url) => {
-        requestedUrls.push(url)
+  const jobs = await skoruz.createSkoruzScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
 
-        if (url === skoruz.CAREERS_URL) return SKORUZ_EMPTY_US_HTML
-        if (url === skoruz.INDIA_IFRAME_URL) {
-          throw new Error(
-            'The underlying connection was closed: Could not establish trust relationship for the SSL/TLS secure channel.',
-          )
-        }
+      if (url === skoruz.CAREERS_URL) return SKORUZ_EMPTY_US_HTML
+      if (url === skoruz.INDIA_IFRAME_URL) {
+        throw new Error(
+          'The underlying connection was closed: Could not establish trust relationship for the SSL/TLS secure channel.',
+        )
+      }
 
-        throw new Error(`Unexpected Skoruz URL: ${url}`)
-      },
-    }),
-    (error) => {
-      assert.equal(error.name, 'SkoruzIndiaInventoryUnavailableError')
-      assert.equal(error.softFailure, true)
-      assert.equal(error.upstreamOutage, true)
-      assert.equal(error.abortRetries, true)
-      assert.equal(error.failureKind, 'network_or_timeout')
-      assert.equal(error.inventoryScope, 'India')
-      assert.equal(error.otherRegionJobCount, 0)
-      assert.match(error.message, /India inventory unavailable/i)
-      return true
+      throw new Error(`Unexpected Skoruz URL: ${url}`)
     },
-  )
+  })
 
   assert.deepEqual(requestedUrls, [
     skoruz.CAREERS_URL,
     skoruz.INDIA_IFRAME_URL,
   ])
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, skoruz.INDIA_IFRAME_URL)
+  assert.equal(evidence?.listingComplete, false)
+  assert.equal(evidence?.indiaFacetCount, null)
 })
 
-test('Skoruz cannot publish visible US jobs as a complete India inventory when the iframe is inaccessible', async () => {
+test('Skoruz records discovery-only evidence instead of publishing visible US jobs as India inventory', async () => {
   const skoruz = await loadModule()
   const requestedUrls = []
 
-  await assert.rejects(
-    skoruz.createSkoruzScraper().run({
-      fetchText: async (url) => {
-        requestedUrls.push(url)
+  const jobs = await skoruz.createSkoruzScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
 
-        if (url === skoruz.CAREERS_URL) return SKORUZ_PUBLIC_US_HTML
-        if (url === skoruz.INDIA_IFRAME_URL) {
-          throw new Error(
-            '[skoruz] All 3 attempts failed. Last error: fetch failed | Connect Timeout Error (attempted address: talenthire.ceipal.in:443, timeout: 10000ms)',
-          )
-        }
+      if (url === skoruz.CAREERS_URL) return SKORUZ_PUBLIC_US_HTML
+      if (url === skoruz.INDIA_IFRAME_URL) {
+        throw new Error(
+          '[skoruz] All 3 attempts failed. Last error: fetch failed | Connect Timeout Error (attempted address: talenthire.ceipal.in:443, timeout: 10000ms)',
+        )
+      }
 
-        throw new Error(`Unexpected Skoruz URL: ${url}`)
-      },
-    }),
-    (error) => {
-      assert.equal(error.name, 'SkoruzIndiaInventoryUnavailableError')
-      assert.equal(error.softFailure, true)
-      assert.equal(error.upstreamOutage, true)
-      assert.equal(error.abortRetries, true)
-      assert.equal(error.failureKind, 'network_or_timeout')
-      assert.equal(error.inventoryScope, 'India')
-      assert.equal(error.otherRegionJobCount, 1)
-      assert.match(error.message, /India inventory unavailable/i)
-      return true
+      throw new Error(`Unexpected Skoruz URL: ${url}`)
     },
-  )
+  })
 
   assert.deepEqual(requestedUrls, [
     skoruz.CAREERS_URL,
     skoruz.INDIA_IFRAME_URL,
   ])
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, skoruz.INDIA_IFRAME_URL)
+  assert.equal(evidence?.listingComplete, false)
+  assert.equal(evidence?.indiaFacetCount, null)
 })
 
 test('Skoruz fails closed when the verified careers page drifts or the India iframe becomes reachable', async () => {

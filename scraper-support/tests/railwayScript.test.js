@@ -32,6 +32,37 @@ const careersHtml = `
 </html>
 `
 
+const remoteRoleChurnCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers | Railway</title>
+  </head>
+  <body>
+    <main>
+      <h1>Redefine the future of infrastructure</h1>
+      <p>See open positions</p>
+      <a href="/careers/platform-engineer-orchestration">
+        <p>Senior Infra Engineer: Orchestration</p>
+        <p>Remote (anywhere)</p>
+      </a>
+      <a href="/careers/systems-engineer">
+        <p>Senior Infra Engineer: Compute</p>
+        <p>Remote (anywhere)</p>
+      </a>
+      <a href="/careers/product-marketer">
+        <p>Senior Product Marketer</p>
+        <p>Remote (anywhere)</p>
+      </a>
+      <a href="/careers/brand-designer-web">
+        <p>Brand Designer - Web Experience</p>
+        <p>Remote (anywhere)</p>
+      </a>
+    </main>
+  </body>
+</html>
+`
+
 const loadRailwayModule = async () => {
   try {
     return await import('../../scraper/railway/script.js')
@@ -71,6 +102,40 @@ test('Railway pins the verified first-party careers page and same-domain role li
       url: 'https://railway.com/careers/dc-engineer',
     },
   ])
+})
+
+test('Railway accepts same-domain remote role title churn while the India slice remains empty', async () => {
+  const railway = await loadRailwayModule()
+
+  assert.equal(railway.hasVerifiedCareersPageSignal(remoteRoleChurnCareersHtml), true)
+  assert.deepEqual(railway.extractRoleSummaries(remoteRoleChurnCareersHtml), [
+    {
+      title: 'Senior Infra Engineer: Orchestration',
+      location: 'Remote (anywhere)',
+      url: 'https://railway.com/careers/platform-engineer-orchestration',
+    },
+    {
+      title: 'Senior Infra Engineer: Compute',
+      location: 'Remote (anywhere)',
+      url: 'https://railway.com/careers/systems-engineer',
+    },
+    {
+      title: 'Senior Product Marketer',
+      location: 'Remote (anywhere)',
+      url: 'https://railway.com/careers/product-marketer',
+    },
+    {
+      title: 'Brand Designer - Web Experience',
+      location: 'Remote (anywhere)',
+      url: 'https://railway.com/careers/brand-designer-web',
+    },
+  ])
+
+  const jobs = await railway.createRailwayScraper().run({
+    fetchText: async () => remoteRoleChurnCareersHtml,
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('Railway returns an honest empty array while the verified first-party roles stay outside India', async () => {

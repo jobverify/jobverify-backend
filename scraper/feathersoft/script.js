@@ -87,6 +87,7 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialCareersSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
   return CAREERS_SIGNALS.every((signal) => normalized.includes(signal))
+    || hasOfficialHomepageSignal(html)
 }
 
 export const extractPublicJobLinks = (html, baseUrl = CAREERS_URL) => {

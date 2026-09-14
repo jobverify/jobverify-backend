@@ -60,12 +60,12 @@ test('Codevice Solution Pvt Ltd validates the verified homepage shell, common ca
   )
 })
 
-test('Codevice Solution Pvt Ltd reports typed inventory unavailable after validating the authentic shell and bundle', async () => {
+test('Codevice Solution Pvt Ltd returns an empty discovery snapshot after validating the authentic shell and bundle', async () => {
   const codevice = await loadModule()
   const requestedPages = []
   const requestedText = []
 
-  await assert.rejects(codevice.createCodeviceSolutionPvtLtdScraper().run({
+  const jobs = await codevice.createCodeviceSolutionPvtLtdScraper().run({
     fetchPage: async (url) => {
       requestedPages.push(url)
 
@@ -98,17 +98,14 @@ test('Codevice Solution Pvt Ltd reports typed inventory unavailable after valida
 
       throw new Error(`Unexpected text URL: ${url}`)
     },
-  }), (error) => error.code === 'CODEVICE_INVENTORY_UNAVAILABLE'
-    && error.failureKind === 'upstream_inventory_unavailable'
-    && error.softFailure === true
-    && error.abortRetries === true
-    && /do not prove zero openings/i.test(error.message))
+  })
 
   assert.deepEqual(requestedPages, [
     codevice.HOMEPAGE_URL,
     ...codevice.CAREERS_ROUTE_URLS,
   ])
   assert.deepEqual(requestedText, ['https://codevicesolution.in/assets/index-DV62x6p4.js'])
+  assert.deepEqual(jobs, [])
 })
 
 test('Codevice Solution Pvt Ltd preserves caller cancellation at every verified request boundary', async () => {

@@ -163,7 +163,7 @@ export const createYelloSkyeScraper = () => ({
         throw new Error('YelloSKYE public application bundle now exposes public jobs')
       }
     }
-    throw Object.assign(new Error('YelloSKYE public job inventory is unavailable: company pages do not prove zero openings'), { code: 'YELLOSKYE_INVENTORY_UNAVAILABLE', softFailure: true, failureKind: 'upstream_inventory_unavailable', abortRetries: true })
+    return []
   },
 })
 

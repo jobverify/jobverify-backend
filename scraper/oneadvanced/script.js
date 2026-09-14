@@ -11,8 +11,7 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const SEARCH_PAGE_URL = PROVIDER_METADATA.searchPageUrl
 
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+export const ICIMS_USER_AGENT = 'Mozilla/5.0'
 
 const STATE_CODE_MAP = {
   KA: 'Karnataka',
@@ -43,7 +42,7 @@ const extractFirst = (pattern, value) => pattern.exec(String(value ?? ''))?.[1] 
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': USER_AGENT,
+      'User-Agent': ICIMS_USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
   })

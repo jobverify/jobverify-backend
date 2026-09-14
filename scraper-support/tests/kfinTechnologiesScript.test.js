@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const FIXED_SCRAPED_AT = '2026-07-16T00:00:00.000Z'
 
 const careersHtml = `
@@ -234,6 +236,28 @@ test('KFin Technologies run verifies the careers page before returning first-par
       },
     ],
   )
+})
+
+test('KFin Technologies returns discovery-only evidence when the verified careers page times out', async () => {
+  const kfinTechnologies = await loadKFinTechnologiesModule()
+  const timeoutError = Object.assign(new TypeError('fetch failed'), {
+    cause: {
+      code: 'UND_ERR_CONNECT_TIMEOUT',
+      message: 'Connect Timeout Error (attempted address: www.kfintech.com:443, timeout: 10000ms)',
+    },
+  })
+
+  const jobs = await kfinTechnologies.createKFinTechnologiesScraper({
+    now: () => FIXED_SCRAPED_AT,
+  }).run({
+    fetchText: async () => { throw timeoutError },
+  })
+
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, kfinTechnologies.CAREERS_URL)
+  assert.equal(evidence?.listingComplete, false)
 })
 
 test('KFin Technologies fails closed when the verified first-party careers page drifts', async () => {

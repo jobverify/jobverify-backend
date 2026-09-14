@@ -258,6 +258,8 @@ test('MaxLinear scraper stays pinned to the verified official careers and iCIMS 
   const maxlinear = await loadMaxLinearModule()
 
   assert.equal(maxlinear.CAREERS_PAGE_URL, CAREERS_PAGE_URL)
+  assert.equal(maxlinear.ICIMS_USER_AGENT, 'Mozilla/5.0')
+  assert.doesNotMatch(maxlinear.ICIMS_USER_AGENT, /Chrome|Safari|Windows NT/i)
   assert.equal(
     maxlinear.INTERNATIONAL_JOBS_URL,
     'https://careersintl-maxlinear.icims.com/jobs/search?ss=1',

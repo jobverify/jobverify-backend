@@ -1,8 +1,8 @@
 import { Schema, model } from "mongoose";
 import {
-  countSuggestionWords,
+  countSuggestionCharacters,
   MAX_DAILY_SUGGESTIONS,
-  MAX_SUGGESTION_WORDS,
+  MAX_SUGGESTION_CHARACTERS,
 } from "../utils/userSuggestion.js";
 
 const UserSuggestionSchema = new Schema(
@@ -19,10 +19,10 @@ const UserSuggestionSchema = new Schema(
       trim: true,
       validate: {
         validator: (value) => {
-          const wordCount = countSuggestionWords(value);
-          return wordCount >= 1 && wordCount <= MAX_SUGGESTION_WORDS;
+          const characterCount = countSuggestionCharacters(value);
+          return characterCount >= 1 && characterCount <= MAX_SUGGESTION_CHARACTERS;
         },
-        message: `Suggestion must contain between 1 and ${MAX_SUGGESTION_WORDS} words.`,
+        message: `Suggestion must contain between 1 and ${MAX_SUGGESTION_CHARACTERS} characters.`,
       },
     },
     submittedDay: {

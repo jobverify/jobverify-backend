@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import provider from './provider.js'
 
@@ -41,6 +42,34 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const findErrorInChain = (error, predicate) => {
+  const seen = new Set()
+  let current = error
+
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    if (predicate(current)) return current
+    current = current?.cause
+  }
+
+  return null
+}
+
+const hasHttpStatus = (error, status) =>
+  Boolean(findErrorInChain(error, (candidate) => Number(candidate?.status) === status))
+
+const createUpstreamUnavailableError = (message, cause) => Object.assign(
+  new Error(message, { cause }),
+  {
+    code: 'NAPIER_CAREERS_UNAVAILABLE',
+    failureType: 'upstream_unavailable',
+    failureKind: 'upstream_unavailable',
+    softFailure: true,
+    upstreamOutage: true,
+    abortRetries: true,
+  },
+)
+
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
@@ -62,8 +91,30 @@ export const extractSameDomainJobLinks = (html = '') => [...new Set(
 )].filter((url) => !url.startsWith(`${CAREERS_URL}#`))
  
 
-export const run = async ({ fetchText = defaultFetchText } = {}) => {
-  const careersHtml = await fetchText(CAREERS_URL)
+export const run = async ({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) => {
+  let careersHtml
+  try {
+    careersHtml = await fetchText(CAREERS_URL)
+  } catch (error) {
+    if (hasHttpStatus(error, 404)) {
+      const unavailableError = createUpstreamUnavailableError(
+        'Napier Healthcare Solutions careers route is currently unavailable upstream',
+        error,
+      )
+      return attachInventoryEvidence([], {
+        status: 'discovery-only',
+        surface: CAREERS_URL,
+        firstParty: true,
+        listingComplete: false,
+        pagesFetched: 0,
+        reportedTotal: null,
+        indiaFacetCount: null,
+        verifiedAt: now(),
+        reason: unavailableError.message,
+      })
+    }
+    throw error
+  }
 
   if (!hasOfficialCareersSignal(careersHtml)) {
     throw new Error('Napier verified careers page no longer matches the trusted first-party surface')

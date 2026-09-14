@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+
 const loadPowerToSolutionsModule = async () => {
   try {
     return await import('./script.js')
@@ -148,7 +150,9 @@ test('run returns an empty list only while Power to Solutions still has no trust
   assert.ok(powerToSolutions, 'Expected Power to Solutions scraper module at ./script.js')
 
   const requests = []
-  const jobs = await powerToSolutions.createPowerToSolutionsScraper().run({
+  const jobs = await powerToSolutions.createPowerToSolutionsScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
     verifyDomain: async (url) => {
       requests.push(url)
       return domainChecks.find((entry) => entry.url === url)
@@ -171,6 +175,11 @@ test('run returns an empty list only while Power to Solutions still has no trust
     powerToSolutions.SEARCH_SURFACES.careers,
   ])
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
+  assert.equal(
+    readInventoryEvidence(jobs)?.reason,
+    'power-to-solutions-no-resolvable-first-party-or-careers-surface',
+  )
 })
 
 test('run fails closed when a likely first-party domain resolves or search starts surfacing the company', async () => {

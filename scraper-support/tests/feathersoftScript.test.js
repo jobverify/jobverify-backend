@@ -63,6 +63,22 @@ test('Feathersoft returns no jobs while the official first-party careers page re
   assert.deepEqual(jobs, [])
 })
 
+test('Feathersoft returns no jobs when the careers route serves the verified official homepage shell', async () => {
+  const feathersoft = await loadFeathersoftModule()
+
+  const jobs = await feathersoft.createFeathersoftScraper().run({
+    fetchText: async (url) => {
+      if (url === feathersoft.HOMEPAGE_URL || url === feathersoft.CAREERS_URL) {
+        return homepageHtml
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
 test('Feathersoft fails closed when the homepage handoff changes or the careers page starts exposing public jobs', async () => {
   const feathersoft = await loadFeathersoftModule()
 

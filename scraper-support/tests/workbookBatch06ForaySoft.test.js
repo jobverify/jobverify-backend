@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const VERIFIED_CAREERS_HTML = `
   <html>
     <body>
@@ -169,6 +171,24 @@ test('ForaySoft run stays fail-closed because the verified jobs archive is stale
     foraysoft.JOBS_PAGE_TWO_URL,
   ])
   assert.deepEqual(jobs, [])
+})
+
+test('ForaySoft returns discovery-only evidence when its official hostname cannot be resolved', async () => {
+  const foraysoft = await loadModule()
+  const dnsError = Object.assign(new Error('fetch failed'), {
+    cause: { code: 'ENOTFOUND', message: 'getaddrinfo ENOTFOUND www.foraysoft.com' },
+  })
+
+  const jobs = await foraysoft.run({
+    fetchText: async () => { throw dnsError },
+    now: () => '2026-09-14T00:00:00.000Z',
+  })
+
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, foraysoft.CAREERS_URL)
+  assert.equal(evidence?.listingComplete, false)
 })
 
 test('ForaySoft rejects when the verified careers surface markers disappear', async () => {

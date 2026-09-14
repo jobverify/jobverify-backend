@@ -22,6 +22,23 @@ const careersHtml = `
 </html>
 `
 
+const currentCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers &amp; Culture | Gainsight Software</title>
+  </head>
+  <body>
+    <nav>Company Careers &amp; Culture</nav>
+    <h1>Careers at Gainsight</h1>
+    <p>The work you and the real you are the same.</p>
+    <h2>Find Your Dream Job</h2>
+    <p>Human-First isn't just a slogan.</p>
+    <p>Gainsight Software</p>
+  </body>
+</html>
+`
+
 const jobsShellHtml = `
 <!doctype html>
 <html lang="en">
@@ -56,6 +73,7 @@ test('Gainsight validates the verified first-party careers page and empty Jibe s
   const gainsight = await loadModule()
 
   assert.equal(gainsight.hasOfficialCareersPageSignal(careersHtml), true)
+  assert.equal(gainsight.hasOfficialCareersPageSignal(currentCareersHtml), true)
   assert.equal(gainsight.extractJibeCompanyId(jobsShellHtml), 'gainsight')
   assert.equal(gainsight.hasEmptyJobsShellSignal(jobsShellHtml), true)
   assert.equal(gainsight.hasEmptyLocationsSignal(locationsHtml), true)

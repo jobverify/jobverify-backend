@@ -28,6 +28,17 @@ const parkedLanderRedirect = {
   html: '',
 }
 
+const parkedLanderHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <script>window.LANDER_SYSTEM = "PW"</script>
+    <script>window._trfd = window._trfd || [], window._trfd.push({ ap: "parking" })</script>
+  </head>
+  <body></body>
+</html>
+`
+
 const connectTimeoutError = () => {
   const error = new TypeError('fetch failed')
   error.cause = { code: 'UND_ERR_CONNECT_TIMEOUT' }
@@ -41,6 +52,15 @@ test('Blue Star Infotech validators and metadata reflect the Friday, August 7, 2
   assert.equal(bluestar.hasRedirectShellSignal(redirectShellHtml), true)
   assert.equal(bluestar.extractRedirectTarget(redirectShellHtml), '/lander')
   assert.equal(bluestar.hasParkedLanderRedirect(parkedLanderRedirect), true)
+  assert.equal(
+    bluestar.hasParkedLanderRedirect({
+      status: 200,
+      url: 'https://www.bsil.com/lander',
+      location: null,
+      html: parkedLanderHtml,
+    }),
+    true,
+  )
   assert.equal(bluestar.isUnreachableError(connectTimeoutError()), true)
   assert.equal(bluestar.isUnavailableSurface({ status: null, errorKind: 'unreachable' }), true)
 })

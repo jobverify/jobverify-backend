@@ -7,6 +7,7 @@ import {
   hasInactiveBoardSignal,
   run,
 } from '../../scraper/brij/script.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const careersHtml = `
   <html><head><title>Brij Careers | Open Roles in NYC &amp; Remote</title></head>
@@ -34,7 +35,7 @@ test('Brij recognizes the exact JazzHR inactive-board response', () => {
 
 test('Brij inactive account preserves previous jobs while current application links are unavailable', async () => {
   const requested = []
-  const pending = run({
+  const jobs = await run({
     fetchText: async (url) => {
       requested.push(url)
       if (url === CAREERS_URL) return careersHtml
@@ -42,7 +43,11 @@ test('Brij inactive account preserves previous jobs while current application li
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
-  await assert.rejects(pending, { code: 'BRIJ_BOARD_UNAVAILABLE', failureType: 'upstream_unavailable', abortRetries: true })
+
+  assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
+  assert.equal(readInventoryEvidence(jobs)?.surface, BOARD_URL)
+  assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
   assert.deepEqual(requested, [CAREERS_URL, BOARD_URL])
 })
 

@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -106,8 +107,14 @@ const defaultFetchSearchFeed = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createPowerToSolutionsScraper = () => ({
-  async run({ verifyDomain = defaultVerifyDomain, fetchSearchFeed = defaultFetchSearchFeed } = {}) {
+export const createPowerToSolutionsScraper = ({
+  now: defaultNow = () => new Date().toISOString(),
+} = {}) => ({
+  async run({
+    verifyDomain = defaultVerifyDomain,
+    fetchSearchFeed = defaultFetchSearchFeed,
+    now = defaultNow,
+  } = {}) {
     const domainChecks = []
 
     for (const url of CANDIDATE_DOMAIN_URLS) {
@@ -134,7 +141,17 @@ export const createPowerToSolutionsScraper = () => ({
       throw new Error('Power to Solutions public careers surface changed; review for a real scraper')
     }
 
-    return []
+    return attachInventoryEvidence([], {
+      status: 'discovery-only',
+      surface: SEARCH_SURFACES.company,
+      firstParty: false,
+      listingComplete: false,
+      pagesFetched: CANDIDATE_DOMAIN_URLS.length + 2,
+      reportedTotal: 0,
+      indiaFacetCount: 0,
+      verifiedAt: now(),
+      reason: 'power-to-solutions-no-resolvable-first-party-or-careers-surface',
+    })
   },
 })
 

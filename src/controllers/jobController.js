@@ -26,6 +26,7 @@ import {
 } from "../constants/jobFilterTaxonomy.js";
 import { resolveJobType } from "../../scraper-support/utils/normalizeScrapedJob.js";
 
+import { PUBLIC_JOB_TYPE_EXPRESSION } from "../utils/publicJobType.js";
 import { applyPublicJobVisibility } from "../utils/publicJobVisibility.js";
 import { buildAggregateHiringSignalFilter } from "../utils/jobListingEvidence.js";
 import { canUsePremiumFilters } from "../utils/accessControl.js";
@@ -125,7 +126,7 @@ const JOB_LIST_CARD_PROJECTION = JOB_LIST_QUERY_FIELDS.join(" ");
 const JOB_LIST_CARD_TEXT_PROJECTION = Object.freeze(
   Object.fromEntries(JOB_LIST_QUERY_FIELDS.map((field) => [field, 1])),
 );
-const JOB_LIST_CARD_AGGREGATE_PROJECT = JOB_LIST_CARD_TEXT_PROJECTION;
+const JOB_LIST_CARD_AGGREGATE_PROJECT = { ...JOB_LIST_CARD_TEXT_PROJECTION, _publicJobType: PUBLIC_JOB_TYPE_EXPRESSION };
 
 const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -454,8 +455,8 @@ const normalizeJobTypeLabel = (value) => {
 
 const deriveExperienceLevelFromYears = (minimumYears) => {
   if (!Number.isFinite(minimumYears) || minimumYears < 0) return null;
-  if (minimumYears <= 1) return "Entry Level";
-  if (minimumYears === 2) return "Junior Level";
+  if (minimumYears === 0) return "Entry Level";
+  if (minimumYears <= 2) return "Junior Level";
   if (minimumYears >= 8) return "Senior Level";
   return "Mid Level";
 };
@@ -468,6 +469,31 @@ const getStructuredExperienceMinimumYears = (job = {}) => {
     && minimumYears <= MAX_REASONABLE_EXPERIENCE_YEARS
     ? minimumYears
     : null;
+};
+
+const hasPositiveExperienceSignal = (job = {}) => {
+  const minimumYears = Number(job?.experienceProfile?.minimumYears);
+  const maximumYears = Number(job?.experienceProfile?.maximumYears);
+  const experienceYears = extractExperienceYears(job?.experienceRequired);
+  const normalizedExperienceText = String(job?.experienceRequired || "")
+    .replace(/[â€“â€”âˆ’]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return (
+    (Number.isFinite(minimumYears) && minimumYears > 0)
+    || (!Number.isFinite(minimumYears) && Number.isFinite(maximumYears) && maximumYears > 0)
+    || (
+      job?.experienceProfile?.isOpenEnded === true
+      && Number.isFinite(minimumYears)
+      && minimumYears > 0
+    )
+    || experienceYears[0] > 0
+    || (
+      experienceYears.length === 0
+      && /\b(?:[1-9]\d*(?:\.\d+)?|0?\.\d*[1-9]\d*)\s*(?:\+|plus)?\s*(?:years?|yrs?)\b/i.test(normalizedExperienceText)
+    )
+  );
 };
 
 const normalizeResponseExperienceLevel = (job = {}) => {
@@ -498,6 +524,7 @@ const normalizeResponseExperienceLevel = (job = {}) => {
 };
 
 const normalizeResponseJobType = (job = {}) => {
+  if (Object.hasOwn(job, "_publicJobType")) return job._publicJobType;
   const normalizedLabel = normalizeJobTypeLabel(job.jobType);
   const normalizedExperienceLevel = normalizeResponseExperienceLevel(job);
   const resolved = resolveJobType({
@@ -507,6 +534,21 @@ const normalizeResponseJobType = (job = {}) => {
   const normalizedResolved = resolved
     ? normalizeJobTypeLabel(resolved) || resolved
     : null;
+
+  if (
+    hasPositiveExperienceSignal(job)
+    && normalizedLabel !== "Contract"
+    && normalizedLabel !== "Others"
+    && (
+      normalizedLabel === "Full-time Fresher"
+      || normalizedLabel === "Full-time Experienced"
+      || normalizedLabel === "Full-time"
+      || normalizedLabel === "Intern"
+      || normalizedResolved === "Full-time Fresher"
+    )
+  ) {
+    return "Full-time Experienced";
+  }
 
   if (
     normalizedLabel
@@ -783,6 +825,7 @@ const normalizeResponseJob = (job) => {
     workdayApplicationStatus: _workdayApplicationStatus,
     workdayApplicationStatusReason: _workdayApplicationStatusReason,
     workdayApplicationStatusCheckedAt: _workdayApplicationStatusCheckedAt,
+    _publicJobType,
     ...publicJob
   } = job;
   const locations = normalizeStoredLocations(publicJob);
@@ -1021,8 +1064,8 @@ const sendJobsResponse = (res, jobs, pageNum, limitNum, total, totalCompanies) =
 const applyJobListProjection = (query, { includeTextScore = false } = {}) => (
   query.select(
     includeTextScore
-      ? { ...JOB_LIST_CARD_TEXT_PROJECTION, score: { $meta: "textScore" } }
-      : JOB_LIST_CARD_PROJECTION,
+      ? { ...JOB_LIST_CARD_AGGREGATE_PROJECT, score: { $meta: "textScore" } }
+      : JOB_LIST_CARD_AGGREGATE_PROJECT,
   )
 );
 
@@ -1854,9 +1897,14 @@ export const getJobMeta = async (req, res) => {
       hasScopedFilters
         ? resolveScopedDistinctValues(queryParams, "city", ["city", "location"], { city: { $ne: null } }, req.siteSettings)
         : Job.distinct("city", applyPublicJobVisibility({ status: "active", city: { $ne: null } }, req.siteSettings)),
-      hasScopedFilters
-        ? resolveScopedDistinctValues(queryParams, "jobType", ["jobType"], { jobType: { $ne: null } }, req.siteSettings)
-        : Job.distinct("jobType", applyPublicJobVisibility({ status: "active", jobType: { $ne: null } }, req.siteSettings)),
+      req.siteSettings?.experiencedJobsEnabled === false
+        ? Job.aggregate([
+          { $match: buildJobMetaFilter(queryParams, ["jobType"], { status: "active" }, req.siteSettings) },
+          { $group: { _id: PUBLIC_JOB_TYPE_EXPRESSION } },
+        ]).exec().then(rows => rows.map(row => row._id))
+        : (hasScopedFilters
+          ? resolveScopedDistinctValues(queryParams, "jobType", ["jobType"], { jobType: { $ne: null } }, req.siteSettings)
+          : Job.distinct("jobType", applyPublicJobVisibility({ status: "active", jobType: { $ne: null } }, req.siteSettings))),
       hasScopedFilters
         ? resolveScopedExperienceYearOptions(queryParams, req.siteSettings)
         : Promise.resolve(EXPERIENCE_FILTER_OPTIONS),
@@ -2048,6 +2096,7 @@ export const getJobSeoFeed = async (req, res) => {
     )
       .sort({ sortDate: -1, _id: -1 })
       .select("title company postedAt updatedAt closingDate city location locations jobType")
+      .select({ _publicJobType: PUBLIC_JOB_TYPE_EXPRESSION })
       .lean()
       .exec();
 

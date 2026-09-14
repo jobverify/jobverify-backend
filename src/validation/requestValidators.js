@@ -18,8 +18,8 @@ import {
   WORK_ARRANGEMENT_OPTIONS,
 } from "../constants/jobFilterTaxonomy.js";
 import {
-  countSuggestionWords,
-  MAX_SUGGESTION_WORDS,
+  countSuggestionCharacters,
+  MAX_SUGGESTION_CHARACTERS,
 } from "../utils/userSuggestion.js";
 
 const MAX_TEXT_LENGTH = 80;
@@ -413,6 +413,26 @@ export const jobCompanyAutocompleteValidation = [
     .withMessage(`Company search must be ${MAX_TEXT_LENGTH} characters or fewer.`),
 ];
 
+export const companyDirectoryQueryValidation = [
+  query("q")
+    .optional()
+    .customSanitizer(trimIfString)
+    .isLength({ max: 100 })
+    .withMessage("Company search must be 100 characters or fewer."),
+  query("page")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Page must be at least 1."),
+  query("limit")
+    .optional()
+    .isInt({ min: 1, max: 48 })
+    .withMessage("Limit must be between 1 and 48."),
+];
+
+export const companyKeyParamValidation = [
+  boundedStringRule(param("companyKey"), "Company key", 100),
+];
+
 export const mongoIdParamValidation = (name, label) => [
   param(name).isMongoId().withMessage(`Invalid ${label}.`),
 ];
@@ -478,9 +498,9 @@ export const suggestionSubmissionValidation = [
     .withMessage("Suggestion is required.")
     .bail()
     .custom((value) => {
-      if (countSuggestionWords(value) > MAX_SUGGESTION_WORDS) {
+      if (countSuggestionCharacters(value) > MAX_SUGGESTION_CHARACTERS) {
         throw new Error(
-          `Suggestion must be ${MAX_SUGGESTION_WORDS} words or fewer.`,
+          `Suggestion must be ${MAX_SUGGESTION_CHARACTERS} characters or fewer.`,
         );
       }
       return true;

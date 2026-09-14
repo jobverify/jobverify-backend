@@ -50,6 +50,20 @@ const appShellHtml = `
   </html>
 `
 
+const suspendedAccountHtml = `
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <title>Account Suspended</title>
+    </head>
+    <body>
+      <h1>Account Suspended</h1>
+      <p>This Account has been suspended.</p>
+      <p>Contact your hosting provider for more information.</p>
+    </body>
+  </html>
+`
+
 test('Mindgraph Technologies constants stay pinned to the verified first-party brochure site', async () => {
   const mindgraphTechnologies = await loadMindgraphTechnologiesModule()
 
@@ -68,6 +82,7 @@ test('Mindgraph Technologies constants stay pinned to the verified first-party b
   assert.equal(mindgraphTechnologies.extractBundleUrl(verifiedHomepageHtml), 'https://mind-graph.com/assets/index-CAQIcZmv.js')
   assert.equal(mindgraphTechnologies.hasPublicJobsSignal(verifiedHomepageHtml), false)
   assert.equal(mindgraphTechnologies.hasVerifiedRouteTableSignal(verifiedBundleJs), true)
+  assert.equal(mindgraphTechnologies.hasSuspendedAccountSignal(suspendedAccountHtml), true)
 })
 
 test('Mindgraph Technologies returns no jobs only while the verified brochure site and route table stay unchanged', async () => {
@@ -109,6 +124,33 @@ test('Mindgraph Technologies returns no jobs only while the verified brochure si
   assert.deepEqual(requestedUrls, [
     mindgraphTechnologies.HOMEPAGE_URL,
     'https://mind-graph.com/assets/index-CAQIcZmv.js',
+    ...mindgraphTechnologies.PUBLIC_JOB_ROUTE_URLS,
+  ])
+  assert.deepEqual(jobs, [])
+})
+
+test('Mindgraph Technologies returns no jobs when every checked route is the current suspended account page', async () => {
+  const mindgraphTechnologies = await loadMindgraphTechnologiesModule()
+  const requestedUrls = []
+
+  const jobs = await mindgraphTechnologies.createMindgraphTechnologiesScraper().run({
+    fetchPage: async (url) => {
+      requestedUrls.push(url)
+
+      if (url === mindgraphTechnologies.HOMEPAGE_URL || mindgraphTechnologies.PUBLIC_JOB_ROUTE_URLS.includes(url)) {
+        return {
+          status: 200,
+          url: 'https://mind-graph.com/cgi-sys/suspendedpage.cgi',
+          html: suspendedAccountHtml,
+        }
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(requestedUrls, [
+    mindgraphTechnologies.HOMEPAGE_URL,
     ...mindgraphTechnologies.PUBLIC_JOB_ROUTE_URLS,
   ])
   assert.deepEqual(jobs, [])

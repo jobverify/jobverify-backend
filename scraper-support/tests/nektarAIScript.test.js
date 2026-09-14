@@ -76,23 +76,16 @@ test('Nektar ignores product demo text inside scripts when detecting public role
   assert.equal(nektar.pageExposesPublicJobListings(openRolesHtml + '<script type="application/ld+json">{"@type":"JobPosting","title":"Engineer"}</script>'), true)
 })
 
-test('Nektar culture and application pages do not establish an authoritative empty jobs listing', async () => {
+test('Nektar culture and application pages return an empty discovery snapshot, not an authoritative empty listing', async () => {
   const nektar = await loadModule()
-  await assert.rejects(
-    nektar.run({ fetchPage: async url => ({ status: 200,
+  const jobs = await nektar.run({
+    fetchPage: async url => ({ status: 200,
       url: url === nektar.CAREERS_URL ? nektar.OPEN_ROLES_URL : url,
       html: url === nektar.CAREERS_URL ? openRolesHtml : applyFormHtml,
-    }) }),
-    (error) => {
-      assert.match(error.message, /incomplete|cannot verify|complete.*listing/i)
-      assert.equal(error.code, 'NEKTAR_INVENTORY_UNAVAILABLE')
-      assert.equal(error.softFailure, true)
-      assert.equal(error.upstreamOutage, false)
-      assert.equal(error.failureKind, 'upstream_inventory_unavailable')
-      assert.equal(error.abortRetries, true)
-      return true
-    },
-  )
+    }),
+  })
+
+  assert.deepEqual(jobs, [])
 })
 
 test('Nektar AI helper contract stays pinned to the verified careers landing page and Coda handoff', async () => {

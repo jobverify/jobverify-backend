@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 import { normalizeScrapedJob } from '../utils/normalizeScrapedJob.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const fixturesDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -16,6 +17,27 @@ const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
 
 const homepageHtml = readFixture('homepage.html')
 const careersHtml = readFixture('careers.html')
+
+const currentClientLoadedCareersHtml = `
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Careers | NeoStats</title>
+    <meta
+      name="description"
+      content="Join NeoStats and help shape the future of data and AI consulting. Explore open roles across data, analytics, risk, sales, and operations."
+    />
+  </head>
+  <body>
+    <section id="career-options" aria-busy="true">
+      <p>Current Openings</p>
+      <h2>Open Roles</h2>
+      <p>Explore open roles across banking, data, cards & analytics transformations.</p>
+      <p class="sr-only" aria-live="polite">Loading open roles</p>
+    </section>
+  </body>
+</html>
+`
 
 const loadNeostatsModule = async () => {
   try {
@@ -32,8 +54,11 @@ test('Neostats sentinels recognize the verified homepage and first-party careers
   assert.equal(neostats.COMPANY, 'NeoStats')
   assert.equal(neostats.HOMEPAGE_URL, 'https://neostats.ai/')
   assert.equal(neostats.CAREERS_URL, 'https://neostats.ai/careers')
+  assert.equal(neostats.JOBS_API_URL, 'https://neostats.ai/api/careers/jobs')
   assert.equal(neostats.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(neostats.hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(neostats.hasOfficialCareersSignal(currentClientLoadedCareersHtml), true)
+  assert.equal(neostats.hasClientLoadedJobsSignal(currentClientLoadedCareersHtml), true)
 })
 
 test('Neostats extracts the current public role cards and narrows them to India jobs', async () => {
@@ -177,6 +202,41 @@ test('Neostats run verifies the trusted surfaces and returns the current India o
   assert.equal(jobs[0].source, 'neostats')
   assert.equal(jobs[0].link, 'https://neostats.ai/careers')
   assert.equal(typeof jobs[0].scrapedAt, 'string')
+})
+
+test('Neostats preserves existing jobs when the current client-loaded jobs API is unavailable', async () => {
+  const neostats = await loadNeostatsModule()
+  const requestedText = []
+  const requestedApis = []
+
+  const jobs = await neostats.createNeostatsScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      requestedText.push(url)
+
+      if (url === neostats.HOMEPAGE_URL) return homepageHtml
+      if (url === neostats.CAREERS_URL) return currentClientLoadedCareersHtml
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    fetchJobsApi: async (url) => {
+      requestedApis.push(url)
+      return {
+        status: 503,
+        body: '{"error":"Unable to load openings right now."}',
+        json: { error: 'Unable to load openings right now.' },
+      }
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, neostats.JOBS_API_URL)
+  assert.equal(evidence?.listingComplete, false)
+  assert.deepEqual(requestedText, [neostats.HOMEPAGE_URL, neostats.CAREERS_URL])
+  assert.deepEqual(requestedApis, [neostats.JOBS_API_URL])
 })
 
 test('Neostats fails closed when the verified homepage or careers page contract changes', async () => {

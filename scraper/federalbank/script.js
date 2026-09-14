@@ -185,10 +185,17 @@ export const hasOfficialCareersSurface = (html) => {
 }
 
 export const hasRadwareChallengeSignal = (html) => {
+  const page = String(html ?? '')
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes('radware page')
+  return (
+    normalized.includes('radware page')
     && normalized.includes('verifying your browser')
+  ) || (
+    /<title>\s*Radware Block Page\s*<\/title>/i.test(page)
+    && /captcha\.perfdrive\.com/i.test(page)
+    && /botmanager_support@radware\.com/i.test(page)
+  )
 }
 
 export const hasCareersPortalShellSignal = (html) => {

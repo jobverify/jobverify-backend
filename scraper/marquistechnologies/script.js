@@ -40,6 +40,39 @@ const isBrowserFallbackError = (error) =>
   /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to/i
     .test(String(error?.message ?? error ?? ''))
 
+const findErrorInChain = (error, predicate) => {
+  const seen = new Set()
+  let current = error
+
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    if (predicate(current)) return current
+    current = current?.cause
+  }
+
+  return null
+}
+
+const hasAnyHttpStatus = (error, statuses) => Boolean(
+  findErrorInChain(error, (candidate) => statuses.includes(Number(candidate?.status))),
+)
+
+const createBlockedAccessError = (url, cause) => {
+  const routeLabel = url === HOMEPAGE_URL ? 'homepage' : 'route'
+  return Object.assign(
+    new Error(`Marquis Technologies ${routeLabel} is currently blocked by upstream access controls`, {
+      cause,
+    }),
+    {
+      code: 'MARQUIS_SITE_BLOCKED',
+      failureKind: 'blocked_or_access_denied',
+      softFailure: true,
+      upstreamOutage: true,
+      abortRetries: true,
+    },
+  )
+}
+
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
@@ -221,11 +254,22 @@ export const createMarquisTechnologiesScraper = () => ({
       try {
         return await fetchText(url)
       } catch (error) {
+        if (hasAnyHttpStatus(error, [307])) {
+          throw createBlockedAccessError(url, error)
+        }
+
         if (!isBrowserFallbackError(error)) {
           throw error
         }
 
-        return browserTextFetcher(url)
+        try {
+          return await browserTextFetcher(url)
+        } catch (fallbackError) {
+          if (hasAnyHttpStatus(fallbackError, [307])) {
+            throw createBlockedAccessError(url, fallbackError)
+          }
+          throw fallbackError
+        }
       }
     }
 

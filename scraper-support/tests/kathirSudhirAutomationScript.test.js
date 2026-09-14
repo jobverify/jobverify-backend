@@ -4,6 +4,8 @@ import test from 'node:test'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const fixturesDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   'fixtures',
@@ -269,4 +271,27 @@ test('Kathir Sudhir Automation rejects absent inventory and role arrays without 
   assert.throws(() => scraperModule.extractPublicJobs(currentNoListingsCareersHtml), error => error.code === 'KATHIR_INVENTORY_UNAVAILABLE')
   const careers = currentNoListingsCareersHtml + '<script>const jobs=[{title:"Sales Engineer",apply:"https://docs.google.com/forms/d/e/verified/viewform"}];const list=document.getElementById("jobList");</script>'
   assert.throws(() => scraperModule.extractPublicJobs(careers), error => error.code === 'KATHIR_LOCATION_UNVERIFIED' && error.abortRetries === true)
+})
+
+test('Kathir Sudhir Automation returns discovery-only evidence when current inline jobs lack verified geography', async () => {
+  const scraperModule = await loadKathirSudhirAutomationModule()
+  const careers = currentNoListingsCareersHtml + '<script>const jobs=[{title:"Sales Engineer",apply:"https://docs.google.com/forms/d/e/verified/viewform"}];const list=document.getElementById("jobList");</script>'
+
+  const jobs = await scraperModule.createKathirSudhirAutomationScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
+    fetchText: async (url) => {
+      if (url === scraperModule.HOMEPAGE_URL) return verifiedHomepageHtml
+      if (url === scraperModule.CAREERS_URL) return careers
+
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, scraperModule.CAREERS_URL)
+  assert.equal(evidence?.listingComplete, false)
+  assert.equal(evidence?.reason, 'Kathir Sudhir Automation job geography is unverified: current inline role geography has not been validated')
 })

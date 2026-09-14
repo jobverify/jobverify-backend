@@ -363,6 +363,8 @@ test('Expleo helpers stay pinned to the verified first-party careers and India i
   assert.equal(expleo.INDIA_JOBS_ROOT_URL, INDIA_JOBS_ROOT_URL)
   assert.equal(expleo.SEARCH_WRAPPER_URL, SEARCH_WRAPPER_URL)
   assert.equal(expleo.SEARCH_IFRAME_URL, SEARCH_IFRAME_URL)
+  assert.equal(expleo.ICIMS_USER_AGENT, 'Mozilla/5.0')
+  assert.doesNotMatch(expleo.ICIMS_USER_AGENT, /Chrome|Safari|Windows NT/i)
   assert.equal(expleo.buildSearchUrl(), SEARCH_IFRAME_URL)
   assert.equal(expleo.buildSearchUrl(1), SEARCH_PAGE_URL_PAGE_2)
   assert.equal(

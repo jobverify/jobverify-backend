@@ -74,6 +74,15 @@ const isFirstPartyRoleUrl = (value) => {
   }
 }
 
+const hasSameDomainCareersRoleLink = (html = '') => {
+  for (const match of String(html ?? '').matchAll(/<a[^>]+href=["']([^"'#?]*\/careers\/[^"'#?]+)["'][^>]*>/gi)) {
+    const url = toAbsoluteUrl(match[1])
+    if (isFirstPartyRoleUrl(url)) return true
+  }
+
+  return false
+}
+
 const extractNextLocationLabel = (html = '') => {
   const match = String(html ?? '').match(/<(?:span|p|div|li|strong)[^>]*>([\s\S]*?)<\/(?:span|p|div|li|strong)>/i)
   return normalizeWhitespace(match?.[1] ?? '') || null
@@ -86,12 +95,8 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
   return /<title[^>]*>\s*Careers\s*\|\s*Railway\s*<\/title>/i.test(rawHtml)
     && normalized.includes('Redefine the future of infrastructure')
     && normalized.includes('See open positions')
-    && normalized.includes('Senior Infra Engineer: Platform')
-    && normalized.includes('Senior Infra Engineer: Storage')
-    && normalized.includes('Senior Infra Engineer: Observability')
-    && normalized.includes('Senior Infra Engineer: Datacenters')
     && normalized.includes('Remote (anywhere)')
-    && /href=["']\/careers\/[^"'#?]+["']/i.test(rawHtml)
+    && hasSameDomainCareersRoleLink(rawHtml)
 }
 
 export const extractRoleSummaries = (html = '') => {

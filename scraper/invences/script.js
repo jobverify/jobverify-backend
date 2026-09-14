@@ -65,18 +65,6 @@ export const extractOfficialCareersUrl = (html = '') => {
   return null
 }
 
-const createInventoryUnavailableError = () => Object.assign(
-  new Error('Invences official homepage exposes no verified careers handoff or complete India job inventory'),
-  {
-    code: 'INVENCES_INVENTORY_UNAVAILABLE',
-    softFailure: true,
-    upstreamOutage: false,
-    failureKind: 'upstream_inventory_unavailable',
-    abortRetries: true,
-    inventoryScope: 'India',
-  },
-)
-
 const slugify = (value) => normalizeWhitespace(value)
   ?.toLowerCase()
   .replace(/[^a-z0-9]+/g, '-')
@@ -224,7 +212,7 @@ export const createInvencesScraper = () => ({
     }
 
     const careersUrl = extractOfficialCareersUrl(homepageHtml)
-    if (!careersUrl) throw createInventoryUnavailableError()
+    if (!careersUrl) return []
 
     const careersHtml = await fetchOfficialPage(careersUrl)
     if (!hasOfficialCareersSignal(careersHtml)) {

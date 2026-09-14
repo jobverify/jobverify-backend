@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { EventEmitter } from 'node:events'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
@@ -121,6 +122,90 @@ test('Immidart Technologies LLP run decorates official first-party careers jobs 
   assert.equal(jobs[8].requiredSkills.length, 3)
   assert.equal(jobs[9].jobId, 'immidarttechnologiesllp-sm-1')
   assert.equal(jobs[9].requiredSkills.length, 4)
+})
+
+test('Immidart official fetch falls back only for the verified certificate alt-name mismatch', async () => {
+  const immidart = await loadImmidartModule()
+  const certificateError = Object.assign(
+    new Error("Hostname/IP does not match certificate's altnames: Host: www.immidart.com."),
+    { code: 'ERR_TLS_CERT_ALTNAME_INVALID' },
+  )
+  const fallbackUrls = []
+
+  const page = await immidart.fetchTextWithOfficialFallback(immidart.HOMEPAGE_URL, {
+    strictFetchText: async () => {
+      throw certificateError
+    },
+    fallbackFetchText: async (url) => {
+      fallbackUrls.push(url)
+      return homepageHtml
+    },
+  })
+
+  assert.equal(page, homepageHtml)
+  assert.deepEqual(fallbackUrls, [immidart.HOMEPAGE_URL])
+
+  await assert.rejects(
+    immidart.fetchTextWithOfficialFallback('https://example.com/', {
+      strictFetchText: async () => {
+        throw certificateError
+      },
+      fallbackFetchText: async () => {
+        throw new Error('Unexpected fallback for an unverified host')
+      },
+    }),
+    /certificate's altnames/i,
+  )
+
+  await assert.rejects(
+    immidart.fetchTextWithOfficialFallback(immidart.CAREERS_URL, {
+      strictFetchText: async () => {
+        throw new Error('HTTP 500 for https://www.immidart.com/company/careers')
+      },
+      fallbackFetchText: async () => {
+        throw new Error('Unexpected fallback for a non-certificate error')
+      },
+    }),
+    /HTTP 500/i,
+  )
+})
+
+test('Immidart certificate-mismatch fallback disables TLS rejection only for the verified host', async () => {
+  const immidart = await loadImmidartModule()
+  const requests = []
+  const fakeRequest = (url, options, callback) => {
+    requests.push({ url, options })
+    const request = new EventEmitter()
+    request.setTimeout = () => request
+    request.destroy = (error) => request.emit('error', error)
+    request.end = () => {
+      const response = new EventEmitter()
+      response.statusCode = 200
+      response.headers = {}
+      response.setEncoding = () => {}
+      callback(response)
+      response.emit('data', homepageHtml)
+      response.emit('end')
+    }
+    return request
+  }
+
+  const text = await immidart.fetchTextAllowingMismatchedCertificate(immidart.HOMEPAGE_URL, {
+    request: fakeRequest,
+  })
+
+  assert.equal(text, homepageHtml)
+  assert.equal(requests.length, 1)
+  assert.equal(requests[0].url, immidart.HOMEPAGE_URL)
+  assert.equal(requests[0].options.rejectUnauthorized, false)
+  assert.match(requests[0].options.headers['User-Agent'], /Mozilla\/5\.0/)
+
+  await assert.rejects(
+    immidart.fetchTextAllowingMismatchedCertificate('https://example.com/', {
+      request: fakeRequest,
+    }),
+    /refusing certificate fallback/i,
+  )
 })
 
 test('Immidart Technologies LLP fails closed when the verified first-party careers surface changes or loses embedded openings', async () => {

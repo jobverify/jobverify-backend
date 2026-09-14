@@ -175,7 +175,7 @@ test('saveToDB upserts source jobs before recording misses for unseen jobs', asy
   const operations = []
   let capturedBulkOps = []
   const capturedLifecycleUpdates = []
-  let deleteAttempted = false
+  const deletionFilters = []
 
   Job.bulkWrite = async (bulkOps) => {
     operations.push('bulkWrite')
@@ -197,9 +197,12 @@ test('saveToDB upserts source jobs before recording misses for unseen jobs', asy
     }
   }
 
-  Job.deleteMany = async () => {
-    deleteAttempted = true
-    return { deletedCount: 0 }
+  Job.deleteMany = (filter) => {
+    operations.push('deleteMany')
+    deletionFilters.push(filter)
+    return {
+      exec: async () => ({ deletedCount: 1 }),
+    }
   }
 
   const jobs = [
@@ -224,36 +227,66 @@ test('saveToDB upserts source jobs before recording misses for unseen jobs', asy
   try {
     const result = await saveToDB(jobs, 'example-source', { missesBeforeExpiry: 2 })
 
-    assert.deepEqual(operations, ['bulkWrite', 'updateMany', 'updateMany'])
-    assert.deepEqual(capturedLifecycleUpdates[0].filter, {
+    assert.deepEqual(operations, ['bulkWrite', 'deleteMany', 'updateMany'])
+    assert.deepEqual(deletionFilters, [{
       source: 'example-source',
       status: 'active',
       fingerprint: { $nin: expectedFingerprints },
       missedScrapeCount: { $gte: 1 },
-    })
-    assert.deepEqual(capturedLifecycleUpdates[0].update, {
-      $inc: { missedScrapeCount: 1 },
-      $set: { status: 'expired' },
-    })
-    assert.deepEqual(capturedLifecycleUpdates[1].filter, {
+    }])
+    assert.deepEqual(capturedLifecycleUpdates[0].filter, {
       source: 'example-source',
       status: 'active',
       fingerprint: { $nin: expectedFingerprints },
     })
-    assert.deepEqual(capturedLifecycleUpdates[1].update, {
+    assert.deepEqual(capturedLifecycleUpdates[0].update, {
       $inc: { missedScrapeCount: 1 },
     })
-    assert.equal(deleteAttempted, false)
     assert.equal(result.inserted, 2)
     assert.equal(result.missed, 3)
     assert.equal(result.expired, 1)
-    assert.equal(result.deleted, 0)
+    assert.equal(result.deleted, 1)
     for (const operation of capturedBulkOps) {
       const seenJobState = operation.updateOne.update.$set
       assert.equal(seenJobState.status, 'active')
       assert.equal(seenJobState.missedScrapeCount, 0)
       assert.ok(seenJobState.lastSeenAt instanceof Date)
     }
+  } finally {
+    Job.bulkWrite = originalBulkWrite
+    Job.updateMany = originalUpdateMany
+    Job.deleteMany = originalDeleteMany
+    restoreReadyState()
+  }
+})
+
+test('saveToDB does not persist a scraped job description', async () => {
+  const restoreReadyState = setReadyState(1)
+  const originalBulkWrite = Job.bulkWrite
+  const originalUpdateMany = Job.updateMany
+  const originalDeleteMany = Job.deleteMany
+
+  let capturedBulkOps = []
+  Job.bulkWrite = async (bulkOps) => {
+    capturedBulkOps = bulkOps
+    return { upsertedCount: bulkOps.length, modifiedCount: 0 }
+  }
+  Job.updateMany = () => ({ exec: async () => ({ matchedCount: 0, modifiedCount: 0 }) })
+  Job.deleteMany = () => ({ exec: async () => ({ deletedCount: 0 }) })
+
+  try {
+    await saveToDB([{
+      title: 'Software Engineer',
+      company: 'Example',
+      location: 'Bengaluru, India',
+      city: 'Bangalore',
+      link: 'https://example.com/job-1',
+      description: 'Build student-facing software with Node.js and React.',
+    }], 'example-source', { missesBeforeExpiry: 2 })
+
+    const persistedFields = capturedBulkOps[0].updateOne.update.$set
+    assert.equal(Object.hasOwn(persistedFields, 'description'), false)
+    assert.deepEqual(capturedBulkOps[0].updateOne.update.$unset, { description: 1 })
   } finally {
     Job.bulkWrite = originalBulkWrite
     Job.updateMany = originalUpdateMany

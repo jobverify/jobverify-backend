@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import { ALGONOMY_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -170,8 +171,16 @@ export const createAlgonomyScraper = ({ now = () => new Date().toISOString() } =
     signal?.throwIfAborted()
     if (/<title[^>]*>[^<]*ADA Global<\/title>/i.test(careersHtml)
       && String(careersHtml).includes('https://adaglobal.darwinbox.com/ms/candidatev2/main/careers/allJobs')) {
-      throw Object.assign(new Error('Algonomy careers migrated to ADA Global Darwinbox; a complete Algonomy-specific inventory is not verified. Parent-company jobs cannot establish an Algonomy snapshot.'), {
-        code: 'ALGONOMY_SCOPE_UNVERIFIED', failureKind: 'upstream_source_migration', softFailure: true, abortRetries: true,
+      return attachInventoryEvidence([], {
+        status: 'discovery-only',
+        surface: CAREERS_URL,
+        firstParty: true,
+        listingComplete: false,
+        pagesFetched: 1,
+        reportedTotal: null,
+        indiaFacetCount: null,
+        verifiedAt: (overrideNow || now)(),
+        reason: 'Algonomy careers migrated to ADA Global Darwinbox; a complete Algonomy-specific inventory is not verified. Parent-company jobs cannot establish an Algonomy snapshot.',
       })
     }
     if (!hasOfficialCareersSignal(careersHtml)) {

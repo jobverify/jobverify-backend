@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'cfi'
@@ -29,9 +31,12 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
-export const createCfiScraper = () => ({
+export const createCfiScraper = ({
+  now: defaultNow = () => new Date().toISOString(),
+} = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
+    const now = options.now || defaultNow
     const careersHtml = await fetchText(CAREERS_URL)
     const bambooHrEmbedHtml = await fetchText(BAMBOOHR_EMBED_URL)
 
@@ -47,7 +52,17 @@ export const createCfiScraper = () => ({
       throw new Error('CFI BambooHR embed no longer matches the verified no-openings state')
     }
 
-    return []
+    return attachInventoryEvidence([], {
+      status: 'verified-empty',
+      surface: CAREERS_URL,
+      firstParty: true,
+      listingComplete: true,
+      pagesFetched: 2,
+      reportedTotal: 0,
+      indiaFacetCount: 0,
+      verifiedAt: now(),
+      reason: 'cfi-bamboohr-official-empty-openings',
+    })
   },
 })
 

@@ -4,20 +4,22 @@ import test from 'node:test'
 import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
-test('Genex Space is registered against the current first-party unavailable inventory', () => {
+test('Genex Space is registered against the current first-party discovery-only inventory', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'genexspace')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Genex Space')
   assert.equal(provider.companyCareerPage, 'https://genex.space/')
-  assert.equal(provider.atsPlatform, 'official-company-site-inventory-unavailable')
+  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'verified-homepage-plus-current-client-bundle')
   assert.equal(
     provider.extractionStrategy,
-    'verified-company-and-join-us-bundle+reject-unavailable-inventory',
+    'verified-company-and-join-us-bundle+no-public-listings-discovery-only-return-empty',
   )
+  assert.equal(provider.verifiedPublicJobCount, 0)
+  assert.equal(provider.verifiedIndiaJobCount, 0)
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'genex.space')

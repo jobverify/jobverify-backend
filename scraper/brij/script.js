@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -295,8 +296,16 @@ export const createBrijScraper = () => ({
 
     const boardHtml = await fetchText(BOARD_URL)
     if (hasInactiveBoardSignal(boardHtml)) {
-      throw Object.assign(new Error('Brij application board account is inactive; current job inventory is unavailable'), {
-        code: 'BRIJ_BOARD_UNAVAILABLE', failureType: 'upstream_unavailable', abortRetries: true,
+      return attachInventoryEvidence([], {
+        status: 'discovery-only',
+        surface: BOARD_URL,
+        firstParty: true,
+        listingComplete: false,
+        pagesFetched: 2,
+        reportedTotal: null,
+        indiaFacetCount: null,
+        verifiedAt: now(),
+        reason: 'Verified Brij first-party careers handoff reaches a JazzHR inactive-account page; current public inventory is unavailable.',
       })
     }
 

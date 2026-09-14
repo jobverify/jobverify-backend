@@ -1,7 +1,8 @@
 [
   {
     "source": "accenture",
-    "scraperTimeoutMs": 1200000
+    "scraperTimeoutMs": 1200000,
+    "dryRunEnrichPublicExperience": false
   },
   {
     "source": "artechinfosystems",

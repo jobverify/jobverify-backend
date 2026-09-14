@@ -17,6 +17,9 @@ const USER_AGENT =
 
 const PAYODA_APPLICATION_EMAIL_PATTERN = /\b(?:joinus|careers)@payoda\.com\b/i
 const PAYODA_APPLICATION_MAILTO_PATTERN = /href=["'](mailto:(?:joinus|careers)@payoda\.com[^"']*)["']/i
+const ROLE_CARD_CTA_PATTERN = /\bView\s+(?:job|role)\b/i
+const DOT_SEPARATOR_PATTERN = /\s*(?:·|\u00c2\u00b7)\s*/
+const DOT_SEPARATOR_ONLY_PATTERN = /^(?:·|\u00c2\u00b7)$/
 
 const decodeHtml = (value) => String(value ?? '')
   .replace(/&nbsp;/gi, ' ')
@@ -54,7 +57,7 @@ const normalizeLocation = (value) => {
 const deriveCity = (value) => {
   const normalized = normalizeWhitespace(value)
   if (!normalized) return null
-  const firstLocation = normalized.split('·')[0]?.trim()
+  const firstLocation = normalized.split(DOT_SEPARATOR_PATTERN)[0]?.trim()
   return normalizeCity(firstLocation || normalized)
 }
 
@@ -69,7 +72,7 @@ const parseEmploymentDetails = (value) => {
     }
   }
 
-  const parts = normalized.split('·').map((part) => normalizeWhitespace(part)).filter(Boolean)
+  const parts = normalized.split(DOT_SEPARATOR_PATTERN).map((part) => normalizeWhitespace(part)).filter(Boolean)
   return {
     experienceRequired: normalizeExperience(parts[0]),
     employmentType: parts[1] || null,
@@ -93,7 +96,7 @@ export const hasOfficialCareersSignal = (html) => {
   return /Careers\s*·\s*Build the future of agentic AI at Payoda/i.test(page)
     && /Open Roles|Where we'?re hiring right now\./i.test(page)
     && PAYODA_APPLICATION_EMAIL_PATTERN.test(page)
-    && /View job/i.test(page)
+    && ROLE_CARD_CTA_PATTERN.test(page)
 }
 
 export const extractRoleCards = (html) => {
@@ -101,14 +104,14 @@ export const extractRoleCards = (html) => {
   const applyUrl = extractApplyUrl(page)
   const jobs = []
 
-  for (const match of page.matchAll(/<button\b[^>]*>[\s\S]*?<h4[^>]*>([\s\S]*?)<\/h4>([\s\S]*?)View job[\s\S]*?<\/button>/gi)) {
+  for (const match of page.matchAll(/<button\b[^>]*>[\s\S]*?<h4[^>]*>([\s\S]*?)<\/h4>([\s\S]*?)View\s+(?:job|role)[\s\S]*?<\/button>/gi)) {
     const title = stripTags(match[1])
     const body = String(match[2] ?? '')
     const spanValues = [...body.matchAll(/<span\b[^>]*>([\s\S]*?)<\/span>/gi)]
       .map((spanMatch) => stripTags(spanMatch[1]))
       .filter(Boolean)
 
-    const metadata = spanValues.filter((value) => value !== '·')
+    const metadata = spanValues.filter((value) => !DOT_SEPARATOR_ONLY_PATTERN.test(value))
     const department = metadata[0] || null
     const rawLocation = metadata[1] || null
     const details = parseEmploymentDetails(metadata[2] || null)

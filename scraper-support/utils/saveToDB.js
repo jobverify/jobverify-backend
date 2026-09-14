@@ -98,12 +98,30 @@ export const purgeExpiredJobsForQuotaRecovery = async ({
 
   let deletedCount = 0
   let estimatedBytes = 0
+  let dryRunCursor = null
 
   while (estimatedBytes < normalizedTargetBytes) {
-    const candidates = await JobModel.find({
+    const candidateFilter = {
       status: 'expired',
       lastSeenAt: { $lt: cutoff },
-    })
+    }
+
+    if (dryRunCursor) {
+      candidateFilter.$or = [
+        {
+          lastSeenAt: {
+            $gt: dryRunCursor.lastSeenAt,
+            $lt: cutoff,
+          },
+        },
+        {
+          lastSeenAt: dryRunCursor.lastSeenAt,
+          _id: { $gt: dryRunCursor.id },
+        },
+      ]
+    }
+
+    const candidates = await JobModel.find(candidateFilter)
       .sort({ lastSeenAt: 1, _id: 1 })
       .limit(normalizedBatchSize)
       .lean()
@@ -129,12 +147,15 @@ export const purgeExpiredJobsForQuotaRecovery = async ({
       deletedCount += deleteResult.deletedCount ?? 0
     } else {
       deletedCount += selected.length
+      const lastSelected = selected[selected.length - 1]
+      dryRunCursor = {
+        lastSeenAt: lastSelected.lastSeenAt,
+        id: lastSelected._id,
+      }
     }
 
-    // A preview must not fetch the same rows repeatedly because it does not
-    // mutate them. The live quota-recovery path always runs with dryRun=false.
-    if (dryRun) break
     if (selected.length < candidates.length || estimatedBytes >= normalizedTargetBytes) break
+    if (dryRun && candidates.length < normalizedBatchSize) break
   }
 
   return {
@@ -315,7 +336,6 @@ export const saveToDB = async (jobs, source, options = {}) => {
     const sourceContentUpdates = preserveExistingSourceContent
       ? {}
       : {
-          description: normalizedJob.jobDescription,
           minimumQualification: normalizedJob.minimumQualification,
           preferredQualification: normalizedJob.preferredQualification,
           requiredSkills: normalizedJob.requiredSkills,
@@ -386,6 +406,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
             ...(postedAt && { postedAt }),
             ...(closingDate && { closingDate }),
           },
+          $unset: { description: 1 },
         },
         upsert: true,
       },
@@ -479,18 +500,14 @@ export const saveToDB = async (jobs, source, options = {}) => {
       unseenFilter.fingerprint = { $nin: currentFingerprints }
     }
 
-    const expireResult = await runStage(
+    const expirationDeletion = await runStage(
       source,
       onStage,
       'expireUnseen',
-      () => JobModel.updateMany(
+      () => JobModel.deleteMany(
         {
           ...unseenFilter,
           missedScrapeCount: { $gte: missesBeforeExpiry - 1 },
-        },
-        {
-          $inc: { missedScrapeCount: 1 },
-          $set: { status: 'expired' },
         },
       ).exec(),
       {},
@@ -509,9 +526,10 @@ export const saveToDB = async (jobs, source, options = {}) => {
       { signal },
     )
 
-    result.expired = expireResult.modifiedCount ?? 0
-    result.missed = result.expired + (missResult.modifiedCount ?? 0)
-    shouldRefreshDatasetSummary = shouldRefreshDatasetSummary || result.expired > 0
+    result.deleted = expirationDeletion.deletedCount ?? 0
+    result.expired = result.deleted
+    result.missed = result.deleted + (missResult.modifiedCount ?? 0)
+    shouldRefreshDatasetSummary = shouldRefreshDatasetSummary || result.deleted > 0
   }
 
   if (shouldRefreshDatasetSummary && options.refreshDatasetSummary !== false && hasLiveDatabaseHandle()) {

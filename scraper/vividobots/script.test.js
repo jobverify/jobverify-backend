@@ -4,6 +4,8 @@ import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
+import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+
 import {
   AROOPA_FORM_ID,
   CAREERS_URL,
@@ -57,6 +59,25 @@ test('returns no jobs while Vividobots only exposes the verified candidate-porta
 
   assert.deepEqual(requestedUrls, [HOMEPAGE_URL, CAREERS_URL, JOB_APPLICATION_URL])
   assert.deepEqual(jobs, [])
+})
+
+test('returns discovery-only evidence when the Vividobots homepage blocks public access with HTTP 403', async () => {
+  const forbiddenError = Object.assign(
+    new Error(`HTTP 403 for ${HOMEPAGE_URL}`),
+    { status: 403 },
+  )
+
+  const jobs = await createVividobotsScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
+    fetchText: async () => { throw forbiddenError },
+  })
+
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, HOMEPAGE_URL)
+  assert.equal(evidence?.listingComplete, false)
 })
 
 test('fails closed when the verified first-party pages drift or public listings appear', async () => {

@@ -253,17 +253,20 @@ export const pageIndicatesStellaraaCompany = (html) => {
 }
 
 export const searchPageShowsZeroResults = (html) => {
+  const raw = String(html ?? '')
   const normalized = normalizeWhitespace(html)?.toLowerCase() || ''
-
-  return (
-    normalized.includes('0 jobs in india')
+  const hasNoMatchCopy = normalized.includes("we couldn't find a match")
+    || normalized.includes('no matching jobs found')
+    || normalized.includes('no jobs found')
+  const hasNoJobCards = !/urn:li:jobPosting:/i.test(raw)
+  const hasZeroCountTitle = normalized.includes('0 jobs in india')
     || normalized.includes('0 jobs jobs in india')
-  )
-    && (
-      normalized.includes("we couldn't find a match")
-      || normalized.includes('no matching jobs found')
-      || normalized.includes('no jobs found')
-    )
+  const hasCompanyScopedEmptyTitle = /<title[^>]*>\s*jobs jobs at stellaraa in india\s*\|\s*linkedin\s*<\/title>/i
+    .test(raw)
+
+  return hasNoJobCards
+    && hasNoMatchCopy
+    && (hasZeroCountTitle || hasCompanyScopedEmptyTitle)
 }
 
 const extractLinkedInJobCardSegments = (html) =>

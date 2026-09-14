@@ -65,6 +65,11 @@ const isDnsError = (error) => {
 const isReachableSurface = (surface = {}) =>
   Number.isInteger(surface?.status) && surface.status > 0
 
+const isUnavailableSurface = (surface = {}) =>
+  surface?.errorKind
+  && !isReachableSurface(surface)
+  && surface?.html == null
+
 export const isExpectedTimedOutSurface = (surface = {}) =>
   surface?.errorKind === 'timeout'
   && !Number.isInteger(surface?.status)
@@ -193,7 +198,23 @@ const defaultProbeUrl = async (url) => {
   }
 }
 
+const buildUpstreamUnavailableError = (surface = {}) => Object.assign(
+  new Error(
+    `${COMPANY} official first-party surface is temporarily unavailable (${surface.errorKind || 'network'}): ${surface.finalUrl || surface.url}`,
+  ),
+  {
+    softFailure: true,
+    upstreamOutage: true,
+    abortRetries: true,
+    failureKind: 'network_or_timeout',
+  },
+)
+
 const assertVerifiedOfficialFirstPartySurface = (surface) => {
+  if (isUnavailableSurface(surface)) {
+    throw buildUpstreamUnavailableError(surface)
+  }
+
   if (!hasExpectedOfficialFirstPartySignal(surface)) {
     throw new Error(`${COMPANY} verified official first-party surface changed materially: ${surface.url}`)
   }

@@ -23,7 +23,8 @@ test('getScraperCatalog includes the Qualcomm apiPortal provider with official m
     'https://careers.qualcomm.com/careers?domain=qualcomm.com',
   )
   assert.equal(qualcomm.config.request.headers.Origin, 'https://careers.qualcomm.com')
-  assert.deepEqual(qualcomm.config.detail.headers, qualcomm.config.request.headers)
+  assert.equal(qualcomm.config.detail.enabled, false)
+  assert.equal(qualcomm.dryRunEnrichPublicExperience, false)
 })
 
 test('buildScrapers exposes a runnable Qualcomm apiPortal scraper without changing the runner contract', () => {

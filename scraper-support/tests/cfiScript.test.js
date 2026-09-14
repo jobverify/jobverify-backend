@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const careersHtml = `
   <html>
     <head><title>Careers at CFI | Corporate Finance Institute</title></head>
@@ -39,7 +41,9 @@ test('CFI verifies the official careers page and BambooHR handoff', async () => 
 
 test('run returns an empty list while the verified BambooHR no-openings state is present', async () => {
   const cfi = await loadCfiModule()
-  const scraper = cfi.createCfiScraper()
+  const scraper = cfi.createCfiScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  })
   const requested = []
 
   const jobs = await scraper.run({
@@ -56,4 +60,6 @@ test('run returns an empty list while the verified BambooHR no-openings state is
     cfi.BAMBOOHR_EMBED_URL,
   ])
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs)?.status, 'verified-empty')
+  assert.equal(readInventoryEvidence(jobs)?.verifiedAt, '2026-09-14T00:00:00.000Z')
 })

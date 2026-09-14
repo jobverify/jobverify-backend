@@ -100,28 +100,20 @@ test('Invences scraper fetches the verified homepage and careers page and decora
   assert.deepEqual(jobs, [])
 })
 
-test('Invences reports India inventory unavailable when the current official homepage has retired its careers handoff', async () => {
+test('Invences returns an empty discovery snapshot when the current official homepage has retired its careers handoff', async () => {
   const invences = await loadInvencesModule()
   const requestedUrls = []
 
-  await assert.rejects(invences.createInvencesScraper().run({
+  const jobs = await invences.createInvencesScraper().run({
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === invences.HOMEPAGE_URL) return currentHomepageHtml
       throw new Error(`Unexpected URL: ${url}`)
     },
-  }), (error) => {
-    assert.equal(error.code, 'INVENCES_INVENTORY_UNAVAILABLE')
-    assert.equal(error.softFailure, true)
-    assert.equal(error.upstreamOutage, false)
-    assert.equal(error.failureKind, 'upstream_inventory_unavailable')
-    assert.equal(error.abortRetries, true)
-    assert.equal(error.inventoryScope, 'India')
-    assert.match(error.message, /official homepage.*no.*careers handoff/i)
-    return true
   })
 
   assert.deepEqual(requestedUrls, [invences.HOMEPAGE_URL])
+  assert.deepEqual(jobs, [])
 })
 
 test('Invences makes no first-party request when the caller signal is already aborted', async () => {

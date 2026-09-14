@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'hanosoftwaresolutions'
@@ -19,6 +21,8 @@ export const CAREERS_ROUTE_URLS = [
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+const DNS_ERROR_CODES = new Set(['ENOTFOUND', 'EAI_AGAIN', 'ERR_NAME_NOT_RESOLVED'])
 
 const HOMEPAGE_SIGNALS = [
   '<title>hano software solution private limited</title>',
@@ -111,6 +115,41 @@ const defaultFetchText = async (url) => {
 
 const normalizeHtml = (value) => String(value ?? '').toLowerCase()
 
+const isDnsResolutionError = (error) => {
+  const seen = new Set()
+  let current = error
+
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    const code = typeof current.code === 'string' ? current.code : ''
+    const message = String(current.message ?? '')
+
+    if (
+      DNS_ERROR_CODES.has(code)
+      || /\b(?:ENOTFOUND|EAI_AGAIN|ERR_NAME_NOT_RESOLVED|getaddrinfo ENOTFOUND)\b/i.test(message)
+    ) {
+      return true
+    }
+
+    current = current.cause
+  }
+
+  return false
+}
+
+const buildDiscoveryOnlyEvidence = (now) =>
+  attachInventoryEvidence([], {
+    status: 'discovery-only',
+    surface: HOMEPAGE_URL,
+    firstParty: true,
+    listingComplete: false,
+    pagesFetched: 0,
+    reportedTotal: null,
+    indiaFacetCount: null,
+    verifiedAt: now(),
+    reason: 'Hano Software Solutions official hostname cannot be resolved; first-party careers inventory cannot be verified.',
+  })
+
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeHtml(html)
   return HOMEPAGE_SIGNALS.every((signal) => normalized.includes(signal))
@@ -141,46 +180,53 @@ export const isVerifiedCareersShell = (page = {}) =>
   && extractBundleAssetPath(page?.html) !== null
   && !hasPublicJobsSignal(page?.html)
 
-export const createHanoSoftwareSolutionsScraper = () => ({
+export const createHanoSoftwareSolutionsScraper = ({
+  now = () => new Date().toISOString(),
+} = {}) => ({
   async run({
     fetchPage = defaultFetchPage,
     fetchText = defaultFetchText,
   } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+    try {
+      const homepage = await fetchPage(HOMEPAGE_URL)
 
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
-      throw new Error('Hano Software Solutions verified official homepage no longer matches the known public surface')
-    }
-
-    if (hasPublicJobsSignal(homepage.html)) {
-      throw new Error('Hano Software Solutions homepage now appears to expose a public jobs surface')
-    }
-
-    const bundleAssetPath = extractBundleAssetPath(homepage.html)
-    if (!bundleAssetPath) {
-      throw new Error('Hano Software Solutions homepage no longer exposes the verified client bundle')
-    }
-
-    const bundleUrl = new URL(bundleAssetPath, HOMEPAGE_URL).toString()
-    const bundleText = await fetchText(bundleUrl)
-
-    if (!hasVerifiedBundleSignal(bundleText) || hasBundleJobsSignal(bundleText)) {
-      throw new Error('Hano Software Solutions client bundle changed materially or now exposes a public jobs surface')
-    }
-
-    for (const careersRouteUrl of CAREERS_ROUTE_URLS) {
-      const careersRoute = await fetchPage(careersRouteUrl)
-
-      if (!isVerifiedCareersShell(careersRoute)) {
-        throw new Error('Hano Software Solutions careers routes changed materially or now expose public jobs')
+      if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+        throw new Error('Hano Software Solutions verified official homepage no longer matches the known public surface')
       }
-    }
 
-    return []
+      if (hasPublicJobsSignal(homepage.html)) {
+        throw new Error('Hano Software Solutions homepage now appears to expose a public jobs surface')
+      }
+
+      const bundleAssetPath = extractBundleAssetPath(homepage.html)
+      if (!bundleAssetPath) {
+        throw new Error('Hano Software Solutions homepage no longer exposes the verified client bundle')
+      }
+
+      const bundleUrl = new URL(bundleAssetPath, HOMEPAGE_URL).toString()
+      const bundleText = await fetchText(bundleUrl)
+
+      if (!hasVerifiedBundleSignal(bundleText) || hasBundleJobsSignal(bundleText)) {
+        throw new Error('Hano Software Solutions client bundle changed materially or now exposes a public jobs surface')
+      }
+
+      for (const careersRouteUrl of CAREERS_ROUTE_URLS) {
+        const careersRoute = await fetchPage(careersRouteUrl)
+
+        if (!isVerifiedCareersShell(careersRoute)) {
+          throw new Error('Hano Software Solutions careers routes changed materially or now expose public jobs')
+        }
+      }
+
+      return []
+    } catch (error) {
+      if (isDnsResolutionError(error)) return buildDiscoveryOnlyEvidence(now)
+      throw error
+    }
   },
 })
 
-export const run = async (options = {}) => createHanoSoftwareSolutionsScraper().run(options)
+export const run = async (options = {}) => createHanoSoftwareSolutionsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

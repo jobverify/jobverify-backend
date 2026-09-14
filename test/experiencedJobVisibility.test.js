@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import { PUBLIC_JOB_TYPE_EXPRESSION } from '../src/utils/publicJobType.js';
+import { normalizeJobListResponseJob } from '../src/controllers/jobController.js';
 import Job from '../src/models/Job.js';
 import User from '../src/models/User.js';
 import SiteSettings from '../src/models/SiteSettings.js';
@@ -16,6 +18,38 @@ import { refreshJobDatasetSummary } from '../src/services/jobDatasetSummaryServi
 
 process.env.JWT_SECRET = 'visibility-tests-only-secret-at-least-32-characters';
 
+test('response normalization promotes positive-experience fresher and intern labels', () => {
+  assert.equal(
+    normalizeJobListResponseJob({
+      title: 'Associate Researcher',
+      jobType: 'Full-time Fresher',
+      experienceRequired: '1 year',
+    }).jobType,
+    'Full-time Experienced',
+  );
+  assert.equal(
+    normalizeJobListResponseJob({
+      title: 'Finance Intern',
+      jobType: 'Internship',
+      employmentType: 'Internship',
+      experienceRequired: '1 year',
+    }).jobType,
+    'Full-time Experienced',
+  );
+});
+
+test('response normalization keeps zero-minimum experience ranges as fresher jobs', () => {
+  assert.equal(
+    normalizeJobListResponseJob({
+      title: 'Graduate Software Engineer',
+      jobType: 'Full-time Fresher',
+      employmentType: 'Full-time',
+      experienceRequired: '0-1 years',
+    }).jobType,
+    'Full-time Fresher',
+  );
+});
+
 test('experienced job visibility is reversible and consistent across public surfaces', { timeout: 120000 }, async (t) => {
   const mongo = await MongoMemoryServer.create({ binary: {
     downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)),
@@ -24,10 +58,30 @@ test('experienced job visibility is reversible and consistent across public surf
   t.after(async () => { await mongoose.disconnect(); await mongo.stop(); });
   await mongoose.connect(mongo.getUri());
   const { default: jobRoutes } = await import('../src/routes/jobRoutes.js');
+  await t.test('Mongo category decisions match response normalization for legacy and experience variants', async () => {
+    const types = ['Full-time Experienced', 'Full-time Fresher', 'Full-time', 'Intern', 'Internship', 'Contract', 'Others', 'part-time', '', 'Permanent'];
+    const variants = [
+      {}, { experienceLevel: 'Entry Level' }, { experienceLevel: 'Entry  Level' }, { experienceLevel: 'Entry\nLevel' }, { experienceLevel: 'Junior Level' },
+      ...['0-1 years', '0-2 years', '0-5 years', '5 years', '2 yrs', '1.5 years', '1.5+ years', '1.5-2 years', '5-2 years', '2 years and above', 'minimum 2 years', 'Freshers, 5 years', '0 years', '1.5\u00a0years', '1.5\u2013 2 years'].map(experienceRequired => ({ experienceRequired })),
+      ...[null, 0, 1, 1.5, 2, 5, 41].map(minimumYears => ({ experienceProfile: { minimumYears, maximumYears: 5 } })),
+      { experienceProfile: { maximumYears: 2 } },
+      ...['Contract', 'Internship', 'Others', 'part-time', 'permanent', 'permanent_staff', 'fixed_term_contract'].map(employmentType => ({ employmentType })),
+      ...['Entry Level', 'Junior Level', 'Mid Level', 'Senior Level'].flatMap(experienceLevel => [null, 0, 1, 1.5, 2, 5].flatMap(minimumYears => [null, 1, 5].map(maximumYears => ({ employmentType: 'Full-time', experienceLevel, experienceRequired: '5 years', experienceProfile: { minimumYears, maximumYears } })))),
+      { description: 'Recent graduates welcome' }, { department: 'Campus hiring' },
+    ];
+    const fixtures = types.flatMap(jobType => ['Engineer', 'Graduate Engineer', 'Senior Engineer', 'Intern', 'Junior Engineer'].flatMap(title => variants.map(variant => ({ jobType, title, ...variant }))));
+    const collection = mongoose.connection.collection('category_parity');
+    await collection.insertMany(fixtures);
+    const actual = await collection.aggregate([{ $project: { category: PUBLIC_JOB_TYPE_EXPRESSION } }]).toArray();
+    const expected = new Map(fixtures.map(job => [String(job._id), normalizeJobListResponseJob(job).jobType]));
+    const mismatches = actual.filter(row => row.category !== expected.get(String(row._id))).map(row => ({ job: fixtures.find(job => String(job._id) === String(row._id)), expected: expected.get(String(row._id)), actual: row.category }));
+    assert.deepEqual(mismatches, []);
+  });
+
   const categories = ['Full-time Experienced', 'Full-time Fresher', 'Internship', 'Contract', 'Others', 'Full-time'];
   const ids = categories.map(() => new mongoose.Types.ObjectId());
   await Job.collection.insertMany(categories.map((jobType, index) => ({
-    _id: ids[index], title: `Opportunity ${index}`, company: `Company ${index}`, companyKey: `company ${index}`,
+    fingerprint: String(ids[index]), _id: ids[index], title: `Opportunity ${index}`, company: `Company ${index}`, companyKey: `company ${index}`,
     jobType, status: 'active', isPublicIndia: true, city: 'Bangalore', country: 'India',
     sourceUrl: `https://example.com/jobs/${index}`, applyUrl: `https://example.com/jobs/${index}`,
     postedAt: new Date('2026-01-01'), sortDate: new Date('2026-01-01'),
@@ -103,7 +157,7 @@ test('experienced job visibility is reversible and consistent across public surf
     ];
     const variantIds = variants.map(() => new mongoose.Types.ObjectId());
     await Job.collection.insertMany(variants.map((variant, index) => ({
-      ...variant, _id: variantIds[index], company: 'Legacy ' + index, companyKey: 'legacy ' + index,
+      ...variant, fingerprint: String(variantIds[index]), _id: variantIds[index], company: 'Legacy ' + index, companyKey: 'legacy ' + index,
       status: 'active', isPublicIndia: true, city: 'Bangalore', sourceUrl: 'https://example.com/legacy/' + index,
       postedAt: new Date('2026-01-01'), sortDate: new Date('2026-01-01'),
     })));
@@ -114,6 +168,9 @@ test('experienced job visibility is reversible and consistent across public surf
       assert.equal(result.data.find(job => job._id === String(variantIds[1]))?.jobType, 'Full-time Fresher');
       assert.equal(result.data.find(job => job._id === String(variantIds[2]))?.jobType, 'Contract');
       assert.equal((await fetch(base + '/api/jobs/' + variantIds[0])).status, 404);
+      assert.equal((await read('/api/jobs?jobType=Contract')).pagination.total, 2);
+      assert.equal((await read('/api/jobs?jobType=Full-time%20Fresher')).pagination.total, 2);
+      assert.ok((await read('/api/jobs/meta?jobType=Contract')).data.companies.includes('Legacy 2'));
       assert.equal((await read('/api/jobs/stats')).data.totalJobs, 6);
       assert.equal((await read('/api/jobs/snapshot')).data.totalJobs, 6);
       assert.ok(!(await read('/api/jobs/meta')).data.jobTypes.includes('Full-time Experienced'));

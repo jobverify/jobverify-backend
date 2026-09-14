@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { run, extractListings, hasOfficialCareersSignal } from './script.js'
+import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const titles = [
   'Digital Growth &amp; Brand Strategy Aptitude Test', 'Sales &amp; Outreach Strategy Aptitude Test',
@@ -42,9 +43,18 @@ test('Technotreon refuses a partial card inventory instead of borrowing the next
   ]) await assert.rejects(run({ fetchText: async url => { if (url.endsWith('/')) throw homepageUnavailable; return changed } }), /incomplete.*card/i)
 })
 
-test('Technotreon propagates careers transport errors and cancellation without an empty snapshot', async () => {
+test('Technotreon records careers transport errors as discovery evidence and still propagates cancellation', async () => {
   const failure = Object.assign(new Error('Connect timeout'), { code: 'UND_ERR_CONNECT_TIMEOUT' })
-  await assert.rejects(run({ fetchText: async () => { throw failure } }), error => error === failure)
+  const jobs = await run({
+    fetchText: async () => { throw failure },
+    now: () => '2026-09-14T00:00:00.000Z',
+  })
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, 'https://technotreon.in/careers')
+  assert.equal(evidence?.listingComplete, false)
+
   const reason = new Error('Source stopped')
   let requests = 0
   await assert.rejects(run({ signal: AbortSignal.abort(reason), fetchText: async () => { requests++; return page } }), error => error === reason)

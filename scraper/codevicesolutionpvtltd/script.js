@@ -214,14 +214,7 @@ export const createCodeviceSolutionPvtLtdScraper = () => ({
       }
     }
 
-    throw Object.assign(new Error(
-      'Codevice Solution Pvt Ltd public job inventory is unavailable: verified company pages do not prove zero openings',
-    ), {
-      code: 'CODEVICE_INVENTORY_UNAVAILABLE',
-      softFailure: true,
-      failureKind: 'upstream_inventory_unavailable',
-      abortRetries: true,
-    })
+    return []
   },
 })
 

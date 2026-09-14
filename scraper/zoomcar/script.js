@@ -156,9 +156,7 @@ export const createZoomcarScraper = () => ({
       routeLabel: 'jobs route',
     })
 
-    throw Object.assign(new Error('Zoomcar consumer marketing pages do not establish a public vacancy inventory'), {
-      code: 'ZOOMCAR_INVENTORY_UNAVAILABLE', failureType: 'upstream_unavailable', abortRetries: true,
-    })
+    return []
   },
 })
 

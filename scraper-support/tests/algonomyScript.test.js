@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const CAREERS_HTML = `
 <!doctype html>
 <html lang="en">
@@ -107,7 +109,17 @@ test('Algonomy returns Paycor-backed jobs from the verified first-party careers 
 test('Algonomy reports the official ADA migration without relabeling parent jobs or accepting an empty marketing page', async () => {
   const a = await loadModule()
   const html = '<title>Careers | Build What the Next Era Runs On | ADA Global</title><h1>Careers at ADA</h1><a href="https://adaglobal.darwinbox.com/ms/candidatev2/main/careers/allJobs">Explore open roles</a>'
-  await assert.rejects(a.run({fetchText: async url => { assert.equal(url, a.CAREERS_URL); return html }}), error => error.code === 'ALGONOMY_SCOPE_UNVERIFIED' && error.abortRetries === true)
+  const jobs = await a.run({
+    fetchText: async url => { assert.equal(url, a.CAREERS_URL); return html },
+    now: () => '2026-09-14T00:00:00.000Z',
+  })
+
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, a.CAREERS_URL)
+  assert.equal(evidence?.listingComplete, false)
+  assert.match(evidence?.reason || '', /ADA Global Darwinbox/i)
 })
 
 test('Algonomy refuses an unlinked legacy Paycor board even if old marketing copy remains', async () => {

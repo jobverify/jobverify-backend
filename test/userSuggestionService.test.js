@@ -7,7 +7,7 @@ import {
   UserSuggestionDailyLimitError,
 } from "../src/services/userSuggestionService.js";
 import {
-  countSuggestionWords,
+  countSuggestionCharacters,
   getIndiaDayKey,
 } from "../src/utils/userSuggestion.js";
 
@@ -18,17 +18,11 @@ const quotaCollision = () => {
   return error;
 };
 
-test("suggestion words ignore surrounding and repeated whitespace", () => {
-  assert.equal(countSuggestionWords("  Acme\n\tCareers   please "), 3);
-  assert.equal(countSuggestionWords("   "), 0);
-  assert.equal(
-    countSuggestionWords(Array.from({ length: 100 }, () => "word").join(" ")),
-    100,
-  );
-  assert.equal(
-    countSuggestionWords(Array.from({ length: 101 }, () => "word").join(" ")),
-    101,
-  );
+test("suggestion character count includes whitespace", () => {
+  assert.equal(countSuggestionCharacters("  Acme\n\tCareers   please "), 25);
+  assert.equal(countSuggestionCharacters("   "), 3);
+  assert.equal(countSuggestionCharacters("a".repeat(100)), 100);
+  assert.equal(countSuggestionCharacters("a".repeat(101)), 101);
 });
 
 test("India day keys cross midnight at UTC+05:30", () => {
@@ -121,7 +115,7 @@ test("slot allocation never hides an unrelated database failure", async () => {
 test("the suggestion schema enforces message rules and the unique quota index", () => {
   const valid = new UserSuggestion({
     user: "507f1f77bcf86cd799439011",
-    message: Array.from({ length: 100 }, () => "word").join(" "),
+    message: "a".repeat(100),
     submittedDay: "2026-09-13",
     dailySlot: 5,
   });
@@ -129,7 +123,7 @@ test("the suggestion schema enforces message rules and the unique quota index", 
 
   const invalid = new UserSuggestion({
     user: "507f1f77bcf86cd799439011",
-    message: Array.from({ length: 101 }, () => "word").join(" "),
+    message: "a".repeat(101),
     submittedDay: "2026-09-13",
     dailySlot: 6,
   });

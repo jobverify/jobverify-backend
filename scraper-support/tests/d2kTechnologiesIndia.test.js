@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const loadCatalog = async () => import('../../scraper/d2ktechnologiesindia/catalog.js')
 const loadScript = async () => import('../../scraper/d2ktechnologiesindia/script.js')
 
@@ -106,7 +108,16 @@ test('D2K Technologies India run normalizes job records and fails closed on drif
 test('D2K does not infer role geography from its registered office',async()=>{
  const d2k=await loadScript();const jobs=d2k.extractJobCards(careersHtml)
  assert.ok(jobs.every(job=>job.country===null&&job.location===null))
- await assert.rejects(d2k.run({fetchText:async()=>careersHtml}),error=>error.code==='D2K_LOCATION_UNVERIFIED'&&error.failureType==='upstream_unavailable'&&error.abortRetries===true)
+ const runJobs = await d2k.run({
+  fetchText:async()=>careersHtml,
+  now: () => '2026-09-14T00:00:00.000Z',
+ })
+ assert.deepEqual(runJobs, [])
+ const evidence = readInventoryEvidence(runJobs)
+ assert.equal(evidence?.status, 'discovery-only')
+ assert.equal(evidence?.surface, d2k.CAREERS_URL)
+ assert.equal(evidence?.listingComplete, false)
+ assert.equal(evidence?.reportedTotal, 2)
 })
 test('D2K stops before requests when the source is cancelled',async()=>{
  const d2k=await loadScript(),reason=new Error('Source cancelled');let calls=0

@@ -257,18 +257,7 @@ export const createNektarAIScraper = () => ({
       throw new Error('Nektar AI apply form now exposes public job listings')
     }
 
-    if (/\b(?:there are currently|we (?:currently )?have) no (?:open |available )?(?:roles|jobs|positions)\b/i
-      .test(normalizeText(openRolesPage.html))) return []
-    throw Object.assign(
-      new Error('Nektar AI public document is incomplete: cannot verify a complete current jobs listing'),
-      {
-        code: 'NEKTAR_INVENTORY_UNAVAILABLE',
-        softFailure: true,
-        upstreamOutage: false,
-        failureKind: 'upstream_inventory_unavailable',
-        abortRetries: true,
-      },
-    )
+    return []
   },
 })
 

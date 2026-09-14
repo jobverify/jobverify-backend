@@ -114,6 +114,8 @@ test('run fetches the verified Lennox iCIMS search surface and returns canonical
 
   assert.equal(lennox.CAREERS_PAGE_URL, CAREERS_PAGE_URL)
   assert.equal(lennox.SEARCH_PAGE_URL, SEARCH_PAGE_URL)
+  assert.equal(lennox.ICIMS_USER_AGENT, 'Mozilla/5.0')
+  assert.doesNotMatch(lennox.ICIMS_USER_AGENT, /Chrome|Safari|Windows NT/i)
   assert.equal(lennox.buildSearchUrl(), SEARCH_PAGE_URL)
   assert.equal(lennox.hasOfficialJobsPageSignal(listingHtml), true)
   assert.equal(lennox.hasOfficialJobsPageSignal('<html><title>Other Company Jobs</title></html>'), false)

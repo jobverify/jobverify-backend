@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -9,6 +10,7 @@ export const SOURCE = 'neostats'
 export const COMPANY = 'NeoStats'
 export const HOMEPAGE_URL = 'https://neostats.ai/'
 export const CAREERS_URL = 'https://neostats.ai/careers'
+export const JOBS_API_URL = 'https://neostats.ai/api/careers/jobs'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -120,11 +122,24 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialCareersSignal = (html) => {
   const normalized = normalizeWhitespace(html)?.toLowerCase() || ''
   const section = normalizeWhitespace(extractCareersSection(html))?.toLowerCase() || ''
+  const hasScopeCopy = section.includes('positions across banking, data, cards & analytics transformations - globally')
+    || section.includes('explore open roles across banking, data, cards & analytics transformations')
+    || normalized.includes('explore open roles across data, analytics, risk, sales, and operations')
 
   return normalized.includes('careers | neostats')
     && section.includes('current openings')
     && section.includes('open roles')
-    && section.includes('positions across banking, data, cards & analytics transformations - globally')
+    && hasScopeCopy
+}
+
+export const hasClientLoadedJobsSignal = (html) => {
+  const page = String(html ?? '')
+
+  return /<section[^>]+id=["']career-options["']/i.test(page)
+    && (
+      /\baria-busy=["']true["']/i.test(page)
+      || /Loading open roles/i.test(page)
+    )
 }
 
 export const extractOpenRoleCards = (html) => {
@@ -220,8 +235,42 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createNeostatsScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+const defaultFetchJobsApi = async (url) => {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'application/json,text/plain,*/*',
+    },
+  })
+  const body = await response.text()
+  let json = null
+
+  try {
+    json = JSON.parse(body)
+  } catch {
+    json = null
+  }
+
+  return {
+    status: response.status,
+    url: response.url,
+    body,
+    json,
+  }
+}
+
+export const hasUnavailableJobsApiResponse = ({ status, body, json } = {}) =>
+  Number(status) >= 500
+  && (
+    /unable to load openings right now/i.test(String(body ?? ''))
+    || /unable to load openings right now/i.test(String(json?.error ?? ''))
+  )
+
+export const createNeostatsScraper = ({ now = () => new Date().toISOString() } = {}) => ({
+  async run({
+    fetchText = defaultFetchText,
+    fetchJobsApi = defaultFetchJobsApi,
+  } = {}) {
     const homepageHtml = await fetchText(HOMEPAGE_URL)
 
     if (!hasOfficialHomepageSignal(homepageHtml)) {
@@ -236,6 +285,27 @@ export const createNeostatsScraper = () => ({
 
     const roleCards = extractOpenRoleCards(careersHtml)
     if (roleCards.length === 0) {
+      if (hasClientLoadedJobsSignal(careersHtml)) {
+        const apiResult = await fetchJobsApi(JOBS_API_URL)
+        if (hasUnavailableJobsApiResponse(apiResult)) {
+          return attachInventoryEvidence([], {
+            status: 'discovery-only',
+            surface: JOBS_API_URL,
+            firstParty: true,
+            listingComplete: false,
+            pagesFetched: 3,
+            reportedTotal: null,
+            indiaFacetCount: null,
+            verifiedAt: now(),
+            reason: 'Neostats jobs API is unavailable; preserving the existing job snapshot',
+          })
+        }
+
+        if (Array.isArray(apiResult?.json) && apiResult.json.length === 0) {
+          return []
+        }
+      }
+
       throw new Error('Neostats careers page no longer exposes verified public role cards')
     }
 

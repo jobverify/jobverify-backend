@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import { D2K_TECHNOLOGIES_INDIA_CATALOG } from './catalog.js'
 
@@ -134,11 +135,17 @@ export const createD2KScraper = () => ({
 
     const verifiedJobs = jobs.filter(job => job.country === 'India')
     if (!verifiedJobs.length) {
-      const error = new Error('D2K role locations are unverified; the registered office does not establish job geography')
-      error.code = 'D2K_LOCATION_UNVERIFIED'
-      error.failureType = 'upstream_unavailable'
-      error.abortRetries = true
-      throw error
+      return attachInventoryEvidence([], {
+        status: 'discovery-only',
+        surface: CAREERS_URL,
+        firstParty: true,
+        listingComplete: false,
+        pagesFetched: 1,
+        reportedTotal: jobs.length,
+        indiaFacetCount: null,
+        verifiedAt: now(),
+        reason: 'D2K role locations are unverified; the registered office does not establish job geography',
+      })
     }
     return verifiedJobs.map((job) => ({
       ...(verifiedJobs.length < jobs.length ? { sourceListingComplete: false } : {}),

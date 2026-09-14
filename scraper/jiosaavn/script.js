@@ -73,7 +73,7 @@ export const hasOfficialCareersSignal = (html) => {
 
   return /Work With Us/i.test(normalized)
     && /Come make music beautiful/i.test(normalized)
-    && /Find Authentic Jobs/i.test(normalized)
+    && /Find (?:Authentic Jobs|Your Dream Job)/i.test(normalized)
     && /Life At JioSaavn/i.test(normalized)
     && /Find Your Gig/i.test(normalized)
     && /Saavn Media Limited/i.test(normalized)

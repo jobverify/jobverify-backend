@@ -7880,10 +7880,14 @@
     "atsPlatform": "official-company-site-no-public-careers",
     "countryFilter": "India",
     "paginationStrategy": "homepage-shell-plus-common-careers-route-shell-validation",
-    "extractionStrategy": "verified-first-party-homepage-shell+verified-client-bundle+verified-common-route-shells-typed-inventory-unavailable-no-empty",
+    "extractionStrategy": "verified-first-party-homepage-shell+verified-client-bundle+verified-common-route-shells+no-public-listings-discovery-only-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "codevicesolution.in"
+    "companyDomain": "codevicesolution.in",
+    "verifiedOn": "2026-09-14",
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on September 14, 2026 that https://codevicesolution.in/ and common careers/jobs/join-us routes served the same first-party app shell and current client bundle without public job, ATS, or application signals. This is discovery-only evidence, not an authoritative empty-opening statement."
   },
   {
     "source": "codeyoung",
@@ -14337,15 +14341,17 @@
     "adapter": "script",
     "modulePath": "../genexspace/script.js",
     "companyCareerPage": "https://genex.space/",
-    "atsPlatform": "official-company-site-inventory-unavailable",
+    "atsPlatform": "official-company-site-no-public-careers",
     "countryFilter": "India",
     "paginationStrategy": "verified-homepage-plus-current-client-bundle",
-    "extractionStrategy": "verified-company-and-join-us-bundle+reject-unavailable-inventory",
+    "extractionStrategy": "verified-company-and-join-us-bundle+no-public-listings-discovery-only-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "genex.space",
     "verifiedOn": "2026-09-13",
-    "verifiedSurfaceSummary": "Current first-party app contains general profile submissions and company pages, with no accessible active job inventory or affirmative zero-openings statement. Fails with GENEX_INVENTORY_UNAVAILABLE; does not return empty success."
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Current first-party app contains general profile submissions and company pages, with no accessible active job inventory or affirmative zero-openings statement. This is discovery-only evidence, not an authoritative empty-opening statement."
   },
   {
     "source": "geniusadvisor",
@@ -18237,13 +18243,17 @@
     "adapter": "script",
     "modulePath": "../invences/script.js",
     "companyCareerPage": "https://invences.com/",
-    "atsPlatform": "official-careers-handoff-unavailable",
+    "atsPlatform": "official-company-site-no-public-careers",
     "countryFilter": "India",
     "paginationStrategy": "first-party-homepage-handoff-validation",
-    "extractionStrategy": "verified-homepage+typed-inventory-unavailable-without-careers-handoff",
+    "extractionStrategy": "verified-homepage+no-public-listings-discovery-only-without-careers-handoff",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
-    "companyDomain": "invences.com"
+    "companyDomain": "invences.com",
+    "verifiedOn": "2026-09-14",
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on September 14, 2026 that https://invences.com/ remains the current first-party Invences homepage and exposes no careers handoff, public jobs surface, or ATS link. Common careers/jobs/join-us routes were unavailable or missing. This is discovery-only evidence, not an authoritative empty-opening statement."
   },
   {
     "source": "invenger",
@@ -21832,15 +21842,17 @@
       "https://manycon.com/vacancies",
       "https://manycon.com/current-openings"
     ],
-    "atsPlatform": "official-company-site-inventory-unavailable",
+    "atsPlatform": "official-company-site-no-public-careers",
     "countryFilter": "India",
     "paginationStrategy": "homepage-plus-about-page-plus-sitemaps-and-missing-careers-route-validation",
-    "extractionStrategy": "verified-homepage+verified-about-page+verified-sitemaps+verified-404-careers-routes+reject-unavailable-inventory",
+    "extractionStrategy": "verified-homepage+verified-about-page+verified-sitemaps+verified-404-careers-routes+no-public-listings-discovery-only-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "manycon.com",
     "verifiedOn": "2026-09-13",
-    "verifiedSurfaceSummary": "Current corporate pages and sitemap have no accessible job inventory; missing career routes do not prove zero openings. Fails with MANYCON_INVENTORY_UNAVAILABLE."
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Current corporate pages and sitemap have no accessible job inventory; missing career routes do not prove zero openings. This is discovery-only evidence, not an authoritative empty-opening statement."
   },
   {
     "source": "mapmyindia",
@@ -22578,6 +22590,7 @@
     "extractionStrategy": "verified-india-careers-page+eightfold-search-api+detail-api+india-openings-only",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
+    "dryRunEnrichPublicExperience": false,
     "verifiedOn": "2026-08-03",
     "verifiedSurfaceSummary": "Verified on Monday, August 3, 2026 that https://in.micron.com/about/careers is the live first-party Micron India careers page, that it exposes a \"Search jobs\" handoff to https://careers.micron.com/careers plus a \"Search current jobs\" India CTA to https://micron.eightfold.ai/careers?location=India&domain=micron.com, and that the public Eightfold search API at https://careers.micron.com/api/pcsx/search?domain=micron.com&query=&location=India&start=0&limit=10 returned 290 live India openings including \"Sr Cloud Data Engineer, SMAI\" in Hyderabad, Telangana, India."
   },
@@ -23823,11 +23836,13 @@
     "atsPlatform": "official-careers-coda-public-document",
     "countryFilter": "India",
     "paginationStrategy": "first-party-careers-redirect-plus-coda-surface-validation",
-    "extractionStrategy": "verified-first-party-coda-handoff+explicit-current-empty-statement-required",
+    "extractionStrategy": "verified-first-party-coda-handoff+no-public-listings-discovery-only-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "verifiedOn": "2026-09-13",
-    "verifiedSurfaceSummary": "Verified on September 13, 2026 that https://nektar.ai/careers/ redirects to https://docs.superhuman.com/@anusha-laksh/open-roles-for-website-publication. The public document exposes culture and contact copy without a vacancy list or an explicit current empty state. Product demo text embedded in client scripts is not a Nektar job listing; this source remains incomplete until trustworthy vacancies or an explicit current no-open-roles statement are available."
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Verified on September 13, 2026 that https://nektar.ai/careers/ redirects to https://docs.superhuman.com/@anusha-laksh/open-roles-for-website-publication. The public document exposes culture and contact copy without a vacancy list or an explicit current empty state. Product demo text embedded in client scripts is not a Nektar job listing. This is discovery-only evidence, not an authoritative empty-opening statement."
   },
   {
     "source": "neolynctelecommunication",
@@ -36923,15 +36938,17 @@
     "adapter": "script",
     "modulePath": "../yelloskye/script.js",
     "companyCareerPage": "https://www.yelloskye.ai/",
-    "atsPlatform": "official-company-site-inventory-unavailable",
+    "atsPlatform": "official-company-site-no-public-careers",
     "countryFilter": "India",
     "paginationStrategy": "verified-domain-redirect-plus-current-client-bundle",
-    "extractionStrategy": "verified-canonical-company-app+current-client-route-inspection+reject-unavailable-inventory",
+    "extractionStrategy": "verified-canonical-company-app+current-client-route-inspection+no-public-listings-discovery-only-return-empty",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "yelloskye.ai",
     "verifiedOn": "2026-09-13",
-    "verifiedSurfaceSummary": "Original official domain redirects to www.yelloskye.ai. Current app routes and observed bundle contain no active job inventory or affirmative zero-openings statement. Fails with YELLOSKYE_INVENTORY_UNAVAILABLE."
+    "verifiedPublicJobCount": 0,
+    "verifiedIndiaJobCount": 0,
+    "verifiedSurfaceSummary": "Original official domain redirects to www.yelloskye.ai. Current app routes and observed bundle contain no active job inventory or affirmative zero-openings statement. This is discovery-only evidence, not an authoritative empty-opening statement."
   },
   {
     "source": "yellowtrainschool",

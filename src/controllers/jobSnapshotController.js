@@ -1,7 +1,8 @@
 import Job from '../models/Job.js';
+import { PUBLIC_JOB_TYPE_EXPRESSION } from '../utils/publicJobType.js';
 import { applyPublicJobVisibility } from '../utils/publicJobVisibility.js';
 
-const label = (field) => ({ $trim: { input: { $ifNull: [`$${field}`, ''] } } });
+const label = field => ({ $trim: { input: { $ifNull: [field === 'jobType' ? PUBLIC_JOB_TYPE_EXPRESSION : '$' + field, ''] } } });
 const ranking = (field, limit) => [
   { $group: { _id: { $toLower: label(field) }, label: { $first: label(field) }, count: { $sum: 1 } } },
   { $sort: { count: -1, label: 1 } },

@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -128,9 +129,44 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createVividobotsScraper = () => ({
+const findErrorInChain = (error, predicate) => {
+  const seen = new Set()
+  let current = error
+
+  while (current && !seen.has(current)) {
+    seen.add(current)
+    if (predicate(current)) return current
+    current = current?.cause
+  }
+
+  return null
+}
+
+const hasHttpStatus = (error, status) =>
+  Boolean(findErrorInChain(error, (candidate) => Number(candidate?.status) === status))
+
+export const createVividobotsScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+    let homepageHtml
+    try {
+      homepageHtml = await fetchText(HOMEPAGE_URL)
+    } catch (error) {
+      if (hasHttpStatus(error, 403)) {
+        return attachInventoryEvidence([], {
+          status: 'discovery-only',
+          surface: HOMEPAGE_URL,
+          firstParty: true,
+          listingComplete: false,
+          pagesFetched: 0,
+          reportedTotal: null,
+          indiaFacetCount: null,
+          verifiedAt: now(),
+          reason: 'Vividobots official homepage blocks public access with HTTP 403; current candidate-portal inventory cannot be verified.',
+        })
+      }
+
+      throw error
+    }
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('The Vividobots official homepage no longer matches the verified first-party surface')
     }

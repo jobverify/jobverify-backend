@@ -395,13 +395,13 @@ export const isAuthoritativeEmptyScrape = (scraper, jobs) => (
 
 export const resolveZeroJobOutcome = (scraper, jobs, indiaJobs) => {
   if (!Array.isArray(indiaJobs) || indiaJobs.length > 0) return null
-  if (scraper?.provider?.zeroResultPolicy === 'coverage-gap') return 'coverage-gap'
 
   const evidence = readInventoryEvidence(jobs)
   if (isVerifiedEmptyEvidence(evidence)) return 'verified-empty'
-  if (evidence?.status === 'complete-inventory' && jobs.length > 0) return 'fetched-zero'
+  if (evidence?.status === 'complete-inventory') return 'fetched-zero'
   if (evidence?.status === 'discovery-only') return 'blocked-zero'
   if (evidence?.status === 'coverage-gap') return 'coverage-gap'
+  if (scraper?.provider?.zeroResultPolicy === 'coverage-gap') return 'coverage-gap'
   return 'unverified-zero'
 }
 

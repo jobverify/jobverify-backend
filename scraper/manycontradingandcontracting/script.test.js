@@ -259,11 +259,11 @@ test('Manycon Trading and Contracting preserves expected 404 page snapshots for 
   })
 })
 
-test('Manycon Trading and Contracting rejects unavailable inventory while the verified first-party surface exposes no public careers board', async () => {
+test('Manycon Trading and Contracting returns an empty discovery snapshot after the verified first-party surface exposes no public careers board', async () => {
   const scraper = await loadModule()
   const requestedUrls = []
 
-  await assert.rejects(scraper.createManyconTradingAndContractingScraper().run({
+  const jobs = await scraper.createManyconTradingAndContractingScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
 
@@ -275,7 +275,7 @@ test('Manycon Trading and Contracting rejects unavailable inventory while the ve
 
       throw new Error(`Unexpected URL ${url}`)
     },
-  }), error => error.code === 'MANYCON_INVENTORY_UNAVAILABLE' && error.abortRetries === true)
+  })
 
   assert.deepEqual(
     requestedUrls,
@@ -287,6 +287,7 @@ test('Manycon Trading and Contracting rejects unavailable inventory while the ve
       ...scraper.MISSING_ROUTE_URLS,
     ],
   )
+  assert.deepEqual(jobs, [])
 })
 
 test('Manycon Trading and Contracting sentinel fails closed when the verified public surface drifts into a jobs surface', async () => {

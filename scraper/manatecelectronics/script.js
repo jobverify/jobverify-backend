@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'manatecelectronics'
@@ -56,9 +58,10 @@ const stripTags = (value) => String(value ?? '')
 
 const normalizeVisibleText = (value) => normalizeWhitespace(stripTags(value)) || ''
 
-const unavailableInventory = (message, cause) => Object.assign(new Error(message), {
+const unavailableInventory = (message, cause, { surface = null } = {}) => Object.assign(new Error(message), {
   code: 'MANATEC_INVENTORY_UNAVAILABLE', failureType: 'upstream_unavailable',
   failureKind: 'upstream_unavailable', softFailure: true, upstreamOutage: true, abortRetries: true,
+  surface,
   ...(cause ? { cause } : {}),
 })
 
@@ -221,32 +224,66 @@ export const isVerifiedBlockedShell = ({ status, html } = {}) => {
     && !BLOCKED_PUBLIC_JOB_PATTERN.test(text)
 }
 
-export const createManatecElectronicsScraper = () => ({
+const buildDiscoveryOnlyEvidence = (now, surface, error) =>
+  attachInventoryEvidence([], {
+    status: 'discovery-only',
+    surface: surface || HOMEPAGE_URL,
+    firstParty: true,
+    listingComplete: false,
+    pagesFetched: 0,
+    reportedTotal: null,
+    indiaFacetCount: null,
+    verifiedAt: now(),
+    reason: 'Manatec public inventory is currently unavailable or application-only; enumerable vacancies cannot be verified.',
+  })
+
+export const createManatecElectronicsScraper = ({
+  now = () => new Date().toISOString(),
+} = {}) => ({
   async run({ fetchPage = defaultFetchPage, signal, timeoutMs = DEFAULT_FETCH_TIMEOUT_MS } = {}) {
-    return withRequestDeadline(async requestSignal => {
-      const fetchVerifiedPage = async (url) => {
-        requestSignal.throwIfAborted()
-        try {
-          const page = await fetchPage(url, { signal: requestSignal, timeoutMs })
+    try {
+      return await withRequestDeadline(async requestSignal => {
+        const fetchVerifiedPage = async (url) => {
           requestSignal.throwIfAborted()
-          if (page?.status !== 200) throw unavailableInventory('Manatec public inventory unavailable: HTTP ' + page?.status + ' for ' + url)
-          return page
-        } catch (error) {
-          requestSignal.throwIfAborted()
-          if (error?.code === 'MANATEC_INVENTORY_UNAVAILABLE') throw error
-          throw unavailableInventory('Manatec public inventory could not be fetched: ' + url, error)
+          try {
+            const page = await fetchPage(url, { signal: requestSignal, timeoutMs })
+            requestSignal.throwIfAborted()
+            if (page?.status !== 200) {
+              throw unavailableInventory(
+                'Manatec public inventory unavailable: HTTP ' + page?.status + ' for ' + url,
+                null,
+                { surface: url },
+              )
+            }
+            return page
+          } catch (error) {
+            requestSignal.throwIfAborted()
+            if (error?.code === 'MANATEC_INVENTORY_UNAVAILABLE') throw error
+            throw unavailableInventory('Manatec public inventory could not be fetched: ' + url, error, {
+              surface: url,
+            })
+          }
         }
+        const homepage = await fetchVerifiedPage(HOMEPAGE_URL)
+        if (!hasOfficialHomepageSignal(homepage.html)) throw new Error('Manatec Electronics homepage no longer matches the verified official public site')
+        const careersPage = await fetchVerifiedPage(CAREERS_URL)
+        if (!hasApplicationOnlyCareersSignal(careersPage.html)) throw new Error('Manatec Electronics careers page no longer matches the verified application-only public surface')
+        throw unavailableInventory(
+          'Manatec application-only careers form does not establish an enumerable vacancy inventory',
+          null,
+          { surface: CAREERS_URL },
+        )
+      }, { signal, timeoutMs })
+    } catch (error) {
+      if (error?.code === 'MANATEC_INVENTORY_UNAVAILABLE') {
+        return buildDiscoveryOnlyEvidence(now, error.surface, error)
       }
-      const homepage = await fetchVerifiedPage(HOMEPAGE_URL)
-      if (!hasOfficialHomepageSignal(homepage.html)) throw new Error('Manatec Electronics homepage no longer matches the verified official public site')
-      const careersPage = await fetchVerifiedPage(CAREERS_URL)
-      if (!hasApplicationOnlyCareersSignal(careersPage.html)) throw new Error('Manatec Electronics careers page no longer matches the verified application-only public surface')
-      throw unavailableInventory('Manatec application-only careers form does not establish an enumerable vacancy inventory')
-    }, { signal, timeoutMs })
+      throw error
+    }
   },
 })
 
-export const run = async (options = {}) => createManatecElectronicsScraper().run(options)
+export const run = async (options = {}) => createManatecElectronicsScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

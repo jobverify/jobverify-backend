@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+
 const careersHtml = `
 <!doctype html>
 <html lang="en">
@@ -79,6 +81,24 @@ test('Accubits Technologies returns [] only while the verified careers shell exp
 
   assert.deepEqual(requestedUrls, ['https://accubits.com/career/'])
   assert.deepEqual(jobs, [])
+})
+
+test('Accubits Technologies returns discovery-only evidence when the verified careers page returns HTTP 500', async () => {
+  const accubits = await loadAccubitsModule()
+
+  const jobs = await accubits.createAccubitsTechnologiesScraper({
+    now: () => '2026-09-14T00:00:00.000Z',
+  }).run({
+    fetchText: async () => {
+      throw new Error(`HTTP 500 for ${accubits.OFFICIAL_CAREERS_URL}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'discovery-only')
+  assert.equal(evidence?.surface, accubits.OFFICIAL_CAREERS_URL)
+  assert.equal(evidence?.listingComplete, false)
 })
 
 test('Accubits Technologies fails closed when structured public jobs appear on the careers shell', async () => {

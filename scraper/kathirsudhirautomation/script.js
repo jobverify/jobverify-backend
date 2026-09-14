@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -204,7 +205,29 @@ export const createKathirSudhirAutomationScraper = ({ now = () => new Date().toI
     }
 
     const careersHtml = await read(CAREERS_URL)
-    const jobs = extractPublicJobs(careersHtml)
+    let jobs
+    try {
+      jobs = extractPublicJobs(careersHtml)
+    } catch (error) {
+      if (
+        error?.code === 'KATHIR_LOCATION_UNVERIFIED'
+        || error?.code === 'KATHIR_INVENTORY_UNAVAILABLE'
+      ) {
+        return attachInventoryEvidence([], {
+          status: 'discovery-only',
+          surface: CAREERS_URL,
+          firstParty: true,
+          listingComplete: false,
+          pagesFetched: 2,
+          reportedTotal: null,
+          indiaFacetCount: null,
+          verifiedAt: (overrideNow || now)(),
+          reason: error.message,
+        })
+      }
+
+      throw error
+    }
 
     return jobs.map((job) => ({
       ...job,
