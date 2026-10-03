@@ -1,5 +1,5 @@
 ﻿export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 16, 2026 that https://www.livspace.com/in/careers is the live first-party Livspace careers page and that it hands off to the first-party board at https://careers.livspace.com/livspace/. Verified that the public Zwayam search API at https://public.zwayam.com/jobs/search accepts TenantGroupId G1 with companyId MTU5MTk= for careers.livspace.com, that the public detail API at https://public.zwayam.com/jobs-service/v1/jobs/careersite is live with detail company id 15919, and that the verified search contract exposed 98 public jobs including Cluster Manager - Retail Ops at https://careers.livspace.com/livspace/jobview/cluster-manager-retail-ops-pune-maharashtra-2026051109291415.'
+  "Verified on October 3, 2026: https://www.livspace.com/in/careers publishes https://careers.livspace.com/livspace/. The native https://public.zwayam.com/jobs/search feed for verified company15919 enumerates 106 public jobs across12 pages with106 unique IDs matching the advertised total; https://public.zwayam.com/jobs-service/v1/jobs/careersite returned all106 matching details. All106 have verified India scope, including35 formerly dropped rows with exact Indian city/state labels or Chandigarh and no separate country record. Cluster Manager - Retail Ops remains a matching native sample. Unknown or conflicting geography never becomes India; access remains intermittent, so prior success is not an access guarantee."
 
 export const LIVSPACE_CATALOG = {
   source: 'livspace',
@@ -16,7 +16,8 @@ export const LIVSPACE_CATALOG = {
   zwayamTenantGroupId: 'G1',
   zwayamCompanyId: 'MTU5MTk=',
   zwayamDetailCompanyId: '15919',
-  verifiedPublicJobCount: 98,
+  verifiedPublicJobCount: 106,
+  verifiedIndiaJobCount: 106,
   verifiedSampleJobTitle: 'Cluster Manager - Retail Ops',
   verifiedSampleJobUrl:
     'https://careers.livspace.com/livspace/jobview/cluster-manager-retail-ops-pune-maharashtra-2026051109291415',
@@ -24,10 +25,10 @@ export const LIVSPACE_CATALOG = {
   atsPlatform: 'zwayam',
   countryFilter: 'India',
   paginationStrategy: 'official-careers-page-plus-public-zwayam-total-count-plus-page-size',
-  extractionStrategy: 'verified-official-careers-page+zwayam-board-shell+public-zwayam-search-api+detail-api',
+  extractionStrategy: 'verified-official-careers-page+zwayam-board-shell+complete-public-zwayam-pagination+native-detail-api+verified-country-or-city-state-scope',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

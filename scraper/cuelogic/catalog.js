@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Tuesday, August 4, 2026 that https://www.ltm.com/careers is still the live LTM careers landing page, but that both the legacy LTIMindtree jobs microsite at https://careers.ltimindtree.com/Microsite/content/View-Jobs/ and the CueLogic search URL at https://careers.ltimindtree.com/search/ now fail direct TLS validation on careers.ltimindtree.com because the host presents certificate-not-found.jobs2web.com. CueLogic therefore stays fail-closed until a trustworthy public jobs surface is restored.'
+  'Verified October 3, 2026: the official LTM careers page links to the LTIMindtree Ripplehire India board. A Cuelogic query on its public search API returns zero roles while the unfiltered India query returns 530. The prior careers.ltimindtree.com host no longer resolves.'
 
 export const CUELOGIC_CATALOG = {
   source: 'cuelogic',
@@ -12,19 +12,17 @@ export const CUELOGIC_CATALOG = {
   officialBrandName: 'LTM',
   adapter: 'script',
   homepageUrl: 'https://www.ltm.com/careers',
-  companyCareerPage: 'https://careers.ltimindtree.com/search/',
-  verifiedJobsMicrositeUrl: 'https://careers.ltimindtree.com/Microsite/content/View-Jobs/',
-  brokenRedirectHost: 'careers.ltimindtree.com',
-  brokenRedirectCertificateHost: 'certificate-not-found.jobs2web.com',
-  companyDomain: 'careers.ltimindtree.com',
-  atsPlatform: 'successfactors-empty-search-sentinel',
+  companyCareerPage: 'https://www.ltm.com/careers',
+  boardUrl: 'https://ltimindtree.ripplehire.com/candidate/?token=xviyQvbnyYZdGtozXoNm&lang=en&source=CAREERSITE#list/geo=India',
+  companyDomain: 'ltm.com',
+  atsPlatform: 'ripplehire-empty-search-sentinel',
   countryFilter: 'India',
-  paginationStrategy: 'single-parent-search-query',
+  paginationStrategy: 'parent-board-search-query',
   extractionStrategy:
-    'verified-parent-successfactors-search-empty-state-or-fail-closed-upstream-tls-outage',
+    'official-parent-ripplehire-india-search-with-unfiltered-control-query',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-04',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'cuelogic/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

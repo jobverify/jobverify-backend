@@ -12,19 +12,22 @@ export const SNYK_CATALOG = {
   dryRunFile: 'snyk.workday/jobs.json',
   officialCareersLandingUrl: 'https://snyk.io/careers/',
   companyCareerPage: 'https://snyk.io/careers/all-jobs/',
-  firstPartyJobsApiUrl: 'https://snyk.io/api/next/jobs',
-  workdayTenantUrl: 'https://snyk.wd103.myworkdayjobs.com/External',
-  atsPlatform: 'workday',
+  ashbyBoardToken: '98cd1a00-2706-4aa8-ab72-38a7b8c9c20c',
+  ashbyBoardUrl: 'https://jobs.ashbyhq.com/98cd1a00-2706-4aa8-ab72-38a7b8c9c20c',
+  ashbyJobsApiUrl: 'https://api.ashbyhq.com/posting-api/job-board/98cd1a00-2706-4aa8-ab72-38a7b8c9c20c',
+  atsPlatform: 'ashby',
   countryFilter: 'India',
-  paginationStrategy: 'single-first-party-next-jobs-api-page',
+  paginationStrategy: 'single-ashby-board-api-page',
   extractionStrategy:
-    'verified-first-party-careers-pages+first-party-next-jobs-api+workday-detail-urls+return-empty-when-no-india-locations',
+    'verified-first-party-careers-pages+linked-ashby-board-api+complete-inventory-zero-india-openings',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'snyk.io',
-  verifiedOn: '2026-08-13',
+  verifiedOn: '2026-10-03',
+  verifiedPublicJobCount: 13,
+  verifiedIndiaJobCount: 0,
   verifiedSurfaceSummary:
-    'Verified on Thursday, August 13, 2026 that https://snyk.io/careers/ remains the live first-party Snyk careers landing page, that https://snyk.io/careers/all-jobs/ remains the live first-party open-jobs page, and that the current jobs bundle still calls the first-party endpoint https://snyk.io/api/next/jobs for Workday-backed openings under https://snyk.wd103.myworkdayjobs.com/External. Direct verification of that first-party jobs API returned 24 public roles and 0 India roles on the verified date.',
+    'Verified on October 3, 2026 that Snyk\'s official all-jobs page links to its Ashby board and enumerates the same 13 public roles as the Ashby posting API. The complete current inventory has zero India openings; every listed location is outside India.',
 }
 
 export default SNYK_CATALOG

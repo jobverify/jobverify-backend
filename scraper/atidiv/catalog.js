@@ -8,8 +8,8 @@ export const ATIDIV_CATALOG = {
   companyName: 'Atidiv',
   officialBrandName: 'Atidiv',
   adapter: 'script',
-  homepageUrl: 'https://www.atidiv.com/',
-  companyCareerPage: 'https://www.atidiv.com/careers/',
+  homepageUrl: 'https://atidiv.com/',
+  companyCareerPage: 'https://atidiv.com/careers/',
   atsPlatform: 'official-company-careers',
   countryFilter: 'India',
   paginationStrategy: 'single-static-careers-page',
@@ -17,9 +17,9 @@ export const ATIDIV_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'atidiv.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.atidiv.com/careers/ remained the exact first-party Atidiv careers page and exposed a server-rendered Current Openings section linking to the first-party detail page for Senior Campaign Manager with Digital Marketing, Full-Time, Growth, and Remote tags.',
+    'Verified on October 3, 2026 that https://www.atidiv.com/careers/ redirects to the official https://atidiv.com/careers/ page, whose Current Openings section links to https://atidiv.com/job/senior-campaign-manager/ with Digital Marketing, Full-Time, Growth, and Remote tags.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

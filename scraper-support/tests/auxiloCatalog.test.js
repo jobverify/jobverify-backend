@@ -48,11 +48,11 @@ test('Auxilo local catalog captures the verified first-party careers handoff and
   )
   assert.equal(
     AUXILO_CATALOG.sampleDetailUrl,
-    'https://app1176.workline.hr/CandidatePortal/b48c8d0a-777c-4046-8617-f41f8bfe5004/Territory-Credit-Head---EIL-Job-in-Hyderabad-1325',
+    'https://app1176.workline.hr/CandidatePortal/56dc33ad-1f13-475c-958d-7c7dcb92df9f/Senior-Executive---Customer-Service-Job-in-Mumbai---Corporate-Office-1-1391',
   )
   assert.equal(
     AUXILO_CATALOG.sampleApplyUrl,
-    'https://app1176.workline.hr/Candidate/SignInv1.aspx?PRFCode=b48c8d0a-777c-4046-8617-f41f8bfe5004&Flag=C&DirectApply=1',
+    'https://app1176.workline.hr/Candidate/SignInv1.aspx?PRFCode=56dc33ad-1f13-475c-958d-7c7dcb92df9f&Flag=C&DirectApply=1',
   )
   assert.equal(AUXILO_CATALOG.companyDomain, 'auxilo.com')
   assert.equal(AUXILO_CATALOG.atsPlatform, 'workline-public-jobs-api')
@@ -67,14 +67,14 @@ test('Auxilo local catalog captures the verified first-party careers handoff and
   )
   assert.equal(AUXILO_CATALOG.parser, 'custom-script')
   assert.equal(AUXILO_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(AUXILO_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(AUXILO_CATALOG.verifiedOn, '2026-10-03')
   assert.equal(AUXILO_CATALOG.dryRunFile, 'auxilo/jobs.json')
   assert.equal(AUXILO_CATALOG.modulePath, auxiloModulePath)
   assert.match(AUXILO_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.auxilo\.com\/careers/i)
   assert.match(AUXILO_CATALOG.verifiedSurfaceSummary, /https:\/\/app1176\.workline\.hr\/candidate/i)
   assert.match(AUXILO_CATALOG.verifiedSurfaceSummary, /GeneralOpening\.aspx/i)
   assert.match(AUXILO_CATALOG.verifiedSurfaceSummary, /GetCurrentopening/i)
-  assert.match(AUXILO_CATALOG.verifiedSurfaceSummary, /\b21 live job records\b/i)
+  assert.match(AUXILO_CATALOG.verifiedSurfaceSummary, /\b16 live job records\b/i)
   assert.match(AUXILO_CATALOG.verifiedSurfaceSummary, /SignInv1\.aspx/i)
 
   assert.equal(auxilo.PROVIDER_METADATA.source, AUXILO_CATALOG.source)

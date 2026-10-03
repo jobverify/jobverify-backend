@@ -105,13 +105,19 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*TEBSolutions-\s*Your Path to Digital Excellence\s*<\/title>/i.test(page)
+  return /<title>\s*(?:TEBSolutions-\s*Your Path to Digital Excellence|HomePage - TEB Solutions)\s*<\/title>/i.test(page)
     && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']TEB Solutions["']/i.test(page)
     && /"@type":"Organization"[^]*?"name":"TEB Solutions"/i.test(page)
     && normalized.includes('Your Path to Digital Excellence')
     && normalized.includes('We build high-converting websites and drive traffic through powerful digital marketing.')
     && normalized.includes('Grow online with targeted strategies built for performance and lasting impact.')
-    && /mailto:info@tebsolutions\.in/i.test(page)
+    && (
+      /mailto:info@tebsolutions\.in/i.test(page)
+      || (page.includes('/wp-content/uploads/2025/07/Tattavit-Blue-PNG.png')
+        && normalized.includes('Seamless Communication, Global Impact.')
+        && normalized.includes('Transforming Ideas into Digital Excellence.')
+        && normalized.includes('Send us a message'))
+    )
     && /href=["'](?:https:\/\/tebsolutions\.in)?\/marketing\/["']/i.test(page)
     && /href=["'](?:https:\/\/tebsolutions\.in)?\/web-design\/["']/i.test(page)
     && /href=["'](?:https:\/\/tebsolutions\.in)?\/blog\/["']/i.test(page)
@@ -119,13 +125,13 @@ export const hasOfficialHomepageSignal = (html) => {
 
 export const hasOfficialPageSitemapSignal = (xml) => {
   const page = String(xml ?? '')
-
-  return /<urlset\b/i.test(page)
-    && page.includes('<loc>https://tebsolutions.in/web-design/</loc>')
-    && page.includes('<loc>https://tebsolutions.in/marketing/</loc>')
-    && page.includes('<loc>https://tebsolutions.in/blog/</loc>')
-    && page.includes('<loc>https://tebsolutions.in/unsubscribe/</loc>')
-    && !/https:\/\/tebsolutions\.in\/(?:career|careers|jobs)\/?/i.test(page)
+  if (!/<urlset\b/i.test(page)) return false
+  const urls = [...page.matchAll(/<loc>([^<]+)<\/loc>/gi)].map(match => {
+    try { return new URL(match[1].trim(), HOMEPAGE_URL) } catch { return null }
+  })
+  return urls.length > 0
+    && urls.every(url => url && isSameOfficialDomain(url.href) && !/\/(?:career|careers|jobs)\/?$/i.test(url.pathname))
+    && ['/web-design/', '/marketing/', '/blog/'].every(path => urls.some(url => url.pathname === path))
 }
 
 const hasBrandedSoft404Signal = (html) => {
@@ -158,6 +164,7 @@ export const isVerifiedNoPublicJobsRoute = (page = {}) => {
   }
 
   return hasBrandedSoft404Signal(page.html)
+    || (Number(page.status) === 200 && hasOfficialHomepageSignal(page.html))
 }
 
 export const createTebSolutionsScraper = () => ({

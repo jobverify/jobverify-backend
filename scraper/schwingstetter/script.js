@@ -78,6 +78,29 @@ const PUBLIC_JOB_LISTING_PATTERNS = [
 export const pageExposesPublicJobListings = (html) =>
   PUBLIC_JOB_LISTING_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
+const extractStetterRoleUrls = (html) => {
+  const page = String(html ?? '')
+  const hrefs = [...page.matchAll(/<td\s+class=["']title["']>\s*<a\b[^>]*href=["']([^"']+)["']/gi)]
+    .map((match) => match[1].replace(/&amp;/g, '&'))
+  const urls = [...new Set(hrefs)]
+  const expectedPrefix = new URL(STETTER_BOARD_URL).pathname.replace(/\.html$/, '/')
+  if (hrefs.length !== urls.length || urls.some((href) => {
+    const url = new URL(href, STETTER_BOARD_URL)
+    return url.origin !== new URL(STETTER_BOARD_URL).origin
+      || !url.pathname.startsWith(expectedPrefix)
+      || !url.pathname.endsWith('.html')
+  })) {
+    throw new Error('Schwing Stetter board contains unexpected or duplicate job links')
+  }
+  return urls.map((href) => new URL(href, STETTER_BOARD_URL).toString())
+}
+
+const isVerifiedMemmingenRole = (html) => {
+  const page = String(html ?? '')
+  return /<title>[^<]+<\/title>/i.test(page)
+    && normalizeWhitespace(page).includes('Erste Tätigkeitsstätte ist der Firmensitz der Stetter GmbH in Memmingen.')
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -99,8 +122,16 @@ export const createSchwingStetterScraper = () => ({
       throw new Error('Schwing Stetter verified official Stetter board changed')
     }
 
-    if (pageExposesPublicJobListings(stetterBoardHtml)) {
-      throw new Error('Schwing Stetter Stetter board now exposes public job listings')
+    const roleUrls = extractStetterRoleUrls(stetterBoardHtml)
+    if (pageExposesPublicJobListings(stetterBoardHtml) && roleUrls.length === 0) {
+      throw new Error('Schwing Stetter board exposes unrecognized public job listings')
+    }
+
+    for (const roleUrl of roleUrls) {
+      const detailHtml = await fetchText(roleUrl)
+      if (!isVerifiedMemmingenRole(detailHtml)) {
+        throw new Error('Schwing Stetter role location is no longer verified as Memmingen, Germany')
+      }
     }
 
     return []

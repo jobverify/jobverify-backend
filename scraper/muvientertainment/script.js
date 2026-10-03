@@ -115,13 +115,27 @@ const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
 
 const isIndiaLocation = (value) => /\bindia\b|\bbhubaneswar\b/i.test(value)
 
+const isTrustedCurrentDetailUrl = (value) => {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:'
+      && url.hostname === 'www.muvi.com'
+      && !url.search
+      && !url.hash
+      && (/^\/career\/jobs\/[a-z0-9-]+\/?$/i.test(url.pathname)
+        || /^\/career\/job-listings\/[a-z0-9-]+\/[a-z0-9-]+\/?$/i.test(url.pathname))
+  } catch {
+    return false
+  }
+}
+
 const extractCurrentCards = (html) => {
   const blocks = String(html).split(/<div\b[^>]*class=["']job-card["'][^>]*>/i).slice(1)
   const cards = blocks.map(block => {
     const sourceUrl = block.match(/<a\b[^>]*href=["']([^"']+)["']/i)?.[1]
     const title = normalizeText(block.match(/<h6\b[^>]*>([\s\S]*?)<\/h6>/i)?.[1])
     const tags = [...(block.match(/class=["']job-card-tags["'][^>]*>([\s\S]*?)<\/div>/i)?.[1] || '').matchAll(/<span[^>]*>([\s\S]*?)<\/span>/gi)].map(m => normalizeText(m[1]))
-    if (!sourceUrl || !/^https:\/\/www\.muvi\.com\/career\/jobs\/[a-z0-9-]+\/?$/i.test(sourceUrl) || !title || tags.length !== 4 || !/^\d+ Openings$/i.test(tags[2] || '') || !tags[3]) throw new Error('Muvi incomplete listing: malformed role card')
+    if (!isTrustedCurrentDetailUrl(sourceUrl) || !title || tags.length !== 4 || !/^\d+ Openings$/i.test(tags[2] || '') || !tags[3]) throw new Error('Muvi incomplete listing: malformed role card')
     return { title, sourceUrl, experienceRequired: tags[0], location: tags[3] }
   })
   if (!cards.length) throw new Error('Muvi incomplete listing: empty jobs page')

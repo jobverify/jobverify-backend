@@ -40,7 +40,7 @@ test('Livspace local catalog captures the verified first-party careers page and 
   assert.equal(provider.companyDomain, 'livspace.com')
   assert.equal(provider.atsPlatform, 'zwayam')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.verifiedPublicJobCount, 98)
+  assert.equal(provider.verifiedPublicJobCount, 106)
   assert.equal(provider.verifiedSampleJobTitle, 'Cluster Manager - Retail Ops')
   assert.equal(
     provider.verifiedSampleJobUrl,
@@ -52,16 +52,16 @@ test('Livspace local catalog captures the verified first-party careers page and 
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-careers-page+zwayam-board-shell+public-zwayam-search-api+detail-api',
+    'verified-official-careers-page+zwayam-board-shell+complete-public-zwayam-pagination+native-detail-api+verified-country-or-city-state-scope',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.livspace\.com\/in\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.livspace\.com\/livspace\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/public\.zwayam\.com\/jobs\/search/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/public\.zwayam\.com\/jobs-service\/v1\/jobs\/careersite/i)
-  assert.match(provider.verifiedSurfaceSummary, /98 public jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /106 public jobs/i)
   assert.match(provider.verifiedSurfaceSummary, /Cluster Manager - Retail Ops/i)
   assert.match(provider.modulePath, /livspace[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /livspace[\\/]jobs\.json$/i)

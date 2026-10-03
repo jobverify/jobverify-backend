@@ -19,8 +19,6 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const INDIA_CITY_PATTERN = /\b(hyderabad|bengaluru|bangalore|mumbai|pune|chennai|noida|gurugram|gurgaon|delhi)\b/i
-
 const decodeHtml = (value = '') => String(value)
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
@@ -60,11 +58,12 @@ const toApplicationUrl = (value) => {
 
 const parseLocation = (value) => {
   const location = normalizeWhitespace(value)
-  const country = /(?:^|,)\s*India\s*$/i.test(location) ? 'India'
+  const stateQualifiedIndia = /^Bengaluru,\s*Karnataka$/i.test(location)
+  const country = /(?:^|,)\s*India\s*$/i.test(location) || stateQualifiedIndia ? 'India'
     : /(?:^|,)\s*(United States|United Kingdom|Germany|Singapore|Canada|Australia)\s*$/i.exec(location)?.[1] ?? null
   if (!country) throw Object.assign(new Error('Excelra incomplete location scope: ' + location), { code: 'incomplete_location_scope' })
   const parts = location.split(',').map(part => part.trim()).filter(Boolean)
-  return { location, city: parts.length > 1 ? parts[0] : null, state: parts.length > 2 ? parts.slice(1, -1).join(', ') : null, country }
+  return { location, city: parts.length > 1 ? parts[0] : null, state: stateQualifiedIndia ? parts[1] : parts.length > 2 ? parts.slice(1, -1).join(', ') : null, country }
 }
 
 const applicationLinks = (html) => {

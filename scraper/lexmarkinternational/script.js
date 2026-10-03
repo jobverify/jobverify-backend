@@ -1,3 +1,4 @@
+import { assertWorkdayPageAvailable } from '../../scraper-support/myworkday/pageAvailability.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -258,6 +259,7 @@ export const createLexmarkInternationalScraper = ({
     }
 
     const workdayBoardHtml = await fetchText(WORKDAY_BASE_URL)
+    assertWorkdayPageAvailable({ status: 200, html: workdayBoardHtml, url: WORKDAY_BASE_URL }, { source: SOURCE, url: WORKDAY_BASE_URL })
     if (!hasWorkdayBoardBootstrapSignal(workdayBoardHtml)) {
       throw new Error('Lexmark International verified Workday Candidate Experience shell no longer matches the trusted surface')
     }

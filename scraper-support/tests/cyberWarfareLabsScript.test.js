@@ -1,102 +1,60 @@
-import assert from 'node:assert/strict'
+﻿import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { CAREERS_URL, CAREERS_API_URL, createCyberWarfareLabsScraper, extractCareerJobs } from '../../scraper/cyberwarfarelabs/script.js'
 
-const careersHtml = `
-  <main>
-    <h3>AI security intern (Offensive side)</h3>
-    <p>In this role, you will conduct research in offensive and AI security.</p>
-    <h6>Location: Bangalore, India (On-Site)</h6>
-    <h6>Joining: Intern (Immediately)</h6>
-    <a href="mailto:career@cyberwarfare.live?subject=AI%20security%20intern">Email your resume at career@cyberwarfare.live</a>
-    <h3>Security Intern (Red team)</h3>
-    <p>Perform basic reverse engineering and support red team simulations.</p>
-    <h6>Location: Bangalore, India (On-Site)</h6>
-    <h6>Joining: Intern (Immediately)</h6>
-    <a href="mailto:career@cyberwarfare.live?subject=Security%20Intern">Email your resume at career@cyberwarfare.live</a>
-    <h3>Digital marketing and social media marketing specialist</h3>
-    <p>Strong understanding of SEO and paid advertising campaigns.</p>
-    <h6>Location: Bangalore, India (On-Site)</h6>
-    <h6>Joining: Full Time (Immediately)</h6>
-    <a href="mailto:career@cyberwarfare.live?subject=Digital%20marketing">Email your resume at career@cyberwarfare.live</a>
-    <h3>Security Researcher</h3>
-    <p>Continuously monitor and analyze emerging cybersecurity threats.</p>
-    <h6>Location: Bangalore, India (On-Site)</h6>
-    <h6>Joining: Full Time (Immediately)</h6>
-    <a href="mailto:career@cyberwarfare.live?subject=Security%20Researcher">Email your resume at career@cyberwarfare.live</a>
-    <h3>Security Intern</h3>
-    <p>Analyze security systems and develop security standards.</p>
-    <h6>Location: Bangalore, India (On-Site)</h6>
-    <h6>Joining: Immediately</h6>
-    <a href="mailto:career@cyberwarfare.live?subject=Security%20Intern">Email your resume at career@cyberwarfare.live</a>
-  </main>
-`
-
-const loadCyberWarfareLabsModule = async () => {
-  try {
-    return await import('../../scraper/cyberwarfarelabs/script.js')
-  } catch {
-    return null
-  }
+const payload = {
+  success: true,
+  data: [
+    { _id: '6a4b5cac378927855d00caf5', title: 'Security Intern (RED TEAM)', description: 'Perform vulnerability assessments and support red team operations.', position: 'Intern', jd: 'Security-Intern.pdf', location: 'Remote', team: 'red', joining: 'Immediately', isActive: true },
+    { _id: '6a4b5cac378927855d00caf6', title: 'AI security intern (Offensive side)', description: 'Conduct AI security research and LLM red teaming.', position: 'Intern', jd: 'AI-Offensive-Security-Intern.pdf', location: 'Remote', team: 'red', joining: 'Immediately', isActive: true },
+  ],
 }
 
-test('catalog registers CyberWarFare Labs against its official careers page', () => {
-  const provider = getScraperCatalog().find((item) => item.source === 'cyberwarfarelabs')
-
+test('catalog registers CyberWarFare Labs against its current first-party careers API', () => {
+  const provider = getScraperCatalog().find(item => item.source === 'cyberwarfarelabs')
   assert.ok(provider)
   assert.equal(provider.companyName, 'CyberWarFare Labs')
-  assert.equal(provider.companyCareerPage, 'https://cyberwarfare.live/careers/')
+  assert.equal(provider.companyCareerPage, CAREERS_URL)
   assert.equal(provider.companyDomain, 'cyberwarfare.live')
-  assert.equal(provider.extractionStrategy, 'official-html-career-listings+email-application')
-  assert.ok(buildScrapers().find((scraper) => scraper.name === 'cyberwarfarelabs'))
+  assert.equal(provider.extractionStrategy, 'official-spa-careers-api+verified-india-remote-jds+email-application')
+  assert.ok(buildScrapers().find(scraper => scraper.name === 'cyberwarfarelabs'))
 })
 
-test('extractCareerJobs maps official CWL careers listings to India job records', async () => {
-  const cyberWarfareLabs = await loadCyberWarfareLabsModule()
-
-  assert.ok(cyberWarfareLabs, 'CyberWarFare Labs scraper module must exist')
-  const jobs = cyberWarfareLabs.extractCareerJobs(careersHtml)
-
-  assert.equal(jobs.length, 5)
-  assert.deepEqual(jobs[0], {
-    title: 'AI security intern (Offensive side)',
-    company: 'CyberWarFare Labs',
-    department: null,
-    location: 'Bangalore, India',
-    city: 'Bangalore',
-    country: 'India',
-    jobId: 'cyberwarfarelabs-ai-security-intern-offensive-side',
-    requisitionId: 'cyberwarfarelabs-ai-security-intern-offensive-side',
-    sourceUrl: 'https://cyberwarfare.live/careers/',
-    applyUrl: 'https://cyberwarfare.live/careers/',
-    employmentType: 'Internship',
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: 'In this role, you will conduct research in offensive and AI security. Apply by email: career@cyberwarfare.live',
-    remoteStatus: 'On-site',
-    compensation: null,
-  })
+test('extractCareerJobs maps the current two active remote internships', () => {
+  const jobs = extractCareerJobs(payload)
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].jobId, '6a4b5cac378927855d00caf5')
+  assert.equal(jobs[0].location, 'Remote, India')
+  assert.equal(jobs[0].city, null)
+  assert.equal(jobs[0].employmentType, 'Internship')
+  assert.equal(jobs[0].sourceUrl, 'https://cwl-main-website.s3.us-east-1.amazonaws.com/files/Security-Intern.pdf')
+  assert.equal(jobs[0].applyUrl, 'mailto:careers@cyberwarfare.live?subject=Application%20for%20Security%20Intern%20(RED%20TEAM)')
 })
 
-test('run fetches the official CyberWarFare Labs careers page', async () => {
-  const cyberWarfareLabs = await loadCyberWarfareLabsModule()
-  assert.ok(cyberWarfareLabs, 'CyberWarFare Labs scraper module must exist')
-
-  const jobs = await cyberWarfareLabs.createCyberWarfareLabsScraper().run({
-    fetchText: async (url) => {
-      assert.equal(url, cyberWarfareLabs.CAREERS_URL)
-      return careersHtml
-    },
+test('run fetches and validates the official careers API', async () => {
+  const jobs = await createCyberWarfareLabsScraper().run({
+    fetchJson: async url => { assert.equal(url, CAREERS_API_URL); return payload },
+    now: () => '2026-10-03T00:00:00.000Z',
   })
-
-  assert.equal(jobs.length, 5)
+  assert.equal(jobs.length, 2)
   assert.equal(jobs[0].source, 'cyberwarfarelabs')
-  assert.equal(jobs[0].link, cyberWarfareLabs.CAREERS_URL)
-  assert.equal(jobs[0].applyUrl, cyberWarfareLabs.CAREERS_URL)
-  assert.equal(typeof jobs[0].scrapedAt, 'string')
+  assert.equal(jobs[0].link, jobs[0].applyUrl)
+  assert.equal(jobs[0].scrapedAt, '2026-10-03T00:00:00.000Z')
+})
+
+test('run records verified empty inventory and rejects unknown remote locations', async () => {
+  const jobs = await createCyberWarfareLabsScraper().run({
+    fetchJson: async () => ({ success: true, data: [] }),
+    now: () => '2026-10-03T00:00:00.000Z',
+  })
+  assert.equal(readInventoryEvidence(jobs)?.status, 'verified-empty')
+  await assert.rejects(createCyberWarfareLabsScraper().run({
+    fetchJson: async () => ({ success: true, data: [{ ...payload.data[0], jd: 'Unknown.pdf' }] }),
+  }), /unverified India location/i)
+  await assert.rejects(createCyberWarfareLabsScraper().run({
+    fetchJson: async () => ({ success: true, data: [...payload.data, payload.data[0]] }),
+  }), /duplicate/i)
 })

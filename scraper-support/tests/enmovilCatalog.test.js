@@ -31,7 +31,7 @@ const buildCatalogReadyProvider = (catalogEntry) => hydrateProviderCatalogEntry(
   modulePath,
 })
 
-test('Enmovil local catalog captures the verified first-party coming-soon careers surface', async () => {
+test('Enmovil local catalog captures the verified first-party empty careers surface', async () => {
   const { ENMOVIL_CATALOG } = await loadCatalogModule()
   const enmovil = await loadScraperModule()
   const provider = buildCatalogReadyProvider(ENMOVIL_CATALOG)
@@ -49,20 +49,20 @@ test('Enmovil local catalog captures the verified first-party coming-soon career
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'first-party-careers-placeholder-plus-sitemap-and-jobs-404-validation',
+    'first-party-explicit-empty-careers-plus-sitemap-and-jobs-404-validation',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-sitemap-careers-url+verified-coming-soon-careers-page+verified-jobs-route-404-return-empty',
+    'verified-homepage+verified-sitemap-home-url+verified-explicit-empty-careers-page+verified-jobs-route-404-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.enmovil\.ai\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.enmovil\.ai\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.enmovil\.ai\/sitemap\.xml/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.enmovil\.ai\/jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /Coming soon/i)
+  assert.match(provider.verifiedSurfaceSummary, /no open roles right now/i)
   assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /enmovil[\\/]jobs\.json$/i)

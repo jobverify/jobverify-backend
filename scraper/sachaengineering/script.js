@@ -336,7 +336,7 @@ export const hasVerifiedBellJobsSignal = (html) => {
   const text = stripTags(page)
 
   return (
-    /<title>\s*SACHA Engineering - Bell Careers\s*<\/title>/i.test(page)
+    /<title>\s*SACHA Engineering - (?:Bell Careers|bell\.careers)\s*<\/title>/i.test(page)
     && /<link rel="canonical" href="https:\/\/bell\.careers\/company\/sacha"\s*\/?>/i.test(page)
     && /SACHA Engineering/i.test(text)
     && /job_posts/i.test(page)
@@ -400,7 +400,9 @@ export const createSachaEngineeringScraper = ({
 
     const bellApiJobPosts = await fetchBellCompanyApiJobPosts(fetchBellApiPageImpl)
 
-    return normalizeBellJobPosts(bellApiJobPosts).map((job) => ({
+    return normalizeBellJobPosts(bellApiJobPosts)
+      .filter((job) => job.country === 'India')
+      .map((job) => ({
       ...job,
       source: SOURCE,
       companyCareerPage: CAREERS_URL,
@@ -408,7 +410,7 @@ export const createSachaEngineeringScraper = ({
       atsPlatform: ATS_PLATFORM,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt,
-    }))
+      }))
   },
 })
 

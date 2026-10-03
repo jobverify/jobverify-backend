@@ -161,3 +161,17 @@ test('ZAi-Fi Business Solutions sentinel fails closed when a common careers path
     /common careers path no longer returns 404/i,
   )
 })
+
+
+const engineeringHome = "<html><head><title>ZAi-Fi | Legacy Engineering Drawings to Editable CAD</title><meta name=\"description\" content=\"Convert scanned, handwritten and legacy engineering drawings into reviewed, editable 2D CAD. Discuss a sample drawing with our team.\"><link rel=\"canonical\" href=\"https://www.zai-fi.com\"><script type=\"application/ld+json\">{\"@type\":\"Organization\",\"name\":\"ZAIFI BUSINESS SOLUTIONS PRIVATE LIMITED\",\"alternateName\":\"ZAi-Fi\",\"url\":\"https://www.zai-fi.com\",\"contactPoint\":{\"email\":\"contact@zai-fi.com\"}}</script></head><body><h1>Turn old engineering drawings into editable CAD.</h1><a href=\"mailto:contact@zai-fi.com\">Discuss your drawings</a></body></html>"
+test('ZAi-Fi verifies its current engineering company identity, canonical sitemap and missing careers paths', async () => {
+  const source = await loadModule()
+  assert.equal(source.isVerifiedHomepage(engineeringHome), true)
+  assert.equal(source.isVerifiedHomepage(engineeringHome.replace('ZAIFI BUSINESS SOLUTIONS PRIVATE LIMITED', 'UNRELATED COMPANY')), false)
+  assert.equal(source.isVerifiedHomepage(engineeringHome.replace('href="https://www.zai-fi.com"', 'href="https://unrelated.example"')), false)
+  const currentRobots = robotsTxt.replaceAll('https://zaifi.co', 'https://www.zai-fi.com')
+  const currentSitemap = sitemapXml.replaceAll('https://zaifi.co', 'https://www.zai-fi.com')
+  const fetchText = async url => url === source.HOMEPAGE_URL ? engineeringHome : url === source.ROBOTS_URL ? currentRobots : currentSitemap
+  assert.deepEqual(await source.run({fetchText,fetchStatus:async()=>404}), [])
+  await assert.rejects(source.run({fetchText,fetchStatus:async()=>403}), /no longer returns 404/)
+})

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 18, 2026 that Bentley Systems uses the first-party jobs host https://jobs.bentley.com/?locale=en_US from its official careers experience, and that the public India search surface at https://jobs.bentley.com/search/?searchby=location&q=&locationsearch=India&locale=en_US exposed live India roles including Senior Software Engineer in Pune, IN and User Engagement Advocate in Kolkata, WB, IN. A live public detail page was also verified at https://jobs.bentley.com/job/Pune-Senior-Software-Engineer/1409448100/ with a public description block and Apply now handoff.'
+  'Verified on October 3, 2026 that https://jobs.bentley.com/?locale=en_US redirects to the public Workday board https://bentleysystems.wd5.myworkdayjobs.com/bentley, linked from https://www.bentley.com/company/careers/. The Workday API at https://bentleysystems.wd5.myworkdayjobs.com/wday/cxs/bentleysystems/bentley/jobs reports seven India roles in Mumbai and Pune, including Technical Account Manager. Public detail pages on the same board expose job descriptions and application URLs.'
 
 export const BENTLEY_SYSTEMS_CATALOG = {
   source: 'bentleysystems',
@@ -14,17 +14,19 @@ export const BENTLEY_SYSTEMS_CATALOG = {
   homepageUrl: 'https://www.bentley.com/',
   companyCareerPage: 'https://www.bentley.com/company/careers/',
   officialJobsHostUrl: 'https://jobs.bentley.com/?locale=en_US',
+  workdayBoardUrl: 'https://bentleysystems.wd5.myworkdayjobs.com/bentley',
+  workdayJobsApiUrl: 'https://bentleysystems.wd5.myworkdayjobs.com/wday/cxs/bentleysystems/bentley/jobs',
   indiaSearchUrl: 'https://jobs.bentley.com/search/?searchby=location&q=&locationsearch=India&locale=en_US',
-  sampleJobUrl: 'https://jobs.bentley.com/job/Pune-Senior-Software-Engineer/1409448100/',
+  sampleJobUrl: 'https://bentleysystems.wd5.myworkdayjobs.com/bentley/job/Mumbai-Maharashtra-India/Technical-Account-Manager_RC125',
   companyDomain: 'bentley.com',
-  atsPlatform: 'successfactors',
+  atsPlatform: 'official-workday-board',
   countryFilter: 'India',
-  paginationStrategy: 'single-location-search-page',
+  paginationStrategy: 'workday-india-location-facets-with-pagination',
   extractionStrategy:
-    'verified-first-party-jobs-host+india-location-search-results+detail-pages',
+    'verified-bentley-careers-handoff+workday-india-location-facets+workday-detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'bentleysystems/jobs.json',

@@ -1,3 +1,5 @@
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { runWorkdayScraper } from '../../scraper-support/myworkday/engine.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -197,13 +199,37 @@ const mapListingToJob = (listing, detailHtml, scrapedAt) => {
   }
 }
 
+export const WORKDAY_URL = 'https://lexmark.wd1.myworkdayjobs.com/Lexmark'
+export const WORKDAY_JOBS_API_URL = 'https://lexmark.wd1.myworkdayjobs.com/wday/cxs/lexmark/Lexmark/jobs'
+const defaultFetchWorkdayJson = async (url, options) => {
+  const response = await fetch(url, {...options,signal:AbortSignal.timeout(15000)})
+  if (!response.ok) throw new Error('Lexmark Workday API HTTP '+response.status)
+  return response.json()
+}
+const hasVerifiedWorkdayBoard = html => /property=["']og:title["'][^>]*content=["']Lexmark Careers["']/i.test(html)
+  && /tenant\s*:\s*["']lexmark["']/i.test(html) && /siteId\s*:\s*["']Lexmark["']/i.test(html)
+  && /rel=["']canonical["'][^>]*href=["']https:\/\/lexmark\.wd1\.myworkdayjobs\.com\/Lexmark["']/i.test(html)
+
 export const createLexmarkIndiaScraper = ({
   now = () => new Date().toISOString(),
+  workdayScraper = runWorkdayScraper,
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchWorkdayJson, signal } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('Lexmark India verified careers landing page no longer matches the trusted public surface')
+    }
+
+    const currentHandoff = /<a\b[^>]*href=["']https:\/\/lexmark\.wd1\.myworkdayjobs\.com\/Lexmark["'][^>]*>[\s\S]*?View Jobs Now[\s\S]*?<\/a>/i.test(careersHtml)
+    if (currentHandoff) {
+      const boardHtml = await fetchText(WORKDAY_URL)
+      if (!hasVerifiedWorkdayBoard(boardHtml)) throw new Error('Lexmark verified Workday board identity changed')
+      const payload = await fetchJson(WORKDAY_JOBS_API_URL,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({appliedFacets:{},limit:20,offset:0,searchText:''}),signal})
+      if (!Number.isInteger(payload?.total) || payload.total < 0 || !Array.isArray(payload.jobPostings) || !Array.isArray(payload.facets) || payload.jobPostings.length > payload.total || (payload.total > 0 && payload.jobPostings.length === 0)) {
+        throw new Error('Lexmark Workday public inventory payload changed')
+      }
+      if (payload.total === 0) return attachInventoryEvidence([], {status:'verified-empty',surface:WORKDAY_JOBS_API_URL,firstParty:true,listingComplete:true,pagesFetched:1,reportedTotal:0,indiaFacetCount:0,verifiedAt:now(),reason:'exact-official-Lexmark-Workday-unfiltered-zero-total'})
+      return workdayScraper({company:COMPANY_NAME,source:SOURCE,baseUrl:WORKDAY_URL,scraperDir:currentDir,boardIdentityVerified:true,signal})
     }
 
     const jobSearchHtml = await fetchText(JOB_SEARCH_URL)

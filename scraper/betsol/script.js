@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { BETSOL_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -10,6 +10,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const BOARD_URL = PROVIDER_METADATA.boardUrl
+export const API_URL = 'https://api.smartrecruiters.com/v1/companies/Betsol/postings'
 export { PROVIDER_METADATA }
 
 const USER_AGENT =
@@ -31,6 +32,96 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   label: SOURCE,
   timeoutMs: 15000,
 })
+
+const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+  headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
+
+export const getCurrentBoardCount = (html) => {
+  const page = String(html ?? '')
+  if (!/<title[^>]*>\s*Careers at BETSOL\s*<\/title>/i.test(page)
+    || !/Jobs at Betsol LLC/i.test(page)
+    || !/jobs\.smartrecruiters\.com\/Betsol\//i.test(page)) return null
+  const counts = [...page.matchAll(/<section\b[^>]*data-qty="(\d+)"[^>]*class="[^"]*openings-section/gi)]
+    .map((match) => Number(match[1]))
+  return counts.length ? counts.reduce((total, count) => total + count, 0) : null
+}
+
+const hasBetsolIdentity = (posting) =>
+  posting?.company?.identifier === 'BETSOL' && posting?.company?.name === 'BETSOL'
+
+const getPostingUrl = (value, id) => {
+  try {
+    const url = new URL(value)
+    if (url.hostname !== 'jobs.smartrecruiters.com'
+      || !new RegExp(`^/BETSOL/${id}(?:-|$)`, 'i').test(url.pathname)) return null
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
+const runCurrentBoard = async ({ boardCount, fetchJson, now }) => {
+  const limit = 100
+  const first = await fetchJson(`${API_URL}?limit=${limit}&offset=0`)
+  const total = first?.totalFound
+  if (first?.offset !== 0 || first?.limit !== limit || !Number.isInteger(total)
+    || total !== boardCount || total > 1000 || !Array.isArray(first?.content)) {
+    throw new Error('BETSOL board and SmartRecruiters inventory counts disagree')
+  }
+  const postings = [...first.content]
+  for (let offset = limit; offset < total; offset += limit) {
+    const page = await fetchJson(`${API_URL}?limit=${limit}&offset=${offset}`)
+    if (page?.offset !== offset || page?.limit !== limit || page?.totalFound !== total
+      || !Array.isArray(page.content)) {
+      throw new Error('BETSOL SmartRecruiters inventory page is incomplete')
+    }
+    postings.push(...page.content)
+  }
+  if (postings.length !== total || new Set(postings.map((posting) => posting?.id)).size !== total
+    || postings.some((posting) => !hasBetsolIdentity(posting) || posting.visibility !== 'PUBLIC')) {
+    throw new Error('BETSOL SmartRecruiters inventory is incomplete or changed identity')
+  }
+  const indiaPostings = postings.filter((posting) => posting.location?.country?.toLowerCase() === 'in')
+  const jobs = []
+  for (const posting of indiaPostings) {
+    const detail = await fetchJson(`${API_URL}/${posting.id}`)
+    const sourceUrl = getPostingUrl(detail?.postingUrl, posting.id)
+    const applyUrl = getPostingUrl(detail?.applyUrl, posting.id)
+    const title = normalizeWhitespace(detail?.name)
+    const city = normalizeWhitespace(detail?.location?.city)
+    const fullLocation = normalizeWhitespace(detail?.location?.fullLocation)
+    if (!hasBetsolIdentity(detail) || detail.id !== posting.id || detail.active !== true
+      || detail.visibility !== 'PUBLIC' || detail.location?.country?.toLowerCase() !== 'in'
+      || !sourceUrl || !applyUrl || !title || !city || !/india/i.test(fullLocation)) {
+      throw new Error(`BETSOL SmartRecruiters inventory has invalid India posting ${posting.id}`)
+    }
+    const sections = detail.jobAd?.sections ?? {}
+    jobs.push({
+      title,
+      company: COMPANY,
+      department: normalizeWhitespace(detail.department?.label) || null,
+      location: fullLocation,
+      city,
+      state: normalizeWhitespace(detail.location.region) || null,
+      country: 'India',
+      jobId: posting.id,
+      requisitionId: normalizeWhitespace(detail.refNumber) || posting.id,
+      sourceUrl,
+      applyUrl,
+      employmentType: normalizeWhitespace(detail.typeOfEmployment?.label) || null,
+      experienceLevel: normalizeWhitespace(detail.experienceLevel?.label) || null,
+      postingDate: detail.releasedDate?.slice(0, 10) || null,
+      jobDescription: normalizeWhitespace([sections.jobDescription?.text, sections.qualifications?.text].filter(Boolean).join(' ')) || null,
+      source: SOURCE,
+      link: applyUrl,
+      scrapedAt: now(),
+    })
+  }
+  return jobs.sort((left, right) => left.title.localeCompare(right.title) || left.jobId.localeCompare(right.jobId))
+}
 
 export const hasVerifiedBoardSignal = (html) => {
   const normalized = normalizeWhitespace(html)
@@ -80,8 +171,12 @@ export const extractBoardJobs = (html) =>
 export const createBetsolScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
     const boardHtml = await fetchText(BOARD_URL)
+    const currentBoardCount = getCurrentBoardCount(boardHtml)
+    if (currentBoardCount !== null) {
+      return runCurrentBoard({ boardCount: currentBoardCount, fetchJson, now })
+    }
     if (!hasVerifiedBoardSignal(boardHtml)) {
       throw new Error('BETSOL SmartRecruiters board changed materially')
     }

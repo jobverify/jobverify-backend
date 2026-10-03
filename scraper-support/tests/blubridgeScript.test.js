@@ -291,3 +291,19 @@ test('Blubridge bundle parsing preserves colon-delimited platform labels inside 
   assert.match(jobs[0].jobDescription, /YouTube: 10,000\+ subscribers/)
   assert.match(jobs[0].jobDescription, /Instagram: 25,000\+ followers/)
 })
+
+test('Blubridge reads listing and detail arrays after minified variable names change', async () => {
+  const blubridge = await loadModule()
+  const renamedBundle = currentBundleText.replace('Pd=[', 'EC=[').replace('fu=[', 'YC=[')
+
+  assert.equal(blubridge.extractBundleJobCards(renamedBundle).length, 2)
+  assert.equal(blubridge.extractBundleJobDetails(renamedBundle).length, 2)
+
+  const jobs = await blubridge.createBlubridgeScraper().run({
+    fetchText: async (url) => url === blubridge.CAREER_PAGE_URL
+      ? currentCareersShellHtml
+      : renamedBundle,
+  })
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].title, 'Data Science / AI ML Engineer')
+})

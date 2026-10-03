@@ -488,6 +488,61 @@ export const getLiveSearchPages = async ({
   return pages
 }
 
+
+const hasDirectCareersSignal = (html) => {
+  const raw = String(html ?? '')
+  return /<title>\s*Careers\s*(?:&|&amp;)\s*Job Opportunities\s*-\s*MetricStream\s*<\/title>/i.test(raw)
+    && /join our team today/i.test(stripTags(raw) || '')
+    && /class=["'][^"']*\bjob-list\b[^"']*["']/i.test(raw)
+    && /class=["'][^"']*\bjob-card\b[^"']*["']/i.test(raw)
+}
+
+const extractDirectCareersListings = (html) => {
+  const page = String(html ?? '').replace(/<!--[\s\S]*?-->|<style\b[\s\S]*?<\/style>|<script\b[\s\S]*?<\/script>/gi, '')
+  const starts = [...page.matchAll(/<div\b[^>]*class=["'][^"']*\bjob-card\b[^"']*["'][^>]*>/gi)]
+  const seen = new Set()
+  return starts.map((start, index) => {
+    const card = page.slice(start.index, starts[index + 1]?.index ?? page.length)
+    const title = stripTags(card.match(/<h2\b[^>]*class=["'][^"']*\bjob-title\b[^"']*["'][^>]*>([\s\S]*?)<\/h2>/i)?.[1])
+    const meta = [...card.matchAll(/<span\b[^>]*class=["'][^"']*\bmeta-item\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/gi)].map(match => stripTags(match[1]))
+    const href = card.match(/<a\b[^>]*class=["'][^"']*\bapply-btn\b[^"']*["'][^>]*href=["']([^"']+)["']/i)?.[1]
+    const summary = stripTags(card.match(/<p\b[^>]*class=["'][^"']*\bjob-desc\b[^"']*["'][^>]*>([\s\S]*?)<\/p>/i)?.[1])
+    if (!title || meta.length !== 3 || meta.some(value => !value) || !summary || !href) {
+      throw new Error('MetricStream incomplete public role card')
+    }
+    const url = new URL(decodeHtmlEntities(href), CAREERS_PAGE_URL)
+    if (url.protocol !== 'https:' || url.hostname !== 'www.metricstream.com' || !/^\/careers\/[a-z0-9-]+\.html$/.test(url.pathname) || url.search || url.hash) {
+      throw new Error('MetricStream listing does not link to a trusted first-party role')
+    }
+    if (seen.has(url.href)) throw new Error('MetricStream duplicate public role card')
+    seen.add(url.href)
+    return {title, location: meta[0], department: meta[1], postingDate: toIsoDate(meta[2]), sourceUrl: url.href, jobId: url.pathname.split('/').at(-1).replace(/\.html$/, '')}
+  })
+}
+
+const runDirectCareers = async ({ careersHtml, fetchText, now }) => {
+  const listings = extractDirectCareersListings(careersHtml)
+  if (!listings.length) throw new Error('MetricStream incomplete public role card inventory')
+  const jobs = []
+  for (const listing of listings) {
+    if (!/\bIndia\b/i.test(listing.location)) continue
+    const detail = await fetchText(listing.sourceUrl)
+    const title = stripTags(String(detail).match(/<h1\b[^>]*class=["'][^"']*\bms-jd__title\b[^"']*["'][^>]*>([\s\S]*?)<\/h1>/i)?.[1])
+    const location = stripTags(String(detail).match(/<span\b[^>]*class=["'][^"']*\bms-jd__chip\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/i)?.[1])
+    const content = String(detail).match(/<main\b[^>]*class=["'][^"']*\bms-jd__content\b[^"']*["'][^>]*>([\s\S]*?)<\/main>/i)?.[1]
+    if (title !== listing.title || !/<title>[^<]*Careers at MetricStream\s*<\/title>/i.test(detail) || !content || !location) {
+      throw new Error('MetricStream first-party detail identity or content changed materially')
+    }
+    if (!/\bIndia\b/i.test(location)) {
+      throw Object.assign(new Error('MetricStream incomplete country scope: conflicting listing and detail locations for ' + listing.sourceUrl), {softFailure: true, upstreamOutage: false, failureKind: 'incomplete_location_scope', abortRetries: true})
+    }
+    jobs.push({ ...listing, company: COMPANY_NAME, source: SOURCE, country: 'India', city: location.split(',')[0].trim(), location,
+      requisitionId: listing.jobId, applyUrl: listing.sourceUrl, link: listing.sourceUrl, jobDescription: stripTags(content),
+      requiredSkills: extractListItems(extractSectionHtml(content, 'Required Skills')), minimumQualification: stripTags(extractSectionHtml(content, 'Education')), scrapedAt: now() })
+  }
+  return jobs
+}
+
 export const createMetricStreamScraper = ({
   fetchText = defaultFetchText,
   getSearchPages = (options = {}) => getLiveSearchPages({ ...options, fetchText }),
@@ -501,6 +556,9 @@ export const createMetricStreamScraper = ({
     }
 
     const careersHtml = await fetchText(CAREERS_PAGE_URL)
+    if (hasDirectCareersSignal(careersHtml)) {
+      return runDirectCareers({ careersHtml, fetchText, now })
+    }
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('MetricStream verified official careers page changed materially')
     }

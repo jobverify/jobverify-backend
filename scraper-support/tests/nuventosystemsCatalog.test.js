@@ -37,12 +37,9 @@ test('Nuvento Systems catalog captures the current first-party careers hub and a
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-03')
-  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /relative \/careers\/kochi\//i)
-  assert.match(provider.verifiedSurfaceSummary, /accordion-based India openings/i)
-  assert.match(provider.verifiedSurfaceSummary, /Senior DevOps \/ Platform Engineer/i)
-  assert.match(provider.verifiedSurfaceSummary, /IT\/Sr\/JR Recruiter/i)
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.match(provider.verifiedSurfaceSummary, /17 accordion role sections/i)
+  assert.match(provider.verifiedSurfaceSummary, /HR Trainee/i)
   assert.equal(
     provider.modulePath,
     path.resolve(currentDir, '../../scraper/nuventosystems/script.js'),

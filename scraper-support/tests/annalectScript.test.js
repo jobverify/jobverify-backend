@@ -54,6 +54,30 @@ const sampleSearchHtmlPage2 = `
 </div>
 `
 
+test('extractSearchResults reads newly posted LinkedIn cards with the new date class', async () => {
+  const annalect = await loadAnnalectModule()
+  const html = sampleSearchHtmlPage2.replace(
+    'class="job-search-card__listdate"',
+    'class="job-search-card__listdate--new"',
+  )
+
+  const listings = annalect.extractSearchResults(html)
+  assert.equal(listings.length, 1)
+  assert.equal(listings[0].jobId, '4430560517')
+  assert.equal(listings[0].postingDate, '2026-06-22')
+})
+
+test('extractSearchResults does not borrow fields from the next card when one card is incomplete', async () => {
+  const annalect = await loadAnnalectModule()
+  const incompleteCard = sampleSearchHtmlPage2.replace(
+    '<time class="job-search-card__listdate" datetime="2026-06-22"></time>',
+    '',
+  )
+
+  const listings = annalect.extractSearchResults(incompleteCard + sampleSearchHtmlPage1)
+  assert.deepEqual(listings.map((job) => job.jobId), ['4428029637', '4430560517'])
+})
+
 const sampleDetailHtml = `
 <section class="top-card-layout">
   <a class="topcard__link"><h2 class="top-card-layout__title">Presentation Designer - Specialist</h2></a>

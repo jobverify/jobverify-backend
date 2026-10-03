@@ -535,3 +535,26 @@ test('Dedalus fails closed when the verified careers handoff, country facet, or 
     /verified India-empty Workday sentinel changed materially/i,
   )
 })
+
+
+for (const [status, html, failureKind] of [
+  [200, '<title>Workday is currently unavailable.</title>', 'network_or_timeout'],
+  [503, 'Service unavailable', 'network_or_timeout'],
+  [403, 'Forbidden', 'blocked_or_access_denied'],
+]) {
+  test('dedalus recognizes upstream Workday board failures for HTTP ' + status, async () => {
+    const mod = await import('../../scraper/dedalus.workday/script.js')
+    const {classifyScraperError} = await import('../utils/failureClassification.js')
+    await assert.rejects(mod.createDedalusScraper().run({
+      fetchPage: async url => {
+        if (url === mod.WORKDAY_BOARD_URL) return {status,url,html}
+        if (url === mod.CAREERS_URL) return {status:200,url,html:careersPageHtml}; if (url === mod.JOB_OFFERS_URL) return {status:200,url,html:jobOffersPageHtml}
+        throw new Error('Unexpected page: ' + url)
+      },
+      fetchJson: async () => assert.fail('Unavailable board must not request job listings'),
+    }), error => {
+      assert.deepEqual(classifyScraperError(error), {softFailure:true,upstreamOutage:true,failureKind})
+      return true
+    })
+  })
+}

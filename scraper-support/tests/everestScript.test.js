@@ -381,3 +381,26 @@ test('Everest fails closed when the verified first-party handoff or Workday payl
     /jobs api payload changed materially/i,
   )
 })
+
+
+for (const [status, html, failureKind] of [
+  [200, '<title>Workday is currently unavailable.</title>', 'network_or_timeout'],
+  [503, 'Service unavailable', 'network_or_timeout'],
+  [403, 'Forbidden', 'blocked_or_access_denied'],
+]) {
+  test('everest recognizes upstream Workday board failures for HTTP ' + status, async () => {
+    const mod = await import('../../scraper/everest.workday/script.js')
+    const {classifyScraperError} = await import('../utils/failureClassification.js')
+    await assert.rejects(mod.createEverestScraper().run({
+      fetchPage: async url => {
+        if (url === mod.WORKDAY_BOARD_URL) return {status,url,html}
+        if (url === mod.HOMEPAGE_URL) return homepagePage; if (url === mod.CAREERS_PAGE_URL) return careersPage
+        throw new Error('Unexpected page: ' + url)
+      },
+      fetchJson: async () => assert.fail('Unavailable board must not request job listings'),
+    }), error => {
+      assert.deepEqual(classifyScraperError(error), {softFailure:true,upstreamOutage:true,failureKind})
+      return true
+    })
+  })
+}

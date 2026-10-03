@@ -177,7 +177,6 @@ export const hasOfficialLeverBoardSignal = (html = '') => {
     && text.includes('team')
     && text.includes('work type')
     && text.includes('pune, maharashtra')
-    && text.includes('delphix')
     && text.includes('jobs powered by')
     && /https:\/\/jobs\.lever\.co\/perforce\/[a-z0-9-]+/i.test(page)
 }
@@ -270,8 +269,11 @@ export const createDelphixIndiaScraper = ({
     }
 
     const delphixJobs = leverJobs.filter(isDelphixBrandedJob)
-    if (delphixJobs.length === 0) {
-      throw new Error('Delphix India verified public Lever board no longer exposes Delphix-branded roles')
+    if (delphixJobs.length === 0 && (
+      leverJobs.length === 0
+      || !leverJobs.every((job) => job?.hostedUrl && leverBoardPage.html.includes(job.hostedUrl))
+    )) {
+      throw new Error('Delphix India verified public Lever board no longer agrees with API postings for zero Delphix-branded roles')
     }
 
     const scrapedAt = now()

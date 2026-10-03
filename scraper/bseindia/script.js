@@ -3,11 +3,13 @@ import http2 from 'node:http2'
 import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
+const BUNDLE_DIRECTORY_URL = 'https://www.bseindia.com/assets/includenew/js/'
 
 export const SOURCE = 'bseindia'
 export const COMPANY = 'BSE India'
 export const CAREERS_URL = 'https://www.bseindia.com/static/about/careers'
 export const SITEMAP_URL = 'https://www.bseindia.com/sitemap.xml'
+export const APPLICATION_URL = 'https://bsegenie.darwinbox.in/ms/candidatev2/main/careers/home'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -65,7 +67,7 @@ export const hasOfficialCareersShell = (html) => {
 
 export const hasVerifiedSitemapSignal = (xml) => {
   const text = normalizeWhitespace(xml)
-  return text.includes('<loc>https://www.bseindia.com/static/about/careers</loc>')
+  return /<urlset\b/i.test(text)
     && text.includes('<loc>https://www.bseindia.com/markets/jobprocessstatus</loc>')
 }
 
@@ -86,6 +88,27 @@ export const hasOfficialBundleSignal = (bundleJs) => {
   return normalized.includes('/static/about/careers')
     && normalized.includes('Careers')
     && !hasUnexpectedAtsSignal(script)
+}
+
+const extractImportedChunkUrl = (bundleJs, route, exportName) => {
+  const escapedRoute = route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const escapedExport = exportName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const pattern = new RegExp(`path:["']${escapedRoute}["'],loadChildren:\\(\\)=>import\\(["']\\./(chunk-[A-Z0-9]+\\.js)["']\\)\\.then\\(\\w+=>\\w+\\.${escapedExport}\\)`)
+  const chunkName = String(bundleJs ?? '').match(pattern)?.[1]
+  return chunkName ? new URL(chunkName, BUNDLE_DIRECTORY_URL).toString() : null
+}
+
+export const extractStaticRoutesChunkUrl = (bundleJs) =>
+  extractImportedChunkUrl(bundleJs, 'static', 'staticRoutesOnly')
+
+export const extractAboutRoutesChunkUrl = (bundleJs) =>
+  extractImportedChunkUrl(bundleJs, 'about', 'staticAboutRoutes')
+
+export const hasVerifiedCareersRoute = (bundleJs) => {
+  const script = String(bundleJs ?? '')
+  return /path:["']careers["']/.test(script)
+    && script.includes('Careers at BSE')
+    && script.includes(APPLICATION_URL)
 }
 
 const decodeBundleText = (value) => String(value ?? '')
@@ -116,13 +139,14 @@ const slugify = (value) => String(value ?? '')
 
 export const extractCurrentOpeningsFromBundle = (bundleJs, {
   scrapedAt = new Date().toISOString(),
+  applyUrl = 'mailto:careers@bseindia.com',
 } = {}) => {
   const script = String(bundleJs ?? '')
   const seen = new Set()
   const titles = [
-    ...script.matchAll(/["'`]Hiring(?:\s+Post\s*-\s*|\s+Finance\s*:\s*)([^"'`]+)["'`]/gi),
+    ...script.matchAll(/["'`]((?:Hiring\s+Post\s*-\s*|Hiring\s+Finance\s*:\s*)[^"'`]+)["'`]/gi),
   ]
-    .map((match) => normalizeOpeningTitle(match[0].slice(1, -1)))
+    .map((match) => normalizeOpeningTitle(match[1]))
     .filter(Boolean)
 
   return titles
@@ -138,12 +162,12 @@ export const extractCurrentOpeningsFromBundle = (bundleJs, {
         company: COMPANY,
         department: deriveDepartment(title),
         location: 'India',
-        city: 'Remote',
+        city: null,
         country: 'India',
         jobId,
         requisitionId: jobId,
         sourceUrl: CAREERS_URL,
-        applyUrl: 'mailto:careers@bseindia.com',
+        applyUrl,
         employmentType: null,
         experienceRequired: null,
         minimumQualification: null,
@@ -154,7 +178,7 @@ export const extractCurrentOpeningsFromBundle = (bundleJs, {
         jobDescription: null,
         remoteStatus: null,
         source: SOURCE,
-        link: 'mailto:careers@bseindia.com',
+        link: applyUrl,
         scrapedAt,
       }
     })
@@ -235,7 +259,19 @@ export const createBseIndiaScraper = () => ({
       throw new Error('BSE India frontend bundle no longer matches the verified first-party careers shell')
     }
 
-    return extractCurrentOpeningsFromBundle(bundleJs)
+    const inlineJobs = extractCurrentOpeningsFromBundle(bundleJs)
+    if (inlineJobs.length > 0) return inlineJobs
+
+    const staticChunkUrl = extractStaticRoutesChunkUrl(bundleJs)
+    if (!staticChunkUrl) throw new Error('BSE India frontend no longer exposes the verified static careers route')
+    const staticChunkJs = await fetchText(staticChunkUrl)
+    const aboutChunkUrl = extractAboutRoutesChunkUrl(staticChunkJs)
+    if (!aboutChunkUrl) throw new Error('BSE India frontend no longer exposes the verified about careers route')
+    const aboutChunkJs = await fetchText(aboutChunkUrl)
+    if (!hasVerifiedCareersRoute(aboutChunkJs)) {
+      throw new Error('BSE India careers route or application portal no longer matches the verified public surface')
+    }
+    return extractCurrentOpeningsFromBundle(aboutChunkJs, { applyUrl: APPLICATION_URL })
   },
 })
 

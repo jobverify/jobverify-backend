@@ -21,9 +21,9 @@ export const AMICABLE_AI_CATALOG = {
     'verified-homepage-careers-link+verified-careers-no-openings-message+verified-non-india-screenloop-board-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-28',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified https://amicable.io/, https://amicable.io/careers, and https://app.screenloop.com/careers/amicable on July 28, 2026. There is no trustworthy India jobs surface for the backlog company Amicable AI: the first-party amicable.io homepage links to a branded careers page that explicitly says there are currently no open positions and asks speculative applicants to email jobs@amicable.co.uk, while the hidden Screenloop board exposes only non-India roles such as Remote or London rather than India openings.',
+    'Verified https://amicable.io/, https://amicable.io/careers, and https://app.screenloop.com/careers/amicable on October 3, 2026. The homepage title now includes prenups. There is no trustworthy India jobs surface for the backlog company Amicable AI: the first-party careers page still says there are currently no open positions and asks speculative applicants to email jobs@amicable.co.uk, while the hidden Screenloop board lists seven non-India roles with Remote or London locations.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

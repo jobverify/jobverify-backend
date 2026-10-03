@@ -51,7 +51,8 @@ test('Anaptyss local catalog captures the verified first-party homepage, careers
   assert.equal(ANAPTYSS_CATALOG.adapter, 'script')
   assert.equal(ANAPTYSS_CATALOG.homepageUrl, 'https://www.anaptyss.com/')
   assert.equal(ANAPTYSS_CATALOG.careersLandingUrl, 'https://www.anaptyss.com/careers/')
-  assert.equal(ANAPTYSS_CATALOG.companyCareerPage, 'https://www.anaptyss.com/jobs/')
+  assert.equal(ANAPTYSS_CATALOG.companyCareerPage, 'https://www.anaptyss.com/careers/openings')
+  assert.equal(ANAPTYSS_CATALOG.legacyJobsUrl, 'https://www.anaptyss.com/jobs/')
   assert.equal(ANAPTYSS_CATALOG.sitemapUrl, 'https://www.anaptyss.com/sitemap_index.xml')
   assert.equal(ANAPTYSS_CATALOG.jobPostSitemapUrl, 'https://www.anaptyss.com/job_post-sitemap.xml')
   assert.equal(ANAPTYSS_CATALOG.sharedApplyPageUrl, 'https://www.anaptyss.com/apply-now/')
@@ -61,15 +62,15 @@ test('Anaptyss local catalog captures the verified first-party homepage, careers
   assert.equal(ANAPTYSS_CATALOG.countryFilter, 'India')
   assert.equal(
     ANAPTYSS_CATALOG.paginationStrategy,
-    'verified-homepage-plus-careers-landing-plus-single-first-party-jobs-listing-and-detail-pages',
+    'current-first-party-openings-list-and-detail-pages-with-legacy-sitemap-fallback',
   )
   assert.equal(
     ANAPTYSS_CATALOG.extractionStrategy,
-    'verified-homepage+verified-careers-landing+verified-jobs-page+verified-job-post-sitemap+first-party-detail-pages+shared-first-party-apply-form',
+    'verified-current-homepage+current-openings-list+india-detail-pages+shared-first-party-apply-form',
   )
   assert.equal(ANAPTYSS_CATALOG.parser, 'custom-script')
   assert.equal(ANAPTYSS_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(ANAPTYSS_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(ANAPTYSS_CATALOG.verifiedOn, '2026-10-03')
   assert.equal(ANAPTYSS_CATALOG.dryRunFile, 'anaptyss/jobs.json')
   assert.match(ANAPTYSS_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.anaptyss\.com\/careers\//i)
   assert.match(ANAPTYSS_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.anaptyss\.com\/jobs\//i)
@@ -119,7 +120,7 @@ test('buildScrapers and company coverage resolve Anaptyss from the shared catalo
   assert.ok(provider)
   assert.ok(scraper)
   assert.equal(provider.companyName, 'Anaptyss')
-  assert.equal(provider.companyCareerPage, 'https://www.anaptyss.com/jobs/')
+  assert.equal(provider.companyCareerPage, 'https://www.anaptyss.com/careers/openings')
   assert.match(scraper.dryRunFile, /anaptyss[\\/]jobs\.json$/i)
 
   const report = generateCompanyCoverageReport({

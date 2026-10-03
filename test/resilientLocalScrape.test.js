@@ -11,6 +11,7 @@ import {
   consumeStopRequest,
   parseArgs,
   shouldRestartRun,
+  runResilientScrape,
 } from '../scripts/resilientLocalScrape.js'
 
 const supervisorScript = fileURLToPath(new URL('../scripts/resilientLocalScrape.js', import.meta.url))
@@ -120,6 +121,7 @@ test('resilient launcher restarts an incomplete child and finishes the same chec
         ...process.env,
         SCRAPER_ONLY: '__must_not_run_real_catalog__',
         RESILIENT_FIXTURE_ATTEMPT_FILE: attemptFile,
+        JOB_CLASSIFICATION_MODE: 'off',
       },
     })
 
@@ -134,3 +136,35 @@ test('resilient launcher restarts an incomplete child and finishes the same chec
     fs.rmSync(directory, { recursive: true, force: true })
   }
 })
+
+test('resilient supervisor waits for Laya and retains its worker across runner retries', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'laya-supervisor-test-'));
+  const events = [];
+  try {
+    const result = await runResilientScrape(parseArgs(['--run-dir', directory, '--dry-run', '--runner-script', childFixture, '--restart-delay-seconds', '0']), {
+      env: { ...process.env, RESILIENT_FIXTURE_ATTEMPT_FILE: path.join(directory, 'attempt.txt'), JOB_CLASSIFICATION_MODE: 'policy' },
+      prepareLaya: async ({ env }) => {
+        events.push('prepare');
+        await new Promise(resolve => setTimeout(resolve, 20));
+        assert.equal(fs.existsSync(path.join(directory, 'attempt.txt')), false);
+        events.push('ready');
+        return { env, stop: async () => { assert.equal(fs.readFileSync(path.join(directory, 'attempt.txt'), 'utf8'), '2'); events.push('stop'); } };
+      },
+    });
+    assert.equal(result, 0);
+    assert.deepEqual(events, ['prepare', 'ready', 'stop']);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(directory, 'run-metadata.json'))).environment.JOB_CLASSIFICATION_MODE, 'policy');
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('a failed Laya installation never starts the scraper child', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'laya-supervisor-test-'));
+  try {
+    await assert.rejects(runResilientScrape(parseArgs(['--run-dir', directory, '--dry-run', '--runner-script', childFixture]), {
+      env: { ...process.env, RESILIENT_FIXTURE_ATTEMPT_FILE: path.join(directory, 'attempt.txt') },
+      prepareLaya: async () => { throw new Error('installation failed'); },
+    }), /installation failed/);
+    assert.equal(fs.existsSync(path.join(directory, 'attempt.txt')), false);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(directory, 'run-exit.json'))).code, 1);
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});

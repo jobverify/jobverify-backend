@@ -45,7 +45,8 @@ test('Assocham Tech local catalog captures the verified first-party ASSOCHAM int
   assert.equal(provider.officialBrandName, 'ASSOCHAM')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://www.assocham.org/')
-  assert.equal(provider.companyCareerPage, 'https://www.assocham.org/career.php')
+  assert.equal(provider.companyCareerPage, 'https://www.assocham.org/assocham_backend/career.php')
+  assert.equal(provider.legacyCareersUrl, 'https://www.assocham.org/career.php')
   assert.equal(provider.applicationEmail, 'hr@assocham.com')
   assert.equal(provider.applicationUrl, 'mailto:hr@assocham.com')
   assert.equal(provider.companyDomain, 'assocham.org')
@@ -64,7 +65,7 @@ test('Assocham Tech local catalog captures the verified first-party ASSOCHAM int
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.match(provider.dryRunFile, /assochamtech[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.assocham\.org\//i)
@@ -108,7 +109,7 @@ test('buildScrapers and company coverage resolve Assocham Tech from the shared c
   assert.ok(provider)
   assert.ok(scraper)
   assert.equal(provider.companyName, 'Assocham Tech')
-  assert.equal(provider.companyCareerPage, 'https://www.assocham.org/career.php')
+  assert.equal(provider.companyCareerPage, 'https://www.assocham.org/assocham_backend/career.php')
   assert.match(scraper.dryRunFile, /assochamtech[\\/]jobs\.json$/i)
 
   const report = generateCompanyCoverageReport({

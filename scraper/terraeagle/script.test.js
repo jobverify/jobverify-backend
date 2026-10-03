@@ -188,3 +188,9 @@ test('Terraeagle sentinel fails closed when the careers shell starts exposing pu
     /broken jobs route/i,
   )
 })
+
+
+test('Terraeagle HTTP challenge and service errors preserve their access or outage cause', async () => {
+  const source = await import('./script.js')
+  for (const status of [403,503]) await assert.rejects(source.run({fetchPage:async url => ({status,url,html:'<title>Just a moment...</title>Enable JavaScript and cookies to continue'})}), new RegExp('HTTP '+status))
+})

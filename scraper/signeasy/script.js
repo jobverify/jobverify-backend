@@ -17,6 +17,7 @@ export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
 export const CAREERS_URL = PROVIDER_METADATA.officialCareersPageUrl
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
+export const RECRUITERBOX_OPENINGS_URL = 'https://app.recruiterbox.com/widget/14690/openings/'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -47,16 +48,74 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchJson = async (url) => {
+  const response = await fetch(url, {
+    headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
+    signal: AbortSignal.timeout(15000),
+  })
+  if (!response.ok) throw new Error('HTTP ' + response.status + ' for ' + url)
+  return response.json()
+}
+
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = (normalizeWhitespace(page) || '').toLowerCase()
   const title = (extractTitle(page) || '').toLowerCase()
 
   return title === 'careers at signeasy | signeasy'
-    && text.includes('join our tribe')
+    && (text.includes('join our tribe') || text.includes('join our mission'))
     && (text.includes('apply now') || text.includes('apply here'))
     && text.includes('our principles')
     && text.includes('perks and benefits')
+}
+
+export const hasOfficialRecruiterboxWidget = (html = '') =>
+  /\/static\/client-src-served\/widget\/14690\/rbox_api\.js/i.test(String(html ?? ''))
+  && /class=["'][^"']*rbox-opening-list/i.test(String(html ?? ''))
+
+const mapRecruiterboxJobs = (openings, now) => {
+  if (!Array.isArray(openings)) {
+    throw new Error('Signeasy Recruiterbox openings payload changed')
+  }
+  const seen = new Set()
+  return openings
+    .map((opening) => {
+      const id = String(opening?.id || '')
+      const hash = String(opening?.hash_id || '')
+      const title = normalizeWhitespace(opening?.title)
+      const location = normalizeWhitespace(opening?.location?.city)
+      if (!/^\d+$/.test(id) || !/^[a-z0-9]+$/i.test(hash) || !title
+        || opening?.company_name !== 'Signeasy' || !location || !opening?.description
+        || seen.has(id)) {
+        throw new Error('Signeasy Recruiterbox role payload changed or contains duplicate jobs')
+      }
+      seen.add(id)
+      if (!/\bIndia\b|Bengaluru|Bangalore/i.test(location)) return null
+      const applyUrl = 'https://signeasy.hire.trakstar.com/jobs/' + hash + '/'
+      return {
+        company: COMPANY_NAME,
+        title,
+        location: /India/i.test(location) ? location : location + ', Karnataka, India',
+        city: 'Bengaluru',
+        country: 'India',
+        link: applyUrl,
+        applyUrl,
+        sourceUrl: applyUrl,
+        source: SOURCE,
+        jobId: id,
+        department: normalizeWhitespace(opening.team),
+        employmentType: normalizeWhitespace(opening.position_type),
+        experienceRequired: null,
+        jobDescription: opening.description,
+        minimumQualification: null,
+        preferredQualification: null,
+        requiredSkills: [],
+        postingDate: null,
+        remoteStatus: opening.allows_remote ? 'Remote' : 'On-site',
+        scrapedAt: now(),
+      }
+    })
+    .filter(Boolean)
 }
 
 export const hasNoTrustworthyPublicJobsSignal = (html = '') => {
@@ -70,11 +129,17 @@ export const hasNoTrustworthyPublicJobsSignal = (html = '') => {
 export const createSigneasyScraper = () => ({
   async run({
     fetchText = defaultFetchText,
+    fetchJson = defaultFetchJson,
+    now = () => new Date().toISOString(),
   } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
 
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('The verified SignEasy careers page changed materially')
+    }
+
+    if (hasOfficialRecruiterboxWidget(careersHtml)) {
+      return mapRecruiterboxJobs(await fetchJson(RECRUITERBOX_OPENINGS_URL), now)
     }
 
     if (!hasNoTrustworthyPublicJobsSignal(careersHtml)) {

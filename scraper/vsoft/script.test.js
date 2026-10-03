@@ -186,7 +186,7 @@ const indiaJobDetailPayloads = {
 test('pins the verified VSoft first-party careers handoff and embedded JobDiva shell', () => {
   assert.equal(SOURCE, 'vsoft')
   assert.equal(COMPANY, 'VSoft')
-  assert.equal(VERIFIED_ON, '2026-08-14')
+  assert.equal(VERIFIED_ON, '2026-10-03')
   assert.equal(CAREERS_PAGE_URL, 'https://www.vsoftconsulting.com/careers/')
   assert.equal(CAREER_PORTAL_URL, 'https://www.vsoftconsulting.com/career-portal/')
   assert.equal(
@@ -194,6 +194,10 @@ test('pins the verified VSoft first-party careers handoff and embedded JobDiva s
     'https://www1.jobdiva.com/portal/?a=ehjdnwnz6myv05mxjimlmwguleo14c0be149kcy238wtxsp4ozlqyjqehdl6g0y1&compid=-1',
   )
   assert.equal(hasCareersPageSignal(careersHtml), true)
+  assert.equal(hasCareersPageSignal(careersHtml.replace(
+    'Careers - V-Soft Consulting | Enterprise AI &amp; Digital Transformation',
+    'Careers | V-Soft Consulting',
+  )), true)
   assert.equal(hasCareerPortalPageSignal(careerPortalHtml), true)
   assert.equal(extractJobDivaIframeUrl(careerPortalHtml), JOBDIVA_PORTAL_URL)
   assert.equal(hasJobDivaPortalShellSignal(jobDivaPortalHtml), true)

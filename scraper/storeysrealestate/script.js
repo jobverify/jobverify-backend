@@ -1,5 +1,3 @@
-import http from 'node:http'
-import https from 'node:https'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -9,12 +7,12 @@ export const SOURCE = 'storeysrealestate'
 export const COMPANY = 'Storeys Real Estate'
 export const HOMEPAGE_URL = 'https://www.storeys.ae/'
 export const CAREERS_URL = 'https://www.storeys.ae/careers'
+export const CURRENT_CAREERS_URL = 'https://storeys.ae/careers.html'
 export const CAREERS_API_URL = 'https://api.storeys.ae/api/v1/careers'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 const REQUEST_TIMEOUT_MS = 15000
-const MAX_REDIRECTS = 5
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
@@ -101,55 +99,6 @@ const isOfficialDomainUrl = (value) => {
   }
 }
 
-const fetchPageIgnoringTlsErrors = (url, redirectsRemaining = MAX_REDIRECTS) =>
-  new Promise((resolve, reject) => {
-    const parsedUrl = new URL(url)
-    const requestImpl = parsedUrl.protocol === 'http:' ? http : https
-
-    const request = requestImpl.request(parsedUrl, {
-      method: 'GET',
-      headers: {
-        'User-Agent': USER_AGENT,
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7',
-      },
-      rejectUnauthorized: false,
-    }, (response) => {
-      const status = Number(response.statusCode) || 0
-      const location = response.headers.location
-
-      if (status >= 300 && status < 400 && location) {
-        response.resume()
-
-        if (redirectsRemaining <= 0) {
-          reject(new Error(`Too many redirects for ${url}`))
-          return
-        }
-
-        const nextUrl = new URL(location, parsedUrl).toString()
-        resolve(fetchPageIgnoringTlsErrors(nextUrl, redirectsRemaining - 1))
-        return
-      }
-
-      const chunks = []
-      response.on('data', (chunk) => chunks.push(chunk))
-      response.on('end', () => {
-        resolve({
-          status,
-          url: parsedUrl.toString(),
-          contentType: String(response.headers['content-type'] || ''),
-          html: Buffer.concat(chunks).toString('utf8'),
-          errorMessage: '',
-        })
-      })
-    })
-
-    request.setTimeout(REQUEST_TIMEOUT_MS, () => {
-      request.destroy(new Error(`timeout for ${url}`))
-    })
-    request.on('error', reject)
-    request.end()
-  })
-
 const defaultFetchPage = async (url) => {
   try {
     const response = await fetch(url, {
@@ -169,21 +118,6 @@ const defaultFetchPage = async (url) => {
     }
   } catch (error) {
     const errorMessage = extractErrorMessage(error)
-
-    if (hasRecoverableCertificateError(errorMessage)) {
-      try {
-        return await fetchPageIgnoringTlsErrors(url)
-      } catch (fallbackError) {
-        const fallbackErrorMessage = extractErrorMessage(fallbackError)
-        return {
-          status: hasTimeoutError(fallbackErrorMessage) ? 'TIMEOUT' : 'NETWORK_ERROR',
-          url,
-          contentType: '',
-          html: '',
-          errorMessage: fallbackErrorMessage,
-        }
-      }
-    }
 
     return {
       status: hasTimeoutError(errorMessage) ? 'TIMEOUT' : 'NETWORK_ERROR',
@@ -234,11 +168,109 @@ export const hasUnavailableCareersApiSignal = (page = {}) => {
   return hasBrokenWordPressJsonSignal(page)
 }
 
+
+const isVerifiedPageUrl = (value, expectedPath) => {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:'
+      && ['storeys.ae', 'www.storeys.ae'].includes(url.hostname.toLowerCase())
+      && url.pathname === expectedPath
+      && !url.search
+      && !url.username
+      && !url.password
+  } catch {
+    return false
+  }
+}
+
+export const hasCurrentStoreysHomepage = (page = {}) => {
+  const raw = String(page.html ?? '')
+  const text = normalizeWhitespace(raw)
+  return Number(page.status) === 200
+    && isVerifiedPageUrl(page.url, '/')
+    && /<title>\s*Off-Plan &amp; Ready Property in Dubai \| Storeys Real Estate\s*<\/title>/i.test(raw)
+    && /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/storeys\.ae\/["']/i.test(raw)
+    && /href=["']careers\.html["']/i.test(raw)
+    && /mailto:enquiries@storeys\.ae/i.test(raw)
+    && text.includes('Off-plan and ready homes in Dubai, Sharjah and Abu Dhabi.')
+}
+
+const hasCurrentStoreysLegalIdentity = (raw) => {
+  for (const match of raw.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    try {
+      const schema = JSON.parse(match[1])
+      const entities = Array.isArray(schema['@graph']) ? schema['@graph'] : [schema]
+      if (entities.some(entity => entity['@type'] === 'RealEstateAgent'
+        && entity.name === 'Storeys Real Estate LLC'
+        && entity.url === 'https://storeys.ae/'
+        && entity.email === 'hiring@storeys.ae'
+        && entity.address?.addressCountry === 'AE'
+        && entity.address?.addressLocality === 'Dubai')) return true
+    } catch {
+      return false
+    }
+  }
+  return false
+}
+
+export const hasCurrentStoreysResumeIntake = (page = {}) => {
+  const raw = String(page.html ?? '')
+  const text = normalizeWhitespace(raw)
+  const scriptSources = [...raw.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/gi)].map(match => match[1])
+  return Number(page.status) === 200
+    && isVerifiedPageUrl(page.url, '/careers.html')
+    && /<title>\s*Careers at Storeys Real Estate — Dubai, Abu Dhabi &amp; Sharjah\s*<\/title>/i.test(raw)
+    && /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/storeys\.ae\/careers\.html["']/i.test(raw)
+    && hasCurrentStoreysLegalIdentity(raw)
+    && /href=["']mailto:hiring@storeys\.ae["']/i.test(raw)
+    && text.includes('Real estate careers in Dubai, Abu Dhabi and Sharjah.')
+    && text.includes('Your CV is emailed to our hiring team and is not stored on this website.')
+    && /<form\b[^>]*id=["']jobForm["']/i.test(raw)
+    && /<input\b[^>]*name=["']cv["'][^>]*accept=["']application\/pdf,\.pdf["']/i.test(raw)
+    && /fetch\(\s*["']\/api\/bewerbung["']\s*,\s*\{\s*method\s*:\s*["']POST["']\s*,\s*body\s*:\s*daten\s*\}/.test(raw)
+    && scriptSources.every(src => src === '/_vercel/insights/script.js')
+    && !/\bname=["'](?:job|jobId|role|roleId|position|department|city)["']/i.test(raw)
+    && !hasPublicJobsSignal(raw.replace(/\bapply now\b/gi, ''))
+}
+
+const inventoryUnavailable = (message, surface, pagesFetched, firstParty) =>
+  Object.assign(new Error(message), {
+    code: 'STOREYS_INVENTORY_UNAVAILABLE',
+    softFailure: true,
+    failureKind: 'upstream_inventory_unavailable',
+    abortRetries: true,
+    inventoryEvidence: {
+      status: 'discovery-only',
+      surface,
+      firstParty,
+      listingComplete: false,
+      pagesFetched,
+      reportedTotal: null,
+      indiaFacetCount: null,
+      verifiedAt: new Date().toISOString(),
+      reason: message,
+    },
+  })
+
 export const createStoreysRealEstateScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
+    if (hasCurrentStoreysHomepage(homepage)) {
+      const careersPage = await fetchPage(CURRENT_CAREERS_URL)
+      if (!hasCurrentStoreysResumeIntake(careersPage)) {
+        throw new Error('Storeys careers page no longer matches the verified first-party UAE resume intake')
+      }
+      throw inventoryUnavailable(
+        'Storeys public careers inventory is unavailable: the first-party careers page provides a generic UAE resume intake; role-level public job inventory remains unverified',
+        CURRENT_CAREERS_URL,
+        2,
+        true,
+      )
+    }
+
     if (!hasBrokenWordPressJsonSignal(homepage)) {
-      throw new Error('Storeys official homepage no longer matches the verified broken first-party surface')
+      const networkDetail = homepage.errorMessage ? ': ' + homepage.errorMessage : ''
+      throw new Error('Storeys official homepage no longer matches a verified first-party surface' + networkDetail)
     }
 
     const careersPage = await fetchPage(CAREERS_URL)
@@ -251,7 +283,12 @@ export const createStoreysRealEstateScraper = () => ({
       throw new Error('Storeys careers api no longer matches the verified unavailable first-party surface')
     }
 
-    return []
+    throw inventoryUnavailable(
+      'Storeys public careers inventory is unavailable: the official site and careers API are unavailable; role-level public job inventory remains unverified',
+      CAREERS_URL,
+      3,
+      false,
+    )
   },
 })
 

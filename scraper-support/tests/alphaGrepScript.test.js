@@ -212,6 +212,15 @@ const currentDetailHtml = `
 </html>
 `
 
+const clientRenderedDetailHtml = `
+<html><head><title>Career Opportunity - AlphaGrep</title><link rel="canonical" href="/career-opportunity/" /></head>
+<body>
+  <div class="jobDet"><p class="eut-h6">Career Opportunity</p><p>Loading…</p><p class="location">AlphaGrep</p><a href="#jobApply">Apply for this job</a></div>
+  <div class="contentJD"><p>AlphaGrep is a quantitative trading and investment firm. We are seeking a Devops Engineer for our Bangalore office to provide day-to-day operational support and stability of infrastructure. Responsibilities include production engineering, Linux systems, monitoring, and deployment workflows.</p></div>
+  <div id="jobApply"><h2>Apply for this Job</h2><form enctype="multipart/form-data"><input name="resume"><input type="submit" value="Submit Application"></form></div>
+</body></html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/alphagrep/script.js')
@@ -234,7 +243,7 @@ test('AlphaGrep constants and parsers stay pinned to the verified first-party ca
   )
   assert.equal(
     alphaGrep.VERIFIED_INDIA_JOB_URL,
-    'https://www.alpha-grep.com/career-opportunity?jid=8176611002',
+    'https://www.alpha-grep.com/career-opportunity/?jid=6902979002',
   )
   assert.equal(alphaGrep.extractCareersUrl(homepageHtml), alphaGrep.CAREERS_HOME_URL)
   assert.equal(alphaGrep.hasOfficialHomepageSignal(homepageHtml), true)
@@ -431,6 +440,9 @@ test('AlphaGrep accepts the current relative canonical tags and li-first careers
     alphaGrep.hasOfficialJobDetailSignal(currentDetailHtml, alphaGrep.extractListingJobs(currentCareersHtml)[0]),
     true,
   )
+  const currentListing = alphaGrep.extractListingJobs(careersHtml)[0]
+  assert.equal(alphaGrep.hasOfficialJobDetailSignal(clientRenderedDetailHtml, currentListing), true)
+  assert.equal(alphaGrep.hasOfficialJobDetailSignal(clientRenderedDetailHtml.replace('Devops Engineer', 'unrelated role').replace('production engineering', 'office operations'), currentListing), false)
 })
 
 test('run validates the verified homepage handoff, keeps only India jobs, and decorates runner fields', async () => {

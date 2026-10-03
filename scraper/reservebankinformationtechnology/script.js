@@ -1,4 +1,7 @@
 import path from 'node:path'
+import { CANONICAL_CITIES } from '../../scraper-support/utils/cities.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { resolvePublishedMainClient, parsePublishedAnonymousBootstrap, assertPublishedApiBase } from './publicBootstrap.js'
 import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
@@ -21,12 +24,6 @@ export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 const DEFAULT_EXPERIENCE_ENRICHMENT_CONCURRENCY = 4
-const CAREERS_API_LOGIN_PAYLOAD = {
-  // ReBIT's public careers SPA performs this anonymous login before it reads
-  // the first-party current-openings API.
-  username: '5AFDL6ZEo6CeuX5ECXhAjw==',
-  password: 'd3/tQTEpKBQ6iQnolgQlDlpk8jSaicWBpw2u15ze4/s=',
-}
 const MONTHS = {
   january: '01',
   february: '02',
@@ -42,7 +39,7 @@ const MONTHS = {
   december: '12',
 }
 
-const normalizeWhitespace = (value = '') => String(value)
+const normalizeWhitespace = (value = '') => String(value ?? '')
   .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number.parseInt(code, 10)))
   .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
   .replace(/&nbsp;/gi, ' ')
@@ -75,14 +72,6 @@ const normalizeLocation = (value) => {
     }
   }
 
-  if (/multiple locations/i.test(normalized)) {
-    return {
-      location: 'Multiple locations, India',
-      city: null,
-      state: null,
-      country: 'India',
-    }
-  }
 
   const parts = normalized.split(',').map((part) => part.trim()).filter(Boolean)
   if (/india$/i.test(normalized) && parts.length >= 3) {
@@ -93,6 +82,20 @@ const normalizeLocation = (value) => {
       state,
       country: 'India',
     }
+  }
+
+  const explicitIndia = /\bIndia$/i.test(normalized)
+  const namedIndiaCities = parts.every(part => {
+    const key = part.toLowerCase()
+    const city = Object.hasOwn(CANONICAL_CITIES, key) ? CANONICAL_CITIES[key] : null
+    return typeof city === 'string' && !['None', 'Remote'].includes(city)
+  })
+  if (!explicitIndia && !namedIndiaCities) {
+    const error = new Error('ReBIT incomplete country scope: unverified location ' + normalized)
+    error.softFailure = true
+    error.failureKind = 'incomplete_location_scope'
+    error.abortRetries = true
+    throw error
   }
 
   if (parts.length > 1) {
@@ -145,7 +148,8 @@ const parsePostingDate = (value) => {
 
 const parseCurrentOpeningsPayload = (payload) => {
   const parsed = typeof payload === 'string' ? JSON.parse(payload) : payload
-  if (!Array.isArray(parsed)) {
+  if (!Array.isArray(parsed) || parsed.some(record => !record || typeof record !== 'object'
+    || Array.isArray(record) || typeof record.job_status !== 'boolean')) {
     throw new Error('Reserve Bank Information Technology current openings payload changed materially')
   }
 
@@ -167,18 +171,25 @@ const buildJobDescription = (job, apiDescription = null) => {
     return normalizedApiDescription
   }
 
-  return [
-    `Official ReBIT careers API opening for ${job.title}.`,
-    job.department ? `Department: ${job.department}.` : null,
-    job.location ? `Location: ${job.location}.` : null,
-    job.experienceRequired ? `Experience: ${job.experienceRequired}.` : null,
-    'Applications route through the linked official ReBIT Darwinbox detail page.',
-  ]
-    .filter(Boolean)
-    .join(' ')
+  return null
+}
+
+const guardedFirstPartyFetch = async (url, options = {}) => {
+  const requested = new URL(url)
+  const changed = () => Object.assign(new Error('ReBIT first-party response identity or redirect changed'), {
+    code: 'REBIT_SOURCE_IDENTITY_CHANGED', softFailure: true, abortRetries: true,
+    failureKind: 'surface_drift_or_fail_closed',
+  })
+  if (requested.origin !== 'https://rebit.org.in' || requested.username || requested.password) throw changed()
+  const response = await fetch(url, { ...options, redirect: 'manual' })
+  let actual
+  try { actual = new URL(response.url) } catch { throw changed() }
+  if (response.status >= 300 && response.status < 400 || actual.href !== requested.href) throw changed()
+  return response
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
+  fetchImpl: guardedFirstPartyFetch,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -188,6 +199,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 const defaultPostJson = (url, body) => fetchJsonWithRetry(url, {
+  fetchImpl: guardedFirstPartyFetch,
   method: 'POST',
   headers: {
     'User-Agent': USER_AGENT,
@@ -202,6 +214,7 @@ const defaultPostJson = (url, body) => fetchJsonWithRetry(url, {
 })
 
 const defaultFetchJson = (url, { accessToken } = {}) => fetchJsonWithRetry(url, {
+  fetchImpl: guardedFirstPartyFetch,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
@@ -227,7 +240,14 @@ export const extractIndiaJobsFromCurrentOpeningsPayload = (
     const experienceRequired = normalizeExperience(record.job_experience)
     const jobId = normalizeWhitespace(record.id)
 
-    if (!title || !locationDetails.location || !applyUrl || !jobId) {
+    let trustedApplication = false
+    try {
+      const url = new URL(applyUrl)
+      trustedApplication = url.origin === 'https://rebithr.darwinbox.in'
+        && /^\/ms\/candidatev2\/main\/careers\/jobDetails\/[a-z0-9]+$/.test(url.pathname)
+        && !url.username && !url.password
+    } catch {}
+    if (!title || !locationDetails.location || !trustedApplication || !jobId) {
       throw new Error('Reserve Bank Information Technology current openings payload changed materially')
     }
 
@@ -276,23 +296,27 @@ export const createReserveBankInformationTechnologyScraper = ({
       throw new Error('Reserve Bank Information Technology verified careers page no longer matches the trusted first-party SPA contract')
     }
 
-    const authPayload = await postJson(CAREERS_LOGIN_API_URL, CAREERS_API_LOGIN_PAYLOAD)
+    const clientUrl = resolvePublishedMainClient(careersHtml)
+    const bootstrap = parsePublishedAnonymousBootstrap(await fetchText(clientUrl), clientUrl)
+    assertPublishedApiBase(await fetchText(bootstrap.configUrl))
+    const authPayload = await postJson(CAREERS_LOGIN_API_URL, bootstrap.body)
     const accessToken = normalizeWhitespace(authPayload?.access_token)
     if (!accessToken) {
       throw new Error('Reserve Bank Information Technology careers API login changed materially')
     }
 
     const scrapedAt = now()
-    const collectedJobs = extractIndiaJobsFromCurrentOpeningsPayload(
-      await fetchJson(CURRENT_OPENINGS_API_URL, { accessToken }),
-      { scrapedAt },
-    )
+    const openingsPayload = parseCurrentOpeningsPayload(await fetchJson(CURRENT_OPENINGS_API_URL, { accessToken }))
+    const collectedJobs = extractIndiaJobsFromCurrentOpeningsPayload(openingsPayload, { scrapedAt })
+    if (new Set(collectedJobs.map(job => job.jobId)).size !== collectedJobs.length) {
+      throw new Error('ReBIT current openings contain duplicate job identity')
+    }
 
     const shouldEnrichPublicDetails =
       collectedJobs.some((job) => !job.experienceRequired)
       && (typeof fetchPublicJobText === 'function' || fetchText === defaultFetchText)
-    const jobsWithPublicDetails = shouldEnrichPublicDetails
-      ? await enrichJobsWithPublicExperience(collectedJobs, {
+    const enrichedPublicJobs = shouldEnrichPublicDetails
+      ? await enrichJobsWithPublicExperience(collectedJobs.filter(job => !job.experienceRequired), {
           ...(typeof fetchPublicJobText === 'function'
             ? {
                 fetchText: fetchPublicJobText,
@@ -304,14 +328,22 @@ export const createReserveBankInformationTechnologyScraper = ({
             Math.max(1, collectedJobs.length),
           ),
         })
-      : collectedJobs
+      : []
+    const enrichedById = new Map(enrichedPublicJobs.map(job => [job.jobId, job]))
+    const jobsWithPublicDetails = collectedJobs.map(job => enrichedById.get(job.jobId) || job)
 
-    return jobsWithPublicDetails
+    const jobs = jobsWithPublicDetails
       .map((job) => ({
         ...job,
         publicExperienceChecked: job.publicExperienceChecked === true || Boolean(job.experienceRequired),
       }))
       .sort((left, right) => left.title.localeCompare(right.title))
+    return attachInventoryEvidence(jobs, {
+      status: openingsPayload.length ? 'complete-inventory' : 'verified-empty',
+      surface: CURRENT_OPENINGS_API_URL, firstParty: true, listingComplete: true,
+      pagesFetched: 1, reportedTotal: openingsPayload.length, indiaFacetCount: jobs.length,
+      verifiedAt: scrapedAt, reason: 'Published anonymous SPA bootstrap and unpaginated first-party current-openings inventory. Missing descriptions remain null.'
+    })
   },
 })
 

@@ -20,7 +20,7 @@ const loadScraperModule = async () => {
   }
 }
 
-test('Lexmark India local catalog captures the verified first-party careers pages and job detail archive', async () => {
+test('Lexmark India local catalog captures the verified current Workday handoff and authoritative zero inventory', async () => {
   const { LEXMARK_INDIA_CATALOG } = await loadCatalogModule()
   const lexmarkIndia = await loadScraperModule()
   const provider = hydrateProviderCatalogEntry(LEXMARK_INDIA_CATALOG)
@@ -31,30 +31,28 @@ test('Lexmark India local catalog captures the verified first-party careers page
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://origin-www.lexmark.com/en_in/careers.html')
   assert.equal(provider.jobSearchUrl, 'https://origin-www.lexmark.com/en_in/careers/job-search.html')
-  assert.equal(
-    provider.verifiedSampleJobUrl,
-    'https://origin-www.lexmark.com/en_in/careers/job-description.143497.html',
-  )
-  assert.equal(provider.verifiedSampleJobTitle, 'Azure Data Integration Developer')
+  assert.equal(provider.officialJobsBoardUrl, 'https://lexmark.wd1.myworkdayjobs.com/Lexmark')
+  assert.equal(provider.publicJobsApiUrl, 'https://lexmark.wd1.myworkdayjobs.com/wday/cxs/lexmark/Lexmark/jobs')
+  assert.equal(Object.hasOwn(provider, 'verifiedSampleJobUrl'), false)
   assert.equal(provider.companyDomain, 'lexmark.com')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.atsPlatform, 'workday-jobs-api')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.verifiedPublicJobCount, 15)
+  assert.equal(provider.verifiedPublicJobCount, 0)
   assert.equal(
     provider.paginationStrategy,
-    'first-party-careers-landing-page-plus-job-search-table-and-linked-job-detail-pages',
+    'workday-offset-limit-and-native-country-facets',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+job-search-table+linked-job-detail-pages+people-soft-apply-links',
+    'verified-first-party-careers-handoff+verified-workday-tenant+unfiltered-zero-payload-or-native-workday-india-details',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/origin-www\.lexmark\.com\/en_in\/careers\.html/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/origin-www\.lexmark\.com\/en_in\/careers\/job-search\.html/i)
-  assert.match(provider.verifiedSurfaceSummary, /15 public jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /Azure Data Integration Developer/i)
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.equal(provider.verifiedIndiaJobCount, 0)
+  assert.match(provider.verifiedSurfaceSummary, /official Lexmark India careers/i)
+  assert.match(provider.verifiedSurfaceSummary, /unfiltered public jobs POST explicitly reports total 0/i)
+  assert.match(provider.verifiedSurfaceSummary, /tenant lexmark and site Lexmark/i)
   assert.match(provider.modulePath, /lexmarkindia[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /lexmarkindia[\\/]jobs\.json$/i)
 

@@ -60,7 +60,7 @@ test('Fastrack local catalog captures the verified brand-homepage careers handof
   )
   assert.equal(FASTRACK_CATALOG.parser, 'custom-script')
   assert.equal(FASTRACK_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(FASTRACK_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(FASTRACK_CATALOG.verifiedOn, '2026-10-03')
   assert.equal(FASTRACK_CATALOG.verifiedSurfaceSummary, VERIFIED_SURFACE_SUMMARY)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.fastrack\.in\//i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/careers\.titan\.in\/\?rms=titan/i)

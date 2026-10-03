@@ -71,7 +71,72 @@ export const hasOfficialCareersSignal = (html = '') => {
     && lowerNormalized.includes('apply now')
     && lowerNormalized.includes('senior accountant')
     && lowerNormalized.includes('electrical maintenance supervisor')
+    && (page.includes(APPLY_URL) || page.includes('https://winman.in/jobs/resumedetail.aspx'))
+}
+
+export const hasCurrentCareersSignal = (html = '') => {
+  const page = String(html ?? '')
+  return /<title>\s*Careers\s*(?:&#8211;|–)\s*Winman Software\s*<\/title>/i.test(page)
+    && /<table\b[^>]*id=["']freshers["']/i.test(page)
+    && /<table\b[^>]*id=["']experienced["']/i.test(page)
     && page.includes(APPLY_URL)
+}
+
+export const extractCurrentListings = (html = '') => {
+  const page = String(html ?? '')
+  if (!hasCurrentCareersSignal(page)) throw new Error('Winman current first-party careers page changed')
+  const freshersTable = page.match(/<table\b[^>]*id=["']freshers["'][\s\S]*?<\/table>/i)?.[0]
+  const experiencedTable = page.match(/<table\b[^>]*id=["']experienced["'][\s\S]*?<\/table>/i)?.[0]
+  if (!freshersTable || !experiencedTable) throw new Error('Winman current job tables are missing')
+
+  const freshers = [...freshersTable.matchAll(/<a\b[^>]*href=["'](https:\/\/www\.winmansoftware\.com\/more\/careers\/[a-z0-9-]+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
+    .map(match => ({ title: normalizeWhitespace(match[2]), detailUrl: match[1] }))
+  const experienced = [...experiencedTable.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)]
+    .map(match => {
+      const cells = [...match[1].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)].map(cell => cell[1])
+      const title = normalizeWhitespace(cells[0]?.match(/<h4[^>]*>([\s\S]*?)<\/h4>/i)?.[1])
+      if (!title) return null
+      return {
+        title,
+        experienceRequired: normalizeWhitespace(cells[1]),
+        description: stripToLines(cells[0]).filter(line => line !== title).join(' '),
+      }
+    }).filter(Boolean)
+  if (!freshers.length || !experienced.length
+    || new Set(freshers.map(job => job.detailUrl)).size !== freshers.length
+    || [...freshers, ...experienced].some(job => !job.title)
+    || experienced.some(job => !job.experienceRequired || !job.description)) {
+    throw new Error('Winman current job inventory is incomplete')
+  }
+  return { freshers, experienced }
+}
+
+export const extractCurrentFresherDetail = (html, listing) => {
+  const page = String(html ?? '')
+  const title = normalizeWhitespace(page.match(/<h1\b[^>]*class=["']job-title["'][^>]*>([\s\S]*?)<\/h1>/i)?.[1])
+  const summary = page.match(/<ul\b[^>]*class=["']job-summary["'][^>]*>([\s\S]*?)<\/ul>/i)?.[1]
+  const description = summary && stripToLines(summary).join(' ')
+  const qualification = normalizeWhitespace(page.match(/<p\b[^>]*class=["']qualification["'][^>]*>([\s\S]*?)<\/p>/i)?.[1])
+  if (title !== listing.title || !description || !qualification || !page.includes(APPLY_URL)
+    || !/Winman Software India LLP/i.test(page) || !/Mangalore/i.test(page)) {
+    throw new Error(`Winman current job detail changed: ${listing.detailUrl}`)
+  }
+  return { title, description, qualification }
+}
+
+const buildCurrentJob = ({ title, description, qualification = null, experienceRequired = null, sourceUrl, scrapedAt }) => {
+  const jobId = slugify(title)
+  if (!jobId) throw new Error('Winman current job ID is missing')
+  return {
+    title, company: COMPANY, department: null,
+    location: 'Mangaluru, Karnataka, India', city: 'Mangaluru', country: 'India',
+    jobId, requisitionId: jobId, sourceUrl, applyUrl: APPLY_URL,
+    employmentType: null, experienceRequired,
+    minimumQualification: qualification, preferredQualification: null,
+    requiredSkills: [], postingDate: null, closingDate: null,
+    jobDescription: description, remoteStatus: 'On-site',
+    source: SOURCE, link: APPLY_URL, scrapedAt,
+  }
 }
 
 export const extractJobs = (html = '') => {
@@ -124,6 +189,26 @@ export const createWinmanSoftwareScraper = ({
     fetchText = defaultFetchText,
   } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
+    if (hasCurrentCareersSignal(careersHtml)) {
+      const { freshers, experienced } = extractCurrentListings(careersHtml)
+      const scrapedAt = new Date().toISOString()
+      const freshJobs = []
+      for (let index = 0; index < freshers.length; index += 4) {
+        const batch = await Promise.all(freshers.slice(index, index + 4).map(async listing => {
+          const detail = extractCurrentFresherDetail(await fetchText(listing.detailUrl), listing)
+          return buildCurrentJob({ title: detail.title, description: detail.description,
+            qualification: detail.qualification, sourceUrl: listing.detailUrl, scrapedAt })
+        }))
+        freshJobs.push(...batch)
+      }
+      const jobs = [...freshJobs, ...experienced.map(job => buildCurrentJob({
+        title: job.title, description: job.description, experienceRequired: job.experienceRequired,
+        sourceUrl: CAREERS_URL, scrapedAt,
+      }))]
+      if (new Set(jobs.map(job => job.jobId)).size !== jobs.length) throw new Error('Winman current job IDs are duplicated')
+      const selected = maxJobs ? jobs.slice(0, maxJobs) : jobs
+      return selected.map(job => ({ ...job, ...(selected.length < jobs.length ? { sourceListingComplete: false } : {}) }))
+    }
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('The verified Winman Software careers surface no longer matches the trusted first-party page')
     }

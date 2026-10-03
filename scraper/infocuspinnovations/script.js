@@ -91,6 +91,29 @@ export const hasOfficialHomepageSignal = (html) => {
     && /href=["'](?:https:\/\/www\.infocusp\.com)?\/careers\/openings\/?["']/i.test(rawHtml)
 }
 
+const extractCurrentZohoJobs = (html) => {
+  const page = String(html ?? '')
+  const segments = page.split(/<div\b[^>]*class=["']job-card\b[^"']*["'][^>]*>/i).slice(1)
+  const starts = [...page.matchAll(/<div\b[^>]*class=["']job-card\b[^"']*["'][^>]*>/gi)].map(match=>match[0])
+  if (!segments.length) return []
+  const seen = new Set()
+  return segments.map((card,index)=>{
+    const title = normalizeWhitespace(starts[index].match(/data-title=["']([^"']+)["']/i)?.[1])
+    const locations = normalizeWhitespace(starts[index].match(/data-locations=["']([^"']+)["']/i)?.[1])
+    const controlId = card.match(/aria-controls=["']job-details-(\d+)["']/i)?.[1]
+    const jobId = card.match(/\bid=["']job-details-(\d+)["']/i)?.[1]
+    const applyUrl = normalizeWhitespace(card.match(/href=["'](https:\/\/infocusp\.zohorecruit\.in\/jobs\/Careers\/\d+\/[^"']+)["']/i)?.[1])
+    const applyId = applyUrl?.match(/\/Careers\/(\d+)\//)?.[1]
+    const description = normalizeWhitespace(card.match(/class=["']job-desc["'][^>]*>([\s\S]*?)<\/div>/i)?.[1])
+    const cities = locations?.split(',').map(value=>value.trim()) || []
+    if (!title || !jobId || jobId !== controlId || jobId !== applyId || !description || seen.has(jobId) || !cities.length || cities.some(city=>!['Ahmedabad','Pune'].includes(city))) {
+      throw new Error('InfoCusp verified Zoho card identity, application or India location changed')
+    }
+    seen.add(jobId)
+    return {title,company:COMPANY,department:null,location:locations+', India',city:locations,country:'India',jobId,requisitionId:jobId,sourceUrl:CAREERS_URL,applyUrl,employmentType:null,experienceRequired:null,minimumQualification:null,preferredQualification:null,requiredSkills:[],postingDate:null,closingDate:null,jobDescription:description}
+  })
+}
+
 export const hasVerifiedCareersPageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
@@ -99,7 +122,7 @@ export const hasVerifiedCareersPageSignal = (html) => {
     && /rel=["']canonical["'][^>]+href=["']https:\/\/www\.infocusp\.com\/careers\/openings\/["']/i.test(rawHtml)
     && /Current Openings/i.test(normalized)
     && /Explore Open Positions/i.test(normalized)
-    && /jobs-container/i.test(rawHtml)
+    && (/jobs-container/i.test(rawHtml) || (/href=["']https:\/\/infocusp\.zohorecruit\.in\/jobs\/Careers\/?["']/i.test(rawHtml) && extractCurrentZohoJobs(rawHtml).length > 0))
 }
 
 export const extractCareersBundlePath = (html) =>
@@ -170,6 +193,7 @@ export const extractSearchResults = (payload, { domain } = {}) =>
 
 export const extractServerRenderedJobs = (html = '') => {
   const page = String(html ?? '')
+  if (/aria-controls=["']job-details-\d+["']/i.test(page)) return extractCurrentZohoJobs(page)
   const jobs = []
   const seen = new Set()
   const cards = page.matchAll(/<div class=["']job-card\b[\s\S]*?(?=<div class=["']job-card\b|<\/section>|$)/gi)

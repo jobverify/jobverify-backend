@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -111,6 +112,19 @@ export const hasOfficialCareersPageSignal = (html) => {
     && /Scan QR code to apply/i.test(normalized)
   }
 
+export const hasVerifiedEmptyCareersSignal = (html) => {
+  const page = String(html ?? '')
+  const widget = page.match(/id="job-openings--grid"[\s\S]*?<div class="elementor-posts-nothing-found"><\/div>/i)?.[0]
+  return /<title>\s*Careers\s*-\s*Innovation Incubator\s*<\/title>/i.test(page)
+    && /<link rel="canonical" href="https:\/\/innovationincubator\.com\/careers\/"/i.test(page)
+    && /We empower everyone to embark on their own career growth/i.test(page)
+    && /<h2[^>]*>Current Openings<\/h2>/i.test(page)
+    && Boolean(widget)
+    && /data-widget_type="posts\.custom"/i.test(widget)
+    && !/<article\b[^>]*\bjob type-job status-publish\b/i.test(page)
+    && !/href="https:\/\/innovationincubator\.com\/job\//i.test(page)
+}
+
 export const extractJobCards = (html) => {
   const cards = []
   const articlePattern = /<article id="post-\d+" class="[^"]*\bjob type-job status-publish\b[\s\S]*?<\/article>/gi
@@ -198,6 +212,20 @@ export const createInnovationIncubatorScraper = ({
 } = {}) => ({
   async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
     const careersHtml = await fetchText(CAREERS_PAGE_URL)
+
+    if (hasVerifiedEmptyCareersSignal(careersHtml)) {
+      return attachInventoryEvidence([], {
+        status: 'verified-empty',
+        surface: CAREERS_PAGE_URL,
+        firstParty: true,
+        listingComplete: true,
+        pagesFetched: 1,
+        reportedTotal: 0,
+        indiaFacetCount: 0,
+        verifiedAt: now(),
+        reason: 'innovationincubator-current-openings-widget-empty',
+      })
+    }
 
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('Innovation Incubator careers page no longer matches the verified first-party jobs surface')

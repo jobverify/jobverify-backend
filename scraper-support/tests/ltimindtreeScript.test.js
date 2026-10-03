@@ -1,130 +1,96 @@
-import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
+﻿import assert from 'node:assert/strict'
 import test from 'node:test'
-import { fileURLToPath } from 'node:url'
 
 import {
   buildIndiaSearchUrl,
+  buildSearchRequestPayload,
+  buildDetailUrl,
+  buildApplyUrl,
   createLtimindtreeScraper,
-  extractJobDetail,
-  extractResultsSummary,
-  extractSearchResults,
 } from '../../scraper/ltimindtree/script.js'
 
-const fixturesDir = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  'fixtures',
-  'ltimindtree',
-)
+const listing = (id, city = 'Bengaluru') => `<jobVoList><jobSeq>${id}</jobSeq><jobTitle>Specialist ${id}</jobTitle><jobLocation>India</jobLocation><locations>${city}</locations><jobId>REQ-${id}</jobId></jobVoList>`
+const page = (start, total, rows) => `<JobPageVO><startJobIndex>${start}</startJobIndex><maxJobSize>2</maxJobSize><totalJobCount>${total}</totalJobCount>${rows.join('')}</JobPageVO>`
+const detail = (id) => `<CandidateJobVO><companyVO><companyCd>LTIMINDIA</companyCd></companyVO><jobVO><jobSeq>${id}</jobSeq><jobTitle>Specialist ${id}</jobTitle><jobId>REQ-${id}</jobId><locations>Bengaluru</locations><jobDesc><![CDATA[Build and maintain software services for clients.]]></jobDesc><jobReqExp>5 - 7 Years</jobReqExp><jobType>Permanent</jobType></jobVO></CandidateJobVO>`
 
-const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
-
-test('buildIndiaSearchUrl keeps LTIMindtree listing pages on the official India search route', () => {
-  assert.equal(
-    buildIndiaSearchUrl(),
-    'https://careers.ltm.com/search/?createNewAlert=false&q=&optionsFacetsDD_country=&optionsFacetsDD_location=&locationsearch=India',
-  )
+test('LTIMindtree uses the India Ripplehire board linked by the official LTM careers page', () => {
+  assert.equal(buildIndiaSearchUrl(), 'https://ltimindtree.ripplehire.com/candidate/?token=xviyQvbnyYZdGtozXoNm&lang=en&source=CAREERSITE#list/geo=India')
+  assert.deepEqual(buildSearchRequestPayload(1, 2), {
+    page: 1, search: '*:*', token: 'xviyQvbnyYZdGtozXoNm', source: 'CAREERSITE', pagesize: 2, geo: 'India',
+  })
+  assert.match(buildDetailUrl('898694'), /#detail\/job\/898694$/)
+  assert.match(buildApplyUrl('898694'), /#apply\/job\/898694$/)
 })
 
-test('extractSearchResults parses LTIMindtree India search rows into shared scraper fields', () => {
-  const html = readFixture('india-search.html')
-  const jobs = extractSearchResults(html)
-
-  assert.equal(jobs.length, 2)
-  assert.deepEqual(jobs[0], {
-    title: 'Senior Software Engineer',
-    location: 'Bengaluru, IN',
-    city: 'Bengaluru',
-    jobId: '679605001',
-    requisitionId: '679605001',
-    sourceUrl: 'https://careers.ltm.com/job/Bengaluru-Senior-Software-Engineer/679605001/',
-    postingDate: 'Jun 16, 2026',
-  })
-  assert.equal(jobs[1].location, 'Chennai, TN, IN')
-})
-
-test('extractResultsSummary reads LTIMindtree total result and page counts from the listing chrome', () => {
-  const html = readFixture('india-search.html')
-
-  assert.deepEqual(extractResultsSummary(html), {
-    totalResults: 2,
-    currentPage: 1,
-    totalPages: 1,
-  })
-})
-
-test('extractJobDetail pulls LTIMindtree apply URL, req id, description, and job segments from the detail page', () => {
-  const html = readFixture('job-detail-679605001.html')
-  const detail = extractJobDetail(html, {
-    sourceUrl: 'https://careers.ltm.com/job/Bengaluru-Senior-Software-Engineer/679605001/',
-    title: 'Senior Software Engineer',
-    location: 'Bengaluru, IN',
-    city: 'Bengaluru',
-  })
-
-  assert.deepEqual(detail, {
-    title: 'Senior Software Engineer',
-    location: 'Bengaluru, IN',
-    city: 'Bengaluru',
-    jobId: '536167',
-    requisitionId: '536167',
-    employmentType: 'Full-time',
-    experienceRequired: '2 to 4 years of software development experience',
-    jobDescription:
-      'RESPONSIBILITIES: Understand the current capabilities and functionalities of the existing production platform Deliver new functionality for the internal production platform for the ESG Business Datapoint and Calculation development for ESG Business Analyze requirements, recommend and implement solutions, and assist UAT Closely collaborate with Product Management, Quality Assurance, Data Operation and IT Infrastructure on all stages of software development life cycle. DESIRED EXPERIENCE AND QUALIFICATIONS: 2 to 4 years of software development experience. Ruby software development. Good understanding of Domain Specific Language (DSL) concept Relational Databases, especially Oracle. Excellent problem solving skills High degree of motivation, with strong written communication skills Good verbal communication skills required for working as a part of a geographically distributed team. Ability to learn quickly, grasp important concepts, and working independently if the situation demands. Bachelor degree in Computer Science, Mathematics, Engineering, related field, or equivalent experience.',
-    minimumQualification:
-      'Bachelor degree in Computer Science, Mathematics, Engineering, related field, or equivalent experience.',
-    preferredQualification: null,
-    requiredSkills: [
-      'ERP',
-      'Software Engineer',
-      'Computer Science',
-      'Senior Product Manager',
-      'Database',
-      'Technology',
-      'Engineering',
-      'Operations',
-    ],
-    postingDate: 'Tue Jun 16 02:00:00 UTC 2026',
-    closingDate: null,
-    applyUrl: 'https://careers.ltm.com/talentcommunity/apply/679605001/?locale=en_US',
-    sourceUrl: 'https://careers.ltm.com/job/Bengaluru-Senior-Software-Engineer/679605001/',
-  })
-})
-
-test('LTIMindtree run decorates listing and detail pages into shared job records', async () => {
-  const searchHtml = readFixture('india-search.html')
+test('LTIMindtree paginates the complete India count and fetches each description', async () => {
+  const calls = []
   const jobs = await createLtimindtreeScraper().run({
-    fetchPage: async (url) => {
-      if (url === buildIndiaSearchUrl()) {
-        return { status: 200, url, html: searchHtml }
+    pageSize: 2,
+    detailConcurrency: 2,
+    fetchText: async (url, options = {}) => {
+      calls.push({ url, options })
+      if (url.endsWith('/candidatejobsearch')) {
+        const params = JSON.parse(new URLSearchParams(options.body).get('careerSiteUrlParams'))
+        if (params.page === 0) return page(0, 3, [listing('1'), listing('2')])
+        if (params.page === 1) return page(2, 3, [listing('3')])
       }
-
-      if (/679605001/.test(url)) {
-        return { status: 200, url, html: readFixture('job-detail-679605001.html') }
-      }
-
-      if (/870365101/.test(url)) {
-        return { status: 200, url, html: readFixture('job-detail-870365101.html') }
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
+      const id = new URL(url).searchParams.get('jobSeq')
+      if (id) return detail(id)
+      throw new Error(`Unexpected request: ${url}`)
     },
   })
 
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].company, 'LTIMindtree')
+  assert.equal(jobs.length, 3)
+  assert.deepEqual(jobs.map(job => job.jobId), ['1', '2', '3'])
   assert.equal(jobs[0].source, 'ltimindtree')
-  assert.equal(jobs[0].jobId, '536167')
-  assert.equal(jobs[1].title, 'Specialist - Software Engineering')
-  assert.equal(jobs[1].link, jobs[1].applyUrl)
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].company, 'LTIMindtree')
+  assert.equal(jobs[0].requisitionId, 'REQ-1')
+  assert.match(jobs[0].jobDescription, /Build and maintain/)
+  assert.equal(jobs[0].link, buildApplyUrl('1'))
+  assert.equal(jobs[0].sourceUrl, buildDetailUrl('1'))
+  assert.equal(calls.filter(call => call.url.endsWith('/candidatejobsearch')).length, 2)
 })
 
-
-test('LTIMindtree rejects incomplete or unrecognized listing snapshots', async () => {
-  const html = readFixture('india-search.html')
-  for (const broken of ['<title>Maintenance</title>', html.replace(/of <b>2<\/b>/, 'of <b>3</b>')]) {
-    await assert.rejects(createLtimindtreeScraper().run({fetchPage: async url => ({status:200,url,html:broken})}), /incomplete|invalid/i)
+test('LTIMindtree rejects a truncated or duplicated India listing page', async () => {
+  for (const broken of [page(0, 2, [listing('1')]), page(0, 2, [listing('1'), listing('1')])]) {
+    await assert.rejects(
+      createLtimindtreeScraper().run({ pageSize: 2, fetchText: async () => broken }),
+      /incomplete|duplicate/i,
+    )
   }
+})
+
+test('LTIMindtree rejects a missing job description', async () => {
+  await assert.rejects(
+    createLtimindtreeScraper().run({
+      pageSize: 2,
+      fetchText: async (url) => url.endsWith('/candidatejobsearch')
+        ? page(0, 1, [listing('1')])
+        : '<CandidateJobVO><companyVO><companyCd>LTIMINDIA</companyCd></companyVO><jobVO><jobSeq>1</jobSeq><jobDesc/></jobVO></CandidateJobVO>',
+    }),
+    /incomplete job detail/i,
+  )
+})
+
+test('LTIMindtree retains a role with unspecified city on the India board after company verification', async () => {
+  const unspecified = '<jobVoList><jobSeq>1</jobSeq><jobTitle>Specialist</jobTitle><jobLocation/><locations>Select Location</locations><jobId>1</jobId></jobVoList>'
+  const jobs = await createLtimindtreeScraper().run({
+    pageSize: 2,
+    fetchText: async url => url.endsWith('/candidatejobsearch')
+      ? page(0, 1, [unspecified])
+      : detail('1').replace('<locations>Bengaluru</locations>', '<locations>Select Location</locations>'),
+  })
+  assert.equal(jobs[0].location, 'India')
+  assert.equal(jobs[0].city, null)
+})
+
+test('LTIMindtree preserves text in encoded descriptions with a stray angle bracket', async () => {
+  const jobs = await createLtimindtreeScraper().run({
+    pageSize: 2,
+    fetchText: async url => url.endsWith('/candidatejobsearch')
+      ? page(0, 1, [listing('1')])
+      : detail('1').replace('Build and maintain software services for clients.', '&lt;\n&lt;li>Build and maintain software services for clients.&lt;/li>'),
+  })
+  assert.match(jobs[0].jobDescription, /Build and maintain software services for clients/)
 })

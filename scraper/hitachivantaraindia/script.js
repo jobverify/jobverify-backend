@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchHitachiParadoxJobs, normalizeHitachiParadoxJob } from '../../scraper-support/shared/hitachiParadoxJobs.js'
 import HITACHI_VANTARA_INDIA_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -10,7 +11,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = HITACHI_VANTARA_INDIA_CATALOG.source
 export const COMPANY = HITACHI_VANTARA_INDIA_CATALOG.companyName
 export const OFFICIAL_COMPANY_LABEL = HITACHI_VANTARA_INDIA_CATALOG.officialCompanyLabel
-export const SEARCH_PAGE_URL = HITACHI_VANTARA_INDIA_CATALOG.companyCareerPage
+export const SEARCH_PAGE_URL = 'https://careers.hitachi.com/search/hitachi-vantara-india-private-limited/jobs'
 export const VERIFIED_ON = HITACHI_VANTARA_INDIA_CATALOG.verifiedOn
 export const PROVIDER_METADATA = HITACHI_VANTARA_INDIA_CATALOG
 
@@ -425,6 +426,7 @@ export const createHitachiVantaraIndiaScraper = ({
     fetchImpl: overrideFetchImpl,
     maxJobs: overrideMaxJobs = maxJobs,
     now = () => new Date().toISOString(),
+    useLegacySearchPage = false,
   } = {}) {
     const fetchTextImpl = overrideFetchText || fetchText
     const fetchApplyImpl = overrideFetchImpl || fetchImpl
@@ -447,8 +449,22 @@ export const createHitachiVantaraIndiaScraper = ({
     const fetchPageImpl = overrideFetchPage
       || (overrideFetchText ? createFetchPageFromText(fetchPageText) : fetchPage)
 
+    const fetchCurrentJobs = async () => {
+      const currentJobs = await fetchHitachiParadoxJobs({
+        brand: 'Hitachi Vantara Global',
+        country: 'India',
+        legalName: OFFICIAL_COMPANY_LABEL,
+        fetchText: fetchPageText,
+      })
+      return currentJobs
+        .slice(0, overrideMaxJobs || currentJobs.length)
+        .map((job) => normalizeHitachiParadoxJob(job, { company: COMPANY, source: SOURCE, now }))
+    }
+    if (!useLegacySearchPage) return fetchCurrentJobs()
+
     const listingPageUrl = buildSearchPageUrl()
     const listingPage = await fetchPageImpl(listingPageUrl)
+    if (Number(listingPage?.status) === 404) return fetchCurrentJobs()
     if (isVerifiedCloudflareChallengedPage(listingPage, listingPageUrl)) {
       return []
     }

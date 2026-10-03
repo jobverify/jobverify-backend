@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About — Drytis</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#0B0B0C">
+<meta name="description" content="AI writes software. Drytis gives you the engineer behind it: human engineering experience, talent and judgment, available to anyone, in real time." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet" />
+
+
+</head>
+<body>
+
+<div style="position:relative;z-index:0;color:var(--ink);min-height:100vh;overflow-x:clip;">
+  <div aria-hidden="true" style="position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;opacity:var(--aur);transition:opacity .6s;">
+    <div style="position:absolute;left:-12vw;top:-18vh;width:62vw;height:62vw;border-radius:50%;background:radial-gradient(circle at center,var(--a1) 0%,transparent 62%);filter:blur(40px);animation:drift1 28s ease-in-out infinite alternate;"></div>
+    <div style="position:absolute;right:-16vw;top:4vh;width:58vw;height:58vw;border-radius:50%;background:radial-gradient(circle at center,var(--a2) 0%,transparent 62%);filter:blur(40px);animation:drift2 32s ease-in-out infinite alternate;"></div>
+  </div>
+  <div aria-hidden="true" style="position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:var(--grain);background-image:url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'180'%20height%3D'180'%3E%3Cfilter%20id%3D'n'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'.85'%20numOctaves%3D'2'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20values%3D'0%200%200%200%20.5%20%200%200%200%200%20.5%20%200%200%200%200%20.5%20%200%200%200%201%200'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'100%25'%20height%3D'100%25'%20filter%3D'url(%23n)'%2F%3E%3C%2Fsvg%3E');background-size:180px 180px;mix-blend-mode:overlay;"></div>
+
+  <header class="site-pill">
+    <div class="pill-in">
+      <a href="/" class="wordmark" aria-label="Drytis home">
+        <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true" style="display:block;overflow:visible;flex:none;"><defs><linearGradient id="dg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--logo-a)"></stop><stop offset="1" style="stop-color:var(--logo-b)"></stop></linearGradient></defs><path d="M15 12 A9.5 9.5 0 0 0 15 31 Z" fill="url(#dg1)"></path><path d="M18 6.5 L26 1.5 L26 31 L18 31 Z" fill="var(--ink)"></path></svg>
+        <span style="letter-spacing:-.055em;">drytis</span>
+      </a>
+      <nav class="pill-nav">
+        <a href="/solutions/">Solutions</a>
+        <a href="/pricing/">Pricing</a>
+        <a href="#top" aria-current="page">About</a>
+        <a href="/contact/">Contact</a>
+      </nav>
+      <div class="pill-actions">
+        <a href="https://studio.drytis.ai/login" class="login" data-hide-sm>Log in</a>
+        <a href="https://studio.drytis.ai/signup" class="cta-notch" data-hide-sm>Get started</a>
+        <button id="themeBtn" class="pill-theme" type="button" aria-label="Toggle color theme" data-hide-sm><span class="ind"></span></button>
+      </div>
+      <button class="mb-burger" id="mbBurger" type="button" aria-expanded="false" aria-controls="mbSheet" aria-label="Menu"><i></i></button>
+    </div>
+  </header>
+
+  <div class="mb-sheet pill-sheet" id="mbSheet">
+    <a class="mb-link" href="/solutions/">Solutions</a>
+    <a class="mb-link" href="/pricing/">Pricing</a>
+    <a class="mb-link" href="/about/" aria-current="page">About</a>
+    <a class="mb-link" href="/contact/">Contact</a>
+    <div class="mb-actions">
+      <a href="https://studio.drytis.ai/login">Log in</a>
+      <a href="https://studio.drytis.ai/signup" class="mb-primary">Get started</a>
+      <button type="button" class="mb-theme" id="mbTheme" aria-label="Toggle color theme"><span style="width:12px;height:12px;border-radius:50%;border:1.5px solid var(--ink);background:linear-gradient(90deg,var(--ink) 50%,transparent 50%);display:block;"></span></button>
+    </div>
+  </div>
+
+
+  <section id="top" data-screen-label="Hero" style="padding:clamp(64px,9vw,128px) 0 0;text-align:center;">
+    <div style="max-width:1320px;margin:0 auto;padding:0 clamp(16px,3vw,40px);">
+      <div data-reveal style="font-size:15px;font-weight:500;color:var(--dim);">What Drytis is</div>
+      <h1 data-reveal style="margin:18px auto 0;font-size:clamp(36px,5.8vw,84px);line-height:1.05;letter-spacing:-.062em;font-weight:600;max-width:14em;text-wrap:balance;">We turned <span style="white-space:nowrap;"><span style="display:inline-block;padding:0 .16em .05em;border-radius:.22em;background:var(--accent);color:var(--accent-ink);line-height:1.1;">‘hire an engineer’</span></span> into something you can buy by the token.</h1>
+      <p data-reveal style="margin:clamp(20px,2.2vw,28px) auto 0;font-size:clamp(19px,2vw,28px);line-height:1.3;letter-spacing:-.035em;font-weight:500;color:var(--dim);max-width:38ch;text-wrap:balance;">Drytis is human intelligence, tokenized and accessible — priced, measured, and delivered the same transparent way AI already is.</p>
+    </div>
+
+    <div data-reveal style="max-width:1320px;margin:clamp(56px,7vw,96px) auto 0;padding:0 clamp(16px,3vw,40px);">
+      <div style="position:relative;overflow:hidden;border-radius:clamp(24px,3vw,40px);background-color:var(--card2);background-image:radial-gradient(color-mix(in srgb,var(--ink) 14%,transparent) 1px,transparent 1.2px);background-size:22px 22px;padding:clamp(48px,7vw,104px) clamp(20px,5vw,80px);">
+        <span class="mark-glow" aria-hidden="true"></span>
+        <div class="halves">
+          <p class="halves-cap l" style="margin:0;"><small>AI</small>AI writes software.</p>
+          <svg class="mark" viewBox="0 0 32 32" role="img" aria-label="The Drytis mark: two halves coming together">
+            <defs><linearGradient id="dgHero" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--logo-a)"></stop><stop offset="1" style="stop-color:var(--logo-b)"></stop></linearGradient></defs>
+            <path class="h-ai" d="M15 12 A9.5 9.5 0 0 0 15 31 Z" fill="url(#dgHero)"></path>
+            <path class="h-eng" d="M18 6.5 L26 1.5 L26 31 L18 31 Z" style="fill:var(--ink);"></path>
+          </svg>
+          <p class="halves-cap r" style="margin:0;"><small>Drytis</small>Drytis gives you the engineer behind it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="other-half" data-screen-label="The other half" style="max-width:1320px;margin:0 auto;padding:clamp(110px,13vw,190px) clamp(16px,3vw,40px) 0;scroll-margin-top:68px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:clamp(32px,6vw,96px);align-items:start;">
+      <div>
+        <div style="font-size:15px;font-weight:500;color:var(--dim);">The other half</div>
+        <h2 data-reveal style="margin:14px 0 0;font-size:clamp(40px,5.4vw,80px);line-height:1;letter-spacing:-.06em;font-weight:600;max-width:12ch;text-wrap:balance;">Drytis exists to do the other half.</h2>
+      </div>
+      <div data-reveal style="display:flex;flex-direction:column;gap:22px;padding-top:clamp(0px,2.4vw,34px);font-size:clamp(17px,1.4vw,20px);line-height:1.7;color:var(--dim);">
+        <p style="margin:0;">AI is accessible to anyone: type a prompt, get code, get output. It's changing everything — but only half of what really matters.</p>
+        <p style="margin:0;">We make human engineering experience, talent, and judgment accessible to anyone in the world, in real time. <span style="color:var(--ink);">Not as a service. Not as a luxury. As a built-in layer of human intelligence inside our model.</span></p>
+      </div>
+    </div>
+
+    <div data-reveal style="margin-top:clamp(48px,6vw,80px);border-radius:36px;background:var(--card);border:1px solid var(--line);padding:clamp(24px,4vw,56px);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px 32px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:clamp(24px,2.4vw,34px);font-weight:600;letter-spacing:-.045em;line-height:1.1;">Human intelligence, metered</div>
+          <div style="margin-top:8px;font-size:16px;color:var(--dim);">Available the moment generation stops being enough.</div>
+        </div>
+      </div>
+      <div class="jbar" aria-hidden="true">
+        <span class="j-flag">The moment generation stops being enough</span>
+        <span class="j-gen">AI generation</span>
+        <span class="j-hum">Human intelligence<span class="j-live"><i></i>Live</span></span>
+      </div>
+      <p style="margin:clamp(28px,3vw,40px) 0 0;max-width:70ch;font-size:clamp(16px,1.3vw,18px);line-height:1.7;color:var(--dim);">We take the kind of human software engineers who design systems, fix failures, worry about security, and carry responsibility for what ships — and we make that engineering available through Edge and Albert when a project needs more than generation.</p>
+    </div>
+  </section>
+
+  <section id="engineers" data-screen-label="About Drytis engineers" style="max-width:1320px;margin:0 auto;padding:clamp(110px,13vw,190px) clamp(16px,3vw,40px) 0;scroll-margin-top:68px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:clamp(32px,6vw,96px);align-items:start;">
+      <div data-sticky style="position:sticky;top:100px;">
+        <div style="font-size:15px;font-weight:500;color:var(--dim);">About Drytis engineers</div>
+        <h2 data-reveal style="margin:14px 0 0;font-size:clamp(38px,5vw,76px);line-height:1;letter-spacing:-.06em;font-weight:600;max-width:13ch;text-wrap:balance;">We believe the future is built by engineers. AI just made them more powerful.</h2>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:26px;font-size:clamp(17px,1.4vw,20px);line-height:1.75;color:var(--dim);">
+        <p data-reveal style="margin:0;">Every AI company is out there selling the same fantasy: that AI replaces engineers, replaces teams, replaces the hard part. It is great marketing. It is also not true — and the companies selling it know that better than anyone. The people selling that story do not even operate that way themselves. <span style="color:var(--ink);">Behind every serious AI product is a team of serious engineers building, testing, securing, scaling, and taking responsibility for what ships.</span></p>
+        <p data-reveal style="margin:0;">AI was trained by great engineers to learn code. AI was trained by great engineers to write code. That is real. But writing code, writing syntax, is not the same thing as engineering. <span style="color:var(--ink);">Engineers built the roads, bridges, buildings, planes, spaceships, and the systems that run the world.</span></p>
+      </div>
+    </div>
+
+    <div style="margin-top:clamp(96px,12vw,176px);text-align:center;">
+      <div style="font-size:15px;font-weight:500;color:var(--dim);">Engineers know the truth</div>
+      <p class="lit" id="lit">Tools evolve. AI can generate output. Engineers deliver outcomes.</p>
+    </div>
+  </section>
+
+  <section id="why" data-screen-label="Why we built Drytis" style="max-width:1320px;margin:0 auto;padding:clamp(110px,13vw,190px) clamp(16px,3vw,40px) 0;scroll-margin-top:68px;">
+    <div style="text-align:center;">
+      <div style="font-size:15px;font-weight:500;color:var(--dim);">Why we built Drytis</div>
+      <h2 data-reveal style="margin:14px auto 0;font-size:clamp(36px,4.8vw,72px);line-height:1.02;letter-spacing:-.058em;font-weight:600;max-width:17ch;text-wrap:balance;">To give anyone with ingenuity access to the engineering talent needed to release their vision to the world.</h2>
+      <p data-reveal style="margin:22px auto 0;font-size:clamp(17px,1.4vw,20px);line-height:1.6;color:var(--dim);">From the moment you log in to the moment you go live.</p>
+    </div>
+
+    <div class="story" style="margin-top:clamp(64px,8vw,112px);">
+      <p data-reveal>When the first coding agents arrived, they told the world anyone could write software and ship products. They promised that people with vision could finally build without barriers. It sounded right. It felt possible. But for most people, it never happened. <span style="color:var(--ink);">People got stuck.</span></p>
+      <div data-reveal><span class="refrain r1">“I need an engineer.”</span></div>
+      <p data-reveal>They found themselves testing software and trying their best to fix it. They found themselves doing the job of software engineers — chasing bugs, worrying about security, and trying to hold everything together. <span style="color:var(--ink);">Then came the language barrier.</span></p>
+      <div data-reveal><span class="refrain r2">“I need an engineer.”</span></div>
+      <p data-reveal>There is a huge difference between explaining what you want as a human and getting back what AI builds as an engineer. Speaking as an engineer and speaking as a human are not the same thing. The models keep getting better. <span style="color:var(--ink);">But people are still getting stuck in the same place.</span></p>
+    </div>
+
+    <div style="padding-top:clamp(80px,10vw,144px);text-align:center;">
+      <div style="font-size:15px;font-weight:500;color:var(--dim);">That place has a name</div>
+      <p data-reveal style="margin:20px auto 0;font-size:clamp(54px,10vw,156px);line-height:.95;letter-spacing:-.07em;font-weight:600;text-wrap:balance;">I need an <span style="white-space:nowrap;"><span style="display:inline-block;padding:0 .14em .06em;border-radius:.2em;background:var(--accent);color:var(--accent-ink);line-height:1.05;">engineer</span>.</span></p>
+      <p data-reveal style="margin:clamp(40px,5vw,64px) auto 0;max-width:30ch;font-size:clamp(24px,2.6vw,38px);line-height:1.2;letter-spacing:-.045em;font-weight:600;text-wrap:balance;">Drytis puts real engineers, real human intelligence, inside the loop so people with vision are not forced to become engineers just to ship their dreams.</p>
+    </div>
+  </section>
+
+  <section id="tokenized" data-screen-label="We tokenize human intelligence" style="max-width:1320px;margin:0 auto;padding:clamp(110px,13vw,190px) clamp(16px,3vw,40px) 0;scroll-margin-top:68px;">
+    <div style="border-radius:36px;background:var(--card);border:1px solid var(--line);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));overflow:hidden;">
+      <div style="padding:clamp(28px,4.2vw,68px);display:flex;flex-direction:column;justify-content:space-between;gap:40px;">
+        <div>
+          <div style="font-size:15px;font-weight:500;color:var(--dim);">We tokenize human intelligence</div>
+          <h2 data-reveal style="margin:14px 0 0;font-size:clamp(36px,4.6vw,68px);line-height:1;letter-spacing:-.06em;font-weight:600;max-width:12ch;text-wrap:balance;">Real engineering talent, priced like AI work.</h2>
+          <p data-reveal style="margin:22px 0 0;font-size:17px;line-height:1.65;color:var(--dim);max-width:46ch;">AI models use tokens to measure input and output. We extended that same metering to human engineers. Every line of code, every review, every fix — metered the same way AI tokens are metered. So you pay for engineering work the same transparent, usage-based way you pay for AI.</p>
+        </div>
+        <div data-reveal><a href="/pricing/" style="display:inline-flex;align-items:center;height:46px;padding:0 22px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-size:15px;font-weight:500;">See how it's priced</a></div>
+      </div>
+      <div style="position:relative;background:#0B0B0C;background-image:radial-gradient(70% 60% at 100% 0%,rgba(91,60,255,.28) 0%,transparent 60%),radial-gradient(60% 50% at 0% 100%,rgba(0,184,159,.2) 0%,transparent 60%);color:#F4F4F0;padding:clamp(28px,4.2vw,68px);display:flex;flex-direction:column;justify-content:space-between;gap:40px;">
+        <div data-reveal>
+          <div style="font-size:clamp(56px,7vw,104px);line-height:.9;letter-spacing:-.065em;font-weight:600;">Tokenized</div>
+          <div style="margin-top:14px;font-size:17px;color:rgba(244,244,240,.68);">Human intelligence, metered like AI.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;">
+          <div data-reveal style="display:flex;gap:14px;align-items:center;padding:18px 0;border-top:1px solid rgba(255,255,255,.12);font-size:clamp(16px,1.35vw,19px);font-weight:500;letter-spacing:-.02em;"><span aria-hidden="true" style="flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:12px;">✓</span>You never overpay for idle time.</div>
+          <div data-reveal style="display:flex;gap:14px;align-items:center;padding:18px 0;border-top:1px solid rgba(255,255,255,.12);font-size:clamp(16px,1.35vw,19px);font-weight:500;letter-spacing:-.02em;transition-delay:.08s;"><span aria-hidden="true" style="flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:12px;">✓</span>You never guess what an engineer costs.</div>
+          <div data-reveal style="display:flex;gap:14px;align-items:center;padding:18px 0;border-top:1px solid rgba(255,255,255,.12);border-bottom:1px solid rgba(255,255,255,.12);font-size:clamp(16px,1.35vw,19px);font-weight:500;letter-spacing:-.02em;transition-delay:.16s;"><span aria-hidden="true" style="flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:12px;">✓</span>You see exactly what the work consumed.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="community" data-screen-label="Founder community" style="max-width:1320px;margin:0 auto;padding:clamp(110px,13vw,190px) clamp(16px,3vw,40px) 0;scroll-margin-top:68px;">
+    <div data-reveal style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:clamp(24px,4vw,56px);align-items:center;border-radius:36px;background:var(--t3);padding:clamp(28px,4vw,56px);">
+      <div>
+        <h3 style="margin:0;font-size:clamp(28px,3vw,44px);line-height:1.05;letter-spacing:-.05em;font-weight:600;max-width:16ch;text-wrap:balance;">Founders building with Drytis hang out here.</h3>
+        <p style="margin:16px 0 0;font-size:17px;line-height:1.6;color:var(--dim);max-width:44ch;">A small community where builders trade what shipped, what broke, and what the AI could not finish. Drytis engineers drop in too.</p>
+        <a href="mailto:contact@drytis.com?subject=Founder%20Community" class="hv-scale" style="display:inline-flex;align-items:center;height:48px;margin-top:26px;padding:0 22px;border-radius:999px;background:var(--ink);color:var(--bg);font-size:15px;font-weight:500;">Want in when it launches? Tell us</a>
+      </div>
+      <div aria-hidden="true" style="display:flex;flex-direction:column;align-items:flex-start;gap:8px;">
+        <span style="padding:12px 18px;border-radius:20px 20px 20px 6px;background:var(--card);box-shadow:var(--shadow);font-size:16px;font-weight:500;letter-spacing:-.02em;">What shipped</span>
+        <span style="align-self:flex-end;padding:12px 18px;border-radius:20px 20px 6px 20px;background:var(--ink);color:var(--bg);box-shadow:var(--shadow);font-size:16px;font-weight:500;letter-spacing:-.02em;">What broke</span>
+        <span style="padding:12px 18px;border-radius:20px 20px 20px 6px;background:var(--card);box-shadow:var(--shadow);font-size:16px;font-weight:500;letter-spacing:-.02em;">What the AI could not finish</span>
+        <span style="display:inline-flex;align-items:center;gap:10px;margin-top:6px;padding:9px 14px 9px 9px;border-radius:999px;background:#0B0B0C;color:#F4F4F0;font-size:13.5px;"><span style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:10px;font-weight:700;">DE</span>A Drytis engineer dropped in</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="blog" data-screen-label="From the Drytis blog" style="max-width:1320px;margin:0 auto;padding:clamp(110px,13vw,190px) clamp(16px,3vw,40px) 0;scroll-margin-top:68px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:15px;font-weight:500;color:var(--dim);">From the Drytis blog</div>
+        <h2 data-reveal style="margin:14px 0 0;font-size:clamp(40px,5.6vw,84px);line-height:1;letter-spacing:-.06em;font-weight:600;">Read more.</h2>
+      </div>
+      <a data-reveal href="/blog/" style="display:inline-flex;align-items:center;height:46px;padding:0 22px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-size:15px;font-weight:500;">All essays</a>
+    </div>
+    <div data-reveal style="margin-top:clamp(36px,4.6vw,64px);">
+      <a class="post" href="/blog/#essay/there-is-no-such-thing-as-software-engineering"><span class="post-t">Software Engineering Is More Than Writing Code</span><span class="post-go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M7 17 L17 7 M9 7 H17 V15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></a>
+      </div>
+  </section>
+
+  <section data-screen-label="Final CTA" style="max-width:1320px;margin:0 auto;padding:clamp(110px,13vw,190px) clamp(16px,3vw,40px) clamp(40px,5vw,72px);">
+    <div style="position:relative;border-radius:clamp(28px,3vw,44px);overflow:hidden;background-color:#08080B;background-image:radial-gradient(60% 80% at 0% 0%,rgba(91,60,255,.22) 0%,transparent 60%),radial-gradient(50% 70% at 100% 100%,rgba(0,184,159,.16) 0%,transparent 60%);color:#F4F4F0;padding:clamp(64px,9vw,140px) clamp(20px,4vw,64px);text-align:center;">      <h2 data-reveal style="position:relative;margin:0 auto;font-size:clamp(40px,6vw,96px);line-height:1;letter-spacing:-.06em;font-weight:600;max-width:12ch;text-wrap:balance;">The other half of AI isn't more AI. It's us.</h2>
+      <div data-reveal style="position:relative;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:clamp(32px,3.6vw,48px);">
+        <a href="https://studio.drytis.ai/login" class="hv-scale" style="display:inline-flex;align-items:center;height:52px;padding:0 26px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-size:15.5px;font-weight:500;">Start building</a>
+        <a href="/contact/?topic=Starting%20a%20build" style="display:inline-flex;align-items:center;height:52px;padding:0 26px;border-radius:999px;border:1px solid rgba(255,255,255,.24);background:rgba(255,255,255,.06);color:#F4F4F0;font-size:15.5px;font-weight:500;">Talk to an engineer</a>
+      </div>
+    </div>
+  </section>
+
+  <footer style="max-width:1320px;margin:0 auto;padding:clamp(24px,3vw,40px) clamp(16px,3vw,40px) 40px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:clamp(24px,3vw,48px);">
+      <div style="grid-column:span 2;min-width:240px;">
+        <div style="display:flex;align-items:center;gap:10px;font-size:26px;font-weight:600;letter-spacing:-.05em;"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true" style="display:block;overflow:visible;flex:none;"><defs><linearGradient id="dg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--logo-a)"></stop><stop offset="1" style="stop-color:var(--logo-b)"></stop></linearGradient></defs><path d="M15 12 A9.5 9.5 0 0 0 15 31 Z" fill="url(#dg2)"></path><path d="M18 6.5 L26 1.5 L26 31 L18 31 Z" fill="var(--ink)"></path></svg><span style="letter-spacing:-.055em;">drytis</span></div>
+        <p style="margin:14px 0 0;font-size:15px;line-height:1.55;color:var(--dim);max-width:32ch;">AI and engineers, building together — so no idea gets stuck.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:14.5px;">
+        <span style="font-size:13px;color:var(--dim);margin-bottom:4px;">Product</span>
+        <a href="/solutions/">Solutions</a><a href="/pricing/">Pricing</a><a href="/about/">About</a><a href="/contact/">Contact</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:14.5px;">
+        <span style="font-size:13px;color:var(--dim);margin-bottom:4px;">Company</span>
+        <a href="/blog/">Blog</a><a href="/careers/">Careers</a><a href="/trust/">Trust &amp; Security</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:14.5px;">
+        <span style="font-size:13px;color:var(--dim);margin-bottom:4px;">Policies</span>
+        <a href="/legal/terms/">Terms of Service</a><a href="/legal/privacy/">Privacy Policy</a><a href="/legal/dpa/">DPA</a><a href="/legal/aup/">Acceptable Use</a>
+      </div>
+    </div>
+    <div aria-hidden="true" style="margin-top:clamp(48px,6vw,80px);display:flex;align-items:flex-end;gap:.08em;font-size:clamp(80px,19vw,280px);line-height:.8;letter-spacing:-.075em;font-weight:600;color:var(--ink);user-select:none;"><span style="display:block;width:.8em;flex:none;margin-bottom:.02em;"><svg viewBox="0 0 32 32" width="100%" height="100%" aria-hidden="true" style="display:block;overflow:visible;flex:none;"><defs><linearGradient id="dg3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--logo-a)"></stop><stop offset="1" style="stop-color:var(--logo-b)"></stop></linearGradient></defs><path d="M15 12 A9.5 9.5 0 0 0 15 31 Z" fill="url(#dg3)"></path><path d="M18 6.5 L26 1.5 L26 31 L18 31 Z" fill="var(--ink)"></path></svg></span><span>drytis</span></div>
+    <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--dim);">
+      <span>© 2026 Drytis. All rights reserved.</span>
+      <a href="mailto:hello@drytis.com" style="color:inherit;">hello@drytis.com</a>
+    </div>
+  </footer>
+</div>
+
+</body>
+</html>

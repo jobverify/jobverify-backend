@@ -26,7 +26,7 @@ const loadScraperModule = async () => {
   }
 }
 
-test('SignEasy local catalog captures the verified first-party careers page with no trustworthy public jobs surface', async () => {
+test('SignEasy local catalog captures the official Recruiterbox jobs widget', async () => {
   const { SIGNEASY_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const signeasy = await loadScraperModule()
   const provider = hydrateProviderCatalogEntry(SIGNEASY_CATALOG)
@@ -39,22 +39,20 @@ test('SignEasy local catalog captures the verified first-party careers page with
   assert.equal(provider.companyCareerPage, 'https://signeasy.com/careers')
   assert.equal(provider.officialCareersPageUrl, 'https://signeasy.com/careers')
   assert.equal(provider.companyDomain, 'signeasy.com')
-  assert.equal(provider.atsPlatform, 'first-party-careers-page-with-no-trustworthy-public-jobs')
+  assert.equal(provider.atsPlatform, 'recruiterbox-trakstar-widget')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-public-page')
+  assert.equal(provider.paginationStrategy, 'official-widget-complete-openings-feed')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+no-trustworthy-public-job-listings',
+    'verified-first-party-widget-14690+recruiterbox-openings+trakstar-role-links',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.match(provider.dryRunFile, /signeasy[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/signeasy\.com\/careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /Apply Now/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public job/i)
+  assert.match(provider.verifiedSurfaceSummary, /Recruiterbox widget 14690/i)
+  assert.match(provider.verifiedSurfaceSummary, /four Bengaluru roles/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'SignEasy'), false)
 
   assert.equal(signeasy.PROVIDER_METADATA.source, SIGNEASY_CATALOG.source)
@@ -85,7 +83,7 @@ test('SignEasy hydrated local catalog stays script-runner compatible for central
   assert.equal(provider.companyName, 'SignEasy')
   assert.equal(provider.companyCareerPage, 'https://signeasy.com/careers')
   assert.equal(provider.companyDomain, 'signeasy.com')
-  assert.equal(provider.atsPlatform, 'first-party-careers-page-with-no-trustworthy-public-jobs')
+  assert.equal(provider.atsPlatform, 'recruiterbox-trakstar-widget')
   assert.match(provider.modulePath, /signeasy[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /signeasy[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')

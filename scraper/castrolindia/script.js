@@ -9,6 +9,8 @@ export const SOURCE = 'castrolindia'
 export const COMPANY = 'Castrol India'
 export const SITEMAP_URL = 'https://www.castrol.com/en_in/india/home/sitemap.html'
 export const CAREERS_PAGE_URL = 'https://www.castrol.com/en_in/india/home/about-castrol/careers.html'
+export const GREENHOUSE_BOARD_URL = 'https://job-boards.eu.greenhouse.io/castrol'
+export const GREENHOUSE_JOBS_URL = 'https://boards-api.greenhouse.io/v1/boards/castrol/jobs?content=true'
 export const GRADUATE_PROGRAMMES_URL =
   'https://www.castrol.com/en_in/india/home/about-castrol/careers/graduate-programmes.html'
 export const BP_CAREERS_URL = 'https://www.bp.com/en/global/corporate/careers.html'
@@ -91,6 +93,15 @@ const defaultFetchPage = (url) => withRetry(async () => {
   label: SOURCE,
 })
 
+const defaultFetchGreenhouseJobs = (url = GREENHOUSE_JOBS_URL) => withRetry(async () => {
+  const response = await fetch(url, {
+    headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
+    signal: createTimeoutSignal(20000),
+  })
+  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
+  return response.json()
+}, { attempts: 3, baseDelayMs: 2000, label: `${SOURCE}-greenhouse` })
+
 export const buildBpAlgoliaSearchParams = ({
   page = 0,
   hitsPerPage = 100,
@@ -151,6 +162,62 @@ export const hasOfficialCareersPageSignal = (html) => {
     && normalized.includes('be part of our story')
     && normalized.includes('working with us offers reward, prestige and the opportunity to do brilliant things.')
     && page.includes('/en_in/india/home/about-castrol/careers.html')
+}
+
+export const hasOfficialGreenhouseCareersSignal = (html) => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page)
+  return /<title[^>]*>\s*Careers\s*\|\s*Castrol India\s*<\/title>/i.test(page)
+    && /Castrol careers in India/i.test(text)
+    && /Explore our jobs/i.test(text)
+    && /href=["']https:\/\/job-boards\.eu\.greenhouse\.io\/castrol["']/i.test(page)
+    && page.includes(CAREERS_PAGE_URL)
+}
+
+export const hasOfficialGreenhouseBoardSignal = (html) => {
+  const page = String(html ?? '')
+  return /<title[^>]*>\s*Jobs at Castrol\s*<\/title>/i.test(page)
+    && /Current positions at Castrol/i.test(normalizeWhitespace(page))
+}
+
+export const extractGreenhouseIndiaJobs = (payload) => {
+  if (!Array.isArray(payload?.jobs)) {
+    throw new Error('Castrol Greenhouse board no longer exposes a jobs array')
+  }
+
+  return payload.jobs.map((job) => {
+    const id = String(job?.id ?? '')
+    const title = normalizeWhitespace(job?.title)
+    const location = normalizeWhitespace(job?.location?.name)
+    const url = String(job?.absolute_url ?? '')
+    if (!/^\d+$/.test(id) || !title || !location || url !== `${GREENHOUSE_BOARD_URL}/jobs/${id}`) {
+      throw new Error('Castrol Greenhouse board returned an invalid job or foreign board URL')
+    }
+    if (!/^India\s*-\s*/i.test(location)) return null
+
+    const officeLocation = normalizeWhitespace(job?.offices?.[0]?.location)
+    return {
+      title,
+      company: COMPANY,
+      department: normalizeWhitespace(job?.departments?.[0]?.name),
+      location,
+      city: officeLocation ? officeLocation.split(',')[0].trim() : location.replace(/^India\s*-\s*/i, ''),
+      country: 'India',
+      jobId: id,
+      requisitionId: null,
+      sourceUrl: url,
+      applyUrl: url,
+      employmentType: null,
+      experienceRequired: null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: normalizeWhitespace(job?.content) || null,
+      remoteStatus: null,
+    }
+  }).filter(Boolean)
 }
 
 export const hasOfficialGraduateProgrammesSignal = (html) => {
@@ -287,6 +354,7 @@ export const createCastrolIndiaScraper = () => ({
   async run({
     fetchPage = defaultFetchPage,
     fetchAlgoliaJobs = defaultFetchAlgoliaJobs,
+    fetchGreenhouseJobs = defaultFetchGreenhouseJobs,
   } = {}) {
     const sitemapPage = await fetchPage(SITEMAP_URL)
     if (
@@ -298,6 +366,23 @@ export const createCastrolIndiaScraper = () => ({
     }
 
     const careersPage = await fetchPage(CAREERS_PAGE_URL)
+    if (careersPage.status === 200
+      && careersPage.url === CAREERS_PAGE_URL
+      && hasOfficialGreenhouseCareersSignal(careersPage.html)) {
+      const boardPage = await fetchPage(GREENHOUSE_BOARD_URL)
+      if (boardPage.status !== 200
+        || boardPage.url !== GREENHOUSE_BOARD_URL
+        || !hasOfficialGreenhouseBoardSignal(boardPage.html)) {
+        throw new Error('Castrol Greenhouse board no longer matches the official careers handoff')
+      }
+      const jobs = extractGreenhouseIndiaJobs(await fetchGreenhouseJobs(GREENHOUSE_JOBS_URL))
+      return jobs.map((job) => ({
+        ...job,
+        source: SOURCE,
+        link: job.applyUrl,
+        scrapedAt: new Date().toISOString(),
+      }))
+    }
     if (
       careersPage.status !== 200
       || careersPage.url !== CAREERS_PAGE_URL

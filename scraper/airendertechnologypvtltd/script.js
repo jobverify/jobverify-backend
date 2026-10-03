@@ -103,6 +103,13 @@ export const isVerifiedMissingCareerRoute = (page = {}) =>
   && normalizeWhitespace(page?.html).toLowerCase() === '404 Not Found 404 Not Found nginx/1.24.0 (Ubuntu)'.toLowerCase()
   && !hasPublicJobsSignal(page?.html)
 
+export const isVerifiedSpaFallbackRoute = (page = {}, routeUrl, homepageHtml) =>
+  Number(page?.status) === 200
+  && page?.url === routeUrl
+  && hasOfficialHomepageSignal(page?.html)
+  && String(page?.html ?? '') === String(homepageHtml ?? '')
+  && !hasPublicJobsSignal(page?.html)
+
 export const createAiRenderTechnologyPvtLtdScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
@@ -134,7 +141,10 @@ export const createAiRenderTechnologyPvtLtdScraper = () => ({
     for (const routeUrl of CAREERS_ROUTE_URLS) {
       const routePage = await fetchPage(routeUrl)
 
-      if (!isVerifiedMissingCareerRoute(routePage)) {
+      if (
+        !isVerifiedMissingCareerRoute(routePage)
+        && !isVerifiedSpaFallbackRoute(routePage, routeUrl, homepage.html)
+      ) {
         throw new Error(`aiRender Technology Pvt Ltd verified no-public-careers route changed: ${routePage.url || routeUrl}`)
       }
     }

@@ -215,6 +215,8 @@ test('saveToDB reports enrichment and bulk write stage boundaries', async () => 
     assert.deepEqual(stages, [
       'enrichment:start',
       'enrichment:done',
+      'classification:start',
+      'classification:done',
       'bulkWrite:start',
       'bulkWrite:done',
     ])
@@ -271,6 +273,49 @@ test('saveToDB does not start bulk write after a lifecycle abort', async () => {
   } finally {
     Job.bulkWrite = originalBulkWrite
     Job.deleteMany = originalDeleteMany
+    restoreReadyState()
+  }
+})
+
+test('saveToDB stores the complete scraped description and keeps it when a later scrape omits it', async () => {
+  const restoreReadyState = setReadyState(1)
+  const originalBulkWrite = Job.bulkWrite
+  const updates = []
+
+  Job.bulkWrite = async (operations) => {
+    updates.push(operations[0].updateOne.update)
+    return { upsertedCount: 0, modifiedCount: 1 }
+  }
+
+  try {
+    const job = {
+      title: 'Backend Engineer',
+      company: 'Example Corp',
+      location: 'Bengaluru, India',
+      city: 'Bengaluru',
+      link: 'https://careers.example.com/jobs/description-test',
+      jobDescription: 'Responsibilities:\nBuild services.\n\nRequirements:\nFive years of experience.',
+    }
+    const options = {
+      enrichPublicExperience: false,
+      refreshDatasetSummary: false,
+      replaceExisting: false,
+    }
+
+    await saveToDB([job], 'example-source', options)
+    await saveToDB([{ ...job, jobDescription: null }], 'example-source', options)
+    await saveToDB([{ ...job, jobDescription: null, description: 'Full alternate description.' }], 'example-source', options)
+
+    assert.equal(
+      updates[0].$set.description,
+      'Responsibilities:\nBuild services.\n\nRequirements:\nFive years of experience.',
+    )
+    assert.equal(Object.hasOwn(updates[0], '$unset') && Object.hasOwn(updates[0].$unset, 'description'), false)
+    assert.equal(Object.hasOwn(updates[1].$set, 'description'), false)
+    assert.equal(Object.hasOwn(updates[1], '$unset') && Object.hasOwn(updates[1].$unset, 'description'), false)
+    assert.equal(updates[2].$set.description, 'Full alternate description.')
+  } finally {
+    Job.bulkWrite = originalBulkWrite
     restoreReadyState()
   }
 })

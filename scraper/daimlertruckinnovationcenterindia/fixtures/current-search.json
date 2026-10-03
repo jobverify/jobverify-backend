@@ -1,0 +1,42 @@
+{
+  "LanguageCode": "EN",
+  "SearchParameters": {
+    "Sort": [
+      {
+        "Criterion": "PublicationStartDate",
+        "Direction": "DESC"
+      }
+    ]
+  },
+  "SearchResult": {
+    "SearchResultCount": 1,
+    "SearchResultCountAll": 1,
+    "SearchResultItems": [
+      {
+        "MatchedObjectId": "413231",
+        "MatchedObjectDescriptor": {
+          "PositionID": "5405",
+          "PositionTitle": "DTICI_Snowflake_Data_engineer_T8",
+          "PositionURI": "https://jobsearch.daimlertruck.com//index.php?ac=jobad&id=413231",
+          "PublicationChannel": [
+            {
+              "StartDate": "2025-11-13"
+            },
+            {
+              "StartDate": "2025-11-13"
+            },
+            {
+              "StartDate": "2025-11-13"
+            }
+          ],
+          "ParentOrganization": "4068",
+          "PublicationStartDate": "2025-11-13"
+        },
+        "RelevanceRank": 1
+      }
+    ],
+    "UserArea": {
+      "ExecutionError": 0
+    }
+  }
+}

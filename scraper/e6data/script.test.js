@@ -37,6 +37,16 @@ const officialHomepageHtml = `
   </html>
 `
 
+const currentHomepageHtml = `
+  <html lang="en">
+    <head><title>e6data: lakehouse compute engine for the agentic era</title></head>
+    <body>
+      <a href="/careers">Careers</a>
+      <h1>The data plane for the agentic era</h1>
+    </body>
+  </html>
+`
+
 const officialCareersPageHtml = `
   <html lang="en">
     <head>
@@ -232,6 +242,11 @@ test('helpers recognize the verified August 14, 2026 homepage, careers handoff, 
   assert.equal(hasOfficialCareersPageSignal(officialCareersPageHtml), true)
   assert.equal(hasOfficialPortalSignal(officialPortalHtml), true)
   assert.deepEqual(extractIndiaJobs(officialApiPayload), expectedIndiaJobs)
+})
+
+test('homepage signal accepts the current e6data title while preserving its official careers link', () => {
+  assert.equal(hasOfficialHomepageSignal(currentHomepageHtml), true)
+  assert.equal(hasOfficialHomepageSignal(currentHomepageHtml.replace('href="/careers"', 'href="/contact"')), false)
 })
 
 test('run returns only explicitly India-scoped jobs from the verified public Zoho API', async () => {

@@ -47,18 +47,20 @@ test('Syllable local catalog captures the verified first-party careers page and 
   assert.equal(provider.paginationStrategy, 'single-first-party-linked-rippling-board-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-rippling-board-page+india-job-detail-pages',
+    'verified-first-party-careers-page+verified-rippling-listings-or-explicit-unfiltered-zero-payload+India-job-details',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-05')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.match(provider.dryRunFile, /syllable[\\/]jobs\.json$/i)
+  assert.equal(provider.verifiedPublicJobCount, 0)
+  assert.equal(provider.verifiedIndiaJobCount, 0)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Wednesday, August 5, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/syllable\.ai\/careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/ats\.rippling\.com\/syllable-corporation\/jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /Software Engineer II/i)
-  assert.match(provider.verifiedSurfaceSummary, /Mountain View, CA/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /official Syllable AI careers page/i)
+  assert.match(provider.verifiedSurfaceSummary, /exact Syllable Corporation Rippling board/i)
+  assert.match(provider.verifiedSurfaceSummary, /unfiltered job-posts query succeeds/i)
+  assert.match(provider.verifiedSurfaceSummary, /totalItems 0 and totalPages 0/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Syllable'), false)
 
   assert.equal(syllable.PROVIDER_METADATA.source, SYLLABLE_CATALOG.source)

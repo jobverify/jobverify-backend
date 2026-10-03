@@ -51,7 +51,7 @@ test('getScraperCatalog includes Credit Suisse as a verified UBS-handoff sentine
   assert.equal(provider.officialCareersRedirectUrl, 'https://www.ubs.com/global/en/careers.html')
   assert.equal(provider.officialSearchJobsUrl, 'https://www.ubs.com/global/en/careers/search-jobs.html')
   assert.equal(provider.officialJobsBoardHost, 'https://jobs.ubs.com')
-  assert.equal(provider.verifiedOn, '2026-07-14')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.match(provider.verifiedSurfaceSummary, /redirects to UBS Global Careers/i)
   assert.match(provider.verifiedSurfaceSummary, /no trustworthy Credit Suisse-branded public jobs surface/i)
   assert.match(provider.modulePath, /creditsuisse[\\/]script\.js$/i)

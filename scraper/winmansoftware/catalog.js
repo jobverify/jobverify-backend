@@ -9,18 +9,18 @@ export const WINMAN_SOFTWARE_CATALOG = {
   officialBrandName: 'Winman Software',
   adapter: 'script',
   homepageUrl: 'https://www.winmansoftware.com/',
-  companyCareerPage: 'https://www.winmansoftware.com/careers/experienced/',
-  applyUrl: 'https://winman.in/jobs/resumedetail.aspx',
+  companyCareerPage: 'https://www.winmansoftware.com/more/careers/',
+  applyUrl: 'https://winman.in/jobs/resume.aspx',
   atsPlatform: 'official-first-party-html-table',
   countryFilter: 'India',
   paginationStrategy: 'single-page',
-  extractionStrategy: 'html-table',
+  extractionStrategy: 'first-party-freshers-and-experienced-tables+fresher-detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'winmansoftware.com',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.winmansoftware.com/careers/experienced/ was the live first-party Winman Software experienced-candidates careers page, that it exposed a public HTML table with current openings including Senior Accountant and Electrical Maintenance Supervisor, and that the page handed applicants to the first-party application route https://winman.in/jobs/resumedetail.aspx.',
+    'Verified on October 3, 2026 that the old experienced careers URL redirects in browser to https://www.winmansoftware.com/more/careers/. The current first-party page lists 14 fresher roles with individual detail pages and eight experienced roles in its public table, and links applicants to https://winman.in/jobs/resume.aspx.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

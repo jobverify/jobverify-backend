@@ -13,15 +13,15 @@ export const ZIFO_RND_SOLUTIONS_CATALOG = {
   companyCareerPage: 'https://careers.zifo.com/',
   officialCareersPageUrl: 'https://careers.zifo.com/',
   companyDomain: 'careers.zifo.com',
-  atsPlatform: 'official-company-careers-no-current-india-vacancies',
+  atsPlatform: 'workable',
   countryFilter: 'India',
-  paginationStrategy: 'verified-single-first-party-careers-page-with-no-current-india-vacancies',
-  extractionStrategy: 'verified-first-party-careers-page+explicit-no-vacancies-copy-returns-empty',
+  paginationStrategy: 'first-party-india-links-plus-complete-workable-published-jobs-feed',
+  extractionStrategy: 'verified-first-party-india-links+workable-public-api+explicit-india-country-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://careers.zifo.com/ is the live first-party Zifo RnD Solutions careers page, that its Zifo India section still exposes stale role text such as Assistant Manager - Finance, Chennai, and that the same page explicitly says "we do not have any vacancies at this moment," so this provider is pinned as a fail-closed sentinel until a trustworthy public jobs surface reappears.',
+    'Verified on October 3, 2026 that https://careers.zifo.com/ links two Zifo India roles to Workable. The documented public Workable API at https://www.workable.com/api/accounts/zifo?details=true lists 41 published location records and the same two India roles. An outdated popup still says no vacancies; the scraper uses the matching first-party links and published feed.',
 }
 
 export default ZIFO_RND_SOLUTIONS_CATALOG

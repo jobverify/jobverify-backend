@@ -14,10 +14,10 @@ test('Astronics is registered against the verified group careers chain for Diagn
   assert.equal(provider.companyCareerPage, 'https://www.astronics.com/careers')
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-careers-page-plus-embedded-appone-location-index')
+  assert.equal(provider.paginationStrategy, 'homepage-plus-careers-page-plus-country-limited-jobs-page-or-embedded-appone-location-index')
   assert.equal(
     provider.extractionStrategy,
-    'verified-diagnosys-homepage+verified-astronics-careers-page+verified-jobs-page+embedded-appone-board-without-india-locations-return-empty',
+    'verified-diagnosys-homepage+verified-astronics-careers-page+verified-us-jobs-page-without-india-or-embedded-appone-board-without-india-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

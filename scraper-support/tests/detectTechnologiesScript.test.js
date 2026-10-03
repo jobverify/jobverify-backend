@@ -91,3 +91,30 @@ test('run fetches the official Detect Technologies openings page and decorates e
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.equal(typeof jobs[0].scrapedAt, 'string')
 })
+
+test('Detect Technologies reads the current Webflow openings cards', async () => {
+  const detect = await loadDetectTechnologiesModule()
+  const webflowHtml = `<html><head><title>Current Openings</title><meta name="generator" content="Webflow"></head><body>
+    <div id="roles"><div class="w-dyn-list"><div role="list" class="w-dyn-items">
+    <div role="listitem" class="w-dyn-item"><div class="job-listing-card">
+      <h3 class="text-size-medium">Junior Software Operations and Maintenance Engineer</h3>
+      <div>Mode:</div><div>Full Time</div><div>Exp:</div><div>Freshers</div>
+      <div>Location:</div><div>Chennai</div><div>Mode:</div><div>Work from office</div>
+      <a href="/careers/junior-software-operations-and-maintenance-engineer" class="button is-icon w-inline-block"><div>Apply Now</div></a>
+    </div></div>
+    <div role="listitem" class="w-dyn-item"><div class="job-listing-card">
+      <h3 class="text-size-medium">Delivery Engineer DA Robotics (Drone Pilot)</h3>
+      <div>Mode:</div><div>Full Time</div><div>Exp:</div><div>1-1.5 yrs</div>
+      <div>Location:</div><div>Chennai</div><div>Mode:</div><div>Work from office</div>
+      <a href="/careers/delivery-engineer-da-robotics-drone-pilot" class="button is-icon w-inline-block"><div>Apply Now</div></a>
+    </div></div></div></div></div></body></html>`
+
+  assert.equal(detect.pageIndicatesJobCards(webflowHtml), true)
+  const jobs = await detect.createDetectTechnologiesScraper().run({ fetchText: async () => webflowHtml })
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].title, 'Junior Software Operations and Maintenance Engineer')
+  assert.equal(jobs[0].city, 'Chennai')
+  assert.equal(jobs[0].employmentType, 'Full Time')
+  assert.equal(jobs[0].experienceRequired, 'Freshers')
+  assert.equal(jobs[0].applyUrl, 'https://detecttechnologies.com/careers/junior-software-operations-and-maintenance-engineer')
+})

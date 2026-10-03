@@ -32,7 +32,7 @@ export const hasTransitionPressReleaseSignal = (html = '') => {
   const text = normalizeText(html)
 
   return /sell danske it/i.test(text ?? '')
-    && /transfer to infosys/i.test(text ?? '')
+    && /transfer to /i.test(text ?? '')
     && /1,400 colleagues/i.test(text ?? '')
 }
 

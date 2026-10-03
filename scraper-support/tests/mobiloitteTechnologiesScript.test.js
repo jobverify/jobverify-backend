@@ -54,3 +54,33 @@ test('Mobiloitte Technologies can recover with a browser-backed careers page whe
   assert.deepEqual(browserUrls, [mobiloitte.CAREERS_URL])
   assert.deepEqual(jobs, [])
 })
+
+const liveLikeCareersHtml = careersHtml
+  .replace('<div>No Jobs Found</div>', '<div class="CurrentOpenings_jobCard__x"><h3 class="CurrentOpenings_jobTitle__x">Interns-Software Engineer</h3><p class="CurrentOpenings_jobDescription__x">Intern software engineer role</p><span>Mobiloitte Delhi Office</span><a href="/careers/JOB000016" class="CurrentOpenings_viewLink__x">View Details</a></div><div class="CurrentOpenings_jobCard__x"><h3 class="CurrentOpenings_jobTitle__x">Sr Business Development Manager</h3><p class="CurrentOpenings_jobDescription__x">AI sales role</p><span>Mobiloitte Delhi Office</span><a href="/careers/JOB000013" class="CurrentOpenings_viewLink__x">View Details</a></div>')
+  .replace("<p>We couldn't find any jobs matching your criteria.</p>", '')
+const roleDetail = (title, id) => '<html><title>Apply For ' + title + ' At Mobiloitte Technologies India Pvt. Ltd.</title><link rel="canonical" href="https://www.mobiloitte.com/careers/' + id + '"></html>'
+
+test('Mobiloitte Technologies collects first-party Delhi roles from its current careers page', async () => {
+  const mobiloitte = await loadModule()
+  const jobs = await mobiloitte.run({
+    fetchText: async (url) => {
+      if (url === mobiloitte.CAREERS_URL) return liveLikeCareersHtml
+      if (url.endsWith('/JOB000016')) return roleDetail('Interns-Software Engineer', 'JOB000016')
+      if (url.endsWith('/JOB000013')) return roleDetail('Sr Business Development Manager', 'JOB000013')
+      throw new Error('Unexpected URL: ' + url)
+    },
+    now: () => '2026-10-03T00:00:00.000Z',
+  })
+  assert.deepEqual(jobs.map((job) => job.jobId), ['JOB000016', 'JOB000013'])
+  assert.deepEqual(jobs.map((job) => job.title), ['Interns-Software Engineer', 'Sr Business Development Manager'])
+  assert.equal(jobs[0].location, 'Delhi, India')
+  assert.equal(jobs[0].applyUrl, 'https://www.mobiloitte.com/careers/JOB000016')
+  assert.equal(jobs[0].scrapedAt, '2026-10-03T00:00:00.000Z')
+})
+
+test('Mobiloitte Technologies rejects a role card without a valid first-party detail link', async () => {
+  const mobiloitte = await loadModule()
+  await assert.rejects(mobiloitte.run({
+    fetchText: async () => liveLikeCareersHtml.replace('/careers/JOB000013', 'https://other.example/job'),
+  }), /card|role|link/i)
+})

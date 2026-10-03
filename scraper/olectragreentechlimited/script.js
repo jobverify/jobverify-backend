@@ -231,11 +231,116 @@ export const extractPublicJobs = (html) => {
   })
 }
 
+export const CURRENT_CAREERS_URL = 'https://www.olectra.com/career'
+
+const readNextData = html => {
+  const raw = String(html).match(/<script\s+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i)?.[1]
+  if (!raw) throw new Error('Olectra current careers/detail Next data is missing')
+  try { return JSON.parse(raw) } catch { throw new Error('Olectra current careers/detail Next data is malformed') }
+}
+
+const hasOlectraCanonical = (html, path) => {
+  const canonical = String(html).match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i)?.[1]
+  try {
+    const url = new URL(canonical)
+    return url.protocol === 'https:' && /^(www\.)?olectra\.com$/i.test(url.hostname) && url.pathname === path
+  } catch { return false }
+}
+
+export const hasCurrentHomepageSignal = (html) => {
+  const page = String(html)
+  const text = stripTags(page)
+  return /<title[^>]*>\s*Olectra-Greentech\s*<\/title>/i.test(page)
+    && hasOlectraCanonical(page, '/')
+    && text.includes('Pioneering Electric Buses and Electric Tippers in India.')
+    && text.includes('Olectra is a leading Indian green technology company focused on electric mobility and innovative energy solutions.')
+    && readNextData(page).page === '/'
+}
+
+const parseCurrentIndiaLocation = (value) => {
+  const location = normalizeWhitespace(value)
+  if (location === 'Hyderabad') return { location, city: 'Hyderabad', country: 'India' }
+  if (location === 'Seetharampur, Telangana') return { location, city: 'Seetharampur', country: 'India' }
+  throw new Error('Olectra current opening location/geography is unverified: ' + location)
+}
+
+export const extractCurrentOpeningSummaries = (html) => {
+  const page = String(html)
+  const data = readNextData(page)
+  const props = data.props?.pageProps
+  if (!/<title[^>]*>\s*Career \| Olectra-Greentech\s*<\/title>/i.test(page)
+    || !hasOlectraCanonical(page, '/career')
+    || data.page !== '/career'
+    || props?.careerPage?.slug !== 'career'
+    || !props.careerPage.sections?.some(section => section.__component === 'career.open-positions')
+    || !stripTags(page).includes('Explore Open Positions')
+    || !Array.isArray(props.openings) || props.openings.length === 0) {
+    throw new Error('Olectra current public career listing changed materially')
+  }
+  const visibleLinks = [...page.matchAll(/href=["'](\/openings\/[a-z0-9-]+)["']/g)].map(match => match[1])
+  if (visibleLinks.length !== props.openings.length || new Set(visibleLinks).size !== props.openings.length) {
+    throw new Error('Olectra current public career listing count does not match its visible links')
+  }
+  const ids = new Set()
+  return props.openings.map(opening => {
+    if (!Number.isInteger(opening.id) || !opening.documentId || ids.has(opening.documentId)
+      || !/^[a-z0-9-]+$/.test(opening.slug || '')
+      || !normalizeWhitespace(opening.title) || !normalizeWhitespace(opening.qualification)
+      || !normalizeWhitespace(opening.experience)
+      || !visibleLinks.includes('/openings/' + opening.slug)
+      || !stripTags(page).includes(normalizeWhitespace(opening.title))) {
+      throw new Error('Olectra current public opening summary is incomplete or mismatched')
+    }
+    ids.add(opening.documentId)
+    return { ...opening, ...parseCurrentIndiaLocation(opening.location) }
+  })
+}
+
+const runCurrentCareers = async (fetchText, now) => {
+  const summaries = extractCurrentOpeningSummaries(await fetchText(CURRENT_CAREERS_URL))
+  const jobs = []
+  for (const summary of summaries) {
+    const sourceUrl = 'https://www.olectra.com/openings/' + summary.slug
+    const html = await fetchText(sourceUrl)
+    const data = readNextData(html)
+    const props = data.props?.pageProps
+    const detail = props?.opening
+    const visible = stripTags(html)
+    const description = stripTags(props?.descriptionHtml)
+    if (data.page !== '/openings/[slug]' || !hasOlectraCanonical(html, '/openings/' + summary.slug)
+      || !detail || ['id', 'documentId', 'slug', 'title', 'location', 'experience', 'qualification'].some(key => detail[key] !== summary[key])
+      || detail.jobStatus !== 'Open' || !visible.includes(normalizeWhitespace(detail.title))
+      || !visible.includes(normalizeWhitespace(detail.location)) || !visible.includes('Submit Application')
+      || !/<form\s+class=["']enq-card["']/i.test(html)
+      || !/id=["']op-apply-name["']/i.test(html)
+      || !/id=["']op-apply-email["']/i.test(html)
+      || !/id=["']op-apply-resume["']\s+type=["']file["']/i.test(html)
+      || description.length < 100) {
+      throw new Error('Olectra current opening detail/status or application form is incomplete or mismatched: ' + sourceUrl)
+    }
+    const jobId = SOURCE + '-' + summary.documentId
+    jobs.push({
+      title: normalizeWhitespace(detail.title), company: COMPANY, department: null,
+      ...parseCurrentIndiaLocation(detail.location), jobId, requisitionId: detail.jobReferenceId || summary.documentId,
+      sourceUrl, applyUrl: sourceUrl, employmentType: null, workplaceType: null,
+      experienceRequired: normalizeWhitespace(detail.experience), minimumQualification: normalizeWhitespace(detail.qualification),
+      preferredQualification: null, requiredSkills: [], postingDate: null,
+      closingDate: detail.applicationEndDate?.slice(0, 10) || null, jobDescription: description,
+      source: SOURCE, link: sourceUrl, scrapedAt: now(), companyCareerPage: CURRENT_CAREERS_URL,
+      companyDomain: COMPANY_DOMAIN, atsPlatform: 'official-company-careers',
+    })
+  }
+  return jobs
+}
+
 export const createOlectraGreentechLimitedScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
     const homepageHtml = await fetchText(HOMEPAGE_URL)
+    if (hasCurrentHomepageSignal(homepageHtml)) {
+      return runCurrentCareers(fetchText, overrideNow || now)
+    }
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error(HOMEPAGE_ERROR)
     }

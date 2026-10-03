@@ -1,5 +1,5 @@
 ﻿export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 16, 2026 that https://www.joinhgs.com/in/en is the live first-party HGS India careers landing page, that it links candidates to the public category pages at https://careers.joinhgs.com/India/go/BPM-Jobs-India/7947010/ and https://careers.joinhgs.com/India/go/Digital-Data-And-Analytics-Jobs-India/7947110/, and that those pages expose the public RSS feeds https://careers.joinhgs.com/services/rss/category/?catid=7947010 and https://careers.joinhgs.com/services/rss/category/?catid=7947110. During verification those linked feeds returned 12 India openings in total, including Process Consultant and SAC Planning Consultant.'
+  'Verified October 3, 2026: the HGS India landing and both category pages still link to their public RSS feeds. BPM RSS lists one Trainee Process Consultant role in Bangalore; Digital RSS exposes the ATS no-jobs sentinel and no active roles.'
 
 export const HINDUJA_GLOBAL_SERVICES_CATALOG = {
   source: 'hindujaglobalservices',
@@ -16,9 +16,9 @@ export const HINDUJA_GLOBAL_SERVICES_CATALOG = {
   bpmJobsRssUrl: 'https://careers.joinhgs.com/services/rss/category/?catid=7947010',
   digitalJobsRssUrl: 'https://careers.joinhgs.com/services/rss/category/?catid=7947110',
   verifiedSampleJobUrl:
-    'https://careers.joinhgs.com/India/job/Hyderabad-Process-Consultant-TG-500019/1362905766/',
-  verifiedPublicJobCount: 12,
-  verifiedIndiaJobCount: 12,
+    'https://careers.joinhgs.com/India/job/Bengaluru-Urban-Trainee-Process-Consultant-KA-560068/1367615866/',
+  verifiedPublicJobCount: 1,
+  verifiedIndiaJobCount: 1,
   atsPlatform: 'jobs2web-rss',
   countryFilter: 'India',
   paginationStrategy: 'official-careers-landing-plus-linked-category-rss-feeds',
@@ -26,7 +26,7 @@ export const HINDUJA_GLOBAL_SERVICES_CATALOG = {
     'verified-joinhgs-landing+verified-category-pages+jobs2web-rss-feeds+india-job-normalization',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 15, 2026 that https://www.auxilo.com/ is the live Auxilo homepage, that https://www.auxilo.com/careers is the first-party careers page, and that it links job seekers to the public Workline entry URL https://app1176.workline.hr/candidate, which resolves to https://app1176.workline.hr/Cportal/GeneralOpening.aspx. Verified the public Workline listing API https://app1176.workline.hr/CPortal/generalopening.aspx/GetCurrentopening returned 21 live job records, and verified the public detail/apply route pattern on https://app1176.workline.hr/CandidatePortal/b48c8d0a-777c-4046-8617-f41f8bfe5004/Territory-Credit-Head---EIL-Job-in-Hyderabad-1325 with the public apply handoff https://app1176.workline.hr/Candidate/SignInv1.aspx?PRFCode=b48c8d0a-777c-4046-8617-f41f8bfe5004&Flag=C&DirectApply=1.'
+  'Verified on October 3, 2026 that https://www.auxilo.com/ and https://www.auxilo.com/careers remain first-party Auxilo pages. The careers page now has the title Careers at Auxilo | Join Our Education Finance Team and still links to https://app1176.workline.hr/candidate, which resolves to https://app1176.workline.hr/Cportal/GeneralOpening.aspx. The public Workline API https://app1176.workline.hr/CPortal/generalopening.aspx/GetCurrentopening returned 16 live job records; each detail and apply route was verified, including https://app1176.workline.hr/CandidatePortal/56dc33ad-1f13-475c-958d-7c7dcb92df9f/Senior-Executive---Customer-Service-Job-in-Mumbai---Corporate-Office-1-1391 and its SignInv1.aspx application handoff.'
 
 export const AUXILO_CATALOG = {
   source: 'auxilo',
@@ -19,9 +19,9 @@ export const AUXILO_CATALOG = {
   jobsBoardUrl: 'https://app1176.workline.hr/Cportal/GeneralOpening.aspx',
   jobsApiUrl: 'https://app1176.workline.hr/CPortal/generalopening.aspx/GetCurrentopening',
   sampleDetailUrl:
-    'https://app1176.workline.hr/CandidatePortal/b48c8d0a-777c-4046-8617-f41f8bfe5004/Territory-Credit-Head---EIL-Job-in-Hyderabad-1325',
+    'https://app1176.workline.hr/CandidatePortal/56dc33ad-1f13-475c-958d-7c7dcb92df9f/Senior-Executive---Customer-Service-Job-in-Mumbai---Corporate-Office-1-1391',
   sampleApplyUrl:
-    'https://app1176.workline.hr/Candidate/SignInv1.aspx?PRFCode=b48c8d0a-777c-4046-8617-f41f8bfe5004&Flag=C&DirectApply=1',
+    'https://app1176.workline.hr/Candidate/SignInv1.aspx?PRFCode=56dc33ad-1f13-475c-958d-7c7dcb92df9f&Flag=C&DirectApply=1',
   companyDomain: 'auxilo.com',
   atsPlatform: 'workline-public-jobs-api',
   countryFilter: 'India',
@@ -30,7 +30,7 @@ export const AUXILO_CATALOG = {
     'verified-homepage+verified-first-party-careers-page+workline-handoff+currentopening-json-api+detail-page-apply-validation',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

@@ -5,7 +5,7 @@ import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/ut
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = 'amberstudent'
 export const COMPANY = 'Amberstudent'
-export const VERIFIED_ON = '2026-09-13'
+export const VERIFIED_ON = '2026-10-03'
 export const CAREERS_URL = 'https://amberstudent.com/career'
 export const JOB_OPENING_URL = 'https://amberstudent.com/job-opening'
 export const KEKA_BOARD_URL = 'https://amberstudent.keka.com/careers/'
@@ -45,6 +45,12 @@ export const resolveJobsChunkUrl = main => {
   if (!hash || !runtime.includes('[e]+".desktop.js"')) throw new Error('Amber current jobs chunk handoff is missing')
   return `${ASSET_ROOT}js/${chunkId}.${hash}.desktop.js`
 }
+
+export const hasVerifiedKekaJobsChunk = chunk => (
+  (chunk.includes(`identifier:"${KEKA_IDENTIFIER}"`) && chunk.includes(`domain:"${KEKA_BOARD_URL}"`))
+  || (chunk.includes(`u="${KEKA_BOARD_URL.replace(/\/$/, '')}"`)
+    && chunk.includes('m=`${u}/api/embedjobs/default/active/' + KEKA_IDENTIFIER + '`'))
+)
 
 export const extractKekaJobs = payload => {
   if (!Array.isArray(payload)) throw new Error('Amber invalid Keka inventory: expected a complete jobs array')
@@ -88,7 +94,7 @@ export const createAmberstudentScraper = ({ maxJobs = null } = {}) => ({
     const mainUrl = opening.match(/src=["'](https:\/\/cdn-static-assets\.amberstudent\.com\/amber-user-website\/build\/assets\/js\/main\.[a-f0-9]+\.desktop\.js)["']/)?.[1]
     if (!mainUrl) throw new Error('Amber current jobs route has no verified first-party asset handoff')
     const chunk = await read(resolveJobsChunkUrl(await read(mainUrl)))
-    if (!chunk.includes(`identifier:"${KEKA_IDENTIFIER}"`) || !chunk.includes(`domain:"${KEKA_BOARD_URL}"`)) throw new Error('Amber current jobs module no longer binds the verified Keka tenant')
+    if (!hasVerifiedKekaJobsChunk(chunk)) throw new Error('Amber current jobs module no longer binds the verified Keka tenant')
     const info = await fetchJson(KEKA_INFO_URL, { signal })
     signal?.throwIfAborted()
     if (info?.name !== 'amber' || info?.shortName !== 'amber' || info?.careersPortalDomain !== 'amberstudent.keka.com') throw new Error('Amber Keka tenant identity is unverified')

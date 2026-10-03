@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
-export const VERIFIED_SURFACE_SUMMARY = 'Verified on Wednesday, August 5, 2026 that the official Syllable AI careers page at https://syllable.ai/careers still links directly to the public Rippling board at https://ats.rippling.com/syllable-corporation/jobs, and that the live board still exposes a Software Engineer II opening with a public detail page on ats.rippling.com for Syllable Corporation in Mountain View, CA. No India openings were verified on the public board on the verified date, so the exact provider currently returns [] after validating the linked jobs surface.'
+export const VERIFIED_SURFACE_SUMMARY = 'Verified on October 3, 2026 that the official Syllable AI careers page still links directly to the exact Syllable Corporation Rippling board. The board visibly reports no open roles and its hydrated unfiltered job-posts query succeeds with items [], totalItems 0 and totalPages 0. Exact company, slug, URL and query identity are checked before accepting zero jobs.'
 
 export const SYLLABLE_CATALOG = {
   source: 'syllable',
@@ -19,11 +19,13 @@ export const SYLLABLE_CATALOG = {
   atsPlatform: 'rippling',
   countryFilter: 'India',
   paginationStrategy: 'single-first-party-linked-rippling-board-page',
-  extractionStrategy: 'verified-first-party-careers-page+verified-rippling-board-page+india-job-detail-pages',
+  extractionStrategy: 'verified-first-party-careers-page+verified-rippling-listings-or-explicit-unfiltered-zero-payload+India-job-details',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-05',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
+  verifiedPublicJobCount: 0,
+  verifiedIndiaJobCount: 0,
   dryRunFile: 'syllable/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

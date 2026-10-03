@@ -1,3 +1,4 @@
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -56,15 +57,16 @@ export const hasOfficialHandoffSignal = (html) => {
   const page = String(html ?? '')
   return /<title>\s*Careers at United Breweries Limited \|\s*Part of The HEINEKEN Company\s*<\/title>/i.test(page)
     && /\/Job-Listing\?operatings_company(?:%5B0%5D|\[0\])=6739/i.test(page)
-    && /\/job\/united-breweries-limited\/india\//i.test(page)
 }
+
+const hasConfirmedEmptyListing = (html) => /<h[1-6]\b[^>]*>\s*No jobs found\s*<\/h[1-6]>/i.test(String(html ?? '').replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ''))
 
 export const hasOfficialListingSignal = (html) => {
   const page = String(html ?? '')
   return /<title>\s*Job Listing\s*\|\s*HEINEKEN Careers\s*<\/title>/i.test(page)
     && /job-listing-page/i.test(page)
     && /operatings_company(?:\\u005B0\\u005D|\[0\]|%5B0%5D)?\s*["']?\s*:\s*\[\s*"6739"\s*\]/i.test(page)
-    && /\/job\/united-breweries-limited\/india\//i.test(page)
+    && (/\/job\/united-breweries-limited\/india\//i.test(page) || hasConfirmedEmptyListing(page))
 }
 
 export const extractListings = (html) => {
@@ -182,6 +184,9 @@ export const createUbGroupScraper = () => ({
     }
 
     const listings = extractListings(listingHtml)
+    if (!listings.length && !hasConfirmedEmptyListing(listingHtml)) {
+      throw new Error('UB Group listing has no parsed jobs and no verified empty result')
+    }
     const seenRequisitionIds = new Set()
     const jobs = []
 
@@ -194,6 +199,7 @@ export const createUbGroupScraper = () => ({
       jobs.push(job)
     }
 
+    if (!jobs.length) return attachInventoryEvidence(jobs, { status: 'verified-empty', surface: JOB_LISTING_URL, firstParty: true, listingComplete: true, pagesFetched: 1, reportedTotal: 0, indiaFacetCount: 0, verifiedAt: new Date().toISOString(), reason: 'Verified current United Breweries operating-company filter with visible No jobs found' })
     return jobs
   },
 })

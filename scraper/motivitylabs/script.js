@@ -82,6 +82,75 @@ export const hasOfficialCareersSignal = (html = '') => {
     && normalized.includes('careers@motivitylabs.com')
 }
 
+export const hasCurrentCareersSignal = (html = '') =>
+  /<title>\s*Careers\s*·\s*Motivity Labs\s*<\/title>/i.test(String(html))
+  && /href=["']\/jobs\/['"]/i.test(String(html))
+
+const readJsonLd = (html, type) => {
+  for (const match of String(html).matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    let data
+    try { data = JSON.parse(match[1]) } catch { continue }
+    if (data?.['@type'] === type) return data
+  }
+  throw new Error(`Motivity Labs ${type} JSON-LD is missing`)
+}
+
+export const extractCurrentListing = (html) => {
+  if (!/<title>\s*Careers\s*—\s*Open Roles\s*·\s*Motivity Labs\s*<\/title>/i.test(String(html))) {
+    throw new Error('Motivity Labs current first-party openings page changed')
+  }
+  const data = readJsonLd(html, 'CollectionPage')
+  if (!Array.isArray(data.hasPart) || !data.hasPart.length) throw new Error('Motivity Labs current job inventory is missing')
+  const urls = new Set()
+  return data.hasPart.map(row => {
+    const url = String(row?.url ?? '')
+    if (row?.['@type'] !== 'JobPosting' || !normalizeWhitespace(row.title)
+      || !/^https:\/\/motivitylabs\.com\/jobs\/[a-z0-9-]+\/$/.test(url)) {
+      throw new Error('Motivity Labs current job inventory contains an invalid role')
+    }
+    if (urls.has(url)) throw new Error('Motivity Labs current job inventory contains a duplicate URL')
+    urls.add(url)
+    return { title: normalizeWhitespace(row.title), url }
+  })
+}
+
+const runCurrentJobs = async ({ fetchText, now, listingHtml }) => {
+  const listing = extractCurrentListing(listingHtml)
+  const jobs = []
+  let unknownGeography = false
+  for (let start = 0; start < listing.length; start += 5) {
+    const batch = await Promise.all(listing.slice(start, start + 5).map(async row => {
+      const detail = readJsonLd(await fetchText(row.url), 'JobPosting')
+      if (detail.url !== row.url || normalizeWhitespace(detail.title) !== row.title
+        || !normalizeWhitespace(detail.description)) {
+        throw new Error(`Motivity Labs current job detail changed: ${row.url}`)
+      }
+      return { row, detail }
+    }))
+    for (const { row, detail } of batch) {
+      const country = normalizeWhitespace(detail.applicantLocationRequirements?.name)
+      if (!country) { unknownGeography = true; continue }
+      if (country !== 'India') continue
+      const locality = normalizeWhitespace(detail.jobLocation?.address?.addressLocality)
+      const city = locality && locality !== 'India' ? locality : null
+      const jobId = row.url.split('/').filter(Boolean).at(-1)
+      jobs.push({
+        title: row.title, company: COMPANY, department: null,
+        location: city ? `${city}, India` : 'India', city, country: 'India',
+        jobId, requisitionId: jobId, sourceUrl: row.url, applyUrl: row.url,
+        employmentType: null, experienceRequired: normalizeWhitespace(detail.experienceRequirements),
+        minimumQualification: null, preferredQualification: null, requiredSkills: [],
+        postingDate: normalizeWhitespace(detail.datePosted), closingDate: null,
+        jobDescription: normalizeWhitespace(detail.description),
+        remoteStatus: detail.employmentType === 'WORK_FROM_OFFICE' ? 'On-site' : null,
+        source: SOURCE, link: row.url, scrapedAt: now(),
+      })
+    }
+  }
+  if (unknownGeography && !jobs.length) throw new Error('Motivity Labs geography is unverified for every current role')
+  return jobs.map(job => ({ ...job, ...(unknownGeography ? { sourceListingComplete: false } : {}) }))
+}
+
 export const hasJobOpeningsSignal = (html = '') => {
   const normalized = (normalizeWhitespace(stripScriptsAndStyles(html)) || '').toLowerCase()
 
@@ -184,6 +253,9 @@ export const createMotivityLabsScraper = ({
 } = {}) => ({
   async run({ fetchText = defaultFetchText } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
+    if (hasCurrentCareersSignal(careersHtml)) {
+      return runCurrentJobs({ fetchText, now, listingHtml: await fetchText(JOB_OPENINGS_URL) })
+    }
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('The verified Motivity Labs careers page no longer matches the trusted first-party surface')
     }

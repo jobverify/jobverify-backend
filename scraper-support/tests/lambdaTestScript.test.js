@@ -127,19 +127,35 @@ test('LambdaTest pins the verified first-party careers shell and JSON API helper
     lambdaTest.DEPARTMENTS_API_URL,
     'https://test-backend.lambdatest.com/api/careers-page/org-departments',
   )
-  assert.equal(lambdaTest.VERIFIED_ON, '2026-07-16')
+  assert.equal(lambdaTest.VERIFIED_ON, '2026-10-03')
   assert.equal(
     lambdaTest.buildJobDetailUrl({ jobId: '134349' }),
     'https://lambdatest.kekahire.com/jobdetails/134349',
   )
   assert.equal(lambdaTest.hasOfficialLambdaTestCareersSignals(officialCareersHtml), true)
+  assert.equal(lambdaTest.hasOfficialLambdaTestCareersSignals('<html><head><title>Find your role in 4 minutes, consult with our Advisor &amp; get hired!</title></head><body><h1>Careers at TestMu AI, Formerly LambdaTest.</h1><h2>Open Positions</h2><a>Apply Here</a></body></html>'), true)
   assert.equal(
     lambdaTest.hasOfficialLambdaTestCareersSignals('<html><head><title>Careers</title></head><body><h1>Jobs</h1></body></html>'),
     false,
   )
   assert.equal(lambdaTest.hasExpectedDepartmentPayload(departmentsPayload), true)
   assert.equal(lambdaTest.hasExpectedDepartmentPayload(liveDepartmentsPayload), true)
+  assert.equal(lambdaTest.hasExpectedDepartmentPayload([{ name: 'Application Support Engineer' }, { name: 'Engineering' }, { name: 'Sales' }]), true)
   assert.equal(lambdaTest.hasExpectedDepartmentPayload([{ departmentName: 'Support' }]), false)
+})
+
+test('LambdaTest retains an unlocated role when its opening text explicitly gives Noida', async () => {
+  const lambdaTest = await loadLambdaTestModule()
+  const jobs = lambdaTest.extractSearchResults([{
+    id: 138113,
+    title: 'Business Development Representative - APAC',
+    description: '<div>Sales · Revenue 📍 Noida 🕐 Full-Time</div>',
+    jobLocations: [],
+    jobNumber: 'LT313',
+  }])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].location, 'Noida, India')
+  assert.equal(jobs[0].city, 'Noida')
 })
 
 test('extractSearchResults keeps only India LambdaTest jobs and normalizes the first-party JSON payload', async () => {

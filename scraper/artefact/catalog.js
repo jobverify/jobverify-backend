@@ -1,5 +1,5 @@
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Thursday, August 13, 2026 that https://www.artefact.com/ and https://www.artefact.com/careers/ currently return the official Artefact BunkerWeb Bot Detection surface from this environment, that the public Greenhouse board at https://job-boards.greenhouse.io/artefact remains the verified public fallback, and that the Greenhouse jobs API at https://boards-api.greenhouse.io/v1/boards/artefact/jobs?content=true currently exposes 5 India roles in Pune, Maharashtra, India, including https://job-boards.greenhouse.io/artefact/jobs/8360407002 and https://job-boards.greenhouse.io/artefact/jobs/7884340002.'
+  'Verified on October 3, 2026 that https://www.artefact.com/ and https://www.artefact.com/careers/ are accessible again after the earlier BunkerWeb Bot Detection response. The careers list has no India cards on its current first page, while the public Greenhouse board at https://job-boards.greenhouse.io/artefact and API at https://boards-api.greenhouse.io/v1/boards/artefact/jobs?content=true expose 6 India roles in Pune, Maharashtra, India, including https://job-boards.greenhouse.io/artefact/jobs/8360407002, https://job-boards.greenhouse.io/artefact/jobs/7884340002, and SAP Developer.'
 
 export const ARTEFACT_CATALOG = {
   source: 'artefact',
@@ -18,7 +18,7 @@ export const ARTEFACT_CATALOG = {
     'verified-bot-detection-first-party-pages+public-greenhouse-board+greenhouse-jobs-api+india-location-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-13',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

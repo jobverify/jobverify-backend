@@ -18,21 +18,20 @@ test('LS Devices (P) Ltd is registered against the verified Lifesigns careers su
   assert.equal(provider.companyCareerPage, CAREERS_URL)
   assert.deepEqual(provider.alternateCareerPages, [
     'https://www.lifesigns.us/',
-    'https://www.lifesigns.us/terms-and-conditions/',
+    'https://www.lifesigns.us/terms-of-service/',
   ])
-  assert.equal(provider.atsPlatform, 'official-company-careers-zero-openings')
+  assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page-verification')
+  assert.equal(provider.paginationStrategy, 'public-wix-openroles-feed')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-shell+no-public-job-listings+return-empty',
+    'verified-legal-lifesigns-identity+public-wix-openroles-feed+first-party-role-details',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'lifesigns.us')
-  assert.equal(provider.verifiedOn, '2026-08-03')
-  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /livesigns\.us\/terms-and-conditions|lifesigns\.us\/terms-and-conditions/i)
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.match(provider.verifiedSurfaceSummary, /lifesigns\.us\/terms-of-service/i)
   assert.match(provider.verifiedSurfaceSummary, /lifesigns\.us\/careers/i)
   assert.match(provider.modulePath, /lsdevicespltd[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, COMPANY), false)

@@ -41,7 +41,19 @@ if (-not [string]::IsNullOrWhiteSpace($RunDir)) {
   try {
     $activeRun = Get-Content -Raw -LiteralPath $activeRunPath | ConvertFrom-Json
     $candidateStatePath = Join-Path ([string]$activeRun.runDir) 'run-state.json'
-    if (Test-Path -LiteralPath $candidateStatePath) {
+    $candidateSupervisorPath = Join-Path ([string]$activeRun.runDir) 'supervisor.pid'
+    $candidateSupervisor = $null
+    if (Test-Path -LiteralPath $candidateSupervisorPath) {
+      $candidateSupervisorId = 0
+      if ([int]::TryParse((Get-Content -Raw -LiteralPath $candidateSupervisorPath).Trim(), [ref]$candidateSupervisorId)) {
+        $candidateSupervisor = Get-Process -Id $candidateSupervisorId -ErrorAction SilentlyContinue
+      }
+    }
+    # Installation/warmup happens before the runner creates its checkpoint.
+    if ($candidateSupervisor) {
+      $selectedRunDir = [string]$activeRun.runDir
+      $isResume = $true
+    } elseif (Test-Path -LiteralPath $candidateStatePath) {
       $candidateState = Get-Content -Raw -LiteralPath $candidateStatePath | ConvertFrom-Json
       if ($candidateState.status -ne 'complete') {
         $selectedRunDir = [string]$activeRun.runDir

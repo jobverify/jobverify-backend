@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -171,12 +172,70 @@ export const isVerifiedPublicJobShell = (page = {}) =>
   && extractComponentScriptPath(page?.html) !== null
   && !hasPublicJobsSignal(page?.html)
 
+// The current product application contains all public page components in one module.
+export const extractCurrentClientPath = (html = '') =>
+  String(html).match(/<script[^>]+type=["']module["'][^>]+src=["'](\/assets\/index-[a-zA-Z0-9_-]+\.js)["']/i)?.[1] ?? null
+
+export const hasCurrentProductShellSignal = (html = '') => {
+  const page = String(html)
+  return /<title>\s*Petrus\s*\|\s*Transform Manufacturing with Industrial Intelligence\s*<\/title>/i.test(page)
+    && /href=["']\/assets\/images\/petrus-logo\.png["']/i.test(page)
+    && /<div\s+id=["']root["']\s*>\s*<\/div>/i.test(page)
+    && Boolean(extractCurrentClientPath(page))
+}
+
+export const hasVerifiedCurrentClientSignal = (client = '') => {
+  const text = String(client)
+  return text.includes('Petrus Technologies is a full-stack digital transformation partner helping manufacturers')
+    && text.includes('Petrus Technologies Pvt. Ltd. All rights reserved.')
+    && text.includes('mailto:info@petrustechnologies.com')
+    && text.includes('mailto:sales@petrustechnologies.com')
+    && text.includes('Sivasakthi Colony')
+    && text.includes('Ganapathy, Coimbatore')
+    && text.includes('Tamil Nadu, India.')
+    && ['/', '/about-us', '/company/about-us', '/contact-us', '/company/contact-us', '/resources', '/blog', '*']
+      .every(path => text.includes('path:"' + path + '"'))
+    && text.includes('createRoot(')
+    && !hasBundlePublicJobsSignal(text)
+    && !/JobPosting|\bupload resume\b|\bwe are hiring\b/i.test(text)
+}
+
+const runCurrentProductApplication = async (homepage, fetchPage, fetchText) => {
+  if (homepage.url !== HOMEPAGE_URL || hasPublicJobsSignal(homepage.html)) {
+    throw new Error('Petrus current product homepage identity changed materially')
+  }
+  const clientPath = extractCurrentClientPath(homepage.html)
+  const client = await fetchText(new URL(clientPath, HOMEPAGE_URL).toString())
+  if (!hasVerifiedCurrentClientSignal(client)) {
+    throw new Error('Petrus current public route bundle changed materially or now exposes public jobs')
+  }
+  for (const url of PUBLIC_JOB_ROUTE_URLS) {
+    const page = await fetchPage(url)
+    const verifiedMissing = Number(page.status) === 404 && String(page.html).trim() === '404 Not Found'
+    const verifiedShell = Number(page.status) === 200
+      && hasCurrentProductShellSignal(page.html)
+      && extractCurrentClientPath(page.html) === clientPath
+      && !hasPublicJobsSignal(page.html)
+    if (page.url !== url || (!verifiedMissing && !verifiedShell)) {
+      throw new Error('Petrus current public-job route changed materially: ' + url)
+    }
+  }
+  return attachInventoryEvidence([], {
+      status: 'discovery-only', surface: HOMEPAGE_URL, firstParty: true, listingComplete: false,
+      pagesFetched: 8, reportedTotal: null, indiaFacetCount: null, verifiedAt: new Date().toISOString(),
+      reason: "Petrus public website has no verified hiring route; complete company job inventory is unverified.",
+    })
+}
+
 export const createPetrusTechnologiesPvtLtdScraper = () => ({
   async run({
     fetchPage = defaultFetchPage,
     fetchText = defaultFetchText,
   } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
+    if (Number(homepage.status) === 200 && hasCurrentProductShellSignal(homepage.html)) {
+      return runCurrentProductApplication(homepage, fetchPage, fetchText)
+    }
     if (homepage.status !== 200 || !hasOfficialShellSignal(homepage.html)) {
       throw new Error('Petrus Technologies Pvt Ltd verified official shell no longer matches the trusted first-party surface')
     }
@@ -213,7 +272,11 @@ export const createPetrusTechnologiesPvtLtdScraper = () => ({
       }
     }
 
-    return []
+    return attachInventoryEvidence([], {
+      status: 'discovery-only', surface: HOMEPAGE_URL, firstParty: true, listingComplete: false,
+      pagesFetched: 10, reportedTotal: null, indiaFacetCount: null, verifiedAt: new Date().toISOString(),
+      reason: "Petrus public website has no verified hiring route; complete company job inventory is unverified.",
+    })
   },
 })
 
@@ -224,7 +287,15 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
-  if (isDryRun) {
+  const evidence = readInventoryEvidence(jobs)
+  if (evidence?.listingComplete === false) {
+    if (isDryRun) {
+      const { writeFile } = await import('node:fs/promises')
+      await writeFile(path.join(currentDir, 'inventory-evidence.json'), JSON.stringify(evidence, null, 2))
+    }
+    console.error(evidence.reason)
+    process.exitCode = 1
+  } else if (isDryRun) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
   } else {
     await saveToDB(jobs, SOURCE)

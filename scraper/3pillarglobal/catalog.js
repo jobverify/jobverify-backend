@@ -1,6 +1,5 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const THREE_PILLAR_GLOBAL_CATALOG = {
@@ -10,20 +9,17 @@ export const THREE_PILLAR_GLOBAL_CATALOG = {
   adapter: 'script',
   homepageUrl: 'https://www.3pillar.ai/',
   companyCareerPage: 'https://www.3pillar.ai/careers/career-opportunities/',
-  officialLeverBoardUrl: 'https://jobs.lever.co/3pillarglobal',
-  leverApiUrl: 'https://api.lever.co/v0/postings/3pillarglobal?mode=json',
+  darwinboxBoardUrl: 'https://3pillar.darwinbox.com/ms/candidatev2/main/careers/allJobs',
+  jobsApiUrl: 'https://3pillar.darwinbox.com/ms/candidateapi/job/alljobs?companyId=main',
   companyDomain: '3pillar.ai',
-  atsPlatform: 'lever',
-  countryFilter: 'Global',
-  paginationStrategy: 'verified-first-party-careers-page-plus-lever-api',
-  extractionStrategy:
-    'verified-first-party-careers-page+verified-official-lever-board+global-lever-postings',
+  atsPlatform: 'darwinbox',
+  countryFilter: 'India',
+  paginationStrategy: 'public-session-darwinbox-pagination',
+  extractionStrategy: 'verified-first-party-darwinbox-handoff+session-aware-public-jobs-api',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: "2026-09-13",
-  verifiedPublicJobCount: 0,
-  verifiedSurfaceSummary:
-    "Verified September 13, 2026: the official 3Pillar careers page and linked Lever board retain their company identity, and the official Lever postings API returns an empty array. Validated empty arrays are accepted; malformed or incomplete payloads are rejected.",
+  verifiedOn: '2026-10-03',
+  verifiedSurfaceSummary: 'Verified October 3, 2026: the official 3Pillar Career Opportunities page links its Darwinbox tenant at 3pillar.darwinbox.com/ms/candidatev2/main/careers/allJobs. The public session-aware Darwinbox API returns structured India jobs; the retired Lever board returns HTTP 404. Listing denial, transport errors and malformed inventory propagate instead of returning empty jobs.',
   modulePath: path.join(currentDir, 'script.js'),
   dryRunFile: path.join(currentDir, 'jobs.json'),
 }

@@ -1,5 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { MOVATE_CATALOG } from './catalog.js'
+export const PROVIDER_METADATA = MOVATE_CATALOG
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
@@ -8,6 +10,7 @@ const config = loadConfig(currentDir)
 
 export const HOMEPAGE_URL = 'https://www.movate.com/careers-at-movate/'
 export const JOBS_PAGE_URL = 'https://www.movate.com/careers/latest-job-openings/'
+export const PORTAL_URL = 'https://movatecareers.movate.com/MovateJobOpenings'
 
 const COMPANY = 'Movate'
 const SOURCE = 'movate'
@@ -138,6 +141,54 @@ const isIndiaListing = (record = {}) => {
 export const buildDetailUrl = (jobId) =>
   `https://www.movate.com/job-details/?job_id=${jobId}`
 
+const extractOfficialPortalUrl = (html) => {
+  for (const match of String(html ?? '').matchAll(/<iframe\b[^>]*src=["']([^"']+)["']/gi)) {
+    if (toAbsoluteUrl(match[1], JOBS_PAGE_URL) === PORTAL_URL) return PORTAL_URL
+  }
+  return null
+}
+
+const extractPortalJobs = (html) => {
+  const page = String(html ?? '')
+  if (!/^Movate Job Openings$/i.test(extractTitle(page) || '')
+    || !/class=["']mv-jobs-grid["']/.test(page)
+    || !/function\s+initPagination\s*\(/.test(page)) {
+    throw new Error('Movate verified careers portal listings surface changed')
+  }
+  const segments = page.split(/<div\b[^>]*class=["']job-card["'][^>]*>/i).slice(1)
+  if (!segments.length) throw new Error('Movate verified portal no longer exposes job listings')
+  const seen = new Set()
+  return segments.flatMap(segment => {
+    const fields = Object.fromEntries([...segment.matchAll(/<b>([^<]*)<\/b>([\s\S]*?)(?=<\/div>)/gi)].map(match => [normalizeWhitespace(match[1])?.toLowerCase(), stripTags(match[2])]))
+    const title = stripTags(segment.match(/class=["']job-title["'][^>]*>([\s\S]*?)<\/div>/i)?.[1])
+    const jobId = normalizeWhitespace(fields['rrf-'])
+    const location = normalizeLocation(fields['location:'])
+    const sourceUrl = toAbsoluteUrl(segment.match(/href=["']([^"']*MovateJobDetails\.aspx\?[^"']+)["']/i)?.[1], PORTAL_URL)
+    let trustedUrl = false
+    try { const url = new URL(sourceUrl); trustedUrl = url.origin === new URL(PORTAL_URL).origin && url.pathname === '/MovateJobDetails.aspx' && Boolean(url.search) } catch {}
+    if (!title || !jobId || !location || !trustedUrl || seen.has(jobId)) {
+      throw new Error('Movate verified portal job listings schema or identity changed')
+    }
+    seen.add(jobId)
+    if (!/(?:^|,)\s*India\s*$/i.test(location)) return []
+    return [{title,company:COMPANY,department:null,location,city:extractCity(location),country:'India',jobId,requisitionId:jobId,sourceUrl,applyUrl:sourceUrl,employmentType:fields['employment type:']||null,experienceRequired:fields['experience required(yrs):']||null,minimumQualification:fields['qualification:']||null,preferredQualification:null,requiredSkills:[],postingDate:null,closingDate:null,jobDescription:null,remoteStatus:null}]
+  })
+}
+
+const extractPortalDetail = (html, listing) => {
+  const page = String(html ?? '')
+  const field = id => stripTags(page.match(new RegExp('<span\\b[^>]*id=["\']'+id+'["\'][^>]*>([\\s\\S]*?)<\\/span>','i'))?.[1])
+  const title = field('lblJobTitle')
+  const jobId = field('lblRRFID')?.replace(/^RRF-/, '')
+  const location = normalizeLocation(field('lblLocation'))
+  const description = field('lblJobDescription')
+  if (!/^MOVATE\s*-/i.test(extractTitle(page)||'') || title !== listing.title || jobId !== listing.jobId || !location || !/(?:^|,)\s*India\s*$/i.test(location) || !description) {
+    throw new Error('Movate verified portal job detail identity or description changed for requisition '+listing.jobId)
+  }
+  const skills = [...page.matchAll(/<span\b[^>]*class=["'][^"']*\bskill-tag\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/gi)].map(match => stripTags(match[1])).filter(value => value && !/^[\d, ]+$/.test(value))
+  return {...listing,title,location,city:extractCity(location),experienceRequired:field('lblExperience')||listing.experienceRequired,employmentType:field('lblEmploymentType')||listing.employmentType,minimumQualification:field('lblEducation')||listing.minimumQualification,requiredSkills:[...new Set(skills)],jobDescription:description}
+}
+
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const title = extractTitle(page)?.toLowerCase() || ''
@@ -153,7 +204,7 @@ export const hasOfficialJobsPageSignal = (html) => {
 
   return title.includes('latest job openings')
     && title.includes('movate')
-    && /var\s+arrayList\s*=\s*\[/i.test(page)
+    && (/var\s+arrayList\s*=\s*\[/i.test(page) || Boolean(extractOfficialPortalUrl(page)))
 }
 
 export const extractJobListData = (html) => parseEmbeddedArray(html)
@@ -305,13 +356,16 @@ export const createMovateScraper = ({
       throw new Error('Movate jobs page no longer matches the verified embedded listings surface')
     }
 
-    const listings = extractIndiaJobs(extractJobListData(jobsPageHtml))
+    const portalUrl = extractOfficialPortalUrl(jobsPageHtml)
+    const listings = portalUrl
+      ? extractPortalJobs(await fetchText(portalUrl))
+      : extractIndiaJobs(extractJobListData(jobsPageHtml))
     const selectedJobs = maxJobs ? listings.slice(0, maxJobs) : listings
     const jobs = []
 
     for (const listing of selectedJobs) {
       const detailHtml = await fetchText(listing.sourceUrl)
-      const detail = extractJobDetail(detailHtml, listing)
+      const detail = portalUrl ? extractPortalDetail(detailHtml, listing) : extractJobDetail(detailHtml, listing)
 
       jobs.push({
         ...detail,

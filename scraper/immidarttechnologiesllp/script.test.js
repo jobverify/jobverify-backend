@@ -72,6 +72,14 @@ test('Immidart Technologies LLP scraper constants stay pinned to the verified of
   })
 })
 
+test('Immidart extracts the first-party role array after a bundle minifier renames its variable', async () => {
+  const immidart = await loadImmidartModule()
+  const renamedBundle = routeBundle.replaceAll('$3', '_O')
+  const jobs = immidart.extractEmbeddedJobs(renamedBundle)
+  assert.equal(jobs.length, 10)
+  assert.equal(jobs[0].title, 'Business Development Manager')
+})
+
 test('Immidart Technologies LLP run decorates official first-party careers jobs from the embedded bundle payload', async () => {
   const immidart = await loadImmidartModule()
   const requestedUrls = []

@@ -1,3 +1,4 @@
+import { assertWorkdayPageAvailable } from '../../scraper-support/myworkday/pageAvailability.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -308,6 +309,7 @@ export const createMagnitudeSoftwareScraper = ({
     }
 
     const workdayBoardPage = await fetchPage(WORKDAY_BOARD_URL)
+    assertWorkdayPageAvailable(workdayBoardPage, { source: SOURCE, url: WORKDAY_BOARD_URL })
     if (
       workdayBoardPage?.status !== 200
       || workdayBoardPage?.url !== WORKDAY_BOARD_URL

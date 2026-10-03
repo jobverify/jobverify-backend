@@ -140,7 +140,7 @@ test('resolveScraperTimeoutMs gives Workday adapters a shorter default budget', 
 
 test('resolveScraperTimeoutMs honors provider timeout overrides before falling back to the Workday default', () => {
   const workdayScraper = {
-    name: 'accenture',
+    name: 'cadence',
     provider: {
       adapter: 'workday',
       scraperTimeoutMs: 300000,
@@ -159,7 +159,6 @@ test('resolveScraperTimeoutMs uses extended catalog budgets for high-volume Work
   assert.deepEqual(
     Object.fromEntries(
       [
-        'accenture',
         'cadence',
         'mastercard',
         'nvidia',
@@ -178,7 +177,6 @@ test('resolveScraperTimeoutMs uses extended catalog budgets for high-volume Work
       }),
     ),
     {
-      accenture: 1200000,
       cadence: 1200000,
       mastercard: 1200000,
       nvidia: 1200000,
@@ -221,7 +219,7 @@ test('retired AMNS provider stays out of the active runner catalog', () => {
 })
 
 test('resolveLivePublicExperienceEnabled skips redundant enrichment for high-volume API sources', () => {
-  for (const source of ['ibm', 'pwc']) {
+  for (const source of ['ibm']) {
     const scraper = buildScrapers().find((candidate) => candidate.name === source)
 
     assert.ok(scraper, `missing ${source} scraper`)

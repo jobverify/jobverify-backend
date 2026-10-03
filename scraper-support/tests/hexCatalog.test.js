@@ -22,8 +22,9 @@ const CAREERS_FIXTURE = `
   <p>We're hiring in San Francisco, New York, and remote.</p>
   <p>We have beautiful offices in both cities – and remote team members throughout US, Canada, and a few other countries.</p>
   <h2>Open roles</h2>
-  <a href="/careers/software-engineer-backend-%28platform%29/">Software Engineer, Backend (Platform)</a>
-  <a href="/careers/cloud-security-engineer/">Cloud Security Engineer</a>
+  <div class="OpenRolesSidebar__TotalRoleCount-x">[<!-- -->2<!-- -->]</div>
+  <a class="OpenRole__Wrapper-x" href="/careers/software-engineer-backend-%28platform%29/"><p class="OpenRole__TitleText-x">Software Engineer, Backend (Platform)</p><p class="OpenRole__LocationText-x">Remote - US or New York</p></a>
+  <a class="OpenRole__Wrapper-x" href="/careers/cloud-security-engineer/"><p class="OpenRole__TitleText-x">Cloud Security Engineer</p><p class="OpenRole__LocationText-x">Remote - US, San Francisco or New York</p></a>
 `
 
 const BACKEND_PLATFORM_ROLE_FIXTURE = `
@@ -75,22 +76,23 @@ test('Hex local catalog captures the verified first-party careers surface and in
   ])
   assert.equal(provider.atsPlatform, 'first-party-careers-page-us-only-openings')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'fail-closed-sentinel')
+  assert.equal(provider.paginationStrategy, 'single-page-complete-inventory')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-us-only-role-pages+fail-closed-sentinel',
+    'verified-first-party-role-cards+complete-count+us-only-locations',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'hex.tech')
-  assert.equal(provider.verifiedOn, '2026-07-25')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.match(provider.dryRunFile, /hex[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 25, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/hex\.tech\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /software-engineer-backend-%28platform%29/i)
   assert.match(provider.verifiedSurfaceSummary, /Cloud Security Engineer/i)
-  assert.match(provider.verifiedSurfaceSummary, /Remote \(US\)/i)
+  assert.match(provider.verifiedSurfaceSummary, /36 first-party role cards/i)
+  assert.match(provider.verifiedSurfaceSummary, /Remote - US/i)
   assert.match(provider.verifiedSurfaceSummary, /no India-eligible openings/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Hex'), false)
 
@@ -112,6 +114,7 @@ test('Hex scraper verifies the official careers surface and returns an empty lis
   const scraper = hex.createHexScraper()
 
   assert.equal(hex.hasVerifiedCareersLandingSignal(CAREERS_FIXTURE), true)
+  assert.equal(hex.hasCompleteUsOnlyInventory(CAREERS_FIXTURE), true)
   assert.equal(
     hex.hasUsOnlyRolePageSignal(
       BACKEND_PLATFORM_ROLE_FIXTURE,
@@ -130,18 +133,11 @@ test('Hex scraper verifies the official careers surface and returns an empty lis
       visited.push(url)
 
       if (url === hex.CAREERS_URL) return CAREERS_FIXTURE
-      if (url === hex.SAMPLE_ROLE_URLS[0]) return BACKEND_PLATFORM_ROLE_FIXTURE
-      if (url === hex.SAMPLE_ROLE_URLS[1]) return CLOUD_SECURITY_ROLE_FIXTURE
-
       assert.fail(`Unexpected URL requested by Hex scraper: ${url}`)
     },
   })
 
-  assert.deepEqual(visited, [
-    'https://hex.tech/careers/',
-    'https://hex.tech/careers/software-engineer-backend-%28platform%29/',
-    'https://hex.tech/careers/cloud-security-engineer/',
-  ])
+  assert.deepEqual(visited, ['https://hex.tech/careers/'])
   assert.deepEqual(jobs, [])
 })
 

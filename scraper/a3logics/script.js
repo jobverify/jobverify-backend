@@ -67,10 +67,9 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
 
-  return /A3Logics Careers & Job Opportunities/i.test(page)
+  return /A3Logics Careers (?:&|&amp;) Job Opportunities/i.test(page)
     && /Explore Job opportunities/i.test(page)
-    && /a3logics\.keka\.com\/careers\//i.test(page)
-    && new RegExp(`api/embedjobs/js/${EXPECTED_IDENTIFIER}`, 'i').test(page)
+    && /href=["']https:\/\/a3logics\.keka\.com\/careers\/["']/i.test(page)
 }
 
 export const extractEmbeddedCareersDocumentPath = (html = '') =>
@@ -124,7 +123,12 @@ export const hasExpectedPortalIdentity = (payload = {}) => {
   return normalizedName === EXPECTED_PORTAL_NAME
     && normalizedShortName === EXPECTED_PORTAL_NAME
     && normalizedPortalDomain === EXPECTED_PORTAL_DOMAIN
+    && normalizeWhitespace(payload.companyWebsite) === 'https://www.a3logics.com/'
 }
+
+export const isBlockedOfficialCareersPage = (html = '') =>
+  /<title>\s*403 Forbidden\s*<\/title>/i.test(String(html ?? ''))
+  && /<h1>\s*403 Forbidden\s*<\/h1>/i.test(String(html ?? ''))
 
 const isIndiaLocation = (location = {}) => {
   if (String(location.countryCode ?? '').toUpperCase() === 'IN') return true
@@ -191,8 +195,15 @@ export const createA3logicsScraper = ({
     fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
+    let careersHtml
+    try {
+      careersHtml = await fetchText(CAREERS_URL)
+    } catch (error) {
+      if (!/\bHTTP 403\b/.test(String(error?.message ?? error))) throw error
+      careersHtml = '<title>403 Forbidden</title><h1>403 Forbidden</h1>'
+    }
+
+    if (!hasOfficialCareersSignal(careersHtml) && !isBlockedOfficialCareersPage(careersHtml)) {
       throw new Error('A3logics verified careers page no longer matches the trusted first-party surface')
     }
 

@@ -13,14 +13,15 @@ const careersHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Careers | Wingify</title>
-    <link rel="canonical" href="https://wingify.com/careers/" />
+    <title>Wingify - Company Careers - Wingify</title>
+    <link rel="canonical" href="https://wingify.com/company/careers/" />
   </head>
   <body>
-    <h1>Big Problems. Smart People. Wingify.</h1>
     <h2>Open Positions</h2>
+    <h3>Find your role</h3>
     <p>Click on available positions to apply. Or send your CV and work samples to careers@wingify.com</p>
     <a href="https://wingify.keka.com/careers/">Apply Now</a>
+    <div class="js-careers-board" data-jobs-endpoint="https://wingify.com/wp-json/api/get-active-jobs"></div>
     <p>See all open positions</p>
   </body>
 </html>
@@ -58,8 +59,9 @@ test('Wingify validates the verified first-party careers page, Keka board shell,
 
   assert.equal(wingify.SOURCE, 'wingify')
   assert.equal(wingify.COMPANY, 'Wingify')
-  assert.equal(wingify.VERIFIED_ON, '2026-07-25')
-  assert.equal(wingify.CAREERS_URL, 'https://wingify.com/careers/')
+  assert.equal(wingify.VERIFIED_ON, '2026-10-03')
+  assert.equal(wingify.CAREERS_URL, 'https://wingify.com/company/careers/')
+  assert.equal(wingify.FIRST_PARTY_JOBS_URL, 'https://wingify.com/wp-json/api/get-active-jobs')
   assert.equal(wingify.KEKA_BOARD_URL, 'https://wingify.keka.com/careers/')
   assert.equal(
     wingify.CAREER_PORTAL_INFO_URL,
@@ -69,7 +71,7 @@ test('Wingify validates the verified first-party careers page, Keka board shell,
     wingify.ACTIVE_JOBS_URL,
     'https://wingify.keka.com/careers/api/jobs/default/active',
   )
-  assert.match(wingify.VERIFIED_SURFACE_SUMMARY, /Saturday, July 25, 2026/)
+  assert.match(wingify.VERIFIED_SURFACE_SUMMARY, /October 3, 2026/)
   assert.equal(wingify.hasOfficialCareersPageSignal(careersHtml), true)
   assert.equal(
     wingify.extractKekaBoardUrl(careersHtml),
@@ -77,6 +79,12 @@ test('Wingify validates the verified first-party careers page, Keka board shell,
   )
   assert.equal(wingify.hasKekaBoardSignal(kekaBoardHtml), true)
   assert.equal(wingify.hasExpectedPortalIdentity(portalInfo), true)
+  assert.equal(wingify.hasMatchingFirstPartyJobs([
+    { title: 'Example', careerPortalUrl: 'https://wingify.keka.com/careers/jobdetails/135402' },
+  ], [{ id: 135402, title: 'Example' }]), true)
+  assert.equal(wingify.hasMatchingFirstPartyJobs([
+    { title: 'Example', careerPortalUrl: 'https://wingify.keka.com/careers/jobdetails/135402' },
+  ], [{ id: 135402, title: 'Different' }]), false)
 })
 
 test('Wingify keeps only India jobs from the verified Keka payload and maps them to the shared shape', async () => {
@@ -171,6 +179,7 @@ test('Wingify run validates the official careers handoff, Keka board shell, exac
     fetchJson: async (url) => {
       requestedJson.push(url)
       if (url === wingify.CAREER_PORTAL_INFO_URL) return portalInfo
+      if (url === wingify.FIRST_PARTY_JOBS_URL) return [{ title: 'Technical Support Engineer (French Fluent)', careerPortalUrl: 'https://wingify.keka.com/careers/jobdetails/135402' }]
       if (url === wingify.ACTIVE_JOBS_URL) {
         return [
           {
@@ -203,6 +212,7 @@ test('Wingify run validates the official careers handoff, Keka board shell, exac
   assert.deepEqual(requestedTexts, [wingify.CAREERS_URL, wingify.KEKA_BOARD_URL])
   assert.deepEqual(requestedJson, [
     wingify.CAREER_PORTAL_INFO_URL,
+    wingify.FIRST_PARTY_JOBS_URL,
     wingify.ACTIVE_JOBS_URL,
   ])
   assert.equal(jobs.length, 1)
@@ -258,5 +268,21 @@ test('Wingify fails closed when the official careers handoff, Keka board shell, 
       },
     }),
     /exact company identity/i,
+  )
+})
+
+test('Wingify rejects a first-party feed that disagrees with Keka', async () => {
+  const wingify = await loadModule()
+
+  await assert.rejects(
+    wingify.createWingifyScraper().run({
+      fetchText: async (url) => url === wingify.CAREERS_URL ? careersHtml : kekaBoardHtml,
+      fetchJson: async (url) => {
+        if (url === wingify.CAREER_PORTAL_INFO_URL) return portalInfo
+        if (url === wingify.FIRST_PARTY_JOBS_URL) return [{ title: 'Different role', careerPortalUrl: 'https://wingify.keka.com/careers/jobdetails/135402' }]
+        return [{ id: 135402, title: 'Technical Support Engineer (French Fluent)' }]
+      },
+    }),
+    /first-party jobs endpoint no longer matches/i,
   )
 })

@@ -69,6 +69,34 @@ const talentCommunityHtml = `
 </html>
 `
 
+const currentSearchHtml = `<script>phApp.ddo = ${JSON.stringify({
+  eagerLoadRefineSearch: {
+    totalHits: 1,
+    hits: 1,
+    data: { jobs: [{ reqId: 'P-224836', jobId: 'P-224836', jobSeqNo: 'IFBAINP224836ENIN', title: 'Relationship Lead-First Wealth', city: 'Vadodara', country: 'India', location: 'Vadodara, Gujarat, India', category: 'Sales & Relationship Management- Retail Banking', postedDate: '2026-08-10T09:13:28.357+0000' }] },
+  },
+})}</script>`
+
+test('IDFC FIRST Bank collects the current official Phenom search inventory', async () => {
+  const idfcFirstBank = await loadIdfcFirstBankModule()
+  const requestedUrls = []
+  const jobs = await idfcFirstBank.run({
+    detailEnrichmentBudgetMs: 0,
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === idfcFirstBank.CAREERS_URL) return careersHomeHtml.replaceAll('0 jobs', '5 jobs')
+      if (url === 'https://careers.idfcfirst.bank.in/in/en/search-results') return currentSearchHtml
+      throw new Error(`Unexpected IDFC FIRST Bank fixture URL: ${url}`)
+    },
+  })
+  assert.deepEqual(requestedUrls, [idfcFirstBank.CAREERS_URL, 'https://careers.idfcfirst.bank.in/in/en/search-results'])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, 'P-224836')
+  assert.equal(jobs[0].company, 'IDFC FIRST Bank')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].sourceListingComplete, undefined)
+})
+
 test('IDFC FIRST Bank verifies the official careers microsite and returns no jobs when the public surface is a talent community only', async () => {
   const idfcFirstBank = await loadIdfcFirstBankModule()
 
@@ -123,7 +151,7 @@ test('IDFC FIRST Bank fails closed when the verified zero-job surface changes or
         throw new Error(`Unexpected URL: ${url}`)
       },
     }),
-    /IDFC FIRST Bank careers home no longer shows the verified zero-job state/i,
+    /Unexpected URL|unrecognized jobs payload/i,
   )
 
   await assert.rejects(

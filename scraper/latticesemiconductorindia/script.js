@@ -1,3 +1,4 @@
+import { assertWorkdayPageAvailable } from '../../scraper-support/myworkday/pageAvailability.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -116,6 +117,7 @@ export const createLatticeSemiconductorIndiaScraper = () => ({
     }
 
     const workdayBoard = await fetchPage(OFFICIAL_WORKDAY_BOARD_URL)
+    assertWorkdayPageAvailable(workdayBoard, { source: SOURCE, url: OFFICIAL_WORKDAY_BOARD_URL })
     if (workdayBoard.status !== 200 || !hasOfficialWorkdayBoardSignal(workdayBoard.html)) {
       throw new Error('Lattice Semiconductor India verified Workday board no longer matches the trusted public jobs surface')
     }

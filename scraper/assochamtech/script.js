@@ -12,7 +12,8 @@ export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
 export const VERIFIED_AT = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
-export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
+export const CAREERS_URL = PROVIDER_METADATA.legacyCareersUrl
+export const CURRENT_CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const APPLICATION_EMAIL = PROVIDER_METADATA.applicationEmail
 export const APPLICATION_URL = PROVIDER_METADATA.applicationUrl
 export const NO_PUBLIC_JOB_ROUTE_URLS = [
@@ -118,6 +119,26 @@ export const hasOfficialHomepageSignal = (html) => {
     && extractCareersUrl(rawHtml) === CAREERS_URL
 }
 
+const extractCurrentFrontendBundleUrl = (html = '') => {
+  const path = String(html ?? '').match(/<script[^>]+src="(\/static\/js\/main\.[a-f0-9]+\.js)"/i)?.[1]
+  return path ? toAbsoluteUrl(path, HOMEPAGE_URL) : null
+}
+
+export const hasCurrentSpaHomepageSignal = (html = '') => {
+  const page = String(html ?? '')
+  return /<title>\s*ASSOCHAM \| Knowledge Architect of India\s*<\/title>/i.test(page)
+    && /The Associated Chambers of Commerce &(?:amp;)? Industry of India \(ASSOCHAM\)/i.test(page)
+    && /<div id="root"><\/div>/i.test(page)
+    && Boolean(extractCurrentFrontendBundleUrl(page))
+}
+
+export const hasCurrentFrontendCareersNavigation = (text = '') => {
+  const bundle = String(text ?? '')
+  return bundle.includes('"Careers",path:"/career"')
+    && bundle.includes('https://www.assocham.org/assocham_backend')
+    && bundle.includes(APPLICATION_EMAIL)
+}
+
 export const pageExposesPublicJobListings = (html) =>
   PUBLIC_JOB_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
@@ -148,16 +169,27 @@ export const isVerifiedNoPublicJobRoute = (page = {}, requestedUrl) => {
 export const createAssochamTechScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    const isLegacyHomepage = hasOfficialHomepageSignal(homepage.html)
+    const isCurrentHomepage = hasCurrentSpaHomepageSignal(homepage.html)
+    if (homepage.status !== 200 || (!isLegacyHomepage && !isCurrentHomepage)) {
       throw new Error('Assocham Tech verified official homepage no longer matches the known public surface')
     }
 
-    if (extractCareersUrl(homepage.html) !== CAREERS_URL) {
+    let careersUrl = CAREERS_URL
+    if (isCurrentHomepage) {
+      const bundleUrl = extractCurrentFrontendBundleUrl(homepage.html)
+      const bundlePage = await fetchPage(bundleUrl)
+      if (bundlePage.status !== 200 || bundlePage.url !== bundleUrl
+        || !hasCurrentFrontendCareersNavigation(bundlePage.html)) {
+        throw new Error('Assocham Tech frontend careers navigation no longer matches the verified public surface')
+      }
+      careersUrl = CURRENT_CAREERS_URL
+    } else if (extractCareersUrl(homepage.html) !== CAREERS_URL) {
       throw new Error('Assocham Tech verified careers handoff no longer matches the known public surface')
     }
 
-    const careersPage = await fetchPage(CAREERS_URL)
-    if (getFinalUrl(careersPage, CAREERS_URL) !== CAREERS_URL) {
+    const careersPage = await fetchPage(careersUrl)
+    if (getFinalUrl(careersPage, careersUrl) !== careersUrl) {
       throw new Error('Assocham Tech verified careers route no longer matches the known public surface')
     }
 

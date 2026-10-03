@@ -991,6 +991,7 @@ const buildNormalizedProviderEnrichedJob = (job = {}, updates = {}) => {
     description: normalized.jobDescription || normalizeWhitespace(updates.description) || job.description || null,
     jobDescription: normalized.jobDescription || normalizeWhitespace(updates.jobDescription) || job.jobDescription || null,
     experienceRequired: normalized.experienceRequired,
+    ...(updates.experienceRequired && { sourceExperienceRequired: normalizeWhitespace(updates.experienceRequired) }),
     publicExperienceChecked: true,
   }
 }
@@ -1505,6 +1506,7 @@ export const inferExperienceFromPublicPageHtml = (job = {}, html) => {
       || relevantPageSummary
       || null,
     experienceRequired: normalized.experienceRequired,
+    ...(explicitExperience && { sourceExperienceRequired: explicitExperience }),
     publicExperienceChecked: hasTrustedPriorPublicEvidence || hasVerifiedPublicJobEvidence,
   }
 }

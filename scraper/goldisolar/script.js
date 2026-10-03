@@ -137,6 +137,16 @@ export const createGoldiSolarScraper = ({
     const fetchText = options.fetchText || defaultFetchText
     const html = await fetchText(buildSearchUrl())
 
+    if (/Password Protect WordPress plugin/i.test(html)
+      && /<input\b[^>]*type=["']password["']/i.test(html)) {
+      throw Object.assign(new Error('Goldi Solar public careers inventory is unavailable: the first-party page is password-protected'), {
+        code: 'GOLDISOLAR_INVENTORY_UNAVAILABLE',
+        softFailure: true,
+        failureKind: 'upstream_inventory_unavailable',
+        abortRetries: true,
+      })
+    }
+
     if (!pageIndicatesApplyForm(html)) {
       throw new Error('Goldi Solar careers page no longer exposes the expected application form signal')
     }

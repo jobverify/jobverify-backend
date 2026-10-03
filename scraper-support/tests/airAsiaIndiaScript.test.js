@@ -46,6 +46,12 @@ const airIndiaExpressCareersHtml = `
 </html>
 `
 
+const currentLegacyHomeMissingRoute = JSON.stringify({
+  message: 'no Route matched with those values',
+  request_id: '649b131d39e4b523d09adb4dc7ac9021',
+})
+const currentLegacyHomeMissingRouteHtml = '<!doctype html><html><head><title>Error</title></head><body><h1>Error</h1><p>no Route matched with those values.</p><p>request_id: 729c4d47ab906b58b32cd550e82aea55</p></body></html>'
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/airasiaindia/script.js')
@@ -70,6 +76,21 @@ test('AirAsia India sentinel pins the verified legacy redirect, parked rebrand h
   assert.equal(airAsiaIndia.hasAirAsiaMoveSignal(airAsiaMoveHtml), true)
   assert.equal(airAsiaIndia.hasAixConnectParkedSignal(aixConnectComingSoonHtml), true)
   assert.equal(airAsiaIndia.hasAirIndiaExpressCareersSignal(airIndiaExpressCareersHtml), true)
+  assert.equal(airAsiaIndia.isVerifiedMissingLegacyHomepageRoute({
+    status: 404,
+    url: airAsiaIndia.LEGACY_HOMEPAGE_URL,
+    html: currentLegacyHomeMissingRoute,
+  }), true)
+  assert.equal(airAsiaIndia.isVerifiedMissingLegacyHomepageRoute({
+    status: 404,
+    url: airAsiaIndia.LEGACY_HOMEPAGE_URL,
+    html: currentLegacyHomeMissingRouteHtml,
+  }), true)
+  assert.equal(airAsiaIndia.isVerifiedMissingLegacyHomepageRoute({
+    status: 404,
+    url: 'https://unrelated.example/',
+    html: currentLegacyHomeMissingRoute,
+  }), false)
 
   assert.equal(
     airAsiaIndia.isVerifiedAirAsiaMoveRedirect({
@@ -148,6 +169,28 @@ test('AirAsia India returns no jobs only while the verified first-party legacy a
     airAsiaIndia.AIXCONNECT_CAREERS_URL,
     airAsiaIndia.AIR_INDIA_EXPRESS_CAREERS_URL,
   ])
+  assert.deepEqual(jobs, [])
+})
+
+test('AirAsia India accepts the missing legacy home route only when the careers handoff and rebrand checks still pass', async () => {
+  const airAsiaIndia = await loadModule()
+  const jobs = await airAsiaIndia.createAirAsiaIndiaScraper().run({
+    fetchPage: async (url) => {
+      if (url === airAsiaIndia.LEGACY_HOMEPAGE_URL) {
+        return { status: 404, url, html: currentLegacyHomeMissingRouteHtml }
+      }
+      if (url === airAsiaIndia.LEGACY_CAREERS_URL) {
+        return { status: 200, url: `${airAsiaIndia.AIRASIA_MOVE_URL}/`, html: airAsiaMoveHtml }
+      }
+      if (url === airAsiaIndia.AIXCONNECT_HOME_URL || url === airAsiaIndia.AIXCONNECT_CAREERS_URL) {
+        return { status: 200, url, html: aixConnectComingSoonHtml }
+      }
+      if (url === airAsiaIndia.AIR_INDIA_EXPRESS_CAREERS_URL) {
+        return { status: 200, url, html: airIndiaExpressCareersHtml }
+      }
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
   assert.deepEqual(jobs, [])
 })
 

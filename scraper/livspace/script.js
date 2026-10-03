@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { LIVSPACE_CATALOG } from './catalog.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -54,6 +55,14 @@ const stripTags = (value) => normalizeWhitespace(
     .replace(/<[^>]+>/g, ' '),
 )
 
+const substantiveDescription = (...values) => {
+  for (const value of values) {
+    const text = stripTags(value)
+    if (text && /\p{L}/u.test(text) && !/^n\/?a$/i.test(text)) return text
+  }
+  return null
+}
+
 const splitCsv = (value) => normalizeWhitespace(value)
   ?.split(',')
   .map((part) => normalizeWhitespace(part))
@@ -96,6 +105,10 @@ const normalizeDate = (value) => {
 
   return parsed.toISOString().slice(0, 10)
 }
+
+const surfaceFailure = (message, failureKind = 'surface_drift') => Object.assign(new Error(message), {
+  softFailure: true, abortRetries: true, failureKind,
+})
 
 const unwrapPayload = (payload = {}) => {
   if (typeof payload !== 'string') return payload
@@ -167,12 +180,74 @@ export const hasPublicBoardShell = (html = '') => {
     && /main\.[A-Za-z0-9]+\.js/i.test(rawHtml)
 }
 
-export const isIndiaJob = (record = {}) =>
-  (Array.isArray(record?.jobLocationRecord) && record.jobLocationRecord.some(
-    (location) => /india/i.test(normalizeWhitespace(location?.country) || ''),
-  ))
-  || /india/i.test(normalizeWhitespace(record?.locAgg) || '')
-  || /india/i.test(normalizeWhitespace(record?.location) || '')
+// Exact public location labels, rather than the employer's country, establish scope.
+const INDIA_CITY_STATE_PAIRS = new Set([
+  'ahmedabad,gujarat', 'hyderabad,telangana', 'surat,gujarat',
+  'chennai,tamil nadu', 'bangalore,karnataka', 'bengaluru,karnataka',
+  'mumbai,maharashtra', 'gurgaon,haryana', 'gurugram,haryana',
+  'pune,maharashtra', 'noida,uttar pradesh', 'patna,bihar',
+  'bhopal,madhya pradesh',
+])
+const FOREIGN_COUNTRY_CODES = new Set()
+const FOREIGN_COUNTRY_LABELS = (() => {
+  const labels = new Set([
+    'united states of america', 'usa', 'us', 'uae', 'uk',
+    'hong kong', 'macau', 'macao', 'taiwan', 'turkey', 'türkiye',
+    'czech republic', 'south korea', 'north korea',
+  ])
+  const names = new Intl.DisplayNames(['en'], { type: 'region' })
+  // ICU recognizes region names; unrecognized codes echo the code unchanged.
+  // Compare entire comma-separated country tokens, never location substrings.
+  for (let first = 65; first <= 90; first += 1) {
+    for (let second = 65; second <= 90; second += 1) {
+      const code = String.fromCharCode(first, second)
+      if (['IN', 'ZZ', 'EU', 'EZ', 'UN', 'QO', 'XA', 'XB'].includes(code)) continue
+      const name = names.of(code)
+      if (name && name !== code) {
+        labels.add(name.toLowerCase())
+        FOREIGN_COUNTRY_CODES.add(code)
+      }
+    }
+  }
+  return labels
+})()
+const locationTokens = (value) => (normalizeWhitespace(value) || '')
+  .toLowerCase().split(',').map((part) => part.trim())
+
+const classifyLocationLabel = (value) => {
+  const tokens = locationTokens(value)
+  const last = tokens.at(-1)
+  const hasIndia = tokens.some((token) => token === 'india' || token === 'in')
+  const hasForeign = tokens.some((token) => FOREIGN_COUNTRY_LABELS.has(token))
+  if (hasIndia && hasForeign) return 'conflict'
+  if (hasForeign) return 'foreign'
+  if (last === 'india' || last === 'in') return 'india'
+  if (tokens.length === 2 && INDIA_CITY_STATE_PAIRS.has(tokens.join(','))) return 'india'
+  // Chandigarh is both a city and an Indian union territory.
+  if (tokens.length === 1 && last === 'chandigarh') return 'india'
+  return 'unknown'
+}
+
+export const classifyJobCountry = (record = {}) => {
+  const locations = Array.isArray(record?.jobLocationRecord) ? record.jobLocationRecord : []
+  const countries = [record?.country, ...locations.map((location) => location?.country)]
+    .map(normalizeWhitespace).filter((value) => value && !/^(unknown|none|null|undefined)$/i.test(value))
+  const signals = countries.map((value) => {
+    if (/^(india|in|ind)$/i.test(value)) return 'india'
+    if (FOREIGN_COUNTRY_LABELS.has(value.toLowerCase()) || FOREIGN_COUNTRY_CODES.has(value.toUpperCase())) return 'foreign'
+    return 'unknown'
+  })
+  for (const label of [record?.locAgg, record?.location, record?.jobConfigurationData?.Location,
+    ...locations.flatMap((location) => [location?.formattedLocation, location?.location])]) {
+    signals.push(classifyLocationLabel(label))
+  }
+  if (signals.includes('conflict') || signals.includes('india') && signals.includes('foreign')) return 'conflict'
+  if (signals.includes('foreign')) return 'foreign'
+  if (signals.includes('india')) return 'india'
+  return 'unknown'
+}
+
+export const isIndiaJob = (record = {}) => classifyJobCountry(record) === 'india'
 
 export const buildSearchPayload = ({ page = 1, keywords = '' } = {}) => ({
   filterCri: JSON.stringify({
@@ -206,7 +281,7 @@ const extractSearchRecords = (payload = {}) => {
   const normalizedPayload = unwrapPayload(payload)
   const records = normalizedPayload?.data?.data
   if (!Array.isArray(records)) {
-    throw new Error('Livspace Zwayam search response no longer matches the expected payload')
+    throw surfaceFailure('Livspace Zwayam search response no longer matches the expected payload')
   }
 
   return records.map(unwrapSearchRecord)
@@ -231,7 +306,7 @@ const mapSearchRecord = (record = {}) => ({
     : splitCsv(record?.skillSet || record?.desiredSkill),
   postingDate: normalizeDate(record?.createDate || record?.createdDate),
   closingDate: normalizeDate(record?.endtDate || record?.endDate),
-  jobDescription: stripTags(record?.shortDescription || record?.mediumDescriptionWithoutHtml),
+  jobDescription: substantiveDescription(record?.shortDescription, record?.mediumDescriptionWithoutHtml),
   _listingRecord: record,
 })
 
@@ -258,6 +333,18 @@ export const extractJobDetail = (payload = {}, listing = {}) => {
   const listingRecord = listing._listingRecord || listing
   const jobCode = normalizeWhitespace(detailRecord?.jobCode || listing.jobId || listingRecord?.jobCode)
   const jobUrl = normalizeWhitespace(detailRecord?.jobUrl || listingRecord?.jobUrl)
+
+  const nativeDescriptions = [
+    detailRecord?.jobConfigurationData?.['Job Description'],
+    detailRecord?.longDescription,
+    detailRecord?.mediumDescription,
+    detailRecord?.shortDescription,
+  ]
+  const hasNativeFullDescriptionField = nativeDescriptions.slice(0, 3).some((value) => value !== undefined)
+  const description = substantiveDescription(
+    ...nativeDescriptions,
+    ...(hasNativeFullDescriptionField ? [] : [listing.jobDescription]),
+  )
 
   return {
     title: normalizeWhitespace(detailRecord?.jobTitle) || listing.title || null,
@@ -307,13 +394,7 @@ export const extractJobDetail = (payload = {}, listing = {}) => {
         || listingRecord?.createDate,
     ),
     closingDate: normalizeDate(detailRecord?.endtDate || detailRecord?.endDate || listing.closingDate),
-    jobDescription: stripTags(
-      detailRecord?.jobConfigurationData?.['Job Description']
-        || detailRecord?.longDescription
-        || detailRecord?.mediumDescription
-        || detailRecord?.shortDescription
-        || listing.jobDescription,
-    ),
+    jobDescription: description,
   }
 }
 
@@ -383,65 +464,145 @@ export const createLivspaceScraper = ({
   } = {}) {
     const careersPageHtml = await fetchText(CAREERS_URL)
     if (!hasOfficialCareersPageSignal(careersPageHtml)) {
-      throw new Error('Livspace verified official careers page no longer matches the known public surface')
+      throw surfaceFailure('Livspace verified official careers page no longer matches the known public surface')
     }
 
     const handoffUrl = extractZwayamHandoffUrl(careersPageHtml)
     if (handoffUrl !== CAREERS_LANDING_URL) {
-      throw new Error('Livspace verified official careers page no longer exposes the known Zwayam handoff')
+      throw surfaceFailure('Livspace verified official careers page no longer exposes the known Zwayam handoff')
     }
 
     const boardShellHtml = await fetchText(CAREERS_LANDING_URL)
     if (!hasPublicBoardShell(boardShellHtml)) {
-      throw new Error('Livspace verified public Zwayam board no longer matches the known public surface')
+      throw surfaceFailure('Livspace verified public Zwayam board no longer matches the known public surface')
     }
 
     const jobs = []
     const seenJobIds = new Set()
+    const unresolvedIds = []
+    let expectedTotal = null
+    let reachedLastPage = false
+    let pagesFetched = 0
 
-    for (let page = 1; page <= maxPages && jobs.length < maxJobs; page += 1) {
+    for (let page = 1; page <= maxPages; page += 1) {
       const listingPayload = await fetchJson(LISTING_API_URL, {
         method: 'POST',
         form: buildSearchPayload({ page }),
       })
-
-      const listings = extractSearchResults(listingPayload)
+      const records = extractSearchRecords(listingPayload)
+      pagesFetched += 1
       const summary = extractPaginationSummary(listingPayload)
+      const rawData = unwrapPayload(listingPayload)?.data
+      const rawTotal = rawData?.totalCount
+      if (typeof rawData?.hasMoreData !== 'boolean') {
+        throw surfaceFailure('Livspace public listing pagination marker is invalid')
+      }
+      const validTotalType = typeof rawTotal === 'number'
+        || typeof rawTotal === 'string' && /^\d+$/.test(rawTotal.trim())
+      if (!validTotalType || !Number.isSafeInteger(Number(rawTotal)) || Number(rawTotal) < 0) {
+        throw surfaceFailure('Livspace public listing total is invalid')
+      }
+      if (expectedTotal === null) expectedTotal = summary.totalCount
+      if (summary.totalCount !== expectedTotal || !records.length && (expectedTotal > 0 || summary.hasNext)) {
+        throw surfaceFailure('Livspace public listing inventory is incomplete or its total changed')
+      }
+
+      // Validate unfiltered identity/counts, including foreign and unresolved rows.
+      for (const record of records) {
+        if (record?.companyId != null && String(record.companyId) !== String(DETAIL_COMPANY_ID)) {
+          throw surfaceFailure('Livspace public listing company identity does not match its tenant')
+        }
+      }
+      const listings = records.map(mapSearchRecord)
+      for (const listing of listings) {
+        if (!listing.title || !listing.jobId || !listing.sourceUrl) {
+          throw surfaceFailure('Livspace public listing record has invalid job identity')
+        }
+        if (seenJobIds.has(listing.jobId)) throw surfaceFailure('Livspace public listing repeats a duplicate job identity')
+        seenJobIds.add(listing.jobId)
+      }
+      if (seenJobIds.size > expectedTotal) throw surfaceFailure('Livspace public listing exceeds its advertised total')
 
       for (const listing of listings) {
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
-
+        const listingScope = classifyJobCountry(listing._listingRecord)
+        if (listingScope === 'conflict') throw surfaceFailure('Livspace listing country scope conflicts with its location', 'incomplete_location_scope')
+        if (listingScope === 'foreign') continue
         let job = listing
+        let detailPayload = null
+        let detailComplete = false
         try {
-          const detailPayload = await fetchJson(DETAIL_API_URL, {
+          detailPayload = unwrapPayload(await fetchJson(DETAIL_API_URL, {
             method: 'POST',
             json: buildDetailRequest(listing._listingRecord),
-          })
-          job = extractJobDetail(detailPayload, listing)
+          }))
         } catch {
-          job = listing
+          // The complete public listing remains usable when detail access fails.
         }
-
+        let scope = listingScope
+        if (detailPayload !== null) {
+          if (normalizeWhitespace(detailPayload?.jobCode) !== listing.jobId
+            || normalizeWhitespace(detailPayload?.jobUrl) !== listing._listingRecord.jobUrl
+            || detailPayload?.companyId != null && String(detailPayload.companyId) !== String(DETAIL_COMPANY_ID)) {
+            throw surfaceFailure('Livspace public detail job/company identity does not match the listing')
+          }
+          const detailScope = classifyJobCountry(detailPayload)
+          if (detailScope === 'conflict' || listingScope === 'india' && detailScope === 'foreign') {
+            throw surfaceFailure('Livspace public detail country scope conflicts with the India listing', 'incomplete_location_scope')
+          }
+          if (detailScope !== 'unknown') scope = detailScope
+          job = extractJobDetail(detailPayload, listing)
+          detailComplete = true
+        }
+        if (scope === 'foreign') continue
+        if (scope !== 'india') {
+          unresolvedIds.push(listing.jobId)
+          continue
+        }
+        if (jobs.length >= maxJobs) throw surfaceFailure('Livspace public listing inventory is incomplete at the configured job limit')
         jobs.push({
           ...job,
-          country: job.country || PROVIDER_METADATA.countryFilter,
+          country: 'India',
           source: SOURCE,
           link: job.applyUrl || job.sourceUrl,
           companyCareerPage: CAREERS_URL,
           companyDomain: PROVIDER_METADATA.companyDomain,
           atsPlatform: PROVIDER_METADATA.atsPlatform,
           scrapedAt: now(),
+          sourceDetailComplete: detailComplete,
+          // Matching native details were inspected for experience, including its absence.
+          // This does not certify a populated description; that has its own missing flag.
+          publicExperienceChecked: detailComplete,
+          sourceDescriptionMissing: !normalizeWhitespace(job.jobDescription),
         })
-
-        if (jobs.length >= maxJobs) break
       }
-
-      if (!summary.hasNext) break
-      if (summary.totalCount > 0 && page * summary.pageSize >= summary.totalCount) break
+      if (!summary.hasNext) {
+        reachedLastPage = true
+        break
+      }
     }
-
-    return jobs
+    if (!reachedLastPage || seenJobIds.size !== expectedTotal) {
+      throw surfaceFailure('Livspace public listing inventory is incomplete against its advertised total')
+    }
+    if (!jobs.length && unresolvedIds.length) throw surfaceFailure('Livspace public listing has unresolved country scope', 'incomplete_location_scope')
+    for (const job of jobs) {
+      job.sourceListingComplete = unresolvedIds.length === 0
+      job.sourceListingTotal = expectedTotal
+      job.sourceListingFetched = seenJobIds.size
+      if (unresolvedIds.length) job.sourceLocationScopeUnresolvedIds = [...unresolvedIds]
+    }
+    return attachInventoryEvidence(jobs, {
+      status: unresolvedIds.length ? 'coverage-gap' : expectedTotal === 0 ? 'verified-empty' : 'complete-inventory',
+      surface: LISTING_API_URL,
+      firstParty: true,
+      listingComplete: unresolvedIds.length === 0,
+      pagesFetched,
+      reportedTotal: expectedTotal,
+      indiaFacetCount: jobs.length,
+      verifiedAt: now(),
+      reason: unresolvedIds.length
+        ? 'Complete unfiltered Zwayam pagination; some location scopes remain unresolved'
+        : 'Official Livspace handoff, tenant identity, complete unfiltered Zwayam pagination and validated country scope',
+    })
   },
 })
 

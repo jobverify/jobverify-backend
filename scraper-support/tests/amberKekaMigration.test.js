@@ -6,7 +6,7 @@ const assetRoot='https://cdn-static-assets.amberstudent.com/amber-user-website/b
 const tenant='https://amberstudent.keka.com/careers/'
 const identifier='228f83f5-48b3-474a-b753-4fce2be7524f'
 const main='path:"/job-opening",exact:!0,component:abc.A;var abc=n(42);42:function(e,t,n){chunkName:()=>"Jobs",importAsync:()=>Promise.all([n.e("100"),n.e("5004")]).then(n.bind(n,45111))};u.u=function(e){return"js/"+e+"."+({5004:"abcdef1234567890"})[e]+".desktop.js"}'
-const chunk='window.khConfig={identifier:"'+identifier+'",domain:"'+tenant+'",targetContainer:"#khembedjobs"}'
+const chunk='let u="https://amberstudent.keka.com/careers",m=`${u}/api/embedjobs/default/active/'+identifier+'`'
 const texts={ [career]:'<title>Careers | Amber</title><a href="/job-opening">Explore Open Roles</a>', [opening]:'<script src="'+assetRoot+'main.abcdef.desktop.js"></script>', [assetRoot+'main.abcdef.desktop.js']:main, [assetRoot+'5004.abcdef1234567890.desktop.js']:chunk }
 const info={name:'amber',shortName:'amber',careersPortalDomain:'amberstudent.keka.com'}
 const role=(id=1,country='IN')=>({id,title:'Engineer',description:'<p>Build student accommodation products.</p>',jobLocations:[{city:'Pune',state:'MH',countryCode:country,countryName:country==='IN'?'India':'United States'}],publishedOn:'2026-09-11T06:38:37.257Z',skillNames:[],departmentName:'Engineering'})

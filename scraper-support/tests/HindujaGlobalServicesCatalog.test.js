@@ -50,10 +50,10 @@ test('Hinduja Global Services local catalog captures the verified first-party la
   )
   assert.equal(
     provider.verifiedSampleJobUrl,
-    'https://careers.joinhgs.com/India/job/Hyderabad-Process-Consultant-TG-500019/1362905766/',
+    'https://careers.joinhgs.com/India/job/Bengaluru-Urban-Trainee-Process-Consultant-KA-560068/1367615866/',
   )
-  assert.equal(provider.verifiedPublicJobCount, 12)
-  assert.equal(provider.verifiedIndiaJobCount, 12)
+  assert.equal(provider.verifiedPublicJobCount, 1)
+  assert.equal(provider.verifiedIndiaJobCount, 1)
   assert.equal(provider.atsPlatform, 'jobs2web-rss')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
@@ -66,15 +66,15 @@ test('Hinduja Global Services local catalog captures the verified first-party la
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.match(provider.modulePath, /hindujaglobalservices[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /hindujaglobalservices[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /July 16, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /joinhgs\.com\/in\/en/i)
-  assert.match(provider.verifiedSurfaceSummary, /category\/\?catid=7947010/i)
-  assert.match(provider.verifiedSurfaceSummary, /category\/\?catid=7947110/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /HGS India landing/i)
+  assert.match(provider.verifiedSurfaceSummary, /both category pages/i)
+  assert.match(provider.verifiedSurfaceSummary, /public RSS feeds/i)
   assert.match(provider.verifiedSurfaceSummary, /Process Consultant/i)
-  assert.match(provider.verifiedSurfaceSummary, /12 India openings/i)
+  assert.match(provider.verifiedSurfaceSummary, /one Trainee Process Consultant/i)
 
   assert.equal(hgs.PROVIDER_METADATA.source, provider.source)
   assert.equal(hgs.CAREERS_URL, provider.companyCareerPage)

@@ -2,7 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -104,7 +104,11 @@ export const extractCurrentAppBundleUrl = (html = '') => {
 
 export const hasCurrentHomepageSignal = (html = '') => {
   const page = String(html ?? '')
-  return /<title>\s*Logic Fruit Technologies \| Semiconductor Systems Solutions Company\s*<\/title>/i.test(page)
+  const legacyTitle = /<title>\s*Logic Fruit Technologies \| Semiconductor Systems Solutions Company\s*<\/title>/i.test(page)
+  const currentTitle = /<title>\s*Logic Fruit Technologies \| Hardware, Software, AI (?:&amp;|&) Robotics for Mission-Critical Systems\s*<\/title>/i.test(page)
+    && /["']@type["']\s*:\s*["']Organization["']/i.test(page)
+    && page.includes('https://www.logic-fruit.com')
+  return (legacyTitle || currentTitle)
     && /<div id=["']root["']><\/div>/i.test(page)
     && Boolean(extractCurrentAppBundleUrl(page))
 }
@@ -225,10 +229,49 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+
+export const CURRENT_JOBS_API_URL = 'https://api.logic-fruit.com/api/jobs'
+
+const hasVerifiedPublicJobsApiSignal = (bundle = '') =>
+  bundle.includes('https://api.logic-fruit.com/api')
+  && /async getJobs\(/.test(bundle)
+  && /label:`Career`,page:`career`,href:`\/careers`/.test(bundle)
+  && bundle.includes('CURRENT OPENINGS')
+  && bundle.includes('/career/jobs-current-opening/')
+
+const extractCurrentApiJobs = (payload, scrapedAt) => {
+  if (payload?.success !== true || !Array.isArray(payload.data) || Number(payload.count) !== payload.data.length) {
+    throw new Error('Logic Fruit public jobs feed changed materially or is incomplete')
+  }
+  return payload.data.filter((record) => record?.status === 'published').map((record) => {
+    if (record.entityType !== 'job' || !record.id || !record.slug || !record.title || !record.location) {
+      throw new Error('Logic Fruit public jobs feed changed materially: invalid published job')
+    }
+    if (!/\b(?:India|Gurugram|Gurgaon|Bengaluru|Bangalore|Hyderabad|Noida|Chennai|Pune|Mumbai|Delhi)\b/i.test(record.location)) return null
+    const sourceUrl = new URL('/jobs-current-opening/' + encodeURIComponent(record.slug) + '/', HOMEPAGE_URL).toString()
+    const location = normalizeLocation(record.location)
+    return {
+      title: normalizeWhitespace(record.title), company: COMPANY, source: SOURCE,
+      jobId: SOURCE + '-' + record.id, requisitionId: record.id,
+      location, city: deriveCity(location), country: 'India',
+      department: normalizeWhitespace(record.department),
+      employmentType: /full[- ]?time/i.test(record.type || '') ? 'Full-time' : normalizeWhitespace(record.type),
+      experienceRequired: normalizeWhitespace(record.experience),
+      remoteStatus: /remote/i.test(record.workMode || '') ? 'Remote' : /hybrid/i.test(record.workMode || '') ? 'Hybrid' : 'On-site',
+      minimumQualification: stripTags(record.qualifications), preferredQualification: null,
+      requiredSkills: Array.isArray(record.skills) ? record.skills.filter((skill) => typeof skill === 'string') : [],
+      jobDescription: [record.overview, record.description, record.responsibilities, record.qualifications].map(stripTags).filter(Boolean).join('\n') || null,
+      postingDate: record.createdAt || null, closingDate: null,
+      sourceUrl, applyUrl: sourceUrl, link: sourceUrl,
+      companyCareerPage: HOMEPAGE_URL + 'careers', companyDomain: 'logic-fruit.com', atsPlatform: 'official-company-careers', scrapedAt,
+    }
+  }).filter(Boolean)
+}
+
 export const createLogicFruitTechnologiesScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText = defaultFetchText, fetchJson = (url) => fetchJsonWithRetry(url, { label: SOURCE, timeoutMs: 15000 }) } = {}) {
     let html
     try {
       html = await fetchText(CAREERS_URL)
@@ -243,6 +286,9 @@ export const createLogicFruitTechnologiesScraper = ({
       }
       const bundleUrl = extractCurrentAppBundleUrl(homepageHtml)
       const bundle = await fetchText(bundleUrl)
+      if (hasVerifiedPublicJobsApiSignal(bundle)) {
+        return extractCurrentApiJobs(await fetchJson(CURRENT_JOBS_API_URL), now())
+      }
       if (!hasVerifiedCurrentCareersBundleSignal(bundle)) {
         throw new Error('Logic Fruit Technologies current careers app changed materially or now exposes public jobs')
       }

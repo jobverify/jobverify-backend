@@ -67,7 +67,7 @@ test("jobMatchesSavedFilters applies fresher job-type semantics for experience y
 
 test("buildJobFilterConditions excludes explicit non-numeric experience from the unspecified filter", () => {
   const filters = buildJobFilterConditions({ experienceYear: "unspecified" });
-  const explicitExperienceGuard = filters.$and?.[0]?.$and?.[1]?.$or || [];
+  const explicitExperienceGuard = filters.$and?.[0]?.$or?.[1]?.$and?.[1]?.$and?.[1]?.$or || [];
 
   assert.equal(
     explicitExperienceGuard.some(

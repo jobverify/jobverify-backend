@@ -448,20 +448,20 @@ test('inferExperienceFromPublicPageHtml does not treat Oracle location chrome as
 
 test('inferExperienceFromPublicPageHtml trims trailing Oracle chrome after real job-detail sections', () => {
   const enriched = inferExperienceFromPublicPageHtml({
-    title: 'ECD_Havells Fan_168 (3621)',
-    company: 'Havells',
+    title: 'ECD_Fan_168 (3621)',
+    company: 'Example Company',
     applyUrl: 'https://iabgcp.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/1000093',
     sourceUrl: 'https://iabgcp.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/1000093',
     experienceRequired: null,
   }, `
     <html>
       <head>
-        <title>ECD_Havells Fan_168 (3621) - Havells Careers</title>
-        <meta property="og:title" content="ECD_Havells Fan_168 (3621)" />
+        <title>ECD_Fan_168 (3621) - Example Company Careers</title>
+        <meta property="og:title" content="ECD_Fan_168 (3621)" />
         <meta property="og:description" content="Area Head for Fans Division based at Tirupati" />
       </head>
       <body>
-        <h1>ECD_Havells Fan_168 (3621)</h1>
+        <h1>ECD_Fan_168 (3621)</h1>
         <section>
           <h2>Job Description</h2>
           <p>Sales Experience</p>
@@ -480,7 +480,7 @@ test('inferExperienceFromPublicPageHtml trims trailing Oracle chrome after real 
           <h2>Job Info</h2>
           <p>Job Identification 1000093</p>
         </section>
-        <p>Copy to Clipboard Similar Jobs Page ECD_Havells Fan_168 (3621) - Havells Careers loaded</p>
+        <p>Copy to Clipboard Similar Jobs Page ECD_Fan_168 (3621) - Example Company Careers loaded</p>
       </body>
     </html>
   `)
@@ -1364,9 +1364,9 @@ test('enrichJobWithPublicExperience promotes detailed source-provided job descri
 test('enrichJobWithPublicExperience promotes skill-led source descriptions without refetching', async () => {
   const job = {
     title: 'Microsoft Cloud Native Lead',
-    company: 'Hexaware',
-    applyUrl: 'https://jobs.hexaware.com/#en/sites/CX_1/job/653958',
-    sourceUrl: 'https://jobs.hexaware.com/#en/sites/CX_1/job/653958',
+    company: 'ExampleCo',
+    applyUrl: 'https://jobs.example.com/#en/sites/CX_1/job/653958',
+    sourceUrl: 'https://jobs.example.com/#en/sites/CX_1/job/653958',
     experienceRequired: null,
     publicExperienceChecked: false,
     jobDescription: `
@@ -1593,9 +1593,9 @@ test('enrichJobWithPublicExperience does not auto-trust long company boilerplate
 test('enrichJobWithPublicExperience trusts provider-verified public evidence and skips refetching', async () => {
   const job = {
     title: 'Senior Associate - SAP HCM-TC',
-    company: 'PwC',
-    applyUrl: 'https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Kolkata-DN-57/Associate---SAP-ABAP-TC_145552WD/apply',
-    sourceUrl: 'https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Kolkata-DN-57/Associate---SAP-ABAP-TC_145552WD',
+    company: 'Example Corp',
+    applyUrl: 'https://example.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Kolkata-DN-57/Associate---SAP-ABAP-TC_145552WD/apply',
+    sourceUrl: 'https://example.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Kolkata-DN-57/Associate---SAP-ABAP-TC_145552WD',
     experienceRequired: null,
     engineeringDomain: 'Unknown',
     publicExperienceChecked: true,

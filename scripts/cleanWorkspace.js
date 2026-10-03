@@ -9,6 +9,10 @@ const repoRoot = path.resolve(__dirname, "..");
 const removedPaths = [];
 
 function removePath(targetPath) {
+  const relative = path.relative(repoRoot, path.resolve(targetPath));
+  if (!relative || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+    throw new Error(`Cleanup target is outside the backend workspace: ${targetPath}`);
+  }
   if (!existsSync(targetPath)) {
     return;
   }
@@ -29,7 +33,9 @@ function removeDirectChildren(parentDir, matcher) {
   }
 }
 
-removePath(path.join(repoRoot, ".cache"));
+// Retain installed runtimes, weights and ownership of any running model worker.
+const persistentCaches = new Set(["laya-python", "laya-venv", "laya-model", "scraper-actions", "description-rewriter"]);
+removeDirectChildren(path.join(repoRoot, ".cache"), name => !persistentCaches.has(name));
 removePath(path.join(repoRoot, "coverage"));
 removePath(path.join(repoRoot, "node_modules", ".cache"));
 removePath(path.join(repoRoot, "playwright-report"));

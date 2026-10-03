@@ -109,7 +109,7 @@ const firstListingPayload = {
     facetedSearchConfig: {
       paginationHowMuch: '9',
     },
-    totalCount: 98,
+    totalCount: 3,
   },
 }
 
@@ -122,7 +122,7 @@ const secondListingPayload = {
     facetedSearchConfig: {
       paginationHowMuch: '9',
     },
-    totalCount: 98,
+    totalCount: 3,
   },
 }
 
@@ -196,7 +196,7 @@ test('Livspace pins the verified official careers handoff and public Zwayam boar
   assert.equal(livspace.TENANT_GROUP_ID, 'G1')
   assert.equal(livspace.SEARCH_COMPANY_ID, 'MTU5MTk=')
   assert.equal(livspace.DETAIL_COMPANY_ID, '15919')
-  assert.equal(livspace.VERIFIED_ON, '2026-07-16')
+  assert.equal(livspace.VERIFIED_ON, '2026-10-03')
   assert.equal(livspace.hasOfficialCareersPageSignal(officialCareersPageHtml), true)
   assert.equal(
     livspace.extractZwayamHandoffUrl(officialCareersPageHtml),
@@ -277,7 +277,7 @@ test('Livspace search extraction keeps only India jobs from the verified Zwayam 
   assert.deepEqual(livspace.extractPaginationSummary(firstListingPayload), {
     hasNext: true,
     pageSize: 9,
-    totalCount: 98,
+    totalCount: 3,
   })
 })
 

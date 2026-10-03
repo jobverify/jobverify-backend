@@ -27,6 +27,13 @@ test('shouldFetchWorkdayJobDetail skips obvious non-India country-code summaries
   )
 })
 
+test('shouldFetchWorkdayJobDetail recognizes dotted and comma-separated US locations from CXS', () => {
+  assert.equal(shouldFetchWorkdayJobDetail({ location: 'USA.VA.Reston' }), false)
+  assert.equal(shouldFetchWorkdayJobDetail({ location: 'USA, GA, Atlanta' }), false)
+  assert.equal(shouldFetchWorkdayJobDetail({ location: 'USA.IL.Home Office Chicago Metro' }), false)
+  assert.equal(shouldFetchWorkdayJobDetail({ location: 'IN, Chennai' }), true)
+})
+
 test('runWorkdayScraper jobs-api mode skips leaked non-India country-code listings before detail fetches', async () => {
   const originalFetch = global.fetch
   const detailUrls = []

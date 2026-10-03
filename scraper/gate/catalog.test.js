@@ -12,12 +12,12 @@ test('Gate is registered through the custom provider catalog without aliases', (
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Gate')
   assert.equal(provider.companyCareerPage, 'https://www.gate.com/careers')
-  assert.equal(provider.atsPlatform, 'lever')
+  assert.equal(provider.atsPlatform, 'official-first-party-careers-api')
   assert.equal(provider.countryFilter, 'Global')
-  assert.equal(provider.paginationStrategy, 'official-careers-validation-plus-lever-api')
+  assert.equal(provider.paginationStrategy, 'first-party-careers-api-pagination')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-lever-board+lever-postings-api',
+    'verified-first-party-careers-page+positions-api+position-detail-api',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

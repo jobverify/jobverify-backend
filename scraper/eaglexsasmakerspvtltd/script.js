@@ -171,7 +171,14 @@ export const isVerifiedMissingCareersRoute = (page = {}) => {
     && lower.includes('building professional web solutions for early-stage startups')
     && lower.includes('2026 launch initiative supporting the entrepreneurial ecosystem')
     && lower.includes('eaglexdevelopment@gmail.com')
-    && lower.includes('indore, madhya pradesh, india')
+    && (
+      lower.includes('indore, madhya pradesh, india')
+      || (
+        lower.includes('global / remote studio')
+        && hasOfficialHomepageSignal(rawHtml)
+        && rawHtml.includes('https://eagle-x.in/#organization')
+      )
+    )
 
   return (matchesLegacySoft404 || matchesCurrentHard404)
     && !hasPublicJobsSignal(rawHtml)

@@ -1,3 +1,4 @@
+import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -237,4 +238,38 @@ test('run scrapes live UB Group roles from the verified official ATS handoff and
     }),
     /verified first-party careers surface/i,
   )
+})
+
+test('UB Group accepts the current handoff without job cards only with an explicit filtered empty result', async () => {
+  const emptyHandoff = handoffHtml.replace('<a href="/job/united-breweries-limited/india/shift-brewer">Shift Brewer</a>', '')
+  const emptyListing = listingHtml.replace(/<main>[\s\S]*?<\/main>/, '<main><h3>No jobs found</h3></main>')
+  const requests = []
+  const jobs = await createUbGroupScraper().run({
+    fetchText: async (url) => {
+      requests.push(url)
+      if (url === FIRST_PARTY_CAREERS_URL) return firstPartyCareersHtml
+      if (url === HANDOFF_URL) return emptyHandoff
+      if (url === JOB_LISTING_URL) return emptyListing
+      throw new Error('Unexpected detail request for an empty board')
+    },
+  })
+  assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs)?.status, 'verified-empty')
+  assert.equal(readInventoryEvidence(jobs)?.listingComplete, true)
+  assert.deepEqual(requests, [FIRST_PARTY_CAREERS_URL, HANDOFF_URL, JOB_LISTING_URL])
+  assert.equal(hasOfficialListingSignal(emptyListing.replace('6739', '0000')), false)
+})
+
+test('UB Group does not treat a loading shell, translation, or unparsed job path as confirmed empty', async () => {
+  const shell = listingHtml.replace(/<main>[\s\S]*?<\/main>/, '<main>Loading...</main><script>{"noResults":"No jobs found"}</script>')
+  const unparsed = shell.replace('Loading...', '/job/united-breweries-limited/india/shift-brewer')
+  for (const page of [shell, unparsed]) {
+    await assert.rejects(createUbGroupScraper().run({
+      fetchText: async (url) => {
+        if (url === FIRST_PARTY_CAREERS_URL) return firstPartyCareersHtml
+        if (url === HANDOFF_URL) return handoffHtml
+        return page
+      },
+    }), /listing|empty/i)
+  }
 })

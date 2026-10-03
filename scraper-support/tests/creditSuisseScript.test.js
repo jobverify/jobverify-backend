@@ -17,6 +17,9 @@ const ubsUsHomepageHtml = `
 </html>
 `
 
+const currentUbsUsHomepageHtml = ubsUsHomepageHtml
+  .replaceAll('UBS United States of America', 'UBS United States')
+
 const ubsCareersHtml = `
 <!doctype html>
 <html lang="en">
@@ -72,6 +75,7 @@ test('Credit Suisse sentinel pins the verified legacy-to-UBS handoff surfaces', 
   assert.equal(creditSuisse.UBS_JOBS_BOARD_HOST, 'https://jobs.ubs.com')
 
   assert.equal(creditSuisse.hasUbsHomepageSignal(ubsUsHomepageHtml), true)
+  assert.equal(creditSuisse.hasUbsHomepageSignal(currentUbsUsHomepageHtml), true)
   assert.equal(creditSuisse.hasUbsCareersSignal(ubsCareersHtml), true)
   assert.equal(creditSuisse.hasUbsSearchJobsSignal(ubsSearchJobsHtml), true)
 

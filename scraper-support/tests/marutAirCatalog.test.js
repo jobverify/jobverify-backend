@@ -24,10 +24,9 @@ test('Marut Air is registered against the verified first-party brand page and Od
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'marutair.com')
-  assert.equal(provider.verifiedOn, '2026-08-15')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.match(provider.verifiedSurfaceSummary, /crm\.marutair\.com\/jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /Sales Engineer/i)
-  assert.match(provider.verifiedSurfaceSummary, /HR Recruiter/i)
+  assert.match(provider.verifiedSurfaceSummary, /no-open-job-opportunities/i)
   assert.match(provider.modulePath, /marutair[\\/]script\.js$/i)
 })
 

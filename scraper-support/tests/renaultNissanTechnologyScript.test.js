@@ -97,3 +97,26 @@ test('createRenaultNissanTechnologyScraper decorates the verified public feed wi
   assert.equal(jobs[0].scrapedAt, '2026-07-11T00:00:00.000Z')
   assert.equal(jobs[1].source, 'renaultnissantechnology')
 })
+
+
+test('RNTBCI reports the upstream 503 carried inside an HTTP 400 gateway response', async () => {
+  const renault = await loadRenaultNissanTechnologyModule()
+  const { classifyScraperError } = await import('../utils/failureClassification.js')
+  const originalFetch = globalThis.fetch
+  let requests = 0
+  globalThis.fetch = async () => {
+    requests += 1
+    return new Response(JSON.stringify({ result: 'Error', data: {}, errorDetails: { message: "Access token is undefined - StatusCodeError: 503 - The backend sent '503' HTTP_STATUS and Reason: 'Service Unavailable'." } }), { status: 400, headers: { 'content-type': 'application/json' } })
+  }
+  try {
+    await assert.rejects(renault.createRenaultNissanTechnologyScraper().run(), (error) => {
+      const failure = classifyScraperError(error)
+      assert.equal(failure.failureKind, 'network_or_timeout')
+      assert.equal(failure.softFailure, true)
+      return true
+    })
+    assert.equal(requests, 1)
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})

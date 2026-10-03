@@ -359,3 +359,27 @@ test('Delphix India fails closed when the verified homepage, careers handoff, or
     /delphix-branded roles/i,
   )
 })
+
+test('Delphix India returns zero when the current board and API agree there are no Delphix roles', async () => {
+  const delphixIndia = await loadModule()
+  const otherRole = {
+    id: '30001071-3347-41d6-9060-e427051e7075',
+    text: 'Senior Software Engineer - Akana Sola',
+    hostedUrl: 'https://jobs.lever.co/perforce/30001071-3347-41d6-9060-e427051e7075',
+    categories: { location: 'Pune, Maharashtra', team: 'Development', allLocations: ['Pune, Maharashtra'] },
+  }
+  const boardHtml = officialLeverBoardHtml
+    .replace('Business Development Representative, Delphix', 'Senior Software Engineer - Akana Sola')
+    .replace('Senior Software Engineer - Delphix (BP)', 'Senior Software Engineer - Akana Sola')
+    .replace('30f38ba2-01e2-43c3-a5b9-f4d493772961', otherRole.id)
+  const jobs = await delphixIndia.createDelphixIndiaScraper().run({
+    fetchPage: async (url) => ({
+      status: 200,
+      url: url === delphixIndia.HOMEPAGE_URL ? delphixIndia.RESOLVED_HOMEPAGE_URL : url,
+      html: url === delphixIndia.HOMEPAGE_URL ? officialHomepageHtml
+        : url === delphixIndia.CAREERS_URL ? officialCareersHtml : boardHtml,
+    }),
+    fetchJson: async () => [otherRole],
+  })
+  assert.deepEqual(jobs, [])
+})

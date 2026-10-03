@@ -43,7 +43,7 @@ const verifiedCareersHtml = `
         <td>7 to 10 years</td>
       </tr>
     </table>
-    <a href="https://winman.in/jobs/resumedetail.aspx">Apply now</a>
+    <a href="https://winman.in/jobs/resume.aspx">Apply now</a>
   </body>
 </html>
 `
@@ -61,9 +61,9 @@ test('Winman Software helpers stay pinned to the verified first-party experience
 
   assert.equal(winman.SOURCE, 'winmansoftware')
   assert.equal(winman.COMPANY, 'Winman Software')
-  assert.equal(winman.CAREERS_URL, 'https://www.winmansoftware.com/careers/experienced/')
-  assert.equal(winman.APPLY_URL, 'https://winman.in/jobs/resumedetail.aspx')
-  assert.equal(winman.VERIFIED_ON, '2026-07-17')
+  assert.equal(winman.CAREERS_URL, 'https://www.winmansoftware.com/more/careers/')
+  assert.equal(winman.APPLY_URL, 'https://winman.in/jobs/resume.aspx')
+  assert.equal(winman.VERIFIED_ON, '2026-10-03')
   assert.equal(winman.hasOfficialCareersSignal(verifiedCareersHtml), true)
   assert.equal(winman.hasOfficialCareersSignal('<html><body><h1>Careers</h1></body></html>'), false)
   assert.deepEqual(winman.extractJobs(verifiedCareersHtml), [
@@ -76,8 +76,8 @@ test('Winman Software helpers stay pinned to the verified first-party experience
       country: 'India',
       jobId: 'senior-accountant',
       requisitionId: 'senior-accountant',
-      sourceUrl: 'https://www.winmansoftware.com/careers/experienced/',
-      applyUrl: 'https://winman.in/jobs/resumedetail.aspx',
+      sourceUrl: 'https://www.winmansoftware.com/more/careers/',
+      applyUrl: 'https://winman.in/jobs/resume.aspx',
       employmentType: null,
       experienceRequired: '3 to 5 years',
       minimumQualification: null,
@@ -97,8 +97,8 @@ test('Winman Software helpers stay pinned to the verified first-party experience
       country: 'India',
       jobId: 'electrical-maintenance-supervisor',
       requisitionId: 'electrical-maintenance-supervisor',
-      sourceUrl: 'https://www.winmansoftware.com/careers/experienced/',
-      applyUrl: 'https://winman.in/jobs/resumedetail.aspx',
+      sourceUrl: 'https://www.winmansoftware.com/more/careers/',
+      applyUrl: 'https://winman.in/jobs/resume.aspx',
       employmentType: null,
       experienceRequired: '5 to 8 years',
       minimumQualification: null,
@@ -118,8 +118,8 @@ test('Winman Software helpers stay pinned to the verified first-party experience
       country: 'India',
       jobId: 'regional-sales-manager',
       requisitionId: 'regional-sales-manager',
-      sourceUrl: 'https://www.winmansoftware.com/careers/experienced/',
-      applyUrl: 'https://winman.in/jobs/resumedetail.aspx',
+      sourceUrl: 'https://www.winmansoftware.com/more/careers/',
+      applyUrl: 'https://winman.in/jobs/resume.aspx',
       employmentType: null,
       experienceRequired: '7 to 10 years',
       minimumQualification: null,
@@ -161,4 +161,28 @@ test('Winman Software run fails closed when the verified first-party careers tab
     }),
     /verified Winman Software careers surface/i,
   )
+})
+
+test('Winman Software reads both current careers tables and validates linked fresher detail', async () => {
+  const winman = await loadModule()
+  const careers = `<title>Careers &#8211; Winman Software</title>
+    <table id="freshers" class="job-table active"><tbody><tr><td><a href="https://www.winmansoftware.com/more/careers/software-engineer">Software Engineer</a></td></tr></tbody></table>
+    <table id="experienced" class="job-table"><tbody><tr><td><h4>Senior Accountant</h4><ul><li>Oversee finalisation of accounts.</li></ul></td><td>2 years</td></tr></tbody></table>
+    <a href="https://winman.in/jobs/resume.aspx">Apply Now</a>`
+  const detail = `<h1 class="job-title">Software Engineer</h1><div>Winman Software India LLP</div><div>Mangalore</div>
+    <ul class="job-summary"><li>Build and test software.</li></ul><p class="qualification">B.E.</p>
+    <button onclick="window.open('https://winman.in/jobs/resume.aspx')">Apply Now</button>`
+  assert.equal(winman.hasCurrentCareersSignal(careers), true)
+  assert.deepEqual(Object.fromEntries(Object.entries(winman.extractCurrentListings(careers)).map(([key, rows]) => [key, rows.length])),
+    { freshers: 1, experienced: 1 })
+  const jobs = await winman.run({ fetchText: async url => url === winman.CAREERS_URL ? careers : detail })
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].title, 'Software Engineer')
+  assert.equal(jobs[0].minimumQualification, 'B.E.')
+  assert.equal(jobs[0].sourceUrl, 'https://www.winmansoftware.com/more/careers/software-engineer')
+  assert.equal(jobs[1].title, 'Senior Accountant')
+  assert.equal(jobs[1].experienceRequired, '2 years')
+  assert.equal(jobs[1].sourceUrl, winman.CAREERS_URL)
+  await assert.rejects(winman.run({ fetchText: async url => url === winman.CAREERS_URL ? careers : detail.replace('Software Engineer', 'Other job') }),
+    /current job detail changed/i)
 })

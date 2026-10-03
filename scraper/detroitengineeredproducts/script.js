@@ -159,7 +159,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)?.toLowerCase() || ''
 
-  return /<title>\s*(?:Home|Detroit Engineered Products)\s*<\/title>/i.test(rawHtml)
+  return /<title>\s*(?:Home(?:\s*[|-]\s*Detroit Engineered Products(?:\s*\(DEP\))?)?|Detroit Engineered Products)\s*<\/title>/i.test(rawHtml)
     && /meta property=["']og:url["'] content=["']https:\/\/depusa\.com\/["']/i.test(rawHtml)
     && hasHref(rawHtml, CAREERS_PAGE_URL)
     && hasHref(rawHtml, 'https://depusa.com/index.php/company/about-us')
@@ -170,7 +170,7 @@ export const hasCareersLandingSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)?.toLowerCase() || ''
 
-  return /<title>\s*Careers(?:\s*\|\s*Detroit Engineered Products)?\s*<\/title>/i.test(rawHtml)
+  return /<title>\s*Careers(?:\s*[|-]\s*Detroit Engineered Products(?:\s*\(DEP\))?)?\s*<\/title>/i.test(rawHtml)
     && hasHref(rawHtml, INDIA_CAREERS_URL)
     && hasHref(rawHtml, USA_CAREERS_URL)
     && (
@@ -184,7 +184,7 @@ export const hasIndiaCareersSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)?.toLowerCase() || ''
 
-  return /<title>\s*Careers India(?:\s*\|\s*Detroit Engineered Products)?\s*<\/title>/i.test(rawHtml)
+  return /<title>\s*Careers India(?:\s*[|-]\s*Detroit Engineered Products(?:\s*\(DEP\))?)?\s*<\/title>/i.test(rawHtml)
     && /jobsapi\.ceipal\.com\/apisource\/widget\.js/i.test(rawHtml)
     && /data-ceipal-api-key=/i.test(rawHtml)
     && /data-ceipal-career-portal-id=/i.test(rawHtml)

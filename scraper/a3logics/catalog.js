@@ -18,9 +18,9 @@ export const A3LOGICS_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'a3logics.com',
-  verifiedOn: '2026-07-18',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that https://www.a3logics.com/careers/ remained the exact first-party A3Logics careers page, exposed an Explore Job opportunities handoff to https://a3logics.keka.com/careers/, and that the public Keka feed listed openings including Data Administrator, Senior System Administrator, and Admin Executive in Jaipur, India.',
+    'Verified on October 3, 2026 that https://www.a3logics.com/careers/ still links to https://a3logics.keka.com/careers/ through Explore Job opportunities. The former embedded jobs script is absent. The branded Keka tenant identifies A3LOGICS and the official company website; its current feed lists one India role, Senior System and Network Administrator in Jaipur.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

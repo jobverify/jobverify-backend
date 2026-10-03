@@ -5,26 +5,26 @@ import companyAliases from '../providers/companyAliases.json' with { type: 'json
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 
-test('Lakshmi Electrical Control Systems is registered as a verified first-party zero-job scraper without alias churn', () => {
+test('Lakshmi Electrical Control Systems is registered as a verified first-party public careers scraper without alias churn', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'lakshmielectricalcontrolsystems')
 
   assert.ok(provider, 'Expected Lakshmi Electrical Control Systems provider to be registered in customProviders.json')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Lakshmi Electrical Control Systems')
   assert.equal(provider.companyCareerPage, 'https://www.lecsindia.com/careers')
-  assert.equal(provider.atsPlatform, 'official-first-party-careers-page-no-public-jobs')
+  assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-careers-plus-contact-page-validation-with-slow-page-fallback')
+  assert.equal(provider.paginationStrategy, 'verified-public-jobs-api-page-pagination')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-first-party-careers-shell+verified-contact-page+slow-first-party-fallback-return-empty',
+    'verified-official-homepage+verified-careers-client+public-jobs-api+evidenced-india-location-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'lecsindia.com')
-  assert.equal(provider.verifiedOn, '2026-09-03')
-  assert.match(provider.verifiedSurfaceSummary, /Verified on September 3, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /Careers \| LECS India/i)
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.match(provider.verifiedSurfaceSummary, /Verified on October 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Careers at LECS India/i)
   assert.match(provider.modulePath, /lakshmielectricalcontrolsystems[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Lakshmi Electrical Control Systems'), false)
 })

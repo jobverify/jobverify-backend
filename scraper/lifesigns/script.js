@@ -7,28 +7,10 @@ export const SOURCE = 'lifesigns'
 export const COMPANY = 'LifeSigns'
 export const HOMEPAGE_URL = 'https://www.lifesigns.us/'
 export const CAREERS_URL = 'https://www.lifesigns.us/careers/'
-export const EXPECTED_ROLE_CARDS = {
-  '/careers/junior-video-editor/': {
-    title: 'Junior Video Editor',
-    employmentType: 'Full-Time',
-    city: 'Chennai',
-  },
-  '/careers/junior-visual-designer/': {
-    title: 'Junior Visual Designer',
-    employmentType: 'Full-Time',
-    city: 'Chennai',
-  },
-  '/careers/digital-patient-monitoring-executive-cmt/': {
-    title: 'Digital Patient Monitoring Executive (Central Monitoring Executive)',
-    employmentType: 'Full-Time',
-    city: 'Chennai',
-  },
-  '/careers/hospital-support-executive-hse/': {
-    title: 'Hospital Support Executive (HSE)',
-    employmentType: 'Full-Time',
-    city: 'Surat',
-  },
-}
+const WIX_CLIENT_ID = '7923844b-a7b1-422f-879d-98abe62f1c0e'
+const WIX_COLLECTION = 'OpenRoles'
+const WIX_TOKEN_URL = 'https://www.wixapis.com/oauth2/token'
+const WIX_QUERY_URL = 'https://edge.wixapis.com/wix-data/v2/items/query'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -110,7 +92,10 @@ export const hasOfficialHomepageSignal = (snapshot = {}) => {
 
   return snapshot.status === 200
     && normalizePathname(snapshot.url, HOMEPAGE_URL) === '/'
-    && title === 'Lifesigns | Intelligent patient monitoring for smarter decisions'
+    && [
+      'Lifesigns | Intelligent patient monitoring for smarter decisions',
+      'AI Patient Monitoring System, Ambulance to Home | Lifesigns',
+    ].includes(title)
     && text.includes('ai-powered patient monitoring')
     && text.includes('predictive intelligence and continuous monitoring')
     && hasPathLink(snapshot, '/careers/')
@@ -123,81 +108,135 @@ export const hasOfficialCareersSignal = (snapshot = {}) => {
 
   return snapshot.status === 200
     && normalizePathname(snapshot.url, CAREERS_URL) === '/careers/'
-    && title === 'Careers at Lifesigns | Challenge convention'
+    && [
+      'Careers at Lifesigns | Challenge convention',
+      'Careers at Lifesigns | Challenge convention | Lifesigns',
+    ].includes(title)
     && normalizedText.includes('we challenge')
     && normalizedText.includes('see open roles')
     && normalizedText.includes('explore our open roles')
-    && normalizedText.includes("didn't see the role you're looking for?")
+    && /didn['’]t see the role you['’]re looking for\?/.test(normalizedText)
     && normalizedText.includes('leave a message')
 }
 
-export const hasVerifiedRoleDetailSignal = (snapshot = {}, pathname, expected = EXPECTED_ROLE_CARDS[pathname]) => {
-  if (!expected) {
-    return false
-  }
-
+export const hasVerifiedRoleDetailSignal = (snapshot = {}, pathname, expectedTitle) => {
   const title = normalizeWhitespace(snapshot.title) || ''
 
   return snapshot.status === 200
     && normalizePathname(snapshot.url, CAREERS_URL) === pathname
-    && title === expected.title
+    && [expectedTitle, `${expectedTitle} | Lifesigns`].includes(title)
 }
 
-export const extractVerifiedOpenRoles = (careersSnapshot, roleSnapshotsByPath = {}) => {
+const extractBodyText = (node) => {
+  if (!node || typeof node !== 'object') return ''
+  return [node.textData?.text, ...(node.nodes || []).map(extractBodyText)]
+    .filter(Boolean)
+    .join(' ')
+}
+
+export const fetchOpenRoles = async (fetchImpl = fetch) => {
+  const tokenResponse = await fetchImpl(WIX_TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clientId: WIX_CLIENT_ID, grantType: 'anonymous' }),
+  })
+  if (!tokenResponse.ok) throw new Error(`LifeSigns public role token returned HTTP ${tokenResponse.status}`)
+  const { access_token: token } = await tokenResponse.json()
+  if (!token) throw new Error('LifeSigns public role token is missing')
+
+  const query = {
+    dataCollectionId: WIX_COLLECTION,
+    query: { fields: [], paging: { limit: 1000, offset: 0 }, filter: {}, sort: [] },
+    referencedItemOptions: [],
+  }
+  const url = `${WIX_QUERY_URL}?.r=${Buffer.from(JSON.stringify(query)).toString('base64url')}`
+  const response = await fetchImpl(url, { headers: { Authorization: token } })
+  if (!response.ok) throw new Error(`LifeSigns public role feed returned HTTP ${response.status}`)
+  const result = await response.json()
+  if (!Array.isArray(result.dataItems) || result.pagingMetadata?.hasNext || result.pagingMetadata?.tooManyToCount) {
+    throw new Error('LifeSigns public role feed is incomplete or changed shape')
+  }
+  return result.dataItems
+}
+
+export const extractVerifiedOpenRoles = (careersSnapshot, roleItems, roleSnapshotsByPath = {}) => {
   if (!hasOfficialCareersSignal(careersSnapshot)) {
     throw new Error('LifeSigns careers page no longer matches the verified official public surface')
   }
+  if (!Array.isArray(roleItems)) throw new Error('LifeSigns public role feed is missing')
 
-  return Object.entries(EXPECTED_ROLE_CARDS).map(([pathname, expected]) => {
+  const seen = new Set()
+  return roleItems.map((item) => {
+    if (item?.dataCollectionId !== WIX_COLLECTION || !item.id || !item.data) {
+      throw new Error('LifeSigns public role feed changed shape')
+    }
+    const role = item.data
+    const slug = normalizeWhitespace(role.slug)
+    const title = normalizeWhitespace(role.title)
+    const city = normalizeWhitespace(role.location)
+    if (!slug || !/^[a-z0-9-]+$/.test(slug) || !title || !city || !role.employmentType) {
+      throw new Error('LifeSigns public role feed has an incomplete opening')
+    }
+    if (/^(remote|hybrid|anywhere)$/i.test(city)) {
+      throw new Error(`LifeSigns role location needs country verification: ${slug}`)
+    }
+    const pathname = `/careers/${slug}/`
+    if (seen.has(pathname)) throw new Error(`LifeSigns duplicate opening: ${pathname}`)
+    seen.add(pathname)
+
     const roleSnapshot = roleSnapshotsByPath[pathname]
     const jobId = buildJobId(pathname)
     const roleUrl = buildRoleUrl(pathname)
 
-    if (!hasVerifiedRoleDetailSignal(roleSnapshot, pathname, expected)) {
+    if (!hasVerifiedRoleDetailSignal(roleSnapshot, pathname, title)) {
       throw new Error(`LifeSigns role detail page drifted for "${pathname}"`)
     }
 
-    if (!jobId) {
-      throw new Error(`LifeSigns missing verified opening "${pathname}"`)
-    }
-
     return {
-      title: expected.title,
+      title,
       company: COMPANY,
       department: null,
-      location: `${expected.city}, India`,
-      city: expected.city,
+      location: `${city}, India`,
+      city,
       country: 'India',
       jobId,
-      requisitionId: jobId,
+      requisitionId: item.id,
       sourceUrl: roleUrl,
       applyUrl: roleUrl,
-      employmentType: expected.employmentType,
+      employmentType: role.employmentType,
       experienceRequired: null,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: null,
+      postingDate: role._publishDate || null,
       closingDate: null,
-      jobDescription: null,
+      jobDescription: normalizeWhitespace(extractBodyText(role.body)) || null,
     }
   })
 }
 
 export const createLifeSignsScraper = () => ({
-  async run({ fetchPageSnapshot = defaultFetchPageSnapshot } = {}) {
+  async run({ fetchPageSnapshot = defaultFetchPageSnapshot, fetchRoleItems = fetchOpenRoles } = {}) {
     const homepageSnapshot = await fetchPageSnapshot(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageSnapshot)) {
       throw new Error('LifeSigns homepage no longer matches the verified official public surface')
     }
 
     const careersSnapshot = await fetchPageSnapshot(CAREERS_URL)
+    if (!hasOfficialCareersSignal(careersSnapshot)) {
+      throw new Error('LifeSigns careers page no longer matches the verified official public surface')
+    }
+    const roleItems = await fetchRoleItems()
+    if (!Array.isArray(roleItems)) throw new Error('LifeSigns public role feed is missing')
     const roleSnapshots = Object.fromEntries(
       await Promise.all(
-        Object.keys(EXPECTED_ROLE_CARDS).map(async (pathname) => [pathname, await fetchPageSnapshot(buildRoleUrl(pathname))]),
+        roleItems.map(async (item) => {
+          const pathname = `/careers/${item.data?.slug}/`
+          return [pathname, await fetchPageSnapshot(buildRoleUrl(pathname))]
+        }),
       ),
     )
-    const jobs = extractVerifiedOpenRoles(careersSnapshot, roleSnapshots)
+    const jobs = extractVerifiedOpenRoles(careersSnapshot, roleItems, roleSnapshots)
     const scrapedAt = new Date().toISOString()
 
     return jobs.map((job) => ({

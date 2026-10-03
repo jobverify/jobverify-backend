@@ -6,12 +6,12 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes Zifo as a no-current-vacancies sentinel provider', () => {
+test('getScraperCatalog includes Zifo with the current Workable published feed', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'zifo')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'official-company-careers-no-current-india-vacancies')
+  assert.equal(provider.atsPlatform, 'workable')
   assert.equal(provider.companyName, 'Zifo RnD Solutions')
   assert.equal(provider.officialBrandName, 'Zifo')
   assert.equal(provider.countryFilter, 'India')
@@ -20,12 +20,12 @@ test('getScraperCatalog includes Zifo as a no-current-vacancies sentinel provide
   assert.match(provider.modulePath, /zifo[\\/]script\.js$/i)
 })
 
-test('buildScrapers exposes a runnable Zifo sentinel scraper without changing the runner contract', () => {
+test('buildScrapers exposes a runnable Zifo scraper', () => {
   const scraper = buildScrapers().find((item) => item.name === 'zifo')
 
   assert.ok(scraper)
   assert.equal(typeof scraper.run, 'function')
   assert.match(scraper.dryRunFile, /zifo[\\/]jobs\.json$/)
   assert.equal(scraper.provider.source, 'zifo')
-  assert.equal(scraper.provider.atsPlatform, 'official-company-careers-no-current-india-vacancies')
+  assert.equal(scraper.provider.atsPlatform, 'workable')
 })

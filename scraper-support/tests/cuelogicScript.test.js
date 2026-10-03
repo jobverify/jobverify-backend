@@ -1,178 +1,59 @@
-import assert from 'node:assert/strict'
+﻿import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+import {
+  buildSearchRequestPayload,
+  buildSearchUrl,
+  createCuelogicScraper,
+  SEARCH_TERM,
+} from '../../scraper/cuelogic/script.js'
 
-const searchHtml = `
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>LTIMindtree Careers</title>
-  </head>
-  <body>
-    <h1>Search jobs</h1>
-    <div>LTIMindtree</div>
-    <div>Results <b>0</b> of <b>0</b></div>
-    <p>There are currently no open positions matching "Cuelogic".</p>
-  </body>
-</html>
-`
+const page = (total) => `<JobPageVO><startJobIndex>0</startJobIndex><maxJobSize>10</maxJobSize><totalJobCount>${total}</totalJobCount>${total ? '<jobVoList><jobSeq>898694</jobSeq></jobVoList>' : '<jobVoList/>'}</JobPageVO>`
 
-const currentSearchHtml = `
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>Cuelogic - LTM Jobs</title>
-  </head>
-  <body>
-    <div>LTIMindtree</div>
-    <h1>Search results for "Cuelogic".</h1>
-    <p>There are currently no open positions matching " Cuelogic ".</p>
-    <p>The 0 most recent jobs posted by LTM are listed below for your convenience.</p>
-  </body>
-</html>
-`
-
-const loadModule = async () => {
-  try {
-    return await import('../../scraper/cuelogic/script.js')
-  } catch {
-    assert.fail('Expected Cuelogic scraper module at ../../scraper/cuelogic/script.js')
-  }
+const fetchText = async (url, options) => {
+  assert.equal(url, buildSearchUrl())
+  assert.equal(options.method, 'POST')
+  const payload = JSON.parse(new URLSearchParams(options.body).get('careerSiteUrlParams'))
+  assert.equal(payload.geo, 'India')
+  return page(payload.search === '*:*' ? 1 : 0)
 }
 
-test('Cuelogic sentinel pins the verified LTIMindtree search query and current TLS outage wording', async () => {
-  const cuelogic = await loadModule()
-
-  assert.equal(cuelogic.SOURCE, 'cuelogic')
-  assert.equal(cuelogic.COMPANY, 'Cuelogic')
-  assert.equal(cuelogic.VERIFIED_ON, '2026-08-04')
-  assert.equal(cuelogic.HOMEPAGE_URL, 'https://www.ltm.com/careers')
-  assert.equal(cuelogic.CAREERS_URL, 'https://careers.ltimindtree.com/search/')
-  assert.equal(
-    cuelogic.VERIFIED_JOBS_MICROSITE_URL,
-    'https://careers.ltimindtree.com/Microsite/content/View-Jobs/',
-  )
-  assert.equal(cuelogic.BROKEN_REDIRECT_HOST, 'careers.ltimindtree.com')
-  assert.equal(cuelogic.BROKEN_REDIRECT_CERTIFICATE_HOST, 'certificate-not-found.jobs2web.com')
-  assert.match(cuelogic.VERIFIED_SURFACE_SUMMARY, /Tuesday, August 4, 2026/i)
-  assert.match(cuelogic.VERIFIED_SURFACE_SUMMARY, /careers\.ltimindtree\.com/i)
-  assert.match(cuelogic.VERIFIED_SURFACE_SUMMARY, /certificate-not-found\.jobs2web\.com/i)
-  assert.equal(
-    cuelogic.buildSearchUrl(),
-    'https://careers.ltimindtree.com/search/?createNewAlert=false&q=Cuelogic&optionsFacetsDD_country=&optionsFacetsDD_location=&locationsearch=',
-  )
-  assert.equal(cuelogic.isTrustedSearchRoute(cuelogic.buildSearchUrl()), true)
-  assert.equal(
-    cuelogic.isTrustedSearchRoute('https://careers.ltm.com/search/?createNewAlert=false&q=Cuelogic&optionsFacetsDD_country=&optionsFacetsDD_location=&locationsearch='),
-    false,
-  )
-  assert.equal(cuelogic.hasVerifiedEmptySearchSignal(searchHtml), true)
-  assert.equal(cuelogic.hasVerifiedEmptySearchSignal(currentSearchHtml), true)
-  assert.equal(cuelogic.pageExposesOpenJobs(searchHtml), false)
-})
-
-test('Cuelogic sentinel returns no jobs while the verified parent board still shows an empty result set', async () => {
-  const cuelogic = await loadModule()
-  const requestedUrls = []
-
-  const jobs = await cuelogic.createCuelogicScraper({
-    now: () => '2026-09-14T00:00:00.000Z',
-  }).run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-      return {
-        status: 200,
-        url,
-        html: searchHtml,
-      }
-    },
+test('Cuelogic searches the current official LTM Ripplehire India board', () => {
+  assert.equal(SEARCH_TERM, 'Cuelogic')
+  assert.equal(buildSearchUrl(), 'https://ltimindtree.ripplehire.com/candidate/candidatejobsearch')
+  assert.deepEqual(buildSearchRequestPayload(), {
+    page: 0, search: 'Cuelogic', token: 'xviyQvbnyYZdGtozXoNm', source: 'CAREERSITE', pagesize: 10, geo: 'India',
   })
-
-  assert.deepEqual(requestedUrls, [cuelogic.buildSearchUrl()])
-  assert.deepEqual(jobs, [])
-  assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
-  assert.equal(readInventoryEvidence(jobs)?.reason, 'cuelogic-ltimindtree-empty-search-result')
 })
 
-test('Cuelogic sentinel fails closed when the LTIMindtree search route redirects to a different careers host', async () => {
-  const cuelogic = await loadModule()
+test('Cuelogic records verified empty inventory when parent board works but has no matching India jobs', async () => {
+  const jobs = await createCuelogicScraper({ now: () => '2026-10-03T00:00:00.000Z' }).run({ fetchText })
+  assert.deepEqual(jobs, [])
+  assert.deepEqual(readInventoryEvidence(jobs), {
+    status: 'verified-empty',
+    surface: buildSearchUrl(),
+    firstParty: true,
+    listingComplete: true,
+    pagesFetched: 2,
+    reportedTotal: 0,
+    indiaFacetCount: 0,
+    verifiedAt: '2026-10-03T00:00:00.000Z',
+    reason: 'cuelogic-ltm-ripplehire-india-search-zero',
+  })
+})
 
+test('Cuelogic fails closed when matching roles appear or parent API is incomplete', async () => {
   await assert.rejects(
-    cuelogic.createCuelogicScraper().run({
-      fetchPage: async () => ({
-        status: 200,
-        url: 'https://careers.ltm.com/search/?createNewAlert=false&q=Cuelogic&optionsFacetsDD_country=&optionsFacetsDD_location=&locationsearch=',
-        html: searchHtml,
-      }),
-    }),
-    /redirected away from the trusted careers surface/i,
+    createCuelogicScraper().run({ fetchText: async () => page(1) }),
+    /matching jobs/i,
   )
-})
-
-test('Cuelogic sentinel returns [] when the verified careers.ltimindtree.com certificate mismatch is still active', async () => {
-  const cuelogic = await loadModule()
-
-  const tlsError = new TypeError('fetch failed')
-  tlsError.cause = {
-    code: 'ERR_TLS_CERT_ALTNAME_INVALID',
-    message:
-      "Hostname/IP does not match certificate's altnames: Host: careers.ltimindtree.com. is not in the cert's altnames: DNS:certificate-not-found.jobs2web.com",
-  }
-  assert.equal(cuelogic.isKnownBrokenCareersRedirectTlsFailure(tlsError), true)
-
-  const jobs = await cuelogic.createCuelogicScraper({
-    now: () => '2026-09-14T00:00:00.000Z',
-  }).run({
-    fetchPage: async () => {
-      throw tlsError
-    },
-  })
-
-  assert.deepEqual(jobs, [])
-  assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
-  assert.equal(readInventoryEvidence(jobs)?.reason, 'cuelogic-ltimindtree-search-route-broken-tls')
-})
-
-test('Cuelogic sentinel recognizes wrapped retry errors for the verified careers.ltimindtree.com TLS outage', async () => {
-  const cuelogic = await loadModule()
-
-  const tlsError = new TypeError('fetch failed')
-  tlsError.cause = {
-    code: 'ERR_TLS_CERT_ALTNAME_INVALID',
-    message:
-      "Hostname/IP does not match certificate's altnames: Host: careers.ltimindtree.com. is not in the cert's altnames: DNS:certificate-not-found.jobs2web.com",
-  }
-  const wrappedRetryError = new Error(
-    "[cuelogic] All 3 attempts failed. Last error: fetch failed | Hostname/IP does not match certificate's altnames: Host: careers.ltimindtree.com. is not in the cert's altnames: DNS:certificate-not-found.jobs2web.com",
-    { cause: tlsError },
-  )
-
-  assert.equal(cuelogic.isKnownBrokenCareersRedirectTlsFailure(wrappedRetryError), true)
-
-  const jobs = await cuelogic.createCuelogicScraper({
-    now: () => '2026-09-14T00:00:00.000Z',
-  }).run({
-    fetchPage: async () => {
-      throw wrappedRetryError
-    },
-  })
-
-  assert.deepEqual(jobs, [])
-  assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
-})
-
-test('Cuelogic sentinel fails closed if the parent board no longer exposes the verified empty-state', async () => {
-  const cuelogic = await loadModule()
-
   await assert.rejects(
-    cuelogic.createCuelogicScraper().run({
-      fetchPage: async (url) => ({
-        status: 200,
-        url,
-        html: '<html><body><h1>Search jobs</h1><div>LTIMindtree</div></body></html>',
-      }),
-    }),
-    /verified LTIMindtree empty-search surface/i,
+    createCuelogicScraper().run({ fetchText: async () => '<html>Maintenance</html>' }),
+    /changed/i,
+  )
+  await assert.rejects(
+    createCuelogicScraper().run({ fetchText: async () => page(0) }),
+    /no control results/i,
   )
 })

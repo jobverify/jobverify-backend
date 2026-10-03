@@ -140,7 +140,7 @@ test('Hitachi Vantara India stays pinned to the verified public company-filtered
     'HITACHI VANTARA INDIA PRIVATE LIMITED',
   )
   assert.equal(hitachiVantaraIndia.SEARCH_PAGE_URL, SEARCH_PAGE_URL)
-  assert.equal(hitachiVantaraIndia.VERIFIED_ON, '2026-08-14')
+  assert.equal(hitachiVantaraIndia.VERIFIED_ON, '2026-10-03')
   assert.equal(hitachiVantaraIndia.buildSearchPageUrl(), SEARCH_PAGE_URL)
   assert.equal(hitachiVantaraIndia.hasOfficialSearchPageSignal(listingHtml), true)
 })
@@ -223,6 +223,7 @@ test('Hitachi Vantara India run verifies the search shell, enriches detail pages
   assert.equal(applyUrl, FINAL_APPLY_URL)
 
   const jobs = await createHitachiVantaraIndiaScraper().run({
+    useLegacySearchPage: true,
     maxJobs: 1,
     fetchText: async (url) => {
       requestedTextUrls.push(url)
@@ -284,6 +285,7 @@ test('Hitachi Vantara India treats the verified Cloudflare challenge shell as an
   }), true)
 
   const jobs = await createHitachiVantaraIndiaScraper().run({
+    useLegacySearchPage: true,
     fetchPage: async (url) => {
       requestedUrls.push(url)
       return {
@@ -311,6 +313,7 @@ test('Hitachi Vantara India falls back to browser-readable HTML when direct text
   const requestedBrowserUrls = []
 
   const jobs = await createHitachiVantaraIndiaScraper().run({
+    useLegacySearchPage: true,
     maxJobs: 1,
     fetchText: async (url) => {
       requestedTextUrls.push(url)

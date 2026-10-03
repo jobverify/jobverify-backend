@@ -38,6 +38,7 @@ const stripTags = (value) => normalizeWhitespace(
   decodeHtmlEntities(value)
     .replace(/<!\[CDATA\[/gi, '')
     .replace(/\]\]>/g, '')
+    .replace(/<(?!\/?[a-z][\w-]*\b)/gi, ' ')
     .replace(/<(br|\/p|\/div|\/li|\/h[1-6])\b[^>]*>/gi, '\n')
     .replace(/<li\b[^>]*>/gi, ' ')
     .replace(/<p\b[^>]*>/gi, '\n')

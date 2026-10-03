@@ -23,29 +23,27 @@ const loadModule = async () => {
   }
 }
 
-test('Zifo RnD Solutions sentinel stays pinned to the explicit no-current-vacancies surface', async () => {
+test('Zifo RnD Solutions retains its prior no-vacancies fixture for regression coverage', async () => {
   const zifo = await loadModule()
 
   assert.equal(zifo.SOURCE, 'zifo')
   assert.equal(zifo.COMPANY, 'Zifo RnD Solutions')
   assert.equal(zifo.OFFICIAL_BRAND_NAME, 'Zifo')
   assert.equal(zifo.CAREERS_URL, 'https://careers.zifo.com/')
-  assert.equal(zifo.VERIFIED_ON, '2026-07-17')
+  assert.equal(zifo.VERIFIED_ON, '2026-10-03')
   assert.equal(zifo.hasOfficialCareersSignal(careersPageHtml), true)
   assert.equal(zifo.hasNoCurrentVacanciesSignal(careersPageHtml), true)
   assert.deepEqual(zifo.extractStaleIndiaRoleTitles(careersPageHtml), ['Assistant Manager - Finance, Chennai'])
 })
 
-test('Zifo RnD Solutions sentinel returns [] only while the verified no-current-vacancies copy remains live', async () => {
+test('Zifo RnD Solutions rejects its old no-vacancies page without a current feed', async () => {
   const zifo = await loadModule()
-  const jobs = await zifo.createZifoScraper().run({
+  await assert.rejects(zifo.createZifoScraper().run({
     fetchText: async (url) => {
       assert.equal(url, zifo.CAREERS_URL)
       return careersPageHtml
     },
-  })
-
-  assert.deepEqual(jobs, [])
+  }), /verified surface/i)
 })
 
 test('Zifo RnD Solutions sentinel fails closed when the verified page stops advertising no-current-vacancies', async () => {
@@ -65,6 +63,6 @@ test('Zifo RnD Solutions sentinel fails closed when the verified page stops adve
         </html>
       `,
     }),
-    /verified Zifo careers surface/i,
+    /verified surface/i,
   )
 })

@@ -8,11 +8,12 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'lendenclub'
 export const COMPANY = 'LenDenClub'
-export const CAREERS_URL = 'https://www.lendenclub.com/careers/'
+export const CAREERS_URL = 'https://careers.lendenclub.com/'
 export const APPLY_NOW_URL = 'https://www.lendenclub.com/careers/apply-now/'
 export const KEKA_CAREERS_URL = 'https://lendenclub.keka.com/careers/'
 export const KEKA_ACTIVE_JOBS_API_URL = 'https://lendenclub.keka.com/careers/api/jobs/default/active'
-export const VERIFIED_AT = '2026-07-25'
+export const KEKA_PORTAL_INFO_URL = 'https://lendenclub.keka.com/careers/api/organization/default/careerportalinfo'
+export const VERIFIED_AT = '2026-10-03'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -107,11 +108,24 @@ const buildKekaJobUrl = (jobId) => toAbsoluteUrl(`jobdetails/${encodeURIComponen
 export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
 
+  if (/<title[^>]*>\s*LenDenClub\s*<\/title>/i.test(String(html ?? ''))
+    && /Join A Moment, Advance Your Career/i.test(normalized)
+    && /View Open Roles/i.test(normalized)
+    && /href=["']https:\/\/lendenclub\.keka\.com\/careers\/["']/i.test(String(html ?? ''))) {
+    return true
+  }
+
   return /join us,\s+let['’]s change the way india does lending and borrowing!?/i.test(normalized)
     && /we invite you to join us in this mission!?/i.test(normalized)
     && /why join lendenclub\?/i.test(normalized)
     && /work hard,\s+party harder/i.test(normalized)
 }
+
+export const hasExpectedKekaPortalIdentity = (payload = {}) =>
+  normalizeWhitespace(payload.name) === 'LenDenClub'
+  && normalizeWhitespace(payload.shortName) === 'LenDenClub'
+  && normalizeWhitespace(payload.careersPortalDomain) === 'lendenclub.keka.com'
+  && normalizeWhitespace(payload.companyWebsite) === 'https://www.lendenclub.com/'
 
 export const extractApplyNowUrl = (html = '') => {
   for (const match of String(html ?? '').matchAll(/href=["']([^"']+)["']/gi)) {
@@ -232,14 +246,15 @@ export const createLenDenClubScraper = () => ({
 
     try {
       const careersHtml = await fetchPageText(CAREERS_URL)
-      const applyNowHtml = await fetchPageText(APPLY_NOW_URL)
 
-      if (
-        !hasOfficialCareersSignal(careersHtml)
-        || extractApplyNowUrl(careersHtml) !== APPLY_NOW_URL
-        || !hasApplyNowPageSignal(applyNowHtml)
-      ) {
+      if (!hasOfficialCareersSignal(careersHtml)
+        || !/href=["']https:\/\/lendenclub\.keka\.com\/careers\/["']/i.test(careersHtml)) {
         throw new Error('LenDenClub verified first-party careers chain no longer matches the trusted Keka handoff')
+      }
+
+      const portalInfo = await fetchJson(KEKA_PORTAL_INFO_URL)
+      if (!hasExpectedKekaPortalIdentity(portalInfo)) {
+        throw new Error('LenDenClub Keka portal no longer matches the exact company identity')
       }
 
       const payload = await fetchJson(KEKA_ACTIVE_JOBS_API_URL)

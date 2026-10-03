@@ -19,9 +19,9 @@ export const RESERVE_BANK_INFORMATION_TECHNOLOGY_CATALOG = {
     'verified-first-party-careers-spa+authenticated-current-openings-api+darwinbox-apply-links+experience-field',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-05',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified on Wednesday, August 5, 2026 that https://rebit.org.in/careers/ is the live first-party ReBIT careers SPA, that the page bootstraps a public anonymous API login handshake at https://rebit.org.in/web/api/auth/login, and that the authenticated first-party openings feed at https://rebit.org.in/web/api/current-openings returned 26 active openings with direct ReBIT Darwinbox apply links under https://rebithr.darwinbox.in/ms/candidatev2/main/careers/. The verified openings included Data Science Manager, AI/ML Architect, Company Secretary, Engineer - IT Infra, Lead - Application Security SSDLC, Incident Response and Governance - Specialist, and SOC - SIEM Admin Specialist, and the feed exposed explicit job_experience values for all 26 current openings.',
+    'Verified on 2026-10-03: https://rebit.org.in/careers/ publishes its current main client and API configuration on the same first-party origin. The current public anonymous bootstrap payload succeeds at https://rebit.org.in/web/api/auth/login; the single https://rebit.org.in/web/api/current-openings feed returns 14 active India openings with explicit current job_experience and trusted https://rebithr.darwinbox.in apply URLs. All 14 apply shells identify Reserve Bank Information Technology Pvt Ltd; detail APIs return Cloudflare 403, so missing full descriptions remain null. Published byte-to-base64 bindings are read from the current client rather than retained as old constants.',
   modulePath: path.join(currentDir, 'script.js'),
   dryRunFile: 'reservebankinformationtechnology/jobs.json',
 }

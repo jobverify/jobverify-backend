@@ -41,6 +41,54 @@ const extractJobCards = (html) => [...String(html ?? '').matchAll(
   /<div\b[^>]*class=["'][^"']*\bcurrent-job-list\b[^"']*["'][^>]*>([\s\S]*?<a\b[^>]*href=["']([^"']*\/career\/[^"']+)["'][^>]*>\s*Apply Now[\s\S]*?<\/a>)[\s\S]*?<\/div>/gi,
 )]
 
+const extractWebflowField = (html, label) => normalizeWhitespace(
+  String(html ?? '').match(new RegExp(`<div[^>]*>\\s*${label}:\\s*<\\/div>\\s*<div[^>]*>([\\s\\S]*?)<\\/div>`, 'i'))?.[1],
+)
+
+const extractWebflowJobs = (html) => {
+  const page = String(html ?? '')
+  const cardStarts = [...page.matchAll(/<div\b[^>]*role=["']listitem["'][^>]*class=["'][^"']*\bw-dyn-item\b[^"']*["'][^>]*>/gi)]
+
+  return cardStarts.map((start, index) => {
+    const card = page.slice(start.index, cardStarts[index + 1]?.index ?? page.length)
+    const title = normalizeWhitespace(card.match(/<h3\b[^>]*>([\s\S]*?)<\/h3>/i)?.[1])
+    const href = card.match(/<a\b[^>]*href=["']([^"']*\/careers\/[^"']+)["'][^>]*>[\s\S]*?Apply Now[\s\S]*?<\/a>/i)?.[1]
+    let applyUrl
+    try {
+      applyUrl = new URL(href, CAREER_PAGE_URL)
+    } catch {
+      throw new Error('Detect Technologies Webflow card has no valid application URL')
+    }
+    const rawLocation = extractWebflowField(card, 'Location')
+    if (!title || !rawLocation || applyUrl.hostname !== 'detecttechnologies.com') {
+      throw new Error('Detect Technologies Webflow card no longer matches the verified job fields')
+    }
+
+    const requisitionId = getRequisitionId(applyUrl.toString(), title)
+    const { city, location } = formatLocation(rawLocation)
+    return {
+      title,
+      company: 'Detect Technologies',
+      department: null,
+      location,
+      city,
+      country: 'India',
+      jobId: `detecttechnologies-${requisitionId}`,
+      requisitionId,
+      sourceUrl: CAREER_PAGE_URL,
+      applyUrl: applyUrl.toString(),
+      employmentType: extractWebflowField(card, 'Mode'),
+      experienceRequired: extractWebflowField(card, 'Exp'),
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: 'Apply via the official Detect Technologies job page.',
+    }
+  })
+}
+
 const getRequisitionId = (applyUrl, title) => {
   try {
     const pathParts = new URL(applyUrl).pathname.split('/').filter(Boolean)
@@ -62,11 +110,17 @@ const formatLocation = (value) => {
 export const buildSearchUrl = () => CAREER_PAGE_URL
 
 export const pageIndicatesJobCards = (html) => (
-  /class=["'][^"']*\bcurrent-job-list\b/i.test(String(html ?? ''))
-  && /href=["'][^"']*\/career\/[^"']+["'][^>]*>\s*Apply Now/i.test(String(html ?? ''))
+  (/class=["'][^"']*\bcurrent-job-list\b/i.test(String(html ?? ''))
+    && /href=["'][^"']*\/career\/[^"']+["'][^>]*>\s*Apply Now/i.test(String(html ?? '')))
+  || (/<title>\s*Current Openings\s*<\/title>/i.test(String(html ?? ''))
+    && /id=["']roles["']/i.test(String(html ?? ''))
+    && /class=["'][^"']*\bjob-listing-card\b/i.test(String(html ?? ''))
+    && /href=["'][^"']*\/careers\/[^"']+["']/i.test(String(html ?? '')))
 )
 
-export const extractSearchResults = (html) => extractJobCards(html)
+export const extractSearchResults = (html) => /class=["'][^"']*\bjob-listing-card\b/i.test(String(html ?? ''))
+  ? extractWebflowJobs(html)
+  : extractJobCards(html)
   .map((match) => {
     const card = match[1]
     const applyUrl = normalizeWhitespace(match[2])
@@ -119,6 +173,9 @@ export const createDetectTechnologiesScraper = ({
     }
 
     const jobs = extractSearchResults(html)
+    if (jobs.length === 0) {
+      throw new Error('Detect Technologies careers page has no readable job cards')
+    }
     const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
 
     return selectedJobs.map((job) => ({

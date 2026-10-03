@@ -1,0 +1,11 @@
+{
+  "modelId": "convaiinnovations/laya",
+  "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+  "subfolder": "multilingual",
+  "layaVersion": "0.3.23",
+  "runtimeVersion": "jobverify-laya-v3",
+  "headAdapter": null,
+  "maxInputBytes": 262144,
+  "requestSeconds": 60,
+  "windowOverlapTokens": 96
+}

@@ -71,8 +71,21 @@ export const isVerifiedHomepage = (html) => {
     // The redesigned site publishes the verified contact only in Organization JSON-LD.
     && page.includes(EXPECTED_CONTACT_EMAIL)
 
-  return (isLegacyBusinessHomepage || isCurrentHomeIntelligenceHomepage)
-    && canonical === EXPECTED_CANONICAL_URL
+  const engineeringOrganization = [...page.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].some(match => {
+    try {
+      const org = JSON.parse(match[1])
+      return org['@type'] === 'Organization' && org.name === 'ZAIFI BUSINESS SOLUTIONS PRIVATE LIMITED'
+        && org.alternateName === 'ZAi-Fi' && org.url === 'https://www.zai-fi.com'
+        && org.contactPoint?.email === EXPECTED_CONTACT_EMAIL
+    } catch { return false }
+  })
+  const engineeringHome = title === 'ZAi-Fi | Legacy Engineering Drawings to Editable CAD'
+    && description === 'Convert scanned, handwritten and legacy engineering drawings into reviewed, editable 2D CAD. Discuss a sample drawing with our team.'
+    && canonical === 'https://www.zai-fi.com' && engineeringOrganization
+    && text.includes('Turn old engineering drawings into editable CAD.')
+    && text.includes('Discuss your drawings')
+  return engineeringHome || ((isLegacyBusinessHomepage || isCurrentHomeIntelligenceHomepage)
+    && canonical === EXPECTED_CANONICAL_URL)
 }
 
 export const sitemapHasCareerRoutes = (xml) =>
@@ -87,15 +100,15 @@ const hasVerifiedRobotsSignal = (robotsTxt) => {
   return text.includes('Allow: /')
     && text.includes('Disallow: /api/')
     && text.includes('Disallow: /_next/')
-    && text.includes(EXPECTED_SITEMAP_HINT)
+    && (text.includes(EXPECTED_SITEMAP_HINT) || text.includes('Sitemap: https://www.zai-fi.com/sitemap.xml'))
 }
 
 const hasVerifiedSitemapSignal = (xml) => {
-  const text = normalizeWhitespace(xml)
-  return text.includes('<loc>https://zaifi.co</loc>')
-    && text.includes('<loc>https://zaifi.co/about</loc>')
-    && text.includes('<loc>https://zaifi.co/services</loc>')
-    && text.includes('<loc>https://zaifi.co/blog</loc>')
+  const page = String(xml ?? '')
+  const locs = [...page.matchAll(/<loc>([^<]+)<\/loc>/gi)].map(match => normalizeWhitespace(match[1]).replace(/\/$/, ''))
+  return /<urlset\b/i.test(page) && ['https://zaifi.co', 'https://www.zai-fi.com'].some(origin =>
+    ['', '/about', '/services', '/blog'].every(path => locs.includes(origin + path))
+    && locs.every(url => url === origin || url.startsWith(origin + '/')))
 }
 
 const defaultFetchText = async (url) => {

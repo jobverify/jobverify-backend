@@ -20,6 +20,9 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = homepageHtml
+  .replace('<a href="https://exotel.com/careers/">Careers</a>', '<img src="/wp-content/uploads/2023/04/ameyo-by-exotel-logo.svg">')
+
 const upstreamCareersHtml = `
 <!doctype html>
 <html lang="en-IN">
@@ -119,11 +122,12 @@ test('Ameyo constants and validators stay pinned to the verified homepage handof
   assert.equal(ameyo.OPENINGS_API_URL, 'https://app.recruiterbox.com/widget/2176/openings/')
   assert.equal(
     ameyo.VERIFIED_UPSTREAM_JOB_URL,
-    'https://app.recruiterbox.com/widget/2176/opening/701455/',
+    'https://app.recruiterbox.com/widget/2176/opening/708128/',
   )
   assert.equal(ameyo.UPSTREAM_COMPANY_NAME, 'Exotel Techcom Pvt Ltd')
   assert.equal(ameyo.extractCareersUrl(homepageHtml), ameyo.OFFICIAL_CAREERS_HANDOFF_URL)
   assert.equal(ameyo.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(ameyo.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(
     ameyo.hasExpectedHomepageOutageSignal({
       status: 522,
@@ -199,6 +203,16 @@ test('run validates the Ameyo homepage handoff, the upstream Exotel careers surf
   assert.equal(jobs[0].company, 'Ameyo')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+})
+
+test('run accepts the current Exotel-branded Ameyo homepage without careers navigation while verifying upstream jobs', async () => {
+  const ameyo = await loadModule()
+  const jobs = await ameyo.createAmeyoScraper().run({
+    fetchPage: async (url) => ({ status: 200, url, html: currentHomepageHtml }),
+    fetchText: async () => upstreamCareersHtml,
+    fetchJson: async () => openingsPayload,
+  })
+  assert.equal(jobs.length, 2)
 })
 
 test('run continues through the verified Ameyo homepage 522 outage while the upstream Exotel careers surface and Recruiterbox feed remain healthy', async () => {

@@ -43,7 +43,7 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*(?:Careers\s*-\s*)?Aarav Solutions\s*<\/title>/i.test(page)
+  return hasStructuredCareersSignal(page) || (/<title>\s*(?:Careers\s*-\s*)?Aarav Solutions\s*<\/title>/i.test(page)
     && normalized.includes('Careers')
     && (
       normalized.includes('You At Aarav')
@@ -53,7 +53,83 @@ export const hasOfficialCareersSignal = (html) => {
     && /class=["'][^"']*job-board-wrapper[^"']*["']/i.test(page)
     && /class=["'][^"']*job-tabs[^"']*["']/i.test(page)
     && /href=["']#career-form["']/i.test(page)
-    && /linkedin\.com\/company\/aarav-solutions-private-limited/i.test(page)
+    && /linkedin\.com\/company\/aarav-solutions-private-limited/i.test(page))
+}
+
+const hasStructuredCareersSignal = (page) => (
+  /<title>\s*Careers\s*-\s*Aarav Solutions\s*<\/title>/i.test(page)
+  && /<section\b[^>]*\bid=["']open-roles["']/i.test(page)
+  && /<section\b[^>]*\bid=["']apply["']/i.test(page)
+  && /<h2>\s*Current openings\s*<\/h2>/i.test(page)
+  && /application\/ld\+json/i.test(page)
+)
+
+const extractStructuredIndiaRoles = (html, now) => {
+  const page = String(html ?? '')
+  const records = [...page.matchAll(/<script\b[^>]*\btype=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)]
+    .flatMap((match) => {
+      try {
+        const parsed = JSON.parse(match[1])
+        return Array.isArray(parsed) ? parsed : [parsed]
+      } catch {
+        return []
+      }
+    })
+    .filter((record) => record?.['@type'] === 'JobPosting')
+
+  if (records.length === 0) {
+    throw new Error('Aarav Solutions current careers page has no parseable structured job inventory')
+  }
+
+  return records.flatMap((record) => {
+    const title = normalizeWhitespace(record.title)
+    const organization = record.hiringOrganization
+    const roleUrl = new URL(String(record.url || ''), CAREERS_URL)
+    const roleId = roleUrl.hash.slice(1)
+    const eligibleCountries = record.applicantLocationRequirements
+    if (
+      !title
+      || organization?.name !== COMPANY
+      || new URL(String(organization.sameAs || ''), CAREERS_URL).hostname !== 'www.aaravsolutions.com'
+      || roleUrl.origin !== new URL(CAREERS_URL).origin
+      || roleUrl.pathname !== '/careers/'
+      || !/^[a-z0-9-]+$/i.test(roleId)
+      || !page.includes(`id="${roleId}"`)
+      || record.jobLocationType !== 'TELECOMMUTE'
+      || !Array.isArray(eligibleCountries)
+      || eligibleCountries.length === 0
+    ) {
+      throw new Error('Aarav Solutions structured job inventory changed and cannot establish complete India scope')
+    }
+
+    if (!eligibleCountries.some((country) => country?.name === 'India')) return []
+
+    const jobId = `${SOURCE}-${roleId}`
+    return [{
+      jobId,
+      requisitionId: jobId,
+      title,
+      company: COMPANY,
+      department: record.occupationalCategory || null,
+      location: 'Remote, India',
+      city: 'Remote',
+      country: 'India',
+      link: roleUrl.href,
+      applyUrl: roleUrl.href,
+      sourceUrl: roleUrl.href,
+      source: SOURCE,
+      employmentType: record.employmentType === 'FULL_TIME' ? 'Full-time' : null,
+      experienceRequired: null,
+      jobDescription: normalizeWhitespace(String(record.description || '').replace(/<[^>]+>/g, ' ')) || null,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: record.datePosted || null,
+      closingDate: null,
+      remoteStatus: 'Remote',
+      scrapedAt: now(),
+    }]
+  })
 }
 
 export const hasVerifiedHubSpotApplyForm = (html) => {
@@ -151,6 +227,14 @@ export const createAaravSolutionsScraper = ({ now = () => new Date().toISOString
     const careersPage = await fetchPage(CAREERS_URL)
     if (careersPage.status !== 200 || !hasOfficialCareersSignal(careersPage.html)) {
       throw new Error('Aarav Solutions verified careers page no longer matches the trusted first-party public job surface')
+    }
+
+    if (hasStructuredCareersSignal(careersPage.html)) {
+      const jobs = extractStructuredIndiaRoles(careersPage.html, now)
+      if (jobs.length === 0) {
+        throw new Error('Aarav Solutions structured careers page has no verified India roles')
+      }
+      return jobs
     }
 
     if (!hasVerifiedHubSpotApplyForm(careersPage.html)) {

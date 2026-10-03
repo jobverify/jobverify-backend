@@ -150,7 +150,7 @@ test('Danske IT local catalog captures the verified transition notice and parent
   )
   assert.equal(provider.verifiedOn, '2026-07-18')
   assert.match(provider.verifiedSurfaceSummary, /June 26, 2023/i)
-  assert.match(provider.verifiedSurfaceSummary, /Infosys/i)
+  assert.match(provider.verifiedSurfaceSummary, /transfer colleagues/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

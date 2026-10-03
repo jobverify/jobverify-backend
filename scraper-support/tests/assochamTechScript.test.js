@@ -88,6 +88,40 @@ const publicJobsHtml = `
 </html>
 `
 
+const currentHomepageHtml = '<!doctype html><html><head><meta name="description" content="The Associated Chambers of Commerce & Industry of India (ASSOCHAM) is the country\'s oldest apex chamber."/><title>ASSOCHAM | Knowledge Architect of India</title><script defer="defer" src="/static/js/main.0ba26ba7.js"></script></head><body><div id="root"></div></body></html>'
+const currentBundleText = 'const rk="https://www.assocham.org/assocham_backend",sk="hr@assocham.com";const nav=[{label:"Careers",path:"/career"}];'
+const currentBundleUrl = 'https://www.assocham.org/static/js/main.0ba26ba7.js'
+const currentCareersUrl = 'https://www.assocham.org/assocham_backend/career.php'
+
+test('Assocham Tech follows the current first-party frontend to its generic careers intake', async () => {
+  const assochamTech = await loadModule()
+  const requested = []
+  const jobs = await assochamTech.createAssochamTechScraper().run({
+    fetchPage: async (url) => {
+      requested.push(url)
+      if (url === assochamTech.HOMEPAGE_URL) return { status: 200, url, html: currentHomepageHtml }
+      if (url === currentBundleUrl) return { status: 200, url, html: currentBundleText }
+      if (url === currentCareersUrl) return { status: 200, url, html: careersIntakeHtml }
+      if (assochamTech.NO_PUBLIC_JOB_ROUTE_URLS.includes(url)) return { status: 404, url, html: notFoundHtml }
+      throw new Error(`Unexpected current ASSOCHAM URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+  assert.deepEqual(requested.slice(0, 3), [assochamTech.HOMEPAGE_URL, currentBundleUrl, currentCareersUrl])
+})
+
+test('Assocham Tech rejects a current frontend bundle without the verified careers navigation', async () => {
+  const assochamTech = await loadModule()
+  await assert.rejects(assochamTech.createAssochamTechScraper().run({
+    fetchPage: async (url) => {
+      if (url === assochamTech.HOMEPAGE_URL) return { status: 200, url, html: currentHomepageHtml }
+      if (url === currentBundleUrl) return { status: 200, url, html: currentBundleText.replace('path:"/career"', 'path:"/jobs"') }
+      throw new Error(`Unexpected current ASSOCHAM URL: ${url}`)
+    },
+  }), /frontend careers navigation/i)
+})
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/assochamtech/script.js')
@@ -102,9 +136,10 @@ test('Assocham Tech scraper constants stay pinned to the verified ASSOCHAM intak
   assert.equal(assochamTech.SOURCE, 'assochamtech')
   assert.equal(assochamTech.COMPANY, 'Assocham Tech')
   assert.equal(assochamTech.OFFICIAL_BRAND_NAME, 'ASSOCHAM')
-  assert.equal(assochamTech.VERIFIED_AT, '2026-07-15')
+  assert.equal(assochamTech.VERIFIED_AT, '2026-10-03')
   assert.equal(assochamTech.HOMEPAGE_URL, 'https://www.assocham.org/')
   assert.equal(assochamTech.CAREERS_URL, 'https://www.assocham.org/career.php')
+  assert.equal(assochamTech.CURRENT_CAREERS_URL, 'https://www.assocham.org/assocham_backend/career.php')
   assert.equal(assochamTech.APPLICATION_EMAIL, 'hr@assocham.com')
   assert.equal(assochamTech.APPLICATION_URL, 'mailto:hr@assocham.com')
   assert.deepEqual(assochamTech.NO_PUBLIC_JOB_ROUTE_URLS, [

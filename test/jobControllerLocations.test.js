@@ -165,6 +165,16 @@ const matchesExperienceClause = (job, clause) => {
     return clause.$and.every((condition) => matchesExperienceClause(job, condition))
   }
 
+  for (const [field, rule] of Object.entries(clause || {})) {
+    if (!field.startsWith('classification.')) continue
+    const value = field.split('.').reduce((current, part) => current?.[part], job)
+    if (rule && typeof rule === 'object') {
+      if (Object.hasOwn(rule, '$ne') && value === rule.$ne) return false
+      if (rule.$in && !rule.$in.includes(value)) return false
+      if (Object.hasOwn(rule, '$size') && (!Array.isArray(value) || value.length !== rule.$size)) return false
+    } else if (value !== rule) return false
+  }
+
   return (
     matchesExperienceRequiredCondition(job, clause)
     && matchesExperienceYearsCondition(job, clause)

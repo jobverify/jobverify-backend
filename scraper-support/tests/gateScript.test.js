@@ -98,7 +98,7 @@ const loadGateModule = async () => {
   }
 }
 
-test('Gate helpers recognize the current official careers and Lever board surfaces', async () => {
+test('Gate preserves the legacy Lever parser without using its retired board at runtime', async () => {
   const gate = await loadGateModule()
 
   assert.equal(gate.SOURCE, 'gate')
@@ -154,60 +154,21 @@ test('Gate helpers recognize the current official careers and Lever board surfac
   ])
 })
 
-test('Gate run verifies the current careers surfaces and decorates Lever jobs', async () => {
+test('Gate run confirms zero from its first-party API rather than the loading shell', async () => {
   const gate = await loadGateModule()
-  const requestedTexts = []
-  const requestedJson = []
-
-  const jobs = await gate.createGateScraper({
-    now: () => '2026-07-26T19:40:00.000Z',
-  }).run({
-    fetchText: async (url) => {
-      requestedTexts.push(url)
-
-      if (url === gate.OFFICIAL_CAREERS_URL) return OFFICIAL_CAREERS_HTML
-      if (url === gate.LEVER_BOARD_URL) return LEVER_BOARD_HTML
-
-      throw new Error(`Unexpected text URL: ${url}`)
-    },
+  const jobs = await gate.run({
+    fetchText: async (url) => { assert.equal(url, 'https://www.gate.com/careers'); return OFFICIAL_CAREERS_HTML },
     fetchJson: async (url) => {
-      requestedJson.push(url)
-      return LEVER_JOBS
+      const path = new URL(url).pathname
+      if (path.endsWith('/taxonomies')) return { code: 0, data: { job_categories: [], employment_types: [] } }
+      assert.equal(path, '/api/web/v1/tst/career/positions')
+      return { code: 0, data: { total: 0, page: 1, limit: 50, list: [] } }
     },
   })
-
-  assert.deepEqual(requestedTexts, [
-    gate.OFFICIAL_CAREERS_URL,
-    gate.LEVER_BOARD_URL,
-  ])
-  assert.deepEqual(requestedJson, [gate.LEVER_ENDPOINT])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'gate')
-  assert.equal(jobs[0].companyCareerPage, gate.OFFICIAL_CAREERS_URL)
-  assert.equal(jobs[0].companyDomain, 'gate.com')
-  assert.equal(jobs[0].atsPlatform, 'lever')
-  assert.equal(jobs[0].scrapedAt, '2026-07-26T19:40:00.000Z')
+  assert.deepEqual(jobs, [])
 })
-
-test('Gate fails closed when the official careers page or Lever board drifts', async () => {
+test('Gate rejects changed careers identity and propagates upstream failure', async () => {
   const gate = await loadGateModule()
-
-  await assert.rejects(
-    gate.createGateScraper().run({
-      fetchText: async () => '<html><body><h1>Careers</h1></body></html>',
-      fetchJson: async () => [],
-    }),
-    /official gate careers surface/i,
-  )
-
-  await assert.rejects(
-    gate.createGateScraper().run({
-      fetchText: async (url) => {
-        if (url === gate.OFFICIAL_CAREERS_URL) return OFFICIAL_CAREERS_HTML
-        return '<html><body><h1>Unexpected Lever board</h1></body></html>'
-      },
-      fetchJson: async () => [],
-    }),
-    /public jobs surface/i,
-  )
+  await assert.rejects(gate.run({ fetchText: async () => '<title>Other careers</title>' }), /official Gate careers surface/)
+  await assert.rejects(gate.run({ fetchText: async () => OFFICIAL_CAREERS_HTML, fetchJson: async () => { throw new Error('HTTP 503 upstream') } }), /HTTP 503 upstream/)
 })

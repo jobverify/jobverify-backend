@@ -124,6 +124,62 @@ const careersHtmlWithCurrentTitleAndHeading = careersHtml
     '<h2>Life at Aarav Solutions</h2>',
   )
 
+const structuredCareersHtml = `
+<html><head><title>Careers - Aarav Solutions</title></head><body>
+  <section id="open-roles"><h2>Current openings</h2>
+    <article class="ac-role" id="lead-engineer-odoo-ai"><h3>Lead Engineer, Odoo &amp; AI</h3></article>
+    <article class="ac-role" id="us-only-role"><h3>US Only Role</h3></article>
+  </section>
+  <section id="apply"><form><input name="job-title"></form></section>
+  <script type="application/ld+json">${JSON.stringify([
+    {
+      '@context': 'https://schema.org/',
+      '@type': 'JobPosting',
+      title: 'Lead Engineer, Odoo & AI',
+      description: '<p>Build Odoo modules and production AI applications.</p>',
+      datePosted: '2026-09-11',
+      employmentType: 'FULL_TIME',
+      url: 'https://www.aaravsolutions.com/careers/#lead-engineer-odoo-ai',
+      hiringOrganization: { '@type': 'Organization', name: 'Aarav Solutions', sameAs: 'https://www.aaravsolutions.com' },
+      jobLocationType: 'TELECOMMUTE',
+      applicantLocationRequirements: [{ '@type': 'Country', name: 'India' }, { '@type': 'Country', name: 'United States' }],
+    },
+    {
+      '@context': 'https://schema.org/',
+      '@type': 'JobPosting',
+      title: 'US Only Role',
+      description: '<p>US applicants only.</p>',
+      datePosted: '2026-09-11',
+      employmentType: 'FULL_TIME',
+      url: 'https://www.aaravsolutions.com/careers/#us-only-role',
+      hiringOrganization: { '@type': 'Organization', name: 'Aarav Solutions', sameAs: 'https://www.aaravsolutions.com' },
+      jobLocationType: 'TELECOMMUTE',
+      applicantLocationRequirements: [{ '@type': 'Country', name: 'United States' }],
+    },
+  ])}</script>
+</body></html>
+`
+
+test('run extracts current structured Aarav roles only when India is explicitly eligible', async () => {
+  const aarav = await loadAaravSolutionsModule()
+  const jobs = await aarav.createAaravSolutionsScraper({
+    now: () => '2026-10-02T00:00:00.000Z',
+  }).run({
+    fetchPage: async (url) => ({
+      status: 200,
+      url,
+      html: url === aarav.HOMEPAGE_URL ? homepageHtml : structuredCareersHtml,
+    }),
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Lead Engineer, Odoo & AI')
+  assert.equal(jobs[0].location, 'Remote, India')
+  assert.equal(jobs[0].sourceUrl, 'https://www.aaravsolutions.com/careers/#lead-engineer-odoo-ai')
+  assert.equal(jobs[0].applyUrl, jobs[0].sourceUrl)
+  assert.equal(jobs[0].postingDate, '2026-09-11')
+})
+
 test('Aarav Solutions validates the verified homepage, careers page shell, shared HubSpot form, and India roles', async () => {
   const aarav = await loadAaravSolutionsModule()
 

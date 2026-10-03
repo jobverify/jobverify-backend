@@ -372,7 +372,7 @@ test('Anaptyss helpers stay pinned to the verified homepage, careers landing, jo
   assert.equal(anaptyss.SOURCE, 'anaptyss')
   assert.equal(anaptyss.COMPANY, 'Anaptyss')
   assert.equal(anaptyss.OFFICIAL_BRAND_NAME, 'Anaptyss Inc.')
-  assert.equal(anaptyss.VERIFIED_ON, '2026-07-15')
+  assert.equal(anaptyss.VERIFIED_ON, '2026-10-03')
   assert.equal(anaptyss.HOMEPAGE_URL, 'https://www.anaptyss.com/')
   assert.equal(anaptyss.CAREERS_LANDING_URL, 'https://www.anaptyss.com/careers/')
   assert.equal(anaptyss.JOBS_URL, 'https://www.anaptyss.com/jobs/')
@@ -612,4 +612,32 @@ test('Anaptyss fails closed when the homepage, careers landing, jobs listing sur
     }),
     /detail page surface changed/i,
   )
+})
+
+test('Anaptyss follows the redesigned first-party openings page and validates its India detail and apply URL', async () => {
+  const anaptyss = await loadAnaptyssModule()
+  const detailUrl = 'https://www.anaptyss.com/job-post/quality-analyst-qa'
+  const homepage = '<html><head><title>Anaptyss — Building Intelligent Enterprises for What&#x27;s Next</title></head><body><a href="/life-at-anaptyss">Life @ Anaptyss</a><a href="/careers/openings">Current Openings</a></body></html>'
+  const careers = '<html><head><title>Current Openings | Anaptyss</title><link rel="canonical" href="https://anaptyss.com/careers/openings"></head><body><details class="op-card"><summary><h4>Quality Analyst (QA)</h4><span class="op-card-meta"><span><svg></svg>Full Time</span><span><svg></svg>Noida / Gurugram</span></span></summary><div><dl><div><dt>Industry</dt><dd>Banking &amp; Financial Services</dd></div><div><dt>Work Experience</dt><dd>4-7 Years</dd></div><div><dt>Date Opened</dt><dd>01 June 2026</dd></div></dl><a href="/job-post/quality-analyst-qa"><span>View More</span></a></div></details></body></html>'
+  const detail = '<html><head><title>Quality Analyst (QA) | Anaptyss</title></head><body><h1>Quality Analyst (QA)</h1><h2>Job Information</h2><dl><div><dt>Country</dt><dd>India</dd></div><div><dt>City</dt><dd>Noida / Gurugram</dd></div></dl><a href="/apply-now?post=Quality%20Analyst%20(QA)">Apply Now</a><div class="jb-block"><h2 class="sec-title">Job Description</h2><div class="jb-prose"><p>Review banking operations for quality.</p></div></div></body></html>'
+  const fetchPage = async (url) => ({ status: 200, url, html: new Map([
+    [anaptyss.HOMEPAGE_URL, homepage],
+    [anaptyss.CURRENT_CAREERS_URL, careers],
+    [detailUrl, detail],
+  ]).get(url) })
+
+  const jobs = await anaptyss.createAnaptyssScraper().run({ fetchPage })
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Quality Analyst (QA)')
+  assert.equal(jobs[0].location, 'Noida / Gurugram, India')
+  assert.equal(jobs[0].sourceUrl, detailUrl)
+  assert.equal(jobs[0].applyUrl, 'https://www.anaptyss.com/apply-now?post=Quality%20Analyst%20(QA)')
+
+  await assert.rejects(anaptyss.createAnaptyssScraper().run({
+    fetchPage: async (url) => ({
+      status: 200,
+      url,
+      html: url === detailUrl ? detail.replace('<dd>India</dd>', '<dd>United States</dd>') : (await fetchPage(url)).html,
+    }),
+  }), /current job detail changed/i)
 })

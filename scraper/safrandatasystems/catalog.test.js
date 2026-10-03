@@ -27,12 +27,12 @@ test('Safran Data Systems is registered against the verified accessible keyword-
   assert.equal(provider.paginationStrategy, 'accessible-keyword-search-page-plus-detail-pages')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-keyword-search+detail-pages+exact-company-meta-description',
+    'verified-first-party-keyword-search+detail-pages+exact-company-or-sds-division-identity',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'careers.safran-group.com')
-  assert.equal(provider.verifiedOn, '2026-08-14')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.match(provider.modulePath, /safrandatasystems[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, COMPANY), false)
 })

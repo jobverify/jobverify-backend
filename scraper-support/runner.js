@@ -59,7 +59,7 @@ const resolveExecutionPath = (value) => {
 const DEFAULT_SCRAPER_TIMEOUT_MS = 5 * 60 * 1000
 const DEFAULT_WORKDAY_SCRAPER_TIMEOUT_MS = 210 * 1000
 const DEFAULT_SOURCE_LIFECYCLE_TIMEOUT_MS = 30 * 60 * 1000
-const DEFAULT_ABORT_GRACE_MS = 5 * 1000
+const DEFAULT_ABORT_GRACE_MS = 15 * 1000
 const DRY_RUN_EXPERIENCE_ENRICHMENT_CONCURRENCY = 2
 const DEFAULT_DRY_RUN_MAX_JOBS_TO_ENRICH = null
 
@@ -94,6 +94,7 @@ export const resolveDryRunMaxJobsToEnrich = (
 export const buildDryRunSnapshotOptions = ({
   scraper = null,
   signal = null,
+  onStage = null,
   enrichPublicExperience = resolveDryRunPublicExperienceEnabled({ scraper }),
   experienceEnrichmentConcurrency = DRY_RUN_EXPERIENCE_ENRICHMENT_CONCURRENCY,
   maxJobsToEnrich = resolveDryRunMaxJobsToEnrich(
@@ -104,6 +105,8 @@ export const buildDryRunSnapshotOptions = ({
   experienceEnrichmentConcurrency,
   maxJobsToEnrich,
   ...(signal ? { signal } : {}),
+  ...(scraper?.name ? { source: scraper.name } : {}),
+  ...(onStage ? { onStage } : {}),
 })
 
 export const finalizeDirectRunnerExit = ({
@@ -700,21 +703,35 @@ export const formatSourceStageLog = ({
   durationMs,
   jobs,
   operations,
+  processed,
+  total,
+  nativeComplete,
+  fallback,
   error,
 } = {}) => {
   const detailParts = []
   if (Number.isFinite(jobs)) detailParts.push(`${jobs} jobs`)
   if (Number.isFinite(operations)) detailParts.push(`${operations} ops`)
+  if (Number.isFinite(processed)) detailParts.push(`${processed}/${total} processed, ${nativeComplete} complete model scans, ${fallback} fallback`)
   if (error) detailParts.push(error)
   const details = detailParts.length ? ` (${detailParts.join(', ')})` : ''
   return `  [runner] [${source}] ${stage} ${status}${formatStageDuration(durationMs)}${details}`
 }
 
-const createSourceStageLogger = (source) => (event = {}) => {
+const createSourceStageLogger = (source) => {
+  let lastProgressAt = 0, lastProcessed = -1;
+  return (event = {}) => {
+  if (event.status === 'progress') {
+    const now = Date.now();
+    if (event.processed !== event.total && event.processed - lastProcessed < 25 && now - lastProgressAt < 15000) return;
+    lastProgressAt = now;
+    lastProcessed = event.processed;
+  }
   console.log(formatSourceStageLog({
     source,
     ...event,
   }))
+  }
 }
 
 const updateLiveScraperStatus = async (source, result, logStage) => {
@@ -996,6 +1013,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
     startedCount++
     const progressStr = `[${startedCount}/${totalScrapers}] `
     const scraperStart = Date.now()
+    const logStage = createSourceStageLogger(scraper.name)
     checkpoint?.markSourceStarted(scraper.name)
 
     // Skip execution if the scraper has been deactivated by an administrator
@@ -1043,7 +1061,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
         await saveDryRunSnapshot(
           indiaJobs,
           scraper.dryRunFile,
-          buildDryRunSnapshotOptions({ scraper, signal: stopSignal }),
+          buildDryRunSnapshotOptions({ scraper, signal: stopSignal, onStage: logStage }),
         )
         result = {
           jobs: indiaJobs.length,
@@ -1246,7 +1264,7 @@ export const runScraper = async (
       await saveDryRunSnapshot(
         indiaJobs,
         scraper.dryRunFile,
-        buildDryRunSnapshotOptions({ scraper, signal: lifecycleSignal }),
+        buildDryRunSnapshotOptions({ scraper, signal: lifecycleSignal, onStage: logStage }),
       )
       result = {
         jobs: indiaJobs.length,
@@ -1291,6 +1309,7 @@ export const runScraper = async (
     }
 
     await updateLiveScraperStatus(scraper.name, successResult, logStage)
+    throwIfAborted(lifecycleSignal)
 
     return { name: scraper.name, ...successResult }
   } catch (err) {
@@ -1380,18 +1399,39 @@ const runAllParallel = async ({
           { signal: pipelineController.signal },
         )
       } catch (error) {
-        // Escaped lifecycle failures can leave non-cooperative work behind.
-        // Stop the queue and bound peer cleanup before finalizing this run.
-        fatalWorkerError ||= error
-        escapedError = error
-        queue.length = 0
-        pipelineController.abort(fatalWorkerError)
-        result = {
+        const failureResult = {
           name: scraper.name,
           success: false,
           error: error.message,
           durationMs: Date.now() - sourceStartedAt,
           ...classifyScraperError(error),
+        }
+        if (error instanceof ScraperSourceLifecycleTimeoutError) {
+          console.error(`  ERROR [${scraper.name}] FAILED:`, error.message)
+          try {
+            await updateLiveScraperStatus(
+              scraper.name,
+              failureResult,
+              createSourceStageLogger(scraper.name),
+            )
+            result = failureResult
+          } catch (statusError) {
+            escapedError = statusError
+          }
+        } else {
+          escapedError = error
+        }
+
+        if (escapedError) {
+          // Persistence failures and unexpected errors still stop the queue.
+          fatalWorkerError ||= escapedError
+          queue.length = 0
+          pipelineController.abort(fatalWorkerError)
+          result = {
+            ...failureResult,
+            error: escapedError.message,
+            ...classifyScraperError(escapedError),
+          }
         }
       }
       const { name, ...rest } = result

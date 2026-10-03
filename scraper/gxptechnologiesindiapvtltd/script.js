@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
@@ -61,15 +62,25 @@ export const extractBundlePath = (html) => {
   return match?.[1] ?? null
 }
 
+const hasOctober2026ProductCopy = (html) => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page)
+  return /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/gxptechnologies\.com\/["']/i.test(page)
+    && text.includes('Guide your operators toward perfect execution.')
+    && text.includes('Shihan GX™ learns from your own runs which in-range step choices lead to on-spec results')
+    && text.includes('It sits beside your validated systems and advises; your people decide.')
+}
+
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
   return /<title>\s*Shihan GX(?:™|&trade;)?\s*[—-]\s*Operator Execution Intelligence\s*\|\s*GxP Technologies\s*<\/title>/i.test(rawHtml)
     && /GxP Technologies/i.test(normalized)
-    && /Shihan GX(?:™|&trade;)?\s*[—-]\s*reduce recurring GMP execution errors without replacing your validated systems\./i.test(normalized)
+    && ((/Shihan GX(?:™|&trade;)?\s*[—-]\s*reduce recurring GMP execution errors without replacing your validated systems\./i.test(normalized)
     && /Up to 75% fewer QC execution errors in a biopharma method/i.test(normalized)
-    && /\$4M\+\s+in manufacturing-error savings previously achieved/i.test(normalized)
+    && /\$4M\+\s+in manufacturing-error savings previously achieved/i.test(normalized))
+      || hasOctober2026ProductCopy(rawHtml))
     && /support@gxptechnologies\.com/i.test(rawHtml)
     && extractBundlePath(rawHtml) !== null
 }
@@ -91,6 +102,17 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const hasVerifiedResumeOnlyClientCareers = (bundle) => {
+  const text = String(bundle ?? '')
+  return text.includes('Careers at ')
+    && text.includes('Key Roles')
+    && text.includes('We are not actively recruiting at this moment.')
+    && text.includes('upload a resume with a description of why you are interested')
+    && text.includes('support@gxptechnologies.com')
+    && /type:["']career["']/.test(text)
+    && !PUBLIC_JOBS_SIGNAL_PATTERNS.filter(pattern => !pattern.test('apply now')).some(pattern => pattern.test(text))
+}
+
 export const createGxpTechnologiesIndiaPvtLtdScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
     const homepageHtml = await fetchText(HOMEPAGE_URL)
@@ -104,6 +126,15 @@ export const createGxpTechnologiesIndiaPvtLtdScraper = () => ({
     }
 
     const bundlePath = extractBundlePath(homepageHtml)
+    let hasExplicitlyInactiveRecruitment = false
+    // The current product shell hides recruiting content in its first-party module.
+    if (hasOctober2026ProductCopy(homepageHtml)) {
+      const clientBundle = await fetchText(new URL(bundlePath, HOMEPAGE_URL).toString())
+      if (!hasVerifiedResumeOnlyClientCareers(clientBundle)) {
+        throw new Error('GxP Technologies India Pvt. Ltd. client careers no longer verifies a resume-only surface without active recruitment')
+      }
+      hasExplicitlyInactiveRecruitment = true
+    }
 
     for (const routeUrl of CHECKED_ROUTE_URLS) {
       const routeHtml = await fetchText(routeUrl)
@@ -113,7 +144,17 @@ export const createGxpTechnologiesIndiaPvtLtdScraper = () => ({
       }
     }
 
-    return []
+    return attachInventoryEvidence([], {
+      status: hasExplicitlyInactiveRecruitment ? 'verified-empty' : 'discovery-only',
+      surface: new URL(bundlePath, HOMEPAGE_URL).toString(), firstParty: true,
+      listingComplete: hasExplicitlyInactiveRecruitment,
+      pagesFetched: 1 + CHECKED_ROUTE_URLS.length + (hasExplicitlyInactiveRecruitment ? 1 : 0),
+      reportedTotal: hasExplicitlyInactiveRecruitment ? 0 : null,
+      indiaFacetCount: hasExplicitlyInactiveRecruitment ? 0 : null,
+      verifiedAt: new Date().toISOString(),
+      reason: hasExplicitlyInactiveRecruitment ? 'First-party client careers explicitly states not actively recruiting at this moment.'
+        : 'GxP legacy product shell does not expose verified complete recruitment inventory.',
+    })
   },
 })
 
@@ -124,7 +165,15 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
-  if (isDryRun) {
+  const evidence = readInventoryEvidence(jobs)
+  if (isDryRun && evidence) {
+    const { writeFile } = await import('node:fs/promises')
+    await writeFile(path.join(currentDir, 'inventory-evidence.json'), JSON.stringify(evidence, null, 2))
+  }
+  if (evidence?.listingComplete === false) {
+    console.error(evidence.reason)
+    process.exitCode = 1
+  } else if (isDryRun) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
   } else {
     await saveToDB(jobs, SOURCE)

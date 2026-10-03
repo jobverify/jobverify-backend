@@ -1,12 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { ASTER_DM_HEALTHCARE_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
 
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY_NAME = PROVIDER_METADATA.companyName
@@ -250,6 +248,27 @@ export const hasOfficialCandidateExperienceSignal = (html) => {
     && /<base[^>]+href=["']\/hcmUI\/CandidateExperience\/en\/sites\/CX\/?["'][^>]+data-apibaseurl=["']https:\/\/hcdt\.fa\.us2\.oraclecloud\.com:443["'][^>]+data-sitenumber=["']CX["']/i.test(page)
 }
 
+export const hasCurrentHomepageSignal = (html) => {
+  const page = String(html ?? '')
+  return /<title>\s*Aster Quality Care\s*<\/title>/i.test(page)
+    && /Aster DM Quality Care Ltd\./i.test(page)
+    && /Formerly Aster DM Healthcare Ltd\./i.test(page)
+    && /<a\b[^>]+href=["']\/careers["'][^>]*>\s*Careers\s*<\/a>/i.test(page)
+}
+
+export const hasCurrentCareersIntakeSignal = (html) => {
+  const page = String(html ?? '')
+  return /<title>\s*Aster Quality Care\s*<\/title>/i.test(page)
+    && /Aster DM Quality Care Ltd\./i.test(page)
+    && /Formerly Aster DM Healthcare Ltd\./i.test(page)
+    && /Build a Career That Makes Every Moment Matter/i.test(page)
+    && /Across Aster, CARE, Evercare and KIMSHEALTH Bangladesh/i.test(page)
+    && /<form\b[^>]+id=["']career-contact-form["'][^>]+data-action=["']https:\/\/www\.asterqualitycare\.com\/careers\/contact["']/i.test(page)
+    && /<input\b[^>]+type=["']file["'][^>]+name=["']resume["']/i.test(page)
+    && !/hcdt\.fa\.us2\.oraclecloud\.com/i.test(page)
+    && !/href=["'][^"']*(?:\/jobs?\/|\/openings|\/positions)/i.test(page)
+}
+
 export const buildSearchUrl = ({
   page = 0,
   limit = DEFAULT_LIMIT,
@@ -360,69 +379,23 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 20000,
 })
 
-const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'application/json,text/plain,*/*',
-  },
-  label: SOURCE,
-  timeoutMs: 30000,
-})
-
 export const createAsterDmHealthcareScraper = ({
-  maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
   fetchText = defaultFetchText,
-  fetchJson = defaultFetchJson,
-  now = () => new Date().toISOString(),
 } = {}) => ({
   async run() {
     const homepageHtml = await fetchText(OFFICIAL_HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
+    if (!hasCurrentHomepageSignal(homepageHtml)) {
       throw new Error('Aster DM Healthcare verified official homepage no longer matches the known first-party surface')
     }
 
     const careersHtml = await fetchText(OFFICIAL_CAREERS_URL)
-    if (!hasOfficialCareersPageSignal(careersHtml)) {
+    if (!hasCurrentCareersIntakeSignal(careersHtml)) {
       throw new Error('Aster DM Healthcare verified careers page no longer matches the known first-party handoff')
     }
 
-    const candidateExperienceHtml = await fetchText(CANDIDATE_EXPERIENCE_URL)
-    if (!hasOfficialCandidateExperienceSignal(candidateExperienceHtml)) {
-      throw new Error('Aster DM Healthcare verified Oracle candidate experience page no longer matches the known first-party shell')
-    }
-
-    const jobs = []
-    const seenJobIds = new Set()
-
-    for (let page = 0; page < maxPages; page += 1) {
-      const payload = await fetchJson(buildSearchUrl({ page }))
-      const pageJobs = extractSearchResults(payload)
-      const summary = extractPaginationSummary(payload, { page })
-
-      for (const listing of pageJobs) {
-        if (seenJobIds.has(listing.jobId)) continue
-        seenJobIds.add(listing.jobId)
-
-        const detailPayload = await fetchJson(buildJobDetailApiUrl(listing.jobId))
-        const detail = extractJobDetail(detailPayload, listing)
-
-        jobs.push({
-          ...detail,
-          source: SOURCE,
-          link: detail.applyUrl || detail.sourceUrl,
-          scrapedAt: now(),
-        })
-
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
-        }
-      }
-
-      if (!summary.hasNext) break
-    }
-
-    return jobs
+    // The merged company's current careers surface is a general resume intake,
+    // with no published requisitions or handoff to the legacy Oracle board.
+    return []
   },
 })
 

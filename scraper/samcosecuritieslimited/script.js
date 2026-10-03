@@ -20,13 +20,6 @@ const CAREERS_ERROR =
   'SAMCO verified first-party careers page no longer matches the trusted public surface'
 const OPTIONS_ERROR = 'SAMCO verified public position options changed shape'
 
-const EXPECTED_OPENINGS = [
-  { requisitionId: '115', title: 'Channel Sales' },
-  { requisitionId: '127', title: 'Growth' },
-  { requisitionId: '139', title: 'Operations' },
-  { requisitionId: '27', title: 'RankMF - B2B Sales' },
-]
-
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -63,14 +56,6 @@ const slugify = (value) => normalizeWhitespace(value)
   .replace(/['"]/g, '')
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
-
-const matchesExpectedOpenings = (openings) => (
-  openings.length === EXPECTED_OPENINGS.length
-  && openings.every((opening, index) => (
-    opening.requisitionId === EXPECTED_OPENINGS[index].requisitionId
-    && opening.title === EXPECTED_OPENINGS[index].title
-  ))
-)
 
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
@@ -110,7 +95,7 @@ const extractPositionCards = (html) => {
     visibleTitle: normalizeWhitespace(stripTags(match[3])),
   }))
 
-  if (cards.length !== EXPECTED_OPENINGS.length) {
+  if (cards.length === 0 || new Set(cards.map((card) => card.requisitionId)).size !== cards.length) {
     throw new Error(OPTIONS_ERROR)
   }
 
@@ -140,7 +125,8 @@ const extractPositionOptions = (html) => {
   }))
 
   if (
-    options.length !== EXPECTED_OPENINGS.length
+    options.length === 0
+    || new Set(options.map((option) => option.requisitionId)).size !== options.length
     || options.some((option) => option.requisitionId !== option.value || option.title !== option.label)
   ) {
     throw new Error(OPTIONS_ERROR)
@@ -157,11 +143,8 @@ export const extractPublicJobs = (html) => {
   const cards = extractPositionCards(html)
   const options = extractPositionOptions(html)
 
-  if (!matchesExpectedOpenings(cards) || !matchesExpectedOpenings(options)) {
-    throw new Error(OPTIONS_ERROR)
-  }
-
-  if (cards.some((card, index) => card.requisitionId !== options[index].requisitionId || card.title !== options[index].title)) {
+  const optionById = new Map(options.map((option) => [option.requisitionId, option.title]))
+  if (cards.length !== options.length || cards.some((card) => optionById.get(card.requisitionId) !== card.title)) {
     throw new Error(OPTIONS_ERROR)
   }
 

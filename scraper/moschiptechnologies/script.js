@@ -107,7 +107,7 @@ export const hasCurrentOpeningsNoListingSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Current Openings - MosChip\s*<\/title>/i.test(page)
+  return /<title>\s*Current Job Openings\s*\|\s*MosChip\s*<\/title>/i.test(page)
     && /Drop your CV/i.test(normalized)
     && /Find Current Openings on/i.test(normalized)
     && /LinkedIn/i.test(normalized)

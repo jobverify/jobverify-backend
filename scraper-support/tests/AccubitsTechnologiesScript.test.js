@@ -57,6 +57,29 @@ const structuredJobsHtml = `
 </html>
 `
 
+const currentEmptyCareersHtml = `
+<html><head><title>Career &ndash; Accubits</title></head><body>
+  <a href="#latest_jobs">View Job Openings</a>
+  <section class="latest-jobs" id="latest_jobs">
+    <h2>Latest Jobs</h2>
+    <div class="job-list-head"><div>Role</div><div>Location</div><div>Type</div><div>Date of Posting</div></div>
+    <div class="job-list"><div class="search-error">No openings are listed right now. Write to us and we will keep you in mind.</div></div>
+  </section>
+</body></html>
+`
+
+test('Accubits Technologies accepts the current explicit no-openings state as verified empty', async () => {
+  const accubits = await loadAccubitsModule()
+  const jobs = await accubits.createAccubitsTechnologiesScraper().run({
+    fetchText: async () => currentEmptyCareersHtml,
+  })
+
+  assert.deepEqual(jobs, [])
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence?.status, 'verified-empty')
+  assert.equal(evidence?.listingComplete, true)
+})
+
 const loadAccubitsModule = async () => {
   try {
     return await import('../../scraper/accubitstechnologies/script.js')

@@ -20,7 +20,7 @@ export const DANSKE_IT_CATALOG = {
   companyDomain: 'danskebank.com',
   verifiedOn: '2026-07-18',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 18, 2026 that the official Danske Bank press release published on June 26, 2023 states Danske Bank will sell Danske IT to Infosys and transfer colleagues from 1 September 2023, while the current parent-brand careers page routes openings through generic Danske Bank Oracle Cloud listings and does not expose a standalone exact-name public careers surface for Danske IT.',
+    'Verified on Saturday, July 18, 2026 that the official Danske Bank press release published on June 26, 2023 states Danske Bank will sell Danske IT and transfer colleagues from 1 September 2023, while the current parent-brand careers page routes openings through generic Danske Bank Oracle Cloud listings and does not expose a standalone exact-name public careers surface for Danske IT.',
   modulePath: path.resolve(currentDir, 'script.js'),
 }
 

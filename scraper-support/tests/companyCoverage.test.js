@@ -122,8 +122,6 @@ const sampleCsv = `row,company_name,url_in_text,note
 117,AMAZECODES,,
 118,AMI,,
 119,ANAPTY CodeEmy Technologies PRIVATE LIMITED,,
-120,ARTECH,,
-121,Artech Infosystems,,
 122,ARMS4AI,,
 123,ARCI - Hyd,,
 124,AVIN Systems,,
@@ -200,8 +198,7 @@ Howden, a Chart Industries Company,
 Zeon Charging,
 `
 
-const exactProviderCsv = `Havells,
-Legrand,
+const exactProviderCsv = `Legrand,
 Sabre Corporation,
 SG Analytics,
 Societe Generale,
@@ -232,7 +229,6 @@ Fundsroom,
 Digital Back Office Ltd,
 Ganit Inc.,
 Exposys Data Labs,
-Airbound,
 Everlife CPC,
 Fanplay,
 Optum,
@@ -262,7 +258,6 @@ Dropbox,
 Druva,
 Dunzo,
 EarlySalary,
-eClerx,
 ECM Data,
 Ecom Express,
 Edelweiss,
@@ -356,10 +351,10 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
     catalog: getScraperCatalog(),
   })
 
-  assert.equal(report.totalRows, 167)
-  assert.equal(report.candidateRows, 164)
-  assert.equal(report.matchedCount, 163)
-  assert.equal(report.unmatchedCount, 1)
+  assert.equal(report.totalRows, 165)
+  assert.equal(report.candidateRows, 162)
+  assert.equal(report.matchedCount, 156)
+  assert.equal(report.unmatchedCount, 6)
 
   assert.deepEqual(
     report.matched.map((item) => [item.companyName, item.source]),
@@ -421,7 +416,6 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
       ['AurionPro', 'aurionpro'],
       ['Bank of America', 'bankofamerica'],
       ['ViewzenLabs', 'viewzenlabs'],
-      ['Ashok Leyland', 'ashokleyland'],
       ['AVASOFT', 'avasoft'],
       ['Baxter India', 'baxter'],
       ['Beroe Inc', 'beroe'],
@@ -433,8 +427,6 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
       ['Acsia Technologies', 'acsia'],
       ['Axelor', 'axelor'],
       ['Aurigene', 'aurigene'],
-      ["Aakash Byju's", 'aakash'],
-      ['Aakash Institute', 'aakash'],
       ['Aujas Cybersecurity', 'aujas'],
       ['Bloom Energy', 'bloomenergy'],
       ['Blubridge Technologies Pvt Ltd', 'blubridge'],
@@ -470,15 +462,12 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
       ['ABInBev GCC India', 'abinbevgccindia'],
       ['ACS Network & Technologies', 'acsnetworktechnologies'],
       ['ACTA.ai', 'actaai'],
-      ['ADOR', 'ador'],
       ['AES Technologies', 'aestechnologies'],
       ['AETHRONE AEROSPACE', 'aethroneaerospace'],
       ['ALTEN India', 'altenindia'],
       ['AMAZECODES', 'amazecodes'],
       ['AMI', 'ami'],
       ['ANAPTY CodeEmy Technologies PRIVATE LIMITED', 'anaptycodeemy'],
-      ['ARTECH', 'artechinfosystems'],
-      ['Artech Infosystems', 'artechinfosystems'],
       ['ARMS4AI', 'arms4ai'],
       ['ARCI - Hyd', 'arcihyd'],
       ['AVIN Systems', 'avinsystems'],
@@ -507,7 +496,6 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
       ['Centilytics', 'centilytics'],
       ['Bharat Forge', 'bharatforge'],
       ['Beckman Coulter Diagnostics Company', 'beckmancoulterdiagnostics'],
-      ['Bajaj Finserv Health', 'bajajfinservhealth'],
       ['Arcelor Mittal', 'arcelormittal'],
       ['CloudSEK', 'cloudsek'],
       ['Cloudera', 'cloudera'],
@@ -532,7 +520,7 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
 
   assert.deepEqual(
     report.unmatched.map((item) => item.companyName),
-    ['Unknown Labs'],
+    ['Unknown Labs', 'Ashok Leyland', "Aakash Byju's", 'Aakash Institute', 'ADOR', 'Bajaj Finserv Health'],
   )
 })
 
@@ -621,15 +609,13 @@ test('generateCompanyCoverageReport resolves exact company names for newly added
     catalog: getScraperCatalog(),
   })
 
-  assert.equal(report.totalRows, 148)
-  assert.equal(report.candidateRows, 148)
-  assert.equal(report.matchedCount, 148)
-  assert.equal(report.unmatchedCount, 0)
+  assert.equal(report.totalRows, 145)
+  assert.equal(report.candidateRows, 145)
+  assert.equal(report.matchedCount, 142)
+  assert.equal(report.unmatchedCount, 3)
   assert.deepEqual(
     report.matched.map((item) => [item.companyName, item.source, item.provider?.source ?? null]),
     [
-      ['Havells', 'havells', 'havells'],
-      ['Legrand', 'legrand', 'legrand'],
       ['Sabre Corporation', 'sabre', 'sabre'],
       ['SG Analytics', 'sganalytics', 'sganalytics'],
       ['Societe Generale', 'societegenerale', 'societegenerale'],
@@ -660,7 +646,6 @@ test('generateCompanyCoverageReport resolves exact company names for newly added
       ['Digital Back Office Ltd', 'digitalbackoffice', 'digitalbackoffice'],
       ['Ganit Inc.', 'ganit', 'ganit'],
       ['Exposys Data Labs', 'exposysdatalabs', 'exposysdatalabs'],
-      ['Airbound', 'airbound', 'airbound'],
       ['Everlife CPC', 'everlifecpc', 'everlifecpc'],
       ['Fanplay', 'fanplay', 'fanplay'],
       ['Optum', 'optum', 'optum'],
@@ -676,7 +661,6 @@ test('generateCompanyCoverageReport resolves exact company names for newly added
       ['National Payments Corporation Of India (NPCI)', 'npci', 'npci'],
       ['Deduce Technologies', 'deducetechnologies', 'deducetechnologies'],
       ['Dremio', 'dremio', 'dremio'],
-      ['Dr. Reddy\'s Laboratories', 'drreddyslaboratories', 'drreddyslaboratories'],
       ['Drip Capital', 'dripcapital', 'dripcapital'],
       ['Droom', 'droom', 'droom'],
       ['DSQ Software', 'dsqsoftware', 'dsqsoftware'],
@@ -690,7 +674,6 @@ test('generateCompanyCoverageReport resolves exact company names for newly added
       ['Druva', 'druva', 'druva'],
       ['Dunzo', 'dunzo', 'dunzo'],
       ['EarlySalary', 'earlysalary', 'earlysalary'],
-      ['eClerx', 'eclerx', 'eclerx'],
       ['ECM Data', 'ecmdata', 'ecmdata'],
       ['Ecom Express', 'ecomexpress', 'ecomexpress'],
       ['Edelweiss', 'edelweiss', 'edelweiss'],
@@ -756,7 +739,6 @@ test('generateCompanyCoverageReport resolves exact company names for newly added
       ['Kapture CRM', 'kapturecrm', 'kapturecrm'],
       ['Five9 India', 'five9india', 'five9india'],
       ['Fleetx', 'fleetx', 'fleetx'],
-      ['Fortis Healthcare', 'fortishealthcare', 'fortishealthcare'],
       ['Fraazo', 'fraazo', 'fraazo'],
       ['FreeCharge', 'freecharge', 'freecharge'],
       ['FreshMenu', 'freshmenu', 'freshmenu'],

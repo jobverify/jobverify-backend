@@ -34,11 +34,11 @@ test('PeopleStrong Technologies helper sentinels stay pinned to the portal shell
   assert.equal(peopleStrong.hasBrokenJobsApiSignal(BROKEN_API_TEXT), true)
 })
 
-test('PeopleStrong Technologies returns [] only while the public list routes and jobs API stay broken', async () => {
+test('PeopleStrong Technologies rejects a broken jobs API instead of claiming verified empty inventory', async () => {
   const peopleStrong = await loadScriptModule()
   const requestedUrls = []
 
-  const jobs = await peopleStrong.createPeopleStrongTechnologiesScraper().run({
+  await assert.rejects(peopleStrong.createPeopleStrongTechnologiesScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
       if (url === peopleStrong.HOMEPAGE_URL || url === peopleStrong.SAMPLE_JOB_DETAIL_URL) {
@@ -54,9 +54,7 @@ test('PeopleStrong Technologies returns [] only while the public list routes and
       assert.equal(url, peopleStrong.JOBS_API_URL)
       return { status: 200, text: BROKEN_API_TEXT }
     },
-  })
-
-  assert.deepEqual(jobs, [])
+  }), /broken method payload/i)
   assert.deepEqual(requestedUrls, [
     peopleStrong.HOMEPAGE_URL,
     peopleStrong.JOB_LIST_URL,

@@ -719,7 +719,7 @@ const hasExplicitIndiaMarker = (value = '') => (
 )
 
 const extractLeadingCountryCode = (value = '') =>
-  String(value || '').trim().match(/^([A-Z]{2,3})\s*-\s*/i)?.[1]?.toUpperCase() || null
+  String(value || '').trim().match(/^([A-Z]{2,3})\s*[-,.]\s*/i)?.[1]?.toUpperCase() || null
 
 // Keep summary-location filtering conservative: skip detail only when the
 // listing is already clearly outside the public India scope.

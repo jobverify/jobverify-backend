@@ -162,6 +162,22 @@ export const hasOfficialHomepageSignal = (html = '') => {
     && />\s*Join Us\s*</i.test(page)
 }
 
+export const hasCurrentHomepageSignal = (html = '') => {
+  const page = String(html ?? '')
+  return /<title>\s*Enterprise Technology Services Partner \| Apar Technologies\s*<\/title>/i.test(page)
+    && sameUrl(extractHomepageCareerUrl(page), CAREERS_URL)
+}
+
+export const hasCurrentCareersSignal = (html = '') => {
+  const page = String(html ?? '')
+  return /<title>\s*Careers at Apar Technologies \| IT &amp; Tech Jobs\s*<\/title>/i.test(page)
+    && /\bJoin our team\b/i.test(normalizeWhitespace(page))
+    && /<form\b/i.test(page)
+    && /<input\b[^>]*type="file"/i.test(page)
+    && !hasPublicJobListingSignal(page)
+    && !/https?:\/\/(?:jobs\.lever\.co|job-boards\.greenhouse\.io|boards\.greenhouse\.io|api\.ashbyhq\.com)/i.test(page)
+}
+
 export const extractHomepageCareerUrl = (html = '') =>
   extractAnchorHrefByLabel(html, /^Careers$/i, HOMEPAGE_URL)
 
@@ -249,6 +265,16 @@ export const isKnownMissingJobRoute = (page = {}, requestedUrl) => {
 export const createAparTechnologiesScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
+    if (homepage.status === 200 && sameUrl(homepage.url, HOMEPAGE_URL)
+      && hasCurrentHomepageSignal(homepage.html)) {
+      const careers = await fetchPage(CAREERS_URL)
+      if (careers.status !== 200 || !sameUrl(careers.url, CAREERS_URL)
+        || !hasCurrentCareersSignal(careers.html)) {
+        throw new Error('Apar Technologies current careers form no longer matches the known first-party surface')
+      }
+      return []
+    }
+
     if (
       homepage.status !== 200
       || !sameUrl(homepage.url, HOMEPAGE_URL)

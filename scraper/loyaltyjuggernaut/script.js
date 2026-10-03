@@ -98,15 +98,30 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialAboutSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml).toLowerCase()
+  const legacyCopy = normalized.includes('about loyalty juggernaut')
+    && normalized.includes('born in silicon valley in 2015')
+    && normalized.includes('palo alto, california')
+    && normalized.includes('founded 2015')
+  const officialOrganization = [...rawHtml.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].some((match) => {
+    try {
+      const organization = JSON.parse(match[1])
+      return organization['@type'] === 'Organization'
+        && organization.name === 'Loyalty Juggernaut, Inc.'
+        && /^https:\/\/(?:www\.)?lji\.io\/?$/.test(organization.url)
+    } catch {
+      return false
+    }
+  })
+  const currentCopy = officialOrganization
+    && /founded in silicon valley\s*(?:·)?\s*2015/.test(normalized)
+    && normalized.includes('leading the next era of enterprise loyalty')
+    && normalized.includes('palo alto, ca')
 
   return /<title>\s*About Us\s*(?:&middot;|·|Â·)\s*Loyalty Juggernaut\s*<\/title>/i.test(rawHtml)
     && ABOUT_DESCRIPTION_PATTERN.test(rawHtml)
-    && normalized.includes('about loyalty juggernaut')
-    && normalized.includes('born in silicon valley in 2015')
-    && normalized.includes('palo alto, california')
     && normalized.includes('global headquarters')
-    && normalized.includes('founded 2015')
     && /href="\/contact-us"/i.test(rawHtml)
+    && (legacyCopy || currentCopy)
 }
 
 export const hasFirstPartyCareerLikeLink = (html) =>

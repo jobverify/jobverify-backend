@@ -48,15 +48,15 @@ test('Anar Business local catalog captures the verified shutdown homepage and mi
   assert.equal(ANAR_BUSINESS_CATALOG.countryFilter, 'India')
   assert.equal(
     ANAR_BUSINESS_CATALOG.paginationStrategy,
-    'retired-domain-redirect-plus-common-route-validation',
+    'shutdown-homepage-plus-retired-route-validation',
   )
   assert.equal(
     ANAR_BUSINESS_CATALOG.extractionStrategy,
-    'verified-repurposed-former-domain-redirect+verified-no-public-jobs-surface-return-empty',
+    'verified-first-party-shutdown+verified-retired-careers-routes-return-empty',
   )
   assert.equal(ANAR_BUSINESS_CATALOG.parser, 'custom-script')
   assert.equal(ANAR_BUSINESS_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(ANAR_BUSINESS_CATALOG.verifiedOn, '2026-08-13')
+  assert.equal(ANAR_BUSINESS_CATALOG.verifiedOn, '2026-10-03')
   assert.equal(ANAR_BUSINESS_CATALOG.modulePath, scriptModulePath)
   assert.deepEqual(ANAR_BUSINESS_CATALOG.verifiedMissingCareersUrls, [
     'https://www.anar.biz/career',
@@ -65,10 +65,10 @@ test('Anar Business local catalog captures the verified shutdown homepage and mi
     'https://www.anar.biz/join-us',
     'https://www.anar.biz/work-with-us',
   ])
-  assert.match(ANAR_BUSINESS_CATALOG.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
-  assert.match(ANAR_BUSINESS_CATALOG.verifiedSurfaceSummary, /myragems\.com/i)
-  assert.match(ANAR_BUSINESS_CATALOG.verifiedSurfaceSummary, /Buy Certified Gemstone Rings for Men & Women/i)
-  assert.match(ANAR_BUSINESS_CATALOG.verifiedSurfaceSummary, /No trustworthy public Anar jobs surface is currently available/i)
+  assert.match(ANAR_BUSINESS_CATALOG.verifiedSurfaceSummary, /October 3, 2026/i)
+  assert.match(ANAR_BUSINESS_CATALOG.verifiedSurfaceSummary, /first-party Anar shutdown message/i)
+  assert.match(ANAR_BUSINESS_CATALOG.verifiedSurfaceSummary, /HTTP 410/i)
+  assert.match(ANAR_BUSINESS_CATALOG.verifiedSurfaceSummary, /No public Anar jobs surface is available/i)
 
   assert.equal(anar.PROVIDER_METADATA.source, ANAR_BUSINESS_CATALOG.source)
   assert.equal(anar.PROVIDER_METADATA.companyName, ANAR_BUSINESS_CATALOG.companyName)

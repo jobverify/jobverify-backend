@@ -2,9 +2,11 @@ import fs from 'node:fs'
 import { spawn } from 'node:child_process'
 import path from 'node:path'
 import process from 'node:process'
+import { finished } from 'node:stream/promises'
 import { fileURLToPath } from 'node:url'
 
 import { buildLocalScrapeRunEnv } from './localScrapeRunEnv.js'
+import { prepareLocalLaya } from './localLaya.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const backendDir = path.resolve(currentDir, '..')
@@ -136,8 +138,7 @@ const sleep = (milliseconds) => new Promise((resolve) => {
 
 const timestamp = () => new Date().toISOString()
 
-const main = async () => {
-  const options = parseArgs(process.argv.slice(2))
+export const runResilientScrape = async (options, { env: sourceEnv = process.env, prepareLaya = prepareLocalLaya } = {}) => {
   fs.mkdirSync(options.runDir, { recursive: true })
 
   const checkpointPath = path.join(options.runDir, 'run-state.json')
@@ -148,8 +149,8 @@ const main = async () => {
   const exitPath = path.join(options.runDir, 'run-exit.json')
   const stopRequestPath = path.join(options.runDir, 'stop-request.json')
   const runId = path.basename(options.runDir)
-  const env = {
-    ...buildLocalScrapeRunEnv(process.env),
+  let env = {
+    ...buildLocalScrapeRunEnv(sourceEnv),
     SCRAPER_CHECKPOINT_FILE: checkpointPath,
     SCRAPER_RUN_ID: runId,
     SCRAPER_RUN_LEASE: options.dryRun ? '0' : '1',
@@ -162,6 +163,8 @@ const main = async () => {
   let stopRequested = false
   let signalCount = 0
   let forcedShutdownTimer = null
+  const startupController = new AbortController()
+  let classifierRuntime = null
 
   const appendSupervisorLog = (message) => {
     const line = `[${timestamp()}] [supervisor] ${message}\n`
@@ -172,6 +175,7 @@ const main = async () => {
   const requestStop = (signalName) => {
     signalCount += 1
     stopRequested = true
+    if (!child) startupController.abort(new Error('Classification startup stopped by user'))
     if (!child || child.exitCode !== null) return
 
     if (signalCount === 1) {
@@ -200,7 +204,7 @@ const main = async () => {
   stopRequestTimer.unref?.()
 
   writeJsonFile(path.join(options.runDir, 'supervisor.pid'), process.pid)
-  writeJsonFile(metadataPath, {
+  const metadata = {
     runId,
     runDir: options.runDir,
     startedAt: timestamp(),
@@ -217,14 +221,26 @@ const main = async () => {
       WORKDAY_REQUEST_TIMEOUT_MS: env.WORKDAY_REQUEST_TIMEOUT_MS,
       WORKDAY_SCRAPER_TIMEOUT_MS: env.WORKDAY_SCRAPER_TIMEOUT_MS,
       NODE_OPTIONS: env.NODE_OPTIONS,
+      JOB_CLASSIFICATION_MODE: env.JOB_CLASSIFICATION_MODE || 'policy',
     },
-  })
+  }
+  writeJsonFile(metadataPath, metadata)
 
   let restartCount = 0
   let finalExitCode = 1
   let finalSignal = null
 
   try {
+    appendSupervisorLog('Preparing Laya; the scraper will start only after installation and model readiness.')
+    classifierRuntime = await prepareLaya({ env, signal: startupController.signal, log: appendSupervisorLog })
+    env = classifierRuntime.env
+    metadata.environment.JOB_CLASSIFICATION_MODE = env.JOB_CLASSIFICATION_MODE
+    metadata.environment.LAYA_PYTHON = env.LAYA_PYTHON || null
+    metadata.environment.LAYA_TOTAL_BUDGET_SECONDS = env.LAYA_TOTAL_BUDGET_SECONDS || '1200'
+    metadata.classificationReadyAt = timestamp()
+    metadata.classificationEnabled = env.JOB_CLASSIFICATION_MODE !== 'off'
+    writeJsonFile(metadataPath, metadata)
+    appendSupervisorLog(metadata.classificationEnabled ? 'Laya ready; starting the scraper. Parallel scrapers share this worker.' : 'Classification explicitly disabled; starting the scraper.')
     while (true) {
       const attempt = restartCount + 1
       appendSupervisorLog(`Starting runner attempt ${attempt}/${options.maxRestarts + 1}.`)
@@ -291,6 +307,8 @@ const main = async () => {
       }
     }
   } finally {
+    try { await classifierRuntime?.stop() }
+    catch (error) { appendSupervisorLog(`Laya cleanup failed: ${error.message}`); if (finalExitCode === 0) finalExitCode = 1 }
     process.off('SIGINT', onSigint)
     process.off('SIGTERM', onSigterm)
     clearInterval(stopRequestTimer)
@@ -306,9 +324,11 @@ const main = async () => {
       completedCount: checkpoint?.completedCount || 0,
       totalSources: checkpoint?.totalSources || null,
     })
-    pipelineStream.end()
-    stdoutStream.end()
-    stderrStream.end()
+    await Promise.all([pipelineStream, stdoutStream, stderrStream].map(stream => {
+      const closed = finished(stream, { cleanup: true })
+      stream.end()
+      return closed
+    }))
   }
 
   return finalExitCode
@@ -318,7 +338,7 @@ const directExecutionModulePath = path.resolve(fileURLToPath(import.meta.url))
 const isEntrypoint = path.resolve(process.argv[1] || '') === directExecutionModulePath
 
 if (isEntrypoint) {
-  main()
+  runResilientScrape(parseArgs(process.argv.slice(2)))
     .then((exitCode) => {
       process.exitCode = exitCode
     })

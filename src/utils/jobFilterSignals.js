@@ -1,3 +1,5 @@
+import { withSourceDescription } from './jobSourceContent.js';
+import { JOB_CLASSIFICATION_POLICY_VERSION } from './jobClassificationVersion.js';
 import {
   EXPERIENCE_BUCKET_VALUES,
   EXTRACTION_VERSION,
@@ -2136,6 +2138,7 @@ const detectWorkArrangement = (job = {}) => {
 };
 
 export const extractJobFilterSignals = (job = {}) => {
+  job = withSourceDescription(job);
   const normalizedDescription = normalizeText(job.jobDescription || job.description);
   const requiredSectionText = collectSectionText(normalizedDescription, [
     "MINIMUM QUALIFICATIONS",
@@ -2235,5 +2238,15 @@ export const extractJobFilterSignals = (job = {}) => {
     taxonomyVersion: TAXONOMY_VERSION,
     extractionVersion: EXTRACTION_VERSION,
     extractedAt: new Date(),
+    ...(job.classification?.authoritative === true && ['enforce', 'policy'].includes(job.classification.mode)
+      && job.classification.policyVersion === JOB_CLASSIFICATION_POLICY_VERSION
+      && ['accepted', 'uncertain', 'fallback'].includes(job.classification.status)
+      && ['Intern', 'Full-time Fresher', 'Full-time Experienced', 'Contract', 'Others', 'Unspecified'].includes(job.classification.resolved?.jobType)
+      ? {
+        experienceProfile: job.classification.resolved.experienceProfile,
+        experienceYears: job.classification.resolved.experienceYears,
+        experienceBucket: job.classification.resolved.experienceBucket,
+        seniority: job.classification.resolved.seniority,
+      } : {}),
   };
 };

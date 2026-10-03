@@ -1045,7 +1045,7 @@ test('runWorkdayScraper uses bulletFields and externalPath to recover India summ
           getSetCookie: () => [],
           get: () => 'text/html',
         },
-        text: async () => '<html><body>Accenture careers</body></html>',
+        text: async () => '<html><body>Cadence careers</body></html>',
       }
     }
 
@@ -1078,11 +1078,11 @@ test('runWorkdayScraper uses bulletFields and externalPath to recover India summ
 
   try {
     const jobs = await runWorkdayScraper({
-      company: 'Accenture',
-      baseUrl: 'https://accenture.wd103.myworkdayjobs.com/AccentureCareers',
+      company: 'Cadence',
+      baseUrl: 'https://cadence.wd1.myworkdayjobs.com/en-US/External_Careers',
       locationCountry: 'c4f78be1a8f14da0ab49ce1162348a5e',
-      source: 'accenture',
-      scraperDir: path.join(testsDir, '../../scraper/accenture.workday'),
+      source: 'cadence',
+      scraperDir: path.join(testsDir, '../../scraper/cadence.workday'),
       launchBrowserImpl: async () => {
         throw new Error('DOM browser must not launch when the jobs API works')
       },

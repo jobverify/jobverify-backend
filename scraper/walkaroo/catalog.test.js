@@ -5,19 +5,19 @@ import companyAliases from '../../scraper-support/providers/companyAliases.json'
 import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
-test('Walkaroo is registered as a verified first-party careers handoff sentinel without aliases', () => {
+test('Walkaroo is registered as a verified public Zappyhire API provider without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'walkaroo')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Walkaroo')
   assert.equal(provider.companyCareerPage, 'https://recruitcareers.zappyhire.com/en/walkaroo')
-  assert.equal(provider.atsPlatform, 'zappyhire-handoff')
+  assert.equal(provider.atsPlatform, 'zappyhire')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-about-contact-and-zappyhire-handoff-validation')
+  assert.equal(provider.paginationStrategy, 'verified-public-api-page-pagination')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-about-page+verified-contact-page+verified-zappyhire-careers-handoff-return-empty',
+    'verified-first-party-handoff+published-client-api+verified-tenant+jobs-search+job-details',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

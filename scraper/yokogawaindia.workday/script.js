@@ -1,3 +1,4 @@
+import { assertWorkdayPageAvailable } from '../../scraper-support/myworkday/pageAvailability.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -207,6 +208,7 @@ export const createYokogawaIndiaScraper = ({
 
     const careersHtml = await fetchText(CAREERS_URL)
     const boardHtml = await fetchText(WORKDAY_BOARD_URL)
+    assertWorkdayPageAvailable({ status: 200, html: boardHtml, url: WORKDAY_BOARD_URL }, { source: SOURCE })
 
     if (!hasVerifiedWorkdayBoardSignal(boardHtml)) {
       if (

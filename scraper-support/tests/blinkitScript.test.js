@@ -218,3 +218,16 @@ test('Blinkit classifies the official Cloudflare access-denied page and stays em
 
   assert.deepEqual(jobs, [])
 })
+
+test('Blinkit recognizes the current official error page with an HTTP canonical link', async () => {
+  const blinkit = await loadBlinkitModule()
+  const currentErrorHtml = officialAccessDeniedHtml.replace(
+    'href="https://blinkit.com/careers/error-page"',
+    'href="http://blinkit.com/careers/error-page"',
+  )
+
+  assert.equal(blinkit.isOfficialAccessDeniedPage({ status: 403, html: currentErrorHtml }), true)
+  assert.deepEqual(await blinkit.createBlinkitScraper().run({
+    fetchPage: async (url) => ({ status: 403, url, html: currentErrorHtml }),
+  }), [])
+})

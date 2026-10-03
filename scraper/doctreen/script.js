@@ -1,8 +1,10 @@
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 export const CAREER_PAGE_URL = 'https://www.doctreen.com/carrieres'
+export const PAGES_SITEMAP_URL = 'https://www.doctreen.com/pages-sitemap.xml'
 
 const SOURCE = 'doctreen'
 const COMPANY = 'Doctreen'
@@ -117,7 +119,31 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const createDoctreenScraper = () => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
-    const jobs = extractCareerJobs(await fetchText(CAREER_PAGE_URL))
+    const html = await fetchText(CAREER_PAGE_URL)
+    if (/<title[^>]*>[^<]*Doctreen[^<]*<\/title>/i.test(html)
+      && /https:\/\/www\.doctreen\.com\/a-propos/i.test(html)
+      && /Montpellier/i.test(html)
+      && !/Nous recherchons activement/i.test(html)) {
+      const sitemap = await fetchText(PAGES_SITEMAP_URL)
+      const locs = [...String(sitemap).matchAll(/<loc>([^<]+)<\/loc>/gi)].map(match => match[1])
+      if (!/<urlset\b/i.test(sitemap)
+        || !locs.includes('https://www.doctreen.com/a-propos')
+        || locs.some(url => /\/(?:carrieres|careers|jobs|offres)(?:\/|$)/i.test(url))) {
+        throw new Error('Doctreen current page sitemap no longer proves the careers route is retired')
+      }
+      return attachInventoryEvidence([], {
+        status: 'verified-empty',
+        surface: PAGES_SITEMAP_URL,
+        firstParty: true,
+        listingComplete: true,
+        pagesFetched: 2,
+        reportedTotal: 0,
+        indiaFacetCount: 0,
+        verifiedAt: new Date().toISOString(),
+        reason: 'doctreen-retired-careers-route-no-public-openings',
+      })
+    }
+    const jobs = extractCareerJobs(html)
 
     return jobs.map((job) => ({
       ...job,

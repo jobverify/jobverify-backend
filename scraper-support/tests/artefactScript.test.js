@@ -731,7 +731,7 @@ test('Artefact fails closed when the verified homepage, careers page, listing ca
       fetchText: async (url) => {
         if (url === artefact.HOMEPAGE_URL) return homepageHtml
         if (url === artefact.CAREERS_URL) {
-          return careersPageHtml.replace('https://www.artefact.com/careers/explore-our-jobs/page/2/', 'https://example.com/page/2/')
+          return careersPageHtml.replace('Filter by:', 'Sort by:')
         }
         throw new Error(`Unexpected Artefact URL: ${url}`)
       },

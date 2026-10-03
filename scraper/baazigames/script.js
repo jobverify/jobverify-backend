@@ -87,6 +87,12 @@ export const createBaaziGamesScraper = () => ({
       : fetchPage
 
     const homepage = await resolvePage(HOMEPAGE_URL)
+    if (homepage.status !== 200) {
+      throw Object.assign(new Error(`Baazi Games public homepage returned HTTP ${homepage.status} at ${homepage.url}`), { abortRetries: true })
+    }
+    if (/<title>\s*BaaziGames \| No Games Available at the Moment\s*<\/title>/i.test(homepage.html) && normalizeText(homepage.html).includes('no games are available at the moment')) {
+      throw Object.assign(new Error('Baazi Games public site is unavailable; current job inventory is unavailable'), {softFailure:true, upstreamOutage:true, abortRetries:true, failureKind:'upstream_unavailable'})
+    }
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Baazi Games verified homepage no longer matches the trusted first-party surface')
     }

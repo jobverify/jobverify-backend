@@ -69,7 +69,7 @@ test('AvenDATA local catalog captures the verified first-party resume-form caree
   assert.equal(AVENDATA_CATALOG.parser, 'custom-script')
   assert.equal(AVENDATA_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(AVENDATA_CATALOG.companyDomain, 'avendata.com')
-  assert.equal(AVENDATA_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(AVENDATA_CATALOG.verifiedOn, '2026-10-03')
   assert.match(AVENDATA_CATALOG.verifiedSurfaceSummary, /https:\/\/avendata\.com\//i)
   assert.match(AVENDATA_CATALOG.verifiedSurfaceSummary, /https:\/\/avendata\.com\/careers/i)
   assert.match(AVENDATA_CATALOG.verifiedSurfaceSummary, /Upload Your Resume/i)

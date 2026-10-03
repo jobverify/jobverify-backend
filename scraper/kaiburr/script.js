@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -46,6 +47,13 @@ export const hasOfficialHomepageSignal = (html) => {
     && rawHtml.includes('Continuous Improvement and Innovation')
     && rawHtml.includes('Supercharge Efficiency Gains Across All Technology Functions')
     && rawHtml.includes('Eliminate Gaps. Automate Tasks. Accelerate Delivery.')
+    || (/<title>\s*Kaiburr \| Transform your Business with AI\s*<\/title>/i.test(rawHtml)
+      && /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/kaiburr\.com\/["']/i.test(rawHtml)
+      && /href=["']https:\/\/app\.kaiburr\.com\/?["']/i.test(rawHtml)
+      && rawHtml.includes("Make your Business more competitive with Kaiburr's AI Platform")
+      && rawHtml.includes('Supercharge your business at the speed of AI')
+      && rawHtml.includes('Measure Performance, Automate Tasks and Transform Your Business with AI.')
+      && rawHtml.includes('Continuous Improvement and Continuous Innovation'))
 }
 
 export const sitemapHasCareerLikeUrl = (xml) => {
@@ -80,7 +88,11 @@ export const createKaiburrScraper = () => ({
       }
     }
 
-    return []
+    return attachInventoryEvidence([], {
+      status: 'discovery-only', surface: HOMEPAGE_URL, firstParty: true, listingComplete: false,
+      pagesFetched: 8, reportedTotal: null, indiaFacetCount: null, verifiedAt: new Date().toISOString(),
+      reason: "Kaiburr has no verified public careers board; complete company job inventory is unverified.",
+    })
   },
 })
 
@@ -91,7 +103,15 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
-  if (isDryRun) {
+  const evidence = readInventoryEvidence(jobs)
+  if (evidence?.listingComplete === false) {
+    if (isDryRun) {
+      const { writeFile } = await import('node:fs/promises')
+      await writeFile(path.join(currentDir, 'inventory-evidence.json'), JSON.stringify(evidence, null, 2))
+    }
+    console.error(evidence.reason)
+    process.exitCode = 1
+  } else if (isDryRun) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
   } else {
     await saveToDB(jobs, SOURCE)

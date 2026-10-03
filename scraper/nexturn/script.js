@@ -10,7 +10,7 @@ export const SOURCE = 'nexturn'
 export const COMPANY = 'NexTurn'
 export const HOMEPAGE_URL = 'https://nexturn.com/'
 export const CAREERS_URL = 'https://nexturn.com/careers/'
-export const VERIFIED_ON = '2026-08-07'
+export const VERIFIED_ON = '2026-10-03'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -280,12 +280,28 @@ export const hasOfficialCareersSignal = (html) => {
     && /href=["']?https:\/\/nexturn\.com\/job\/[^"'\s>]+["']?/i.test(page)
 }
 
-export const hasOfficialJobDetailSignal = (html) => {
+export const hasOfficialJobDetailSignal = (html, sourceUrl = null) => {
   const page = String(html ?? '')
   const canonicalUrl = extractCanonicalUrl(page, HOMEPAGE_URL)
+  let trustedCanonical = isOfficialNexTurnJobUrl(canonicalUrl)
+    && (!sourceUrl || urlsMatch(canonicalUrl, sourceUrl))
+  if (!trustedCanonical && sourceUrl && isOfficialNexTurnJobUrl(sourceUrl)) {
+    try {
+      const canonical = new URL(canonicalUrl)
+      trustedCanonical = [
+        'ec2-65-0-158-166.ap-south-1.compute.amazonaws.com',
+        '3.7.208.225',
+        '13.202.106.64',
+      ].includes(canonical.hostname)
+        && canonical.protocol === 'https:'
+        && normalizePathname(canonical.pathname) === normalizePathname(new URL(sourceUrl).pathname)
+    } catch {
+      trustedCanonical = false
+    }
+  }
 
   return /<title>[\s\S]+-\s*NexTurn<\/title>/i.test(page)
-    && isOfficialNexTurnJobUrl(canonicalUrl)
+    && trustedCanonical
     && /Location\s*:/i.test(page)
     && /Work\s*Experience\s*:/i.test(page)
     && /Qualifications\s*:/i.test(page)
@@ -383,7 +399,7 @@ export const createNexTurnScraper = () => ({
       }
 
       const detailHtml = await fetchText(card.sourceUrl)
-      if (!hasOfficialJobDetailSignal(detailHtml)) {
+      if (!hasOfficialJobDetailSignal(detailHtml, card.sourceUrl)) {
         throw new Error('NexTurn official job detail surface changed; refusing to trust public listings')
       }
 

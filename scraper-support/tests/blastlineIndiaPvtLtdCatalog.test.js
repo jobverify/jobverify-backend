@@ -14,10 +14,10 @@ test('BLASTLINE INDIA PVT LTD is registered against the verified first-party car
   assert.equal(provider.companyCareerPage, 'https://blastlineindia.com/about-us/careers/')
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-first-party-careers-page-plus-wordpress-page-payload')
+  assert.equal(provider.paginationStrategy, 'homepage-plus-careers-page-handoff-plus-wordpress-payload-plus-official-board-details')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-careers-page+verified-wordpress-page-payload+inline-openings+same-page-apply-form',
+    'verified-homepage+verified-careers-handoff+verified-wordpress-payload+company-filtered-board-cards+jobposting-detail+direct-apply-form',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

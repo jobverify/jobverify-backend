@@ -36,6 +36,57 @@ const expectedPublicJobRouteUrls = [
   'https://newstreettech.com/work-with-us/',
 ]
 
+const careersHtml = '<html><head><title>Careers — New Street Technologies</title></head><body><h1>Open Roles</h1><span>All roles<span> · <!-- -->3</span></span><a href="/careers/engineering-lead">Engineering Lead</a><a href="/careers/ai-ml-engineer">AI / ML Engineer</a><a href="/careers/software-engineer-backend">Software Engineer · Backend</a></body></html>'
+const roleHtml = (title, experience) => '<html><head><title>' + title + ' — Careers at New Street Technologies</title><meta name="description" content="Help build our financial platform."/></head><body><h1>' + title + '</h1><button aria-haspopup="dialog">Apply for this role</button><p>Experience</p><p>' + experience + '</p><p>Location</p><p>Bengaluru</p></body></html>'
+
+test('New Street Technologies collects all advertised first-party careers roles', async () => {
+  const newStreetTechnologies = await loadNewStreetTechnologiesModule()
+  const rolePages = new Map([
+    ['https://newstreettech.com/careers/engineering-lead', roleHtml('Engineering Lead', '8–10 years')],
+    ['https://newstreettech.com/careers/ai-ml-engineer', roleHtml('AI / ML Engineer', '3–5 years')],
+    ['https://newstreettech.com/careers/software-engineer-backend', roleHtml('Software Engineer · Backend', '1–2 years').replace('Software Engineer · Backend — Careers', 'Software Engineer — Backend — Careers')],
+  ])
+  const jobs = await newStreetTechnologies.run({
+    fetchPage: async (url) => {
+      if (url === newStreetTechnologies.HOMEPAGE_URL) return { status: 200, url, html: verifiedHomepageHtml }
+      if (url === newStreetTechnologies.CONTACT_URL) return { status: 200, url, html: verifiedContactHtml }
+      if (url === newStreetTechnologies.PUBLIC_JOB_ROUTE_URLS[0]) return { status: 200, url, html: careersHtml }
+      if (rolePages.has(url)) return { status: 200, url, html: rolePages.get(url) }
+      throw new Error('Unexpected URL: ' + url)
+    },
+    now: () => '2026-10-03T00:00:00.000Z',
+  })
+
+  assert.equal(jobs.length, 3)
+  assert.deepEqual(jobs.map((job) => job.jobId), ['engineering-lead', 'ai-ml-engineer', 'software-engineer-backend'])
+  assert.deepEqual(jobs.map((job) => job.title), ['Engineering Lead', 'AI / ML Engineer', 'Software Engineer · Backend'])
+  assert.equal(jobs[0].location, 'Bengaluru, Karnataka, India')
+  assert.equal(jobs[0].sourceUrl, 'https://newstreettech.com/careers/engineering-lead')
+  assert.equal(jobs[0].applyUrl, jobs[0].sourceUrl)
+  assert.equal(jobs[0].experienceRequired, '8–10 years')
+  assert.equal(jobs[0].scrapedAt, '2026-10-03T00:00:00.000Z')
+})
+
+test('New Street Technologies rejects an incomplete first-party careers listing or missing application surface', async () => {
+  const newStreetTechnologies = await loadNewStreetTechnologiesModule()
+  const fetchPage = async (url) => {
+    if (url === newStreetTechnologies.HOMEPAGE_URL) return { status: 200, url, html: verifiedHomepageHtml }
+    if (url === newStreetTechnologies.CONTACT_URL) return { status: 200, url, html: verifiedContactHtml }
+    if (url === newStreetTechnologies.PUBLIC_JOB_ROUTE_URLS[0]) return { status: 200, url, html: careersHtml.replace('<!-- -->3', '<!-- -->4') }
+    throw new Error('Unexpected URL: ' + url)
+  }
+  await assert.rejects(newStreetTechnologies.run({ fetchPage }), /careers.*count|count.*careers/i)
+
+  await assert.rejects(newStreetTechnologies.run({
+    fetchPage: async (url) => {
+      if (url === newStreetTechnologies.HOMEPAGE_URL) return { status: 200, url, html: verifiedHomepageHtml }
+      if (url === newStreetTechnologies.CONTACT_URL) return { status: 200, url, html: verifiedContactHtml }
+      if (url === newStreetTechnologies.PUBLIC_JOB_ROUTE_URLS[0]) return { status: 200, url, html: careersHtml }
+      return { status: 200, url, html: '<title>Unverified role</title>' }
+    },
+  }), /verified role|application surface/i)
+})
+
 test('New Street Technologies recognizes the verified homepage, contact page, and public-jobs route list', async () => {
   const newStreetTechnologies = await loadNewStreetTechnologiesModule()
 
@@ -219,7 +270,7 @@ test('New Street Technologies fails closed when the verified zero-job contract c
         }
       },
     }),
-    /verified 404 zero-job state/i,
+    /official careers page no longer matches the verified listing/i,
   )
 })
 

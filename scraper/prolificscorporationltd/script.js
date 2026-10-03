@@ -1,3 +1,5 @@
+import PROVIDER_METADATA from './catalog.js'
+export { PROVIDER_METADATA }
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -131,7 +133,7 @@ export const hasOfficialPortalSignal = (html) => {
     && hasInputWithId(page, 'moduleMeta')
     && hasInputWithId(page, 'meta')
     && hasInputWithId(page, 'jobs')
-    && /"website":"https:\/\/prolifics\.com\/"/i.test(decodedPage)
+    && /"website":"https:\/\/prolifics\.(?:com|ai)\/"/i.test(decodedPage)
     && /"company_name":"Prolifics Corporation Private Limited"/i.test(decodedPage)
     && /"list_url":"https:\/\/prolifics\.zohorecruit\.in\/jobs\/Careers"/i.test(decodedPage)
 }

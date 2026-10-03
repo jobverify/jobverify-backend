@@ -1,0 +1,60 @@
+{
+  "version": "laya-jobs-v2",
+  "filterRules": {
+    "categoryDefaultsWin": true,
+    "internDefaultYears": 0,
+    "fresherDefaultYears": 0,
+    "experiencedDefaultRange": [1, 15],
+    "graduationCohortUsesReferenceYear": true
+  },
+  "thresholds": { "employment": 0.95, "experience": 0.95, "seniority": 0.90, "leadership": 0.90 },
+  "questions": {
+    "employment": {
+      "type": "choice",
+      "instructions": "Apply Jobverify defaults to this vacancy, not incidental people. An actual intern role or student-only eligibility (currently pursuing bachelors or masters) means internship. Contract means contract. Completed graduates are full-time. A management trainee is not automatically an intern. Category defaults override conflicting employer fields. Select unspecified when evidence is insufficient.",
+      "criteria": {
+        "full_time": "A permanent or regular full-time employee role, including full-time graduate or management trainee programmes.",
+        "internship": "The vacancy itself is an internship or student intern placement.",
+        "contract": "A fixed-term, temporary, freelance, or contract role.",
+        "other": "An explicit different arrangement, such as part-time or an apprenticeship.",
+        "unspecified": "Insufficient or conflicting evidence about employment arrangement."
+      }
+    },
+    "experience": {
+      "type": "choice",
+      "instructions": "Apply Jobverify defaults even when employer requirements conflict. Interns and mandatory current students map to zero. Current-year or recently completed graduates map to zero. Older graduation cohorts map to reference year minus graduation year (1-15), implying prior required. Use required work years, not preferred or career-break years. Established managers or required prior experience without years map to 1-15. Defaults are filter inferences, not verified work history.",
+      "criteria": {
+        "fresher_eligible": "Applicants without prior professional experience can qualify, including graduate recruitment. Preferred experience does not exclude freshers.",
+        "prior_required": "Prior professional experience is mandatory, or the role clearly requires established management or senior professional responsibilities.",
+        "mixed": "Explicit alternative eligibility paths allow both freshers and experienced applicants.",
+        "not_stated": "No reliable statement of experience eligibility, or contradictory requirements."
+      }
+    },
+    "seniority": {
+      "type": "choice",
+      "instructions": "Classify the seniority of the vacancy itself, considering title and actual responsibilities. Managing interns does not make the manager an intern. Management trainee is not a manager merely because its title contains management.",
+      "criteria": {
+        "entry": "Graduate or entry-level employee role.",
+        "junior": "Junior or associate professional role.",
+        "mid": "Established individual contributor at mid level.",
+        "senior": "Senior, staff, or principal individual contributor.",
+        "leadership": "Lead, manager, director, vice president, or executive with leadership responsibilities.",
+        "internship": "The vacancy itself is an intern placement.",
+        "unknown": "Insufficient or contradictory evidence about seniority."
+      }
+    },
+    "leadership": {
+      "type": "choice",
+      "instructions": "Which leadership level describes this vacancy? Select unknown if it is not a leadership role. A management trainee is not a manager.",
+      "criteria": {
+        "manager": "Manager responsible for a team or function.",
+        "senior_manager": "Senior manager or head of a management function.",
+        "director": "Director-level leadership.",
+        "vice_president": "Vice president-level leadership.",
+        "executive": "C-suite or executive leadership.",
+        "lead": "Team lead or technical lead.",
+        "unknown": "Not a leadership vacancy, or level not determinable."
+      }
+    }
+  }
+}
