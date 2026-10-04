@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import RAILWAY_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -122,7 +123,7 @@ export const extractRoleSummaries = (html = '') => {
 const hasIndiaSignal = (value) => INDIA_SIGNAL_PATTERN.test(String(value ?? ''))
 
 export const createRailwayScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
 
     if (!hasVerifiedCareersPageSignal(careersHtml)) {
@@ -137,12 +138,25 @@ export const createRailwayScraper = () => ({
     if (roles.some((role) => !isFirstPartyRoleUrl(role.url))) {
       throw new Error('Verified Railway same-domain role-link contract changed materially')
     }
+    if (new Set(roles.map((role) => role.url)).size !== roles.length) {
+      throw new Error('Verified Railway careers page contains duplicate role links')
+    }
 
     if (roles.some((role) => hasIndiaSignal(role.location) || hasIndiaSignal(role.title))) {
       throw new Error('Verified Railway India slice changed materially')
     }
 
-    return []
+    return attachInventoryEvidence([], {
+      status: 'complete-inventory',
+      surface: CAREERS_URL,
+      firstParty: true,
+      listingComplete: true,
+      pagesFetched: 1,
+      reportedTotal: roles.length,
+      indiaFacetCount: 0,
+      verifiedAt: now(),
+      reason: 'current-first-party-roles-have-no-india-specific-location',
+    })
   },
 })
 

@@ -76,14 +76,24 @@ const buildDiscoveryOnlyEvidence = (now) =>
 export const hasOfficialAccubitsCareersSignals = (html = '') => {
   const page = String(html ?? '')
 
-  return /Career Archive/i.test(page)
+  return hasCurrentExplicitEmptyCareersShell(page) || (/Career Archive/i.test(page)
     && /View Job Openings/i.test(page)
     && /Latest Jobs/i.test(page)
     && /Role/i.test(page)
     && /Location/i.test(page)
     && /Date of Posting/i.test(page)
-    && /ROLE YOU ARE APPLYING FOR/i.test(page)
+    && /ROLE YOU ARE APPLYING FOR/i.test(page))
 }
+
+const hasCurrentExplicitEmptyCareersShell = (page) => (
+  /<title>\s*Career\s*&ndash;\s*Accubits\s*<\/title>/i.test(page)
+  && /href=["']#latest_jobs["']/i.test(page)
+  && /<section\b[^>]*class=["'][^"']*latest-jobs[^"']*["'][^>]*id=["']latest_jobs["']/i.test(page)
+  && /class=["']job-list-head["']/i.test(page)
+  && /class=["']job-list["']/i.test(page)
+  && /class=["']search-error["'][^>]*>\s*No openings are listed right now\./i.test(page)
+  && /Date of Posting/i.test(page)
+)
 
 export const pageExposesStructuredJobListings = (html = '') =>
   /\bjob-card\b/i.test(String(html ?? ''))
@@ -107,6 +117,20 @@ export const createAccubitsTechnologiesScraper = ({
 
     if (pageExposesStructuredJobListings(careersHtml)) {
       throw new Error('Accubits Technologies careers shell now exposes structured public job listings and needs a dedicated scraper')
+    }
+
+    if (hasCurrentExplicitEmptyCareersShell(careersHtml)) {
+      return attachInventoryEvidence([], {
+        status: 'verified-empty',
+        surface: OFFICIAL_CAREERS_URL,
+        firstParty: true,
+        listingComplete: true,
+        pagesFetched: 1,
+        reportedTotal: 0,
+        indiaFacetCount: 0,
+        verifiedAt: now(),
+        reason: 'current-first-party-no-openings-message',
+      })
     }
 
     return []

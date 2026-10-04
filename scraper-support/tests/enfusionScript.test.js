@@ -371,3 +371,26 @@ test('Enfusion fails closed when the verified homepage redirect, careers shell, 
     /jobs api payload/i,
   )
 })
+
+
+for (const [status, html, failureKind] of [
+  [200, '<title>Workday is currently unavailable.</title>', 'network_or_timeout'],
+  [503, 'Service unavailable', 'network_or_timeout'],
+  [403, 'Forbidden', 'blocked_or_access_denied'],
+]) {
+  test('enfusion recognizes upstream Workday board failures for HTTP ' + status, async () => {
+    const mod = await import('../../scraper/enfusion.workday/script.js')
+    const {classifyScraperError} = await import('../utils/failureClassification.js')
+    await assert.rejects(mod.createEnfusionScraper().run({
+      fetchPage: async url => {
+        if (url === mod.WORKDAY_BOARD_URL) return {status,url,html}
+        if (url === mod.ENFUSION_HOMEPAGE_URL) return {status:200,url:mod.OFFICIAL_HOMEPAGE_URL,html:homepageHtml}; if (url === mod.CAREERS_URL) return {status:200,url,html:careersHtml}
+        throw new Error('Unexpected page: ' + url)
+      },
+      fetchJson: async () => assert.fail('Unavailable board must not request job listings'),
+    }), error => {
+      assert.deepEqual(classifyScraperError(error), {softFailure:true,upstreamOutage:true,failureKind})
+      return true
+    })
+  })
+}

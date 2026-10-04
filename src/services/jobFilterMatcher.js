@@ -1,4 +1,5 @@
 import { getPreferredJobTypeMatches } from "../constants/preferredJobTypes.js";
+import { withSemanticExperienceConstraint, matchesExperienceFilter } from '../utils/classifiedExperienceFilters.js';
 import {
   DATE_POSTED_NA_VALUE,
   DATE_POSTED_OLDER_THAN_30_VALUE,
@@ -76,14 +77,14 @@ const buildExperienceYearConstraint = (years) => {
   const normalizedYears = [...new Set(years.map(Number).filter(Number.isFinite))];
   const constraints = [];
   if (normalizedYears.includes(0)) {
-    constraints.push({ $and: [{ experienceYears: { $in: [0] } }, { jobType: { $in: getPreferredJobTypeMatches("Full-time Fresher") } }] });
+    constraints.push(withSemanticExperienceConstraint(0, { $and: [{ experienceYears: { $in: [0] } }, { jobType: { $in: getPreferredJobTypeMatches("Full-time Fresher") } }] }));
   }
   const nonZeroYears = normalizedYears.filter((year) => year !== 0);
   if (nonZeroYears.length) constraints.push({ experienceYears: { $in: nonZeroYears } });
   return constraints.length === 1 ? constraints[0] : constraints.length > 1 ? { $or: constraints } : null;
 };
 
-const buildUnspecifiedExperienceConstraint = () => ({
+const buildUnspecifiedExperienceConstraint = () => withSemanticExperienceConstraint('unspecified', {
   $and: [{
     $or: [
       { experienceBucket: EXPERIENCE_UNSPECIFIED_VALUE },
@@ -191,17 +192,11 @@ export const jobMatchesSavedFilters = ({ job, filters, userProfile = {}, now = n
   if (batches.length && !batches.includes(passingYear)) return false;
   const jobTypes = getPreferredJobTypeMatches(job.jobType || "");
   const location = [job.city, job.location].filter(Boolean).join(" ").toLowerCase();
-  const experienceYear = normalized.experienceYear === ""
-    ? null
-    : Number(normalized.experienceYear);
-  const experienceMatches = experienceYear === null
-    || (
-      (job.experienceYears || []).includes(experienceYear)
-      && (
-        experienceYear !== 0
-        || getPreferredJobTypeMatches("Full-time Fresher").includes(job.jobType)
-      )
-    );
+  const experienceMatches = matchesExperienceFilter(job, normalized.experienceYear, (legacy) => {
+    const text = String(legacy.experienceRequired || '').trim();
+    const missing = legacy.experienceBucket === 'unspecified' || !legacy.experienceYears?.length || !text;
+    return missing && (legacy.experienceProfile?.hasExplicitExperience !== true || !text || !EXPERIENCE_TEXT_HINT_PATTERN.test(text));
+  });
 
   return (
     (normalized.company.length === 0 || normalized.company.some((value) => String(job.company || "").toLowerCase() === value.toLowerCase()))

@@ -9,9 +9,9 @@ export const HOMEPAGE_URL = 'https://www.g10x.com/'
 export const CAREERS_URL = 'https://www.g10x.com/careers'
 export const JOBS_URL = 'https://www.g10x.com/jobs'
 export const COMPANY_DOMAIN = 'g10x.com'
-export const VERIFIED_ON = '2026-08-07'
+export const VERIFIED_ON = '2026-10-03'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Friday, August 7, 2026 that https://www.g10x.com/, https://www.g10x.com/careers, and https://www.g10x.com/jobs remained G10X\'s live first-party careers surface, and that the jobs page still exposed the verified zero-openings state with "0 job openings for you" plus no public job-detail or apply links. Also verified on Friday, August 7, 2026 that the related legacy openings routes under /career, /join-us, /current-openings, /openings, and /work-with-us still returned the standard Webflow 404 shell.'
+  'Verified on October 3, 2026 that https://www.g10x.com/, https://www.g10x.com/careers, and https://www.g10x.com/jobs remained G10X\'s live first-party careers surface. The jobs page still shows 0 job openings for you, with no job-detail links. Its new /job-apply link is a general Share your profile form for future opportunities. The related legacy openings routes under /career, /join-us, /current-openings, /openings, and /work-with-us still returned the standard Webflow 404 shell.'
 export const MISSING_ROUTE_URLS = [
   'https://www.g10x.com/career',
   'https://www.g10x.com/join-us',
@@ -109,10 +109,22 @@ const extractJobDetailLinks = (html) => {
     .map((url) => url.toString())
 }
 
+const hasVerifiedGeneralApplication = (html) => {
+  const page = String(html ?? '')
+  const text = normalizeVisibleText(page).toLowerCase()
+  return /<a\b[^>]*id=["']proactively-apply-btn["'][^>]*href=["']\/job-apply["'][^>]*>/i.test(page)
+    && text.includes("don't see a matching role?")
+    && text.includes('share your profile for future opportunities')
+    && text.includes('share your profile')
+}
+
 const extractApplyLinks = (html) => extractLinks(html)
   .map((href) => normalizeUrl(href, JOBS_URL))
   .filter(Boolean)
   .filter((url) => /(^mailto:)|apply|greenhouse|lever|workday|ashby|recruitee|freshteam|teamtailor|zohorecruit|optimhire|linkedin\.com\/jobs\/view/i.test(url.toString()))
+  .filter((url) => !(url.origin === new URL(JOBS_URL).origin
+    && url.pathname === '/job-apply'
+    && hasVerifiedGeneralApplication(html)))
   .map((url) => url.toString())
 
 export const hasVerifiedCareersLink = (html) =>

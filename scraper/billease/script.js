@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -246,12 +246,68 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+  headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
+
+export const extractCurrentPayloadReference = (html) => {
+  const page = String(html ?? '')
+  if (!/<title>\s*Careers at Billease\s*\|\s*Join our team\s*<\/title>/i.test(page)
+    || !page.includes(CAREERS_BOARD_URL)) return null
+  const count = Number(page.match(/\b(\d+) open roles\b/i)?.[1])
+  const path = page.match(/<script\b[^>]*src=["']([^"']*\/careers\/_payload\.json\?[^"']+)["']/i)?.[1]
+  if (!Number.isInteger(count) || !path) return null
+  return { count, url: new URL(path, CAREERS_URL).toString() }
+}
+
+export const verifyCurrentNoIndiaInventory = (payload, expectedCount) => {
+  if (!Array.isArray(payload)) throw new Error('BillEase current jobs inventory payload is unavailable')
+  const dereference = (index) => Number.isInteger(index) ? payload[index] : undefined
+  const reactive = dereference(payload[0]?.data)
+  const data = dereference(Array.isArray(reactive) && reactive[0] === 'ShallowReactive' ? reactive[1] : null)
+  const state = dereference(data?.['billease-career-jobs'])
+  const references = dereference(state?.jobs)
+  if (dereference(state?.failed) !== false || !Array.isArray(references)
+    || references.length !== expectedCount) {
+    throw new Error('BillEase current jobs inventory count or state is incomplete')
+  }
+  const ids = new Set()
+  for (const reference of references) {
+    const record = dereference(reference)
+    const id = dereference(record?.id)
+    const title = dereference(record?.title)
+    const location = dereference(record?.location)
+    const url = dereference(record?.url)
+    if (typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)
+      || typeof title !== 'string' || !title.trim() || typeof location !== 'string'
+      || url !== `https://billease.careers-page.com/jobs/${id}` || ids.has(id)) {
+      throw new Error('BillEase current jobs inventory contains an invalid or duplicate role')
+    }
+    ids.add(id)
+    if (/\bindia\b/i.test(location)) {
+      throw new Error('BillEase current jobs inventory now contains an India role')
+    }
+    if (!/\bPhilippines\b/i.test(location)) {
+      throw new Error('BillEase current jobs inventory has an unverified location')
+    }
+  }
+  return true
+}
+
 export const createBillEaseScraper = ({ maxJobs = null } = {}) => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
+  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson, now = () => new Date().toISOString() } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
 
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('BillEase careers page no longer matches the verified official public surface')
+    }
+
+    const currentPayload = extractCurrentPayloadReference(careersHtml)
+    if (currentPayload) {
+      verifyCurrentNoIndiaInventory(await fetchJson(currentPayload.url), currentPayload.count)
+      return []
     }
 
     const boardHtml = await fetchText(CAREERS_BOARD_URL)

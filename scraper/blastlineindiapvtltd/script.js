@@ -13,6 +13,7 @@ export const HOMEPAGE_URL = 'https://blastlineindia.com/'
 export const CAREERS_URL = 'https://blastlineindia.com/about-us/careers/'
 export const CAREERS_PAGE_API_URL = 'https://blastlineindia.com/wp-json/wp/v2/pages/2957'
 export const APPLICATION_ANCHOR_URL = 'https://blastlineindia.com/about-us/careers/#career-form'
+export const JOB_BOARD_URL = 'https://careers.blastlineindia.com/'
 
 const COMPANY_DOMAIN = 'blastlineindia.com'
 const ATS_PLATFORM = 'official-company-careers'
@@ -285,6 +286,99 @@ export const extractPublicJobs = (html) => {
   return jobs
 }
 
+export const hasOfficialBoardHandoff = (html) => {
+  const page = String(html ?? '')
+  return /<title>\s*Careers\s*-\s*Blastline India\s*<\/title>/i.test(page)
+    && /Current Openings/i.test(stripTags(page))
+    && /<a\b[^>]*href=["']https:\/\/careers\.blastlineindia\.com\/["'][^>]*>\s*VIEW OPEN POSITIONS\s*<\/a>/i.test(page)
+}
+
+const hasVerifiedBoardPagePayload = (payload) => {
+  const parsed = typeof payload === 'string' ? JSON.parse(payload) : payload
+  return parsed?.id === 2957
+    && parsed?.slug === 'careers'
+    && parsed?.link === CAREERS_URL
+    && parsed?.title?.rendered === 'Careers'
+    && /Current Openings/i.test(parsed?.content?.rendered ?? '')
+    && /href=["']https:\/\/careers\.blastlineindia\.com\/["']/i.test(parsed?.content?.rendered ?? '')
+}
+
+export const extractBoardCards = (html) => {
+  const page = String(html ?? '')
+  if (!/<title>\s*Careers\s*\|\s*Blastline India\s*<\/title>/i.test(page)
+    || !/Blastline India Pvt Ltd/i.test(page)) {
+    throw new Error('Blastline official board no longer matches the verified company surface')
+  }
+
+  const articles = [...page.matchAll(/<article\b[^>]*class=["'][^"']*\bjob-card\b[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi)]
+  if (articles.length === 0) throw new Error('Blastline official board no longer exposes job cards')
+
+  return articles
+    .map((match) => {
+      const article = match[1]
+      const company = stripTags(article.match(/<span\b[^>]*class=["'][^"']*\bcompany-badge\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/i)?.[1])
+      if (company !== 'Blastline India') return null
+
+      const titleMatch = article.match(/<h3>\s*<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>\s*<\/h3>/i)
+      const title = stripTags(titleMatch?.[2])
+      const url = buildAbsoluteUrl(titleMatch?.[1], JOB_BOARD_URL)
+      const facts = [...article.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)].map((item) => stripTags(item[1]))
+      if (!title || !url || new URL(url).origin !== new URL(JOB_BOARD_URL).origin
+        || !new URL(url).pathname.startsWith('/jobs/') || !facts[0]) {
+        throw new Error('Blastline official board job card no longer matches the verified role contract')
+      }
+      return { title, url, location: facts[0], department: facts[1] || null, experienceRequired: facts[2] || null }
+    })
+    .filter(Boolean)
+}
+
+export const extractBoardJob = (html, card) => {
+  const page = String(html ?? '')
+  const ldJson = page.match(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/i)?.[1]
+  let posting
+  try {
+    posting = JSON.parse(ldJson)
+  } catch {
+    throw new Error(`Blastline official board job has no readable JobPosting: ${card.url}`)
+  }
+  if (posting?.['@type'] !== 'JobPosting'
+    || posting.title !== card.title
+    || posting.hiringOrganization?.name !== 'Blastline India Pvt Ltd'
+    || posting.hiringOrganization?.sameAs !== HOMEPAGE_URL.replace(/\/$/, '')
+    || posting.jobLocation?.address?.addressCountry !== 'IN'
+    || posting.directApply !== true
+    || !/<form\b[^>]*class=["'][^"']*\bapply-form\b/i.test(page)
+    || !/<h2\s+id=["']apply["']>Apply for this role<\/h2>/i.test(page)) {
+    throw new Error(`Blastline official board job no longer matches the verified application surface: ${card.url}`)
+  }
+
+  const slug = new URL(card.url).pathname.split('/').filter(Boolean).at(-1)
+  const city = card.location.includes(',')
+    ? normalizeCity(card.location.split(',')[0].trim()) || card.location.split(',')[0].trim()
+    : null
+  return {
+    title: card.title,
+    company: COMPANY,
+    department: card.department,
+    location: card.location,
+    city,
+    country: 'India',
+    jobId: `${SOURCE}-${slug}`,
+    requisitionId: `${SOURCE}-${slug}`,
+    sourceUrl: card.url,
+    applyUrl: `${card.url}#apply`,
+    employmentType: normalizeEmploymentType(String(posting.employmentType ?? '').replace(/_/g, '-')),
+    experienceRequired: card.experienceRequired,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: posting.datePosted || null,
+    closingDate: posting.validThrough || null,
+    jobDescription: stripTags(posting.description),
+    remoteStatus: null,
+  }
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -339,6 +433,20 @@ export const createBlastlineIndiaPvtLtdScraper = ({
     }
 
     const careersHtml = await fetchText(CAREERS_URL)
+    if (hasOfficialBoardHandoff(careersHtml)) {
+      const payload = await fetchJson(CAREERS_PAGE_API_URL)
+      if (!hasVerifiedBoardPagePayload(payload)) {
+        throw new Error('Blastline verified careers payload no longer links to the official board')
+      }
+      const boardHtml = await fetchText(JOB_BOARD_URL)
+      const cards = extractBoardCards(boardHtml)
+      if (cards.length === 0) throw new Error('Blastline official board has no Blastline India roles')
+      const timestampFactory = overrideNow || now
+      const jobs = await Promise.all(cards.map(async (card) =>
+        extractBoardJob(await fetchText(card.url), card)))
+      return jobs.map((job) => buildNormalizedJob(job, timestampFactory))
+    }
+
     if (!hasOfficialCareersSignal(careersHtml)) {
       throw new Error('Blastline verified public careers surface no longer matches the known first-party jobs page')
     }

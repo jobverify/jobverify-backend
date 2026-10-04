@@ -129,6 +129,14 @@ test('Stanza Living sentinel pins the verified homepage, about/contact pages, an
     }),
     true,
   )
+  assert.equal(
+    stanzaLiving.isVerifiedMisdirectedCareersRoute({
+      status: 200,
+      url: 'https://www.stanzaliving.com/careers',
+      html: CAREERS_ROUTE_HTML.replace('6 PGs near', '3 PGs near'),
+    }),
+    true,
+  )
 })
 
 test('Stanza Living returns [] only while the verified first-party no-public-careers sentinel surface stays intact', async () => {

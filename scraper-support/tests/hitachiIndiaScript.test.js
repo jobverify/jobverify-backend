@@ -204,6 +204,7 @@ test('Hitachi India treats the verified Cloudflare challenge shell as an honest 
   }), true)
 
   const jobs = await createHitachiIndiaScraper().run({
+    useLegacySearchPage: true,
     fetchPage: async (url) => {
       requestedUrls.push(url)
       return {
@@ -231,6 +232,7 @@ test('run keeps Hitachi India on the filtered listing page, enriches detail page
   const requestedApplyUrls = []
 
   const jobs = await createHitachiIndiaScraper().run({
+    useLegacySearchPage: true,
     maxJobs: 1,
     fetchText: async (url) => {
       requestedTextUrls.push(url)

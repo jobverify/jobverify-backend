@@ -167,7 +167,7 @@ test('Komprise helpers stay pinned to the verified careers page, job sitemap, an
 
   assert.equal(komprise.SOURCE, 'komprise')
   assert.equal(komprise.COMPANY, 'Komprise')
-  assert.equal(komprise.VERIFIED_ON, '2026-09-03')
+  assert.equal(komprise.VERIFIED_ON, '2026-10-03')
   assert.equal(komprise.HOMEPAGE_URL, 'https://www.komprise.com/')
   assert.equal(komprise.CAREERS_URL, 'https://www.komprise.com/careers/')
   assert.equal(komprise.SITEMAP_INDEX_URL, 'https://www.komprise.com/sitemap_index.xml')
@@ -177,11 +177,8 @@ test('Komprise helpers stay pinned to the verified careers page, job sitemap, an
   )
   assert.deepEqual(komprise.VERIFIED_JOB_DETAIL_URLS, [
     'https://www.komprise.com/job/account-executive/',
-    'https://www.komprise.com/job/implementation-engineer-2/',
-    'https://www.komprise.com/job/technical-support-engineer/',
-    'https://www.komprise.com/job/product-management-vp/',
-    'https://www.komprise.com/job/sales-ops-analyst/',
     'https://www.komprise.com/job/ux-designer/',
+    'https://www.komprise.com/job/software-development-engineer-test/',
   ])
   assert.equal(komprise.hasOfficialCareersPageSignal(CAREERS_HTML), true)
   assert.equal(komprise.hasJobListingSitemapSignal(JOB_LISTING_SITEMAP_XML), true)
@@ -309,4 +306,30 @@ test('Komprise run validates the verified careers shell, consumes the job sitema
   )
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.match(jobs[1].jobDescription, /Komprise unlocks unstructured data for AI/i)
+})
+
+test('Komprise accepts its changed first-party sitemap and the visible India email apply link', async () => {
+  const komprise = await loadModule()
+  const currentSitemap = `<urlset>
+    <url><loc>https://www.komprise.com/job/account-executive/</loc><lastmod>2026-06-17T21:57:44+00:00</lastmod></url>
+    <url><loc>https://www.komprise.com/job/ux-designer/</loc><lastmod>2026-08-24T16:37:33+00:00</lastmod></url>
+    <url><loc>https://www.komprise.com/job/software-development-engineer-test/</loc><lastmod>2026-09-25T04:49:16+00:00</lastmod></url>
+  </urlset>`
+  assert.equal(komprise.hasJobListingSitemapSignal(currentSitemap), true)
+  assert.equal(komprise.hasJobListingSitemapSignal(currentSitemap.replace('www.komprise.com/job/ux-designer', 'other.example/job/ux-designer')), false)
+
+  const uxHtml = `<title>Komprise UX Designer</title>
+    <meta property="og:title" content="Komprise UX Designer" />
+    <meta property="og:description" content="Craft the future of our data management platform." />
+    <a class="google_map_link">Bengalaru</a>
+    <a href="mailto:india_careers@komprise.com">Apply</a>
+    <script>var job_manager_stats = {"postId":"58531"};</script>`
+  const job = komprise.extractJobFromDetailPage({
+    url: 'https://www.komprise.com/job/ux-designer/',
+    lastmod: '2026-08-24T16:37:33+00:00',
+    html: uxHtml,
+  })
+  assert.equal(job.title, 'UX Designer')
+  assert.equal(job.location, 'Bengaluru, India')
+  assert.equal(job.applyUrl, 'mailto:india_careers@komprise.com')
 })

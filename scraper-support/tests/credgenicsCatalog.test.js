@@ -8,19 +8,19 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('Credgenics is registered as a verified homepage LinkedIn-handoff sentinel without alias churn', () => {
+test('Credgenics is registered with its current official Zappyhire careers board', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'credgenics')
 
   assert.ok(provider, 'Expected Credgenics provider to be registered in customProviders.json')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Credgenics')
-  assert.equal(provider.companyCareerPage, 'https://www.credgenics.com/')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.companyCareerPage, 'https://recruitcareers.zappyhire.com/en/credgenics')
+  assert.equal(provider.atsPlatform, 'official-zappyhire-board')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-official-homepage')
+  assert.equal(provider.paginationStrategy, 'official-homepage-handoff-plus-complete-zappyhire-jobsearch-pagination')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage-plus-linkedin-handoff-return-empty',
+    'verified-homepage+official-zappyhire-board+organization-config+location-filters+paginated-jobsearch+verified-job-details+career-page-apply-urls',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
@@ -49,6 +49,6 @@ test('Credgenics is runnable through the scraper provider catalog', () => {
   assert.ok(scraper, 'Expected buildScrapers() to return the Credgenics scraper')
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'credgenics')
-  assert.equal(scraper.provider.companyCareerPage, 'https://www.credgenics.com/')
+  assert.equal(scraper.provider.companyCareerPage, 'https://recruitcareers.zappyhire.com/en/credgenics')
   assert.match(scraper.dryRunFile, /credgenics[\\/]jobs\.json$/i)
 })

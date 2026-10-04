@@ -8,12 +8,12 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = 'filo'
 export const COMPANY = 'Filo'
 export const OFFICIAL_BRAND = 'Filo'
-export const VERIFIED_ON = '2026-08-02'
+export const VERIFIED_ON = '2026-10-03'
 export const CAREERS_URL = 'https://askfilo.com/careers'
 export const DISPOSITION =
-  'verified-first-party-careers-page-plus-public-google-doc-role-descriptions'
+  'verified-first-party-careers-page-plus-public-role-details'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Sunday, August 2, 2026 that https://askfilo.com/careers was the live first-party Filo careers page, that its public __NEXT_DATA__ payload enumerated 10 current openings across departments including Analytics, Engineering, Growth, Product, Creative, and Design, and that each reviewed opening still linked to a public published Google Docs role description. The live public document URLs now include both direct /document/d/e/.../pub and account-scoped /document/u/3/d/e/.../pub variants, and reviewed roles included Business Analyst, Senior Backend Developer, and Senior Product Designer. The public contract still does not disclose per-role city detail or dedicated application handoffs, so this scraper preserves the exact-name India provider scope with null city detail and returns listing-plus-role-description data conservatively from the public documents.'
+  'Verified on October 3, 2026 that https://askfilo.com/careers exposes department-grouped openings in public __NEXT_DATA__ and that each opening has a public Filo role page containing its title, India location, description, and application URL. The page repeated one Maharashtra opening under four IDs with the same application URL; the scraper validates each detail and publishes that application once. The previous Google Docs payload remains supported for historical compatibility.'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -94,6 +94,15 @@ const parseCareersPayload = (html = '') => {
 
 const isTrustedGoogleDocUrl = (value = '') =>
   TRUSTED_GOOGLE_DOC_URL_PATTERN.test(normalizeWhitespace(value) || '')
+
+const CURRENT_APPLY_URL_PATTERN =
+  /^https:\/\/filorians\.tools\.findfilo\.com\/hiring\/apply\/\d+\/?$/i
+
+const CURRENT_INDIA_LOCATION_PATTERN =
+  /^(?:Gurgaon|Gurugram|Jharkhand|Assam|Maharasthra|Maharashtra|Jaipur \(Rajasthan\))$/i
+
+const buildCurrentDetailUrl = (slug) =>
+  `${CAREERS_URL}/${Buffer.from(slug).toString('base64')}`
 
 const dedupeRoles = (roles = []) =>
   roles.filter((role, index, collection) =>
@@ -206,6 +215,9 @@ export const extractPublicRoles = (html = '') => {
   const departmentMap = payload?.props?.pageProps?.data
 
   if (Array.isArray(departmentMap)) {
+    const groupedRoles = []
+    const allDepartmentIds = new Set()
+    const groupedIds = new Set()
     for (const department of departmentMap) {
       if (
         !Number.isInteger(department?.departmentId)
@@ -214,15 +226,42 @@ export const extractPublicRoles = (html = '') => {
       ) {
         throw new Error('Filo verified careers payload changed materially')
       }
+      for (const entry of department.jobs) {
+        if (
+          !Number.isInteger(entry?.id)
+          || entry.id <= 0
+          || !normalizeWhitespace(entry?.jobTitle)
+          || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(entry?.slug || '')
+        ) {
+          throw new Error('Filo verified careers payload changed materially')
+        }
+        if (department.departmentId === 0) {
+          allDepartmentIds.add(entry.id)
+          continue
+        }
+        if (groupedIds.has(entry.id)) {
+          throw new Error('Filo verified careers payload changed materially')
+        }
+        groupedIds.add(entry.id)
+        groupedRoles.push({
+          kind: 'current',
+          id: entry.id,
+          title: normalizeWhitespace(entry.jobTitle),
+          department: normalizeWhitespace(department.departmentName),
+          departmentId: department.departmentId,
+          slug: entry.slug,
+          detailUrl: buildCurrentDetailUrl(entry.slug),
+        })
+      }
     }
-
-    if (departmentMap.some((department) => department.jobs.length > 0)) {
-      throw new Error(
-        'Filo non-empty current careers payload requires review before publishing',
-      )
+    if (
+      allDepartmentIds.size > 0
+      && (allDepartmentIds.size !== groupedIds.size
+        || [...allDepartmentIds].some((id) => !groupedIds.has(id)))
+    ) {
+      throw new Error('Filo verified careers payload changed materially')
     }
-
-    return []
+    return groupedRoles
   }
 
   if (!departmentMap || typeof departmentMap !== 'object') {
@@ -297,6 +336,54 @@ export const extractPublishedRoleDetails = (html = '', listing = {}) => {
   }
 }
 
+export const extractCurrentRoleDetails = (html = '', listing = {}) => {
+  const payload = parseCareersPayload(html)?.props?.pageProps?.data
+  const title = normalizeWhitespace(payload?.job_title)
+  const description = normalizeWhitespace(payload?.job_description)
+  const applyUrl = normalizeWhitespace(payload?.apply_link)
+  if (
+    payload?.id !== listing.id
+    || payload?.department_id !== listing.departmentId
+    || payload?.slug !== listing.slug
+    || title !== listing.title
+    || payload?.is_deleted !== false
+    || !description
+    || !CURRENT_APPLY_URL_PATTERN.test(applyUrl || '')
+  ) {
+    throw new Error('Filo current role detail changed materially')
+  }
+
+  const location = normalizeWhitespace(payload.location)
+    || normalizeWhitespace(
+      payload.job_description.match(/^(?:-\s*)?\*\*Job Location:\*\*\s*([^\r\n]+)/im)?.[1]
+        ?.replace(/\*+\s*$/, ''),
+    )
+  if (!CURRENT_INDIA_LOCATION_PATTERN.test(location || '')) {
+    throw new Error('Filo current role has unverified India location')
+  }
+  const experienceRequired = normalizeWhitespace(
+    payload.job_description.match(/^(?:-\s*)?\*\*Experience:\*\*\s*([^\r\n]+)/im)?.[1],
+  )
+  const employmentType = normalizeWhitespace(
+    payload.job_description.match(/^(?:-\s*)?\*\*Job Type:\*\*\s*([^\r\n]+)/im)?.[1],
+  )
+  const postingDate = /^\d{4}-\d{2}-\d{2}T/.test(payload.created_at || '')
+    ? payload.created_at.slice(0, 10)
+    : null
+
+  return {
+    location,
+    city: /^(?:Gurgaon|Gurugram)/i.test(location)
+      ? location
+      : /^Jaipur \(Rajasthan\)$/i.test(location) ? 'Jaipur' : null,
+    applyUrl,
+    experienceRequired,
+    employmentType,
+    postingDate,
+    jobDescription: description,
+  }
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -335,6 +422,30 @@ const buildJob = (listing = {}, detail = {}, scrapedAt = new Date().toISOString(
   }
 }
 
+const buildCurrentJob = (listing, detail, scrapedAt) => ({
+  title: listing.title,
+  company: COMPANY,
+  department: listing.department,
+  location: detail.location,
+  city: detail.city,
+  country: 'India',
+  jobId: String(listing.id),
+  requisitionId: String(listing.id),
+  sourceUrl: listing.detailUrl,
+  applyUrl: detail.applyUrl,
+  employmentType: detail.employmentType,
+  experienceRequired: detail.experienceRequired,
+  minimumQualification: null,
+  preferredQualification: null,
+  requiredSkills: [],
+  postingDate: detail.postingDate,
+  closingDate: null,
+  jobDescription: detail.jobDescription,
+  source: SOURCE,
+  link: listing.detailUrl,
+  scrapedAt,
+})
+
 export const createFiloScraper = ({ maxJobs = null } = {}) => ({
   async run({
     fetchText = defaultFetchText,
@@ -352,8 +463,28 @@ export const createFiloScraper = ({ maxJobs = null } = {}) => ({
       : roles
     const scrapedAt = now()
     const jobs = []
+    const currentApplications = new Map()
 
     for (const listing of selectedRoles) {
+      if (listing.kind === 'current') {
+        const detailHtml = await fetchText(listing.detailUrl)
+        const detail = extractCurrentRoleDetails(detailHtml, listing)
+        const prior = currentApplications.get(detail.applyUrl)
+        if (prior) {
+          if (
+            prior.title !== listing.title
+            || prior.department !== listing.department
+            || prior.location !== detail.location
+          ) {
+            throw new Error('Filo duplicate application role details conflict')
+          }
+          continue
+        }
+        const job = buildCurrentJob(listing, detail, scrapedAt)
+        currentApplications.set(detail.applyUrl, job)
+        jobs.push(job)
+        continue
+      }
       try {
         const detailHtml = await fetchText(listing.documentUrl)
         const detail = extractPublishedRoleDetails(detailHtml, listing)

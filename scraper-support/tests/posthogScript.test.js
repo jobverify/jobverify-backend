@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const CAREERS_HTML = `
 <!doctype html>
@@ -147,13 +148,19 @@ test('PostHog pins the verified first-party careers page and Gatsby page-data co
   assert.equal(posthog.SOURCE, 'posthog')
   assert.equal(posthog.COMPANY, 'PostHog')
   assert.equal(posthog.OFFICIAL_BRAND_NAME, 'PostHog')
-  assert.equal(posthog.VERIFIED_ON, '2026-08-21')
+  assert.equal(posthog.VERIFIED_ON, '2026-10-03')
   assert.equal(posthog.CAREERS_PAGE_URL, 'https://posthog.com/careers')
   assert.equal(
     posthog.DISCOVERY_PAGE_DATA_URL,
-    'https://posthog.com/page-data/careers/ai-research-engineer/page-data.json',
+    'https://posthog.com/page-data/careers/product-engineer/page-data.json',
   )
   assert.equal(posthog.hasVerifiedCareersPageSignal(CAREERS_HTML), true)
+  const currentHtml = CAREERS_HTML
+    .replace('<div>Backend Engineer - Ingestion (Europe/UK timezone)</div>', '')
+    .replace('<div>Technical Account Executive - EMEA</div>', '')
+    .replace('<a href="/careers/ai-research-engineer">Read more</a>', '<a href="/careers/product-engineer">Read more</a>')
+  assert.equal(posthog.hasVerifiedCareersPageSignal(currentHtml), true)
+  assert.equal(posthog.extractVerifiedRoleSlug(currentHtml), '/careers/product-engineer')
   assert.equal(
     posthog.extractVerifiedRoleSlug(CAREERS_HTML),
     '/careers/ai-research-engineer',
@@ -211,8 +218,11 @@ test('PostHog run returns an honest empty array while the verified first-party r
   })
 
   assert.deepEqual(requestedTexts, [posthog.CAREERS_PAGE_URL])
-  assert.deepEqual(requestedJson, [posthog.DISCOVERY_PAGE_DATA_URL])
+  assert.deepEqual(requestedJson, ['https://posthog.com/page-data/careers/ai-research-engineer/page-data.json'])
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).status, 'complete-inventory')
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 4)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 0)
 })
 
 test('PostHog fails closed when the verified careers surface, page-data contract, or India slice drifts', async () => {

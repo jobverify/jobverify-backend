@@ -110,7 +110,7 @@ test('Applied Cloud Computing local catalog captures the current SmartRecruiters
   await assertHydratedCatalogLoadsScript(provider)
 })
 
-test('Mobiloitte Technologies local catalog captures the verified first-party careers empty-state contract', async () => {
+test('Mobiloitte Technologies local catalog captures the current first-party role cards', async () => {
   const { constant, defaultExport } = await loadCatalog(
     '../../scraper/mobiloittetechnologies/catalog.js',
     'MOBILOITTE_TECHNOLOGIES_CATALOG',
@@ -122,17 +122,15 @@ test('Mobiloitte Technologies local catalog captures the verified first-party ca
   assert.equal(provider.officialBrandName, 'Mobiloitte')
   assert.equal(provider.homepageUrl, 'https://www.mobiloitte.com/')
   assert.equal(provider.companyCareerPage, 'https://www.mobiloitte.com/careers')
-  assert.equal(provider.atsPlatform, 'first-party-careers-page-empty-search-state')
-  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page-empty-filter-state')
+  assert.equal(provider.atsPlatform, 'first-party-careers-page')
+  assert.equal(provider.paginationStrategy, 'single-first-party-careers-page-visible-cards')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+no-jobs-found-state+resume-drop-fallback',
+    'verified-first-party-role-cards+canonical-role-details+empty-state-fallback',
   )
-  assert.equal(provider.verifiedOn, '2026-08-03')
-  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /No Jobs Found/i)
-  assert.match(provider.verifiedSurfaceSummary, /Send Your Resume/i)
-  assert.match(provider.verifiedSurfaceSummary, /careers@mobiloitte\.com/i)
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.match(provider.verifiedSurfaceSummary, /four Delhi job cards/i)
+  assert.match(provider.verifiedSurfaceSummary, /listing-incomplete/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

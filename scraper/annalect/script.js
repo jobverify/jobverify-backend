@@ -85,17 +85,29 @@ export const pageIndicatesOgsCompany = (html) => {
   )
 }
 
-export const extractSearchResults = (html) => [...String(html ?? '').matchAll(
-  /<div class="base-card[\s\S]*?job-search-card"[\s\S]*?data-entity-urn="urn:li:jobPosting:([0-9]+)"[\s\S]*?<a class="base-card__full-link[^"]*" href="([^"]+)"[\s\S]*?<h3 class="base-search-card__title">\s*([\s\S]*?)\s*<\/h3>[\s\S]*?<h4 class="base-search-card__subtitle">[\s\S]*?<a[^>]*>\s*([\s\S]*?)\s*<\/a>[\s\S]*?<span class="job-search-card__location">\s*([\s\S]*?)\s*<\/span>[\s\S]*?<time class="job-search-card__listdate" datetime="([^"]+)"/gi,
-)]
-  .map((match) => {
-    const [, jobId, rawHref, rawTitle, rawCompany, rawLocation, postingDate] = match
+export const extractSearchResults = (html) => {
+  const source = String(html ?? '')
+  const cardStarts = [...source.matchAll(/<div\b[^>]*\bdata-entity-urn="urn:li:jobPosting:([0-9]+)"[^>]*>/gi)]
+
+  return cardStarts.map((match, index) => {
+    const card = source.slice(match.index, cardStarts[index + 1]?.index ?? source.length)
+    const openingTag = match[0]
+    if (!/\bbase-card\b/.test(openingTag) || !/\bjob-search-card\b/.test(openingTag)) return null
+
+    const anchorTag = card.match(/<a\b[^>]*class="[^"]*base-card__full-link[^"]*"[^>]*>/i)?.[0]
+    const rawHref = anchorTag?.match(/\bhref="([^"]+)"/i)?.[1]
+    const rawTitle = card.match(/<h3\b[^>]*class="[^"]*base-search-card__title[^"]*"[^>]*>([\s\S]*?)<\/h3>/i)?.[1]
+    const subtitle = card.match(/<h4\b[^>]*class="[^"]*base-search-card__subtitle[^"]*"[^>]*>([\s\S]*?)<\/h4>/i)?.[1]
+    const rawCompany = subtitle?.match(/<a\b[^>]*>([\s\S]*?)<\/a>/i)?.[1]
+    const rawLocation = card.match(/<span\b[^>]*class="[^"]*job-search-card__location[^"]*"[^>]*>([\s\S]*?)<\/span>/i)?.[1]
+    const timeTag = card.match(/<time\b[^>]*class="[^"]*job-search-card__listdate(?:--new)?[^"]*"[^>]*>/i)?.[0]
+    const postingDate = timeTag?.match(/\bdatetime="([^"]+)"/i)?.[1]
     const sourceUrl = normalizeWhitespace(rawHref)?.replace(/&amp;/g, '&')
     const title = stripTags(rawTitle)
     const company = stripTags(rawCompany)
     const locationData = parseLocation(stripTags(rawLocation))
 
-    if (!title || !jobId || !sourceUrl || locationData.country !== 'India') return null
+    if (!title || !postingDate || !sourceUrl || locationData.country !== 'India') return null
 
     return {
       title,
@@ -104,8 +116,8 @@ export const extractSearchResults = (html) => [...String(html ?? '').matchAll(
       location: locationData.location,
       city: locationData.city,
       country: locationData.country,
-      jobId,
-      requisitionId: jobId,
+      jobId: match[1],
+      requisitionId: match[1],
       sourceUrl,
       applyUrl: sourceUrl,
       employmentType: null,
@@ -119,6 +131,7 @@ export const extractSearchResults = (html) => [...String(html ?? '').matchAll(
     }
   })
   .filter(Boolean)
+}
 
 export const extractJobDetail = (html) => {
   const title = stripTags(

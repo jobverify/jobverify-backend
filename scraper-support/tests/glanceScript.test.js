@@ -48,14 +48,12 @@ const buildCareersPageHtml = (jobs = firstPartyJobs) => `
 <html lang="en">
   <body>
     <main>
-      <h1>Why you&#x27;d love being here.</h1>
-      <span>Search</span>
-      <span>Everywhere</span>
-      <span>All</span>
+      <h1>Careers at Glance</h1>
+      <p>Come build what millions see every day</p>
       <footer>Glance AI, Inc. &#169; 2026</footer>
     </main>
     <script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
-      page: '/careers/latest',
+      page: '/careers',
       props: {
         pageProps: {
           jobsDepartmentWise: {
@@ -138,7 +136,7 @@ test('Glance pins the verified first-party careers page and Greenhouse handoff c
   assert.equal(glance.SOURCE, 'glance')
   assert.equal(glance.COMPANY, 'Glance')
   assert.equal(glance.OFFICIAL_BRAND_NAME, 'Glance AI')
-  assert.equal(glance.CAREERS_URL, 'https://glance.com/careers/latest')
+  assert.equal(glance.CAREERS_URL, 'https://glance.com/careers')
   assert.equal(glance.GREENHOUSE_BOARD_URL, 'https://job-boards.greenhouse.io/glance')
   assert.equal(
     glance.buildGreenhouseJobsApiUrl(),
@@ -242,7 +240,7 @@ test('Glance fails closed when the first-party careers page or Greenhouse compan
 
   await assert.rejects(
     glance.createGlanceScraper().run({
-      fetchText: async () => buildCareersPageHtml(firstPartyJobs.slice(1)),
+      fetchText: async () => buildCareersPageHtml([]),
       fetchJson: async () => greenhousePayload,
     }),
     /verified first-party careers page/i,
@@ -250,14 +248,19 @@ test('Glance fails closed when the first-party careers page or Greenhouse compan
 
   await assert.rejects(
     glance.createGlanceScraper().run({
+      fetchText: async () => buildCareersPageHtml(firstPartyJobs.slice(1)),
+      fetchJson: async () => greenhousePayload,
+    }),
+    /first-party and Greenhouse job inventories disagree/i,
+  )
+
+  await assert.rejects(
+    glance.createGlanceScraper().run({
       fetchText: async () => buildCareersPageHtml(),
       fetchJson: async () => ({
-        jobs: [
-          {
-            ...greenhousePayload.jobs[0],
-            company_name: 'Different Company',
-          },
-        ],
+        jobs: greenhousePayload.jobs.map((job, index) => index === 0
+          ? { ...job, company_name: 'Different Company' }
+          : job),
       }),
     }),
     /verified company identity/i,

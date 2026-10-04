@@ -7,6 +7,7 @@ const JOB_TYPE_COMPATIBILITY_MAP = new Map([
   ["Full-time Fresher", "Full-time Fresher"],
   ["Full-time Experienced", "Full-time Experienced"],
   ["Contract", "Contract"],
+  ["Unspecified", "Unspecified"],
 ]);
 
 const normalizeStringList = (value) => {

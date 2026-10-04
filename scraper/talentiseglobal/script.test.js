@@ -221,3 +221,14 @@ test('Talentise Global fails closed when the homepage, careers list, or detail c
     /career detail page/i,
   )
 })
+
+
+test('Talentise validates its current Talent Pro signup route without changing public role extraction', async () => {
+  const source = await loadTalentiseGlobalModule()
+  const currentHome = officialHomepageHtml.replace('/student-registration', '/talent-pro-register')
+  assert.equal(source.hasOfficialHomepageSignal(currentHome), true)
+  assert.equal(source.hasOfficialHomepageSignal(currentHome.replace('/talent-pro-register', '/unverified-signup')), false)
+  const jobs = await source.run({fetchPage: async url => ({status:200,url,html:url === source.HOMEPAGE_URL ? currentHome : url === source.CAREERS_URL ? careersHtml : detailHtml})})
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].city, 'Kolkata')
+})

@@ -1,3 +1,4 @@
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -129,13 +130,30 @@ const buildJobDescription = (job = {}, locationLabel, skills) => [
   skills.length > 0 ? `Skills: ${skills.join(', ')}` : null,
 ].filter(Boolean).join(' ')
 
-export const extractJobsFromApiResponse = (text = '') => {
+const parseRequisitionPayload = (text = '') => {
   if (hasBrokenJobsApiSignal(text)) {
-    return []
+    throw new Error('PeopleStrong public requisition API returned a broken method payload')
   }
+  let payload
+  try { payload = JSON.parse(String(text ?? '')) } catch {
+    throw new Error('PeopleStrong public requisition API returned an invalid payload')
+  }
+  const total = payload?.totalRecords
+  const records = payload?.response
+  const status = payload?.messageCode
+  const successfulEmpty = total === 0 && status?.code === 200 && status?.messages === 'success'
+  if (!Number.isInteger(total) || total < 0
+    || (status && status.code !== 200)
+    || (total === 0 && (!successfulEmpty || (records !== null && (!Array.isArray(records) || records.length !== 0))))
+    || (total > 0 && (!Array.isArray(records) || records.length === 0 || records.length > total))
+    || (Array.isArray(records) && records.some(record => !normalizeWhitespace(record?.jobCode) || !normalizeWhitespace(record?.jobTitle) || !normalizeWhitespace(record?.locationHierarchyComplete || record?.locationHierarchy)))) {
+    throw new Error('PeopleStrong public jobs API no longer returns the verified requisition payload')
+  }
+  return { total, records: records || [] }
+}
 
-  const payload = JSON.parse(String(text ?? '{}'))
-  const records = Array.isArray(payload?.response) ? payload.response : []
+export const extractJobsFromApiResponse = (text = '') => {
+  const { records } = parseRequisitionPayload(text)
 
   return records.flatMap((record) => {
     const detailUrl = buildJobDetailUrl(record)
@@ -198,17 +216,38 @@ export const createPeopleStrongTechnologiesScraper = () => ({
       throw new Error('PeopleStrong sample public detail route no longer matches the verified first-party shell')
     }
 
-    const apiResponse = await fetchApiText(JOBS_API_URL)
-    if (apiResponse.status !== 200) {
-      throw new Error('PeopleStrong public jobs API no longer matches the verified first-party surface')
-    }
+    const jobs = []
+    const seen = new Set()
+    let offset = 0
+    let pagesFetched = 0
+    let expectedTotal = null
+    do {
+      const url = new URL(JOBS_API_URL)
+      url.searchParams.set('offset', String(offset))
+      const apiResponse = await fetchApiText(url.toString())
+      if (apiResponse.status !== 200) {
+        throw new Error('PeopleStrong public jobs API no longer matches the verified first-party surface')
+      }
+      const { total, records } = parseRequisitionPayload(apiResponse.text)
+      pagesFetched += 1
+      if (expectedTotal !== null && total !== expectedTotal) {
+        throw new Error('PeopleStrong requisition payload total changed during pagination')
+      }
+      expectedTotal = total
+      for (const record of records) {
+        if (seen.has(record.jobCode)) throw new Error('PeopleStrong requisition pagination repeated a payload record')
+        seen.add(record.jobCode)
+      }
+      jobs.push(...extractJobsFromApiResponse(apiResponse.text))
+      offset += records.length
+    } while (offset < expectedTotal)
 
-    const jobs = extractJobsFromApiResponse(apiResponse.text)
-    if (jobs.length === 0 && !hasBrokenJobsApiSignal(apiResponse.text)) {
-      throw new Error('PeopleStrong public jobs API no longer returns the verified requisition payload')
-    }
-
-    return jobs
+    return attachInventoryEvidence(jobs, {
+      status: expectedTotal === 0 ? 'verified-empty' : 'complete-inventory',
+      surface: JOBS_API_URL, firstParty: true, listingComplete: true, pagesFetched,
+      reportedTotal: expectedTotal, indiaFacetCount: jobs.length,
+      verifiedAt: new Date().toISOString(), reason: 'schema-validated-first-party-requisition-pagination',
+    })
   },
 })
 

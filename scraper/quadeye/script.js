@@ -117,7 +117,7 @@ export const hasOfficialCareersPageSignal = (html = '') => {
 
   if (
     /<title>\s*Jobs\s*\|\s*quadeye\s*<\/title>/i.test(page)
-    && /rel=["']canonical["'][^>]+href=["']https:\/\/www\.quadeye\.com\/jobs["']/i.test(page)
+    && /rel=["']canonical["'][^>]+href=["']https:\/\/(?:www\.quadeye\.com\/jobs|quadeye\.cyralix\.com\/\/jobs)["']/i.test(page)
     && text.includes('Open Roles')
     && text.includes('Loading roles')
     && /href=["']\/career["']/i.test(page)

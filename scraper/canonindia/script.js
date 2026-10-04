@@ -7,7 +7,10 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
 export const CAREER_PAGE_URL = 'https://in.canon/en/consumer/web/career'
-export const EXTERNAL_PORTAL_URL = 'https://career.asia.canon:8086/psc/ps/EMPLOYEE/CIPLCAREER/c/HRS_HRAM.HRS_APP_SCHJOB.GBL?Page=HRS_APP_SCHJOB&Action=U&FOCUS=Applicant&SiteId=2226&'
+export const EXTERNAL_PORTAL_URL = 'https://career.asia.canon'
+export const ORACLE_BOARD_URL = 'https://career.asia.canon/en/sites/CX_1'
+export const ORACLE_API_ORIGIN = 'https://cmaonehr-iaeatj.fa.ocs.oraclecloud.com'
+export const ORACLE_LISTING_URL = `${ORACLE_API_ORIGIN}/hcmRestApi/resources/latest/recruitingCEJobRequisitions?onlyData=true&expand=requisitionList.secondaryLocations&finder=findReqs;siteNumber=CX_1,limit=5,offset=0`
 
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
@@ -42,22 +45,41 @@ const defaultFetchPage = async (url) => {
   }
 }
 
-const isPortalUnavailableError = (error) =>
-  /HTTP (?:403|429)\b|fetch failed|timed out|timeout|could not connect|und_err_connect_timeout|ssl\/tls secure channel|econnreset|unable to verify the first certificate|unable to/i
-    .test(String(error?.message ?? error ?? ''))
-
 export const hasCareerPageSignal = (html) => {
   const normalized = normalizeWhitespace(html)?.toLowerCase() || ''
   return (
     normalized.includes('careers - canon india')
     && normalized.includes('come join us')
     && normalized.includes('canon is a global brand')
+    && /href=["']https:\/\/career\.asia\.canon\/?["']/i.test(String(html ?? ''))
   )
 }
 
-export const hasPortalBlockedSignal = ({ status, html }) => {
-  const normalized = normalizeWhitespace(html)?.toLowerCase() || ''
-  return (status === 200 || status === 403) && normalized === 'no access'
+export const hasOracleBoardSignal = ({ status, url, html } = {}) => {
+  const page = String(html ?? '')
+  return status === 200
+    && url === ORACLE_BOARD_URL
+    && /<title>\s*Canon Career Site\s*<\/title>/i.test(page)
+    && /<base\b[^>]*href=["']\/en\/sites\/CX_1["']/i.test(page)
+    && /data-sitenumber=["']CX_1["']/i.test(page)
+    && page.includes(`data-apibaseurl="${ORACLE_API_ORIGIN}:443"`)
+}
+
+export const hasVerifiedEmptyOracleInventory = ({ status, url, html } = {}) => {
+  if (status !== 200 || url !== ORACLE_LISTING_URL) return false
+
+  try {
+    const payload = JSON.parse(String(html ?? ''))
+    const inventory = payload?.items?.[0]
+    return payload.items.length === 1
+      && inventory.SiteNumber === 'CX_1'
+      && inventory.Location === null
+      && inventory.TotalJobsCount === 0
+      && Array.isArray(inventory.requisitionList)
+      && inventory.requisitionList.length === 0
+  } catch {
+    return false
+  }
 }
 
 export const extractOpenings = () => []
@@ -69,23 +91,18 @@ export const createCanonIndiaScraper = ({
     const fetchPage = options.fetchPage || defaultFetchPage
     const careerPage = await fetchPage(CAREER_PAGE_URL)
 
-    if (!hasCareerPageSignal(careerPage.html)) {
-      return []
+    if (careerPage.status !== 200 || !hasCareerPageSignal(careerPage.html)) {
+      throw new Error('Canon India first-party careers handoff no longer matches the verified surface')
     }
 
-    let portalPage
-    try {
-      portalPage = await fetchPage(EXTERNAL_PORTAL_URL)
-    } catch (error) {
-      if (isPortalUnavailableError(error)) {
-        return []
-      }
-
-      throw error
+    const portalPage = await fetchPage(EXTERNAL_PORTAL_URL)
+    if (!hasOracleBoardSignal(portalPage)) {
+      throw new Error('Canon India external careers handoff no longer resolves to the verified Oracle board')
     }
 
-    if (!hasPortalBlockedSignal(portalPage)) {
-      throw new Error('Canon India external careers portal no longer returns the expected current no-access state')
+    const inventoryPage = await fetchPage(ORACLE_LISTING_URL)
+    if (!hasVerifiedEmptyOracleInventory(inventoryPage)) {
+      throw new Error('Canon India Oracle career inventory changed or is unavailable')
     }
 
     const jobs = extractOpenings()

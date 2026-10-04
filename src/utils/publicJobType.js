@@ -1,6 +1,7 @@
 // Query-time equivalent of the public response taxonomy. Keep the parity tests in
 // experiencedJobVisibility.test.js aligned when response normalization changes.
 // Native expressions let Mongo filter BEFORE pagination and counting.
+import { JOB_CLASSIFICATION_POLICY_VERSION } from './jobClassificationVersion.js';
 const str = input => ({ $convert: { input, to: 'string', onError: '', onNull: '' } });
 const text = field => ({ $trim: { input: str('$' + field) } });
 // Match JavaScript whitespace (including NBSP) explicitly; PCRE \s is narrower.
@@ -79,7 +80,10 @@ const LEGACY_PUBLIC_JOB_TYPE_EXPRESSION = bind({
   profileMin: num('$experienceProfile.minimumYears'), profileMax: num('$experienceProfile.maximumYears'),
   // Number(null) in the response normalizer is zero; missing is not a number.
   responseMin: choose([[eq({ $type: '$experienceProfile.minimumYears' }, 'null'), 0]], num('$experienceProfile.minimumYears')),
-  cues: { $concat: ['title', 'department', 'description', 'jobDescription', 'minimumQualification', 'preferredQualification', 'experienceRequired'].flatMap(field => [text(field), ' ']) },
+  cues: { $concat: [text('title'), ' ', text('department'), ' ',
+    { $cond: [{ $ne: [{ $type: '$sourceDescription' }, 'missing'] }, text('sourceDescription'),
+      { $concat: [text('description'), ' ', text('jobDescription')] }] }, ' ',
+    ...['minimumQualification', 'preferredQualification', 'experienceRequired'].flatMap(field => [text(field), ' '])] },
 }, bind({
   canonical, employmentType: employment,
   range: find('$$experience', /(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s+years?/),
@@ -131,6 +135,9 @@ const LEGACY_PUBLIC_JOB_TYPE_EXPRESSION = bind({
 // Most imported records already have a canonical employment type and level.
 // Avoid parsing long descriptions and experience text for those proven cases.
 export const PUBLIC_JOB_TYPE_EXPRESSION = bind({ type: { $toLower: text('jobType') } }, choose([
+  [and(eq('$classification.authoritative', true), { $in: ['$classification.mode', ['enforce', 'policy']] }, eq('$classification.policyVersion', JOB_CLASSIFICATION_POLICY_VERSION),
+    { $in: ['$classification.status', ['accepted', 'uncertain', 'fallback']] },
+    { $in: ['$classification.resolved.jobType', ['Intern', 'Full-time Fresher', 'Full-time Experienced', 'Contract', 'Others', 'Unspecified']] }), '$classification.resolved.jobType'],
   [eq('$$type', 'contract'), 'Contract'], [eq('$$type', 'others'), 'Others'],
   [and(eq('$employmentType', 'Full-time'), { $in: ['$experienceLevel', ['Junior Level', 'Mid Level', 'Senior Level']] }), 'Full-time Experienced'],
 ], LEGACY_PUBLIC_JOB_TYPE_EXPRESSION));

@@ -17,14 +17,16 @@ export const PEOPLESTRONG_TECHNOLOGIES_CATALOG = {
   companyDomain: 'careers.peoplestrong.com',
   atsPlatform: 'official-company-careers-api',
   countryFilter: 'India',
-  paginationStrategy: 'portal-shell-plus-broken-public-list-routes-validation',
+  paginationStrategy: 'offset-limit-to-totalRecords',
   extractionStrategy:
-    'verified-official-portal-shell+verified-broken-public-list-routes+verified-public-jobs-api',
+    'verified-official-portal+schema-validated-public-requisitions-api+explicit-successful-zero-state',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-04',
+  verifiedOn: '2026-10-03',
+  verifiedPublicJobCount: 0,
+  verifiedIndiaJobCount: 0,
   verifiedSurfaceSummary:
-    'Verified on Tuesday, August 4, 2026 that https://careers.peoplestrong.com/ is the live first-party PeopleStrong careers portal shell and that a public sample detail route such as https://careers.peoplestrong.com/job/detail/PST_SDE_1615631 resolves on the same first-party origin. The public list routes https://careers.peoplestrong.com/job/joblist and https://careers.peoplestrong.com/job/openings still return 404 shell responses, but the public jobs API at https://careers.peoplestrong.com/api/cp/rest/altone/cp/jobs/v1?offset=0&limit=20 now returns live requisitions again, so the scraper uses the verified first-party API as the public jobs source.',
+    'Verified on October 3, 2026 that the first-party PeopleStrong portal and sample detail route remain live. The public list routes return their known 404 shells, while the public jobs API returns an explicit successful zero-requisition payload with totalRecords 0, response null and messageCode code 200/messages success. Nonempty responses are validated and paginated by offset until totalRecords; backend errors and contradictory empty responses fail closed.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'peoplestrongtechnologies/jobs.json',
 }

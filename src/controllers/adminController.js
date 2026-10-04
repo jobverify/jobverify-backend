@@ -23,6 +23,7 @@ import { getDiskBackedScraperSources } from "../../scraper-support/providers/sou
 import { classifyScraperError } from "../../scraper-support/utils/failureClassification.js";
 import { refreshJobDatasetSummary } from "../services/jobDatasetSummaryService.js";
 import { respondWithInternalError } from "../utils/respondWithInternalError.js";
+import { removeUserAccount } from "../services/userAccountDeletion.js";
 
 const MAX_REGEX_FILTER_LENGTH = 80;
 const MAX_PAGE = 500;
@@ -932,6 +933,62 @@ export const toggleScraperActive = async (req, res) => {
     });
   } catch (err) {
     return respondWithAdminInternalError(res, err);
+  }
+};
+
+// Permanently deletes a member account so the same email can start fresh.
+export const deleteUser = async (req, res) => {
+  let accessRevoked = false;
+  try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ success: false, message: "Invalid user ID" });
+    }
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    if (isSameUser(req.user, user)) {
+      return res.status(400).json({ success: false, message: "You cannot delete your own account from the admin directory" });
+    }
+    if (user.role === "admin") {
+      return res.status(403).json({ success: false, message: "You are not authorized to delete an administrator account" });
+    }
+    if (!user.email) {
+      throw new Error("User email is required for account deletion");
+    }
+
+    // Reject new requests throughout cleanup, including retries after a failure.
+    const revoked = await User.updateOne(
+      { _id: user._id, role: "user" },
+      { $set: { deactivated: true }, $inc: { sessionVersion: 1 } },
+    );
+    if (revoked.matchedCount !== 1) {
+      return res.status(409).json({ success: false, message: "The user account changed. Refresh the directory and try again." });
+    }
+    accessRevoked = true;
+
+    await removeUserAccount(user);
+    // Record the action without retaining the deleted member's identity.
+    await AdminAudit.create({
+      admin: req.user._id,
+      action: "deleteUser",
+      targetType: "User",
+      targetId: null,
+      details: "User account and linked records permanently deleted",
+    }).catch((error) => console.error("Failed to audit user deletion:", error));
+
+    return res.status(200).json({
+      success: true,
+      message: "User account deleted successfully. They can sign in again with a fresh account.",
+      data: { id: user._id },
+    });
+  } catch (error) {
+    return respondWithInternalError(res, error, {
+      message: accessRevoked
+        ? "Deletion could not be completed. The account is deactivated. Retry deletion to finish removing its data."
+        : "Internal Server Error",
+      logLabel: "[adminController] User deletion failed:",
+    });
   }
 };
 

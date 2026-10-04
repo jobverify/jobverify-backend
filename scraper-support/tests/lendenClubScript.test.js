@@ -3,12 +3,14 @@ import test from 'node:test'
 
 import {
   APPLY_NOW_URL,
+  CAREERS_URL,
   createLenDenClubScraper,
   extractApplyNowUrl,
   extractKekaJobs,
   hasOfficialCareersSignal,
   hasApplyNowPageSignal,
   KEKA_ACTIVE_JOBS_API_URL,
+  KEKA_PORTAL_INFO_URL,
 } from '../../scraper/lendenclub/script.js'
 
 const careersHtml = `
@@ -37,6 +39,15 @@ const applyNowHtml = `
       <div id="khembedjobs"></div>
     </body>
   </html>
+`
+
+const currentCareersHtml = `
+  <html><head><title>LenDenClub</title></head><body>
+    <h1>Join A Moment, Advance Your Career</h1>
+    <p>We're Hiring</p>
+    <a href="https://lendenclub.keka.com/careers/">View Open Roles</a>
+    <a href="https://lendenclub.keka.com/careers/">View Job Roles</a>
+  </body></html>
 `
 
 const jobsPayload = [
@@ -83,7 +94,7 @@ const jobsPayload = [
 ]
 
 test('LenDenClub detects its first-party careers shell and apply-now handoff', () => {
-  assert.equal(hasOfficialCareersSignal(careersHtml), true)
+  assert.equal(hasOfficialCareersSignal(currentCareersHtml), true)
   assert.equal(extractApplyNowUrl(careersHtml), APPLY_NOW_URL)
   assert.equal(hasApplyNowPageSignal(applyNowHtml), true)
 })
@@ -122,11 +133,12 @@ test('LenDenClub run validates the first-party shell and consumes the official K
   const jobs = await createLenDenClubScraper().run({
     fetchText: async (url) => {
       requested.push(url)
-      if (url === APPLY_NOW_URL) return applyNowHtml
-      return careersHtml
+      if (url === CAREERS_URL) return currentCareersHtml
+      throw new Error(`Unexpected URL: ${url}`)
     },
     fetchJson: async (url) => {
       requested.push(url)
+      if (url === KEKA_PORTAL_INFO_URL) return { name: 'LenDenClub', shortName: 'LenDenClub', careersPortalDomain: 'lendenclub.keka.com', companyWebsite: 'https://www.lendenclub.com/' }
       assert.equal(url, KEKA_ACTIVE_JOBS_API_URL)
       return jobsPayload
     },
@@ -134,10 +146,17 @@ test('LenDenClub run validates the first-party shell and consumes the official K
   })
 
   assert.deepEqual(requested, [
-    'https://www.lendenclub.com/careers/',
-    'https://www.lendenclub.com/careers/apply-now/',
+    'https://careers.lendenclub.com/',
+    'https://lendenclub.keka.com/careers/api/organization/default/careerportalinfo',
     'https://lendenclub.keka.com/careers/api/jobs/default/active',
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].company, 'LenDenClub')
+})
+
+test('LenDenClub rejects a mismatched Keka tenant', async () => {
+  await assert.rejects(createLenDenClubScraper().run({
+    fetchText: async () => currentCareersHtml,
+    fetchJson: async () => ({ name: 'Other Company', shortName: 'Other Company', careersPortalDomain: 'lendenclub.keka.com' }),
+  }), /exact company identity/i)
 })

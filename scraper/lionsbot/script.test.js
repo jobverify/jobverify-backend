@@ -11,7 +11,7 @@ const loadLionsbotModule = async () => {
 
 const buildSerializedKulaHtml = (jobs) => {
   const escapedJobs = JSON.stringify(jobs).replace(/"/g, '\\"')
-  return `before {\\"jobs\\":${escapedJobs},\\"departments\\":[{\\"id\\":1,\\"name\\":\\"Research & Development (R&D)\\"}]} after`
+  return `<title>LionsBot International Pte Ltd Careers | Open Jobs</title><link rel="canonical" href="https://careers.kula.ai/lionsbot" />before {\\"jobs\\":${escapedJobs},\\"departments\\":[{\\"id\\":1,\\"name\\":\\"Research & Development (R&D)\\"}]} after`
 }
 
 const officialCareersHtml = `

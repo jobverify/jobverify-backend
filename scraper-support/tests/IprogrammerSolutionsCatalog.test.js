@@ -17,7 +17,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('Iprogrammer Solutions local catalog captures the verified first-party openings page', async () => {
+test('Iprogrammer Solutions local catalog records the redesigned official careers route without claiming unverified inventory', async () => {
   const { IPROGRAMMER_SOLUTIONS_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(IPROGRAMMER_SOLUTIONS_CATALOG)
 
@@ -35,11 +35,14 @@ test('Iprogrammer Solutions local catalog captures the verified first-party open
   assert.equal(provider.extractionStrategy, 'job-card-listing-with-detail-links')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-09-13')
-  assert.match(provider.verifiedSurfaceSummary, /September 13, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /current-openings/i)
-  assert.match(provider.verifiedSurfaceSummary, /nine role cards/i)
-  assert.match(provider.verifiedSurfaceSummary, /validates role fields and locations/i)
+  assert.match(provider.verifiedSurfaceSummary, /redirect.*homepage/i)
+  assert.match(provider.verifiedSurfaceSummary, /localhost application URLs/i)
+  assert.equal(provider.verificationDisposition, 'official-careers-route-redirects-to-homepage-no-verified-current-inventory')
+  assert.equal(Object.hasOwn(provider, 'verifiedPublicJobCount'), false)
+  assert.equal(Object.hasOwn(provider, 'verifiedIndiaJobCount'), false)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /iprogrammersolutions[\\/]jobs\.json$/i)
 })

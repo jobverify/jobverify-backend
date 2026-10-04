@@ -79,3 +79,12 @@ test('GGK Technologies fails closed when the redirect contract drifts or GGK job
     /GGK-branded public job listings/i,
   )
 })
+
+
+test('GGK referral metadata on the verified Innova redirect does not imply GGK job listings', async () => {
+  const ggk = await loadModule()
+  const html = redirectedHomepageHtml + '<input type="hidden" name="url_referer" value="http://ggktech.com">'
+  assert.equal(ggk.pageExposesGgkJobListings(html), false)
+  assert.deepEqual(await ggk.run({fetchText: async () => html}), [])
+  assert.equal(ggk.pageExposesGgkJobListings(html + '<a href="https://ggktech.com/careers/software-engineer">GGK Careers</a>'), true)
+})

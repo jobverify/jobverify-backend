@@ -184,3 +184,22 @@ test('AgentDNA scraper rejects a careers route that starts exposing a public job
     /public careers route now appears to expose job listings/i,
   )
 })
+
+
+for (const route of ['homepage', 'careers']) {
+  for (const [status, failureKind] of [[503, 'network_or_timeout'], [403, 'blocked_or_access_denied']]) {
+    test('AgentDNA classifies HTTP ' + status + ' on ' + route + ' as an upstream failure', async () => {
+      const { createAgentDnaScraper, HOMEPAGE_URL } = await import('./script.js')
+      const { classifyScraperError } = await import('../../scraper-support/utils/failureClassification.js')
+      await assert.rejects(createAgentDnaScraper().run({
+        fetchPage: async (url) => {
+          const failingRoute = route === 'homepage' ? url === HOMEPAGE_URL : url !== HOMEPAGE_URL
+          return { status: failingRoute ? status : 200, url, html: failingRoute ? 'The deployment is currently unavailable\nDEPLOYMENT_PAUSED' : homepageHtml }
+        },
+      }), (error) => {
+        assert.deepEqual(classifyScraperError(error), { softFailure: true, upstreamOutage: true, failureKind })
+        return true
+      })
+    })
+  }
+}

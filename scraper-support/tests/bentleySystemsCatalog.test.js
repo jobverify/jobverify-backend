@@ -28,17 +28,17 @@ test('Bentley Systems local catalog captures the verified first-party jobs host 
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://www.bentley.com/company/careers/')
   assert.equal(provider.companyDomain, 'bentley.com')
-  assert.equal(provider.atsPlatform, 'successfactors')
+  assert.equal(provider.atsPlatform, 'official-workday-board')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-location-search-page')
+  assert.equal(provider.paginationStrategy, 'workday-india-location-facets-with-pagination')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-jobs-host+india-location-search-results+detail-pages',
+    'verified-bentley-careers-handoff+workday-india-location-facets+workday-detail-pages',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /bentleysystems[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /jobs\.bentley\.com/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Bentley Systems'), false)
 })
@@ -64,6 +64,6 @@ test('Bentley Systems hydrated local catalog stays script-runner compatible', as
   const module = await import(pathToFileURL(provider.modulePath).href)
 
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'successfactors')
+  assert.equal(provider.atsPlatform, 'official-workday-board')
   assert.equal(typeof module.run, 'function')
 })

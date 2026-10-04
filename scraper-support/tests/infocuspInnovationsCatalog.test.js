@@ -5,17 +5,20 @@ import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
 
-test('InfoCusp Innovations is registered as an official careers page Keka-backed provider without aliases', () => {
+test('InfoCusp Innovations is registered as an official SSR careers provider with Zoho applications without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'infocuspinnovations')
 
   assert.ok(provider, 'Expected InfoCusp Innovations provider to be registered in customProviders.json')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'InfoCusp Innovations')
   assert.equal(provider.companyCareerPage, 'https://www.infocusp.com/careers/openings/')
-  assert.equal(provider.atsPlatform, 'keka-embed-api')
+  assert.equal(provider.atsPlatform, 'first-party-server-rendered-openings-plus-zoho-recruit-application-links')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-keka-active-jobs-endpoint')
-  assert.equal(provider.extractionStrategy, 'official-careers-page+careers-bundle+keka-embed-api+jobdetails')
+  assert.equal(provider.paginationStrategy, 'single-complete-server-rendered-card-listing')
+  assert.equal(provider.extractionStrategy, 'verified-official-homepage+careers-cards+matched-job-description-and-zoho-application-identity')
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.equal(provider.verifiedPublicJobCount, 5)
+  assert.equal(provider.verifiedIndiaJobCount, 5)
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'infocusp.com')

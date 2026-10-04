@@ -168,3 +168,65 @@ test('KodNest fails closed when the homepage shell, careers shell, or bundle no-
     /client bundle changed materially or no longer confirms the verified no-careers route contract/i,
   )
 })
+
+const publicAnonToken = (role = 'anon', ref = 'copqjvapsjgzgzxfsrrf') => [
+  Buffer.from(JSON.stringify({ alg: 'HS256' })).toString('base64url'),
+  Buffer.from(JSON.stringify({ role, ref })).toString('base64url'),
+  'public-test-signature',
+].join('.')
+const currentBundle = (token = publicAnonToken(), origin = 'https://copqjvapsjgzgzxfsrrf.supabase.co') =>
+  verifiedBundleJs + '\nconst assets=["assets/CareerHub-current.js","assets/careers-current.js"]; const url="' + origin + '",key="' + token + '";'
+const currentHubModule = 'Careers at KodNest canonical:"https://kodnest.com/career" to:`/career/${job.slug}`'
+const currentCareersModule = 'client.from("career_jobs").select("*").eq("status","published").order("published_at",{ascending:false})'
+const currentHome = verifiedHomepageHtml.replace(/<script[^>]*>[\s\S]*?connect\.facebook\.net[\s\S]*?<\/script>/i, '')
+
+test('KodNest accepts its branded shell without a tracking pixel', async () => {
+  const kodnest = await loadModule()
+  assert.equal(kodnest.hasOfficialHomepageSignal(currentHome), true)
+})
+
+test('KodNest reads the current public careers feed before the obsolete no-careers bundle contract and excludes closed and foreign jobs', async () => {
+  const kodnest = await loadModule()
+  const requests = []
+  const scraper = kodnest.createKodNestScraper({ now: () => '2026-10-03T00:00:00.000Z', pageSize: 2 })
+  const jobs = await scraper.run({
+    fetchPage: async (url) => ({ status: 200, url, html: currentHome, headers: {} }),
+    fetchText: async (url) => url.endsWith('careers-current.js') ? currentCareersModule : url.endsWith('CareerHub-current.js') ? currentHubModule : currentBundle(),
+    fetchJson: async (url, options) => {
+      requests.push({ url, options })
+      const offset = Number(new URL(url).searchParams.get('offset'))
+      return offset === 0 ? [
+        { id: 'active', slug: 'academic-developer', title: 'Academic Developer', status: 'published', location_label: 'Bengaluru · On-site', employment_type: 'full_time', summary: 'Teach developers.', jd_markdown: 'Review projects.', requirements: ['Java'], published_at: '2026-07-18T00:00:00Z', closes_at: null },
+        { id: 'closed', slug: 'closed', title: 'Expired internship', status: 'published', location_label: 'Bengaluru', closes_at: '2026-09-20T00:00:00Z' },
+      ] : [
+        { id: 'foreign', slug: 'foreign', title: 'US developer', status: 'published', location_label: 'San Francisco', closes_at: null },
+      ]
+    },
+  })
+  assert.equal(requests.length, 2)
+  assert.equal(new URL(requests[0].url).pathname, '/rest/v1/career_jobs')
+  assert.equal(new URL(requests[1].url).searchParams.get('offset'), '2')
+  assert.equal(requests[0].options.headers.apikey, publicAnonToken())
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Academic Developer')
+  assert.equal(jobs[0].city, 'Bengaluru')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].sourceUrl, 'https://kodnest.com/career/academic-developer')
+  assert.match(jobs[0].jobDescription, /Review projects/)
+  assert.equal(jobs[0].closingDate, null)
+})
+
+for (const [label, bundle, feed] of [
+  ['unverified backend', currentBundle(publicAnonToken(), 'https://otherproject.supabase.co'), []],
+  ['non-public token', currentBundle(publicAnonToken('service_role')), []],
+  ['malformed feed', currentBundle(), { error: 'not a jobs array' }],
+]) {
+  test('KodNest fails closed for a ' + label, async () => {
+    const kodnest = await loadModule()
+    await assert.rejects(kodnest.createKodNestScraper().run({
+      fetchPage: async (url) => ({ status: 200, url, html: verifiedHomepageHtml, headers: {} }),
+      fetchText: async (url) => url.endsWith('careers-current.js') ? currentCareersModule : url.endsWith('CareerHub-current.js') ? currentHubModule : bundle,
+      fetchJson: async () => feed,
+    }), /verified public careers|careers feed/i)
+  })
+}

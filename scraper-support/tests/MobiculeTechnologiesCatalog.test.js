@@ -17,7 +17,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Mobicule Technologies exports provider metadata for the verified first-party careers handoff and public Zoho API', async () => {
+test('Mobicule Technologies exports provider metadata for the current greytHR handoff', async () => {
   const providerModule = await loadProviderModule()
   const scriptModule = await loadScriptModule()
 
@@ -29,19 +29,18 @@ test('Mobicule Technologies exports provider metadata for the verified first-par
     modulePath: '../../scraper/mobiculetechnologies/script.js',
     homepageUrl: 'https://mobicule.com/',
     companyCareerPage: 'https://mobicule.com/careers/',
-    careersPortalUrl: 'https://mobicule.zohorecruit.com/jobs/Careers',
-    careersApiUrl:
-      'https://mobicule.zohorecruit.com/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite',
-    atsPlatform: 'zohorecruit',
+    careersPortalUrl: 'https://mobiculetechnologies.greythr.com/hire/jobs/',
+    careersApiUrl: 'https://mobiculetechnologies.greythr.com/hire/api/career/published_jobs/',
+    atsPlatform: 'greythr',
     countryFilter: 'India',
-    paginationStrategy: 'official-careers-page-handoff-plus-public-zoho-api',
-    extractionStrategy: 'verified-first-party-careers-page+branded-zohorecruit-portal+public-job-openings-api',
+    paginationStrategy: 'first-party-greythr-handoff-plus-published-jobs-feed',
+    extractionStrategy: 'verified-first-party-handoff+greythr-company-identity+published-feed+filters+job-details',
     parser: 'custom-script',
     normalizationProfile: 'engineering-default',
     companyDomain: 'mobicule.com',
-    verifiedOn: '2026-07-18',
+    verifiedOn: '2026-10-03',
     verifiedSurfaceSummary:
-      'Verified on Saturday, July 18, 2026 that https://mobicule.com/careers/ was the live first-party Mobicule careers page and that its Explore opportunities CTA handed applicants to the branded public Zoho Recruit board at https://mobicule.zohorecruit.com/jobs/Careers backed by https://mobicule.zohorecruit.com/recruit/v2/public/Job_Openings?pagename=Careers&source=CareerSite. The public jobs payload exposed India openings including Programmer Analyst - Android in Mumbai / Pune.',
+      'Verified on October 3, 2026 that https://mobicule.com/careers/ now hands applicants to https://mobiculetechnologies.greythr.com/hire/jobs/. The branded greytHR company endpoint and published jobs feed listed three roles, with location IDs mapped to Mumbai and Pune by the same public portal filters. All three job detail endpoints were published and matched the feed.',
     dryRunFile: 'mobiculetechnologies/jobs.json',
   })
 

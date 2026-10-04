@@ -266,6 +266,57 @@ export const hasUnavailableJobsApiResponse = ({ status, body, json } = {}) =>
     || /unable to load openings right now/i.test(String(json?.error ?? ''))
   )
 
+export const extractIndiaJobsFromApi = (records, { now = () => new Date().toISOString() } = {}) => {
+  if (!Array.isArray(records) || records.some((record) =>
+    !normalizeWhitespace(record?.id)
+    || !normalizeWhitespace(record?.slug)
+    || !normalizeWhitespace(record?.title)
+    || !normalizeWhitespace(record?.location)
+  )) {
+    throw new Error('Neostats jobs API payload changed materially')
+  }
+
+  const ids = records.map((record) => String(record.id))
+  if (new Set(ids).size !== ids.length) {
+    throw new Error('Neostats jobs API payload has duplicate role IDs')
+  }
+
+  return records.filter((record) => isIndiaLocation(record.location)).map((record) => {
+    const location = normalizeIndiaLocation(record.location)
+    const description = [
+      normalizeWhitespace(record.about),
+      ...(Array.isArray(record.responsibilities) ? record.responsibilities.map(normalizeWhitespace) : []),
+      ...(Array.isArray(record.requirements) ? record.requirements.map(normalizeWhitespace) : []),
+    ].filter(Boolean).join(' ')
+
+    return {
+      title: normalizeWhitespace(record.title),
+      company: COMPANY,
+      department: normalizeWhitespace(record.department),
+      location,
+      city: extractCity(location),
+      state: null,
+      country: 'India',
+      jobId: String(record.id),
+      requisitionId: String(record.id),
+      sourceUrl: CAREERS_URL,
+      applyUrl: CAREERS_URL,
+      employmentType: normalizeWhitespace(record.employmentType),
+      experienceRequired: normalizeWhitespace(record.experience),
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: null,
+      closingDate: null,
+      jobDescription: description || null,
+      remoteStatus: normalizeRemoteStatus(record.mode),
+      source: SOURCE,
+      link: CAREERS_URL,
+      scrapedAt: now(),
+    }
+  })
+}
+
 export const createNeostatsScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({
     fetchText = defaultFetchText,
@@ -301,8 +352,8 @@ export const createNeostatsScraper = ({ now = () => new Date().toISOString() } =
           })
         }
 
-        if (Array.isArray(apiResult?.json) && apiResult.json.length === 0) {
-          return []
+        if (Number(apiResult?.status) === 200) {
+          return extractIndiaJobsFromApi(apiResult.json, { now })
         }
       }
 

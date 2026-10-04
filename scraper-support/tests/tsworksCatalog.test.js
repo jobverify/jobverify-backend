@@ -16,10 +16,10 @@ test('getScraperCatalog includes T-Works as an official first-party careers scra
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.companyCareerPage, 'https://tworks.telangana.gov.in/careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'official-careers-page-plus-openings-page')
+  assert.equal(provider.paginationStrategy, 'official-careers-page-closed-state-or-openings-handoff')
   assert.equal(
     provider.extractionStrategy,
-    'official-careers-handoff+openings-page+first-party-pdf-links+embedded-application-form',
+    'official-careers-closed-applications-or-openings-page-with-first-party-pdf-links',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

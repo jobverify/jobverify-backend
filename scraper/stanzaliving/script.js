@@ -107,7 +107,7 @@ export const isVerifiedMisdirectedCareersRoute = (page = {}) => {
 
   return Number(page?.status) === 200
     && /PG near Careers Department, Mall Road, Dehradun/i.test(text)
-    && /6 PGs near Careers Department, Mall Road, Dehradun/i.test(text)
+    && /[1-9]\d* PGs near Careers Department, Mall Road, Dehradun/i.test(text)
     && text.includes('Schedule a Visit')
     && text.includes('Request a callback')
     && text.includes('What our residents say')

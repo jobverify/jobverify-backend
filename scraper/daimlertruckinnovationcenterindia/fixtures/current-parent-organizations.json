@@ -1,0 +1,15 @@
+{
+  "lookup": {
+    "tablename": "parentorganization",
+    "items": [
+      {
+        "id": 366989,
+        "label": "Bengaluru, Daimler Truck Innovation Center India Private Limited"
+      },
+      {
+        "id": 4068,
+        "label": "Daimler Truck Innovation Center India Private Limited"
+      }
+    ]
+  }
+}

@@ -127,16 +127,16 @@ test('Filo validates the verified careers shell and extracts the public roles fr
 
   assert.equal(filo.SOURCE, 'filo')
   assert.equal(filo.COMPANY, 'Filo')
-  assert.equal(filo.VERIFIED_ON, '2026-08-02')
+  assert.equal(filo.VERIFIED_ON, '2026-10-03')
   assert.equal(filo.CAREERS_URL, 'https://askfilo.com/careers')
   assert.equal(
     filo.DISPOSITION,
-    'verified-first-party-careers-page-plus-public-google-doc-role-descriptions',
+    'verified-first-party-careers-page-plus-public-role-details',
   )
-  assert.match(filo.VERIFIED_SURFACE_SUMMARY, /Sunday, August 2, 2026/)
+  assert.match(filo.VERIFIED_SURFACE_SUMMARY, /October 3, 2026/)
   assert.match(filo.VERIFIED_SURFACE_SUMMARY, /https:\/\/askfilo\.com\/careers/i)
-  assert.match(filo.VERIFIED_SURFACE_SUMMARY, /Senior Backend Developer/i)
-  assert.match(filo.VERIFIED_SURFACE_SUMMARY, /Senior Product Designer/i)
+  assert.match(filo.VERIFIED_SURFACE_SUMMARY, /India location/i)
+  assert.match(filo.VERIFIED_SURFACE_SUMMARY, /application URL/i)
   assert.equal(filo.hasOfficialCareersPageSignal(VERIFIED_CAREERS_HTML), true)
   assert.deepEqual(roles, [
     {

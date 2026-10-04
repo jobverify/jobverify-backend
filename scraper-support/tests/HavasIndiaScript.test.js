@@ -369,3 +369,17 @@ test('Havas India enriches India Workday jobs with public detail-page experience
   assert.equal(seniorDataAnalyst?.experienceRequired, '2-5 years')
   assert.match(seniorDataAnalyst?.jobDescription || '', /data science or analytics roles/i)
 })
+
+
+test('Havas India reports Workday maintenance before validating board identity or requesting jobs', async () => {
+  const havasIndia = await loadModule()
+  await assert.rejects(havasIndia.createHavasIndiaScraper().run({
+    fetchPage: async (url) => ({
+      status: 200, url,
+      html: url === havasIndia.CAREERS_URL
+        ? officialCareersHtml
+        : '<html><title>Workday is currently unavailable.</title></html>',
+    }),
+    fetchJobsPage: async () => assert.fail('Maintenance must not request the jobs API'),
+  }), (error) => error.name === 'WorkdayUpstreamOutageError')
+})

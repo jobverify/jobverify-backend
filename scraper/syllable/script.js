@@ -1,3 +1,4 @@
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -99,13 +100,36 @@ export const extractVerifiedJobBoardUrl = (html = '') => {
   return verifiedUrl
 }
 
+const hasVerifiedEmptyBoard = (html) => {
+  const raw = String(html ?? '').match(/<script\b[^>]*id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i)?.[1]
+  if (!raw) return false
+  try {
+    const data = JSON.parse(raw)
+    const props = data.props?.pageProps
+    const board = props?.apiData?.jobBoard
+    const query = props?.dehydratedState?.queries?.find(item => item.queryKey?.[0] === 'board' && item.queryKey?.[1] === JOB_BOARD_SLUG && item.queryKey?.[2] === 'job-posts')
+    const filter = query?.queryKey?.[4]
+    const jobs = query?.state?.data
+    return board?.slug === JOB_BOARD_SLUG
+      && board.companyName === 'Syllable Corporation'
+      && board.boardURL === JOBS_URL
+      && props.apiData.jobBoardSlug === JOB_BOARD_SLUG
+      && data.query?.jobBoardSlug === JOB_BOARD_SLUG
+      && query.state.status === 'success' && query.state.error === null
+      && filter?.searchQuery === '' && Array.isArray(filter.departments) && filter.departments.length === 0
+      && filter.workplaceType === null && filter.country === '' && filter.state === '' && filter.city === '' && filter.page === 0
+      && Array.isArray(jobs?.items) && jobs.items.length === 0
+      && jobs.page === 0 && jobs.totalItems === 0 && jobs.totalPages === 0
+  } catch { return false }
+}
+
 export const hasVerifiedBoardPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(html) || ''
 
   return /<title\b[^>]*>\s*Syllable Corporation(?:\s+Jobs)?\s*<\/title>/i.test(page)
     && normalized.includes('Syllable Corporation')
-    && normalized.includes('View job')
+    && (normalized.includes('View job') || (normalized.includes('There are currently no open roles.') && hasVerifiedEmptyBoard(page)))
     && normalized.includes('Powered by Rippling')
   }
 
@@ -158,6 +182,9 @@ export const extractListingCards = (html = '') => {
     })
   }
 
+  if (cards.length === 0 && !hasVerifiedEmptyBoard(page)) {
+    throw new Error('Syllable verified Rippling listings are missing without a trusted zero-role payload')
+  }
   return cards
 }
 
@@ -265,6 +292,13 @@ export const createSyllableScraper = ({
       })
     }
 
+    if (hasVerifiedEmptyBoard(boardHtml)) {
+      return attachInventoryEvidence(jobs, {
+        status: 'verified-empty', surface: verifiedBoardUrl, firstParty: true, listingComplete: true,
+        pagesFetched: 1, reportedTotal: 0, indiaFacetCount: 0, verifiedAt: now(),
+        reason: 'exact-rippling-board-unfiltered-successful-zero-role-payload',
+      })
+    }
     return jobs
   },
 })

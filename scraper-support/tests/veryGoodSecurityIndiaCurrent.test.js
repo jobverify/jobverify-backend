@@ -95,3 +95,13 @@ test('VGS run validates first-party and Lever surfaces before loading jobs', asy
 test('VGS fails closed on malformed Lever data', () => {
   assert.throws(() => vgs.extractIndiaLeverJobs({ jobs: [] }), /array/i)
 })
+
+test('VGS recognizes Poland as foreign in a verified Greece posting', () => {
+  const foreign = {
+    id: 'greece-poland-role', text: 'Security Engineer', country: 'GR',
+    hostedUrl: 'https://jobs.lever.co/verygoodsecurity/greece-poland-role',
+    applyUrl: 'https://jobs.lever.co/verygoodsecurity/greece-poland-role/apply',
+    categories: { location: 'Greece', allLocations: ['Greece', 'Poland'] },
+  }
+  assert.deepEqual(vgs.extractIndiaLeverJobs([foreign]), [])
+})

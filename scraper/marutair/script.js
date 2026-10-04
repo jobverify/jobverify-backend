@@ -200,6 +200,17 @@ export const hasJobsPageSignal = (html) => {
     && /(Sales Engineer|Full Stack Developer|HR Recruiter)/i.test(text)
 }
 
+export const hasVerifiedEmptyJobsPageSignal = (html) => {
+  const page = String(html ?? '')
+  const text = stripTags(page)
+
+  return /<title[^>]*>\s*Jobs\s*\|\s*Marut Air\s*<\/title>/i.test(page)
+    && /Our Job Opportunities/i.test(text)
+    && /There are currently no open job opportunities/i.test(text)
+    && /MARUT AIR SYSTEMS PRIVATE LIMITED/i.test(text)
+    && !/<a[^>]+href=["'][^"']*\/jobs\/(?!apply\/)[^"']*-\d+\/?["']/i.test(page)
+}
+
 export const extractJobCards = (html) => {
   if (!hasJobsPageSignal(html)) {
     throw new Error('Expected verified Marut Air jobs page with public listings')
@@ -311,6 +322,10 @@ export const createMarutAirScraper = ({
     }
 
     const jobsPageHtml = await fetchText(JOBS_PAGE_URL)
+
+    if (hasVerifiedEmptyJobsPageSignal(jobsPageHtml)) {
+      return []
+    }
 
     if (!hasJobsPageSignal(jobsPageHtml)) {
       throw new Error('Expected verified Marut Air jobs page with public listings')

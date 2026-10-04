@@ -108,13 +108,19 @@ const createFetchPageFromText = (fetchText) => async (url) => ({
 export const createAgentDnaScraper = () => ({
   async run({ fetchText, fetchPage = fetchText ? createFetchPageFromText(fetchText) : defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
+    if (homepage.status !== 200) {
+      throw new Error(`HTTP ${homepage.status} for ${HOMEPAGE_URL}`)
+    }
     const homepageHtml = homepage.html
 
-    if (homepage.status !== 200 || !hasOfficialAgentDnaSignal(homepageHtml)) {
+    if (!hasOfficialAgentDnaSignal(homepageHtml)) {
       throw new Error('AgentDNA homepage no longer matches the verified official public surface')
     }
 
     const careers = await fetchPage(CAREERS_URL)
+    if (careers.status !== 200 && careers.status !== 404) {
+      throw new Error(`HTTP ${careers.status} for ${CAREERS_URL}`)
+    }
     const careersHtml = careers.html
 
     if (hasPublicJobBoardSignal(homepageHtml) || hasPublicJobBoardSignal(careersHtml)) {

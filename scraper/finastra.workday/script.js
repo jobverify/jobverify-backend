@@ -1,6 +1,7 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { hasWorkdayOutageSignal, WorkdayUpstreamOutageError } from '../../scraper-support/myworkday/engine.js'
 import { extractJobDetail } from '../../scraper-support/detailExtractors/index.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
@@ -218,11 +219,15 @@ const defaultFetchJson = async (url, options = {}) => {
     body: options.body,
   })
 
+  const html = await response.text()
+  if (hasWorkdayOutageSignal({html, url: response.url})) {
+    throw new WorkdayUpstreamOutageError(`[${SOURCE}] Workday is currently unavailable upstream at ${url}`)
+  }
   if (!response.ok) {
     throw new Error(`HTTP ${response.status} for ${url}`)
   }
 
-  return response.json()
+  return JSON.parse(html)
 }
 
 const defaultFetchPage = async (url) => {

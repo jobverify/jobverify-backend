@@ -100,6 +100,27 @@ const PUBLIC_JOBS_HTML = `
 </html>
 `
 
+const TEAM_FORM_URL = 'https://airtable.com/app3JO79fwEz4srgJ/shrD53PpCm2BKq5O9'
+const NEW_HOMEPAGE_HTML = `<html><head><title>Allo Health - Sexual Health, Therapy &amp; STI Care in India</title><meta name="description" content="India's #1 sexual health provider"><link rel="canonical" href="https://www.allohealth.com"/><meta property="og:url" content="https://www.allohealth.com"/><meta property="og:type" content="website"/></head><body><a href="/about">About us</a><h1>Better Sex, Better Life</h1><p>Allo Health (PATIENT FIRST HEALTHTECH PRIVATE LIMITED)</p><a href="${TEAM_FORM_URL}">Join Our Team</a></body></html>`
+const NEW_ABOUT_HTML = `<html><head><title>About Allo Health | Leading Sexual Health Care</title><link rel="canonical" href="https://www.allohealth.com/about"/><meta property="og:url" content="https://www.allohealth.com/about"/><meta property="og:type" content="website"/></head><body><a href="/about">About us</a><p>India's first structured healthcare ecosystem for sexual wellness.</p><p>With 4,00,000+ patients treated across 70+ cities.</p><a href="${TEAM_FORM_URL}">Join Our Team</a></body></html>`
+const NEW_MISSING_HTML = `<html><head><title>Allo Health</title></head><body><a href="/about">About us</a><h1>404</h1><p>Oops! Page Not Found</p><a href="${TEAM_FORM_URL}">Join Our Team</a></body></html>`
+
+test('Allo Health accepts the current company-identifying pages and general team intake without public jobs', async () => {
+  const allohealth = await loadModule()
+  assert.equal(allohealth.hasOfficialHomepageSignal(NEW_HOMEPAGE_HTML), true)
+  assert.equal(allohealth.hasOfficialHomepageSignal(NEW_HOMEPAGE_HTML.replace(TEAM_FORM_URL, 'https://airtable.com/other')), false)
+  assert.equal(allohealth.hasOfficialAboutPageSignal(NEW_ABOUT_HTML), true)
+  assert.equal(allohealth.isVerifiedMissingCareerRoute({ status: 404, url: allohealth.CAREERS_URL, html: NEW_MISSING_HTML }, allohealth.CAREERS_URL), true)
+  assert.equal(allohealth.pageExposesPublicJobListings(NEW_HOMEPAGE_HTML), false)
+  assert.deepEqual(await allohealth.createAllohealthScraper().run({
+    fetchPage: async (url) => ({
+      status: url.includes('/careers') ? 404 : 200,
+      url: url === allohealth.NON_WWW_CAREERS_URL ? allohealth.CAREERS_URL : url,
+      html: url === allohealth.HOMEPAGE_URL ? NEW_HOMEPAGE_HTML : url === allohealth.ABOUT_URL ? NEW_ABOUT_HTML : NEW_MISSING_HTML,
+    }),
+  }), [])
+})
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/allohealth/script.js')
@@ -113,7 +134,7 @@ test('Allo Health helper signals stay pinned to the verified homepage, about pag
 
   assert.equal(allohealth.SOURCE, 'allohealth')
   assert.equal(allohealth.COMPANY, 'Allo Health')
-  assert.equal(allohealth.VERIFIED_ON, '2026-07-30')
+  assert.equal(allohealth.VERIFIED_ON, '2026-10-03')
   assert.equal(allohealth.HOMEPAGE_URL, 'https://www.allohealth.com/')
   assert.equal(allohealth.ABOUT_URL, 'https://www.allohealth.com/about')
   assert.equal(allohealth.CAREERS_URL, 'https://www.allohealth.com/careers')

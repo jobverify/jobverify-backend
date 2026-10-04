@@ -44,11 +44,6 @@ const normalizeWhitespace = (value) => decodeHtmlEntities(
 )
   || null
 
-const extractTitle = (html = '') => {
-  const match = String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)
-  return normalizeWhitespace(match?.[1])
-}
-
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -106,7 +101,13 @@ const resolveIndiaLocation = (job = {}) => {
   const locations = Array.isArray(job?.jobLocations) ? job.jobLocations : []
   const indiaLocation = locations.find(isIndiaLocation) || null
 
-  if (!indiaLocation) return null
+  if (!indiaLocation) {
+    const introduction = normalizeWhitespace(job?.description || job?.excerpt)?.slice(0, 300) || ''
+    if (/(?:📍|location\s*[:\-])\s*Noida\b/i.test(introduction)) {
+      return { location: 'Noida, India', city: 'Noida', country: 'India' }
+    }
+    return null
+  }
 
   const city = normalizeWhitespace(indiaLocation.city) || normalizeWhitespace(indiaLocation.name)
   const state = normalizeWhitespace(indiaLocation.state)
@@ -130,10 +131,10 @@ export const hasOfficialLambdaTestCareersSignals = (html = '') => {
   const source = String(html ?? '')
   const text = (normalizeWhitespace(source) || '').toLowerCase()
 
-  return extractTitle(source) === 'Careers at TestMu AI (Formerly LambdaTest) | A Cross Browser Testing Tool'
+  return /careers at testmu ai/i.test(text)
+    && /formerly lambdatest/i.test(text)
     && text.includes('open positions')
     && text.includes('apply here')
-    && text.includes('testmu ai')
 }
 
 export const hasExpectedDepartmentPayload = (payload = []) => {
@@ -143,7 +144,7 @@ export const hasExpectedDepartmentPayload = (payload = []) => {
     .map((item) => normalizeWhitespace(item?.departmentName || item?.name)?.toLowerCase())
     .filter(Boolean)
 
-  return normalizedNames.includes('application support')
+  return normalizedNames.some((name) => name.startsWith('application support'))
     && normalizedNames.some((name) => [
       'engineering',
       'sales',

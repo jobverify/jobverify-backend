@@ -7,14 +7,15 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'wingify'
 export const COMPANY = 'Wingify'
-export const VERIFIED_ON = '2026-07-25'
-export const CAREERS_URL = 'https://wingify.com/careers/'
+export const VERIFIED_ON = '2026-10-03'
+export const CAREERS_URL = 'https://wingify.com/company/careers/'
 export const KEKA_BOARD_URL = 'https://wingify.keka.com/careers/'
+export const FIRST_PARTY_JOBS_URL = 'https://wingify.com/wp-json/api/get-active-jobs'
 export const CAREER_PORTAL_INFO_URL = `${KEKA_BOARD_URL}api/organization/default/careerportalinfo`
 export const ACTIVE_JOBS_URL = `${KEKA_BOARD_URL}api/jobs/default/active`
 export const DISPOSITION = 'verified-first-party-careers-page-plus-public-keka-jobs-api'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://wingify.com/careers/ was the live exact-name Wingify careers surface, that it handed applicants to the public Keka board at https://wingify.keka.com/careers/, and that https://wingify.keka.com/careers/api/jobs/default/active exposed a trustworthy public jobs inventory including India roles. This scraper validates those verified surfaces and returns India jobs only from the public Keka API.'
+  'Verified on October 3, 2026 that https://wingify.com/company/careers/ links to the Wingify Keka board and exposes https://wingify.com/wp-json/api/get-active-jobs. Both feeds listed the same 23 job IDs; the scraper cross-checks them and returns India jobs from the Keka API.'
 
 export const EXPECTED_KEKA_DOMAIN = 'wingify.keka.com'
 export const EXPECTED_PORTAL_NAME = 'Wingify Software Pvt. Ltd.'
@@ -59,11 +60,12 @@ export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title[^>]*>\s*Careers\s*\|\s*Wingify\s*<\/title>/i.test(page)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/wingify\.com\/careers\/["']/i.test(page)
-    && /\bBig Problems\.\s*Smart People\.\s*Wingify\./i.test(normalized ?? '')
+  return /<title[^>]*>\s*Wingify\s*-\s*Company Careers\s*-\s*Wingify\s*<\/title>/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/wingify\.com\/company\/careers\/["']/i.test(page)
+    && /\bFind your role\b/i.test(normalized ?? '')
     && /\bOpen Positions\b/i.test(normalized ?? '')
     && /careers@wingify\.com/i.test(normalized ?? '')
+    && /data-jobs-endpoint=["']https:\/\/wingify\.com\/wp-json\/api\/get-active-jobs["']/i.test(page)
 }
 
 export const extractKekaBoardUrl = (html = '') => {
@@ -96,6 +98,23 @@ export const hasExpectedPortalIdentity = (payload = {}) => {
     && shortName === EXPECTED_PORTAL_NAME
     && domain === EXPECTED_KEKA_DOMAIN
     && companyWebsite === 'https://wingify.com/'
+}
+
+export const hasMatchingFirstPartyJobs = (firstPartyJobs, kekaJobs) => {
+  if (!Array.isArray(firstPartyJobs) || !Array.isArray(kekaJobs)) return false
+  if (firstPartyJobs.length !== kekaJobs.length) return false
+
+  const listed = new Map()
+  for (const job of firstPartyJobs) {
+    const url = toAbsoluteUrl(job?.careerPortalUrl, CAREERS_URL)
+    if (!url || !/^https:\/\/wingify\.keka\.com\/careers\/jobdetails\/[^/?#]+$/.test(url)) return false
+    const id = url.split('/').pop()
+    const title = normalizeWhitespace(job?.title)
+    if (!title || listed.has(id)) return false
+    listed.set(id, title)
+  }
+
+  return kekaJobs.every((job) => listed.get(String(job?.id)) === normalizeWhitespace(job?.title))
 }
 
 const buildJobDetailUrl = ({ domain, jobId } = {}) => {
@@ -275,7 +294,13 @@ export const createWingifyScraper = () => ({
       throw new Error('Wingify Keka portal no longer resolves to the exact company identity')
     }
 
-    const jobs = extractSearchResults(await fetchJson(ACTIVE_JOBS_URL), {
+    const firstPartyJobs = await fetchJson(FIRST_PARTY_JOBS_URL)
+    const activeJobs = await fetchJson(ACTIVE_JOBS_URL)
+    if (!hasMatchingFirstPartyJobs(firstPartyJobs, activeJobs)) {
+      throw new Error('Wingify first-party jobs endpoint no longer matches the Keka board')
+    }
+
+    const jobs = extractSearchResults(activeJobs, {
       domain: KEKA_BOARD_URL,
     })
 

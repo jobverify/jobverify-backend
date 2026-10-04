@@ -1,0 +1,22 @@
+{
+  "modelId": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+  "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+  "file": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+  "sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+  "bytes": 1117320736,
+  "runtimeTag": "b11146",
+  "runtimeAssets": {
+    "linux": {
+      "file": "llama-b11146-bin-ubuntu-x64.tar.gz",
+      "sha256": "c150306eb16b5ab696f76a8bdf810c35fd98a24e82158742e6fa28f420ff8410"
+    },
+    "win32": {
+      "file": "llama-b11146-bin-win-cpu-x64.zip",
+      "sha256": "14cf1303ca9ac3abd94816850532f9f9a69ac66fbaca3776fc6f9061c2fac1d1"
+    }
+  },
+  "policyVersion": "job-description-v1",
+  "contextTokens": 8192,
+  "maxOutputTokens": 3072,
+  "requestSeconds": 180
+}

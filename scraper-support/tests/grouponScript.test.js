@@ -80,7 +80,7 @@ test('Groupon helpers stay pinned to the verified first-party careers handoff an
   assert.equal(groupon.SOURCE, 'groupon')
   assert.equal(groupon.COMPANY, 'Groupon')
   assert.equal(groupon.OFFICIAL_BRAND_NAME, 'Groupon')
-  assert.equal(groupon.VERIFIED_ON, '2026-07-17')
+  assert.equal(groupon.VERIFIED_ON, '2026-10-03')
   assert.equal(groupon.CAREERS_URL, 'https://www.grouponcareers.com/')
   assert.equal(groupon.BOARD_URL, 'https://job-boards.eu.greenhouse.io/groupon')
   assert.equal(groupon.GREENHOUSE_JOB_BASE_URL, 'https://job-boards.eu.greenhouse.io/groupon/jobs')

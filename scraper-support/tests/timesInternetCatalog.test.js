@@ -39,8 +39,8 @@ test('Times Internet local catalog captures the verified first-party listing pag
   assert.equal(provider.companyCareerPage, 'https://timesinternet.in/careers/job-list')
   assert.equal(provider.officialCareersPageUrl, 'https://timesinternet.in/careers/job-list')
   assert.deepEqual(provider.verifiedJobDetailUrls, [
-    'https://timesinternet.in/careers/job-detail/698222a358a30d19cf667cbb',
-    'https://timesinternet.in/careers/job-detail/644b66c280bea7e80b7a127c',
+    'https://timesinternet.in/careers/job-detail/6abb601846c5d2b24a35bd82',
+    'https://timesinternet.in/careers/job-detail/644b66c280bea7e80b7a229d',
   ])
   assert.equal(provider.companyDomain, 'timesinternet.in')
   assert.equal(provider.atsPlatform, 'official-company-careers')
@@ -52,12 +52,12 @@ test('Times Internet local catalog captures the verified first-party listing pag
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.match(provider.dryRunFile, /timesinternet[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /Associate Sales/i)
-  assert.match(provider.verifiedSurfaceSummary, /Manager - Legal/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /10 current roles/i)
+  assert.match(provider.verifiedSurfaceSummary, /unstructured job description/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Times Internet'), false)
 
   assert.equal(timesInternet.PROVIDER_METADATA.source, TIMES_INTERNET_CATALOG.source)

@@ -15,14 +15,14 @@ export const ENMOVIL_CATALOG = {
   companyDomain: 'enmovil.ai',
   atsPlatform: 'official-company-careers-nonlisting',
   countryFilter: 'India',
-  paginationStrategy: 'first-party-careers-placeholder-plus-sitemap-and-jobs-404-validation',
+  paginationStrategy: 'first-party-explicit-empty-careers-plus-sitemap-and-jobs-404-validation',
   extractionStrategy:
-    'verified-homepage+verified-sitemap-careers-url+verified-coming-soon-careers-page+verified-jobs-route-404-return-empty',
+    'verified-homepage+verified-sitemap-home-url+verified-explicit-empty-careers-page+verified-jobs-route-404-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified on July 15, 2026 that https://www.enmovil.ai/ is the live official Enmovil homepage, that https://www.enmovil.ai/sitemap.xml includes the first-party careers URL https://www.enmovil.ai/careers, that the official careers page currently shows only "Coming soon" without trustworthy public job listings or ATS handoffs, and that https://www.enmovil.ai/jobs returns a first-party Page Not Found shell instead of a live jobs board. There is no trustworthy public jobs surface for Enmovil at the verified first-party URLs.',
+    'Verified on October 3, 2026 that https://www.enmovil.ai/ is the live official Enmovil homepage, that https://www.enmovil.ai/sitemap.xml includes the homepage while the noindex careers page is omitted, that https://www.enmovil.ai/careers explicitly says "We have no open roles right now" without public job listings or ATS handoffs, and that https://www.enmovil.ai/jobs returns a first-party Page Not Found shell. There is no trustworthy public jobs surface for Enmovil at the verified first-party URLs.',
   modulePath: path.join(currentDir, 'script.js'),
   dryRunFile: 'enmovil/jobs.json',
 }

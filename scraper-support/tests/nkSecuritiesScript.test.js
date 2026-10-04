@@ -58,6 +58,13 @@ const openPositionsHtml = `
 </html>
 `
 
+const currentOpenPositionsHtml = openPositionsHtml
+  .replace('Search by role or location', 'Search by role, team or location')
+  .replace(
+    "fetch('https://api.greenhouse.io/v1/boards/nksecuritiesresearch/jobs')",
+    "var BOARD_API = 'https://api.greenhouse.io/v1/boards/nksecuritiesresearch'; getJson(BOARD_API + '/jobs?content=true')",
+  )
+
 const greenhousePayload = {
   jobs: [
     {
@@ -125,6 +132,8 @@ test('NK Securities pins the verified first-party homepage, official jobs page, 
   assert.equal(nk.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(nk.hasOfficialOpenPositionsSignal(openPositionsHtml), true)
   assert.equal(nk.extractGreenhouseApiUrl(openPositionsHtml), nk.GREENHOUSE_JOBS_API_URL)
+  assert.equal(nk.hasOfficialOpenPositionsSignal(currentOpenPositionsHtml), true)
+  assert.equal(nk.extractGreenhouseApiUrl(currentOpenPositionsHtml), nk.GREENHOUSE_JOBS_API_URL)
 })
 
 test('NK Securities extracts India jobs from the verified Greenhouse payload shape', async () => {

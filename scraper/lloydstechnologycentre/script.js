@@ -1,3 +1,4 @@
+import { assertWorkdayPageAvailable } from '../../scraper-support/myworkday/pageAvailability.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -165,6 +166,7 @@ export const createLloydsTechnologyCentreScraper = ({
     }
 
     const boardHtml = await fetchText(WORKDAY_BOARD_URL)
+    assertWorkdayPageAvailable({ status: 200, html: boardHtml, url: WORKDAY_BOARD_URL }, { source: SOURCE, url: WORKDAY_BOARD_URL })
     if (!hasOfficialWorkdayBoardSignal(boardHtml)) {
       throw new Error('Lloyds Technology Centre verified Workday board changed materially')
     }

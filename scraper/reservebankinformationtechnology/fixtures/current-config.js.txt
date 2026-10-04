@@ -1,0 +1,1 @@
+var t={production:!0,chatbotApiUrl:"https://prod-chatbot.rebit.org.in/api",apiUrl:"https://rebit.org.in/web/api",trustedDomain:"rebit.org.in",enableChatbot:!1};export{t as a};

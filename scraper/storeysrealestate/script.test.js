@@ -106,10 +106,10 @@ test('Storeys Real Estate sentinel pins the verified broken first-party WordPres
   assert.equal(hasPublicJobsSignal('{"jobs":[{"title":"Senior Agent"}]}'), false)
 })
 
-test('Storeys Real Estate sentinel returns no jobs while the official surface stays broken and the careers API remains unavailable', async () => {
+test('Storeys Real Estate unavailable legacy surface cannot prove zero jobs', async () => {
   const requestedUrls = []
 
-  const jobs = await createStoreysRealEstateScraper().run({
+  await assert.rejects(createStoreysRealEstateScraper().run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
       if (url === HOMEPAGE_URL) return brokenWordPressJson(HOMEPAGE_URL)
@@ -117,17 +117,16 @@ test('Storeys Real Estate sentinel returns no jobs while the official surface st
       if (url === CAREERS_API_URL) return unavailableApiPage
       throw new Error(`Unexpected URL: ${url}`)
     },
-  })
+  }), (error) => error.code === 'STOREYS_INVENTORY_UNAVAILABLE' && error.abortRetries === true)
 
   assert.deepEqual(requestedUrls, [
     HOMEPAGE_URL,
     CAREERS_URL,
     CAREERS_API_URL,
   ])
-  assert.deepEqual(jobs, [])
 })
 
-test('Storeys Real Estate default fetch validates the broken WordPress JSON behind an expired TLS certificate', async () => {
+test('Storeys Real Estate preserves TLS certificate validation failures without retrying insecurely', async () => {
   const originalFetch = globalThis.fetch
   const originalRequest = https.request
   const observedBypassOptions = []
@@ -150,13 +149,7 @@ test('Storeys Real Estate default fetch validates the broken WordPress JSON behi
   https.request = createMockTlsBypassRequest(tlsBypassPages, observedBypassOptions)
 
   try {
-    const jobs = await createStoreysRealEstateScraper().run()
-
-    assert.deepEqual(jobs, [])
-    assert.deepEqual(observedBypassOptions, [
-      { url: HOMEPAGE_URL, rejectUnauthorized: false },
-      { url: CAREERS_URL, rejectUnauthorized: false },
-    ])
+    await assert.rejects(createStoreysRealEstateScraper().run(), /certificate/i)    assert.deepEqual(observedBypassOptions, [])
   } finally {
     globalThis.fetch = originalFetch
     https.request = originalRequest
@@ -196,10 +189,7 @@ test('Storeys Real Estate default fetch attaches a bounded abort signal to every
   }
 
   try {
-    const jobs = await createStoreysRealEstateScraper().run()
-
-    assert.deepEqual(jobs, [])
-    assert.deepEqual(requests.map((request) => request.url), [
+    await assert.rejects(createStoreysRealEstateScraper().run(), error => error.code === 'STOREYS_INVENTORY_UNAVAILABLE')    assert.deepEqual(requests.map((request) => request.url), [
       HOMEPAGE_URL,
       CAREERS_URL,
       CAREERS_API_URL,

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import fs from 'node:fs/promises'
 
 import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
@@ -90,6 +91,16 @@ const rebitCareersHtml = `
   </body>
 </html>
 `
+
+
+const rebitClientFixture = await fs.readFile(new URL('../../scraper/reservebankinformationtechnology/fixtures/current-client.js.txt', import.meta.url), 'utf8')
+const rebitConfigFixture = await fs.readFile(new URL('../../scraper/reservebankinformationtechnology/fixtures/current-config.js.txt', import.meta.url), 'utf8')
+const rebitFetchText = async url => {
+  if (url === 'https://rebit.org.in/careers/') return rebitCareersHtml
+  if (url === 'https://rebit.org.in/main-DIP7EZNW.js') return rebitClientFixture
+  if (url === 'https://rebit.org.in/chunk-DFJHAP4Q.js') return rebitConfigFixture
+  assert.fail('Unexpected ReBIT fixture URL: ' + url)
+}
 
 const rebitAuthResponse = {
   status: 'success',
@@ -297,10 +308,7 @@ test('Reserve Bank Information Technology run authenticates against the first-pa
   const jobs = await rebit.createReserveBankInformationTechnologyScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
-    fetchText: async (url) => {
-      assert.equal(url, rebit.CAREERS_URL)
-      return rebitCareersHtml
-    },
+    fetchText: rebitFetchText,
     postJson: async (url, body) => {
       authRequests.push({ url, body })
       return rebitAuthResponse
@@ -349,10 +357,7 @@ test('Reserve Bank Information Technology run enriches Darwinbox detail pages on
   const jobs = await rebit.createReserveBankInformationTechnologyScraper({
     now: () => FIXED_SCRAPED_AT,
   }).run({
-    fetchText: async (url) => {
-      assert.equal(url, rebit.CAREERS_URL)
-      return rebitCareersHtml
-    },
+    fetchText: rebitFetchText,
     postJson: async () => rebitAuthResponse,
     fetchJson: async () => ([
       {

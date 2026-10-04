@@ -56,7 +56,7 @@ const contactHtml = `
         </div>
         <div class="location-card">
           <h4>Mysuru</h4>
-          <p>338, KIADB Industrial Area Near Infosys, Hebbal Industrial Estate, Hebbal, Hebbalu, Karnataka 570016</p>
+          <p>338, KIADB Industrial Area, Hebbal Industrial Estate, Hebbal, Hebbalu, Karnataka 570016</p>
         </div>
         <div class="location-card">
           <h4>Chennai</h4>

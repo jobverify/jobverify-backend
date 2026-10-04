@@ -62,7 +62,7 @@ test('AirAsia India local catalog captures the verified legacy-brand redirect an
   assert.equal(provider.parkedRebrandCareersUrl, 'https://aixconnect.in/careers')
   assert.equal(provider.mergedCarrierHomepageUrl, 'https://www.airindiaexpress.com/home')
   assert.equal(provider.mergedCarrierCareersUrl, 'https://www.airindiaexpress.com/careers')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.airasia\.com\/in\/en/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/aixconnect\.in\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.airindiaexpress\.com\/careers/i)

@@ -24,9 +24,9 @@ test('getScraperCatalog includes Blinkit as a verified zero-openings first-party
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'blinkit.com')
-  assert.equal(provider.verifiedOn, '2026-08-13')
-  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /access-denied shell/i)
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /access-denied page/i)
   assert.match(provider.modulePath, /blinkit[\\/]script\.js$/i)
 })
 

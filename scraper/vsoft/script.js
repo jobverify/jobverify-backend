@@ -9,7 +9,7 @@ const config = loadConfig(currentDir)
 
 export const SOURCE = 'vsoft'
 export const COMPANY = 'VSoft'
-export const VERIFIED_ON = '2026-08-14'
+export const VERIFIED_ON = '2026-10-03'
 export const CAREERS_PAGE_URL = 'https://www.vsoftconsulting.com/careers/'
 export const CAREER_PORTAL_URL = 'https://www.vsoftconsulting.com/career-portal/'
 export const JOBDIVA_PORTAL_URL =
@@ -27,7 +27,7 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const CAREERS_PAGE_SIGNAL_PATTERNS = [
-  /<title>\s*Careers\s*-\s*V-Soft Consulting\s*\|\s*Enterprise AI(?:\s*&amp;\s*|\s*&\s*)Digital Transformation\s*<\/title>/i,
+  /<title>\s*Careers(?:\s*-\s*V-Soft Consulting\s*\|\s*Enterprise AI(?:\s*&amp;\s*|\s*&\s*)Digital Transformation|\s*\|\s*V-Soft Consulting)\s*<\/title>/i,
   /https:\/\/www\.vsoftconsulting\.com\/career-portal\/?/i,
   /\b(?:Browse Open Roles|View jobs)\b/i,
 ]

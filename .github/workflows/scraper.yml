@@ -15,8 +15,21 @@ concurrency:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 360
+    env:
+      JOB_CLASSIFICATION_MODE: ${{ vars.JOB_CLASSIFICATION_MODE == 'enforce' && 'enforce' || 'policy' }}
+      LAYA_ENDPOINT: 'http://127.0.0.1:8765'
+      HF_HOME: '${{ github.workspace }}/.cache/laya-model'
+      LAYA_CPU_THREADS: '2'
+      LAYA_RELEASE_FILE: 'classification/release.json'
+      JOB_DESCRIPTION_REWRITE_MODE: ${{ vars.JOB_DESCRIPTION_REWRITE_MODE || 'publish' }}
+      JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS: ${{ vars.JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS || '1200' }}
+      JOB_DESCRIPTION_REWRITE_CPU_THREADS: '2'
+      JOB_DESCRIPTION_WORKFLOW_BUDGET_SECONDS: '21600'
     steps:
+      - name: Record workflow start for the rewrite budget
+        run: printf 'JOB_DESCRIPTION_WORKFLOW_STARTED_AT=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
       - uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -29,8 +42,62 @@ jobs:
       - name: Install Backend Dependencies
         run: npm ci
 
+      - name: Setup Python for CPU classification
+        if: env.JOB_CLASSIFICATION_MODE != 'off'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: 'classification/requirements.txt'
+
+      - name: Cache the pinned multilingual checkpoint
+        if: env.JOB_CLASSIFICATION_MODE != 'off'
+        uses: actions/cache@v4
+        with:
+          path: .cache/laya-model
+          key: laya-cpu-${{ runner.os }}-${{ hashFiles('classification/model.json', 'classification/requirements.txt') }}
+
+      - name: Install CPU classification dependencies
+        id: laya_dependencies
+        if: env.JOB_CLASSIFICATION_MODE != 'off'
+        timeout-minutes: 10
+        run: |
+          python -m pip install --disable-pip-version-check torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install --disable-pip-version-check -r classification/requirements.txt
+          python -m unittest discover -s classification -p 'test_*.py'
+
+      - name: Start and warm Laya locally
+        id: laya_start
+        if: env.JOB_CLASSIFICATION_MODE != 'off' && steps.laya_dependencies.outcome == 'success'
+        timeout-minutes: 12
+        run: node scripts/layaWorker.js start
+
+      - name: Cache pinned description model and CPU runtime
+        if: env.JOB_DESCRIPTION_REWRITE_MODE == 'publish'
+        uses: actions/cache@v4
+        with:
+          path: .cache/description-rewriter
+          key: description-qwen-cpu-${{ runner.os }}-${{ hashFiles('rewriting/model.json', 'rewriting/worker.js') }}
+
+      - name: Restore completed model scans
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/scraper-actions/classification-cache
+          key: laya-decisions-${{ runner.os }}-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            laya-decisions-${{ runner.os }}-${{ github.ref }}-
+
+      - name: Restore this workflow's source checkpoint on a rerun
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/scraper-actions/run-state.json
+          key: scraper-state-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            scraper-state-${{ github.run_id }}-
+
       - name: Run Scraper
-        run: npm run scrape:parallel
+        id: scraper_run
+        run: timeout --signal=TERM --kill-after=60s 310m node --use-system-ca scraper-support/runner.js --parallel
         env:
           NODE_ENV: production
           NODE_OPTIONS: '--use-system-ca'
@@ -47,12 +114,45 @@ jobs:
           WORKDAY_REQUEST_TIMEOUT_MS: '20000'
           WORKDAY_DETAIL_FETCH_CONCURRENCY: '1'
 
+      - name: Stop Laya and collect classification statistics
+        id: laya_stop
+        if: always() && env.JOB_CLASSIFICATION_MODE != 'off' && steps.laya_start.outcome != 'skipped'
+        run: node scripts/layaWorker.js stop
+
+      - name: Save completed model scans even if scraping was interrupted
+        if: always() && steps.scraper_run.outcome != 'skipped'
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/scraper-actions/classification-cache
+          key: laya-decisions-${{ runner.os }}-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Save this workflow's resumable source checkpoint
+        if: always() && steps.scraper_run.outcome != 'skipped'
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/scraper-actions/run-state.json
+          key: scraper-state-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Rewrite new and changed descriptions on CPU
+        if: success() && steps.scraper_run.outcome == 'success' && env.JOB_DESCRIPTION_REWRITE_MODE == 'publish'
+        continue-on-error: true
+        timeout-minutes: 22
+        run: node scripts/rewriteJobDescriptions.js --apply
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          NODE_OPTIONS: '--use-system-ca'
+
       - name: Upload scraper run diagnostics
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: scraper-run-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .cache/scraper-actions/run-state.json
+          path: |
+            .cache/scraper-actions/run-state.json
+            .cache/scraper-actions/classification-summary.json
+            .cache/scraper-actions/laya-worker.log
+            .cache/scraper-actions/description-summary.json
+            .cache/scraper-actions/description-worker.log
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 14

@@ -28,7 +28,7 @@ const MAX_PROFILE_ITEMS = 20;
 // The public listing currently contains more than 500 pages at its smallest
 // supported card count, so this must cover every page the UI can expose.
 const MAX_PAGE = 2000;
-const MAX_JOB_LIMIT = 2000;
+const MAX_JOB_LIMIT = 1000;
 const MAX_ADMIN_LIMIT = 50;
 const MAX_EXPERIENCE_FILTER_YEAR = 15;
 const EXPERIENCE_UNSPECIFIED_VALUE = "unspecified";

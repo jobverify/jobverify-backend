@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>drytis — Built with AI. Perfected by engineers.</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#0B0B0C">
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet" />
+
+
+</head>
+<body>
+
+
+<div style="position:relative;z-index:0;color:var(--ink);min-height:100vh;overflow-x:clip;">
+  <div aria-hidden="true" style="position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;opacity:var(--aur);transition:opacity .6s;">
+    <div style="position:absolute;left:-12vw;top:-18vh;width:62vw;height:62vw;border-radius:50%;background:radial-gradient(circle at center,var(--a1) 0%,transparent 62%);filter:blur(40px);animation:drift1 28s ease-in-out infinite alternate;"></div>
+    <div style="position:absolute;right:-16vw;top:4vh;width:58vw;height:58vw;border-radius:50%;background:radial-gradient(circle at center,var(--a2) 0%,transparent 62%);filter:blur(40px);animation:drift2 32s ease-in-out infinite alternate;"></div>
+  </div>
+  <div aria-hidden="true" style="position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:var(--grain);background-image:url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'180'%20height%3D'180'%3E%3Cfilter%20id%3D'n'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'.85'%20numOctaves%3D'2'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20values%3D'0%200%200%200%20.5%20%200%200%200%200%20.5%20%200%200%200%200%20.5%20%200%200%200%201%200'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'100%25'%20height%3D'100%25'%20filter%3D'url(%23n)'%2F%3E%3C%2Fsvg%3E');background-size:180px 180px;mix-blend-mode:overlay;"></div>
+
+  <header class="site-pill">
+    <div class="pill-in">
+      <a href="/" class="wordmark" aria-label="Drytis home">
+        <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true" style="display:block;overflow:visible;flex:none;"><defs><linearGradient id="dg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#80EAFF"></stop><stop offset="1" stop-color="#22D3B4"></stop></linearGradient></defs><path d="M15 12 A9.5 9.5 0 0 0 15 31 Z" fill="url(#dg1)"></path><path d="M18 6.5 L26 1.5 L26 31 L18 31 Z" fill="var(--ink)"></path></svg>
+        <span style="letter-spacing:-.055em;">drytis</span>
+      </a>
+      <nav class="pill-nav">
+        <a href="/solutions/">Solutions</a>
+        <a href="/pricing/">Pricing</a>
+        <a href="/about/">About</a>
+        <a href="/contact/">Contact</a>
+      </nav>
+      <div class="pill-actions">
+        <a href="https://studio.drytis.ai/login" class="login" data-hide-sm>Log in</a>
+        <a href="https://studio.drytis.ai/signup" class="cta-notch" data-hide-sm>Get started</a>
+        <button id="themeBtn" class="pill-theme" type="button" aria-label="Toggle color theme" data-hide-sm><span class="ind"></span></button>
+      </div>
+      <button class="mb-burger" id="mbBurger" type="button" aria-expanded="false" aria-controls="mbSheet" aria-label="Menu"><i></i></button>
+    </div>
+  </header>
+
+  <div class="mb-sheet pill-sheet" id="mbSheet">
+    <a class="mb-link" href="/solutions/">Solutions</a>
+    <a class="mb-link" href="/pricing/">Pricing</a>
+    <a class="mb-link" href="/about/">About</a>
+    <a class="mb-link" href="/contact/">Contact</a>
+    <div class="mb-actions">
+      <a href="https://studio.drytis.ai/login">Log in</a>
+      <a href="https://studio.drytis.ai/signup" class="mb-primary">Get started</a>
+      <button type="button" class="mb-theme" id="mbTheme" aria-label="Toggle color theme"><span style="width:12px;height:12px;border-radius:50%;border:1.5px solid var(--ink);background:linear-gradient(90deg,var(--ink) 50%,transparent 50%);display:block;"></span></button>
+    </div>
+  </div>
+
+
+  <section id="top" data-screen-label="Hero" style="padding:clamp(56px,8vw,112px) 0 0;text-align:center;position:relative;overflow:clip;">
+    <!-- moving lights -->
+    <div aria-hidden="true" style="position:absolute;left:50%;top:30%;width:190px;height:190px;margin:-95px 0 0 -95px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--lime) 55%,transparent) 0%,transparent 68%);filter:blur(26px);animation:heroOrbit 26s linear infinite;pointer-events:none;"></div>
+    <div aria-hidden="true" style="position:absolute;left:50%;top:32%;width:min(78vw,1000px);height:min(78vw,1000px);transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,var(--lime) 0%,transparent 62%);opacity:.3;filter:blur(56px);animation:heroGlow 11s ease-in-out infinite;pointer-events:none;"></div>
+    <div aria-hidden="true" style="position:absolute;left:26%;top:16%;width:min(42vw,540px);height:min(42vw,540px);transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,#8B7BFF 0%,transparent 64%);opacity:.16;filter:blur(60px);animation:heroGlow 14s ease-in-out infinite reverse;pointer-events:none;"></div>
+    <div aria-hidden="true" style="position:absolute;left:74%;top:16%;width:min(42vw,540px);height:min(42vw,540px);transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,var(--lime) 0%,transparent 64%);opacity:.14;filter:blur(60px);animation:heroGlow 13s ease-in-out infinite;pointer-events:none;"></div>
+    <div id="heroCopy" style="max-width:1320px;margin:0 auto;padding:0 clamp(16px,3vw,40px);position:relative;">
+      <div class="kick" data-reveal style="margin:0 auto;">
+        Let <span class="heroPill p-name"><span id="tokName"></span></span>
+        <span class="connector">from</span>
+        <span class="heroPill p-role"><span id="tokRole"></span></span>
+        <span class="connector">create</span>
+        <span class="heroPill p-thing"><span id="tokThing"></span></span>
+      </div>
+      <h1 id="heroH1" data-reveal style="margin:clamp(16px,2vw,24px) 0 0;font-size:clamp(34px,5.4vw,76px);line-height:1.05;letter-spacing:-.06em;font-weight:700;">Built with AI.<br />Perfected by engineers.</h1>
+
+      <form id="heroForm" data-reveal style="margin:clamp(28px,3.4vw,44px) auto 0;max-width:720px;display:flex;align-items:center;gap:14px;padding:clamp(14px,1.6vw,20px) clamp(14px,1.6vw,20px) clamp(14px,1.6vw,20px) clamp(20px,2.2vw,28px);border-radius:26px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);text-align:left;">
+        <input id="heroInput" name="prompt" type="text" autocomplete="off" spellcheck="false" aria-label="Describe what you want to build" placeholder="Describe the website, app, or tool you want to build." style="flex:1;min-width:0;border:0;outline:none;background:transparent;color:var(--ink);font-family:inherit;font-size:clamp(15px,1.3vw,17px);line-height:1.7;padding:0;" />
+        <button type="submit" class="sendBtn">Start building<svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true"><path d="M2.5 8h11M13.5 8L9.3 3.8M13.5 8l-4.2 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></button>
+      </form>
+      <p id="heroSub" data-reveal style="margin:clamp(16px,1.8vw,22px) auto 0;font-size:clamp(15px,1.25vw,17px);line-height:1.6;color:var(--dim);max-width:52ch;text-wrap:pretty;">Your idea, expertly built. AI creates the first version. Drytis engineers refine, test and prepare it for launch.</p>
+      <div id="heroCtas" data-reveal style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:clamp(20px,2.4vw,28px);">
+        <a href="https://studio.drytis.ai/signup" style="display:inline-flex;align-items:center;height:44px;padding:0 22px;border-radius:999px;background:var(--lime);color:var(--lime-ink);font-size:14.5px;font-weight:500;" class="cta-main hv-3">Get started free</a>
+        <a href="/contact/?topic=Sales" style="display:inline-flex;align-items:center;height:44px;padding:0 22px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-size:14.5px;font-weight:500;" class="cta-sales">Talk to sales</a>
+      </div>
+    </div>
+
+    <div id="heroArt" data-reveal style="max-width:1320px;margin:clamp(56px,7vw,96px) auto 0;padding:0 clamp(16px,3vw,40px);text-align:left;">
+      <div style="container-type:inline-size;">
+      <div aria-hidden="true" style="position:relative;aspect-ratio:100/60;border-radius:clamp(20px,3vw,40px);background-color:var(--card2);background-image:radial-gradient(color-mix(in srgb,var(--ink) 14%,transparent) 1px,transparent 1.2px);background-size:22px 22px;overflow:hidden;">
+        <div style="position:absolute;left:30%;top:30%;width:40%;height:50%;border-radius:50%;background:radial-gradient(circle,var(--a1) 0%,transparent 70%);opacity:.2;filter:blur(30px);"></div>
+        <div class="ha-deco" style="position:absolute;left:50%;top:2.4cqw;transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:1cqw;padding:0.6cqw 0.6cqw 0.6cqw 1.3cqw;border-radius:999px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);white-space:nowrap;"><span style="position:relative;display:block;width:11cqw;height:1.4cqw;font-size:1.05cqw;font-weight:500;"><span style="position:absolute;inset:0;animation:st1 12s ease infinite;">AI is drafting…</span><span style="position:absolute;inset:0;animation:st2 12s ease infinite;">Engineer refining…</span><span style="position:absolute;inset:0;animation:st3 12s ease infinite;color:var(--ok);">Live in production</span></span><span style="display:block;width:10cqw;height:0.5cqw;border-radius:999px;background:var(--card2);overflow:hidden;"><span style="display:block;height:100%;background:var(--ink);transform-origin:left;animation:prog 12s linear infinite;"></span></span></div>
+        <div class="ha-eng" style="position:absolute;left:5cqw;top:5cqw;width:17cqw;z-index:9;animation:floatY 6s ease-in-out -1s infinite;"><div style="border-radius:1.3cqw;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);padding:1cqw;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);"><div style="display:flex;align-items:center;gap:0.8cqw;"><span style="position:relative;flex:none;width:2.4cqw;height:2.4cqw;border-radius:50%;background:var(--ink);color:var(--lime);display:grid;place-items:center;font-size:0.8cqw;font-weight:600;">MA<span style="position:absolute;right:0;bottom:0;width:0.7cqw;height:0.7cqw;border-radius:50%;background:var(--ok);border:2px solid var(--card);display:block;"></span></span><span style="min-width:0;"><span style="display:block;font-size:0.95cqw;font-weight:600;white-space:nowrap;">Maya joined</span><span style="display:block;font-size:0.78cqw;color:var(--dim);white-space:nowrap;">Reviewing 3 builds</span></span></div></div></div>
+        <div class="ha-deco" style="position:absolute;left:80cqw;top:3.5cqw;width:16cqw;z-index:4;animation:floatY 7.5s ease-in-out -3s infinite;"><div style="border-radius:1.3cqw;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);padding:1cqw;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);"><div style="display:flex;flex-direction:column;gap:0.5cqw;"><span style="font-family:'Geist Mono',monospace;font-size:0.75cqw;color:var(--dim);">DEPLOYMENT STATUS</span><span style="font-size:1.9cqw;font-weight:600;letter-spacing:-.05em;line-height:1;">Preview available</span><span style="display:flex;gap:0.18cqw;"><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--lime);opacity:1;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span><span style="flex:1;height:1.1cqw;border-radius:0.15cqw;background:var(--ok);opacity:0.75;display:block;"></span></span></div></div></div>
+        <div class="ha-deco" style="position:absolute;left:2.5cqw;top:17cqw;width:26cqw;height:19cqw;z-index:2;transform:rotate(-3deg);animation:floatY 8s ease-in-out -2s infinite;">
+  <div style="position:relative;height:100%;border-radius:2cqw;background:#0E0E10;padding:0.9cqw;box-shadow:0 0 0 1px rgba(255,255,255,.07) inset,0 0 0 1px rgba(0,0,0,.25),0 3cqw 6cqw -2cqw rgba(0,0,0,.35);">
+    <div style="height:100%;border-radius:1.2cqw;background:var(--card);overflow:hidden;padding:1.1cqw;display:flex;flex-direction:column;gap:0.8cqw;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:0.6cqw;"><span style="display:flex;align-items:center;gap:0.6cqw;min-width:0;font-size:0.95cqw;font-weight:600;white-space:nowrap;"><span style="flex:none;width:1.3cqw;height:1.3cqw;border-radius:0.4cqw;background:var(--t1);display:block;"></span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;">Northwind Billing</span></span><span style="position:relative;flex:none;display:block;width:5.4cqw;height:1.1cqw;font-family:'Geist Mono',monospace;font-size:0.78cqw;text-align:right;white-space:nowrap;color:var(--dim);"><span style="position:absolute;inset:0;animation:st1 10s ease -3s infinite;">AI drafting</span><span style="position:absolute;inset:0;animation:st2 10s ease -3s infinite;">Refining</span><span style="position:absolute;inset:0;animation:st3 10s ease -3s infinite;color:var(--ok);">● Live</span></span></div>
+      <div style="display:flex;align-items:baseline;gap:0.6cqw;"><span style="font-size:2.2cqw;font-weight:600;letter-spacing:-.05em;line-height:1;">$48.2k</span><span style="font-size:0.8cqw;color:var(--ok);">+12.4%</span></div>
+      <div style="flex:1;display:flex;align-items:flex-end;gap:0.4cqw;min-height:0;"><span style="flex:1;height:38%;border-radius:0.35cqw 0.35cqw 0.15cqw 0.15cqw;background:var(--t1);transform-origin:bottom;animation:grow 1.6s ease-in-out 0.00s infinite alternate;display:block;"></span><span style="flex:1;height:55%;border-radius:0.35cqw 0.35cqw 0.15cqw 0.15cqw;background:var(--t1);transform-origin:bottom;animation:grow 1.6s ease-in-out 0.13s infinite alternate;display:block;"></span><span style="flex:1;height:46%;border-radius:0.35cqw 0.35cqw 0.15cqw 0.15cqw;background:var(--t1);transform-origin:bottom;animation:grow 1.6s ease-in-out 0.26s infinite alternate;display:block;"></span><span style="flex:1;height:68%;border-radius:0.35cqw 0.35cqw 0.15cqw 0.15cqw;background:var(--t1);transform-origin:bottom;animation:grow 1.6s ease-in-out 0.39s infinite alternate;display:block;"></span><span style="flex:1;height:58%;border-radius:0.35cqw 0.35cqw 0.15cqw 0.15cqw;background:var(--t1);transform-origin:bottom;animation:grow 1.6s ease-in-out 0.52s infinite alternate;display:block;"></span><span style="flex:1;height:80%;border-radius:0.35cqw 0.35cqw 0.15cqw 0.15cqw;background:var(--t1);transform-origin:bottom;animation:grow 1.6s ease-in-out 0.65s infinite alternate;display:block;"></span><span style="flex:1;height:66%;border-radius:0.35cqw 0.35cqw 0.15cqw 0.15cqw;background:var(--t1);transform-origin:bottom;animation:grow 1.6s ease-in-out 0.78s infinite alternate;display:block;"></span><span style="flex:1;height:92%;border-radius:0.35cqw 0.35cqw 0.15cqw 0.15cqw;background:var(--t1);transform-origin:bottom;animation:grow 1.6s ease-in-out 0.91s infinite alternate;display:block;"></span><span style="flex:1;height:74%;border-radius:0.35cqw 0.35cqw 0.15cqw 0.15cqw;background:var(--t1);transform-origin:bottom;animation:grow 1.6s ease-in-out 1.04s infinite alternate;display:block;"></span><span style="flex:1;height:98%;border-radius:0.35cqw 0.35cqw 0.15cqw 0.15cqw;background:var(--ink);transform-origin:bottom;animation:grow 1.6s ease-in-out 1.17s infinite alternate;display:block;"></span></div>
+      <div style="display:flex;align-items:center;gap:0.6cqw;"><span style="flex:none;width:1.5cqw;height:1.5cqw;border-radius:50%;background:var(--ink);color:var(--lime);display:grid;place-items:center;font-size:0.62cqw;font-weight:600;">JK</span><span style="flex:1;height:0.4cqw;border-radius:999px;background:var(--card2);overflow:hidden;display:block;"><span style="display:block;height:100%;background:var(--ink);transform-origin:left;animation:prog 10s linear -3s infinite;"></span></span><span style="flex:none;font-family:'Geist Mono',monospace;font-size:0.75cqw;color:var(--dim);white-space:nowrap;">v0.8</span></div>
+    </div>
+  </div>
+</div>
+        <div class="ha-main" style="position:absolute;left:23cqw;top:8.5cqw;width:54cqw;z-index:3;">
+  <div style="position:relative;height:33.5cqw;border-radius:1.6cqw 1.6cqw 0.4cqw 0.4cqw;background:#0E0E10;padding:0.9cqw 0.9cqw 1.3cqw;box-shadow:0 0 0 1px rgba(255,255,255,.07) inset,0 0 0 1px rgba(0,0,0,.25),0 3cqw 6cqw -2cqw rgba(0,0,0,.35);">
+    <span style="position:absolute;left:50%;top:0.3cqw;transform:translateX(-50%);width:0.4cqw;height:0.4cqw;border-radius:50%;background:#26262B;display:block;"></span>
+    <div style="position:relative;height:100%;border-radius:0.5cqw;background:var(--card);overflow:hidden;animation:liveRing 12s ease infinite;"><div style="position:absolute;inset:0;display:flex;flex-direction:column;font-size:0.9cqw;">
+  <div style="display:flex;align-items:center;gap:0.6cqw;padding:0.6cqw 0.9cqw;border-bottom:1px solid var(--line);">
+    <span style="display:flex;gap:0.35cqw;"><span style="width:0.6cqw;height:0.6cqw;border-radius:50%;background:#FF6159;display:block;"></span><span style="width:0.6cqw;height:0.6cqw;border-radius:50%;background:#FFBD2E;display:block;"></span><span style="width:0.6cqw;height:0.6cqw;border-radius:50%;background:#28C941;display:block;"></span></span>
+    <span style="margin:0 auto;padding:0.25cqw 1.2cqw;border-radius:0.5cqw;background:var(--card2);font-family:'Geist Mono',monospace;font-size:0.75cqw;color:var(--dim);">clinic-booking.app</span>
+  </div>
+  <div style="flex:1;display:grid;grid-template-columns:.9fr 3fr 1.3fr;gap:0.8cqw;padding:0.8cqw;min-height:0;">
+    <div style="animation:bA 12s cubic-bezier(.16,.8,.24,1) 0s infinite;border-radius:0.8cqw;background:var(--card2);padding:0.8cqw;display:flex;flex-direction:column;gap:0.6cqw;">
+      <span style="display:flex;align-items:center;gap:0.4cqw;font-weight:600;"><span style="width:1cqw;height:1cqw;border-radius:0.3cqw;background:var(--t1);display:block;"></span>Clinic</span>
+      <span style="height:1.7cqw;border-radius:0.5cqw;background:var(--ink);display:block;"></span>
+      <span style="height:0.55cqw;width:80%;border-radius:0.3cqw;background:var(--mute);display:block;"></span><span style="height:0.55cqw;width:62%;border-radius:0.3cqw;background:var(--mute);display:block;"></span><span style="height:0.55cqw;width:72%;border-radius:0.3cqw;background:var(--mute);display:block;"></span><span style="height:0.55cqw;width:54%;border-radius:0.3cqw;background:var(--mute);display:block;"></span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.7cqw;min-width:0;min-height:0;">
+      <div style="animation:bB 12s cubic-bezier(.16,.8,.24,1) 0s infinite;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:1.35cqw;font-weight:600;letter-spacing:-.03em;">Appointments</span><span style="padding:0.4cqw 0.9cqw;border-radius:999px;background:var(--lime);color:var(--lime-ink);font-size:0.8cqw;font-weight:500;white-space:nowrap;">+ New booking</span></div>
+      <div style="animation:bC 12s cubic-bezier(.16,.8,.24,1) 0s infinite;display:grid;grid-template-columns:repeat(3,1fr);gap:0.6cqw;">
+        <div style="border-radius:0.8cqw;background:var(--t1);padding:0.7cqw;"><div style="font-size:1.6cqw;font-weight:600;letter-spacing:-.04em;line-height:1.1;">312</div><div style="font-size:0.72cqw;color:var(--dim);">this week</div></div><div style="border-radius:0.8cqw;background:var(--t2);padding:0.7cqw;"><div style="font-size:1.6cqw;font-weight:600;letter-spacing:-.04em;line-height:1.1;">98%</div><div style="font-size:0.72cqw;color:var(--dim);">attended</div></div><div style="border-radius:0.8cqw;background:var(--t3);padding:0.7cqw;"><div style="font-size:1.6cqw;font-weight:600;letter-spacing:-.04em;line-height:1.1;">4.9</div><div style="font-size:0.72cqw;color:var(--dim);">rating</div></div>
+      </div>
+      <div style="animation:bD 12s cubic-bezier(.16,.8,.24,1) 0s infinite;flex:1;min-height:0;border-radius:0.8cqw;border:1px solid var(--line);padding:0.3cqw 0.8cqw;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:0.7cqw;padding:0.5cqw 0;border-bottom:1px solid var(--line);"><span style="width:1.5cqw;height:1.5cqw;border-radius:50%;background:var(--t4);display:block;flex:none;"></span><span style="flex:1;">A. Moreno</span><span style="font-family:'Geist Mono',monospace;font-size:0.75cqw;color:var(--dim);">09:30</span></div><div style="display:flex;align-items:center;gap:0.7cqw;padding:0.5cqw 0;border-bottom:1px solid var(--line);"><span style="width:1.5cqw;height:1.5cqw;border-radius:50%;background:var(--t2);display:block;flex:none;"></span><span style="flex:1;">J. Chen</span><span style="font-family:'Geist Mono',monospace;font-size:0.75cqw;color:var(--dim);">10:15</span></div><div style="display:flex;align-items:center;gap:0.7cqw;padding:0.5cqw 0;border-bottom:1px solid var(--line);"><span style="width:1.5cqw;height:1.5cqw;border-radius:50%;background:var(--t5);display:block;flex:none;"></span><span style="flex:1;">R. Okafor</span><span style="font-family:'Geist Mono',monospace;font-size:0.75cqw;color:var(--dim);">11:00</span></div><div style="display:flex;align-items:center;gap:0.7cqw;padding:0.5cqw 0;"><span style="width:1.5cqw;height:1.5cqw;border-radius:50%;background:var(--t3);display:block;flex:none;"></span><span style="flex:1;">L. Haddad</span><span style="font-family:'Geist Mono',monospace;font-size:0.75cqw;color:var(--dim);">11:45</span></div>
+      </div>
+    </div>
+    <div style="animation:bE 12s cubic-bezier(.16,.8,.24,1) 0s infinite;border-radius:0.8cqw;background:var(--card2);padding:0.8cqw;display:flex;flex-direction:column;gap:0.55cqw;">
+      <span style="font-weight:600;">Book a visit</span>
+      <span style="height:1.8cqw;border-radius:0.5cqw;background:var(--card);border:1px solid var(--line);display:block;"></span>
+      <span style="height:1.8cqw;border-radius:0.5cqw;background:var(--card);border:1px solid var(--line);display:block;"></span>
+      <span style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.3cqw;"><span style="height:1.2cqw;border-radius:0.35cqw;background:var(--mute);display:block;"></span><span style="height:1.2cqw;border-radius:0.35cqw;background:var(--ink);display:block;"></span><span style="height:1.2cqw;border-radius:0.35cqw;background:var(--mute);display:block;"></span><span style="height:1.2cqw;border-radius:0.35cqw;background:var(--mute);display:block;"></span><span style="height:1.2cqw;border-radius:0.35cqw;background:var(--mute);display:block;"></span><span style="height:1.2cqw;border-radius:0.35cqw;background:var(--mute);display:block;"></span><span style="height:1.2cqw;border-radius:0.35cqw;background:var(--lime);display:block;"></span><span style="height:1.2cqw;border-radius:0.35cqw;background:var(--mute);display:block;"></span></span>
+      <span style="margin-top:auto;height:2cqw;border-radius:999px;background:var(--ink);display:block;"></span>
+    </div>
+  </div>
+</div></div>
+  </div>
+  <div style="position:relative;margin:0 -5cqw;height:1.5cqw;border-radius:0.2cqw 0.2cqw 1.4cqw 1.4cqw;background:linear-gradient(180deg,#E4E4E8 0%,#C4C4CB 55%,#9E9EA6 100%);box-shadow:0 1.6cqw 2.4cqw -0.8cqw rgba(0,0,0,.35);">
+    <span style="position:absolute;left:50%;top:0;transform:translateX(-50%);width:9cqw;height:0.55cqw;border-radius:0 0 0.7cqw 0.7cqw;background:linear-gradient(180deg,#A9A9B0,#C9C9CF);display:block;"></span>
+  </div>
+</div>
+        <div class="ha-deco" style="position:absolute;left:72cqw;top:13cqw;width:13.5cqw;height:28cqw;z-index:5;transform:rotate(4deg);animation:floatY 7s ease-in-out -1s infinite;">
+  <div style="position:relative;height:100%;border-radius:2.6cqw;background:#0E0E10;padding:0.55cqw;box-shadow:0 0 0 1px rgba(255,255,255,.07) inset,0 0 0 1px rgba(0,0,0,.25),0 3cqw 6cqw -2cqw rgba(0,0,0,.35);">
+    <div style="position:relative;height:100%;border-radius:2.1cqw;background:var(--card);overflow:hidden;display:flex;flex-direction:column;padding:2.4cqw 0.9cqw 0.9cqw;gap:0.7cqw;">
+      <span style="position:absolute;left:50%;top:0.6cqw;transform:translateX(-50%);width:3.8cqw;height:1.1cqw;border-radius:999px;background:#0E0E10;display:block;"></span>
+      <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:1.05cqw;font-weight:600;letter-spacing:-.03em;">Loop Market</span><span style="width:1.4cqw;height:1.4cqw;border-radius:50%;background:var(--t5);display:block;"></span></div>
+      <span style="height:1.6cqw;border-radius:999px;background:var(--card2);display:block;"></span>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5cqw;"><div style="animation:bA 11s cubic-bezier(.16,.8,.24,1) -4s infinite;"><span style="display:block;aspect-ratio:1;border-radius:0.8cqw;background:var(--t2);"></span><span style="display:block;margin-top:0.35cqw;"><span style="height:0.45cqw;width:80%;border-radius:0.3cqw;background:var(--mute);display:block;"></span></span><span style="display:block;margin-top:0.25cqw;font-size:0.72cqw;font-weight:600;">$24</span></div><div style="animation:bB 11s cubic-bezier(.16,.8,.24,1) -4s infinite;"><span style="display:block;aspect-ratio:1;border-radius:0.8cqw;background:var(--t3);"></span><span style="display:block;margin-top:0.35cqw;"><span style="height:0.45cqw;width:80%;border-radius:0.3cqw;background:var(--mute);display:block;"></span></span><span style="display:block;margin-top:0.25cqw;font-size:0.72cqw;font-weight:600;">$58</span></div><div style="animation:bC 11s cubic-bezier(.16,.8,.24,1) -4s infinite;"><span style="display:block;aspect-ratio:1;border-radius:0.8cqw;background:var(--t1);"></span><span style="display:block;margin-top:0.35cqw;"><span style="height:0.45cqw;width:80%;border-radius:0.3cqw;background:var(--mute);display:block;"></span></span><span style="display:block;margin-top:0.25cqw;font-size:0.72cqw;font-weight:600;">$36</span></div><div style="animation:bD 11s cubic-bezier(.16,.8,.24,1) -4s infinite;"><span style="display:block;aspect-ratio:1;border-radius:0.8cqw;background:var(--t4);"></span><span style="display:block;margin-top:0.35cqw;"><span style="height:0.45cqw;width:80%;border-radius:0.3cqw;background:var(--mute);display:block;"></span></span><span style="display:block;margin-top:0.25cqw;font-size:0.72cqw;font-weight:600;">$42</span></div></div>
+      <span style="margin-top:auto;height:2cqw;border-radius:999px;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-size:0.8cqw;font-weight:500;animation:bE 11s cubic-bezier(.16,.8,.24,1) -4s infinite;">Checkout</span>
+      <span style="align-self:center;width:4cqw;height:0.3cqw;border-radius:999px;background:var(--mute);display:block;"></span>
+    </div>
+  </div>
+</div>
+        <div class="ha-deco" style="position:absolute;left:4cqw;top:41cqw;width:21cqw;z-index:4;animation:floatY 7s ease-in-out -4s infinite;"><div style="border-radius:1.3cqw;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);padding:1cqw;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);"><div style="display:flex;flex-direction:column;gap:0.8cqw;"><div style="display:flex;justify-content:space-between;align-items:center;gap:0.6cqw;"><span style="display:flex;align-items:center;gap:0.6cqw;min-width:0;font-size:0.95cqw;font-weight:600;white-space:nowrap;"><span style="flex:none;width:1.3cqw;height:1.3cqw;border-radius:0.4cqw;background:var(--t3);display:block;"></span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;">Fleetline</span></span><span style="position:relative;flex:none;display:block;width:5.4cqw;height:1.1cqw;font-family:'Geist Mono',monospace;font-size:0.78cqw;text-align:right;white-space:nowrap;color:var(--dim);"><span style="position:absolute;inset:0;animation:st1 14s ease -7s infinite;">AI drafting</span><span style="position:absolute;inset:0;animation:st2 14s ease -7s infinite;">Refining</span><span style="position:absolute;inset:0;animation:st3 14s ease -7s infinite;color:var(--ok);">● Live</span></span></div><div style="display:flex;align-items:center;gap:0.6cqw;animation:bA 14s cubic-bezier(.16,.8,.24,1) -7s infinite;"><span style="flex:none;width:0.6cqw;height:0.6cqw;border-radius:50%;background:var(--ok);display:block;"></span><span style="height:0.5cqw;width:64%;border-radius:0.3cqw;background:var(--mute);display:block;"></span><span style="margin-left:auto;flex:none;white-space:nowrap;font-family:'Geist Mono',monospace;font-size:0.75cqw;color:var(--dim);">12 km</span></div><div style="display:flex;align-items:center;gap:0.6cqw;animation:bB 14s cubic-bezier(.16,.8,.24,1) -7s infinite;"><span style="flex:none;width:0.6cqw;height:0.6cqw;border-radius:50%;background:var(--lime);display:block;"></span><span style="height:0.5cqw;width:48%;border-radius:0.3cqw;background:var(--mute);display:block;"></span><span style="margin-left:auto;flex:none;white-space:nowrap;font-family:'Geist Mono',monospace;font-size:0.75cqw;color:var(--dim);">8 km</span></div><div style="display:flex;align-items:center;gap:0.6cqw;animation:bC 14s cubic-bezier(.16,.8,.24,1) -7s infinite;"><span style="flex:none;width:0.6cqw;height:0.6cqw;border-radius:50%;background:var(--mute);display:block;"></span><span style="height:0.5cqw;width:56%;border-radius:0.3cqw;background:var(--mute);display:block;"></span><span style="margin-left:auto;flex:none;white-space:nowrap;font-family:'Geist Mono',monospace;font-size:0.75cqw;color:var(--dim);">21 km</span></div><div style="display:flex;align-items:center;gap:0.6cqw;"><span style="flex:none;width:1.5cqw;height:1.5cqw;border-radius:50%;background:var(--ink);color:var(--lime);display:grid;place-items:center;font-size:0.62cqw;font-weight:600;">AR</span><span style="flex:1;height:0.4cqw;border-radius:999px;background:var(--card2);overflow:hidden;display:block;"><span style="display:block;height:100%;background:var(--ink);transform-origin:left;animation:prog 14s linear -7s infinite;"></span></span><span style="flex:none;font-family:'Geist Mono',monospace;font-size:0.75cqw;color:var(--dim);white-space:nowrap;">3 fixes</span></div></div></div></div>
+        <div class="ha-deco" style="position:absolute;left:70cqw;top:43.5cqw;width:26cqw;z-index:4;animation:floatY 6.5s ease-in-out -2s infinite;"><div style="border-radius:1.3cqw;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);padding:1cqw;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);"><div style="display:flex;flex-direction:column;gap:0.8cqw;"><div style="display:flex;justify-content:space-between;align-items:center;gap:0.6cqw;"><span style="display:flex;align-items:center;gap:0.6cqw;min-width:0;font-size:0.95cqw;font-weight:600;white-space:nowrap;"><span style="flex:none;width:1.3cqw;height:1.3cqw;border-radius:0.4cqw;background:var(--t2);display:block;"></span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;">Ledger API</span></span><span style="position:relative;flex:none;display:block;width:5.4cqw;height:1.1cqw;font-family:'Geist Mono',monospace;font-size:0.78cqw;text-align:right;white-space:nowrap;color:var(--dim);"><span style="position:absolute;inset:0;animation:st1 9s ease -1s infinite;">AI drafting</span><span style="position:absolute;inset:0;animation:st2 9s ease -1s infinite;">Refining</span><span style="position:absolute;inset:0;animation:st3 9s ease -1s infinite;color:var(--ok);">● Live</span></span></div><div style="border-radius:0.7cqw;background:var(--card2);padding:0.8cqw;display:flex;flex-direction:column;gap:0.5cqw;"><div style="display:flex;gap:0.35cqw;animation:bA 9s cubic-bezier(.16,.8,.24,1) -1s infinite;"><span style="height:0.5cqw;width:16%;border-radius:0.3cqw;background:var(--t4);display:block;"></span><span style="height:0.5cqw;width:44%;border-radius:0.3cqw;background:var(--mute);display:block;"></span></div><div style="display:flex;gap:0.35cqw;animation:bB 9s cubic-bezier(.16,.8,.24,1) -1s infinite;"><span style="height:0.5cqw;width:8%;border-radius:0.3cqw;background:var(--mute);display:block;"></span><span style="height:0.5cqw;width:30%;border-radius:0.3cqw;background:var(--t2);display:block;"></span><span style="height:0.5cqw;width:22%;border-radius:0.3cqw;background:var(--mute);display:block;"></span></div><div style="display:flex;gap:0.35cqw;animation:bC 9s cubic-bezier(.16,.8,.24,1) -1s infinite;"><span style="height:0.5cqw;width:8%;border-radius:0.3cqw;background:var(--mute);display:block;"></span><span style="height:0.5cqw;width:52%;border-radius:0.3cqw;background:var(--t3);display:block;"></span></div><div style="display:flex;gap:0.35cqw;animation:bD 9s cubic-bezier(.16,.8,.24,1) -1s infinite;"><span style="height:0.5cqw;width:20%;border-radius:0.3cqw;background:var(--t4);display:block;"></span></div></div><div style="display:flex;align-items:center;gap:0.6cqw;"><span style="flex:none;width:1.5cqw;height:1.5cqw;border-radius:50%;background:var(--ink);color:var(--lime);display:grid;place-items:center;font-size:0.62cqw;font-weight:600;">SO</span><span style="flex:1;height:0.4cqw;border-radius:999px;background:var(--card2);overflow:hidden;display:block;"><span style="display:block;height:100%;background:var(--ink);transform-origin:left;animation:prog 9s linear -1s infinite;"></span></span><span style="flex:none;font-family:'Geist Mono',monospace;font-size:0.75cqw;color:var(--dim);white-space:nowrap;">tests 42/42</span></div></div></div></div>
+        <div class="ha-deco" style="position:absolute;left:50%;top:47.5cqw;transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:0.6cqw;padding:0.6cqw;border-radius:999px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);white-space:nowrap;"><span style="padding:0.5cqw 1.1cqw;border-radius:999px;font-size:0.9cqw;font-weight:500;animation:pipe0 12s ease infinite;">Prompt</span><span style="color:var(--dim);font-size:0.9cqw;">→</span><span style="padding:0.5cqw 1.1cqw;border-radius:999px;font-size:0.9cqw;font-weight:500;animation:pipe1 12s ease infinite;">AI draft</span><span style="color:var(--dim);font-size:0.9cqw;">→</span><span style="padding:0.5cqw 1.1cqw;border-radius:999px;font-size:0.9cqw;font-weight:500;animation:pipe2 12s ease infinite;">Review</span><span style="color:var(--dim);font-size:0.9cqw;">→</span><span style="padding:0.5cqw 1.1cqw;border-radius:999px;font-size:0.9cqw;font-weight:500;animation:pipe3 12s ease infinite;">Live</span></div>
+        <div class="ha-deco" style="position:absolute;left:44%;top:58%;z-index:7;animation:cA 12s ease infinite;display:flex;align-items:center;gap:0.6cqw;padding:0.55cqw 0.9cqw 0.55cqw 0.55cqw;border-radius:0.9cqw;background:#0B0B0C;color:#F4F4F0;font-size:0.95cqw;white-space:nowrap;box-shadow:0 12px 24px -12px rgba(0,0,0,.5);"><span style="width:1.5cqw;height:1.5cqw;border-radius:50%;background:#80EAFF;color:#0B0B0C;display:grid;place-items:center;font-size:0.8cqw;">✓</span>Secured patient data</div>
+        <div class="ha-deco" style="position:absolute;left:52%;top:38%;z-index:7;animation:cB 12s ease infinite;display:flex;align-items:center;gap:0.6cqw;padding:0.55cqw 0.9cqw 0.55cqw 0.55cqw;border-radius:0.9cqw;background:#0B0B0C;color:#F4F4F0;font-size:0.95cqw;white-space:nowrap;box-shadow:0 12px 24px -12px rgba(0,0,0,.5);"><span style="width:1.5cqw;height:1.5cqw;border-radius:50%;background:#80EAFF;color:#0B0B0C;display:grid;place-items:center;font-size:0.8cqw;">✓</span>Added reminder tests</div>
+        <div class="ha-deco" style="position:absolute;left:30%;top:46%;z-index:7;animation:cC 12s ease infinite;display:flex;align-items:center;gap:0.6cqw;padding:0.55cqw 0.9cqw 0.55cqw 0.55cqw;border-radius:0.9cqw;background:#0B0B0C;color:#F4F4F0;font-size:0.95cqw;white-space:nowrap;box-shadow:0 12px 24px -12px rgba(0,0,0,.5);"><span style="width:1.5cqw;height:1.5cqw;border-radius:50%;background:#80EAFF;color:#0B0B0C;display:grid;place-items:center;font-size:0.8cqw;">✓</span>Optimized queries</div>
+        <div class="ha-deco" style="position:absolute;z-index:8;animation:curAI 12s cubic-bezier(.45,0,.25,1) infinite;pointer-events:none;"><svg viewBox="0 0 18 22" style="display:block;width:1.4cqw;height:auto;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25));"><path d="M1 1 L1 18 L5.6 13.8 L8.8 20.6 L11.8 19.3 L8.7 12.6 L15 12.6 Z" fill="#80EAFF" stroke="#FFFFFF" stroke-width="1.4" stroke-linejoin="round"></path></svg><span style="position:absolute;left:1.1cqw;top:1.4cqw;white-space:nowrap;padding:0.4cqw 0.8cqw;border-radius:0.6cqw 999px 999px 999px;background:#80EAFF;color:#0B0B0C;font-size:0.9cqw;font-weight:500;box-shadow:0 6px 16px -6px rgba(0,0,0,.35);">Drytis AI</span></div>
+        <div class="ha-deco" style="position:absolute;z-index:8;animation:curEng 12s cubic-bezier(.45,0,.25,1) infinite;pointer-events:none;"><svg viewBox="0 0 18 22" style="display:block;width:1.4cqw;height:auto;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25));"><path d="M1 1 L1 18 L5.6 13.8 L8.8 20.6 L11.8 19.3 L8.7 12.6 L15 12.6 Z" fill="#0B0B0C" stroke="#FFFFFF" stroke-width="1.4" stroke-linejoin="round"></path></svg><span style="position:absolute;left:1.1cqw;top:1.4cqw;white-space:nowrap;padding:0.4cqw 0.8cqw;border-radius:0.6cqw 999px 999px 999px;background:#0B0B0C;color:#F4F4F0;font-size:0.9cqw;font-weight:500;box-shadow:0 6px 16px -6px rgba(0,0,0,.35);">Maya · Engineer</span></div>
+      </div>
+      </div>
+    </div>
+    <div data-reveal style="max-width:1320px;margin:clamp(40px,5vw,64px) auto 0;padding:0 clamp(16px,3vw,40px);">
+      <div class="strip-view" style="white-space:nowrap;font-size:clamp(13px,1.1vw,15px);color:var(--dim);-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);">
+        <div class="strip-track" aria-label="Drytis highlights: one workspace, four build modes, human engineering, token-based usage."><span style="display:inline-flex;align-items:baseline;gap:8px;"><strong style="font-size:clamp(17px,1.6vw,22px);font-weight:600;letter-spacing:-.04em;color:var(--ink);">One workspace</strong>Build, collaborate, and refine</span>
+        <span style="flex:none;width:4px;height:4px;border-radius:50%;background:var(--mute);display:block;"></span>
+        <span style="display:inline-flex;align-items:baseline;gap:8px;"><strong style="font-size:clamp(17px,1.6vw,22px);font-weight:600;letter-spacing:-.04em;color:var(--ink);">Four build modes</strong>Studio, Drytis AI, Edge, and Albert</span>
+        <span style="flex:none;width:4px;height:4px;border-radius:50%;background:var(--mute);display:block;"></span>
+        <span style="display:inline-flex;align-items:baseline;gap:8px;"><strong style="font-size:clamp(17px,1.6vw,22px);font-weight:600;letter-spacing:-.04em;color:var(--ink);">Human engineering</strong>Available through Edge and Albert</span>
+        <span style="flex:none;width:4px;height:4px;border-radius:50%;background:var(--mute);display:block;"></span>
+        <span style="display:inline-flex;align-items:baseline;gap:8px;"><strong style="font-size:clamp(17px,1.6vw,22px);font-weight:600;letter-spacing:-.04em;color:var(--ink);">Token-based usage</strong>AI and engineering work within the models</span>
+        <span aria-hidden="true" style="display:contents;"><span style="display:inline-flex;align-items:baseline;gap:8px;"><strong style="font-size:clamp(17px,1.6vw,22px);font-weight:600;letter-spacing:-.04em;color:var(--ink);">One workspace</strong>Build, collaborate, and refine</span>
+        <span style="flex:none;width:4px;height:4px;border-radius:50%;background:var(--mute);display:block;"></span>
+        <span style="display:inline-flex;align-items:baseline;gap:8px;"><strong style="font-size:clamp(17px,1.6vw,22px);font-weight:600;letter-spacing:-.04em;color:var(--ink);">Four build modes</strong>Studio, Drytis AI, Edge, and Albert</span>
+        <span style="flex:none;width:4px;height:4px;border-radius:50%;background:var(--mute);display:block;"></span>
+        <span style="display:inline-flex;align-items:baseline;gap:8px;"><strong style="font-size:clamp(17px,1.6vw,22px);font-weight:600;letter-spacing:-.04em;color:var(--ink);">Human engineering</strong>Available through Edge and Albert</span>
+        <span style="flex:none;width:4px;height:4px;border-radius:50%;background:var(--mute);display:block;"></span>
+        <span style="display:inline-flex;align-items:baseline;gap:8px;"><strong style="font-size:clamp(17px,1.6vw,22px);font-weight:600;letter-spacing:-.04em;color:var(--ink);">Token-based usage</strong>AI and engineering work within the models</span>
+        <span style="flex:none;width:4px;height:4px;border-radius:50%;background:var(--mute);display:block;"></span></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section data-screen-label="Film" style="padding:clamp(88px,10vw,150px) 0 0;">
+    <div id="film" style="position:relative;margin:0 auto;width:calc(100% - 12vw);height:min(88vh,880px);min-height:520px;border-radius:40px;transition:width .1s linear,border-radius .1s linear;overflow:hidden;background:#07070A;color:#F4F4F0;">
+      <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(60% 70% at 20% 30%,rgba(91,60,255,.35) 0%,transparent 60%),radial-gradient(50% 60% at 85% 70%,rgba(0,184,159,.28) 0%,transparent 60%),#07070A;"></div>
+      <video id="filmVideo" src="hero-film-1080.mp4" autoplay="" muted="" loop="" playsinline="" preload="metadata" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s ease;transform-origin:center;"></video>
+      <div aria-hidden="true" style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,7,10,.35) 0%,rgba(7,7,10,0) 30%,rgba(7,7,10,.15) 55%,rgba(7,7,10,.82) 100%);"></div>
+      <div style="position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;gap:16px;padding:clamp(20px,3vw,40px) clamp(20px,4vw,64px);font-family:'Geist Mono',monospace;font-size:12px;letter-spacing:.12em;color:rgba(244,244,240,.8);">
+        <span>DRYTIS — 2026</span><span>PEOPLE + AI</span>
+      </div>
+      <div style="position:absolute;left:0;right:0;bottom:0;padding:clamp(24px,4vw,64px);display:flex;justify-content:space-between;align-items:flex-end;gap:32px;flex-wrap:wrap;">
+        <h2 data-reveal style="margin:0;font-size:clamp(36px,5.6vw,92px);line-height:.98;letter-spacing:-.06em;font-weight:600;max-width:13ch;text-wrap:balance;color:#F4F4F0;">The next era of software is built together.</h2>
+        <div data-reveal style="display:flex;flex-direction:column;gap:18px;max-width:34ch;">
+          <p style="margin:0;font-size:clamp(15px,1.25vw,18px);line-height:1.55;color:rgba(244,244,240,.82);">AI gives everyone the power to start. Engineers give every idea the strength to last. Drytis brings both to anyone, anywhere.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <a href="https://studio.drytis.ai/login" style="display:inline-flex;align-items:center;height:48px;padding:0 22px;border-radius:999px;background:#80EAFF;color:#0B0B0C;font-size:15px;font-weight:500;" class="hv-4">Start building</a>
+            <a href="/contact/?topic=Sales" style="display:inline-flex;align-items:center;height:48px;padding:0 22px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.08);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#F4F4F0;font-size:15px;font-weight:500;" class="hv-5">Talk to sales</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" data-screen-label="How it works" style="max-width:1320px;margin:0 auto;padding:clamp(96px,11vw,176px) clamp(16px,3vw,40px) 0;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:15px;font-weight:500;color:var(--dim);">How it works</div>
+        <h2 data-reveal style="margin:14px 0 0;font-size:clamp(38px,5.4vw,80px);line-height:1;letter-spacing:-.06em;font-weight:600;max-width:14ch;text-wrap:balance;">Describe it. AI builds it. Engineers perfect it.</h2>
+      </div>
+      <a href="https://studio.drytis.ai/login" style="display:inline-flex;align-items:center;height:46px;padding:0 22px;border-radius:999px;background:var(--ink);color:var(--bg);font-size:15px;font-weight:500;" class="hv-6">Start building</a>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:clamp(16px,2vw,28px);margin-top:clamp(40px,5vw,72px);align-items:stretch;">
+      <div style="display:flex;flex-direction:column;">
+        <div id="stepsList" style="display:flex;flex-direction:column;"></div>
+      </div>
+      <div data-reveal id="stepPanel" style="position:relative;min-height:440px;border-radius:32px;background:var(--t1);transition:background .6s ease;overflow:hidden;display:grid;place-items:center;padding:clamp(20px,3vw,48px);">
+        <div id="stepPanel0" style="display:contents;"><div style="width:100%;max-width:440px;display:flex;flex-direction:column;gap:14px;animation:fadeUp .6s cubic-bezier(.16,.8,.24,1) both;">
+            <div style="align-self:flex-start;padding:10px 16px;border-radius:18px 18px 18px 6px;background:var(--card);font-size:14px;color:var(--dim);box-shadow:var(--shadow);">What do you want to build?</div>
+            <div style="align-self:flex-end;max-width:90%;padding:14px 18px;border-radius:18px 18px 6px 18px;background:var(--ink);color:var(--bg);font-size:16px;line-height:1.45;box-shadow:var(--shadow);"><span id="stepPromptText"></span><span style="display:inline-block;width:8px;height:1em;background:var(--lime);vertical-align:-2px;margin-left:2px;animation:blink 1s steps(1) infinite;"></span></div>
+            <div style="align-self:flex-start;display:flex;gap:6px;flex-wrap:wrap;">
+              <span style="padding:7px 12px;border-radius:999px;background:var(--card);font-size:12.5px;">+ User roles</span>
+              <span style="padding:7px 12px;border-radius:999px;background:var(--card);font-size:12.5px;">+ Stripe billing</span>
+              <span style="padding:7px 12px;border-radius:999px;background:var(--card);font-size:12.5px;">+ Email reminders</span>
+            </div>
+          </div>
+        </div>
+        <div id="stepPanel1" style="display:contents;"><div style="width:100%;max-width:480px;border-radius:20px;background:var(--card);box-shadow:var(--shadow);overflow:hidden;animation:fadeUp .6s cubic-bezier(.16,.8,.24,1) both;">
+            <div style="display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);font-family:'Geist Mono',monospace;font-size:11.5px;color:var(--dim);"><span>routes/billing.js</span><span>AI writing…</span></div>
+            <pre style="margin:0;padding:16px;min-height:150px;font-family:'Geist Mono',monospace;font-size:12.5px;line-height:1.7;color:var(--ink);white-space:pre-wrap;"><span id="demoCode"></span><span style="display:inline-block;width:7px;height:1em;background:var(--ink);vertical-align:-2px;animation:blink 1s steps(1) infinite;"></span></pre>
+            <div style="padding:10px 16px;border-top:1px solid var(--line);font-family:'Geist Mono',monospace;font-size:11px;color:var(--dim);">38 files · first version in minutes</div>
+          </div>
+        </div>
+        <div id="stepPanel2" style="display:contents;"><div style="width:100%;max-width:420px;display:flex;flex-direction:column;gap:8px;animation:fadeUp .6s cubic-bezier(.16,.8,.24,1) both;">
+            <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:18px;background:var(--card);box-shadow:var(--shadow);">
+              <span style="width:36px;height:36px;border-radius:50%;background:var(--ink);color:var(--lime);display:grid;place-items:center;font-size:13px;font-weight:600;">DE</span>
+              <span style="flex:1;"><span style="display:block;font-size:14.5px;font-weight:500;">Drytis engineer</span><span style="display:block;font-size:12.5px;color:var(--dim);">Human engineering through Edge and Albert</span></span>
+              <span style="position:relative;width:8px;height:8px;border-radius:50%;background:var(--ok);display:block;"><span style="position:absolute;inset:0;border-radius:50%;background:var(--ok);animation:pulseRing 1.8s ease-out infinite;"></span></span>
+            </div>
+            <div id="checksList" style="display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="difference" data-screen-label="The difference" style="max-width:1320px;margin:0 auto;padding:clamp(96px,11vw,176px) clamp(16px,3vw,40px) 0;">
+    <div style="text-align:center;">
+      <div style="font-size:15px;font-weight:500;color:var(--dim);">The difference</div>
+      <h2 data-reveal style="margin:14px auto 0;font-size:clamp(38px,5.4vw,80px);line-height:1;letter-spacing:-.06em;font-weight:600;max-width:15ch;text-wrap:balance;">AI gives you a head start. Our engineers take you all the way.</h2>
+      <p data-reveal style="margin:20px auto 0;font-size:clamp(16px,1.3vw,18px);line-height:1.6;color:var(--dim);max-width:44ch;">Edge and Albert combine AI development with human engineering review, testing, and refinement.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:16px;margin-top:clamp(40px,5vw,72px);">
+      <div data-reveal style="border-radius:32px;background:var(--card2);padding:clamp(22px,2.6vw,36px);display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:space-between;font-family:'Geist Mono',monospace;font-size:11.5px;color:var(--dim);"><span>app.js · AI first version</span><span>1 LAYER · IN PROGRESS</span></div>
+        <div aria-hidden="true" style="position:relative;height:340px;perspective:1400px;display:grid;place-items:center;">
+          <div style="position:relative;width:230px;height:230px;transform-style:preserve-3d;">
+            <div style="position:absolute;inset:0;border-radius:20px;background:var(--card);border:1px dashed var(--mute);animation:floatPlane 5s ease-in-out infinite;box-shadow:0 30px 40px -20px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:8px;padding:18px;">
+              <span style="height:10px;width:60%;border-radius:4px;background:var(--mute);display:block;"></span>
+              <span style="height:10px;width:85%;border-radius:4px;background:var(--mute);display:block;"></span>
+              <span style="height:10px;width:40%;border-radius:4px;background:var(--lime);display:block;"></span>
+              <span style="height:10px;width:70%;border-radius:4px;background:var(--mute);display:block;"></span>
+              <span style="height:10px;width:50%;border-radius:4px;background:var(--lime);display:block;"></span>
+            </div>
+          </div>
+        </div>
+        <h3 style="margin:0;font-size:clamp(26px,2.4vw,36px);letter-spacing:-.045em;font-weight:600;">A great first version.</h3>
+        <p style="margin:8px 0 0;font-size:15px;color:var(--dim);">Fast, visual and ready for the next step.</p>
+      </div>
+      <div data-reveal style="border-radius:32px;background:var(--ink);color:var(--bg);padding:clamp(22px,2.6vw,36px);display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:space-between;font-family:'Geist Mono',monospace;font-size:11.5px;opacity:.7;"><span>app.js · production</span><span style="color:var(--lime);opacity:1;">5 LAYERS · ENGINEER-REVIEWED</span></div>
+        <div aria-hidden="true" style="position:relative;height:340px;perspective:1400px;display:grid;place-items:center;">
+          <div style="position:relative;width:230px;height:230px;transform-style:preserve-3d;">
+            <div style="--z:0px;position:absolute;inset:0;border-radius:20px;background:#2A2A2E;border:1px solid #3A3A3E;animation:explode 7s cubic-bezier(.65,0,.35,1) infinite;display:flex;align-items:flex-end;padding:16px;font-family:'Geist Mono',monospace;font-size:12px;color:#F4F4F0;">Infra &amp; monitoring</div>
+            <div style="--z:48px;position:absolute;inset:0;border-radius:20px;background:#DFF3E6;border:1px solid rgba(0,0,0,.08);animation:explode 7s cubic-bezier(.65,0,.35,1) infinite;display:flex;align-items:flex-end;padding:16px;font-family:'Geist Mono',monospace;font-size:12px;color:#0B0B0C;">Tests 128/128</div>
+            <div style="--z:96px;position:absolute;inset:0;border-radius:20px;background:#FFE8DA;border:1px solid rgba(0,0,0,.08);animation:explode 7s cubic-bezier(.65,0,.35,1) infinite;display:flex;align-items:flex-end;padding:16px;font-family:'Geist Mono',monospace;font-size:12px;color:#0B0B0C;">Payments</div>
+            <div style="--z:144px;position:absolute;inset:0;border-radius:20px;background:#ECE9FF;border:1px solid rgba(0,0,0,.08);animation:explode 7s cubic-bezier(.65,0,.35,1) infinite;display:flex;align-items:flex-end;padding:16px;font-family:'Geist Mono',monospace;font-size:12px;color:#0B0B0C;">Auth &amp; sessions</div>
+            <div style="--z:192px;position:absolute;inset:0;border-radius:20px;background:#80EAFF;border:1px solid rgba(0,0,0,.08);animation:explode 7s cubic-bezier(.65,0,.35,1) infinite;display:flex;flex-direction:column;justify-content:space-between;padding:16px;font-family:'Geist Mono',monospace;font-size:12px;color:#0B0B0C;"><span style="display:flex;gap:6px;"><span style="width:40%;height:10px;border-radius:4px;background:rgba(0,0,0,.18);display:block;"></span><span style="width:20%;height:10px;border-radius:4px;background:rgba(0,0,0,.18);display:block;"></span></span>Interface</div>
+          </div>
+          <div style="position:absolute;right:0;top:18%;display:flex;flex-direction:column;gap:8px;font-family:'Geist Mono',monospace;font-size:11px;">
+            <span style="padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.08);animation:tagIn 7s ease infinite;">✓ reviewed</span>
+            <span style="padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.08);animation:tagIn 7s ease .15s infinite;">✓ secured</span>
+            <span style="padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.08);animation:tagIn 7s ease .3s infinite;">✓ tested</span>
+          </div>
+        </div>
+        <h3 style="margin:0;font-size:clamp(26px,2.4vw,36px);letter-spacing:-.045em;font-weight:600;">A product ready for real users.</h3>
+        <p style="margin:8px 0 0;font-size:15px;opacity:.7;">Reviewed, tested and secured by an engineer.</p>
+      </div>
+    </div>
+  </section>
+
+  <section data-screen-label="Manifesto" style="max-width:1320px;margin:0 auto;padding:clamp(96px,11vw,176px) clamp(16px,3vw,40px) 0;">
+    <div style="text-align:center;font-size:15px;font-weight:500;color:var(--dim);margin-bottom:20px;">Our purpose</div>
+    <p id="manifesto" style="margin:0 auto;max-width:20ch;text-align:center;font-size:clamp(32px,4.6vw,70px);line-height:1.08;letter-spacing:-.055em;font-weight:600;display:flex;flex-wrap:wrap;justify-content:center;column-gap:.26em;row-gap:.04em;">
+      
+    </p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:16px;margin-top:clamp(48px,6vw,80px);">
+      <div data-reveal style="border-radius:28px;background:var(--t4);padding:clamp(24px,2.6vw,36px);min-height:220px;display:flex;flex-direction:column;justify-content:space-between;gap:24px;">
+        <div style="font-size:14px;font-weight:500;">For builders</div>
+        <p style="margin:0;font-size:clamp(20px,1.8vw,26px);line-height:1.25;letter-spacing:-.035em;font-weight:500;">If you can describe it, you can have it — with an engineer beside you the whole way.</p>
+      </div>
+      <div data-reveal style="border-radius:28px;background:var(--t2);padding:clamp(24px,2.6vw,36px);min-height:220px;display:flex;flex-direction:column;justify-content:space-between;gap:24px;">
+        <div style="font-size:14px;font-weight:500;">For engineers</div>
+        <p style="margin:0;font-size:clamp(20px,1.8vw,26px);line-height:1.25;letter-spacing:-.035em;font-weight:500;">AI takes the first draft, so engineers focus on what they do best: architecture, quality and craft.</p>
+      </div>
+      <div data-reveal style="border-radius:28px;background:var(--lime);color:var(--lime-ink);padding:clamp(24px,2.6vw,36px);min-height:220px;display:flex;flex-direction:column;justify-content:space-between;gap:24px;">
+        <div style="font-size:14px;font-weight:500;">Drytis</div>
+        <p style="margin:0;font-size:clamp(20px,1.8vw,26px);line-height:1.25;letter-spacing:-.035em;font-weight:500;">People and AI on the same build — so every idea keeps moving forward.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="work" data-screen-label="Showcase" style="max-width:1320px;margin:0 auto;padding:clamp(96px,11vw,176px) clamp(16px,3vw,40px) 0;">
+    <div style="text-align:center;">
+      <div style="font-size:15px;font-weight:500;color:var(--dim);">Built with Drytis</div>
+      <h2 data-reveal style="margin:14px auto 0;font-size:clamp(38px,5.4vw,80px);line-height:1;letter-spacing:-.06em;font-weight:600;max-width:20ch;">See what people are building with Drytis.</h2>
+      <p style="margin:18px auto 0;font-size:clamp(16px,1.3vw,18px);line-height:1.6;color:var(--dim);max-width:50ch;">Explore websites and applications built with Drytis.</p>
+    </div>
+    <div style="margin-top:clamp(40px,5vw,72px);"></div>
+    <div class="dev-row" data-cards style="margin-top:14px;align-items:flex-end;gap:clamp(14px,2.2vw,36px);">
+      <!-- clean row: QubeCare iPad · Dinky's iPhone · Academy MacBook · HGH iPhone · Offshorely iPad -->
+      <div class="dev-wrap" data-reveal style="flex:1 1 150px;max-width:270px;">
+        <div class="dev dv-pad">
+          <div class="dv-pad-frame">
+            <span class="dv-pad-cam"></span>
+            <img class="dv-pad-shot" src="showcase-qubecare.webp" alt="QubeCare" loading="lazy" decoding="async" />
+            <span class="dv-pad-glare"></span>
+          </div>
+        </div>
+        <div class="dev-cap">QubeCare</div>
+      </div>
+      <div class="dev-wrap" data-reveal style="flex:0 1 128px;max-width:150px;">
+        <div class="dev dv-iph">
+          <div class="dv-iph-frame">
+            <img class="dv-iph-shot" src="showcase-dinkys.webp" alt="Dinky's Tavern" loading="lazy" decoding="async" />
+            <span class="dv-isl"></span>
+            <span class="dv-iph-pwr"></span>
+            <span class="dv-iph-vol"></span>
+            <span class="dv-iph-vol2"></span>
+            <span class="dv-iph-glare"></span>
+          </div>
+        </div>
+        <div class="dev-cap">Dinky's Tavern</div>
+      </div>
+      <div class="dev-wrap" data-reveal style="flex:2.4 1 360px;max-width:600px;">
+        <div class="dev dv-mac">
+          <div class="dv-mac-screen">
+            <span class="dv-mac-cam"></span>
+            <img class="dv-mac-shot" src="showcase-offshorely.webp" alt="Offshorely" loading="lazy" decoding="async" style="aspect-ratio:auto;height:auto;object-fit:contain;object-position:center;" />
+            <span class="dv-glare"></span>
+          </div>
+          <div class="dv-mac-deck"></div>
+        </div>
+        <div class="dev-cap">Offshorely</div>
+      </div>
+      <div class="dev-wrap" data-reveal style="flex:0 1 128px;max-width:150px;">
+        <div class="dev dv-iph">
+          <div class="dv-iph-frame">
+            <img class="dv-iph-shot" src="showcase-hgh.webp" alt="HGH" loading="lazy" decoding="async" />
+            <span class="dv-isl"></span>
+            <span class="dv-iph-pwr"></span>
+            <span class="dv-iph-vol"></span>
+            <span class="dv-iph-vol2"></span>
+            <span class="dv-iph-glare"></span>
+          </div>
+        </div>
+        <div class="dev-cap">HGH</div>
+      </div>
+      <div class="dev-wrap" data-reveal style="flex:1 1 150px;max-width:270px;">
+        <div class="dev dv-pad">
+          <div class="dv-pad-frame">
+            <span class="dv-pad-cam"></span>
+            <img class="dv-pad-shot" src="showcase-academy.webp" alt="Drytis Academy" loading="lazy" decoding="async" style="object-position:30% center;" />
+            <span class="dv-pad-glare"></span>
+          </div>
+        </div>
+        <div class="dev-cap">Drytis Academy</div>
+      </div>
+    </div>
+    <div class="swipe-hint" aria-hidden="true">swipe to explore</div>
+</section>
+
+  <section data-screen-label="The journey" style="max-width:1320px;margin:0 auto;padding:clamp(96px,11vw,176px) clamp(16px,3vw,40px) 0;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:clamp(28px,5vw,80px);align-items:center;">
+      <div>
+        <div style="font-size:15px;font-weight:500;color:var(--dim);">Wherever you are</div>
+        <h2 data-reveal style="margin:14px 0 0;font-size:clamp(34px,4.4vw,64px);line-height:1;letter-spacing:-.06em;font-weight:600;max-width:12ch;">We meet you at every step.</h2>
+        <p style="margin:18px 0 0;font-size:17px;line-height:1.6;color:var(--dim);max-width:42ch;">You know what you want to build. Drytis turns it into exactly what an engineer needs to bring it to life.</p>
+        <div id="arcTabsList" style="display:flex;flex-direction:column;gap:6px;margin-top:clamp(24px,3vw,40px);"></div>
+      </div>
+      <div data-reveal style="border-radius:32px;background:var(--t3);padding:clamp(20px,2.6vw,36px);">
+        <div style="font-size:13px;font-weight:500;color:var(--dim);">You say</div>
+        <div style="margin-top:10px;padding:16px 18px;border-radius:18px 18px 18px 6px;background:var(--card);font-size:clamp(18px,1.6vw,22px);letter-spacing:-.03em;font-weight:500;overflow:hidden;box-shadow:var(--shadow);"><span id="arcSayWrap"></span></div>
+        <div style="display:flex;align-items:center;gap:12px;margin:22px 0;">
+          <span style="flex:1;height:1px;background:color-mix(in srgb,var(--ink) 18%,transparent);"></span>
+          <span style="padding:6px 12px;border-radius:999px;background:var(--ink);color:var(--lime);font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.06em;">DRYTIS TRANSLATES</span>
+          <span style="flex:1;height:1px;background:color-mix(in srgb,var(--ink) 18%,transparent);"></span>
+        </div>
+        <div style="font-size:13px;font-weight:500;color:var(--dim);">The engineer receives</div>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;" id="arcSpec"></div>
+      </div>
+    </div>
+  </section>
+
+  <section data-screen-label="Speed vs ready" style="max-width:1320px;margin:0 auto;padding:clamp(96px,11vw,176px) clamp(16px,3vw,40px) 0;">
+    <div style="border-radius:36px;background:var(--card);border:1px solid var(--line);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));overflow:hidden;">
+      <div style="padding:clamp(28px,4vw,64px);">
+        <div style="font-size:15px;font-weight:500;color:var(--dim);">Why Drytis</div>
+        <h2 data-reveal style="margin:14px 0 0;font-size:clamp(36px,4.6vw,68px);line-height:1;letter-spacing:-.06em;font-weight:600;max-width:10ch;">Speed and quality, together.</h2>
+        <p data-reveal style="margin:22px 0 0;font-size:17px;line-height:1.6;color:var(--dim);max-width:44ch;">AI brings the speed. Our engineers bring <span style="color:var(--ink);">architecture, reliability and security</span>. With both behind every line, what you launch is built to last.</p>
+      </div>
+      <div aria-hidden="true" style="position:relative;background:var(--card2);padding:clamp(24px,3vw,48px);display:flex;align-items:center;min-height:320px;">
+        <div style="position:relative;width:100%;min-height:clamp(220px,24vw,300px);">
+          <svg viewBox="0 0 640 330" preserveAspectRatio="xMidYMid meet" style="position:absolute;left:0;right:0;top:0;bottom:22px;width:100%;height:calc(100% - 22px);overflow:visible;color:var(--ink);">
+            <defs><linearGradient id="dtFill4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#80EAFF" stop-opacity=".55"></stop><stop offset="1" stop-color="#80EAFF" stop-opacity="0"></stop></linearGradient></defs>
+            <g stroke="currentColor" opacity=".18" stroke-width="1"><line x1="46" y1="300" x2="586" y2="300"></line><line x1="238" y1="300" x2="238" y2="294"></line><line x1="424" y1="300" x2="424" y2="294"></line></g>
+            <path d="M46 262 L86 262 L100 224 L114 286 L132 200 L150 276 L172 212 L192 258 L214 236 L238 262" fill="none" stroke="currentColor" stroke-width="2" opacity=".4" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" style="animation:drawPath 9s cubic-bezier(.5,0,.4,1) infinite;"></path>
+            <path d="M238 262 C316 262 322 118 424 118 L586 118 L586 300 L238 300 Z" fill="url(#dtFill4)" style="animation:areaIn 9s ease-out 3.4s infinite;"></path>
+            <path d="M238 262 C316 262 322 118 424 118 L586 118" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" pathLength="1" stroke-dasharray="1" style="animation:drawPath 9s cubic-bezier(.4,0,.3,1) 2.5s infinite;"></path>
+            <g style="animation:nodePop 9s ease-out 5.4s infinite;transform-origin:586px 118px;"><circle cx="586" cy="118" r="16" fill="#80EAFF"></circle><circle cx="586" cy="118" r="6" fill="currentColor"></circle></g>
+          </svg>
+          <span style="position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;gap:10px;font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.06em;color:var(--dim);">
+            <span style="animation:labelIn 9s ease-out .2s infinite;">01 PROMPT</span>
+            <span style="animation:labelIn 9s ease-out 1.4s infinite;">02 AI DRAFT</span>
+            <span style="animation:labelIn 9s ease-out 3.4s infinite;">03 ENGINEER REFINES</span>
+          </span>
+          <span style="position:absolute;right:0;top:2%;padding:6px 12px;border-radius:999px;background:var(--ink);color:var(--lime);font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.06em;animation:labelIn 9s ease-out 5.6s infinite;">LIVE</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" data-screen-label="FAQ" style="max-width:1320px;margin:0 auto;padding:clamp(96px,11vw,176px) clamp(16px,3vw,40px) 0;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:clamp(28px,5vw,80px);align-items:start;">
+      <div>
+        <div style="font-size:15px;font-weight:500;color:var(--dim);">FAQ</div>
+        <h2 data-reveal style="margin:14px 0 0;font-size:clamp(36px,4.6vw,68px);line-height:1;letter-spacing:-.06em;font-weight:600;max-width:11ch;">You've got questions. We've got answers.</h2>
+        <p style="margin:18px 0 0;font-size:16px;color:var(--dim);">For everything else, write to <a href="mailto:hello@drytis.com" style="color:var(--ink);text-decoration:underline;text-underline-offset:3px;">hello@drytis.com</a></p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div id="faqList" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <section data-screen-label="Final CTA" style="max-width:1320px;margin:0 auto;padding:clamp(96px,11vw,176px) clamp(16px,3vw,40px) clamp(40px,5vw,72px);">
+    <div style="position:relative;border-radius:clamp(28px,3vw,44px);overflow:hidden;background-color:#08080B;background-image:radial-gradient(60% 80% at 0% 0%,rgba(91,60,255,.22) 0%,transparent 60%),radial-gradient(50% 70% at 100% 100%,rgba(0,184,159,.16) 0%,transparent 60%);color:#F4F4F0;padding:clamp(56px,8vw,128px) clamp(20px,4vw,64px);text-align:center;">      <h2 data-reveal style="position:relative;margin:0 auto;font-size:clamp(40px,6vw,96px);line-height:1;letter-spacing:-.06em;font-weight:600;max-width:12ch;text-wrap:balance;">Your idea deserves to go all the way.</h2>
+      <p data-reveal style="position:relative;margin:20px auto 0;font-size:clamp(16px,1.35vw,19px);color:#9A9A94;max-width:40ch;">Type what you want to build. We'll take it from there.</p>
+      <form id="ctaForm" data-reveal style="position:relative;margin:clamp(28px,3vw,40px) auto 0;max-width:620px;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 24px;border-radius:999px;background:#1C1C1F;border:1px solid #2E2E32;text-align:left;">
+        <input placeholder="Describe the website, app, or tool you want to build." aria-label="Describe what you want to build" style="flex:1;min-width:0;height:48px;border:0;outline:none;background:transparent;color:#F4F4F0;font-family:Geist,sans-serif;font-size:16px;" />
+        <button type="submit" style="flex:none;height:48px;padding:0 22px;border:0;border-radius:999px;background:#80EAFF;color:#0B0B0C;font-family:Geist,sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:transform .3s cubic-bezier(.16,.8,.24,1);" class="hv-7">Start building →</button>
+      </form>
+    </div>
+  </section>
+
+  <footer style="max-width:1320px;margin:0 auto;padding:clamp(24px,3vw,40px) clamp(16px,3vw,40px) 40px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:clamp(24px,3vw,48px);">
+      <div style="grid-column:span 2;min-width:240px;">
+        <div style="display:flex;align-items:center;gap:10px;font-size:26px;font-weight:600;letter-spacing:-.05em;"><svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true" style="display:block;overflow:visible;flex:none;"><defs><linearGradient id="dg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#80EAFF"></stop><stop offset="1" stop-color="#22D3B4"></stop></linearGradient></defs><path d="M15 12 A9.5 9.5 0 0 0 15 31 Z" fill="url(#dg2)"></path><path d="M18 6.5 L26 1.5 L26 31 L18 31 Z" fill="var(--ink)"></path></svg><span style="letter-spacing:-.055em;">drytis</span></div>
+        <p style="margin:14px 0 0;font-size:clamp(15px,1.25vw,16px);line-height:1.55;color:var(--dim);max-width:32ch;" class="foot-sub">AI and engineers, building together — so no idea gets stuck.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:14.5px;">
+        <span style="font-size:13px;color:var(--dim);margin-bottom:4px;">Product</span>
+        <a href="/solutions/">Solutions</a><a href="/pricing/">Pricing</a><a href="/about/">About</a><a href="/contact/">Contact</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:14.5px;">
+        <span style="font-size:13px;color:var(--dim);margin-bottom:4px;">Company</span>
+        <a href="/blog/">Blog</a><a href="/careers/">Careers</a><a href="/trust/">Trust &amp; Security</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:14.5px;">
+        <span style="font-size:13px;color:var(--dim);margin-bottom:4px;">Policies</span>
+        <a href="/legal/terms/">Terms of Service</a><a href="/legal/privacy/">Privacy Policy</a><a href="/legal/dpa/">DPA</a><a href="/legal/aup/">Acceptable Use</a>
+      </div>
+    </div>
+    <div aria-hidden="true" style="margin-top:clamp(48px,6vw,80px);display:flex;align-items:flex-end;gap:.08em;font-size:clamp(80px,19vw,280px);line-height:.8;letter-spacing:-.075em;font-weight:600;color:var(--ink);user-select:none;"><span style="display:block;width:.8em;flex:none;margin-bottom:.02em;"><svg viewBox="0 0 32 32" width="100%" height="100%" aria-hidden="true" style="display:block;overflow:visible;flex:none;"><defs><linearGradient id="dg3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#80EAFF"></stop><stop offset="1" stop-color="#22D3B4"></stop></linearGradient></defs><path d="M15 12 A9.5 9.5 0 0 0 15 31 Z" fill="url(#dg3)"></path><path d="M18 6.5 L26 1.5 L26 31 L18 31 Z" fill="var(--ink)"></path></svg></span><span>drytis</span></div>
+    <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--dim);">
+      <span>© 2026 Drytis. All rights reserved.</span>
+      <a href="mailto:hello@drytis.com" style="color:inherit;">hello@drytis.com</a>
+    </div>
+  </footer>
+</div>
+
+
+
+</body>
+</html>

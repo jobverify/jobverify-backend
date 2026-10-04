@@ -17,7 +17,7 @@ test('aiRender Technology Pvt Ltd is registered as a verified first-party missin
   assert.equal(provider.paginationStrategy, 'homepage-plus-client-bundle-plus-common-careers-route-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-client-bundle-company-identity+verified-missing-first-party-careers-routes-return-empty',
+    'verified-official-homepage+verified-client-bundle-company-identity+verified-no-public-careers-route-surfaces-return-empty',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

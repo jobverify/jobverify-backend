@@ -24,9 +24,9 @@ export const ROLLBAR_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'rollbar.com',
-  verifiedOn: '2026-07-25',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 25, 2026 that https://rollbar.com/ was the live first-party Rollbar homepage with the hero copy "Every error. Every release." and "Under control.", that its footer Careers link targeted https://rollbar.com/about-us#career, that direct requests to https://rollbar.com/careers resolved to the first-party about page at https://rollbar.com/about-us, and that direct requests to https://rollbar.com/jobs resolved back to the homepage. The verified about page exposed culture and benefits copy including "We build what we believe in.", "Life at Rollbar.", "Benefits.", and "Join the Rollbar Team and help developers build better software faster, together." together with a Contact us call to action at https://rollbar.com/contact-us, but no trustworthy public jobs surface, ATS handoff, public openings list, or JobPosting records.',
+    'Verified on October 3, 2026 that https://rollbar.com/ uses the new title "Rollbar | Error Tracking Tool That Fixes Errors Too" and hero "Every production error, found and fixed." Its footer Careers link still targets https://rollbar.com/about-us#career. Direct requests to https://rollbar.com/careers resolve to the first-party about page at https://rollbar.com/about-us, while https://rollbar.com/jobs resolves back to the homepage. The about page still says "Join the Rollbar Team" and links only to https://rollbar.com/contact-us. These first-party routes expose no trustworthy public jobs surface, ATS handoff, public openings list, or JobPosting records.',
   dryRunFile: 'rollbar/jobs.json',
 }
 

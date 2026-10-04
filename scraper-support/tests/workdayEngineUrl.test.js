@@ -1045,7 +1045,7 @@ test('runWorkdayScraper uses bulletFields and externalPath to recover India summ
           getSetCookie: () => [],
           get: () => 'text/html',
         },
-        text: async () => '<html><body>Accenture careers</body></html>',
+        text: async () => '<html><body>Cadence careers</body></html>',
       }
     }
 
@@ -1078,11 +1078,11 @@ test('runWorkdayScraper uses bulletFields and externalPath to recover India summ
 
   try {
     const jobs = await runWorkdayScraper({
-      company: 'Accenture',
-      baseUrl: 'https://accenture.wd103.myworkdayjobs.com/AccentureCareers',
+      company: 'Cadence',
+      baseUrl: 'https://cadence.wd1.myworkdayjobs.com/en-US/External_Careers',
       locationCountry: 'c4f78be1a8f14da0ab49ce1162348a5e',
-      source: 'accenture',
-      scraperDir: path.join(testsDir, '../../scraper/accenture.workday'),
+      source: 'cadence',
+      scraperDir: path.join(testsDir, '../../scraper/cadence.workday'),
       launchBrowserImpl: async () => {
         throw new Error('DOM browser must not launch when the jobs API works')
       },
@@ -1369,7 +1369,8 @@ test('runWorkdayScraper jobs-api mode fetches detail HTML without requiring Pupp
     assert.equal(jobs[0].link, detailUrl)
     assert.equal(jobs[0].city, 'Bangalore')
     assert.equal(jobs[0].requisitionId, 'R123')
-    assert.deepEqual(calls.map((call) => call.method), ['GET', 'POST', 'GET'])
+    // This fixture has no structured JSON endpoint, so the API attempt uses HTML fallback.
+    assert.deepEqual(calls.map((call) => call.method), ['GET', 'POST', 'GET', 'GET'])
   } finally {
     global.fetch = originalFetch
   }
@@ -1519,7 +1520,9 @@ test('runWorkdayScraper keeps processing jobs when one detail request hits a tra
     })
 
     await new Promise((resolve) => setTimeout(resolve, 30))
-    assert.equal(detailStarts.length, 6)
+    assert.equal(detailStarts.filter(url => url.includes('/wday/cxs/')).length, 6)
+    assert.equal(detailStarts.filter(url => !url.includes('/wday/cxs/')).length, 5)
+    assert.equal(detailStarts.filter(url => url.includes('Engineer_R1')).length, 1)
     assert.equal(jobs.length, 6)
     assert.equal(jobs[0].title, 'Engineer 1')
     assert.equal(jobs[0].location, 'Bangalore, India')

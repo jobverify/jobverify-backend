@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -91,6 +92,17 @@ const defaultFetchPage = async (url) => {
   }
 }
 
+const hasOctober2026Identity = (html) => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page).toLowerCase()
+  return /https:\/\/studio\.drytis\.ai\/login/i.test(page)
+    && /mailto:hello@drytis\.com/i.test(page)
+    && (/href=["']\/careers\/?["']/i.test(page)
+      || /href=["']#top["'][^>]*aria-current=["']page["'][^>]*>\s*Careers\s*<\/a>/i.test(page))
+    && text.includes('ai and engineers, building together')
+    && /(?:©|&copy;)\s*2026\s+Drytis\.\s*All rights reserved\./i.test(page)
+}
+
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
@@ -122,6 +134,9 @@ export const hasOfficialHomepageSignal = (html) => {
     && /AI builds prototypes\.\s*Humans build companies\./i.test(title)
     && (hasLegacyHeroCopy || hasCurrentHeroCopy)
   ) || hasAugust2026HeroCopy || hasCurrentHomepageIdentity
+    || (hasOctober2026Identity(page)
+      && /^drytis\s*[—-]\s*Built with AI\. Perfected by engineers\.$/i.test(title)
+      && normalized.includes('ai creates the first version. drytis engineers refine, test and prepare it for launch.'))
 }
 
 export const hasOfficialAboutSignal = (html) => {
@@ -150,6 +165,11 @@ export const hasOfficialAboutSignal = (html) => {
       || /<title>\s*About\s*\|\s*Drytis\s*<\/title>/i.test(page)
   ) && (hasLegacyAboutCopy || hasCurrentAboutCopy))
     || hasAugust2026AboutCopy
+    || (hasOctober2026Identity(page)
+      && /<title>\s*About\s*[—-]\s*Drytis\s*<\/title>/i.test(page)
+      && normalized.includes("we turned 'hire an engineer' into something you can buy by the token.")
+      && normalized.includes('drytis is human intelligence, tokenized and accessible')
+      && normalized.includes('engineers deliver outcomes.'))
 }
 
 export const pageHasExpectedEngineersLink = (html) =>
@@ -229,12 +249,14 @@ export const isVerifiedMissingCareerRoute = (page = {}) => {
   const hasCurrentPlain404Surface =
     /^404(?:\s*[—-]\s*|\s+)page not found\.?$/i.test(normalized)
 
+  const hasCaddy404Surface = normalized === "404 - not found 404 page not found the route you requested doesn't exist. check your caddyfile configuration."
+
   const isKnownHomepageShell = Number(page?.status) === 200
     && hasOfficialHomepageSignal(page?.html)
 
   return (isKnownHomepageShell || (
     Number(page?.status) === 404
-    && (hasLegacy404Surface || hasCurrentPlain404Surface)
+    && (hasLegacy404Surface || hasCurrentPlain404Surface || hasCaddy404Surface)
   )) && !hasPublicJobsSignal(page?.html)
 }
 
@@ -250,6 +272,22 @@ export const hasVerifiedUnpublishableCareersLanding = (html = '') => {
     && /<section\s+id=["']apply["']/i.test(page)
     && /mailto:careers@drytis\.ai/i.test(page)
     && normalized.includes('remote-first. real ownership.')
+}
+
+export const hasVerifiedEmptyCareersLanding = (html) => {
+  const page = String(html ?? '')
+  const text = normalizeWhitespace(page).toLowerCase()
+  // Remove only the observed empty-state/notification phrases before checking for jobs.
+  const openingCheck = page
+    .replace(/No open roles\s*(?:<[^>]+>\s*)*right now/gi, '')
+    .replace(/Notify me about open roles/gi, '')
+    .replace(/There are no open roles at Drytis right now\./gi, '')
+  return hasOctober2026Identity(page)
+    && /<title>\s*Careers\s*[—-]\s*Drytis\s*<\/title>/i.test(page)
+    && text.includes('careers at drytis no open roles right now')
+    && text.includes("leave your email and we'll let you know as soon as a position opens.")
+    && /<form\b[^>]*id=["']notifyForm["']/i.test(page)
+    && !hasPublicJobsSignal(openingCheck)
 }
 
 export const createDrytisScraper = () => ({
@@ -316,10 +354,16 @@ export const createDrytisScraper = () => ({
     }
 
     let hasUnpublishableCareersLanding = false
+    let hasExplicitlyEmptyCareersLanding = false
     for (const routeUrl of NO_PUBLIC_CAREERS_ROUTE_URLS) {
       const routePage = await fetchPage(routeUrl)
-      if (routeUrl === 'https://drytis.com/careers' && routePage.status === 200 && hasVerifiedUnpublishableCareersLanding(routePage.html)) {
+      if (routeUrl === 'https://drytis.com/careers' && routePage.status === 200 && (hasVerifiedUnpublishableCareersLanding(routePage.html) || hasVerifiedEmptyCareersLanding(routePage.html))) {
         hasUnpublishableCareersLanding = true
+        const landingUrl = new URL(routePage.url || routeUrl)
+        if (landingUrl.origin !== new URL(HOMEPAGE_URL).origin || !/^\/careers\/?$/.test(landingUrl.pathname)) {
+          throw new Error('DRYTIS careers landing left the verified first-party route')
+        }
+        hasExplicitlyEmptyCareersLanding = hasVerifiedEmptyCareersLanding(routePage.html)
         continue
       }
 
@@ -328,9 +372,18 @@ export const createDrytisScraper = () => ({
       }
     }
 
-    if (hasUnpublishableCareersLanding) return []
-
-    return []
+    return attachInventoryEvidence([], {
+      status: hasExplicitlyEmptyCareersLanding ? 'verified-empty' : 'discovery-only',
+      surface: 'https://drytis.com/careers/', firstParty: true,
+      listingComplete: hasExplicitlyEmptyCareersLanding,
+      pagesFetched: 6 + NO_PUBLIC_CAREERS_ROUTE_URLS.length,
+      reportedTotal: hasExplicitlyEmptyCareersLanding ? 0 : null,
+      indiaFacetCount: hasExplicitlyEmptyCareersLanding ? 0 : null,
+      verifiedAt: new Date().toISOString(),
+      reason: hasExplicitlyEmptyCareersLanding ? 'First-party careers landing explicitly states No open roles right now.'
+        : hasUnpublishableCareersLanding ? 'DRYTIS careers landing is discovery-only without explicit current empty inventory.'
+          : 'DRYTIS has no verified public listing inventory.',
+    })
   },
 })
 
@@ -341,7 +394,15 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
-  if (isDryRun) {
+  const evidence = readInventoryEvidence(jobs)
+  if (isDryRun && evidence) {
+    const { writeFile } = await import('node:fs/promises')
+    await writeFile(path.join(currentDir, 'inventory-evidence.json'), JSON.stringify(evidence, null, 2))
+  }
+  if (evidence?.listingComplete === false) {
+    console.error(evidence.reason)
+    process.exitCode = 1
+  } else if (isDryRun) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
   } else {
     await saveToDB(jobs, SOURCE)

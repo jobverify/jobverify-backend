@@ -159,14 +159,13 @@ export const hasEmbeddedCareersRoute = (bundleJs) => {
 
 export const extractEmbeddedJobs = (bundleJs) => {
   const script = String(bundleJs ?? '')
-  const marker = 'const $3='
-  const markerIndex = script.indexOf(marker)
+  const markers = [...script.matchAll(/\b(?:const|let|var)\s+[$\w]+\s*=\s*(?=\[\s*\{\s*id\s*:\s*["'])/g)]
 
-  if (markerIndex === -1) {
+  if (markers.length !== 1) {
     throw new Error('Immidart embedded first-party job payload marker disappeared from the verified bundle')
   }
 
-  const arrayStart = script.indexOf('[', markerIndex)
+  const arrayStart = script.indexOf('[', markers[0].index + markers[0][0].length)
   const arrayEnd = findMatchingBracketIndex(script, arrayStart)
 
   if (arrayStart === -1 || arrayEnd === -1) {

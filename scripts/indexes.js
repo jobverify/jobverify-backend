@@ -16,6 +16,7 @@ const { default: User } = await import("../src/models/User.js");
 const { default: Click } = await import("../src/models/Click.js");
 const { default: Subscription } = await import("../src/models/Subscription.js");
 const { default: AdminAudit } = await import("../src/models/AdminAudit.js");
+const { default: AccessEvent } = await import("../src/models/AccessEvent.js");
 const { default: BlacklistedToken } = await import("../src/models/BlacklistedToken.js");
 const { default: JobDatasetSummary } = await import("../src/models/JobDatasetSummary.js");
 const { default: ScraperRun } = await import("../src/models/ScraperRun.js");
@@ -27,6 +28,7 @@ const MODELS = [
   ["Click", Click],
   ["Subscription", Subscription],
   ["AdminAudit", AdminAudit],
+  ["AccessEvent", AccessEvent],
   ["BlacklistedToken", BlacklistedToken],
   ["JobDatasetSummary", JobDatasetSummary],
   ["ScraperRun", ScraperRun],

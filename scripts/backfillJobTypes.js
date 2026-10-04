@@ -7,7 +7,7 @@ import { resolveJobType } from "../scraper-support/utils/normalizeScrapedJob.js"
 const shouldApply = process.argv.includes("--apply");
 const canonicalJobTypes = ["Intern", "Internship", "Full-time Fresher", "Full-time Experienced", "Full-time", "Contract"];
 const cursor = Job.find({ status: "active", jobType: { $nin: canonicalJobTypes } })
-  .select("employmentType experienceLevel title department description jobDescription minimumQualification preferredQualification experienceRequired jobType")
+  .select("employmentType experienceLevel title department sourceDescription description jobDescription minimumQualification preferredQualification experienceRequired jobType")
   .lean()
   .cursor();
 

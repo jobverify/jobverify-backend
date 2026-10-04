@@ -1,7 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { runWalkarooPublicCareers } from './publicCareers.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -43,7 +44,9 @@ export const hasOfficialHomepageSignal = (html) => {
 
   return normalized.includes('Walkaroo Footwear')
     && normalized.includes('Homegrown Indian Brand')
-    && /Free shipping above/i.test(normalized)
+    && (/Free shipping above/i.test(normalized)
+      || (/<meta[^>]*property=["']og:site_name["'][^>]*content=["']Walkaroo Footwear["']/i.test(page)
+        && /<link[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/www\.walkaroo\.in\/["']/i.test(page)))
     && (
       /https:\/\/www\.walkaroo\.in\/pages\/about-us/i.test(page)
       || /href=["']\/pages\/about-us["']/i.test(page)
@@ -96,8 +99,8 @@ const validateNoPublicListings = (jobs) => {
   return jobs
 }
 
-export const createWalkarooScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+export const createWalkarooScraper = ({pageSize=50,maxPages=100,now=()=>new Date().toISOString()} = {}) => ({
+  async run({ fetchText = defaultFetchText, fetchJson = url => fetchJsonWithRetry(url, {label:SOURCE,timeoutMs:20000}) } = {}) {
     const homepageHtml = await fetchText(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Walkaroo homepage no longer matches the verified official site')
@@ -118,6 +121,9 @@ export const createWalkarooScraper = () => ({
       throw new Error('Walkaroo careers handoff no longer matches the verified official Zappyhire surface')
     }
 
+    if (/<app-root\b/i.test(careersHtml)) {
+      return runWalkarooPublicCareers({shell:careersHtml,fetchText,fetchJson,pageSize,maxPages,now})
+    }
     return validateNoPublicListings([])
   },
 })

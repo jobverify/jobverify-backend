@@ -2,6 +2,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -35,10 +36,17 @@ const normalizeWhitespace = (value) => {
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
 
-  return /Start your career at LionsBot/i.test(page)
+  const legacySignal = /Start your career at LionsBot/i.test(page)
     && /Our Team Is In Search!/i.test(page)
     && /JOIN US TODAY/i.test(page)
     && /Fastest Growing Robotic Startup in Singapore/i.test(page)
+
+  const currentSignal = /<title>Careers at LionsBot \| Robotics Jobs in Singapore<\/title>/i.test(page)
+    && /Start your career at LionsBot/i.test(page)
+    && /Openings change often, so the live list is on the job board/i.test(page)
+    && /See open roles/i.test(page)
+
+  return legacySignal || currentSignal
 }
 
 export const extractKulaCompanyUrl = (html) => {
@@ -76,11 +84,68 @@ const parseEmbeddedJobs = (html) => {
           .replace(/\\\\/g, '\\'),
       )
     } catch {
-      return []
+      throw new Error('Lionsbot Kula jobs payload is malformed')
     }
   }
 
-  return []
+  return null
+}
+
+const extractJsonArrayAfterKey = (value, key) => {
+  const token = `"${key}":[`
+  const start = value.indexOf(token)
+  if (start < 0) return null
+
+  let depth = 0
+  let inString = false
+  let escaped = false
+  const arrayStart = start + token.length - 1
+
+  for (let index = arrayStart; index < value.length; index += 1) {
+    const char = value[index]
+    if (inString) {
+      if (escaped) escaped = false
+      else if (char === '\\') escaped = true
+      else if (char === '"') inString = false
+      continue
+    }
+    if (char === '"') inString = true
+    else if (char === '[') depth += 1
+    else if (char === ']' && --depth === 0) {
+      return JSON.parse(value.slice(arrayStart, index + 1))
+    }
+  }
+
+  throw new Error('Lionsbot Kula jobs array is truncated')
+}
+
+export const extractKulaInventoryJobs = (html = '') => {
+  const page = String(html ?? '')
+  for (const match of page.matchAll(/<script\b[^>]*>\s*self\.__next_f\.push\((\[[\s\S]*?\])\)\s*<\/script>/gi)) {
+    let chunk
+    try {
+      chunk = JSON.parse(match[1])?.[1]
+    } catch {
+      continue
+    }
+    if (typeof chunk !== 'string' || !chunk.includes('"jobs":[')) continue
+    if (!chunk.includes('"accountName":"lionsbot"')) {
+      throw new Error('Lionsbot Kula payload no longer identifies the official board')
+    }
+    const jobs = extractJsonArrayAfterKey(chunk, 'jobs')
+    if (!Array.isArray(jobs)) throw new Error('Lionsbot Kula jobs inventory is unavailable')
+    return jobs
+  }
+
+  const legacyJobs = parseEmbeddedJobs(page)
+  if (Array.isArray(legacyJobs)) return legacyJobs
+  throw new Error('Lionsbot Kula board no longer exposes a complete jobs inventory')
+}
+
+export const hasKulaBoardSignal = (html = '') => {
+  const page = String(html ?? '')
+  return /<title>LionsBot International Pte Ltd Careers \| Open Jobs<\/title>/i.test(page)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/careers\.kula\.ai\/lionsbot["']/i.test(page)
 }
 
 const isIndiaOffice = (office) => {
@@ -144,7 +209,7 @@ const extractDescription = (value) => {
 export const buildSearchUrl = () => KULA_JOBS_URL
 
 export const extractSearchResults = (html) => (
-  parseEmbeddedJobs(html)
+  extractKulaInventoryJobs(html)
     .map((row) => {
       const title = normalizeWhitespace(row?.title)
       const jobId = normalizeWhitespace(row?.id)
@@ -213,15 +278,33 @@ export const createLionsbotScraper = ({
     }
 
     const html = await fetchText(buildSearchUrl())
+    if (!hasKulaBoardSignal(html)) {
+      throw new Error('Lionsbot linked Kula board no longer matches the verified public surface')
+    }
+    const inventory = extractKulaInventoryJobs(html)
+    if (new Set(inventory.map((row) => String(row?.id ?? ''))).size !== inventory.length
+      || inventory.some((row) => !row?.id || !row?.title || !Array.isArray(row?.ats_job?.offices))) {
+      throw new Error('Lionsbot Kula jobs inventory contains incomplete or duplicate records')
+    }
     const jobs = extractSearchResults(html)
     const selectedJobs = maxJobs ? jobs.slice(0, maxJobs) : jobs
 
-    return selectedJobs.map((job) => ({
+    return attachInventoryEvidence(selectedJobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: new Date().toISOString(),
-    }))
+    })), {
+      status: 'complete-inventory',
+      surface: KULA_JOBS_URL,
+      firstParty: true,
+      listingComplete: true,
+      pagesFetched: 1,
+      reportedTotal: inventory.length,
+      indiaFacetCount: jobs.length,
+      verifiedAt: new Date().toISOString(),
+      reason: 'official-first-party-handoff-to-complete-kula-jobs-payload',
+    })
   },
 })
 

@@ -4,15 +4,20 @@ import test from 'node:test'
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 
-test('getScraperCatalog includes Movate as an official careers page scraper with Darwinbox apply handoff', () => {
+test('getScraperCatalog includes Movate as an official careers page scraper with first-party ASP.NET portal', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'movate')
 
   assert.ok(provider)
   assert.equal(provider.companyName, 'Movate')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'official-company-careers-plus-darwinbox-handoff')
+  assert.equal(provider.atsPlatform, 'official-first-party-aspnet-careers')
   assert.equal(provider.companyCareerPage, 'https://www.movate.com/careers-at-movate/')
   assert.equal(provider.companyDomain, 'movate.com')
+  assert.equal(provider.linkedJobsBoardUrl, 'https://movatecareers.movate.com/MovateJobOpenings')
+  assert.equal(provider.paginationStrategy, 'all-dom-cards-client-side-pagination')
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.equal(provider.verifiedPublicJobCount, 424)
+  assert.equal(provider.verifiedIndiaJobCount, 301)
   assert.match(provider.modulePath, /movate[\\/]script\.js$/i)
 })
 

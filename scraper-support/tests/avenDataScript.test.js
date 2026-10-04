@@ -42,6 +42,23 @@ const careersHtml = `
 </html>
 `
 
+const currentHomepageHtml = homepageHtml.replace(
+  '<title>AvenDATA \u2013 Decommission Legacy Systems &amp; Archive Data Securely</title>',
+  '<title>Decommission Legacy Systems &amp; Archive Data Securely | AvenDATA</title>',
+)
+const currentCareersHtml = careersHtml.replace(
+  '<title>Careers at AvenDATA \u2013 Archive Legacy Systems &amp; Carve-Outs</title>',
+  '<title>Careers at AvenDATA : Archive Legacy Systems &amp; Carve-Outs</title>',
+)
+
+test('AvenDATA recognizes the current official page titles while retaining the no-listings checks', async () => {
+  const avenData = await loadAvenDataModule()
+  assert.equal(avenData.hasOfficialHomepageSignal(currentHomepageHtml), true)
+  assert.equal(avenData.extractHomepageCareerUrl(currentHomepageHtml), avenData.CAREERS_PAGE_URL)
+  assert.equal(avenData.hasOfficialCareersSignal(currentCareersHtml), true)
+  assert.equal(avenData.hasOfficialCareersSignal(currentCareersHtml + '<a href="https://avendata.com/careers/new-role">Job</a>'), false)
+})
+
 const publicJobsCareersHtml = `
 <!doctype html>
 <html lang="en">
@@ -114,7 +131,7 @@ test('AvenDATA constants stay pinned to the verified homepage, careers form page
   assert.equal(avenData.SOURCE, 'avendata')
   assert.equal(avenData.COMPANY, 'AvenDATA')
   assert.equal(avenData.OFFICIAL_BRAND_NAME, 'AvenDATA')
-  assert.equal(avenData.VERIFIED_ON, '2026-07-15')
+  assert.equal(avenData.VERIFIED_ON, '2026-10-03')
   assert.equal(avenData.HOMEPAGE_URL, 'https://avendata.com/')
   assert.equal(avenData.CAREERS_PAGE_URL, 'https://avendata.com/careers')
   assert.equal(avenData.ROBOTS_TXT_URL, 'https://avendata.com/robots.txt')

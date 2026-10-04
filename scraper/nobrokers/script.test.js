@@ -265,3 +265,15 @@ test('Nobrokers scraper fails closed when the verified first-party surface drift
     /jobs feed changed materially/i,
   )
 })
+
+test('Nobrokers accepts current Firebase config keys while retaining exact project verification', async () => {
+  const nb = await loadNobrokersModule()
+  const client = 'r.default.initializeApp(v.firebaseConfig);r.default.database().ref("jobOpeningSheet").once("value",callback)'
+  const config = 't.firebaseConfig={authDomain:"no-broker-cbaa4.firebaseapp.com",databaseURL:"https://no-broker-cbaa4.firebaseio.com"}'
+  assert.equal(nb.hasVerifiedBundleSignals([client, config]), true)
+  assert.equal(nb.hasVerifiedBundleSignals([client, config.replace('no-broker-cbaa4.firebaseio.com', 'different.firebaseio.com')]), false)
+  assert.equal(nb.hasVerifiedBundleSignals([client, config.replace('no-broker-cbaa4.firebaseapp.com', 'different.firebaseapp.com')]), false)
+  const jobs = await nb.run({fetchText: async url => url === nb.HOMEPAGE_URL ? homepageHtml : url === nb.CAREERS_URL ? careersHtml : url.includes('/careers/') ? client : config, fetchJson: async () => jobFeedPayload})
+  assert.equal(jobs.length, 6)
+  assert.equal(jobs[0].jobId, '1')
+})

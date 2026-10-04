@@ -18,7 +18,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('PeopleStrong Technologies local catalog captures the restored public API behind broken list routes without alias churn', async () => {
+test('PeopleStrong Technologies local catalog captures successful public inventory evidence behind unavailable list routes without alias churn', async () => {
   const { PEOPLESTRONG_TECHNOLOGIES_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(PEOPLESTRONG_TECHNOLOGIES_CATALOG)
 
@@ -29,11 +29,15 @@ test('PeopleStrong Technologies local catalog captures the restored public API b
   assert.equal(provider.companyCareerPage, 'https://careers.peoplestrong.com/')
   assert.equal(provider.companyDomain, 'careers.peoplestrong.com')
   assert.equal(provider.atsPlatform, 'official-company-careers-api')
-  assert.equal(provider.verifiedOn, '2026-08-04')
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.equal(provider.verifiedPublicJobCount, 0)
+  assert.equal(provider.verifiedIndiaJobCount, 0)
+  assert.equal(provider.paginationStrategy, 'offset-limit-to-totalRecords')
+  assert.equal(provider.jobsApiUrl, 'https://careers.peoplestrong.com/api/cp/rest/altone/cp/jobs/v1?offset=0&limit=20')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /job\/joblist/i)
-  assert.match(provider.verifiedSurfaceSummary, /404 shell responses/i)
-  assert.match(provider.verifiedSurfaceSummary, /returns live requisitions again/i)
+  assert.match(provider.verifiedSurfaceSummary, /public list routes/i)
+  assert.match(provider.verifiedSurfaceSummary, /known 404 shells/i)
+  assert.match(provider.verifiedSurfaceSummary, /explicit successful zero-requisition payload/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'PeopleStrong Technologies'), false)
 })
 

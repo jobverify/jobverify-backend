@@ -22,6 +22,13 @@ const homepageHtml = `
 </html>
 `
 
+const currentHomepageHtml = `
+<html><head><title>Rollbar | Error Tracking Tool That Fixes Errors Too</title></head>
+<body><main><h1>Every production error,<br>found and fixed.</h1>
+<p>Rollbar is code-first observability. It starts at the code running in production.</p></main>
+<footer><a href="./about-us#career">Careers</a></footer></body></html>
+`
+
 const aboutPageHtml = `
 <!doctype html>
 <html lang="en">
@@ -78,12 +85,18 @@ test('Rollbar scraper helpers stay pinned to the verified first-party homepage a
   assert.equal(rollbar.ABOUT_PAGE_URL, 'https://rollbar.com/about-us')
   assert.equal(rollbar.JOBS_PAGE_URL, 'https://rollbar.com/jobs')
   assert.equal(rollbar.CONTACT_PAGE_URL, 'https://rollbar.com/contact-us')
-  assert.equal(rollbar.VERIFIED_AT, '2026-07-25')
+  assert.equal(rollbar.VERIFIED_AT, '2026-10-03')
   assert.equal(rollbar.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(rollbar.hasOfficialAboutPageSignal(aboutPageHtml), true)
   assert.equal(rollbar.hasLinkedTrustworthyPublicJobsSurface(homepageHtml), false)
   assert.equal(rollbar.hasLinkedTrustworthyPublicJobsSurface(aboutPageHtml), false)
   assert.equal(rollbar.hasLinkedTrustworthyPublicJobsSurface(jobsSurfaceHtml), true)
+})
+
+test('Rollbar recognizes the current homepage and still requires its careers handoff', async () => {
+  const rollbar = await loadRollbarModule()
+  assert.equal(rollbar.hasOfficialHomepageSignal(currentHomepageHtml), true)
+  assert.equal(rollbar.hasOfficialHomepageSignal(currentHomepageHtml.replace('about-us#career', 'contact-us')), false)
 })
 
 test('Rollbar run returns [] while the verified homepage, careers redirect, and jobs redirect remain intact', async () => {

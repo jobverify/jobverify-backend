@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { hasWorkdayOutageSignal, WorkdayUpstreamOutageError } from '../../scraper-support/myworkday/engine.js'
 
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
@@ -323,6 +324,12 @@ export const createDedalusScraper = ({
     }
 
     const workdayBoardPage = await fetchPage(WORKDAY_BOARD_URL)
+    if (hasWorkdayOutageSignal(workdayBoardPage)) {
+      throw new WorkdayUpstreamOutageError(`[${SOURCE}] Workday is currently unavailable upstream at ${WORKDAY_BOARD_URL}`)
+    }
+    if (workdayBoardPage.status !== 200) {
+      throw new Error(`HTTP ${workdayBoardPage.status} for ${WORKDAY_BOARD_URL}`)
+    }
     if (
       workdayBoardPage.status !== 200
       || !sameUrl(workdayBoardPage.url, WORKDAY_BOARD_URL)

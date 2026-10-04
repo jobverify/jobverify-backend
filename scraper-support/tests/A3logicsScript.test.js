@@ -64,6 +64,7 @@ const portalInfo = {
   shortName: 'A3LOGICS',
   careersPortalDomain: 'a3logics.keka.com',
   companyWebsite: 'https://www.a3logics.com/',
+  companyWebsite: 'https://www.a3logics.com/',
 }
 
 test('A3logics constants stay pinned to the verified first-party careers and Keka surfaces', async () => {
@@ -75,6 +76,7 @@ test('A3logics constants stay pinned to the verified first-party careers and Kek
   assert.equal(a3logics.KEKA_BOARD_URL, 'https://a3logics.keka.com/careers/')
   assert.equal(a3logics.EXPECTED_IDENTIFIER, '7061a4dc-4cd0-4c44-ab72-df4368cc7199')
   assert.equal(a3logics.hasOfficialCareersSignal(careersPageHtml), true)
+  assert.equal(a3logics.hasOfficialCareersSignal(careersPageHtml.replace(/<script src="https:\/\/a3logics\.keka\.com\/careers\/api\/embedjobs\/js\/[^\"]+"><\/script>/, '')), true)
   assert.equal(
     a3logics.extractEmbeddedCareersDocumentPath(kekaBootstrapHtml),
     '/ats/documents/7061a4dc-4cd0-4c44-ab72-df4368cc7199/careerportal/a3logics-careers.html',
@@ -248,4 +250,23 @@ test('A3logics fails closed when the verified first-party or Keka identity chang
     }),
     /exact company identity/i,
   )
+})
+
+test('A3logics uses its exact Keka tenant when the official careers page returns 403', async () => {
+  const a3logics = await loadModule()
+  const jobs = await a3logics.createA3logicsScraper().run({
+    fetchText: async (url) => {
+      if (url === a3logics.CAREERS_URL) return '<html><head><title>403 Forbidden</title></head><body><h1>403 Forbidden</h1></body></html>'
+      if (url === a3logics.KEKA_BOARD_URL) return kekaBootstrapHtml
+      return embeddedCareersHtml
+    },
+    fetchJson: async (url) => url.includes('careerportalinfo') ? portalInfo : [{
+      id: 90399,
+      title: 'Senior System and Network Administrator',
+      jobLocations: [{ city: 'Jaipur', countryCode: 'IN' }],
+    }],
+  })
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Senior System and Network Administrator')
+  assert.equal(jobs[0].source, 'a3logics')
 })

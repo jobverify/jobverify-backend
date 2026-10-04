@@ -4,6 +4,7 @@ import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import { hydrateProviderCatalogEntry } from '../providers/index.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const modulePath = path.resolve(currentDir, '../../scraper/modeln/script.js')
@@ -22,24 +23,10 @@ const careersHtml = `
         <div>Filter by team</div>
         <div>Filter by work type</div>
         <div>Clear all</div>
-        <div>No results</div>
-      </section>
-    </body>
-  </html>
-`
-
-const liveJobsHtml = `
-  <html>
-    <head>
-      <title>Careers | Model N</title>
-    </head>
-    <body>
-      <section>
-        <h2>Open Positions</h2>
-        <article>
-          <h3>Senior Software Engineer</h3>
-          <p>Bengaluru, Karnataka, India</p>
-        </article>
+        <div id="lever-no-results" style="display: none;">No results</div>
+        <div id="lever-jobs-container"></div>
+        <script src="https://jobs.lever.co/embed/index.js"></script>
+        <script>window.leverJobsOptions = { accountName: 'modeln' }</script>
       </section>
     </body>
   </html>
@@ -61,7 +48,7 @@ const loadScriptModule = async () => {
   }
 }
 
-test('Model N local catalog captures the verified empty first-party careers state', async () => {
+test('Model N local catalog captures the current official Lever feed', async () => {
   const { MODEL_N_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(MODEL_N_CATALOG)
 
@@ -71,27 +58,25 @@ test('Model N local catalog captures the verified empty first-party careers stat
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://www.modeln.com/company/careers/')
   assert.equal(provider.companyDomain, 'modeln.com')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'lever')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'verified-first-party-careers-page-with-empty-open-positions-state')
+  assert.equal(provider.paginationStrategy, 'lever-public-postings-api')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-open-positions-empty-state-return-empty',
+    'verified-first-party-careers-embed+lever-public-postings-api',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-03')
+  assert.equal(provider.verifiedOn, '2026-10-02')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Monday, August 3, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /Filter by location/i)
-  assert.match(provider.verifiedSurfaceSummary, /No results/i)
+  assert.match(provider.verifiedSurfaceSummary, /Lever/i)
+  assert.equal(provider.leverApiUrl, 'https://api.lever.co/v0/postings/modeln?mode=json')
 })
 
-test('Model N scraper returns no jobs while the verified first-party page still shows no results', async () => {
+test('Model N scraper extracts India roles despite a hidden No results placeholder', async () => {
   const modelN = await loadScriptModule()
 
   assert.equal(modelN.hasOfficialCareersSignal(careersHtml), true)
-  assert.equal(modelN.hasNoResultsSignal(careersHtml), true)
 
   const jobs = await modelN.createModelNScraper().run({
     fetchPage: async (url) => ({
@@ -99,12 +84,23 @@ test('Model N scraper returns no jobs while the verified first-party page still 
       url,
       html: careersHtml,
     }),
+    fetchJson: async (url) => {
+      assert.equal(url, modelN.LEVER_API_URL)
+      return [
+        { id: 'us-id', text: 'US Engineer', categories: { location: 'Remote, US' }, hostedUrl: 'https://jobs.lever.co/modeln/us-id' },
+        { id: 'india-id', text: 'Employee Experience Specialist', categories: { location: 'Hyderabad India' }, hostedUrl: 'https://jobs.lever.co/modeln/india-id', applyUrl: 'https://jobs.lever.co/modeln/india-id/apply', descriptionPlain: 'Help employees succeed.' },
+      ]
+    },
   })
 
-  assert.deepEqual(jobs, [])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Employee Experience Specialist')
+  assert.equal(jobs[0].location, 'Hyderabad India')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(readInventoryEvidence(jobs).status, 'complete-inventory')
 })
 
-test('Model N scraper fails closed when the official careers page starts showing live roles', async () => {
+test('Model N scraper rejects an unverified embed and invalid India posting URL', async () => {
   const modelN = await loadScriptModule()
 
   await assert.rejects(
@@ -112,9 +108,17 @@ test('Model N scraper fails closed when the official careers page starts showing
       fetchPage: async (url) => ({
         status: 200,
         url,
-        html: liveJobsHtml,
+        html: careersHtml.replace("accountName: 'modeln'", "accountName: 'other'"),
       }),
+      fetchJson: async () => [],
     }),
-    /Model N verified empty careers state changed; review the scraper/,
+    /verified Lever embed/,
+  )
+  await assert.rejects(
+    modelN.createModelNScraper().run({
+      fetchPage: async (url) => ({ status: 200, url, html: careersHtml }),
+      fetchJson: async () => [{ id: 'india-id', text: 'India Engineer', categories: { location: 'Hyderabad India' }, hostedUrl: 'https://jobs.lever.co/other/india-id' }],
+    }),
+    /trusted Lever job URL/,
   )
 })

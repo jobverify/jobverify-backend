@@ -1,13 +1,14 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const HOMEPAGE_URL = 'https://homefirstindia.com/'
 export const CAREERS_URL = 'https://homefirstindia.com/careers'
 export const JOB_LISTING_URL = 'https://homefirstindia.com/careers/job-listing'
+export const JOBS_API_URL = 'https://blue.homefirstindia.com:8443/homefirstweb/api/jobList.getAll'
 
 const COMPANY = 'Home First Finance Company (HFFC)'
 const SOURCE = 'homefirstfinancecompanyhffc'
@@ -106,10 +107,17 @@ const parseJsonArrayAt = (value, startIndex) => {
 export const hasOfficialJobListingSignal = (html) => {
   const page = String(html ?? '')
 
-  return /home\s+first/i.test(page)
+  const legacyListing = /home\s+first/i.test(page)
     && /job\s+listing/i.test(page)
     && /careers@homefirstindia\.com/i.test(page)
     && /current\s+openings/i.test(page)
+  const currentApp = /<title>\s*Easy Home Loans\s*\|\s*Affordable Home Loan in India\s*\|?\s*HFFC Home Loan\s*<\/title>/i.test(page)
+    && /<meta\s+name="description"\s+content="Home First Finance Company India \(HFFC\)/i.test(page)
+    && /<meta\s+property="og:site_name"\s+content="Home First"/i.test(page)
+    && /<base\s+href="\/">/i.test(page)
+    && /<app-root\s+id="main-root"/i.test(page)
+    && /<script\s+src="main-[A-Z0-9]+\.js"\s+type="module"/i.test(page)
+  return legacyListing || currentApp
 }
 
 export const buildSearchUrl = () => JOB_LISTING_URL
@@ -125,9 +133,10 @@ export const extractEmbeddedJobList = (html) => {
   return parseJsonArrayAt(page, arrayStartIndex)
 }
 
-export const extractSearchResults = (html) => {
-  const records = extractEmbeddedJobList(html)
+export const extractSearchResults = (input) => {
+  const records = Array.isArray(input?.JobList) ? input.JobList : extractEmbeddedJobList(input)
   if (!Array.isArray(records)) return []
+  const fromApi = typeof input === 'object' && input !== null
 
   return records
     .map((record) => {
@@ -147,6 +156,10 @@ export const extractSearchResults = (html) => {
 
       if (!title || !city || !jobId || !requisitionId) return null
 
+      const sourceUrl = fromApi
+        ? `${JOB_LISTING_URL}/job/${encodeURIComponent(jobId)}`
+        : JOB_LISTING_URL
+
       return {
         title,
         company: COMPANY,
@@ -156,15 +169,16 @@ export const extractSearchResults = (html) => {
         country: 'India',
         jobId,
         requisitionId,
-        sourceUrl: JOB_LISTING_URL,
-        applyUrl: JOB_LISTING_URL,
-        employmentType,
+        sourceUrl,
+        applyUrl: sourceUrl,
+        employmentType: fromApi ? null : employmentType,
         experienceRequired: minimumQualification,
         minimumQualification,
         preferredQualification,
         requiredSkills: [],
         postingDate: toDateOnly(record?.startDatetime),
-        closingDate: toDateOnly(record?.endDatetime),
+        closingDate: fromApi && new Date(record?.endDatetime).getTime() < Date.now()
+          ? null : toDateOnly(record?.endDatetime),
         jobDescription: joinTextParts(description, responsibility, preferredQualification),
         remoteStatus: getRemoteStatus(record?.job?.workModel),
       }
@@ -181,10 +195,19 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'application/json',
+  },
+  label: SOURCE,
+  timeoutMs: 15000,
+})
+
 export const createHomeFirstFinanceCompanyHffcScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
     const html = await fetchText(buildSearchUrl())
 
     if (!hasOfficialJobListingSignal(html)) {
@@ -193,11 +216,20 @@ export const createHomeFirstFinanceCompanyHffcScraper = ({
       )
     }
 
-    const jobs = extractSearchResults(html)
-    if (extractEmbeddedJobList(html) == null) {
-      throw new Error(
-        'Home First Finance Company (HFFC) verified official public jobs surface changed materially',
-      )
+    const embedded = extractEmbeddedJobList(html)
+    let jobs
+    if (embedded !== null) {
+      jobs = extractSearchResults(html)
+    } else {
+      const payload = await fetchJson(JOBS_API_URL)
+      if (!Array.isArray(payload?.JobList)) {
+        throw new Error('Home First Finance Company (HFFC) public jobs API changed materially')
+      }
+      const active = payload.JobList.filter((record) => record?.active === true)
+      jobs = extractSearchResults(payload)
+      if (jobs.length !== active.length || new Set(jobs.map((job) => job.jobId)).size !== jobs.length) {
+        throw new Error('Home First Finance Company (HFFC) public jobs API has incomplete active roles')
+      }
     }
 
     return jobs.map((job) => ({

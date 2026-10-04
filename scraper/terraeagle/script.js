@@ -146,6 +146,11 @@ const buildDiscoveryOnlyEvidence = ({ surface, reason, now }) => attachInventory
 export const createTerraEagleScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
+    if (homepage.status !== 200) {
+      const error = new Error('Terraeagle public homepage returned HTTP ' + homepage.status + ' at ' + homepage.url)
+      error.abortRetries = true
+      throw error
+    }
     if (hasCompromisedOfficialSurfaceSignal(homepage.html)) {
       const error = buildUpstreamUnavailableError('homepage', homepage)
       return buildDiscoveryOnlyEvidence({
@@ -160,6 +165,11 @@ export const createTerraEagleScraper = ({ now = () => new Date().toISOString() }
     }
 
     const about = await fetchPage(ABOUT_URL)
+    if (about.status !== 200) {
+      const error = new Error('Terraeagle public about returned HTTP ' + about.status + ' at ' + about.url)
+      error.abortRetries = true
+      throw error
+    }
     if (hasCompromisedOfficialSurfaceSignal(about.html)) {
       const error = buildUpstreamUnavailableError('about page', about)
       return buildDiscoveryOnlyEvidence({
@@ -174,6 +184,11 @@ export const createTerraEagleScraper = ({ now = () => new Date().toISOString() }
     }
 
     const careers = await fetchPage(CAREERS_URL)
+    if (careers.status !== 200) {
+      const error = new Error('Terraeagle public careers returned HTTP ' + careers.status + ' at ' + careers.url)
+      error.abortRetries = true
+      throw error
+    }
     if (hasCompromisedOfficialSurfaceSignal(careers.html)) {
       const error = buildUpstreamUnavailableError('careers shell', careers)
       return buildDiscoveryOnlyEvidence({

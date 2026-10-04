@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Thursday, July 16, 2026 that https://navi.com/careers is the official first-party Navi careers page and that its View Open Roles button hands candidates to the public TurboHire board at https://navi.turbohire.co/dashboardv2?orgId=3e818601-0baa-429c-b6f8-4b21903ae0e6&type=0. Live verification on Thursday, July 16, 2026 confirmed that the public TurboHire no-auth token flow and filtered jobs API for org 3e818601-0baa-429c-b6f8-4b21903ae0e6 returned 45 public jobs.'
+  'Verified on October 3, 2026 that https://navi.com/careers still links to the public TurboHire board at https://navi.turbohire.co/dashboardv2?orgId=3e818601-0baa-429c-b6f8-4b21903ae0e6&type=0. The board shell now identifies NAVI TECHNOLOGIES LIMITED. Its no-auth token and filtered jobs API returned 35 India jobs.'
 
 export const NAVI_CATALOG = {
   source: 'navi',
@@ -19,7 +19,7 @@ export const NAVI_CATALOG = {
   handoffBoardUrl: 'https://navi.turbohire.co/dashboardv2?orgId=3e818601-0baa-429c-b6f8-4b21903ae0e6&type=0',
   turboHireOrgId: '3e818601-0baa-429c-b6f8-4b21903ae0e6',
   verifiedSampleJobUrl:
-    'https://navi.turbohire.co/job/publicjobs/Cvxwte5N5snwG3hC%2FJkmZDU3RTVAq0zyKiiGLI4keyB3_3_ZUhAlZKVULxyMnx6q',
+    'https://navi.turbohire.co/job/publicjobs/35YCNAG2eaMoNphqxvoqVsso2VVeb_4pXd1YYAnRyqkx_FjWUqeRn1k243NU%2FQrF',
   atsPlatform: 'turbohire',
   countryFilter: 'India',
   paginationStrategy: 'official-careers-page-handoff-plus-public-turbohire-api',
@@ -27,7 +27,7 @@ export const NAVI_CATALOG = {
     'verified-first-party-careers-page+verified-turbohire-board+noauth-token+filteredjobs-api',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

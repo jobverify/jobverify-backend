@@ -1,5 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { NOBROKERS_CATALOG } from './catalog.js'
+export const PROVIDER_METADATA = NOBROKERS_CATALOG
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
@@ -159,8 +161,8 @@ export const hasJobsFeedBundleSignal = (bundleText) => {
 export const hasJobsFeedConfigSignal = (bundleText) => {
   const code = String(bundleText ?? '')
 
-  return /firebaseAuthDomain["']?\s*:\s*["']no-broker-cbaa4\.firebaseapp\.com["']/i.test(code)
-    && /firebaseDatabaseURL["']?\s*:\s*["']https:\/\/no-broker-cbaa4\.firebaseio\.com["']/i.test(code)
+  return /(?:firebaseAuthDomain|authDomain)["']?\s*:\s*["']no-broker-cbaa4\.firebaseapp\.com["']/i.test(code)
+    && /(?:firebaseDatabaseURL|databaseURL)["']?\s*:\s*["']https:\/\/no-broker-cbaa4\.firebaseio\.com["']/i.test(code)
 }
 
 export const hasVerifiedBundleSignals = (bundleTexts = []) =>

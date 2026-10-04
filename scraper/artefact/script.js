@@ -91,7 +91,8 @@ export const hasOfficialHomepageSignal = (html) => {
     && /href=["']https:\/\/www\.artefact\.com\/careers\/(?:explore-our-jobs\/)?["']/i.test(rawHtml)
     && /Explore our Jobs/i.test(normalized)
     && /Working at Artefact/i.test(normalized)
-    && /Artefact is a global leader in data and AI consulting services/i.test(normalized)
+    && (/Artefact is a global leader in data and AI consulting services/i.test(normalized)
+      || /Artefact is a global data and AI consulting company/i.test(normalized))
 }
 
 export const hasOfficialCareersPageSignal = (html) => {
@@ -102,7 +103,8 @@ export const hasOfficialCareersPageSignal = (html) => {
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.artefact\.com\/careers\/(?:explore-our-jobs\/)?["']/i.test(rawHtml)
     && /Explore our jobs/i.test(normalized)
     && /Filter by:/i.test(normalized)
-    && /https:\/\/www\.artefact\.com\/careers\/explore-our-jobs\/page\/\d+\//i.test(rawHtml)
+    && (/https:\/\/www\.artefact\.com\/careers\/explore-our-jobs\/page\/\d+\//i.test(rawHtml)
+      || extractListingCards(rawHtml).length > 0)
     && /https:\/\/www\.artefact\.com\/job\//i.test(rawHtml)
     && /https:\/\/job-boards\.greenhouse\.io\/artefact\/jobs\/\d+/i.test(rawHtml)
 }

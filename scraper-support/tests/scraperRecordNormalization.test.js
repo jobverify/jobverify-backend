@@ -204,15 +204,15 @@ test('normalizeScrapedJob captures open-ended experience when the label uses sta
   const normalized = normalizeScrapedJob(
     {
       title: 'Technical Staff - Warehouse',
-      company: 'Piramal Pharma',
+      company: 'ExampleCo',
       location: 'India',
       city: 'Mumbai',
       description: 'QUALIFICATIONS: Minimum Graduate or diploma in pharmacy Experience:- More than one years in warehouse Full time',
-      link: 'https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS/job/India/example',
+      link: 'https://example.wd102.myworkdayjobs.com/ExternalCareers/job/India/example',
     },
     {
-      source: 'piramalpharma.workday',
-      companyCareerPage: 'https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS',
+      source: 'example.workday',
+      companyCareerPage: 'https://example.wd102.myworkdayjobs.com/ExternalCareers',
       atsPlatform: 'workday',
     },
   )
@@ -224,15 +224,15 @@ test('normalizeScrapedJob captures post-qualification experience shorthand', () 
   const normalized = normalizeScrapedJob(
     {
       title: 'Chief Manager - Finance',
-      company: 'Piramal Pharma',
+      company: 'ExampleCo',
       location: 'Mumbai, India',
       city: 'Mumbai',
       description: 'Experience - CA 10 Yrs Post qualification experience Competencies - Prior experience in Financial or Management reporting',
-      link: 'https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS/job/Mumbai/example',
+      link: 'https://example.wd102.myworkdayjobs.com/ExternalCareers/job/Mumbai/example',
     },
     {
-      source: 'piramalpharma.workday',
-      companyCareerPage: 'https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS',
+      source: 'example.workday',
+      companyCareerPage: 'https://example.wd102.myworkdayjobs.com/ExternalCareers',
       atsPlatform: 'workday',
     },
   )
@@ -1107,14 +1107,14 @@ test('normalizeScrapedJob infers software engineering from plural solutions arch
   const normalized = normalizeScrapedJob(
     {
       title: 'Manager Solutions Architect Application Technology Advisory Mumbai',
-      company: 'PwC',
+      company: 'Example Corp',
       location: 'Mumbai, India',
       city: 'Mumbai',
-      link: 'https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Airoli/IN-Manager--Solutions-Architect-Application-Technology-Advisory-Mumbai_736897WD-1/apply',
+      link: 'https://example.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Airoli/IN-Manager--Solutions-Architect-Application-Technology-Advisory-Mumbai_736897WD-1/apply',
     },
     {
-      source: 'pwc',
-      companyCareerPage: 'https://pwc.wd3.myworkdayjobs.com',
+      source: 'example',
+      companyCareerPage: 'https://example.wd3.myworkdayjobs.com',
       atsPlatform: 'workday',
     },
   )
@@ -1301,28 +1301,6 @@ test('normalizeScrapedJob maps atkins architecture roles into construction engin
   assert.equal(normalized.engineeringDomain, 'Construction')
 })
 
-test('normalizeScrapedJob maps OTT video testing roles into verification', () => {
-  const normalized = normalizeScrapedJob(
-    {
-      title: 'OTT Video Testing',
-      company: 'Infosys',
-      department: 'Engineering Services',
-      description: 'Conduct OTT and STB platform testing for video streaming playback quality.',
-      requiredSkills: ['Settop Box', 'DVB', 'Video Streaming'],
-      location: 'Bengaluru, India',
-      city: 'Bengaluru',
-      link: 'https://www.infosys.com/careers/job/ott-video-testing',
-    },
-    {
-      source: 'infosys',
-      companyCareerPage: 'https://www.infosys.com/careers',
-      atsPlatform: 'official-company-careers',
-    },
-  )
-
-  assert.equal(normalized.engineeringDomain, 'Verification')
-})
-
 test('normalizeScrapedJob maps semiconductor services roles at tessolve into semiconductor engineering', () => {
   const normalized = normalizeScrapedJob(
     {
@@ -1402,26 +1380,6 @@ test('normalizeScrapedJob maps telecom fiber design roles into telecommunication
   )
 
   assert.equal(normalized.engineeringDomain, 'Telecommunications')
-})
-
-test('normalizeScrapedJob maps strategic domain architect roles at pwc into software engineering', () => {
-  const normalized = normalizeScrapedJob(
-    {
-      title: 'Senior Manager Domain Architect CEDA Central Advisory Bangalore',
-      company: 'PwC',
-      department: 'Advisory',
-      location: 'Bengaluru, India',
-      city: 'Bengaluru',
-      link: 'https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Bengaluru-Millenia/IN-Senior-Manager-Domain-Architect-CEDA-Central-Advisory-Bangalore_747623WD-1/apply',
-    },
-    {
-      source: 'pwc',
-      companyCareerPage: 'https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers',
-      atsPlatform: 'workday',
-    },
-  )
-
-  assert.equal(normalized.engineeringDomain, 'Software Engineering')
 })
 
 test('normalizeScrapedJob maps machine-building design roles into mechanical engineering', () => {

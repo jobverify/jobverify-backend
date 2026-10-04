@@ -91,7 +91,9 @@ export const hasOfficialHomepageSignal = (html) => {
   return extractTitle(page) === 'Call Center Software | Call Center Solution | Helpdesk Software - Ameyo'
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.ameyo\.com\/["']/i.test(page)
     && normalized.includes('Ameyo XTRM by Exotel')
-    && extractCareersUrl(page) === OFFICIAL_CAREERS_HANDOFF_URL
+    && (extractCareersUrl(page) === OFFICIAL_CAREERS_HANDOFF_URL
+      || (page.includes('/wp-content/uploads/2023/04/ameyo-by-exotel-logo.svg')
+        && !/\bcareers\b/i.test(page)))
 }
 
 export const hasUpstreamCareersSignal = (html) => {
@@ -184,7 +186,9 @@ export const createAmeyoScraper = ({
       throw new Error('Ameyo verified homepage handoff no longer matches the trusted public surface')
     }
 
-    if (hasOfficialHomepageSignal(homepageHtml) && extractCareersUrl(homepageHtml) !== OFFICIAL_CAREERS_HANDOFF_URL) {
+    if (hasOfficialHomepageSignal(homepageHtml)
+      && extractCareersUrl(homepageHtml)
+      && extractCareersUrl(homepageHtml) !== OFFICIAL_CAREERS_HANDOFF_URL) {
       throw new Error('Ameyo verified homepage handoff no longer points to the trusted Exotel careers route')
     }
 

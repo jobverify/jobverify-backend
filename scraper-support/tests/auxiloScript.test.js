@@ -38,6 +38,18 @@ const careersHtml = `
 </html>
 `
 
+const currentCareersHtml = careersHtml.replace(
+  '<title>Opportunity to join us | Auxilo Finserve</title>',
+  '<title>Careers at Auxilo | Join Our Education Finance Team </title>',
+)
+
+test('Auxilo accepts the current first-party careers title only with its verified Workline handoff', async () => {
+  const auxilo = await import('../../scraper/auxilo/script.js')
+  assert.equal(auxilo.hasOfficialCareersSignal(currentCareersHtml), true)
+  assert.equal(auxilo.extractJobsBoardEntryUrl(currentCareersHtml), auxilo.JOBS_BOARD_ENTRY_URL)
+  assert.equal(auxilo.hasOfficialCareersSignal(currentCareersHtml.replace('app1176.workline.hr', 'other.example')), false)
+})
+
 const jobsBoardHtml = `
 <!doctype html>
 <html lang="en">
@@ -163,7 +175,7 @@ test('Auxilo pins the verified homepage, careers handoff, Workline board, API pa
   assert.equal(auxilo.SOURCE, 'auxilo')
   assert.equal(auxilo.COMPANY, 'Auxilo')
   assert.equal(auxilo.OFFICIAL_BRAND_NAME, 'Auxilo Finserve')
-  assert.equal(auxilo.VERIFIED_AT, '2026-07-15')
+  assert.equal(auxilo.VERIFIED_AT, '2026-10-03')
   assert.equal(auxilo.HOMEPAGE_URL, 'https://www.auxilo.com/')
   assert.equal(auxilo.CAREERS_URL, 'https://www.auxilo.com/careers')
   assert.equal(auxilo.JOBS_BOARD_ENTRY_URL, 'https://app1176.workline.hr/candidate')

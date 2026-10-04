@@ -192,7 +192,10 @@ export const hasVerifiedLinkedInCompanySignal = ({ url, html } = {}) => {
 
   return normalized.includes('indmoney')
     && normalized.includes('financial services')
-    && normalized.includes('invest in india and us markets from one app')
+    && (normalized.includes('invest in india and us markets from one app')
+      || (normalized.includes('global investment and trading app')
+        && normalized.includes('trade across us, india and the world from india')
+        && normalized.includes('manage your networth - in one place')))
     && normalized.includes('https://www.indmoney.com')
     && /(gurgaon|gurugram), haryana/.test(normalized)
 }
@@ -207,48 +210,35 @@ export const hasPublicLinkedInJobsSignal = (html) => {
     && normalized.includes('indmoney')
 }
 
-export const extractSearchResults = (html) => [...String(html ?? '').matchAll(
-  /<div class="base-card[\s\S]*?job-search-card"[\s\S]*?data-entity-urn="urn:li:jobPosting:([0-9]+)"[\s\S]*?<a class="base-card__full-link[^"]*" href="([^"]+)"[\s\S]*?<h3 class="base-search-card__title">\s*([\s\S]*?)\s*<\/h3>[\s\S]*?<h4 class="base-search-card__subtitle">[\s\S]*?<a[^>]*>\s*([\s\S]*?)\s*<\/a>[\s\S]*?<span class="job-search-card__location">\s*([\s\S]*?)\s*<\/span>[\s\S]*?<time class="job-search-card__listdate" datetime="([^"]+)"[^>]*>/gi,
-)]
-  .map((match) => {
-    const [, jobId, rawHref, rawTitle, rawCompany, rawLocation, postingDate] = match
-    const sourceUrl = normalizeWhitespace(rawHref)?.replace(/&amp;/g, '&')
-    const title = stripTags(rawTitle)
-    const company = stripTags(rawCompany)
-    const locationData = parseLocation(stripTags(rawLocation))
-
-    if (
-      !title
-      || !jobId
-      || !sourceUrl
-      || locationData.country !== 'India'
-      || normalizeWhitespace(company)?.toLowerCase() !== OFFICIAL_BRAND_NAME.toLowerCase()
-    ) {
-      return null
-    }
-
+export const extractSearchResults = (html) => {
+  const page = String(html ?? '')
+  const cards = [...page.matchAll(/<div class="base-card[^"<]*\bjob-search-card"[^>]*>/gi)]
+  return cards.map((card, index) => {
+    // Bound extraction to this card; incomplete cards cannot borrow another employer's fields.
+    const section = page.slice(card.index, cards[index + 1]?.index ?? page.length)
+    const jobId = card[0].match(/data-entity-urn="urn:li:jobPosting:([0-9]+)"/i)?.[1]
+    const sourceUrl = toAbsoluteUrl(section.match(/<a class="base-card__full-link[^"<]*" href="([^"]+)"/i)?.[1]?.replace(/&amp;/g, '&'))
+    const title = stripTags(section.match(/<h3 class="base-search-card__title">\s*([\s\S]*?)\s*<\/h3>/i)?.[1])
+    const companyBlock = section.match(/<h4 class="base-search-card__subtitle">([\s\S]*?)<\/h4>/i)?.[1]
+    const company = stripTags(companyBlock?.match(/<a[^>]*>\s*([\s\S]*?)\s*<\/a>/i)?.[1])
+    const locationData = parseLocation(stripTags(section.match(/<span class="job-search-card__location">\s*([\s\S]*?)\s*<\/span>/i)?.[1]))
+    const postingDate = section.match(/<time class="job-search-card__listdate(?:--new)?" datetime="([^"]+)"/i)?.[1]
+    let verifiedSourceUrl = false
+    try {
+      const url = new URL(sourceUrl)
+      verifiedSourceUrl = /(^|\.)linkedin\.com$/i.test(url.hostname) && /^\/jobs\/view\//i.test(url.pathname)
+    } catch { /* An incomplete card is discarded below. */ }
+    if (!title || !jobId || !verifiedSourceUrl || !postingDate || locationData.country !== 'India'
+      || normalizeWhitespace(company)?.toLowerCase() !== OFFICIAL_BRAND_NAME.toLowerCase()) return null
     return {
-      title,
-      company,
-      department: null,
-      location: locationData.location,
-      city: locationData.city,
-      country: locationData.country,
-      jobId,
-      requisitionId: jobId,
-      sourceUrl,
-      applyUrl: sourceUrl,
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: normalizeWhitespace(postingDate),
-      closingDate: null,
-      jobDescription: null,
+      title, company, department: null, location: locationData.location, city: locationData.city,
+      country: locationData.country, jobId, requisitionId: jobId, sourceUrl, applyUrl: sourceUrl,
+      employmentType: null, experienceRequired: null, minimumQualification: null,
+      preferredQualification: null, requiredSkills: [], postingDate: normalizeWhitespace(postingDate),
+      closingDate: null, jobDescription: null,
     }
-  })
-  .filter(Boolean)
+  }).filter(Boolean)
+}
 
 export const extractJobDetail = (html) => {
   const jobPosting = parseJobPostingJsonLd(html)
@@ -423,6 +413,7 @@ export const createIndwealthScraper = ({
       return enrichedJobs.map((job) => ({
         ...job,
         source: SOURCE,
+        sourceListingComplete: false,
         link: job.applyUrl || job.sourceUrl,
         scrapedAt: now(),
       }))

@@ -302,20 +302,33 @@ const parseObjectArrayLiteral = (arrayLiteral) => {
   return JSON.parse(normalized)
 }
 
-const extractAssignedArray = (bundleText, variableName) => {
+const extractJobArrays = (bundleText) => {
   const source = String(bundleText ?? '')
-  const assignment = `${variableName}=[`
-  const assignmentIndex = source.indexOf(assignment)
+  const arrays = []
 
-  if (assignmentIndex === -1) {
-    return []
+  for (const match of source.matchAll(/\b[A-Za-z_$][\w$]*=\[\s*\{\s*id:/g)) {
+    const arrayStartIndex = source.indexOf('[', match.index)
+    const preview = source.slice(arrayStartIndex, arrayStartIndex + 350)
+    if (!/\bslug:/.test(preview) || !/\btitle:/.test(preview)) continue
+
+    try {
+      const records = parseObjectArrayLiteral(
+        extractBalancedArrayLiteral(source, arrayStartIndex),
+      )
+      if (Array.isArray(records) && records.length > 0 && records.every((record) => record.slug && record.title)) {
+        arrays.push(records)
+      }
+    } catch {
+      // Other bundled arrays can contain JavaScript expressions instead of job data.
+    }
   }
 
-  const arrayStartIndex = assignmentIndex + assignment.length - 1
-  return parseObjectArrayLiteral(
-    extractBalancedArrayLiteral(source, arrayStartIndex),
-  )
+  return arrays
 }
+
+const isJobDetail = (record) =>
+  ['description', 'responsibilities', 'requirements', 'education', 'experience']
+    .some((field) => Object.hasOwn(record, field))
 
 const asStringArray = (value) => [...new Set(
   (Array.isArray(value) ? value : [])
@@ -332,7 +345,9 @@ export const extractMainBundleUrl = (html = '') => {
 }
 
 export const extractBundleJobCards = (bundleText = '') =>
-  extractAssignedArray(bundleText, 'Pd')
+  extractJobArrays(bundleText)
+    .filter((records) => !isJobDetail(records[0]))
+    .flat()
     .map((record) => {
       const slug = normalizeWhitespace(record.slug)
       if (!slug) return null
@@ -348,7 +363,9 @@ export const extractBundleJobCards = (bundleText = '') =>
     .filter(Boolean)
 
 export const extractBundleJobDetails = (bundleText = '') =>
-  extractAssignedArray(bundleText, 'fu')
+  extractJobArrays(bundleText)
+    .filter((records) => isJobDetail(records[0]))
+    .flat()
     .map((record) => {
       const slug = normalizeWhitespace(record.slug || record.id)
       if (!slug) return null

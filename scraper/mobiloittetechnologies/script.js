@@ -43,6 +43,36 @@ export const hasNoJobsFoundState = (html = '') => {
     && normalized.includes("We couldn't find any jobs matching your criteria.")
   }
 
+const extractRoleCards = (html) => {
+  const page = String(html ?? '')
+  const starts = [...page.matchAll(/<div[^>]*class=["'][^"']*CurrentOpenings_jobCard__[^"']*["'][^>]*>/gi)]
+    .map((match) => match.index)
+  const cards = starts.map((start, index) => page.slice(start, starts[index + 1] ?? page.indexOf('CurrentOpenings_ctaSection__', start)))
+  const roles = cards.map((card) => {
+    const title = normalizeWhitespace(card.match(/<h3[^>]*CurrentOpenings_jobTitle__[^>]*>([\s\S]*?)<\/h3>/i)?.[1])
+    const descriptionMatch = card.match(/<p[^>]*CurrentOpenings_jobDescription__[^>]*>([\s\S]*?)<\/p>/i)
+    const description = normalizeWhitespace(descriptionMatch?.[1])
+    const afterDescription = descriptionMatch ? card.slice(card.indexOf(descriptionMatch[0]) + descriptionMatch[0].length) : ''
+    const location = normalizeWhitespace(afterDescription.match(/<span[^>]*>([^<]+)<\/span>/i)?.[1])
+    const link = card.match(/<a\b[^>]*href=["'](\/careers\/JOB\d+)["'][^>]*CurrentOpenings_viewLink__/i)?.[1]
+    if (!title || !description || location !== 'Mobiloitte Delhi Office' || !link) {
+      throw new Error('Mobiloitte Technologies role card or first-party detail link changed')
+    }
+    return { title, description, location, url: new URL(link, CAREERS_URL).toString(), jobId: link.split('/').at(-1) }
+  })
+  if (roles.length !== new Set(roles.map((role) => role.jobId)).size) {
+    throw new Error('Mobiloitte Technologies duplicate role cards on careers page')
+  }
+  return roles
+}
+
+const hasVerifiedRoleDetail = (html, role) => {
+  const page = String(html ?? '')
+  const title = normalizeWhitespace(page.match(/<title>\s*Apply For ([\s\S]*?) At Mobiloitte Technologies India Pvt\. Ltd\.\s*<\/title>/i)?.[1])
+  const canonical = page.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i)?.[1]
+  return title === role.title && canonical === role.url
+}
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -57,7 +87,7 @@ const isBrowserFallbackError = (error) =>
     .test(String(error?.message ?? error ?? ''))
 
 export const createMobiloitteTechnologiesScraper = () => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
+  async run({ fetchText = defaultFetchText, fetchBrowserText, now = () => new Date().toISOString() } = {}) {
     let browserSession = null
 
     const getBrowserSession = async () => {
@@ -92,11 +122,47 @@ export const createMobiloitteTechnologiesScraper = () => ({
         throw new Error('Mobiloitte Technologies verified careers page no longer matches the trusted first-party contract')
       }
 
-      if (!hasNoJobsFoundState(careersHtml)) {
-        throw new Error('Mobiloitte Technologies verified careers page no longer exposes the no-jobs-found empty state')
+      if (hasNoJobsFoundState(careersHtml)) {
+        return []
       }
 
-      return []
+      const roles = extractRoleCards(careersHtml)
+      if (roles.length === 0) {
+        throw new Error('Mobiloitte Technologies careers page exposes neither verified jobs nor the empty state')
+      }
+
+      const scrapedAt = now()
+      const jobs = []
+      for (const role of roles) {
+        const detailHtml = await fetchPageText(role.url)
+        if (!hasVerifiedRoleDetail(detailHtml, role)) {
+          throw new Error('Mobiloitte Technologies first-party role detail changed')
+        }
+        jobs.push({
+          company: COMPANY,
+          title: role.title,
+          location: 'Delhi, India',
+          city: 'Delhi',
+          country: 'India',
+          link: role.url,
+          applyUrl: role.url,
+          sourceUrl: role.url,
+          source: SOURCE,
+          jobId: role.jobId,
+          department: null,
+          employmentType: null,
+          experienceRequired: null,
+          jobDescription: role.description,
+          minimumQualification: null,
+          preferredQualification: null,
+          requiredSkills: [],
+          postingDate: null,
+          remoteStatus: 'On-site',
+          sourceListingComplete: false,
+          scrapedAt,
+        })
+      }
+      return jobs
     } finally {
       if (browserSession) {
         await browserSession.close()

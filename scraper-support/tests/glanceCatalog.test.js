@@ -28,16 +28,16 @@ test('Glance local catalog captures the verified first-party careers page plus G
   assert.equal(GLANCE_CATALOG.companyName, 'Glance')
   assert.equal(GLANCE_CATALOG.officialBrandName, 'Glance AI')
   assert.equal(GLANCE_CATALOG.adapter, 'script')
-  assert.equal(GLANCE_CATALOG.companyCareerPage, 'https://glance.com/careers/latest')
+  assert.equal(GLANCE_CATALOG.companyCareerPage, 'https://glance.com/careers')
   assert.equal(GLANCE_CATALOG.companyDomain, 'glance.com')
   assert.equal(GLANCE_CATALOG.greenhouseBoardUrl, 'https://job-boards.greenhouse.io/glance')
   assert.equal(
     GLANCE_CATALOG.greenhouseJobsApiUrl,
     'https://boards-api.greenhouse.io/v1/boards/glance/jobs',
   )
-  assert.equal(GLANCE_CATALOG.verifiedSampleJobUrl, 'https://glance.com/careers/7443309')
-  assert.equal(GLANCE_CATALOG.verifiedPublicJobCount, 39)
-  assert.equal(GLANCE_CATALOG.verifiedIndiaJobCount, 25)
+  assert.equal(GLANCE_CATALOG.verifiedSampleJobUrl, 'https://glance.com/careers/7528886')
+  assert.equal(GLANCE_CATALOG.verifiedPublicJobCount, 38)
+  assert.equal(GLANCE_CATALOG.verifiedIndiaJobCount, 22)
   assert.equal(GLANCE_CATALOG.atsPlatform, 'greenhouse')
   assert.equal(GLANCE_CATALOG.countryFilter, 'India')
   assert.equal(
@@ -52,10 +52,10 @@ test('Glance local catalog captures the verified first-party careers page plus G
   assert.equal(GLANCE_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(GLANCE_CATALOG.modulePath, '../../scraper/glance/script.js')
   assert.equal(GLANCE_CATALOG.dryRunFile, 'glance/jobs.json')
-  assert.equal(GLANCE_CATALOG.verifiedOn, '2026-07-16')
+  assert.equal(GLANCE_CATALOG.verifiedOn, '2026-10-03')
   assert.match(GLANCE_CATALOG.verifiedSurfaceSummary, /__NEXT_DATA__/i)
   assert.match(GLANCE_CATALOG.verifiedSurfaceSummary, /boards-api\.greenhouse\.io/i)
-  assert.match(GLANCE_CATALOG.verifiedSurfaceSummary, /Applied Scientist III - Recommendation System/i)
+  assert.match(GLANCE_CATALOG.verifiedSurfaceSummary, /Applied Scientist II - Recommendation Systems/i)
 
   assert.equal(glance.PROVIDER_METADATA.source, GLANCE_CATALOG.source)
   assert.equal(glance.PROVIDER_METADATA.companyName, GLANCE_CATALOG.companyName)
@@ -96,7 +96,7 @@ test('getScraperCatalog includes Glance as a verified Greenhouse-backed provider
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Glance')
-  assert.equal(provider.companyCareerPage, 'https://glance.com/careers/latest')
+  assert.equal(provider.companyCareerPage, 'https://glance.com/careers')
   assert.equal(provider.companyDomain, 'glance.com')
   assert.equal(provider.atsPlatform, 'greenhouse')
   assert.match(provider.modulePath, /glance[\\/]script\.js$/i)

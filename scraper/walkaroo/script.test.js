@@ -177,3 +177,84 @@ test('Walkaroo fails closed when the homepage, about page, contact page, or care
     /careers handoff/i,
   )
 })
+
+
+const modernWalkHome = homepageHtml.replace('<p>Free shipping above ₹500</p>', '<meta property="og:site_name" content="Walkaroo Footwear"><link rel="canonical" href="https://www.walkaroo.in/">')
+const modernWalkShell = '<title>Careers</title><app-root></app-root><script src="main.current.js" type="module"></script>'
+const modernWalkClient = 'endpoint: "zappyhire-multitenant-be-prod.zappyhire.com/" source: "zappyhire" api/careers/configurations/ api/jobs/jobsearch/ api/careers/jobs/ sessionStorage.setItem("TENANT", tenant)'
+const walkApiBase = 'https://walkaroo.zappyhire-multitenant-be-prod.zappyhire.com/api/'
+const walkConfig = {status:1,errors:'',results:{name:'Walkaroo International',website:'https://www.walkaroo.in/',career_text_heading:'Walkaroo International Careers'}}
+const walkRows = [1,2,3].map(job=>({_source:{client:'walkaroo',job,title:'Engineer '+job,location:job===1?'Pune':job===2?'Nellore':'California',entity:'Walkaroo International'}}))
+const walkFetchText = async url => url === 'https://www.walkaroo.in/' ? modernWalkHome : url.endsWith('/pages/about-us') ? aboutHtml : url.endsWith('/pages/contact-us') ? contactHtml : url.endsWith('.js') ? modernWalkClient : modernWalkShell
+const walkFetchJson = async url => {
+  if (url.endsWith('careers/configurations/')) return walkConfig
+  if (url.includes('jobs/jobsearch/')) {const page=Number(new URL(url).searchParams.get('page'));return{status:1,errors:'',results:{total:{value:3,relation:'eq'},hits:page===1?walkRows.slice(0,2):walkRows.slice(2)}}}
+  const id=Number(url.match(/jobs\/(\d+)\//)?.[1])
+  return{status:1,errors:'',results:{id,title:'Engineer '+id,location:[{city:id===1?'Pune-Maharashtra':id===2?'Nellore-Andhra Pradesh':'California',country_code:id===3?'US':null}],description:'<p>Build reliable operations.</p>',skills:['Engineering'],job_type:'Full Time',job_board_urls:[{feature:{name:'career_page'},url:'https://recruitcareers.zappyhire.com/walkaroo/apply?source=1&company=1&job='+id}]}}
+}
+
+test('Walkaroo follows the official public client, paginates all jobs and validates India details', async () => {
+  const source = await loadModule()
+  const calls=[]
+  const jobs=await source.createWalkarooScraper({pageSize:2}).run({fetchText:walkFetchText,fetchJson:async url=>{calls.push(url);return walkFetchJson(url)}})
+  assert.equal(jobs.length,2)
+  assert.deepEqual(jobs.map(job=>job.jobId),['1','2'])
+  assert.deepEqual(jobs.map(job=>job.city),['Pune','Nellore'])
+  assert.ok(jobs.every(job=>job.country==='India'&&/Build reliable/.test(job.jobDescription)))
+  assert.equal(calls.filter(url=>url.includes('jobs/jobsearch/')).length,2)
+  assert.ok(jobs.every(job=>new URL(job.applyUrl).hostname==='recruitcareers.zappyhire.com'))
+})
+
+test('Walkaroo rejects wrong tenant, pagination gaps, public detail identity and unsafe application URLs', async () => {
+  const source=await loadModule()
+  const run=(fetchJson,fetchText=walkFetchText)=>source.createWalkarooScraper({pageSize:2}).run({fetchJson,fetchText})
+  await assert.rejects(run(async url=>url.endsWith('configurations/')?{...walkConfig,results:{...walkConfig.results,name:'Other Company'}}:walkFetchJson(url)),/tenant identity/)
+  await assert.rejects(run(async url=>url.includes('page=2')?{status:1,errors:'',results:{total:{value:3,relation:'eq'},hits:[]}}:walkFetchJson(url)),/incomplete.*pagination/)
+  await assert.rejects(run(async url=>{const data=await walkFetchJson(url);if(data.results?.id)data.results.id=999;return data}),/detail identity/)
+  await assert.rejects(run(async url=>{const data=await walkFetchJson(url);if(data.results?.id)data.results.job_board_urls[0].url='https://unrelated.example/apply';return data}),/application handoff/)
+  await assert.rejects(run(walkFetchJson,async url=>url.endsWith('.js')?modernWalkClient.replace('zappyhire-multitenant-be-prod.zappyhire.com','unrelated.example'):walkFetchText(url)),/public careers client/)
+})
+
+test('Walkaroo preserves countryless remote scope and partial India inventory', async () => {
+  const source = await loadModule()
+  const fetchJson = async url => {
+    const data = await walkFetchJson(url)
+    if (data.results?.id === 2) data.results.location = [{ city: 'Remote', country_code: null }]
+    return data
+  }
+  const jobs = await source.createWalkarooScraper({ pageSize: 2 }).run({ fetchText: walkFetchText, fetchJson })
+  assert.deepEqual(jobs.map(job => job.jobId), ['1'])
+  assert.equal(jobs[0].sourceListingComplete, false)
+  const { readInventoryEvidence } = await import('../../scraper-support/utils/inventoryEvidence.js')
+  assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
+  assert.equal(readInventoryEvidence(jobs)?.indiaFacetCount, null)
+
+  await assert.rejects(source.createWalkarooScraper({ pageSize: 2 }).run({
+    fetchText: walkFetchText,
+    fetchJson: async url => {
+      const data = await walkFetchJson(url)
+      if (data.results?.id && data.results.id !== 3) data.results.location = [{ city: 'Remote', country_code: null }]
+      return data
+    },
+  }), /incomplete country scope/)
+})
+
+test('Walkaroo accepts remote work only with explicit India country evidence', async () => {
+  const source = await loadModule()
+  const jobs = await source.createWalkarooScraper({ pageSize: 2 }).run({
+    fetchText: walkFetchText,
+    fetchJson: async url => {
+      const data = await walkFetchJson(url)
+      if (data.results?.id === 2) data.results.location = [{ city: 'Remote', country_code: 'IN' }]
+      return data
+    },
+  })
+  assert.equal(jobs.find(job => job.jobId === '2')?.country, 'India')
+})
+
+test('Walkaroo does not infer India from inherited city-map properties',async()=>{
+  const source=await loadModule()
+  const jobs=await source.createWalkarooScraper({pageSize:2}).run({fetchText:walkFetchText,fetchJson:async url=>{const data=await walkFetchJson(url);if(data.results?.id===2)data.results.location=[{city:'constructor',country_code:null}];return data}})
+  assert.deepEqual(jobs.map(job=>job.jobId),['1'])
+  assert.equal(jobs[0].sourceListingComplete,false)
+})

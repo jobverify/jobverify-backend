@@ -88,10 +88,19 @@ export const hasShutdownExplainerSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return /<title>\s*Anar/i.test(rawHtml)
+  const historicalSignal = /<title>\s*Anar/i.test(rawHtml)
     && /Anar Business App:\s*A Journey Concluded/i.test(normalized)
     && /Why We Shut Down/i.test(normalized)
     && /Anar Business App/i.test(normalized)
+
+  const currentSignal = /<title>\s*Anar\s*[—-]\s*Thank you for being part of our journey\s*<\/title>/i.test(rawHtml)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/anar\.biz\/["']/i.test(rawHtml)
+    && /<h1[^>]*>\s*Anar has shut down\.\s*<\/h1>/i.test(rawHtml)
+    && /Our journey came to an end in November 2023/i.test(normalized)
+    && /Our story, in two chapters/i.test(normalized)
+    && /href=["']\/agents["']/i.test(rawHtml)
+
+  return historicalSignal || currentSignal
 }
 
 export const hasRepurposedDomainSignal = (html = '') => {
@@ -120,11 +129,14 @@ export const isVerifiedMissingCareersRoute = (page = {}, requestedUrl) => {
   const rawHtml = String(page.html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return Number(page.status) === 404
-    && getFinalUrl(page, requestedUrl) === requestedUrl
-    && /\b404\b|not found|page not found/i.test(normalized)
-    && /\bAnar\b/i.test(normalized)
-    && !pageExposesPublicJobListings(rawHtml)
+  if (getFinalUrl(page, requestedUrl) !== requestedUrl || pageExposesPublicJobListings(rawHtml)) {
+    return false
+  }
+
+  return (Number(page.status) === 410 && hasShutdownExplainerSignal(rawHtml))
+    || (Number(page.status) === 404
+      && /\b404\b|not found|page not found/i.test(normalized)
+      && /\bAnar\b/i.test(normalized))
 }
 
 export const isVerifiedRepurposedDomainRedirect = (page = {}) =>

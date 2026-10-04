@@ -6,7 +6,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = 'safrandatasystems'
 export const COMPANY = 'Safran Data Systems'
 export const OFFICIAL_BRAND_NAME = 'Safran Data Systems SAS'
-export const VERIFIED_ON = '2026-08-14'
+export const VERIFIED_ON = '2026-10-03'
 export const COMPANY_PAGE_URL = 'https://www.safran-group.com/fr/societes/safran-data-systems'
 export const CAREERS_HOST = 'https://careers.safran-group.com'
 export const SEARCH_KEYWORDS = 'Safran Data Systems'
@@ -211,14 +211,19 @@ export const extractJobCards = (html = '') => [...String(html ?? '').matchAll(
   })
   .filter(Boolean)
 
-export const hasVerifiedDetailSignal = (html = '') => {
+export const hasVerifiedDetailSignal = (html = '', card = {}) => {
   const rawHtml = String(html ?? '')
   const normalizedTitle = normalizeSearchText(extractTitleText(rawHtml))
   const metaDescription = extractMetaDescription(rawHtml)
   const text = normalizeSearchText(rawHtml)
+  const directCompany = metaDescription?.includes(`Offre d'emploi ${OFFICIAL_BRAND_NAME} -`)
+  const divisionOfferId = metaDescription?.match(/\bRef\s*:\s*SDS\/[A-Z0-9/.-]+-(\d+)\b/i)?.[1]
+  const spaceDivision = metaDescription?.includes("Offre d'emploi Space & Communication")
+    && divisionOfferId === String(card.jobId ?? '')
+    && /Safran Data Systems/i.test(extractFieldById(rawHtml, 'fldjobdescription_description1') || '')
 
   return normalizedTitle.startsWith(normalizeSearchText('Safran -'))
-    && metaDescription?.includes(`Offre d'emploi ${OFFICIAL_BRAND_NAME} -`)
+    && (directCompany || spaceDivision)
     && /value="Je postule à cette offre"/i.test(rawHtml)
     && text.includes(normalizeSearchText('Description du poste'))
     && text.includes(normalizeSearchText('Localisation du poste'))
@@ -298,7 +303,7 @@ export const createSafranDataSystemsScraper = ({
         seenJobIds.add(card.jobId)
 
         const detailHtml = await fetchTextImpl(card.sourceUrl)
-        if (!hasVerifiedDetailSignal(detailHtml)) {
+        if (!hasVerifiedDetailSignal(detailHtml, card)) {
           throw new Error(`Safran Data Systems detail page no longer matches the accessible first-party careers surface for ${card.sourceUrl}`)
         }
 

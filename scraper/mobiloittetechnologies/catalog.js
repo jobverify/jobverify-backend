@@ -11,16 +11,16 @@ export const MOBILOITTE_TECHNOLOGIES_CATALOG = {
   homepageUrl: 'https://www.mobiloitte.com/',
   companyCareerPage: 'https://www.mobiloitte.com/careers',
   companyDomain: 'mobiloitte.com',
-  atsPlatform: 'first-party-careers-page-empty-search-state',
+  atsPlatform: 'first-party-careers-page',
   countryFilter: 'India',
-  paginationStrategy: 'single-first-party-careers-page-empty-filter-state',
+  paginationStrategy: 'single-first-party-careers-page-visible-cards',
   extractionStrategy:
-    'verified-first-party-careers-page+no-jobs-found-state+resume-drop-fallback',
+    'verified-first-party-role-cards+canonical-role-details+empty-state-fallback',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-03',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified on Monday, August 3, 2026 that https://www.mobiloitte.com/careers is the exact-name Mobiloitte careers page, that it renders the branded "Current Openings" search/filter UI, and that the visible public state currently says "No Jobs Found" while offering a "Send Your Resume" fallback to careers@mobiloitte.com. Because no trustworthy public role inventory is presently exposed, this local provider remains empty-state only.',
+    'Verified on October 3, 2026 that the official Mobiloitte careers page displays four Delhi job cards with role-specific canonical detail pages. The visible cards are collected and marked listing-incomplete because the page does not advertise a total count.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'mobiloittetechnologies/jobs.json',
 }

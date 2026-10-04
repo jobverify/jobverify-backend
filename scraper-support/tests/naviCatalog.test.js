@@ -45,7 +45,7 @@ test('Navi local catalog captures the verified first-party TurboHire careers sur
   assert.equal(provider.turboHireOrgId, '3e818601-0baa-429c-b6f8-4b21903ae0e6')
   assert.equal(
     provider.verifiedSampleJobUrl,
-    'https://navi.turbohire.co/job/publicjobs/Cvxwte5N5snwG3hC%2FJkmZDU3RTVAq0zyKiiGLI4keyB3_3_ZUhAlZKVULxyMnx6q',
+    'https://navi.turbohire.co/job/publicjobs/35YCNAG2eaMoNphqxvoqVsso2VVeb_4pXd1YYAnRyqkx_FjWUqeRn1k243NU%2FQrF',
   )
   assert.equal(provider.atsPlatform, 'turbohire')
   assert.equal(provider.countryFilter, 'India')
@@ -56,16 +56,16 @@ test('Navi local catalog captures the verified first-party TurboHire careers sur
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-16')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.match(provider.dryRunFile, /navi[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, naviModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Thursday, July 16, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/navi\.com\/careers/i)
   assert.match(
     provider.verifiedSurfaceSummary,
     /https:\/\/navi\.turbohire\.co\/dashboardv2\?orgId=3e818601-0baa-429c-b6f8-4b21903ae0e6&type=0/i,
   )
-  assert.match(provider.verifiedSurfaceSummary, /45 public jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /35 India jobs/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Navi'), false)
 
   assert.equal(navi.PROVIDER_METADATA.source, NAVI_CATALOG.source)

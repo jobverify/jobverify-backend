@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import SNYK_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -16,8 +17,9 @@ export const VERIFIED_ON = SNYK_CATALOG.verifiedOn
 export const PROVIDER_METADATA = SNYK_CATALOG
 export const CAREERS_URL = SNYK_CATALOG.officialCareersLandingUrl
 export const JOBS_PAGE_URL = SNYK_CATALOG.companyCareerPage
-export const FIRST_PARTY_JOBS_API_URL = SNYK_CATALOG.firstPartyJobsApiUrl
-export const WORKDAY_TENANT_URL = SNYK_CATALOG.workdayTenantUrl
+export const ASHBY_BOARD_TOKEN = SNYK_CATALOG.ashbyBoardToken
+export const ASHBY_BOARD_URL = SNYK_CATALOG.ashbyBoardUrl
+export const ASHBY_JOBS_API_URL = SNYK_CATALOG.ashbyJobsApiUrl
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -72,57 +74,74 @@ export const hasVerifiedJobsPageSignal = (html = '') => {
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/snyk\.io\/careers\/all-jobs\/["']/i.test(page)
     && /id=["']all-jobs["']/i.test(page)
     && normalized.includes('open security')
+    && page.includes(`${ASHBY_BOARD_URL}/`)
 }
 
-const toArray = (value) => {
-  if (Array.isArray(value)) return value
-  if (value && typeof value === 'object') return [value]
-  return []
-}
+export const extractVisibleJobIds = (html = '') => new Set(
+  [...String(html).matchAll(new RegExp(
+    `${ASHBY_BOARD_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\/([a-f0-9-]{36})`,
+    'gi',
+  ))].map((match) => match[1].toLowerCase()),
+)
 
-export const extractLocationNames = (job = {}) =>
-  toArray(job.locations)
-    .map((location) => normalizeWhitespace(location?.['@_Descriptor']))
-    .filter(Boolean)
-
-const getDepartment = (job = {}) =>
-  normalizeWhitespace(job?.Job_Requisition_group?.department?.['@_Descriptor']) || 'Other'
-
-const hasVerifiedWorkdayUrl = (value) => {
-  try {
-    const url = new URL(value)
-    const expected = new URL(WORKDAY_TENANT_URL)
-    return url.origin === expected.origin
-      && url.pathname.startsWith(`${expected.pathname}/job/`)
-  } catch {
-    return false
+const chooseIndiaLocation = (job) => {
+  const primaryCountry = normalizeWhitespace(job?.address?.postalAddress?.addressCountry)
+  if (primaryCountry === 'India' || /\bIndia\b/i.test(job?.location || '')) {
+    return normalizeWhitespace(job.location)
   }
+  const secondary = (Array.isArray(job?.secondaryLocations) ? job.secondaryLocations : [])
+    .find((item) => normalizeWhitespace(item?.address?.postalAddress?.addressCountry) === 'India')
+  return normalizeWhitespace(secondary?.location)
 }
 
-export const extractIndiaJobsFromPayload = (payload) => {
-  const jobs = Array.isArray(payload?.data) ? payload.data : null
-  if (!payload?.success || !jobs) {
-    throw new Error('Snyk jobs API response no longer matches the expected payload')
+const validateAshbyInventory = (payload, pageIds) => {
+  const jobs = payload?.jobs
+  if (payload?.apiVersion !== '1' || !Array.isArray(jobs) || jobs.length === 0) {
+    throw new Error('Snyk Ashby inventory changed materially')
   }
-
+  const apiIds = new Set()
+  for (const job of jobs) {
+    const id = normalizeWhitespace(job?.id)?.toLowerCase()
+    if (
+      !/^[a-f0-9-]{36}$/.test(id || '')
+      || !normalizeWhitespace(job?.title)
+      || !normalizeWhitespace(job?.location)
+      || job?.isListed !== true
+      || job?.jobUrl !== `${ASHBY_BOARD_URL}/${id}`
+      || job?.applyUrl !== `${ASHBY_BOARD_URL}/${id}/application`
+      || apiIds.has(id)
+    ) {
+      throw new Error('Snyk Ashby inventory changed materially')
+    }
+    apiIds.add(id)
+  }
+  if (apiIds.size !== pageIds.size || [...apiIds].some((id) => !pageIds.has(id))) {
+    throw new Error('Snyk Ashby inventory differs from official jobs page')
+  }
   return jobs
-    .filter((job) => extractLocationNames(job).some((location) => /\bindia\b/i.test(location)))
+}
+
+export const extractIndiaJobsFromPayload = (payload) =>
+  (Array.isArray(payload?.jobs) ? payload.jobs : [])
+    .filter((job) => chooseIndiaLocation(job))
     .map((job) => ({
       title: normalizeWhitespace(job.title),
       company: COMPANY,
-      location: extractLocationNames(job).join('; '),
+      location: chooseIndiaLocation(job),
       country: 'India',
-      link: job.url,
-      applyUrl: job.url,
-      sourceUrl: job.url,
+      link: job.jobUrl,
+      applyUrl: job.applyUrl,
+      sourceUrl: job.jobUrl,
       source: SOURCE,
-      jobId: normalizeWhitespace(job.jobRequisitionId),
-      requisitionId: normalizeWhitespace(job.jobRequisitionId),
-      department: getDepartment(job),
-      postingDate: null,
+      jobId: job.id,
+      requisitionId: job.id,
+      department: normalizeWhitespace(job.department),
+      employmentType: normalizeWhitespace(job.employmentType),
+      postingDate: normalizeWhitespace(job.publishedAt),
+      jobDescription: normalizeWhitespace(job.descriptionPlain),
+      remoteStatus: normalizeWhitespace(job.workplaceType),
       requiredSkills: [],
     }))
-}
 
 export const createSnykScraper = () => ({
   async run({
@@ -139,21 +158,20 @@ export const createSnykScraper = () => ({
       throw new Error('Verified Snyk jobs page changed materially')
     }
 
-    const payload = await fetchJson(FIRST_PARTY_JOBS_API_URL)
-    const jobs = Array.isArray(payload?.data) ? payload.data : null
-    if (!payload?.success || !jobs) {
-      throw new Error('Snyk jobs API response no longer matches the expected payload')
-    }
-
-    if (jobs.length === 0) {
-      throw new Error('Verified Snyk jobs API changed materially')
-    }
-
-    if (!jobs.every((job) => hasVerifiedWorkdayUrl(job?.url))) {
-      throw new Error('Verified Snyk Workday detail URL contract changed materially')
-    }
-
-    return extractIndiaJobsFromPayload(payload)
+    const payload = await fetchJson(ASHBY_JOBS_API_URL)
+    const listedJobs = validateAshbyInventory(payload, extractVisibleJobIds(jobsPageHtml))
+    const jobs = extractIndiaJobsFromPayload(payload)
+    return attachInventoryEvidence(jobs, {
+      status: 'complete-inventory',
+      surface: JOBS_PAGE_URL,
+      firstParty: true,
+      listingComplete: true,
+      pagesFetched: 1,
+      reportedTotal: listedJobs.length,
+      indiaFacetCount: jobs.length,
+      verifiedAt: new Date().toISOString(),
+      reason: 'official-snyk-jobs-page-matches-current-ashby-board-inventory',
+    })
   },
 })
 

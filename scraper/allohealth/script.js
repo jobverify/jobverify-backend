@@ -5,11 +5,12 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'allohealth'
 export const COMPANY = 'Allo Health'
-export const VERIFIED_ON = '2026-07-30'
+export const VERIFIED_ON = '2026-10-03'
 export const HOMEPAGE_URL = 'https://www.allohealth.com/'
 export const ABOUT_URL = 'https://www.allohealth.com/about'
 export const CAREERS_URL = 'https://www.allohealth.com/careers'
 export const NON_WWW_CAREERS_URL = 'https://allohealth.com/careers'
+export const TEAM_FORM_URL = 'https://airtable.com/app3JO79fwEz4srgJ/shrD53PpCm2BKq5O9'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -86,18 +87,25 @@ const HTML_APOSTROPHE = "(?:'|&#39;|&#x27;|&apos;)"
 export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const currentTitle = /<title>\s*Allo Health - Sexual Health, Therapy &amp; STI Care in India\s*<\/title>/i.test(page)
 
   return (
     /<title>\s*Best STI Doctors in India \|\s*Allo Health\s*<\/title>/i.test(page)
     || new RegExp(`<title>\\s*Allo Health India${HTML_APOSTROPHE}?s Sexual Health Provider\\s*<\\/title>`, 'i').test(page)
     || new RegExp(`<title>\\s*Allo Health\\s*-\\s*India${HTML_APOSTROPHE}?s\\s*#1 Sexual Health Provider\\s*<\\/title>`, 'i').test(page)
+    || currentTitle
   )
     && /<meta name="description" content="/i.test(page)
     && /<link rel="canonical" href="https:\/\/www\.allohealth\.com"\/?>/i.test(page)
     && /<meta property="og:url" content="https:\/\/www\.allohealth\.com"/i.test(page)
     && /<meta property="og:type" content="website"/i.test(page)
-    && normalized.includes('About Us')
+    && /About us/i.test(normalized)
     && normalized.includes('Allo Health')
+    && (!currentTitle || (
+      page.includes(TEAM_FORM_URL)
+      && page.includes('Join Our Team')
+      && page.includes('PATIENT FIRST HEALTHTECH PRIVATE LIMITED')
+    ))
 }
 
 export const hasOfficialAboutPageSignal = (html = '') => {
@@ -112,7 +120,7 @@ export const hasOfficialAboutPageSignal = (html = '') => {
     && /<link rel="canonical" href="https:\/\/www\.allohealth\.com\/about"\/?>/i.test(page)
     && /<meta property="og:url" content="https:\/\/www\.allohealth\.com\/about"/i.test(page)
     && /<meta property="og:type" content="website"/i.test(page)
-    && normalized.includes('About Us')
+    && /About us/i.test(normalized)
     && normalized.includes('70+ cities')
     && normalized.includes('structured healthcare ecosystem')
 }
@@ -128,7 +136,7 @@ export const isVerifiedMissingCareerRoute = (page = {}, expectedUrl = '') => {
     && matchesExpectedUrl(page.url || '', expectedUrl)
     && /<title>\s*Allo Health\s*<\/title>/i.test(html)
     && normalized.includes('Not Found')
-    && normalized.includes('About Us')
+    && /About us/i.test(normalized)
     && !pageExposesPublicJobListings(html)
 }
 

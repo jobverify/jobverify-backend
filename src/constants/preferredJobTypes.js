@@ -4,6 +4,7 @@ export const PREFERRED_JOB_TYPES = [
   "Full-time Experienced",
   "Contract",
   "Others",
+  "Unspecified",
 ];
 
 const PREFERRED_JOB_TYPE_ALIASES = {
@@ -12,6 +13,7 @@ const PREFERRED_JOB_TYPE_ALIASES = {
   "Full-time Experienced": ["Full-time Experienced", "Full-time"],
   Contract: ["Contract"],
   Others: ["Others"],
+  Unspecified: ["Unspecified"],
 };
 
 export const normalizePreferredJobType = (value) => {

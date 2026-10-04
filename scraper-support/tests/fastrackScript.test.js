@@ -88,6 +88,12 @@ const titanCareersHomePage = {
   `,
 }
 
+const currentTitanCareersHomePage = {
+  status: 200,
+  url: 'https://careers.titan.in/in/en',
+  html: '<title>Careers at Titan | Titan jobs</title><a href="/in/en/search-results">Search results</a><h1>ream</h1><h2>What is it like to work with Titan?</h2><p>Career Paths</p><h2>Upload &#xa0; Resume</h2><h2>Our Brands</h2><p>The Timeless Tales of TITAN</p>',
+}
+
 const zeroJobsSearchPage = {
   status: 200,
   url: 'https://careers.titan.in/in/en/search-results',
@@ -162,6 +168,7 @@ test('Fastrack helpers stay pinned to the verified homepage careers handoff and 
     'https://careers.titan.in/in/en/search-results',
   )
   assert.equal(fastrack.hasTitanJobsHomeSignal(titanCareersHomePage), true)
+  assert.equal(fastrack.hasTitanJobsHomeSignal(currentTitanCareersHomePage), true)
   assert.equal(fastrack.hasZeroJobsSignal(zeroJobsSearchPage), true)
   assert.equal(fastrack.hasPublicJobSignal(zeroJobsSearchPage.html), false)
   assert.equal(fastrack.hasPublicJobSignal(searchResultsWithOpeningsPage.html), true)

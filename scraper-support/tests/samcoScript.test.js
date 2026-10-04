@@ -79,9 +79,9 @@ test('Samco exports a stable exact-name wrapper over the verified SAMCO first-pa
   assert.equal(samco.ATS_PLATFORM, 'official-company-careers')
   assert.equal(samco.COUNTRY_FILTER, 'India')
   assert.equal(samco.PAGINATION_STRATEGY, 'single-first-party-careers-page-with-public-department-options')
-  assert.equal(samco.VERIFIED_ON, '2026-07-15')
+  assert.equal(samco.VERIFIED_ON, '2026-10-03')
   assert.match(samco.VERIFIED_SURFACE_SUMMARY, /Channel Sales/i)
-  assert.match(samco.VERIFIED_SURFACE_SUMMARY, /RankMF - B2B Sales/i)
+  assert.match(samco.VERIFIED_SURFACE_SUMMARY, /Engineering/i)
   assert.equal(samco.hasVerifiedSamcoHomepageSignal(homepageHtml), true)
   assert.equal(samco.hasVerifiedSamcoCareersSignal(careersHtml), true)
   assert.deepEqual(

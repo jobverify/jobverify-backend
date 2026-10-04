@@ -125,7 +125,7 @@ test('Fino Payments Bank pins the verified homepage handoff, non-listing careers
   assert.equal(finoPaymentsBank.SOURCE, 'finopaymentsbank')
   assert.equal(finoPaymentsBank.COMPANY, 'Fino Payments Bank')
   assert.equal(finoPaymentsBank.OFFICIAL_BRAND_NAME, 'Fino Payments Bank')
-  assert.equal(finoPaymentsBank.VERIFIED_ON, '2026-07-15')
+  assert.equal(finoPaymentsBank.VERIFIED_ON, '2026-10-03')
   assert.equal(finoPaymentsBank.LEGACY_HOMEPAGE_URL, 'https://www.finobank.com/')
   assert.equal(finoPaymentsBank.HOMEPAGE_URL, 'https://www.fino.bank.in/')
   assert.equal(finoPaymentsBank.CAREERS_URL, 'https://www.fino.bank.in/company/careers')

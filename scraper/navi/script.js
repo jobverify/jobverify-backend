@@ -167,8 +167,8 @@ export const extractTurboHireHandoffUrl = (html) =>
 export const hasOfficialBoardSignal = (html) => {
   const rawHtml = String(html ?? '')
 
-  return /<title>\s*Navi\s*<\/title>/i.test(rawHtml)
-    && /property=["']og:title["'][^>]+content=["']Navi - Career Page["']/i.test(rawHtml)
+  return /<title>\s*NAVI TECHNOLOGIES LIMITED\s*<\/title>/i.test(rawHtml)
+    && /property=["']og:title["'][^>]+content=["']NAVI TECHNOLOGIES LIMITED - Career Page["']/i.test(rawHtml)
     && /You need to enable JavaScript to run this app\./i.test(rawHtml)
 }
 

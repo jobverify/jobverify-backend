@@ -52,6 +52,20 @@ const catalogsMatch = (left = [], right = []) => (
   && left.every((source, index) => source === right[index])
 )
 
+const catalogsMatchWithSuccessfulRemovals = (existing, current = []) => {
+  const original = existing.catalogSources || []
+  if (current.length > original.length) return false
+  let currentIndex = 0
+  for (const source of original) {
+    if (source === current[currentIndex]) {
+      currentIndex += 1
+    } else if (existing.completed?.[source]?.result?.success !== true) {
+      return false
+    }
+  }
+  return currentIndex === current.length
+}
+
 const waitSynchronously = (milliseconds) => {
   Atomics.wait(synchronousWaitBuffer, 0, 0, milliseconds)
 }
@@ -119,7 +133,9 @@ export const openRunCheckpoint = ({
 
   const catalogSources = sources.map((source) => String(source).trim())
   const existing = loadExistingState(filePath)
-  if (existing && !catalogsMatch(existing.catalogSources, catalogSources)) {
+  if (existing
+    && !catalogsMatch(existing.catalogSources, catalogSources)
+    && !catalogsMatchWithSuccessfulRemovals(existing, catalogSources)) {
     throw new Error(
       `Cannot resume ${filePath}: the scraper catalog changed. Start a new resilient run directory.`,
     )

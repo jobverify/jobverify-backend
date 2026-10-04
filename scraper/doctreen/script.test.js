@@ -3,9 +3,11 @@ import test from 'node:test'
 
 import {
   CAREER_PAGE_URL,
+  PAGES_SITEMAP_URL,
   createDoctreenScraper,
   extractCareerJobs,
 } from './script.js'
+import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const careersHtml = `
   <main>
@@ -183,4 +185,27 @@ test('rejects a Doctreen careers page without the expected openings section', ()
     () => extractCareerJobs('<main><h1>Nous rejoindre</h1></main>'),
     /expected openings page shape/,
   )
+})
+
+test('records verified empty inventory when the retired careers route resolves to the current About page and sitemap', async () => {
+  const requested = []
+  const jobs = await createDoctreenScraper().run({
+    fetchText: async url => {
+      requested.push(url)
+      if (url === CAREER_PAGE_URL) return '<html><head><title>À propos — Doctreen</title><link rel="canonical" href="https://www.doctreen.com/a-propos"></head><body>Doctreen Montpellier</body></html>'
+      if (url === PAGES_SITEMAP_URL) return '<urlset><url><loc>https://www.doctreen.com/</loc></url><url><loc>https://www.doctreen.com/a-propos</loc></url></urlset>'
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+  assert.deepEqual(requested, [CAREER_PAGE_URL, PAGES_SITEMAP_URL])
+  assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs)?.status, 'verified-empty')
+})
+
+test('rejects a sitemap with a live careers page', async () => {
+  await assert.rejects(createDoctreenScraper().run({
+    fetchText: async url => url === CAREER_PAGE_URL
+      ? '<html><head><title>À propos — Doctreen</title><link href="https://www.doctreen.com/a-propos"></head><body>Montpellier</body></html>'
+      : '<urlset><url><loc>https://www.doctreen.com/a-propos</loc></url><url><loc>https://www.doctreen.com/carrieres</loc></url></urlset>',
+  }), /sitemap no longer proves/i)
 })

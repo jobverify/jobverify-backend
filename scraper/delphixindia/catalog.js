@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 15, 2026 that https://www.delphix.com/ redirects to the live Delphix product page at https://www.perforce.com/products/delphix, and that the official Perforce careers page at https://www.perforce.com/careers links Browse Open Positions to the public Lever board at https://jobs.lever.co/perforce. The public Lever postings API at https://api.lever.co/v0/postings/perforce?mode=json currently exposes Delphix-branded roles outside India and separate Pune, Maharashtra roles for other Perforce product lines, so the live Delphix-and-India intersection is 0 Delphix India roles right now.'
+  'Verified on October 3, 2026 that https://www.delphix.com/ redirects to the live Delphix product page at https://www.perforce.com/products/delphix, and that the official Perforce careers page at https://www.perforce.com/careers links Browse Open Positions to the public Lever board at https://jobs.lever.co/perforce. All six current postings in the public Lever API at https://api.lever.co/v0/postings/perforce?mode=json also appear on the board. One role is in Pune, Maharashtra, but no role is Delphix-branded, so there are 0 Delphix India roles.'
 
 export const DELPHIX_INDIA_CATALOG = {
   source: 'delphixindia',
@@ -25,10 +25,10 @@ export const DELPHIX_INDIA_CATALOG = {
   countryFilter: 'India',
   paginationStrategy: 'official-homepage-redirect-plus-careers-validation-plus-lever-api',
   extractionStrategy:
-    'verified-delphix-homepage-redirect+verified-perforce-careers-page+verified-lever-board+lever-postings-api+delphix-brand-filter+india-location-filter',
+    'verified-delphix-homepage-redirect+verified-perforce-careers-page+verified-lever-board+lever-postings-api+board-api-zero-check+delphix-brand-filter+india-location-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

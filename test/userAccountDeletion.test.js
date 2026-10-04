@@ -5,10 +5,14 @@ import { deleteUserAccount } from "../src/controllers/userController.js";
 import Click from "../src/models/Click.js";
 import JobAlertDelivery from "../src/models/JobAlertDelivery.js";
 import PlanPurchase from "../src/models/PlanPurchase.js";
+import AccessEvent from "../src/models/AccessEvent.js";
 import Subscription from "../src/models/Subscription.js";
 import TelegramLinkToken from "../src/models/TelegramLinkToken.js";
 import User from "../src/models/User.js";
 import UserSuggestion from "../src/models/UserSuggestion.js";
+import PendingUser from "../src/models/PendingUser.js";
+import AdminAudit from "../src/models/AdminAudit.js";
+import SiteSettings from "../src/models/SiteSettings.js";
 
 const createResponseDouble = () => ({
   statusCode: 200,
@@ -29,14 +33,19 @@ const createResponseDouble = () => ({
 
 test("deleteUserAccount removes the authenticated user's account-linked data and clears their session", async () => {
   const userId = "507f1f77bcf86cd799439011";
+  const email = "deleted.account@gmail.com";
   const originalMethods = {
     deleteOne: User.deleteOne,
     subscriptions: Subscription.deleteMany,
     clicks: Click.deleteMany,
     deliveries: JobAlertDelivery.deleteMany,
     purchases: PlanPurchase.deleteMany,
+    accessEvents: AccessEvent.deleteMany,
     suggestions: UserSuggestion.deleteMany,
     telegramTokens: TelegramLinkToken.deleteMany,
+    pendingUsers: PendingUser.deleteMany,
+    audits: AdminAudit.deleteMany,
+    settings: SiteSettings.updateMany,
   };
   const removals = [];
 
@@ -45,13 +54,17 @@ test("deleteUserAccount removes the authenticated user's account-linked data and
   Click.deleteMany = async (filter) => { removals.push(["click", filter]); };
   JobAlertDelivery.deleteMany = async (filter) => { removals.push(["delivery", filter]); };
   PlanPurchase.deleteMany = async (filter) => { removals.push(["purchase", filter]); };
+  AccessEvent.deleteMany = async (filter) => { removals.push(["accessEvent", filter]); };
   UserSuggestion.deleteMany = async (filter) => { removals.push(["suggestion", filter]); };
   TelegramLinkToken.deleteMany = async (filter) => { removals.push(["telegramToken", filter]); };
+  PendingUser.deleteMany = async (filter) => { removals.push(["pendingUser", filter]); };
+  AdminAudit.deleteMany = async (filter) => { removals.push(["audit", filter]); };
+  SiteSettings.updateMany = async (filter, update) => { removals.push(["settings", filter, update]); };
 
   try {
     const res = createResponseDouble();
     await deleteUserAccount({
-      user: { _id: userId },
+      user: { _id: userId, email },
     }, res);
 
     assert.equal(res.statusCode, 200);
@@ -61,13 +74,17 @@ test("deleteUserAccount removes the authenticated user's account-linked data and
       message: "Account deleted successfully",
     });
     assert.equal(res.clearedCookie, "jobverify_token");
-    assert.deepEqual(removals.map(([model, filter]) => [model, filter]), [
+    assert.deepEqual(removals, [
       ["subscription", { user: userId }],
       ["click", { user: userId }],
       ["delivery", { user: userId }],
       ["purchase", { user: userId }],
+      ["accessEvent", { user: userId }],
       ["telegramToken", { user: userId }],
       ["suggestion", { user: userId }],
+      ["pendingUser", { email }],
+      ["audit", { $or: [{ admin: userId }, { targetType: "User", targetId: userId }] }],
+      ["settings", { updatedBy: userId }, { $unset: { updatedBy: "" } }],
       ["user", { _id: userId }],
     ]);
   } finally {
@@ -76,7 +93,11 @@ test("deleteUserAccount removes the authenticated user's account-linked data and
     Click.deleteMany = originalMethods.clicks;
     JobAlertDelivery.deleteMany = originalMethods.deliveries;
     PlanPurchase.deleteMany = originalMethods.purchases;
+    AccessEvent.deleteMany = originalMethods.accessEvents;
     UserSuggestion.deleteMany = originalMethods.suggestions;
     TelegramLinkToken.deleteMany = originalMethods.telegramTokens;
+    PendingUser.deleteMany = originalMethods.pendingUsers;
+    AdminAudit.deleteMany = originalMethods.audits;
+    SiteSettings.updateMany = originalMethods.settings;
   }
 });

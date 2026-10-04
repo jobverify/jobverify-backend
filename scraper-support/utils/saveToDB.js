@@ -27,6 +27,10 @@ import {
 import { normalizeScrapedJob, resolveJobType } from './normalizeScrapedJob.js'
 import { enrichJobsWithPublicExperience } from './publicExperienceEnrichment.js'
 import { jobAlertService } from '../../src/services/jobAlertService.js'
+import { getJobClassifier, classifyJobsForPersistence } from './jobClassifier.js'
+import { buildDescriptionSourceUpdate } from '../../src/services/jobDescriptionPolicy.js'
+import { getSourceDescription } from '../../src/utils/jobSourceContent.js'
+import { CLASSIFICATION_FIELDS, getAuthoritativeClassification } from '../../src/services/jobClassificationPolicy.js'
 import { refreshJobDatasetSummary } from '../../src/services/jobDatasetSummaryService.js'
 import {
   analyzePublishableJobs,
@@ -284,7 +288,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
     now,
   })
 
-  const jobsForPersistence = options.enrichPublicExperience === false
+  const enrichedJobs = options.enrichPublicExperience === false
     ? (() => {
         emitStage(source, onStage, {
           stage: 'enrichment',
@@ -311,6 +315,29 @@ export const saveToDB = async (jobs, source, options = {}) => {
       )
   throwIfAborted(signal)
 
+  const classifier = options.classifier || getJobClassifier()
+  const keyForJob = (job) => job.fingerprint || generateFingerprint(normalizeScrapedJob(job, { source }))
+  const rewriteMode = options.descriptionRewriteMode || process.env.JOB_DESCRIPTION_REWRITE_MODE || 'off'
+  if (!['off', 'publish'].includes(rewriteMode)) throw new Error('JOB_DESCRIPTION_REWRITE_MODE must be off or publish')
+  const existingJobs = enrichedJobs.length === 0 || (classifier.mode === 'off' && rewriteMode === 'off' && !hasLiveDatabaseHandle())
+    ? []
+    : await JobModel.find({ fingerprint: { $in: enrichedJobs.map(keyForJob) } })
+      .select('fingerprint classification title originalTitle company location salary description sourceDescription sourceContentHash descriptionFormat descriptionRewrite minimumQualification preferredQualification sourceEmploymentType sourceExperienceRequired postedAt eligibleBatches eligibleBatchesProvenance jobType employmentType experienceRequired experienceLevel seniority experienceYears experienceBucket experienceProfile')
+      .lean().exec()
+  const existingByKey = new Map(existingJobs.map(job => [job.fingerprint, job]))
+  const sourceJobs = enrichedJobs.map(job => {
+    const previous = existingByKey.get(keyForJob(job))
+    return job.preserveExistingSourceContent === true && previous
+      ? { ...previous, ...job, sourceDescription: getSourceDescription(previous), jobDescription: getSourceDescription(previous) }
+      : job
+  })
+  const jobsForPersistence = await runStage(source, onStage, 'classification',
+    () => classifyJobsForPersistence(classifier, sourceJobs, { signal, now, existingJobs, keyForJob,
+      onProgress: progress => emitStage(source, onStage, { stage: 'classification', status: 'progress', ...progress }),
+    }),
+    { jobs: enrichedJobs.length }, { signal })
+  throwIfAborted(signal)
+
   const operations = jobsForPersistence.map((job) => {
     const normalizedJob = normalizeScrapedJob(job, { source })
     const fingerprint = generateFingerprint(normalizedJob)
@@ -333,9 +360,15 @@ export const saveToDB = async (jobs, source, options = {}) => {
     const searchKeys = buildJobSearchKeys(persistedJob)
     const derivedFields = buildJobDerivedFields(persistedJob)
     const preserveExistingSourceContent = normalizedJob.preserveExistingSourceContent === true
+    const descriptionUpdates = buildDescriptionSourceUpdate({ ...persistedJob, sourceDescription: getSourceDescription(job) }, existingByKey.get(fingerprint), { mode: rewriteMode, now })
     const sourceContentUpdates = preserveExistingSourceContent
       ? {}
       : {
+          ...descriptionUpdates,
+          sourceEmploymentType: normalizedJob.sourceEmploymentType || null,
+          sourceExperienceRequired: normalizedJob.sourceExperienceRequired ?? null,
+          eligibleBatches: normalizedJob.eligibleBatches || [],
+          eligibleBatchesProvenance: normalizedJob.eligibleBatchesProvenance === 'source' ? 'source' : null,
           minimumQualification: normalizedJob.minimumQualification,
           preferredQualification: normalizedJob.preferredQualification,
           requiredSkills: normalizedJob.requiredSkills,
@@ -394,6 +427,13 @@ export const saveToDB = async (jobs, source, options = {}) => {
             jobId: normalizedJob.jobId,
             requisitionId: normalizedJob.requisitionId,
             ...sourceContentUpdates,
+            ...(getAuthoritativeClassification(normalizedJob) && Object.fromEntries(
+              CLASSIFICATION_FIELDS.map((field) => [field, normalizedJob[field] ?? null]),
+            )),
+            ...(normalizedJob.classification && { classification: normalizedJob.classification }),
+            ...(normalizedJob.sourceEmploymentType && { sourceEmploymentType: normalizedJob.sourceEmploymentType }),
+            ...(normalizedJob.sourceExperienceRequired !== null && normalizedJob.sourceExperienceRequired !== undefined && normalizedJob.sourceExperienceRequired !== '' && { sourceExperienceRequired: normalizedJob.sourceExperienceRequired }),
+            ...(normalizedJob.eligibleBatchesProvenance === 'source' && { eligibleBatches: normalizedJob.eligibleBatches || [], eligibleBatchesProvenance: 'source' }),
             fingerprint,
             scrapedAt: now,
             scrapedTimestamp: normalizedJob.scrapedTimestamp || now,
@@ -406,7 +446,6 @@ export const saveToDB = async (jobs, source, options = {}) => {
             ...(postedAt && { postedAt }),
             ...(closingDate && { closingDate }),
           },
-          $unset: { description: 1 },
         },
         upsert: true,
       },
@@ -451,7 +490,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
       .map((index) => operations[index]?.updateOne?.filter?.fingerprint)
       .filter(Boolean)
 
-    if (insertedFingerprints.length > 0) {
+    if (insertedFingerprints.length > 0 && options.enqueueAlerts !== false) {
       const insertedJobs = await JobModel.find({
         fingerprint: { $in: insertedFingerprints },
         status: 'active',
@@ -576,6 +615,7 @@ const VOLATILE_DRY_RUN_SNAPSHOT_FIELDS = new Set([
   'scrapedAt',
   'scrapedTimestamp',
   'extractedAt',
+  'classifiedAt',
 ])
 
 const stripVolatileDryRunSnapshotFields = (value) => {
@@ -650,6 +690,8 @@ const writeDryRunSnapshotIfChanged = async (filePath, content, options = {}) => 
 
 export const saveDryRunSnapshot = async (jobs, filePath, options = {}) => {
   const signal = options.signal || null
+  const source = options.source || jobs[0]?.source || 'dry-run'
+  const onStage = options.onStage
   throwIfAborted(signal)
   const filteredJobs = filterIndiaJobs(jobs)
   const hasTargetedSelection = typeof options.shouldEnrichJob === 'function'
@@ -662,6 +704,8 @@ export const saveDryRunSnapshot = async (jobs, filePath, options = {}) => {
     : () => true
 
   let enrichedJobs = filteredJobs
+  const enrichmentStartedAt = Date.now()
+  emitStage(source, onStage, { stage: 'enrichment', status: options.enrichPublicExperience === false ? 'skipped' : 'start', jobs: filteredJobs.length })
 
   if (options.enrichPublicExperience !== false) {
     if (!hasTargetedSelection) {
@@ -705,11 +749,17 @@ export const saveDryRunSnapshot = async (jobs, filePath, options = {}) => {
     }
   }
 
+  if (options.enrichPublicExperience !== false) emitStage(source, onStage, { stage: 'enrichment', status: 'done', jobs: enrichedJobs.length, durationMs: Date.now() - enrichmentStartedAt })
   throwIfAborted(signal)
-  const normalizedJobs = normalizeDryRunJobs(enrichedJobs)
-  await writeDryRunSnapshotIfChanged(filePath, JSON.stringify(normalizedJobs, null, 2), {
+  const classifier = options.classifier || getJobClassifier()
+  const classifiedJobs = await runStage(source, onStage, 'classification',
+    () => classifyJobsForPersistence(classifier, enrichedJobs, { signal, now: options.now || new Date(),
+      onProgress: progress => emitStage(source, onStage, { stage: 'classification', status: 'progress', ...progress }),
+    }), { jobs: enrichedJobs.length }, { signal })
+  const normalizedJobs = normalizeDryRunJobs(classifiedJobs)
+  await runStage(source, onStage, 'snapshot write', () => writeDryRunSnapshotIfChanged(filePath, JSON.stringify(normalizedJobs, null, 2), {
     allowInPlaceRewriteOnEnospc: options.allowInPlaceRewriteOnEnospc === true,
-  })
+  }), { jobs: normalizedJobs.length }, { signal })
   return normalizedJobs
 }
 

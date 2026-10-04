@@ -27,6 +27,8 @@ import {
 import { resolveJobType } from "../../scraper-support/utils/normalizeScrapedJob.js";
 
 import { PUBLIC_JOB_TYPE_EXPRESSION } from "../utils/publicJobType.js";
+import { getAuthoritativeClassification } from '../services/jobClassificationPolicy.js';
+import { withSemanticExperienceConstraint } from '../utils/classifiedExperienceFilters.js';
 import { applyPublicJobVisibility } from "../utils/publicJobVisibility.js";
 import { buildAggregateHiringSignalFilter } from "../utils/jobListingEvidence.js";
 import { canUsePremiumFilters } from "../utils/accessControl.js";
@@ -63,7 +65,7 @@ const PUBLIC_CACHE_HEADER =
 const PRIVATE_CACHE_HEADER = "no-store";
 const FALLBACK_JOB_SLUG = "job";
 const JOB_CARD_PAGE_LIMIT = 12;
-const MAX_JOB_CARD_PAGE_LIMIT = 2000;
+const MAX_JOB_CARD_PAGE_LIMIT = 1000;
 const MAX_EXPERIENCE_FILTER_YEAR = 15;
 const MAX_QUERY_EXECUTION_MS = 800;
 const DEFAULT_COMPANY_META_LIMIT = 24;
@@ -120,7 +122,7 @@ const JOB_LIST_CARD_FIELDS = Object.freeze([
 ]);
 const JOB_LIST_CURSOR_FIELDS = Object.freeze(["sortDate", "clickCount"]);
 const JOB_LIST_QUERY_FIELDS = Object.freeze([
-  ...new Set([...JOB_LIST_CARD_FIELDS, ...JOB_LIST_CURSOR_FIELDS]),
+  ...new Set([...JOB_LIST_CARD_FIELDS, ...JOB_LIST_CURSOR_FIELDS, 'classification', 'employmentType', 'experienceLevel']),
 ]);
 const JOB_LIST_CARD_PROJECTION = JOB_LIST_QUERY_FIELDS.join(" ");
 const JOB_LIST_CARD_TEXT_PROJECTION = Object.freeze(
@@ -447,6 +449,7 @@ const normalizeJobTypeLabel = (value) => {
   if (normalized === "intern" || normalized === "internship") return "Intern";
   if (normalized === "contract") return "Contract";
   if (normalized === "others") return "Others";
+  if (normalized === "unspecified") return "Unspecified";
   if (normalized === "full-time fresher") return "Full-time Fresher";
   if (normalized === "full-time experienced") return "Full-time Experienced";
   if (normalized === "full-time") return "Full-time";
@@ -497,6 +500,8 @@ const hasPositiveExperienceSignal = (job = {}) => {
 };
 
 const normalizeResponseExperienceLevel = (job = {}) => {
+  const classified = getAuthoritativeClassification(job);
+  if (classified) return classified.experienceLevel ?? null;
   const derivedFromProfile = deriveExperienceLevelFromYears(
     getStructuredExperienceMinimumYears(job),
   );
@@ -524,6 +529,8 @@ const normalizeResponseExperienceLevel = (job = {}) => {
 };
 
 const normalizeResponseJobType = (job = {}) => {
+  const classified = getAuthoritativeClassification(job);
+  if (classified) return classified.jobType;
   if (Object.hasOwn(job, "_publicJobType")) return job._publicJobType;
   const normalizedLabel = normalizeJobTypeLabel(job.jobType);
   const normalizedExperienceLevel = normalizeResponseExperienceLevel(job);
@@ -826,6 +833,10 @@ const normalizeResponseJob = (job) => {
     workdayApplicationStatusReason: _workdayApplicationStatusReason,
     workdayApplicationStatusCheckedAt: _workdayApplicationStatusCheckedAt,
     _publicJobType,
+    classification: _classification,
+    sourceDescription: _sourceDescription,
+    sourceContentHash: _sourceContentHash,
+    descriptionRewrite: _descriptionRewrite,
     ...publicJob
   } = job;
   const locations = normalizeStoredLocations(publicJob);
@@ -992,7 +1003,7 @@ const buildExperienceYearConstraint = (years = []) => {
     const zeroYearConstraint = buildExperienceYearMatchConstraint([0]);
     const fresherJobTypeConstraint = buildFresherJobTypeConstraint();
     if (zeroYearConstraint && fresherJobTypeConstraint) {
-      constraints.push({ $and: [zeroYearConstraint, fresherJobTypeConstraint] });
+      constraints.push(withSemanticExperienceConstraint(0, { $and: [zeroYearConstraint, fresherJobTypeConstraint] }));
     }
   }
 
@@ -1007,7 +1018,7 @@ const buildExperienceYearConstraint = (years = []) => {
   return null;
 };
 
-const buildUnspecifiedExperienceConstraint = () => ({
+const buildUnspecifiedExperienceConstraint = () => withSemanticExperienceConstraint('unspecified', {
   $and: [
     {
       $or: [

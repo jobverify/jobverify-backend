@@ -36,9 +36,9 @@ export const AVENDATA_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'avendata.com',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified on July 15, 2026 that https://avendata.com/ is the live first-party AvenDATA homepage and links Careers to https://avendata.com/careers, that the official careers page is currently a general application surface with "Upload Your Resume" and "Submit Application" instead of public job listings, that robots.txt points to https://avendata.com/sitemap.xml which only publishes https://avendata.com/careers as the careers-like route, and that adjacent first-party jobs routes such as /career, /jobs, /join-us, /work-with-us, /openings, /current-openings, /company/careers, and /about/careers returned 404 pages. There is no trustworthy public jobs surface on the AvenDATA domain right now.',
+    'Verified on October 3, 2026 that https://avendata.com/ remains the first-party AvenDATA homepage and links Careers to https://avendata.com/careers. The refreshed page titles are Decommission Legacy Systems & Archive Data Securely | AvenDATA and Careers at AvenDATA : Archive Legacy Systems & Carve-Outs. The careers page still has Upload Your Resume and Submit Application, with no public job listings. robots.txt still points to https://avendata.com/sitemap.xml, which exposes only the careers route; the two careers aliases resolve to that page and eight adjacent job routes return branded 404 pages. There is no trustworthy public jobs surface on the checked AvenDATA domain.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

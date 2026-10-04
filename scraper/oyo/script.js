@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { OYO_CATALOG } from './catalog.js'
+import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -103,6 +104,9 @@ export const hasConsumerBookingSurfaceSignal = (html = '') => {
       normalized.includes('Over 174,000+ hotels and homes across 35+ countries')
       || normalized.includes('From Stays to Experiences - Your Trusted Hotel Partner')
       || normalized.includes('From Stays to Experiences — Your Trusted Hotel Partner')
+      || (normalized.includes('Top rated value stays across 35+ countries')
+        && normalized.includes('175k+ hotels and homes')
+        && normalized.includes('35+ countries'))
     )
 }
 
@@ -119,7 +123,7 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
 
   return hasConsumerBookingSurfaceSignal(html)
-    && normalized.includes('OYO for Business')
+    && /OYO for Business/i.test(normalized)
     && normalized.includes('Teams / Careers')
 }
 
@@ -167,7 +171,12 @@ export const createOyoScraper = () => ({
       throw new Error('The verified OYO exact-name careers route changed materially')
     }
 
-    return []
+    return attachInventoryEvidence([], {
+      status: 'discovery-only', surface: LINKEDIN_CAREERS_URL, firstParty: false,
+      listingComplete: false, pagesFetched: 2, reportedTotal: null, indiaFacetCount: null,
+      verifiedAt: new Date().toISOString(),
+      reason: 'OYO first-party careers handoff points to LinkedIn; linked public inventory has not been fully enumerated.',
+    })
   },
 })
 
@@ -178,7 +187,15 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
-  if (isDryRun) {
+  const evidence = readInventoryEvidence(jobs)
+  if (evidence?.listingComplete === false) {
+    if (isDryRun) {
+      const { writeFile } = await import('node:fs/promises')
+      await writeFile(path.join(currentDir, 'inventory-evidence.json'), JSON.stringify(evidence, null, 2))
+    }
+    console.error(evidence.reason)
+    process.exitCode = 1
+  } else if (isDryRun) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
   } else {
     await saveToDB(jobs, SOURCE)

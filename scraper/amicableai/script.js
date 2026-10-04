@@ -163,7 +163,7 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeText(page)
 
-  return /<title>\s*amicable \| Relationships, divorce, separation, co-parenting\s*<\/title>/i.test(page)
+  return /<title>\s*amicable \| Relationships, divorce, (?:prenups, )?separation, co-parenting\s*<\/title>/i.test(page)
     && sameUrl(extractHomepageCareerUrl(page), CAREERS_URL)
     && (
       normalized.includes("we're the trusted legal service for separating couples")

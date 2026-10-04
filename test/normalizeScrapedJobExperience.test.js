@@ -32,6 +32,19 @@ test('preserves an experience value provided by the scraper', () => {
   assert.equal(normalized.experienceRequired, '4-6 years')
 })
 
+test('zero required experience takes priority over an Associate title and stale junior inference', () => {
+  for (const experienceRequired of ['0', '0 years', '0-1 years']) {
+    const normalized = normalizeScrapedJob({
+      title: 'Associate System Engineer', employmentType: 'Full Time',
+      experienceRequired, experienceLevel: 'Junior Level',
+      description: 'Batch Required Graduate 2025. Full Time (Night Shift).',
+    })
+    assert.equal(normalized.jobType, 'Full-time Fresher', experienceRequired)
+    assert.equal(normalized.experienceLevel, 'Entry Level', experienceRequired)
+    assert.equal(normalizeScrapedJob(normalized).jobType, 'Full-time Fresher')
+  }
+})
+
 test('normalizes internship roles without explicit years into a no-experience requirement', () => {
   const normalized = normalizeScrapedJob({
     title: 'QA Engineer Intern',
@@ -48,9 +61,9 @@ test('normalizes internship roles without explicit years into a no-experience re
 test('normalizes a title-only year range when the official listing title carries the requirement', () => {
   const normalized = normalizeScrapedJob({
     title: '1-10yrs Application for Cyber- Kolkata DN 57 - RDC',
-    company: 'PwC',
+    company: 'Example Corp',
     location: 'Kolkata, India',
-    sourceUrl: 'https://jobs.example.com/pwc-cyber-role',
+    sourceUrl: 'https://jobs.example.com/example-cyber-role',
     description: null,
     experienceRequired: null,
   })
@@ -113,9 +126,9 @@ test('normalizes label-first experience ranges when the years cue appears before
 test('normalizes years-of-experience labels that carry an exact numeric requirement', () => {
   const normalized = normalizeScrapedJob({
     title: 'Associate',
-    company: 'PwC',
+    company: 'Example Corp',
     location: 'Gurugram, India',
-    sourceUrl: 'https://jobs.example.com/pwc-associate',
+    sourceUrl: 'https://jobs.example.com/example-associate',
     description: 'Mandatory Skills: Consulting Preferred Skills: Energy, Utilities & Resources Years of Experience: 1 QUALIFICATIONS: MBA/PG',
     experienceRequired: null,
   })
@@ -126,9 +139,9 @@ test('normalizes years-of-experience labels that carry an exact numeric requirem
 test('normalizes malformed split-digit ranges in years-of-experience labels', () => {
   const normalized = normalizeScrapedJob({
     title: 'Associate Business Development iGT - Citizen and Business Services Advisory Noida',
-    company: 'PwC',
+    company: 'Example Corp',
     location: 'Noida, India',
-    sourceUrl: 'https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Noida/IN-Senior-Associate-Business-Development-iGT---Citizen-and-Business-Services-Advisory-Bhopal_739604WD-1',
+    sourceUrl: 'https://example.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Noida/IN-Senior-Associate-Business-Development-iGT---Citizen-and-Business-Services-Advisory-Bhopal_739604WD-1',
     description: 'Years of experience required: 10 -1 5 Education qualification: Masters Degree in Economics.',
     experienceRequired: null,
   })
@@ -139,10 +152,10 @@ test('normalizes malformed split-digit ranges in years-of-experience labels', ()
 test('preserves late experience requirements that follow learn-more company copy', () => {
   const normalized = normalizeScrapedJob({
     title: 'Associate Business Development iGT - Citizen and Business Services Advisory Noida',
-    company: 'PwC',
+    company: 'Example Corp',
     location: 'Noida, India',
-    sourceUrl: 'https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Noida/IN-Senior-Associate-Business-Development-iGT---Citizen-and-Business-Services-Advisory-Bhopal_739604WD-1',
-    description: 'Why PWC At Pw C, you will be part of a vibrant community of solvers that leads with trust and creates distinctive outcomes for our clients and communities. Learn more about us. At Pw C, we believe in providing equal employment opportunities without discrimination. Responsibilities include supporting financial sector projects and business development activities. Years of experience required: 10 -1 5 Education qualification: Masters Degree in Economics.',
+    sourceUrl: 'https://example.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Noida/IN-Senior-Associate-Business-Development-iGT---Citizen-and-Business-Services-Advisory-Bhopal_739604WD-1',
+    description: 'Why Example Corp At Example Corp, you will be part of a vibrant community of solvers that leads with trust and creates distinctive outcomes for our clients and communities. Learn more about us. At Example Corp, we believe in providing equal employment opportunities without discrimination. Responsibilities include supporting financial sector projects and business development activities. Years of experience required: 10 -1 5 Education qualification: Masters Degree in Economics.',
     experienceRequired: null,
   })
 
@@ -253,9 +266,9 @@ test('normalizes candidate-cued minimum years in domain requirements even with m
 test('normalizes labeled minimum values when the year token is split apart', () => {
   const normalized = normalizeScrapedJob({
     title: 'Manager Carbon/Green hydrogen Decarbonization Advisory Gurgaon',
-    company: 'PwC',
+    company: 'Example Corp',
     location: 'Gurgaon, India',
-    sourceUrl: 'https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Gurugram-10-C/IN-Manager--Carbon-Green-hydrogen--Decarbonization-Advisory-Gurgaon_635429WD-2/apply',
+    sourceUrl: 'https://example.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Gurugram-10-C/IN-Manager--Carbon-Green-hydrogen--Decarbonization-Advisory-Gurgaon_635429WD-2/apply',
     description: 'Years of experience required : Minimum 7 y ears Education qualification: B.tech + MBA',
     experienceRequired: null,
   })
@@ -331,9 +344,9 @@ test('normalizes descriptive between-and experience ranges into bounded year req
 test('normalizes greater-than experience labels into open-ended year requirements', () => {
   const normalized = normalizeScrapedJob({
     title: 'Associate General Manager-Supply Chain',
-    company: 'Piramal Pharma',
+    company: 'ExampleCo',
     location: 'Pithampur, India',
-    sourceUrl: 'https://jobs.example.com/piramal-supply-chain',
+    sourceUrl: 'https://jobs.example.com/supply-chain',
     description: 'Relevant Experience >12 years and shall have independently led supply chain functions.',
     experienceRequired: null,
   })
@@ -1078,9 +1091,9 @@ test('does not promote non-numeric medium-confidence experience phrases into exp
 test('preserves a source-verified missing experience requirement when the scraper has already checked the public detail page', () => {
   const normalized = normalizeScrapedJob({
     title: 'Associate Business Development iGT - Citizen and Business Services Advisory Noida',
-    company: 'PwC',
+    company: 'Example Corp',
     location: 'Noida, India',
-    sourceUrl: 'https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Noida/IN-Senior-Associate-Business-Development-iGT---Citizen-and-Business-Services-Advisory-Bhopal_739604WD-1',
+    sourceUrl: 'https://example.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Noida/IN-Senior-Associate-Business-Development-iGT---Citizen-and-Business-Services-Advisory-Bhopal_739604WD-1',
     publicExperienceChecked: true,
     jobDescription: `
       <p style="text-align:left"><b>Line of Service</b></p>Advisory
@@ -1088,12 +1101,12 @@ test('preserves a source-verified missing experience requirement when the scrape
       <p style="text-align:left"><b>Specialism</b></p>Operations
       <p style="text-align:left"><b>Management Level</b></p>Associate
       <p style="text-align:left"><b>Job Description &amp; Summary</b></p>
-      At PwC, our people in data and analytics focus on leveraging data to drive insights and make informed business decisions.
+      At Example Corp, our people in data and analytics focus on leveraging data to drive insights and make informed business decisions.
       They utilise advanced analytics techniques to help clients optimise their operations and achieve their strategic goals.
-      <div><u>*<span>Why</span> <span>PWC</span></u></div>
-      <div>At <span>PwC</span>, you will be part of a vibrant community of solvers that leads with trust and creates distinctive outcomes for our clients and communities.</div>
-      <div>Learn more <a href="https://www.pwc.in/about-us.html" target="_blank">about us</a>.</div>
-      <div>At <span>PwC</span>, we believe in providing equal employment opportunities, without any discrimination on the grounds of gender, ethnic background, age, disability, marital status, sexual orientation, pregnancy, gender identity or expression, religion or other beliefs, perceived differences and status protected by law.</div>
+      <div><u>*<span>Why</span> <span>Example Corp</span></u></div>
+      <div>At <span>Example Corp</span>, you will be part of a vibrant community of solvers that leads with trust and creates distinctive outcomes for our clients and communities.</div>
+      <div>Learn more <a href="https://www.example.in/about-us.html" target="_blank">about us</a>.</div>
+      <div>At <span>Example Corp</span>, we believe in providing equal employment opportunities, without any discrimination on the grounds of gender, ethnic background, age, disability, marital status, sexual orientation, pregnancy, gender identity or expression, religion or other beliefs, perceived differences and status protected by law.</div>
     `,
     experienceRequired: null,
   })
@@ -1130,3 +1143,10 @@ test('rejects reversed high-confidence profile evidence after a verified public-
 
   assert.equal(inferred, null)
 })
+test('source description remains unchanged through display normalization', () => {
+  const description = 'Freshers with post-graduation or 2 - 3 years of experience. Work with PowerPoint.';
+  const first = normalizeScrapedJob({ title: 'Analyst', company: 'Example', source: 'test', jobDescription: description });
+  assert.equal(first.sourceDescription, description);
+  const second = normalizeScrapedJob(first);
+  assert.equal(second.sourceDescription, description);
+});

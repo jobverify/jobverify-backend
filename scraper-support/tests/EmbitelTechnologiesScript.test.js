@@ -1,80 +1,74 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { createEmbitelTechnologiesScraper } from '../../scraper/embiteltechnologies/script.js'
 
-const LISTING_PAGE_HTML = String.raw`<!DOCTYPE html><html><body><script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{"jobsData":{"rows":[{"id":55737,"created_on":1752105600000,"job_status":"OPEN","department":"CARIAD","title":"Security Lead -Incident Management","location":"Bangalore","description_external":"<p>Lead security incident response for CARIAD.</p><p><strong>Skills :</strong> SIEM, Incident Management</p>","job_type":"FULLTIME","code":"55737"},{"id":55731,"created_on":1752019200000,"job_status":"OPEN","department":"ATC","title":"Software Architect - Adaptive Autosar","location":"Bangalore","description_external":"<p>Design Adaptive Autosar solutions.</p><p><strong>Skills :</strong> Autosar, C++</p>","job_type":"FULLTIME","code":"55731"},{"id":55369,"created_on":1751932800000,"job_status":"CLOSED","department":"VW Brands","title":"Front End Engineer","location":"Bangalore","description_external":"<p>Closed role.</p>","job_type":"FULLTIME","code":"55369"}],"count":11}}},"page":"/","query":{},"buildId":"embitel-build","isFallback":false,"gssp":true}</script></body></html>`
-
-const loadModule = async () => {
-  try {
-    return await import('../../scraper/embiteltechnologies/script.js')
-  } catch {
-    assert.fail('Expected Embitel Technologies scraper module at ../../scraper/embiteltechnologies/script.js')
-  }
+const CAREERS = 'https://www.embitel.com/work-with-us/'
+const OPENINGS = 'https://www.embitel.com/cariad-india-openings'
+const SCRIPT = 'https://www.embitel.com/wp-content/themes/astra-child/assets/embitel/wdhub-job.js'
+const API = 'https://www.embitel.com/wp-admin/admin-ajax.php'
+const HTML = '<title>Work With Embitel - Opportunities At Embitel</title><h2>Opportunities At Embitel</h2><a href="' + OPENINGS + '">CARIAD India Jobs</a>'
+const OPENINGS_HTML = '<title>CARIAD India Jobs</title><div id="cariadBody"></div><script>var wdhubJobData = {"ajaxUrl":"' + API + '"};</script><script src="' + SCRIPT + '"></script>'
+const CLIENT = 'jQuery(function ($) { $.ajax({ url: wdhubJobData.ajaxUrl, type: "POST", data: { action: "get_wdhub_job" } }); });'
+const job = (id, overrides = {}) => ({
+  jobpostingID: 'JOB_POSTING-3-' + id, jobcode: 'Backend Developer',
+  designation: 'Software Engineer - Software Engineering ( A3 )',
+  jobdescription: '<h3>Build services</h3><p>Experience: 5 years</p>', experience: '',
+  job_url: 'https://diconium.wd3.myworkdayjobs.com/Embitel_Technologies/job/Bangalore/Backend-Developer_JR' + id,
+  bu: 'Cariad', posted: 'Y', timestamp: '2026-07-07T22:27:18.112-07:00', location: 'Bangalore',
+  ...overrides,
+})
+const fetchText = async (url) => {
+  if (url === CAREERS) return HTML
+  if (url === OPENINGS) return OPENINGS_HTML
+  if (url === SCRIPT) return CLIENT
+  assert.fail('Retired or unverified URL: ' + url)
 }
 
-test('Embitel Technologies helpers keep the verified public SenseHQ board contract stable', async () => {
-  const embitel = await loadModule()
-
-  assert.equal(embitel.SOURCE, 'embiteltechnologies')
-  assert.equal(embitel.COMPANY, 'Embitel Technologies')
-  assert.equal(embitel.PUBLIC_BOARD_URL, 'https://embitel.sensehq.com/careers')
-  assert.equal(embitel.VERIFIED_ON, '2026-07-18')
-  assert.equal(embitel.buildListingUrl(), 'https://embitel.sensehq.com/careers')
-  assert.equal(embitel.buildJobUrl(55737), 'https://embitel.sensehq.com/careers/jobs/55737')
-})
-
-test('extractSearchResults keeps only open India jobs from the Embitel Technologies public SenseHQ board payload', async () => {
-  const embitel = await loadModule()
-  const jobs = embitel.extractSearchResults(LISTING_PAGE_HTML)
-
-  assert.equal(jobs.length, 2)
-  assert.deepEqual(jobs[0], {
-    title: 'Security Lead -Incident Management',
-    company: 'Embitel Technologies',
-    department: 'CARIAD',
-    location: 'Bangalore, India',
-    city: 'Bangalore',
-    jobId: '55737',
-    requisitionId: '55737',
-    sourceUrl: 'https://embitel.sensehq.com/careers/jobs/55737',
-    applyUrl: 'https://embitel.sensehq.com/careers/jobs/55737',
-    employmentType: 'Full-time',
-    experienceRequired: null,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [
-      'SIEM',
-      'Incident Management',
-    ],
-    postingDate: '2025-07-10',
-    closingDate: null,
-    jobDescription: 'Lead security incident response for CARIAD. Skills : SIEM, Incident Management',
-  })
-
-  assert.deepEqual(embitel.extractBoardSummary(LISTING_PAGE_HTML), {
-    currentPage: 1,
-    pageSize: 3,
-    totalCount: 11,
-    totalPages: 4,
-    hasNext: true,
-  })
-})
-
-test('run paginates the verified public SenseHQ board and decorates shared runner fields', async () => {
-  const embitel = await loadModule()
-  const requests = []
-  const scraper = embitel.createEmbitelTechnologiesScraper({ maxPages: 1, maxJobs: 2 })
-
-  const jobs = await scraper.run({
-    fetchText: async (url) => {
-      requests.push(url)
-      if (url === embitel.buildListingUrl({ page: 1 })) return LISTING_PAGE_HTML
-      throw new Error(`Unexpected Embitel URL: ${url}`)
+test('Embitel uses the first-party published AJAX listing and maps its Workday handoffs', async () => {
+  const jobs = await createEmbitelTechnologiesScraper({ now: () => '2026-10-03T00:00:00.000Z' }).run({
+    fetchText,
+    fetchJson: async (url, init) => {
+      assert.equal(url, API)
+      assert.equal(init.method, 'POST')
+      assert.equal(init.body, 'action=get_wdhub_job')
+      return { success: true, data: [job('101048'), job('101049', { location: 'Pune', bu: 'Digital_Solutions' })] }
     },
   })
-
-  assert.deepEqual(requests, [embitel.buildListingUrl({ page: 1 })])
   assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'embiteltechnologies')
-  assert.equal(jobs[0].link, jobs[0].applyUrl)
-  assert.ok(jobs.every((job) => typeof job.scrapedAt === 'string' && job.scrapedAt.length > 0))
+  assert.equal(jobs[0].title, 'Software Engineer - Software Engineering ( A3 )')
+  assert.equal(jobs[0].jobId, 'JOB_POSTING-3-101048')
+  assert.equal(jobs[0].requisitionId, 'JR101048')
+  assert.equal(jobs[0].location, 'Bangalore, India')
+  assert.equal(jobs[0].jobDescription, 'Build services Experience: 5 years')
+  assert.equal(jobs[0].postingDate, '2026-07-08T05:27:18.112Z')
+  assert.equal(jobs[0].applyUrl, 'https://diconium.wd3.myworkdayjobs.com/Embitel_Technologies/job/Bangalore/Backend-Developer_JR101048')
+  assert.equal(jobs[0].atsPlatform, 'first-party-ajax+workday')
+  assert.equal(jobs[1].department, 'Digital Solutions')
+  assert.equal(jobs[1].city, 'Pune')
+})
+
+test('Embitel accepts only a confirmed success listing; upstream failures and incomplete records reject', async () => {
+  for (const payload of [{ success: false, data: [] }, {}, { success: true }, { success: true, data: [job('1', { job_url: 'https://example.com/unrelated' })] }, { success: true, data: [job('1', { designation: '' })] }]) {
+    await assert.rejects(createEmbitelTechnologiesScraper().run({ fetchText, fetchJson: async () => payload }), /payload|handoff/)
+  }
+  const error = new Error('HTTP 404 upstream')
+  await assert.rejects(createEmbitelTechnologiesScraper().run({ fetchText, fetchJson: async () => { throw error } }), /HTTP 404 upstream/)
+  assert.deepEqual(await createEmbitelTechnologiesScraper().run({ fetchText, fetchJson: async () => ({ success: true, data: [] }) }), [])
+})
+
+test('Embitel skips closed and foreign jobs, deduplicates IDs, and marks a requested cap incomplete', async () => {
+  const rows = [job('1'), job('1'), job('2', { location: 'BLR-SJR-I Park Mobius Unit 2 (Floor 3)' }), job('3', { posted: 'N' }), job('4', { location: 'Berlin, Germany' })]
+  const all = await createEmbitelTechnologiesScraper().run({ fetchText, fetchJson: async () => ({ success: true, data: rows }) })
+  assert.equal(all.length, 2)
+  assert.equal(all[1].city, 'Bangalore')
+  const capped = await createEmbitelTechnologiesScraper({ maxJobs: 1 }).run({ fetchText, fetchJson: async () => ({ success: true, data: rows }) })
+  assert.equal(capped.length, 1)
+  assert.equal(capped[0].sourceListingComplete, false)
+})
+
+test('Embitel rejects missing current client handoff and cancellation before a request', async () => {
+  await assert.rejects(createEmbitelTechnologiesScraper().run({ fetchText: async () => '<title>Embitel</title>', fetchJson: async () => assert.fail('No trusted handoff') }), /careers/)
+  const controller = new AbortController()
+  controller.abort(new Error('cancelled'))
+  await assert.rejects(createEmbitelTechnologiesScraper().run({ signal: controller.signal, fetchText: async () => assert.fail('Cancelled') }), /cancelled/)
 })

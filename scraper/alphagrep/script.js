@@ -225,14 +225,26 @@ export const hasOfficialJobDetailSignal = (html, expectedListing = null) => {
   const page = String(html ?? '')
   const detailTitle = extractDetailTitle(page)
   const rawLocation = extractRawDetailLocation(page)
+  const detailBlock = extractJobDetailBlock(page) || ''
+  const description = normalizeWhitespace(extractContentBlock(page)) || ''
+  const titleTokens = normalizeWhitespace(expectedListing?.title)?.match(/[A-Za-z]{5,}/g) || []
+  const hasClientRenderedDetail = !detailTitle
+    && !rawLocation
+    && Boolean(expectedListing?.jobId)
+    && /<p>\s*Loading…\s*<\/p>/i.test(detailBlock)
+    && /<p[^>]*class=["']location["'][^>]*>\s*AlphaGrep\s*<\/p>/i.test(detailBlock)
+    && description.length >= 200
+    && /\bAlphaGrep\b/i.test(description)
+    && titleTokens.some((token) => description.toLowerCase().includes(token.toLowerCase()))
 
   return extractTitle(page) === 'Career Opportunity - AlphaGrep'
     && hasCanonicalUrl(page, CAREER_OPPORTUNITY_BASE_URL, CAREER_OPPORTUNITY_BASE_URL)
-    && Boolean(extractDepartment(page))
-    && Boolean(detailTitle)
-    && Boolean(rawLocation)
     && hasInlineApplyForm(page)
-    && (!expectedListing?.title || detailTitle === expectedListing.title)
+    && ((Boolean(extractDepartment(page))
+      && Boolean(detailTitle)
+      && Boolean(rawLocation)
+      && (!expectedListing?.title || detailTitle === expectedListing.title))
+      || hasClientRenderedDetail)
 }
 
 const inferLocationFromDetail = (title, rawLocation) => {

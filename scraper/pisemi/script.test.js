@@ -195,6 +195,40 @@ test('PISemi scraper run() validates the verified first-party surface and return
   assert.deepEqual(jobs, [])
 })
 
+test('PISemi checks the complete embedded role list when only ten cards are rendered', async () => {
+  const pisemi = await loadPisemiModule()
+  let visibleCount = 0
+  const visibleHtml = JOIN_US_HTML.replace(/<article>[\s\S]*?<\/article>/g, (article) => {
+    visibleCount += 1
+    return visibleCount <= 10 ? article : ''
+  })
+  const rows = pisemi.EXPECTED_ROLE_CARDS.map((card) => ({
+    id: Number(card.detailUrl.match(/h-nd-(\d+)/)[1]),
+    title: card.title,
+    summary: card.locationSummary,
+    url: new URL(card.detailUrl).pathname,
+  }))
+  const withModule = (items) => `${visibleHtml}<script>"module550":{"newsList":${JSON.stringify(items)}}</script>`
+  const fetchText = async (url) => {
+    if (url === HOMEPAGE_URL) return HOMEPAGE_HTML
+    if (url === JOIN_US_URL) return withModule(rows)
+    if (url === CONTACT_URL) return CONTACT_HTML
+    throw new Error(`Unexpected URL ${url}`)
+  }
+
+  assert.equal(pisemi.extractRoleCards(withModule(rows)).length, 10)
+  assert.deepEqual(pisemi.extractEmbeddedRoleCards(withModule(rows)), pisemi.EXPECTED_ROLE_CARDS)
+  assert.deepEqual(await pisemi.createPisemiScraper().run({ fetchText }), [])
+
+  const indiaRows = [...rows, { id: 999, title: 'Engineer', summary: 'Bangalore, India', url: '/h-nd-999.html' }]
+  await assert.rejects(
+    pisemi.createPisemiScraper().run({
+      fetchText: async (url) => url === JOIN_US_URL ? withModule(indiaRows) : fetchText(url),
+    }),
+    /now exposes India jobs/i,
+  )
+})
+
 test('PISemi scraper fails closed when the verified first-party board starts exposing India jobs', async () => {
   const pisemi = await loadPisemiModule()
   const fetchText = async (url) => {

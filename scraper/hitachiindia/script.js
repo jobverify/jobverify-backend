@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { fetchHitachiParadoxJobs, normalizeHitachiParadoxJob } from '../../scraper-support/shared/hitachiParadoxJobs.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -387,6 +388,7 @@ export const createHitachiIndiaScraper = ({
     fetchImpl: overrideFetchImpl,
     maxJobs: overrideMaxJobs = maxJobs,
     now = () => new Date().toISOString(),
+    useLegacySearchPage = false,
   } = {}) {
     const fetchTextImpl = overrideFetchText || fetchText
     const fetchApplyImpl = overrideFetchImpl || fetchImpl
@@ -409,8 +411,22 @@ export const createHitachiIndiaScraper = ({
     const fetchPageImpl = overrideFetchPage
       || (overrideFetchText ? createFetchPageFromText(fetchPageText) : fetchPage)
 
+    const fetchCurrentJobs = async () => {
+      const currentJobs = await fetchHitachiParadoxJobs({
+        brand: 'Hitachi India Pvt. Ltd',
+        country: 'India',
+        legalName: COMPANY_NAME,
+        fetchText: fetchPageText,
+      })
+      return currentJobs
+        .slice(0, overrideMaxJobs || currentJobs.length)
+        .map((job) => normalizeHitachiParadoxJob(job, { company: COMPANY_NAME, source: SOURCE, now }))
+    }
+    if (!useLegacySearchPage) return fetchCurrentJobs()
+
     const listingPageUrl = buildSearchPageUrl()
     const listingPage = await fetchPageImpl(listingPageUrl)
+    if (Number(listingPage?.status) === 404) return fetchCurrentJobs()
     if (isVerifiedCloudflareChallengedPage(listingPage, listingPageUrl)) {
       return []
     }

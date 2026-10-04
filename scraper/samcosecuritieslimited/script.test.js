@@ -129,6 +129,18 @@ test('SAMCO sentinels recognize the verified homepage and first-party careers pa
   assert.equal(samco.hasOfficialCareersSignal(careersHtml), true)
 })
 
+test('SAMCO accepts a changed position when its public card and application option agree', async () => {
+  const samco = await loadSamcoModule()
+  const updatedCareersHtml = careersHtml
+    .replaceAll('RankMF - B2B Sales', 'Engineering')
+    .replaceAll('data-value="27"', 'data-value="125"')
+    .replaceAll('value="27"', 'value="125"')
+  const jobs = samco.extractPublicJobs(updatedCareersHtml)
+  assert.equal(jobs.length, 4)
+  assert.ok(jobs.some((job) => job.requisitionId === '125' && job.title === 'Engineering'))
+  assert.ok(!jobs.some((job) => job.requisitionId === '27'))
+})
+
 test('SAMCO extracts the four current public department openings from the first-party careers page', async () => {
   const samco = await loadSamcoModule()
 

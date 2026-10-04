@@ -123,7 +123,9 @@ const mapJob = (job, { domain }) => {
     sourceUrl,
     applyUrl: sourceUrl,
     employmentType: toEmploymentType(job.jobType),
+    sourceEmploymentType: toEmploymentType(job.jobType),
     experienceRequired: normalizeWhitespace(job.experience),
+    sourceExperienceRequired: normalizeWhitespace(job.experience),
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: Array.isArray(job.skillNames)

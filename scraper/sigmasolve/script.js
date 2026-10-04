@@ -116,7 +116,7 @@ export const hasOfficialOpeningsPageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTags(page) || ''
 
-  return /<title>\s*Open Positions - Sigma Solve \| Sigma Solve\s*<\/title>/i.test(page)
+  return /<title>\s*Open Positions(?: - Sigma Solve)? \| Sigma Solve\s*<\/title>/i.test(page)
     && /<meta\s+name=["']description["']\s+content=["']Career opportunities at Sigma Solve\. Explore current openings and apply directly\.["']/i.test(page)
     && /<link[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/www\.sigmasolve\.com\/who-we-are\/openings["']/i.test(page)
     && text.includes('Returning Candidate?')
@@ -153,6 +153,18 @@ export const extractOpeningSummaries = (html = '') => {
   return summaries
 }
 
+const extractApplyUrl = (html = '', sourceUrl) => {
+  const href = String(html ?? '').match(/<a[^>]*href=["']([^"']*\/who-we-are\/apply-for-job\?job=[^"']+)["'][^>]*>/i)?.[1]
+  const applyUrl = toAbsoluteUrl(href)
+  if (!applyUrl) return null
+  const parsed = new URL(applyUrl)
+  return parsed.hostname === 'www.sigmasolve.com'
+    && parsed.pathname === '/who-we-are/apply-for-job'
+    && parsed.searchParams.get('job') === getJobIdFromUrl(sourceUrl)
+    ? applyUrl
+    : null
+}
+
 const hasOfficialDetailPageSignal = (html = '', sourceUrl) => {
   const page = String(html ?? '')
   const canonical = normalizeWhitespace(
@@ -165,11 +177,12 @@ const hasOfficialDetailPageSignal = (html = '', sourceUrl) => {
     && Boolean(extractLabeledValue(page, 'Type'))
     && Boolean(extractLabeledValue(page, 'Location'))
     && Boolean(extractLabeledValue(page, 'Department'))
+    && Boolean(extractApplyUrl(page, sourceUrl))
 }
 
 export const extractJobsFromDetailPages = (pages = []) => pages.map(({ summary, detailHtml }) => {
   const sourceUrl = summary?.sourceUrl
-  const applyUrl = summary?.applyUrl || sourceUrl
+  const applyUrl = extractApplyUrl(detailHtml, sourceUrl)
   const locationData = parseLocation(extractLabeledValue(detailHtml, 'Location'))
   const title = normalizeWhitespace(
     String(detailHtml ?? '').match(/<title>\s*([\s\S]*?)\s*\|\s*Sigma Solve\s*<\/title>/i)?.[1],

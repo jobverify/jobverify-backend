@@ -67,7 +67,7 @@ export const isOfficialAccessDeniedPage = (page = {}) => {
 
   return Number(page.status) === 403
     && /<title[^>]*>\s*blinkit\s*\|\s*Error Page\s*<\/title>/i.test(html)
-    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/blinkit\.com\/careers\/error-page["']/i.test(html)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https?:\/\/blinkit\.com\/careers\/error-page["']/i.test(html)
     && normalized.includes('access denied')
     && normalized.includes('you have been blocked')
 }

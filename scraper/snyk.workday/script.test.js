@@ -33,53 +33,30 @@ const jobsPageHtml = `
     </head>
     <body>
       <div id="all-jobs"></div>
-      <script>
-        fetch("/api/next/jobs")
-      </script>
+      <a href="https://jobs.ashbyhq.com/98cd1a00-2706-4aa8-ab72-38a7b8c9c20c/507a3707-d6bd-48c4-800f-429ecf40769e">Security Engineer</a>
       <p>Open security, developer, sales, marketing, leadership, technical support, and creative roles at Snyk.</p>
     </body>
   </html>
 `
 
+const JOB_ID = '507a3707-d6bd-48c4-800f-429ecf40769e'
+const BOARD_URL = 'https://jobs.ashbyhq.com/98cd1a00-2706-4aa8-ab72-38a7b8c9c20c'
 const jobsPayload = {
-  success: true,
-  data: [
-    {
-      url: 'https://snyk.wd103.myworkdayjobs.com/External/job/United-States---Boston-Office/Analytics-Engineer_JR100631',
-      title: 'Analytics Engineer',
-      jobRequisitionId: 'JR100631',
-      jobPostingID: 'JOB_POSTING-3-1270',
-      locations: {
-        '@_Descriptor': 'United States - Boston Office',
-      },
-      Job_Requisition_group: {
-        department: {
-          '@_Descriptor': 'Corp Info Systems',
-        },
-        departmentID: 'DPT_CorpInfoSystems',
-      },
-    },
-    {
-      url: 'https://snyk.wd103.myworkdayjobs.com/External/job/United-States---TX-Remote/Staff-Technical-Success-Manager--Central-_JR100657',
-      title: 'Staff Technical Success Manager (Central)',
-      jobRequisitionId: 'JR100657',
-      jobPostingID: 'JOB_POSTING-3-1287',
-      locations: [
-        {
-          '@_Descriptor': 'United States - TX Remote',
-        },
-      ],
-      Job_Requisition_group: {
-        department: {
-          '@_Descriptor': 'Customer Solutions',
-        },
-        departmentID: 'DPT_Customer_Success',
-      },
-    },
-  ],
+  apiVersion: '1',
+  jobs: [{
+    id: JOB_ID,
+    title: 'Security Engineer',
+    department: 'R&D',
+    location: 'United States - Boston Office',
+    address: { postalAddress: { addressCountry: 'United States' } },
+    secondaryLocations: [],
+    isListed: true,
+    jobUrl: `${BOARD_URL}/${JOB_ID}`,
+    applyUrl: `${BOARD_URL}/${JOB_ID}/application`,
+  }],
 }
 
-test('Snyk scraper returns an empty India slice when the verified first-party jobs API exposes no India roles', async () => {
+test('Snyk scraper returns an empty India slice when the linked Ashby board has no India roles', async () => {
   const snyk = await loadScriptModule()
   const requested = []
   const scraper = snyk.createSnykScraper()
@@ -93,7 +70,7 @@ test('Snyk scraper returns an empty India slice when the verified first-party jo
     },
     fetchJson: async (url) => {
       requested.push(url)
-      assert.equal(url, 'https://snyk.io/api/next/jobs')
+      assert.equal(url, 'https://api.ashbyhq.com/posting-api/job-board/98cd1a00-2706-4aa8-ab72-38a7b8c9c20c')
       return jobsPayload
     },
   })
@@ -101,12 +78,12 @@ test('Snyk scraper returns an empty India slice when the verified first-party jo
   assert.deepEqual(requested, [
     'https://snyk.io/careers/',
     'https://snyk.io/careers/all-jobs/',
-    'https://snyk.io/api/next/jobs',
+    'https://api.ashbyhq.com/posting-api/job-board/98cd1a00-2706-4aa8-ab72-38a7b8c9c20c',
   ])
   assert.deepEqual(jobs, [])
 })
 
-test('Snyk scraper rejects payloads that no longer match the verified first-party jobs API contract', async () => {
+test('Snyk scraper rejects payloads that no longer match the linked Ashby board contract', async () => {
   const snyk = await loadScriptModule()
   const scraper = snyk.createSnykScraper()
 
@@ -117,8 +94,8 @@ test('Snyk scraper rejects payloads that no longer match the verified first-part
         if (url === 'https://snyk.io/careers/all-jobs/') return jobsPageHtml
         throw new Error(`Unexpected HTML fetch: ${url}`)
       },
-      fetchJson: async () => ({ success: true, data: null }),
+      fetchJson: async () => ({ apiVersion: '1', jobs: null }),
     }),
-    /Snyk jobs API response no longer matches the expected payload/i,
+    /Snyk Ashby inventory changed materially/i,
   )
 })

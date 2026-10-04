@@ -33,6 +33,12 @@ test('Excelra rejects unknown geography without publishing a partial India snaps
   await assert.rejects(run(html.replace('Hyderabad, India', 'Indianapolis, IN')), /location|scope/i)
 })
 
+test('Excelra recognizes Bengaluru, Karnataka as a scoped India location', async () => {
+  const jobs = await run(html.replace('Hyderabad, India', 'Bengaluru, Karnataka'))
+  assert.equal(jobs.length, 7)
+  assert.ok(jobs.some(job => job.location === 'Bengaluru, Karnataka' && job.country === 'India' && job.city === 'Bengaluru'))
+})
+
 test('Excelra requires an identified careers WordPress record and does not accept arbitrary API pages', () => {
   assert.equal(extractWordpressRenderedContent([{ ...payload[0], slug: 'contact' }]), '')
   assert.equal(extractWordpressRenderedContent([{ ...payload[0], link: 'https://unrelated.example/careers/' }]), '')

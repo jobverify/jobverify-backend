@@ -26,20 +26,20 @@ test('ZingHR local catalog captures the verified first-party jobs surface', asyn
   assert.equal(provider.source, 'zinghr')
   assert.equal(provider.companyName, 'ZingHR')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyCareerPage, 'https://www.zinghr.com/job-openings/')
+  assert.equal(provider.companyCareerPage, 'https://www.zinghr.com/jobs/')
   assert.equal(provider.companyDomain, 'zinghr.com')
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'single-page-role-index+detail-pages')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-job-openings-page+detail-pages+first-party-application-form',
+    'verified-first-party-jobs-archive+detail-pages+first-party-application-form',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-01')
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.zinghr\.com\/job-openings\//i)
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.zinghr\.com\/jobs\//i)
   assert.match(provider.verifiedSurfaceSummary, /Customer Support- \(HRMS\/HCM\)/i)
   assert.match(provider.verifiedSurfaceSummary, /Sales Manager/i)
   assert.match(provider.verifiedSurfaceSummary, /Key Job Traits/i)

@@ -139,19 +139,17 @@ const loadLexmarkIndiaModule = async () => {
   }
 }
 
-test('Lexmark India pins the verified careers landing page and job archive contracts', async () => {
+test('Lexmark India pins the current Workday contract and preserves legacy archive parsing', async () => {
   const lexmarkIndia = await loadLexmarkIndiaModule()
 
   assert.equal(lexmarkIndia.SOURCE, 'lexmarkindia')
   assert.equal(lexmarkIndia.COMPANY_NAME, 'Lexmark India')
   assert.equal(lexmarkIndia.CAREERS_URL, 'https://origin-www.lexmark.com/en_in/careers.html')
   assert.equal(lexmarkIndia.JOB_SEARCH_URL, 'https://origin-www.lexmark.com/en_in/careers/job-search.html')
-  assert.equal(
-    lexmarkIndia.VERIFIED_SAMPLE_JOB_URL,
-    'https://origin-www.lexmark.com/en_in/careers/job-description.143497.html',
-  )
-  assert.equal(lexmarkIndia.VERIFIED_PUBLIC_JOB_COUNT, 15)
-  assert.equal(lexmarkIndia.VERIFIED_ON, '2026-07-16')
+  assert.equal(lexmarkIndia.WORKDAY_URL, 'https://lexmark.wd1.myworkdayjobs.com/Lexmark')
+  assert.equal(lexmarkIndia.WORKDAY_JOBS_API_URL, 'https://lexmark.wd1.myworkdayjobs.com/wday/cxs/lexmark/Lexmark/jobs')
+  assert.equal(lexmarkIndia.VERIFIED_PUBLIC_JOB_COUNT, 0)
+  assert.equal(lexmarkIndia.VERIFIED_ON, '2026-10-03')
   assert.equal(lexmarkIndia.hasOfficialCareersPageSignal(careersLandingHtml), true)
   assert.equal(lexmarkIndia.hasOfficialJobSearchSignal(jobSearchHtml), true)
   assert.equal(lexmarkIndia.hasOfficialJobSearchSignal(driftedSearchHtml), false)
@@ -180,7 +178,7 @@ test('Lexmark India pins the verified careers landing page and job archive contr
   )
 })
 
-test('Lexmark India returns normalized first-party jobs from the verified job-search and detail pages', async () => {
+test('Lexmark India preserves normalized first-party jobs for the legacy job-search and detail fixtures', async () => {
   const lexmarkIndia = await loadLexmarkIndiaModule()
   const requestedUrls = []
 

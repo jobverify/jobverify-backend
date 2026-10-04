@@ -51,7 +51,10 @@
     "test:scraper": "node --test --test-concurrency=4 \"scraper/**/*.test.js\" \"scraper-support/**/*.test.js\"",
     "check": "npm run lint && npm run test:api",
     "test:integration": "node --test test/integration/*.integration.js",
-    "test:provision-mongo": "node scripts/provisionTestMongo.js"
+    "test:provision-mongo": "node scripts/provisionTestMongo.js",
+    "descriptions:preview": "node scripts/rewriteJobDescriptions.js",
+    "descriptions:rewrite": "node scripts/rewriteJobDescriptions.js --apply",
+    "descriptions:benchmark": "node scripts/benchmarkJobDescriptions.js"
   },
   "repository": {
     "type": "git",

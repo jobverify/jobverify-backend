@@ -117,6 +117,24 @@ export const isVerifiedAirAsiaMoveRedirect = (page = {}) =>
   && normalizeUrl(page.url) === normalizeUrl(AIRASIA_MOVE_URL)
   && hasAirAsiaMoveSignal(page.html)
 
+export const isVerifiedMissingLegacyHomepageRoute = (page = {}) => {
+  if (page.status !== 404 || normalizeUrl(page.url) !== normalizeUrl(LEGACY_HOMEPAGE_URL)) {
+    return false
+  }
+
+  try {
+    const payload = JSON.parse(page.html)
+    return Object.keys(payload).sort().join(',') === 'message,request_id'
+      && payload.message === 'no Route matched with those values'
+      && /^[a-f0-9]{32}$/i.test(payload.request_id)
+  } catch {
+    const html = String(page.html ?? '')
+    return /<title>\s*Error\s*<\/title>/i.test(html)
+      && /<h1>\s*Error\s*<\/h1>/i.test(html)
+      && /^Error Error no Route matched with those values\. request_id: [a-f0-9]{32}$/i.test(normalizeWhitespace(html))
+  }
+}
+
 export const isVerifiedAixConnectParkedPage = (page = {}, expectedUrl = AIXCONNECT_HOME_URL) =>
   page.status === 200
   && normalizeUrl(page.url) === normalizeUrl(expectedUrl)
@@ -130,7 +148,8 @@ export const isVerifiedAirIndiaExpressCareersPage = (page = {}) =>
 export const createAirAsiaIndiaScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const legacyHomepage = await fetchPage(LEGACY_HOMEPAGE_URL)
-    if (!isVerifiedAirAsiaMoveRedirect(legacyHomepage)) {
+    if (!isVerifiedAirAsiaMoveRedirect(legacyHomepage)
+      && !isVerifiedMissingLegacyHomepageRoute(legacyHomepage)) {
       throw new Error(
         'AirAsia India legacy homepage no longer matches the verified AirAsia MOVE redirect surface',
       )

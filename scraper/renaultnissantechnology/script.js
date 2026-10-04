@@ -123,6 +123,19 @@ const defaultFetchJson = (url) => fetchJsonWithRetry(url, {
     Accept: 'application/json,text/plain,*/*',
   },
   label: SOURCE,
+  fetchImpl: async (...args) => {
+    const response = await fetch(...args)
+    if (response.status === 400) {
+      const payload = await response.clone().json().catch(() => null)
+      const message = payload?.errorDetails?.message || ''
+      if (payload?.result === 'Error' && /StatusCodeError:\s*503|backend sent ['\"]503['\"] HTTP_STATUS/i.test(message)) {
+        const error = new Error('RNTBCI careers upstream returned HTTP 503 Service Unavailable through its HTTP 400 gateway')
+        error.abortRetries = true
+        throw error
+      }
+    }
+    return response
+  },
 })
 
 export const createRenaultNissanTechnologyScraper = ({

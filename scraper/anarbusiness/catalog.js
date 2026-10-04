@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Thursday, August 13, 2026 that https://www.anar.biz/ and the legacy career-like routes under /career, /careers, /jobs, /join-us, and /work-with-us now all redirect to https://myragems.com/, a repurposed third-party commerce site titled "Myra Gems: Buy Certified Gemstone Rings for Men & Women". No trustworthy public Anar jobs surface is currently available.'
+  'Verified on October 3, 2026 that https://www.anar.biz/ displays the first-party Anar shutdown message and its former /career, /careers, /jobs, /join-us, and /work-with-us routes return HTTP 410 with the same message. No public Anar jobs surface is available.'
 
 export const ANAR_BUSINESS_CATALOG = {
   source: 'anarbusiness',
@@ -17,8 +17,8 @@ export const ANAR_BUSINESS_CATALOG = {
   companyDomain: 'anar.biz',
   atsPlatform: 'official-company-site-no-public-careers',
   countryFilter: 'India',
-  paginationStrategy: 'retired-domain-redirect-plus-common-route-validation',
-  extractionStrategy: 'verified-repurposed-former-domain-redirect+verified-no-public-jobs-surface-return-empty',
+  paginationStrategy: 'shutdown-homepage-plus-retired-route-validation',
+  extractionStrategy: 'verified-first-party-shutdown+verified-retired-careers-routes-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   verifiedMissingCareersUrls: [
@@ -28,7 +28,7 @@ export const ANAR_BUSINESS_CATALOG = {
     'https://www.anar.biz/join-us',
     'https://www.anar.biz/work-with-us',
   ],
-  verifiedOn: '2026-08-13',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

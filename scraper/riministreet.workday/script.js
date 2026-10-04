@@ -1,3 +1,4 @@
+import { assertWorkdayPageAvailable } from '../../scraper-support/myworkday/pageAvailability.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -140,6 +141,7 @@ export const createRiminiStreetScraper = ({
         ? fetchText(WORKDAY_BASE_URL)
         : fetchText(WORKDAY_BASE_URL, { signal })
     )
+    assertWorkdayPageAvailable({ status: 200, html: workdayBoardHtml, url: WORKDAY_BASE_URL }, { source: SOURCE })
     if (!hasOfficialWorkdayBoardSignal(workdayBoardHtml)) {
       throw new Error('Rimini Street verified public Workday board changed materially')
     }

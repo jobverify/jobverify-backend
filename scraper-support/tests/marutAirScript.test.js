@@ -122,6 +122,26 @@ const hrRecruiterDetailHtml = `
 </html>
 `
 
+const emptyJobsPageHtml = `
+  <html><head><title>Jobs | Marut Air</title></head><body>
+    <h1>Our Job Opportunities</h1>
+    <p>There are currently no open job opportunities, but feel free to contact us for a spontaneous application.</p>
+    <footer>Copyright MARUT AIR SYSTEMS PRIVATE LIMITED</footer>
+  </body></html>
+`
+
+test('Marut Air returns zero only for the verified official empty jobs state', async () => {
+  const marutAir = await loadMarutAirModule()
+  assert.equal(marutAir.hasVerifiedEmptyJobsPageSignal(emptyJobsPageHtml), true)
+  assert.equal(marutAir.hasVerifiedEmptyJobsPageSignal(emptyJobsPageHtml.replace('MARUT AIR SYSTEMS PRIVATE LIMITED', 'Other Company')), false)
+  assert.equal(marutAir.hasVerifiedEmptyJobsPageSignal(`${emptyJobsPageHtml}<a href="/jobs/new-role-99">New role</a>`), false)
+
+  const jobs = await marutAir.createMarutAirScraper().run({
+    fetchText: async (url) => url === marutAir.BRAND_PAGE_URL ? brandPageHtml : emptyJobsPageHtml,
+  })
+  assert.deepEqual(jobs, [])
+})
+
 test('Marut Air verifies the current first-party brand page and public jobs board signals', async () => {
   const marutAir = await loadMarutAirModule()
 

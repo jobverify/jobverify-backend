@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { shouldContinueWorkdayJobsApiPagination } from '../../scraper-support/myworkday/engine.js'
+import { hasWorkdayOutageSignal, shouldContinueWorkdayJobsApiPagination, WorkdayUpstreamOutageError } from '../../scraper-support/myworkday/engine.js'
 import { extractJobDetail } from '../../scraper-support/detailExtractors/index.js'
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
@@ -311,9 +311,11 @@ export const createArcticWolfIndiaScraper = ({
     now = defaultNow,
   } = {}) {
     const careersPage = await fetchPage(CAREERS_URL)
+    if (careersPage.status !== 200) {
+      throw new Error(`HTTP ${careersPage.status} for ${CAREERS_URL}`)
+    }
     if (
-      careersPage.status !== 200
-      || !sameUrl(careersPage.url, CAREERS_URL)
+      !sameUrl(careersPage.url, CAREERS_URL)
       || !hasOfficialCareersSignal(careersPage.html)
     ) {
       throw new Error('Arctic Wolf India verified official careers surface changed materially')
@@ -325,6 +327,14 @@ export const createArcticWolfIndiaScraper = ({
     }
 
     const workdayBoardPage = await fetchPage(WORKDAY_BOARD_URL)
+    if (hasWorkdayOutageSignal(workdayBoardPage)) {
+      throw new WorkdayUpstreamOutageError(
+        `[${SOURCE}] Workday is currently unavailable upstream at ${WORKDAY_BOARD_URL}`,
+      )
+    }
+    if (workdayBoardPage.status !== 200) {
+      throw new Error(`HTTP ${workdayBoardPage.status} for ${WORKDAY_BOARD_URL}`)
+    }
     if (!hasOfficialWorkdayBoardSignal(workdayBoardPage)) {
       throw new Error('Arctic Wolf India verified public Workday board changed materially')
     }

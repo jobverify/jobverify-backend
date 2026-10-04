@@ -7,15 +7,16 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes the IDFC FIRST Bank provider with the official careers microsite metadata', () => {
+test('getScraperCatalog includes the IDFC FIRST Bank provider with the current Phenom board metadata', () => {
   const catalog = getScraperCatalog()
   const provider = catalog.find((item) => item.source === 'idfcfirstbank')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'official-company-careers')
+  assert.equal(provider.atsPlatform, 'official-phenom-board')
   assert.equal(provider.companyName, 'IDFC FIRST Bank')
-  assert.equal(provider.companyCareerPage, 'https://careers.idfcfirst.bank.in/')
+  assert.equal(provider.companyCareerPage, 'https://careers.idfcfirst.bank.in/in/en/search-results')
+  assert.equal(provider.dryRunMaxJobsToEnrich, 20)
 })
 
 test('buildScrapers exposes a runnable IDFC FIRST Bank scraper without changing the runner contract', () => {

@@ -26,53 +26,38 @@ const loadScraperModule = async () => {
   }
 }
 
-test('Slice local catalog captures the verified exact-name ambiguity between two first-party companies without alias churn', async () => {
-  const { SLICE_CATALOG, default: defaultCatalog } = await loadCatalogModule()
-  const slice = await loadScraperModule()
-  const provider = hydrateProviderCatalogEntry(SLICE_CATALOG)
-
-  assert.equal(defaultCatalog, SLICE_CATALOG)
-  assert.equal(provider.source, 'slice')
-  assert.equal(provider.companyName, 'Slice')
-  assert.equal(provider.officialBrandName, 'Slice')
-  assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyCareerPage, 'https://slice.bank.in/careers/')
-  assert.equal(provider.officialBankApplyPageUrl, 'https://slice.bank.in/careers/apply')
-  assert.equal(provider.alternateCompanyCareerPage, 'https://slice.careers/')
-  assert.equal(provider.bankCompanyLegalName, 'slice small finance bank ltd')
-  assert.equal(provider.alternateCompanyReferenceDomain, 'about.slicelife.com')
-  assert.equal(provider.companyDomain, 'slice.bank.in')
-  assert.equal(provider.alternateCompanyDomain, 'slice.careers')
-  assert.equal(provider.atsPlatform, 'ambiguous-exact-name-multiple-first-party-companies')
-  assert.equal(provider.countryFilter, 'India')
-  assert.equal(
-    provider.paginationStrategy,
-    'multiple-first-party-exact-name-careers-surface-validation',
-  )
-  assert.equal(
-    provider.extractionStrategy,
-    'verified-slice-bank-careers+verified-slice-careers+exact-name-ambiguity-return-empty',
-  )
-  assert.equal(provider.parser, 'custom-script')
-  assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
-  assert.match(provider.dryRunFile, /slice[\\/]jobs\.json$/i)
-  assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/slice\.bank\.in\/careers\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/slice\.bank\.in\/careers\/apply/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/slice\.careers\//i)
-  assert.match(provider.verifiedSurfaceSummary, /slice small finance bank ltd/i)
-  assert.match(provider.verifiedSurfaceSummary, /Ilir Sela/i)
-  assert.match(provider.verifiedSurfaceSummary, /exact-name ambiguity/i)
-  assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Slice'), false)
-
-  assert.equal(slice.PROVIDER_METADATA.source, SLICE_CATALOG.source)
-  assert.equal(slice.PROVIDER_METADATA.companyName, SLICE_CATALOG.companyName)
-  assert.equal(
-    slice.PROVIDER_METADATA.alternateCompanyCareerPage,
-    SLICE_CATALOG.alternateCompanyCareerPage,
-  )
+test('Slice local catalog captures the verified Indian-bank Kula inventory without alias churn', async () => {
+  const {SLICE_CATALOG,default:defaultCatalog}=await loadCatalogModule()
+  const slice=await loadScraperModule()
+  const provider=hydrateProviderCatalogEntry(SLICE_CATALOG)
+  assert.equal(defaultCatalog,SLICE_CATALOG)
+  assert.equal(provider.source,'slice')
+  assert.equal(provider.companyName,'Slice')
+  assert.equal(provider.officialBrandName,'Slice')
+  assert.equal(provider.adapter,'script')
+  assert.equal(provider.companyCareerPage,'https://slice.bank.in/careers/')
+  assert.equal(provider.officialBankOpenPositionsUrl,'https://slice.bank.in/careers/open-positions')
+  assert.equal(provider.publicBoardUrl,'https://careers.kula.ai/slice?jobs=true')
+  assert.equal(provider.jobsApiUrl,'https://careers.kula.ai/api/internal/ats_job_posts')
+  assert.equal(provider.bankCompanyLegalName,'slice small finance bank ltd')
+  assert.equal(provider.companyDomain,'slice.bank.in')
+  assert.equal(provider.atsPlatform,'kula-public-api')
+  assert.equal(provider.countryFilter,'India')
+  assert.equal(provider.paginationStrategy,'native-api-99-item-pages-with-reported-count-and-page-completeness')
+  assert.equal(provider.extractionStrategy,'verified-bank-kula-handoff+native-public-jobs+full-descriptions+explicit-india-office-filter')
+  assert.equal(provider.parser,'custom-script')
+  assert.equal(provider.normalizationProfile,'engineering-default')
+  assert.equal(provider.verifiedOn,'2026-10-03')
+  assert.equal(provider.verifiedPublicJobCount,40)
+  assert.equal(provider.verifiedIndiaJobCount,40)
+  assert.equal(provider.modulePath,modulePath)
+  assert.match(provider.dryRunFile,/slice[\\/]jobs\.json$/i)
+  assert.match(provider.verifiedSurfaceSummary,/2026-10-03/)
+  assert.match(provider.verifiedSurfaceSummary,/slice small finance bank ltd/)
+  assert.match(provider.verifiedSurfaceSummary,/count 40, page 1, pages 1/)
+  assert.equal(provider.alternateCompanyCareerPage,undefined)
+  assert.equal(Object.hasOwn(companyAliases,'Slice'),false)
+  assert.equal(slice.PROVIDER_METADATA,SLICE_CATALOG)
 })
 
 test('Slice exact backlog row matches directly from local provider metadata', async () => {
@@ -90,7 +75,7 @@ test('Slice exact backlog row matches directly from local provider metadata', as
   )
 })
 
-test('Slice hydrated local catalog stays script-runner compatible while the exact row remains ambiguous', async () => {
+test('Slice hydrated local catalog stays script-runner compatible with the verified bank feed', async () => {
   const { SLICE_CATALOG } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(SLICE_CATALOG)
   const module = await import(pathToFileURL(provider.modulePath).href)
@@ -99,7 +84,7 @@ test('Slice hydrated local catalog stays script-runner compatible while the exac
   assert.equal(provider.companyName, 'Slice')
   assert.equal(provider.companyCareerPage, 'https://slice.bank.in/careers/')
   assert.equal(provider.companyDomain, 'slice.bank.in')
-  assert.equal(provider.atsPlatform, 'ambiguous-exact-name-multiple-first-party-companies')
+  assert.equal(provider.atsPlatform, 'kula-public-api')
   assert.match(provider.modulePath, /slice[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /slice[\\/]jobs\.json$/i)
   assert.equal(typeof module.run, 'function')

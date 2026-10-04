@@ -18,12 +18,6 @@
     "locationCountry": "c4f78be1a8f14da0ab49ce1162348a5e"
   },
   {
-    "name": "accenture",
-    "company": "Accenture",
-    "baseUrl": "https://accenture.wd103.myworkdayjobs.com/AccentureCareers",
-    "companyCareerPage": "https://www.accenture.com/in-en/careers"
-  },
-  {
     "name": "amadeus",
     "company": "Amadeus",
     "baseUrl": "https://amadeus.wd502.myworkdayjobs.com/jobs"
@@ -609,5 +603,13 @@
     "jobsApiUrl": "https://analogdevices.wd1.myworkdayjobs.com/wday/cxs/analogdevices/External/jobs",
     "verifiedOn": "2026-07-25",
     "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.analog.com/en/careers/career-opportunities.html is the live first-party Analog Devices careers page and links Search Analog Devices Jobs to https://analogdevices.wd1.myworkdayjobs.com/External. Verified on the same date that the public Workday jobs API at https://analogdevices.wd1.myworkdayjobs.com/wday/cxs/analogdevices/External/jobs returned 955 total postings, exposed the India country facet c4f78be1a8f14da0ab49ce1162348a5e with count 114, and exposed India location buckets including Bangalore, Gandhinagar, and Hyderabad."
+  },
+  {
+    "name": "kantar",
+    "company": "Kantar",
+    "baseUrl": "https://kantar.wd3.myworkdayjobs.com/KANTAR",
+    "companyCareerPage": "https://www.kantar.com/careers",
+    "boardIdentityVerified": true,
+    "dryRunFile": "kantar/jobs.json"
   }
 ]

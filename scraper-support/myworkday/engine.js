@@ -7,6 +7,8 @@ import { workdayRequestScheduler } from './requestScheduler.js'
 import { loadConfig } from '../utils/loadConfig.js'
 import { normalizeCity } from '../utils/cityNormalizer.js'
 import { extractJobDetail } from '../detailExtractors/index.js'
+import { extractWorkdayJobDetail } from '../detailExtractors/workday.js'
+import { toPlainText } from '../detailExtractors/shared.js'
 import { parseRetryAfterHeader } from '../utils/fetch.js'
 import { isGroupedLocationLabel } from '../../src/utils/jobLocations.js'
 import { isJobInPublicLocationScope } from '../../src/utils/publicJobLocationScope.js'
@@ -719,7 +721,7 @@ const hasExplicitIndiaMarker = (value = '') => (
 )
 
 const extractLeadingCountryCode = (value = '') =>
-  String(value || '').trim().match(/^([A-Z]{2,3})\s*-\s*/i)?.[1]?.toUpperCase() || null
+  String(value || '').trim().match(/^([A-Z]{2,3})\s*[-,.]\s*/i)?.[1]?.toUpperCase() || null
 
 // Keep summary-location filtering conservative: skip detail only when the
 // listing is already clearly outside the public India scope.
@@ -1295,6 +1297,46 @@ export const inferWorkdayJobsApiConfig = (baseUrl) => {
   }
 }
 
+export const buildWorkdayDetailApiUrl = (jobUrl, jobsApiUrl) => {
+  try {
+    const job = new URL(jobUrl), api = new URL(jobsApiUrl)
+    const jobPath = job.pathname.match(/\/job\/.+$/)?.[0]
+    if (job.origin !== api.origin || !/^https:$/.test(api.protocol)
+      || !/\/wday\/cxs\/[^/]+\/[^/]+\/jobs$/.test(api.pathname) || !jobPath) return null
+    api.pathname = api.pathname.replace(/\/jobs$/, '') + jobPath
+    api.search = ''; api.hash = ''
+    return api.href
+  } catch { return null }
+}
+
+export const extractWorkdayStructuredDetail = payload => {
+  const posting = payload?.jobPostingInfo
+  if (typeof posting?.jobDescription !== 'string') return null
+  const sourceDescription = toPlainText(posting.jobDescription)
+  if (!sourceDescription) return null
+  const detail = extractWorkdayJobDetail(`<section data-automation-id="jobPostingDescription"><div>${posting.jobDescription}</div></section>`)
+  const locationRecords = [posting.location, ...(Array.isArray(posting.additionalLocations) ? posting.additionalLocations : [])]
+    .map((value, index) => ({
+      label: typeof value === 'string' ? value.trim() : value?.descriptor?.trim(),
+      countryScope: resolveWorkdayCxsPrimaryCountryScope(index === 0
+        ? { ...posting, country: value?.country || posting.country }
+        : { country: value?.country }),
+    }))
+    .filter(({ label }) => label && !isGroupedLocationLabel(label))
+  const locations = [...new Set(locationRecords.map(({ label }) => label))]
+  // A generic Remote label must not override the API's authoritative country.
+  // Keep India secondary addresses even when the primary country is foreign.
+  const hasCountryScope = locationRecords.some(({ countryScope }) => countryScope)
+  const indiaScopeLocations = hasCountryScope ? [...new Set(locationRecords.flatMap(({ label, countryScope }) => {
+    if (countryScope === 'foreign') return []
+    if (countryScope === 'india') return [hasExplicitIndiaMarker(label) ? label : `${label}, India`]
+    return !/^remote$/i.test(label) && isWorkdayJobInPublicIndiaScope({ location: label }) ? [label] : []
+  }))] : null
+  return { ...detail, sourceDescription, jobDescription: sourceDescription,
+    locations, indiaScopeLocations, requisitionId: posting.jobReqId || detail.requisitionId,
+    publicExperienceChecked: true }
+}
+
 const fetchDetailedJobPayload = async (
   jobUrl,
   source,
@@ -1304,11 +1346,33 @@ const fetchDetailedJobPayload = async (
     requestTimeoutMs = DEFAULT_WORKDAY_REQUEST_TIMEOUT_MS,
     circuitBreaker = workdayHostCircuitBreaker,
     requestScheduler = workdayRequestScheduler,
+    jobsApiUrl = null,
   } = {},
 ) => {
   try {
     throwIfAborted(signal)
     circuitBreaker.assertRequestAllowed(jobUrl, source)
+    // The public SEO page often flattens ATS bullets into one paragraph.
+    // Keep the complete structured employer text as the classification source.
+    const structuredUrl = buildWorkdayDetailApiUrl(jobUrl, jobsApiUrl)
+    if (structuredUrl) {
+      try {
+        const { response, bodyText } = await fetchWorkdayResource(structuredUrl, {
+          headers: { accept: 'application/json', 'user-agent': WORKDAY_FETCH_USER_AGENT,
+            ...(session?.bootstrapUrl ? { referer: session.bootstrapUrl } : {}),
+            ...(session?.cookieHeader ? { cookie: session.cookieHeader } : {}) },
+        }, { signal, timeoutMs: requestTimeoutMs, source, requestScheduler, kind: 'detail' },
+        async response => ({ response, bodyText: await response.text() }))
+        if (response.status === 429 || response.status >= 500) throw buildWorkdayHttpFailureError(source, structuredUrl, response.status, response.headers)
+        const structured = response.ok ? extractWorkdayStructuredDetail(JSON.parse(bodyText)) : null
+        if (structured) { circuitBreaker.recordSuccess(jobUrl); return structured }
+      } catch (error) {
+        throwIfAborted(signal)
+        const status = Number(error?.jobsApiHttpStatus ?? error?.httpStatus)
+        if (status === 429 || status >= 500) throw error
+        // Missing, blocked, or malformed API descriptions use the existing page path.
+      }
+    }
     const { response, html } = await fetchWorkdayResource(
       jobUrl,
       {
@@ -1410,7 +1474,10 @@ const buildWorkdayIncompleteScopeError = (source, jobUrl, cause) => {
 
 const resolveWorkdayCxsPrimaryCountryScope = (info = {}) => {
   const countryValues = [
+    typeof info.country === 'string' ? info.country : null,
     info.country?.descriptor,
+    info.country?.alpha2Code,
+    typeof info.jobRequisitionLocation?.country === 'string' ? info.jobRequisitionLocation.country : null,
     info.jobRequisitionLocation?.country?.descriptor,
     info.jobRequisitionLocation?.country?.alpha2Code,
   ].filter((value) => typeof value === 'string' && value.trim())
@@ -1799,6 +1866,7 @@ const runWorkdayJobsApiScraper = async ({
                   requestTimeoutMs,
                   circuitBreaker: detailCircuitBreaker,
                   requestScheduler,
+                  jobsApiUrl,
                 },
               )
             } catch (error) {
@@ -1808,13 +1876,15 @@ const runWorkdayJobsApiScraper = async ({
             }
           }
           maybeDisableWorkdayDetailEnrichment(detailPayload, detailEnrichmentState, source)
-          const detailedLocations = scopeLocations || resolveWorkdayLocationsFromSummary(location, detailPayload)
+          const structuredIndiaLocations = detailPayload.indiaScopeLocations
+          if (Array.isArray(structuredIndiaLocations) && structuredIndiaLocations.length === 0) return null
+          const detailedLocations = structuredIndiaLocations || scopeLocations || resolveWorkdayLocationsFromSummary(location, detailPayload)
 
           if (!shouldPublishWorkdayListingFallback({ location, detailPayload, locations: detailedLocations })) {
             throw buildWorkdayIncompleteScopeError(source, canonicalLink)
           }
 
-          const indiaScopeLocations = scopeLocations?.filter((value) => isWorkdayJobInPublicIndiaScope({ location: value }))
+          const indiaScopeLocations = (structuredIndiaLocations || scopeLocations)?.filter((value) => isWorkdayJobInPublicIndiaScope({ location: value }))
           const displayLocation = indiaScopeLocations?.length ? indiaScopeLocations.join(' / ') : location
           const workdayJob = {
             jobId: extractJobId(canonicalLink),
@@ -1829,6 +1899,7 @@ const runWorkdayJobsApiScraper = async ({
             postedAt: parsePostedOn(job.postedOn || detailPayload.postingDate),
             closingDate: null,
             jobDescription: detailPayload.jobDescription,
+            ...(detailPayload.sourceDescription && { sourceDescription: detailPayload.sourceDescription }),
             minimumQualification: detailPayload.minimumQualification,
             preferredQualification: detailPayload.preferredQualification,
             requiredSkills: detailPayload.requiredSkills,

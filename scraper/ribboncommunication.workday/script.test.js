@@ -317,3 +317,12 @@ test('Ribbon scraper fails closed when the public Workday board no longer matche
     /verified workday board changed/i,
   )
 })
+
+
+test('Ribbon detects maintenance before checking Workday company identity', async () => {
+  const ribbon = await loadRibbonModule()
+  await assert.rejects(ribbon.createRibbonCommunicationScraper().run({
+    fetchText: async (url) => url === ribbon.CAREER_PAGE_URL ? officialCareersHtml : '<title>Workday is currently unavailable.</title>',
+    fetchJson: async () => assert.fail('Must not query jobs during maintenance'),
+  }), (error) => error.name === 'WorkdayUpstreamOutageError')
+})

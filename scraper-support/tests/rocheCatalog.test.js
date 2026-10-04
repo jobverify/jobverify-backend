@@ -59,11 +59,12 @@ test('buildScrapers and company coverage resolve Roche from the shared Workday c
   )
 })
 
-test('Roche local Workday config uses the shared jobs API defaults with the India country facet', () => {
+test('Roche local Workday config uses the shared jobs API configuration with dynamic India scope resolution', () => {
   const config = loadConfig(path.join(testsDir, '../../scraper/roche.workday'))
 
   assert.equal(config.listingStrategy, 'jobs-api')
-  assert.equal(config.countryFacetParameter, 'locationCountry')
+  assert.equal(config.countryFacetParameter, undefined)
+  assert.equal(config.locationCountry, null)
   assert.equal(
     config.jobsApiUrl,
     'https://roche.wd3.myworkdayjobs.com/wday/cxs/roche/roche-ext/jobs',

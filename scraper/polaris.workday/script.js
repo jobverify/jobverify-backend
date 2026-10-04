@@ -1,3 +1,4 @@
+import { assertWorkdayPageAvailable } from '../../scraper-support/myworkday/pageAvailability.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -139,6 +140,7 @@ export const createPolarisScraper = ({
     }
 
     const workdayBoardHtml = await fetchVerifiedText(WORKDAY_BOARD_URL)
+    assertWorkdayPageAvailable({ status: 200, html: workdayBoardHtml, url: WORKDAY_BOARD_URL }, { source: SOURCE })
     if (!hasOfficialWorkdayBoardSignal(workdayBoardHtml)) {
       throw new Error('Polaris verified public Workday board changed materially')
     }

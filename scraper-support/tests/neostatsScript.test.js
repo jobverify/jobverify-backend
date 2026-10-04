@@ -239,6 +239,33 @@ test('Neostats preserves existing jobs when the current client-loaded jobs API i
   assert.deepEqual(requestedApis, [neostats.JOBS_API_URL])
 })
 
+test('Neostats reads current client-loaded jobs and keeps only India locations', async () => {
+  const neostats = await loadNeostatsModule()
+  const jobs = await neostats.createNeostatsScraper({ now: () => '2026-10-03T00:00:00.000Z' }).run({
+    fetchText: async (url) => url === neostats.HOMEPAGE_URL ? homepageHtml : currentClientLoadedCareersHtml,
+    fetchJobsApi: async () => ({ status: 200, json: [
+      { id: 'role-india', slug: 'data-engineer-india', title: 'Data Engineer', location: 'Bengaluru, India', department: 'Data', experience: '4+ years', mode: 'Hybrid', employmentType: 'Full Time', about: 'Build data platforms.', responsibilities: ['Develop pipelines'], requirements: ['SQL'] },
+      { id: 'role-uae', slug: 'sales-uae', title: 'Sales Lead', location: 'Riyadh, Saudi Arabia', department: 'Sales', experience: '5+ years', mode: 'Onsite', employmentType: 'Contract', about: 'Sell services.', responsibilities: [], requirements: [] },
+    ] }),
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Data Engineer')
+  assert.equal(jobs[0].jobId, 'role-india')
+  assert.equal(jobs[0].location, 'Bengaluru, India')
+  assert.equal(jobs[0].jobDescription, 'Build data platforms. Develop pipelines SQL')
+  assert.equal(jobs[0].source, 'neostats')
+  assert.equal(jobs[0].scrapedAt, '2026-10-03T00:00:00.000Z')
+})
+
+test('Neostats rejects malformed client-loaded job records', async () => {
+  const neostats = await loadNeostatsModule()
+  await assert.rejects(neostats.createNeostatsScraper().run({
+    fetchText: async (url) => url === neostats.HOMEPAGE_URL ? homepageHtml : currentClientLoadedCareersHtml,
+    fetchJobsApi: async () => ({ status: 200, json: [{ title: 'Unknown', location: 'India' }] }),
+  }), /jobs API payload/i)
+})
+
 test('Neostats fails closed when the verified homepage or careers page contract changes', async () => {
   const neostats = await loadNeostatsModule()
 

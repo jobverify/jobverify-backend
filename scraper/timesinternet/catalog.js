@@ -13,8 +13,8 @@ export const TIMES_INTERNET_CATALOG = {
   companyCareerPage: 'https://timesinternet.in/careers/job-list',
   officialCareersPageUrl: 'https://timesinternet.in/careers/job-list',
   verifiedJobDetailUrls: [
-    'https://timesinternet.in/careers/job-detail/698222a358a30d19cf667cbb',
-    'https://timesinternet.in/careers/job-detail/644b66c280bea7e80b7a127c',
+    'https://timesinternet.in/careers/job-detail/6abb601846c5d2b24a35bd82',
+    'https://timesinternet.in/careers/job-detail/644b66c280bea7e80b7a229d',
   ],
   companyDomain: 'timesinternet.in',
   atsPlatform: 'official-company-careers',
@@ -23,9 +23,9 @@ export const TIMES_INTERNET_CATALOG = {
   extractionStrategy: 'verified-first-party-job-list+same-domain-detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://timesinternet.in/careers/job-list is the live first-party Times Internet careers page and that it publicly lists current roles including Associate Sales, Enterprise Sales Manager, and Manager - Legal with locations in Mumbai, Noida, and Bengaluru. Verified same-domain detail pages such as https://timesinternet.in/careers/job-detail/698222a358a30d19cf667cbb and https://timesinternet.in/careers/job-detail/644b66c280bea7e80b7a127c expose public job descriptions and Apply now actions on the first-party domain, so this provider is pinned to the verified listing page plus same-domain detail pages.',
+    'Verified on October 3, 2026 that https://timesinternet.in/careers/job-list lists 10 current roles in India. Same-domain detail pages including https://timesinternet.in/careers/job-detail/6abb601846c5d2b24a35bd82 and https://timesinternet.in/careers/job-detail/644b66c280bea7e80b7a229d expose job descriptions and Apply now actions. The latter has an unstructured job description without an About Times Internet section; its branded title and page structure were verified.',
 }
 
 export default TIMES_INTERNET_CATALOG

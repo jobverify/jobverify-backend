@@ -20,9 +20,9 @@ export const CREDIT_SUISSE_CATALOG = {
   officialCareersRedirectUrl: 'https://www.ubs.com/global/en/careers.html',
   officialSearchJobsUrl: 'https://www.ubs.com/global/en/careers/search-jobs.html',
   officialJobsBoardHost: 'https://jobs.ubs.com',
-  verifiedOn: '2026-07-14',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'As of July 14, 2026, the Credit Suisse careers URL redirects to UBS Global Careers and the official UBS search-jobs page hands off to jobs.ubs.com, so there is no trustworthy Credit Suisse-branded public jobs surface to attribute India roles.',
+    'Verified on October 3, 2026 that the Credit Suisse U.S. homepage redirects to the UBS U.S. page, whose heading is now UBS United States and still includes Credit Suisse client access and UBS careers links. The Credit Suisse careers URL redirects to UBS Global Careers, and its search-jobs page hands off to jobs.ubs.com. There is no trustworthy Credit Suisse-branded public jobs surface to attribute India roles.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

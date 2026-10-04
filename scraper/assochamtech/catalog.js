@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 15, 2026 that https://www.assocham.org/ is the live official ASSOCHAM first-party site, that the homepage Careers link resolves to https://www.assocham.org/career.php, and that the careers page is a generic profile and internship intake surface with hr@assocham.com, resume-upload fields, and no trustworthy public jobs surface. Common public job routes such as /careers, /career, /jobs, /join-us, /work-with-us, and /recruitment returned 404 Not Found pages during live checks.'
+  'Verified on October 3, 2026 that https://www.assocham.org/ serves a first-party frontend whose Careers navigation points to /career. The old https://www.assocham.org/career.php now returns 404, while https://www.assocham.org/assocham_backend/career.php remains a public generic profile and internship intake page with hr@assocham.com and resume-upload fields. Common /careers, /career, /jobs, /join-us, /work-with-us, and /recruitment routes return 404. There is no trustworthy public jobs surface.'
 
 export const ASSOCHAM_TECH_CATALOG = {
   source: 'assochamtech',
@@ -14,7 +14,8 @@ export const ASSOCHAM_TECH_CATALOG = {
   modulePath: path.join(currentDir, 'script.js'),
   dryRunFile: 'assochamtech/jobs.json',
   homepageUrl: 'https://www.assocham.org/',
-  companyCareerPage: 'https://www.assocham.org/career.php',
+  companyCareerPage: 'https://www.assocham.org/assocham_backend/career.php',
+  legacyCareersUrl: 'https://www.assocham.org/career.php',
   applicationEmail: 'hr@assocham.com',
   applicationUrl: 'mailto:hr@assocham.com',
   companyDomain: 'assocham.org',
@@ -25,7 +26,7 @@ export const ASSOCHAM_TECH_CATALOG = {
     'verified-homepage+verified-generic-careers-intake-page-without-public-listings+verified-common-job-routes-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

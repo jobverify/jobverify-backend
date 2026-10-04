@@ -205,6 +205,14 @@ test('Hinduja Global Services normalizes first-party RSS items into India jobs a
   ])
 })
 
+test('HGS accepts the ATS no-jobs item for an empty category without creating a job', async () => {
+  const hgs = await loadHgsModule()
+  const xml = `<?xml version="1.0"?><rss><channel><atom:link href='https://careers.joinhgs.com/xml/category7947110.xml'/><title>Hinduja Global Solutions Ltd - Digital Data And Analytics Jobs India</title><item><title>No jobs currently available - Check out our other opportunities.</title><description>Click above to see other opportunities</description><link>https://careers.joinhgs.com</link><guid isPermaLink='false'>0</guid></item></channel></rss>`
+  assert.equal(hgs.hasJobsRssSignal(xml, hgs.DIGITAL_JOBS_RSS_URL), true)
+  assert.deepEqual(hgs.extractIndiaJobsFromFeed(xml), [])
+  assert.equal(hgs.hasJobsRssSignal(xml.replace('<guid isPermaLink=\'false\'>0</guid>', '<guid>123</guid>'), hgs.DIGITAL_JOBS_RSS_URL), false)
+})
+
 test('Hinduja Global Services run validates the official pages before merging both linked RSS feeds', async () => {
   const hgs = await loadHgsModule()
   const requestedUrls = []

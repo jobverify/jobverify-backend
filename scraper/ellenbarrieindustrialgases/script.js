@@ -125,6 +125,18 @@ export const createEllenbarrieIndustrialGasesScraper = () => ({
     }
 
     const careerPage = await fetchPage(CAREER_PAGE_URL)
+    if (careerPage.status === 200
+      && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/ellenbarrie\.com\/career\/["']/i.test(careerPage.html)
+      && /wpcf7-contact-form-not-found/i.test(careerPage.html)
+      && /Error:\s*Contact form not found\./i.test(normalizeWhitespace(String(careerPage.html).replace(/<[^>]+>/g, ' ')))) {
+      throw Object.assign(new Error('Ellenbarrie Industrial Gases public careers inventory is unavailable: the first-party contact form is missing (Contact form not found)'), {
+        code: 'ELLENBARRIE_INVENTORY_UNAVAILABLE',
+        softFailure: true,
+        failureKind: 'upstream_inventory_unavailable',
+        abortRetries: true,
+      })
+    }
+
     if (careerPage.status !== 200 || !hasCareerPageSignal(careerPage.html)) {
       throw new Error('Ellenbarrie Industrial Gases verified career page no longer matches the trusted first-party form surface')
     }

@@ -236,3 +236,19 @@ test('run fails closed when the homepage, page sitemap, or careers routes drift 
     /careers routes changed materially or now expose public jobs/i,
   )
 })
+
+
+const currentTebHome = homepageHtml.replace('TEBSolutions- Your Path to Digital Excellence</title>', 'HomePage - TEB Solutions</title>')
+  .replace('<a href="mailto:info@tebsolutions.in">info@tebsolutions.in</a>', '<img src="/wp-content/uploads/2025/07/Tattavit-Blue-PNG.png" alt="TEB Solutions"><p>Seamless Communication, Global Impact.</p><p>Transforming Ideas into Digital Excellence.</p><p>Send us a message</p>')
+const currentTebSitemap = '<?xml version="1.0"?><urlset><url><loc>/web-design/</loc></url><url><loc>/marketing/</loc></url><url><loc>/blog/</loc></url></urlset>'
+
+test('TEB validates current WordPress branding, relative sitemap and careers catch-all homepage', async () => {
+  assert.equal(hasOfficialHomepageSignal(currentTebHome), true)
+  assert.equal(hasOfficialPageSitemapSignal(currentTebSitemap), true)
+  assert.equal(isVerifiedNoPublicJobsRoute({status:200,url:CAREERS_ROUTE_URLS[0],html:currentTebHome}), true)
+  assert.deepEqual(await createTebSolutionsScraper().run({fetchPage:async url=>({status:200,url,html:url===PAGE_SITEMAP_URL?currentTebSitemap:currentTebHome})}), [])
+  assert.equal(hasOfficialPageSitemapSignal(currentTebSitemap.replace('/blog/', 'https://unrelated.example/blog/')), false)
+  assert.equal(hasOfficialPageSitemapSignal(currentTebSitemap.replace('</urlset>', '<url><loc>/careers/</loc></url></urlset>')), false)
+  assert.equal(isVerifiedNoPublicJobsRoute({status:503,url:CAREERS_ROUTE_URLS[0],html:currentTebHome}), false)
+  assert.equal(isVerifiedNoPublicJobsRoute({status:200,url:CAREERS_ROUTE_URLS[0],html:currentTebHome+'<h2>Current Openings</h2>'}), false)
+})

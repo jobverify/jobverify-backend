@@ -4,13 +4,9 @@
  */
 
 import Job from "../models/Job.js";
-import Click from "../models/Click.js";
-import JobAlertDelivery from "../models/JobAlertDelivery.js";
-import PlanPurchase from "../models/PlanPurchase.js";
 import Subscription from "../models/Subscription.js";
 import TelegramLinkToken from "../models/TelegramLinkToken.js";
 import User from "../models/User.js";
-import UserSuggestion from "../models/UserSuggestion.js";
 import { normalizePreferredJobType } from "../constants/preferredJobTypes.js";
 import { ACCESS_ROLES } from "../constants/accessPlans.js";
 import {
@@ -27,6 +23,7 @@ import { applyPublicJobVisibility } from "../utils/publicJobVisibility.js";
 import { respondWithInternalError } from "../utils/respondWithInternalError.js";
 import { createTelegramLinkToken } from "../services/telegramLinkService.js";
 import { clearAuthCookie } from "../utils/authCookies.js";
+import { removeUserAccount } from "../services/userAccountDeletion.js";
 
 const MAX_PROFILE_TEXT_LENGTH = 80;
 const MAX_PROFILE_ITEMS = 20;
@@ -268,15 +265,7 @@ export const updateUserProfile = async (req, res) => {
 // Permanently removes the authenticated account and records that identify or track it.
 export const deleteUserAccount = async (req, res) => {
   try {
-    const userId = req.user._id;
-
-    await Subscription.deleteMany({ user: userId });
-    await Click.deleteMany({ user: userId });
-    await JobAlertDelivery.deleteMany({ user: userId });
-    await PlanPurchase.deleteMany({ user: userId });
-    await TelegramLinkToken.deleteMany({ user: userId });
-    await UserSuggestion.deleteMany({ user: userId });
-    await User.deleteOne({ _id: userId });
+    await removeUserAccount(req.user);
     clearAuthCookie(res);
 
     res.status(200).json({

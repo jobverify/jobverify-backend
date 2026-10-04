@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const careersHtml = `
 <!doctype html>
@@ -78,7 +79,7 @@ test('Railway pins the verified first-party careers page and same-domain role li
   assert.equal(railway.COMPANY, 'Railway')
   assert.equal(railway.COMPANY_DOMAIN, 'railway.com')
   assert.equal(railway.CAREERS_URL, 'https://railway.com/careers')
-  assert.equal(railway.VERIFIED_AT, '2026-08-21')
+  assert.equal(railway.VERIFIED_AT, '2026-10-03')
   assert.equal(railway.hasVerifiedCareersPageSignal(careersHtml), true)
   assert.deepEqual(railway.extractRoleSummaries(careersHtml), [
     {
@@ -151,6 +152,9 @@ test('Railway returns an honest empty array while the verified first-party roles
 
   assert.deepEqual(requestedUrls, [railway.CAREERS_URL])
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).status, 'complete-inventory')
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 4)
+  assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 0)
 })
 
 test('Railway fails closed when the verified careers surface drifts or the India slice changes', async () => {

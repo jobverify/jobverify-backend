@@ -144,11 +144,20 @@ export const hasOfficialHomepageSignal = (html) => {
 }
 
 export const extractGreenhouseApiUrl = (html) => {
-  const match = String(html ?? '').match(
+  const page = String(html ?? '')
+  const directMatch = page.match(
     /fetch\(\s*['"](https:\/\/api\.greenhouse\.io\/v1\/boards\/[a-z0-9-]+\/jobs)['"]\s*\)/i,
   )
+  if (directMatch) return directMatch[1]
 
-  return match?.[1] ?? null
+  const boardMatch = page.match(
+    /\b(?:var|let|const)\s+BOARD_API\s*=\s*['"](https:\/\/api\.greenhouse\.io\/v1\/boards\/[a-z0-9-]+)['"]/i,
+  )
+  if (!boardMatch || !/getJson\(\s*BOARD_API\s*\+\s*['"]\/jobs\?content=true['"]\s*\)/i.test(page)) {
+    return null
+  }
+
+  return `${boardMatch[1]}/jobs`
 }
 
 export const hasOfficialOpenPositionsSignal = (html) => {
@@ -158,7 +167,7 @@ export const hasOfficialOpenPositionsSignal = (html) => {
   return /<title>\s*Open Positions - NK Securities Research\s*<\/title>/i.test(page)
     && pageText?.includes('CURRENT OPENINGS')
     && pageText?.includes('Find your role')
-    && /placeholder=["']Search by role or location["']/i.test(page)
+    && /placeholder=["']Search by role(?:, team)? or location["']/i.test(page)
     && pageText?.includes('All Locations')
     && pageText?.includes('No open positions at this time. Check back soon.')
     && /id=["']ghSearch["']/i.test(page)

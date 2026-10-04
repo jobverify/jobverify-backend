@@ -81,13 +81,14 @@ test('Amicable AI sentinel helpers stay pinned to the verified homepage, no-open
 
   assert.equal(amicableAi.SOURCE, 'amicableai')
   assert.equal(amicableAi.COMPANY, 'Amicable AI')
-  assert.equal(amicableAi.VERIFIED_AT, '2026-07-28')
+  assert.equal(amicableAi.VERIFIED_AT, '2026-10-03')
   assert.equal(amicableAi.HOMEPAGE_URL, 'https://amicable.io/')
   assert.equal(amicableAi.CAREERS_URL, 'https://amicable.io/careers')
   assert.equal(amicableAi.SCREENLOOP_BOARD_URL, 'https://app.screenloop.com/careers/amicable')
   assert.equal(amicableAi.SPECULATIVE_APPLY_EMAIL, 'jobs@amicable.co.uk')
 
   assert.equal(amicableAi.hasOfficialHomepageSignal(homepageHtml), true)
+  assert.equal(amicableAi.hasOfficialHomepageSignal(homepageHtml.replace('divorce, separation', 'divorce, prenups, separation')), true)
   assert.equal(
     amicableAi.extractHomepageCareerUrl(homepageHtml),
     'https://amicable.io/careers',

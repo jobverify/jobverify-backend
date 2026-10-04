@@ -78,6 +78,12 @@ export const extractHomepageCareerUrl = (html = '') => {
     }
   }
 
+  const embeddedNavigation = String(html ?? '').replace(/\\"/g, '"')
+  const embeddedCareer = embeddedNavigation.match(/"text"\s*:\s*"Careers"\s*,\s*"url"\s*:\s*"([^"]+)"/i)
+  if (normalizeUrl(embeddedCareer?.[1]) === normalizeUrl(CAREERS_URL)) {
+    return CAREERS_URL
+  }
+
   return null
 }
 
@@ -112,13 +118,15 @@ export const hasPublicJobListingSignal = (html = '') => {
 export const hasOfficialHomepageSignal = (html = '') => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
+  const embeddedNavigation = rawHtml.replace(/\\"/g, '"')
+  const hasCompanyCareersNavigation = /"text"\s*:\s*"About Us"\s*,\s*"url"\s*:\s*"https:\/\/www\.fino\.bank\.in\/company\/about-us"/i.test(embeddedNavigation)
+    && extractHomepageCareerUrl(rawHtml) === CAREERS_URL
 
   return normalized.includes('Open your FinoPay Account now')
     && normalized.includes('FinoPay')
     && normalized.includes('Savings Account')
     && normalized.includes('Investor Relations')
-    && normalized.includes('About Us')
-    && normalized.includes('Careers')
+    && ((normalized.includes('About Us') && normalized.includes('Careers')) || hasCompanyCareersNavigation)
 }
 
 export const hasVerifiedNonListingCareersPageSignal = (html = '') => {

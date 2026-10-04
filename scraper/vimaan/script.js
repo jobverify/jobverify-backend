@@ -1,3 +1,5 @@
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { verifyPublicInventory, defaultFetchListings } from './publicInventory.js'
 export const SOURCE = 'vimaan'
 export const COMPANY = 'Vimaan'
 export const HOMEPAGE_URL = 'https://vimaan.ai/'
@@ -37,7 +39,11 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes('100% inventory accuracy & visibility')
+  const current = /<title>AI for Inventory Visibility and Inventory Accuracy \| Vimaan<\/title>/i.test(html)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/vimaan\.ai\/["']/i.test(html)
+    && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']VIMAAN["']/i.test(html)
+    && ['stortrack','palletscan','parcelscan','packview','computer vision','inventory accuracy','careers'].every(marker=>normalized.includes(marker))
+  return current || normalized.includes('100% inventory accuracy & visibility')
     && normalized.includes('computer vision that brings real-world accuracy to your warehouse')
     && normalized.includes('dozens of warehouses use vimaan')
     && normalized.includes('careers')
@@ -87,7 +93,7 @@ export const hasRenderedPublicJobCards = (html) => {
 }
 
 export const createVimaanScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
+  async run({ fetchPage = defaultFetchPage, fetchListings = defaultFetchListings } = {}) {
     const homepagePage = await fetchPage(HOMEPAGE_URL)
     if (homepagePage.status !== 200 || !hasOfficialHomepageSignal(homepagePage.html)) {
       throw new Error('Vimaan homepage changed materially or no longer matches the verified official site')
@@ -112,7 +118,11 @@ export const createVimaanScraper = () => ({
       throw new Error('Vimaan careers page now appears to expose rendered public job cards')
     }
 
-    return []
+    if (/job_manager_ajax_filters/.test(careersPage.html)) {
+      if (!careersPage.html.includes('/jm-ajax/%%endpoint%%/')) throw new Error('Vimaan jobs API handoff changed')
+      return verifyPublicInventory(fetchListings)
+    }
+    return attachInventoryEvidence([], { status: 'discovery-only', surface: CAREERS_URL, firstParty: true, listingComplete: false, pagesFetched: 1, verifiedAt: new Date().toISOString(), reason: 'Verified careers shell without an enumerable jobs API handoff' })
   },
 })
 

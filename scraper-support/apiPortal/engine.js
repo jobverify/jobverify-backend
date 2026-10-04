@@ -280,14 +280,91 @@ const mapWithConcurrency = async (items, concurrency, mapper) => {
   return results
 }
 
+const validateInventory = (payload, records, rules) => {
+  if (!rules) return
+  if (!Array.isArray(records) || records.length < (rules.minRecords ?? 0)) {
+    throw new Error('API portal inventory validation failed: missing or short listing array')
+  }
+  if (
+    rules.totalCountPath
+    && getValueAtPath(payload, rules.totalCountPath) !== records.length
+  ) {
+    throw new Error('API portal inventory validation failed: total count mismatch')
+  }
+  if (
+    rules.sourcePath
+    && getValueAtPath(payload, rules.sourcePath) !== rules.expectedSource
+  ) {
+    throw new Error('API portal inventory validation failed: source marker mismatch')
+  }
+
+  const seen = new Set()
+  for (const record of records) {
+    if (!record || typeof record !== 'object') {
+      throw new Error('API portal inventory validation failed: malformed listing')
+    }
+    for (const field of rules.requiredFields || []) {
+      const value = getValueAtPath(record, field)
+      if (typeof value !== 'string' || !value.trim()) {
+        throw new Error(`API portal inventory validation failed: missing ${field}`)
+      }
+    }
+    if (rules.uniqueField) {
+      const value = getValueAtPath(record, rules.uniqueField)
+      if (seen.has(value)) {
+        throw new Error('API portal inventory validation failed: duplicate listing ID')
+      }
+      seen.add(value)
+    }
+    if (rules.urlField) {
+      try {
+        const url = new URL(getValueAtPath(record, rules.urlField))
+        if (
+          url.origin !== rules.allowedUrlOrigin
+          || !url.pathname.startsWith(rules.urlPathPrefix)
+        ) {
+          throw new Error('untrusted URL')
+        }
+      } catch {
+        throw new Error('API portal inventory validation failed: untrusted listing URL')
+      }
+    }
+  }
+}
+
 export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJson }) => {
   const config = normalizeApiPortalConfig(provider.config || {})
   if (
     provider.atsPlatform === 'eightfold'
     && config.pagination?.strategy === 'offset-limit'
     && (config.pagination.pageSize == null || config.pagination.pageSize === 10)
+    && !Number.isInteger(provider.templateOptions?.pageSize)
   ) {
     config.pagination.pageSize = 50
+  }
+  let lastRequestStartedAt = 0
+  const fetchPortalJson = async (url, options) => {
+    const policy = config.rateLimit
+    if (!policy) return fetchJson(url, options)
+
+    const maxRetries = Math.max(0, Number(policy.maxRetries) || 0)
+    for (let attempt = 0; ; attempt += 1) {
+      const waitMs = Math.max(0, (Number(policy.minimumIntervalMs) || 0) - (Date.now() - lastRequestStartedAt))
+      if (waitMs > 0) await new Promise((resolve) => setTimeout(resolve, waitMs))
+      lastRequestStartedAt = Date.now()
+      try {
+        return await fetchJson(url, options)
+      } catch (error) {
+        if (attempt >= maxRetries || !(/HTTP 429\b/i.test(String(error?.message)) || error?.status === 429)) {
+          throw error
+        }
+        const backoffMs = Math.min(
+          Number(policy.maxDelayMs) || 30000,
+          (Number(policy.baseDelayMs) || 2000) * (2 ** attempt),
+        )
+        await new Promise((resolve) => setTimeout(resolve, backoffMs))
+      }
+    }
   }
   const jobs = []
   let state = createPaginationState(config.pagination)
@@ -305,7 +382,7 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
         url.searchParams.set(key, value)
       })
 
-      const listingPayload = await fetchJson(url.toString(), {
+      const listingPayload = await fetchPortalJson(url.toString(), {
         method: config.request.method,
         headers: config.request.headers,
         body: serializeRequestBody(
@@ -313,10 +390,12 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
           config.request.headers,
         ),
       })
-      const records = getValueAtPath(listingPayload, config.pagination.resultsPath) || []
+      const records = getValueAtPath(listingPayload, config.pagination.resultsPath)
+      validateInventory(listingPayload, records, config.inventoryValidation)
+      const listingRecords = records || []
 
       const mappedRecords = await mapWithConcurrency(
-        records,
+        listingRecords,
         config.detail.enabled ? (config.detail.concurrency || 1) : 1,
         async (record) => {
           let detailPayload = {}
@@ -328,7 +407,7 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
             })
 
             try {
-              detailPayload = await fetchJson(detailUrl, {
+              detailPayload = await fetchPortalJson(detailUrl, {
                 method: config.detail.method,
                 headers: config.detail.headers,
                 body: serializeRequestBody(config.detail.body, config.detail.headers),
@@ -363,7 +442,7 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
       state = updatePaginationState(config.pagination, state, {
         hasMore,
         totalCount,
-        resultCount: Array.isArray(records) ? records.length : 0,
+        resultCount: Array.isArray(listingRecords) ? listingRecords.length : 0,
         pageSize: config.pagination.pageSize,
       })
     }
