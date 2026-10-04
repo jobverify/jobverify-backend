@@ -8,11 +8,24 @@ const identity = { modelRevision: CLASSIFICATION_MODEL.revision, runtimeVersion:
 const now = new Date('2026-10-02T12:00:00Z');
 const job = { title: 'Engineer', description: 'Develop software.' };
 const response = value => ({ ok: true, status: 200, json: async () => value });
+const completeAnswers = Object.fromEntries(Object.entries(CLASSIFICATION_POLICY.questions).map(([key, question]) => {
+  const labels = Object.keys(question.criteria), choice = labels.at(-1);
+  return [key, { choice, probabilities: Object.fromEntries(labels.map(label => [label, label === choice ? .99 : .01 / (labels.length - 1)])) }];
+}));
 
 test('display normalization preserves the classifier input and avoids a second model pass', () => {
   const source = { title: 'Analyst', source: 'test', company: 'Example', postingDate: '2026-10-01', jobDescription: 'Freshers with post-graduation or 2 - 3 years of experience. Work with PowerPoint.' };
   assert.equal(buildClassificationInput(source, { now }).inputHash,
     buildClassificationInput(normalizeScrapedJob(source), { now }).inputHash);
+});
+
+test('display titles preserve employer whitespace in the source title used by Laya', () => {
+  const source = { title: 'Software Development Engineer \u00a0II - Mainframe Assembler', company: 'Example',
+    jobDescription: 'A full-time role requiring 3-5 years of experience.', postedAt: '2026-09-17' };
+  const normalized = normalizeScrapedJob(source);
+  assert.equal(normalized.title, 'Software Development Engineer II - Mainframe Assembler');
+  assert.equal(buildClassificationInput(normalized, { now }).inputHash, buildClassificationInput(source, { now }).inputHash);
+  assert.equal(buildClassificationInput(normalizeScrapedJob(normalized), { now }).inputHash, buildClassificationInput(source, { now }).inputHash);
 });
 
 test('worker receives employer experience separately from the windowed description', async () => {
@@ -126,7 +139,7 @@ test('a shadow-to-enforce upgrade snapshots the current baseline', async () => {
   const liveIdentity = { ...identity, calibrationHash: 'a'.repeat(64) };
   const existing = { ...job, fingerprint: 'one', jobType: 'Contract', classification: { previous: { jobType: 'Intern' }, mode: 'shadow', authoritative: false } };
   const client = createJobClassifier({ mode: 'enforce', fetch: async url => url.endsWith('/health') ? response({ ready: true, identity: liveIdentity, enforceAllowed: true })
-    : response({ complete: true, windows: 1, identity: liveIdentity, answers: {} }) });
+    : response({ complete: true, windows: 1, identity: liveIdentity, answers: completeAnswers }) });
   const [result] = await client.classifyJobs([job], { now, existingJobs: [existing], keyForJob: () => 'one' });
   assert.equal(result.classification.previous.jobType, 'Contract');
 });
@@ -155,10 +168,10 @@ test('worker requests send source content once while retaining section boundarie
   await client.classifyJobs([{ ...job, preferredQualification: '5 years preferred.' }], { now });
 });
 
-test('a timed-out worker cannot hold every remaining job in the batch and is retried after cooldown', async () => {
+test('shadow diagnostics use cooldown after timeout and retry on a later job', async () => {
   let clock = 0, predictions = 0;
   const progress = [];
-  const client = createJobClassifier({ mode: 'policy', clock: () => clock, retryAfterMs: 100,
+  const client = createJobClassifier({ mode: 'shadow', clock: () => clock, retryAfterMs: 100,
     fetch: async url => {
       if (url.endsWith('/health')) return response({ ready: true, identity });
       if (++predictions === 1) throw new DOMException('slow CPU forward', 'TimeoutError');
@@ -170,7 +183,7 @@ test('a timed-out worker cannot hold every remaining job in the batch and is ret
   assert.equal(result.length, 100);
   assert.equal(result[0].classification.reason, 'timeout');
   assert.equal(result[99].classification.reason, 'worker_cooldown');
-  assert.ok(result.every(job => normalizeScrapedJob(job).jobType === 'Intern'));
+  assert.deepEqual(result.map(job => normalizeScrapedJob(job).jobType), jobs.map(job => normalizeScrapedJob(job).jobType));
   assert.ok(result.every(job => job.classification.complete === false));
   assert.equal(predictions, 1, 'remaining jobs must not repeat the failed model wait');
   assert.equal(progress.at(-1).processed, 100);
@@ -180,9 +193,9 @@ test('a timed-out worker cannot hold every remaining job in the batch and is ret
   assert.equal(predictions, 2);
 });
 
-test('a busy worker produces explicit fallback without a second retry for every job', async () => {
+test('a busy worker produces explicit shadow fallback without a second retry for every job', async () => {
   let predictions = 0;
-  const client = createJobClassifier({ mode: 'policy', fetch: async url => {
+  const client = createJobClassifier({ mode: 'shadow', fetch: async url => {
     if (url.endsWith('/health')) return response({ ready: true, identity });
     predictions++;
     return { ok: false, status: 503, json: async () => ({ error: 'busy' }) };
@@ -198,7 +211,7 @@ test('classification reports progress while the native request is still running'
   const client = createJobClassifier({ mode: 'policy', progressIntervalMs: 5, fetch: async url => {
     if (url.endsWith('/health')) return response({ ready: true, identity });
     await new Promise(resolve => setTimeout(resolve, 30));
-    return response({ complete: true, windows: 1, answers: {}, identity });
+    return response({ complete: true, windows: 1, answers: completeAnswers, identity });
   } });
   await client.classifyJobs([job], { now, onProgress: event => progress.push(event) });
   assert.ok(progress.filter(event => event.processed === 0).length > 1);
@@ -206,9 +219,9 @@ test('classification reports progress while the native request is still running'
   assert.equal(progress.at(-1).nativeComplete, 1);
 });
 
-test('a native deadline overrun also pauses further model requests', async () => {
+test('a native deadline overrun also pauses further shadow requests', async () => {
   let predictions = 0;
-  const client = createJobClassifier({ mode: 'policy', fetch: async url => {
+  const client = createJobClassifier({ mode: 'shadow', fetch: async url => {
     if (url.endsWith('/health')) return response({ ready: true, identity });
     predictions++;
     return response({ complete: false, windows: 1, answers: {}, reason: 'request_deadline', identity });
@@ -219,27 +232,25 @@ test('a native deadline overrun also pauses further model requests', async () =>
   assert.equal(predictions, 1);
 });
 
-test('worker budget exhaustion is terminal for queued uncached requests in this run', async () => {
+test('an old worker budget response blocks policy persistence instead of skipping the rest of the jobs', async () => {
   let predictions = 0;
-  const client = createJobClassifier({ mode: 'policy', fetch: async url => {
+  const client = createJobClassifier({ mode: 'policy', retryAfterMs: 0, fetch: async url => {
     if (url.endsWith('/health')) return response({ ready: true, identity });
     predictions++;
     return response({ complete: false, windows: 0, answers: {}, reason: 'budget_exhausted', identity });
   } });
-  const result = await client.classifyJobs([job, { ...job, title: 'Second Engineer' }], { now });
-  assert.ok(result.every(job => job.classification.reason === 'budget_exhausted'));
-  assert.equal(client.stats.budgetSkipped, 2);
+  await assert.rejects(client.classifyJobs([job, { ...job, title: 'Second Engineer' }], { now }), { name: 'LayaClassificationRequiredError' });
   assert.equal(predictions, 1);
 });
 
 test('initial health unavailability is retried on a later source after cooldown', async () => {
   let clock = 0, healthCalls = 0;
-  const client = createJobClassifier({ mode: 'policy', clock: () => clock, retryAfterMs: 100, fetch: async url => {
+  const client = createJobClassifier({ mode: 'shadow', clock: () => clock, retryAfterMs: 100, fetch: async url => {
     if (url.endsWith('/health')) {
       if (++healthCalls === 1) throw new Error('temporarily offline');
       return response({ ready: true, identity });
     }
-    return response({ complete: true, windows: 1, answers: {}, identity });
+    return response({ complete: true, windows: 1, answers: completeAnswers, identity });
   } });
   assert.equal((await client.classifyJobs([job], { now }))[0].classification.reason, 'unavailable');
   clock = 101;
@@ -255,7 +266,7 @@ test('cancelling the initial health handshake does not poison later sources', as
       if (++healthCalls === 1) { controller.abort(); throw new DOMException('cancelled source', 'AbortError'); }
       return response({ ready: true, identity });
     }
-    return response({ complete: true, windows: 1, answers: {}, identity });
+    return response({ complete: true, windows: 1, answers: completeAnswers, identity });
   } });
   await assert.rejects(client.classifyJobs([job], { now, signal: controller.signal }), { name: 'AbortError' });
   assert.equal((await client.classifyJobs([job], { now }))[0].classification.complete, true);

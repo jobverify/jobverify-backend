@@ -147,6 +147,7 @@ export const runResilientScrape = async (options, { env: sourceEnv = process.env
   const stderrPath = path.join(options.runDir, 'stderr.log')
   const metadataPath = path.join(options.runDir, 'run-metadata.json')
   const exitPath = path.join(options.runDir, 'run-exit.json')
+  if (fs.existsSync(exitPath)) fs.renameSync(exitPath, path.join(options.runDir, `run-exit-${Date.now()}.json`))
   const stopRequestPath = path.join(options.runDir, 'stop-request.json')
   const runId = path.basename(options.runDir)
   let env = {
@@ -236,7 +237,7 @@ export const runResilientScrape = async (options, { env: sourceEnv = process.env
     env = classifierRuntime.env
     metadata.environment.JOB_CLASSIFICATION_MODE = env.JOB_CLASSIFICATION_MODE
     metadata.environment.LAYA_PYTHON = env.LAYA_PYTHON || null
-    metadata.environment.LAYA_TOTAL_BUDGET_SECONDS = env.LAYA_TOTAL_BUDGET_SECONDS || '1200'
+    metadata.classificationRequiresCompleteScan = ['policy', 'enforce'].includes(env.JOB_CLASSIFICATION_MODE)
     metadata.classificationReadyAt = timestamp()
     metadata.classificationEnabled = env.JOB_CLASSIFICATION_MODE !== 'off'
     writeJsonFile(metadataPath, metadata)

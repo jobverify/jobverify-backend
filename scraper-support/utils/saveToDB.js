@@ -27,7 +27,7 @@ import {
 import { normalizeScrapedJob, resolveJobType } from './normalizeScrapedJob.js'
 import { enrichJobsWithPublicExperience } from './publicExperienceEnrichment.js'
 import { jobAlertService } from '../../src/services/jobAlertService.js'
-import { getJobClassifier } from './jobClassifier.js'
+import { getJobClassifier, classifyJobsForPersistence } from './jobClassifier.js'
 import { buildDescriptionSourceUpdate } from '../../src/services/jobDescriptionPolicy.js'
 import { getSourceDescription } from '../../src/utils/jobSourceContent.js'
 import { CLASSIFICATION_FIELDS, getAuthoritativeClassification } from '../../src/services/jobClassificationPolicy.js'
@@ -332,7 +332,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
       : job
   })
   const jobsForPersistence = await runStage(source, onStage, 'classification',
-    () => classifier.classifyJobs(sourceJobs, { signal, now, existingJobs, keyForJob,
+    () => classifyJobsForPersistence(classifier, sourceJobs, { signal, now, existingJobs, keyForJob,
       onProgress: progress => emitStage(source, onStage, { stage: 'classification', status: 'progress', ...progress }),
     }),
     { jobs: enrichedJobs.length }, { signal })
@@ -753,7 +753,7 @@ export const saveDryRunSnapshot = async (jobs, filePath, options = {}) => {
   throwIfAborted(signal)
   const classifier = options.classifier || getJobClassifier()
   const classifiedJobs = await runStage(source, onStage, 'classification',
-    () => classifier.classifyJobs(enrichedJobs, { signal, now: options.now || new Date(),
+    () => classifyJobsForPersistence(classifier, enrichedJobs, { signal, now: options.now || new Date(),
       onProgress: progress => emitStage(source, onStage, { stage: 'classification', status: 'progress', ...progress }),
     }), { jobs: enrichedJobs.length }, { signal })
   const normalizedJobs = normalizeDryRunJobs(classifiedJobs)

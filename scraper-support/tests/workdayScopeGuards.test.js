@@ -67,6 +67,11 @@ test('runWorkdayScraper jobs-api mode skips leaked non-India country-code listin
 
     if (url.includes('/job/')) {
       detailUrls.push(url)
+      if (url.includes('/wday/cxs/')) {
+        return { ok: true, status: 200, url, headers: { get: () => 'application/json' },
+          text: async () => JSON.stringify({ jobPostingInfo: { title: 'Senior Specialist - Workflow Management',
+            location: 'IN - Chennai', jobReqId: 'R190557', jobDescription: '<p>Required experience</p><ul><li>3 years of professional experience</li><li>Excel certification preferred</li></ul>' } }) }
+      }
       return {
         ok: true,
         status: 200,
@@ -102,8 +107,9 @@ test('runWorkdayScraper jobs-api mode skips leaked non-India country-code listin
     assert.equal(jobs.length, 1)
     assert.equal(jobs[0].title, 'Senior Specialist - Workflow Management')
     assert.equal(jobs[0].location, 'IN - Chennai')
+    assert.match(jobs[0].sourceDescription, /experience\nExcel certification preferred/)
     assert.deepEqual(detailUrls, [
-      'https://scope-guard-test.wd5.myworkdayjobs.com/External/job/IN---Chennai/Senior-Specialist---Workflow-Management_R190557',
+      'https://scope-guard-test.wd5.myworkdayjobs.com/wday/cxs/scope-guard-test/External/job/IN---Chennai/Senior-Specialist---Workflow-Management_R190557',
     ])
   } finally {
     global.fetch = originalFetch

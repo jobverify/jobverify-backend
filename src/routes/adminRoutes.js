@@ -14,6 +14,7 @@ import {
   getUserGrowthTimeSeries,
   getUsersTable,
   getUserById,
+  deleteUser,
   updateUserRole,
   updateUserAccess,
   getJobsTable,
@@ -74,6 +75,7 @@ router.get("/analytics/user-growth", getUserGrowthTimeSeries);
 // User Account Management
 router.get("/users", adminUsersQueryValidation, validateRequest, getUsersTable);
 router.get("/users/:id", mongoIdParamValidation("id", "user ID"), validateRequest, getUserById);
+router.delete("/users/:id", mongoIdParamValidation("id", "user ID"), validateRequest, deleteUser);
 router.put(
   "/users/:id/role",
   adminRoleUpdateValidation,

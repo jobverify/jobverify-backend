@@ -24,6 +24,7 @@ test("cancelPlan returns free access after a successful cancellation", async () 
   const cancelPlan = controller.createCancelPlanHandler(async () => ({
     user: { accessRole: "free_user" },
     access: { planId: "free", isPremium: false },
+    accessEvent: { id: "event-1", type: "cancelled", planId: "monthly" },
   }));
   const res = createResponseDouble();
 
@@ -33,6 +34,7 @@ test("cancelPlan returns free access after a successful cancellation", async () 
   assert.equal(res.body.success, true);
   assert.equal(res.body.data.accessRole, "free_user");
   assert.equal(res.body.data.access.planId, "free");
+  assert.equal(res.body.data.accessEvent.type, "cancelled");
 });
 
 test("cancelPlan returns a safe 400 for an ineligible plan", async () => {
@@ -250,7 +252,7 @@ test("createPlanCheckout does not expose stored payment signature or metadata", 
       _id: "purchase_1",
       planId: "monthly",
       accessRole: "monthly_premium_user",
-      amount: 199,
+      amount: 99,
       currency: "INR",
       status: "pending",
       provider: "razorpay",
@@ -346,7 +348,7 @@ test("verifyPlanCheckout does not expose stored payment signature or metadata", 
     user: "507f1f77bcf86cd799439011",
     planId: "monthly",
     accessRole: "monthly_premium_user",
-    amount: 199,
+    amount: 99,
     currency: "INR",
     status: "paid",
     provider: "razorpay",

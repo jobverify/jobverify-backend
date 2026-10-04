@@ -1369,7 +1369,8 @@ test('runWorkdayScraper jobs-api mode fetches detail HTML without requiring Pupp
     assert.equal(jobs[0].link, detailUrl)
     assert.equal(jobs[0].city, 'Bangalore')
     assert.equal(jobs[0].requisitionId, 'R123')
-    assert.deepEqual(calls.map((call) => call.method), ['GET', 'POST', 'GET'])
+    // This fixture has no structured JSON endpoint, so the API attempt uses HTML fallback.
+    assert.deepEqual(calls.map((call) => call.method), ['GET', 'POST', 'GET', 'GET'])
   } finally {
     global.fetch = originalFetch
   }
@@ -1519,7 +1520,9 @@ test('runWorkdayScraper keeps processing jobs when one detail request hits a tra
     })
 
     await new Promise((resolve) => setTimeout(resolve, 30))
-    assert.equal(detailStarts.length, 6)
+    assert.equal(detailStarts.filter(url => url.includes('/wday/cxs/')).length, 6)
+    assert.equal(detailStarts.filter(url => !url.includes('/wday/cxs/')).length, 5)
+    assert.equal(detailStarts.filter(url => url.includes('Engineer_R1')).length, 1)
     assert.equal(jobs.length, 6)
     assert.equal(jobs[0].title, 'Engineer 1')
     assert.equal(jobs[0].location, 'Bangalore, India')

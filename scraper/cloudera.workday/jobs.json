@@ -1,0 +1,843 @@
+[
+  {
+    "jobId": null,
+    "title": "Sr. Staff Platform Operations Engineer (with OpenStack)",
+    "company": "Cloudera",
+    "department": null,
+    "location": "India-Bangalore-Remote / India > Delhi > New Delhi / India-Chennai-Remote / India > Mumbai > Remote / India > Tamil Nadu > Chennai",
+    "city": "Remote",
+    "locations": [
+      "Ireland-Remote",
+      "Costa Rica-Remote",
+      "South Africa-Remote",
+      "China-Remote",
+      "UK-Remote",
+      "Chile-Remote",
+      "India-Bangalore-Remote",
+      "Hungary-Remote",
+      "Italy-Remote",
+      "Brazil-Remote",
+      "Spain-Other-Remote",
+      "India > Delhi > New Delhi",
+      "India-Chennai-Remote",
+      "India > Mumbai > Remote",
+      "India > Tamil Nadu > Chennai"
+    ],
+    "link": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/Ireland-Remote/Sr-Staff-Platform-Operations-Engineer_261367-1",
+    "source": "cloudera",
+    "postedAt": "2026-10-03T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the preferred data partner for the top companies in almost every industry. Powered by the relentless innovation of the open source community, Cloudera advances digital transformation for the world’s largest enterprises. The Cloudera IT team is looking for a talented, motivated, and passionate Sr. Staff Platform Operations Engineer to join our Technical Operations organization. In this role, you will help design and run the internal platform that our engineers and business teams rely on every day, owning the deployment, reliability, and automated management of our Linux-based infrastructure and core IT services across on‑premise and cloud. As a technical leader and subject matter expert, you’ll combine deep Linux systems experience with infrastructure-as-code, automation, and security-first thinking to build a highly available, compliant, and scalable foundation for the company. As a Sr. Staff Platform Operations Engineer you will: Architect, deploy, and provide senior-level operational support for our on-premise and cloud-based Linux infrastructure and core IT services (e.g., virtualization, baremetal, storage, DNS), ensuring high availability and reliability. Develop, maintain, and champion our Infrastructure-as-Code (Ia C) and automation frameworks using tools like Terraform, Ansible, and Foreman/Maa S to manage and deploy platform services. Implement and automate system-level security best practices, including patching, hardening, and configuration management, ensuring compliance and resilience from the ground up. Build and automate deployment pipelines for IT infrastructure services (e.g., system images, configuration, platform services) using tools like Git Hub/Git, Ansible, and scripting tools. Serve as a technical Subject Matter Expert (SME), working with IT Systems, Cloud Ops, Security, and Engineering teams to design and implement robust, scalable, and optimal solutions. Participate in a shared on-call rotation to support mission-critical IT services (with clear documentation and runbooks provided). Create and maintain accurate documentation for automation, operational audits, and compliance. Design, implement, and administer enterprise storage platforms, including Dell Power Store and Pure Storage arrays, ensuring capacity, performance, data protection, and high availability for critical workloads. Mentor junior team members. We are excited if you have (Required Qualifications): Bachelor’s degree in Computer Science or 8+ years of equivalent experience in a large-scale enterprise environment. Solid experience managing hybrid infrastructure, with deep expertise in on-premise environments (virtualization, Open Stack, networking) and a strong understanding of core public cloud services (AWS/Azure/GCP) and containerized platforms (Kubernetes). Deep, expert-level Linux systems administration experience (e.g., Red Hat, Rocky, Ubuntu) and mastery of common Command Line Interface (CLI) tools and services. Strong hands-on skills with Python and shell scripting, used for systems automation, tooling, and integration. Proven experience with Infrastructure-as-Code (e.g., Terraform, Ansible) and version control (Git Hub/Git). Hands-on experience administering enterprise storage arrays, ideally including Dell Power Store and Pure Storage Flash Array (provisioning, performance tuning, upgrades, and troubleshooting). A security-first mindset and experience designing, building, and operating secure, automated infrastructure. Strong networking fundamentals (TCP/IP, DNS, DHCP, routing, firewalls), including public cloud equivalents. You may also have: Certifications such as Red Hat (RHCE), Terraform, or public cloud (AWS, Azure, GCP). Knowledge of enterprise security principles, cryptography, PKI, and operational security practices. Experience operating in regulated/high-governance/compliance environments (e.g., Fed RAMP, PCI, ISO27001, SOC2, etc.). Familiarity with monitoring and observability tools. Experience with containerization (Docker) and orchestration (Kubernetes). Project management experience. Previous experience mentoring junior team members. This role is not eligible for immigration sponsorship. What you can expect from us: Generous PTO Policy Support work life balance with Unplugged Days Flexible WFH Policy Mental &amp; Physical Wellness programs Phone and Internet Reimbursement program Access to Continued Career Development Comprehensive Benefits and Competitive Packages Paid Volunteer Time Employee Resource Groups EEO/VEVRAA #LI-REMOTE #LI-AC1 It has come to our attention that job seekers have been contacted about fake job opportunities with Cloudera from individuals fraudulently posing as Cloudera employees. These recruiting fraud schemes often include requests for personal information and payments. Be aware that Cloudera will never request a payment as part of its recruitment process. Additionally, Cloudera will never make a job offer without conducting an interview process. Any information submitted to Cloudera in relation to a job application should only be through our official career portal https://www.cloudera.com/careers.html Email communications from Cloudera will come from an email address ending in @cloudera.com. If you are the target of a recruiting scam, consider filing a report with law enforcement authorities. Cloudera is not responsible for fraudulent job offers and/or any claims, damages, expenses, or other inconvenience connected to recruiting scams. For information on Cloudera's Candidate Privacy Notice, click here. If you have any questions about our privacy practices, please contact us at privacy@cloudera.com. EEO/VEVRAA If you need assistance with applying for a position, please email our office at talentacquisition@cloudera.com.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "8+ years",
+    "publicExperienceChecked": true,
+    "requisitionId": "261367",
+    "scrapedAt": "2026-10-03T21:10:52.906Z",
+    "country": "India",
+    "companyCareerPage": "https://www.cloudera.com/careers.html",
+    "companyDomain": "cloudera.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/Ireland-Remote/Sr-Staff-Platform-Operations-Engineer_261367-1",
+    "sourceUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/Ireland-Remote/Sr-Staff-Platform-Operations-Engineer_261367-1",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "49daceadf147cae75349612202d47e7aa858119e78437937e09bdc653dc3f749",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "internship",
+          "probability": 0.5888
+        },
+        "experience": {
+          "label": "prior_required",
+          "probability": 0.75
+        },
+        "seniority": {
+          "label": "internship",
+          "probability": 0.3892
+        },
+        "leadership": {
+          "label": "senior_manager",
+          "probability": 0.5972
+        }
+      },
+      "complete": true,
+      "windows": 2,
+      "evidenceContext": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the p",
+      "classifiedAt": "2026-10-03T21:10:54.182Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": null,
+        "seniority": "Unknown",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "experienceBucket": "5-8",
+        "experienceProfile": {
+          "minimumYears": 8,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "8+ years",
+          "rawText": null,
+          "experienceBucket": "5-8"
+        },
+        "experienceBasis": "employer_requirement",
+        "experienceRequired": "8+ years",
+        "employerExperienceProfile": {
+          "minimumYears": 8,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "8+ years",
+          "rawText": null,
+          "experienceBucket": "5-8"
+        },
+        "policyEvidence": "Sr. Staff Platform Operations Engineer (with OpenStack)"
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Senior Level",
+        "seniority": "Staff",
+        "experienceYears": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "experienceBucket": "5-8",
+        "experienceProfile": {
+          "minimumYears": 8,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "8+ years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "3d6680f44da3f98af19c920c557a18e93bcd9124e1b4164a32ea62d5396bcf02",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "3b95fa6cd1aaeb06cb6280864cd5df1a7d3bc5224f4d390401017c8603453db3",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-03T21:11:30.949Z",
+        "reused": true
+      }
+    },
+    "description": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the preferred data partner for the top companies in almost every industry. Powered by the relentless innovation of the open source community, Cloudera advances digital transformation for the world’s largest enterprises. The Cloudera IT team is looking for a talented, motivated, and passionate Sr. Staff Platform Operations Engineer to join our Technical Operations organization. In this role, you will help design and run the internal platform that our engineers and business teams rely on every day, owning the deployment, reliability, and automated management of our Linux-based infrastructure and core IT services across on‑premise and cloud. As a technical leader and subject matter expert, you’ll combine deep Linux systems experience with infrastructure-as-code, automation, and security-first thinking to build a highly available, compliant, and scalable foundation for the company. As a Sr. Staff Platform Operations Engineer you will: Architect, deploy, and provide senior-level operational support for our on-premise and cloud-based Linux infrastructure and core IT services (e.g., virtualization, baremetal, storage, DNS), ensuring high availability and reliability. Develop, maintain, and champion our Infrastructure-as-Code (IaC) and automation frameworks using tools like Terraform, Ansible, and Foreman/MaaS to manage and deploy platform services. Implement and automate system-level security best practices, including patching, hardening, and configuration management, ensuring compliance and resilience from the ground up. Build and automate deployment pipelines for IT infrastructure services (e.g., system images, configuration, platform services) using tools like GitHub/Git, Ansible, and scripting tools. Serve as a technical Subject Matter Expert (SME), working with IT Systems, CloudOps, Security, and Engineering teams to design and implement robust, scalable, and optimal solutions. Participate in a shared on-call rotation to support mission-critical IT services (with clear documentation and runbooks provided). Create and maintain accurate documentation for automation, operational audits, and compliance. Design, implement, and administer enterprise storage platforms, including Dell PowerStore and Pure Storage arrays, ensuring capacity, performance, data protection, and high availability for critical workloads. Mentor junior team members. We are excited if you have (Required Qualifications): Bachelor’s degree in Computer Science or 8+ years of equivalent experience in a large-scale enterprise environment. Solid experience managing hybrid infrastructure, with deep expertise in on-premise environments (virtualization, OpenStack, networking) and a strong understanding of core public cloud services (AWS/Azure/GCP) and containerized platforms (Kubernetes). Deep, expert-level Linux systems administration experience (e.g., Red Hat, Rocky, Ubuntu) and mastery of common Command Line Interface (CLI) tools and services. Strong hands-on skills with Python and shell scripting, used for systems automation, tooling, and integration. Proven experience with Infrastructure-as-Code (e.g., Terraform, Ansible) and version control (GitHub/Git). Hands-on experience administering enterprise storage arrays, ideally including Dell PowerStore and Pure Storage FlashArray (provisioning, performance tuning, upgrades, and troubleshooting). A security-first mindset and experience designing, building, and operating secure, automated infrastructure. Strong networking fundamentals (TCP/IP, DNS, DHCP, routing, firewalls), including public cloud equivalents. You may also have: Certifications such as Red Hat (RHCE), Terraform, or public cloud (AWS, Azure, GCP). Knowledge of enterprise security principles, cryptography, PKI, and operational security practices. Experience operating in regulated/high-governance/compliance environments (e.g., FedRAMP, PCI, ISO27001, SOC2, etc.). Familiarity with monitoring and observability tools. Experience with containerization (Docker) and orchestration (Kubernetes). Project management experience. Previous experience mentoring junior team members. This role is not eligible for immigration sponsorship. What you can expect from us: Generous PTO Policy Support work life balance with Unplugged Days Flexible WFH Policy Mental &amp; Physical Wellness programs Phone and Internet Reimbursement program Access to Continued Career Development Comprehensive Benefits and Competitive Packages Paid Volunteer Time Employee Resource Groups EEO/VEVRAA #LI-REMOTE #LI-AC1 It has come to our attention that job seekers have been contacted about fake job opportunities with Cloudera from individuals fraudulently posing as Cloudera employees. These recruiting fraud schemes often include requests for personal information and payments. Be aware that Cloudera will never request a payment as part of its recruitment process. Additionally, Cloudera will never make a job offer without conducting an interview process. Any information submitted to Cloudera in relation to a job application should only be through our official career portal https://www.cloudera.com/careers.html Email communications from Cloudera will come from an email address ending in @cloudera.com. If you are the target of a recruiting scam, consider filing a report with law enforcement authorities. Cloudera is not responsible for fraudulent job offers and/or any claims, damages, expenses, or other inconvenience connected to recruiting scams. For information on Cloudera's Candidate Privacy Notice, click here. If you have any questions about our privacy practices, please contact us at privacy@cloudera.com. EEO/VEVRAA If you need assistance with applying for a position, please email our office at talentacquisition@cloudera.com.",
+    "sourceDescription": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the preferred data partner for the top companies in almost every industry. Powered by the relentless innovation of the open source community, Cloudera advances digital transformation for the world’s largest enterprises. The Cloudera IT team is looking for a talented, motivated, and passionate Sr. Staff Platform Operations Engineer to join our Technical Operations organization. In this role, you will help design and run the internal platform that our engineers and business teams rely on every day, owning the deployment, reliability, and automated management of our Linux-based infrastructure and core IT services across on‑premise and cloud. As a technical leader and subject matter expert, you’ll combine deep Linux systems experience with infrastructure-as-code, automation, and security-first thinking to build a highly available, compliant, and scalable foundation for the company. As a Sr. Staff Platform Operations Engineer you will: Architect, deploy, and provide senior-level operational support for our on-premise and cloud-based Linux infrastructure and core IT services (e.g., virtualization, baremetal, storage, DNS), ensuring high availability and reliability. Develop, maintain, and champion our Infrastructure-as-Code (IaC) and automation frameworks using tools like Terraform, Ansible, and Foreman/MaaS to manage and deploy platform services. Implement and automate system-level security best practices, including patching, hardening, and configuration management, ensuring compliance and resilience from the ground up. Build and automate deployment pipelines for IT infrastructure services (e.g., system images, configuration, platform services) using tools like GitHub/Git, Ansible, and scripting tools. Serve as a technical Subject Matter Expert (SME), working with IT Systems, CloudOps, Security, and Engineering teams to design and implement robust, scalable, and optimal solutions. Participate in a shared on-call rotation to support mission-critical IT services (with clear documentation and runbooks provided). Create and maintain accurate documentation for automation, operational audits, and compliance. Design, implement, and administer enterprise storage platforms, including Dell PowerStore and Pure Storage arrays, ensuring capacity, performance, data protection, and high availability for critical workloads. Mentor junior team members. We are excited if you have (Required Qualifications): Bachelor’s degree in Computer Science or 8+ years of equivalent experience in a large-scale enterprise environment. Solid experience managing hybrid infrastructure, with deep expertise in on-premise environments (virtualization, OpenStack, networking) and a strong understanding of core public cloud services (AWS/Azure/GCP) and containerized platforms (Kubernetes). Deep, expert-level Linux systems administration experience (e.g., Red Hat, Rocky, Ubuntu) and mastery of common Command Line Interface (CLI) tools and services. Strong hands-on skills with Python and shell scripting, used for systems automation, tooling, and integration. Proven experience with Infrastructure-as-Code (e.g., Terraform, Ansible) and version control (GitHub/Git). Hands-on experience administering enterprise storage arrays, ideally including Dell PowerStore and Pure Storage FlashArray (provisioning, performance tuning, upgrades, and troubleshooting). A security-first mindset and experience designing, building, and operating secure, automated infrastructure. Strong networking fundamentals (TCP/IP, DNS, DHCP, routing, firewalls), including public cloud equivalents. You may also have: Certifications such as Red Hat (RHCE), Terraform, or public cloud (AWS, Azure, GCP). Knowledge of enterprise security principles, cryptography, PKI, and operational security practices. Experience operating in regulated/high-governance/compliance environments (e.g., FedRAMP, PCI, ISO27001, SOC2, etc.). Familiarity with monitoring and observability tools. Experience with containerization (Docker) and orchestration (Kubernetes). Project management experience. Previous experience mentoring junior team members. This role is not eligible for immigration sponsorship. What you can expect from us: Generous PTO Policy Support work life balance with Unplugged Days Flexible WFH Policy Mental &amp; Physical Wellness programs Phone and Internet Reimbursement program Access to Continued Career Development Comprehensive Benefits and Competitive Packages Paid Volunteer Time Employee Resource Groups EEO/VEVRAA #LI-REMOTE #LI-AC1 It has come to our attention that job seekers have been contacted about fake job opportunities with Cloudera from individuals fraudulently posing as Cloudera employees. These recruiting fraud schemes often include requests for personal information and payments. Be aware that Cloudera will never request a payment as part of its recruitment process. Additionally, Cloudera will never make a job offer without conducting an interview process. Any information submitted to Cloudera in relation to a job application should only be through our official career portal https://www.cloudera.com/careers.html Email communications from Cloudera will come from an email address ending in @cloudera.com. If you are the target of a recruiting scam, consider filing a report with law enforcement authorities. Cloudera is not responsible for fraudulent job offers and/or any claims, damages, expenses, or other inconvenience connected to recruiting scams. For information on Cloudera's Candidate Privacy Notice, click here. If you have any questions about our privacy practices, please contact us at privacy@cloudera.com. EEO/VEVRAA If you need assistance with applying for a position, please email our office at talentacquisition@cloudera.com.",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Sr. Staff Platform Operations Engineer (with OpenStack)",
+    "normalizedTitle": "Sr. Staff Platform Operations Engineer (with OpenStack)",
+    "jobCategory": "Sr. Staff Platform Operations Engineer (with OpenStack)",
+    "engineeringDomain": "DevOps",
+    "employmentType": "Full-time",
+    "experienceLevel": null,
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "Remote",
+    "salary": null,
+    "postingDate": "2026-10-03T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-03T21:10:52.906Z",
+    "skillIds": [
+      "linux",
+      "terraform",
+      "aws",
+      "azure",
+      "gcp",
+      "kubernetes",
+      "python",
+      "docker"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "linux",
+        "canonicalName": "Linux",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Linux"
+      },
+      {
+        "skillId": "terraform",
+        "canonicalName": "Terraform",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Terraform"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "gcp",
+        "canonicalName": "Google Cloud Platform",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "GCP"
+      },
+      {
+        "skillId": "kubernetes",
+        "canonicalName": "Kubernetes",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kubernetes"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "docker",
+        "canonicalName": "Docker",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Docker"
+      }
+    ],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "minimumYears": 8,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "8+ years",
+      "rawText": null,
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Unknown",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-03T21:23:59.834Z",
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "employer_requirement",
+    "employerExperienceProfile": {
+      "minimumYears": 8,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "8+ years",
+      "rawText": null,
+      "experienceBucket": "5-8"
+    },
+    "policyEvidence": "Sr. Staff Platform Operations Engineer (with OpenStack)"
+  },
+  {
+    "jobId": null,
+    "title": "Solutions Architect",
+    "company": "Cloudera",
+    "department": null,
+    "location": "India > Mumbai > Remote",
+    "city": "Remote",
+    "locations": [
+      "Remote"
+    ],
+    "link": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India--Mumbai--Remote/Senior-Solutions-Architect_260676",
+    "source": "cloudera",
+    "postedAt": "2026-09-12T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the preferred data partner for the top companies in almost every industry. Powered by the relentless innovation of the open source community, Cloudera advances digital transformation for the world’s largest enterprises. Cloudera is seeking a Senior Solutions Architect to join its APAC Professional Services team. In this role you’ll have the opportunity to develop massively scalable solutions to solve complex data problems using Hadoop, Ni Fi, Spark and related Big Data technology. This role is a client facing opportunity that combines consulting skills with deep technical design and development in the Big Data space. This role will present the successful candidate the opportunity to travel across Asia Pacific and across multiple industries and large customer organisations. As the Senior Solutions Architect you will: Work directly with customer business and technical teams to understand requirements and develop high quality solutions Design highly scalable and reliable data pipelines to consume, integrate, and analyze large amounts of data from various sources. Able to understand big data use-cases and recommend standard design, implementation patterns used in Hadoop-based deployments Able to document and present complex architectures for the customer’s technical teams Work closely with Cloudera teams at all levels to ensure project and customer success Design effective data models for optimal storage and retrieval, deploy inclusive data quality checks to ensure high quality of data Design, build, tune and maintain data pipelines using Hadoop, Ni Fi or related data integration technologies Install, deploy, augment, upgrade, manage and operate large Hadoop clusters Write and produce technical documentation, customer status reports and knowledge-base articles Keep up with current Hadoop, Ni Fi, Big Data ecosystem / technologies. We’re excited about you if you have: Overall 12+ years IT experience, with at least 4+ years of production experience working with Hadoop and/or Ni Fi, data engineering. Hands-on experience with all aspects of developing, testing and implementing low-latency big data pipelines. Demonstrated production experience in data engineering, data management, cluster management and/or analytics domains. Experience designing data queries against data in the HDFS environment using tools such as Apache Hive Experience implementing Map Reduce, Spark jobs Experience setting up multi-node Hadoop clusters Experience in systems administration or Dev Ops experience with one or more open-source operating systems [Big Data Developers interested in Administration and consulting can also apply] Experience with Data Warehouse design, ETL (Extraction, Transformation &amp; Load), architecting efficient software designs for DW platform. Experience implementing operational best practices such as alerting, monitoring, and metadata management. Strong understanding with various enterprise security practices and solutions such as LDAP and/or Kerberos Experience using configuration management tools such as Ansible, Puppet or Chef Familiarity with scripting tools such as bash shell scripts, Python and/or Perl Experience with Apache Ni Fi is desired Significant previous work writing to network-based APIs, preferably REST/JSON or XML/SOAP Understanding of the Java ecosystem and enterprise offerings, including debugging and profiling tools (e.g. jstack, jmap, jconsole), logging and monitoring tools (log4j, JMX) Ability to understand and translate customer requirements into technical requirements Excellent verbal and written communications You may also have: Site Reliability Engineering concepts and practices Knowledge of the data management eco-system including: Concepts of data warehousing, ETL, data integration, etc. Experience using a compiled programming language, preferably one that runs on the JVM (Java, Scala, etc) Experience coding with streaming/micro-batch compute frameworks, preferably Kafka, Spark What you can expect from us: Generous PTO Policy Support work life balance with Unplugged Days Flexible WFH Policy Mental &amp; Physical Wellness programs Phone and Internet Reimbursement program Access to Continued Career Development Comprehensive Benefits and Competitive Packages Paid Volunteer Time Employee Resource Groups EEO/VEVRAA #LI-VG1 It has come to our attention that job seekers have been contacted about fake job opportunities with Cloudera from individuals fraudulently posing as Cloudera employees. These recruiting fraud schemes often include requests for personal information and payments. Be aware that Cloudera will never request a payment as part of its recruitment process. Additionally, Cloudera will never make a job offer without conducting an interview process. Any information submitted to Cloudera in relation to a job application should only be through our official career portal https://www.cloudera.com/careers.html Email communications from Cloudera will come from an email address ending in @cloudera.com. If you are the target of a recruiting scam, consider filing a report with law enforcement authorities. Cloudera is not responsible for fraudulent job offers and/or any claims, damages, expenses, or other inconvenience connected to recruiting scams. For information on Cloudera's Candidate Privacy Notice, click here. If you have any questions about our privacy practices, please contact us at privacy@cloudera.com. EEO/VEVRAA If you need assistance with applying for a position, please email our office at talentacquisition@cloudera.com.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "12+ years",
+    "publicExperienceChecked": true,
+    "requisitionId": "260676",
+    "scrapedAt": "2026-10-03T21:10:53.583Z",
+    "country": "India",
+    "companyCareerPage": "https://www.cloudera.com/careers.html",
+    "companyDomain": "cloudera.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India--Mumbai--Remote/Senior-Solutions-Architect_260676",
+    "sourceUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India--Mumbai--Remote/Senior-Solutions-Architect_260676",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "82c0aea0d1606daca2af5840638b799927d158f0fa417c2cf77bdf454878df7c",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "full_time",
+          "probability": 0.5648
+        },
+        "experience": {
+          "label": "fresher_eligible",
+          "probability": 0.6556
+        },
+        "seniority": {
+          "label": "senior",
+          "probability": 0.5794
+        },
+        "leadership": {
+          "label": "senior_manager",
+          "probability": 0.7306
+        }
+      },
+      "complete": true,
+      "windows": 2,
+      "evidenceContext": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the p",
+      "classifiedAt": "2026-10-03T21:10:54.182Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": null,
+        "seniority": "Unknown",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          12,
+          13,
+          14,
+          15
+        ],
+        "experienceBucket": "8-12",
+        "experienceProfile": {
+          "minimumYears": 12,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "12+ years",
+          "rawText": null,
+          "experienceBucket": "8-12"
+        },
+        "experienceBasis": "employer_requirement",
+        "experienceRequired": "12+ years",
+        "employerExperienceProfile": {
+          "minimumYears": 12,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "12+ years",
+          "rawText": null,
+          "experienceBucket": "8-12"
+        },
+        "policyEvidence": null
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Senior Level",
+        "seniority": "Senior",
+        "experienceYears": [
+          12,
+          13,
+          14,
+          15
+        ],
+        "experienceBucket": "8-12",
+        "experienceProfile": {
+          "minimumYears": 12,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "12+ years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "a6f7b79059bac0d5134964d0da020b90c217b14fe902adafd1f95715c2df1d63",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "3b95fa6cd1aaeb06cb6280864cd5df1a7d3bc5224f4d390401017c8603453db3",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-03T21:12:38.532Z",
+        "reused": true
+      }
+    },
+    "description": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the preferred data partner for the top companies in almost every industry. Powered by the relentless innovation of the open source community, Cloudera advances digital transformation for the world’s largest enterprises. Cloudera is seeking a Senior Solutions Architect to join its APAC Professional Services team. In this role you’ll have the opportunity to develop massively scalable solutions to solve complex data problems using Hadoop, NiFi, Spark and related Big Data technology. This role is a client facing opportunity that combines consulting skills with deep technical design and development in the Big Data space. This role will present the successful candidate the opportunity to travel across Asia Pacific and across multiple industries and large customer organisations. As the Senior Solutions Architect you will: Work directly with customer business and technical teams to understand requirements and develop high quality solutions Design highly scalable and reliable data pipelines to consume, integrate, and analyze large amounts of data from various sources. Able to understand big data use-cases and recommend standard design, implementation patterns used in Hadoop-based deployments Able to document and present complex architectures for the customer’s technical teams Work closely with Cloudera teams at all levels to ensure project and customer success Design effective data models for optimal storage and retrieval, deploy inclusive data quality checks to ensure high quality of data Design, build, tune and maintain data pipelines using Hadoop, NiFi or related data integration technologies Install, deploy, augment, upgrade, manage and operate large Hadoop clusters Write and produce technical documentation, customer status reports and knowledge-base articles Keep up with current Hadoop, NiFi, Big Data ecosystem / technologies. We’re excited about you if you have: Overall 12+ years IT experience, with at least 4+ years of production experience working with Hadoop and/or NiFi, data engineering. Hands-on experience with all aspects of developing, testing and implementing low-latency big data pipelines. Demonstrated production experience in data engineering, data management, cluster management and/or analytics domains. Experience designing data queries against data in the HDFS environment using tools such as Apache Hive Experience implementing MapReduce, Spark jobs Experience setting up multi-node Hadoop clusters Experience in systems administration or DevOps experience with one or more open-source operating systems [Big Data Developers interested in Administration and consulting can also apply] Experience with Data Warehouse design, ETL (Extraction, Transformation &amp; Load), architecting efficient software designs for DW platform. Experience implementing operational best practices such as alerting, monitoring, and metadata management. Strong understanding with various enterprise security practices and solutions such as LDAP and/or Kerberos Experience using configuration management tools such as Ansible, Puppet or Chef Familiarity with scripting tools such as bash shell scripts, Python and/or Perl Experience with Apache NiFi is desired Significant previous work writing to network-based APIs, preferably REST/JSON or XML/SOAP Understanding of the Java ecosystem and enterprise offerings, including debugging and profiling tools (e.g. jstack, jmap, jconsole), logging and monitoring tools (log4j, JMX) Ability to understand and translate customer requirements into technical requirements Excellent verbal and written communications You may also have: Site Reliability Engineering concepts and practices Knowledge of the data management eco-system including: Concepts of data warehousing, ETL, data integration, etc. Experience using a compiled programming language, preferably one that runs on the JVM (Java, Scala, etc) Experience coding with streaming/micro-batch compute frameworks, preferably Kafka, Spark What you can expect from us: Generous PTO Policy Support work life balance with Unplugged Days Flexible WFH Policy Mental &amp; Physical Wellness programs Phone and Internet Reimbursement program Access to Continued Career Development Comprehensive Benefits and Competitive Packages Paid Volunteer Time Employee Resource Groups EEO/VEVRAA #LI-VG1 It has come to our attention that job seekers have been contacted about fake job opportunities with Cloudera from individuals fraudulently posing as Cloudera employees. These recruiting fraud schemes often include requests for personal information and payments. Be aware that Cloudera will never request a payment as part of its recruitment process. Additionally, Cloudera will never make a job offer without conducting an interview process. Any information submitted to Cloudera in relation to a job application should only be through our official career portal https://www.cloudera.com/careers.html Email communications from Cloudera will come from an email address ending in @cloudera.com. If you are the target of a recruiting scam, consider filing a report with law enforcement authorities. Cloudera is not responsible for fraudulent job offers and/or any claims, damages, expenses, or other inconvenience connected to recruiting scams. For information on Cloudera's Candidate Privacy Notice, click here. If you have any questions about our privacy practices, please contact us at privacy@cloudera.com. EEO/VEVRAA If you need assistance with applying for a position, please email our office at talentacquisition@cloudera.com.",
+    "sourceDescription": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the preferred data partner for the top companies in almost every industry. Powered by the relentless innovation of the open source community, Cloudera advances digital transformation for the world’s largest enterprises. Cloudera is seeking a Senior Solutions Architect to join its APAC Professional Services team. In this role you’ll have the opportunity to develop massively scalable solutions to solve complex data problems using Hadoop, NiFi, Spark and related Big Data technology. This role is a client facing opportunity that combines consulting skills with deep technical design and development in the Big Data space. This role will present the successful candidate the opportunity to travel across Asia Pacific and across multiple industries and large customer organisations. As the Senior Solutions Architect you will: Work directly with customer business and technical teams to understand requirements and develop high quality solutions Design highly scalable and reliable data pipelines to consume, integrate, and analyze large amounts of data from various sources. Able to understand big data use-cases and recommend standard design, implementation patterns used in Hadoop-based deployments Able to document and present complex architectures for the customer’s technical teams Work closely with Cloudera teams at all levels to ensure project and customer success Design effective data models for optimal storage and retrieval, deploy inclusive data quality checks to ensure high quality of data Design, build, tune and maintain data pipelines using Hadoop, NiFi or related data integration technologies Install, deploy, augment, upgrade, manage and operate large Hadoop clusters Write and produce technical documentation, customer status reports and knowledge-base articles Keep up with current Hadoop, NiFi, Big Data ecosystem / technologies. We’re excited about you if you have: Overall 12+ years IT experience, with at least 4+ years of production experience working with Hadoop and/or NiFi, data engineering. Hands-on experience with all aspects of developing, testing and implementing low-latency big data pipelines. Demonstrated production experience in data engineering, data management, cluster management and/or analytics domains. Experience designing data queries against data in the HDFS environment using tools such as Apache Hive Experience implementing MapReduce, Spark jobs Experience setting up multi-node Hadoop clusters Experience in systems administration or DevOps experience with one or more open-source operating systems [Big Data Developers interested in Administration and consulting can also apply] Experience with Data Warehouse design, ETL (Extraction, Transformation &amp; Load), architecting efficient software designs for DW platform. Experience implementing operational best practices such as alerting, monitoring, and metadata management. Strong understanding with various enterprise security practices and solutions such as LDAP and/or Kerberos Experience using configuration management tools such as Ansible, Puppet or Chef Familiarity with scripting tools such as bash shell scripts, Python and/or Perl Experience with Apache NiFi is desired Significant previous work writing to network-based APIs, preferably REST/JSON or XML/SOAP Understanding of the Java ecosystem and enterprise offerings, including debugging and profiling tools (e.g. jstack, jmap, jconsole), logging and monitoring tools (log4j, JMX) Ability to understand and translate customer requirements into technical requirements Excellent verbal and written communications You may also have: Site Reliability Engineering concepts and practices Knowledge of the data management eco-system including: Concepts of data warehousing, ETL, data integration, etc. Experience using a compiled programming language, preferably one that runs on the JVM (Java, Scala, etc) Experience coding with streaming/micro-batch compute frameworks, preferably Kafka, Spark What you can expect from us: Generous PTO Policy Support work life balance with Unplugged Days Flexible WFH Policy Mental &amp; Physical Wellness programs Phone and Internet Reimbursement program Access to Continued Career Development Comprehensive Benefits and Competitive Packages Paid Volunteer Time Employee Resource Groups EEO/VEVRAA #LI-VG1 It has come to our attention that job seekers have been contacted about fake job opportunities with Cloudera from individuals fraudulently posing as Cloudera employees. These recruiting fraud schemes often include requests for personal information and payments. Be aware that Cloudera will never request a payment as part of its recruitment process. Additionally, Cloudera will never make a job offer without conducting an interview process. Any information submitted to Cloudera in relation to a job application should only be through our official career portal https://www.cloudera.com/careers.html Email communications from Cloudera will come from an email address ending in @cloudera.com. If you are the target of a recruiting scam, consider filing a report with law enforcement authorities. Cloudera is not responsible for fraudulent job offers and/or any claims, damages, expenses, or other inconvenience connected to recruiting scams. For information on Cloudera's Candidate Privacy Notice, click here. If you have any questions about our privacy practices, please contact us at privacy@cloudera.com. EEO/VEVRAA If you need assistance with applying for a position, please email our office at talentacquisition@cloudera.com.",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Solutions Architect",
+    "normalizedTitle": "Solutions Architect",
+    "jobCategory": "Solutions Architect",
+    "engineeringDomain": "Data Engineering",
+    "employmentType": "Full-time",
+    "experienceLevel": null,
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "Remote",
+    "salary": null,
+    "postingDate": "2026-09-12T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-03T21:10:53.583Z",
+    "skillIds": [
+      "spark",
+      "python",
+      "java",
+      "kafka"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "spark",
+        "canonicalName": "Spark",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Spark"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "kafka",
+        "canonicalName": "Kafka",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kafka"
+      }
+    ],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "minimumYears": 12,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "12+ years",
+      "rawText": null,
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Unknown",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-03T21:23:59.838Z",
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "employer_requirement",
+    "employerExperienceProfile": {
+      "minimumYears": 12,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "12+ years",
+      "rawText": null,
+      "experienceBucket": "8-12"
+    },
+    "policyEvidence": null
+  },
+  {
+    "jobId": null,
+    "title": "Forward Deployed AI Engineer",
+    "company": "Cloudera",
+    "department": null,
+    "location": "India-Bangalore / India-Bangalore-Remote",
+    "city": "Bangalore",
+    "locations": [
+      "India-Bangalore",
+      "India-Bangalore-Remote"
+    ],
+    "link": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India-Bangalore/Forward-Deployed-AI-Engineer_261237-1",
+    "source": "cloudera",
+    "postedAt": "2026-09-04T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the preferred data partner for the top companies in almost every industry. Powered by the relentless innovation of the open source community, Cloudera advances digital transformation for the world’s largest enterprises. Cloudera’s Forward Deployed Engineering (FDE) function sits within the Applied AI organization and is a specialized AI/ML engineering team focused on accelerating AI adoption within our most strategic enterprise customers. We embed directly with customers to rapidly pilot AI use cases, solve real-world business challenges, and help operationalize advanced AI capabilities within enterprise environments. Cloudera FDEs operate at the intersection of customer engineering, AI innovation, and enterprise deployment—driving high-impact AI outcomes for customers and codifying solution patterns for repeatable delivery at scale. We are looking for a seasoned, full-stack ML engineer who can embed with customers to design technical use cases and ship scalable enterprise AI/ML solutions on the Cloudera platform. As a Forward Deployed AI Engineer you will: Develop full-stack AI/ML applications on Cloudera to demonstrate how AI and agentic systems solve real enterprise use cases. Work directly with customer teams to drive AI and agentic use cases from early prototype toward production readiness. Advise customer leaders on AI roadmaps, solution design, deployment, and AI use cases. Standardize successful patterns into repeatable reference architectures, productized solutions, starter kits, and internal playbooks. Act as a thought leader, mentor Cloudera teams, and contribute to resources that grow our overall AI capability. Channel field and customer feedback back to Product teams to continuously improve our AI platform and products. We’re excited about you if you have: 7+ years of experience building and deploying production-grade systems. 2–4 years of experience specifically focused on building ML systems or Gen AI and agentic applications. Strong hands-on software engineering, data engineering, and applied AI/ML skills. Demonstrated experience building full-stack ML applications or agentic systems using modern AI frameworks and tooling. You may also have: Experience with MLOps frameworks, LLM orchestration, and modern AI stacks (e.g., Lang Chain, Llama Index, v LLM, Ray, MLflow). Hands-on experience with Vector Databases and Retrieval-Augmented Generation (RAG) architectures. Background in client-facing consulting, technical account management, or solution architecture within enterprise environments. Familiarity with distributed data engineering platforms (Apache Spark, Iceberg, Kubernetes). What you can expect from us: Generous PTO Policy Support work life balance with Unplugged Days Flexible WFH Policy Mental &amp; Physical Wellness programs Phone and Internet Reimbursement program Access to Continued Career Development Comprehensive Benefits and Competitive Packages Paid Volunteer Time Employee Resource Groups EEO/VEVRAA #LI-AB1 #LI-Remote It has come to our attention that job seekers have been contacted about fake job opportunities with Cloudera from individuals fraudulently posing as Cloudera employees. These recruiting fraud schemes often include requests for personal information and payments. Be aware that Cloudera will never request a payment as part of its recruitment process. Additionally, Cloudera will never make a job offer without conducting an interview process. Any information submitted to Cloudera in relation to a job application should only be through our official career portal https://www.cloudera.com/careers.html Email communications from Cloudera will come from an email address ending in @cloudera.com. If you are the target of a recruiting scam, consider filing a report with law enforcement authorities. Cloudera is not responsible for fraudulent job offers and/or any claims, damages, expenses, or other inconvenience connected to recruiting scams. For information on Cloudera's Candidate Privacy Notice, click here. If you have any questions about our privacy practices, please contact us at privacy@cloudera.com. EEO/VEVRAA If you need assistance with applying for a position, please email our office at talentacquisition@cloudera.com.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "2-4 years",
+    "publicExperienceChecked": true,
+    "requisitionId": "261237",
+    "scrapedAt": "2026-10-03T21:10:54.148Z",
+    "country": "India",
+    "companyCareerPage": "https://www.cloudera.com/careers.html",
+    "companyDomain": "cloudera.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India-Bangalore/Forward-Deployed-AI-Engineer_261237-1",
+    "sourceUrl": "https://cloudera.wd5.myworkdayjobs.com/External_Career/job/India-Bangalore/Forward-Deployed-AI-Engineer_261237-1",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "4c3d0d91b5b76eb26a587bd28d91346de4e57b61de1b9618b26a5daeb9d59d48",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "internship",
+          "probability": 0.3283
+        },
+        "experience": {
+          "label": "fresher_eligible",
+          "probability": 0.7212
+        },
+        "seniority": {
+          "label": "entry",
+          "probability": 0.3681
+        },
+        "leadership": {
+          "label": "lead",
+          "probability": 0.2601
+        }
+      },
+      "complete": true,
+      "windows": 2,
+      "evidenceContext": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the p",
+      "classifiedAt": "2026-10-03T21:10:54.182Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": null,
+        "seniority": "Unknown",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          2,
+          3,
+          4
+        ],
+        "experienceBucket": "1-3",
+        "experienceProfile": {
+          "minimumYears": 2,
+          "maximumYears": 4,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "2-4 years",
+          "rawText": null,
+          "experienceBucket": "1-3"
+        },
+        "experienceBasis": "employer_requirement",
+        "experienceRequired": "2-4 years",
+        "employerExperienceProfile": {
+          "minimumYears": 2,
+          "maximumYears": 4,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "2-4 years",
+          "rawText": null,
+          "experienceBucket": "1-3"
+        },
+        "policyEvidence": null
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Mid Level",
+        "seniority": "Mid Level",
+        "experienceYears": [
+          2,
+          3,
+          4
+        ],
+        "experienceBucket": "1-3",
+        "experienceProfile": {
+          "minimumYears": 2,
+          "maximumYears": 4,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "7+ years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "e7369748c8d298f96ec32653765d422f825fede69e6938f03d36725ab43381c1",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "3b95fa6cd1aaeb06cb6280864cd5df1a7d3bc5224f4d390401017c8603453db3",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-03T21:14:06.378Z",
+        "reused": true
+      }
+    },
+    "description": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the preferred data partner for the top companies in almost every industry. Powered by the relentless innovation of the open source community, Cloudera advances digital transformation for the world’s largest enterprises. Cloudera’s Forward Deployed Engineering (FDE) function sits within the Applied AI organization and is a specialized AI/ML engineering team focused on accelerating AI adoption within our most strategic enterprise customers. We embed directly with customers to rapidly pilot AI use cases, solve real-world business challenges, and help operationalize advanced AI capabilities within enterprise environments. Cloudera FDEs operate at the intersection of customer engineering, AI innovation, and enterprise deployment—driving high-impact AI outcomes for customers and codifying solution patterns for repeatable delivery at scale. We are looking for a seasoned, full-stack ML engineer who can embed with customers to design technical use cases and ship scalable enterprise AI/ML solutions on the Cloudera platform. As a Forward Deployed AI Engineer you will: Develop full-stack AI/ML applications on Cloudera to demonstrate how AI and agentic systems solve real enterprise use cases. Work directly with customer teams to drive AI and agentic use cases from early prototype toward production readiness. Advise customer leaders on AI roadmaps, solution design, deployment, and AI use cases. Standardize successful patterns into repeatable reference architectures, productized solutions, starter kits, and internal playbooks. Act as a thought leader, mentor Cloudera teams, and contribute to resources that grow our overall AI capability. Channel field and customer feedback back to Product teams to continuously improve our AI platform and products. We’re excited about you if you have: 7+ years of experience building and deploying production-grade systems. 2–4 years of experience specifically focused on building ML systems or GenAI and agentic applications. Strong hands-on software engineering, data engineering, and applied AI/ML skills. Demonstrated experience building full-stack ML applications or agentic systems using modern AI frameworks and tooling. You may also have: Experience with MLOps frameworks, LLM orchestration, and modern AI stacks (e.g., LangChain, LlamaIndex, vLLM, Ray, MLflow). Hands-on experience with Vector Databases and Retrieval-Augmented Generation (RAG) architectures. Background in client-facing consulting, technical account management, or solution architecture within enterprise environments. Familiarity with distributed data engineering platforms (Apache Spark, Iceberg, Kubernetes). What you can expect from us: Generous PTO Policy Support work life balance with Unplugged Days Flexible WFH Policy Mental &amp; Physical Wellness programs Phone and Internet Reimbursement program Access to Continued Career Development Comprehensive Benefits and Competitive Packages Paid Volunteer Time Employee Resource Groups EEO/VEVRAA #LI-AB1 #LI-Remote It has come to our attention that job seekers have been contacted about fake job opportunities with Cloudera from individuals fraudulently posing as Cloudera employees. These recruiting fraud schemes often include requests for personal information and payments. Be aware that Cloudera will never request a payment as part of its recruitment process. Additionally, Cloudera will never make a job offer without conducting an interview process. Any information submitted to Cloudera in relation to a job application should only be through our official career portal https://www.cloudera.com/careers.html Email communications from Cloudera will come from an email address ending in @cloudera.com. If you are the target of a recruiting scam, consider filing a report with law enforcement authorities. Cloudera is not responsible for fraudulent job offers and/or any claims, damages, expenses, or other inconvenience connected to recruiting scams. For information on Cloudera's Candidate Privacy Notice, click here. If you have any questions about our privacy practices, please contact us at privacy@cloudera.com. EEO/VEVRAA If you need assistance with applying for a position, please email our office at talentacquisition@cloudera.com.",
+    "sourceDescription": "At Cloudera, we empower people to transform complex data into clear and actionable insights. With as much data under management as the hyperscalers, we're the preferred data partner for the top companies in almost every industry. Powered by the relentless innovation of the open source community, Cloudera advances digital transformation for the world’s largest enterprises. Cloudera’s Forward Deployed Engineering (FDE) function sits within the Applied AI organization and is a specialized AI/ML engineering team focused on accelerating AI adoption within our most strategic enterprise customers. We embed directly with customers to rapidly pilot AI use cases, solve real-world business challenges, and help operationalize advanced AI capabilities within enterprise environments. Cloudera FDEs operate at the intersection of customer engineering, AI innovation, and enterprise deployment—driving high-impact AI outcomes for customers and codifying solution patterns for repeatable delivery at scale. We are looking for a seasoned, full-stack ML engineer who can embed with customers to design technical use cases and ship scalable enterprise AI/ML solutions on the Cloudera platform. As a Forward Deployed AI Engineer you will: Develop full-stack AI/ML applications on Cloudera to demonstrate how AI and agentic systems solve real enterprise use cases. Work directly with customer teams to drive AI and agentic use cases from early prototype toward production readiness. Advise customer leaders on AI roadmaps, solution design, deployment, and AI use cases. Standardize successful patterns into repeatable reference architectures, productized solutions, starter kits, and internal playbooks. Act as a thought leader, mentor Cloudera teams, and contribute to resources that grow our overall AI capability. Channel field and customer feedback back to Product teams to continuously improve our AI platform and products. We’re excited about you if you have: 7+ years of experience building and deploying production-grade systems. 2–4 years of experience specifically focused on building ML systems or GenAI and agentic applications. Strong hands-on software engineering, data engineering, and applied AI/ML skills. Demonstrated experience building full-stack ML applications or agentic systems using modern AI frameworks and tooling. You may also have: Experience with MLOps frameworks, LLM orchestration, and modern AI stacks (e.g., LangChain, LlamaIndex, vLLM, Ray, MLflow). Hands-on experience with Vector Databases and Retrieval-Augmented Generation (RAG) architectures. Background in client-facing consulting, technical account management, or solution architecture within enterprise environments. Familiarity with distributed data engineering platforms (Apache Spark, Iceberg, Kubernetes). What you can expect from us: Generous PTO Policy Support work life balance with Unplugged Days Flexible WFH Policy Mental &amp; Physical Wellness programs Phone and Internet Reimbursement program Access to Continued Career Development Comprehensive Benefits and Competitive Packages Paid Volunteer Time Employee Resource Groups EEO/VEVRAA #LI-AB1 #LI-Remote It has come to our attention that job seekers have been contacted about fake job opportunities with Cloudera from individuals fraudulently posing as Cloudera employees. These recruiting fraud schemes often include requests for personal information and payments. Be aware that Cloudera will never request a payment as part of its recruitment process. Additionally, Cloudera will never make a job offer without conducting an interview process. Any information submitted to Cloudera in relation to a job application should only be through our official career portal https://www.cloudera.com/careers.html Email communications from Cloudera will come from an email address ending in @cloudera.com. If you are the target of a recruiting scam, consider filing a report with law enforcement authorities. Cloudera is not responsible for fraudulent job offers and/or any claims, damages, expenses, or other inconvenience connected to recruiting scams. For information on Cloudera's Candidate Privacy Notice, click here. If you have any questions about our privacy practices, please contact us at privacy@cloudera.com. EEO/VEVRAA If you need assistance with applying for a position, please email our office at talentacquisition@cloudera.com.",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Forward Deployed AI Engineer",
+    "normalizedTitle": "Forward Deployed AI Engineer",
+    "jobCategory": "Forward Deployed AI Engineer",
+    "engineeringDomain": "Machine Learning",
+    "employmentType": "Full-time",
+    "experienceLevel": null,
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "Remote",
+    "salary": null,
+    "postingDate": "2026-09-04T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-03T21:10:54.148Z",
+    "skillIds": [
+      "machine-learning",
+      "generative-ai",
+      "mlops",
+      "spark",
+      "kubernetes"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "machine-learning",
+        "canonicalName": "Machine Learning",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "ML"
+      },
+      {
+        "skillId": "generative-ai",
+        "canonicalName": "Generative AI",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "GenAI"
+      },
+      {
+        "skillId": "mlops",
+        "canonicalName": "MLOps",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "MLOps"
+      },
+      {
+        "skillId": "spark",
+        "canonicalName": "Spark",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Apache Spark"
+      },
+      {
+        "skillId": "kubernetes",
+        "canonicalName": "Kubernetes",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kubernetes"
+      }
+    ],
+    "experienceBucket": "1-3",
+    "experienceProfile": {
+      "minimumYears": 2,
+      "maximumYears": 4,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "2-4 years",
+      "rawText": null,
+      "experienceBucket": "1-3"
+    },
+    "experienceYears": [
+      2,
+      3,
+      4
+    ],
+    "seniority": "Unknown",
+    "primaryRoleDomain": "Data Science & AI",
+    "secondaryRoleDomains": [],
+    "workArrangement": "Remote",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-03T21:23:59.841Z",
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "employer_requirement",
+    "employerExperienceProfile": {
+      "minimumYears": 2,
+      "maximumYears": 4,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "2-4 years",
+      "rawText": null,
+      "experienceBucket": "1-3"
+    },
+    "policyEvidence": null
+  }
+]

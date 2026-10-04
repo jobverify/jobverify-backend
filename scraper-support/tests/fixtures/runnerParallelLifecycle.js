@@ -27,7 +27,11 @@ const source = (name, sourceLifecycleTimeoutMs = 0) => ({
   },
 })
 globalThis.runnerLifecycleFixture = {
-  scrapers: scenario === 'failed-retry-telemetry'
+  scrapers: scenario === 'shutdown-classification'
+    ? [source('peer'), source('queued')]
+    : scenario === 'classification-pending'
+    ? [source('alpha'), source('beta')]
+    : scenario === 'failed-retry-telemetry'
     ? [{ name: 'unavailable', run: async () => {
       state.started.push('unavailable')
       const error = new Error('fetch failed')
@@ -42,7 +46,12 @@ globalThis.runnerLifecycleFixture = {
       ? [source('broken', 5), source('queued')]
       : [source('broken', 5), source('peer'), source('queued')],
   status: () => ({ isActive: scenario !== 'inactive' }),
-  save: async (_jobs, name, { signal }) => {
+  save: async (_jobs, name, { signal, onStage }) => {
+    if (scenario === 'classification-pending' && name === 'alpha') {
+      const error = new Error('complete Laya scan required')
+      error.classificationPending = true
+      throw error
+    }
     if (name === 'broken') {
       if (scenario === 'quota') throw quotaError
       if (['cooperative-timeout', 'slow-cleanup'].includes(scenario)) {
@@ -59,6 +68,7 @@ globalThis.runnerLifecycleFixture = {
       return new Promise(() => {})
     }
     if (name === 'peer') {
+      if (scenario === 'shutdown-classification') onStage({ stage: 'classification', status: 'start' })
       return new Promise((resolve, reject) => {
         signal?.addEventListener('abort', () => {
           state.peerAborted = true
@@ -118,7 +128,7 @@ registerHooks({
 
 // Child-only inputs avoid the developer's .env and source-selection settings.
 process.env.MONGO_URI = 'mongodb://offline.invalid/never-connected'
-process.env.SCRAPER_CONCURRENCY = ['timeout', 'uncooperative-timeout', 'checkpoint-timeout', 'cooperative-timeout', 'slow-cleanup'].includes(scenario) ? '1' : '2'
+process.env.SCRAPER_CONCURRENCY = ['timeout', 'uncooperative-timeout', 'checkpoint-timeout', 'cooperative-timeout', 'slow-cleanup', 'shutdown-classification'].includes(scenario) ? '1' : '2'
 let checkpointDir = null
 if (['checkpoint-resume', 'checkpoint-failure-threshold'].includes(scenario)) {
   checkpointDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-runner-resume-'))
@@ -144,7 +154,7 @@ if (['checkpoint-resume', 'checkpoint-failure-threshold'].includes(scenario)) {
     },
   }))
 }
-if (scenario === 'checkpoint-timeout') {
+if (['checkpoint-timeout', 'classification-pending', 'shutdown-classification'].includes(scenario)) {
   checkpointDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-runner-resume-'))
   process.env.SCRAPER_CHECKPOINT_FILE = path.join(checkpointDir, 'run-state.json')
 }
@@ -158,12 +168,14 @@ console.log = console.error = console.warn = () => {}
 const { runAll } = await import('../../runner.js')
 mock.timers.enable({ apis: ['setTimeout'] })
 let completed = false
-const run = runAll().catch((error) => {
+const shutdownController = new AbortController()
+const run = runAll({ stopSignal: shutdownController.signal }).catch((error) => {
   state.error = { name: error.name, message: error.message }
 }).finally(() => { completed = true })
 
 for (let step = 0; step < 50 && !completed; step += 1) {
   await setImmediate()
+  if (scenario === 'shutdown-classification' && state.started.includes('peer') && !shutdownController.signal.aborted) shutdownController.abort(new Error('fixture shutdown'))
   mock.timers.tick(1_000)
 }
 await setImmediate()

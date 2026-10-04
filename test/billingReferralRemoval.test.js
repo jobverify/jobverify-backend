@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import mongoose from "mongoose";
 import PlanPurchase from "../src/models/PlanPurchase.js";
+import AccessEvent from "../src/models/AccessEvent.js";
+import AdminAudit from "../src/models/AdminAudit.js";
 import { createPlanCheckoutHandler } from "../src/controllers/billingController.js";
 import { buildBillingSummary } from "../src/services/planService.js";
 
@@ -36,8 +38,10 @@ test("checkout forwards only the selected plan and authenticated user", async ()
   assert.deepEqual(received, { user, planId: "monthly" });
 });
 
-test("billing summary contains only access and purchase history", async () => {
+test("billing summary contains access, purchases, and access history", async () => {
   const originalFind = PlanPurchase.find;
+  const originalEventFind = AccessEvent.find;
+  const originalAuditFind = AdminAudit.find;
   const legacyCodeModel = mongoose.models.ReferralCode;
   const originalLegacyFind = legacyCodeModel?.findOne;
 
@@ -47,6 +51,8 @@ test("billing summary contains only access and purchase history", async () => {
     lean() { return this; },
     async exec() { return []; },
   });
+  AccessEvent.find = PlanPurchase.find;
+  AdminAudit.find = PlanPurchase.find;
   if (legacyCodeModel) {
     legacyCodeModel.findOne = () => ({
       lean() { return this; },
@@ -60,9 +66,11 @@ test("billing summary contains only access and purchase history", async () => {
       accessRole: "free_user",
       premium: { planId: "free", status: "inactive", expiresAt: null },
     });
-    assert.deepEqual(Object.keys(summary).sort(), ["access", "purchases"]);
+    assert.deepEqual(Object.keys(summary).sort(), ["access", "accessEvents", "purchases"]);
   } finally {
     PlanPurchase.find = originalFind;
+    AccessEvent.find = originalEventFind;
+    AdminAudit.find = originalAuditFind;
     if (legacyCodeModel) legacyCodeModel.findOne = originalLegacyFind;
   }
 });

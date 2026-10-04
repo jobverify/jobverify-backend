@@ -1,7 +1,9 @@
 // Product filter defaults are kept separate from employer-stated work experience.
 const degree = /\b(?:bachelor(?:'s|s)?|master(?:'s|s)?|b\.?tech|m\.?tech|b\.e\.?|m\.e\.?|degree)\b/i;
-const seniorRole = /\b(?:manager|director|vice president|chief|head of|senior|principal|staff|lead|supervisor|expert)\b/i;
+const seniorRole = /\b(?:manager|director|vice president|chief|head of|senior|sr|principal|staff|lead|supervisor|expert)\b/i;
 const excludedStudentSubject = /\b(?:our (?:staff|employees|team)|employees|staff|mentoring|mentor|supervis(?:e|ing)|manage|managing|lead (?:our |the )?(?:graduate|student|intern)|recruitment programme|recruitment program|support (?:recent )?graduates)\b/i;
+const employerExperienceSubject = /\b(?:our|the|this)\s+(?:company|business|organization|organisation)\s+(?:has|have|with|brings?)\b|\bwe\s+(?:have|are\s+a\s+company\s+with)\b/i;
+const applicantExperienceRequirement = /\b(?:applicants?|candidates?|you)\s+(?:(?:must|should)\s+)?(?:have|possess|bring)\s+(?:prior |previous |professional |relevant |work )?experience\b/i;
 const normalize = value => String(value || '').replace(/[\u2018\u2019]/g, "'").replace(/[\u2013\u2014]/g, '-');
 const clauses = text => normalize(text).split(/\n|[.;](?=\s|$)/).map(value => value.trim()).filter(Boolean);
 const negated = text => /\b(?:not|never|no longer|ineligible|cannot|can't|need not)\b/i.test(text);
@@ -19,15 +21,20 @@ const inferred = (minimumYears, maximumYears, basis, evidence) => ({
 export const collectRecruitmentFacts = input => {
   const text = normalize(`${input.title}\n${input.body}`);
   let preferredSection = false;
-  const segments = clauses(input.body).filter(segment => {
-    if (/^(?:preferred|nice to have|desirable|bonus|good to have)\b/i.test(segment)) preferredSection = true;
-    else if (/^(?:minimum|basic|required|qualifications|requirements|responsibilities|duties|benefits|about|more about us)\b/i.test(segment)) preferredSection = false;
+  // Some ATS pages flatten this heading and its requirements into one paragraph.
+  // Restore a boundary only when qualification text follows, not in prose such
+  // as "an equivalent combination of education and experience is considered".
+  const sectionBody = normalize(input.body).replace(/\b((?:(?:preferred|desirable|optional|desired|nice[- ]to[- ]have|good[- ]to[- ]have|bonus)\s+)?Education\s+(?:and|&)\s+Experience)(?=\s*(?::|\n|[•-]|bachelor|master|degree|experience|relevant|previous|required))/gi, '\n$1\n')
+    .replace(/\b(About\s+(?:the\s+)?ideal\s+candidate)\s*:/gi, '\n$1:\n');
+  const segments = clauses(sectionBody).filter(segment => {
+    if (/^(?:preferred|nice[- ]to[- ]have|desirable|optional|desired|bonus|good[- ]to[- ]have)\b/i.test(segment)) preferredSection = true;
+    else if (/^(?:minimum|basic|required|qualifications|requirements|education\s+(?:and|&)\s+experience|responsibilities|duties|benefits|about|more about us)\b/i.test(segment)) preferredSection = false;
     return !preferredSection && !/\{\s*insert\b[^}]*\}/i.test(segment);
   });
   let inQualifications = false;
   const qualificationSegments = new Set(segments.filter(segment => {
-    if (/^(?:minimum|basic|required)?\s*(?:qualifications?|requirements?)(?:\b|:)/i.test(segment)) inQualifications = true;
-    else if (/^(?:preferred|responsibilities|duties|benefits|more about us|about (?:us|the company)|building a|recruitment fraud|what's in it|guidelines)\b/i.test(segment)) inQualifications = false;
+    if (/^(?:(?:minimum|basic|required)?\s*(?:qualifications?|requirements?)|education\s+(?:and|&)\s+experience|about\s+(?:the\s+)?ideal\s+candidate)(?:\b|:)/i.test(segment)) inQualifications = true;
+    else if (/^(?:preferred|responsibilities|duties|benefits|functional skills?|supervisory responsibilities|primary skills|more about us|about (?:us|the company)|company overview|diversity\s*(?:&|and)\s*inclusion|building a|recruitment fraud|what's in it|guidelines)\b/i.test(segment)) inQualifications = false;
     return inQualifications;
   }));
   const internOccupation = /\bintern(?:ship)?\s*(?:[-:\u2013\u2014]\s*)?(?:(?:program(?:me)?|recruitment|training|relations|operations)\s+)*(?:manager|director|coordinator|mentor|supervisor)\b/i.test(input.title)
@@ -39,7 +46,8 @@ export const collectRecruitmentFacts = input => {
   const internship = internshipTitle ? input.title : segments.find(segment => !negated(segment)
     && (/\b(?:this (?:role|position|vacancy|job) (?:is|offers)|employment(?: type)?\s*:|position(?: type)?\s*:)\s+(?:an? |paid |summer )?intern(?:ship)?\b/i.test(segment)
       || ((!seniorRole.test(input.title) || /\btrainee\b/i.test(input.title))
-        && (/\bwe (?:are (?:hiring|seeking)|offer)\s+(?:an? |paid |summer )?intern(?:ship)?\b/i.test(segment)
+        && ((/\bwe (?:are (?:hiring|seeking|looking for)|offer)\s+(?:(?:an?|paid|summer|experienced)\s+){0,3}intern(?:ship)?\b/i.test(segment)
+            && !/\bintern(?:ship)?\s+(?:(?:program(?:me)?|recruitment|training|relations|operations)\s+)*(?:manager|director|coordinator|mentor|supervisor|recruiter|specialist|administrator|officer)\b/i.test(segment))
           || (/\binternship duration\s*[:=-]\s*\d+\b/i.test(segment)
             && !/\b(?:manag(?:e|ing)|administer(?:ing)?|oversee(?:ing)?|coordinat(?:e|ing)|mentor(?:ing)?|supervis(?:e|ing))\s+(?:(?:this|the|our|an)\s+)?internship\b/i.test(segment))
           || /^this\s+(?:exciting |paid |summer )?internship\s+(?:will\s+(?:allow|give|offer|provide)|allows?|gives?|offers?|provides?)\b/i.test(segment)))));
@@ -64,8 +72,11 @@ export const collectRecruitmentFacts = input => {
     && /\b(?:completed|finished|graduated)\b/i.test(segment));
   const experienced = !internshipTitle && !/\btrainee\b/i.test(input.title) && seniorRole.test(input.title) ? input.title
     : segments.find(segment => !negated(segment) && !excludedStudentSubject.test(segment)
-      && !/\b(?:preferred|desirable|optional|a plus|nice to have)\b/i.test(segment)
-      && (/\b(?:prior|previous|professional|relevant) (?:work )?experience\b.{0,60}\b(?:required|mandatory|must)|\bexperienced (?:professionals?|applicants?|candidates?)\b|\b(?:applicants?|candidates?|you)\s+(?:(?:must|should)\s+)?(?:have|possess|bring)\s+(?:prior |previous |professional |relevant |work )?experience\b/i.test(segment)
+      && (!employerExperienceSubject.test(segment) || applicantExperienceRequirement.test(segment))
+      && !/\b(?:preferred|desirable|desired|optional|a plus|a bonus|an advantage|nice[- ]to[- ]have|good[- ]to[- ]have)\b/i.test(segment)
+      && (applicantExperienceRequirement.test(segment)
+        || (!/\bintern(?:ship)?\b/i.test(segment) && /\bwe\s+(?:are\s+)?(?:looking\s+for|seeking|hiring)\s+(?:(?:an?|the)\s+)?experienced\b/i.test(segment))
+        || /\b(?:prior|previous|professional|relevant) (?:work )?experience\b.{0,60}\b(?:required|mandatory|must)|\bexperienced (?:professionals?|applicants?|candidates?)\b/i.test(segment)
         || (qualificationSegments.has(segment) && /\b(?:prior|previous|professional|relevant) (?:work )?experience\b|\bexperience\s+(?:in|with|on|of|as|related|working)\b|\bworked\s+(?:on|in|with|as)\b/i.test(segment))));
   const graduationSegments = segments.filter(segment => !negated(segment) && !excludedStudentSubject.test(segment)
     && /\b(?:batch|cohort|graduat(?:e[sd]?|ing|ion)|pass[- ]?outs?)\b/i.test(segment));

@@ -2,8 +2,12 @@ import unittest
 import threading
 import time
 import io
+import os
+import sys
+from types import SimpleNamespace
 from unittest.mock import patch
 from runtime import Classifier, aggregate_answers, calibrated_answer, load_release, POLICY, audit_question_budget, source_context, serve
+import runtime
 
 
 class Tokenizer:
@@ -33,6 +37,16 @@ class FakeAgent:
 
 
 class RuntimeTests(unittest.TestCase):
+    def test_requested_eight_cpu_threads_are_applied_before_model_loading(self):
+        applied = []
+        torch = SimpleNamespace(set_num_threads=applied.append)
+        with patch.dict(os.environ, {'LAYA_CPU_THREADS': '8'}), patch.dict(sys.modules, {'torch': torch}), \
+                patch('runtime.argparse.ArgumentParser.parse_args', return_value=SimpleNamespace(port=8765)), \
+                patch('runtime.load_release', return_value=None), patch('runtime.load_agent', side_effect=RuntimeError('probe stops before loading')):
+            with self.assertRaisesRegex(RuntimeError, 'probe stops'):
+                runtime.main()
+        self.assertEqual(applied, [8])
+
     def test_only_employer_batches_enter_source_context(self):
         request = {'title': 'Engineer', 'eligibleBatches': [2025], 'referenceYear': 2026}
         self.assertNotIn('Eligible graduation batches', source_context(request))
@@ -148,12 +162,35 @@ class RuntimeTests(unittest.TestCase):
     def test_release_is_disabled_without_human_evaluation(self):
         self.assertIsNone(load_release(None))
 
-    def test_deadline_marks_uninspected_document_incomplete(self):
+    def test_explicit_request_deadline_marks_uninspected_document_incomplete(self):
         agent = FakeAgent()
-        worker = Classifier(agent, room=lambda *args: 130, budget_seconds=0)
-        result = worker.classify({'title': 'Manager', 'body': ' '.join(['work'] * 420), 'referenceYear': 2026})
+        worker = Classifier(agent, room=lambda *args: 130)
+        result = worker.classify({'title': 'Manager', 'body': ' '.join(['work'] * 420), 'referenceYear': 2026}, deadline=time.monotonic() - 1)
         self.assertFalse(result['complete'])
         self.assertEqual(agent.states, [])
+
+    def test_worker_still_scans_new_jobs_after_twenty_minutes(self):
+        with patch('runtime.time.monotonic', return_value=10):
+            worker = Classifier(FakeAgent(), room=lambda *args: 130)
+        with patch('runtime.time.monotonic', return_value=2000):
+            status, result = worker.handle({'title': 'Engineer', 'body': 'Build software.', 'referenceYear': 2026, 'identity': worker.identity})
+        self.assertEqual(status, 200)
+        self.assertTrue(result['complete'])
+
+    def test_full_description_scan_can_take_longer_than_sixty_seconds(self):
+        agent = FakeAgent()
+        clock = [10]
+        predict = agent.predict
+        def slow_predict(*args):
+            clock[0] += 70
+            return predict(*args)
+        agent.predict = slow_predict
+        worker = Classifier(agent, room=lambda *args: 130)
+        with patch('runtime.time.monotonic', side_effect=lambda: clock[0]):
+            status, result = worker.handle({'title': 'Engineer', 'body': ' '.join(['work'] * 420), 'referenceYear': 2026, 'identity': worker.identity})
+        self.assertEqual(status, 200)
+        self.assertTrue(result['complete'])
+        self.assertGreater(result['windows'], 1)
 
 
 if __name__ == '__main__':

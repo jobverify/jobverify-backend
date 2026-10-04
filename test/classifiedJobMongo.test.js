@@ -18,6 +18,13 @@ const prediction = labels => ({ complete: true, windows: 1, answers: Object.from
   return [key, { choice, probabilities: Object.fromEntries(choices.map(label => [label, label === choice ? .999 : .001 / (choices.length - 1)])) }];
 })) });
 
+const completePolicyClassifier = () => {
+  const identity = { modelRevision: CLASSIFICATION_MODEL.revision, runtimeVersion: CLASSIFICATION_MODEL.runtimeVersion,
+    runtimeHash: RUNTIME_HASH, policyHash: POLICY_HASH, calibrationHash: 'uncalibrated' };
+  return createJobClassifier({ mode: 'policy', fetch: async url => ({ ok: true, json: async () => url.endsWith('/health')
+    ? { ready: true, identity } : { ...prediction({ employment: 'full_time', experience: 'fresher_eligible', seniority: 'entry' }), identity } }) });
+};
+
 test('persisted authoritative categories and experience filters agree with Mongo and alerts', { timeout: 300000 }, async t => {
   const mongo = new MongoMemoryServer({ binary: { version: '8.2.6', downloadDir: fileURLToPath(new URL('../.cache/mongodb-binaries/', import.meta.url)) } });
   t.after(async () => { await mongoose.disconnect(); await mongo.stop(); });
@@ -104,18 +111,24 @@ test('persisted authoritative categories and experience filters agree with Mongo
 
   await t.test('numeric employer zero is retained by the real persistence path', async () => {
     const job = { title: 'Graduate Engineer', company: 'Numeric Zero Company', location: 'Bangalore, India', city: 'Bangalore', country: 'India', source: 'numeric-zero', applyUrl: 'https://example.com/jobs/numeric-zero', sourceUrl: 'https://example.com/jobs/numeric-zero', sourceEmploymentType: 'Full Time', sourceExperienceRequired: 0, description: 'Full-time role for 2026 graduates.' };
-    const classifier = createJobClassifier({ mode: 'policy', fetch: async () => { throw new Error('offline'); } });
+    const classifier = completePolicyClassifier();
     await saveToDB([job], 'numeric-zero', { now, classifier, enrichPublicExperience: false, replaceExisting: false, enqueueAlerts: false, refreshDatasetSummary: false });
     const saved = await Job.findOne({ source: 'numeric-zero' }).lean().exec();
     assert.equal(saved.sourceExperienceRequired, '0');
     assert.deepEqual(saved.experienceYears, [0]);
     assert.equal(saved.experienceBasis, 'graduation_cohort');
     assert.equal(saved.classification.mode, 'policy');
+    assert.equal(saved.classification.complete, true);
+    assert.ok(saved.classification.windows > 0);
+    assert.deepEqual(saved.classification.nativeScan.identity, { modelRevision: CLASSIFICATION_MODEL.revision,
+      runtimeVersion: CLASSIFICATION_MODEL.runtimeVersion, runtimeHash: RUNTIME_HASH, policyHash: POLICY_HASH, calibrationHash: 'uncalibrated' });
+    assert.equal(saved.classification.nativeScan.inputHash, saved.classification.inputHash);
+    assert.equal(saved.classification.nativeScan.reused, false);
   });
 
   await t.test('employer batch provenance survives persistence and a partial rescrape', async () => {
     const job = { title: 'Graduate Engineer', company: 'Batch Company', location: 'Bangalore, India', city: 'Bangalore', country: 'India', source: 'batch-provenance', applyUrl: 'https://example.com/jobs/batch-provenance', sourceUrl: 'https://example.com/jobs/batch-provenance', sourceEmploymentType: 'Full Time', eligibleBatches: [2025], eligibleBatchesProvenance: 'source', description: 'Graduate engineering recruitment.' };
-    const classifier = createJobClassifier({ mode: 'policy', fetch: async () => { throw new Error('offline'); } });
+    const classifier = completePolicyClassifier();
     const options = { now, classifier, enrichPublicExperience: false, replaceExisting: false, enqueueAlerts: false, refreshDatasetSummary: false };
     await saveToDB([job], 'batch-provenance', options);
     let saved = await Job.findOne({ source: 'batch-provenance' }).lean().exec();
@@ -129,7 +142,7 @@ test('persisted authoritative categories and experience filters agree with Mongo
 
   await t.test('source-marked ATS fields remain employer facts after classification and rescraping', async () => {
     const job = { title: 'Engineer', company: 'Opt-in Source Company', location: 'Bangalore, India', city: 'Bangalore', country: 'India', source: 'opt-in-source', applyUrl: 'https://example.com/jobs/opt-in-source', sourceUrl: 'https://example.com/jobs/opt-in-source', employmentType: 'Full Time', employmentTypeProvenance: 'source', experienceRequired: '5', experienceRequiredProvenance: 'source', description: 'Develop and test products.' };
-    const classifier = createJobClassifier({ mode: 'policy', fetch: async () => { throw new Error('offline'); } });
+    const classifier = completePolicyClassifier();
     const options = { now, classifier, enrichPublicExperience: false, replaceExisting: false, enqueueAlerts: false, refreshDatasetSummary: false };
     await saveToDB([job], 'opt-in-source', options);
     let saved = await Job.findOne({ source: 'opt-in-source' }).lean().exec();
@@ -140,5 +153,19 @@ test('persisted authoritative categories and experience filters agree with Mongo
     assert.equal(saved.jobType, 'Full-time Experienced');
     assert.equal(saved.experienceProfile.minimumYears, 5);
     assert.equal(saved.sourceExperienceRequired, '5');
+  });
+
+  await t.test('a worker outage cannot publish jobs or expire existing Mongo records', async () => {
+    const source = 'native-outage';
+    const old = await Job.create({ title: 'Old Engineer', company: 'Outage Company', source,
+      fingerprint: 'native-outage-old', status: 'active', closingDate: new Date('2025-01-01'), description: 'Existing source content.' });
+    const before = await Job.findById(old._id).lean().exec();
+    const classifier = createJobClassifier({ mode: 'policy', retryAfterMs: 0, fetch: async () => { throw new Error('offline'); } });
+    await assert.rejects(saveToDB([{ title: 'Engineering Intern', company: 'Outage Company', source,
+      location: 'Bangalore, India', country: 'India', description: 'Internship for current students.', applyUrl: 'https://example.com/jobs/native-outage' }], source,
+      { now, classifier, enrichPublicExperience: false, replaceExisting: true, enqueueAlerts: false, refreshDatasetSummary: false }),
+      error => error.name === 'LayaClassificationRequiredError' && error.classificationPending === true);
+    assert.deepEqual(await Job.findById(old._id).lean().exec(), before);
+    assert.equal(await Job.countDocuments({ source }), 1);
   });
 });

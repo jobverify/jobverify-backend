@@ -26,6 +26,33 @@ const sampleScrapers = [
   { name: 'zeta' },
 ]
 
+test('queued classification pauses the source lifecycle clock and writes resume the remaining clock', async () => {
+  const result = await withSourceLifecycleTimeout({ name: 'classification' }, async ({ pauseTimeout, resumeTimeout }) => {
+    pauseTimeout();
+    await new Promise(resolve => setTimeout(resolve, 70));
+    resumeTimeout();
+    return 'saved';
+  }, 40);
+  assert.equal(result, 'saved');
+  await assert.rejects(withSourceLifecycleTimeout({ name: 'write-hang' }, async ({ pauseTimeout, resumeTimeout, signal }) => {
+    pauseTimeout();
+    await new Promise(resolve => setTimeout(resolve, 70));
+    resumeTimeout();
+    await new Promise(resolve => signal.addEventListener('abort', resolve, { once: true }));
+  }, 40), { name: 'ScraperSourceLifecycleTimeoutError' });
+});
+
+test('cancellation still interrupts classification while the lifecycle clock is paused', async () => {
+  const controller = new AbortController();
+  const reason = new Error('cancel model scan');
+  const operation = withSourceLifecycleTimeout({ name: 'cancelled' }, async ({ pauseTimeout, signal }) => {
+    pauseTimeout();
+    await new Promise(resolve => signal.addEventListener('abort', resolve, { once: true }));
+  }, 40, { signal: controller.signal });
+  setTimeout(() => controller.abort(reason), 15);
+  await assert.rejects(operation, reason);
+});
+
 test('selectScrapersForRun returns the full catalog when no resume source is set', () => {
   const result = selectScrapersForRun(sampleScrapers, {})
 

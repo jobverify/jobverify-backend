@@ -124,3 +124,19 @@ test('a timed-out source and subsequent source are both checkpointed', () => {
   assert.equal(result.checkpoint.remainingCount, 0)
   assert.equal(result.checkpoint.status, 'complete')
 })
+test('shutdown cancels active classification and preserves the source for checkpoint retry', () => {
+  const result = runScenario('shutdown-classification')
+  assert.equal(result.peerAborted, true)
+  assert.equal(result.peerSettled, true)
+  assert.deepEqual(result.started, ['peer'])
+  assert.equal(result.checkpoint.completedCount, 0)
+  assert.equal(result.checkpoint.status, 'interrupted')
+})
+
+test('a failed required model scan stays pending while another source can finish', () => {
+  const result = runScenario('classification-pending')
+  assert.equal(result.history.alpha.classificationPending, true)
+  assert.equal(result.history.beta.success, true)
+  assert.deepEqual(Object.keys(result.checkpoint.completed), ['beta'])
+  assert.equal(result.checkpoint.status, 'interrupted')
+})

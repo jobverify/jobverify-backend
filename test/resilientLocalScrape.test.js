@@ -168,3 +168,20 @@ test('a failed Laya installation never starts the scraper child', async () => {
     assert.equal(JSON.parse(fs.readFileSync(path.join(directory, 'run-exit.json'))).code, 1);
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 });
+
+test('a resumed supervisor archives its old exit before model preparation', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'laya-supervisor-exit-'));
+  const exitPath = path.join(directory, 'run-exit.json');
+  try {
+    fs.writeFileSync(exitPath, JSON.stringify({ code: 1, stopRequested: true }));
+    await assert.rejects(runResilientScrape(parseArgs(['--run-dir', directory, '--dry-run', '--runner-script', childFixture]), {
+      env: { ...process.env }, prepareLaya: async () => {
+        assert.equal(fs.existsSync(exitPath), false, 'watchers must not mistake the prior exit for this active attempt');
+        const archives = fs.readdirSync(directory).filter(name => /^run-exit-\d+\.json$/.test(name));
+        assert.equal(archives.length, 1);
+        assert.equal(JSON.parse(fs.readFileSync(path.join(directory, archives[0]), 'utf8')).stopRequested, true);
+        throw new Error('preparation stopped by fixture');
+      },
+    }), /preparation stopped by fixture/);
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});

@@ -87,6 +87,7 @@ export const JobSchema = new Schema(
         mode: { type: String, enum: ['shadow', 'policy', 'enforce'] }, authoritative: Boolean, decisionSource: String,
         status: { type: String, enum: ['accepted', 'uncertain', 'fallback'] }, reason: String,
         decisions: Schema.Types.Mixed, complete: Boolean, windows: Number, evidenceContext: String, classifiedAt: Date,
+        nativeScan: Schema.Types.Mixed,
         resolved: Schema.Types.Mixed, previous: Schema.Types.Mixed,
       }, { _id: false }),
       default: undefined,

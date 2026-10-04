@@ -92,6 +92,7 @@ test('Workday detail Retry-After pauses peer listings using the actual server de
   const scheduler = new WorkdayRequestScheduler({ minIntervalMs: 0 })
   let limitedAt
   let peerStartedAt
+  const detailUrls = []
   t.mock.method(globalThis, 'fetch', async (url, init = {}) => {
     if (String(url).includes('peer.')) {
       peerStartedAt = Date.now()
@@ -102,6 +103,7 @@ test('Workday detail Retry-After pauses peer listings using the actual server de
       jobPostings: [{ title: 'Engineer', externalPath: '/job/Bangalore/Engineer_R1', locationsText: 'Bangalore, India' }],
     })
     if (String(url).includes('/job/')) {
+      detailUrls.push(String(url))
       limitedAt = Date.now()
       return new Response('Too many requests', { status: 429, headers: { 'retry-after': '0.1' } })
     }
@@ -115,6 +117,8 @@ test('Workday detail Retry-After pauses peer listings using the actual server de
     requestScheduler: scheduler,
   })
   assert.equal(jobs.length, 1)
+  assert.equal(detailUrls.length, 1, 'an API rate limit must not trigger an HTML fallback request')
+  assert.match(detailUrls[0], /\/wday\/cxs\/details\/External\/job\//)
   await page('peer', 'wd907', { requestScheduler: scheduler })
   assert.ok(peerStartedAt - limitedAt >= 90)
   assert.ok(peerStartedAt - limitedAt < 1000, 'the actual header must replace the default five-second delay')

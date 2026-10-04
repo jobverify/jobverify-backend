@@ -23,7 +23,7 @@ def main():
     from runtime import load_agent
     torch.set_num_threads(2)
     agent = load_agent()
-    worker = Classifier(agent, budget_seconds=1200)
+    worker = Classifier(agent)
     report = {'kind': 'diagnostic, not a release', 'identity': worker.identity, 'referenceDate': args.reference_date,
               'questionBudget': audit_question_budget(agent), 'requestSeconds': MODEL['requestSeconds'], 'results': []}
     args.output.parent.mkdir(parents=True, exist_ok=True)

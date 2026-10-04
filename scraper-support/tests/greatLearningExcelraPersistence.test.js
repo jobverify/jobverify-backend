@@ -18,6 +18,7 @@ for (const [source, count, run] of [
   let writes = []
   t.mock.method(Job, 'bulkWrite', async operations => { writes = operations; return { modifiedCount: 0, upsertedCount: operations.length } })
   t.mock.method(Job, 'updateMany', () => ({ exec: async () => ({ modifiedCount: 0 }) }))
+  t.mock.method(Job, 'deleteMany', () => ({ exec: async () => ({ deletedCount: 0 }) }))
   const jobs = await run()
   assert.equal(jobs.length, count)
   assert.ok(jobs.every(job => job.applicationUrlIsGeneric === true && job.requisitionId))

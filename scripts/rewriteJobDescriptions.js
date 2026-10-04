@@ -15,7 +15,7 @@ if (!['off', 'publish'].includes(mode)) throw new Error('JOB_DESCRIPTION_REWRITE
 const summary = { mode: apply ? mode : 'preview', modelRevision: REWRITE_MODEL.revision, policyVersion: REWRITE_MODEL.policyVersion, startedAt: new Date().toISOString() };
 const summaryFile = path.resolve('.cache/scraper-actions/description-summary.json');
 const deadline = rewriteDeadline({ budgetSeconds: process.env.JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS || 1200,
-  workflowStartedAt: process.env.JOB_DESCRIPTION_WORKFLOW_STARTED_AT, workflowSeconds: 9000 });
+  workflowStartedAt: process.env.JOB_DESCRIPTION_WORKFLOW_STARTED_AT, workflowSeconds: process.env.JOB_DESCRIPTION_WORKFLOW_BUDGET_SECONDS || 9000 });
 const controller = new AbortController();
 for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => controller.abort());
 const budgetSignal = AbortSignal.timeout(Math.max(1, Math.floor(deadline - Date.now())));

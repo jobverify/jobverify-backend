@@ -123,7 +123,7 @@ def main():
     if adapter and adapter['datasetHash'] != dataset_hash:
         raise ValueError('trained adapter evaluation must use the exact frozen full training/validation/test dataset')
     audit_question_budget(agent)
-    worker = Classifier(agent, budget_seconds=86400)
+    worker = Classifier(agent)
     start = time.monotonic()
     for index, row in enumerate(rows):
         row['prediction'] = cached.get(row['id']) or worker.classify(row['input'], include_windows=True)

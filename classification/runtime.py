@@ -170,7 +170,7 @@ def source_windows(agent, request, room_function=None):
 
 
 class Classifier:
-    def __init__(self, agent, room=None, budget_seconds=1200, release=None):
+    def __init__(self, agent, room=None, release=None):
         if room is None:
             from laya.common import state_room
             room = state_room
@@ -179,13 +179,12 @@ class Classifier:
         self.thresholds = release['thresholds'] if release else POLICY['thresholds']
         self.temperatures = release['temperatures'] if release else {}
         self.identity = {**IDENTITY, 'calibrationHash': release['artifactHash'] if release else 'uncalibrated'}
-        self.deadline = time.monotonic() + max(0, budget_seconds)
         self.lock = threading.Lock()
         self.cache = OrderedDict()
         self.stats = Counter()
 
     def classify(self, request, deadline=None, include_windows=False):
-        deadline = min(deadline or time.monotonic() + MODEL['requestSeconds'], self.deadline)
+        deadline = deadline if deadline is not None else time.monotonic() + MODEL['requestSeconds']
         questions = POLICY['questions']
         agent = self.agent
         states, reason = source_windows(agent, request, self.room)
@@ -231,9 +230,6 @@ class Classifier:
                 self.stats['cached'] += 1
                 self.cache.move_to_end(key)
                 return 200, self.cache[key]
-            if time.monotonic() >= self.deadline:
-                self.stats['budgetSkipped'] += 1
-                return 200, {'complete': False, 'windows': 0, 'answers': {}, 'reason': 'budget_exhausted', 'identity': self.identity}
             result = self.classify(request, request_deadline)
             self.stats['classified'] += 1
             self.stats['incomplete'] += int(not result['complete'])
@@ -301,15 +297,15 @@ def main():
     args = parser.parse_args()
     release = load_release(os.environ.get('LAYA_RELEASE_FILE'))
     import torch
-    torch.set_num_threads(max(1, min(4, int(os.environ.get('LAYA_CPU_THREADS', '2')))))
+    default_threads = min(8, os.cpu_count() or 1)
+    torch.set_num_threads(max(1, min(8, int(os.environ.get('LAYA_CPU_THREADS', str(default_threads))))))
     agent = load_agent()
     question_audit = audit_question_budget(agent)
-    worker = Classifier(agent, budget_seconds=int(os.environ.get('LAYA_TOTAL_BUDGET_SECONDS', '1200')), release=release)
+    worker = Classifier(agent, release=release)
     reference_year = datetime.now(timezone(timedelta(hours=5, minutes=30))).year
     warmup = worker.classify({'title': 'Graduate Engineer', 'body': 'Permanent full-time graduate role. Freshers eligible.', 'referenceYear': reference_year})
     if not warmup['complete']:
         raise RuntimeError('warmup failed')
-    worker.deadline = time.monotonic() + max(0, int(os.environ.get('LAYA_TOTAL_BUDGET_SECONDS', '1200')))
     print(json.dumps({'ready': True, 'identity': worker.identity, 'enforceAllowed': bool(release), 'questionBudget': question_audit}), flush=True)
     serve(worker, args.port)
 

@@ -18,6 +18,23 @@ const setReadyState = (value) => {
   }
 }
 
+test('incomplete policy classification prevents Mongo job writes, expiry and alerts', async () => {
+  const restore = setReadyState(1)
+  const originals = { bulkWrite: Job.bulkWrite, find: Job.find, updateMany: Job.updateMany, deleteMany: Job.deleteMany }
+  Job.find = () => ({ select() { return this }, lean() { return this }, exec: async () => [] })
+  Job.bulkWrite = async () => assert.fail('unclassified jobs must not reach MongoDB')
+  Job.updateMany = async () => assert.fail('failed classification must not expire previous jobs')
+  Job.deleteMany = async () => assert.fail('failed classification must not delete jobs')
+  try {
+    await assert.rejects(saveToDB([{
+      title: 'Engineering Intern', company: 'Example', location: 'Bengaluru, India',
+      link: 'https://example.com/jobs/intern', description: 'Internship for currently pursuing students.',
+    }], 'example', { enrichPublicExperience: false, refreshDatasetSummary: false,
+      classifier: { mode: 'policy', classifyJobs: async jobs => jobs.map(job => ({ ...job, classification: { complete: false, windows: 0 } })) },
+    }), /complete Laya/)
+  } finally { Object.assign(Job, originals); restore() }
+})
+
 test('quota recovery deletes oldest expired jobs until the 10 MB estimate is reached', async () => {
   const { purgeExpiredJobsForQuotaRecovery } = await import('../utils/saveToDB.js')
   const deletedIds = []

@@ -9,6 +9,13 @@ const normalizeString = (value) => {
   return normalized || null
 }
 
+// Employer text is scan evidence; preserve paragraphs and Unicode whitespace.
+const preserveSourceText = value => {
+  if (value == null) return null
+  const text = (Array.isArray(value) ? value.join('\n') : String(value)).trim()
+  return text || null
+}
+
 const stripHtmlTags = (value) => {
   if (value == null) return null
   return String(value).replace(/<[^>]+>/g, ' ')
@@ -1476,6 +1483,8 @@ export const inferMissingExperienceRequired = (job = {}, experienceRequired, exp
 
 export const normalizeScrapedJob = (job = {}, provider = {}) => {
   job = withSourceDescription(job);
+  // Keep the employer title as scan evidence; display whitespace may differ.
+  const sourceTitle = String(job.originalTitle || job.title || '').trim() || null
   const originalTitle = normalizeInlineText(job.originalTitle || job.title)
   const normalizedTitle = normalizeTitle(originalTitle)
   const applyUrl = normalizeUrl(job.applyUrl || job.link || job.sourceUrl)
@@ -1504,13 +1513,13 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
   const normalizedJob = {
     ...job,
     sourceDescription: job.jobDescription,
-    sourceEmploymentType: normalizeString(job.sourceEmploymentType || job.atsEmploymentType || job.rawEmploymentType
+    sourceEmploymentType: preserveSourceText(job.sourceEmploymentType || job.atsEmploymentType || job.rawEmploymentType
       || (job.employmentTypeProvenance === 'source' ? job.employmentType : null)),
-    sourceExperienceRequired: normalizeString([job.sourceExperienceRequired, job.experienceRequiredProvenance === 'source' ? job.experienceRequired : null]
+    sourceExperienceRequired: preserveSourceText([job.sourceExperienceRequired, job.experienceRequiredProvenance === 'source' ? job.experienceRequired : null]
       .find(value => value !== null && value !== undefined && value !== '')),
     title: originalTitle,
     company: normalizeString(job.company || provider.companyName),
-    originalTitle,
+    originalTitle: sourceTitle,
     normalizedTitle,
     jobCategory: normalizeInlineText(job.jobCategory) || normalizedTitle,
     engineeringDomain: inferEngineeringDomain(job, normalizedTitle, job.source || provider.source),
@@ -1524,8 +1533,8 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
     remoteStatus: inferRemoteStatus(job),
     department: normalizeString(job.department),
     jobDescription: normalizeDescription(job.jobDescription || job.description),
-    minimumQualification: normalizeString(job.minimumQualification),
-    preferredQualification: normalizeString(job.preferredQualification),
+    minimumQualification: preserveSourceText(job.minimumQualification),
+    preferredQualification: preserveSourceText(job.preferredQualification),
     requiredSkills,
     experienceRequired: normalizeString(job.experienceRequired),
     salary: normalizeString(job.salary),

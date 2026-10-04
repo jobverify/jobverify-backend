@@ -11,6 +11,11 @@ export const CLASSIFICATION_POLICY = JSON.parse(policyBytes);
 if (CLASSIFICATION_POLICY.version !== JOB_CLASSIFICATION_POLICY_VERSION) throw new Error('Classification policy version mismatch');
 export const CLASSIFICATION_MODEL = JSON.parse(readFileSync(new URL('../../classification/model.json', import.meta.url)));
 export const POLICY_HASH = createHash('sha256').update(policyBytes).digest('hex');
+// Recruitment-rule changes need a new derived decision, but unchanged model
+// code can reuse its actual response for the exact same canonical source input.
+export const NATIVE_RUNTIME_HASH = createHash('sha256').update(JSON.stringify([
+  'classification/model.json', 'classification/requirements.txt', 'classification/runtime.py', 'classification/training.py',
+].map(relative => [relative, createHash('sha256').update(normalizedBytes(relative)).digest('hex')]))).digest('hex');
 export const RUNTIME_HASH = createHash('sha256').update(JSON.stringify([
   'classification/model.json', 'classification/requirements.txt', 'classification/runtime.py', 'classification/training.py',
   'src/services/jobClassificationPolicy.js', 'src/services/jobRecruitmentPolicy.js', 'src/utils/jobClassificationVersion.js', 'src/utils/jobFilterSignals.js', 'src/utils/jobSourceContent.js',
@@ -41,6 +46,11 @@ export const cleanSourceText = (value) => {
       return point >= 0 && point <= 0x10ffff ? String.fromCodePoint(point) : match;
     }).replace(/&(nbsp|amp|lt|gt|quot|apos);/gi, (_, entity) => ({ nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" })[entity.toLowerCase()])
     .replace(/\r/g, '').replace(/[\t ]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim();
+};
+
+export const hashClassificationInput = (input, identity = {}) => {
+  const { inputHash: _inputHash, incomplete: _incomplete, ...canonical } = input;
+  return createHash('sha256').update(JSON.stringify({ ...canonical, ...identity })).digest('hex');
 };
 
 export const buildClassificationInput = (job = {}, { now = new Date(), identity = {} } = {}) => {
@@ -77,7 +87,7 @@ export const buildClassificationInput = (job = {}, { now = new Date(), identity 
     modelRevision: CLASSIFICATION_MODEL.revision, runtimeVersion: CLASSIFICATION_MODEL.runtimeVersion,
     policyHash: POLICY_HASH, runtimeHash: RUNTIME_HASH, calibrationHash: 'uncalibrated', ...identity,
   };
-  const inputHash = createHash('sha256').update(JSON.stringify({ ...input, ...runtimeIdentity })).digest('hex');
+  const inputHash = hashClassificationInput(input, runtimeIdentity);
   return { ...input, ...runtimeIdentity, inputHash, incomplete: !body || Buffer.byteLength(body, 'utf8') > CLASSIFICATION_MODEL.maxInputBytes };
 };
 
@@ -86,11 +96,20 @@ const emptyProfile = () => ({ minimumYears: null, maximumYears: null, isOpenEnde
 const splitPreferenceText = text => {
   const required = [], preferred = [];
   let preferredSection = false;
-  for (const segment of text.split(/\n|(?<!\d)[.;](?=\s|$)|(?=\b(?:required|preferred|minimum qualifications?|preferred qualifications?)\s*:)/i).map(part => part.trim()).filter(Boolean)) {
-    if (/^(?:minimum|basic|required|qualifications|requirements|responsibilities|duties|benefits|about|freshers?|graduates?|no (?:prior |previous )?experience)\b/i.test(segment)) preferredSection = false;
-    if (/^(?:preferred|nice to have|desirable|bonus|good to have)\b/i.test(segment)) preferredSection = true;
-    const preference = preferredSection || /\b(?:preferred|desirable|nice to have|a plus|an advantage)\b/i.test(segment);
-    (preference ? preferred : required).push(segment);
+  const sectionText = text.replace(/\b(\d+(?:\.\d+)?|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+or\s+more\s+(years?|yrs?|months?)\b/gi, '$1+ $2')
+    .replace(/\b((?:(?:minimum|basic|required|preferred|desirable|desired|optional|nice[- ]to[- ]have|good[- ]to[- ]have|bonus)\s+)?(?:education\s+(?:and|&)\s+experience|experience|education|qualifications?|requirements?))\s*:/gi, '\n$1:\n');
+  const candidateQuantity = new RegExp('\\b(?:candidates?|applicants?|you)\\s+(?:must|need\\s+to|are\\s+required\\s+to)\\s+(?:have|bring|possess)\\s+('
+    + NUMERIC_SOURCE_PATTERN.source + ')\\s+(?:of\\s+)?(?:(?:professional|work|relevant)\\s+)?(?:experience|background)\\b', 'gi');
+  for (const segment of sectionText.split(/\n|(?<!\d)[.;](?=\s|$)|(?=\b(?:required|preferred|minimum qualifications?|preferred qualifications?)\s*:)/i).map(part => part.trim()).filter(Boolean)) {
+    if (/^(?:minimum|basic|required|qualifications|requirements|education|experience(?=\s*:)|responsibilities|duties|benefits|about|freshers?|graduates?|no (?:prior |previous )?experience)\b/i.test(segment)) preferredSection = false;
+    if (/^(?:preferred|nice[- ]to[- ]have|desirable|desired|optional|bonus|good[- ]to[- ]have)\b/i.test(segment)) preferredSection = true;
+    const preference = preferredSection || /\b(?:preferred|desirable|desired|optional|nice[- ]to[- ]have|good[- ]to[- ]have|a plus|a bonus|an advantage)\b/i.test(segment);
+    if (preference) {
+      // Flattened ATS bullets can put a mandatory quantity and an optional
+      // skill in one clause. Only an explicit applicant work requirement wins.
+      const optional = segment.replace(candidateQuantity, (match, quantity) => { required.push(`${quantity} of experience`); return ''; });
+      preferred.push(optional);
+    } else required.push(segment);
   }
   return { required: required.join('\n'), preferred: preferred.join('\n') };
 };
@@ -105,7 +124,13 @@ const sourceNumericFields = input => {
     .replace(new RegExp('^[\\t ]*(?:in|within|after|by|at)\\s+(?:the\\s+)?(?:(?:first|next|initial)\\s+)?' + NUMERIC_SOURCE_PATTERN.source + '[\\t ]*[:=-]?[\\t ]*$', 'gim'), 'performance milestone')
     .replace(new RegExp(NUMERIC_SOURCE_PATTERN.source + '\\s+(?:(?:of\\s+)?(?:service|employment|training)\\s+bond\\b|(?:of\\s+)?bond\\b(?=[\\t ]*(?:[,;.]|$)))', 'gim'), 'service bond');
   const requiredPhrase = separated.required.match(/\b(?:requir(?:ing|ed|es)|must have|at least|minimum(?: of)?)\s+(\d+(?:\.\d+)?(?:\s*(?:-|to)\s*\d+(?:\.\d+)?)?\s*(?:years?|yrs?|months?)\s+(?:of\s+)?[a-z -]{0,45}\bexperience)\b/i)?.[0];
-  const signals = extractJobFilterSignals({ title: input.title, jobDescription: separated.required, experienceRequired: input.sourceFields.experienceRequired || requiredPhrase });
+  // The legacy bare-label parser reads only the first value of "Experience:
+  // 0-2 years". Pass the whole source-backed quantity, including its unit.
+  const labeledPhrase = separated.required.match(new RegExp('\\bexperience\\s*:\\s*(' + NUMERIC_SOURCE_PATTERN.source
+    + '(?:\\s*(?:-|to|~)\\s*' + NUMERIC_SOURCE_PATTERN.source + ')?)', 'i'))?.[1];
+  const isolatedLabel = labeledPhrase && !input.sourceFields.experienceRequired && !requiredPhrase;
+  const signals = extractJobFilterSignals({ title: input.title, jobDescription: isolatedLabel ? '' : separated.required,
+    experienceRequired: input.sourceFields.experienceRequired || requiredPhrase || (labeledPhrase ? `${labeledPhrase} of experience` : null) });
   const profile = signals.experienceProfile || {};
   const preferredProfile = NUMERIC_SOURCE_PATTERN.test(separated.preferred)
     ? extractJobFilterSignals({ experienceRequired: separated.preferred }).experienceProfile : null;

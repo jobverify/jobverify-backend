@@ -19,6 +19,162 @@ const examples = [
   ['contract vacancy', { title: 'Contract Engineer', description: 'This is a six-month contract position. 3-5 years of professional experience required.' }, 'Contract', [3, 4, 5]],
 ];
 
+test('a flattened ideal-candidate section requires prior project experience', () => {
+  const job = classify({ title: 'Product Definition Analyst 3', description:
+    'Accountabilities Analysis and product definition. Skills Python and SQL. About the ideal candidate: University degree in Computer Science or equivalent work experience. Experience delivering end-to-end analytics projects. Experience in the software development lifecycle including coding and testing. Experience in data modeling is a plus. Diversity & Inclusion We are a company with experience in travel technology.' });
+  assert.equal(job.jobType, 'Full-time Experienced');
+  assert.deepEqual(job.experienceYears, Array.from({ length: 15 }, (_, i) => i + 1));
+  assert.equal(job.experienceBasis, 'experienced_role_default');
+  assert.equal(job.classification.resolved.employerExperienceProfile.minimumYears, null);
+});
+
+test('a company-introduced mandatory applicant requirement still requires experience', () => {
+  const job = classify({ title: 'Engineer', description:
+    'About the ideal candidate: We have one mandatory requirement: candidates must have experience in software delivery.' });
+  assert.equal(job.jobType, 'Full-time Experienced');
+});
+
+test('flattened required experience resets a preceding optional skills section', () => {
+  const job = classify({ title: 'Operator - Technology Support', description:
+    'Skills Required: Basic understanding of mechanical systems. Additional Skills / Knowledge Preferred: Knowledge of SCADA is preferred. Education: Polytechnic diploma. Experience: 0 - 2 years related experience in this field. Reports To: Technology Support Manager.' });
+  assert.equal(job.jobType, 'Full-time Fresher');
+  assert.deepEqual(job.experienceYears, [0]);
+  assert.equal(job.classification.resolved.employerExperienceProfile.minimumYears, 0);
+  assert.equal(job.classification.resolved.employerExperienceProfile.maximumYears, 2);
+});
+
+test('a plain experience heading ends optional skills without needing an education heading', () => {
+  const job = classify({ title: 'Engineer', description:
+    'Preferred skills: Python is a plus. Experience: 2 - 4 years of professional experience required.' });
+  assert.equal(job.jobType, 'Full-time Experienced');
+  assert.equal(job.classification.resolved.employerExperienceProfile.minimumYears, 2);
+  assert.equal(job.classification.resolved.employerExperienceProfile.maximumYears, 4);
+});
+
+test('a labelled experience range retains month units and employer bounds', () => {
+  const job = classify({ title: 'Engineer', description: 'Education: Bachelors degree. Experience: 6 - 12 months related experience required.' });
+  assert.equal(job.jobType, 'Full-time Experienced');
+  assert.deepEqual(job.experienceYears, [1]);
+  assert.equal(job.classification.resolved.employerExperienceProfile.minimumYears, .5);
+  assert.equal(job.classification.resolved.employerExperienceProfile.maximumYears, 1);
+});
+
+test('labelled repeated and mixed-unit ranges retain the complete employer bounds', async t => {
+  for (const quantity of ['6 months - 1 year', '6 months - 12 months', '6 months to 1 year']) await t.test(quantity, () => {
+    const job = classify({ title: 'Engineer', description: `Experience: ${quantity} related experience required.` });
+    assert.equal(job.jobType, 'Full-time Experienced');
+    assert.deepEqual(job.experienceYears, [1]);
+    assert.equal(job.classification.resolved.employerExperienceProfile.minimumYears, .5);
+    assert.equal(job.classification.resolved.employerExperienceProfile.maximumYears, 1);
+  });
+});
+
+test('an abbreviated senior vacancy is experienced without a numeric requirement', () => {
+  const job = classify({ title: 'Sr. Engineer - Stack Development', description:
+    'Support engineering development and root cause investigations. Key Skills Required: Strong failure analysis skills.' });
+  assert.equal(job.jobType, 'Full-time Experienced');
+  assert.deepEqual(job.experienceYears, Array.from({ length: 15 }, (_, i) => i + 1));
+  assert.equal(job.classification.resolved.employerExperienceProfile.minimumYears, null);
+});
+
+test('explicit hiring of an experienced associate does not depend on an occupation title', () => {
+  const job = classify({ title: 'Events Marketing', sourceEmploymentType: 'Full Time', description:
+    'We are looking for an experienced, metrics-driven Associate - Event Marketing to lead our event presence. Desired Experience: 2+ years managing events.' });
+  assert.equal(job.jobType, 'Full-time Experienced');
+  assert.deepEqual(job.experienceYears, Array.from({ length: 15 }, (_, i) => i + 1));
+  assert.equal(job.classification.resolved.employerExperienceProfile.minimumYears, null);
+  assert.equal(job.experienceProfile.preferredMinimumYears, 2);
+});
+
+test('hiring wording about an experienced intern cannot promote the vacancy to experienced full-time', () => {
+  const job = classify({ title: 'Engineering Placement', description: 'We are looking for an experienced intern to assist the team.' });
+  assert.equal(job.jobType, 'Intern');
+  assert.deepEqual(job.experienceYears, [0]);
+});
+
+test('an explicitly preferred experience section cannot become a required minimum', () => {
+  const job = classify({ title: 'Engineer', description:
+    'Full-time role. Minimum qualifications: Bachelors degree. Preferred Experience: 3 years of professional experience.' });
+  assert.equal(job.jobType, 'Unspecified');
+  assert.equal(job.classification.resolved.employerExperienceProfile.minimumYears, null);
+  assert.equal(job.experienceProfile.preferredMinimumYears, 3);
+});
+
+test('inline optional modifiers on numeric experience cannot become a required minimum', async t => {
+  for (const modifier of ['desired', 'good to have', 'optional', 'a bonus', 'desirable', 'nice-to-have']) await t.test(modifier, () => {
+    const job = classify({ title: 'Engineer', description:
+      `Full-time role. Preferred qualifications: Certification is preferred. Experience: 3 years of professional experience is ${modifier}.` });
+    assert.equal(job.jobType, 'Unspecified');
+    assert.equal(job.classification.resolved.employerExperienceProfile.minimumYears, null);
+    assert.equal(job.experienceProfile.preferredMinimumYears, 3);
+  });
+});
+
+test('or-more years remains an open-ended employer requirement', () => {
+  const job = classify({ title: 'Technical Writer', description: 'Requirements: You have 2 or more years of experience in technical writing for software products.' });
+  assert.equal(job.jobType, 'Full-time Experienced');
+  assert.equal(job.classification.resolved.employerExperienceProfile.minimumYears, 2);
+  assert.equal(job.classification.resolved.employerExperienceProfile.isOpenEnded, true);
+  assert.deepEqual(job.experienceYears, Array.from({ length: 14 }, (_, i) => i + 2));
+});
+
+test('an explicit mandatory candidate quantity survives adjacent optional experience', async t => {
+  for (const description of [
+    'Preferred qualifications: Research publications are desired. Skills and Experience: Candidate must have 15+ years of background in Analytics, Data Science and Machine learning.',
+    'Skills and Experience: Candidate must have 15+ years of background in Analytics and Machine learning This will be an individual contributor role Experience as a Business Analyst in Data Science Solutions is a plus.',
+  ]) await t.test(description, () => {
+    const job = classify({ title: 'Sr Principal Engineer - Data Science', description });
+    assert.equal(job.jobType, 'Full-time Experienced');
+    assert.equal(job.classification.resolved.employerExperienceProfile.minimumYears, 15);
+    assert.equal(job.classification.resolved.employerExperienceProfile.isOpenEnded, true);
+    assert.deepEqual(job.experienceYears, [15]);
+  });
+});
+
+test('optional ideal-candidate experience and company history remain distinct from requirements', async t => {
+  for (const description of [
+    'About the ideal candidate: University degree required. Experience in data modeling is a plus. Experience in software delivery is a bonus.',
+    'About the ideal candidate: University degree required. About us: Our company has experience in the software development lifecycle.',
+    'About the ideal candidate: University degree required. Responsibilities: Deliver projects and provide an excellent experience in travel planning.',
+    'About the ideal candidate: University degree required. Diversity & Inclusion We are a company with experience in travel technology.',
+    'About the ideal candidate: University degree required. Company Overview Our company has experience in software delivery.',
+    'About the ideal candidate: University degree required. Our company has experience in travel technology.',
+    'About the ideal candidate: University degree required. Experience in data modeling is desired.',
+    'About the ideal candidate: University degree required. Experience in software delivery is good to have.',
+  ]) await t.test(description, () => assert.equal(classify({ title: 'Product Definition Analyst', description }).jobType, 'Unspecified'));
+});
+
+test('a flattened education-and-experience section requires experience without inventing employer years', () => {
+  const job = classify({ title: 'Customer Service Associate III', description:
+    'Job Description Communicate with customers. Education and Experience Bachelors degree or equivalent experience. Insurance certification will be preferred. Experience in voice process and zeal to learn about property. Functional Skills Knowledge of insurance policies.' });
+  assert.equal(job.jobType, 'Full-time Experienced');
+  assert.deepEqual(job.experienceYears, Array.from({ length: 15 }, (_, i) => i + 1));
+  assert.equal(job.experienceBasis, 'experienced_role_default');
+  assert.equal(job.classification.resolved.employerExperienceProfile.minimumYears, null);
+});
+
+test('preferred voice experience and company experience do not require applicant experience', () => {
+  for (const description of [
+    'Education and Experience Bachelors degree or equivalent experience. Experience in voice process is preferred. Functional Skills Communicate with customers.',
+    'About us Our company has experience in voice process operations. Responsibilities Support customers and develop your skills.',
+  ]) assert.equal(classify({ title: 'Customer Service Associate', description }).jobType, 'Unspecified');
+});
+
+test('required education-and-experience requirements reset a preceding preferred section', () => {
+  const result = classify({ title: 'Customer Service Associate', description:
+    'Preferred qualifications: Certification is preferred. Education and Experience Bachelors degree or equivalent experience. Experience in voice process. Functional Skills Communicate clearly.' });
+  assert.equal(result.jobType, 'Full-time Experienced');
+  assert.equal(result.experienceBasis, 'experienced_role_default');
+});
+
+test('restored education-and-experience headings retain their optional modifiers', () => {
+  for (const modifier of ['Preferred', 'Desirable', 'Optional', 'Desired', 'Nice to have', 'Good to have', 'Bonus']) {
+    const result = classify({ title: 'Customer Service Associate', description:
+      `${modifier} Education and Experience: Bachelors degree or equivalent experience. Experience in voice process. Functional Skills Communicate clearly.` });
+    assert.equal(result.jobType, 'Unspecified', modifier);
+  }
+});
+
 for (const [name, job, jobType, experienceYears] of examples) {
   test(`recruitment rule: ${name}`, () => {
     const result = classify(job);
