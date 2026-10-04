@@ -108,8 +108,8 @@ test('MotivityLabs helpers stay pinned to the verified openings list and same-do
   assert.equal(motivity.COMPANY, 'MotivityLabs')
   assert.equal(motivity.OFFICIAL_BRAND_NAME, 'Motivity Labs')
   assert.equal(motivity.CAREERS_URL, 'https://motivitylabs.com/careers/')
-  assert.equal(motivity.JOB_OPENINGS_URL, 'https://motivitylabs.com/job-openings/')
-  assert.equal(motivity.VERIFIED_ON, '2026-08-03')
+  assert.equal(motivity.JOB_OPENINGS_URL, 'https://motivitylabs.com/jobs/')
+  assert.equal(motivity.VERIFIED_ON, '2026-10-03')
   assert.equal(motivity.hasOfficialCareersSignal(careersPageHtml), true)
   assert.equal(motivity.hasJobOpeningsSignal(listingsPageHtml), true)
   assert.deepEqual(motivity.extractJobCards(listingsPageHtml), [
@@ -209,4 +209,39 @@ test('MotivityLabs fails closed when the verified openings surface drifts', asyn
     }),
     /verified Motivity Labs job openings page/i,
   )
+})
+
+test('MotivityLabs parses current first-party collection and confirmed India detail JSON-LD', async () => {
+  const motivity = await loadModule()
+  const newCareers = '<title>Careers · Motivity Labs</title><a href="/jobs/">Explore open roles</a>'
+  const listing = `<title>Careers — Open Roles · Motivity Labs</title><script type="application/ld+json">${JSON.stringify({
+    '@type': 'CollectionPage', hasPart: [
+      { '@type': 'JobPosting', title: 'Engineer', url: 'https://motivitylabs.com/jobs/engineer/' },
+      { '@type': 'JobPosting', title: 'Designer', url: 'https://motivitylabs.com/jobs/designer/' },
+    ],
+  })}</script>`
+  const detail = (title, country) => `<title>${title} · Motivity Labs</title><script type="application/ld+json">${JSON.stringify({
+    '@type': 'JobPosting', title, url: `https://motivitylabs.com/jobs/${title.toLowerCase()}/`,
+    description: 'Build and support client software.', datePosted: '2025-04-02',
+    applicantLocationRequirements: country ? { name: country } : undefined,
+    jobLocation: country ? { address: { addressLocality: 'Hyderabad' } } : undefined,
+    directApply: true,
+  })}</script>`
+  const requested = []
+  const jobs = await motivity.createMotivityLabsScraper({ now: () => FIXED_SCRAPED_AT }).run({
+    fetchText: async url => {
+      requested.push(url)
+      if (url === motivity.CAREERS_URL) return newCareers
+      if (url === motivity.JOB_OPENINGS_URL) return listing
+      if (url.endsWith('/engineer/')) return detail('Engineer', 'India')
+      if (url.endsWith('/designer/')) return detail('Designer', null)
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+  assert.equal(requested.length, 4)
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Engineer')
+  assert.equal(jobs[0].location, 'Hyderabad, India')
+  assert.equal(jobs[0].sourceListingComplete, false)
+  assert.equal(jobs[0].sourceUrl, 'https://motivitylabs.com/jobs/engineer/')
 })

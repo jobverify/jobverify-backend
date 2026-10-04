@@ -4,7 +4,7 @@ import test from 'node:test'
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 
-test('getScraperCatalog includes BSE India as a verified first-party angular careers shell with no public jobs board', () => {
+test('getScraperCatalog includes BSE India as a verified Angular careers page with a Darwinbox application link', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'bseindia')
 
   assert.ok(provider)
@@ -14,8 +14,8 @@ test('getScraperCatalog includes BSE India as a verified first-party angular car
   assert.equal(provider.companyCareerPage, 'https://www.bseindia.com/static/about/careers')
   assert.equal(provider.companyDomain, 'bseindia.com')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'careers-shell-plus-sitemap-and-bundle-validation')
-  assert.equal(provider.extractionStrategy, 'verified-careers-shell+verified-sitemap-routes+verified-angular-bundle+no-public-jobs-return-empty')
+  assert.equal(provider.paginationStrategy, 'careers-shell-plus-sitemap-and-lazy-route-bundle-validation')
+  assert.equal(provider.extractionStrategy, 'verified-careers-shell+verified-sitemap-routes+verified-angular-static-about-careers-bundle+hiring-posts+official-darwinbox-apply-link')
   assert.match(provider.modulePath, /bseindia[\\/]script\.js$/i)
 })
 

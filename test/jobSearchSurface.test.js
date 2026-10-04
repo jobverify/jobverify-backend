@@ -141,17 +141,17 @@ test("job search request canonicalizes and deduplicates visible multi-select fil
   assert.match(request.filterHash, /^[a-f0-9]{64}$/);
 });
 
-test("job search request keeps cursor page sizes within the canonical 2000-card limit", () => {
+test("job search request keeps cursor page sizes within the canonical 1000-card limit", () => {
   const request = buildJobSearchRequest({
     company: ["Example Corp"],
-    limit: "2000",
+    limit: "1000",
     sort: "popularity",
   });
 
-  assert.equal(request.pageSize, 2000);
+  assert.equal(request.pageSize, 1000);
   assert.equal(request.sort, "popularity");
   assert.throws(
-    () => buildJobSearchRequest({ limit: "2001", sort: "latest" }),
+    () => buildJobSearchRequest({ limit: "1200", sort: "latest" }),
     (error) => error instanceof SearchInputError && error.code === "INVALID_PAGE_SIZE",
   );
 });

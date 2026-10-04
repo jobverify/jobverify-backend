@@ -214,3 +214,20 @@ test('Loyalty Juggernaut fails closed when the verified homepage, about page, or
     /careers routes changed materially or now expose public jobs/i,
   )
 })
+
+
+const currentAboutPage = `<html><head><title>About Us · Loyalty Juggernaut</title><meta name="description" content="Loyalty Juggernaut, founded 2015 in Palo Alto. 200+ people across 7 offices, building the loyalty operating layer the world&#39;s largest programs run on."></head><body><script type="application/ld+json">{"@type":"Organization","name":"Loyalty Juggernaut, Inc.","url":"https://lji.io"}</script><h1>Founded in Silicon Valley · 2015</h1><p>Leading the next era of enterprise loyalty.</p><p>Global headquarters: Palo Alto, CA</p><a href="/contact-us">Contact Us</a></body></html>`
+
+test('Loyalty Juggernaut validates the current about-page branding while checking all careers routes for jobs', async () => {
+  const loyalty = await loadModule()
+  const urls = []
+  const jobs = await loyalty.createLoyaltyJuggernautScraper().run({
+    fetchPage: async (url) => {
+      urls.push(url)
+      return { status: loyalty.CAREERS_ROUTE_URLS.includes(url) ? 404 : 200, url, headers: {}, html: url === loyalty.HOMEPAGE_URL ? HOMEPAGE_HTML : url === loyalty.ABOUT_URL ? currentAboutPage : MISSING_ROUTE_HTML }
+    },
+  })
+  assert.deepEqual(jobs, [])
+  assert.deepEqual(urls, [loyalty.HOMEPAGE_URL, loyalty.ABOUT_URL, ...loyalty.CAREERS_ROUTE_URLS])
+  assert.equal(loyalty.hasOfficialAboutSignal(currentAboutPage.replace('"url":"https://lji.io"', '"url":"https://unrelated.example"')), false)
+})

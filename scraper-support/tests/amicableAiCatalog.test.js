@@ -44,7 +44,7 @@ test('Amicable AI catalog captures the verified first-party no-public-careers su
   )
   assert.equal(AMICABLE_AI_CATALOG.parser, 'custom-script')
   assert.equal(AMICABLE_AI_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(AMICABLE_AI_CATALOG.verifiedOn, '2026-07-28')
+  assert.equal(AMICABLE_AI_CATALOG.verifiedOn, '2026-10-03')
   assert.match(AMICABLE_AI_CATALOG.verifiedSurfaceSummary, /https:\/\/amicable\.io\//i)
   assert.match(AMICABLE_AI_CATALOG.verifiedSurfaceSummary, /https:\/\/amicable\.io\/careers/i)
   assert.match(
@@ -53,7 +53,7 @@ test('Amicable AI catalog captures the verified first-party no-public-careers su
   )
   assert.match(AMICABLE_AI_CATALOG.verifiedSurfaceSummary, /jobs@amicable\.co\.uk/i)
   assert.match(AMICABLE_AI_CATALOG.verifiedSurfaceSummary, /no trustworthy india jobs surface/i)
-  assert.match(AMICABLE_AI_CATALOG.verifiedSurfaceSummary, /non-india roles such as remote or london/i)
+  assert.match(AMICABLE_AI_CATALOG.verifiedSurfaceSummary, /seven non-India roles with Remote or London locations/i)
   assert.match(AMICABLE_AI_CATALOG.modulePath, /amicableai[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Amicable AI'), false)
 })

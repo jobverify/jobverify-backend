@@ -11,7 +11,7 @@ const loadMetricStreamCatalog = async () => {
   }
 }
 
-test('MetricStream catalog captures the verified first-party SuccessFactors hiring surface', async () => {
+test('MetricStream catalog captures the current first-party cards and retained legacy hiring surface', async () => {
   const {
     METRICSTREAM_CATALOG,
     default: defaultCatalog,
@@ -41,24 +41,24 @@ test('MetricStream catalog captures the verified first-party SuccessFactors hiri
     METRICSTREAM_CATALOG.verifiedSampleJobUrl,
     'https://career5.successfactors.eu/career?career_ns=job_listing&company=metricstre&navBarLevel=JOB_SEARCH&rcm_site_locale=en_US&career_job_req_id=3567&selected_lang=en_US&jobAlertController_jobAlertId=&jobAlertController_jobAlertName=&browserTimeZone=Asia/Calcutta',
   )
-  assert.equal(METRICSTREAM_CATALOG.atsPlatform, 'successfactors')
+  assert.equal(METRICSTREAM_CATALOG.atsPlatform, 'official-first-party-job-cards+legacy-successfactors')
   assert.equal(METRICSTREAM_CATALOG.countryFilter, 'India')
-  assert.equal(METRICSTREAM_CATALOG.paginationStrategy, 'successfactors-dwr-initial-search')
+  assert.equal(METRICSTREAM_CATALOG.paginationStrategy, 'first-party-all-role-cards+legacy-successfactors-dwr')
   assert.equal(
     METRICSTREAM_CATALOG.extractionStrategy,
-    'verified-first-party-homepage+verified-first-party-careers-page+successfactors-bootstrap+dwr-search-results+india-filter',
+    'verified-first-party-homepage+public-role-cards+validated-details+india-filter+legacy-successfactors',
   )
   assert.equal(METRICSTREAM_CATALOG.parser, 'custom-script')
   assert.equal(METRICSTREAM_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(METRICSTREAM_CATALOG.verifiedOn, '2026-08-13')
+  assert.equal(METRICSTREAM_CATALOG.verifiedOn, '2026-10-03')
   assert.equal(METRICSTREAM_CATALOG.dryRunFile, 'metricstream/jobs.json')
-  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
+  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /2026-10-03/i)
   assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.metricstream\.com\//)
   assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.metricstream\.com\/about-us\/careers\.htm/)
   assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /https:\/\/career5\.successfactors\.eu\/career\?company=metricstre/)
-  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /3 public postings/i)
-  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /outside India/i)
-  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /3567/i)
+  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /four first-party role cards/i)
+  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /conflicting country scope/i)
+  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /head-of-services/i)
   assert.match(METRICSTREAM_CATALOG.modulePath, /metricstream[\\/]script\.js$/i)
 })
 

@@ -19,7 +19,6 @@ export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const SITEMAP_INDEX_URL = PROVIDER_METADATA.sitemapIndexUrl
 export const JOB_LISTING_SITEMAP_URL = PROVIDER_METADATA.jobListingSitemapUrl
-const VERIFIED_JOB_DETAIL_URLS = [...VERIFIED_JOB_DETAIL_URLS_CONST]
 export { VERIFIED_JOB_DETAIL_URLS_CONST as VERIFIED_JOB_DETAIL_URLS }
 
 const USER_AGENT =
@@ -77,6 +76,7 @@ const extractFallbackTitle = (html = '') =>
   normalizeWhitespace(String(html ?? '').match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || null)
 
 const normalizeJobTitle = (value) => normalizeWhitespace(value)
+  ?.replace(/^Komprise\s+/i, '')
   ?.replace(/\s*[-–]\s*Komprise$/i, '')
   ?.trim() || null
 
@@ -98,7 +98,8 @@ const extractApplyUrl = (html = '') => {
   const match = String(html ?? '').match(
     /<a[^>]+class=["'][^"']*job_application_email[^"']*["'][^>]+href=["']([^"']+)["']/i,
   )
-  return normalizeWhitespace(match?.[1]) || null
+  const fallback = String(html ?? '').match(/href=["'](mailto:(?:india|us)_careers@komprise\.com[^"']*)["']/i)
+  return normalizeWhitespace(match?.[1] || fallback?.[1]) || null
 }
 
 const extractJobId = (html = '') => (
@@ -120,7 +121,8 @@ const resolveIndiaLocation = (rawLocation, applyUrl) => {
   if (email.includes('us_careers@komprise.com')) return null
   if (location && /\b(?:usa|united states)\b/i.test(location)) return null
 
-  const city = normalizeCity(location?.split(',')[0] || location)
+  const rawCity = location?.split(',')[0] || location
+  const city = /\bbengalaru\b/i.test(rawCity) ? 'Bengaluru' : normalizeCity(rawCity)
   const isIndiaRole = email.includes('india_careers@komprise.com')
     || /\bindia\b/i.test(location || '')
     || KNOWN_INDIA_LOCATION_PATTERN.test(location || '')
@@ -144,9 +146,22 @@ export const hasOfficialCareersPageSignal = (html = '') => {
     && /wp-job-manager/i.test(page)
   }
 
-export const hasJobListingSitemapSignal = (xml = '') =>
-  VERIFIED_JOB_DETAIL_URLS.every((url) => String(xml ?? '').includes(url))
-    && extractSitemapEntries(xml).length >= VERIFIED_JOB_DETAIL_URLS.length
+export const hasJobListingSitemapSignal = (xml = '') => {
+  const entries = extractSitemapEntries(xml)
+  return /<urlset\b/i.test(String(xml ?? ''))
+    && entries.length > 0
+    && new Set(entries.map((entry) => entry.url)).size === entries.length
+    && entries.every(({ url, lastmod }) => {
+      try {
+        const parsed = new URL(url)
+        return parsed.origin === 'https://www.komprise.com'
+          && /^\/job\/[^/]+\/$/.test(parsed.pathname)
+          && !Number.isNaN(Date.parse(lastmod))
+      } catch {
+        return false
+      }
+    })
+}
 
 export const extractSitemapEntries = (xml = '') =>
   [...String(xml ?? '').matchAll(/<url>([\s\S]*?)<\/url>/gi)]

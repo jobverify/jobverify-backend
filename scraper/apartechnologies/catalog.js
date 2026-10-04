@@ -24,9 +24,9 @@ export const APAR_TECHNOLOGIES_CATALOG = {
     'verified-homepage-careers-link+verified-careers-page+verified-us-and-apac-placeholder-pages+verified-page-sitemap-careers-urls+verified-missing-common-job-routes-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified on July 15, 2026 that https://www.apartechnologies.com/ is the live first-party homepage for Apar Technologies and links Careers to https://www.apartechnologies.com/careers/. The first-party careers shell links US Openings to https://www.apartechnologies.com/job-posting/ and APAC Openings to https://www.apartechnologies.com/apac-2/, but both regional pages are placeholder Job Listing surfaces that only direct candidates to sales.apartech@apar.com and do not expose trustworthy public job cards, ATS handoffs, or job-detail pages. https://www.apartechnologies.com/wp-sitemap-posts-page-1.xml lists the three first-party careers URLs, while common first-party job routes such as /jobs, /join-us, /work-with-us, /openings, and /current-openings returned 404 on July 15, 2026. There is no trustworthy public jobs surface for Apar Technologies.',
+    'Verified on October 3, 2026 that https://www.apartechnologies.com/ links to the redesigned first-party page at https://www.apartechnologies.com/careers/. This page has a generic resume upload form but no public job cards or ATS board. The former https://www.apartechnologies.com/job-posting/ route redirects to the careers page and https://www.apartechnologies.com/apac-2/ returns 404. The earlier regional placeholders referred candidates to sales.apartech@apar.com. There is no trustworthy public jobs surface for Apar Technologies.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

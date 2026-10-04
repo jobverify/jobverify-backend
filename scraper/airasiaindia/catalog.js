@@ -23,9 +23,9 @@ export const AIRASIA_INDIA_CATALOG = {
   parkedRebrandCareersUrl: 'https://aixconnect.in/careers',
   mergedCarrierHomepageUrl: 'https://www.airindiaexpress.com/home',
   mergedCarrierCareersUrl: 'https://www.airindiaexpress.com/careers',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'As of July 15, 2026, https://www.airasia.com/in/en and https://www.airasia.com/in/en/careers resolve to AirAsia MOVE at https://www.airasia.com/en/gb, https://aixconnect.in/ and https://aixconnect.in/careers are parked "Coming Soon" pages, and https://www.airindiaexpress.com/careers is an Air India Express-branded careers page, so there is no trustworthy AirAsia India-branded public jobs surface.',
+    'As of October 3, 2026, https://www.airasia.com/in/en returns a 404 JSON response for a missing route, while https://www.airasia.com/in/en/careers redirects to AirAsia MOVE at https://www.airasia.com/en/gb. https://aixconnect.in/ and https://aixconnect.in/careers remain parked "Coming Soon" pages, and https://www.airindiaexpress.com/careers is an Air India Express-branded careers page. There is no trustworthy AirAsia India-branded public jobs surface.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

@@ -7,7 +7,7 @@ const jobsIndexHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Jobs - ZingHR HCM Solution</title>
+    <title>Job Openings Archive - ZingHR HCM Solution</title>
   </head>
   <body>
     <h1>Jobs</h1>
@@ -86,8 +86,8 @@ test('ZingHR helpers stay pinned to the verified jobs index and detail page cont
 
   assert.equal(zinghr.SOURCE, 'zinghr')
   assert.equal(zinghr.COMPANY, 'ZingHR')
-  assert.equal(zinghr.CAREERS_URL, 'https://www.zinghr.com/job-openings/')
-  assert.equal(zinghr.VERIFIED_ON, '2026-08-01')
+  assert.equal(zinghr.CAREERS_URL, 'https://www.zinghr.com/jobs/')
+  assert.equal(zinghr.VERIFIED_ON, '2026-10-03')
   assert.equal(zinghr.hasVerifiedJobsIndexSignal(jobsIndexHtml), true)
   assert.equal(zinghr.hasVerifiedJobDetailSignal(customerSupportDetailHtml), true)
   assert.equal(zinghr.hasVerifiedJobDetailSignal(salesManagerDetailHtml), true)

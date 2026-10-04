@@ -18,14 +18,14 @@ export const ALPHAGREP_CATALOG = {
   normalizationProfile: 'engineering-default',
   homepageUrl: 'https://www.alpha-grep.com/',
   careerOpportunityBaseUrl: 'https://www.alpha-grep.com/career-opportunity',
-  verifiedIndiaJobUrl: 'https://www.alpha-grep.com/career-opportunity?jid=8176611002',
+  verifiedIndiaJobUrl: 'https://www.alpha-grep.com/career-opportunity/?jid=6902979002',
   verifiedCareers404Urls: [
     'https://www.alpha-grep.com/careers/',
     'https://www.alpha-grep.com/jobs/',
   ],
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified on July 15, 2026 that https://www.alpha-grep.com/ is the live first-party homepage, that it hands off job seekers to https://www.alpha-grep.com/career/, and that https://www.alpha-grep.com/career-opportunity?jid=8176611002 is a live first-party India job detail page with an inline application form. Verified separately that /careers/ and /jobs/ on the same host are first-party 404 routes rather than the public jobs surface.',
+    'Verified on October 3, 2026 that https://www.alpha-grep.com/ links to the first-party careers list at https://www.alpha-grep.com/career/, which currently lists five India jobs. The live Devops Engineer detail at https://www.alpha-grep.com/career-opportunity/?jid=6902979002 has a client-rendered Loading heading in initial HTML, but retains the job-specific AlphaGrep description and inline application form. The careers list supplies each job title and India location.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

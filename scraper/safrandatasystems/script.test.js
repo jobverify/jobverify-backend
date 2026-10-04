@@ -162,7 +162,7 @@ test('Safran Data Systems pins the accessible keyword search surface and detail 
   assert.equal(safranDataSystems.SOURCE, 'safrandatasystems')
   assert.equal(safranDataSystems.COMPANY, 'Safran Data Systems')
   assert.equal(safranDataSystems.OFFICIAL_BRAND_NAME, 'Safran Data Systems SAS')
-  assert.equal(safranDataSystems.VERIFIED_ON, '2026-08-14')
+  assert.equal(safranDataSystems.VERIFIED_ON, '2026-10-03')
   assert.equal(
     safranDataSystems.SEARCH_URL,
     'https://careers.safran-group.com/offre-de-emploi/liste-toutes-offres.aspx?Keywords=Safran%20Data%20Systems',
@@ -353,4 +353,19 @@ test('Safran Data Systems fails closed when the accessible search page or detail
     }),
     /detail page no longer matches/i,
   )
+})
+
+test('Safran Data Systems accepts a Space & Communication detail only with matching SDS identity', async () => {
+  const safranDataSystems = await loadScriptModule()
+  const detail = BID_MANAGER_DETAIL_HTML
+    .replace("Offre d'emploi Safran Data Systems SAS -", "Offre d'emploi Space &amp; Communication -")
+    .replace('Ref : 2026-185635.', 'Ref : SDS/GS3/27-185635.')
+  const card = { jobId: '185635' }
+
+  assert.equal(safranDataSystems.hasVerifiedDetailSignal(detail, card), true)
+  assert.equal(safranDataSystems.hasVerifiedDetailSignal(detail, { jobId: 'other' }), false)
+  assert.equal(safranDataSystems.hasVerifiedDetailSignal(
+    detail.replace('Safran Data Systems recrute', 'Another business recruits'),
+    card,
+  ), false)
 })

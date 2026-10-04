@@ -2,19 +2,13 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import POSTHOG_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-
-const REQUIRED_SAMPLE_TITLES = [
-  'AI Research Engineer',
-  'Backend Engineer - Ingestion (Europe/UK timezone)',
-  'Technical Account Executive - EMEA',
-  'Technical Customer Success Manager - Americas',
-]
 
 const INDIA_SIGNAL_PATTERN =
   /\b(india|bengaluru|bangalore|mumbai|pune|hyderabad|gurugram|gurgaon|noida|delhi|chennai|asia\/kolkata)\b/i
@@ -104,11 +98,6 @@ const extractTimezoneValues = (customFields = []) =>
       .flatMap((field) => parseCustomFieldValues(field?.value)),
   )
 
-const hasRequiredRoleSamples = (postings = []) => {
-  const titles = new Set(postings.map((posting) => posting.title))
-  return REQUIRED_SAMPLE_TITLES.every((title) => titles.has(title))
-}
-
 const hasIndiaSignal = (posting = {}) =>
   [posting.title, posting.slug, posting.department, ...(posting.timezones || [])]
     .filter(Boolean)
@@ -126,11 +115,7 @@ export const hasVerifiedCareersPageSignal = (html = '') => {
     && normalized.includes("Who's hiring?")
     && /Our small teams are looking to add \d+ team members/i.test(normalized)
     && normalized.includes('Select a role')
-    && normalized.includes('AI Research Engineer')
-    && normalized.includes('Backend Engineer - Ingestion (Europe/UK timezone)')
-    && normalized.includes('Technical Customer Success Manager - Americas')
-    && normalized.includes('Technical Account Executive - EMEA')
-    && /href="\/careers\/ai-research-engineer"/i.test(rawHtml)
+    && /href="\/careers\/[^"#?]+"/i.test(rawHtml)
 }
 
 export const extractVerifiedRoleSlug = (html = '') => {
@@ -177,6 +162,7 @@ export const createPostHogScraper = () => ({
   async run({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
+    now = () => new Date().toISOString(),
   } = {}) {
     const careersHtml = await fetchText(CAREERS_PAGE_URL)
     if (!hasVerifiedCareersPageSignal(careersHtml)) {
@@ -190,8 +176,16 @@ export const createPostHogScraper = () => ({
     }
 
     const payload = await fetchJson(pageDataUrl)
+    const rawPostings = payload?.result?.data?.allJobPostings?.nodes
     const postings = extractAllJobPostings(payload)
-    if (postings.length === 0 || !hasRequiredRoleSamples(postings)) {
+    if (
+      !Array.isArray(rawPostings)
+      || postings.length === 0
+      || postings.length !== rawPostings.length
+      || !postings.some((posting) => posting.slug === verifiedRoleSlug)
+      || new Set(postings.map((posting) => posting.slug)).size !== postings.length
+      || postings.some((posting) => posting.timezones.length === 0)
+    ) {
       throw new Error('Verified PostHog page-data contract changed materially')
     }
 
@@ -199,7 +193,17 @@ export const createPostHogScraper = () => ({
       throw new Error('Verified PostHog India slice changed materially')
     }
 
-    return []
+    return attachInventoryEvidence([], {
+      status: 'complete-inventory',
+      surface: CAREERS_PAGE_URL,
+      firstParty: true,
+      listingComplete: true,
+      pagesFetched: 1,
+      reportedTotal: postings.length,
+      indiaFacetCount: 0,
+      verifiedAt: now(),
+      reason: 'current-first-party-gatsby-inventory-has-no-india-timezone',
+    })
   },
 })
 

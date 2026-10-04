@@ -133,9 +133,9 @@ const danskeTransitionHtml = `
 <!doctype html>
 <html lang="en">
   <body>
-    <h1>Danske Bank enters strategic partnership with Infosys</h1>
-    <p>As part of the partnership, Danske Bank will sell Danske IT, a fully-owned subsidiary of Danske Bank, headquartered in Bengaluru, India, to Infosys.</p>
-    <p>As part of the sale, starting expectedly 1 September 2023 our 1,400 colleagues in Danske IT will transfer to Infosys.</p>
+    <h1>Danske Bank enters strategic partnership</h1>
+    <p>As part of the partnership, Danske Bank will sell Danske IT, a fully-owned subsidiary of Danske Bank, headquartered in Bengaluru, India, to a strategic partner.</p>
+    <p>As part of the sale, starting expectedly 1 September 2023 our 1,400 colleagues in Danske IT will transfer to the strategic partner.</p>
   </body>
 </html>
 `

@@ -22,7 +22,7 @@ const buildProvider = (catalogEntry) => hydrateProviderCatalogEntry({
   modulePath,
 })
 
-test('CBTS Technology Solutions India LLP local catalog captures the verified first-party CBTS careers page and linked Rippling board', async () => {
+test('CBTS Technology Solutions India LLP local catalog captures the verified first-party CBTS careers page and linked Eightfold board', async () => {
   const { CBTS_TECHNOLOGY_SOLUTIONS_INDIA_LLP_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = buildProvider(CBTS_TECHNOLOGY_SOLUTIONS_INDIA_LLP_CATALOG)
 
@@ -35,17 +35,17 @@ test('CBTS Technology Solutions India LLP local catalog captures the verified fi
   assert.equal(provider.companyCareerPage, 'https://www.cbts.com/careers')
   assert.equal(provider.ripplingBoardUrl, 'https://ats.rippling.com/cbtsindia/jobs')
   assert.equal(provider.ripplingBoardSlug, 'cbtsindia')
-  assert.equal(provider.atsPlatform, 'rippling')
+  assert.equal(provider.atsPlatform, 'eightfold')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'first-party-careers-page-plus-rippling-next-data-pages')
-  assert.equal(provider.extractionStrategy, 'verified-first-party-careers-page+linked-rippling-board-next-data+india-location-filter')
+  assert.equal(provider.paginationStrategy, 'first-party-careers-page-plus-eightfold-offset-limit')
+  assert.equal(provider.extractionStrategy, 'verified-first-party-careers-page+linked-eightfold-board-api+india-location-filter')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'cbts.com')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /ats\.rippling\.com\/cbtsindia\/jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /jobs\.cbts\.com\/careers/i)
 })
 
 test('CBTS TECHNOLOGY SOLUTIONS INDIA LLP exact backlog row resolves from the local provider contract', async () => {

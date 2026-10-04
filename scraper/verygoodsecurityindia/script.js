@@ -52,7 +52,7 @@ const indiaLocations = (job) => {
   const india = []
   for (const place of places) {
     if (/^(?:India|(?:Bengaluru|Bangalore|Hyderabad|Gurugram|Gurgaon|Pune|Mumbai|Chennai|Noida)(?:,\s*India)?)$/i.test(place)) india.push(place)
-    else if (/^(?:United States|Canada|Greece|United Kingdom|Singapore|Australia|Germany)$/i.test(place)) continue
+    else if (/^(?:United States|Canada|Greece|Poland|United Kingdom|Singapore|Australia|Germany)$/i.test(place)) continue
     else if (place === primary && /^[A-Z]{2}$/.test(country || '') && country !== 'IN') continue
     else if (place === primary && country === 'IN' && /^Remote$/i.test(place)) india.push('Remote, India')
     else throw Object.assign(new Error('VGS incomplete location scope: ' + place), { code: 'incomplete_location_scope' })

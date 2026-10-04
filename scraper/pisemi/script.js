@@ -200,6 +200,54 @@ export const extractRoleCards = (html) => {
   return extractFallbackRoleCards(html)
 }
 
+// The site renders only the first ten cards in HTML, while its own module data
+// contains the full list. Read that list so an India opening on a later page
+// cannot be mistaken for a zero-result board.
+export const extractEmbeddedRoleCards = (html) => {
+  const page = String(html ?? '')
+  const moduleStart = page.indexOf('"module550":{')
+  if (moduleStart < 0) return []
+
+  const listStart = page.indexOf('"newsList":[', moduleStart)
+  if (listStart < 0) throw new Error('PISemi careers module no longer exposes its full role list')
+  const arrayStart = page.indexOf('[', listStart)
+  let depth = 0
+  let inString = false
+  let escaped = false
+  let arrayEnd = -1
+  for (let index = arrayStart; index < page.length; index += 1) {
+    const char = page[index]
+    if (inString) {
+      if (escaped) escaped = false
+      else if (char === '\\') escaped = true
+      else if (char === '"') inString = false
+    } else if (char === '"') inString = true
+    else if (char === '[') depth += 1
+    else if (char === ']' && --depth === 0) {
+      arrayEnd = index + 1
+      break
+    }
+  }
+  if (arrayEnd < 0) throw new Error('PISemi careers module role list is incomplete')
+
+  const rows = JSON.parse(page.slice(arrayStart, arrayEnd))
+  if (!Array.isArray(rows) || rows.length === 0) {
+    throw new Error('PISemi careers module role list is empty')
+  }
+  return rows.map((row) => {
+    const card = {
+      title: normalizeWhitespace(row.title),
+      locationSummary: normalizeWhitespace(row.summary),
+      detailUrl: toAbsoluteUrl(row.url),
+    }
+    if (!Number.isInteger(row.id) || !card.title || !card.locationSummary
+      || card.detailUrl !== `${HOMEPAGE_URL}h-nd-${row.id}.html`) {
+      throw new Error('PISemi careers module role entry changed materially')
+    }
+    return card
+  })
+}
+
 export const isIndiaJob = (job = {}) =>
   /india|印度|bangalore|bengaluru|班加罗尔/i.test(normalizeWhitespace(job.locationSummary))
 
@@ -243,9 +291,15 @@ export const createPisemiScraper = () => ({
       throw new Error('PISemi contact page no longer confirms the verified India office signal')
     }
 
-    const roleCards = extractRoleCards(joinUsHtml)
+    const visibleCards = extractRoleCards(joinUsHtml)
+    const embeddedCards = extractEmbeddedRoleCards(joinUsHtml)
+    const roleCards = embeddedCards.length > 0 ? embeddedCards : visibleCards
     if (roleCards.length === 0) {
       throw new Error('PISemi joinus page no longer exposes the verified public role cards')
+    }
+    if (embeddedCards.length > 0 && (visibleCards.length === 0 || visibleCards.length > embeddedCards.length
+      || visibleCards.some((card, index) => JSON.stringify(card) !== JSON.stringify(embeddedCards[index])))) {
+      throw new Error('PISemi visible careers cards no longer match the full module role list')
     }
 
     if (roleCards.some((job) => isIndiaJob(job))) {

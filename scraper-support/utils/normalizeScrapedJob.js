@@ -1,10 +1,19 @@
+import { withSourceDescription } from '../../src/utils/jobSourceContent.js';
 import { extractJobFilterSignals, hasEntryLevelCue } from '../../src/utils/jobFilterSignals.js'
+import { applyClassification, getAuthoritativeClassification } from '../../src/services/jobClassificationPolicy.js'
 import { resolveJobPostedAt } from '../../src/utils/jobLifecycle.js'
 
 const normalizeString = (value) => {
   if (value == null) return null
   const normalized = String(value).replace(/\s+/g, ' ').trim()
   return normalized || null
+}
+
+// Employer text is scan evidence; preserve paragraphs and Unicode whitespace.
+const preserveSourceText = value => {
+  if (value == null) return null
+  const text = (Array.isArray(value) ? value.join('\n') : String(value)).trim()
+  return text || null
 }
 
 const stripHtmlTags = (value) => {
@@ -421,6 +430,12 @@ const inferExperienceLevel = (job = {}) => {
   const { minimumYears, maximumYears } = getExperienceBounds(job)
   const hasPositiveExperienceYears = hasPositiveExperienceRequirement({ minimumYears, maximumYears })
 
+  // Explicit entry-level requirements outrank a previously inferred title level.
+  // Seniority (for example Associate) remains a separate filter signal.
+  if (minimumYears === 0 && Number.isFinite(maximumYears) && maximumYears <= 1) {
+    return 'Entry Level'
+  }
+
   if (explicitLevel && !(explicitLevel === 'Entry Level' && hasPositiveExperienceYears)) {
     return explicitLevel
   }
@@ -463,6 +478,9 @@ const composeJobType = ({ employmentType, experienceLevel, hasPositiveExperience
 }
 
 export const resolveJobType = (job = {}) => {
+  job = withSourceDescription(job);
+  const classified = getAuthoritativeClassification(job)
+  if (classified) return classified.jobType
   const employmentType = inferEmploymentType(job)
   const experienceLevel = inferExperienceLevel(job)
   const hasPositiveExperienceYears = hasPositiveExperienceRequirement(getExperienceBounds(job))
@@ -595,11 +613,6 @@ const SOURCE_ENGINEERING_DOMAIN_RULES = [
     value: 'Industrial',
   },
   {
-    sources: new Set(['artechinfosystems']),
-    pattern: /\b(engineer it|senior engineer it)\b/i,
-    value: 'Cloud',
-  },
-  {
     sources: new Set(['cmscomputers']),
     pattern: /\b(helpdesk|desktop support|field service|customer service engineer|support engineer)\b/i,
     value: 'Cloud',
@@ -652,11 +665,6 @@ const SOURCE_ENGINEERING_DOMAIN_RULES = [
   {
     sources: new Set(['axtria']),
     pattern: /\b(product architect|datamax|salesiq)\b/i,
-    value: 'Software Engineering',
-  },
-  {
-    sources: new Set(['birlasoft']),
-    pattern: /\b(sr architect|architect)\b/i,
     value: 'Software Engineering',
   },
   {
@@ -815,11 +823,6 @@ const SOURCE_ENGINEERING_DOMAIN_RULES = [
     value: 'Manufacturing',
   },
   {
-    sources: new Set(['infosys']),
-    pattern: /\b(ott video testing|settop box|dvb|video streaming)\b/i,
-    value: 'Verification',
-  },
-  {
     sources: new Set(['inmobi']),
     pattern: /\b(staff engineer)\b/i,
     value: 'Software Engineering',
@@ -838,11 +841,6 @@ const SOURCE_ENGINEERING_DOMAIN_RULES = [
     sources: new Set(['mindaindustries']),
     pattern: /\b(oem|suzuki|maruti|tata motors|honda cars)\b/i,
     value: 'Automotive',
-  },
-  {
-    sources: new Set(['mobitechwireless']),
-    pattern: /\b(assembly & testing|production division)\b/i,
-    value: 'Manufacturing',
   },
   {
     sources: new Set(['novartis']),
@@ -898,11 +896,6 @@ const SOURCE_ENGINEERING_DOMAIN_RULES = [
     sources: new Set(['pragyarefrigerationandelectricalsprivatelimited']),
     pattern: /\b(product engineer|refrigeration|cooling industries)\b/i,
     value: 'Mechanical',
-  },
-  {
-    sources: new Set(['pwc']),
-    pattern: /\b(domain architect|solution architect|sap tm|enterprise architecture|digital transformation)\b/i,
-    value: 'Software Engineering',
   },
   {
     sources: new Set(['rubrik']),
@@ -1489,6 +1482,9 @@ export const inferMissingExperienceRequired = (job = {}, experienceRequired, exp
 }
 
 export const normalizeScrapedJob = (job = {}, provider = {}) => {
+  job = withSourceDescription(job);
+  // Keep the employer title as scan evidence; display whitespace may differ.
+  const sourceTitle = String(job.originalTitle || job.title || '').trim() || null
   const originalTitle = normalizeInlineText(job.originalTitle || job.title)
   const normalizedTitle = normalizeTitle(originalTitle)
   const applyUrl = normalizeUrl(job.applyUrl || job.link || job.sourceUrl)
@@ -1516,9 +1512,14 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
   const experienceLevel = inferExperienceLevel(job)
   const normalizedJob = {
     ...job,
+    sourceDescription: job.jobDescription,
+    sourceEmploymentType: preserveSourceText(job.sourceEmploymentType || job.atsEmploymentType || job.rawEmploymentType
+      || (job.employmentTypeProvenance === 'source' ? job.employmentType : null)),
+    sourceExperienceRequired: preserveSourceText([job.sourceExperienceRequired, job.experienceRequiredProvenance === 'source' ? job.experienceRequired : null]
+      .find(value => value !== null && value !== undefined && value !== '')),
     title: originalTitle,
     company: normalizeString(job.company || provider.companyName),
-    originalTitle,
+    originalTitle: sourceTitle,
     normalizedTitle,
     jobCategory: normalizeInlineText(job.jobCategory) || normalizedTitle,
     engineeringDomain: inferEngineeringDomain(job, normalizedTitle, job.source || provider.source),
@@ -1532,8 +1533,8 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
     remoteStatus: inferRemoteStatus(job),
     department: normalizeString(job.department),
     jobDescription: normalizeDescription(job.jobDescription || job.description),
-    minimumQualification: normalizeString(job.minimumQualification),
-    preferredQualification: normalizeString(job.preferredQualification),
+    minimumQualification: preserveSourceText(job.minimumQualification),
+    preferredQualification: preserveSourceText(job.preferredQualification),
     requiredSkills,
     experienceRequired: normalizeString(job.experienceRequired),
     salary: normalizeString(job.salary),
@@ -1572,12 +1573,12 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
   }
   const finalExperienceLevel = inferExperienceLevel(finalJob)
 
-  return {
+  return applyClassification({
     ...finalJob,
     experienceLevel: finalExperienceLevel,
     jobType: resolveJobType({
       ...finalJob,
       experienceLevel: finalExperienceLevel,
     }),
-  }
+  })
 }

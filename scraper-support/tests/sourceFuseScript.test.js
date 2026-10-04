@@ -105,6 +105,10 @@ test('SourceFuse helpers stay pinned to the verified official India openings pag
   )
   assert.equal(sourceFuse.hasApplicationFormSignal(OFFICIAL_INDIA_OPENINGS_HTML), true)
   assert.equal(
+    sourceFuse.hasApplicationFormSignal(OFFICIAL_INDIA_OPENINGS_HTML.replace('accept=".doc, .docx, .pdf"', 'accept=".pdf"')),
+    true,
+  )
+  assert.equal(
     sourceFuse.hasApplicationFormSignal('<form action="/careers/?location=India"></form>'),
     false,
   )

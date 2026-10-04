@@ -1,3 +1,4 @@
+import { classifyScraperError } from '../utils/failureClassification.js'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -626,4 +627,43 @@ test('MetricStream fails closed when the verified careers handoff or public sear
     }).run(),
     /verified public successfactors search surface/i,
   )
+})
+
+
+const directCareersHtml = '<html><head><title>Careers &amp; Job Opportunities - MetricStream</title></head><body><h1>Join Our Team Today!</h1><div class="job-list">'
+  + '<div class="job-card"><h2 class="job-title">Sales Director</h2><div class="meta-row"><span class="meta-item">United States</span><span class="meta-item">Sales</span><span class="meta-item">08/21/2026</span></div><p class="job-desc">Global enterprise sales.</p><a class="apply-btn" href="https://www.metricstream.com/careers/sales-director.html">Apply Now</a></div>'
+  + '<div class="job-card"><h2 class="job-title">Head of Services</h2><div class="meta-row"><span class="meta-item">Bangalore, India</span><span class="meta-item">Customer Services &amp; Success</span><span class="meta-item">08/21/2026</span></div><p class="job-desc">Lead global customer services.</p><a class="apply-btn" href="https://www.metricstream.com/careers/head-of-services.html">Apply Now</a></div></div></body></html>'
+const directIndiaDetail = '<html><head><title>Head of Services - Careers at MetricStream</title></head><body><h1 class="ms-jd__title">Head of Services</h1><span class="ms-jd__chip">Bangalore, India</span><main class="ms-jd__content"><h2>Job Description</h2><p>Lead global customer services with AI-enabled operations.</p><h2>Required Skills</h2><ul><li>20+ years of services leadership.</li></ul><h2>Education</h2><p>Bachelor degree.</p></main></body></html>'
+
+test('MetricStream follows current first-party role cards and validates India detail identity', async () => {
+  const metricStream = await loadMetricStreamModule()
+  const calls = []
+  const jobs = await metricStream.run({fetchText: async url => {
+    calls.push(url)
+    if (url === metricStream.HOMEPAGE_URL) return homepageHtml
+    if (url === metricStream.CAREERS_PAGE_URL) return directCareersHtml
+    if (url === 'https://www.metricstream.com/careers/head-of-services.html') return directIndiaDetail
+    throw new Error('Unexpected URL: ' + url)
+  }, getSearchPages: async () => {throw new Error('Retired ATS must not be used')}})
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Head of Services')
+  assert.equal(jobs[0].location, 'Bangalore, India')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].postingDate, '2026-08-21')
+  assert.match(jobs[0].jobDescription, /AI-enabled operations/)
+  assert.deepEqual(calls, [metricStream.HOMEPAGE_URL, metricStream.CAREERS_PAGE_URL, jobs[0].sourceUrl])
+})
+
+test('MetricStream refuses incomplete direct cards, foreign detail URLs, and conflicting detail locations', async () => {
+  const metricStream = await loadMetricStreamModule()
+  const runDirect = (careers = directCareersHtml, detail = directIndiaDetail) => metricStream.run({fetchText: async url => url === metricStream.HOMEPAGE_URL ? homepageHtml : url === metricStream.CAREERS_PAGE_URL ? careers : detail})
+  await assert.rejects(runDirect(directCareersHtml.replace('https://www.metricstream.com/careers/head-of-services.html', 'https://unrelated.example/careers/head-of-services.html')), /trusted first-party role|verified.*careers/i)
+  await assert.rejects(runDirect(directCareersHtml.replace('Bangalore, India', '')), /incomplete.*role card/i)
+  await assert.rejects(runDirect(directCareersHtml, directIndiaDetail.replace('Bangalore, India', 'United States')), error => {
+    assert.match(error.message, /incomplete country scope.*conflicting/i)
+    assert.deepEqual(classifyScraperError(error), {softFailure:true, upstreamOutage:false, failureKind:'incomplete_location_scope'})
+    assert.equal(error.abortRetries,true)
+    return true
+  })
+  await assert.rejects(runDirect(directCareersHtml, directIndiaDetail.replace('>Head of Services</h1>', '>Other Role</h1>')), /detail identity/i)
 })

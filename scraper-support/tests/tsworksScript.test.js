@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const loadTsworksModule = async () => {
   try {
@@ -51,6 +52,20 @@ const openingsPageHtml = `
   </body>
 </html>
 `
+
+const closedCareersHtml = `<html><head><title>Careers | T-Works</title></head><body><h1>Join Our Team</h1><p>And drive India's hardware innovation!</p><h2>Current Openings</h2><div data-current-context="&quot;title&quot;: &quot;Current Openings&quot;, &quot;buttonText&quot;: &quot;APPLICATIONS CLOSED&quot;, &quot;buttonLink&quot;: &quot;&quot;"></div><div data-current-context="&quot;title&quot;: &quot;Internships&quot;, &quot;buttonText&quot;: &quot;APPLICATIONS CLOSED&quot;, &quot;buttonLink&quot;: &quot;&quot;"></div></body></html>`
+
+test('T-Works records verified empty inventory when openings and internships are both closed', async () => {
+  const tsworks = await loadTsworksModule()
+  assert.equal(tsworks.hasVerifiedClosedCareersSignal(closedCareersHtml), true)
+  const jobs = await tsworks.createTsworksScraper().run({
+    fetchText: async url => { assert.equal(url, tsworks.CAREERS_URL); return closedCareersHtml },
+    now: () => '2026-10-03T00:00:00.000Z',
+  })
+  assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs)?.status, 'verified-empty')
+  assert.equal(tsworks.hasVerifiedClosedCareersSignal(closedCareersHtml.replace('APPLICATIONS CLOSED', 'APPLICATIONS OPEN')), false)
+})
 
 test('TSWorks scraper validates the official careers handoff and extracts public job-description PDFs from the openings page', async () => {
   const tsworks = await loadTsworksModule()

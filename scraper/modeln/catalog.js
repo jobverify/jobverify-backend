@@ -9,15 +9,16 @@ export const MODEL_N_CATALOG = {
   adapter: 'script',
   companyCareerPage: 'https://www.modeln.com/company/careers/',
   companyDomain: 'modeln.com',
-  atsPlatform: 'official-company-site-no-public-careers',
+  atsPlatform: 'lever',
   countryFilter: 'India',
-  paginationStrategy: 'verified-first-party-careers-page-with-empty-open-positions-state',
-  extractionStrategy: 'verified-first-party-careers-page+verified-open-positions-empty-state-return-empty',
+  paginationStrategy: 'lever-public-postings-api',
+  extractionStrategy: 'verified-first-party-careers-embed+lever-public-postings-api',
+  leverApiUrl: 'https://api.lever.co/v0/postings/modeln?mode=json',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-03',
+  verifiedOn: '2026-10-02',
   verifiedSurfaceSummary:
-    'Verified on Monday, August 3, 2026 that https://www.modeln.com/company/careers/ was still the live first-party Model N careers page and that its Open Positions widget rendered the filters "Filter by location" and "Filter by work type" with the empty-state text "No results" instead of any public role cards.',
+    'Verified on October 2, 2026 that the first-party Model N careers page embeds the modeln Lever account. Its hidden No results placeholder is not inventory evidence. The public Lever postings API lists current roles, including a Hyderabad India posting.',
   modulePath: path.join(currentDir, 'script.js'),
 }
 

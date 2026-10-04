@@ -153,7 +153,10 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const normalized = normalizeText(page)
   const title = normalizeText((page.match(/<title>([\s\S]*?)<\/title>/i) || [])[1] || '')
 
-  return title === 'avendata - decommission legacy systems & archive data securely'
+  return [
+    'avendata - decommission legacy systems & archive data securely',
+    'decommission legacy systems & archive data securely | avendata',
+  ].includes(title)
     && normalized.includes('legacy applications & application retirement')
     && /href=["'][^"']*careers[^"']*["']/i.test(page)
 }
@@ -174,7 +177,10 @@ export const hasOfficialCareersSignal = (html = '') => {
   const normalized = normalizeText(page)
   const title = normalizeText((page.match(/<title>([\s\S]*?)<\/title>/i) || [])[1] || '')
 
-  return title === 'careers at avendata - archive legacy systems & carve-outs'
+  return [
+    'careers at avendata - archive legacy systems & carve-outs',
+    'careers at avendata : archive legacy systems & carve-outs',
+  ].includes(title)
     && normalized.includes('careers at avendata')
     && normalized.includes('join our global team of industry specialists')
     && normalized.includes('remote-first culture')

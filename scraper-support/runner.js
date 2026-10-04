@@ -35,6 +35,8 @@ import { formatFinalSummaryTable } from './finalSummaryFormatter.js'
 import { installGracefulShutdownHandlers } from './utils/gracefulShutdown.js'
 import { openRunCheckpoint } from './utils/runCheckpoint.js'
 import { acquireMongoRunLease } from './utils/runLease.js'
+import { prepareLocalLaya } from '../scripts/localLaya.js'
+import { readLayaHealth, startLayaWorker } from '../scripts/layaWorker.js'
 import { refreshJobDatasetSummary } from '../src/services/jobDatasetSummaryService.js'
 import { DEFAULT_JOB_RETENTION_DAYS } from '../src/utils/jobLifecycle.js'
 import ScraperStatus from '../src/models/ScraperStatus.js'
@@ -59,7 +61,7 @@ const resolveExecutionPath = (value) => {
 const DEFAULT_SCRAPER_TIMEOUT_MS = 5 * 60 * 1000
 const DEFAULT_WORKDAY_SCRAPER_TIMEOUT_MS = 210 * 1000
 const DEFAULT_SOURCE_LIFECYCLE_TIMEOUT_MS = 30 * 60 * 1000
-const DEFAULT_ABORT_GRACE_MS = 5 * 1000
+const DEFAULT_ABORT_GRACE_MS = 15 * 1000
 const DRY_RUN_EXPERIENCE_ENRICHMENT_CONCURRENCY = 2
 const DEFAULT_DRY_RUN_MAX_JOBS_TO_ENRICH = null
 
@@ -94,6 +96,7 @@ export const resolveDryRunMaxJobsToEnrich = (
 export const buildDryRunSnapshotOptions = ({
   scraper = null,
   signal = null,
+  onStage = null,
   enrichPublicExperience = resolveDryRunPublicExperienceEnabled({ scraper }),
   experienceEnrichmentConcurrency = DRY_RUN_EXPERIENCE_ENRICHMENT_CONCURRENCY,
   maxJobsToEnrich = resolveDryRunMaxJobsToEnrich(
@@ -104,6 +107,8 @@ export const buildDryRunSnapshotOptions = ({
   experienceEnrichmentConcurrency,
   maxJobsToEnrich,
   ...(signal ? { signal } : {}),
+  ...(scraper?.name ? { source: scraper.name } : {}),
+  ...(onStage ? { onStage } : {}),
 })
 
 export const finalizeDirectRunnerExit = ({
@@ -564,7 +569,7 @@ export const withSourceLifecycleTimeout = async (
   { abortGraceMs = DEFAULT_ABORT_GRACE_MS, signal = null } = {},
 ) => {
   if (!timeoutMs && !signal) {
-    return operation({ signal: null })
+    return operation({ signal: null, pauseTimeout: () => {}, resumeTimeout: () => {} })
   }
 
   let timeoutId
@@ -577,23 +582,33 @@ export const withSourceLifecycleTimeout = async (
     parentAbortReason = reason
     rejectParentAbort(reason)
   })
+  let remainingMs = timeoutMs, timerStartedAt = 0, rejectTimeout
+  const timeoutPromise = new Promise((_, reject) => { rejectTimeout = reject })
+  const pauseTimeout = () => {
+    if (!timeoutId) return
+    clearTimeout(timeoutId)
+    timeoutId = null
+    remainingMs = Math.max(0, remainingMs - (Date.now() - timerStartedAt))
+  }
+  const resumeTimeout = () => {
+    if (!timeoutMs || timeoutId || controller.signal.aborted) return
+    timerStartedAt = Date.now()
+    timeoutId = setTimeout(() => {
+      timeoutError = new ScraperSourceLifecycleTimeoutError(scraper.name, timeoutMs)
+      controller.abort(timeoutError)
+      rejectTimeout(timeoutError)
+    }, remainingMs)
+  }
+  resumeTimeout()
   const runPromise = Promise.resolve().then(() => {
     throwIfAborted(controller.signal)
-    return operation({ signal: controller.signal })
+    return operation({ signal: controller.signal, pauseTimeout, resumeTimeout })
   })
 
   try {
     return await Promise.race([
       runPromise,
-      timeoutMs
-        ? new Promise((_, reject) => {
-            timeoutId = setTimeout(() => {
-              timeoutError = new ScraperSourceLifecycleTimeoutError(scraper.name, timeoutMs)
-              controller.abort(timeoutError)
-              reject(timeoutError)
-            }, timeoutMs)
-          })
-        : new Promise(() => {}),
+      timeoutPromise,
       parentAbortPromise,
     ])
   } catch (error) {
@@ -700,21 +715,38 @@ export const formatSourceStageLog = ({
   durationMs,
   jobs,
   operations,
+  processed,
+  total,
+  nativeComplete,
+  unscanned,
+  modelDecisions,
+  policyDecisions,
+  unresolved,
   error,
 } = {}) => {
   const detailParts = []
   if (Number.isFinite(jobs)) detailParts.push(`${jobs} jobs`)
   if (Number.isFinite(operations)) detailParts.push(`${operations} ops`)
+  if (Number.isFinite(processed)) detailParts.push(`${processed}/${total} processed, ${nativeComplete} complete model scans, ${unscanned} unscanned, ${modelDecisions} model labels, ${policyDecisions} policy labels, ${unresolved} unresolved`)
   if (error) detailParts.push(error)
   const details = detailParts.length ? ` (${detailParts.join(', ')})` : ''
   return `  [runner] [${source}] ${stage} ${status}${formatStageDuration(durationMs)}${details}`
 }
 
-const createSourceStageLogger = (source) => (event = {}) => {
+const createSourceStageLogger = (source) => {
+  let lastProgressAt = 0, lastProcessed = -1;
+  return (event = {}) => {
+  if (event.status === 'progress') {
+    const now = Date.now();
+    if (event.processed !== event.total && event.processed - lastProcessed < 25 && now - lastProgressAt < 15000) return;
+    lastProgressAt = now;
+    lastProcessed = event.processed;
+  }
   console.log(formatSourceStageLog({
     source,
     ...event,
   }))
+  }
 }
 
 const updateLiveScraperStatus = async (source, result, logStage) => {
@@ -996,6 +1028,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
     startedCount++
     const progressStr = `[${startedCount}/${totalScrapers}] `
     const scraperStart = Date.now()
+    const logStage = createSourceStageLogger(scraper.name)
     checkpoint?.markSourceStarted(scraper.name)
 
     // Skip execution if the scraper has been deactivated by an administrator
@@ -1043,7 +1076,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
         await saveDryRunSnapshot(
           indiaJobs,
           scraper.dryRunFile,
-          buildDryRunSnapshotOptions({ scraper, signal: stopSignal }),
+          buildDryRunSnapshotOptions({ scraper, signal: stopSignal, onStage: logStage }),
         )
         result = {
           jobs: indiaJobs.length,
@@ -1060,6 +1093,9 @@ export const runAll = async ({ stopSignal = null } = {}) => {
         result = await retryAfterMongoQuotaRecovery(() => saveToDB(jobs, scraper.name, {
           refreshDatasetSummary: false,
           authoritativeEmpty: zeroJobEvidence === 'verified-empty',
+          enrichPublicExperience: resolveLivePublicExperienceEnabled(scraper),
+          signal: stopSignal,
+          onStage: logStage,
         }))
         result.jobs = indiaJobs.length
         result.cities = cities
@@ -1095,6 +1131,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
       const failureResult = {
         success: false,
         error: err.message,
+        ...(err.classificationPending ? { classificationPending: true } : {}),
         retry: getRetryMetadata(err),
         durationMs: Date.now() - scraperStart,
         ...classification,
@@ -1123,7 +1160,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
       }
     }
 
-    checkpoint?.markSourceCompleted(scraper.name, summary[scraper.name])
+    if (!summary[scraper.name]?.classificationPending) checkpoint?.markSourceCompleted(scraper.name, summary[scraper.name])
 
     console.log()
 
@@ -1190,7 +1227,14 @@ export const runScraper = async (
   persistenceOptions = {},
 ) => {
   const scraperStart = Date.now()
-  const logStage = createSourceStageLogger(scraper.name)
+  const stageLogger = createSourceStageLogger(scraper.name)
+  const logStage = event => {
+    if (event.stage === 'classification') {
+      if (event.status === 'start') persistenceOptions.pauseTimeout?.()
+      if (['done', 'error'].includes(event.status)) persistenceOptions.resumeTimeout?.()
+    }
+    stageLogger(event)
+  }
 
   // Skip execution if the scraper has been deactivated by an administrator
   if (!isDryRun) {
@@ -1246,7 +1290,7 @@ export const runScraper = async (
       await saveDryRunSnapshot(
         indiaJobs,
         scraper.dryRunFile,
-        buildDryRunSnapshotOptions({ scraper, signal: lifecycleSignal }),
+        buildDryRunSnapshotOptions({ scraper, signal: lifecycleSignal, onStage: logStage }),
       )
       result = {
         jobs: indiaJobs.length,
@@ -1291,6 +1335,7 @@ export const runScraper = async (
     }
 
     await updateLiveScraperStatus(scraper.name, successResult, logStage)
+    throwIfAborted(lifecycleSignal)
 
     return { name: scraper.name, ...successResult }
   } catch (err) {
@@ -1306,6 +1351,7 @@ export const runScraper = async (
     const failResult = {
       success: false,
       error: err.message,
+      ...(err.classificationPending ? { classificationPending: true } : {}),
       retry: getRetryMetadata(err),
       durationMs: Date.now() - scraperStart,
       ...classification,
@@ -1351,6 +1397,7 @@ const runAllParallel = async ({
   const totalScrapers = scrapers.length
   let fatalWorkerError = null
   const pipelineController = new AbortController()
+  const detachStopSignal = attachParentAbort(stopSignal, pipelineController)
 
   // Worker loop that drains the shared queue
   const worker = async () => {
@@ -1371,32 +1418,53 @@ const runAllParallel = async ({
       try {
         result = await withSourceLifecycleTimeout(
           scraper,
-          ({ signal }) => runScraper(
+          ({ signal, pauseTimeout, resumeTimeout }) => runScraper(
             scraper,
             progressStr,
-            { signal },
+            { signal, pauseTimeout, resumeTimeout },
           ),
           resolveSourceLifecycleTimeoutMs(undefined, scraper),
           { signal: pipelineController.signal },
         )
       } catch (error) {
-        // Escaped lifecycle failures can leave non-cooperative work behind.
-        // Stop the queue and bound peer cleanup before finalizing this run.
-        fatalWorkerError ||= error
-        escapedError = error
-        queue.length = 0
-        pipelineController.abort(fatalWorkerError)
-        result = {
+        const failureResult = {
           name: scraper.name,
           success: false,
           error: error.message,
           durationMs: Date.now() - sourceStartedAt,
           ...classifyScraperError(error),
         }
+        if (error instanceof ScraperSourceLifecycleTimeoutError) {
+          console.error(`  ERROR [${scraper.name}] FAILED:`, error.message)
+          try {
+            await updateLiveScraperStatus(
+              scraper.name,
+              failureResult,
+              createSourceStageLogger(scraper.name),
+            )
+            result = failureResult
+          } catch (statusError) {
+            escapedError = statusError
+          }
+        } else {
+          escapedError = error
+        }
+
+        if (escapedError) {
+          // Persistence failures and unexpected errors still stop the queue.
+          fatalWorkerError ||= escapedError
+          queue.length = 0
+          pipelineController.abort(fatalWorkerError)
+          result = {
+            ...failureResult,
+            error: escapedError.message,
+            ...classifyScraperError(escapedError),
+          }
+        }
       }
       const { name, ...rest } = result
       summary[name] = rest
-      if (!escapedError) checkpoint?.markSourceCompleted(name, rest)
+      if (!escapedError && !rest.classificationPending && !stopSignal?.aborted) checkpoint?.markSourceCompleted(name, rest)
       
       completedCount++
       console.log(`${formatParallelProgressLog(completedCount, totalScrapers)}\n`)
@@ -1419,7 +1487,8 @@ const runAllParallel = async ({
   )
 
   // Wait for all workers to finish draining the queue
-  await Promise.all(activeWorkers)
+  try { await Promise.all(activeWorkers) }
+  finally { detachStopSignal() }
 
   if (!isDryRun) {
     await refreshVisibleDatasetSummaryWithLogging()
@@ -1470,7 +1539,19 @@ const directExecutionModulePath = resolveExecutionPath(fileURLToPath(import.meta
 if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
   const shutdown = installGracefulShutdownHandlers()
   let runLease = null
+  let classificationRuntime = null
   try {
+    process.env.JOB_CLASSIFICATION_MODE ||= 'policy'
+    if (process.env.JOB_CLASSIFICATION_MODE !== 'off') {
+      const log = message => console.log(`[runner] ${message}`)
+      // The Actions workflow and resilient supervisor have already installed and warmed this worker.
+      if ((await readLayaHealth())?.ready) {
+        await startLayaWorker({ env: process.env, signal: shutdown.signal, log })
+      } else {
+        classificationRuntime = await prepareLocalLaya({ signal: shutdown.signal, log })
+        Object.assign(process.env, classificationRuntime.env)
+      }
+    }
     if (!isDryRun && !/^(?:0|false|no)$/i.test(String(process.env.SCRAPER_RUN_LEASE || '1'))) {
       runLease = await retryAfterMongoQuotaRecovery(() => acquireMongoRunLease({
         runId: process.env.SCRAPER_RUN_ID || null,
@@ -1523,11 +1604,17 @@ if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
       console.error(`\nPipeline aborted due to too many errors (>= ${failureAbortThreshold}).`)
       process.exitCode = 1
     }
+    if (Object.values(summary).some(result => result.classificationPending)) {
+      console.error('Some sources still require complete Laya scans. Resume this checkpoint to retry; their jobs were not published.')
+      process.exitCode = 1
+    }
     if (shutdown.requested) process.exitCode = shutdown.exitCode
   } catch (err) {
     console.error('Pipeline error:', err)
     process.exitCode = Number.isInteger(err?.exitCode) ? err.exitCode : 1
   } finally {
+    try { await classificationRuntime?.stop() }
+    catch (error) { console.error('[runner] Failed to stop owned Laya worker:', error.message); process.exitCode = process.exitCode || 1 }
     try {
       await runLease?.release()
     } catch (error) {

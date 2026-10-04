@@ -435,3 +435,27 @@ test('Arctic Wolf India fails closed when the verified careers handoff, public W
     /verified india workday facet changed/i,
   )
 })
+
+
+for (const [route, status, html, failureKind] of [
+  ['careers', 503, 'Service unavailable', 'network_or_timeout'],
+  ['careers', 403, 'Forbidden', 'blocked_or_access_denied'],
+  ['board', 503, 'Service unavailable', 'network_or_timeout'],
+  ['board', 403, 'Forbidden', 'blocked_or_access_denied'],
+  ['board', 200, '<title>Workday is currently unavailable.</title>', 'network_or_timeout'],
+]) {
+  test('Arctic Wolf preserves upstream failure classification for ' + route + ' HTTP ' + status + ' ' + html, async () => {
+    const { createArcticWolfIndiaScraper, CAREERS_URL } = await loadModule()
+    const { classifyScraperError } = await import('../utils/failureClassification.js')
+    await assert.rejects(createArcticWolfIndiaScraper().run({
+      fetchPage: async (url) => {
+        if ((route === 'careers') === (url === CAREERS_URL)) return {status, url, html}
+        return {status: 200, url, html: officialCareersHtml}
+      },
+      fetchJson: async () => assert.fail('Jobs API must not be queried after an upstream failure'),
+    }), (error) => {
+      assert.deepEqual(classifyScraperError(error), {softFailure: true, upstreamOutage: true, failureKind})
+      return true
+    })
+  })
+}

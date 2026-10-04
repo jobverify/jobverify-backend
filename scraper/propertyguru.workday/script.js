@@ -1,3 +1,4 @@
+import { assertWorkdayPageAvailable } from '../../scraper-support/myworkday/pageAvailability.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -416,6 +417,7 @@ export const createPropertyGuruScraper = ({
     }
 
     const workdayBoardPage = await fetchPage(WORKDAY_BOARD_URL)
+    assertWorkdayPageAvailable(workdayBoardPage, { source: SOURCE, url: WORKDAY_BOARD_URL })
     if (!hasOfficialWorkdayBoardSignal(workdayBoardPage)) {
       throw new Error('PropertyGuru verified public Workday board changed materially')
     }

@@ -6,6 +6,8 @@
 import User from "../models/User.js";
 import Subscription from "../models/Subscription.js";
 import PlanPurchase from "../models/PlanPurchase.js";
+import AccessEvent from "../models/AccessEvent.js";
+import AdminAudit from "../models/AdminAudit.js";
 import {
   ACCESS_ROLES,
   PLAN_CONFIG,
@@ -149,6 +151,7 @@ export const cancelActivePlan = async ({ userId }) => {
       throw new BillingRequestError("No active paid plan to cancel.");
     }
 
+    const cancelledPlanId = user.premium.planId;
     user.accessRole = ACCESS_ROLES.FREE;
     user.premium.planId = PLAN_IDS.FREE;
     user.premium.status = "cancelled";
@@ -157,13 +160,27 @@ export const cancelActivePlan = async ({ userId }) => {
     user.premium.lastPurchase = null;
 
     await user.save({ session });
+    const [event] = await AccessEvent.create([{
+      user: user._id,
+      type: "cancelled",
+      planId: cancelledPlanId,
+    }], { session });
     await Subscription.updateOne(
       { user: user._id },
       { $set: { isActive: false } },
       { session },
     );
 
-    return { user, access: buildAccessSummary(user) };
+    return {
+      user,
+      access: buildAccessSummary(user),
+      accessEvent: {
+        id: event._id,
+        type: event.type,
+        planId: event.planId,
+        occurredAt: event.occurredAt,
+      },
+    };
   }, {
     readPreference: "primary",
     readConcern: { level: "snapshot" },
@@ -536,15 +553,42 @@ export const downgradeExpiredPlans = async (now = new Date()) => {
 };
 
 export const buildBillingSummary = async (user) => {
-  const purchases = await PlanPurchase.find({ user: user._id })
-    .sort({ createdAt: -1 })
-    .limit(10)
-    .lean()
-    .exec();
+  const [purchases, cancellations, adminChanges] = await Promise.all([
+    PlanPurchase.find({ user: user._id }).sort({ createdAt: -1 }).limit(10).lean().exec(),
+    AccessEvent.find({ user: user._id }).sort({ occurredAt: -1 }).limit(10).lean().exec(),
+    AdminAudit.find({ targetType: "User", targetId: user._id, action: "updateUserAccess" })
+      .sort({ timestamp: -1 }).limit(10).lean().exec(),
+  ]);
+
+  const accessEvents = [
+    ...cancellations.map((event) => ({
+      id: event._id,
+      type: event.type,
+      planId: event.planId,
+      occurredAt: event.occurredAt,
+    })),
+    ...adminChanges.flatMap((audit) => {
+      // Older admin grants exist only as audit records with this detail format.
+      const match = audit.details?.match(/to \S+ \((monthly|semester|yearly|free)\) with expiry .* -> (\S+)/);
+      if (!match) return [];
+      return [{
+        id: audit._id,
+        type: match[1] === PLAN_IDS.FREE ? "admin_removed" : "admin_granted",
+        planId: match[1],
+        expiresAt: match[2] === "none" ? null : match[2],
+        occurredAt: audit.timestamp,
+      }];
+    }),
+  ].sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt)).slice(0, 10);
+
+  if (user.premium?.status === "cancelled" && !accessEvents.some((event) => event.type === "cancelled")) {
+    accessEvents.push({ id: "legacy-cancellation", type: "cancelled", planId: null, occurredAt: null });
+  }
 
   return {
     access: buildAccessSummary(user),
     purchases: purchases.map(buildPurchaseSummary),
+    accessEvents,
   };
 };
 

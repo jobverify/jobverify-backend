@@ -135,9 +135,12 @@ export const hasOfficialHomepageSignal = (html) =>
   && hasAllSignals(html, HOMEPAGE_SIGNALS)
   && hasRequiredLinks(html, HOMEPAGE_URL, [
     CANDIDATE_LOGIN_URL,
-    CANDIDATE_SIGNUP_URL,
     CAREERS_URL,
   ])
+  && (
+    hasRequiredLinks(html, HOMEPAGE_URL, [CANDIDATE_SIGNUP_URL])
+    || hasRequiredLinks(html, HOMEPAGE_URL, ['https://talentiseglobal.com/talent-pro-register'])
+  )
 
 export const hasPublicCareersSignal = (html) =>
   extractTitle(html) === CAREERS_TITLE

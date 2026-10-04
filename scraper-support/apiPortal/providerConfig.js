@@ -104,4 +104,6 @@ export const normalizeApiPortalConfig = (config = {}) => ({
   mapping: config.mapping || {},
   detail: { ...DEFAULT_DETAIL, ...(config.detail || {}) },
   resultFilter: { ...DEFAULT_RESULT_FILTER, ...(config.resultFilter || {}) },
+  inventoryValidation: config.inventoryValidation || null,
+  rateLimit: config.rateLimit || null,
 })

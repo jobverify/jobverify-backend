@@ -10,7 +10,7 @@ export const JOB_SEARCH_LIMITS = Object.freeze({
   maxValuesPerFilter: 50,
   maxTotalValues: 150,
   maxSearchLength: 200,
-  maxPageSize: 2000,
+  maxPageSize: 1000,
   defaultPageSize: 12,
 });
 

@@ -100,3 +100,14 @@ test('Eaglex returns [] when the verified marketing surfaces remain live and car
 
   assert.deepEqual(jobs, [])
 })
+
+
+test('EagleX accepts its branded redesigned missing careers pages and rejects unverified replacements', async () => {
+  const eaglex = await import('../../scraper/eaglexsasmakerspvtltd/script.js')
+  const redesigned404 = missingCareersHtml.replace('Indore, Madhya Pradesh, India', 'Global / Remote Studio')
+    .replace('</body>', '<p>EagleX | The Team That Builds, Guards &amp; Grows</p><script type="application/ld+json">{"@type":"Organization","@id":"https://eagle-x.in/#organization","name":"EagleX","alternateName":["Eagle X Systems"]}</script></body>')
+  assert.equal(eaglex.isVerifiedMissingCareersRoute({ status: 404, html: redesigned404 }), true)
+  assert.equal(eaglex.isVerifiedMissingCareersRoute({ status: 503, html: redesigned404 }), false)
+  assert.equal(eaglex.isVerifiedMissingCareersRoute({ status: 404, html: redesigned404.replace('https://eagle-x.in/#organization', 'https://unrelated.example/#organization') }), false)
+  assert.equal(eaglex.isVerifiedMissingCareersRoute({ status: 404, html: redesigned404 + '<a href="/jobs">Jobs</a>' }), false)
+})

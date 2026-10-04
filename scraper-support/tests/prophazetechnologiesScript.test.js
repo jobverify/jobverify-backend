@@ -74,6 +74,19 @@ test('Prophaze Technologies validates the verified official homepage, careers sh
   ])
 })
 
+test('Prophaze recognizes its current AI security homepage wording', async () => {
+  const prophaze = await loadProphazeModule()
+  const currentHomepage = `
+    <html><head><title>AI-Based WAAP Solution for Enterprises | Prophaze</title></head>
+    <body><h1>AI & LLM Security</h1><p>AI-driven WAF, API protection</p>
+      <p>Meet Prophaze</p>
+      <a href="https://www.prophaze.com/company/careers/">Careers</a>
+    </body></html>
+  `
+  assert.equal(prophaze.hasOfficialHomepageSignal(currentHomepage), true)
+  assert.equal(prophaze.hasOfficialHomepageSignal(currentHomepage.replace('Meet Prophaze', 'Other company')), false)
+})
+
 test('Prophaze Technologies maps first-party detail payloads into shared job records', async () => {
   const prophaze = await loadProphazeModule()
 

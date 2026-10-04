@@ -98,7 +98,7 @@ const defaultFetchJson = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
 
-  return /<title>\s*e6data\s*-\s*The data plane for the agentic era\s*<\/title>/i.test(page)
+  return /<title>\s*e6data(?:\s*-\s*The data plane for the agentic era|:\s*lakehouse compute engine for the agentic era)\s*<\/title>/i.test(page)
     && hasHref(page, '/careers')
     && /The data plane/i.test(page)
     && /agentic era/i.test(page)

@@ -5,19 +5,19 @@ import companyAliases from '../providers/companyAliases.json' with { type: 'json
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 
-test('New Street Technologies is registered as a verified first-party zero-job scraper without aliases', () => {
+test('New Street Technologies is registered as a verified first-party careers scraper without aliases', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'newstreettechnologies')
 
   assert.ok(provider, 'Expected New Street Technologies provider to be registered in customProviders.json')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'New Street Technologies')
-  assert.equal(provider.companyCareerPage, 'https://newstreettech.com/contact')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.companyCareerPage, 'https://newstreettech.com/careers')
+  assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-contact-page-plus-common-public-jobs-route-validation')
+  assert.equal(provider.paginationStrategy, 'official-careers-advertised-role-count')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-inline-hiring-cta+verified-contact-page-hiring-email+verified-missing-public-jobs-routes-return-empty',
+    'verified-official-careers-role-links+first-party-detail-and-application-validation',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
@@ -44,6 +44,6 @@ test('New Street Technologies matches the backlog directly and is runnable throu
   assert.ok(scraper, 'Expected buildScrapers() to return the New Street Technologies scraper')
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'newstreettechnologies')
-  assert.equal(scraper.provider.companyCareerPage, 'https://newstreettech.com/contact')
+  assert.equal(scraper.provider.companyCareerPage, 'https://newstreettech.com/careers')
   assert.match(scraper.dryRunFile, /newstreettechnologies[\\/]jobs\.json$/i)
 })

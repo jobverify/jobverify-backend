@@ -115,7 +115,10 @@ const isPublicLinkedInJobsUrl = (url) =>
 export const assertVerifiedOfficialPublicSurface = (html = '') => {
   const text = normalizeText(html)
 
-  if (REQUIRED_SURFACE_PATTERNS.every((pattern) => pattern.test(text))) return
+  const currentIdentity = /<title>\s*About Blaaiz \| Cross-Border Payment Platform\s*<\/title>/i.test(html)
+    && /<link[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/www\.blaaiz\.com\/about-us["']/i.test(html)
+  // The current verified about page removes only the former fraud-prevention lead.
+  if (REQUIRED_SURFACE_PATTERNS.every((pattern, index) => pattern.test(text) || (index === 1 && currentIdentity))) return
 
   throw new Error(
     'Blaaiz verified official public surface changed; review the public contract before promoting a real parser.',

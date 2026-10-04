@@ -36,6 +36,16 @@ const blockedFirstPartyHtml = `
 </html>
 `
 
+const currentCloudflareForbiddenHtml = `<html>
+<head>
+<title>Error 403 Forbidden</title>
+</head>
+<body>
+<h1>403 Forbidden</h1>
+</body>
+</html>
+`
+
 const greenhouseBoardHtml = `
 <!doctype html>
 <html lang="en">
@@ -109,7 +119,7 @@ test('Eltropy helpers keep the verified first-party careers page and Greenhouse 
   assert.equal(eltropy.SOURCE, 'eltropy')
   assert.equal(eltropy.COMPANY, 'Eltropy')
   assert.equal(eltropy.OFFICIAL_BRAND_NAME, 'Eltropy')
-  assert.equal(eltropy.VERIFIED_ON, '2026-08-02')
+  assert.equal(eltropy.VERIFIED_ON, '2026-10-03')
   assert.equal(eltropy.HOMEPAGE_URL, 'https://eltropy.com/')
   assert.equal(eltropy.CAREERS_URL, 'https://eltropy.com/careers/')
   assert.equal(eltropy.GREENHOUSE_BOARD_URL, 'https://job-boards.greenhouse.io/eltropyinc')
@@ -119,6 +129,9 @@ test('Eltropy helpers keep the verified first-party careers page and Greenhouse 
   )
   assert.equal(eltropy.hasOfficialCareersSignal(officialCareersHtml), true)
   assert.equal(eltropy.hasBlockedFirstPartySurfaceSignal(blockedFirstPartyHtml), true)
+  assert.equal(eltropy.hasBlockedFirstPartySurfaceSignal(currentCloudflareForbiddenHtml, { server: 'cloudflare' }), true)
+  assert.equal(eltropy.hasBlockedFirstPartySurfaceSignal(currentCloudflareForbiddenHtml), false)
+  assert.equal(eltropy.hasBlockedFirstPartySurfaceSignal(currentCloudflareForbiddenHtml.replace('<h1>403 Forbidden</h1>', '<h1>Open roles</h1>'), { server: 'cloudflare' }), false)
   assert.equal(eltropy.hasOfficialGreenhouseBoardSignal(greenhouseBoardHtml), true)
   assert.equal(
     eltropy.extractGreenhouseBoardUrl(officialCareersHtml),
@@ -256,6 +269,28 @@ test('run supports the blocked first-party surface while the verified Greenhouse
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].title, 'AI Optimization Specialist (India)')
+})
+
+test('run accepts the current Cloudflare 403 on both official URLs while verifying the exact Greenhouse board', async () => {
+  const eltropy = await loadEltropyModule()
+  const requested = []
+
+  const jobs = await eltropy.createEltropyScraper().run({
+    fetchPage: async (url) => {
+      requested.push(url)
+      if (url === eltropy.HOMEPAGE_URL || url === eltropy.CAREERS_URL) {
+        return { status: 403, url, html: currentCloudflareForbiddenHtml, server: 'cloudflare' }
+      }
+      if (url === eltropy.GREENHOUSE_BOARD_URL) {
+        return { status: 200, url, html: greenhouseBoardHtml }
+      }
+      throw new Error(`Unexpected current Eltropy fixture URL: ${url}`)
+    },
+    fetchJson: async () => greenhousePayload,
+  })
+
+  assert.deepEqual(requested, [eltropy.HOMEPAGE_URL, eltropy.CAREERS_URL, eltropy.GREENHOUSE_BOARD_URL])
+  assert.equal(jobs.length, 2)
 })
 
 test('run fails closed when the verified Eltropy surface or Greenhouse detail route drift materially', async () => {

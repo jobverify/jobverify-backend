@@ -60,7 +60,7 @@ test('Fino Payments Bank local catalog captures the verified non-listing careers
   )
   assert.equal(FINO_PAYMENTS_BANK_CATALOG.parser, 'custom-script')
   assert.equal(FINO_PAYMENTS_BANK_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(FINO_PAYMENTS_BANK_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(FINO_PAYMENTS_BANK_CATALOG.verifiedOn, '2026-10-03')
   assert.equal(FINO_PAYMENTS_BANK_CATALOG.dryRunFile, 'finopaymentsbank/jobs.json')
   assert.match(
     FINO_PAYMENTS_BANK_CATALOG.verifiedSurfaceSummary,

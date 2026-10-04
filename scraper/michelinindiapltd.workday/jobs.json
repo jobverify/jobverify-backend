@@ -1,0 +1,1813 @@
+[
+  {
+    "jobId": null,
+    "title": "Accountant",
+    "company": "Michelin India (P) Ltd.",
+    "department": null,
+    "location": "Pune",
+    "city": "Pune",
+    "locations": [
+      "Pune"
+    ],
+    "link": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/Accountant_R-2026026097",
+    "source": "michelinindiapltd",
+    "postedAt": "2026-10-02T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Comptable\n-\n-\n-\n-\n-\n-\n-\n-\n-\n-\n-\n- MISSION : The accountant assists the Accounting Manager or the Accounting Cycle Analyst with Group and local norms accounting activities. He/She handles layout, entry, verification, control, quality and consistency of accounting transactions and accounts within his/her remit. He/She ensures these activities comply with Group referentials and relevant country's legislation and such information is available within prescribed deadlines for preparation of financial statements. We are looking for a Senior Executive for the Fixed Assets and Project Accounting process with 5 years of relevant experience. The candidate should have strong fundamental accounting knowledge, including a clear understanding of fixed asset accounting concepts such as capitalization, depreciation, asset additions, transfers and disposals, along with the related debit and credit accounting entries. Experience in project accounting, month-end close activities, reconciliations, and ERP systems such as SAP or Oracle is preferred. The role requires strong analytical skills and the ability to work in the 6:00 PM to 3:00 AM IST shift. Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "5 years",
+    "publicExperienceChecked": true,
+    "requisitionId": "R-2026026097",
+    "scrapedAt": "2026-10-04T00:34:09.250Z",
+    "country": "India",
+    "companyCareerPage": "https://recrutement.michelin.fr",
+    "companyDomain": "recrutement.michelin.fr",
+    "atsPlatform": "workday",
+    "applyUrl": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/Accountant_R-2026026097",
+    "sourceUrl": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/Accountant_R-2026026097",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "cb3c7ab21f31f0b7cbe44d680479c8f0d028278b4a4e57bb94cf5189a5b98e2f",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "unspecified",
+          "probability": 0.4029
+        },
+        "experience": {
+          "label": "mixed",
+          "probability": 0.3599
+        },
+        "seniority": {
+          "label": "senior",
+          "probability": 0.4043
+        },
+        "leadership": {
+          "label": "senior_manager",
+          "probability": 0.5061
+        }
+      },
+      "complete": true,
+      "windows": 1,
+      "evidenceContext": "Comptable - - - - - - - - - - - - MISSION : The accountant assists the Accounting Manager or the Accounting Cycle Analyst with Group and local norms accounting ",
+      "classifiedAt": "2026-10-04T00:34:14.218Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": null,
+        "seniority": "Unknown",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          5
+        ],
+        "experienceBucket": "3-5",
+        "experienceProfile": {
+          "minimumYears": 5,
+          "maximumYears": 5,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "5 years",
+          "rawText": null,
+          "experienceBucket": "3-5"
+        },
+        "experienceBasis": "employer_requirement",
+        "experienceRequired": "5 years",
+        "employerExperienceProfile": {
+          "minimumYears": 5,
+          "maximumYears": 5,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "5 years",
+          "rawText": null,
+          "experienceBucket": "3-5"
+        },
+        "policyEvidence": null
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Mid Level",
+        "seniority": "Mid Level",
+        "experienceYears": [
+          5
+        ],
+        "experienceBucket": "3-5",
+        "experienceProfile": {
+          "minimumYears": 5,
+          "maximumYears": 5,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "5 years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "cb3c7ab21f31f0b7cbe44d680479c8f0d028278b4a4e57bb94cf5189a5b98e2f",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-04T00:36:20.399Z",
+        "reused": false
+      }
+    },
+    "description": "Comptable - - - - - - - - - - - - MISSION : The accountant assists the Accounting Manager or the Accounting Cycle Analyst with Group and local norms accounting activities. He/She handles layout, entry, verification, control, quality and consistency of accounting transactions and accounts within his/her remit. He/She ensures these activities comply with Group referentials and relevant country's legislation and such information is available within prescribed deadlines for preparation of financial statements. We are looking for a Senior Executive for the Fixed Assets and Project Accounting process with 5 years of relevant experience. The candidate should have strong fundamental accounting knowledge, including a clear understanding of fixed asset accounting concepts such as capitalization, depreciation, asset additions, transfers and disposals, along with the related debit and credit accounting entries. Experience in project accounting, month-end close activities, reconciliations, and ERP systems such as SAP or Oracle is preferred. The role requires strong analytical skills and the ability to work in the 6:00 PM to 3:00 AM IST shift. Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "sourceDescription": "Comptable - - - - - - - - - - - - MISSION : The accountant assists the Accounting Manager or the Accounting Cycle Analyst with Group and local norms accounting activities. He/She handles layout, entry, verification, control, quality and consistency of accounting transactions and accounts within his/her remit. He/She ensures these activities comply with Group referentials and relevant country's legislation and such information is available within prescribed deadlines for preparation of financial statements. We are looking for a Senior Executive for the Fixed Assets and Project Accounting process with 5 years of relevant experience. The candidate should have strong fundamental accounting knowledge, including a clear understanding of fixed asset accounting concepts such as capitalization, depreciation, asset additions, transfers and disposals, along with the related debit and credit accounting entries. Experience in project accounting, month-end close activities, reconciliations, and ERP systems such as SAP or Oracle is preferred. The role requires strong analytical skills and the ability to work in the 6:00 PM to 3:00 AM IST shift. Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Accountant",
+    "normalizedTitle": "Accountant",
+    "jobCategory": "Accountant",
+    "engineeringDomain": "Unknown",
+    "employmentType": "Full-time",
+    "experienceLevel": null,
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-10-02T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-04T00:34:09.250Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "minimumYears": 5,
+      "maximumYears": 5,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5 years",
+      "rawText": null,
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      5
+    ],
+    "seniority": "Unknown",
+    "primaryRoleDomain": "Other",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "low",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-04T00:54:29.844Z",
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "employer_requirement",
+    "employerExperienceProfile": {
+      "minimumYears": 5,
+      "maximumYears": 5,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5 years",
+      "rawText": null,
+      "experienceBucket": "3-5"
+    },
+    "policyEvidence": null
+  },
+  {
+    "jobId": null,
+    "title": "External Geometry Developer",
+    "company": "Michelin India (P) Ltd.",
+    "department": null,
+    "location": "Pune",
+    "city": "Pune",
+    "locations": [
+      "Pune"
+    ],
+    "link": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/ExtGeomDev_R-2026035497",
+    "source": "michelinindiapltd",
+    "postedAt": "2026-09-30T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Dev Geom Ext\n-\n-\n-\n-\n-\n-\n-\n-\n-\n-\n-\n- MISSION :\n1. Provide definitions of the external geometry of the tire (contact area between the tire and the curing mold)\n2. Integrate both tire performance constraints and industrial constraints (mold manufacturing and usage) KEY EXPECTED ACHIEVEMENTS 0–5 years of experience in CAD design, mechanical design, automotive, tire, or related engineering domains. Hands-on experience with CATIA V5/V6. CAD Models and nomenclature of the external geometry of the tire (tread and/or marking) that meet the tire specifications, as well as norms and regulations. These models integrate mold manufacturing /utilization, cost and standardization constraints : -Updates existing CAD models (simple update and/or use of an existing master model)\n- Model's creation for simple geometries with or without master models\n- Model's creation for complex geometries with or without master models Estimate Performance for the design team using the CAD performance simulation models Build Parametric CAD models (master models) and associated documentation, used for the declinaison of a series of dimension or the representation performance area (sculpture or marking) Evolution of Methods and / or tools that improve quality or efficiency of the metier Animation of Processes, tools and methods training sessions Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "0 years (inferred)",
+    "publicExperienceChecked": true,
+    "requisitionId": "R-2026035497",
+    "scrapedAt": "2026-10-04T00:34:09.913Z",
+    "country": "India",
+    "companyCareerPage": "https://recrutement.michelin.fr",
+    "companyDomain": "recrutement.michelin.fr",
+    "atsPlatform": "workday",
+    "applyUrl": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/ExtGeomDev_R-2026035497",
+    "sourceUrl": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/ExtGeomDev_R-2026035497",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "c1989d751933bda3a32fbcc9c2c28d0ca5ad51be7539d1c17f086014eb46b873",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "unspecified",
+          "probability": 0.6344
+        },
+        "experience": {
+          "label": "mixed",
+          "probability": 0.674
+        },
+        "seniority": {
+          "label": "entry",
+          "probability": 0.3349
+        },
+        "leadership": {
+          "label": "unknown",
+          "probability": 0.7308
+        }
+      },
+      "complete": true,
+      "windows": 1,
+      "evidenceContext": "DevGeomExt - - - - - - - - - - - - MISSION : 1. Provide definitions of the external geometry of the tire (contact area between the tire and the curing mold) 2. ",
+      "classifiedAt": "2026-10-04T00:34:14.218Z",
+      "resolved": {
+        "jobType": "Full-time Fresher",
+        "employmentType": "Full-time",
+        "experienceLevel": "Entry Level",
+        "seniority": "Entry Level",
+        "experiencePolicy": "fresher_eligible",
+        "experienceYears": [
+          0
+        ],
+        "experienceBucket": "0-1",
+        "experienceProfile": {
+          "minimumYears": 0,
+          "maximumYears": 0,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": false,
+          "confidence": "medium",
+          "inferenceMethod": "fresher_eligibility",
+          "evidence": "0-5 years",
+          "rawText": null
+        },
+        "experienceBasis": "fresher_eligibility",
+        "experienceRequired": "0 years (inferred)",
+        "employerExperienceProfile": {
+          "minimumYears": 0,
+          "maximumYears": 5,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "0-5 years",
+          "rawText": null,
+          "experienceBucket": "0-1"
+        },
+        "policyEvidence": null
+      },
+      "previous": {
+        "jobType": "Full-time Fresher",
+        "employmentType": "Full-time",
+        "experienceLevel": "Entry Level",
+        "seniority": "Entry Level",
+        "experienceYears": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "experienceBucket": "0-1",
+        "experienceProfile": {
+          "minimumYears": 0,
+          "maximumYears": 5,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "0-5 years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "c1989d751933bda3a32fbcc9c2c28d0ca5ad51be7539d1c17f086014eb46b873",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-04T00:39:18.362Z",
+        "reused": false
+      }
+    },
+    "description": "DevGeomExt - - - - - - - - - - - - MISSION : 1. Provide definitions of the external geometry of the tire (contact area between the tire and the curing mold) 2. Integrate both tire performance constraints and industrial constraints (mold manufacturing and usage) KEY EXPECTED ACHIEVEMENTS 0–5 years of experience in CAD design, mechanical design, automotive, tire, or related engineering domains. Hands-on experience with CATIA V5/V6. CAD Models and nomenclature of the external geometry of the tire (tread and/or marking) that meet the tire specifications, as well as norms and regulations. These models integrate mold manufacturing /utilization, cost and standardization constraints : -Updates existing CAD models (simple update and/or use of an existing master model) - Model's creation for simple geometries with or without master models - Model's creation for complex geometries with or without master models Estimate Performance for the design team using the CAD performance simulation models Build Parametric CAD models (master models) and associated documentation, used for the declinaison of a series of dimension or the representation performance area (sculpture or marking) Evolution of Methods and / or tools that improve quality or efficiency of the metier Animation of Processes, tools and methods training sessions Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "sourceDescription": "DevGeomExt - - - - - - - - - - - - MISSION : 1. Provide definitions of the external geometry of the tire (contact area between the tire and the curing mold) 2. Integrate both tire performance constraints and industrial constraints (mold manufacturing and usage) KEY EXPECTED ACHIEVEMENTS 0–5 years of experience in CAD design, mechanical design, automotive, tire, or related engineering domains. Hands-on experience with CATIA V5/V6. CAD Models and nomenclature of the external geometry of the tire (tread and/or marking) that meet the tire specifications, as well as norms and regulations. These models integrate mold manufacturing /utilization, cost and standardization constraints : -Updates existing CAD models (simple update and/or use of an existing master model) - Model's creation for simple geometries with or without master models - Model's creation for complex geometries with or without master models Estimate Performance for the design team using the CAD performance simulation models Build Parametric CAD models (master models) and associated documentation, used for the declinaison of a series of dimension or the representation performance area (sculpture or marking) Evolution of Methods and / or tools that improve quality or efficiency of the metier Animation of Processes, tools and methods training sessions Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "External Geometry Developer",
+    "normalizedTitle": "External Geometry Developer",
+    "jobCategory": "External Geometry Developer",
+    "engineeringDomain": "Software Engineering",
+    "employmentType": "Full-time",
+    "experienceLevel": "Entry Level",
+    "jobType": "Full-time Fresher",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-09-30T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-04T00:34:09.913Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "minimumYears": 0,
+      "maximumYears": 0,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "medium",
+      "inferenceMethod": "fresher_eligibility",
+      "evidence": "0-5 years",
+      "rawText": null
+    },
+    "experienceYears": [
+      0
+    ],
+    "seniority": "Entry Level",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-04T00:54:29.847Z",
+    "confidence": {
+      "experience": "low"
+    },
+    "experiencePolicy": "fresher_eligible",
+    "experienceBasis": "fresher_eligibility",
+    "employerExperienceProfile": {
+      "minimumYears": 0,
+      "maximumYears": 5,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "0-5 years",
+      "rawText": null,
+      "experienceBucket": "0-1"
+    },
+    "policyEvidence": null
+  },
+  {
+    "jobId": null,
+    "title": "FEA Analyst",
+    "company": "Michelin India (P) Ltd.",
+    "department": null,
+    "location": "Pune",
+    "city": "Pune",
+    "locations": [
+      "Pune"
+    ],
+    "link": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/FEA-Analyst_R-2026033681",
+    "source": "michelinindiapltd",
+    "postedAt": "2026-09-30T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "FEA Analyst\n-\n-\n-\n-\n-\n-\n-\n-\n-\n-\n-\n-\n\nRESPONSIBILITIES:\nUsage of FEA and other analytical tools to define mold shapes which respect internal homologation, tireline, government/regulatory, and industrial requirements. Analytical studies using FEA to determine tire performance based upon variations in design and/or usage. Assessments of proposed scenarios during a tireline or OE development project feasibility study using FEA and other analytical techniques. Presentation of simulation results and consultation for design decisions both inside and outside of design event activities. Able to perform responsibilities of Key-user, Product Owner, Business Analyst, etc.. on need basis. Engagement in technical exchanges (Tech club &amp; Focus group participation, etc). Adhering to the company policies. Meet the deadline defined for each project. Knowledge Sharing: Creation of reports regarding golden nuggets or fundamental knowledge for new design rules and understandings of tire mechanics and analysis methods. Documentation of simulation methods and best practices (Lv-1). Transmission of knowledge and development of people in simulation tools/practices through teaching in the Tire Design school and mentoring/training new analysts and tire designers. Progress and Collaboration: Engage in the development and testing of new simulation tools, providing valuable feedback to improve these resources. Serve as a key liaison across different global regions in this field, ensuring alignment and excellence in our collaborative efforts. What You Will Bring Adaptability to meet the business demand through polyvalency across the zones Problem solving skills Continuous learning mindset Fundamental knowledge on Finite Element Analysis Basic knowledge of strength of materials Punctuality, teamwork &amp; collaboration Suggestion for improving current practices Able to learn, understand and contribute to the digital transformation Additional Skills Programming languages, python, vba, shell scripting Power platforms Education (Mandatory): Graduate (B.E / B.Tech) in Mechanical / Automobile Engineering (Fresher/ 0-3 year of experience) Or Post-Graduate (M.E / M.Tech) in Mechanical / Automobile Engineering (Fresher/ 0-3 year of experience) Fundamental knowledge on Finite Element Analysis Basic knowledge of strength of materials Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "0 years (inferred)",
+    "publicExperienceChecked": true,
+    "requisitionId": "R-2026033681",
+    "scrapedAt": "2026-10-04T00:34:10.587Z",
+    "country": "India",
+    "companyCareerPage": "https://recrutement.michelin.fr",
+    "companyDomain": "recrutement.michelin.fr",
+    "atsPlatform": "workday",
+    "applyUrl": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/FEA-Analyst_R-2026033681",
+    "sourceUrl": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/FEA-Analyst_R-2026033681",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "62be6d56769272503b71caade1b9413a31e76f970d5053e5122da89c407dc65c",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "unspecified",
+          "probability": 0.4332
+        },
+        "experience": {
+          "label": "not_stated",
+          "probability": 0.3411
+        },
+        "seniority": {
+          "label": "internship",
+          "probability": 0.3292
+        },
+        "leadership": {
+          "label": "manager",
+          "probability": 0.2506
+        }
+      },
+      "complete": true,
+      "windows": 1,
+      "evidenceContext": "FEA Analyst - - - - - - - - - - - - Responsibilities: Usage of FEA and other analytical tools to define mold shapes which respect internal homologation, tirelin",
+      "classifiedAt": "2026-10-04T00:34:14.218Z",
+      "resolved": {
+        "jobType": "Full-time Fresher",
+        "employmentType": "Full-time",
+        "experienceLevel": "Entry Level",
+        "seniority": "Entry Level",
+        "experiencePolicy": "fresher_eligible",
+        "experienceYears": [
+          0
+        ],
+        "experienceBucket": "0-1",
+        "experienceProfile": {
+          "minimumYears": 0,
+          "maximumYears": 0,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": false,
+          "confidence": "medium",
+          "inferenceMethod": "fresher_eligibility",
+          "evidence": "0-3 years",
+          "rawText": null
+        },
+        "experienceBasis": "fresher_eligibility",
+        "experienceRequired": "0 years (inferred)",
+        "employerExperienceProfile": {
+          "minimumYears": 0,
+          "maximumYears": 3,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "0-3 years",
+          "rawText": null,
+          "experienceBucket": "0-1"
+        },
+        "policyEvidence": "What You Will Bring Adaptability to meet the business demand through polyvalency across the zones Problem solving skills Continuous learning mindset Fundamental"
+      },
+      "previous": {
+        "jobType": "Full-time Fresher",
+        "employmentType": "Full-time",
+        "experienceLevel": "Entry Level",
+        "seniority": "Entry Level",
+        "experienceYears": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "experienceBucket": "0-1",
+        "experienceProfile": {
+          "minimumYears": 0,
+          "maximumYears": 3,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "0-3 years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "62be6d56769272503b71caade1b9413a31e76f970d5053e5122da89c407dc65c",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-04T00:41:30.462Z",
+        "reused": false
+      }
+    },
+    "description": "FEA Analyst - - - - - - - - - - - - Responsibilities: Usage of FEA and other analytical tools to define mold shapes which respect internal homologation, tireline, government/regulatory, and industrial requirements. Analytical studies using FEA to determine tire performance based upon variations in design and/or usage. Assessments of proposed scenarios during a tireline or OE development project feasibility study using FEA and other analytical techniques. Presentation of simulation results and consultation for design decisions both inside and outside of design event activities. Able to perform responsibilities of Key-user, Product Owner, Business Analyst, etc.. on need basis. Engagement in technical exchanges (Tech club &amp; Focus group participation, etc). Adhering to the company policies. Meet the deadline defined for each project. Knowledge Sharing: Creation of reports regarding golden nuggets or fundamental knowledge for new design rules and understandings of tire mechanics and analysis methods. Documentation of simulation methods and best practices (Lv-1). Transmission of knowledge and development of people in simulation tools/practices through teaching in the Tire Design school and mentoring/training new analysts and tire designers. Progress and Collaboration: Engage in the development and testing of new simulation tools, providing valuable feedback to improve these resources. Serve as a key liaison across different global regions in this field, ensuring alignment and excellence in our collaborative efforts. What You Will Bring Adaptability to meet the business demand through polyvalency across the zones Problem solving skills Continuous learning mindset Fundamental knowledge on Finite Element Analysis Basic knowledge of strength of materials Punctuality, teamwork &amp; collaboration Suggestion for improving current practices Able to learn, understand and contribute to the digital transformation Additional Skills Programming languages, python, vba, shell scripting Power platforms Education (Mandatory): Graduate (B.E / B.Tech) in Mechanical / Automobile Engineering (Fresher/ 0-3 year of experience) Or Post-Graduate (M.E / M.Tech) in Mechanical / Automobile Engineering (Fresher/ 0-3 year of experience) Fundamental knowledge on Finite Element Analysis Basic knowledge of strength of materials Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "sourceDescription": "FEA Analyst - - - - - - - - - - - - Responsibilities: Usage of FEA and other analytical tools to define mold shapes which respect internal homologation, tireline, government/regulatory, and industrial requirements. Analytical studies using FEA to determine tire performance based upon variations in design and/or usage. Assessments of proposed scenarios during a tireline or OE development project feasibility study using FEA and other analytical techniques. Presentation of simulation results and consultation for design decisions both inside and outside of design event activities. Able to perform responsibilities of Key-user, Product Owner, Business Analyst, etc.. on need basis. Engagement in technical exchanges (Tech club &amp; Focus group participation, etc). Adhering to the company policies. Meet the deadline defined for each project. Knowledge Sharing: Creation of reports regarding golden nuggets or fundamental knowledge for new design rules and understandings of tire mechanics and analysis methods. Documentation of simulation methods and best practices (Lv-1). Transmission of knowledge and development of people in simulation tools/practices through teaching in the Tire Design school and mentoring/training new analysts and tire designers. Progress and Collaboration: Engage in the development and testing of new simulation tools, providing valuable feedback to improve these resources. Serve as a key liaison across different global regions in this field, ensuring alignment and excellence in our collaborative efforts. What You Will Bring Adaptability to meet the business demand through polyvalency across the zones Problem solving skills Continuous learning mindset Fundamental knowledge on Finite Element Analysis Basic knowledge of strength of materials Punctuality, teamwork &amp; collaboration Suggestion for improving current practices Able to learn, understand and contribute to the digital transformation Additional Skills Programming languages, python, vba, shell scripting Power platforms Education (Mandatory): Graduate (B.E / B.Tech) in Mechanical / Automobile Engineering (Fresher/ 0-3 year of experience) Or Post-Graduate (M.E / M.Tech) in Mechanical / Automobile Engineering (Fresher/ 0-3 year of experience) Fundamental knowledge on Finite Element Analysis Basic knowledge of strength of materials Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "FEA Analyst",
+    "normalizedTitle": "FEA Analyst",
+    "jobCategory": "FEA Analyst",
+    "engineeringDomain": "Unknown",
+    "employmentType": "Full-time",
+    "experienceLevel": "Entry Level",
+    "jobType": "Full-time Fresher",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-09-30T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-04T00:34:10.587Z",
+    "skillIds": [
+      "python"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "python"
+      }
+    ],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "minimumYears": 0,
+      "maximumYears": 0,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "medium",
+      "inferenceMethod": "fresher_eligibility",
+      "evidence": "0-3 years",
+      "rawText": null
+    },
+    "experienceYears": [
+      0
+    ],
+    "seniority": "Entry Level",
+    "primaryRoleDomain": "Legal & Compliance",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-04T00:54:29.850Z",
+    "confidence": {
+      "experience": "low"
+    },
+    "experiencePolicy": "fresher_eligible",
+    "experienceBasis": "fresher_eligibility",
+    "employerExperienceProfile": {
+      "minimumYears": 0,
+      "maximumYears": 3,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "0-3 years",
+      "rawText": null,
+      "experienceBucket": "0-1"
+    },
+    "policyEvidence": "What You Will Bring Adaptability to meet the business demand through polyvalency across the zones Problem solving skills Continuous learning mindset Fundamental"
+  },
+  {
+    "jobId": null,
+    "title": "Assistant Manager - Record to Report (R2R)",
+    "company": "Michelin India (P) Ltd.",
+    "department": null,
+    "location": "Pune",
+    "city": "Pune",
+    "locations": [
+      "Pune"
+    ],
+    "link": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/Assistant-Manager---Record-to-Report--R2R-_R-2026031205",
+    "source": "michelinindiapltd",
+    "postedAt": "2026-09-24T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Comptable\n-\n-\n-\n-\n-\n-\n-\n-\n-\n-\n-\n- MISSION : Manage end-to-end Record-to-Report (R2R), General Ledger, and financial reporting activities, ensuring accurate and timely financial close, compliance with accounting standards and internal controls, and supporting audits, stakeholder management, process improvement, automation, and high-quality financial reporting across the organization Role Summary The Assistant Manager – Record to Report (R2R) is responsible for managing end-to-end General Ledger and financial reporting activities, ensuring accurate and timely financial close, compliance with accounting standards, and adherence to internal controls. The role will drive process excellence, support audits, manage stakeholder relationships, lead continuous improvement initiatives, and ensure the delivery of high-quality financial reporting across the organization. Key Roles and Responsibilities Record to Report Operations · Manage end-to-end R2R activities, including General Ledger accounting, journal entries, accruals, prepayments, reconciliations, and financial reporting. · Ensure General Ledger transactions comply with Group policies, local statutory requirements, accounting standards, and standard operating procedures. · Review and approve journal entries, reconciliations, and accounting adjustments to ensure accuracy and completeness. · Maintain the integrity of financial records and supporting documentation. Financial Close and Reporting · Lead month-end, quarter-end, and year-end closing activities, ensuring adherence to deadlines and quality standards. · Review financial statements, management reports, and supporting schedules. · Ensure timely and accurate reporting through consolidation and reporting tools such as HFM/SURF or equivalent systems. · Analyze financial results and investigate significant variances and unusual transactions. Balance Sheet Reconciliations and Controls · Oversee preparation and review of balance sheet reconciliations and account substantiation. · Ensure timely resolution of reconciling items and aging balances. · Drive compliance with internal controls, accounting policies, and financial governance requirements. · Identify process risks and implement corrective actions to strengthen the control environment. Fixed Assets, Intercompany, and Inventory Accounting · Oversee fixed asset accounting activities, including capitalization, depreciation, asset transfers, and disposals. · Review and reconcile intercompany transactions and balances, ensuring timely issue resolution and settlement. · Ensure accurate accounting and reconciliation of inventory balances and Cost of Goods Sold (COGS). Job Title Assistant Manager – Record to Report Job Level N Location PNI Job Description · Support revenue recognition activities in compliance with IFRS/GAAP requirements. Audit and Compliance · Coordinate and support internal and external audits by ensuring timely availability of documentation and responses. · Ensure compliance with IFRS, GAAP, local statutory requirements, and company policies. · Monitor audit observations and drive closure of corrective actions. Process Improvement and Automation · Identify opportunities for process standardization, simplification, and automation within the R2R function. · Lead continuous improvement initiatives to enhance efficiency, accuracy, and service delivery. · Support implementation of automation solutions, ERP enhancements, and transformation projects. · Drive best practices across accounting and reporting processes. Stakeholder and Team Management · Partner with Business Finance, FP&amp;A, Tax, Treasury, Supply Chain, Shared Services, and external stakeholders to resolve accounting and reporting issues. · Act as a key contact for escalations related to financial reporting and accounting matters. · Support, coach, and mentor team members to enhance capability and performance. · Foster a culture of accountability, continuous learning, and process excellence. Educational Requirements · CA / CMA preferred. · Bachelor's or Master's Degree in Accounting, Finance, Commerce, or Business Administration. · Professional accounting qualification will be an added advantage. Work Experience · Minimum 4-5 years of experience in General Ledger, Record-to-Report, or Financial Accounting functions. · Experience in Shared Services, Global Business Services (GBS), or Business Process Outsourcing (BPO) environments is preferred. · Experience in managing month-end close, financial reporting, audits, and stakeholder interactions. Required Competencies · Strong knowledge of General Ledger accounting and Record-to-Report processes. · Sound understanding of IFRS, GAAP, and financial reporting requirements. · Strong analytical, problem-solving, and financial review skills. · Excellent stakeholder management and communication skills. · Ability to manage multiple priorities and work under tight deadlines. · Strong attention to detail and commitment to accuracy. · Leadership and team development capabilities. · Continuous improvement mindset with a focus on controls and operational excellence. Preferred Skills · Experience with ERP systems such as SAP, Oracle, Microsoft Dynamics Business Central, or similar platforms. · Experience with financial reporting and consolidation tools such as HFM, Hyperion, One Stream, or Black Line. · Advanced proficiency in Microsoft Excel, Word, and Power Point. · Exposure to process automation, RPA, Power BI, and digital trans Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "4-5 years",
+    "publicExperienceChecked": true,
+    "requisitionId": "R-2026031205",
+    "scrapedAt": "2026-10-04T00:34:11.274Z",
+    "country": "India",
+    "companyCareerPage": "https://recrutement.michelin.fr",
+    "companyDomain": "recrutement.michelin.fr",
+    "atsPlatform": "workday",
+    "applyUrl": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/Assistant-Manager---Record-to-Report--R2R-_R-2026031205",
+    "sourceUrl": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/Assistant-Manager---Record-to-Report--R2R-_R-2026031205",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "bfa83890146d85d2ddb89f6f307bc5de4269ed11dbceded683adb1d820fe03a7",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "full_time",
+          "probability": 0.6813
+        },
+        "experience": {
+          "label": "prior_required",
+          "probability": 0.3556
+        },
+        "seniority": {
+          "label": "junior",
+          "probability": 0.3512
+        },
+        "leadership": {
+          "label": "manager",
+          "probability": 0.4612
+        }
+      },
+      "complete": true,
+      "windows": 2,
+      "evidenceContext": "Comptable - - - - - - - - - - - - MISSION : Manage end-to-end Record-to-Report (R2R), General Ledger, and financial reporting activities, ensuring accurate and ",
+      "classifiedAt": "2026-10-04T00:34:14.218Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Senior Level",
+        "seniority": "Manager",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          4,
+          5
+        ],
+        "experienceBucket": "3-5",
+        "experienceProfile": {
+          "minimumYears": 4,
+          "maximumYears": 5,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "4-5 years",
+          "rawText": null,
+          "experienceBucket": "3-5"
+        },
+        "experienceBasis": "employer_requirement",
+        "experienceRequired": "4-5 years",
+        "employerExperienceProfile": {
+          "minimumYears": 4,
+          "maximumYears": 5,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "4-5 years",
+          "rawText": null,
+          "experienceBucket": "3-5"
+        },
+        "policyEvidence": "Assistant Manager - Record to Report (R2R)"
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Senior Level",
+        "seniority": "Manager",
+        "experienceYears": [
+          4,
+          5
+        ],
+        "experienceBucket": "3-5",
+        "experienceProfile": {
+          "minimumYears": 4,
+          "maximumYears": 5,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "4-5 years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "bfa83890146d85d2ddb89f6f307bc5de4269ed11dbceded683adb1d820fe03a7",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-04T00:44:18.794Z",
+        "reused": false
+      }
+    },
+    "description": "Comptable - - - - - - - - - - - - MISSION : Manage end-to-end Record-to-Report (R2R), General Ledger, and financial reporting activities, ensuring accurate and timely financial close, compliance with accounting standards and internal controls, and supporting audits, stakeholder management, process improvement, automation, and high-quality financial reporting across the organization Role Summary The Assistant Manager – Record to Report (R2R) is responsible for managing end-to-end General Ledger and financial reporting activities, ensuring accurate and timely financial close, compliance with accounting standards, and adherence to internal controls. The role will drive process excellence, support audits, manage stakeholder relationships, lead continuous improvement initiatives, and ensure the delivery of high-quality financial reporting across the organization. Key Roles and Responsibilities Record to Report Operations · Manage end-to-end R2R activities, including General Ledger accounting, journal entries, accruals, prepayments, reconciliations, and financial reporting. · Ensure General Ledger transactions comply with Group policies, local statutory requirements, accounting standards, and standard operating procedures. · Review and approve journal entries, reconciliations, and accounting adjustments to ensure accuracy and completeness. · Maintain the integrity of financial records and supporting documentation. Financial Close and Reporting · Lead month-end, quarter-end, and year-end closing activities, ensuring adherence to deadlines and quality standards. · Review financial statements, management reports, and supporting schedules. · Ensure timely and accurate reporting through consolidation and reporting tools such as HFM/SURF or equivalent systems. · Analyze financial results and investigate significant variances and unusual transactions. Balance Sheet Reconciliations and Controls · Oversee preparation and review of balance sheet reconciliations and account substantiation. · Ensure timely resolution of reconciling items and aging balances. · Drive compliance with internal controls, accounting policies, and financial governance requirements. · Identify process risks and implement corrective actions to strengthen the control environment. Fixed Assets, Intercompany, and Inventory Accounting · Oversee fixed asset accounting activities, including capitalization, depreciation, asset transfers, and disposals. · Review and reconcile intercompany transactions and balances, ensuring timely issue resolution and settlement. · Ensure accurate accounting and reconciliation of inventory balances and Cost of Goods Sold (COGS). Job Title Assistant Manager – Record to Report Job Level N Location PNI Job Description · Support revenue recognition activities in compliance with IFRS/GAAP requirements. Audit and Compliance · Coordinate and support internal and external audits by ensuring timely availability of documentation and responses. · Ensure compliance with IFRS, GAAP, local statutory requirements, and company policies. · Monitor audit observations and drive closure of corrective actions. Process Improvement and Automation · Identify opportunities for process standardization, simplification, and automation within the R2R function. · Lead continuous improvement initiatives to enhance efficiency, accuracy, and service delivery. · Support implementation of automation solutions, ERP enhancements, and transformation projects. · Drive best practices across accounting and reporting processes. Stakeholder and Team Management · Partner with Business Finance, FP&amp;A, Tax, Treasury, Supply Chain, Shared Services, and external stakeholders to resolve accounting and reporting issues. · Act as a key contact for escalations related to financial reporting and accounting matters. · Support, coach, and mentor team members to enhance capability and performance. · Foster a culture of accountability, continuous learning, and process excellence. Educational Requirements · CA / CMA preferred. · Bachelor's or Master's Degree in Accounting, Finance, Commerce, or Business Administration. · Professional accounting qualification will be an added advantage. Work Experience · Minimum 4-5 years of experience in General Ledger, Record-to-Report, or Financial Accounting functions. · Experience in Shared Services, Global Business Services (GBS), or Business Process Outsourcing (BPO) environments is preferred. · Experience in managing month-end close, financial reporting, audits, and stakeholder interactions. Required Competencies · Strong knowledge of General Ledger accounting and Record-to-Report processes. · Sound understanding of IFRS, GAAP, and financial reporting requirements. · Strong analytical, problem-solving, and financial review skills. · Excellent stakeholder management and communication skills. · Ability to manage multiple priorities and work under tight deadlines. · Strong attention to detail and commitment to accuracy. · Leadership and team development capabilities. · Continuous improvement mindset with a focus on controls and operational excellence. Preferred Skills · Experience with ERP systems such as SAP, Oracle, Microsoft Dynamics Business Central, or similar platforms. · Experience with financial reporting and consolidation tools such as HFM, Hyperion, OneStream, or BlackLine. · Advanced proficiency in Microsoft Excel, Word, and PowerPoint. · Exposure to process automation, RPA, Power BI, and digital trans Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "sourceDescription": "Comptable - - - - - - - - - - - - MISSION : Manage end-to-end Record-to-Report (R2R), General Ledger, and financial reporting activities, ensuring accurate and timely financial close, compliance with accounting standards and internal controls, and supporting audits, stakeholder management, process improvement, automation, and high-quality financial reporting across the organization Role Summary The Assistant Manager – Record to Report (R2R) is responsible for managing end-to-end General Ledger and financial reporting activities, ensuring accurate and timely financial close, compliance with accounting standards, and adherence to internal controls. The role will drive process excellence, support audits, manage stakeholder relationships, lead continuous improvement initiatives, and ensure the delivery of high-quality financial reporting across the organization. Key Roles and Responsibilities Record to Report Operations · Manage end-to-end R2R activities, including General Ledger accounting, journal entries, accruals, prepayments, reconciliations, and financial reporting. · Ensure General Ledger transactions comply with Group policies, local statutory requirements, accounting standards, and standard operating procedures. · Review and approve journal entries, reconciliations, and accounting adjustments to ensure accuracy and completeness. · Maintain the integrity of financial records and supporting documentation. Financial Close and Reporting · Lead month-end, quarter-end, and year-end closing activities, ensuring adherence to deadlines and quality standards. · Review financial statements, management reports, and supporting schedules. · Ensure timely and accurate reporting through consolidation and reporting tools such as HFM/SURF or equivalent systems. · Analyze financial results and investigate significant variances and unusual transactions. Balance Sheet Reconciliations and Controls · Oversee preparation and review of balance sheet reconciliations and account substantiation. · Ensure timely resolution of reconciling items and aging balances. · Drive compliance with internal controls, accounting policies, and financial governance requirements. · Identify process risks and implement corrective actions to strengthen the control environment. Fixed Assets, Intercompany, and Inventory Accounting · Oversee fixed asset accounting activities, including capitalization, depreciation, asset transfers, and disposals. · Review and reconcile intercompany transactions and balances, ensuring timely issue resolution and settlement. · Ensure accurate accounting and reconciliation of inventory balances and Cost of Goods Sold (COGS). Job Title Assistant Manager – Record to Report Job Level N Location PNI Job Description · Support revenue recognition activities in compliance with IFRS/GAAP requirements. Audit and Compliance · Coordinate and support internal and external audits by ensuring timely availability of documentation and responses. · Ensure compliance with IFRS, GAAP, local statutory requirements, and company policies. · Monitor audit observations and drive closure of corrective actions. Process Improvement and Automation · Identify opportunities for process standardization, simplification, and automation within the R2R function. · Lead continuous improvement initiatives to enhance efficiency, accuracy, and service delivery. · Support implementation of automation solutions, ERP enhancements, and transformation projects. · Drive best practices across accounting and reporting processes. Stakeholder and Team Management · Partner with Business Finance, FP&amp;A, Tax, Treasury, Supply Chain, Shared Services, and external stakeholders to resolve accounting and reporting issues. · Act as a key contact for escalations related to financial reporting and accounting matters. · Support, coach, and mentor team members to enhance capability and performance. · Foster a culture of accountability, continuous learning, and process excellence. Educational Requirements · CA / CMA preferred. · Bachelor's or Master's Degree in Accounting, Finance, Commerce, or Business Administration. · Professional accounting qualification will be an added advantage. Work Experience · Minimum 4-5 years of experience in General Ledger, Record-to-Report, or Financial Accounting functions. · Experience in Shared Services, Global Business Services (GBS), or Business Process Outsourcing (BPO) environments is preferred. · Experience in managing month-end close, financial reporting, audits, and stakeholder interactions. Required Competencies · Strong knowledge of General Ledger accounting and Record-to-Report processes. · Sound understanding of IFRS, GAAP, and financial reporting requirements. · Strong analytical, problem-solving, and financial review skills. · Excellent stakeholder management and communication skills. · Ability to manage multiple priorities and work under tight deadlines. · Strong attention to detail and commitment to accuracy. · Leadership and team development capabilities. · Continuous improvement mindset with a focus on controls and operational excellence. Preferred Skills · Experience with ERP systems such as SAP, Oracle, Microsoft Dynamics Business Central, or similar platforms. · Experience with financial reporting and consolidation tools such as HFM, Hyperion, OneStream, or BlackLine. · Advanced proficiency in Microsoft Excel, Word, and PowerPoint. · Exposure to process automation, RPA, Power BI, and digital trans Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Assistant Manager - Record to Report (R2R)",
+    "normalizedTitle": "Assistant Manager - Record to Report (R2R)",
+    "jobCategory": "Assistant Manager - Record to Report (R2R)",
+    "engineeringDomain": "Unknown",
+    "employmentType": "Full-time",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-09-24T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-04T00:34:11.274Z",
+    "skillIds": [
+      "power-bi"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "power-bi",
+        "canonicalName": "Power BI",
+        "category": "Product, Design & Collaboration",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Power BI"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "minimumYears": 4,
+      "maximumYears": 5,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4-5 years",
+      "rawText": null,
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4,
+      5
+    ],
+    "seniority": "Manager",
+    "primaryRoleDomain": "Finance & Operations",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-04T00:54:29.855Z",
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "employer_requirement",
+    "employerExperienceProfile": {
+      "minimumYears": 4,
+      "maximumYears": 5,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4-5 years",
+      "rawText": null,
+      "experienceBucket": "3-5"
+    },
+    "policyEvidence": "Assistant Manager - Record to Report (R2R)"
+  },
+  {
+    "jobId": null,
+    "title": "Assistant Manager – Record to Record",
+    "company": "Michelin India (P) Ltd.",
+    "department": null,
+    "location": "Pune",
+    "city": "Pune",
+    "locations": [
+      "Pune"
+    ],
+    "link": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/Assistant-Manager---Record-to-Record_R-2026030751-1",
+    "source": "michelinindiapltd",
+    "postedAt": "2026-09-24T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Assistant Manager – Record to Record\n-\n-\n-\n-\n-\n-\n-\n-\n-\n-\n-\n- Key Roles and Responsibilities Record to Report Operations Manage end-to-end R2R activities, including General Ledger accounting, journal entries, accruals, prepayments, reconciliations, and financial reporting. Ensure General Ledger transactions comply with Group policies, local statutory requirements, accounting standards, and standard operating procedures. Review and approve journal entries, reconciliations, and accounting adjustments to ensure accuracy and completeness. Maintain the integrity of financial records and supporting documentation. Financial Close and Reporting Lead month-end, quarter-end, and year-end closing activities, ensuring adherence to deadlines and quality standards. Review financial statements, management reports, and supporting schedules. Ensure timely and accurate reporting through consolidation and reporting tools such as HFM/SURF or equivalent systems. Analyze financial results and investigate significant variances and unusual transactions. Balance Sheet Reconciliations and Controls Oversee preparation and review of balance sheet reconciliations and account substantiation. Ensure timely resolution of reconciling items and aging balances. Drive compliance with internal controls, accounting policies, and financial governance requirements. Identify process risks and implement corrective actions to strengthen the control environment. Fixed Assets, Intercompany, and Inventory Accounting Oversee fixed asset accounting activities, including capitalization, depreciation, asset transfers, and disposals. Review and reconcile intercompany transactions and balances, ensuring timely issue resolution and settlement. Ensure accurate accounting and reconciliation of inventory balances and Cost of Goods Sold (COGS). Support revenue recognition activities in compliance with IFRS/GAAP requirements. Audit and Compliance Coordinate and support internal and external audits by ensuring timely availability of documentation and responses. Ensure compliance with IFRS, GAAP, local statutory requirements, and company policies. Monitor audit observations and drive closure of corrective actions. Process Improvement and Automation Identify opportunities for process standardization, simplification, and automation within the R2R function. Lead continuous improvement initiatives to enhance efficiency, accuracy, and service delivery. Support implementation of automation solutions, ERP enhancements, and transformation projects. Drive best practices across accounting and reporting processes. Stakeholder and Team Management Partner with Business Finance, FP&amp;A, Tax, Treasury, Supply Chain, Shared Services, and external stakeholders to resolve accounting and reporting issues. Act as a key contact for escalations related to financial reporting and accounting matters. Support, coach, and mentor team members to enhance capability and performance. Foster a culture of accountability, continuous learning, and process excellence. Educational Requirements CA / CMA / CA Inter preferred. Bachelor's or Master's Degree in Accounting, Finance, Commerce, or Business Administration. Professional accounting qualification will be an added advantage. Work Experience Minimum 3-5 years of experience in General Ledger, Record-to-Report, or Financial Accounting functions. Experience in Shared Services, Global Business Services, or Business Process Outsourcing, Global Capabilities Center (GCC) environments is preferred. Experience in managing month-end close, financial reporting, audits, and stakeholder interactions. Required Competencies Strong knowledge of General Ledger accounting and Record-to-Report processes. Sound understanding of IFRS, GAAP, and financial reporting requirements. Strong analytical, problem-solving, and financial review skills. Excellent stakeholder management and communication skills. Ability to manage multiple priorities and work under tight deadlines. Strong attention to detail and commitment to accuracy. Leadership and team development capabilities. Continuous improvement mindset with a focus on controls and operational excellence. Preferred Skills Experience with ERP systems such as SAP, Oracle, Microsoft Dynamics Business Central, or similar platforms. Experience with financial reporting and consolidation tools such as HFM, Hyperion, One Stream, or Black Line. Advanced proficiency in Microsoft Excel, Word, and Power Point. Exposure to process automation, RPA, Power BI, and digital transformation initiatives. Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "3-5 years",
+    "publicExperienceChecked": true,
+    "requisitionId": "R-2026030751",
+    "scrapedAt": "2026-10-04T00:34:11.954Z",
+    "country": "India",
+    "companyCareerPage": "https://recrutement.michelin.fr",
+    "companyDomain": "recrutement.michelin.fr",
+    "atsPlatform": "workday",
+    "applyUrl": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/Assistant-Manager---Record-to-Record_R-2026030751-1",
+    "sourceUrl": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/Assistant-Manager---Record-to-Record_R-2026030751-1",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "bc0557bb6a5a725bf5e3de24c8e2b7b59f5205ddfd3a98110240228f98858f0d",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "internship",
+          "probability": 0.357
+        },
+        "experience": {
+          "label": "fresher_eligible",
+          "probability": 0.4272
+        },
+        "seniority": {
+          "label": "entry",
+          "probability": 0.2967
+        },
+        "leadership": {
+          "label": "executive",
+          "probability": 0.2619
+        }
+      },
+      "complete": true,
+      "windows": 2,
+      "evidenceContext": "Assistant Manager – Record to Record - - - - - - - - - - - - Key Roles and Responsibilities Record to Report Operations Manage end-to-end R2R activities, includ",
+      "classifiedAt": "2026-10-04T00:34:14.218Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Senior Level",
+        "seniority": "Manager",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          3,
+          4,
+          5
+        ],
+        "experienceBucket": "3-5",
+        "experienceProfile": {
+          "minimumYears": 3,
+          "maximumYears": 5,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "3-5 years",
+          "rawText": null,
+          "experienceBucket": "3-5"
+        },
+        "experienceBasis": "employer_requirement",
+        "experienceRequired": "3-5 years",
+        "employerExperienceProfile": {
+          "minimumYears": 3,
+          "maximumYears": 5,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "3-5 years",
+          "rawText": null,
+          "experienceBucket": "3-5"
+        },
+        "policyEvidence": "Assistant Manager – Record to Record"
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Senior Level",
+        "seniority": "Manager",
+        "experienceYears": [
+          3,
+          4,
+          5
+        ],
+        "experienceBucket": "3-5",
+        "experienceProfile": {
+          "minimumYears": 3,
+          "maximumYears": 5,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "3-5 years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "bc0557bb6a5a725bf5e3de24c8e2b7b59f5205ddfd3a98110240228f98858f0d",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-04T00:47:24.400Z",
+        "reused": false
+      }
+    },
+    "description": "Assistant Manager – Record to Record - - - - - - - - - - - - Key Roles and Responsibilities Record to Report Operations Manage end-to-end R2R activities, including General Ledger accounting, journal entries, accruals, prepayments, reconciliations, and financial reporting. Ensure General Ledger transactions comply with Group policies, local statutory requirements, accounting standards, and standard operating procedures. Review and approve journal entries, reconciliations, and accounting adjustments to ensure accuracy and completeness. Maintain the integrity of financial records and supporting documentation. Financial Close and Reporting Lead month-end, quarter-end, and year-end closing activities, ensuring adherence to deadlines and quality standards. Review financial statements, management reports, and supporting schedules. Ensure timely and accurate reporting through consolidation and reporting tools such as HFM/SURF or equivalent systems. Analyze financial results and investigate significant variances and unusual transactions. Balance Sheet Reconciliations and Controls Oversee preparation and review of balance sheet reconciliations and account substantiation. Ensure timely resolution of reconciling items and aging balances. Drive compliance with internal controls, accounting policies, and financial governance requirements. Identify process risks and implement corrective actions to strengthen the control environment. Fixed Assets, Intercompany, and Inventory Accounting Oversee fixed asset accounting activities, including capitalization, depreciation, asset transfers, and disposals. Review and reconcile intercompany transactions and balances, ensuring timely issue resolution and settlement. Ensure accurate accounting and reconciliation of inventory balances and Cost of Goods Sold (COGS). Support revenue recognition activities in compliance with IFRS/GAAP requirements. Audit and Compliance Coordinate and support internal and external audits by ensuring timely availability of documentation and responses. Ensure compliance with IFRS, GAAP, local statutory requirements, and company policies. Monitor audit observations and drive closure of corrective actions. Process Improvement and Automation Identify opportunities for process standardization, simplification, and automation within the R2R function. Lead continuous improvement initiatives to enhance efficiency, accuracy, and service delivery. Support implementation of automation solutions, ERP enhancements, and transformation projects. Drive best practices across accounting and reporting processes. Stakeholder and Team Management Partner with Business Finance, FP&amp;A, Tax, Treasury, Supply Chain, Shared Services, and external stakeholders to resolve accounting and reporting issues. Act as a key contact for escalations related to financial reporting and accounting matters. Support, coach, and mentor team members to enhance capability and performance. Foster a culture of accountability, continuous learning, and process excellence. Educational Requirements CA / CMA / CA Inter preferred. Bachelor's or Master's Degree in Accounting, Finance, Commerce, or Business Administration. Professional accounting qualification will be an added advantage. Work Experience Minimum 3-5 years of experience in General Ledger, Record-to-Report, or Financial Accounting functions. Experience in Shared Services, Global Business Services, or Business Process Outsourcing, Global Capabilities Center (GCC) environments is preferred. Experience in managing month-end close, financial reporting, audits, and stakeholder interactions. Required Competencies Strong knowledge of General Ledger accounting and Record-to-Report processes. Sound understanding of IFRS, GAAP, and financial reporting requirements. Strong analytical, problem-solving, and financial review skills. Excellent stakeholder management and communication skills. Ability to manage multiple priorities and work under tight deadlines. Strong attention to detail and commitment to accuracy. Leadership and team development capabilities. Continuous improvement mindset with a focus on controls and operational excellence. Preferred Skills Experience with ERP systems such as SAP, Oracle, Microsoft Dynamics Business Central, or similar platforms. Experience with financial reporting and consolidation tools such as HFM, Hyperion, OneStream, or BlackLine. Advanced proficiency in Microsoft Excel, Word, and PowerPoint. Exposure to process automation, RPA, Power BI, and digital transformation initiatives. Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "sourceDescription": "Assistant Manager – Record to Record - - - - - - - - - - - - Key Roles and Responsibilities Record to Report Operations Manage end-to-end R2R activities, including General Ledger accounting, journal entries, accruals, prepayments, reconciliations, and financial reporting. Ensure General Ledger transactions comply with Group policies, local statutory requirements, accounting standards, and standard operating procedures. Review and approve journal entries, reconciliations, and accounting adjustments to ensure accuracy and completeness. Maintain the integrity of financial records and supporting documentation. Financial Close and Reporting Lead month-end, quarter-end, and year-end closing activities, ensuring adherence to deadlines and quality standards. Review financial statements, management reports, and supporting schedules. Ensure timely and accurate reporting through consolidation and reporting tools such as HFM/SURF or equivalent systems. Analyze financial results and investigate significant variances and unusual transactions. Balance Sheet Reconciliations and Controls Oversee preparation and review of balance sheet reconciliations and account substantiation. Ensure timely resolution of reconciling items and aging balances. Drive compliance with internal controls, accounting policies, and financial governance requirements. Identify process risks and implement corrective actions to strengthen the control environment. Fixed Assets, Intercompany, and Inventory Accounting Oversee fixed asset accounting activities, including capitalization, depreciation, asset transfers, and disposals. Review and reconcile intercompany transactions and balances, ensuring timely issue resolution and settlement. Ensure accurate accounting and reconciliation of inventory balances and Cost of Goods Sold (COGS). Support revenue recognition activities in compliance with IFRS/GAAP requirements. Audit and Compliance Coordinate and support internal and external audits by ensuring timely availability of documentation and responses. Ensure compliance with IFRS, GAAP, local statutory requirements, and company policies. Monitor audit observations and drive closure of corrective actions. Process Improvement and Automation Identify opportunities for process standardization, simplification, and automation within the R2R function. Lead continuous improvement initiatives to enhance efficiency, accuracy, and service delivery. Support implementation of automation solutions, ERP enhancements, and transformation projects. Drive best practices across accounting and reporting processes. Stakeholder and Team Management Partner with Business Finance, FP&amp;A, Tax, Treasury, Supply Chain, Shared Services, and external stakeholders to resolve accounting and reporting issues. Act as a key contact for escalations related to financial reporting and accounting matters. Support, coach, and mentor team members to enhance capability and performance. Foster a culture of accountability, continuous learning, and process excellence. Educational Requirements CA / CMA / CA Inter preferred. Bachelor's or Master's Degree in Accounting, Finance, Commerce, or Business Administration. Professional accounting qualification will be an added advantage. Work Experience Minimum 3-5 years of experience in General Ledger, Record-to-Report, or Financial Accounting functions. Experience in Shared Services, Global Business Services, or Business Process Outsourcing, Global Capabilities Center (GCC) environments is preferred. Experience in managing month-end close, financial reporting, audits, and stakeholder interactions. Required Competencies Strong knowledge of General Ledger accounting and Record-to-Report processes. Sound understanding of IFRS, GAAP, and financial reporting requirements. Strong analytical, problem-solving, and financial review skills. Excellent stakeholder management and communication skills. Ability to manage multiple priorities and work under tight deadlines. Strong attention to detail and commitment to accuracy. Leadership and team development capabilities. Continuous improvement mindset with a focus on controls and operational excellence. Preferred Skills Experience with ERP systems such as SAP, Oracle, Microsoft Dynamics Business Central, or similar platforms. Experience with financial reporting and consolidation tools such as HFM, Hyperion, OneStream, or BlackLine. Advanced proficiency in Microsoft Excel, Word, and PowerPoint. Exposure to process automation, RPA, Power BI, and digital transformation initiatives. Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Assistant Manager – Record to Record",
+    "normalizedTitle": "Assistant Manager – Record to Record",
+    "jobCategory": "Assistant Manager – Record to Record",
+    "engineeringDomain": "Unknown",
+    "employmentType": "Full-time",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-09-24T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-04T00:34:11.954Z",
+    "skillIds": [
+      "power-bi"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "power-bi",
+        "canonicalName": "Power BI",
+        "category": "Product, Design & Collaboration",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Power BI"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "minimumYears": 3,
+      "maximumYears": 5,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3-5 years",
+      "rawText": null,
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3,
+      4,
+      5
+    ],
+    "seniority": "Manager",
+    "primaryRoleDomain": "Finance & Operations",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-04T00:54:29.860Z",
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "employer_requirement",
+    "employerExperienceProfile": {
+      "minimumYears": 3,
+      "maximumYears": 5,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3-5 years",
+      "rawText": null,
+      "experienceBucket": "3-5"
+    },
+    "policyEvidence": "Assistant Manager – Record to Record"
+  },
+  {
+    "jobId": null,
+    "title": "Databricks Platform Expert",
+    "company": "Michelin India (P) Ltd.",
+    "department": null,
+    "location": "Pune",
+    "city": "Pune",
+    "locations": [
+      "Pune"
+    ],
+    "link": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/Databricks-Platform-Expert_R-2025044388-1",
+    "source": "michelinindiapltd",
+    "postedAt": "2026-09-24T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Databricks Platform Expert\n-\n-\n-\n-\n-\n-\n-\n-\n-\n-\n-\n- MISSION : We are seeking a highly skilled Databricks expert with hands-on experience in Apache Spark programming and strong knowledge of cloud-based data engineering platforms. The ideal candidate will be responsible for managing, optimizing, and supporting our Databricks environment, ensuring high availability, security, performance, and efficient usage across teams. This role combines platform administration with practical Spark development to support data engineering and analytics workloads. Key Responsibilities Databricks Platform Expert Manage, configure, and administer Databricks workspaces, Clusters, SQL Warehouses, Serverless, jobs, and workspace objects. Implement and manage Unity Catalog, including catalogs, schemas, tables, access controls, and data lineage. Optimize cluster policies, auto-scaling strategies, and cost management for Serverless and Classic compute. Serve as the SME for Databricks infrastructure, governance, and security best practices. Monitor workspace performance, cluster stability, logs, job reliability, and platform health. Implement CI/CD pipelines for notebooks, jobs, and Delta Live Tables using Git integration. Support user provisioning, access controls (ACLs), secrets management, and workspace SSO. Write efficient Spark (Py Spark / SQL / Scala) code for ETL, data transformations, and pipeline optimizations. Assist data engineering teams with Spark job debugging, performance tuning, and code reviews. Build and maintain production-grade pipelines leveraging Delta Lake, Databricks Jobs, and DLT. Implement and manage RBAC, SCIM provisioning, AIM, service principals, and cluster access controls. Ensure compliance with enterprise data governance, audit, and logging requirements. Manage secrets Key Vault and enforce secure credential handling. Support audit reports, compliance reviews, and workspace security configuration. Monitor job failures, cluster lifecycle performance, and system events using Databricks logs and cloud-native monitoring tools (Azure Monitor). Create automated alerts and observability dashboards for platform usage, cost, and performance. Troubleshoot Databricks runtime issues, library conflicts, and Spark execution failures. Collaborate with cloud and network teams on VNet, peering, and private-link connectivity issues. Develop cost governance policies for cluster sizes, job policies, and SQL Warehouse tiers. Identify opportunities to reduce cost via autoscaling, spot instances (classic clusters), and job consolidation. Required Qualifications 4–6 years of experience working with Databricks as an administrator or data engineer. Strong expertise in Apache Spark programming (Py Spark preferred; SQL or Scala is a plus). Hands-on experience with Databricks Jobs, cluster configuration, SQL Warehouses, and Unity Catalog. Deep understanding of Delta Lake, ACID transactions, and lakehouse architecture. Experience with Git, CI/CD, and Dev Ops concepts for data engineering workflows. Knowledge of cloud platforms ( Azure). Familiarity with IAM, networking basics, monitoring tools, and security patterns Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "4-6 years",
+    "publicExperienceChecked": true,
+    "requisitionId": "R-2025044388",
+    "scrapedAt": "2026-10-04T00:34:12.727Z",
+    "country": "India",
+    "companyCareerPage": "https://recrutement.michelin.fr",
+    "companyDomain": "recrutement.michelin.fr",
+    "atsPlatform": "workday",
+    "applyUrl": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/Databricks-Platform-Expert_R-2025044388-1",
+    "sourceUrl": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/Databricks-Platform-Expert_R-2025044388-1",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "08733b146a85fc06b26c6f66f6fc2a7c8866e2bb913119a554a2eba725fdf19c",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "internship",
+          "probability": 0.8355
+        },
+        "experience": {
+          "label": "fresher_eligible",
+          "probability": 0.6767
+        },
+        "seniority": {
+          "label": "internship",
+          "probability": 0.4949
+        },
+        "leadership": {
+          "label": "executive",
+          "probability": 0.3422
+        }
+      },
+      "complete": true,
+      "windows": 1,
+      "evidenceContext": "Databricks Platform Expert - - - - - - - - - - - - MISSION : We are seeking a highly skilled Databricks expert with hands-on experience in Apache Spark programm",
+      "classifiedAt": "2026-10-04T00:34:14.218Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": null,
+        "seniority": "Unknown",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          4,
+          5,
+          6
+        ],
+        "experienceBucket": "3-5",
+        "experienceProfile": {
+          "minimumYears": 4,
+          "maximumYears": 6,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "4-6 years",
+          "rawText": null,
+          "experienceBucket": "3-5"
+        },
+        "experienceBasis": "employer_requirement",
+        "experienceRequired": "4-6 years",
+        "employerExperienceProfile": {
+          "minimumYears": 4,
+          "maximumYears": 6,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "4-6 years",
+          "rawText": null,
+          "experienceBucket": "3-5"
+        },
+        "policyEvidence": "Databricks Platform Expert"
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Mid Level",
+        "seniority": "Mid Level",
+        "experienceYears": [
+          4,
+          5,
+          6
+        ],
+        "experienceBucket": "3-5",
+        "experienceProfile": {
+          "minimumYears": 4,
+          "maximumYears": 6,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "4-6 years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "08733b146a85fc06b26c6f66f6fc2a7c8866e2bb913119a554a2eba725fdf19c",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-04T00:50:15.968Z",
+        "reused": false
+      }
+    },
+    "description": "Databricks Platform Expert - - - - - - - - - - - - MISSION : We are seeking a highly skilled Databricks expert with hands-on experience in Apache Spark programming and strong knowledge of cloud-based data engineering platforms. The ideal candidate will be responsible for managing, optimizing, and supporting our Databricks environment, ensuring high availability, security, performance, and efficient usage across teams. This role combines platform administration with practical Spark development to support data engineering and analytics workloads. Key Responsibilities Databricks Platform Expert Manage, configure, and administer Databricks workspaces, Clusters, SQL Warehouses, Serverless, jobs, and workspace objects. Implement and manage Unity Catalog, including catalogs, schemas, tables, access controls, and data lineage. Optimize cluster policies, auto-scaling strategies, and cost management for Serverless and Classic compute. Serve as the SME for Databricks infrastructure, governance, and security best practices. Monitor workspace performance, cluster stability, logs, job reliability, and platform health. Implement CI/CD pipelines for notebooks, jobs, and Delta Live Tables using Git integration. Support user provisioning, access controls (ACLs), secrets management, and workspace SSO. Write efficient Spark (PySpark / SQL / Scala) code for ETL, data transformations, and pipeline optimizations. Assist data engineering teams with Spark job debugging, performance tuning, and code reviews. Build and maintain production-grade pipelines leveraging Delta Lake, Databricks Jobs, and DLT. Implement and manage RBAC, SCIM provisioning, AIM, service principals, and cluster access controls. Ensure compliance with enterprise data governance, audit, and logging requirements. Manage secrets Key Vault and enforce secure credential handling. Support audit reports, compliance reviews, and workspace security configuration. Monitor job failures, cluster lifecycle performance, and system events using Databricks logs and cloud-native monitoring tools (Azure Monitor). Create automated alerts and observability dashboards for platform usage, cost, and performance. Troubleshoot Databricks runtime issues, library conflicts, and Spark execution failures. Collaborate with cloud and network teams on VNet, peering, and private-link connectivity issues. Develop cost governance policies for cluster sizes, job policies, and SQL Warehouse tiers. Identify opportunities to reduce cost via autoscaling, spot instances (classic clusters), and job consolidation. Required Qualifications 4–6 years of experience working with Databricks as an administrator or data engineer. Strong expertise in Apache Spark programming (PySpark preferred; SQL or Scala is a plus). Hands-on experience with Databricks Jobs, cluster configuration, SQL Warehouses, and Unity Catalog. Deep understanding of Delta Lake, ACID transactions, and lakehouse architecture. Experience with Git, CI/CD, and DevOps concepts for data engineering workflows. Knowledge of cloud platforms ( Azure). Familiarity with IAM, networking basics, monitoring tools, and security patterns Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "sourceDescription": "Databricks Platform Expert - - - - - - - - - - - - MISSION : We are seeking a highly skilled Databricks expert with hands-on experience in Apache Spark programming and strong knowledge of cloud-based data engineering platforms. The ideal candidate will be responsible for managing, optimizing, and supporting our Databricks environment, ensuring high availability, security, performance, and efficient usage across teams. This role combines platform administration with practical Spark development to support data engineering and analytics workloads. Key Responsibilities Databricks Platform Expert Manage, configure, and administer Databricks workspaces, Clusters, SQL Warehouses, Serverless, jobs, and workspace objects. Implement and manage Unity Catalog, including catalogs, schemas, tables, access controls, and data lineage. Optimize cluster policies, auto-scaling strategies, and cost management for Serverless and Classic compute. Serve as the SME for Databricks infrastructure, governance, and security best practices. Monitor workspace performance, cluster stability, logs, job reliability, and platform health. Implement CI/CD pipelines for notebooks, jobs, and Delta Live Tables using Git integration. Support user provisioning, access controls (ACLs), secrets management, and workspace SSO. Write efficient Spark (PySpark / SQL / Scala) code for ETL, data transformations, and pipeline optimizations. Assist data engineering teams with Spark job debugging, performance tuning, and code reviews. Build and maintain production-grade pipelines leveraging Delta Lake, Databricks Jobs, and DLT. Implement and manage RBAC, SCIM provisioning, AIM, service principals, and cluster access controls. Ensure compliance with enterprise data governance, audit, and logging requirements. Manage secrets Key Vault and enforce secure credential handling. Support audit reports, compliance reviews, and workspace security configuration. Monitor job failures, cluster lifecycle performance, and system events using Databricks logs and cloud-native monitoring tools (Azure Monitor). Create automated alerts and observability dashboards for platform usage, cost, and performance. Troubleshoot Databricks runtime issues, library conflicts, and Spark execution failures. Collaborate with cloud and network teams on VNet, peering, and private-link connectivity issues. Develop cost governance policies for cluster sizes, job policies, and SQL Warehouse tiers. Identify opportunities to reduce cost via autoscaling, spot instances (classic clusters), and job consolidation. Required Qualifications 4–6 years of experience working with Databricks as an administrator or data engineer. Strong expertise in Apache Spark programming (PySpark preferred; SQL or Scala is a plus). Hands-on experience with Databricks Jobs, cluster configuration, SQL Warehouses, and Unity Catalog. Deep understanding of Delta Lake, ACID transactions, and lakehouse architecture. Experience with Git, CI/CD, and DevOps concepts for data engineering workflows. Knowledge of cloud platforms ( Azure). Familiarity with IAM, networking basics, monitoring tools, and security patterns Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Databricks Platform Expert",
+    "normalizedTitle": "Databricks Platform Expert",
+    "jobCategory": "Databricks Platform Expert",
+    "engineeringDomain": "Data Engineering",
+    "employmentType": "Full-time",
+    "experienceLevel": null,
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-09-24T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-04T00:34:12.727Z",
+    "skillIds": [
+      "databricks",
+      "spark",
+      "sql",
+      "azure"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "databricks",
+        "canonicalName": "Databricks",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "title",
+        "matchedPhrase": "Databricks"
+      },
+      {
+        "skillId": "spark",
+        "canonicalName": "Spark",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Apache Spark"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "minimumYears": 4,
+      "maximumYears": 6,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4-6 years",
+      "rawText": null,
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4,
+      5,
+      6
+    ],
+    "seniority": "Unknown",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-04T00:54:29.863Z",
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "employer_requirement",
+    "employerExperienceProfile": {
+      "minimumYears": 4,
+      "maximumYears": 6,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4-6 years",
+      "rawText": null,
+      "experienceBucket": "3-5"
+    },
+    "policyEvidence": "Databricks Platform Expert"
+  },
+  {
+    "jobId": null,
+    "title": "Lead Software Engineer",
+    "company": "Michelin India (P) Ltd.",
+    "department": null,
+    "location": "Pune",
+    "city": "Pune",
+    "locations": [
+      "Pune"
+    ],
+    "link": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/Lead-Software-Engineer_R-2026024926",
+    "source": "michelinindiapltd",
+    "postedAt": "2026-09-24T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Lead Software Engineer\n-\n-\n-\n-\n-\n-\n-\n-\n-\n-\n-\n- Mission Move from AI exploration to AI adoption by accelerating the software development lifecycle through measurable impact, real usage, and scaled adoption—delivering tangible results powered by the DRIVE program. Key Expected Achievements As part of a strategic initiative on Generative AI, you will design, build, and industrialize high visibility Gen AI solutions. You will work closely with innovation, data, and IT teams to deliver robust, scalable, and secure AI capabilities that integrate seamlessly with enterprise systems Key\n\nRESPONSIBILITIES:\n• Design and develop AI powered applications integrating Large Language Models (LLMs), including RAG, embeddings, and agent-based components. • Define and contribute to scalable Gen AI architectures, ensuring robustness, performance, and industrial readiness. • Implement APIs, microservices, and AI pipelines within an industrial cloud environment. • Support client teams through scoping, technical expertise, architecture reviews, audits, and best practice guidance. • Ensure solution quality, security, compliance, and observability, following governance and risk management standards. Required Profile: • Strong backend engineering experience in Python, Node.js, or Java. • Proficiency with Gen AI frameworks such as Lang Chain, Llama Index, Hugging Face, and Open AI API. • Hands on exposure to at least one major cloud platform (Azure, AWS, or GCP) and experience with demanding production grade industrial environments. • Ability to operate effectively in large enterprise ecosystems: structured communication, rigor, and a strong service mindset. • Experience with RAG architectures, vector databases, and MLOps pipelines is a strong plus. Team Life &amp; Ways of Working: • Embrace and respect Agile rituals, contributing actively to continuous improvement of team processes and collaboration. • Participate in workload estimation for backlog items, challenging complexity and scope when needed. • Contribute to sprint planning and allocation of tasks, supporting the delivery of incremental value and modernization of components (Evergreen approach). Behavioural Skills: Planning &amp; organizing, Teamwork &amp; Collaboration, Customer Focus, Continuous learning Ability to rapidly learn and take advantage of new concepts, business models, and technologies Working with internal and external stakeholders in an international environment. Product approach mindset Experience\n- 5-7 years Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "5 years",
+    "publicExperienceChecked": true,
+    "requisitionId": "R-2026024926",
+    "scrapedAt": "2026-10-04T00:34:13.392Z",
+    "country": "India",
+    "companyCareerPage": "https://recrutement.michelin.fr",
+    "companyDomain": "recrutement.michelin.fr",
+    "atsPlatform": "workday",
+    "applyUrl": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/Lead-Software-Engineer_R-2026024926",
+    "sourceUrl": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/Lead-Software-Engineer_R-2026024926",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "81284afca3db000a048eb6eb9587a44d6153247a8cbf1f1aa7cfb0ba9b7cb0e6",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "internship",
+          "probability": 0.9764
+        },
+        "experience": {
+          "label": "fresher_eligible",
+          "probability": 0.4894
+        },
+        "seniority": {
+          "label": "leadership",
+          "probability": 1
+        },
+        "leadership": {
+          "label": "lead",
+          "probability": 1
+        }
+      },
+      "complete": true,
+      "windows": 1,
+      "evidenceContext": "Lead Software Engineer - - - - - - - - - - - - Mission Move from AI exploration to AI adoption by accelerating the software development lifecycle through measur",
+      "classifiedAt": "2026-10-04T00:34:14.218Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": null,
+        "seniority": "Unknown",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          5
+        ],
+        "experienceBucket": "3-5",
+        "experienceProfile": {
+          "minimumYears": 5,
+          "maximumYears": 5,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "5 years",
+          "rawText": null,
+          "experienceBucket": "3-5"
+        },
+        "experienceBasis": "employer_requirement",
+        "experienceRequired": "5 years",
+        "employerExperienceProfile": {
+          "minimumYears": 5,
+          "maximumYears": 5,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "5 years",
+          "rawText": null,
+          "experienceBucket": "3-5"
+        },
+        "policyEvidence": "Lead Software Engineer"
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Senior Level",
+        "seniority": "Lead",
+        "experienceYears": [
+          5
+        ],
+        "experienceBucket": "3-5",
+        "experienceProfile": {
+          "minimumYears": 5,
+          "maximumYears": 5,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "5 years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "81284afca3db000a048eb6eb9587a44d6153247a8cbf1f1aa7cfb0ba9b7cb0e6",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-04T00:52:28.106Z",
+        "reused": false
+      }
+    },
+    "description": "Lead Software Engineer - - - - - - - - - - - - Mission Move from AI exploration to AI adoption by accelerating the software development lifecycle through measurable impact, real usage, and scaled adoption—delivering tangible results powered by the DRIVE program. Key Expected Achievements As part of a strategic initiative on Generative AI, you will design, build, and industrialize high visibility GenAI solutions. You will work closely with innovation, data, and IT teams to deliver robust, scalable, and secure AI capabilities that integrate seamlessly with enterprise systems Key Responsibilities: • Design and develop AI powered applications integrating Large Language Models (LLMs), including RAG, embeddings, and agent-based components. • Define and contribute to scalable GenAI architectures, ensuring robustness, performance, and industrial readiness. • Implement APIs, microservices, and AI pipelines within an industrial cloud environment. • Support client teams through scoping, technical expertise, architecture reviews, audits, and best practice guidance. • Ensure solution quality, security, compliance, and observability, following governance and risk management standards. Required Profile: • Strong backend engineering experience in Python, Node.js, or Java. • Proficiency with GenAI frameworks such as LangChain, LlamaIndex, Hugging Face, and OpenAI API. • Hands on exposure to at least one major cloud platform (Azure, AWS, or GCP) and experience with demanding production grade industrial environments. • Ability to operate effectively in large enterprise ecosystems: structured communication, rigor, and a strong service mindset. • Experience with RAG architectures, vector databases, and MLOps pipelines is a strong plus. Team Life &amp; Ways of Working: • Embrace and respect Agile rituals, contributing actively to continuous improvement of team processes and collaboration. • Participate in workload estimation for backlog items, challenging complexity and scope when needed. • Contribute to sprint planning and allocation of tasks, supporting the delivery of incremental value and modernization of components (Evergreen approach). Behavioural Skills: Planning &amp; organizing, Teamwork &amp; Collaboration, Customer Focus, Continuous learning Ability to rapidly learn and take advantage of new concepts, business models, and technologies Working with internal and external stakeholders in an international environment. Product approach mindset Experience - 5-7 years Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "sourceDescription": "Lead Software Engineer - - - - - - - - - - - - Mission Move from AI exploration to AI adoption by accelerating the software development lifecycle through measurable impact, real usage, and scaled adoption—delivering tangible results powered by the DRIVE program. Key Expected Achievements As part of a strategic initiative on Generative AI, you will design, build, and industrialize high visibility GenAI solutions. You will work closely with innovation, data, and IT teams to deliver robust, scalable, and secure AI capabilities that integrate seamlessly with enterprise systems Key Responsibilities: • Design and develop AI powered applications integrating Large Language Models (LLMs), including RAG, embeddings, and agent-based components. • Define and contribute to scalable GenAI architectures, ensuring robustness, performance, and industrial readiness. • Implement APIs, microservices, and AI pipelines within an industrial cloud environment. • Support client teams through scoping, technical expertise, architecture reviews, audits, and best practice guidance. • Ensure solution quality, security, compliance, and observability, following governance and risk management standards. Required Profile: • Strong backend engineering experience in Python, Node.js, or Java. • Proficiency with GenAI frameworks such as LangChain, LlamaIndex, Hugging Face, and OpenAI API. • Hands on exposure to at least one major cloud platform (Azure, AWS, or GCP) and experience with demanding production grade industrial environments. • Ability to operate effectively in large enterprise ecosystems: structured communication, rigor, and a strong service mindset. • Experience with RAG architectures, vector databases, and MLOps pipelines is a strong plus. Team Life &amp; Ways of Working: • Embrace and respect Agile rituals, contributing actively to continuous improvement of team processes and collaboration. • Participate in workload estimation for backlog items, challenging complexity and scope when needed. • Contribute to sprint planning and allocation of tasks, supporting the delivery of incremental value and modernization of components (Evergreen approach). Behavioural Skills: Planning &amp; organizing, Teamwork &amp; Collaboration, Customer Focus, Continuous learning Ability to rapidly learn and take advantage of new concepts, business models, and technologies Working with internal and external stakeholders in an international environment. Product approach mindset Experience - 5-7 years Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Lead Software Engineer",
+    "normalizedTitle": "Software Engineer",
+    "jobCategory": "Software Engineer",
+    "engineeringDomain": "Software Engineering",
+    "employmentType": "Full-time",
+    "experienceLevel": null,
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-09-24T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-04T00:34:13.392Z",
+    "skillIds": [
+      "generative-ai",
+      "python",
+      "node-js",
+      "java",
+      "azure",
+      "aws",
+      "gcp",
+      "mlops"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "generative-ai",
+        "canonicalName": "Generative AI",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Generative AI"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "node-js",
+        "canonicalName": "Node.js",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Node.js"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Azure"
+      },
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      },
+      {
+        "skillId": "gcp",
+        "canonicalName": "Google Cloud Platform",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "GCP"
+      },
+      {
+        "skillId": "mlops",
+        "canonicalName": "MLOps",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "MLOps"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "minimumYears": 5,
+      "maximumYears": 5,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5 years",
+      "rawText": null,
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      5
+    ],
+    "seniority": "Unknown",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-04T00:54:29.866Z",
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "employer_requirement",
+    "employerExperienceProfile": {
+      "minimumYears": 5,
+      "maximumYears": 5,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "5 years",
+      "rawText": null,
+      "experienceBucket": "3-5"
+    },
+    "policyEvidence": "Lead Software Engineer"
+  },
+  {
+    "jobId": null,
+    "title": "MDM Solution Consultant",
+    "company": "Michelin India (P) Ltd.",
+    "department": null,
+    "location": "Pune",
+    "city": "Pune",
+    "locations": [
+      "Pune"
+    ],
+    "link": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/MDM-Solution-Consultant_R-2026013419-1",
+    "source": "michelinindiapltd",
+    "postedAt": "2026-09-24T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "MDM Solution Consultant\n-\n-\n-\n-\n-\n-\n-\n-\n-\n-\n-\n- Mission As a Solution Consultant in MDM team within Michelin Supply Chain Business Solutions, you will work with a global, dynamic team focused on MDM (Customer) processes You will collaborate closely with Product Architects, Product Owners, and cross-functional stakeholders to define scalable, high-performance solutions that drive business value while maintaining standardization and operational excellence. Key Responsibilities Solution Design &amp; Architecture • Contribute to defining IT solutions based on business ambitions. • Provide an optimal balance between standardization, simplification, and necessary customization. • Create and share design documents with development teams to ensure clear understanding. • Ensure proposed IT solutions support maintainability, scalability, operability, and performance. Functional &amp; Technical Analysis • Gather requirements and perform gap analysis to translate business needs into functional and technical specifications. • Ensure expected business benefits are achieved as defined in the business case. • Participate in user story creation and refine requirements with stakeholders. • Consider FMEA (Failure Modes and Effects Analysis) and performance requirements in solution design. Agile Team Collaboration • Participate actively in Agile Team routines (Daily standups, refinements, reviews, etc.) • Work effectively with stakeholders at all organizational levels. • Support applications at L2/L3 • Participating in Test Strategy definition and execution • Implement scalable technical solutions aligned with architectural patterns PRIMARY SKILLS • Proven experience in business and functional analysis for Oracle MDM -CDM or any other MDM. • Hands on Oracle fusion Cloud- Customer data Hub ( Or similar ) • Good understanding of TCA (Trading community architecture) ,BI Reports • Ability to translate complex business requirements into clear technical specifications • Knowledge of API design, REST APIs, and API Manager configurations • Knowledge of integration architectures: EDI, API, and event-driven architecture (ideally Kafka) SECONDARY SKILLS • Knowledge of supply chain processes • Experience with FMEA (Failure Modes and Effects Analysis) • Basic knowledge of architectural patterns and design principles • Basic knowledge of core technologies: Java, git, cloud, SQL • Understanding of microservices and cloud-native architectures (Kubernetes) COMMUNICATION &amp; COLLABORATION • Excellent verbal and written communication skills • Ability to simplify complex technical topics • Strong interpersonal and presentation skills • Customer-oriented mindset with focus on business value delivery • Ability to work effectively in decentralized, global team environments across time zones PERSONAL ATTRIBUTES • Adaptability: Able to excel in fast-paced, dynamic environments • Support Orientation: Focus on operability, maintainability, and runtime excellence • Customer Focus: Commitment to understanding and delivering business benefits • Self-Directed: Works independently while collaborating effectively • Solution Mindset: Proactive problem-solving with long-term scalability in view WORKING CONDITIONS • Must be available to work in a shift accommodating French time zone (11:30 AM – 8:30 PM IST) • Comfortable working in a global, truly international team environment • Able to balance multiple concurrent projects and processes Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": null,
+    "publicExperienceChecked": true,
+    "requisitionId": "R-2026013419",
+    "scrapedAt": "2026-10-04T00:34:14.175Z",
+    "country": "India",
+    "companyCareerPage": "https://recrutement.michelin.fr",
+    "companyDomain": "recrutement.michelin.fr",
+    "atsPlatform": "workday",
+    "applyUrl": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/MDM-Solution-Consultant_R-2026013419-1",
+    "sourceUrl": "https://michelinhr.wd3.myworkdayjobs.com/fr-FR/Michelin/job/Pune/MDM-Solution-Consultant_R-2026013419-1",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "42f3d4cdab9eb8aa65004df008af88669a6a2c6a81f47f06f1542c1f02dda026",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "fallback",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "full_time",
+          "probability": 0.5189
+        },
+        "experience": {
+          "label": "fresher_eligible",
+          "probability": 0.572
+        },
+        "seniority": {
+          "label": "entry",
+          "probability": 0.5437
+        },
+        "leadership": {
+          "label": "executive",
+          "probability": 0.3587
+        }
+      },
+      "complete": true,
+      "windows": 1,
+      "evidenceContext": "MDM Solution Consultant - - - - - - - - - - - - Mission As a Solution Consultant in MDM team within Michelin Supply Chain Business Solutions, you will work with",
+      "classifiedAt": "2026-10-04T00:34:14.218Z",
+      "resolved": {
+        "jobType": "Unspecified",
+        "employmentType": null,
+        "experienceLevel": null,
+        "seniority": "Unknown",
+        "experiencePolicy": "not_stated",
+        "experienceYears": [],
+        "experienceBucket": "unspecified",
+        "experienceProfile": {
+          "minimumYears": null,
+          "maximumYears": null,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": false,
+          "confidence": "low",
+          "evidence": null,
+          "rawText": null
+        },
+        "experienceBasis": "unspecified"
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Mid Level",
+        "seniority": "Mid Level",
+        "experienceYears": [],
+        "experienceBucket": "unspecified",
+        "experienceProfile": {
+          "minimumYears": null,
+          "maximumYears": null,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": false,
+          "confidence": "low"
+        },
+        "experienceRequired": null,
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "42f3d4cdab9eb8aa65004df008af88669a6a2c6a81f47f06f1542c1f02dda026",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-04T00:54:29.827Z",
+        "reused": false
+      }
+    },
+    "description": "MDM Solution Consultant - - - - - - - - - - - - Mission As a Solution Consultant in MDM team within Michelin Supply Chain Business Solutions, you will work with a global, dynamic team focused on MDM (Customer) processes You will collaborate closely with Product Architects, Product Owners, and cross-functional stakeholders to define scalable, high-performance solutions that drive business value while maintaining standardization and operational excellence. Key Responsibilities Solution Design &amp; Architecture • Contribute to defining IT solutions based on business ambitions. • Provide an optimal balance between standardization, simplification, and necessary customization. • Create and share design documents with development teams to ensure clear understanding. • Ensure proposed IT solutions support maintainability, scalability, operability, and performance. Functional &amp; Technical Analysis • Gather requirements and perform gap analysis to translate business needs into functional and technical specifications. • Ensure expected business benefits are achieved as defined in the business case. • Participate in user story creation and refine requirements with stakeholders. • Consider FMEA (Failure Modes and Effects Analysis) and performance requirements in solution design. Agile Team Collaboration • Participate actively in Agile Team routines (Daily standups, refinements, reviews, etc.) • Work effectively with stakeholders at all organizational levels. • Support applications at L2/L3 • Participating in Test Strategy definition and execution • Implement scalable technical solutions aligned with architectural patterns PRIMARY SKILLS • Proven experience in business and functional analysis for Oracle MDM -CDM or any other MDM. • Hands on Oracle fusion Cloud- Customer data Hub ( Or similar ) • Good understanding of TCA (Trading community architecture) ,BI Reports • Ability to translate complex business requirements into clear technical specifications • Knowledge of API design, REST APIs, and API Manager configurations • Knowledge of integration architectures: EDI, API, and event-driven architecture (ideally Kafka) SECONDARY SKILLS • Knowledge of supply chain processes • Experience with FMEA (Failure Modes and Effects Analysis) • Basic knowledge of architectural patterns and design principles • Basic knowledge of core technologies: Java, git, cloud, SQL • Understanding of microservices and cloud-native architectures (Kubernetes) COMMUNICATION &amp; COLLABORATION • Excellent verbal and written communication skills • Ability to simplify complex technical topics • Strong interpersonal and presentation skills • Customer-oriented mindset with focus on business value delivery • Ability to work effectively in decentralized, global team environments across time zones PERSONAL ATTRIBUTES • Adaptability: Able to excel in fast-paced, dynamic environments • Support Orientation: Focus on operability, maintainability, and runtime excellence • Customer Focus: Commitment to understanding and delivering business benefits • Self-Directed: Works independently while collaborating effectively • Solution Mindset: Proactive problem-solving with long-term scalability in view WORKING CONDITIONS • Must be available to work in a shift accommodating French time zone (11:30 AM – 8:30 PM IST) • Comfortable working in a global, truly international team environment • Able to balance multiple concurrent projects and processes Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "sourceDescription": "MDM Solution Consultant - - - - - - - - - - - - Mission As a Solution Consultant in MDM team within Michelin Supply Chain Business Solutions, you will work with a global, dynamic team focused on MDM (Customer) processes You will collaborate closely with Product Architects, Product Owners, and cross-functional stakeholders to define scalable, high-performance solutions that drive business value while maintaining standardization and operational excellence. Key Responsibilities Solution Design &amp; Architecture • Contribute to defining IT solutions based on business ambitions. • Provide an optimal balance between standardization, simplification, and necessary customization. • Create and share design documents with development teams to ensure clear understanding. • Ensure proposed IT solutions support maintainability, scalability, operability, and performance. Functional &amp; Technical Analysis • Gather requirements and perform gap analysis to translate business needs into functional and technical specifications. • Ensure expected business benefits are achieved as defined in the business case. • Participate in user story creation and refine requirements with stakeholders. • Consider FMEA (Failure Modes and Effects Analysis) and performance requirements in solution design. Agile Team Collaboration • Participate actively in Agile Team routines (Daily standups, refinements, reviews, etc.) • Work effectively with stakeholders at all organizational levels. • Support applications at L2/L3 • Participating in Test Strategy definition and execution • Implement scalable technical solutions aligned with architectural patterns PRIMARY SKILLS • Proven experience in business and functional analysis for Oracle MDM -CDM or any other MDM. • Hands on Oracle fusion Cloud- Customer data Hub ( Or similar ) • Good understanding of TCA (Trading community architecture) ,BI Reports • Ability to translate complex business requirements into clear technical specifications • Knowledge of API design, REST APIs, and API Manager configurations • Knowledge of integration architectures: EDI, API, and event-driven architecture (ideally Kafka) SECONDARY SKILLS • Knowledge of supply chain processes • Experience with FMEA (Failure Modes and Effects Analysis) • Basic knowledge of architectural patterns and design principles • Basic knowledge of core technologies: Java, git, cloud, SQL • Understanding of microservices and cloud-native architectures (Kubernetes) COMMUNICATION &amp; COLLABORATION • Excellent verbal and written communication skills • Ability to simplify complex technical topics • Strong interpersonal and presentation skills • Customer-oriented mindset with focus on business value delivery • Ability to work effectively in decentralized, global team environments across time zones PERSONAL ATTRIBUTES • Adaptability: Able to excel in fast-paced, dynamic environments • Support Orientation: Focus on operability, maintainability, and runtime excellence • Customer Focus: Commitment to understanding and delivering business benefits • Self-Directed: Works independently while collaborating effectively • Solution Mindset: Proactive problem-solving with long-term scalability in view WORKING CONDITIONS • Must be available to work in a shift accommodating French time zone (11:30 AM – 8:30 PM IST) • Comfortable working in a global, truly international team environment • Able to balance multiple concurrent projects and processes Avancer ensemble, un engagement réciproque et responsable : Rejoindre Michelin c’est vous développer dans une entreprise où respect, dialogue, passion et confiance sont la clé de nos relations avec nos employés. En construisant avec nous votre parcours professionnel, vous évoluez et c’est tout Michelin qui avance. Avec plus de 114 000 personnes dans le monde, de 170 nationalités, la diversité des talents est un moteur fondamental de créativité et d’innovation. Responsabilisation, autonomie et esprit d’équipe créent l’engagement collectif au service de tous nos clients. C’est donc ensemble que nous innovons et faisons progresser la mobilité durablement partout dans le monde, sous toutes ses formes, avec passion, enthousiasme et fierté. Osez Michelin et trouvez votre meilleure façon d’avancer!",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "MDM Solution Consultant",
+    "normalizedTitle": "MDM Solution Consultant",
+    "jobCategory": "MDM Solution Consultant",
+    "engineeringDomain": "Data Engineering",
+    "employmentType": null,
+    "experienceLevel": null,
+    "jobType": "Unspecified",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-09-24T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-04T00:34:14.175Z",
+    "skillIds": [
+      "kafka",
+      "java",
+      "sql",
+      "kubernetes"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "kafka",
+        "canonicalName": "Kafka",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kafka"
+      },
+      {
+        "skillId": "java",
+        "canonicalName": "Java",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Java"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "kubernetes",
+        "canonicalName": "Kubernetes",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kubernetes"
+      }
+    ],
+    "experienceBucket": "unspecified",
+    "experienceProfile": {
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "low",
+      "evidence": null,
+      "rawText": null
+    },
+    "experienceYears": [],
+    "seniority": "Unknown",
+    "primaryRoleDomain": "Backend Engineering",
+    "secondaryRoleDomains": [
+      "Data Engineering"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "medium",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-04T00:54:29.870Z",
+    "experiencePolicy": "not_stated",
+    "experienceBasis": "unspecified"
+  }
+]

@@ -2,7 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -98,7 +98,8 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
 
-  return /<title>\s*Kathir Sudhir Automation Solution_\s*Home\s*<\/title>/i.test(page)
+  return (/<title>\s*Kathir Sudhir Automation Solution_\s*Home\s*<\/title>/i.test(page)
+      || /<title>\s*Kathir Sudhir Automation India\s*[—–-]\s*Electronics Instruments Manufacturer\s*&\s*System Integrator for Automation Solutions\s*<\/title>/i.test(decodeHtmlEntities(page)))
     && /Kathir Sudhir Automation India Pvt Ltd/i.test(text)
     && /Electronics Instruments Manufacturer\s*&\s*System Integrator for Automation Solutions/i.test(text)
     && HOMEPAGE_CAREERS_LINK_PATTERN.test(page)
@@ -109,7 +110,8 @@ export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page).toLowerCase()
 
-  const hasStableCareersIdentity = /<title>\s*Career opportunities in Electronics Core Company in Chennai\s*<\/title>/i.test(page)
+  const hasStableCareersIdentity = (/<title>\s*Career opportunities in Electronics Core Company in Chennai\s*<\/title>/i.test(page)
+      || /<title>\s*career\s*[—–-]\s*Kathir Sudhir Automation India\s*<\/title>/i.test(decodeHtmlEntities(page)))
     && text.includes('electronics core company jobs')
     && /hr@kathirsudhirautomation\.com/i.test(page)
 
@@ -120,7 +122,14 @@ export const hasOfficialCareersSignal = (html) => {
     && /<h1\b[^>]*>\s*Career\s*<\/h1>/i.test(page)
     && /For Job\s*:/i.test(page)
 
-  return hasStableCareersIdentity && (hasLegacyJobSections || hasCurrentNoListingsSurface)
+  const hasCurrentInlineCareersSurface = /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/www\.kathirsudhirautomation\.com\/career["']/i.test(page)
+    && /Kathir Sudhir Automation India Pvt Ltd/i.test(text)
+    && /<h1\b[^>]*>\s*Career\s*<\/h1>/i.test(page)
+    && /Open Positions\s*[—–-]\s*Kathir Sudhir Automation/i.test(page)
+    && /const\s+jobs\s*=\s*\[/i.test(page)
+    && /For Job\s*:/i.test(page)
+
+  return hasStableCareersIdentity && (hasLegacyJobSections || hasCurrentNoListingsSurface || hasCurrentInlineCareersSurface)
 }
 
 const JOB_SECTION_PATTERN =
@@ -248,7 +257,15 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
-  if (isDryRun) {
+  const inventoryEvidence = readInventoryEvidence(jobs)
+  if (inventoryEvidence?.listingComplete === false) {
+    if (isDryRun) {
+      const { writeFile } = await import('node:fs/promises')
+      await writeFile(path.join(currentDir, 'inventory-evidence.json'), JSON.stringify(inventoryEvidence, null, 2))
+    }
+    console.error(inventoryEvidence.reason)
+    process.exitCode = 1
+  } else if (isDryRun) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
   } else {
     await saveToDB(jobs, SOURCE)

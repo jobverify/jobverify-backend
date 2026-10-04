@@ -36,8 +36,18 @@ test('scraper workflow runs the scraper with system CA support enabled', () => {
 test('scraper workflow bounds the job and per-source public enrichment budgets', () => {
   const workflow = readScraperWorkflow()
 
-  assert.match(workflow, /\n\s+scrape:\s*\n(?:.*\n)*?\s+timeout-minutes:\s*150/)
+  assert.match(workflow, /\n\s+scrape:\s*\n(?:.*\n)*?\s+timeout-minutes:\s*360/)
   assert.match(workflow, /SCRAPER_SOURCE_LIFECYCLE_TIMEOUT_MS:\s*['"]1800000['"]/)
   assert.match(workflow, /PUBLIC_EXPERIENCE_FETCH_TIMEOUT_MS:\s*['"]15000['"]/)
   assert.match(workflow, /PDF_TEXT_EXTRACTION_TIMEOUT_MS:\s*['"]30000['"]/)
+})
+
+test('public runner requires Laya readiness and keeps resumable model checkpoints without the old inference budget', () => {
+  const workflow = readScraperWorkflow()
+  assert.doesNotMatch(workflow, /LAYA_TOTAL_BUDGET_SECONDS/)
+  assert.doesNotMatch(workflow, /continue-on-error:.*enforce/)
+  assert.match(workflow, /actions\/cache\/restore@v4/)
+  assert.match(workflow, /actions\/cache\/save@v4/)
+  assert.match(workflow, /classification-cache/)
+  assert.match(workflow, /timeout --signal=TERM --kill-after=60s 310m/)
 })

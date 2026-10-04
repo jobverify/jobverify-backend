@@ -253,6 +253,15 @@ const defaultFetchJson = async (url, options = {}) => {
       error.abortRetries = true
       throw error
     }
+    if (response.ok && response.url === 'https://ibegin.tcsapps.com/candidate/next/'
+      && /<title>\s*iBegin\s*<\/title>/i.test(body)
+      && /<base[^>]+href=["']\/candidate\/next\/["']/i.test(body)
+      && /<ib-root\b/i.test(body)) {
+      const error = new Error('TCS verified public search API now redirects to the replacement iBegin app; its jobs API contract requires re-verification')
+      error.code = 'TCS_API_MIGRATED'
+      error.abortRetries = true
+      throw error
+    }
     if (response.ok) throw new Error(`Expected JSON from TCS but received HTML for ${url}`)
     throw new Error(`HTTP ${response.status} for ${url}`)
   }

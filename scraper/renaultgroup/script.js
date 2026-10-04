@@ -1,3 +1,4 @@
+import { assertWorkdayPageAvailable } from '../../scraper-support/myworkday/pageAvailability.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -9,7 +10,7 @@ export const SOURCE = 'renaultgroup'
 export const COMPANY = 'Renault Group'
 export const HOMEPAGE_URL = 'https://www.renaultgroup.com/en/'
 export const CAREERS_URL = 'https://www.renaultgroup.com/en/careers/'
-export const WORKDAY_BOARD_URL = 'https://alliancewd.wd3.myworkdayjobs.com/en-US/renault-group-careers'
+export const WORKDAY_BOARD_URL = 'https://alliancewd.wd3.myworkdayjobs.com/renault-group-careers'
 export const WORKDAY_JOBS_API_URL =
   'https://alliancewd.wd3.myworkdayjobs.com/wday/cxs/alliancewd/renault-group-careers/jobs'
 
@@ -56,11 +57,13 @@ export const hasOfficialHomepageSignal = (html) => {
 export const hasOfficialCareersSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
 
-  return normalized.includes('a career at the centre of the automotive revolution')
+  return (normalized.includes('a career at the centre of the automotive revolution')
+      || normalized.includes('a career at the center of the automotive industry transformation'))
     && normalized.includes('joining renault group means being part of a pioneering automotive company')
     && normalized.includes('find your next job')
     && normalized.includes('view our offers')
     && normalized.includes('reknow university')
+    && /href=["'](?:https:\/\/www\.renaultgroup\.com\/en\/careers\/our-international-vacancies\/?|https:\/\/alliancewd\.wd3\.myworkdayjobs\.com\/(?:en-US\/)?renault-group-careers\/?)["']/i.test(html)
 }
 
 export const hasOfficialWorkdayBoardSignal = (html) => {
@@ -70,7 +73,7 @@ export const hasOfficialWorkdayBoardSignal = (html) => {
     && /siteId:\s*"renault-group-careers"/i.test(page)
     && /requestLocale:\s*"en-US"/i.test(page)
     && /appName:\s*"cxs"/i.test(page)
-  const hasCurrentWorkdayMetadata = /property="og:url" content="https:\/\/alliancewd\.wd3\.myworkdayjobs\.com\/en-US\/renault-group-careers/i.test(page)
+  const hasCurrentWorkdayMetadata = /property="og:url" content="https:\/\/alliancewd\.wd3\.myworkdayjobs\.com\/(?:en-US\/)?renault-group-careers/i.test(page)
 
   return /<link rel="canonical" href="https:\/\/alliancewd\.wd3\.myworkdayjobs\.com\/(?:en-US\/)?renault-group-careers/i.test(page)
     && /property="og:title" content="Careers \| Renault Group"/i.test(page)
@@ -99,13 +102,14 @@ export const createRenaultGroupScraper = ({
       throw new Error('Renault Group verified careers page no longer matches the trusted first-party surface')
     }
 
-    // The board was previously verified from Renault's careers handoff. Current pages
-    // may route through the international vacancies UI; reject an explicit conflicting tenant.
+    // Renault's current international vacancies feed publishes this same Workday tenant.
+    // Verify its live public board and reject an explicit conflicting careers handoff.
     const directHandoff = careersPage.html.match(/href=["'](https:\/\/[^"']+myworkdayjobs\.com\/[^"']+)["']/i)?.[1]
     if (directHandoff && !/^https:\/\/alliancewd\.wd3\.myworkdayjobs\.com\/(?:en-US\/)?renault-group-careers(?:[/?#]|$)/.test(directHandoff)) {
       throw new Error('Renault Group careers handoff changed to an unverified Workday board')
     }
     const workdayBoard = await fetchPage(WORKDAY_BOARD_URL, { signal })
+    assertWorkdayPageAvailable(workdayBoard, { source: SOURCE, url: WORKDAY_BOARD_URL })
     signal?.throwIfAborted()
     if (workdayBoard.status !== 200 || !hasOfficialWorkdayBoardSignal(workdayBoard.html)) {
       throw new Error('Renault Group verified Workday board no longer matches the trusted public jobs surface')

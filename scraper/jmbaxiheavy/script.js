@@ -1,3 +1,6 @@
+import PROVIDER_METADATA from './catalog.js'
+export { PROVIDER_METADATA }
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -120,6 +123,12 @@ export const hasCareersPageSignal = (html) => hasAllSignals(html, CAREERS_PAGE_S
 
 export const hasJobSearchPageSignal = (html) => {
   const page = normalizePage(html)
+  const raw = String(html ?? '')
+  if (page.includes('job search | j m baxi') && page.includes('land your dream job')
+    && /<form\b[^>]*action=["']job-list\.html["'][^>]*method=["']post["']/i.test(raw)
+    && /<input\b[^>]*name=["']home_action["'][^>]*value=["']home_search["']/i.test(raw)
+    && /<select\b[^>]*name=["']home_department["']/i.test(raw)
+    && /<select\b[^>]*name=["']home_location_city["']/i.test(raw)) return true
 
   return page.includes('job search | j m baxi')
     && page.includes('land your dream job')
@@ -206,7 +215,11 @@ export const createJmBaxiHeavyScraper = () => ({
       throw new Error('JM Baxi Heavy public job board now exposes public job postings')
     }
 
-    return []
+    return attachInventoryEvidence([], {
+      status: 'verified-empty', surface: JOB_LIST_POST_URL, firstParty: true, listingComplete: true,
+      pagesFetched: 1, reportedTotal: 0, indiaFacetCount: 0, verifiedAt: new Date().toISOString(),
+      reason: 'verified-first-party-Engineering-search-no-data-found-zero-pages',
+    })
   },
 })
 

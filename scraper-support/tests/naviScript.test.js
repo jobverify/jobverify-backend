@@ -27,9 +27,9 @@ const officialBoardHtml = `
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Navi</title>
-    <meta property="og:title" content="Navi - Career Page" />
-    <meta property="og:description" content="Explore job opportunities at Navi" />
+    <title>NAVI TECHNOLOGIES LIMITED</title>
+    <meta property="og:title" content="NAVI TECHNOLOGIES LIMITED - Career Page" />
+    <meta property="og:description" content="Explore job opportunities at NAVI TECHNOLOGIES LIMITED" />
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

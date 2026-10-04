@@ -4,17 +4,17 @@ import test from 'node:test'
 import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
-test('Vimaan is registered as a first-party careers-shell sentinel provider', () => {
+test('Vimaan is registered as a verified first-party public WordPress jobs provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'vimaan')
 
   assert.ok(provider, 'Expected Vimaan provider to be registered in customProviders.json')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Vimaan')
   assert.equal(provider.companyCareerPage, 'https://vimaan.ai/careers/')
-  assert.equal(provider.atsPlatform, 'official-company-careers-shell')
+  assert.equal(provider.atsPlatform, 'wordpress-job-manager')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-about-contact-and-careers-shell-validation')
-  assert.equal(provider.extractionStrategy, 'verified-homepage+verified-about-page+verified-contact-page+verified-careers-shell-zero-public-job-listings')
+  assert.equal(provider.paginationStrategy, 'unfiltered-public-ajax-pagination')
+  assert.equal(provider.extractionStrategy, 'verified-homepage+verified-about-page+verified-contact-page+verified-careers-shell+unfiltered-wordpress-jobs-inventory')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.companyDomain, 'vimaan.ai')
   assert.match(provider.modulePath, /vimaan[\\/]script\.js$/i)

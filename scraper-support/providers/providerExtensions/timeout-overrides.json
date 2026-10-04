@@ -1,14 +1,5 @@
 [
   {
-    "source": "accenture",
-    "scraperTimeoutMs": 1200000,
-    "dryRunEnrichPublicExperience": false
-  },
-  {
-    "source": "artechinfosystems",
-    "scraperTimeoutMs": 600000
-  },
-  {
     "source": "asterdmhealthcare",
     "scraperTimeoutMs": 600000
   },

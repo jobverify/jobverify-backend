@@ -1,6 +1,8 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { hasWorkdayOutageSignal, WorkdayUpstreamOutageError } from '../../scraper-support/myworkday/engine.js'
+
 import { BENTLEY_SYSTEMS_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -14,6 +16,9 @@ export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const JOBS_HOST_URL = PROVIDER_METADATA.officialJobsHostUrl
 export const INDIA_SEARCH_URL = PROVIDER_METADATA.indiaSearchUrl
 export const SAMPLE_JOB_URL = PROVIDER_METADATA.sampleJobUrl
+export const WORKDAY_BOARD_URL = 'https://bentleysystems.wd5.myworkdayjobs.com/bentley'
+export const WORKDAY_JOBS_API_URL = 'https://bentleysystems.wd5.myworkdayjobs.com/wday/cxs/bentleysystems/bentley/jobs'
+const WORKDAY_DETAIL_API_BASE_URL = 'https://bentleysystems.wd5.myworkdayjobs.com/wday/cxs/bentleysystems/bentley'
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
@@ -143,6 +148,34 @@ export const hasOfficialJobsHostSignal = (html = '') => {
     && /locationsearch=/i.test(page)
 }
 
+export const hasWorkdayJobsHostSignal = (html = '') =>
+  /bentleysystems\.wd5\.myworkdayjobs\.com\/bentley/i.test(String(html ?? ''))
+
+export const hasOfficialWorkdayHandoffSignal = (html = '') => {
+  const page = String(html ?? '')
+  return /<title[^>]*>\s*Careers\s*\|\s*Bentley Systems\s*\|\s*Infrastructure Engineering Software Company\s*<\/title>/i.test(page)
+    && /A career at Bentley/i.test(stripTags(page))
+    && /href=["']https:\/\/bentleysystems\.wd5\.myworkdayjobs\.com\/bentley["']/i.test(page)
+}
+
+export const getWorkdayIndiaLocationIds = (payload) => {
+  if (!Array.isArray(payload?.facets)) {
+    throw new Error('Bentley Workday jobs API no longer exposes location facets')
+  }
+  const groups = payload.facets.find((facet) => facet.facetParameter === 'locationMainGroup')?.values
+  const locations = groups?.find((group) => group.facetParameter === 'locations')?.values
+  if (!Array.isArray(locations)) {
+    throw new Error('Bentley Workday jobs API no longer exposes location facets')
+  }
+  const ids = locations.filter((location) => /,\s*India$/i.test(location.descriptor ?? ''))
+    .map((location) => location.id)
+    .filter(Boolean)
+  if (ids.length === 0) {
+    throw new Error('Bentley Workday jobs API no longer exposes verified India locations')
+  }
+  return ids
+}
+
 export const hasIndiaSearchResultsSignal = (html = '') => {
   const page = String(html ?? '')
   return /locationsearch=India/i.test(page)
@@ -237,13 +270,119 @@ const defaultFetchText = async (url) => {
   return response.text()
 }
 
+const defaultFetchJson = async (url, { method = 'GET', body } = {}) => {
+  const response = await fetch(url, {
+    method,
+    headers: {
+      'User-Agent': USER_AGENT,
+      Accept: 'application/json',
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  })
+  const html = await response.text()
+  if (hasWorkdayOutageSignal({html, url: response.url})) {
+    throw new WorkdayUpstreamOutageError(`[${SOURCE}] Workday is currently unavailable upstream at ${url}`)
+  }
+  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
+  return JSON.parse(html)
+}
+
+const fetchWorkdayIndiaJobs = async ({ fetchJson, now }) => {
+  const body = (appliedFacets, offset = 0) => ({ appliedFacets, limit: 20, offset, searchText: '' })
+  const overview = await fetchJson(WORKDAY_JOBS_API_URL, { method: 'POST', body: body({}) })
+  const locationIds = getWorkdayIndiaLocationIds(overview)
+  const appliedFacets = { locations: locationIds }
+  const postings = []
+  let offset = 0
+  let total = null
+  do {
+    const page = await fetchJson(WORKDAY_JOBS_API_URL, { method: 'POST', body: body(appliedFacets, offset) })
+    if (!Number.isInteger(page?.total) || !Array.isArray(page?.jobPostings)) {
+      throw new Error('Bentley Workday India jobs response changed materially')
+    }
+    total = page.total
+    if (total > 0 && page.jobPostings.length === 0) {
+      throw new Error('Bentley Workday India jobs response ended before the reported total')
+    }
+    postings.push(...page.jobPostings)
+    offset += page.jobPostings.length
+  } while (offset < total)
+
+  const jobs = []
+  for (const posting of postings) {
+    const externalPath = String(posting?.externalPath ?? '')
+    const location = normalizeWhitespace(posting?.locationsText)
+    if (!/^\/job\/[A-Za-z0-9/_-]+$/.test(externalPath)
+      || !/,\s*India$/i.test(location ?? '')
+      || !normalizeWhitespace(posting?.title)) {
+      throw new Error('Bentley Workday India listing changed materially')
+    }
+    const payload = await fetchJson(`${WORKDAY_DETAIL_API_BASE_URL}${externalPath}`)
+    const detail = payload?.jobPostingInfo
+    const applyUrl = `${WORKDAY_BOARD_URL}${externalPath}`
+    if (!detail
+      || detail.externalUrl !== applyUrl
+      || detail.title !== posting.title
+      || !/,\s*India$/i.test(detail.location ?? '')) {
+      throw new Error('Bentley Workday detail no longer matches the verified public board')
+    }
+    const description = stripTags(detail.jobDescription)
+    jobs.push({
+      title: detail.title,
+      company: COMPANY,
+      department: null,
+      location: detail.location,
+      city: normalizeWhitespace(detail.location.split(',')[0]),
+      country: 'India',
+      jobId: String(detail.id ?? detail.jobReqId ?? ''),
+      requisitionId: normalizeWhitespace(detail.jobReqId),
+      sourceUrl: applyUrl,
+      applyUrl,
+      employmentType: null,
+      experienceRequired: extractExperienceRequired(description),
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: detail.startDate ?? null,
+      closingDate: null,
+      jobDescription: description,
+      source: SOURCE,
+      link: applyUrl,
+      companyCareerPage: CAREERS_URL,
+      companyDomain: PROVIDER_METADATA.companyDomain,
+      atsPlatform: 'workday',
+      scrapedAt: now(),
+    })
+  }
+  return jobs
+}
+
 export const createBentleySystemsScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
+    fetchJson = defaultFetchJson,
   } = {}) {
-    const jobsHostHtml = await fetchText(JOBS_HOST_URL)
+    let jobsHostHtml
+    try {
+      jobsHostHtml = await fetchText(JOBS_HOST_URL)
+    } catch (error) {
+      if (!/HTTP[\s_:-]*404\b/i.test(error?.message || '')) throw error
+      const careersHtml = await fetchText(CAREERS_URL)
+      if (!hasOfficialWorkdayHandoffSignal(careersHtml)) {
+        throw new Error('Bentley official careers page no longer links to the verified Workday board')
+      }
+      return fetchWorkdayIndiaJobs({fetchJson, now})
+    }
+    if (hasWorkdayJobsHostSignal(jobsHostHtml)) {
+      const careersHtml = await fetchText(CAREERS_URL)
+      if (!hasOfficialWorkdayHandoffSignal(careersHtml)) {
+        throw new Error('Bentley official careers page no longer links to the verified Workday board')
+      }
+      return fetchWorkdayIndiaJobs({ fetchJson, now })
+    }
     if (!hasOfficialJobsHostSignal(jobsHostHtml)) {
       throw new Error('Bentley verified first-party jobs host no longer matches the known public surface')
     }
@@ -264,7 +403,7 @@ export const createBentleySystemsScraper = ({
         link: listing.sourceUrl,
         companyCareerPage: CAREERS_URL,
         companyDomain: PROVIDER_METADATA.companyDomain,
-        atsPlatform: PROVIDER_METADATA.atsPlatform,
+        atsPlatform: 'successfactors',
         scrapedAt: now(),
       })
     }

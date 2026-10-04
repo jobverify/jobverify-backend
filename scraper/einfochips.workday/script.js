@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { hasWorkdayOutageSignal, WorkdayUpstreamOutageError } from '../../scraper-support/myworkday/engine.js'
 
 import { extractJobDetail } from '../../scraper-support/detailExtractors/index.js'
 import { shouldContinueWorkdayJobsApiPagination } from '../../scraper-support/myworkday/engine.js'
@@ -387,6 +388,12 @@ export const createEInfochipsScraper = ({
     }
 
     const workdayBoardPage = await fetchPage(WORKDAY_BOARD_URL)
+    if (hasWorkdayOutageSignal(workdayBoardPage)) {
+      throw new WorkdayUpstreamOutageError(`[${SOURCE}] Workday is currently unavailable upstream at ${WORKDAY_BOARD_URL}`)
+    }
+    if (workdayBoardPage.status !== 200) {
+      throw new Error(`HTTP ${workdayBoardPage.status} for ${WORKDAY_BOARD_URL}`)
+    }
     if (!hasOfficialWorkdayBoardSignal(workdayBoardPage)) {
       throw new Error('eInfochips verified public Workday board changed materially')
     }

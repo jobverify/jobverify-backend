@@ -1,0 +1,1220 @@
+[
+  {
+    "jobId": "R12489",
+    "title": "Technical Writer",
+    "company": "Alteryx",
+    "department": null,
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "locations": [
+      "Bangalore"
+    ],
+    "link": "https://alteryx.wd108.myworkdayjobs.com/en-US/AlteryxCareers/job/Bangalore-India/Technical-Writer_R12489",
+    "source": "alteryx",
+    "postedAt": "2026-09-24T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center of every business decision\n- and Alteryx is leading the transformation. You'll be working on the challenges that sit at the heart of modern business. No matter your role, the work you do will help organizations move faster, see more clearly, and tackle questions that used to feel impossible. If you're ready to meet the moment with innovation, curiosity, and excellence, there's a place for you here. Our Global Content team is looking for a talented technical writer who wants to create valuable content experiences for our audience. Our team writes content for Alteryx Documentation. Our site is available in 8 languages and has over 100,000 monthly users. You'll fit right in if you are passionate about online technical communication and helping customers to find the answers they need. You will thrive if you believe that all customers should have a helpful, positive, and accessible experience, regardless of the language they choose and the technologies they use to navigate and consume our content. What You Will Own and Improve Authoring documentation: Write help articles, release notes, and examples that enable customers to use and configure Alteryx products. Publishing documentation: We create our content in the Paligo CMS and publish it in AWS. You will own the process for generating the outputs (usually in HTML5), testing, and publishing them. You will also collaborate with the other tech writers to suggest improvements to the outputs and publishing process. Contribute to our peer review and styles and standards processes: You will ask your fellow writers to review your work, and you will review their work. You will propose topics for styles and standards and participate in our discussions. AI-assisted workflows: Use AI tools and agent-assisted workflows to improve efficiency, reduce repetitive work, and produce better first drafts. Contribute to the team's growing set of shared AI practices, including documentation agents that integrate with Jira, Confluence, and Git Lab, and help refine them over time. Cross-functional collaboration: Work with engineering, product, UX, localization, and support teams to ensure your content is accurate, timely, and accessible across languages and user contexts. Requirements · You have 2 or more years of experience in technical writing for software or Saa S products. · You write clear, professional American English and can adapt your style for a global audience. · You can translate complex technical details into clear, accessible documentation. · You work well with multidisciplinary teams and are comfortable partnering with engineering, product, and UX. · You plan and track your work using Jira and Confluence. You seek clarity, follow through on commitments, and communicate proactively. · You have a bachelor's degree (or equivalent experience) in a field relevant to this role. Your Team We are part of the Product organization. Our group reports to the VP of UX. You will be a member of the Technical Writing team, which reports to the manager of Global Content. Global Content includes two teams: Technical Writing and Content Design. We have work flexible schedules. India team members collaborate with US-based colleagues across time zones, with team calls scheduled to accommodate distributed working hours. Find yourself checking a lot of these boxes but doubting whether you should apply? At Alteryx, we support a growth mindset for our associates through all stages of their careers. If you meet some of the requirements and you share our values, we encourage you to apply. As part of our ongoing commitment to a diverse, equitable, and inclusive workplace, we’re invested in building teams with a wide variety of backgrounds, identities, and experiences. This position involves access to software/technology that is subject to U.S. export controls. Any job offer made will be contingent upon the applicant’s capacity to serve in compliance with U.S. export controls. Who We Are Alteryx is a leading AI-ready data and analytics company that powers actionable insights to help organizations drive smarter, faster decisions with AI-ready data. More than 8,000 customers around the world rely on Alteryx to automate analytics, improve revenue performance, manage costs, and mitigate risk across their businesses. Disclaimers If you require reasonable accommodation as part of the recruiting process, please contact Benefits@alteryx.com. Alteryx, Inc. is an Equal Employment Opportunity Employer. Unsolicited third party/agency profiles and resumes will not be considered.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "2+ years",
+    "publicExperienceChecked": true,
+    "requisitionId": "R12489",
+    "scrapedAt": "2026-10-03T19:21:59.202Z",
+    "country": "India",
+    "companyCareerPage": "https://www.alteryx.com/about-us/careers",
+    "companyDomain": "alteryx.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://alteryx.wd108.myworkdayjobs.com/en-US/AlteryxCareers/job/Bangalore-India/Technical-Writer_R12489",
+    "sourceUrl": "https://alteryx.wd108.myworkdayjobs.com/en-US/AlteryxCareers/job/Bangalore-India/Technical-Writer_R12489",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "6fc9d5471a3daa345b45a5e1c8745abed8eee6044a2949198dd149f9898b888f",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "internship",
+          "probability": 0.7182
+        },
+        "experience": {
+          "label": "fresher_eligible",
+          "probability": 0.5016
+        },
+        "seniority": {
+          "label": "internship",
+          "probability": 0.4321
+        },
+        "leadership": {
+          "label": "lead",
+          "probability": 0.4296
+        }
+      },
+      "complete": true,
+      "windows": 2,
+      "evidenceContext": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center o",
+      "classifiedAt": "2026-10-03T19:22:01.994Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": null,
+        "seniority": "Unknown",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "experienceBucket": "1-3",
+        "experienceProfile": {
+          "minimumYears": 2,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "2+ years",
+          "rawText": null,
+          "experienceBucket": "1-3"
+        },
+        "experienceBasis": "employer_requirement",
+        "experienceRequired": "2+ years",
+        "employerExperienceProfile": {
+          "minimumYears": 2,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "2+ years",
+          "rawText": null,
+          "experienceBucket": "1-3"
+        },
+        "policyEvidence": "Requirements · You have 2 or more years of experience in technical writing for software or SaaS products"
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Junior Level",
+        "seniority": "Associate",
+        "experienceYears": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "experienceBucket": "1-3",
+        "experienceProfile": {
+          "minimumYears": 2,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "2+ years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "d05a1bdfaef694fef1c374da4c00139984a3bdf2206e7aa935f47e8f09edd90e",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "e43c51beafe432f0edcae28ef89058804c26311dfca53441b84d75ae9eb830ed",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-03T19:22:01.994Z",
+        "reused": true
+      }
+    },
+    "description": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center of every business decision - and Alteryx is leading the transformation. You'll be working on the challenges that sit at the heart of modern business. No matter your role, the work you do will help organizations move faster, see more clearly, and tackle questions that used to feel impossible. If you're ready to meet the moment with innovation, curiosity, and excellence, there's a place for you here. Our Global Content team is looking for a talented technical writer who wants to create valuable content experiences for our audience. Our team writes content for Alteryx Documentation. Our site is available in 8 languages and has over 100,000 monthly users. You'll fit right in if you are passionate about online technical communication and helping customers to find the answers they need. You will thrive if you believe that all customers should have a helpful, positive, and accessible experience, regardless of the language they choose and the technologies they use to navigate and consume our content. What You Will Own and Improve Authoring documentation: Write help articles, release notes, and examples that enable customers to use and configure Alteryx products. Publishing documentation: We create our content in the Paligo CMS and publish it in AWS. You will own the process for generating the outputs (usually in HTML5), testing, and publishing them. You will also collaborate with the other tech writers to suggest improvements to the outputs and publishing process. Contribute to our peer review and styles and standards processes: You will ask your fellow writers to review your work, and you will review their work. You will propose topics for styles and standards and participate in our discussions. AI-assisted workflows: Use AI tools and agent-assisted workflows to improve efficiency, reduce repetitive work, and produce better first drafts. Contribute to the team's growing set of shared AI practices, including documentation agents that integrate with Jira, Confluence, and GitLab, and help refine them over time. Cross-functional collaboration: Work with engineering, product, UX, localization, and support teams to ensure your content is accurate, timely, and accessible across languages and user contexts. Requirements · You have 2 or more years of experience in technical writing for software or SaaS products. · You write clear, professional American English and can adapt your style for a global audience. · You can translate complex technical details into clear, accessible documentation. · You work well with multidisciplinary teams and are comfortable partnering with engineering, product, and UX. · You plan and track your work using Jira and Confluence. You seek clarity, follow through on commitments, and communicate proactively. · You have a bachelor's degree (or equivalent experience) in a field relevant to this role. Your Team We are part of the Product organization. Our group reports to the VP of UX. You will be a member of the Technical Writing team, which reports to the manager of Global Content. Global Content includes two teams: Technical Writing and Content Design. We have work flexible schedules. India team members collaborate with US-based colleagues across time zones, with team calls scheduled to accommodate distributed working hours. Find yourself checking a lot of these boxes but doubting whether you should apply? At Alteryx, we support a growth mindset for our associates through all stages of their careers. If you meet some of the requirements and you share our values, we encourage you to apply. As part of our ongoing commitment to a diverse, equitable, and inclusive workplace, we’re invested in building teams with a wide variety of backgrounds, identities, and experiences. This position involves access to software/technology that is subject to U.S. export controls. Any job offer made will be contingent upon the applicant’s capacity to serve in compliance with U.S. export controls. Who We Are Alteryx is a leading AI-ready data and analytics company that powers actionable insights to help organizations drive smarter, faster decisions with AI-ready data. More than 8,000 customers around the world rely on Alteryx to automate analytics, improve revenue performance, manage costs, and mitigate risk across their businesses. Disclaimers If you require reasonable accommodation as part of the recruiting process, please contact Benefits@alteryx.com. Alteryx, Inc. is an Equal Employment Opportunity Employer. Unsolicited third party/agency profiles and resumes will not be considered.",
+    "sourceDescription": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center of every business decision - and Alteryx is leading the transformation. You'll be working on the challenges that sit at the heart of modern business. No matter your role, the work you do will help organizations move faster, see more clearly, and tackle questions that used to feel impossible. If you're ready to meet the moment with innovation, curiosity, and excellence, there's a place for you here. Our Global Content team is looking for a talented technical writer who wants to create valuable content experiences for our audience. Our team writes content for Alteryx Documentation. Our site is available in 8 languages and has over 100,000 monthly users. You'll fit right in if you are passionate about online technical communication and helping customers to find the answers they need. You will thrive if you believe that all customers should have a helpful, positive, and accessible experience, regardless of the language they choose and the technologies they use to navigate and consume our content. What You Will Own and Improve Authoring documentation: Write help articles, release notes, and examples that enable customers to use and configure Alteryx products. Publishing documentation: We create our content in the Paligo CMS and publish it in AWS. You will own the process for generating the outputs (usually in HTML5), testing, and publishing them. You will also collaborate with the other tech writers to suggest improvements to the outputs and publishing process. Contribute to our peer review and styles and standards processes: You will ask your fellow writers to review your work, and you will review their work. You will propose topics for styles and standards and participate in our discussions. AI-assisted workflows: Use AI tools and agent-assisted workflows to improve efficiency, reduce repetitive work, and produce better first drafts. Contribute to the team's growing set of shared AI practices, including documentation agents that integrate with Jira, Confluence, and GitLab, and help refine them over time. Cross-functional collaboration: Work with engineering, product, UX, localization, and support teams to ensure your content is accurate, timely, and accessible across languages and user contexts. Requirements · You have 2 or more years of experience in technical writing for software or SaaS products. · You write clear, professional American English and can adapt your style for a global audience. · You can translate complex technical details into clear, accessible documentation. · You work well with multidisciplinary teams and are comfortable partnering with engineering, product, and UX. · You plan and track your work using Jira and Confluence. You seek clarity, follow through on commitments, and communicate proactively. · You have a bachelor's degree (or equivalent experience) in a field relevant to this role. Your Team We are part of the Product organization. Our group reports to the VP of UX. You will be a member of the Technical Writing team, which reports to the manager of Global Content. Global Content includes two teams: Technical Writing and Content Design. We have work flexible schedules. India team members collaborate with US-based colleagues across time zones, with team calls scheduled to accommodate distributed working hours. Find yourself checking a lot of these boxes but doubting whether you should apply? At Alteryx, we support a growth mindset for our associates through all stages of their careers. If you meet some of the requirements and you share our values, we encourage you to apply. As part of our ongoing commitment to a diverse, equitable, and inclusive workplace, we’re invested in building teams with a wide variety of backgrounds, identities, and experiences. This position involves access to software/technology that is subject to U.S. export controls. Any job offer made will be contingent upon the applicant’s capacity to serve in compliance with U.S. export controls. Who We Are Alteryx is a leading AI-ready data and analytics company that powers actionable insights to help organizations drive smarter, faster decisions with AI-ready data. More than 8,000 customers around the world rely on Alteryx to automate analytics, improve revenue performance, manage costs, and mitigate risk across their businesses. Disclaimers If you require reasonable accommodation as part of the recruiting process, please contact Benefits@alteryx.com. Alteryx, Inc. is an Equal Employment Opportunity Employer. Unsolicited third party/agency profiles and resumes will not be considered.",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Technical Writer",
+    "normalizedTitle": "Technical Writer",
+    "jobCategory": "Technical Writer",
+    "engineeringDomain": "Cloud",
+    "employmentType": "Full-time",
+    "experienceLevel": null,
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-09-24T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-03T19:21:59.202Z",
+    "skillIds": [
+      "aws"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "aws",
+        "canonicalName": "AWS",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "AWS"
+      }
+    ],
+    "experienceBucket": "1-3",
+    "experienceProfile": {
+      "minimumYears": 2,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "2+ years",
+      "rawText": null,
+      "experienceBucket": "1-3"
+    },
+    "experienceYears": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Unknown",
+    "primaryRoleDomain": "Cloud & Infrastructure",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-03T21:23:59.107Z",
+    "confidence": {
+      "experience": "low"
+    },
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "employer_requirement",
+    "employerExperienceProfile": {
+      "minimumYears": 2,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "2+ years",
+      "rawText": null,
+      "experienceBucket": "1-3"
+    },
+    "policyEvidence": "Requirements · You have 2 or more years of experience in technical writing for software or SaaS products"
+  },
+  {
+    "jobId": "R12471",
+    "title": "Sr. AI Data Engineer",
+    "company": "Alteryx",
+    "department": null,
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "locations": [
+      "Bangalore"
+    ],
+    "link": "https://alteryx.wd108.myworkdayjobs.com/en-US/AlteryxCareers/job/Bangalore-India/Sr-AI-Data-Engineer_R12471",
+    "source": "alteryx",
+    "postedAt": "2026-09-17T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center of every business decision\n- and Alteryx is leading the transformation. You'll be working on the challenges that sit at the heart of modern business. No matter your role, the work you do will help organizations move faster, see more clearly, and tackle questions that used to feel impossible. If you're ready to meet the moment with innovation, curiosity, and excellence, there's a place for you here. The Senior AI Data Engineer builds and operates trusted data capabilities that support enterprise analytics and AI. This role owns the reliability and continuous improvement of key AI-powered data products, including Data Concierge and Ask Insights, while also developing and optimizing data pipelines and models using dbt, SQL, and Alteryx. Working across Data Engineering, Data Science, Governance, and business-aligned data teams, this role turns emerging AI use cases and traditional data requirements into secure, scalable, and reusable enterprise capabilities. Core Competencies: Data Engineering: Design and build maintainable data pipelines, transformations, and data models using modern data-engineering practices. Production Ownership: Proactively monitor, support, troubleshoot, and continuously improve business-critical data and AI products. AI Systems Understanding: Understand how enterprise data, semantic context, data models, APIs, and application components come together to enable reliable AI-powered experiences. Technical Problem-Solving: Diagnose complex data, performance, integration, and production issues and implement durable solutions. Data Quality &amp; Reliability: Build appropriate testing, monitoring, observability, and governance into data products. Collaboration: Work effectively across technical and business teams while reinforcing shared engineering standards and ownership. Key\n\nRESPONSIBILITIES:\nOwn the ongoing support, maintenance, reliability, and enhancement of Data Concierge, Ask Insights, and related AI-powered data products. Build, test, deploy, and optimize data pipelines and transformations using dbt, SQL, Alteryx, and related technologies. Design and develop governed, reusable data models and contextual data capabilities that support analytics, automation, and AI use cases. Monitor data and application health, troubleshoot production issues, perform root-cause analysis, and improve reliability, performance, scalability, and cost efficiency. Implement automated testing, data-quality controls, observability, documentation, and deployment practices across data products and pipelines. Build and maintain integrations with enterprise platforms, APIs, data sources, and AI services as required. Partner with Data Engineering, Data Science, Governance, Customer 0, and embedded Data Ops teams to deliver reusable enterprise data products. Translate business and AI requirements into scalable technical solutions while maintaining appropriate governance and security standards. Evaluate emerging AI and data-engineering technologies and capabilities and apply them where they provide practical enterprise value. Contribute to engineering standards, reusable patterns, documentation, and best practices across the broader data organization. Qualifications &amp; Experience: 4–6 years of relevant professional experience in Data Engineering, Analytics Engineering, or a closely related technical role. Strong hands-on experience building and supporting production-grade data pipelines, transformations, and data models. Strong proficiency in SQL and practical experience working with modern data transformation frameworks such as dbt. Experience with Alteryx or similar data preparation, analytics, or workflow automation platforms. Experience designing and maintaining data solutions within cloud-based or modern enterprise data environments. Good understanding of data modeling, data quality, testing, monitoring, observability, and production support. Experience integrating data solutions with APIs, enterprise applications, and external services. Understanding of software engineering practices such as version control, CI/CD, automated testing, and deployment processes. Exposure to AI/ML, Generative AI, LLM-powered applications, semantic layers, or AI-enabled data products is highly desirable. Ability to troubleshoot complex data and integration issues and drive them through to resolution. Strong communication and collaboration skills with the ability to work across engineering, data science, governance, and business teams. Find yourself checking a lot of these boxes but doubting whether you should apply? At Alteryx, we support a growth mindset for our associates through all stages of their careers. If you meet some of the requirements and you share our values, we encourage you to apply. As part of our ongoing commitment to a diverse, equitable, and inclusive workplace, we’re invested in building teams with a wide variety of backgrounds, identities, and experiences. This position involves access to software/technology that is subject to U.S. export controls. Any job offer made will be contingent upon the applicant’s capacity to serve in compliance with U.S. export controls. Who We Are Alteryx is a leading AI-ready data and analytics company that powers actionable insights to help organizations drive smarter, faster decisions with AI-ready data. More than 8,000 customers around the world rely on Alteryx to automate analytics, improve revenue performance, manage costs, and mitigate risk across their businesses. Disclaimers If you require reasonable accommodation as part of the recruiting process, please contact Benefits@alteryx.com. Alteryx, Inc. is an Equal Employment Opportunity Employer. Unsolicited third party/agency profiles and resumes will not be considered.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "4-6 years",
+    "publicExperienceChecked": true,
+    "requisitionId": "R12471",
+    "scrapedAt": "2026-10-03T19:21:59.761Z",
+    "country": "India",
+    "companyCareerPage": "https://www.alteryx.com/about-us/careers",
+    "companyDomain": "alteryx.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://alteryx.wd108.myworkdayjobs.com/en-US/AlteryxCareers/job/Bangalore-India/Sr-AI-Data-Engineer_R12471",
+    "sourceUrl": "https://alteryx.wd108.myworkdayjobs.com/en-US/AlteryxCareers/job/Bangalore-India/Sr-AI-Data-Engineer_R12471",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "9878086164029201a9a19137b11781544ca93eddaeef4b65b8e207201d171c4f",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "internship",
+          "probability": 0.4671
+        },
+        "experience": {
+          "label": "fresher_eligible",
+          "probability": 0.9193
+        },
+        "seniority": {
+          "label": "senior",
+          "probability": 0.9483
+        },
+        "leadership": {
+          "label": "senior_manager",
+          "probability": 0.6857
+        }
+      },
+      "complete": true,
+      "windows": 2,
+      "evidenceContext": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center o",
+      "classifiedAt": "2026-10-03T19:22:01.994Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": null,
+        "seniority": "Unknown",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          4,
+          5,
+          6
+        ],
+        "experienceBucket": "3-5",
+        "experienceProfile": {
+          "minimumYears": 4,
+          "maximumYears": 6,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "4-6 years",
+          "rawText": null,
+          "experienceBucket": "3-5"
+        },
+        "experienceBasis": "employer_requirement",
+        "experienceRequired": "4-6 years",
+        "employerExperienceProfile": {
+          "minimumYears": 4,
+          "maximumYears": 6,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "4-6 years",
+          "rawText": null,
+          "experienceBucket": "3-5"
+        },
+        "policyEvidence": "Sr. AI Data Engineer"
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Senior Level",
+        "seniority": "Senior",
+        "experienceYears": [
+          4
+        ],
+        "experienceBucket": "3-5",
+        "experienceProfile": {
+          "minimumYears": 4,
+          "maximumYears": 4,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "4 years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "1c25047cd3ab6eeb6fdb16a19e4813d551b14fb962015376b0fb6cd3cbca5831",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "e43c51beafe432f0edcae28ef89058804c26311dfca53441b84d75ae9eb830ed",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-03T19:22:01.994Z",
+        "reused": true
+      }
+    },
+    "description": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center of every business decision - and Alteryx is leading the transformation. You'll be working on the challenges that sit at the heart of modern business. No matter your role, the work you do will help organizations move faster, see more clearly, and tackle questions that used to feel impossible. If you're ready to meet the moment with innovation, curiosity, and excellence, there's a place for you here. The Senior AI Data Engineer builds and operates trusted data capabilities that support enterprise analytics and AI. This role owns the reliability and continuous improvement of key AI-powered data products, including Data Concierge and AskInsights, while also developing and optimizing data pipelines and models using dbt, SQL, and Alteryx. Working across Data Engineering, Data Science, Governance, and business-aligned data teams, this role turns emerging AI use cases and traditional data requirements into secure, scalable, and reusable enterprise capabilities. Core Competencies: Data Engineering: Design and build maintainable data pipelines, transformations, and data models using modern data-engineering practices. Production Ownership: Proactively monitor, support, troubleshoot, and continuously improve business-critical data and AI products. AI Systems Understanding: Understand how enterprise data, semantic context, data models, APIs, and application components come together to enable reliable AI-powered experiences. Technical Problem-Solving: Diagnose complex data, performance, integration, and production issues and implement durable solutions. Data Quality &amp; Reliability: Build appropriate testing, monitoring, observability, and governance into data products. Collaboration: Work effectively across technical and business teams while reinforcing shared engineering standards and ownership. Key Responsibilities: Own the ongoing support, maintenance, reliability, and enhancement of Data Concierge, AskInsights, and related AI-powered data products. Build, test, deploy, and optimize data pipelines and transformations using dbt, SQL, Alteryx, and related technologies. Design and develop governed, reusable data models and contextual data capabilities that support analytics, automation, and AI use cases. Monitor data and application health, troubleshoot production issues, perform root-cause analysis, and improve reliability, performance, scalability, and cost efficiency. Implement automated testing, data-quality controls, observability, documentation, and deployment practices across data products and pipelines. Build and maintain integrations with enterprise platforms, APIs, data sources, and AI services as required. Partner with Data Engineering, Data Science, Governance, Customer 0, and embedded Data Ops teams to deliver reusable enterprise data products. Translate business and AI requirements into scalable technical solutions while maintaining appropriate governance and security standards. Evaluate emerging AI and data-engineering technologies and capabilities and apply them where they provide practical enterprise value. Contribute to engineering standards, reusable patterns, documentation, and best practices across the broader data organization. Qualifications &amp; Experience: 4–6 years of relevant professional experience in Data Engineering, Analytics Engineering, or a closely related technical role. Strong hands-on experience building and supporting production-grade data pipelines, transformations, and data models. Strong proficiency in SQL and practical experience working with modern data transformation frameworks such as dbt. Experience with Alteryx or similar data preparation, analytics, or workflow automation platforms. Experience designing and maintaining data solutions within cloud-based or modern enterprise data environments. Good understanding of data modeling, data quality, testing, monitoring, observability, and production support. Experience integrating data solutions with APIs, enterprise applications, and external services. Understanding of software engineering practices such as version control, CI/CD, automated testing, and deployment processes. Exposure to AI/ML, Generative AI, LLM-powered applications, semantic layers, or AI-enabled data products is highly desirable. Ability to troubleshoot complex data and integration issues and drive them through to resolution. Strong communication and collaboration skills with the ability to work across engineering, data science, governance, and business teams. Find yourself checking a lot of these boxes but doubting whether you should apply? At Alteryx, we support a growth mindset for our associates through all stages of their careers. If you meet some of the requirements and you share our values, we encourage you to apply. As part of our ongoing commitment to a diverse, equitable, and inclusive workplace, we’re invested in building teams with a wide variety of backgrounds, identities, and experiences. This position involves access to software/technology that is subject to U.S. export controls. Any job offer made will be contingent upon the applicant’s capacity to serve in compliance with U.S. export controls. Who We Are Alteryx is a leading AI-ready data and analytics company that powers actionable insights to help organizations drive smarter, faster decisions with AI-ready data. More than 8,000 customers around the world rely on Alteryx to automate analytics, improve revenue performance, manage costs, and mitigate risk across their businesses. Disclaimers If you require reasonable accommodation as part of the recruiting process, please contact Benefits@alteryx.com. Alteryx, Inc. is an Equal Employment Opportunity Employer. Unsolicited third party/agency profiles and resumes will not be considered.",
+    "sourceDescription": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center of every business decision - and Alteryx is leading the transformation. You'll be working on the challenges that sit at the heart of modern business. No matter your role, the work you do will help organizations move faster, see more clearly, and tackle questions that used to feel impossible. If you're ready to meet the moment with innovation, curiosity, and excellence, there's a place for you here. The Senior AI Data Engineer builds and operates trusted data capabilities that support enterprise analytics and AI. This role owns the reliability and continuous improvement of key AI-powered data products, including Data Concierge and AskInsights, while also developing and optimizing data pipelines and models using dbt, SQL, and Alteryx. Working across Data Engineering, Data Science, Governance, and business-aligned data teams, this role turns emerging AI use cases and traditional data requirements into secure, scalable, and reusable enterprise capabilities. Core Competencies: Data Engineering: Design and build maintainable data pipelines, transformations, and data models using modern data-engineering practices. Production Ownership: Proactively monitor, support, troubleshoot, and continuously improve business-critical data and AI products. AI Systems Understanding: Understand how enterprise data, semantic context, data models, APIs, and application components come together to enable reliable AI-powered experiences. Technical Problem-Solving: Diagnose complex data, performance, integration, and production issues and implement durable solutions. Data Quality &amp; Reliability: Build appropriate testing, monitoring, observability, and governance into data products. Collaboration: Work effectively across technical and business teams while reinforcing shared engineering standards and ownership. Key Responsibilities: Own the ongoing support, maintenance, reliability, and enhancement of Data Concierge, AskInsights, and related AI-powered data products. Build, test, deploy, and optimize data pipelines and transformations using dbt, SQL, Alteryx, and related technologies. Design and develop governed, reusable data models and contextual data capabilities that support analytics, automation, and AI use cases. Monitor data and application health, troubleshoot production issues, perform root-cause analysis, and improve reliability, performance, scalability, and cost efficiency. Implement automated testing, data-quality controls, observability, documentation, and deployment practices across data products and pipelines. Build and maintain integrations with enterprise platforms, APIs, data sources, and AI services as required. Partner with Data Engineering, Data Science, Governance, Customer 0, and embedded Data Ops teams to deliver reusable enterprise data products. Translate business and AI requirements into scalable technical solutions while maintaining appropriate governance and security standards. Evaluate emerging AI and data-engineering technologies and capabilities and apply them where they provide practical enterprise value. Contribute to engineering standards, reusable patterns, documentation, and best practices across the broader data organization. Qualifications &amp; Experience: 4–6 years of relevant professional experience in Data Engineering, Analytics Engineering, or a closely related technical role. Strong hands-on experience building and supporting production-grade data pipelines, transformations, and data models. Strong proficiency in SQL and practical experience working with modern data transformation frameworks such as dbt. Experience with Alteryx or similar data preparation, analytics, or workflow automation platforms. Experience designing and maintaining data solutions within cloud-based or modern enterprise data environments. Good understanding of data modeling, data quality, testing, monitoring, observability, and production support. Experience integrating data solutions with APIs, enterprise applications, and external services. Understanding of software engineering practices such as version control, CI/CD, automated testing, and deployment processes. Exposure to AI/ML, Generative AI, LLM-powered applications, semantic layers, or AI-enabled data products is highly desirable. Ability to troubleshoot complex data and integration issues and drive them through to resolution. Strong communication and collaboration skills with the ability to work across engineering, data science, governance, and business teams. Find yourself checking a lot of these boxes but doubting whether you should apply? At Alteryx, we support a growth mindset for our associates through all stages of their careers. If you meet some of the requirements and you share our values, we encourage you to apply. As part of our ongoing commitment to a diverse, equitable, and inclusive workplace, we’re invested in building teams with a wide variety of backgrounds, identities, and experiences. This position involves access to software/technology that is subject to U.S. export controls. Any job offer made will be contingent upon the applicant’s capacity to serve in compliance with U.S. export controls. Who We Are Alteryx is a leading AI-ready data and analytics company that powers actionable insights to help organizations drive smarter, faster decisions with AI-ready data. More than 8,000 customers around the world rely on Alteryx to automate analytics, improve revenue performance, manage costs, and mitigate risk across their businesses. Disclaimers If you require reasonable accommodation as part of the recruiting process, please contact Benefits@alteryx.com. Alteryx, Inc. is an Equal Employment Opportunity Employer. Unsolicited third party/agency profiles and resumes will not be considered.",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Sr. AI Data Engineer",
+    "normalizedTitle": "Data Engineer",
+    "jobCategory": "Data Engineer",
+    "engineeringDomain": "Data Engineering",
+    "employmentType": "Full-time",
+    "experienceLevel": null,
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-09-17T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-03T19:21:59.761Z",
+    "skillIds": [
+      "sql",
+      "generative-ai"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "generative-ai",
+        "canonicalName": "Generative AI",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Generative AI"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "minimumYears": 4,
+      "maximumYears": 6,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4-6 years",
+      "rawText": null,
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      4,
+      5,
+      6
+    ],
+    "seniority": "Unknown",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-03T21:23:59.110Z",
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "employer_requirement",
+    "employerExperienceProfile": {
+      "minimumYears": 4,
+      "maximumYears": 6,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "4-6 years",
+      "rawText": null,
+      "experienceBucket": "3-5"
+    },
+    "policyEvidence": "Sr. AI Data Engineer"
+  },
+  {
+    "jobId": "R12245",
+    "title": "Software Development Engineer in Test - Performance Focus",
+    "company": "Alteryx",
+    "department": null,
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "locations": [
+      "Bangalore"
+    ],
+    "link": "https://alteryx.wd108.myworkdayjobs.com/en-US/AlteryxCareers/job/Bangalore-India/Software-Development-Engineer-in-Test---Performance-Focus_R12245",
+    "source": "alteryx",
+    "postedAt": "2026-09-04T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center of every business decision\n- and Alteryx is leading the transformation. You'll be working on the challenges that sit at the heart of modern business. No matter your role, the work you do will help organizations move faster, see more clearly, and tackle questions that used to feel impossible. If you're ready to meet the moment with innovation, curiosity, and excellence, there's a place for you here. We are hiring a Software Engineer to help build Alteryx’s next-generation Performance Engineering Platform. This role is for a software engineer with 3+ years of software engineering experience, including exposure to developer tools, automation, CI/CD, performance testing, or cloud-native systems. The goal is to help engineering teams test, understand, and improve performance earlier in the SDLC through developer-first, AI-assisted tooling. This is not a traditional QA or manual performance testing role. This is an engineering role focused on frameworks, automation, observability, CI/CD integration, and agentic AI workflows. Work Location : Pune (Hybrid) What You’ll Do Build features for an agentic, AI-first self-service performance platform. Develop reusable tools, templates, scripts, SDKs, and workflows for API, UI, service, and code performance testing. Help integrate performance checks into CI/CD pipelines and developer workflows. Build AI-assisted workflows for performance test creation, execution, result analysis, defect creation, and service-team notification. Support performance validation for Critical User Journeys, releases, and scale events. Help standardize performance test inputs, outputs, thresholds, evidence, and reporting. Integrate with observability tools such as Datadog, logs, traces, dashboards, and reporting systems. Work with product engineering, SRE, platform, QA, and architecture teams. Contribute to documentation, examples, and onboarding material for development teams. What We’re Looking For 3+ years of professional software engineering experience. Programming experience in Python, Type Script, Go, or similar languages. Understanding of APIs, distributed systems, cloud services, and service-to-service communication. Experience with automation, CI/CD, internal tools, or developer workflows. Familiarity with performance testing concepts such as load, spike, soak, stress, capacity, or regression testing. Familiarity with observability using metrics, logs, traces, dashboards, or alerts. Ability to build simple, maintainable, and reusable software. Good communication and collaboration skills. Must Have Experience with tools such as k6, Locust, and Grasshopper Experience in Python and Type Script. Experience with Datadog, Open Telemetry, Grafana, Prometheus, or Influx DB. Experience with Kubernetes, cloud-native systems, or large-scale Saa S platforms. Nice To Have Experience with tools such as Playwright Experience with SLOs, SLIs, Apdex, error budgets, or burn-rate alerting. Experience building AI agents, MCPs, AI-assisted developer tools, or agentic automation workflows. Experience with Jira automation, defect routing, or engineering dashboards. What Success Looks Like Developers can create and run performance tests more easily. Performance checks become part of normal development and CI/CD workflows. AI-assisted workflows help teams generate tests, analyze failures, and create actionable defects. Performance results are clear, consistent, and useful. Product teams can detect regressions earlier and improve service performance faster. Why This Role Matters Performance is critical to customer trust. This role will help Alteryx build a scalable, AI-first, self-service performance engineering model used across engineering teams. Find yourself checking a lot of these boxes but doubting whether you should apply? At Alteryx, we support a growth mindset for our associates through all stages of their careers. If you meet some of the requirements and you share our values, we encourage you to apply. As part of our ongoing commitment to a diverse, equitable, and inclusive workplace, we’re invested in building teams with a wide variety of backgrounds, identities, and experiences. This position involves access to software/technology that is subject to U.S. export controls. Any job offer made will be contingent upon the applicant’s capacity to serve in compliance with U.S. export controls. Who We Are Alteryx is a leading AI-ready data and analytics company that powers actionable insights to help organizations drive smarter, faster decisions with AI-ready data. More than 8,000 customers around the world rely on Alteryx to automate analytics, improve revenue performance, manage costs, and mitigate risk across their businesses. Disclaimers If you require reasonable accommodation as part of the recruiting process, please contact Benefits@alteryx.com. Alteryx, Inc. is an Equal Employment Opportunity Employer. Unsolicited third party/agency profiles and resumes will not be considered.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "3+ years",
+    "publicExperienceChecked": true,
+    "requisitionId": "R12245",
+    "scrapedAt": "2026-10-03T19:22:00.481Z",
+    "country": "India",
+    "companyCareerPage": "https://www.alteryx.com/about-us/careers",
+    "companyDomain": "alteryx.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://alteryx.wd108.myworkdayjobs.com/en-US/AlteryxCareers/job/Bangalore-India/Software-Development-Engineer-in-Test---Performance-Focus_R12245",
+    "sourceUrl": "https://alteryx.wd108.myworkdayjobs.com/en-US/AlteryxCareers/job/Bangalore-India/Software-Development-Engineer-in-Test---Performance-Focus_R12245",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "5adb125bc22642b02afffafb33da01d1f3ddf45f734ac1f6162ddf4e77a052d7",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "internship",
+          "probability": 0.4765
+        },
+        "experience": {
+          "label": "fresher_eligible",
+          "probability": 0.3906
+        },
+        "seniority": {
+          "label": "internship",
+          "probability": 0.3423
+        },
+        "leadership": {
+          "label": "lead",
+          "probability": 0.4276
+        }
+      },
+      "complete": true,
+      "windows": 2,
+      "evidenceContext": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center o",
+      "classifiedAt": "2026-10-03T19:22:01.994Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": null,
+        "seniority": "Unknown",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "experienceBucket": "3-5",
+        "experienceProfile": {
+          "minimumYears": 3,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "3+ years",
+          "rawText": null,
+          "experienceBucket": "3-5"
+        },
+        "experienceBasis": "employer_requirement",
+        "experienceRequired": "3+ years",
+        "employerExperienceProfile": {
+          "minimumYears": 3,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "3+ years",
+          "rawText": null,
+          "experienceBucket": "3-5"
+        },
+        "policyEvidence": null
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Mid Level",
+        "seniority": "Mid Level",
+        "experienceYears": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "experienceBucket": "3-5",
+        "experienceProfile": {
+          "minimumYears": 3,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "3+ years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "5167b59c53768d0c06172543c3975284c5a02b33ac33f5669476c7c190e7aeb6",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "e43c51beafe432f0edcae28ef89058804c26311dfca53441b84d75ae9eb830ed",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-03T19:22:01.994Z",
+        "reused": true
+      }
+    },
+    "description": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center of every business decision - and Alteryx is leading the transformation. You'll be working on the challenges that sit at the heart of modern business. No matter your role, the work you do will help organizations move faster, see more clearly, and tackle questions that used to feel impossible. If you're ready to meet the moment with innovation, curiosity, and excellence, there's a place for you here. We are hiring a Software Engineer to help build Alteryx’s next-generation Performance Engineering Platform. This role is for a software engineer with 3+ years of software engineering experience, including exposure to developer tools, automation, CI/CD, performance testing, or cloud-native systems. The goal is to help engineering teams test, understand, and improve performance earlier in the SDLC through developer-first, AI-assisted tooling. This is not a traditional QA or manual performance testing role. This is an engineering role focused on frameworks, automation, observability, CI/CD integration, and agentic AI workflows. Work Location : Pune (Hybrid) What You’ll Do Build features for an agentic, AI-first self-service performance platform. Develop reusable tools, templates, scripts, SDKs, and workflows for API, UI, service, and code performance testing. Help integrate performance checks into CI/CD pipelines and developer workflows. Build AI-assisted workflows for performance test creation, execution, result analysis, defect creation, and service-team notification. Support performance validation for Critical User Journeys, releases, and scale events. Help standardize performance test inputs, outputs, thresholds, evidence, and reporting. Integrate with observability tools such as Datadog, logs, traces, dashboards, and reporting systems. Work with product engineering, SRE, platform, QA, and architecture teams. Contribute to documentation, examples, and onboarding material for development teams. What We’re Looking For 3+ years of professional software engineering experience. Programming experience in Python, TypeScript, Go, or similar languages. Understanding of APIs, distributed systems, cloud services, and service-to-service communication. Experience with automation, CI/CD, internal tools, or developer workflows. Familiarity with performance testing concepts such as load, spike, soak, stress, capacity, or regression testing. Familiarity with observability using metrics, logs, traces, dashboards, or alerts. Ability to build simple, maintainable, and reusable software. Good communication and collaboration skills. Must Have Experience with tools such as k6, Locust, and Grasshopper Experience in Python and TypeScript. Experience with Datadog, OpenTelemetry, Grafana, Prometheus, or InfluxDB. Experience with Kubernetes, cloud-native systems, or large-scale SaaS platforms. Nice To Have Experience with tools such as Playwright Experience with SLOs, SLIs, Apdex, error budgets, or burn-rate alerting. Experience building AI agents, MCPs, AI-assisted developer tools, or agentic automation workflows. Experience with Jira automation, defect routing, or engineering dashboards. What Success Looks Like Developers can create and run performance tests more easily. Performance checks become part of normal development and CI/CD workflows. AI-assisted workflows help teams generate tests, analyze failures, and create actionable defects. Performance results are clear, consistent, and useful. Product teams can detect regressions earlier and improve service performance faster. Why This Role Matters Performance is critical to customer trust. This role will help Alteryx build a scalable, AI-first, self-service performance engineering model used across engineering teams. Find yourself checking a lot of these boxes but doubting whether you should apply? At Alteryx, we support a growth mindset for our associates through all stages of their careers. If you meet some of the requirements and you share our values, we encourage you to apply. As part of our ongoing commitment to a diverse, equitable, and inclusive workplace, we’re invested in building teams with a wide variety of backgrounds, identities, and experiences. This position involves access to software/technology that is subject to U.S. export controls. Any job offer made will be contingent upon the applicant’s capacity to serve in compliance with U.S. export controls. Who We Are Alteryx is a leading AI-ready data and analytics company that powers actionable insights to help organizations drive smarter, faster decisions with AI-ready data. More than 8,000 customers around the world rely on Alteryx to automate analytics, improve revenue performance, manage costs, and mitigate risk across their businesses. Disclaimers If you require reasonable accommodation as part of the recruiting process, please contact Benefits@alteryx.com. Alteryx, Inc. is an Equal Employment Opportunity Employer. Unsolicited third party/agency profiles and resumes will not be considered.",
+    "sourceDescription": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center of every business decision - and Alteryx is leading the transformation. You'll be working on the challenges that sit at the heart of modern business. No matter your role, the work you do will help organizations move faster, see more clearly, and tackle questions that used to feel impossible. If you're ready to meet the moment with innovation, curiosity, and excellence, there's a place for you here. We are hiring a Software Engineer to help build Alteryx’s next-generation Performance Engineering Platform. This role is for a software engineer with 3+ years of software engineering experience, including exposure to developer tools, automation, CI/CD, performance testing, or cloud-native systems. The goal is to help engineering teams test, understand, and improve performance earlier in the SDLC through developer-first, AI-assisted tooling. This is not a traditional QA or manual performance testing role. This is an engineering role focused on frameworks, automation, observability, CI/CD integration, and agentic AI workflows. Work Location : Pune (Hybrid) What You’ll Do Build features for an agentic, AI-first self-service performance platform. Develop reusable tools, templates, scripts, SDKs, and workflows for API, UI, service, and code performance testing. Help integrate performance checks into CI/CD pipelines and developer workflows. Build AI-assisted workflows for performance test creation, execution, result analysis, defect creation, and service-team notification. Support performance validation for Critical User Journeys, releases, and scale events. Help standardize performance test inputs, outputs, thresholds, evidence, and reporting. Integrate with observability tools such as Datadog, logs, traces, dashboards, and reporting systems. Work with product engineering, SRE, platform, QA, and architecture teams. Contribute to documentation, examples, and onboarding material for development teams. What We’re Looking For 3+ years of professional software engineering experience. Programming experience in Python, TypeScript, Go, or similar languages. Understanding of APIs, distributed systems, cloud services, and service-to-service communication. Experience with automation, CI/CD, internal tools, or developer workflows. Familiarity with performance testing concepts such as load, spike, soak, stress, capacity, or regression testing. Familiarity with observability using metrics, logs, traces, dashboards, or alerts. Ability to build simple, maintainable, and reusable software. Good communication and collaboration skills. Must Have Experience with tools such as k6, Locust, and Grasshopper Experience in Python and TypeScript. Experience with Datadog, OpenTelemetry, Grafana, Prometheus, or InfluxDB. Experience with Kubernetes, cloud-native systems, or large-scale SaaS platforms. Nice To Have Experience with tools such as Playwright Experience with SLOs, SLIs, Apdex, error budgets, or burn-rate alerting. Experience building AI agents, MCPs, AI-assisted developer tools, or agentic automation workflows. Experience with Jira automation, defect routing, or engineering dashboards. What Success Looks Like Developers can create and run performance tests more easily. Performance checks become part of normal development and CI/CD workflows. AI-assisted workflows help teams generate tests, analyze failures, and create actionable defects. Performance results are clear, consistent, and useful. Product teams can detect regressions earlier and improve service performance faster. Why This Role Matters Performance is critical to customer trust. This role will help Alteryx build a scalable, AI-first, self-service performance engineering model used across engineering teams. Find yourself checking a lot of these boxes but doubting whether you should apply? At Alteryx, we support a growth mindset for our associates through all stages of their careers. If you meet some of the requirements and you share our values, we encourage you to apply. As part of our ongoing commitment to a diverse, equitable, and inclusive workplace, we’re invested in building teams with a wide variety of backgrounds, identities, and experiences. This position involves access to software/technology that is subject to U.S. export controls. Any job offer made will be contingent upon the applicant’s capacity to serve in compliance with U.S. export controls. Who We Are Alteryx is a leading AI-ready data and analytics company that powers actionable insights to help organizations drive smarter, faster decisions with AI-ready data. More than 8,000 customers around the world rely on Alteryx to automate analytics, improve revenue performance, manage costs, and mitigate risk across their businesses. Disclaimers If you require reasonable accommodation as part of the recruiting process, please contact Benefits@alteryx.com. Alteryx, Inc. is an Equal Employment Opportunity Employer. Unsolicited third party/agency profiles and resumes will not be considered.",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Software Development Engineer in Test - Performance Focus",
+    "normalizedTitle": "Software Development Engineer in Test - Performance Focus",
+    "jobCategory": "Software Development Engineer in Test - Performance Focus",
+    "engineeringDomain": "Machine Learning",
+    "employmentType": "Full-time",
+    "experienceLevel": null,
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-09-04T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-03T19:22:00.481Z",
+    "skillIds": [
+      "python",
+      "typescript",
+      "kubernetes"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "typescript",
+        "canonicalName": "TypeScript",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "TypeScript"
+      },
+      {
+        "skillId": "kubernetes",
+        "canonicalName": "Kubernetes",
+        "category": "DevOps & Infrastructure",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Kubernetes"
+      }
+    ],
+    "experienceBucket": "3-5",
+    "experienceProfile": {
+      "minimumYears": 3,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3+ years",
+      "rawText": null,
+      "experienceBucket": "3-5"
+    },
+    "experienceYears": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Unknown",
+    "primaryRoleDomain": "Software Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-03T21:23:59.113Z",
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "employer_requirement",
+    "employerExperienceProfile": {
+      "minimumYears": 3,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "3+ years",
+      "rawText": null,
+      "experienceBucket": "3-5"
+    },
+    "policyEvidence": null
+  },
+  {
+    "jobId": "R12112",
+    "title": "Customer Success Manager",
+    "company": "Alteryx",
+    "department": null,
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "locations": [
+      "Bangalore"
+    ],
+    "link": "https://alteryx.wd108.myworkdayjobs.com/en-US/AlteryxCareers/job/Bangalore-India/Customer-Success-Manager_R12112",
+    "source": "alteryx",
+    "postedAt": "2026-09-04T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center of every business decision\n- and Alteryx is leading the transformation. You'll be working on the challenges that sit at the heart of modern business. No matter your role, the work you do will help organizations move faster, see more clearly, and tackle questions that used to feel impossible. If you're ready to meet the moment with innovation, curiosity, and excellence, there's a place for you here.\n\nRESPONSIBILITIES:\nBuilding &amp; Fostering Strong Relationships – Be the technical interface between the customer and internal departments by developing deep relationship with customers, sponsors, and key stakeholders by increasing adoption, ensuring retention, and long-term success Becoming a Strategic Advisor – Establish a trusted advisor relationship with each assigned customer and drive continued value of our products and services Driving Advocacy\n- Build deep relationships with key customer stakeholders to inform engagement strategy and create \"Alteryx Advocates” Architecting Technical Solutions – Conduct technical working sessions to jointly architect solutions leveraging the Alteryx Designer with prospective and existing users within your accounts Supporting Account Expansion – Partnering with Sales Leaders to provide insights on customer health – focusing on adoption and retention strategies, identifying new business opportunities Active Account Management – Create success plans for portfolio of accounts and proactively work with customers to establish and achieve critical goals Enabling and Training Users – Conduct enablement sessions to provide hands on training of the Alteryx Designer and Server products Demonstrating Alteryx Proficiency – Remain up-to-date and certified on Alteryx solutions and products and maintain familiarity to all company methods and procedures. Qualifications 2+ years of work experience with data and analytics used specifically for strategic business decisions Experience in alteryx or similar analytics platform Proven customer-facing experience. Ability to effectively collaborate with internal teams to advocate for and represent the voice of the customer Exceptional analytical and problem-solving skills including ability to figure out how things should work. A creative self-starter who will find new and creative ways to bring value to customers A strong entrepreneurial spirit and a passion for excellence Attention to detail, strong organizational skills, and a focus on quality of work by executing success goals pertaining to your customers journey Ability to make data and analytics approachable, engaging, and fun in a virtual environment A listener who is empathetic, customer-oriented, and attentive to their needs #LI-MP1 Find yourself checking a lot of these boxes but doubting whether you should apply? At Alteryx, we support a growth mindset for our associates through all stages of their careers. If you meet some of the requirements and you share our values, we encourage you to apply. As part of our ongoing commitment to a diverse, equitable, and inclusive workplace, we’re invested in building teams with a wide variety of backgrounds, identities, and experiences. This position involves access to software/technology that is subject to U.S. export controls. Any job offer made will be contingent upon the applicant’s capacity to serve in compliance with U.S. export controls. Who We Are Alteryx is a leading AI-ready data and analytics company that powers actionable insights to help organizations drive smarter, faster decisions with AI-ready data. More than 8,000 customers around the world rely on Alteryx to automate analytics, improve revenue performance, manage costs, and mitigate risk across their businesses. Disclaimers If you require reasonable accommodation as part of the recruiting process, please contact Benefits@alteryx.com. Alteryx, Inc. is an Equal Employment Opportunity Employer. Unsolicited third party/agency profiles and resumes will not be considered.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "2+ years",
+    "publicExperienceChecked": true,
+    "requisitionId": "R12112",
+    "scrapedAt": "2026-10-03T19:22:01.013Z",
+    "country": "India",
+    "companyCareerPage": "https://www.alteryx.com/about-us/careers",
+    "companyDomain": "alteryx.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://alteryx.wd108.myworkdayjobs.com/en-US/AlteryxCareers/job/Bangalore-India/Customer-Success-Manager_R12112",
+    "sourceUrl": "https://alteryx.wd108.myworkdayjobs.com/en-US/AlteryxCareers/job/Bangalore-India/Customer-Success-Manager_R12112",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "732d775aac392b099101b3046abab53679022585fe84f30b13c80429632c994d",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "internship",
+          "probability": 0.4294
+        },
+        "experience": {
+          "label": "fresher_eligible",
+          "probability": 0.8746
+        },
+        "seniority": {
+          "label": "entry",
+          "probability": 0.3927
+        },
+        "leadership": {
+          "label": "lead",
+          "probability": 0.3702
+        }
+      },
+      "complete": true,
+      "windows": 1,
+      "evidenceContext": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center o",
+      "classifiedAt": "2026-10-03T19:22:01.994Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Senior Level",
+        "seniority": "Manager",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "experienceBucket": "1-3",
+        "experienceProfile": {
+          "minimumYears": 2,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "2+ years",
+          "rawText": null,
+          "experienceBucket": "1-3"
+        },
+        "experienceBasis": "employer_requirement",
+        "experienceRequired": "2+ years",
+        "employerExperienceProfile": {
+          "minimumYears": 2,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "2+ years",
+          "rawText": null,
+          "experienceBucket": "1-3"
+        },
+        "policyEvidence": "Customer Success Manager"
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Senior Level",
+        "seniority": "Manager",
+        "experienceYears": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "experienceBucket": "1-3",
+        "experienceProfile": {
+          "minimumYears": 2,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "2+ years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "d16d5433d3236e9969451c1aad28e0257e0e1aec018147323a2cd3a4597fe364",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "e43c51beafe432f0edcae28ef89058804c26311dfca53441b84d75ae9eb830ed",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-03T19:22:01.994Z",
+        "reused": true
+      }
+    },
+    "description": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center of every business decision - and Alteryx is leading the transformation. You'll be working on the challenges that sit at the heart of modern business. No matter your role, the work you do will help organizations move faster, see more clearly, and tackle questions that used to feel impossible. If you're ready to meet the moment with innovation, curiosity, and excellence, there's a place for you here. Responsibilities: Building &amp; Fostering Strong Relationships – Be the technical interface between the customer and internal departments by developing deep relationship with customers, sponsors, and key stakeholders by increasing adoption, ensuring retention, and long-term success Becoming a Strategic Advisor – Establish a trusted advisor relationship with each assigned customer and drive continued value of our products and services Driving Advocacy - Build deep relationships with key customer stakeholders to inform engagement strategy and create \"Alteryx Advocates” Architecting Technical Solutions – Conduct technical working sessions to jointly architect solutions leveraging the Alteryx Designer with prospective and existing users within your accounts Supporting Account Expansion – Partnering with Sales Leaders to provide insights on customer health – focusing on adoption and retention strategies, identifying new business opportunities Active Account Management – Create success plans for portfolio of accounts and proactively work with customers to establish and achieve critical goals Enabling and Training Users – Conduct enablement sessions to provide hands on training of the Alteryx Designer and Server products Demonstrating Alteryx Proficiency – Remain up-to-date and certified on Alteryx solutions and products and maintain familiarity to all company methods and procedures. Qualifications 2+ years of work experience with data and analytics used specifically for strategic business decisions Experience in alteryx or similar analytics platform Proven customer-facing experience. Ability to effectively collaborate with internal teams to advocate for and represent the voice of the customer Exceptional analytical and problem-solving skills including ability to figure out how things should work. A creative self-starter who will find new and creative ways to bring value to customers A strong entrepreneurial spirit and a passion for excellence Attention to detail, strong organizational skills, and a focus on quality of work by executing success goals pertaining to your customers journey Ability to make data and analytics approachable, engaging, and fun in a virtual environment A listener who is empathetic, customer-oriented, and attentive to their needs #LI-MP1 Find yourself checking a lot of these boxes but doubting whether you should apply? At Alteryx, we support a growth mindset for our associates through all stages of their careers. If you meet some of the requirements and you share our values, we encourage you to apply. As part of our ongoing commitment to a diverse, equitable, and inclusive workplace, we’re invested in building teams with a wide variety of backgrounds, identities, and experiences. This position involves access to software/technology that is subject to U.S. export controls. Any job offer made will be contingent upon the applicant’s capacity to serve in compliance with U.S. export controls. Who We Are Alteryx is a leading AI-ready data and analytics company that powers actionable insights to help organizations drive smarter, faster decisions with AI-ready data. More than 8,000 customers around the world rely on Alteryx to automate analytics, improve revenue performance, manage costs, and mitigate risk across their businesses. Disclaimers If you require reasonable accommodation as part of the recruiting process, please contact Benefits@alteryx.com. Alteryx, Inc. is an Equal Employment Opportunity Employer. Unsolicited third party/agency profiles and resumes will not be considered.",
+    "sourceDescription": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center of every business decision - and Alteryx is leading the transformation. You'll be working on the challenges that sit at the heart of modern business. No matter your role, the work you do will help organizations move faster, see more clearly, and tackle questions that used to feel impossible. If you're ready to meet the moment with innovation, curiosity, and excellence, there's a place for you here. Responsibilities: Building &amp; Fostering Strong Relationships – Be the technical interface between the customer and internal departments by developing deep relationship with customers, sponsors, and key stakeholders by increasing adoption, ensuring retention, and long-term success Becoming a Strategic Advisor – Establish a trusted advisor relationship with each assigned customer and drive continued value of our products and services Driving Advocacy - Build deep relationships with key customer stakeholders to inform engagement strategy and create \"Alteryx Advocates” Architecting Technical Solutions – Conduct technical working sessions to jointly architect solutions leveraging the Alteryx Designer with prospective and existing users within your accounts Supporting Account Expansion – Partnering with Sales Leaders to provide insights on customer health – focusing on adoption and retention strategies, identifying new business opportunities Active Account Management – Create success plans for portfolio of accounts and proactively work with customers to establish and achieve critical goals Enabling and Training Users – Conduct enablement sessions to provide hands on training of the Alteryx Designer and Server products Demonstrating Alteryx Proficiency – Remain up-to-date and certified on Alteryx solutions and products and maintain familiarity to all company methods and procedures. Qualifications 2+ years of work experience with data and analytics used specifically for strategic business decisions Experience in alteryx or similar analytics platform Proven customer-facing experience. Ability to effectively collaborate with internal teams to advocate for and represent the voice of the customer Exceptional analytical and problem-solving skills including ability to figure out how things should work. A creative self-starter who will find new and creative ways to bring value to customers A strong entrepreneurial spirit and a passion for excellence Attention to detail, strong organizational skills, and a focus on quality of work by executing success goals pertaining to your customers journey Ability to make data and analytics approachable, engaging, and fun in a virtual environment A listener who is empathetic, customer-oriented, and attentive to their needs #LI-MP1 Find yourself checking a lot of these boxes but doubting whether you should apply? At Alteryx, we support a growth mindset for our associates through all stages of their careers. If you meet some of the requirements and you share our values, we encourage you to apply. As part of our ongoing commitment to a diverse, equitable, and inclusive workplace, we’re invested in building teams with a wide variety of backgrounds, identities, and experiences. This position involves access to software/technology that is subject to U.S. export controls. Any job offer made will be contingent upon the applicant’s capacity to serve in compliance with U.S. export controls. Who We Are Alteryx is a leading AI-ready data and analytics company that powers actionable insights to help organizations drive smarter, faster decisions with AI-ready data. More than 8,000 customers around the world rely on Alteryx to automate analytics, improve revenue performance, manage costs, and mitigate risk across their businesses. Disclaimers If you require reasonable accommodation as part of the recruiting process, please contact Benefits@alteryx.com. Alteryx, Inc. is an Equal Employment Opportunity Employer. Unsolicited third party/agency profiles and resumes will not be considered.",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Customer Success Manager",
+    "normalizedTitle": "Customer Success Manager",
+    "jobCategory": "Customer Success Manager",
+    "engineeringDomain": "Unknown",
+    "employmentType": "Full-time",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-09-04T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-03T19:22:01.013Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "1-3",
+    "experienceProfile": {
+      "minimumYears": 2,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "2+ years",
+      "rawText": null,
+      "experienceBucket": "1-3"
+    },
+    "experienceYears": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Manager",
+    "primaryRoleDomain": "Sales & Customer Success",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-03T21:23:59.117Z",
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "employer_requirement",
+    "employerExperienceProfile": {
+      "minimumYears": 2,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "2+ years",
+      "rawText": null,
+      "experienceBucket": "1-3"
+    },
+    "policyEvidence": "Customer Success Manager"
+  },
+  {
+    "jobId": "R12343",
+    "title": "Associate, Digital Customer Success Programs",
+    "company": "Alteryx",
+    "department": null,
+    "location": "Bangalore, India",
+    "city": "Bangalore",
+    "locations": [
+      "Bangalore"
+    ],
+    "link": "https://alteryx.wd108.myworkdayjobs.com/en-US/AlteryxCareers/job/Bangalore-India/Associate--Digital-Customer-Success-Programs_R12343",
+    "source": "alteryx",
+    "postedAt": "2026-09-04T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center of every business decision\n- and Alteryx is leading the transformation. You'll be working on the challenges that sit at the heart of modern business. No matter your role, the work you do will help organizations move faster, see more clearly, and tackle questions that used to feel impossible. If you're ready to meet the moment with innovation, curiosity, and excellence, there's a place for you here. Why work for just any analytics company? At Alteryx, we are explorers, dreamers, and innovators. We’re on a journey to build the best analytics platform in the world—and we can’t do it without people like you leading the way. Forget the stereotypical tech companies of the past. Embrace the unconventional, exercise your imagination, and help alter the future with Alteryx. We are looking for an Associate, Digital Customer Success Programs in India to join our Global Digital Customer Success Programs team. This role is ideal for an early-career professional who is highly organized, execution-focused, collaborative, and excited to contribute to scalable customer engagement and lifecycle automation programs that support onboarding, product adoption, customer satisfaction, retention, and growth. This is primarily an execution and delivery-focused role, supporting customer lifecycle programs and digital engagement initiatives from planning through launch and ongoing management. While this role does not own program strategy, we highly value individuals who question the status quo, identify opportunities for improvement, and bring a mindset of continuous optimization, efficiency, and scalable execution. About the Role As an Associate on the Digital Customer Success Programs team, you will contribute to the day-to-day execution, coordination, and delivery of customer lifecycle programs and engagement initiatives. You will work closely with Customer Success, Operations, Product, and Marketing teams to help deliver digital omni-channel customer engagement initiatives accurately, efficiently, and at scale. This role is focused on building and supporting scalable, repeatable execution mechanisms that enable the team to deliver consistent customer experiences globally. In addition to supporting program delivery, you will help document, refine, and improve workflows and processes that allow the organization to scale effectively over time while balancing creative problem-solving with structured execution. Success in this role requires strong attention to detail, adaptability, and the ability to execute consistently in a fast-paced environment. You will work within established frameworks and scalable mechanisms while helping improve workflows, documentation, and team efficiency over time. This role helps create the bridge between scalable digital and community-led engagement and more strategic, relationship-driven customer experiences. By enabling consistent, high-quality customer interactions across the lifecycle, this role helps Customer Success teams engage customers more effectively at the right moments and in the right ways. This is a highly collaborative, global role that partners extensively with US-based stakeholders and cross-functional teams across multiple regions. Flexibility in working hours and comfort collaborating across time zones will be important for success. What You’ll Do Program &amp; Lifecycle Execution Execute Digital Customer Success programs and omni-channel customer outreach using and continuously improving established workflows, templates, and engagement processes. Deliver onboarding, adoption, renewal, and customer engagement initiatives across digital channels. Contribute to scalable customer engagement experiences that improve onboarding success, product adoption, customer satisfaction, and retention outcomes. Support customer engagement initiatives that connect digital, community, and relationship-led experiences in a scalable and consistent way across the customer lifecycle. Prepare, validate, and QA audience lists, segmentation logic, and lifecycle workflows before launch. Monitor recurring program execution activities and ensure timelines and deliverables are met consistently. Identify execution issues, process gaps, or data discrepancies and escalate them quickly and clearly. Workflow &amp; Program Coordination Maintain and optimize digital customer journey workflows and lifecycle automation programs across internal systems and tools. Assist with testing, validation, and rollout of workflow enhancements and process improvements. Follow documented procedures and standards to maintain accuracy, consistency, and data integrity. Support reporting and performance analysis by gathering program metrics and organizing engagement data. Cross-Functional Coordination Partner closely with Customer Success, Rev Ops, Marketing, Product, and Operations stakeholders to support program delivery. Participate in regular working sessions, project check-ins, and operational reviews. Maintain trackers, documentation, schedules, and execution plans to ensure visibility and alignment across teams. Collaborate effectively with global teams and adapt to shifting priorities and business needs. Continuous Improvement &amp; Optimization Bring curiosity and a process-improvement mindset to everyday work. Help document, refine, and build scalable mechanisms and repeatable processes that enable the team to grow efficiently while maintaining consistency and quality. Proactively identify opportunities to streamline workflows, reduce manual effort, improve customer experience, or increase operational efficiency. Bring a creative and resourceful mindset to solving problems, balancing scrappy execution with long-term scalability and structure. Question existing processes constructively and contribute ideas that help the team scale more effectively. Who You Are An execution-oriented professional who enjoys delivering high-quality outcomes through coordination, organization, and consistent execution. Comfortable working within structured processes and scalable program frameworks. Highly detail-oriented, organized, and dependable in managing recurring tasks and timelines. Curious, proactive, and willing to challenge inefficient processes constructively. Strong communicator who collaborates effectively across teams and functions. Adaptable and comfortable working in a fast-paced, globally distributed environment. What You Bring 2–4 years of experience in Customer Success, Marketing Operations, Digital Programs, Communications, or a related field. Bachelor’s degree or equivalent practical experience. Experience supporting execution of customer communications, digital programs, operational workflows, or lifecycle initiatives. Familiarity with CRM, marketing automation, or customer engagement platforms is preferred. Exposure to tools such as Salesforce, Marketo, Gainsight, Intercom, Snowflake, or similar platforms is a plus. Strong organizational skills and attention to detail. Ability to manage multiple operational tasks while maintaining accuracy and consistency. Strong written and verbal communication skills. Willingness and flexibility to collaborate across global time zones, including regular overlap with US-based stakeholders and teams. Why This Role Matters This role plays a critical part in ensuring customers receive timely, accurate, and engaging experiences throughout their lifecycle with Alteryx. By supporting the scalable execution of digital customer programs and engagement initiatives, you will directly contribute to customer onboarding, product adoption, retention, and overall customer experience. This role also helps strengthen the connection between scalable digital engagement and more personalized, relationship-driven customer experiences, enabling Customer Success teams to engage customers more effectively across every stage of the customer journey. This is an opportunity to gain hands-on experience in Digital Customer Success and lifecycle programs while contributing to high-impact global initiatives in a collaborative and fast-moving environment. #LI-MP1 Find yourself checking a lot of these boxes but doubting whether you should apply? At Alteryx, we support a growth mindset for our associates through all stages of their careers. If you meet some of the requirements and you share our values, we encourage you to apply. As part of our ongoing commitment to a diverse, equitable, and inclusive workplace, we’re invested in building teams with a wide variety of backgrounds, identities, and experiences. This position involves access to software/technology that is subject to U.S. export controls. Any job offer made will be contingent upon the applicant’s capacity to serve in compliance with U.S. export controls. Who We Are Alteryx is a leading AI-ready data and analytics company that powers actionable insights to help organizations drive smarter, faster decisions with AI-ready data. More than 8,000 customers around the world rely on Alteryx to automate analytics, improve revenue performance, manage costs, and mitigate risk across their businesses. Disclaimers If you require reasonable accommodation as part of the recruiting process, please contact Benefits@alteryx.com. Alteryx, Inc. is an Equal Employment Opportunity Employer. Unsolicited third party/agency profiles and resumes will not be considered.",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "2-4 years",
+    "publicExperienceChecked": true,
+    "requisitionId": "R12343",
+    "scrapedAt": "2026-10-03T19:22:01.705Z",
+    "country": "India",
+    "companyCareerPage": "https://www.alteryx.com/about-us/careers",
+    "companyDomain": "alteryx.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://alteryx.wd108.myworkdayjobs.com/en-US/AlteryxCareers/job/Bangalore-India/Associate--Digital-Customer-Success-Programs_R12343",
+    "sourceUrl": "https://alteryx.wd108.myworkdayjobs.com/en-US/AlteryxCareers/job/Bangalore-India/Associate--Digital-Customer-Success-Programs_R12343",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "d395a7a9aca4bc52311f7c3466068ef5a079fad3e9a33b8ec7fa9c17679b2872",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "internship",
+          "probability": 0.5615
+        },
+        "experience": {
+          "label": "fresher_eligible",
+          "probability": 0.563
+        },
+        "seniority": {
+          "label": "junior",
+          "probability": 0.6507
+        },
+        "leadership": {
+          "label": "lead",
+          "probability": 0.5284
+        }
+      },
+      "complete": true,
+      "windows": 3,
+      "evidenceContext": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center o",
+      "classifiedAt": "2026-10-03T19:22:01.994Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": null,
+        "seniority": "Unknown",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          2,
+          3,
+          4
+        ],
+        "experienceBucket": "1-3",
+        "experienceProfile": {
+          "minimumYears": 2,
+          "maximumYears": 4,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "2-4 years",
+          "rawText": null,
+          "experienceBucket": "1-3"
+        },
+        "experienceBasis": "employer_requirement",
+        "experienceRequired": "2-4 years",
+        "employerExperienceProfile": {
+          "minimumYears": 2,
+          "maximumYears": 4,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "2-4 years",
+          "rawText": null,
+          "experienceBucket": "1-3"
+        },
+        "policyEvidence": null
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Junior Level",
+        "seniority": "Associate",
+        "experienceYears": [
+          2,
+          3,
+          4
+        ],
+        "experienceBucket": "1-3",
+        "experienceProfile": {
+          "minimumYears": 2,
+          "maximumYears": 4,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "2-4 years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "bf7380d861ad5251299252a6498890e8450b461be3ff7c6e89e6741cd48f46dd",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "e43c51beafe432f0edcae28ef89058804c26311dfca53441b84d75ae9eb830ed",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-03T19:22:01.994Z",
+        "reused": true
+      }
+    },
+    "description": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center of every business decision - and Alteryx is leading the transformation. You'll be working on the challenges that sit at the heart of modern business. No matter your role, the work you do will help organizations move faster, see more clearly, and tackle questions that used to feel impossible. If you're ready to meet the moment with innovation, curiosity, and excellence, there's a place for you here. Why work for just any analytics company? At Alteryx, we are explorers, dreamers, and innovators. We’re on a journey to build the best analytics platform in the world—and we can’t do it without people like you leading the way. Forget the stereotypical tech companies of the past. Embrace the unconventional, exercise your imagination, and help alter the future with Alteryx. We are looking for an Associate, Digital Customer Success Programs in India to join our Global Digital Customer Success Programs team. This role is ideal for an early-career professional who is highly organized, execution-focused, collaborative, and excited to contribute to scalable customer engagement and lifecycle automation programs that support onboarding, product adoption, customer satisfaction, retention, and growth. This is primarily an execution and delivery-focused role, supporting customer lifecycle programs and digital engagement initiatives from planning through launch and ongoing management. While this role does not own program strategy, we highly value individuals who question the status quo, identify opportunities for improvement, and bring a mindset of continuous optimization, efficiency, and scalable execution. About the Role As an Associate on the Digital Customer Success Programs team, you will contribute to the day-to-day execution, coordination, and delivery of customer lifecycle programs and engagement initiatives. You will work closely with Customer Success, Operations, Product, and Marketing teams to help deliver digital omni-channel customer engagement initiatives accurately, efficiently, and at scale. This role is focused on building and supporting scalable, repeatable execution mechanisms that enable the team to deliver consistent customer experiences globally. In addition to supporting program delivery, you will help document, refine, and improve workflows and processes that allow the organization to scale effectively over time while balancing creative problem-solving with structured execution. Success in this role requires strong attention to detail, adaptability, and the ability to execute consistently in a fast-paced environment. You will work within established frameworks and scalable mechanisms while helping improve workflows, documentation, and team efficiency over time. This role helps create the bridge between scalable digital and community-led engagement and more strategic, relationship-driven customer experiences. By enabling consistent, high-quality customer interactions across the lifecycle, this role helps Customer Success teams engage customers more effectively at the right moments and in the right ways. This is a highly collaborative, global role that partners extensively with US-based stakeholders and cross-functional teams across multiple regions. Flexibility in working hours and comfort collaborating across time zones will be important for success. What You’ll Do Program &amp; Lifecycle Execution Execute Digital Customer Success programs and omni-channel customer outreach using and continuously improving established workflows, templates, and engagement processes. Deliver onboarding, adoption, renewal, and customer engagement initiatives across digital channels. Contribute to scalable customer engagement experiences that improve onboarding success, product adoption, customer satisfaction, and retention outcomes. Support customer engagement initiatives that connect digital, community, and relationship-led experiences in a scalable and consistent way across the customer lifecycle. Prepare, validate, and QA audience lists, segmentation logic, and lifecycle workflows before launch. Monitor recurring program execution activities and ensure timelines and deliverables are met consistently. Identify execution issues, process gaps, or data discrepancies and escalate them quickly and clearly. Workflow &amp; Program Coordination Maintain and optimize digital customer journey workflows and lifecycle automation programs across internal systems and tools. Assist with testing, validation, and rollout of workflow enhancements and process improvements. Follow documented procedures and standards to maintain accuracy, consistency, and data integrity. Support reporting and performance analysis by gathering program metrics and organizing engagement data. Cross-Functional Coordination Partner closely with Customer Success, RevOps, Marketing, Product, and Operations stakeholders to support program delivery. Participate in regular working sessions, project check-ins, and operational reviews. Maintain trackers, documentation, schedules, and execution plans to ensure visibility and alignment across teams. Collaborate effectively with global teams and adapt to shifting priorities and business needs. Continuous Improvement &amp; Optimization Bring curiosity and a process-improvement mindset to everyday work. Help document, refine, and build scalable mechanisms and repeatable processes that enable the team to grow efficiently while maintaining consistency and quality. Proactively identify opportunities to streamline workflows, reduce manual effort, improve customer experience, or increase operational efficiency. Bring a creative and resourceful mindset to solving problems, balancing scrappy execution with long-term scalability and structure. Question existing processes constructively and contribute ideas that help the team scale more effectively. Who You Are An execution-oriented professional who enjoys delivering high-quality outcomes through coordination, organization, and consistent execution. Comfortable working within structured processes and scalable program frameworks. Highly detail-oriented, organized, and dependable in managing recurring tasks and timelines. Curious, proactive, and willing to challenge inefficient processes constructively. Strong communicator who collaborates effectively across teams and functions. Adaptable and comfortable working in a fast-paced, globally distributed environment. What You Bring 2–4 years of experience in Customer Success, Marketing Operations, Digital Programs, Communications, or a related field. Bachelor’s degree or equivalent practical experience. Experience supporting execution of customer communications, digital programs, operational workflows, or lifecycle initiatives. Familiarity with CRM, marketing automation, or customer engagement platforms is preferred. Exposure to tools such as Salesforce, Marketo, Gainsight, Intercom, Snowflake, or similar platforms is a plus. Strong organizational skills and attention to detail. Ability to manage multiple operational tasks while maintaining accuracy and consistency. Strong written and verbal communication skills. Willingness and flexibility to collaborate across global time zones, including regular overlap with US-based stakeholders and teams. Why This Role Matters This role plays a critical part in ensuring customers receive timely, accurate, and engaging experiences throughout their lifecycle with Alteryx. By supporting the scalable execution of digital customer programs and engagement initiatives, you will directly contribute to customer onboarding, product adoption, retention, and overall customer experience. This role also helps strengthen the connection between scalable digital engagement and more personalized, relationship-driven customer experiences, enabling Customer Success teams to engage customers more effectively across every stage of the customer journey. This is an opportunity to gain hands-on experience in Digital Customer Success and lifecycle programs while contributing to high-impact global initiatives in a collaborative and fast-moving environment. #LI-MP1 Find yourself checking a lot of these boxes but doubting whether you should apply? At Alteryx, we support a growth mindset for our associates through all stages of their careers. If you meet some of the requirements and you share our values, we encourage you to apply. As part of our ongoing commitment to a diverse, equitable, and inclusive workplace, we’re invested in building teams with a wide variety of backgrounds, identities, and experiences. This position involves access to software/technology that is subject to U.S. export controls. Any job offer made will be contingent upon the applicant’s capacity to serve in compliance with U.S. export controls. Who We Are Alteryx is a leading AI-ready data and analytics company that powers actionable insights to help organizations drive smarter, faster decisions with AI-ready data. More than 8,000 customers around the world rely on Alteryx to automate analytics, improve revenue performance, manage costs, and mitigate risk across their businesses. Disclaimers If you require reasonable accommodation as part of the recruiting process, please contact Benefits@alteryx.com. Alteryx, Inc. is an Equal Employment Opportunity Employer. Unsolicited third party/agency profiles and resumes will not be considered.",
+    "sourceDescription": "Meet the Moment with Alteryx We're living through a once-in-a-generation shift in how work gets done. Data, automation, and AI are quickly becoming the center of every business decision - and Alteryx is leading the transformation. You'll be working on the challenges that sit at the heart of modern business. No matter your role, the work you do will help organizations move faster, see more clearly, and tackle questions that used to feel impossible. If you're ready to meet the moment with innovation, curiosity, and excellence, there's a place for you here. Why work for just any analytics company? At Alteryx, we are explorers, dreamers, and innovators. We’re on a journey to build the best analytics platform in the world—and we can’t do it without people like you leading the way. Forget the stereotypical tech companies of the past. Embrace the unconventional, exercise your imagination, and help alter the future with Alteryx. We are looking for an Associate, Digital Customer Success Programs in India to join our Global Digital Customer Success Programs team. This role is ideal for an early-career professional who is highly organized, execution-focused, collaborative, and excited to contribute to scalable customer engagement and lifecycle automation programs that support onboarding, product adoption, customer satisfaction, retention, and growth. This is primarily an execution and delivery-focused role, supporting customer lifecycle programs and digital engagement initiatives from planning through launch and ongoing management. While this role does not own program strategy, we highly value individuals who question the status quo, identify opportunities for improvement, and bring a mindset of continuous optimization, efficiency, and scalable execution. About the Role As an Associate on the Digital Customer Success Programs team, you will contribute to the day-to-day execution, coordination, and delivery of customer lifecycle programs and engagement initiatives. You will work closely with Customer Success, Operations, Product, and Marketing teams to help deliver digital omni-channel customer engagement initiatives accurately, efficiently, and at scale. This role is focused on building and supporting scalable, repeatable execution mechanisms that enable the team to deliver consistent customer experiences globally. In addition to supporting program delivery, you will help document, refine, and improve workflows and processes that allow the organization to scale effectively over time while balancing creative problem-solving with structured execution. Success in this role requires strong attention to detail, adaptability, and the ability to execute consistently in a fast-paced environment. You will work within established frameworks and scalable mechanisms while helping improve workflows, documentation, and team efficiency over time. This role helps create the bridge between scalable digital and community-led engagement and more strategic, relationship-driven customer experiences. By enabling consistent, high-quality customer interactions across the lifecycle, this role helps Customer Success teams engage customers more effectively at the right moments and in the right ways. This is a highly collaborative, global role that partners extensively with US-based stakeholders and cross-functional teams across multiple regions. Flexibility in working hours and comfort collaborating across time zones will be important for success. What You’ll Do Program &amp; Lifecycle Execution Execute Digital Customer Success programs and omni-channel customer outreach using and continuously improving established workflows, templates, and engagement processes. Deliver onboarding, adoption, renewal, and customer engagement initiatives across digital channels. Contribute to scalable customer engagement experiences that improve onboarding success, product adoption, customer satisfaction, and retention outcomes. Support customer engagement initiatives that connect digital, community, and relationship-led experiences in a scalable and consistent way across the customer lifecycle. Prepare, validate, and QA audience lists, segmentation logic, and lifecycle workflows before launch. Monitor recurring program execution activities and ensure timelines and deliverables are met consistently. Identify execution issues, process gaps, or data discrepancies and escalate them quickly and clearly. Workflow &amp; Program Coordination Maintain and optimize digital customer journey workflows and lifecycle automation programs across internal systems and tools. Assist with testing, validation, and rollout of workflow enhancements and process improvements. Follow documented procedures and standards to maintain accuracy, consistency, and data integrity. Support reporting and performance analysis by gathering program metrics and organizing engagement data. Cross-Functional Coordination Partner closely with Customer Success, RevOps, Marketing, Product, and Operations stakeholders to support program delivery. Participate in regular working sessions, project check-ins, and operational reviews. Maintain trackers, documentation, schedules, and execution plans to ensure visibility and alignment across teams. Collaborate effectively with global teams and adapt to shifting priorities and business needs. Continuous Improvement &amp; Optimization Bring curiosity and a process-improvement mindset to everyday work. Help document, refine, and build scalable mechanisms and repeatable processes that enable the team to grow efficiently while maintaining consistency and quality. Proactively identify opportunities to streamline workflows, reduce manual effort, improve customer experience, or increase operational efficiency. Bring a creative and resourceful mindset to solving problems, balancing scrappy execution with long-term scalability and structure. Question existing processes constructively and contribute ideas that help the team scale more effectively. Who You Are An execution-oriented professional who enjoys delivering high-quality outcomes through coordination, organization, and consistent execution. Comfortable working within structured processes and scalable program frameworks. Highly detail-oriented, organized, and dependable in managing recurring tasks and timelines. Curious, proactive, and willing to challenge inefficient processes constructively. Strong communicator who collaborates effectively across teams and functions. Adaptable and comfortable working in a fast-paced, globally distributed environment. What You Bring 2–4 years of experience in Customer Success, Marketing Operations, Digital Programs, Communications, or a related field. Bachelor’s degree or equivalent practical experience. Experience supporting execution of customer communications, digital programs, operational workflows, or lifecycle initiatives. Familiarity with CRM, marketing automation, or customer engagement platforms is preferred. Exposure to tools such as Salesforce, Marketo, Gainsight, Intercom, Snowflake, or similar platforms is a plus. Strong organizational skills and attention to detail. Ability to manage multiple operational tasks while maintaining accuracy and consistency. Strong written and verbal communication skills. Willingness and flexibility to collaborate across global time zones, including regular overlap with US-based stakeholders and teams. Why This Role Matters This role plays a critical part in ensuring customers receive timely, accurate, and engaging experiences throughout their lifecycle with Alteryx. By supporting the scalable execution of digital customer programs and engagement initiatives, you will directly contribute to customer onboarding, product adoption, retention, and overall customer experience. This role also helps strengthen the connection between scalable digital engagement and more personalized, relationship-driven customer experiences, enabling Customer Success teams to engage customers more effectively across every stage of the customer journey. This is an opportunity to gain hands-on experience in Digital Customer Success and lifecycle programs while contributing to high-impact global initiatives in a collaborative and fast-moving environment. #LI-MP1 Find yourself checking a lot of these boxes but doubting whether you should apply? At Alteryx, we support a growth mindset for our associates through all stages of their careers. If you meet some of the requirements and you share our values, we encourage you to apply. As part of our ongoing commitment to a diverse, equitable, and inclusive workplace, we’re invested in building teams with a wide variety of backgrounds, identities, and experiences. This position involves access to software/technology that is subject to U.S. export controls. Any job offer made will be contingent upon the applicant’s capacity to serve in compliance with U.S. export controls. Who We Are Alteryx is a leading AI-ready data and analytics company that powers actionable insights to help organizations drive smarter, faster decisions with AI-ready data. More than 8,000 customers around the world rely on Alteryx to automate analytics, improve revenue performance, manage costs, and mitigate risk across their businesses. Disclaimers If you require reasonable accommodation as part of the recruiting process, please contact Benefits@alteryx.com. Alteryx, Inc. is an Equal Employment Opportunity Employer. Unsolicited third party/agency profiles and resumes will not be considered.",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Associate, Digital Customer Success Programs",
+    "normalizedTitle": "Associate, Digital Customer Success Programs",
+    "jobCategory": "Associate, Digital Customer Success Programs",
+    "engineeringDomain": "Unknown",
+    "employmentType": "Full-time",
+    "experienceLevel": null,
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-09-04T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-03T19:22:01.705Z",
+    "skillIds": [
+      "salesforce",
+      "snowflake"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "salesforce",
+        "canonicalName": "Salesforce",
+        "category": "Product, Design & Collaboration",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Salesforce"
+      },
+      {
+        "skillId": "snowflake",
+        "canonicalName": "Snowflake",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Snowflake"
+      }
+    ],
+    "experienceBucket": "1-3",
+    "experienceProfile": {
+      "minimumYears": 2,
+      "maximumYears": 4,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "2-4 years",
+      "rawText": null,
+      "experienceBucket": "1-3"
+    },
+    "experienceYears": [
+      2,
+      3,
+      4
+    ],
+    "seniority": "Unknown",
+    "primaryRoleDomain": "Sales & Customer Success",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-03T21:23:59.122Z",
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "employer_requirement",
+    "employerExperienceProfile": {
+      "minimumYears": 2,
+      "maximumYears": 4,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "2-4 years",
+      "rawText": null,
+      "experienceBucket": "1-3"
+    },
+    "policyEvidence": null
+  }
+]

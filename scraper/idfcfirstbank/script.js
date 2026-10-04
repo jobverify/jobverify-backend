@@ -2,12 +2,22 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { createPhenomScraper } from '../../scraper-support/phenom/engine.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const CAREERS_URL = 'https://careers.idfcfirst.bank.in/in/en'
 export const RETAIL_BANKING_URL = 'https://careers.idfcfirst.bank.in/in/en/retail-banking'
 export const TALENT_COMMUNITY_URL = 'https://careers.idfcfirst.bank.in/in/en/jointalentcommunity'
+export const SEARCH_URL = 'https://careers.idfcfirst.bank.in/in/en/search-results'
+
+const phenomScraper = createPhenomScraper({
+  companyName: 'IDFC FIRST Bank',
+  source: 'idfcfirstbank',
+  baseUrl: 'https://careers.idfcfirst.bank.in',
+  searchPath: '/in/en/search-results',
+  scraperDir: currentDir,
+})
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
@@ -73,7 +83,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const createIdfcFirstBankScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run(options = {}) {
+    const { fetchText = defaultFetchText } = options
     const careersHomeHtml = await fetchText(CAREERS_URL)
 
     if (!hasOfficialCareersHomeSignal(careersHomeHtml)) {
@@ -81,7 +92,7 @@ export const createIdfcFirstBankScraper = () => ({
     }
 
     if (!hasZeroJobSignal(careersHomeHtml)) {
-      throw new Error('IDFC FIRST Bank careers home no longer shows the verified zero-job state')
+      return phenomScraper.run({ ...options, fetchText, useWidgetApi: options.useWidgetApi ?? true })
     }
 
     if (pageExposesPublicJobListings(careersHomeHtml)) {

@@ -263,13 +263,17 @@ export const hasJobsRssSignal = (xml = '', rssUrl = '') => {
   const itemLinks = [...rawXml.matchAll(/<item>[\s\S]*?<link>([\s\S]*?)<\/link>/gi)]
     .map((match) => normalizeWhitespace(match[1]))
     .filter(Boolean)
-
-  return /<rss\b/i.test(rawXml)
+  const trustedHeader = /<rss\b/i.test(rawXml)
     && /Hinduja Global Solutions Ltd/i.test(rawXml)
     && new RegExp(`category${escapeRegExp(expectedCatId)}\\.xml`, 'i').test(rawXml)
-    && /https:\/\/careers\.joinhgs\.com\/India\/job\//i.test(rawXml)
+  const emptyCategory = /<item>\s*<title>No jobs currently available - Check out our other opportunities\.<\/title>[\s\S]*?<link>https:\/\/careers\.joinhgs\.com<\/link>[\s\S]*?<guid\b[^>]*>0<\/guid>\s*<\/item>/i.test(rawXml)
+    && itemLinks.length === 1
+
+  return trustedHeader && (emptyCategory || (
+    /https:\/\/careers\.joinhgs\.com\/India\/job\//i.test(rawXml)
     && itemLinks.length > 0
     && itemLinks.every((link) => /utm_campaign=J2W_RSS/i.test(link))
+  ))
 }
 
 export const extractIndiaJobsFromFeed = (

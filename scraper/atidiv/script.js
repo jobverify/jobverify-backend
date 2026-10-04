@@ -61,7 +61,7 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return /Current Openings/i.test(page)
     && /Find Your(?:\s|&nbsp;|&#160;)+Next Job/i.test(page)
-    && /https:\/\/www\.atidiv\.com\/job\/senior-campaign-manager\//i.test(page)
+    && /https:\/\/(?:www\.)?atidiv\.com\/job\/senior-campaign-manager\//i.test(page)
     && /Digital Marketing/i.test(page)
 }
 
@@ -103,7 +103,11 @@ export const extractJobCards = (html = '') => [...String(html ?? '').matchAll(
       jobDescription: [department, ...tags].filter(Boolean).join(' | ') || title,
     }
   })
-  .filter(Boolean)
+  .filter((job) => {
+    if (!job) return false
+    const url = new URL(job.sourceUrl)
+    return /^(?:www\.)?atidiv\.com$/i.test(url.hostname) && url.pathname.startsWith('/job/')
+  })
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {

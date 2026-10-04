@@ -197,7 +197,7 @@ test("trackJobClick keeps analytics updates inside the public job scope", async 
   }
 });
 
-test("free users can request the public 2000-card limit on the legacy jobs route", async () => {
+test("legacy jobs route caps the requested card limit at 1000", async () => {
   const originalCountDocuments = Job.countDocuments;
   const originalDistinct = Job.distinct;
   const originalFind = Job.find;
@@ -230,7 +230,7 @@ test("free users can request the public 2000-card limit on the legacy jobs route
 
     await getAllJobs(
       {
-        query: { page: "1", limit: "2000" },
+        query: { page: "1", limit: "1200" },
         user: {
           role: "user",
           accessRole: ACCESS_ROLES.FREE,
@@ -244,8 +244,8 @@ test("free users can request the public 2000-card limit on the legacy jobs route
     );
 
     assert.equal(res.statusCode, 200);
-    assert.equal(capturedLimit, 2000);
-    assert.equal(res.body.pagination.limit, 2000);
+    assert.equal(capturedLimit, 1000);
+    assert.equal(res.body.pagination.limit, 1000);
   } finally {
     Job.countDocuments = originalCountDocuments;
     Job.distinct = originalDistinct;

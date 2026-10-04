@@ -22,19 +22,19 @@ test('Aabasoft exports verified first-party careers metadata for the current aab
   assert.equal(aabasoft.SOURCE, 'aabasoft')
   assert.equal(aabasoft.COMPANY, 'Aabasoft')
   assert.equal(aabasoft.COMPANY_DOMAIN, 'aabasoft.com')
-  assert.equal(aabasoft.VERIFIED_AT, '2026-07-14')
+  assert.equal(aabasoft.VERIFIED_AT, '2026-10-03')
   assert.equal(aabasoft.HOMEPAGE_URL, 'https://www.aabasoft.com/in-en/')
   assert.equal(aabasoft.CAREERS_URL, 'https://www.aabasoft.com/in-en/career/')
   assert.deepEqual(aabasoft.SCRAPER_METADATA, {
     source: 'aabasoft',
     companyName: 'Aabasoft',
-    companyCareerPage: 'https://www.aabasoft.com/in-en/career/',
+    companyCareerPage: 'https://aabasoft.com/in-en/join-our-team/',
     companyDomain: 'aabasoft.com',
     countryFilter: 'India',
     atsPlatform: 'official-company-careers',
-    paginationStrategy: 'verified-single-page-careers-listing-plus-first-party-detail-pages',
+    paginationStrategy: 'complete-paginated-first-party-cms-job-feed',
     extractionStrategy:
-      'verified-official-homepage+verified-careers-page+first-party-listing-cards+first-party-detail-pages',
+      'verified-official-homepage+verified-current-careers-page+first-party-cms-api+india-city-filter',
     parser: 'custom-script',
     normalizationProfile: 'engineering-default',
   })
@@ -47,7 +47,7 @@ test('buildScrapers and company coverage resolve Aabasoft from the shared catalo
   assert.ok(provider)
   assert.ok(scraper)
   assert.equal(provider.companyName, 'Aabasoft')
-  assert.equal(provider.companyCareerPage, 'https://www.aabasoft.com/in-en/career/')
+  assert.equal(provider.companyCareerPage, 'https://aabasoft.com/in-en/join-our-team/')
   assert.match(scraper.dryRunFile, /aabasoft[\\/]jobs\.json$/i)
 
   const report = generateCompanyCoverageReport({

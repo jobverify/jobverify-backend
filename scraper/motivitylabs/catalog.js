@@ -11,17 +11,17 @@ export const MOTIVITYLABS_CATALOG = {
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'motivitylabs/jobs.json',
   companyCareerPage: 'https://motivitylabs.com/careers/',
-  officialCareersPageUrl: 'https://motivitylabs.com/job-openings/',
+  officialCareersPageUrl: 'https://motivitylabs.com/jobs/',
   companyDomain: 'motivitylabs.com',
   atsPlatform: 'official-company-careers',
   countryFilter: 'India',
-  paginationStrategy: 'verified-first-party-job-openings-pages',
-  extractionStrategy: 'verified-first-party-job-openings+same-domain-detail-pages',
+  paginationStrategy: 'first-party-collection-page-jsonld',
+  extractionStrategy: 'verified-first-party-collection-jsonld+same-domain-jobposting-details+india-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-03',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified on Monday, August 3, 2026 that https://motivitylabs.com/careers/ remained the live first-party Motivity Labs careers page, that it still hands applicants to the first-party openings hub at https://motivitylabs.com/job-openings/, and that the openings hub publicly lists current India roles such as Sr.Test Engineer, Technical Solution Architect Experience, Senior AI/ML & Gen AI Engineer, and Looker Developer with same-domain detail pages under https://motivitylabs.com/jobs/.',
+    'Verified on October 3, 2026 that https://motivitylabs.com/careers/ links to the current first-party openings hub at https://motivitylabs.com/jobs/. The collection JSON-LD listed 30 public same-domain job details, including 20 with confirmed India geography and 10 without confirmed country. The scraper returns the confirmed India roles and flags incomplete source scope.',
 }
 
 export default MOTIVITYLABS_CATALOG

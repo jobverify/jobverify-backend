@@ -163,12 +163,16 @@ export const hasOfficialCareersSignal = (html) => {
     && /Explore our open roles for working totally remotely, from the office, or somewhere in between\./i.test(page)
 }
 
-export const hasBlockedFirstPartySurfaceSignal = (html = '') => {
+export const hasBlockedFirstPartySurfaceSignal = (html = '', { server } = {}) => {
   const page = String(html ?? '')
 
-  return extractTitle(page) === 'Just a moment...'
+  const olderChallenge = extractTitle(page) === 'Just a moment...'
     && /\.spinner\s*\{/i.test(page)
     && /border-top:\s*4px solid #3498db/i.test(page)
+  const currentCloudflareForbidden = String(server ?? '').toLowerCase() === 'cloudflare'
+    && page.trim() === '<html>\n<head>\n<title>Error 403 Forbidden</title>\n</head>\n<body>\n<h1>403 Forbidden</h1>\n</body>\n</html>'
+
+  return olderChallenge || currentCloudflareForbidden
 }
 
 export const extractGreenhouseBoardUrl = (html) => {
@@ -300,6 +304,7 @@ const defaultFetchPage = async (url) => {
     status: response.status,
     url: response.url,
     html: await response.text(),
+    server: response.headers.get('server'),
   }
 }
 
@@ -344,8 +349,10 @@ export const createEltropyScraper = ({
     const hasBlockedFirstPartySurface =
       homepage.status === 403
       && careersPage.status === 403
-      && hasBlockedFirstPartySurfaceSignal(homepage.html)
-      && hasBlockedFirstPartySurfaceSignal(careersPage.html)
+      && homepage.url === HOMEPAGE_URL
+      && careersPage.url === CAREERS_URL
+      && hasBlockedFirstPartySurfaceSignal(homepage.html, { server: homepage.server })
+      && hasBlockedFirstPartySurfaceSignal(careersPage.html, { server: careersPage.server })
 
     if (!hasReadableFirstPartyCareers && !hasBlockedFirstPartySurface) {
       throw new Error('Eltropy verified official careers surface no longer matches the first-party contract')

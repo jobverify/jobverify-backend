@@ -54,6 +54,31 @@ const route = "/static/about/careers";
 const navigation = ["About BSE", "Contact us", "Careers", "Feedback"];
 `
 
+const CURRENT_SITEMAP_XML = SITEMAP_XML.replace(
+  '<url><loc>https://www.bseindia.com/static/about/careers</loc></url>',
+  '',
+)
+const CURRENT_MAIN_JS = `
+const navigation = ["/static/about/careers", "Careers"];
+const routes = [{path:"static",loadChildren:()=>import("./chunk-2OCJOVBW.js").then(o=>o.staticRoutesOnly)}];
+`
+const CURRENT_STATIC_JS = `
+const routes = [{path:"about",loadChildren:()=>import("./chunk-46MCKQOG.js").then(r=>r.staticAboutRoutes)}];
+`
+const CURRENT_ABOUT_JS = `
+const careers = {path:"careers",component:Pe};
+const heading = "Careers at BSE";
+const jobs = [
+  ["src","assets/includenew/images/Hiring_OnlineSurveillance.jpg","alt",\`Hiring Post
+                        - Online Surveillance\`],
+  ["src","assets/includenew/images/Hiring_Post_InvestigationGeneralized.jpg","alt",\`Hiring
+                        Post - Investigation\`],
+  ["src","assets/includenew/images/Hiring_Post_ListingCompliance.jpg","alt","Hiring Post - Listing Compliance"],
+  ["src","assets/includenew/images/Hiring_post.jpg","alt","Hiring Finance: Financial Planning & Analysis (FP&A 01)"],
+];
+const apply = ["href","https://bsegenie.darwinbox.in/ms/candidatev2/main/careers/home"];
+`
+
 const loadBseIndiaModule = async () => {
   try {
     return await import('../../scraper/bseindia/script.js')
@@ -112,6 +137,34 @@ test('BSE India parses public hiring posts from the verified first-party careers
   assert.equal(jobs[0].company, 'BSE India')
   assert.equal(jobs[0].location, 'India')
   assert.equal(jobs[0].applyUrl, 'mailto:careers@bseindia.com')
+})
+
+test('BSE India follows the current lazy careers route and its official application portal', async () => {
+  const bse = await loadBseIndiaModule()
+  const requestedUrls = []
+  const responses = new Map([
+    [bse.CAREERS_URL, CAREERS_PAGE_HTML],
+    [bse.SITEMAP_URL, CURRENT_SITEMAP_XML],
+    ['https://www.bseindia.com/assets/includenew/js/main-LB545UKC.js', CURRENT_MAIN_JS],
+    ['https://www.bseindia.com/assets/includenew/js/chunk-2OCJOVBW.js', CURRENT_STATIC_JS],
+    ['https://www.bseindia.com/assets/includenew/js/chunk-46MCKQOG.js', CURRENT_ABOUT_JS],
+  ])
+  const jobs = await bse.createBseIndiaScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (!responses.has(url)) throw new Error(`Unexpected BSE India URL: ${url}`)
+      return responses.get(url)
+    },
+  })
+
+  assert.equal(bse.hasVerifiedSitemapSignal(CURRENT_SITEMAP_XML), true)
+  assert.equal(jobs.length, 4)
+  assert.deepEqual(jobs.map((job) => job.title), [
+    'Online Surveillance', 'Investigation', 'Listing Compliance',
+    'Financial Planning & Analysis (FP&A 01)',
+  ])
+  assert.equal(jobs[0].applyUrl, 'https://bsegenie.darwinbox.in/ms/candidatev2/main/careers/home')
+  assert.equal(requestedUrls.length, 5)
 })
 
 test('BSE India fails closed if the sitemap starts exposing a public openings route', async () => {

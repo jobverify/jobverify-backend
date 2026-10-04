@@ -150,3 +150,13 @@ test('Blaaiz rejects when a same-origin jobs path appears on the verified public
     /public jobs surface/i,
   )
 })
+
+
+test('Blaaiz current about-page identity permits its removed fraud lead while preserving jobs guards', async () => {
+  const source = await loadModule()
+  const current = VERIFIED_SURFACE_HTML.replace("<p>Fraudsters don't sleep, neither do we. We lock the doors before fraud walks in.</p>", '')
+    .replace('<html>', '<html><head><title>About Blaaiz | Cross-Border Payment Platform</title><link rel="canonical" href="https://www.blaaiz.com/about-us"></head>')
+  assert.deepEqual(await source.run({fetchHtml:async()=>current}), [])
+  await assert.rejects(source.run({fetchHtml:async()=>current.replace('https://www.blaaiz.com/about-us', 'https://unrelated.example/about-us')}), /verified official public surface/)
+  await assert.rejects(source.run({fetchHtml:async()=>current+'<a href="/careers">Careers</a>'}), /public jobs surface/)
+})

@@ -84,9 +84,11 @@ const defaultFetchPage = (url) => withRetry(async () => {
 export const hasUbsHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
+  const hasCurrentUsIdentity = /<title[^>]*>\s*Our financial services in the United States of America\s*\|\s*UBS United States\s*<\/title>/i.test(rawHtml)
+    && /<h1[^>]*>\s*UBS United States\s*<\/h1>/i.test(rawHtml)
 
   return /UBS (?:logo|home)/i.test(rawHtml)
-    && /UBS United States of America/i.test(normalized)
+    && (/UBS United States of America/i.test(normalized) || hasCurrentUsIdentity)
     && /Credit Suisse Individuals/i.test(normalized)
     && /Careers at UBS/i.test(normalized)
 }

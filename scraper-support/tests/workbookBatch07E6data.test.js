@@ -14,7 +14,7 @@ const loadModule = async () => {
   }
 }
 
-test('getScraperCatalog includes e6data with the verified August 14, 2026 homepage, careers handoff, and Zoho API contract', async () => {
+test('getScraperCatalog includes e6data with the verified October 3, 2026 homepage, careers handoff, and Zoho API contract', async () => {
   const e6data = await loadModule()
   const provider = getScraperCatalog().find((item) => item.source === 'e6data')
 
@@ -43,15 +43,15 @@ test('getScraperCatalog includes e6data with the verified August 14, 2026 homepa
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-08-14')
-  assert.equal(provider.verifiedPublicJobCount, 6)
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.equal(provider.verifiedPublicJobCount, 5)
   assert.equal(provider.verifiedIndiaJobCount, 2)
   assert.match(provider.modulePath, /e6data[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /e6data[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, August 14, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/e6data\.com\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/e6data\.zohorecruit\.in\/jobs\/Careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /six public jobs/i)
+  assert.match(provider.verifiedSurfaceSummary, /five public jobs/i)
   assert.match(provider.verifiedSurfaceSummary, /two explicitly India-scoped jobs/i)
 
   assert.equal(e6data.HOMEPAGE_URL, provider.homepageUrl)

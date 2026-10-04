@@ -65,6 +65,21 @@ const muviDetail = (id,location='Bhubaneswar') => '<title>Jobs - Muvi</title><h3
 const runMuvi = (pages,details={}) => muvi.run({fetchText:async url=>url===muvi.CAREERS_URL?muviHome:pages[url]??details[url]??(()=>{throw Error('Unexpected URL '+url)})()})
 const m1='https://www.muvi.com/career/job-listings/',m2=m1+'page/2/'
 
+test('Muvi accepts current category job URLs while retaining verified India scope', async () => {
+  const currentUrl = 'https://www.muvi.com/career/job-listings/qa/automation-engineer-onsite-20260910144645/'
+  const card = muviCard('158').replace(muviUrl('158'), currentUrl)
+  const jobs = await muvi.run({fetchText: async url => {
+    if (url === muvi.CAREERS_URL) return muviHome
+    if (url === m1) return muviPage(card).replace(/<nav aria-label="Page navigation">[\s\S]*?<\/nav>/, '')
+    if (url === currentUrl) return muviDetail('158')
+    throw new Error('Unexpected URL ' + url)
+  }})
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, 'muvientertainment-158')
+  assert.equal(jobs[0].sourceUrl, currentUrl)
+  assert.equal(jobs[0].country, 'India')
+})
+
 test('Muvi follows first-party pagination and retains only proven India roles with unknown remote scope marked partial', async () => {
   const jobs=await runMuvi({[m1]:muviPage(muviCard('1')+muviCard('2','Remote')),[m2]:muviPage(muviCard('3'),2)}, {[muviUrl('1')]:muviDetail('1'),[muviUrl('2')]:muviDetail('2','Remote'),[muviUrl('3')]:muviDetail('3')})
   assert.equal(jobs.length,2)
@@ -97,6 +112,6 @@ test('Current SuryaLogix, Lumiq, Setu and Muvi catalog records match their verif
     const {default:local}=await import('../../scraper/'+source+'/catalog.js')
     assert.equal(local.atsPlatform,platform)
     for(const key of ['atsPlatform','verifiedOn','verifiedSurfaceSummary','paginationStrategy','extractionStrategy'])assert.equal(shared[key],local[key],source+' '+key)
-    assert.equal(shared.verifiedOn,'2026-09-13')
+    assert.equal(shared.verifiedOn,source==='muvientertainment'?'2026-10-03':'2026-09-13')
   }
 })

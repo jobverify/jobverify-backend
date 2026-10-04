@@ -3,7 +3,7 @@ import test from 'node:test'
 
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 
-test('G10X is registered as a verified first-party zero-openings scraper for Friday, August 7, 2026', () => {
+test('G10X is registered as a verified first-party zero-openings scraper for October 3, 2026', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'g10x')
 
   assert.ok(provider, 'Expected G10X provider to be registered in customProviders.json')
@@ -23,9 +23,9 @@ test('G10X is registered as a verified first-party zero-openings scraper for Fri
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'g10x.com')
-  assert.equal(provider.verifiedOn, '2026-08-07')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.equal(provider.verifiedPublicJobCount, 0)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /0 job openings for you/i)
   assert.match(provider.verifiedSurfaceSummary, /work-with-us/i)
   assert.match(provider.modulePath, /g10x[\\/]script\.js$/i)

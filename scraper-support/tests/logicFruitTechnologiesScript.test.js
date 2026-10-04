@@ -227,3 +227,41 @@ test('Logic Fruit Technologies fails closed when the verified public openings su
     /verified official public careers surface/i,
   )
 })
+
+const currentJobsHomepage = '<html><head><title>Logic Fruit Technologies | Hardware, Software, AI &amp; Robotics for Mission-Critical Systems</title></head><body><div id="root"></div><script type="module" src="/assets/index-current.js"></script><script type="application/ld+json">{"@type":"Organization","name":"Logic Fruit Technologies","url":"https://www.logic-fruit.com"}</script></body></html>'
+const currentJobsBundle = 'const Y="https://api.logic-fruit.com/api"; async getJobs(e={}){return fetch(Y+"/jobs")} label:`Career`,page:`career`,href:`/careers`; href:`/career/jobs-current-opening/`,children:`CURRENT OPENINGS`'
+const migrateFetchText = async (url) => {
+  if (url.includes('/career/jobs-current-opening/')) throw new Error('HTTP 404 for ' + url)
+  return url.endsWith('.js') ? currentJobsBundle : currentJobsHomepage
+}
+
+test('Logic Fruit follows the current verified jobs API after the obsolete WordPress route closes', async () => {
+  const logicfruit = await loadLogicFruitModule()
+  const jobs = await logicfruit.createLogicFruitTechnologiesScraper({ now: () => '2026-10-03T00:00:00Z' }).run({
+    fetchText: migrateFetchText,
+    fetchJson: async (url) => {
+      assert.equal(url, 'https://api.logic-fruit.com/api/jobs')
+      return { success: true, count: 3, data: [
+        { id: 'active', entityType: 'job', slug: 'rf-architect', title: 'RF Architect', location: 'Gurugram/Bengaluru', status: 'published', type: 'Full-Time', department: 'Engineering', experience: '8-12 Years', description: 'Design radios.', responsibilities: 'Review systems.', qualifications: 'Engineering degree', skills: ['RF'], workMode: 'On-site', createdAt: '2026-09-18T00:00:00Z' },
+        { id: 'draft', entityType: 'job', slug: 'draft', title: 'Draft opening', location: 'Gurugram', status: 'draft' },
+        { id: 'foreign', entityType: 'job', slug: 'foreign', title: 'US opening', location: 'Boston', status: 'published' },
+      ] }
+    },
+  })
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'RF Architect')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].sourceUrl, 'https://www.logic-fruit.com/jobs-current-opening/rf-architect/')
+  assert.equal(jobs[0].employmentType, 'Full-time')
+  assert.equal(jobs[0].experienceRequired, '8-12 Years')
+  assert.deepEqual(jobs[0].requiredSkills, ['RF'])
+  assert.match(jobs[0].jobDescription, /Review systems/)
+})
+
+test('Logic Fruit refuses incomplete public API results instead of returning partial or empty jobs', async () => {
+  const logicfruit = await loadLogicFruitModule()
+  await assert.rejects(logicfruit.createLogicFruitTechnologiesScraper().run({
+    fetchText: migrateFetchText,
+    fetchJson: async () => ({ success: true, count: 7, data: [] }),
+  }), /jobs feed changed|incomplete/i)
+})

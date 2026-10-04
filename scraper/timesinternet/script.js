@@ -173,6 +173,7 @@ export const hasOfficialJobDetailSignal = (html = '') => {
       normalized.includes('about times internet')
       || normalized.includes('about times limited')
       || normalized.includes('about the company')
+      || /class=["'][^"']*\bjob-description\b[^"']*["']/.test(rawHtml)
     )
     && normalized.includes('apply now')
     && /<title>\s*.+job at times internet\b/i.test(rawHtml)
@@ -195,6 +196,9 @@ export const extractJobFromDetailHtml = (html = '', card = {}, { scrapedAt } = {
       'Educational qualification:',
     ]).join(' '),
   )
+  const unstructuredDescription = stripTags(
+    String(html ?? '').match(/<div\b[^>]*class=["'][^"']*\bjob-description\b[^"']*["'][^>]*>([\s\S]*?)(?=<footer\b|<section\b[^>]*>\s*<footer\b|$)/i)?.[1] || '',
+  )?.replace(/^JOB DESCRIPTION\s*/i, '') || null
   const workResponsibilities = extractSectionLines(lines, 'Work Responsibilities', [
     'Skills, Experience & Expertise:',
     'Eligibility:',
@@ -240,7 +244,7 @@ export const extractJobFromDetailHtml = (html = '', card = {}, { scrapedAt } = {
     requiredSkills: requiredSkills.length > 0 ? requiredSkills : workResponsibilities,
     postingDate: null,
     closingDate: null,
-    jobDescription: roleDescription || normalizeWhitespace(workResponsibilities.join(' ')),
+    jobDescription: roleDescription || normalizeWhitespace(workResponsibilities.join(' ')) || unstructuredDescription,
     remoteStatus: 'On-site',
     source: SOURCE,
     link: detailUrl,

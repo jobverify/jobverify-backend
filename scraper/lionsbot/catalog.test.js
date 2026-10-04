@@ -15,6 +15,9 @@ test('getScraperCatalog includes Lionsbot as an official Kula-backed script prov
   assert.equal(provider.atsPlatform, 'kula')
   assert.equal(provider.companyCareerPage, 'https://www.lionsbot.com/careers/')
   assert.equal(provider.companyDomain, 'lionsbot.com')
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.equal(provider.verifiedPublicJobCount, 21)
+  assert.equal(provider.extractionStrategy, 'official-careers-handoff+complete-kula-react-flight-jobs+india-office-filter')
   assert.match(provider.modulePath, /lionsbot[\\/]script\.js$/i)
 })
 

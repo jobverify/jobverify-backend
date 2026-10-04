@@ -9,19 +9,21 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = 'aabasoft'
 export const COMPANY = 'Aabasoft'
 export const COMPANY_DOMAIN = 'aabasoft.com'
-export const VERIFIED_AT = '2026-07-14'
+export const VERIFIED_AT = '2026-10-03'
 export const HOMEPAGE_URL = 'https://www.aabasoft.com/in-en/'
 export const CAREERS_URL = 'https://www.aabasoft.com/in-en/career/'
+export const CURRENT_CAREERS_URL = 'https://aabasoft.com/in-en/join-our-team/'
+export const CURRENT_API_URL = 'https://cmsweb.aabasoft.info/api/list/filter'
 export const SCRAPER_METADATA = {
   source: SOURCE,
   companyName: COMPANY,
-  companyCareerPage: CAREERS_URL,
+  companyCareerPage: CURRENT_CAREERS_URL,
   companyDomain: COMPANY_DOMAIN,
   countryFilter: 'India',
   atsPlatform: 'official-company-careers',
-  paginationStrategy: 'verified-single-page-careers-listing-plus-first-party-detail-pages',
+  paginationStrategy: 'complete-paginated-first-party-cms-job-feed',
   extractionStrategy:
-    'verified-official-homepage+verified-careers-page+first-party-listing-cards+first-party-detail-pages',
+    'verified-official-homepage+verified-current-careers-page+first-party-cms-api+india-city-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
 }
@@ -277,9 +279,125 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
-export const createAabasoftScraper = ({ now = () => new Date().toISOString() } = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
+const defaultFetchCurrentPage = async (page, pageGuid, pageSize) => {
+  const response = await fetch(CURRENT_API_URL, {
+    method: 'POST',
+    headers: { 'User-Agent': USER_AGENT, 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      parentGuid: pageGuid,
+      page,
+      pageSize,
+      enablePagination: true,
+      filters: { keyword: '', dropdowns: {} },
+    }),
+    signal: AbortSignal.timeout(15000),
+  })
+  if (!response.ok) throw new Error(`HTTP ${response.status} for ${CURRENT_API_URL}`)
+  return response.json()
+}
+
+export const hasCurrentHomepageSignal = (html) => {
+  const page = String(html ?? '')
+  return /<title>\s*Software Development Company Kerala, India\s*\|\s*Aabasoft\s*<\/title>/i.test(page)
+    && /href=["']\/in-en\/join-our-team\/["']/i.test(page)
+    && /Aabasoft Technologies India Private Limited/i.test(page)
+}
+
+export const extractCurrentCareersGuid = (html) => {
+  const page = String(html ?? '')
+  if (!/<title>\s*Join Us to Grow, Innovate and make an Impact\.\s*\|\s*Aabasoft\s*<\/title>/i.test(page)
+    || !/id=["']jobsGrid["']/i.test(page)
+    || !/Jobs Found/i.test(page)
+    || !/Official Communication/i.test(page)) {
+    throw new Error('Aabasoft current careers page no longer matches the verified first-party surface')
+  }
+  const guid = page.match(/<input\b[^>]*name=["']pageGuid["'][^>]*value=["']([0-9a-f-]{36})["']/i)?.[1]
+  if (!guid) throw new Error('Aabasoft current careers page no longer exposes its job feed identifier')
+  return guid
+}
+
+const normalizeCurrentPostingDate = (value) => {
+  const match = String(value ?? '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : null
+}
+
+export const normalizeCurrentJobs = (items, now) => {
+  const ids = new Set()
+  const urls = new Set()
+  return items.map((item) => {
+    const title = normalizeText(item?.properties?.cdVacancyTitle?.value)
+    const guid = String(item?.guid ?? '')
+    const city = normalizeCity(item?.properties?.cdJobLocation?.value?.[0]?.name ?? '')
+    const slug = slugify(title)
+    const sourceUrl = `${CURRENT_CAREERS_URL}${slug}`
+    if (item?.contentType !== 'careerDetails' || !title || !/^[0-9a-f-]{36}$/i.test(guid)
+      || !city || !slug || ids.has(guid) || urls.has(sourceUrl)) {
+      throw new Error('Aabasoft current jobs inventory contains an invalid or duplicate role')
+    }
+    ids.add(guid)
+    urls.add(sourceUrl)
+    const department = normalizeText(item.properties.cdDepartment?.value?.[0]?.name)
+    const type = normalizeText(item.properties.cdJobType?.value?.[0]?.name)
+    const description = stripTags(item.properties.cdDescription?.value?.markup)
+    return {
+      title,
+      company: COMPANY,
+      department,
+      location: `${city}, India`,
+      city,
+      country: 'India',
+      jobId: guid,
+      requisitionId: guid,
+      sourceUrl,
+      applyUrl: sourceUrl,
+      employmentType: type?.replace(/^Full Time$/i, 'Full-time').replace(/^Part Time$/i, 'Part-time') ?? null,
+      experienceRequired: normalizeText(item.properties.cdExperience?.value),
+      postingDate: normalizeCurrentPostingDate(item.properties.cdPostedDate?.value),
+      jobDescription: description || null,
+      companyCareerPage: CURRENT_CAREERS_URL,
+      companyDomain: COMPANY_DOMAIN,
+      atsPlatform: 'official-company-careers',
+      source: SOURCE,
+      link: sourceUrl,
+      scrapedAt: now(),
+    }
+  })
+}
+
+const runCurrentCareers = async ({ fetchText, fetchCurrentPage, currentPageSize, now }) => {
+  const careersHtml = await fetchText(CURRENT_CAREERS_URL)
+  const pageGuid = extractCurrentCareersGuid(careersHtml)
+  const first = await fetchCurrentPage(1, pageGuid, currentPageSize)
+  const total = first?.pagination?.totalItems
+  const totalPages = first?.pagination?.totalPages
+  if (first?.success !== true || first?.parent?.guid !== pageGuid
+    || first?.parent?.name !== 'Job Openings' || !Array.isArray(first?.items)
+    || first?.pagination?.page !== 1 || first?.pagination?.pageSize !== currentPageSize
+    || !Number.isInteger(total) || total < 0 || !Number.isInteger(totalPages)
+    || totalPages !== Math.max(1, Math.ceil(total / currentPageSize)) || totalPages > 100) {
+    throw new Error('Aabasoft current jobs inventory contract changed')
+  }
+  const items = [...first.items]
+  for (let page = 2; page <= totalPages; page += 1) {
+    const payload = await fetchCurrentPage(page, pageGuid, currentPageSize)
+    if (payload?.success !== true || payload?.parent?.guid !== pageGuid
+      || payload?.pagination?.page !== page || payload?.pagination?.pageSize !== currentPageSize
+      || payload?.pagination?.totalItems !== total || payload?.pagination?.totalPages !== totalPages
+      || !Array.isArray(payload.items)) {
+      throw new Error('Aabasoft current jobs inventory page is incomplete')
+    }
+    items.push(...payload.items)
+  }
+  if (items.length !== total) throw new Error('Aabasoft current jobs inventory count is incomplete')
+  return normalizeCurrentJobs(items, now)
+}
+
+export const createAabasoftScraper = ({ now = () => new Date().toISOString(), currentPageSize = 50 } = {}) => ({
+  async run({ fetchText = defaultFetchText, fetchCurrentPage = defaultFetchCurrentPage, now: overrideNow } = {}) {
     const homepageHtml = await fetchText(HOMEPAGE_URL)
+    if (hasCurrentHomepageSignal(homepageHtml)) {
+      return runCurrentCareers({ fetchText, fetchCurrentPage, currentPageSize, now: overrideNow || now })
+    }
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('Aabasoft verified official homepage no longer matches the trusted first-party surface')
     }

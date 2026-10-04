@@ -30,6 +30,7 @@ const INDIA_CAREERS_HTML = `
   </head>
   <body>
     <h1>Nuvento – India</h1>
+    <h2>Build your Career with Nuvento</h2>
     <p>For all the enquiries and resume submission please email to naseeba.parvin@nuvento.com</p>
     <p>anindita.ghosal@nuvento.com</p>
 
@@ -147,4 +148,21 @@ test('Nuvento Systems scraper accepts the current hub handoff and accordion-base
   assert.equal(jobs[0].applyUrl, nuvento.CAREERS_URL)
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
   assert.match(jobs[2].jobDescription, /Lead architecture and development/i)
+})
+
+test('Nuvento Systems accepts new India titles and hybrid location without an outdated title pin', async () => {
+  const nuvento = await loadModule()
+  const currentHtml = INDIA_CAREERS_HTML
+    .replaceAll('Team Lead -Python', 'HR Trainee - Payroll & Statutory Compliance')
+    .replaceAll('Sales and Marketing Intern (Paid Internship)', 'Intern - Automation')
+    .replaceAll('Senior DevOps / Platform Engineer', 'Creative/Design Executive')
+    .replaceAll('Location: Kochi, Kerala', 'Location: Hybrid / Work-from-Office')
+    .replaceAll('Location: Kerala (Hybrid)', 'Location: Hybrid / Work-from-Office')
+
+  assert.equal(nuvento.hasOfficialIndiaCareersSignal(currentHtml), true)
+  const jobs = await nuvento.run({
+    fetchText: async (url) => url === nuvento.CAREERS_HUB_URL ? CAREERS_HUB_HTML : currentHtml,
+  })
+  assert.equal(jobs.length, 3)
+  assert.equal(jobs[0].city, null)
 })

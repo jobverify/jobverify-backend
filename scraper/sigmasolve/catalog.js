@@ -14,20 +14,20 @@ export const SIGMA_SOLVE_CATALOG = {
   companyCareerPage: 'https://www.sigmasolve.com/who-we-are/openings',
   officialCareersPageUrl: 'https://www.sigmasolve.com/who-we-are/openings',
   verifiedJobDetailUrl:
-    'https://www.sigmasolve.com/who-we-are/open-position/ai-driven-lead-generation-amp-email-marketing-specialist',
+    'https://www.sigmasolve.com/who-we-are/open-position/content-growth-strategist',
   companyDomain: 'sigmasolve.com',
   atsPlatform: 'official-company-careers',
   countryFilter: 'Global',
   verifiedPublicJobCount: 1,
-  verifiedSampleJobTitle: 'AI-Driven Lead Generation & Email Marketing Specialist',
+  verifiedSampleJobTitle: 'Content & Growth Strategist',
   paginationStrategy: 'single-first-party-openings-page-plus-same-domain-detail-pages',
   extractionStrategy:
     'verified-first-party-openings-page+same-domain-opening-cards+same-domain-detail-pages',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.sigmasolve.com/who-we-are/openings is the live exact-name Sigma Solve public openings page, that it exposes one same-domain opening card for AI-Driven Lead Generation & Email Marketing Specialist, and that the linked first-party detail route at https://www.sigmasolve.com/who-we-are/open-position/ai-driven-lead-generation-amp-email-marketing-specialist is live. Verified also that the older route https://www.sigmasolve.com/careers returned 404 on the same date, so this provider is anchored on the newer first-party openings surface.',
+    'Verified on October 3, 2026 that the official openings page exposes one Content & Growth Strategist card. Its same-domain detail page lists United States, Marketing, and Full-time, and links to a live first-party application form for the same job slug.',
 }
 
 export default SIGMA_SOLVE_CATALOG

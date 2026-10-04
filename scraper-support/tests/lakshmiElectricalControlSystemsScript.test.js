@@ -96,7 +96,7 @@ test('Lakshmi Electrical Control Systems recognizes the verified official homepa
   assert.equal(lecs.HOMEPAGE_URL, 'https://www.lecsindia.com/')
   assert.equal(lecs.CAREERS_URL, 'https://www.lecsindia.com/careers')
   assert.equal(lecs.CONTACT_URL, 'https://www.lecsindia.com/contact-us/')
-  assert.equal(lecs.VERIFIED_ON, '2026-09-03')
+  assert.equal(lecs.VERIFIED_ON, '2026-10-03')
 
   assert.equal(lecs.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(lecs.hasOfficialHomepageSignal(currentHomepageHtml), true)
@@ -214,4 +214,45 @@ test('Lakshmi Electrical Control Systems fails closed when the verified zero-job
     }),
     /careers page now exposes public jobs/i,
   )
+})
+
+const publishedCareersShell = '<html><head><title>Careers at LECS India | Explore Jobs &amp; Career Opportunities</title><link rel="canonical" href="https://lecsindia.com/careers"></head><body><nav>LECS Careers</nav><script src="/_next/static/chunks/app/careers/page-current.js"></script></body></html>'
+const publishedCareersClient = 'https://api.lecsindia.com /job?page= /job/dropdown CareersHeroSection'
+
+test('LECS follows its verified public careers client and paginates jobs with evidenced India locations', async () => {
+  const lecs = await loadModule()
+  const pages = []
+  const jobs = await lecs.createLakshmiElectricalControlSystemsScraper({ now: () => '2026-10-03T00:00:00Z' }).run({
+    fetchText: async (url) => url === lecs.HOMEPAGE_URL ? currentHomepageHtml.replace('<title>LECS</title>', '<title>Discover Control Panel Manufacturer Solutions | LECS India</title>') : url.endsWith('.js') ? publishedCareersClient : publishedCareersShell,
+    fetchJson: async (url) => {
+      const page = Number(new URL(url).searchParams.get('page'))
+      pages.push(page)
+      return { success: true, pagination: { currentPage: page, totalPages: 2, totalJobs: 2, hasNext: page === 1 }, jobs: page === 1 ? [
+        { _id: 'located', title: 'Marketing Engineer', department: 'Engineering', type: 'Full Time', description: '<p>This role based in Coimbatore handles control panels.</p>', createdAt: '2026-06-26T00:00:00Z' },
+      ] : [
+        { _id: 'no-location', title: 'Tool maker', type: 'Full Time', description: '<p>Assemble moulds.</p>' },
+      ] }
+    },
+  })
+  assert.deepEqual(pages, [1, 2])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].city, 'Coimbatore')
+  assert.equal(jobs[0].location, 'Coimbatore, India')
+  assert.equal(jobs[0].employmentType, 'Full-time')
+  assert.match(jobs[0].jobDescription, /control panels/)
+  assert.equal(jobs[0].sourceUrl, lecs.CAREERS_URL)
+  assert.equal(jobs[0].sourceListingComplete, false)
+})
+
+test('LECS refuses unverified client backends and incomplete job pagination', async () => {
+  const lecs = await loadModule()
+  for (const [client, feed] of [
+    ['https://unverified.example /job?page= /job/dropdown CareersHeroSection', null],
+    [publishedCareersClient, { success: true, jobs: [], pagination: { currentPage: 1, totalPages: 1, totalJobs: 3, hasNext: false } }],
+  ]) {
+    await assert.rejects(lecs.createLakshmiElectricalControlSystemsScraper().run({
+      fetchText: async (url) => url === lecs.HOMEPAGE_URL ? currentHomepageHtml.replace('<title>LECS</title>', '<title>Discover Control Panel Manufacturer Solutions | LECS India</title>') : url.endsWith('.js') ? client : publishedCareersShell,
+      fetchJson: async () => feed,
+    }), /verified.*client|jobs feed|incomplete/i)
+  }
 })

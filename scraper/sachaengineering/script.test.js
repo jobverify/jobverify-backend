@@ -391,6 +391,28 @@ test('SACHA Engineering run fetches the official homepage, careers handoff page,
   )
 })
 
+test('SACHA Engineering accepts Bell title drift and excludes roles without India evidence', async () => {
+  const sachaengineering = await loadSachaEngineeringModule()
+  const payload = JSON.parse(bellCompanyApiPage1Json)
+  payload.next = null
+  payload.results.job_posts[1].currency = null
+  const jobs = await sachaengineering.createSachaEngineeringScraper().run({
+    fetchText: async (url) => {
+      if (url === sachaengineering.HOMEPAGE_URL) return homepageHtml
+      if (url === sachaengineering.CAREERS_URL) return careersHtml
+      if (url === sachaengineering.BELL_JOBS_URL) {
+        return bellJobsHtml.replaceAll('SACHA Engineering - Bell Careers', 'SACHA Engineering - bell.careers')
+      }
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    fetchBellCompanyApiPage: async () => payload,
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].jobId, 'sachaengineering-190')
+})
+
 test('SACHA Engineering run follows the current Bell paginated company API after validating the public jobs page', async () => {
   const sachaengineering = await loadSachaEngineeringModule()
   assert.ok(sachaengineering, 'Expected SACHA Engineering scraper module at ./script.js')

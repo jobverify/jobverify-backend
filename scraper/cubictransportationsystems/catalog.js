@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, August 1, 2026 that https://www.cubic.com/global-careers still handed Global Career Opportunities to the public Cubic Workday board at https://cubic.wd1.myworkdayjobs.com/cubic_global_careers/jobs in a browser, while direct scraper fetches to the first-party page returned a known Incapsula interstitial. Also verified that the public Workday board remained live, that the Workday jobs API at https://cubic.wd1.myworkdayjobs.com/wday/cxs/cubic/cubic_global_careers/jobs enumerated 87 public postings across offsets 0 through 80 even though later pages reported total 0, and that structured JobPosting detail pages such as Senior Site Reliability Engineer and Head of Technology and Service Operations exposed India locations plus Business Unit: Cubic Transportation Systems. Saturday, August 1, 2026 counts were 87 public global postings, 35 India-addressed postings on the board, and 30 India postings whose detail pages were explicitly tagged to Cubic Transportation Systems; the scraper now returns that CTS subset.'
+  'Verified on October 3, 2026 that https://www.cubic.com/global-careers still links to the public Cubic Workday board, whose jobs API exposed 55 global postings across three pages. Of 26 India-addressed candidates, the current Workday detail API identified 23 active India roles in the Cubic Transportation Systems business unit. The previously pinned Workday job detail has been removed; the scraper now validates each current posting through its live detail API response and returns the CTS subset.'
 
 export const CUBIC_TRANSPORTATION_SYSTEMS_CATALOG = {
   source: 'cubictransportationsystems',
@@ -16,17 +16,17 @@ export const CUBIC_TRANSPORTATION_SYSTEMS_CATALOG = {
   officialWorkdayBoardUrl: 'https://cubic.wd1.myworkdayjobs.com/cubic_global_careers/jobs',
   jobsApiUrl: 'https://cubic.wd1.myworkdayjobs.com/wday/cxs/cubic/cubic_global_careers/jobs',
   companyDomain: 'cubic.com',
-  atsPlatform: 'workday-jobs-api-with-detail-jsonld',
+  atsPlatform: 'workday-cxs-jobs-and-detail-api',
   countryFilter: 'India',
   paginationStrategy: 'workday-cxs-offset-pagination-until-short-page',
   extractionStrategy:
-    'verified-cubic-global-careers-handoff-or-incapsula-block+verified-workday-board+india-summary-candidate-filter+detail-jsonld-business-unit-filter',
+    'verified-cubic-global-careers-handoff-or-incapsula-block+verified-workday-board+india-summary-candidate-filter+current-detail-api-business-unit-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-01',
-  verifiedPublicJobCount: 87,
-  verifiedIndiaBoardJobCount: 35,
-  verifiedIndiaJobCount: 30,
+  verifiedOn: '2026-10-03',
+  verifiedPublicJobCount: 55,
+  verifiedIndiaBoardJobCount: 26,
+  verifiedIndiaJobCount: 23,
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
   dryRunFile: 'cubictransportationsystems/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),

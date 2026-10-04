@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -58,11 +59,25 @@ const defaultFetchPage = async (url) => {
   }
 }
 
+const hasCurrentCompanyIdentity = (html) =>
+  /mailto:info@intellectyx\.com/i.test(String(html ?? ''))
+  && /Intellectyx is an Enterprise Agentic AI innovation and delivery partner\./i.test(String(html ?? ''))
+
 export const hasOfficialHomepageSignal = (html) =>
   HOMEPAGE_SIGNALS.every((pattern) => pattern.test(String(html ?? '')))
+  || (hasCurrentCompanyIdentity(html)
+    && /<title\b[^>]*>\s*Enterprise AI Consulting &amp; Development Company \| Intellectyx\s*<\/title>/i.test(String(html ?? ''))
+    && /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/www\.intellectyx\.com\/["']/i.test(String(html ?? ''))
+    && /href=["']\/careers\/?["']/i.test(String(html ?? '')))
 
 export const hasOfficialCareersSignal = (html) =>
   CAREERS_SIGNALS.every((pattern) => pattern.test(String(html ?? '')))
+  || (hasCurrentCompanyIdentity(html)
+    && /<title\b[^>]*>\s*Enterprise AI Careers \| Join Intellectyx\s*<\/title>/i.test(String(html ?? ''))
+    && /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/www\.intellectyx\.com\/careers\/["']/i.test(String(html ?? ''))
+    && /Send Us Your Resume/i.test(String(html ?? ''))
+    && /Share your resume with our recruitment team/i.test(String(html ?? ''))
+    && /mailto:recruitment@intellectyx\.com/i.test(String(html ?? '')))
 
 export const pageExposesPublicJobListings = (html) => {
   const page = String(html ?? '')
@@ -88,7 +103,11 @@ export const createIntellectyxScraper = () => ({
       throw new Error('The official Intellectyx careers page appears to expose public job listings')
     }
 
-    return []
+    return attachInventoryEvidence([], {
+      status: 'discovery-only', surface: CAREERS_URL, firstParty: true, listingComplete: false,
+      pagesFetched: 2, reportedTotal: null, indiaFacetCount: null, verifiedAt: new Date().toISOString(),
+      reason: "Intellectyx generic resume landing is a discovery surface; complete public job inventory is unverified.",
+    })
   },
 })
 
@@ -99,7 +118,15 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
 
-  if (isDryRun) {
+  const evidence = readInventoryEvidence(jobs)
+  if (evidence?.listingComplete === false) {
+    if (isDryRun) {
+      const { writeFile } = await import('node:fs/promises')
+      await writeFile(path.join(currentDir, 'inventory-evidence.json'), JSON.stringify(evidence, null, 2))
+    }
+    console.error(evidence.reason)
+    process.exitCode = 1
+  } else if (isDryRun) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
   } else {
     await saveToDB(jobs, SOURCE)

@@ -54,7 +54,7 @@ test('Apar Technologies catalog captures the verified first-party no-public-care
   )
   assert.equal(APAR_TECHNOLOGIES_CATALOG.parser, 'custom-script')
   assert.equal(APAR_TECHNOLOGIES_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(APAR_TECHNOLOGIES_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(APAR_TECHNOLOGIES_CATALOG.verifiedOn, '2026-10-03')
   assert.match(APAR_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.apartechnologies\.com\//i)
   assert.match(APAR_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.apartechnologies\.com\/careers\//i)
   assert.match(APAR_TECHNOLOGIES_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.apartechnologies\.com\/job-posting\//i)

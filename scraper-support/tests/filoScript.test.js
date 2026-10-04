@@ -110,7 +110,7 @@ test('Filo helpers accept the live /u/3 Google Docs URL variant and broader doc 
 
   assert.equal(filo.SOURCE, 'filo')
   assert.equal(filo.COMPANY, 'Filo')
-  assert.equal(filo.VERIFIED_ON, '2026-08-02')
+  assert.equal(filo.VERIFIED_ON, '2026-10-03')
   assert.equal(filo.CAREERS_URL, CAREERS_URL)
   assert.equal(filo.hasOfficialCareersPageSignal(careersHtml), true)
   assert.equal(filo.hasMatchingRoleTitle('Analysts', 'Business Analyst'), true)

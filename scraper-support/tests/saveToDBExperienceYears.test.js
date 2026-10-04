@@ -18,6 +18,23 @@ const setReadyState = (value) => {
   }
 }
 
+test('incomplete policy classification prevents Mongo job writes, expiry and alerts', async () => {
+  const restore = setReadyState(1)
+  const originals = { bulkWrite: Job.bulkWrite, find: Job.find, updateMany: Job.updateMany, deleteMany: Job.deleteMany }
+  Job.find = () => ({ select() { return this }, lean() { return this }, exec: async () => [] })
+  Job.bulkWrite = async () => assert.fail('unclassified jobs must not reach MongoDB')
+  Job.updateMany = async () => assert.fail('failed classification must not expire previous jobs')
+  Job.deleteMany = async () => assert.fail('failed classification must not delete jobs')
+  try {
+    await assert.rejects(saveToDB([{
+      title: 'Engineering Intern', company: 'Example', location: 'Bengaluru, India',
+      link: 'https://example.com/jobs/intern', description: 'Internship for currently pursuing students.',
+    }], 'example', { enrichPublicExperience: false, refreshDatasetSummary: false,
+      classifier: { mode: 'policy', classifyJobs: async jobs => jobs.map(job => ({ ...job, classification: { complete: false, windows: 0 } })) },
+    }), /complete Laya/)
+  } finally { Object.assign(Job, originals); restore() }
+})
+
 test('quota recovery deletes oldest expired jobs until the 10 MB estimate is reached', async () => {
   const { purgeExpiredJobsForQuotaRecovery } = await import('../utils/saveToDB.js')
   const deletedIds = []
@@ -215,6 +232,8 @@ test('saveToDB reports enrichment and bulk write stage boundaries', async () => 
     assert.deepEqual(stages, [
       'enrichment:start',
       'enrichment:done',
+      'classification:start',
+      'classification:done',
       'bulkWrite:start',
       'bulkWrite:done',
     ])
@@ -271,6 +290,49 @@ test('saveToDB does not start bulk write after a lifecycle abort', async () => {
   } finally {
     Job.bulkWrite = originalBulkWrite
     Job.deleteMany = originalDeleteMany
+    restoreReadyState()
+  }
+})
+
+test('saveToDB stores the complete scraped description and keeps it when a later scrape omits it', async () => {
+  const restoreReadyState = setReadyState(1)
+  const originalBulkWrite = Job.bulkWrite
+  const updates = []
+
+  Job.bulkWrite = async (operations) => {
+    updates.push(operations[0].updateOne.update)
+    return { upsertedCount: 0, modifiedCount: 1 }
+  }
+
+  try {
+    const job = {
+      title: 'Backend Engineer',
+      company: 'Example Corp',
+      location: 'Bengaluru, India',
+      city: 'Bengaluru',
+      link: 'https://careers.example.com/jobs/description-test',
+      jobDescription: 'Responsibilities:\nBuild services.\n\nRequirements:\nFive years of experience.',
+    }
+    const options = {
+      enrichPublicExperience: false,
+      refreshDatasetSummary: false,
+      replaceExisting: false,
+    }
+
+    await saveToDB([job], 'example-source', options)
+    await saveToDB([{ ...job, jobDescription: null }], 'example-source', options)
+    await saveToDB([{ ...job, jobDescription: null, description: 'Full alternate description.' }], 'example-source', options)
+
+    assert.equal(
+      updates[0].$set.description,
+      'Responsibilities:\nBuild services.\n\nRequirements:\nFive years of experience.',
+    )
+    assert.equal(Object.hasOwn(updates[0], '$unset') && Object.hasOwn(updates[0].$unset, 'description'), false)
+    assert.equal(Object.hasOwn(updates[1].$set, 'description'), false)
+    assert.equal(Object.hasOwn(updates[1], '$unset') && Object.hasOwn(updates[1].$unset, 'description'), false)
+    assert.equal(updates[2].$set.description, 'Full alternate description.')
+  } finally {
+    Job.bulkWrite = originalBulkWrite
     restoreReadyState()
   }
 })

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 15, 2026 that https://www.fastrack.in/ is the live first-party Fastrack homepage, that its footer Careers link points to https://careers.titan.in/?rms=titan, and that this handoff resolves to Titan’s first-party careers home at https://careers.titan.in/in/en. Verified https://www.titancompany.in/careers is Titan’s public corporate careers page, explicitly describes careers across Titan brands including Fastrack, and links Current vacancies to https://careers.titan.in/in/en/search-results. Verified the public search shell at https://careers.titan.in/in/en/search-results currently says “Sorry... no active job openings, please come back later.”, so there is no trustworthy public Fastrack-specific jobs feed to scrape.'
+  'Verified on October 3, 2026 that https://www.fastrack.in/ returns its known Cloudflare blocked page from this environment. The verified https://www.titancompany.in/careers page still covers Fastrack and links current vacancies to https://careers.titan.in/in/en/search-results. The handoff https://careers.titan.in/?rms=titan resolves to https://careers.titan.in/in/en, whose updated home page retains Titan brand and careers markers. The search results page still says Sorry... no active job openings, please come back later.'
 
 export const FASTRACK_CATALOG = {
   source: 'fastrack',
@@ -27,7 +27,7 @@ export const FASTRACK_CATALOG = {
     'verified-fastrack-homepage+verified-footer-careers-handoff+verified-titan-brand-inclusive-careers-page+verified-titan-jobs-home+verified-zero-results-search-shell-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

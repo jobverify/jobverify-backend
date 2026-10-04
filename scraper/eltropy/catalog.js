@@ -22,9 +22,9 @@ export const ELTROPY_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   companyDomain: 'eltropy.com',
-  verifiedOn: '2026-08-02',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified on Sunday, August 2, 2026 that https://eltropy.com/ and https://eltropy.com/careers/ now return the same first-party-blocked "Just a moment..." surface, while the public Greenhouse board at https://job-boards.greenhouse.io/eltropyinc and the public Greenhouse jobs API at https://boards-api.greenhouse.io/v1/boards/eltropyinc/jobs?content=true remain live. Verified that the Greenhouse jobs API exposes India roles including Data & Analytics Engineer and Engineering Manager, and that the public Greenhouse board continues to publish matching Eltropy Inc. job detail URLs.',
+    'Verified on October 3, 2026 that https://eltropy.com/ and https://eltropy.com/careers/ return the same Cloudflare 403 Forbidden page, while the public Greenhouse board at https://job-boards.greenhouse.io/eltropyinc and the public Greenhouse jobs API at https://boards-api.greenhouse.io/v1/boards/eltropyinc/jobs?content=true remain live. The API lists 11 Eltropy Inc. roles, including five India roles such as Engineering Manager and Senior Backend Engineer, with matching public Greenhouse detail URLs.',
   dryRunFile: 'eltropy/jobs.json',
 }
 

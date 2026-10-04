@@ -101,7 +101,7 @@ const loadG10XModule = async () => {
   }
 }
 
-test('G10X pins the verified Friday, August 7, 2026 zero-openings surface', async () => {
+test('G10X pins the verified October 3, 2026 zero-openings surface', async () => {
   const g10x = await loadG10XModule()
 
   assert.equal(g10x.SOURCE, 'g10x')
@@ -110,8 +110,8 @@ test('G10X pins the verified Friday, August 7, 2026 zero-openings surface', asyn
   assert.equal(g10x.CAREERS_URL, 'https://www.g10x.com/careers')
   assert.equal(g10x.JOBS_URL, 'https://www.g10x.com/jobs')
   assert.equal(g10x.COMPANY_DOMAIN, 'g10x.com')
-  assert.equal(g10x.VERIFIED_ON, '2026-08-07')
-  assert.match(g10x.VERIFIED_SURFACE_SUMMARY, /Friday, August 7, 2026/i)
+  assert.equal(g10x.VERIFIED_ON, '2026-10-03')
+  assert.match(g10x.VERIFIED_SURFACE_SUMMARY, /October 3, 2026/i)
   assert.equal(g10x.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(g10x.hasOfficialHomepageSignal(currentHomepageHtml), true)
   assert.equal(g10x.hasOfficialCareersSignal(careersHtml), true)
@@ -183,6 +183,21 @@ test('G10X fails closed when the homepage year sentinel is removed or the jobs p
         throw new Error(`Unexpected G10X URL: ${url}`)
       },
     }),
+    /public openings changed materially/i,
+  )
+})
+
+test('G10X keeps zero listed roles when the only apply link is a verified general profile form', async () => {
+  const g10x = await loadG10XModule()
+  const generalApplyHtml = jobsHtml.replace('</main>', `
+    <section><h2>Don't see a matching role?</h2>
+      <p>We're always looking for exceptional talent. Share your profile for future opportunities.</p>
+      <a id="proactively-apply-btn" href="/job-apply"><div>Share your profile</div></a>
+    </section></main>`)
+
+  assert.deepEqual(g10x.extractJobs(generalApplyHtml), [])
+  assert.throws(
+    () => g10x.extractJobs(generalApplyHtml.replace('id="proactively-apply-btn"', 'id="unexpected"')),
     /public openings changed materially/i,
   )
 })

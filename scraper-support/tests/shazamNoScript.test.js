@@ -31,6 +31,7 @@ const APPLE_CAREERS_HTML = `
   </head>
   <body>
     <h1>Find your perfect role.</h1>
+    <input aria-label="Search by role or keyword" value="shazam"/>
     <section>
       <h2>QA Lead - Shazam (12 Month Contract)</h2>
       <p>Software and Services</p>
@@ -155,10 +156,24 @@ test('Shazam? no fails closed when the Shazam page, Apple careers handoff, or ex
         return {
           status: 200,
           url,
-          html: APPLE_CAREERS_HTML.replace('QA Lead - Shazam (12 Month Contract)', 'QA Lead - Music'),
+          html: APPLE_CAREERS_HTML.replace('Search Jobs - Apple Music - Jobs - Careers at Apple', 'Unrelated careers'),
         }
       },
     }),
     /verified Apple careers surface/i,
   )
+})
+
+test('Shazam noisy-row verification survives the retirement of an individual Apple vacancy', async () => {
+  const shazamNo = await loadModule()
+  const currentCareers = APPLE_CAREERS_HTML
+    .replace('QA Lead - Shazam (12 Month Contract)', 'Music Content Operations AI/ML Program Lead')
+    .replace('The role is located in our London office, the tech hub of the Shazam team.', 'Work on Apple Music and Shazam services.')
+  assert.equal(shazamNo.hasVerifiedAppleCareersSignal(currentCareers), true)
+  assert.deepEqual(await shazamNo.run({
+    fetchPage: async (url) => ({status: 200, url, html: url === shazamNo.HOMEPAGE_URL ? SHAZAM_HTML : currentCareers}),
+  }), [])
+  await assert.rejects(shazamNo.run({
+    fetchPage: async (url) => ({status: 200, url, html: url === shazamNo.HOMEPAGE_URL ? SHAZAM_HTML : currentCareers.replace('value="shazam"', 'value="unrelated"')}),
+  }), /Apple careers surface/i)
 })

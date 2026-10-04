@@ -33,6 +33,19 @@ test('Phenom rejects an empty/reset later page before the earlier total',async()
 test('Phenom rejects duplicate pages before total coverage',async()=>{
  await assert.rejects(scraper.run({detailEnrichmentBudgetMs:0,fetchText:async()=>page([job(1)],2,1)}),/incomplete/i)
 })
+test('Phenom preserves distinct roles as incomplete when the final page overlaps an earlier page',async()=>{
+ const rows=[[job(1),job(2)],[job(2),job(3)]]
+ const requests=[]
+ const jobs=await scraper.run({detailEnrichmentBudgetMs:0,fetchText:async url=>{
+  const offset=Number(new URL(url).searchParams.get('from')||0)
+  requests.push(offset)
+  if(offset>=4) throw new Error('Requested beyond the advertised listing total')
+  return page(rows[offset/2],4,2)
+ }})
+ assert.deepEqual(requests,[0,2])
+ assert.deepEqual(jobs.map(row=>row.jobId),['1','2','3'])
+ assert.ok(jobs.every(row=>row.sourceListingComplete===false))
+})
 test('Phenom rejects malformed listing identities instead of silently dropping records',async()=>{
  await assert.rejects(scraper.run({detailEnrichmentBudgetMs:0,fetchText:async()=>page([job(1),{country:'India',title:'Missing ID'}],2)}),/incomplete|identity/i)
 })

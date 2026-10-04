@@ -1,136 +1,82 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-
-import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { hydrateProviderCatalogEntry } from '../providers/index.js'
+import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
+import { THREE_PILLAR_GLOBAL_CATALOG } from '../../scraper/3pillarglobal/catalog.js'
+import { CAREERS_URL, createThreePillarGlobalScraper } from '../../scraper/3pillarglobal/script.js'
 
-const CAREERS_HTML = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>3Pillar Career Opportunities</title>
-  </head>
-  <body>
-    <h1>3Pillar Career Opportunities</h1>
-  </body>
-</html>
-`
-
-const LEVER_BOARD_HTML = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta property="og:title" content="Job openings at 3Pillar" />
-  </head>
-  <body>
-    <h1>Job openings at 3Pillar</h1>
-  </body>
-</html>
-`
-
-const SAMPLE_LEVER_JOBS = [
-  {
-    id: 'role-1',
-    text: 'AI ML Architect',
-    hostedUrl: 'https://jobs.lever.co/3pillarglobal/role-1',
-    applyUrl: 'https://jobs.lever.co/3pillarglobal/role-1/apply',
-    createdAt: 1_784_889_600_000,
-    categories: {
-      location: 'Noida, India',
-      team: 'Engineering',
-      commitment: 'Full-time',
-    },
-    descriptionPlain: 'Lead applied AI programs across delivery teams.',
-  },
-]
-
-const loadCatalogModule = async () => {
-  try {
-    return await import('../../scraper/3pillarglobal/catalog.js')
-  } catch {
-    assert.fail('Expected 3Pillar Global catalog module at ../../scraper/3pillarglobal/catalog.js')
-  }
-}
-
-const loadScraperModule = async () => {
-  try {
-    return await import('../../scraper/3pillarglobal/script.js')
-  } catch {
-    assert.fail('Expected 3Pillar Global scraper module at ../../scraper/3pillarglobal/script.js')
-  }
-}
-
-test('3Pillar Global local catalog captures the first-party careers page plus official Lever contract', async () => {
-  const { THREE_PILLAR_GLOBAL_CATALOG } = await loadCatalogModule()
-  const threePillar = await loadScraperModule()
-  const provider = hydrateProviderCatalogEntry(THREE_PILLAR_GLOBAL_CATALOG)
-
-  assert.equal(provider.source, '3pillarglobal')
-  assert.equal(provider.companyName, '3Pillar Global')
-  assert.equal(provider.companyCareerPage, 'https://www.3pillar.ai/careers/career-opportunities/')
-  assert.equal(provider.officialLeverBoardUrl, 'https://jobs.lever.co/3pillarglobal')
-  assert.equal(provider.leverApiUrl, 'https://api.lever.co/v0/postings/3pillarglobal?mode=json')
-  assert.equal(provider.atsPlatform, 'lever')
-  assert.equal(provider.verifiedPublicJobCount, 0)
-  assert.equal(threePillar.PROVIDER_METADATA.source, provider.source)
+const BOARD = 'https://3pillar.darwinbox.com/ms/candidatev2/main/careers/allJobs'
+const API = 'https://3pillar.darwinbox.com/ms/candidateapi/job/alljobs?companyId=main'
+const CAREERS = '<title>3Pillar Career Opportunities</title><h1>Career opportunities</h1><a href="' + BOARD + '">View Opportunities</a>'
+const record = (id, location = 'Noida, Uttar Pradesh, India') => ({
+  id, title: 'Senior Software Engineer', locations: location, country: 'India',
+  department_name: 'Engineering', emp_type_name: 'Employee', experience: '5 - 8 Years',
+  posted_on: '1790793000', jd: '<p>Build reliable services.</p>',
 })
 
-test('3Pillar Global exact backlog row resolves from the local catalog object', async () => {
-  const { THREE_PILLAR_GLOBAL_CATALOG } = await loadCatalogModule()
-  const report = generateCompanyCoverageReport({
-    csvText: '3Pillar Global\n',
-    catalog: [hydrateProviderCatalogEntry(THREE_PILLAR_GLOBAL_CATALOG)],
+test('3Pillar executes the linked Darwinbox listing with public session seeding and pagination', async () => {
+  const posts = []
+  const fetchImpl = async (url, init) => {
+    if (url === BOARD) return new Response('<title>3Pillar Group</title>', { headers: { 'set-cookie': 'public=example; Path=/; Secure' } })
+    assert.equal(url, API)
+    assert.equal(init.method, 'POST')
+    assert.equal(init.headers.cookie, 'public=example')
+    const body = JSON.parse(init.body)
+    posts.push(body)
+    return Response.json({ status: 'success', job_counts: 2, data: [record('role-' + body.page)] })
+  }
+  const jobs = await createThreePillarGlobalScraper({ pageSize: 1, fetchImpl, now: () => '2026-10-03T00:00:00.000Z' }).run({
+    fetchText: async (url) => { assert.equal(url, CAREERS_URL); return CAREERS },
   })
-
-  assert.equal(report.matchedCount, 1)
-  assert.equal(report.unmatchedCount, 0)
-})
-
-test('3Pillar Global scraper validates the first-party careers page and maps official Lever jobs into shared job fields', async () => {
-  const threePillar = await loadScraperModule()
-
-  assert.equal(threePillar.hasOfficialThreePillarCareersSignal(CAREERS_HTML), true)
-  assert.equal(threePillar.hasOfficialThreePillarLeverBoardSignal(LEVER_BOARD_HTML), true)
-
-  const jobs = await threePillar.createThreePillarGlobalScraper({
-    now: () => '2026-07-18T00:00:00.000Z',
-    maxJobs: 1,
-  }).run({
-    fetchText: async (url) => {
-      if (url === threePillar.CAREERS_URL) return CAREERS_HTML
-      if (url === threePillar.LEVER_BOARD_URL) return LEVER_BOARD_HTML
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-    fetchJson: async () => SAMPLE_LEVER_JOBS,
-  })
-
-  assert.deepEqual(jobs, [
-    {
-      title: 'AI ML Architect',
-      company: '3Pillar Global',
-      department: 'Engineering',
-      location: 'Noida, India',
-      city: 'Noida',
-      country: 'India',
-      jobId: 'role-1',
-      requisitionId: 'role-1',
-      sourceUrl: 'https://jobs.lever.co/3pillarglobal/role-1',
-      applyUrl: 'https://jobs.lever.co/3pillarglobal/role-1/apply',
-      employmentType: 'Full-time',
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: '2026-07-24T10:40:00.000Z',
-      closingDate: null,
-      jobDescription: 'Lead applied AI programs across delivery teams.',
-      remoteStatus: null,
-      source: '3pillarglobal',
-      link: 'https://jobs.lever.co/3pillarglobal/role-1/apply',
-      scrapedAt: '2026-07-18T00:00:00.000Z',
-      companyCareerPage: 'https://www.3pillar.ai/careers/career-opportunities/',
-      companyDomain: '3pillar.ai',
-      atsPlatform: 'lever',
-    },
+  assert.deepEqual(posts, [
+    { companyId: 'main', sort_option: 'new', limit: 1, page: 1 },
+    { companyId: 'main', sort_option: 'new', limit: 1, page: 2 },
   ])
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].company, '3Pillar Global')
+  assert.equal(jobs[0].source, '3pillarglobal')
+  assert.equal(jobs[0].sourceUrl, 'https://3pillar.darwinbox.com/ms/candidatev2/main/careers/jobDetails/role-1')
+  assert.equal(jobs[0].atsPlatform, 'darwinbox')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].scrapedAt, '2026-10-03T00:00:00.000Z')
+})
+
+test('3Pillar rejects an official page with no current Darwinbox handoff before enumeration', async () => {
+  await assert.rejects(createThreePillarGlobalScraper().run({
+    fetchText: async () => '<title>3Pillar Career Opportunities</title><a href="https://jobs.lever.co/3pillarglobal">Old board</a>',
+    fetchListingPage: async () => assert.fail('Unverified handoff must not enumerate'),
+  }), /Darwinbox handoff/)
+})
+
+test('3Pillar never turns malformed or denied listings into empty jobs', async () => {
+  for (const payload of [{ status: 'success' }, { status: 'success', job_counts: 1, data: [] }]) {
+    await assert.rejects(createThreePillarGlobalScraper().run({
+      fetchText: async () => CAREERS, fetchListingPage: async () => payload,
+    }), /malformed or incomplete/)
+  }
+  const error = Object.assign(new Error('HTTP 403'), { status: 403 })
+  await assert.rejects(createThreePillarGlobalScraper().run({
+    fetchText: async () => CAREERS, fetchListingPage: async () => { throw error },
+  }), (err) => err.failureKind === 'blocked_or_access_denied')
+})
+
+test('3Pillar decorates confirmed empty listings and propagates cancellation', async () => {
+  assert.deepEqual(await createThreePillarGlobalScraper().run({
+    fetchText: async () => CAREERS, fetchListingPage: async () => ({ status: 'success', job_counts: 0, data: [] }),
+  }), [])
+  const controller = new AbortController()
+  controller.abort(new Error('cancelled'))
+  await assert.rejects(createThreePillarGlobalScraper().run({
+    signal: controller.signal, fetchText: async () => assert.fail('Cancelled source must not fetch'),
+  }), /cancelled/)
+})
+
+test('3Pillar catalog and exact backlog match expose the verified replacement board', () => {
+  const provider = hydrateProviderCatalogEntry(THREE_PILLAR_GLOBAL_CATALOG)
+  assert.equal(provider.darwinboxBoardUrl, BOARD)
+  assert.equal(provider.companyCareerPage, CAREERS_URL)
+  assert.equal(provider.atsPlatform, 'darwinbox')
+  assert.equal(provider.countryFilter, 'India')
+  const report = generateCompanyCoverageReport({ csvText: '3Pillar Global\n', catalog: [provider] })
+  assert.equal(report.matchedCount, 1)
 })

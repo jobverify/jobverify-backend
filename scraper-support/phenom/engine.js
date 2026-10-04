@@ -637,6 +637,10 @@ export const createPhenomScraper = ({
           if (typeof listingPredicate !== 'function' && targetCountryCount != null && targetListings.length < targetCountryCount) uncertainScope = true
           break
         }
+        // An overlapping final page can exhaust the advertised offsets without
+        // yielding every unique ID. Keep verified jobs, but mark the inventory
+        // incomplete so persistence preserves roles absent from this snapshot.
+        if (offset >= totalHits) break
         if (targetListings.length >= maxJobs) break
       }
     } catch (error) {

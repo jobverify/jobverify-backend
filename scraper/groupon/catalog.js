@@ -13,18 +13,18 @@ export const GROUPON_CATALOG = {
   officialJobsBoardUrl: 'https://job-boards.eu.greenhouse.io/groupon',
   greenhouseJobsApiUrl: 'https://boards-api.greenhouse.io/v1/boards/groupon/jobs',
   greenhouseJobBaseUrl: 'https://job-boards.eu.greenhouse.io/groupon/jobs',
-  sampleJobUrl: 'https://job-boards.eu.greenhouse.io/groupon/jobs/4924951101',
+  sampleJobUrl: 'https://job-boards.eu.greenhouse.io/groupon/jobs/4970408101',
   companyDomain: 'grouponcareers.com',
   atsPlatform: 'greenhouse',
   paginationStrategy: 'single-greenhouse-jobs-api-content-page',
   extractionStrategy:
-    'verified-first-party-careers-page+official-greenhouse-board-link+visible-greenhouse-board-jobs+greenhouse-jobs-api',
+    'verified-first-party-careers-shell+greenhouse-board-backlink+visible-greenhouse-board-jobs+greenhouse-jobs-api',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-17',
-  verifiedJobCount: 13,
+  verifiedOn: '2026-10-03',
+  verifiedJobCount: 23,
   verifiedSurfaceSummary:
-    'Verified on Friday, July 17, 2026 that https://www.grouponcareers.com/ is Groupon\'s live first-party careers landing page and that it links directly to the official public Greenhouse board at https://job-boards.eu.greenhouse.io/groupon. Anonymous verification showed the board page exposing 13 visible public job links, and the Greenhouse jobs API at https://boards-api.greenhouse.io/v1/boards/groupon/jobs?content=true returned 13 public jobs including (AI-First) Engineering Manager and Business Development Manager with absolute URLs on the same official Greenhouse board host.',
+    'Verified on October 3, 2026 that https://www.grouponcareers.com/ redirects to the new first-party app at https://careers.groupon.com/. The official Greenhouse board at https://job-boards.eu.greenhouse.io/groupon links back to the Groupon careers domain and exposes 23 public jobs. Its API at https://boards-api.greenhouse.io/v1/boards/groupon/jobs?content=true returns the same 23 jobs, including four Bangalore roles with official Greenhouse detail URLs.',
   dryRunFile: 'groupon/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

@@ -14,10 +14,9 @@ export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const JOB_CARD_MARKER = '<div role="listitem" class="c-jobitem w-dyn-item">'
-
 const decodeHtmlEntities = (value) => String(value ?? '')
   .replace(/&nbsp;|&#160;/gi, ' ')
+  .replace(/&middot;/gi, '·')
   .replace(/&amp;/gi, '&')
   .replace(/&#39;|&apos;|&#x27;/gi, "'")
   .replace(/&quot;|&#34;/gi, '"')
@@ -40,41 +39,27 @@ const toAbsoluteUrl = (value) => {
   }
 }
 
-const slugify = (value) => normalizeWhitespace(value)
-  .toLowerCase()
-  .replace(/[^a-z0-9]+/g, '-')
-  .replace(/^-+|-+$/g, '')
-
-const extractCountry = (value) => normalizeText(value)
-
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
+  const total = Number.parseInt(normalizeWhitespace(page).match(/\b(\d+) open roles\b/i)?.[1], 10)
 
-  return /<title>\s*Job Search \| thinkbridge/i.test(page)
-    && extractJobCards(page).length > 0
+  return /<title>\s*Careers at thinkbridge \| Remote-first engineering work\s*<\/title>/i.test(page)
+    && Number.isInteger(total)
+    && total > 0
+    && extractJobCards(page).length === total
 }
 
 export const extractJobCards = (html = '') => {
   const jobs = []
-  const segments = String(html ?? '').split(JOB_CARD_MARKER).slice(1)
-
-  for (const segment of segments) {
-    const countryValue = segment.match(/<div class="category-tag country">([\s\S]*?)<\/div>/i)?.[1]
-    const departmentValue = segment.match(/<div class="category-tag static hide">([\s\S]*?)<\/div>/i)?.[1]
-    const experienceValue = segment.match(/<div class="category-tag gray career hide">([\s\S]*?)<\/div>/i)?.[1]
-    const titleValue = segment.match(/<h3 class="space-top-small">([\s\S]*?)<\/h3>/i)?.[1]
-    const summaryValue = segment.match(/<div class="opacity-dark-text summary">([\s\S]*?)<\/div>/i)?.[1]
-    const skillsValue = segment.match(/<div class="category-tag transparent">([\s\S]*?)<\/div>/i)?.[1]
-    const hrefValue = segment.match(/<a[^>]+href="([^"]+)"/i)?.[1]
-    const title = normalizeText(titleValue)
-    const sourceUrl = toAbsoluteUrl(hrefValue)
-    if (!title || !sourceUrl) continue
-
-    const requisitionId = slugify(hrefValue)
-    const country = extractCountry(countryValue)
-    const requiredSkills = normalizeText(skillsValue)
-      ? normalizeText(skillsValue).split(/\s*,\s*/).filter(Boolean)
-      : []
+  for (const match of String(html ?? '').matchAll(/<li\b[^>]*data-loc="([^"]+)"[^>]*>\s*<a class="role" href="([^"]+)">\s*<span class="role-t">([\s\S]*?)<\/span>\s*<span class="role-m">([\s\S]*?)<\/span>/gi)) {
+    const [, mode, href, titleHtml, metadataHtml] = match
+    const title = normalizeText(titleHtml)
+    const sourceUrl = toAbsoluteUrl(href)
+    const metadata = normalizeWhitespace(metadataHtml).split(/\s*·\s*/)
+    const location = normalizeText(metadata[0])
+    const country = /\bIndia\b/i.test(location || '') ? 'India' : null
+    if (!title || !location || !/^https:\/\/www\.thinkbridge\.com\/careers\/[^/?#]+$/.test(sourceUrl)) continue
+    const requisitionId = sourceUrl.split('/').pop()
 
     jobs.push({
       title,
@@ -82,26 +67,44 @@ export const extractJobCards = (html = '') => {
       requisitionId,
       sourceUrl,
       applyUrl: sourceUrl,
-      location: country,
+      location,
       city: null,
       country,
-      department: normalizeText(departmentValue),
-      employmentType: null,
-      workplaceType: null,
-      experienceRequired: normalizeText(experienceValue),
+      department: null,
+      employmentType: normalizeText(metadata[1]),
+      workplaceType: /^remote$/i.test(mode) ? 'Remote' : 'On-site',
+      experienceRequired: normalizeText(metadata[2]),
       minimumQualification: null,
       preferredQualification: null,
-      requiredSkills,
+      requiredSkills: [],
       compensation: null,
       postingDate: null,
       closingDate: null,
       openingsCount: null,
-      jobDescription: normalizeText(summaryValue),
+      jobDescription: null,
       companyCareerPage: CAREERS_URL,
     })
   }
 
   return jobs
+}
+
+export const extractVerifiedDetail = (html, card) => {
+  const page = String(html ?? '')
+  const title = normalizeText(page.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1])
+  const canonical = page.match(/<link\b[^>]*rel="canonical"[^>]*href="([^"]+)"/i)?.[1]
+  const applyUrl = page.match(/<a\b[^>]*href="(https:\/\/careers\.thinkbridge\.com\/jobs\/Careers\/[^"?#]+(?:\?[^\"]*)?)"[^>]*>\s*Apply for this role/i)?.[1]
+  if (title !== card.title
+    || canonical !== card.sourceUrl
+    || !applyUrl
+    || !new RegExp(`<title>\\s*${card.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} job \\| thinkbridge\\s*<\\/title>`, 'i').test(page)) {
+    throw new Error(`thinkbridge job detail page changed materially: ${card.sourceUrl}`)
+  }
+
+  return {
+    applyUrl,
+    jobDescription: normalizeText(page.match(/<meta\b[^>]*name="description"[^>]*content="([^"]+)"/i)?.[1]),
+  }
 }
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
@@ -125,15 +128,21 @@ export const createThinkbridgeScraper = ({ now = () => new Date().toISOString() 
       throw new Error('thinkbridge verified first-party job-search page no longer exposes visible public role cards')
     }
 
-    return jobs.map((job) => ({
-      ...job,
-      company: COMPANY,
-      source: SOURCE,
-      companyDomain: PROVIDER_METADATA.companyDomain,
-      atsPlatform: PROVIDER_METADATA.atsPlatform,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: (overrideNow || now)(),
-    }))
+    const detailedJobs = []
+    for (const job of jobs) {
+      const detail = extractVerifiedDetail(await fetchText(job.sourceUrl), job)
+      detailedJobs.push({
+        ...job,
+        ...detail,
+        company: COMPANY,
+        source: SOURCE,
+        companyDomain: PROVIDER_METADATA.companyDomain,
+        atsPlatform: PROVIDER_METADATA.atsPlatform,
+        link: detail.applyUrl,
+        scrapedAt: (overrideNow || now)(),
+      })
+    }
+    return detailedJobs
   },
 })
 

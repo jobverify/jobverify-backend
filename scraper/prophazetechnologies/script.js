@@ -154,7 +154,10 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const text = stripTags(page)
 
-  return HOMEPAGE_SIGNALS.every((signal) => text.includes(signal))
+  return text.includes(HOMEPAGE_SIGNALS[0])
+    && text.includes(HOMEPAGE_SIGNALS[2])
+    && (text.includes(HOMEPAGE_SIGNALS[1]) || text.includes('AI-driven WAF, API protection'))
+    && (text.includes(HOMEPAGE_SIGNALS[3]) || text.includes('AI & LLM Security'))
     && /href=["']https:\/\/www\.prophaze\.com\/company\/careers\/["']/i.test(page)
 }
 

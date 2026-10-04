@@ -20,6 +20,53 @@ const homepageHtml = `
 </html>
 `
 
+const qualityCareHomepageHtml = `
+<html><head><title>Aster Quality Care</title></head><body>
+  <nav><a href="/careers">Careers</a></nav>
+  <p>Aster DM Quality Care Ltd.</p>
+  <em>*Formerly Aster DM Healthcare Ltd.</em>
+</body></html>`
+
+const qualityCareCareersHtml = `
+<html><head><title>Aster Quality Care</title></head><body>
+  <p>Aster DM Quality Care Ltd.</p>
+  <div>Build a Career That Makes Every Moment Matter</div>
+  <p>Across Aster, CARE, Evercare and KIMSHEALTH Bangladesh, every role contributes to something bigger.</p>
+  <form id="career-contact-form" method="POST" enctype="multipart/form-data"
+    data-action="https://www.asterqualitycare.com/careers/contact">
+    <input type="file" id="resume-upload" name="resume" />
+  </form>
+  <em>*Formerly Aster DM Healthcare Ltd.</em>
+</body></html>`
+
+test('current Aster Quality Care careers form has no published jobs and never queries legacy Oracle', async () => {
+  const aster = await loadScriptModule()
+  const requested = []
+  const jobs = await aster.createAsterDmHealthcareScraper({
+    fetchText: async (url) => {
+      requested.push(url)
+      if (url === 'https://www.asterqualitycare.com/') return qualityCareHomepageHtml
+      if (url === 'https://www.asterqualitycare.com/careers') return qualityCareCareersHtml
+      throw new Error(`Unexpected text URL: ${url}`)
+    },
+    fetchJson: async (url) => { throw new Error(`Unexpected Oracle request: ${url}`) },
+  }).run()
+  assert.deepEqual(requested, ['https://www.asterqualitycare.com/', 'https://www.asterqualitycare.com/careers'])
+  assert.deepEqual(jobs, [])
+  assert.equal(aster.hasCurrentHomepageSignal(qualityCareHomepageHtml), true)
+  assert.equal(aster.hasCurrentCareersIntakeSignal(qualityCareCareersHtml), true)
+  assert.equal(aster.hasCurrentCareersIntakeSignal(qualityCareCareersHtml.replace('name="resume"', 'name="other"')), false)
+  assert.equal(aster.hasCurrentCareersIntakeSignal(qualityCareCareersHtml + '<a href="https://hcdt.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX">Jobs</a>'), false)
+  await assert.rejects(aster.createAsterDmHealthcareScraper({
+    fetchText: async (url) => url.endsWith('/careers')
+      ? qualityCareCareersHtml.replace('name="resume"', 'name="other"')
+      : qualityCareHomepageHtml,
+  }).run(), /verified careers page/i)
+  await assert.rejects(aster.createAsterDmHealthcareScraper({
+    fetchText: async () => qualityCareHomepageHtml.replace('Formerly Aster DM Healthcare Ltd.', 'Formerly another company'),
+  }).run(), /verified official homepage/i)
+})
+
 const careersHtml = `
 <!doctype html>
 <html lang="en">
@@ -194,9 +241,9 @@ test('Aster DM Healthcare verifies the live first-party homepage, careers handof
 
   assert.equal(aster.SOURCE, 'asterdmhealthcare')
   assert.equal(aster.COMPANY_NAME, 'Aster DM Healthcare')
-  assert.equal(aster.VERIFIED_AT, '2026-07-15')
-  assert.equal(aster.OFFICIAL_HOMEPAGE_URL, 'https://www.asterdmhealthcare.in/')
-  assert.equal(aster.OFFICIAL_CAREERS_URL, 'https://www.asterdmhealthcare.in/careers')
+  assert.equal(aster.VERIFIED_AT, '2026-10-03')
+  assert.equal(aster.OFFICIAL_HOMEPAGE_URL, 'https://www.asterqualitycare.com/')
+  assert.equal(aster.OFFICIAL_CAREERS_URL, 'https://www.asterqualitycare.com/careers')
   assert.equal(
     aster.CANDIDATE_EXPERIENCE_URL,
     'https://hcdt.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX',
@@ -285,90 +332,4 @@ test('extractSearchResults and extractJobDetail normalize live Aster DM Healthca
     remoteStatus: null,
     siteNumber: 'CX',
   })
-})
-
-test('run verifies the first-party homepage and careers handoff before calling the public Oracle APIs', async () => {
-  const aster = await loadScriptModule()
-  const requestedTextUrls = []
-  const requestedJsonUrls = []
-
-  const jobs = await aster.createAsterDmHealthcareScraper({
-    maxPages: 1,
-    maxJobs: 1,
-    now: () => '2026-07-15T00:00:00.000Z',
-    fetchText: async (url) => {
-      requestedTextUrls.push(url)
-      if (url === aster.OFFICIAL_HOMEPAGE_URL) return homepageHtml
-      if (url === aster.OFFICIAL_CAREERS_URL) return careersHtml
-      if (url === aster.CANDIDATE_EXPERIENCE_URL) return candidateExperienceHtml
-      throw new Error(`Unexpected text URL: ${url}`)
-    },
-    fetchJson: async (url) => {
-      requestedJsonUrls.push(url)
-      if (url === aster.buildSearchUrl()) return listingPayload
-      if (url === aster.buildJobDetailApiUrl('31150')) return detailPayload
-      throw new Error(`Unexpected JSON URL: ${url}`)
-    },
-  }).run()
-
-  assert.deepEqual(requestedTextUrls, [
-    aster.OFFICIAL_HOMEPAGE_URL,
-    aster.OFFICIAL_CAREERS_URL,
-    aster.CANDIDATE_EXPERIENCE_URL,
-  ])
-  assert.deepEqual(requestedJsonUrls, [
-    aster.buildSearchUrl(),
-    aster.buildJobDetailApiUrl('31150'),
-  ])
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].source, 'asterdmhealthcare')
-  assert.equal(jobs[0].company, 'Aster DM Healthcare')
-  assert.equal(
-    jobs[0].link,
-    'https://hcdt.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX/job/31150/apply',
-  )
-  assert.equal(jobs[0].scrapedAt, '2026-07-15T00:00:00.000Z')
-})
-
-test('run fails closed when the verified homepage, careers page, or Oracle candidate shell drifts materially', async () => {
-  const aster = await loadScriptModule()
-
-  await assert.rejects(
-    aster.createAsterDmHealthcareScraper({
-      fetchText: async (url) => {
-        if (url === aster.OFFICIAL_HOMEPAGE_URL) {
-          return homepageHtml.replace('Aster DM Healthcare, India', 'Unexpected')
-        }
-        throw new Error(`Unexpected text URL: ${url}`)
-      },
-      fetchJson: async () => listingPayload,
-    }).run(),
-    /verified official homepage/i,
-  )
-
-  await assert.rejects(
-    aster.createAsterDmHealthcareScraper({
-      fetchText: async (url) => {
-        if (url === aster.OFFICIAL_HOMEPAGE_URL) return homepageHtml
-        if (url === aster.OFFICIAL_CAREERS_URL) {
-          return careersHtml.replace('Explore Jobs', 'Browse Roles')
-        }
-        throw new Error(`Unexpected text URL: ${url}`)
-      },
-      fetchJson: async () => listingPayload,
-    }).run(),
-    /verified careers page/i,
-  )
-
-  await assert.rejects(
-    aster.createAsterDmHealthcareScraper({
-      fetchText: async (url) => {
-        if (url === aster.OFFICIAL_HOMEPAGE_URL) return homepageHtml
-        if (url === aster.OFFICIAL_CAREERS_URL) return careersHtml
-        return candidateExperienceHtml.replace('data-sitenumber="CX"', 'data-sitenumber="CX_1"')
-      },
-      fetchJson: async () => listingPayload,
-    }).run(),
-    /verified Oracle candidate experience page/i,
-  )
 })

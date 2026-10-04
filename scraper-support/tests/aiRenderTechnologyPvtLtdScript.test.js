@@ -113,6 +113,33 @@ test('aiRender Technology Pvt Ltd returns no jobs only while the verified homepa
   assert.deepEqual(jobs, [])
 })
 
+test('aiRender accepts career-like URLs only when they serve the identical verified SPA shell', async () => {
+  const airender = await loadModule()
+  const jobs = await airender.createAiRenderTechnologyPvtLtdScraper().run({
+    fetchPage: async (url) => {
+      if (url === airender.HOMEPAGE_URL || airender.CAREERS_ROUTE_URLS.includes(url)) {
+        return { status: 200, url, html: verifiedHomepageHtml }
+      }
+      if (url === new URL('/static/js/main.bcd18984.js', airender.HOMEPAGE_URL).toString()) {
+        return { status: 200, url, html: verifiedBundleJs }
+      }
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+  assert.deepEqual(jobs, [])
+
+  await assert.rejects(
+    airender.createAiRenderTechnologyPvtLtdScraper().run({
+      fetchPage: async (url) => {
+        if (url === airender.HOMEPAGE_URL) return { status: 200, url, html: verifiedHomepageHtml }
+        if (url.endsWith('.js')) return { status: 200, url, html: verifiedBundleJs }
+        return { status: 200, url, html: `${verifiedHomepageHtml}<p>Current Openings</p>` }
+      },
+    }),
+    /verified no-public-careers route changed/i,
+  )
+})
+
 test('aiRender Technology Pvt Ltd fails closed when the homepage, client bundle, or missing-route contract changes', async () => {
   const airender = await loadModule()
 

@@ -17,7 +17,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('Zifo RnD Solutions local catalog captures the verified no-current-vacancies sentinel surface', async () => {
+test('Zifo RnD Solutions local catalog captures the current published India inventory', async () => {
   const { ZIFO_RND_SOLUTIONS_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(ZIFO_RND_SOLUTIONS_CATALOG)
 
@@ -29,24 +29,24 @@ test('Zifo RnD Solutions local catalog captures the verified no-current-vacancie
   assert.equal(provider.companyCareerPage, 'https://careers.zifo.com/')
   assert.equal(provider.officialCareersPageUrl, 'https://careers.zifo.com/')
   assert.equal(provider.companyDomain, 'careers.zifo.com')
-  assert.equal(provider.atsPlatform, 'official-company-careers-no-current-india-vacancies')
+  assert.equal(provider.atsPlatform, 'workable')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'verified-single-first-party-careers-page-with-no-current-india-vacancies',
+    'first-party-india-links-plus-complete-workable-published-jobs-feed',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+explicit-no-vacancies-copy-returns-empty',
+    'verified-first-party-india-links+workable-public-api+explicit-india-country-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /zifo[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /do not have any vacancies at this moment/i)
-  assert.match(provider.verifiedSurfaceSummary, /Assistant Manager - Finance, Chennai/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /two Zifo India roles/i)
+  assert.match(provider.verifiedSurfaceSummary, /41 published location records/i)
 })
 
 test('Zifo RnD Solutions exact backlog row resolves from the local catalog entry', async () => {

@@ -213,7 +213,7 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = stripTagsToText(page)
 
-  return /<title>\s*Opportunity to join us \| Auxilo Finserve\s*<\/title>/i.test(page)
+  return /<title>\s*(?:Opportunity to join us \| Auxilo Finserve|Careers at Auxilo \| Join Our Education Finance Team)\s*<\/title>/i.test(page)
     && /Browse all available jobs at Auxilo/i.test(text)
     && /View Current Openings/i.test(text)
     && /app1176\.workline\.hr\/candidate/i.test(page)

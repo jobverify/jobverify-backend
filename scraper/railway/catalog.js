@@ -18,9 +18,11 @@ export const RAILWAY_CATALOG = {
   extractionStrategy: 'verified-first-party-careers-page+same-domain-role-links+return-empty-when-no-india-locations',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-21',
+  verifiedOn: '2026-10-03',
+  verifiedPublicJobCount: 16,
+  verifiedIndiaJobCount: 0,
   verifiedSurfaceSummary:
-    'Verified on Friday, August 21, 2026 that https://railway.com/careers remained the live first-party Railway careers page, that it prominently stated "Redefine the future of infrastructure", and that it publicly exposed same-domain role pages including Senior Infra Engineer: Platform, Senior Infra Engineer: Storage, Senior Infra Engineer: Observability, and Senior Infra Engineer: Datacenters with "Remote (anywhere)" location labels and zero India locations on the verified date.',
+    'Verified on October 3, 2026 that https://railway.com/careers remained the live first-party Railway careers page, prominently stated "Redefine the future of infrastructure", and exposed 16 unique same-domain role pages including Senior Infra Engineer: Platform, Senior Infra Engineer: Observability, and Senior Infra Engineer: Datacenters. Every listing used the "Remote (anywhere)" location label, with zero India locations explicitly identified on the page.',
 }
 
 export default RAILWAY_CATALOG

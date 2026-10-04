@@ -1,6 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { runApiPortalScraper } from '../../scraper-support/apiPortal/engine.js'
+import { expandApiPortalProviderTemplate } from '../../scraper-support/providers/apiPortalTemplates.js'
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
+
 import { CBTS_TECHNOLOGY_SOLUTIONS_INDIA_LLP_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -52,6 +56,10 @@ const defaultFetchText = async (url) => {
 
   return response.text()
 }
+
+const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
+  ...options, attempts: 3, timeoutMs: 20000, label: SOURCE,
+})
 
 export const buildBoardPageUrl = (page = 1) =>
   `${RIPPLING_BOARD_URL}?city=&country=IN&page=${page}&searchQuery=&state=&weekdayJdUid=789935&workplaceType=`
@@ -129,11 +137,37 @@ export const extractIndiaJobsFromBoardHtml = (html, { scrapedAt = new Date().toI
 export const createCbtstechnologysolutionsindiallpScraper = () => ({
   async run({
     fetchText = defaultFetchText,
+    fetchJson = defaultFetchJson,
     now = () => new Date().toISOString(),
   } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
     if (!hasVerifiedCareersPageSignal(careersHtml)) {
       throw new Error('CBTS verified careers page no longer matches the linked India jobs surface')
+    }
+
+    if (careersHtml.replace(/&amp;/gi, '&').includes(CURRENT_INDIA_CAREERS_BOARD_URL)) {
+      const boardHtml = await fetchText(CURRENT_INDIA_CAREERS_BOARD_URL)
+      if (!/<title[^>]*>\s*Careers at CBTS\s*<\/title>/i.test(boardHtml)
+        || !/window\._EF_GROUP_ID\s*=\s*["']cbts\.com["']/i.test(boardHtml)) {
+        throw new Error('CBTS verified Eightfold board no longer matches the official India handoff')
+      }
+      const provider = expandApiPortalProviderTemplate({
+        source: SOURCE,
+        companyName: COMPANY,
+        companyCareerPage: CAREERS_URL,
+        countryFilter: 'India',
+        atsPlatform: 'eightfold',
+        template: 'eightfold',
+        templateOptions: {
+          host: 'jobs.cbts.com',
+          domain: 'cbts.com',
+          pageSize: 10,
+          locationPattern: 'India|(?:^|,)\\s*IN\\b',
+        },
+        config: {mapping: {location: ['standardizedLocations.0', 'locations.0']}},
+      })
+      const jobs = await runApiPortalScraper({provider, fetchJson})
+      return jobs.map(job => ({...job, scrapedAt: now()}))
     }
 
     const scrapedAt = now()

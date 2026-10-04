@@ -8,7 +8,6 @@ const testDir = path.dirname(fileURLToPath(import.meta.url))
 const backendDir = path.resolve(testDir, '../..')
 
 const sources = [
-  'pwc',
   'radware',
   'rinextechnologies',
   'safranengineeringservicesindia',

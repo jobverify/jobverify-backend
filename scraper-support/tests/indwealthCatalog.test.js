@@ -94,7 +94,7 @@ test('getScraperCatalog includes INDwealth as a verified LinkedIn guest-search p
   assert.equal(provider.companyCareerPage, 'https://www.indmoney.com/about')
   assert.equal(provider.companyDomain, 'indmoney.com')
   assert.equal(provider.atsPlatform, 'linkedin-guest-search')
-  assert.equal(provider.verifiedOn, '2026-08-15')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.match(provider.modulePath, /indwealth[\\/]script\.js$/i)
 })
 

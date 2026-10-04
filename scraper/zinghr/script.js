@@ -150,8 +150,8 @@ export const hasVerifiedJobsIndexSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Jobs\s*-\s*ZingHR HCM Solution\s*<\/title>/i.test(page)
-    && normalized.includes('Jobs')
+  return /<title>\s*Job Openings Archive\s*-\s*ZingHR HCM Solution\s*<\/title>/i.test(page)
+    && normalized.includes('Job Openings')
     && normalized.includes('Filter by')
     && normalized.includes('Customer Support- (HRMS/HCM)')
     && normalized.includes('Sales Manager')

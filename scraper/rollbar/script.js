@@ -86,10 +86,15 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const normalized = normalizeWhitespace(html)
   const anchors = extractAnchors(html, HOMEPAGE_URL)
 
-  return /^Rollbar \| Error logging & tracking(?: service)? for software teams$/i.test(title || '')
+  const legacyHomepage = /^Rollbar \| Error logging & tracking(?: service)? for software teams$/i.test(title || '')
     && normalized.includes('Every error. Every release.')
     && normalized.includes('Under control.')
     && normalized.includes('Code-first observability that connects errors, replays, and releases in one place.')
+  const currentHomepage = title === 'Rollbar | Error Tracking Tool That Fixes Errors Too'
+    && normalized.includes('Every production error, found and fixed.')
+    && normalized.includes('Rollbar is code-first observability.')
+
+  return (legacyHomepage || currentHomepage)
     && anchors.some((anchor) => anchor.label === 'Careers' && anchor.href === CAREERS_ANCHOR_URL)
 }
 

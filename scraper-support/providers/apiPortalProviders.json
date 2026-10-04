@@ -97,6 +97,7 @@
   {
     "source": "arista",
     "companyName": "Arista Networks",
+    "scraperTimeoutMs": 600000,
     "companyCareerPage": "https://www.arista.com/en/careers",
     "countryFilter": "India",
     "atsPlatform": "smartrecruiters",
@@ -137,6 +138,7 @@
       },
       "detail": {
         "enabled": true,
+        "concurrency": 5,
         "urlTemplate": "https://api.smartrecruiters.com/v1/companies/AristaNetworks/postings/{{jobId}}",
         "method": "GET",
         "mapping": {
@@ -1130,38 +1132,50 @@
   {
     "source": "postman",
     "companyName": "Postman",
-    "companyCareerPage": "https://www.postman.com/company/careers/",
+    "companyCareerPage": "https://www.postman.com/company/careers/open-positions/",
     "countryFilter": "India",
-    "atsPlatform": "greenhouse",
+    "atsPlatform": "workday",
     "paginationStrategy": "single-page",
-    "extractionStrategy": "api",
+    "extractionStrategy": "verified-first-party-careers-cache",
     "parser": "api-portal",
     "normalizationProfile": "engineering-default",
+    "verifiedOn": "2026-10-03",
+    "verifiedPublicJobCount": 35,
+    "verifiedIndiaJobCount": 11,
+    "verifiedSurfaceSummary": "Verified on October 3, 2026 that Postman's official open positions page loads its first-party careers-jobs.json cache, which reports 35 Workday-backed openings and 11 India openings. Sample India Workday detail links opened successfully. The cache exposes a total count and source marker that the scraper validates before publishing roles.",
     "config": {
       "discovery": {
-        "careerPageUrl": "https://www.postman.com/company/careers/",
-        "listingApiUrl": "https://boards-api.greenhouse.io/v1/boards/postman/jobs"
+        "careerPageUrl": "https://www.postman.com/company/careers/open-positions/",
+        "listingApiUrl": "https://www.postman.com/_mk-www-next/api-cache/careers-jobs.json"
       },
       "request": {
-        "method": "GET",
-        "query": {
-          "content": "true"
-        }
+        "method": "GET"
       },
       "pagination": {
         "strategy": "single-page",
-        "resultsPath": "jobs",
-        "hasMorePath": "hasMore"
+        "resultsPath": "jobs"
       },
       "mapping": {
         "title": "title",
-        "location": "location.name",
+        "location": "location",
         "jobId": "id",
-        "requisitionId": "requisition_id",
-        "applyUrl": "absolute_url",
-        "department": "departments.0.name",
-        "jobDescription": "content",
+        "requisitionId": "id",
+        "sourceUrl": "url",
+        "applyUrl": "url",
+        "department": "department",
+        "jobDescription": "description",
         "postingDate": "updated_at"
+      },
+      "inventoryValidation": {
+        "minRecords": 1,
+        "totalCountPath": "meta.total",
+        "sourcePath": "meta.source",
+        "expectedSource": "workday_cxs",
+        "requiredFields": ["id", "title", "url", "location", "department"],
+        "uniqueField": "id",
+        "urlField": "url",
+        "allowedUrlOrigin": "https://postman.wd108.myworkdayjobs.com",
+        "urlPathPrefix": "/careers/job/"
       },
       "resultFilter": {
         "include": [
@@ -1469,8 +1483,9 @@
     "source": "microsoft",
     "companyName": "Microsoft",
     "companyCareerPage": "https://careers.microsoft.com",
-    "verifiedOn": "2026-07-25",
-    "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.microsoft.com/en-us/power-platform/products/power-bi/ is the live first-party Power BI product surface under Microsoft, and that https://careers.microsoft.com/professionals/us/en/l-india is the live first-party Microsoft India careers page linking applicants into the official Microsoft careers flow on apply.careers.microsoft.com. Microsoft therefore remains the trustworthy parent-company provider for Power BI coverage.",
+    "verifiedOn": "2026-10-03",
+    "verifiedSurfaceSummary": "Verified on October 3, 2026 that the official Microsoft India careers search at https://apply.careers.microsoft.com/api/pcsx/search remains public. Its India query reports 231 positions and returns at most 10 records per request even when the requested limit is 50, so this provider advances in 10-record pages and retries temporary HTTP 429 responses.",
+    "scraperTimeoutMs": 720000,
     "countryFilter": "India",
     "atsPlatform": "eightfold",
     "paginationStrategy": "offset-limit",
@@ -1480,9 +1495,16 @@
     "template": "eightfold",
     "templateOptions": {
       "host": "apply.careers.microsoft.com",
-      "domain": "microsoft.com"
+      "domain": "microsoft.com",
+      "pageSize": 10
     },
     "config": {
+      "rateLimit": {
+        "minimumIntervalMs": 500,
+        "maxRetries": 5,
+        "baseDelayMs": 2000,
+        "maxDelayMs": 30000
+      },
       "mapping": {
         "location": [
           "standardizedLocations.1",
@@ -2138,61 +2160,6 @@
     "templateOptions": {
       "boardToken": "xebiaapac",
       "locationPattern": "india|xus-in|bangalore|bengaluru|gurgaon|gurugram|hyderabad|pune|chennai|mumbai|noida"
-    }
-  },
-  {
-    "source": "kantar",
-    "companyName": "Kantar",
-    "companyCareerPage": "https://careers.kantar.com/job-search",
-    "countryFilter": "India",
-    "atsPlatform": "kantar-careers-api+workday-handoff",
-    "paginationStrategy": "single-page",
-    "extractionStrategy": "official-kantar-json-api",
-    "parser": "api-portal",
-    "normalizationProfile": "engineering-default",
-    "config": {
-      "discovery": {
-        "careerPageUrl": "https://careers.kantar.com/job-search",
-        "listingApiUrl": "https://careers.kantar.com/api/careers/GetJobs"
-      },
-      "request": {
-        "method": "GET",
-        "query": {
-          "PageSize": "1000"
-        }
-      },
-      "pagination": {
-        "strategy": "single-page",
-        "resultsPath": "Report_Entry",
-        "totalCountPath": "TotalJobs"
-      },
-      "mapping": {
-        "title": "Job_Post_Title",
-        "location": {
-          "strategy": "template",
-          "template": "{{primaryLocation}}, {{country}}",
-          "values": {
-            "primaryLocation": "Primary_Location",
-            "country": "Country"
-          }
-        },
-        "jobId": "Job_Req_ID",
-        "requisitionId": "Job_Req_ID",
-        "sourceUrl": "externalApplyURL",
-        "applyUrl": "externalApplyURL",
-        "department": "Job_Family_Group",
-        "employmentType": "Employee_Type",
-        "jobDescription": "Additional_Job_Description",
-        "postingDate": "Start_Date"
-      },
-      "resultFilter": {
-        "include": [
-          {
-            "field": "location",
-            "pattern": "\\bIndia\\b"
-          }
-        ]
-      }
     }
   },
   {

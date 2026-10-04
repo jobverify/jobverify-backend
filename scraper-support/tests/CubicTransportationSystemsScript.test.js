@@ -121,6 +121,17 @@ const buildDetailHtml = ({
 </html>
 `
 
+const buildApiDetail = ({ title, requisitionId, businessUnit, locality, externalPath }) => ({
+  jobPostingInfo: {
+    title, jobReqId: requisitionId,
+    jobDescription: `<h1><b>Business Unit:</b></h1><p></p>${businessUnit}<h1>Company Details:</h1><p>Verified page.</p><h1>Job Details:</h1><p>Role overview.</p>`,
+    country: { descriptor: 'India' }, location: locality,
+    timeType: 'Full time', startDate: '2026-07-31', canApply: true, posted: true,
+    externalUrl: `https://cubic.wd1.myworkdayjobs.com/cubic_global_careers${externalPath}`,
+  },
+  hiringOrganization: { name: '2038 Cubic Transportation Systems (India) Private Limited' },
+})
+
 const pageZeroPayload = {
   total: 87,
   jobPostings: [
@@ -200,6 +211,19 @@ test('Cubic Transportation Systems helpers stay pinned to the verified block sta
   assert.equal(cubic.isLikelyIndiaPosting(pageZeroPayload.jobPostings[0]), true)
   assert.equal(cubic.isLikelyIndiaPosting(pageZeroPayload.jobPostings[1]), true)
   assert.equal(cubic.isLikelyIndiaPosting(pageTwentyPayload.jobPostings[1]), false)
+  const apiDetail = cubic.extractWorkdayApiDetail({
+    jobPostingInfo: {
+      title: 'Senior Site Reliability Engineer', jobReqId: 'REQ_48649',
+      jobDescription: '<h1><b>Business Unit:</b></h1><p></p>Cubic Transportation Systems<h1>Company Details:</h1><p>Role overview.</p>',
+      country: { descriptor: 'India' }, location: 'Hyderabad, Telangana',
+      timeType: 'Full time', startDate: '2026-10-01', canApply: true, posted: true,
+      externalUrl: 'https://cubic.wd1.myworkdayjobs.com/cubic_global_careers/job/Hyderabad-Telangana/Senior-Site-Reliability-Engineer_REQ_48649',
+    },
+    hiringOrganization: { name: '2038 Cubic Transportation Systems (India) Private Limited' },
+  }, pageZeroPayload.jobPostings[0])
+  assert.equal(apiDetail.businessUnit, 'Cubic Transportation Systems')
+  assert.equal(apiDetail.country, 'India')
+  assert.equal(apiDetail.requisitionId, 'REQ_48649')
   assert.equal(
     cubic.buildDetailUrl('/job/Hyderabad-Telangana/Senior-Site-Reliability-Engineer_REQ_48649'),
     'https://cubic.wd1.myworkdayjobs.com/en-US/cubic_global_careers/job/Hyderabad-Telangana/Senior-Site-Reliability-Engineer_REQ_48649',
@@ -246,33 +270,6 @@ test('Cubic Transportation Systems run tolerates the verified Incapsula block, p
 
       if (url === cubic.CAREERS_URL) return blockedCareersHtml
       if (url === cubic.WORKDAY_BOARD_URL) return workdayBoardHtml
-      if (url === cubic.VERIFIED_JOB_DETAIL_URLS[0]) return seniorSiteReliabilityEngineerHtml
-      if (url.endsWith('Senior-Site-Reliability-Engineer_REQ_48649')) return seniorSiteReliabilityEngineerHtml
-      if (url.endsWith('Manager--Financial-Systems_REQ_48188')) {
-        return buildDetailHtml({
-          title: 'Manager, Financial Systems',
-          requisitionId: 'REQ_48188',
-          businessUnit: 'Cubic Corporation',
-          locality: 'Hyderabad, Telangana',
-        })
-      }
-      if (url.endsWith('Senior-Product-Security-Architect_REQ_49134')) {
-        return buildDetailHtml({
-          title: 'Senior Product Security Architect',
-          requisitionId: 'REQ_49134',
-          businessUnit: 'Cubic Transportation Systems',
-          locality: 'IND Hyderabad Aparna',
-        })
-      }
-      if (url.endsWith('Accounts-Payable-Analyst_REQ_48966')) {
-        return buildDetailHtml({
-          title: 'Senior Accounts Payable Analyst',
-          requisitionId: 'REQ_48966',
-          businessUnit: 'Cubic Corporation',
-          locality: 'Hyderabad, Telangana',
-        })
-      }
-
       throw new Error(`Unexpected Cubic URL: ${url}`)
     },
     fetchJson: async (url, body) => {
@@ -285,6 +282,20 @@ test('Cubic Transportation Systems run tolerates the verified Incapsula block, p
       if (parsed.offset === 4) return pageFortyPayload
 
       throw new Error(`Unexpected Cubic offset: ${parsed.offset}`)
+    },
+    fetchDetailJson: async url => {
+      requests.push(url)
+      const posting = [...pageZeroPayload.jobPostings, ...pageTwentyPayload.jobPostings, ...pageFortyPayload.jobPostings]
+        .find(item => url.endsWith(item.externalPath))
+      if (!posting) throw new Error(`Unexpected Cubic detail URL: ${url}`)
+      return buildApiDetail({
+        title: posting.title,
+        requisitionId: posting.bulletFields[0],
+        businessUnit: ['REQ_48188', 'REQ_48966'].includes(posting.bulletFields[0])
+          ? 'Cubic Corporation' : 'Cubic Transportation Systems',
+        locality: posting.locationsText === '2 Locations' ? 'Hyderabad, Telangana' : posting.locationsText,
+        externalPath: posting.externalPath,
+      })
     },
     now: () => '2026-08-01T18:00:00.000Z',
   })
@@ -306,7 +317,7 @@ test('Cubic Transportation Systems run tolerates the verified Incapsula block, p
   assert.equal(jobs[0].city, 'Hyderabad')
   assert.equal(jobs[0].state, 'Telangana')
   assert.equal(jobs[0].country, 'India')
-  assert.equal(jobs[0].employmentType, 'FULL_TIME')
+  assert.equal(jobs[0].employmentType, 'Full time')
   assert.equal(
     jobs[0].sourceUrl,
     'https://cubic.wd1.myworkdayjobs.com/en-US/cubic_global_careers/job/Hyderabad-Telangana/Senior-Site-Reliability-Engineer_REQ_48649',
@@ -326,18 +337,17 @@ test('Cubic Transportation Systems run tolerates the verified Incapsula block, p
   assert.deepEqual(requests, [
     cubic.CAREERS_URL,
     cubic.WORKDAY_BOARD_URL,
-    cubic.VERIFIED_JOB_DETAIL_URLS[0],
     `${cubic.JOBS_API_URL}::${JSON.stringify({ appliedFacets: {}, limit: 2, offset: 0, searchText: '' })}`,
-    'https://cubic.wd1.myworkdayjobs.com/en-US/cubic_global_careers/job/Hyderabad-Telangana/Senior-Site-Reliability-Engineer_REQ_48649',
-    'https://cubic.wd1.myworkdayjobs.com/en-US/cubic_global_careers/job/Hyderabad-Telangana/Manager--Financial-Systems_REQ_48188',
+    'https://cubic.wd1.myworkdayjobs.com/wday/cxs/cubic/cubic_global_careers/job/Hyderabad-Telangana/Senior-Site-Reliability-Engineer_REQ_48649',
+    'https://cubic.wd1.myworkdayjobs.com/wday/cxs/cubic/cubic_global_careers/job/Hyderabad-Telangana/Manager--Financial-Systems_REQ_48188',
     `${cubic.JOBS_API_URL}::${JSON.stringify({ appliedFacets: {}, limit: 2, offset: 2, searchText: '' })}`,
-    'https://cubic.wd1.myworkdayjobs.com/en-US/cubic_global_careers/job/IND-Hyderabad-Aparna/Senior-Product-Security-Architect_REQ_49134',
+    'https://cubic.wd1.myworkdayjobs.com/wday/cxs/cubic/cubic_global_careers/job/IND-Hyderabad-Aparna/Senior-Product-Security-Architect_REQ_49134',
     `${cubic.JOBS_API_URL}::${JSON.stringify({ appliedFacets: {}, limit: 2, offset: 4, searchText: '' })}`,
-    'https://cubic.wd1.myworkdayjobs.com/en-US/cubic_global_careers/job/Hyderabad-Telangana/Accounts-Payable-Analyst_REQ_48966',
+    'https://cubic.wd1.myworkdayjobs.com/wday/cxs/cubic/cubic_global_careers/job/Hyderabad-Telangana/Accounts-Payable-Analyst_REQ_48966',
   ])
 })
 
-test('Cubic Transportation Systems fails closed when the verified public board or detail structured data drift', async () => {
+test('Cubic Transportation Systems fails closed when the verified public board or detail API drifts', async () => {
   const cubic = await loadModule()
 
   await assert.rejects(
@@ -365,13 +375,11 @@ test('Cubic Transportation Systems fails closed when the verified public board o
       fetchText: async (url) => {
         if (url === cubic.CAREERS_URL) return blockedCareersHtml
         if (url === cubic.WORKDAY_BOARD_URL) return workdayBoardHtml
-        if (url === cubic.VERIFIED_JOB_DETAIL_URLS[0]) return '<html><body><h1>Senior Site Reliability Engineer</h1></body></html>'
         throw new Error(`Unexpected Cubic URL: ${url}`)
       },
-      fetchJson: async () => {
-        throw new Error('Should not fetch JSON when the verified detail page has drifted')
-      },
+      fetchJson: async () => pageZeroPayload,
+      fetchDetailJson: async () => ({ jobPostingInfo: { title: 'Unexpected job' } }),
     }),
-    /verified CTS job detail page/i,
+    /Workday detail API contract changed/i,
   )
 })

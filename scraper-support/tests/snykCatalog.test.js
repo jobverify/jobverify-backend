@@ -12,7 +12,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('Snyk local catalog captures the verified first-party careers pages and Workday jobs API wrapper', async () => {
+test('Snyk local catalog captures its linked Ashby board and complete zero-India inventory', async () => {
   const { SNYK_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(SNYK_CATALOG)
 
@@ -23,27 +23,26 @@ test('Snyk local catalog captures the verified first-party careers pages and Wor
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.officialCareersLandingUrl, 'https://snyk.io/careers/')
   assert.equal(provider.companyCareerPage, 'https://snyk.io/careers/all-jobs/')
-  assert.equal(provider.firstPartyJobsApiUrl, 'https://snyk.io/api/next/jobs')
-  assert.equal(provider.workdayTenantUrl, 'https://snyk.wd103.myworkdayjobs.com/External')
-  assert.equal(provider.atsPlatform, 'workday')
+  assert.equal(provider.ashbyBoardUrl, 'https://jobs.ashbyhq.com/98cd1a00-2706-4aa8-ab72-38a7b8c9c20c')
+  assert.equal(provider.ashbyJobsApiUrl, 'https://api.ashbyhq.com/posting-api/job-board/98cd1a00-2706-4aa8-ab72-38a7b8c9c20c')
+  assert.equal(provider.atsPlatform, 'ashby')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-next-jobs-api-page')
+  assert.equal(provider.paginationStrategy, 'single-ashby-board-api-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-pages+first-party-next-jobs-api+workday-detail-urls+return-empty-when-no-india-locations',
+    'verified-first-party-careers-pages+linked-ashby-board-api+complete-inventory-zero-india-openings',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'snyk.io')
-  assert.equal(provider.verifiedOn, '2026-08-13')
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.equal(provider.verifiedPublicJobCount, 13)
+  assert.equal(provider.verifiedIndiaJobCount, 0)
   assert.match(provider.modulePath, /snyk\.workday[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /snyk.workday[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Thursday, August 13, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/snyk\.io\/careers\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/snyk\.io\/careers\/all-jobs\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/snyk\.io\/api\/next\/jobs/i)
-  assert.match(provider.verifiedSurfaceSummary, /24 public roles/i)
-  assert.match(provider.verifiedSurfaceSummary, /0 India roles/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /13 public roles/i)
+  assert.match(provider.verifiedSurfaceSummary, /zero India openings/i)
 })
 
 test('getScraperCatalog includes Snyk as a runnable script provider', () => {
@@ -52,7 +51,7 @@ test('getScraperCatalog includes Snyk as a runnable script provider', () => {
   assert.ok(provider, 'Expected Snyk provider to be registered in customProviders.json')
   assert.equal(provider.companyName, 'Snyk')
   assert.equal(provider.companyCareerPage, 'https://snyk.io/careers/all-jobs/')
-  assert.equal(provider.atsPlatform, 'workday')
+  assert.equal(provider.atsPlatform, 'ashby')
   assert.match(provider.modulePath, /snyk\.workday[\\/]script\.js$/i)
 })
 

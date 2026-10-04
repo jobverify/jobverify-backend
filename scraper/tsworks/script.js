@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -68,6 +69,18 @@ export const hasOfficialCareersSignal = (html) => {
     && /drive India's hardware innovation/i.test(text)
     && /Current Openings/i.test(text)
     && /Applications Open/i.test(text)
+}
+
+export const hasVerifiedClosedCareersSignal = (html) => {
+  const page = String(html ?? '')
+  const cards = [...page.matchAll(/&quot;title&quot;:\s*&quot;(Current Openings|Internships)&quot;[\s\S]*?&quot;buttonText&quot;:\s*&quot;([^&]+)&quot;[\s\S]*?&quot;buttonLink&quot;:\s*&quot;([^&]*)&quot;/gi)]
+  return /<title>\s*Careers\s*\|\s*T-Works\s*<\/title>/i.test(page)
+    && /drive India(?:&#39;|&apos;|')s hardware innovation/i.test(page)
+    && /<h2[^>]*>Current Openings<\/h2>/i.test(page)
+    && cards.length === 2
+    && new Set(cards.map(match => match[1])).size === 2
+    && cards.every(match => match[2] === 'APPLICATIONS CLOSED' && match[3] === '')
+    && !/Applications Open/i.test(page)
 }
 
 export const extractOpeningsUrl = (html) => {
@@ -150,6 +163,19 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 export const createTsworksScraper = () => ({
   async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
+    if (hasVerifiedClosedCareersSignal(careersHtml)) {
+      return attachInventoryEvidence([], {
+        status: 'verified-empty',
+        surface: CAREERS_URL,
+        firstParty: true,
+        listingComplete: true,
+        pagesFetched: 1,
+        reportedTotal: 0,
+        indiaFacetCount: 0,
+        verifiedAt: now(),
+        reason: 'tsworks-current-openings-and-internships-applications-closed',
+      })
+    }
     const openingsUrl = extractOpeningsUrl(careersHtml)
 
     if (!hasOfficialCareersSignal(careersHtml) || openingsUrl !== OPENINGS_URL) {

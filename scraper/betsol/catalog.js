@@ -12,16 +12,16 @@ export const BETSOL_CATALOG = {
   companyCareerPage: 'https://www.betsol.com/careers/',
   boardUrl: 'https://careers.smartrecruiters.com/Betsol',
   companyDomain: 'betsol.com',
-  atsPlatform: 'smartrecruiters-board-html',
+  atsPlatform: 'smartrecruiters-public-postings-api',
   countryFilter: 'India',
-  paginationStrategy: 'exact-name-smartrecruiters-board-grouped-by-location',
+  paginationStrategy: 'complete-smartrecruiters-public-postings-api-with-board-count-check',
   extractionStrategy:
-    'verified-first-party-careers-linkout+exact-name-smartrecruiters-board-html+india-location-group-filter',
+    'verified-first-party-careers-linkout+exact-name-smartrecruiters-board+public-posting-details+india-country-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-01',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified on Saturday, August 1, 2026 that the first-party BETSOL careers page at https://www.betsol.com/careers/ still publicly directs applicants to the exact-name SmartRecruiters board at https://careers.smartrecruiters.com/Betsol. Direct fetches to the first-party page still returned a Cloudflare challenge in this environment, but the linked public board remained reachable under the refreshed Careers at BETSOL shell and visibly listed 21 public openings, including 15 India roles under Bengaluru, India such as Technical Team Leader - DevOps & DevSecOps, Compliance Lead (GRC), and Associate Database Administrator. This local provider scrapes the verified exact-name board and keeps only India roles.',
+    'Verified on October 3, 2026 that the first-party BETSOL careers page at https://www.betsol.com/careers/ links to the exact-name SmartRecruiters board at https://careers.smartrecruiters.com/Betsol. The board shows 19 current openings, matching the documented public Posting API at https://api.smartrecruiters.com/v1/companies/Betsol/postings. Sixteen published postings are explicitly in India, across Bengaluru and Pune. The scraper checks the complete board count, API inventory, and active posting details.',
   dryRunFile: 'betsol/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

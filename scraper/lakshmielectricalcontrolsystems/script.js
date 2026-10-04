@@ -1,3 +1,4 @@
+import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -10,8 +11,8 @@ export const COMPANY = 'Lakshmi Electrical Control Systems'
 export const HOMEPAGE_URL = 'https://www.lecsindia.com/'
 export const CAREERS_URL = 'https://www.lecsindia.com/careers'
 export const CONTACT_URL = 'https://www.lecsindia.com/contact-us/'
-export const VERIFIED_ON = '2026-09-03'
-export const VERIFIED_SURFACE_SUMMARY = 'Verified on September 3, 2026 that https://www.lecsindia.com/, https://www.lecsindia.com/careers, and https://www.lecsindia.com/contact-us remain the live first-party Lakshmi Electrical Control Systems public surfaces. The homepage and contact page now link to a dedicated first-party careers shell titled "Careers | LECS India", but that shell still exposes no public openings, ATS handoff, role cards, application CTA, or JobPosting markup.'
+export const VERIFIED_ON = '2026-10-03'
+export const VERIFIED_SURFACE_SUMMARY = "Verified on October 3, 2026 that Careers at LECS India is backed by its official public jobs API. Three roles observed; one explicitly based in Coimbatore exported, two without public job location evidence excluded."
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -114,7 +115,7 @@ export const hasOfficialHomepageSignal = (html) => {
     && normalized.includes('arasur, coimbatore - 641 407 tamilnadu, india')
     && normalized.includes('info@lecsindia.com')
 
-  const hasCurrentHomepageSignal = /<title>\s*lecs\s*<\/title>/i.test(page)
+  const hasCurrentHomepageSignal = /<title>\s*(?:lecs|Discover Control Panel Manufacturer Solutions \| LECS India)\s*<\/title>/i.test(page)
     && normalized.includes('ev chargers')
     && normalized.includes('what we offer')
     && normalized.includes('industries we serve')
@@ -168,10 +169,76 @@ export const hasFirstPartyCareerLikeLink = (html) =>
 export const hasPublicJobsSignal = (html) =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
-export const createLakshmiElectricalControlSystemsScraper = () => ({
+
+export const CURRENT_JOBS_API_URL = 'https://api.lecsindia.com/job'
+
+const extractCurrentCareersClientUrl = (html = '') => {
+  if (!/<title>\s*Careers at LECS India \| Explore Jobs (?:&amp;|&) Career Opportunities\s*<\/title>/i.test(html)
+    || !/<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/(?:www\.)?lecsindia\.com\/careers["']/i.test(html)) return null
+  const scriptPath = html.match(/<script[^>]+src=["'](\/_next\/static\/chunks\/app\/careers\/page-[^"']+\.js)["']/i)?.[1]
+  return scriptPath ? new URL(scriptPath, HOMEPAGE_URL).toString() : null
+}
+
+const cleanJobDescription = (value = '') => String(value)
+  .replace(/<[^>]+>/g, ' ').replace(/&amp;/gi, '&').replace(/&nbsp;/gi, ' ')
+  .replace(/&quot;/gi, '"').replace(/\s+/g, ' ').trim()
+
+const readCurrentCareersJobs = async ({ clientUrl, fetchText, fetchJson, now, maxPages }) => {
+  const client = await fetchText(clientUrl)
+  if (!client.includes('https://api.lecsindia.com') || !client.includes('/job?page=')
+    || !client.includes('/job/dropdown') || !client.includes('CareersHeroSection')) {
+    throw new Error('LECS verified public careers client changed materially')
+  }
+  const jobs = []
+  const seen = new Set()
+  const scrapedAt = now()
+  let totalJobs = null
+  let unresolvedLocations = 0
+  for (let page = 1; page <= maxPages; page += 1) {
+    const payload = await fetchJson(CURRENT_JOBS_API_URL + '?page=' + page + '&limit=10')
+    const pagination = payload?.pagination
+    if (payload?.success !== true || !Array.isArray(payload.jobs)
+      || !Number.isInteger(pagination?.totalJobs) || pagination.totalJobs < 0
+      || pagination.currentPage !== page || typeof pagination.hasNext !== 'boolean') {
+      throw new Error('LECS jobs feed changed materially or has invalid pagination')
+    }
+    if (totalJobs !== null && totalJobs !== pagination.totalJobs) throw new Error('LECS jobs feed total changed during pagination')
+    totalJobs = pagination.totalJobs
+    for (const record of payload.jobs) {
+      if (!record?._id || !record.title || typeof record.description !== 'string') throw new Error('LECS jobs feed contains an invalid job')
+      if (seen.has(record._id)) continue
+      seen.add(record._id)
+      const description = cleanJobDescription(record.description)
+      const city = (record.location || '').match(/\b(Coimbatore|Chennai|Bengaluru|Bangalore|Hyderabad|Pune|Mumbai|Delhi|Noida|Gurugram)\b/i)?.[1]
+        || description.match(/(?:based in|location\s*:)\s*(Coimbatore|Chennai|Bengaluru|Bangalore|Hyderabad|Pune|Mumbai|Delhi|Noida|Gurugram)\b/i)?.[1]
+      if (!city) { unresolvedLocations += 1; continue }
+      jobs.push({
+        title: record.title, company: COMPANY, source: SOURCE,
+        jobId: SOURCE + '-' + record._id, requisitionId: record._id,
+        department: record.department || null, location: city + ', India', city, country: 'India',
+        employmentType: /full[- ]?time/i.test(record.type || '') ? 'Full-time' : record.type || null,
+        remoteStatus: null, experienceRequired: null, minimumQualification: null, preferredQualification: null, requiredSkills: [],
+        jobDescription: description || null, postingDate: record.createdAt || null, closingDate: null,
+        sourceUrl: CAREERS_URL, applyUrl: CAREERS_URL, link: CAREERS_URL,
+        companyCareerPage: CAREERS_URL, companyDomain: 'lecsindia.com', atsPlatform: 'official-company-careers', scrapedAt,
+      })
+    }
+    if (!pagination.hasNext) {
+      if (seen.size !== totalJobs) throw new Error('LECS jobs feed is incomplete')
+      if (unresolvedLocations && !jobs.length) throw new Error('LECS incomplete country scope: all public role locations are unverified')
+      if (unresolvedLocations) for (const job of jobs) job.sourceListingComplete = false
+      return jobs
+    }
+    if (payload.jobs.length === 0) throw new Error('LECS jobs feed returned an incomplete empty page')
+  }
+  throw new Error('LECS jobs feed exceeded the verified pagination limit')
+}
+
+export const createLakshmiElectricalControlSystemsScraper = ({ now = () => new Date().toISOString(), maxPages = 100 } = {}) => ({
   async run({
     fetchText = defaultFetchText,
     fetchTextWithExtendedTimeout = defaultFetchTextWithExtendedTimeout,
+    fetchJson = (url) => fetchJsonWithRetry(url, { label: SOURCE, timeoutMs: 15000 }),
   } = {}) {
     const homepageHtml = await fetchVerifiedText(
       HOMEPAGE_URL,
@@ -191,6 +258,8 @@ export const createLakshmiElectricalControlSystemsScraper = () => ({
       fetchText,
       fetchTextWithExtendedTimeout,
     )
+    const currentClientUrl = extractCurrentCareersClientUrl(careersHtml)
+    if (currentClientUrl) return readCurrentCareersJobs({ clientUrl: currentClientUrl, fetchText, fetchJson, now, maxPages })
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('Lakshmi Electrical Control Systems verified official careers page no longer matches the known public surface')
     }

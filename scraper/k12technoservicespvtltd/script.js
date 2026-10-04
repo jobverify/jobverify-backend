@@ -112,7 +112,7 @@ export const hasOfficialHomepageSignal = (html) => {
     && text.includes('info@orchids.edu.in')
     && (
       (
-        text.includes('Admissions 2026-27')
+        /Admissions 20\d{2}-\d{2}\b/.test(text)
         && text.includes("We're Hiring")
         && text.includes('Eduvate AI')
         && text.includes('Day & Boarding Schools')

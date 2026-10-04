@@ -60,18 +60,18 @@ test('AlphaGrep local catalog captures the verified first-party careers surface'
   )
   assert.equal(
     provider.verifiedIndiaJobUrl,
-    'https://www.alpha-grep.com/career-opportunity?jid=8176611002',
+    'https://www.alpha-grep.com/career-opportunity/?jid=6902979002',
   )
   assert.deepEqual(provider.verifiedCareers404Urls, [
     'https://www.alpha-grep.com/careers/',
     'https://www.alpha-grep.com/jobs/',
   ])
-  assert.equal(provider.verifiedOn, '2026-07-15')
-  assert.match(provider.verifiedSurfaceSummary, /July 15, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.alpha-grep\.com\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.alpha-grep\.com\/career\//i)
-  assert.match(provider.verifiedSurfaceSummary, /career-opportunity\?jid=8176611002/i)
-  assert.match(provider.verifiedSurfaceSummary, /\/careers\/ and \/jobs\//i)
+  assert.match(provider.verifiedSurfaceSummary, /career-opportunity\/\?jid=6902979002/i)
+  assert.match(provider.verifiedSurfaceSummary, /five India jobs/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /alphagrep[\\/]jobs\.json$/i)
 

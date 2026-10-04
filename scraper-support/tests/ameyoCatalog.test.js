@@ -48,11 +48,11 @@ test('Ameyo local catalog captures the verified homepage 522 outage and the live
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'verified-homepage-handoff-or-verified-homepage-522-outage-plus-upstream-recruiterbox-openings-json',
+    'verified-exotel-branded-homepage-or-verified-homepage-522-outage-plus-upstream-recruiterbox-openings-json',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage-or-verified-homepage-522-outage+verified-exotel-careers-handoff+recruiterbox-openings-json',
+    'verified-exotel-branded-homepage-or-verified-homepage-522-outage+verified-exotel-careers-page+recruiterbox-openings-json',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
@@ -62,21 +62,21 @@ test('Ameyo local catalog captures the verified homepage 522 outage and the live
   assert.equal(provider.openingsApiUrl, 'https://app.recruiterbox.com/widget/2176/openings/')
   assert.equal(
     provider.verifiedUpstreamJobUrl,
-    'https://app.recruiterbox.com/widget/2176/opening/701455/',
+    'https://app.recruiterbox.com/widget/2176/opening/708128/',
   )
   assert.deepEqual(provider.verifiedCareers404Urls, [
     'https://www.ameyo.com/careers/',
     'https://www.ameyo.com/jobs/',
   ])
   assert.equal(provider.upstreamCompanyName, 'Exotel Techcom Pvt Ltd')
-  assert.equal(provider.verifiedOn, '2026-07-28')
-  assert.match(provider.verifiedSurfaceSummary, /July 28, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.ameyo\.com\//i)
-  assert.match(provider.verifiedSurfaceSummary, /522 timeout page/i)
+  assert.match(provider.verifiedSurfaceSummary, /reachable again/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/exotel\.com\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/exotel\.com\/about-us\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /widget\/2176\/openings/i)
-  assert.match(provider.verifiedSurfaceSummary, /\/careers\/ and \/jobs\//i)
+  assert.match(provider.verifiedSurfaceSummary, /31 India roles/i)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /ameyo[\\/]jobs\.json$/i)
 

@@ -12,10 +12,11 @@ export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
 export const CAREERS_LANDING_URL = PROVIDER_METADATA.careersLandingUrl
-export const JOBS_URL = PROVIDER_METADATA.companyCareerPage
+export const JOBS_URL = PROVIDER_METADATA.legacyJobsUrl
 export const SITEMAP_URL = PROVIDER_METADATA.sitemapUrl
 export const JOB_POST_SITEMAP_URL = PROVIDER_METADATA.jobPostSitemapUrl
 export const SHARED_APPLY_PAGE_URL = PROVIDER_METADATA.sharedApplyPageUrl
+export const CURRENT_CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const VERIFIED_JOB_DETAIL_URLS_CONST = [...VERIFIED_JOB_DETAIL_URLS]
 export { VERIFIED_JOB_DETAIL_URLS_CONST as VERIFIED_JOB_DETAIL_URLS }
 
@@ -297,6 +298,120 @@ const mapCardToJob = (card, detailHtml, now) => ({
   scrapedAt: now(),
 })
 
+export const hasCurrentHomepageSignal = (html = '') => {
+  const page = String(html ?? '')
+  return extractTitle(page) === "Anaptyss — Building Intelligent Enterprises for What's Next"
+    && /href="\/life-at-anaptyss"/i.test(page)
+    && /href="\/careers\/openings"/i.test(page)
+}
+
+export const extractCurrentJobCards = (html = '') =>
+  [...String(html ?? '').matchAll(/<details class="op-card"[\s\S]*?<\/details>/g)]
+    .map(([block]) => {
+      const summary = block.split('</summary>')[0]
+      const title = stripTags(summary.match(/<h4>([\s\S]*?)<\/h4>/i)?.[1])
+      const meta = [...summary.matchAll(/<\/svg>([^<]+)<\/span>/g)].map((match) => stripTags(match[1]))
+      const href = block.match(/<a[^>]+href="(\/job-post\/[a-z0-9-]+)"[^>]*>\s*<span>View More<\/span>/i)?.[1]
+      const detailUrl = href ? toAbsoluteUrl(href, CURRENT_CAREERS_URL) : null
+      if (!title || meta.length !== 2 || !detailUrl) return null
+      return {
+        title,
+        jobType: meta[0],
+        location: meta[1],
+        department: extractCurrentFact(block, 'Industry'),
+        experience: extractCurrentFact(block, 'Work Experience'),
+        dateOpened: extractCurrentFact(block, 'Date Opened'),
+        detailUrl,
+      }
+    })
+    .filter(Boolean)
+
+const extractCurrentFact = (html, label) => stripTags(
+  String(html ?? '').match(new RegExp(`<dt>${escapeRegExp(label)}</dt><dd>([\\s\\S]*?)</dd>`, 'i'))?.[1],
+)
+
+export const hasCurrentCareersSignal = (html = '') => {
+  const page = String(html ?? '')
+  const cards = extractCurrentJobCards(page)
+  return extractTitle(page) === 'Current Openings | Anaptyss'
+    && /<link[^>]+rel="canonical"[^>]+href="https:\/\/anaptyss\.com\/careers\/openings"/i.test(page)
+    && cards.length > 0
+    && cards.length === (page.match(/<details class="op-card"/g) || []).length
+    && new Set(cards.map((card) => card.detailUrl)).size === cards.length
+}
+
+const extractCurrentApplyUrl = (html, title) => {
+  const match = String(html ?? '').match(/href="(\/apply-now\?post=[^"]+)"/i)
+  if (!match) return null
+  const url = toAbsoluteUrl(match[1], CURRENT_CAREERS_URL)
+  if (!url) return null
+  const parsed = new URL(url)
+  return parsed.origin === 'https://www.anaptyss.com'
+    && parsed.pathname === '/apply-now'
+    && normalizeComparableTitle(parsed.searchParams.get('post')) === normalizeComparableTitle(title)
+    ? url
+    : null
+}
+
+const extractCurrentDescription = (html) =>
+  [...String(html ?? '').matchAll(/<div class="jb-block"><h2 class="sec-title"[^>]*>([\s\S]*?)<\/h2><div class="jb-prose"[^>]*>([\s\S]*?)<\/div><\/div>/g)]
+    .map(([, heading, body]) => `${stripTags(heading)}: ${stripTags(body)}`)
+    .join(' ') || null
+
+export const hasCurrentDetailSignal = (html, card) => {
+  const page = String(html ?? '')
+  const title = stripTags(page.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1])
+  return extractTitle(page) === `${card.title} | Anaptyss`
+    && title === card.title
+    && extractCurrentFact(page, 'Country') === 'India'
+    && extractCurrentFact(page, 'City') === card.location
+    && Boolean(extractCurrentApplyUrl(page, card.title))
+    && Boolean(extractCurrentDescription(page))
+}
+
+const runCurrentSite = async (fetchPage, now) => {
+  const careers = await fetchPage(CURRENT_CAREERS_URL)
+  if (careers.status !== 200 || normalizeUrl(careers.url) !== CURRENT_CAREERS_URL
+    || !hasCurrentCareersSignal(careers.html)) {
+    throw new Error('Anaptyss current openings page no longer matches the first-party jobs surface')
+  }
+
+  const cards = extractCurrentJobCards(careers.html)
+  const jobs = []
+  for (const card of cards) {
+    const detail = await fetchPage(card.detailUrl)
+    if (detail.status !== 200 || normalizeUrl(detail.url) !== card.detailUrl
+      || !hasCurrentDetailSignal(detail.html, card)) {
+      throw new Error(`Anaptyss current job detail changed: ${card.detailUrl}`)
+    }
+    const applyUrl = extractCurrentApplyUrl(detail.html, card.title)
+    jobs.push({
+      title: card.title,
+      company: COMPANY,
+      department: card.department,
+      location: formatIndiaLocation(card.location),
+      city: deriveCity(card.location),
+      country: 'India',
+      jobId: buildJobIdFromUrl(card.detailUrl),
+      requisitionId: null,
+      sourceUrl: card.detailUrl,
+      applyUrl,
+      employmentType: card.jobType,
+      experienceRequired: card.experience,
+      minimumQualification: null,
+      preferredQualification: null,
+      requiredSkills: [],
+      postingDate: parseOpenedDate(card.dateOpened),
+      closingDate: null,
+      jobDescription: extractCurrentDescription(detail.html),
+      source: SOURCE,
+      link: applyUrl,
+      scrapedAt: now(),
+    })
+  }
+  return jobs
+}
+
 export const createAnaptyssScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
@@ -305,10 +420,12 @@ export const createAnaptyssScraper = ({
     if (
       homepage.status !== 200
       || normalizeUrl(homepage.url) !== normalizeUrl(HOMEPAGE_URL)
-      || !hasOfficialHomepageSignal(homepage.html)
+      || (!hasOfficialHomepageSignal(homepage.html) && !hasCurrentHomepageSignal(homepage.html))
     ) {
       throw new Error('Anaptyss verified homepage no longer matches the known first-party surface')
     }
+
+    if (hasCurrentHomepageSignal(homepage.html)) return runCurrentSite(fetchPage, now)
 
     const careersLanding = await fetchPage(CAREERS_LANDING_URL)
     if (

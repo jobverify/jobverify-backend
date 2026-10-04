@@ -99,6 +99,7 @@ export const createCancelPlanHandler = (cancelPlan) => async (req, res) => {
       data: {
         access: result.access,
         accessRole: result.user.accessRole,
+        accessEvent: result.accessEvent,
       },
     });
   } catch (error) {

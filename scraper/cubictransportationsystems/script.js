@@ -1,3 +1,4 @@
+import { assertWorkdayPageAvailable } from '../../scraper-support/myworkday/pageAvailability.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -14,6 +15,7 @@ export const COMPANY = PROVIDER_METADATA.companyName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const WORKDAY_BOARD_URL = PROVIDER_METADATA.officialWorkdayBoardUrl
 export const JOBS_API_URL = PROVIDER_METADATA.jobsApiUrl
+export const DETAIL_API_BASE_URL = JOBS_API_URL.replace(/\/jobs$/, '')
 export const WORKDAY_DETAIL_BASE_URL = 'https://cubic.wd1.myworkdayjobs.com/en-US/cubic_global_careers'
 export const VERIFIED_JOB_DETAIL_URLS = [
   'https://cubic.wd1.myworkdayjobs.com/en-US/cubic_global_careers/job/Hyderabad-Telangana/Senior-Site-Reliability-Engineer_REQ_48649',
@@ -108,6 +110,11 @@ const defaultFetchJson = (url, body) => fetchJsonWithRetry(url, {
   label: `${SOURCE}-json`,
   timeoutMs: 20000,
 })
+const defaultFetchDetailJson = (url) => fetchJsonWithRetry(url, {
+  headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
+  label: `${SOURCE}-detail-json`,
+  timeoutMs: 20000,
+})
 
 export const buildJobsRequestBody = ({
   limit = PAGE_SIZE,
@@ -183,6 +190,40 @@ export const extractStructuredJobPosting = (html = '') => {
   }
 
   return null
+}
+
+export const buildWorkdayDetailApiUrl = (externalPath) => {
+  const path = String(externalPath ?? '').trim()
+  if (!/^\/job\/[a-z0-9%._-]+\/[a-z0-9%._-]+$/i.test(path)) {
+    throw new Error('Cubic Transportation Systems invalid Workday detail API path')
+  }
+  return `${DETAIL_API_BASE_URL}${path}`
+}
+
+export const extractWorkdayApiDetail = (payload, posting = {}) => {
+  const info = payload?.jobPostingInfo
+  const description = normalizeWhitespace(String(info?.jobDescription ?? '').replace(/<[^>]+>/g, ' '))
+  const businessUnit = normalizeWhitespace(description.match(/Business Unit:\s*(.*?)\s*Company Details:/i)?.[1])
+  const requisitionId = normalizeWhitespace(info?.jobReqId)
+  const country = normalizeWhitespace(info?.country?.descriptor)
+  const externalPath = String(posting.externalPath ?? '')
+  if (!info || !normalizeWhitespace(info.title) || !description || !businessUnit || !requisitionId || !country
+    || !String(info.externalUrl ?? '').endsWith(externalPath)
+    || (posting.bulletFields?.[0] && requisitionId !== posting.bulletFields[0])) {
+    throw new Error('Cubic Transportation Systems Workday detail API contract changed materially')
+  }
+  return {
+    title: normalizeWhitespace(info.title),
+    description,
+    requisitionId,
+    employmentType: normalizeWhitespace(info.timeType),
+    postingDate: normalizeWhitespace(info.startDate),
+    country,
+    locality: normalizeWhitespace(info.location),
+    businessUnit,
+    hiringOrganization: normalizeWhitespace(payload?.hiringOrganization?.name),
+    canApply: info.canApply === true && info.posted === true,
+  }
 }
 
 export const hasVerifiedCtsJobDetailSignal = (html = '') => {
@@ -311,6 +352,7 @@ export const createCubicTransportationSystemsScraper = ({
   async run({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
+    fetchDetailJson = defaultFetchDetailJson,
     now = defaultNow,
   } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
@@ -319,13 +361,9 @@ export const createCubicTransportationSystemsScraper = ({
     }
 
     const boardHtml = await fetchText(WORKDAY_BOARD_URL)
+    assertWorkdayPageAvailable({ status: 200, html: boardHtml, url: WORKDAY_BOARD_URL }, { source: SOURCE })
     if (!hasOfficialWorkdayBoardSignal(boardHtml)) {
       throw new Error('The verified Cubic Workday board no longer matches the trusted public surface')
-    }
-
-    const verifiedJobHtml = await fetchText(VERIFIED_JOB_DETAIL_URLS[0])
-    if (!hasVerifiedCtsJobDetailSignal(verifiedJobHtml)) {
-      throw new Error('The verified CTS job detail page no longer matches the trusted public surface')
     }
 
     const scrapedAt = now()
@@ -359,14 +397,16 @@ export const createCubicTransportationSystemsScraper = ({
             throw new Error('Cubic Transportation Systems verified Workday detail URL contract changed materially')
           }
 
-          const detailHtml = await fetchText(detailUrl)
-          const detail = extractStructuredJobPosting(detailHtml)
+          const detail = extractWorkdayApiDetail(
+            await fetchDetailJson(buildWorkdayDetailApiUrl(posting.externalPath)),
+            posting,
+          )
 
           if (!detail?.title || !detail?.description || !detail?.country) {
             throw new Error('Cubic Transportation Systems verified job detail structured data changed materially')
           }
 
-          if (detail.country !== COUNTRY_FILTER) {
+          if (!detail.canApply || detail.country !== COUNTRY_FILTER) {
             return null
           }
 

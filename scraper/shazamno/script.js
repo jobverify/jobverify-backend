@@ -87,8 +87,7 @@ export const hasVerifiedAppleCareersSignal = (html = '') => {
       || text.includes('Search Jobs - Apple Music - Jobs - Careers at Apple')
   )
     && text.includes('Find your perfect role.')
-    && text.includes('QA Lead - Shazam (12 Month Contract)')
-    && text.includes('tech hub of the Shazam team')
+    && /<input\b(?=[^>]*\baria-label=["']Search by role or keyword["'])(?=[^>]*\bvalue=["']shazam["'])[^>]*>/i.test(page)
 }
 
 export const createShazamNoScraper = () => ({

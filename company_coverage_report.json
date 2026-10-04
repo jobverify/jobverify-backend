@@ -1,7 +1,7 @@
 {
-  "totalRows": 4690,
-  "candidateRows": 4690,
-  "matchedCount": 4690,
+  "totalRows": 4670,
+  "candidateRows": 4670,
+  "matchedCount": 4670,
   "unmatchedCount": 0,
   "matched": [
     {
@@ -1372,33 +1372,6 @@
         "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\accelyasolutionsindialimited\\script.js",
         "zeroResultPolicy": "evidence-required",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\accelyasolutionsindialimited"
-      }
-    },
-    {
-      "row": "51",
-      "companyName": "Accenture",
-      "normalizedCompanyName": "accenture",
-      "source": "accenture",
-      "provider": {
-        "atsPlatform": "workday",
-        "countryFilter": "India",
-        "paginationStrategy": "next-button",
-        "extractionStrategy": "dom+detail-page",
-        "parser": "workday",
-        "normalizationProfile": "engineering-default",
-        "name": "accenture",
-        "company": "Accenture",
-        "baseUrl": "https://accenture.wd103.myworkdayjobs.com/AccentureCareers",
-        "companyCareerPage": "https://www.accenture.com/in-en/careers",
-        "adapter": "workday",
-        "source": "accenture",
-        "scraperTimeoutMs": 1200000,
-        "companyName": "Accenture",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\accenture.workday\\jobs.json",
-        "modulePath": null,
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\accenture.workday",
-        "companyDomain": "accenture.com"
       }
     },
     {
@@ -3851,29 +3824,6 @@
         "zeroResultPolicy": "evidence-required",
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\airbnb\\jobs.json",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\airbnb"
-      }
-    },
-    {
-      "row": "139",
-      "companyName": "Airbound",
-      "normalizedCompanyName": "airbound",
-      "source": "airbound",
-      "provider": {
-        "atsPlatform": "ashby",
-        "countryFilter": "India",
-        "paginationStrategy": "ashby-public-board-pagination",
-        "extractionStrategy": "public-ashby-board-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "airbound",
-        "companyName": "Airbound",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\airbound\\script.js",
-        "companyCareerPage": "https://www.airbound.com/careers",
-        "companyDomain": "airbound.com",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\airbound\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\airbound"
       }
     },
     {
@@ -10970,30 +10920,6 @@
         "verifiedIndiaJobCount": 0,
         "zeroResultPolicy": "coverage-gap",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\artafinance"
-      }
-    },
-    {
-      "row": "370",
-      "companyName": "Artech Infosystems Private Limited",
-      "normalizedCompanyName": "artech infosystems",
-      "source": "artechinfosystems",
-      "provider": {
-        "atsPlatform": "oracle-cloud",
-        "countryFilter": "India",
-        "paginationStrategy": "page-query",
-        "extractionStrategy": "json-search-api+json-detail-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "artechinfosystems",
-        "companyName": "Artech Infosystems Private Limited",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\artechinfosystems\\script.js",
-        "companyCareerPage": "https://fa-erqf-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs",
-        "companyDomain": "artech.com",
-        "scraperTimeoutMs": 600000,
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\artechinfosystems\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\artechinfosystems"
       }
     },
     {
@@ -18382,29 +18308,6 @@
       }
     },
     {
-      "row": "617",
-      "companyName": "Birlasoft",
-      "normalizedCompanyName": "birlasoft",
-      "source": "birlasoft",
-      "provider": {
-        "atsPlatform": "successfactors",
-        "countryFilter": "India",
-        "paginationStrategy": "offset-path",
-        "extractionStrategy": "html+detail-page",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "birlasoft",
-        "companyName": "Birlasoft",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\birlasoft\\script.js",
-        "companyCareerPage": "https://jobs.birlasoft.com/search/",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\birlasoft\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\birlasoft",
-        "companyDomain": "jobs.birlasoft.com"
-      }
-    },
-    {
       "row": "618",
       "companyName": "Bitglass",
       "normalizedCompanyName": "bitglass",
@@ -24432,29 +24335,6 @@
         "verifiedSurfaceSummary": "Verified on Tuesday, July 28, 2026 that https://www.cartesia.ai/ was the live Cartesia official homepage, that the public Ashby board at https://jobs.ashbyhq.com/cartesia remained reachable, and that the public Ashby API at https://api.ashbyhq.com/posting-api/job-board/cartesia returned 30 listed roles including 5 India openings such as Software Engineer, Platform (India) in Bangalore.",
         "zeroResultPolicy": "evidence-required",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\cartesia"
-      }
-    },
-    {
-      "row": "825",
-      "companyName": "Casagrand",
-      "normalizedCompanyName": "casagrand",
-      "source": "casagrand",
-      "provider": {
-        "atsPlatform": "darwinbox",
-        "countryFilter": "India",
-        "paginationStrategy": "page-body",
-        "extractionStrategy": "json-search-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "casagrand",
-        "companyName": "Casagrand",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\casagrand\\script.js",
-        "companyCareerPage": "https://casagrand.darwinbox.in/ms/candidatev2/main/careers/allJobs",
-        "companyDomain": "casagrand.co.in",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\casagrand\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\casagrand"
       }
     },
     {
@@ -30761,29 +30641,6 @@
       }
     },
     {
-      "row": "1046",
-      "companyName": "Conduent",
-      "normalizedCompanyName": "conduent",
-      "source": "conduent",
-      "provider": {
-        "atsPlatform": "phenom",
-        "countryFilter": "India",
-        "paginationStrategy": "offset-query",
-        "extractionStrategy": "embedded-json+detail-page",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "conduent",
-        "companyName": "Conduent",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\conduent\\script.js",
-        "companyCareerPage": "https://careers.conduent.com/us/en/search-results",
-        "companyDomain": "careers.conduent.com",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\conduent\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\conduent"
-      }
-    },
-    {
       "row": "1047",
       "companyName": "Conduktor",
       "normalizedCompanyName": "conduktor",
@@ -33255,29 +33112,6 @@
       }
     },
     {
-      "row": "1136",
-      "companyName": "Cummins India",
-      "normalizedCompanyName": "cummins",
-      "source": "cumminsindia",
-      "provider": {
-        "atsPlatform": "jobsyn-solr",
-        "countryFilter": "India",
-        "paginationStrategy": "page-number",
-        "extractionStrategy": "json-search-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "cumminsindia",
-        "companyName": "Cummins India",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\cumminsindia\\script.js",
-        "companyCareerPage": "https://cummins.jobs/jobs/",
-        "companyDomain": "cummins.jobs",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\cumminsindia\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\cumminsindia"
-      }
-    },
-    {
       "row": "1137",
       "companyName": "Curefoods",
       "normalizedCompanyName": "curefoods",
@@ -34792,7 +34626,7 @@
         "supportingEvidenceUrl": "https://danskebank.com/news-and-insights/news-archive/press-releases/2023/pr26062023",
         "companyDomain": "danskebank.com",
         "verifiedOn": "2026-07-18",
-        "verifiedSurfaceSummary": "Verified on Saturday, July 18, 2026 that the official Danske Bank press release published on June 26, 2023 states Danske Bank will sell Danske IT to Infosys and transfer colleagues from 1 September 2023, while the current parent-brand careers page routes openings through generic Danske Bank Oracle Cloud listings and does not expose a standalone exact-name public careers surface for Danske IT.",
+        "verifiedSurfaceSummary": "Verified on Saturday, July 18, 2026 that the official Danske Bank press release published on June 26, 2023 states Danske Bank will sell Danske IT and transfer colleagues from 1 September 2023, while the current parent-brand careers page routes openings through generic Danske Bank Oracle Cloud listings and does not expose a standalone exact-name public careers surface for Danske IT.",
         "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\danskeit\\script.js",
         "zeroResultPolicy": "evidence-required",
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\danskeit\\jobs.json",
@@ -35753,35 +35587,6 @@
         "zeroResultPolicy": "coverage-gap",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\decathlon.workday",
         "companyDomain": null
-      }
-    },
-    {
-      "row": "1226",
-      "companyName": "Decathlon India",
-      "normalizedCompanyName": "decathlon",
-      "source": "decathlonindia",
-      "provider": {
-        "atsPlatform": "digitalrecruiters",
-        "countryFilter": "India",
-        "paginationStrategy": "digitalrecruiters-counted-api-pages",
-        "extractionStrategy": "official-offers-shell+domain-bound-digitalrecruiters-api",
-        "parser": "decathlon-india-digitalrecruiters-json",
-        "normalizationProfile": "engineering-default",
-        "source": "decathlonindia",
-        "companyName": "Decathlon India",
-        "adapter": "script",
-        "companyCareerPage": "https://joinus.decathlon.in/en/annonces",
-        "verifiedOn": "2026-09-13",
-        "verifiedPublicJobCount": 313,
-        "verifiedIndiaJobCount": 313,
-        "verificationDisposition": "live-official-complete-inventory-parser",
-        "verifiedSurfaceSummary": "Verified on Sunday, September 13, 2026 that https://joinus.decathlon.in/en/annonces configures Decathlon India's DigitalRecruiters API, which exposed 313 jobs across four complete counted pages.",
-        "backfillMode": "live-parser",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\decathlonindia.workday\\script.js",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\decathlonindia.workday\\jobs.json",
-        "zeroResultPolicy": "evidence-required",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\decathlonindia.workday",
-        "companyDomain": "joinus.decathlon.in"
       }
     },
     {
@@ -40610,40 +40415,6 @@
         "verifiedIndiaJobCount": 0,
         "zeroResultPolicy": "coverage-gap",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\ebury"
-      }
-    },
-    {
-      "row": "1392",
-      "companyName": "eClerx",
-      "normalizedCompanyName": "eclerx",
-      "source": "eclerx",
-      "provider": {
-        "atsPlatform": "oracle-cloud",
-        "countryFilter": "India",
-        "paginationStrategy": "offset-query-location-filter",
-        "extractionStrategy": "verified-first-party-careers-pages+oracle-cloud-candidate-experience+oracle-cloud-india-finder-api+oracle-cloud-detail-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "eclerx",
-        "companyName": "eClerx",
-        "officialBrandName": "eClerx",
-        "adapter": "script",
-        "officialHomepageUrl": "https://eclerx.com/",
-        "officialCareersLandingUrl": "https://eclerx.com/careers/",
-        "companyCareerPage": "https://eclerx.com/job-portal/",
-        "oracleCandidateExperienceUrl": "https://fa-ewji-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs",
-        "workspaceDomain": "fa-ewji-saasfaprod1.fa.ocs.oraclecloud.com",
-        "listingApiBaseUrl": "https://fa-ewji-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitions",
-        "detailApiBaseUrl": "https://fa-ewji-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails",
-        "publicJobsBaseUrl": "https://fa-ewji-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/",
-        "siteNumber": "CX_1",
-        "companyDomain": "eclerx.com",
-        "verifiedOn": "2026-07-15",
-        "verifiedSurfaceSummary": "Verified on July 15, 2026 that https://eclerx.com/careers/ is the live first-party careers landing page and that its Explore jobs CTA hands candidates to the first-party job portal at https://eclerx.com/job-portal/. The first-party job portal hands applicants to the public Oracle Candidate Experience board at https://fa-ewji-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs. The public India finder at https://fa-ewji-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitions?onlyData=true&expand=requisitionList.secondaryLocations&finder=findReqs;siteNumber=CX_1,limit=5,offset=0,location=India returned 261 India jobs, including Analyst in Chandigarh, India and Senior Analyst in Mumbai, Maharashtra, India, and the public detail API is live at https://fa-ewji-saasfaprod1.fa.ocs.oraclecloud.com/hcmRestApi/resources/latest/recruitingCEJobRequisitionDetails?expand=all&onlyData=true&finder=ById;Id=%2281338%22,siteNumber=CX_1.",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\eclerx\\jobs.json",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\eclerx\\script.js",
-        "zeroResultPolicy": "evidence-required",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\eclerx"
       }
     },
     {
@@ -52639,29 +52410,6 @@
       }
     },
     {
-      "row": "1797",
-      "companyName": "Genpact",
-      "normalizedCompanyName": "genpact",
-      "source": "genpact",
-      "provider": {
-        "atsPlatform": "workday",
-        "countryFilter": "India",
-        "paginationStrategy": "next-button",
-        "extractionStrategy": "workday-runner-delegation",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "genpact",
-        "companyName": "Genpact",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\genpact.workday\\script.js",
-        "companyCareerPage": "https://www.genpact.com/careers",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\genpact.workday\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\genpact.workday",
-        "companyDomain": "genpact.com"
-      }
-    },
-    {
       "row": "1798",
       "companyName": "Gensol",
       "normalizedCompanyName": "gensol",
@@ -56724,29 +56472,6 @@
       }
     },
     {
-      "row": "1937",
-      "companyName": "Havells",
-      "normalizedCompanyName": "havells",
-      "source": "havells",
-      "provider": {
-        "atsPlatform": "oracle-cloud",
-        "countryFilter": "India",
-        "paginationStrategy": "offset-query",
-        "extractionStrategy": "oracle-cloud-finder-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "havells",
-        "companyName": "Havells",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\havells\\script.js",
-        "companyCareerPage": "https://iabgcp.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/jobs",
-        "companyDomain": "iabgcp.fa.ocs.oraclecloud.com",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\havells\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\havells"
-      }
-    },
-    {
       "row": "1938",
       "companyName": "Haveloc",
       "normalizedCompanyName": "haveloc",
@@ -56797,29 +56522,6 @@
         "zeroResultPolicy": "coverage-gap",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\hawaiianelectric.workday",
         "companyDomain": null
-      }
-    },
-    {
-      "row": "1940",
-      "companyName": "Hawkins Cookers Ltd",
-      "normalizedCompanyName": "hawkins cookers",
-      "source": "hawkinscookersltd",
-      "provider": {
-        "atsPlatform": "official-company-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "single-first-party-aspnet-jobs-page",
-        "extractionStrategy": "official-aspnet-jobs-page+server-button-listings+inline-details",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "hawkinscookersltd",
-        "companyName": "Hawkins Cookers Ltd",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\hawkinscookersltd\\script.js",
-        "companyCareerPage": "https://www.hawkinscookers.com/Job_Openings_R.aspx",
-        "companyDomain": "hawkinscookers.com",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\hawkinscookersltd\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\hawkinscookersltd"
       }
     },
     {
@@ -57596,29 +57298,6 @@
         "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\hexaviewtechnologies\\script.js",
         "zeroResultPolicy": "evidence-required",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\hexaviewtechnologies"
-      }
-    },
-    {
-      "row": "1968",
-      "companyName": "Hexaware",
-      "normalizedCompanyName": "hexaware",
-      "source": "hexaware",
-      "provider": {
-        "atsPlatform": "oracle-cloud",
-        "countryFilter": "India",
-        "paginationStrategy": "offset-query",
-        "extractionStrategy": "json-search-api+json-detail-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "hexaware",
-        "companyName": "Hexaware",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\hexaware\\script.js",
-        "companyCareerPage": "https://jobs.hexaware.com/",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\hexaware\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\hexaware",
-        "companyDomain": "jobs.hexaware.com"
       }
     },
     {
@@ -63224,29 +62903,6 @@
       }
     },
     {
-      "row": "2161",
-      "companyName": "Infosys",
-      "normalizedCompanyName": "infosys",
-      "source": "infosys",
-      "provider": {
-        "atsPlatform": "infosys-careers-api",
-        "countryFilter": "India",
-        "paginationStrategy": "single-request",
-        "extractionStrategy": "json-search-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "infosys",
-        "companyName": "Infosys",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\infosys\\script.js",
-        "companyCareerPage": "https://career.infosys.com/jobs",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\infosys\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\infosys",
-        "companyDomain": "career.infosys.com"
-      }
-    },
-    {
       "row": "2162",
       "companyName": "Infoworks",
       "normalizedCompanyName": "infoworks",
@@ -64188,33 +63844,6 @@
         "zeroResultPolicy": "coverage-gap",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\insulet.workday",
         "companyDomain": null
-      }
-    },
-    {
-      "row": "2196",
-      "companyName": "InsureMile",
-      "normalizedCompanyName": "insuremile",
-      "source": "insuremile",
-      "provider": {
-        "atsPlatform": "official-first-party-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "single-first-party-careers-page-verification",
-        "extractionStrategy": "complete-public-role-cards+role-specific-email-apply",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "insuremile",
-        "companyName": "InsureMile",
-        "officialBrandName": "Insuremile",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\insuremile\\script.js",
-        "homepageUrl": "https://insuremile.in/",
-        "companyCareerPage": "https://insuremile.in/careers",
-        "companyDomain": "insuremile.in",
-        "verifiedOn": "2026-09-13",
-        "verifiedSurfaceSummary": "Verified September 13, 2026: the official careers page publishes seven role cards with explicit branch locations and role-specific hr@insuremile.in application links. The current parser checks the advertised total and every card; the historical AWSM parser remains available only for its verified legacy surface.",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\insuremile\\jobs.json",
-        "zeroResultPolicy": "evidence-required",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\insuremile"
       }
     },
     {
@@ -67494,29 +67123,6 @@
         "zeroResultPolicy": "evidence-required",
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\jpmorganchase\\jobs.json",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\jpmorganchase"
-      }
-    },
-    {
-      "row": "2313",
-      "companyName": "Jubilant FoodWorks",
-      "normalizedCompanyName": "jubilant foodworks",
-      "source": "jubilantfoodworks",
-      "provider": {
-        "atsPlatform": "oracle-cloud",
-        "countryFilter": "India",
-        "paginationStrategy": "page-query",
-        "extractionStrategy": "official-careers-page+oracle-json-search-api+json-detail-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "jubilantfoodworks",
-        "companyName": "Jubilant FoodWorks",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\jubilantfoodworks\\script.js",
-        "companyCareerPage": "https://www.jubilantfoodworks.com/careers/work-with-us",
-        "companyDomain": "jubilantfoodworks.com",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\jubilantfoodworks\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\jubilantfoodworks"
       }
     },
     {
@@ -74880,37 +74486,6 @@
         "verifiedIndiaJobCount": 0,
         "zeroResultPolicy": "coverage-gap",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\lightstep"
-      }
-    },
-    {
-      "row": "2566",
-      "companyName": "LILT",
-      "normalizedCompanyName": "lilt",
-      "source": "lilt",
-      "provider": {
-        "atsPlatform": "ashby",
-        "countryFilter": "India",
-        "paginationStrategy": "single-public-ashby-job-board-get",
-        "extractionStrategy": "verified-first-party-community-page+verified-public-ashby-board+public-ashby-get-feed+india-location-filter",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "lilt",
-        "companyName": "LILT",
-        "officialBrandName": "LILT",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\lilt\\script.js",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\lilt\\jobs.json",
-        "companyCareerPage": "https://lilt.com/products/community",
-        "ashbyPublicBoardUrl": "https://jobs.ashbyhq.com/lilt-production",
-        "ashbyJobBoardUrl": "https://api.ashbyhq.com/posting-api/job-board/lilt-production",
-        "companyDomain": "lilt.com",
-        "verifiedOn": "2026-07-25",
-        "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://lilt.com/products/community was the live first-party LILT community jobs page, that it explicitly directed applicants to the public Ashby production board at https://jobs.ashbyhq.com/lilt-production, and that the companion public Ashby GET feed at https://api.ashbyhq.com/posting-api/job-board/lilt-production exposed listed India-remote openings. Verified live examples included Talent Manager with India (Remote) among its public locations and Subject Matter Expert – Professional, Scientific & Technical Services (English/Tamil) – Remote in India.",
-        "verifiedSampleJobTitle": "Talent Manager",
-        "verifiedSampleJobLocation": "India (Remote)",
-        "verifiedSampleSecondaryJobTitle": "Subject Matter Expert – Professional, Scientific & Technical Services (English/Tamil) – Remote",
-        "zeroResultPolicy": "evidence-required",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\lilt"
       }
     },
     {
@@ -83429,29 +83004,6 @@
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\mobineersinfosystems\\jobs.json",
         "zeroResultPolicy": "evidence-required",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\mobineersinfosystems"
-      }
-    },
-    {
-      "row": "2855",
-      "companyName": "Mobitech Wireless Solution Private Limited",
-      "normalizedCompanyName": "mobitech wireless solution",
-      "source": "mobitechwireless",
-      "provider": {
-        "atsPlatform": "official-company-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "single-first-party-careers-page",
-        "extractionStrategy": "verified-official-homepage+verified-first-party-careers-page+inline-job-listings+apply-links",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "mobitechwireless",
-        "companyName": "Mobitech Wireless Solution Private Limited",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\mobitechwireless\\script.js",
-        "companyCareerPage": "https://careers.mobitechwireless.in/",
-        "companyDomain": "mobitechwireless.in",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\mobitechwireless\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\mobitechwireless"
       }
     },
     {
@@ -96326,38 +95878,6 @@
       }
     },
     {
-      "row": "3296",
-      "companyName": "Piramal Pharma",
-      "normalizedCompanyName": "piramal pharma",
-      "source": "piramalpharma",
-      "provider": {
-        "atsPlatform": "workday",
-        "countryFilter": "India",
-        "paginationStrategy": "verified-first-party-careers-handoff-plus-workday-country-facet",
-        "extractionStrategy": "verified-careers-page+verified-workday-board+unfiltered-workday-jobs-api+india-country-facet+filtered-workday-jobs-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "piramalpharma",
-        "companyName": "Piramal Pharma",
-        "officialBrandName": "Piramal Pharma Limited",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\piramalpharma.workday\\script.js",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\piramalpharma\\jobs.json",
-        "companyCareerPage": "https://www.piramalpharma.com/careers",
-        "officialCareersPageUrl": "https://www.piramalpharma.com/careers",
-        "officialWorkdayBoardUrl": "https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS",
-        "jobsApiUrl": "https://piramalpharma.wd102.myworkdayjobs.com/wday/cxs/piramalpharma/PIRAMAL_EXTERNAL_CAREERS/jobs",
-        "verifiedIndiaCountryFacetId": "c4f78be1a8f14da0ab49ce1162348a5e",
-        "verifiedIndiaJobUrl": "https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS/job/MahadMH/Executive---Production_R00000427",
-        "verifiedIndiaApplyUrl": "https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS/job/MahadMH/Executive---Production_R00000427/apply",
-        "companyDomain": "piramalpharma.com",
-        "verifiedOn": "2026-07-17",
-        "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.piramalpharma.com/careers is the official Piramal Pharma Limited careers page, that it hands applicants to the public Workday board at https://piramalpharma.wd102.myworkdayjobs.com/PIRAMAL_EXTERNAL_CAREERS, and that the public Workday jobs API at https://piramalpharma.wd102.myworkdayjobs.com/wday/cxs/piramalpharma/PIRAMAL_EXTERNAL_CAREERS/jobs exposes a verified India country facet. The live unfiltered payload showed 254 total postings and the verified India country facet returned 195 India roles on that date, including Executive - Production and Deputy Manager - Utility.",
-        "zeroResultPolicy": "evidence-required",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\piramalpharma.workday"
-      }
-    },
-    {
       "row": "3297",
       "companyName": "Piramal Pharma Digital",
       "normalizedCompanyName": "piramal pharma digital",
@@ -99538,31 +99058,6 @@
         "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.pvrcinemas.com/careers-us, https://www.pvrcinemas.com/career, and https://www.pvrcinemas.com/careers each returned the same generic movie-booking SPA shell for PVR INOX Cinemas rather than a trustworthy public jobs board. The returned static HTML kept the consumer movie-ticket metadata, including the Book Movie Tickets Online | PVR INOX Cinemas Open Graph surface and og:url pointing at https://www.inoxmovies.com/, while exposing no JobPosting markup, no ATS handoff, and no public job-card markers. Live bundle inspection also confirmed a client route string for careers-us but no trustworthy public jobs surface.",
         "zeroResultPolicy": "evidence-required",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\pvrinox"
-      }
-    },
-    {
-      "row": "3407",
-      "companyName": "PwC",
-      "normalizedCompanyName": "pwc",
-      "source": "pwc",
-      "provider": {
-        "atsPlatform": "official-company-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "single-page",
-        "extractionStrategy": "embedded-json",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "pwc",
-        "companyName": "PwC",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\pwc\\script.js",
-        "companyCareerPage": "https://www.pwc.in/careers/experienced-jobs.html",
-        "enrichPublicExperience": false,
-        "dryRunEnrichPublicExperience": false,
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\pwc\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.02\\jobverify-backend\\scraper\\pwc",
-        "companyDomain": "pwc.in"
       }
     },
     {

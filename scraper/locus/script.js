@@ -1,18 +1,23 @@
+import PROVIDER_METADATA from './catalog.js'
+export { PROVIDER_METADATA }
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { createDarwinboxScraper } from '../darwinbox/script.js'
 
 export const SOURCE = 'locus'
 export const COMPANY = 'Locus'
-export const VERIFIED_ON = '2026-07-30'
+export const VERIFIED_ON = '2026-10-03'
 export const CAREERS_URL = 'https://locus.sh/careers/'
+export const DARWINBOX_CAREERS_URL = 'https://locus.darwinbox.in/ms/candidate/careers'
+export const DARWINBOX_JOBS_API_URL = 'https://locus.darwinbox.in/ms/candidateapi/job/alljobs?companyId=main'
 export const FRESHTEAM_JOBS_URL = 'https://locus.freshteam.com/jobs'
 export const DETAIL_URL_PATTERN = 'https://locus.freshteam.com/jobs/{opaque_id}/{slug}'
-export const DISPOSITION =
-  'verified-first-party-careers-page-plus-public-freshteam-jobs-board'
-export const VERIFIED_SURFACE_SUMMARY =
-  "Verified on Thursday, July 30, 2026 that https://locus.sh/careers/ was the live first-party Locus careers page, that its primary careers CTA labeled Explore Open Roles linked directly to the public Freshteam board at https://locus.freshteam.com/jobs, and that the board publicly exposed 12 current openings including India roles such as Senior Security Engineer and Sr. Technical Account Manager in Bengaluru. This scraper validates that verified official handoff and public Freshteam board, then returns the current India jobs from the visible public detail pages."
+export const DISPOSITION = PROVIDER_METADATA.verificationDisposition
+export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
+
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
@@ -98,6 +103,18 @@ export const hasOfficialCareersPageSignal = (html = '') => {
     && /careers@locus\.sh/i.test(text)
     && normalizeComparableUrl(extractFreshteamJobsUrl(page))
       === normalizeComparableUrl(FRESHTEAM_JOBS_URL)
+}
+
+export const hasCurrentDarwinboxCareersSignal = (html = '') => {
+  const page = String(html)
+  const text = normalizeWhitespace(page) || ''
+  const links = [...page.matchAll(/<a\b[^>]+href=["']([^"']+)["']/gi)]
+    .map((match) => normalizeComparableUrl(decodeHtmlEntities(match[1])))
+  return /<title[^>]*>\s*Careers in Locus\s*\|/i.test(page)
+    && /\bThe Software Machine\b/i.test(text)
+    && /\bLife at Locus\b/i.test(text)
+    && /\bExplore Open Roles\b/i.test(text)
+    && links.includes(normalizeComparableUrl(DARWINBOX_CAREERS_URL))
 }
 
 const buildDetailUrl = (opaqueId, slug) =>
@@ -322,8 +339,51 @@ export const createLocusScraper = ({ maxJobs = null } = {}) => ({
   async run({
     fetchText = defaultFetchText,
     now = () => new Date().toISOString(),
+    fetchListingPage,
+    signal,
   } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+    signal?.throwIfAborted()
+    const careersHtml = await fetchText(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
+
+    if (hasCurrentDarwinboxCareersSignal(careersHtml)) {
+      const native = createDarwinboxScraper({companyName: COMPANY, source: SOURCE, origin: 'https://locus.darwinbox.in', companyId: 'main'})
+      const seen = new Set()
+      let reportedTotal = null
+      let pagesFetched = 0
+      const jobs = await native.run({
+        maxPages: Number.MAX_SAFE_INTEGER, maxJobs, signal,
+        fetchListingPage: async (request) => {
+          const payload = await (fetchListingPage || native.fetchListingPageFromApi)(request)
+          if (!Number.isInteger(payload?.job_counts) || payload.job_counts < 0 || !Array.isArray(payload.data)) {
+            throw new Error('Locus Darwinbox inventory count or records are malformed')
+          }
+          if (reportedTotal !== null && reportedTotal !== payload.job_counts) {
+            throw new Error('Locus Darwinbox inventory count changed during pagination')
+          }
+          reportedTotal = payload.job_counts
+          for (const record of payload.data) {
+            if (!record?.id || seen.has(String(record.id))) throw new Error('Locus Darwinbox duplicate or missing job identity')
+            seen.add(String(record.id))
+            if (/india/i.test(record.country || record.locations || '') && !normalizeWhitespace(record.jd)) {
+              throw new Error('Locus Darwinbox India job description is missing')
+            }
+          }
+          pagesFetched += 1
+          if (seen.size > reportedTotal || (request.page * request.pageSize >= reportedTotal && seen.size !== reportedTotal)) {
+            throw new Error('Locus Darwinbox inventory is incomplete or contradicts its reported count')
+          }
+          return payload
+        },
+      })
+      if (!maxJobs && seen.size !== reportedTotal) throw new Error('Locus Darwinbox inventory is incomplete')
+      return attachInventoryEvidence(jobs.map((job) => ({...job, country: 'India', scrapedAt: now()})), {
+        status: reportedTotal === 0 ? 'verified-empty' : 'complete-inventory',
+        surface: DARWINBOX_JOBS_API_URL, firstParty: true, listingComplete: seen.size === reportedTotal,
+        pagesFetched, reportedTotal, indiaFacetCount: jobs.length, verifiedAt: now(),
+        reason: 'Exact official Locus handoff and complete native Darwinbox listing payload',
+      })
+    }
 
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('Locus verified official careers page changed materially')

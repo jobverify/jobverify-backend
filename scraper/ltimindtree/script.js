@@ -1,275 +1,167 @@
-import path from 'path'
-import { fileURLToPath } from 'url'
+﻿import path from 'node:path'
+import { setTimeout as delay } from 'node:timers/promises'
+import { fileURLToPath } from 'node:url'
 
-import { fetchPageWithRetry } from '../../scraper-support/utils/fetchPageWithRetry.js'
+import {
+  extractSearchSummary,
+  extractSearchResults as parseRipplehireResults,
+  extractJobDetail as parseRipplehireDetail,
+} from '../altimetrik/script.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'ltimindtree'
 export const COMPANY = 'LTIMindtree'
-// The official LTM careers page links to this replacement SuccessFactors host.
-const BASE_URL = 'https://careers.ltm.com'
-const SEARCH_PATH = '/search/?createNewAlert=false&q=&optionsFacetsDD_country=&optionsFacetsDD_location=&locationsearch=India'
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
+const BASE_URL = 'https://ltimindtree.ripplehire.com'
+const TOKEN = 'xviyQvbnyYZdGtozXoNm'
+const CAREER_SOURCE = 'CAREERSITE'
+const DEFAULT_PAGE_SIZE = 10
+const DEFAULT_DETAIL_CONCURRENCY = 6
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
-const decodeHtmlEntities = (value) => String(value ?? '')
-  .replace(/&nbsp;/gi, ' ')
-  .replace(/&amp;/gi, '&')
-  .replace(/&quot;/gi, '"')
-  .replace(/&#39;|&apos;/gi, "'")
-  .replace(/&lt;/gi, '<')
-  .replace(/&gt;/gi, '>')
-  .replace(/&#x2F;/gi, '/')
-  .replace(/&ndash;|&#8211;/gi, '-')
-  .replace(/&mdash;|&#8212;/gi, '-')
-
-const normalizeWhitespace = (value) => {
-  if (value == null) return null
-  const normalized = decodeHtmlEntities(value)
-    .replace(/\u00a0/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-  return normalized || null
-}
-
-const stripTags = (value) => normalizeWhitespace(
-  String(value ?? '')
-    .replace(/<(br|\/p|\/div|\/li|\/h[1-6])\b[^>]*>/gi, '\n')
-    .replace(/<p\b[^>]*>/gi, '\n')
-    .replace(/<li\b[^>]*>/gi, '- ')
-    .replace(/<[^>]+>/g, ' '),
-)
-
-const toAbsoluteUrl = (value) => {
-  try {
-    return new URL(value, BASE_URL).toString()
-  } catch {
-    return null
-  }
-}
-
-const extractFirst = (pattern, value, transform = (match) => match[1]) => {
-  const match = pattern.exec(value)
-  return match ? transform(match) : null
-}
-
-export const buildIndiaSearchUrl = () => new URL(SEARCH_PATH, BASE_URL).toString()
-
-export const extractCity = (location) => {
-  const normalized = normalizeWhitespace(location)
-  if (!normalized) return null
-  return normalized.split(',')[0]?.trim() || null
-}
-
-export const extractJobIdFromUrl = (value) =>
-  extractFirst(/\/(\d+)\/?(?:[#?].*)?$/i, value, (match) => match[1])
-
-export const extractSearchResults = (html) => {
-  const rows = [...String(html).matchAll(/<tr class="data-row">([\s\S]*?)<\/tr>/gi)]
-
-  return rows
-    .map((rowMatch) => {
-      const rowHtml = rowMatch[1]
-      const title = normalizeWhitespace(
-        extractFirst(/<a[^>]*class="jobTitle-link"[^>]*>([\s\S]*?)<\/a>/i, rowHtml),
-      )
-      const relativeLink = normalizeWhitespace(
-        extractFirst(/<a(?=[^>]*class="jobTitle-link")(?=[^>]*href="([^"]+)")[^>]*>/i, rowHtml),
-      )
-      const location = normalizeWhitespace(
-        extractFirst(/<td class="colLocation hidden-phone"[\s\S]*?<span class="jobLocation">\s*([\s\S]*?)\s*<\/span>/i, rowHtml),
-      )
-      const postingDate = normalizeWhitespace(
-        extractFirst(/<span class="jobDate">\s*([\s\S]*?)\s*<\/span>/i, rowHtml),
-      )
-      const sourceUrl = toAbsoluteUrl(relativeLink)
-      const jobId = extractJobIdFromUrl(sourceUrl)
-
-      if (!title || !sourceUrl || !jobId) return null
-
-      return {
-        title,
-        location,
-        city: extractCity(location),
-        jobId,
-        requisitionId: jobId,
-        sourceUrl,
-        postingDate,
-      }
-    })
-    .filter(Boolean)
-}
-
-export const extractResultsSummary = (html) => {
-  const totalResults = extractFirst(
-    /Results\s*<b>[^<]+<\/b>\s*of\s*<b>([\d,]+)<\/b>/i,
-    html,
-    (match) => Number.parseInt(match[1].replace(/,/g, ''), 10),
-  )
-  const currentPage = extractFirst(
-    /Page\s+(\d+)\s+of\s+(\d+)/i,
-    html,
-    (match) => Number.parseInt(match[1], 10),
-  )
-  const totalPages = extractFirst(
-    /Page\s+(\d+)\s+of\s+(\d+)/i,
-    html,
-    (match) => Number.parseInt(match[2], 10),
-  )
-
-  return {
-    totalResults: Number.isInteger(totalResults) ? totalResults : null,
-    currentPage: Number.isInteger(currentPage) ? currentPage : null,
-    totalPages: Number.isInteger(totalPages) ? totalPages : null,
-  }
-}
-
-const extractJobSegments = (html) => {
-  const segmentHtml = extractFirst(/<strong>\s*Job Segment:\s*<\/strong>([\s\S]*?)(?:<\/span>|<\/p>)/i, html)
-  const segmentText = stripTags(segmentHtml)
-  if (!segmentText) return []
-
-  return [...new Set(
-    segmentText
-      .split(/[;,]/)
-      .map((item) => normalizeWhitespace(item))
-      .filter(Boolean),
-  )]
-}
-
-const extractMinimumQualification = (descriptionText) => {
-  const qualificationMatches = [...String(descriptionText ?? '').matchAll(
-    /([^.]*\b(?:bachelor|master|degree|b\.tech|be|b\.e\.|m\.tech|mba)\b[^.]*\.?)/gi,
-  )]
-  const lastMatch = qualificationMatches.at(-1)
-  return normalizeWhitespace(lastMatch?.[1] ?? null)
-}
-
-export const extractJobDetail = (html, listing = {}) => {
-  const descriptionHtml = extractFirst(/<span class="jobdescription">([\s\S]*?)<\/span>/i, html)
-  const descriptionText = normalizeWhitespace(
-    stripTags(descriptionHtml)?.replace(/•/g, ' ') ?? null,
-  )
-  const applyPath = normalizeWhitespace(
-    extractFirst(/class="btn btn-primary btn-large btn-lg apply dialogApplyBtn "\s+href="([^"]+)"/i, html),
-  )
-  const streetAddress = normalizeWhitespace(
-    extractFirst(/itemprop="streetAddress" content="([^"]+)"/i, html),
-  )
-  const addressLocality = normalizeWhitespace(
-    extractFirst(/itemprop="addressLocality" content="([^"]+)"/i, html),
-  )
-  const addressRegion = normalizeWhitespace(
-    extractFirst(/itemprop="addressRegion" content="([^"]+)"/i, html),
-  )
-  const addressCountry = normalizeWhitespace(
-    extractFirst(/itemprop="addressCountry" content="([^"]+)"/i, html),
-  )
-
-  const location = streetAddress || [addressLocality, addressRegion, addressCountry]
-    .filter(Boolean)
-    .join(', ') || listing.location || null
-
-  return {
-    title: listing.title || normalizeWhitespace(
-      extractFirst(/itemprop="title"[^>]*>([\s\S]*?)<\/span>/i, html),
-    ),
-    location,
-    city: extractCity(location),
-    jobId: normalizeWhitespace(
-      extractFirst(/data-careersite-propertyid="customfield2"[^>]*>([\s\S]*?)<\/span>/i, html),
-    ),
-    requisitionId: normalizeWhitespace(
-      extractFirst(/data-careersite-propertyid="customfield2"[^>]*>([\s\S]*?)<\/span>/i, html),
-    ),
-    employmentType: 'Full-time',
-    experienceRequired: normalizeWhitespace(
-      extractFirst(/(\d+\s*(?:\+|-|to)\s*\d+\s+years?[^.]*)/i, descriptionText),
-    ),
-    jobDescription: descriptionText,
-    minimumQualification: extractMinimumQualification(descriptionText),
-    preferredQualification: null,
-    requiredSkills: extractJobSegments(html),
-    postingDate: normalizeWhitespace(
-      extractFirst(/itemprop="datePosted" content="([^"]+)"/i, html),
-    ),
-    closingDate: normalizeWhitespace(
-      extractFirst(/itemprop="validThrough" content="([^"]+)"/i, html),
-    ),
-    applyUrl: toAbsoluteUrl(applyPath),
-    sourceUrl: listing.sourceUrl || null,
-  }
-}
-
-const defaultFetchPage = (url) => fetchPageWithRetry(url, {
-  attempts: 1,
-  headers: {
-    'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: SOURCE,
-  timeoutMs: 15000,
+// The India link on https://www.ltm.com/careers supplies this token and geo filter.
+export const buildIndiaSearchUrl = () => `${BASE_URL}/candidate/?token=${TOKEN}&lang=en&source=${CAREER_SOURCE}#list/geo=India`
+export const buildSearchRequestPayload = (page = 0, pageSize = DEFAULT_PAGE_SIZE) => ({
+  page,
+  search: '*:*',
+  token: TOKEN,
+  source: CAREER_SOURCE,
+  pagesize: pageSize,
+  geo: 'India',
 })
+export const buildDetailUrl = (jobSeq) =>
+  `${BASE_URL}/candidate/?token=${TOKEN}&source=${CAREER_SOURCE}#detail/job/${encodeURIComponent(jobSeq)}`
+export const buildApplyUrl = (jobSeq) =>
+  `${BASE_URL}/candidate/?token=${TOKEN}&source=${CAREER_SOURCE}#apply/job/${encodeURIComponent(jobSeq)}`
+
+const searchUrl = `${BASE_URL}/candidate/candidatejobsearch`
+const detailUrl = (jobSeq) => {
+  const params = new URLSearchParams({ token: TOKEN, jobSeq, source: CAREER_SOURCE, lang: 'en' })
+  return `${BASE_URL}/candidate/candidatejobdetail?${params}`
+}
+
+const defaultFetchText = async (url, options = {}) => {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        method: options.method || 'GET',
+        headers: {
+          'User-Agent': USER_AGENT,
+          Accept: 'application/xml,text/xml,*/*',
+          ...(options.headers || {}),
+        },
+        body: options.body,
+        signal: AbortSignal.timeout(20000),
+      })
+      if (!response.ok) {
+        const error = new Error(`HTTP ${response.status} for ${url}`)
+        error.status = response.status
+        throw error
+      }
+      return response.text()
+    } catch (error) {
+      if (attempt === 3 || (error.status && error.status !== 429 && error.status < 500)) throw error
+      await delay(1000 * 2 ** attempt)
+    }
+  }
+}
+
+const parseIndiaPage = (xml, page, pageSize, expectedTotal) => {
+  if (!/^\s*<JobPageVO>/.test(xml)) throw new Error('LTIMindtree invalid India listing response')
+  const summary = extractSearchSummary(xml)
+  const total = summary.totalJobCount
+  if (!Number.isInteger(total) || total < 0 || summary.startJobIndex !== page * pageSize
+    || summary.pageSize !== pageSize || (expectedTotal != null && total !== expectedTotal)) {
+    throw new Error('LTIMindtree incomplete or changed India listing count')
+  }
+  const blocks = [...xml.matchAll(/<jobVoList>\s*<jobSeq>[\s\S]*?<\/jobVoList>/gi)].map(match => match[0])
+  const expectedPageCount = Math.min(pageSize, total - page * pageSize)
+  if (blocks.length !== expectedPageCount || blocks.some(block => !/<jobLocation>\s*India\s*<\/jobLocation>|<jobLocation\s*\/>/i.test(block))) {
+    throw new Error('LTIMindtree incomplete or non-India listing page')
+  }
+  const listings = parseRipplehireResults(xml)
+  if (listings.length !== blocks.length || new Set(listings.map(job => job.jobId)).size !== listings.length) {
+    throw new Error('LTIMindtree incomplete or duplicate listing page')
+  }
+  return { total, listings: listings.map(job => ({
+    ...job,
+    city: /^select location$/i.test(job.city || '') ? null : job.city,
+    location: /^select location$/i.test(job.city || '') ? 'India' : job.location,
+    sourceUrl: buildDetailUrl(job.jobId),
+    applyUrl: buildApplyUrl(job.jobId),
+  })) }
+}
 
 export const createLtimindtreeScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const listingPage = await fetchPage(buildIndiaSearchUrl())
-    if (listingPage.status !== 200) {
-      throw new Error(`HTTP ${listingPage.status} for ${buildIndiaSearchUrl()}`)
+  async run({ fetchText = defaultFetchText, pageSize = DEFAULT_PAGE_SIZE, detailConcurrency = DEFAULT_DETAIL_CONCURRENCY } = {}) {
+    if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) throw new Error('Invalid LTIMindtree page size')
+    if (!Number.isInteger(detailConcurrency) || detailConcurrency < 1 || detailConcurrency > 10) {
+      throw new Error('Invalid LTIMindtree detail concurrency')
     }
 
-    const listings = extractSearchResults(listingPage.html)
-    const summary = extractResultsSummary(listingPage.html)
-    const rawRows = [...String(listingPage.html).matchAll(/<tr class="data-row">/gi)].length
-    if (!Number.isInteger(summary.totalResults) || summary.currentPage !== 1 || summary.totalPages !== 1
-      || listings.length !== summary.totalResults || rawRows !== listings.length
-      || new Set(listings.map(row => row.jobId)).size !== listings.length) {
-      throw new Error('LTIMindtree incomplete or invalid India listing snapshot')
-    }
-    if (listings.some(row => !/(?:,\s*)(?:IN|India)\s*$/i.test(row.location || ''))) {
-      throw new Error('LTIMindtree invalid country in the India listing snapshot')
-    }
-    const jobs = []
-    const seenJobIds = new Set()
-
-    for (const listing of listings) {
-      if (seenJobIds.has(listing.jobId)) continue
-      seenJobIds.add(listing.jobId)
-
-      const detailPage = await fetchPage(listing.sourceUrl)
-      if (detailPage.status !== 200) {
-        throw new Error(`HTTP ${detailPage.status} for ${listing.sourceUrl}`)
-      }
-
-      const detail = extractJobDetail(detailPage.html, listing)
-      if (!detail.jobDescription) throw new Error('LTIMindtree incomplete job detail snapshot')
-
-      jobs.push({
-        jobId: detail.jobId || listing.jobId,
-        requisitionId: detail.requisitionId || listing.requisitionId,
-        title: detail.title || listing.title,
-        company: COMPANY,
-        country: 'India',
-        department: null,
-        location: detail.location || listing.location,
-        city: detail.city || listing.city,
-        link: detail.applyUrl || listing.sourceUrl,
-        applyUrl: detail.applyUrl || listing.sourceUrl,
-        sourceUrl: detail.sourceUrl || listing.sourceUrl,
-        source: SOURCE,
-        employmentType: detail.employmentType,
-        experienceRequired: detail.experienceRequired,
-        jobDescription: detail.jobDescription,
-        minimumQualification: detail.minimumQualification,
-        preferredQualification: detail.preferredQualification,
-        requiredSkills: detail.requiredSkills,
-        postingDate: detail.postingDate || listing.postingDate,
-        closingDate: detail.closingDate,
-        scrapedAt: new Date().toISOString(),
+    const listings = []
+    const seenIds = new Set()
+    let expectedTotal = null
+    for (let page = 0; expectedTotal === null || page * pageSize < expectedTotal; page += 1) {
+      const body = new URLSearchParams({
+        careerSiteUrlParams: JSON.stringify(buildSearchRequestPayload(page, pageSize)),
+        lang: 'en',
       })
+      const xml = await fetchText(searchUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+        body,
+      })
+      const result = parseIndiaPage(xml, page, pageSize, expectedTotal)
+      expectedTotal = result.total
+      for (const listing of result.listings) {
+        if (seenIds.has(listing.jobId)) throw new Error(`LTIMindtree duplicate job ${listing.jobId} across pages`)
+        seenIds.add(listing.jobId)
+        listings.push(listing)
+      }
     }
+    if (listings.length !== expectedTotal) throw new Error('LTIMindtree incomplete India listing snapshot')
 
+    const jobs = new Array(listings.length)
+    let nextIndex = 0
+    const worker = async () => {
+      while (nextIndex < listings.length) {
+        const index = nextIndex++
+        const listing = listings[index]
+        const xml = await fetchText(detailUrl(listing.jobId))
+        if (!/<companyCd>\s*LTIMINDIA\s*<\/companyCd>/i.test(xml)) {
+          throw new Error(`LTIMindtree unverified India company for job ${listing.jobId}`)
+        }
+        const detail = parseRipplehireDetail(xml, listing)
+        if (!detail.jobDescription || detail.jobId !== listing.jobId) {
+          throw new Error(`LTIMindtree incomplete job detail ${listing.jobId}`)
+        }
+        jobs[index] = {
+          jobId: listing.jobId,
+          requisitionId: detail.requisitionId || listing.requisitionId,
+          title: detail.title || listing.title,
+          company: COMPANY,
+          country: 'India',
+          department: detail.department || listing.department,
+          location: detail.location || listing.location,
+          city: /^select location$/i.test(detail.city || '') ? null : detail.city || listing.city,
+          link: listing.applyUrl,
+          applyUrl: listing.applyUrl,
+          sourceUrl: listing.sourceUrl,
+          source: SOURCE,
+          employmentType: detail.employmentType,
+          experienceRequired: detail.experienceRequired,
+          jobDescription: detail.jobDescription,
+          minimumQualification: detail.minimumQualification,
+          preferredQualification: detail.preferredQualification,
+          requiredSkills: detail.requiredSkills,
+          postingDate: detail.postingDate || listing.postingDate,
+          closingDate: detail.closingDate,
+          scrapedAt: new Date().toISOString(),
+        }
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(detailConcurrency, listings.length) }, worker))
     return jobs
   },
 })
@@ -282,14 +174,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   console.log(`Running LTIMindtree scraper standalone (${isDryRun ? 'dry-run' : 'live'})...`)
   const jobs = await run()
   console.log(`\nTotal India jobs scraped: ${jobs.length}`)
-  const cities = [...new Set(jobs.map((job) => job.city).filter(Boolean))].sort()
-  console.log(`Cities found: ${cities.join(', ')}`)
   if (isDryRun) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
     console.log(`Dry run - wrote ${jobs.length} jobs to jobs.json`)
   } else {
     const result = await saveToDB(jobs, SOURCE)
     console.log('DB result:', result)
-    process.exit(0)
   }
 }

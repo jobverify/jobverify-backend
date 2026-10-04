@@ -1,0 +1,1240 @@
+[
+  {
+    "jobId": "R37415",
+    "title": "Software Development Engineer 3",
+    "company": "Amadeus",
+    "department": null,
+    "location": "Bangalore",
+    "city": "Bangalore",
+    "locations": [
+      "Bangalore"
+    ],
+    "link": "https://amadeus.wd502.myworkdayjobs.com/jobs/job/Bangalore/Software-Development-Engineer-3_R37415",
+    "source": "amadeus",
+    "postedAt": "2026-10-01T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Job Title Software Development Engineer 3 Job Summary We are seeking an experienced Frontend Developer with strong expertise in Angular (Version 17 and above) and Ionic Framework to build scalable, high-performance web and mobile applications. The ideal candidate will have hands-on experience in modern frontend technologies, responsive UI development, and mobile application development using Ionic. You will collaborate with product managers, UX designers, backend developers, and QA teams to deliver innovative digital solutions. Key Responsibilities Develop and maintain responsive web and hybrid mobile applications using Angular 17+ and Ionic Framework. Design and implement reusable, modular, and scalable frontend components. Translate UI/UX designs into high-quality, responsive, and user-friendly interfaces. Develop cross-platform mobile applications for Android and i OS using Ionic. Ensure application performance, security, reliability, and scalability. Integrate frontend applications with RESTful APIs and backend services. Optimize applications for maximum speed and responsiveness. Conduct code reviews and ensure adherence to coding standards and best practices. Troubleshoot and resolve frontend and mobile application issues. Collaborate with cross-functional teams in Agile/Scrum environments. Stay updated with emerging frontend and mobile technologies and recommend improvements. Technical Skills 6–9 years of frontend development experience. Strong experience in Angular (Version 17 and above). Hands-on experience with Ionic Framework for hybrid mobile application development. Excellent knowledge of: HTML5CSS3Java Script (ES6+)Type Script Experience with responsive web design and mobile-first development. Strong understanding of component-based architecture and state management. Experience with REST APIs and asynchronous programming. Familiarity with Git and version control systems. Knowledge of frontend testing frameworks and debugging tools. Diversity &amp; Inclusion Amadeus aspires to be a leader in Diversity and Inclusion in the tech industry, enabling every employee to reach their full potential by fostering a culture of belonging and fair treatment, attracting the best talent from all backgrounds, and as a role model for an inclusive employee experience. Amadeus is an equal opportunity employer and committed to an accessible recruitment process. All qualified applicants will receive consideration for employment without regard to gender, race, ethnicity, sexual orientation, age, beliefs, disability or any other characteristics protected by law. Be aware of recruitment scams Amadeus Group never charges fees, requests payment, or asks for financial information during recruitment. All legitimate opportunities are communicated solely through official Amadeus channels, including our careers website. Any payment request or outreach via unofficial platforms (e.g., Whats App, Telegram) should be treated as fraudulent. We are Amadeus and we make travel work better for everyone, everywhere. As part of our global team of 20,000+ passionate team members across 100+ locations, you’ll join a community united by a love for travel and technology. We’re not just shaping the future of travel; we’re using it as a force for good, enriching lives and supporting our planet. Here, you’ll be free to innovate and grow with driven colleagues. Join us on a journey where you will help us bring the world closer!",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "6-9 years",
+    "publicExperienceChecked": true,
+    "requisitionId": "R37415",
+    "scrapedAt": "2026-10-03T19:22:00.156Z",
+    "country": "India",
+    "companyCareerPage": "https://amadeus.wd502.myworkdayjobs.com/jobs",
+    "companyDomain": "amadeus.wd502.myworkdayjobs.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://amadeus.wd502.myworkdayjobs.com/jobs/job/Bangalore/Software-Development-Engineer-3_R37415",
+    "sourceUrl": "https://amadeus.wd502.myworkdayjobs.com/jobs/job/Bangalore/Software-Development-Engineer-3_R37415",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "95e582786035d4586415f62ef5a42989f7e7e34f14207f29445b626d917abecb",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "full_time",
+          "probability": 0.4648
+        },
+        "experience": {
+          "label": "fresher_eligible",
+          "probability": 0.8476
+        },
+        "seniority": {
+          "label": "internship",
+          "probability": 0.8697
+        },
+        "leadership": {
+          "label": "lead",
+          "probability": 0.6045
+        }
+      },
+      "complete": true,
+      "windows": 1,
+      "evidenceContext": "Job Title Software Development Engineer 3 Job Summary We are seeking an experienced Frontend Developer with strong expertise in Angular (Version 17 and above) a",
+      "classifiedAt": "2026-10-03T19:22:03.341Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": null,
+        "seniority": "Unknown",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          6,
+          7,
+          8,
+          9
+        ],
+        "experienceBucket": "5-8",
+        "experienceProfile": {
+          "minimumYears": 6,
+          "maximumYears": 9,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "6-9 years",
+          "rawText": null,
+          "experienceBucket": "5-8"
+        },
+        "experienceBasis": "employer_requirement",
+        "experienceRequired": "6-9 years",
+        "employerExperienceProfile": {
+          "minimumYears": 6,
+          "maximumYears": 9,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "6-9 years",
+          "rawText": null,
+          "experienceBucket": "5-8"
+        },
+        "policyEvidence": "Job Title Software Development Engineer 3 Job Summary We are seeking an experienced Frontend Developer with strong expertise in Angular (Version 17 and above) a"
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Mid Level",
+        "seniority": "Mid Level",
+        "experienceYears": [
+          6,
+          7,
+          8,
+          9
+        ],
+        "experienceBucket": "5-8",
+        "experienceProfile": {
+          "minimumYears": 6,
+          "maximumYears": 9,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "6-9 years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "a1847b7782f9dc704962c4167620438aacb5f6cadd84f6ab58f06f55d92d5fbc",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "e43c51beafe432f0edcae28ef89058804c26311dfca53441b84d75ae9eb830ed",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-03T19:22:03.341Z",
+        "reused": true
+      }
+    },
+    "description": "Job Title Software Development Engineer 3 Job Summary We are seeking an experienced Frontend Developer with strong expertise in Angular (Version 17 and above) and Ionic Framework to build scalable, high-performance web and mobile applications. The ideal candidate will have hands-on experience in modern frontend technologies, responsive UI development, and mobile application development using Ionic. You will collaborate with product managers, UX designers, backend developers, and QA teams to deliver innovative digital solutions. Key Responsibilities Develop and maintain responsive web and hybrid mobile applications using Angular 17+ and Ionic Framework. Design and implement reusable, modular, and scalable frontend components. Translate UI/UX designs into high-quality, responsive, and user-friendly interfaces. Develop cross-platform mobile applications for Android and iOS using Ionic. Ensure application performance, security, reliability, and scalability. Integrate frontend applications with RESTful APIs and backend services. Optimize applications for maximum speed and responsiveness. Conduct code reviews and ensure adherence to coding standards and best practices. Troubleshoot and resolve frontend and mobile application issues. Collaborate with cross-functional teams in Agile/Scrum environments. Stay updated with emerging frontend and mobile technologies and recommend improvements. Technical Skills 6–9 years of frontend development experience. Strong experience in Angular (Version 17 and above). Hands-on experience with Ionic Framework for hybrid mobile application development. Excellent knowledge of: HTML5CSS3JavaScript (ES6+)TypeScript Experience with responsive web design and mobile-first development. Strong understanding of component-based architecture and state management. Experience with REST APIs and asynchronous programming. Familiarity with Git and version control systems. Knowledge of frontend testing frameworks and debugging tools. Diversity &amp; Inclusion Amadeus aspires to be a leader in Diversity and Inclusion in the tech industry, enabling every employee to reach their full potential by fostering a culture of belonging and fair treatment, attracting the best talent from all backgrounds, and as a role model for an inclusive employee experience.  Amadeus is an equal opportunity employer and committed to an accessible recruitment process. All qualified applicants will receive consideration for employment without regard to gender, race, ethnicity, sexual orientation, age, beliefs, disability or any other characteristics protected by law. Be aware of recruitment scams Amadeus Group never charges fees, requests payment, or asks for financial information during recruitment. All legitimate opportunities are communicated solely through official Amadeus channels, including our careers website. Any payment request or outreach via unofficial platforms (e.g., WhatsApp, Telegram) should be treated as fraudulent. We are Amadeus and we make travel work better for everyone, everywhere. As part of our global team of 20,000+ passionate team members across 100+ locations, you’ll join a community united by a love for travel and technology. We’re not just shaping the future of travel; we’re using it as a force for good, enriching lives and supporting our planet. Here, you’ll be free to innovate and grow with driven colleagues. Join us on a journey where you will help us bring the world closer!",
+    "sourceDescription": "Job Title Software Development Engineer 3 Job Summary We are seeking an experienced Frontend Developer with strong expertise in Angular (Version 17 and above) and Ionic Framework to build scalable, high-performance web and mobile applications. The ideal candidate will have hands-on experience in modern frontend technologies, responsive UI development, and mobile application development using Ionic. You will collaborate with product managers, UX designers, backend developers, and QA teams to deliver innovative digital solutions. Key Responsibilities Develop and maintain responsive web and hybrid mobile applications using Angular 17+ and Ionic Framework. Design and implement reusable, modular, and scalable frontend components. Translate UI/UX designs into high-quality, responsive, and user-friendly interfaces. Develop cross-platform mobile applications for Android and iOS using Ionic. Ensure application performance, security, reliability, and scalability. Integrate frontend applications with RESTful APIs and backend services. Optimize applications for maximum speed and responsiveness. Conduct code reviews and ensure adherence to coding standards and best practices. Troubleshoot and resolve frontend and mobile application issues. Collaborate with cross-functional teams in Agile/Scrum environments. Stay updated with emerging frontend and mobile technologies and recommend improvements. Technical Skills 6–9 years of frontend development experience. Strong experience in Angular (Version 17 and above). Hands-on experience with Ionic Framework for hybrid mobile application development. Excellent knowledge of: HTML5CSS3JavaScript (ES6+)TypeScript Experience with responsive web design and mobile-first development. Strong understanding of component-based architecture and state management. Experience with REST APIs and asynchronous programming. Familiarity with Git and version control systems. Knowledge of frontend testing frameworks and debugging tools. Diversity &amp; Inclusion Amadeus aspires to be a leader in Diversity and Inclusion in the tech industry, enabling every employee to reach their full potential by fostering a culture of belonging and fair treatment, attracting the best talent from all backgrounds, and as a role model for an inclusive employee experience.  Amadeus is an equal opportunity employer and committed to an accessible recruitment process. All qualified applicants will receive consideration for employment without regard to gender, race, ethnicity, sexual orientation, age, beliefs, disability or any other characteristics protected by law. Be aware of recruitment scams Amadeus Group never charges fees, requests payment, or asks for financial information during recruitment. All legitimate opportunities are communicated solely through official Amadeus channels, including our careers website. Any payment request or outreach via unofficial platforms (e.g., WhatsApp, Telegram) should be treated as fraudulent. We are Amadeus and we make travel work better for everyone, everywhere. As part of our global team of 20,000+ passionate team members across 100+ locations, you’ll join a community united by a love for travel and technology. We’re not just shaping the future of travel; we’re using it as a force for good, enriching lives and supporting our planet. Here, you’ll be free to innovate and grow with driven colleagues. Join us on a journey where you will help us bring the world closer!",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Software Development Engineer 3",
+    "normalizedTitle": "Software Development Engineer 3",
+    "jobCategory": "Software Development Engineer 3",
+    "engineeringDomain": "Verification",
+    "employmentType": "Full-time",
+    "experienceLevel": null,
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-10-01T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-03T19:22:00.156Z",
+    "skillIds": [
+      "angular",
+      "typescript"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "angular",
+        "canonicalName": "Angular",
+        "category": "Frameworks & Libraries",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Angular"
+      },
+      {
+        "skillId": "typescript",
+        "canonicalName": "TypeScript",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "TypeScript"
+      }
+    ],
+    "experienceBucket": "5-8",
+    "experienceProfile": {
+      "minimumYears": 6,
+      "maximumYears": 9,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "6-9 years",
+      "rawText": null,
+      "experienceBucket": "5-8"
+    },
+    "experienceYears": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "seniority": "Unknown",
+    "primaryRoleDomain": "Frontend Engineering",
+    "secondaryRoleDomains": [
+      "Mobile Development"
+    ],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-03T21:23:58.863Z",
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "employer_requirement",
+    "employerExperienceProfile": {
+      "minimumYears": 6,
+      "maximumYears": 9,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "6-9 years",
+      "rawText": null,
+      "experienceBucket": "5-8"
+    },
+    "policyEvidence": "Job Title Software Development Engineer 3 Job Summary We are seeking an experienced Frontend Developer with strong expertise in Angular (Version 17 and above) a"
+  },
+  {
+    "jobId": null,
+    "title": "Lead Data Engineer",
+    "company": "Amadeus",
+    "department": null,
+    "location": "Bangalore",
+    "city": "Bangalore",
+    "locations": [
+      "Jeddah",
+      "Bangalore"
+    ],
+    "link": "https://amadeus.wd502.myworkdayjobs.com/jobs/job/Jeddah/Senior-Data-Engineering-Expert_R35700-1",
+    "source": "amadeus",
+    "postedAt": "2026-09-30T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Job Title Lead Data Engineer We are seeking a highly experienced Senior Data Engineering Expert with deep expertise in the Airline IT domain to lead the design, development, modernization, and governance of enterprise-scale data platforms and data integration ecosystems. The ideal candidate will possess extensive experience in building and managing batch and real-time data pipelines, large-scale ETL frameworks, cloud-based data platforms, and enterprise data management solutions supporting airline operations, customer experience, revenue management, commercial analytics, and regulatory reporting. The role requires technical leadership in modern data engineering technologies including Databricks, Apache Spark (Scala), Delta Lake, Data Warehousing, Database Management Systems, Master Data Management (MDM), and enterprise data integration platforms. Key Responsibilities Enterprise Data Platform Architecture Define and implement enterprise-wide data architecture strategies supporting commercial, digital, customer, and operational business functions. Design scalable, resilient, and secure data platforms that enable analytics, reporting, machine learning, and operational decision-making. Lead the modernization of legacy data environments toward cloud-native Lakehouse architectures and enterprise data ecosystems. Establish data engineering standards, architectural principles, governance frameworks, and best practices across the organization. Airline Business Data Enablement Design and implement scalable enterprise data architectures supporting Airline Commercial and Digital functions, Reservations and Passenger Service Systems (PSS) Revenue Management and Pricing Loyalty Programs Customer Relationship Management (CRM) Customer Data Platforms (CDP) Digital Engagement and Mobile Applications Customer Analytics and Personalization Commercial Performance and Regulatory Reporting Data Engineering &amp; Integration Architect and develop scalable data ingestion, transformation, and serving layers supporting both batch and real-time processing requirements. Design reusable and metadata-driven ETL/ELT frameworks capable of handling large volumes of transactional, operational, and customer data. Establish enterprise integration patterns leveraging APIs, event-driven architectures, messaging technologies, and hybrid connectivity models. Implement data quality controls, reconciliation mechanisms, lineage tracking, metadata management, and observability capabilities. Drive automation of deployment, orchestration, monitoring, recovery, and operational support processes. Real-Time Data &amp; Analytics Design and implement streaming architectures that provide near real-time operational visibility and business insights. Enable event-driven data processing capabilities supporting customer engagement, disruption management, operational performance monitoring, and decision support. Ensure scalability, reliability, and performance of real-time data processing platforms. Data Management &amp; Governance Establish enterprise Master Data Management (MDM) strategies and governance frameworks. Define and govern master data domains including customers, flights, airports, aircraft, crew, and enterprise reference data. Drive data stewardship, golden record management, metadata governance, and enterprise data quality initiatives. Ensure compliance with security, privacy, regulatory, and corporate governance requirements. Leadership &amp; Stakeholder Management Provide technical leadership and direction across data engineering and architecture teams. Mentor engineers, architects, and technical leads while fostering a culture of engineering excellence. Collaborate closely with business stakeholders, product owners, enterprise architects, airline operations teams, and executive leadership. Lead strategic modernization, cloud transformation, and enterprise data platform initiatives. Required Qualifications &amp; Technical Expertise Bachelor's or Master's degree in Computer Science, Information Technology, Engineering, or a related discipline, Experience in Data Engineering, Data Architecture, Data Platform Engineering, or Enterprise Data Management roles. Proven experience delivering enterprise-scale data platforms within complex and highly integrated environments, preferably in the airline, aviation, travel, or transportation industry, Extensive expertise in designing and implementing modern cloud-based data architectures using Microsoft Azure and Databricks Lakehouse technologies, Strong hands-on experience building scalable data engineering solutions leveraging Apache Spark, Scala, Spark SQL, Delta Lake, and modern orchestration frameworks to support both batch and real-time workloads, Experience with Informatica data integration, Demonstrated success in developing enterprise-grade ETL/ELT frameworks, high-performance data pipelines, and large-scale data processing platforms capable of handling operational, commercial, and customer data domains, Deep understanding of enterprise data integration patterns, including API-based integrations, event-driven architectures, messaging technologies, and hybrid integration models connecting operational systems, cloud platforms, and analytical environments, Significant experience in enterprise data warehousing, analytical data modeling, database design, SQL optimization, performance tuning, and large-scale data management across structured and semi-structured datasets. Practical experience establishing Master Data Management (MDM) capabilities, metadata management frameworks, data stewardship processes, golden record management, and enterprise data governance practices, Deep understanding of data quality, lineage, observability, security, privacy, compliance, and governance requirements associated with enterprise data platforms, Proven ability to define architecture standards, lead engineering teams, mentor technical professionals, and drive enterprise-wide modernization and cloud transformation initiatives. Preferred Qualifications Experience working with Passenger Service Systems (PSS), Revenue Management, Loyalty Platforms, CRM, CDP, Digital Commerce, and Customer Experience solutions within the airline industry. Experience supporting advanced analytics, artificial intelligence, machine learning, and personalization initiatives through modern data platforms. Exposure to Data Mesh, Data Fabric, or domain-oriented data architecture approaches. Experience operating within large-scale enterprise transformation programs. Relevant certifications in Microsoft Azure, Databricks, Data Engineering, Cloud Architecture, or Enterprise Data Management. What can we offer you? 🎯 A critical mission and purpose\n- At Amadeus, you'll power the future of travel with a critical mission and extraordinary purpose. 🌎 A truly global DNA\n- Everything at Amadeus is global, from our people to our business, which translates into our footprint, processes, and culture. 🎓 Great opportunities to learn\n- Learning happens all the time and in many ways at Amadeus, from on-the-job training to formal activities, and daily interactions. 🤗 A caring environment – Amadeus fosters a caring environment that supports both professional growth and personal well-being. 💰 A complete rewards offer\n- Amadeus provides attractive compensation packages, including salary, bonus, caregiving and health benefits. 🌟 A flexible working model\n- Embrace our flexible working model, enabling you to excel wherever and however you work best. 🌈 A diverse and inclusive community – We are committed to enabling each employee to reach their full potential by fostering a culture of belonging and fair treatment. 📈 A Reliable Company\n- Trust and reliability are fundamental to shaping our relationships with customers, partners, and employees. #LI-EMEA Diversity &amp; Inclusion Amadeus aspires to be a leader in Diversity and Inclusion in the tech industry, enabling every employee to reach their full potential by fostering a culture of belonging and fair treatment, attracting the best talent from all backgrounds, and as a role model for an inclusive employee experience. Amadeus is an equal opportunity employer and committed to an accessible recruitment process. All qualified applicants will receive consideration for employment without regard to gender, race, ethnicity, sexual orientation, age, beliefs, disability or any other characteristics protected by law. Be aware of recruitment scams Amadeus Group never charges fees, requests payment, or asks for financial information during recruitment. All legitimate opportunities are communicated solely through official Amadeus channels, including our careers website. Any payment request or outreach via unofficial platforms (e.g., Whats App, Telegram) should be treated as fraudulent. We are Amadeus and we make travel work better for everyone, everywhere. As part of our global team of 20,000+ passionate team members across 100+ locations, you’ll join a community united by a love for travel and technology. We’re not just shaping the future of travel; we’re using it as a force for good, enriching lives and supporting our planet. Here, you’ll be free to innovate and grow with driven colleagues. Join us on a journey where you will help us bring the world closer!",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "1-15 years (inferred)",
+    "publicExperienceChecked": true,
+    "requisitionId": "R35700",
+    "scrapedAt": "2026-10-03T19:22:00.788Z",
+    "country": "India",
+    "companyCareerPage": "https://amadeus.wd502.myworkdayjobs.com/jobs",
+    "companyDomain": "amadeus.wd502.myworkdayjobs.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://amadeus.wd502.myworkdayjobs.com/jobs/job/Jeddah/Senior-Data-Engineering-Expert_R35700-1",
+    "sourceUrl": "https://amadeus.wd502.myworkdayjobs.com/jobs/job/Jeddah/Senior-Data-Engineering-Expert_R35700-1",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "c32b50e4fb0ef6d1693ff4fd278af8671cbbcd90878fcdb2407565601bdd5b91",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "internship",
+          "probability": 0.6069
+        },
+        "experience": {
+          "label": "fresher_eligible",
+          "probability": 0.4962
+        },
+        "seniority": {
+          "label": "leadership",
+          "probability": 0.9936
+        },
+        "leadership": {
+          "label": "lead",
+          "probability": 0.9828
+        }
+      },
+      "complete": true,
+      "windows": 3,
+      "evidenceContext": "Job Title Lead Data Engineer We are seeking a highly experienced Senior Data Engineering Expert with deep expertise in the Airline IT domain to lead the design,",
+      "classifiedAt": "2026-10-03T19:22:03.341Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": null,
+        "seniority": "Unknown",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "experienceBucket": "0-1",
+        "experienceProfile": {
+          "minimumYears": 1,
+          "maximumYears": 15,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": false,
+          "confidence": "medium",
+          "inferenceMethod": "experienced_role_default",
+          "evidence": "Lead Data Engineer",
+          "rawText": null
+        },
+        "experienceBasis": "experienced_role_default",
+        "experienceRequired": "1-15 years (inferred)",
+        "employerExperienceProfile": {
+          "minimumYears": null,
+          "maximumYears": null,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": false,
+          "confidence": "low",
+          "evidence": null,
+          "rawText": null
+        },
+        "policyEvidence": "Lead Data Engineer"
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Senior Level",
+        "seniority": "Lead",
+        "experienceYears": [],
+        "experienceBucket": "unspecified",
+        "experienceProfile": {
+          "minimumYears": null,
+          "maximumYears": null,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": false,
+          "confidence": "low"
+        },
+        "experienceRequired": null,
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "38382cf3ef0ec113f36eed196307cd9e19c1d9c0df9f15d6050c45d50d5b81b8",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "e43c51beafe432f0edcae28ef89058804c26311dfca53441b84d75ae9eb830ed",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-03T19:22:03.341Z",
+        "reused": true
+      }
+    },
+    "description": "Job Title Lead Data Engineer We are seeking a highly experienced Senior Data Engineering Expert with deep expertise in the Airline IT domain to lead the design, development, modernization, and governance of enterprise-scale data platforms and data integration ecosystems. The ideal candidate will possess extensive experience in building and managing batch and real-time data pipelines, large-scale ETL frameworks, cloud-based data platforms, and enterprise data management solutions supporting airline operations, customer experience, revenue management, commercial analytics, and regulatory reporting. The role requires technical leadership in modern data engineering technologies including Databricks, Apache Spark (Scala), Delta Lake, Data Warehousing, Database Management Systems, Master Data Management (MDM), and enterprise data integration platforms. Key Responsibilities Enterprise Data Platform Architecture Define and implement enterprise-wide data architecture strategies supporting commercial, digital, customer, and operational business functions. Design scalable, resilient, and secure data platforms that enable analytics, reporting, machine learning, and operational decision-making. Lead the modernization of legacy data environments toward cloud-native Lakehouse architectures and enterprise data ecosystems. Establish data engineering standards, architectural principles, governance frameworks, and best practices across the organization. Airline Business Data Enablement Design and implement scalable enterprise data architectures supporting Airline Commercial and Digital functions, Reservations and Passenger Service Systems (PSS) Revenue Management and Pricing Loyalty Programs Customer Relationship Management (CRM) Customer Data Platforms (CDP) Digital Engagement and Mobile Applications Customer Analytics and Personalization Commercial Performance and Regulatory Reporting Data Engineering &amp; Integration Architect and develop scalable data ingestion, transformation, and serving layers supporting both batch and real-time processing requirements. Design reusable and metadata-driven ETL/ELT frameworks capable of handling large volumes of transactional, operational, and customer data. Establish enterprise integration patterns leveraging APIs, event-driven architectures, messaging technologies, and hybrid connectivity models. Implement data quality controls, reconciliation mechanisms, lineage tracking, metadata management, and observability capabilities. Drive automation of deployment, orchestration, monitoring, recovery, and operational support processes. Real-Time Data &amp; Analytics Design and implement streaming architectures that provide near real-time operational visibility and business insights. Enable event-driven data processing capabilities supporting customer engagement, disruption management, operational performance monitoring, and decision support. Ensure scalability, reliability, and performance of real-time data processing platforms. Data Management &amp; Governance Establish enterprise Master Data Management (MDM) strategies and governance frameworks. Define and govern master data domains including customers, flights, airports, aircraft, crew, and enterprise reference data. Drive data stewardship, golden record management, metadata governance, and enterprise data quality initiatives. Ensure compliance with security, privacy, regulatory, and corporate governance requirements. Leadership &amp; Stakeholder Management Provide technical leadership and direction across data engineering and architecture teams. Mentor engineers, architects, and technical leads while fostering a culture of engineering excellence. Collaborate closely with business stakeholders, product owners, enterprise architects, airline operations teams, and executive leadership. Lead strategic modernization, cloud transformation, and enterprise data platform initiatives. Required Qualifications &amp; Technical Expertise Bachelor's or Master's degree in Computer Science, Information Technology, Engineering, or a related discipline, Experience in Data Engineering, Data Architecture, Data Platform Engineering, or Enterprise Data Management roles. Proven experience delivering enterprise-scale data platforms within complex and highly integrated environments, preferably in the airline, aviation, travel, or transportation industry, Extensive expertise in designing and implementing modern cloud-based data architectures using Microsoft Azure and Databricks Lakehouse technologies, Strong hands-on experience building scalable data engineering solutions leveraging Apache Spark, Scala, Spark SQL, Delta Lake, and modern orchestration frameworks to support both batch and real-time workloads, Experience with Informatica data integration, Demonstrated success in developing enterprise-grade ETL/ELT frameworks, high-performance data pipelines, and large-scale data processing platforms capable of handling operational, commercial, and customer data domains, Deep understanding of enterprise data integration patterns, including API-based integrations, event-driven architectures, messaging technologies, and hybrid integration models connecting operational systems, cloud platforms, and analytical environments, Significant experience in enterprise data warehousing, analytical data modeling, database design, SQL optimization, performance tuning, and large-scale data management across structured and semi-structured datasets. Practical experience establishing Master Data Management (MDM) capabilities, metadata management frameworks, data stewardship processes, golden record management, and enterprise data governance practices, Deep understanding of data quality, lineage, observability, security, privacy, compliance, and governance requirements associated with enterprise data platforms, Proven ability to define architecture standards, lead engineering teams, mentor technical professionals, and drive enterprise-wide modernization and cloud transformation initiatives. Preferred Qualifications Experience working with Passenger Service Systems (PSS), Revenue Management, Loyalty Platforms, CRM, CDP, Digital Commerce, and Customer Experience solutions within the airline industry. Experience supporting advanced analytics, artificial intelligence, machine learning, and personalization initiatives through modern data platforms. Exposure to Data Mesh, Data Fabric, or domain-oriented data architecture approaches. Experience operating within large-scale enterprise transformation programs. Relevant certifications in Microsoft Azure, Databricks, Data Engineering, Cloud Architecture, or Enterprise Data Management. What can we offer you? 🎯 A critical mission and purpose - At Amadeus, you'll power the future of travel with a critical mission and extraordinary purpose. 🌎 A truly global DNA - Everything at Amadeus is global, from our people to our business, which translates into our footprint, processes, and culture. 🎓 Great opportunities to learn - Learning happens all the time and in many ways at Amadeus, from on-the-job training to formal activities, and daily interactions. 🤗 A caring environment – Amadeus fosters a caring environment that supports both professional growth and personal well-being. 💰 A complete rewards offer - Amadeus provides attractive compensation packages, including salary, bonus, caregiving and health benefits. 🌟 A flexible working model - Embrace our flexible working model, enabling you to excel wherever and however you work best. 🌈 A diverse and inclusive community – We are committed to enabling each employee to reach their full potential by fostering a culture of belonging and fair treatment. 📈 A Reliable Company - Trust and reliability are fundamental to shaping our relationships with customers, partners, and employees. #LI-EMEA Diversity &amp; Inclusion Amadeus aspires to be a leader in Diversity and Inclusion in the tech industry, enabling every employee to reach their full potential by fostering a culture of belonging and fair treatment, attracting the best talent from all backgrounds, and as a role model for an inclusive employee experience.  Amadeus is an equal opportunity employer and committed to an accessible recruitment process. All qualified applicants will receive consideration for employment without regard to gender, race, ethnicity, sexual orientation, age, beliefs, disability or any other characteristics protected by law. Be aware of recruitment scams Amadeus Group never charges fees, requests payment, or asks for financial information during recruitment. All legitimate opportunities are communicated solely through official Amadeus channels, including our careers website. Any payment request or outreach via unofficial platforms (e.g., WhatsApp, Telegram) should be treated as fraudulent. We are Amadeus and we make travel work better for everyone, everywhere. As part of our global team of 20,000+ passionate team members across 100+ locations, you’ll join a community united by a love for travel and technology. We’re not just shaping the future of travel; we’re using it as a force for good, enriching lives and supporting our planet. Here, you’ll be free to innovate and grow with driven colleagues. Join us on a journey where you will help us bring the world closer!",
+    "sourceDescription": "Job Title Lead Data Engineer We are seeking a highly experienced Senior Data Engineering Expert with deep expertise in the Airline IT domain to lead the design, development, modernization, and governance of enterprise-scale data platforms and data integration ecosystems. The ideal candidate will possess extensive experience in building and managing batch and real-time data pipelines, large-scale ETL frameworks, cloud-based data platforms, and enterprise data management solutions supporting airline operations, customer experience, revenue management, commercial analytics, and regulatory reporting. The role requires technical leadership in modern data engineering technologies including Databricks, Apache Spark (Scala), Delta Lake, Data Warehousing, Database Management Systems, Master Data Management (MDM), and enterprise data integration platforms. Key Responsibilities Enterprise Data Platform Architecture Define and implement enterprise-wide data architecture strategies supporting commercial, digital, customer, and operational business functions. Design scalable, resilient, and secure data platforms that enable analytics, reporting, machine learning, and operational decision-making. Lead the modernization of legacy data environments toward cloud-native Lakehouse architectures and enterprise data ecosystems. Establish data engineering standards, architectural principles, governance frameworks, and best practices across the organization. Airline Business Data Enablement Design and implement scalable enterprise data architectures supporting Airline Commercial and Digital functions, Reservations and Passenger Service Systems (PSS) Revenue Management and Pricing Loyalty Programs Customer Relationship Management (CRM) Customer Data Platforms (CDP) Digital Engagement and Mobile Applications Customer Analytics and Personalization Commercial Performance and Regulatory Reporting Data Engineering &amp; Integration Architect and develop scalable data ingestion, transformation, and serving layers supporting both batch and real-time processing requirements. Design reusable and metadata-driven ETL/ELT frameworks capable of handling large volumes of transactional, operational, and customer data. Establish enterprise integration patterns leveraging APIs, event-driven architectures, messaging technologies, and hybrid connectivity models. Implement data quality controls, reconciliation mechanisms, lineage tracking, metadata management, and observability capabilities. Drive automation of deployment, orchestration, monitoring, recovery, and operational support processes. Real-Time Data &amp; Analytics Design and implement streaming architectures that provide near real-time operational visibility and business insights. Enable event-driven data processing capabilities supporting customer engagement, disruption management, operational performance monitoring, and decision support. Ensure scalability, reliability, and performance of real-time data processing platforms. Data Management &amp; Governance Establish enterprise Master Data Management (MDM) strategies and governance frameworks. Define and govern master data domains including customers, flights, airports, aircraft, crew, and enterprise reference data. Drive data stewardship, golden record management, metadata governance, and enterprise data quality initiatives. Ensure compliance with security, privacy, regulatory, and corporate governance requirements. Leadership &amp; Stakeholder Management Provide technical leadership and direction across data engineering and architecture teams. Mentor engineers, architects, and technical leads while fostering a culture of engineering excellence. Collaborate closely with business stakeholders, product owners, enterprise architects, airline operations teams, and executive leadership. Lead strategic modernization, cloud transformation, and enterprise data platform initiatives. Required Qualifications &amp; Technical Expertise Bachelor's or Master's degree in Computer Science, Information Technology, Engineering, or a related discipline, Experience in Data Engineering, Data Architecture, Data Platform Engineering, or Enterprise Data Management roles. Proven experience delivering enterprise-scale data platforms within complex and highly integrated environments, preferably in the airline, aviation, travel, or transportation industry, Extensive expertise in designing and implementing modern cloud-based data architectures using Microsoft Azure and Databricks Lakehouse technologies, Strong hands-on experience building scalable data engineering solutions leveraging Apache Spark, Scala, Spark SQL, Delta Lake, and modern orchestration frameworks to support both batch and real-time workloads, Experience with Informatica data integration, Demonstrated success in developing enterprise-grade ETL/ELT frameworks, high-performance data pipelines, and large-scale data processing platforms capable of handling operational, commercial, and customer data domains, Deep understanding of enterprise data integration patterns, including API-based integrations, event-driven architectures, messaging technologies, and hybrid integration models connecting operational systems, cloud platforms, and analytical environments, Significant experience in enterprise data warehousing, analytical data modeling, database design, SQL optimization, performance tuning, and large-scale data management across structured and semi-structured datasets. Practical experience establishing Master Data Management (MDM) capabilities, metadata management frameworks, data stewardship processes, golden record management, and enterprise data governance practices, Deep understanding of data quality, lineage, observability, security, privacy, compliance, and governance requirements associated with enterprise data platforms, Proven ability to define architecture standards, lead engineering teams, mentor technical professionals, and drive enterprise-wide modernization and cloud transformation initiatives. Preferred Qualifications Experience working with Passenger Service Systems (PSS), Revenue Management, Loyalty Platforms, CRM, CDP, Digital Commerce, and Customer Experience solutions within the airline industry. Experience supporting advanced analytics, artificial intelligence, machine learning, and personalization initiatives through modern data platforms. Exposure to Data Mesh, Data Fabric, or domain-oriented data architecture approaches. Experience operating within large-scale enterprise transformation programs. Relevant certifications in Microsoft Azure, Databricks, Data Engineering, Cloud Architecture, or Enterprise Data Management. What can we offer you? 🎯 A critical mission and purpose - At Amadeus, you'll power the future of travel with a critical mission and extraordinary purpose. 🌎 A truly global DNA - Everything at Amadeus is global, from our people to our business, which translates into our footprint, processes, and culture. 🎓 Great opportunities to learn - Learning happens all the time and in many ways at Amadeus, from on-the-job training to formal activities, and daily interactions. 🤗 A caring environment – Amadeus fosters a caring environment that supports both professional growth and personal well-being. 💰 A complete rewards offer - Amadeus provides attractive compensation packages, including salary, bonus, caregiving and health benefits. 🌟 A flexible working model - Embrace our flexible working model, enabling you to excel wherever and however you work best. 🌈 A diverse and inclusive community – We are committed to enabling each employee to reach their full potential by fostering a culture of belonging and fair treatment. 📈 A Reliable Company - Trust and reliability are fundamental to shaping our relationships with customers, partners, and employees. #LI-EMEA Diversity &amp; Inclusion Amadeus aspires to be a leader in Diversity and Inclusion in the tech industry, enabling every employee to reach their full potential by fostering a culture of belonging and fair treatment, attracting the best talent from all backgrounds, and as a role model for an inclusive employee experience.  Amadeus is an equal opportunity employer and committed to an accessible recruitment process. All qualified applicants will receive consideration for employment without regard to gender, race, ethnicity, sexual orientation, age, beliefs, disability or any other characteristics protected by law. Be aware of recruitment scams Amadeus Group never charges fees, requests payment, or asks for financial information during recruitment. All legitimate opportunities are communicated solely through official Amadeus channels, including our careers website. Any payment request or outreach via unofficial platforms (e.g., WhatsApp, Telegram) should be treated as fraudulent. We are Amadeus and we make travel work better for everyone, everywhere. As part of our global team of 20,000+ passionate team members across 100+ locations, you’ll join a community united by a love for travel and technology. We’re not just shaping the future of travel; we’re using it as a force for good, enriching lives and supporting our planet. Here, you’ll be free to innovate and grow with driven colleagues. Join us on a journey where you will help us bring the world closer!",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Lead Data Engineer",
+    "normalizedTitle": "Data Engineer",
+    "jobCategory": "Data Engineer",
+    "engineeringDomain": "Data Engineering",
+    "employmentType": "Full-time",
+    "experienceLevel": null,
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-09-30T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-03T19:22:00.788Z",
+    "skillIds": [
+      "databricks",
+      "spark",
+      "machine-learning",
+      "azure",
+      "sql"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "databricks",
+        "canonicalName": "Databricks",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Databricks"
+      },
+      {
+        "skillId": "spark",
+        "canonicalName": "Spark",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Apache Spark"
+      },
+      {
+        "skillId": "machine-learning",
+        "canonicalName": "Machine Learning",
+        "category": "Data & AI",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "machine learning"
+      },
+      {
+        "skillId": "azure",
+        "canonicalName": "Azure",
+        "category": "Cloud Platforms",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Microsoft Azure"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      }
+    ],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "minimumYears": 1,
+      "maximumYears": 15,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "medium",
+      "inferenceMethod": "experienced_role_default",
+      "evidence": "Lead Data Engineer",
+      "rawText": null
+    },
+    "experienceYears": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Unknown",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-03T21:23:58.869Z",
+    "confidence": {
+      "experience": "low"
+    },
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "experienced_role_default",
+    "employerExperienceProfile": {
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "low",
+      "evidence": null,
+      "rawText": null
+    },
+    "policyEvidence": "Lead Data Engineer"
+  },
+  {
+    "jobId": "R33540",
+    "title": "Senior Manager, Hardware Deployment",
+    "company": "Amadeus",
+    "department": null,
+    "location": "Bangalore",
+    "city": "Bangalore",
+    "locations": [
+      "Lisbon",
+      "Bangalore"
+    ],
+    "link": "https://amadeus.wd502.myworkdayjobs.com/jobs/job/Lisbon/Senior-Manager--Hardware-Deployment_R33540",
+    "source": "amadeus",
+    "postedAt": "2026-09-30T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Job Title Senior Manager, Hardware Deployment Summary Lead global hardware deployment initiatives across the Amadeus Air Ops portfolio, powering Self Service, Seamless Journey, and Border Management solutions worldwide. Build and inspire a high‑performing deployment team to deliver projects on time, drive customer satisfaction, and secure revenue outcomes. Own the end‑to‑end deployment strategy, including stakeholder alignment, resource planning, risk management, and governance across a complex global landscape. Champion quality, innovation, and continuous improvement while acting as a trusted hardware deployment expert across Air Ops. Key Responsibilities Lead and develop a high-performing global hardware deployment team. Deliver complex deployment projects on time, within budget, and to quality standards. Manage deployment planning, prioritization, and resource allocation across the portfolio. Identify and mitigate delivery, technical, and operational risks. Provide regular status updates and performance reporting to stakeholders. Support cutover planning, testing, and production deployments. Own deployment cost estimates and resource forecasts. Act as the technical expert for hardware deployment solutions and airport systems. Drive resolution of complex technical and operational challenges. Conduct feasibility assessments and contribute to strategic decision-making. Provide customer and on-site support during critical deployment phases. Ensure compliance with health, safety, and deployment standards. Partner with customers to define requirements and implementation plans. Collaborate with Product, R&amp;D, and operational teams to improve delivery outcomes. Drive continuous improvement, scalability, and standardization of deployment processes. Build strong stakeholder relationships and mentor teams across the organization. About the ideal candidate: University degree in Electromechanical Engineering, Hardware Engineering, Quantity Surveying, or related field (or equivalent experience); Accredited in Project Management methodologies and Health &amp; Safety; 10+ years of experience in the Air Transport Industry; 10+ years of proven people management and senior leadership experience; Recognized expert in self‑service, electromechanical, and baggage handling hardware solutions; Strong expertise in Auto Bag Drop, kiosks, biometrics, self‑service, and automation; Solid understanding of the airport ecosystem and airline operational environments; Knowledge of software development and hardware manufacturing life cycles; Strong understanding of airline IT systems, competitive products, and business practices (Reservations, Inventory, DCS); Excellent written and spoken English, with strong communication skills at all organizational levels; Willingness and availability to travel as required. What we can offer you: 💰 A complete rewards offer\n- Amadeus provides attractive remuneration packages, covering all essential components of a competitive reward offer, including bonus, pension plan, travel, and healthcare insurance, as well as lunch allowance and other benefits. 🌎 A truly global DNA\n- Everything at Amadeus is global, from our people to our business, which translates into our footprint, processes, and culture. 🎓 Great opportunities to learn\n- Learning happens all the time and in many ways at Amadeus, through on-the-job training, formal learning activities, and day-to-day interactions with colleagues. 🤗 A caring environment\n- Amadeus fosters a caring environment, nurturing both a fulfilling career and personal and family life. We care about our employees and strive to provide a supportive work environment. 🌟 A flexible working model\n- We want our employees to do their best work, wherever and however it works best for them. 🌈 A diverse and inclusive community\n- We are committed to leveraging our uniquely diverse population to drive innovation, creativity, and collaboration across our organization. 📈 A Reliable Company\n- Trust and reliability are fundamental values that drive our actions and shape long-lasting relationships with our customers, partners, and employees. 🎯 A critical mission and purpose\n- At Amadeus, you will be powering the future of travel and pursuing a critical mission and extraordinary purpose. #LI-EMEA Diversity &amp; Inclusion Amadeus aspires to be a leader in Diversity and Inclusion in the tech industry, enabling every employee to reach their full potential by fostering a culture of belonging and fair treatment, attracting the best talent from all backgrounds, and as a role model for an inclusive employee experience. Amadeus is an equal opportunity employer and committed to an accessible recruitment process. All qualified applicants will receive consideration for employment without regard to gender, race, ethnicity, sexual orientation, age, beliefs, disability or any other characteristics protected by law. Be aware of recruitment scams Amadeus Group never charges fees, requests payment, or asks for financial information during recruitment. All legitimate opportunities are communicated solely through official Amadeus channels, including our careers website. Any payment request or outreach via unofficial platforms (e.g., Whats App, Telegram) should be treated as fraudulent. We are Amadeus and we make travel work better for everyone, everywhere. As part of our global team of 20,000+ passionate team members across 100+ locations, you’ll join a community united by a love for travel and technology. We’re not just shaping the future of travel; we’re using it as a force for good, enriching lives and supporting our planet. Here, you’ll be free to innovate and grow with driven colleagues. Join us on a journey where you will help us bring the world closer!",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "10+ years",
+    "publicExperienceChecked": true,
+    "requisitionId": "R33540",
+    "scrapedAt": "2026-10-03T19:22:01.297Z",
+    "country": "India",
+    "companyCareerPage": "https://amadeus.wd502.myworkdayjobs.com/jobs",
+    "companyDomain": "amadeus.wd502.myworkdayjobs.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://amadeus.wd502.myworkdayjobs.com/jobs/job/Lisbon/Senior-Manager--Hardware-Deployment_R33540",
+    "sourceUrl": "https://amadeus.wd502.myworkdayjobs.com/jobs/job/Lisbon/Senior-Manager--Hardware-Deployment_R33540",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "db0e9fd9e8bec6d65eed5e82341771a1a8aaaa07ad7ce54cdcbcaed357a3ee7b",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "full_time",
+          "probability": 0.5607
+        },
+        "experience": {
+          "label": "fresher_eligible",
+          "probability": 0.4662
+        },
+        "seniority": {
+          "label": "senior",
+          "probability": 0.4845
+        },
+        "leadership": {
+          "label": "senior_manager",
+          "probability": 0.4131
+        }
+      },
+      "complete": true,
+      "windows": 2,
+      "evidenceContext": "Job Title Senior Manager, Hardware Deployment Summary Lead global hardware deployment initiatives across the Amadeus AirOps portfolio, powering Self Service, Se",
+      "classifiedAt": "2026-10-03T19:22:03.341Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Senior Level",
+        "seniority": "Manager",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "experienceBucket": "8-12",
+        "experienceProfile": {
+          "minimumYears": 10,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "10+ years",
+          "rawText": null,
+          "experienceBucket": "8-12"
+        },
+        "experienceBasis": "employer_requirement",
+        "experienceRequired": "10+ years",
+        "employerExperienceProfile": {
+          "minimumYears": 10,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "10+ years",
+          "rawText": null,
+          "experienceBucket": "8-12"
+        },
+        "policyEvidence": "Senior Manager, Hardware Deployment"
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Senior Level",
+        "seniority": "Senior Manager",
+        "experienceYears": [
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "experienceBucket": "8-12",
+        "experienceProfile": {
+          "minimumYears": 10,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "10+ years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "f2ad497c41aea6bb5fcbc957e7851928fa095c767129ee51e07b78d118f2eae7",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "e43c51beafe432f0edcae28ef89058804c26311dfca53441b84d75ae9eb830ed",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-03T19:22:03.341Z",
+        "reused": true
+      }
+    },
+    "description": "Job Title Senior Manager, Hardware Deployment Summary Lead global hardware deployment initiatives across the Amadeus AirOps portfolio, powering Self Service, Seamless Journey, and Border Management solutions worldwide. Build and inspire a high‑performing deployment team to deliver projects on time, drive customer satisfaction, and secure revenue outcomes. Own the end‑to‑end deployment strategy, including stakeholder alignment, resource planning, risk management, and governance across a complex global landscape. Champion quality, innovation, and continuous improvement while acting as a trusted hardware deployment expert across AirOps. Key Responsibilities Lead and develop a high-performing global hardware deployment team. Deliver complex deployment projects on time, within budget, and to quality standards. Manage deployment planning, prioritization, and resource allocation across the portfolio. Identify and mitigate delivery, technical, and operational risks. Provide regular status updates and performance reporting to stakeholders. Support cutover planning, testing, and production deployments. Own deployment cost estimates and resource forecasts. Act as the technical expert for hardware deployment solutions and airport systems. Drive resolution of complex technical and operational challenges. Conduct feasibility assessments and contribute to strategic decision-making. Provide customer and on-site support during critical deployment phases. Ensure compliance with health, safety, and deployment standards. Partner with customers to define requirements and implementation plans. Collaborate with Product, R&amp;D, and operational teams to improve delivery outcomes. Drive continuous improvement, scalability, and standardization of deployment processes. Build strong stakeholder relationships and mentor teams across the organization. About the ideal candidate: University degree in Electromechanical Engineering, Hardware Engineering, Quantity Surveying, or related field (or equivalent experience); Accredited in Project Management methodologies and Health &amp; Safety; 10+ years of experience in the Air Transport Industry; 10+ years of proven people management and senior leadership experience; Recognized expert in self‑service, electromechanical, and baggage handling hardware solutions; Strong expertise in Auto Bag Drop, kiosks, biometrics, self‑service, and automation; Solid understanding of the airport ecosystem and airline operational environments; Knowledge of software development and hardware manufacturing life cycles; Strong understanding of airline IT systems, competitive products, and business practices (Reservations, Inventory, DCS); Excellent written and spoken English, with strong communication skills at all organizational levels; Willingness and availability to travel as required. What we can offer you: 💰 A complete rewards offer - Amadeus provides attractive remuneration packages, covering all essential components of a competitive reward offer, including bonus, pension plan, travel, and healthcare insurance, as well as lunch allowance and other benefits. 🌎 A truly global DNA - Everything at Amadeus is global, from our people to our business, which translates into our footprint, processes, and culture. 🎓 Great opportunities to learn - Learning happens all the time and in many ways at Amadeus, through on-the-job training, formal learning activities, and day-to-day interactions with colleagues. 🤗 A caring environment - Amadeus fosters a caring environment, nurturing both a fulfilling career and personal and family life. We care about our employees and strive to provide a supportive work environment. 🌟 A flexible working model - We want our employees to do their best work, wherever and however it works best for them. 🌈 A diverse and inclusive community - We are committed to leveraging our uniquely diverse population to drive innovation, creativity, and collaboration across our organization. 📈 A Reliable Company - Trust and reliability are fundamental values that drive our actions and shape long-lasting relationships with our customers, partners, and employees. 🎯 A critical mission and purpose - At Amadeus, you will be powering the future of travel and pursuing a critical mission and extraordinary purpose. #LI-EMEA Diversity &amp; Inclusion Amadeus aspires to be a leader in Diversity and Inclusion in the tech industry, enabling every employee to reach their full potential by fostering a culture of belonging and fair treatment, attracting the best talent from all backgrounds, and as a role model for an inclusive employee experience.  Amadeus is an equal opportunity employer and committed to an accessible recruitment process. All qualified applicants will receive consideration for employment without regard to gender, race, ethnicity, sexual orientation, age, beliefs, disability or any other characteristics protected by law. Be aware of recruitment scams Amadeus Group never charges fees, requests payment, or asks for financial information during recruitment. All legitimate opportunities are communicated solely through official Amadeus channels, including our careers website. Any payment request or outreach via unofficial platforms (e.g., WhatsApp, Telegram) should be treated as fraudulent. We are Amadeus and we make travel work better for everyone, everywhere. As part of our global team of 20,000+ passionate team members across 100+ locations, you’ll join a community united by a love for travel and technology. We’re not just shaping the future of travel; we’re using it as a force for good, enriching lives and supporting our planet. Here, you’ll be free to innovate and grow with driven colleagues. Join us on a journey where you will help us bring the world closer!",
+    "sourceDescription": "Job Title Senior Manager, Hardware Deployment Summary Lead global hardware deployment initiatives across the Amadeus AirOps portfolio, powering Self Service, Seamless Journey, and Border Management solutions worldwide. Build and inspire a high‑performing deployment team to deliver projects on time, drive customer satisfaction, and secure revenue outcomes. Own the end‑to‑end deployment strategy, including stakeholder alignment, resource planning, risk management, and governance across a complex global landscape. Champion quality, innovation, and continuous improvement while acting as a trusted hardware deployment expert across AirOps. Key Responsibilities Lead and develop a high-performing global hardware deployment team. Deliver complex deployment projects on time, within budget, and to quality standards. Manage deployment planning, prioritization, and resource allocation across the portfolio. Identify and mitigate delivery, technical, and operational risks. Provide regular status updates and performance reporting to stakeholders. Support cutover planning, testing, and production deployments. Own deployment cost estimates and resource forecasts. Act as the technical expert for hardware deployment solutions and airport systems. Drive resolution of complex technical and operational challenges. Conduct feasibility assessments and contribute to strategic decision-making. Provide customer and on-site support during critical deployment phases. Ensure compliance with health, safety, and deployment standards. Partner with customers to define requirements and implementation plans. Collaborate with Product, R&amp;D, and operational teams to improve delivery outcomes. Drive continuous improvement, scalability, and standardization of deployment processes. Build strong stakeholder relationships and mentor teams across the organization. About the ideal candidate: University degree in Electromechanical Engineering, Hardware Engineering, Quantity Surveying, or related field (or equivalent experience); Accredited in Project Management methodologies and Health &amp; Safety; 10+ years of experience in the Air Transport Industry; 10+ years of proven people management and senior leadership experience; Recognized expert in self‑service, electromechanical, and baggage handling hardware solutions; Strong expertise in Auto Bag Drop, kiosks, biometrics, self‑service, and automation; Solid understanding of the airport ecosystem and airline operational environments; Knowledge of software development and hardware manufacturing life cycles; Strong understanding of airline IT systems, competitive products, and business practices (Reservations, Inventory, DCS); Excellent written and spoken English, with strong communication skills at all organizational levels; Willingness and availability to travel as required. What we can offer you: 💰 A complete rewards offer - Amadeus provides attractive remuneration packages, covering all essential components of a competitive reward offer, including bonus, pension plan, travel, and healthcare insurance, as well as lunch allowance and other benefits. 🌎 A truly global DNA - Everything at Amadeus is global, from our people to our business, which translates into our footprint, processes, and culture. 🎓 Great opportunities to learn - Learning happens all the time and in many ways at Amadeus, through on-the-job training, formal learning activities, and day-to-day interactions with colleagues. 🤗 A caring environment - Amadeus fosters a caring environment, nurturing both a fulfilling career and personal and family life. We care about our employees and strive to provide a supportive work environment. 🌟 A flexible working model - We want our employees to do their best work, wherever and however it works best for them. 🌈 A diverse and inclusive community - We are committed to leveraging our uniquely diverse population to drive innovation, creativity, and collaboration across our organization. 📈 A Reliable Company - Trust and reliability are fundamental values that drive our actions and shape long-lasting relationships with our customers, partners, and employees. 🎯 A critical mission and purpose - At Amadeus, you will be powering the future of travel and pursuing a critical mission and extraordinary purpose. #LI-EMEA Diversity &amp; Inclusion Amadeus aspires to be a leader in Diversity and Inclusion in the tech industry, enabling every employee to reach their full potential by fostering a culture of belonging and fair treatment, attracting the best talent from all backgrounds, and as a role model for an inclusive employee experience.  Amadeus is an equal opportunity employer and committed to an accessible recruitment process. All qualified applicants will receive consideration for employment without regard to gender, race, ethnicity, sexual orientation, age, beliefs, disability or any other characteristics protected by law. Be aware of recruitment scams Amadeus Group never charges fees, requests payment, or asks for financial information during recruitment. All legitimate opportunities are communicated solely through official Amadeus channels, including our careers website. Any payment request or outreach via unofficial platforms (e.g., WhatsApp, Telegram) should be treated as fraudulent. We are Amadeus and we make travel work better for everyone, everywhere. As part of our global team of 20,000+ passionate team members across 100+ locations, you’ll join a community united by a love for travel and technology. We’re not just shaping the future of travel; we’re using it as a force for good, enriching lives and supporting our planet. Here, you’ll be free to innovate and grow with driven colleagues. Join us on a journey where you will help us bring the world closer!",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Senior Manager, Hardware Deployment",
+    "normalizedTitle": "Senior Manager, Hardware Deployment",
+    "jobCategory": "Senior Manager, Hardware Deployment",
+    "engineeringDomain": "Security",
+    "employmentType": "Full-time",
+    "experienceLevel": "Senior Level",
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-09-30T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-03T19:22:01.297Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "minimumYears": 10,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "10+ years",
+      "rawText": null,
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Manager",
+    "primaryRoleDomain": "Cybersecurity",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "high",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-03T21:23:58.873Z",
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "employer_requirement",
+    "employerExperienceProfile": {
+      "minimumYears": 10,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "10+ years",
+      "rawText": null,
+      "experienceBucket": "8-12"
+    },
+    "policyEvidence": "Senior Manager, Hardware Deployment"
+  },
+  {
+    "jobId": null,
+    "title": "Product Definition Analyst 4",
+    "company": "Amadeus",
+    "department": null,
+    "location": "Bangalore",
+    "city": "Bangalore",
+    "locations": [
+      "Bangalore"
+    ],
+    "link": "https://amadeus.wd502.myworkdayjobs.com/jobs/job/Bangalore/Product-Definition-Analyst-4_R37225-1",
+    "source": "amadeus",
+    "postedAt": "2026-09-30T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Job Title Product Definition Analyst 4 Experience: 9+ Years Key Responsibilities Gather, analyze, and document business requirements. Create BRDs, FRS, user stories, process flows, and functional specifications. Conduct impact analysis, feasibility studies, and solution design discussions. Collaborate with business stakeholders, Product Owners, Development, and QA teams. Participate in Agile ceremonies and manage requirements throughout the SDLC. Support UAT, defect triage, and production validation. Drive stakeholder communication, requirement sign-offs, and process improvements. Required Skills 9+ years of experience as a Business Analyst / Functional Analyst. Strong expertise in requirements gathering, functional analysis, and stakeholder management. Experience in Agile/Scrum methodologies. Hands-on experience with Jira and Confluence. Strong documentation, analytical, and problem-solving skills. Excellent verbal and written communication skills. Ability to understand a feature and slice and dice accordingly is needed. Ability to prioritize based on business requirement is an absolute necessity. Safe PO certification can be mentioned as Preferred. Preferred Experience in Product-based organizations. Exposure to API integrations, process modeling, and system design. Domain experience in Travel or Airlines is an added advantage. Diversity &amp; Inclusion Amadeus aspires to be a leader in Diversity and Inclusion in the tech industry, enabling every employee to reach their full potential by fostering a culture of belonging and fair treatment, attracting the best talent from all backgrounds, and as a role model for an inclusive employee experience. Amadeus is an equal opportunity employer and committed to an accessible recruitment process. All qualified applicants will receive consideration for employment without regard to gender, race, ethnicity, sexual orientation, age, beliefs, disability or any other characteristics protected by law. Be aware of recruitment scams Amadeus Group never charges fees, requests payment, or asks for financial information during recruitment. All legitimate opportunities are communicated solely through official Amadeus channels, including our careers website. Any payment request or outreach via unofficial platforms (e.g., Whats App, Telegram) should be treated as fraudulent. We are Amadeus and we make travel work better for everyone, everywhere. As part of our global team of 20,000+ passionate team members across 100+ locations, you’ll join a community united by a love for travel and technology. We’re not just shaping the future of travel; we’re using it as a force for good, enriching lives and supporting our planet. Here, you’ll be free to innovate and grow with driven colleagues. Join us on a journey where you will help us bring the world closer!",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "9+ years",
+    "publicExperienceChecked": true,
+    "requisitionId": "R37225",
+    "scrapedAt": "2026-10-03T19:22:02.065Z",
+    "country": "India",
+    "companyCareerPage": "https://amadeus.wd502.myworkdayjobs.com/jobs",
+    "companyDomain": "amadeus.wd502.myworkdayjobs.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://amadeus.wd502.myworkdayjobs.com/jobs/job/Bangalore/Product-Definition-Analyst-4_R37225-1",
+    "sourceUrl": "https://amadeus.wd502.myworkdayjobs.com/jobs/job/Bangalore/Product-Definition-Analyst-4_R37225-1",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "c2656e17acde14c9caa649f39c8e2a4618e4317dca21c0f8abf728836d185e76",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "full_time",
+          "probability": 0.4439
+        },
+        "experience": {
+          "label": "fresher_eligible",
+          "probability": 0.8187
+        },
+        "seniority": {
+          "label": "internship",
+          "probability": 0.3015
+        },
+        "leadership": {
+          "label": "senior_manager",
+          "probability": 0.3194
+        }
+      },
+      "complete": true,
+      "windows": 1,
+      "evidenceContext": "Job Title Product Definition Analyst 4 Experience: 9+ Years Key Responsibilities Gather, analyze, and document business requirements. Create BRDs, FRS, user sto",
+      "classifiedAt": "2026-10-03T19:22:03.341Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": null,
+        "seniority": "Unknown",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "experienceBucket": "8-12",
+        "experienceProfile": {
+          "minimumYears": 9,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "9+ years",
+          "rawText": null,
+          "experienceBucket": "8-12"
+        },
+        "experienceBasis": "employer_requirement",
+        "experienceRequired": "9+ years",
+        "employerExperienceProfile": {
+          "minimumYears": 9,
+          "maximumYears": null,
+          "isOpenEnded": true,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high",
+          "evidence": "9+ years",
+          "rawText": null,
+          "experienceBucket": "8-12"
+        },
+        "policyEvidence": null
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Mid Level",
+        "seniority": "Mid Level",
+        "experienceYears": [
+          9
+        ],
+        "experienceBucket": "8-12",
+        "experienceProfile": {
+          "minimumYears": 9,
+          "maximumYears": 9,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": true,
+          "confidence": "high"
+        },
+        "experienceRequired": "9+ years",
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "662a4b49c23c63ca1cb7062225c0493c03448b04f6a3eea694922306b9c3ec56",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "e43c51beafe432f0edcae28ef89058804c26311dfca53441b84d75ae9eb830ed",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-03T19:22:03.341Z",
+        "reused": true
+      }
+    },
+    "description": "Job Title Product Definition Analyst 4 Experience: 9+ Years Key Responsibilities Gather, analyze, and document business requirements. Create BRDs, FRS, user stories, process flows, and functional specifications. Conduct impact analysis, feasibility studies, and solution design discussions. Collaborate with business stakeholders, Product Owners, Development, and QA teams. Participate in Agile ceremonies and manage requirements throughout the SDLC. Support UAT, defect triage, and production validation. Drive stakeholder communication, requirement sign-offs, and process improvements. Required Skills 9+ years of experience as a Business Analyst / Functional Analyst. Strong expertise in requirements gathering, functional analysis, and stakeholder management. Experience in Agile/Scrum methodologies. Hands-on experience with Jira and Confluence. Strong documentation, analytical, and problem-solving skills. Excellent verbal and written communication skills. Ability to understand a feature and slice and dice accordingly is needed. Ability to prioritize based on business requirement is an absolute necessity. Safe PO certification can be mentioned as Preferred. Preferred Experience in Product-based organizations. Exposure to API integrations, process modeling, and system design. Domain experience in Travel or Airlines is an added advantage. Diversity &amp; Inclusion Amadeus aspires to be a leader in Diversity and Inclusion in the tech industry, enabling every employee to reach their full potential by fostering a culture of belonging and fair treatment, attracting the best talent from all backgrounds, and as a role model for an inclusive employee experience.  Amadeus is an equal opportunity employer and committed to an accessible recruitment process. All qualified applicants will receive consideration for employment without regard to gender, race, ethnicity, sexual orientation, age, beliefs, disability or any other characteristics protected by law. Be aware of recruitment scams Amadeus Group never charges fees, requests payment, or asks for financial information during recruitment. All legitimate opportunities are communicated solely through official Amadeus channels, including our careers website. Any payment request or outreach via unofficial platforms (e.g., WhatsApp, Telegram) should be treated as fraudulent. We are Amadeus and we make travel work better for everyone, everywhere. As part of our global team of 20,000+ passionate team members across 100+ locations, you’ll join a community united by a love for travel and technology. We’re not just shaping the future of travel; we’re using it as a force for good, enriching lives and supporting our planet. Here, you’ll be free to innovate and grow with driven colleagues. Join us on a journey where you will help us bring the world closer!",
+    "sourceDescription": "Job Title Product Definition Analyst 4 Experience: 9+ Years Key Responsibilities Gather, analyze, and document business requirements. Create BRDs, FRS, user stories, process flows, and functional specifications. Conduct impact analysis, feasibility studies, and solution design discussions. Collaborate with business stakeholders, Product Owners, Development, and QA teams. Participate in Agile ceremonies and manage requirements throughout the SDLC. Support UAT, defect triage, and production validation. Drive stakeholder communication, requirement sign-offs, and process improvements. Required Skills 9+ years of experience as a Business Analyst / Functional Analyst. Strong expertise in requirements gathering, functional analysis, and stakeholder management. Experience in Agile/Scrum methodologies. Hands-on experience with Jira and Confluence. Strong documentation, analytical, and problem-solving skills. Excellent verbal and written communication skills. Ability to understand a feature and slice and dice accordingly is needed. Ability to prioritize based on business requirement is an absolute necessity. Safe PO certification can be mentioned as Preferred. Preferred Experience in Product-based organizations. Exposure to API integrations, process modeling, and system design. Domain experience in Travel or Airlines is an added advantage. Diversity &amp; Inclusion Amadeus aspires to be a leader in Diversity and Inclusion in the tech industry, enabling every employee to reach their full potential by fostering a culture of belonging and fair treatment, attracting the best talent from all backgrounds, and as a role model for an inclusive employee experience.  Amadeus is an equal opportunity employer and committed to an accessible recruitment process. All qualified applicants will receive consideration for employment without regard to gender, race, ethnicity, sexual orientation, age, beliefs, disability or any other characteristics protected by law. Be aware of recruitment scams Amadeus Group never charges fees, requests payment, or asks for financial information during recruitment. All legitimate opportunities are communicated solely through official Amadeus channels, including our careers website. Any payment request or outreach via unofficial platforms (e.g., WhatsApp, Telegram) should be treated as fraudulent. We are Amadeus and we make travel work better for everyone, everywhere. As part of our global team of 20,000+ passionate team members across 100+ locations, you’ll join a community united by a love for travel and technology. We’re not just shaping the future of travel; we’re using it as a force for good, enriching lives and supporting our planet. Here, you’ll be free to innovate and grow with driven colleagues. Join us on a journey where you will help us bring the world closer!",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Product Definition Analyst 4",
+    "normalizedTitle": "Product Definition Analyst 4",
+    "jobCategory": "Product Definition Analyst 4",
+    "engineeringDomain": "Software Engineering",
+    "employmentType": "Full-time",
+    "experienceLevel": null,
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-09-30T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-03T19:22:02.065Z",
+    "skillIds": [],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [],
+    "experienceBucket": "8-12",
+    "experienceProfile": {
+      "minimumYears": 9,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "9+ years",
+      "rawText": null,
+      "experienceBucket": "8-12"
+    },
+    "experienceYears": [
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Unknown",
+    "primaryRoleDomain": "Backend Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "medium",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-03T21:23:58.875Z",
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "employer_requirement",
+    "employerExperienceProfile": {
+      "minimumYears": 9,
+      "maximumYears": null,
+      "isOpenEnded": true,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": true,
+      "confidence": "high",
+      "evidence": "9+ years",
+      "rawText": null,
+      "experienceBucket": "8-12"
+    },
+    "policyEvidence": null
+  },
+  {
+    "jobId": null,
+    "title": "Product Definition Analyst 3",
+    "company": "Amadeus",
+    "department": null,
+    "location": "Bangalore",
+    "city": "Bangalore",
+    "locations": [
+      "Bangalore"
+    ],
+    "link": "https://amadeus.wd502.myworkdayjobs.com/jobs/job/Bangalore/Product-Definition-Analyst-3_R37258-1",
+    "source": "amadeus",
+    "postedAt": "2026-09-30T00:00:00.000Z",
+    "closingDate": null,
+    "jobDescription": "Job Title Product Definition Analyst 3 Accountabilities Analysis Analyse business requirements written by airline customers and Amadeus Product Managers Conduct the functional analysis, propose viable solutions. Perform feasibility studies. Participate to requirement refinement sessions with airline customers Understanding &amp; acquiring datasets that align with business needs. Design of functional specifications Write documentation for product specifications or functional studies. Collaborate closely with the team members with an agile mindset, make sure development activities are in lines with the specifications. Prepare adhoc documentation whenever needed by developers to make sure development can be fully aligned with expected functionality Functional test and maintenance of the software Participate in the validation phase of the product cycle, fine-tuning when necessary to finalize the product. Ensuring the quality of the data produced from data pipelines to be used in the applications. Write Test plan and execute test cases. Review and validate airlines’ brush test to make sure expected behaviour is in line with functional solution developed Utilize Business Intelligence tools, such as Tableau, Power BI, and Qlik, to create meaningful reports and dashboards. Proficient in writing SQL queries to extract, manipulate, and analyze data from databases. End to end testing, support to airlines Support end users during acceptance phases. Support the customer by debugging existing solutions in collaboration with Product Manager or Product Definition Analyst. Support Amadeus Implementation teams to implement related products for airline customers Test and maintenance of the software. Ensure production integrity. Work closely with cross-functional teams to understand their data needs and provide data-driven recommendations to support their goals. Conduct ad hoc analysis as requested by the business to address specific questions or concerns. Implement data quality checks and processes to ensure data accuracy, integrity, and consistency. Create new data validation methods and data analysis tools. Skills Functional analysis, analysis of the value Functional Validation soft / hard Functional specifications, detailed Non-regression test Python, Databricks Notebook &amp; SQL Tableau/Power BI SQL, Mongo DB About the ideal candidate: · University degree in Computer Science or related field, or equivalent work experience. · Proficient in English as the team is fully international. · Knowledge of programming languages (e.g., Python, R) is a bonus. · Experience delivering end-to-end analytics projects, transforming vague requirements into impactful stories accessible to diverse audiences, leading to clear business outcomes. · Excellent analytical and problem-solving skills with a keen attention to detail. · Ability to work with large and complex datasets · Excellent communication skills to effectively convey complex data findings. · Collaborative individual with a mindset suited for a multi-cultural, international organization and time management skills. · Experience in the software development lifecycle (including product design, coding, testing, version and configuration management, security, and Quality Assurance) relevant to the functional area. · Knowledge of Scrum framework and Agile methodologies. · Experience in data modeling is a plus. · Knowledge of Airline business is a plus Diversity &amp; Inclusion Amadeus aspires to be a leader in Diversity and Inclusion in the tech industry, enabling every employee to reach their full potential by fostering a culture of belonging and fair treatment, attracting the best talent from all backgrounds, and as a role model for an inclusive employee experience. Amadeus is an equal opportunity employer and committed to an accessible recruitment process. All qualified applicants will receive consideration for employment without regard to gender, race, ethnicity, sexual orientation, age, beliefs, disability or any other characteristics protected by law. Be aware of recruitment scams Amadeus Group never charges fees, requests payment, or asks for financial information during recruitment. All legitimate opportunities are communicated solely through official Amadeus channels, including our careers website. Any payment request or outreach via unofficial platforms (e.g., Whats App, Telegram) should be treated as fraudulent. We are Amadeus and we make travel work better for everyone, everywhere. As part of our global team of 20,000+ passionate team members across 100+ locations, you’ll join a community united by a love for travel and technology. We’re not just shaping the future of travel; we’re using it as a force for good, enriching lives and supporting our planet. Here, you’ll be free to innovate and grow with driven colleagues. Join us on a journey where you will help us bring the world closer!",
+    "minimumQualification": null,
+    "preferredQualification": null,
+    "requiredSkills": [],
+    "experienceRequired": "1-15 years (inferred)",
+    "publicExperienceChecked": true,
+    "requisitionId": "R37258",
+    "scrapedAt": "2026-10-03T19:22:03.080Z",
+    "country": "India",
+    "companyCareerPage": "https://amadeus.wd502.myworkdayjobs.com/jobs",
+    "companyDomain": "amadeus.wd502.myworkdayjobs.com",
+    "atsPlatform": "workday",
+    "applyUrl": "https://amadeus.wd502.myworkdayjobs.com/jobs/job/Bangalore/Product-Definition-Analyst-3_R37258-1",
+    "sourceUrl": "https://amadeus.wd502.myworkdayjobs.com/jobs/job/Bangalore/Product-Definition-Analyst-3_R37258-1",
+    "classification": {
+      "policyVersion": "laya-jobs-v2",
+      "inputHash": "2776459b3fc305e3a9683f5f05ae3cd4db3f9ba16a5114300d6712702b48072e",
+      "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "runtimeVersion": "jobverify-laya-v4",
+      "runtimeHash": "06ad4400d69a03778e84cb68fe7a7b30b59c8dee95e5d9d7568e227531ceef53",
+      "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+      "calibrationHash": "uncalibrated",
+      "referenceYear": 2026,
+      "mode": "policy",
+      "authoritative": true,
+      "decisionSource": "policy",
+      "status": "uncertain",
+      "reason": "model_unvalidated",
+      "decisions": {
+        "employment": {
+          "label": "full_time",
+          "probability": 0.6263
+        },
+        "experience": {
+          "label": "fresher_eligible",
+          "probability": 0.7982
+        },
+        "seniority": {
+          "label": "senior",
+          "probability": 0.3792
+        },
+        "leadership": {
+          "label": "executive",
+          "probability": 0.3818
+        }
+      },
+      "complete": true,
+      "windows": 2,
+      "evidenceContext": "Job Title Product Definition Analyst 3 Accountabilities Analysis Analyse business requirements written by airline customers and Amadeus Product Managers Conduct",
+      "classifiedAt": "2026-10-03T19:22:03.341Z",
+      "resolved": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": null,
+        "seniority": "Unknown",
+        "experiencePolicy": "prior_required",
+        "experienceYears": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "experienceBucket": "0-1",
+        "experienceProfile": {
+          "minimumYears": 1,
+          "maximumYears": 15,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": false,
+          "confidence": "medium",
+          "inferenceMethod": "experienced_role_default",
+          "evidence": "· Experience in the software development lifecycle (including product design, coding, testing, version and configuration management, security, and Quality Assur",
+          "rawText": null
+        },
+        "experienceBasis": "experienced_role_default",
+        "experienceRequired": "1-15 years (inferred)",
+        "employerExperienceProfile": {
+          "minimumYears": null,
+          "maximumYears": null,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": false,
+          "confidence": "low",
+          "evidence": null,
+          "rawText": null
+        },
+        "policyEvidence": "· Experience in the software development lifecycle (including product design, coding, testing, version and configuration management, security, and Quality Assur"
+      },
+      "previous": {
+        "jobType": "Full-time Experienced",
+        "employmentType": "Full-time",
+        "experienceLevel": "Mid Level",
+        "seniority": "Mid Level",
+        "experienceYears": [],
+        "experienceBucket": "unspecified",
+        "experienceProfile": {
+          "minimumYears": null,
+          "maximumYears": null,
+          "isOpenEnded": false,
+          "preferredMinimumYears": null,
+          "hasExplicitExperience": false,
+          "confidence": "low"
+        },
+        "experienceRequired": null,
+        "experienceBasis": null
+      },
+      "nativeScan": {
+        "inputHash": "7a3ca51b79a560d8eef8a5c92808a813788467b5756a147fff772cb35542dcb0",
+        "identity": {
+          "modelRevision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+          "runtimeVersion": "jobverify-laya-v4",
+          "runtimeHash": "e43c51beafe432f0edcae28ef89058804c26311dfca53441b84d75ae9eb830ed",
+          "policyHash": "cc9ae1d1f7cd91125a7c71b64a9535aba10ac694fab76ab3e063182810af9605",
+          "calibrationHash": "uncalibrated"
+        },
+        "nativeRuntimeHash": "0766c068bb4775660c74514cda7cf1b547c34648431bc52408569231792b1c4c",
+        "completedAt": "2026-10-03T19:22:03.341Z",
+        "reused": true
+      }
+    },
+    "description": "Job Title Product Definition Analyst 3 Accountabilities Analysis Analyse business requirements written by airline customers and Amadeus Product Managers Conduct the functional analysis, propose viable solutions. Perform feasibility studies. Participate to requirement refinement sessions with airline customers Understanding &amp; acquiring datasets that align with business needs. Design of functional specifications Write documentation for product specifications or functional studies. Collaborate closely with the team members with an agile mindset, make sure development activities are in lines with the specifications. Prepare adhoc documentation whenever needed by developers to make sure development can be fully aligned with expected functionality Functional test and maintenance of the software Participate in the validation phase of the product cycle, fine-tuning when necessary to finalize the product. Ensuring the quality of the data produced from data pipelines to be used in the applications. Write Test plan and execute test cases. Review and validate airlines’ brush test to make sure expected behaviour is in line with functional solution developed Utilize Business Intelligence tools, such as Tableau, Power BI, and Qlik, to create meaningful reports and dashboards. Proficient in writing SQL queries to extract, manipulate, and analyze data from databases. End to end testing, support to airlines Support end users during acceptance phases. Support the customer by debugging existing solutions in collaboration with Product Manager or Product Definition Analyst. Support Amadeus Implementation teams to implement related products for airline customers Test and maintenance of the software. Ensure production integrity. Work closely with cross-functional teams to understand their data needs and provide data-driven recommendations to support their goals. Conduct ad hoc analysis as requested by the business to address specific questions or concerns. Implement data quality checks and processes to ensure data accuracy, integrity, and consistency. Create new data validation methods and data analysis tools. Skills Functional analysis, analysis of the value Functional Validation soft / hard Functional specifications, detailed Non-regression test Python, Databricks Notebook &amp; SQL Tableau/Power BI SQL, MongoDB About the ideal candidate: · University degree in Computer Science or related field, or equivalent work experience. · Proficient in English as the team is fully international. · Knowledge of programming languages (e.g., Python, R) is a bonus. · Experience delivering end-to-end analytics projects, transforming vague requirements into impactful stories accessible to diverse audiences, leading to clear business outcomes. · Excellent analytical and problem-solving skills with a keen attention to detail. · Ability to work with large and complex datasets · Excellent communication skills to effectively convey complex data findings. · Collaborative individual with a mindset suited for a multi-cultural, international organization and time management skills. · Experience in the software development lifecycle (including product design, coding, testing, version and configuration management, security, and Quality Assurance) relevant to the functional area. · Knowledge of Scrum framework and Agile methodologies. · Experience in data modeling is a plus. · Knowledge of Airline business is a plus Diversity &amp; Inclusion Amadeus aspires to be a leader in Diversity and Inclusion in the tech industry, enabling every employee to reach their full potential by fostering a culture of belonging and fair treatment, attracting the best talent from all backgrounds, and as a role model for an inclusive employee experience.  Amadeus is an equal opportunity employer and committed to an accessible recruitment process. All qualified applicants will receive consideration for employment without regard to gender, race, ethnicity, sexual orientation, age, beliefs, disability or any other characteristics protected by law. Be aware of recruitment scams Amadeus Group never charges fees, requests payment, or asks for financial information during recruitment. All legitimate opportunities are communicated solely through official Amadeus channels, including our careers website. Any payment request or outreach via unofficial platforms (e.g., WhatsApp, Telegram) should be treated as fraudulent. We are Amadeus and we make travel work better for everyone, everywhere. As part of our global team of 20,000+ passionate team members across 100+ locations, you’ll join a community united by a love for travel and technology. We’re not just shaping the future of travel; we’re using it as a force for good, enriching lives and supporting our planet. Here, you’ll be free to innovate and grow with driven colleagues. Join us on a journey where you will help us bring the world closer!",
+    "sourceDescription": "Job Title Product Definition Analyst 3 Accountabilities Analysis Analyse business requirements written by airline customers and Amadeus Product Managers Conduct the functional analysis, propose viable solutions. Perform feasibility studies. Participate to requirement refinement sessions with airline customers Understanding &amp; acquiring datasets that align with business needs. Design of functional specifications Write documentation for product specifications or functional studies. Collaborate closely with the team members with an agile mindset, make sure development activities are in lines with the specifications. Prepare adhoc documentation whenever needed by developers to make sure development can be fully aligned with expected functionality Functional test and maintenance of the software Participate in the validation phase of the product cycle, fine-tuning when necessary to finalize the product. Ensuring the quality of the data produced from data pipelines to be used in the applications. Write Test plan and execute test cases. Review and validate airlines’ brush test to make sure expected behaviour is in line with functional solution developed Utilize Business Intelligence tools, such as Tableau, Power BI, and Qlik, to create meaningful reports and dashboards. Proficient in writing SQL queries to extract, manipulate, and analyze data from databases. End to end testing, support to airlines Support end users during acceptance phases. Support the customer by debugging existing solutions in collaboration with Product Manager or Product Definition Analyst. Support Amadeus Implementation teams to implement related products for airline customers Test and maintenance of the software. Ensure production integrity. Work closely with cross-functional teams to understand their data needs and provide data-driven recommendations to support their goals. Conduct ad hoc analysis as requested by the business to address specific questions or concerns. Implement data quality checks and processes to ensure data accuracy, integrity, and consistency. Create new data validation methods and data analysis tools. Skills Functional analysis, analysis of the value Functional Validation soft / hard Functional specifications, detailed Non-regression test Python, Databricks Notebook &amp; SQL Tableau/Power BI SQL, MongoDB About the ideal candidate: · University degree in Computer Science or related field, or equivalent work experience. · Proficient in English as the team is fully international. · Knowledge of programming languages (e.g., Python, R) is a bonus. · Experience delivering end-to-end analytics projects, transforming vague requirements into impactful stories accessible to diverse audiences, leading to clear business outcomes. · Excellent analytical and problem-solving skills with a keen attention to detail. · Ability to work with large and complex datasets · Excellent communication skills to effectively convey complex data findings. · Collaborative individual with a mindset suited for a multi-cultural, international organization and time management skills. · Experience in the software development lifecycle (including product design, coding, testing, version and configuration management, security, and Quality Assurance) relevant to the functional area. · Knowledge of Scrum framework and Agile methodologies. · Experience in data modeling is a plus. · Knowledge of Airline business is a plus Diversity &amp; Inclusion Amadeus aspires to be a leader in Diversity and Inclusion in the tech industry, enabling every employee to reach their full potential by fostering a culture of belonging and fair treatment, attracting the best talent from all backgrounds, and as a role model for an inclusive employee experience.  Amadeus is an equal opportunity employer and committed to an accessible recruitment process. All qualified applicants will receive consideration for employment without regard to gender, race, ethnicity, sexual orientation, age, beliefs, disability or any other characteristics protected by law. Be aware of recruitment scams Amadeus Group never charges fees, requests payment, or asks for financial information during recruitment. All legitimate opportunities are communicated solely through official Amadeus channels, including our careers website. Any payment request or outreach via unofficial platforms (e.g., WhatsApp, Telegram) should be treated as fraudulent. We are Amadeus and we make travel work better for everyone, everywhere. As part of our global team of 20,000+ passionate team members across 100+ locations, you’ll join a community united by a love for travel and technology. We’re not just shaping the future of travel; we’re using it as a force for good, enriching lives and supporting our planet. Here, you’ll be free to innovate and grow with driven colleagues. Join us on a journey where you will help us bring the world closer!",
+    "sourceEmploymentType": null,
+    "sourceExperienceRequired": null,
+    "originalTitle": "Product Definition Analyst 3",
+    "normalizedTitle": "Product Definition Analyst 3",
+    "jobCategory": "Product Definition Analyst 3",
+    "engineeringDomain": "Data Engineering",
+    "employmentType": "Full-time",
+    "experienceLevel": null,
+    "jobType": "Full-time Experienced",
+    "state": null,
+    "remoteStatus": "On-site",
+    "salary": null,
+    "postingDate": "2026-09-30T00:00:00.000Z",
+    "scrapedTimestamp": "2026-10-03T19:22:03.080Z",
+    "skillIds": [
+      "tableau",
+      "power-bi",
+      "sql",
+      "python",
+      "databricks",
+      "mongodb"
+    ],
+    "requiredSkillIds": [],
+    "preferredSkillIds": [],
+    "jobSkills": [
+      {
+        "skillId": "tableau",
+        "canonicalName": "Tableau",
+        "category": "Product, Design & Collaboration",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Tableau"
+      },
+      {
+        "skillId": "power-bi",
+        "canonicalName": "Power BI",
+        "category": "Product, Design & Collaboration",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Power BI"
+      },
+      {
+        "skillId": "sql",
+        "canonicalName": "SQL",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "SQL"
+      },
+      {
+        "skillId": "python",
+        "canonicalName": "Python",
+        "category": "Programming Languages",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Python"
+      },
+      {
+        "skillId": "databricks",
+        "canonicalName": "Databricks",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "Databricks"
+      },
+      {
+        "skillId": "mongodb",
+        "canonicalName": "MongoDB",
+        "category": "Databases & Data Systems",
+        "required": false,
+        "preferred": false,
+        "confidence": "medium",
+        "extractionSource": "description",
+        "matchedPhrase": "MongoDB"
+      }
+    ],
+    "experienceBucket": "0-1",
+    "experienceProfile": {
+      "minimumYears": 1,
+      "maximumYears": 15,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "medium",
+      "inferenceMethod": "experienced_role_default",
+      "evidence": "· Experience in the software development lifecycle (including product design, coding, testing, version and configuration management, security, and Quality Assur",
+      "rawText": null
+    },
+    "experienceYears": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "seniority": "Unknown",
+    "primaryRoleDomain": "Data Engineering",
+    "secondaryRoleDomains": [],
+    "workArrangement": "On-site",
+    "filterSignals": {
+      "confidence": {
+        "experience": "high",
+        "seniority": "medium",
+        "roleDomain": "high",
+        "workArrangement": "high"
+      }
+    },
+    "taxonomyVersion": "2026-07-16-v1",
+    "extractionVersion": "2026-07-16-v1",
+    "extractedAt": "2026-10-03T21:23:58.880Z",
+    "experiencePolicy": "prior_required",
+    "experienceBasis": "experienced_role_default",
+    "confidence": {
+      "experience": "low"
+    },
+    "employerExperienceProfile": {
+      "minimumYears": null,
+      "maximumYears": null,
+      "isOpenEnded": false,
+      "preferredMinimumYears": null,
+      "hasExplicitExperience": false,
+      "confidence": "low",
+      "evidence": null,
+      "rawText": null
+    },
+    "policyEvidence": "· Experience in the software development lifecycle (including product design, coding, testing, version and configuration management, security, and Quality Assur"
+  }
+]

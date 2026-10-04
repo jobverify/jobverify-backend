@@ -1,3 +1,4 @@
+import { assertWorkdayPageAvailable } from '../../scraper-support/myworkday/pageAvailability.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -129,11 +130,15 @@ export const createItronIndiaScraper = () => ({
     }
 
     const workdayBoardPage = await fetchVerifiedPage(verifiedIndiaWorkdayUrl)
-    if (
-      workdayBoardPage.status !== 200
-      || !isAcceptedWorkdayBoardUrl(workdayBoardPage.url)
-      || !hasOfficialWorkdayBoardSignal(workdayBoardPage.html)
-    ) {
+    assertWorkdayPageAvailable(workdayBoardPage, { source: SOURCE, url: verifiedIndiaWorkdayUrl })
+    // Workday currently redirects this exact India board back to Itron during maintenance.
+    // Revalidate the same official handoff, then let the jobs API report its actual availability.
+    const verifiedCareersRedirect = sameUrl(workdayBoardPage.url, CAREERS_URL)
+      && hasOfficialCareersSignal(workdayBoardPage.html)
+      && sameUrl(extractVerifiedIndiaWorkdayUrl(workdayBoardPage.html), INDIA_WORKDAY_URL)
+    const verifiedWorkdayBoard = isAcceptedWorkdayBoardUrl(workdayBoardPage.url)
+      && hasOfficialWorkdayBoardSignal(workdayBoardPage.html)
+    if (workdayBoardPage.status !== 200 || (!verifiedWorkdayBoard && !verifiedCareersRedirect)) {
       throw new Error('Itron India verified public Workday board changed materially')
     }
 

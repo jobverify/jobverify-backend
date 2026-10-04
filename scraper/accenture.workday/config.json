@@ -1,8 +1,0 @@
-{
-  "listingStrategy": "jobs-api",
-  "jobsApiUrl": "https://accenture.wd103.myworkdayjobs.com/wday/cxs/accenture/AccentureCareers/jobs",
-  "detailUrlBase": "https://accenture.wd103.myworkdayjobs.com/AccentureCareers",
-  "locationCountry": null,
-  "searchText": "India",
-  "locationPattern": "india|bengaluru|bangalore|hyderabad|gurugram|gurgaon|pune|chennai|mumbai|navi mumbai|kolkata|jaipur|coimbatore|bhubaneswar|indore|noida|ahmedabad|nagpur|new delhi|kochi|thiruvananthapuram|tiruchirappalli|gandhinagar|thane"
-}

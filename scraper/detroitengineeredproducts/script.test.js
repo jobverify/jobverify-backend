@@ -332,3 +332,11 @@ test('run fails closed when the DEP India careers page or CEIPAL career portal A
     /public ceipal career portal api/i,
   )
 })
+
+
+test('DEP accepts the current first-party page titles while retaining navigation and widget validation', async () => {
+  const dep = await loadModule()
+  assert.equal(dep.hasOfficialHomepageSignal(homepageHtml.replace('<title>Home</title>', '<title>Home - Detroit Engineered Products (DEP)</title>')), true)
+  assert.equal(dep.hasCareersLandingSignal(careersLandingHtml.replace('<title>Careers</title>', '<title>Careers - Detroit Engineered Products (DEP)</title>')), true)
+  assert.equal(dep.hasIndiaCareersSignal(indiaCareersHtml.replace('<title>Careers India</title>', '<title>Careers India - Detroit Engineered Products (DEP)</title>')), true)
+})

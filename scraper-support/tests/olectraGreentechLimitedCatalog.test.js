@@ -7,7 +7,7 @@ import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 
 const SOURCE = 'olectragreentechlimited'
 const COMPANY = 'Olectra Greentech Limited'
-const JOB_OPENINGS_URL = 'https://olectra.com/job-openings/'
+const JOB_OPENINGS_URL = 'https://www.olectra.com/career'
 
 test('Olectra Greentech Limited is registered against its verified first-party jobs surface without alias churn', () => {
   const provider = getScraperCatalog().find((item) => item.source === SOURCE)
@@ -21,10 +21,10 @@ test('Olectra Greentech Limited is registered against its verified first-party j
   assert.equal(provider.companyCareerPage, JOB_OPENINGS_URL)
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'official-homepage-plus-first-party-job-openings-page')
+  assert.equal(provider.paginationStrategy, 'complete-next-cms-openings-plus-first-party-details')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-first-party-job-openings-page+accordion-role-cards+shared-first-party-resume-form',
+    'verified-first-party-sitemap+next-cms-listing+matched-opening-details+inline-resume-form',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

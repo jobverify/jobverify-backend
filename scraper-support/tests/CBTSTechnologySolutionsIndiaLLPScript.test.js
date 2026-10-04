@@ -237,3 +237,50 @@ test('CBTS Technology Solutions India LLP paginates the linked Rippling board an
     /verified rippling board/i,
   )
 })
+
+
+const currentEightfoldBoardHtml = '<title>Careers at CBTS</title><script>window._EF_GROUP_ID = "cbts.com";</script>'
+
+test('CBTS follows its current Eightfold India handoff, paginates, and excludes non-India positions', async () => {
+  const cbts = await loadModule()
+  const offsets = []
+  const jobs = await cbts.createCbtstechnologysolutionsindiallpScraper().run({
+    now: () => '2026-10-03T00:00:00.000Z',
+    fetchText: async (url) => {
+      if (url === cbts.CAREERS_URL) return currentCareersHtml
+      assert.equal(url, 'https://jobs.cbts.com/careers?&location=India')
+      return currentEightfoldBoardHtml
+    },
+    fetchJson: async (value) => {
+      const url = new URL(value)
+      assert.equal(url.origin, 'https://jobs.cbts.com')
+      assert.equal(url.searchParams.get('domain'), 'cbts.com')
+      if (url.pathname === '/api/pcsx/search') {
+        const offset = Number(url.searchParams.get('start'))
+        offsets.push(offset)
+        assert.equal(url.searchParams.get('location'), 'India')
+        assert.equal(url.searchParams.get('limit'), '10')
+        const ids = offset === 0 ? [1,2,3,4,5,6,7,8,9,10] : [11,12]
+        return {data: {count: 12, positions: ids.map(id => ({id, name: 'Engineer ' + id, standardizedLocations: [id === 11 ? 'Cincinnati, OH, US' : id === 1 ? 'IN' : 'Chennai, TN, IN'], locations: [id === 11 ? 'Cincinnati' : 'Chennai'], positionUrl: '/careers/job/' + id}))}}
+      }
+      assert.equal(url.pathname, '/api/pcsx/position_details')
+      const id = Number(url.searchParams.get('position_id'))
+      return {data: {publicUrl: 'https://jobs.cbts.com/careers/job/' + id, jobDescription: '<p>Build reliable services.</p>'}}
+    },
+  })
+  assert.deepEqual(offsets, [0,10])
+  assert.equal(jobs.length, 11)
+  assert.equal(jobs.some(job => job.title === 'Engineer 11'), false)
+  assert.equal(jobs[0].applyUrl, 'https://jobs.cbts.com/careers/job/1')
+  assert.equal(jobs[0].source, 'cbtstechnologysolutionsindiallp')
+  assert.equal(jobs[0].scrapedAt, '2026-10-03T00:00:00.000Z')
+  assert.match(jobs[0].jobDescription, /Build reliable services/)
+})
+
+test('CBTS rejects the current jobs handoff when its board identity is unverified', async () => {
+  const cbts = await loadModule()
+  await assert.rejects(cbts.createCbtstechnologysolutionsindiallpScraper().run({
+    fetchText: async url => url === cbts.CAREERS_URL ? currentCareersHtml : '<title>Careers at Another Company</title>',
+    fetchJson: async () => assert.fail('Unverified board must not query listings'),
+  }), /CBTS verified Eightfold board/i)
+})

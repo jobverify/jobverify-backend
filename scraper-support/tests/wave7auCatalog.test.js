@@ -128,11 +128,11 @@ test('Reserve Bank Information Technology local catalog captures the verified ca
     provider.extractionStrategy,
     'verified-first-party-careers-spa+authenticated-current-openings-api+darwinbox-apply-links+experience-field',
   )
-  assert.equal(provider.verifiedOn, '2026-08-05')
+  assert.equal(provider.verifiedOn, '2026-10-03')
   assert.match(provider.verifiedSurfaceSummary, /web\/api\/auth\/login/i)
   assert.match(provider.verifiedSurfaceSummary, /web\/api\/current-openings/i)
   assert.match(provider.verifiedSurfaceSummary, /rebithr\.darwinbox\.in/i)
-  assert.match(provider.verifiedSurfaceSummary, /Data Science Manager/i)
+  assert.match(provider.verifiedSurfaceSummary, /14 active India openings/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

@@ -20,6 +20,7 @@ const USER_AGENT =
 
 const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;|&#(?:x[aA]0|160);/gi, ' ')
   .replace(/\u00a0/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
@@ -102,7 +103,8 @@ export const hasTitanJobsHomeSignal = (page = {}) => {
   return Number(page?.status) === 200
     && normalizeUrl(getFinalUrl(page, CAREERS_HANDOFF_URL)) === normalizeUrl(CAREERS_HOME_URL)
     && /<title[^>]*>\s*Careers at Titan\s*\|\s*Titan jobs\s*<\/title>/i.test(html)
-    && normalized.includes('DREAM. DISCOVER. DESIGN')
+    && (normalized.includes('DREAM. DISCOVER. DESIGN')
+      || normalized.includes('What is it like to work with Titan?'))
     && normalized.includes('Career Paths')
     && normalized.includes('Upload Resume')
     && normalized.includes('Our Brands')

@@ -31,7 +31,7 @@ export const PLAN_CONFIG = Object.freeze({
   [PLAN_IDS.MONTHLY]: {
     id: PLAN_IDS.MONTHLY,
     name: "Monthly Premium",
-    priceInr: 199,
+    priceInr: 99,
     durationMonths: 1,
     accessRole: ACCESS_ROLES.MONTHLY,
     hasFilters: true,
@@ -41,8 +41,8 @@ export const PLAN_CONFIG = Object.freeze({
   [PLAN_IDS.SEMESTER]: {
     id: PLAN_IDS.SEMESTER,
     name: "Semester Premium",
-    priceInr: 499,
-    durationMonths: 4,
+    priceInr: 299,
+    durationMonths: 3,
     accessRole: ACCESS_ROLES.SEMESTER,
     hasFilters: true,
     hasAds: false,
@@ -51,7 +51,7 @@ export const PLAN_CONFIG = Object.freeze({
   [PLAN_IDS.YEARLY]: {
     id: PLAN_IDS.YEARLY,
     name: "Yearly Premium",
-    priceInr: 1299,
+    priceInr: 999,
     durationMonths: 12,
     accessRole: ACCESS_ROLES.YEARLY,
     hasFilters: true,

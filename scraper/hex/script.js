@@ -63,6 +63,47 @@ export const hasUsOnlyRolePageSignal = (html = '', roleTitle = '') => {
     && /Remote \(US\)/i.test(normalized)
 }
 
+export const extractOpenRoleCards = (html = '') => [...String(html ?? '').matchAll(
+  /<a\b[^>]*class=["'][^"']*OpenRole__Wrapper[^"']*["'][^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
+)].map((match) => {
+  const title = normalizeWhitespace(match[2].match(/<p\b[^>]*OpenRole__TitleText[^>]*>([\s\S]*?)<\/p>/i)?.[1])
+  const location = normalizeWhitespace(match[2].match(/<p\b[^>]*OpenRole__LocationText[^>]*>([\s\S]*?)<\/p>/i)?.[1])
+  let url = null
+  try {
+    url = new URL(match[1], CAREERS_URL).toString()
+  } catch {
+    // An invalid role URL fails the inventory check below.
+  }
+  return { url, title, location }
+})
+
+const isExplicitlyUsOnlyLocation = (location) => {
+  const remainder = String(location ?? '')
+    .replace(/\bRemote\s*-\s*US(?:\s*\((?:EST|CST|PST)\))?/gi, '')
+    .replace(/\b(?:San Francisco|New York|SF|NYC)\b/gi, '')
+    .replace(/\b(?:or)\b|[,\s]/gi, '')
+  return Boolean(location) && remainder.length === 0
+}
+
+export const hasCompleteUsOnlyInventory = (html = '') => {
+  const page = String(html ?? '')
+  if (!hasVerifiedCareersLandingSignal(page)) return false
+
+  const total = Number.parseInt(normalizeWhitespace(page).match(/Open roles\s*\[\s*(\d+)\s*\]/i)?.[1] ?? '', 10)
+  if (!Number.isInteger(total)) return false
+
+  const cards = extractOpenRoleCards(page)
+  const allRoleLinks = [...page.matchAll(/<a\b[^>]*href=["'](\/careers\/[^"'?#]+\/)["']/gi)]
+    .map((match) => new URL(match[1], CAREERS_URL).toString())
+  const urls = cards.map((card) => card.url)
+
+  return cards.length === total
+    && allRoleLinks.length === total
+    && new Set(urls).size === total
+    && urls.every((url) => url?.startsWith(CAREERS_URL) && allRoleLinks.includes(url))
+    && cards.every((card) => card.title && isExplicitlyUsOnlyLocation(card.location))
+}
+
 export const createHexScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
     const careersHtml = await fetchText(CAREERS_URL)
@@ -70,16 +111,8 @@ export const createHexScraper = () => ({
       throw new Error('Hex verified careers page no longer matches the known fail-closed contract')
     }
 
-    const expectedRoles = [
-      'Software Engineer, Backend (Platform)',
-      'Cloud Security Engineer',
-    ]
-
-    for (const [index, sampleRoleUrl] of SAMPLE_ROLE_URLS.entries()) {
-      const roleHtml = await fetchText(sampleRoleUrl)
-      if (!hasUsOnlyRolePageSignal(roleHtml, expectedRoles[index])) {
-        throw new Error(`Hex verified role page no longer matches the known fail-closed contract: ${sampleRoleUrl}`)
-      }
+    if (!hasCompleteUsOnlyInventory(careersHtml)) {
+      throw new Error('Hex careers inventory is incomplete or includes a location outside the verified US-only set')
     }
 
     return []

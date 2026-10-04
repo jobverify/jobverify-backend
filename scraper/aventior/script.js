@@ -1,3 +1,5 @@
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+
 export const SOURCE = 'aventior'
 export const COMPANY = 'Aventior'
 export const VERIFIED_ON = '2026-08-01'
@@ -290,9 +292,32 @@ export const extractCompanyJobsUrl = (html = '', pageUrl = LINKEDIN_COMPANY_PAGE
   return handoff?.url?.toString() || null
 }
 
+export const hasVerifiedCompanySearchUrl = (value) => {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' && /(^|\.)linkedin\.com$/i.test(url.hostname)
+      && normalizePathname(url.pathname) === '/jobs/aventior-jobs-worldwide'
+      && url.searchParams.getAll('f_C').length === 1 && url.searchParams.get('f_C') === '27234995'
+  } catch { return false }
+}
+
+const hasCurrentScopedNoMatchShell = (page, text) => {
+  const scopedMeta = page.match(/<meta[^>]+property=["']lnkd:url["'][^>]+content=["']([^"']+)["']/i)?.[1]
+  return /<title[^>]*>\s*Aventior Jobs at Aventior in Worldwide \| LinkedIn\s*<\/title>/i.test(page)
+    && /<meta[^>]+name=["']pageKey["'][^>]+content=["']d_jobs_guest_search["']/i.test(page)
+    && hasVerifiedCompanySearchUrl(decodeHtml(scopedMeta || ''))
+    && /<input\b(?=[^>]*\bname=["']f_C["'])(?=[^>]*\bvalue=["']27234995["'])(?=[^>]*\bchecked(?:\s|=|\/?>))[^>]*>/i.test(page)
+    && /We couldn['’]t find a match for Aventior jobs in Worldwide/i.test(text)
+    && /class=["']no-results__main-title-keywords["']/i.test(page)
+    && !/base-card__full-link|job-search-card"/i.test(page)
+}
+
 export const hasVerifiedLinkedInJobsPageSignal = (html = '') => {
   const page = String(html)
   const text = normalizePageText(page) || ''
+  const scopedMeta = page.match(/<meta[^>]+property=["']lnkd:url["'][^>]+content=["']([^"']+)["']/i)?.[1]
+  if (scopedMeta && !hasVerifiedCompanySearchUrl(decodeHtml(scopedMeta))) return false
+  if (hasCurrentScopedNoMatchShell(page, text)) return true
   const hasZeroJobsTitle = /\b0\s+Aventior jobs in Worldwide\b/i.test(page)
     || /\b0\s+Aventior jobs in Worldwide\b/i.test(text)
 
@@ -317,44 +342,35 @@ export const hasVerifiedLinkedInJobsPageSignal = (html = '') => {
     )
 }
 
-export const extractSearchResults = (html = '') =>
-  [...String(html).matchAll(
-    /<div class="base-card[\s\S]*?job-search-card"[\s\S]*?data-entity-urn="urn:li:jobPosting:([0-9]+)"[\s\S]*?<a class="base-card__full-link[^"]*" href="([^"]+)"[\s\S]*?<h3 class="base-search-card__title">\s*([\s\S]*?)\s*<\/h3>[\s\S]*?<h4 class="base-search-card__subtitle">[\s\S]*?<a[^>]*>\s*([\s\S]*?)\s*<\/a>[\s\S]*?<span class="job-search-card__location">\s*([\s\S]*?)\s*<\/span>[\s\S]*?<time class="job-search-card__listdate(?:--new)?" datetime="([^"]+)"/gi,
-  )]
-    .map((match) => {
-      const [, jobId, rawHref, rawTitle, rawCompany, rawLocation, postingDate] = match
-      const title = stripTags(rawTitle)
-      const company = stripTags(rawCompany)
-      const sourceUrl = normalizeWhitespace(rawHref)?.replace(/&amp;/g, '&')
-      const locationData = parseLocation(stripTags(rawLocation))
-
-      if (!jobId || !title || !company || !sourceUrl) return null
-      if (company !== COMPANY || locationData.country !== 'India') return null
-
-      return {
-        title,
-        company,
-        department: null,
-        location: locationData.location,
-        city: locationData.city,
-        country: locationData.country,
-        jobId,
-        requisitionId: jobId,
-        sourceUrl,
-        applyUrl: sourceUrl,
-        employmentType: null,
-        experienceRequired: null,
-        minimumQualification: null,
-        preferredQualification: null,
-        requiredSkills: [],
-        postingDate: normalizeWhitespace(postingDate),
-        closingDate: null,
-        jobDescription: null,
-      }
-    })
-    .filter(Boolean)
-    .filter((listing, index, collection) =>
-      collection.findIndex((candidate) => candidate.jobId === listing.jobId) === index)
+export const extractSearchResults = (html = '') => {
+  const page = String(html)
+  const cards = [...page.matchAll(/<div class="base-card[^"<]*\bjob-search-card"[^>]*>/gi)]
+  const jobs = cards.map((card, index) => {
+    // Each field belongs to this card; incomplete rows cannot borrow another employer's data.
+    const section = page.slice(card.index, cards[index + 1]?.index ?? page.length)
+    const jobId = card[0].match(/data-entity-urn="urn:li:jobPosting:([0-9]+)"/i)?.[1]
+    const title = stripTags(section.match(/<h3 class="base-search-card__title">\s*([\s\S]*?)\s*<\/h3>/i)?.[1])
+    const companyBlock = section.match(/<h4 class="base-search-card__subtitle">([\s\S]*?)<\/h4>/i)?.[1]
+    const company = stripTags(companyBlock?.match(/<a[^>]*>\s*([\s\S]*?)\s*<\/a>/i)?.[1])
+    const sourceUrl = normalizeWhitespace(section.match(/<a class="base-card__full-link[^"<]*" href="([^"]+)"/i)?.[1])
+    const locationData = parseLocation(stripTags(section.match(/<span class="job-search-card__location">\s*([\s\S]*?)\s*<\/span>/i)?.[1]))
+    const postingDate = section.match(/<time class="job-search-card__listdate(?:--new)?" datetime="([^"]+)"/i)?.[1]
+    let verifiedSourceUrl = false
+    try {
+      const url = new URL(sourceUrl)
+      verifiedSourceUrl = url.protocol === 'https:' && /(^|\.)linkedin\.com$/i.test(url.hostname) && /^\/jobs\/view\//i.test(url.pathname)
+    } catch { /* Missing or unrelated URLs are discarded below. */ }
+    if (!jobId || !title || !postingDate || !verifiedSourceUrl || company !== COMPANY || locationData.country !== 'India') return null
+    return {
+      title, company, department: null, location: locationData.location, city: locationData.city,
+      country: locationData.country, jobId, requisitionId: jobId, sourceUrl, applyUrl: sourceUrl,
+      employmentType: null, experienceRequired: null, minimumQualification: null,
+      preferredQualification: null, requiredSkills: [], postingDate: normalizeWhitespace(postingDate),
+      closingDate: null, jobDescription: null,
+    }
+  }).filter(Boolean)
+  return jobs.filter((job, index) => jobs.findIndex(candidate => candidate.jobId === job.jobId) === index)
+}
 
 export const extractJobDetail = (html = '', listing = {}) => {
   const jobPosting = parseJobPostingJsonLd(html)
@@ -479,6 +495,9 @@ const defaultFetchText = async (url) => {
   })
 
   if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
+  if (url === LINKEDIN_COMPANY_JOBS_URL && !hasVerifiedCompanySearchUrl(response.url)) {
+    throw new Error('Aventior public LinkedIn search left its verified employer-filtered URL: ' + response.url)
+  }
   return response.text()
 }
 
@@ -523,12 +542,21 @@ export const createAventiorScraper = ({ maxJobs = null } = {}) => ({
       }
     }
 
-    return enrichedJobs.map((job) => ({
+    const jobs = enrichedJobs.filter(job => job.company === COMPANY && job.country === 'India').map((job) => ({
       ...job,
       source: SOURCE,
+      sourceListingComplete: false,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: now(),
     }))
+    return attachInventoryEvidence(jobs, {
+      status: jobs.length ? 'coverage-gap' : 'discovery-only',
+      surface: jobsUrl, firstParty: false, listingComplete: false,
+      pagesFetched: 3 + selectedJobs.length, reportedTotal: null, indiaFacetCount: null,
+      verifiedAt: now(),
+      reason: jobs.length ? 'Aventior company-scoped LinkedIn guest search yields verified India rows without exhaustive employer inventory.'
+        : 'Aventior company-scoped LinkedIn guest search reports no matching query results; complete employer inventory is unverified.',
+    })
   },
 })
 

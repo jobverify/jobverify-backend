@@ -24,6 +24,7 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/&#39;|&apos;|&rsquo;/gi, "'")
   .replace(/&quot;/gi, '"')
   .replace(/&amp;/gi, '&')
+  .replace(/&gt;/gi, '>')
   .replace(/\s+/g, ' ')
   .trim()
 
@@ -76,11 +77,13 @@ export const hasOfficialJobsPageSignal = (html) => {
 export const hasCountryLimitedJobsPageWithoutIndia = (html) => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page.replace(/<[^>]+>/g, ' '))
+  const hasUsOnlyContext = /current job openings for all locations in the United States/i.test(text)
+    || (/Home\s*>\s*Careers\s*>\s*US Jobs/i.test(text) && /\bE-Verify\b/i.test(text))
 
   return /<title>\s*Astronics Jobs in the United States\s*<\/title>/i.test(page)
     && /Astronics Career Search/i.test(text)
     && /United States/i.test(text)
-    && /current job openings for all locations in the United States/i.test(text)
+    && hasUsOnlyContext
     && /Search for Jobs in Canada/i.test(text)
     && /Search for Jobs in France/i.test(text)
     && !hasIndiaLocationOptions([{ label: text }])

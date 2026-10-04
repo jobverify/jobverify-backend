@@ -56,11 +56,11 @@ test('Delphix India local catalog captures the verified Delphix-to-Perforce care
   )
   assert.equal(
     DELPHIX_INDIA_CATALOG.extractionStrategy,
-    'verified-delphix-homepage-redirect+verified-perforce-careers-page+verified-lever-board+lever-postings-api+delphix-brand-filter+india-location-filter',
+    'verified-delphix-homepage-redirect+verified-perforce-careers-page+verified-lever-board+lever-postings-api+board-api-zero-check+delphix-brand-filter+india-location-filter',
   )
   assert.equal(DELPHIX_INDIA_CATALOG.parser, 'custom-script')
   assert.equal(DELPHIX_INDIA_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(DELPHIX_INDIA_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(DELPHIX_INDIA_CATALOG.verifiedOn, '2026-10-03')
   assert.equal(DELPHIX_INDIA_CATALOG.verifiedSurfaceSummary, VERIFIED_SURFACE_SUMMARY)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.delphix\.com\//i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.perforce\.com\/products\/delphix/i)
@@ -69,7 +69,7 @@ test('Delphix India local catalog captures the verified Delphix-to-Perforce care
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/api\.lever\.co\/v0\/postings\/perforce\?mode=json/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /\b0 Delphix India roles\b/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /Pune, Maharashtra/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /outside India/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /no role is Delphix-branded/i)
 })
 
 test('Delphix India local catalog hydrates into coverage without needing an alias entry', async () => {

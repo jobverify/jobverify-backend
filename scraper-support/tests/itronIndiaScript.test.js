@@ -163,3 +163,34 @@ test('Itron India fails closed when the verified official careers handoff or Wor
     /verified public workday board changed materially/i,
   )
 })
+
+test('Itron revalidates its own careers redirect and propagates the Workday outage instead of returning empty', async () => {
+  const itron = await loadItronIndiaModule()
+  const outage = Object.assign(new Error('Workday is currently unavailable'), {code:'WORKDAY_UPSTREAM_UNAVAILABLE'})
+  const requests = []
+  await assert.rejects(itron.run({
+    fetchPage: async url => {
+      requests.push(url)
+      return {status:200,url:itron.CAREERS_URL,html:officialCareersHtml}
+    },
+    workdayRunner: async options => {
+      assert.equal(options.baseUrl,itron.INDIA_WORKDAY_URL)
+      assert.equal(options.locationCountry,itron.LOCATION_COUNTRY)
+      throw outage
+    },
+  }), error => error === outage)
+  assert.deepEqual(requests,[itron.CAREERS_URL,itron.INDIA_WORKDAY_URL])
+})
+
+test('Itron rejects a foreign redirect and its own careers page if the India handoff changed', async () => {
+  const itron = await loadItronIndiaModule()
+  for (const [url, html] of [
+    ['https://unrelated.example/careers', officialCareersHtml],
+    [itron.CAREERS_URL, officialCareersHtml.replace(itron.LOCATION_COUNTRY,'unverified-country')],
+  ]) {
+    await assert.rejects(itron.run({
+      fetchPage: async requested => requested === itron.CAREERS_URL ? {status:200,url:requested,html:officialCareersHtml} : {status:200,url,html},
+      workdayRunner: async () => {throw new Error('Must not delegate unverified redirect')},
+    }), /verified public workday board changed materially/i)
+  }
+})

@@ -1,26 +1,12 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import * as insure from '../../scraper/insuremile/script.js'
 import * as rnf from '../../scraper/rnftechnologies/script.js'
 import * as morrisons from '../../scraper/morrisonslifecare/script.js'
 import { buildScrapers } from '../providers/index.js'
-import { isIndiaJob } from '../utils/indiaLocationFilter.js'
 const fixture = (source, name='current-openings.html') => readFileSync(new URL('./fixtures/'+source+'/'+name, import.meta.url),'utf8')
-const insureHtml=fixture('insuremile')
 const rnfHtml=fixture('rnftechnologies')
 const morrisonsHtml=fixture('morrisonslifecare')
-test('InsureMile extracts all seven current email-apply roles', async()=>{
- const jobs=await insure.run({fetchText:async()=>insureHtml,fetchJson:async()=>{throw Error('Retired WordPress API must not be used')}})
- assert.equal(jobs.length,7);assert.equal(jobs[0].title,'Renewal Service Executive');assert.equal(jobs[0].country,'India');assert.match(jobs[0].applyUrl,/^mailto:hr@insuremile\.in\?subject=/)
-})
-test('InsureMile rejects a missing card against the advertised total', async()=>{
- await assert.rejects(insure.run({fetchText:async()=>insureHtml.replace('7 Open Roles','8 Open Roles')}),/incomplete/i)
-})
-test('InsureMile does not infer India from the company address', async()=>{
- const html=insureHtml.replaceAll('Mysore \u2022 Salem \u2022 Palakkad \u2022 Nagpur \u2022 Vizag','London, United Kingdom')
- const jobs=await insure.run({fetchText:async()=>html});assert.equal(isIndiaJob(jobs[0]),false)
-})
 test('RNF validates and extracts all seven current role cards',()=>{
  assert.equal(rnf.hasOfficialListingsSignal(rnfHtml),true)
  const jobs=rnf.extractJobListings(rnfHtml);assert.equal(jobs.length,7);assert.equal(jobs[0].title,'React Developer');assert.equal(jobs[0].country,'India')
@@ -49,7 +35,7 @@ test('RNF resolves city-only listings from structured detail before India filter
  const jobs = await rnf.createRNFTechnologiesScraper({maxJobs:1}).run({fetchText: async url=>url===rnf.CAREERS_URL?html:fixture('rnftechnologies','current-detail.html')})
  assert.equal(jobs.length,1);assert.equal(jobs[0].country,'India');assert.equal(jobs[0].sourceListingComplete,false)
 })
-for (const name of ['insuremile','rnftechnologies','morrisonslifecare','capitalnumbersinfotech','systechsolutions','3pillarglobal']) {
+for (const name of ['rnftechnologies','morrisonslifecare','capitalnumbersinfotech','systechsolutions','3pillarglobal']) {
  test(name+' does not start requests after source cancellation', async () => {
   const source=buildScrapers().find(item=>item.name===name);let requests=0
   const cancelled=new Error('Source deadline expired')

@@ -1,3 +1,4 @@
+import { assertWorkdayPageAvailable } from '../../scraper-support/myworkday/pageAvailability.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -236,6 +237,7 @@ export const createRibbonCommunicationScraper = ({ pageSize = PAGE_SIZE } = {}) 
     }
 
     const workdayBoardHtml = await fetchText(WORKDAY_BASE_URL)
+    assertWorkdayPageAvailable({ status: 200, html: workdayBoardHtml, url: WORKDAY_BASE_URL }, { source: SOURCE })
     if (!hasVerifiedWorkdayBoardSignal(workdayBoardHtml)) {
       throw new Error('Ribbon verified Workday board changed; refusing to scrape')
     }

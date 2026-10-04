@@ -15,19 +15,16 @@ const runScenario = (scenario, parallel = true) => {
   return JSON.parse(child.stdout)
 }
 
-test('parallel lifecycle failure cancels active peers, stops dequeueing and records the aborted run', () => {
+test('parallel lifecycle timeout records a source failure and continues the queue', () => {
   const result = runScenario('timeout')
 
-  assert.equal(result.error.name, 'ScraperSourceLifecycleTimeoutError')
-  assert.deepEqual(result.started.sort(), ['broken', 'peer'])
-  assert.equal(result.peerAborted, true)
-  assert.equal(result.peerSettled, true)
-  assert.deepEqual(Object.keys(result.history).sort(), ['broken', 'peer'])
+  assert.equal(result.error, null)
+  assert.deepEqual(result.started, ['broken', 'queued'])
+  assert.deepEqual(Object.keys(result.history).sort(), ['broken', 'queued'])
   assert.equal(result.history.broken.success, false)
   assert.equal(result.history.broken.failureKind, 'runner_lifecycle_timeout')
-  assert.equal(result.finished.aborted, true)
-  assert.match(result.finished.error, /broken/)
-  assert.equal(result.settledBeforeHistory, true)
+  assert.equal(result.history.queued.success, true)
+  assert.equal(result.finished.aborted, false)
 })
 
 test('fatal persistence failure cancels a peer even when its lifecycle timeout is disabled', () => {
@@ -42,15 +39,14 @@ test('fatal persistence failure cancels a peer even when its lifecycle timeout i
   assert.equal(result.settledBeforeHistory, true)
 })
 
-test('parallel cancellation stays bounded when a peer ignores its abort signal', () => {
-  const result = runScenario('uncooperative-peer')
+test('parallel timeout stays bounded when a source ignores its abort signal', () => {
+  const result = runScenario('uncooperative-timeout')
 
-  assert.equal(result.error.name, 'ScraperSourceLifecycleTimeoutError')
-  assert.deepEqual(result.started.sort(), ['broken', 'peer'])
-  assert.equal(result.peerAborted, true)
-  assert.equal(result.peerSettled, false)
-  assert.equal(result.finished.aborted, true)
-  assert.deepEqual(Object.keys(result.history).sort(), ['broken', 'peer'])
+  assert.equal(result.error, null)
+  assert.deepEqual(result.started, ['broken', 'queued'])
+  assert.equal(result.history.broken.failureKind, 'runner_lifecycle_timeout')
+  assert.equal(result.history.queued.success, true)
+  assert.equal(result.finished.aborted, false)
 })
 
 test('parallel summaries preserve individual names for deactivated sources', () => {
@@ -69,6 +65,16 @@ test('cooperative source timeouts allow queued sources to run after recording th
   assert.equal(result.error, null)
   assert.deepEqual(result.started, ['broken', 'queued'])
   assert.equal(result.history.broken.success, false)
+  assert.equal(result.history.broken.failureKind, 'runner_lifecycle_timeout')
+  assert.equal(result.history.queued.success, true)
+  assert.equal(result.finished.aborted, false)
+})
+
+test('a source that settles six seconds after timeout does not abort the parallel run', () => {
+  const result = runScenario('slow-cleanup')
+
+  assert.equal(result.error, null)
+  assert.deepEqual(result.started, ['broken', 'queued'])
   assert.equal(result.history.broken.failureKind, 'runner_lifecycle_timeout')
   assert.equal(result.history.queued.success, true)
   assert.equal(result.finished.aborted, false)
@@ -109,12 +115,28 @@ for (const parallel of [true, false]) {
 }
 
 
-test('a peer cancelled by another source timeout remains incomplete for checkpoint resume', () => {
-  const result = runScenario('checkpoint-cancelled-peer')
-  assert.equal(result.error.name, 'ScraperSourceLifecycleTimeoutError')
+test('a timed-out source and subsequent source are both checkpointed', () => {
+  const result = runScenario('checkpoint-timeout')
+  assert.equal(result.error, null)
+  assert.deepEqual(Object.keys(result.checkpoint.completed).sort(), ['broken', 'queued'])
+  assert.equal(result.checkpoint.completed.broken.result.failureKind, 'runner_lifecycle_timeout')
+  assert.equal(result.checkpoint.completedCount, 2)
+  assert.equal(result.checkpoint.remainingCount, 0)
+  assert.equal(result.checkpoint.status, 'complete')
+})
+test('shutdown cancels active classification and preserves the source for checkpoint retry', () => {
+  const result = runScenario('shutdown-classification')
+  assert.equal(result.peerAborted, true)
   assert.equal(result.peerSettled, true)
-  assert.deepEqual(Object.keys(result.checkpoint.completed), [])
+  assert.deepEqual(result.started, ['peer'])
   assert.equal(result.checkpoint.completedCount, 0)
-  assert.equal(result.checkpoint.remainingCount, 3)
+  assert.equal(result.checkpoint.status, 'interrupted')
+})
+
+test('a failed required model scan stays pending while another source can finish', () => {
+  const result = runScenario('classification-pending')
+  assert.equal(result.history.alpha.classificationPending, true)
+  assert.equal(result.history.beta.success, true)
+  assert.deepEqual(Object.keys(result.checkpoint.completed), ['beta'])
   assert.equal(result.checkpoint.status, 'interrupted')
 })

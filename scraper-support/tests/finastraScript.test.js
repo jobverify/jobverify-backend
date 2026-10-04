@@ -189,3 +189,14 @@ test('run queries the official Finastra Workday jobs API for India listings and 
   assert.equal(jobs[2].jobId, 'REQ0326_0036569')
   assert.equal(jobs[2].experienceRequired, '5-8 years')
 })
+
+
+test('Finastra treats Workday maintenance HTML returned with HTTP 200 as an upstream outage', async (t) => {
+  const {createFinastraScraper} = await import('../../scraper/finastra.workday/script.js')
+  const {classifyScraperError} = await import('../utils/failureClassification.js')
+  t.mock.method(globalThis, 'fetch', async () => new Response('<title>Workday is currently unavailable.</title>', {status: 200}))
+  await assert.rejects(createFinastraScraper().run(), error => {
+    assert.deepEqual(classifyScraperError(error), {softFailure: true, upstreamOutage: true, failureKind: 'network_or_timeout'})
+    return true
+  })
+})

@@ -41,30 +41,29 @@ test('Groupon local catalog captures the verified first-party careers handoff to
   assert.equal(provider.officialJobsBoardUrl, 'https://job-boards.eu.greenhouse.io/groupon')
   assert.equal(provider.greenhouseJobsApiUrl, 'https://boards-api.greenhouse.io/v1/boards/groupon/jobs')
   assert.equal(provider.greenhouseJobBaseUrl, 'https://job-boards.eu.greenhouse.io/groupon/jobs')
-  assert.equal(provider.sampleJobUrl, 'https://job-boards.eu.greenhouse.io/groupon/jobs/4924951101')
+  assert.equal(provider.sampleJobUrl, 'https://job-boards.eu.greenhouse.io/groupon/jobs/4970408101')
   assert.equal(provider.companyDomain, 'grouponcareers.com')
   assert.equal(provider.atsPlatform, 'greenhouse')
   assert.equal(provider.paginationStrategy, 'single-greenhouse-jobs-api-content-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+official-greenhouse-board-link+visible-greenhouse-board-jobs+greenhouse-jobs-api',
+    'verified-first-party-careers-shell+greenhouse-board-backlink+visible-greenhouse-board-jobs+greenhouse-jobs-api',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-17')
-  assert.equal(provider.verifiedJobCount, 13)
+  assert.equal(provider.verifiedOn, '2026-10-03')
+  assert.equal(provider.verifiedJobCount, 23)
   assert.match(provider.dryRunFile, /groupon[\\/]jobs\.json$/i)
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, July 17, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.grouponcareers\.com\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/job-boards\.eu\.greenhouse\.io\/groupon/i)
   assert.match(
     provider.verifiedSurfaceSummary,
     /https:\/\/boards-api\.greenhouse\.io\/v1\/boards\/groupon\/jobs\?content=true/i,
   )
-  assert.match(provider.verifiedSurfaceSummary, /\b13 public jobs\b/i)
-  assert.match(provider.verifiedSurfaceSummary, /\(AI-First\) Engineering Manager/i)
-  assert.match(provider.verifiedSurfaceSummary, /Business Development Manager/i)
+  assert.match(provider.verifiedSurfaceSummary, /\b23 public jobs\b/i)
+  assert.match(provider.verifiedSurfaceSummary, /four Bangalore roles/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Groupon'), false)
 
   assert.equal(groupon.PROVIDER_METADATA.source, GROUPON_CATALOG.source)

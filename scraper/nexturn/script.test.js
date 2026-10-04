@@ -342,7 +342,7 @@ test('NexTurn helpers validate the official homepage, careers shell, job cards, 
   assert.equal(nexturn.COMPANY, 'NexTurn')
   assert.equal(nexturn.HOMEPAGE_URL, 'https://nexturn.com/')
   assert.equal(nexturn.CAREERS_URL, 'https://nexturn.com/careers/')
-  assert.equal(nexturn.VERIFIED_ON, '2026-08-07')
+  assert.equal(nexturn.VERIFIED_ON, '2026-10-03')
   assert.equal(nexturn.hasOfficialHomepageSignal(officialHomepageHtml), true)
   assert.equal(nexturn.hasOfficialHomepageSignal('<html><title>Placeholder</title></html>'), false)
   assert.equal(nexturn.hasOfficialCareersSignal(officialCareersHtml), true)
@@ -400,6 +400,22 @@ test('NexTurn helpers validate the official homepage, careers shell, job cards, 
       applyUrl: 'https://nexturn.com/job/sap-techno-functional-consultant/',
     },
   )
+})
+
+test('NexTurn accepts its known origin canonical only for the matching official job path', async () => {
+  const nexturn = await loadNexTurnModule()
+  const sourceUrl = 'https://nexturn.com/job/java-linux-admin/'
+  for (const origin of [
+    'ec2-65-0-158-166.ap-south-1.compute.amazonaws.com',
+    '3.7.208.225',
+    '13.202.106.64',
+  ]) {
+    const html = javaLinuxAdminDetailHtml.replace(sourceUrl, `https://${origin}/job/java-linux-admin/`)
+    assert.equal(nexturn.hasOfficialJobDetailSignal(html, sourceUrl), true)
+    assert.equal(nexturn.hasOfficialJobDetailSignal(html, 'https://nexturn.com/job/another-role/'), false)
+  }
+  const unrelated = javaLinuxAdminDetailHtml.replace(sourceUrl, 'https://unrelated.example/job/java-linux-admin/')
+  assert.equal(nexturn.hasOfficialJobDetailSignal(unrelated, sourceUrl), false)
 })
 
 test('NexTurn run validates the official surfaces, fetches same-domain India detail pages, and skips explicit US jobs', async () => {

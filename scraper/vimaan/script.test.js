@@ -129,3 +129,47 @@ test('run returns an empty list when Vimaan exposes only a verified JavaScript j
   ])
   assert.deepEqual(jobs, [])
 })
+
+import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+
+test('current Vimaan homepage enumerates the unfiltered WordPress jobs inventory before reporting zero India roles', async () => {
+  const vimaan = await import('./script.js')
+  const requests=[]
+  const jobs = await vimaan.run({
+    fetchPage: async url => ({status:200,url,html:url===vimaan.HOMEPAGE_URL?"<title>AI for Inventory Visibility and Inventory Accuracy | Vimaan</title><link rel=\"canonical\" href=\"https://vimaan.ai/\" /><meta property=\"og:site_name\" content=\"VIMAAN\" /><p>Vimaan provides AI-powered computer vision products enabling 100% inventory accuracy</p><p>StorTRACK PalletSCAN ParcelSCAN PackVIEW</p><a href=\"https://vimaan.ai/careers/\">Careers</a>":url===vimaan.ABOUT_URL?aboutHtml:url===vimaan.CONTACT_URL?contactHtml:careersShellHtml+'<script>var job_manager_ajax_filters={"ajax_url":"/jm-ajax/%%endpoint%%/"}</script>'}),
+    fetchListings: async request => { requests.push(request); return {"found_jobs":true,"showing":"","max_num_pages":1,"showing_links":"<a href=\"https://vimaan.ai?feed=job_feed&#038;job_types&#038;search_location&#038;job_categories&#038;search_keywords&#038;author\" class=\"rss_link\">RSS</a>","html":"<li class=\"post-23935 job_listing type-job_listing status-publish has-post-thumbnail hentry job_position_featured\" data-longitude=\"\" data-latitude=\"\">\n\t<a href=\"https://vimaan.ai/job/field-engineer-2/\">\n\t\t<img class=\"company_logo\" src=\"https://vimaan.ai/wp-content/uploads/2022/01/mstile-310x150-1-150x150.png\" alt=\"\" />\t\t<div class=\"position\">\n\t\t\t<h3>Field Engineer</h3>\n\t\t\t<div class=\"company\">\n\t\t\t\t\t\t\t\t\t\t\t</div>\n\t\t</div>\n\t\t<div class=\"location\">\n\t\t\tSan Jose, CA\t\t</div>\n\t\t<ul class=\"meta\">\n\t\t\t\n\t\t\t\n\t\t\t<li class=\"date\"><time datetime=\"2024-12-17\">Posted 2 years ago</time></li>\n\n\t\t\t\t\t</ul>\n\t</a>\n</li>\n"} },
+  })
+  assert.equal(jobs.length,0)
+  assert.equal(requests.length,1)
+  assert.equal(requests[0].page,1)
+  assert.equal(requests[0].search_location,'')
+  assert.equal(readInventoryEvidence(jobs)?.status,'complete-inventory')
+  assert.equal(readInventoryEvidence(jobs)?.reportedTotal,1)
+  assert.equal(readInventoryEvidence(jobs)?.indiaFacetCount,0)
+})
+
+test('Vimaan does not report a generic remote job as zero India inventory',async()=>{
+  const vimaan=await import('./script.js')
+  await assert.rejects(vimaan.run({
+    fetchPage: async url=>({status:200,url,html:url===vimaan.HOMEPAGE_URL?homepageHtml:url===vimaan.ABOUT_URL?aboutHtml:url===vimaan.CONTACT_URL?contactHtml:careersShellHtml+'<script>var job_manager_ajax_filters={"ajax_url":"/jm-ajax/%%endpoint%%/"}</script>'}),
+    fetchListings:async()=>({...{"found_jobs":true,"showing":"","max_num_pages":1,"showing_links":"<a href=\"https://vimaan.ai?feed=job_feed&#038;job_types&#038;search_location&#038;job_categories&#038;search_keywords&#038;author\" class=\"rss_link\">RSS</a>","html":"<li class=\"post-23935 job_listing type-job_listing status-publish has-post-thumbnail hentry job_position_featured\" data-longitude=\"\" data-latitude=\"\">\n\t<a href=\"https://vimaan.ai/job/field-engineer-2/\">\n\t\t<img class=\"company_logo\" src=\"https://vimaan.ai/wp-content/uploads/2022/01/mstile-310x150-1-150x150.png\" alt=\"\" />\t\t<div class=\"position\">\n\t\t\t<h3>Field Engineer</h3>\n\t\t\t<div class=\"company\">\n\t\t\t\t\t\t\t\t\t\t\t</div>\n\t\t</div>\n\t\t<div class=\"location\">\n\t\t\tSan Jose, CA\t\t</div>\n\t\t<ul class=\"meta\">\n\t\t\t\n\t\t\t\n\t\t\t<li class=\"date\"><time datetime=\"2024-12-17\">Posted 2 years ago</time></li>\n\n\t\t\t\t\t</ul>\n\t</a>\n</li>\n"},html:"<li class=\"post-23935 job_listing type-job_listing status-publish has-post-thumbnail hentry job_position_featured\" data-longitude=\"\" data-latitude=\"\">\n\t<a href=\"https://vimaan.ai/job/field-engineer-2/\">\n\t\t<img class=\"company_logo\" src=\"https://vimaan.ai/wp-content/uploads/2022/01/mstile-310x150-1-150x150.png\" alt=\"\" />\t\t<div class=\"position\">\n\t\t\t<h3>Field Engineer</h3>\n\t\t\t<div class=\"company\">\n\t\t\t\t\t\t\t\t\t\t\t</div>\n\t\t</div>\n\t\t<div class=\"location\">\n\t\t\tRemote\t\t</div>\n\t\t<ul class=\"meta\">\n\t\t\t\n\t\t\t\n\t\t\t<li class=\"date\"><time datetime=\"2024-12-17\">Posted 2 years ago</time></li>\n\n\t\t\t\t\t</ul>\n\t</a>\n</li>\n"}),
+  }),/country scope|location/i)
+})
+
+test('Vimaan rejects empty inventories with contradictory or incomplete page ranges', async () => {
+  const { verifyPublicInventory } = await import('./publicInventory.js')
+  await assert.rejects(verifyPublicInventory(async () => ({ found_jobs: false, max_num_pages: 2, html: '<li class="no_jobs_found">No jobs found</li>' })), /pagination|incomplete/i)
+  const card = '<li class="post-23935 job_listing"><a href="https://vimaan.ai/job/field-engineer-2/"><h3>Field Engineer</h3><div class="location">San Jose, CA</div></a></li>'
+  await assert.rejects(verifyPublicInventory(async () => ({ found_jobs: true, max_num_pages: 0, html: card })), /pagination|incomplete/i)
+  await assert.rejects(verifyPublicInventory(async ({ page }) => ({ found_jobs: page === 1, max_num_pages: 2, html: page === 1 ? card : '<li class="no_jobs_found">No jobs found</li>' })), /pagination|incomplete/i)
+})
+
+test('Vimaan verifies explicit empty inventory only on a single empty page', async () => {
+  const { verifyPublicInventory } = await import('./publicInventory.js')
+  for (const pages of [0, 1]) {
+    const jobs = await verifyPublicInventory(async () => ({ found_jobs: false, max_num_pages: pages, html: '<li class="no_jobs_found">No jobs found</li>' }))
+    assert.equal(readInventoryEvidence(jobs)?.status, 'verified-empty')
+    assert.equal(readInventoryEvidence(jobs)?.reportedTotal, 0)
+    assert.equal(readInventoryEvidence(jobs)?.pagesFetched, 1)
+  }
+})

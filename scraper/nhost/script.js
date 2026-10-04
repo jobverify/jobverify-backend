@@ -11,9 +11,9 @@ export const PROVIDER_METADATA = {
   companyCareerPage: 'https://nhost.io/careers',
   companyDomain: 'nhost.io',
   atsPlatform: 'official-first-party-careers-page',
-  verifiedOn: '2026-07-25',
+  verifiedOn: '2026-10-03',
   verifiedSurfaceSummary:
-    'Verified on Saturday, July 25, 2026 that https://nhost.io/careers was the live first-party Nhost careers page, that it publicly exposed exactly three first-party role pages for Senior Software Engineer Backend / Operations, Senior Software Engineer Frontend / Product, and Developer Relations Engineer, and that each verified detail page under https://nhost.io/careers/* described a Remote, Full-time role with direct application instructions via careers@nhost.io.',
+    'Verified on October 3, 2026 that https://nhost.io/careers exposed one first-party role page for Senior Software Engineer, Backend & Operations, with a Remote, Full-time detail page and direct application instructions via careers@nhost.io.',
 }
 
 export const SOURCE = PROVIDER_METADATA.source
@@ -26,7 +26,7 @@ export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 export const APPLICATION_EMAIL = 'careers@nhost.io'
 export const APPLICATION_URL = `mailto:${APPLICATION_EMAIL}`
 export const VERIFIED_ROLE_URLS = [
-  'https://nhost.io/careers/infrastructure-engineer',
+  'https://nhost.io/careers/senior-software-engineer-backend-operations',
 ]
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'

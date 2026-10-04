@@ -151,7 +151,7 @@ test('Apar Technologies sentinel helpers stay pinned to the verified first-party
 
   assert.equal(aparTechnologies.SOURCE, 'apartechnologies')
   assert.equal(aparTechnologies.COMPANY, 'Apar Technologies')
-  assert.equal(aparTechnologies.VERIFIED_AT, '2026-07-15')
+  assert.equal(aparTechnologies.VERIFIED_AT, '2026-10-03')
   assert.equal(aparTechnologies.HOMEPAGE_URL, 'https://www.apartechnologies.com/')
   assert.equal(aparTechnologies.CAREERS_URL, 'https://www.apartechnologies.com/careers/')
   assert.equal(
@@ -215,6 +215,25 @@ test('Apar Technologies sentinel helpers stay pinned to the verified first-party
     ),
     true,
   )
+})
+
+test('Apar Technologies accepts its current branded generic careers form only without job listings', async () => {
+  const apar = await loadAparTechnologiesModule()
+  const homepage = '<html><head><title>Enterprise Technology Services Partner | Apar Technologies</title></head><body><a href="https://www.apartechnologies.com/careers/">Careers</a></body></html>'
+  const careers = '<html><head><title>Careers at Apar Technologies | IT &amp; Tech Jobs</title></head><body><h2>Join our team</h2><form><input type="file" name="resume"><button>Submit</button></form></body></html>'
+  const fetchPage = async (url) => ({ status: 200, url, html: url === apar.HOMEPAGE_URL ? homepage : careers })
+
+  assert.equal(apar.hasCurrentHomepageSignal(homepage), true)
+  assert.equal(apar.hasCurrentCareersSignal(careers), true)
+  assert.deepEqual(await apar.createAparTechnologiesScraper().run({ fetchPage }), [])
+
+  await assert.rejects(apar.createAparTechnologiesScraper().run({
+    fetchPage: async (url) => ({
+      status: 200,
+      url,
+      html: url === apar.HOMEPAGE_URL ? homepage : careers.replace('Join our team', 'Current Openings'),
+    }),
+  }), /current careers form/i)
 })
 
 test('Apar Technologies returns no jobs only while the verified first-party careers shell remains placeholder-only', async () => {

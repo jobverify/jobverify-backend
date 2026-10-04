@@ -81,6 +81,7 @@ const normalizeWhitespace = (value) =>
   String(value ?? '')
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&#39;|&apos;|&rsquo;|&#x27;|\u2019/gi, "'")
@@ -231,8 +232,72 @@ export const hasOfficialContactSignal = (html = '') => {
 export const hasPublicJobsSignal = (html = '') =>
   PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
 
+const extractCareerRoleUrls = (html) => {
+  const page = String(html ?? '')
+  if (!/<title>\s*Careers\s*—\s*New Street Technologies\s*<\/title>/i.test(page)
+    || !/<h1[^>]*>\s*Open Roles\s*<\/h1>/i.test(page)) {
+    throw new Error('New Street Technologies official careers page no longer matches the verified listing')
+  }
+
+  const advertisedCount = normalizeWhitespace(page).match(/\bAll roles\s*·\s*(\d+)\b/i)
+  const paths = [...page.matchAll(/<a\b[^>]*href=["'](\/careers\/[a-z0-9-]+)["']/gi)]
+    .map((match) => match[1])
+  const uniquePaths = [...new Set(paths)]
+  if (!advertisedCount || paths.length !== uniquePaths.length
+    || Number(advertisedCount[1]) !== uniquePaths.length) {
+    throw new Error('New Street Technologies careers role count does not match the first-party listing')
+  }
+
+  return uniquePaths.map((rolePath) => new URL(rolePath, PUBLIC_JOB_ROUTE_URLS[0]).toString())
+}
+
+const extractRoleField = (html, label) => {
+  const match = String(html ?? '').match(
+    new RegExp('<p[^>]*>\\s*' + label + '\\s*<\\/p>[\\s\\S]{0,500}?<p[^>]*>([^<]+)<\\/p>', 'i'),
+  )
+  return normalizeWhitespace(match?.[1])
+}
+
+const extractCareerRole = (html, sourceUrl, scrapedAt) => {
+  const page = String(html ?? '')
+  const title = normalizeWhitespace(page.match(/<title>\s*([\s\S]*?)\s*—\s*Careers at New Street Technologies\s*<\/title>/i)?.[1])
+  const heading = normalizeWhitespace(page.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1])
+  const description = normalizeWhitespace(page.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i)?.[1])
+  const experience = extractRoleField(page, 'Experience')
+  const location = extractRoleField(page, 'Location')
+  if (!title || !heading || heading.replace(/[·—]/g, '-') !== title.replace(/[·—]/g, '-')
+    || !description || !experience || !location
+    || !/<button[^>]*aria-haspopup=["']dialog["'][^>]*>\s*Apply for this role/i.test(page)) {
+    throw new Error('New Street Technologies verified role or application surface has changed')
+  }
+
+  const slug = new URL(sourceUrl).pathname.split('/').at(-1)
+  return {
+    company: COMPANY,
+    title: heading,
+    location: /bengaluru|bangalore/i.test(location) ? 'Bengaluru, Karnataka, India' : location,
+    city: /bengaluru|bangalore/i.test(location) ? 'Bengaluru' : null,
+    country: 'India',
+    link: sourceUrl,
+    applyUrl: sourceUrl,
+    sourceUrl,
+    source: SOURCE,
+    jobId: slug,
+    department: null,
+    employmentType: null,
+    experienceRequired: experience,
+    jobDescription: description,
+    minimumQualification: null,
+    preferredQualification: null,
+    requiredSkills: [],
+    postingDate: null,
+    remoteStatus: 'On-site',
+    scrapedAt,
+  }
+}
+
 export const createNewStreetTechnologiesScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
+  async run({ fetchPage = defaultFetchPage, now = () => new Date().toISOString() } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('New Street Technologies verified official homepage no longer matches the known public surface')
@@ -255,7 +320,29 @@ export const createNewStreetTechnologiesScraper = () => ({
       throw new Error('New Street Technologies contact page now appears to expose public openings')
     }
 
-    for (const routeUrl of PUBLIC_JOB_ROUTE_URLS) {
+    const careersPage = await fetchPage(PUBLIC_JOB_ROUTE_URLS[0])
+    if (careersPage.status === 200) {
+      const roleUrls = extractCareerRoleUrls(careersPage.html)
+      const scrapedAt = now()
+      const jobs = []
+      for (const roleUrl of roleUrls) {
+        const rolePage = await fetchPage(roleUrl)
+        if (rolePage.status !== 200 || new URL(rolePage.url).origin !== new URL(roleUrl).origin) {
+          throw new Error('New Street Technologies verified role page is unavailable or redirected away')
+        }
+        const job = extractCareerRole(rolePage.html, roleUrl, scrapedAt)
+        if (/bengaluru|bangalore|\bindia\b/i.test(job.location)) {
+          jobs.push(job)
+        }
+      }
+      return jobs
+    }
+
+    if (careersPage.status !== 404) {
+      throw new Error('New Street Technologies official careers page is unavailable')
+    }
+
+    for (const routeUrl of PUBLIC_JOB_ROUTE_URLS.slice(1)) {
       const routePage = await fetchPage(routeUrl)
       if (routePage.status !== 404) {
         throw new Error(`New Street Technologies public jobs route ${routeUrl} no longer matches the verified 404 zero-job state`)

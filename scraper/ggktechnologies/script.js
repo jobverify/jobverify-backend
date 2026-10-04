@@ -34,8 +34,11 @@ export const hasRedirectedHomepageSignal = (html = '') => {
     && normalized.includes('Innova Solutions')
 }
 
-export const pageExposesGgkJobListings = (html = '') =>
-  /ggk/i.test(String(html ?? '')) && /careers|jobs|software engineer|developer/i.test(String(html ?? ''))
+export const pageExposesGgkJobListings = (html = '') => {
+  const publicHtml = String(html ?? '')
+    .replace(/<input\b(?=[^>]*\btype\s*=\s*["']hidden["'])[^>]*>/gi, '')
+  return /ggk/i.test(publicHtml) && /careers|jobs|software engineer|developer/i.test(publicHtml)
+}
 
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {

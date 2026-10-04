@@ -170,7 +170,9 @@ test('American Chase Keka scraper maps only India jobs without inventing a posti
     sourceUrl: 'https://americanchase.keka.com/careers/jobdetails/88834',
     applyUrl: 'https://americanchase.keka.com/careers/jobdetails/88834',
     employmentType: 'Full Time',
+    sourceEmploymentType: 'Full Time',
     experienceRequired: null,
+    sourceExperienceRequired: null,
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
@@ -178,4 +180,21 @@ test('American Chase Keka scraper maps only India jobs without inventing a posti
     closingDate: null,
     jobDescription: null,
   }])
+})
+
+test('American Chase employer facts survive normalization and reach the model without inferred labels', async () => {
+  const { extractSearchResults, CAREER_PAGE_URL } = await loadModule()
+  const { normalizeScrapedJob } = await import('../../scraper-support/utils/normalizeScrapedJob.js')
+  const { buildClassificationInput } = await import('../../src/services/jobClassificationPolicy.js')
+  const [job] = extractSearchResults([{
+    id: 88834, title: 'Associate System Engineer', jobType: 2, experience: 0,
+    description: 'Batch Required Graduate 2025. Full Time (Night Shift).',
+    jobLocations: [{ city: 'Indore', countryCode: 'IN' }],
+  }], { domain: CAREER_PAGE_URL })
+  assert.equal(job.sourceEmploymentType, 'Full Time')
+  assert.equal(job.sourceExperienceRequired, '0')
+  const input = buildClassificationInput(normalizeScrapedJob(job))
+  assert.equal(input.sourceEmploymentType, 'Full Time')
+  assert.equal(input.sourceFields.experienceRequired, '0')
+  assert.match(input.body, /Required professional experience:\n0/)
 })

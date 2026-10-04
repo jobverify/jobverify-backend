@@ -15,7 +15,7 @@ export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const GREENHOUSE_BOARD_URL = PROVIDER_METADATA.greenhouseBoardUrl
 export const GREENHOUSE_JOBS_API_URL = PROVIDER_METADATA.greenhouseJobsApiUrl
-export const VERIFIED_SAMPLE_JOB_ID = '7443309'
+export const VERIFIED_SAMPLE_JOB_ID = '7528886'
 export const VERIFIED_ON = PROVIDER_METADATA.verifiedOn
 
 const USER_AGENT =
@@ -156,19 +156,14 @@ export const extractEmbeddedFirstPartyJobs = (html = '') => {
 
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
-  const normalized = decodeRepeatedHtmlEntities(normalizeWhitespace(page) || '')
   const payload = extractNextDataPayload(page)
   const jobs = flattenEmbeddedJobs(payload?.props?.pageProps?.jobsDepartmentWise)
 
   return page.includes('__NEXT_DATA__')
-    && payload?.page === '/careers/latest'
-    && normalized.includes("Why you'd love being here.")
-    && normalized.includes('Search')
-    && normalized.includes('Everywhere')
-    && normalized.includes('All')
+    && payload?.page === '/careers'
+    && page.includes('Careers at Glance')
+    && page.includes('Come build what millions see every day')
     && jobs.length > 0
-    && jobs.some((job) => String(job?.id) === VERIFIED_SAMPLE_JOB_ID)
-    && jobs.some((job) => isIndiaJob(job))
     && jobs.every((job) => normalizeGreenhouseApplyUrl(job?.absolute_url, job?.id))
 }
 
@@ -272,8 +267,20 @@ export const createGlanceScraper = ({
         .map((job) => String(job.id)),
     )
 
+    const greenhousePayload = await fetchJson(buildGreenhouseJobsApiUrl(), { method: 'GET' })
+    const greenhouseJobs = greenhousePayload?.jobs
+    const greenhouseIds = new Set(Array.isArray(greenhouseJobs) ? greenhouseJobs.map((job) => String(job?.id)) : [])
+    const embeddedIds = new Set(embeddedJobs.map((job) => String(job?.id)))
+    if (!Array.isArray(greenhouseJobs)
+      || embeddedIds.size !== embeddedJobs.length
+      || greenhouseIds.size !== greenhouseJobs.length
+      || embeddedIds.size !== greenhouseIds.size
+      || [...embeddedIds].some((id) => !greenhouseIds.has(id))) {
+      throw new Error('Glance first-party and Greenhouse job inventories disagree')
+    }
+
     const jobs = extractIndiaJobsFromGreenhousePayload(
-      await fetchJson(buildGreenhouseJobsApiUrl(), { method: 'GET' }),
+      greenhousePayload,
       {
         allowedJobIds,
         scrapedAt: now(),

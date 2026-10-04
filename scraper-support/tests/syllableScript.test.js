@@ -88,7 +88,7 @@ test('Syllable verifies the first-party careers page and linked Rippling board s
   assert.equal(syllable.SOURCE, 'syllable')
   assert.equal(syllable.COMPANY_NAME, 'Syllable')
   assert.equal(syllable.OFFICIAL_BRAND_NAME, 'Syllable AI')
-  assert.equal(syllable.VERIFIED_ON, '2026-08-05')
+  assert.equal(syllable.VERIFIED_ON, '2026-10-03')
   assert.equal(syllable.CAREERS_URL, 'https://syllable.ai/careers')
   assert.equal(syllable.JOBS_URL, 'https://ats.rippling.com/syllable-corporation/jobs')
   assert.equal(syllable.JOB_BOARD_SLUG, 'syllable-corporation')
@@ -122,7 +122,7 @@ test('Syllable verifies the first-party careers page and linked Rippling board s
   })
 })
 
-test('Syllable run validates the first-party-linked Rippling board and currently returns no India jobs', async () => {
+test('Syllable run validates the first-party-linked Rippling board and keeps non-India jobs excluded on the historical nonempty board fixture', async () => {
   const syllable = await loadModule()
   const requestedUrls = []
 

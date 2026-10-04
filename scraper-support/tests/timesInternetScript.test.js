@@ -118,6 +118,18 @@ const enterpriseDetailHtml = `
 </html>
 `
 
+const salesManagerDetailHtml = `
+<!doctype html><html><head>
+  <title>Sales Manager Job at Times Internet | Ad Sales Jobs in Gurgaon Apply Now</title>
+</head><body><main>
+  <h2>Sales Manager</h2><a href="/careers/custom-job">Apply now</a>
+  <div class="col-md-6 job-description">
+    <h2>JOB DESCRIPTION</h2>
+    <div><div>Primary responsibilities are</div><div>Sales Forecasting &amp; Management</div></div>
+  </div>
+</main><footer>Times Internet</footer></body></html>
+`
+
 const loadModule = async () => {
   try {
     return await import('../../scraper/timesinternet/script.js')
@@ -133,10 +145,10 @@ test('Times Internet helpers stay pinned to the verified first-party listing and
   assert.equal(timesInternet.COMPANY, 'Times Internet')
   assert.equal(timesInternet.OFFICIAL_BRAND_NAME, 'Times Internet')
   assert.equal(timesInternet.CAREERS_URL, 'https://timesinternet.in/careers/job-list')
-  assert.equal(timesInternet.VERIFIED_ON, '2026-07-17')
+  assert.equal(timesInternet.VERIFIED_ON, '2026-10-03')
   assert.deepEqual(timesInternet.VERIFIED_JOB_DETAIL_URLS, [
-    'https://timesinternet.in/careers/job-detail/698222a358a30d19cf667cbb',
-    'https://timesinternet.in/careers/job-detail/644b66c280bea7e80b7a127c',
+    'https://timesinternet.in/careers/job-detail/6abb601846c5d2b24a35bd82',
+    'https://timesinternet.in/careers/job-detail/644b66c280bea7e80b7a229d',
   ])
   assert.equal(timesInternet.hasOfficialCareersSignal(careersPageHtml), true)
   assert.deepEqual(timesInternet.extractJobCards(careersPageHtml), [
@@ -163,6 +175,13 @@ test('Times Internet helpers stay pinned to the verified first-party listing and
     },
   ])
   assert.equal(timesInternet.hasOfficialJobDetailSignal(associateSalesDetailHtml), true)
+  assert.equal(timesInternet.hasOfficialJobDetailSignal(salesManagerDetailHtml), true)
+  assert.match(timesInternet.extractJobFromDetailHtml(salesManagerDetailHtml, {
+    title: 'Sales Manager',
+    location: 'Gurgaon',
+    business: 'Ad Sales',
+    detailUrl: 'https://timesinternet.in/careers/job-detail/644b66c280bea7e80b7a229d',
+  }).jobDescription, /Sales Forecasting & Management/)
   assert.deepEqual(
     timesInternet.extractJobFromDetailHtml(
       associateSalesDetailHtml,

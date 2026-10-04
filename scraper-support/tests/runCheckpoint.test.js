@@ -106,6 +106,37 @@ test('run checkpoint rejects a catalog change inside the same run directory', ()
   }
 })
 
+test('run checkpoint can resume after an already completed source leaves the catalog', () => {
+  const { directory, filePath } = createTempCheckpoint()
+  try {
+    const initial = openRunCheckpoint({ filePath, sources: ['alpha', 'beta', 'gamma'], mode: 'dry-run', parallel: true })
+    initial.markSourceCompleted('beta', { success: true, jobs: 4 })
+
+    const resumed = openRunCheckpoint({ filePath, sources: ['alpha', 'gamma'], mode: 'dry-run', parallel: true })
+    assert.deepEqual(resumed.pendingSources(['alpha', 'gamma']), ['alpha', 'gamma'])
+    assert.deepEqual(resumed.snapshot().catalogSources, ['alpha', 'beta', 'gamma'])
+    resumed.markSourceCompleted('alpha', { success: true, jobs: 1 })
+    resumed.markSourceCompleted('gamma', { success: true, jobs: 2 })
+    resumed.finish()
+    assert.equal(resumed.snapshot().completedCount, 3)
+    assert.equal(resumed.snapshot().remainingCount, 0)
+    assert.equal(resumed.snapshot().status, 'complete')
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true })
+  }
+})
+
+test('run checkpoint still rejects removal of an unfinished source', () => {
+  const { directory, filePath } = createTempCheckpoint()
+  try {
+    const initial = openRunCheckpoint({ filePath, sources: ['alpha', 'beta'], mode: 'dry-run', parallel: true })
+    initial.markSourceCompleted('alpha', { success: true })
+    assert.throws(() => openRunCheckpoint({ filePath, sources: ['alpha'], mode: 'dry-run', parallel: true }), /catalog changed/i)
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true })
+  }
+})
+
 test('run checkpoint keeps summary metrics but omits bulky per-source detail', () => {
   const { directory, filePath } = createTempCheckpoint()
 

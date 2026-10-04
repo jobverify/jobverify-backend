@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import fs from 'node:fs/promises'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const FIXED_SCRAPED_AT = '2026-08-01T00:00:00.000Z'
 
@@ -322,24 +324,16 @@ test('CDW run returns normalized India jobs from the verified search results and
   assert.match(jobs[2].jobDescription, /Microsoft Fabric/i)
 })
 
-test('Maven Wave Partners stays fail-closed while the public surface is limited to Atos redirect plus Jobvite alerts', async () => {
+test('Maven Wave Partners verifies the native linked unfiltered empty Jobvite inventory', async () => {
   const mavenWave = await loadModule('../../scraper/mavenwavepartners/script.js')
   const requestedUrls = []
-
-  assert.equal(mavenWave.hasVerifiedHomepageRedirectSignal(mavenWaveHomepageHtml), true)
-  assert.equal(mavenWave.hasJobAlertsSignal(mavenWaveAlertsHtml), true)
-
-  const jobs = await mavenWave.createMavenWavePartnersScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === mavenWave.HOMEPAGE_URL) return mavenWaveHomepageHtml
-      if (url === mavenWave.CAREERS_URL) return mavenWaveAlertsHtml
-      throw new Error(`Unexpected Maven Wave URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [mavenWave.HOMEPAGE_URL, mavenWave.CAREERS_URL])
+  const alerts = await fs.readFile(new URL('../../scraper/mavenwavepartners/fixtures/current-alerts.html', import.meta.url), 'utf8')
+  const openings = await fs.readFile(new URL('../../scraper/mavenwavepartners/fixtures/current-openings.html', import.meta.url), 'utf8')
+  const jobs = await mavenWave.run({fetchText: async url => {requestedUrls.push(url);if(url===mavenWave.ALERTS_URL)return alerts;if(url===mavenWave.CAREERS_URL)return openings;throw new Error('Unexpected Maven Wave URL '+url)}})
+  assert.deepEqual(requestedUrls, [mavenWave.ALERTS_URL, mavenWave.CAREERS_URL])
   assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).status, 'verified-empty')
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
 })
 
 test('Vertex Global Services stays fail-closed while the careers page remains contradictory and untrustworthy', async () => {

@@ -13,7 +13,7 @@ test('Renault Group is registered as a verified Workday-backed provider', () => 
   assert.equal(provider.companyCareerPage, 'https://www.renaultgroup.com/en/careers/')
   assert.equal(
     provider.officialWorkdayBoardUrl,
-    'https://alliancewd.wd3.myworkdayjobs.com/en-US/renault-group-careers',
+    'https://alliancewd.wd3.myworkdayjobs.com/renault-group-careers',
   )
   assert.equal(
     provider.jobsApiUrl,
@@ -24,7 +24,7 @@ test('Renault Group is registered as a verified Workday-backed provider', () => 
   assert.equal(provider.paginationStrategy, 'verified-careers-overview-plus-workday-jobs-api')
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-careers-overview+verified-workday-board+inferred-workday-jobs-api',
+    'verified-homepage+verified-careers-overview+verified-current-workday-board+workday-jobs-api',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.companyDomain, 'renaultgroup.com')

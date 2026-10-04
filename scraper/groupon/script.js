@@ -94,7 +94,7 @@ const inferCountry = (location) => {
   const normalized = normalizeLocationLabel(location)
   if (!normalized) return null
 
-  if (/\bindia\b/i.test(normalized)) return 'India'
+  if (/\b(?:india|bangalore|bengaluru)\b/i.test(normalized)) return 'India'
   if (/\bunited states\b/i.test(normalized)) return 'United States'
   return null
 }
@@ -166,12 +166,21 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeVisibleText(page)
 
-  return /<title>\s*Why Groupon\s*<\/title>/i.test(page)
+  return hasCurrentCareersSignal(page)
+    || (/<title>\s*Why Groupon\s*<\/title>/i.test(page)
     && text.includes('our mission')
     && text.includes('our teams')
     && text.includes('bangalore and chennai')
     && text.includes('apply now and join the groupon team!')
-    && extractOfficialBoardUrl(page) === BOARD_URL
+    && extractOfficialBoardUrl(page) === BOARD_URL)
+}
+
+export const hasCurrentCareersSignal = (html = '') => {
+  const page = String(html ?? '')
+  return /<title>\s*Groupon Careers\s*<\/title>/i.test(page)
+    && /<meta\s+name=["']description["']\s+content=["']Join Groupon[^"']*explore open roles[^"']*meet our teams/i.test(page)
+    && /<script\s+type=["']module["'][^>]+src=["']\/assets\/index-[A-Za-z0-9_-]+\.js["']/i.test(page)
+    && /<div\s+id=["']root["']\s*><\/div>/i.test(page)
 }
 
 export const extractVisibleJobUrls = (html = '') => {
@@ -282,6 +291,12 @@ export const createGrouponScraper = ({
     }
 
     const boardHtml = await fetchText(BOARD_URL)
+    if (hasCurrentCareersSignal(careersHtml)
+      && (!/<title[^>]*>\s*Jobs at Groupon\s*<\/title>/i.test(boardHtml)
+        || !/https:\/\/www\.grouponcareers\.com/i.test(boardHtml)
+        || !/life at Groupon/i.test(boardHtml))) {
+      throw new Error('Groupon Greenhouse board no longer links back to its first-party careers domain')
+    }
     const visibleJobUrls = extractVisibleJobUrls(boardHtml)
     if (visibleJobUrls.length === 0) {
       throw new Error('Groupon visible Groupon Greenhouse job links are no longer exposed on the official board')

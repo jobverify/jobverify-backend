@@ -143,3 +143,45 @@ test('BLASTLINE INDIA PVT LTD fails closed when the verified homepage or public 
     /verified page payload|verified inline public openings/i,
   )
 })
+
+test('BLASTLINE INDIA PVT LTD follows its new board and excludes other group companies', async () => {
+  const blastline = await loadBlastlineModule()
+  const boardUrl = 'https://careers.blastlineindia.com/'
+  const detailsUrl = `${boardUrl}jobs/export-sales-co-ordinator`
+  const currentCareersHtml = '<title>Careers - Blastline India</title><h2>Current Openings</h2><a href="https://careers.blastlineindia.com/">VIEW OPEN POSITIONS</a>'
+  const boardHtml = `<title>Careers | Blastline India</title><p>3 roles</p>
+    <article class="job-card"><h3><a href="/jobs/export-sales-co-ordinator">Export Sales Co-ordinator</a></h3><span class="company-badge"><i></i>Blastline India</span><ul class="job-meta"><li>Angamaly, Ernakulam</li><li>Sales</li><li>5–8 years experience</li><li>Full-time</li></ul></article>
+    <article class="job-card"><h3><a href="/o/jolly-industries/jobs/design-engineer">Design Engineer</a></h3><span class="company-badge"><i></i>Jolly Industries</span></article>
+    <footer>Blastline India Pvt Ltd</footer>`
+  const detailHtml = `<title>Export Sales Co-ordinator | Blastline India</title><main><script type="application/ld+json">${JSON.stringify({
+    '@type': 'JobPosting', title: 'Export Sales Co-ordinator', description: '<p>Export sales role</p>',
+    datePosted: '2026-09-28', validThrough: '2026-10-31T23:59:59+05:30',
+    employmentType: 'FULL_TIME', directApply: true,
+    hiringOrganization: { name: 'Blastline India Pvt Ltd', sameAs: 'https://blastlineindia.com' },
+    jobLocation: { address: { addressCountry: 'IN' } },
+  })}</script><form class="apply-form"><h2 id="apply">Apply for this role</h2><input name="resume"/></form></main>`
+  const requestedUrls = []
+  const jobs = await blastline.createBlastlineIndiaPvtLtdScraper().run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      const responses = new Map([
+        [blastline.HOMEPAGE_URL, homepageHtml], [blastline.CAREERS_URL, currentCareersHtml],
+        [boardUrl, boardHtml], [detailsUrl, detailHtml],
+      ])
+      if (!responses.has(url)) throw new Error(`Unexpected URL: ${url}`)
+      return responses.get(url)
+    },
+    fetchJson: async () => ({
+      id: 2957, slug: 'careers', link: blastline.CAREERS_URL,
+      title: { rendered: 'Careers' },
+      content: { rendered: '<h2>Current Openings</h2><a href="https://careers.blastlineindia.com/">VIEW OPEN POSITIONS</a>' },
+    }),
+    now: () => '2026-10-03T00:00:00.000Z',
+  })
+
+  assert.deepEqual(requestedUrls, [blastline.HOMEPAGE_URL, blastline.CAREERS_URL, boardUrl, detailsUrl])
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Export Sales Co-ordinator')
+  assert.equal(jobs[0].applyUrl, `${detailsUrl}#apply`)
+  assert.equal(jobs[0].company, 'BLASTLINE INDIA PVT LTD')
+})

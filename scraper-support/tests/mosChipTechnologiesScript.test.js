@@ -24,7 +24,7 @@ const CURRENT_OPENINGS_HTML = `
 <html lang="en-US">
   <head>
     <meta charset="UTF-8">
-    <title>Current Openings - MosChip</title>
+    <title>Current Job Openings | MosChip</title>
   </head>
   <body>
     <main>
@@ -86,7 +86,7 @@ test('MosChip Technologies sentinel helpers stay pinned to the verified careers 
   assert.equal(moschipTechnologies.SOURCE, 'moschiptechnologies')
   assert.equal(moschipTechnologies.COMPANY, 'MosChip Technologies')
   assert.equal(moschipTechnologies.OFFICIAL_BRAND_NAME, 'MosChip Technologies Limited')
-  assert.equal(moschipTechnologies.VERIFIED_ON, '2026-07-16')
+  assert.equal(moschipTechnologies.VERIFIED_ON, '2026-10-03')
   assert.equal(moschipTechnologies.HOMEPAGE_URL, 'https://moschip.com/')
   assert.equal(moschipTechnologies.CAREERS_URL, 'https://moschip.com/careers/')
   assert.equal(

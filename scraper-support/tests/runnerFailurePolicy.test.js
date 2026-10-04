@@ -373,3 +373,9 @@ test('shouldAbortPipelineAfterFailures only aborts once an explicit threshold is
   assert.equal(shouldAbortPipelineAfterFailures(3, 3), true)
   assert.equal(shouldAbortPipelineAfterFailures(4, 3), true)
 })
+
+
+test('Workday maintenance HTML is classified as an upstream outage even inside a JSON error', () => {
+  const error = new Error('Expected JSON from https://example.wd1.myworkdayjobs.com/wday/cxs/example/jobs/jobs but received HTML (Workday is currently unavailable.)')
+  assert.deepEqual(classifyScraperError(error), {softFailure: true, upstreamOutage: true, failureKind: 'network_or_timeout'})
+})

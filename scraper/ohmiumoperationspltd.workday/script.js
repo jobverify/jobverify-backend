@@ -1,3 +1,4 @@
+import { assertWorkdayPageAvailable } from '../../scraper-support/myworkday/pageAvailability.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -120,6 +121,7 @@ export const createOhmiumOperationsPltdScraper = ({
     }
 
     const workdayHtml = await fetchVerifiedText(WORKDAY_BASE_URL)
+    assertWorkdayPageAvailable({ status: 200, html: workdayHtml, url: WORKDAY_BASE_URL }, { source: SOURCE, url: WORKDAY_BASE_URL })
     if (!hasVerifiedWorkdayBoardSignal(workdayHtml)) {
       throw new Error('Ohmium verified Workday board changed; refusing to guess the public jobs source')
     }

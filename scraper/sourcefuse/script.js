@@ -122,7 +122,8 @@ export const hasApplicationFormSignal = (html = '') => {
 
   return page.includes(`action="${APPLICATION_FORM_ACTION}"`)
     && /name=["']your-job-name["']/i.test(page)
-    && /accept=["'][^"']*\.doc,\s*\.docx,\s*\.pdf/i.test(page)
+    && /data-name=["']your-cv["']/i.test(page)
+    && /accept=["'][^"']*\.pdf(?:\s*,|\s*["'])/i.test(page)
   }
 
 export const extractJobCards = (html = '') =>

@@ -77,10 +77,11 @@ export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(rawHtml)
   const lowered = normalized.toLowerCase()
 
-  return normalized.includes('The Intelligence Layer for Supply Chain & Logistics | Enmovil')
-    && lowered.includes('your technology thought partner for autonomous supply chains')
+  return normalized.includes('AI Supply Chain & Logistics Intelligence Platform | Enmovil')
+    && normalized.includes('CADDIE')
+    && lowered.includes('erp')
+    && lowered.includes('tms')
     && lowered.includes('book a demo')
-    && lowered.includes('talk to sales')
 }
 
 export const extractSitemapUrls = (xml) => [...String(xml ?? '').matchAll(/<loc>([^<]+)<\/loc>/gi)]
@@ -89,18 +90,21 @@ export const extractSitemapUrls = (xml) => [...String(xml ?? '').matchAll(/<loc>
 export const sitemapIncludesCareersUrl = (xml) =>
   extractSitemapUrls(xml).some((url) => sameUrl(url, CAREERS_URL))
 
+export const sitemapIncludesHomepageUrl = (xml) =>
+  extractSitemapUrls(xml).some((url) => sameUrl(url, HOMEPAGE_URL))
+
 export const hasOfficialCareersPageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml)
 
-  return normalized.includes('Careers | Enmovil')
+  return normalized.includes('Careers at Enmovil | Enmovil')
     && normalized.includes('Careers')
     && /rel=["']canonical["'][^>]+href=["']https:\/\/www\.enmovil\.ai\/careers["']/i.test(rawHtml)
 }
 
-export const hasComingSoonCareersState = (html) => {
+export const hasVerifiedEmptyCareersState = (html) => {
   const normalized = normalizeWhitespace(html)
-  return normalized.includes('Careers') && normalized.includes('Coming soon')
+  return normalized.includes('Careers') && /\bno open roles right now\b/i.test(normalized)
 }
 
 export const pageExposesPublicJobListings = (html) => {
@@ -133,9 +137,9 @@ export const createEnmovilScraper = () => ({
     if (
       sitemap.status !== 200
       || !sameUrl(sitemap.url, SITEMAP_URL)
-      || !sitemapIncludesCareersUrl(sitemap.html)
+      || !sitemapIncludesHomepageUrl(sitemap.html)
     ) {
-      throw new Error('Enmovil sitemap no longer matches the verified careers URL contract')
+      throw new Error('Enmovil sitemap no longer matches the verified official homepage URL contract')
     }
 
     const careersPage = await fetchPage(CAREERS_URL)
@@ -147,7 +151,7 @@ export const createEnmovilScraper = () => ({
       throw new Error('Enmovil careers page changed materially or no longer matches the verified first-party careers shell')
     }
 
-    if (pageExposesPublicJobListings(careersPage.html) || !hasComingSoonCareersState(careersPage.html)) {
+    if (pageExposesPublicJobListings(careersPage.html) || !hasVerifiedEmptyCareersState(careersPage.html)) {
       throw new Error('Enmovil careers page changed materially or now exposes a public jobs surface')
     }
 

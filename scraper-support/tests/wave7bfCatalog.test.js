@@ -148,11 +148,10 @@ test('Betsol local catalog captures the verified first-party linkout and public 
   assert.equal(provider.source, 'betsol')
   assert.equal(provider.companyCareerPage, 'https://www.betsol.com/careers/')
   assert.equal(provider.boardUrl, 'https://careers.smartrecruiters.com/Betsol')
-  assert.equal(provider.atsPlatform, 'smartrecruiters-board-html')
-  assert.equal(provider.paginationStrategy, 'exact-name-smartrecruiters-board-grouped-by-location')
-  assert.match(provider.verifiedSurfaceSummary, /Cloudflare challenge/i)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, August 1, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /15 India roles/i)
+  assert.equal(provider.atsPlatform, 'smartrecruiters-public-postings-api')
+  assert.equal(provider.paginationStrategy, 'complete-smartrecruiters-public-postings-api-with-board-count-check')
+  assert.match(provider.verifiedSurfaceSummary, /October 3, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /Sixteen published postings are explicitly in India/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

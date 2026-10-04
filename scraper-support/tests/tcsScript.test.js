@@ -221,3 +221,28 @@ test('TCS refuses a malformed search payload instead of reporting zero jobs', as
   const { createTcsScraper } = await loadTcsModule()
   await assert.rejects(createTcsScraper({ maxPages: 1 }).run({ fetchJson: async () => ({ status: 'unavailable' }) }), /invalid.*search response/i)
 })
+
+
+test('TCS reports a verified API migration when the old search URL redirects to the new official app shell', async (t) => {
+  const { createTcsScraper } = await loadTcsModule()
+  const { classifyScraperError } = await import('../utils/failureClassification.js')
+  t.mock.method(globalThis, 'fetch', async () => {
+    const response = new Response('<html><title>iBegin</title><base href="/candidate/next/"><ib-root></ib-root></html>', { status: 200, headers: { 'Content-Type': 'text/html' } })
+    Object.defineProperty(response, 'url', { value: 'https://ibegin.tcsapps.com/candidate/next/' })
+    return response
+  })
+  await assert.rejects(createTcsScraper({ maxPages: 1 }).run(), (error) => {
+    assert.equal(error.code, 'TCS_API_MIGRATED')
+    assert.equal(error.abortRetries, true)
+    const failure = classifyScraperError(error)
+    assert.equal(failure.softFailure, true)
+    assert.equal(failure.failureKind, 'surface_drift_or_fail_closed')
+    return true
+  })
+})
+
+test('TCS keeps unknown HTML responses as parser failures', async (t) => {
+  const { createTcsScraper } = await loadTcsModule()
+  t.mock.method(globalThis, 'fetch', async () => new Response('<html><title>Unexpected</title></html>', { status: 200, headers: { 'Content-Type': 'text/html' } }))
+  await assert.rejects(createTcsScraper({ maxPages: 1 }).run(), /Expected JSON from TCS/)
+})

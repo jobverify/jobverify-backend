@@ -1,3 +1,4 @@
+import { assertWorkdayPageAvailable } from '../../scraper-support/myworkday/pageAvailability.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -247,6 +248,7 @@ export const createIgInfotechIndiaScraper = ({
     }
 
     const listingHtml = await fetchText(WORKDAY_LISTING_URL)
+    assertWorkdayPageAvailable({ status: 200, html: listingHtml, url: WORKDAY_LISTING_URL }, { source: SOURCE, url: WORKDAY_LISTING_URL })
     if (!hasOfficialWorkdayListingSignal(listingHtml)) {
       throw new Error('The verified IG Workday listing page no longer matches the trusted first-party surface')
     }
