@@ -3,89 +3,40 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { createKbrScraper, run } from '../../scraper/kbr/script.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
-const loadKbrModule = async () => {
-  try {
-    return await import('../../scraper/kbr/script.js')
-  } catch {
-    assert.fail('Expected KBR scraper module at ../../scraper/scraper/kbr/script.js')
-  }
-}
-
-const fixturesDir = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  'fixtures',
-  'kbr',
-)
-
-const readFixture = (name) => readFileSync(path.join(fixturesDir, name), 'utf8')
-
-test('buildSearchResultsPageUrl keeps KBR listings on the official Phenom search route', async () => {
-  const {
-    CAREERS_LANDING_URL,
-    HOMEPAGE_URL,
-    buildJobDetailUrl,
-    buildSearchResultsPageUrl,
-  } = await loadKbrModule()
-
-  assert.equal(HOMEPAGE_URL, 'https://www.kbr.com/en')
-  assert.equal(CAREERS_LANDING_URL, 'https://careers.kbr.com/us/en')
-  assert.equal(
-    buildSearchResultsPageUrl(),
-    'https://careers.kbr.com/us/en/search-results',
-  )
-  assert.equal(
-    buildSearchResultsPageUrl(10),
-    'https://careers.kbr.com/us/en/search-results?from=10',
-  )
-  assert.equal(
-    buildJobDetailUrl({ reqId: 'R2109999', title: 'Senior Associate Designer' }),
-    'https://careers.kbr.com/us/en/job/R2109999/Senior-Associate-Designer',
-  )
+const fixturesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures', 'kbr')
+const readFixture = name => readFileSync(path.join(fixturesDir, name), 'utf8')
+const fixtureJson = name => JSON.parse(readFixture(name))
+const snapshot = fixtureJson('current-snapshot.json')
+const detail = fixtureJson('current-workday-detail.json')
+const now = () => '2026-10-08T18:00:00.000Z'
+const buildFetch = ({ snapshotValue = snapshot, widget = { name: 'KBR', jobs: [] }, detailValue = detail, search = { total: 0, jobPostings: [] }, control = { total: 1, jobPostings: [{ bulletFields: ['R2109999'] }] }, overview = readFixture('migration-overview.html') } = {}, requests = []) => ({
+  fetchText: async url => {
+    requests.push(url)
+    if (url === 'https://www.kbr.com/en') return readFixture('homepage.html')
+    if (url === 'https://careers.kbr.com/us/en') return overview
+    if (url === 'https://jobs.kbr.com/jobs.html') return readFixture('current-jobs.html')
+    if (url === 'https://jobs.kbr.com/data/kbr-jobs.json') return JSON.stringify(snapshotValue)
+    if (url === 'https://apply.workable.com/api/v1/widget/accounts/kbr') return JSON.stringify(widget)
+    if (url === 'https://kbr.wd5.myworkdayjobs.com/wday/cxs/kbr/KBR_Careers/job/Chennai-Tamil-Nadu-India/Designer_R2109999') return JSON.stringify(detailValue)
+    throw new Error('Unexpected KBR fixture URL: ' + url)
+  },
+  fetchJson: async (url, options) => {
+    requests.push(url)
+    assert.equal(url, 'https://kbr.wd5.myworkdayjobs.com/wday/cxs/kbr/KBR_Careers/jobs')
+    assert.equal(options.method, 'POST')
+    const requisition = JSON.parse(options.body).searchText
+    if (requisition === 'R2109999') return control
+    assert.equal(requisition, 'R2121383')
+    return search
+  },
 })
 
-test('extractSearchPayload reads KBR embedded Phenom search payloads and India aggregation counts', async () => {
-  const { extractSearchPayload } = await loadKbrModule()
-  const payload = extractSearchPayload(readFixture('search-results-page-0.html'))
-
-  assert.equal(payload.totalHits, 2)
-  assert.equal(payload.hits, 10)
-  assert.equal(payload.jobs.length, 2)
-  assert.equal(payload.aggregations.country.India, 1)
-  assert.equal(payload.jobs[0].reqId, 'R2109999')
-})
-
-test('run validates the official KBR homepage handoff and returns India jobs from the Phenom detail page', async () => {
-  const {
-    CAREERS_LANDING_URL,
-    HOMEPAGE_URL,
-    buildSearchResultsPageUrl,
-    run,
-  } = await loadKbrModule()
-  const requestedUrls = []
-
-  const jobs = await run({
-    maxPages: 1,
-    maxJobs: 1,
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === HOMEPAGE_URL) return readFixture('homepage.html')
-      if (url === CAREERS_LANDING_URL) return readFixture('careers-landing.html')
-      if (url === buildSearchResultsPageUrl()) return readFixture('search-results-page-0.html')
-      if (url === 'https://careers.kbr.com/us/en/job/R2109999/Senior-Associate-Designer') {
-        return readFixture('job-detail-R2109999.html')
-      }
-
-      throw new Error(`Unexpected KBR fixture URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    HOMEPAGE_URL,
-    CAREERS_LANDING_URL,
-    buildSearchResultsPageUrl(),
-    'https://careers.kbr.com/us/en/job/R2109999/Senior-Associate-Designer',
-  ])
+test('KBR follows its current first-party migration and preserves the complete snapshot with actionable India details', async () => {
+  const requests = []
+  const jobs = await createKbrScraper({ now }).run(buildFetch({}, requests))
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].company, 'KBR')
   assert.equal(jobs[0].source, 'kbr')
@@ -93,25 +44,56 @@ test('run validates the official KBR homepage handoff and returns India jobs fro
   assert.equal(jobs[0].location, 'Chennai, Tamil Nadu, India')
   assert.equal(jobs[0].city, 'Chennai')
   assert.equal(jobs[0].country, 'India')
-  assert.equal(
-    jobs[0].applyUrl,
-    'https://careers.kbr.com/us/en/job/R2109999/Senior-Associate-Designer',
-  )
+  assert.equal(jobs[0].postingDate, '2026-10-01')
+  assert.equal(jobs[0].applyUrl, 'https://kbr.wd5.myworkdayjobs.com/KBR_Careers/job/Chennai-Tamil-Nadu-India/Designer_R2109999')
   assert.match(jobs[0].jobDescription, /detail design deliverables/i)
-  assert.ok(jobs[0].requiredSkills.some((skill) => /smartplant 3d/i.test(skill)))
-  assert.ok(jobs[0].requiredSkills.some((skill) => /asme standards/i.test(skill)))
+  assert.equal(requests.some(url => /search-results|Trinzic/.test(url)), false)
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.status, 'complete-inventory')
+  assert.equal(evidence.listingComplete, true)
+  assert.equal(evidence.reportedTotal, 1)
+  assert.equal(evidence.indiaFacetCount, 1)
+  assert.match(evidence.reason, /3-snapshot-rows-2-india-1-unpublished/)
 })
 
-test('run fails closed when the official KBR homepage no longer links to the first-party careers site', async () => {
-  const { HOMEPAGE_URL, run } = await loadKbrModule()
+for (const { name, options, error } of [
+  { name: 'a missing advertised snapshot total', options: { snapshotValue: { ...snapshot, total_jobs: undefined } }, error: /incomplete KBR snapshot/ },
+  { name: 'a truncated snapshot', options: { snapshotValue: { ...snapshot, total_jobs: 4 } }, error: /incomplete KBR snapshot/ },
+  { name: 'duplicate snapshot requisitions', options: { snapshotValue: { ...snapshot, jobs: [snapshot.jobs[0], snapshot.jobs[0], snapshot.jobs[2]] } }, error: /snapshot requisition/ },
+  { name: 'a stale snapshot', options: { snapshotValue: { ...snapshot, generated_at: '2026-10-01' } }, error: /snapshot freshness/ },
+  { name: 'unresolved snapshot country', options: { snapshotValue: { ...snapshot, jobs: snapshot.jobs.map(job => ({ ...job, location: 'Unknown' })) } }, error: /snapshot country/ },
+  { name: 'a foreign application tenant', options: { snapshotValue: { ...snapshot, jobs: snapshot.jobs.map(job => job.application_url ? { ...job, application_url: job.application_url.replace('kbr.wd5', 'other.wd5') } : job) } }, error: /verified KBR Workday tenant/ },
+  { name: 'unexpected published Workable roles', options: { widget: { name: 'KBR', jobs: [{ shortcode: 'ABC', title: 'Engineer' }] } }, error: /Workable inventory.*reverified/ },
+  { name: 'unresolved unlinked public requisitions', options: { search: { total: 1, jobPostings: [{ externalPath: '/job/Unexpected' }] } }, error: /unlinked India requisition/ },
+  { name: 'mismatched detail requisitions', options: { detailValue: { ...detail, jobPostingInfo: { ...detail.jobPostingInfo, jobReqId: 'R9999999' } } }, error: /India job detail/ },
+  { name: 'non-India live details', options: { detailValue: { ...detail, jobPostingInfo: { ...detail.jobPostingInfo, country: { descriptor: 'United Kingdom' } } } }, error: /India job detail/ },
+  { name: 'unpublished live details', options: { detailValue: { ...detail, jobPostingInfo: { ...detail.jobPostingInfo, canApply: false } } }, error: /India job detail/ },
+  { name: 'missing live descriptions', options: { detailValue: { ...detail, jobPostingInfo: { ...detail.jobPostingInfo, jobDescription: '' } } }, error: /India job description/ },
+]) {
+  test('KBR rejects ' + name + ' without masking incomplete inventory', async () => {
+    await assert.rejects(createKbrScraper({ now }).run(buildFetch(options)), error)
+  })
+}
 
-  await assert.rejects(
-    run({
-      fetchText: async (url) => {
-        if (url === HOMEPAGE_URL) return '<html><body><a href="/contact">Contact</a></body></html>'
-        throw new Error(`Unexpected KBR fixture URL: ${url}`)
-      },
-    }),
-    /KBR homepage no longer links to the official careers site/i,
-  )
+test('KBR rejects an overview whose KBR handoff goes to the separate Trinzic board', async () => {
+  await assert.rejects(run(buildFetch({ overview: readFixture('migration-overview.html').replace('https://jobs.kbr.com', 'https://careers.trinzic.com') })), /verified KBR careers migration/)
+})
+
+test('KBR validates an empty snapshot and additional live widget before returning verified empty', async () => {
+  const jobs = await createKbrScraper({ now }).run(buildFetch({ snapshotValue: { ...snapshot, total_jobs: 0, jobs: [] } }))
+  assert.deepEqual(jobs, [])
+  assert.equal(readInventoryEvidence(jobs).status, 'verified-empty')
+})
+
+test('KBR resolves new ISO country codes absent from the website map using the matching public Workday country', async () => {
+  const fetchers = buildFetch({ snapshotValue: { ...snapshot, jobs: snapshot.jobs.map(job => job.id === 'R2111111' ? { ...job, location: 'MEX, Altamira, Engineering Centre' } : job) } })
+  const baseFetch = fetchers.fetchText
+  fetchers.fetchText = async url => url === 'https://kbr.wd5.myworkdayjobs.com/wday/cxs/kbr/KBR_Careers/job/London-United-Kingdom/Engineer_R2111111'
+    ? JSON.stringify({ jobPostingInfo: { jobReqId: 'R2111111', country: { descriptor: 'Mexico' }, canApply: true, posted: true } }) : baseFetch(url)
+  const jobs = await createKbrScraper({ now }).run(fetchers)
+  assert.deepEqual(jobs.map(job => job.jobId), ['R2109999'])
+})
+
+test('KBR requires a matching published requisition search control before interpreting unlinked zero results', async () => {
+  await assert.rejects(createKbrScraper({ now }).run(buildFetch({ control: { total: 0, jobPostings: [] } })), /public requisition search control/)
 })

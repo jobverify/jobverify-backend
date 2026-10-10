@@ -107,7 +107,7 @@ test('Safran Data Systems pins the accessible keyword search page and exact-comp
   assert.equal(safranDataSystems.SOURCE, 'safrandatasystems')
   assert.equal(safranDataSystems.COMPANY, 'Safran Data Systems')
   assert.equal(safranDataSystems.OFFICIAL_BRAND_NAME, 'Safran Data Systems SAS')
-  assert.equal(safranDataSystems.VERIFIED_ON, '2026-08-14')
+  assert.equal(safranDataSystems.VERIFIED_ON, '2026-10-08')
   assert.equal(
     safranDataSystems.buildSearchUrl(2),
     'https://careers.safran-group.com/offre-de-emploi/liste-toutes-offres.aspx?Keywords=Safran+Data+Systems&page=2',

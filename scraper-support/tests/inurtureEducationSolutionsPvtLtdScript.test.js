@@ -125,7 +125,7 @@ test('iNurture returns no jobs while the official first-party surfaces remain em
   assert.deepEqual(jobs, [])
 })
 
-test('iNurture default fetch uses the insecure TLS agent for the verified expired-certificate surfaces', async () => {
+test('iNurture default fetch verifies TLS while preserving the first-party sentinel guards', async () => {
   const inurture = await loadModule()
   const originalRequest = https.request
   const observedRequests = []
@@ -165,8 +165,8 @@ test('iNurture default fetch uses the insecure TLS agent for the verified expire
     assert.deepEqual(jobs, [])
     assert.ok(observedRequests.length > 0)
     assert.deepEqual(
-      [...new Set(observedRequests.map((request) => request.options.agent.options.rejectUnauthorized))],
-      [false],
+      [...new Set(observedRequests.map((request) => request.options.rejectUnauthorized))],
+      [true],
     )
   } finally {
     https.request = originalRequest
@@ -255,4 +255,31 @@ test('iNurture fails closed when the verified shell changes or public listings a
     }),
     /iframe handoff host now resolves or changed materially/i,
   )
+})
+
+test('iNurture default preserves an untrusted-certificate error instead of certifying empty inventory', async () => {
+  const inurture = await loadModule()
+  const originalRequest = https.request
+  const certificateError = Object.assign(new Error('unable to get local issuer certificate'), {
+    code: 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+  })
+  const observedRequests = []
+  https.request = (targetUrl, options) => {
+    observedRequests.push({url:targetUrl.toString(), options})
+    const request = new EventEmitter()
+    request.setTimeout = () => {}
+    request.end = () => queueMicrotask(() => request.emit('error', certificateError))
+    return request
+  }
+  try {
+    await assert.rejects(inurture.createInurtureEducationSolutionsScraper().run(), (error) => (
+      error === certificateError && error.code === 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY'
+    ))
+    assert.equal(observedRequests.length, 1)
+    assert.equal(observedRequests[0].url, inurture.HOMEPAGE_URL)
+    assert.equal(observedRequests[0].options.rejectUnauthorized, true)
+    assert.equal(observedRequests[0].options.agent, undefined)
+  } finally {
+    https.request = originalRequest
+  }
 })

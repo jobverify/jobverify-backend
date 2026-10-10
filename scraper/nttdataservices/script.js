@@ -56,7 +56,11 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
 
-  return normalized.includes('dare to redefine tomorrow')
+  const hasCurrentBrand = /<title[^>]*>\s*Intelligence to Impact\s*<\/title>/i.test(page)
+    && /<h1\b[^>]*>\s*Intelligence to Impact\s*<\/h1>/i.test(page)
+    && /<img\b[^>]*alt=["']NTT DATA Logo["']/i.test(page)
+
+  return (normalized.includes('dare to redefine tomorrow') || hasCurrentBrand)
     && /ntt[\s_]*data/i.test(page)
     && OFFICIAL_HOMEPAGE_CANONICAL_PATTERN.test(page)
     && OFFICIAL_HOMEPAGE_CAREERS_LINK_PATTERN.test(page)

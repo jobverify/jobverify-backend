@@ -85,3 +85,50 @@ test('Canon India fails closed when the official Oracle inventory changes or bec
     )
   }
 })
+
+const singaporeJob = (id) => ({
+  Id: String(id), Title: 'Admin Executive', PrimaryLocationCountry: 'SG',
+  PrimaryLocation: 'Singapore', secondaryLocations: [],
+})
+
+const canonFixtureFetch = (canonIndia, inventories, requested = []) => async (url) => {
+  requested.push(url)
+  if (url === canonIndia.CAREER_PAGE_URL) return { status: 200, url, html: careerPageHtml }
+  if (url === canonIndia.EXTERNAL_PORTAL_URL) return { status: 200, url: canonIndia.ORACLE_BOARD_URL, html: oracleBoardHtml }
+  const offset = Number(url.match(/offset=(\d+)/)?.[1])
+  if (!inventories.has(offset)) throw new Error('Unexpected inventory page: ' + url)
+  return { status: 200, url, html: JSON.stringify({ items: [inventories.get(offset)] }) }
+}
+
+const singaporeInventory = (records, total, offset = 0) => ({
+  SiteNumber: 'CX_1', Location: null, Offset: offset, Limit: 5,
+  TotalJobsCount: total, requisitionList: records,
+})
+
+test('Canon verifies all pages of the current Singapore-only board before reporting no India jobs', async () => {
+  const canonIndia = await loadCanonIndiaModule()
+  const requested = []
+  const jobs = await canonIndia.createCanonIndiaScraper().run({
+    fetchPage: canonFixtureFetch(canonIndia, new Map([
+      [0, singaporeInventory([1, 2, 3, 4, 5].map(singaporeJob), 9)],
+      [5, singaporeInventory([6, 7, 8, 9].map(singaporeJob), 9, 5)],
+    ]), requested),
+  })
+  assert.deepEqual(jobs, [])
+  assert.equal(requested.filter(url => url.includes('recruitingCEJobRequisitions')).length, 2)
+  assert.match(requested.at(-1), /offset=5$/)
+})
+
+test('Canon rejects incomplete or changing Singapore inventory and does not silently drop India jobs', async () => {
+  const canonIndia = await loadCanonIndiaModule()
+  for (const inventories of [
+    new Map([[0, singaporeInventory([singaporeJob(1)], 9)]]),
+    new Map([[0, singaporeInventory([1, 2, 3, 4, 5].map(singaporeJob), 9)], [5, singaporeInventory([5, 6, 7, 8].map(singaporeJob), 9, 5)]]),
+    new Map([[0, singaporeInventory([1, 2, 3, 4, 5].map(singaporeJob), 9)], [5, singaporeInventory([6, 7, 8, 9].map(singaporeJob), 10, 5)]]),
+    new Map([[0, singaporeInventory([{ ...singaporeJob(1), PrimaryLocationCountry: 'IN', PrimaryLocation: 'Mumbai, India' }], 1)]]),
+    new Map([[0, singaporeInventory([{ ...singaporeJob(1), secondaryLocations: [{ Name: 'Mumbai, India' }] }], 1)]]),
+    new Map([[0, { ...singaporeInventory([singaporeJob(1)], 1), SiteNumber: 'CX_2' }]]),
+  ]) {
+    await assert.rejects(canonIndia.createCanonIndiaScraper().run({ fetchPage: canonFixtureFetch(canonIndia, inventories) }), /Canon India Oracle career inventory changed or is unavailable/)
+  }
+})

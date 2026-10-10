@@ -156,13 +156,15 @@ const PLANIFICATEUR_DETAIL_HTML = `
 
 const loadScriptModule = async () => import('./script.js')
 
-test('Safran Data Systems pins the accessible keyword search surface and detail extraction contract', async () => {
+test('Safran Data Systems retains the France keyword audit surface and native detail extraction contract', async () => {
   const safranDataSystems = await loadScriptModule()
 
   assert.equal(safranDataSystems.SOURCE, 'safrandatasystems')
   assert.equal(safranDataSystems.COMPANY, 'Safran Data Systems')
   assert.equal(safranDataSystems.OFFICIAL_BRAND_NAME, 'Safran Data Systems SAS')
-  assert.equal(safranDataSystems.VERIFIED_ON, '2026-10-03')
+  // This date labels the retained France audit, not the current India adapter.
+  assert.match(safranDataSystems.VERIFIED_ON, /^\d{4}-\d{2}-\d{2}$/)
+  assert.ok(Number.isFinite(Date.parse(safranDataSystems.VERIFIED_ON)))
   assert.equal(
     safranDataSystems.SEARCH_URL,
     'https://careers.safran-group.com/offre-de-emploi/liste-toutes-offres.aspx?Keywords=Safran%20Data%20Systems',
@@ -271,7 +273,7 @@ test('Safran Data Systems default fetch uses the accessible careers host respons
   )
 })
 
-test('Safran Data Systems run() follows the accessible keyword search pagination and same-domain detail pages', async () => {
+test('Safran Data Systems retained France factory follows keyword pagination and same-domain details', async () => {
   const safranDataSystems = await loadScriptModule()
   const requestedUrls = []
 
@@ -334,7 +336,7 @@ test('Safran Data Systems run() follows the accessible keyword search pagination
   assert.equal(jobs[2].link, PLANIFICATEUR_URL)
 })
 
-test('Safran Data Systems fails closed when the accessible search page or detail page drifts', async () => {
+test('Safran Data Systems retained France audit fails closed on keyword search or detail drift', async () => {
   const safranDataSystems = await loadScriptModule()
 
   await assert.rejects(

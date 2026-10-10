@@ -1,5 +1,6 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { runCoinDCXLinkedIn } from './publicLinkedIn.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -20,14 +21,15 @@ const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/\s+/g, ' ')
   .trim()
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
+  signal?.throwIfAborted()
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
-    signal: AbortSignal.timeout(15000),
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
   })
 
   return {
@@ -65,36 +67,12 @@ export const hasCloudflareBlockSignal = (page = {}) => {
 }
 
 export const createCoinDCXScraper = () => ({
-  async run({ fetchPage, fetchText } = {}) {
-    const loadPage = typeof fetchPage === 'function'
-      ? fetchPage
-      : typeof fetchText === 'function'
-        ? createFetchPageFromText(fetchText)
-        : defaultFetchPage
-    const page = await loadPage(CAREER_PAGE_URL)
-    const html = page.html ?? ''
-
-    if (hasCloudflareBlockSignal(page)) {
-      return []
-    }
-
-    if (page.status !== 200) {
-      throw new Error(`HTTP ${page.status} for ${page.url || CAREER_PAGE_URL}`)
-    }
-
-    if (!hasOpportunityShellSignal(html)) {
-      throw new Error('CoinDCX careers page no longer matches the expected opportunities shell')
-    }
-
-    if (!hasNoPublicListingsSignal(html)) {
-      throw new Error('CoinDCX careers page now appears to expose a different hiring flow')
-    }
-
-    return []
+  async run({fetchPage,fetchText,signal,now,maxJobs}={}){
+    const loadPage=typeof fetchPage==='function'?fetchPage:typeof fetchText==='function'?createFetchPageFromText(fetchText):defaultFetchPage
+    return runCoinDCXLinkedIn({fetchPage:loadPage,signal,now,maxJobs})
   },
 })
-
-export const run = async () => createCoinDCXScraper().run()
+export const run = async (options = {}) => createCoinDCXScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

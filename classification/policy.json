@@ -1,5 +1,5 @@
 {
-  "version": "laya-jobs-v2",
+  "version": "laya-job-type-v3",
   "filterRules": {
     "categoryDefaultsWin": true,
     "internDefaultYears": 0,
@@ -7,8 +7,21 @@
     "experiencedDefaultRange": [1, 15],
     "graduationCohortUsesReferenceYear": true
   },
-  "thresholds": { "employment": 0.95, "experience": 0.95, "seniority": 0.90, "leadership": 0.90 },
+  "thresholds": { "jobType": 0.95 },
   "questions": {
+    "jobType": {
+      "type": "choice",
+      "instructions": "Which category describes this vacancy, based on its description and employer requirements? Classify the vacancy itself. Required experience counts; preferred experience does not exclude freshers. Managing interns is not an internship. Management trainee is not automatically an intern. Choose the best supported category.",
+      "criteria": {
+        "Full-time Fresher": "Regular full-time employment open to applicants without prior professional experience, including fresh graduates and entry-level trainees.",
+        "Full-time Experienced": "Regular full-time employment requiring prior professional experience or established senior or management responsibilities.",
+        "Intern": "The vacancy itself is an internship or student intern placement.",
+        "Contract": "The vacancy itself is fixed-term, temporary, freelance, or contract employment."
+      }
+    }
+  },
+  "legacyThresholds": { "employment": 0.95, "experience": 0.95, "seniority": 0.90, "leadership": 0.90 },
+  "legacyQuestions": {
     "employment": {
       "type": "choice",
       "instructions": "Apply Jobverify defaults to this vacancy, not incidental people. An actual intern role or student-only eligibility (currently pursuing bachelors or masters) means internship. Contract means contract. Completed graduates are full-time. A management trainee is not automatically an intern. Category defaults override conflicting employer fields. Select unspecified when evidence is insufficient.",

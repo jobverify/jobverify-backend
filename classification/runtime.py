@@ -42,7 +42,7 @@ def aggregate_answers(windows, thresholds):
         available = [window[key] for window in windows if key in window]
         if not available:
             continue
-        informative = [a for a in available if a['choice'] != ABSTAIN[key]]
+        informative = [a for a in available if a['choice'] != ABSTAIN.get(key)]
         confident = {a['choice'] for a in informative if a['probabilities'][a['choice']] >= thresholds[key]}
         if len(confident) > 1:
             conflicts.append(key)
@@ -260,7 +260,7 @@ def serve(worker, port):
                 pass
         def do_GET(self):
             if self.path == '/health':
-                self.respond(200, {'ready': True, 'instanceId': os.environ.get('LAYA_INSTANCE_ID'), 'identity': worker.identity, 'enforceAllowed': bool(worker.release), 'thresholds': worker.thresholds, 'stats': dict(worker.stats)})
+                self.respond(200, {'ready': True, 'instanceId': os.environ.get('LAYA_INSTANCE_ID'), 'identity': worker.identity, 'enforceAllowed': bool(worker.release), 'thresholds': worker.thresholds, 'stats': dict(worker.stats), 'capacity': getattr(worker, 'capacity', {})})
             else:
                 self.respond(404, {'error': 'not_found'})
         def do_POST(self):
@@ -291,14 +291,24 @@ def serve(worker, port):
     server.serve_forever()
 
 
+def available_cpu_count():
+    try:
+        return max(1, len(os.sched_getaffinity(0)))
+    except AttributeError:
+        return max(1, os.cpu_count() or 1)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, default=8765)
     args = parser.parse_args()
     release = load_release(os.environ.get('LAYA_RELEASE_FILE'))
     import torch
-    default_threads = min(8, os.cpu_count() or 1)
-    torch.set_num_threads(max(1, min(8, int(os.environ.get('LAYA_CPU_THREADS', str(default_threads))))))
+    cpus = available_cpu_count()
+    default_threads = min(2, cpus)
+    threads = max(1, min(8, cpus, int(os.environ.get('LAYA_CPU_THREADS', str(default_threads)))))
+    torch.set_num_threads(threads)
+    torch.set_num_interop_threads(1)
     agent = load_agent()
     question_audit = audit_question_budget(agent)
     worker = Classifier(agent, release=release)
@@ -306,7 +316,8 @@ def main():
     warmup = worker.classify({'title': 'Graduate Engineer', 'body': 'Permanent full-time graduate role. Freshers eligible.', 'referenceYear': reference_year})
     if not warmup['complete']:
         raise RuntimeError('warmup failed')
-    print(json.dumps({'ready': True, 'identity': worker.identity, 'enforceAllowed': bool(release), 'questionBudget': question_audit}), flush=True)
+    worker.capacity = {'availableCpus': cpus, 'intraOpThreads': threads, 'interOpThreads': 1, 'modelInstances': 1, 'questionCount': len(POLICY['questions'])}
+    print(json.dumps({'ready': True, 'identity': worker.identity, 'enforceAllowed': bool(release), 'questionBudget': question_audit, 'capacity': worker.capacity}), flush=True)
     serve(worker, args.port)
 
 

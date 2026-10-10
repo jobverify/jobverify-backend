@@ -142,11 +142,8 @@ export const extractLeverBoardUrl = (html) => {
 export const hasOfficialLeverBoardSignal = (html) => {
   const page = String(html ?? '')
   const text = normalizeText(html)
-  const hasLocationFilters = text.includes('location type')
-    && text.includes('location')
-    && text.includes('canada')
-    && text.includes('united kingdom')
-    && text.includes('united states')
+  // Country options change as postings open and close; they are not board identity signals.
+  const hasLocationFilters = text.includes('location type') && text.includes('location')
   const hasTeamAndWorkFilters = text.includes('team') && text.includes('work type')
   const hasLeverPostingLinks = /https:\/\/jobs\.lever\.co\/agiloft\/[a-z0-9-]+/i.test(page)
 

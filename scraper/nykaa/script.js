@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import NYKAA_CATALOG from './catalog.js'
@@ -104,16 +105,28 @@ export const buildListingUrl = ({ page = 1 } = {}) =>
 export const buildJobUrl = (jobId) =>
   toAbsoluteUrl(normalizeWhitespace(jobId), `${PUBLIC_BOARD_URL}`)
 
+const hasExplicitEmptyBoard = (html) => /<p\b[^>]*>\s*Currently there are no job postings available\.\s*<\/p>/i.test(String(html ?? ''))
+
 export const hasOfficialBoardSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const hasCount = /Showing\s+\d+\s+of\s+[1-9]\d*\s+-\s+Jobs/i.test(normalized)
+  const hasJobs = hasCount
+    || /class=["']flex flex-col space-y-3 border-offset-background p-5/i.test(page)
+    || /href=["']\/?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}["']/i.test(page)
+  const empty = hasExplicitEmptyBoard(page)
+  if (normalized.toLowerCase().includes('currently there are no job postings available.') && hasJobs) return false
+  if (!/<title>\s*Careers \| Nykaa\s*<\/title>/i.test(page)) return false
 
-  return /<title>\s*Careers \| Nykaa\s*<\/title>/i.test(page)
-    && /careers\.nykaa\.com\.skima\.ai/i.test(page)
-    && (
-      /Showing\s+\d+\s+of\s+\d+\s+-\s+Jobs/i.test(normalized)
-      || normalized.toLowerCase().includes('currently there are no job postings available.')
-    )
+  const legacyTenant = /careers\.nykaa\.com\.skima\.ai/i.test(page)
+  const currentTenant = /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/careers\.nykaa\.com\/?["']/i.test(page)
+    && /<h1\b[^>]*>\s*Nykaa\s*<\/h1>/i.test(page)
+    && /https:\/\/storage\.googleapis\.com\/skima-prod\/companies\/logo\/28216_/i.test(page)
+    && /https:\/\/skima-careers-frontend\.pages\.dev\/_astro\/InternalJobPostingLoginButton\./i.test(page)
+    && decodeHtmlEntities(page).includes('"domain":[0,"careers.nykaa.com"]')
+    && decodeHtmlEntities(page).includes('"companyName":[0,"Nykaa"]')
+
+  return (legacyTenant || currentTenant) && (hasCount || empty)
 }
 
 const extractCardBlocks = (html) => [...String(html ?? '').matchAll(
@@ -280,15 +293,36 @@ export const createNykaaScraper = ({
   async run({ fetchText = defaultFetchText, now = defaultNow } = {}) {
     const jobs = []
     const seenJobIds = new Set()
+    let reportedTotal = null
+    let reachedLastPage = false
 
     for (let page = 1; page <= maxPages; page += 1) {
       const html = await fetchText(buildListingUrl({ page }))
-      if (page === 1 && !hasOfficialBoardSignal(html)) {
+      if (!hasOfficialBoardSignal(html)) {
         throw new Error('Nykaa verified official board no longer matches the trusted public surface')
+      }
+
+      if (page === 1 && hasExplicitEmptyBoard(html)) {
+        return attachInventoryEvidence([], {
+          status: 'verified-empty',
+          surface: PUBLIC_BOARD_URL,
+          firstParty: true,
+          listingComplete: true,
+          pagesFetched: 1,
+          reportedTotal: 0,
+          indiaFacetCount: 0,
+          verifiedAt: now(),
+          reason: 'official-nykaa-board-explicit-no-job-postings',
+        })
       }
 
       const pageJobs = extractSearchResults(html)
       const summary = extractBoardSummary(html)
+      if (summary.currentPage !== page || summary.totalCount <= 0
+        || (reportedTotal != null && reportedTotal !== summary.totalCount) || pageJobs.length === 0) {
+        throw new Error('Nykaa advertised public inventory could not be parsed')
+      }
+      reportedTotal = summary.totalCount
 
       for (const listing of pageJobs) {
         if (seenJobIds.has(listing.jobId)) continue
@@ -305,13 +339,24 @@ export const createNykaaScraper = ({
         })
 
         if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
+          return jobs.length === reportedTotal && !summary.hasNext
+            ? jobs
+            : jobs.map(job => ({ ...job, sourceListingComplete: false }))
         }
       }
 
-      if (!summary.hasNext) break
+      if (!summary.hasNext) {
+        reachedLastPage = true
+        break
+      }
     }
 
+    if (!reachedLastPage) {
+      return jobs.map(job => ({ ...job, sourceListingComplete: false }))
+    }
+    if (reportedTotal !== seenJobIds.size) {
+      throw new Error('Nykaa advertised public inventory does not match the complete paginated listing')
+    }
     return jobs
   },
 })

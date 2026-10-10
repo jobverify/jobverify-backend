@@ -1,0 +1,455 @@
+{
+  "data": {
+    "data": [
+      {
+        "_source": {
+          "id": 1178117,
+          "jobCode": 16469,
+          "newJobCode": "16469",
+          "companyId": 15578,
+          "careerSiteUrl": "careers.infoedge.com",
+          "jobTitle": "Deputy Manager Training and Quality",
+          "jobUrl": "deputy-manager-training-and-quality-noida-2026091014201322",
+          "status": 1,
+          "jobVisibility": "Normal",
+          "location": "Noida",
+          "locAgg": "Noida",
+          "jobLocationRecord": [
+            {
+              "jobId": 1178117,
+              "country": "India",
+              "companyId": 15578,
+              "city": "Noida",
+              "formattedLocation": "Noida, Uttar Pradesh, India",
+              "location": "Noida",
+              "id": 1824401,
+              "state": "Uttar Pradesh"
+            }
+          ],
+          "referenceNumber": "15456",
+          "departmentName": "Sales Process Quality",
+          "DepartmentName": "Sales Process Quality",
+          "createDate": "10-Sep-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "JD",
+          "metaDescription": "JD",
+          "shortDescription": null,
+          "experienceUIField": "1-3 years",
+          "yrsOfExperience": "1 to 3 Years "
+        }
+      },
+      {
+        "_source": {
+          "id": 1193440,
+          "jobCode": 16737,
+          "newJobCode": "16737",
+          "companyId": 15578,
+          "careerSiteUrl": "careers.infoedge.com",
+          "jobTitle": "Lead AI Engineer",
+          "jobUrl": "lead-ai-engineer-noida-2026100818400913",
+          "status": 1,
+          "jobVisibility": null,
+          "location": "Noida",
+          "locAgg": "Noida",
+          "jobLocationRecord": [
+            {
+              "jobId": 1193440,
+              "country": "India",
+              "companyId": 15578,
+              "city": "Noida",
+              "formattedLocation": "Noida, Uttar Pradesh, India",
+              "location": "Noida",
+              "id": 1855013,
+              "state": "Uttar Pradesh"
+            }
+          ],
+          "referenceNumber": "15716",
+          "departmentName": "Artificial Intelligence",
+          "DepartmentName": "Artificial Intelligence",
+          "createDate": "08-Oct-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "About Info Edge India Ltd. InfoEdge's mission is to create world-class platforms that transform lives by continuously innovating. Our products and services are built keeping our customers in mind. We always delight our customers by delivering superior value through enhanced offerings on the internet and other platforms. Through our continuous investment across various businesses, especially in cutting-edge technology, machine learning and artificial intelligence (AI), we have built a robust system that constantly increases our predictive powers on customer behaviour, and optimizes and improves our systems. Our various teams tirelessly work together to solve problems, innovate, and create something to empower our customers. At Info Edge, people are our core competitive advantage and we will continue doing all that is needed to attract and retain the best available talent. Team: AI Architecture - Central AI Function Title: Lead AI Engineer Educational Qualification: BTech / MTech from IITs, NITs, BITS Pilani, NSUT, DTU, IIITs, or other premier engineering institutes, with relevant experience. Experience: 3-4 Years Job Objective: We are looking for a Lead AI Engineer with 3 - 4 years of experience to join the AI architecture team. You will work closely with the AI head Architect to build cutting edge POCs on core AI platform components spanning traditional data science, deep learning, and advanced agentic workflows. Key Responsibilities: Rapidly prototype and evaluate new AI/ML methodologies, transitioning research papers and open-source models into functional POCs and scalable AI platform components. Design and implement multi-agent systems and stateful workflows using frameworks like LangGraph and modern LLM orchestration tools. Validate and optimize traditional machine learning and statistical models for business-critical applications. Write clean, modular, and maintainable Python code, integrating models with APIs, databases, and user-facing services. Required Technical Stack & Skills: Strong proficiency in Python. Good working knowledge of DS theory, including classification, regression, clustering, ranking methods and evaluation. Good foundation in Scikit-Learn, Pandas, NumPy, and deep learning libraries (PyTorch or TensorFlow). Should be aware with model evaluation techniques. Hands-on experience with LLM orchestration, RAG, and multi-agent frameworks (e.g., LangGraph, AutoGen). Experience with REST APIs (FastAPI/Flask), containerization (Docker), and version control (Git). Desired Skills: Ability to understand Business challenges and define solutions aligned to the needs. Why Join us: This is a unique opportunity to work on innovative and disruptive technologies that are shaping the future of the industry. We are looking for candidates who are willing to work passionately in a fast- paced environment and are ready to enhance their skills by learning something new. Being a part of the InfoEdge team, you will be engaged in innovations, product development, integration with mobile and social media, technology, research and development, quality assurance, sales and marketing. To learn more about Info Edge visit http://www.infoedge.in/",
+          "metaDescription": "About Info Edge India Ltd. InfoEdge's mission is to create world-class platforms that transform lives by continuously innovating. Our products and services are built keeping our customers in mind. We always delight our customers by delivering superior value through enhanced offerings on the internet and other platforms. Through our continuous investment across various businesses, especially in cutting-edge technology, machine learning and artificial intelligence (AI), we have built a robust system that constantly increases our predictive powers on customer behaviour, and optimizes and improves our systems. Our various teams tirelessly work together to solve problems, innovate, and create something to empower our customers. At Info Edge, people are our core competitive advantage and we will continue doing all that is needed to attract and retain the best available talent. Team: AI Architecture - Central AI Function Title: Lead AI Engineer Educational Qualification: BTech / MTech from IITs, NITs, BITS Pilani, NSUT, DTU, IIITs, or other premier engineering institutes, with relevant experience. Experience: 3-4 Years Job Objective: We are looking for a Lead AI Engineer with 3 - 4 years of experience to join the AI architecture team. You will work closely with the AI head Architect to build cutting edge POCs on core AI platform components spanning traditional data science, deep learning, and advanced agentic workflows. Key Responsibilities: Rapidly prototype and evaluate new AI/ML methodologies, transitioning research papers and open-source models into functional POCs and scalable AI platform components. Design and implement multi-agent systems and stateful workflows using frameworks like LangGraph and modern LLM orchestration tools. Validate and optimize traditional machine learning and statistical models for business-critical applications. Write clean, modular, and maintainable Python code, integrating models with APIs, databases, and user-facing services. Required Technical Stack & Skills: Strong proficiency in Python. Good working knowledge of DS theory, including classification, regression, clustering, ranking methods and evaluation. Good foundation in Scikit-Learn, Pandas, NumPy, and deep learning libraries (PyTorch or TensorFlow). Should be aware with model evaluation techniques. Hands-on experience with LLM orchestration, RAG, and multi-agent frameworks (e.g., LangGraph, AutoGen). Experience with REST APIs (FastAPI/Flask), containerization (Docker), and version control (Git). Desired Skills: Ability to understand Business challenges and define solutions aligned to the needs. Why Join us: This is a unique opportunity to work on innovative and disruptive technologies that are shaping the future of the industry. We are looking for candidates who are willing to work passionately in a fast- paced environment and are ready to enhance their skills by learning something new. Being a part of the InfoEdge team, you will be engaged in innovations, product development, integration with mobile and social media, technology, research and development, quality assurance, sales and marketing. To learn more about Info Edge visit http://www.infoedge.in/",
+          "shortDescription": null,
+          "experienceUIField": "3-4 years",
+          "yrsOfExperience": "3 to 4 Years "
+        }
+      },
+      {
+        "_source": {
+          "id": 1187325,
+          "jobCode": 16600,
+          "newJobCode": "16600",
+          "companyId": 15578,
+          "careerSiteUrl": "careers.infoedge.com",
+          "jobTitle": "Manager Corporate Sales - Naukri",
+          "jobUrl": "manager-corporate-sales-mumbai-2026092811003847",
+          "status": 1,
+          "jobVisibility": null,
+          "location": "Mumbai",
+          "locAgg": "Mumbai",
+          "jobLocationRecord": [
+            {
+              "jobId": 1187325,
+              "country": "India",
+              "companyId": 15578,
+              "city": "Mumbai",
+              "formattedLocation": "Mumbai, Maharashtra, India",
+              "location": "Mumbai",
+              "id": 1842460,
+              "state": "Maharashtra"
+            }
+          ],
+          "referenceNumber": "15671",
+          "departmentName": "Metro Cities",
+          "DepartmentName": "Metro Cities",
+          "createDate": "28-Sep-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "Strategic / Key Account Manager - This role has been developed to oversee the relationships of the region with few of its most important clients. You will be responsible for obtaining and maintaining long term key customers by comprehending their requirements. The ideal candidate will be skillful in building strong relationships with strategic customers. You will be able to identify needs and requirements to promote our company’s solutions and achieve the clients’ objectives to mutual benefit. The goal is to contribute in sustaining and growing our business to achieve long-term success. Job Description Nurture · Establish deep relationship with the portfolio of customers and strive to take the partnership to the next level · Identify and nurture multiple influencer points within an organization including but not limited to TA, HR, Procurement and Finance · Constantly do account mapping to identify opportunities within the customer portfolio · Go beyond the connect with TA / HR and establish relationship with hiring managers and businesses who actually have the hiring needs for which the respective TA team is catering to · Constantly connect with all stakeholders of clients via regular meetings, usage mailers, market analytics details, new offering mailers, etc Solution Selling · Understand each customer’s business needs deeply enough to proactively identify areas to augment client requirements using various product portfolio of Naukri.com · Identify the relevant stakeholder and set up regular meetings to pitch the problem we are trying to solve via custom presentations, and effective solutioning · Identifying problems and converting them to opportunities for upselling / cross selling, thereby increasing the wallet-share at every customer · Constantly offer pilots (paid or otherwise) to showcase newer offering, capture the delivery, effectively present RoI to the teams · Ability to replicate the success within one business of a customer in other relevant businesses, thereby creating sub customers within an organization · Ability to act as a partner who can effectively discuss and offer suggestions regarding any recruitment-based clarifications Data Crunching · Regularly monitor the usage of customer subscriptions and proactively keep the relevant stakeholders in loop for any need of intervention in terms of ensuring better usage or regarding the need of top ups before the inventory expires · Ability to effectively read various data points pertaining to a customer’s usage of the products subscribed and prepare custom QBR presentations · Connect with all relevant stakeholders on a quarterly basis to review the usage and effectively communicate how their subscription is being able to add value · Ability to convert all available data to valuable information that will help customers take informed decisions Stakeholder Communication · Ability to communicate effectively with both internal and external stakeholders · Act as a liaison between the customers and internal teams – tech, support, product – to ensure all customer feedbacks reach the relevant teams · Ability to identify needs of the hour in terms of product improvements, new product needs, process improvements, and communicate the same to the relevant internal stakeholders Ideal Skills · Excellent written and oral communication · Interpersonal skills & Good Negotiator · Ability to think and communicate in a structured manner · Ability to analyze data and convert into knowledge · Ability to work cross-functionally · Creative ability to connect seemingly disparate information · Market knowledge & Sector understanding · Tactful and Persuasive · Can do Attitude",
+          "metaDescription": "Strategic / Key Account Manager - This role has been developed to oversee the relationships of the region with few of its most important clients. You will be responsible for obtaining and maintaining long term key customers by comprehending their requirements. The ideal candidate will be skillful in building strong relationships with strategic customers. You will be able to identify needs and requirements to promote our company’s solutions and achieve the clients’ objectives to mutual benefit. The goal is to contribute in sustaining and growing our business to achieve long-term success. Job Description Nurture · Establish deep relationship with the portfolio of customers and strive to take the partnership to the next level · Identify and nurture multiple influencer points within an organization including but not limited to TA, HR, Procurement and Finance · Constantly do account mapping to identify opportunities within the customer portfolio · Go beyond the connect with TA / HR and establish relationship with hiring managers and businesses who actually have the hiring needs for which the respective TA team is catering to · Constantly connect with all stakeholders of clients via regular meetings, usage mailers, market analytics details, new offering mailers, etc Solution Selling · Understand each customer’s business needs deeply enough to proactively identify areas to augment client requirements using various product portfolio of Naukri.com · Identify the relevant stakeholder and set up regular meetings to pitch the problem we are trying to solve via custom presentations, and effective solutioning · Identifying problems and converting them to opportunities for upselling / cross selling, thereby increasing the wallet-share at every customer · Constantly offer pilots (paid or otherwise) to showcase newer offering, capture the delivery, effectively present RoI to the teams · Ability to replicate the success within one business of a customer in other relevant businesses, thereby creating sub customers within an organization · Ability to act as a partner who can effectively discuss and offer suggestions regarding any recruitment-based clarifications Data Crunching · Regularly monitor the usage of customer subscriptions and proactively keep the relevant stakeholders in loop for any need of intervention in terms of ensuring better usage or regarding the need of top ups before the inventory expires · Ability to effectively read various data points pertaining to a customer’s usage of the products subscribed and prepare custom QBR presentations · Connect with all relevant stakeholders on a quarterly basis to review the usage and effectively communicate how their subscription is being able to add value · Ability to convert all available data to valuable information that will help customers take informed decisions Stakeholder Communication · Ability to communicate effectively with both internal and external stakeholders · Act as a liaison between the customers and internal teams – tech, support, product – to ensure all customer feedbacks reach the relevant teams · Ability to identify needs of the hour in terms of product improvements, new product needs, process improvements, and communicate the same to the relevant internal stakeholders Ideal Skills · Excellent written and oral communication · Interpersonal skills & Good Negotiator · Ability to think and communicate in a structured manner · Ability to analyze data and convert into knowledge · Ability to work cross-functionally · Creative ability to connect seemingly disparate information · Market knowledge & Sector understanding · Tactful and Persuasive · Can do Attitude",
+          "shortDescription": null,
+          "experienceUIField": "3-9 years",
+          "yrsOfExperience": "3 to 9 Years "
+        }
+      },
+      {
+        "_source": {
+          "id": 1186497,
+          "jobCode": 16580,
+          "newJobCode": "16580",
+          "companyId": 15578,
+          "careerSiteUrl": "careers.infoedge.com",
+          "jobTitle": "Assistant Manager Corporate Sales",
+          "jobUrl": "assistant-manager-corporate-sales-mumbai-2026092510401023",
+          "status": 1,
+          "jobVisibility": null,
+          "location": "Mumbai",
+          "locAgg": "Mumbai",
+          "jobLocationRecord": [
+            {
+              "jobId": 1186497,
+              "country": "India",
+              "companyId": 15578,
+              "city": "Mumbai",
+              "formattedLocation": "Mumbai, Maharashtra, India",
+              "location": "Mumbai",
+              "id": 1840806,
+              "state": "Maharashtra"
+            }
+          ],
+          "referenceNumber": "15647",
+          "departmentName": "Metro Cities",
+          "DepartmentName": "Metro Cities",
+          "createDate": "25-Sep-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "JD",
+          "metaDescription": "JD",
+          "shortDescription": null,
+          "experienceUIField": null,
+          "yrsOfExperience": null
+        }
+      },
+      {
+        "_source": {
+          "id": 1150084,
+          "jobCode": 16150,
+          "newJobCode": "16150",
+          "companyId": 15578,
+          "careerSiteUrl": "careers.infoedge.com",
+          "jobTitle": "Senior Zonal Manager Corporate Sales",
+          "jobUrl": "associate-vice-president-sales-pune-2026072812401797",
+          "status": 1,
+          "jobVisibility": "Normal",
+          "location": "Pune",
+          "locAgg": "Pune",
+          "jobLocationRecord": [
+            {
+              "jobId": 1150084,
+              "country": "India",
+              "companyId": 15578,
+              "city": "Pune",
+              "formattedLocation": "Pune, Maharashtra, India",
+              "location": "Pune",
+              "id": 1772422,
+              "state": "Maharashtra"
+            }
+          ],
+          "referenceNumber": "14933",
+          "departmentName": "All Departments",
+          "DepartmentName": "All Departments",
+          "createDate": "28-Jul-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "Shiksha.com is India's leading online education platform that helps students make informed decisions about colleges, courses, and exams. It enables students to connect with domain experts and alumni while providing comprehensive information on over�15,000 institutions�and�1,40,000+ courses. With over�70 million unique visitors annually, Shiksha partners with universities and colleges by generating high-quality student leads to support their admission objectives. Designation: Branch Manager ? Corporate Sales Job Objective The objective of this role is to drive branch revenue growth by leading a high-performing sales team, acquiring new education institutions, strengthening existing client relationships, and ensuring operational excellence. The incumbent will be responsible for achieving branch business targets through effective team management, coaching, and execution of sales strategies. Key Responsibilities Business & Revenue Management Drive overall branch revenue and profitability by achieving monthly, quarterly, and annual sales targets. Develop and execute branch sales strategies to acquire new education institutes, colleges, universities, and EdTech clients. Identify new business opportunities and expand market penetration across the assigned territory. Ensure sustained revenue growth through client acquisition, account management, and upselling. Team Leadership & People Management Lead, mentor, and manage a team of Business Development Managers/Executives. Set individual sales targets, monitor performance, and conduct regular performance reviews. Coach team members on sales planning, client meetings, negotiations, and closures. Drive productivity through regular field visits, joint client meetings, and continuous feedback. Build a high-performance culture with strong focus on accountability, collaboration, and employee development. Client Relationship Management Build and maintain strong relationships with key decision-makers including Chairpersons, Directors, Deans, Marketing Heads, Admission Heads, and Counsellors. Understand client requirements and recommend customized Shiksha advertising and lead-generation solutions. Ensure successful execution of client campaigns and deliver committed business outcomes. Drive customer satisfaction and long-term client retention. Operational Excellence Monitor branch sales pipeline, forecasting, and conversion metrics. Ensure timely collections and maintain healthy receivables. Review campaign performance and work closely with internal stakeholders to optimize client outcomes. Ensure compliance with company policies, sales processes, and reporting standards. Required Skills Proven experience in branch management or leading a field sales team. Strong team management, coaching, and people development skills. Excellent business development and client acquisition experience. Strong communication, negotiation, and stakeholder management skills. Ability to analyze sales performance and drive business through data-driven decisions. Strong planning, execution, and operational management skills.",
+          "metaDescription": "Shiksha.com is India's leading online education platform that helps students make informed decisions about colleges, courses, and exams. It enables students to connect with domain experts and alumni while providing comprehensive information on over�15,000 institutions�and�1,40,000+ courses. With over�70 million unique visitors annually, Shiksha partners with universities and colleges by generating high-quality student leads to support their admission objectives. Designation: Branch Manager ? Corporate Sales Job Objective The objective of this role is to drive branch revenue growth by leading a high-performing sales team, acquiring new education institutions, strengthening existing client relationships, and ensuring operational excellence. The incumbent will be responsible for achieving branch business targets through effective team management, coaching, and execution of sales strategies. Key Responsibilities Business & Revenue Management Drive overall branch revenue and profitability by achieving monthly, quarterly, and annual sales targets. Develop and execute branch sales strategies to acquire new education institutes, colleges, universities, and EdTech clients. Identify new business opportunities and expand market penetration across the assigned territory. Ensure sustained revenue growth through client acquisition, account management, and upselling. Team Leadership & People Management Lead, mentor, and manage a team of Business Development Managers/Executives. Set individual sales targets, monitor performance, and conduct regular performance reviews. Coach team members on sales planning, client meetings, negotiations, and closures. Drive productivity through regular field visits, joint client meetings, and continuous feedback. Build a high-performance culture with strong focus on accountability, collaboration, and employee development. Client Relationship Management Build and maintain strong relationships with key decision-makers including Chairpersons, Directors, Deans, Marketing Heads, Admission Heads, and Counsellors. Understand client requirements and recommend customized Shiksha advertising and lead-generation solutions. Ensure successful execution of client campaigns and deliver committed business outcomes. Drive customer satisfaction and long-term client retention. Operational Excellence Monitor branch sales pipeline, forecasting, and conversion metrics. Ensure timely collections and maintain healthy receivables. Review campaign performance and work closely with internal stakeholders to optimize client outcomes. Ensure compliance with company policies, sales processes, and reporting standards. Required Skills Proven experience in branch management or leading a field sales team. Strong team management, coaching, and people development skills. Excellent business development and client acquisition experience. Strong communication, negotiation, and stakeholder management skills. Ability to analyze sales performance and drive business through data-driven decisions. Strong planning, execution, and operational management skills.",
+          "shortDescription": null,
+          "experienceUIField": "10-17 years",
+          "yrsOfExperience": "10 to 17 Years "
+        }
+      },
+      {
+        "_source": {
+          "id": 1171624,
+          "jobCode": 16387,
+          "newJobCode": "16387",
+          "companyId": 15578,
+          "careerSiteUrl": "careers.infoedge.com",
+          "jobTitle": "Senior Executive Corporate Sales",
+          "jobUrl": "senior-executive-corporate-sales-bangalore-2026083112004152",
+          "status": 1,
+          "jobVisibility": "Normal",
+          "location": "Bangalore",
+          "locAgg": "Bangalore",
+          "jobLocationRecord": [
+            {
+              "jobId": 1171624,
+              "country": "India",
+              "companyId": 15578,
+              "city": "Bengaluru",
+              "formattedLocation": "Bengaluru, Karnataka, India",
+              "location": "Bangalore",
+              "id": 1812997,
+              "state": "Karnataka"
+            }
+          ],
+          "referenceNumber": "15387",
+          "departmentName": "Corporate Sales",
+          "DepartmentName": "Corporate Sales",
+          "createDate": "31-Aug-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "JD",
+          "metaDescription": "JD",
+          "shortDescription": null,
+          "experienceUIField": null,
+          "yrsOfExperience": null
+        }
+      },
+      {
+        "_source": {
+          "id": 941309,
+          "jobCode": 15591,
+          "newJobCode": "15591",
+          "companyId": 15578,
+          "careerSiteUrl": "careers.infoedge.com",
+          "jobTitle": "Deputy Manager Corporate Sales",
+          "jobUrl": "deputy-manager-corporate-sales-goa-2026051313200673",
+          "status": 1,
+          "jobVisibility": "Enhanced",
+          "location": "Goa",
+          "locAgg": "Goa",
+          "jobLocationRecord": [
+            {
+              "jobId": 941309,
+              "country": "India",
+              "companyId": 15578,
+              "city": "",
+              "formattedLocation": "Goa, India",
+              "location": "Goa",
+              "id": 1600934,
+              "state": "Goa"
+            }
+          ],
+          "referenceNumber": "14419",
+          "departmentName": "Core Business",
+          "DepartmentName": "Core Business",
+          "createDate": "13-May-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "Business: 99Acres 99acres.com is India?s leading real estate classified portal (Launched in 2005), is the fastest growing business. Given the fact that real estate was the largest category for advertisements in the print media the potential for online real estate classifieds as a business is immense. Today, with a traffic share of more than 50%, 99acres is the clear leader amongst six major players. Job Description:� Selling online property advertisements / branding solutions to clients by assessing their business requirements.� Designing email campaigns to spread awareness of new products / Projects launched in the assigned region.� Achieving sales targets / Acquisitions through focus on acquiring new client base in the assigned territory.� Making proposals and presentations to clients with a precise display of their visibility when placed in the online space.� Handling complete sales cycle ensuring committed deliveries and campaigns focus on renewals.� Building and managing strong relationships with clients and helping product with continuous feedback.� Achieving sales targets through new client acquisition in the assigned territory.� Making presentations in-front of a client to ensure deliveries on active campaigns.",
+          "metaDescription": "Business: 99Acres 99acres.com is India?s leading real estate classified portal (Launched in 2005), is the fastest growing business. Given the fact that real estate was the largest category for advertisements in the print media the potential for online real estate classifieds as a business is immense. Today, with a traffic share of more than 50%, 99acres is the clear leader amongst six major players. Job Description:� Selling online property advertisements / branding solutions to clients by assessing their business requirements.� Designing email campaigns to spread awareness of new products / Projects launched in the assigned region.� Achieving sales targets / Acquisitions through focus on acquiring new client base in the assigned territory.� Making proposals and presentations to clients with a precise display of their visibility when placed in the online space.� Handling complete sales cycle ensuring committed deliveries and campaigns focus on renewals.� Building and managing strong relationships with clients and helping product with continuous feedback.� Achieving sales targets through new client acquisition in the assigned territory.� Making presentations in-front of a client to ensure deliveries on active campaigns.",
+          "shortDescription": null,
+          "experienceUIField": "1-6 years",
+          "yrsOfExperience": "1 to 6 Years "
+        }
+      },
+      {
+        "_source": {
+          "id": 920798,
+          "jobCode": 15249,
+          "newJobCode": "15249",
+          "companyId": 15578,
+          "careerSiteUrl": "careers.infoedge.com",
+          "jobTitle": "Product Manager",
+          "jobUrl": "product-manager-bangalore-2026032610404650",
+          "status": 1,
+          "jobVisibility": "Normal",
+          "location": "Bangalore",
+          "locAgg": "Bangalore",
+          "jobLocationRecord": [
+            {
+              "jobId": 920798,
+              "country": "India",
+              "companyId": 15578,
+              "city": "Bengaluru",
+              "formattedLocation": "Bengaluru, Karnataka, India",
+              "location": "Bangalore",
+              "id": 1584062,
+              "state": "Karnataka"
+            }
+          ],
+          "referenceNumber": "14027",
+          "departmentName": "All Departments",
+          "DepartmentName": "All Departments",
+          "createDate": "26-Mar-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "About Us: Info Edge’s mission is to create world-class platforms that transform lives by continuously innovating. Our products and services are built keeping our customers in mind. We always delight our customers by delivering superior value through enhanced offerings on the internet and other platforms. Through our continuous investment across various businesses, especially in cutting-edge technology, machine learning and artificial intelligence (AI), we have built a robust system that constantly increases our predictive powers on customer behavior, and optimizes and improves our systems. Our various teams tirelessly work together to solve problems, innovate, and create something to empower our customers. Agentic Business: We are building AI-powered, agentic solutions to streamline and enhance hiring workflows, helping teams evaluate candidates faster, more consistently, and at scale. Our products CoCaller, HireMate, and AI Interviews, focus on automating sourcing, screening, assisting recruiters in decision-making, and enabling structured interviews, driving efficiency, improving candidate experience, and supporting better hiring outcomes. Your Opportunity: We are building several solutions that will combine the power of multiple brands / data within Infoedge to solve some very exciting challenges. As PM- Product Management (working directly with the Product Head), you will own the strategy and execution of the product roadmap for several of DoSelect products-new and existing, with the aim of building solutions that establish us as the undisputed industry leader and solve some pressing industry challenges, leveraging data all along the way. You will: • Own the product strategy, vision and roadmap for one or two products for DoSelect Platform • Manage the entire Product Lifecycle from building the roadmap to conceptualization to delivery • Collaborate across the larger eco system and bring in the cohesiveness needed to build effective solutions • Collaborate with engineering, marketing, sales, customer success / support and drive outcomes • Suggest and execute growth hacks required for the product. • Deeply analyze key metrics of product • Track or validate success of new product launches/existing Work Location: Bangalore You should have: • Hands-on, proven Product Management experience (2-5 years) with a passion to create solutions and products. • Proven track record of building products in a collaborative / matrix environment Proven track record of building a product led successful business • The ability to use data / logic to support your point of view Our Ideal Candidate: You have a strong business acumen, functional leadership, sense of ownership accountability and are a problem solver. You are collaborative and have a drive for results. You are data driven and detail oriented. You enjoy working in a fast-paced/ unstructured ecosystem. You love being independent and enjoy working with minimal supervision and ideally have been into a product development environment over the last 2-5 Years.",
+          "metaDescription": "About Us: Info Edge’s mission is to create world-class platforms that transform lives by continuously innovating. Our products and services are built keeping our customers in mind. We always delight our customers by delivering superior value through enhanced offerings on the internet and other platforms. Through our continuous investment across various businesses, especially in cutting-edge technology, machine learning and artificial intelligence (AI), we have built a robust system that constantly increases our predictive powers on customer behavior, and optimizes and improves our systems. Our various teams tirelessly work together to solve problems, innovate, and create something to empower our customers. Agentic Business: We are building AI-powered, agentic solutions to streamline and enhance hiring workflows, helping teams evaluate candidates faster, more consistently, and at scale. Our products CoCaller, HireMate, and AI Interviews, focus on automating sourcing, screening, assisting recruiters in decision-making, and enabling structured interviews, driving efficiency, improving candidate experience, and supporting better hiring outcomes. Your Opportunity: We are building several solutions that will combine the power of multiple brands / data within Infoedge to solve some very exciting challenges. As PM- Product Management (working directly with the Product Head), you will own the strategy and execution of the product roadmap for several of DoSelect products-new and existing, with the aim of building solutions that establish us as the undisputed industry leader and solve some pressing industry challenges, leveraging data all along the way. You will: • Own the product strategy, vision and roadmap for one or two products for DoSelect Platform • Manage the entire Product Lifecycle from building the roadmap to conceptualization to delivery • Collaborate across the larger eco system and bring in the cohesiveness needed to build effective solutions • Collaborate with engineering, marketing, sales, customer success / support and drive outcomes • Suggest and execute growth hacks required for the product. • Deeply analyze key metrics of product • Track or validate success of new product launches/existing Work Location: Bangalore You should have: • Hands-on, proven Product Management experience (2-5 years) with a passion to create solutions and products. • Proven track record of building products in a collaborative / matrix environment Proven track record of building a product led successful business • The ability to use data / logic to support your point of view Our Ideal Candidate: You have a strong business acumen, functional leadership, sense of ownership accountability and are a problem solver. You are collaborative and have a drive for results. You are data driven and detail oriented. You enjoy working in a fast-paced/ unstructured ecosystem. You love being independent and enjoy working with minimal supervision and ideally have been into a product development environment over the last 2-5 Years.",
+          "shortDescription": null,
+          "experienceUIField": "2.0-5.0 years",
+          "yrsOfExperience": "2.0 to 5.0 Years "
+        }
+      },
+      {
+        "_source": {
+          "id": 1173794,
+          "jobCode": 16415,
+          "newJobCode": "16415",
+          "companyId": 15578,
+          "careerSiteUrl": "careers.infoedge.com",
+          "jobTitle": "Manager Direct Sales",
+          "jobUrl": "senior-manager-direct-sales-noida-2026090312202990",
+          "status": 1,
+          "jobVisibility": "Limited",
+          "location": "Noida",
+          "locAgg": "Noida",
+          "jobLocationRecord": [
+            {
+              "jobId": 1173794,
+              "country": "India",
+              "companyId": 15578,
+              "city": "Noida",
+              "formattedLocation": "Noida, Uttar Pradesh, India",
+              "location": "Noida",
+              "id": 1817245,
+              "state": "Uttar Pradesh"
+            }
+          ],
+          "referenceNumber": "15391",
+          "departmentName": "Direct Sales",
+          "DepartmentName": "Direct Sales",
+          "createDate": "03-Sep-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "Job Title: Senior Manager Direct Sales Company Name: Info Edge India Ltd Job Description: We are seeking a highly motivated and experienced Senior Manager of Direct Sales to lead our sales team in achieving growth and revenue targets. The ideal candidate will be responsible for developing and executing strategic sales plans, managing key client relationships, and driving the sales team to meet their targets. The Senior Manager will work closely with marketing and product teams to align sales strategies with overall business objectives, ensuring the team has the necessary resources and support to succeed. Key Responsibilities: - Develop and implement effective sales strategies to achieve revenue and market share growth. - Lead, mentor, and motivate the direct sales team to achieve high performance and professional development. - Build and maintain strong relationships with key clients and stakeholders. - Analyze market trends and competitor activities to identify opportunities and challenges in the marketplace. - Conduct regular performance reviews and provide ongoing feedback to the sales team. - Collaborate with marketing and product teams to create compelling value propositions and promotional campaigns. - Prepare and present sales forecasts, reports, and budgets to senior management. - Drive a culture of accountability and achievement within the sales team. Skills and Tools Required: - Proven experience in sales management, preferably in a direct sales environment. - Strong leadership skills with a track record of motivating and developing high-performing teams. - Excellent communication and interpersonal skills for building relationships with clients and stakeholders. - Strong analytical and problem-solving skills, with the ability to make data-driven decisions. - Proficiency in CRM software and Microsoft Office Suite. - Demonstrated ability to work collaboratively across departments and integrate efforts towards common goals. - Knowledge of market trends and best practices in direct sales. This position offers a competitive salary and benefits package, along with opportunities for career advancement within a dynamic and growing organization. If you are passionate about direct sales and have a proven track record of success, we encourage you to apply.",
+          "metaDescription": "Job Title: Senior Manager Direct Sales Company Name: Info Edge India Ltd Job Description: We are seeking a highly motivated and experienced Senior Manager of Direct Sales to lead our sales team in achieving growth and revenue targets. The ideal candidate will be responsible for developing and executing strategic sales plans, managing key client relationships, and driving the sales team to meet their targets. The Senior Manager will work closely with marketing and product teams to align sales strategies with overall business objectives, ensuring the team has the necessary resources and support to succeed. Key Responsibilities: - Develop and implement effective sales strategies to achieve revenue and market share growth. - Lead, mentor, and motivate the direct sales team to achieve high performance and professional development. - Build and maintain strong relationships with key clients and stakeholders. - Analyze market trends and competitor activities to identify opportunities and challenges in the marketplace. - Conduct regular performance reviews and provide ongoing feedback to the sales team. - Collaborate with marketing and product teams to create compelling value propositions and promotional campaigns. - Prepare and present sales forecasts, reports, and budgets to senior management. - Drive a culture of accountability and achievement within the sales team. Skills and Tools Required: - Proven experience in sales management, preferably in a direct sales environment. - Strong leadership skills with a track record of motivating and developing high-performing teams. - Excellent communication and interpersonal skills for building relationships with clients and stakeholders. - Strong analytical and problem-solving skills, with the ability to make data-driven decisions. - Proficiency in CRM software and Microsoft Office Suite. - Demonstrated ability to work collaboratively across departments and integrate efforts towards common goals. - Knowledge of market trends and best practices in direct sales. This position offers a competitive salary and benefits package, along with opportunities for career advancement within a dynamic and growing organization. If you are passionate about direct sales and have a proven track record of success, we encourage you to apply.",
+          "shortDescription": null,
+          "experienceUIField": "5-13 years",
+          "yrsOfExperience": "5 to 13 Years "
+        }
+      },
+      {
+        "_source": {
+          "id": 1167974,
+          "jobCode": 16361,
+          "newJobCode": "16361",
+          "companyId": 15578,
+          "careerSiteUrl": "careers.infoedge.com",
+          "jobTitle": "Senior Zonal Manager Corporate Sales Zwayam Doselect",
+          "jobUrl": "senior-zonal-manager-corporate-sales-mumbai-2026082415401479",
+          "status": 1,
+          "jobVisibility": "Normal",
+          "location": "Mumbai",
+          "locAgg": "Mumbai",
+          "jobLocationRecord": [
+            {
+              "jobId": 1167974,
+              "country": "India",
+              "companyId": 15578,
+              "city": "Mumbai",
+              "formattedLocation": "Mumbai, Maharashtra, India",
+              "location": "Mumbai",
+              "id": 1805440,
+              "state": "Maharashtra"
+            }
+          ],
+          "referenceNumber": "15053",
+          "departmentName": "Corporate Sales",
+          "DepartmentName": "Corporate Sales",
+          "createDate": "24-Aug-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "SaaS Solutioning Sales Specialist — Zwayam + DoSelect Assessments Role Summary Zwayam and DoSelect together offer a powerful end-to-end talent acquisition stack — combining intelligent Applicant Tracking (ATS) with advanced skill assessment and hiring evaluation capabilities. This integrated platform enables organizations to streamline sourcing, screening, assessment, interview workflows, and hiring decisions through a unified hiring experience. The SaaS Solutioning Sales Specialist is a strategic client-facing role responsible for driving enterprise sales for both Zwayam ATS and DoSelect’s assessment suite. The role combines consultative selling, HR tech solutioning, and recruitment domain expertise to help enterprises modernize their hiring ecosystem. The individual will engage CHROs, TA leaders, L&D teams, and business stakeholders to position the combined value of recruitment workflow automation and data-driven candidate evaluation. This role requires managing complex sales cycles, designing tailored ATS + assessment solutions, influencing multiple stakeholders, and driving enterprise deals from discovery to closure. Key Responsibilities Enterprise Hiring Solutioning: Lead discovery discussions with HR, Talent Acquisition, CIO, L&D, and business leaders to understand hiring challenges and design integrated ATS + assessment solutions tailored to organizational needs. Integrated Value Selling: Position the combined strength of Zwayam ATS and DoSelect Assessments to improve hiring efficiency, candidate quality, skill validation, and recruiter productivity. Deal Leadership: Own end-to-end sales cycles for enterprise opportunities involving multiple stakeholders, long procurement cycles, and customized solution requirements. Stakeholder Management: Build relationships with CHROs, Heads of Talent Acquisition, Heads of L&D, CIO/IT teams, and hiring leaders; navigate complex buying committees effectively. Assessment Led Hiring Transformation: Consult customers on implementing coding tests, aptitude assessments, behavioral evaluations, role-based hiring workflows, and campus hiring solutions integrated with ATS processes. Solution Demonstrations and POCs: Conduct tailored demos, workshops, and pilot programs showcasing ATS workflows, assessment journeys, integrations, analytics, and candidate experience enhancements. Value Articulation & ROI Selling: Develop business cases and ROI models highlighting improvements in quality of hire, screening efficiency, hiring turnaround time, recruiter productivity, and reduction in hiring bias. Competitive Positioning: Differentiate the combined offering against standalone ATS providers, assessment vendors, and broader HR tech platforms by emphasizing integrated workflows and measurable hiring outcomes. Cross Functional Collaboration: Partner with Product, Customer Success, Implementation, and Marketing teams to align customer requirements, implementation success, and GTM initiatives. Commercial Negotiation: Lead commercial discussions, pricing negotiations, procurement coordination, and contract closures in partnership with finance and legal teams. Pipeline & Forecasting: Maintain accurate CRM hygiene, sales forecasts, and pipeline visibility while consistently achieving revenue targets. Required Skills and Experience Enterprise SaaS Sales Experience HR Tech Domain Understanding: Strong understanding of recruitment workflows, candidate evaluation methodologies, campus hiring, lateral hiring, and skill-based assessments. Consultative Solutioning Ability: Proven capability to design customized solutions involving workflows, integrations, assessments, and stakeholder-specific business outcomes. Complex Sales Expertise: Experience managing long sales cycles (3–12 months) with multiple stakeholders, procurement processes, and enterprise negotiations. Executive Presence: Comfortable engaging with senior HR and business leaders and conducting strategic conversations with CXOs. Technical Fluency: Familiarity with APIs, SSO, HRIS integrations (Workday, SAP SuccessFactors, Oracle, etc.), assessment workflows, and enterprise security considerations. Commercial Acumen: Ability to build ROI/TCO models, structure commercial proposals, and negotiate enterprise agreements. Presentation & Communication: Strong storytelling, demo, proposal writing, and presentation skills with the ability to simplify complex solutions. Tools & Analytics: Proficiency with CRM systems, demo platforms, sales analytics, and tools used to measure pilot or assessment program success. Preferred Qualifications and Traits Hiring Transformation Mindset: Passion for improving enterprise hiring through automation, skill intelligence, and data-driven decision making. Analytical Orientation: Comfortable interpreting hiring metrics, assessment analytics, and recruitment KPIs to build compelling business cases. Collaborative Approach: Works effectively across sales, customer success, product, and implementation teams to ensure customer success and expansion opportunities. Resilience & Ownership: Ability to manage ambiguity, navigate long enterprise sales cycles, and independently drive opportunities to closure. Growth Mindset: Curious about evolving HR tech trends including AI-led hiring, skill-based hiring, recruitment analytics, and workforce transformation.",
+          "metaDescription": "SaaS Solutioning Sales Specialist — Zwayam + DoSelect Assessments Role Summary Zwayam and DoSelect together offer a powerful end-to-end talent acquisition stack — combining intelligent Applicant Tracking (ATS) with advanced skill assessment and hiring evaluation capabilities. This integrated platform enables organizations to streamline sourcing, screening, assessment, interview workflows, and hiring decisions through a unified hiring experience. The SaaS Solutioning Sales Specialist is a strategic client-facing role responsible for driving enterprise sales for both Zwayam ATS and DoSelect’s assessment suite. The role combines consultative selling, HR tech solutioning, and recruitment domain expertise to help enterprises modernize their hiring ecosystem. The individual will engage CHROs, TA leaders, L&D teams, and business stakeholders to position the combined value of recruitment workflow automation and data-driven candidate evaluation. This role requires managing complex sales cycles, designing tailored ATS + assessment solutions, influencing multiple stakeholders, and driving enterprise deals from discovery to closure. Key Responsibilities Enterprise Hiring Solutioning: Lead discovery discussions with HR, Talent Acquisition, CIO, L&D, and business leaders to understand hiring challenges and design integrated ATS + assessment solutions tailored to organizational needs. Integrated Value Selling: Position the combined strength of Zwayam ATS and DoSelect Assessments to improve hiring efficiency, candidate quality, skill validation, and recruiter productivity. Deal Leadership: Own end-to-end sales cycles for enterprise opportunities involving multiple stakeholders, long procurement cycles, and customized solution requirements. Stakeholder Management: Build relationships with CHROs, Heads of Talent Acquisition, Heads of L&D, CIO/IT teams, and hiring leaders; navigate complex buying committees effectively. Assessment Led Hiring Transformation: Consult customers on implementing coding tests, aptitude assessments, behavioral evaluations, role-based hiring workflows, and campus hiring solutions integrated with ATS processes. Solution Demonstrations and POCs: Conduct tailored demos, workshops, and pilot programs showcasing ATS workflows, assessment journeys, integrations, analytics, and candidate experience enhancements. Value Articulation & ROI Selling: Develop business cases and ROI models highlighting improvements in quality of hire, screening efficiency, hiring turnaround time, recruiter productivity, and reduction in hiring bias. Competitive Positioning: Differentiate the combined offering against standalone ATS providers, assessment vendors, and broader HR tech platforms by emphasizing integrated workflows and measurable hiring outcomes. Cross Functional Collaboration: Partner with Product, Customer Success, Implementation, and Marketing teams to align customer requirements, implementation success, and GTM initiatives. Commercial Negotiation: Lead commercial discussions, pricing negotiations, procurement coordination, and contract closures in partnership with finance and legal teams. Pipeline & Forecasting: Maintain accurate CRM hygiene, sales forecasts, and pipeline visibility while consistently achieving revenue targets. Required Skills and Experience Enterprise SaaS Sales Experience HR Tech Domain Understanding: Strong understanding of recruitment workflows, candidate evaluation methodologies, campus hiring, lateral hiring, and skill-based assessments. Consultative Solutioning Ability: Proven capability to design customized solutions involving workflows, integrations, assessments, and stakeholder-specific business outcomes. Complex Sales Expertise: Experience managing long sales cycles (3–12 months) with multiple stakeholders, procurement processes, and enterprise negotiations. Executive Presence: Comfortable engaging with senior HR and business leaders and conducting strategic conversations with CXOs. Technical Fluency: Familiarity with APIs, SSO, HRIS integrations (Workday, SAP SuccessFactors, Oracle, etc.), assessment workflows, and enterprise security considerations. Commercial Acumen: Ability to build ROI/TCO models, structure commercial proposals, and negotiate enterprise agreements. Presentation & Communication: Strong storytelling, demo, proposal writing, and presentation skills with the ability to simplify complex solutions. Tools & Analytics: Proficiency with CRM systems, demo platforms, sales analytics, and tools used to measure pilot or assessment program success. Preferred Qualifications and Traits Hiring Transformation Mindset: Passion for improving enterprise hiring through automation, skill intelligence, and data-driven decision making. Analytical Orientation: Comfortable interpreting hiring metrics, assessment analytics, and recruitment KPIs to build compelling business cases. Collaborative Approach: Works effectively across sales, customer success, product, and implementation teams to ensure customer success and expansion opportunities. Resilience & Ownership: Ability to manage ambiguity, navigate long enterprise sales cycles, and independently drive opportunities to closure. Growth Mindset: Curious about evolving HR tech trends including AI-led hiring, skill-based hiring, recruitment analytics, and workforce transformation.",
+          "shortDescription": null,
+          "experienceUIField": "6-12 years",
+          "yrsOfExperience": "6 to 12 Years "
+        }
+      },
+      {
+        "_source": {
+          "id": 1183437,
+          "jobCode": 16544,
+          "newJobCode": "16544",
+          "companyId": 15578,
+          "careerSiteUrl": "careers.infoedge.com",
+          "jobTitle": "Associate Senior Executive",
+          "jobUrl": "associate-senior-executive-noida-2026092116403594",
+          "status": 1,
+          "jobVisibility": "Normal",
+          "location": "Noida",
+          "locAgg": "Noida",
+          "jobLocationRecord": [
+            {
+              "jobId": 1183437,
+              "country": "India",
+              "companyId": 15578,
+              "city": "Noida",
+              "formattedLocation": "Noida, Uttar Pradesh, India",
+              "location": "Noida",
+              "id": 1834553,
+              "state": "Uttar Pradesh"
+            }
+          ],
+          "referenceNumber": "15593",
+          "departmentName": "Fastforward Sales",
+          "DepartmentName": "Fastforward Sales",
+          "createDate": "21-Sep-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "Job Objective: The objective of this role is to sell customized services to job seekers and help them expedite their job search. Job Description:? ? Connect and engage with pre generated leads via outbound calls (approx. 80-100 calls) ? Reach out to new customers and explain to them the benefits of Naukri FastForward services ? Initiate repeat sales by follow up phone calls from existing customers ? Develop in-depth knowledge of products and services to make suitable recommendations based on customer needs ? Continually meeting or exceeding daily and monthly targets with respect to call volume and sales? ? Achieve sales targets by new customer acquisition and ensure growth / revenue from existing customers ? Adhere to quality standards?and processes within defined metrics Required Skills: ? Good communication skills ? Active listening skills ? Strong convincing skills ? Client handling skills ? Ability to handle stress and rejection in soliciting clients ? Flexibility with rotation offs Desired Skills: ? Prior experience in sales/business development/voice process will be preferred ? Solution oriented with effective problem solving skills ? Knowledge of various online portals?will be an added advantage",
+          "metaDescription": "Job Objective: The objective of this role is to sell customized services to job seekers and help them expedite their job search. Job Description:? ? Connect and engage with pre generated leads via outbound calls (approx. 80-100 calls) ? Reach out to new customers and explain to them the benefits of Naukri FastForward services ? Initiate repeat sales by follow up phone calls from existing customers ? Develop in-depth knowledge of products and services to make suitable recommendations based on customer needs ? Continually meeting or exceeding daily and monthly targets with respect to call volume and sales? ? Achieve sales targets by new customer acquisition and ensure growth / revenue from existing customers ? Adhere to quality standards?and processes within defined metrics Required Skills: ? Good communication skills ? Active listening skills ? Strong convincing skills ? Client handling skills ? Ability to handle stress and rejection in soliciting clients ? Flexibility with rotation offs Desired Skills: ? Prior experience in sales/business development/voice process will be preferred ? Solution oriented with effective problem solving skills ? Knowledge of various online portals?will be an added advantage",
+          "shortDescription": null,
+          "experienceUIField": "Upto 5 years",
+          "yrsOfExperience": "0 to 5 Years "
+        }
+      },
+      {
+        "_source": {
+          "id": 1184143,
+          "jobCode": 16556,
+          "newJobCode": "16556",
+          "companyId": 15578,
+          "careerSiteUrl": "careers.infoedge.com",
+          "jobTitle": "Business Manager Corporate Sales",
+          "jobUrl": "business-manager-corporate-sales-bangalore-2026092215401421",
+          "status": 1,
+          "jobVisibility": "Enhanced",
+          "location": "Bangalore",
+          "locAgg": "Bangalore",
+          "jobLocationRecord": [
+            {
+              "jobId": 1184143,
+              "country": "India",
+              "companyId": 15578,
+              "city": "Bengaluru",
+              "formattedLocation": "Bengaluru, Karnataka, India",
+              "location": "Bangalore",
+              "id": 1835938,
+              "state": "Karnataka"
+            }
+          ],
+          "referenceNumber": "15369",
+          "departmentName": "Core Business",
+          "DepartmentName": "Core Business",
+          "createDate": "22-Sep-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "Job Description:  Selling online property advertisements / branding solutions to clients by assessing their business requirements.  Designing email campaigns to spread awareness of new products / Projects launched in the assigned region.  Achieving sales targets / Acquisitions through focus on acquiring new client base in the assigned territory.  Making proposals and presentations to clients with a precise display of their visibility when placed in the online space.  Handling complete sales cycle ensuring committed deliveries and campaigns focus on renewals.  Building and managing strong relationships with clients and helping product with continuous feedback.  Achieving sales targets through new client acquisition in the assigned territory.  Making presentations in-front of a client to ensure deliveries on active campaigns. Other Details:  This is a Field Sales role  Candidate should be comfortable travelling",
+          "metaDescription": "Job Description:  Selling online property advertisements / branding solutions to clients by assessing their business requirements.  Designing email campaigns to spread awareness of new products / Projects launched in the assigned region.  Achieving sales targets / Acquisitions through focus on acquiring new client base in the assigned territory.  Making proposals and presentations to clients with a precise display of their visibility when placed in the online space.  Handling complete sales cycle ensuring committed deliveries and campaigns focus on renewals.  Building and managing strong relationships with clients and helping product with continuous feedback.  Achieving sales targets through new client acquisition in the assigned territory.  Making presentations in-front of a client to ensure deliveries on active campaigns. Other Details:  This is a Field Sales role  Candidate should be comfortable travelling",
+          "shortDescription": null,
+          "experienceUIField": "Upto 5 years",
+          "yrsOfExperience": "0 to 5 Years "
+        }
+      }
+    ],
+    "totalCount": 294,
+    "hasMoreData": true,
+    "facetedSearchConfig": {
+      "paginationHowMuch": "12"
+    }
+  }
+}

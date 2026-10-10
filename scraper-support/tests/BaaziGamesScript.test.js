@@ -157,8 +157,8 @@ test('Baazi Games scraper fails closed when a public jobs surface appears on the
 })
 
 
-test('Baazi current unavailable public site remains an explicit upstream failure', async () => {
+test('Baazi unavailable primary remains recorded when the current employer feed cannot be verified', async () => {
   const source = await import('../../scraper/baazigames/script.js')
-  await assert.rejects(source.run({fetchPage:async url => ({status:200,url,html:'<title>BaaziGames | No Games Available at the Moment</title><p>No games are available at the moment</p>'})}), error => error.failureKind === 'upstream_unavailable' && /current job inventory is unavailable/i.test(error.message))
+  await assert.rejects(source.run({fetchPage:async url => ({status:200,url,html:'<title>BaaziGames | No Games Available at the Moment</title><p>No games are available at the moment</p>'})}), error => error.failureKind === 'incomplete_listing' && /current job inventory is unavailable/i.test(error.primaryInventoryUnavailable))
   await assert.rejects(source.run({fetchPage:async url => ({status:403,url,html:'AccessDenied Access Denied'})}), /HTTP 403/)
 })

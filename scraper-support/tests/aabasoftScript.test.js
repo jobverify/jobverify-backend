@@ -571,3 +571,35 @@ test('Aabasoft fails closed when the verified homepage, careers page, or detail 
     /detail page/i,
   )
 })
+
+
+const currentCmsPosting = (guid, city) => ({
+  guid, contentType: 'careerDetails',
+  properties: {
+    cdVacancyTitle: { value: 'Business Development Manager – Cloud Services' },
+    cdJobLocation: { value: [{ name: city }] },
+  },
+})
+
+test('Aabasoft retains distinct CMS roles that share the official title-based application URL', async () => {
+  const aabasoft = await loadAabasoftModule()
+  assert.ok(aabasoft)
+  const jobs = aabasoft.normalizeCurrentJobs([
+    currentCmsPosting('0dd48335-37df-4af4-84e1-0b9121af5073', 'Bangalore'),
+    currentCmsPosting('e7c856bd-bd57-483e-8dca-0de266cc1740', 'Kochi'),
+  ], () => '2026-10-08T17:00:00.000Z')
+  assert.deepEqual(jobs.map(job => [job.jobId, job.city]), [
+    ['0dd48335-37df-4af4-84e1-0b9121af5073', 'Bangalore'],
+    ['e7c856bd-bd57-483e-8dca-0de266cc1740', 'Kochi'],
+  ])
+  assert.ok(jobs.every(job => job.applyUrl === 'https://aabasoft.com/in-en/join-our-team/business-development-manager-cloud-services'))
+})
+
+test('Aabasoft still rejects duplicate CMS role IDs', async () => {
+  const aabasoft = await loadAabasoftModule()
+  assert.ok(aabasoft)
+  assert.throws(() => aabasoft.normalizeCurrentJobs([
+    currentCmsPosting('0dd48335-37df-4af4-84e1-0b9121af5073', 'Bangalore'),
+    currentCmsPosting('0dd48335-37df-4af4-84e1-0b9121af5073', 'Kochi'),
+  ], () => '2026-10-08T17:00:00.000Z'), /invalid or duplicate role/)
+})

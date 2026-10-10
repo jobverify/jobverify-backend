@@ -1,0 +1,27 @@
+{
+  "id": 1189038,
+  "jobCode": 67877,
+  "companyId": 15154,
+  "careerSiteUrl": "jobs.itcinfotech.com",
+  "jobTitle": "Project Lead - Cloud Services",
+  "jobUrl": "project-lead-cloud-services-bangalore-2026093011412087",
+  "status": 1,
+  "location": "Mumbai, Maharashtra, India",
+  "referenceNumber": "PCIIL_0000266610_1",
+  "jobConfigurationData": {
+    "Description": "<p>Lead Site Reliability Engineer Disaster Recovery Automation Location: Bengaluru Work from Office</p>\n\n<p>Experience: 10 to15 Years</p>\n\n<p>Role Overview:</p>\n\n<p>We are seeking an experienced Lead Site Reliability Engineer SRE to lead Disaster Recovery, Resilience Engineering, and Automation initiatives for mission-critical banking applications and cloud platforms.</p>\n\n<p>The role focuses on designing and improving DR capabilities, automating operational processes, enhancing platform reliability, and driving operational excellence across AWS and Kubernetes environments.</p>\n\n<p>Key Responsibilities:</p>\n\n<p>Lead Disaster Recovery planning, DR drills, failoverfailback validation, and Business Continuity activities. Design and implement automation for operational tasks, incident response, deployment, and recovery using scripting and Infrastructure-as-Code.</p>\n\n<p>Drive platform reliability, observability, capacity planning, and continuous service improvement across AWS and Kubernetes. Collaborate with Application, Platform, DevOps, and Security teams to improve resilience, reduce MTTR, and eliminate recurring production issues.</p>\n\n<p>Define SRE best practices, operational standards, runbooks, and mentor engineering teams. Mandatory Skills AWS EKS, EC2, IAM, VPC, RDS, S3, CloudWatch, Kubernetes EKS, Terraform, CICD, Linux, ShellPython scripting.</p>\n\n<p>Disaster Recovery, High Availability, Business Continuity, Incident Problem Management, RCA, Automation, and Observability Dynatrace, Datadog, Prometheus, Grafana, OpenTelemetry.</p>\n\n<p>Strong experience with Infrastructure Automation, Production Reliability, and Operational Excellence.</p>\n",
+    "Open Positions": "1",
+    "Skills Required": "Technical | Infrastructure | Cloud | GCP",
+    "Role": "<p>Preferred Candidate Profile:</p>\n\n<p>10 to 15 years of experience in Site Reliability Engineering, Cloud Operations, Platform Engineering, or Infrastructure Engineering.</p>\n\n<p>Hands-on experience leading Disaster Recovery, Automation, and Reliability initiatives in large-scale production environments. Experience with Banking, Financial Services, or FinTech environments is preferred.</p>\n\n<p>Strong leadership, stakeholder management, and mentoring skills.</p>\n",
+    "Location": "Mumbai, Maharashtra, India",
+    "Education/Qualification": "BE/BTECH/MCA",
+    "SO ID": "PCIIL_0000266610_1",
+    "Years Of Exp": "6 to 12 years"
+  },
+  "endtDate": null,
+  "createdDate": 1790620200000,
+  "createDate": "29-Sep-2026",
+  "yrsOfExperience": "6 to 12 Years ",
+  "skillSet": "Technical | Infrastructure | Cloud | GCP",
+  "departmentName": "Lateral"
+}

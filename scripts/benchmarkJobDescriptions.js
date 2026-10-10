@@ -1,3 +1,4 @@
+import { validateFactPlan, assessRewriteInput } from '../rewriting/factPlan.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
@@ -14,18 +15,19 @@ const jobs = JSON.parse(await fs.readFile(inputFile, 'utf8'));
 if (!Array.isArray(jobs) || jobs.length !== 20) throw new Error('Benchmark requires exactly 20 representative jobs');
 const controller = new AbortController();
 for (const event of ['SIGINT', 'SIGTERM']) process.once(event, () => controller.abort());
-const policyHash = createHash('sha256').update(await fs.readFile(new URL('../src/services/jobDescriptionPolicy.js', import.meta.url))).digest('hex');
+const policyHash = createHash('sha256').update(await fs.readFile(new URL('../src/services/jobDescriptionPolicy.js', import.meta.url))).update(await fs.readFile(new URL('../rewriting/factPlan.js', import.meta.url))).update(await fs.readFile(new URL('../rewriting/runner.js', import.meta.url))).digest('hex');
 const report = { model: REWRITE_MODEL, policyHash, environment: { platform: process.platform, arch: process.arch, cpu: os.cpus()[0]?.model, threads: 2, totalMemoryBytes: os.totalmem() }, startedAt: new Date().toISOString(), cases: [] };
 if (process.argv.includes('--resume')) {
   const previous = JSON.parse(await fs.readFile(outputFile, 'utf8'));
   if (JSON.stringify(previous.model) !== JSON.stringify(REWRITE_MODEL) || previous.environment.platform !== process.platform || previous.environment.threads !== 2) throw new Error('Cannot resume a different model/runtime/platform configuration');
+  if (previous.policyHash && previous.policyHash !== policyHash) throw new Error('Cannot resume a changed generation policy');
   if (!Array.isArray(previous.cases) || previous.cases.length > jobs.length) throw new Error('Invalid benchmark checkpoint');
   report.startedAt = previous.startedAt;
   report.resumedAt = new Date().toISOString();
   report.cases = previous.cases.map((row, index) => {
     const input = buildRewriteInput(jobs[index]);
     if (row.index !== index + 1 || row.inputHash !== input.inputHash) throw new Error('Cannot resume changed or reordered source jobs');
-    const replay = row.finishReason === 'stop' && row.generatedSections ? validateRewrite({ sections: row.generatedSections }, input, row.finishReason) : null;
+    const replay = row.finishReason === 'stop' ? row.generatedPlan ? validateFactPlan(row.generatedPlan,input,row.finishReason) : row.generatedSections ? validateRewrite({ sections: row.generatedSections }, input, row.finishReason) : null : null;
     return { ...row, generationPolicyHash: row.generationPolicyHash || previous.policyHash || 'unrecorded-initial-pilot',
       ...(replay && { accepted: replay.ok, reason: replay.reason, description: replay.description, validationPolicyHash: policyHash }) };
   });
@@ -46,16 +48,18 @@ try {
     const input = buildRewriteInput(job), started = Date.now();
     let response, validation;
     try {
-      response = await client.generate(input, { signal: controller.signal });
-      validation = validateRewrite(response.value, input, response.finishReason);
+      const assessment=assessRewriteInput(input);
+      if(!assessment.ok) validation=assessment;
+      else { response = await client.generate(input, { signal: controller.signal });
+      validation = validateFactPlan(response.value, input, response.finishReason); }
     } catch (error) { validation = { ok: false, reason: error.name === 'TimeoutError' ? 'timeout' : 'generation_error' }; }
     const text = validation.description || response?.value?.sections?.flatMap(s => s.items?.map(i => i.text) || []).join(' ') || '';
     const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
     const sentences = Math.max(1, (text.match(/[.!?](?:\s|$)/g) || []).length);
     const row = { index: index + 1, title: job.title, company: job.company, inputHash: input.inputHash, sourceWords: input.sourceWords, durationMs: Date.now() - started,
-      generationPolicyHash: policyHash, validationPolicyHash: policyHash, accepted: validation.ok, reason: validation.reason, finishReason: response?.finishReason, wordCount, averageSentenceWords: Number((wordCount / sentences).toFixed(1)),
+      generationPolicyHash: policyHash, validationPolicyHash: policyHash, modelPlanCached: response?.cachedModelPlan||false, accepted: validation.ok, reason: validation.reason, finishReason: response?.finishReason, wordCount, averageSentenceWords: Number((wordCount / sentences).toFixed(1)),
       workerMemoryBytes: await workerMemoryBytes(worker.pid).catch(() => null), usage: response?.usage, timings: response?.timings,
-      description: validation.description, generatedSections: response?.value?.sections };
+      originalDescription: input.sourceDescription, quality: validation.quality, description: validation.description, generatedPlan: response?.value, generatedSections: response?.value?.sections };
     report.cases.push(row); await save();
     console.log(JSON.stringify({ index: row.index, title: row.title, accepted: row.accepted, reason: row.reason, durationMs: row.durationMs, wordCount }));
   }

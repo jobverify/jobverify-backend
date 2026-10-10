@@ -36,12 +36,13 @@ export const extractSearchResults = (payload, siteId) => {
     const row = wrapper?.data
     if (!row || !normalizeWhitespace(row.jobID) || !normalizeWhitespace(row.jobName)
       || !normalizeWhitespace(row.country) || row.siteID !== siteId
-      || row.dudaSiteID !== DUDA_SITE_ID || typeof row.activeStatus !== 'boolean') {
-      throw new Error('Zoom public jobs inventory contains an incomplete or foreign-site record')
+      || row.dudaSiteID !== DUDA_SITE_ID || typeof row.activeStatus !== 'boolean'
+      || row.advertiserName !== 'Zoom' || row.siteName !== 'Zoom Careers') {
+      throw new Error('Zoom public jobs inventory contains an incomplete or foreign-site employer identity record')
     }
     let url
     try { url = new URL(row.jobURL) } catch { throw new Error('Zoom public jobs inventory has a malformed detail URL') }
-    if (url.protocol !== 'https:' || !['careers.zoom.com', 'www.careers.zoom.us'].includes(url.hostname)
+    if (url.protocol !== 'https:' || !['careers.zoom.com', 'www.careers.zoom.us', 'careers.zoom.us'].includes(url.hostname)
       || !/^\/job-details\/[^/]+$/.test(url.pathname)) {
       throw new Error('Zoom public jobs inventory has an unverified detail handoff')
     }
@@ -52,7 +53,7 @@ export const extractSearchResults = (payload, siteId) => {
       throw new Error('Zoom public jobs inventory has incomplete India location data')
     }
     // The published widget builds detail links from the current careers origin
-    // and the feed's pathname; its configured careers.zoom.com host is not live yet.
+    // and the feed's pathname, including its current bare careers.zoom.us alias.
     const sourceUrl = new URL(url.pathname, CAREERS_URL).toString()
     const job = {
       title: normalizeWhitespace(row.jobName), company: 'Zoom',

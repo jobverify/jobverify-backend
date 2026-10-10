@@ -196,7 +196,7 @@ test('LinkedIn pins the verified public jobs search shell and extracts company-f
 
   assert.equal(linkedin.SOURCE, 'linkedin')
   assert.equal(linkedin.COMPANY, 'LinkedIn')
-  assert.equal(linkedin.VERIFIED_ON, '2026-07-16')
+  assert.equal(linkedin.VERIFIED_ON, '2026-10-09')
   assert.equal(linkedin.HOMEPAGE_URL, 'https://www.linkedin.com/')
   assert.equal(
     linkedin.LINKEDIN_JOBS_URL,
@@ -395,4 +395,42 @@ test('LinkedIn scraper returns an empty list for a verified zero-results shell a
     }),
     /detail page/i,
   )
+})
+
+
+test('LinkedIn validates the current India canonical alias with exact selected company scope', async () => {
+  const linkedin = await loadLinkedInModule(), { readFile } = await import('node:fs/promises')
+  const html = await readFile(new URL('./fixtures/linkedin/search-20261009.html', import.meta.url), 'utf8')
+  assert.equal(linkedin.hasVerifiedJobsPageSignal(html), true)
+  assert.equal(linkedin.hasVerifiedJobsPageSignal(html.replaceAll('f_C=1337', 'f_C=9999')), false)
+  assert.equal(linkedin.hasVerifiedJobsPageSignal(html.replace('name="f_C" checked value="1337"', 'name="f_C" checked value="9999"')), false)
+})
+test('LinkedIn parses every current new-date card within an external timeout', async () => {
+  const { execFile } = await import('node:child_process'), { promisify } = await import('node:util')
+  const { fileURLToPath } = await import('node:url')
+  const code = 'import fs from "node:fs/promises";import {extractSearchResults} from ' + JSON.stringify(new URL('../../scraper/linkedin/script.js', import.meta.url).href)
+    + ';const jobs=extractSearchResults(await fs.readFile(' + JSON.stringify(fileURLToPath(new URL('./fixtures/linkedin/search-20261009.html', import.meta.url))) + ',"utf8"));console.log(JSON.stringify({count:jobs.length,ids:new Set(jobs.map(j=>j.jobId)).size,companies:[...new Set(jobs.map(j=>j.company))]}))'
+  const { stdout } = await promisify(execFile)(process.execPath, ['--input-type=module', '-e', code], { timeout: 3000, killSignal: 'SIGKILL', windowsHide: true })
+  assert.deepEqual(JSON.parse(stdout), { count: 47, ids: 47, companies: ['LinkedIn'] })
+})
+
+test('LinkedIn listing geography does not assign India to Remote or a foreign city', async () => {
+  const linkedin = await loadLinkedInModule(), { readFile } = await import('node:fs/promises')
+  const html = await readFile(new URL('./fixtures/linkedin/search-20261009.html', import.meta.url), 'utf8')
+  for (const place of ['Remote', 'Seattle, Washington, United States']) {
+    const changed = html.replace('Coimbatore, Tamil Nadu, India', place)
+    assert.notEqual(changed, html)
+    assert.equal(linkedin.extractSearchResults(changed)[0].country, null)
+  }
+})
+
+test('LinkedIn marks capped or count-mismatched inventories incomplete and rejects a missing positive inventory', async () => {
+  const linkedin = await loadLinkedInModule()
+  const fetchText = async url => url === linkedin.LINKEDIN_JOBS_URL ? searchResultsHtml : /4419298054/.test(url) ? seniorSalesManagerDetailHtml : accountDirectorDetailHtml
+  const capped = await linkedin.createLinkedInScraper({ maxJobs: 1 }).run({ fetchText })
+  assert.equal(capped.length, 1)
+  assert.equal(capped[0].sourceListingComplete, false)
+  const mismatched = await linkedin.createLinkedInScraper().run({ fetchText: async url => url === linkedin.LINKEDIN_JOBS_URL ? searchResultsHtml.replace('<body>', '<body><span class="results-context-header__job-count">47</span>') : fetchText(url) })
+  assert.ok(mismatched.every(job => job.sourceListingComplete === false))
+  await assert.rejects(linkedin.createLinkedInScraper().run({ fetchText: async () => zeroJobsSearchHtml.replace('<body>', '<body><span class="results-context-header__job-count">47</span>') }), /advertised job inventory/)
 })

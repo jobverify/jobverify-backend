@@ -758,6 +758,8 @@ const isClearlyOutsidePublicIndiaScope = (
 
   return summaryValues.some((value) => {
     const summary = String(value).trim()
+    // Employer office labels can identify a country without a leading code.
+    if (/\b(?:USA|United States(?: of America)?)\b/i.test(summary)) return true
     if (/remote/i.test(summary)) return true
     if (summary.includes(',')) return true
     if (/\barea\b/i.test(summary)) return true

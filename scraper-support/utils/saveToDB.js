@@ -28,6 +28,7 @@ import { normalizeScrapedJob, resolveJobType } from './normalizeScrapedJob.js'
 import { enrichJobsWithPublicExperience } from './publicExperienceEnrichment.js'
 import { jobAlertService } from '../../src/services/jobAlertService.js'
 import { getJobClassifier, classifyJobsForPersistence } from './jobClassifier.js'
+import { saveLocalJobOutbox } from './localJobOutbox.js'
 import { buildDescriptionSourceUpdate } from '../../src/services/jobDescriptionPolicy.js'
 import { getSourceDescription } from '../../src/utils/jobSourceContent.js'
 import { CLASSIFICATION_FIELDS, getAuthoritativeClassification } from '../../src/services/jobClassificationPolicy.js'
@@ -322,7 +323,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
   const existingJobs = enrichedJobs.length === 0 || (classifier.mode === 'off' && rewriteMode === 'off' && !hasLiveDatabaseHandle())
     ? []
     : await JobModel.find({ fingerprint: { $in: enrichedJobs.map(keyForJob) } })
-      .select('fingerprint classification title originalTitle company location salary description sourceDescription sourceContentHash descriptionFormat descriptionRewrite minimumQualification preferredQualification sourceEmploymentType sourceExperienceRequired postedAt eligibleBatches eligibleBatchesProvenance jobType employmentType experienceRequired experienceLevel seniority experienceYears experienceBucket experienceProfile')
+      .select('fingerprint classification title originalTitle company location salary description sourceDescription sourceContentHash sourceContentHashVersion descriptionFormat descriptionRewrite minimumQualification preferredQualification sourceEmploymentType sourceExperienceRequired postedAt eligibleBatches eligibleBatchesProvenance jobType employmentType experienceRequired experienceLevel seniority experienceYears experienceBucket experienceProfile')
       .lean().exec()
   const existingByKey = new Map(existingJobs.map(job => [job.fingerprint, job]))
   const sourceJobs = enrichedJobs.map(job => {
@@ -751,11 +752,21 @@ export const saveDryRunSnapshot = async (jobs, filePath, options = {}) => {
 
   if (options.enrichPublicExperience !== false) emitStage(source, onStage, { stage: 'enrichment', status: 'done', jobs: enrichedJobs.length, durationMs: Date.now() - enrichmentStartedAt })
   throwIfAborted(signal)
-  const classifier = options.classifier || getJobClassifier()
-  const classifiedJobs = await runStage(source, onStage, 'classification',
-    () => classifyJobsForPersistence(classifier, enrichedJobs, { signal, now: options.now || new Date(),
-      onProgress: progress => emitStage(source, onStage, { stage: 'classification', status: 'progress', ...progress }),
+  const localJobOutboxDirectory = String(options.localJobOutboxDirectory || '').trim()
+  let classifiedJobs = enrichedJobs
+  if (localJobOutboxDirectory) {
+    await runStage(source, onStage, 'local job outbox', () => saveLocalJobOutbox(enrichedJobs, {
+      source, dryRun: true, directory: localJobOutboxDirectory, capturedAt: options.capturedAt,
+      captureFile: options.captureFile || null, phase: 'enriched_description',
     }), { jobs: enrichedJobs.length }, { signal })
+    emitStage(source, onStage, { stage: 'classification', status: 'skipped', jobs: enrichedJobs.length })
+  } else {
+    const classifier = options.classifier || getJobClassifier()
+    classifiedJobs = await runStage(source, onStage, 'classification',
+      () => classifyJobsForPersistence(classifier, enrichedJobs, { signal, now: options.now || new Date(),
+        onProgress: progress => emitStage(source, onStage, { stage: 'classification', status: 'progress', ...progress }),
+      }), { jobs: enrichedJobs.length }, { signal })
+  }
   const normalizedJobs = normalizeDryRunJobs(classifiedJobs)
   await runStage(source, onStage, 'snapshot write', () => writeDryRunSnapshotIfChanged(filePath, JSON.stringify(normalizedJobs, null, 2), {
     allowInPlaceRewriteOnEnospc: options.allowInPlaceRewriteOnEnospc === true,

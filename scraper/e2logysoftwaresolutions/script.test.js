@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFileSync } from 'node:fs'
 
 const careersHtml = `
 <html>
@@ -89,4 +90,34 @@ test('E2logy Software Solutions run uses the official careers page plus embedded
   ])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'e2logysoftwaresolutions')
+})
+
+const currentCareersHtml = readFileSync(new URL('./fixtures/current-careers.html', import.meta.url), 'utf8')
+
+test('E2logy verifies the redesigned first-party empty careers inventory without querying the detached Zoho feed', async () => {
+  const { run } = await loadE2logyModule()
+  const jobs = await run({
+    fetchText: async () => currentCareersHtml,
+    fetchJson: async () => assert.fail('The redesigned careers page no longer links to this Zoho feed'),
+  })
+  assert.deepEqual(jobs, [])
+})
+
+for (const [name, html] of [
+  ['careers branding changes', currentCareersHtml.replace('<title>Careers at E2logy | Join Our AI and Software Team</title>', '<title>Other Employer</title>')],
+  ['explicit all-roles-filled evidence disappears', currentCareersHtml.replaceAll('All our roles are filled at the moment.', 'We are expanding our team.')],
+  ['a public job appears', currentCareersHtml.replace('No current openings</h3>', 'Full Stack Developer</h3>')],
+  ['a public application link appears beside the empty state', currentCareersHtml.replace('Jobs open right now</h2>', 'Jobs open right now</h2><a href="/careers/full-stack-developer">Apply now</a>')],
+  ['resume handoff changes', currentCareersHtml.replaceAll('mailto:careers@e2logy.com', 'mailto:careers@other.example')],
+]) {
+  test('E2logy fails closed on the redesigned careers page when ' + name, async () => {
+    const { run } = await loadE2logyModule()
+    await assert.rejects(run({ fetchText: async () => html }), /verified first-party/i)
+  })
+}
+
+test('E2logy propagates HTTP 503 even when the error body resembles the verified empty careers page', async (t) => {
+  const { run } = await loadE2logyModule()
+  t.mock.method(globalThis, 'fetch', async () => new Response(currentCareersHtml, { status: 503 }))
+  await assert.rejects(run(), /HTTP 503/i)
 })

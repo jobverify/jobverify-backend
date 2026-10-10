@@ -46,8 +46,13 @@ const loadFamAppModule = async () => {
   }
 }
 
-test('FamApp accepts the current official homepage and careers copy while no direct public jobs surface is exposed', async () => {
+test('FamApp accepts its verified identity and consumes the complete first-party Lever jobs handoff', async () => {
   const famapp = await loadFamAppModule()
+  const { readFile } = await import('node:fs/promises')
+  const fixture = (name) => readFile(new URL('../../scraper/famapp/fixtures/' + name, import.meta.url), 'utf8')
+  const jobsHtml = await fixture('jobs.html')
+  const client = await fixture('jobs-client.js')
+  const groups = JSON.parse(await fixture('lever-grouped.json'))
   const requestedUrls = []
 
   assert.equal(famapp.hasOfficialHomepageSignal(homepageHtml), true)
@@ -55,24 +60,20 @@ test('FamApp accepts the current official homepage and careers copy while no dir
   assert.equal(famapp.hasPublicJobsSignal(careersHtml), true)
   assert.equal(famapp.hasKnownFirstPartyJobsHandoffSignal(careersHtml), true)
 
-  const jobs = await famapp.createFamAppScraper().run({
+  const jobs = await famapp.run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
-
-      if (url === famapp.HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageHtml }
-      }
-
-      if (url === famapp.CAREERS_URL) {
-        return { status: 200, url, html: careersHtml }
-      }
-
-      throw new Error(`Unexpected URL: ${url}`)
+      const html = url === famapp.HOMEPAGE_URL ? homepageHtml
+        : url === famapp.CAREERS_URL ? careersHtml
+          : url === famapp.JOBS_URL ? jobsHtml
+            : url.endsWith('/46b0e91d4324e433.js') ? client : '/* unrelated client bundle */'
+      return { status: 200, url, html }
     },
+    fetchJson: async (url) => url === famapp.LEVER_API_URL ? groups : groups.flatMap((group) => group.postings),
   })
 
-  assert.deepEqual(requestedUrls, [famapp.HOMEPAGE_URL, famapp.CAREERS_URL])
-  assert.deepEqual(jobs, [])
+  assert.deepEqual(requestedUrls.slice(0, 3), [famapp.HOMEPAGE_URL, famapp.CAREERS_URL, famapp.JOBS_URL])
+  assert.equal(jobs.length, 16)
 })
 
 test('FamApp fails closed when the official homepage identity changes', async () => {

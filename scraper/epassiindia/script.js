@@ -1,9 +1,10 @@
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 export const SOURCE = 'epassiindia'
 export const COMPANY = 'Epassi India'
 export const OFFICIAL_BRAND = 'Epassi'
-export const VERIFIED_ON = '2026-07-25'
+export const VERIFIED_ON = '2026-10-09'
 export const CAREERS_URL = 'https://www.epassi.com/careers'
 export const JOBYLON_COMPANY_ID = 2253
 export const JOBYLON_VERSION = 'v1'
@@ -16,9 +17,16 @@ export const JOBYLON_DETAIL_HOST = 'emp.jobylon.com'
 export const DISPOSITION =
   'verified-first-party-careers-page-plus-public-jobylon-embed-and-detail-pages'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://www.epassi.com/careers was the live first-party Epassi careers page for this workbook source, that its Our vacancies section was backed by the public Jobylon embed shell configured with company id 2253 at https://cdn.jobylon.com/jobs/companies/2253/embed/v1/?target=jobylon-jobs-widget&page_size=10, and that the linked public Jobylon detail pages on https://emp.jobylon.com/jobs/ exposed the location metadata needed to filter by country. On the verified Saturday, July 25, 2026 inventory, no public roles exposed India as a location, so this scraper validates the verified first-party and public Jobylon contract and returns India jobs only when the public Jobylon detail pages explicitly include India.'
+  "Verified on 2026-10-09 that https://www.epassi.com/careers remains the first-party careers page, with Jobylon company id 2253 exposing 17 distinct Epassi vacancies across two complete embedded pages. All 17 public Jobylon details were fetched and their requisition URLs, titles, employer identities and country coverage verified; no public roles exposed India as a location. Sixteen roles publish European addresses. Requisition 389049 has an unpublished summary location and blank structured address, while its full role description explicitly states a full-time, Europe-based role. Ambiguous country coverage, identity drift, missing embedded pages and required-detail failures remain errors; collection limits remain incomplete."
 
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
+
+// Country declarations accepted by the verified India/European Jobylon contract.
+const VERIFIED_COUNTRIES = new Set([
+  'in', 'ind', 'india', 'fi', 'fin', 'finland', 'de', 'deu', 'germany',
+  'se', 'swe', 'sweden', 'pl', 'pol', 'poland', 'nl', 'nld', 'netherlands', 'niederlande',
+  'gb', 'gbr', 'uk', 'united kingdom', 'es', 'esp', 'spain', 'it', 'ita', 'italy',
+])
 
 const EXTERNAL_ATS_HOST_PATTERNS = [
   /boards\.greenhouse\.io/i,
@@ -330,7 +338,19 @@ export const extractJobylonListings = (embedJs = '') => {
   }
 
   const blocks = script.split('<div id="jobylon-job-').slice(1)
-  if (blocks.length === 0) return []
+  if (blocks.length === 0) {
+    if (!/<div class="jobylon-no-jobs"/i.test(script)) throw new Error('Epassi India public Jobylon embed lacks explicit inventory evidence')
+    return []
+  }
+
+  const embeddedPages = [...script.matchAll(/class="jobylon-job-list-page[^"\r\n]*\bjs-jobylon-page-(\d+)\b[^"\r\n]*"/g)].map(match => Number(match[1]))
+  const paginationPages = [...script.matchAll(/<a\b[^>]*class="js-jobylon-show-page"[^>]*data-page="(\d+)"/g)].map(match => Number(match[1]))
+  if (embeddedPages.length === 0 || embeddedPages.some((page, index) => page !== index + 1)
+    || paginationPages.length !== embeddedPages.length
+    || paginationPages.some((page, index) => page !== embeddedPages[index])) {
+    throw new Error('Epassi India public Jobylon embed pagination no longer accounts for every embedded page')
+  }
+  const seenIds = new Set()
 
   return blocks.map((block) => {
     const jobId = normalizeWhitespace(block.split('"', 1)[0])
@@ -353,10 +373,14 @@ export const extractJobylonListings = (embedJs = '') => {
       (block.match(/<a class="jobylon-apply-btn jobylon-actual-apply-btn" href="([^"]+)"/i) || [])[1],
     )
 
-    if (!jobId || !title || !location || !sourceUrl || !applyUrl) {
+    if (!jobId || !/^\d+$/.test(jobId) || !title || !sourceUrl || !applyUrl
+      || sourceUrl.match(/\/jobs\/(\d+)-/)?.[1] !== jobId
+      || applyUrl.match(/\/applications\/jobs\/(\d+)\/create/)?.[1] !== jobId
+      || seenIds.has(jobId)) {
       throw new Error('Epassi India public Jobylon embed no longer exposes the verified listing fields')
     }
 
+    seenIds.add(jobId)
     return {
       jobId,
       requisitionId: jobId,
@@ -376,25 +400,54 @@ export const extractIndiaJobFromDetail = (listing = {}, detailHtml = '') => {
     throw new Error('Epassi India public Jobylon detail page no longer exposes a JobPosting payload')
   }
 
+  const detailUrl = String(detailHtml).match(/<meta\b[^>]*property=["']og:url["'][^>]*content=["']([^"']+)["']/i)?.[1]
+  if (!detailUrl || normalizeComparableUrl(decodeEntities(detailUrl)) !== normalizeComparableUrl(listing.sourceUrl)) {
+    throw new Error('Epassi India public Jobylon detail identity no longer matches the expected requisition')
+  }
+
   const detailTitle = normalizeWhitespace(jobPosting.title)
-  if (detailTitle && detailTitle !== normalizeWhitespace(listing.title)) {
+  if (!detailTitle || detailTitle !== normalizeWhitespace(listing.title)) {
     throw new Error('Epassi India public Jobylon detail page no longer matches the expected title')
   }
 
   const organizationName = normalizeWhitespace(jobPosting?.hiringOrganization?.name)
-  if (organizationName && organizationName !== OFFICIAL_BRAND) {
+  if (organizationName !== OFFICIAL_BRAND) {
     throw new Error('Epassi India public Jobylon detail page no longer matches the expected company identity')
   }
 
   const rawLocations = Array.isArray(jobPosting?.jobLocation)
     ? jobPosting.jobLocation
     : (jobPosting?.jobLocation ? [jobPosting.jobLocation] : [])
+  for (const location of rawLocations) {
+    const rawAddress = location?.address && typeof location.address === 'object' ? location.address : location
+    const declaration = rawAddress?.addressCountry
+    const address = normalizeAddress(location)
+    if ((declaration != null && declaration !== '' && !extractCountryValue(declaration))
+      || (address.country && !VERIFIED_COUNTRIES.has(address.country.toLowerCase()))) {
+      throw new Error('Epassi India public Jobylon detail has unrecognized declared country coverage')
+    }
+    if (address.country && address.country !== 'India' && isIndiaAddress(location)) {
+      throw new Error('Epassi India public Jobylon detail country declaration contradicts its India address')
+    }
+  }
   const indiaLocations = rawLocations
     .filter((location) => isIndiaAddress(location))
     .map((location) => normalizeAddress(location))
     .filter((location) => location.location)
 
-  if (indiaLocations.length === 0) return null
+  if (indiaLocations.length === 0) {
+    const addresses = rawLocations.map(location => normalizeAddress(location))
+    const blankAddresses = addresses.length === 0 || addresses.every(address => !address.location)
+    const explicitEuropePlacement = /\bThis is a full-time, Europe-based role\./i.test(stripHtml(jobPosting.description) || '')
+    const nonIndiaAddress = address => Boolean(address.country && address.country !== 'India'
+      && VERIFIED_COUNTRIES.has(address.country.toLowerCase()))
+      || /\b(?:Finland|Germany|Sweden|Poland|Netherlands|Niederlande|United Kingdom|UK|Spain|Italy)\b/i.test(
+        [address.streetAddress, address.city, address.region].filter(Boolean).join(' '),
+      )
+    if ((blankAddresses && explicitEuropePlacement)
+      || (!blankAddresses && addresses.every(nonIndiaAddress))) return null
+    throw new Error('Epassi India public Jobylon detail lacks trustworthy country location coverage')
+  }
 
   return {
     title: detailTitle || normalizeWhitespace(listing.title),
@@ -460,7 +513,17 @@ export const createEpassiIndiaScraper = ({ maxJobs = null } = {}) => ({
       })
     }
 
-    return jobs
+    const limited = selectedListings.length < listings.length
+    const result = limited ? jobs.map(job => ({ ...job, sourceListingComplete: false })) : jobs
+    const pagesFetched = Math.max(1, [...embedJs.matchAll(/class="jobylon-job-list-page[^"\r\n]*\bjs-jobylon-page-(\d+)\b[^"\r\n]*"/g)].length)
+    return attachInventoryEvidence(result, {
+      status: limited ? 'coverage-gap' : 'complete-inventory',
+      surface: CAREERS_URL, firstParty: true, listingComplete: !limited,
+      pagesFetched, reportedTotal: listings.length, indiaFacetCount: jobs.length,
+      verifiedAt: scrapedAt,
+      reason: limited ? 'configured-jobylon-listing-limit'
+        : 'all-embedded-pages-and-detail-identities-employers-countries-verified',
+    })
   },
 })
 

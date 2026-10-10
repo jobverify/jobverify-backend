@@ -51,6 +51,29 @@ test('missing dependencies install CPU torch before pinned Laya requirements', a
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 });
 
+test('dependency installers use a writable local pip cache and preserve an explicit override', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'laya-pip-cache-test-'));
+  const python = path.join(directory, '.cache/laya-python/package/tools/python.exe');
+  fs.mkdirSync(path.dirname(python), { recursive: true });
+  fs.writeFileSync(python, 'fixture');
+  fs.mkdirSync(path.join(directory, 'classification'));
+  fs.copyFileSync(new URL('../classification/requirements.txt', import.meta.url), path.join(directory, 'classification/requirements.txt'));
+  try {
+    for (const override of [undefined, path.join(directory, 'custom-cache')]) {
+      const installers = [];
+      let dependencyProbe = 0;
+      await bootstrap.installLocalLaya({ backendDir: directory, platform: 'win32', env: override ? { PIP_CACHE_DIR: override } : {},
+        run: async (program, args, options) => {
+          if (args[0] === '-c' && args[1].includes('importlib.metadata') && dependencyProbe++ === 0) throw new Error('dependencies missing');
+          if (args[0] === '-m' && args[1] === 'pip') installers.push(options.env.PIP_CACHE_DIR);
+          return { stdout: 'ready' };
+        },
+      });
+      assert.deepEqual(installers, Array(2).fill(override || path.join(directory, '.cache/laya-pip')));
+    }
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});
+
 test('a first Windows run awaits the Python download and extraction before probing it', async () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'laya-first-install-test-'));
   fs.mkdirSync(path.join(directory, 'classification'));

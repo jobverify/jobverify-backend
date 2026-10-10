@@ -27,6 +27,13 @@ test('local scrape launchers pass through SCRAPER_CONCURRENCY from .env when pre
   )
 })
 
+test('local scrape launchers prefer process SCRAPER_CONCURRENCY over .env', () => {
+  assert.equal(
+    buildLocalScrapeRunEnv({ SCRAPER_CONCURRENCY: '5' }, { SCRAPER_CONCURRENCY: '10' }).SCRAPER_CONCURRENCY,
+    '5',
+  )
+})
+
 test('local scrape launchers do not inject a hardcoded SCRAPER_CONCURRENCY default', () => {
   assert.equal(buildLocalScrapeRunEnv({}, {}).SCRAPER_CONCURRENCY, undefined)
 })

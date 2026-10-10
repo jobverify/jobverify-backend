@@ -1,11 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
 
 export const INDIA_SITE_URL = 'https://www.wsp.com/en-gl/sites/india'
 export const JOBS_PAGE_URL = 'https://www.wsp.com/en-gl/careers/job-opportunities?country=IN'
@@ -15,7 +14,7 @@ export const SOURCE = 'wspindia'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 const ORACLE_PREVIEW_LINK_PATTERN =
-  /https:\/\/emit\.fa\.ca3\.oraclecloud\.com\/hcmUI\/CandidateExperience\/en\/sites\/CX_2001\/requisitions\/preview\/(\d+)/i
+  /https:\/\/emit\.fa\.ca3\.oraclecloud\.com\/hcmUI\/CandidateExperience\/en\/sites\/CX_2001\/(?:requisitions\/preview\/|job\/)(\d+)/i
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -77,8 +76,25 @@ export const hasOfficialIndiaSiteSignal = (html) => {
 
 export const hasOfficialJobsPageSignal = (html) => {
   const page = String(html ?? '')
-  return /Find your dream job/i.test(page)
-    && /emit\.fa\.ca3\.oraclecloud\.com/i.test(page)
+  if (!/emit\.fa\.ca3\.oraclecloud\.com\/hcmUI\/CandidateExperience\/en\/sites\/CX_2001\//i.test(page)) return false
+  const legacy = /Find your dream job/i.test(page)
+  const current = /<title\b[^>]*>\s*Find your next opportunity\s*\|\s*WSP\s*<\/title>/i.test(page)
+    && /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/www\.wsp\.com\/en-gl\/careers\/job-opportunities["']/i.test(page)
+    && /id=["']jobscontainer["']/i.test(page)
+    && extractReportedJobCount(page) != null
+  return legacy || current
+}
+
+export const extractReportedJobCount = (html) => {
+  const heading = extractFirst(/<h2\b[^>]*id=["']dict-title["'][^>]*>([\s\S]*?)<\/h2>/i, html)
+  const value = heading?.match(/^Showing\s+([0-9,]+)\s+jobs\b/i)?.[1]
+  return value == null ? null : Number.parseInt(value.replace(/,/g, ''), 10)
+}
+
+const extractCurrentPageNumber = (html) => {
+  const current = String(html ?? '').match(/<div\b[^>]*class=["']pagelist current["'][^>]*>([\s\S]*?)<\/div>/i)?.[1]
+  const value = current?.match(/data-value=["'](\d+)["']/i)?.[1]
+  return value ? Number.parseInt(value, 10) : null
 }
 
 export const hasCloudflareChallengeSignal = (html = '') => {
@@ -116,7 +132,7 @@ export const extractMaxPageNumber = (html) => {
 export const extractJobsFromHtml = (html) => {
   const jobs = []
   const page = String(html ?? '')
-  const anchorPattern = /<a\b[^>]*href=(["'])(https:\/\/emit\.fa\.ca3\.oraclecloud\.com\/hcmUI\/CandidateExperience\/en\/sites\/CX_2001\/requisitions\/preview\/\d+)\1[^>]*>([\s\S]*?)<\/a>/gi
+  const anchorPattern = /<a\b[^>]*href=(["'])(https:\/\/emit\.fa\.ca3\.oraclecloud\.com\/hcmUI\/CandidateExperience\/en\/sites\/CX_2001\/(?:requisitions\/preview\/|job\/)\d+)\1[^>]*>([\s\S]*?)<\/a>/gi
 
   for (const match of page.matchAll(anchorPattern)) {
     const [, , href, innerHtml] = match
@@ -131,7 +147,15 @@ export const extractJobsFromHtml = (html) => {
       || normalizeWhitespace(segments.findLast((segment) => segment && segment !== title))
       || null
 
-    if (!title || !location) continue
+    if (!title || !location) {
+      throw new Error('WSP India job card changed; refusing an incomplete inventory')
+    }
+    if (/\/sites\/CX_2001\/job\//i.test(href)) {
+      const publicCountry = normalizeWhitespace(match[0]).match(/'job_country':\s*'([^']+)'/i)?.[1]
+      if (publicCountry !== 'India') {
+        throw new Error('WSP India current job card lacks explicit India evidence')
+      }
+    }
 
     jobs.push({
       title,
@@ -172,13 +196,14 @@ const inferExperienceFromDescription = (jobDescription) => {
 const buildDetailDescription = (detailRecord = {}) => {
   const sections = [
     detailRecord.ExternalDescriptionStr,
+    detailRecord.ExternalResponsibilitiesStr,
     detailRecord.InternalResponsibilitiesStr,
     detailRecord.ExternalQualificationsStr,
   ]
     .map((value) => extractVisibleText(value))
     .filter(Boolean)
 
-  return sections.length > 0 ? sections.join('\n\n') : null
+  return sections.length > 0 ? [...new Set(sections)].join('\n\n') : null
 }
 
 export const enrichJobFromDetailRecord = (job, detailRecord = null) => {
@@ -229,9 +254,27 @@ const defaultFetchJson = async (url) => {
 export const isCloudflareChallengePage = (page = {}) =>
   Number(page.status) === 403 && hasCloudflareChallengeSignal(page.html)
 
+const mapDetailsInOrder = async (jobs, enrich) => {
+  const results = new Array(jobs.length)
+  let nextIndex = 0
+  let failed = false
+  await Promise.all(Array.from({ length: Math.min(4, jobs.length) }, async () => {
+    while (!failed && nextIndex < jobs.length) {
+      const index = nextIndex++
+      try {
+        results[index] = await enrich(jobs[index])
+      } catch (error) {
+        failed = true
+        throw error
+      }
+    }
+  }))
+  return results
+}
+
 export const createWspIndiaScraper = ({
-  maxPages = Number.isInteger(config.maxPages) ? config.maxPages : null,
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+  maxPages = null,
+  maxJobs = null,
 } = {}) => ({
   async run({
     fetchPage = defaultFetchPage,
@@ -239,77 +282,102 @@ export const createWspIndiaScraper = ({
     now = () => new Date().toISOString(),
   } = {}) {
     const indiaSitePage = await fetchPage(INDIA_SITE_URL)
-    if (isCloudflareChallengePage(indiaSitePage)) {
-      return []
-    }
-
-    if (!hasOfficialIndiaSiteSignal(indiaSitePage.html)) {
+    if (isCloudflareChallengePage(indiaSitePage)) throw new Error('WSP India official site is unavailable behind a Cloudflare challenge')
+    if (indiaSitePage.status !== 200 || !hasOfficialIndiaSiteSignal(indiaSitePage.html)) {
       throw new Error('WSP India official India site surface changed; refusing to guess the jobs handoff')
     }
 
     const firstJobsPage = await fetchPage(buildJobsPageUrl({ page: 1 }))
-    if (isCloudflareChallengePage(firstJobsPage)) {
-      return []
-    }
-
-    if (!hasOfficialJobsPageSignal(firstJobsPage.html)) {
+    if (isCloudflareChallengePage(firstJobsPage)) throw new Error('WSP India jobs page is unavailable behind a Cloudflare challenge')
+    if (firstJobsPage.status !== 200 || !hasOfficialJobsPageSignal(firstJobsPage.html)) {
       throw new Error('WSP India official jobs page surface changed; refusing to guess job links')
     }
 
     const discoveredMaxPages = extractMaxPageNumber(firstJobsPage.html)
     const totalPages = Math.max(1, maxPages ? Math.min(maxPages, discoveredMaxPages) : discoveredMaxPages)
+    const reportedTotal = extractReportedJobCount(firstJobsPage.html)
     const jobs = []
-    const seenJobIds = new Set()
+    const seenJobs = new Map()
+    let listingRows = 0
     const pageHtmlCache = new Map([[1, firstJobsPage.html]])
 
     for (let page = 1; page <= totalPages; page += 1) {
       const pageResult = pageHtmlCache.has(page)
         ? { status: 200, url: buildJobsPageUrl({ page }), html: pageHtmlCache.get(page) }
         : await fetchPage(buildJobsPageUrl({ page }))
-
-      if (isCloudflareChallengePage(pageResult)) {
-        return []
+      if (isCloudflareChallengePage(pageResult)) throw new Error('WSP India jobs page is unavailable behind a Cloudflare challenge')
+      if (pageResult.status !== 200 || !hasOfficialJobsPageSignal(pageResult.html)) {
+        throw new Error('WSP India official jobs page surface changed; refusing an incomplete inventory')
       }
-
+      const currentPage = extractCurrentPageNumber(pageResult.html)
+      const currentTotal = extractReportedJobCount(pageResult.html)
+      if ((currentPage != null && currentPage !== page) || currentTotal !== reportedTotal
+        || (reportedTotal != null && discoveredMaxPages > 1
+          && (currentPage == null || extractMaxPageNumber(pageResult.html) !== discoveredMaxPages))) {
+        throw new Error('WSP India public inventory pagination or reported total changed')
+      }
       const pageJobs = extractJobsFromHtml(pageResult.html)
-      let addedOnPage = 0
-
-      for (const job of pageJobs) {
-        if (!job.jobId || seenJobIds.has(job.jobId)) continue
-        seenJobIds.add(job.jobId)
-        addedOnPage += 1
-
-        let normalizedJob = job
-        try {
-          const detailPayload = await fetchJson(buildJobDetailsApiUrl(job.jobId))
-          normalizedJob = enrichJobFromDetailRecord(
-            job,
-            Array.isArray(detailPayload?.items) ? detailPayload.items[0] : null,
-          )
-        } catch {
-          normalizedJob = job
+      if (pageJobs.length === 0) throw new Error('WSP India public inventory has no recognized job cards')
+      listingRows += pageJobs.length
+      const uniquePageJobs = pageJobs.filter(job => {
+        const previous = seenJobs.get(job.jobId)
+        if (previous) {
+          if (['title', 'location', 'sourceUrl', 'applyUrl'].some(field => previous[field] !== job[field])) {
+            throw new Error('WSP India public inventory has conflicting repeated requisition cards')
+          }
+          return false
         }
-
-        jobs.push({
+        seenJobs.set(job.jobId, job)
+        return true
+      })
+      if (uniquePageJobs.length === 0) throw new Error('WSP India public inventory pagination repeated a previous page')
+      const selectedPageJobs = maxJobs ? uniquePageJobs.slice(0, Math.max(0, maxJobs - jobs.length)) : uniquePageJobs
+      const pageDetails = await mapDetailsInOrder(selectedPageJobs, async job => {
+        const detailPayload = await fetchJson(buildJobDetailsApiUrl(job.jobId))
+        const detailRecords = Array.isArray(detailPayload?.items) ? detailPayload.items : []
+        const detail = detailRecords[0]
+        if (detailRecords.length !== 1 || String(detail?.Id) !== job.jobId
+          || normalizeWhitespace(detail?.Title) !== job.title) {
+          throw new Error('WSP India Oracle requisition identity changed')
+        }
+        if (detail.PrimaryLocationCountry !== 'IN'
+          && !detail.secondaryLocations?.some(location => location.CountryCode === 'IN')) {
+          throw new Error('WSP India Oracle requisition does not verify an India location')
+        }
+        const normalizedJob = enrichJobFromDetailRecord(job, detail)
+        return {
           ...normalizedJob,
+          country: 'India',
+          postingDate: detail.ExternalPostedStartDate?.slice(0, 10) || null,
+          closingDate: detail.ExternalPostedEndDate?.slice(0, 10) || null,
           source: SOURCE,
           link: normalizedJob.applyUrl || normalizedJob.sourceUrl,
           scrapedAt: now(),
-        })
-
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
         }
+      })
+      jobs.push(...pageDetails)
+      if (maxJobs && jobs.length >= maxJobs) {
+        return page === discoveredMaxPages && reportedTotal === listingRows
+          && selectedPageJobs.length === uniquePageJobs.length
+          ? jobs
+          : jobs.map(job => ({ ...job, sourceListingComplete: false }))
       }
 
-      if (pageJobs.length === 0 || addedOnPage === 0) break
     }
 
-    return jobs
+    if (totalPages < discoveredMaxPages) return jobs.map(job => ({ ...job, sourceListingComplete: false }))
+    if (reportedTotal != null && listingRows !== reportedTotal) {
+      throw new Error('WSP India public inventory does not reconcile with the reported total')
+    }
+    return attachInventoryEvidence(jobs, {
+      status: 'complete-inventory', surface: JOBS_PAGE_URL, firstParty: true, listingComplete: true,
+      pagesFetched: totalPages, reportedTotal, indiaFacetCount: jobs.length, verifiedAt: now(),
+      reason: 'official-india-all-advertised-rows-and-identical-duplicates-accounted-oracle-ids-verified',
+    })
   },
 })
 
-export const run = async (options = {}) => createWspIndiaScraper().run(options)
+export const run = async (options = {}) => createWspIndiaScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

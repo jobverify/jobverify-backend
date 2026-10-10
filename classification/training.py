@@ -46,6 +46,9 @@ def validate_training_dataset(rows, minimums=None):
         for key, question in POLICY['questions'].items():
             if expected.get(key) not in question['criteria']:
                 raise ValueError('invalid or missing expected ' + key)
+        for key, question in POLICY.get('legacyQuestions', {}).items():
+            if expected.get(key) not in question['criteria']:
+                raise ValueError('invalid or missing expected ' + key)
         employment, experience = expected['employment'], expected['experience']
         job_type = {'internship': 'Intern', 'contract': 'Contract', 'other': 'Others', 'unspecified': 'Unspecified'}.get(employment)
         if employment == 'full_time':

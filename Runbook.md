@@ -591,6 +591,8 @@ test@razorpay
 
 # Local MongoDB live parallel Persistent run
 
+Parallel scrape launchers and local evaluation scripts use `SCRAPER_CONCURRENCY` from the process environment, then the backend `.env`, then a one-worker fallback. Explicit `-Concurrency` (resilient launcher) or `--concurrency` (missing-artifact backfill) arguments override it for that run. Changing the environment does not change an already running supervisor; restart it to apply the new value.
+
 cd C:\Users\mohv\GitHub\Release-26.09.02\jobverify-backend
 $env:SCRAPER_CONCURRENCY = "10"
 $env:WORKDAY_DETAIL_FETCH_CONCURRENCY = "1"

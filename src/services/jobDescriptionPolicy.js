@@ -22,7 +22,7 @@ export const buildRewriteInput = (job = {}) => {
     sourceExperienceRequired: cleanRewriteSource(job.sourceExperienceRequired),
     location: cleanRewriteSource(job.location), salary: cleanRewriteSource(job.salary),
   };
-  const inputHash = createHash('sha256').update(JSON.stringify(facts)).digest('hex');
+  const inputHash = createHash('sha256').update(JSON.stringify({ facts, sourceStructure: sourceDescription.replace(/\r\n?/g, '\n') })).digest('hex');
   const body = Object.entries(facts).filter(([, value]) => value).map(([key, value]) => key + ': ' + value).join('\n');
   const sourceWords = words(facts.description).length;
   return { facts, sourceDescription, inputHash, body, sourceWords, eligible: sourceWords >= 25 && Buffer.byteLength(body) <= 20000 };
@@ -34,15 +34,15 @@ export const buildDescriptionSourceUpdate = (job, existing, { mode = 'off', now 
   if (!input.sourceDescription && existing) return {};
   // Older records stored employer fields before dedicated provenance fields existed.
   // Recognizing those values initializes metadata without queuing an unchanged job.
-  const previousSource = existing && !existing.sourceContentHash ? {
+  const previousSource = existing && existing.sourceContentHashVersion !== 2 ? {
     ...existing,
     sourceEmploymentType: existing.sourceEmploymentType || (job.sourceEmploymentType ? existing.employmentType : ''),
     sourceExperienceRequired: existing.sourceExperienceRequired || (job.sourceExperienceRequired ? existing.experienceRequired : ''),
   } : existing;
-  const previousHash = existing?.sourceContentHash || (previousSource ? buildRewriteInput(previousSource).inputHash : null);
+  const previousHash = existing?.sourceContentHashVersion === 2 ? existing.sourceContentHash : previousSource ? buildRewriteInput(previousSource).inputHash : null;
   const changed = previousHash !== input.inputHash;
-  const sourceFields = { sourceDescription: input.sourceDescription || null, sourceContentHash: input.inputHash };
-  if (!changed) return { ...sourceFields, ...(!existing.descriptionRewrite && { descriptionRewrite: { status: 'baseline', inputHash: input.inputHash, queuedAt: now } }) };
+  const sourceFields = { sourceDescription: input.sourceDescription || null, sourceContentHash: input.inputHash, sourceContentHashVersion: 2 };
+  if (!changed) return { ...sourceFields, ...(!existing.descriptionRewrite ? { descriptionRewrite: { status: 'baseline', inputHash: input.inputHash, queuedAt: now } } : existing.descriptionRewrite.inputHash !== input.inputHash ? { 'descriptionRewrite.inputHash': input.inputHash } : {}) };
   return {
     ...sourceFields, ...(input.sourceDescription && { description: input.sourceDescription }), descriptionFormat: 'plain',
     descriptionRewrite: { status: mode === 'publish' && input.eligible ? 'pending' : 'skipped', inputHash: input.inputHash,

@@ -62,6 +62,10 @@ class LiteralParser {
     const char = this.peek()
     if (char === '[') return this.parseArray()
     if (char === '{') return this.parseObject()
+    if (char === '!' && /^[!]([01])(?=$|[\s,}\]])/u.test(this.source.slice(this.index))) {
+      this.index += 2
+      return this.source[this.index - 1] === '0'
+    }
     if (char === '"' || char === "'" || char === '`') return this.parseString()
     if (isNumberStart(char)) return this.parseNumber()
     if (isIdentifierStart(char)) return this.parseKeyword()

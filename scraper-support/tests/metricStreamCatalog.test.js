@@ -11,7 +11,7 @@ const loadMetricStreamCatalog = async () => {
   }
 }
 
-test('MetricStream catalog captures the current first-party cards and retained legacy hiring surface', async () => {
+test('MetricStream catalog records the independently verified India subset and unresolved primary conflict', async () => {
   const {
     METRICSTREAM_CATALOG,
     default: defaultCatalog,
@@ -39,20 +39,29 @@ test('MetricStream catalog captures the current first-party cards and retained l
   )
   assert.equal(
     METRICSTREAM_CATALOG.verifiedSampleJobUrl,
-    'https://career5.successfactors.eu/career?career_ns=job_listing&company=metricstre&navBarLevel=JOB_SEARCH&rcm_site_locale=en_US&career_job_req_id=3567&selected_lang=en_US&jobAlertController_jobAlertId=&jobAlertController_jobAlertName=&browserTimeZone=Asia/Calcutta',
+    'https://in.linkedin.com/jobs/view/delivery-manager-at-metricstream-4468518584',
   )
-  assert.equal(METRICSTREAM_CATALOG.atsPlatform, 'official-first-party-job-cards+legacy-successfactors')
+  assert.equal(METRICSTREAM_CATALOG.atsPlatform, 'official-first-party-job-cards+employer-linkedin-partial+legacy-successfactors')
   assert.equal(METRICSTREAM_CATALOG.countryFilter, 'India')
-  assert.equal(METRICSTREAM_CATALOG.paginationStrategy, 'first-party-all-role-cards+legacy-successfactors-dwr')
+  assert.equal(METRICSTREAM_CATALOG.paginationStrategy, 'first-party-role-cards+partial-employer-linkedin-snapshot+legacy-successfactors-dwr')
   assert.equal(
     METRICSTREAM_CATALOG.extractionStrategy,
-    'verified-first-party-homepage+public-role-cards+validated-details+india-filter+legacy-successfactors',
+    'verified-first-party-homepage+country-conflict-preserved+employer-linkedin-identity-country-jd-expiry+partial-india-subset+legacy-successfactors',
   )
   assert.equal(METRICSTREAM_CATALOG.parser, 'custom-script')
   assert.equal(METRICSTREAM_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(METRICSTREAM_CATALOG.verifiedOn, '2026-10-03')
+  assert.match(METRICSTREAM_CATALOG.verifiedOn, /^\d{4}-\d{2}-\d{2}$/)
+  assert.equal(METRICSTREAM_CATALOG.sourceListingComplete, false)
+  assert.equal(METRICSTREAM_CATALOG.verifiedPublicJobCount, null)
+  assert.equal(METRICSTREAM_CATALOG.verifiedIndiaJobCount, null)
+  assert.equal(METRICSTREAM_CATALOG.verifiedObservedIndiaSubsetCount, 1)
+  assert.equal(METRICSTREAM_CATALOG.linkedinEmployerUrl, 'https://www.linkedin.com/company/metricstream')
+  assert.equal(METRICSTREAM_CATALOG.linkedinJobsUrl, 'https://www.linkedin.com/company/metricstream/jobs')
   assert.equal(METRICSTREAM_CATALOG.dryRunFile, 'metricstream/jobs.json')
-  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /2026-10-03/i)
+  assert.ok(METRICSTREAM_CATALOG.verifiedSurfaceSummary.includes(METRICSTREAM_CATALOG.verifiedOn))
+  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /partial.*India subset/i)
+  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /LinkedIn/i)
+  assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /global.*unknown/i)
   assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.metricstream\.com\//)
   assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.metricstream\.com\/about-us\/careers\.htm/)
   assert.match(METRICSTREAM_CATALOG.verifiedSurfaceSummary, /https:\/\/career5\.successfactors\.eu\/career\?company=metricstre/)

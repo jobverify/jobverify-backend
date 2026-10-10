@@ -10,13 +10,13 @@ class EvaluationTests(unittest.TestCase):
         record = {'datasetHash': 'dataset', 'identity': identity, 'prediction': {'identity': {**identity, 'calibrationHash': 'uncalibrated'},
                   'complete': True, 'windows': 1, 'windowAnswers': [window]}}
         self.assertTrue(reusable_prediction(record, 'dataset', identity))
-        choice = window['experience'].pop('choice')
+        choice = window['jobType'].pop('choice')
         self.assertFalse(reusable_prediction(record, 'dataset', identity))
-        window['experience']['choice'] = choice
+        window['jobType']['choice'] = choice
         record['prediction']['complete'] = False
         self.assertFalse(reusable_prediction(record, 'dataset', identity))
         record['prediction']['complete'] = True
-        window.pop('experience')
+        window.pop('jobType')
         self.assertFalse(reusable_prediction(record, 'dataset', identity))
         self.assertFalse(reusable_prediction(record, 'different-dataset', identity))
     def test_small_synthetic_dataset_cannot_enable_enforcement(self):

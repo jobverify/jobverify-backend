@@ -62,6 +62,8 @@ const detailPayloadByJobId = {
   '85341': {
     items: [{
       Id: '85341',
+      Title: "Principal Engineer - Audio Visual Systems",
+      PrimaryLocationCountry: 'IN',
       ExternalDescriptionStr: '<p>Lead audio visual systems engineering for complex transport projects.</p>',
       InternalResponsibilitiesStr: '<p>Coordinate multidisciplinary AV and ELV design reviews.</p>',
       ExternalQualificationsStr: "<p>Bachelor's degree in Electrical Engineering.</p><p>5 - 8 years' experience in audio visual and ELV design.</p>",
@@ -70,6 +72,8 @@ const detailPayloadByJobId = {
   '85342': {
     items: [{
       Id: '85342',
+      Title: "Principal Engineer - RAMS",
+      PrimaryLocationCountry: 'IN',
       ExternalDescriptionStr: '<p>Lead RAMS delivery for major mobility programmes and coordinate multidisciplinary reviews.</p>',
       InternalResponsibilitiesStr: '<p>Support assurance workshops and system safety reviews.</p>',
       ExternalQualificationsStr: "<p>Bachelor's degree in engineering with strong stakeholder management skills.</p>",
@@ -78,6 +82,8 @@ const detailPayloadByJobId = {
   '85343': {
     items: [{
       Id: '85343',
+      Title: "Analyst Consultant - Emissions Inventories",
+      PrimaryLocationCountry: 'IN',
       ExternalDescriptionStr: '<p>Support emissions inventory analysis and environmental consulting projects across India.</p>',
       InternalResponsibilitiesStr: '<p>Prepare data-driven findings for consulting deliverables.</p>',
       ExternalQualificationsStr: '<p>Degree in environmental engineering or a related field.</p>',
@@ -249,11 +255,11 @@ test('run follows the verified WSP India handoff and paginates the official jobs
   )
 })
 
-test('run returns a verified zero-job result when WSP first-party surfaces are Cloudflare challenged', async () => {
+test('run rejects Cloudflare challenged WSP surfaces rather than returning a verified zero-job result', async () => {
   const wspIndia = await loadWspIndiaModule()
   let detailFetchCalled = false
 
-  const jobs = await wspIndia.createWspIndiaScraper().run({
+  await assert.rejects(wspIndia.createWspIndiaScraper().run({
     fetchPage: async (url) => ({
       status: 403,
       url,
@@ -263,8 +269,17 @@ test('run returns a verified zero-job result when WSP first-party surfaces are C
       detailFetchCalled = true
       return {}
     },
-  })
-
-  assert.deepEqual(jobs, [])
+  }), /Cloudflare/i)
   assert.equal(detailFetchCalled, false)
+})
+
+test('WSP India refuses a partial job when the public Oracle detail request fails', async () => {
+  const wspIndia = await loadWspIndiaModule()
+  await assert.rejects(wspIndia.createWspIndiaScraper().run({
+    fetchPage: async url => ({
+      status: 200, url,
+      html: url === wspIndia.INDIA_SITE_URL ? indiaSiteHtml : jobsPageOneHtml,
+    }),
+    fetchJson: async () => { throw new Error('HTTP 403 Oracle detail unavailable') },
+  }), /Oracle detail unavailable/i)
 })

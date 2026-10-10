@@ -8,12 +8,12 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 export const SOURCE = 'filo'
 export const COMPANY = 'Filo'
 export const OFFICIAL_BRAND = 'Filo'
-export const VERIFIED_ON = '2026-10-03'
+export const VERIFIED_ON = '2026-10-09'
 export const CAREERS_URL = 'https://askfilo.com/careers'
 export const DISPOSITION =
   'verified-first-party-careers-page-plus-public-role-details'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on October 3, 2026 that https://askfilo.com/careers exposes department-grouped openings in public __NEXT_DATA__ and that each opening has a public Filo role page containing its title, India location, description, and application URL. The page repeated one Maharashtra opening under four IDs with the same application URL; the scraper validates each detail and publishes that application once. The previous Google Docs payload remains supported for historical compatibility.'
+  "Verified on October 9, 2026 that https://askfilo.com/careers publishes 17 unique current roles in its department-grouped public payload. All 17 public detail pages matched their listing identities, known India locations, full descriptions and 17 unique native application URLs. A newly published Jammu and Kashmir role is recognized at state level without inventing a city. The previous Google Docs payload remains supported for historical compatibility."
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -99,7 +99,7 @@ const CURRENT_APPLY_URL_PATTERN =
   /^https:\/\/filorians\.tools\.findfilo\.com\/hiring\/apply\/\d+\/?$/i
 
 const CURRENT_INDIA_LOCATION_PATTERN =
-  /^(?:Gurgaon|Gurugram|Jharkhand|Assam|Maharasthra|Maharashtra|Jaipur \(Rajasthan\))$/i
+  /^(?:Gurgaon|Gurugram|Jharkhand|Assam|Jammu and Kashmir|Maharasthra|Maharashtra|Jaipur \(Rajasthan\))$/i
 
 const buildCurrentDetailUrl = (slug) =>
   `${CAREERS_URL}/${Buffer.from(slug).toString('base64')}`

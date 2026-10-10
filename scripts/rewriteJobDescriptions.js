@@ -1,3 +1,4 @@
+import os from 'node:os';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -7,12 +8,12 @@ import { configureMongoDns } from '../src/utils/mongoDns.js';
 import Job from '../src/models/Job.js';
 import { REWRITE_MODEL } from '../src/services/jobDescriptionPolicy.js';
 import { rewriteDeadline, rewriteQueueQuery, createRewriteClient, rewriteCandidates } from '../rewriting/runner.js';
-import { prepareRewriteRuntime, startRewriteWorker } from '../rewriting/worker.js';
+import { prepareRewriteRuntime, startRewriteWorker, workerMemoryBytes } from '../rewriting/worker.js';
 
 const apply = process.argv.includes('--apply');
 const mode = process.env.JOB_DESCRIPTION_REWRITE_MODE || 'off';
 if (!['off', 'publish'].includes(mode)) throw new Error('JOB_DESCRIPTION_REWRITE_MODE must be off or publish');
-const summary = { mode: apply ? mode : 'preview', modelRevision: REWRITE_MODEL.revision, policyVersion: REWRITE_MODEL.policyVersion, startedAt: new Date().toISOString() };
+const summary = { mode: apply ? mode : 'preview', modelRevision: REWRITE_MODEL.revision, policyVersion: REWRITE_MODEL.policyVersion, startedAt: new Date().toISOString(), environment: { platform: os.platform(), cpu: os.cpus()[0]?.model, availableCpus: os.availableParallelism(), cpuThreads: Number(process.env.JOB_DESCRIPTION_REWRITE_CPU_THREADS || 2), totalMemoryBytes: os.totalmem() } };
 const summaryFile = path.resolve('.cache/scraper-actions/description-summary.json');
 const deadline = rewriteDeadline({ budgetSeconds: process.env.JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS || 1200,
   workflowStartedAt: process.env.JOB_DESCRIPTION_WORKFLOW_STARTED_AT, workflowSeconds: process.env.JOB_DESCRIPTION_WORKFLOW_BUDGET_SECONDS || 9000 });
@@ -47,7 +48,7 @@ try {
           threads: process.env.JOB_DESCRIPTION_REWRITE_CPU_THREADS || 2 });
         cursor = Job.find(query).sort({ 'descriptionRewrite.queuedAt': 1, _id: 1 }).lean().cursor({ batchSize: 1 });
         summary.results = [];
-        Object.assign(summary, await rewriteCandidates(cursor, { client: createRewriteClient(worker), deadline, signal,
+        Object.assign(summary, await rewriteCandidates(cursor, { client: createRewriteClient({ ...worker, planCacheDir: '.cache/description-plans' }), deadline, signal,
           update: (filter, update) => Job.updateOne(filter, update, { runValidators: true, maxTimeMS: 15000 }),
           onResult: result => { summary.results.push(result); console.log(JSON.stringify(result)); },
         }));
@@ -61,8 +62,15 @@ try {
   if (!signal.aborted) process.exitCode = 1;
 } finally {
   await cursor?.close();
+  if (worker) summary.workerMemoryBytes = await workerMemoryBytes(worker.pid).catch(() => null);
   await worker?.stop();
   await mongoose.disconnect();
+  if (summary.results?.length) {
+    const durations=summary.results.filter(r=>r.generated && !r.modelPlanCached && r.durationMs>0).map(r=>r.durationMs).sort((a,b)=>a-b);
+    const seconds=(Date.now()-Date.parse(summary.startedAt))/1000;
+    summary.capacity={elapsedSeconds:seconds,modelRequests:summary.results.filter(r=>r.generated&&!r.modelPlanCached).length,attemptsPerHour:summary.attempted ? summary.attempted/seconds*3600 : 0,p50DurationMs:durations[Math.floor(durations.length*.5)]||null,p95DurationMs:durations[Math.min(durations.length-1,Math.floor(durations.length*.95))]||null};
+    summary.pendingEstimate=Math.max(0,(summary.queued||0)-(summary.published||0)-(summary.failed||0)-(summary.skipped||0));
+  }
   summary.finishedAt = new Date().toISOString();
   await fs.mkdir(path.dirname(summaryFile), { recursive: true });
   await fs.writeFile(summaryFile + '.tmp', JSON.stringify(summary, null, 2) + '\n');

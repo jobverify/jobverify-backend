@@ -35,7 +35,8 @@ export const installLocalLaya = async ({ backendDir = root, env = process.env, p
   download = downloadFile, signal, log = () => {} } = {}) => {
   const prepared = { ...env, JOB_CLASSIFICATION_MODE: env.JOB_CLASSIFICATION_MODE || 'policy',
     PYTHONUTF8: '1', PYTHONUNBUFFERED: '1', USE_TF: '0', LAYA_CPU_THREADS: env.LAYA_CPU_THREADS || '2',
-    HF_HOME: env.HF_HOME || path.join(backendDir, '.cache/laya-model') };
+    HF_HOME: env.HF_HOME || path.join(backendDir, '.cache/laya-model'),
+    PIP_CACHE_DIR: env.PIP_CACHE_DIR || path.join(backendDir, '.cache/laya-pip') };
   const execute = (program, args, options = {}) => run(program, args, { cwd: backendDir, env: prepared, signal, log, ...options });
   let python = prepared.LAYA_PYTHON;
   let versionChecked = false;

@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { EKO_CATALOG } from './catalog.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -191,7 +192,7 @@ export const isMissingCorporateSitemap = (page = {}) =>
   && !hasPublicJobsSignal(page.html)
 
 export const createEkoScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
+  async run({ fetchPage = defaultFetchPage, now = () => new Date().toISOString() } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Eko verified official homepage no longer matches the known public surface')
@@ -252,7 +253,12 @@ export const createEkoScraper = () => ({
       }
     }
 
-    return []
+    return attachInventoryEvidence([], {
+      status: 'discovery-only', surface: HOMEPAGE_URL, firstParty: true, listingComplete: false,
+      pagesFetched: 6 + CAREERS_ROUTE_URLS.length + CORPORATE_CAREERS_ROUTE_URLS.length,
+      reportedTotal: null, indiaFacetCount: null, verifiedAt: now(),
+      reason: 'first-party-pages-and-missing-careers-routes-do-not-prove-active-vacancy-inventory',
+    })
   },
 })
 

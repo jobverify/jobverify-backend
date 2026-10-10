@@ -48,12 +48,12 @@ test('SAP detail extraction handles the current SuccessFactors description marku
     city: 'Bangalore',
     jobId: '1270625401',
     requisitionId: '1270625401',
-    sourceUrl: 'https://jobs.sap.com/job/Bangalore-AI-Security-Architect-560066/1270625401/',
+    sourceUrl: 'https://careers.sap.com/job/Bangalore-AI-Security-Architect-560066/1270625401/',
   })
 
   assert.equal(detail.department, 'Information Technology')
   assert.equal(detail.location, 'Bangalore, India')
-  assert.equal(detail.applyUrl, 'https://jobs.sap.com/talentcommunity/apply/1270625401/?locale=en_US')
+  assert.equal(detail.applyUrl, 'https://careers.sap.com/talentcommunity/apply/1270625401/?locale=en_US')
   assert.match(detail.jobDescription || '', /7-10 years of experience/i)
 
   const normalized = normalizeScrapedJob({

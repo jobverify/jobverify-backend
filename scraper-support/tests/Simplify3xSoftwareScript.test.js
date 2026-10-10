@@ -1,114 +1,69 @@
 import assert from 'node:assert/strict'
+import fs from 'node:fs/promises'
 import test from 'node:test'
-
-const homepageHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Simplify3x - AI-Driven Technology Solutions for Enterprise Transformation</title>
-  </head>
-  <body>
-    <main>
-      <h1>Turning complex problems into simple solutions</h1>
-      <p>Explore Hire3x</p>
-      <p>info@simplify3x.com</p>
-    </main>
-  </body>
-</html>
-`
-
-const lifeHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Life at Simplify3x - Where Innovation Meets People</title>
-  </head>
-  <body>
-    <main>
-      <h1>Life at Simplify3x</h1>
-      <h2>Driven by Innovation, United by Purpose</h2>
-      <p>Hear From Our People</p>
-      <p>Tanvi</p>
-    </main>
-  </body>
-</html>
-`
-
-const missingJobsHtml = `
-<!doctype html>
-<html lang="en">
-  <head><title>404 Not Found</title></head>
-  <body><h1>Not Found</h1></body>
-</html>
-`
-
-const publicJobsHtml = `
-<!doctype html>
-<html lang="en">
-  <body>
-    <h1>Current Openings</h1>
-    <article><a href="/jobs/software-engineer">Software Engineer</a></article>
-  </body>
-</html>
-`
-
-const loadModule = async () => {
-  try {
-    return await import('../../scraper/simplify3xsoftware/script.js')
-  } catch {
-    assert.fail('Expected Simplify3x Software scraper module at ../../scraper/simplify3xsoftware/script.js')
-  }
+import * as source from '../../scraper/simplify3xsoftware/script.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+const fixtures = new URL('./fixtures/simplify3x-current/', import.meta.url)
+const texts = Object.fromEntries(await Promise.all(['home.html','life.html','about.html','contact.html','careers.html','app.js','careers.js','listing.json','details.json','availability.json'].map(async name => [name, await fs.readFile(new URL(name, fixtures), 'utf8')])))
+const listing = JSON.parse(texts['listing.json'])
+const details = JSON.parse(texts['details.json'])
+const clone = value => structuredClone(value)
+const createFetch = (mutate = () => {}) => async url => {
+  let name = ({[source.HOMEPAGE_URL]:'home.html',[source.LIFE_PAGE_URL]:'life.html',[source.ABOUT_URL]:'about.html',[source.CONTACT_URL]:'contact.html',[source.CAREERS_URL]:'careers.html','https://www.hire3x.com/js/app.43b85d23.js':'app.js','https://www.hire3x.com/js/988.f36977f5.js':'careers.js'})[url]
+  let page
+  if (name) page = {status:200,url,html:texts[name]}
+  else if (url === source.LISTING_URL) page = {status:200,url,html:JSON.stringify(listing)}
+  else if (url.startsWith(source.DETAIL_BASE)) {const id = new URL(url).searchParams.get('jobID');page = {status:details[id].status,url,html:JSON.stringify(details[id].body)}}
+  else if (url.startsWith(source.AVAILABILITY_BASE)) {const id = new URL(url).searchParams.get('jobID');page = {status:200,url,html:JSON.stringify({type:'Success',data:{JobID:id,customerID:id.split('JD')[0]}})}}
+  else throw new Error('Unexpected request: '+url)
+  mutate(page,url)
+  return page
 }
-
-test('Simplify3x Software sentinel pins the verified homepage, life page, and missing job routes', async () => {
-  const simplify3x = await loadModule()
-
-  assert.equal(simplify3x.SOURCE, 'simplify3xsoftware')
-  assert.equal(simplify3x.COMPANY, 'Simplify3x Software')
-  assert.equal(simplify3x.HOMEPAGE_URL, 'https://simplify3x.com/')
-  assert.equal(simplify3x.LIFE_PAGE_URL, 'https://simplify3x.com/life.html')
-  assert.equal(simplify3x.hasOfficialHomepageSignal(homepageHtml), true)
-  assert.equal(simplify3x.hasOfficialLifePageSignal(lifeHtml), true)
-  assert.equal(simplify3x.hasPublicJobSignal(lifeHtml), false)
-  assert.equal(simplify3x.hasPublicJobSignal(publicJobsHtml), true)
-  assert.equal(simplify3x.isVerifiedMissingJobRoute({ status: 404, html: missingJobsHtml }), true)
+test('current published Hire3x migration returns only verified active India assignments and protects earlier inventory', async () => {
+ const jobs = await source.run({fetchPage:createFetch()})
+ assert.deepEqual(jobs.map(j=>j.jobId).sort(),['L071122A001CU010JD017','L071122A001CU036JD027','L071122A001CU036JD028'])
+ assert.ok(jobs.every(j=>j.country==='India' && j.description.length>1500 && j.sourceListingComplete===false && j.jobUrl===j.applyUrl))
+ assert.equal(readInventoryEvidence(jobs).status,'coverage-gap')
+ assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+ assert.equal(readInventoryEvidence(jobs).indiaFacetCount,null)
+})
+for (const [label,change,pattern] of [
+ ['homepage identity',(p,u)=>{if(u===source.HOMEPAGE_URL)p.html=p.html.replace('info@simplify3x.com','other@example.com').replaceAll('info@simplify3x.com','other@example.com')},/identity/i],
+ ['handoff drift',(p,u)=>{if(u===source.LIFE_PAGE_URL)p.html=p.html.replaceAll('https://www.hire3x.com/careers','https://other.example/careers')},/handoff/i],
+ ['cross host redirect',(p,u)=>{if(u===source.CAREERS_URL)p.url='https://other.example/careers'},/redirect|identity/i],
+ ['unpublished API',(p,u)=>{if(u.includes('/js/app.'))p.html=p.html.replaceAll('careers/jobs/','careers/old/')},/client|published/i],
+ ['missing role renderer',(p,u)=>{if(u.includes('/js/988.'))p.html=p.html.replaceAll('https://recruitment.hire3x.com/JobRegistration/','https://example.org/jobs/')},/client|published/i],
+ ['API outage',(p,u)=>{if(u===source.LISTING_URL)p.status=503},/HTTP 503/i],
+ ['malformed listing',(p,u)=>{if(u===source.LISTING_URL)p.html='{}'},/listing/i],
+ ['partial page',(p,u)=>{if(u===source.LISTING_URL){let b=JSON.parse(p.html);b.next='page2';p.html=JSON.stringify(b)}},/pagination|listing/i],
+ ['employer drift',(p,u)=>{if(u===source.LISTING_URL){let b=JSON.parse(p.html);b.data[0].jobs[0].customerName='Other Employer';p.html=JSON.stringify(b)}},/employer|identity/i],
+ ['conflicting duplicate',(p,u)=>{if(u===source.LISTING_URL){let b=JSON.parse(p.html);b.data.at(-1).jobs[0].title='Changed';p.html=JSON.stringify(b)}},/duplicate/i],
+ ['detail ID mismatch',(p,u)=>{if(u.startsWith(source.DETAIL_BASE)&&u.endsWith('L071122A001CU036JD028')){let b=JSON.parse(p.html);b.data.jobID='wrong';p.html=JSON.stringify(b)}},/detail|identity/i],
+ ['detail country mismatch',(p,u)=>{if(u.startsWith(source.DETAIL_BASE)&&u.endsWith('L071122A001CU036JD028')){let b=JSON.parse(p.html);b.data.location=['New York'];p.html=JSON.stringify(b)}},/detail|location/i],
+ ['missing native form',(p,u)=>{if(u.startsWith(source.DETAIL_BASE)&&p.status===200){let b=JSON.parse(p.html);b.data.fields=[];p.html=JSON.stringify(b)}},/form/i],
+ ['native outage',(p,u)=>{if(u.startsWith(source.DETAIL_BASE))p.status=503},/HTTP 503/i],
+ ['unexpected closed response',(p,u)=>{if(u.startsWith(source.DETAIL_BASE)&&u.endsWith('L071122A001CU036JD028')){p.status=409;p.html=JSON.stringify({type:'Fail',data:{data:'Job Not found'}})}},/detail|active/i],
+ ['availability identity',(p,u)=>{if(u.startsWith(source.AVAILABILITY_BASE)){let b=JSON.parse(p.html);b.data.JobID='other';p.html=JSON.stringify(b)}},/availability/i]
+]) test('fails closed on '+label,async()=>assert.rejects(source.run({fetchPage:createFetch(change)}),pattern))
+test('unknown locations are excluded and remain an incomplete country inventory', async()=>{
+ const jobs=await source.run({fetchPage:createFetch((p,u)=>{if(u===source.LISTING_URL||u.startsWith(source.DETAIL_BASE)){let b=JSON.parse(p.html);let rows=u===source.LISTING_URL?b.data.flatMap(g=>g.jobs):[b.data];for(const j of rows)if(j.jobID==='L071122A001CU036JD028')j.location=['Remote'];p.html=JSON.stringify(b)}})})
+ assert.equal(jobs.length,2);assert.equal(readInventoryEvidence(jobs).listingComplete,false)
+})
+test('no verified India rows never authorizes empty expiry',async()=>{
+ const jobs=await source.run({fetchPage:createFetch((p,u)=>{if(u===source.LISTING_URL||u.startsWith(source.DETAIL_BASE)){let b=JSON.parse(p.html);let rows=u===source.LISTING_URL?b.data.flatMap(g=>g.jobs):[b.data];for(const j of rows)if(j?.licenseKey==='L071122A001'&&j.location?.some(l=>/bengaluru|bangalore/i.test(l)))j.location=['Remote'];p.html=JSON.stringify(b)}})})
+ assert.equal(jobs.length,0);assert.equal(readInventoryEvidence(jobs).status,'coverage-gap');assert.equal(readInventoryEvidence(jobs).listingComplete,false)
 })
 
-test('Simplify3x Software sentinel returns [] only while the verified no-jobs surface remains unchanged', async () => {
-  const simplify3x = await loadModule()
-  const requestedUrls = []
-
-  const jobs = await simplify3x.createSimplify3xSoftwareScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-      if (url === simplify3x.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
-      if (url === simplify3x.LIFE_PAGE_URL) return { status: 200, url, html: lifeHtml }
-      if (simplify3x.NO_PUBLIC_JOB_ROUTE_URLS.includes(url)) {
-        return { status: 404, url, html: missingJobsHtml }
-      }
-      throw new Error(`Unexpected Simplify3x URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    simplify3x.HOMEPAGE_URL,
-    simplify3x.LIFE_PAGE_URL,
-    ...simplify3x.NO_PUBLIC_JOB_ROUTE_URLS,
-  ])
-  assert.deepEqual(jobs, [])
+test('a changing final snapshot is rejected',async()=>{
+ let listingCalls=0
+ await assert.rejects(source.run({fetchPage:createFetch((p,u)=>{if(u===source.LISTING_URL&&++listingCalls===2){let b=JSON.parse(p.html);b.data[0].jobs[0].title='Changed';p.html=JSON.stringify(b)}})}),/duplicate|changed during/i)
 })
-
-test('Simplify3x Software sentinel fails closed when a public jobs surface appears', async () => {
-  const simplify3x = await loadModule()
-
-  await assert.rejects(
-    simplify3x.createSimplify3xSoftwareScraper().run({
-      fetchPage: async (url) => {
-        if (url === simplify3x.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
-        if (url === simplify3x.LIFE_PAGE_URL) return { status: 200, url, html: publicJobsHtml }
-        throw new Error(`Unexpected Simplify3x URL: ${url}`)
-      },
-    }),
-    /life page now exposes a public jobs surface/i,
-  )
+test('an aborted run makes no requests',async()=>{
+ const controller=new AbortController();controller.abort(new Error('stop'))
+ let called=false;await assert.rejects(source.run({signal:controller.signal,fetchPage:async()=>{called=true}}),/stop/)
+ assert.equal(called,false)
+})
+test('default transport requests JSON for public APIs and supplies a bounded request signal',async()=>{
+ const originalFetch=globalThis.fetch;const mock=createFetch();let calls=0
+ try {globalThis.fetch=async(url,options)=>{calls++;assert.ok(options.signal);assert.equal(options.redirect,'follow');if(String(url).includes('-api.hire3x.com/')||String(url).includes('api-website.hire3x.com/'))assert.equal(options.headers.Accept,'application/json');const page=await mock(url);return {status:page.status,url:page.url,text:async()=>page.html}};assert.equal((await source.run()).length,3);assert.equal(calls,25)}finally{globalThis.fetch=originalFetch}
 })

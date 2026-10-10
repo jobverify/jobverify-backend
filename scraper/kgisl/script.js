@@ -1,7 +1,9 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
 import { normalizeScrapedJob } from '../../scraper-support/utils/normalizeScrapedJob.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -12,9 +14,9 @@ export const HOMEPAGE_URL = 'https://www.kgisl.com/'
 export const CAREERS_URL = 'https://www.kgisl.com/careers'
 export const CURRENT_OPENINGS_URL = 'https://www.kgisl.com/current-openings/'
 export const CANDIDATE_HOME_URL = 'https://careerxai.kgisl.com/ajax/candidate_home?form=wepportal'
-export const VERIFIED_ON = '2026-08-15'
+export const VERIFIED_ON = '2026-10-09'
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, August 15, 2026 that direct requests from this runtime to both the wrapper pages under https://www.kgisl.com/ and the first-party candidate portal at https://careerxai.kgisl.com/ajax/candidate_home?form=wepportal currently fail with UND_ERR_CONNECT_TIMEOUT before any trusted KGISL jobs surface can render. The scraper preserves the previously verified wrapper validation and candidate-portal parser whenever those trusted surfaces are reachable again, and now returns an authoritative empty result while they remain temporarily unreachable from this environment.'
+  "Verified on October 9, 2026 that the official KGISL current-openings page embeds https://careerx.kgisl.com/#/careers. Its verified first-party client consumes the complete public vacancies array from /careerxai/api/public/careers/vacancies. The live array contains 23 unique roles: 20 explicitly in India and 3 in Malaysia. All 20 India public details were verified against listing identities, locations and experience, with full descriptions and client-advertised apply routes. Unavailable or malformed inventory remains a failure."
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -60,12 +62,13 @@ const normalizeWhitespace = (value) => String(value ?? '')
 
 const toLowerText = (value) => normalizeWhitespace(value).toLowerCase()
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
+  signal,
   timeoutMs: 15000,
 })
 
@@ -133,9 +136,14 @@ export const hasOfficialCandidateHomeSignal = (html) => {
     && /(?:https?:\/\/careerxai\.kgisl\.com)?\/resume\/webportal_vacancy_apply_resume\//i.test(String(html ?? ''))
 }
 
+export const CURRENT_PORTAL_URL = 'https://careerx.kgisl.com/#/careers'
+export const CURRENT_INVENTORY_URL = 'https://careerx.kgisl.com/careerxai/api/public/careers/vacancies'
+const CURRENT_PORTAL_ROOT = 'https://careerx.kgisl.com/'
 export const extractCandidateHomeUrl = (html) => {
-  const match = String(html ?? '').match(/<iframe[^>]+src="([^"]*candidate_home\?form=wepportal[^"]*)"[^>]*>/i)
-  return toAbsoluteUrl(match?.[1] ?? null, CURRENT_OPENINGS_URL)
+  const urls = [...String(html ?? '').matchAll(/<iframe\b[^>]*src=["']([^"']+)["']/gi)]
+    .map(match => toAbsoluteUrl(match[1], CURRENT_OPENINGS_URL))
+    .filter(url => url === CANDIDATE_HOME_URL || url === CURRENT_PORTAL_URL)
+  return urls.length === 1 ? urls[0] : null
 }
 
 export const extractJobs = (html) => {
@@ -211,26 +219,88 @@ const normalizeKgislJobs = (jobs) => jobs.map((job) => normalizeScrapedJob({
   countryFilter: 'India',
 }))
 
+const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
+  headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' }, signal, label: SOURCE, timeoutMs: 15000, attempts: 3,
+})
+const vacancyTitle = record => normalizeWhitespace(record.position_title)
+  + (record.designation ? ' - ' + normalizeWhitespace(record.designation) : '')
+const validateVacancy = record => {
+  if (!/^V\d+$/.test(record?.vacancy_number || '') || !normalizeWhitespace(record.position_title)
+    || !normalizeWhitespace(record.work_location) || !Number.isFinite(record.min_experience)
+    || !Number.isFinite(record.max_experience) || record.min_experience < 0 || record.max_experience < record.min_experience
+    || !/^[1-9]\d*$/.test(String(record.no_of_position))) throw new Error('KGISL replacement inventory record is malformed')
+  if (!/-(India|Malaysia|Singapore|Thailand|Australia|United States|United Kingdom)$/i.test(record.work_location)) {
+    throw new Error('KGISL replacement inventory has unresolved country location')
+  }
+}
+const scrapeCurrentPortal = async ({ fetchText, fetchJson, signal }) => {
+  signal?.throwIfAborted()
+  const portal = await fetchText(CURRENT_PORTAL_ROOT)
+  const scripts = [...String(portal).matchAll(/<script\b[^>]*type=["']module["'][^>]*src=["']([^"']+)["']/gi)]
+  if (!/<title>\s*CareerX\s*<\/title>/i.test(portal) || scripts.length !== 1
+    || !/^\/assets\/index-[\w-]+\.js$/.test(scripts[0][1])) throw new Error('KGISL replacement careers client shell changed')
+  const client = await fetchText(new URL(scripts[0][1], CURRENT_PORTAL_ROOT).href)
+  if (!client.includes('baseURL:"/careerxai"') || !client.includes('/api/public/careers/vacancies')
+    || !client.includes('/api/public/careers/vacancy/') || !client.includes('#/careers/apply/')) {
+    throw new Error('KGISL replacement careers client no longer verifies the public inventory')
+  }
+  const payload = await fetchJson(CURRENT_INVENTORY_URL, { signal })
+  if (payload?.status !== 200 || !Array.isArray(payload.response) || payload.more_records === true || payload.hasMore === true) {
+    throw new Error('KGISL replacement inventory schema or pagination changed')
+  }
+  const ids = new Set()
+  for (const record of payload.response) {
+    validateVacancy(record)
+    if (ids.has(record.vacancy_number)) throw new Error('KGISL replacement inventory contains duplicate identities')
+    ids.add(record.vacancy_number)
+  }
+  const selected = payload.response.filter(record => /-India$/i.test(record.work_location))
+  const jobs = await mapWithConcurrency(selected, 3, async record => {
+    signal?.throwIfAborted()
+    const detail = await fetchJson(CURRENT_INVENTORY_URL.replace('/vacancies', '/vacancy/') + record.vacancy_number, { signal })
+    const job = detail?.response
+    if (detail?.status !== 200 || !job || ['vacancy_number', 'position_title', 'designation', 'work_location', 'min_experience', 'max_experience', 'no_of_position']
+      .some(key => job[key] !== record[key])) throw new Error('KGISL replacement job detail conflicts with its public listing')
+    const jobDescription = normalizeWhitespace(job.job_description)
+    if (!jobDescription) throw new Error('KGISL replacement job description is missing')
+    const applyUrl = CURRENT_PORTAL_URL + '/apply/' + job.vacancy_number
+    return { title: vacancyTitle(job), location: job.work_location, country: 'India', jobId: job.vacancy_number,
+      applyUrl, sourceUrl: applyUrl, jobDescription,
+      experienceRequired: job.min_experience + '-' + job.max_experience + ' years',
+      requiredSkills: String(job.primary_skills || '').split(',').map(normalizeWhitespace).filter(Boolean),
+    }
+  })
+  signal?.throwIfAborted()
+  return attachInventoryEvidence(normalizeKgislJobs(jobs), {
+    status: jobs.length ? 'complete-inventory' : 'verified-empty', surface: CURRENT_INVENTORY_URL,
+    firstParty: true, listingComplete: true, pagesFetched: 1, reportedTotal: selected.length, indiaFacetCount: selected.length,
+    verifiedAt: new Date().toISOString(), reason: 'complete-first-party-client-inventory-' + payload.response.length + '-global-records',
+  })
+}
+
 export const createKgislScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
-    const homepageResult = await fetchTextSafely(fetchText, HOMEPAGE_URL)
+  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson, signal } = {}) {
+    signal?.throwIfAborted()
+    const readText = url => fetchText(url, { signal })
+    const homepageResult = await fetchTextSafely(readText, HOMEPAGE_URL)
     if (homepageResult.ok && !hasOfficialHomepageSignal(homepageResult.html)) {
       throw new Error('KGISL verified official homepage no longer matches the known public surface')
     }
 
-    const careersResult = await fetchTextSafely(fetchText, CAREERS_URL)
+    const careersResult = await fetchTextSafely(readText, CAREERS_URL)
     if (careersResult.ok && !hasOfficialCareersSignal(careersResult.html)) {
       throw new Error('KGISL verified official careers page no longer matches the known public surface')
     }
 
-    const currentOpeningsResult = await fetchTextSafely(fetchText, CURRENT_OPENINGS_URL)
+    const currentOpeningsResult = await fetchTextSafely(readText, CURRENT_OPENINGS_URL)
     if (currentOpeningsResult.ok && !hasOfficialCurrentOpeningsSignal(currentOpeningsResult.html)) {
       throw new Error('KGISL verified current openings page no longer matches the known public surface')
     }
 
+    let candidateHomeUrl = CANDIDATE_HOME_URL
     if (currentOpeningsResult.ok) {
-      const candidateHomeUrl = extractCandidateHomeUrl(currentOpeningsResult.html)
-      if (candidateHomeUrl !== CANDIDATE_HOME_URL) {
+      candidateHomeUrl = extractCandidateHomeUrl(currentOpeningsResult.html)
+      if (candidateHomeUrl !== CANDIDATE_HOME_URL && candidateHomeUrl !== CURRENT_PORTAL_URL) {
         throw new Error('KGISL current openings page no longer links to the verified candidate portal')
       }
     }
@@ -245,12 +315,10 @@ export const createKgislScraper = () => ({
       throw new Error('KGISL verified first-party wrappers failed in an unexpected way')
     }
 
-    const candidateHomeResult = await fetchTextSafely(fetchText, CANDIDATE_HOME_URL)
-    if (!candidateHomeResult.ok) {
-      if (isVerifiedKgislUnavailableError(candidateHomeResult.error)) {
-        return []
-      }
+    if (candidateHomeUrl === CURRENT_PORTAL_URL) return scrapeCurrentPortal({ fetchText: readText, fetchJson, signal })
 
+    const candidateHomeResult = await fetchTextSafely(readText, CANDIDATE_HOME_URL)
+    if (!candidateHomeResult.ok) {
       throw candidateHomeResult.error
     }
 

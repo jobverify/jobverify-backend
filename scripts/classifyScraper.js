@@ -3,25 +3,49 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createJobClassifier } from '../scraper-support/utils/jobClassifier.js';
 import { normalizeScrapedJob } from '../scraper-support/utils/normalizeScrapedJob.js';
+import { prepareLocalLaya } from './localLaya.js';
 
 export const runClassifiedScraper = async ({ scraper, jobs: capturedJobs, classifier = createJobClassifier({ mode: 'policy' }),
-  captureOnly = false, apply = false, persist, now = new Date(), onProgress = () => {}, onCheckpoint = () => {} } = {}) => {
+  captureOnly = false, apply = false, persist, bootstrap, now = new Date(), onProgress = () => {}, onCheckpoint = () => {} } = {}) => {
   if (!scraper?.name || typeof scraper.run !== 'function') throw new Error('A runnable scraper is required');
   if (captureOnly && apply) throw new Error('Capture-only cannot write to MongoDB');
+  if (bootstrap && apply) throw new Error('The local comparison trial cannot publish to MongoDB');
   const jobs = capturedJobs ?? await scraper.run();
   if (!Array.isArray(jobs) || jobs.some(job => !job || (job.source && job.source !== scraper.name))) throw new Error('Source jobs must belong to the selected scraper');
+  if (bootstrap && !captureOnly && jobs.length) {
+    onProgress({ stage: 'captured', source: scraper.name, jobs: jobs.length });
+    await onCheckpoint({ stage: 'captured', source: scraper.name, referenceDate: now.toISOString(), jobs });
+    const runtime = await bootstrap();
+    try {
+      return await runClassifiedScraper({ scraper, jobs, classifier, apply: false, now, onProgress, onCheckpoint });
+    } finally { await runtime.stop(); }
+  }
   onProgress({ stage: 'scraped', source: scraper.name, jobs: jobs.length });
   const report = { source: scraper.name, referenceDate: now.toISOString(), scrapedJobs: jobs.length, capturedOnly: captureOnly, applied: false, results: [] };
   if (captureOnly) return { ...report, jobs };
   const classified = [];
+  report.comparison = { compared: 0, agreed: 0, disagreed: 0, missing: 0, agreementRate: null };
   // Use one shared client so the entire source observes the same identity and cache.
   for (const job of jobs) {
+    const classifyStarted = performance.now();
     const [result] = await classifier.classifyJobs([{ ...job, source: scraper.name }], { now });
     const normalized = normalizeScrapedJob(result, { source: scraper.name });
     classified.push(normalized);
-    const row = { title: normalized.title, jobType: normalized.jobType, experienceYears: normalized.experienceYears,
+    const comparison = normalized.classification?.comparison;
+    const probabilities = normalized.classification?.decisions?.jobType?.probabilities;
+    const row = { title: normalized.title, classifyMs: Math.round((performance.now() - classifyStarted) * 100) / 100,
+      jobType: normalized.jobType, experienceYears: normalized.experienceYears,
       experienceBasis: normalized.experienceBasis, sourceExperienceRequired: normalized.sourceExperienceRequired,
+      modelJobType: comparison?.modelJobType ?? null, logicJobType: comparison?.logicJobType ?? normalized.jobType,
+      agreement: comparison?.agreement ?? null,
+      modelPercentages: probabilities ? Object.fromEntries(Object.entries(probabilities).map(([key, value]) => [key, Math.round(value * 10000) / 100])) : null,
       status: normalized.classification?.status, complete: normalized.classification?.complete, decisions: normalized.classification?.decisions };
+    if (row.agreement === null) report.comparison.missing++;
+    else {
+      report.comparison.compared++;
+      report.comparison[row.agreement ? 'agreed' : 'disagreed']++;
+      report.comparison.agreementRate = report.comparison.agreed / report.comparison.compared;
+    }
     report.results.push(row);
     onProgress({ stage: 'classified', source: scraper.name, processed: classified.length, total: jobs.length, ...row });
     await onCheckpoint({ ...report, classifierStats: { ...classifier.stats }, jobs: classified });
@@ -40,6 +64,7 @@ export const runClassifiedScraper = async ({ scraper, jobs: capturedJobs, classi
 
 const main = async () => {
   const args = process.argv.slice(2);
+  if (args.includes('--local') && args.includes('--all')) throw new Error('--local compares one company at a time');
   const value = name => args.find(arg => arg.startsWith(`--${name}=`))?.slice(name.length + 3);
   const { buildScrapers } = await import('../scraper-support/providers/index.js');
   const scrapers = buildScrapers();
@@ -59,6 +84,7 @@ const main = async () => {
     const captured = value('jobs') ? JSON.parse(fs.readFileSync(path.resolve(value('jobs')), 'utf8')) : null;
     if (captured?.source && captured.source !== scraper.name) throw new Error('Capture belongs to a different scraper');
     const report = await runClassifiedScraper({ scraper, jobs: captured && (Array.isArray(captured) ? captured : captured.jobs),
+      bootstrap: args.includes('--local') ? () => prepareLocalLaya({ env: { ...process.env, JOB_CLASSIFICATION_MODE: 'policy' }, log: console.log }) : undefined,
       classifier, captureOnly: args.includes('--capture-only'), apply: args.includes('--apply'), now,
       onProgress: progress => console.log(JSON.stringify(progress)),
       onCheckpoint: snapshot => {

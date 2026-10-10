@@ -119,11 +119,29 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const isCorporateHomepageGatewayFailure = (error) => {
+  const visited = new Set()
+  let current = error
+  while (current && !visited.has(current)) {
+    visited.add(current)
+    if (current.name === 'AbortError') return false
+    if (current.status != null) return [502, 503, 504].includes(current.status)
+    current = current.cause
+  }
+  return false
+}
+
 export const createAdityaBirlaGroupScraper = () => ({
   async run({ fetchText = defaultFetchText } = {}) {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
-    if (!hasOfficialHomepageSignal(homepageHtml)) {
-      throw new Error('Aditya Birla Group homepage no longer matches the verified official homepage')
+    try {
+      const homepageHtml = await fetchText(HOMEPAGE_URL)
+      if (!hasOfficialHomepageSignal(homepageHtml)) {
+        throw new Error('Aditya Birla Group homepage no longer matches the verified official homepage')
+      }
+    } catch (error) {
+      if (!isCorporateHomepageGatewayFailure(error)) throw error
+      // The independently hosted careers inventory must still verify every known surface below.
+      console.warn('  [adityabirlagroup] Corporate homepage unavailable; verifying official careers inventory')
     }
 
     const careersHomeHtml = await fetchText(CAREERS_HOME_URL)

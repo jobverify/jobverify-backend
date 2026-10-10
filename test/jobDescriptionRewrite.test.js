@@ -1,3 +1,5 @@
+import { buildSourceFacts } from '../rewriting/factPlan.js';
+import { buildRewriteInput } from '../src/services/jobDescriptionPolicy.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildClassificationInput } from '../src/services/jobClassificationPolicy.js';
@@ -77,6 +79,15 @@ test('scraper persistence queues only new or changed sources and preserves publi
   assert.equal(retained.sourceDescription, raw);
   assert.equal(retained.descriptionRewrite.status, 'baseline');
 
+  await Job.updateOne({_id:stored._id},{$set:{'descriptionRewrite.status':'pending','descriptionRewrite.attempts':0}});
+  const qualityCandidate=await Job.findById(stored._id).lean();
+  const qualityStats=await rewriteCandidates([qualityCandidate],{deadline:Date.now()+10000,client:{generate:async input=>({value:{categories:buildSourceFacts(input).map(f=>f.section??9),overview:null},finishReason:'stop'})},update:(filter,values)=>Job.updateOne(filter,values,{runValidators:true})});
+  assert.equal(qualityStats.published,1);
+  const qualityStored=await Job.findById(stored._id).lean();
+  assert.equal(qualityStored.descriptionRewrite.quality.method,'llm_source_fact_organization');
+  assert.equal(qualityStored.descriptionRewrite.quality.factCoverage,1);
+  assert.match(qualityStored.description,/3 years/);
+  assert.equal(qualityStored.sourceContentHash,qualityCandidate.sourceContentHash);
   // Exercise the real Mongo optimistic guard while generation is in flight.
   await Job.updateOne({ _id: stored._id }, { $set: { 'descriptionRewrite.status': 'pending', 'descriptionRewrite.attempts': 0 } });
   const candidate = await Job.findById(stored._id).lean();

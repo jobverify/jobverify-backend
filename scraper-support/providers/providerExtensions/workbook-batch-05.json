@@ -326,18 +326,6 @@
     "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://vakilsearch.com/ was the live Vakilsearch first-party company surface and that the brand's public openings hub was available at https://vakilsearch.hire.trakstar.com/. The batch parser only emits India JobPosting JSON-LD with a same-origin public application URL; it returns no jobs when that narrow contract is absent."
   },
   {
-    "source": "varthana",
-    "companyName": "Varthana",
-    "adapter": "script",
-    "modulePath": "../workbookbatch05/varthana.js",
-    "companyCareerPage": "https://varthana.com/student/life-at-varthana/",
-    "atsPlatform": "verified-workline-general-openings-table",
-    "paginationStrategy": "single-first-party-handoff+workline-general-openings-table",
-    "extractionStrategy": "verified-first-party-careers-page+public-workline-general-openings-table+india-listing-rows",
-    "verifiedOn": "2026-07-25",
-    "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://varthana.com/student/life-at-varthana/ was the live Varthana public careers surface and that its Search Jobs handoff led to the public Workline board at https://app79.workline.hr/Candidate/GeneralOpening.aspx. The batch parser emits listing rows directly from that verified General Opening table."
-  },
-  {
     "source": "verygoodsecurityindia",
     "companyName": "Very Good Security India",
     "adapter": "script",

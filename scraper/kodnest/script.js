@@ -84,11 +84,21 @@ export const extractBundleAssetPath = (html) => {
 
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
-
-  return /<title>\s*KodNest[^<]*Placement-ready engineering training\s*<\/title>/i.test(rawHtml)
+  const legacyIdentity = /<title>\s*KodNest[^<]*Placement-ready engineering training\s*<\/title>/i.test(rawHtml)
     && /<meta[^>]+name=["']description["'][^>]+content=["']KodNest helps freshers become placement-ready with hands-on Java, Python, Data Science (?:&amp;|&) GenAI tracks, real projects, and outcome-driven coaching\.["']/i.test(rawHtml)
-    && /<meta[^>]+name=["']author["'][^>]+content=["']KodNest["']/i.test(rawHtml)
     && /<meta[^>]+property=["']og:url["'][^>]+content=["']https:\/\/kodnest\.com["']/i.test(rawHtml)
+  const hasOrganizationIdentity = [...rawHtml.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].some(match => {
+    try {
+      const organization = JSON.parse(match[1])
+      return organization['@type'] === 'EducationalOrganization' && organization.name === 'KodNest' && organization.url === 'https://kodnest.com'
+    } catch { return false }
+  })
+  const currentIdentity = /<title>\s*KodNest (?:—|-) We Build Careers \| Career Outcome Engine\s*<\/title>/i.test(rawHtml)
+    && /<meta[^>]+name=["']description["'][^>]+content=["']KodNest is a Career Outcome Engine\. We Build Careers\.["']/i.test(rawHtml)
+    && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']KodNest["']/i.test(rawHtml)
+    && hasOrganizationIdentity
+  return (legacyIdentity || currentIdentity)
+    && /<meta[^>]+name=["']author["'][^>]+content=["']KodNest["']/i.test(rawHtml)
     && /<meta[^>]+name=["']twitter:site["'][^>]+content=["']@KodNest["']/i.test(rawHtml)
     && /<div id=["']root["']><\/div>/i.test(rawHtml)
     && extractBundleAssetPath(rawHtml) !== null

@@ -162,7 +162,7 @@ test('Amicorp scraper constants stay pinned to the verified first-party careers 
   assert.equal(amicorp.VERIFIED_ON, '2026-09-03')
   assert.equal(amicorp.HOMEPAGE_URL, 'https://amicorp.com/')
   assert.equal(amicorp.CAREERS_URL, 'https://amicorp.com/ami-news/careers/')
-  assert.equal(amicorp.PAGE_SITEMAP_URL, 'https://amicorp.com/page-sitemap1.xml')
+  assert.equal(amicorp.PAGE_SITEMAP_URL, 'https://amicorp.com/?sitemap=page&sitemap_n=1')
   assert.equal(
     amicorp.TRUSTED_APPLY_FORM_URL,
     'https://forms.zohopublic.eu/zohopeople40/form/CareerPageForm/formperma/eclRamd2dWW4rbcIcyYbA0ooIb_3CA2MBYGp_56EYyY',
@@ -350,4 +350,46 @@ test('run fails closed when the verified Amicorp careers hub, sitemap, or truste
     }),
     /trusted apply form/i,
   )
+})
+
+test('Amicorp uses the working first-party sitemap query endpoint when rewritten sitemap paths return 404', async () => {
+  const amicorp = await loadAmicorpModule()
+  const jobs = await amicorp.createAmicorpScraper().run({
+    fetchText: async (url) => {
+      if (url === 'https://amicorp.com/ami-news/careers/') return careersHtml
+      if (url === 'https://amicorp.com/?sitemap=page&sitemap_n=1') return pageSitemapXml
+      if (url === 'https://amicorp.com/page-sitemap1.xml') {
+        throw new Error('HTTP 404 for https://amicorp.com/page-sitemap1.xml')
+      }
+      if (url === 'https://amicorp.com/ami-news/careers/senior-group-legal-jd1440/') {
+        return seniorGroupLegalDetailHtml
+      }
+      if (url === 'https://amicorp.com/ami-news/careers/central-fund-accountant-bl-ct-mu-cl-jd1527/') {
+        return centralFundAccountantDetailHtml
+      }
+      throw new Error(`Unexpected Amicorp URL: ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs.map(job => job.requisitionId), ['JD1440', 'JD1527'])
+  assert.deepEqual(jobs.map(job => job.country), ['India', 'India'])
+})
+
+test('Amicorp fails closed when its page sitemap omits a listed India role', async () => {
+  const amicorp = await loadAmicorpModule()
+  const sitemapMissingIndiaRole = pageSitemapXml.replace(
+    'https://amicorp.com/ami-news/careers/central-fund-accountant-bl-ct-mu-cl-jd1527/',
+    'https://amicorp.com/ami-news/careers/other-overseas-role/',
+  )
+
+  await assert.rejects(amicorp.createAmicorpScraper().run({
+    fetchText: async (url) => {
+      if (url === amicorp.CAREERS_URL) return careersHtml
+      if (url === amicorp.PAGE_SITEMAP_URL) return sitemapMissingIndiaRole
+      if (url === 'https://amicorp.com/ami-news/careers/senior-group-legal-jd1440/') {
+        return seniorGroupLegalDetailHtml
+      }
+      throw new Error(`Unexpected Amicorp URL: ${url}`)
+    },
+  }), /page sitemap no longer advertises the verified detail URL/)
 })

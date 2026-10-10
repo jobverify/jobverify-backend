@@ -23,14 +23,14 @@ jobs:
       LAYA_CPU_THREADS: '2'
       LAYA_RELEASE_FILE: 'classification/release.json'
       JOB_DESCRIPTION_REWRITE_MODE: ${{ vars.JOB_DESCRIPTION_REWRITE_MODE || 'publish' }}
-      JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS: ${{ vars.JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS || '1200' }}
-      JOB_DESCRIPTION_REWRITE_CPU_THREADS: '2'
-      JOB_DESCRIPTION_WORKFLOW_BUDGET_SECONDS: '21600'
     steps:
-      - name: Record workflow start for the rewrite budget
-        run: printf 'JOB_DESCRIPTION_WORKFLOW_STARTED_AT=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
-
       - uses: actions/checkout@v4
+
+      - name: Record actual Linux classification capacity
+        run: |
+          printf 'Available CPUs: %s\n' "$(nproc)"
+          free -h
+          printf 'One shared Laya instance, one four-category question, %s intra-op threads, 1 inter-op thread\n' "$LAYA_CPU_THREADS"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -71,13 +71,6 @@ jobs:
         if: env.JOB_CLASSIFICATION_MODE != 'off' && steps.laya_dependencies.outcome == 'success'
         timeout-minutes: 12
         run: node scripts/layaWorker.js start
-
-      - name: Cache pinned description model and CPU runtime
-        if: env.JOB_DESCRIPTION_REWRITE_MODE == 'publish'
-        uses: actions/cache@v4
-        with:
-          path: .cache/description-rewriter
-          key: description-qwen-cpu-${{ runner.os }}-${{ hashFiles('rewriting/model.json', 'rewriting/worker.js') }}
 
       - name: Restore completed model scans
         uses: actions/cache/restore@v4
@@ -133,15 +126,6 @@ jobs:
           path: .cache/scraper-actions/run-state.json
           key: scraper-state-${{ github.run_id }}-${{ github.run_attempt }}
 
-      - name: Rewrite new and changed descriptions on CPU
-        if: success() && steps.scraper_run.outcome == 'success' && env.JOB_DESCRIPTION_REWRITE_MODE == 'publish'
-        continue-on-error: true
-        timeout-minutes: 22
-        run: node scripts/rewriteJobDescriptions.js --apply
-        env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-          NODE_OPTIONS: '--use-system-ca'
-
       - name: Upload scraper run diagnostics
         if: always()
         uses: actions/upload-artifact@v7
@@ -151,6 +135,75 @@ jobs:
             .cache/scraper-actions/run-state.json
             .cache/scraper-actions/classification-summary.json
             .cache/scraper-actions/laya-worker.log
+            .cache/scraper-actions/description-summary.json
+            .cache/scraper-actions/description-worker.log
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+
+  rewrite_descriptions:
+    needs: scrape
+    # Partial scrapes also queue valid jobs; drain those even when a source fails.
+    if: always() && !cancelled() && vars.JOB_DESCRIPTION_REWRITE_MODE != 'off'
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      JOB_DESCRIPTION_REWRITE_MODE: 'publish'
+      JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS: ${{ vars.JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS || '18000' }}
+      JOB_DESCRIPTION_REWRITE_CPU_THREADS: '2'
+      JOB_DESCRIPTION_WORKFLOW_BUDGET_SECONDS: '21000'
+      NODE_OPTIONS: '--use-system-ca'
+    steps:
+      - name: Record generation job start
+        run: printf 'JOB_DESCRIPTION_WORKFLOW_STARTED_AT=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+      - name: Install backend dependencies
+        run: npm ci
+      - name: Inspect pending description queue
+        id: description_queue
+        run: |
+          node scripts/rewriteJobDescriptions.js
+          node -e "const fs=require('node:fs'); const s=JSON.parse(fs.readFileSync('.cache/scraper-actions/description-summary.json')); fs.appendFileSync(process.env.GITHUB_OUTPUT,'queued='+Number(s.queued || 0)+'\n');"
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+      - name: Cache immutable model and CPU runtime
+        if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
+        uses: actions/cache@v4
+        with:
+          path: .cache/description-rewriter
+          key: description-qwen-cpu-${{ runner.os }}-6a1a2eb6-b11146-14cf1303-c150306e
+      - name: Restore validated compact decisions
+        if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/description-plans
+          key: description-plans-${{ runner.os }}-v11-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            description-plans-${{ runner.os }}-v11-${{ github.ref }}-
+      - name: Drain the durable source-hash queue
+        if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
+        continue-on-error: true
+        timeout-minutes: 315
+        run: node scripts/rewriteJobDescriptions.js --apply
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+      - name: Save validated compact decisions for the next batch
+        if: always() && steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/description-plans
+          key: description-plans-${{ runner.os }}-v11-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Upload generation quality and capacity diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: description-rewrite-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
             .cache/scraper-actions/description-summary.json
             .cache/scraper-actions/description-worker.log
           include-hidden-files: true

@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
 import { IPROGRAMMER_SOLUTIONS_CATALOG } from './catalog.js'
+import { runPublishedAnnouncement } from './employerAnnouncement.js'
+export {parseNativeAnnouncementPdf,fetchAnnouncementPage} from './employerAnnouncement.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -147,7 +149,11 @@ export const createIprogrammerSolutionsScraper = ({ maxJobs = null } = {}) => ({
   },
 })
 
-export const run = async (options = {}) => createIprogrammerSolutionsScraper().run(options)
+// The original HTML factory remains available for its historical parser contract.
+// Current production reads the fresh employer announcement and native public PDF.
+export const run = async (options = {}) => typeof options.fetchText === 'function' && typeof options.fetchPage !== 'function'
+  ? createIprogrammerSolutionsScraper().run(options)
+  : runPublishedAnnouncement(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

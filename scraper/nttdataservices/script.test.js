@@ -298,3 +298,48 @@ test('NTT Data Services scraper fails closed when a verified first-party surface
     /verified first-party public jobs surface/i,
   )
 })
+
+
+const loadCurrentHomepage = async () => {
+  const { readFile } = await import('node:fs/promises')
+  return readFile(new URL('./fixtures/homepage-current.html', import.meta.url), 'utf8')
+}
+
+test('NTT Data Services accepts the verified Intelligence to Impact homepage without changing the India Phenom handoff', async () => {
+  const ntt = await loadModule()
+  const homepage = await loadCurrentHomepage()
+  assert.equal(ntt.hasOfficialHomepageSignal(homepage), true)
+  const detailUrl = 'https://careers.nttdata.com/global/en/job/P-100131/SASE-ENGINEER'
+  const jobs = await ntt.run({
+    fetchText: async url => {
+      if (url === ntt.HOMEPAGE_URL) return homepage
+      if (url === ntt.CAREERS_URL) return officialCareersHtml
+      if (url === ntt.JOBS_HOME_URL) return officialJobsHomeHtml
+      if (url === ntt.SEARCH_RESULTS_URL) return buildSearchResultsHtml([
+        { reqId: 'P-100131', jobId: 'P-100131', title: 'SASE ENGINEER', country: 'India', cityStateCountry: 'Noida, Uttar Pradesh, India' },
+        { reqId: 'US-001', jobId: 'US-001', title: 'Cloud Architect', country: 'United States', cityStateCountry: 'Plano, Texas, United States' },
+      ])
+      if (url === detailUrl) return buildJobDetailHtml(detailUrl)
+      throw new Error('Unexpected URL: ' + url)
+    },
+  })
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].company, ntt.COMPANY)
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].sourceUrl, detailUrl)
+})
+
+test('NTT Data Services rejects altered homepage brand, canonical identity, and careers links', async () => {
+  const ntt = await loadModule()
+  const homepage = await loadCurrentHomepage()
+  for (const changed of [
+    homepage.replace(/<title[^>]*>Intelligence to Impact<\/title>/, '<title>Other homepage</title>'),
+    homepage.replace(/(<h1\b[^>]*>)Intelligence to Impact(<\/h1>)/, '$1Other heading$2'),
+    homepage.replace('href="https://www.nttdata.com/en-us" data-next-head', 'href="https://example.org/en-us" data-next-head'),
+    homepage.replace(/href="\/en-us\/careers"/g, 'href="https://example.org/careers"'),
+    homepage.replace(/alt="NTT DATA Logo"/g, 'alt="Other employer logo"'),
+  ]) {
+    assert.notEqual(changed, homepage)
+    assert.equal(ntt.hasOfficialHomepageSignal(changed), false)
+  }
+})

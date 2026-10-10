@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { BAAZI_GAMES_CATALOG } from './catalog.js'
+import { runBaaziLinkedInSubset } from './employerLinkedIn.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -35,13 +36,14 @@ const createTimeoutSignal = (timeoutMs) => {
   return controller.signal
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
+  signal?.throwIfAborted()
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
-    signal: createTimeoutSignal(15000),
+    signal: AbortSignal.any([...(signal ? [signal] : []), createTimeoutSignal(15000)]),
   })
 
   return {
@@ -81,17 +83,21 @@ const isBlockedCareersResponse = (page = {}) =>
   && isBlockedCareersRoute(page.html)
 
 export const createBaaziGamesScraper = () => ({
-  async run({ fetchText, fetchPage = defaultFetchPage } = {}) {
+  async run({ fetchText, fetchPage = defaultFetchPage, signal, now } = {}) {
+    signal?.throwIfAborted()
     const resolvePage = fetchText
       ? async (url) => ({ status: 200, url, html: await fetchText(url) })
       : fetchPage
 
-    const homepage = await resolvePage(HOMEPAGE_URL)
+    const homepage = await resolvePage(HOMEPAGE_URL, { signal })
+    signal?.throwIfAborted()
+    if (homepage.url !== HOMEPAGE_URL) throw new Error('Baazi Games primary homepage redirected outside its verified authority')
     if (homepage.status !== 200) {
       throw Object.assign(new Error(`Baazi Games public homepage returned HTTP ${homepage.status} at ${homepage.url}`), { abortRetries: true })
     }
-    if (/<title>\s*BaaziGames \| No Games Available at the Moment\s*<\/title>/i.test(homepage.html) && normalizeText(homepage.html).includes('no games are available at the moment')) {
-      throw Object.assign(new Error('Baazi Games public site is unavailable; current job inventory is unavailable'), {softFailure:true, upstreamOutage:true, abortRetries:true, failureKind:'upstream_unavailable'})
+    const primaryVisible = String(homepage.html ?? '').replace(/<!--[\s\S]*?-->|<script\b[\s\S]*?<\/script>|<style\b[\s\S]*?<\/style>/gi, '')
+    if (/<title>\s*BaaziGames \| No Games Available at the Moment\s*<\/title>/i.test(primaryVisible) && normalizeText(primaryVisible).includes('no games are available at the moment')) {
+      return runBaaziLinkedInSubset({ fetchPage: resolvePage, signal, now })
     }
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Baazi Games verified homepage no longer matches the trusted first-party surface')

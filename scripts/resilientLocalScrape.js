@@ -138,7 +138,7 @@ const sleep = (milliseconds) => new Promise((resolve) => {
 
 const timestamp = () => new Date().toISOString()
 
-export const runResilientScrape = async (options, { env: sourceEnv = process.env, prepareLaya = prepareLocalLaya } = {}) => {
+export const runResilientScrape = async (options, { env: sourceEnv = process.env, prepareLaya = prepareLocalLaya, signal: externalSignal } = {}) => {
   fs.mkdirSync(options.runDir, { recursive: true })
 
   const checkpointPath = path.join(options.runDir, 'run-state.json')
@@ -231,9 +231,15 @@ export const runResilientScrape = async (options, { env: sourceEnv = process.env
   let finalExitCode = 1
   let finalSignal = null
 
+  const onExternalAbort = () => requestStop('SIGTERM')
+  externalSignal?.addEventListener('abort', onExternalAbort, { once: true })
+
   try {
+    if (externalSignal?.aborted) onExternalAbort()
+    startupController.signal.throwIfAborted()
     appendSupervisorLog('Preparing Laya; the scraper will start only after installation and model readiness.')
     classifierRuntime = await prepareLaya({ env, signal: startupController.signal, log: appendSupervisorLog })
+    startupController.signal.throwIfAborted()
     env = classifierRuntime.env
     metadata.environment.JOB_CLASSIFICATION_MODE = env.JOB_CLASSIFICATION_MODE
     metadata.environment.LAYA_PYTHON = env.LAYA_PYTHON || null
@@ -310,6 +316,7 @@ export const runResilientScrape = async (options, { env: sourceEnv = process.env
   } finally {
     try { await classifierRuntime?.stop() }
     catch (error) { appendSupervisorLog(`Laya cleanup failed: ${error.message}`); if (finalExitCode === 0) finalExitCode = 1 }
+    externalSignal?.removeEventListener('abort', onExternalAbort)
     process.off('SIGINT', onSigint)
     process.off('SIGTERM', onSigterm)
     clearInterval(stopRequestTimer)

@@ -17,7 +17,7 @@ const loadAculifeCatalog = async () => {
   }
 }
 
-test('Aculife provider metadata captures the verified first-party no-public-jobs surface without aliases', async () => {
+test('Aculife provider metadata captures the verified first-party discovery-only application form without aliases', async () => {
   const { ACULIFE_PROVIDER } = await loadAculifeCatalog()
   const provider = hydrateProviderCatalogEntry(ACULIFE_PROVIDER)
 
@@ -25,20 +25,25 @@ test('Aculife provider metadata captures the verified first-party no-public-jobs
   assert.equal(provider.companyName, 'Aculife')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyCareerPage, 'https://www.aculife.co.in/resource/career.aspx')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'official-company-site-discovery-only')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'verified-career-form-plus-missing-public-jobs-routes')
+  assert.equal(provider.paginationStrategy, 'first-party-homepage-and-general-application-form')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-first-party-career-form-without-public-job-listings+verified-missing-public-jobs-routes-return-empty',
+    'verified-first-party-careers-application-form+discovery-only-unknown-vacancy-counts',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'aculife.co.in')
+  assert.equal(provider.verifiedOn, '2026-10-09')
+  assert.equal(provider.verifiedInventoryStatus, 'discovery-only')
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
+  assert.equal(provider.listingComplete, false)
   assert.match(provider.modulePath, /aculife[\\/]script\.js$/i)
-  assert.match(provider.verifiedSurfaceSummary, /July 14, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 9, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.aculife\.co\.in\/resource\/career\.aspx/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /unknown active vacancy counts/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Aculife'), false)
 })
 

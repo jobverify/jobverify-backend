@@ -230,7 +230,7 @@ test('incidental intern/student words, founding dates and education duration can
 test('policy publishing does not accept an uncalibrated model guess as fact', async () => {
   const input = buildClassificationInput({ title: 'Engineer', description: 'Develop software.' }, { now });
   const identity = Object.fromEntries(['modelRevision', 'runtimeVersion', 'runtimeHash', 'policyHash', 'calibrationHash'].map(key => [key, input[key]]));
-  const choices = { employment: 'internship', experience: 'fresher_eligible', seniority: 'internship', leadership: 'unknown' };
+  const choices = { jobType: 'Intern' };
   const answers = Object.fromEntries(Object.entries(CLASSIFICATION_POLICY.questions).map(([key, question]) => {
     const labels = Object.keys(question.criteria), choice = choices[key];
     return [key, { choice, probabilities: Object.fromEntries(labels.map(label => [label, label === choice ? .999 : .001 / (labels.length - 1)])) }];

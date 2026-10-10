@@ -169,3 +169,33 @@ test('run fetches ASSA ABLOY jobs from the official job openings API and decorat
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.equal(jobs[0].scrapedAt, jobs[0].scrapedAt)
 })
+
+test('ASSA ABLOY fetches the complete inventory from the integration hub configured by its official careers component', async () => {
+  const jobs = await createAssaAbloyScraper().run({
+    fetchJson: async (url) => {
+      if (url === 'https://integration-hub-prod-assets.globalweb.aws.assaabloy.com/job-openings/jobs.json') {
+        return { version: '1.0', fetchedAt: '2026-10-08T19:01:32+02:00', ...samplePayload }
+      }
+      throw new Error(`HTTP 404 for ${url}`)
+    },
+  })
+
+  assert.deepEqual(jobs.map(job => job.jobId), ['49038', '15352'])
+  assert.deepEqual(jobs.map(job => job.country), ['India', 'India'])
+})
+
+for (const { name, payload } of [
+  { name: 'missing items', payload: { version: '1.0', itemsTotalCount: 0 } },
+  { name: 'missing advertised total', payload: { version: '1.0', items: [] } },
+  { name: 'truncated items', payload: { version: '1.0', itemsTotalCount: 3, items: samplePayload.items.slice(0, 2) } },
+]) {
+  test(`ASSA ABLOY rejects ${name} before applying maxJobs`, async () => {
+    await assert.rejects(createAssaAbloyScraper({ maxJobs: 1 }).run({
+      fetchJson: async () => payload,
+    }), /ASSA ABLOY job inventory is malformed or incomplete/)
+  })
+}
+
+test('ASSA ABLOY preserves a verified empty inventory when the advertised total is zero', () => {
+  assert.deepEqual(extractSearchResults({ version: '1.0', itemsTotalCount: 0, items: [] }), [])
+})

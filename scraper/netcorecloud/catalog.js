@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on September 13, 2026 that https://netcorecloud.com/careers redirects to https://netcore.ai/careers and embeds the official careers presentation. The linked https://netcorecloud.com/careers-list?job_category=engineering redirects to https://netcore.ai/careers-list?job_category=engineering and embeds netcoreai.mynexthire.com. The public MyNextHire reqlist/get inventory supplies all departments; typed records are validated before India filtering. Loading shells, blocked responses, malformed records, and unknown locations reject the snapshot.'
+  "Verified on October 9, 2026 that the first-party https://netcorecloud.com/careers redirects to https://netcore.ai/careers and delegates to the live https://careerpagenetcore.lovable.app/ presentation. Its https://netcorecloud.com/careers-list?job_category=engineering handoff redirects to https://netcore.ai/careers-list?job_category=engineering. Blocked marketing pages are not accepted as healthy listings or empty inventory. The public netcoreai MyNextHire board independently identifies clientId 1127, Netcore AI, https://netcore.ai/, and the official careers URL. The board's complete unfiltered array is reconciled with all current published details and a second stable inventory before India filtering; missing descriptions, unpublished roles, identity, country, count or field disagreement rejects the snapshot."
 
 export const NETCORE_CLOUD_CATALOG = {
   source: 'netcorecloud',
@@ -14,17 +14,17 @@ export const NETCORE_CLOUD_CATALOG = {
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'netcorecloud/jobs.json',
   homepageUrl: 'https://netcorecloud.com/',
-  companyCareerPage: 'https://netcorecloud.com/careers',
+  companyCareerPage: 'https://netcoreai.mynexthire.com/employer/jobs/careers',
   companyCareersListUrl: 'https://netcorecloud.com/careers-list?job_category=engineering',
   companyDomain: 'netcorecloud.com',
   atsPlatform: 'mynexthire',
   countryFilter: 'India',
-  paginationStrategy: 'complete-public-reqlist-inventory',
+  paginationStrategy: 'complete-public-reqlist-and-published-detail-reconciliation',
   extractionStrategy:
-    'first-party-careers-list-handoff+validated-mynexthire-inventory+india-filter',
+    'verified-careers-presentation+tenant-identity+unfiltered-reqlist+all-published-details+stable-count+india-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-09-13',
+  verifiedOn: '2026-10-09',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

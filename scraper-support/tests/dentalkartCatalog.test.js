@@ -13,7 +13,7 @@ const loadDentalkartCatalog = async () => {
   }
 }
 
-test('Dentalkart catalog captures the verified first-party no-public-jobs surface metadata', async () => {
+test('Dentalkart catalog captures the verified first-party Zoho active-jobs metadata', async () => {
   const {
     DENTALKART_CATALOG,
     VERIFIED_SURFACE_SUMMARY,
@@ -29,28 +29,26 @@ test('Dentalkart catalog captures the verified first-party no-public-jobs surfac
   assert.equal(DENTALKART_CATALOG.homepageUrl, 'https://www.dentalkart.com/')
   assert.equal(DENTALKART_CATALOG.aboutPageUrl, 'https://www.dentalkart.com/about-us')
   assert.equal(DENTALKART_CATALOG.companyDomain, 'dentalkart.com')
-  assert.equal(DENTALKART_CATALOG.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(DENTALKART_CATALOG.atsPlatform, 'zoho-recruit')
   assert.equal(DENTALKART_CATALOG.countryFilter, 'India')
   assert.equal(
     DENTALKART_CATALOG.paginationStrategy,
-    'verified-homepage-plus-about-page-plus-careers-shell-plus-common-route-validation',
+    'complete-zoho-api-inventory-verified-against-public-portal',
   )
   assert.equal(
     DENTALKART_CATALOG.extractionStrategy,
-    'verified-homepage+verified-about-page+verified-careers-shell-without-public-job-listings+verified-missing-common-job-routes-return-empty',
+    'verified-first-party-zoho-handoff+verified-legal-employer+complete-published-unlocked-india-inventory',
   )
   assert.equal(DENTALKART_CATALOG.parser, 'custom-script')
   assert.equal(DENTALKART_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(DENTALKART_CATALOG.verifiedOn, '2026-07-15')
+  assert.equal(DENTALKART_CATALOG.verifiedOn, '2026-10-08')
   assert.equal(DENTALKART_CATALOG.verifiedSurfaceSummary, VERIFIED_SURFACE_SUMMARY)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.dentalkart\.com\/\b/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.dentalkart\.com\/about-us\b/i)
   assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.dentalkart\.com\/careers\b/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.dentalkart\.com\/sitemap\.xml\b/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.dentalkart\.com\/career\b/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.dentalkart\.com\/jobs\b/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.dentalkart\.com\/join-us\b/i)
-  assert.match(VERIFIED_SURFACE_SUMMARY, /no trustworthy public jobs surface/i)
+  assert.match(VERIFIED_SURFACE_SUMMARY, /24 published, unlocked India openings/i)
+  assert.equal(DENTALKART_CATALOG.legalEmployerName, 'VASA Denticity Limited')
+  assert.equal(DENTALKART_CATALOG.officialCareersHandoffUrl, 'https://dentalkart.zohorecruit.in/jobs/Careers')
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Dentalkart'), false)
 })
 

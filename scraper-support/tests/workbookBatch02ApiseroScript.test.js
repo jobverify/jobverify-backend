@@ -151,3 +151,15 @@ test('APISero fails closed when the verified redirect contract changes materiall
     /jobs route for apisero/i,
   )
 })
+
+test('APISero recognizes the current branded parent redirect while rejecting an unrelated canonical or a lost hero', async () => {
+  const { readFile } = await import('node:fs/promises')
+  const apisero = await loadModule()
+  const html = await readFile(new URL('./fixtures/apisero/ntt-parent-about-20261009.html', import.meta.url), 'utf8')
+  assert.equal(apisero.hasParentAboutPageSignal(html), true)
+  assert.equal(apisero.hasParentAboutPageSignal(html.replaceAll('https://www.nttdata.com/en-us/about-us', 'https://example.com/about-us')), false)
+  assert.equal(apisero.hasParentAboutPageSignal(html.replaceAll('Intelligence to Impact', 'Unrelated hero')), false)
+  const urls = []
+  assert.deepEqual(await apisero.run({ fetchPage: async url => { urls.push(url); return { status: 200, url: 'https://www.nttdata.com/en-us/about-us', html } } }), [])
+  assert.equal(urls.length, 4)
+})

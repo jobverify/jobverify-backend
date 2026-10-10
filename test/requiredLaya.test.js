@@ -145,10 +145,10 @@ test('native cache misses when source facts, year, model, questions or calibrati
 
 test('malformed native probabilities and partial scans are never reused', async t => {
   for (const [name, mutate] of [
-    ['missing answer', p => { delete p.answers.leadership; }],
-    ['invalid sum', p => { p.answers.employment.probabilities[p.answers.employment.choice] = .3; }],
-    ['unknown choice', p => { p.answers.experience.choice = 'made-up'; }],
-    ['non-numeric probability', p => { p.answers.seniority.probabilities[p.answers.seniority.choice] = '.99'; }],
+    ['missing answer', p => { delete p.answers.jobType; }],
+    ['invalid sum', p => { p.answers.jobType.probabilities[p.answers.jobType.choice] = .3; }],
+    ['unknown choice', p => { p.answers.jobType.choice = 'made-up'; }],
+    ['non-numeric probability', p => { p.answers.jobType.probabilities[p.answers.jobType.choice] = '.99'; }],
     ['fractional windows', p => { p.windows = 1.5; }],
     ['incomplete', p => { p.complete = false; }],
     ['deadline', p => { p.reason = 'request_deadline'; }],

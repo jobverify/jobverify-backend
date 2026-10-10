@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -124,7 +125,7 @@ export const hasOfficialContactSignal = (html) => {
   const text = stripTagsToLines(page).join(' ').toLowerCase()
 
   return /<title>\s*Contact Us\s*-\s*Salesforce Implementation,\s*Consulting\s*&(?:amp;|#038;)\s*Software Solutions\s*<\/title>/i.test(page)
-    && text.includes('pletra technologies india offices')
+    && (text.includes('pletra technologies india offices') || text.includes('pletratech india offices:'))
     && text.includes('pune address - office # 102, pentagon 1, magarpatta city, hadapsar, pune-411013')
     && /info@pletratech\.com/i.test(page)
 }
@@ -180,37 +181,12 @@ const extractExperienceRequired = (lines) => {
 
 const normalizeJobLocation = (rawLocation) => {
   const normalized = normalizeWhitespace(rawLocation)
-
-  if (!normalized) {
-    return {
-      location: 'India',
-      city: null,
-      country: 'India',
-    }
-  }
-
-  if (/belgium/i.test(normalized)) {
-    return {
-      location: 'Belgium',
-      city: null,
-      country: 'Belgium',
-    }
-  }
-
+  if (!normalized) return { location: null, city: null, country: null }
+  if (/^belgium$/i.test(normalized)) return { location: 'Belgium', city: null, country: 'Belgium' }
+  if (/^india$/i.test(normalized)) return { location: 'India', city: null, country: 'India' }
   const city = normalizeCity(normalized)
-  if (city && !/^india$/i.test(city)) {
-    return {
-      location: `${city}, India`,
-      city,
-      country: 'India',
-    }
-  }
-
-  return {
-    location: 'India',
-    city: null,
-    country: 'India',
-  }
+  if (city && /^(?:Pune|Mumbai|Bengaluru|Bangalore|Hyderabad|Chennai|Delhi|New Delhi|Noida|Gurugram|Gurgaon|Kolkata|Ahmedabad)$/i.test(normalized) && !/^india$/i.test(city)) return { location: city + ', India', city, country: 'India' }
+  return { location: normalized, city: null, country: null }
 }
 
 export const extractPublicJobs = (html) => {
@@ -221,13 +197,13 @@ export const extractPublicJobs = (html) => {
   const jobs = extractAccordionBlocks(html)
     .map(({ title: rawTitle, detailsHtml }) => {
       const { title, rawLocation } = extractTitleAndLocation(rawTitle)
-      if (!title) return null
+      if (!title) throw new Error('Pletra incomplete public opening: missing title')
 
       const lines = stripTagsToLines(detailsHtml)
-      if (lines.length === 0) return null
+      if (lines.length === 0) throw new Error('Pletra incomplete public opening: missing description')
 
       const { location, city, country } = normalizeJobLocation(rawLocation)
-      const identitySlug = slugify(`${title}-${location}`)
+      const identitySlug = slugify(`${title}-${location || 'unresolved'}`)
 
       return {
         title,
@@ -256,6 +232,8 @@ export const extractPublicJobs = (html) => {
     throw new Error('Pletra careers page no longer exposes verified public openings')
   }
 
+  const advertised = (String(html).match(/class=["'][^"']*\belementor-accordion-item\b[^"']*["']/gi) || []).length
+  if (advertised !== jobs.length || new Set(jobs.map(job => job.jobId)).size !== jobs.length) throw new Error('Pletra incomplete or duplicate public opening inventory')
   return jobs
 }
 
@@ -288,8 +266,9 @@ export const createPletraTechnologiesIndiaScraper = ({ now = () => new Date().to
       }
     }
 
-    const indiaJobs = extractPublicJobs(careersPage.html)
-      .filter((job) => job.country === 'India')
+    const globalJobs = extractPublicJobs(careersPage.html)
+    const listingComplete = globalJobs.every(job => Boolean(job.country))
+    const indiaJobs = globalJobs.filter(job => job.country === 'India')
 
     if (indiaJobs.length === 0) {
       throw new Error('Pletra careers page no longer exposes India-scoped public openings')
@@ -297,7 +276,7 @@ export const createPletraTechnologiesIndiaScraper = ({ now = () => new Date().to
 
     const scrapedAt = (overrideNow || now)()
 
-    return indiaJobs.map((job) => ({
+    return attachInventoryEvidence(indiaJobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
@@ -305,7 +284,8 @@ export const createPletraTechnologiesIndiaScraper = ({ now = () => new Date().to
       companyCareerPage: CAREERS_URL,
       companyDomain: COMPANY_DOMAIN,
       atsPlatform: 'official-company-careers',
-    }))
+      ...(listingComplete ? {} : { sourceListingComplete: false }),
+    })), { status: listingComplete ? 'complete-inventory' : 'coverage-gap', surface: CAREERS_URL, firstParty: true, listingComplete, pagesFetched: 1, reportedTotal: globalJobs.length, indiaFacetCount: listingComplete ? indiaJobs.length : null, verifiedAt: scrapedAt, reason: listingComplete ? 'all-inline-opening-locations-verified' : 'one-or-more-published-roles-have-unresolved-country' })
   },
 })
 

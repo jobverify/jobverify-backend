@@ -54,7 +54,8 @@
     "test:provision-mongo": "node scripts/provisionTestMongo.js",
     "descriptions:preview": "node scripts/rewriteJobDescriptions.js",
     "descriptions:rewrite": "node scripts/rewriteJobDescriptions.js --apply",
-    "descriptions:benchmark": "node scripts/benchmarkJobDescriptions.js"
+    "descriptions:benchmark": "node scripts/benchmarkJobDescriptions.js",
+    "descriptions:evaluate:dry": "node --use-system-ca scripts/evaluateDryRunDescriptions.js"
   },
   "repository": {
     "type": "git",

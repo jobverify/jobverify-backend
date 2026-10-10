@@ -242,3 +242,20 @@ test('Alpha Design Technologies fails closed when the homepage, careers page, or
     /verified no-public-careers route changed/i,
   )
 })
+
+
+const currentMissingCareerRouteHtml = '<html><head><title>404 Error Page</title></head><body><h2>404</h2><h4>We couldn\'t find the page</h4><a href="/">Go Back to Home Page</a></body></html>'
+
+test('Alpha Design Technologies accepts its official custom missing-page redirect while checking resume-only careers', async () => {
+  const alpha = await loadAlphaDesignTechnologiesModule()
+  const jobs = await alpha.createAlphaDesignTechnologiesScraper().run({
+    fetchPage: async (url) => ({
+      ok: true, status: 200,
+      url: [alpha.HOMEPAGE_URL, alpha.CAREERS_URL].includes(url) ? url : 'https://www.adtl.co.in/404error',
+      text: url === alpha.HOMEPAGE_URL ? homepageHtml : url === alpha.CAREERS_URL ? careersResumeOnlyHtml : currentMissingCareerRouteHtml,
+    }),
+  })
+  assert.deepEqual(jobs, [])
+  assert.equal(alpha.isVerifiedMissingCareerRoute({ status: 200, url: 'https://unrelated.example/404error', text: currentMissingCareerRouteHtml }), false)
+  assert.equal(alpha.isVerifiedMissingCareerRoute({ status: 200, url: 'https://www.adtl.co.in/404error', text: currentMissingCareerRouteHtml + publicJobsHtml }), false)
+})

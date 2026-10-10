@@ -11,6 +11,20 @@ const jobs = [
 const scraper = { name: 'first', run: async () => jobs };
 const makeClient = () => ({ mode: 'policy', stats: {}, classifyJobs: async records => records.map(job => ({ ...job, classification: resolveClassification(job, null, { now, mode: 'policy' }) })) });
 
+test('a local company trial captures once and stops its runtime after classification failure', async () => {
+  const events = [];
+  const scraper = { name: 'trial', run: async () => { events.push('scrape'); return [{ title: 'Intern', description: 'Intern placement.' }]; } };
+  const classifier = { mode: 'policy', stats: {}, classifyJobs: async () => { events.push('classify'); throw new Error('inference failed'); } };
+  const bootstrap = async () => { events.push('start'); return { stop: async () => events.push('stop') }; };
+  await assert.rejects(runClassifiedScraper({ scraper, classifier, bootstrap, now }), /inference failed/);
+  assert.deepEqual(events, ['scrape', 'start', 'classify', 'stop']);
+});
+
+test('the local comparison trial cannot publish to MongoDB', async () => {
+  await assert.rejects(runClassifiedScraper({ scraper, classifier: makeClient(), bootstrap: async () => ({ stop: async () => {} }),
+    apply: true, persist: async () => { throw new Error('Unexpected write attempt'); }, now }), /local comparison/);
+});
+
 test('a scraper supplies every job to the shared classifier before persistence', async () => {
   const events = [], client = makeClient();
   const classify = client.classifyJobs;

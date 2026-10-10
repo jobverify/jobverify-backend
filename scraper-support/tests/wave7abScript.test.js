@@ -365,27 +365,16 @@ test('SAG Infotech run returns normalized jobs from the verified first-party cur
   assert.equal(jobs[1].openingsCount, 2)
 })
 
-test('Intech Creative Services run returns normalized jobs from the verified loop-grid cards', async () => {
+test('Intech Creative Services card helpers retain the verified older native URL route', async () => {
   const intech = await loadModule('../../scraper/intechcreativeservices/script.js')
-
   assert.equal(intech.hasOfficialCareersSignal(intechCareersHtml), true)
-  assert.equal(intech.extractLoopGridJobCards(intechCareersHtml).length, 3)
-
-  const jobs = await intech.createIntechCreativeServicesScraper({
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async (url) => {
-      assert.equal(url, intech.CAREERS_URL)
-      return intechCareersHtml
-    },
-  })
-
-  assert.equal(jobs.length, 3)
-  assert.equal(jobs[0].title, 'Assistant Consultant - Oracle Fusion')
-  assert.equal(jobs[0].employmentType, 'Contractual')
-  assert.equal(jobs[0].location, 'Work From Home')
-  assert.equal(jobs[2].title, 'Senior Executive - Implementation')
-  assert.equal(jobs[2].city, 'Bangalore')
+  const cards = intech.extractLoopGridJobCards(intechCareersHtml)
+  assert.equal(cards.length, 3)
+  assert.equal(cards[0].title, 'Assistant Consultant - Oracle Fusion')
+  assert.equal(cards[0].location, 'Work From Home')
+  assert.equal(cards[1].employmentType, 'Contractual')
+  assert.equal(cards[2].location, 'Bengaluru')
+  assert.match(cards[2].sourceUrl, /\/career\/jobs\/senior-executive-implementation\/$/)
 })
 
 test('Mindfire Solutions run returns normalized jobs from the public jobpost API payload', async () => {

@@ -32,17 +32,42 @@ class FakeAgent:
         return question
     def predict(self, state, questions, **kwargs):
         self.states.append(state)
-        choices = {'employment': 'full_time', 'experience': 'prior_required', 'seniority': 'leadership', 'leadership': 'manager'}
+        choices = {'jobType': 'Full-time Experienced'}
         return {'answers': {key: answer(key, choices[key]) for key in questions}, 'usage': {'state_tokens_dropped': 0}}
 
 
 class RuntimeTests(unittest.TestCase):
-    def test_requested_eight_cpu_threads_are_applied_before_model_loading(self):
-        applied = []
-        torch = SimpleNamespace(set_num_threads=applied.append)
+    def test_one_question_returns_all_four_categories_without_auxiliary_heads(self):
+        agent = FakeAgent()
+        def predict(state, questions):
+            self.assertEqual(list(questions), ['jobType'])
+            return {'answers': {'jobType': {'choice': 'Intern', 'probabilities': {
+                'Full-time Fresher': .1, 'Full-time Experienced': .15, 'Intern': .7, 'Contract': .05}}},
+                'usage': {'state_tokens_dropped': 0}}
+        agent.predict = predict
+        result = Classifier(agent, room=lambda *args: 130).classify({'title': 'Intern', 'body': 'Intern placement.', 'referenceYear': 2026})
+        self.assertTrue(result['complete'])
+        self.assertEqual(result['answers']['jobType']['choice'], 'Intern')
+        self.assertAlmostEqual(sum(result['answers']['jobType']['probabilities'].values()), 1)
+
+    def test_two_cpu_runner_limits_inference_threads_and_disables_interop_fanout(self):
+        intra, inter = [], []
+        torch = SimpleNamespace(set_num_threads=intra.append, set_num_interop_threads=inter.append)
         with patch.dict(os.environ, {'LAYA_CPU_THREADS': '8'}), patch.dict(sys.modules, {'torch': torch}), \
+                patch('runtime.available_cpu_count', return_value=2, create=True), \
                 patch('runtime.argparse.ArgumentParser.parse_args', return_value=SimpleNamespace(port=8765)), \
                 patch('runtime.load_release', return_value=None), patch('runtime.load_agent', side_effect=RuntimeError('probe stops before loading')):
+            with self.assertRaisesRegex(RuntimeError, 'probe stops'):
+                runtime.main()
+        self.assertEqual(intra, [2])
+        self.assertEqual(inter, [1])
+
+    def test_requested_eight_cpu_threads_are_applied_before_model_loading(self):
+        applied = []
+        torch = SimpleNamespace(set_num_threads=applied.append, set_num_interop_threads=lambda value: None)
+        with patch.dict(os.environ, {'LAYA_CPU_THREADS': '8'}), patch.dict(sys.modules, {'torch': torch}), \
+                patch('runtime.argparse.ArgumentParser.parse_args', return_value=SimpleNamespace(port=8765)), \
+                patch('runtime.available_cpu_count', return_value=8), patch('runtime.load_release', return_value=None), patch('runtime.load_agent', side_effect=RuntimeError('probe stops before loading')):
             with self.assertRaisesRegex(RuntimeError, 'probe stops'):
                 runtime.main()
         self.assertEqual(applied, [8])
@@ -58,7 +83,7 @@ class RuntimeTests(unittest.TestCase):
         def partial_predict(*args):
             result = predict(*args)
             if len(agent.states) > 1:
-                result['answers'].pop('experience')
+                result['answers'].pop('jobType')
             return result
         agent.predict = partial_predict
         worker = Classifier(agent, room=lambda *args: 130)
@@ -151,11 +176,11 @@ class RuntimeTests(unittest.TestCase):
         self.assertTrue(all('Engineering Manager' in state for state in agent.states))
 
     def test_conflicting_high_confidence_windows_abstain(self):
-        result = aggregate_answers([{'employment': answer('employment', 'full_time')}, {'employment': answer('employment', 'internship')}], POLICY['thresholds'])
-        self.assertIn('employment', result['conflicts'])
+        result = aggregate_answers([{'jobType': answer('jobType', 'Full-time Experienced')}, {'jobType': answer('jobType', 'Intern')}], POLICY['thresholds'])
+        self.assertIn('jobType', result['conflicts'])
 
     def test_entropy_confidence_is_not_used(self):
-        value = answer('employment', 'full_time', .51)
+        value = answer('jobType', 'Full-time Experienced', .51)
         value['confidence'] = .999
         self.assertEqual(calibrated_answer(value, 1)['answer_confidence'], .51)
 

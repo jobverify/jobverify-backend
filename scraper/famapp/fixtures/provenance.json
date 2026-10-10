@@ -1,0 +1,41 @@
+{
+  "capturedAt": "2026-10-08T18:09:05.629Z",
+  "pages": [
+    {
+      "url": "https://www.famapp.in/",
+      "status": 200,
+      "title": "FamApp: Make payments with your own UPI and Card"
+    },
+    {
+      "url": "https://www.famapp.in/careers/",
+      "status": 200,
+      "title": "FamApp: Make payments with your own UPI and Card"
+    },
+    {
+      "url": "https://www.famapp.in/jobs/",
+      "status": 200,
+      "title": "FamApp: Make payments with your own UPI and Card"
+    }
+  ],
+  "client": {
+    "url": "https://www.famapp.in/_next/static/chunks/46b0e91d4324e433.js",
+    "status": 200,
+    "verifiedEndpoint": "https://api.lever.co/v0/postings/fampay?group=team&mode=json"
+  },
+  "inventory": {
+    "url": "https://api.lever.co/v0/postings/fampay?group=team&mode=json",
+    "status": 200,
+    "groups": 9,
+    "postings": 16,
+    "allCountries": [
+      "IN"
+    ],
+    "notes": "All 16 published IDs retained; only fields consumed by the adapter retained to avoid duplicated description representations."
+  },
+  "paginationValidation": {
+    "url": "https://api.lever.co/v0/postings/fampay?mode=json&skip=0&limit=100",
+    "status": 200,
+    "postings": 16,
+    "idsEqual": true
+  }
+}

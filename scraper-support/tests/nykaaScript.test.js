@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import fs from 'node:fs/promises'
+
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const FIXED_SCRAPED_AT = '2026-07-17T00:00:00.000Z'
 
@@ -212,7 +215,7 @@ test('Nykaa helpers verify the official board, pagination summary, and list-card
   const nykaa = await loadNykaaModule()
 
   assert.equal(nykaa.COMPANY, 'Nykaa')
-  assert.equal(nykaa.VERIFIED_ON, '2026-07-17')
+  assert.equal(nykaa.VERIFIED_ON, '2026-10-09')
   assert.equal(nykaa.OFFICIAL_CAREERS_URL, 'https://careers.nykaa.com/')
   assert.equal(nykaa.PUBLIC_BOARD_URL, 'https://careers.nykaa.com/')
   assert.equal(nykaa.hasOfficialBoardSignal(BOARD_PAGE_1_HTML), true)
@@ -375,4 +378,77 @@ test('Nykaa fails closed when the verified official board no longer matches the 
     }),
     /official board/i,
   )
+})
+
+
+test('Nykaa accepts the current official Skima tenant with an explicit empty public inventory', async () => {
+  const nykaa = await loadNykaaModule()
+  const html = await fs.readFile(new URL('../../scraper/nykaa/fixtures/board-current-empty.html', import.meta.url), 'utf8')
+  assert.equal(nykaa.hasOfficialBoardSignal(html), true)
+  const jobs = await nykaa.createNykaaScraper().run({ fetchText: async () => html, now: () => FIXED_SCRAPED_AT })
+  assert.deepEqual(jobs, [])
+  assert.deepEqual(readInventoryEvidence(jobs), {
+    status: 'verified-empty', surface: nykaa.PUBLIC_BOARD_URL, firstParty: true, listingComplete: true,
+    pagesFetched: 1, reportedTotal: 0, indiaFacetCount: 0, verifiedAt: FIXED_SCRAPED_AT,
+    reason: 'official-nykaa-board-explicit-no-job-postings',
+  })
+})
+
+test('Nykaa current board rejects missing inventory and contradictory visible job cards', async () => {
+  const nykaa = await loadNykaaModule()
+  const html = await fs.readFile(new URL('../../scraper/nykaa/fixtures/board-current-empty.html', import.meta.url), 'utf8')
+  const missingInventory = html.replace('Currently there are no job postings available.', 'Please check back later.')
+  const contradictoryInventory = html.replace('Currently there are no job postings available.', 'Currently there are no job postings available. Showing 1 of 1 - Jobs') + BOARD_PAGE_1_HTML
+  assert.equal(nykaa.hasOfficialBoardSignal(missingInventory), false)
+  assert.equal(nykaa.hasOfficialBoardSignal(contradictoryInventory), false)
+  await assert.rejects(nykaa.createNykaaScraper().run({ fetchText: async () => missingInventory }), /official board/i)
+  await assert.rejects(nykaa.createNykaaScraper().run({ fetchText: async () => contradictoryInventory }), /official board/i)
+})
+
+test('Nykaa fails closed when pagination omits an advertised public opening', async () => {
+  const nykaa = await loadNykaaModule()
+  const partialFirstPage = BOARD_PAGE_1_HTML.replace('Showing 2 of 3 - Jobs', 'Showing 2 of 4 - Jobs')
+  const partialLastPage = BOARD_PAGE_2_HTML.replace('Showing 1 of 3 - Jobs', 'Showing 1 of 4 - Jobs')
+  await assert.rejects(nykaa.createNykaaScraper().run({
+    fetchText: async (url) => {
+      if (url === nykaa.buildListingUrl()) return partialFirstPage
+      if (url === nykaa.buildListingUrl({ page: 2 })) return partialLastPage
+      if (url === nykaa.buildJobUrl('job-1')) return DETAIL_PAGE_1_HTML
+      if (url === nykaa.buildJobUrl('job-2')) return DETAIL_PAGE_2_HTML
+      if (url === nykaa.buildJobUrl('job-3')) return DETAIL_PAGE_3_HTML
+      throw new Error('Unexpected fixture URL: ' + url)
+    },
+  }), /advertised public inventory/i)
+})
+
+const fetchNykaaInventoryFixture = async (url) => {
+  if (url === 'https://careers.nykaa.com/') return BOARD_PAGE_1_HTML
+  if (url === 'https://careers.nykaa.com/?page=2') return BOARD_PAGE_2_HTML
+  if (url === 'https://careers.nykaa.com/job-1') return DETAIL_PAGE_1_HTML
+  if (url === 'https://careers.nykaa.com/job-2') return DETAIL_PAGE_2_HTML
+  if (url === 'https://careers.nykaa.com/job-3') return DETAIL_PAGE_3_HTML
+  throw new Error('Unexpected fixture URL: ' + url)
+}
+
+for (const [label, limits] of [
+  ['maxJobs', { maxJobs: 2 }],
+  ['maxPages', { maxPages: 1 }],
+]) {
+  test('Nykaa marks every returned job incomplete when ' + label + ' truncates advertised inventory', async () => {
+    const nykaa = await loadNykaaModule()
+    const jobs = await nykaa.createNykaaScraper(limits).run({ fetchText: fetchNykaaInventoryFixture })
+    assert.deepEqual(jobs.map(job => job.jobId), ['job-1', 'job-2'])
+    assert.ok(jobs.every(job => job.sourceListingComplete === false))
+    assert.equal(jobs[0].company, 'Nykaa')
+    assert.equal(jobs[0].title, 'Executive - Category & Brand Management')
+    assert.match(jobs[1].jobDescription, /Lead product growth/)
+    assert.deepEqual(jobs[1].requiredSkills, ['Data Analysis', 'Strategic Planning'])
+  })
+}
+
+test('Nykaa leaves complete inventory flags unchanged when configured limits cover all advertised jobs', async () => {
+  const nykaa = await loadNykaaModule()
+  const jobs = await nykaa.createNykaaScraper({ maxJobs: 3, maxPages: 2 }).run({ fetchText: fetchNykaaInventoryFixture })
+  assert.deepEqual(jobs.map(job => job.jobId), ['job-1', 'job-2', 'job-3'])
+  assert.ok(jobs.every(job => job.sourceListingComplete === undefined))
 })

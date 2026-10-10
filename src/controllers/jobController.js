@@ -836,6 +836,7 @@ const normalizeResponseJob = (job) => {
     classification: _classification,
     sourceDescription: _sourceDescription,
     sourceContentHash: _sourceContentHash,
+    sourceContentHashVersion: _sourceContentHashVersion,
     descriptionRewrite: _descriptionRewrite,
     ...publicJob
   } = job;
@@ -2103,6 +2104,7 @@ export const getJobSeoFeed = async (req, res) => {
       applyPublicJobVisibility({
         status: "active",
         sourceUrl: { $exists: true, $ne: null },
+        $and: [{ $or: [{ closingDate: null }, { closingDate: { $gt: new Date() } }] }],
       }, req.siteSettings),
     )
       .sort({ sortDate: -1, _id: -1 })

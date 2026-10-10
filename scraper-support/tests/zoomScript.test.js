@@ -82,3 +82,17 @@ test('Zoom rejects changed official careers surfaces and honours pre-aborted can
   controller.abort(new Error('cancelled Zoom'))
   await assert.rejects(createZoomScraper().run({ signal: controller.signal, fetchText: async () => assert.fail('Cancelled request') }), /cancelled Zoom/)
 })
+
+test('Zoom accepts the current public bare-host URL while preserving its trusted widget detail path and employer', async () => {
+  const { readFile } = await import('node:fs/promises')
+  const rows = JSON.parse(await readFile(new URL('./fixtures/zoom/current-bare-host.json', import.meta.url), 'utf8'))
+  const jobs = zoom.extractSearchResults(rows, rows[0].data.siteID)
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(new URL(jobs[0].sourceUrl).origin, 'https://www.careers.zoom.us')
+  const changed = structuredClone(rows)
+  changed[0].data.jobURL = changed[0].data.jobURL.replace('careers.zoom.us', 'example.com')
+  assert.throws(() => zoom.extractSearchResults(changed, rows[0].data.siteID), /unverified detail/)
+  changed[0] = structuredClone(rows[0]); changed[0].data.advertiserName = 'Unrelated employer'
+  assert.throws(() => zoom.extractSearchResults(changed, rows[0].data.siteID), /employer|identity/)
+})

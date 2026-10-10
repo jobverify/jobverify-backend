@@ -102,3 +102,7 @@ test('Anar Business run returns an empty result when the former domain now consi
 
   assert.deepEqual(jobs, [])
 })
+
+import {readInventoryEvidence,isVerifiedEmptyEvidence} from '../utils/inventoryEvidence.js'
+test('Anar current shutdown discovery is explicit incomplete evidence and cannot expire previous jobs',async()=>{const source=await loadAnarBusinessModule();const jobs=await source.run({now:()=> '2026-10-09T00:50:00Z',fetchPage:async url=>({status:url===source.HOMEPAGE_URL?200:410,url,html:currentShutdownHtml})});assert.equal(jobs.length,0);const evidence=readInventoryEvidence(jobs);assert.equal(evidence?.status,'discovery-only');assert.equal(evidence.firstParty,true);assert.equal(evidence.listingComplete,false);assert.equal(evidence.reportedTotal,null);assert.equal(evidence.indiaFacetCount,null);assert.match(evidence.reason,/shutdown/);assert.equal(isVerifiedEmptyEvidence(evidence),false)})
+test('Anar cannot accept a copied shutdown page redirected to a foreign authority',async()=>{const source=await loadAnarBusinessModule();await assert.rejects(source.run({fetchPage:async()=>({status:200,url:'https://unrelated.example/',html:currentShutdownHtml})}),/shutdown homepage/)})

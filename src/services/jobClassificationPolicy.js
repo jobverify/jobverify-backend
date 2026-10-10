@@ -149,8 +149,8 @@ const sourceNumericFields = input => {
     experienceProfile: { ...emptyProfile(), ...profile, preferredMinimumYears, evidence: profile.evidence?.slice(0, 160) || null, rawText: null },
   };
 };
-const decisionFor = (answer, key, thresholds) => {
-  const labels = Object.keys(CLASSIFICATION_POLICY.questions[key].criteria);
+const decisionFor = (answer, key, thresholds, questions = CLASSIFICATION_POLICY.questions) => {
+  const labels = Object.keys(questions[key].criteria);
   const p = answer?.probabilities;
   if (!p || typeof p !== 'object' || Object.keys(p).length !== labels.length || labels.some(label => !Object.hasOwn(p, label) || typeof p[label] !== 'number' || !Number.isFinite(p[label]) || p[label] < 0 || p[label] > 1)) return null;
   const sum = labels.reduce((total, label) => total + p[label], 0);
@@ -161,10 +161,12 @@ export const snapshotClassificationFields = job => Object.fromEntries(CLASSIFICA
   ? { minimumYears: job.experienceProfile?.minimumYears ?? null, maximumYears: job.experienceProfile?.maximumYears ?? null, isOpenEnded: job.experienceProfile?.isOpenEnded === true, preferredMinimumYears: job.experienceProfile?.preferredMinimumYears ?? null, hasExplicitExperience: job.experienceProfile?.hasExplicitExperience === true, confidence: job.experienceProfile?.confidence || 'low' }
   : field === 'experienceYears' ? (job[field] || []).filter(finiteYear).slice(0, 41) : typeof job[field] === 'string' ? job[field].slice(0, 160) : job[field] ?? null]));
 
-export const resolveClassification = (job, prediction, { now = new Date(), mode = 'shadow', identity = {}, reason, previous, thresholds = CLASSIFICATION_POLICY.thresholds } = {}) => {
+// Retain decoding of historical four-question records. The native worker and
+// native cache accept only the current single-question contract.
+const resolveLegacyClassification = (job, prediction, { now = new Date(), mode = 'shadow', identity = {}, reason, previous, thresholds = CLASSIFICATION_POLICY.legacyThresholds } = {}) => {
   const input = buildClassificationInput(job, { now, identity });
   const numeric = sourceNumericFields(input);
-  const decisions = Object.fromEntries(Object.keys(CLASSIFICATION_POLICY.questions).map(key => [key, decisionFor(prediction?.answers?.[key], key, thresholds)]));
+  const decisions = Object.fromEntries(Object.keys(CLASSIFICATION_POLICY.legacyQuestions).map(key => [key, decisionFor(prediction?.answers?.[key], key, thresholds, CLASSIFICATION_POLICY.legacyQuestions)]));
   const requiredKeys = ['employment', 'experience', 'seniority', ...(decisions.seniority?.label === 'leadership' ? ['leadership'] : [])];
   let rejection = reason || (input.incomplete || prediction?.complete !== true ? 'incomplete' : null);
   if (!prediction) rejection = reason || 'unavailable';
@@ -231,6 +233,38 @@ export const resolveClassification = (job, prediction, { now = new Date(), mode 
     windows: Number.isInteger(prediction?.windows) ? Math.min(10000, Math.max(0, prediction.windows)) : 0,
     evidenceContext: input.body.slice(0, 160), classifiedAt: now.toISOString(), resolved,
     previous: snapshotClassificationFields(previous || job.classification?.previous || job),
+  };
+};
+
+export const resolveClassification = (job, prediction, options = {}) => {
+  if (prediction?.answers && !Object.hasOwn(prediction.answers, 'jobType')
+    && Object.keys(prediction.answers).some(key => Object.hasOwn(CLASSIFICATION_POLICY.legacyQuestions, key))) {
+    return resolveLegacyClassification(job, prediction, options);
+  }
+  // This trial compares the model against rules without letting its prediction
+  // influence the baseline. Numeric experience continues to come from source facts.
+  const baseline = resolveLegacyClassification(job, null, options);
+  const input = buildClassificationInput(job, options);
+  const sourceSeniority = baseline.resolved.seniority === 'Unknown' && !input.incomplete
+    ? extractJobFilterSignals({ title: input.title, description: input.body }).seniority : baseline.resolved.seniority;
+  const resolved = { ...baseline.resolved, seniority: sourceSeniority,
+    experienceLevel: baseline.resolved.experienceLevel || (sourceSeniority === 'Mid Level' ? 'Mid Level'
+      : ['Senior', 'Lead', 'Manager', 'Senior Manager', 'Director', 'Vice President', 'Executive'].includes(sourceSeniority) ? 'Senior Level' : null) };
+  const decision = decisionFor(prediction?.answers?.jobType, 'jobType', options.thresholds || CLASSIFICATION_POLICY.thresholds);
+  let reason = options.reason || (!prediction ? 'unavailable' : prediction.complete !== true || input.incomplete ? 'incomplete' : null);
+  if (!reason && (!decision || Object.keys(prediction.answers).length !== 1)) reason = 'invalid_response';
+  if (!reason && baseline.calibrationHash === 'uncalibrated') reason = 'model_unvalidated';
+  if (!reason && (prediction.conflicts?.length || !decision.confident)) reason = 'uncertain';
+  const modelJobType = decision?.label || null;
+  return { ...baseline, resolved, reason,
+    decisionSource: baseline.decisionSource === 'policy' ? 'policy' : 'fallback',
+    status: !reason ? 'accepted' : ['model_unvalidated', 'uncertain', 'incomplete'].includes(reason) ? 'uncertain' : 'fallback',
+    decisions: decision ? { jobType: { label: decision.label, probability: decision.probability,
+      probabilities: { ...prediction.answers.jobType.probabilities } } } : {},
+    complete: prediction?.complete === true && !input.incomplete,
+    windows: Number.isInteger(prediction?.windows) ? Math.min(10000, Math.max(0, prediction.windows)) : 0,
+    comparison: { modelJobType, logicJobType: baseline.resolved.jobType,
+      agreement: modelJobType ? modelJobType === baseline.resolved.jobType : null },
   };
 };
 

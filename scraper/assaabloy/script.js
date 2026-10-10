@@ -8,7 +8,8 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
 export const CAREER_PAGE_URL = 'https://www.assaabloy.com/career/en/open-positions'
-export const JOBS_API_URL = 'https://www.assaabloy.com/rest/api/v1/job-openings.json'
+// Configured by the official careers page's gw-group-job-openings-grid component.
+export const JOBS_API_URL = 'https://integration-hub-prod-assets.globalweb.aws.assaabloy.com/job-openings/jobs.json'
 
 const normalizeWhitespace = (value) => {
   if (value == null) return null
@@ -44,7 +45,16 @@ const buildDescription = (item, cities) => normalizeWhitespace([
 export const buildSearchUrl = () => JOBS_API_URL
 
 export const extractSearchResults = (payload) => {
-  const items = Array.isArray(payload?.items) ? payload.items : []
+  if (
+    !Array.isArray(payload?.items)
+    || !Number.isInteger(payload?.itemsTotalCount)
+    || payload.itemsTotalCount < 0
+    || payload.items.length !== payload.itemsTotalCount
+  ) {
+    throw new Error('ASSA ABLOY job inventory is malformed or incomplete')
+  }
+
+  const items = payload.items
 
   return items
     .map((item) => {

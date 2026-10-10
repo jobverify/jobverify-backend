@@ -29,13 +29,6 @@ test('detects the CoinDCX opportunities shell and no-public-listings signal', ()
   assert.equal(hasNoPublicListingsSignal(noOpeningsPageHtml), true)
 })
 
-test('run returns no jobs when CoinDCX only exposes CV-drop hiring on the public opportunities page', async () => {
-  const jobs = await createCoinDCXScraper().run({
-    fetchText: async (url) => {
-      assert.equal(url, CAREER_PAGE_URL)
-      return noOpeningsPageHtml
-    },
-  })
-
-  assert.deepEqual(jobs, [])
+test('obsolete CV-drop shell cannot authorize a healthy empty public inventory', async () => {
+  await assert.rejects(createCoinDCXScraper().run({fetchText:async()=>noOpeningsPageHtml}), /LinkedIn.*profile|LinkedIn.*canonical/)
 })
