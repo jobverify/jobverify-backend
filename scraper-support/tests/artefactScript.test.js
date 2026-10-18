@@ -700,6 +700,29 @@ test('Artefact rejects an unrelated fallback board when public HTML omits India 
   }), /verified public Greenhouse board/)
 })
 
+test('Artefact follows the official careers landing handoff to the verified job list', async () => {
+  const artefact = await loadScriptModule()
+  const requested = []
+  const landing = '<title>Careers - Artefact</title><h1>Careers</h1>'
+    + '<a href="https://www.artefact.com/careers/explore-our-jobs/">Explore our Jobs</a>'
+    + '<a href="https://www.artefact.com/careers/working-at-artefact/">Working at Artefact</a>'
+  const jobs = await artefact.createArtefactScraper().run({
+    fetchText: async url => {
+      requested.push(url)
+      if (url === artefact.HOMEPAGE_URL) return homepageHtml
+      if (url === artefact.CAREERS_URL) return landing
+      if (url === 'https://www.artefact.com/careers/explore-our-jobs/') return careersPageHtml.replaceAll('India', 'France')
+      if (url === 'https://www.artefact.com/careers/explore-our-jobs/page/2/') return careersPage2Html.replaceAll('India', 'France')
+      if (url === artefact.GREENHOUSE_BOARD_URL) return greenhouseBoardHtml
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+    fetchJson: async () => greenhousePayload,
+  })
+  assert.ok(requested.includes('https://www.artefact.com/careers/explore-our-jobs/'))
+  assert.ok(jobs.length > 0)
+  assert.ok(jobs.every(job => /India/i.test(job.location)))
+})
+
 test('Artefact fails closed when the verified homepage, careers page, listing cards, or detail pages drift', async () => {
   const artefact = await loadScriptModule()
 

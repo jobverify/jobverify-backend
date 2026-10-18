@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const loadG7CrModule = async () => {
@@ -150,7 +151,9 @@ test('G7 CR follows its verified Noventiq migration and enriches current listing
   const g7 = await import('../../scraper/g7cr/script.js')
   const jobUrl = 'https://noventiqai.com/job-details/senior-cloud-service-engineer/'
   const pages = new Map([
-    ['https://g7cr.com/', '<link rel="canonical" href="https://noventiqai.com/"><a href="https://www.linkedin.com/company/g7cr-technologies">G7 CR</a>'],
+    ['https://noventiqai.com/', await readFile(new URL('./fixtures/g7cr/current-homepage.html', import.meta.url), 'utf8')],
+    ['https://noventiqai.com/about/', await readFile(new URL('./fixtures/g7cr/current-about.html', import.meta.url), 'utf8')],
+    ['https://noventiqai.com/privacy-policy/', await readFile(new URL('./fixtures/g7cr/current-privacy.html', import.meta.url), 'utf8')],
     ['https://noventiqai.com/job-listings/', '<title>Job Listings ? Noventiq Global AI Solutions</title><link rel="canonical" href="https://noventiqai.com/job-listings/"><h4><a href="' + jobUrl + '">Senior Cloud Service Engineer</a></h4>'],
     ['https://noventiqai.com/careers-sitemap.xml', '<urlset><url><loc><![CDATA[' + jobUrl + ']]></loc><lastmod>2026-09-01</lastmod></url></urlset>'],
     [jobUrl, '<section><h2>Senior Cloud Service Engineer</h2><p>G7 CR Technologies India Pvt Ltd</p><ul><li>Industry: IT/Cloud Services Location: Bangalore</li></ul><p>Support Azure customers.</p></section><a href="#career_detail">Apply now</a><div id="career_detail">Application form</div>'],

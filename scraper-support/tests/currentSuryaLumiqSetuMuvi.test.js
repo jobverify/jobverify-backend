@@ -107,11 +107,11 @@ test('SuryaLogix and Setu reject an added unparsed hiring handoff beside valid r
 
 test('Current SuryaLogix, Lumiq, Setu and Muvi catalog records match their verified live contracts', async () => {
   const {getScraperCatalog}=await import('../providers/index.js')
-  for(const [source,platform] of [['suryalogix','first-party-inline-walk-in-openings'],['lumiq','zohorecruit'],['setu','first-party-careers-plus-turbohire-links'],['muvientertainment','first-party-careers-pagination-plus-job-details']]) {
+  for(const [source,platform] of [['suryalogix','first-party-careers-application-popup'],['lumiq','zohorecruit'],['setu','first-party-careers-plus-turbohire-links'],['muvientertainment','first-party-careers-pagination-plus-job-details']]) {
     const shared=getScraperCatalog().find(p=>p.source===source)
     const {default:local}=await import('../../scraper/'+source+'/catalog.js')
     assert.equal(local.atsPlatform,platform)
     for(const key of ['atsPlatform','verifiedOn','verifiedSurfaceSummary','paginationStrategy','extractionStrategy'])assert.equal(shared[key],local[key],source+' '+key)
-    assert.equal(shared.verifiedOn,source==='muvientertainment'?'2026-10-03':'2026-09-13')
+    assert.equal(shared.verifiedOn,['muvientertainment','suryalogix'].includes(source)?'2026-10-09':'2026-09-13')
   }
 })

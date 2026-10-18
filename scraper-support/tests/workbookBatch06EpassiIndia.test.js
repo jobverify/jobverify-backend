@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import fs from 'node:fs/promises'
 
 const VERIFIED_CAREERS_HTML = `
 <!doctype html>
@@ -45,6 +46,7 @@ const VERIFIED_NON_INDIA_DETAIL_HTML = `
 <html>
   <head>
     <title>Staff Applied AI Engineer - Epassi | Jobylon</title>
+    <meta property="og:url" content="https://emp.jobylon.com/jobs/372856-epassi-staff-applied-ai-engineer/">
   </head>
   <body>
     <script type="application/ld+json">
@@ -91,6 +93,7 @@ const VERIFIED_NON_INDIA_DETAIL_HTML_TWO = `
 <html>
   <head>
     <title>B2B Marketing Manager - Sports Activation - Epassi | Jobylon</title>
+    <meta property="og:url" content="https://emp.jobylon.com/jobs/370526-epassi-b2b-marketing-manager-sports-activation/">
   </head>
   <body>
     <script type="application/ld+json">
@@ -125,6 +128,7 @@ const VERIFIED_INDIA_DETAIL_HTML = `
 <html>
   <head>
     <title>Staff Applied AI Engineer - Epassi | Jobylon</title>
+    <meta property="og:url" content="https://emp.jobylon.com/jobs/372856-epassi-staff-applied-ai-engineer/">
   </head>
   <body>
     <script type="application/ld+json">
@@ -173,7 +177,7 @@ test('Epassi India validates the verified first-party careers shell and public J
   assert.equal(epassiindia.SOURCE, 'epassiindia')
   assert.equal(epassiindia.COMPANY, 'Epassi India')
   assert.equal(epassiindia.OFFICIAL_BRAND, 'Epassi')
-  assert.equal(epassiindia.VERIFIED_ON, '2026-07-25')
+  assert.equal(epassiindia.VERIFIED_ON, '2026-10-09')
   assert.equal(epassiindia.CAREERS_URL, 'https://www.epassi.com/careers')
   assert.equal(epassiindia.JOBYLON_COMPANY_ID, 2253)
   assert.equal(epassiindia.JOBYLON_EMBED_URL, 'https://cdn.jobylon.com/jobs/companies/2253/embed/v1/?target=jobylon-jobs-widget&page_size=10')
@@ -181,7 +185,7 @@ test('Epassi India validates the verified first-party careers shell and public J
     epassiindia.DISPOSITION,
     'verified-first-party-careers-page-plus-public-jobylon-embed-and-detail-pages',
   )
-  assert.match(epassiindia.VERIFIED_SURFACE_SUMMARY, /Saturday, July 25, 2026/)
+  assert.match(epassiindia.VERIFIED_SURFACE_SUMMARY, /2026-10-09/)
   assert.match(epassiindia.VERIFIED_SURFACE_SUMMARY, /https:\/\/www\.epassi\.com\/careers/i)
   assert.match(epassiindia.VERIFIED_SURFACE_SUMMARY, /company id 2253/i)
   assert.match(epassiindia.VERIFIED_SURFACE_SUMMARY, /no public roles exposed India as a location/i)
@@ -325,4 +329,101 @@ test('Epassi India fails closed when the public Jobylon embed or detail contract
     }),
     /expected title/i,
   )
+})
+
+test('Epassi India parses every current embedded page when a summary location is unpublished', async () => {
+  const epassiindia = await loadModule()
+  const embed = await fs.readFile(new URL('../../scraper/epassiindia/fixtures/jobylon-current-embed.js', import.meta.url), 'utf8')
+  const listings = epassiindia.extractJobylonListings(embed)
+  assert.equal(listings.length, 17)
+  assert.equal(new Set(listings.map(job => job.jobId)).size, 17)
+  assert.equal(listings[0].jobId, '389049')
+  assert.equal(listings[0].location, null)
+  assert.equal(listings.at(-1).jobId, '343629')
+})
+
+test('Epassi India requires public detail country coverage for an unpublished listing location', async () => {
+  const epassiindia = await loadModule()
+  const embed = VERIFIED_JOBYLON_EMBED_JS.replace('Finland +7 more', '')
+  const jobs = await epassiindia.run({
+    fetchText: async url => url === epassiindia.CAREERS_URL ? VERIFIED_CAREERS_HTML
+      : url === epassiindia.JOBYLON_EMBED_URL ? embed
+        : url.includes('372856') ? VERIFIED_INDIA_DETAIL_HTML : VERIFIED_NON_INDIA_DETAIL_HTML_TWO,
+  })
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].location, 'Bengaluru, Karnataka, India')
+  assert.equal(jobs[0].jobDescription, 'Build platform capabilities for India and Europe.')
+})
+
+test('Epassi India accepts the actual explicit Europe-based role and rejects unclassified remote vacancies', async () => {
+  const epassiindia = await loadModule()
+  const detail = await fs.readFile(new URL('../../scraper/epassiindia/fixtures/detail-389049.html', import.meta.url), 'utf8')
+  const listing = { jobId: '389049', title: 'Enterprise Systems Specialist', sourceUrl: 'https://emp.jobylon.com/jobs/389049-epassi-enterprise-systems-specialist/' }
+  assert.equal(epassiindia.extractIndiaJobFromDetail(listing, detail), null)
+  assert.throws(() => epassiindia.extractIndiaJobFromDetail(listing, detail.replace('Europe-based role', 'global role')), /country.*coverage|location.*coverage/i)
+})
+
+test('Epassi India rejects a detail identity mismatch even when its title matches', async () => {
+  const epassiindia = await loadModule()
+  const listing = epassiindia.extractJobylonListings(VERIFIED_JOBYLON_EMBED_JS)[0]
+  assert.throws(() => epassiindia.extractIndiaJobFromDetail(listing, VERIFIED_INDIA_DETAIL_HTML.replace('/jobs/372856-', '/jobs/999999-')), /detail.*identity/i)
+})
+
+test('Epassi India rejects an advertised client page omitted from the embed', async () => {
+  const epassiindia = await loadModule()
+  const missingPage = VERIFIED_JOBYLON_EMBED_JS.replace('</ul><small class="jobylon-powered-by">', '<li><a class="js-jobylon-show-page" data-page="2">2</a></li></ul><small class="jobylon-powered-by">')
+  assert.throws(() => epassiindia.extractJobylonListings(missingPage), /pagination|embedded.*page/i)
+})
+
+test('Epassi India refuses missing employer and country metadata rather than claiming a complete empty inventory', async () => {
+  const epassiindia = await loadModule()
+  const listing = epassiindia.extractJobylonListings(VERIFIED_JOBYLON_EMBED_JS)[0]
+  assert.throws(() => epassiindia.extractIndiaJobFromDetail(listing, VERIFIED_NON_INDIA_DETAIL_HTML.replace('"name": "Epassi"', '"name": "Unknown"')), /company identity/i)
+  const ambiguous = VERIFIED_NON_INDIA_DETAIL_HTML.replaceAll('"FI"', '""').replaceAll('"DE"', '""').replace('"streetAddress": "Finland"', '"streetAddress": ""').replace('"streetAddress": "Germany"', '"streetAddress": ""')
+  assert.throws(() => epassiindia.extractIndiaJobFromDetail(listing, ambiguous), /country.*coverage|location.*coverage/i)
+})
+
+test('Epassi India requires every public detail fetch and marks a listing limit incomplete', async () => {
+  const epassiindia = await loadModule()
+  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+  const fetchText = async url => url === epassiindia.CAREERS_URL ? VERIFIED_CAREERS_HTML
+    : url === epassiindia.JOBYLON_EMBED_URL ? VERIFIED_JOBYLON_EMBED_JS
+      : url.includes('372856') ? VERIFIED_INDIA_DETAIL_HTML : VERIFIED_NON_INDIA_DETAIL_HTML_TWO
+  const complete = await epassiindia.run({ fetchText })
+  assert.equal(readInventoryEvidence(complete).listingComplete, true)
+  assert.equal(readInventoryEvidence(complete).reportedTotal, 2)
+  const limited = await epassiindia.run({ maxJobs: 1, fetchText })
+  assert.equal(limited[0].sourceListingComplete, false)
+  assert.equal(readInventoryEvidence(limited).listingComplete, false)
+  await assert.rejects(epassiindia.run({ fetchText: async url => url.includes('/jobs/372856-') ? Promise.reject(Error('HTTP 403 for public detail')) : fetchText(url) }), /HTTP 403/i)
+})
+
+test('Epassi India catalog records the complete verified current global inventory and India subset', async () => {
+  const local = (await import('../../scraper/epassiindia/catalog.js')).default
+  const { getScraperCatalog } = await import('../providers/index.js')
+  const provider = getScraperCatalog().find(item => item.source === 'epassiindia')
+  for (const entry of [local, provider]) {
+    assert.equal(entry.verifiedOn, '2026-10-09')
+    assert.equal(entry.verifiedPublicJobCount, 17)
+    assert.equal(entry.verifiedIndiaJobCount, 0)
+    assert.match(entry.verifiedSurfaceSummary, /17 distinct Epassi vacancies across two complete embedded pages/i)
+    assert.match(entry.verifiedSurfaceSummary, /Europe-based role/i)
+  }
+})
+
+test('Epassi India rejects unrecognized declared countries instead of classifying Remote or ZZ as foreign', async () => {
+  const epassiindia = await loadModule()
+  const detail = await fs.readFile(new URL('../../scraper/epassiindia/fixtures/detail-389049.html', import.meta.url), 'utf8')
+  const listing = { jobId: '389049', title: 'Enterprise Systems Specialist', sourceUrl: 'https://emp.jobylon.com/jobs/389049-epassi-enterprise-systems-specialist/' }
+  for (const country of ['Remote', 'ZZ', 'Atlantis']) {
+    const modified = detail.replace('"streetAddress": ""', '"addressCountry": "' + country + '", "streetAddress": ""')
+    assert.throws(() => epassiindia.extractIndiaJobFromDetail(listing, modified), /unknown|unrecognized.*country|country.*coverage/i)
+  }
+})
+
+test('Epassi India rejects a foreign country declaration that contradicts an explicit India address', async () => {
+  const epassiindia = await loadModule()
+  const listing = epassiindia.extractJobylonListings(VERIFIED_JOBYLON_EMBED_JS)[0]
+  assert.throws(() => epassiindia.extractIndiaJobFromDetail(listing, VERIFIED_INDIA_DETAIL_HTML.replace('"addressCountry": "IN"', '"addressCountry": "DE"')), /country.*conflict|country.*contradict/i)
 })

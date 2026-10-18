@@ -33,6 +33,7 @@ const CHECKPOINT_RESULT_FIELDS = [
   'filteredOld',
   'filteredClosed',
   'filteredInvalidUrl',
+  'filteredEmptyDescription',
   'retentionDays',
   'durationMs',
 ]

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import {
   CAREERS_ROUTE_URLS,
@@ -118,8 +119,9 @@ test('Eko current public and corporate homepage contracts stay verified', () => 
   assert.equal(isMissingCorporateSitemap(missingCorporateSitemap), true)
 })
 
-test('Eko scraper returns [] while both public surfaces remain careers-free', async () => {
+test('Eko scraper records incomplete discovery rather than certifying zero vacancies', async () => {
   const jobs = await createEkoScraper().run({
+    now: () => '2026-10-09T00:00:00Z',
     fetchPage: async (url) => {
       if (url === HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
       if (url === CORPORATE_HOMEPAGE_URL) return { status: 200, url, html: corporateHomepageHtml }
@@ -135,4 +137,9 @@ test('Eko scraper returns [] while both public surfaces remain careers-free', as
   })
 
   assert.deepEqual(jobs, [])
+  assert.deepEqual(readInventoryEvidence(jobs), {
+    status: 'discovery-only', surface: HOMEPAGE_URL, firstParty: true, listingComplete: false,
+    pagesFetched: 18, reportedTotal: null, indiaFacetCount: null, verifiedAt: '2026-10-09T00:00:00.000Z',
+    reason: 'first-party-pages-and-missing-careers-routes-do-not-prove-active-vacancy-inventory',
+  })
 })

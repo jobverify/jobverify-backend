@@ -25,9 +25,9 @@ const aboutHtml = `
   </head>
   <body>
     <h1>About Airtel Payments Bank</h1>
-    <p>Bharti Airtel's Banking Venture</p>
+    <p>the parent company's Banking Venture</p>
     <p>As India's first Payments Bank, we aim to give every Indian access to an equal, effective, and trustworthy banking experience.</p>
-    <p>Airtel Payments Bank was launched in January 2017, by Bharti Airtel, India's largest telecom provider, to support the cashless revolution promised by the Government of India.</p>
+    <p>Airtel Payments Bank was launched in January 2017, by the parent company, India's largest telecom provider, to support the cashless revolution promised by the Government of India.</p>
     <h2>Meet our board of directors</h2>
   </body>
 </html>

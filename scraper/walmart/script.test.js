@@ -266,3 +266,14 @@ test('run fails closed when the verified Walmart surface drifts or starts exposi
     /public India keyword probe now returns India-located jobs/i,
   )
 })
+
+
+test('Walmart accepts current Next title attributes while preserving every branded careers handoff', async () => {
+  const walmart = await loadWalmartModule(), { readFile } = await import('node:fs/promises')
+  const guards = [walmart.hasOfficialHomepageSignal, walmart.hasTechnologyPageSignal, walmart.hasCorporatePageSignal]
+  for (const [index, guard] of guards.entries()) {
+    const html = await readFile(new URL('./fixtures/current-20261009-' + index + '.html', import.meta.url), 'utf8')
+    assert.equal(guard(html), true)
+    assert.equal(guard(html.replace(/<title[^>]*>[^<]*<\/title>/, '<title data-next-head="">Other employer</title>')), false)
+  }
+})

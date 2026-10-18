@@ -1,0 +1,18 @@
+{
+  "capturedAt": "2026-10-08T18:31:04.064Z",
+  "pages": [
+    {
+      "url": "https://www.mcmenon.com/",
+      "status": 200,
+      "finalUrl": "https://www.mcmenon.com/",
+      "title": "McMenon Engineering | Flow &amp; Temperature Instruments UK"
+    },
+    {
+      "url": "https://www.mcmenon.com/careers/",
+      "status": 200,
+      "finalUrl": "https://www.mcmenon.com/careers/",
+      "title": "Careers | McMenon Engineering"
+    }
+  ],
+  "notes": "Unmodified first-party HTML responses. Careers explicitly renders Current vacancies and There are no current vacancies at the moment."
+}

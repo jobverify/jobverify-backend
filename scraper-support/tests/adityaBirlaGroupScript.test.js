@@ -203,3 +203,55 @@ test('Aditya Birla Group fails closed when the verified homepage, careers handof
     /public jobs surface now exposes openings/i,
   )
 })
+
+const fetchAfterHomepageFailure = (adityaBirlaGroup, homepageError, {
+  careersHtml = verifiedCareersHomeHtml,
+  jobSearchHtml = verifiedZeroJobsHtml,
+} = {}) => async (url) => {
+  if (url === adityaBirlaGroup.HOMEPAGE_URL) throw homepageError
+  if (url === adityaBirlaGroup.CAREERS_HOME_URL) return careersHtml
+  if (url === adityaBirlaGroup.JOB_SEARCH_URL) return jobSearchHtml
+  throw new Error('Unexpected URL: ' + url)
+}
+
+const gatewayFailure = (status) => new Error('Shared fetch exhausted retries', {
+  cause: Object.assign(new Error('HTTP ' + status + ' for https://www.adityabirla.com/'), { status }),
+})
+
+for (const status of [502, 503, 504]) {
+  test('Aditya Birla Group verifies the careers inventory when its corporate homepage returns HTTP ' + status, async () => {
+    const adityaBirlaGroup = await loadModule()
+    const jobs = await adityaBirlaGroup.run({
+      fetchText: fetchAfterHomepageFailure(adityaBirlaGroup, gatewayFailure(status)),
+    })
+    assert.deepEqual(jobs, [])
+  })
+}
+
+for (const [name, surface, expectedError] of [
+  ['careers branding changes', { careersHtml: '<html><title>Other Company</title></html>' }, /verified public careers homepage/i],
+  ['careers handoff changes', { careersHtml: verifiedCareersHomeHtml.replace('/job-search', '/different-openings') }, /verified public job-search route/i],
+  ['search exposes openings', { jobSearchHtml: verifiedOpeningHtml }, /public jobs surface now exposes openings/i],
+  ['zero-jobs evidence disappears', { jobSearchHtml: '<html><title>Maintenance</title></html>' }, /verified zero-jobs shell/i],
+]) {
+  test('Aditya Birla Group fails closed during a homepage outage when ' + name, async () => {
+    const adityaBirlaGroup = await loadModule()
+    await assert.rejects(adityaBirlaGroup.run({
+      fetchText: fetchAfterHomepageFailure(adityaBirlaGroup, gatewayFailure(502), surface),
+    }), expectedError)
+  })
+}
+
+for (const homepageError of [
+  Object.assign(new Error('HTTP 403 for https://www.adityabirla.com/'), { status: 403 }),
+  Object.assign(new Error('HTTP 404 for https://www.adityabirla.com/'), { status: 404 }),
+  Object.assign(new Error('The operation was aborted'), { name: 'AbortError' }),
+  new Error('Unknown homepage failure'),
+]) {
+  test('Aditya Birla Group preserves non-gateway homepage failure: ' + homepageError.message, async () => {
+    const adityaBirlaGroup = await loadModule()
+    await assert.rejects(adityaBirlaGroup.run({
+      fetchText: fetchAfterHomepageFailure(adityaBirlaGroup, homepageError),
+    }), (error) => error === homepageError)
+  })
+}

@@ -140,6 +140,17 @@ test('Interra Information Technologies helpers stay pinned to the verified first
   )
 })
 
+test('Interra Information Technologies keeps validating the handoff after the careers SEO title changes', async () => {
+  const interra = await loadModule()
+  const currentCareers = careersHtml.replace(
+    'Careers at Ferfier Technologies | Shape the Future with Innovation',
+    'Careers at InterraIT | Jobs in AI, Cloud &amp; Cybersecurity',
+  )
+  assert.equal(interra.hasOfficialCareersSignal(currentCareers), true)
+  assert.equal(interra.hasOfficialCareersSignal(currentCareers.replace('Explore Open Positions', 'Unrelated link').replace('/explore-open-positions/', '/unrelated/')), false)
+  assert.equal(interra.hasOfficialCareersSignal(currentCareers.replace('Careers at InterraIT', 'Careers at Another Company')), false)
+})
+
 test('Interra Information Technologies run validates the careers shell and filters the first-party Keka jobs payload to India roles', async () => {
   const interra = await loadModule()
   const requestedTexts = []

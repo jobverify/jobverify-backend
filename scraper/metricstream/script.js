@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import {
   buildInitialSearchDwrBody,
   buildPaginatedSearchDwrBody,
@@ -164,7 +165,8 @@ const buildRequiredSkills = (html) => {
   return skills
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -534,7 +536,7 @@ const runDirectCareers = async ({ careersHtml, fetchText, now }) => {
       throw new Error('MetricStream first-party detail identity or content changed materially')
     }
     if (!/\bIndia\b/i.test(location)) {
-      throw Object.assign(new Error('MetricStream incomplete country scope: conflicting listing and detail locations for ' + listing.sourceUrl), {softFailure: true, upstreamOutage: false, failureKind: 'incomplete_location_scope', abortRetries: true})
+      throw Object.assign(new Error('MetricStream incomplete country scope: conflicting listing and detail locations for ' + listing.sourceUrl), {softFailure: true, upstreamOutage: false, failureKind: 'incomplete_location_scope', abortRetries: true, sourceUrl: listing.sourceUrl, listingLocation: listing.location, detailLocation: location})
     }
     jobs.push({ ...listing, company: COMPANY_NAME, source: SOURCE, country: 'India', city: location.split(',')[0].trim(), location,
       requisitionId: listing.jobId, applyUrl: listing.sourceUrl, link: listing.sourceUrl, jobDescription: stripTags(content),
@@ -543,21 +545,191 @@ const runDirectCareers = async ({ careersHtml, fetchText, now }) => {
   return jobs
 }
 
+
+export const LINKEDIN_EMPLOYER_URL = 'https://www.linkedin.com/company/metricstream'
+export const LINKEDIN_JOBS_URL = LINKEDIN_EMPLOYER_URL + '/jobs'
+
+const subsetContractError = (message) => Object.assign(new Error('MetricStream employer LinkedIn subset: ' + message), {
+  softFailure: true, upstreamOutage: false, failureKind: 'incomplete_listing', abortRetries: true,
+})
+
+const hasLinkedInEmployerHandoff = html => /<a\b[^>]*href=["']https:\/\/www\.linkedin\.com\/company\/metricstream\/?["'][^>]*>/i.test(
+  String(html ?? '').replace(/<!--[\s\S]*?-->|<script\b[\s\S]*?<\/script>/gi, ''),
+)
+
+const isLinkedInEmployerUrl = value => {
+  try {
+    const url = new URL(decodeHtmlEntities(value))
+    return url.protocol === 'https:' && !url.username && !url.password && !url.port
+      && ['www.linkedin.com', 'in.linkedin.com'].includes(url.hostname)
+      && /^\/company\/metricstream\/?$/.test(url.pathname)
+      && [...url.searchParams.keys()].every(key => key === 'trk') && !url.hash
+  } catch { return false }
+}
+
+const canonicalLinkedInJobUrl = (value, id) => {
+  try {
+    const url = new URL(decodeHtmlEntities(value))
+    if (url.protocol !== 'https:' || url.username || url.password || url.port || url.hash
+      || !['www.linkedin.com', 'in.linkedin.com', 'uk.linkedin.com'].includes(url.hostname)
+      || !new RegExp('^/jobs/view/[a-z0-9-]+-' + id + '$').test(url.pathname)
+      || ![...url.searchParams.keys()].every(key => ['refId', 'trackingId', 'trk'].includes(key))) return null
+    url.search = ''
+    return url.href
+  } catch { return null }
+}
+
+export const fetchLinkedInPublicText = async (url, { signal, fetchImpl = fetch } = {}) => {
+  signal?.throwIfAborted()
+  const response = await fetchImpl(url, {
+    headers: { 'User-Agent': USER_AGENT, Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8' },
+    signal: AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(15000)]),
+  })
+  if (!response.ok) throw Object.assign(new Error('HTTP ' + response.status + ' for ' + url), { status: response.status, abortRetries: true })
+  if (response.url !== url) throw subsetContractError('final redirect changed the published authority: ' + response.url)
+  const html = await response.text()
+  signal?.throwIfAborted()
+  return html
+}
+
+const readLinkedInCards = html => {
+  const page = String(html ?? '')
+  const canonical = page.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i)?.[1]
+  const sections = [...page.matchAll(/<section\b[^>]*data-test-id=["']jobs-at["'][^>]*>([\s\S]*?)<\/section>/gi)]
+  if (canonical !== LINKEDIN_JOBS_URL || !/<title>\s*MetricStream:\s*Jobs\s*\|\s*LinkedIn\s*<\/title>/i.test(page)
+    || sections.length !== 1 || !/Jobs at MetricStream/.test(stripTags(sections[0][1]) || '')) throw subsetContractError('company feed identity changed')
+  const section = sections[0][1]
+  const starts = [...section.matchAll(/<div\b[^>]*data-entity-urn=["']urn:li:jobPosting:(\d+)["'][^>]*>/gi)]
+  if (!starts.length || starts.length > 100) throw subsetContractError('visible role inventory is missing or unbounded')
+  const seen = new Set()
+  return starts.map((start, index) => {
+    const block = section.slice(start.index, starts[index + 1]?.index ?? section.length)
+    const id = start[1]
+    const href = block.match(/<a\b[^>]*class=["'][^"']*\bbase-card__full-link\b[^"']*["'][^>]*href=["']([^"']+)["']/i)?.[1]
+    const sourceUrl = canonicalLinkedInJobUrl(href, id)
+    const title = stripTags(block.match(/<h3\b[^>]*class=["'][^"']*\bbase-main-card__title\b[^"']*["'][^>]*>([\s\S]*?)<\/h3>/i)?.[1])
+    const employer = block.match(/<a\b[^>]*href=["']([^"']+)["'][^>]*data-tracking-control-name=["']org-job-results_main-jobs-card-subtitle["'][^>]*>([\s\S]*?)<\/a>/i)
+    const location = stripTags(block.match(/<span\b[^>]*class=["'][^"']*\bmain-job-card__location\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/i)?.[1])
+    const postingDate = block.match(/<time\b[^>]*datetime=["'](\d{4}-\d{2}-\d{2})["']/i)?.[1]
+    if (!sourceUrl || !title || !location || !postingDate || !Number.isFinite(Date.parse(postingDate))
+      || !employer || !isLinkedInEmployerUrl(employer[1]) || stripTags(employer[2]) !== COMPANY_NAME || seen.has(id)) throw subsetContractError('malformed, duplicate, or foreign-employer role card')
+    seen.add(id)
+    return { id, title, sourceUrl, location, postingDate }
+  })
+}
+
+const readLinkedInIndiaDetail = (html, card, checkedAt) => {
+  const page = String(html ?? '')
+  const canonical = page.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i)?.[1]
+  const title = stripTags(page.match(/<h1\b[^>]*class=["'][^"']*\btop-card-layout__title\b[^"']*["'][^>]*>([\s\S]*?)<\/h1>/i)?.[1])
+  const location = stripTags(page.match(/<span\b[^>]*class=["'][^"']*\btopcard__flavor--bullet\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/i)?.[1])
+  const employer = page.match(/<a\b[^>]*data-tracking-control-name=["']public_jobs_topcard-org-name["'][^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i)
+  const schemas = []
+  for (const match of page.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    let data
+    try { data = JSON.parse(match[1]) } catch { throw subsetContractError('malformed published job schema') }
+    schemas.push(...(Array.isArray(data) ? data : [data]).filter(item => item?.['@type'] === 'JobPosting'))
+  }
+  const job = schemas[0]
+  const address = job?.jobLocation?.address
+  const description = stripTags(decodeHtmlEntities(job?.description))
+  const visibleDescription = stripTags(page.match(/<div\b[^>]*class=["'][^"']*\bshow-more-less-html__markup\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/i)?.[1])
+  if (schemas.length !== 1 || canonical !== card.sourceUrl || title !== card.title || job?.title !== card.title
+    || !employer || !isLinkedInEmployerUrl(employer[1]) || stripTags(employer[2]) !== COMPANY_NAME
+    || job?.hiringOrganization?.name !== COMPANY_NAME || !isLinkedInEmployerUrl(job?.hiringOrganization?.sameAs)) throw subsetContractError('job identity or employer does not match the current company card')
+  const workplaceParts = (location || '').split(',').map(part => part.trim())
+  const indianRegions = new Set([
+    'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana',
+    'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
+    'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana',
+    'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Andaman and Nicobar Islands', 'Chandigarh',
+    'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry',
+  ])
+  const visibleRegion = workplaceParts.length === 3 ? workplaceParts[1] : null
+  if (location !== card.location || ![2, 3].includes(workplaceParts.length) || workplaceParts.at(-1) !== 'India'
+    || (visibleRegion !== null && !indianRegions.has(visibleRegion))
+    || !['IN', 'India'].includes(address?.addressCountry) || !address?.addressLocality
+    || workplaceParts[0] !== address.addressLocality
+    || (address.addressRegion != null && (!indianRegions.has(address.addressRegion) || address.addressRegion !== visibleRegion))) {
+    throw subsetContractError('conflicting or unverified native India workplace country')
+  }
+  const jdWorkplace = stripTags(decodeHtmlEntities(job.description).match(/<p\b[^>]*>\s*Job Location:\s*[-–]?\s*([^<]+)/i)?.[1])
+  if (jdWorkplace && ![location, location.replace(/,\s*India$/i, ''), address.addressLocality, 'India'].includes(jdWorkplace)) {
+    throw subsetContractError('conflicting explicit JD workplace: ' + jdWorkplace)
+  }
+  const posted = Date.parse(job.datePosted), closes = Date.parse(job.validThrough), now = Date.parse(checkedAt)
+  if (!Number.isFinite(posted) || !Number.isFinite(closes) || !Number.isFinite(now)
+    || posted > now || closes <= now || closes <= posted || job.datePosted.slice(0, 10) !== card.postingDate
+    || /No longer accepting applications/i.test(stripTags(page) || '')
+    || !/<button\b[^>]*data-tracking-control-name=["']public_jobs_apply-link-onsite["'][^>]*>\s*Apply\s*<\/button>/i.test(page)) throw subsetContractError('job is not a currently open native application')
+  if (!description || description.length < 300 || description !== visibleDescription) throw subsetContractError('published job description is missing or conflicts with visible content')
+  return {
+    title: card.title, company: COMPANY_NAME, source: SOURCE, jobId: card.id, requisitionId: null,
+    location, city: address.addressLocality, country: 'India', department: null,
+    sourceUrl: card.sourceUrl, applyUrl: card.sourceUrl, link: card.sourceUrl,
+    employmentType: job.employmentType || null, postingDate: new Date(posted).toISOString(), closingDate: new Date(closes).toISOString(),
+    jobDescription: description, requiredSkills: [], experienceRequired: null, minimumQualification: null, preferredQualification: null,
+    sourceListingComplete: false, scrapedAt: checkedAt,
+  }
+}
+
+const runLinkedInIndiaSubset = async ({ fetchLinkedInText, signal, now, conflict }) => {
+  const read = async url => {
+    signal?.throwIfAborted()
+    const html = await fetchLinkedInText(url, { signal })
+    signal?.throwIfAborted()
+    return html
+  }
+  const cards = readLinkedInCards(await read(LINKEDIN_JOBS_URL))
+  const checkedAt = now()
+  const jobs = []
+  for (const card of cards) {
+    if (!/,\s*India$/i.test(card.location)) continue
+    jobs.push(readLinkedInIndiaDetail(await read(card.sourceUrl), card, checkedAt))
+  }
+  if (!jobs.length) throw subsetContractError('no current independently verified India roles; primary country conflict remains unresolved')
+  const fingerprint = list => JSON.stringify(list.map(card => [card.id, card.title, card.sourceUrl, card.location, card.postingDate]))
+  const snapshot = readLinkedInCards(await read(LINKEDIN_JOBS_URL))
+  if (fingerprint(cards) !== fingerprint(snapshot)) throw subsetContractError('company listing changed during traversal')
+  return attachInventoryEvidence(jobs, {
+    status: 'coverage-gap', firstParty: true, listingComplete: false, surface: LINKEDIN_JOBS_URL,
+    pagesFetched: 1, reportedTotal: null, indiaFacetCount: null, verifiedAt: checkedAt,
+    reason: 'Primary ' + conflict.sourceUrl + ' listing ' + conflict.listingLocation + ' conflicts with detail ' + conflict.detailLocation
+      + '; employer LinkedIn guest feed is a partial public subset; global and India inventory totals remain unknown.',
+  })
+}
+
 export const createMetricStreamScraper = ({
   fetchText = defaultFetchText,
+  fetchLinkedInText = fetchLinkedInPublicText,
   getSearchPages = (options = {}) => getLiveSearchPages({ ...options, fetchText }),
   now = () => new Date().toISOString(),
   maxPages = DEFAULT_MAX_PAGES,
 } = {}) => ({
-  async run() {
-    const homepageHtml = await fetchText(HOMEPAGE_URL)
+  async run({ signal } = {}) {
+    const read = async url => {
+      signal?.throwIfAborted()
+      const html = await fetchText(url, { signal })
+      signal?.throwIfAborted()
+      return html
+    }
+    const homepageHtml = await read(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml)) {
       throw new Error('MetricStream verified official homepage changed materially')
     }
 
-    const careersHtml = await fetchText(CAREERS_PAGE_URL)
+    const careersHtml = await read(CAREERS_PAGE_URL)
     if (hasDirectCareersSignal(careersHtml)) {
-      return runDirectCareers({ careersHtml, fetchText, now })
+      try {
+        return await runDirectCareers({ careersHtml, fetchText: read, now })
+      } catch (error) {
+        if (error?.failureKind !== 'incomplete_location_scope' || !hasLinkedInEmployerHandoff(careersHtml)) throw error
+        try { return await runLinkedInIndiaSubset({ fetchLinkedInText, signal, now, conflict: error }) }
+        catch (subsetError) {
+          subsetError.primaryInventoryConflict = error.message
+          throw subsetError
+        }
+      }
     }
     if (!hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('MetricStream verified official careers page changed materially')
@@ -625,7 +797,7 @@ export const createMetricStreamScraper = ({
   },
 })
 
-export const run = async (options = {}) => createMetricStreamScraper(options).run()
+export const run = async (options = {}) => createMetricStreamScraper(options).run({ signal: options.signal })
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

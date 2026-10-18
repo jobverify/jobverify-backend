@@ -372,3 +372,59 @@ test('Agiloft India fails closed when the verified careers surface or Lever boar
     /verified public lever board/i,
   )
 })
+
+test('Agiloft India accepts posting turnover that removes United Kingdom from the public board', async () => {
+  const agiloftIndia = await loadAgiloftIndiaModule()
+  const contractedLocationsHtml = currentLeverBoardHtml.replace(/\s*<li>United Kingdom<\/li>/, '')
+  const jobs = await agiloftIndia.run({
+    fetchPage: async (url) => {
+      if (url === agiloftIndia.CAREERS_ENTRY_URL) {
+        return { status: 200, url, html: officialCareersHtml }
+      }
+      if (url === agiloftIndia.LEVER_BOARD_URL) {
+        return { status: 200, url, html: contractedLocationsHtml }
+      }
+      throw new Error(`Unexpected page URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      assert.equal(url, 'https://api.lever.co/v0/postings/agiloft?mode=json')
+      return liveBoardShapeWithoutIndiaJobs
+    },
+  })
+
+  assert.deepEqual(jobs, [])
+})
+
+test('Agiloft India can extract India roles when the board has no historical overseas locations', async () => {
+  const agiloftIndia = await loadAgiloftIndiaModule()
+  const indiaOnlyBoardHtml = `
+    <html><head><title>Agiloft</title></head><body>
+      <section>Location type</section><section>Location</section>
+      <ul><li>Bengaluru, India</li></ul>
+      <section>Team</section><section>Work type</section>
+      <a href="https://jobs.lever.co/agiloft/india-solution-architect">Senior Solution Architect</a>
+    </body></html>
+  `
+  const jobs = await agiloftIndia.run({
+    now: () => '2026-10-08T17:20:00.000Z',
+    fetchPage: async (url) => {
+      if (url === agiloftIndia.CAREERS_ENTRY_URL) {
+        return { status: 200, url, html: officialCareersHtml }
+      }
+      if (url === agiloftIndia.LEVER_BOARD_URL) {
+        return { status: 200, url, html: indiaOnlyBoardHtml }
+      }
+      throw new Error(`Unexpected page URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      assert.equal(url, 'https://api.lever.co/v0/postings/agiloft?mode=json')
+      return sampleLeverJobs.filter(job => job.id === 'india-solution-architect')
+    },
+  })
+
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, 'india-solution-architect')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].source, 'agiloftindia')
+  assert.equal(jobs[0].scrapedAt, '2026-10-08T17:20:00.000Z')
+})

@@ -1,5 +1,5 @@
 ﻿export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 15, 2026 that https://eko.in/ is the live Eko Bharat Ventures Private Limited homepage, that it advertises https://about.eko.in/ as the corporate site, and that neither first-party homepage exposes a careers or jobs link or ATS handoff. Verified that https://eko.in/robots.txt and https://eko.in/sitemap.xml are live first-party crawl surfaces that do not advertise any careers route, that https://about.eko.in/robots.txt is live and disallows all crawling, that https://about.eko.in/sitemap.xml returned a first-party 404, and that common first-party jobs routes on both hosts such as /careers, /career, /jobs, /join-us, /work-with-us, and /openings returned first-party 404 pages. There is no trustworthy public jobs surface on Eko\'s verified first-party web properties.'
+  "Verified October 9, 2026: https://eko.in/ is the Eko Bharat Ventures Private Limited homepage and links https://about.eko.in/. Both captured first-party homepage responses have no public hiring signal or careers/ATS handoff; the corporate homepage is a client shell. https://eko.in/robots.txt and https://eko.in/sitemap.xml advertise no careers route, and https://about.eko.in/robots.txt disallows crawling. https://about.eko.in/sitemap.xml and twelve common /careers, /career, /jobs, /join-us, /work-with-us and /openings routes across both hosts return first-party 404 responses. These inspected surfaces establish incomplete discovery rather than a complete active vacancy inventory or an authoritative zero statement, so public and India vacancy counts remain unknown."
 
 export const EKO_CATALOG = {
   source: 'eko',
@@ -18,10 +18,13 @@ export const EKO_CATALOG = {
   countryFilter: 'India',
   paginationStrategy: 'verified-homepage-plus-corporate-homepage-plus-crawl-surface-plus-common-careers-route-validation',
   extractionStrategy:
-    'verified-homepage+verified-corporate-homepage+verified-crawl-surfaces-without-careers+verified-missing-common-careers-routes-return-empty',
+    'verified-homepage+verified-corporate-homepage+verified-crawl-surfaces-without-careers+verified-missing-common-careers-routes+incomplete-discovery',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-10-09',
+  verifiedPublicJobCount: null,
+  verifiedIndiaJobCount: null,
+  zeroResultPolicy: 'discovery-only',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

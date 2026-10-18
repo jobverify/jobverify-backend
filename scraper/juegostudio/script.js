@@ -1,3 +1,4 @@
+import {runPublicLinkedIn,fetchPublicPage} from './publicLinkedIn.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -186,121 +187,13 @@ const buildBlockedCareersSurfaceError = (error) => {
   return upstreamError
 }
 
-export const createJuegoStudioScraper = ({
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchBrowserText } = {}) {
-    let browserSession = null
-
-    const getBrowserSession = async () => {
-      if (!browserSession) {
-        browserSession = await createBrowserFetchSession({ userAgent: USER_AGENT })
-      }
-
-      return browserSession
-    }
-
-    const browserTextFetcher = fetchBrowserText || (async (url) => {
-      const session = await getBrowserSession()
-      return session.fetchText(url)
-    })
-
-    const fetchPageText = async (url) => {
-      try {
-        return await fetchText(url)
-      } catch (error) {
-        if (!isBrowserFallbackError(error)) {
-          throw error
-        }
-
-        try {
-          return await browserTextFetcher(url)
-        } catch (browserError) {
-          if (isBrowserFallbackError(browserError)) {
-            throw buildBlockedCareersSurfaceError(browserError)
-          }
-          throw browserError
-        }
-      }
-    }
-
-    try {
-      let html
-      try {
-        html = await fetchPageText(CAREERS_URL)
-      } catch (error) {
-        if (!error?.upstreamOutage) {
-          throw error
-        }
-
-        let jhubHtml
-        try {
-          jhubHtml = await fetchText(JHUB_APPLICATION_URL)
-        } catch (fallbackError) {
-          fallbackError.abortRetries = true
-          throw fallbackError
-        }
-
-        if (!hasJhubApplicationSignal(jhubHtml)) {
-          throw error
-        }
-
-        return extractJhubOpenPositions(jhubHtml)
-          .sort((left, right) => left.title.localeCompare(right.title))
-          .map((job) => ({
-            title: job.title,
-            company: COMPANY,
-            location: job.location,
-            city: job.city,
-            state: job.state,
-            country: job.country,
-            department: job.department,
-            positionTitle: job.positionTitle,
-            experienceRequired: job.experienceRequired,
-            jobId: job.jobId,
-            requisitionId: job.requisitionId,
-            sourceUrl: job.sourceUrl,
-            applyUrl: job.applyUrl,
-            jobDescription: null,
-            source: SOURCE,
-            link: job.link,
-            scrapedAt: now(),
-          }))
-      }
-
-      if (!hasOfficialCareersSignal(html)) {
-        throw new Error('Juego Studio careers page changed materially')
-      }
-
-      return extractOpenPositions(html)
-        .sort((left, right) => left.title.localeCompare(right.title))
-        .map((job) => ({
-          title: job.title,
-          company: COMPANY,
-          location: job.location,
-          city: job.city,
-          state: job.state,
-          country: job.country,
-          department: job.department,
-          positionTitle: job.positionTitle,
-          experienceRequired: job.experienceRequired,
-          jobId: job.jobId,
-          sourceUrl: job.sourceUrl,
-          applyUrl: job.applyUrl,
-          jobDescription: null,
-          source: SOURCE,
-          link: job.link,
-          scrapedAt: now(),
-        }))
-    } finally {
-      if (browserSession) {
-        await browserSession.close()
-      }
-    }
-  },
+export const createJuegoStudioScraper = ({now=()=>new Date().toISOString()}={})=>({
+ async run(options={}){
+  const fetchPage=options.fetchPage||(options.fetchText?async(url,context)=>({status:200,url,html:await options.fetchText(url,context)}):fetchPublicPage)
+  return runPublicLinkedIn({...options,fetchPage,now:options.now||now})
+ }
 })
-
-export const run = async (options = {}) => createJuegoStudioScraper(options).run(options)
+export const run = (options={})=>createJuegoStudioScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

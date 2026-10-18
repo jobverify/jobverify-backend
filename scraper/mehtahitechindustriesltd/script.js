@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -33,7 +34,7 @@ const toTextLines = (value) => decodeHtmlEntities(String(value ?? ''))
   .replace(/<[^>]+>/g, ' ')
   .replace(/\u00a0/g, ' ')
   .split(/\r?\n/)
-  .map((line) => normalizeWhitespace(line)?.replace(/^"+|"+$/g, ''))
+  .map((line) => normalizeWhitespace(line)?.replace(/["”]\s+Less$/i, '').replace(/^"+|"+$/g, ''))
   .map((line) => normalizeWhitespace(line))
   .filter(Boolean)
 
@@ -78,8 +79,8 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const hasOfficialHomepageSignal = (html) => {
-  const page = String(html ?? '')
-  return /<title>\s*Mehta Hitech Industries Limited - Manufacturer of Fiber Laser Cutting Machine from Ahmedabad\s*<\/title>/i.test(page)
+  const page = decodeHtmlEntities(String(html ?? ''))
+  return /<title>\s*Mehta Hitech Industries Limited - (?:Exporter & )?Manufacturer of Fiber Laser Cutting Machine from Ahmedabad\s*<\/title>/i.test(page)
     && /Mehta Hitech Industries Limited/i.test(page)
     && /Kathawada,\s*Ahmedabad,\s*Gujarat/i.test(page)
 }
@@ -156,6 +157,11 @@ export const extractPublicListings = (html) => {
   }
 
   const page = String(html ?? '')
+  const openingCount = [...page.matchAll(/<section\b[^>]*class=["'][^"']*\bcareer-opening\b[^"']*["'][^>]*>/gi)].length
+    + [...page.matchAll(/<div[^>]*class=["'][^"']*\bpflInrHdng\b[^"']*["'][^>]*>\s*<h3[^>]*>/gi)].length
+  if (openingCount !== 1) {
+    throw new Error('Mehta Hitech Industries Ltd. verified single-opening inventory changed')
+  }
   const openingHtml = page.match(/<section\b[^>]*class=["'][^"']*\bcareer-opening\b[^"']*["'][^>]*>([\s\S]*?)<\/section>/i)?.[1]
 
   if (!openingHtml) {
@@ -191,6 +197,7 @@ export const extractPublicListings = (html) => {
         `Company: ${COMPANY}`,
         `Location: ${city}`,
         `Qualification: ${liveOpening.qualification}`,
+        `Skills Required: ${joinUnique(liveOpening.skills)}`,
         `Year of experience: ${liveOpening.experienceRequired}`,
         `Notes: ${liveOpening.summary}`,
       ].join(' | '),
@@ -234,6 +241,7 @@ export const extractPublicListings = (html) => {
       `Company: ${COMPANY}`,
       `Location: ${city}`,
       `Qualification: ${qualification}`,
+      `Skills Required: ${joinUnique(skills)}`,
       `Year of experience: ${experienceRequired}`,
       `Notes: ${summary}`,
     ].join(' | '),
@@ -248,7 +256,7 @@ export const createMehtaHitechIndustriesLtdScraper = ({ now = () => new Date().t
     }
 
     const careersHtml = await fetchText(CAREERS_URL)
-    return extractPublicListings(careersHtml).map((job) => ({
+    const jobs = extractPublicListings(careersHtml).map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
@@ -257,6 +265,11 @@ export const createMehtaHitechIndustriesLtdScraper = ({ now = () => new Date().t
       companyDomain: 'mehtahitech.com',
       atsPlatform: 'official-company-careers',
     }))
+    return attachInventoryEvidence(jobs, {
+      status: 'complete-inventory', surface: CAREERS_URL, firstParty: true, listingComplete: true,
+      pagesFetched: 1, reportedTotal: jobs.length, indiaFacetCount: jobs.length,
+      verifiedAt: (overrideNow || now)(), reason: 'verified-single-opening-profile-and-application-form',
+    })
   },
 })
 

@@ -268,3 +268,13 @@ test('AutoPi fails closed when the verified careers shell or role detail apply s
     /verified role detail surface/i,
   )
 })
+
+
+const emptyOfficialCareersHtml = '<html><head><title>Join Our Team | AutoPi Careers</title></head><body><div>// open positions</div><h2>Roles we\'re hiring for</h2><p>No open positions right now - but we\'re always interested in great people.</p></body></html>'
+
+test('AutoPi returns an empty inventory when its verified careers page explicitly has no open positions', async () => {
+  const autoPi = await loadModule()
+  const jobs = await autoPi.createAutoPiScraper().run({ fetchText: async () => emptyOfficialCareersHtml })
+  assert.deepEqual(jobs, [])
+  await assert.rejects(autoPi.createAutoPiScraper().run({ fetchText: async () => emptyOfficialCareersHtml.replace('No open positions right now', 'Please check back later') }), /verified official careers surface/)
+})

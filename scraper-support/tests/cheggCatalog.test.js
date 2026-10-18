@@ -9,13 +9,13 @@ test('getScraperCatalog includes Chegg on the verified official jobs page and Wo
   assert.ok(provider, 'Expected Chegg provider to be registered in customProviders.json')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Chegg')
-  assert.equal(provider.companyCareerPage, 'https://www.chegg.com/about/working-at-chegg/jobs/')
+  assert.equal(provider.companyCareerPage, 'https://osv-chegg.wd5.myworkdayjobs.com/Chegg')
   assert.equal(provider.atsPlatform, 'workday')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'official-careers-handoff-plus-workday-runner')
+  assert.equal(provider.paginationStrategy, 'verified-workday-board-plus-workday-runner')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-careers-page+verified-workday-handoff+workday-detail-pages',
+    'verified-workday-board+workday-detail-pages',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

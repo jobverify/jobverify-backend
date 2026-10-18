@@ -34,8 +34,9 @@ test('disabled or exhausted CLI runs do not connect to MongoDB or start a model'
   const cwd = await fs.mkdtemp(path.join(tmpdir(), 'description-disabled-'));
   t.after(() => fs.rm(cwd, { recursive: true, force: true }));
   for (const [mode, budget, reason] of [['off', '1200', 'disabled'], ['publish', '0', 'workflow_budget_exhausted']]) {
-    const { stdout } = await exec(process.execPath, [script, '--apply'], { cwd, windowsHide: true,
-      env: { ...process.env, MONGO_URI: '', JOB_DESCRIPTION_REWRITE_MODE: mode, JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS: budget } });
-    assert.equal(JSON.parse(stdout.trim().split('\n').at(-1)).reason, reason);
+    const error = await exec(process.execPath, [script, '--apply'], { cwd, windowsHide: true,
+      env: { ...process.env, MONGO_URI: '', JOB_DESCRIPTION_REWRITE_MODE: mode, JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS: budget } }).then(() => assert.fail('Unfinished or disabled generation must not report success'), error => error);
+    assert.equal(error.code, 1);
+    assert.equal(JSON.parse(error.stdout.trim().split('\n').at(-1)).reason, reason);
   }
 });

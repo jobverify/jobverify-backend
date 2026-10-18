@@ -17,9 +17,9 @@ export const SHORE_INFOTECH_INDIA_CATALOG = {
   extractionStrategy: 'verified-homepage+verified-contact-page+verified-missing-careers-routes-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-27',
+  verifiedOn: '2026-10-09',
   verifiedSurfaceSummary:
-    'Verified on Monday, July 27, 2026 that https://www.shoregrp.com/ remained the live first-party Shore Group site for the Shore Infotech India business family, that the contact handoff had moved to https://www.shoregrp.com/contact, and that common first-party careers routes such as /careers, /jobs, /join-us, and /openings still returned empty 404 surfaces rather than a trustworthy public careers or jobs page.',
+    'Verified on 2026-10-09 that https://www.shoregrp.com/ remains the first-party Shore Group homepage for the Shore Infotech India business family, and https://www.shoregrp.com/contact identifies the Hyderabad office. Current digital-services and operations-discovery-call copy is verified; /careers, /jobs, /join-us and /openings return first-party 404s. This is discovery-only evidence of checked routes, with incomplete inventory and unknown vacancy counts.',
   dryRunFile: 'shoreinfotechindia/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

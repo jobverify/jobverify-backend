@@ -17,9 +17,9 @@
     'verified-homepage+verified-about-page+verified-contact-page-without-public-jobs-return-empty',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-02',
+  verifiedOn: '2026-10-08',
   verifiedSurfaceSummary:
-    'Verified on Sunday, August 2, 2026 that https://kapiva.in/, https://kapiva.in/about-us/, and https://kapiva.in/contact-us/ are live first-party Kapiva surfaces. The homepage is now a commerce storefront while the contact page still exposes the recruiting email careers@kapiva.in under "For openings and collaboration" through Cloudflare-protected email markup, but there are still no trustworthy public job listings, ATS handoff, role cards, or JobPosting markup, so the scraper returns an empty array until a real public jobs surface appears.',
+    "Verified on Thursday, October 8, 2026 that https://kapiva.in/, https://kapiva.in/about-us/, and https://kapiva.in/contact-us/ are live first-party Kapiva surfaces. The About page now presents science-backed Ayurveda and seed-to-batch verification with a canonical Kapiva URL and Adret Retail legal identity. The contact page still exposes careers@kapiva.in under \"For openings and collaboration\" through Cloudflare-protected email markup. These routes and the official static sitemap expose no trustworthy public job listings or ATS handoff, and /careers/, /career/, and /jobs/ return branded 404 pages; this remains a non-listing sentinel rather than a verified count of zero company vacancies.",
 }
 
 export default KAPIVA_CATALOG

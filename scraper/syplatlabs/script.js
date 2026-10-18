@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -34,7 +35,7 @@ const USER_AGENT =
 
 const HOMEPAGE_SIGNAL_PATTERNS = [
   /<title>\s*SYplat Labs\s*(?:-|&#8212;|&mdash;|\u2014)\s*The autonomous trust fabric for AI-driven enterprises\s*<\/title>/i,
-  /<meta[^>]+name="description"[^>]+semantic security fabric[^>]+SAP Build Partner\.[^>]+Microsoft AI Cloud Partner\./i,
+  /<meta[^>]+name="description"[^>]+semantic security fabric[^>]+SAP Build Partner\.(?:\s*Microsoft AI Cloud Partner\.)?["']/i,
   /<meta[^>]+name="author"[^>]+content="SYplat Labs"/i,
   /<script[^>]+src="\/assets\/index-[^"]+\.js"/i,
   /<div id="root"><\/div>/i,
@@ -164,7 +165,7 @@ export const createSyplatLabsScraper = () => ({
       }
     }
 
-    return []
+    return attachInventoryEvidence([], { status: 'discovery-only', surface: REDIRECTED_HOMEPAGE_URL, firstParty: true, listingComplete: false, pagesFetched: 2 + CAREERS_ROUTE_URLS.length, reportedTotal: null, indiaFacetCount: null, verifiedAt: new Date().toISOString(), reason: 'verified-company-shell-and-complete-client-route-map-no-public-careers-route' })
   },
 })
 

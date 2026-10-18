@@ -36,6 +36,15 @@ const careersHtml = `
 </html>
 `
 
+test('Frontegg recognizes its current SEO title while retaining the verified careers body checks', async () => {
+  const { hasOfficialCareersPageSignal } = await import('../../scraper/frontegg/script.js')
+  const current = careersHtml.replace('<title>Careers at Frontegg</title>',
+    '<title>Careers at Frontegg | Open Roles in Identity &amp; AI Security</title>')
+  assert.equal(hasOfficialCareersPageSignal(current), true)
+  assert.equal(hasOfficialCareersPageSignal(current.replace(/Current openings/gi, 'Unrelated content')), false)
+  assert.equal(hasOfficialCareersPageSignal(current.replaceAll('Frontegg', 'Other company')), false)
+})
+
 const seniorBackendDetailHtml = `
 <!doctype html>
 <html lang="en">

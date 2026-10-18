@@ -11,7 +11,7 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('Innoval Digital Solutions local catalog captures the verified first-party recruiting teaser sentinel contract', async () => {
+test('Innoval Digital Solutions local catalog captures the verified first-party public careers portal contract', async () => {
   const { INNOVAL_DIGITAL_SOLUTIONS_CATALOG, default: defaultCatalog } = await loadCatalogModule()
 
   assert.equal(defaultCatalog, INNOVAL_DIGITAL_SOLUTIONS_CATALOG)
@@ -19,23 +19,23 @@ test('Innoval Digital Solutions local catalog captures the verified first-party 
   assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.companyName, 'Innoval Digital Solutions')
   assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.officialBrandName, 'Innoval Digital Solutions')
   assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.adapter, 'script')
-  assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.companyCareerPage, 'https://www.ivldsp.com/company/')
+  assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.companyCareerPage, 'https://career.ivldsp.in/portal/')
   assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.companyDomain, 'ivldsp.com')
-  assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.atsPlatform, 'official-company-careers-portal')
   assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.countryFilter, 'India')
-  assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.paginationStrategy, 'verified-company-page-recruiting-teaser-only')
+  assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.paginationStrategy, 'complete-server-rendered-job-cards-no-pagination')
   assert.equal(
     INNOVAL_DIGITAL_SOLUTIONS_CATALOG.extractionStrategy,
-    'verified-first-party-company-page+verified-recruiting-teaser+no-trustworthy-inline-openings-return-empty',
+    'verified-company-client-cta+secure-portal-redirect+all-cards-and-application-details+active-india',
   )
   assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.parser, 'custom-script')
   assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.modulePath, '../../scraper/innovaldigitalsolutions/script.js')
-  assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.verifiedOn, '2026-08-02')
+  assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.verifiedOn, '2026-10-09')
   assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.dryRunFile, 'innovaldigitalsolutions/jobs.json')
-  assert.match(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.verifiedSurfaceSummary, /https:\/\/www\.ivldsp\.com\/company\//i)
-  assert.match(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.verifiedSurfaceSummary, /Life @ IVL/i)
-  assert.match(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.verifiedSurfaceSummary, /SAP BTP company overview/i)
+  assert.equal(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.companyPageUrl, 'https://www.ivldsp.com/company/?tab=careers')
+  assert.match(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.verifiedSurfaceSummary, /secure.*portal/i)
+  assert.match(INNOVAL_DIGITAL_SOLUTIONS_CATALOG.verifiedSurfaceSummary, /complete.*card/i)
 })
 
 test('Innoval Digital Solutions exact backlog row resolves directly from local provider metadata', async () => {

@@ -9,6 +9,7 @@ import {
   runScraperWithTimeout,
 } from '../scraper-support/runner.js'
 import { mapWithConcurrency } from '../scraper-support/utils/mapWithConcurrency.js'
+import { resolveConfiguredParallelScraperConcurrency } from '../scraper-support/utils/parallelConcurrency.js'
 import { withRetry } from '../scraper-support/utils/retry.js'
 import { saveDryRunSnapshot } from '../scraper-support/utils/saveToDB.js'
 
@@ -17,7 +18,6 @@ const backendDir = path.resolve(currentDir, '..')
 const scraperRoot = path.join(backendDir, 'scraper')
 const outputDir = path.join(backendDir, 'artifacts', 'coverage-gap-analysis')
 const DRY_RUN_EXPERIENCE_ENRICHMENT_CONCURRENCY = 2
-const DEFAULT_CONCURRENCY = 1
 
 const parseArgValue = (flag) => {
   const index = process.argv.indexOf(flag)
@@ -154,7 +154,7 @@ const main = async () => {
   const onlySources = normalizeSourceSet(parseArgValue('--only'))
   const limitArg = parseArgValue('--limit')
   const limit = limitArg == null ? null : parsePositiveInt(limitArg, null)
-  const concurrency = parsePositiveInt(parseArgValue('--concurrency'), DEFAULT_CONCURRENCY)
+  const concurrency = parsePositiveInt(parseArgValue('--concurrency'), resolveConfiguredParallelScraperConcurrency())
   const label = parseArgValue('--label') || 'missing-dry-run-backfill'
   const startedAtIso = new Date().toISOString()
 

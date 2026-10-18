@@ -58,9 +58,11 @@ test('Muvi Entertainment local catalog captures the verified first-party paginat
     provider.extractionStrategy,
     'verified-first-party-careers-handoff+all-listing-pages+validated-job-details+explicit-india-scope',
   )
-  assert.equal(provider.verifiedOn, '2026-09-13')
+  assert.equal(provider.verifiedOn, '2026-10-09')
   assert.match(provider.verifiedSurfaceSummary, /Automation Engineer/i)
-  assert.match(provider.verifiedSurfaceSummary, /sourceListingComplete:false/i)
+  assert.match(provider.verifiedSurfaceSummary, /fail.closed/i)
+  assert.equal(provider.verifiedPublicJobCount, 3)
+  assert.equal(Object.hasOwn(provider, 'verifiedIndiaJobCount'), false)
 
   assertCatalogMatchesBacklogRow({
     provider,

@@ -120,7 +120,7 @@ export const hasOfficialHomepageSignal = (html = '') => {
     && /href=["'][^"']*pages\/investor-relations["']/i.test(rawHtml)
     && normalized.includes('one network')
     && normalized.includes('simplifying construction')
-    && /delivery\.arisinfra\.com\/privacy-policy/i.test(rawHtml)
+    && /(?:delivery\.arisinfra\.com|connect\.aris\.in)\/privacy-policy/i.test(rawHtml)
 }
 
 export const hasVerifiedCareersPageSignal = (html = '') => {

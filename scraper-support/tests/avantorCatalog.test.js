@@ -6,14 +6,14 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes the Avantor Phenom script provider with official metadata', () => {
+test('getScraperCatalog includes the Avantor current Paradox script provider with official metadata', () => {
   const catalog = getScraperCatalog()
   const provider = catalog.find((item) => item.source === 'avantor')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'phenom')
-  assert.match(provider.companyCareerPage, /careers\.avantorsciences\.com/i)
+  assert.equal(provider.atsPlatform, 'paradox-careersites')
+  assert.equal(provider.companyCareerPage, 'https://careers.avantorsciences.com/jobs/page/1?filter[country][0]=India')
 })
 
 test('buildScrapers exposes a runnable Avantor scraper without changing the runner contract', () => {

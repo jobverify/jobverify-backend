@@ -117,3 +117,14 @@ test('unchanged legacy provenance initializes a baseline without historical back
   const changed = buildDescriptionSourceUpdate({ ...incoming, sourceExperienceRequired: 'At least 3 years of experience' }, legacy, { mode: 'publish' });
   assert.equal(changed.descriptionRewrite.status, 'pending');
 });
+
+test('source hashes preserve line boundaries used to interpret required and preferred facts',()=>{
+ const a=buildRewriteInput({title:'Engineer',sourceDescription:'Build reliable software for customer services.\nRequirements:\nA Computer Science degree is required.\nPreferred Experience:\nAWS cloud development experience.'});
+ const b=buildRewriteInput({title:'Engineer',sourceDescription:'Build reliable software for customer services. Requirements: A Computer Science degree is required. Preferred Experience: AWS cloud development experience.'});
+ assert.notEqual(a.inputHash,b.inputHash);
+});
+test('hash-format migration does not backfill an unchanged preserved employer source',()=>{
+ const job={title:'Engineer',company:'Example',description:'Responsibilities: Build reliable Python applications for customer services. Requirements: A Computer Science degree and software development experience are required for this role.'};
+ const existing={...job,sourceDescription:job.description,description:'Published display wording',sourceContentHash:'old-normalized-source-hash',descriptionRewrite:{status:'published',inputHash:'old-normalized-source-hash',attempts:1}};
+ const update=buildDescriptionSourceUpdate(job,existing,{mode:'publish'});assert.equal(update.description,undefined);assert.equal(update.descriptionRewrite,undefined);assert.equal(update['descriptionRewrite.inputHash'],update.sourceContentHash);assert.equal(update.sourceContentHashVersion,2);
+});

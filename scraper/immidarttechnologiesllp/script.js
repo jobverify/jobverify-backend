@@ -179,12 +179,18 @@ export const extractEmbeddedJobs = (bundleJs) => {
     throw new Error('Immidart embedded first-party job payload no longer contains public openings')
   }
 
-  const jobs = parsed
-    .map(sanitizeEmbeddedJob)
-    .filter((job) => job.id && job.title && job.location && job.experience && job.department)
+  if (parsed.some((job) => !job || typeof job !== 'object' || Array.isArray(job)
+    || (Object.hasOwn(job, 'active') && typeof job.active !== 'boolean'))) {
+    throw new Error('Immidart embedded first-party job payload has an invalid active state')
+  }
 
-  if (jobs.length === 0) {
+  // The first-party client displays records whose active flag is not false.
+  const jobs = parsed.filter((job) => job.active !== false).map(sanitizeEmbeddedJob)
+  if (jobs.some((job) => !job.id || !job.title || !job.location || !job.experience || !job.department)) {
     throw new Error('Immidart embedded first-party job payload no longer contains parseable public openings')
+  }
+  if (new Set(jobs.map((job) => job.id)).size !== jobs.length) {
+    throw new Error('Immidart embedded first-party job payload contains duplicate opening identities')
   }
 
   return jobs

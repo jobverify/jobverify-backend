@@ -7,17 +7,17 @@ import {
   getScraperCatalog,
 } from '../providers/index.js'
 
-test('getScraperCatalog includes Simplilearn as an official WP Job Openings script provider', () => {
+test('getScraperCatalog includes Simplilearn as an official CEIPAL career portal script provider', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'simplilearn')
 
   assert.ok(provider)
   assert.equal(provider.companyName, 'Simplilearn')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.atsPlatform, 'wp-job-openings')
+  assert.equal(provider.atsPlatform, 'ceipal-public-career-portal')
   assert.equal(provider.companyCareerPage, 'https://www.simplilearn.com/job-openings')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'wp-json-page-query')
-  assert.equal(provider.extractionStrategy, 'official-careers-page+awsm-rest-api')
+  assert.equal(provider.paginationStrategy, 'complete-ceipal-count-and-page-validation')
+  assert.equal(provider.extractionStrategy, 'verified-official-ceipal-iframe+complete-public-listing+all-detail-employer-and-india-validation')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.companyDomain, 'simplilearn.com')
   assert.match(provider.modulePath, /simplilearn[\\/]script\.js$/i)

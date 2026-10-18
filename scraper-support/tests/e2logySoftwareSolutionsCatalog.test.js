@@ -12,24 +12,24 @@ const modulePath = path.resolve(currentDir, '../../scraper/e2logysoftwaresolutio
 
 const loadCatalogModule = async () => import('../../scraper/e2logysoftwaresolutions/catalog.js')
 
-test('E2logy Software Solutions local catalog captures the verified Zoho widget contract', async () => {
+test('E2logy Software Solutions local catalog captures the verified current first-party careers contract', async () => {
   const { E2LOGY_SOFTWARE_SOLUTIONS_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(E2LOGY_SOFTWARE_SOLUTIONS_CATALOG)
 
   assert.equal(defaultCatalog, E2LOGY_SOFTWARE_SOLUTIONS_CATALOG)
   assert.equal(provider.source, 'e2logysoftwaresolutions')
   assert.equal(provider.companyName, 'E2logy Software Solutions')
-  assert.equal(provider.companyCareerPage, 'https://e2logy.com/careers/')
+  assert.equal(provider.companyCareerPage, 'https://e2logy.com/careers')
   assert.equal(provider.companyDomain, 'e2logy.com')
-  assert.equal(provider.atsPlatform, 'official-careers-page-embedded-zoho-recruit')
+  assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-careers-page-plus-zoho-public-openings-api')
+  assert.equal(provider.paginationStrategy, 'verified-first-party-empty-state-or-embedded-zoho-api')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+verified-embedded-zoho-public-openings-api',
+    'verified-first-party-careers-empty-state+legacy-zoho-only-when-embedded',
   )
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 8, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /zohorecruit/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'E2logy Software Solutions'), false)
 })

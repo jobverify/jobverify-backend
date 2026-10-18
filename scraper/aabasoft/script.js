@@ -322,8 +322,9 @@ const normalizeCurrentPostingDate = (value) => {
 }
 
 export const normalizeCurrentJobs = (items, now) => {
+  // The official careers UI reuses a title-based URL for roles in different cities.
+  // CMS IDs identify distinct roles even when their application URLs match.
   const ids = new Set()
-  const urls = new Set()
   return items.map((item) => {
     const title = normalizeText(item?.properties?.cdVacancyTitle?.value)
     const guid = String(item?.guid ?? '')
@@ -331,11 +332,10 @@ export const normalizeCurrentJobs = (items, now) => {
     const slug = slugify(title)
     const sourceUrl = `${CURRENT_CAREERS_URL}${slug}`
     if (item?.contentType !== 'careerDetails' || !title || !/^[0-9a-f-]{36}$/i.test(guid)
-      || !city || !slug || ids.has(guid) || urls.has(sourceUrl)) {
+      || !city || !slug || ids.has(guid)) {
       throw new Error('Aabasoft current jobs inventory contains an invalid or duplicate role')
     }
     ids.add(guid)
-    urls.add(sourceUrl)
     const department = normalizeText(item.properties.cdDepartment?.value?.[0]?.name)
     const type = normalizeText(item.properties.cdJobType?.value?.[0]?.name)
     const description = stripTags(item.properties.cdDescription?.value?.markup)

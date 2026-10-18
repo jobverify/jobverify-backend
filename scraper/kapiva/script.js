@@ -113,12 +113,19 @@ export const hasVerifiedHomepageSignal = (html = '') => {
 export const hasVerifiedAboutPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
-
-  return /<title\b[^>]*>\s*Explore Ayurveda Products for Healthy Life\s*\|\s*Kapiva\s*\|\s*<\/title>/i.test(page)
-    && normalized.includes('ABOUT US')
+  const legacyContent = normalized.includes('ABOUT US')
     && normalized.includes('Kapiva tri-dosha synergy is an ever growing family')
     && normalized.includes('Your simple guide to everyday Ayurveda')
-  }
+  const currentContent = /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/kapiva\.in\/about-us\/["']/i.test(page)
+    && /<meta\b[^>]*property=["']og:title["'][^>]*content=["']About Kapiva \| Science-backed Ayurveda["']/i.test(page)
+    && normalized.includes('About Kapiva')
+    && normalized.includes('Science-backed Ayurveda. And we can prove it.')
+    && normalized.includes('From seed to your health report.')
+    && normalized.includes('Kapiva is a company of Adret Retail Private Limited')
+
+  return /<title\b[^>]*>\s*Explore Ayurveda Products for Healthy Life\s*\|\s*Kapiva\s*(?:\|\s*)?<\/title>/i.test(page)
+    && (legacyContent || currentContent)
+}
 
 export const hasVerifiedContactPageSignal = (html = '') => {
   const page = String(html ?? '')

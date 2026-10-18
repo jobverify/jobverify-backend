@@ -1,6 +1,6 @@
 param(
   [ValidateRange(1, 100)]
-  [int]$Concurrency = 10,
+  [int]$Concurrency,
   [ValidateRange(1, 20)]
   [int]$WorkdayDetailFetchConcurrency = 1,
   [ValidateRange(0, 100)]
@@ -108,7 +108,10 @@ if (-not $isResume -and -not $NoClean.IsPresent) {
   }
 }
 
-$env:SCRAPER_CONCURRENCY = [string]$Concurrency
+# Preserve the inherited setting so the supervisor can also fall back to .env.
+if ($PSBoundParameters.ContainsKey('Concurrency')) {
+  $env:SCRAPER_CONCURRENCY = [string]$Concurrency
+}
 $env:WORKDAY_DETAIL_FETCH_CONCURRENCY = [string]$WorkdayDetailFetchConcurrency
 $env:NODE_OPTIONS = '--use-system-ca'
 foreach ($name in @('SCRAPER_ONLY', 'SCRAPER_START_AT', 'SCRAPER_START_AFTER')) {

@@ -14,6 +14,8 @@ export const HOMEPAGE_URL = 'https://isocrates.com/'
 export const CAREER_PAGE_URL = 'https://isocrates.com/careers/'
 export const EXPECTED_IDENTIFIER = '53772be4-e756-4beb-b9d6-91966b560812'
 export const EXPECTED_KEKA_DOMAIN = 'https://isocrates.keka.com/careers/'
+export const CURRENT_KEKA_DOMAIN = 'https://madtechai.keka.com/careers/'
+const VERIFIED_KEKA_DOMAINS = [EXPECTED_KEKA_DOMAIN, CURRENT_KEKA_DOMAIN]
 
 export const PROVIDER_METADATA = {
   source: SOURCE,
@@ -59,8 +61,10 @@ const parseQuotedConfigValue = (block, key) => {
 export const extractEmbeddedCareersDocumentPath = (html = '') =>
   String(html ?? '').match(/fetch\(['"]([^'"]+careerportal\/[^'"]+\.html)['"]\)/i)?.[1] ?? null
 
-export const extractDirectKekaBoardUrl = (html) =>
-  /https:\/\/isocrates\.keka\.com\/careers\/?/i.test(String(html ?? '')) ? EXPECTED_KEKA_DOMAIN : null
+export const extractDirectKekaBoardUrl = (html) => {
+  const match = String(html ?? '').match(/https:\/\/(isocrates|madtechai)\.keka\.com\/careers(?:\/|(?=["'\s?#<]|$))/i)
+  return match ? `https://${match[1].toLowerCase()}.keka.com/careers/` : null
+}
 
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
@@ -74,7 +78,7 @@ export const hasOfficialHomepageSignal = (html) => {
 
 export const hasOfficialCareersPageSignal = (html) => {
   const rawHtml = String(html ?? '')
-  const hasDirectKekaBoardHandoff = extractDirectKekaBoardUrl(rawHtml) === EXPECTED_KEKA_DOMAIN
+  const hasDirectKekaBoardHandoff = VERIFIED_KEKA_DOMAINS.includes(extractDirectKekaBoardUrl(rawHtml))
   const hasLegacyKekaEmbed =
     /window\.khConfig\s*=\s*\{/i.test(rawHtml)
     && /api\/embedjobs\/js\//i.test(rawHtml)
@@ -293,7 +297,7 @@ export const createIsocratesScraper = ({
         throw new Error('iSOCRATES careers page no longer exposes the verified Keka configuration')
       }
 
-      if (careerConfig.identifier !== EXPECTED_IDENTIFIER || careerConfig.domain !== EXPECTED_KEKA_DOMAIN) {
+      if (careerConfig.identifier !== EXPECTED_IDENTIFIER || !VERIFIED_KEKA_DOMAINS.includes(careerConfig.domain)) {
         throw new Error('iSOCRATES verified Keka job surface changed materially')
       }
 

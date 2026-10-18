@@ -5,7 +5,7 @@ import companyAliases from '../providers/companyAliases.json' with { type: 'json
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
 
-test('Courtclik is registered as a verified first-party zero-openings scraper without alias churn', () => {
+test('Courtclik is registered as a verified first-party careers API scraper without alias churn', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'courtclik')
 
   assert.ok(provider, 'Expected Courtclik provider to be registered in customProviders.json')
@@ -14,10 +14,10 @@ test('Courtclik is registered as a verified first-party zero-openings scraper wi
   assert.equal(provider.companyCareerPage, 'https://www.courtclick.com/career')
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-careers-page-validation')
+  assert.equal(provider.paginationStrategy, 'single-complete-first-party-careers-api-array')
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-first-party-careers-page+verified-no-roles-empty-state-return-empty',
+    'verified-official-homepage+verified-first-party-careers-page+complete-careers-api+india-location-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

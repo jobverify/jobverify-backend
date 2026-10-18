@@ -64,13 +64,13 @@ export const prepareRewriteRuntime = async ({ directory = path.join(root, '.cach
   return { modelFile, binary };
 };
 
-export const startRewriteWorker = async ({ modelFile, binary, port = 8766, threads = 2, deadline = Date.now() + 120000, signal, logFile = path.join(root, '.cache/scraper-actions/description-worker.log') }) => {
+export const startRewriteWorker = async ({ modelFile, binary, port = 8766, threads = REWRITE_MODEL.cpuThreads, deadline = Date.now() + 120000, signal, logFile = path.join(root, '.cache/scraper-actions/description-worker.log') }) => {
   const model = 'job-description-' + randomUUID();
   await fs.mkdir(path.dirname(logFile), { recursive: true });
   const log = await fs.open(logFile, 'w');
   const child = spawn(binary, ['-m', modelFile, '--host', '127.0.0.1', '--port', String(port),
-    '--alias', model, '-c', String(REWRITE_MODEL.contextTokens), '-np', '1', '-t', String(Math.max(1, Math.min(4, Number(threads) || 2))),
-    '-ngl', '0', '--no-context-shift', '--no-webui', '--log-disable'], { cwd: path.dirname(binary), windowsHide: true,
+    '--alias', model, '-c', String(REWRITE_MODEL.contextTokens), '-np', '1', '-t', String(Math.max(1, Math.min(4, Number(threads) || REWRITE_MODEL.cpuThreads))),
+    '-ngl', '0', '--jinja', '--no-context-shift', '--no-webui', '--log-disable'], { cwd: path.dirname(binary), windowsHide: true,
     env: { ...process.env, LD_LIBRARY_PATH: path.dirname(binary) + path.delimiter + (process.env.LD_LIBRARY_PATH || '') },
     stdio: ['ignore', log.fd, log.fd] });
   await log.close();

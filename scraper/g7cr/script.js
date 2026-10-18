@@ -156,10 +156,27 @@ const hasCanonical = (html, url) => [...String(html ?? '').matchAll(/<link\b[^>]
   .some(([tag]) => /rel=["']canonical["']/i.test(tag) && tag.match(/href=["']([^"']+)["']/i)?.[1] === url)
 
 const fetchMigratedJobs = async (fetchText, { now, maxJobs }) => {
-  const homepage = await fetchText('https://g7cr.com/')
-  if (!hasCanonical(homepage, CURRENT_ORIGIN + '/')
-    || !/https:\/\/www\.linkedin\.com\/company\/g7cr-technologies\/?["']/i.test(homepage)) {
-    throw new Error('G7 CR homepage no longer confirms the official Noventiq migration')
+  const homepage = await fetchText(CURRENT_ORIGIN + '/')
+  const hasCurrentBrandTitle = [...String(homepage).matchAll(/<title\b[^>]*>([\s\S]*?)<\/title>/gi)]
+    .some((match) => textFromHtml(match[1]) === 'Noventiq Global AI Solutions')
+  const hasG7CrCompanyLink = [...String(homepage).matchAll(/<a\b[^>]*>/gi)]
+    .some(([tag]) => /^https:\/\/www\.linkedin\.com\/company\/g7cr-technologies\/?$/.test(
+      tag.match(/href=["']([^"']+)["']/i)?.[1] || '',
+    ))
+  if (!hasCanonical(homepage, CURRENT_ORIGIN + '/') || !hasCurrentBrandTitle || !hasG7CrCompanyLink) {
+    throw new Error('G7 CR current official employer identity is not confirmed by the Noventiq homepage')
+  }
+  const about = await fetchText(CURRENT_ORIGIN + '/about/')
+  if (!hasCanonical(about, CURRENT_ORIGIN + '/about/')
+    || !/G7\s*CR Technologies is proudly part of Noventiq Global/i.test(textFromHtml(about) || '')) {
+    throw new Error('G7 CR current official employer identity is not confirmed by the Noventiq About page')
+  }
+  const privacy = await fetchText(CURRENT_ORIGIN + '/privacy-policy/')
+  const privacyText = textFromHtml(privacy) || ''
+  if (!hasCanonical(privacy, CURRENT_ORIGIN + '/privacy-policy/')
+    || !/NOVENTIQ GLOBAL AI SOLUTIONS PVT\.\s*LTD\./i.test(privacyText)
+    || !/Only authorized personnel from G7\s*CR TECHNOLOGIES PVT\.\s*LTD\./i.test(privacyText)) {
+    throw new Error('G7 CR current official employer identity is not confirmed by the Noventiq privacy policy')
   }
   const listingsHtml = await fetchText(CURRENT_JOBS_URL)
   if (!hasCanonical(listingsHtml, CURRENT_JOBS_URL) || !/Job Listings/i.test(listingsHtml)

@@ -3,7 +3,7 @@ import test from 'node:test'
 
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import companyAliases from '../providers/companyAliases.json' with { type: 'json' }
-import { hydrateProviderCatalogEntry } from '../providers/index.js'
+import { getScraperCatalog, hydrateProviderCatalogEntry } from '../providers/index.js'
 
 const loadCatalogModule = async () => {
   try {
@@ -46,18 +46,26 @@ test('Eko local catalog captures the verified first-party no-public-careers surf
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-corporate-homepage+verified-crawl-surfaces-without-careers+verified-missing-common-careers-routes-return-empty',
+    'verified-homepage+verified-corporate-homepage+verified-crawl-surfaces-without-careers+verified-missing-common-careers-routes+incomplete-discovery',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
+  assert.equal(provider.verifiedOn, '2026-10-09')
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
+  assert.equal(provider.zeroResultPolicy, 'discovery-only')
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/eko\.in\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/about\.eko\.in\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/eko\.in\/robots\.txt/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/eko\.in\/sitemap\.xml/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/about\.eko\.in\/robots\.txt/i)
   assert.match(provider.verifiedSurfaceSummary, /\/careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /unknown/i)
+  assert.match(provider.verifiedSurfaceSummary, /incomplete discovery/i)
+  const shared = getScraperCatalog().find(entry => entry.source === 'eko')
+  for (const key of ['verifiedOn', 'extractionStrategy', 'verifiedSurfaceSummary', 'verifiedPublicJobCount', 'verifiedIndiaJobCount', 'zeroResultPolicy']) {
+    assert.deepEqual(shared[key], provider[key], key)
+  }
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Eko'), false)
 
   assert.equal(eko.PROVIDER_METADATA.source, EKO_CATALOG.source)

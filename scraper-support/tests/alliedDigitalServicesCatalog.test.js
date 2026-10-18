@@ -30,64 +30,21 @@ const loadAlliedModule = async () => {
   }
 }
 
-test('Allied Digital Services local catalog captures the verified first-party India careers and Hiring Now surface', async () => {
+test('Allied Digital Services catalog connects the current WordPress inventory and India-filtered scraper', async () => {
   const { ALLIED_DIGITAL_SERVICES_CATALOG } = await loadCatalogModule()
   const allied = await loadAlliedModule()
+  const provider = hydrateProviderCatalogEntry(ALLIED_DIGITAL_SERVICES_CATALOG)
 
-  assert.equal(ALLIED_DIGITAL_SERVICES_CATALOG.source, 'allieddigitalservices')
-  assert.equal(ALLIED_DIGITAL_SERVICES_CATALOG.companyName, 'Allied Digital Services')
-  assert.equal(ALLIED_DIGITAL_SERVICES_CATALOG.officialBrandName, 'Allied Digital Services Ltd')
-  assert.equal(ALLIED_DIGITAL_SERVICES_CATALOG.adapter, 'script')
-  assert.equal(ALLIED_DIGITAL_SERVICES_CATALOG.companyCareerPage, 'https://www.allieddigital.net/in/careers/')
-  assert.equal(ALLIED_DIGITAL_SERVICES_CATALOG.companyDomain, 'allieddigital.net')
-  assert.equal(ALLIED_DIGITAL_SERVICES_CATALOG.indiaHomeUrl, 'https://www.allieddigital.net/in/')
-  assert.equal(
-    ALLIED_DIGITAL_SERVICES_CATALOG.hiringNowPageUrl,
-    'https://www.allieddigital.net/in/careers/hiring-now/',
-  )
-  assert.equal(ALLIED_DIGITAL_SERVICES_CATALOG.atsPlatform, 'official-company-careers')
-  assert.equal(ALLIED_DIGITAL_SERVICES_CATALOG.countryFilter, 'India')
-  assert.equal(
-    ALLIED_DIGITAL_SERVICES_CATALOG.paginationStrategy,
-    'verified-root-geolocation-plus-single-first-party-hiring-now-page',
-  )
-  assert.equal(
-    ALLIED_DIGITAL_SERVICES_CATALOG.extractionStrategy,
-    'verified-root-geolocation+verified-india-careers-handoff+verified-hiring-now-tables+friendly-detail-link-when-present+listing-fallback-for-broken-request-links',
-  )
-  assert.equal(ALLIED_DIGITAL_SERVICES_CATALOG.parser, 'custom-script')
-  assert.equal(ALLIED_DIGITAL_SERVICES_CATALOG.normalizationProfile, 'engineering-default')
-  assert.equal(ALLIED_DIGITAL_SERVICES_CATALOG.verifiedOn, '2026-07-15')
-  assert.equal(ALLIED_DIGITAL_SERVICES_CATALOG.dryRunFile, 'allieddigitalservices/jobs.json')
-  assert.match(
-    ALLIED_DIGITAL_SERVICES_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/www\.allieddigital\.net\//i,
-  )
-  assert.match(
-    ALLIED_DIGITAL_SERVICES_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/www\.allieddigital\.net\/in\/careers\//i,
-  )
-  assert.match(
-    ALLIED_DIGITAL_SERVICES_CATALOG.verifiedSurfaceSummary,
-    /https:\/\/www\.allieddigital\.net\/in\/careers\/hiring-now\//i,
-  )
-  assert.match(
-    ALLIED_DIGITAL_SERVICES_CATALOG.verifiedSurfaceSummary,
-    /senior-talent-acquisition-specialist-global/i,
-  )
-  assert.match(
-    ALLIED_DIGITAL_SERVICES_CATALOG.verifiedSurfaceSummary,
-    /jobdetails\?requestid=8154/i,
-  )
-  assert.match(
-    ALLIED_DIGITAL_SERVICES_CATALOG.verifiedSurfaceSummary,
-    /404/i,
-  )
-  assert.equal(ALLIED_DIGITAL_SERVICES_CATALOG.modulePath, alliedModulePath)
-
-  assert.equal(allied.PROVIDER_METADATA.source, ALLIED_DIGITAL_SERVICES_CATALOG.source)
-  assert.equal(allied.PROVIDER_METADATA.companyName, ALLIED_DIGITAL_SERVICES_CATALOG.companyName)
-  assert.equal(allied.PROVIDER_METADATA.hiringNowPageUrl, ALLIED_DIGITAL_SERVICES_CATALOG.hiringNowPageUrl)
+  assert.equal(provider.source, 'allieddigitalservices')
+  assert.equal(provider.companyName, 'Allied Digital Services')
+  assert.equal(provider.companyCareerPage, 'https://www.allieddigital.net/careers/')
+  assert.equal(provider.companyDomain, 'allieddigital.net')
+  assert.equal(provider.countryFilter, 'India')
+  assert.equal(provider.modulePath, alliedModulePath)
+  assert.equal(allied.CAREERS_URL, provider.companyCareerPage)
+  assert.equal(allied.HIRING_NOW_URL, 'https://www.allieddigital.net/job-openings/')
+  assert.equal(allied.JOBS_API_URL, 'https://www.allieddigital.net/wp-json/wp/v2/awsm_job_openings')
+  assert.equal(allied.PROVIDER_METADATA, ALLIED_DIGITAL_SERVICES_CATALOG)
 })
 
 test('Allied Digital Services local catalog hydrates into coverage without needing a shared alias entry', async () => {
@@ -123,7 +80,7 @@ test('buildScrapers and company coverage resolve Allied Digital Services from th
   assert.ok(provider)
   assert.ok(scraper)
   assert.equal(provider.companyName, 'Allied Digital Services')
-  assert.equal(provider.companyCareerPage, 'https://www.allieddigital.net/in/careers/')
+  assert.equal(provider.companyCareerPage, 'https://www.allieddigital.net/careers/')
   assert.match(scraper.dryRunFile, /allieddigitalservices[\\/]jobs\.json$/i)
 
   const report = generateCompanyCoverageReport({

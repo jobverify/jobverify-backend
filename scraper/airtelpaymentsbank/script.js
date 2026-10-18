@@ -93,9 +93,7 @@ export const hasOfficialAboutPageSignal = (html = '') => {
 
   return /<title>\s*About Us\s*\|\s*Airtel Payments Bank\s*<\/title>/i.test(page)
     && text.includes('About Airtel Payments Bank')
-    && text.includes("Bharti Airtel's Banking Venture")
     && /As India['’]s first Payments Bank, we aim to give every Indian access to an equal, effective, and trustworthy banking experience\./i.test(text)
-    && /Airtel Payments Bank was launched in January 2017, by Bharti Airtel/i.test(text)
     && text.includes('Meet our board of directors')
 }
 

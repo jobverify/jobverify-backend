@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveClassification, applyClassification, buildClassificationInput, CLASSIFICATION_POLICY } from '../src/services/jobClassificationPolicy.js';
-import { createJobClassifier } from '../scraper-support/utils/jobClassifier.js';
 
 const now = new Date('2026-10-03T12:00:00Z');
 const classify = job => applyClassification({ ...job, classification: resolveClassification(job, null, { now, mode: 'policy' }) });
@@ -230,18 +229,15 @@ test('incidental intern/student words, founding dates and education duration can
 test('policy publishing does not accept an uncalibrated model guess as fact', async () => {
   const input = buildClassificationInput({ title: 'Engineer', description: 'Develop software.' }, { now });
   const identity = Object.fromEntries(['modelRevision', 'runtimeVersion', 'runtimeHash', 'policyHash', 'calibrationHash'].map(key => [key, input[key]]));
-  const choices = { employment: 'internship', experience: 'fresher_eligible', seniority: 'internship', leadership: 'unknown' };
+  const choices = { jobType: 'Intern' };
   const answers = Object.fromEntries(Object.entries(CLASSIFICATION_POLICY.questions).map(([key, question]) => {
     const labels = Object.keys(question.criteria), choice = choices[key];
     return [key, { choice, probabilities: Object.fromEntries(labels.map(label => [label, label === choice ? .999 : .001 / (labels.length - 1)])) }];
   }));
-  const response = value => ({ ok: true, json: async () => value });
-  const client = createJobClassifier({ mode: 'policy', fetch: async url => url.endsWith('/health')
-    ? response({ ready: true, identity, enforceAllowed: false })
-    : response({ complete: true, windows: 1, identity, answers }) });
-  const [job] = await client.classifyJobs([{ title: 'Engineer', description: 'Develop software.' }], { now });
-  assert.notEqual(job.classification.status, 'accepted');
-  assert.equal(applyClassification(job).jobType, 'Unspecified');
+  const source = { title: 'Engineer', description: 'Develop software.' };
+  const result = resolveClassification(source, { complete: true, windows: 1, answers }, { mode: 'policy', now });
+  assert.notEqual(result.status, 'accepted');
+  assert.equal(applyClassification({ ...source, classification: result }).jobType, 'Unspecified');
 });
 
 test('source rules cannot turn a missing description into a complete model scan', () => {

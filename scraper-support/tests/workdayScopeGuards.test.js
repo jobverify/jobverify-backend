@@ -115,3 +115,10 @@ test('runWorkdayScraper jobs-api mode skips leaked non-India country-code listin
     global.fetch = originalFetch
   }
 })
+
+
+test('shouldFetchWorkdayJobDetail excludes US office labels while retaining explicit India secondary scope', () => {
+  assert.equal(shouldFetchWorkdayJobDetail({ location: 'Workday USA Offices' }), false)
+  assert.equal(shouldFetchWorkdayJobDetail({ location: 'Workday United States Offices' }), false)
+  assert.equal(shouldFetchWorkdayJobDetail({ location: 'Workday USA Offices', locations: ['Bangalore, India'] }), true)
+})

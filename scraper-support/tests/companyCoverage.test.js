@@ -160,8 +160,6 @@ const sampleCsv = `row,company_name,url_in_text,note
 158,Clix Capital,,
 159,C-DAC,,
 160,"C-DAC, Chennai",,
-161,City Union Bank,,
-162,CUB,,
 163,CISAI - Amrita Vishwa Vidyapeetham,,
 164,Cyware,,
 165,Danaher Corporation,,
@@ -351,9 +349,9 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
     catalog: getScraperCatalog(),
   })
 
-  assert.equal(report.totalRows, 165)
-  assert.equal(report.candidateRows, 162)
-  assert.equal(report.matchedCount, 156)
+  assert.equal(report.totalRows, 163)
+  assert.equal(report.candidateRows, 160)
+  assert.equal(report.matchedCount, 154)
   assert.equal(report.unmatchedCount, 6)
 
   assert.deepEqual(
@@ -505,8 +503,6 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
       ['Clix Capital', 'clixcapital'],
       ['C-DAC', 'cdac'],
       ['C-DAC, Chennai', 'cdac'],
-      ['City Union Bank', 'cityunionbank'],
-      ['CUB', 'cityunionbank'],
       ['CISAI - Amrita Vishwa Vidyapeetham', 'amrita'],
       ['Cyware', 'cyware'],
       ['Danaher Corporation', 'danahercorporation'],

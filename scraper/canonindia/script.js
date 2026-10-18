@@ -82,6 +82,52 @@ export const hasVerifiedEmptyOracleInventory = ({ status, url, html } = {}) => {
   }
 }
 
+// Canon's Asia board currently advertises Singapore roles, without India openings.
+// Verify every page before treating that foreign inventory as an empty India result.
+const verifyNoIndiaInventory = async (fetchPage) => {
+  const seenIds = new Set()
+  let total = null
+  let offset = 0
+
+  do {
+    const url = ORACLE_LISTING_URL.replace('offset=0', 'offset=' + offset)
+    const page = await fetchPage(url)
+    let payload
+    try {
+      payload = JSON.parse(String(page?.html ?? ''))
+    } catch {
+      throw new Error('Canon India Oracle career inventory changed or is unavailable')
+    }
+    const inventory = payload?.items?.[0]
+    if (
+      page?.status !== 200 || page?.url !== url
+      || !Array.isArray(payload?.items) || payload.items.length !== 1
+      || inventory?.SiteNumber !== 'CX_1' || inventory.Location !== null
+      || !Number.isInteger(inventory.TotalJobsCount) || inventory.TotalJobsCount < 0
+      || (total !== null && inventory.TotalJobsCount !== total)
+      || (inventory.Offset != null && inventory.Offset !== offset)
+      || (inventory.Limit != null && inventory.Limit !== 5)
+      || !Array.isArray(inventory.requisitionList)
+      || inventory.requisitionList.length !== Math.min(5, inventory.TotalJobsCount - offset)
+    ) {
+      throw new Error('Canon India Oracle career inventory changed or is unavailable')
+    }
+    total = inventory.TotalJobsCount
+    for (const record of inventory.requisitionList) {
+      const id = normalizeWhitespace(record?.Id)
+      if (
+        !id || seenIds.has(id) || !normalizeWhitespace(record.Title)
+        || record.PrimaryLocationCountry !== 'SG' || record.PrimaryLocation !== 'Singapore'
+        || !Array.isArray(record.secondaryLocations) || record.secondaryLocations.length !== 0
+      ) {
+        throw new Error('Canon India Oracle career inventory changed or is unavailable')
+      }
+      seenIds.add(id)
+    }
+    offset += inventory.requisitionList.length
+  } while (offset < total)
+}
+
 export const extractOpenings = () => []
 
 export const createCanonIndiaScraper = ({
@@ -100,10 +146,7 @@ export const createCanonIndiaScraper = ({
       throw new Error('Canon India external careers handoff no longer resolves to the verified Oracle board')
     }
 
-    const inventoryPage = await fetchPage(ORACLE_LISTING_URL)
-    if (!hasVerifiedEmptyOracleInventory(inventoryPage)) {
-      throw new Error('Canon India Oracle career inventory changed or is unavailable')
-    }
+    await verifyNoIndiaInventory(fetchPage)
 
     const jobs = extractOpenings()
     return maxJobs ? jobs.slice(0, maxJobs) : jobs

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on Saturday, July 25, 2026 that https://calendly.com/careers is the live official Calendly careers page with the Careers at Calendly hero, Join us in creating better meeting experiences headline, and Open roles section, and that Calendly\'s public Greenhouse board is live at https://job-boards.greenhouse.io/calendly. The public Greenhouse feed at https://boards-api.greenhouse.io/v1/boards/calendly/jobs?content=true returned 14 live roles on the verified date, all in US locations such as Remote - US and San Francisco (Hybrid). No India roles were present in the verified public feed, so this provider currently returns an honest empty India slice while the trusted public surface remains unchanged.'
+  "Verified on October 9, 2026 that https://calendly.com/careers is the live official Calendly careers page with Careers at Calendly, the current hero, location/department filters and nine role cards. The Featured heading is optional because the current page has no featured openings. All nine card IDs match https://job-boards.greenhouse.io/calendly and the complete feed at https://boards-api.greenhouse.io/v1/boards/calendly/jobs?content=true, which reports 9 live roles. All nine native application details are live and agree on titles, full descriptions and US locations (Remote - US or San Francisco (Hybrid)); no India roles. Runtime reconciles the reported total, unique IDs, current first-party cards, full decoded descriptions, location countries and a stable second complete feed before returning the India slice."
 
 export const CALENDLY_CATALOG = {
   source: 'calendly',
@@ -16,16 +16,16 @@ export const CALENDLY_CATALOG = {
   greenhouseBoardUrl: 'https://job-boards.greenhouse.io/calendly',
   greenhouseJobsApiUrl: 'https://boards-api.greenhouse.io/v1/boards/calendly/jobs',
   companyDomain: 'calendly.com',
-  verifiedPublicJobCount: 14,
+  verifiedPublicJobCount: 9,
   verifiedIndiaJobCount: 0,
   atsPlatform: 'greenhouse',
   countryFilter: 'India',
-  paginationStrategy: 'verified-first-party-careers-page-plus-single-greenhouse-jobs-api',
+  paginationStrategy: 'complete-greenhouse-count-and-stable-snapshot',
   extractionStrategy:
-    'verified-first-party-careers-page+greenhouse-jobs-api+greenhouse-detail-url-canonicalization+india-location-filter',
+    'verified-calendly-handoff+careers-card-ids+complete-feed+full-content+stable-snapshot+india-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-25',
+  verifiedOn: '2026-10-09',
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

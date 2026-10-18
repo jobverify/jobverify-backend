@@ -5,19 +5,19 @@ import companyAliases from '../../scraper-support/providers/companyAliases.json'
 import { generateCompanyCoverageReport } from '../../scraper-support/providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../../scraper-support/providers/index.js'
 
-test('FamApp is registered as a verified first-party non-listing careers sentinel with Fam alias coverage', () => {
+test('FamApp is registered as a first-party Lever jobs scraper with Fam alias coverage', () => {
   const provider = getScraperCatalog().find((item) => item.source === 'famapp')
 
   assert.ok(provider)
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'FamApp by Trio')
-  assert.equal(provider.companyCareerPage, 'https://www.famapp.in/careers/')
-  assert.equal(provider.atsPlatform, 'official-company-careers-nonlisting')
+  assert.equal(provider.companyCareerPage, 'https://www.famapp.in/jobs/')
+  assert.equal(provider.atsPlatform, 'lever')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-careers-page-validation')
+  assert.equal(provider.paginationStrategy, 'lever-skip-limit-reconciled-with-grouped-feed')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-homepage+verified-careers-page-without-direct-public-openings-surface-return-empty',
+    'verified-first-party-homepage+careers+jobs-client-handoff+public-lever-feed',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.companyDomain, 'famapp.in')
@@ -25,7 +25,7 @@ test('FamApp is registered as a verified first-party non-listing careers sentine
   assert.equal(companyAliases.Fam, 'famapp')
 })
 
-test('Fam resolves through company coverage to the FamApp sentinel provider', () => {
+test('Fam resolves through company coverage to the FamApp Lever provider', () => {
   const report = generateCompanyCoverageReport({
     csvText: 'Fam,\n',
     catalog: getScraperCatalog(),
@@ -43,6 +43,6 @@ test('Fam resolves through company coverage to the FamApp sentinel provider', ()
   assert.ok(scraper)
   assert.equal(typeof scraper.run, 'function')
   assert.equal(scraper.provider.source, 'famapp')
-  assert.equal(scraper.provider.companyCareerPage, 'https://www.famapp.in/careers/')
+  assert.equal(scraper.provider.companyCareerPage, 'https://www.famapp.in/jobs/')
   assert.match(scraper.dryRunFile, /famapp[\\/]jobs\.json$/i)
 })

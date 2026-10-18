@@ -109,7 +109,7 @@ test('MotivityLabs helpers stay pinned to the verified openings list and same-do
   assert.equal(motivity.OFFICIAL_BRAND_NAME, 'Motivity Labs')
   assert.equal(motivity.CAREERS_URL, 'https://motivitylabs.com/careers/')
   assert.equal(motivity.JOB_OPENINGS_URL, 'https://motivitylabs.com/jobs/')
-  assert.equal(motivity.VERIFIED_ON, '2026-10-03')
+  assert.equal(motivity.VERIFIED_ON, '2026-10-09')
   assert.equal(motivity.hasOfficialCareersSignal(careersPageHtml), true)
   assert.equal(motivity.hasJobOpeningsSignal(listingsPageHtml), true)
   assert.deepEqual(motivity.extractJobCards(listingsPageHtml), [
@@ -244,4 +244,67 @@ test('MotivityLabs parses current first-party collection and confirmed India det
   assert.equal(jobs[0].location, 'Hyderabad, India')
   assert.equal(jobs[0].sourceListingComplete, false)
   assert.equal(jobs[0].sourceUrl, 'https://motivitylabs.com/jobs/engineer/')
+})
+
+
+const loadCurrentMotivityFixtures = async () => {
+  const { readFile } = await import('node:fs/promises')
+  const fixture = name => readFile(new URL('./fixtures/motivitylabs/' + name, import.meta.url), 'utf8')
+  return { careers: await fixture('careers-20261009.html'), listing: await fixture('jobs-20261009.html'),
+    reader: await fixture('api-reader-20261009.js'), loader: await fixture('jobs-loader-20261009.js'),
+    payload: JSON.parse(await fixture('jobs-api-20261009.json')) }
+}
+const currentMotivityFetch = (f, { payload = f.payload, reader = f.reader, loader = f.loader, apiError } = {}) => async url => {
+  if (url === 'https://motivitylabs.com/careers/') return f.careers
+  if (url === 'https://motivitylabs.com/jobs/') return f.listing
+  if (url === 'https://ml-websites-backend.onrender.com/api/jobs?includeAll=true') {
+    if (apiError) throw apiError
+    return JSON.stringify(payload)
+  }
+  if (url.startsWith('https://motivitylabs.com/_next/static/chunks/')) {
+    if (url.endsWith('/3k9--kst9xacu.js')) return reader
+    if (url.endsWith('/3jrwa6x5be2js.js')) return loader
+    return '/* unrelated public framework chunk */'
+  }
+  throw new Error('Unexpected URL: ' + url)
+}
+test('Motivity current loading page resolves the verified public API and preserves unknown geography', async () => {
+  const motivity = await loadModule(), f = await loadCurrentMotivityFixtures()
+  const jobs = await motivity.createMotivityLabsScraper({ now: () => '2026-10-09T00:00:00.000Z' }).run({ fetchText: currentMotivityFetch(f) })
+  assert.equal(jobs.length, 17)
+  assert.deepEqual(new Set(jobs.map(j => j.jobId)), new Set(f.payload.data.filter(r => ['Hyderabad', 'India'].includes(r.location)).map(r => r.slug)))
+  assert.ok(jobs.every(j => j.country === 'India' && j.sourceListingComplete === false && j.jobDescription.length > 100))
+  assert.equal(jobs[0].requisitionId, 'ML026')
+  assert.equal(jobs[0].applyUrl, 'https://motivitylabs.com/jobs/technical-solution-architect-experience/')
+})
+test('Motivity rejects upstream API failures instead of accepting the initial zero count', async () => {
+  const motivity = await loadModule(), f = await loadCurrentMotivityFixtures()
+  await assert.rejects(motivity.run({ fetchText: currentMotivityFetch(f, { apiError: new Error('HTTP 503') }) }), /HTTP 503/)
+})
+test('Motivity verifies both first-party API reader and public expiry loader', async () => {
+  const motivity = await loadModule(), f = await loadCurrentMotivityFixtures()
+  for (const altered of [{ reader: 'fetch("https://untrusted.example/api/jobs")' }, { loader: 'return []' }]) {
+    await assert.rejects(motivity.run({ fetchText: currentMotivityFetch(f, altered) }), /public jobs client/i)
+  }
+})
+test('Motivity rejects truncated, duplicate, unpublished and malformed API inventory', async () => {
+  const motivity = await loadModule(), f = await loadCurrentMotivityFixtures()
+  const row = structuredClone(f.payload.data[0])
+  for (const payload of [
+    { ...f.payload, count: 27 }, { ...f.payload, hasMore: true },
+    { ok: true, count: 2, data: [row, row] },
+    { ok: true, count: 1, data: [{ ...row, status: 'draft' }] },
+    { ok: true, count: 1, data: [{ ...row, description: '' }] },
+    { ok: true, count: 1, data: [{ ...row, expiresOn: '2027-02-30' }] },
+    { ok: true, count: 1, data: [{ ...row, experienceMin: -1 }] },
+  ]) await assert.rejects(motivity.run({ fetchText: currentMotivityFetch(f, { payload }) }), /inventory|role/i)
+})
+test('Motivity accepts explicit API zero and filters expiry without inferring India for Remote', async () => {
+  const motivity = await loadModule(), f = await loadCurrentMotivityFixtures()
+  assert.deepEqual(await motivity.run({ fetchText: currentMotivityFetch(f, { payload: { ok: true, count: 0, data: [] } }) }), [])
+  const [a,b,c] = structuredClone(f.payload.data)
+  a.location = 'Remote'; b.expiresOn = '2025-01-01'; c.location = 'Hyderabad'
+  const jobs = await motivity.createMotivityLabsScraper({ now: () => '2026-10-09T00:00:00Z' }).run({ fetchText: currentMotivityFetch(f, { payload: { ok: true, count: 3, data: [a,b,c] } }) })
+  assert.equal(jobs.length, 1); assert.equal(jobs[0].jobId, c.slug); assert.equal(jobs[0].sourceListingComplete, false)
+  await assert.rejects(motivity.run({ fetchText: currentMotivityFetch(f, { payload: { ok: true, count: 1, data: [a] } }) }), /geography/i)
 })

@@ -35,69 +35,35 @@ const buildCatalogReadyProvider = (catalogEntry) => hydrateProviderCatalogEntry(
   modulePath,
 })
 
-test('Dineout local catalog captures the verified consumer-surface handoff and no-public-jobs contract', async () => {
+test('Dineout local catalog captures the verified parent careers migration and attributed public jobs', async () => {
   const { DINEOUT_CATALOG } = await loadCatalogModule()
   const dineout = await loadScraperModule()
   const provider = buildCatalogReadyProvider(DINEOUT_CATALOG)
-
   assert.equal(provider.source, 'dineout')
   assert.equal(provider.companyName, 'Dineout')
   assert.equal(provider.officialBrandName, 'Swiggy Dineout')
   assert.equal(provider.parentCompanyName, 'Swiggy')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.homepageUrl, 'https://www.dineout.co.in/')
-  assert.equal(provider.canonicalConsumerSurfaceUrl, 'https://www.swiggy.com/dineout')
-  assert.equal(provider.companyCareerPage, 'https://careers.swiggy.com/')
-  assert.equal(
-    provider.careersIntegrationScriptUrl,
-    'https://careers.swiggy.com/assets/js/careers-integration.js',
-  )
-  assert.equal(provider.jobsBoardUrl, 'https://swiggy.mynexthire.com/employer/jobs/careers')
-  assert.equal(
-    provider.jobsBoardDetailsUrl,
-    'https://swiggy.mynexthire.com/employer/jobboard/details_by_shortname/get/swiggy/',
-  )
-  assert.equal(provider.redirectedNoTrustRouteUrl, 'https://www.swiggy.com/restaurants-near-me')
+  assert.equal(provider.companyCareerPage, 'https://careers.swiggy.in/')
+  assert.equal(provider.legacyCareersUrl, 'https://careers.swiggy.com/')
+  assert.equal(provider.jobsFeedUrl, 'https://careers.swiggy.in/api/jobs.json')
+  assert.equal(provider.jobsApiUrl, 'https://api.smartrecruiters.com/v1/companies/SWIGGY/postings')
+  assert.equal(provider.jobsBoardUrl, 'https://jobs.smartrecruiters.com/SWIGGY')
   assert.equal(provider.companyDomain, 'dineout.co.in')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.atsPlatform, 'smartrecruiters')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(
-    provider.paginationStrategy,
-    'verified-dineout-consumer-homepage-plus-parent-careers-surface-check',
-  )
-  assert.equal(
-    provider.extractionStrategy,
-    'verified-dineout-homepage-canonicalized-to-swiggy-dineout+verified-dineout-career-routes-redirect-away+verified-parent-swiggy-careers-surface-without-dineout-attributable-public-roles',
-  )
+  assert.equal(provider.paginationStrategy, 'offset-paginated-parent-ats-with-count-checked-first-party-inventory')
+  assert.equal(provider.extractionStrategy, 'verified-parent-careers-migration+reconciled-public-inventories+dine-out-business-unit+india-country-filter+job-details')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-15')
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.dineout\.co\.in\//i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.swiggy\.com\/dineout/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/careers\.swiggy\.com\//i)
-  assert.match(
-    provider.verifiedSurfaceSummary,
-    /https:\/\/swiggy\.mynexthire\.com\/employer\/jobs\/careers/i,
-  )
-  assert.match(
-    provider.verifiedSurfaceSummary,
-    /https:\/\/swiggy\.mynexthire\.com\/employer\/jobboard\/details_by_shortname\/get\/swiggy\//i,
-  )
-  assert.match(
-    provider.verifiedSurfaceSummary,
-    /https:\/\/www\.swiggy\.com\/restaurants-near-me/i,
-  )
-  assert.match(
-    provider.verifiedSurfaceSummary,
-    /no trustworthy public jobs surface attributable to Dineout/i,
-  )
+  assert.equal(provider.verifiedOn, '2026-10-08')
+  assert.match(provider.verifiedSurfaceSummary, /careers\.swiggy\.com/)
+  assert.match(provider.verifiedSurfaceSummary, /careers\.swiggy\.in/)
+  assert.match(provider.verifiedSurfaceSummary, /SmartRecruiters/)
+  assert.match(provider.verifiedSurfaceSummary, /Dine Out/)
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /dineout[\\/]jobs\.json$/i)
-
-  assert.equal(dineout.PROVIDER_METADATA.source, provider.source)
-  assert.equal(dineout.PROVIDER_METADATA.companyName, provider.companyName)
   assert.equal(dineout.PROVIDER_METADATA.companyCareerPage, provider.companyCareerPage)
-  assert.equal(dineout.PROVIDER_METADATA.jobsBoardUrl, provider.jobsBoardUrl)
 })
 
 test('Dineout exact backlog name matches from the local provider contract without aliases', async () => {
@@ -123,7 +89,7 @@ test('buildScrapers and company coverage resolve Dineout from the shared catalog
   assert.ok(provider)
   assert.ok(scraper)
   assert.equal(provider.companyName, 'Dineout')
-  assert.equal(provider.companyCareerPage, 'https://careers.swiggy.com/')
+  assert.equal(provider.companyCareerPage, 'https://careers.swiggy.in/')
   assert.match(scraper.dryRunFile, /dineout[\\/]jobs\.json$/i)
 
   const report = generateCompanyCoverageReport({

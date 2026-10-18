@@ -11,7 +11,7 @@ const exec = promisify(execFile);
 const script = fileURLToPath(new URL('../scripts/benchmarkJobDescriptions.js', import.meta.url));
 const job = { title: 'Engineer', company: 'Example', sourceDescription: 'Build and maintain Python services for customer applications. Design reliable APIs and collaborate with engineering teams. At least 2 years of software development experience is required.' };
 const jobs = Array.from({ length: 20 }, (_, index) => ({ ...job, title: 'Engineer ' + index }));
-const checkpoint = () => ({ model: REWRITE_MODEL, environment: { platform: process.platform, threads: 2 }, startedAt: '2026-10-02T00:00:00Z',
+const checkpoint = () => ({ model: REWRITE_MODEL, environment: { platform: process.platform, threads: REWRITE_MODEL.cpuThreads }, startedAt: '2026-10-02T00:00:00Z',
   cases: jobs.map((job, index) => ({ index: index + 1, inputHash: buildRewriteInput(job).inputHash, durationMs: 100, accepted: false, reason: 'timeout' })),
 });
 

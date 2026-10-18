@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFile } from 'node:fs/promises'
+const currentCareers = await readFile(new URL('./fixtures/happiestminds-current/current-careers.html', import.meta.url), 'utf8')
 
 const loadHappiestMindsModule = async () => {
   try {
@@ -9,9 +11,9 @@ const loadHappiestMindsModule = async () => {
   }
 }
 
-test('createHappiestMindsScraper targets the Happiest Minds Darwinbox host', async () => {
+test('the explicit legacy factory keeps the verified Happiest Minds Darwinbox host', async () => {
   const { createHappiestMindsScraper } = await loadHappiestMindsModule()
-  const scraper = createHappiestMindsScraper()
+  const scraper = createHappiestMindsScraper({ publicBoard: 'darwinbox' })
 
   assert.equal(
     scraper.buildCareersPageUrl(),
@@ -19,7 +21,7 @@ test('createHappiestMindsScraper targets the Happiest Minds Darwinbox host', asy
   )
   assert.equal(
     scraper.buildListingApiUrl(),
-    'https://smileshrms.darwinbox.com/ms/candidateapi/job/alljobs?companyId=main',
+    'https://smileshrms.darwinbox.com/ms/candidateapi/job/alljobs',
   )
   assert.equal(
     scraper.buildJobDetailUrl('a68875230db751'),
@@ -33,6 +35,7 @@ test('run keeps Happiest Minds jobs on the hosted Darwinbox routes and decorates
   const requestedPages = []
 
   const jobs = await scraper.run({
+    fetchPage: async url => ({status:200, url, html:currentCareers}),
     fetchListingPage: async ({ page }) => {
       requestedPages.push(page)
 
@@ -48,7 +51,7 @@ test('run keeps Happiest Minds jobs on the hosted Darwinbox routes and decorates
             emp_type_name: 'PERMANENT',
             experience: '5 - 7 Years',
             posted_on: '28-Jul-2025',
-            jd: '<p>Back end developer with some experience in front end development</p>',
+            jd: '<p>Back end developer with some experience in front end development</p><p>Must Have : C#, .NET, .NET Core , Nice to have : React , Azure</p>',
           },
         ],
         job_counts: 1,

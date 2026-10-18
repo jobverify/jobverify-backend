@@ -6,6 +6,7 @@
 import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import mongoose from "mongoose";
+import { buildJobProvenance } from '../utils/jobProvenance.js';
 import Job from "../models/Job.js";
 import Click from "../models/Click.js";
 import { getPreferredJobTypeMatches } from "../constants/preferredJobTypes.js";
@@ -31,6 +32,7 @@ import { getAuthoritativeClassification } from '../services/jobClassificationPol
 import { withSemanticExperienceConstraint } from '../utils/classifiedExperienceFilters.js';
 import { applyPublicJobVisibility } from "../utils/publicJobVisibility.js";
 import { buildAggregateHiringSignalFilter } from "../utils/jobListingEvidence.js";
+import { buildMissingSourceDescriptionFilter } from "../utils/jobSourceContent.js";
 import { canUsePremiumFilters } from "../utils/accessControl.js";
 import {
   formatStoredLocationLabel,
@@ -132,7 +134,7 @@ const JOB_LIST_CARD_AGGREGATE_PROJECT = { ...JOB_LIST_CARD_TEXT_PROJECTION, _pub
 
 const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const slugifyJob = (...parts) => {
+export const slugifyJob = (...parts) => {
   const slug = parts
     .filter(Boolean)
     .join(" ")
@@ -221,7 +223,7 @@ const isDefaultPublicJobListFilter = (filters = {}) => (
   && filters?.isPublicIndia === true
   && Object.keys(filters).length === 4
   && Object.hasOwn(filters, "$expr")
-  && isDeepStrictEqual(filters.$nor, [buildAggregateHiringSignalFilter()])
+  && isDeepStrictEqual(filters.$nor, [buildAggregateHiringSignalFilter(), buildMissingSourceDescriptionFilter()])
 );
 
 const workdayApplicationStatusCache = new Map();
@@ -825,7 +827,7 @@ const scheduleWorkdayApplicationAvailabilityRefresh = (job = {}) => {
   return refreshPromise;
 };
 
-const normalizeResponseJob = (job) => {
+export const normalizeResponseJob = (job) => {
   if (!job) return job;
 
   const {
@@ -834,8 +836,10 @@ const normalizeResponseJob = (job) => {
     workdayApplicationStatusCheckedAt: _workdayApplicationStatusCheckedAt,
     _publicJobType,
     classification: _classification,
+    postClassification: _postClassification,
     sourceDescription: _sourceDescription,
     sourceContentHash: _sourceContentHash,
+    sourceContentHashVersion: _sourceContentHashVersion,
     descriptionRewrite: _descriptionRewrite,
     ...publicJob
   } = job;
@@ -854,6 +858,7 @@ const normalizeResponseJob = (job) => {
     locations,
     experienceLevel: normalizeResponseExperienceLevel(job),
     jobType: normalizeResponseJobType(job),
+    provenance: buildJobProvenance(job),
     ...buildApplicationState(job),
   };
 };
@@ -1719,7 +1724,7 @@ export const getJobById = async (req, res) => {
     }
 
     const job = await Job.findOne(
-      applyPublicJobVisibility({ _id: id, status: "active" }, req.siteSettings),
+      applyPublicJobVisibility({ _id: id, status: "active", $or: [{ closingDate: null }, { closingDate: { $gt: new Date() } }] }, req.siteSettings),
     );
 
     if (!job) {
@@ -2103,6 +2108,7 @@ export const getJobSeoFeed = async (req, res) => {
       applyPublicJobVisibility({
         status: "active",
         sourceUrl: { $exists: true, $ne: null },
+        $and: [{ $or: [{ closingDate: null }, { closingDate: { $gt: new Date() } }] }],
       }, req.siteSettings),
     )
       .sort({ sortDate: -1, _id: -1 })

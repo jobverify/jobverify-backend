@@ -35,28 +35,28 @@ test('Calendly local catalog captures the verified official careers page plus Gr
     provider.greenhouseJobsApiUrl,
     'https://boards-api.greenhouse.io/v1/boards/calendly/jobs',
   )
-  assert.equal(provider.verifiedPublicJobCount, 14)
+  assert.equal(provider.verifiedPublicJobCount, 9)
   assert.equal(provider.verifiedIndiaJobCount, 0)
   assert.equal(provider.atsPlatform, 'greenhouse')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'verified-first-party-careers-page-plus-single-greenhouse-jobs-api',
+    'complete-greenhouse-count-and-stable-snapshot',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+greenhouse-jobs-api+greenhouse-detail-url-canonicalization+india-location-filter',
+    'verified-calendly-handoff+careers-card-ids+complete-feed+full-content+stable-snapshot+india-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-25')
+  assert.equal(provider.verifiedOn, '2026-10-09')
   assert.match(provider.modulePath, /calendly[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /calendly[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 25, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 9, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/calendly\.com\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/job-boards\.greenhouse\.io\/calendly/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/boards-api\.greenhouse\.io\/v1\/boards\/calendly\/jobs\?content=true/i)
-  assert.match(provider.verifiedSurfaceSummary, /14 live roles/i)
+  assert.match(provider.verifiedSurfaceSummary, /9 live roles/i)
   assert.match(provider.verifiedSurfaceSummary, /no India roles/i)
 
   assert.equal(calendly.PROVIDER_METADATA.source, provider.source)

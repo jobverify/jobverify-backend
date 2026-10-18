@@ -91,7 +91,7 @@ export const hasOfficialContactSignal = (html) => {
   const normalized = normalizeWhitespace(html)
 
   return normalized.includes('Contact us | Vivriti Capital')
-    && normalized.includes('Prestige Zackria Metropolitan, No.200/1-8, 2nd Floor, Block 1, Anna Salai, Chennai 600002')
+    && /Prestige Zackria Metropolitan, No\.200\/1-8, (?:2nd|8th) Floor, Block 1, Anna Salai, Chennai 600002/.test(normalized)
     && normalized.includes('sales@vivriticapital.com')
     && normalized.includes('grievanceredressal@vivriticapital.com')
 }

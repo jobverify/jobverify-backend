@@ -23,9 +23,9 @@ export const LINKEDIN_CATALOG = {
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   dryRunFile: 'linkedin/jobs.json',
-  verifiedOn: '2026-07-16',
+  verifiedOn: '2026-10-09',
   verifiedSurfaceSummary:
-    'Verified on Thursday, July 16, 2026 that the current trustworthy first-party LinkedIn jobs surface for the exact company name is the public LinkedIn guest jobs search at https://www.linkedin.com/jobs/search/?f_C=1337&geoId=102713980, which exposed 39 jobs in India and company-filtered public role cards for LinkedIn. Verified public detail pages for Account Manager, LinkedIn Talent Solutions and Senior Sales Manager, LinkedIn Marketing Solutions expose JobPosting JSON-LD plus public role content on the same first-party linkedin.com surface.',
+    "Verified on October 9, 2026 that the public LinkedIn guest jobs search at https://www.linkedin.com/jobs/search/?f_C=1337&geoId=102713980 exposed 47 unique company-filtered LinkedIn jobs in India. The current India canonical alias is trusted only with the exact company and India filters and selected company input. All 47 public detail pages were fetched and matched their listing titles, LinkedIn employer identity, explicit India geography and full job descriptions. Both ordinary and new-date listing cards are parsed; caller caps or advertised-count disagreement are marked incomplete.",
 }
 
 export default LINKEDIN_CATALOG

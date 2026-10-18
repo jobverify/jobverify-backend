@@ -3,12 +3,13 @@ import { fileURLToPath } from 'url'
 
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 import { inferMissingExperienceRequired } from '../../scraper-support/utils/normalizeScrapedJob.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
-const BASE_URL = 'https://jobs.sap.com'
+const BASE_URL = 'https://careers.sap.com'
 const DEFAULT_LOCATION = 'India'
 const DEFAULT_LOCALE = 'en_US'
 const PAGE_SIZE = 25
@@ -101,19 +102,21 @@ const extractCityFromLocation = (value) => {
   return normalized.split(',')[0]?.trim() || null
 }
 
+const INDIAN_REGION = /^(?:AP|AR|AS|BR|CG|CH|DL|GA|GJ|HR|HP|JK|JH|KA|KL|LD|MP|MH|MN|ML|MZ|NL|OD|OR|PB|PY|RJ|SK|TN|TS|TR|UP|UK|UT|WB|AN|DN|DD|LA|Andhra Pradesh|Arunachal Pradesh|Assam|Bihar|Chhattisgarh|Chandigarh|Delhi|New Delhi|Goa|Gujarat|Haryana|Himachal Pradesh|Jammu and Kashmir|Jharkhand|Karnataka|Kerala|Lakshadweep|Madhya Pradesh|Maharashtra|Manipur|Meghalaya|Mizoram|Nagaland|Odisha|Orissa|Punjab|Puducherry|Rajasthan|Sikkim|Tamil Nadu|Telangana|Tripura|Uttar Pradesh|Uttarakhand|West Bengal|Andaman and Nicobar Islands|Dadra and Nagar Haveli|Daman and Diu|Ladakh)$/i
+const countryFromLocation = (value) => {
+  const parts = (stripTags(value) || '').split(',').map(x => x.trim())
+  if (/^\d{6}$/.test(parts.at(-1))) parts.pop()
+  if (!/^(?:IN|India)$/i.test(parts.pop() || '')) return null
+  if (!parts[0] || parts.length > 2 || (parts.length === 2 && !INDIAN_REGION.test(parts[1]))) return null
+  return 'India'
+}
 const normalizeSearchLocation = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return null
-  const city = extractCityFromLocation(normalized)
-  return city ? `${city}, India` : DEFAULT_LOCATION
+  const normalized = stripTags(value)
+  return countryFromLocation(normalized) === 'India'
+    ? extractCityFromLocation(normalized) + ', India'
+    : normalized
 }
-
-const normalizeDetailLocation = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return null
-  const [city] = normalized.split(',')
-  return city ? `${city.trim()}, India` : DEFAULT_LOCATION
-}
+const normalizeDetailLocation = normalizeSearchLocation
 
 const extractListingJobId = (href) => normalizeWhitespace(
   extractFirst(/\/(\d+)\/?$/i, decodeHtmlEntities(href)),
@@ -174,6 +177,8 @@ export const extractSearchResults = (html) => [...String(html).matchAll(
       title,
       location: normalizeSearchLocation(rawLocation),
       city: extractCityFromLocation(rawLocation),
+      country: countryFromLocation(rawLocation),
+      rawLocation,
       jobId,
       requisitionId: jobId,
       sourceUrl,
@@ -195,14 +200,17 @@ export const extractPaginationSummary = (html) => {
   return {
     totalJobCount: Number.isFinite(totalJobCount) ? totalJobCount : null,
     pageSize: Number.isFinite(pageSize) ? pageSize : null,
+    firstRow: pageRangeMatch ? Number(pageRangeMatch[1]) : null,
+    lastRow: pageRangeMatch ? Number(pageRangeMatch[2]) : null,
   }
 }
 
 export const extractJobDetail = (html, listing = {}) => {
-  const location = normalizeDetailLocation(extractFirst(
+  const rawLocation = stripTags(extractFirst(
     /<p id="job-location"[\s\S]*?<span class="jobGeoLocation">([\s\S]*?)<\/span>/i,
     html,
-  )) || listing.location || null
+  ))
+  const location = normalizeDetailLocation(rawLocation)
   const requisitionId = normalizeWhitespace(extractFirst(
     /data-careersite-propertyid="facility"[^>]*>([\s\S]*?)<\/span>/i,
     html,
@@ -241,8 +249,10 @@ export const extractJobDetail = (html, listing = {}) => {
   )
 
   return {
-    title: normalizeWhitespace(extractFirst(/<h1>([\s\S]*?)<\/h1>/i, html)) || listing.title || null,
+    title: stripTags(extractFirst(/<h1>([\s\S]*?)<\/h1>/i, html)) || listing.title || null,
     location,
+    country: countryFromLocation(rawLocation),
+    rawLocation,
     city: extractCityFromLocation(location) || listing.city || null,
     jobId: requisitionId,
     requisitionId,
@@ -260,71 +270,124 @@ export const extractJobDetail = (html, listing = {}) => {
   }
 }
 
-const fetchText = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
+  signal?.throwIfAborted()
   const response = await fetch(url, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
   })
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
-  }
-
-  return response.text()
+  return { status: response.status, url: response.url, html: await response.text() }
 }
 
-export const run = async () => {
-  const jobs = []
-  const seenJobIds = new Set()
-  const maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY
-
-  for (let page = 0; page < maxPages; page += 1) {
-    const startRow = page * PAGE_SIZE
-    const listingHtml = await fetchText(buildSearchUrl({ startRow }))
-    const listings = extractSearchResults(listingHtml)
-    const summary = extractPaginationSummary(listingHtml)
-
-    if (listings.length === 0) break
-
-    for (const listing of listings) {
-      if (seenJobIds.has(listing.jobId)) continue
-      seenJobIds.add(listing.jobId)
-
-      const detailHtml = await fetchText(listing.sourceUrl)
-      const detail = extractJobDetail(detailHtml, listing)
-
-      jobs.push({
-        jobId: detail.jobId || listing.jobId,
-        requisitionId: detail.requisitionId || listing.requisitionId,
-        title: detail.title || listing.title,
-        company: 'SAP',
-        department: detail.department,
-        location: detail.location || listing.location,
-        city: detail.city || listing.city,
-        link: detail.applyUrl || detail.sourceUrl || listing.sourceUrl,
-        applyUrl: detail.applyUrl || null,
-        sourceUrl: detail.sourceUrl || listing.sourceUrl,
-        source: 'sap',
-        employmentType: detail.employmentType,
-        experienceRequired: detail.experienceRequired,
-        jobDescription: detail.jobDescription,
-        minimumQualification: detail.minimumQualification,
-        preferredQualification: detail.preferredQualification,
-        requiredSkills: detail.requiredSkills,
-        postingDate: detail.postingDate,
-        closingDate: detail.closingDate,
-        scrapedAt: new Date().toISOString(),
-      })
-    }
-
-    const totalJobCount = summary.totalJobCount || 0
-    const pageSize = summary.pageSize || listings.length
-    if ((page + 1) * pageSize >= totalJobCount) break
+const requirePage = async (url, fetchPage, signal) => {
+  signal?.throwIfAborted()
+  const page = await fetchPage(url, { signal })
+  signal?.throwIfAborted()
+  if (page.status !== 200) throw new Error('HTTP ' + page.status + ' for ' + url)
+  let finalUrl
+  try { finalUrl = new URL(page.url) } catch { throw new Error('SAP invalid public response URL') }
+  const expectedUrl = new URL(url)
+  const queryEntries = (value) => JSON.stringify([...value.searchParams.entries()].sort((a,b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1])))
+  if (finalUrl.origin !== BASE_URL || finalUrl.pathname !== expectedUrl.pathname || queryEntries(finalUrl) !== queryEntries(expectedUrl)) {
+    throw new Error('SAP public page redirected off the verified employer route')
   }
+  const canonical = extractFirst(/<link\b(?=[^>]*rel=["']canonical["'])(?=[^>]*href=["']([^"']+)["'])[^>]*>/i, page.html)
+  if (!canonical || new URL(decodeHtmlEntities(canonical), BASE_URL).origin !== BASE_URL || new URL(decodeHtmlEntities(canonical), BASE_URL).pathname !== finalUrl.pathname) {
+    throw new Error('SAP public page canonical identity changed')
+  }
+  if (!/<title[^>]*>[^<]*\bSAP\b[^<]*<\/title>/i.test(page.html)) throw new Error('SAP employer identity changed')
+  return page.html
+}
 
-  return jobs
+const requireListing = (html, startRow, expectedTotal = null) => {
+  const summary = extractPaginationSummary(html)
+  const listings = extractSearchResults(html)
+  const rawRows = [...String(html).matchAll(/<tr class="data-row">/gi)].length
+  if (!/id=["']searchresults["']/i.test(html)
+    || !Number.isInteger(summary.totalJobCount) || summary.totalJobCount < 1
+    || summary.firstRow !== startRow + 1 || summary.lastRow > summary.totalJobCount
+    || summary.pageSize !== listings.length || listings.length !== rawRows || !listings.length
+    || (expectedTotal !== null && summary.totalJobCount !== expectedTotal)) {
+    throw new Error('SAP native listing count, range or row contract changed; no authoritative empty inventory')
+  }
+  for (const listing of listings) {
+    if (!Number.isSafeInteger(Number(listing.jobId)) || String(Number(listing.jobId)) !== listing.jobId) throw new Error('SAP noncanonical native posting ID alias')
+    const url = new URL(listing.sourceUrl)
+    if (url.origin !== BASE_URL || !/^\/job\/.+\/\d+\/$/.test(url.pathname) || listing.country !== 'India') {
+      throw new Error('SAP listing lacks explicit India country or native employer identity')
+    }
+  }
+  return { summary, listings }
+}
+
+export const run = async ({ fetchPage = defaultFetchPage, signal, now = () => new Date().toISOString(), maxPages = config.maxPages, maxJobs } = {}) => {
+  signal?.throwIfAborted()
+  for (const cap of [maxPages, maxJobs]) {
+    if (cap != null && (!Number.isInteger(cap) || cap < 1)) throw new Error('SAP caller caps must be positive integers')
+  }
+  const pageLimit = Number.isInteger(maxPages) && maxPages > 0 ? maxPages : Infinity
+  const jobLimit = Number.isInteger(maxJobs) && maxJobs > 0 ? maxJobs : Infinity
+  const listings = []
+  const seenIds = new Set()
+  let total = null, startRow = 0, pagesFetched = 0, firstIds = null
+  for (let page = 0; page < pageLimit; page++) {
+    const html = await requirePage(buildSearchUrl({ startRow }), fetchPage, signal)
+    const current = requireListing(html, startRow, total)
+    total = current.summary.totalJobCount
+    if (firstIds === null) firstIds = current.listings.map(x => x.jobId)
+    for (const listing of current.listings) {
+      if (seenIds.has(listing.jobId)) throw new Error('SAP duplicate native posting ID across listing pages')
+      seenIds.add(listing.jobId)
+      listings.push(listing)
+    }
+    pagesFetched++
+    startRow = current.summary.lastRow
+    if (startRow === total) break
+  }
+  const capped = listings.length < total || listings.length > jobLimit
+  if (startRow === total && listings.length !== total) throw new Error('SAP inventory count disagrees with unique native postings')
+  const jobs = [], seenRequisitions = new Set()
+  let filledCount = 0
+  for (const listing of listings.slice(0, jobLimit)) {
+    const html = await requirePage(listing.sourceUrl, fetchPage, signal)
+    const detail = extractJobDetail(html, listing)
+    const nativeJobContent = extractElementInnerHtmlByClass(html, 'job') || ''
+    if (!detail.jobDescription && /<p\b[^>]*>\s*<strong\b[^>]*>\s*Sorry, this position has been filled\.\s*<\/strong>\s*<\/p>/i.test(nativeJobContent)) {
+      filledCount++
+      continue
+    }
+    const nativeRequisition = stripTags(extractFirst(/data-careersite-propertyid=["']facility["'][^>]*>([\s\S]*?)<\/span>/i, html))
+    const nativeTitle = stripTags(extractFirst(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i, html))
+    if (!nativeTitle || nativeTitle !== listing.title || detail.country !== 'India' || detail.city !== listing.city || detail.title !== listing.title
+      || !/^\d+$/.test(nativeRequisition || '') || nativeRequisition !== detail.requisitionId || !detail.jobDescription || detail.jobDescription.length < 200
+      || !/\bSAP\b/i.test(detail.jobDescription) || !detail.applyUrl) {
+      throw new Error('SAP native detail title, employer, country, identity or full description changed')
+    }
+    const applyUrl = new URL(detail.applyUrl)
+    if (applyUrl.origin !== BASE_URL || applyUrl.pathname !== '/talentcommunity/apply/' + listing.jobId + '/') {
+      throw new Error('SAP native application route conflicts with posting identity')
+    }
+    if (seenRequisitions.has(detail.requisitionId)) throw new Error('SAP duplicate native requisition ID')
+    seenRequisitions.add(detail.requisitionId)
+    jobs.push({
+      ...detail, company: 'SAP', country: 'India', source: 'sap', link: detail.applyUrl,
+      scrapedAt: now(), sourceListingComplete: false,
+      sourceListingIncompleteReason: 'SAP publishes roles across parallel recruiting platforms; the new jobs.sap.com platform is not covered.'
+        + (capped ? ' Caller cap also limits this observed inventory.' : ''),
+    })
+  }
+  const snapshot = requireListing(await requirePage(buildSearchUrl(), fetchPage, signal), 0, total)
+  if (snapshot.listings.map(x => x.jobId).join(',') !== firstIds.join(',')) throw new Error('SAP native first-page snapshot changed during detail collection')
+  return attachInventoryEvidence(jobs, {
+    status: 'coverage-gap', surface: buildSearchUrl(), firstParty: true, listingComplete: false,
+    pagesFetched, reportedTotal: total, indiaFacetCount: null, verifiedAt: now(),
+    reason: 'The careers.sap.com India inventory was observed with native full descriptions, but SAP publishes a parallel new recruiting platform at jobs.sap.com that is not covered.'
+      + (capped ? ' Caller cap limits the observed inventory.' : '')
+      + (filledCount ? ' Native detail explicitly marked ' + filledCount + ' listed posting(s) filled; these were excluded.' : ''),
+  })
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

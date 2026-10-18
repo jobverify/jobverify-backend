@@ -57,7 +57,7 @@ test('Mehta Hitech Industries Ltd. extracts the public job opening from the veri
     requiredSkills: ['Good Communication Skills', 'Management Skills', 'Presentation Skills', 'Good command over English'],
     postingDate: null,
     closingDate: null,
-    jobDescription: 'Company: Mehta Hitech Industries Ltd. | Location: Ahmedabad | Qualification: Graduation + MBA Marketing | Year of experience: 0 to 3 Years | Notes: 25+ years experienced manufacturing company is looking for Marketing executives with following skills:',
+    jobDescription: 'Company: Mehta Hitech Industries Ltd. | Location: Ahmedabad | Qualification: Graduation + MBA Marketing | Skills Required: Good Communication Skills, Management Skills, Presentation Skills, Good command over English | Year of experience: 0 to 3 Years | Notes: 25+ years experienced manufacturing company is looking for Marketing executives with following skills:',
   })
 })
 
@@ -109,4 +109,30 @@ test('Mehta Hitech Industries Ltd. fails closed when the homepage handoff or car
     }),
     /verified careers surface/i,
   )
+})
+
+
+test('Mehta accepts its current Exporter and Manufacturer homepage with the complete first-party opening', async () => {
+  const mehta = await loadMehtaHitechModule()
+  const jobs = await mehta.run({fetchText: async (url) => readHtmlFixture(url === mehta.HOMEPAGE_URL ? 'homepage-current.html' : 'jobs-current.html')})
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Marketing Executives')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].experienceRequired, '0 to 3 Years')
+  assert.equal(jobs[0].minimumQualification, 'Graduation + MBA Marketing')
+})
+
+test('Mehta preserves every public skill while excluding the current Less display control', async () => {
+  const mehta = await loadMehtaHitechModule()
+  const jobs = mehta.extractPublicListings(readHtmlFixture('jobs-current.html'))
+  assert.deepEqual(jobs[0].requiredSkills, ['Good Communication Skills', 'Management Skills', 'Presentation Skills', 'Good command over English'])
+  assert.match(jobs[0].jobDescription, /Skills Required: Good Communication Skills, Management Skills, Presentation Skills, Good command over English/)
+  assert.doesNotMatch(jobs[0].jobDescription, /Less/)
+})
+
+
+test('Mehta fails closed if the verified single-opening layout gains another unparsed role', async () => {
+  const mehta = await loadMehtaHitechModule()
+  const html = readHtmlFixture('jobs-current.html') + '<div class="pflInrHdng"><h3>Service Engineer</h3></div>'
+  assert.throws(() => mehta.extractPublicListings(html), /single-opening inventory/i)
 })

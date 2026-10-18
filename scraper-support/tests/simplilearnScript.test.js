@@ -214,3 +214,143 @@ test('run fails closed when the Simplilearn public careers surfaces change', asy
     /verified wp job openings feed/i,
   )
 })
+
+
+const loadCeipalFixtures = async () => {
+  const { readFile } = await import('node:fs/promises')
+  const read = name => readFile(new URL('../../scraper/simplilearn/fixtures/' + name, import.meta.url), 'utf8')
+  return {
+    openingsHtml: await read('job-openings-current.html'),
+    embedHtml: await read('ceipal-embed.html'),
+    pages: JSON.parse(await read('ceipal-listing-pages.json')),
+    details: JSON.parse(await read('ceipal-public-details.json')),
+  }
+}
+const ceipalOptions = (fixtures, calls = []) => ({
+  now: () => '2026-10-08T19:00:00.000Z',
+  fetchText: async url => {
+    calls.push({ url, method: 'GET' })
+    if (url === 'https://www.simplilearn.com/careers') return careersHtml
+    if (url === 'https://www.simplilearn.com/job-openings') return fixtures.openingsHtml
+    if (url.startsWith('https://jobsapi.ceipal.com/APISource/v1/index.html?')) return fixtures.embedHtml
+    throw new Error('Unexpected HTML URL: ' + url)
+  },
+  fetchJson: async (url, options = {}) => {
+    calls.push({ url, options })
+    if (url.includes('/wp-json/')) throw new Error('HTTP 404 retired WP API')
+    const parsed = new URL(url)
+    if (parsed.pathname.endsWith('/CareerPortalJobPostings/')) {
+      assert.equal(options.method, 'POST')
+      assert.equal(options.body.get('method'), 'CareerPortalJobPostings')
+      assert.equal(options.body.get('cp_id'), 'Z3RkUkt2OXZJVld2MjFpOVRSTXoxZz09')
+      assert.equal(options.body.get('from_career_portal'), '1')
+      return structuredClone(fixtures.pages[Number(parsed.searchParams.get('page')) - 1])
+    }
+    const id = decodeURIComponent(parsed.pathname.split('/').at(-2))
+    assert.equal(options.method || 'GET', 'GET')
+    assert.equal(parsed.searchParams.get('from_career_portal'), '1')
+    assert.equal(parsed.searchParams.get('cp_id'), 'Z3RkUkt2OXZJVld2MjFpOVRSTXoxZz09')
+    if (!fixtures.details[id]) throw new Error('Unexpected detail API URL: ' + url)
+    return structuredClone(fixtures.details[id])
+  },
+})
+
+test('Simplilearn follows its official CEIPAL migration, completes all three pages and verifies all 57 details', async () => {
+  const simplilearn = await loadSimplilearnModule()
+  const fixtures = await loadCeipalFixtures()
+  const calls = []
+  const jobs = await simplilearn.run(ceipalOptions(fixtures, calls))
+  assert.equal(jobs.length, 57)
+  assert.equal(new Set(jobs.map(job => job.jobId)).size, 57)
+  assert.equal(jobs.every(job => job.country === 'India' && job.company === 'Simplilearn' && job.source === 'simplilearn'), true)
+  assert.equal(calls.filter(call => call.options?.method === 'POST').length, 3)
+  assert.equal(calls.filter(call => call.url.startsWith('https://careerapi.ceipal.com/')).length, 60)
+  assert.equal(calls.some(call => call.url.includes('/wp-json/')), false)
+  assert.equal(jobs.every(job => job.sourceUrl.startsWith('https://jobsapi.ceipal.com/APISource/v1/index.html?') && new URL(job.sourceUrl).searchParams.get('job_id') === job.jobId), true)
+  assert.equal(jobs.find(job => job.requisitionId === 'JPC - 155').city, null)
+  assert.equal(jobs.find(job => job.requisitionId === 'JPC - 155').location, 'India')
+  assert.equal(jobs.find(job => job.requisitionId === 'JPC - 75').location, 'Karnataka, India')
+  assert.equal(jobs.find(job => job.requisitionId === 'JPC - 32').city, 'Bangalore')
+  assert.deepEqual(jobs.find(job => job.requisitionId === 'JPC - 32').locations, ['Bengaluru, KA, 560001, India', 'Hsr Layout, KA, 560102, India'])
+  assert.equal(jobs.filter(job => job.jobDescription).length, 50)
+  assert.equal(jobs.find(job => job.requisitionId === 'JPC - 155').jobDescription, 'Sr. Operations Officer')
+  assert.equal(jobs.find(job => job.requisitionId === 'JPC - 155').experienceRequired, '1-3 years')
+  assert.equal(jobs.every(job => job.scrapedAt === '2026-10-08T19:00:00.000Z'), true)
+})
+
+test('Simplilearn rejects foreign or changed CEIPAL employer handoff identifiers before API reads', async () => {
+  const simplilearn = await loadSimplilearnModule()
+  const fixtures = await loadCeipalFixtures()
+  for (const mutate of [
+    html => html.replace('src="https://jobsapi.ceipal.com/', 'src="https://example.org/'),
+    html => html.replace('api_key=NDlYd05RTlF2REZhaHVnTEdjT294dz09', 'api_key=foreign-board'),
+    html => html.replace('cp_id=Z3RkUkt2OXZJVld2MjFpOVRSTXoxZz09', 'cp_id=foreign-portal'),
+    html => html.replace('href="https://www.simplilearn.com/job-openings"', 'href="https://example.org/jobs"'),
+  ]) {
+    const options = ceipalOptions({ ...fixtures, openingsHtml: mutate(fixtures.openingsHtml) })
+    let apiReads = 0
+    options.fetchJson = async () => { apiReads++; throw new Error('Unexpected API request') }
+    await assert.rejects(simplilearn.run(options), /CEIPAL|handoff|identity|portal/i)
+    assert.equal(apiReads, 0)
+  }
+})
+
+test('Simplilearn fails rather than returning a partial CEIPAL inventory for count, page, next URL, or duplicate drift', async () => {
+  const simplilearn = await loadSimplilearnModule()
+  const fixtures = await loadCeipalFixtures()
+  for (const mutate of [
+    pages => { pages[2].results.pop() },
+    pages => { pages[1].count += 1 },
+    pages => { pages[1].page_number = 1 },
+    pages => { pages[0].next = 'https://example.org/page2' },
+    pages => { pages[1].results[0] = pages[0].results[0] },
+    pages => { pages[0].results[0].id = '' },
+  ]) {
+    const pages = structuredClone(fixtures.pages)
+    mutate(pages)
+    await assert.rejects(simplilearn.run(ceipalOptions({ ...fixtures, pages })), /inventory|pagination|page|identity|count|duplicate/i)
+  }
+})
+
+test('Simplilearn propagates CEIPAL listing and detail HTTP failures', async () => {
+  const simplilearn = await loadSimplilearnModule()
+  const fixtures = await loadCeipalFixtures()
+  for (const failedDetail of [false, true]) {
+    const options = ceipalOptions(fixtures)
+    const fetchJson = options.fetchJson
+    options.fetchJson = async (url, request) => {
+      if (failedDetail === !new URL(url).pathname.endsWith('/CareerPortalJobPostings/')) throw new Error('HTTP 503 CEIPAL unavailable')
+      return fetchJson(url, request)
+    }
+    await assert.rejects(simplilearn.run(options), /HTTP 503/)
+  }
+})
+
+test('Simplilearn rejects CEIPAL detail employer, requisition, title, and country conflicts', async () => {
+  const simplilearn = await loadSimplilearnModule()
+  const fixtures = await loadCeipalFixtures()
+  for (const mutate of [
+    detail => { detail.company_url = 'www.other-employer.com' },
+    detail => { detail.job_code = 'JPC - 999' },
+    detail => { detail.public_job_title = 'Unrelated role' },
+    detail => { detail.country = 'United States' },
+  ]) {
+    const details = structuredClone(fixtures.details)
+    mutate(details[fixtures.pages[0].results[0].id])
+    await assert.rejects(simplilearn.run(ceipalOptions({ ...fixtures, details })), /employer|detail|requisition|conflict/i)
+  }
+})
+
+test('Simplilearn accepts only an explicitly complete empty CEIPAL response and honors cancellation', async () => {
+  const simplilearn = await loadSimplilearnModule()
+  const fixtures = await loadCeipalFixtures()
+  const empty = { count: 0, num_pages: 0, limit: 20, page_number: 1, page_count: 0, next: null, previous: null, results: [] }
+  assert.deepEqual(await simplilearn.run(ceipalOptions({ ...fixtures, pages: [empty] })), [])
+  const reason = new Error('source cancelled')
+  await assert.rejects(simplilearn.run({ ...ceipalOptions(fixtures), signal: AbortSignal.abort(reason) }), error => error === reason)
+  const controller = new AbortController()
+  const options = ceipalOptions({ ...fixtures, pages: [empty] })
+  options.signal = controller.signal
+  options.fetchJson = async () => { controller.abort(reason); return empty }
+  await assert.rejects(simplilearn.run(options), error => error === reason)
+})

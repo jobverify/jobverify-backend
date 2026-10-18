@@ -15,7 +15,7 @@ const loadReNewModule = async () => {
   }
 }
 
-test('getScraperCatalog includes ReNew as a verified SuccessFactors script provider', async () => {
+test('getScraperCatalog includes ReNew as a verified employer-published partial LinkedIn provider', async () => {
   const reNew = await loadReNewModule()
   const provider = getScraperCatalog().find((item) => item.source === reNew.SOURCE)
 
@@ -24,14 +24,18 @@ test('getScraperCatalog includes ReNew as a verified SuccessFactors script provi
   assert.equal(provider.companyName, 'ReNew')
   assert.equal(provider.officialBrandName, 'ReNew Power')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyCareerPage, 'https://careers.renew.com/')
-  assert.equal(provider.companyDomain, 'careers.renew.com')
-  assert.equal(provider.atsPlatform, 'successfactors')
+  assert.equal(provider.companyCareerPage, 'https://www.linkedin.com/jobs/renew-jobs-worldwide?f_C=2563081')
+  assert.equal(provider.companyDomain, 'renew.com')
+  assert.equal(provider.atsPlatform, 'linkedin-employer-public-subset')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'startrow-query')
+  assert.equal(provider.verifiedOn, '2026-10-09')
+  assert.equal(provider.verifiedLiveActiveJobCount, null)
+  assert.equal(provider.verifiedLiveIndiaJobCount, null)
+  assert.equal(provider.inventoryVerification.listingComplete, false)
+  assert.equal(provider.paginationStrategy, 'counted-current-native-company-cards+stable-final-snapshot')
   assert.equal(
     provider.extractionStrategy,
-    'verified-renew-jobs-page+successfactors-search-page+detail-pages+filled-role-filter',
+    'first-party-careers+brand-alias+native-company2563081+JobPosting-full-JD+India+active-apply+partial-lifecycle',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')

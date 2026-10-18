@@ -13,7 +13,9 @@ test('getScraperCatalog includes the TCS custom script provider with official me
   assert.ok(tcs)
   assert.equal(tcs.adapter, 'script')
   assert.equal(tcs.atsPlatform, 'official-company-careers')
-  assert.match(tcs.companyCareerPage, /ibegin\.tcsapps\.com\/candidate\/?$/i)
+  assert.equal(tcs.companyCareerPage, 'https://ibegin.tcsapps.com/candidate/next/en-IN/jobs/search')
+  assert.equal(tcs.paginationStrategy, 'complete-public-api-pages')
+  assert.equal(tcs.extractionStrategy, 'verified-india-handoff+public-session-csrf+recent-sorted-json-search+strict-json-details')
   assert.equal(tcs.companyDomain, 'ibegin.tcsapps.com')
 })
 

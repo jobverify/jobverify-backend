@@ -35,7 +35,7 @@ test('Netcore Cloud local catalog captures the verified MyNextHire inventory con
   assert.equal(provider.officialBrandName, 'Netcore Cloud')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://netcorecloud.com/')
-  assert.equal(provider.companyCareerPage, 'https://netcorecloud.com/careers')
+  assert.equal(provider.companyCareerPage, 'https://netcoreai.mynexthire.com/employer/jobs/careers')
   assert.equal(
     provider.companyCareersListUrl,
     'https://netcorecloud.com/careers-list?job_category=engineering',
@@ -45,24 +45,24 @@ test('Netcore Cloud local catalog captures the verified MyNextHire inventory con
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'complete-public-reqlist-inventory',
+    'complete-public-reqlist-and-published-detail-reconciliation',
   )
   assert.equal(
     provider.extractionStrategy,
-    'first-party-careers-list-handoff+validated-mynexthire-inventory+india-filter',
+    'verified-careers-presentation+tenant-identity+unfiltered-reqlist+all-published-details+stable-count+india-filter',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-09-13')
+  assert.equal(provider.verifiedOn, '2026-10-09')
   assert.equal(provider.modulePath, modulePath)
   assert.match(provider.dryRunFile, /netcorecloud[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /September 13, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 9, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/netcorecloud\.com\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/netcorecloud\.com\/careers-list\?job_category=engineering/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/netcore\.ai\/careers/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/netcore\.ai\/careers-list\?job_category=engineering/i)
-  assert.match(provider.verifiedSurfaceSummary, /Loading shells/i)
-  assert.match(provider.verifiedSurfaceSummary, /reject the snapshot/i)
+  assert.match(provider.verifiedSurfaceSummary, /Blocked marketing pages/i)
+  assert.match(provider.verifiedSurfaceSummary, /published details/i)
 
   assert.equal(
     netcoreCloud.PROVIDER_METADATA.source,
@@ -100,7 +100,7 @@ test('Netcore Cloud hydrated local catalog stays script-runner compatible for ce
 
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.companyName, 'Netcore Cloud')
-  assert.equal(provider.companyCareerPage, 'https://netcorecloud.com/careers')
+  assert.equal(provider.companyCareerPage, 'https://netcoreai.mynexthire.com/employer/jobs/careers')
   assert.equal(provider.companyDomain, 'netcorecloud.com')
   assert.match(provider.modulePath, /netcorecloud[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /netcorecloud[\\/]jobs\.json$/i)

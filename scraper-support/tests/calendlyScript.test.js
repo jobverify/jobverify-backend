@@ -56,7 +56,7 @@ const greenhousePayload = {
     },
   ],
   meta: {
-    total: 14,
+    total: 2,
   },
 }
 
@@ -113,6 +113,11 @@ test('Calendly returns an honest zero-job result while the verified public Green
 
   assert.deepEqual(requested, [
     { type: 'text', url: calendly.CAREERS_URL },
+    {
+      type: 'json',
+      url: 'https://boards-api.greenhouse.io/v1/boards/calendly/jobs?content=true',
+      options: { method: 'GET' },
+    },
     {
       type: 'json',
       url: 'https://boards-api.greenhouse.io/v1/boards/calendly/jobs?content=true',

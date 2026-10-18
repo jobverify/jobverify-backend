@@ -17,12 +17,14 @@ const homepageHtml = `
 const careerFormHtml = `
   <html>
     <body>
+      <form method="post" action="Career.aspx"><input name="Position" type="text" />
       <h2>-Apply Here-</h2>
       <p>Apply via the form given below and meet us for face to face interview.</p>
       <label>First name</label>
       <label>Position you are applying for</label>
       <label>Upload Resume</label>
       <label>Years Of Experience</label>
+      </form>
     </body>
   </html>
 `
@@ -42,7 +44,7 @@ const loadAculifeModule = async () => {
   }
 }
 
-test('Aculife scraper constants stay pinned to the verified first-party apply form and missing public jobs routes', async () => {
+test('Aculife scraper constants stay pinned to the verified first-party apply form and historical route probes', async () => {
   const aculife = await loadAculifeModule()
 
   assert.equal(aculife.SOURCE, 'aculife')
@@ -90,12 +92,11 @@ test('Aculife returns no jobs only while the verified first-party surface stays 
   assert.deepEqual(requestedUrls, [
     aculife.HOMEPAGE_URL,
     aculife.CAREER_PAGE_URL,
-    ...aculife.NO_PUBLIC_JOB_ROUTE_URLS,
   ])
   assert.deepEqual(jobs, [])
 })
 
-test('Aculife fails closed when the homepage, apply form, or checked public jobs routes drift', async () => {
+test('Aculife fails closed when the homepage, apply form, or newly published jobs drift', async () => {
   const aculife = await loadAculifeModule()
 
   await assert.rejects(
@@ -140,7 +141,7 @@ test('Aculife fails closed when the homepage, apply form, or checked public jobs
         }
 
         if (url === aculife.CAREER_PAGE_URL) {
-          return { status: 200, url, html: careerFormHtml }
+          return { status: 200, url, html: careerFormHtml + '<script type="application/ld+json">{"@type":"JobPosting","title":"Engineer"}</script>' }
         }
 
         if (url === aculife.NO_PUBLIC_JOB_ROUTE_URLS[0]) {
@@ -150,6 +151,6 @@ test('Aculife fails closed when the homepage, apply form, or checked public jobs
         return { status: 404, url, html: notFoundHtml }
       },
     }),
-    /verified no-public-job route/i,
+    /public jobs|hiring handoff/i,
   )
 })

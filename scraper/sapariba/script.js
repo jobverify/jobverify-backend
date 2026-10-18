@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import SAP_ARIBA_CATALOG from './catalog.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -25,13 +26,14 @@ const extractTitle = (html = '') => {
   return normalizeWhitespace(match?.[1]) || null
 }
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
   })
 
   return {
@@ -66,9 +68,19 @@ export const hasExactSapAribaCareersSignal = (html = '') =>
   /(careers? at sap ariba|jobs? at sap ariba|join sap ariba|work at sap ariba)/i.test(String(html ?? ''))
 
 export const createSapAribaScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const careersPage = await fetchPage(CAREERS_URL)
+  async run({ fetchPage = defaultFetchPage, now = () => new Date().toISOString(), signal } = {}) {
+    signal?.throwIfAborted()
+    const careersPage = await fetchPage(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
 
+    if (Number.isInteger(careersPage.status) && careersPage.status !== 200) {
+      const error = new Error('SAP Ariba public careers HTTP ' + careersPage.status + ' for ' + careersPage.url)
+      error.code = 'UPSTREAM_HTTP_ERROR'
+      error.status = careersPage.status
+      error.statusCode = careersPage.status
+      error.url = careersPage.url
+      throw error
+    }
     if (
       careersPage.status !== 200
       || (!sameUrl(careersPage.url, CAREERS_URL) && !isTrustedSapCareersRedirect(careersPage.url))
@@ -81,7 +93,11 @@ export const createSapAribaScraper = () => ({
       throw new Error('SAP careers now exposes an exact-name SAP Ariba public jobs surface and needs a real scraper')
     }
 
-    return []
+    return attachInventoryEvidence([], {
+      status: 'discovery-only', surface: CAREERS_URL, firstParty: true, listingComplete: false,
+      pagesFetched: 1, reportedTotal: null, indiaFacetCount: null, verifiedAt: now(),
+      reason: 'Generic SAP parent careers discovery does not establish an exact-brand SAP Ariba global or India job inventory. An empty discovery result cannot authorize expiry.',
+    })
   },
 })
 

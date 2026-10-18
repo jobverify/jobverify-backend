@@ -385,3 +385,23 @@ test('Workday propagates source cancellation during required CXS scope verificat
   await assert.rejects(runWorkdayScraper({ ...options, signal: controller.signal, detailEnrichmentBudgetMs: 0 }),
     (error) => error === reason)
 })
+
+
+test('Workday excludes grouped US-only roles with a Workday USA Offices location', async (t) => {
+  t.mock.method(globalThis, 'fetch', async (url, init = {}) => {
+    if (init.method === 'POST') return json({
+      total: 2, jobPostings: [posting(1), posting(2, '3 Locations')],
+    })
+    if (String(url).includes('/wday/cxs/')) return json({ jobPostingInfo: {
+      location: 'USA, IL, Chicago',
+      additionalLocations: ['USA, WY, Remote', 'Workday USA Offices'],
+      country: { descriptor: 'United States of America' },
+      jobRequisitionLocation: { country: { alpha2Code: 'US' } },
+    } })
+    return new Response('<html>Workday</html>')
+  })
+  const jobs = await runWorkdayScraper({ ...options, detailEnrichmentBudgetMs: 0 })
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Engineer 1')
+  assert.equal(jobs[0].location, 'Bangalore, India')
+})

@@ -170,3 +170,30 @@ test('run validates the official Sun Mobility LinkedIn handoff and decorates Ind
   assert.equal(jobs[0].employmentType, 'Full-time')
   assert.equal(jobs[0].link, 'https://in.linkedin.com/jobs/view/embedded-software-engineer-at-sun-mobility-4433812958?position=1&pageNum=0')
 })
+
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
+import { fileURLToPath } from 'node:url'
+
+const execFileAsync = promisify(execFile)
+
+test('Sun Mobility parses current new-date LinkedIn cards without blocking the event loop', async () => {
+  const moduleUrl = new URL('../../scraper/sunmobility/script.js', import.meta.url).href
+  const fixturePath = fileURLToPath(new URL('../../scraper/sunmobility/fixtures/linkedin-search-current.html', import.meta.url))
+  const code = [
+    'import fs from "node:fs/promises"',
+    'import { extractSearchResults } from ' + JSON.stringify(moduleUrl),
+    'const jobs = extractSearchResults(await fs.readFile(' + JSON.stringify(fixturePath) + ', "utf8"))',
+    'console.log(JSON.stringify(jobs.map(({ jobId, title, postingDate }) => ({ jobId, title, postingDate }))))',
+  ].join(';')
+  const { stdout } = await execFileAsync(process.execPath, ['--input-type=module', '-e', code], {
+    timeout: 3000,
+    killSignal: 'SIGKILL',
+    windowsHide: true,
+  })
+  assert.deepEqual(JSON.parse(stdout), [
+    { jobId: '4426606139', title: 'Embedded Application Developer', postingDate: '2026-06-11' },
+    { jobId: '4470858240', title: 'Associate – Company Secretary', postingDate: '2026-09-28' },
+    { jobId: '4477120207', title: 'Senior Vehicle Integration Specialist (Electrical Focus)', postingDate: '2026-10-08' },
+  ])
+})

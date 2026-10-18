@@ -1,275 +1,144 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
 import { DINEOUT_CATALOG } from './catalog.js'
+import { composeAbortSignals } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
+import { toPlainText } from '../../scraper-support/detailExtractors/shared.js'
+import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
 export const PROVIDER_METADATA = DINEOUT_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
-export const OFFICIAL_BRAND_NAME = PROVIDER_METADATA.officialBrandName
-export const PARENT_COMPANY_NAME = PROVIDER_METADATA.parentCompanyName
-export const VERIFIED_AT = PROVIDER_METADATA.verifiedOn
-export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
-export const HOMEPAGE_URL = PROVIDER_METADATA.homepageUrl
-export const CANONICAL_CONSUMER_SURFACE_URL = PROVIDER_METADATA.canonicalConsumerSurfaceUrl
-export const OFFICIAL_BUSINESS_URL = PROVIDER_METADATA.officialBusinessUrl
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
-export const CAREERS_INTEGRATION_SCRIPT_URL = PROVIDER_METADATA.careersIntegrationScriptUrl
-export const JOBS_BOARD_URL = PROVIDER_METADATA.jobsBoardUrl
-export const JOBS_BOARD_DETAILS_URL = PROVIDER_METADATA.jobsBoardDetailsUrl
-export const REDIRECTED_NO_TRUST_ROUTE_URL = PROVIDER_METADATA.redirectedNoTrustRouteUrl
-export const NO_TRUST_PUBLIC_JOB_ROUTE_URLS = [
-  'https://www.dineout.co.in/careers',
-  'https://www.dineout.co.in/careers/',
-  'https://www.dineout.co.in/jobs',
-  'https://www.dineout.co.in/jobs/',
-  'https://www.dineout.co.in/work-with-us',
-  'https://www.dineout.co.in/join-us',
-]
-
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
-
-const normalizeWhitespace = (value = '') => String(value ?? '')
-  .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
-  .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
-  .replace(/<[^>]+>/g, ' ')
-  .replace(/&nbsp;/gi, ' ')
-  .replace(/&#39;|&apos;|&rsquo;/gi, "'")
-  .replace(/&quot;/gi, '"')
-  .replace(/&amp;/gi, '&')
-  .replace(/\u00a0/g, ' ')
-  .replace(/\s+/g, ' ')
-  .trim()
-
-const parseJson = (value) => {
-  try {
-    return JSON.parse(String(value ?? ''))
-  } catch {
-    return null
-  }
+export const LEGACY_CAREERS_URL = PROVIDER_METADATA.legacyCareersUrl
+export const JOBS_FEED_URL = PROVIDER_METADATA.jobsFeedUrl
+export const JOBS_API_URL = PROVIDER_METADATA.jobsApiUrl
+const normalizeString = value => String(value ?? '').replace(/\s+/g, ' ').trim()
+const isDineOut = value => /^dine[ -]?out$/i.test(normalizeString(value))
+const businessUnit = item => {
+  const fields = item?.customField?.filter(field => field.fieldLabel === 'BusinessUnit') || []
+  if (fields.length !== 1 || !normalizeString(fields[0].valueLabel)) throw new Error('Dineout unresolved Swiggy business unit attribution')
+  return normalizeString(fields[0].valueLabel)
 }
-
-const defaultFetchPage = async (url) => {
+const signature = (title, city, unit) => JSON.stringify([title, city, unit].map(value => normalizeString(value).toLowerCase()))
+const hasTrustedJobUrl = value => {
+  try {
+    const url = new URL(value)
+    return url.origin === 'https://jobs.smartrecruiters.com' && /^\/SWIGGY\/\d+-[^/]+$/.test(url.pathname)
+  } catch { return false }
+}
+const defaultFetchPage = async (url, { signal } = {}) => {
   const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7',
-    },
+    headers: { 'User-Agent': 'JobverifyCareerScraper/1.0', Accept: 'application/json,text/html,*/*' },
+    signal: composeAbortSignals(signal, AbortSignal.timeout(15000)),
     redirect: 'follow',
   })
+  return { status: response.status, url: response.url, html: await response.text() }
+}
+const getJson = async (fetchPage, url) => {
+  const page = await fetchPage(url)
+  if (page.status !== 200 || page.url !== url) throw new Error('Dineout public inventory request failed for ' + url)
+  try { return JSON.parse(page.html) } catch { throw new Error('Dineout malformed public inventory response for ' + url) }
+}
+const getAppScriptUrl = html => {
+  const match = String(html ?? '').match(/<script\b(?=[^>]*\btype=["']module["'])[^>]*\bsrc=["']([^"']+)["']/i)
+  if (!match) return null
+  const url = new URL(match[1], CAREERS_URL)
+  return url.origin === new URL(CAREERS_URL).origin && /^\/assets\/[^/]+\.js$/.test(url.pathname) ? url.toString() : null
+}
+export const hasParentCareersLandingSignal = html => /<title>\s*Swiggy Careers\b[^<]*<\/title>/i.test(html)
+  && /<meta\b(?=[^>]*\bname=["']description["'])[^>]*\bcontent=["'][^"']*Swiggy Careers/i.test(html)
+  && Boolean(getAppScriptUrl(html))
 
+const validatePosting = item => {
+  if (!/^\d+$/.test(String(item?.id)) || !normalizeString(item?.name) || item.company?.identifier !== 'SWIGGY' || item.visibility !== 'PUBLIC'
+    || item.ref !== JOBS_API_URL + '/' + item.id) throw new Error('Dineout public postings no longer belong to the verified Swiggy tenant')
+  if (!normalizeString(item.location?.country) || !normalizeString(item.location?.city)) throw new Error('Dineout unresolved Swiggy location country')
+  businessUnit(item)
+}
+const mapDetail = (item, detail) => {
+  if (detail?.id !== item.id || detail.company?.identifier !== 'SWIGGY' || detail.active !== true || detail.visibility !== 'PUBLIC'
+    || normalizeString(detail.name) !== normalizeString(item.name) || !isDineOut(businessUnit(detail))
+    || !/^(in|India)$/i.test(detail.location?.country || '')
+    || normalizeString(detail.location?.city) !== normalizeString(item.location.city)
+    || !hasTrustedJobUrl(detail.postingUrl) || !hasTrustedJobUrl(detail.applyUrl)) throw new Error('Dineout selected Dine Out job detail no longer matches the verified public listing')
+  const sections = detail.jobAd?.sections
+  const roleDescription = toPlainText(sections?.jobDescription?.text || '')
+  if (!roleDescription) throw new Error('Dineout selected Dine Out job description is missing')
+  const jobDescription = toPlainText(Object.values(sections).map(section => section?.text || '').join('\n'))
+  const minimumQualification = toPlainText(sections.qualifications?.text || '') || null
+  const department = detail.customField.find(field => field.fieldLabel === 'Department.')?.valueLabel || null
   return {
-    status: response.status,
-    url: response.url,
-    html: await response.text(),
+    title: normalizeString(detail.name), company: COMPANY, department,
+    location: normalizeString(detail.location.fullLocation) || normalizeString(detail.location.city) + ', India',
+    city: normalizeString(detail.location.city), state: normalizeString(detail.location.region) || null, country: 'India',
+    jobId: String(item.id), requisitionId: normalizeString(detail.refNumber) || String(item.id),
+    sourceUrl: detail.postingUrl, applyUrl: detail.applyUrl,
+    employmentType: normalizeString(detail.typeOfEmployment?.label) || null,
+    experienceRequired: extractJobFilterSignals({ title: detail.name, jobDescription, experienceRequired: null }).experienceProfile?.evidence || null,
+    minimumQualification, preferredQualification: null, requiredSkills: [],
+    postingDate: normalizeString(detail.releasedDate) || null, closingDate: null, jobDescription,
+    remoteStatus: detail.location.remote ? 'Remote' : detail.location.hybrid ? 'Hybrid' : 'On-site',
   }
 }
 
-export const extractCanonicalConsumerSurfaceUrl = (html = '') => {
-  const match = /<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i.exec(String(html ?? ''))
-  return match?.[1] ?? null
-}
+export const createDineoutScraper = ({ now = () => new Date().toISOString() } = {}) => ({
+  async run({ fetchPage, signal } = {}) {
+    fetchPage ??= url => defaultFetchPage(url, { signal })
+    // The established parent domain redirects to its current first-party careers site.
+    const careers = await fetchPage(LEGACY_CAREERS_URL)
+    if (careers.status !== 200 || careers.url !== CAREERS_URL || !hasParentCareersLandingSignal(careers.html)) throw new Error('Dineout verified Swiggy careers handoff no longer matches the current public surface')
+    const appUrl = getAppScriptUrl(careers.html)
+    const app = await fetchPage(appUrl)
+    if (app.status !== 200 || app.url !== appUrl || !app.html.includes('/api/jobs.json') || !/\bDineout\b/.test(app.html)
+      || !app.html.includes('Explore Open Roles') || !app.html.includes('Filter by business unit')) throw new Error('Dineout verified Swiggy careers application no longer exposes the attributed public inventory')
+    const feed = await getJson(fetchPage, JOBS_FEED_URL)
+    if (!Array.isArray(feed?.jobs) || !Number.isInteger(feed.total) || feed.total < 0 || feed.jobs.length !== feed.total) throw new Error('Dineout incomplete Swiggy careers inventory')
+    const feedUrls = new Set()
+    for (const job of feed.jobs) {
+      if (!normalizeString(job.t) || !normalizeString(job.c) || !normalizeString(job.b) || !hasTrustedJobUrl(job.u) || feedUrls.has(job.u)) throw new Error('Dineout incomplete Swiggy careers inventory: unresolved fields or repeated links')
+      feedUrls.add(job.u)
+    }
 
-export const hasOfficialHomepageSignal = (html = '') => {
-  const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
-  const keywordsMatch = /<meta\b[^>]*name=["']keywords["'][^>]*content=["']([^"']+)["']/i.exec(rawHtml)
-  const keywords = keywordsMatch?.[1] ?? ''
-
-  return extractCanonicalConsumerSurfaceUrl(rawHtml) === CANONICAL_CONSUMER_SURFACE_URL
-    && /Swiggy Dineout/i.test(keywords)
-    && /Swiggy Dineout/i.test(normalized)
-}
-
-export const hasOfficialBusinessSignal = (html = '') => {
-  const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
-
-  return /<title>\s*Our Business - Swiggy\s*<\/title>/i.test(rawHtml)
-    && /\bDineout facilitates a user(?:'|’|&rsquo;)s eating-out experience\b/i.test(normalized)
-    && /\bSwiggy Limited\b/i.test(normalized)
-}
-
-export const hasRedirectedRestaurantsNearMeSignal = (html = '') => {
-  const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
-
-  return /Best Restaurants Near Me(?: In \d{4})? \| Swiggy/i.test(rawHtml)
-    && normalized.includes('Restaurants Near Me')
-    && normalized.includes('For Dining Out')
-    && normalized.includes('Order Online')
-    && /Book a table/i.test(normalized)
-}
-
-export const isVerifiedRedirectedNoTrustPublicJobRoute = (page = {}) =>
-  String(page?.url ?? '') === REDIRECTED_NO_TRUST_ROUTE_URL
-  && (
-    (
-      Number(page?.status) === 403
-      && /\b403 Forbidden\b/i.test(String(page?.html ?? ''))
-    )
-    || (
-      Number(page?.status) === 200
-      && hasRedirectedRestaurantsNearMeSignal(page?.html)
-    )
-  )
-
-export const hasParentCareersLandingSignal = (html = '') => {
-  const rawHtml = String(html ?? '')
-  const normalized = normalizeWhitespace(rawHtml)
-
-  return /<title>\s*Swiggy Careers\s*<\/title>/i.test(rawHtml)
-    && /<meta\s+name=["']description["'][^>]*Check out the exciting job opportunities at Swiggy!/i.test(rawHtml)
-    && /assets\/js\/careers-integration\.js/i.test(rawHtml)
-    && /\bSwiggy Careers\b/i.test(normalized)
-}
-
-export const extractJobsBoardUrlFromIntegrationScript = (scriptText = '') => {
-  const text = String(scriptText ?? '')
-  const directMatch = /(https:\/\/[a-z0-9-]+\.mynexthire\.com\/employer\/jobs\/careers)/i.exec(text)
-  if (directMatch) {
-    return directMatch[1]
-  }
-
-  const shortNameMatch = /clientShortName\s*=\s*["']([^"']+)["']/i.exec(text)
-  if (shortNameMatch && /mynexthire\.com\/employer\/jobs\/careers/i.test(text)) {
-    return `https://${shortNameMatch[1]}.mynexthire.com/employer/jobs/careers`
-  }
-
-  if (
-    /iFrameSrc\s*=\s*["']https:\/\/["']\s*\+\s*clientShortName\s*\+\s*["']\.mynexthire\.com\/employer\/jobs\/careers["']/i.test(text)
-    && /page=careers/i.test(text)
-  ) {
-    return JOBS_BOARD_URL
-  }
-
-  return null
-}
-
-export const hasJobsBoardLandingSignal = (html = '') => {
-  const rawHtml = String(html ?? '')
-  return /<title>\s*Approved Jobs, powered by Smaclify Technologies!\s*<\/title>/i.test(rawHtml)
-    && /\/employer\/ui\/js\/jobboard\/careers\.js/i.test(rawHtml)
-}
-
-export const hasDineoutAttributablePublicRoles = (value = '') => {
-  const text = normalizeWhitespace(String(value ?? ''))
-  return /\bDineout\b/i.test(text)
-    && /\b(job|jobs|career|careers|role|roles|opening|openings|position|positions|hiring|apply)\b/i.test(text)
-}
-
-const toTypedUrlMap = (value) => {
-  if (Array.isArray(value)) {
-    return value.reduce((accumulator, entry) => {
-      const pageType = String(entry?.pageType ?? '')
-      const url = String(entry?.url ?? '')
-      if (pageType && url) {
-        accumulator[pageType] = url
+    const items = [], ids = new Set()
+    let total, pagesFetched = 0
+    do {
+      const url = new URL(JOBS_API_URL)
+      url.searchParams.set('limit', '100')
+      url.searchParams.set('offset', String(items.length))
+      const page = await getJson(fetchPage, url.toString())
+      pagesFetched += 1
+      if (!Array.isArray(page?.content) || !Number.isInteger(page.totalFound) || page.totalFound < 0 || page.offset !== items.length) throw new Error('Dineout incomplete SmartRecruiters inventory: malformed page')
+      total ??= page.totalFound
+      if (page.totalFound !== total || (!page.content.length && items.length < total)) throw new Error('Dineout incomplete SmartRecruiters inventory: totals changed or pagination stopped')
+      for (const item of page.content) {
+        validatePosting(item)
+        if (ids.has(item.id)) throw new Error('Dineout incomplete SmartRecruiters inventory: repeated posting ID')
+        ids.add(item.id)
+        items.push(item)
       }
-      return accumulator
-    }, {})
-  }
-
-  if (value && typeof value === 'object') {
-    return Object.entries(value).reduce((accumulator, [pageType, entry]) => {
-      const url = typeof entry === 'string'
-        ? entry
-        : String(entry?.url ?? '')
-      if (url) {
-        accumulator[pageType] = url
-      }
-      return accumulator
-    }, {})
-  }
-
-  return {}
-}
-
-export const hasVerifiedJobBoardDetailsSignal = (jsonText = '') => {
-  const payload = parseJson(jsonText)
-  if (!payload || typeof payload !== 'object') {
-    return false
-  }
-
-  const careerPageUrl = payload.career_page_url
-    || payload.tenantPreferencesMap?.career_page_url
-    || null
-  const typedCareerUrls = toTypedUrlMap(careerPageUrl?.url)
-  const typedReferralUrls = toTypedUrlMap(careerPageUrl?.referral_url)
-
-  return payload.clientName === 'Swiggy'
-    && typedCareerUrls.list === 'https://careers.swiggy.com/#/careers'
-    && typedCareerUrls.jd === 'https://careers.swiggy.com/#/careers'
-    && typedCareerUrls.application === 'https://careers.swiggy.com/#/careers/apply'
-    && (
-      typedReferralUrls.list === JOBS_BOARD_URL
-      || typedReferralUrls.list === 'https://swiggy.mynexthire.com/employer/referrals'
-    )
-    && !hasDineoutAttributablePublicRoles(jsonText)
-}
-
-export const createDineoutScraper = () => ({
-  async run({
-    fetchPage = defaultFetchPage,
-  } = {}) {
-    const businessPage = await fetchPage(OFFICIAL_BUSINESS_URL)
-    if (businessPage.status !== 200 || !hasOfficialBusinessSignal(businessPage.html)) {
-      throw new Error('Dineout verified Swiggy business page no longer identifies the Dineout business')
-    }
-
-    const careersPage = await fetchPage(CAREERS_URL)
-    if (
-      careersPage.status !== 200
-      || !hasParentCareersLandingSignal(careersPage.html)
-      || hasDineoutAttributablePublicRoles(careersPage.html)
-    ) {
-      throw new Error('Dineout verified Swiggy careers landing page no longer matches the known public surface or now exposes Dineout-attributable public roles')
-    }
-
-    const careersIntegrationScript = await fetchPage(CAREERS_INTEGRATION_SCRIPT_URL)
-    if (
-      careersIntegrationScript.status !== 200
-      || extractJobsBoardUrlFromIntegrationScript(careersIntegrationScript.html) !== JOBS_BOARD_URL
-      || hasDineoutAttributablePublicRoles(careersIntegrationScript.html)
-    ) {
-      throw new Error('Dineout verified Swiggy careers integration no longer matches the known public surface')
-    }
-
-    const jobsBoardPage = await fetchPage(JOBS_BOARD_URL)
-    if (
-      jobsBoardPage.status !== 200
-      || !hasJobsBoardLandingSignal(jobsBoardPage.html)
-      || hasDineoutAttributablePublicRoles(jobsBoardPage.html)
-    ) {
-      throw new Error('Dineout verified Swiggy jobs board landing page no longer matches the known public surface')
-    }
-
-    const jobsBoardDetails = await fetchPage(JOBS_BOARD_DETAILS_URL)
-    if (hasDineoutAttributablePublicRoles(jobsBoardDetails.html)) {
-      throw new Error('Swiggy job board now exposes Dineout-attributable public roles')
-    }
-
-    if (jobsBoardDetails.status !== 200 || !hasVerifiedJobBoardDetailsSignal(jobsBoardDetails.html)) {
-      throw new Error('Dineout verified Swiggy job board details no longer match the known public surface')
-    }
-
-    return []
+      if (items.length > total) throw new Error('Dineout incomplete SmartRecruiters inventory: advertised count exceeded')
+    } while (items.length < total)
+    // The first-party feed uses job-ad URLs; the API uses posting IDs. Compare every title/city/unit with multiplicity.
+    const feedKeys = feed.jobs.map(job => signature(job.t, job.c, job.b)).sort()
+    const apiKeys = items.map(item => signature(item.name, item.location.city, businessUnit(item))).sort()
+    if (feed.total !== total || JSON.stringify(feedKeys) !== JSON.stringify(apiKeys)) throw new Error('Dineout parent and ATS inventories disagree')
+    const selected = items.filter(item => isDineOut(businessUnit(item)) && /^(in|India)$/i.test(item.location.country))
+    const jobs = await mapWithConcurrency(selected, 3, async item => mapDetail(item, await getJson(fetchPage, item.ref)))
+    const result = jobs.map(job => ({ ...job, source: SOURCE, link: job.applyUrl, scrapedAt: now() }))
+    return attachInventoryEvidence(result, {
+      status: result.length ? 'complete-inventory' : 'verified-empty', surface: JOBS_API_URL,
+      firstParty: true, listingComplete: true, pagesFetched, reportedTotal: selected.length, indiaFacetCount: selected.length,
+      verifiedAt: now(), reason: 'complete-parent-inventories-reconciled-' + total + '-parent-postings-dine-out-india-business-unit',
+    })
   },
 })
-
 export const run = async (options = {}) => createDineoutScraper().run(options)
-
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
-  const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
-
-  if (isDryRun) {
-    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-  } else {
-    await saveToDB(jobs, SOURCE)
-  }
+  if (process.argv.includes('--dry-run')) saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  else await saveToDB(jobs, SOURCE)
 }

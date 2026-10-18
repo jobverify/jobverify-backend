@@ -5,9 +5,9 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
-test('cleanup retains Laya runtime, weights and worker state while deleting scrape artifacts', () => {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'laya-clean-test-'));
-  const preserved = ['.cache/laya-python/package/tools/python.exe', '.cache/laya-model/weights.bin', '.cache/laya-venv/python', '.cache/scraper-actions/laya-worker.json', '.cache/description-rewriter/model.bin'];
+test('cleanup retains GLiClass runtime, weights and worker state while deleting scrape artifacts', () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'gliclass-clean-test-'));
+  const preserved = ['.cache/gliclass-hub/hub/config.json', '.cache/gliclass-model/weights.bin', '.cache/gliclass-runtime/python', '.cache/scraper-actions/classification-0.json', '.cache/description-rewriter/model.bin'];
   const removed = ['.cache/classification-runs/old.json', 'scraper/example/jobs.json', 'coverage/old.json'];
   try {
     fs.mkdirSync(path.join(directory, 'scripts'));

@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { CANONICAL_CITIES } from '../../scraper-support/utils/cities.js'
+
 import { LINKEDIN_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -89,14 +91,14 @@ const parseSearchLocation = (value) => {
     return {
       location: normalized,
       city: normalized,
-      country: 'India',
+      country: normalized === 'India' || CANONICAL_CITIES[normalized.toLowerCase().replace(/ metropolitan (region|area)$/, '')] && !/^(remote|none)$/i.test(normalized) ? 'India' : null,
     }
   }
 
   return {
     location: normalized,
     city: parts[0] || null,
-    country: parts.at(-1) === 'India' ? 'India' : 'India',
+    country: parts.at(-1) === 'India' ? 'India' : null,
   }
 }
 
@@ -134,7 +136,7 @@ const extractLocationFromTitleTag = (html = '') => {
   return {
     location: rawLocation,
     city: parts[0] || rawLocation,
-    country: parts.at(-1) === 'India' ? 'India' : parts.at(-1) || null,
+    country: parts.at(-1) === 'India' ? 'India' : null,
   }
 }
 
@@ -202,53 +204,48 @@ const extractCriteriaValue = (html = '', label) => {
 }
 
 export const hasVerifiedJobsPageSignal = (html = '') => {
-  const page = String(html ?? '')
-  const text = stripTags(page) || ''
-
+  const page = String(html ?? ''), text = stripTags(page) || ''
+  const legacyCanonical = /<meta[^>]+property=["']og:url["'][^>]+content=["']https:\/\/www\.linkedin\.com\/jobs\/search["']/i.test(page)
+  let currentScope = false
+  const currentCanonical = /<meta[^>]+property=["']og:url["'][^>]+content=["']https:\/\/in\.linkedin\.com\/jobs\/jobs-in-india["']/i.test(page)
+  try {
+    const tag = [...page.matchAll(/<meta\b[^>]*>/gi)].find(m => /property=["']lnkd:url["']/.test(m[0]))?.[0]
+    const url = new URL(decodeHtml(tag?.match(/content=["']([^"']+)["']/)?.[1] || ''))
+    const selected = [...page.matchAll(/<input\b[^>]*>/gi)].some(m => /name=["']f_C["']/.test(m[0]) && /\bchecked\b/.test(m[0]) && /value=["']1337["']/.test(m[0]))
+    currentScope = currentCanonical && url.origin === 'https://www.linkedin.com' && /^\/jobs\/search\/$/.test(url.pathname)
+      && url.searchParams.get('f_C') === '1337' && url.searchParams.get('geoId') === '102713980' && selected
+  } catch { /* A current alias without verified scope is not trusted. */ }
   return /<meta[^>]+name=["']linkedin:pageTag["'][^>]+content=["'][^"]*jserp/i.test(page)
-    && /<meta[^>]+property=["']og:url["'][^>]+content=["']https:\/\/www\.linkedin\.com\/jobs\/search["']/i.test(page)
-    && /jobs in India/i.test(text)
-    && /LinkedIn/i.test(text)
+    && (legacyCanonical || currentScope) && /jobs in India/i.test(text) && /LinkedIn/i.test(text)
 }
 
-export const extractSearchResults = (html = '') => [...String(html ?? '').matchAll(
-  /<div class="base-card[\s\S]*?job-search-card"[\s\S]*?data-entity-urn="urn:li:jobPosting:([0-9]+)"[\s\S]*?<a class="base-card__full-link[^"]*" href="([^"]+)"[\s\S]*?<h3 class="base-search-card__title">\s*([\s\S]*?)\s*<\/h3>[\s\S]*?<h4 class="base-search-card__subtitle">[\s\S]*?<a[^>]*>\s*([\s\S]*?)\s*<\/a>[\s\S]*?<span class="job-search-card__location">\s*([\s\S]*?)\s*<\/span>[\s\S]*?<time class="job-search-card__listdate" datetime="([^"]+)"/gi,
-)]
-  .map((match) => {
-    const [, jobId, rawHref, rawTitle, rawCompany, rawLocation, postingDate] = match
-    const title = stripTags(rawTitle)
-    const company = stripTags(rawCompany)
-    const sourceUrl = normalizeWhitespace(rawHref)?.replace(/&amp;/g, '&')
-    const locationData = parseSearchLocation(stripTags(rawLocation))
-
-    if (!jobId || !title || !company || !sourceUrl) return null
-    if (company !== COMPANY) return null
-
-    return {
-      title,
-      company,
-      department: null,
-      location: locationData.location,
-      city: locationData.city,
-      country: locationData.country,
-      jobId,
-      requisitionId: jobId,
-      sourceUrl,
-      applyUrl: sourceUrl,
-      employmentType: null,
-      experienceRequired: null,
-      minimumQualification: null,
-      preferredQualification: null,
-      requiredSkills: [],
-      postingDate: normalizeWhitespace(postingDate),
-      closingDate: null,
-      jobDescription: null,
-      remoteStatus: null,
-    }
-  })
-  .filter(Boolean)
-  .filter((listing, index, collection) =>
-    collection.findIndex((candidate) => candidate.jobId === listing.jobId) === index)
+export const extractSearchResults = (html = '') => {
+  const page = String(html), jobs = []
+  const cards = [...page.matchAll(/<div\b[^>]*>/gi)]
+    .filter(m => /\bclass=["'][^"']*\bjob-search-card\b[^"']*["']/i.test(m[0]))
+  for (let index = 0; index < cards.length; index++) {
+    const opening = cards[index], card = page.slice(opening.index, cards[index + 1]?.index ?? page.length)
+    const jobId = opening[0].match(/data-entity-urn=["']urn:li:jobPosting:(\d+)["']/)?.[1]
+    const field = (tag, cls) => card.match(new RegExp('<' + tag + '\\b[^>]*class=["\\\'][^"\\\']*\\b' + cls + '\\b[^"\\\']*["\\\'][^>]*>([\\s\\S]*?)<\\/' + tag + '>', 'i'))?.[1]
+    const title = stripTags(field('h3', 'base-search-card__title'))
+    const company = stripTags(field('h4', 'base-search-card__subtitle'))
+    if (company !== COMPANY) continue
+    const link = card.match(/<a\b[^>]*class=["'][^"']*\bbase-card__full-link\b[^"']*["'][^>]*>/)?.[0]
+    const sourceUrl = normalizeWhitespace(link?.match(/href=["']([^"']+)["']/)?.[1])
+    const dateTag = card.match(/<time\b[^>]*class=["']job-search-card__listdate(?:--new)?["'][^>]*>/)?.[0]
+    const postingDate = normalizeWhitespace(dateTag?.match(/datetime=["']([^"']+)["']/)?.[1])
+    const locationData = parseSearchLocation(stripTags(field('span', 'job-search-card__location')))
+    let trustedUrl = false
+    try { const parsed = new URL(sourceUrl); trustedUrl = parsed.protocol === 'https:' && /^(?:www|in)\.linkedin\.com$/.test(parsed.hostname)
+      && parsed.pathname.startsWith('/jobs/view/') && parsed.pathname.endsWith('-' + jobId) } catch {}
+    if (!jobId || !title || !postingDate || !locationData.location || !trustedUrl) throw new Error('LinkedIn current public job card fields or identity changed')
+    if (jobs.some(job => job.jobId === jobId)) throw new Error('LinkedIn current public job inventory contains duplicate identities')
+    jobs.push({ title, company, department: null, ...locationData, jobId, requisitionId: jobId,
+      sourceUrl, applyUrl: sourceUrl, employmentType: null, experienceRequired: null, minimumQualification: null,
+      preferredQualification: null, requiredSkills: [], postingDate, closingDate: null, jobDescription: null, remoteStatus: null })
+  }
+  return jobs
+}
 
 export const extractJobDetail = (html = '', listing = {}) => {
   const jobPosting = parseJobPostingJsonLd(html)
@@ -261,8 +258,10 @@ export const extractJobDetail = (html = '', listing = {}) => {
   const company = normalizeWhitespace(jobPosting?.hiringOrganization?.name)
   const decodedDescription = decodeHtml(jobPosting.description)
   const jobDescription = stripTags(decodedDescription)
+  const primaryLocation = detailLocationFromJsonLd(jobPosting)
+  if (primaryLocation.country && primaryLocation.country !== 'India') throw new Error('LinkedIn public detail country conflicts with the India search scope')
   const locationData = selectRicherLocation(
-    detailLocationFromJsonLd(jobPosting),
+    primaryLocation,
     extractLocationFromTitleTag(html),
   )
   const employmentType = normalizeEmploymentType(jobPosting.employmentType)
@@ -326,6 +325,9 @@ export const createLinkedInScraper = ({
     }
 
     const listings = extractSearchResults(searchHtml)
+    const advertisedText = stripTags(searchHtml.match(/class=["']results-context-header__job-count["'][^>]*>([^<]*)/)?.[1])
+    const advertisedCount = /^\d[\d,]*$/.test(advertisedText || "") ? Number(advertisedText.replaceAll(",", "")) : null
+    if (!listings.length && advertisedCount > 0) throw new Error("LinkedIn advertised job inventory could not be parsed")
     if (listings.length === 0) {
       return []
     }
@@ -337,6 +339,7 @@ export const createLinkedInScraper = ({
     for (const listing of selectedListings) {
       const detailHtml = await fetchText(listing.sourceUrl)
       const detail = extractJobDetail(detailHtml, listing)
+      if (detail.country !== 'India') throw new Error('LinkedIn detail India country is unverified')
 
       jobs.push({
         ...listing,
@@ -349,7 +352,7 @@ export const createLinkedInScraper = ({
       })
     }
 
-    return jobs
+    return jobs.map(job => ({ ...job, ...((selectedListings.length < listings.length || (advertisedCount !== null && advertisedCount !== listings.length)) ? { sourceListingComplete: false } : {}) }))
   },
 })
 

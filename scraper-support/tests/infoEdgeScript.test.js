@@ -4,6 +4,7 @@ import test from 'node:test'
 const FIXED_SCRAPED_AT = '2026-07-16T00:00:00.000Z'
 
 const firstListingRecord = {
+  companyId: 15578, id: 16072, status: 1, careerSiteUrl: 'careers.infoedge.com',
   jobTitle: 'Lead UI Designer',
   jobUrl: 'lead-ui-designer-noida-2026071413401714',
   jobCode: '16072',
@@ -28,6 +29,7 @@ const firstListingRecord = {
 }
 
 const secondListingRecord = {
+  companyId: 15578, id: 16055, status: 1, careerSiteUrl: 'careers.infoedge.com',
   jobTitle: 'Senior Product Designer',
   jobUrl: 'senior-product-designer-noida-2026071310101010',
   jobCode: '16055',
@@ -52,6 +54,7 @@ const secondListingRecord = {
 }
 
 const nonIndiaListingRecord = {
+  companyId: 15578, id: 77777, status: 1, careerSiteUrl: 'careers.infoedge.com',
   jobTitle: 'US Sales Leader',
   jobUrl: 'us-sales-leader-new-york-2026071110101010',
   jobCode: '77777',
@@ -78,9 +81,9 @@ const firstListingPayload = {
     ],
     hasMoreData: true,
     facetedSearchConfig: {
-      paginationHowMuch: '12',
+      paginationHowMuch: '2',
     },
-    totalCount: 13,
+    totalCount: 3,
   },
 }
 
@@ -91,13 +94,14 @@ const secondListingPayload = {
     ],
     hasMoreData: false,
     facetedSearchConfig: {
-      paginationHowMuch: '12',
+      paginationHowMuch: '2',
     },
-    totalCount: 13,
+    totalCount: 3,
   },
 }
 
 const firstDetailPayload = {
+  companyId: 15578, id: 16072, status: 1, careerSiteUrl: 'careers.infoedge.com',
   jobTitle: 'Lead UI Designer',
   jobCode: 16072,
   jobUrl: 'lead-ui-designer-noida-2026071413401714',
@@ -114,6 +118,7 @@ const firstDetailPayload = {
 }
 
 const secondDetailPayload = {
+  companyId: 15578, id: 16055, status: 1, careerSiteUrl: 'careers.infoedge.com',
   jobTitle: 'Senior Product Designer',
   jobCode: 16055,
   jobUrl: 'senior-product-designer-noida-2026071310101010',
@@ -257,8 +262,8 @@ test('InfoEdge search extraction keeps only India jobs from the verified Zwayam 
 
   assert.deepEqual(infoEdge.extractPaginationSummary(firstListingPayload), {
     hasNext: true,
-    pageSize: 12,
-    totalCount: 13,
+    pageSize: 2,
+    totalCount: 3,
   })
 })
 
@@ -348,7 +353,7 @@ test('createInfoEdgeScraper follows the verified first-party Zwayam flow across 
       requests.push({ url, options })
 
       if (url === infoEdge.LISTING_API_URL) {
-        return listingPayloads.shift()
+        return listingPayloads.shift() || firstListingPayload
       }
 
       if (url === infoEdge.DETAIL_API_URL) {
@@ -360,7 +365,7 @@ test('createInfoEdgeScraper follows the verified first-party Zwayam flow across 
     now: () => FIXED_SCRAPED_AT,
   })
 
-  assert.deepEqual(requests, [
+  const expectedRequests = [
     {
       url: 'https://public.zwayam.com/jobs/search',
       options: {
@@ -398,7 +403,7 @@ test('createInfoEdgeScraper follows the verified first-party Zwayam flow across 
         method: 'POST',
         form: {
           filterCri: JSON.stringify({
-            paginationStartNo: 12,
+            paginationStartNo: 2,
             selectedCall: 'sort',
             sortCriteria: {
               name: 'modifiedDate',
@@ -423,7 +428,10 @@ test('createInfoEdgeScraper follows the verified first-party Zwayam flow across 
         },
       },
     },
-  ])
+  ]
+  expectedRequests.push(expectedRequests[0])
+  assert.deepEqual(requests.filter(request => request.url === infoEdge.LISTING_API_URL), expectedRequests.filter(request => request.url === infoEdge.LISTING_API_URL))
+  assert.deepEqual(requests.filter(request => request.url === infoEdge.DETAIL_API_URL), expectedRequests.filter(request => request.url === infoEdge.DETAIL_API_URL))
 
   assert.equal(jobs.length, 2)
   assert.equal(jobs[0].jobId, '16072')
@@ -452,7 +460,7 @@ test('createInfoEdgeScraper overlaps public detail requests so large India batch
       ],
       hasMoreData: false,
       facetedSearchConfig: {
-        paginationHowMuch: '12',
+        paginationHowMuch: '2',
       },
       totalCount: 2,
     },

@@ -461,3 +461,21 @@ test('FunPlus scraper fails closed when the homepage, careers iframe, board shel
     /public job detail page/i,
   )
 })
+
+test('FunPlus follows the official Factorial canonical host while reconciling its legacy-host sitemap dates', async () => {
+  const funPlus = await loadModule()
+  const current = html => html.replaceAll('funplus.factorialhr.com', 'funplus.factorial.com')
+  const jobs = await funPlus.createFunPlusScraper().run({ fetchPage: async url => {
+    if (url === funPlus.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
+    if (url === funPlus.CAREERS_URL) return { status: 200, url, html: careersHtml }
+    if (url === funPlus.JOBS_BOARD_URL) return { status: 200, url: 'https://funplus.factorial.com/embed/jobs', html: current(jobsBoardHtml) }
+    if (url === funPlus.JOBS_SITEMAP_URL) return { status: 200, url: 'https://funplus.factorial.com/sitemap.xml', html: sitemapXml }
+    const legacyUrl = url.replace('funplus.factorial.com', 'funplus.factorialhr.com')
+    if (detailHtmlByUrl[legacyUrl]) return { status: 200, url, html: current(detailHtmlByUrl[legacyUrl]) }
+    throw Error('Unexpected URL ' + url)
+  } })
+  assert.equal(jobs.length, 2)
+  assert.ok(jobs.every(job => job.applyUrl.startsWith('https://funplus.factorial.com/embed/apply/')))
+  assert.ok(jobs.every(job => job.postingDate === '2026-07-13'))
+  assert.equal(funPlus.hasOfficialJobsBoardSignal(current(jobsBoardHtml).replaceAll('funplus.factorial.com', 'other.factorial.com')), false)
+})

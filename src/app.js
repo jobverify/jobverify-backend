@@ -3,6 +3,7 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import helmet from "helmet";
 import jobRoutes from "./routes/jobRoutes.js";
+import publishingRoutes from './routes/publishingRoutes.js';
 import companyRoutes from "./routes/companyRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import telegramRoutes from "./routes/telegramRoutes.js";
@@ -179,6 +180,7 @@ export function createApp({ isReady = () => mongoose.connection.readyState === 1
   app.get("/api/site-settings", noStore, readSiteSettings);
   app.use("/api/auth", noStore, authRoutes);
   app.use("/api/jobs", jobRoutes);
+  app.use('/api/publishing', publishingRoutes);
   app.use("/api/companies", companyRoutes);
   app.use("/api/user", noStore, userRoutes);
   app.use("/api/billing", noStore, billingRoutes);

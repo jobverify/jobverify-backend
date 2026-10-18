@@ -51,7 +51,8 @@ const htmlToLines = (value) => decodeHtmlEntities(
   .map((line) => normalizeWhitespace(line))
   .filter(Boolean)
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -93,6 +94,85 @@ const readJsonLd = (html, type) => {
     if (data?.['@type'] === type) return data
   }
   throw new Error(`Motivity Labs ${type} JSON-LD is missing`)
+}
+
+
+const PUBLIC_JOBS_API = 'https://ml-websites-backend.onrender.com/api/jobs?includeAll=true'
+const hasApiCareersSignal = html => {
+  if (!/<title>\s*Motivity Labs\s*—\s*AI-First Engineering for Enterprise Transformation\s*<\/title>/i.test(String(html))
+    || !/href=["']\/jobs\/["']/i.test(String(html))) return false
+  try {
+    const data = readJsonLd(html, 'WebPage')
+    return data.url === CAREERS_URL && data.name === 'Careers at Motivity Labs'
+      && data.isPartOf?.name === 'Motivity Labs' && data.isPartOf?.url === 'https://motivitylabs.com'
+  } catch { return false }
+}
+const verifyPublicJobsClient = async (html, fetchText) => {
+  const data = readJsonLd(html, 'CollectionPage')
+  if (data.url !== JOB_OPENINGS_URL || data.name !== 'Careers at Motivity Labs' || !Array.isArray(data.hasPart)) {
+    throw new Error('Motivity Labs public jobs client listing identity changed')
+  }
+  const urls = [...new Set([...String(html).matchAll(/<script\b[^>]*src=["'](\/_next\/static\/chunks\/[a-z0-9_-]+\.js)["'][^>]*>/gi)]
+    .map(match => new URL(match[1], JOB_OPENINGS_URL).href))]
+  if (!urls.length || urls.length > 32) throw new Error('Motivity Labs public jobs client scripts changed')
+  let readerVerified = false, loaderVerified = false
+  for (let start = 0; start < urls.length && !(readerVerified && loaderVerified); start += 4) {
+    for (const js of await Promise.all(urls.slice(start, start + 4).map(url => fetchText(url)))) {
+      readerVerified ||= js.includes('https://ml-websites-backend.onrender.com')
+        && js.includes('/api/jobs') && js.includes('?includeAll=true')
+        && js.includes('fetchJobsFromApi') && js.includes('cache:"no-store"') && js.includes('Accept:"application/json"')
+      loaderVerified ||= /fetchJobsFromApi\)\(!0\)/.test(js) && js.includes('isExpired') && js.includes('encodeURIComponent')
+    }
+  }
+  if (!readerVerified || !loaderVerified) throw new Error('Motivity Labs public jobs client API or expiry loader changed')
+}
+const validPublicDate = (value, dateOnly = false) => {
+  if (typeof value !== 'string' || !(dateOnly ? /^\d{4}-\d{2}-\d{2}$/.test(value) : /^\d{4}-\d{2}-\d{2}T/.test(value))) return false
+  const parsed = new Date(dateOnly ? value + 'T00:00:00.000Z' : value)
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value.slice(0, 10)
+}
+const runPublicApiJobs = async ({ fetchText, now, listingHtml }) => {
+  await verifyPublicJobsClient(listingHtml, fetchText)
+  let payload
+  try { payload = JSON.parse(await fetchText(PUBLIC_JOBS_API)) } catch (error) { throw new Error('Motivity Labs public jobs API unavailable: ' + error.message) }
+  if (payload?.ok !== true || !Number.isInteger(payload.count) || payload.count < 0
+    || !Array.isArray(payload.data) || payload.count !== payload.data.length
+    || ['hasMore','next','nextPage','total','totalPages','pagination'].some(key => payload[key] != null)) {
+    throw new Error('Motivity Labs public API inventory count or pagination changed')
+  }
+  const ids = new Set(), slugs = new Set(), jobs = []
+  let unknownGeography = false
+  const scrapedAt = now(), currentTime = new Date(scrapedAt).getTime()
+  if (!Number.isFinite(currentTime)) throw new Error('Motivity Labs current scrape time is invalid')
+  for (const row of payload.data) {
+    if (!row || typeof row !== 'object' || Array.isArray(row)
+      || typeof row.jobId !== 'string' || !/^[a-zA-Z0-9-]+$/.test(row.jobId)
+      || typeof row.slug !== 'string' || !/^[a-z0-9-]+$/.test(row.slug)
+      || !normalizeWhitespace(row.title) || !normalizeWhitespace(row.description)
+      || row.status !== 'published' || typeof row.location !== 'string'
+      || !['Work from Office','Remote','Hybrid'].includes(row.type)
+      || !Array.isArray(row.skills) || row.skills.some(skill => typeof skill !== 'string' || !normalizeWhitespace(skill))
+      || !Number.isFinite(row.experienceMin) || row.experienceMin < 0
+      || (row.experienceMax !== null && (!Number.isFinite(row.experienceMax) || row.experienceMax < row.experienceMin))
+      || !validPublicDate(row.expiresOn, true) || !validPublicDate(row.createdAt)
+      || ids.has(row.jobId) || slugs.has(row.slug)) throw new Error('Motivity Labs public API inventory contains an invalid or duplicate role')
+    ids.add(row.jobId); slugs.add(row.slug)
+    // Match the public client's end-of-day expiry rule in the host timezone.
+    if (new Date(row.expiresOn + 'T23:59:59').getTime() < currentTime) continue
+    const location = normalizeWhitespace(row.location)
+    if (!/^(?:Hyderabad(?:,\s*India)?|India)$/i.test(location || '')) { unknownGeography = true; continue }
+    const city = /^India$/i.test(location) ? null : 'Hyderabad'
+    const sourceUrl = new URL('/jobs/' + encodeURIComponent(row.slug) + '/', JOB_OPENINGS_URL).href
+    jobs.push({ title: normalizeWhitespace(row.title), company: COMPANY, department: null,
+      location: city ? city + ', India' : 'India', city, country: 'India', jobId: row.slug,
+      requisitionId: row.jobId, sourceUrl, applyUrl: sourceUrl, employmentType: normalizeWhitespace(row.jobType),
+      experienceRequired: row.experienceMax === null ? row.experienceMin + '+ Years' : row.experienceMin + '–' + row.experienceMax + ' Years',
+      minimumQualification: null, preferredQualification: null, requiredSkills: row.skills.map(normalizeWhitespace),
+      postingDate: row.createdAt, closingDate: row.expiresOn, jobDescription: normalizeWhitespace(row.description),
+      remoteStatus: row.type === 'Work from Office' ? 'On-site' : row.type, source: SOURCE, link: sourceUrl, scrapedAt })
+  }
+  if (unknownGeography && !jobs.length) throw new Error('Motivity Labs geography is unverified for every current role')
+  return jobs.map(job => ({ ...job, ...(unknownGeography ? { sourceListingComplete: false } : {}) }))
 }
 
 export const extractCurrentListing = (html) => {
@@ -251,8 +331,12 @@ export const extractJobDetail = (html = '', card = {}, { scrapedAt } = {}) => {
 export const createMotivityLabsScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText: suppliedFetchText = defaultFetchText, signal } = {}) {
+    const fetchText = async url => { signal?.throwIfAborted(); return suppliedFetchText(url, { signal }) }
     const careersHtml = await fetchText(CAREERS_URL)
+    if (hasApiCareersSignal(careersHtml)) {
+      return runPublicApiJobs({ fetchText, now, listingHtml: await fetchText(JOB_OPENINGS_URL) })
+    }
     if (hasCurrentCareersSignal(careersHtml)) {
       return runCurrentJobs({ fetchText, now, listingHtml: await fetchText(JOB_OPENINGS_URL) })
     }

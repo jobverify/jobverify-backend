@@ -1,446 +1,93 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { createDineoutScraper, run } from '../../scraper/dineout/script.js'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
-const homepageHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Discover Dining Out Restaurants In Chennai And Book A Table</title>
-    <link rel="canonical" href="https://www.swiggy.com/dineout" />
-    <meta
-      name="keywords"
-      content="Swiggy Dineout, Dineout, Book A Table, Restaurants Near Me"
-    />
-  </head>
-  <body>
-    <main>
-      <h1>Swiggy Dineout</h1>
-      <p>Book a table and discover dining out experiences.</p>
-    </main>
-  </body>
-</html>
-`
-
-const swiggyBusinessHtml = `
-<!doctype html>
-<html lang="en">
-  <head><title>Our Business - Swiggy</title></head>
-  <body>
-    <main>
-      <h1>Our Businesses</h1>
-      <h2>Dineout</h2>
-      <p>Dineout facilitates a user’s eating-out experience, through which users can discover restaurants, access menus and images, make reservations, benefit from attractive promotions, and make digital payments to such restaurants on our platform.</p>
-    </main>
-    <footer>Swiggy Limited</footer>
-  </body>
-</html>
-`
-
-const redirectedBlockedRouteHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>403 Forbidden</title>
-  </head>
-  <body>
-    <h1>403 Forbidden</h1>
-    <p>Access Denied</p>
-  </body>
-</html>
-`
-
-const redirectedRestaurantsRouteHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Best Restaurants Near Me In 2026 | Swiggy</title>
-    <meta
-      name="description"
-      content="Find The Restaurants Serving Near Your Location. View Menus, Reviews And Ratings For The Best Restaurants Near You On Swiggy."
-    />
-  </head>
-  <body>
-    <main>
-      <h1>Best Restaurants Near Me In 2026 | Swiggy</h1>
-      <p>Restaurants Near Me</p>
-      <p>For Dining Out</p>
-      <p>Order Online</p>
-      <p>Book a table</p>
-    </main>
-  </body>
-</html>
-`
-
-const swiggyCareersHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Swiggy Careers</title>
-    <meta
-      name="description"
-      content="Check out the exciting job opportunities at Swiggy!"
-    />
-  </head>
-  <body>
-    <main>
-      <h1>Swiggy Careers</h1>
-      <script src="./assets/js/careers-integration.js"></script>
-    </main>
-  </body>
-</html>
-`
-
-const careersIntegrationScript = `
-const clientShortName = "swiggy";
-let iFrameSrc = "https://" + clientShortName + ".mynexthire.com/employer/jobs/careers";
-document.getElementById("careers-frame").src = iFrameSrc;
-`
-
-const templatedCareersIntegrationScript = `
-function mnh_ci_onreadystatechange(pageType, clientShortName) {
-  var firstSuffix = ((window.location.href + "").split("?")[1]);
-  var urlSuffix = firstSuffix ? ("?" + firstSuffix) : "";
-  urlSuffix += urlSuffix === "" ? "?src=careers&page=careers" : "&page=careers";
-  iFrameSrc = "https://" + clientShortName + ".mynexthire.com/employer/jobs/careers";
-  document.getElementById("mnhembedded").src = iFrameSrc + "#" + urlSuffix;
-}
-`
-
-const jobsBoardHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Approved Jobs, powered by Smaclify Technologies!</title>
-  </head>
-  <body>
-    <div id="careers-app"></div>
-    <script src="/employer/ui/js/jobboard/careers.js"></script>
-  </body>
-</html>
-`
-
-const jobBoardDetailsJson = JSON.stringify({
-  clientName: 'Swiggy',
-  career_page_url: {
-    url: {
-      list: 'https://careers.swiggy.com/#/careers',
-      jd: 'https://careers.swiggy.com/#/careers',
-      application: 'https://careers.swiggy.com/#/careers/apply',
-    },
-    referral_url: {
-      list: 'https://swiggy.mynexthire.com/employer/jobs/careers',
-    },
-  },
-  requisition_custom_fields: {
-    custom_fields: ['company', 'business_unit', 'department', 'Team_name'],
-  },
+const careersHtml = '<title>Swiggy Careers - Build, Scale, Deliver India\'s Everyday Needs</title><meta name="description" content="Swiggy Careers - Join India"><script type="module" src="/assets/index-live.js"></script><div id="root"></div>'
+const appScript = 'const jobsUrl="/api/jobs.json"; const brand={name:"Dineout"}; const heading="Explore Open Roles"; const filter="Filter by business unit";'
+const posting = (id, name, unit, country = 'in', city = 'Mumbai') => ({
+  id, name, company: { identifier: 'SWIGGY', name: 'SWIGGY' }, visibility: 'PUBLIC',
+  ref: 'https://api.smartrecruiters.com/v1/companies/SWIGGY/postings/' + id,
+  location: { city, region: 'MH', country, fullLocation: city + ', ' + (country === 'in' ? 'India' : 'United Kingdom') },
+  customField: [{ fieldLabel: 'BusinessUnit', valueLabel: unit }, { fieldLabel: 'Department.', valueLabel: 'Supply' }],
+  releasedDate: '2026-10-06T05:22:17.931Z', refNumber: 'REF' + id, typeOfEmployment: { label: 'Full-time' },
 })
-
-const nestedJobBoardDetailsJson = JSON.stringify({
-  clientName: 'Swiggy',
-  tenantPreferencesMap: {
-    career_page_url: {
-      referral_url: [
-        {
-          url: 'https://swiggy.mynexthire.com/employer/referrals',
-          pageType: 'application',
-        },
-        {
-          url: 'https://swiggy.mynexthire.com/employer/referrals',
-          pageType: 'jd',
-        },
-        {
-          url: 'https://swiggy.mynexthire.com/employer/referrals',
-          pageType: 'list',
-        },
-      ],
-      url: [
-        {
-          url: 'https://careers.swiggy.com/#/careers/apply',
-          pageType: 'application',
-        },
-        {
-          url: 'https://careers.swiggy.com/#/careers',
-          pageType: 'jd',
-        },
-        {
-          url: 'https://careers.swiggy.com/#/careers',
-          pageType: 'list',
-        },
-      ],
-    },
-  },
+const allPostings = [posting('101', 'Account Manager', 'Dine Out'), posting('102', 'Engineer', 'Technology'), posting('103', 'Account Manager', 'Dine Out', 'gb', 'London'), posting('104', 'Sales Manager', 'Dine Out', 'in', 'Delhi')]
+const feedFor = items => ({ total: items.length, generatedAt: '2026-10-08T18:03:22.795Z', jobs: items.map(item => ({ t: item.name.trim(), c: item.location.city, l: item.location.fullLocation, b: item.customField.find(field => field.fieldLabel === 'BusinessUnit')?.valueLabel, u: 'https://jobs.smartrecruiters.com/SWIGGY/' + item.id + '2-role' })) })
+const detailFor = item => ({ ...item, active: true,
+  postingUrl: 'https://jobs.smartrecruiters.com/SWIGGY/' + item.id + '-role', applyUrl: 'https://jobs.smartrecruiters.com/SWIGGY/' + item.id + '-role?oga=true',
+  jobAd: { sections: { companyDescription: { text: '<p>Swiggy Dineout is building a dining out platform.</p>' }, jobDescription: { text: '<p>Onboard restaurant partners.</p>' }, qualifications: { text: '<p>Graduate with field sales experience.</p>' } } },
 })
-
-const trustworthyJobsHtml = `
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Dineout Careers</title>
-  </head>
-  <body>
-    <main>
-      <h1>Open roles at Dineout</h1>
-      <a href="https://jobs.example.com/dineout/software-engineer">Apply Now</a>
-    </main>
-  </body>
-</html>
-`
-
-const loadModule = async () => {
-  try {
-    return await import('../../scraper/dineout/script.js')
-  } catch {
-    assert.fail('Expected Dineout scraper module at ../../scraper/dineout/script.js')
+const buildFetch = ({ items = allPostings, feed = feedFor(items), mutateList = page => page, mutateDetail = detail => detail } = {}, requests = []) => async url => {
+  requests.push(url)
+  if (url === 'https://www.swiggy.com/corporate/our-business/') return { status: 200, url, html: '<title>Our Business - Swiggy</title><p>Dineout facilitates a user’s eating-out experience.</p><footer>Swiggy Limited</footer>' }
+  if (url === 'https://careers.swiggy.com/') return { status: 200, url: 'https://careers.swiggy.in/', html: careersHtml }
+  if (url === 'https://careers.swiggy.in/assets/index-live.js') return { status: 200, url, html: appScript }
+  if (url === 'https://careers.swiggy.in/api/jobs.json') return { status: 200, url, html: JSON.stringify(feed) }
+  const parsed = new URL(url)
+  if (parsed.pathname === '/v1/companies/SWIGGY/postings') {
+    const offset = Number(parsed.searchParams.get('offset'))
+    return { status: 200, url, html: JSON.stringify(mutateList({ offset, limit: 100, totalFound: items.length, content: items.slice(offset, offset + 2) })) }
   }
+  const item = items.find(item => item.ref === url)
+  if (item) return { status: 200, url, html: JSON.stringify(mutateDetail(detailFor(item))) }
+  throw new Error('Unexpected Dineout URL: ' + url)
+}
+const now = () => '2026-10-08T18:00:00.000Z'
+
+test('Dineout verifies the migrated Swiggy handoff and complete inventories, extracting only attributed India roles', async () => {
+  const requests = []
+  const jobs = await createDineoutScraper({ now }).run({ fetchPage: buildFetch({}, requests) })
+  assert.deepEqual(jobs.map(job => job.jobId), ['101', '104'])
+  assert.equal(jobs[0].company, 'Dineout')
+  assert.equal(jobs[0].location, 'Mumbai, India')
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].department, 'Supply')
+  assert.equal(jobs[0].postingDate, '2026-10-06T05:22:17.931Z')
+  assert.equal(jobs[0].sourceUrl, 'https://jobs.smartrecruiters.com/SWIGGY/101-role')
+  assert.equal(jobs[0].applyUrl, 'https://jobs.smartrecruiters.com/SWIGGY/101-role?oga=true')
+  assert.match(jobs[0].jobDescription, /Onboard restaurant partners/)
+  assert.equal(jobs[0].minimumQualification, 'Graduate with field sales experience.')
+  assert.equal(requests.some(url => /dineout\.co\.in|mynexthire/.test(url)), false)
+  assert.equal(requests.filter(url => /\/postings\?/.test(url)).length, 2)
+  assert.equal(requests.includes(allPostings[1].ref), false)
+  assert.equal(requests.includes(allPostings[2].ref), false)
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.status, 'complete-inventory')
+  assert.equal(evidence.listingComplete, true)
+  assert.equal(evidence.reportedTotal, 2)
+  assert.equal(evidence.pagesFetched, 2)
+  assert.equal(evidence.indiaFacetCount, 2)
+})
+
+for (const { name, options, error } of [
+  { name: 'a truncated parent feed', options: { feed: { ...feedFor(allPostings), total: 5 } }, error: /incomplete Swiggy careers inventory/ },
+  { name: 'a truncated ATS inventory', options: { mutateList: page => ({ ...page, content: [] }) }, error: /incomplete SmartRecruiters inventory/ },
+  { name: 'duplicate ATS IDs', options: { mutateList: page => ({ ...page, content: [allPostings[0], allPostings[0]] }) }, error: /incomplete SmartRecruiters inventory/ },
+  { name: 'unresolved business unit attribution', options: { mutateList: page => ({ ...page, content: page.content.map(item => ({ ...item, customField: [] })) }) }, error: /business unit attribution/ },
+  { name: 'parent and ATS attribution disagreement', options: { feed: { ...feedFor(allPostings), jobs: feedFor(allPostings).jobs.map((job, index) => index === 0 ? { ...job, b: 'Technology' } : job) } }, error: /parent and ATS inventories disagree/ },
+  { name: 'unresolved country', options: { mutateList: page => ({ ...page, content: page.content.map(item => ({ ...item, location: { ...item.location, country: null } })) }) }, error: /location country/ },
+  { name: 'foreign tenant detail links', options: { mutateList: page => ({ ...page, content: page.content.map(item => ({ ...item, ref: item.ref.replace('SWIGGY', 'OTHER') })) }) }, error: /verified Swiggy tenant/ },
+  { name: 'detail attribution disagreement', options: { mutateDetail: detail => ({ ...detail, customField: [{ fieldLabel: 'BusinessUnit', valueLabel: 'Technology' }] }) }, error: /Dine Out job detail/ },
+  { name: 'inactive selected details', options: { mutateDetail: detail => ({ ...detail, active: false }) }, error: /Dine Out job detail/ },
+  { name: 'missing selected description', options: { mutateDetail: detail => ({ ...detail, jobAd: { sections: {} } }) }, error: /Dine Out job description/ },
+]) {
+  test('Dineout rejects ' + name + ' without masking incomplete inventory', async () => {
+    await assert.rejects(run({ fetchPage: buildFetch(options) }), error)
+  })
 }
 
-test('Dineout constants and helpers stay pinned to the verified no-public-jobs contract', async () => {
-  const dineout = await loadModule()
-
-  assert.equal(dineout.COMPANY, 'Dineout')
-  assert.equal(dineout.OFFICIAL_BRAND_NAME, 'Swiggy Dineout')
-  assert.equal(dineout.PARENT_COMPANY_NAME, 'Swiggy')
-  assert.equal(dineout.SOURCE, 'dineout')
-  assert.equal(dineout.VERIFIED_AT, '2026-07-15')
-  assert.equal(dineout.HOMEPAGE_URL, 'https://www.dineout.co.in/')
-  assert.equal(dineout.CANONICAL_CONSUMER_SURFACE_URL, 'https://www.swiggy.com/dineout')
-  assert.equal(dineout.OFFICIAL_BUSINESS_URL, 'https://www.swiggy.com/corporate/our-business/')
-  assert.equal(dineout.CAREERS_URL, 'https://careers.swiggy.com/')
-  assert.equal(
-    dineout.CAREERS_INTEGRATION_SCRIPT_URL,
-    'https://careers.swiggy.com/assets/js/careers-integration.js',
-  )
-  assert.equal(dineout.JOBS_BOARD_URL, 'https://swiggy.mynexthire.com/employer/jobs/careers')
-  assert.equal(
-    dineout.JOBS_BOARD_DETAILS_URL,
-    'https://swiggy.mynexthire.com/employer/jobboard/details_by_shortname/get/swiggy/',
-  )
-  assert.equal(dineout.REDIRECTED_NO_TRUST_ROUTE_URL, 'https://www.swiggy.com/restaurants-near-me')
-  assert.deepEqual(dineout.NO_TRUST_PUBLIC_JOB_ROUTE_URLS, [
-    'https://www.dineout.co.in/careers',
-    'https://www.dineout.co.in/careers/',
-    'https://www.dineout.co.in/jobs',
-    'https://www.dineout.co.in/jobs/',
-    'https://www.dineout.co.in/work-with-us',
-    'https://www.dineout.co.in/join-us',
-  ])
-
-  assert.equal(dineout.hasOfficialHomepageSignal(homepageHtml), true)
-  assert.equal(dineout.hasOfficialBusinessSignal(swiggyBusinessHtml), true)
-  assert.equal(
-    dineout.extractCanonicalConsumerSurfaceUrl(homepageHtml),
-    'https://www.swiggy.com/dineout',
-  )
-  assert.equal(
-    dineout.isVerifiedRedirectedNoTrustPublicJobRoute({
-      status: 403,
-      url: 'https://www.swiggy.com/restaurants-near-me',
-      html: redirectedBlockedRouteHtml,
-    }),
-    true,
-  )
-  assert.equal(
-    dineout.hasRedirectedRestaurantsNearMeSignal(redirectedRestaurantsRouteHtml),
-    true,
-  )
-  assert.equal(
-    dineout.isVerifiedRedirectedNoTrustPublicJobRoute({
-      status: 200,
-      url: 'https://www.swiggy.com/restaurants-near-me',
-      html: redirectedRestaurantsRouteHtml,
-    }),
-    true,
-  )
-  assert.equal(dineout.hasParentCareersLandingSignal(swiggyCareersHtml), true)
-  assert.equal(
-    dineout.extractJobsBoardUrlFromIntegrationScript(careersIntegrationScript),
-    'https://swiggy.mynexthire.com/employer/jobs/careers',
-  )
-  assert.equal(
-    dineout.extractJobsBoardUrlFromIntegrationScript(templatedCareersIntegrationScript),
-    'https://swiggy.mynexthire.com/employer/jobs/careers',
-  )
-  assert.equal(dineout.hasJobsBoardLandingSignal(jobsBoardHtml), true)
-  assert.equal(dineout.hasVerifiedJobBoardDetailsSignal(jobBoardDetailsJson), true)
-  assert.equal(dineout.hasVerifiedJobBoardDetailsSignal(nestedJobBoardDetailsJson), true)
-  assert.equal(
-    dineout.hasDineoutAttributablePublicRoles('Explore Dineout jobs and apply today'),
-    true,
-  )
+test('Dineout rejects an unverified careers redirect', async () => {
+  await assert.rejects(run({ fetchPage: async () => ({ status: 200, url: 'https://careers.example.com/', html: careersHtml }) }), /verified Swiggy careers handoff/)
 })
 
-test('Dineout returns no jobs only while the verified Swiggy handoff stays non-actionable for Dineout roles', async () => {
-  const dineout = await loadModule()
-  const requestedUrls = []
-
-  const jobs = await dineout.createDineoutScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      if (url === dineout.OFFICIAL_BUSINESS_URL) {
-        return { status: 200, url, html: swiggyBusinessHtml }
-      }
-
-      if (url === dineout.CAREERS_URL) {
-        return { status: 200, url, html: swiggyCareersHtml }
-      }
-
-      if (url === dineout.CAREERS_INTEGRATION_SCRIPT_URL) {
-        return { status: 200, url, html: careersIntegrationScript }
-      }
-
-      if (url === dineout.JOBS_BOARD_URL) {
-        return { status: 200, url, html: jobsBoardHtml }
-      }
-
-      if (url === dineout.JOBS_BOARD_DETAILS_URL) {
-        return { status: 200, url, html: jobBoardDetailsJson }
-      }
-
-      throw new Error(`Unexpected Dineout URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    dineout.OFFICIAL_BUSINESS_URL,
-    dineout.CAREERS_URL,
-    dineout.CAREERS_INTEGRATION_SCRIPT_URL,
-    dineout.JOBS_BOARD_URL,
-    dineout.JOBS_BOARD_DETAILS_URL,
-  ])
+test('Dineout returns verified empty only after complete parent inventories have no attributed India roles', async () => {
+  const items = [allPostings[1], allPostings[2]]
+  const jobs = await run({ fetchPage: buildFetch({ items }) })
   assert.deepEqual(jobs, [])
-})
-
-test('Dineout uses secure Swiggy surfaces without requesting the expired legacy Dineout domain', async () => {
-  const dineout = await loadModule()
-  const requestedUrls = []
-
-  const jobs = await dineout.createDineoutScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-
-      if (url.startsWith('https://www.dineout.co.in/')) {
-        throw new Error(`Expired legacy domain must not be requested: ${url}`)
-      }
-
-      if (url === dineout.OFFICIAL_BUSINESS_URL) {
-        return { status: 200, url, html: swiggyBusinessHtml }
-      }
-
-      if (url === dineout.CAREERS_URL) {
-        return { status: 200, url, html: swiggyCareersHtml }
-      }
-
-      if (url === dineout.CAREERS_INTEGRATION_SCRIPT_URL) {
-        return { status: 200, url, html: careersIntegrationScript }
-      }
-
-      if (url === dineout.JOBS_BOARD_URL) {
-        return { status: 200, url, html: jobsBoardHtml }
-      }
-
-      if (url === dineout.JOBS_BOARD_DETAILS_URL) {
-        return { status: 200, url, html: jobBoardDetailsJson }
-      }
-
-      throw new Error(`Unexpected Dineout URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [
-    dineout.OFFICIAL_BUSINESS_URL,
-    dineout.CAREERS_URL,
-    dineout.CAREERS_INTEGRATION_SCRIPT_URL,
-    dineout.JOBS_BOARD_URL,
-    dineout.JOBS_BOARD_DETAILS_URL,
-  ])
-  assert.deepEqual(jobs, [])
-})
-
-test('Dineout fails closed when the business or parent careers surfaces drift into public Dineout jobs', async () => {
-  const dineout = await loadModule()
-
-  const buildFetchPage = (overrides = {}) => async (url) => {
-    if (Object.hasOwn(overrides, url)) return overrides[url]
-    if (url === dineout.OFFICIAL_BUSINESS_URL) {
-      return { status: 200, url, html: swiggyBusinessHtml }
-    }
-    if (url === dineout.CAREERS_URL) {
-      return { status: 200, url, html: swiggyCareersHtml }
-    }
-    if (url === dineout.CAREERS_INTEGRATION_SCRIPT_URL) {
-      return { status: 200, url, html: careersIntegrationScript }
-    }
-    if (url === dineout.JOBS_BOARD_URL) {
-      return { status: 200, url, html: jobsBoardHtml }
-    }
-    if (url === dineout.JOBS_BOARD_DETAILS_URL) {
-      return { status: 200, url, html: jobBoardDetailsJson }
-    }
-    throw new Error(`Unexpected Dineout URL: ${url}`)
-  }
-
-  await assert.rejects(
-    dineout.createDineoutScraper().run({
-      fetchPage: buildFetchPage({
-        [dineout.OFFICIAL_BUSINESS_URL]: {
-          status: 200,
-          url: dineout.OFFICIAL_BUSINESS_URL,
-          html: '<html><head><title>Placeholder</title></head><body>Welcome</body></html>',
-        },
-      }),
-    }),
-    /verified Swiggy business page/i,
-  )
-
-  await assert.rejects(
-    dineout.createDineoutScraper().run({
-      fetchPage: buildFetchPage({
-        [dineout.CAREERS_URL]: {
-          status: 200,
-          url: dineout.CAREERS_URL,
-          html: swiggyCareersHtml.replace('Swiggy Careers', 'Swiggy Careers - Dineout roles'),
-        },
-      }),
-    }),
-    /Dineout-attributable public roles|verified Swiggy careers landing page/i,
-  )
-
-  await assert.rejects(
-    dineout.createDineoutScraper().run({
-      fetchPage: buildFetchPage({
-        [dineout.CAREERS_INTEGRATION_SCRIPT_URL]: {
-          status: 200,
-          url: dineout.CAREERS_INTEGRATION_SCRIPT_URL,
-          html: careersIntegrationScript.replace(
-            'https://" + clientShortName + ".mynexthire.com/employer/jobs/careers',
-            'https://example.com/jobs',
-          ),
-        },
-      }),
-    }),
-    /verified Swiggy careers integration/i,
-  )
-
-  await assert.rejects(
-    dineout.createDineoutScraper().run({
-      fetchPage: buildFetchPage({
-        [dineout.JOBS_BOARD_DETAILS_URL]: {
-          status: 200,
-          url: dineout.JOBS_BOARD_DETAILS_URL,
-          html: JSON.stringify({
-            clientName: 'Swiggy',
-            career_page_url: {
-              url: {
-                list: 'https://careers.swiggy.com/#/careers',
-              },
-            },
-            note: 'Dineout openings are now live',
-          }),
-        },
-      }),
-    }),
-    /Dineout-attributable public roles|verified Swiggy job board details/i,
-  )
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.status, 'verified-empty')
+  assert.equal(evidence.listingComplete, true)
+  assert.equal(evidence.reportedTotal, 0)
+  assert.equal(evidence.indiaFacetCount, 0)
 })

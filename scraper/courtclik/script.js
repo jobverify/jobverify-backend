@@ -1,12 +1,16 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { getValidIndiaCityForJob } from '../../src/utils/publicJobLocationScope.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'courtclik'
 export const COMPANY = 'Courtclik'
 export const HOMEPAGE_URL = 'https://www.courtclick.com/'
 export const CAREERS_URL = 'https://www.courtclick.com/career'
+export const CAREERS_API_URL = 'https://www.courtclick.com/api/careers'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
@@ -70,20 +74,18 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const markup = normalizeMarkup(html)
   const text = stripTags(html).toLowerCase()
-
-  return /<title>\s*Court Click:\s*India's Smartest Case Tracking App for Lawyers and Litigants\s*<\/title>/i.test(markup)
+  return /<title>\s*(?:Court Click:\s*India's Smartest Case Tracking App for Lawyers and Litigants|Court Click \(CourtClick\)\s*-\s*Case Tracking App for India)\s*<\/title>/i.test(markup)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.courtclick\.com\/?["']/i.test(markup)
-    && /<meta[^>]+property=["']og:title["'][^>]+content=["']Court Click\s*-\s*Legal Case Management App for Lawyers\s*&\s*Litigants["']/i.test(markup)
+    && /<meta[^>]+property=["']og:title["'][^>]+content=["'](?:Court Click\s*-\s*Legal Case Management App for Lawyers\s*&\s*Litigants|Court Click \(CourtClick\)\s*-\s*Case Tracking App for India)["']/i.test(markup)
     && text.includes('manage your legal journey anytime, anywhere')
-    && text.includes("court click is a modern legal-tech platform designed to simplify how people track & manage court cases")
+    && text.includes('court click is a modern legal-tech platform designed to simplify how people track & manage court cases')
     && text.includes('digilaw legal software pvt ltd. doing business as court click')
 }
 
 export const hasOfficialCareersSignal = (html) => {
   const markup = normalizeMarkup(html)
   const text = stripTags(html).toLowerCase()
-
-  return /<title>\s*Careers at Court Click\s*-\s*Join Our Legal-Tech Team\s*\|\s*Court Click\s*<\/title>/i.test(markup)
+  return /<title>\s*Careers at Court Click\s*-\s*Join Our Legal-Tech Team(?:\s*\|\s*Court Click)?\s*<\/title>/i.test(markup)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.courtclick\.com\/career["']/i.test(markup)
     && /<meta[^>]+name=["']description["'][^>]+content=["']Explore open roles at Court Click\.\s*Join our mission to transform India's legal-tech industry\.\s*See current openings and apply today\.["']/i.test(markup)
     && text.includes('build the future of legaltech')
@@ -136,11 +138,52 @@ export const createCourtclikScraper = () => ({
       throw new Error('Courtclik verified official careers page no longer matches the verified first-party surface')
     }
 
-    if (!hasZeroRolesEmptyState(careersPage.html) || hasUnexpectedPublicJobsSignal(careersPage.html)) {
-      throw new Error('Courtclik careers page no longer matches the verified zero-openings surface')
+    // The server-rendered empty state precedes the client's GET /api/careers.
+    const apiPage = await fetchPage(CAREERS_API_URL)
+    let records
+    try {
+      records = JSON.parse(String(apiPage?.html ?? ''))
+    } catch {
+      throw new Error('Courtclik careers API inventory is malformed or unavailable')
     }
-
-    return []
+    if (apiPage?.status !== 200 || apiPage?.url !== CAREERS_API_URL || !Array.isArray(records)) {
+      throw new Error('Courtclik careers API inventory is malformed or unavailable')
+    }
+    const ids = new Set()
+    const jobs = []
+    for (const record of records) {
+      const id = normalizeWhitespace(record?.id)
+      const title = normalizeWhitespace(record?.title)
+      const location = normalizeWhitespace(record?.tags?.location)
+      if (!id || ids.has(id) || !title || !location || !normalizeWhitespace(record.description)
+        || !normalizeWhitespace(record.keyRequirements) || !normalizeWhitespace(record.tags?.mode)
+        || !normalizeWhitespace(record.tags?.type)) {
+        throw new Error('Courtclik careers API inventory contains malformed or duplicate roles')
+      }
+      ids.add(id)
+      const city = getValidIndiaCityForJob({ location })
+      if (!city || city === 'Remote') {
+        if (/\b(?:United Kingdom|United States|Singapore|Canada|Australia|Germany|UAE)\b/i.test(location)) continue
+        throw new Error('Courtclik careers API role location is outside the verified India scope: ' + location)
+      }
+      jobs.push({
+        jobId: id, requisitionId: id, title, company: COMPANY, source: SOURCE,
+        location: /\bindia\b/i.test(location) ? location : location + ', India', city, country: 'India',
+        department: null, employmentType: normalizeWhitespace(record.tags.mode),
+        remoteStatus: normalizeWhitespace(record.tags.type), experienceRequired: null,
+        minimumQualification: null, preferredQualification: null, requiredSkills: [],
+        postingDate: null, closingDate: null,
+        jobDescription: stripTags(record.description) + ' Requirements: ' + stripTags(record.keyRequirements),
+        sourceUrl: CAREERS_URL, applyUrl: CAREERS_URL, link: CAREERS_URL,
+        scrapedAt: new Date().toISOString(),
+      })
+    }
+    return attachInventoryEvidence(jobs, {
+      status: 'complete-inventory', surface: CAREERS_API_URL, firstParty: true,
+      listingComplete: true, pagesFetched: 1, reportedTotal: records.length,
+      indiaFacetCount: jobs.length, verifiedAt: new Date().toISOString(),
+      reason: 'verified-official-pages-and-complete-careers-api-array',
+    })
   },
 })
 

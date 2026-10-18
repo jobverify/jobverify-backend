@@ -83,7 +83,7 @@ test('Kapiva pins the verified homepage, about page, and contact-page sentinel s
   assert.equal(kapiva.HOMEPAGE_URL, 'https://kapiva.in/')
   assert.equal(kapiva.ABOUT_PAGE_URL, 'https://kapiva.in/about-us/')
   assert.equal(kapiva.CONTACT_PAGE_URL, 'https://kapiva.in/contact-us/')
-  assert.equal(kapiva.VERIFIED_ON, '2026-08-02')
+  assert.equal(kapiva.VERIFIED_ON, '2026-10-08')
   assert.equal(kapiva.hasVerifiedHomepageSignal(homepageHtml), true)
   assert.equal(kapiva.hasVerifiedAboutPageSignal(aboutHtml), true)
   assert.equal(kapiva.hasVerifiedContactPageSignal(contactHtml), true)
@@ -143,4 +143,19 @@ test('Kapiva fails closed when the verified pages drift or a public jobs surface
     }),
     /public jobs surface/i,
   )
+})
+
+
+test('Kapiva accepts its current verified science-backed about page while retaining the non-listing contact route', async () => {
+  const kapiva = await loadKapivaModule()
+  const { readFile } = await import('node:fs/promises')
+  const currentAbout = await readFile(new URL('./fixtures/kapiva/about-current.html', import.meta.url), 'utf8')
+  const jobs = await kapiva.run({
+    fetchText: async (url) => url === kapiva.HOMEPAGE_URL ? homepageHtml
+      : url === kapiva.ABOUT_PAGE_URL ? currentAbout : contactHtml,
+  })
+  assert.deepEqual(jobs, [])
+  assert.equal(kapiva.hasVerifiedAboutPageSignal(currentAbout.replace('https://kapiva.in/about-us/', 'https://unrelated.example/about-us/')), false)
+  assert.equal(kapiva.hasVerifiedAboutPageSignal(currentAbout.replace('Science-backed Ayurveda. And we can prove it.', 'Unrelated product copy')), false)
+  assert.equal(kapiva.hasVerifiedAboutPageSignal(currentAbout.replace('Kapiva is a company of Adret Retail Private Limited', 'Unrelated company')), false)
 })

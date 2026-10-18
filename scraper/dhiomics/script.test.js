@@ -99,7 +99,7 @@ test('dhiOmics scraper verifies the ADA Global handoff and Darwinbox public jobs
   )
   assert.equal(
     scraper.buildListingApiUrl(),
-    'https://adaglobal.darwinbox.com/ms/candidateapi/job/alljobs?companyId=main',
+    'https://adaglobal.darwinbox.com/ms/candidateapi/job/alljobs',
   )
   assert.equal(
     scraper.buildJobDetailUrl('ada-001'),
@@ -144,8 +144,9 @@ test('dhiOmics scraper verifies the ADA Global handoff and Darwinbox public jobs
             country: 'India',
             emp_type_name: 'Full Time',
             experience: '4 - 7 Years',
-            posted_on: '12-Jul-2026',
-            jd: '<p>Build decisioning and AI products.</p>',
+            posted_on: 1783814400,
+            job_posting: {careers:{source:'careers',from:1783814400,to:null}},
+            jd: '<p>Build decisioning and AI products for regional clients. Develop robust data science workflows, collaborate with engineering teams and deliver reliable production systems.</p>',
           },
           {
             id: 'ada-my-001',
@@ -155,7 +156,8 @@ test('dhiOmics scraper verifies the ADA Global handoff and Darwinbox public jobs
             country: 'Malaysia',
             emp_type_name: 'Full Time',
             experience: '5 - 8 Years',
-            posted_on: '12-Jul-2026',
+            posted_on: 1783814400,
+            job_posting: {careers:{source:'careers',from:1783814400,to:null}},
             jd: '<p>Lead regional growth.</p>',
           },
         ],
@@ -182,10 +184,12 @@ test('dhiOmics scraper verifies the ADA Global handoff and Darwinbox public jobs
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: '12-Jul-2026',
+      postingDate: '2026-07-12T00:00:00.000Z',
       closingDate: null,
-      jobDescription: '<p>Build decisioning and AI products.</p>',
+      jobDescription: '<p>Build decisioning and AI products for regional clients. Develop robust data science workflows, collaborate with engineering teams and deliver reliable production systems.</p>',
       source: 'dhiomics',
+      country: 'India',
+      sourceListingComplete: false,
       link: 'https://adaglobal.darwinbox.com/ms/candidatev2/main/careers/jobDetails/ada-001',
       scrapedAt: FIXED_SCRAPED_AT,
     },

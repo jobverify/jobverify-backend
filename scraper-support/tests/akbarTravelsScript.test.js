@@ -67,6 +67,25 @@ const loadAkbarTravelsModule = async () => {
   }
 }
 
+test('known Akbar routes may redirect to the verified resume-only careers page', async () => {
+  const akbar = await loadAkbarTravelsModule()
+  const page = { status: 200, url: 'https://www.akbartravels.com/in/careers', html: careersPageHtml }
+  assert.equal(akbar.isKnownMissingJobRoute(page, 'https://www.akbartravels.com/in/career'), true)
+  assert.equal(akbar.isKnownMissingJobRoute(page, 'https://example.com/careers'), false)
+  assert.equal(akbar.isKnownMissingJobRoute({ ...page, html: publicJobsHtml }, 'https://www.akbartravels.com/in/career'), false)
+  assert.equal(akbar.isKnownMissingJobRoute({ ...page, html: '<h1>Careers</h1>' }, 'https://www.akbartravels.com/in/career'), false)
+})
+
+test('known localized Akbar routes may redirect to the branded WordPress error response', async () => {
+  const akbar = await loadAkbarTravelsModule()
+  const page = { status: 403, url: 'https://www.akbartravels.com/in/wordpress/jobs',
+    html: '<title>Error - Akbar Travels</title><h1>Page not found</h1>' }
+  assert.equal(akbar.isKnownMissingJobRoute(page, 'https://www.akbartravels.com/in/jobs'), true)
+  assert.equal(akbar.isKnownMissingJobRoute({ ...page, html: publicJobsHtml }, 'https://www.akbartravels.com/in/jobs'), false)
+  assert.equal(akbar.isKnownMissingJobRoute({ ...page, url: 'https://example.com/jobs' }, 'https://www.akbartravels.com/in/jobs'), false)
+  assert.equal(akbar.isKnownMissingJobRoute({ ...page, html: '<title>Access denied</title>' }, 'https://www.akbartravels.com/in/jobs'), false)
+})
+
 test('Akbar Travels scraper constants stay pinned to the verified first-party careers copy and adjacent dead-end routes', async () => {
   const akbarTravels = await loadAkbarTravelsModule()
 

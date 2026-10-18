@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
-import { hydrateProviderCatalogEntry } from '../providers/index.js'
+import { hydrateProviderCatalogEntry, getScraperCatalog } from '../providers/index.js'
 
 const loadCatalogModule = async () => {
   try {
@@ -12,34 +12,40 @@ const loadCatalogModule = async () => {
   }
 }
 
-test('CBNITS catalog captures the verified first-party SPA careers shell contract', async () => {
+test('CBNITS catalog captures the current first-party discovery-only careers contract', async () => {
   const { CBNITS_CATALOG, default: defaultCatalog } = await loadCatalogModule()
   const provider = hydrateProviderCatalogEntry(CBNITS_CATALOG)
 
   assert.equal(defaultCatalog, CBNITS_CATALOG)
+  const active = getScraperCatalog().find(item => item.source === 'cbnits')
+  for (const field of ['companyCareerPage', 'atsPlatform', 'paginationStrategy', 'extractionStrategy', 'verifiedOn', 'verifiedPublicJobCount', 'verifiedIndiaJobCount', 'verificationDisposition']) {
+    assert.equal(active[field], provider[field], 'Active CBNITS metadata: ' + field)
+  }
   assert.equal(provider.source, 'cbnits')
   assert.equal(provider.companyName, 'CBNITS')
   assert.equal(provider.officialBrandName, 'CBNITS')
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.homepageUrl, 'https://www.cbnits.com/')
-  assert.equal(provider.companyCareerPage, 'https://cbnits.com/')
-  assert.equal(provider.atsPlatform, 'first-party-spa-careers-shell-no-public-jobs-html')
+  assert.equal(provider.companyCareerPage, 'https://www.cbnits.com/career/')
+  assert.equal(provider.atsPlatform, 'first-party-nextjs-careers-discovery-only')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'first-party-spa-shell-and-careers-bundle-validation')
+  assert.equal(provider.paginationStrategy, 'first-party-nextjs-careers-route-and-bundle-validation')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-spa-shell+current-careers-route-bundle-without-rendered-jobs',
+    'verified-first-party-nextjs-careers-route+unpublished-job-api-view-discovery-only',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'cbnits.com')
-  assert.equal(provider.verifiedOn, '2026-09-13')
+  assert.equal(provider.verifiedOn, '2026-10-09')
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
   assert.match(provider.modulePath, /cbnits[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /cbnits[\\/]jobs\.json$/i)
-  assert.match(provider.verifiedSurfaceSummary, /Sunday, September 13, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /https:\/\/cbnits\.com\//i)
-  assert.match(provider.verifiedSurfaceSummary, /Agentic AI, Cybersecurity & Intelligent Enterprise Solutions \| CBNITS/i)
-  assert.match(provider.verifiedSurfaceSummary, /div id="root"/i)
+  assert.match(provider.verifiedSurfaceSummary, /2026-10-09/i)
+  assert.match(provider.verifiedSurfaceSummary, /https:\/\/www\.cbnits\.com\/career\//i)
+  assert.match(provider.verifiedSurfaceSummary, /Careers at CBNITS \| AI & Engineering Opportunities/i)
+  assert.match(provider.verifiedSurfaceSummary, /discovery-only.*does not establish an empty India inventory/i)
 })
 
 test('CBNITS exact backlog row resolves from the local catalog contract', async () => {

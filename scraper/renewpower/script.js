@@ -3,6 +3,8 @@ import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
+import { runPublishedReNewPartial } from './publishedLinkedIn.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
@@ -299,12 +301,12 @@ const defaultFetchText = async (url) => {
 }
 
 export const createRenewPowerScraper = () => {
-  const run = async ({
-    maxPages = config.maxPages,
-    maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-    fetchText = defaultFetchText,
-    now = () => new Date().toISOString(),
-  } = {}) => {
+  const run = async (options = {}) => {
+    if (!Object.hasOwn(options, 'fetchText') || options.fetchPublishedText) {
+      return runPublishedReNewPartial({ ...options, source: SOURCE, company: COMPANY })
+    }
+    // Keep the explicit legacy transport seam for archived RMK parser consumers.
+    const { maxPages = config.maxPages, maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null, fetchText = defaultFetchText, now = () => new Date().toISOString() } = options
     const jobs = []
     const seenJobIds = new Set()
     const pageLimit = Number.isInteger(maxPages) ? maxPages : Number.POSITIVE_INFINITY

@@ -157,9 +157,11 @@ export const hasBrokenOpeningsSignal = (page = {}) => {
 
 export const sitemapHasCareersRoute = (xml = '') => {
   const rawXml = String(xml ?? '')
-
-  return /<loc>\s*https:\/\/emudhra\.com\/en\/careers\s*<\/loc>/i.test(rawXml)
-    && /href=["']https:\/\/emudhra\.com\/en-in\/careers["']/i.test(rawXml)
+  const hasCareers = /<loc>\s*https:\/\/emudhra\.com\/en\/careers\s*<\/loc>/i.test(rawXml)
+  const hasIndiaAlternate = /href=["']https:\/\/emudhra\.com\/en-in\/careers["']/i.test(rawXml)
+  const hasCurrentGlobalAlternates = /hreflang=["']en["'][^>]*href=["']https:\/\/emudhra\.com\/en\/careers["']/i.test(rawXml)
+    && /hreflang=["']x-default["'][^>]*href=["']https:\/\/emudhra\.com\/en\/careers["']/i.test(rawXml)
+  return hasCareers && (hasIndiaAlternate || hasCurrentGlobalAlternates)
 }
 
 export const sitemapListsOpeningsRoute = (xml = '') => (
@@ -238,11 +240,25 @@ export const createEmudhraScraper = () => ({
       }
 
       const sitemapPage = await fetchVerifiedPage(SITEMAP_URL)
-
+      const maps = [sitemapPage.html]
+      if (/<sitemapindex\b/i.test(String(sitemapPage.html))) {
+        const childUrls = [...String(sitemapPage.html).matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/gi)].map(match => match[1])
+        if (!childUrls.length || childUrls.length > 20 || new Set(childUrls).size !== childUrls.length
+          || childUrls.some(url => !/^https:\/\/emudhra\.com\/sitemap-[a-z-]+\.xml$/.test(url))) {
+          throw new Error('eMudhra verified sitemap changed')
+        }
+        for (const url of childUrls) {
+          const child = await fetchVerifiedPage(url)
+          if (Number(child.status) !== 200 || child.url !== url || !/<urlset\b/i.test(String(child.html))) {
+            throw new Error('eMudhra verified sitemap changed')
+          }
+          maps.push(child.html)
+        }
+      }
       if (
         Number(sitemapPage.status) !== 200
-        || !sitemapHasCareersRoute(sitemapPage.html)
-        || sitemapListsOpeningsRoute(sitemapPage.html)
+        || !maps.some(sitemapHasCareersRoute)
+        || maps.some(sitemapListsOpeningsRoute)
       ) {
         throw new Error('eMudhra verified sitemap changed')
       }

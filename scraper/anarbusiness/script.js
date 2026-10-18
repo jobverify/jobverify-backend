@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { ANAR_BUSINESS_CATALOG } from './catalog.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -53,13 +54,15 @@ const normalizeWhitespace = (value) =>
     .replace(/\s+/g, ' ')
     .trim()
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url, {signal} = {}) => {
+  signal?.throwIfAborted()
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
+    signal: AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(15000)]),
   })
 
   return {
@@ -146,21 +149,23 @@ export const isVerifiedRepurposedDomainRedirect = (page = {}) =>
   && !pageExposesPublicJobListings(page.html)
 
 export const createAnarBusinessScraper = () => ({
-  async run({ fetchPage = defaultFetchPage } = {}) {
-    const homepage = await fetchPage(HOMEPAGE_URL)
+  async run({ fetchPage = defaultFetchPage, now = () => new Date().toISOString(), signal } = {}) {
+    const read = async url => { signal?.throwIfAborted(); const page = await fetchPage(url, {signal}); signal?.throwIfAborted(); return page }
+    const homepage = await read(HOMEPAGE_URL)
     if (
       homepage.status !== 200
       || (
         !hasShutdownExplainerSignal(homepage.html)
         && !isVerifiedRepurposedDomainRedirect(homepage)
       )
+      || (hasShutdownExplainerSignal(homepage.html) && getFinalUrl(homepage, HOMEPAGE_URL) !== HOMEPAGE_URL)
       || pageExposesPublicJobListings(homepage.html)
     ) {
       throw new Error('Anar Business verified shutdown homepage no longer matches the trusted first-party surface')
     }
 
     for (const routeUrl of NO_PUBLIC_JOB_ROUTE_URLS) {
-      const routePage = await fetchPage(routeUrl)
+      const routePage = await read(routeUrl)
       if (
         !isVerifiedMissingCareersRoute(routePage, routeUrl)
         && !isVerifiedRepurposedDomainRedirect(routePage)
@@ -169,7 +174,7 @@ export const createAnarBusinessScraper = () => ({
       }
     }
 
-    return []
+    return attachInventoryEvidence([], {status:'discovery-only',surface:HOMEPAGE_URL,firstParty:true,listingComplete:false,pagesFetched:1+NO_PUBLIC_JOB_ROUTE_URLS.length,reportedTotal:null,indiaFacetCount:null,verifiedAt:now(),reason:'Current publisher shutdown/retired careers route discovery only; no current employer recruiting inventory or complete vacancy count is verified. Prior jobs must be preserved; this is not verified-empty inventory.'})
   },
 })
 
