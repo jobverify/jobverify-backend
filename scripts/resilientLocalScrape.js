@@ -6,7 +6,6 @@ import { finished } from 'node:stream/promises'
 import { fileURLToPath } from 'node:url'
 
 import { buildLocalScrapeRunEnv } from './localScrapeRunEnv.js'
-import { prepareLocalLaya } from './localLaya.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const backendDir = path.resolve(currentDir, '..')
@@ -138,7 +137,7 @@ const sleep = (milliseconds) => new Promise((resolve) => {
 
 const timestamp = () => new Date().toISOString()
 
-export const runResilientScrape = async (options, { env: sourceEnv = process.env, prepareLaya = prepareLocalLaya, signal: externalSignal } = {}) => {
+export const runResilientScrape = async (options, { env: sourceEnv = process.env, signal: externalSignal } = {}) => {
   fs.mkdirSync(options.runDir, { recursive: true })
 
   const checkpointPath = path.join(options.runDir, 'run-state.json')
@@ -165,7 +164,6 @@ export const runResilientScrape = async (options, { env: sourceEnv = process.env
   let signalCount = 0
   let forcedShutdownTimer = null
   const startupController = new AbortController()
-  let classifierRuntime = null
 
   const appendSupervisorLog = (message) => {
     const line = `[${timestamp()}] [supervisor] ${message}\n`
@@ -222,7 +220,7 @@ export const runResilientScrape = async (options, { env: sourceEnv = process.env
       WORKDAY_REQUEST_TIMEOUT_MS: env.WORKDAY_REQUEST_TIMEOUT_MS,
       WORKDAY_SCRAPER_TIMEOUT_MS: env.WORKDAY_SCRAPER_TIMEOUT_MS,
       NODE_OPTIONS: env.NODE_OPTIONS,
-      JOB_CLASSIFICATION_MODE: env.JOB_CLASSIFICATION_MODE || 'policy',
+      classificationStage: 'post-scrape',
     },
   }
   writeJsonFile(metadataPath, metadata)
@@ -237,17 +235,7 @@ export const runResilientScrape = async (options, { env: sourceEnv = process.env
   try {
     if (externalSignal?.aborted) onExternalAbort()
     startupController.signal.throwIfAborted()
-    appendSupervisorLog('Preparing Laya; the scraper will start only after installation and model readiness.')
-    classifierRuntime = await prepareLaya({ env, signal: startupController.signal, log: appendSupervisorLog })
-    startupController.signal.throwIfAborted()
-    env = classifierRuntime.env
-    metadata.environment.JOB_CLASSIFICATION_MODE = env.JOB_CLASSIFICATION_MODE
-    metadata.environment.LAYA_PYTHON = env.LAYA_PYTHON || null
-    metadata.classificationRequiresCompleteScan = ['policy', 'enforce'].includes(env.JOB_CLASSIFICATION_MODE)
-    metadata.classificationReadyAt = timestamp()
-    metadata.classificationEnabled = env.JOB_CLASSIFICATION_MODE !== 'off'
-    writeJsonFile(metadataPath, metadata)
-    appendSupervisorLog(metadata.classificationEnabled ? 'Laya ready; starting the scraper. Parallel scrapers share this worker.' : 'Classification explicitly disabled; starting the scraper.')
+    appendSupervisorLog('Starting the scraper; classification runs in the separate post-scrape pipeline.')
     while (true) {
       const attempt = restartCount + 1
       appendSupervisorLog(`Starting runner attempt ${attempt}/${options.maxRestarts + 1}.`)
@@ -314,8 +302,6 @@ export const runResilientScrape = async (options, { env: sourceEnv = process.env
       }
     }
   } finally {
-    try { await classifierRuntime?.stop() }
-    catch (error) { appendSupervisorLog(`Laya cleanup failed: ${error.message}`); if (finalExitCode === 0) finalExitCode = 1 }
     externalSignal?.removeEventListener('abort', onExternalAbort)
     process.off('SIGINT', onSigint)
     process.off('SIGTERM', onSigterm)

@@ -83,6 +83,12 @@ const normalizeExperienceRequired = (value) => {
 const extractVisibleJobSection = (html) =>
   String(html ?? '').match(/<section[^>]+id=["']section1["'][^>]*>[\s\S]*?<\/section>/i)?.[0] || ''
 
+const hasExplicitEmptyOpenings = (html) => {
+  const visibleJobSection = extractVisibleJobSection(html)
+  return /New Job Openings Will Be Added Soon/i.test(stripTags(visibleJobSection) || '')
+    && !/class=["'][^"']*\bjob-card(?:\s|["'])/i.test(visibleJobSection)
+}
+
 const extractHeaderTags = (cardHtml) => {
   const tagsHtml = String(cardHtml ?? '').match(/<div class="d-flex flex-wrap gap_10">([\s\S]*?)<\/div>/i)?.[1] || ''
 
@@ -151,7 +157,7 @@ export const hasOfficialCareerPageSignal = (html) => {
     && /<meta[^>]+property=["']og:site_name["'][^>]+content=["']PixDynamics["']/i.test(page)
     && normalized.includes('join us at pixdynamics')
     && normalized.includes('job openings')
-    && /href=["']mailto:hr@pixl\.ai/i.test(visibleJobSection)
+    && (/href=["']mailto:hr@pixl\.ai/i.test(visibleJobSection) || hasExplicitEmptyOpenings(page))
 }
 
 export const extractVisibleJobCards = (html) => {
@@ -265,7 +271,7 @@ export const createPixdynamicsScraper = ({ now = () => new Date().toISOString() 
     }
 
     const jobs = extractIndiaJobOpenings(careersHtml)
-    if (jobs.length === 0) {
+    if (jobs.length === 0 && !hasExplicitEmptyOpenings(careersHtml)) {
       throw new Error('PixDynamics visible public job cards are no longer exposed on the verified career page')
     }
 

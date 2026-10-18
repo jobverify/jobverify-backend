@@ -16,10 +16,10 @@ if (!Array.isArray(jobs) || jobs.length !== 20) throw new Error('Benchmark requi
 const controller = new AbortController();
 for (const event of ['SIGINT', 'SIGTERM']) process.once(event, () => controller.abort());
 const policyHash = createHash('sha256').update(await fs.readFile(new URL('../src/services/jobDescriptionPolicy.js', import.meta.url))).update(await fs.readFile(new URL('../rewriting/factPlan.js', import.meta.url))).update(await fs.readFile(new URL('../rewriting/runner.js', import.meta.url))).digest('hex');
-const report = { model: REWRITE_MODEL, policyHash, environment: { platform: process.platform, arch: process.arch, cpu: os.cpus()[0]?.model, threads: 2, totalMemoryBytes: os.totalmem() }, startedAt: new Date().toISOString(), cases: [] };
+const report = { model: REWRITE_MODEL, policyHash, environment: { platform: process.platform, arch: process.arch, cpu: os.cpus()[0]?.model, threads: REWRITE_MODEL.cpuThreads, totalMemoryBytes: os.totalmem() }, startedAt: new Date().toISOString(), cases: [] };
 if (process.argv.includes('--resume')) {
   const previous = JSON.parse(await fs.readFile(outputFile, 'utf8'));
-  if (JSON.stringify(previous.model) !== JSON.stringify(REWRITE_MODEL) || previous.environment.platform !== process.platform || previous.environment.threads !== 2) throw new Error('Cannot resume a different model/runtime/platform configuration');
+  if (JSON.stringify(previous.model) !== JSON.stringify(REWRITE_MODEL) || previous.environment.platform !== process.platform || previous.environment.threads !== REWRITE_MODEL.cpuThreads) throw new Error('Cannot resume a different model/runtime/platform configuration');
   if (previous.policyHash && previous.policyHash !== policyHash) throw new Error('Cannot resume a changed generation policy');
   if (!Array.isArray(previous.cases) || previous.cases.length > jobs.length) throw new Error('Invalid benchmark checkpoint');
   report.startedAt = previous.startedAt;
@@ -38,7 +38,7 @@ try {
   const setupAt = Date.now();
   if (report.cases.length === jobs.length) { await save(); }
   else {
-  worker = await startRewriteWorker({ ...await prepareRewriteRuntime({ signal: controller.signal }), signal: controller.signal, threads: 2 });
+  worker = await startRewriteWorker({ ...await prepareRewriteRuntime({ signal: controller.signal }), signal: controller.signal });
   report.setupMs = Date.now() - setupAt;
   const client = createRewriteClient(worker);
   const resumeCount = report.cases.length;

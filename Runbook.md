@@ -62,7 +62,7 @@ Notes:
 - `FRONTEND_ORIGIN` should be the browser origin of the frontend app, for example `https://jobverify-frontend.onrender.com`.
 - `PUBLIC_API_ORIGIN` should be the public HTTPS origin of this backend service, for example `https://jobverify-backend.onrender.com`.
 - `TRUST_PROXY` defaults to disabled. Set it to `1` only when the backend is behind exactly one trusted reverse proxy that overwrites `X-Forwarded-For`.
-- `GITHUB_PAT` and `GITHUB_REPO` are only needed for `POST /api/admin/scrape/trigger`.
+- `GITHUB_PAT` and `GITHUB_REPO` are needed for admin scraper dispatch and description rewriting controls. The rewrite controls also need repository Variables read/write permission; see [description rewriting setup](./rewriting/CONTROLS.md).
 - Start new environments from `.env.example`.
 
 ## Run the Backend
@@ -398,6 +398,11 @@ curl.exe -X POST http://localhost:5000/api/admin/scrape/trigger `
 ```
 
 This trigger requires `GITHUB_PAT` and `GITHUB_REPO` in `.env`. The code dispatches the `scraper.yml` workflow on the `main` branch.
+
+Admin → Scrapers also includes a separate **Description rewriting** section.
+Its persistent auto-run switch starts rewriting after successful default-branch
+scraper runs; with the switch off, use **Rewrite Descriptions Now**. See
+[setup, permissions and pipeline acceptance checks](./rewriting/CONTROLS.md).
 
 Toggle a scraper source:
 

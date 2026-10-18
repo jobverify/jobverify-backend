@@ -10,6 +10,7 @@
     "clean:workspace": "node scripts/cleanWorkspace.js",
     "lint": "node scripts/lintSyntax.js",
     "test": "node --test --test-concurrency=4 \"test/**/*.test.js\" \"scraper/**/*.test.js\" \"scraper-support/**/*.test.js\"",
+    "classify:jobs": "node scripts/classifySavedJobs.js",
     "scrape": "node --use-system-ca scraper-support/runner.js",
     "scrape:dry": "node --use-system-ca scraper-support/runner.js --dry-run",
     "scrape:parallel": "node --use-system-ca scraper-support/runner.js --parallel",

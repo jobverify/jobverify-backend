@@ -1,0 +1,99 @@
+name: Jobverify Description Rewrite
+run-name: 'Rewrite | ${{ inputs.pipeline_id }} | ${{ inputs.dispatch_token }}'
+on:
+  workflow_dispatch:
+    inputs:
+      pipeline_id:
+        description: Internal pipeline ID (leave empty for Rewrite then Classification)
+        type: string
+      dispatch_token:
+        description: Internal dispatch identity
+        type: string
+      pipeline_sha:
+        description: Internal source revision
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: jobverify-description-rewrite
+  cancel-in-progress: false
+jobs:
+  rewrite_descriptions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      JOB_DESCRIPTION_REWRITE_MODE: 'publish'
+      JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS: ${{ vars.JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS || '18000' }}
+      JOB_DESCRIPTION_REWRITE_CPU_THREADS: '4'
+      JOB_DESCRIPTION_WORKFLOW_BUDGET_SECONDS: '21000'
+      NODE_OPTIONS: '--use-system-ca'
+      PIPELINE_STAGE: rewrite
+      PIPELINE_ID: ${{ inputs.pipeline_id }}
+      PIPELINE_DISPATCH_TOKEN: ${{ inputs.dispatch_token }}
+      PIPELINE_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+    steps:
+      - name: Record generation job start
+        run: printf 'JOB_DESCRIPTION_WORKFLOW_STARTED_AT=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.pipeline_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+      - name: Install backend dependencies
+        run: npm ci
+      - name: Claim pipeline stage
+        id: register
+        run: node scripts/pipelineGithub.js register
+      - name: Inspect pending description queue
+        id: description_queue
+        run: |
+          node scripts/rewriteJobDescriptions.js
+          node -e "const fs=require('node:fs'); const s=JSON.parse(fs.readFileSync('.cache/scraper-actions/description-summary.json')); fs.appendFileSync(process.env.GITHUB_OUTPUT,'queued='+Number(s.queued || 0)+'\n');"
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+      - name: Cache immutable model and CPU runtime
+        if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
+        uses: actions/cache@v4
+        with:
+          path: .cache/description-rewriter
+          key: description-lfm230-cpu-${{ runner.os }}-e75f8326-b11146-14cf1303-c150306e
+      - name: Restore validated compact decisions
+        if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/description-plans
+          key: description-lfm230-plans-${{ runner.os }}-v11-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            description-lfm230-plans-${{ runner.os }}-v11-${{ github.ref }}-
+      - name: Drain the durable source-hash queue
+        if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
+        timeout-minutes: 315
+        run: node scripts/rewriteJobDescriptions.js --apply
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+      - name: Save validated compact decisions for the next batch
+        if: always() && steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/description-plans
+          key: description-lfm230-plans-${{ runner.os }}-v11-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Upload generation quality and capacity diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: description-rewrite-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .cache/scraper-actions/description-summary.json
+            .cache/scraper-actions/description-worker.log
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Record stage outcome
+        if: always() && steps.register.outcome == 'success'
+        run: node scripts/pipelineGithub.js report
+        env:
+          PIPELINE_JOB_RESULT: ${{ job.status }}

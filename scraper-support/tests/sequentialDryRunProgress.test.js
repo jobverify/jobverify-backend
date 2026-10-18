@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 
-test('the sequential dry runner writes a snapshot and reports classification stages', () => {
+test('the sequential dry runner writes a snapshot and defers classification', () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'sequential-dry-progress-'));
   const original = new URL('../runner.js', import.meta.url);
   const fixturePath = path.join(directory, 'providers.mjs');
@@ -24,12 +24,12 @@ test('the sequential dry runner writes a snapshot and reports classification sta
   try {
     const result = spawnSync(process.execPath, [runnerPath, '--dry-run'], {
       cwd: fileURLToPath(new URL('../../', import.meta.url)), encoding: 'utf8', timeout: 15000,
-      env: { ...process.env, JOB_CLASSIFICATION_MODE: 'off', SCRAPER_ONLY: 'sequential-fixture', SCRAPER_START_AT: '', SCRAPER_START_AFTER: '', SCRAPER_CHECKPOINT_FILE: path.join(directory, 'run-state.json') },
+      env: { ...process.env, SCRAPER_ONLY: 'sequential-fixture', SCRAPER_START_AT: '', SCRAPER_START_AFTER: '', SCRAPER_CHECKPOINT_FILE: path.join(directory, 'run-state.json') },
     });
     assert.equal(result.status, 0, result.stderr || result.stdout);
     assert.equal(fs.existsSync(outputPath), true, result.stderr || result.stdout);
     assert.equal(JSON.parse(fs.readFileSync(outputPath)).length, 1);
-    assert.match(result.stdout, /\[sequential-fixture\] classification start/);
+    assert.match(result.stdout, /\[sequential-fixture\] classification deferred/);
     assert.equal(JSON.parse(fs.readFileSync(path.join(directory, 'run-state.json'))).status, 'complete');
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 });

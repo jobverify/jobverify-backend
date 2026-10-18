@@ -10,6 +10,8 @@ import { parsePort } from "./src/config/http.js";
 import { createPeriodicTask, createShutdown } from "./src/runtime/lifecycle.js";
 import { recoverQueuedJobAlerts } from "./src/services/jobAlertService.js";
 import { downgradeExpiredPlans } from "./src/services/planService.js";
+import { captureHiringObservation } from './src/services/hiringObservationService.js';
+import { reconcileActivePipeline } from './src/pipeline/recovery.js';
 
 async function main() {
   const port = parsePort(process.env.PORT);
@@ -35,6 +37,14 @@ async function main() {
   console.log(`Server is running on 0.0.0.0:${port}`);
 
   const stopTasks = [
+    createPeriodicTask(reconcileActivePipeline, {
+      intervalMs: 60_000, runImmediately: true,
+      onError: error => console.error('[Pipeline recovery]', error.message),
+    }),
+    createPeriodicTask(captureHiringObservation, {
+      intervalMs: 60 * 60_000, runImmediately: true,
+      onError: error => console.error('[Hiring Observation]', error.message),
+    }),
     createPeriodicTask(recoverQueuedJobAlerts, {
       intervalMs: 60_000,
       runImmediately: true,

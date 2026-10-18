@@ -4,6 +4,7 @@ import test from "node:test";
 import Job from "../src/models/Job.js";
 import User from "../src/models/User.js";
 import { buildAggregateHiringSignalFilter } from "../src/utils/jobListingEvidence.js";
+import { buildMissingSourceDescriptionFilter } from "../src/utils/jobSourceContent.js";
 
 const createResponseDouble = () => {
   const result = {
@@ -33,7 +34,7 @@ const assertHasPublicSavedJobScope = (scope) => {
   assert.ok(now instanceof Date);
   assert.ok(today instanceof Date);
   assert.equal(scope.$expr.$and.length, 2);
-  assert.deepEqual(scope.$nor, [buildAggregateHiringSignalFilter()]);
+  assert.deepEqual(scope.$nor, [buildAggregateHiringSignalFilter(), buildMissingSourceDescriptionFilter()]);
   assert.equal(today.getUTCHours(), 0);
   assert.equal(today.getUTCMinutes(), 0);
 };

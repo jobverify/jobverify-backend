@@ -1,7 +1,6 @@
 import os from 'node:os';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { setTimeout as delay } from 'node:timers/promises';
 import mongoose from 'mongoose';
 import '../loadEnv.js';
 import { configureMongoDns } from '../src/utils/mongoDns.js';
@@ -13,8 +12,8 @@ import { prepareRewriteRuntime, startRewriteWorker, workerMemoryBytes } from '..
 const apply = process.argv.includes('--apply');
 const mode = process.env.JOB_DESCRIPTION_REWRITE_MODE || 'off';
 if (!['off', 'publish'].includes(mode)) throw new Error('JOB_DESCRIPTION_REWRITE_MODE must be off or publish');
-const summary = { mode: apply ? mode : 'preview', modelRevision: REWRITE_MODEL.revision, policyVersion: REWRITE_MODEL.policyVersion, startedAt: new Date().toISOString(), environment: { platform: os.platform(), cpu: os.cpus()[0]?.model, availableCpus: os.availableParallelism(), cpuThreads: Number(process.env.JOB_DESCRIPTION_REWRITE_CPU_THREADS || 2), totalMemoryBytes: os.totalmem() } };
-const summaryFile = path.resolve('.cache/scraper-actions/description-summary.json');
+const summary = { mode: apply ? mode : 'preview', modelRevision: REWRITE_MODEL.revision, policyVersion: REWRITE_MODEL.policyVersion, startedAt: new Date().toISOString(), environment: { platform: os.platform(), cpu: os.cpus()[0]?.model, availableCpus: os.availableParallelism(), cpuThreads: Number(process.env.JOB_DESCRIPTION_REWRITE_CPU_THREADS || REWRITE_MODEL.cpuThreads), totalMemoryBytes: os.totalmem() } };
+const summaryFile = path.resolve(process.env.PIPELINE_SUMMARY_FILE || '.cache/scraper-actions/description-summary.json');
 const deadline = rewriteDeadline({ budgetSeconds: process.env.JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS || 1200,
   workflowStartedAt: process.env.JOB_DESCRIPTION_WORKFLOW_STARTED_AT, workflowSeconds: process.env.JOB_DESCRIPTION_WORKFLOW_BUDGET_SECONDS || 9000 });
 const controller = new AbortController();
@@ -33,26 +32,15 @@ try {
     summary.queued = await Job.countDocuments(query).maxTimeMS(15000);
     if (!apply || !summary.queued) summary.reason = apply ? 'empty_queue' : 'read_only_preview';
     else {
-      // Do not start a second model if Laya remains alive after its cleanup step.
-      let layaAlive = false;
-      const layaStopDeadline = Math.min(deadline, Date.now() + 10000);
-      do {
-        try { await fetch('http://127.0.0.1:8765/health', { signal: AbortSignal.any([signal, AbortSignal.timeout(1000)]) }); layaAlive = true; } catch { layaAlive = false; }
-        if (layaAlive && Date.now() < layaStopDeadline) await delay(200, undefined, { signal });
-        else break;
-      } while (!signal.aborted);
-      if (layaAlive) summary.reason = 'laya_still_running';
-      else {
         signal.throwIfAborted();
         worker = await startRewriteWorker({ ...await prepareRewriteRuntime({ signal }), signal, deadline,
-          threads: process.env.JOB_DESCRIPTION_REWRITE_CPU_THREADS || 2 });
+          threads: process.env.JOB_DESCRIPTION_REWRITE_CPU_THREADS || REWRITE_MODEL.cpuThreads });
         cursor = Job.find(query).sort({ 'descriptionRewrite.queuedAt': 1, _id: 1 }).lean().cursor({ batchSize: 1 });
         summary.results = [];
         Object.assign(summary, await rewriteCandidates(cursor, { client: createRewriteClient({ ...worker, planCacheDir: '.cache/description-plans' }), deadline, signal,
           update: (filter, update) => Job.updateOne(filter, update, { runValidators: true, maxTimeMS: 15000 }),
           onResult: result => { summary.results.push(result); console.log(JSON.stringify(result)); },
         }));
-      }
     }
   }
 } catch (error) {
@@ -72,6 +60,11 @@ try {
     summary.pendingEstimate=Math.max(0,(summary.queued||0)-(summary.published||0)-(summary.failed||0)-(summary.skipped||0));
   }
   summary.finishedAt = new Date().toISOString();
+  if (apply) {
+    const { stageOutcome } = await import('../src/pipeline/policy.js');
+    summary.outcome = stageOutcome('rewrite', summary, process.exitCode || 0);
+    if (summary.outcome !== 'completed') process.exitCode = 1;
+  }
   await fs.mkdir(path.dirname(summaryFile), { recursive: true });
   await fs.writeFile(summaryFile + '.tmp', JSON.stringify(summary, null, 2) + '\n');
   await fs.rename(summaryFile + '.tmp', summaryFile);

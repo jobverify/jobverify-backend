@@ -5,6 +5,7 @@
 
 import express from "express";
 import { updateSiteSettings } from "../controllers/siteSettingsController.js";
+import { getPipelineStatus, savePipelineConfiguration, getPipelineCapabilities, triggerPipeline, getPipelineRuns, getPipelineRun, getPipelineLog, retiredPipelineControl } from '../controllers/pipelineController.js';
 import { getUserSuggestions } from "../controllers/userSuggestionController.js";
 import {
   getDashboardStats,
@@ -22,7 +23,6 @@ import {
   updateJobStatus,
   getAuditLog,
   getScrapeStatus,
-  triggerScrapeAdmin,
   toggleScraperActive,
   toggleUserStatus,
 } from "../controllers/adminController.js";
@@ -56,6 +56,15 @@ const scrapeTriggerLimiter = createRateLimiter({
     success: false,
     message: "Too many scraper trigger attempts, please try again after an hour",
   },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const descriptionTriggerLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  keyGenerator: (req) => `${req.user?._id ?? "unknown"}:${ipKeyGenerator(req.ip)}`,
+  message: { success: false, message: "Too many description rewrite requests. Try again after an hour." },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -113,10 +122,20 @@ router.get("/audit", getAuditLog);
 
 // Crawler Health Status and Pipeline Triggers
 router.get("/scrape/status", getScrapeStatus);
+router.get('/pipeline/status', getPipelineStatus);
+router.get('/pipeline/capabilities', getPipelineCapabilities);
+router.put('/pipeline/configuration', savePipelineConfiguration);
+router.post('/pipeline/trigger', scrapeTriggerLimiter, triggerPipeline);
+router.get('/pipeline/runs', getPipelineRuns);
+router.get('/pipeline/runs/:id', getPipelineRun);
+router.get('/pipeline/runs/:id/logs/:stage', getPipelineLog);
+router.get('/description-rewrite/status', retiredPipelineControl);
+router.put('/description-rewrite/automation', retiredPipelineControl);
+router.post('/description-rewrite/trigger', retiredPipelineControl);
 router.post(
   "/scrape/trigger",
   scrapeTriggerLimiter,
-  triggerScrapeAdmin,
+  retiredPipelineControl,
 );
 
 // Crawler Pipeline Active State Control

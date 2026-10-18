@@ -138,6 +138,16 @@ test('Zimetrics Technologies dedupes identical inline role cards and preserves t
   assert.equal(jobs[0].link, 'https://zimetrics.com/career/#frmsub')
 })
 
+test('Zimetrics Technologies never captures preceding navigation across paragraph boundaries as a job title', async () => {
+  const zimetrics = await loadScriptModule()
+  const page = '<p class="elementor-heading-title elementor-size-default">Industries Services About Contact</p>'
+    + '<div>' + 'navigation '.repeat(100) + '</div>' + careersHtml
+  const jobs = zimetrics.extractJobsFromHtml(page)
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Full Stack Engineer (Node & React)')
+  assert.equal(jobs[0].jobId, 'full-stack-engineer-node-react__pune')
+})
+
 test('Zimetrics Technologies fails closed when the verified inline role-card surface disappears', async () => {
   const zimetrics = await loadScriptModule()
 

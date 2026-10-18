@@ -2,6 +2,21 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildRewriteInput } from '../src/services/jobDescriptionPolicy.js';
 import { buildSourceFacts, validateFactPlan } from '../rewriting/factPlan.js';
+
+test('additional desired experience is optional in the opt-in source parser',()=>{
+ const x=buildRewriteInput({title:'Software Engineer',description:'Minimum Qualifications:\nExperience building enterprise software.\nAdditional Experience Desired:\nKnowledge of source control tools.\nExperience with unit testing.'});
+ const facts=buildSourceFacts(x,{preserveContext:true});
+ assert.equal(facts.find(f=>f.text==='Knowledge of source control tools.').section,4);
+ assert.equal(facts.find(f=>f.text==='Experience with unit testing.').section,4);
+ assert.equal(buildSourceFacts(x).find(f=>f.text==='Knowledge of source control tools.').section,2);
+});
+
+test('an employer working-life question ends inherited qualification scope',()=>{
+ const x=buildRewriteInput({title:'AI Engineer',description:'Required Skills:\nStrong understanding of deploying AI systems at scale.\nWhat is it like working for 3Pillar Global?\nImagine a flexible work environment and support for wellbeing.'});
+ const facts=buildSourceFacts(x,{preserveContext:true});
+ assert.equal(facts.find(f=>f.text==='Imagine a flexible work environment and support for wellbeing.').section,9);
+ assert.equal(buildSourceFacts(x).find(f=>f.text==='Imagine a flexible work environment and support for wellbeing.').section,3);
+});
 const source='Responsibilities:\nBuild and test reliable Python applications.\nRequired qualifications:\nBE / B.Tech or MCA, graduating in 2025.\n55% throughout 10th, 12th and graduation.\nRequired skills:\nExcellent written communication skills.\nPreferred skills:\nAWS experience is nice to have.\nEmployment details:\nFull Time (Night Shift), onsite in Indore.\nCompensation INR 321,000 per year.\nProbation Period 90 Days.';
 const input=buildRewriteInput({title:'Associate System Engineer',company:'American Chase',sourceDescription:source});
 test('compact source references retain degrees, numeric relationships and preferred scope',()=>{const facts=buildSourceFacts(input); const plan={categories:facts.map(f=>f.section??9)};const result=validateFactPlan(plan,input,'stop');assert.equal(result.ok,true,JSON.stringify(result));assert.match(result.description,/BE \/ B\.Tech or MCA, graduating in 2025\./);assert.match(result.description,/55% throughout 10th, 12th and graduation\./);assert.match(result.description,/INR 321,000 per year/);assert.match(result.description,/90 Days/);assert.match(result.description,/## Preferred qualifications and skills\n\n- AWS experience is nice to have\./);assert.equal(result.quality.factCoverage,1);});

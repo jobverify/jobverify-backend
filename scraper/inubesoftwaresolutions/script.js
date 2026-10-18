@@ -78,12 +78,22 @@ const buildJobId = (detailUrl) => detailUrl?.split('/').filter(Boolean).at(-1) |
 export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
+  const roles = extractRoleSummaries(page)
 
   return /<title>\s*Careers\s*-\s*iNube\s*<\/title>/i.test(page)
     && /class=["'][^"']*awsm-job-listings[^"']*["']/i.test(page)
-    && normalized.includes('View all 0penings')
-    && normalized.includes('Senior Business Analyst')
-    && normalized.includes('Associate Project Manager')
+    && /View all [O0]penings/i.test(normalized)
+    && roles.length > 0
+    && roles.every(({ detailUrl }) => {
+      try {
+        const url = new URL(detailUrl)
+        return url.protocol === 'https:'
+          && ['inubesolutions.com', 'www.inubesolutions.com'].includes(url.hostname)
+          && /^\/jobs\/[^/]+\/?$/.test(url.pathname)
+      } catch {
+        return false
+      }
+    })
 }
 
 export const extractRoleSummaries = (html = '') =>

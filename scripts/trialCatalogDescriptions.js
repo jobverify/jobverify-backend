@@ -64,7 +64,7 @@ try{
  report.status='running';await save();
  // A 30-second optional-detail budget leaves large boards with listing-only jobs.
  // Keep one detail request at a time; this stays below the ten-minute source cap.
- const env={...scrapeEnv,WORKDAY_DETAIL_FETCH_CONCURRENCY:'1',WORKDAY_DETAIL_ENRICHMENT_BUDGET_MS:'480000',NODE_OPTIONS:'--use-system-ca',JOB_CLASSIFICATION_MODE:'off',SCRAPER_DISABLE_DRY_RUN_PUBLIC_EXPERIENCE:'1',SCRAPER_RAW_CAPTURE_DIRECTORY:path.join(runDir,'raw-captures'),SCRAPER_SOURCE_LIFECYCLE_TIMEOUT_MS:'600000',SCRAPER_ONLY:'',SCRAPER_START_AT:'',SCRAPER_START_AFTER:'',SCRAPER_SKIP:'',DESCRIPTION_REWRITE_MODE:'off'};
+ const env={...scrapeEnv,WORKDAY_DETAIL_FETCH_CONCURRENCY:'1',WORKDAY_DETAIL_ENRICHMENT_BUDGET_MS:'480000',NODE_OPTIONS:'--use-system-ca',SCRAPER_DISABLE_DRY_RUN_PUBLIC_EXPERIENCE:'1',SCRAPER_RAW_CAPTURE_DIRECTORY:path.join(runDir,'raw-captures'),SCRAPER_SOURCE_LIFECYCLE_TIMEOUT_MS:'600000',SCRAPER_ONLY:'',SCRAPER_START_AT:'',SCRAPER_START_AFTER:'',SCRAPER_SKIP:'',DESCRIPTION_REWRITE_MODE:'off'};
  const scrapeOptions=parseArgs(['--run-dir',runDir,'--parallel','--dry-run','--max-restarts','8','--restart-delay-seconds','5','--shutdown-grace-seconds','10']);
  scrapePromise=runResilientScrape(scrapeOptions,{env,signal}).then(code=>{scrapeExitCode=code;scrapeSettled=true;return code;},error=>{report.scrapeError=error.message;scrapeExitCode=1;scrapeSettled=true;return 1;});
  const result=await runTrialCaptureQueue({runDir,outputDir,catalog,report,client:lazyClient,signal,isScrapeSettled:()=>scrapeSettled,save,policyIdentity});

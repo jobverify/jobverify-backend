@@ -162,6 +162,21 @@ test('Inube Software Solutions run validates the verified archive before hydrati
   assert.equal(jobs[1].title, 'Associate Project Manager')
 })
 
+test('Inube Software Solutions validates the official archive when advertised roles change', async () => {
+  const inube = await loadModule()
+  const updatedCareersHtml = careersHtml
+    .replace(/Senior Business Analyst/g, 'Support Lead')
+    .replace(/senior-business-analyst/g, 'support-lead')
+    .replace(/Associate Project Manager/g, 'Senior Software Engineer')
+    .replace(/associate-project-manager/g, 'senior-software-engineer')
+
+  assert.equal(inube.hasOfficialCareersSignal(updatedCareersHtml), true)
+  assert.equal(inube.hasOfficialCareersSignal(updatedCareersHtml.replace('0penings', 'Openings')), true)
+  assert.equal(inube.hasOfficialCareersSignal(updatedCareersHtml.replace(/www\.inubesolutions\.com/g, 'unrelated.example')), false)
+  assert.equal(inube.hasOfficialCareersSignal(updatedCareersHtml.replace('Careers - iNube', 'Careers - Other Company')), false)
+  assert.equal(inube.hasOfficialCareersSignal(updatedCareersHtml.replace('awsm-job-listings ', '')), false)
+})
+
 test('Inube Software Solutions run fails closed when the verified jobs archive drifts', async () => {
   const inube = await loadModule()
 

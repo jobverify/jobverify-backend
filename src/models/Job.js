@@ -93,6 +93,14 @@ export const JobSchema = new Schema(
       default: undefined,
     },
     sourceEmploymentType: { type: String, trim: true, default: null },
+    postClassification: {
+      type: new Schema({
+        inputHash: String, mode: { type: String, enum: ['shadow', 'policy'] },
+        status: { type: String, enum: ['pending', 'processing', 'completed', 'failed', 'skipped'] },
+        owner: String, leaseUntil: Date, attemptedAt: Date, completedAt: Date,
+        attempts: Number, reason: String, result: Schema.Types.Mixed,
+      }, { _id: false }), default: undefined,
+    },
     sourceExperienceRequired: { type: String, trim: true, default: null },
     location: { type: String, trim: true },
     city: { type: String, trim: true },

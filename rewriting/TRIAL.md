@@ -1,6 +1,6 @@
 # Full catalog description trial
 
-This experimental path runs the configured catalog in dry-run mode and writes only local files. It uses the pinned Qwen2.5-1.5B GGUF and CPU llama.cpp runtime already used by the production rewriter. Production classification and publishing code are unchanged.
+This experimental path runs the configured catalog in dry-run mode and writes only local files. It uses the pinned LFM2.5-230M QAD Q4_0 GGUF and CPU llama.cpp runtime used by the production description rewriter. The trial itself does not publish results or change production classifications.
 
 Start a fresh trial from the backend:
 

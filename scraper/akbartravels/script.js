@@ -115,6 +115,11 @@ export const isKnownMissingJobRoute = (page = {}, requestedUrl) => {
 
   if (hasPublicJobListingSignal(page.html)) return false
 
+  if (Number(page.status) === 200 && finalUrl === LOCALIZED_CAREERS_URL) {
+    return [...ROOT_MISSING_JOB_ROUTE_URLS, ...LOCALIZED_MISSING_JOB_ROUTE_URLS].includes(requestedUrl)
+      && hasResumeOnlyCareersSignal(page.html)
+  }
+
   if (Number(page.status) === 404) {
     return finalUrl === requestedUrl
       && [...ROOT_MISSING_JOB_ROUTE_URLS, ...LOCALIZED_MISSING_JOB_ROUTE_URLS].includes(requestedUrl)
@@ -128,6 +133,8 @@ export const isKnownMissingJobRoute = (page = {}, requestedUrl) => {
 
   if (LOCALIZED_MISSING_JOB_ROUTE_URLS.includes(requestedUrl)) {
     return finalUrl === requestedUrl
+      || (finalUrl === requestedUrl.replace('/in/', '/in/wordpress/')
+        && /<title>\s*Error - Akbar Travels\s*<\/title>/i.test(String(page.html ?? '')))
   }
 
   return false

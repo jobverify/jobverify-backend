@@ -90,19 +90,15 @@ test('dry runner queues usable provider descriptions before the enriched batch w
   const directory = await temporaryDirectory(t)
   const previousArgv = process.argv
   const previousOutbox = process.env.SCRAPER_LOCAL_JOB_OUTBOX_DIRECTORY
-  const previousMode = process.env.JOB_CLASSIFICATION_MODE
   const previousFetch = globalThis.fetch
   const batchesBeforeFetch = []
   process.argv = [...previousArgv, '--dry-run']
   process.env.SCRAPER_LOCAL_JOB_OUTBOX_DIRECTORY = path.join(directory, 'outbox')
-  process.env.JOB_CLASSIFICATION_MODE = 'policy'
   t.after(() => {
     process.argv = previousArgv
     globalThis.fetch = previousFetch
     if (previousOutbox === undefined) delete process.env.SCRAPER_LOCAL_JOB_OUTBOX_DIRECTORY
     else process.env.SCRAPER_LOCAL_JOB_OUTBOX_DIRECTORY = previousOutbox
-    if (previousMode === undefined) delete process.env.JOB_CLASSIFICATION_MODE
-    else process.env.JOB_CLASSIFICATION_MODE = previousMode
   })
   globalThis.fetch = async url => {
     const files = await fs.readdir(process.env.SCRAPER_LOCAL_JOB_OUTBOX_DIRECTORY).catch(() => [])

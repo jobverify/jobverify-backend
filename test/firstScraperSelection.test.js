@@ -36,9 +36,9 @@ test('live first N CLI fails before model preparation or Mongo access', () => {
   const runner = fileURLToPath(new URL('../scraper-support/runner.js', import.meta.url))
   const result = spawnSync(process.execPath, [runner], {
     encoding: 'utf8', timeout: 10_000,
-    env: { ...process.env, SCRAPER_FIRST_N: '1000', SCRAPER_ONLY: '', SCRAPER_START_AT: '', SCRAPER_START_AFTER: '', JOB_CLASSIFICATION_MODE: 'policy', MONGO_URI: '' },
+    env: { ...process.env, SCRAPER_FIRST_N: '1000', SCRAPER_ONLY: '', SCRAPER_START_AT: '', SCRAPER_START_AFTER: '', MONGO_URI: '' },
   })
   assert.equal(result.status, 1)
   assert.match(result.stderr, /SCRAPER_FIRST_N.*--dry-run/)
-  assert.doesNotMatch(result.stdout, /Laya|Downloading|Installing/)
+  assert.doesNotMatch(result.stdout, /Downloading|Installing/)
 })

@@ -39,7 +39,7 @@ const readCompletionStream = async response => {
   return {choices:[{message:{content},finish_reason:finishReason}],usage,timings};
 };
 
-export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model = 'job-description-qwen', requestMs = REWRITE_MODEL.requestSeconds * 1000, planCacheDir } = {}) => {
+export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model = 'job-description-lfm', requestMs = REWRITE_MODEL.requestSeconds * 1000, planCacheDir } = {}) => {
   const url = new URL(endpoint);
   if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || url.username || url.password || url.pathname !== '/' || url.search || url.hash) throw new Error('Generation must run on unauthenticated http://127.0.0.1');
   const cache = new Map();

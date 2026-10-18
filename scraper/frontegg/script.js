@@ -57,7 +57,7 @@ export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const text = normalizeWhitespace(page)
 
-  return /<title>\s*Careers at Frontegg\s*<\/title>/i.test(page)
+  return /<title>\s*Careers at Frontegg(?:\s*\|\s*Open Roles in Identity\s*(?:&|&amp;)\s*AI Security)?\s*<\/title>/i.test(page)
     && /Careers at Frontegg/i.test(text)
     && /Current openings/i.test(text)
     && (

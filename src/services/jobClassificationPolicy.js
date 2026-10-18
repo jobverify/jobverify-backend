@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { extractJobFilterSignals } from '../utils/jobFilterSignals.js';
-import { getSourceDescription } from '../utils/jobSourceContent.js';
+import { selectClassificationDescription } from './classificationDescription.js';
 import { JOB_CLASSIFICATION_POLICY_VERSION } from '../utils/jobClassificationVersion.js';
 import { resolveRecruitmentPolicy } from './jobRecruitmentPolicy.js';
 
@@ -9,21 +9,14 @@ const normalizedBytes = relative => readFileSync(new URL(`../../${relative}`, im
 const policyBytes = normalizedBytes('classification/policy.json');
 export const CLASSIFICATION_POLICY = JSON.parse(policyBytes);
 if (CLASSIFICATION_POLICY.version !== JOB_CLASSIFICATION_POLICY_VERSION) throw new Error('Classification policy version mismatch');
-export const CLASSIFICATION_MODEL = JSON.parse(readFileSync(new URL('../../classification/model.json', import.meta.url)));
+export const CLASSIFICATION_MODEL = JSON.parse(readFileSync(new URL('../../classification/gliclass/model.json', import.meta.url)));
 export const POLICY_HASH = createHash('sha256').update(policyBytes).digest('hex');
-// Recruitment-rule changes need a new derived decision, but unchanged model
-// code can reuse its actual response for the exact same canonical source input.
-export const NATIVE_RUNTIME_HASH = createHash('sha256').update(JSON.stringify([
-  'classification/model.json', 'classification/requirements.txt', 'classification/runtime.py', 'classification/training.py',
-].map(relative => [relative, createHash('sha256').update(normalizedBytes(relative)).digest('hex')]))).digest('hex');
 export const RUNTIME_HASH = createHash('sha256').update(JSON.stringify([
-  'classification/model.json', 'classification/requirements.txt', 'classification/runtime.py', 'classification/training.py',
-  'src/services/jobClassificationPolicy.js', 'src/services/jobRecruitmentPolicy.js', 'src/utils/jobClassificationVersion.js', 'src/utils/jobFilterSignals.js', 'src/utils/jobSourceContent.js',
+  'classification/gliclass/model.json', 'classification/gliclass/requirements.txt', 'classification/gliclass/worker.py',
+  'src/services/jobClassificationPolicy.js', 'src/services/classificationDescription.js', 'src/services/jobRecruitmentPolicy.js', 'src/utils/jobClassificationVersion.js', 'src/utils/jobFilterSignals.js', 'src/utils/jobSourceContent.js',
 ].map(relative => [relative, createHash('sha256').update(normalizedBytes(relative)).digest('hex')]))).digest('hex');
 const PUBLIC_TYPES = ['Intern', 'Full-time Fresher', 'Full-time Experienced', 'Contract', 'Others', 'Unspecified'];
 export const CLASSIFICATION_FIELDS = ['jobType', 'employmentType', 'experienceLevel', 'seniority', 'experienceYears', 'experienceBucket', 'experienceProfile', 'experienceRequired', 'experienceBasis'];
-const SENIORITY = { entry: 'Entry Level', junior: 'Associate', mid: 'Mid Level', senior: 'Senior', internship: 'Internship', unknown: 'Unknown' };
-const LEADERSHIP = { manager: 'Manager', senior_manager: 'Senior Manager', director: 'Director', vice_president: 'Vice President', executive: 'Executive', lead: 'Lead', unknown: 'Unknown' };
 const EMPLOYMENT = { full_time: 'Full-time', internship: 'Internship', contract: 'Contract', other: 'Other', unspecified: null };
 
 export const cleanSourceText = (value) => {
@@ -54,12 +47,13 @@ export const hashClassificationInput = (input, identity = {}) => {
 };
 
 export const buildClassificationInput = (job = {}, { now = new Date(), identity = {} } = {}) => {
+  const selectedDescription = selectClassificationDescription(job);
   const referenceYear = Number(new Intl.DateTimeFormat('en', { timeZone: 'Asia/Kolkata', year: 'numeric' }).format(now));
   // These opt-in fields are employer facts. employmentType/jobType/experienceLevel may already be inferred by a scraper.
   const sourceEmploymentType = cleanSourceText(job.sourceEmploymentType || job.atsEmploymentType || job.rawEmploymentType
     || (job.employmentTypeProvenance === 'source' ? job.employmentType : ''));
   const sourceFields = {
-    description: cleanSourceText(getSourceDescription(job)),
+    description: cleanSourceText(selectedDescription.text),
     minimumQualification: cleanSourceText(job.minimumQualification), preferredQualification: cleanSourceText(job.preferredQualification),
     qualifications: cleanSourceText(job.qualifications), responsibilities: cleanSourceText(job.responsibilities), requirements: cleanSourceText(job.requirements),
     experienceRequired: cleanSourceText([job.sourceExperienceRequired, job.experienceRequiredProvenance === 'source' ? job.experienceRequired : null]
@@ -78,6 +72,7 @@ export const buildClassificationInput = (job = {}, { now = new Date(), identity 
   const validPosted = postedDate && !inferredPosted && !Number.isNaN(new Date(postedDate).getTime()) ? new Date(postedDate).toISOString().slice(0, 10) : null;
   const input = {
     title: cleanSourceText(job.originalTitle || job.title), body, sourceFields, sourceEmploymentType,
+    descriptionOrigin: selectedDescription.origin, descriptionIdentity: selectedDescription.identity,
     sourceExperienceRequired: sourceFields.experienceRequired,
     eligibleBatches: [...new Set((job.eligibleBatchesProvenance === 'source' ? job.eligibleBatches || [] : []).map(Number).filter(year => Number.isInteger(year) && year >= 1990 && year <= referenceYear + 10))].sort(),
     postedDate: validPosted, referenceYear,
@@ -161,62 +156,36 @@ export const snapshotClassificationFields = job => Object.fromEntries(CLASSIFICA
   ? { minimumYears: job.experienceProfile?.minimumYears ?? null, maximumYears: job.experienceProfile?.maximumYears ?? null, isOpenEnded: job.experienceProfile?.isOpenEnded === true, preferredMinimumYears: job.experienceProfile?.preferredMinimumYears ?? null, hasExplicitExperience: job.experienceProfile?.hasExplicitExperience === true, confidence: job.experienceProfile?.confidence || 'low' }
   : field === 'experienceYears' ? (job[field] || []).filter(finiteYear).slice(0, 41) : typeof job[field] === 'string' ? job[field].slice(0, 160) : job[field] ?? null]));
 
-// Retain decoding of historical four-question records. The native worker and
-// native cache accept only the current single-question contract.
-const resolveLegacyClassification = (job, prediction, { now = new Date(), mode = 'shadow', identity = {}, reason, previous, thresholds = CLASSIFICATION_POLICY.legacyThresholds } = {}) => {
+// Source rules determine public eligibility; model scores remain a comparison.
+const resolveSourceClassification = (job, { now = new Date(), mode = 'shadow', identity = {}, reason, previous } = {}) => {
   const input = buildClassificationInput(job, { now, identity });
   const numeric = sourceNumericFields(input);
-  const decisions = Object.fromEntries(Object.keys(CLASSIFICATION_POLICY.legacyQuestions).map(key => [key, decisionFor(prediction?.answers?.[key], key, thresholds, CLASSIFICATION_POLICY.legacyQuestions)]));
-  const requiredKeys = ['employment', 'experience', 'seniority', ...(decisions.seniority?.label === 'leadership' ? ['leadership'] : [])];
-  let rejection = reason || (input.incomplete || prediction?.complete !== true ? 'incomplete' : null);
-  if (!prediction) rejection = reason || 'unavailable';
-  if (!rejection && mode === 'policy' && input.calibrationHash === 'uncalibrated') rejection = 'model_unvalidated';
-  if (!rejection && requiredKeys.some(key => !decisions[key])) rejection = 'invalid_response';
-  if (!rejection && (prediction.conflicts?.length || requiredKeys.some(key => !decisions[key].confident))) rejection = 'uncertain';
   const explicitInternTitle = /\bintern(?:ship)?(?:\s*\([^)]*\))?$/i.test(input.title)
     && !/\b(?:head|manager|director|coordinator|mentor|supervisor)\s+(?:of|for)\b/i.test(input.title);
   const sourceAllowsZero = numeric.experienceProfile.minimumYears === 0 || /^freshers?$/i.test(input.sourceExperienceRequired);
   const managerTitle = /\b(manager|director|vice president|chief|head of)\b/i.test(input.title)
     && !/\btrainee\b/i.test(input.title) && !explicitInternTitle;
-  if (!rejection && managerTitle && (decisions.employment.label === 'internship' || decisions.seniority.label === 'internship'
-    || (!sourceAllowsZero && (decisions.seniority.label === 'entry' || decisions.experience.label === 'fresher_eligible')))) rejection = 'source_contradiction';
   const explicitEmployment = input.sourceEmploymentType.toLowerCase();
   const sourceEmployment = /\bintern(?:ship)?\b/.test(explicitEmployment) ? 'internship'
     : /\b(apprentice(?:ship)?|part.?time|volunteer)\b/.test(explicitEmployment) ? 'other'
       : /\b(contract|contractor|temporary|fixed.?term|freelance)\b/.test(explicitEmployment) ? 'contract'
         : /\b(full.?time|permanent|regular)\b/.test(explicitEmployment) ? 'full_time' : explicitInternTitle ? 'internship' : null;
-  if (!rejection && sourceEmployment && decisions.employment.label !== sourceEmployment) rejection = 'source_contradiction';
-  if (!rejection && numeric.experienceProfile.minimumYears > 0 && ['fresher_eligible', 'mixed'].includes(decisions.experience.label)) rejection = 'source_contradiction';
-  if (!rejection && sourceAllowsZero && !['fresher_eligible', 'mixed'].includes(decisions.experience.label)) rejection = 'source_contradiction';
-  let employment = 'unspecified';
-  let experience = 'not_stated';
-  let seniority = managerTitle ? 'Manager' : 'Unknown';
-  if (!rejection) {
-    employment = decisions.employment.label;
-    experience = decisions.experience.label;
-    seniority = decisions.seniority.label === 'leadership' ? LEADERSHIP[decisions.leadership.label] : SENIORITY[decisions.seniority.label];
-    if (experience === 'not_stated' && managerTitle && decisions.seniority.label === 'leadership') experience = 'prior_required';
-    if (employment === 'unspecified' || (employment === 'full_time' && experience === 'not_stated' && !managerTitle && numeric.experienceProfile.minimumYears === null)) rejection = 'not_stated';
-  }
-  if (rejection) {
-    employment = sourceEmployment || 'unspecified';
-    experience = numeric.experienceProfile.minimumYears > 0 ? 'prior_required'
-      : sourceAllowsZero ? 'fresher_eligible' : 'not_stated';
-  }
+  const employment = sourceEmployment || 'unspecified';
+  const experience = numeric.experienceProfile.minimumYears > 0 ? 'prior_required'
+    : sourceAllowsZero ? 'fresher_eligible' : 'not_stated';
+  const seniority = managerTitle ? 'Manager' : 'Unknown';
   const jobType = employment === 'internship' ? 'Intern' : employment === 'contract' ? 'Contract' : employment === 'other' ? 'Others'
-    : employment === 'full_time' && (experience === 'prior_required' || (!rejection && managerTitle && !sourceAllowsZero)) ? 'Full-time Experienced'
+    : employment === 'full_time' && experience === 'prior_required' ? 'Full-time Experienced'
       : employment === 'full_time' && ['fresher_eligible', 'mixed'].includes(experience) ? 'Full-time Fresher' : 'Unspecified';
-  const experienceLevel = ['Internship', 'Entry Level'].includes(seniority) ? 'Entry Level' : seniority === 'Associate' ? 'Junior Level'
-    : seniority === 'Mid Level' ? 'Mid Level' : seniority !== 'Unknown' ? 'Senior Level' : null;
-  let resolved = { jobType, employmentType: EMPLOYMENT[employment], experienceLevel, seniority, experiencePolicy: experience, ...numeric, experienceBasis: numeric.experienceProfile.minimumYears === null ? 'unspecified' : 'employer_requirement' };
-  const policy = resolveRecruitmentPolicy(input, { numeric, sourceEmployment,
-    modelEmployment: !rejection ? employment : null, modelExperience: !rejection ? experience : null });
+  let resolved = { jobType, employmentType: EMPLOYMENT[employment], experienceLevel: managerTitle ? 'Senior Level' : null,
+    seniority, experiencePolicy: experience, ...numeric,
+    experienceBasis: numeric.experienceProfile.minimumYears === null ? 'unspecified' : 'employer_requirement' };
+  const policy = resolveRecruitmentPolicy(input, { numeric, sourceEmployment });
   if (policy) {
     const { employment: policyEmployment, experience: policyExperience, evidence: policyEvidence, ...fields } = policy;
     const policyType = policyEmployment === 'internship' ? 'Intern' : policyEmployment === 'contract' ? 'Contract'
       : policyEmployment === 'other' ? 'Others' : policyExperience === 'prior_required' ? 'Full-time Experienced'
         : ['fresher_eligible', 'mixed'].includes(policyExperience) ? 'Full-time Fresher' : 'Unspecified';
-    if (!rejection && (employment !== policyEmployment || experience !== policyExperience)) rejection = 'policy_contradiction';
     resolved = { ...resolved, ...fields, jobType: policyType, employmentType: EMPLOYMENT[policyEmployment], experiencePolicy: policyExperience,
       ...(policyType === 'Intern' ? { seniority: 'Internship', experienceLevel: 'Entry Level' }
         : policyType === 'Full-time Fresher' ? { seniority: 'Entry Level', experienceLevel: 'Entry Level' } : {}),
@@ -226,24 +195,17 @@ const resolveLegacyClassification = (job, prediction, { now = new Date(), mode =
   return {
     policyVersion: CLASSIFICATION_POLICY.version, inputHash: input.inputHash, modelRevision: input.modelRevision,
     runtimeVersion: input.runtimeVersion, runtimeHash: input.runtimeHash, policyHash: input.policyHash, calibrationHash: input.calibrationHash,
-    referenceYear: input.referenceYear, mode, authoritative: ['enforce', 'policy'].includes(mode), decisionSource: policy ? 'policy' : !rejection ? 'model' : 'fallback',
-    status: !rejection ? 'accepted' : ['uncertain', 'source_contradiction', 'policy_contradiction', 'model_unvalidated', 'not_stated', 'incomplete'].includes(rejection) ? 'uncertain' : 'fallback',
-    reason: rejection, decisions: Object.fromEntries(Object.entries(decisions).filter(([, value]) => value).map(([key, { label, probability }]) => [key, { label, probability }])),
-    complete: prediction?.complete === true && !input.incomplete,
-    windows: Number.isInteger(prediction?.windows) ? Math.min(10000, Math.max(0, prediction.windows)) : 0,
+    referenceYear: input.referenceYear, mode, authoritative: ['enforce', 'policy'].includes(mode), decisionSource: policy ? 'policy' : 'fallback',
+    status: 'fallback', reason: reason || 'unavailable', decisions: {}, complete: false, windows: 0,
     evidenceContext: input.body.slice(0, 160), classifiedAt: now.toISOString(), resolved,
     previous: snapshotClassificationFields(previous || job.classification?.previous || job),
   };
 };
 
 export const resolveClassification = (job, prediction, options = {}) => {
-  if (prediction?.answers && !Object.hasOwn(prediction.answers, 'jobType')
-    && Object.keys(prediction.answers).some(key => Object.hasOwn(CLASSIFICATION_POLICY.legacyQuestions, key))) {
-    return resolveLegacyClassification(job, prediction, options);
-  }
   // This trial compares the model against rules without letting its prediction
   // influence the baseline. Numeric experience continues to come from source facts.
-  const baseline = resolveLegacyClassification(job, null, options);
+  const baseline = resolveSourceClassification(job, options);
   const input = buildClassificationInput(job, options);
   const sourceSeniority = baseline.resolved.seniority === 'Unknown' && !input.incomplete
     ? extractJobFilterSignals({ title: input.title, description: input.body }).seniority : baseline.resolved.seniority;

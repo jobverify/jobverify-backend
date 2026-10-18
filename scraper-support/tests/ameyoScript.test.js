@@ -255,6 +255,24 @@ test('run continues through the verified Ameyo homepage 522 outage while the ups
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
 })
 
+test('Ameyo continues after a homepage connection timeout only through the verified Exotel board', async () => {
+  const ameyo = await loadModule()
+  const outage = new TypeError('fetch failed', { cause: { code: 'UND_ERR_CONNECT_TIMEOUT' } })
+  const options = {
+    fetchPage: async () => { throw outage },
+    fetchText: async () => upstreamCareersHtml,
+    fetchJson: async () => openingsPayload,
+  }
+  const jobs = await ameyo.createAmeyoScraper().run(options)
+  assert.equal(jobs.length, 2)
+  await assert.rejects(ameyo.createAmeyoScraper().run({ ...options,
+    fetchText: async () => '<title>Unrelated careers page</title>',
+  }), /upstream careers page/i)
+  await assert.rejects(ameyo.createAmeyoScraper().run({ ...options,
+    fetchPage: async () => { throw new Error('Certificate identity mismatch') },
+  }), /Certificate identity mismatch/)
+})
+
 test('Ameyo scraper fails closed when the homepage handoff, upstream careers page, or openings feed drifts', async () => {
   const ameyo = await loadModule()
 

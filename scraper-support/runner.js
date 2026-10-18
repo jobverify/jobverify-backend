@@ -38,8 +38,6 @@ import { saveRawSourceCapture, saveRawSourceFailure } from './utils/rawCapture.j
 import { LocalJobOutboxPersistenceError, saveLocalJobOutbox } from './utils/localJobOutbox.js'
 import { buildClassificationInput } from '../src/services/jobClassificationPolicy.js'
 import { acquireMongoRunLease } from './utils/runLease.js'
-import { prepareLocalLaya } from '../scripts/localLaya.js'
-import { readLayaHealth, startLayaWorker } from '../scripts/layaWorker.js'
 import { refreshJobDatasetSummary } from '../src/services/jobDatasetSummaryService.js'
 import { DEFAULT_JOB_RETENTION_DAYS } from '../src/utils/jobLifecycle.js'
 import ScraperStatus from '../src/models/ScraperStatus.js'
@@ -423,6 +421,18 @@ export const shouldClearExistingJobsBeforeRun = ({
   && !String(startAfter || '').trim()
   && !String(firstN || '').trim()
 
+// Keep bounded local trials away from the canonical scraper snapshots.
+export const isolateDryRunSnapshots = (scrapers, {
+  dryRun = isDryRun,
+  directory = process.env.SCRAPER_DRY_RUN_OUTPUT_DIRECTORY,
+} = {}) => {
+  if (!dryRun || !String(directory || '').trim()) return scrapers
+  return scrapers.map(scraper => ({
+    ...scraper,
+    dryRunFile: path.join(path.resolve(directory), `${scraper.name}.json`),
+  }))
+}
+
 const isWorkdayScraper = (scraper) => (
   scraper?.provider?.adapter === 'workday'
   || scraper?.provider?.atsPlatform === 'workday'
@@ -728,6 +738,9 @@ const formatPersistenceSummary = (result) => {
   const invalidUrl = result.filteredInvalidUrl
     ? ` | ${result.filteredInvalidUrl} invalid URL filtered`
     : ''
+  const emptyDescription = result.filteredEmptyDescription
+    ? ` | ${result.filteredEmptyDescription} empty description filtered`
+    : ''
   const lifecycle = result.missed
     ? ` | ${result.missed} lifecycle misses`
     : ''
@@ -737,7 +750,7 @@ const formatPersistenceSummary = (result) => {
   const staleCheck = result.staleCheckSkipped
     ? ` | stale cleanup skipped: ${result.staleCheckReason || 'previous source jobs preserved'}`
     : ''
-  return `${base}${updated}${nonIndia}${closed}${invalidUrl}${lifecycle}${expired}${staleCheck}`
+  return `${base}${updated}${nonIndia}${closed}${invalidUrl}${emptyDescription}${lifecycle}${expired}${staleCheck}`
 }
 
 const formatStageDuration = (durationMs) => (
@@ -950,6 +963,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
   assertLiveMongoUriConfigured()
 
   const selected = selectScrapersForRun(buildScrapers())
+  selected.scrapers = isolateDryRunSnapshots(selected.scrapers)
   const checkpoint = process.env.SCRAPER_CHECKPOINT_FILE
     ? openRunCheckpoint({
         filePath: process.env.SCRAPER_CHECKPOINT_FILE,
@@ -1125,6 +1139,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
           filteredNonIndia: publishableAnalysis.filterCounts.nonIndia,
           filteredClosed: publishableAnalysis.filterCounts.closed,
           filteredInvalidUrl: publishableAnalysis.filterCounts.invalidUrl,
+          filteredEmptyDescription: publishableAnalysis.filterCounts.emptyDescription,
           cities,
           mode: 'dry-run',
           file: scraper.dryRunFile,
@@ -1346,6 +1361,7 @@ export const runScraper = async (
         filteredNonIndia: publishableAnalysis.filterCounts.nonIndia,
         filteredClosed: publishableAnalysis.filterCounts.closed,
         filteredInvalidUrl: publishableAnalysis.filterCounts.invalidUrl,
+        filteredEmptyDescription: publishableAnalysis.filterCounts.emptyDescription,
         cities,
         mode: 'dry-run',
         file: scraper.dryRunFile,
@@ -1589,22 +1605,9 @@ const directExecutionModulePath = resolveExecutionPath(fileURLToPath(import.meta
 if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
   const shutdown = installGracefulShutdownHandlers()
   let runLease = null
-  let classificationRuntime = null
   try {
-    // Validate bounded dry-run selection before preparing any model or database runtime.
+    // Validate bounded dry-run selection before preparing the database runtime.
     if (String(process.env.SCRAPER_FIRST_N || '').trim()) selectScrapersForRun([], { dryRun: isDryRun })
-    if (isDryRun && String(process.env.SCRAPER_LOCAL_JOB_OUTBOX_DIRECTORY || '').trim()) process.env.JOB_CLASSIFICATION_MODE = 'off'
-    process.env.JOB_CLASSIFICATION_MODE ||= 'policy'
-    if (process.env.JOB_CLASSIFICATION_MODE !== 'off') {
-      const log = message => console.log(`[runner] ${message}`)
-      // The Actions workflow and resilient supervisor have already installed and warmed this worker.
-      if ((await readLayaHealth())?.ready) {
-        await startLayaWorker({ env: process.env, signal: shutdown.signal, log })
-      } else {
-        classificationRuntime = await prepareLocalLaya({ signal: shutdown.signal, log })
-        Object.assign(process.env, classificationRuntime.env)
-      }
-    }
     if (!isDryRun && !/^(?:0|false|no)$/i.test(String(process.env.SCRAPER_RUN_LEASE || '1'))) {
       runLease = await retryAfterMongoQuotaRecovery(() => acquireMongoRunLease({
         runId: process.env.SCRAPER_RUN_ID || null,
@@ -1658,16 +1661,28 @@ if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
       process.exitCode = 1
     }
     if (Object.values(summary).some(result => result.classificationPending)) {
-      console.error('Some sources still require complete Laya scans. Resume this checkpoint to retry; their jobs were not published.')
+      console.error('Some sources have unfinished persistence. Resume this checkpoint to retry.')
       process.exitCode = 1
     }
     if (shutdown.requested) process.exitCode = shutdown.exitCode
+    if (process.env.PIPELINE_SUMMARY_FILE) {
+      const rows = Object.values(summary)
+      const pipelineSummary = {
+        scanned: rows.length, completed: rows.filter(row => row.success).length,
+        skipped: rows.filter(row => row.skipped).length, failed: totalFailures,
+        inserted: rows.reduce((sum,row) => sum + (row.inserted || 0), 0),
+        updated: rows.reduce((sum,row) => sum + (row.updated || 0), 0),
+        interrupted: shutdown.requested,
+        pendingEstimate: rows.filter(row => row.classificationPending).length,
+      }
+      fs.mkdirSync(path.dirname(process.env.PIPELINE_SUMMARY_FILE), { recursive: true })
+      fs.writeFileSync(process.env.PIPELINE_SUMMARY_FILE, JSON.stringify(pipelineSummary))
+      if (totalFailures > 0 || pipelineSummary.pendingEstimate > 0) process.exitCode = 1
+    }
   } catch (err) {
     console.error('Pipeline error:', err)
     process.exitCode = Number.isInteger(err?.exitCode) ? err.exitCode : 1
   } finally {
-    try { await classificationRuntime?.stop() }
-    catch (error) { console.error('[runner] Failed to stop owned Laya worker:', error.message); process.exitCode = process.exitCode || 1 }
     try {
       await runLease?.release()
     } catch (error) {

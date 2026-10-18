@@ -21,6 +21,7 @@ const { default: BlacklistedToken } = await import("../src/models/BlacklistedTok
 const { default: JobDatasetSummary } = await import("../src/models/JobDatasetSummary.js");
 const { default: ScraperRun } = await import("../src/models/ScraperRun.js");
 const { default: UserSuggestion } = await import("../src/models/UserSuggestion.js");
+const { default: HiringObservation } = await import('../src/models/HiringObservation.js');
 
 const MODELS = [
   ["Job", Job],
@@ -33,6 +34,7 @@ const MODELS = [
   ["JobDatasetSummary", JobDatasetSummary],
   ["ScraperRun", ScraperRun],
   ["UserSuggestion", UserSuggestion],
+  ['HiringObservation', HiringObservation],
 ];
 
 const formatIndex = (idx) => {

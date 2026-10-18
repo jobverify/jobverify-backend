@@ -33,6 +33,20 @@ test('generation client rejects non-local endpoints', () => {
   assert.throws(() => createRewriteClient({ endpoint: 'https://example.com' }), /127\.0\.0\.1/);
 });
 
+test('the default rewrite client selects the LFM model alias', async t => {
+  let requestedModel;
+  const server = http.createServer(async (req, res) => {
+    let body = ''; for await (const part of req) body += part;
+    requestedModel = JSON.parse(body).model;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ categories: [], overviewFactId: 0 }) } }] }));
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  await createRewriteClient({ endpoint: 'http://127.0.0.1:' + server.address().port }).generate(buildRewriteInput(job));
+  assert.equal(requestedModel, 'job-description-lfm');
+});
+
 test('run budget respects the workflow deadline and cleanup reserve', () => {
   assert.equal(rewriteDeadline({ now: 100000, budgetSeconds: 1200, workflowStartedAt: new Date(0).toISOString(), workflowSeconds: 150, cleanupSeconds: 20 }), 130000);
   assert.equal(rewriteDeadline({ now: 100000, budgetSeconds: 0 }), 100000);

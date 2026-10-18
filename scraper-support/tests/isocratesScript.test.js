@@ -276,6 +276,40 @@ test('iSOCRATES can resolve the verified Keka config from a first-party direct b
   assert.equal(jobs[0].source, 'isocrates')
 })
 
+test('iSOCRATES follows the new first-party Keka address for the same verified tenant', async () => {
+  const isocrates = await loadIsocratesModule()
+  const currentDomain = 'https://madtechai.keka.com/careers/'
+  const handoff = careersLinkOnlyHtml.replace(/isocrates\.keka\.com/g, 'madtechai.keka.com')
+  const currentConfig = careersHtml.replace(/isocrates\.keka\.com/g, 'madtechai.keka.com')
+  const embeddedDocumentUrl = new URL(isocrates.extractEmbeddedCareersDocumentPath(kekaShellHtml), currentDomain).toString()
+  const requested = []
+
+  assert.equal(isocrates.hasOfficialCareersPageSignal(handoff), true)
+  assert.equal(isocrates.hasOfficialCareersPageSignal(handoff.replace('madtechai.keka.com', 'unrelated.keka.com')), false)
+  const jobs = await isocrates.createIsocratesScraper().run({
+    fetchText: async (url) => {
+      requested.push(url)
+      if (url === isocrates.HOMEPAGE_URL) return homepageHtml
+      if (url === isocrates.CAREER_PAGE_URL) return handoff
+      if (url === currentDomain) return kekaShellHtml
+      if (url === embeddedDocumentUrl) return currentConfig
+      throw new Error(`Unexpected text URL: ${url}`)
+    },
+    fetchJson: async (url) => {
+      assert.equal(url, `${currentDomain}api/embedjobs/default/active/${isocrates.EXPECTED_IDENTIFIER}`)
+      return [{ id: 73365, title: 'Engineering Manager', jobLocations: [{ city: 'Bengaluru', countryCode: 'IN' }] }]
+    },
+  })
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].sourceUrl, `${currentDomain}jobdetails/73365`)
+  assert.deepEqual(requested, [isocrates.HOMEPAGE_URL, isocrates.CAREER_PAGE_URL, currentDomain, embeddedDocumentUrl])
+
+  await assert.rejects(isocrates.createIsocratesScraper().run({
+    fetchText: async (url) => url === isocrates.HOMEPAGE_URL ? homepageHtml : currentConfig.replace(isocrates.EXPECTED_IDENTIFIER, '11111111-2222-3333-4444-555555555555'),
+    fetchJson: async () => { throw new Error('Unverified tenant must not be queried') },
+  }), /verified Keka job surface changed materially/i)
+})
+
 test('iSOCRATES fails closed when the verified homepage, careers shell, or Keka config changes', async () => {
   const isocrates = await loadIsocratesModule()
 

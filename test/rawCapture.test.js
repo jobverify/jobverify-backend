@@ -113,7 +113,7 @@ test('a source directory junction cannot redirect captures outside the archive',
 test('a later processing failure references its immutable provider capture', async (t) => {
   const directory = await temporaryDirectory(t)
   const options = { directory, source: 'processing', dryRun: true }
-  const captureFile = await saveRawSourceCapture([{ sourceDescription: 'Retain this advert even if Laya fails.' }], options)
+  const captureFile = await saveRawSourceCapture([{ sourceDescription: 'Retain this advert even if processing fails.' }], options)
   const error = new Error('model unavailable')
   error.classificationPending = true
   const failureFile = await saveRawSourceFailure(error, { ...options, captureFile })
@@ -121,34 +121,26 @@ test('a later processing failure references its immutable provider capture', asy
   assert.equal(failure.captureFile, captureFile)
   assert.equal(failure.error.classificationPending, true)
   assert.equal(Object.hasOwn(failure, 'jobs'), false)
-  assert.equal(JSON.parse(await fs.readFile(captureFile, 'utf8')).jobs[0].sourceDescription, 'Retain this advert even if Laya fails.')
+  assert.equal(JSON.parse(await fs.readFile(captureFile, 'utf8')).jobs[0].sourceDescription, 'Retain this advert even if processing fails.')
 })
 
 const loadDryRunRunner = async () => {
   const previousArgv = process.argv
-  const previousMode = process.env.JOB_CLASSIFICATION_MODE
   process.argv = [...previousArgv, '--dry-run']
-  process.env.JOB_CLASSIFICATION_MODE = 'off'
   try {
     return await import('../scraper-support/runner.js?raw-capture-test')
   } finally {
     process.argv = previousArgv
-    if (previousMode === undefined) delete process.env.JOB_CLASSIFICATION_MODE
-    else process.env.JOB_CLASSIFICATION_MODE = previousMode
   }
 }
 
 test('the dry runner captures rejected jobs before filtering and records scrape failures separately', async (t) => {
   const directory = await temporaryDirectory(t)
   const previousDirectory = process.env.SCRAPER_RAW_CAPTURE_DIRECTORY
-  const previousMode = process.env.JOB_CLASSIFICATION_MODE
   process.env.SCRAPER_RAW_CAPTURE_DIRECTORY = path.join(directory, 'raw')
-  process.env.JOB_CLASSIFICATION_MODE = 'off'
   t.after(() => {
     if (previousDirectory === undefined) delete process.env.SCRAPER_RAW_CAPTURE_DIRECTORY
     else process.env.SCRAPER_RAW_CAPTURE_DIRECTORY = previousDirectory
-    if (previousMode === undefined) delete process.env.JOB_CLASSIFICATION_MODE
-    else process.env.JOB_CLASSIFICATION_MODE = previousMode
   })
   const { runScraper } = await loadDryRunRunner()
   const result = await runScraper({

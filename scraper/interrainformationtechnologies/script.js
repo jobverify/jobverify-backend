@@ -59,7 +59,7 @@ export const hasOfficialCareersSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page)
 
-  return /<title>\s*Careers at Ferfier Technologies\s*\|\s*Shape the Future with Innovation\s*<\/title>/i.test(page)
+  return /<title>\s*(?:Careers at Ferfier Technologies\s*\|\s*Shape the Future with Innovation|Careers at InterraIT\s*\|\s*Jobs in AI, Cloud (?:&amp;|&) Cybersecurity)\s*<\/title>/i.test(page)
     && normalized?.includes('Join Our Team and Shape the Future')
     && normalized?.includes('Explore Open Positions')
     && /href=["'][^"']*\/explore-open-positions\/["']/i.test(page)

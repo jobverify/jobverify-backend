@@ -28,7 +28,7 @@ test('run checkpoint resumes only unfinished sources and preserves prior results
       now: () => new Date('2026-09-12T06:00:00.000Z'),
     })
     first.markSourceStarted('alpha')
-    first.markSourceCompleted('alpha', { success: true, jobs: 2, inserted: 2 })
+    first.markSourceCompleted('alpha', { success: true, jobs: 3, inserted: 2, filteredEmptyDescription: 1 })
 
     const resumed = openRunCheckpoint({
       filePath,
@@ -41,7 +41,7 @@ test('run checkpoint resumes only unfinished sources and preserves prior results
 
     assert.deepEqual(resumed.pendingSources(sources), ['beta', 'gamma'])
     assert.deepEqual(resumed.completedSummary(), {
-      alpha: { success: true, jobs: 2, inserted: 2 },
+      alpha: { success: true, jobs: 3, inserted: 2, filteredEmptyDescription: 1 },
     })
     assert.equal(resumed.snapshot().inProgress.alpha, undefined)
     assert.equal(resumed.snapshot().completedCount, 1)

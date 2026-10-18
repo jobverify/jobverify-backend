@@ -8,6 +8,7 @@ const EXPENSIVE_JOB_READ_PATHS = new Set([
   "/api/jobs/search",
   "/api/jobs/meta",
   "/api/jobs/meta/companies",
+  '/api/publishing/build-feed',
 ]);
 
 const normalizeEnvValue = (value) => String(value ?? "").trim().toLowerCase();

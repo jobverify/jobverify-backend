@@ -82,7 +82,7 @@ test('experienced job visibility is reversible and consistent across public surf
   const ids = categories.map(() => new mongoose.Types.ObjectId());
   await Job.collection.insertMany(categories.map((jobType, index) => ({
     fingerprint: String(ids[index]), _id: ids[index], title: `Opportunity ${index}`, company: `Company ${index}`, companyKey: `company ${index}`,
-    jobType, status: 'active', isPublicIndia: true, city: 'Bangalore', country: 'India',
+    jobType, status: 'active', isPublicIndia: true, city: 'Bangalore', country: 'India', description: 'Deliver software features and support the engineering team.',
     sourceUrl: `https://example.com/jobs/${index}`, applyUrl: `https://example.com/jobs/${index}`,
     postedAt: new Date('2026-01-01'), sortDate: new Date('2026-01-01'),
   })));
@@ -158,7 +158,7 @@ test('experienced job visibility is reversible and consistent across public surf
     const variantIds = variants.map(() => new mongoose.Types.ObjectId());
     await Job.collection.insertMany(variants.map((variant, index) => ({
       ...variant, fingerprint: String(variantIds[index]), _id: variantIds[index], company: 'Legacy ' + index, companyKey: 'legacy ' + index,
-      status: 'active', isPublicIndia: true, city: 'Bangalore', sourceUrl: 'https://example.com/legacy/' + index,
+      status: 'active', isPublicIndia: true, city: 'Bangalore', sourceUrl: 'https://example.com/legacy/' + index, description: 'Deliver software features and support the engineering team.',
       postedAt: new Date('2026-01-01'), sortDate: new Date('2026-01-01'),
     })));
     try {

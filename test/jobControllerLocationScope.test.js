@@ -10,6 +10,7 @@ import mongoose from 'mongoose'
 import Job from '../src/models/Job.js'
 import JobDatasetSummary from '../src/models/JobDatasetSummary.js'
 import { buildAggregateHiringSignalFilter } from '../src/utils/jobListingEvidence.js'
+import { buildMissingSourceDescriptionFilter } from '../src/utils/jobSourceContent.js'
 import { ACCESS_ROLES, PLAN_IDS } from '../src/constants/accessPlans.js'
 import {
   JOB_LIST_CARD_PROJECTION,
@@ -99,7 +100,7 @@ const assertMatchesPublicJobScope = (scope, expectedFilters = {}) => {
   assert.deepEqual(stripPublishedDateScope(scope), {
     ...expectedFilters,
     isPublicIndia: true,
-    $nor: [buildAggregateHiringSignalFilter()],
+    $nor: [buildAggregateHiringSignalFilter(), buildMissingSourceDescriptionFilter()],
   })
   assertHasPublishedDateScope(scope)
 }
@@ -462,9 +463,13 @@ test('getJobById applies the public location scope to the detail query', async (
   try {
     const res = createResponseDouble()
 
+    const queryStartedAt = Date.now()
     await getJobById({ params: { id: jobId } }, res)
 
-    assertMatchesPublicJobScope(capturedFilter, { _id: jobId, status: 'active' })
+    assert.deepEqual(capturedFilter.$or[0], { closingDate: null })
+    assert.ok(capturedFilter.$or[1].closingDate.$gt instanceof Date)
+    assert.ok(capturedFilter.$or[1].closingDate.$gt.getTime() >= queryStartedAt && capturedFilter.$or[1].closingDate.$gt.getTime() <= Date.now())
+    assertMatchesPublicJobScope(capturedFilter, { _id: jobId, status: 'active', $or: capturedFilter.$or })
     assert.equal(res.statusCode, 404)
   } finally {
     Job.findOne = originalFindOne
