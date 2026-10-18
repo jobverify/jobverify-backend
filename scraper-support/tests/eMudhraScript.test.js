@@ -361,3 +361,27 @@ test('eMudhra fails closed when the verified careers or broken-openings contract
     /sitemap changed/i,
   )
 })
+
+const currentCareersMap = '<urlset><url><loc>https://emudhra.com/en/careers</loc><xhtml:link rel="alternate" hreflang="en" href="https://emudhra.com/en/careers"/><xhtml:link rel="alternate" hreflang="x-default" href="https://emudhra.com/en/careers"/></url></urlset>'
+const indexedSitemapFixture = async (child = currentCareersMap, index = '<sitemapindex><sitemap><loc>https://emudhra.com/sitemap-pages.xml</loc></sitemap><sitemap><loc>https://emudhra.com/sitemap-blog.xml</loc></sitemap></sitemapindex>') => {
+  const source = await loadEmudhraModule()
+  return source.createEmudhraScraper().run({ fetchPage: async url => {
+    if (url === source.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
+    if (url === source.CAREER_PAGE_URL) return { status: 200, url, html: indiaCareersHtml }
+    if (url === source.GLOBAL_CAREER_PAGE_URL) return { status: 200, url, html: globalCareersHtml }
+    if (source.CHECKED_BROKEN_OPENINGS_URLS.includes(url)) return { status: 404, url, html: brokenOpeningsHtml }
+    if (url === source.SITEMAP_URL) return { status: 200, url, html: index }
+    if (url === 'https://emudhra.com/sitemap-pages.xml') return { status: 200, url, html: child }
+    if (url === 'https://emudhra.com/sitemap-blog.xml') return { status: 200, url, html: '<urlset><url><loc>https://emudhra.com/en/blog</loc></url></urlset>' }
+    throw Error('Unexpected sitemap URL ' + url)
+  } })
+}
+
+test('eMudhra follows the verified official sitemap index and current global careers alternates', async () => {
+  assert.deepEqual(await indexedSitemapFixture(), [])
+})
+
+test('eMudhra rejects new openings in child maps and off-host sitemap index URLs', async () => {
+  await assert.rejects(indexedSitemapFixture(currentCareersMap.replace('</urlset>', '<url><loc>https://emudhra.com/en/careers-open-positions</loc></url></urlset>')), /sitemap changed/)
+  await assert.rejects(indexedSitemapFixture(currentCareersMap, '<sitemapindex><sitemap><loc>https://other.example/sitemap-pages.xml</loc></sitemap></sitemapindex>'), /sitemap changed/)
+})

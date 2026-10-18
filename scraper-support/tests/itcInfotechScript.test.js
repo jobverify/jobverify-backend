@@ -28,6 +28,8 @@ test('createItcInfotechScraper keeps India listings on the public Zwayam flow an
   assert.equal(typeof run, 'function')
 
   const indiaListing = {
+    id: 98123, companyId: 15154, status: 1, careerSiteUrl: 'jobs.itcinfotech.com',
+    jobLocationRecord: [{ country: 'India', city: 'Bengaluru' }],
     jobTitle: 'Senior Data Engineer',
     jobUrl: 'senior-data-engineer',
     jobCode: '98123',
@@ -40,6 +42,7 @@ test('createItcInfotechScraper keeps India listings on the public Zwayam flow an
   }
 
   const detailPayload = {
+    id: 98123, companyId: 15154, status: 1, careerSiteUrl: 'jobs.itcinfotech.com',
     jobTitle: 'Senior Data Engineer',
     jobUrl: 'senior-data-engineer',
     jobCode: '98123',
@@ -86,6 +89,8 @@ test('createItcInfotechScraper keeps India listings on the public Zwayam flow an
               {
                 _source: {
                   jobTitle: 'Senior Data Engineer, US',
+                  id: 77111, companyId: 15154, status: 1,
+                  jobLocationRecord: [{ country: 'United States', city: 'Dallas' }],
                   jobUrl: 'senior-data-engineer-us',
                   jobCode: '77111',
                   referenceNumber: 'REQ-77111',
@@ -97,6 +102,7 @@ test('createItcInfotechScraper keeps India listings on the public Zwayam flow an
             ],
             facetedSearchConfig: { paginationHowMuch: 10 },
             totalCount: 2,
+            hasMoreData: false,
           },
         }
       }
@@ -112,7 +118,7 @@ test('createItcInfotechScraper keeps India listings on the public Zwayam flow an
     },
   })
 
-  assert.deepEqual(requests, [
+  const expectedRequests = [
     {
       url: 'https://public.zwayam.com/jobs/search',
       options: {
@@ -128,7 +134,7 @@ test('createItcInfotechScraper keeps India listings on the public Zwayam flow an
             anyOfTheseWords: '',
           }),
           domain: 'jobs.itcinfotech.com',
-          companyId: '15154',
+          companyId: 'MTUxNTQ=',
         },
       },
     },
@@ -144,7 +150,9 @@ test('createItcInfotechScraper keeps India listings on the public Zwayam flow an
         },
       },
     },
-  ])
+  ]
+  expectedRequests.push(expectedRequests[0])
+  assert.deepEqual(requests, expectedRequests)
 
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].jobId, '98123')

@@ -36,10 +36,13 @@ test('InfoEdge local catalog captures the verified first-party careers page and 
   assert.equal(INFOEDGE_CATALOG.zwayamTenantGroupId, 'G1')
   assert.equal(INFOEDGE_CATALOG.zwayamCompanyId, 'MTU1Nzg=')
   assert.equal(INFOEDGE_CATALOG.zwayamDetailCompanyId, '15578')
-  assert.equal(INFOEDGE_CATALOG.verifiedPublicJobCount, 303)
+  assert.equal(INFOEDGE_CATALOG.verifiedPublicJobCount, null)
+  assert.equal(INFOEDGE_CATALOG.verifiedInventoryStatus, 'coverage-gap')
+  assert.equal(INFOEDGE_CATALOG.verifiedPublicListingRowCount, 294)
+  assert.equal(INFOEDGE_CATALOG.verifiedIndiaListingRowCount, 288)
   assert.equal(
     INFOEDGE_CATALOG.verifiedSampleJobUrl,
-    'https://careers.infoedge.com/infoedge/jobview/lead-ui-designer-noida-2026071413401714',
+    'https://careers.infoedge.com/infoedge/jobview/deputy-manager-training-and-quality-noida-2026091014201322',
   )
   assert.equal(INFOEDGE_CATALOG.atsPlatform, 'zwayam')
   assert.equal(INFOEDGE_CATALOG.countryFilter, 'India')
@@ -49,17 +52,17 @@ test('InfoEdge local catalog captures the verified first-party careers page and 
   )
   assert.equal(
     INFOEDGE_CATALOG.extractionStrategy,
-    'verified-first-party-careers-page+public-zwayam-search-api+detail-api',
+    'verified-first-party-careers-page+counted-zwayam-search+native-detail-api+incomplete-full-description-fallback',
   )
   assert.equal(INFOEDGE_CATALOG.parser, 'custom-script')
   assert.equal(INFOEDGE_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(INFOEDGE_CATALOG.modulePath, '../../scraper/infoedge/script.js')
   assert.equal(INFOEDGE_CATALOG.dryRunFile, 'infoedge/jobs.json')
-  assert.equal(INFOEDGE_CATALOG.verifiedOn, '2026-07-16')
-  assert.match(INFOEDGE_CATALOG.verifiedSurfaceSummary, /careers\.infoedge\.com\/infoedge\/jobslist/i)
+  assert.equal(INFOEDGE_CATALOG.verifiedOn, '2026-10-09')
+  assert.match(INFOEDGE_CATALOG.verifiedSurfaceSummary, /careers\.infoedge\.com/i)
   assert.match(INFOEDGE_CATALOG.verifiedSurfaceSummary, /public\.zwayam\.com\/jobs\/search/i)
   assert.match(INFOEDGE_CATALOG.verifiedSurfaceSummary, /public\.zwayam\.com\/jobs-service\/v1\/jobs\/careersite/i)
-  assert.match(INFOEDGE_CATALOG.verifiedSurfaceSummary, /303 live jobs/i)
+  assert.match(INFOEDGE_CATALOG.verifiedSurfaceSummary, /294 distinct public-status rows/i)
 
   assert.equal(provider.source, 'infoedge')
   assert.equal(provider.companyName, 'InfoEdge')

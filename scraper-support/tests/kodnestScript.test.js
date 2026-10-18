@@ -230,3 +230,17 @@ for (const [label, bundle, feed] of [
     }), /verified public careers|careers feed/i)
   })
 }
+
+const octoberHomepage = readFixture('homepage-20261009.html')
+test('KodNest accepts the current Career Outcome Engine identity while retaining the verified public careers feed', async () => {
+  const kodnest = await loadModule()
+  assert.equal(kodnest.hasOfficialHomepageSignal(octoberHomepage), true)
+  for (const html of [octoberHomepage.replaceAll('KodNest','Other'),octoberHomepage.replaceAll('https://kodnest.com','https://example.com'),octoberHomepage.replaceAll('Career Outcome Engine','Unverified')]) assert.equal(kodnest.hasOfficialHomepageSignal(html), false)
+  const jobs=await kodnest.createKodNestScraper({now:()=> '2026-10-09T00:00:00Z'}).run({
+    fetchPage:async url=>({status:200,url,html:octoberHomepage}),
+    fetchText:async url=>url.endsWith('careers-current.js')?currentCareersModule:url.endsWith('CareerHub-current.js')?currentHubModule:currentBundle(),
+    fetchJson:async()=>[{id:'current',slug:'academic-developer',title:'Academic Developer',status:'published',location_label:'Bengaluru · On-site',summary:'Build careers.',published_at:'2026-07-18T00:00:00Z',closes_at:null}],
+  })
+  assert.equal(jobs.length,1)
+  assert.equal(jobs[0].jobId,'kodnest-current')
+})

@@ -15,13 +15,13 @@ export const MOTIVITYLABS_CATALOG = {
   companyDomain: 'motivitylabs.com',
   atsPlatform: 'official-company-careers',
   countryFilter: 'India',
-  paginationStrategy: 'first-party-collection-page-jsonld',
-  extractionStrategy: 'verified-first-party-collection-jsonld+same-domain-jobposting-details+india-filter',
+  paginationStrategy: 'complete-public-jobs-api-count-reconciled',
+  extractionStrategy: 'verified-first-party-client+public-jobs-api+expiry-and-confirmed-india+incomplete-geography-preservation',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-10-03',
+  verifiedOn: '2026-10-09',
   verifiedSurfaceSummary:
-    'Verified on October 3, 2026 that https://motivitylabs.com/careers/ links to the current first-party openings hub at https://motivitylabs.com/jobs/. The collection JSON-LD listed 30 public same-domain job details, including 20 with confirmed India geography and 10 without confirmed country. The scraper returns the confirmed India roles and flags incomplete source scope.',
+    "Verified on October 9, 2026 that the official Motivity Labs careers and jobs pages load their public GET jobs API through the current first-party client. The complete API count reconciled 26 published roles: 17 with confirmed India geography and 9 with unverified location. Only confirmed India roles are returned, with full API descriptions, expiry filtering and incomplete source scope so previous vacancies are preserved.",
 }
 
 export default MOTIVITYLABS_CATALOG

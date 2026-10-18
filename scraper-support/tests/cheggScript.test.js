@@ -21,12 +21,22 @@ const careersHtml = `
   </html>
 `
 
+const workdayBoardHtml = `
+  <html lang="en-US"><head>
+    <link rel="canonical" href="https://osv-chegg.wd5.myworkdayjobs.com/Chegg" />
+    <meta property="og:description" content="What is Chegg? An always on digital learning platform." />
+    <script>
+      window.workday = { tenant: "osv_chegg", siteId: "Chegg", isExternal: true, appName: "cxs" };
+    </script>
+  </head><body><div id="root"></div></body></html>
+`
+
 test('Chegg exposes the expected Workday options and validates the official careers handoff', async () => {
   const chegg = await loadCheggModule()
 
   assert.equal(chegg.SOURCE, 'chegg')
   assert.equal(chegg.COMPANY_NAME, 'Chegg')
-  assert.equal(chegg.CAREERS_PAGE_URL, 'https://www.chegg.com/about/working-at-chegg/jobs/')
+  assert.equal(chegg.CAREERS_PAGE_URL, 'https://osv-chegg.wd5.myworkdayjobs.com/Chegg')
   assert.equal(chegg.WORKDAY_BASE_URL, 'https://osv-chegg.wd5.myworkdayjobs.com/Chegg')
   assert.equal(chegg.INDIA_LOCATION_COUNTRY, 'c4f78be1a8f14da0ab49ce1162348a5e')
   assert.equal(chegg.hasOfficialCareersSignal(careersHtml), true)
@@ -113,5 +123,36 @@ test('run delegates to the shared Workday runner after the official Chegg handof
 
   assert.deepEqual(requestedUrls, [chegg.CAREERS_PAGE_URL])
   assert.equal(jobs.length, 1)
-  assert.deepEqual(jobs[0].runnerOptions, chegg.buildScraperOptions())
+  assert.deepEqual(jobs[0].runnerOptions, { ...chegg.buildScraperOptions(), boardIdentityVerified: true })
+})
+
+test('Chegg validates its live Workday board without requiring the retired marketing jobs page', async () => {
+  const chegg = await loadCheggModule()
+  await chegg.run({
+    fetchText: async (url) => {
+      if (url === 'https://osv-chegg.wd5.myworkdayjobs.com/Chegg') return workdayBoardHtml
+      throw new Error(`HTTP 404 for ${url}`)
+    },
+    workdayRunner: async (options) => {
+      assert.equal(options.baseUrl, 'https://osv-chegg.wd5.myworkdayjobs.com/Chegg')
+      assert.equal(options.locationCountry, 'c4f78be1a8f14da0ab49ce1162348a5e')
+      assert.equal(options.boardIdentityVerified, true)
+      return []
+    },
+  })
+})
+
+test('Chegg recognizes the canonical Workday board and rejects a mismatched tenant, site, or board URL', async () => {
+  const chegg = await loadCheggModule()
+  assert.equal(chegg.hasOfficialCareersSignal(workdayBoardHtml), true)
+  for (const html of [
+    workdayBoardHtml.replace('tenant: "osv_chegg"', 'tenant: "other_company"'),
+    workdayBoardHtml.replace('siteId: "Chegg"', 'siteId: "OtherSite"'),
+    workdayBoardHtml.replace('https://osv-chegg.wd5.myworkdayjobs.com/Chegg', 'https://other.wd5.myworkdayjobs.com/Chegg'),
+  ]) {
+    await assert.rejects(chegg.run({
+      fetchText: async () => html,
+      workdayRunner: async () => { throw new Error('Workday runner must not receive an unverified board') },
+    }), /official jobs page changed/)
+  }
 })

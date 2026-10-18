@@ -1,12 +1,13 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { fetchTextWithRetry, fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'e2logysoftwaresolutions'
 export const COMPANY = 'E2logy Software Solutions'
 export const COMPANY_DOMAIN = 'e2logy.com'
-export const CAREERS_URL = 'https://e2logy.com/careers/'
+export const CAREERS_URL = 'https://e2logy.com/careers'
 export const ZOHO_SITE = 'https://e2logy.zohorecruit.com'
 
 const USER_AGENT =
@@ -35,6 +36,30 @@ export const hasOfficialCareersSignal = (html) => {
     && /site:\s*"https:\/\/e2logy\.zohorecruit\.com"/i.test(page)
 }
 
+const tagTexts = (html, tag) => [...String(html).matchAll(
+  new RegExp('<' + tag + '\\b[^>]*>([\\s\\S]*?)<\\/' + tag + '>', 'gi'),
+)].map((match) => normalizeWhitespace(match[1].replace(/<[^>]*>/g, ' ')))
+
+export const hasVerifiedEmptyCareersSurface = (html) => {
+  const page = String(html ?? '')
+  const sections = [...page.matchAll(/<section\b[^>]*\sid=["']positions["'][^>]*>([\s\S]*?)<\/section>/gi)]
+  if (sections.length !== 1) return false
+  const positions = sections[0][1]
+  const resumeLinks = [...positions.matchAll(/<a\b[^>]*\shref=["']([^"']+)["'][^>]*>/gi)]
+  return tagTexts(page, 'title')[0] === 'Careers at E2logy | Join Our AI and Software Team'
+    && tagTexts(page, 'h1').join('') === 'Work with us on AI and software projects'
+    && tagTexts(positions, 'h2').length === 1
+    && tagTexts(positions, 'h2')[0] === 'Jobs open right now'
+    && tagTexts(positions, 'h3').length === 1
+    && tagTexts(positions, 'h3')[0] === 'No current openings'
+    && tagTexts(positions, 'p').length === 1
+    && tagTexts(positions, 'p')[0] === 'All our roles are filled at the moment. You can still send us your resume and we will keep it for the next opening.'
+    && resumeLinks.length === 1
+    && resumeLinks[0][1] === 'mailto:careers@e2logy.com?subject=Career%20Application%3A%20General'
+    && !/<(?:button|form|iframe)\b/i.test(positions)
+    && !/rec_embed_js\.load|e2logy\.zohorecruit\.com|JobPosting/i.test(page)
+}
+
 export const extractZohoJobs = (payload) => (payload?.data ?? [])
   .filter((job) => normalizeWhitespace(job?.Country) === 'India')
   .map((job) => ({
@@ -58,39 +83,30 @@ export const extractZohoJobs = (payload) => (payload?.data ?? [])
     jobDescription: null,
   }))
 
-const defaultFetchText = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    },
-  })
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  headers: { 'User-Agent': USER_AGENT, Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' },
+  attempts: 1, label: SOURCE, timeoutMs: 15000, signal,
+})
 
-  return response.text()
-}
-
-const defaultFetchJson = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': USER_AGENT,
-      Accept: 'application/json,text/plain,*/*',
-    },
-  })
-
-  return response.json()
-}
+const defaultFetchJson = (url, { signal } = {}) => fetchJsonWithRetry(url, {
+  headers: { 'User-Agent': USER_AGENT, Accept: 'application/json,text/plain,*/*' },
+  attempts: 1, label: SOURCE, timeoutMs: 15000, signal,
+})
 
 export const createE2logySoftwareSolutionsScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson } = {}) {
-    const careersHtml = await fetchText(CAREERS_URL)
+  async run({ fetchText = defaultFetchText, fetchJson = defaultFetchJson, signal } = {}) {
+    signal?.throwIfAborted()
+    const careersHtml = await fetchText(CAREERS_URL, { signal })
+    signal?.throwIfAborted()
+    if (hasVerifiedEmptyCareersSurface(careersHtml)) return []
 
     if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error('E2logy careers page no longer matches the verified first-party Zoho widget surface')
+      throw new Error('E2logy careers page no longer matches the verified first-party careers surface')
     }
 
-    return extractZohoJobs(await fetchJson(buildZohoJobsApiUrl())).map((job) => ({
+    return extractZohoJobs(await fetchJson(buildZohoJobsApiUrl(), { signal })).map((job) => ({
       ...job,
       source: SOURCE,
       companyDomain: COMPANY_DOMAIN,

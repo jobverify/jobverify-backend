@@ -120,7 +120,7 @@ test('Eko scraper helpers stay pinned to the verified first-party homepage, corp
   assert.equal(eko.SOURCE, 'eko')
   assert.equal(eko.COMPANY, 'Eko')
   assert.equal(eko.OFFICIAL_BRAND_NAME, 'Eko Bharat Ventures Private Limited')
-  assert.equal(eko.VERIFIED_ON, '2026-07-15')
+  assert.equal(eko.VERIFIED_ON, '2026-10-09')
   assert.equal(eko.HOMEPAGE_URL, 'https://eko.in/')
   assert.equal(eko.CORPORATE_HOMEPAGE_URL, 'https://about.eko.in/')
   assert.equal(eko.ROBOTS_TXT_URL, 'https://eko.in/robots.txt')
@@ -178,7 +178,7 @@ test('Eko scraper helpers stay pinned to the verified first-party homepage, corp
   )
 })
 
-test('Eko returns [] only while the verified first-party web properties expose no public jobs surface', async () => {
+test('Eko preserves all current first-party route checks before returning incomplete discovery', async () => {
   const eko = await loadEkoModule()
   const requestedUrls = []
 

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFile } from 'node:fs/promises'
 
 import { generateCompanyCoverageReport } from '../providers/companyCoverage.js'
 import { buildScrapers, getScraperCatalog } from '../providers/index.js'
@@ -72,7 +73,11 @@ test('Okinawa Autotech extracts only official first-party career cards', async (
   }])
 
   const jobs = await okinawa.createOkinawaAutotechScraper().run({
-    fetchText: async () => CAREERS_HTML,
+    fetchText: async (url) => {
+      if (url.includes('careerdetail.aspx')) return readFile(new URL('../../scraper/okinawaautotech/fixtures/current-detail.html', import.meta.url), 'utf8')
+      if (url.includes('applynow.aspx')) return readFile(new URL('../../scraper/okinawaautotech/fixtures/current-application.html', import.meta.url), 'utf8')
+      return CAREERS_HTML.replace('</article>', '<a href="/careerdetail.aspx?jobid=11">View Detail</a></article>')
+    },
     now: () => '2026-07-26T00:00:00.000Z',
   })
 

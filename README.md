@@ -10,6 +10,14 @@ Express and MongoDB backend for Jobverify, with a separate scraper runtime that 
 - JWT-based authentication
 - Provider scrapers under `scraper/`, orchestrated by `scraper-support/`
 
+## Public job build feed
+
+`GET /api/publishing/build-feed?limit=200&cursor=<job-id>` provides paginated complete public job data and first-page snapshot/settings data for frontend prerendering. It excludes expired, incomplete-description and unavailable-application jobs and strips private classification/rewrite state.
+
+`HiringObservation` stores immutable daily observations by India calendar date and public visibility/counting scope for analytics. Startup/hourly maintenance captures observations only when listings exist and collection is idle.
+
+Deploy this API before the frontend, whose production builds require the build feed. Reports and Guides and their report administration endpoints have been removed.
+
 ## Repository Layout
 
 ```text
@@ -225,3 +233,11 @@ minute requires a continuously running backend: this repository's Render
 blueprint uses the Free plan, which [spins down after 15 minutes without inbound
 traffic](https://render.com/docs/free#spinning-down-on-idle). An idle instance
 will catch up only when it starts again.
+
+## Admin description rewriting
+
+Admin → Scrapers has a separate description rewriting section with a manual run
+button, workflow status/logs and a persistent switch to run automatically after
+successful scraper workflows. Auto-run defaults to off. See
+[description rewriting setup and acceptance checks](./rewriting/CONTROLS.md)
+for the required GitHub repository permissions and deployment steps.

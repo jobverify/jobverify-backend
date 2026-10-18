@@ -225,3 +225,27 @@ test('CuriousJr run fails closed when the brand surface or a common careers rout
     /common curiousjr career route changed/i,
   )
 })
+
+const clientContactShell = '<title>CuriousJr | Online Tuition Classes for 1st to 10th Kids</title><script src="/_next/static/chunks/pages/contact-us-16667945d63681e2.js"></script><script id="__NEXT_DATA__" type="application/json">{"page":"/contact-us","nextExport":true,"isFallback":false}</script>'
+const contactBundle = '(window.__NEXT_P=window.__NEXT_P||[]).push(["/contact-us",function(){return n(78267)}]); Welcome to CuriousJr powered by Physicswallah! cjr_support@pw.live 8448828113'
+const runClientContactFixture = async (bundle = contactBundle, shell = clientContactShell) => {
+  const source = await loadCuriousJrModule()
+  return source.createCuriousJrScraper().run({ fetchPage: async url => {
+    if (url === source.BRAND_HOME_URL) return { status: 200, url, html: homepageHtml }
+    if (url === source.CONTACT_URL) return { status: 200, url, html: shell }
+    if (url === source.PARENT_ABOUT_URL) return { status: 200, url, html: parentAboutHtml }
+    if (url === 'https://www.curiousjr.com/_next/static/chunks/pages/contact-us-16667945d63681e2.js') return { status: 200, url, html: bundle }
+    return { status: 404, url, html: buildRoute404Html(new URL(url).pathname) }
+  } })
+}
+
+test('CuriousJr validates the official client contact bundle when its static export omits contact text', async () => {
+  assert.deepEqual(await runClientContactFixture(), [])
+})
+
+test('CuriousJr rejects an unrelated shell, missing contact data and new public jobs in the contact bundle', async () => {
+  for (const bundle of [contactBundle.replace('8448828113', '0000000000'), contactBundle.replace('["/contact-us"', '["/different-page"'), contactBundle + ' https://jobs.lever.co/curiousjr']) {
+    await assert.rejects(runClientContactFixture(bundle), /CuriousJr.*contact/i)
+  }
+  await assert.rejects(runClientContactFixture(contactBundle, clientContactShell.replace('/_next/static/', 'https://other.example/_next/static/')), /CuriousJr.*contact/i)
+})

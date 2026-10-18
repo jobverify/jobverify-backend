@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const loadPletraModule = async () => {
   try {
@@ -142,11 +143,11 @@ test('Pletra scraper recognizes the verified homepage, contact page, careers pag
     {
       title: 'Business Development Manger',
       company: 'Pletra Technologies India Pvt. Ltd.',
-      location: 'India',
+      location: null,
       city: null,
-      country: 'India',
-      jobId: 'pletratechnologiesindiapvtltd-business-development-manger-india',
-      requisitionId: 'pletratechnologiesindiapvtltd-business-development-manger-india',
+      country: null,
+      jobId: 'pletratechnologiesindiapvtltd-business-development-manger-unresolved',
+      requisitionId: 'pletratechnologiesindiapvtltd-business-development-manger-unresolved',
       sourceUrl: 'https://pletratech.com/careers-pletra-technologies/',
       applyUrl: 'https://pletratech.com/careers-pletra-technologies/',
       employmentType: null,
@@ -256,11 +257,10 @@ test('Pletra scraper runs end to end, validates the careers alias, and returns I
     pletra.CAREERS_URL,
     ...pletra.CAREERS_ALIAS_URLS,
   ])
-  assert.equal(jobs.length, 2)
+  assert.equal(jobs.length, 1)
   assert.deepEqual(
     jobs.map((job) => [job.title, job.location, job.country]),
     [
-      ['Business Development Manger', 'India', 'India'],
       ['Salesforce Trainer', 'Pune, India', 'India'],
     ],
   )
@@ -271,6 +271,12 @@ test('Pletra scraper runs end to end, validates the careers alias, and returns I
   assert.equal(jobs[0].companyCareerPage, pletra.CAREERS_URL)
   assert.equal(jobs[0].companyDomain, 'pletratech.com')
   assert.equal(jobs[0].atsPlatform, 'official-company-careers')
+  assert.equal(jobs[0].sourceListingComplete, false)
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.status, 'coverage-gap')
+  assert.equal(evidence.listingComplete, false)
+  assert.equal(evidence.reportedTotal, 3)
+  assert.equal(evidence.indiaFacetCount, null)
 })
 
 test('Pletra scraper fails closed when the verified public surface drifts', async () => {

@@ -18,20 +18,49 @@ const setReadyState = (value) => {
   }
 }
 
-test('incomplete policy classification prevents Mongo job writes, expiry and alerts', async () => {
+test('generic persistence never inserts empty-description jobs and reports the rejection', async t => {
+  const restore = setReadyState(1)
+  t.after(restore)
+  const written = []
+  t.mock.method(Job, 'bulkWrite', async operations => { written.push(...operations); return { upsertedCount: operations.length, modifiedCount: 0 } })
+  t.mock.method(Job, 'deleteMany', async () => assert.fail('filtered descriptions must not authorize deletion'))
+  t.mock.method(Job, 'updateMany', async () => assert.fail('filtered descriptions must not authorize lifecycle misses'))
+  const base = { title: 'Engineer', company: 'Example', location: 'Bengaluru, India' }
+  const result = await saveToDB([
+    { ...base, link: 'https://example.test/jobs/empty', description: ' \n\t' },
+    { ...base, link: 'https://example.test/jobs/full', description: 'Build reliable APIs for customers.' },
+  ], 'example', { classifier: { mode: 'off' }, descriptionRewriteMode: 'off', enrichPublicExperience: false, refreshDatasetSummary: false, replaceExisting: false, enqueueAlerts: false })
+  assert.equal(result.inserted, 1)
+  assert.equal(result.filteredEmptyDescription, 1)
+  assert.equal(written.length, 1)
+  assert.equal(written[0].updateOne.update.$set.applyUrl, 'https://example.test/jobs/full')
+  const rejected = await saveToDB([{ ...base, link: 'https://example.test/jobs/empty', description: null }], 'example', {
+    classifier: { mode: 'off' }, descriptionRewriteMode: 'off', enrichPublicExperience: false, refreshDatasetSummary: false, enqueueAlerts: false,
+  })
+  assert.equal(rejected.inserted, 0)
+  assert.equal(rejected.staleCheckSkipped, true)
+  assert.equal(rejected.filteredEmptyDescription, 1)
+  assert.equal(written.length, 1)
+})
+
+test('scraped jobs are persisted as pending without invoking a classifier', async () => {
   const restore = setReadyState(1)
   const originals = { bulkWrite: Job.bulkWrite, find: Job.find, updateMany: Job.updateMany, deleteMany: Job.deleteMany }
   Job.find = () => ({ select() { return this }, lean() { return this }, exec: async () => [] })
-  Job.bulkWrite = async () => assert.fail('unclassified jobs must not reach MongoDB')
-  Job.updateMany = async () => assert.fail('failed classification must not expire previous jobs')
-  Job.deleteMany = async () => assert.fail('failed classification must not delete jobs')
+  const written = []
+  Job.bulkWrite = async operations => { written.push(...operations); return { upsertedCount: operations.length, modifiedCount: 0 } }
+  Job.updateMany = async () => assert.fail('replacement is disabled')
+  Job.deleteMany = async () => assert.fail('replacement is disabled')
   try {
-    await assert.rejects(saveToDB([{
+    const result = await saveToDB([{
       title: 'Engineering Intern', company: 'Example', location: 'Bengaluru, India',
       link: 'https://example.com/jobs/intern', description: 'Internship for currently pursuing students.',
-    }], 'example', { enrichPublicExperience: false, refreshDatasetSummary: false,
-      classifier: { mode: 'policy', classifyJobs: async jobs => jobs.map(job => ({ ...job, classification: { complete: false, windows: 0 } })) },
-    }), /complete Laya/)
+    }], 'example', { enrichPublicExperience: false, refreshDatasetSummary: false, replaceExisting: false, enqueueAlerts: false,
+      classifier: { mode: 'policy', classifyJobs: async () => assert.fail('scraping must not run inference') },
+    })
+    assert.equal(result.inserted, 1)
+    assert.equal(written[0].updateOne.update.$set.postClassification.status, 'pending')
+    assert.ok(written[0].updateOne.update.$unset.classification !== undefined)
   } finally { Object.assign(Job, originals); restore() }
 })
 
@@ -126,6 +155,7 @@ test('saveToDB persists normalized experience years for filtering', async () => 
       location: 'Bengaluru, India',
       city: 'Bengaluru',
       link: 'https://careers.example.com/jobs/2',
+      description: 'Build and maintain backend services.',
       experienceRequired: '2 years of backend engineering experience',
     }], 'example-source', {
       refreshDatasetSummary: false,
@@ -162,6 +192,7 @@ test('saveToDB enriches missing experience from the official public job page bef
       link: 'https://www.virtusa.com/careers/job-search/in/cloud-engineer-vrt-123',
       applyUrl: 'https://www.virtusa.com/careers/job-search/in/cloud-engineer-vrt-123',
       sourceUrl: 'https://www.virtusa.com/careers/job-search/in/cloud-engineer-vrt-123',
+      description: 'Build and maintain cloud infrastructure.',
       experienceRequired: null,
     }], 'virtusa', {
       refreshDatasetSummary: false,
@@ -210,6 +241,7 @@ test('saveToDB reports enrichment and bulk write stage boundaries', async () => 
       link: 'https://www.virtusa.com/careers/job-search/in/cloud-engineer-vrt-123',
       applyUrl: 'https://www.virtusa.com/careers/job-search/in/cloud-engineer-vrt-123',
       sourceUrl: 'https://www.virtusa.com/careers/job-search/in/cloud-engineer-vrt-123',
+      description: 'Build and maintain cloud infrastructure.',
       experienceRequired: null,
     }], 'virtusa', {
       refreshDatasetSummary: false,
@@ -232,8 +264,7 @@ test('saveToDB reports enrichment and bulk write stage boundaries', async () => 
     assert.deepEqual(stages, [
       'enrichment:start',
       'enrichment:done',
-      'classification:start',
-      'classification:done',
+      'classification:deferred',
       'bulkWrite:start',
       'bulkWrite:done',
     ])
@@ -294,7 +325,7 @@ test('saveToDB does not start bulk write after a lifecycle abort', async () => {
   }
 })
 
-test('saveToDB stores the complete scraped description and keeps it when a later scrape omits it', async () => {
+test('saveToDB preserves source wording and does not write a later empty description', async () => {
   const restoreReadyState = setReadyState(1)
   const originalBulkWrite = Job.bulkWrite
   const updates = []
@@ -328,9 +359,9 @@ test('saveToDB stores the complete scraped description and keeps it when a later
       'Responsibilities:\nBuild services.\n\nRequirements:\nFive years of experience.',
     )
     assert.equal(Object.hasOwn(updates[0], '$unset') && Object.hasOwn(updates[0].$unset, 'description'), false)
-    assert.equal(Object.hasOwn(updates[1].$set, 'description'), false)
+    assert.equal(updates.length, 2)
+    assert.equal(updates[1].$set.description, 'Full alternate description.')
     assert.equal(Object.hasOwn(updates[1], '$unset') && Object.hasOwn(updates[1].$unset, 'description'), false)
-    assert.equal(updates[2].$set.description, 'Full alternate description.')
   } finally {
     Job.bulkWrite = originalBulkWrite
     restoreReadyState()

@@ -8,8 +8,8 @@ export const SCRAPER_DIR = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = 'chegg'
 export const COMPANY_NAME = 'Chegg'
-export const CAREERS_PAGE_URL = 'https://www.chegg.com/about/working-at-chegg/jobs/'
 export const WORKDAY_BASE_URL = 'https://osv-chegg.wd5.myworkdayjobs.com/Chegg'
+export const CAREERS_PAGE_URL = WORKDAY_BASE_URL
 export const INDIA_LOCATION_COUNTRY = 'c4f78be1a8f14da0ab49ce1162348a5e'
 
 const USER_AGENT = 'JobverifyCareerScraper/1.0'
@@ -27,7 +27,10 @@ export const buildScraperOptions = () => ({
 
 export const hasOfficialCareersSignal = (html) => {
   const page = String(html ?? '')
-  return CAREERS_TITLE_PATTERN.test(page) && WORKDAY_LINK_PATTERN.test(page)
+  const hasVerifiedWorkdayBoard = /\btenant\s*:\s*["']osv_chegg["']/i.test(page)
+    && /\bsiteId\s*:\s*["']Chegg["']/i.test(page)
+    && /<link\b(?=[^>]*\brel=["']canonical["'])(?=[^>]*\bhref=["']https:\/\/osv-chegg\.wd5\.myworkdayjobs\.com\/Chegg["'])[^>]*>/i.test(page)
+  return hasVerifiedWorkdayBoard || (CAREERS_TITLE_PATTERN.test(page) && WORKDAY_LINK_PATTERN.test(page))
 }
 
 const isVerifiedWorkdayHandoffUrl = (value) => {
@@ -89,6 +92,7 @@ export const createCheggScraper = ({
 
     return workdayRunner({
       ...buildScraperOptions(),
+      boardIdentityVerified: true,
       ...(signal === undefined ? {} : { signal }),
     })
   },

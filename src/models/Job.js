@@ -87,12 +87,20 @@ export const JobSchema = new Schema(
         mode: { type: String, enum: ['shadow', 'policy', 'enforce'] }, authoritative: Boolean, decisionSource: String,
         status: { type: String, enum: ['accepted', 'uncertain', 'fallback'] }, reason: String,
         decisions: Schema.Types.Mixed, complete: Boolean, windows: Number, evidenceContext: String, classifiedAt: Date,
-        nativeScan: Schema.Types.Mixed,
+        nativeScan: Schema.Types.Mixed, comparison: Schema.Types.Mixed,
         resolved: Schema.Types.Mixed, previous: Schema.Types.Mixed,
       }, { _id: false }),
       default: undefined,
     },
     sourceEmploymentType: { type: String, trim: true, default: null },
+    postClassification: {
+      type: new Schema({
+        inputHash: String, mode: { type: String, enum: ['shadow', 'policy'] },
+        status: { type: String, enum: ['pending', 'processing', 'completed', 'failed', 'skipped'] },
+        owner: String, leaseUntil: Date, attemptedAt: Date, completedAt: Date,
+        attempts: Number, reason: String, result: Schema.Types.Mixed,
+      }, { _id: false }), default: undefined,
+    },
     sourceExperienceRequired: { type: String, trim: true, default: null },
     location: { type: String, trim: true },
     city: { type: String, trim: true },
@@ -143,6 +151,7 @@ export const JobSchema = new Schema(
     description: { type: String, trim: true, default: null },
     sourceDescription: { type: String, default: undefined },
     sourceContentHash: { type: String, default: undefined },
+    sourceContentHashVersion: { type: Number, default: undefined },
     descriptionFormat: { type: String, enum: ['plain', 'markdown'], default: 'plain' },
     descriptionRewrite: {
       type: new Schema({
@@ -150,6 +159,7 @@ export const JobSchema = new Schema(
         inputHash: String, reason: String, modelRevision: String, runtimeTag: String, policyVersion: String,
         queuedAt: Date, attemptedAt: Date, publishedAt: Date, nextAttemptAt: Date, attempts: Number,
         durationMs: Number, wordCount: Number,
+        quality: { method: String, factCoverage: Number, sourceFacts: Number, contentSections: Number, longestFactWords: Number, addedClaims: Number },
       }, { _id: false }), default: undefined,
     },
     minimumQualification: { type: String, trim: true, default: null },

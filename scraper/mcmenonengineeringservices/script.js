@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -16,11 +17,11 @@ const USER_AGENT =
 const normalizeWhitespace = (value) =>
   String(value ?? '')
     .replace(/<[^>]+>/g, ' ')
-    .replace(/&/g, ' ')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&#39;|&apos;|&rsquo;/gi, "'")
     .replace(/&quot;/gi, '"')
     .replace(/&amp;/gi, '&')
+    .replace(/&/g, ' ')
     .replace(/\u00a0/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -38,7 +39,7 @@ const defaultFetchText = (url) =>
   })
 
 export const hasVerifiedCareersLink = (html) =>
-  /href=["']https:\/\/www\.mcmenon\.com\/careers\/["']/i.test(String(html ?? ''))
+  /href=["'](?:https:\/\/www\.mcmenon\.com)?\/careers\/["']/i.test(String(html ?? ''))
 
 export const hasOfficialHomepageSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
@@ -48,18 +49,38 @@ export const hasOfficialHomepageSignal = (html) => {
     && normalized.includes('careers')
 }
 
+const hasCurrentCareersSignal = (html) => {
+  const page = String(html ?? '')
+  const normalized = normalizeWhitespace(page).toLowerCase()
+  return /<title\b[^>]*>\s*Careers \| McMenon Engineering\s*<\/title>/i.test(page)
+    && normalized.includes('build your future with mcmenon')
+    && normalized.includes('engineering the future. investing in people.')
+    && normalized.includes('email your cv to')
+    && normalized.includes('hr@mcmenon.com')
+    && normalized.includes('mcmenon engineering services ltd.')
+}
+
 export const hasOfficialCareersSignal = (html) => {
   const normalized = normalizeWhitespace(html).toLowerCase()
-
-  return normalized.includes('mcmenon - champions of diversity and committed to transition towards net zero looking for talent to support exciting growth plans'.toLowerCase())
+  const legacySignal = normalized.includes('mcmenon - champions of diversity and committed to transition towards net zero looking for talent to support exciting growth plans')
     && normalized.includes('email your resume to')
     && normalized.includes('hr@mcmenon.com')
+  return legacySignal || hasCurrentCareersSignal(html)
+}
+
+export const hasVerifiedEmptyVacanciesSignal = (html) => {
+  const page = String(html ?? '')
+  return hasCurrentCareersSignal(page)
+    && /<h2\b[^>]*>\s*Current vacancies\s*<\/h2>/i.test(page)
+    && /<p\b[^>]*>\s*There are no current vacancies at the moment\.\s*<\/p>/i.test(page)
 }
 
 export const hasEmailOnlyCareersSignal = (html) =>
   /href=["']mailto:hr@mcmenon\.com["']/i.test(String(html ?? ''))
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
+  /href=["'][^"']*\/(?:careers|jobs)\/[^"']+["']/i,
+  /\bJobPosting\b/i,
   /\bcurrent openings\b/i,
   /\bopen positions\b/i,
   /\bsearch jobs\b/i,
@@ -80,11 +101,17 @@ const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /zohorecruit/i,
 ]
 
-export const hasPublicJobsSignal = (html) =>
-  PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(String(html ?? '')))
+export const hasPublicJobsSignal = (html) => {
+  const page = String(html ?? '')
+  const inspected = hasVerifiedEmptyVacanciesSignal(page) ? page
+    .replace(/\bCurrent vacancies\b/gi, ' ')
+    .replace(/There are no current vacancies at the moment\./gi, ' ')
+    .replace(/Don[’']t see a current vacancy that matches your experience\?/gi, ' ') : page
+  return PUBLIC_JOBS_SIGNAL_PATTERNS.some((pattern) => pattern.test(inspected))
+}
 
 export const createMcMenonEngineeringServicesScraper = () => ({
-  async run({ fetchText = defaultFetchText } = {}) {
+  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
     const homepageHtml = await fetchText(HOMEPAGE_URL)
     if (!hasOfficialHomepageSignal(homepageHtml) || !hasVerifiedCareersLink(homepageHtml)) {
       throw new Error('McMenon Engineering Services Ltd. verified official homepage no longer matches the known first-party surface')
@@ -99,6 +126,16 @@ export const createMcMenonEngineeringServicesScraper = () => ({
       throw new Error('McMenon Engineering Services Ltd. careers page now appears to expose a public jobs surface')
     }
 
+    if (hasVerifiedEmptyVacanciesSignal(careersHtml)) {
+      return attachInventoryEvidence([], {
+        status: 'verified-empty', surface: CAREERS_URL, firstParty: true, listingComplete: true,
+        pagesFetched: 1, reportedTotal: 0, indiaFacetCount: 0, verifiedAt: now(),
+        reason: 'official-careers-explicit-no-current-vacancies',
+      })
+    }
+    if (hasCurrentCareersSignal(careersHtml)) {
+      throw new Error('McMenon Engineering Services Ltd. current vacancy inventory is unavailable')
+    }
     return []
   },
 })

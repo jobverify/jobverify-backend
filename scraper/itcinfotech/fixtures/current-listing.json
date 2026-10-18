@@ -1,0 +1,344 @@
+{
+  "data": {
+    "data": [
+      {
+        "_source": {
+          "id": 1189038,
+          "jobCode": 67877,
+          "newJobCode": "67877",
+          "companyId": 15154,
+          "careerSiteUrl": "jobs.itcinfotech.com",
+          "jobTitle": "Project Lead - Cloud Services",
+          "jobUrl": "project-lead-cloud-services-bangalore-2026093011412087",
+          "status": 1,
+          "jobVisibility": "Enhanced",
+          "location": "Mumbai, Maharashtra, India",
+          "locAgg": "Mumbai, Maharashtra, India",
+          "jobLocationRecord": [
+            {
+              "jobId": 1189038,
+              "country": "India",
+              "companyId": 15154,
+              "city": "Mumbai",
+              "formattedLocation": "Mumbai, Maharashtra, India",
+              "location": "Mumbai, Maharashtra, India",
+              "id": 1847924,
+              "state": "Maharashtra"
+            }
+          ],
+          "referenceNumber": "PCIIL_0000266610_1",
+          "departmentName": "Lateral",
+          "DepartmentName": "Lateral",
+          "createDate": "29-Sep-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "Lead Site Reliability Engineer Disaster Recovery Automation Location: Bengaluru Work from Office Experience: 10 to15 Years Role Overview: We are seeking an experienced Lead Site Reliability Engineer SRE to lead Disaster Recovery, Resilience Engineering, and Automation initiatives for mission-critical banking applications and cloud platforms. The role focuses on designing and improving DR capabilities, automating operational processes, enhancing platform reliability, and driving operational excellence across AWS and Kubernetes environments. Key Responsibilities: Lead Disaster Recovery planning, DR drills, failoverfailback validation, and Business Continuity activities. Design and implement automation for operational tasks, incident response, deployment, and recovery using scripting and Infrastructure-as-Code. Drive platform reliability, observability, capacity planning, and continuous service improvement across AWS and Kubernetes. Collaborate with Application, Platform, DevOps, and Security teams to improve resilience, reduce MTTR, and eliminate recurring production issues. Define SRE best practices, operational standards, runbooks, and mentor engineering teams. Mandatory Skills AWS EKS, EC2, IAM, VPC, RDS, S3, CloudWatch, Kubernetes EKS, Terraform, CICD, Linux, ShellPython scripting. Disaster Recovery, High Availability, Business Continuity, Incident Problem Management, RCA, Automation, and Observability Dynatrace, Datadog, Prometheus, Grafana, OpenTelemetry. Strong experience with Infrastructure Automation, Production Reliability, and Operational Excellence.",
+          "metaDescription": "Lead Site Reliability Engineer Disaster Recovery Automation Location: Bengaluru Work from Office Experience: 10 to15 Years Role Overview: We are seeking an experienced Lead Site Reliability Engineer SRE to lead Disaster Recovery, Resilience Engineering, and Automation initiatives for mission-critical banking applications and cloud platforms. The role focuses on designing and improving DR capabilities, automating operational processes, enhancing platform reliability, and driving operational excellence across AWS and Kubernetes environments. Key Responsibilities: Lead Disaster Recovery planning, DR drills, failoverfailback validation, and Business Continuity activities. Design and implement automation for operational tasks, incident response, deployment, and recovery using scripting and Infrastructure-as-Code. Drive platform reliability, observability, capacity planning, and continuous service improvement across AWS and Kubernetes. Collaborate with Application, Platform, DevOps, and Security teams to improve resilience, reduce MTTR, and eliminate recurring production issues. Define SRE best practices, operational standards, runbooks, and mentor engineering teams. Mandatory Skills AWS EKS, EC2, IAM, VPC, RDS, S3, CloudWatch, Kubernetes EKS, Terraform, CICD, Linux, ShellPython scripting. Disaster Recovery, High Availability, Business Continuity, Incident Problem Management, RCA, Automation, and Observability Dynatrace, Datadog, Prometheus, Grafana, OpenTelemetry. Strong experience with Infrastructure Automation, Production Reliability, and Operational Excellence.",
+          "shortDescription": null,
+          "experienceUIField": "6-12 years",
+          "yrsOfExperience": "6 to 12 Years "
+        }
+      },
+      {
+        "_source": {
+          "id": 1190537,
+          "jobCode": 67963,
+          "newJobCode": "67963",
+          "companyId": 15154,
+          "careerSiteUrl": "jobs.itcinfotech.com",
+          "jobTitle": "Lead - AWS Site Reliability",
+          "jobUrl": "lead-aws-site-rel-cld-ser-bangalore-2026100509080344",
+          "status": 1,
+          "jobVisibility": "Limited",
+          "location": "BANGALORE",
+          "locAgg": "BANGALORE",
+          "jobLocationRecord": [
+            {
+              "jobId": 1190537,
+              "country": "India",
+              "companyId": 15154,
+              "city": "Bengaluru",
+              "formattedLocation": "Bengaluru, Karnataka, India",
+              "location": "Bangalore",
+              "id": 1849842,
+              "state": "Karnataka"
+            }
+          ],
+          "referenceNumber": "PCIIL_0000264256_1",
+          "departmentName": "Lateral",
+          "DepartmentName": "Lateral",
+          "createDate": "01-Sep-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "Must have experience in leading and managing a team of Application support or SRE with skill set of Java Angular and AWS Should have a minimum of 7+ yrs experience in handling a team in different domains Ability to assist the team on Java Angular and AWS specific issues Ability to work individually and in large teams as well to handle big complex projects Requirements Hands on experience in Monitoring applications Object oriented analysis and design using common design patterns Good knowledge of Java and Angular Knowledge of Relational Databases SQL and ORM technologies JPA2 Hibernate Experience in the Shell and Python scripting Exposure to Microservices Docker and Jenkins Strong knowledge of New Relic or Dynatrace or Grafana tool will be added advantage Strong analytical skills and good problem solving skills Excellent verbal and written communication skills Ability in managing and communicating with internal as well as external stakeholders Should be a Quick Learner and Passionate about exploring and adoption of new Advanced technologiesmethods Should be a strong believer in self-exploration and self-learning Mentor junior associates in the team Always interested in analyzing problems and working towards practical relevant workable and implementable solutions Soft Skills: Excellent problem solving and troubleshooting skills Process oriented with great documentation skills Excellent oral and written communication skills with a keen sense of customer service",
+          "metaDescription": "Must have experience in leading and managing a team of Application support or SRE with skill set of Java Angular and AWS Should have a minimum of 7+ yrs experience in handling a team in different domains Ability to assist the team on Java Angular and AWS specific issues Ability to work individually and in large teams as well to handle big complex projects Requirements Hands on experience in Monitoring applications Object oriented analysis and design using common design patterns Good knowledge of Java and Angular Knowledge of Relational Databases SQL and ORM technologies JPA2 Hibernate Experience in the Shell and Python scripting Exposure to Microservices Docker and Jenkins Strong knowledge of New Relic or Dynatrace or Grafana tool will be added advantage Strong analytical skills and good problem solving skills Excellent verbal and written communication skills Ability in managing and communicating with internal as well as external stakeholders Should be a Quick Learner and Passionate about exploring and adoption of new Advanced technologiesmethods Should be a strong believer in self-exploration and self-learning Mentor junior associates in the team Always interested in analyzing problems and working towards practical relevant workable and implementable solutions Soft Skills: Excellent problem solving and troubleshooting skills Process oriented with great documentation skills Excellent oral and written communication skills with a keen sense of customer service",
+          "shortDescription": null,
+          "experienceUIField": "7-15 years",
+          "yrsOfExperience": "7 to 15 Years "
+        }
+      },
+      {
+        "_source": {
+          "id": 1177484,
+          "jobCode": 67323,
+          "newJobCode": "67323",
+          "companyId": 15154,
+          "careerSiteUrl": "jobs.itcinfotech.com",
+          "jobTitle": "SAP BW with SAC & Datasphere",
+          "jobUrl": "sap-consult-sr-func-consult--bengaluru-2026090915504091",
+          "status": 1,
+          "jobVisibility": "Limited",
+          "location": "Bengaluru",
+          "locAgg": "Bengaluru",
+          "jobLocationRecord": [
+            {
+              "jobId": 1177484,
+              "country": "India",
+              "companyId": 15154,
+              "city": "Bengaluru",
+              "formattedLocation": "Bengaluru, Karnataka, India",
+              "location": "Bengaluru",
+              "id": 1823087,
+              "state": "Karnataka"
+            }
+          ],
+          "referenceNumber": "PCIIL_0000264871_1",
+          "departmentName": "Lateral",
+          "DepartmentName": "Lateral",
+          "createDate": "09-Sep-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "8+ years of experience SAC, Datasphere, SAP BW4H ,S4 Hana Experience with SAP BW, BW4HANA, HANA modelling, or SAP BDC, SAP BTP. Knowledge of SAC live and import connections. Exposure to planning scenarios in SAC is an added advantage. Experience with SAP Cloud Connector, DP Agent, or integration setup is preferred. Basic understanding of ABAP CDS Views or S4HANA embedded analytics will be helpful. Experience in migration or modernization from BWHANA to Datasphere will be an advantage.",
+          "metaDescription": "8+ years of experience SAC, Datasphere, SAP BW4H ,S4 Hana Experience with SAP BW, BW4HANA, HANA modelling, or SAP BDC, SAP BTP. Knowledge of SAC live and import connections. Exposure to planning scenarios in SAC is an added advantage. Experience with SAP Cloud Connector, DP Agent, or integration setup is preferred. Basic understanding of ABAP CDS Views or S4HANA embedded analytics will be helpful. Experience in migration or modernization from BWHANA to Datasphere will be an advantage.",
+          "shortDescription": null,
+          "experienceUIField": "8-10 years",
+          "yrsOfExperience": "8 to 10 Years "
+        }
+      },
+      {
+        "_source": {
+          "id": 1154158,
+          "jobCode": 66432,
+          "newJobCode": "66432",
+          "companyId": 15154,
+          "careerSiteUrl": "jobs.itcinfotech.com",
+          "jobTitle": "Associate Sol Architect - CS",
+          "jobUrl": "associate-sol-architect-cs-mumbai-2026080418522379",
+          "status": 1,
+          "jobVisibility": "Enhanced",
+          "location": "MUMBAI",
+          "locAgg": "MUMBAI",
+          "jobLocationRecord": [
+            {
+              "jobId": 1154158,
+              "country": "India",
+              "companyId": 15154,
+              "city": "Mumbai",
+              "formattedLocation": "Mumbai, Maharashtra, India",
+              "location": "Mumbai",
+              "id": 1846521,
+              "state": "Maharashtra"
+            }
+          ],
+          "referenceNumber": "PCIIL_0000261607_1",
+          "departmentName": "Lateral",
+          "DepartmentName": "Lateral",
+          "createDate": "04-Aug-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "We are seeking a highly skilled AWS Cloud Expert with Kubernetes with deep expertise in managing large-scale containerized environments and cloud-native solutions. The ideal candidate will have proven experience in designing implementing and maintaining enterprise-grade Kubernetes EKS platforms on AWS Cloud coupled with strong Terraform skills for Infrastructure-as-Code IaC Key Responsibilities Architect deploy and manage Kubernetes clusters EKS in production environments Design scalable secure and high-availability solutions on AWS Cloud Implement and manage Infrastructure-as-Code using Terraform Troubleshoot and optimize Kubernetes workloads networking storage and security policies Automate CICD pipelines for Kubernetes-based deployments Implement observability stack monitoring logging tracing for Kubernetes clusters Ensure cluster security governance and compliance best practices Mentor and guide junior engineers on Kubernetes AWS and Terraform best practices Collaborate with cross-functional teams DevOps Cloud Ops Security Development to deliver cloud-native solutions Required Skills Expertise MultiCloud - AWS, Azure and OCI. Kubernetes 4+ years: o Deep knowledge of Kubernetes architecture API controllers operators and CRDs o Expertise in EKS cluster lifecycle management o Proficiency in configuring Ingress Load Balancers PVPVC StatefulSets DaemonSets Deployments o Strong hands-on with Helm Kustomize and GitOps tools eg ArgoCD Flux o Experience in Kubernetes cluster scaling multi-AZ deployments and high availability o Knowledge of Kubernetes networking CNI CoreDNS service mesh IstioLinkerd o Hands-on with RBAC Pod Security Standards Network Policies Secrets Management AWS Cloud: o Strong expertise with EKS VPC EC2 IAM RDS S3 CloudWatch ALBNLB Route53 o Experience with AWS-native DevOps and Security services o Hands-on with cluster upgrades patching and backup strategies Terraform IaC: o Strong proficiency in writing Terraform modules for AWS and Kubernetes o Managing state files workspaces and versioning o Experience with Terragrunt is a plus Certifications Preferred: o CKA Certified Kubernetes Administrator Mandatory o AWS Certified Solutions Architect DevOps Engineer Preferred",
+          "metaDescription": "We are seeking a highly skilled AWS Cloud Expert with Kubernetes with deep expertise in managing large-scale containerized environments and cloud-native solutions. The ideal candidate will have proven experience in designing implementing and maintaining enterprise-grade Kubernetes EKS platforms on AWS Cloud coupled with strong Terraform skills for Infrastructure-as-Code IaC Key Responsibilities Architect deploy and manage Kubernetes clusters EKS in production environments Design scalable secure and high-availability solutions on AWS Cloud Implement and manage Infrastructure-as-Code using Terraform Troubleshoot and optimize Kubernetes workloads networking storage and security policies Automate CICD pipelines for Kubernetes-based deployments Implement observability stack monitoring logging tracing for Kubernetes clusters Ensure cluster security governance and compliance best practices Mentor and guide junior engineers on Kubernetes AWS and Terraform best practices Collaborate with cross-functional teams DevOps Cloud Ops Security Development to deliver cloud-native solutions Required Skills Expertise MultiCloud - AWS, Azure and OCI. Kubernetes 4+ years: o Deep knowledge of Kubernetes architecture API controllers operators and CRDs o Expertise in EKS cluster lifecycle management o Proficiency in configuring Ingress Load Balancers PVPVC StatefulSets DaemonSets Deployments o Strong hands-on with Helm Kustomize and GitOps tools eg ArgoCD Flux o Experience in Kubernetes cluster scaling multi-AZ deployments and high availability o Knowledge of Kubernetes networking CNI CoreDNS service mesh IstioLinkerd o Hands-on with RBAC Pod Security Standards Network Policies Secrets Management AWS Cloud: o Strong expertise with EKS VPC EC2 IAM RDS S3 CloudWatch ALBNLB Route53 o Experience with AWS-native DevOps and Security services o Hands-on with cluster upgrades patching and backup strategies Terraform IaC: o Strong proficiency in writing Terraform modules for AWS and Kubernetes o Managing state files workspaces and versioning o Experience with Terragrunt is a plus Certifications Preferred: o CKA Certified Kubernetes Administrator Mandatory o AWS Certified Solutions Architect DevOps Engineer Preferred",
+          "shortDescription": null,
+          "experienceUIField": "6-10 years",
+          "yrsOfExperience": "6 to 10 Years "
+        }
+      },
+      {
+        "_source": {
+          "id": 1180439,
+          "jobCode": 67520,
+          "newJobCode": "67520",
+          "companyId": 15154,
+          "careerSiteUrl": "jobs.itcinfotech.com",
+          "jobTitle": "SAP Functional Developer",
+          "jobUrl": "sap-functional-developer-kol-itc-centre-2026091518342723",
+          "status": 1,
+          "jobVisibility": "Limited",
+          "location": "KOL_ITC Centre",
+          "locAgg": "KOL_ITC Centre",
+          "jobLocationRecord": [
+            {
+              "jobId": 1180439,
+              "country": "India",
+              "companyId": 15154,
+              "city": "Kolkata",
+              "formattedLocation": "Kolkata, West Bengal, India",
+              "location": "KOL_ITC Centre",
+              "id": 1828154,
+              "state": "West Bengal"
+            }
+          ],
+          "referenceNumber": "PCIIL_0000265440_1",
+          "departmentName": "Lateral",
+          "DepartmentName": "Lateral",
+          "createDate": "15-Sep-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "SAP FICO experience with strong OpenText VIM exposure. 10+ years of experience, the resource will act as a business-facing SAP FICO lead, responsible for understanding business requirements, translating them into SAP solutions, and driving end-to-end delivery, with a strong focus on Vendor Invoice Management VIM. The role demands ownership, coordination with stakeholders, and delivery assurance across enhancements, projects, and support activities. Good in FICO Customizations and possessing knowledge in Indian Taxation",
+          "metaDescription": "SAP FICO experience with strong OpenText VIM exposure. 10+ years of experience, the resource will act as a business-facing SAP FICO lead, responsible for understanding business requirements, translating them into SAP solutions, and driving end-to-end delivery, with a strong focus on Vendor Invoice Management VIM. The role demands ownership, coordination with stakeholders, and delivery assurance across enhancements, projects, and support activities. Good in FICO Customizations and possessing knowledge in Indian Taxation",
+          "shortDescription": null,
+          "experienceUIField": "4-12 years",
+          "yrsOfExperience": "4 to 12 Years "
+        }
+      },
+      {
+        "_source": {
+          "id": 1166728,
+          "jobCode": 66923,
+          "newJobCode": "66923",
+          "companyId": 15154,
+          "careerSiteUrl": "jobs.itcinfotech.com",
+          "jobTitle": "Sr. Cloud Application Support Engineer",
+          "jobUrl": "sr-developer-cloud-app-cs-bangalore-2026082018402158",
+          "status": 1,
+          "jobVisibility": "Limited",
+          "location": "BANGALORE",
+          "locAgg": "BANGALORE",
+          "jobLocationRecord": [
+            {
+              "jobId": 1166728,
+              "country": "India",
+              "companyId": 15154,
+              "city": "Bengaluru",
+              "formattedLocation": "Bengaluru, Karnataka, India",
+              "location": "Bangalore",
+              "id": 1839536,
+              "state": "Karnataka"
+            }
+          ],
+          "referenceNumber": "PCIIL_0000262910_1",
+          "departmentName": "Lateral",
+          "DepartmentName": "Lateral",
+          "createDate": "18-Aug-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "We are looking for a Backend Engineer with strong expertise in Java Spring Boot RESTful APIs and microservices The ideal candidate must have experience in: Java application production support APM tools such as Dynatrace and AppDynamics Troubleshooting and debugging Scripting AWS ITIL processes. Experience with Backbase backend support will be an added advantage Candidates should have demonstrated hands-on expertise in troubleshooting debugging and managing high-availability microservices-based applications",
+          "metaDescription": "We are looking for a Backend Engineer with strong expertise in Java Spring Boot RESTful APIs and microservices The ideal candidate must have experience in: Java application production support APM tools such as Dynatrace and AppDynamics Troubleshooting and debugging Scripting AWS ITIL processes. Experience with Backbase backend support will be an added advantage Candidates should have demonstrated hands-on expertise in troubleshooting debugging and managing high-availability microservices-based applications",
+          "shortDescription": null,
+          "experienceUIField": "3-6 years",
+          "yrsOfExperience": "3 to 6 Years "
+        }
+      },
+      {
+        "_source": {
+          "id": 1164654,
+          "jobCode": 66852,
+          "newJobCode": "66852",
+          "companyId": 15154,
+          "careerSiteUrl": "jobs.itcinfotech.com",
+          "jobTitle": "Full Stack Tech Lead",
+          "jobUrl": "developer-others-pune-2026081811262522",
+          "status": 1,
+          "jobVisibility": "Limited",
+          "location": "PUNE",
+          "locAgg": "PUNE",
+          "jobLocationRecord": [
+            {
+              "jobId": 1164654,
+              "country": "India",
+              "companyId": 15154,
+              "city": "Pune",
+              "formattedLocation": "Pune, Maharashtra, India",
+              "location": "Pune",
+              "id": 1830257,
+              "state": "Maharashtra"
+            }
+          ],
+          "referenceNumber": "PCIIL_0000262855_1",
+          "departmentName": "Lateral",
+          "DepartmentName": "Lateral",
+          "createDate": "17-Aug-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "Job Description: We are looking for an experienced Tech Lead – Java Full Stack with strong hands-on expertise in Java, Spring Boot, Microservices, AWS Cloud, and React.js. The candidate will lead technical design, development, code reviews, team mentoring, and end-to-end delivery of scalable enterprise applications. Key Responsibilities Lead the design and development of Java/Spring Boot Microservices. Develop and integrate REST APIs and enterprise applications. Design and implement responsive frontend applications using React.js. Design, deploy, and manage scalable solutions on AWS Cloud. Drive architecture, technical design, coding standards, and best practices. Conduct code reviews and ensure quality, security, performance, and scalability. Troubleshoot complex technical and production issues. Mentor developers and provide technical guidance. Collaborate with Product, QA, DevOps, Architects, and business stakeholders. Participate in Agile ceremonies and support end-to-end project delivery. Mandatory Skills Java 8/11/17+ Spring Boot Microservices Architecture AWS Cloud React.js REST APIs SQL / JPA / Hibernate Git, Docker, CI/CD Agile/Scrum Experience 10–15 years of overall software development experience. Proven experience in Technical Lead / Lead Developer roles. Strong hands-on experience across both backend and frontend technologies. Excellent problem-solving, communication, architecture, and team leadership skills.",
+          "metaDescription": "Job Description: We are looking for an experienced Tech Lead – Java Full Stack with strong hands-on expertise in Java, Spring Boot, Microservices, AWS Cloud, and React.js. The candidate will lead technical design, development, code reviews, team mentoring, and end-to-end delivery of scalable enterprise applications. Key Responsibilities Lead the design and development of Java/Spring Boot Microservices. Develop and integrate REST APIs and enterprise applications. Design and implement responsive frontend applications using React.js. Design, deploy, and manage scalable solutions on AWS Cloud. Drive architecture, technical design, coding standards, and best practices. Conduct code reviews and ensure quality, security, performance, and scalability. Troubleshoot complex technical and production issues. Mentor developers and provide technical guidance. Collaborate with Product, QA, DevOps, Architects, and business stakeholders. Participate in Agile ceremonies and support end-to-end project delivery. Mandatory Skills Java 8/11/17+ Spring Boot Microservices Architecture AWS Cloud React.js REST APIs SQL / JPA / Hibernate Git, Docker, CI/CD Agile/Scrum Experience 10–15 years of overall software development experience. Proven experience in Technical Lead / Lead Developer roles. Strong hands-on experience across both backend and frontend technologies. Excellent problem-solving, communication, architecture, and team leadership skills.",
+          "shortDescription": null,
+          "experienceUIField": "10-12 years",
+          "yrsOfExperience": "10 to 12 Years "
+        }
+      },
+      {
+        "_source": {
+          "id": 1157670,
+          "jobCode": 66583,
+          "newJobCode": "66583",
+          "companyId": 15154,
+          "careerSiteUrl": "jobs.itcinfotech.com",
+          "jobTitle": "Associate Sol Architect - CS",
+          "jobUrl": "associate-sol-architect-cs-mumbai-2026081112511512",
+          "status": 1,
+          "jobVisibility": "Limited",
+          "location": "MUMBAI",
+          "locAgg": "MUMBAI",
+          "jobLocationRecord": [
+            {
+              "jobId": 1157670,
+              "country": "India",
+              "companyId": 15154,
+              "city": "Mumbai",
+              "formattedLocation": "Mumbai, Maharashtra, India",
+              "location": "Mumbai",
+              "id": 1829761,
+              "state": "Maharashtra"
+            }
+          ],
+          "referenceNumber": "PCIIL_0000261970_1",
+          "departmentName": "Lateral",
+          "DepartmentName": "Lateral",
+          "createDate": "10-Aug-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "Key Responsibilities Architects, deploy and manage Kubernetes clusters EKS in production environments Design scalable secure and high-availability solutions on OCI and AWS Cloud Implement and manage Infrastructure-as-Code using Terraform Troubleshoot and optimize Kubernetes workloads networking storage and security policies Automate CICD pipelines for Kubernetes-based deployments Implement observability stack monitoring logging tracing for Kubernetes clusters Ensure cluster security governance and compliance best practices Mentor and guide junior engineers on OCI, Kubernetes, and Terraform best practices Collaborate with cross-functional teams DevOps Cloud Ops Security Development to deliver cloud-native solutions Required Skills: Expertise in OCI Primary - 4+ Years AWS Secondary - 6+ Years Kubernetes 4+ years o Deep knowledge of Kubernetes architecture, API controllers, operators and CRDs o Expertise in EKS cluster lifecycle management o Proficiency in configuring Ingress Load Balancers PVPVC, Stateful Sets DaemonSets Deployments o Experience in Kubernetes cluster scaling multi-AZ deployments and high availability o Knowledge of Kubernetes networking CNI CoreDNS service mesh IstioLinkerd o Hands-on with RBAC Pod Security Standards Network Policies and Secrets Management OCI and AWS Cloud o Strong expertise with EKS VPC, EC2, IAM, RDS, S3, CloudWatch, ALBNLB, Route53 o Experience with AWS-native DevOps and Security services o Hands-on with cluster upgrades, patching and backup strategies Terraform IaC: o Strong proficiency in writing Terraform modules for AWS and Kubernetes o Managing state files, workspaces and versioning o Experience with Terragrunt is a plus",
+          "metaDescription": "Key Responsibilities Architects, deploy and manage Kubernetes clusters EKS in production environments Design scalable secure and high-availability solutions on OCI and AWS Cloud Implement and manage Infrastructure-as-Code using Terraform Troubleshoot and optimize Kubernetes workloads networking storage and security policies Automate CICD pipelines for Kubernetes-based deployments Implement observability stack monitoring logging tracing for Kubernetes clusters Ensure cluster security governance and compliance best practices Mentor and guide junior engineers on OCI, Kubernetes, and Terraform best practices Collaborate with cross-functional teams DevOps Cloud Ops Security Development to deliver cloud-native solutions Required Skills: Expertise in OCI Primary - 4+ Years AWS Secondary - 6+ Years Kubernetes 4+ years o Deep knowledge of Kubernetes architecture, API controllers, operators and CRDs o Expertise in EKS cluster lifecycle management o Proficiency in configuring Ingress Load Balancers PVPVC, Stateful Sets DaemonSets Deployments o Experience in Kubernetes cluster scaling multi-AZ deployments and high availability o Knowledge of Kubernetes networking CNI CoreDNS service mesh IstioLinkerd o Hands-on with RBAC Pod Security Standards Network Policies and Secrets Management OCI and AWS Cloud o Strong expertise with EKS VPC, EC2, IAM, RDS, S3, CloudWatch, ALBNLB, Route53 o Experience with AWS-native DevOps and Security services o Hands-on with cluster upgrades, patching and backup strategies Terraform IaC: o Strong proficiency in writing Terraform modules for AWS and Kubernetes o Managing state files, workspaces and versioning o Experience with Terragrunt is a plus",
+          "shortDescription": null,
+          "experienceUIField": "6-10 years",
+          "yrsOfExperience": "6 to 10 Years "
+        }
+      },
+      {
+        "_source": {
+          "id": 1146819,
+          "jobCode": 66005,
+          "newJobCode": "66005",
+          "companyId": 15154,
+          "careerSiteUrl": "jobs.itcinfotech.com",
+          "jobTitle": "Lead RT-CDP",
+          "jobUrl": "senior-consultant-bangalore-2026072214165664",
+          "status": 1,
+          "jobVisibility": "Limited",
+          "location": "BANGALORE",
+          "locAgg": "BANGALORE",
+          "jobLocationRecord": [
+            {
+              "jobId": 1146819,
+              "country": "India",
+              "companyId": 15154,
+              "city": "Bengaluru",
+              "formattedLocation": "Bengaluru, Karnataka, India",
+              "location": "Bangalore",
+              "id": 1829633,
+              "state": "Karnataka"
+            }
+          ],
+          "referenceNumber": "PCIIL_0000259028_1",
+          "departmentName": "Lateral",
+          "DepartmentName": "Lateral",
+          "createDate": "08-Jul-2026",
+          "endtDate": null,
+          "mediumDescriptionWithoutHtml": "As the CDP Tech Lead, you will play a pivotal role in shaping and implementing architectural designs for a complete view of our customers within the Customer Data Platform CDP. You will be responsible for leading the deployment of the Adobe CDP solution, finalizing roadmap, and hands-on involvement within the platform. This role will require collaboration with Clients Markets stakeholders to build capabilities for personalization, segmentation, data synchronization, and privacy management, enabling seamless integration with the CDP to drive exponential growth. Key Responsibilities: CDP Platform Leadership: Lead management and administration of the Adobe Real-time CDP and related toolkit. Provide architectural leadership and support for the platform as required by business requirements. Collaborate on the management and optimization of data pipelines to and from Adobe CDP. Source systems will be e.g. Brand websites, D2C, CRM apps, offline campaign datasets etc Provide guidance on segment-building and assist in performing dynamic customer-level analysis. Form Consumers Golden Records in Adobe CDP solutionand enrich the same on an ongoing basis with website user behaviour data etc. Apply customer record de-dup and stitching rules etc to have high quality Consumer Golden Records Diagnose and resolve functional issues efficiently. Manage and maintain overall architecture documentation. Coordinate with privacy and compliance teams on proper handling of consumer PII. Technical Leadership: Develop and maintain effective working relationships with team members, internal partners, and other stakeholders. Interface with specific SMEs and business teams across CRM, MarTech, and AdTech to gather business requirements and define technical architecture for enhanced customer experiences and innovative marketing data solutions. Manage the day-to-day work of onshore and offshore developers, acting as their technical lead and offering solutions as needed. Deliver innovative ideas to solve customer needs. Engage in technical resource planning and level-of-effort estimation to support project scoping, pricing, and planning.",
+          "metaDescription": "As the CDP Tech Lead, you will play a pivotal role in shaping and implementing architectural designs for a complete view of our customers within the Customer Data Platform CDP. You will be responsible for leading the deployment of the Adobe CDP solution, finalizing roadmap, and hands-on involvement within the platform. This role will require collaboration with Clients Markets stakeholders to build capabilities for personalization, segmentation, data synchronization, and privacy management, enabling seamless integration with the CDP to drive exponential growth. Key Responsibilities: CDP Platform Leadership: Lead management and administration of the Adobe Real-time CDP and related toolkit. Provide architectural leadership and support for the platform as required by business requirements. Collaborate on the management and optimization of data pipelines to and from Adobe CDP. Source systems will be e.g. Brand websites, D2C, CRM apps, offline campaign datasets etc Provide guidance on segment-building and assist in performing dynamic customer-level analysis. Form Consumers Golden Records in Adobe CDP solutionand enrich the same on an ongoing basis with website user behaviour data etc. Apply customer record de-dup and stitching rules etc to have high quality Consumer Golden Records Diagnose and resolve functional issues efficiently. Manage and maintain overall architecture documentation. Coordinate with privacy and compliance teams on proper handling of consumer PII. Technical Leadership: Develop and maintain effective working relationships with team members, internal partners, and other stakeholders. Interface with specific SMEs and business teams across CRM, MarTech, and AdTech to gather business requirements and define technical architecture for enhanced customer experiences and innovative marketing data solutions. Manage the day-to-day work of onshore and offshore developers, acting as their technical lead and offering solutions as needed. Deliver innovative ideas to solve customer needs. Engage in technical resource planning and level-of-effort estimation to support project scoping, pricing, and planning.",
+          "shortDescription": null,
+          "experienceUIField": "7-10 years",
+          "yrsOfExperience": "7 to 10 Years "
+        }
+      }
+    ],
+    "totalCount": 236,
+    "hasMoreData": true,
+    "facetedSearchConfig": {
+      "paginationHowMuch": "9"
+    }
+  }
+}

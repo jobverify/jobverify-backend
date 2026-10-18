@@ -17,9 +17,9 @@ const homepageHtml = `
     </head>
     <body>
       <span>DEP USA</span>
-      <a href="https://depusa.com/index.php/company/careers">Careers</a>
-      <a href="https://depusa.com/index.php/company/about-us">About</a>
-      <a href="https://depusa.com/index.php/contact">Contact Us</a>
+      <a href="https://depusa.com/company/careers">Careers</a>
+      <a href="https://depusa.com/company/about-us">About</a>
+      <a href="https://depusa.com/contact">Contact Us</a>
     </body>
   </html>
 `
@@ -32,8 +32,8 @@ const careersLandingHtml = `
     <body>
       <h1>Careers</h1>
       <p>Welcome to DEP's Careers Page - where innovation meets opportunity.</p>
-      <a href="https://depusa.com/index.php/careers-india">Careers India</a>
-      <a href="https://depusa.com/index.php/careers-usa">Careers USA</a>
+      <a href="https://depusa.com/careers-india">Careers India</a>
+      <a href="https://depusa.com/careers-usa">Careers USA</a>
     </body>
   </html>
 `
@@ -169,9 +169,9 @@ test('Detroit Engineered Products constants stay pinned to the live DEP pages an
   assert.equal(dep.SOURCE, 'detroitengineeredproducts')
   assert.equal(dep.COMPANY, 'Detroit Engineered Products')
   assert.equal(dep.HOMEPAGE_URL, 'https://depusa.com/')
-  assert.equal(dep.CAREERS_PAGE_URL, 'https://depusa.com/index.php/company/careers')
-  assert.equal(dep.INDIA_CAREERS_URL, 'https://depusa.com/index.php/careers-india')
-  assert.equal(dep.USA_CAREERS_URL, 'https://depusa.com/index.php/careers-usa')
+  assert.equal(dep.CAREERS_PAGE_URL, 'https://depusa.com/company/careers')
+  assert.equal(dep.INDIA_CAREERS_URL, 'https://depusa.com/careers-india')
+  assert.equal(dep.USA_CAREERS_URL, 'https://depusa.com/careers-usa')
   assert.equal(dep.hasOfficialHomepageSignal(homepageHtml), true)
   assert.equal(dep.hasCareersLandingSignal(careersLandingHtml), true)
   assert.equal(dep.hasIndiaCareersSignal(indiaCareersHtml), true)
@@ -339,4 +339,60 @@ test('DEP accepts the current first-party page titles while retaining navigation
   assert.equal(dep.hasOfficialHomepageSignal(homepageHtml.replace('<title>Home</title>', '<title>Home - Detroit Engineered Products (DEP)</title>')), true)
   assert.equal(dep.hasCareersLandingSignal(careersLandingHtml.replace('<title>Careers</title>', '<title>Careers - Detroit Engineered Products (DEP)</title>')), true)
   assert.equal(dep.hasIndiaCareersSignal(indiaCareersHtml.replace('<title>Careers India</title>', '<title>Careers India - Detroit Engineered Products (DEP)</title>')), true)
+})
+
+
+test('run follows the current clean DEP navigation through the verified India CEIPAL handoff', async () => {
+  const dep = await loadModule()
+  const { readFile } = await import('node:fs/promises')
+  const currentHomepage = await readFile(new URL('./fixtures/homepage-current.html', import.meta.url), 'utf8')
+  const currentCareers = await readFile(new URL('./fixtures/careers-current.html', import.meta.url), 'utf8')
+  const requestedUrls = []
+  const jobs = await dep.run({
+    fetchText: async (url) => {
+      requestedUrls.push(url)
+      if (url === 'https://depusa.com/') return currentHomepage
+      if (url === 'https://depusa.com/company/careers') return currentCareers
+      if (url === 'https://depusa.com/careers-india') return indiaCareersHtml
+      throw new Error('Unexpected DEP page: ' + url)
+    },
+    fetchJson: async (url) => url.endsWith('?page=2') ? careerPortalPage2 : careerPortalPage1,
+  })
+  assert.deepEqual(requestedUrls, [
+    'https://depusa.com/',
+    'https://depusa.com/company/careers',
+    'https://depusa.com/careers-india',
+  ])
+  assert.deepEqual(jobs.map((job) => job.jobId), ['233', '234'])
+  assert.equal(dep.hasOfficialHomepageSignal(currentHomepage.replace('/company/careers', '/unrelated')), false)
+  assert.equal(dep.hasCareersLandingSignal(currentCareers.replace('https://depusa.com/careers-india', 'https://depusa.com/unrelated')), false)
+})
+
+
+test('extractIndiaJobs retains the current CEIPAL apply_job_login handoff and opaque job id', async () => {
+  const dep = await loadModule()
+  const { readFile } = await import('node:fs/promises')
+  const currentJob = JSON.parse(await readFile(new URL('./fixtures/ceipal-current-job.json', import.meta.url), 'utf8'))
+  const payload = { count: 1, num_pages: 1, page_number: 1, next: null, results: [currentJob] }
+  const jobs = dep.extractIndiaJobs(payload)
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Sys Eng-II')
+  assert.equal(jobs[0].jobId, currentJob.id)
+  assert.equal(jobs[0].sourceUrl, currentJob.apply_job_login)
+  assert.equal(jobs[0].applyUrl, currentJob.apply_job_login)
+  assert.equal(jobs[0].country, 'India')
+  assert.equal(jobs[0].state, 'Tamil Nadu')
+  assert.equal(jobs[0].postingDate, null)
+  assert.match(jobs[0].jobDescription, /.+/)
+})
+
+
+test('run fails closed when a reported India opening cannot be mapped to its public application link', async () => {
+  const dep = await loadModule()
+  await assert.rejects(dep.run({
+    fetchText: async (url) => url === dep.HOMEPAGE_URL ? homepageHtml : url === dep.CAREERS_PAGE_URL ? careersLandingHtml : indiaCareersHtml,
+    fetchJson: async () => ({ count: 1, num_pages: 1, page_number: 1, next: null, results: [
+      { id: 'india-opening', public_job_title: 'Engineer', country: 'India', unknown_application_field: 'https://candidateportal.ceipal.com/login/changed' },
+    ] }),
+  }), /DEP India career portal.*unmapped India opening/i)
 })

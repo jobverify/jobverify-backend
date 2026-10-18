@@ -254,3 +254,21 @@ test('Immidart Technologies LLP fails closed when the verified first-party caree
     /embedded first-party job payload/i,
   )
 })
+
+const roleLiteral = (extra = '') => '{id:"one",title:"Engineer",location:"Bangalore",experience:"1-3 Years",department:"engineering",description:"Develop our product."' + extra + '}'
+
+test('Immidart matches the client active filter on minified boolean constants', async () => {
+  const immidart = await loadImmidartModule()
+  const jobs = immidart.extractEmbeddedJobs('const roles=[' + roleLiteral(',active:!0') + ',' + roleLiteral(',active:!1').replace('id:"one"', 'id:"two"') + ',' + roleLiteral().replace('id:"one"', 'id:"legacy"') + ']')
+  assert.deepEqual(jobs.map(job => job.id), ['one', 'legacy'])
+  assert.deepEqual(immidart.extractEmbeddedJobs('const roles=[' + roleLiteral(',active:!1') + ']'), [])
+})
+
+test('Immidart rejects ambiguous active state, malformed active roles and duplicate identities', async () => {
+  const immidart = await loadImmidartModule()
+  for (const extra of [',active:"false"', ',active:null', ',active:0']) {
+    assert.throws(() => immidart.extractEmbeddedJobs('const roles=[' + roleLiteral(extra) + ']'), /active/i)
+  }
+  assert.throws(() => immidart.extractEmbeddedJobs('const roles=[' + roleLiteral() + ',' + roleLiteral(',active:true') + ']'), /duplicate/i)
+  assert.throws(() => immidart.extractEmbeddedJobs('const roles=[' + roleLiteral() + ',' + roleLiteral().replace('title:"Engineer"', 'title:""').replace('id:"one"', 'id:"two"') + ']'), /parseable/i)
+})

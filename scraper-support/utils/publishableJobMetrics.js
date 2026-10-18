@@ -1,5 +1,6 @@
 import { filterIndiaJobs } from './indiaLocationFilter.js'
 import { isAggregateHiringSignalJob } from '../../src/utils/jobListingEvidence.js'
+import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 import {
   normalizeLifecycleDate,
   startOfUtcDay,
@@ -24,6 +25,7 @@ export const analyzePublishableJobs = (jobs = [], { now = new Date() } = {}) => 
     closed: 0,
     invalidUrl: 0,
     nonJob: 0,
+    emptyDescription: 0,
   }
 
   const indiaJobs = filterIndiaJobs(jobs)
@@ -47,6 +49,11 @@ export const analyzePublishableJobs = (jobs = [], { now = new Date() } = {}) => 
     const closingDate = normalizeLifecycleDate(job?.closingDate)
     if (closingDate && startOfUtcDay(closingDate) < today) {
       filterCounts.closed += 1
+      return false
+    }
+
+    if (!hasSourceDescription(job)) {
+      filterCounts.emptyDescription += 1
       return false
     }
 

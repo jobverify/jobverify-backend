@@ -113,6 +113,8 @@ const extractJobId = (url) => {
 const buildCanonicalSitemapUrl = (value) => {
   try {
     const url = new URL(String(value ?? ''))
+    // Factorial redirects this employer to factorial.com while its sitemap retains factorialhr.com.
+    if (url.hostname === 'funplus.factorial.com') url.hostname = 'funplus.factorialhr.com'
     url.pathname = url.pathname.replace(/^\/embed\//i, '/')
     url.search = ''
     url.hash = ''
@@ -149,7 +151,7 @@ export const hasOfficialHomepageSignal = (html = '') => {
 
 export const extractJobsBoardUrl = (html = '') => {
   const match = String(html ?? '').match(
-    /src=["'](https:\/\/funplus\.factorialhr\.com\/embed\/jobs)["']/i,
+    /src=["'](https:\/\/funplus\.factorial(?:hr)?\.com\/embed\/jobs)["']/i,
   )
 
   return match?.[1] || null
@@ -171,13 +173,13 @@ export const hasOfficialJobsBoardSignal = (html = '') => {
   return /<title>\s*FunPlus - Job offers, offices and team\s*<\/title>/i.test(page)
     && /Open Positions/i.test(text)
     && /job-offer-item/i.test(page)
-    && /funplus\.factorialhr\.com\/embed\/job_posting\//i.test(page)
+    && /funplus\.factorial(?:hr)?\.com\/embed\/job_posting\//i.test(page)
 }
 
 export const hasVerifiedJobsSitemapSignal = (xml = '') => {
   const page = String(xml ?? '')
-  return /https:\/\/funplus\.factorialhr\.com<\/loc>/i.test(page)
-    && /https:\/\/funplus\.factorialhr\.com\/job_posting\//i.test(page)
+  return /https:\/\/funplus\.factorial(?:hr)?\.com<\/loc>/i.test(page)
+    && /https:\/\/funplus\.factorial(?:hr)?\.com\/job_posting\//i.test(page)
   }
 
 export const extractSitemapEntries = (xml = '') => {

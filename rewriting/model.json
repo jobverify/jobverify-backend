@@ -1,9 +1,9 @@
 {
-  "modelId": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
-  "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
-  "file": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
-  "sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
-  "bytes": 1117320736,
+  "modelId": "LiquidAI/LFM2.5-230M-GGUF",
+  "revision": "03502067c64ce32ac4fe87b0cec0310a1a13d3e9",
+  "file": "LFM2.5-230M-QAD-Q4_0.gguf",
+  "sha256": "e75f83268de11b2a1bcfab5f3b5c5c0c97569ddbbc0990aad88437e45b8ba292",
+  "bytes": 149081056,
   "runtimeTag": "b11146",
   "runtimeAssets": {
     "linux": {
@@ -15,8 +15,9 @@
       "sha256": "14cf1303ca9ac3abd94816850532f9f9a69ac66fbaca3776fc6f9061c2fac1d1"
     }
   },
-  "policyVersion": "job-description-v1",
+  "policyVersion": "job-description-fact-plan-v11",
+  "cpuThreads": 4,
   "contextTokens": 8192,
-  "maxOutputTokens": 3072,
+  "maxOutputTokens": 768,
   "requestSeconds": 180
 }

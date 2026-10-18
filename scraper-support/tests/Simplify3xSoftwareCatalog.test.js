@@ -36,22 +36,22 @@ test('Simplify3x Software local catalog captures the verified fail-closed first-
   assert.equal(provider.companyName, 'Simplify3x Software')
   assert.equal(provider.officialBrandName, 'Simplify3x')
   assert.equal(provider.adapter, 'script')
-  assert.equal(provider.companyCareerPage, 'https://simplify3x.com/life.html')
-  assert.equal(provider.companyDomain, 'simplify3x.com')
-  assert.equal(provider.atsPlatform, 'official-company-site-no-public-careers')
+  assert.equal(provider.companyCareerPage, "https://www.hire3x.com/careers")
+  assert.equal(provider.companyDomain, "simplify3x.com.my")
+  assert.equal(provider.atsPlatform, "hire3x-public-careers")
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'homepage-plus-life-page-plus-common-route-validation')
+  assert.equal(provider.paginationStrategy, "published-v2-categories-two-snapshots-native-details")
   assert.equal(
     provider.extractionStrategy,
-    'verified-homepage+verified-life-page+missing-common-job-routes-return-empty',
+    "verified-company-alias+published-hire3x-client+native-details+India-assignments-partial",
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, "2026-10-09")
   assert.equal(provider.modulePath, modulePath)
-  assert.match(provider.verifiedSurfaceSummary, /Saturday, July 18, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /October 9, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /Life at Simplify3x/i)
-  assert.match(provider.verifiedSurfaceSummary, /no trustworthy public jobs surface/i)
+  assert.match(provider.verifiedSurfaceSummary, /full source coverage is incomplete/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'Simplify3x Software'), false)
 
   assert.equal(simplify3x.PROVIDER_METADATA.source, SIMPLIFY3X_SOFTWARE_CATALOG.source)

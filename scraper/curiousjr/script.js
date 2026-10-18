@@ -126,6 +126,26 @@ export const hasParentCompanyBridgeSignal = (html = '') => {
 
 const isExpectedMissingCareerRoute = ({ status }) => status === 404
 
+const getVerifiedContactBundleUrl = (html) => {
+  const page = String(html ?? '')
+  if (!/<title[^>]*>\s*CuriousJr\s*\|\s*(?:Contact Us|Online Tuition Classes for 1st to 10th Kids)\s*<\/title>/i.test(page)) return null
+  let data
+  try {
+    data = JSON.parse(page.match(/<script[^>]*id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i)?.[1] || '')
+  } catch { return null }
+  if (data.page !== '/contact-us' || data.nextExport !== true || data.isFallback !== false) return null
+  const bundles = [...page.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)]
+    .map(match => match[1]).filter(src => /^\/_next\/static\/chunks\/pages\/contact-us-[a-f0-9]+\.js$/.test(src))
+  return bundles.length === 1 ? new URL(bundles[0], CONTACT_URL).toString() : null
+}
+
+const hasVerifiedContactBundleContent = (script) => {
+  const text = normalizeWhitespace(script).toLowerCase()
+  return /window\.__NEXT_P/.test(script) && /\.push\(\s*\[\s*["']\/contact-us["']/.test(script)
+    && text.includes('welcome to curiousjr powered by')
+    && text.includes('cjr_support@pw.live') && text.includes('8448828113')
+}
+
 export const createCuriousJrScraper = () => ({
   async run({ fetchPage = defaultFetchPage } = {}) {
     const homepage = await fetchPage(BRAND_HOME_URL)
@@ -138,11 +158,19 @@ export const createCuriousJrScraper = () => ({
     }
 
     const contactPage = await fetchPage(CONTACT_URL)
-    if (!hasCuriousJrContactSignal(contactPage.html)) {
-      throw new Error('CuriousJr verified contact page no longer matches the known first-party surface')
+    let contactContent = contactPage.html
+    if (!hasCuriousJrContactSignal(contactContent)) {
+      const bundleUrl = getVerifiedContactBundleUrl(contactContent)
+      if (contactPage.status !== 200 || contactPage.url !== CONTACT_URL || !bundleUrl) {
+        throw new Error('CuriousJr verified contact page no longer matches the known first-party surface')
+      }
+      const bundle = await fetchPage(bundleUrl)
+      if (bundle.status !== 200 || bundle.url !== bundleUrl || !hasVerifiedContactBundleContent(bundle.html)) {
+        throw new Error('CuriousJr verified contact bundle no longer matches the known first-party surface')
+      }
+      contactContent += '\n' + bundle.html
     }
-
-    if (hasUnexpectedPublicJobsSignal(contactPage.html)) {
+    if (hasUnexpectedPublicJobsSignal(contactContent)) {
       throw new Error('CuriousJr contact page now exposes a public jobs surface')
     }
 

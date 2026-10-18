@@ -49,51 +49,15 @@ test('CoinDCX stays pinned to the verified opportunities shell and no-public-lis
   assert.equal(coindcx.hasNoPublicListingsSignal(opportunitiesHtml), true)
 })
 
-test('CoinDCX run returns zero jobs for the verified public no-listings shell', async () => {
+test('CoinDCX legacy opportunities shell is insufficient employer inventory proof', async () => {
   const coindcx = await loadCoinDCXModule()
-
-  const jobs = await coindcx.createCoinDCXScraper().run({
-    fetchText: async (url) => {
-      assert.equal(url, coindcx.CAREER_PAGE_URL)
-      return opportunitiesHtml
-    },
-  })
-
-  assert.deepEqual(jobs, [])
+  await assert.rejects(coindcx.createCoinDCXScraper().run({fetchText:async()=>opportunitiesHtml}), /LinkedIn.*profile|LinkedIn.*canonical/)
 })
-
-test('CoinDCX returns zero jobs when the verified opportunities route is Cloudflare-blocked on Thursday, August 13, 2026', async () => {
+test('CoinDCX HTTP403 cannot become a successful zero inventory', async () => {
   const coindcx = await loadCoinDCXModule()
-  const requestedPageUrls = []
-
-  const jobs = await coindcx.createCoinDCXScraper().run({
-    fetchText: async (url) => {
-      throw new Error(`HTTP 403 for ${url}`)
-    },
-    fetchBrowserText: async () => {
-      assert.fail('CoinDCX should not launch a browser for the verified blocked no-public-listings state')
-    },
-    fetchPage: async (url) => {
-      requestedPageUrls.push(url)
-      return {
-        status: 403,
-        url,
-        html: cloudflareBlockedPageHtml,
-      }
-    },
-  })
-
-  assert.deepEqual(jobs, [])
-  assert.deepEqual(requestedPageUrls, [coindcx.CAREER_PAGE_URL])
+  await assert.rejects(coindcx.createCoinDCXScraper().run({fetchPage:async url=>({status:403,url,html:cloudflareBlockedPageHtml})}), /HTTP 403/)
 })
-
-test('CoinDCX fails closed when the verified opportunities shell changes materially', async () => {
+test('CoinDCX unverified employer page fails closed', async () => {
   const coindcx = await loadCoinDCXModule()
-
-  await assert.rejects(
-    coindcx.createCoinDCXScraper().run({
-      fetchText: async () => '<html><body><h1>Jobs</h1></body></html>',
-    }),
-    /expected opportunities shell/i,
-  )
+  await assert.rejects(coindcx.createCoinDCXScraper().run({fetchText:async()=>'<h1>Jobs</h1>'}), /LinkedIn/)
 })

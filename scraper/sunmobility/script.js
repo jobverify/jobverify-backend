@@ -111,19 +111,39 @@ export const pageIndicatesLinkedinJobs = (html) => {
   )
 }
 
-export const extractSearchResults = (html) => [...String(html ?? '').matchAll(
-  /<div class="base-card[\s\S]*?job-search-card"[\s\S]*?data-entity-urn="urn:li:jobPosting:([0-9]+)"[\s\S]*?<a class="base-card__full-link[^"]*" href="([^"]+)"[\s\S]*?<h3 class="base-search-card__title">\s*([\s\S]*?)\s*<\/h3>[\s\S]*?<h4 class="base-search-card__subtitle">[\s\S]*?<a[^>]*>\s*([\s\S]*?)\s*<\/a>[\s\S]*?<span class="job-search-card__location">\s*([\s\S]*?)\s*<\/span>[\s\S]*?<time class="job-search-card__listdate" datetime="([^"]+)"/gi,
-)]
-  .map((match) => {
-    const [, jobId, rawHref, rawTitle, rawCompany, rawLocation, postingDate] = match
-    const sourceUrl = normalizeWhitespace(rawHref)?.replace(/&amp;/g, '&')
+// Parse fields within a single card. A full-page expression with overlapping
+// wildcards can backtrack indefinitely when a new-date card lacks the old class.
+export const extractSearchResults = (html) => {
+  const page = String(html ?? '')
+  const cards = [...page.matchAll(/<div\b[^>]*>/gi)]
+    .filter((match) => /\bclass=["'][^"']*\bjob-search-card\b[^"']*["']/i.test(match[0]))
+    .map((match) => ({
+      index: match.index,
+      jobId: match[0].match(/\bdata-entity-urn=["']urn:li:jobPosting:([0-9]+)["']/i)?.[1],
+    }))
+  const jobs = []
+
+  for (let index = 0; index < cards.length; index += 1) {
+    const { jobId } = cards[index]
+    const card = page.slice(cards[index].index, cards[index + 1]?.index ?? page.length)
+    const rawTitle = card.match(/<h3\b[^>]*class=["'][^"']*\bbase-search-card__title\b[^"']*["'][^>]*>([\s\S]*?)<\/h3>/i)?.[1]
+    const rawCompany = card.match(/<h4\b[^>]*class=["'][^"']*\bbase-search-card__subtitle\b[^"']*["'][^>]*>([\s\S]*?)<\/h4>/i)?.[1]
+    const rawLocation = card.match(/<span\b[^>]*class=["'][^"']*\bjob-search-card__location\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/i)?.[1]
+    const linkTag = card.match(/<a\b[^>]*class=["'][^"']*\bbase-card__full-link\b[^"']*["'][^>]*>/i)?.[0]
+    const rawHref = linkTag?.match(/\bhref=["']([^"']+)["']/i)?.[1]
+    const dateTag = card.match(/<time\b[^>]*class=["']job-search-card__listdate(?:--new)?["'][^>]*>/i)?.[0]
+    const postingDate = normalizeWhitespace(dateTag?.match(/\bdatetime=["']([^"']+)["']/i)?.[1])
     const title = stripTags(rawTitle)
     const company = stripTags(rawCompany)
+    const sourceUrl = normalizeWhitespace(rawHref)
     const locationData = parseLocation(stripTags(rawLocation))
 
-    if (!title || !jobId || !sourceUrl || locationData.country !== 'India') return null
+    if (locationData.country !== 'India') continue
+    if (!title || !jobId || !sourceUrl || !postingDate) {
+      throw new Error('Sun Mobility LinkedIn India job card no longer exposes the expected public fields')
+    }
 
-    return {
+    jobs.push({
       title,
       company,
       department: null,
@@ -139,12 +159,14 @@ export const extractSearchResults = (html) => [...String(html ?? '').matchAll(
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: normalizeWhitespace(postingDate),
+      postingDate,
       closingDate: null,
       jobDescription: null,
-    }
-  })
-  .filter(Boolean)
+    })
+  }
+
+  return jobs
+}
 
 export const extractJobDetail = (html) => {
   const jobPosting = parseJobPostingJsonLd(html)

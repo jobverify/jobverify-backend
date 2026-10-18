@@ -3,13 +3,14 @@ import { fileURLToPath } from 'url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
 
 export const COMPANY_NAME = 'Payatu'
 export const COUNTRY_FILTER = 'India'
-export const OFFICIAL_CAREERS_URL = 'https://payatu.com/career/'
+export const OFFICIAL_CAREERS_URL = 'https://payatu.ai/career'
 export const LISTING_URL = 'https://payatu.freshteam.com/jobs'
 export const DETAIL_URL_PATTERN = 'https://payatu.freshteam.com/jobs/{opaque_id}/{slug}'
 
@@ -263,7 +264,8 @@ export const extractSearchResults = ({
     extractJobDetail(detailHtmlByUrl[listing.detailUrl] || '', listing))
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const defaultFetchText = (url, { signal } = {}) => fetchTextWithRetry(url, {
+  signal,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -272,13 +274,96 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+
+export const CURRENT_PUBLIC_BOARD_URL = 'https://bandit.fit/'
+const hasCurrentPayatuSignal = html => /<title>\s*Career - Payatu\s*<\/title>/i.test(html)
+  && /data-wf-domain=["']payatu\.ai["']/i.test(html)
+  && /Cybersecurity jobs in India at a CERT-In empanelled firm/i.test(html)
+  && /Open roles, right now\./i.test(html)
+  && /href=["']https:\/\/bandit\.fit\/[a-z0-9-]+#apply["']/i.test(html)
+const currentLocation = value => {
+  const raw = normalizeWhitespace(value)
+  if (/^Pune$/i.test(raw || '')) return { location: 'Pune, India', city: 'Pune', country: 'India', remoteStatus: 'On-site' }
+  if (/^(Bengaluru|Bangalore)$/i.test(raw || '')) return { location: 'Bangalore, India', city: 'Bangalore', country: 'India', remoteStatus: 'On-site' }
+  if (/^Pune\/BLR\/Remote$/i.test(raw || '')) return { location: 'Pune / Bangalore / Remote, India', city: 'Pune', country: 'India', remoteStatus: 'Remote' }
+  if (/^Remote\s*\/\s*India$/i.test(raw || '')) return { location: 'Remote, India', city: null, country: 'India', remoteStatus: 'Remote' }
+  throw new Error('Payatu public role location geography is unverified: ' + raw)
+}
+const extractCurrentBoard = html => {
+  if (!/<title>\s*Careers · Payatu Careers\s*<\/title>/i.test(html)
+    || !/<h1>\s*Open roles at Payatu\s*<\/h1>/i.test(html)
+    || !/<div class=["']grid["']>/i.test(html)) throw new Error('Payatu public board listing identity changed')
+  const inventoryHtml = String(html).replace(/<script\b[^>]*src=["']https:\/\/static\.cloudflareinsights\.com\/beacon\.min\.js\/[a-z0-9]+["'][^>]*>\s*<\/script>/gi, '')
+  if (/<script\b|\brel=["']next["']|[?&](?:page|offset)=|class=["'][^"']*pagination/i.test(inventoryHtml)) {
+    throw new Error('Payatu public board inventory pagination changed')
+  }
+  const openings = [...String(html).matchAll(/<a\b[^>]*class=["']card["'][^>]*>/gi)]
+  const cards = [...String(html).matchAll(/<a\b[^>]*class=["']card["'][^>]*>([\s\S]*?)<\/a>/gi)]
+  if (!cards.length || cards.length !== openings.length) throw new Error('Payatu public board role inventory is incomplete')
+  const seen = new Set()
+  return cards.map(match => {
+    const href = match[0].match(/\bhref=["']([^"']+)["']/)?.[1]
+    const title = normalizeWhitespace(match[1].match(/<h2[^>]*>([\s\S]*?)<\/h2>/)?.[1])
+    const meta = normalizeWhitespace(match[1].match(/<div class=["']meta["']>([\s\S]*?)<\/div>/)?.[1])?.split(' · ')
+    const department = normalizeWhitespace(match[1].match(/<span class=["']pill[^"']*["']>([\s\S]*?)<\/span>\s*<\/div>/)?.[1])
+    if (!/^[a-z0-9-]+$/.test(href || '') || seen.has(href) || !title || meta?.length !== 2 || !department || !meta[1]
+      || /test.*(?:do.?n.?t|not).*apply/i.test(title)) throw new Error('Payatu public role inventory contains an invalid or duplicate role')
+    seen.add(href)
+    return { slug: href, title, department, family: meta[1], rawLocation: meta[0], ...currentLocation(meta[0]), url: new URL(href, CURRENT_PUBLIC_BOARD_URL).href }
+  })
+}
+const extractCurrentDetail = (html, card) => {
+  const page = String(html)
+  const expectedTitle = card.title + ' · Payatu Careers'
+  const title = normalizeWhitespace(page.match(/<title[^>]*>([^<]*)<\/title>/)?.[1])
+  const header = page.match(/<header\b[^>]*>([\s\S]*?)<\/header>/)?.[1] || ''
+  const heading = normalizeWhitespace(header.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1])
+  const meta = normalizeWhitespace(header.match(/<div class=["']sub["'][^>]*>([\s\S]*?)<\/div>/)?.[1])?.split(' · ')
+  const descriptionHtml = page.match(/<div class=["']desc["']>([\s\S]*?)<\/div>\s*<form\b/)?.[1]
+  const form = page.match(/<form\b[^>]*id=["']apply-form["'][^>]*>/)?.[0] || ''
+  const action = form.match(/\baction=["']([^"']+)["']/)?.[1]
+  if (title !== expectedTitle || heading !== card.title || meta?.length !== 4
+    || meta[0] !== card.department || meta[1] !== card.family || meta[2] !== card.rawLocation
+    || !/^\d+-\d+ yrs$/.test(meta[3]) || !normalizeWhitespace(descriptionHtml)
+    || !/\bmethod=["']post["']/.test(form) || new URL(action || '/', card.url).href !== card.url + '/apply'
+    || !/<h2\b[^>]*id=["']apply["']/.test(page) || !/href=["']\.\/["'][^>]*>← All open roles/i.test(page)) {
+    throw new Error('Payatu public role detail identity, location or application changed: ' + card.url)
+  }
+  return { title: card.title, company: COMPANY_NAME, department: card.department,
+    location: card.location, city: card.city, country: card.country, jobId: card.slug, requisitionId: card.slug,
+    sourceUrl: card.url, applyUrl: card.url + '#apply', employmentType: null,
+    experienceRequired: meta[3].replace(' yrs', ' Years'), minimumQualification: null, preferredQualification: null,
+    requiredSkills: [], postingDate: null, closingDate: null,
+    jobDescription: normalizeWhitespace(descriptionHtml), remoteStatus: card.remoteStatus }
+}
+const runCurrentPayatuBoard = async ({ officialHtml, fetchText, maxJobs, now }) => {
+  const linkedSlugs = new Set([...String(officialHtml).matchAll(/href=["']https:\/\/bandit\.fit\/([a-z0-9-]+)#apply["']/g)].map(m => m[1]))
+  const cards = extractCurrentBoard(await fetchText(CURRENT_PUBLIC_BOARD_URL))
+  if (!cards.some(card => linkedSlugs.has(card.slug))) throw new Error('Payatu official application handoff no longer matches the public board')
+  const selected = maxJobs ? cards.slice(0, maxJobs) : cards
+  const jobs = []
+  for (let start = 0; start < selected.length; start += 3) {
+    jobs.push(...await Promise.all(selected.slice(start, start + 3).map(async card => extractCurrentDetail(await fetchText(card.url), card))))
+  }
+  // The marketing CMS contains stale and test postings; the linked, branded
+  // application board and its live form pages establish the active inventory.
+  const decorated = jobs.map(job => ({ ...job, source: 'payatu', link: job.applyUrl, scrapedAt: now(),
+    ...(selected.length !== cards.length ? { sourceListingComplete: false } : {}) }))
+  if (selected.length !== cards.length) return decorated
+  return attachInventoryEvidence(decorated, { status: 'complete-inventory', surface: CURRENT_PUBLIC_BOARD_URL,
+    firstParty: true, listingComplete: true, pagesFetched: 1, reportedTotal: null, indiaFacetCount: decorated.length,
+    verifiedAt: now(), reason: 'employer-linked-active-board-all-cards-and-live-application-details-reconciled' })
+}
+
 export const createPayatuScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
+    const suppliedFetchText = options.fetchText || defaultFetchText
+    const fetchText = async url => { options.signal?.throwIfAborted(); return suppliedFetchText(url, { signal: options.signal }) }
     const now = options.now || (() => new Date().toISOString())
     const officialHtml = await fetchText(OFFICIAL_CAREERS_URL)
+    if (hasCurrentPayatuSignal(officialHtml)) return runCurrentPayatuBoard({ officialHtml, fetchText, maxJobs, now })
 
     if (!hasOfficialCareersSignal(officialHtml)) {
       throw new Error('Payatu official careers page no longer matches the verified official public surface')

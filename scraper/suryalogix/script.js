@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -60,7 +61,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const markup = normalizeMarkup(html)
   const text = stripTags(html)
 
-  return /<title>\s*SuryaLogix\s*\|\s*Monitoring\s*&\s*Controlling with AI\s*<\/title>/i.test(markup)
+  return /<title>\s*SuryaLogix\s*\|\s*(?:Monitoring\s*&\s*Controlling with AI|Renewable Energy Monitoring\s*&\s*Control Solutions)\s*<\/title>/i.test(markup)
     && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/suryalogix\.com\/["']/i.test(markup)
     && /href=["'][^"']*\/career-opportunities\/["']/i.test(markup)
     && text.includes('SMART | RELIABLE | SUSTAINABLE')
@@ -139,7 +140,94 @@ const slugify = (value) => String(value ?? '')
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '')
 
+const attribute = (tag, name) => decodeHtmlEntities(String(tag ?? '').match(
+  new RegExp('\\s' + name + '\\s*=\\s*(["\x27])([\\s\\S]*?)\\1', 'i'),
+)?.[2] || '')
+
+const extractVerifiedApplicationPopup = (html) => {
+  const raw = String(html ?? '')
+  const popupTags = [...raw.matchAll(/<div\b[^>]*>/gi)].filter(match =>
+    attribute(match[0], 'data-elementor-type') === 'popup'
+    && attribute(match[0], 'data-elementor-id') === '63761',
+  )
+  if (popupTags.length === 0) return null
+  if (popupTags.length !== 1) throw new Error('SuryaLogix incomplete application popup association')
+  const start = popupTags[0].index
+  const end = raw.indexOf('</form>', start)
+  if (end < 0) throw new Error('SuryaLogix incomplete application popup form')
+  const popup = raw.slice(start, end + '</form>'.length)
+  const forms = [...popup.matchAll(/<form\b[^>]*>/gi)]
+  const form = forms[0]?.[0]
+  if (forms.length !== 1 || !stripTags(popup).includes('Join Our Team')
+    || attribute(form, 'method').toLowerCase() !== 'post'
+    || attribute(form, 'enctype') !== 'multipart/form-data'
+    || !/^\/career-opportunities\/#wpcf7-f63770-o[1-9]\d*$/.test(attribute(form, 'action'))) {
+    throw new Error('SuryaLogix unverified application popup form')
+  }
+  const inputs = [...popup.matchAll(/<input\b[^>]*>/gi)].map(match => match[0])
+  const formId = inputs.filter(tag => attribute(tag, 'name') === '_wpcf7')
+  if (formId.length !== 1 || attribute(formId[0], 'value') !== '63770') throw new Error('SuryaLogix unverified application popup form ID')
+  for (const [name, type] of [['your-name', 'text'], ['your-email', 'email'], ['your-phone', 'tel'], ['your-resume', 'file']]) {
+    const fields = inputs.filter(tag => attribute(tag, 'name') === name)
+    if (fields.length !== 1 || attribute(fields[0], 'type') !== type || attribute(fields[0], 'aria-required') !== 'true') {
+      throw new Error('SuryaLogix incomplete application popup required fields')
+    }
+  }
+  const selectors = [...popup.matchAll(/<select\b([^>]*)>([\s\S]*?)<\/select>/gi)]
+  if (selectors.length !== 1 || attribute('<select ' + selectors[0][1] + '>', 'name') !== 'job-position'
+    || attribute('<select ' + selectors[0][1] + '>', 'aria-required') !== 'true') {
+    throw new Error('SuryaLogix incomplete application popup position selector')
+  }
+  const options = [...selectors[0][2].matchAll(/<option\b[^>]*>([\s\S]*?)<\/option>/gi)]
+  if (options.length < 2 || attribute(options[0][0].split('>')[0] + '>', 'value') !== ''
+    || stripTags(options[0][1]) !== 'Select Job Position') throw new Error('SuryaLogix unverified application popup position selector')
+  const positions = options.slice(1).map(option => {
+    const title = stripTags(option[1])
+    if (!title || attribute(option[0].split('>')[0] + '>', 'value') !== title) throw new Error('SuryaLogix incomplete application popup position association')
+    return title
+  })
+  if (new Set(positions).size !== positions.length) throw new Error('SuryaLogix duplicate application popup position')
+  return { positions }
+}
+
+const openingApplyHref = (section, title, popup) => {
+  const links = [...String(section).matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/gi)]
+    .filter(match => stripTags(match[0]) === 'Apply Now')
+  if (links.length !== 1) throw new Error('SuryaLogix incomplete opening application association')
+  const href = attribute(links[0][0].split('>')[0] + '>', 'href')
+  if (href === '#form') return href
+  try {
+    const decoded = decodeURIComponent(href)
+    const prefix = '#elementor-action:action=popup:open&settings='
+    if (!decoded.startsWith(prefix)) throw new Error('Unknown application action')
+    const settings = JSON.parse(Buffer.from(decoded.slice(prefix.length), 'base64').toString('utf8'))
+    if (settings.id !== '63761' || settings.toggle !== false || Object.keys(settings).length !== 2
+      || !popup?.positions.includes(title)) throw new Error('Unverified popup association')
+    return href
+  } catch {
+    throw new Error('SuryaLogix incomplete opening application popup association')
+  }
+}
+
+const fullyHiddenSectionRanges = (html) => {
+  const stack = []
+  const ranges = []
+  for (const match of String(html).matchAll(/<\/?section\b[^>]*>/gi)) {
+    if (/^<\//.test(match[0])) {
+      const section = stack.pop()
+      if (!section) throw new Error('SuryaLogix incomplete section visibility association')
+      if (section.hidden) ranges.push([section.start, match.index + match[0].length])
+    } else {
+      const classes = new Set(attribute(match[0], 'class').split(/\s+/))
+      stack.push({ start: match.index, hidden: ['desktop', 'laptop', 'tablet', 'mobile'].every(device => classes.has('elementor-hidden-' + device)) })
+    }
+  }
+  if (stack.length) throw new Error('SuryaLogix incomplete section visibility association')
+  return ranges
+}
+
 export const extractPublicOpenings = (html) => {
+  const popup = extractVerifiedApplicationPopup(html)
   const jobsByTitle = new Map()
   const sections = String(html ?? '').split(
     /<section\b[^>]*class=["'][^"']*elementor-inner-section[^"']*["'][^>]*>/i,
@@ -158,7 +246,8 @@ export const extractPublicOpenings = (html) => {
     const expertise = text.match(/Expertise\s*-\s*(.+?)\s+Openings:/i)?.[1]?.trim()
     const openings = text.match(/Openings:\s*(\d+)/i)?.[1]
 
-    if (!title || !location || !experienceRequired || !expertise || !Number(openings) || !/href=["']#form["'][\s\S]*?Apply Now/i.test(section)) throw new Error('SuryaLogix incomplete listing: malformed opening')
+    if (!title || !location || !experienceRequired || !expertise || !Number(openings)) throw new Error('SuryaLogix incomplete listing: malformed opening')
+    const applyHref = openingApplyHref(section, title, popup)
     if (!/^(?:Pune,\s*Maharashtra(?:,\s*India)?|.+,\s*India)$/i.test(location)) throw new Error('SuryaLogix opening location does not prove India scope')
     if (jobsByTitle.has(title)) throw new Error('SuryaLogix incomplete listing: duplicate opening')
     const jobId = slugify(title)
@@ -172,7 +261,7 @@ export const extractPublicOpenings = (html) => {
       jobId,
       requisitionId: jobId,
       sourceUrl: CAREERS_URL,
-      applyUrl: `${CAREERS_URL}#form`,
+      applyUrl: `${CAREERS_URL}${applyHref}`,
       employmentType: null,
       experienceRequired,
       minimumQualification: null,
@@ -182,7 +271,7 @@ export const extractPublicOpenings = (html) => {
       closingDate: null,
       jobDescription: `${title}. Experience: ${experienceRequired}. Expertise: ${expertise}. Openings: ${openings}.`,
       source: SOURCE,
-      link: `${CAREERS_URL}#form`,
+      link: `${CAREERS_URL}${applyHref}`,
     })
   }
 
@@ -234,8 +323,28 @@ export const createSuryaLogixScraper = () => ({
       throw new Error('SuryaLogix public jobs are present but could not be parsed completely')
     }
     const scrapedAt = now()
-    const deadline = getWalkInDeadline(careersPage.html)
     if (!Number.isFinite(Date.parse(scrapedAt))) throw new Error('SuryaLogix invalid observation date')
+    const hiddenRanges = fullyHiddenSectionRanges(careersPage.html)
+    const isHidden = index => hiddenRanges.some(([start, end]) => index >= start && index < end)
+    const openingSignals = [...String(careersPage.html).matchAll(/\bOpenings:/gi)]
+    const eventSignals = [...String(careersPage.html).matchAll(/Walk-In Interviews/gi)]
+    const hiddenOpenings = openingSignals.filter(match => isHidden(match.index)).length
+    const hiddenEvents = eventSignals.filter(match => isHidden(match.index)).length
+    const popup = extractVerifiedApplicationPopup(careersPage.html)
+    if (hiddenOpenings || hiddenEvents) {
+      if (!popup || hiddenOpenings !== jobs.length || hiddenEvents !== eventSignals.length || eventSignals.length !== 1
+        || popup.positions.length !== jobs.length || !jobs.every(job => popup.positions.includes(job.title))
+        || !jobs.every(job => job.applyUrl.includes('#elementor-action%3Aaction%3Dpopup%3Aopen'))) {
+        throw new Error('SuryaLogix hidden archive and current application inventory association is incomplete')
+      }
+      return attachInventoryEvidence([], {
+        status: 'discovery-only', surface: CAREERS_URL, firstParty: true, listingComplete: false,
+        pagesFetched: 1, reportedTotal: null, indiaFacetCount: null, verifiedAt: scrapedAt,
+        reason: 'hidden-archived-openings-and-current-position-selector-do-not-prove-active-vacancy-inventory',
+      })
+    }
+    if (popup) throw new Error('SuryaLogix current popup with visible openings requires a verified date and inventory association')
+    const deadline = getWalkInDeadline(careersPage.html)
     if (deadline && Date.parse(scrapedAt) > deadline.timestamp) return []
     return jobs.map((job) => ({ ...job, closingDate: deadline?.closingDate || null, scrapedAt }))
   },

@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="js/analytics.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Managed Digital Services &amp; AI-Enabled Ops | Shore Group</title>
+    <meta name="description" content="Shore Group delivers managed digital services and AI-enabled operations for growing SMBs. SLA-backed outcomes, predictable pricing. Book a call.">
+    <link rel="canonical" href="https://www.shoregrp.com">
+    <link rel="alternate" hreflang="en" href="https://www.shoregrp.com" />
+    <link rel="alternate" hreflang="x-default" href="https://www.shoregrp.com" />
+    <link rel="icon" type="image/png" href="images/shore-favicon.png">
+    <link rel="stylesheet" href="css/shore.css">
+    <script src="js/icons.js" defer></script>
+    <!-- sg:schema -->
+<!-- Site-wide structured data. Master copy: partials/schema-org.html (seo:qa checks every page). -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Shore Group",
+  "legalName": "Shore Group Associates LLC",
+  "alternateName": [
+    "Shore Digital Services",
+    "Shore Group Associates"
+  ],
+  "url": "https://www.shoregrp.com",
+  "logo": "https://www.shoregrp.com/images/shore-group-logo.png",
+  "foundingDate": "2006",
+  "description": "Shore Group delivers managed digital services and AI-enabled operational automation for small and mid-sized businesses, powered by the proprietary Polaris platform.",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "244 Fifth Avenue, Suite 2921",
+    "addressLocality": "New York",
+    "addressRegion": "NY",
+    "postalCode": "10001",
+    "addressCountry": "US"
+  },
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "telephone": "+1-646-535-0970",
+    "contactType": "sales",
+    "email": "info@shoregrp.com"
+  },
+  "sameAs": [
+    "https://www.linkedin.com/company/shoregrp"
+  ],
+  "knowsAbout": [
+    "managed digital services",
+    "AI-enabled operations",
+    "intelligent document processing",
+    "community bank operations",
+    "workflow automation",
+    "elastic staffing"
+  ],
+  "numberOfEmployees": {
+    "@type": "QuantitativeValue",
+    "minValue": 201,
+    "maxValue": 500
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Shore Group",
+  "url": "https://www.shoregrp.com"
+}
+</script>
+<!-- /sg:schema -->
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Shore Group">
+    <meta property="og:title" content="Managed Digital Services &amp; AI-Enabled Ops | Shore Group">
+    <meta property="og:description" content="Shore Group delivers managed digital services and AI-enabled operations for growing SMBs. SLA-backed outcomes, predictable pricing. Book a call.">
+    <meta property="og:url" content="https://www.shoregrp.com/">
+    <meta property="og:image" content="https://www.shoregrp.com/images/og-default.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="627">
+    <meta property="og:image:alt" content="Shore Group logo on black background">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Managed Digital Services &amp; AI-Enabled Ops | Shore Group">
+    <meta name="twitter:description" content="Shore Group delivers managed digital services and AI-enabled operations for growing SMBs. SLA-backed outcomes, predictable pricing. Book a call.">
+    <meta name="twitter:image" content="https://www.shoregrp.com/images/og-default.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+
+        /* Homepage page-local rules. Cards: .pain-card (light), .uc-card (dark glass). Grids: .uc-grid (4 across), .pain-grid (3 across). */
+
+        /* Off-token accents: bottleneck badge orange and the six Who We Serve hover colours. */
+        .home-page {
+            --accent-orange: #FF5E3A;
+            --accent-orange-soft: #FF8A65;
+            --serve-1: #1B4F91;  /* Financial Services */
+            --serve-2: #0FA3A3;  /* B2B SaaS          */
+            --serve-3: #FF7A45;  /* Insurance         */
+            --serve-4: #678D14;  /* Logistics         */
+            --serve-5: #0A2647;  /* Real Estate       */
+            --serve-6: #0C8E8E;  /* SMB Market        */
+        }
+
+        /* Section 8 background (homepage only). */
+        .bg-mint { background: linear-gradient(180deg, #F0FBF9, #E4F7F3); }
+
+        /* 1. HERO: left-aligned variant; .hero-canvas paints the animated background. */
+        .hero { padding: 132px 0 104px; }
+        /* Matches the nav's inner box so the hero copy lines up with the logo. */
+        .hero-inner { max-width: 1280px; margin: 0 auto; text-align: left; }
+        .hero h1 { font-size: clamp(2.3rem, 4.2vw, 3.5rem); line-height: 1.08; max-width: 660px; }
+        .hero p.lead { font-size: 1.12rem; margin: 0 0 34px; max-width: 660px; }
+        .hero-ctas { justify-content: flex-start; margin-bottom: 42px; }
+        .hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; display: block; }
+        /* Below 900px the canvas is hidden; it would only sit behind the copy. */
+        @media (max-width: 899px) { .hero-canvas, .hero-veil { display: none; } }
+        /* Veil keeps the copy legible over the canvas. */
+        .hero-veil {
+            position: absolute; inset: 0; z-index: 1; pointer-events: none;
+            background: linear-gradient(100deg,
+                var(--navy-deep) 6%,
+                rgba(10,38,71,0.90) 34%,
+                rgba(10,38,71,0.42) 60%,
+                rgba(10,38,71,0.10) 82%,
+                transparent 100%);
+        }
+
+        /* Service pills: links, lighter than .btn. */
+        .service-pills { display: flex; gap: 10px; flex-wrap: wrap; position: relative; z-index: 2; }
+        .service-pill {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 8px 15px; border-radius: 999px;
+            font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 0.78rem;
+            color: #fff; background: rgba(255,255,255,0.10);
+            border: 1px solid rgba(255,255,255,0.28);
+            transition: transform .15s ease, background .15s ease, border-color .15s ease;
+        }
+        .service-pill:hover { transform: translateY(-2px); background: rgba(255,255,255,0.18); border-color: var(--lime); }
+        .service-pill .icon { color: var(--lime); }
+
+        /* Curve from the hero into the white section below. */
+        .hero-wave { position: absolute; bottom: -1px; left: 0; width: 100%; z-index: 2; display: block; line-height: 0; }
+
+        /* 2. THE ONE-HOUR RULE: .pain-card in a .uc-grid; heading measure widened so the headline wraps after "It". */
+        .oh-wrap { max-width: 1180px; }
+        .oh-head { max-width: 1180px; }
+        .oh-head p { max-width: 700px; margin-left: auto; margin-right: auto; }
+        .quote-card { display: flex; flex-direction: column; }
+        .quote-card .q-head { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.98rem; color: var(--navy); line-height: 1.3; margin-bottom: 12px; }
+        .quote-card blockquote { font-size: 0.88rem; color: var(--ink-soft); font-style: italic; flex-grow: 1; margin-bottom: 16px; padding-left: 14px; border-left: 2px solid var(--teal); }
+        .link-arrow.small { font-size: 0.8rem; }
+
+        /* 3. FOUR CRITICAL BOTTLENECKS: dark floating panel of .uc-card. */
+        .bottleneck-panel { background: linear-gradient(160deg, var(--navy-deep), var(--navy)); border-radius: 28px; padding: 60px 44px 52px; position: relative; overflow: hidden; }
+        .bottleneck-panel::before { content: ""; position: absolute; width: 420px; height: 420px; top: -170px; right: -140px; pointer-events: none; background: radial-gradient(circle, rgba(255,94,58,0.20), transparent 65%); }
+        .bottleneck-panel::after { content: ""; position: absolute; width: 320px; height: 320px; bottom: -140px; left: -100px; pointer-events: none; background: radial-gradient(circle, rgba(15,163,163,0.14), transparent 65%); }
+        .bottleneck-panel > * { position: relative; }
+        .bottleneck-tag { display: block; width: max-content; margin: 0 auto 18px; padding: 5px 16px; border-radius: 999px; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-orange-soft); background: rgba(255,94,58,0.14); }
+        .bottleneck-title { max-width: 680px; margin: 0 auto 46px; text-align: center; color: #fff; font-size: clamp(1.4rem, 2.8vw, 1.95rem); line-height: 1.2; }
+        /* position:relative anchors each badge to its own card. */
+        .bn-card { position: relative; text-align: center; padding-top: 30px; transition: transform .18s ease, background .18s ease; }
+        .bn-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.16); }
+        .bn-card .bn-num { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 0.78rem; color: #fff; background: linear-gradient(135deg, var(--accent-orange-soft), var(--accent-orange)); box-shadow: 0 6px 14px -4px rgba(255,94,58,0.6); }
+        .bn-card .uc-icon { font-size: 1.5rem; }
+
+        /* 4. HOW WE HELP: bento on teal. */
+        .bento-help { display: grid; grid-template-columns: 1.35fr 1fr 1fr; grid-template-rows: auto auto; gap: 16px; }
+        .bento-help .vehicle-card h4 { display: flex; align-items: center; gap: 10px; }
+        .bento-help .vehicle-card p { margin-bottom: 14px; }
+        .bento-help .link-arrow { color: #fff; font-weight: 800; margin-top: auto; }
+        .v-icon-badge { width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.22); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+        /* Featured card. */
+        .bento-hero { grid-column: 1; grid-row: 1 / 3; padding: 28px; }
+        .bento-hero h4 { margin-bottom: 10px; }
+        .mini-list { list-style: none; margin-bottom: 20px; }
+        .mini-list li { padding: 8px 0; font-size: 0.85rem; color: rgba(255,255,255,0.88); border-top: 1px solid rgba(255,255,255,0.15); }
+        .mini-list li:first-child { border-top: none; }
+        .bento-item-a { grid-column: 2; grid-row: 1; }
+        .bento-item-b { grid-column: 3; grid-row: 1; }
+        .bento-item-wide { grid-column: 2 / 4; grid-row: 2; flex-direction: row; align-items: center; gap: 20px; }
+        .bento-item-wide .wide-text { flex: 1; }
+        .bento-item-wide h4 { margin-bottom: 4px; }
+        .bento-item-wide p { margin-bottom: 0; }
+        .bento-item-wide .link-arrow { margin-top: 0; flex-shrink: 0; }
+
+        /* 5. CASE STUDY PROOF: matches production's colours exactly, so the hex values are literal on purpose. */
+        .solution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+        .solution-grid h2 { font-size: clamp(1.7rem, 3vw, 2.3rem); line-height: 1.15; color: #111827; }
+        .solution-grid h2 .grad-bc { background: linear-gradient(90deg, #2563EB, #0891B2); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .solution-grid > div:first-child > p { color: #374151; font-size: 1.05rem; margin-top: 14px; }
+        .solution-features { display: flex; flex-direction: column; gap: 12px; margin: 22px 0; }
+        .solution-feature { display: flex; align-items: flex-start; gap: 14px; padding: 14px; background: #fff; border: 2px solid #BFDBFE; border-radius: 12px; box-shadow: 0 10px 25px -12px rgba(0,0,0,0.25); }
+        .solution-feature .v-icon-badge { width: 40px; height: 40px; border-radius: 8px; color: #fff; }
+        .solution-feature:nth-child(1) .v-icon-badge { background: linear-gradient(135deg, #3B82F6, #2563EB); }
+        .solution-feature:nth-child(2) .v-icon-badge { background: linear-gradient(135deg, #06B6D4, #0891B2); }
+        .solution-feature:nth-child(3) .v-icon-badge { background: linear-gradient(135deg, #22C55E, #16A34A); }
+        .solution-feature h3 { font-size: 1rem; margin-bottom: 2px; color: #111827; }
+        .solution-feature p { font-size: 0.75rem; color: #4B5563; }
+        .solution-grid > div:first-child > .link-arrow { color: #2563EB; }
+
+        .case-card { background: #fff; border: 2px solid #BFDBFE; border-radius: 24px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+        .case-card .cc-header { padding: 32px; color: #fff; background: linear-gradient(90deg, #2563EB, #0891B2); }
+        .case-card .tag-cs { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px; padding: 8px 16px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; background: rgba(255,255,255,0.2); }
+        .case-card .cc-header h3 { font-size: 1.875rem; font-weight: 800; margin-bottom: 0; color: #fff; }
+        .case-stats { display: flex; align-items: center; gap: 16px; margin-top: 16px; }
+        .case-stats > div { background: rgba(255,255,255,0.2); border-radius: 12px; padding: 12px 24px; }
+        .case-stats .num { display: block; font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 2.2rem; color: #fff; line-height: 1.1; }
+        .case-stats .lbl { font-size: 0.85rem; color: #DBEAFE; }
+        .case-card .cc-body { padding: 32px; }
+        .case-card .cc-body > p { font-size: 1.1rem; line-height: 1.6; color: #374151; margin-bottom: 24px; }
+        .case-card .impact-box { background: linear-gradient(135deg, #F0FDF4, #ECFDF5); border: 2px solid #BBF7D0; border-radius: 16px; padding: 24px; }
+        .case-card .impact-box h4 { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; margin-bottom: 16px; color: #111827; }
+        .case-card .impact-box h4 .icon { color: #16A34A; width: 22px; height: 22px; }
+        .case-card ul { list-style: none; }
+        .case-card li { position: relative; padding: 6px 0 6px 26px; font-size: 0.95rem; color: #374151; }
+        .case-card li::before { content: "\2713"; position: absolute; left: 0; top: 6px; color: #16A34A; font-weight: 700; font-size: 1.05rem; }
+
+        /* .uc-icon needs auto margins to centre in a centred card. */
+        .bn-card .uc-icon, .pillar-item .uc-icon { margin-left: auto; margin-right: auto; }
+
+        /* 7. DATA & AI ENABLEMENT TEASER */
+        .pillar-item { text-align: center; }
+        .pillar-item h5 { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.92rem; color: #fff; margin-bottom: 6px; }
+        .pillar-item p { font-size: 0.78rem; color: rgba(255,255,255,0.65); line-height: 1.4; }
+        .pillar-grid { margin-bottom: 28px; }
+        .feature-tile .badge { display: inline-block; margin-bottom: 12px; padding: 4px 10px; border-radius: 6px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--lime); background: rgba(183,230,0,0.14); }
+        .feature-tile .uc-icon { color: var(--lime); }
+
+        /* 8 & 10. Linked card grids: .pain-card with a bottom-aligned link. */
+        .nav-card { display: flex; flex-direction: column; transition: transform .15s ease, box-shadow .15s ease, background .2s ease, border-color .2s ease; }
+        .nav-card p { flex-grow: 1; margin-bottom: 12px; }
+        .nav-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -20px rgba(10,38,71,0.22); }
+
+        /* Who We Serve: each card has its own hover colour; icon and text colours are set explicitly. */
+        .serve-grid .nav-card:hover { box-shadow: 0 20px 40px -20px rgba(10,38,71,0.35); }
+        .serve-grid .nav-card:hover h4,
+        .serve-grid .nav-card:hover p,
+        .serve-grid .nav-card:hover .icon,
+        .serve-grid .nav-card:hover .link-arrow { color: #fff; }
+        .serve-grid .nav-card:nth-child(1):hover { background: var(--serve-1); border-color: var(--serve-1); }
+        .serve-grid .nav-card:nth-child(2):hover { background: var(--serve-2); border-color: var(--serve-2); }
+        .serve-grid .nav-card:nth-child(3):hover { background: var(--serve-3); border-color: var(--serve-3); }
+        .serve-grid .nav-card:nth-child(4):hover { background: var(--serve-4); border-color: var(--serve-4); }
+        .serve-grid .nav-card:nth-child(5):hover { background: var(--serve-5); border-color: var(--serve-5); }
+        .serve-grid .nav-card:nth-child(6):hover { background: var(--serve-6); border-color: var(--serve-6); }
+
+        /* 9. PILOT TO PARTNERSHIP: matches production's colours exactly, so the hex values are literal on purpose. */
+        .flow-section { position: relative; overflow: hidden; background: linear-gradient(135deg, #F3F4F6, #DBEAFE, #F3F4F6); }
+        .flow-grid-bg { position: absolute; inset: 0; z-index: 0; opacity: 0.2; pointer-events: none; background-image: linear-gradient(#3B82F6 2px, transparent 2px), linear-gradient(90deg, #3B82F6 2px, transparent 2px); background-size: 50px 50px; }
+        .flow-section .wrap { position: relative; z-index: 1; }
+        .flow-section .section-head h2, .flow-section .section-head p { color: #111827; }
+        .flow-section .section-head p { color: #4B5563; }
+        .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+        .flow-step { position: relative; padding-top: 20px; }
+        .flow-step .n {
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 2;
+            width: 40px; height: 40px; border-radius: 999px; border: 4px solid #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 1.1rem; color: #fff;
+            box-shadow: 0 6px 14px -4px rgba(0,0,0,0.35);
+        }
+        .flow-step:nth-child(1) .n { background: linear-gradient(135deg, #3B82F6, #2563EB); }
+        .flow-step:nth-child(2) .n { background: linear-gradient(135deg, #3B82F6, #06B6D4); }
+        .flow-step:nth-child(3) .n { background: linear-gradient(135deg, #06B6D4, #14B8A6); }
+        .flow-step:nth-child(4) .n { background: linear-gradient(135deg, #14B8A6, #16A34A); }
+        .flow-step .fs-card { height: 100%; display: flex; flex-direction: column; background: #fff; border-radius: 16px; padding: 32px 22px 22px; box-shadow: 0 10px 25px -12px rgba(0,0,0,0.25); }
+        .flow-step:nth-child(1) .fs-card, .flow-step:nth-child(2) .fs-card { border: 2px solid #BFDBFE; }
+        .flow-step:nth-child(3) .fs-card { border: 2px solid #A5F3FC; }
+        .flow-step:nth-child(4) .fs-card { border: 2px solid #BBF7D0; }
+        .flow-step .fs-icon { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+        .flow-step .fs-icon .icon { width: 26px; height: 26px; }
+        .flow-step:nth-child(1) .fs-icon { background: linear-gradient(135deg, #DBEAFE, #BFDBFE); color: #2563EB; }
+        .flow-step:nth-child(2) .fs-icon { background: linear-gradient(135deg, #CFFAFE, #A5F3FC); color: #0891B2; }
+        .flow-step:nth-child(3) .fs-icon { background: linear-gradient(135deg, #CCFBF1, #99F6E4); color: #0D9488; }
+        .flow-step:nth-child(4) .fs-icon { background: linear-gradient(135deg, #DCFCE7, #BBF7D0); color: #16A34A; }
+        .flow-step h4 { font-size: 1.15rem; margin-bottom: 10px; color: #111827; }
+        .flow-step p { font-size: 0.9rem; color: #4B5563; margin-bottom: 16px; flex-grow: 1; }
+        .flow-step .time { display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; }
+        .flow-step:nth-child(1) .time { color: #2563EB; background: #EFF6FF; }
+        .flow-step:nth-child(2) .time { color: #0891B2; background: #ECFEFF; }
+        .flow-step:nth-child(3) .time { color: #0D9488; background: #F0FDFA; }
+        .flow-step:nth-child(4) .time { color: #16A34A; background: #F0FDF4; }
+        .flow-note { max-width: 760px; margin: 40px auto 0; text-align: center; padding: 40px; border-radius: 24px; color: #fff; background: linear-gradient(90deg, #2563EB, #0891B2); }
+        .flow-note h4 { font-size: 1.5rem; margin-bottom: 12px; color: #fff; }
+        .flow-note p { font-size: 1rem; color: rgba(255,255,255,0.9); margin-bottom: 22px; }
+        .flow-note .link-arrow { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: #2563EB; font-weight: 700; padding: 14px 28px; border-radius: 12px; }
+
+        /* RESPONSIVE: shore.css already collapses .pain-grid and .uc-grid at 860/560. */
+        @media (max-width: 860px) {
+            .hero { padding: 104px 0 84px; }
+            .bento-help { grid-template-columns: 1fr; grid-template-rows: none; }
+            .bento-hero, .bento-item-a, .bento-item-b, .bento-item-wide { grid-column: 1; grid-row: auto; }
+            .bento-item-wide { flex-direction: column; align-items: flex-start; }
+            .solution-grid { grid-template-columns: 1fr; gap: 32px; }
+            .flow { grid-template-columns: 1fr 1fr; gap: 32px 24px; }
+        }
+        @media (max-width: 560px) {
+            .bottleneck-panel { padding: 46px 22px 34px; }
+            .case-card .cc-header, .case-card .cc-body { padding: 22px; }
+            .flow { grid-template-columns: 1fr; }
+            .trust-strip { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body class="home-page">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NRKNLV7R"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <div id="navbar">
+<!-- sg:navbar -->
+<!-- Site header. Master copy: partials/navbar.html (seo:qa checks every page). -->
+<style id="sg-navbar-styles">
+#navbar{font-family:'Montserrat', sans-serif;}
+#navbar *{box-sizing:border-box;}
+
+#navbar .sg-header{
+    position:fixed; top:0; left:0; right:0;
+    height:76px;
+    background:rgba(250,249,245,0.92);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid #E3E3DC;
+    z-index:1000;
+}
+#navbar .sg-nav-inner{
+    max-width:1280px; margin:0 auto; height:100%;
+    padding:0 28px;
+    display:flex; align-items:center; justify-content:space-between;
+}
+#navbar .sg-logo{display:flex; align-items:center; min-width:0;}
+#navbar .sg-logo img{display:block; height:38px; width:auto; max-width:100%; object-fit:contain;}
+
+#navbar .sg-nav-primary{display:flex; align-items:center; gap:4px; height:100%;}
+#navbar .sg-nav-item{position:relative; height:100%; display:flex; align-items:center;}
+
+#navbar button{margin:0; background:none; border:0; padding:0; font:inherit; color:inherit; cursor:pointer;}
+#navbar a{text-decoration:none;}
+
+#navbar .sg-nav-link{
+    font-family:'Montserrat', sans-serif;
+    font-weight:600; font-size:0.92rem;
+    color:#14212E;
+    padding:10px 16px;
+    border-radius:8px;
+    display:flex; align-items:center; gap:5px;
+    cursor:pointer;
+    transition:color .15s ease;
+}
+#navbar .sg-nav-link:hover, #navbar .sg-nav-item.open .sg-nav-link{color:#0FA3A3;}
+#navbar .sg-caret{
+    width:8px; height:8px;
+    border-right:1.6px solid currentColor;
+    border-bottom:1.6px solid currentColor;
+    transform:rotate(45deg);
+    margin-top:-3px;
+    transition:transform .15s ease;
+}
+#navbar .sg-nav-item.open .sg-caret{transform:rotate(225deg); margin-top:3px;}
+
+#navbar .sg-nav-cta{
+    margin-left:8px;
+    display:inline-flex; align-items:center; gap:6px;
+    background:#B7E600; color:#071A33;
+    font-family:'Montserrat', sans-serif;
+    font-weight:700; font-size:0.9rem;
+    padding:11px 20px; border-radius:10px;
+    transition:transform .15s ease, box-shadow .15s ease;
+}
+#navbar .sg-nav-cta:hover{transform:translateY(-1px); box-shadow:0 6px 16px -6px rgba(183,230,0,0.6);}
+
+/* Dropdown panels -- click-to-open, click-outside-to-close. */
+#navbar .sg-dropdown{
+    position:absolute;
+    top:calc(100% + 1px);
+    left:50%;
+    transform:translate(-50%, 8px);
+    background:#fff;
+    border:1px solid #E3E3DC;
+    border-radius:16px;
+    box-shadow:0 24px 48px -20px rgba(10,38,71,0.28);
+    padding:22px;
+    opacity:0; visibility:hidden; pointer-events:none;
+    transition:opacity .16s ease, transform .16s ease;
+}
+#navbar .sg-nav-item.open .sg-dropdown{
+    opacity:1; visibility:visible; pointer-events:auto;
+    transform:translate(-50%, 0);
+}
+#navbar .sg-dd-solutions{width:560px;}
+#navbar .sg-dd-serve{width:640px;}
+#navbar .sg-dd-insights{width:420px;}
+
+#navbar .sg-dd-grid{display:grid; grid-template-columns:1fr 1fr; gap:6px;}
+#navbar .sg-dd-grid.one-col{grid-template-columns:1fr;}
+#navbar .sg-dd-item{
+    display:flex; gap:12px; padding:12px;
+    border-radius:12px;
+    transition:background .12s ease;
+}
+#navbar .sg-dd-item:hover{background:rgba(15,163,163,0.07);}
+#navbar .sg-dd-item .sg-dd-ic{
+    width:36px; height:36px;
+    border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+    background:rgba(10,38,71,0.06);
+    color:#0A2647;
+}
+#navbar .sg-dd-item .sg-dd-ic svg{width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
+#navbar .sg-dd-item .sg-dd-txt h5{
+    font-family:'Montserrat', sans-serif;
+    font-weight:700; font-size:0.9rem;
+    color:#0A2647;
+    margin:0 0 3px;
+}
+#navbar .sg-dd-item .sg-dd-txt p{
+    font-size:0.79rem; color:#4B5A68; line-height:1.4;
+    margin:0;
+}
+
+/* Hamburger -- shown below 980, otherwise hidden. */
+#navbar .sg-burger{
+    display:none;
+    width:32px; height:32px;
+    flex-direction:column; justify-content:center; gap:5px;
+}
+#navbar .sg-burger span{
+    display:block; width:100%; height:2px;
+    background:#0A2647; border-radius:2px;
+    transition:transform .2s ease, opacity .2s ease;
+}
+
+#navbar .sg-mobile{
+    position:fixed;
+    top:76px; left:0; right:0; bottom:0;
+    background:#FAF9F5;
+    z-index:999;
+    padding:20px 24px 40px;
+    overflow-y:auto;
+    display:none;
+}
+#navbar .sg-mobile.open{display:block;}
+#navbar .sg-m-group{border-bottom:1px solid #E3E3DC; padding:14px 0;}
+#navbar .sg-m-group-title{
+    font-family:'Montserrat', sans-serif; font-weight:700; font-size:1.02rem;
+    display:flex; justify-content:space-between; align-items:center;
+    cursor:pointer; color:#0A2647;
+}
+#navbar .sg-m-sub{display:none; padding-top:10px;}
+#navbar .sg-m-sub.open{display:block;}
+#navbar .sg-m-sub a{
+    display:block; padding:9px 4px 9px 14px;
+    font-size:0.92rem; color:#4B5A68;
+    border-left:2px solid #E3E3DC;
+}
+#navbar .sg-m-direct{
+    display:block; padding:14px 0;
+    border-bottom:1px solid #E3E3DC;
+    font-family:'Montserrat', sans-serif; font-weight:700; color:#0A2647;
+}
+#navbar .sg-m-cta{
+    margin-top:20px; display:block; text-align:center;
+    background:#B7E600; color:#071A33;
+    font-family:'Montserrat', sans-serif;
+    font-weight:700; font-size:0.95rem;
+    padding:14px 20px; border-radius:10px;
+}
+
+@media (max-width: 980px){
+    #navbar .sg-nav-primary{display:none;}
+    #navbar .sg-burger{display:flex;}
+    #navbar .sg-nav-cta.desktop-only{display:none;}
+}
+</style>
+<header class="sg-header">
+    <div class="sg-nav-inner">
+        <a href="/" class="sg-logo">
+            <img src="images/shore-group-logo-lg.png" alt="Shore Group" width="220" height="38">
+        </a>
+
+        <nav class="sg-nav-primary" aria-label="Primary">
+            <div class="sg-nav-item" data-menu="solutions">
+                <button class="sg-nav-link" type="button">Solutions <span class="sg-caret"></span></button>
+                <div class="sg-dropdown sg-dd-solutions">
+                    <div class="sg-dd-grid">
+                        <a class="sg-dd-item" href="/elastic-staffing">
+                            <span class="sg-dd-ic"><svg><use href="#icon-staffing"/></svg></span>
+                            <span class="sg-dd-txt"><h5>Elastic Staffing</h5><p>Skilled hands that learn your process and carry the load.</p></span>
+                        </a>
+                        <a class="sg-dd-item" href="/automation-micro-apps">
+                            <span class="sg-dd-ic"><svg><use href="#icon-automation"/></svg></span>
+                            <span class="sg-dd-txt"><h5>Automation &amp; Micro-Apps</h5><p>A lightweight tool that kills a manual task &mdash; fast and cheap.</p></span>
+                        </a>
+                        <a class="sg-dd-item" href="/polaris">
+                            <span class="sg-dd-ic"><svg><use href="#icon-data-ai"/></svg></span>
+                            <span class="sg-dd-txt"><h5>Data &amp; AI Enablement</h5><p>Powered by Polaris &mdash; ingests and organizes data at scale, then uses AI to synthesize it into actionable insights.</p></span>
+                        </a>
+                        <a class="sg-dd-item" href="/strategic-advisory">
+                            <span class="sg-dd-ic"><svg><use href="#icon-advisory"/></svg></span>
+                            <span class="sg-dd-txt"><h5>Strategic Advisory</h5><p>Priced problem-solving when you&rsquo;re just lost.</p></span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sg-nav-item" data-menu="serve">
+                <button class="sg-nav-link" type="button">Who We Serve <span class="sg-caret"></span></button>
+                <div class="sg-dropdown sg-dd-serve">
+                    <div class="sg-dd-grid">
+                        <a class="sg-dd-item" href="/community-financial-institutions">
+                            <span class="sg-dd-ic"><svg><use href="#icon-financial"/></svg></span>
+                            <span class="sg-dd-txt"><h5>Community Financial Institutions</h5></span>
+                        </a>
+                        <a class="sg-dd-item" href="/b2b-saas">
+                            <span class="sg-dd-ic"><svg><use href="#icon-saas"/></svg></span>
+                            <span class="sg-dd-txt"><h5>B2B SaaS</h5></span>
+                        </a>
+                        <a class="sg-dd-item" href="/insurance">
+                            <span class="sg-dd-ic"><svg><use href="#icon-insurance"/></svg></span>
+                            <span class="sg-dd-txt"><h5>Insurance</h5></span>
+                        </a>
+                        <a class="sg-dd-item" href="/logistics">
+                            <span class="sg-dd-ic"><svg><use href="#icon-logistics"/></svg></span>
+                            <span class="sg-dd-txt"><h5>Logistics</h5></span>
+                        </a>
+                        <a class="sg-dd-item" href="/real-estate">
+                            <span class="sg-dd-ic"><svg><use href="#icon-real-estate"/></svg></span>
+                            <span class="sg-dd-txt"><h5>Real Estate</h5></span>
+                        </a>
+                        <a class="sg-dd-item" href="/smb">
+                            <span class="sg-dd-ic"><svg><use href="#icon-smb"/></svg></span>
+                            <span class="sg-dd-txt"><h5>SMB Market</h5></span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <a class="sg-nav-link" href="/our-approach">Our Approach</a>
+            <a class="sg-nav-link" href="/why-shore-digital">Why Shore</a>
+
+            <div class="sg-nav-item" data-menu="insights">
+                <button class="sg-nav-link" type="button">Insights <span class="sg-caret"></span></button>
+                <div class="sg-dropdown sg-dd-insights">
+                    <div class="sg-dd-grid one-col">
+                        <a class="sg-dd-item" href="/capabilities-case-studies">
+                            <span class="sg-dd-ic"><svg><use href="#icon-case-studies"/></svg></span>
+                            <span class="sg-dd-txt"><h5>Case Studies</h5><p>Real, anonymized outcomes with numbers.</p></span>
+                        </a>
+                        <a class="sg-dd-item" href="/blog">
+                            <span class="sg-dd-ic"><svg><use href="#icon-blog"/></svg></span>
+                            <span class="sg-dd-txt"><h5>Blog</h5><p>Practical perspectives on ops, AI, and readiness.</p></span>
+                        </a>
+                        <a class="sg-dd-item" href="/about">
+                            <span class="sg-dd-ic"><svg><use href="#icon-about"/></svg></span>
+                            <span class="sg-dd-txt"><h5>About Shore</h5><p>20 years of managed operations.</p></span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <a href="/contact" class="sg-nav-cta desktop-only">Contact Us</a>
+
+        <button class="sg-burger" id="sg-burger-btn" type="button" aria-label="Open menu" aria-expanded="false">
+            <span></span><span></span><span></span>
+        </button>
+    </div>
+</header>
+
+<div class="sg-mobile" id="sg-mobile">
+    <div class="sg-m-group">
+        <div class="sg-m-group-title" data-target="sg-m-solutions">Solutions <span class="sg-caret"></span></div>
+        <div class="sg-m-sub" id="sg-m-solutions">
+            <a href="/elastic-staffing">Elastic Staffing</a>
+            <a href="/automation-micro-apps">Automation &amp; Micro-Apps</a>
+            <a href="/polaris">Data &amp; AI Enablement</a>
+            <a href="/strategic-advisory">Strategic Advisory</a>
+        </div>
+    </div>
+    <div class="sg-m-group">
+        <div class="sg-m-group-title" data-target="sg-m-serve">Who We Serve <span class="sg-caret"></span></div>
+        <div class="sg-m-sub" id="sg-m-serve">
+            <a href="/community-financial-institutions">Community Financial Institutions</a>
+            <a href="/b2b-saas">B2B SaaS</a>
+            <a href="/insurance">Insurance</a>
+            <a href="/logistics">Logistics</a>
+            <a href="/real-estate">Real Estate</a>
+            <a href="/smb">SMB Market</a>
+        </div>
+    </div>
+    <a class="sg-m-direct" href="/our-approach">Our Approach</a>
+    <a class="sg-m-direct" href="/why-shore-digital">Why Shore</a>
+    <div class="sg-m-group">
+        <div class="sg-m-group-title" data-target="sg-m-insights">Insights <span class="sg-caret"></span></div>
+        <div class="sg-m-sub" id="sg-m-insights">
+            <a href="/capabilities-case-studies">Case Studies</a>
+            <a href="/blog">Blog</a>
+            <a href="/about">About Shore</a>
+        </div>
+    </div>
+    <a href="/contact" class="sg-m-cta">Contact Us</a>
+</div>
+<!-- /sg:navbar -->
+</div>
+    <script src="js/navbar.js"></script>
+
+    <!-- 1. HERO (the canvas is decorative and aria-hidden) -->
+    <section class="hero">
+        <canvas class="hero-canvas" aria-hidden="true"></canvas>
+        <div class="hero-veil" aria-hidden="true"></div>
+        <div class="wrap hero-inner">
+            <h1><span>Managed Digital Services</span> To Simplify Your Operations.</h1>
+            <p class="lead">We help growing and mid-sized businesses take back-office work off their plate. We map your process end to end, then staff it, automate it, or build the digital workflow to run it, delivering measurable outcomes without adding headcount.</p>
+            <div class="hero-ctas">
+                <a href="/contact" class="btn btn-lime">Schedule a Discovery Call</a>
+            </div>
+            <!-- "AI-Enabled Processing" is intentional keyword wording; don't change it to match the nav. -->
+            <div class="service-pills">
+                <a href="/elastic-staffing" class="service-pill"><svg class="icon"><use href="#icon-staffing"/></svg>Elastic Staffing</a>
+                <a href="/automation-micro-apps" class="service-pill"><svg class="icon"><use href="#icon-automation"/></svg>Automation</a>
+                <a href="/polaris" class="service-pill"><svg class="icon"><use href="#icon-data-ai"/></svg>AI-Enabled Processing</a>
+                <a href="/strategic-advisory" class="service-pill"><svg class="icon"><use href="#icon-advisory"/></svg>Strategic Advisory</a>
+            </div>
+        </div>
+        <svg class="hero-wave" viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+            <path d="M0,40 C240,90 480,0 720,30 C960,60 1200,10 1440,50 L1440,80 L0,80 Z" fill="#FFFFFF"></path>
+        </svg>
+    </section>
+
+    <!-- ============ 2. THE ONE-HOUR RULE ============ -->
+    <section class="bg-white">
+        <div class="wrap oh-wrap">
+            <div class="section-head center oh-head">
+                <span class="eyebrow">The One-Hour Rule</span>
+                <h2>If It's Repetitive and Takes More Than an Hour a Week, It Shouldn't Be Manual.</h2>
+                <p>That's the bar. Below it, keep doing it by hand. Above it, we can staff it, automate it, or build the platform to run it, for less than it costs you to keep doing it manually.</p>
+            </div>
+            <div class="uc-grid">
+                <div class="pain-card quote-card">
+                    <h4 class="q-head">Turnover Never Stops?</h4>
+                    <blockquote>We've had three people cycle through this role in a year. Every time someone leaves, we're back to square one.</blockquote>
+                    <a href="/elastic-staffing" class="link-arrow small">See how we help &rarr;</a>
+                </div>
+                <div class="pain-card quote-card">
+                    <h4 class="q-head">Drowning in Manual Tasks?</h4>
+                    <blockquote>My team spends hours every week on the same invoice processing and data entry. We can't keep up.</blockquote>
+                    <a href="/automation-micro-apps" class="link-arrow small">See how we help &rarr;</a>
+                </div>
+                <div class="pain-card quote-card">
+                    <h4 class="q-head">Buried in Data You Can't Turn Into Answers?</h4>
+                    <blockquote>This takes my team weeks pulling together the data we need for the next board meeting.</blockquote>
+                    <a href="/polaris" class="link-arrow small">See how we help &rarr;</a>
+                </div>
+                <div class="pain-card quote-card">
+                    <h4 class="q-head">Too Small a Team for a Problem This Big?</h4>
+                    <blockquote>I have an IT team of two. I need a partner who can help me think this through, not just execute.</blockquote>
+                    <a href="/strategic-advisory" class="link-arrow small">See how we help &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. FOUR CRITICAL BOTTLENECKS -->
+    <section class="bg-white" style="padding-top:0;">
+        <div class="wrap">
+            <div class="bottleneck-panel">
+                <span class="bottleneck-tag">The Result</span>
+                <h2 class="bottleneck-title">This Creates Four Critical Bottlenecks For Your Team:</h2>
+                <div class="uc-grid">
+                    <div class="uc-card bn-card">
+                        <span class="bn-num">01</span>
+                        <svg class="icon uc-icon"><use href="#icon-staffing"/></svg>
+                        <h4>Stretched Resources</h4>
+                        <p>Your best people are stuck managing tools instead of driving strategy.</p>
+                    </div>
+                    <div class="uc-card bn-card">
+                        <span class="bn-num">02</span>
+                        <svg class="icon uc-icon"><use href="#icon-scale"/></svg>
+                        <h4>Cost vs. Capability Trap</h4>
+                        <p>Caught between expensive enterprise software and cheap tools that don't solve the problem.</p>
+                    </div>
+                    <div class="uc-card bn-card">
+                        <span class="bn-num">03</span>
+                        <svg class="icon uc-icon"><use href="#icon-trend-down"/></svg>
+                        <h4>Scalability?</h4>
+                        <p>Workflows built for 100 transactions break at 10,000, a ceiling on growth.</p>
+                    </div>
+                    <div class="uc-card bn-card">
+                        <span class="bn-num">04</span>
+                        <svg class="icon uc-icon"><use href="#icon-database"/></svg>
+                        <h4>Unreliable Data</h4>
+                        <p>Critical decisions resting on error-prone, inconsistent data.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ 4. HOW WE HELP ============ -->
+    <section id="how-we-help" class="bg-teal">
+        <div class="wrap">
+            <div class="section-head center">
+                <span class="eyebrow">How We Help</span>
+                <h2>We Don't Sell Tools. We Deliver Outcomes, Four Ways.</h2>
+                <p>Every engagement starts the same way: we diagnose the real problem, then recommend the mix that actually fixes it. Most solutions blend more than one.</p>
+            </div>
+            <div class="bento-help">
+                <a class="vehicle-card bento-hero" href="/polaris">
+                    <h4><span class="v-icon-badge"><svg class="icon"><use href="#icon-data-ai"/></svg></span>Data &amp; AI Enablement</h4>
+                    <p>Powered by Polaris, our data engine that synthesizes raw documents and data into actionable insight.</p>
+                    <ul class="mini-list">
+                        <li>Ingests documents &amp; data at scale</li>
+                        <li>Organizes and validates automatically</li>
+                        <li>Synthesizes risk &amp; business insight</li>
+                    </ul>
+                    <span class="link-arrow">Learn more &rarr;</span>
+                </a>
+                <a class="vehicle-card bento-item-a" href="/elastic-staffing">
+                    <h4><span class="v-icon-badge"><svg class="icon"><use href="#icon-staffing"/></svg></span>Elastic Staffing</h4>
+                    <p>Skilled hands that learn your process and carry the load.</p>
+                    <span class="link-arrow">Learn more &rarr;</span>
+                </a>
+                <a class="vehicle-card bento-item-b" href="/automation-micro-apps">
+                    <h4><span class="v-icon-badge"><svg class="icon"><use href="#icon-automation"/></svg></span>Automation &amp; Micro-Apps</h4>
+                    <p>A lightweight tool that kills a manual task.</p>
+                    <span class="link-arrow">Learn more &rarr;</span>
+                </a>
+                <a class="vehicle-card bento-item-wide" href="/strategic-advisory">
+                    <span class="v-icon-badge"><svg class="icon"><use href="#icon-advisory"/></svg></span>
+                    <div class="wide-text">
+                        <h4>Strategic Advisory</h4>
+                        <p>Priced problem-solving when you're just lost.</p>
+                    </div>
+                    <span class="link-arrow">Learn more &rarr;</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. CASE STUDY PROOF -->
+    <section class="bg-white">
+        <div class="wrap">
+            <div class="solution-grid">
+                <div>
+                    <h2>A Fully Managed <span class="grad-bc">&quot;Digital Product&quot;</span></h2>
+                    <p>Instead of selling you a tool or a team, we deliver an <strong>SLA-backed, and fully audited &quot;data product&quot;</strong> at a predictable cost.</p>
+                    <div class="solution-features">
+                        <div class="solution-feature">
+                            <span class="v-icon-badge"><svg class="icon"><use href="#icon-zap"/></svg></span>
+                            <div>
+                                <h3>Polaris Platform</h3>
+                                <p>Our proprietary cloud-native technology stack</p>
+                            </div>
+                        </div>
+                        <div class="solution-feature">
+                            <span class="v-icon-badge"><svg class="icon"><use href="#icon-staffing"/></svg></span>
+                            <div>
+                                <h3>Expert Operations Teams</h3>
+                                <p>Seamless extension of your workforce</p>
+                            </div>
+                        </div>
+                        <div class="solution-feature">
+                            <span class="v-icon-badge"><svg class="icon"><use href="#icon-shield-check"/></svg></span>
+                            <div>
+                                <h3>End-to-End Ownership</h3>
+                                <p>Complete process management and accountability</p>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="#polaris" class="link-arrow">See the Technology That Guarantees Your Outcome &rarr;</a>
+                </div>
+                <div class="case-card">
+                    <div class="cc-header">
+                        <span class="tag-cs"><svg class="icon"><use href="#icon-badge-check"/></svg>CASE STUDY</span>
+                        <h3>Eliminating Revenue Leakage</h3>
+                        <div class="case-stats">
+                            <div><span class="num">3x</span><span class="lbl">Volume Growth</span></div>
+                            <div><span class="num">0</span><span class="lbl">New Hires</span></div>
+                        </div>
+                    </div>
+                    <div class="cc-body">
+                        <p>A logistics provider was losing revenue to manual errors in their reconciliation process. We deployed a fully managed reconciliation solution that supported a <strong>3x increase in transaction volume with no additional headcount.</strong></p>
+                        <div class="impact-box">
+                            <h4><svg class="icon"><use href="#icon-circle-check-big"/></svg>Measurable Impact</h4>
+                            <ul>
+                                <li><strong>SLA-Backed accuracy guarantee</strong> - Eliminated revenue leakage</li>
+                                <li><strong>Increased cashflow</strong> with faster, more accurate billing cycles</li>
+                                <li><strong>Scaled operations</strong> with zero new hires needed</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ 6. TRUST STRIP ============ -->
+    <section class="bg-lime">
+        <div class="wrap">
+            <div class="trust-strip">
+                <div>
+                    <span class="eyebrow">Why Shore</span>
+                    <h3>20 Years Running Regulated, Examined Operations.</h3>
+                </div>
+                <div class="trust-stats">
+                    <div><span class="num">2006</span><span class="lbl">Founded</span></div>
+                    <div><span class="num">300+</span><span class="lbl">Professionals</span></div>
+                    <div><span class="num">ISO 27001</span><span class="lbl">Certified</span></div>
+                    <div><span class="num">SOC 2</span><span class="lbl">Type II</span></div>
+                </div>
+                <a href="/why-shore-digital" class="btn btn-ghost">Why Shore &rarr;</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ 7. DATA & AI ENABLEMENT TEASER ============ -->
+    <section class="bg-navy">
+        <div class="wrap">
+            <div class="section-head center">
+                <span class="eyebrow">Data &amp; AI Enablement</span>
+                <h2>We Transform Raw Data Into Clean, Ready-to-Use Data Extracts for Downstream Systems.</h2>
+                <p>Polaris is our proprietary data engine and AI layer. It ingests and organizes your data and documents at scale, then synthesizes it into the insight your team needs to act, delivered as a fully managed, audited outcome, not a license.</p>
+            </div>
+            <div class="uc-grid pillar-grid">
+                <div class="uc-card pillar-item"><svg class="icon uc-icon"><use href="#icon-target"/></svg><h5>Polaris Platform</h5><p>Our proprietary, cloud-native data engine</p></div>
+                <div class="uc-card pillar-item"><svg class="icon uc-icon"><use href="#icon-staffing"/></svg><h5>Expert Operations Teams</h5><p>A seamless extension of your workforce</p></div>
+                <div class="uc-card pillar-item"><svg class="icon uc-icon"><use href="#icon-shield-check"/></svg><h5>End-to-End Ownership</h5><p>Complete process management and accountability</p></div>
+                <div class="uc-card pillar-item"><svg class="icon uc-icon"><use href="#icon-sparkles"/></svg><h5>Actionable Insights</h5><p>AI-powered analysis for risk and business decisions</p></div>
+            </div>
+            <div class="pain-grid">
+                <div class="uc-card feature-tile">
+                    <svg class="icon uc-icon"><use href="#icon-ai-doc"/></svg>
+                    <span class="badge">AI Document Intelligence</span>
+                    <h4>Extract Data From Any Document</h4>
+                    <p>OCR + NLP extracts structured data from invoices, contracts, and scans, even handwriting.</p>
+                </div>
+                <div class="uc-card feature-tile">
+                    <svg class="icon uc-icon"><use href="#icon-qa"/></svg>
+                    <span class="badge">Quality Assurance</span>
+                    <h4>Human-in-the-Loop Control</h4>
+                    <p>Exceptions get flagged and routed to expert reviewers, guaranteeing your SLA is met every time.</p>
+                </div>
+                <div class="uc-card feature-tile">
+                    <svg class="icon uc-icon"><use href="#icon-insights-op"/></svg>
+                    <span class="badge">Operational Insights</span>
+                    <h4>Real-Time Process Intelligence</h4>
+                    <p>Monitor accuracy, processing time, and cost per transaction, the data to keep optimizing.</p>
+                </div>
+            </div>
+            <div class="center-row" style="margin-top:40px;">
+                <a href="/polaris" class="btn btn-lime">Explore Data &amp; AI Enablement</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8. WHO WE SERVE (Financial Services links to /community-financial-institutions on purpose) -->
+    <section class="bg-mint">
+        <div class="wrap">
+            <div class="section-head center">
+                <span class="eyebrow">Who We Serve</span>
+                <h2>Built for Data-Heavy Operations, Wherever They Run.</h2>
+                <p>20 years of experience in operationally complex industries, solved with the same rigor, tailored to your world.</p>
+            </div>
+            <div class="pain-grid serve-grid">
+                <a class="pain-card nav-card" href="/community-financial-institutions">
+                    <svg class="icon"><use href="#icon-financial"/></svg>
+                    <h4>Financial Services</h4>
+                    <p>Loan processing, KYC verification, and compliance reporting for banks, credit unions, fintechs, and ag lenders.</p>
+                    <span class="link-arrow">Explore &rarr;</span>
+                </a>
+                <a class="pain-card nav-card" href="/b2b-saas">
+                    <svg class="icon"><use href="#icon-saas"/></svg>
+                    <h4>B2B SaaS</h4>
+                    <p>Data acquisition engines, content moderation, and API integration.</p>
+                    <span class="link-arrow">Explore &rarr;</span>
+                </a>
+                <a class="pain-card nav-card" href="/insurance">
+                    <svg class="icon"><use href="#icon-insurance"/></svg>
+                    <h4>Insurance</h4>
+                    <p>Claims intake, provider data, and policy validation.</p>
+                    <span class="link-arrow">Explore &rarr;</span>
+                </a>
+                <a class="pain-card nav-card" href="/logistics">
+                    <svg class="icon"><use href="#icon-logistics"/></svg>
+                    <h4>Logistics</h4>
+                    <p>Freight invoice processing, POD validation, and shipment tracking.</p>
+                    <span class="link-arrow">Explore &rarr;</span>
+                </a>
+                <a class="pain-card nav-card" href="/real-estate">
+                    <svg class="icon"><use href="#icon-real-estate"/></svg>
+                    <h4>Real Estate</h4>
+                    <p>Lease abstraction, market data, and portfolio management.</p>
+                    <span class="link-arrow">Explore &rarr;</span>
+                </a>
+                <a class="pain-card nav-card" href="/smb">
+                    <svg class="icon"><use href="#icon-smb"/></svg>
+                    <h4>SMB Market</h4>
+                    <p>Don't see your industry? If the problem is operational and repetitive, we've likely solved a version of it.</p>
+                    <span class="link-arrow">Explore &rarr;</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 9. PILOT TO PARTNERSHIP -->
+    <section class="flow-section">
+        <div class="flow-grid-bg" aria-hidden="true"></div>
+        <div class="wrap">
+            <div class="section-head center">
+                <span class="eyebrow">Our Approach</span>
+                <h2>A Clear, Low-Risk Path to Success</h2>
+                <p>Our "Pilot-to-Partnership" model is built on proof, not promises. We prove our value at every step before you make a significant commitment.</p>
+            </div>
+            <div class="flow">
+                <div class="flow-step">
+                    <span class="n">1</span>
+                    <div class="fs-card">
+                        <span class="fs-icon"><svg class="icon"><use href="#icon-search"/></svg></span>
+                        <h4>Discovery</h4>
+                        <p>Understand your challenge and map a clear solution path.</p>
+                        <span class="time"><svg class="icon"><use href="#icon-clock"/></svg>1&ndash;2 Weeks &middot; Free</span>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <span class="n">2</span>
+                    <div class="fs-card">
+                        <span class="fs-icon"><svg class="icon"><use href="#icon-clipboard-list"/></svg></span>
+                        <h4>POC &amp; Roadmap</h4>
+                        <p>Prove capabilities on your data and validate technical fit.</p>
+                        <span class="time"><svg class="icon"><use href="#icon-clock"/></svg>2&ndash;4 Weeks &middot; Low/No Cost</span>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <span class="n">3</span>
+                    <div class="fs-card">
+                        <span class="fs-icon"><svg class="icon"><use href="#icon-zap"/></svg></span>
+                        <h4>Pilot</h4>
+                        <p>Run in production with fixed pricing to validate ROI.</p>
+                        <span class="time"><svg class="icon"><use href="#icon-clock"/></svg>3&ndash;6 Months &middot; Fixed Rate</span>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <span class="n">4</span>
+                    <div class="fs-card">
+                        <span class="fs-icon"><svg class="icon"><use href="#icon-shield-check"/></svg></span>
+                        <h4>Full-Service Partnership</h4>
+                        <p>Outcome-based engagement with predictable pricing and SLA-backed results.</p>
+                        <span class="time"><svg class="icon"><use href="#icon-clock"/></svg>Ongoing &middot; SLA-Backed</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flow-note">
+                <h4>Every Step De-Risks Your Investment</h4>
+                <p>You're never locked in. Exit at any stage, or scale up when you see the value. That's the confidence we have in our model.</p>
+                <a href="/our-approach" class="link-arrow">Learn More About Our Engagement Model &rarr;</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ 11. FINAL CTA ============ -->
+    <section class="bg-white">
+        <div class="wrap">
+            <div class="final-cta">
+                <h2>Stop Drowning in Manual Work.</h2>
+                <p>Let's have a conversation about your biggest operational bottleneck and build a plan to solve it for good. No commitment, just clarity.</p>
+                <div class="btn-row">
+                    <a href="/contact" class="btn btn-lime">Schedule Your Free Discovery Call</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div id="footer">
+<!-- sg:footer -->
+<!-- Site footer. Master copy: partials/footer.html (seo:qa checks every page). -->
+<style id="sg-footer-styles">
+#footer{font-family:'Montserrat', sans-serif;}
+#footer *{box-sizing:border-box;}
+#footer .sg-ft{background:#111827; color:#ffffff;}
+#footer .sg-ft-wrap{width:100%; margin-left:auto; margin-right:auto; padding:3rem 1.5rem;}
+@media (min-width:640px){#footer .sg-ft-wrap{max-width:640px;}}
+@media (min-width:768px){#footer .sg-ft-wrap{max-width:768px;}}
+@media (min-width:1024px){#footer .sg-ft-wrap{max-width:1024px;}}
+@media (min-width:1280px){#footer .sg-ft-wrap{max-width:1280px;}}
+@media (min-width:1536px){#footer .sg-ft-wrap{max-width:1536px;}}
+#footer .sg-ft-grid{display:grid; grid-template-columns:repeat(1, minmax(0, 1fr)); gap:2rem;}
+@media (min-width:768px){#footer .sg-ft-grid{grid-template-columns:repeat(5, minmax(0, 1fr));}}
+#footer .sg-ft-logo{display:block; height:1.5rem; width:auto; margin-bottom:1rem;}
+#footer .sg-ft-tag{margin:0.5rem 0 0; color:#9ca3af; font-size:0.875rem; line-height:1.25rem;}
+
+/* Column headings. shore.css styles h4 site-wide, so every property is stated here */
+#footer .sg-ft-head{margin:0; font-family:'Montserrat', sans-serif; font-size:1rem;
+    line-height:1.5rem; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;
+    color:#6b7280;}
+
+/* Link lists: padding stated explicitly; page resets differ. */
+#footer .sg-ft-list{list-style:none; margin:1rem 0 0; padding:0; line-height:1.5rem;}
+#footer .sg-ft-list li{line-height:1.5rem;}
+#footer .sg-ft-list > li + li{margin-top:0.5rem;}
+#footer .sg-ft-list a{color:#9ca3af; font-size:1rem; line-height:1.5rem;
+    text-decoration:none; transition:color 0.2s ease;}
+#footer .sg-ft-list a:hover{color:#ffffff;}
+
+#footer .sg-ft-badges{margin-top:1rem; display:grid; grid-template-columns:repeat(2, 1fr);
+    gap:0.75rem; align-items:center;}
+#footer .sg-ft-badges img{display:block; width:100%; max-width:6rem; height:auto;}
+
+#footer .sg-ft-bottom{margin-top:3rem; border-top:1px solid #1f2937; padding-top:2rem;
+    text-align:center; color:#6b7280; font-size:0.875rem; line-height:1.25rem;}
+#footer .sg-ft-bottom p{margin:0;}
+#footer .sg-ft-bottom a{color:#9ca3af; text-decoration:none; transition:color 0.2s ease;}
+#footer .sg-ft-bottom a:hover{color:#ffffff;}
+</style>
+<footer class="sg-ft bg-gray-900 text-white">
+    <div class="sg-ft-wrap container mx-auto px-6 py-12">
+        <div class="sg-ft-grid grid md:grid-cols-5 gap-8">
+            <div>
+                <img src="images/shore-group-logo.png" alt="Shore Group Logo - Managed Digital Services and Custom Software Development" class="sg-ft-logo h-6 w-auto mb-4" loading="lazy" width="250" height="42">
+                <p class="sg-ft-tag mt-2 text-gray-400 text-sm">Scalable Technology Solutions. Guaranteed Outcomes.</p>
+            </div>
+            <div>
+                <h4 class="sg-ft-head font-semibold tracking-wider uppercase text-gray-500">Solutions</h4>
+                <ul class="sg-ft-list mt-4 space-y-2">
+                    <li><a href="/polaris" class="text-gray-400 hover:text-white">Data &amp; AI Enablement</a></li>
+                    <li><a href="/automation-micro-apps" class="text-gray-400 hover:text-white">Automation &amp; Micro-Apps</a></li>
+                    <li><a href="/elastic-staffing" class="text-gray-400 hover:text-white">Elastic Staffing</a></li>
+                    <li><a href="/strategic-advisory" class="text-gray-400 hover:text-white">Strategic Advisory</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="sg-ft-head font-semibold tracking-wider uppercase text-gray-500">Who We Serve</h4>
+                <ul class="sg-ft-list mt-4 space-y-2">
+                    <li><a href="/community-financial-institutions" class="text-gray-400 hover:text-white">Community Financial Institutions</a></li>
+                    <li><a href="/insurance" class="text-gray-400 hover:text-white">Insurance</a></li>
+                    <li><a href="/real-estate" class="text-gray-400 hover:text-white">Real Estate</a></li>
+                    <li><a href="/logistics" class="text-gray-400 hover:text-white">Logistics</a></li>
+                    <li><a href="/b2b-saas" class="text-gray-400 hover:text-white">B2B SaaS</a></li>
+                    <li><a href="/smb" class="text-gray-400 hover:text-white">SMB Market</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="sg-ft-head font-semibold tracking-wider uppercase text-gray-500">Company</h4>
+                <ul class="sg-ft-list mt-4 space-y-2">
+                    <li><a href="/about" class="text-gray-400 hover:text-white">About Us</a></li>
+                    <li><a href="/our-approach" class="text-gray-400 hover:text-white">Our Approach</a></li>
+                    <li><a href="/why-shore-digital" class="text-gray-400 hover:text-white">Why Shore</a></li>
+                    <li><a href="/capabilities-case-studies" class="text-gray-400 hover:text-white">Case Studies</a></li>
+                    <li><a href="/blog" class="text-gray-400 hover:text-white">Resources</a></li>
+                    <li><a href="/contact" class="text-gray-400 hover:text-white">Contact Us</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="sg-ft-head font-semibold tracking-wider uppercase text-gray-500">Trust &amp; Compliance</h4>
+                <div class="sg-ft-badges mt-4 flex items-center gap-4">
+                    <img src="images/iso-27001-badge.png" alt="ISO 27001 Certified - Information Security Management System Certification for Data Protection" class="h-24 w-auto" loading="lazy" width="847" height="845">
+                    <img src="images/soc-2-badge.png" alt="SOC 2® - SOC for Service Organizations" class="h-24 w-auto" loading="lazy" width="847" height="845">
+                </div>
+            </div>
+        </div>
+        <div class="sg-ft-bottom mt-12 border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
+            <p>&copy; <span class="sg-ft-year">2026</span> Shore Group. All Rights Reserved. | <a href="/terms-of-service" class="text-gray-400 hover:text-white">Terms of Service</a> | <a href="/privacy-policy" class="text-gray-400 hover:text-white">Privacy Policy</a></p>
+        </div>
+    </div>
+</footer>
+<!-- /sg:footer -->
+</div>
+    <script src="js/footer.js"></script>
+
+    <!-- Hero background: scattered points resolve into a lattice as a wave crosses the hero. One still frame under reduced motion; pauses off-screen or in a hidden tab. -->
+    <script>
+    (function () {
+        var canvas = document.querySelector('.hero-canvas');
+        if (!canvas || !canvas.getContext) return;
+        var ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        var TEAL = [15, 163, 163], LIME = [183, 230, 0];
+        var GLYPHS = ['0x4F', '{"id":', '82.10', 'A7', '"status"', 'FF', '1042', '"amount"',
+                      'B3', '{"ref":', '09.24', 'D1', '"total"', '5E'];
+
+        var pts = [], W = 0, H = 0, cols = 0, rows = 0, raf = null, t = 0, running = false, enabled = false;
+        var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        function rand(a, b) { return a + Math.random() * (b - a); }
+        function ease(x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+
+        // Trapezoid over one cycle: settle -> hold -> release -> stay scattered.
+        // The scattered share is the largest on purpose; if the lattice holds too
+        // long the whole field looks static and the transformation is lost.
+        function orderAt(phase) {
+            if (phase < 0.08) return ease(phase / 0.08);
+            if (phase < 0.50) return 1;
+            if (phase < 0.62) return 1 - ease((phase - 0.50) / 0.12);
+            return 0;
+        }
+
+        function build() {
+            var rect = canvas.getBoundingClientRect();
+            W = rect.width; H = rect.height;
+            var dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.width = Math.round(W * dpr);
+            canvas.height = Math.round(H * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            // Matches the media query above: nothing is drawn below 900.
+            enabled = W >= 900;
+            pts = [];
+            if (!enabled) { stop(); return; }
+
+            // The lattice sits clear of the copy, in the empty right half.
+            // SG-043: tightened ~30% on each axis (was 0.48/0.07/0.16/0.86) so
+            // the graphic reads as a smaller accent rather than dominating the
+            // whole right side -- same centre, smaller field.
+            var left = W * 0.55;
+            var right = W - W * 0.14;
+            var top = H * 0.27, bottom = H * 0.76;
+
+            cols = 10;
+            rows = 8;
+            var gx = (right - left) / (cols - 1), gy = (bottom - top) / (rows - 1);
+
+            for (var r = 0; r < rows; r++) {
+                for (var c = 0; c < cols; c++) {
+                    pts.push({
+                        ox: left + c * gx,
+                        oy: top + r * gy,
+                        cx: rand(W * 0.42, W * 1.0),
+                        cy: rand(-H * 0.08, H * 1.08),
+                        dx: rand(-0.5, 0.5),
+                        dy: rand(-0.4, 0.4),
+                        col: c, row: r,
+                        lag: c / (cols - 1),
+                        glyph: Math.random() < 0.38 ? GLYPHS[(r * cols + c) % GLYPHS.length] : null,
+                        o: 0
+                    });
+                }
+            }
+        }
+
+        function frame(now) {
+            raf = null;
+            if (!running) return;
+            t = now / 1000;
+
+            ctx.clearRect(0, 0, W, H);
+
+            var i, p, cxo, cyo;
+            for (i = 0; i < pts.length; i++) {
+                p = pts[i];
+                // Each column trails the one before it, so order sweeps rightward.
+                var phase = ((t * 0.075) - p.lag * 0.75) % 1;
+                if (phase < 0) phase += 1;
+                p.o = orderAt(phase);
+
+                cxo = p.cx + Math.sin(t * 0.32 + i * 1.7) * 16 * p.dx;
+                cyo = p.cy + Math.cos(t * 0.27 + i * 2.3) * 16 * p.dy;
+                var e = ease(p.o);
+                p.x = cxo + (p.ox - cxo) * e;
+                p.y = cyo + (p.oy - cyo) * e;
+            }
+
+            // Links between settled neighbours, drawn first so points sit on top.
+            ctx.lineWidth = 1;
+            for (i = 0; i < pts.length; i++) {
+                p = pts[i];
+                if (p.o < 0.88) continue;
+                var right = (p.col < cols - 1) ? pts[i + 1] : null;
+                var below = (p.row < rows - 1) ? pts[i + cols] : null;
+                [right, below].forEach(function (q) {
+                    if (!q || q.o < 0.88) return;
+                    var a = Math.min(p.o, q.o);
+                    ctx.strokeStyle = 'rgba(15,163,163,' + (0.34 * (a - 0.88) / 0.12).toFixed(3) + ')';
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(q.x, q.y);
+                    ctx.stroke();
+                });
+            }
+
+            for (i = 0; i < pts.length; i++) {
+                p = pts[i];
+                var o = p.o;
+                // Glyph belongs to the raw state and fades out as the point settles.
+                if (p.glyph && o < 0.55) {
+                    ctx.font = '600 10px ui-monospace, SFMono-Regular, Menlo, monospace';
+                    ctx.fillStyle = 'rgba(255,255,255,' + (0.30 * (1 - o / 0.55)).toFixed(3) + ')';
+                    ctx.fillText(p.glyph, p.x + 7, p.y + 3);
+                }
+                var col = o < 0.5
+                    ? [255 - (255 - TEAL[0]) * o * 2, 255 - (255 - TEAL[1]) * o * 2, 255 - (255 - TEAL[2]) * o * 2]
+                    : [TEAL[0] + (LIME[0] - TEAL[0]) * (o - 0.5) * 2,
+                       TEAL[1] + (LIME[1] - TEAL[1]) * (o - 0.5) * 2,
+                       TEAL[2] + (LIME[2] - TEAL[2]) * (o - 0.5) * 2];
+                ctx.fillStyle = 'rgba(' + (col[0] | 0) + ',' + (col[1] | 0) + ',' + (col[2] | 0) + ','
+                              + (0.24 + 0.58 * o).toFixed(3) + ')';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 1.1 + 1.7 * o, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            raf = requestAnimationFrame(frame);
+        }
+
+        // One settled frame: the composition without any motion.
+        function still() {
+            ctx.clearRect(0, 0, W, H);
+            for (var i = 0; i < pts.length; i++) { var p = pts[i]; p.o = 1; p.x = p.ox; p.y = p.oy; }
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(15,163,163,0.30)';
+            for (i = 0; i < pts.length; i++) {
+                p = pts[i];
+                if (p.col < cols - 1) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(pts[i + 1].x, pts[i + 1].y); ctx.stroke(); }
+                if (p.row < rows - 1) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(pts[i + cols].x, pts[i + cols].y); ctx.stroke(); }
+            }
+            ctx.fillStyle = 'rgba(183,230,0,0.72)';
+            for (i = 0; i < pts.length; i++) {
+                ctx.beginPath(); ctx.arc(pts[i].x, pts[i].y, 2.8, 0, Math.PI * 2); ctx.fill();
+            }
+        }
+
+        function start() {
+            if (reduce || running || !enabled) return;
+            running = true;
+            if (!raf) raf = requestAnimationFrame(frame);
+        }
+        function stop() {
+            running = false;
+            if (raf) { cancelAnimationFrame(raf); raf = null; }
+        }
+
+        build();
+        if (!enabled) { /* nothing to paint */ }
+        else if (reduce) { still(); }
+        else { start(); }
+
+        var resizeTimer;
+        window.addEventListener('resize', function () {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function () {
+                build();
+                if (!enabled) return;
+                if (reduce) still(); else start();
+            }, 180);
+        });
+
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) stop(); else start();
+        });
+
+        if (window.IntersectionObserver) {
+            new IntersectionObserver(function (entries) {
+                entries[0].isIntersecting ? start() : stop();
+            }, { threshold: 0 }).observe(canvas);
+        }
+    })();
+    </script>
+</body>
+</html>

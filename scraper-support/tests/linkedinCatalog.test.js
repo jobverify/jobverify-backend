@@ -45,10 +45,10 @@ test('LinkedIn catalog captures the verified public company-filtered jobs search
   assert.equal(LINKEDIN_CATALOG.parser, 'custom-script')
   assert.equal(LINKEDIN_CATALOG.normalizationProfile, 'engineering-default')
   assert.equal(LINKEDIN_CATALOG.dryRunFile, 'linkedin/jobs.json')
-  assert.equal(LINKEDIN_CATALOG.verifiedOn, '2026-07-16')
+  assert.equal(LINKEDIN_CATALOG.verifiedOn, '2026-10-09')
   assert.match(LINKEDIN_CATALOG.verifiedSurfaceSummary, /f_C=1337&geoId=102713980/i)
-  assert.match(LINKEDIN_CATALOG.verifiedSurfaceSummary, /39 jobs in India/i)
-  assert.match(LINKEDIN_CATALOG.verifiedSurfaceSummary, /Senior Sales Manager, LinkedIn Marketing Solutions/i)
+  assert.match(LINKEDIN_CATALOG.verifiedSurfaceSummary, /47 unique company-filtered LinkedIn jobs in India/i)
+  assert.match(LINKEDIN_CATALOG.verifiedSurfaceSummary, /All 47 public detail pages/i)
   assert.match(LINKEDIN_CATALOG.modulePath, /linkedin[\\/]script\.js$/i)
 })
 

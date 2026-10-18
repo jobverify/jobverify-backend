@@ -119,3 +119,14 @@ test('Filo fails closed on mismatched current details or ambiguous location', as
     }), /current role detail|India location/i)
   }
 })
+
+test('Filo accepts the current published Jammu and Kashmir role without inventing a city', async () => {
+  const { readFile } = await import('node:fs/promises')
+  const { extractCurrentRoleDetails } = await import('../../scraper/filo/script.js')
+  const html = await readFile(new URL('./fixtures/filo/jammu-kashmir-role-20261009.html', import.meta.url), 'utf8')
+  const detail = extractCurrentRoleDetails(html, { id: 49, departmentId: 22, slug: 'manager-government-partnerships-jammu-and-kashmir-30', title: 'Manager- Government Partnerships( Jammu and Kashmir)' })
+  assert.equal(detail.location, 'Jammu and Kashmir')
+  assert.equal(detail.city, null)
+  assert.equal(detail.applyUrl, 'https://filorians.tools.findfilo.com/hiring/apply/62')
+  assert.ok(detail.jobDescription.length > 1000)
+})

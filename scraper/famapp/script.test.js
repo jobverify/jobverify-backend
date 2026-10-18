@@ -48,7 +48,7 @@ const careersHtml = `
   </html>
 `
 
-test('FamApp sentinel validates the verified homepage and careers page with the known first-party Fam jobs handoff', async () => {
+test('FamApp validates the verified homepage and careers page with the known first-party Fam jobs handoff', async () => {
   const famapp = await loadModule()
   assert.ok(famapp, 'FamApp scraper module should load')
 
@@ -62,29 +62,28 @@ test('FamApp sentinel validates the verified homepage and careers page with the 
   assert.equal(famapp.hasKnownFirstPartyJobsHandoffSignal(careersHtml), true)
 })
 
-test('FamApp run returns an empty list while the verified careers page only hands off to the separate FamPay jobs surface', async () => {
+test('FamApp run reads the known first-party jobs handoff instead of returning an unchecked empty list', async () => {
   const famapp = await loadModule()
-  assert.ok(famapp, 'FamApp scraper module should load')
-
+  const { readFile } = await import('node:fs/promises')
+  const jobsHtml = await readFile(new URL('./fixtures/jobs.html', import.meta.url), 'utf8')
+  const client = await readFile(new URL('./fixtures/jobs-client.js', import.meta.url), 'utf8')
+  const groups = JSON.parse(await readFile(new URL('./fixtures/lever-grouped.json', import.meta.url), 'utf8'))
   const requestedUrls = []
-  const jobs = await famapp.createFamAppScraper().run({
+  const jobs = await famapp.run({
     fetchPage: async (url) => {
       requestedUrls.push(url)
-      if (url === famapp.HOMEPAGE_URL) {
-        return { status: 200, url, html: homepageHtml }
-      }
-      if (url === famapp.CAREERS_URL) {
-        return { status: 200, url, html: careersHtml }
-      }
-      throw new Error(`Unexpected FamApp URL: ${url}`)
+      const html = url === famapp.HOMEPAGE_URL ? homepageHtml
+        : url === famapp.CAREERS_URL ? careersHtml
+          : url === famapp.JOBS_URL ? jobsHtml
+            : url.endsWith('/46b0e91d4324e433.js') ? client : '/* unrelated client bundle */'
+      return { status: 200, url, html }
     },
+    fetchJson: async (url) => url === famapp.LEVER_API_URL ? groups : groups.flatMap((group) => group.postings),
   })
-
-  assert.deepEqual(requestedUrls, [
-    'https://www.famapp.in/',
-    'https://www.famapp.in/careers/',
+  assert.deepEqual(requestedUrls.slice(0, 3), [
+    famapp.HOMEPAGE_URL, famapp.CAREERS_URL, famapp.JOBS_URL,
   ])
-  assert.deepEqual(jobs, [])
+  assert.equal(jobs.length, 16)
 })
 
 test('FamApp fails closed when the homepage or careers page changes materially or starts exposing direct job links', async () => {
@@ -124,4 +123,40 @@ test('FamApp fails closed when the homepage or careers page changes materially o
     }),
     /now appears to expose a direct public jobs surface/i,
   )
+})
+
+
+test('FamApp follows the current client jobs handoff and returns the complete live India Lever inventory', async () => {
+  const famapp = await loadModule()
+  const { readFile } = await import('node:fs/promises')
+  const fixture = (name) => readFile(new URL('./fixtures/' + name, import.meta.url), 'utf8')
+  const pages = new Map([
+    ['https://www.famapp.in/', await fixture('homepage.html')],
+    ['https://www.famapp.in/careers/', await fixture('careers.html')],
+    ['https://www.famapp.in/jobs/', await fixture('jobs.html')],
+  ])
+  const client = await fixture('jobs-client.js')
+  const grouped = JSON.parse(await fixture('lever-grouped.json'))
+  const postings = grouped.flatMap((group) => group.postings)
+  const requestedPages = []
+  const requestedApi = []
+  const jobs = await famapp.run({
+    fetchPage: async (url) => {
+      requestedPages.push(url)
+      return { status: 200, url, html: pages.get(url) ?? (url.endsWith('/46b0e91d4324e433.js') ? client : '/* unrelated client bundle */') }
+    },
+    fetchJson: async (url) => {
+      requestedApi.push(url)
+      if (url === 'https://api.lever.co/v0/postings/fampay?group=team&mode=json') return grouped
+      const parsed = new URL(url)
+      return postings.slice(Number(parsed.searchParams.get('skip')), Number(parsed.searchParams.get('skip')) + Number(parsed.searchParams.get('limit')))
+    },
+    now: () => '2026-10-08T18:15:00.000Z',
+  })
+  assert.equal(jobs.length, 16)
+  assert.deepEqual(jobs.map((job) => job.jobId).sort(), postings.map((job) => job.id).sort())
+  assert.ok(jobs.every((job) => job.country === 'India' && job.source === 'famapp' && job.jobDescription))
+  assert.ok(requestedPages.includes('https://www.famapp.in/jobs/'))
+  assert.ok(requestedPages.some((url) => url.endsWith('/46b0e91d4324e433.js')))
+  assert.equal(requestedApi.length, 2)
 })

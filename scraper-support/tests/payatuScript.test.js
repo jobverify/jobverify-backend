@@ -150,7 +150,7 @@ test('Payatu constants stay pinned to the verified official careers page, embedd
 
   assert.equal(payatu.COMPANY_NAME, 'Payatu')
   assert.equal(payatu.COUNTRY_FILTER, 'India')
-  assert.equal(payatu.OFFICIAL_CAREERS_URL, 'https://payatu.com/career/')
+  assert.equal(payatu.OFFICIAL_CAREERS_URL, 'https://payatu.ai/career')
   assert.equal(payatu.LISTING_URL, 'https://payatu.freshteam.com/jobs')
   assert.equal(payatu.DETAIL_URL_PATTERN, 'https://payatu.freshteam.com/jobs/{opaque_id}/{slug}')
   assert.equal(payatu.hasOfficialCareersSignal(officialCareersHtml), true)
@@ -289,4 +289,73 @@ test('Payatu scraper fails closed when the official careers page stops linking t
     }),
     /verified official payatu careers handoff/i,
   )
+})
+
+
+const currentPayatuFixtures = async () => {
+  const { readFile } = await import('node:fs/promises')
+  const get = name => readFile(new URL('./fixtures/payatu/' + name, import.meta.url), 'utf8')
+  const official = await get('careers-20261009.html'), board = await get('board-20261009.html')
+  const slugs = [...board.matchAll(/<a class="card" href="([^"]+)">/g)].map(m => m[1])
+  const details = Object.fromEntries(await Promise.all(slugs.map(async slug => [slug, await get('detail-20261009-' + slug + '.html')])))
+  return { official, board, details, slugs }
+}
+const currentPayatuFetch = (f, overrides = {}) => async url => {
+  if (Object.hasOwn(overrides, url)) { if (overrides[url] instanceof Error) throw overrides[url]; return overrides[url] }
+  if (url === 'https://payatu.ai/career') return f.official
+  if (url === 'https://bandit.fit/') return f.board
+  const slug = new URL(url).pathname.slice(1)
+  if (new URL(url).origin === 'https://bandit.fit' && f.details[slug]) return f.details[slug]
+  throw new Error('Unexpected Payatu request: ' + url)
+}
+test('Payatu follows current employer-linked board and returns all ten active India application pages', async () => {
+  const f = await currentPayatuFixtures(), { run } = await import('../../scraper/payatu/script.js')
+  const jobs = await run({ fetchText: currentPayatuFetch(f) })
+  assert.equal(jobs.length, 10)
+  const { readInventoryEvidence } = await import('../utils/inventoryEvidence.js')
+  assert.equal(readInventoryEvidence(jobs)?.listingComplete, true)
+  assert.deepEqual(new Set(jobs.map(j => j.jobId)), new Set(f.slugs))
+  assert.ok(jobs.every(j => j.country === 'India' && j.jobDescription.length > 500 && j.applyUrl === j.sourceUrl + '#apply'))
+  assert.ok(!jobs.some(j => /test-dont-apply|embedded-security-engineer|grc-compliance-intern|hr-specialist|pre-sales/.test(j.jobId)))
+  assert.equal(jobs.find(j => j.jobId === 'sr-hardware-security-consultant').location, 'Remote, India')
+  assert.match(jobs.find(j => j.jobId === 'cloud-security-consultant').jobDescription, /Infrastructure.*Code|cloud/i)
+})
+test('Payatu fails closed when the new public board or detail is unavailable', async () => {
+  const f = await currentPayatuFixtures(), { run } = await import('../../scraper/payatu/script.js')
+  for (const url of ['https://bandit.fit/', 'https://bandit.fit/radio-frequency']) {
+    await assert.rejects(run({ fetchText: currentPayatuFetch(f, { [url]: new Error('HTTP 503') }) }), /HTTP 503/)
+  }
+})
+test('Payatu rejects missing role fields, duplicates, unsupported pagination and empty unsignaled inventory', async () => {
+  const f = await currentPayatuFixtures(), { run } = await import('../../scraper/payatu/script.js')
+  for (const board of [
+    f.board.replace('<h2>IoT Radio Frequency Security Consultant</h2>', '<h2></h2>'),
+    f.board.replace('href="cloud-security-consultant"', 'href="radio-frequency"'),
+    f.board.replace('</body>', '<a rel="next" href="?page=2">Next</a></body>'),
+    '<title>Careers · Payatu Careers</title><h1>Open roles at Payatu</h1><div class="grid"></div>',
+  ]) await assert.rejects(run({ fetchText: currentPayatuFetch(f, { 'https://bandit.fit/': board }) }), /inventory|listing|role|pagination/i)
+})
+test('Payatu validates employer, title, location and application-form identities on each detail', async () => {
+  const f = await currentPayatuFixtures(), { run } = await import('../../scraper/payatu/script.js')
+  const url = 'https://bandit.fit/radio-frequency', detail = f.details['radio-frequency']
+  for (const changed of [
+    detail.replace('· Payatu Careers', '· Other Employer'),
+    detail.replace('<h1>IoT Radio Frequency Security Consultant</h1>', '<h1>Other role</h1>'),
+    detail.replace('action="radio-frequency/apply"', 'action="https://other.example/apply"'),
+    detail.replace('<span>· Pune</span>', '<span>· Remote</span>'),
+  ]) { assert.notEqual(changed, detail); await assert.rejects(run({ fetchText: currentPayatuFetch(f, { [url]: changed }) }), /detail|identity|location|application/i) }
+})
+test('Payatu does not infer India for a new Remote-only role and marks configured truncation incomplete', async () => {
+  const f = await currentPayatuFixtures(), { run, createPayatuScraper } = await import('../../scraper/payatu/script.js')
+  await assert.rejects(run({ fetchText: currentPayatuFetch(f, { 'https://bandit.fit/': f.board.replace('Pune · Consulting', 'Remote · Consulting') }) }), /location|geography/i)
+  const jobs = await createPayatuScraper({ maxJobs: 1 }).run({ fetchText: currentPayatuFetch(f) })
+  assert.equal(jobs.length, 1); assert.equal(jobs[0].sourceListingComplete, false)
+})
+
+test('Payatu accepts the observed static Cloudflare analytics beacon and rejects unknown job-loading scripts', async () => {
+  const f = await currentPayatuFixtures(), { run } = await import('../../scraper/payatu/script.js')
+  const { readFile } = await import('node:fs/promises')
+  const nativeBoard = await readFile(new URL('./fixtures/payatu/board-native-20261009.html', import.meta.url), 'utf8')
+  assert.equal((await run({ fetchText: currentPayatuFetch(f, { 'https://bandit.fit/': nativeBoard }) })).length, 10)
+  await assert.rejects(run({ fetchText: currentPayatuFetch(f, { 'https://bandit.fit/': f.board.replace('</body>', '<script src="/load-more-jobs.js"></script></body>') }) }), /pagination/i)
 })

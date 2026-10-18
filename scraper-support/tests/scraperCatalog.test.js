@@ -342,8 +342,7 @@ test('getScraperCatalog merges workday and official portal providers into one re
   assert.ok(sap)
   assert.equal(sap.adapter, 'script')
   assert.equal(sap.atsPlatform, 'successfactors')
-  assert.match(sap.companyCareerPage, /jobs\.sap\.com/i)
-  assert.equal(sap.companyDomain, 'jobs.sap.com')
+
 
   assert.ok(questglobal)
   assert.equal(questglobal.adapter, 'script')
@@ -1199,4 +1198,17 @@ test('buildScrapers exposes runnable Chevron, CleverTap, and CloudThat scrapers'
   assert.match(cloudthat.dryRunFile, /cloudthat[\\/]jobs\.json$/)
   assert.equal(cloudthat.provider.source, 'cloudthat')
   assert.equal(cloudthat.provider.atsPlatform, 'keka-embed-api')
+})
+
+test('getScraperCatalog exposes SAP current India search as incomplete inventory', () => {
+  const sap = getScraperCatalog().find(provider => provider.source === 'sap')
+  assert.ok(sap)
+  const sapCareerPage = new URL(sap.companyCareerPage)
+  assert.equal(sapCareerPage.origin, 'https://careers.sap.com')
+  assert.equal(sapCareerPage.pathname, '/search/')
+  assert.equal(sapCareerPage.searchParams.get('locationsearch'), 'India')
+  assert.equal(sap.companyDomain, 'careers.sap.com')
+  assert.equal(sap.sourceListingComplete, false)
+  assert.equal(sap.verifiedPublicJobCount, null)
+  assert.equal(sap.verifiedIndiaJobCount, null)
 })

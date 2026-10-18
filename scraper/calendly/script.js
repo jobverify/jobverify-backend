@@ -3,6 +3,9 @@ import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { CANONICAL_CITIES } from '../../scraper-support/utils/cities.js'
+
 import { CALENDLY_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -32,7 +35,16 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
-const decodeHtml = (value) => normalizeWhitespace(value)
+const decodeEntities = value => String(value ?? '').replace(/&(#x[\da-f]+|#\d+|amp|nbsp|quot|apos|lt|gt|ndash|mdash|rsquo|lsquo|ldquo|rdquo|hellip);/gi, (entity, key) => {
+  if (key.startsWith('#')) return String.fromCodePoint(key[1].toLowerCase() === 'x' ? parseInt(key.slice(2), 16) : Number(key.slice(1)))
+  return ({ amp: '&', nbsp: ' ', quot: '"', apos: "'", lt: '<', gt: '>', ndash: '–', mdash: '—', rsquo: '’', lsquo: '‘', ldquo: '“', rdquo: '”', hellip: '…' })[key.toLowerCase()]
+})
+const decodeHtml = value => {
+  let decoded = String(value ?? '')
+  // Greenhouse content=true returns escaped HTML with some entities escaped again.
+  for (let pass = 0; pass < 3; pass++) decoded = decodeEntities(decoded)
+  return normalizeWhitespace(decoded)
+}
 
 const collectLocationValues = (job = {}) => [
   normalizeWhitespace(job?.location?.name),
@@ -40,7 +52,7 @@ const collectLocationValues = (job = {}) => [
     ? job.offices.map((office) => normalizeWhitespace(office?.location || office?.name))
     : []),
   ...(Array.isArray(job?.metadata)
-    ? job.metadata.map((entry) => normalizeWhitespace(entry?.value))
+    ? job.metadata.filter(entry => /^(country|job country|location)$/i.test(entry?.name || '')).map((entry) => normalizeWhitespace(entry?.value))
     : []),
 ].filter(Boolean)
 
@@ -93,6 +105,24 @@ export const normalizeGreenhouseJobUrl = (value, jobId) => {
   }
 }
 
+const careersHandoff = html => [...String(html).matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>/gi)]
+  .map(match => { try { return new URL(decodeEntities(match[1])) } catch { return null } })
+  .filter(url => url?.protocol === 'https:' && ['boards.greenhouse.io', 'job-boards.greenhouse.io'].includes(url.hostname)
+    && (/^\/calendly(?:\/jobs\/\d+)?\/?$/.test(url.pathname)
+      || (url.pathname === '/embed/job_app' && url.searchParams.get('for') === 'calendly' && /^\d+$/.test(url.searchParams.get('token') || ''))))
+const careersJobIds = html => [...new Set(careersHandoff(html).map(url => url.pathname.match(/^\/calendly\/jobs\/(\d+)\/?$/)?.[1]
+  || (url.pathname === '/embed/job_app' ? url.searchParams.get('token') : null)).filter(Boolean))]
+const countryForJob = job => {
+  const values = collectLocationValues(job)
+  const india = values.some(value => hasIndiaMarker(value) || /^IN$/i.test(value)
+    || (CANONICAL_CITIES[value.split(',')[0].trim().toLowerCase()] && !/^(remote|none)$/i.test(value)))
+  const foreign = values.some(value => /\b(?:US|USA|United States|Canada|United Kingdom|UK|Singapore|Australia|Germany|Ireland|Philippines)\b/i.test(value)
+    || /^San Francisco(?: \(Hybrid\))?$/i.test(value))
+  if (india && foreign) throw new Error('Calendly contradictory public location country')
+  if (!india && !foreign) throw new Error('Calendly unresolved public location country')
+  return { country: india ? 'India' : 'foreign', location: values.find(value => hasIndiaMarker(value)) || normalizeWhitespace(job.location?.name) || values[0] }
+}
+
 export const hasOfficialCareersPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page) || ''
@@ -107,13 +137,13 @@ export const hasOfficialCareersPageSignal = (html = '') => {
       (
         normalized.includes('Filter by location')
         && normalized.includes('Filter by department')
-        && normalized.includes('Featured')
-        && /boards\.greenhouse\.io/i.test(page)
+        && careersHandoff(page).length > 0
       ) || (
         normalized.includes('Open roles')
         && normalized.includes('Take a look at our open positions and join us on our mission to make people love meetings.')
       )
     )
+    && careersHandoff(page).length > 0
     && normalized.includes('Copyright Calendly')
 }
 
@@ -126,12 +156,23 @@ export const extractIndiaJobsFromGreenhousePayload = (
     throw new Error('Calendly Greenhouse jobs API response no longer matches the expected payload')
   }
 
+  if (!Number.isSafeInteger(payload?.meta?.total) || payload.meta.total !== jobs.length) {
+    throw new Error('Calendly incomplete Greenhouse inventory: reported count disagrees')
+  }
+  const seen = new Set()
+  for (const job of jobs) {
+    if (!/^\d+$/.test(String(job?.id ?? '')) || !Number.isSafeInteger(Number(job.id)) || Number(job.id) <= 0 || seen.has(String(job.id))) {
+      throw new Error('Calendly repeated or invalid public job identity')
+    }
+    seen.add(String(job.id))
+  }
+
   return jobs.flatMap((job) => {
     const title = normalizeWhitespace(job?.title)
     const companyName = normalizeWhitespace(job?.company_name)
     const sourceUrl = normalizeGreenhouseJobUrl(job?.absolute_url, job?.id)
 
-    if (companyName && companyName.toLowerCase() !== COMPANY_NAME.toLowerCase()) {
+    if (!companyName || companyName.toLowerCase() !== COMPANY_NAME.toLowerCase()) {
       throw new Error('Calendly Greenhouse payload no longer maps to the verified company identity')
     }
 
@@ -139,8 +180,11 @@ export const extractIndiaJobsFromGreenhousePayload = (
       throw new Error('Calendly Greenhouse payload no longer exposes the verified Greenhouse detail route')
     }
 
-    const location = collectLocationValues(job).find((value) => hasIndiaMarker(value))
-    if (!location) return []
+    if (typeof job?.content !== 'string') throw new Error('Calendly malformed full public job description')
+    const jobDescription = decodeHtml(job?.content)
+    if (!jobDescription) throw new Error('Calendly incomplete public job description')
+    const { country, location } = countryForJob(job)
+    if (country !== 'India') return []
 
     return [{
       title,
@@ -157,7 +201,7 @@ export const extractIndiaJobsFromGreenhousePayload = (
       department: normalizeWhitespace(job?.departments?.[0]?.name),
       employmentType: null,
       experienceRequired: null,
-      jobDescription: decodeHtml(job?.content),
+      jobDescription,
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
@@ -178,10 +222,23 @@ export const createCalendlyScraper = () => ({
       throw new Error('Calendly verified official careers page no longer matches the trusted public surface')
     }
 
-    return extractIndiaJobsFromGreenhousePayload(
-      await fetchJson(buildGreenhouseJobsApiUrl(), { method: 'GET' }),
-      { scrapedAt: now() },
-    )
+    const payload = await fetchJson(buildGreenhouseJobsApiUrl(), { method: 'GET' })
+    const scrapedAt = now()
+    const jobs = extractIndiaJobsFromGreenhousePayload(payload, { scrapedAt })
+    const cardIds = careersJobIds(careersHtml)
+    if (cardIds.length && (cardIds.length !== payload.jobs.length || payload.jobs.some(job => !cardIds.includes(String(job.id))))) {
+      throw new Error('Calendly official careers role cards and complete API inventory disagree')
+    }
+    const last = await fetchJson(buildGreenhouseJobsApiUrl(), { method: 'GET' })
+    extractIndiaJobsFromGreenhousePayload(last, { scrapedAt })
+    const fingerprint = value => JSON.stringify([...value.jobs].sort((a, b) => Number(a.id) - Number(b.id)))
+    if (fingerprint(last) !== fingerprint(payload)) throw new Error('Calendly public inventory changed during validation')
+    return attachInventoryEvidence(jobs, {
+      status: payload.meta.total ? 'complete-inventory' : 'verified-empty',
+      surface: buildGreenhouseJobsApiUrl(), firstParty: true, listingComplete: true, pagesFetched: 3,
+      reportedTotal: payload.meta.total, indiaFacetCount: jobs.length, verifiedAt: scrapedAt,
+      reason: 'Verified Calendly Greenhouse handoff, complete total/unique identities/full descriptions, matching public career cards and stable full snapshot before country filtering.',
+    })
   },
 })
 

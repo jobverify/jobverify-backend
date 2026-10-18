@@ -3,7 +3,8 @@ import { fileURLToPath } from 'node:url'
 
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-
+import { isIndiaJob } from '../../scraper-support/utils/indiaLocationFilter.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { ALLIED_DIGITAL_SERVICES_CATALOG } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
@@ -12,260 +13,219 @@ export const PROVIDER_METADATA = ALLIED_DIGITAL_SERVICES_CATALOG
 export const SOURCE = PROVIDER_METADATA.source
 export const COMPANY = PROVIDER_METADATA.companyName
 export const ROOT_URL = 'https://www.allieddigital.net/'
-export const INDIA_HOME_URL = PROVIDER_METADATA.indiaHomeUrl
 export const CAREERS_URL = PROVIDER_METADATA.companyCareerPage
 export const HIRING_NOW_URL = PROVIDER_METADATA.hiringNowPageUrl
-export const VERIFIED_FRIENDLY_DETAIL_URL = PROVIDER_METADATA.verifiedFriendlyDetailUrl
-export const VERIFIED_BROKEN_REQUEST_DETAIL_URL = PROVIDER_METADATA.verifiedBrokenRequestDetailUrl
+export const JOBS_API_URL = PROVIDER_METADATA.jobsApiUrl
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+const PAGE_SIZE = 100
+const MAX_PAGES = 100
 
-const decodeHtml = (value) => String(value ?? '')
-  .replace(/&nbsp;/gi, ' ')
-  .replace(/&amp;/gi, '&')
-  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
-  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
-  .replace(/&#8211;|&ndash;/gi, '-')
-  .replace(/&#8212;|&mdash;/gi, '-')
-  .replace(/\u00a0/g, ' ')
-
-const normalizeWhitespace = (value) => decodeHtml(value)
+const normalizeWhitespace = (value) => String(value ?? '')
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
   .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;|\u00a0/gi, ' ')
+  .replace(/&amp;|&#0*38;/gi, '&')
+  .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+  .replace(/&#39;|&apos;|&rsquo;|&#8217;/gi, "'")
   .replace(/\s+/g, ' ')
   .trim() || null
 
-const slugify = (value) => normalizeWhitespace(value)
-  ?.toLowerCase()
-  .replace(/[^a-z0-9]+/g, '-')
-  .replace(/^-+|-+$/g, '') || null
+const attribute = (tag, name) => String(tag ?? '')
+  .match(new RegExp('\\b' + name + '\\s*=\\s*["\\\']([^"\\\']*)["\\\']', 'i'))?.[1] ?? null
 
-const toAbsoluteUrl = (value, base = HIRING_NOW_URL) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return null
-
-  try {
-    return new URL(normalized, base).toString()
-  } catch {
-    return null
-  }
+const canonicalUrl = (html) => {
+  const tag = [...String(html).matchAll(/<link\b[^>]*>/gi)]
+    .find(([link]) => attribute(link, 'rel') === 'canonical')?.[0]
+  return attribute(tag, 'href')
 }
+const pageTitle = (html) => normalizeWhitespace(String(html).match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1])
+const hasCanonicalTitle = (html, url, title) => canonicalUrl(html) === url && pageTitle(html) === title
 
-const extractHref = (html = '') => {
-  const match = String(html ?? '').match(/<a\b[^>]*href=["']([^"']+)["']/i)
-  return match?.[1] || null
-}
+export const hasOfficialRootSignal = (html = '') => hasCanonicalTitle(html, ROOT_URL, 'Home - Allied Digital')
+  && [...String(html).matchAll(/<a\b[^>]*>/gi)].some(([tag]) => attribute(tag, 'href') === CAREERS_URL)
 
-const extractTables = (html = '') => [...String(html ?? '').matchAll(/<table\b[^>]*>([\s\S]*?)<\/table>/gi)]
-  .map((match) => match[1])
+export const hasOfficialCareersSignal = (html = '') => hasCanonicalTitle(html, CAREERS_URL, 'Careers - Allied Digital')
+  && (normalizeWhitespace(html) || '').includes('Hiring Now')
+  && (normalizeWhitespace(html) || '').includes('careers@allieddigital.net')
 
-const extractRows = (tableHtml = '') => [...String(tableHtml ?? '').matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)]
-  .map((match) => match[1])
+export const hasHiringNowSignal = (html = '') => hasCanonicalTitle(html, HIRING_NOW_URL, 'Jobs - Allied Digital')
+  && /class=["'][^"']*\bawsm-job-listings\b/i.test(html)
+  && /data-listings=["']\d+["']/i.test(html)
+  && (normalizeWhitespace(html) || '').includes('Hiring Now')
 
-const extractCells = (rowHtml = '') => [...String(rowHtml ?? '').matchAll(/<(td|th)\b[^>]*>([\s\S]*?)<\/\1>/gi)]
-  .map((match) => match[2])
-
-const normalizeExperience = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return null
-
-  if (/^\d+\s*-\s*\d+$/.test(normalized)) {
-    return `${normalized.replace(/\s*-\s*/g, '-')} years`
-  }
-
-  return normalized
-}
-
-const normalizeLocation = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return null
-
-  if (/preferably\s+mumbai/i.test(normalized)) return 'Mumbai, India'
-  if (/india/i.test(normalized)) return normalized
-
-  return `${normalized}, India`
-}
-
-const normalizeRemoteStatus = () => 'On-site'
-
-const isRequestDetailUrl = (value) => /\/jobdetails\?requestid=\d+/i.test(String(value ?? ''))
-
-const buildFriendlyListing = (cells = []) => {
-  if (cells.length < 5) return null
-
-  const department = normalizeWhitespace(cells[0])
-  const title = normalizeWhitespace(cells[1])
-  const experienceRequired = normalizeExperience(cells[2])
-  const location = normalizeLocation(cells[3])
-  const sourceUrl = toAbsoluteUrl(extractHref(cells[4]))
-  const jobId = slugify(title)
-
-  if (!department || !title || !location || !sourceUrl || !jobId) return null
-
-  return {
-    title,
-    company: COMPANY,
-    department,
-    location,
-    city: normalizeCity(location.split(',')[0] || null),
-    country: 'India',
-    jobId,
-    requisitionId: jobId,
-    sourceUrl,
-    applyUrl: sourceUrl,
-    employmentType: null,
-    experienceRequired,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: `Department: ${department}`,
-    remoteStatus: normalizeRemoteStatus(),
-  }
-}
-
-const buildRequestListing = (cells = []) => {
-  if (cells.length < 5) return null
-
-  const requestId = normalizeWhitespace(cells[0])
-  const department = normalizeWhitespace(cells[1])
-  const title = normalizeWhitespace(cells[2])
-  const experienceRequired = normalizeExperience(cells[3])
-  const location = normalizeLocation(cells[4])
-  const rawDetailUrl = toAbsoluteUrl(extractHref(cells[0]))
-
-  if (!requestId || !department || !title || !location || !/^\d+$/.test(requestId)) return null
-
-  const sourceUrl = isRequestDetailUrl(rawDetailUrl) ? HIRING_NOW_URL : rawDetailUrl || HIRING_NOW_URL
-
-  return {
-    title,
-    company: COMPANY,
-    department,
-    location,
-    city: normalizeCity(location.split(',')[0] || null),
-    country: 'India',
-    jobId: requestId,
-    requisitionId: requestId,
-    sourceUrl,
-    applyUrl: sourceUrl,
-    employmentType: null,
-    experienceRequired,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    postingDate: null,
-    closingDate: null,
-    jobDescription: `Request ID: ${requestId}\nDepartment: ${department}`,
-    remoteStatus: normalizeRemoteStatus(),
-  }
-}
-
-export const hasOfficialRootSignal = (html = '') => {
-  const page = String(html ?? '')
-
-  return page.includes('AlliedWebGeoLoc/GeoHandler.ashx')
-    && page.includes('https://www.allieddigital.net/in/')
-    && page.includes('https://www.allieddigital.net/us/')
-    && page.includes('https://www.allieddigital.net/row/')
-}
-
-export const hasOfficialCareersSignal = (html = '') => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page) || ''
-
-  return /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.allieddigital\.net\/in\/careers\/["']/i.test(page)
-    && normalized.includes('IT Jobs in India | Career at Allied Digital Services Ltd')
-    && normalized.includes('Hiring Now')
-    && normalized.includes('Join our team')
-}
-
-export const hasHiringNowSignal = (html = '') => {
-  const page = String(html ?? '')
-  const normalized = normalizeWhitespace(page) || ''
-
-  return /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.allieddigital\.net\/in\/careers\/hiring-now\/["']/i.test(page)
-    && normalized.includes('Request ID')
-    && normalized.includes('Designation')
-    && normalized.includes('Location')
-    && normalized.includes('careers@allieddigital.net')
-    && (normalized.includes('Click here to view more') || page.includes('requestid='))
-}
-
-export const extractHiringNowListings = (html = '') => {
-  if (!hasHiringNowSignal(html)) {
-    throw new Error('Expected verified Allied Digital Services Hiring Now surface with public openings')
-  }
-
-  const jobs = []
-
-  for (const tableHtml of extractTables(html)) {
-    const rows = extractRows(tableHtml)
-    if (rows.length < 2) continue
-
-    const headerCells = extractCells(rows[0]).map((cell) => normalizeWhitespace(cell))
-    const isRequestTable = headerCells.includes('Request ID')
-    const isFriendlyTable = headerCells.includes('Department')
-      && headerCells.includes('Designation')
-      && headerCells.includes('Experience')
-      && headerCells.includes('Location')
-
-    if (!isRequestTable && !isFriendlyTable) continue
-
-    for (const rowHtml of rows.slice(1)) {
-      const cells = extractCells(rowHtml)
-      const listing = isRequestTable
-        ? buildRequestListing(cells)
-        : buildFriendlyListing(cells)
-
-      if (listing) jobs.push(listing)
-    }
-  }
-
-  if (jobs.length === 0) {
-    throw new Error('Expected verified Allied Digital Services Hiring Now surface with public openings')
-  }
-
-  return jobs
-}
-
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
+const requestOptions = {
   headers: {
     'User-Agent': USER_AGENT,
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    Accept: 'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8',
   },
   label: SOURCE,
   timeoutMs: 15000,
-})
+}
+const defaultFetchText = (url) => fetchTextWithRetry(url, requestOptions)
 
-export const createAlliedDigitalServicesScraper = ({
-  now = () => new Date().toISOString(),
-} = {}) => ({
-  async run({ fetchText = defaultFetchText, now: overrideNow } = {}) {
+export const createWordPressJobsPageFetch = ({ fetchImpl = fetch } = {}) => async (url) => {
+  let response
+  const text = await fetchTextWithRetry(url, {
+    ...requestOptions,
+    fetchImpl: async (...args) => {
+      response = await fetchImpl(...args)
+      return response
+    },
+  })
+  const total = response.headers.get('x-wp-total')
+  const totalPages = response.headers.get('x-wp-totalpages')
+  if (!/^\d+$/.test(total ?? '') || !/^\d+$/.test(totalPages ?? '')) {
+    throw new Error('Allied Digital Services WordPress inventory count headers missing')
+  }
+  if (response.url && new URL(response.url).origin !== new URL(JOBS_API_URL).origin) {
+    throw new Error('Allied Digital Services WordPress inventory redirected off the official host')
+  }
+  return { records: JSON.parse(text), total: Number(total), totalPages: Number(totalPages) }
+}
+const defaultFetchJobsPage = createWordPressJobsPageFetch()
+
+const officialJobUrl = (value) => {
+  try {
+    const url = new URL(value)
+    return url.origin === new URL(ROOT_URL).origin
+      && /^\/jobs\/[^/]+\/$/.test(url.pathname)
+      && !url.search && !url.hash && !url.username && !url.password
+  } catch {
+    return false
+  }
+}
+
+const extractListingCards = (html) => {
+  const cards = [...String(html).matchAll(/<div\b[^>]*\bid=["']awsm-(?:grid|list)-item-(\d+)["'][^>]*>\s*(<a\b[^>]*>)/gi)]
+    .map((match) => ({ id: Number(match[1]), link: attribute(match[2], 'href') }))
+  const capacity = Number(String(html).match(/data-listings=["'](\d+)["']/i)?.[1])
+  if (!cards.length || !Number.isInteger(capacity) || capacity <= 0) {
+    throw new Error('Allied Digital Services verified opening listing changed')
+  }
+  return { cards, capacity }
+}
+
+const fetchCompleteInventory = async (fetchJobsPage, listingHtml) => {
+  const { cards, capacity } = extractListingCards(listingHtml)
+  const records = []
+  const ids = new Set()
+  let total
+  let totalPages
+  for (let page = 1; ; page += 1) {
+    const result = await fetchJobsPage(JOBS_API_URL + '?per_page=' + PAGE_SIZE + '&page=' + page)
+    if (!Number.isInteger(result.total) || result.total <= 0
+      || !Number.isInteger(result.totalPages) || result.totalPages <= 0
+      || !Array.isArray(result.records)) {
+      throw new Error('Allied Digital Services WordPress inventory count or records changed')
+    }
+    if (page === 1) {
+      total = result.total
+      totalPages = result.totalPages
+      if (totalPages !== Math.ceil(total / PAGE_SIZE) || totalPages > MAX_PAGES) {
+        throw new Error('Allied Digital Services WordPress inventory pagination page count changed')
+      }
+    } else if (result.total !== total || result.totalPages !== totalPages) {
+      throw new Error('Allied Digital Services WordPress inventory changed during pagination')
+    }
+    const expectedCount = Math.min(PAGE_SIZE, total - (page - 1) * PAGE_SIZE)
+    if (result.records.length !== expectedCount) {
+      throw new Error('Allied Digital Services incomplete WordPress inventory page ' + page)
+    }
+    for (const record of result.records) {
+      if (!Number.isInteger(record.id) || record.id <= 0 || record.type !== 'awsm_job_openings'
+        || record.status !== 'publish' || !normalizeWhitespace(record.title?.rendered)
+        || !officialJobUrl(record.link)) {
+        throw new Error('Allied Digital Services WordPress inventory record changed')
+      }
+      if (ids.has(record.id)) throw new Error('Allied Digital Services duplicate WordPress inventory job ' + record.id)
+      ids.add(record.id)
+      records.push(record)
+    }
+    if (page === totalPages) break
+  }
+  if (records.length !== total || cards.length !== Math.min(capacity, total)
+    || new Set(cards.map((card) => card.id)).size !== cards.length
+    || cards.some((card) => !records.some((record) => record.id === card.id && record.link === card.link))) {
+    throw new Error('Allied Digital Services incomplete WordPress inventory or opening listing mismatch')
+  }
+  return records
+}
+
+const extractSpecification = (html, name) => {
+  const block = String(html).match(new RegExp('<div\\b[^>]*class=["\\\'][^"\\\']*\\bawsm-job-specification-job-' + name + '\\b[^"\\\']*["\\\'][^>]*>([\\s\\S]*?)<\\/div>', 'i'))?.[1]
+  return normalizeWhitespace(block?.match(/<span\b[^>]*class=["'][^"']*\bawsm-job-specification-term\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/i)?.[1])
+}
+
+const extractVerifiedDetail = (html, record) => {
+  const fail = () => { throw new Error('Allied Digital Services verified job detail changed: ' + record.link) }
+  if (canonicalUrl(html) !== record.link || !/\bawsm-job-form\b/.test(html)) fail()
+  const input = [...String(html).matchAll(/<input\b[^>]*>/gi)]
+    .find(([tag]) => attribute(tag, 'name') === 'awsm_job_id')?.[0]
+  if (attribute(input, 'value') !== String(record.id)) fail()
+  let postings
+  try {
+    postings = [...String(html).matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)]
+      .flatMap((match) => {
+        const json = JSON.parse(match[1])
+        return Array.isArray(json) ? json : json['@graph'] || [json]
+      })
+      .filter((item) => item['@type'] === 'JobPosting')
+  } catch {
+    fail()
+  }
+  const posting = postings?.[0]
+  if (postings?.length !== 1 || normalizeWhitespace(posting.title) !== normalizeWhitespace(record.title.rendered)
+    || !/^Allied Digital(?: Services(?: Ltd\.?)?)?$/.test(posting.hiringOrganization?.name || '')) fail()
+  try {
+    if (new URL(posting.hiringOrganization.sameAs).origin !== new URL(ROOT_URL).origin) fail()
+  } catch {
+    fail()
+  }
+  const address = posting.jobLocation?.address
+  const location = typeof address === 'string' ? normalizeWhitespace(address)
+    : normalizeWhitespace([address?.addressLocality, address?.addressRegion, address?.addressCountry].filter(Boolean).join(', '))
+  const country = typeof address === 'object' ? address?.addressCountry : null
+  const department = extractSpecification(html, 'category')
+  if (!location || !department) fail()
+  if (/^remote$/i.test(location) && !/^(?:India|IN|IND)$/i.test(country || '')) return null
+  if (!isIndiaJob({ location, country })) return null
+  const indiaLocation = /\bindia\b/i.test(location) ? location : location + ', India'
+  return {
+    title: normalizeWhitespace(posting.title), company: COMPANY, department,
+    location: indiaLocation, city: normalizeCity(location), country: 'India',
+    jobId: String(record.id), requisitionId: String(record.id),
+    sourceUrl: record.link, applyUrl: record.link,
+    employmentType: extractSpecification(html, 'type'),
+    experienceRequired: null, minimumQualification: null, preferredQualification: null,
+    requiredSkills: [], postingDate: posting.datePosted || null, closingDate: posting.validThrough || null,
+    jobDescription: normalizeWhitespace(posting.description),
+    remoteStatus: 'On-site',
+  }
+}
+
+export const createAlliedDigitalServicesScraper = ({ now = () => new Date().toISOString() } = {}) => ({
+  async run({ fetchText = defaultFetchText, fetchJobsPage = defaultFetchJobsPage, now: overrideNow } = {}) {
     const rootHtml = await fetchText(ROOT_URL)
-    if (!hasOfficialRootSignal(rootHtml)) {
-      throw new Error(`Allied Digital Services verified root surface changed: ${ROOT_URL}`)
-    }
-
+    if (!hasOfficialRootSignal(rootHtml)) throw new Error('Allied Digital Services verified root surface changed: ' + ROOT_URL)
     const careersHtml = await fetchText(CAREERS_URL)
-    if (!hasOfficialCareersSignal(careersHtml)) {
-      throw new Error(`Allied Digital Services verified careers surface changed: ${CAREERS_URL}`)
+    if (!hasOfficialCareersSignal(careersHtml)) throw new Error('Allied Digital Services verified careers surface changed: ' + CAREERS_URL)
+    const listingHtml = await fetchText(HIRING_NOW_URL)
+    if (!hasHiringNowSignal(listingHtml)) throw new Error('Allied Digital Services verified Hiring Now surface changed: ' + HIRING_NOW_URL)
+    const inventory = await fetchCompleteInventory(fetchJobsPage, listingHtml)
+    const jobs = []
+    for (const record of inventory) {
+      const job = extractVerifiedDetail(await fetchText(record.link), record)
+      if (job) jobs.push({ ...job, source: SOURCE, link: job.applyUrl, scrapedAt: (overrideNow || now)() })
     }
-
-    const hiringNowHtml = await fetchText(HIRING_NOW_URL)
-    if (!hasHiringNowSignal(hiringNowHtml)) {
-      throw new Error(`Allied Digital Services verified Hiring Now surface changed: ${HIRING_NOW_URL}`)
-    }
-
-    return extractHiringNowListings(hiringNowHtml).map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt: (overrideNow || now)(),
-    }))
+    return attachInventoryEvidence(jobs, {
+      status: 'complete-inventory', surface: JOBS_API_URL, firstParty: true, listingComplete: true,
+      pagesFetched: Math.ceil(inventory.length / PAGE_SIZE), reportedTotal: inventory.length,
+      indiaFacetCount: jobs.length, verifiedAt: (overrideNow || now)(),
+      reason: 'count-checked-wordpress-inventory-and-verified-details',
+    })
   },
 })
 
@@ -273,12 +233,7 @@ export const run = async (options = {}) => createAlliedDigitalServicesScraper().
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
-  const isDryRun = process.argv.includes('--dry-run')
   const jobs = await run()
-
-  if (isDryRun) {
-    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-  } else {
-    await saveToDB(jobs, SOURCE)
-  }
+  if (process.argv.includes('--dry-run')) saveToFile(jobs, path.join(currentDir, 'jobs.json'))
+  else await saveToDB(jobs, SOURCE)
 }

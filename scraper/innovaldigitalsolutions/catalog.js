@@ -1,23 +1,21 @@
-﻿export const INNOVAL_DIGITAL_SOLUTIONS_CATALOG = {
+export const INNOVAL_DIGITAL_SOLUTIONS_CATALOG = {
   source: 'innovaldigitalsolutions',
   companyName: 'Innoval Digital Solutions',
   officialBrandName: 'Innoval Digital Solutions',
   adapter: 'script',
   modulePath: '../../scraper/innovaldigitalsolutions/script.js',
-  companyCareerPage: 'https://www.ivldsp.com/company/',
+  companyCareerPage: 'https://career.ivldsp.in/portal/',
+  companyPageUrl: 'https://www.ivldsp.com/company/?tab=careers',
   companyDomain: 'ivldsp.com',
-  atsPlatform: 'official-company-site-no-public-careers',
+  atsPlatform: 'official-company-careers-portal',
   countryFilter: 'India',
-  paginationStrategy: 'verified-company-page-recruiting-teaser-only',
-  extractionStrategy:
-    'verified-first-party-company-page+verified-recruiting-teaser+no-trustworthy-inline-openings-return-empty',
+  paginationStrategy: 'complete-server-rendered-job-cards-no-pagination',
+  extractionStrategy: 'verified-company-client-cta+secure-portal-redirect+all-cards-and-application-details+active-india',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-08-02',
-  verifiedSurfaceSummary:
-    'Verified on August 2, 2026 that https://www.ivldsp.com/company/ is the live first-party Innoval Digital Solutions company/about surface, that it still exposes Careers and Life @ IVL navigation alongside the SAP BTP company overview, and that the verified exact-name first-party page does not expose a trustworthy inline public openings list to scrape directly.',
+  verifiedOn: '2026-10-09',
+  verifiedSurfaceSummary: 'Verified the current first-party company Careers tab links Explore Current Openings through its public client application and secure redirect to https://career.ivldsp.in/portal/. The complete server-rendered cards expose public detail and application forms; every card, ID, detail link and detail record is reconciled before selecting active India openings. The portal publishes no numeric total or pagination control; missing rows or newly introduced pagination fail closed.',
   dryRunFile: 'innovaldigitalsolutions/jobs.json',
 }
 
 export default INNOVAL_DIGITAL_SOLUTIONS_CATALOG
-

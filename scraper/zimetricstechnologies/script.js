@@ -53,7 +53,7 @@ export const extractJobsFromHtml = (html = '') => {
   const jobs = []
   const seen = new Set()
   const defaultApplyUrl = new URL('#frmsub', CAREERS_URL).toString()
-  const cardPattern = /<p class="elementor-heading-title elementor-size-default">([\s\S]*?)<\/p>[\s\S]{0,500}?<p class="elementor-heading-title elementor-size-default">\|\s*([^<|]+?)\s*\|<\/p>[\s\S]{0,500}?(?:<a[^>]+href="([^"]*#frmsub|#frmsub)"[\s\S]{0,250}?Apply Now|<p class="elementor-heading-title elementor-size-default">\s*Apply Now\s*<\/p>)/gi
+  const cardPattern = /<p class="elementor-heading-title elementor-size-default">((?:(?!<\/?p\b)[\s\S])*?)<\/p>[\s\S]{0,500}?<p class="elementor-heading-title elementor-size-default">\|\s*([^<|]+?)\s*\|<\/p>[\s\S]{0,500}?(?:<a[^>]+href="([^"]*#frmsub|#frmsub)"[\s\S]{0,250}?Apply Now|<p class="elementor-heading-title elementor-size-default">\s*Apply Now\s*<\/p>)/gi
 
   for (const match of html.matchAll(cardPattern)) {
     const titleLine = normalizeWhitespace(match[1])

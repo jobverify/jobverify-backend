@@ -16,25 +16,25 @@ test('KGISL is registered as a verified first-party candidate portal scraper wit
   assert.equal(provider.countryFilter, 'India')
   assert.equal(
     provider.paginationStrategy,
-    'homepage-plus-careers-page-plus-current-openings-page-plus-first-party-candidate-portal-with-wrapper-timeout-fallback',
+    'official-wrapper-handoff-plus-current-client-full-array-and-all-india-details',
   )
   assert.equal(
     provider.extractionStrategy,
-    'verified-official-homepage+verified-careers-page+verified-current-openings-iframe+first-party-inline-job-cards+candidate-portal-fallback-when-kgisl-wrappers-time-out',
+    'verified-first-party-careerx-client+public-vacancies-array+matched-india-details+legacy-inline-portal',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.companyDomain, 'kgisl.com')
-  assert.equal(provider.verifiedOn, '2026-08-07')
-  assert.equal(provider.verifiedPublicJobCount, 17)
+  assert.equal(provider.verifiedOn, '2026-10-09')
+  assert.equal(provider.verifiedPublicJobCount, 20)
   assert.equal(
     provider.verifiedSampleJobTitle,
-    'Senior Cloud Infrastructure & Security Engineer - Solution Architect',
+    'Senior Business Analyst - Project Lead',
   )
-  assert.match(provider.verifiedSampleJobUrl, /careerxai\.kgisl\.com\/resume\/webportal_vacancy_apply_resume/i)
-  assert.match(provider.verifiedSurfaceSummary, /Friday, August 7, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /17 public inline job cards/i)
-  assert.match(provider.verifiedSurfaceSummary, /wrapper pages under https:\/\/www\.kgisl\.com\/ returned upstream 500\/504 errors and timeouts/i)
+  assert.equal(provider.verifiedSampleJobUrl, 'https://careerx.kgisl.com/#/careers/apply/V101094')
+  assert.equal(provider.verifiedGlobalInventoryCount, 23)
+  assert.match(provider.verifiedSurfaceSummary, /October 9, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /20 explicitly in India and 3 in Malaysia/i)
   assert.match(provider.modulePath, /kgisl[\\/]script\.js$/i)
   assert.equal(Object.prototype.hasOwnProperty.call(companyAliases, 'KGISL'), false)
 })

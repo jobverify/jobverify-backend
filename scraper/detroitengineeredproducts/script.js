@@ -13,9 +13,9 @@ const config = loadConfig(currentDir)
 export const SOURCE = 'detroitengineeredproducts'
 export const COMPANY = 'Detroit Engineered Products'
 export const HOMEPAGE_URL = 'https://depusa.com/'
-export const CAREERS_PAGE_URL = 'https://depusa.com/index.php/company/careers'
-export const INDIA_CAREERS_URL = 'https://depusa.com/index.php/careers-india'
-export const USA_CAREERS_URL = 'https://depusa.com/index.php/careers-usa'
+export const CAREERS_PAGE_URL = 'https://depusa.com/company/careers'
+export const INDIA_CAREERS_URL = 'https://depusa.com/careers-india'
+export const USA_CAREERS_URL = 'https://depusa.com/careers-usa'
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
@@ -138,6 +138,7 @@ const getCareerPortalApplyUrl = (job) => normalizeWhitespace(
   ?? job?.apply_job
   ?? job?.campus_portal_login_url
   ?? job?.campus_portal_job_details_url
+  ?? job?.apply_job_login
   ?? null,
 )
 
@@ -146,6 +147,7 @@ const getCareerPortalSourceUrl = (job) => normalizeWhitespace(
   ?? job?.apply_job_monster
   ?? job?.apply_job
   ?? job?.campus_portal_login_url
+  ?? job?.apply_job_login
   ?? null,
 )
 
@@ -162,7 +164,7 @@ export const hasOfficialHomepageSignal = (html) => {
   return /<title>\s*(?:Home(?:\s*[|-]\s*Detroit Engineered Products(?:\s*\(DEP\))?)?|Detroit Engineered Products)\s*<\/title>/i.test(rawHtml)
     && /meta property=["']og:url["'] content=["']https:\/\/depusa\.com\/["']/i.test(rawHtml)
     && hasHref(rawHtml, CAREERS_PAGE_URL)
-    && hasHref(rawHtml, 'https://depusa.com/index.php/company/about-us')
+    && hasHref(rawHtml, 'https://depusa.com/company/about-us')
     && (normalized.includes('dep usa') || normalized.includes('detroit engineered products'))
 }
 
@@ -317,7 +319,14 @@ const collectIndiaJobs = async ({ fetchJson, widgetConfig, maxJobs }) => {
       throw new Error('Response is not the verified public CEIPAL career portal API for DEP India careers')
     }
 
-    jobs.push(...extractIndiaJobs(payload))
+    const indiaJobs = extractIndiaJobs(payload)
+    const indiaOpeningCount = payload.results.filter((job) =>
+      /india/i.test(normalizeWhitespace(job?.country) || ''),
+    ).length
+    if (indiaJobs.length !== indiaOpeningCount) {
+      throw new Error('DEP India career portal contract changed: unmapped India opening(s)')
+    }
+    jobs.push(...indiaJobs)
 
     if (maxJobs && jobs.length >= maxJobs) {
       return jobs.slice(0, maxJobs)

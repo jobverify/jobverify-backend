@@ -112,14 +112,16 @@ test('Intech Creative Services local catalog captures the verified INTECH loop-g
   assert.equal(provider.officialBrandName, 'The INTECH Group')
   assert.equal(provider.companyCareerPage, 'https://theintechgroup.com/career/')
   assert.equal(provider.atsPlatform, 'official-company-careers')
-  assert.equal(provider.paginationStrategy, 'single-loop-grid-careers-page')
+  assert.equal(provider.paginationStrategy, 'elementor-load-more-pages+published-rest-count')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+elementor-loop-grid-job-cards',
+    'verified-first-party-paged-cards+published-identity-inventory+native-job-details',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
+  assert.equal(provider.verifiedOn, '2026-10-09')
   assert.match(provider.verifiedSurfaceSummary, /At INTECH Creative Services/i)
-  assert.match(provider.verifiedSurfaceSummary, /Assistant Consultant - Oracle Fusion/i)
+  assert.match(provider.verifiedSurfaceSummary, /coverage-gap/i)
+  assert.equal(provider.verifiedPublishedJobCount, 23)
+  assert.equal(provider.verifiedIndiaJobCount, 20)
 
   assertCatalogMatchesBacklogRow({
     provider,

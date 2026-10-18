@@ -18,7 +18,7 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
 const CAREER_LIKE_LINK_PATTERN =
-  /href=["'](?:https:\/\/www\.lji\.io)?\/(?:careers?|jobs?|join-us|work-with-us|openings?|vacanc(?:y|ies))(?:[\/#?][^"']*)?["']/i
+  /href=["'](?:https:\/\/(?:www\.)?lji\.io)?\/(?:careers?|jobs?|join-us|work-with-us|openings?|vacanc(?:y|ies))(?:[\/#?][^"']*)?["']/i
 
 const PUBLIC_JOBS_SIGNAL_PATTERNS = [
   /"@type"\s*:\s*"JobPosting"/i,
@@ -83,9 +83,22 @@ const defaultFetchPage = async (url) => {
 export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml).toLowerCase()
-
-  return /<title>\s*Loyalty Juggernaut\.\s*Transform loyalty into the enterprise growth engine\.\s*<\/title>/i.test(rawHtml)
+  const legacyIdentity = /<title>\s*Loyalty Juggernaut\.\s*Transform loyalty into the enterprise growth engine\.\s*<\/title>/i.test(rawHtml)
     && HOMEPAGE_DESCRIPTION_PATTERN.test(rawHtml)
+  const currentIdentity = /<title>\s*Loyalty Juggernaut\s*(?:·|&middot;)\s*Loyalty as an Enterprise Growth Engine\s*<\/title>/i.test(rawHtml)
+    && /<link[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/(?:www\.)?lji\.io\/["']/i.test(rawHtml)
+    && [...rawHtml.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].some((match) => {
+      try {
+        const organization = JSON.parse(match[1])
+        return organization['@type'] === 'Organization'
+          && organization.name === 'Loyalty Juggernaut, Inc.'
+          && /^https:\/\/(?:www\.)?lji\.io\/?$/.test(organization.url)
+      } catch {
+        return false
+      }
+    })
+
+  return (legacyIdentity || currentIdentity)
     && /alt="Loyalty Juggernaut"/i.test(rawHtml)
     && /href="\/about-us"/i.test(rawHtml)
     && /href="\/contact-us"/i.test(rawHtml)

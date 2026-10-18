@@ -179,10 +179,17 @@ export const createAmeyoScraper = ({
     fetchText = defaultFetchText,
     fetchJson = defaultFetchJson,
   } = {}) {
-    const homepagePage = await fetchPage(HOMEPAGE_URL)
-    const homepageHtml = homepagePage.html
+    let homepagePage, homepageTimedOut = false
+    try {
+      homepagePage = await fetchPage(HOMEPAGE_URL)
+    } catch (error) {
+      if (!['UND_ERR_CONNECT_TIMEOUT', 'ETIMEDOUT'].includes(error?.cause?.code || error?.code)
+        && error?.name !== 'TimeoutError') throw error
+      homepageTimedOut = true
+    }
+    const homepageHtml = homepagePage?.html
 
-    if (!hasOfficialHomepageSignal(homepageHtml) && !hasExpectedHomepageOutageSignal(homepagePage)) {
+    if (!homepageTimedOut && !hasOfficialHomepageSignal(homepageHtml) && !hasExpectedHomepageOutageSignal(homepagePage)) {
       throw new Error('Ameyo verified homepage handoff no longer matches the trusted public surface')
     }
 

@@ -218,6 +218,27 @@ test('Loyalty Juggernaut fails closed when the verified homepage, about page, or
 
 const currentAboutPage = `<html><head><title>About Us · Loyalty Juggernaut</title><meta name="description" content="Loyalty Juggernaut, founded 2015 in Palo Alto. 200+ people across 7 offices, building the loyalty operating layer the world&#39;s largest programs run on."></head><body><script type="application/ld+json">{"@type":"Organization","name":"Loyalty Juggernaut, Inc.","url":"https://lji.io"}</script><h1>Founded in Silicon Valley · 2015</h1><p>Leading the next era of enterprise loyalty.</p><p>Global headquarters: Palo Alto, CA</p><a href="/contact-us">Contact Us</a></body></html>`
 
+test('Loyalty Juggernaut validates the current homepage identity and detects apex-domain careers links', async () => {
+  const loyalty = await loadModule()
+  const homepage = `<html><head><title>Loyalty Juggernaut · Loyalty as an Enterprise Growth Engine</title>
+    <link rel="canonical" href="https://lji.io/" />
+    <script type="application/ld+json">{"@type":"Organization","name":"Loyalty Juggernaut, Inc.","url":"https://lji.io"}</script>
+    </head><body><img alt="Loyalty Juggernaut" /><a href="/about-us">About</a><a href="/contact-us">Contact</a>
+    <p>Enterprise loyalty platform. Agentic AI. Real-time intelligence. Built on GRAVTY</p></body></html>`
+  assert.equal(loyalty.hasOfficialHomepageSignal(homepage), true)
+  assert.equal(loyalty.hasOfficialHomepageSignal(homepage.replace('"name":"Loyalty Juggernaut, Inc."', '"name":"Unrelated"')), false)
+  assert.equal(loyalty.hasOfficialHomepageSignal(homepage.replace('href="https://lji.io/"', 'href="https://unrelated.example/"')), false)
+  const withCareers = homepage.replace('</body>', '<a href="https://lji.io/careers">Careers</a></body>')
+  assert.equal(loyalty.hasFirstPartyCareerLikeLink(withCareers), true)
+  assert.deepEqual(await loyalty.createLoyaltyJuggernautScraper().run({
+    fetchPage: async (url) => ({ status: loyalty.CAREERS_ROUTE_URLS.includes(url) ? 404 : 200,
+      html: url === loyalty.HOMEPAGE_URL ? homepage : url === loyalty.ABOUT_URL ? currentAboutPage : MISSING_ROUTE_HTML }),
+  }), [])
+  await assert.rejects(loyalty.createLoyaltyJuggernautScraper().run({
+    fetchPage: async () => ({ status: 200, html: withCareers }),
+  }), /homepage now exposes a first-party careers or public jobs surface/)
+})
+
 test('Loyalty Juggernaut validates the current about-page branding while checking all careers routes for jobs', async () => {
   const loyalty = await loadModule()
   const urls = []

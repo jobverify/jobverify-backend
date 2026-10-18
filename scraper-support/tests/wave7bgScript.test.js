@@ -288,68 +288,17 @@ test('PubMatic scraper accepts the current grouped postings layout and updated j
   )
 })
 
-test('Juego Studio scraper returns normalized India openings from the verified first-party careers page', async () => {
+test('Juego Studio current run rejects legacy opening cards without current job identity, country and full JD proof', async () => {
   const juegoStudio = await loadModule('../../scraper/juegostudio/script.js')
-
   assert.equal(juegoStudio.hasOfficialCareersSignal(juegoStudioCareersHtml), true)
   assert.deepEqual(
     juegoStudio.extractOpenPositions(juegoStudioCareersHtml).map((job) => job.title),
     ['3D Artist I / II', 'UI UX Designer', 'Lead Animator'],
   )
-
-  const jobs = await juegoStudio.createJuegoStudioScraper({
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async (url) => {
-      assert.equal(url, juegoStudio.CAREERS_URL)
-      return juegoStudioCareersHtml
-    },
-  })
-
-  assert.deepEqual(
-    jobs.map((job) => ({
-      title: job.title,
-      location: job.location,
-      city: job.city,
-      country: job.country,
-      department: job.department,
-      experienceRequired: job.experienceRequired,
-      applyUrl: job.applyUrl,
-      scrapedAt: job.scrapedAt,
-    })),
-    [
-      {
-        title: '3D Artist I / II',
-        location: 'Bangalore, Karnataka, India',
-        city: 'Bangalore',
-        country: 'India',
-        department: 'Modelling',
-        experienceRequired: '2- 4 years',
-        applyUrl: 'https://jhub.juegostudio.com/jobs/3d-artist',
-        scrapedAt: FIXED_SCRAPED_AT,
-      },
-      {
-        title: 'Lead Animator',
-        location: 'Bangalore, Karnataka, India',
-        city: 'Bangalore',
-        country: 'India',
-        department: 'Animation',
-        experienceRequired: '6-8 years',
-        applyUrl: 'https://jhub.juegostudio.com/jobs/lead-animator',
-        scrapedAt: FIXED_SCRAPED_AT,
-      },
-      {
-        title: 'UI UX Designer',
-        location: 'Bangalore, Karnataka, India',
-        city: 'Bangalore',
-        country: 'India',
-        department: 'UI Design',
-        experienceRequired: '5+ years',
-        applyUrl: 'https://jhub.juegostudio.com/jobs/ui-ux-designer',
-        scrapedAt: FIXED_SCRAPED_AT,
-      },
-    ],
+  await assert.rejects(
+    juegoStudio.createJuegoStudioScraper({ now: () => FIXED_SCRAPED_AT }).run({
+      fetchText: async () => juegoStudioCareersHtml,
+    }),
+    /Verified LinkedIn/,
   )
-  assert.equal(jobs[0].jobId, '3d-artist-i-ii')
-  assert.equal(jobs[2].positionTitle, 'Senior UI-Designer')
 })

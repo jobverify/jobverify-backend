@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { withRetry } from '../../scraper-support/utils/retry.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import { SHORE_INFOTECH_INDIA_CATALOG } from './catalog.js'
 
@@ -95,14 +96,21 @@ export const hasOfficialHomepageSignal = (html) => {
     && rawLower.includes('sla-backed outcomes')
     && rawLower.includes('polaris platform')
 
-  return hasLegacyBodyIdentity || hasCurrentHeadIdentity
+  const hasDigitalServicesIdentity = /<title>\s*Managed Digital Services (?:&|&amp;) AI-Enabled Ops \| Shore Group\s*<\/title>/i.test(page)
+    && /<meta\b[^>]+property=["']og:site_name["'][^>]+content=["']Shore Group["']/i.test(page)
+    && /<link\b[^>]+rel=["']canonical["'][^>]+href=["']https:\/\/www\.shoregrp\.com\/?["']/i.test(page)
+    && normalized.includes('managed digital services to simplify your operations.')
+    && normalized.includes('polaris platform')
+    && normalized.includes('end-to-end ownership')
+    && normalized.includes('sla-backed')
+  return hasLegacyBodyIdentity || hasCurrentHeadIdentity || hasDigitalServicesIdentity
 }
 
 export const hasOfficialContactSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeText(page)
 
-  return /Schedule a Free Discovery Call \| Shore Group/i.test(page)
+  return /Schedule a Free (?:Operations )?Discovery Call \| Shore Group/i.test(page)
     && normalized.includes('we respond within 24 hours')
     && normalized.includes("schedule your discovery call and let's discuss how we can solve your biggest operational or strategic challenge.")
     && normalized.includes('hyderabad, india')
@@ -152,7 +160,7 @@ export const createShoreInfotechIndiaScraper = () => ({
       }
     }
 
-    return []
+    return attachInventoryEvidence([], { status: 'discovery-only', surface: HOMEPAGE_URL, firstParty: true, listingComplete: false, pagesFetched: 2 + CAREERS_ROUTE_URLS.length, reportedTotal: null, indiaFacetCount: null, verifiedAt: new Date().toISOString(), reason: 'verified-company-and-india-office-public-careers-routes-not-found' })
   },
 })
 

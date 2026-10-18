@@ -42,7 +42,7 @@ test('Amicorp local catalog captures the verified first-party careers hub and de
   assert.equal(provider.companyCareerPage, 'https://amicorp.com/ami-news/careers/')
   assert.equal(provider.homepageUrl, 'https://amicorp.com/')
   assert.equal(provider.careersPageUrl, 'https://amicorp.com/ami-news/careers/')
-  assert.equal(provider.pageSitemapUrl, 'https://amicorp.com/page-sitemap1.xml')
+  assert.equal(provider.pageSitemapUrl, 'https://amicorp.com/?sitemap=page&sitemap_n=1')
   assert.equal(
     provider.trustedApplyFormUrl,
     'https://forms.zohopublic.eu/zohopeople40/form/CareerPageForm/formperma/eclRamd2dWW4rbcIcyYbA0ooIb_3CA2MBYGp_56EYyY',

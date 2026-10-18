@@ -212,6 +212,7 @@ test('saveToDB upserts source jobs before recording misses for unseen jobs', asy
       location: 'Bengaluru, India',
       city: 'Bangalore',
       link: 'https://example.com/job-1',
+      description: 'Build and maintain software for customers.',
     },
     {
       title: 'QA Engineer',
@@ -219,6 +220,7 @@ test('saveToDB upserts source jobs before recording misses for unseen jobs', asy
       location: 'Hyderabad, India',
       city: 'Hyderabad',
       link: 'https://example.com/job-2',
+      description: 'Test and verify software for customers.',
     },
   ]
 
@@ -260,7 +262,7 @@ test('saveToDB upserts source jobs before recording misses for unseen jobs', asy
   }
 })
 
-test('saveToDB does not persist a scraped job description', async () => {
+test('saveToDB persists the employer description as the rewrite source', async () => {
   const restoreReadyState = setReadyState(1)
   const originalBulkWrite = Job.bulkWrite
   const originalUpdateMany = Job.updateMany
@@ -285,8 +287,9 @@ test('saveToDB does not persist a scraped job description', async () => {
     }], 'example-source', { missesBeforeExpiry: 2 })
 
     const persistedFields = capturedBulkOps[0].updateOne.update.$set
-    assert.equal(Object.hasOwn(persistedFields, 'description'), false)
-    assert.deepEqual(capturedBulkOps[0].updateOne.update.$unset, { description: 1 })
+    assert.equal(persistedFields.description, 'Build student-facing software with Node.js and React.')
+    assert.equal(persistedFields.sourceDescription, 'Build student-facing software with Node.js and React.')
+    assert.equal(Object.hasOwn(capturedBulkOps[0].updateOne.update.$unset || {}, 'description'), false)
   } finally {
     Job.bulkWrite = originalBulkWrite
     Job.updateMany = originalUpdateMany
@@ -328,6 +331,7 @@ test('saveToDB only enqueues inserted active jobs for WhatsApp alerts', async ()
         location: 'Bengaluru, India',
         city: 'Bengaluru',
         link: 'https://example.com/jobs/frontend-intern',
+        description: 'Build frontend features with the engineering team.',
       },
       {
         title: 'Backend Intern',
@@ -335,6 +339,7 @@ test('saveToDB only enqueues inserted active jobs for WhatsApp alerts', async ()
         location: 'Bengaluru, India',
         city: 'Bengaluru',
         link: 'https://example.com/jobs/backend-intern',
+        description: 'Build backend services with the engineering team.',
       },
     ], 'example-source', { replaceExisting: false })
 
@@ -378,6 +383,7 @@ test('saveToDB preserves open roles regardless of their normalized postingDate a
           location: 'Bengaluru, India',
           city: 'Bangalore',
           link: 'https://example.com/jobs/fresh',
+          description: 'Build and maintain software for customers.',
           postingDate: freshPostingDate,
         },
         {
@@ -386,6 +392,7 @@ test('saveToDB preserves open roles regardless of their normalized postingDate a
           location: 'Bengaluru, India',
           city: 'Bangalore',
           link: 'https://example.com/jobs/stale',
+          description: 'Build and maintain software for customers.',
           postingDate: stalePostingDate,
         },
         {
@@ -394,6 +401,7 @@ test('saveToDB preserves open roles regardless of their normalized postingDate a
           location: 'Bengaluru, India',
           city: 'Bangalore',
           link: 'https://example.com/jobs/stale-fallback',
+          description: 'Build and maintain software for customers.',
           postingDate: 'not-a-date',
           postedAt: stalePostingDate,
         },
@@ -451,6 +459,7 @@ test('saveToDB preserves existing source jobs when the replacement write fails',
             location: 'Bengaluru, India',
             city: 'Bangalore',
             link: 'https://example.com/job-1',
+            description: 'Build and maintain software for customers.',
           },
         ],
         'example-source',
@@ -530,10 +539,15 @@ test('saveToDB preserves existing jobs when a scrape yields an untrusted zero el
   }
 })
 
-test('saveToDB can record lifecycle misses for an explicitly authoritative empty result', async () => {
+test('saveToDB can record lifecycle misses for an explicitly authoritative empty result', async t => {
   const restoreReadyState = setReadyState(1)
   const originalUpdateMany = Job.updateMany
   const capturedLifecycleUpdates = []
+
+  t.mock.method(Job, 'deleteMany', filter => {
+    assert.deepEqual(filter, { source: 'example-source', status: 'active', missedScrapeCount: { $gte: 1 } })
+    return { exec: async () => ({ deletedCount: 1 }) }
+  })
 
   Job.updateMany = (filter, update) => {
     capturedLifecycleUpdates.push({ filter, update })
@@ -555,7 +569,7 @@ test('saveToDB can record lifecycle misses for an explicitly authoritative empty
       },
     )
 
-    assert.equal(capturedLifecycleUpdates.length, 2)
+    assert.equal(capturedLifecycleUpdates.length, 1)
     assert.equal(result.missed, 4)
     assert.equal(result.expired, 1)
     assert.equal(result.staleCheckSkipped, false)
@@ -637,7 +651,7 @@ test('saveToDB filters jobs whose advertised closing date has passed', async () 
   Job.updateMany = () => ({
     exec: async () => ({ matchedCount: 0, modifiedCount: 0 }),
   })
-  Job.deleteMany = async () => ({ deletedCount: 0 })
+  Job.deleteMany = () => ({ exec: async () => ({ deletedCount: 0 }) })
 
   try {
     const result = await saveToDB(
@@ -656,6 +670,7 @@ test('saveToDB filters jobs whose advertised closing date has passed', async () 
           location: 'Bengaluru, India',
           city: 'Bangalore',
           link: 'https://example.com/jobs/today',
+          description: 'Build and maintain software for customers.',
           closingDate: '2026-07-25T00:00:00.000Z',
         },
       ],
@@ -708,6 +723,7 @@ test('saveToDB persists unified normalized fields alongside the legacy job shape
           city: 'Bangalore',
           department: 'Platform Engineering',
           link: 'https://careers.example.com/jobs/123',
+          description: 'Design platform software using Node.js and AWS.',
           jobId: 'JR-123',
           companyCareerPage: 'https://careers.example.com',
           atsPlatform: 'workday',

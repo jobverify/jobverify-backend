@@ -123,6 +123,12 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
   timeoutMs: 15000,
 })
 
+const hasVerifiedEmptyRoleInventory = (html) => {
+  const page = String(html ?? '')
+  return /No open positions right now/i.test(normalizeWhitespace(page) || '')
+    && !/class=["'][^"']*\bstretched-link\b/i.test(page)
+}
+
 export const hasOfficialCareersSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
@@ -130,7 +136,7 @@ export const hasOfficialCareersSignal = (html) => {
   return /<title>\s*Join Our Team\s*\|\s*AutoPi Careers\s*<\/title>/i.test(rawHtml)
     && normalized.includes('Roles we\'re hiring for')
     && /open positions/i.test(normalized)
-    && /class="stretched-link"/i.test(rawHtml)
+    && (/class="stretched-link"/i.test(rawHtml) || hasVerifiedEmptyRoleInventory(rawHtml))
 }
 
 export const extractRoleCards = (html) => {
@@ -157,7 +163,7 @@ export const extractRoleCards = (html) => {
     })
   }
 
-  if (roles.length === 0) {
+  if (roles.length === 0 && !hasVerifiedEmptyRoleInventory(rawHtml)) {
     throw new Error('AutoPi verified official careers surface changed materially')
   }
 

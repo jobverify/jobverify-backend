@@ -8,24 +8,19 @@ export const ALLIED_DIGITAL_SERVICES_CATALOG = {
   companyName: 'Allied Digital Services',
   officialBrandName: 'Allied Digital Services Ltd',
   adapter: 'script',
-  companyCareerPage: 'https://www.allieddigital.net/in/careers/',
+  companyCareerPage: 'https://www.allieddigital.net/careers/',
   companyDomain: 'allieddigital.net',
-  indiaHomeUrl: 'https://www.allieddigital.net/in/',
-  hiringNowPageUrl: 'https://www.allieddigital.net/in/careers/hiring-now/',
-  verifiedFriendlyDetailUrl:
-    'https://www.allieddigital.net/in/careers/senior-talent-acquisition-specialist-global/',
-  verifiedBrokenRequestDetailUrl:
-    'https://www.allieddigital.net/in/jobdetails?requestid=8154',
-  atsPlatform: 'official-company-careers',
+  hiringNowPageUrl: 'https://www.allieddigital.net/job-openings/',
+  jobsApiUrl: 'https://www.allieddigital.net/wp-json/wp/v2/awsm_job_openings',
+  atsPlatform: 'wordpress-job-openings',
   countryFilter: 'India',
-  paginationStrategy: 'verified-root-geolocation-plus-single-first-party-hiring-now-page',
-  extractionStrategy:
-    'verified-root-geolocation+verified-india-careers-handoff+verified-hiring-now-tables+friendly-detail-link-when-present+listing-fallback-for-broken-request-links',
+  paginationStrategy: 'count-checked-wordpress-rest-pages-plus-public-opening-card-reconciliation',
+  extractionStrategy: 'verified-first-party-careers+complete-published-wordpress-inventory+verified-jobposting-and-application-detail+india-location-filter',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-15',
+  verifiedOn: '2026-10-08',
   verifiedSurfaceSummary:
-    'Verified on July 15, 2026 that https://www.allieddigital.net/ geolocation-redirects into the India site at https://www.allieddigital.net/in/, the first-party careers landing page at https://www.allieddigital.net/in/careers/ links to the live Hiring Now surface at https://www.allieddigital.net/in/careers/hiring-now/, and that Hiring Now page exposes public openings in first-party tables. Verified the friendly first-party detail page https://www.allieddigital.net/in/careers/senior-talent-acquisition-specialist-global/ is live, while the generic first-party request detail route https://www.allieddigital.net/in/jobdetails?requestid=8154 returned 404, so requestid rows are treated as listing-page-backed jobs.',
+    'Verified on October 8, 2026 that the redesigned https://www.allieddigital.net/ links to https://www.allieddigital.net/careers/, the historical India Hiring Now route redirects to https://www.allieddigital.net/job-openings/, and the first-party WordPress REST inventory at https://www.allieddigital.net/wp-json/wp/v2/awsm_job_openings reports three published jobs matching the opening cards. All three first-party detail pages expose matching JobPosting metadata and application job IDs for Navi Mumbai, India. Service Desk Executive L3 and Endpoint Administrator publish no description; Network Engineer L3 publishes responsibilities and skills. The previous geolocation landing page and India table/detail routes have been replaced.',
   dryRunFile: 'allieddigitalservices/jobs.json',
   modulePath: path.resolve(currentDir, 'script.js'),
 }

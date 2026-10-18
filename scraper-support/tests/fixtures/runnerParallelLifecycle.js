@@ -48,7 +48,7 @@ globalThis.runnerLifecycleFixture = {
   status: () => ({ isActive: scenario !== 'inactive' }),
   save: async (_jobs, name, { signal, onStage }) => {
     if (scenario === 'classification-pending' && name === 'alpha') {
-      const error = new Error('complete Laya scan required')
+      const error = new Error('source persistence unfinished')
       error.classificationPending = true
       throw error
     }

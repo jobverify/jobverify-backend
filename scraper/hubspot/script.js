@@ -1,3 +1,4 @@
+import {runPublicLinkedIn,fetchPublicPage} from './publicLinkedIn.js'
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 
 const GRAPHQL_URL = 'https://wtcfns.hubspot.com/careers/graphql'
@@ -78,7 +79,7 @@ const workModeFor = (location) => {
   return null
 }
 
-export const createHubSpotScraper = ({ now = () => new Date().toISOString() } = {}) => ({
+export const createHubSpotGraphqlScraper = ({ now = () => new Date().toISOString() } = {}) => ({
   async run({ fetchGraphql = defaultFetchGraphql } = {}) {
     const listing = await fetchGraphql(JOBS_QUERY)
     if (!Array.isArray(listing?.jobs)) {
@@ -159,4 +160,11 @@ export const createHubSpotScraper = ({ now = () => new Date().toISOString() } = 
   },
 })
 
-export const run = (options = {}) => createHubSpotScraper().run(options)
+export const createHubSpotScraper = ({now=()=>new Date().toISOString()}={})=>({
+ async run(options={}){
+  if(options.fetchGraphql&&!options.fetchPage&&!options.fetchText)return createHubSpotGraphqlScraper({now}).run(options)
+  const fetchPage=options.fetchPage||(options.fetchText?async(url,context)=>({status:200,url,html:await options.fetchText(url,context)}):fetchPublicPage)
+  return runPublicLinkedIn({...options,fetchPage,now:options.now||now})
+ }
+})
+export const run = (options={})=>createHubSpotScraper().run(options)

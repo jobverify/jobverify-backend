@@ -34,7 +34,7 @@ function removeDirectChildren(parentDir, matcher) {
 }
 
 // Retain installed runtimes, weights and ownership of any running model worker.
-const persistentCaches = new Set(["laya-python", "laya-venv", "laya-model", "scraper-actions", "description-rewriter"]);
+const persistentCaches = new Set(["gliclass-model", "gliclass-hub", "gliclass-runtime", "scraper-actions", "description-rewriter"]);
 removeDirectChildren(path.join(repoRoot, ".cache"), name => !persistentCaches.has(name));
 removePath(path.join(repoRoot, "coverage"));
 removePath(path.join(repoRoot, "node_modules", ".cache"));

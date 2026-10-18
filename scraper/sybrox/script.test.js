@@ -115,7 +115,7 @@ const careersHtml = `
 </html>
 `
 
-test('Sybrox scraper recognizes the verified homepage, about, contact, and RPO vacancies surface', async () => {
+test('Sybrox retained legacy parser recognizes its historical first-party RPO surface', async () => {
   const sybrox = await loadSybroxModule()
   assert.ok(sybrox, 'Expected scraper module at ./script.js')
 
@@ -133,7 +133,7 @@ test('Sybrox scraper recognizes the verified homepage, about, contact, and RPO v
   assert.deepEqual(sybrox.extractApplyUrls(careersHtml), ['https://forms.gle/o43Zh9YvfH4sRCvo8'])
 })
 
-test('Sybrox scraper extracts jobs from the verified first-party RPO vacancies page', async () => {
+test('Sybrox retained legacy parser describes historical RPO rows; production never uses this client surface', async () => {
   const sybrox = await loadSybroxModule()
   assert.ok(sybrox, 'Expected scraper module at ./script.js')
 
@@ -172,126 +172,4 @@ test('Sybrox scraper extracts jobs from the verified first-party RPO vacancies p
   assert.deepEqual(jobs[1].requiredSkills, ['Typing', 'Data Entry', 'Attention to Detail'])
 })
 
-test('Sybrox run validates the official first-party surface and returns stamped jobs', async () => {
-  const sybrox = await loadSybroxModule()
-  assert.ok(sybrox, 'Expected scraper module at ./script.js')
-
-  const requestedUrls = []
-  const jobs = await sybrox.createSybroxScraper().run({
-    fetchPage: async (url) => {
-      requestedUrls.push(url)
-      if (url === sybrox.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
-      if (url === sybrox.ABOUT_URL) return { status: 200, url, html: aboutHtml }
-      if (url === sybrox.CONTACT_URL) return { status: 200, url, html: contactHtml }
-      if (url === sybrox.CAREERS_URL) return { status: 200, url, html: careersHtml }
-      throw new Error(`Unexpected URL: ${url}`)
-    },
-    now: () => '2026-07-12T00:00:00.000Z',
-  })
-
-  assert.deepEqual(requestedUrls, [
-    sybrox.HOMEPAGE_URL,
-    sybrox.ABOUT_URL,
-    sybrox.CONTACT_URL,
-    sybrox.CAREERS_URL,
-  ])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].source, 'sybrox')
-  assert.equal(jobs[0].link, 'https://forms.gle/o43Zh9YvfH4sRCvo8')
-  assert.equal(jobs[0].scrapedAt, '2026-07-12T00:00:00.000Z')
-})
-
-test('Sybrox default fetch path applies a bounded timeout to every request', async () => {
-  const sybrox = await loadSybroxModule()
-  assert.ok(sybrox, 'Expected scraper module at ./script.js')
-
-  const originalFetch = globalThis.fetch
-  const originalTimeout = AbortSignal.timeout
-  const timeoutCalls = []
-  const timeoutSignals = []
-  const requests = []
-
-  AbortSignal.timeout = (timeoutMs) => {
-    timeoutCalls.push(timeoutMs)
-    const controller = new AbortController()
-    timeoutSignals.push(controller.signal)
-    return controller.signal
-  }
-
-  globalThis.fetch = async (url, options = {}) => {
-    requests.push({ url, options })
-
-    if (url === sybrox.HOMEPAGE_URL) return { status: 200, url, text: async () => homepageHtml }
-    if (url === sybrox.ABOUT_URL) return { status: 200, url, text: async () => aboutHtml }
-    if (url === sybrox.CONTACT_URL) return { status: 200, url, text: async () => contactHtml }
-    if (url === sybrox.CAREERS_URL) return { status: 200, url, text: async () => careersHtml }
-    throw new Error(`Unexpected URL: ${url}`)
-  }
-
-  try {
-    const jobs = await sybrox.createSybroxScraper().run()
-    assert.equal(jobs.length, 2)
-  } finally {
-    globalThis.fetch = originalFetch
-    AbortSignal.timeout = originalTimeout
-  }
-
-  assert.deepEqual(requests.map((request) => request.url), [
-    sybrox.HOMEPAGE_URL,
-    sybrox.ABOUT_URL,
-    sybrox.CONTACT_URL,
-    sybrox.CAREERS_URL,
-  ])
-  assert.deepEqual(timeoutCalls, [15000, 15000, 15000, 15000])
-  assert.deepEqual(requests.map((request) => request.options.signal), timeoutSignals)
-})
-
-test('Sybrox run fails closed when the official first-party surface drifts', async () => {
-  const sybrox = await loadSybroxModule()
-  assert.ok(sybrox, 'Expected scraper module at ./script.js')
-
-  await assert.rejects(
-    sybrox.createSybroxScraper().run({
-      fetchPage: async (url) => {
-        if (url === sybrox.HOMEPAGE_URL) {
-          return { status: 200, url, html: '<html><body><h1>Unexpected</h1></body></html>' }
-        }
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /official homepage/i,
-  )
-
-  await assert.rejects(
-    sybrox.createSybroxScraper().run({
-      fetchPage: async (url) => {
-        if (url === sybrox.HOMEPAGE_URL) return { status: 200, url, html: homepageHtml }
-        if (url === sybrox.ABOUT_URL) return { status: 200, url, html: aboutHtml }
-        if (url === sybrox.CONTACT_URL) return { status: 200, url, html: contactHtml }
-        if (url === sybrox.CAREERS_URL) {
-          return { status: 200, url, html: careersHtml.replaceAll('Apply Now', 'Learn More') }
-        }
-        throw new Error(`Unexpected URL: ${url}`)
-      },
-    }),
-    /official careers page/i,
-  )
-})
-
-test('Sybrox returns an empty result when the current first-party host is DNS-unresolved', async () => {
-  const sybrox = await loadSybroxModule()
-  assert.ok(sybrox, 'Expected scraper module at ./script.js')
-
-  const jobs = await sybrox.createSybroxScraper().run({
-    fetchPage: async () => {
-      const error = new TypeError('fetch failed')
-      error.cause = {
-        code: 'ENOTFOUND',
-        message: 'getaddrinfo ENOTFOUND sybrox.com',
-      }
-      throw error
-    },
-  })
-
-  assert.deepEqual(jobs, [])
-})
+test('Sybrox current run does not recover legacy RPO client rows as current employer inventory', async()=>{ const sybrox=await loadSybroxModule();await assert.rejects(sybrox.createSybroxScraper().run({fetchPage:async url=>({status:200,url,html:homepageHtml})}),/employer profile identity/) })

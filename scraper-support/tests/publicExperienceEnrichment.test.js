@@ -641,14 +641,14 @@ test('inferExperienceFromPublicPageHtml does not treat access-denied shells as v
 test('inferExperienceFromPublicPageHtml does not treat invalid-url shells as verified job-detail evidence', () => {
   const enriched = inferExperienceFromPublicPageHtml({
     title: 'Relationship Manager',
-    company: 'Varthana',
+    company: 'Example Company',
     applyUrl: 'https://app79.workline.hr/Candidate/CanPRFApplyBL.aspx?PRFCode=3404&Flag=C',
     sourceUrl: 'https://app79.workline.hr/Candidate/CanPRFApplyBL.aspx?PRFCode=3404&Flag=C',
     experienceRequired: null,
   }, `
     <html>
       <head>
-        <title>Varthana - Workline - Possibilities Infinite</title>
+        <title>Example Company - Workline - Possibilities Infinite</title>
       </head>
       <body>
         <p>Toggle navigation</p>
@@ -1662,10 +1662,10 @@ test('enrichJobWithPublicExperience skips refetching concise provider-verified p
 test('enrichJobWithPublicExperience skips refetching when the source already provides rich experience-backed job text', async () => {
   const job = {
     title: 'Platform Engineer',
-    company: 'Moglix',
-    source: 'moglix',
-    applyUrl: 'https://moglix.flexiele.com/careers/moglix/apply/4057',
-    sourceUrl: 'https://moglix.flexiele.com/careers/moglix/job-description/4057',
+    company: 'Example Company',
+    source: 'example',
+    applyUrl: 'https://example.flexiele.com/careers/example/apply/4057',
+    sourceUrl: 'https://example.flexiele.com/careers/example/job-description/4057',
     experienceRequired: '5-8 Years',
     jobDescription: `
       Role Objective: Build and evolve internal platform engineering systems that support order orchestration,

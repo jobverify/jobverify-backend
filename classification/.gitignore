@@ -1,5 +1,5 @@
 __pycache__/
 *.pyc
 .venv/
-# Keep scraped source text and human annotation local. release.json is intentionally trackable.
+# Keep scraped source text and human annotation local.
 *.jsonl

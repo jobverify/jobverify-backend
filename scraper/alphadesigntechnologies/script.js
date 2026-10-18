@@ -118,11 +118,17 @@ export const isVerifiedMissingCareerRoute = (page = {}) => {
   const html = String(page.text ?? page.html ?? '')
   const normalized = normalizeWhitespace(html)
 
-  return Number(page.status) === 404
-    && isOfficialDomainUrl(page.url || '')
+  const legacyMissingPage = Number(page.status) === 404
     && /<title>\s*404 - File or directory not found\.\s*<\/title>/i.test(html)
     && normalized.includes('404 - File or directory not found.')
     && normalized.includes('The resource you are looking for might have been removed, had its name changed, or is temporarily unavailable.')
+  const customMissingPage = Number(page.status) === 200
+    && /\/404error\/?(?:[?#]|$)/i.test(page.url || '')
+    && /<title>\s*404 Error Page\s*<\/title>/i.test(html)
+    && normalized.includes("We couldn't find the page")
+    && normalized.includes('Go Back to Home Page')
+  return isOfficialDomainUrl(page.url || '')
+    && (legacyMissingPage || customMissingPage)
     && !pageExposesPublicJobListings(html)
   }
 

@@ -15,8 +15,6 @@ export const EMBEDDED_CAREERS_IFRAME_URL = 'https://careers.inurture.co.in/'
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
 
-const insecureHttpsAgent = new https.Agent({ rejectUnauthorized: false })
-
 const PUBLIC_JOBS_HOST_PATTERN =
   /(greenhouse|job-boards\.greenhouse|lever|workday|myworkdayjobs|smartrecruiters|ashby|workable|darwinbox|jobvite|teamtailor|recruitcrm|keka|bamboohr|oraclecloud|icims|phenompeople|successfactors|taleo|ceipal|rippling|jobs\.)/i
 
@@ -53,7 +51,7 @@ const toAbsoluteUrl = (value, baseUrl) => {
   }
 }
 
-const fetchPageAllowingInsecureTls = (url, redirectCount = 0) =>
+const fetchPageWithStrictTls = (url, redirectCount = 0) =>
   new Promise((resolve, reject) => {
     const parsedUrl = new URL(url)
     const client = parsedUrl.protocol === 'https:' ? https : http
@@ -63,7 +61,7 @@ const fetchPageAllowingInsecureTls = (url, redirectCount = 0) =>
         'User-Agent': USER_AGENT,
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       },
-      agent: parsedUrl.protocol === 'https:' ? insecureHttpsAgent : undefined,
+      rejectUnauthorized: true,
     }, (response) => {
       const chunks = []
 
@@ -80,7 +78,7 @@ const fetchPageAllowingInsecureTls = (url, redirectCount = 0) =>
         ) {
           try {
             const redirectedUrl = new URL(location, url).toString()
-            resolve(await fetchPageAllowingInsecureTls(redirectedUrl, redirectCount + 1))
+            resolve(await fetchPageWithStrictTls(redirectedUrl, redirectCount + 1))
             return
           } catch (error) {
             reject(error)
@@ -181,7 +179,7 @@ export const isExpectedIframeHostFailure = (error) =>
   /(enotfound|getaddrinfo|could not resolve host|fetch failed|timed out)/i.test(String(error?.message ?? error ?? ''))
 
 export const createInurtureEducationSolutionsScraper = () => ({
-  async run({ fetchPage = fetchPageAllowingInsecureTls } = {}) {
+  async run({ fetchPage = fetchPageWithStrictTls } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
     if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('iNurture verified official homepage no longer matches the known public surface')

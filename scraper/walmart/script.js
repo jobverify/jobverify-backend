@@ -93,7 +93,7 @@ export const hasOfficialHomepageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(html)
 
-  return /<title>\s*Walmart Careers\s*<\/title>/i.test(page)
+  return /<title\b[^>]*>\s*Walmart Careers\s*<\/title>/i.test(page)
     && normalized.includes('Stores and Clubs')
     && normalized.includes('Supply Chain & Transportation')
     && normalized.includes('Healthcare')
@@ -106,7 +106,7 @@ export const hasTechnologyPageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(html)
 
-  return /<title>\s*Technology\s*<\/title>/i.test(page)
+  return /<title\b[^>]*>\s*Technology\s*<\/title>/i.test(page)
     && normalized.includes('See all open roles')
     && normalized.includes('See all technology roles')
     && /\/content\/careers\/us\/en\/results\?searchQuery=All(?:&amp;|&)careerareas=Technology/i.test(page)
@@ -118,7 +118,7 @@ export const hasCorporatePageSignal = (html = '') => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(html)
 
-  return /<title>\s*Corporate\s*<\/title>/i.test(page)
+  return /<title\b[^>]*>\s*Corporate\s*<\/title>/i.test(page)
     && normalized.includes('See all open roles')
     && normalized.includes('See all corporate roles')
     && /\/content\/careers\/us\/en\/results\?searchQuery=All(?:&amp;|&)careerareas=Corporate/i.test(page)

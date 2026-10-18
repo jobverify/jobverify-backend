@@ -13,6 +13,8 @@ import {
 
 import { RENEW_CATALOG } from './catalog.js'
 
+import { runPublishedReNewPartial } from '../renewpower/publishedLinkedIn.js'
+
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 const defaultFetchText = async (url) => {
@@ -55,9 +57,9 @@ export const decorateReNewJob = (job = {}, scrapedAt) => ({
   company: COMPANY,
   source: SOURCE,
   link: job.link || job.applyUrl || job.sourceUrl || null,
-  companyCareerPage: CAREERS_URL,
-  companyDomain: COMPANY_DOMAIN,
-  atsPlatform: ATS_PLATFORM,
+  companyCareerPage: job.sourceUrl?.startsWith('https://careers.renew.com/') ? BASE_CAREERS_URL : CAREERS_URL,
+  companyDomain: job.sourceUrl?.startsWith('https://careers.renew.com/') ? 'careers.renew.com' : COMPANY_DOMAIN,
+  atsPlatform: job.sourceUrl?.startsWith('https://careers.renew.com/') ? 'successfactors' : ATS_PLATFORM,
   scrapedAt,
 })
 
@@ -66,9 +68,11 @@ export const createReNewScraper = ({
   maxJobs = null,
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-  } = {}) {
+  async run(options = {}) {
+    if (!Object.hasOwn(options, 'fetchText') || options.fetchPublishedText) {
+      return runPublishedReNewPartial({ ...options, maxPages: options.maxPages ?? maxPages, maxJobs: options.maxJobs ?? maxJobs, now: options.now ?? now, source: SOURCE, company: COMPANY })
+    }
+    const { fetchText = defaultFetchText } = options
     const searchUrl = buildSearchUrl()
     const searchPageHtml = await fetchText(searchUrl)
     if (!hasVerifiedReNewJobsPageSignal(searchPageHtml)) {
@@ -94,7 +98,7 @@ export const createReNewScraper = ({
 
 export const run = async (options = {}) => createReNewScraper(options).run(options)
 
-if (BASE_CAREERS_URL !== CAREERS_URL || BASE_COMPANY !== OFFICIAL_BRAND_NAME) {
+if (BASE_CAREERS_URL !== 'https://careers.renew.com/' || BASE_COMPANY !== OFFICIAL_BRAND_NAME) {
   throw new Error('ReNew wrapper metadata drifted from the verified ReNew Power contract')
 }
 

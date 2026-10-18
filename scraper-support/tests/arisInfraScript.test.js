@@ -381,3 +381,11 @@ test('ArisInfra fails closed when the homepage, careers page, Keka config, porta
     /active jobs/i,
   )
 })
+
+
+test('ArisInfra recognizes the current official Connect privacy link without accepting an unbranded page', async () => {
+  const aris = await loadArisInfraModule()
+  const currentHomepage = homepageHtml.replace('https://delivery.arisinfra.com/privacy-policy', 'https://connect.aris.in/privacy-policy')
+  assert.equal(aris.hasOfficialHomepageSignal(currentHomepage), true)
+  assert.equal(aris.hasOfficialHomepageSignal('<html><title>Other company</title><a href="https://connect.aris.in/privacy-policy">Privacy</a></html>'), false)
+})

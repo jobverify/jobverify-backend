@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <title>Careers</title>
+  <link href="img/favicon.ico" type="image/x-icon" rel="icon" />
+  <link href="img/favicon.ico" type="image/x-icon" rel="shortcut icon" />
+  <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
+  <link rel="stylesheet" type="text/css" href="css/font-awesome.css" />
+  <link rel="stylesheet" type="text/css"
+    href="https://fonts.googleapis.com/css?family=Open+Sans:400,300,400italic,600,700" />
+  <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Raleway:400,300" />
+  <link rel="stylesheet" type="text/css" href="css/multiple-select/multiple-select.css" />
+  <link rel="stylesheet" type="text/css" href="css/jquery.dataTables_themeroller.css" />
+  <link rel="stylesheet" type="text/css" href="css/custom.css" />
+  <!-- <script type="text/javascript" src="includes/config.inc.js"></script> -->
+</head>
+
+<body id='chatbot-handler'>
+  <div id='loading-message'>
+    <div id="loader"></div>
+    <img src="img/loadernew.gif" alt="Loading" title="Loading" id="loading-image" />
+  </div>
+  <div class="opApi-block">
+    <div class="opApi-header">
+      <form name='job_postings_filter' id='job_postings_filter' method="post">
+        <input type='hidden' id='previous_page_no' value='0'>
+        <input type='hidden' id='next_page_no' value='0'>
+        <input type='hidden' id='from_chatbot' name='from_chatbot' value='0'>
+        <input type='hidden' id='chatbot_job_title' value='' name='chatbot_job_title' class='chatbot-data'>
+        <input type='hidden' id='chatbot_skills' value='' name='chatbot_skills' class='chatbot-data'>
+        <input type='hidden' id='chatbot_city' value='' name='chatbot_city' class='chatbot-data'>
+        <input type='hidden' id='chatbot_state' value='' name='chatbot_state' class='chatbot-data'>
+        <input type='hidden' id='chatbot_country' value='' name='chatbot_country' class='chatbot-data'>
+        <div class="opApi-hTitle">One Million Success Stories. Start Yours Today</div>
+        <div class="opApiSearch-block isATS">
+          <a href="javascript:void(0)" data-toggle="tooltip" data-placement="bottom"
+            title='Enter keyword in "Java developer" or (java developer)'
+            style="margin-right:10px; font-size:13px;color: #0DBBFF !important;text-decoration: none;"><img
+              src='img/info-icon.svg' alt='Hint'></a>
+          <div class="opApi-sKeywords"> <img src='img/opApi-searchIcon.png' alt='Search' title="Search">
+            <input name="searchkey" class="searchkey" id="searchkeyIT" placeholder="Job Title, Keyword, Specialization" type="text" autocomplete="off" />
+          </div>
+          <div class="opApi-country">
+            <select name="country" id="countries-list" onchange="loadStatesList(this.value, 0, 'states_list');">
+              <option value="">Select Country</option>
+             
+            </select>
+          </div>
+          <div class="opApi-state">
+            <select name="state" id="states_list">
+              <option value="">Select State</option>
+            </select>
+          </div>
+          <div class="opApi-city">
+            <input name="city" placeholder="City" type="text" id="city" />
+          </div>
+          <div class="opApi-industry">
+            <select name="industry" id='industries-list'>
+              <option value="">All</option>
+            </select>
+          </div>
+          <div class="opApi-status">
+            <select name="status" id="status_list">
+              <option value="">Status</option>
+            </select>
+          </div>
+          <div class="opApiSearchBtn">
+            <div class="submit">
+              <input type="submit" value="Search" />
+            </div>
+            <a class='reset-search clear_filters' href="javascript:void(0)"
+              style="position:absolute; right:40px; top:43px; font-size:13px; color:#FF0 !important; text-decoration: none;">Reset</a>
+          </div>
+        </div>
+        <div class="opApiSearch-block isHealthCare" style="display: none;">
+          <a href="javascript:void(0)" data-toggle="tooltip" data-placement="bottom"
+            title='Enter keyword in "Java developer" or (java developer)'
+            style="position:absolute;left: 0;top:43px;font-size:13px;color: #0DBBFF !important;text-decoration: none;"><img
+              src='img/info-icon.svg' alt='Hint'></a>
+          <div class="opApi-sKeywords"> <img src='img/opApi-searchIcon.png' alt='Search' title="Search">
+            <input name="searchkey" class="searchkey" id="searchkeyHealthcare" placeholder="Job Title, Keyword, Specialization" type="text" autocomplete="off" />
+          </div>
+          <div class="atsCol-1">
+            <select id="offering_multi_select" name="offering" class="offering_multi_select"
+              placeholder="Offerings" multiple>
+
+            </select>
+            <input type='hidden' id='hidden_offering_multi_select' name='offering'>
+          </div>
+          <div class="atsCol-1">
+            <select id="profession_multi_select" name="profession" class="profession_multi_select"
+              placeholder="Professions" multiple>
+
+            </select>
+            <input type='hidden' id='hidden_profession_multi_select' name='profession'>
+          </div>
+          <div class="atsCol-1">
+            <select name="speciality" id="speciality_multi_select" class="speciality_multi_select"
+              placeholder="Speciality" multiple>
+            
+            </select>
+            <input type='hidden' id='hidden_speciality_multi_select' name='speciality'>
+          </div>
+          <div class="atsCol-1">
+            <select name="job_type" id="job_typemulti_select" class="job_typemulti_select" placeholder="Job Type"
+              multiple>
+
+            </select>
+            <input type='hidden' id='hidden_job_typemulti_select' name='job_type'>
+          </div>
+          <div class="atsCol-1">
+            <select name="state" id="state_multi_select" class="state_multi_select" placeholder="State"
+              multiple>
+
+            </select>
+            <input type='hidden' id='hidden_state_multi_select' name='hc_state'>
+          </div>
+          <div class="opApiSearchBtn">
+            <div class="submit">
+              <input type="submit" value="Search" />
+            </div>
+            <a class='reset-search clear_filters' href="javascript:void(0)"
+              style="position:absolute; right:40px; top:43px; font-size:13px; color:#FF0 !important; text-decoration: none;">Reset</a>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="opApi-content">
+      <!-- Job Postings list start -->
+      <div class="container" id='job_postings_block'>
+        <div class="row">
+          <div class="col-md-12 col-sm-12">
+            <div class="opApiListH">
+              <div class="apiResult showNumbList"></div>
+              <div class="opApi-pNum colPagnation">
+                <ul>
+                  <li><a href="javascript:void(0)">&lt;&lt; </a></li>
+                  <li><a href="javascript:void(0)">&lt; </a></li>
+                  <li><a href="javascript:void(0)">2</a></li>
+                  <li><a href="javascript:void(0)">3</a></li>
+                  <li class="active"><a href="javascript:void(0)">4</a></li>
+                  <li><a href="javascript:void(0)">5</a></li>
+                  <li><a href="javascript:void(0)">6</a></li>
+                  <li><a href="javascript:void(0)"> &gt;</a></li>
+                  <li><a href="javascript:void(0)"> &gt;&gt;</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="opApiResult-listBlock">
+          <div class="opApi-rlSection">
+            <div class="col-md-12 col-sm-12" id='list-of-jobs'>
+              <div class='currentOpenList'>
+                <div class="dashboard-dyn-loading"></div>
+              </div>
+              <div class='currentOpenList'>
+                <div class="dashboard-dyn-loading"></div>
+              </div>
+              <div class='currentOpenList'>
+                <div class="dashboard-dyn-loading"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-12 col-sm-12">
+            <div class="opApiListH">
+              <div class="apiResult showNumbList"></div>
+              <div class="opApi-pNum colPagnation">
+                <ul>
+                  <li><a href="javascript:void(0)">&lt;&lt; </a></li>
+                  <li><a href="javascript:void(0)">&lt; </a></li>
+                  <li><a href="javascript:void(0)">2</a></li>
+                  <li><a href="javascript:void(0)">3</a></li>
+                  <li class="active"><a href="javascript:void(0)">4</a></li>
+                  <li><a href="javascript:void(0)">5</a></li>
+                  <li><a href="javascript:void(0)">6</a></li>
+                  <li><a href="javascript:void(0)"> &gt;</a></li>
+                  <li><a href="javascript:void(0)"> &gt;&gt;</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Job Postings list end -->
+
+      <!-- Job description start -->
+      <div class="jobDetailsBlock" style='display: none;'>
+        <div class="container disFlex">
+          <div class="JobDescription">
+            <div class="row">
+              <div class="col-md-12 col-sm-12">
+                <div class="opApiListH">
+                  <div class="apiResult backJobBoard">
+                    <!--Job Description-->
+                    <a href="javascript:void(0)" class="close_popup pull-left" title="Back">&lt;&lt; Back to all
+                      jobs</a>
+                    <div class='pull-right apply-with-options jobAction'>
+                      <ul>
+                        <li class="lineHight mr-10"><a href="javascript:void(0)" id="print-job-description"><i
+                              class="fa fa-print"></i>&nbsp; Print</a></li>
+                        <li class="hidethis apply_job_monster" style="display: list-item;">
+                          <span class='hidethis apply_job_monster'> <a href="#" target='_blank' data-toggle='tooltip'
+                              data-placement='bottom' title='Apply with Monster'><img
+                                src='img/crs-monster-icon.png'></a> </span>
+                        </li>
+                        <li class="hidethis apply_job_monster" style="display: list-item;"><span
+                            class='hidethis apply_job_indeed'> <a href="#" target='_blank' data-toggle='tooltip'
+                              data-placement='bottom' title='Apply with Indeed'><img src='img/crs-indeed-icon.png'></a>
+                          </span></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="opApiResult-listBlock">
+              
+              <div class="opApi-rlSection">
+                <div class="">
+                  <div id='job_description'>
+                    <div class="opApiR-lirow" style="border-bottom:none;">
+                      <div class="currentOpenList mt-10">
+                        <div class="opApiL-t1" style="border-top: solid 1px #e0e0e0; padding-top: 15px;"> <span
+                            class='position_title make_n_by_a'>N/A</span>
+
+                        </div>
+                        <div class="opApiL-add"> <i class="fa fa-map-marker" style="color:#999;"></i> <span
+                            class='location make_n_by_a'></span> | <i class="fa fa-calendar"></i>&nbsp; <span
+                            class='created make_n_by_a'>N/A</span></div>
+                        <div class='jobApplyBtns'
+                          style="border-bottom: solid 1px #e0e0e0;margin-bottom: 20px;float: left;width: 100%; padding-bottom:10px;">
+                          <a href="#" onClick="event.preventDefault()"
+                          class="crsAp-btn apply_with_reg_btn pull-left isATS shared-job-cta showAtsApply" title="Apply"
+                          data-toggle="modal" id="apply_with_registration_ats_btn" style="display:none">Apply
+                          Now <i class="fa fa-caret-right"></i></a>
+                          <a href="#" onClick="event.preventDefault()"
+                            class="crsAp-btn apply_with_reg_btn pull-left isATS shared-job-cta showAtsEasyApply" title="Apply" data-toggle="modal"
+                            data-target="#apply_with_registration" id="apply_with_registration_btn"
+                            style="display:inline-block">Easy Apply <i class="fa fa-caret-right"></i></a>
+                          
+                          <div class="sharebutton" style="float:right;">
+                            <button onclick="myFunction()" class="dropbtn"
+                              style="border-radius:50px; outline:none; margin-top: 17px;">Share Job <span
+                                class="caret"></span></button>
+                            <div id="myDropdown" class="dropdown-content">
+                              <a href="javascript:void(0);" class="share-job-facebook" id="share-job-facebook"
+                                onclick="sharejobfacebook()"><i class="fa fa-facebook fa-fw"></i> Facebook</a>
+                              <a href="javascript:void(0);" class="share-job-twitter" onclick="sharejobtwitter()"><i
+                                  class="fa fa-twitter fa-fw"></i> Twitter</a>
+                              <!--<a href="javascript:void(0);" class="share-job-gmail" onclick="sharejobgmail()"><i class="fa fa-linkedin fa-fw"></i> Linkedin</a>-->
+                              <a href="javascript:void(0);" class="share-job-copy-url" onclick="sharejobcopycode()"><i
+                                  class="fa fa-clipboard fa-fw"></i> Copy URL</a>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!--<div class="opApiL-add pay_rates_div">
+                    <label>Pay Rates : <span class="label-data pay_rates make_n_by_a">N/A</span></label>
+                  </div>-->
+                        <div class="opApiL-add isATS">
+                          <label>Job Code : <span class="label-data make_n_by_a job_code">N/A</span> </label>
+                        </div>
+                        <div class="jobQInfo isHealthCare">
+                          <div class="job-details-block">
+                            <div class="jLabList hTitle-4 mb-0 float-left mt-0">Job Details</div>
+                            <div class="labListB">
+                              <div class="jLabs job_posted_on_block">
+                                <div class="jLab-1">Job Posted On</div>
+                                <div class="jLab-2 job_posted_on">03/24/24</div>
+                              </div>
+                              <div class="jLabs speciality_block">
+                                <div class="jLab-1">Specialty </div>
+                                <div class="jLab-2 speciality">APRN</div>
+                              </div>
+                              <div class="jLabs profession_block">
+                                <div class="jLab-1">Profession </div>
+                                <div class="jLab-2 profession">APRN</div>
+                              </div>
+                              <div class="jLabs job_type_block">
+                                <div class="jLab-1">Job Type</div>
+                                <div class="jLab-2 job_type">Allied</div>
+                              </div>
+                              <div class="jLabs duration_block">
+                                <div class="jLab-1">Duration</div>
+                                <div class="jLab-2 duration">13 Weeks</div>
+                              </div>
+                            </div>
+                          </div>
+                           <div class="rate-details-block" style="display:none;">
+              <div class="jLabList hTitle-4 mb-0 float-left mt-2">Rate Details</div>
+              <div class="labListB">
+                <div class="jLabs pay_rate_block">
+                  <div class="jLab-1">Hourly Pay</div>
+                  <div class="jLab-2 pay_rate">$5600.00</div>
+                </div>
+                <div class="jLabs weekly_pay_block">
+                  <div class="jLab-1">Weekly Pay</div>
+                  <div class="jLab-2 weekly_pay">$1400.00</div>
+                </div>
+                <div class="jLabs gross_weekly_pay_block">
+                  <div class="jLab-1">Gross Weekly Pay</div>
+                  <div class="jLab-2 gross_weekly_pay">$1400.00</div>
+                </div>
+                <div class="jLabs lodging_hourly_block">
+                  <div class="jLab-1">Lodging (Hourly) </div>
+                  <div class="jLab-2 lodging_hourly">$50/hr</div>
+                </div>
+                <div class="jLabs lodging_daily_block">
+                  <div class="jLab-1">Lodging (Daily) </div>
+                  <div class="jLab-2 lodging_daily">$50/hr</div>
+                </div>
+                <div class="jLabs lodging_weekly_block">
+                  <div class="jLab-1">Lodging (Weekly) </div>
+                  <div class="jLab-2 lodging_weekly">$50/hr</div>
+                </div>
+                <div class="jLabs mie_hourly_block">
+                  <div class="jLab-1">M&IE(Hourly)</div>
+                  <div class="jLab-2 mie_hourly">$23/hr</div>
+                </div>
+                <div class="jLabs mie_daily_block">
+                  <div class="jLab-1">M&IE(Daily)</div>
+                  <div class="jLab-2 mie_daily">$23/hr</div>
+                </div>
+                <div class="jLabs mie_weekly_block">
+                  <div class="jLab-1">M&IE(Weekly)</div>
+                  <div class="jLab-2 mie_weekly">$23/hr</div>
+                </div>
+                <div class="jLabs gsa_hourly_block">
+                  <div class="jLab-1">GSA (Hourly)</div>
+                  <div class="jLab-2 gsa_hourly">$67200.00</div>
+                </div>
+                <div class="jLabs gsa_daily_block">
+                  <div class="jLab-1">GSA (Daily)</div>
+                  <div class="jLab-2 gsa_daily">$67200.00</div>
+                </div>
+                <div class="jLabs gsa_weekly_block">
+                  <div class="jLab-1">GSA (Weekly)</div>
+                  <div class="jLab-2 gsa_weekly">$67200.00</div>
+                </div>
+              </div>
+            </div>
+                          <div class="shift-details-block" style="display:none;">
+                            <div class="jLabList hTitle-4 mb-0 float-left mt-2">Shift Schedules</div>
+                            <div class="shift-schedules-block"></div>
+                          </div>
+                        </div>
+                        <div class="company_overview_top" style="border:none;">
+                          <div>
+          
+                          </div>
+                        </div>
+                        <div class="opApiL-info make_n_by_a job_description">N/A</div>
+                        <div class="opApiL-info job_summary_block" style="display:none;">
+                          <div class="job_summary"></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                  </div>
+                </div>
+              </div>
+              <div class="currentOpenList company_overview_bottom" style="border:none;">
+                <div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+          <!--Job Quick info code starts here-->
+          <div class="jobQuickinfo">
+
+          </div>
+          <!--Job Quick info code ends here-->
+        </div>
+      </div>
+
+      <div class="notReady">
+        <div class="notRTitle">Didn't find a role that matches your skills? </div>
+        <div class="notRInfo">We’d like to stay connected. Join our talent pool, and our recruiters will reach out when
+          a job matches your skills.</div>
+        <a href="#" id="submitResumeBtn" onClick="event.preventDefault()" class="notRBtn submit-resume-btn"
+          data-toggle='modal' data-target='#submitResume'>Submit Resume</a>
+       
+      </div>
+
+      <!-- Job description end -->
+
+      <!-- Apply without registration block start -->
+      <div id="apply_without_registration" class="modal fade" role="dialog">
+        <div class="modal-dialog modal-lg" style="max-width:700px;">
+          <!-- Modal content-->
+          <div class="modal-content aWR">
+            <div id='modal-loading-message'>
+              <div id="modal-loader"></div>
+              <img src="img/loadernew.gif" alt="Loading" title="Loading" id="modal-loading-image" />
+            </div>
+            <div class="modal-header">
+              <h4 class="modal-title">Apply without Registration</h4>
+              <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+              <!--<div id='message_block' class='text-center'></div>-->
+              <form id="application_form" name="application_form" enctype="multipart/form-data" method="post"
+                accept-charset="utf-8">
+                <input type="hidden" name="job_id" id="job_id" />
+                <input type="hidden" name="applicant_id" value="0" id="_method" />
+                <input type="hidden" name="type" value="applyWithoutRegistration" id="_method" />
+                <div class="apply_without_mdl_body">
+                  <ul class="crsPop-ul">
+                    <li>
+                      <div class="ph-wrapper has-feedback">
+                        <label for="easy_firstname" class="crsPholder required">First Name</label>
+                        <input name="firstname" id="easy_firstname" class="crsField form-control" type="text" />
+                        <div class='with-errors error_msg'></div>
+                      </div>
+                    </li>
+                    <li>
+                      <div class="ph-wrapper">
+                        <label for="easy_lastname" class="crsPholder">Last Name</label>
+                        <input name="lastname" class="crsField form-control" type="text" id="easy_lastname" />
+                      </div>
+                    </li>
+                    <li>
+                      <div class="ph-wrapper has-feedback">
+                        <label for="easy_email" class="crsPholder required">Email</label>
+                        <input name="email" class="crsField form-control" id="easy_email" type="text" />
+                        <div class='with-errors error_msg'></div>
+                      </div>
+                    </li>
+                    <li>
+                      <div class="ph-wrapper">
+                        <label for="_method" class="crsPholder">Phone</label>
+                        <input name="mobile_number" class="crsField form-control" type="text" id="easy_mobile_number"
+                          onkeypress="return (event.charCode !=8 && event.charCode ==0 || (event.charCode >= 48 && event.charCode <= 57) || (event.charCode == 43 || event.charCode == 40 || event.charCode == 41 || event.charCode == 45))" />
+                      </div>
+                    </li>
+                    <li>
+                      <div class="ph-wrapper has-feedback">
+                        <label for="resume_upload" class="crsPholder">&nbsp;</label>
+                        <input type="file" name="resume" id="resume_upload" />
+                        <input type='hidden' name='file_name' id='file_name'>
+                        <div class='with-errors error_msg'></div>
+                      </div>
+                    </li>
+                    <li>
+                      <div class="ph-wrapper">
+                        <label for="_method" class="crsPholder">Address</label>
+                        <input name="address" class="crsField form-control" type="text" id="_method" />
+                      </div>
+                    </li>
+                    <li>
+                      <div class="ph-wrapper has-feedback">
+                        <label for="captcha" class="crsPholder required">Captcha</label>
+                        <div id="captcha2"></div>
+                        <input type="text" name="captcha" id="captcha-code-2" />
+                        <div class='with-errors error_msg'></div>
+                      </div>
+                    </li>
+                  </ul>
+                  <div class='clearfix'></div>
+                  <br>
+                  <ul class="crsPop-ul">
+                    <li style='min-height: auto;'>
+                      <div class='ph-wrapper'>
+                        <label for="terms_conditions" class="terms_conditions">
+                          <input type="hidden" name="terms_conditions" id="terms_conditions_" value="0" />
+                          <!--<input type="checkbox" name="terms_conditions" checked="checked" id="terms_conditions" value="1"/>-->
+                          <input type="checkbox" name="terms_conditions" id="terms_conditions" value="1" />
+                          &nbsp;&nbsp;&nbsp; Accept terms & conditions
+                        </label>
+                        <div id='terms_conditions_msg' class='error_msg'></div>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+                <div class="clearfix"></div>
+                <div class="crsPop-row">
+                  <input class="btn crsAp-btn" id="btn_apply_job_without_reg1" type="submit" value="Apply" />
+                  &nbsp;&nbsp;&nbsp; <a style="margin-top: 19px; float: left; padding: 0 15px;"
+                    href="javascript:void(0)" class="" title="Back" data-dismiss="modal">Cancel</a>
+                </div>
+              </form>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Apply without registration block end -->
+
+    <!-- Apply with registration block start -->
+    <div id="apply_with_registration" class="modal fade apply_with_registration" role="dialog">
+      <div class="modal-dialog modal-lg">
+        <!-- Modal content-->
+        <div class="modal-content aWR">
+          <div id='modal-loading-message'>
+            <div id="modal-loader"></div>
+            <img src="img/loadernew.gif" alt="Loading" title="Loading" id="modal-loading-image" />
+          </div>
+          <div class="modal-header">
+            <!-- <h4 class="modal-title">Apply with Registration</h4> -->
+            <h4 class="modal-title">Apply for <span style="color: #002c71; font-size: 22px; font-weight: 700"
+                class='show-job-title'></span> Job</h4>
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div id='message_block' class='text-center message_block'></div>
+            <form id="apply_with_application_form" name="apply_with_application_form" enctype="multipart/form-data"
+              method="post" accept-charset="utf-8">
+              <input type="hidden" name="job_id" id="apply_with_job_id" />
+              <input type="hidden" name="applicant_id" value="0" id="_method" />
+              <input type="hidden" name="type" value="applyWithoutRegistration" id="_method" />
+              <div class="apply_with_mdl_body">
+                <div id='dynamic-form-fields'></div>
+                <div class='clearfix'></div>
+                <div class="gdprBlock" style="display:none;"></div>
+                <div class='clearfix'></div>
+                <div class="jobQuestionsBlock" style="display:none;"></div>
+                <div class='clearfix'></div>
+                <!-- <br> -->
+                <ul class="crsPop-ul">
+                  <li>
+                    <div class="ph-wrapper has-feedback">
+                      <label for="captcha" class="crsPholder required">Captcha</label>
+                      <div id="captcha3"></div>
+                      <input type="text" name="captcha" id="captcha-code-3" />
+                      <div class='with-errors error_msg'></div>
+                    </div>
+                  </li>
+                </ul>
+                <div class='clearfix'></div>
+                <br>
+                <ul class="crsPop-ul apply_terms_conditions_div">
+                  <li style='min-height: auto;'>
+                    <div class='ph-wrapper'>
+                      <label for="apply_terms_conditions" class="apply_terms_conditions">
+                        <input type="hidden" name="terms_conditions" id="apply_terms_conditions_" value="0" />
+                        <!--<input type="checkbox" name="terms_conditions" checked="checked" id="apply_terms_conditions" value="1"/>-->
+                        <input type="checkbox" name="terms_conditions" id="apply_terms_conditions" value="1" />
+                        &nbsp;&nbsp;&nbsp; Accept terms & conditions
+                      </label>
+                      <div id='apply_terms_conditions_msg' class='error_msg'></div>
+                    </div>
+                  </li>
+                </ul>
+                <div class="crsInv-selfD apply_terms_conditions_div">
+                  <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+                    <div class="panel panel-default">
+                      <div class="panel-heading" role="tab" id="tabOne">
+                        <h4 class="panel-title"> <a id='apply_terms_conditions_btn' role="button" data-toggle="collapse"
+                            data-parent="#accordion" href="#applycollapseOne" aria-expanded="true"
+                            aria-controls="applycollapseOne"> <i class="more-less glyphicon glyphicon-menu-right"></i>
+                            Terms and conditions </a> </h4>
+                      </div>
+                      <div id="applycollapseOne" class="panel-collapse collapse" role="tabpanel"
+                        aria-labelledby="headingOne">
+                        <div class="panel-body make_n_by_a terms_and_conditions"> N/A </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="clearfix"></div>
+              <div class='text-center message_block'></div>
+              <div class="crsPop-row">
+                <input class="btn crsAp-btn" id="btn_apply_job_with_reg1" type="button" value="Apply" />
+                &nbsp;&nbsp;&nbsp; <a style="margin-top: 24px;" href="javascript:void(0)"
+              class="" title="Back" data-dismiss="modal">Cancel</a>
+            </form>
+            
+          </div>
+          <div class="clearfix"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Apply with registration block end -->
+  </div>
+
+  <!-- apply with registration conformation model start -->
+  <div id="apply_with_registration_confirm" class="modal fade in" role="dialog">
+    <div class="modal-dialog modal-lg" style="max-width:500px;">
+      <!-- Modal content-->
+      <div class="modal-content aWR">
+        <div id='modal-loading-confirm-message'>
+          <div id="modal-loader"></div>
+          <img src="img/loadernew.gif" alt="Loading" title="Loading" id="modal-loading-image" />
+        </div>
+        <div class="modal-header">
+          <h4 class="modal-title">Apply for <span style="color: #002c71; font-size: 22px; font-weight: 700"
+              class='show-job-title'></span> Job</h4>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <form id="apply_with_confirm_form" name="apply_with_confirm_form" enctype="multipart/form-data" method="post"
+          accept-charset="utf-8">
+          <div class="modal-body">
+            <div class='text-center sub-message_block'></div>
+            <div class='clearfix'></div>
+            <ul class="crsPop-ul">
+              <li style="width:100%;min-height: 40px;">
+                <input type="file" name="resume" id="apply_with_parse_resume" value="Upload Resume"
+                  accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+              </li>
+              <li style="width:100%;min-height: 40px;">
+                <label><input type="radio" checked="checked" name="parse_option" class="apply_with_parse_option"
+                    value="1" /> Parse
+                  Resume and fill the details </label>
+              </li>
+              <li style="width:100%;min-height: 40px;">
+                <label><input type="radio" name="parse_option" class="apply_with_parse_option" value="2" /> I will fill
+                  the details
+                  manually</label>
+              </li>
+            </ul>
+            <div class='clearfix'></div>
+            <div class="crsPop-row">
+              <input class="btn crsAp-btn pull-left" id="btn_apply_with_parse_data" type="button"
+                value="Next" />&nbsp;&nbsp;&nbsp; <a href="javascript:void(0)" class=""
+                style="margin-top: 18px;float: left;margin-left: 10px;" title="Back" data-dismiss="modal">Cancel</a>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+        </form>
+        <div class="clearfix"></div>
+      </div>
+    </div>
+  </div>
+  <!-- ends apply with registration conformation model here -->
+
+  <!-- Submit Resume block start -->
+  <div id="submitResume" class="modal fade in" role="dialog">
+    <div class="modal-dialog modal-lg" style="max-width:700px;">
+      <!-- Modal content-->
+      <div class="modal-content aWR">
+        <div id='modal-loading-message'>
+          <div id="modal-loader"></div>
+          <img src="img/loadernew.gif" alt="Loading" title="Loading" id="modal-loading-image" />
+        </div>
+        <div class="modal-header">
+          <h4 class="modal-title">Submit Resume</h4>
+          <button type="button" class="close cancelSubmit" data-dismiss="modal">&times;</button>
+        </div>
+        <form id="submit_resume_form" name="submit_resume_form" enctype="multipart/form-data" method="post"
+          accept-charset="utf-8">
+          <div class="modal-body">
+            <div id='sub-message_block' class='text-center sub-message_block'></div>
+            <div id='dynamic-submit-resume-fields'></div>
+            <div class='clearfix'></div>
+            <div class="submit_gdprBlock" style="display:none;"></div>
+            <div class='clearfix'></div>
+            <ul class="crsPop-ul hide_submit_resume">
+              <li>
+                <div class="ph-wrapper has-feedback">
+                  <label for="firstname" class="crsPholder required">First Name</label>
+                  <input name="firstname" id="sub-firstname" class="crsField form-control" type="text" />
+                  <div class='with-errors error_msg'></div>
+                </div>
+              </li>
+              <li>
+                <div class="ph-wrapper has-feedback">
+                  <label for="lastname" class="crsPholder required">Last Name</label>
+                  <input name="lastname" id="sub-lastname" class="crsField form-control" type="text" />
+                  <div class='with-errors error_msg'></div>
+                </div>
+              </li>
+              <li>
+                <div class="ph-wrapper has-feedback">
+                  <label class="crsPholder" for='mobile_number'>Contact Number</label>
+                  <input name="mobile_number" id="sub-mobile_number" class="crsField form-control" type="text"
+                    onkeypress="return (event.charCode !=8 && event.charCode ==0 || (event.charCode >= 48 && event.charCode <= 57) || (event.charCode == 43 || event.charCode == 40 || event.charCode == 41 || event.charCode == 45))" />
+                  <div class='with-errors error_msg'></div>
+                </div>
+              </li>
+              <li>
+                <div class="ph-wrapper has-feedback">
+                  <label for="email" class="crsPholder required">Email</label>
+                  <input name="email" class="crsField form-control" id="sub-email" type="text" />
+                  <div class='with-errors error_msg'></div>
+                </div>
+              </li>
+              <li>
+                <div class="ph-wrapper">
+                  <label class="crsPholder" for="country">Country</label>
+                  <select class="crsField form-control" name='country' id='sub-country-list'
+                    onchange="loadStates(this.value, 1, '#sub-states-list')">
+                  </select>
+                </div>
+              </li>
+              <li>
+                <div class="ph-wrapper">
+                  <label class="crsPholder" for="state">State</label>
+                  <select class="crsField form-control" name='state' id='sub-states-list'>
+                  </select>
+                </div>
+              </li>
+              <li>
+                <div class="ph-wrapper">
+                  <label class="crsPholder">City</label>
+                  <input name="city" id="sub-city" class="crsField form-control" type="text" />
+                  <div class='with-errors error_msg'></div>
+                </div>
+              </li>
+              <li>
+                <div class="ph-wrapper">
+                  <label class="crsPholder" for='postal_code'>Postal Code</label>
+                  <input class="crsField form-control" type="text" name='postal_code' id='sub-postal_code' />
+                </div>
+              </li>
+              <li>
+                <div class="ph-wrapper">
+                  <label class="crsPholder" for='work_authorization'>Work Authorization</label>
+                  <select class="crsField form-control" name='work_authorization' id='sub-work_authorization'>
+                  </select>
+                  <div class='with-errors error_msg'></div>
+                </div>
+              </li>
+              <!--<li>
+                <div class="ph-wrapper">
+                  <label class="crsPholder" for="position_title">Job Title</label>
+                  <input  class="crsField form-control" type="text" name='position_title' id='sub-position_title'/>
+                  <div class='with-errors error_msg'></div>
+                </div>
+              </li>-->
+              <li>
+                <div class="ph-wrapper has-feedback">
+                  <label for="resume_upload" class="crsPholder required">Resume</label>
+                  <input type="file" name="resume" id="sub-resume_upload" />
+                  <input type='hidden' name='file_name' id='sub-file_name'>
+                  <div class='with-errors error_msg'></div>
+                </div>
+              </li>
+            </ul>
+            <div class='clearfix'></div>
+            <ul class="crsPop-ul">
+              <li>
+                <div class="ph-wrapper has-feedback">
+                  <label for="captcha" class="crsPholder required">Captcha</label>
+                  <div id="captcha1"></div>
+                  <input type="text" name="captcha" id="captcha-code-1" />
+                  <div class='with-errors error_msg'></div>
+                </div>
+              </li>
+            </ul>
+            <div class="clearfix"></div>
+            <!--Terms and Conditions block starts here -->
+            <div class="crsInv-selfD submit_terms_and_conditions_div" style="display:none;">
+              <div class="panel-group" id="accordion2" role="tablist" aria-multiselectable="true">
+                <div class="panel panel-default">
+                  <div class="panel-heading" role="tab" id="tabTwo">
+                    <h4 class="panel-title"> <a id='submit_terms_conditions_btn' role="button" data-toggle="collapse"
+                        data-parent="#accordion2" href="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
+                        <i class="more-less glyphicon glyphicon-menu-right"></i> Terms and conditions </a> </h4>
+                  </div>
+                  <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+                    <div class="panel-body submit_terms_and_conditions"> N/A </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!--Terms and Conditions block ends here -->
+            <div class="clearfix"></div>
+            <div class="crsPop-row">
+              <input class="btn crsAp-btn pull-left" id="btn_apply_job_without_reg1" type="submit" value="Submit" />
+              &nbsp;&nbsp;&nbsp; <a href="javascript:void(0)" class="cancelSubmit"
+                style="margin-top: 24px;float: left;margin-left: 10px;" data-dismiss="modal" title="Back">Cancel</a>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+        </form>
+        <div class="clearfix"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Submit Resume block end -->
+
+  <!-- submit resume conformation model start -->
+  <div id="submitResumeConfirm" class="modal fade in" role="dialog">
+    <div class="modal-dialog modal-lg" style="max-width:500px;">
+      <!-- Modal content-->
+      <div class="modal-content aWR">
+        <div id='modal-loading-confirm-message'>
+          <div id="modal-loader"></div>
+          <img src="img/loadernew.gif" alt="Loading" title="Loading" id="modal-loading-image" />
+        </div>
+        <div class="modal-header">
+          <h4 class="modal-title">Submit Resume</h4>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <form id="submit_resume_confirm_form" name="submit_resume_form" enctype="multipart/form-data" method="post"
+          accept-charset="utf-8">
+          <div class="modal-body">
+            <div class='text-center sub-message_block'></div>
+            <div class='clearfix'></div>
+            <ul class="crsPop-ul">
+              <li style="width:100%;min-height: 40px;">
+                <input type="file" name="resume" id="submit_parse_resume" value="Upload Resume"
+                  accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+              </li>
+              <li style="width:100%;min-height: 40px;">
+                <label><input type="radio" checked="checked" name="parse_option" class="parse_option" value="1" /> Parse
+                  Resume and fill the details </label>
+              </li>
+              <li style="width:100%;min-height: 40px;">
+                <label><input type="radio" name="parse_option" class="parse_option" value="2" /> I will fill the details
+                  manually</label>
+              </li>
+            </ul>
+            <div class='clearfix'></div>
+            <div class="crsPop-row">
+              <input class="btn crsAp-btn pull-left" id="btn_submit_resume_parse_data" type="button"
+                value="Next" />&nbsp;&nbsp;&nbsp; <a href="javascript:void(0)" class=""
+                style="margin-top: 18px;float: left;margin-left: 10px;" title="Back" data-dismiss="modal">Cancel</a>
+            </div>
+            <div class="clearfix"></div>
+          </div>
+        </form>
+        <div class="clearfix"></div>
+      </div>
+    </div>
+  </div>
+  <!-- ends submit resume conformation model here -->
+
+  <!-- Mandatory Terms and Conditions popup for job details start -->
+  <div id="job_terms_conditions_modal" class="modal fade" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg" style="max-width:700px;">
+      <!-- Modal content-->
+      <div class="modal-content aWR">
+        <div id='modal-loading-tc-message' style="display:none;">
+          <div id="modal-loader"></div>
+          <img src="img/loadernew.gif" alt="Loading" title="Loading" id="modal-loading-image" />
+        </div>
+        <div class="modal-header">
+          <h4 class="modal-title">Terms and Conditions</h4>
+        </div>
+        <div class="modal-body">
+          <div class='text-center tc_message_block' style="color:#d9534f;"></div>
+          <div class="crsInv-selfD" style="width:100%;">
+            <div class="panel panel-default">
+              <div class="panel-body job_terms_and_conditions_text" style="max-height:320px;overflow-y:auto;"> N/A </div>
+            </div>
+          </div>
+          <div class="clearfix"></div>
+          <div class="crsPop-row" style="clear:both;float:none;width:100%;margin-top:12px;">
+            <label for="accept_job_terms_conditions"
+              style="display:block;cursor:pointer;font-weight:normal;margin:0;overflow:hidden;">
+              <input type="checkbox" id="accept_job_terms_conditions"
+                style="width:16px;height:16px;min-width:16px;float:left;margin:2px 8px 0 0;" />
+              <span style="display:block;overflow:hidden;line-height:1.4;">I have read and accept the terms and
+                conditions. <span style="color:#d9534f;">*</span></span>
+            </label>
+            <div class="with-errors tc_checkbox_error" style="clear:both;color:#d9534f;margin-top:5px;"></div>
+          </div>
+          <div class="clearfix"></div>
+          <div class="crsPop-row" style="clear:both;float:none;width:100%;margin-top:15px;">
+            <input class="btn crsAp-btn pull-left" id="btn_accept_job_terms" type="button" value="Accept" disabled />
+            &nbsp;&nbsp;&nbsp;
+            <a href="javascript:void(0)" class="" id="btn_reject_job_terms"
+              style="margin-top:18px;float:left;margin-left:10px;" title="Reject">Reject</a>
+          </div>
+          <div class="clearfix"></div>
+        </div>
+        <div class="clearfix"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Mandatory Terms and Conditions popup for job details end -->
+
+  <!-- xxxxxxxxxxxx start -->
+  <div id="" class="modal fade in" role="dialog" style="display:none;">
+    <div class="modal-dialog modal-lg" style="max-width:500px;">
+      <!-- Modal content-->
+      <div class="modal-content aWR">
+        <div id='modal-loading-message'>
+          <div id="modal-loader"></div>
+          <img src="img/loadernew.gif" alt="Loading" title="Loading" id="modal-loading-image" />
+        </div>
+        <div class="modal-header">
+          <h4 class="modal-title">Apply for Salesforce Business Analyst Job</h4>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div class='clearfix'></div>
+          <ul class="crsPop-ul hide_submit_resume">
+            <li style="width:100%;min-height: 40px;">
+              <input type="file" name="resume" id="" value="Upload Resume" />
+            </li>
+            <li style="width:100%;min-height: 40px;">
+              <label><input type="radio" /> Parse Resume and fill the details </label>
+            </li>
+            <li style="width:100%;min-height: 40px;">
+              <label><input type="radio" /> I will fill the details manually</label>
+            </li>
+          </ul>
+          <div class='clearfix'></div>
+
+          <div class="crsPop-row">
+            <input class="btn crsAp-btn pull-left" id="btn_apply_job_without_reg1" type="submit" value="Next" />
+          </div>
+          <div class="clearfix"></div>
+        </div>
+
+        <div class="clearfix"></div>
+      </div>
+    </div>
+  </div>
+  <!-- xxxxxxxxxxxx end -->
+
+  </div>
+  </div>
+  <!-- Printable job description -->
+  <!DOCTYPE html>
+<html>
+<head>
+<title>Page Title</title>
+</head>
+<body>
+
+<div style='display:none'>
+    <div class="jobDetailsBlock" id='printable-jobDetailsBlock'>
+      <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
+      <link rel="stylesheet" type="text/css" href="css/font-awesome.css" />
+      <link rel="stylesheet" type="text/css"
+        href="https://fonts.googleapis.com/css?family=Open+Sans:400,300,400italic,600,700" />
+      <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Raleway:400,300" />
+      <link rel="stylesheet" type="text/css" href="css/custom.css" />
+      <style>
+      @media print {
+  table tr td {
+    border: 0px !important;
+    padding: 0px !important;
+  }
+  .print-page-header-cell {
+    background-color: #eee !important; 
+    -webkit-print-color-adjust: exact !important; 
+    print-color-adjust: exact !important;
+  }
+  .outer-div {
+    background-color: #fff !important;
+    -webkit-print-color-adjust: exact !important; 
+    print-color-adjust: exact !important;
+  }
+  .jobQuickinfo {
+    background-color: #f5f9fc !important;
+    background: #f5f9fc !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .container {
+    padding: 0px !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+       
+      </style>
+      <div class="outer-div">
+        <div style="background-color:#fff;">
+          <table class="print-layout-table">
+            <thead class="print-page-header">
+              <tr style="background-color:#eee; -webkit-print-color-adjust:exact; print-color-adjust:exact;">
+                <td style="background-color:#eee; -webkit-print-color-adjust:exact; print-color-adjust:exact;"align="left" class="print-page-header-cell">
+                  <img class="print-company-logo" src="" alt="" />
+                </td>
+              </tr>
+              <tr><td>&nbsp;</td></tr>
+              <tr>
+                <td>
+                  <div class="currentOpenList jobDetRow mt-15"><br>
+                <div class="jobDesTitle-1 position_title make_n_by_a">N/A</div>
+                <div class="curJobCodeRow"> <span class="curlocation"><i class="fa fa-map-marker" style="color:#999;"></i> <span
+                      class='location make_n_by_a'>N/A</span></span> <span style="color:#bbb;">|</span> <span
+                    class="nubOfdays"><i class="fa fa-calendar"></i> <span class='created make_n_by_a'>N/A</span></span>
+                </div>
+              </div>
+                </td>
+              </tr>
+              <tr><td>&nbsp;</td></tr>
+            </thead>
+            <tfoot class="print-page-footer">
+              <tr>
+                <td class="print-page-footer-cell">
+                  <hr class="print-page-footer-hr">
+                  <span class="print-company-url"></span>
+                </td>
+              </tr>
+            </tfoot>
+            <tbody>
+              <tr>
+                <td class="print-page-body">
+          <div class="container" style="display:flex;gap:20">
+            <div class="leftSide jobQuickinfo">
+              <div class="jobQuickinfoList" style="margin-top:10px;">
+                <div class="jqIcon"> <i class="fa fa-hashtag"></i> </div>
+                <div class="jqDetaRow">
+                  <div class="jqLabel">Job Code</div>
+                  <div class="jqinfo2 job_code make_n_by_a">N/A</div>
+                </div>
+              </div>
+              <div class="jobQuickinfoList">
+                <div class="jqIcon"> <i class="fa fa-thumb-tack"></i> </div>
+                <div class="jqDetaRow">
+                  <div class="jqLabel">Posted Date</div>
+                  <div class="jqinfo2 created make_n_by_a">N/A</div>
+                </div>
+              </div>
+              <div class="jobQuickinfoList">
+                <div class="jqIcon"> <i class="fa fa-briefcase"></i> </div>
+                <div class="jqDetaRow">
+                  <div class="jqLabel">Experience</div>
+                  <div class="jqinfo2 experience make_n_by_a">N/A</div>
+                </div>
+              </div>
+              <div class="jobQuickinfoList">
+                <div class="jqIcon"> <i class="fa fa-check-circle"></i> </div>
+                <div class="jqDetaRow">
+                  <div class="jqLabel">Primary Skills</div>
+                  <div class="jqinfo2 primary_skills make_n_by_a">N/A</div>
+                </div>
+              </div>
+              <div class="jobQuickinfoList">
+                <div class="jqIcon"> <i class="fa fa-file-text"></i> </div>
+                <div class="jqDetaRow">
+                  <div class="jqLabel">Required Documents</div>
+                  <div class="jqinfo2 required_documents make_n_by_a">N/A</div>
+                </div>
+              </div>
+              <div class="jobQuickinfoList">
+                <div class="jqIcon"> <i class="fa fa-user"></i> </div>
+                <div class="jqDetaRow">
+                  <div class="jqLabel">Contact Person</div>
+                  <div class="jqinfo2 contact_person make_n_by_a">N/A</div>
+                </div>
+              </div>
+            </div>
+            <div class="rightSide JobDescription">
+              
+              <div class="jobQInfo isHealthCare">
+                <div class="job-details-block">
+                  <div class="jLabList hTitle-4 mb-0 float-left mt-0">Job Details</div>
+                  <div class="labListB">
+                    <div class="jLabs job_posted_on_block">
+                      <div class="jLab-1">Job Posted On</div>
+                      <div class="jLab-2 job_posted_on">03/24/24</div>
+                    </div>
+                    <div class="jLabs speciality_block">
+                      <div class="jLab-1">Specialty </div>
+                      <div class="jLab-2 speciality">APRN</div>
+                    </div>
+                    <div class="jLabs profession_block">
+                      <div class="jLab-1">Profession </div>
+                      <div class="jLab-2 profession">APRN</div>
+                    </div>
+                    <div class="jLabs job_type_block">
+                      <div class="jLab-1">Job Type</div>
+                      <div class="jLab-2 job_type">Allied</div>
+                    </div>
+                    <div class="jLabs duration_block">
+                      <div class="jLab-1">Duration</div>
+                      <div class="jLab-2 duration">13 Weeks</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="rate-details-block" style="display:none;">
+                  <div class="jLabList hTitle-4 mb-0 float-left mt-2">Rate Details</div>
+                  <div class="labListB">
+                    <div class="jLabs pay_rate_block">
+                      <div class="jLab-1">Hourly Pay</div>
+                      <div class="jLab-2 pay_rate">$5600.00</div>
+                    </div>
+                    <div class="jLabs weekly_pay_block">
+                      <div class="jLab-1">Weekly Pay</div>
+                      <div class="jLab-2 weekly_pay">$1400.00</div>
+                    </div>
+                    <div class="jLabs gross_weekly_pay_block">
+                      <div class="jLab-1">Gross Weekly Pay</div>
+                      <div class="jLab-2 gross_weekly_pay">$1400.00</div>
+                    </div>
+                    <div class="jLabs lodging_hourly_block">
+                      <div class="jLab-1">Lodging (Hourly) </div>
+                      <div class="jLab-2 lodging_hourly">$50/hr</div>
+                    </div>
+                    <div class="jLabs lodging_daily_block">
+                      <div class="jLab-1">Lodging (Daily) </div>
+                      <div class="jLab-2 lodging_daily">$50/hr</div>
+                    </div>
+                    <div class="jLabs lodging_weekly_block">
+                      <div class="jLab-1">Lodging (Weekly) </div>
+                      <div class="jLab-2 lodging_weekly">$50/hr</div>
+                    </div>
+                    <div class="jLabs mie_hourly_block">
+                      <div class="jLab-1">M&IE(Hourly)</div>
+                      <div class="jLab-2 mie_hourly">$23/hr</div>
+                    </div>
+                    <div class="jLabs mie_daily_block">
+                      <div class="jLab-1">M&IE(Daily)</div>
+                      <div class="jLab-2 mie_daily">$23/hr</div>
+                    </div>
+                    <div class="jLabs mie_weekly_block">
+                      <div class="jLab-1">M&IE(Weekly)</div>
+                      <div class="jLab-2 mie_weekly">$23/hr</div>
+                    </div>
+                    <div class="jLabs gsa_hourly_block">
+                      <div class="jLab-1">GSA (Hourly)</div>
+                      <div class="jLab-2 gsa_hourly">$67200.00</div>
+                    </div>
+                    <div class="jLabs gsa_daily_block">
+                      <div class="jLab-1">GSA (Daily)</div>
+                      <div class="jLab-2 gsa_daily">$67200.00</div>
+                    </div>
+                    <div class="jLabs gsa_weekly_block">
+                      <div class="jLab-1">GSA (Weekly)</div>
+                      <div class="jLab-2 gsa_weekly">$67200.00</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="shift-details-block" style="display:none;">
+                  <div class="jLabList hTitle-4 mb-0 float-left mt-2">Shift Schedules</div>
+                  <div class="shift-schedules-block"></div>
+                </div>
+              </div>
+              <div class="currentOpenList">
+                <div class="jobDetRow make_n_by_a job_description"> </div>
+              </div>
+              <div class="currentOpenList job_summary_block" style="display:none;">
+                <div class="jobDetRow job_summary"></div>
+              </div>
+              <div class="notReady hidden">
+                <div class="jobDesTitle-3">Not Ready to Apply?</div>
+                <div>Join our talent pool and we'll reach out when a job fits your skills.</div>
+                <div class="subResumeBtn">
+                  <button>Submit Resume <i class="fa fa-caret-right"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+
+
+
+  <!--<div style="position:fixed;right:20px;bottom:20px">
+    <iframe style="border:none; width: 500px;height:500px;" id="chatbot_frame" src=""></iframe>
+  </div>-->
+  <!-- Careerbot section start -->
+  <script type="text/javascript" src="js/jquery.min.js"></script>
+  <script type="text/javascript" src="js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="js/jquery.tagsinput.js"></script>
+  <script type="text/javascript" src="js/multiple-select.js"></script>
+  <script type="text/javascript" src="js/bootstrap-datetimepicker.js"></script>
+  <script type="text/javascript" src="js/app.min.js"></script>
+
+
+  <script>
+    /* When the user clicks on the button,
+    toggle between hiding and showing the dropdown content */
+    function myFunction() {
+      document.getElementById("myDropdown").classList.toggle("show");
+    }
+
+    // Close the dropdown menu if the user clicks outside of it
+    window.onclick = function (event) {
+      if (!event.target.matches('.dropbtn')) {
+        var dropdowns = document.getElementsByClassName("dropdown-content");
+        var i;
+        for (i = 0; i < dropdowns.length; i++) {
+          var openDropdown = dropdowns[i];
+          if (openDropdown.classList.contains('show')) {
+            openDropdown.classList.remove('show');
+          }
+        }
+      }
+    }
+
+  </script>
+  <script>
+    $(document).ready(function () {
+      $('[data-toggle="tooltip"]').tooltip();
+    });
+  </script>
+  <script>
+    $(document).ready(function(){
+      $('[data-toggle="tooltip"]').tooltip();
+    });
+    </script>
+</body>
+
+</html>

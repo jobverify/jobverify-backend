@@ -52,3 +52,11 @@ test('dhiOmics is runnable through the scraper provider catalog', () => {
   assert.equal(scraper.provider.companyCareerPage, 'https://adaglobal.com/careers/')
   assert.match(scraper.dryRunFile, /dhiomics[\\/]jobs\.json$/i)
 })
+
+test('dhiOmics current published API metadata never claims authoritative India coverage',()=>{
+ const provider=getScraperCatalog().find(p=>p.source==='dhiomics')
+ assert.equal(provider.publicListingApiUrl,'https://adaglobal.darwinbox.com/ms/candidateapi/job/alljobs')
+ assert.equal(provider.listingComplete,false)
+ assert.equal(provider.indiaInventoryTotal,null)
+ assert.match(provider.verifiedSurfaceSummary,/57.*15|15.*57/)
+})

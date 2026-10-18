@@ -12,6 +12,7 @@ export const SOURCE = ARTEFACT_CATALOG.source
 export const COMPANY = ARTEFACT_CATALOG.companyName
 export const HOMEPAGE_URL = ARTEFACT_CATALOG.homepageUrl
 export const CAREERS_URL = ARTEFACT_CATALOG.companyCareerPage
+export const JOBS_URL = 'https://www.artefact.com/careers/explore-our-jobs/'
 export const GREENHOUSE_BOARD_URL = ARTEFACT_CATALOG.greenhouseBoardUrl
 export const GREENHOUSE_JOBS_API_URL = ARTEFACT_CATALOG.greenhouseJobsApiUrl
 
@@ -107,6 +108,13 @@ export const hasOfficialCareersPageSignal = (html) => {
       || extractListingCards(rawHtml).length > 0)
     && /https:\/\/www\.artefact\.com\/job\//i.test(rawHtml)
     && /https:\/\/job-boards\.greenhouse\.io\/artefact\/jobs\/\d+/i.test(rawHtml)
+}
+
+const hasOfficialCareersLandingSignal = (html) => {
+  const rawHtml = String(html ?? '')
+  return /<title>\s*Careers - Artefact\s*<\/title>/i.test(rawHtml)
+    && /href=["']https:\/\/www\.artefact\.com\/careers\/explore-our-jobs\/["']/i.test(rawHtml)
+    && /href=["']https:\/\/www\.artefact\.com\/careers\/working-at-artefact\/["']/i.test(rawHtml)
 }
 
 export const hasBunkerWebBotDetectionSignal = (html) => {
@@ -391,7 +399,12 @@ export const createArtefactScraper = ({ now = () => new Date().toISOString() } =
       throw new Error('Artefact verified official homepage no longer matches the trusted first-party surface')
     }
 
-    const careersHtml = await fetchText(CAREERS_URL, { signal })
+    let careersHtml = await fetchText(CAREERS_URL, { signal })
+    let listingUrl = CAREERS_URL
+    if (hasOfficialCareersLandingSignal(careersHtml)) {
+      listingUrl = JOBS_URL
+      careersHtml = await fetchText(listingUrl, { signal })
+    }
     const careersBlocked = hasBunkerWebBotDetectionSignal(careersHtml)
     if (!careersBlocked && !hasOfficialCareersPageSignal(careersHtml)) {
       throw new Error('Artefact verified official careers page no longer matches the trusted first-party surface')
@@ -419,7 +432,7 @@ export const createArtefactScraper = ({ now = () => new Date().toISOString() } =
       return fetchVerifiedGreenhouseJobs()
     }
 
-    const pageUrls = [CAREERS_URL, ...extractPaginationUrls(careersHtml)]
+    const pageUrls = [listingUrl, ...extractPaginationUrls(careersHtml)]
     const additionalPageEntries = await mapWithConcurrency(
       pageUrls.slice(1),
       PAGE_FETCH_CONCURRENCY,
@@ -428,7 +441,7 @@ export const createArtefactScraper = ({ now = () => new Date().toISOString() } =
         html: await fetchText(url, { signal }),
       }),
     )
-    const pageHtmlEntries = [{ url: CAREERS_URL, html: careersHtml }, ...additionalPageEntries]
+    const pageHtmlEntries = [{ url: listingUrl, html: careersHtml }, ...additionalPageEntries]
 
     const allListings = pageHtmlEntries.flatMap((entry) => extractListingCards(entry.html))
     const indiaListings = dedupeListings(filterIndiaListings(allListings))
