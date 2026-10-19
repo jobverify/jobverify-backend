@@ -6,7 +6,7 @@ import '../loadEnv.js';
 import { configureMongoDns } from '../src/utils/mongoDns.js';
 import Job from '../src/models/Job.js';
 import { REWRITE_MODEL } from '../src/services/jobDescriptionPolicy.js';
-import { rewriteDeadline, rewriteQueueQuery, createRewriteClient, rewriteCandidates } from '../rewriting/runner.js';
+import { rewriteDeadline, rewriteQueueQuery, rewriteQueueScan, rewriteFailureDetails, createRewriteClient, rewriteCandidates } from '../rewriting/runner.js';
 import { prepareRewriteRuntime, startRewriteWorker, workerMemoryBytes } from '../rewriting/worker.js';
 
 const apply = process.argv.includes('--apply');
@@ -20,25 +20,36 @@ const controller = new AbortController();
 for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => controller.abort());
 const budgetSignal = AbortSignal.timeout(Math.max(1, Math.floor(deadline - Date.now())));
 const signal = AbortSignal.any([controller.signal, budgetSignal]);
-let worker, cursor;
+let worker, cursor, phase = 'configuration';
 try {
   if (apply && mode !== 'publish') summary.reason = 'disabled';
   else if (Date.now() >= deadline) summary.reason = 'workflow_budget_exhausted';
   else {
     if (!process.env.MONGO_URI) throw new Error('MONGO_URI is required');
     configureMongoDns();
+    phase = 'connect';
     await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: Math.max(1, Math.min(15000, deadline - Date.now())) });
     const query = rewriteQueueQuery();
+    phase = 'count_queue';
     summary.queued = await Job.countDocuments(query).maxTimeMS(15000);
     if (!apply || !summary.queued) summary.reason = apply ? 'empty_queue' : 'read_only_preview';
     else {
         signal.throwIfAborted();
-        worker = await startRewriteWorker({ ...await prepareRewriteRuntime({ signal }), signal, deadline,
+        phase = 'prepare_runtime';
+        const runtime = await prepareRewriteRuntime({ signal });
+        phase = 'start_worker';
+        worker = await startRewriteWorker({ ...runtime, signal, deadline,
           threads: process.env.JOB_DESCRIPTION_REWRITE_CPU_THREADS || REWRITE_MODEL.cpuThreads });
-        cursor = Job.find(query).sort({ 'descriptionRewrite.queuedAt': 1, _id: 1 }).lean().cursor({ batchSize: 1 });
+        phase = 'process_queue';
+        cursor = rewriteQueueScan(Job, query).cursor({ batchSize: 1 });
         summary.results = [];
         Object.assign(summary, await rewriteCandidates(cursor, { client: createRewriteClient({ ...worker, planCacheDir: '.cache/description-plans' }), deadline, signal,
-          update: (filter, update) => Job.updateOne(filter, update, { runValidators: true, maxTimeMS: 15000 }),
+          update: async (filter, update) => {
+            phase = 'update_job';
+            const result = await Job.updateOne(filter, update, { runValidators: true, maxTimeMS: 15000 });
+            phase = 'process_queue';
+            return result;
+          },
           onResult: result => { summary.results.push(result); console.log(JSON.stringify(result)); },
         }));
     }
@@ -46,7 +57,7 @@ try {
 } catch (error) {
   summary.reason = signal.aborted ? 'interrupted' : 'worker_error';
   // Keep diagnostics free of source text, connection strings, and model completions.
-  summary.errorType = error.name;
+  Object.assign(summary, rewriteFailureDetails(error, phase));
   if (!signal.aborted) process.exitCode = 1;
 } finally {
   await cursor?.close();

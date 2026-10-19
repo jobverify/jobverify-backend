@@ -6,7 +6,6 @@
 import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import mongoose from "mongoose";
-import { buildJobProvenance } from '../utils/jobProvenance.js';
 import Job from "../models/Job.js";
 import Click from "../models/Click.js";
 import { getPreferredJobTypeMatches } from "../constants/preferredJobTypes.js";
@@ -841,6 +840,7 @@ export const normalizeResponseJob = (job) => {
     sourceContentHash: _sourceContentHash,
     sourceContentHashVersion: _sourceContentHashVersion,
     descriptionRewrite: _descriptionRewrite,
+    provenance: _provenance,
     ...publicJob
   } = job;
   const locations = normalizeStoredLocations(publicJob);
@@ -858,7 +858,6 @@ export const normalizeResponseJob = (job) => {
     locations,
     experienceLevel: normalizeResponseExperienceLevel(job),
     jobType: normalizeResponseJobType(job),
-    provenance: buildJobProvenance(job),
     ...buildApplicationState(job),
   };
 };
