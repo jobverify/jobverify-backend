@@ -99,21 +99,24 @@ const normalizeWorkMode = (value) => {
 const normalizeLocation = (record = {}) => {
   const extracted = record.location_extracted || {}
   const landingLocation = record._landingApplyPayload?.location || {}
+  const country = normalizeWhitespace(extracted.country || record.loc_country || landingLocation.country)
+  if (!country) throw new Error('TechMojo incomplete country scope')
   const city = titleCaseToken(
-    extracted.city_display_name || extracted.city || landingLocation.cityDisplay || landingLocation.city || record.location,
+    extracted.city_display_name || extracted.city || record.loc_city || landingLocation.cityDisplay || landingLocation.city || record.location,
   )
-  const state = titleCaseToken(extracted.stateName || landingLocation.stateName)
+  const state = titleCaseToken(extracted.stateName || extracted.state || landingLocation.stateName)
 
   return {
+    country,
     city: city || null,
-    location: [city, state, 'India'].filter(Boolean).join(', '),
+    location: [city, state, country].filter(Boolean).join(', '),
   }
 }
 
 const buildJobUrl = (record = {}) => {
   const segment = normalizeWhitespace(record.jobUrlSegment)
-  if (!segment) return PUBLIC_COMPANY_BOARD_URL
-  return new URL(`/jobs/${segment}`, PUBLIC_JOBS_URL).toString()
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(segment)) throw new Error('TechMojo invalid job URL segment')
+  return new URL(`/jobs/techmojo-solutions/${segment}/`, PUBLIC_JOBS_URL).toString()
 }
 
 export const hasOfficialCareersSignal = (html = '') => {
@@ -122,7 +125,12 @@ export const hasOfficialCareersSignal = (html = '') => {
 
   return /Careers at TechMojo/i.test(text)
     && /Build where engineering is tested by/i.test(text)
-    && page.includes(PUBLIC_COMPANY_BOARD_URL)
+    && [...page.matchAll(/<a\b[^>]*href=["']([^"']+)["']/gi)].some((match) => {
+      try {
+        const url = new URL(decodeHtml(match[1]), CAREERS_URL)
+        return url.origin === 'https://9am.careers' && url.pathname.replace(/\/$/, '') === '/jobs/techmojo-solutions'
+      } catch { return false }
+    })
 }
 
 const findJobsDataLiteral = (html = '') => {
@@ -175,19 +183,18 @@ export const extractPublicJobsPayload = (html = '') => {
 export const hasPublicJobsPayloadSignal = (html = '') => (
   extractPublicJobsPayload(html).some((record) => (
     record?.displaySlug === 'techmojo-solutions'
-    && /TECHMOJO SOLUTIONS/i.test(String(record?.company ?? ''))
+    && /^TECHMOJO SOLUTIONS$/i.test(normalizeWhitespace(record?.company))
   ))
 )
 
-export const extractJobs = (html = '', scrapedAt = new Date().toISOString()) => {
-  const records = extractPublicJobsPayload(html)
+const extractJobsFromRecords = (records, scrapedAt) => {
   const seen = new Set()
   const jobs = []
 
   for (const record of records) {
     if (
       record?.displaySlug !== 'techmojo-solutions'
-      || !/TECHMOJO SOLUTIONS/i.test(String(record?.company ?? ''))
+      || !/^TECHMOJO SOLUTIONS$/i.test(normalizeWhitespace(record?.company))
       || String(record?.status ?? '').toLowerCase() !== 'open'
     ) {
       continue
@@ -196,10 +203,12 @@ export const extractJobs = (html = '', scrapedAt = new Date().toISOString()) => 
     const title = normalizeWhitespace(record.title)
     const url = buildJobUrl(record)
     const key = `${record.id || record.sequenceNo || title}::${url}`
-    if (!title || seen.has(key)) continue
+    if (!title || !record.id) throw new Error('TechMojo incomplete public role identity')
+    if (seen.has(key)) throw new Error('TechMojo duplicate public role')
 
     seen.add(key)
-    const { city, location } = normalizeLocation(record)
+    const { city, location, country } = normalizeLocation(record)
+    if (country.toLowerCase() !== 'india') continue
     const descriptionHtml = unwrapQuotedDescription(record.description || record._landingApplyPayload?.jobDescription)
 
     jobs.push({
@@ -223,13 +232,38 @@ export const extractJobs = (html = '', scrapedAt = new Date().toISOString()) => 
       jobId: record.id || `${SOURCE}-${record.sequenceNo || record.jobUrlSegment}`,
       requisitionId: String(record.sequenceNo || record.id || record.jobUrlSegment || ''),
       department: null,
-      postingDate: record.created_at || null,
+      postingDate: record.created_at || record.updated_at || null,
       closingDate: null,
       remoteStatus: normalizeWorkMode(record.workMode),
     })
   }
 
   return jobs
+}
+
+export const extractJobs = (html = '', scrapedAt = new Date().toISOString()) =>
+  extractJobsFromRecords(extractPublicJobsPayload(html), scrapedAt)
+
+const extractDetailPayload = (html) => {
+  const page = String(html ?? '')
+  const marker = /\bconst\s+applyPayload\s*=\s*/g.exec(page)
+  if (!marker) throw new Error('TechMojo detail payload marker disappeared')
+  const start = marker.index + marker[0].length
+  let depth = 0
+  let quoted = false
+  let escaped = false
+  if (page[start] !== '{') throw new Error('TechMojo invalid detail payload')
+  for (let index = start; index < page.length; index += 1) {
+    const char = page[index]
+    if (quoted) {
+      if (escaped) escaped = false
+      else if (char === '\\') escaped = true
+      else if (char === '"') quoted = false
+    } else if (char === '"') quoted = true
+    else if (char === '{') depth += 1
+    else if (char === '}' && --depth === 0) return JSON.parse(page.slice(start, index + 1))
+  }
+  throw new Error('TechMojo incomplete detail payload')
 }
 
 export const createTechMojoSolutionsScraper = ({
@@ -241,12 +275,37 @@ export const createTechMojoSolutionsScraper = ({
       throw new Error('The verified TechMojo Solutions careers page changed materially')
     }
 
-    const publicJobsHtml = await fetchText(PUBLIC_JOBS_URL)
+    const publicJobsHtml = await fetchText(PUBLIC_COMPANY_BOARD_URL)
     if (!hasPublicJobsPayloadSignal(publicJobsHtml)) {
       throw new Error('The verified TechMojo Solutions 9am public jobs payload changed materially')
     }
 
-    return extractJobs(publicJobsHtml, now())
+    const records = extractPublicJobsPayload(publicJobsHtml)
+    const advertisedCount = publicJobsHtml.match(/<p\b[^>]*class=["'][^"']*\bcompany-header-count\b[^"']*["'][^>]*>\s*(\d+)\s+jobs? available\s*<\/p>/i)?.[1]
+    if ((advertisedCount != null && Number(advertisedCount) !== records.length)
+      || (records.some(record => Object.hasOwn(record, 'loc_country')) && advertisedCount == null)) {
+      throw new Error('TechMojo incomplete public company-board count')
+    }
+    // The company board embeds the complete list; the homepage now shows featured roles only.
+    const listedJobs = extractJobsFromRecords(records, now())
+    const hydrated = []
+    for (const job of listedJobs) {
+      const record = records.find(record => record.id === job.jobId)
+      if (job.jobDescription) {
+        hydrated.push(record)
+        continue
+      }
+      const detail = extractDetailPayload(await fetchText(job.sourceUrl))
+      if (detail.id !== record.id || normalizeWhitespace(detail.title) !== job.title
+        || !/^TECHMOJO SOLUTIONS$/i.test(normalizeWhitespace(detail.company))
+        || String(detail.status).toLowerCase() !== 'open'
+        || !stripTags(unwrapQuotedDescription(detail.description))) {
+        throw new Error('TechMojo detail identity or employer does not match the company board')
+      }
+      if (normalizeLocation(detail).country.toLowerCase() !== 'india') throw new Error('TechMojo detail country scope changed')
+      hydrated.push({ ...record, ...detail, jobUrlSegment: record.jobUrlSegment, displaySlug: record.displaySlug })
+    }
+    return extractJobsFromRecords(hydrated, now())
   },
 })
 

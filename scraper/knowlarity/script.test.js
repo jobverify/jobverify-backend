@@ -27,7 +27,7 @@ test('Knowlarity default fetch is bounded by a timeout signal', async () => {
   assert.equal(capturedInit.signal instanceof AbortSignal, true)
 })
 
-test('Knowlarity default fetch uses verified Windows Schannel for the exact first-party host when Node lacks the issuer chain', async () => {
+test('Knowlarity default fetch uses verified native HTTPS for the exact first-party host when Node lacks the issuer chain', async () => {
   const calls = []
   const page = await defaultFetchPage(CAREERS_URL, {
     fetchImpl: async () => {
@@ -50,7 +50,7 @@ test('Knowlarity default fetch uses verified Windows Schannel for the exact firs
     url: CAREERS_URL,
     html: '<html><title>Knowlarity careers</title></html>',
   })
-  assert.equal(calls[0].file, 'curl.exe')
+  assert.equal(calls[0].file, process.platform === 'win32' ? 'curl.exe' : 'curl')
   assert.equal(calls[0].args.includes('--insecure'), false)
   assert.equal(calls[0].args.includes('-k'), false)
   assert.deepEqual(calls[0].args.slice(-3), ['--proto-redir', '=https', CAREERS_URL])

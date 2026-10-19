@@ -195,3 +195,24 @@ test('i2c traverses count-advertised public jobs pagination and rejects changing
   assert.deepEqual(requests,[0,32])
   await assert.rejects(i2c.run({fetchText:async url=>url===i2c.CAREERS_LANDING_URL?fixture.landing:fixture.portal,fetchJobsPage:async start=>page(start,start?{jobCount:34}:{})}), /inventory|totals/i)
 })
+
+test('i2c reports HTTP and challenge responses as unavailable inventory instead of parser failures', async t => {
+  const i2c = await loadModule()
+  const fixture = await loadCurrentFixtures()
+  const { classifyScraperError } = await import('../utils/failureClassification.js')
+  for (const [status, url, body, expected] of [
+    [403, i2c.JOBS_API_URL, '<html>Forbidden</html>', /HTTP 403/],
+    [200, i2c.JOBS_API_URL, 'window["bobcmn"];window["failureConfig"];TSPD_123', /bot challenge/],
+    [200, 'https://careers.i2cinc.com/denied', '{}', /redirected/],
+  ]) {
+    const mock = t.mock.method(globalThis, 'fetch', async () => ({ status, url, text: async () => body }))
+    await assert.rejects(i2c.run({
+      fetchText: async url => url === i2c.CAREERS_LANDING_URL ? fixture.landing : fixture.portal,
+    }), error => {
+      assert.match(error.message, expected)
+      assert.equal(classifyScraperError(error).softFailure, true)
+      return true
+    })
+    mock.mock.restore()
+  }
+})

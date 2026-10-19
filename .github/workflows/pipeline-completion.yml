@@ -1,4 +1,4 @@
-name: Jobverify Pipeline Completion
+name: Jobverify Pipeline Coordinator
 on:
   workflow_run:
     workflows: ['Jobverify Scraper Cron', 'Jobverify Description Rewrite', 'Jobverify Post-scrape Classification']
