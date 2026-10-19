@@ -39,6 +39,15 @@ test('fatal persistence failure cancels a peer even when its lifecycle timeout i
   assert.equal(result.settledBeforeHistory, true)
 })
 
+for (const scenario of ['fatal-cleanup', 'persistence-cleanup']) {
+  test(`lifecycle timeout preserves ${scenario} errors instead of downgrading them to a warning`, () => {
+    const result = runScenario(scenario)
+    assert.match(result.error?.message || '', /shared persistence failed during abort cleanup/)
+    assert.deepEqual(result.started, ['broken'])
+    assert.equal(result.finished.aborted, true)
+  })
+}
+
 test('parallel timeout stays bounded when a source ignores its abort signal', () => {
   const result = runScenario('uncooperative-timeout')
 
@@ -92,17 +101,19 @@ test('parallel runner resumes from a per-source checkpoint without rerunning com
   assert.equal(result.checkpoint.completedCount, 2)
 })
 
-test('checkpointed failures still enforce the configured abort threshold after restart', () => {
-  const result = runScenario('checkpoint-failure-threshold')
+for (const parallel of [true, false]) {
+  test(`${parallel ? 'parallel' : 'sequential'} checkpointed source failures do not stop queued sources even with a legacy abort threshold`, () => {
+    const result = runScenario('checkpoint-failure-threshold', parallel)
 
-  assert.equal(result.error, null)
-  assert.deepEqual(result.started, [])
-  assert.deepEqual(Object.keys(result.history), ['alpha'])
-  assert.equal(result.finished.aborted, true)
-  assert.equal(result.checkpoint.status, 'interrupted')
-  assert.equal(result.checkpoint.restartable, false)
-  assert.equal(result.checkpoint.completedCount, 1)
-})
+    assert.equal(result.error, null)
+    assert.deepEqual(result.started, ['beta'])
+    assert.deepEqual(Object.keys(result.history).sort(), ['alpha', 'beta'])
+    assert.equal(result.history.alpha.success, false)
+    assert.equal(result.finished.aborted, false)
+    assert.equal(result.checkpoint.status, 'complete')
+    assert.equal(result.checkpoint.completedCount, 2)
+  })
+}
 
 for (const parallel of [true, false]) {
   test(`${parallel ? 'parallel' : 'sequential'} runner preserves failed retry telemetry in run history`, () => {

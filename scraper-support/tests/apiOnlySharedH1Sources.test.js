@@ -13,7 +13,6 @@ const sources = [
   'safranengineeringservicesindia',
   'saucelabs',
   'schneiderelectric',
-  'schoolnetindia',
   'spheraindia',
   'syrmasgs',
   'waydotcomindia',

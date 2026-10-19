@@ -666,15 +666,15 @@ test('runApiPortalScraper supports POST listing requests and MynextHire-style JD
   const seenRequests = []
   const jobs = await runApiPortalScraper({
     provider: {
-      source: 'swiggy',
-      companyName: 'Swiggy',
-      companyCareerPage: 'https://careers.swiggy.com/',
+      source: 'example',
+      companyName: 'Example Commerce',
+      companyCareerPage: 'https://careers.example.com/',
       countryFilter: 'India',
       atsPlatform: 'mynexthire',
       config: {
         discovery: {
-          careerPageUrl: 'https://careers.swiggy.com/',
-          listingApiUrl: 'https://swiggy.mynexthire.com/employer/careers/reqlist/get',
+          careerPageUrl: 'https://careers.example.com/',
+          listingApiUrl: 'https://example.mynexthire.com/employer/careers/reqlist/get',
         },
         request: {
           method: 'POST',
@@ -704,14 +704,14 @@ test('runApiPortalScraper supports POST listing requests and MynextHire-style JD
           requisitionId: 'reqId',
           sourceUrl: {
             strategy: 'mynexthire-link',
-            baseUrl: 'https://careers.swiggy.com/#/careers',
+            baseUrl: 'https://careers.example.com/#/careers',
             pageType: 'jd',
             cvSource: 'careers',
             reqIdPath: 'reqId',
           },
           applyUrl: {
             strategy: 'mynexthire-link',
-            baseUrl: 'https://careers.swiggy.com/#/careers/apply',
+            baseUrl: 'https://careers.example.com/#/careers/apply',
             pageType: 'application',
             cvSource: 'careers',
             reqIdPath: 'reqId',
@@ -771,8 +771,8 @@ test('runApiPortalScraper supports POST listing requests and MynextHire-style JD
   assert.equal(jobs[0].department, 'Technology')
   assert.equal(jobs[0].jobDescription, 'Test platform quality at scale.')
   assert.equal(jobs[0].postingDate, '2026-06-19T11:53:02.171+0000')
-  assert.match(jobs[0].sourceUrl, /^https:\/\/careers\.swiggy\.com\/#\/careers\?src%3Dcareers%26p%3D/)
-  assert.match(jobs[0].applyUrl, /^https:\/\/careers\.swiggy\.com\/#\/careers\/apply\?src%3Dcareers%26p%3D/)
+  assert.match(jobs[0].sourceUrl, /^https:\/\/careers\.example\.com\/#\/careers\?src%3Dcareers%26p%3D/)
+  assert.match(jobs[0].applyUrl, /^https:\/\/careers\.example\.com\/#\/careers\/apply\?src%3Dcareers%26p%3D/)
   assert.equal(jobs[0].link, jobs[0].sourceUrl)
 
   const decodedSourceQuery = decodeURIComponent(jobs[0].sourceUrl.split('?')[1])

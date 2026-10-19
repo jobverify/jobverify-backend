@@ -42,7 +42,6 @@ const sampleCsv = `row,company_name,url_in_text,note
 36,Attentive.AI,,
 37,Aspire Systems,,
 38,AMAGI LABS,,
-39,AlgoUniversity,,
 40,Ammachi Labs,,
 41,Applexus Technologies,,
 42,AFFORDMED,,
@@ -165,7 +164,6 @@ const sampleCsv = `row,company_name,url_in_text,note
 165,Danaher Corporation,,
 166,Danaher,,
 167,DevRev,,
-168,Auro.edu,,
 169,CyberWarFare Labs (CWL),,
 170,DATAMATICS,,
 `
@@ -349,9 +347,9 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
     catalog: getScraperCatalog(),
   })
 
-  assert.equal(report.totalRows, 163)
-  assert.equal(report.candidateRows, 160)
-  assert.equal(report.matchedCount, 154)
+  assert.equal(report.totalRows, 161)
+  assert.equal(report.candidateRows, 158)
+  assert.equal(report.matchedCount, 152)
   assert.equal(report.unmatchedCount, 6)
 
   assert.deepEqual(
@@ -390,7 +388,6 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
       ['Attentive.AI', 'attentiveai'],
       ['Aspire Systems', 'aspiresystems'],
       ['AMAGI LABS', 'amagi'],
-      ['AlgoUniversity', 'algouniversity'],
       ['Ammachi Labs', 'ammachilabs'],
       ['Applexus Technologies', 'applexus'],
       ['AFFORDMED', 'affordmed'],
@@ -508,7 +505,6 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
       ['Danaher Corporation', 'danahercorporation'],
       ['Danaher', 'danahercorporation'],
       ['DevRev', 'devrev'],
-      ['Auro.edu', 'auro'],
       ['CyberWarFare Labs (CWL)', 'cyberwarfarelabs'],
       ['DATAMATICS', 'datamatics'],
     ],

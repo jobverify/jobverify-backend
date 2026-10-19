@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Subscription from "../models/Subscription.js";
 import JobAlertDelivery from "../models/JobAlertDelivery.js";
+import Job from "../models/Job.js";
 import { ALERT_FREQUENCIES, ALERT_WEEKDAYS, ALERT_TIME_PATTERN, DEFAULT_ALERT_TIME, DEFAULT_ALERT_DAY } from "../constants/alertSchedule.js";
 
 export { ALERT_FREQUENCIES };
@@ -83,35 +84,44 @@ export const updateAlertSchedule = async (userId, { frequency, isActive, deliver
 // Queue insertion and cadence changes both write the same subscription document.
 // MongoDB retries conflicting transactions, so a late insertion cannot retain
 // an obsolete pause/cadence after the settings request has committed.
-const queueDeliveries = async (user, jobs, channel, now = new Date()) => mongoose.connection.transaction(async (session) => {
-  const subscription = await Subscription.findOneAndUpdate(
-    { user: user._id },
-    { $inc: { dispatchRevision: 1 }, $setOnInsert: { telegramSchedule: {} } },
-    { upsert: true, new: true, session, timestamps: false },
-  ).lean().exec();
-  const schedule = normalizeAlertSchedule(subscription);
-  const created = [];
-  for (const job of jobs) {
-    const payload = {
-      user: user._id, job: job._id, channel, status: "queued",
-      scheduledFor: getNextAlertDeliveryAt(schedule.frequency, now, schedule),
-      schedulePaused: !schedule.isActive,
-      scheduleVersion: schedule.version,
-      jobSnapshot: {
-        title: job.title || null, company: job.company || null,
-        location: job.city || job.location || null,
-        jobUrl: job.jobUrl || job.applyUrl || job.sourceUrl || job.link || null,
-      },
-    };
-    const result = await JobAlertDelivery.updateOne(
-      { user: user._id, job: job._id, channel },
-      { $setOnInsert: payload },
-      { upsert: true, session },
-    );
-    if (result.upsertedId) created.push({ delivery: { _id: result.upsertedId, ...payload }, job });
-  }
-  return created;
-});
+const queueDeliveries = async (user, jobs, channel, now = new Date()) => {
+  const created = await mongoose.connection.transaction(async (session) => {
+    const subscription = await Subscription.findOneAndUpdate(
+      { user: user._id },
+      { $inc: { dispatchRevision: 1 }, $setOnInsert: { telegramSchedule: {} } },
+      { upsert: true, new: true, session, timestamps: false },
+    ).lean().exec();
+    const schedule = normalizeAlertSchedule(subscription);
+    const created = [];
+    for (const job of jobs) {
+      const payload = {
+        user: user._id, job: job._id, channel, status: "queued",
+        scheduledFor: getNextAlertDeliveryAt(schedule.frequency, now, schedule),
+        schedulePaused: !schedule.isActive,
+        scheduleVersion: schedule.version,
+        jobSnapshot: {
+          title: job.title || null, company: job.company || null,
+          location: job.city || job.location || null,
+          jobUrl: job.jobUrl || job.applyUrl || job.sourceUrl || job.link || null,
+        },
+      };
+      const result = await JobAlertDelivery.updateOne(
+        { user: user._id, job: job._id, channel },
+        { $setOnInsert: payload },
+        { upsert: true, session },
+      );
+      if (result.upsertedId) created.push({ delivery: { _id: result.upsertedId, ...payload }, job });
+    }
+    return created;
+  });
+  if (!created.length) return created;
+  // Validate after commit: a purge may have deleted jobs while this queue
+  // transaction was still inserting deliveries from its earlier snapshot.
+  const existing = new Set((await Job.find({ _id: { $in: created.map(row => row.job._id) } }).select('_id').lean()).map(job => String(job._id)));
+  const orphaned = created.filter(row => !existing.has(String(row.job._id)));
+  if (orphaned.length) await JobAlertDelivery.deleteMany({ _id: { $in: orphaned.map(row => row.delivery._id) } });
+  return created.filter(row => existing.has(String(row.job._id)));
+};
 
 export const alertScheduleService = {
   queueDeliveries,

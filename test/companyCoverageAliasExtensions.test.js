@@ -15,7 +15,7 @@ test('getCompanyAliasMap merges base aliases with sorted extension files', () =>
       path.join(tempDir, 'b-second.json'),
       `${JSON.stringify({
         'Mercer | Mettl': 'mercermettl',
-        'Swiggy Instamart': 'swiggy',
+        'Example Commerce Express': 'example',
       }, null, 2)}\n`,
       'utf8',
     )
@@ -37,7 +37,7 @@ test('getCompanyAliasMap merges base aliases with sorted extension files', () =>
     assert.equal(aliases.Existing, 'existing-source')
     assert.equal(aliases.Freshdesk, 'freshworks')
     assert.equal(aliases['Mercer | Mettl'], 'mercermettl')
-    assert.equal(aliases['Swiggy Instamart'], 'swiggy')
+    assert.equal(aliases['Example Commerce Express'], 'example')
   } finally {
     rmSync(tempDir, { recursive: true, force: true })
   }

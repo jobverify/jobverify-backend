@@ -53,7 +53,7 @@ test('Dineout local catalog captures the verified parent careers migration and a
   assert.equal(provider.atsPlatform, 'smartrecruiters')
   assert.equal(provider.countryFilter, 'India')
   assert.equal(provider.paginationStrategy, 'offset-paginated-parent-ats-with-count-checked-first-party-inventory')
-  assert.equal(provider.extractionStrategy, 'verified-parent-careers-migration+reconciled-public-inventories+dine-out-business-unit+india-country-filter+job-details')
+  assert.equal(provider.extractionStrategy, 'verified-parent-careers-migration+reconciled-dine-out-cohort+india-country-filter+job-details')
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
   assert.equal(provider.verifiedOn, '2026-10-08')

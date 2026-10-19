@@ -313,8 +313,9 @@ export const getSavedJobs = async (req, res) => {
     const availableSavedJobIds = savedJobIds.filter((jobId) => jobsById.has(jobId));
 
     if (req.siteSettings?.experiencedJobsEnabled !== false && availableSavedJobIds.length !== savedJobIds.length) {
+      const unavailableIds = savedJobIds.filter(jobId => !jobsById.has(jobId));
+      await User.updateOne({ _id: user._id }, { $pull: { savedJobs: { $in: unavailableIds } } });
       user.savedJobs = availableSavedJobIds;
-      await user.save();
     }
 
     const orderedJobs = [...availableSavedJobIds]
@@ -369,6 +370,13 @@ export const saveJob = async (req, res) => {
       await user.save();
     }
 
+    // A purge can delete this job after the public lookup and before save.
+    // Its post-delete sweep covers earlier writes; this check covers late ones.
+    if (!await Job.findOne({ _id: job._id }, '_id')) {
+      await User.updateOne({ _id: user._id }, { $pull: { savedJobs: job._id } });
+      return res.status(404).json({ code: 404, success: false, message: 'Job not found' });
+    }
+
     const savedJobsCount = await countAvailableSavedJobs(user, req.siteSettings);
 
     res.status(200).json({
@@ -403,8 +411,8 @@ export const removeSavedJob = async (req, res) => {
     );
 
     if (nextSavedJobs.length !== user.savedJobs.length) {
+      await User.updateOne({ _id: user._id }, { $pull: { savedJobs: jobId } });
       user.savedJobs = nextSavedJobs;
-      await user.save();
     }
 
     const savedJobsCount = await countAvailableSavedJobs(user, req.siteSettings);

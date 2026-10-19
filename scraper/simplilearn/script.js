@@ -121,8 +121,24 @@ export const extractSearchResults = (records) => assertVerifiedFeed(records)
   })
   .filter((job) => job.title && job.jobId && job.sourceUrl)
 
+const fetchSimplilearnResponse = async (url, options) => {
+  const response = await fetch(url, options)
+  if (String(url).startsWith(CEIPAL_API_BASE) && response.status === 400) {
+    let payload
+    try { payload = await response.clone().json() } catch { /* Other 400s remain contract failures. */ }
+    if (payload?.status === 400 && /^Your? request is invalid\.\s*Please send the request from the Career Portal\.?$/i.test(payload.message || '')) {
+      throw Object.assign(new Error('Simplilearn CEIPAL HTTP 400: provider rejected its verified Career Portal request; current inventory is unavailable.'), {
+        status: 400, softFailure: true, upstreamOutage: true,
+        failureKind: 'blocked_or_access_denied', abortRetries: true,
+      })
+    }
+  }
+  return response
+}
+
 const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
   ...options,
+  fetchImpl: fetchSimplilearnResponse,
   headers: {
     'User-Agent': USER_AGENT,
     Accept: 'application/json,text/plain,*/*',
