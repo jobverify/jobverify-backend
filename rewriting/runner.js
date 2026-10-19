@@ -84,6 +84,18 @@ export const rewriteQueueQuery = (now = new Date()) => ({ status: 'active', sour
   ],
 });
 
+// The built-in _id index streams a stable order without sorting full descriptions in memory.
+// Queue timestamps are not indexed, and small Atlas clusters cannot spill that sort to disk.
+export const rewriteQueueScan = (Job, query = rewriteQueueQuery()) => Job.find(query)
+  .sort({ _id: 1 }).hint({ _id: 1 }).lean();
+
+export const rewriteFailureDetails = (error, phase) => ({
+  errorType: error.name, errorPhase: phase,
+  ...(Number.isInteger(error.code) ? { errorCode: error.code } : {}),
+  ...(typeof error.codeName === 'string' && /^[A-Za-z][A-Za-z0-9]{0,79}$/.test(error.codeName)
+    ? { errorCodeName: error.codeName } : {}),
+});
+
 /** The caller supplies a Mongo update boundary; source/filter fields never enter these updates. */
 export const rewriteCandidates = async (jobs, { client, update, deadline, signal, onResult = () => {} } = {}) => {
   const stats = { attempted: 0, published: 0, failed: 0, skipped: 0, staleSources: 0, concurrentChanges: 0, interrupted: false };

@@ -55,8 +55,8 @@ test('public build feed excludes incomplete or unavailable jobs and private rewr
   t.mock.method(Job, 'find', () => chain([source, { ...source, _id: '665f47f5f65f3f4d2e1d1002', description: '' }]));
   const res = response(); await getPublishingBuildFeed({ query: {} }, res, error => { throw error; });
   assert.equal(Object.hasOwn(res.body.data, 'reports'), false);
-  assert.equal(res.body.data.jobs.length, 1); assert.equal(res.body.data.jobs[0].classification, undefined); assert.equal(res.body.data.jobs[0].sourceDescription, undefined); assert.ok(res.body.data.jobs[0].provenance.sourceUrl);
-  const normalized = normalizeResponseJob({ ...source, postClassification: { owner: 'private-worker', result: { internal: true } } }); assert.equal(normalized.provenance.humanReviewed, false); assert.equal(normalized.postClassification, undefined);
+  assert.equal(res.body.data.jobs.length, 1); assert.equal(res.body.data.jobs[0].classification, undefined); assert.equal(res.body.data.jobs[0].sourceDescription, undefined); assert.equal(Object.hasOwn(res.body.data.jobs[0], 'provenance'), false);
+  const normalized = normalizeResponseJob({ ...source, provenance: { humanReviewed: false }, postClassification: { owner: 'private-worker', result: { internal: true } } }); assert.equal(Object.hasOwn(normalized, 'provenance'), false); assert.equal(normalized.postClassification, undefined);
 });
 test('retired public report endpoints return not found', async () => {
   const server = createApp().listen(0, '127.0.0.1'); await once(server, 'listening');
