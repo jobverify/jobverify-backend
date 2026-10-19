@@ -27,6 +27,8 @@ const ScraperStatusSchema = new Schema(
       required: true,
       default: true,
     },
+    // Retain the in-flight batch for retry if cleanup fails after job deletion.
+    purgeJobIds: { type: [Schema.Types.ObjectId], default: undefined, select: false },
     lastRanAt: {
       type: Date,
       required: true,

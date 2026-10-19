@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createDineoutScraper, run } from '../../scraper/dineout/script.js'
 import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { getRetryMetadata, withRetry } from '../utils/retry.js'
 
 const careersHtml = '<title>Swiggy Careers - Build, Scale, Deliver India\'s Everyday Needs</title><meta name="description" content="Swiggy Careers - Join India"><script type="module" src="/assets/index-live.js"></script><div id="root"></div>'
 const appScript = 'const jobsUrl="/api/jobs.json"; const brand={name:"Dineout"}; const heading="Explore Open Roles"; const filter="Filter by business unit";'
@@ -60,9 +61,51 @@ test('Dineout verifies the migrated Swiggy handoff and complete inventories, ext
   assert.equal(evidence.indiaFacetCount, 2)
 })
 
+for (const { name, items, feed } of [
+  { name: 'an unrelated title changes', items: allPostings, feed: { ...feedFor(allPostings), jobs: feedFor(allPostings).jobs.map((job, index) => index === 1 ? { ...job, t: 'Senior Engineer' } : job) } },
+  { name: 'an unrelated business unit changes', items: allPostings, feed: { ...feedFor(allPostings), jobs: feedFor(allPostings).jobs.map((job, index) => index === 1 ? { ...job, b: 'Instamart' } : job) } },
+  { name: 'the ATS has an additional unrelated role', items: [...allPostings, posting('105', 'Warehouse Lead', 'Instamart')], feed: feedFor(allPostings) },
+  { name: 'the parent has an additional unrelated role', items: allPostings, feed: feedFor([...allPostings, posting('105', 'Warehouse Lead', 'Instamart')]) },
+]) {
+  test('Dineout preserves the complete attributed cohort when ' + name, async () => {
+    const jobs = await run({ fetchPage: buildFetch({ items, feed }) })
+    assert.deepEqual(jobs.map(job => [job.jobId, job.company, job.country]), [['101', 'Dineout', 'India'], ['104', 'Dineout', 'India']])
+    assert.equal(readInventoryEvidence(jobs).status, 'complete-inventory')
+    assert.equal(readInventoryEvidence(jobs).reportedTotal, 2)
+  })
+}
+
+for (const { name, items = allPostings, feed } of [
+  { name: 'a target title changes', feed: { ...feedFor(allPostings), jobs: feedFor(allPostings).jobs.map((job, index) => index === 0 ? { ...job, t: 'Senior Account Manager' } : job) } },
+  { name: 'a target city changes', feed: { ...feedFor(allPostings), jobs: feedFor(allPostings).jobs.map((job, index) => index === 0 ? { ...job, c: 'Pune' } : job) } },
+  { name: 'a target role is absent from the parent feed', feed: feedFor(allPostings.slice(1)) },
+  { name: 'a target role is absent from the ATS', items: allPostings.slice(1), feed: feedFor(allPostings) },
+  { name: 'target attribution changes', feed: { ...feedFor(allPostings), jobs: feedFor(allPostings).jobs.map((job, index) => index === 0 ? { ...job, b: 'Technology' } : job) } },
+  { name: 'a foreign Dine Out role changes', feed: { ...feedFor(allPostings), jobs: feedFor(allPostings).jobs.map((job, index) => index === 2 ? { ...job, t: 'Senior Account Manager' } : job) } },
+  { name: 'target signature multiplicity differs', feed: feedFor([...allPostings, posting('105', 'Account Manager', 'Dine Out')]) },
+  { name: 'only the parent still has Dine Out roles', items: [allPostings[1]], feed: feedFor(allPostings) },
+]) {
+  test('Dineout reports unavailable without returning partial or empty inventory when ' + name, async () => {
+    const requests = []
+    await assert.rejects(withRetry(() => run({ fetchPage: buildFetch({ items, feed }, requests) }), { label: 'dineout', attempts: 4, baseDelayMs: 0 }), error => {
+      assert.match(error.message, /Dineout parent and ATS inventories disagree.*Dine Out/)
+      assert.equal(error.softFailure, true)
+      assert.equal(error.failureKind, 'upstream_inventory_unavailable')
+      assert.equal(error.abortRetries, true)
+      assert.equal(error.code, 'DINEOUT_INVENTORY_UNAVAILABLE')
+      assert.equal(getRetryMetadata(error).attemptsUsed, 1)
+      return true
+    })
+    assert.equal(requests.filter(url => url === 'https://careers.swiggy.com/').length, 1)
+    assert.equal(requests.some(url => /\/postings\/\d+$/.test(url)), false)
+  })
+}
+
 for (const { name, options, error } of [
   { name: 'a truncated parent feed', options: { feed: { ...feedFor(allPostings), total: 5 } }, error: /incomplete Swiggy careers inventory/ },
+  { name: 'repeated parent feed links', options: { feed: { ...feedFor(allPostings), jobs: feedFor(allPostings).jobs.map((job, index, jobs) => index === 1 ? { ...job, u: jobs[0].u } : job) } }, error: /incomplete Swiggy careers inventory/ },
   { name: 'a truncated ATS inventory', options: { mutateList: page => ({ ...page, content: [] }) }, error: /incomplete SmartRecruiters inventory/ },
+  { name: 'changing ATS totals between pages', options: { mutateList: page => ({ ...page, totalFound: page.offset ? page.totalFound + 1 : page.totalFound }) }, error: /incomplete SmartRecruiters inventory/ },
   { name: 'duplicate ATS IDs', options: { mutateList: page => ({ ...page, content: [allPostings[0], allPostings[0]] }) }, error: /incomplete SmartRecruiters inventory/ },
   { name: 'unresolved business unit attribution', options: { mutateList: page => ({ ...page, content: page.content.map(item => ({ ...item, customField: [] })) }) }, error: /business unit attribution/ },
   { name: 'parent and ATS attribution disagreement', options: { feed: { ...feedFor(allPostings), jobs: feedFor(allPostings).jobs.map((job, index) => index === 0 ? { ...job, b: 'Technology' } : job) } }, error: /parent and ATS inventories disagree/ },

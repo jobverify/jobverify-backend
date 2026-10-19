@@ -351,6 +351,19 @@ test('runScraperWithTimeout waits for cooperative abort cleanup before rejecting
   assert.equal(cleanupFinished, true)
 })
 
+for (const lifecycle of [false, true]) {
+  test(`${lifecycle ? 'lifecycle' : 'source'} timeout preserves explicitly fatal abort-cleanup errors`, async () => {
+    const fatal = Object.assign(new Error('shared cleanup failed'), { abortPipeline: true })
+    const operation = ({ signal }) => new Promise((resolve, reject) => {
+      signal.addEventListener('abort', () => reject(fatal), { once: true })
+    })
+    await assert.rejects(lifecycle
+      ? withSourceLifecycleTimeout({ name: 'fatal-cleanup' }, operation, 5, { abortGraceMs: 50 })
+      : runScraperWithTimeout({ name: 'fatal-cleanup', run: operation }, 5, { abortGraceMs: 50 }),
+    error => error === fatal)
+  })
+}
+
 test('runScraperWithTimeout can be disabled for explicitly unbounded local probes', async () => {
   const jobs = await runScraperWithTimeout({
     name: 'instant-source',

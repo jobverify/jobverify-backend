@@ -1,7 +1,7 @@
 {
-  "totalRows": 4654,
-  "candidateRows": 4654,
-  "matchedCount": 4654,
+  "totalRows": 4636,
+  "candidateRows": 4636,
+  "matchedCount": 4636,
   "unmatchedCount": 0,
   "matched": [
     {
@@ -5088,29 +5088,6 @@
         "zeroResultPolicy": "evidence-required",
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\algoshack\\jobs.json",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\algoshack"
-      }
-    },
-    {
-      "row": "182",
-      "companyName": "AlgoUniversity",
-      "normalizedCompanyName": "algouniversity",
-      "source": "algouniversity",
-      "provider": {
-        "atsPlatform": "official-company-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "single-page",
-        "extractionStrategy": "html-cards+json-ld",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "algouniversity",
-        "companyName": "AlgoUniversity",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\algouniversity\\script.js",
-        "companyCareerPage": "https://www.algouniversity.com/careers/",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\algouniversity\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\algouniversity",
-        "companyDomain": "algouniversity.com"
       }
     },
     {
@@ -13116,29 +13093,6 @@
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\aurionpro\\jobs.json",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\aurionpro",
         "companyDomain": "zingnext.zinghr.com"
-      }
-    },
-    {
-      "row": "435",
-      "companyName": "AURO University",
-      "normalizedCompanyName": "auro university",
-      "source": "auro",
-      "provider": {
-        "atsPlatform": "official-company-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "single-page",
-        "extractionStrategy": "general-application-form",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "auro",
-        "companyName": "AURO University",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\auro\\script.js",
-        "companyCareerPage": "https://www.aurouniversity.edu.in/job-and-vacancies/",
-        "companyDomain": "aurouniversity.edu.in",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\auro\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\auro"
       }
     },
     {
@@ -26422,29 +26376,6 @@
       }
     },
     {
-      "row": "894",
-      "companyName": "Chitkara University",
-      "normalizedCompanyName": "chitkara university",
-      "source": "chitkarauniversity",
-      "provider": {
-        "atsPlatform": "official-company-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "first-party-wordpress-pagination",
-        "extractionStrategy": "verified-careers-pages+detail-pages+same-page-gravity-forms-apply",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "chitkarauniversity",
-        "companyName": "Chitkara University",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\chitkarauniversity\\script.js",
-        "companyCareerPage": "https://careers.chitkara.edu.in/",
-        "companyDomain": "careers.chitkara.edu.in",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\chitkarauniversity\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\chitkarauniversity"
-      }
-    },
-    {
       "row": "895",
       "companyName": "Choco",
       "normalizedCompanyName": "choco",
@@ -32816,29 +32747,6 @@
         "originalDryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\workbookbatch06\\crownit.jobs.json",
         "zeroResultPolicy": "coverage-gap",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\crownit"
-      }
-    },
-    {
-      "row": "1116",
-      "companyName": "CR Rao Advanced Institute of Mathematics, Statistics and Computer Science (AIMSCS)",
-      "normalizedCompanyName": "cr rao advanced institute of mathematics statistics and computer science aimscs",
-      "source": "crraoaimscs",
-      "provider": {
-        "atsPlatform": "official-institute-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "single-first-party-careers-page",
-        "extractionStrategy": "verified-official-homepage+verified-first-party-careers-page+inline-recruitment-tables+advertisement-and-application-links",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "crraoaimscs",
-        "companyName": "CR Rao Advanced Institute of Mathematics, Statistics and Computer Science (AIMSCS)",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\crraoaimscs\\script.js",
-        "companyCareerPage": "https://crraoaimscs.res.in/careers.php",
-        "companyDomain": "crraoaimscs.res.in",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\crraoaimscs\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\crraoaimscs"
       }
     },
     {
@@ -71574,52 +71482,6 @@
       }
     },
     {
-      "row": "2444",
-      "companyName": "Kumaraguru College of Technology",
-      "normalizedCompanyName": "kumaraguru college of",
-      "source": "kumaragurucollegeoftechnology",
-      "provider": {
-        "atsPlatform": "official-company-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "homepage-plus-careers-landing-plus-current-openings-plus-detail-pages",
-        "extractionStrategy": "verified-official-homepage+verified-careers-landing+verified-current-openings+faculty-disciplines+institutional-roles+fellowship-pages",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "kumaragurucollegeoftechnology",
-        "companyName": "Kumaraguru College of Technology",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\kumaragurucollegeoftechnology\\script.js",
-        "companyCareerPage": "https://careers.kct.ac.in/current_openings.html",
-        "companyDomain": "kct.ac.in",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\kumaragurucollegeoftechnology\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\kumaragurucollegeoftechnology"
-      }
-    },
-    {
-      "row": "2445",
-      "companyName": "Kumaraguru Institutions",
-      "normalizedCompanyName": "kumaraguru institutions",
-      "source": "kumaraguruinstitutions",
-      "provider": {
-        "atsPlatform": "official-company-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "homepage-plus-careers-landing-plus-current-openings-plus-academic-and-support-pages",
-        "extractionStrategy": "verified-official-homepage+verified-careers-landing+verified-current-openings+academic-recruitment-categories+support-services-categories",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "kumaraguruinstitutions",
-        "companyName": "Kumaraguru Institutions",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\kumaraguruinstitutions\\script.js",
-        "companyCareerPage": "https://careers.kumaraguru.edu.in/current_openings.php",
-        "companyDomain": "kumaraguru.edu.in",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\kumaraguruinstitutions\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\kumaraguruinstitutions"
-      }
-    },
-    {
       "row": "2446",
       "companyName": "Kumaran Systems",
       "normalizedCompanyName": "kumaran",
@@ -97496,31 +97358,6 @@
       }
     },
     {
-      "row": "3323",
-      "companyName": "Presidency University",
-      "normalizedCompanyName": "presidency university",
-      "source": "presidencyuniversity",
-      "provider": {
-        "atsPlatform": "hrone",
-        "countryFilter": "India",
-        "paginationStrategy": "single-official-careers-page-inline-vacancy-cards",
-        "extractionStrategy": "official-careers-page-html-vacancy-cards+trusted-hrone-apply-links",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "presidencyuniversity",
-        "companyName": "Presidency University",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\presidencyuniversity\\script.js",
-        "companyCareerPage": "https://presidencyuniversity.in/careers",
-        "companyDomain": "presidencyuniversity.in",
-        "verifiedOn": "2026-08-14",
-        "verifiedSurfaceSummary": "Verified on Friday, August 14, 2026 that https://presidencyuniversity.in/careers remained the live official Presidency University careers page, that it still linked See All Vacancies to https://hr-1.in/b42a6e, and that inline vacancy cards rendered in vacancy-boxes sections with trusted HROne apply links on career.hrone.cloud using HTML-encoded query separators.",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\presidencyuniversity\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\presidencyuniversity"
-      }
-    },
-    {
       "row": "3324",
       "companyName": "Prestige Group",
       "normalizedCompanyName": "prestige",
@@ -99912,29 +99749,6 @@
       }
     },
     {
-      "row": "3405",
-      "companyName": "Qube Cinema",
-      "normalizedCompanyName": "qube cinema",
-      "source": "qubecinema",
-      "provider": {
-        "atsPlatform": "official-careers-page-plus-applytojob-board",
-        "countryFilter": "India",
-        "paginationStrategy": "validate-official-careers-page-then-read-linked-public-applytojob-board",
-        "extractionStrategy": "official-careers-page-handoff-verification-plus-board-role-card-parsing",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "qubecinema",
-        "companyName": "Qube Cinema",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\qubecinema\\script.js",
-        "companyCareerPage": "https://www.qubecinema.com/careers",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\qubecinema\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\qubecinema",
-        "companyDomain": "qubecinema.com"
-      }
-    },
-    {
       "row": "3406",
       "companyName": "Qubole India",
       "normalizedCompanyName": "qubole",
@@ -100012,34 +99826,6 @@
         "verifiedSurfaceSummary": "Verified on Sunday, July 26, 2026 that https://www.questt.com/ is Questt's first-party public website. The public site exposes no verified careers page, official ATS endpoint, or enumerable job feed. This exact-name provider fails closed and returns no jobs rather than ingesting similarly named companies or third-party listings.",
         "zeroResultPolicy": "coverage-gap",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\questt"
-      }
-    },
-    {
-      "row": "3409",
-      "companyName": "Quick Heal",
-      "normalizedCompanyName": "quick heal",
-      "source": "quickheal",
-      "provider": {
-        "atsPlatform": "darwinbox",
-        "countryFilter": "India",
-        "paginationStrategy": "browser-session-darwinbox-pagination",
-        "extractionStrategy": "official-careers-page+darwinbox-listing-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "quickheal",
-        "companyName": "Quick Heal",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\quickheal\\script.js",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\quickheal\\jobs.json",
-        "companyCareerPage": "https://www.quickheal.com/jobs-careers-at-quick-heal",
-        "companyDomain": "quickheal.com",
-        "officialCareersHandoffUrl": "https://lifecycleqhtl.darwinbox.in/ms/candidate/careers",
-        "darwinboxOrigin": "https://lifecycleqhtl.darwinbox.in",
-        "darwinboxCompanyId": "main",
-        "verifiedOn": "2026-07-17",
-        "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.quickheal.com/jobs-careers-at-quick-heal is the live first-party Quick Heal careers page and that it explicitly links job seekers to the official Darwinbox handoff at https://lifecycleqhtl.darwinbox.in/ms/candidate/careers via the visible Apply for a job and Join Our Innovative Team calls-to-action.",
-        "zeroResultPolicy": "evidence-required",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\quickheal"
       }
     },
     {
@@ -107125,36 +106911,6 @@
       }
     },
     {
-      "row": "3658",
-      "companyName": "Schoolnet India",
-      "normalizedCompanyName": "schoolnet",
-      "source": "schoolnetindia",
-      "provider": {
-        "atsPlatform": "official-company-site-public-careers-page",
-        "countryFilter": "India",
-        "paginationStrategy": "single-official-careers-page-no-pagination-plus-official-recruitment-portal-verification",
-        "extractionStrategy": "verified-official-careers-page+verified-official-recruitment-portal+role-card-text-extraction",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "schoolnetindia",
-        "companyName": "Schoolnet India",
-        "officialBrandName": "Schoolnet India Ltd.",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\schoolnetindia\\script.js",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\schoolnetindia\\jobs.json",
-        "homepageUrl": "https://www.schoolnetindia.com/",
-        "companyCareerPage": "https://www.schoolnetindia.com/careers/",
-        "recruitmentPortalUrl": "https://hms.schoolnetindia.com/login",
-        "companyDomain": "schoolnetindia.com",
-        "verifiedSampleRoleTitle": "Senior Full Stack Developer",
-        "verifiedRecruitmentPortalRoleTitle": "Computer Training Facilitator (ICT Educator)",
-        "verifiedOn": "2026-07-17",
-        "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.schoolnetindia.com/careers/ is the live first-party Schoolnet India careers page showing public openings including Senior Full Stack Developer, and that https://hms.schoolnetindia.com/login is the official Schoolnet India HMS recruitment portal showing Browse Jobs plus a visible Computer Training Facilitator (ICT Educator) opening under the Schoolnet India Ltd. brand.",
-        "zeroResultPolicy": "evidence-required",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\schoolnetindia"
-      }
-    },
-    {
       "row": "3659",
       "companyName": "Schwing Stetter",
       "normalizedCompanyName": "schwing stetter",
@@ -108343,35 +108099,6 @@
       }
     },
     {
-      "row": "3702",
-      "companyName": "Seqrite",
-      "normalizedCompanyName": "seqrite",
-      "source": "seqrite",
-      "provider": {
-        "atsPlatform": "darwinbox",
-        "countryFilter": "India",
-        "paginationStrategy": "browser-session-darwinbox-pagination",
-        "extractionStrategy": "official-quick-heal-careers-page+seqrite-signal+darwinbox-listing-api",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "seqrite",
-        "companyName": "Seqrite",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\seqrite\\script.js",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\seqrite\\jobs.json",
-        "companyCareerPage": "https://www.quickheal.co.in/jobs-careers-at-quick-heal",
-        "companyDomain": "seqrite.com",
-        "officialCareersHandoffUrl": "https://lifecycleqhtl.darwinbox.in/ms/candidate/careers",
-        "darwinboxOrigin": "https://lifecycleqhtl.darwinbox.in",
-        "darwinboxCompanyId": "main",
-        "verifiedOn": "2026-08-14",
-        "verifiedPublicPostingCount": 0,
-        "verifiedSurfaceSummary": "Verified on Friday, August 14, 2026 that Seqrite's official homepage still identifies Seqrite as the enterprise arm of Quick Heal Technologies Limited, and Quick Heal's first-party careers page at https://www.quickheal.co.in/jobs-careers-at-quick-heal still contains the current Seqrite and Quick Heal recruiting copy and links its Apply for a job and Join Our Innovative Team calls-to-action to the live first-party Darwinbox portal at https://lifecycleqhtl.darwinbox.in/ms/candidate/careers. The public jobs portal remains JS-rendered and uses the Darwinbox candidate listing API, so the provider validates the official handoff before collecting India listings.",
-        "zeroResultPolicy": "evidence-required",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\seqrite"
-      }
-    },
-    {
       "row": "3703",
       "companyName": "Sequel Logistics",
       "normalizedCompanyName": "sequel logistics",
@@ -109372,36 +109099,6 @@
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\shivaamicloudservices\\jobs.json",
         "zeroResultPolicy": "evidence-required",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\shivaamicloudservices"
-      }
-    },
-    {
-      "row": "3737",
-      "companyName": "ShopClues",
-      "normalizedCompanyName": "shopclues",
-      "source": "shopclues",
-      "provider": {
-        "atsPlatform": "official-company-site-static-current-openings-page",
-        "countryFilter": "India",
-        "paginationStrategy": "single-official-current-openings-page-no-pagination",
-        "extractionStrategy": "verified-careers-landing+verified-current-openings-page+static-position-block-parsing",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "shopclues",
-        "companyName": "ShopClues",
-        "officialBrandName": "ShopClues",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\shopclues\\script.js",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\shopclues\\jobs.json",
-        "homepageUrl": "https://www.shopclues.com/",
-        "companyCareerPage": "https://www.shopclues.com/career.html",
-        "currentOpeningsUrl": "https://www.shopclues.com/current-opening.html",
-        "companyDomain": "shopclues.com",
-        "verifiedSampleRoleTitle": "Software Engineer (PHP, MYSQL)",
-        "verifiedSampleDepartment": "Technology",
-        "verifiedOn": "2026-07-17",
-        "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.shopclues.com/career.html is the live first-party ShopClues careers landing page and that https://www.shopclues.com/current-opening.html is the first-party current openings page exposing public static role blocks including Technology openings such as Software Engineer (PHP, MYSQL) on the official shopclues.com domain.",
-        "zeroResultPolicy": "evidence-required",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\shopclues"
       }
     },
     {
@@ -112612,29 +112309,6 @@
       }
     },
     {
-      "row": "3850",
-      "companyName": "SNS College of Technology",
-      "normalizedCompanyName": "sns college of",
-      "source": "snscollegeoftechnology",
-      "provider": {
-        "atsPlatform": "official-company-site-no-public-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "homepage-plus-robots-sitemap-and-careers-route-validation",
-        "extractionStrategy": "verified-official-homepage+verified-career-contact+verified-robots-sitemap+verified-no-public-careers-routes-return-empty",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "snscollegeoftechnology",
-        "companyName": "SNS College of Technology",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\snscollegeoftechnology\\script.js",
-        "companyCareerPage": "https://snsct.org/",
-        "companyDomain": "snsct.org",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\snscollegeoftechnology\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\snscollegeoftechnology"
-      }
-    },
-    {
       "row": "3851",
       "companyName": "Snyk",
       "normalizedCompanyName": "snyk",
@@ -114636,29 +114310,6 @@
         "zeroResultPolicy": "evidence-required",
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\squareyards\\jobs.json",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\squareyards"
-      }
-    },
-    {
-      "row": "3922",
-      "companyName": "Sree Chitra Tirunal Institute for Medical Sciences and Technology",
-      "normalizedCompanyName": "sree chitra tirunal institute for medical sciences and",
-      "source": "sreechitratirunalinstitute",
-      "provider": {
-        "atsPlatform": "official-government-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "single-official-recruitment-page",
-        "extractionStrategy": "official-recruitment-page+active-notifications-table+first-party-pdf-links+optional-apply-handoff",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "sreechitratirunalinstitute",
-        "companyName": "Sree Chitra Tirunal Institute for Medical Sciences and Technology",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\sreechitratirunalinstitute\\script.js",
-        "companyCareerPage": "https://www.sctimst.ac.in/recruitment/",
-        "companyDomain": "sctimst.ac.in",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\sreechitratirunalinstitute\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\sreechitratirunalinstitute"
       }
     },
     {
@@ -117734,95 +117385,6 @@
         "zeroResultPolicy": "evidence-required",
         "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\swelect\\jobs.json",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\swelect"
-      }
-    },
-    {
-      "row": "4027",
-      "companyName": "Swiggy",
-      "normalizedCompanyName": "swiggy",
-      "source": "swiggy",
-      "provider": {
-        "atsPlatform": "mynexthire",
-        "countryFilter": "India",
-        "paginationStrategy": "single-page",
-        "extractionStrategy": "api",
-        "parser": "api-portal",
-        "normalizationProfile": "engineering-default",
-        "source": "swiggy",
-        "companyName": "Swiggy",
-        "companyCareerPage": "https://careers.swiggy.com/",
-        "config": {
-          "discovery": {
-            "careerPageUrl": "https://careers.swiggy.com/",
-            "listingApiUrl": "https://swiggy.mynexthire.com/employer/careers/reqlist/get"
-          },
-          "request": {
-            "method": "POST",
-            "headers": {
-              "Content-Type": "application/json"
-            },
-            "body": {
-              "source": "careers",
-              "code": "",
-              "filterByBuId": -1
-            }
-          },
-          "pagination": {
-            "strategy": "single-page",
-            "resultsPath": "reqDetailsBOList",
-            "hasMorePath": "hasMore"
-          },
-          "mapping": {
-            "title": "reqTitle",
-            "location": {
-              "path": "location",
-              "valueMap": {
-                "Sumadhura Capitol Towers": "Bangalore",
-                "Kolkata-Shaila Towers - SNO": "Kolkata"
-              }
-            },
-            "jobId": "reqId",
-            "requisitionId": "reqId",
-            "sourceUrl": {
-              "strategy": "mynexthire-link",
-              "baseUrl": "https://careers.swiggy.com/#/careers",
-              "pageType": "jd",
-              "cvSource": "careers",
-              "reqIdPath": "reqId"
-            },
-            "applyUrl": {
-              "strategy": "mynexthire-link",
-              "baseUrl": "https://careers.swiggy.com/#/careers/apply",
-              "pageType": "application",
-              "cvSource": "careers",
-              "reqIdPath": "reqId"
-            },
-            "department": "buName",
-            "employmentType": {
-              "path": "employmentType",
-              "valueMap": {
-                "full_time": "Full-time",
-                "conversion": "Full-time",
-                "ijp": "Full-time"
-              }
-            },
-            "experienceLevel": {
-              "path": "fresher",
-              "valueMap": {
-                "true": "Entry Level",
-                "false": "Mid Level"
-              }
-            },
-            "jobDescription": "jdDisplay",
-            "postingDate": "approvedOn"
-          }
-        },
-        "adapter": "apiPortal",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\swiggy\\jobs.json",
-        "modulePath": null,
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\swiggy",
-        "companyDomain": "careers.swiggy.com"
       }
     },
     {
@@ -128652,29 +128214,6 @@
       }
     },
     {
-      "row": "4406",
-      "companyName": "Velammal Group of schools",
-      "normalizedCompanyName": "velammal of schools",
-      "source": "velammalgroupofschools",
-      "provider": {
-        "atsPlatform": "official-company-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "homepage-plus-career-page-plus-empty-jobs-page-plus-missing-route-validation",
-        "extractionStrategy": "verified-official-homepage+verified-career-application-page+verified-empty-jobs-page+verified-missing-careers-routes-return-empty",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "velammalgroupofschools",
-        "companyName": "Velammal Group of schools",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\velammalgroupofschools\\script.js",
-        "companyCareerPage": "https://velammal.org/career/",
-        "companyDomain": "velammal.org",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\velammalgroupofschools\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\velammalgroupofschools"
-      }
-    },
-    {
       "row": "4407",
       "companyName": "Velan Info Services",
       "normalizedCompanyName": "velan info",
@@ -134049,29 +133588,6 @@
       }
     },
     {
-      "row": "4587",
-      "companyName": "Yellow Train School",
-      "normalizedCompanyName": "yellow train school",
-      "source": "yellowtrainschool",
-      "provider": {
-        "atsPlatform": "official-company-careers",
-        "countryFilter": "India",
-        "paginationStrategy": "single-first-party-recruitment-page",
-        "extractionStrategy": "verified-homepage+about+recruitment-prose+contact-page+shared-mailto-apply",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "yellowtrainschool",
-        "companyName": "Yellow Train School",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\yellowtrainschool\\script.js",
-        "companyCareerPage": "https://www.yellowtrainschool.com/recruitment",
-        "companyDomain": "yellowtrainschool.com",
-        "zeroResultPolicy": "evidence-required",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\yellowtrainschool\\jobs.json",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\yellowtrainschool"
-      }
-    },
-    {
       "row": "4588",
       "companyName": "Yes Bank",
       "normalizedCompanyName": "yes bank",
@@ -135734,39 +135250,6 @@
         "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://zoox.com/careers is Zoox's first-party careers page. The live public page currently rendered the Zoox careers shell with a job-search section that reported no results instead of exposing a stable enumerable jobs feed that could be verified from this surface, so this exact-name provider fails closed and returns no jobs.",
         "zeroResultPolicy": "coverage-gap",
         "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\zoox"
-      }
-    },
-    {
-      "row": "4646",
-      "companyName": "Zopper",
-      "normalizedCompanyName": "zopper",
-      "source": "zopper",
-      "provider": {
-        "atsPlatform": "verified-first-party-careers-page-plus-public-linkedin-india-jobs-search",
-        "countryFilter": "India",
-        "paginationStrategy": "verified-public-jobs-search",
-        "extractionStrategy": "verified-first-party-careers-handoff+public-linkedin-india-jobs-search+india-filter",
-        "parser": "custom-script",
-        "normalizationProfile": "engineering-default",
-        "source": "zopper",
-        "companyName": "Zopper",
-        "adapter": "script",
-        "modulePath": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\zopper\\script.js",
-        "dryRunFile": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\zopper\\jobs.json",
-        "companyCareerPage": "https://www.zopper.com/about-us/careers",
-        "companyDomain": "zopper.com",
-        "verifiedOn": "2026-07-25",
-        "verificationDisposition": "verified-public-linkedin-india-jobs-search",
-        "verifiedPublicJobCount": 4,
-        "verifiedIndiaJobCount": 4,
-        "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.zopper.com/about-us/careers was the live first-party Zopper careers page, that its See Open Positions CTA handed applicants to the public LinkedIn company jobs page at https://www.linkedin.com/company/zopper/jobs/, and that the public LinkedIn India jobs search at https://www.linkedin.com/jobs/search/?f_C=2760462&geoId=102713980 exposed current India roles including Relationship Manager (B2B Field Sales) - Bangalore and Business Development Manager, Bancassurance. This scraper validates those verified surfaces and returns jobs only from the public LinkedIn India jobs search.",
-        "backfillMode": "live-copy",
-        "originalAdapter": "script",
-        "originalAtsPlatform": "verified-first-party-careers-page-plus-public-linkedin-india-jobs-search",
-        "originalModulePath": "../workbookbatch06/zopper.js",
-        "originalDryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\workbookbatch06\\zopper.jobs.json",
-        "zeroResultPolicy": "evidence-required",
-        "sourceDirectory": "C:\\Users\\mohv\\GitHub\\Release-26.09.04\\jobverify-backend\\scraper\\zopper"
       }
     },
     {

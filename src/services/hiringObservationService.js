@@ -15,19 +15,52 @@ const ranking = field => [
   { $limit: 10 },
   { $project: { _id: 0, label: { $cond: [{ $eq: ['$label', ''] }, 'Not specified', '$label'] }, count: 1 } },
 ];
+const recordedSkills = [{ $project: { names: { $filter: {
+  input: { $map: { input: { $ifNull: ['$jobSkills', []] }, as: 'skill', in: { $trim: { input: { $ifNull: ['$$skill.canonicalName', ''] } } } } },
+  as: 'name', cond: { $ne: ['$$name', ''] },
+} } } }];
 export async function readHiringSnapshot(settings = {}, now = new Date()) {
+  const dayMs = 86400000;
+  const firstDay = new Date(`${indiaDay(now)}T00:00:00+05:30`).getTime() - 89 * dayMs;
   const [result] = await Job.aggregate([
     { $match: applyPublicJobVisibility({ status: 'active', $or: [{ closingDate: null }, { closingDate: { $gt: now } }] }, settings) },
     { $facet: {
       totals: [{ $count: 'count' }],
       companyTotals: [{ $group: { _id: { $toLower: label('company') } } }, { $match: { _id: { $ne: '' } } }, { $count: 'count' }],
       companies: ranking('company'), locations: ranking('city'), jobTypes: ranking('jobType'),
+      roles: ranking('primaryRoleDomain'), arrangements: ranking('workArrangement'),
+      skillCoverage: [...recordedSkills, { $match: { 'names.0': { $exists: true } } }, { $count: 'count' }],
+      skills: [
+        ...recordedSkills,
+        { $unwind: '$names' },
+        // Count each canonical skill at most once per job, including case variants.
+        { $group: { _id: { job: '$_id', name: { $toLower: '$names' } }, label: { $first: '$names' } } },
+        { $group: { _id: '$_id.name', label: { $first: '$label' }, count: { $sum: 1 } } },
+        { $sort: { count: -1, label: 1 } }, { $limit: 12 },
+        { $project: { _id: 0, label: 1, count: 1 } },
+      ],
+      daily: [
+        { $match: { postedAt: { $type: 'date', $gte: new Date(firstDay), $lte: now } } },
+        { $project: { postedAt: 1, entryLevel: { $regexMatch: { input: label('jobType'), regex: 'fresher|intern|apprentice', options: 'i' } } } },
+        { $group: {
+          _id: { $dateToString: { date: '$postedAt', format: '%Y-%m-%d', timezone: 'Asia/Kolkata' } },
+          count: { $sum: 1 }, entryLevel: { $sum: { $cond: ['$entryLevel', 1, 0] } },
+        } },
+      ],
     } },
   ]).exec();
+  const dailyCounts = new Map((result?.daily ?? []).map(row => [row._id, row]));
   return {
     generatedAt: now.toISOString(), scope: observationScope(settings),
     totalJobs: result?.totals?.[0]?.count ?? 0, totalCompanies: result?.companyTotals?.[0]?.count ?? 0,
     companies: result?.companies ?? [], locations: result?.locations ?? [], jobTypes: result?.jobTypes ?? [],
+    roles: result?.roles ?? [], arrangements: result?.arrangements ?? [], skills: result?.skills ?? [],
+    skillCoverage: result?.skillCoverage?.[0]?.count ?? 0,
+    daily: Array.from({ length: 90 }, (_, index) => {
+      const date = indiaDay(new Date(firstDay + index * dayMs));
+      const row = dailyCounts.get(date);
+      return { date, count: row?.count ?? 0, entryLevel: row?.entryLevel ?? 0 };
+    }),
   };
 }
 export function compareObservations(current, previous) {

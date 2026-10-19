@@ -6,12 +6,10 @@ import {
   classifyScraperError,
   FatalScraperPersistenceError,
   formatIstTimestamp,
-  isFailureCountedForAbort,
+  isHardSourceFailure,
   isLatePuppeteerTargetClose,
   isLatePuppeteerWaitTimeout,
   isMongoStorageQuotaWriteBlockError,
-  resolveFailureAbortThreshold,
-  shouldAbortPipelineAfterFailures,
 } from '../runner.js'
 
 test('formatIstTimestamp renders UTC instants in Asia/Kolkata with milliseconds and the IST suffix', () => {
@@ -100,9 +98,9 @@ test('runner ignores late unhandled rejections when they classify as upstream so
   )
 })
 
-test('isFailureCountedForAbort ignores upstream soft failures', () => {
+test('hard-source diagnostic counts exclude upstream soft failures', () => {
   assert.equal(
-    isFailureCountedForAbort({
+    isHardSourceFailure({
       success: false,
       softFailure: true,
       upstreamOutage: true,
@@ -340,9 +338,9 @@ test('classifyScraperError keeps runner-enforced source timeouts as local hard f
   )
 })
 
-test('isFailureCountedForAbort still counts ordinary hard failures', () => {
+test('hard-source diagnostic counts include ordinary source failures', () => {
   assert.equal(
-    isFailureCountedForAbort({
+    isHardSourceFailure({
       success: false,
       softFailure: false,
     }),
@@ -350,28 +348,9 @@ test('isFailureCountedForAbort still counts ordinary hard failures', () => {
   )
 })
 
-test('isFailureCountedForAbort ignores successful and skipped runs', () => {
-  assert.equal(isFailureCountedForAbort({ success: true }), false)
-  assert.equal(isFailureCountedForAbort({ success: false, skipped: true }), false)
-})
-
-test('resolveFailureAbortThreshold disables aborting when the env value is missing or non-positive', () => {
-  assert.equal(resolveFailureAbortThreshold(undefined), Number.POSITIVE_INFINITY)
-  assert.equal(resolveFailureAbortThreshold(''), Number.POSITIVE_INFINITY)
-  assert.equal(resolveFailureAbortThreshold('0'), Number.POSITIVE_INFINITY)
-  assert.equal(resolveFailureAbortThreshold('-1'), Number.POSITIVE_INFINITY)
-})
-
-test('resolveFailureAbortThreshold keeps explicit positive abort thresholds', () => {
-  assert.equal(resolveFailureAbortThreshold('3'), 3)
-  assert.equal(resolveFailureAbortThreshold(5), 5)
-})
-
-test('shouldAbortPipelineAfterFailures only aborts once an explicit threshold is reached', () => {
-  assert.equal(shouldAbortPipelineAfterFailures(3), false)
-  assert.equal(shouldAbortPipelineAfterFailures(2, 3), false)
-  assert.equal(shouldAbortPipelineAfterFailures(3, 3), true)
-  assert.equal(shouldAbortPipelineAfterFailures(4, 3), true)
+test('hard-source diagnostic counts exclude successful and skipped runs', () => {
+  assert.equal(isHardSourceFailure({ success: true }), false)
+  assert.equal(isHardSourceFailure({ success: false, skipped: true }), false)
 })
 
 

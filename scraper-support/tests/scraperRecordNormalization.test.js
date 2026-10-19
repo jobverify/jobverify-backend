@@ -285,16 +285,16 @@ test('normalizeScrapedJob respects explicit experienceLevel cues for full-time a
   const normalized = normalizeScrapedJob(
     {
       title: 'Software Development Engineer',
-      company: 'Swiggy',
+      company: 'Example Commerce',
       location: 'Bangalore',
       city: 'Bangalore',
       employmentType: 'Full-time',
       experienceLevel: 'Entry Level',
-      link: 'https://careers.swiggy.com/#/careers/apply?src%3Dcareers%26p%3Dexample',
+      link: 'https://careers.example.com/#/careers/apply?src%3Dcareers%26p%3Dexample',
     },
     {
-      source: 'swiggy',
-      companyCareerPage: 'https://careers.swiggy.com/',
+      source: 'example',
+      companyCareerPage: 'https://careers.example.com/',
       atsPlatform: 'mynexthire',
     },
   )

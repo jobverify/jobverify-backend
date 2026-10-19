@@ -675,6 +675,11 @@ export const updateJobStatus = async (req, res) => {
       details: `Status changed from ${oldStatus} to ${status}`,
     });
 
+    if (!await Job.findById(job._id, '_id')) {
+      await AdminAudit.deleteMany({ targetType: 'Job', targetId: job._id });
+      return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+
     res.status(200).json({
       success: true,
       message: "Job status updated successfully",

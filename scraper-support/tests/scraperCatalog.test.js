@@ -948,7 +948,6 @@ test('getScraperCatalog includes apiPortal providers with official metadata and 
   const phonepe = catalog.find((provider) => provider.source === 'phonepe')
   const postman = catalog.find((provider) => provider.source === 'postman')
   const stripe = catalog.find((provider) => provider.source === 'stripe')
-  const swiggy = catalog.find((provider) => provider.source === 'swiggy')
   const twilio = catalog.find((provider) => provider.source === 'twilio')
 
   assert.ok(amd)
@@ -1035,12 +1034,6 @@ test('getScraperCatalog includes apiPortal providers with official metadata and 
   assert.equal(stripe.companyDomain, 'stripe.com')
   assert.match(stripe.config.discovery.listingApiUrl, /boards-api\.greenhouse\.io\/v1\/boards\/stripe\/jobs/i)
 
-  assert.ok(swiggy)
-  assert.equal(swiggy.adapter, 'script')
-  assert.equal(swiggy.atsPlatform, 'smartrecruiters')
-  assert.match(swiggy.companyCareerPage, /careers\.swiggy\.in/i)
-  assert.equal(swiggy.companyDomain, 'careers.swiggy.in')
-
   assert.ok(twilio)
   assert.equal(twilio.adapter, 'apiPortal')
   assert.equal(twilio.atsPlatform, 'official-company-careers')
@@ -1063,7 +1056,6 @@ test('buildScrapers exposes a runnable apiPortal scraper without changing the ru
   const phonepe = scrapers.find((scraper) => scraper.name === 'phonepe')
   const postman = scrapers.find((scraper) => scraper.name === 'postman')
   const stripe = scrapers.find((scraper) => scraper.name === 'stripe')
-  const swiggy = scrapers.find((scraper) => scraper.name === 'swiggy')
   const twilio = scrapers.find((scraper) => scraper.name === 'twilio')
 
   assert.ok(amd)
@@ -1134,11 +1126,6 @@ test('buildScrapers exposes a runnable apiPortal scraper without changing the ru
   assert.equal(stripe.provider.adapter, 'apiPortal')
   assert.equal(stripe.provider.parser, 'api-portal')
   assert.match(stripe.provider.companyCareerPage, /stripe\.com\/jobs/i)
-
-  assert.ok(swiggy)
-  assert.equal(typeof swiggy.run, 'function')
-  assert.equal(swiggy.provider.adapter, 'script')
-  assert.equal(swiggy.provider.parser, 'custom-script')
 
   assert.ok(twilio)
   assert.equal(typeof twilio.run, 'function')

@@ -64,7 +64,7 @@ test('Supr Daily throws when the verified off-domain redirect disappears', async
       fetchPage: async () => ({
         status: 200,
         url: CAREERS_URL,
-        html: '<html><body><main><h1>Supr Daily by Swiggy</h1></main></body></html>',
+        html: '<html><body><main><h1>Supr Daily</h1></main></body></html>',
       }),
     }),
     /verified company-domain redirect drift changed/i,

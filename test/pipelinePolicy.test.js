@@ -26,6 +26,17 @@ test('outcomes stop failed or unfinished work but accept empty queues and delibe
   assert.equal(stageOutcome('scraper',{},1),'failed');
   assert.equal(stageOutcome('rewrite',{reason:'interrupted'},0),'incomplete');
 });
+
+test('source failures are warnings only for a successfully finished scraper stage', () => {
+  assert.equal(stageOutcome('scraper',{failed:2,warnings:315},0),'completed');
+  assert.equal(stageOutcome('scraper',{failed:4654,warnings:4654},0),'completed');
+  assert.equal(stageOutcome('scraper',{failed:2,warnings:315},1),'failed');
+  assert.equal(stageOutcome('scraper',{failed:2,pendingEstimate:1},0),'incomplete');
+  assert.equal(stageOutcome('scraper',{failed:2,interrupted:true},0),'incomplete');
+  assert.equal(stageOutcome('scraper',{reason:'worker_error'},0),'failed');
+  assert.equal(stageOutcome('rewrite',{failed:1,warnings:1},0),'failed');
+  assert.equal(stageOutcome('classification',{failed:1,warnings:1},0),'failed');
+});
 test('classification uses only a current published rewrite with original fallback and identity', () => {
   const original={sourceDescription:'Employer original',description:'Validated rewrite'};
   original.sourceContentHash=buildRewriteInput(original).inputHash;

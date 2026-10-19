@@ -354,3 +354,46 @@ test('Simplilearn accepts only an explicitly complete empty CEIPAL response and 
   options.fetchJson = async () => { controller.abort(reason); return empty }
   await assert.rejects(simplilearn.run(options), error => error === reason)
 })
+
+test('Simplilearn reports the verified CEIPAL portal rejection as an upstream failure without retrying or returning empty jobs', async t => {
+  const simplilearn = await loadSimplilearnModule()
+  const fixtures = await loadCeipalFixtures()
+  const { readFile } = await import('node:fs/promises')
+  const rejectedPortal = await readFile(new URL('../../scraper/simplilearn/fixtures/ceipal-portal-denied.json', import.meta.url), 'utf8')
+  const { classifyScraperError } = await import('../utils/failureClassification.js')
+  const { withRetry } = await import('../utils/retry.js')
+  const options = ceipalOptions(fixtures)
+  delete options.fetchJson
+  let requests = 0
+  t.mock.method(globalThis, 'fetch', async url => {
+    requests += 1
+    assert.equal(url, simplilearn.buildCeipalListingUrl(1))
+    return new Response(rejectedPortal, { status: 400, headers: { 'Content-Type': 'application/json' } })
+  })
+  // Keep the real outer wrapper to verify that transport failure metadata survives it.
+  await assert.rejects(withRetry(() => simplilearn.run(options), { attempts: 1, label: 'simplilearn' }), error => {
+    assert.deepEqual(classifyScraperError(error), {
+      softFailure: true, upstreamOutage: true, failureKind: 'blocked_or_access_denied',
+    })
+    assert.equal(error.abortRetries, true)
+    assert.match(error.message, /CEIPAL.*HTTP 400.*Career Portal/i)
+    return true
+  })
+  assert.equal(requests, 1)
+})
+
+test('Simplilearn keeps unrelated HTTP 400 responses as hard contract failures', async t => {
+  const simplilearn = await loadSimplilearnModule()
+  const fixtures = await loadCeipalFixtures()
+  const { classifyScraperError } = await import('../utils/failureClassification.js')
+  const options = ceipalOptions(fixtures)
+  delete options.fetchJson
+  t.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({
+    status: 400, message: 'Required field is missing',
+  }), { status: 400, headers: { 'Content-Type': 'application/json' } }))
+  await assert.rejects(simplilearn.run(options), error => {
+    assert.equal(classifyScraperError(error).softFailure, false)
+    assert.equal(classifyScraperError(error).failureKind, 'parser_or_contract_error')
+    return true
+  })
+})
