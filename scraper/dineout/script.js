@@ -121,17 +121,25 @@ export const createDineoutScraper = ({ now = () => new Date().toISOString() } = 
       }
       if (items.length > total) throw new Error('Dineout incomplete SmartRecruiters inventory: advertised count exceeded')
     } while (items.length < total)
-    // The first-party feed uses job-ad URLs; the API uses posting IDs. Compare every title/city/unit with multiplicity.
-    const feedKeys = feed.jobs.map(job => signature(job.t, job.c, job.b)).sort()
-    const apiKeys = items.map(item => signature(item.name, item.location.city, businessUnit(item))).sort()
-    if (feed.total !== total || JSON.stringify(feedKeys) !== JSON.stringify(apiKeys)) throw new Error('Dineout parent and ATS inventories disagree')
-    const selected = items.filter(item => isDineOut(businessUnit(item)) && /^(in|India)$/i.test(item.location.country))
+    // Both full inventories must be valid, but this source owns only Dine Out.
+    // Reconcile every Dine Out title/city/unit with multiplicity before filtering by country.
+    const feedCohort = feed.jobs.filter(job => isDineOut(job.b))
+    const apiCohort = items.filter(item => isDineOut(businessUnit(item)))
+    const feedKeys = feedCohort.map(job => signature(job.t, job.c, job.b)).sort()
+    const apiKeys = apiCohort.map(item => signature(item.name, item.location.city, businessUnit(item))).sort()
+    if (JSON.stringify(feedKeys) !== JSON.stringify(apiKeys)) {
+      throw Object.assign(new Error('Dineout parent and ATS inventories disagree for the Dine Out business unit; complete target inventory unavailable (parent: ' + feedCohort.length + '; ATS: ' + apiCohort.length + ')'), {
+        code: 'DINEOUT_INVENTORY_UNAVAILABLE', softFailure: true, upstreamOutage: false,
+        failureKind: 'upstream_inventory_unavailable', abortRetries: true,
+      })
+    }
+    const selected = apiCohort.filter(item => /^(in|India)$/i.test(item.location.country))
     const jobs = await mapWithConcurrency(selected, 3, async item => mapDetail(item, await getJson(fetchPage, item.ref)))
     const result = jobs.map(job => ({ ...job, source: SOURCE, link: job.applyUrl, scrapedAt: now() }))
     return attachInventoryEvidence(result, {
       status: result.length ? 'complete-inventory' : 'verified-empty', surface: JOBS_API_URL,
       firstParty: true, listingComplete: true, pagesFetched, reportedTotal: selected.length, indiaFacetCount: selected.length,
-      verifiedAt: now(), reason: 'complete-parent-inventories-reconciled-' + total + '-parent-postings-dine-out-india-business-unit',
+      verifiedAt: now(), reason: 'complete-dine-out-cohort-reconciled-' + apiCohort.length + '-parent-and-ats-postings-explicit-india-country',
     })
   },
 })

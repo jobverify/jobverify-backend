@@ -240,11 +240,11 @@ export class FatalScraperPersistenceError extends Error {
   }
 }
 
-const toFatalScraperPersistenceError = (context, error) => {
-  if (!isMongoStorageQuotaWriteBlockError(error)) return null
+const toFatalScraperPersistenceError = (context, error, { required = false } = {}) => {
+  if (!required && !isMongoStorageQuotaWriteBlockError(error)) return null
 
   return new FatalScraperPersistenceError(
-    `${context}: ${error?.message || 'MongoDB Atlas writes are blocked by storage quota.'}`,
+    `${context}: ${error?.message || String(error)}`,
     error ? { cause: error } : undefined,
   )
 }
@@ -539,22 +539,6 @@ export const resolveLivePublicExperienceEnabled = (
   return !/^(?:1|true|yes)$/i.test(String(value ?? '').trim())
 }
 
-const waitForAbortCleanup = async (runPromise, abortGraceMs) => {
-  if (!Number.isFinite(abortGraceMs) || abortGraceMs <= 0) return
-
-  let graceTimeoutId
-  try {
-    await Promise.race([
-      runPromise.catch(() => undefined),
-      new Promise((resolve) => {
-        graceTimeoutId = setTimeout(resolve, abortGraceMs)
-      }),
-    ])
-  } finally {
-    clearTimeout(graceTimeoutId)
-  }
-}
-
 const waitForAbortSettlement = async (runPromise, abortGraceMs) => {
   if (!Number.isFinite(abortGraceMs) || abortGraceMs <= 0) {
     return { settled: false }
@@ -661,7 +645,7 @@ export const withSourceLifecycleTimeout = async (
     if (error === timeoutError || error === parentAbortReason) {
       const settlement = await waitForAbortSettlement(runPromise, abortGraceMs)
       if (settlement.settled) {
-        if (settlement.error?.persistenceBlocked === true) throw settlement.error
+        if (isPipelineFatalError(settlement.error)) throw settlement.error
         if (
           error === timeoutError
           && settlement.value?.success === false
@@ -717,7 +701,8 @@ export const runScraperWithTimeout = async (
     ])
   } catch (error) {
     if (error === timeoutError || error === parentAbortReason) {
-      await waitForAbortCleanup(runPromise, abortGraceMs)
+      const settlement = await waitForAbortSettlement(runPromise, abortGraceMs)
+      if (isPipelineFatalError(settlement.error)) throw settlement.error
     }
     throw error
   } finally {
@@ -812,14 +797,12 @@ const updateLiveScraperStatus = async (source, result, logStage) => {
       error: dbErr?.message || String(dbErr),
     })
     const fatalPersistenceError = toFatalScraperPersistenceError(
-      `[pipeline] MongoDB writes are blocked while saving status for [${source}]; aborting run`,
+      `[pipeline] Failed to save status for [${source}]; aborting run`,
       dbErr,
+      { required: true },
     )
-    if (fatalPersistenceError) {
-      console.error(`  ${fatalPersistenceError.message}`)
-      throw fatalPersistenceError
-    }
-    console.error(`  ERROR [${source}] Failed to save status to DB:`, dbErr.message)
+    console.error(`  ${fatalPersistenceError.message}`)
+    throw fatalPersistenceError
   }
 }
 
@@ -841,23 +824,33 @@ export const refreshVisibleDatasetSummaryWithLogging = async ({
   }
 }
 
-export const isFailureCountedForAbort = (result = {}) => (
+// Source counts are diagnostic only; legacy SCRAPER_FAILURE_ABORT_THRESHOLD is ignored.
+export const isHardSourceFailure = (result = {}) => (
   result.success === false
   && result.skipped !== true
   && result.softFailure !== true
 )
 
-export const resolveFailureAbortThreshold = (value = process.env.SCRAPER_FAILURE_ABORT_THRESHOLD) => {
-  const normalized = Number.parseInt(String(value ?? '').trim(), 10)
-  return Number.isFinite(normalized) && normalized > 0
-    ? normalized
-    : Number.POSITIVE_INFINITY
+const isPipelineFatalError = (error) => {
+  const seen = new Set()
+  for (let current = error; current && !seen.has(current); current = current.cause) {
+    seen.add(current)
+    if (current.abortPipeline === true || current.persistenceBlocked === true) return true
+  }
+  return false
 }
 
-export const shouldAbortPipelineAfterFailures = (
-  failedCount,
-  threshold = resolveFailureAbortThreshold(),
-) => Number.isFinite(threshold) && failedCount >= threshold
+const rethrowFatalError = (error, { source, processingStarted, signal }) => {
+  if (isPipelineFatalError(error)) throw error
+  if (!processingStarted || error?.classificationPending) return
+  const seen = new Set()
+  for (let current = error; current && !seen.has(current); current = current.cause) {
+    seen.add(current)
+    // Ordinary cancellation during shared processing is still a source timeout/shutdown.
+    if (signal?.aborted && current === signal.reason) return
+  }
+  throw toFatalScraperPersistenceError(`[pipeline] Shared processing failed for [${source}]; aborting run`, error, { required: true })
+}
 
 export class MissingMongoUriError extends Error {
   constructor() {
@@ -984,7 +977,6 @@ export const runAll = async ({ stopSignal = null } = {}) => {
   const summary = checkpoint?.completedSummary() || {}
   const startTime = Date.now()
   const startedAt = new Date(startTime)
-  const failureAbortThreshold = resolveFailureAbortThreshold()
   const checkpointHeartbeat = checkpoint
     ? setInterval(() => checkpoint.heartbeat({
         pid: process.pid,
@@ -1006,14 +998,12 @@ export const runAll = async ({ stopSignal = null } = {}) => {
       await retryAfterMongoQuotaRecovery(() => ensureScrapersSeeded())
     } catch (seedErr) {
       const fatalPersistenceError = toFatalScraperPersistenceError(
-        '[pipeline] MongoDB writes are blocked while seeding scraper status records; aborting run',
+        '[pipeline] Failed while seeding scraper status records; aborting run',
         seedErr,
+        { required: true },
       )
-      if (fatalPersistenceError) {
-        console.error(`  ${fatalPersistenceError.message}`)
-        throw fatalPersistenceError
-      }
-      console.error('  ERROR Failed to seed scraper status records:', seedErr.message)
+      console.error(`  ${fatalPersistenceError.message}`)
+      throw fatalPersistenceError
     }
   }
 
@@ -1028,14 +1018,12 @@ export const runAll = async ({ stopSignal = null } = {}) => {
       await retryAfterMongoQuotaRecovery(() => markPipelineRunStarted(startedAt))
     } catch (pipelineErr) {
       const fatalPersistenceError = toFatalScraperPersistenceError(
-        '[pipeline] MongoDB writes are blocked while marking the pipeline as running; aborting run',
+        '[pipeline] Failed while marking the pipeline as running; aborting run',
         pipelineErr,
+        { required: true },
       )
-      if (fatalPersistenceError) {
-        console.error(`  ${fatalPersistenceError.message}`)
-        throw fatalPersistenceError
-      }
-      console.error('  [pipeline] Failed to mark pipeline as running:', pipelineErr.message)
+      console.error(`  ${fatalPersistenceError.message}`)
+      throw fatalPersistenceError
     }
   }
 
@@ -1049,16 +1037,8 @@ export const runAll = async ({ stopSignal = null } = {}) => {
         checkpoint,
         stopSignal,
       })
-      const abortedByFailureThreshold = shouldAbortPipelineAfterFailures(
-        Object.values(parallelSummary).filter(isFailureCountedForAbort).length,
-        failureAbortThreshold,
-      )
       checkpoint?.finish({
         interruptedBy: stopSignal?.aborted ? (stopSignal.reason?.signalName || 'signal') : null,
-        error: abortedByFailureThreshold
-          ? `Pipeline aborted due to too many scraper errors (>= ${failureAbortThreshold}).`
-          : null,
-        restartable: !abortedByFailureThreshold,
       })
       return parallelSummary
     } catch (error) {
@@ -1069,7 +1049,6 @@ export const runAll = async ({ stopSignal = null } = {}) => {
     }
   }
 
-  let failedCount = Object.values(summary).filter(isFailureCountedForAbort).length
   let startedCount = 0
   const totalScrapers = scrapers.length
 
@@ -1099,16 +1078,17 @@ export const runAll = async ({ stopSignal = null } = {}) => {
         }
       } catch (dbErr) {
         console.error(`  ERROR ${progressStr}[${scraper.name}] Failed to verify active status from DB:`, dbErr.message)
+        throw toFatalScraperPersistenceError(`[pipeline] Failed to read status for [${scraper.name}]; aborting run`, dbErr, { required: true })
       }
     }
 
     console.log(`${progressStr}Running [${scraper.name}]...`)
 
+    if (isDryRun) clearDryRunArtifact(scraper.dryRunFile)
     let rawCaptureFile = null
     let capturedAt = null
+    let processingStarted = false
     try {
-      if (isDryRun) clearDryRunArtifact(scraper.dryRunFile)
-
       const jobs = await withRetry(
         () => runScraperAttemptWithRetryPolicy(scraper, { signal: stopSignal }),
         {
@@ -1118,6 +1098,10 @@ export const runAll = async ({ stopSignal = null } = {}) => {
           signal: stopSignal,
         },
       )
+      if (!Array.isArray(jobs) || jobs.some(job => !job || typeof job !== 'object' || Array.isArray(job))) {
+        throw new Error(`[${scraper.name}] Expected an array of job records from the scraper`)
+      }
+      processingStarted = true
       capturedAt = new Date()
       rawCaptureFile = await saveRawSourceCapture(jobs, { source: scraper.name, dryRun: isDryRun, now: capturedAt })
       const publishableAnalysis = analyzePublishableJobs(jobs)
@@ -1185,6 +1169,8 @@ export const runAll = async ({ stopSignal = null } = {}) => {
         console.error(`  ${fatalPersistenceError.message}`)
         throw fatalPersistenceError
       }
+      // Source outages stay isolated; shared persistence and explicitly fatal errors must escape.
+      rethrowFatalError(err, { source: scraper.name, processingStarted, signal: stopSignal })
       const classification = classifyScraperError(err)
       const failureResult = {
         success: false,
@@ -1194,12 +1180,9 @@ export const runAll = async ({ stopSignal = null } = {}) => {
         durationMs: Date.now() - scraperStart,
         ...classification,
       }
-      const failureLabel = failureResult.softFailure ? 'UPSTREAM:' : 'FAILED:'
-      console.error(`  ERROR [${scraper.name}] ${failureLabel}`, err.message)
+      const failureLabel = failureResult.softFailure ? 'UPSTREAM:' : 'SOURCE FAILED:'
+      console.warn(`  WARN [${scraper.name}] ${failureLabel}`, err.message)
       summary[scraper.name] = failureResult
-      if (isFailureCountedForAbort(failureResult)) {
-        failedCount++
-      }
     }
 
     if (!isDryRun) {
@@ -1207,25 +1190,18 @@ export const runAll = async ({ stopSignal = null } = {}) => {
         await retryAfterMongoQuotaRecovery(() => upsertScraperStatus(scraper.name, summary[scraper.name]))
       } catch (dbErr) {
         const fatalPersistenceError = toFatalScraperPersistenceError(
-          `[pipeline] MongoDB writes are blocked while saving status for [${scraper.name}]; aborting run`,
+          `[pipeline] Failed to save status for [${scraper.name}]; aborting run`,
           dbErr,
+          { required: true },
         )
-        if (fatalPersistenceError) {
-          console.error(`  ${fatalPersistenceError.message}`)
-          throw fatalPersistenceError
-        }
-        console.error(`  ERROR [${scraper.name}] Failed to save status to DB:`, dbErr.message)
+        console.error(`  ${fatalPersistenceError.message}`)
+        throw fatalPersistenceError
       }
     }
 
     if (!summary[scraper.name]?.classificationPending) checkpoint?.markSourceCompleted(scraper.name, summary[scraper.name])
 
     console.log()
-
-    if (shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold)) {
-      console.error(`\n  [runner] Halting sequential pipeline: ${failureAbortThreshold} scrapers have failed.`)
-      break
-    }
   }
 
   const totalMs = Date.now() - startTime
@@ -1250,17 +1226,14 @@ export const runAll = async ({ stopSignal = null } = {}) => {
       await retryAfterMongoQuotaRecovery(() => markPipelineRunFinished({
         startedAt,
         completedAt: new Date(),
-        aborted: stopSignal?.aborted || shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold),
+        aborted: Boolean(stopSignal?.aborted),
         error: stopSignal?.aborted
           ? `Pipeline stopped by ${stopSignal.reason?.signalName || 'signal'}.`
-          : (
-              shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold)
-                ? `Pipeline aborted due to too many scraper errors (>= ${failureAbortThreshold}).`
-                : null
-            ),
+          : null,
       }))
     } catch (pipelineErr) {
       console.error(`  [pipeline] Failed to mark pipeline as complete:`, pipelineErr.message)
+      throw toFatalScraperPersistenceError('[pipeline] Failed to mark pipeline as complete; aborting run', pipelineErr, { required: true })
     }
   }
 
@@ -1269,10 +1242,6 @@ export const runAll = async ({ stopSignal = null } = {}) => {
   })
   checkpoint?.finish({
     interruptedBy: stopSignal?.aborted ? (stopSignal.reason?.signalName || 'signal') : null,
-    error: shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold)
-      ? `Pipeline aborted due to too many scraper errors (>= ${failureAbortThreshold}).`
-      : null,
-    restartable: !shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold),
   })
   if (checkpointHeartbeat) clearInterval(checkpointHeartbeat)
   return summary
@@ -1304,18 +1273,19 @@ export const runScraper = async (
       }
     } catch (dbErr) {
       console.error(`  ERROR ${progressStr}[${scraper.name}] Failed to verify active status from DB:`, dbErr.message)
+      throw toFatalScraperPersistenceError(`[pipeline] Failed to read status for [${scraper.name}]; aborting run`, dbErr, { required: true })
     }
   }
 
   console.log(`${progressStr}Starting [${scraper.name}]...`)
   const lifecycleSignal = persistenceOptions.signal || null
 
+  if (isDryRun) clearDryRunArtifact(scraper.dryRunFile)
   let rawCaptureFile = null
   let capturedAt = null
+  let processingStarted = false
   try {
     throwIfAborted(lifecycleSignal)
-    if (isDryRun) clearDryRunArtifact(scraper.dryRunFile)
-
     const scrapeStageStart = Date.now()
     logStage({ stage: 'scrape', status: 'start' })
     const jobs = await withRetry(
@@ -1327,6 +1297,10 @@ export const runScraper = async (
         signal: lifecycleSignal,
       },
     )
+    if (!Array.isArray(jobs) || jobs.some(job => !job || typeof job !== 'object' || Array.isArray(job))) {
+      throw new Error(`[${scraper.name}] Expected an array of job records from the scraper`)
+    }
+    processingStarted = true
     capturedAt = new Date()
     rawCaptureFile = await saveRawSourceCapture(jobs, { source: scraper.name, dryRun: isDryRun, now: capturedAt })
     logStage({
@@ -1413,6 +1387,7 @@ export const runScraper = async (
       console.error(`  ${fatalPersistenceError.message}`)
       throw fatalPersistenceError
     }
+    rethrowFatalError(err, { source: scraper.name, processingStarted, signal: lifecycleSignal })
     const classification = classifyScraperError(err)
     const failResult = {
       success: false,
@@ -1422,8 +1397,8 @@ export const runScraper = async (
       durationMs: Date.now() - scraperStart,
       ...classification,
     }
-    const failureLabel = failResult.softFailure ? 'UPSTREAM:' : 'FAILED:'
-    console.error(`  ERROR [${scraper.name}] ${failureLabel}`, err.message)
+    const failureLabel = failResult.softFailure ? 'UPSTREAM:' : 'SOURCE FAILED:'
+    console.warn(`  WARN [${scraper.name}] ${failureLabel}`, err.message)
 
     await updateLiveScraperStatus(scraper.name, failResult, logStage)
 
@@ -1452,12 +1427,10 @@ const runAllParallel = async ({
   const {
     effective: concurrencyLimit,
   } = resolveParallelWorkerConcurrency()
-  const failureAbortThreshold = resolveFailureAbortThreshold()
   const queue = [...scrapers]
   if (resumeMessage) console.log(`[runner] ${resumeMessage}`)
   console.log(`[runner] Launching parallel worker pool with concurrency limit: ${concurrencyLimit}`)
 
-  let failedCount = Object.values(summary).filter(isFailureCountedForAbort).length
   let startedCount = 0
   let completedCount = 0
   const totalScrapers = scrapers.length
@@ -1470,7 +1443,6 @@ const runAllParallel = async ({
     while (queue.length > 0) {
       if (fatalWorkerError) break
       if (stopSignal?.aborted) break
-      if (shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold)) break
 
       const scraper = queue.shift()
       if (!scraper) continue
@@ -1501,7 +1473,7 @@ const runAllParallel = async ({
           ...classifyScraperError(error),
         }
         if (error instanceof ScraperSourceLifecycleTimeoutError) {
-          console.error(`  ERROR [${scraper.name}] FAILED:`, error.message)
+          console.warn(`  WARN [${scraper.name}] SOURCE FAILED:`, error.message)
           try {
             await updateLiveScraperStatus(
               scraper.name,
@@ -1534,15 +1506,6 @@ const runAllParallel = async ({
       
       completedCount++
       console.log(`${formatParallelProgressLog(completedCount, totalScrapers)}\n`)
-
-      if (isFailureCountedForAbort(result)) {
-        failedCount++
-        if (shouldAbortPipelineAfterFailures(failedCount, failureAbortThreshold)) {
-          console.error(`\n  [runner] Halting parallel pipeline: ${failureAbortThreshold} scrapers have failed.`)
-          queue.length = 0 // empty queue to stop other workers
-          break
-        }
-      }
     }
   }
 
@@ -1569,25 +1532,20 @@ const runAllParallel = async ({
   }
 
   if (!isDryRun) {
-    const totalFailures = Object.values(summary).filter(isFailureCountedForAbort).length
-
     try {
       await retryAfterMongoQuotaRecovery(() => markPipelineRunFinished({
         startedAt,
         completedAt: new Date(),
-        aborted: stopSignal?.aborted || Boolean(fatalWorkerError) || shouldAbortPipelineAfterFailures(totalFailures, failureAbortThreshold),
+        aborted: Boolean(stopSignal?.aborted || fatalWorkerError),
         error: fatalWorkerError?.message || (
           stopSignal?.aborted
             ? `Pipeline stopped by ${stopSignal.reason?.signalName || 'signal'}.`
-            : (
-                shouldAbortPipelineAfterFailures(totalFailures, failureAbortThreshold)
-                  ? `Pipeline aborted due to too many scraper errors (>= ${failureAbortThreshold}).`
-                  : null
-              )
+            : null
         ),
       }))
     } catch (pipelineErr) {
       console.error(`  [pipeline] Failed to mark pipeline as complete:`, pipelineErr.message)
+      throw toFatalScraperPersistenceError('[pipeline] Failed to mark pipeline as complete; aborting run', pipelineErr, { required: true })
     }
   }
 
@@ -1640,7 +1598,7 @@ if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
         Source: source,
         Status: result.success
           ? 'OK'
-          : (result.skipped ? 'Skip' : (result.softFailure ? 'Upstream' : 'Fail')),
+          : (result.skipped ? 'Skip' : (result.softFailure ? 'Upstream' : 'Warn')),
         Jobs: result.jobs || 0,
         New: result.inserted || 0,
         Updated: result.updated || 0,
@@ -1654,11 +1612,11 @@ if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
       runTiming: summary.runTiming,
     }))
 
-    const totalFailures = Object.values(summary).filter(isFailureCountedForAbort).length
-    const failureAbortThreshold = resolveFailureAbortThreshold()
-    if (shouldAbortPipelineAfterFailures(totalFailures, failureAbortThreshold)) {
-      console.error(`\nPipeline aborted due to too many errors (>= ${failureAbortThreshold}).`)
-      process.exitCode = 1
+    const rows = Object.values(summary)
+    const totalFailures = rows.filter(isHardSourceFailure).length
+    const warnings = rows.filter(row => row.success === false && !row.skipped).length
+    if (warnings > 0) {
+      console.warn(`[runner] Recorded ${warnings} source warning(s). See source diagnostics above.`)
     }
     if (Object.values(summary).some(result => result.classificationPending)) {
       console.error('Some sources have unfinished persistence. Resume this checkpoint to retry.')
@@ -1666,10 +1624,9 @@ if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
     }
     if (shutdown.requested) process.exitCode = shutdown.exitCode
     if (process.env.PIPELINE_SUMMARY_FILE) {
-      const rows = Object.values(summary)
       const pipelineSummary = {
         scanned: rows.length, completed: rows.filter(row => row.success).length,
-        skipped: rows.filter(row => row.skipped).length, failed: totalFailures,
+        skipped: rows.filter(row => row.skipped).length, failed: totalFailures, warnings,
         inserted: rows.reduce((sum,row) => sum + (row.inserted || 0), 0),
         updated: rows.reduce((sum,row) => sum + (row.updated || 0), 0),
         interrupted: shutdown.requested,
@@ -1677,7 +1634,7 @@ if (resolveExecutionPath(process.argv[1]) === directExecutionModulePath) {
       }
       fs.mkdirSync(path.dirname(process.env.PIPELINE_SUMMARY_FILE), { recursive: true })
       fs.writeFileSync(process.env.PIPELINE_SUMMARY_FILE, JSON.stringify(pipelineSummary))
-      if (totalFailures > 0 || pipelineSummary.pendingEstimate > 0) process.exitCode = 1
+      if (pipelineSummary.pendingEstimate > 0) process.exitCode = 1
     }
   } catch (err) {
     console.error('Pipeline error:', err)

@@ -3,7 +3,7 @@ import test from 'node:test'
 
 import {
   buildCoverageGapResult,
-  isFailureCountedForAbort,
+  isHardSourceFailure,
   resolveZeroJobOutcome,
 } from '../runner.js'
 import adpushupProviderMetadata from '../../scraper/adpushup/catalog.js'
@@ -42,7 +42,7 @@ test('coverage-gap provider is completed as a non-aborting coverage result', () 
     failureKind: 'coverage_gap',
     zeroJobEvidence: 'coverage-gap',
   })
-  assert.equal(isFailureCountedForAbort(buildCoverageGapResult('sentinel', outcome)), false)
+  assert.equal(isHardSourceFailure(buildCoverageGapResult('sentinel', outcome)), false)
 })
 
 test('valid first-party verified-empty evidence authorizes a verified zero', () => {

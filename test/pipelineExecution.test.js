@@ -4,8 +4,8 @@ import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { fileURLToPath } from 'node:url';
 import PipelineRun from '../src/models/PipelineRun.js';
-import { createPipeline, claimStage, recordStageResult, completeWorkflow, dispatchNext } from '../src/pipeline/execution.js';
-import { defaultConfiguration } from '../src/pipeline/policy.js';
+import { createPipeline, claimStage, recordStageResult, completeWorkflow, completeLocalStage, dispatchNext } from '../src/pipeline/execution.js';
+import { defaultConfiguration, stageOutcome } from '../src/pipeline/policy.js';
 import { reconcileGithub } from '../src/pipeline/github.js';
 import { reconcileLocal } from '../src/pipeline/local.js';
 
@@ -24,15 +24,32 @@ test('durable pipeline claims, handoffs, failures and configuration snapshots', 
   await assert.rejects(claimStage(run._id,'scraper',{runId:10,token:'wrong'}));
   await claimStage(run._id,'scraper',{runId:10,token});
   await assert.rejects(claimStage(run._id,'scraper',{runId:11,token}));
-  await recordStageResult(run._id,'scraper',{outcome:'completed',summary:{inserted:4}});
+  const summary={inserted:4,failed:2,warnings:315};
+  await recordStageResult(run._id,'scraper',{outcome:stageOutcome('scraper',summary,0),summary});
   await Promise.all([completeWorkflow(10,'success',dispatch),completeWorkflow(10,'success',dispatch)]);
   const next=await PipelineRun.findById(run._id).lean();
   assert.equal(next.stages[0].status,'completed');assert.equal(next.stages[1].status,'queued');assert.equal(dispatches,2);
+  assert.equal(next.stages[0].summary.warnings,315);assert.equal(next.stages[0].summary.failed,2);
   await claimStage(run._id,'rewrite',{runId:12,token:next.stages[1].dispatchToken});
   await recordStageResult(run._id,'rewrite',{outcome:'incomplete',summary:{pendingEstimate:5}});
   await completeWorkflow(12,'failure',dispatch);
   const stopped=await PipelineRun.findById(run._id).lean();
   assert.equal(stopped.status,'incomplete');assert.equal(stopped.stages[2].status,'blocked');assert.equal(stopped.activeKey,undefined);
+ });
+ await t.test('local scraper source warnings allow the next stage and retain diagnostic counts',async()=>{
+  const run=await createPipeline({configuration:defaultConfiguration(),target:'local',origin:'admin'});
+  await dispatchNext(run._id,async()=>{});
+  const queued=await PipelineRun.findById(run._id).lean();
+  await claimStage(run._id,'scraper',{token:queued.stages[0].dispatchToken,owner:'test-owner'});
+  const summary={completed:1,failed:1,warnings:1};
+  await completeLocalStage(run._id,'scraper',stageOutcome('scraper',summary,0),summary);
+  await dispatchNext(run._id,async()=>{});
+  const next=await PipelineRun.findById(run._id).lean();
+  assert.equal(next.status,'running');assert.equal(next.stages[1].status,'queued');
+  assert.equal(next.stages[0].summary.failed,1);assert.equal(next.stages[0].summary.warnings,1);
+  await claimStage(run._id,'rewrite',{token:next.stages[1].dispatchToken,owner:'test-owner'});
+  await completeLocalStage(run._id,'rewrite','failed',{failed:1});
+  assert.equal((await PipelineRun.findById(run._id).lean()).status,'failed');
  });
  await t.test('failed dispatch is terminal and releases the database slot',async()=>{
   const run=await createPipeline({configuration:defaultConfiguration(),target:'github',origin:'admin'});

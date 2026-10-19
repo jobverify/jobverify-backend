@@ -2069,19 +2069,6 @@
     "modulePath": "../algoshack/script.js"
   },
   {
-    "source": "algouniversity",
-    "companyName": "AlgoUniversity",
-    "adapter": "script",
-    "modulePath": "../algouniversity/script.js",
-    "companyCareerPage": "https://www.algouniversity.com/careers/",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "single-page",
-    "extractionStrategy": "html-cards+json-ld",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default"
-  },
-  {
     "source": "aliensgroup",
     "companyName": "Aliens Group",
     "adapter": "script",
@@ -4275,20 +4262,6 @@
     "extractionStrategy": "json-search-api+json-detail-api",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default"
-  },
-  {
-    "source": "auro",
-    "companyName": "AURO University",
-    "adapter": "script",
-    "modulePath": "../auro/script.js",
-    "companyCareerPage": "https://www.aurouniversity.edu.in/job-and-vacancies/",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "single-page",
-    "extractionStrategy": "general-application-form",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "aurouniversity.edu.in"
   },
   {
     "source": "aurobindopharma",
@@ -7221,20 +7194,6 @@
     "companyDomain": "careers.chingari.io"
   },
   {
-    "source": "chitkarauniversity",
-    "companyName": "Chitkara University",
-    "adapter": "script",
-    "modulePath": "../chitkarauniversity/script.js",
-    "companyCareerPage": "https://careers.chitkara.edu.in/",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "first-party-wordpress-pagination",
-    "extractionStrategy": "verified-careers-pages+detail-pages+same-page-gravity-forms-apply",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "careers.chitkara.edu.in"
-  },
-  {
     "source": "chronus",
     "companyName": "Chronus",
     "adapter": "script",
@@ -8544,20 +8503,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "crowdfireapp.com"
-  },
-  {
-    "source": "crraoaimscs",
-    "companyName": "CR Rao Advanced Institute of Mathematics, Statistics and Computer Science (AIMSCS)",
-    "adapter": "script",
-    "modulePath": "../crraoaimscs/script.js",
-    "companyCareerPage": "https://crraoaimscs.res.in/careers.php",
-    "atsPlatform": "official-institute-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "single-first-party-careers-page",
-    "extractionStrategy": "verified-official-homepage+verified-first-party-careers-page+inline-recruitment-tables+advertisement-and-application-links",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "crraoaimscs.res.in"
   },
   {
     "source": "crtdtechnologies",
@@ -19988,34 +19933,6 @@
     "verifiedSurfaceSummary": "Verified on Thursday, July 16, 2026 that the official Ksolves homepage at https://www.ksolves.com/ links to the first-party careers index at https://www.ksolves.com/careers, where live listing cards link directly to first-party role pages under https://www.ksolves.com/careers-form. Verified detail pages for Full Stack Developer (React Native, ReactJS, Python) and Senior Software Engineer (Data) expose title, Location, Experience, Work Mode, role content, and an Apply for This Job form on the same first-party domain."
   },
   {
-    "source": "kumaragurucollegeoftechnology",
-    "companyName": "Kumaraguru College of Technology",
-    "adapter": "script",
-    "modulePath": "../kumaragurucollegeoftechnology/script.js",
-    "companyCareerPage": "https://careers.kct.ac.in/current_openings.html",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "homepage-plus-careers-landing-plus-current-openings-plus-detail-pages",
-    "extractionStrategy": "verified-official-homepage+verified-careers-landing+verified-current-openings+faculty-disciplines+institutional-roles+fellowship-pages",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "kct.ac.in"
-  },
-  {
-    "source": "kumaraguruinstitutions",
-    "companyName": "Kumaraguru Institutions",
-    "adapter": "script",
-    "modulePath": "../kumaraguruinstitutions/script.js",
-    "companyCareerPage": "https://careers.kumaraguru.edu.in/current_openings.php",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "homepage-plus-careers-landing-plus-current-openings-plus-academic-and-support-pages",
-    "extractionStrategy": "verified-official-homepage+verified-careers-landing+verified-current-openings+academic-recruitment-categories+support-services-categories",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "kumaraguru.edu.in"
-  },
-  {
     "source": "kuvera",
     "companyName": "Kuvera",
     "officialBrandName": "Kuvera by CRED",
@@ -26853,22 +26770,6 @@
     "verifiedSurfaceSummary": "Verified on Saturday, August 15, 2026 that https://prepinsta.com/career-opportunities/ remained the live official PrepInsta careers page, that it still handed candidates to https://angel.co/company/prepinsta and https://angel.co/company/prepinsta/jobs, and that the public jobs handoff still resolved to https://wellfound.com/company/prepinsta/jobs. The current public Wellfound board is readable and explicitly shows View 0 jobs plus \"PrepInsta hasn't added any jobs yet,\" so this exact-name provider now accepts the accessible empty-board state and returns an honest empty result."
   },
   {
-    "source": "presidencyuniversity",
-    "companyName": "Presidency University",
-    "adapter": "script",
-    "modulePath": "../presidencyuniversity/script.js",
-    "companyCareerPage": "https://presidencyuniversity.in/careers",
-    "atsPlatform": "hrone",
-    "countryFilter": "India",
-    "paginationStrategy": "single-official-careers-page-inline-vacancy-cards",
-    "extractionStrategy": "official-careers-page-html-vacancy-cards+trusted-hrone-apply-links",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "presidencyuniversity.in",
-    "verifiedOn": "2026-08-14",
-    "verifiedSurfaceSummary": "Verified on Friday, August 14, 2026 that https://presidencyuniversity.in/careers remained the live official Presidency University careers page, that it still linked See All Vacancies to https://hr-1.in/b42a6e, and that inline vacancy cards rendered in vacancy-boxes sections with trusted HROne apply links on career.hrone.cloud using HTML-encoded query separators."
-  },
-  {
     "source": "presto",
     "companyName": "Presto",
     "officialBrandName": "Presto",
@@ -27506,19 +27407,6 @@
     "companyDomain": "quantumbso.com"
   },
   {
-    "source": "qubecinema",
-    "companyName": "Qube Cinema",
-    "adapter": "script",
-    "modulePath": "../qubecinema/script.js",
-    "companyCareerPage": "https://www.qubecinema.com/careers",
-    "atsPlatform": "official-careers-page-plus-applytojob-board",
-    "countryFilter": "India",
-    "paginationStrategy": "validate-official-careers-page-then-read-linked-public-applytojob-board",
-    "extractionStrategy": "official-careers-page-handoff-verification-plus-board-role-card-parsing",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default"
-  },
-  {
     "source": "quboleindia",
     "companyName": "Qubole India",
     "officialBrandName": "Qubole",
@@ -27550,47 +27438,6 @@
     "extractionStrategy": "embedded-json+detail-page",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default"
-  },
-  {
-    "source": "quickheal",
-    "companyName": "Quick Heal",
-    "adapter": "script",
-    "modulePath": "../quickheal/script.js",
-    "dryRunFile": "quickheal/jobs.json",
-    "companyCareerPage": "https://www.quickheal.com/jobs-careers-at-quick-heal",
-    "companyDomain": "quickheal.com",
-    "atsPlatform": "darwinbox",
-    "countryFilter": "India",
-    "paginationStrategy": "browser-session-darwinbox-pagination",
-    "extractionStrategy": "official-careers-page+darwinbox-listing-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "officialCareersHandoffUrl": "https://lifecycleqhtl.darwinbox.in/ms/candidate/careers",
-    "darwinboxOrigin": "https://lifecycleqhtl.darwinbox.in",
-    "darwinboxCompanyId": "main",
-    "verifiedOn": "2026-07-17",
-    "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.quickheal.com/jobs-careers-at-quick-heal is the live first-party Quick Heal careers page and that it explicitly links job seekers to the official Darwinbox handoff at https://lifecycleqhtl.darwinbox.in/ms/candidate/careers via the visible Apply for a job and Join Our Innovative Team calls-to-action."
-  },
-  {
-    "source": "seqrite",
-    "companyName": "Seqrite",
-    "adapter": "script",
-    "modulePath": "../seqrite/script.js",
-    "dryRunFile": "seqrite/jobs.json",
-    "companyCareerPage": "https://www.quickheal.co.in/jobs-careers-at-quick-heal",
-    "companyDomain": "seqrite.com",
-    "atsPlatform": "darwinbox",
-    "countryFilter": "India",
-    "paginationStrategy": "browser-session-darwinbox-pagination",
-    "extractionStrategy": "official-quick-heal-careers-page+seqrite-signal+darwinbox-listing-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "officialCareersHandoffUrl": "https://lifecycleqhtl.darwinbox.in/ms/candidate/careers",
-    "darwinboxOrigin": "https://lifecycleqhtl.darwinbox.in",
-    "darwinboxCompanyId": "main",
-    "verifiedOn": "2026-08-14",
-    "verifiedPublicPostingCount": 0,
-    "verifiedSurfaceSummary": "Verified on Friday, August 14, 2026 that Seqrite's official homepage still identifies Seqrite as the enterprise arm of Quick Heal Technologies Limited, and Quick Heal's first-party careers page at https://www.quickheal.co.in/jobs-careers-at-quick-heal still contains the current Seqrite and Quick Heal recruiting copy and links its Apply for a job and Join Our Innovative Team calls-to-action to the live first-party Darwinbox portal at https://lifecycleqhtl.darwinbox.in/ms/candidate/careers. The public jobs portal remains JS-rendered and uses the Darwinbox candidate listing API, so the provider validates the official handoff before collecting India listings."
   },
   {
     "source": "quinbay",
@@ -29886,28 +29733,6 @@
     "modulePath": "../schoogly/script.js"
   },
   {
-    "source": "schoolnetindia",
-    "companyName": "Schoolnet India",
-    "officialBrandName": "Schoolnet India Ltd.",
-    "adapter": "script",
-    "modulePath": "../schoolnetindia/script.js",
-    "dryRunFile": "schoolnetindia/jobs.json",
-    "homepageUrl": "https://www.schoolnetindia.com/",
-    "companyCareerPage": "https://www.schoolnetindia.com/careers/",
-    "recruitmentPortalUrl": "https://hms.schoolnetindia.com/login",
-    "companyDomain": "schoolnetindia.com",
-    "atsPlatform": "official-company-site-public-careers-page",
-    "countryFilter": "India",
-    "paginationStrategy": "single-official-careers-page-no-pagination-plus-official-recruitment-portal-verification",
-    "extractionStrategy": "verified-official-careers-page+verified-official-recruitment-portal+role-card-text-extraction",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedSampleRoleTitle": "Senior Full Stack Developer",
-    "verifiedRecruitmentPortalRoleTitle": "Computer Training Facilitator (ICT Educator)",
-    "verifiedOn": "2026-07-17",
-    "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.schoolnetindia.com/careers/ is the live first-party Schoolnet India careers page showing public openings including Senior Full Stack Developer, and that https://hms.schoolnetindia.com/login is the official Schoolnet India HMS recruitment portal showing Browse Jobs plus a visible Computer Training Facilitator (ICT Educator) opening under the Schoolnet India Ltd. brand."
-  },
-  {
     "source": "schwingstetter",
     "companyName": "Schwing Stetter",
     "adapter": "script",
@@ -30548,28 +30373,6 @@
     "verifiedSampleRoleDetailUrl": "https://www.shipyaari.com/careers/sales-manager/",
     "verifiedOn": "2026-07-17",
     "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.shipyaari.com/careers/ is the live first-party Shipyaari careers page showing public role cards including Sales Head - B2C & D2C, Customer Growth Manager, and Logistics Operations Executive, and that the same first-party page linked to role detail pages including https://www.shipyaari.com/careers/sales-manager/ plus the linked Customer Growth Manager detail page on the official shipyaari.com domain."
-  },
-  {
-    "source": "shopclues",
-    "companyName": "ShopClues",
-    "officialBrandName": "ShopClues",
-    "adapter": "script",
-    "modulePath": "../shopclues/script.js",
-    "dryRunFile": "shopclues/jobs.json",
-    "homepageUrl": "https://www.shopclues.com/",
-    "companyCareerPage": "https://www.shopclues.com/career.html",
-    "currentOpeningsUrl": "https://www.shopclues.com/current-opening.html",
-    "companyDomain": "shopclues.com",
-    "atsPlatform": "official-company-site-static-current-openings-page",
-    "countryFilter": "India",
-    "paginationStrategy": "single-official-current-openings-page-no-pagination",
-    "extractionStrategy": "verified-careers-landing+verified-current-openings-page+static-position-block-parsing",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedSampleRoleTitle": "Software Engineer (PHP, MYSQL)",
-    "verifiedSampleDepartment": "Technology",
-    "verifiedOn": "2026-07-17",
-    "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.shopclues.com/career.html is the live first-party ShopClues careers landing page and that https://www.shopclues.com/current-opening.html is the first-party current openings page exposing public static role blocks including Technology openings such as Software Engineer (PHP, MYSQL) on the official shopclues.com domain."
   },
   {
     "source": "shopconnect",
@@ -31644,20 +31447,6 @@
     "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://snowplow.io/careers was the live first-party Snowplow careers page, that its public \"See Open Roles\" call-to-action linked directly to the official HiBob board at https://snowplow.careers.hibob.com/, and that the companion public HiBob endpoints https://snowplow.careers.hibob.com/api/career-site and https://snowplow.careers.hibob.com/api/job-ad returned live public Snowplow openings including Customer Success Engineer, Market Development Representative, and Product Manager."
   },
   {
-    "source": "snscollegeoftechnology",
-    "companyName": "SNS College of Technology",
-    "adapter": "script",
-    "modulePath": "../snscollegeoftechnology/script.js",
-    "companyCareerPage": "https://snsct.org/",
-    "atsPlatform": "official-company-site-no-public-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "homepage-plus-robots-sitemap-and-careers-route-validation",
-    "extractionStrategy": "verified-official-homepage+verified-career-contact+verified-robots-sitemap+verified-no-public-careers-routes-return-empty",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "snsct.org"
-  },
-  {
     "source": "sobha",
     "companyName": "Sobha Limited",
     "adapter": "script",
@@ -32194,20 +31983,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "squareyards.com"
-  },
-  {
-    "source": "sreechitratirunalinstitute",
-    "companyName": "Sree Chitra Tirunal Institute for Medical Sciences and Technology",
-    "adapter": "script",
-    "modulePath": "../sreechitratirunalinstitute/script.js",
-    "companyCareerPage": "https://www.sctimst.ac.in/recruitment/",
-    "atsPlatform": "official-government-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "single-official-recruitment-page",
-    "extractionStrategy": "official-recruitment-page+active-notifications-table+first-party-pdf-links+optional-apply-handoff",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "sctimst.ac.in"
   },
   {
     "source": "srei",
@@ -35800,20 +35575,6 @@
     "companyDomain": "vehant.com"
   },
   {
-    "source": "velammalgroupofschools",
-    "companyName": "Velammal Group of schools",
-    "adapter": "script",
-    "modulePath": "../velammalgroupofschools/script.js",
-    "companyCareerPage": "https://velammal.org/career/",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "homepage-plus-career-page-plus-empty-jobs-page-plus-missing-route-validation",
-    "extractionStrategy": "verified-official-homepage+verified-career-application-page+verified-empty-jobs-page+verified-missing-careers-routes-return-empty",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "velammal.org"
-  },
-  {
     "source": "veltrikev",
     "companyName": "VELTRIK.EV",
     "adapter": "script",
@@ -36749,20 +36510,6 @@
     "verifiedPublicJobCount": 0,
     "verifiedIndiaJobCount": 0,
     "verifiedSurfaceSummary": "Original official domain redirects to www.yelloskye.ai. Current app routes and observed bundle contain no active job inventory or affirmative zero-openings statement. This is discovery-only evidence, not an authoritative empty-opening statement."
-  },
-  {
-    "source": "yellowtrainschool",
-    "companyName": "Yellow Train School",
-    "adapter": "script",
-    "modulePath": "../yellowtrainschool/script.js",
-    "companyCareerPage": "https://www.yellowtrainschool.com/recruitment",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "single-first-party-recruitment-page",
-    "extractionStrategy": "verified-homepage+about+recruitment-prose+contact-page+shared-mailto-apply",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "yellowtrainschool.com"
   },
   {
     "source": "yespealtechnologies",
@@ -44964,25 +44711,5 @@
     "verifiedPublicPostingCount": 0,
     "verifiedIndiaJobCount": 0,
     "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that the official RenewBuy domain is https://www.renewbuy.com/ but that no trustworthy enumerable first-party India careers page, ATS handoff, or public jobs feed was confirmed. Third-party RenewBuy vacancy pages are intentionally not promoted by this fail-closed provider."
-  },
-  {
-    "source": "swiggy",
-    "companyName": "Swiggy",
-    "adapter": "script",
-    "modulePath": "../swiggy/script.js",
-    "dryRunFile": "swiggy/jobs.json",
-    "companyCareerPage": "https://careers.swiggy.in/",
-    "legacyCareersUrl": "https://careers.swiggy.com/",
-    "jobsFeedUrl": "https://careers.swiggy.in/api/jobs.json",
-    "jobsApiUrl": "https://api.smartrecruiters.com/v1/companies/SWIGGY/postings",
-    "companyDomain": "careers.swiggy.in",
-    "atsPlatform": "smartrecruiters",
-    "countryFilter": "India",
-    "paginationStrategy": "offset-paginated-ats-with-count-checked-first-party-inventory",
-    "extractionStrategy": "verified-official-careers-migration+reconciled-public-inventories+explicit-india-country+verified-active-job-details",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-10-19",
-    "verifiedSurfaceSummary": "The established careers.swiggy.com redirects to the first-party careers.swiggy.in application, which publishes api/jobs.json and SmartRecruiters SWIGGY job ads. Every parent title, city and business unit is reconciled with the complete count-checked ATS inventory before active explicitly Indian details are emitted. The obsolete MyNextHire board returns HTTP 402."
   }
 ]

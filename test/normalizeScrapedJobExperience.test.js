@@ -786,9 +786,9 @@ test('normalizes candidate-cued exact-year requirements tied to supporting work 
 test('normalizes candidate-cued exact-year requirements tied to managing a role', () => {
   const normalized = normalizeScrapedJob({
     title: 'Senior QA Manager',
-    company: 'ShopClues',
+    company: 'Example Commerce',
     location: 'Gurgaon, India',
-    sourceUrl: 'https://www.shopclues.com/current-opening.html',
+    sourceUrl: 'https://www.example.com/current-opening.html',
     description: 'An ideal candidate will possess following: 2 years in QA Manager role managing a team of over 5 QA engineers and leads.',
     experienceRequired: null,
   })

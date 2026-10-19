@@ -115,7 +115,8 @@ test("getUserProfile reports saved job count in the profile overview", async () 
   }
 });
 
-test("getSavedJobs drops unavailable saved jobs and returns a consistent count", async () => {
+test("getSavedJobs drops unavailable saved jobs and returns a consistent count", async (t) => {
+  t.mock.method(User, 'updateOne', async () => ({ modifiedCount: 1 }));
   const { getSavedJobs } = await import("../src/controllers/userController.js");
   const originalFindById = User.findById;
   const originalJobFind = Job.find;
@@ -151,7 +152,8 @@ test("getSavedJobs drops unavailable saved jobs and returns a consistent count",
   }
 });
 
-test("getSavedJobs applies the public job visibility scope", async () => {
+test("getSavedJobs applies the public job visibility scope", async (t) => {
+  t.mock.method(User, 'updateOne', async () => ({ modifiedCount: 1 }));
   const { getSavedJobs } = await import("../src/controllers/userController.js");
   const originalFindById = User.findById;
   const originalJobFind = Job.find;
@@ -334,7 +336,8 @@ test("saveJob only accepts jobs that are still publicly visible", async () => {
   }
 });
 
-test("removeSavedJob removes the saved job and returns the updated overview count", async () => {
+test("removeSavedJob removes the saved job and returns the updated overview count", async (t) => {
+  t.mock.method(User, 'updateOne', async () => ({ modifiedCount: 1 }));
   const { removeSavedJob } = await import("../src/controllers/userController.js");
   const originalFindById = User.findById;
   const originalCountDocuments = Job.countDocuments;

@@ -1823,6 +1823,12 @@ export const trackJobClick = async (req, res) => {
       console.error("Error creating Click record:", clickErr);
     }
 
+    // A purge may finish between the job update and analytics insertion.
+    if (!await Job.findOne({ _id: job._id }, '_id')) {
+      await Click.deleteMany({ job: job._id });
+      return res.status(404).json({ code: 404, success: false, message: 'Job not found' });
+    }
+
     return res.status(200).json({
       code: 200,
       success: true,

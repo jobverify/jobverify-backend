@@ -7,6 +7,7 @@ import express from "express";
 import { updateSiteSettings } from "../controllers/siteSettingsController.js";
 import { getPipelineStatus, savePipelineConfiguration, getPipelineCapabilities, triggerPipeline, getPipelineRuns, getPipelineRun, getPipelineLog, retiredPipelineControl } from '../controllers/pipelineController.js';
 import { getUserSuggestions } from "../controllers/userSuggestionController.js";
+import { purgeScraperJobs } from "../controllers/scraperMaintenanceController.js";
 import {
   getDashboardStats,
   getClickTimeSeries,
@@ -139,6 +140,7 @@ router.post(
 );
 
 // Crawler Pipeline Active State Control
+router.delete('/scraper/:id/jobs', mongoIdParamValidation('id', 'scraper ID'), validateRequest, purgeScraperJobs);
 router.put(
   "/scraper/:id/toggle",
   adminScraperToggleValidation,

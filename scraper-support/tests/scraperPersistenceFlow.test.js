@@ -58,6 +58,7 @@ test('runAll preserves the existing jobs collection during a full live run', asy
   const originalFindOneAndUpdate = ScraperStatus.findOneAndUpdate
   const originalFindOne = ScraperStatus.findOne
   const originalCreate = ScraperRun.create
+  const originalBulkWrite = ScraperStatus.bulkWrite
 
   const deleteFilters = []
 
@@ -75,6 +76,7 @@ test('runAll preserves the existing jobs collection during a full live run', asy
     },
   })
   ScraperRun.create = async () => ({})
+  ScraperStatus.bulkWrite = async () => ({})
 
   try {
     await runAll()
@@ -85,6 +87,7 @@ test('runAll preserves the existing jobs collection during a full live run', asy
     ScraperStatus.findOneAndUpdate = originalFindOneAndUpdate
     ScraperStatus.findOne = originalFindOne
     ScraperRun.create = originalCreate
+    ScraperStatus.bulkWrite = originalBulkWrite
     restoreMongoUri()
     restoreReadyState()
   }

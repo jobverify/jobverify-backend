@@ -42,7 +42,7 @@ globalThis.runnerLifecycleFixture = {
     ? [source('disabled-one'), source('disabled-two')]
     : ['checkpoint-resume', 'checkpoint-failure-threshold'].includes(scenario)
       ? [source('alpha'), source('beta')]
-    : ['timeout', 'uncooperative-timeout', 'checkpoint-timeout', 'cooperative-timeout', 'slow-cleanup'].includes(scenario)
+    : ['timeout', 'uncooperative-timeout', 'checkpoint-timeout', 'cooperative-timeout', 'slow-cleanup', 'fatal-cleanup', 'persistence-cleanup'].includes(scenario)
       ? [source('broken', 5), source('queued')]
       : [source('broken', 5), source('peer'), source('queued')],
   status: () => ({ isActive: scenario !== 'inactive' }),
@@ -54,6 +54,15 @@ globalThis.runnerLifecycleFixture = {
     }
     if (name === 'broken') {
       if (scenario === 'quota') throw quotaError
+      if (['fatal-cleanup', 'persistence-cleanup'].includes(scenario)) {
+        return new Promise((resolve, reject) => {
+          signal.addEventListener('abort', () => {
+            const error = new Error('shared persistence failed during abort cleanup')
+            if (scenario === 'fatal-cleanup') error.abortPipeline = true
+            reject(error)
+          }, { once: true })
+        })
+      }
       if (['cooperative-timeout', 'slow-cleanup'].includes(scenario)) {
         return new Promise((resolve, reject) => {
           signal.addEventListener('abort', () => {
@@ -128,7 +137,7 @@ registerHooks({
 
 // Child-only inputs avoid the developer's .env and source-selection settings.
 process.env.MONGO_URI = 'mongodb://offline.invalid/never-connected'
-process.env.SCRAPER_CONCURRENCY = ['timeout', 'uncooperative-timeout', 'checkpoint-timeout', 'cooperative-timeout', 'slow-cleanup', 'shutdown-classification'].includes(scenario) ? '1' : '2'
+process.env.SCRAPER_CONCURRENCY = ['timeout', 'uncooperative-timeout', 'checkpoint-timeout', 'cooperative-timeout', 'slow-cleanup', 'shutdown-classification', 'fatal-cleanup', 'persistence-cleanup'].includes(scenario) ? '1' : '2'
 let checkpointDir = null
 if (['checkpoint-resume', 'checkpoint-failure-threshold'].includes(scenario)) {
   checkpointDir = fs.mkdtempSync(path.join(os.tmpdir(), 'jobverify-runner-resume-'))
@@ -137,7 +146,7 @@ if (['checkpoint-resume', 'checkpoint-failure-threshold'].includes(scenario)) {
     version: 1,
     runId: 'fixture-run',
     mode: 'live',
-    parallel: true,
+    parallel: process.argv.includes('--parallel'),
     status: 'running',
     catalogSources: ['alpha', 'beta'],
     totalSources: 2,

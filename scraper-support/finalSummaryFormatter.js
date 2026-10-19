@@ -5,7 +5,7 @@ const formatStatus = (result = {}) => {
   if (result.failureKind === 'coverage_gap') return 'Coverage'
   if (result.success) return 'OK'
   if (result.skipped) return 'Skip'
-  return result.softFailure ? 'Upstream' : 'Fail'
+  return result.softFailure ? 'Upstream' : 'Warn'
 }
 
 const toFiniteNonNegative = (value) => {
@@ -111,7 +111,7 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
   const counts = rows.reduce((total, { result }) => {
     total[formatStatus(result)] += 1
     return total
-  }, { OK: 0, Skip: 0, Coverage: 0, Upstream: 0, Fail: 0 })
+  }, { OK: 0, Skip: 0, Coverage: 0, Upstream: 0, Warn: 0 })
   const successfulRows = rows.filter(({ result }) => formatStatus(result) === 'OK')
   const totalJobs = rows.reduce((total, { result }) => total + toFiniteNonNegative(result.jobs), 0)
   const jobsPerSource = rows.map(({ result }) => toFiniteNonNegative(result.jobs))
@@ -137,7 +137,7 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
   const durations = rows.map(({ result }) => toFiniteNonNegative(result.durationMs))
   const cumulativeDuration = durations.reduce((total, value) => total + value, 0)
   const slowest = sortByMetricThenSource(rows, ({ result }) => toFiniteNonNegative(result.durationMs))[0]
-  const attention = rows.filter(({ result }) => ['Upstream', 'Fail'].includes(formatStatus(result)))
+  const attention = rows.filter(({ result }) => ['Upstream', 'Warn'].includes(formatStatus(result)))
   const timedOutSources = attention.filter(({ result }) => isTimedOut(result)).length
   const dataQuality = rows.reduce((total, { result }) => ({
     missingTitle: total.missingTitle + toFiniteNonNegative(result.dataQuality?.missingTitle),
@@ -212,7 +212,7 @@ export const formatFinalSummaryTable = (summary = {}, { previousRun = null, runT
       ['Skipped', counts.Skip],
       ['Coverage gaps', counts.Coverage],
       ['Upstream issues', counts.Upstream],
-      ['Failed', counts.Fail],
+      ['Source warnings', counts.Warn],
       ['Success rate', formatPercent(counts.OK, processed)],
       ['Successful-source rate', formatPercent(counts.OK, processed)],
       ['Zero India-job results', zeroJobRows.length],
