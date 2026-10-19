@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { normalizeScrapedJob } from '../../scraper-support/utils/normalizeScrapedJob.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -312,19 +313,24 @@ export const extractBoardCards = (html) => {
 
   const articles = [...page.matchAll(/<article\b[^>]*class=["'][^"']*\bjob-card\b[^"']*["'][^>]*>([\s\S]*?)<\/article>/gi)]
   if (articles.length === 0) throw new Error('Blastline official board no longer exposes job cards')
+  const reportedTotal = Number(stripTags(page).match(/\b(\d+)\s+roles?\b/i)?.[1])
+  if (!Number.isInteger(reportedTotal) || reportedTotal !== articles.length) {
+    throw new Error('Blastline incomplete official board inventory')
+  }
 
   return articles
     .map((match) => {
       const article = match[1]
       const company = stripTags(article.match(/<span\b[^>]*class=["'][^"']*\bcompany-badge\b[^"']*["'][^>]*>([\s\S]*?)<\/span>/i)?.[1])
-      if (company !== 'Blastline India') return null
+      // The company-scoped board omits badges; root /jobs/ links still require employer verification on the detail.
+      if (company && company !== 'Blastline India') return null
 
       const titleMatch = article.match(/<h3>\s*<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>\s*<\/h3>/i)
       const title = stripTags(titleMatch?.[2])
       const url = buildAbsoluteUrl(titleMatch?.[1], JOB_BOARD_URL)
       const facts = [...article.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)].map((item) => stripTags(item[1]))
       if (!title || !url || new URL(url).origin !== new URL(JOB_BOARD_URL).origin
-        || !new URL(url).pathname.startsWith('/jobs/') || !facts[0]) {
+        || !/^\/jobs\/[a-z0-9-]+\/?$/.test(new URL(url).pathname) || !facts[0]) {
         throw new Error('Blastline official board job card no longer matches the verified role contract')
       }
       return { title, url, location: facts[0], department: facts[1] || null, experienceRequired: facts[2] || null }
@@ -444,7 +450,11 @@ export const createBlastlineIndiaPvtLtdScraper = ({
       const timestampFactory = overrideNow || now
       const jobs = await Promise.all(cards.map(async (card) =>
         extractBoardJob(await fetchText(card.url), card)))
-      return jobs.map((job) => buildNormalizedJob(job, timestampFactory))
+      return attachInventoryEvidence(jobs.map((job) => buildNormalizedJob(job, timestampFactory)), {
+        status: 'complete-inventory', surface: JOB_BOARD_URL, firstParty: true, listingComplete: true,
+        pagesFetched: 1, reportedTotal: jobs.length, indiaFacetCount: jobs.length,
+        verifiedAt: timestampFactory(), reason: 'complete-official-company-board-and-verified-employer-details',
+      })
     }
 
     if (!hasOfficialCareersSignal(careersHtml)) {

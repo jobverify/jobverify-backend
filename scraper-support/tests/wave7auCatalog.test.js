@@ -54,20 +54,21 @@ test('Excelra Knowledge Solutions local catalog captures the verified WordPress 
   assert.equal(provider.companyCareerPage, 'https://www.excelra.com/careers/')
   assert.equal(provider.careersPortalBaseUrl, 'https://excelra.darwinbox.in/ms/candidatev2/main/careers/')
   assert.equal(provider.careersWordpressApiUrl, 'https://www.excelra.com/wp-json/wp/v2/pages?slug=careers')
-  assert.equal(provider.atsPlatform, 'first-party-wordpress-json-darwinbox-job-links')
-  assert.equal(provider.paginationStrategy, 'single-first-party-wordpress-careers-page-endpoint')
+  assert.equal(provider.careersJobsApiUrl, 'https://www.excelra.com/wp-json/wp/v2/job_listing')
+  assert.equal(provider.atsPlatform, 'first-party-wordpress-rendered-darwinbox-job-links')
+  assert.equal(provider.paginationStrategy, 'wordpress-careers-record-plus-rendered-shortcode-or-paginated-job-listings')
   assert.equal(
     provider.extractionStrategy,
-    'verified-wordpress-careers-page+complete-opening-cards+official-darwinbox-applications+explicit-country-filter',
+    'verified-wordpress-careers-page+rendered-darwinbox-cards-or-public-job-listings+complete-pagination+official-applications+explicit-country-filter',
   )
-  assert.equal(provider.verifiedOn, '2026-09-13')
-  assert.match(provider.verifiedSurfaceSummary, /September 13, 2026/i)
-  assert.match(provider.verifiedSurfaceSummary, /Current openings/i)
-  assert.match(provider.verifiedSurfaceSummary, /wp-json\/wp\/v2\/pages\?slug=careers/i)
-  assert.match(provider.verifiedSurfaceSummary, /eleven role cards/i)
-  assert.match(provider.verifiedSurfaceSummary, /excelra\.darwinbox\.in/i)
-  assert.match(provider.verifiedSurfaceSummary, /seven India/i)
-  assert.match(provider.verifiedSurfaceSummary, /allJobs/i)
+  assert.equal(provider.verifiedOn, '2026-10-19')
+  assert.match(provider.verifiedSurfaceSummary, /October 19, 2026/i)
+  assert.match(provider.verifiedSurfaceSummary, /darwinbox_jobs shortcode/i)
+  assert.match(provider.verifiedSurfaceSummary, /wp-json\/wp\/v2\/job_listing/i)
+  assert.match(provider.verifiedSurfaceSummary, /fourteen current Darwinbox IDs/i)
+  assert.match(provider.verifiedSurfaceSummary, /official application IDs/i)
+  assert.match(provider.verifiedSurfaceSummary, /eight India/i)
+  assert.match(provider.verifiedSurfaceSummary, /historical static cards disabled/i)
 
   assertCatalogMatchesBacklogRow({
     provider,

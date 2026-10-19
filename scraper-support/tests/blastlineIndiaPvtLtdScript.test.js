@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
 
 const loadBlastlineModule = async () => {
   try {
@@ -149,7 +150,7 @@ test('BLASTLINE INDIA PVT LTD follows its new board and excludes other group com
   const boardUrl = 'https://careers.blastlineindia.com/'
   const detailsUrl = `${boardUrl}jobs/export-sales-co-ordinator`
   const currentCareersHtml = '<title>Careers - Blastline India</title><h2>Current Openings</h2><a href="https://careers.blastlineindia.com/">VIEW OPEN POSITIONS</a>'
-  const boardHtml = `<title>Careers | Blastline India</title><p>3 roles</p>
+  const boardHtml = `<title>Careers | Blastline India</title><p>2 roles</p>
     <article class="job-card"><h3><a href="/jobs/export-sales-co-ordinator">Export Sales Co-ordinator</a></h3><span class="company-badge"><i></i>Blastline India</span><ul class="job-meta"><li>Angamaly, Ernakulam</li><li>Sales</li><li>5–8 years experience</li><li>Full-time</li></ul></article>
     <article class="job-card"><h3><a href="/o/jolly-industries/jobs/design-engineer">Design Engineer</a></h3><span class="company-badge"><i></i>Jolly Industries</span></article>
     <footer>Blastline India Pvt Ltd</footer>`
@@ -184,4 +185,57 @@ test('BLASTLINE INDIA PVT LTD follows its new board and excludes other group com
   assert.equal(jobs[0].title, 'Export Sales Co-ordinator')
   assert.equal(jobs[0].applyUrl, `${detailsUrl}#apply`)
   assert.equal(jobs[0].company, 'BLASTLINE INDIA PVT LTD')
+})
+
+const currentBoardHtml = fs.readFileSync(path.join(fixturesDir, 'current-board.html'), 'utf8')
+const buildCurrentBoardFetch = (blastline, { board = currentBoardHtml, transformDetail = html => html } = {}) => ({
+  fetchText: async url => {
+    if (url === blastline.HOMEPAGE_URL) return homepageHtml
+    if (url === blastline.CAREERS_URL) return '<title>Careers - Blastline India</title><h2>Current Openings</h2><a href="https://careers.blastlineindia.com/">VIEW OPEN POSITIONS</a>'
+    if (url === blastline.JOB_BOARD_URL) return board
+    const slug = new URL(url).pathname.match(/^\/jobs\/([a-z0-9-]+)$/)?.[1]
+    if (!slug) throw new Error('Unexpected Blastline detail URL: ' + url)
+    return transformDetail(fs.readFileSync(path.join(fixturesDir, `current-${slug}.html`), 'utf8'))
+  },
+  fetchJson: async () => ({
+    id: 2957, slug: 'careers', link: blastline.CAREERS_URL, title: { rendered: 'Careers' },
+    content: { rendered: '<h2>Current Openings</h2><a href="https://careers.blastlineindia.com/">VIEW OPEN POSITIONS</a>' },
+  }),
+})
+
+test('BLASTLINE INDIA PVT LTD reads every role on the company-scoped board without company badges', async () => {
+  const blastline = await loadBlastlineModule()
+  const jobs = await blastline.createBlastlineIndiaPvtLtdScraper({ now: () => '2026-10-19T10:00:00.000Z' }).run(buildCurrentBoardFetch(blastline))
+  assert.deepEqual(jobs.map(job => [job.title, job.country]), [
+    ['Inventory Controller', 'India'],
+    ['Export Sales Co-ordinator', 'India'],
+    ['Sales Engineer - Gujarat', 'India'],
+    ['Design Engineer - Chennai, Tamilnadu', 'India'],
+  ])
+  assert.equal(jobs.every(job => job.jobDescription && job.applyUrl.endsWith('#apply')), true)
+  const evidence = readInventoryEvidence(jobs)
+  assert.equal(evidence.status, 'complete-inventory')
+  assert.equal(evidence.listingComplete, true)
+  assert.equal(evidence.reportedTotal, 4)
+})
+
+test('BLASTLINE INDIA PVT LTD rejects a truncated company board instead of reporting complete coverage', async () => {
+  const blastline = await loadBlastlineModule()
+  await assert.rejects(blastline.createBlastlineIndiaPvtLtdScraper().run(buildCurrentBoardFetch(blastline, {
+    board: currentBoardHtml.replace('4<!-- --> <!-- -->roles', '5<!-- --> <!-- -->roles'),
+  })), /incomplete.*board inventory/i)
+})
+
+test('BLASTLINE INDIA PVT LTD verifies employer identity on details when the board omits badges', async () => {
+  const blastline = await loadBlastlineModule()
+  await assert.rejects(blastline.createBlastlineIndiaPvtLtdScraper().run(buildCurrentBoardFetch(blastline, {
+    transformDetail: html => html.replace('"name":"Blastline India Pvt Ltd"', '"name":"Jolly Industries"'),
+  })), /verified application surface/)
+})
+
+test('BLASTLINE INDIA PVT LTD does not treat missing job cards as verified empty', async () => {
+  const blastline = await loadBlastlineModule()
+  await assert.rejects(blastline.createBlastlineIndiaPvtLtdScraper().run(buildCurrentBoardFetch(blastline, {
+    board: currentBoardHtml.replace(/<article\b[^>]*>[\s\S]*?<\/article>/g, ''),
+  })), /job cards|incomplete.*board inventory/i)
 })

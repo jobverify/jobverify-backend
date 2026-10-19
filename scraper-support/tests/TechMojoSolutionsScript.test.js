@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
 const FIXED_SCRAPED_AT = '2026-07-18T08:45:00.000Z'
@@ -42,6 +43,7 @@ const publicBoardHtml = `
               city: 'HYDERABAD',
               stateName: 'TELANGANA',
               raw_location: 'HYDERABAD',
+              country: 'India',
               remote: false,
             },
             employment_type: 'FULL_TIME',
@@ -93,8 +95,8 @@ test('TechMojo Solutions helpers stay pinned to the current first-party careers 
   assert.equal(techmojo.COMPANY, 'TechMojo Solutions')
   assert.equal(techmojo.CAREERS_URL, 'https://techmojo.com/company/careers/')
   assert.equal(techmojo.PUBLIC_JOBS_URL, 'https://9am.careers/')
-  assert.equal(techmojo.PUBLIC_COMPANY_BOARD_URL, 'https://9am.careers/jobs/techmojo-solutions')
-  assert.equal(techmojo.VERIFIED_ON, '2026-09-14')
+  assert.equal(techmojo.PUBLIC_COMPANY_BOARD_URL, 'https://9am.careers/jobs/techmojo-solutions/')
+  assert.equal(techmojo.VERIFIED_ON, '2026-10-19')
   assert.equal(techmojo.hasOfficialCareersSignal(careersHtml), true)
   assert.equal(techmojo.hasPublicJobsPayloadSignal(publicBoardHtml), true)
 })
@@ -108,23 +110,93 @@ test('TechMojo Solutions run parses open TechMojo roles from the linked 9am publ
     fetchText: async (url) => {
       requestedUrls.push(url)
       if (url === techmojo.CAREERS_URL) return careersHtml
-      if (url === techmojo.PUBLIC_JOBS_URL) return publicBoardHtml
+      if (url === techmojo.PUBLIC_COMPANY_BOARD_URL) return publicBoardHtml
       throw new Error(`Unexpected URL: ${url}`)
     },
   })
 
-  assert.deepEqual(requestedUrls, [techmojo.CAREERS_URL, techmojo.PUBLIC_JOBS_URL])
+  assert.deepEqual(requestedUrls, [techmojo.CAREERS_URL, techmojo.PUBLIC_COMPANY_BOARD_URL])
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].title, 'Product Owner')
   assert.equal(jobs[0].location, 'Hyderabad, Telangana, India')
   assert.equal(jobs[0].employmentType, 'Full-time')
-  assert.equal(jobs[0].sourceUrl, 'https://9am.careers/jobs/product-owner-101')
+  assert.equal(jobs[0].sourceUrl, 'https://9am.careers/jobs/techmojo-solutions/product-owner-101/')
   assert.match(jobs[0].jobDescription, /Own the product lifecycle/i)
   assert.deepEqual(jobs[0].requiredSkills, [
     'Define the product vision',
     'The position is based in Hyderabad.',
   ])
   assert.equal(jobs[0].scrapedAt, FIXED_SCRAPED_AT)
+})
+
+const currentBoard = readFileSync(new URL('./fixtures/techmojosolutions/current-board.html', import.meta.url), 'utf8')
+const angularDetail = readFileSync(new URL('./fixtures/techmojosolutions/angular-developer.html', import.meta.url), 'utf8')
+const boardWithRecords = (records) => `<p class="company-header-count">${records.length} jobs available</p><script>const jobsData = ${JSON.stringify(JSON.stringify(records))};</script>`
+
+test('TechMojo reads all twenty company-board rows rather than the root featured roles', async () => {
+  const techmojo = await loadModule()
+  const jobs = techmojo.extractJobs(currentBoard, FIXED_SCRAPED_AT)
+  assert.equal(jobs.length, 20)
+  const angular = jobs.find(job => job.title === 'Angular Developer')
+  assert.equal(angular.city, 'Hyderabad')
+  assert.equal(angular.sourceUrl, 'https://9am.careers/jobs/techmojo-solutions/angular-developer-17/')
+  assert.ok(jobs.every(job => job.country === 'India' && job.sourceUrl.includes('/jobs/techmojo-solutions/')))
+})
+
+test('TechMojo hydrates slim company-board records from matching official detail payloads', async () => {
+  const techmojo = await loadModule()
+  const [angular] = techmojo.extractPublicJobsPayload(currentBoard)
+  const jobs = await techmojo.createTechMojoSolutionsScraper({ now: () => FIXED_SCRAPED_AT }).run({
+    fetchText: async (url) => {
+      if (url === techmojo.CAREERS_URL) return careersHtml
+      if (url === 'https://9am.careers/jobs/techmojo-solutions/') return boardWithRecords([angular])
+      if (url === 'https://9am.careers/jobs/techmojo-solutions/angular-developer-17/') return angularDetail
+      throw new Error(`Unexpected URL: ${url}`)
+    },
+  })
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].jobId, '01c8eb8c-7e8b-4308-bd83-932bd8e0d097')
+  assert.equal(jobs[0].location, 'Hyderabad, Telangana, India')
+  assert.match(jobs[0].jobDescription, /Frontend Angular Developer/)
+  assert.ok(jobs[0].requiredSkills.some(skill => /Angular/.test(skill)))
+  assert.equal(jobs[0].remoteStatus, 'On-site')
+})
+
+test('TechMojo rejects truncated company-board payloads before fetching details', async () => {
+  const techmojo = await loadModule()
+  const rows = techmojo.extractPublicJobsPayload(currentBoard)
+  await assert.rejects(techmojo.createTechMojoSolutionsScraper().run({
+    fetchText: async (url) => {
+      if (url === techmojo.CAREERS_URL) return careersHtml
+      if (url === techmojo.PUBLIC_COMPANY_BOARD_URL) return boardWithRecords(rows.slice(1)).replace('19 jobs available', '20 jobs available')
+      throw new Error('Details must not be fetched from an incomplete board')
+    },
+  }), /incomplete public company-board count/i)
+})
+
+test('TechMojo rejects incomplete detail hydration and employer or identity mismatches', async () => {
+  const techmojo = await loadModule()
+  const [angular] = techmojo.extractPublicJobsPayload(currentBoard)
+  for (const detail of [
+    '<html>No detail payload</html>',
+    angularDetail.replace('"company":"TECHMOJO SOLUTIONS"', '"company":"TECHMOJO SOLUTIONS PARTNERS"'),
+    angularDetail.replaceAll('01c8eb8c-7e8b-4308-bd83-932bd8e0d097', 'unrelated-role'),
+  ]) {
+    await assert.rejects(techmojo.createTechMojoSolutionsScraper().run({
+      fetchText: async (url) => url === techmojo.CAREERS_URL ? careersHtml
+        : url === techmojo.PUBLIC_COMPANY_BOARD_URL ? boardWithRecords([angular]) : detail,
+    }), /detail|identity|employer|payload/i)
+  }
+})
+
+test('TechMojo never labels foreign or ambiguous company-board locations as India', async () => {
+  const techmojo = await loadModule()
+  const [angular] = techmojo.extractPublicJobsPayload(currentBoard)
+  assert.deepEqual(techmojo.extractJobs(boardWithRecords([{ ...angular, loc_country: 'United States', loc_city: 'Austin' }])), [])
+  assert.throws(() => techmojo.extractJobs(boardWithRecords([{ ...angular, loc_country: null, loc_city: 'Remote', location: 'Remote' }])), /country|location|scope/i)
+  assert.deepEqual(techmojo.extractJobs(boardWithRecords([{ ...angular, company: 'TECHMOJO SOLUTIONS PARTNERS' }])), [])
+  assert.throws(() => techmojo.extractJobs(boardWithRecords([{ ...angular, jobUrlSegment: 'https://unrelated.example/apply' }])), /URL|segment|link/i)
+  assert.throws(() => techmojo.extractJobs(boardWithRecords([angular, angular])), /duplicate|incomplete/i)
 })
 
 test('TechMojo Solutions fails closed when the trusted careers handoff or public payload changes materially', async () => {

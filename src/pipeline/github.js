@@ -16,6 +16,16 @@ export const dispatchGithubStage=(run,stage,token=process.env.GITHUB_PAT)=>githu
   token,method:'POST',body:{ref:run.ref,inputs:{pipeline_id:run._id,dispatch_token:stage.dispatchToken,pipeline_sha:run.sha||''}},
 });
 
+/** Keep internal dispatch identity out of the scraper's workflow-list title. */
+export async function matchesGithubStage(repo,remote,stage,token=process.env.GITHUB_PAT) {
+  if(!stage.dispatchToken)return false;
+  // Previously dispatched workflows still carry identity in their title.
+  if((remote.display_title||remote.name||'').includes(stage.dispatchToken))return true;
+  if(stage.key!=='scraper'||!/^Scraper #\d+$/.test(remote.display_title||''))return false;
+  const data=await githubRequest(repo,`/actions/runs/${remote.id}/jobs?per_page=100`,{token});
+  return data.jobs?.some(job=>job.name===`Scraper [dispatch:${stage.dispatchToken}]`)||false;
+}
+
 /** Repair missed observer events using exact run IDs/tokens, never the latest unrelated run. */
 export async function reconcileGithub(run,{token=process.env.GITHUB_PAT,advance=true}={}) {
   if(!run||run.target!=='github'||isTerminal(run.status))return run;
@@ -28,7 +38,9 @@ export async function reconcileGithub(run,{token=process.env.GITHUB_PAT,advance=
   if(stage.githubRunId) remote=await githubRequest(run.repo,`/actions/runs/${stage.githubRunId}`,{token});
   else {
     const data=await githubRequest(run.repo,`/actions/workflows/${WORKFLOWS[stage.key]}/runs?event=workflow_dispatch&per_page=100`,{token});
-    remote=data.workflow_runs?.find(r=>(r.display_title||r.name||'').includes(stage.dispatchToken));
+    for(const candidate of data.workflow_runs||[]) {
+      if(await matchesGithubStage(run.repo,candidate,stage,token)){remote=candidate;break;}
+    }
     if(remote)await changeRun(run._id,row=>{
       const current=row.stages.find(s=>s.key===stage.key);
       if(current.status!=='queued')return false;

@@ -106,8 +106,11 @@ const defaultFetchJobsPage = async (start, { signal } = {}) => {
     body: new URLSearchParams({ f: 'getJobsPager', s: '', st: String(start), pp: String(PAGE_SIZE), cf: String(start / PAGE_SIZE + 1) }),
     signal: composeAbortSignals(signal, AbortSignal.timeout(15000)),
   })
-  if (response.status !== 200 || response.url !== JOBS_API_URL) throw new Error('i2c public jobs inventory request failed or redirected')
-  return response.json()
+  if (response.status !== 200) throw new Error(`HTTP ${response.status} for i2c public jobs inventory at ${JOBS_API_URL}`)
+  if (response.url !== JOBS_API_URL) throw new Error('i2c public jobs inventory redirected away from the verified API')
+  const text = await response.text()
+  if (hasVerifiedPortalBotChallenge(text)) throw new Error('i2c public jobs inventory is blocked by a bot challenge')
+  return JSON.parse(text)
 }
 
 export const verifyNonIndiaInventory = async (fetchJobsPage) => {

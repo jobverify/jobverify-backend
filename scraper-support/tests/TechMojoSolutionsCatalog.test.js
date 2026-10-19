@@ -26,16 +26,16 @@ test('TechMojo Solutions local catalog captures the verified first-party careers
   assert.equal(provider.companyName, 'TechMojo Solutions')
   assert.equal(provider.companyCareerPage, 'https://techmojo.com/company/careers/')
   assert.equal(provider.publicJobsUrl, 'https://9am.careers/')
-  assert.equal(provider.publicCompanyBoardUrl, 'https://9am.careers/jobs/techmojo-solutions')
+  assert.equal(provider.publicCompanyBoardUrl, 'https://9am.careers/jobs/techmojo-solutions/')
   assert.equal(provider.atsPlatform, '9am-careers-public-payload')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'first-party-handoff-plus-9am-root-payload')
+  assert.equal(provider.paginationStrategy, 'first-party-handoff-plus-complete-9am-company-board')
   assert.equal(
     provider.extractionStrategy,
-    'verified-techmojo-careers-page+9am-embedded-jobsdata+techmojo-slug-filter',
+    'verified-techmojo-careers-page+company-board-jobsdata+matching-detail-payloads+explicit-country-filter',
   )
-  assert.equal(provider.verifiedOn, '2026-09-14')
-  assert.match(provider.verifiedSurfaceSummary, /Monday, September 14, 2026/i)
+  assert.equal(provider.verifiedOn, '2026-10-19')
+  assert.match(provider.verifiedSurfaceSummary, /October 19, 2026/i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/techmojo\.com\/company\/careers\//i)
   assert.match(provider.verifiedSurfaceSummary, /https:\/\/9am\.careers\//i)
   assert.equal(provider.modulePath, modulePath)

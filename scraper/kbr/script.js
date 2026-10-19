@@ -80,9 +80,8 @@ export const createKbrScraper = ({ now = () => new Date().toISOString() } = {}) 
       if (job.application_url != null) getDetailApiUrl(job.application_url)
       let country = getSnapshotCountry(job, countries)
       if (!country) {
-        // The site's map currently omits MEX. Resolve unmapped ISO codes from the exact live requisition.
-        const countryCodes = normalizeString(job.location).split(',').map(part => part.trim()).filter(part => /^[A-Z]{3}$/.test(part))
-        if (countryCodes.length !== 1 || !job.application_url) throw new Error('KBR unresolved snapshot country')
+        // Snapshot locations can omit ISO codes entirely. Verify their country on the exact live requisition.
+        if (!job.application_url) throw new Error('KBR unresolved snapshot country')
         const payload = parseJson(await fetchText(getDetailApiUrl(job.application_url)), 'Workday country detail')
         const info = payload?.jobPostingInfo
         if (info?.jobReqId !== job.id || !normalizeString(info.country?.descriptor) || info.canApply !== true || info.posted !== true) throw new Error('KBR unresolved snapshot country')
