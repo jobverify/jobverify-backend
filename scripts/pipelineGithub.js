@@ -4,8 +4,9 @@ import '../loadEnv.js';
 import { configureMongoDns } from '../src/utils/mongoDns.js';
 import PipelineRun from '../src/models/PipelineRun.js';
 import { createPipeline, claimStage, recordStageResult, completeWorkflow, updateStage, changeRun } from '../src/pipeline/execution.js';
-import { directConfiguration, stageOutcome, WORKFLOW_NAMES, isTerminal } from '../src/pipeline/policy.js';
-import { dispatchGithubStage, githubRequest } from '../src/pipeline/github.js';
+import { directConfiguration, stageOutcome, WORKFLOWS, WORKFLOW_NAMES, isTerminal } from '../src/pipeline/policy.js';
+import { dispatchGithubStage, githubRequest, matchesGithubStage } from '../src/pipeline/github.js';
+import { redactLog } from '../src/pipeline/local.js';
 
 const command=process.argv[2],key=process.env.PIPELINE_STAGE;
 const token=process.env.GH_TOKEN;
@@ -46,16 +47,21 @@ try {
     }
     const outcome=stageOutcome(key,summary,code);
     await recordStageResult(run._id,key,{outcome,summary});
+    console.log(`Pipeline stage ${key} outcome: ${outcome}; summary: ${redactLog(JSON.stringify(summary))}`);
     if(outcome!=='completed')process.exitCode=1;
   } else if(command==='complete') {
     const event=JSON.parse(await fs.readFile(process.env.GITHUB_EVENT_PATH,'utf8'));
     const remote=event.workflow_run;
-    if(!WORKFLOW_NAMES[remote?.name]||remote.head_branch!==event.repository.default_branch)throw new Error('Unexpected pipeline completion event.');
+    // GitHub can put the custom run-name in workflow_run.name. The workflow file is stable.
+    const workflowPath=remote?.path||event.workflow?.path;
+    const completedKey=workflowPath?Object.keys(WORKFLOWS).find(stage=>workflowPath===`.github/workflows/${WORKFLOWS[stage]}`):WORKFLOW_NAMES[remote?.name];
+    if(!completedKey||remote.head_branch!==event.repository.default_branch)throw new Error('Unexpected pipeline completion event.');
     let run=await PipelineRun.findOne({'stages.githubRunId':remote.id}).lean();
     // A job can fail during npm/setup before registration. Bind only a matching persisted dispatch token.
     if(!run) {
       const active=await PipelineRun.findOne({activeKey:'database',target:'github'}).lean();
-      const stage=active?.stages.find(s=>s.status==='queued'&&(remote.display_title||'').includes(s.dispatchToken));
+      const queued=active?.stages.find(s=>s.status==='queued'&&s.key===completedKey);
+      const stage=queued&&await matchesGithubStage(active.repo,remote,queued,token)?queued:null;
       if(stage){await changeRun(active._id,row=>{const s=row.stages.find(s=>s.key===stage.key);s.githubRunId=remote.id;s.status='preparing';});run=active;}
     }
     if(run&&!isTerminal(run.status)) {
@@ -65,6 +71,11 @@ try {
     }
   } else throw new Error('Unknown pipeline command');
 } catch(error) {
-  console.error('Pipeline control failed:',error.status?error.message:error.name);
+  const details=[],seen=new Set();
+  for(let current=error;current&&!seen.has(current);current=current.cause) {
+    seen.add(current);
+    details.push([current.name,current.code,current.message||String(current)].filter(Boolean).join(': '));
+  }
+  console.error(`Pipeline control failed (${command}):`,redactLog(details.join(' | caused by: ')));
   process.exitCode=1;
 } finally { await mongoose.disconnect(); }

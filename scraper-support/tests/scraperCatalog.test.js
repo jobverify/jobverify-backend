@@ -1036,10 +1036,10 @@ test('getScraperCatalog includes apiPortal providers with official metadata and 
   assert.match(stripe.config.discovery.listingApiUrl, /boards-api\.greenhouse\.io\/v1\/boards\/stripe\/jobs/i)
 
   assert.ok(swiggy)
-  assert.equal(swiggy.adapter, 'apiPortal')
-  assert.equal(swiggy.atsPlatform, 'mynexthire')
-  assert.match(swiggy.companyCareerPage, /careers\.swiggy\.com/i)
-  assert.equal(swiggy.companyDomain, 'careers.swiggy.com')
+  assert.equal(swiggy.adapter, 'script')
+  assert.equal(swiggy.atsPlatform, 'smartrecruiters')
+  assert.match(swiggy.companyCareerPage, /careers\.swiggy\.in/i)
+  assert.equal(swiggy.companyDomain, 'careers.swiggy.in')
 
   assert.ok(twilio)
   assert.equal(twilio.adapter, 'apiPortal')
@@ -1137,8 +1137,8 @@ test('buildScrapers exposes a runnable apiPortal scraper without changing the ru
 
   assert.ok(swiggy)
   assert.equal(typeof swiggy.run, 'function')
-  assert.equal(swiggy.provider.adapter, 'apiPortal')
-  assert.equal(swiggy.provider.parser, 'api-portal')
+  assert.equal(swiggy.provider.adapter, 'script')
+  assert.equal(swiggy.provider.parser, 'custom-script')
 
   assert.ok(twilio)
   assert.equal(typeof twilio.run, 'function')

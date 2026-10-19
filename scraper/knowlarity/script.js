@@ -178,8 +178,8 @@ const isExactKnowlarityCareersUrl = (value) => {
   }
 }
 
-const fetchWithWindowsSchannel = async (url, { runExecFile, signal }) => {
-  const { stdout } = await runExecFile('curl.exe', [
+const fetchWithNativeCurl = async (url, { runExecFile, signal }) => {
+  const { stdout } = await runExecFile(process.platform === 'win32' ? 'curl.exe' : 'curl', [
     '--disable',
     '--fail-with-body',
     '--silent',
@@ -203,14 +203,14 @@ const fetchWithWindowsSchannel = async (url, { runExecFile, signal }) => {
 
   const markerIndex = stdout.lastIndexOf(CURL_METADATA_MARKER)
   if (markerIndex < 0) {
-    throw new Error('Knowlarity Schannel response omitted HTTP metadata')
+    throw new Error('Knowlarity native HTTPS response omitted HTTP metadata')
   }
 
   const html = stdout.slice(0, markerIndex)
   const [statusText, finalUrl] = stdout.slice(markerIndex + CURL_METADATA_MARKER.length).split('\t')
   const status = Number.parseInt(statusText, 10)
   if (!Number.isInteger(status) || !isExactKnowlarityCareersUrl(finalUrl)) {
-    throw new Error('Knowlarity Schannel response left the exact first-party careers URL')
+    throw new Error('Knowlarity native HTTPS response left the exact first-party careers URL')
   }
 
   return { status, url: finalUrl, html }
@@ -235,7 +235,7 @@ export const defaultFetchPage = async (url, {
     })
   } catch (error) {
     if (!isExactKnowlarityCareersUrl(url) || !isLeafSignatureError(error)) throw error
-    return fetchWithWindowsSchannel(url, { runExecFile, signal })
+    return fetchWithNativeCurl(url, { runExecFile, signal })
   }
 
   return {

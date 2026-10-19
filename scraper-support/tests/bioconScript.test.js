@@ -250,7 +250,7 @@ test('Biocon retries only a first-party certificate-chain failure through verifi
 
   assert.equal(biocon.hasOfficialCareersPageSignal(html), true)
   assert.equal(calls.length, 1)
-  assert.equal(calls[0].file, 'curl.exe')
+  assert.equal(calls[0].file, process.platform === 'win32' ? 'curl.exe' : 'curl')
   assert.equal(calls[0].args[0], '--disable')
   assert.deepEqual(calls[0].args.slice(-3), ['--proto-redir', '=https', biocon.CAREERS_PAGE_URL])
   assert.equal(calls[0].args.includes('--insecure'), false)

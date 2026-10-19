@@ -84,7 +84,7 @@ test('Clarion Technologies retries only its job host certificate-chain failure t
 
   assert.equal(html, featuredHtml)
   assert.equal(calls.length, 1)
-  assert.equal(calls[0].file, 'curl.exe')
+  assert.equal(calls[0].file, process.platform === 'win32' ? 'curl.exe' : 'curl')
   assert.ok(calls[0].args.includes('--disable'))
   assert.ok(calls[0].args.includes('=https'))
   assert.equal(calls[0].args.includes('--insecure'), false)

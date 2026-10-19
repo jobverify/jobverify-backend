@@ -83,7 +83,7 @@ export const fetchBioconFirstPartyText = async (url, {
   } catch (error) {
     if (!isBioconFirstPartyUrl(url) || !isLeafSignatureError(error)) throw error
 
-    const { stdout } = await runExecFile('curl.exe', [
+    const { stdout } = await runExecFile(process.platform === 'win32' ? 'curl.exe' : 'curl', [
       '--disable',
       '--fail-with-body',
       '--silent',

@@ -61,7 +61,7 @@ for (const { name, options, error } of [
   { name: 'a truncated snapshot', options: { snapshotValue: { ...snapshot, total_jobs: 4 } }, error: /incomplete KBR snapshot/ },
   { name: 'duplicate snapshot requisitions', options: { snapshotValue: { ...snapshot, jobs: [snapshot.jobs[0], snapshot.jobs[0], snapshot.jobs[2]] } }, error: /snapshot requisition/ },
   { name: 'a stale snapshot', options: { snapshotValue: { ...snapshot, generated_at: '2026-10-01' } }, error: /snapshot freshness/ },
-  { name: 'unresolved snapshot country', options: { snapshotValue: { ...snapshot, jobs: snapshot.jobs.map(job => ({ ...job, location: 'Unknown' })) } }, error: /snapshot country/ },
+  { name: 'unresolved unlinked snapshot country', options: { snapshotValue: { ...snapshot, jobs: snapshot.jobs.map(job => job.application_url ? job : { ...job, location: 'Unknown' }) } }, error: /snapshot country/ },
   { name: 'a foreign application tenant', options: { snapshotValue: { ...snapshot, jobs: snapshot.jobs.map(job => job.application_url ? { ...job, application_url: job.application_url.replace('kbr.wd5', 'other.wd5') } : job) } }, error: /verified KBR Workday tenant/ },
   { name: 'unexpected published Workable roles', options: { widget: { name: 'KBR', jobs: [{ shortcode: 'ABC', title: 'Engineer' }] } }, error: /Workable inventory.*reverified/ },
   { name: 'unresolved unlinked public requisitions', options: { search: { total: 1, jobPostings: [{ externalPath: '/job/Unexpected' }] } }, error: /unlinked India requisition/ },
@@ -97,3 +97,40 @@ test('KBR resolves new ISO country codes absent from the website map using the m
 test('KBR requires a matching published requisition search control before interpreting unlinked zero results', async () => {
   await assert.rejects(createKbrScraper({ now }).run(buildFetch({ control: { total: 0, jobPostings: [] } })), /public requisition search control/)
 })
+
+test('KBR resolves a snapshot location without a country code from its exact active Workday requisition', async () => {
+  const fetchers = buildFetch({ snapshotValue: {
+    ...snapshot,
+    jobs: snapshot.jobs.map(job => job.id === 'R2111111'
+      ? { ...job, location: 'Huntsville Alabama - 6200 Redstone Gateway SW' } : job),
+  } })
+  const baseFetch = fetchers.fetchText
+  fetchers.fetchText = async url => url === 'https://kbr.wd5.myworkdayjobs.com/wday/cxs/kbr/KBR_Careers/job/London-United-Kingdom/Engineer_R2111111'
+    ? JSON.stringify({ jobPostingInfo: { jobReqId: 'R2111111', country: { descriptor: 'United States of America' }, canApply: true, posted: true } }) : baseFetch(url)
+  const jobs = await createKbrScraper({ now }).run(fetchers)
+  assert.deepEqual(jobs.map(job => job.jobId), ['R2109999'])
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+})
+
+test('KBR retains India roles whose snapshot locations omit the country code', async () => {
+  const fetchers = buildFetch({ snapshotValue: {
+    ...snapshot, jobs: snapshot.jobs.map(job => job.id === 'R2109999' ? { ...job, location: 'Chennai Engineering Centre' } : job),
+  } })
+  const jobs = await createKbrScraper({ now }).run(fetchers)
+  assert.deepEqual(jobs.map(job => [job.jobId, job.country]), [['R2109999', 'India']])
+})
+
+for (const info of [
+  { jobReqId: 'R9999999', country: { descriptor: 'United States of America' }, canApply: true, posted: true },
+  { jobReqId: 'R2111111', country: { descriptor: 'United States of America' }, canApply: false, posted: true },
+  { jobReqId: 'R2111111', country: {}, canApply: true, posted: true },
+]) {
+  test('KBR rejects an unverifiable Workday country for a location without an ISO code: ' + JSON.stringify(info), async () => {
+    const fetchers = buildFetch({ snapshotValue: {
+      ...snapshot, jobs: snapshot.jobs.map(job => job.id === 'R2111111' ? { ...job, location: 'Huntsville Alabama' } : job),
+    } })
+    const baseFetch = fetchers.fetchText
+    fetchers.fetchText = async url => url.endsWith('/Engineer_R2111111') ? JSON.stringify({ jobPostingInfo: info }) : baseFetch(url)
+    await assert.rejects(createKbrScraper({ now }).run(fetchers), /unresolved snapshot country/)
+  })
+}

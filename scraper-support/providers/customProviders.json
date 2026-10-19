@@ -44964,5 +44964,25 @@
     "verifiedPublicPostingCount": 0,
     "verifiedIndiaJobCount": 0,
     "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that the official RenewBuy domain is https://www.renewbuy.com/ but that no trustworthy enumerable first-party India careers page, ATS handoff, or public jobs feed was confirmed. Third-party RenewBuy vacancy pages are intentionally not promoted by this fail-closed provider."
+  },
+  {
+    "source": "swiggy",
+    "companyName": "Swiggy",
+    "adapter": "script",
+    "modulePath": "../swiggy/script.js",
+    "dryRunFile": "swiggy/jobs.json",
+    "companyCareerPage": "https://careers.swiggy.in/",
+    "legacyCareersUrl": "https://careers.swiggy.com/",
+    "jobsFeedUrl": "https://careers.swiggy.in/api/jobs.json",
+    "jobsApiUrl": "https://api.smartrecruiters.com/v1/companies/SWIGGY/postings",
+    "companyDomain": "careers.swiggy.in",
+    "atsPlatform": "smartrecruiters",
+    "countryFilter": "India",
+    "paginationStrategy": "offset-paginated-ats-with-count-checked-first-party-inventory",
+    "extractionStrategy": "verified-official-careers-migration+reconciled-public-inventories+explicit-india-country+verified-active-job-details",
+    "parser": "custom-script",
+    "normalizationProfile": "engineering-default",
+    "verifiedOn": "2026-10-19",
+    "verifiedSurfaceSummary": "The established careers.swiggy.com redirects to the first-party careers.swiggy.in application, which publishes api/jobs.json and SmartRecruiters SWIGGY job ads. Every parent title, city and business unit is reconciled with the complete count-checked ATS inventory before active explicitly Indian details are emitted. The obsolete MyNextHire board returns HTTP 402."
   }
 ]
