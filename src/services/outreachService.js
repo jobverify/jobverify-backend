@@ -51,7 +51,7 @@ export async function requestDiscovery(user, { jobId, refresh = false }, { sched
     await requireTaskOwner(task);
     return publicTask(task);
   }
-  if (!process.env.TAVILY_API_KEY) throw outreachError('Hiring-manager search is not configured yet.', 503);
+  if (!process.env.TAVILY_API_KEY) throw outreachError('Referral search is not configured yet.', 503);
   let task;
   try { task = await OutreachTask.create({ user, job: jobId, kind: 'discovery', activeKey, input: { context, refresh } }); }
   catch (error) { if (error.code !== 11000) throw error; return publicTask(await OutreachTask.findOne({ user, activeKey })); }
@@ -217,9 +217,9 @@ export async function deleteThread(user, id) {
   }
 }
 
-export async function dispatchOutreachDrafts({ request = githubRequest, now = new Date() } = {}) {
-  if (process.env.OUTREACH_ACTIONS_ENABLED !== 'true' || process.env.OUTREACH_ACTIONS_FREE_CONFIRMED !== 'true') throw outreachError('AI drafting is unavailable until free GitHub Actions capacity is configured.', 503);
-  const repo = process.env.GITHUB_REPO;
+const outreachDispatches = new Map();
+
+async function dispatchDraftWorkflow(repo, request, now) {
   const data = await request(repo, '/actions/workflows/outreach-drafts.yml/runs?event=workflow_dispatch&per_page=20');
   if (!Array.isArray(data?.workflow_runs)) throw outreachError('GitHub returned invalid drafting workflow status.', 502);
   if (data.workflow_runs.some(run => ['queued', 'in_progress', 'waiting', 'pending', 'requested'].includes(run.status))) return { reused: true };
@@ -231,6 +231,19 @@ export async function dispatchOutreachDrafts({ request = githubRequest, now = ne
   await reserveUsage(`actions:${monthKey(now)}`, cap, { now });
   await request(repo, '/actions/workflows/outreach-drafts.yml/dispatches', { method: 'POST', body: { ref: repository.default_branch } });
   return { reused: false };
+}
+
+export async function dispatchOutreachDrafts({ request = githubRequest, now = new Date() } = {}) {
+  if (process.env.OUTREACH_ACTIONS_ENABLED !== 'true' || process.env.OUTREACH_ACTIONS_FREE_CONFIRMED !== 'true') throw outreachError('AI drafting is unavailable until free GitHub Actions capacity is configured.', 503);
+  const repo = process.env.GITHUB_REPO;
+  if (!process.env.GITHUB_PAT || !/^[-\w.]+\/[-\w.]+$/.test(repo || '')) throw outreachError('AI drafting is unavailable until GitHub repository access is configured.', 503);
+  // GitHub may not list an accepted run immediately. Coalesce concurrent
+  // requests so they do not each consume a monthly dispatch reservation.
+  if (outreachDispatches.has(repo)) return outreachDispatches.get(repo);
+  const pending = dispatchDraftWorkflow(repo, request, now);
+  outreachDispatches.set(repo, pending);
+  try { return await pending; }
+  finally { if (outreachDispatches.get(repo) === pending) outreachDispatches.delete(repo); }
 }
 export async function requestDraft(user, threadId, { dispatch = dispatchOutreachDrafts, now = new Date() } = {}) {
   assertId(threadId);

@@ -6,6 +6,9 @@ export const createPaginationState = (pagination = {}) => ({
   done: false,
 })
 
+export const hasPaginationContinuation = value => typeof value === 'string'
+  ? !['', '0', 'false'].includes(value.trim().toLowerCase()) : Boolean(value)
+
 const buildPaginationRequest = (pagination = {}, params = {}) => (
   pagination.pageParamLocation === 'body'
     ? { query: {}, body: params }
@@ -43,7 +46,7 @@ export const updatePaginationState = (pagination, state, pageInfo = {}) => {
     const resultCount = pageInfo.resultCount ?? 0
     const hasExplicitHasMorePath = Boolean(pagination.hasMorePath)
     const hasMore = hasExplicitHasMorePath
-      ? pageInfo.hasMore !== false && pageInfo.hasMore != null
+      ? hasPaginationContinuation(pageInfo.hasMore)
       : totalCount != null
         ? nextOffset < totalCount
         : resultCount === pageSize && resultCount > 0
@@ -61,7 +64,7 @@ export const updatePaginationState = (pagination, state, pageInfo = {}) => {
     const resultCount = pageInfo.resultCount ?? 0
     const hasExplicitHasMorePath = Boolean(pagination.hasMorePath)
     const hasMore = hasExplicitHasMorePath
-      ? pageInfo.hasMore !== false && pageInfo.hasMore != null
+      ? hasPaginationContinuation(pageInfo.hasMore)
       : totalCount != null
         ? state.page * pageSize < totalCount
         : resultCount === pageSize && resultCount > 0
@@ -76,6 +79,6 @@ export const updatePaginationState = (pagination, state, pageInfo = {}) => {
   return {
     ...state,
     page: state.page + 1,
-    done: pageInfo.hasMore === false || pageInfo.hasMore == null,
+    done: !hasPaginationContinuation(pageInfo.hasMore),
   }
 }

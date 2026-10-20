@@ -99,6 +99,30 @@ test('saved-job tailoring persists, isolates owners, retries and rejects stale g
     assert.equal((await getTailoredResume(owner, job)).status, 'failed');
   });
 
+  await t.test('the real request path dispatches the dedicated GitHub workflow with outreach disabled', async t => {
+    const config = { GITHUB_PAT: 'tailoring-test-token', GITHUB_REPO: 'example/backend', OUTREACH_ACTIONS_ENABLED: 'false', OUTREACH_ACTIONS_FREE_CONFIRMED: 'false', TAILORED_RESUME_ACTIONS_ENABLED: 'true' };
+    for (const [key, value] of Object.entries(config)) {
+      const old = process.env[key]; process.env[key] = value;
+      t.after(() => { if (old === undefined) delete process.env[key]; else process.env[key] = old; });
+    }
+    let dispatches = 0;
+    t.mock.method(globalThis, 'fetch', async (url, options) => {
+      assert.match(url, /^https:\/\/api\.github\.com\/repos\/example\/backend/);
+      if (url.includes('/runs?')) return { ok: true, status: 200, json: async () => ({ workflow_runs: [] }) };
+      if (url.endsWith('/example/backend')) return { ok: true, status: 200, json: async () => ({ default_branch: 'main' }) };
+      assert.match(url, /\/tailored-resumes\.yml\/dispatches$/);
+      assert.equal(options.method, 'POST');
+      assert.deepEqual(JSON.parse(options.body), { ref: 'main' });
+      dispatches++;
+      return { ok: true, status: 204 };
+    });
+    const queued = await requestTailoredResume(owner, job, { regenerate: true });
+    assert.equal(queued.status, 'queued');
+    assert.equal(dispatches, 1);
+    await drainTailoredResumes({ generate: async () => output });
+    assert.equal((await getTailoredResume(owner, job)).status, 'completed');
+  });
+
   const { createApp } = await import('../src/app.js');
   server = createApp().listen(0, '127.0.0.1');
   await new Promise(resolve => server.once('listening', resolve));

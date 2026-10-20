@@ -6,7 +6,7 @@ import '../loadEnv.js';
 import { configureMongoDns } from '../src/utils/mongoDns.js';
 import Job from '../src/models/Job.js';
 import { REWRITE_MODEL } from '../src/services/jobDescriptionPolicy.js';
-import { rewriteDeadline, rewriteQueueQuery, rewriteQueueScan, rewriteFailureDetails, createRewriteClient, rewriteCandidates } from '../rewriting/runner.js';
+import { rewriteDeadline, rewriteQueueQuery, rewriteQueueScan, rewriteFailureDetails, createRewriteClient, rewriteCandidates, probeRewriteClient } from '../rewriting/runner.js';
 import { prepareRewriteRuntime, startRewriteWorker, workerMemoryBytes, rewriteWorkerConfiguration } from '../rewriting/worker.js';
 
 const apply = process.argv.includes('--apply');
@@ -42,6 +42,8 @@ try {
         phase = 'start_worker';
         worker = await startRewriteWorker({ ...runtime, signal, deadline,
           threads: workerConfig.threads, parallelism: workerConfig.parallelism });
+        phase = 'probe_worker';
+        summary.workerProbe = await probeRewriteClient(createRewriteClient(worker), { concurrency: worker.parallelism, deadline, signal });
         phase = 'process_queue';
         cursor = rewriteQueueScan(Job, query).cursor({ batchSize: 1 });
         summary.results = [];
@@ -56,11 +58,13 @@ try {
   }
 } catch (error) {
   summary.reason = signal.aborted ? 'interrupted' : 'worker_error';
+  if (error.rewriteStats) Object.assign(summary, error.rewriteStats);
   // Keep diagnostics free of source text, connection strings, and model completions.
   Object.assign(summary, rewriteFailureDetails(error, error.rewritePhase || phase));
   if (!signal.aborted) process.exitCode = 1;
 } finally {
   await cursor?.close();
+  if (worker) summary.worker = worker.diagnostics();
   if (worker) summary.workerMemoryBytes = await workerMemoryBytes(worker.pid).catch(() => null);
   await worker?.stop();
   await mongoose.disconnect();
@@ -68,8 +72,8 @@ try {
     const durations=summary.results.filter(r=>r.generated && !r.modelPlanCached && r.durationMs>0).map(r=>r.durationMs).sort((a,b)=>a-b);
     const seconds=(Date.now()-Date.parse(summary.startedAt))/1000;
     summary.capacity={elapsedSeconds:seconds,modelRequests:summary.results.filter(r=>r.generated&&!r.modelPlanCached).length,attemptsPerHour:summary.attempted ? summary.attempted/seconds*3600 : 0,p50DurationMs:durations[Math.floor(durations.length*.5)]||null,p95DurationMs:durations[Math.min(durations.length-1,Math.floor(durations.length*.95))]||null};
-    summary.pendingEstimate=Math.max(0,(summary.queued||0)-(summary.published||0)-(summary.failed||0)-(summary.skipped||0));
   }
+  if (apply && summary.queued !== undefined) summary.pendingEstimate=Math.max(0,summary.queued-(summary.published||0)-(summary.failed||0)-(summary.skipped||0));
   summary.finishedAt = new Date().toISOString();
   if (apply) {
     const { stageOutcome } = await import('../src/pipeline/policy.js');

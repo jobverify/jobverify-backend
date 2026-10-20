@@ -60,7 +60,7 @@ Notes:
 - Keep real credentials out of documentation and commits.
 - `CORS_ORIGIN` is comma-separated. If `FRONTEND_ORIGIN` is not set, the first origin is used for email verification redirects.
 - `FRONTEND_ORIGIN` should be the browser origin of the frontend app, for example `https://jobverify-frontend.onrender.com`.
-- `PUBLIC_API_ORIGIN` should be the public HTTPS origin of this backend service, for example `https://jobverify-backend.onrender.com`.
+- `PUBLIC_API_ORIGIN` should be the public HTTPS origin of this backend service, for example `https://api.jobverify.in`.
 - `TRUST_PROXY` defaults to disabled. Set it to `1` only when the backend is behind exactly one trusted reverse proxy that overwrites `X-Forwarded-For`.
 - `GITHUB_PAT` and `GITHUB_REPO` are needed for admin scraper dispatch and description rewriting controls. The rewrite controls also need repository Variables read/write permission; see [description rewriting setup](./rewriting/CONTROLS.md).
 - Start new environments from `.env.example`.
