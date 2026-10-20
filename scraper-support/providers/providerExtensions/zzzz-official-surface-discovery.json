@@ -1,0 +1,526 @@
+[
+  {
+    "source": "1x",
+    "companyName": "1X",
+    "catalogOverride": true,
+    "companyCareerPage": "https://www.1x.tech/careers",
+    "officialHomepageUrl": "https://www.1x.tech/",
+    "companyDomain": "www.1x.tech",
+    "remediationStatus": "implemented-awaiting-live-validation",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": true,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://www.1x.tech/careers",
+      "httpStatus": null,
+      "matchedLinks": [
+        "https://jobs.ashbyhq.com/1x/2d0f6eec-6e64-403f-baf7-330fe81b1473"
+      ],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted.",
+    "adapter": "publicAts",
+    "atsPlatform": "ashby",
+    "boardToken": "1x",
+    "parser": "validated-public-ats",
+    "paginationStrategy": "complete-public-posting-api",
+    "extractionStrategy": "verified-official-binding+validated-public-ats-inventory+explicit-india-location+role-descriptions",
+    "normalizationProfile": "engineering-default",
+    "countryFilter": "India",
+    "zeroResultPolicy": "evidence-required",
+    "backfillMode": "live-parser"
+  },
+  {
+    "source": "2070health",
+    "companyName": "2070Health",
+    "catalogOverride": true,
+    "companyCareerPage": "https://2070health.com/careers/",
+    "officialHomepageUrl": "https://2070health.com/",
+    "companyDomain": "2070health.com",
+    "remediationStatus": "official-surface-discovered",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": false,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://2070health.com/careers/",
+      "httpStatus": null,
+      "matchedLinks": [
+        "https://2070health.com/careers/",
+        "https://2070health.com/careers/career-detail/?id=0A8CBEBB96"
+      ],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
+  },
+  {
+    "source": "2u",
+    "companyName": "2U",
+    "catalogOverride": true,
+    "companyCareerPage": "https://2u.com/careers/",
+    "officialHomepageUrl": "https://2u.com/",
+    "companyDomain": "2u.com",
+    "remediationStatus": "official-surface-discovered",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": false,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://2u.com/careers/",
+      "httpStatus": null,
+      "matchedLinks": [
+        "https://2u.com/careers/jobs/"
+      ],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
+  },
+  {
+    "source": "3m",
+    "companyName": "3M",
+    "catalogOverride": true,
+    "companyCareerPage": "https://www.3m.com/3M/en_US/careers-us/",
+    "officialHomepageUrl": "https://www.3m.com/",
+    "companyDomain": "www.3m.com",
+    "remediationStatus": "implemented-awaiting-live-validation",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": true,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://www.3m.com/3M/en_US/careers-us/",
+      "httpStatus": null,
+      "matchedLinks": [
+        "https://3m.wd1.myworkdayjobs.com/en-US/Search"
+      ],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted.",
+    "adapter": "workday",
+    "atsPlatform": "workday",
+    "baseUrl": "https://3m.wd1.myworkdayjobs.com/en-US/Search",
+    "boardIdentityVerified": true,
+    "locationCountry": "c4f78be1a8f14da0ab49ce1162348a5e",
+    "countryFilter": "India",
+    "parser": "workday-native-api",
+    "paginationStrategy": "complete-workday-native-pagination",
+    "extractionStrategy": "verified-official-workday-binding+native-jobs-and-details",
+    "zeroResultPolicy": "evidence-required",
+    "backfillMode": "live-parser"
+  },
+  {
+    "source": "aartiindustries",
+    "companyName": "Aarti Industries",
+    "catalogOverride": true,
+    "companyCareerPage": "https://www.aarti-industries.com/career-opportunities",
+    "officialHomepageUrl": "https://www.aarti-industries.com/",
+    "companyDomain": "www.aarti-industries.com",
+    "remediationStatus": "official-surface-discovered",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": true,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://www.aarti-industries.com/career-opportunities",
+      "httpStatus": null,
+      "matchedLinks": [
+        "https://aartiindustries.darwinbox.in/ms/candidate/careers"
+      ],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
+  },
+  {
+    "source": "aavasfinanciers",
+    "companyName": "Aavas Financiers",
+    "catalogOverride": true,
+    "companyCareerPage": "https://www.aavas.in/career",
+    "officialHomepageUrl": "https://www.aavas.in/",
+    "companyDomain": "www.aavas.in",
+    "remediationStatus": "official-surface-discovered",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": false,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://www.aavas.in/career",
+      "httpStatus": null,
+      "matchedLinks": [
+        "https://www.aavas.in/join-our-team"
+      ],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
+  },
+  {
+    "source": "abacusai",
+    "companyName": "Abacus.AI",
+    "catalogOverride": true,
+    "companyCareerPage": "https://abacus.ai/jobs",
+    "officialHomepageUrl": "https://abacus.ai/",
+    "companyDomain": "abacus.ai",
+    "remediationStatus": "official-surface-discovered",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": false,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://abacus.ai/jobs",
+      "httpStatus": null,
+      "matchedLinks": [],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
+  },
+  {
+    "source": "abansholdings",
+    "companyName": "Abans Holdings",
+    "catalogOverride": true,
+    "companyCareerPage": "https://abanscareers.com/",
+    "officialHomepageUrl": "https://abansfinserv.com/",
+    "companyDomain": "abansfinserv.com",
+    "remediationStatus": "official-surface-discovered",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": true,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://abanscareers.com/",
+      "httpStatus": null,
+      "matchedLinks": [
+        "https://abansfinserv.com/",
+        "https://abanscareers.com/",
+        "https://abanscareers.com/career-openings.aspx",
+        "https://abans.keka.com/careers"
+      ],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
+  },
+  {
+    "source": "abbott",
+    "companyName": "Abbott",
+    "catalogOverride": true,
+    "companyCareerPage": "https://www.abbott.in/careers.html",
+    "officialHomepageUrl": "https://www.abbott.in/",
+    "companyDomain": "www.abbott.in",
+    "remediationStatus": "official-surface-discovered",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": false,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://www.abbott.in/careers.html",
+      "httpStatus": null,
+      "matchedLinks": [
+        "https://www.jobs.abbott/us/en/search-results?qcountry=India"
+      ],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
+  },
+  {
+    "source": "abbvie",
+    "companyName": "AbbVie",
+    "catalogOverride": true,
+    "companyCareerPage": "https://www.abbvie.in/join-us/opportunities.html",
+    "officialHomepageUrl": "https://www.abbvie.in/",
+    "companyDomain": "www.abbvie.in",
+    "remediationStatus": "official-surface-discovered",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": false,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://www.abbvie.in/join-us/opportunities.html",
+      "httpStatus": null,
+      "matchedLinks": [
+        "https://careers.abbvie.com/",
+        "https://careers.abbvie.com/en/Workflow?vacancyId=34541&workflowId=e8d1d8bf-3e41-4c99-90d1-f7ed5600206e"
+      ],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
+  },
+  {
+    "source": "abridge",
+    "companyName": "Abridge",
+    "catalogOverride": true,
+    "companyCareerPage": "https://www.abridge.com/life-at-abridge",
+    "officialHomepageUrl": "https://www.abridge.com/",
+    "companyDomain": "www.abridge.com",
+    "remediationStatus": "implemented-awaiting-live-validation",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": true,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://www.abridge.com/life-at-abridge",
+      "httpStatus": null,
+      "matchedLinks": [
+        "https://jobs.ashbyhq.com/Abridge"
+      ],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted.",
+    "adapter": "publicAts",
+    "atsPlatform": "ashby",
+    "boardToken": "Abridge",
+    "parser": "validated-public-ats",
+    "paginationStrategy": "complete-public-posting-api",
+    "extractionStrategy": "verified-official-binding+validated-public-ats-inventory+explicit-india-location+role-descriptions",
+    "normalizationProfile": "engineering-default",
+    "countryFilter": "India",
+    "zeroResultPolicy": "evidence-required",
+    "backfillMode": "live-parser"
+  },
+  {
+    "source": "abvolvo",
+    "companyName": "AB Volvo",
+    "catalogOverride": true,
+    "companyCareerPage": "https://www.volvogroup.com/en/careers.html",
+    "officialHomepageUrl": "https://www.volvogroup.com/",
+    "companyDomain": "www.volvogroup.com",
+    "remediationStatus": "alias-review-required",
+    "aliasOfSource": "volvo",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": false,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://www.volvogroup.com/en/careers.html",
+      "httpStatus": null,
+      "matchedLinks": [
+        "https://jobs.volvogroup.com/?locale=en-EN"
+      ],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
+  },
+  {
+    "source": "accellor",
+    "companyName": "Accellor",
+    "catalogOverride": true,
+    "companyCareerPage": "https://www.accellor.com/who-we-are/careers",
+    "officialHomepageUrl": "https://www.accellor.com/",
+    "companyDomain": "www.accellor.com",
+    "remediationStatus": "official-surface-discovered",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": false,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://www.accellor.com/who-we-are/careers",
+      "httpStatus": null,
+      "matchedLinks": [],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
+  },
+  {
+    "source": "acclimited",
+    "companyName": "ACC Limited",
+    "catalogOverride": true,
+    "companyCareerPage": "https://careers.adani.com/",
+    "officialHomepageUrl": "https://www.acclimited.com/",
+    "companyDomain": "www.acclimited.com",
+    "remediationStatus": "official-surface-discovered",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": false,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://careers.adani.com/",
+      "httpStatus": null,
+      "matchedLinks": [
+        "https://careers.adani.com/"
+      ],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
+  },
+  {
+    "source": "accor",
+    "companyName": "Accor",
+    "catalogOverride": true,
+    "companyCareerPage": "https://careers.accor.com/global/en/",
+    "officialHomepageUrl": "https://group.accor.com/en",
+    "companyDomain": "group.accor.com",
+    "remediationStatus": "official-surface-discovered",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": false,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://careers.accor.com/global/en/",
+      "httpStatus": null,
+      "matchedLinks": [
+        "https://careers.accor.com/global/en/",
+        "https://careers.accor.com/global/en/jobs?options=502&page=1"
+      ],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
+  },
+  {
+    "source": "accorindia",
+    "companyName": "Accor India",
+    "catalogOverride": true,
+    "companyCareerPage": "https://careers.accor.com/global/en/",
+    "officialHomepageUrl": "https://group.accor.com/en",
+    "companyDomain": "group.accor.com",
+    "remediationStatus": "alias-review-required",
+    "aliasOfSource": "accor",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": false,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://careers.accor.com/global/en/",
+      "httpStatus": null,
+      "matchedLinks": [
+        "https://careers.accor.com/global/en/",
+        "https://careers.accor.com/global/en/jobs?options=502&page=1"
+      ],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
+  },
+  {
+    "source": "accorsa",
+    "companyName": "Accor SA",
+    "catalogOverride": true,
+    "companyCareerPage": "https://careers.accor.com/global/en/",
+    "officialHomepageUrl": "https://group.accor.com/en",
+    "companyDomain": "group.accor.com",
+    "remediationStatus": "alias-review-required",
+    "aliasOfSource": "accor",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": false,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://careers.accor.com/global/en/",
+      "httpStatus": null,
+      "matchedLinks": [
+        "https://careers.accor.com/global/en/",
+        "https://careers.accor.com/global/en/jobs?options=502&page=1"
+      ],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
+  },
+  {
+    "source": "acer",
+    "companyName": "Acer",
+    "catalogOverride": true,
+    "companyCareerPage": "https://careers.acer.com/home?locale=en_US",
+    "officialHomepageUrl": "https://www.acer.com/in-en",
+    "companyDomain": "www.acer.com",
+    "remediationStatus": "official-surface-discovered",
+    "officialBindingVerifiedAt": "2026-10-20T16:53:11.504Z",
+    "verifiedOn": null,
+    "verifiedAt": null,
+    "verifiedPublicJobCount": null,
+    "verifiedIndiaJobCount": null,
+    "verifiedInventoryStatus": "unverified",
+    "bindingEvidence": {
+      "verified": false,
+      "checkedAt": "2026-10-20T16:53:11.504Z",
+      "officialURL": "https://careers.acer.com/home?locale=en_US",
+      "httpStatus": null,
+      "matchedLinks": [
+        "https://careers.acer.com/go/All-Jobs/7865610/"
+      ],
+      "bindingMethod": "official-company-careers-link",
+      "evidenceOrigin": "public-web-extraction"
+    },
+    "verifiedSurfaceSummary": "Official identity and career handoff discovered through public first-party pages. Direct runtime inventory is unverified because local HTTPS requests are unavailable; no job count or zero inventory is asserted."
+  }
+]

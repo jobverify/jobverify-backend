@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 
 import { CAMBRIDGE_TECHNOLOGY_ENTERPRISES_CATALOG as PROVIDER_METADATA } from './catalog.js'
@@ -166,7 +167,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const rawHtml = String(html ?? '')
   const normalized = normalizeWhitespace(rawHtml) || ''
   const directFreshteamHandoff = extractFreshteamJobsUrl(rawHtml)
-  const hasKnownTitle = /<title>\s*(?:AI Cloud Solutions|Enterprise AI,\s*Data\s*&\s*SaaS Applications|Agentic AI Solutions for Enterprise Workflows)\s*\|\s*Cambridge(?: Technology(?: Inc\.)?)?\s*<\/title>/i.test(rawHtml)
+  const hasKnownTitle = /<title>\s*(?:AI Cloud Solutions|Enterprise AI,\s*Data\s*&\s*SaaS Applications|Agentic AI Solutions for Enterprise(?: Workflows)?)\s*\|\s*Cambridge(?: Technology(?: Inc\.)?)?\s*<\/title>/i.test(rawHtml)
   const hasCareersRoute = /href="(?:https:\/\/www\.(?:ctepl|cambridgetech)\.com)?\/careers\/"/i.test(rawHtml)
 
   return hasKnownTitle
@@ -239,7 +240,7 @@ const extractDescriptionHtml = (source) => {
     throw new Error('Cambridge detail description is incomplete')
   }
 
-  return html
+  return null
 }
 
 const extractLegacyListingJobs = (html) => {
@@ -305,8 +306,59 @@ const extractAnchors = (html) => [...String(html ?? '').matchAll(/<a\b([^>]*)>([
   .map((match) => ({
     href: match[1].match(/\bhref=["']([^"']+)["']/i)?.[1],
     classes: (match[1].match(/\bclass=["']([^"']*)["']/i)?.[1] || '').split(/\s+/),
+    rel: (match[1].match(/\brel=["']([^"']*)["']/i)?.[1] || '').split(/\s+/),
     html: match[2],
   }))
+
+const extractReportedTotal = (html) => {
+  const totals = []
+  for (const [tag] of String(html ?? '').matchAll(/<meta\b[^>]*>/gi)) {
+    const name = tag.match(/\b(?:property|name)=["']([^"']+)["']/i)?.[1]
+    if (!/^(?:og|twitter):description$/i.test(name || '')) continue
+    const content = tag.match(/\bcontent=["']([^"']*)["']/i)?.[1]
+    const count = content?.match(/^\s*#(\d+)\s+Jobs?\b/i)
+    if (count) totals.push(Number(count[1]))
+  }
+  // The older grouped template publishes a separate count for every department.
+  const groups = [...String(html ?? '').matchAll(/<li[^>]*data-portal-role=["'][^"']+["'][^>]*>([\s\S]*?)<\/li>/gi)]
+  const groupCounts = groups.map(group => group[1].match(/<h5\b[^>]*>[\s\S]*?\b(\d+)\s+Open Roles?\b/i)?.[1])
+  if (groups.length && groupCounts.every(count => count != null)) {
+    totals.push(groupCounts.reduce((sum, count) => sum + Number(count), 0))
+  }
+  if (totals.some(total => !Number.isSafeInteger(total) || total !== totals[0])) {
+    throw new Error('Cambridge listing is incomplete: reported vacancy totals disagree')
+  }
+  return totals[0] ?? null
+}
+
+const extractNextPageUrl = (html, currentUrl) => {
+  const currentPage = Number(new URL(currentUrl).searchParams.get('page') || 1)
+  const candidates = new Set()
+  let hasLaterPage = false
+  for (const anchor of extractAnchors(html)) {
+    if (!anchor.href) continue
+    const url = toAbsoluteUrl(decodeHtmlEntities(anchor.href), currentUrl)
+    const explicitNext = anchor.rel.includes('next') || anchor.classes.includes('next')
+      || /^Next(?:\s+Page)?\s*[›»→]?$/i.test(normalizeWhitespace(anchor.html) || '')
+    let numberedNext = false
+    if (url && isVerifiedFreshteamJobsUrl(url)) {
+      const page = Number(new URL(url).searchParams.get('page'))
+      numberedNext = page === currentPage + 1
+      if (page > currentPage + 1 && !explicitNext) {
+        hasLaterPage = true
+        continue
+      }
+    }
+    if (!explicitNext && !numberedNext) continue
+    if (!isVerifiedFreshteamJobsUrl(url) || new URL(url).protocol !== 'https:') {
+      throw new Error('Cambridge pagination contains an untrusted first-party listing URL')
+    }
+    candidates.add(url)
+  }
+  if (hasLaterPage && candidates.size === 0) throw new Error('Cambridge listing is incomplete: pagination skipped the adjacent page')
+  if (candidates.size > 1) throw new Error('Cambridge listing is incomplete: ambiguous next pagination page')
+  return [...candidates][0] || null
+}
 
 export const extractListingJobs = (html) => {
   const anchors = extractAnchors(html)
@@ -359,7 +411,8 @@ export const extractJobDetail = (html, listing = {}) => {
   const { opaqueId, slug } = extractDetailPathParts(detailUrl)
   const title = firstMatch(source, [
     /<h1[^>]*>([\s\S]*?)<\/h1>/i,
-  ]) || listing.title
+  ])
+  if (!title) throw new Error('Cambridge detail page is incomplete: missing role title')
   if (source.trim() && listing.title && title !== normalizeWhitespace(listing.title)) {
     throw new Error('Cambridge detail identity does not match its listing')
   }
@@ -371,7 +424,8 @@ export const extractJobDetail = (html, listing = {}) => {
     /<div[^>]*class="[^"]*\bstick-hide-in-mobile\b[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
   ])?.split('|')[0]?.trim() || listing.locationText
   const descriptionHtml = extractDescriptionHtml(source)
-  const jobDescription = normalizeWhitespace(descriptionHtml) || normalizeWhitespace(listing.summary)
+  const jobDescription = normalizeWhitespace(descriptionHtml)
+  if (!jobDescription) throw new Error('Cambridge detail description is incomplete or empty')
 
   return {
     title,
@@ -404,13 +458,12 @@ export const extractSearchResults = ({
   detailHtmlByUrl = {},
 } = {}) => {
   const listings = Array.isArray(listingJobs) ? listingJobs : extractListingJobs(listingHtml)
-  const hasDetails = Object.keys(detailHtmlByUrl).length > 0
-  const selectedListings = hasDetails
-    ? listings.filter((listing) => detailHtmlByUrl[listing.detailUrl] != null)
-    : listings
-
-  return selectedListings.map((listing) =>
-    extractJobDetail(detailHtmlByUrl[listing.detailUrl] || '', listing))
+  return listings.map((listing) => {
+    if (detailHtmlByUrl[listing.detailUrl] == null) {
+      throw new Error('Cambridge detail inventory is incomplete: a listed vacancy has no detail response')
+    }
+    return extractJobDetail(detailHtmlByUrl[listing.detailUrl], listing)
+  })
 }
 
 const isIndiaListing = (listing = {}) => {
@@ -430,6 +483,7 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 
 export const createCambridgeTechnologyEnterprisesScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+  maxPages = Number.isInteger(config.maxPages) && config.maxPages > 0 ? config.maxPages : 100,
 } = {}) => ({
   async run(options = {}) {
     const fetchText = options.fetchText || defaultFetchText
@@ -464,25 +518,53 @@ export const createCambridgeTechnologyEnterprisesScraper = ({
       listingUrl = LISTING_URL
     }
 
-    const listingHtml = await fetchText(listingUrl)
-    if (!hasOfficialJobsBoardSignal(listingHtml)) {
-      throw new Error(
-        'Cambridge Technology Enterprises verified public Freshteam board no longer matches the known public surface',
-      )
+    const allListings = []
+    const seenPages = new Set()
+    const seenJobs = new Set()
+    let nextUrl = listingUrl
+    let reportedTotal = null
+    let explicitEmpty = false
+    while (nextUrl) {
+      if (seenPages.has(nextUrl) || seenPages.size >= maxPages) {
+        throw new Error('Cambridge listing is incomplete: repeated pagination page or page limit reached')
+      }
+      const listingHtml = await fetchText(nextUrl)
+      seenPages.add(nextUrl)
+      if (!hasOfficialJobsBoardSignal(listingHtml)) {
+        throw new Error('Cambridge Technology Enterprises verified public Freshteam board no longer matches the known public surface')
+      }
+      const pageTotal = extractReportedTotal(listingHtml)
+      if (pageTotal != null && reportedTotal != null && pageTotal !== reportedTotal) {
+        throw new Error('Cambridge listing is incomplete: reported total changed during pagination')
+      }
+      reportedTotal ??= pageTotal
+      const pageListings = extractListingJobs(listingHtml)
+      const pageEmpty = /\bNo jobs found\b/i.test(normalizeWhitespace(listingHtml) || '')
+      if (pageListings.length === 0 && !pageEmpty) {
+        throw new Error('Cambridge listing is incomplete: no verified vacancy or explicit empty state')
+      }
+      if (pageEmpty && (pageListings.length > 0 || allListings.length > 0 || reportedTotal > 0)) {
+        throw new Error('Cambridge listing is incomplete: explicit empty state contradicts the vacancy total')
+      }
+      explicitEmpty ||= pageEmpty
+      for (const listing of pageListings) {
+        if (seenJobs.has(listing.jobId)) throw new Error('Cambridge listing is incomplete: repeated vacancy across pagination pages')
+        seenJobs.add(listing.jobId)
+        allListings.push(listing)
+      }
+      nextUrl = extractNextPageUrl(listingHtml, nextUrl)
+      if (pageEmpty && nextUrl) throw new Error('Cambridge listing is incomplete: empty state contains more pagination')
     }
-
-    const allListings = extractListingJobs(listingHtml)
-    if (allListings.length === 0 && !/\bNo jobs found\b/i.test(normalizeWhitespace(listingHtml) || '')) {
-      throw new Error('Cambridge listing is incomplete: no verified vacancy or explicit empty state')
+    if (explicitEmpty) reportedTotal ??= 0
+    if (reportedTotal != null && allListings.length !== reportedTotal) {
+      throw new Error('Cambridge listing is incomplete: parsed vacancy count does not match the reported total')
     }
     if (allListings.some((listing) => !isIndiaListing(listing) && /\bremote\b/i.test(listing.locationText || ''))) {
       throw new Error('Cambridge listing location scope is incomplete for remote vacancies')
     }
     const listingJobs = allListings.filter(isIndiaListing)
-    const selectedListings = maxJobs ? listingJobs.slice(0, maxJobs) : listingJobs
-    if (selectedListings.length === 0) {
-      return []
-    }
+    const capped = Number.isInteger(maxJobs) && maxJobs > 0
+    const selectedListings = capped ? listingJobs.slice(0, maxJobs) : listingJobs
     const detailHtmlByUrl = {}
 
     await Promise.all(selectedListings.map(async (listing) => {
@@ -498,12 +580,26 @@ export const createCambridgeTechnologyEnterprisesScraper = ({
       detailHtmlByUrl,
     })
 
-    return jobs.map((job) => ({
+    const listingComplete = reportedTotal != null && !capped
+    const verifiedAt = now()
+    return attachInventoryEvidence(jobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
-      scrapedAt: now(),
-    }))
+      scrapedAt: verifiedAt,
+      ...(!listingComplete ? { sourceListingComplete: false } : {}),
+    })), {
+      status: !listingComplete ? 'discovery-only' : explicitEmpty ? 'verified-empty' : 'complete-inventory',
+      surface: listingUrl,
+      firstParty: true,
+      listingComplete,
+      pagesFetched: seenPages.size,
+      reportedTotal,
+      indiaFacetCount: listingJobs.length,
+      verifiedAt,
+      reason: capped ? 'freshteam-max-jobs-cap' : !listingComplete ? 'freshteam-reported-total-unavailable'
+        : explicitEmpty ? 'verified-freshteam-explicit-empty' : 'complete-freshteam-public-inventory',
+    })
   },
 })
 

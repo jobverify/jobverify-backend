@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { AUXILO_CATALOG } from './catalog.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -111,6 +112,9 @@ const defaultFetchJson = async (url, options = {}) => {
 
   if (!response.ok) {
     throw new Error(`HTTP ${response.status} for ${url}`)
+  }
+  if (response.url !== url) {
+    throw new Error('Auxilo verified jobs API redirect no longer matches the known public endpoint')
   }
 
   return response.json()
@@ -245,6 +249,7 @@ export const hasVerifiedJobsPayloadContract = (payload) => {
 
   try {
     return Array.isArray(JSON.parse(payload.d.obj1))
+      && Array.isArray(JSON.parse(payload.d.obj2))
   } catch {
     return false
   }
@@ -255,7 +260,24 @@ export const extractListingRecords = (payload) => {
     throw new Error('Auxilo verified jobs api no longer matches the known public response contract')
   }
 
-  return JSON.parse(payload.d.obj1).filter((record) => record && typeof record === 'object')
+  const records = JSON.parse(payload.d.obj1)
+  const requisitions = new Set()
+  const applicationTokens = new Set()
+  for (const record of records) {
+    if (!record || typeof record !== 'object' || Array.isArray(record)
+      || !['Position_Name', 'TrackToken', 'SearchKeyWord'].every((key) => typeof record[key] === 'string' && normalizeField(record[key]))
+      || !['string', 'number'].includes(typeof record.Req_No) || !normalizeField(record.Req_No)) {
+      throw new Error('Auxilo verified jobs api returned a malformed record outside the expected public job shape')
+    }
+    const requisition = normalizeField(record.Req_No)
+    const token = getTrackToken(record)
+    if (requisitions.has(requisition) || applicationTokens.has(token)) {
+      throw new Error('Auxilo verified jobs api returned a duplicate job identity')
+    }
+    requisitions.add(requisition)
+    applicationTokens.add(token)
+  }
+  return records
 }
 
 export const buildDetailUrl = (record = {}) => {
@@ -348,9 +370,9 @@ export const mapListingRecordToJob = (record, { scrapedAt = new Date().toISOStri
 export const createAuxiloScraper = ({
   now = () => new Date().toISOString(),
 } = {}) => ({
-  async run({ fetchPage = defaultFetchPage, fetchJson = defaultFetchJson } = {}) {
+  async run({ fetchPage = defaultFetchPage, fetchJson = defaultFetchJson, maxJobs = 0 } = {}) {
     const homepage = await fetchPage(HOMEPAGE_URL)
-    if (homepage.status !== 200 || !hasOfficialHomepageSignal(homepage.html)) {
+    if (homepage.status !== 200 || getFinalUrl(homepage, HOMEPAGE_URL) !== HOMEPAGE_URL || !hasOfficialHomepageSignal(homepage.html)) {
       throw new Error('Auxilo verified official homepage no longer matches the known public surface')
     }
 
@@ -358,6 +380,7 @@ export const createAuxiloScraper = ({
     const jobsBoardEntryUrl = extractJobsBoardEntryUrl(careersPage.html)
     if (
       careersPage.status !== 200
+      || getFinalUrl(careersPage, CAREERS_URL) !== CAREERS_URL
       || !hasOfficialCareersSignal(careersPage.html)
       || jobsBoardEntryUrl !== JOBS_BOARD_ENTRY_URL
     ) {
@@ -388,10 +411,8 @@ export const createAuxiloScraper = ({
       throw new Error('Auxilo verified jobs api no longer matches the known public response contract')
     }
 
-    const records = extractListingRecords(payload).filter(isIndiaListingRecord)
-    if (records.length === 0) {
-      return []
-    }
+    const observedRecords = extractListingRecords(payload)
+    const records = observedRecords.filter(isIndiaListingRecord)
 
     const scrapedAt = now()
     const jobs = []
@@ -403,7 +424,7 @@ export const createAuxiloScraper = ({
       }
 
       const detailPage = await fetchPage(job.sourceUrl)
-      if (detailPage.status !== 200 || !hasOfficialDetailPageSignal(detailPage.html, record)) {
+      if (detailPage.status !== 200 || getFinalUrl(detailPage, job.sourceUrl) !== job.sourceUrl || !hasOfficialDetailPageSignal(detailPage.html, record)) {
         throw new Error('Auxilo verified detail page no longer matches the known public apply surface')
       }
 
@@ -411,10 +432,23 @@ export const createAuxiloScraper = ({
         throw new Error('Auxilo verified detail page no longer exposes the expected public apply route')
       }
 
-      jobs.push(job)
+      jobs.push({ ...job, sourceListingComplete: false })
     }
 
-    return jobs
+    const selectedJobs = Number.isInteger(maxJobs) && maxJobs > 0 ? jobs.slice(0, maxJobs) : jobs
+    // The observed API array has no authoritative total or exhaustion marker.
+    // Neither an empty array nor the historical catalog proves a full inventory.
+    return attachInventoryEvidence(selectedJobs, {
+      status: 'discovery-only',
+      surface: JOBS_API_URL,
+      firstParty: true,
+      listingComplete: false,
+      pagesFetched: 4 + jobs.length,
+      reportedTotal: null,
+      indiaFacetCount: null,
+      verifiedAt: now(),
+      reason: `observedRecords=${observedRecords.length}; indiaCandidates=${records.length}; validatedDetails=${jobs.length}; returnedJobs=${selectedJobs.length}. Verified official Auxilo-to-Workline handoff and matching detail/apply identities; exhaustive native inventory remains unverified without an authoritative total or current client exhaustion contract.`,
+    })
   },
 })
 

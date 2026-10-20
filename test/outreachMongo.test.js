@@ -117,9 +117,10 @@ test('Mongo outreach queue lifecycle: explicit discovery, deduplication, cache, 
   assert.equal(reservations.filter(row => row.status === 'fulfilled').length, 5);
   assert.equal((await OutreachUsage.findOne({ key: 'fixture:concurrency' })).used, 5);
 
-  const previousActions = [process.env.OUTREACH_ACTIONS_ENABLED, process.env.OUTREACH_ACTIONS_FREE_CONFIRMED, process.env.GITHUB_REPO, process.env.OUTREACH_ACTIONS_MONTHLY_RUN_LIMIT];
-  Object.assign(process.env, { OUTREACH_ACTIONS_ENABLED: 'true', OUTREACH_ACTIONS_FREE_CONFIRMED: 'true', GITHUB_REPO: 'fixture/repository', OUTREACH_ACTIONS_MONTHLY_RUN_LIMIT: '2' });
-  t.after(() => { for (const [index, name] of ['OUTREACH_ACTIONS_ENABLED', 'OUTREACH_ACTIONS_FREE_CONFIRMED', 'GITHUB_REPO', 'OUTREACH_ACTIONS_MONTHLY_RUN_LIMIT'].entries()) { if (previousActions[index] === undefined) delete process.env[name]; else process.env[name] = previousActions[index]; } });
+  const actionNames = ['OUTREACH_ACTIONS_ENABLED', 'OUTREACH_ACTIONS_FREE_CONFIRMED', 'GITHUB_REPO', 'OUTREACH_ACTIONS_MONTHLY_RUN_LIMIT', 'GITHUB_PAT'];
+  const previousActions = actionNames.map(name => process.env[name]);
+  Object.assign(process.env, { OUTREACH_ACTIONS_ENABLED: 'true', OUTREACH_ACTIONS_FREE_CONFIRMED: 'true', GITHUB_REPO: 'fixture/repository', OUTREACH_ACTIONS_MONTHLY_RUN_LIMIT: '2', GITHUB_PAT: 'fixture-no-network' });
+  t.after(() => { for (const [index, name] of actionNames.entries()) { if (previousActions[index] === undefined) delete process.env[name]; else process.env[name] = previousActions[index]; } });
   let dispatched = 0;
   const github = async (_repo, endpoint, options) => { if (endpoint.includes('/runs?')) return { workflow_runs: [] }; if (!endpoint) return { default_branch: 'main' }; assert.equal(options.body.ref, 'main'); dispatched++; return null; };
   await dispatchOutreachDrafts({ request: github });

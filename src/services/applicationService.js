@@ -1,7 +1,7 @@
 import Application from '../models/Application.js';
 import TailoredResume from '../models/TailoredResume.js';
 
-function safeApplicationUrl(job) {
+export function safeApplicationUrl(job) {
   for (const value of [job.applicationUrl, job.applyUrl, job.sourceUrl]) {
     try {
       const url = new URL(value);

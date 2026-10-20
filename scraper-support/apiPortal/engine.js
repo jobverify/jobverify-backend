@@ -1,4 +1,7 @@
-import { createPaginationState, getNextPageRequest, updatePaginationState } from './pagination.js'
+import { createPaginationState, getNextPageRequest, updatePaginationState, hasPaginationContinuation } from './pagination.js'
+import { createHash } from 'node:crypto'
+import { attachInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { isIndiaJob } from '../utils/indiaLocationFilter.js'
 import {
   expandTemplate,
   getMappedFieldValue,
@@ -210,51 +213,6 @@ const createFallbackDetailUrl = (provider, record, config) => {
   return toAbsoluteUrl(detailUrl, provider)
 }
 
-const isBlockedEightfoldInventoryError = (error) => {
-  const message = String(error?.message ?? error ?? '')
-
-  return /HTTP 403\b/i.test(message)
-    && (
-      /\/api\/pcsx\/search/i.test(message)
-      || /PCSX is not enabled/i.test(message)
-      || /eightfold/i.test(message)
-    )
-}
-
-const createBlockedEightfoldSignalJob = (provider) => {
-  const sourceUrl = provider.companyCareerPage
-  const location = provider.countryFilter || 'India'
-  const verificationNote = provider.verifiedOn
-    ? ` Verified surface checked on ${provider.verifiedOn}.`
-    : ''
-
-  return {
-    title: `Current openings at ${provider.companyName}`,
-    company: provider.companyName,
-    location,
-    city: deriveCity(location),
-    country: provider.countryFilter || 'India',
-    link: sourceUrl,
-    applyUrl: sourceUrl,
-    sourceUrl,
-    source: provider.source,
-    jobId: `${provider.source}-current-openings`,
-    requisitionId: `${provider.source}-current-openings`,
-    department: null,
-    employmentType: null,
-    experienceRequired: null,
-    jobDescription:
-      `The official ${provider.companyName} careers page remained reachable, `
-      + 'but the public Eightfold inventory API returned HTTP 403 during this scrape. '
-      + `Review current openings directly on ${sourceUrl}.${verificationNote}`,
-    minimumQualification: null,
-    preferredQualification: null,
-    requiredSkills: [],
-    remoteStatus: null,
-    scrapedAt: new Date().toISOString(),
-  }
-}
-
 const mapWithConcurrency = async (items, concurrency, mapper) => {
   const workerCount = Math.max(1, Math.min(
     items.length || 1,
@@ -334,6 +292,8 @@ const validateInventory = (payload, records, rules) => {
 
 export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJson }) => {
   const config = normalizeApiPortalConfig(provider.config || {})
+  const maxPages = Number(config.pagination.maxPages ?? 1000)
+  if (!Number.isSafeInteger(maxPages) || maxPages < 1) throw new Error('API portal inventory requires a positive page limit')
   if (
     provider.atsPlatform === 'eightfold'
     && config.pagination?.strategy === 'offset-limit'
@@ -368,11 +328,19 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
   }
   const jobs = []
   let state = createPaginationState(config.pagination)
+  let pagesFetched = 0
+  let recordsFetched = 0
+  let reportedTotal = null
+  let inventoryComplete = true
+  let indiaCount = 0
+  let continuation = false
+  const seenPages = new Set()
 
   try {
     while (true) {
       const nextPage = getNextPageRequest(config, state)
       if (!nextPage) break
+      if (pagesFetched >= maxPages) throw new Error('API portal inventory incomplete: page limit reached')
 
       const url = new URL(config.discovery.listingApiUrl)
       Object.entries(config.request.query || {}).forEach(([key, value]) => {
@@ -391,8 +359,31 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
         ),
       })
       const records = getValueAtPath(listingPayload, config.pagination.resultsPath)
+      if (listingPayload?.success === false || listingPayload?.error
+        || (Array.isArray(listingPayload?.errors) && listingPayload.errors.length > 0)) {
+        throw new Error('API portal inventory validation failed: upstream error response')
+      }
+      if (!Array.isArray(records) || records.some(record => !record || typeof record !== 'object' || Array.isArray(record))) {
+        throw new Error('API portal inventory validation failed: listing array missing or malformed')
+      }
       validateInventory(listingPayload, records, config.inventoryValidation)
-      const listingRecords = records || []
+      const listingRecords = records
+      pagesFetched += 1
+      if (listingRecords.length) {
+        const fingerprint = createHash('sha256').update(JSON.stringify(listingRecords)).digest('hex')
+        if (seenPages.has(fingerprint)) throw new Error('API portal inventory incomplete: repeated page')
+        seenPages.add(fingerprint)
+      }
+      recordsFetched += listingRecords.length
+      const rawTotal = config.pagination.totalCountPath ? getValueAtPath(listingPayload, config.pagination.totalCountPath) : null
+      const totalCount = rawTotal == null ? null : Number(rawTotal)
+      if (rawTotal != null && (!['number', 'string'].includes(typeof rawTotal) || String(rawTotal).trim() === ''
+        || !Number.isSafeInteger(totalCount) || totalCount < 0)) throw new Error('API portal inventory validation failed: malformed total count')
+      if (totalCount != null) {
+        if (reportedTotal != null && reportedTotal !== totalCount) inventoryComplete = false
+        reportedTotal = totalCount
+        if (listingRecords.length === 0 && recordsFetched < totalCount) throw new Error('API portal inventory incomplete: empty page contradicts total count')
+      }
 
       const mappedRecords = await mapWithConcurrency(
         listingRecords,
@@ -414,6 +405,7 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
               })
             } catch (error) {
               if (config.detail.required) throw error
+              inventoryComplete = false
 
               detailPayload = {
                 sourceUrl: createFallbackDetailUrl(provider, record, config),
@@ -424,6 +416,8 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
           }
 
           const mapped = mapRecord(record, provider, config, detailPayload)
+          if (!mapped) inventoryComplete = false
+          if (mapped && isIndiaJob(mapped)) indiaCount += 1
           return mapped && passesResultFilter(mapped, config.resultFilter) ? mapped : null
         },
       )
@@ -435,9 +429,7 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
       const hasMore = config.pagination.hasMorePath
         ? getValueAtPath(listingPayload, config.pagination.hasMorePath)
         : null
-      const totalCount = config.pagination.totalCountPath
-        ? getValueAtPath(listingPayload, config.pagination.totalCountPath)
-        : null
+      continuation = hasPaginationContinuation(hasMore)
 
       state = updatePaginationState(config.pagination, state, {
         hasMore,
@@ -447,17 +439,16 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
       })
     }
 
-    return jobs
+    const complete = inventoryComplete && state.done && !continuation
+      && (reportedTotal == null || reportedTotal === recordsFetched)
+    if (!complete) for (const job of jobs) job.sourceListingComplete = false
+    return attachInventoryEvidence(jobs, {
+      status: complete ? recordsFetched === 0 ? 'verified-empty' : 'complete-inventory' : 'discovery-only',
+      surface: config.discovery.listingApiUrl, firstParty: true, listingComplete: complete,
+      pagesFetched, reportedTotal, indiaFacetCount: indiaCount, verifiedAt: new Date().toISOString(),
+      reason: complete ? 'api-portal-complete-native-pagination' : 'api-portal-incomplete-listing-or-role-details',
+    })
   } catch (error) {
-    if (
-      jobs.length === 0
-      && provider.atsPlatform === 'eightfold'
-      && provider.companyCareerPage
-      && isBlockedEightfoldInventoryError(error)
-    ) {
-      return [createBlockedEightfoldSignalJob(provider)]
-    }
-
     throw error
   }
 }

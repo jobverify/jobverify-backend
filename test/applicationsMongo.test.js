@@ -60,6 +60,22 @@ test('MongoDB and HTTP application lifecycle preserves manual status, privacy an
   await TailoredResume.collection.insertOne({ _id: `${otherUser}:${jobId}`, user: otherUser, job: jobId, status: 'completed', output: { summary: 'Other user resume' } });
   assert.equal(await recordApplicationOpen(user, job), null, 'another user resume does not qualify');
   await TailoredResume.collection.insertOne({ _id: `${user}:${jobId}`, user, job: jobId, status: 'queued', output: null });
+  for (const resumeStatus of ['queued', 'running', 'failed', 'completed']) {
+    await TailoredResume.updateOne({ user, job: jobId }, { $set: { status: resumeStatus } });
+    const pending = await request('/api/user/applications');
+    assert.equal(pending.status, 200);
+    assert.equal(pending.body.data.length, 1, `${resumeStatus} resumes appear without an employer click`);
+    assert.equal(pending.body.data[0].resumeStatus, resumeStatus);
+    assert.equal(pending.body.data[0].jobSnapshot.title, job.title);
+    assert.equal(pending.body.data[0].canConfirm, false);
+    assert.equal(pending.body.data[0].firstOpenedAt, null);
+    assert.equal(pending.body.data[0].output, undefined, 'history must not expose resume content');
+    assert.deepEqual(pending.body.summary, { total: 1, opened: 1, applied: 0 });
+    assert.equal((await request('/api/user/applications?status=opened')).body.data.length, 1);
+    assert.equal((await request('/api/user/applications?status=applied')).body.data.length, 0);
+    assert.equal((await request('/api/user/applications', { owner: otherUser })).body.data.length, 1, 'owners see only their own resume');
+  }
+  await TailoredResume.updateOne({ user, job: jobId }, { $set: { status: 'queued' } });
   assert.equal(await recordApplicationOpen(user, job), null, 'pending generation does not qualify');
   await TailoredResume.updateOne({ user, job: jobId }, { $set: { status: 'failed' } });
   assert.equal(await recordApplicationOpen(user, job), null, 'failed generation does not qualify');
@@ -85,6 +101,12 @@ test('MongoDB and HTTP application lifecycle preserves manual status, privacy an
   assert.equal((await Job.findById(jobId)).clickCount, 1, 'duplicate tracking keeps analytics deduplication');
   const repeated = await request(`/api/user/applications/${id}/applied`, { method: 'PUT' });
   assert.equal(repeated.body.data.appliedAt, confirmed.body.data.appliedAt);
+  await TailoredResume.updateOne({ user, job: jobId }, { $set: { status: 'queued' } });
+  const regenerating = await request('/api/user/applications');
+  assert.equal(regenerating.body.data.length, 1, 'regeneration must not duplicate an application');
+  assert.equal(regenerating.body.data[0].status, 'applied');
+  assert.equal(regenerating.body.data[0].resumeStatus, 'queued');
+  assert.equal(regenerating.body.data[0].appliedAt, confirmed.body.data.appliedAt);
   await Job.deleteOne({ _id: jobId });
   const history = await request('/api/user/applications?status=applied&page=1');
   assert.equal(history.body.data.length, 1);
@@ -99,4 +121,17 @@ test('MongoDB and HTTP application lifecycle preserves manual status, privacy an
     assert.equal(filtered.body.data.length, status === 'opened' ? 0 : 1);
     assert.ok(filtered.body.data.every(item => item.job === String(jobId)));
   }
+  const queuedJobs = Array.from({ length: 21 }, (_, index) => ({ ...job, _id: new mongoose.Types.ObjectId(), fingerprint: `queued-${index}` }));
+  await Job.collection.insertMany(queuedJobs);
+  await TailoredResume.collection.insertMany(queuedJobs.map(listing => ({
+    _id: `${user}:${listing._id}`, user, job: listing._id, status: 'queued', requestedAt: new Date(), output: null,
+  })));
+  const secondPage = await request('/api/user/applications?page=2');
+  assert.equal(secondPage.body.data.length, 2);
+  assert.deepEqual(secondPage.body.summary, { total: 22, opened: 21, applied: 1 });
+  assert.equal(secondPage.body.pagination.totalPages, 2);
+  const pendingPage = await request('/api/user/applications?status=opened');
+  assert.equal(pendingPage.body.data.length, 20);
+  assert.equal(pendingPage.body.pagination.total, 21);
+  assert.ok(pendingPage.body.data.every(item => item.resumeStatus === 'queued'));
 });

@@ -1,22 +1,28 @@
-# Hiring-manager outreach
+# Referral outreach
 
 Outreach extends the existing API and MongoDB deployment. It is available to authenticated accounts independently of paid-plan access. `Application.status` continues to mean an employer page was opened or the user manually confirmed an application. Contacting a person does not change that status.
 
 ## Entry points and requests
 
-The job-detail page owns **Find hiring manager**, below Apply. A signed-in click starts a job-scoped discovery request. Viewing job pages, saved jobs, or application history never starts discovery, provider lookups, or model inference. Saved jobs use the same job-detail flow. Reopening an existing result is free of provider requests until the user explicitly requests refresh.
+The job-detail page has **Find referrals**, below Apply; saved-job cards offer the same explicit action. A signed-in click starts a job-scoped discovery request. Viewing job pages, saved jobs, or application history never starts discovery, provider lookups, or model inference. Reopening an existing result is free of provider requests until the user explicitly requests refresh.
 
 New route groups are `/api/user/outreach`, `/api/user/gmail`, and `/api/user/campaigns`. They use the existing authentication, JSON mutation, CSRF, and no-store behavior. Private task IDs and thread IDs are checked against the current account. Discovery may complete from a shared public-evidence cache; profiles, drafts, selected contacts, campaigns, and task inputs stay private.
 
 ## Configure discovery
 
+`TAVILY_API_KEY` is required for fresh contact searches; without it the API returns a configuration error before reserving credits. `HUNTER_API_KEY` is optional: discovery still returns LinkedIn contacts and public evidence without email enrichment. Set these on the deployed backend, not in GitHub Actions variables. Never place provider keys in frontend configuration.
+
 Set `TAVILY_API_KEY` and `HUNTER_API_KEY` only in backend secrets. Use the providers' free plans, with paid credit purchases and automatic top-ups disabled in their dashboards. Monthly allowances are shared across users, not allocated afresh per account: 1,000 Tavily credits and 50 Hunter credits. The application records reservations before external requests and stops rather than enabling paid usage. There are five fresh discoveries per account per day; a shared cache hit does not consume a fresh discovery.
 
-Discovery searches public indexed hiring evidence for an existing stored job. It ranks explicit hiring-post authors before relevant leaders and recruiting contacts, with at most three results. Results include the evidence URL and excerpt. Email lookup uses the employer domain, not the ATS hostname. Only a provider verification result produces the verified label. Missing enrichment leaves the contact available with its original source. Users can enter an address, then explicitly confirm it before sending.
+Discovery searches public indexed referral and hiring evidence for an existing stored job. It ranks explicit referral-post authors first, hiring-post authors second, relevant employees and team leaders third, and recruiters last, with at most three results. People require a named source and employer evidence; ordinary employees are labeled potential referral contacts, without claiming willingness or ability to refer. Former employees are excluded. Results include the evidence URL and excerpt. Email lookup uses the employer domain, not the ATS hostname. Only a provider verification result produces the verified label. Missing enrichment leaves the contact available with its original source. Users can enter an address, then explicitly confirm it before sending.
 
-Successful discovery caches live for seven days and are keyed by job context; email evidence is reusable for 30 days. Neither cache is proactively refreshed. Failed provider calls do not become evidence that a company has no hiring manager.
+Successful discovery caches live for seven days and are keyed by job context and the discovery policy, so hiring-only results are not reused after changing to referral discovery. Email evidence is reusable for 30 days. Neither cache is proactively refreshed. Failed provider calls do not become evidence that a company has no referral contacts.
 
 ## GitHub Actions drafting
+
+The model runs on demand inside GitHub Actions. The app queues a draft in MongoDB, dispatches `outreach-drafts.yml`, and polls its private task API for the saved result. There is no permanent public model server or model API key; the backend uses its GitHub token to dispatch work. The default workflow mode is `queue`, including existing backend dispatches that omit inputs.
+
+To check model hosting independently, open **Actions → Jobverify Outreach Drafts → Run workflow**, select **smoke-test**, and run it. This downloads/verifies the pinned model and runtime, generates and validates one synthetic draft, prints only counts, then stops the runtime. It needs the two enabled Actions variables but no MongoDB, Tavily, Hunter, or inference-provider keys. It uses the same runner and time limits as normal generation. A successful smoke test proves model startup and structured generation; it does not prove MongoDB connectivity, contact search, or draft quality for real users.
 
 The existing `GITHUB_PAT`, `GITHUB_REPO`, and Actions `MONGO_URI` secret support an isolated outreach drafting workflow. It is separate from the scraper, description rewrite, and classification stages. Enable both `OUTREACH_ACTIONS_ENABLED` and `OUTREACH_ACTIONS_FREE_CONFIRMED` after deploying the workflow and setting repository/organization billing to block paid Actions usage. `OUTREACH_ACTIONS_MONTHLY_RUN_LIMIT` is an additional application dispatch cap; it is not proof of remaining account-level free minutes.
 
@@ -27,6 +33,8 @@ Standard Ubuntu runners load the pinned LiquidAI LFM2.5-1.2B-Instruct Q4_K_M mod
 Drafting is asynchronous and has a ten-request daily account limit. The UI shows queued/running/completed/failed states and supports leaving and returning. Batches are bounded, generation is serial, and workflows time out after ten minutes. Account existence and thread revision are rechecked before publishing a result so deletion or manual edits cannot be undone by a late model response. Drafts remain suggestions that the user reviews and edits.
 
 ## Gmail authorization and campaigns
+
+Concurrent drafting requests in one backend process share a workflow dispatch and one Actions reservation. Worker startup failures release unchanged queued tasks for explicit retry. The Actions process exits with failure when a batch contains failed drafts; saved text and another worker's active leases are preserved.
 
 Create a Google OAuth web client and enable the Gmail API. Set the exact callback URL in Google Cloud and `GMAIL_REDIRECT_URI`; provide `GMAIL_CLIENT_ID` and `GMAIL_CLIENT_SECRET`. Google login remains an identity-only flow. Connecting Gmail separately requests sending permission and sender identity, with state, session binding, and PKCE. Public distribution of the sensitive `gmail.send` scope needs Google's applicable OAuth verification.
 

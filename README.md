@@ -286,3 +286,11 @@ button, workflow status/logs and a persistent switch to run automatically after
 successful scraper workflows. Auto-run defaults to off. See
 [description rewriting setup and acceptance checks](./rewriting/CONTROLS.md)
 for the required GitHub repository permissions and deployment steps.
+
+## Tailored resume generation
+
+The resume generation button queues work in MongoDB and triggers the dedicated
+`tailored-resumes.yml` GitHub Actions workflow. A pinned model runs locally on
+the runner and saves the result for the app's preview and download. See
+[tailored resume setup and recovery](./outreach/TAILORED_RESUMES.md) for repository
+permissions, the `MONGO_URI` Actions secret, and dispatch limits.

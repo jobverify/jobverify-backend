@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import Application from '../models/Application.js';
 import TailoredResume from '../models/TailoredResume.js';
+import Job from '../models/Job.js';
+import { safeApplicationUrl } from '../services/applicationService.js';
 import { respondWithInternalError } from '../utils/respondWithInternalError.js';
 
 const PAGE_SIZE = 20;
@@ -13,14 +15,46 @@ export async function getApplications(req, res) {
     return res.status(400).json({ success: false, message: 'Invalid application page or status.' });
   }
   try {
-    const jobs = await TailoredResume.distinct('job', { user: req.user._id, status: 'completed', output: { $ne: null } });
-    const owner = { user: req.user._id, job: { $in: jobs } };
-    const filter = status === 'all' ? owner : { ...owner, status };
-    const [items, total, applied] = await Promise.all([
-      Application.find(filter).sort({ firstOpenedAt: -1, _id: -1 }).skip((page - 1) * PAGE_SIZE).limit(PAGE_SIZE).lean(),
-      Application.countDocuments(owner),
-      Application.countDocuments({ ...owner, status: 'applied' }),
+    // Start with durable resume requests so even requests queued before this
+    // feature appear without a migration or an employer-page click.
+    const [result] = await TailoredResume.aggregate([
+      { $match: { user: new mongoose.Types.ObjectId(String(req.user._id)) } },
+      { $lookup: { from: Application.collection.name, let: { owner: '$user', jobId: '$job' }, pipeline: [
+        { $match: { $expr: { $and: [{ $eq: ['$user', '$$owner'] }, { $eq: ['$job', '$$jobId'] }] } } },
+      ], as: 'application' } },
+      { $lookup: { from: Job.collection.name, localField: 'job', foreignField: '_id', pipeline: [
+        { $project: { title: 1, company: 1, location: 1, city: 1, jobType: 1, applicationUrl: 1, applyUrl: 1, sourceUrl: 1 } },
+      ], as: 'listing' } },
+      { $set: { application: { $first: '$application' }, listing: { $first: '$listing' } } },
+      { $match: { $or: [{ 'application._id': { $exists: true } }, { 'listing._id': { $exists: true } }] } },
+      { $project: {
+        _id: { $ifNull: ['$application._id', { $concat: ['resume:', { $toString: '$job' }] }] },
+        job: 1, status: { $ifNull: ['$application.status', 'opened'] },
+        canConfirm: { $ne: [{ $ifNull: ['$application._id', null] }, null] },
+        firstOpenedAt: { $ifNull: ['$application.firstOpenedAt', null] },
+        appliedAt: { $ifNull: ['$application.appliedAt', null] },
+        resumeStatus: '$status', resumeRequestedAt: { $ifNull: ['$requestedAt', '$createdAt'] },
+        trackedAt: { $ifNull: ['$application.firstOpenedAt', { $ifNull: ['$requestedAt', '$createdAt'] }] },
+        jobSnapshot: { $ifNull: ['$application.jobSnapshot', {
+          title: '$listing.title', company: '$listing.company',
+          location: { $ifNull: ['$listing.location', '$listing.city'] }, jobType: '$listing.jobType',
+          applicationUrl: '$listing.applicationUrl', applyUrl: '$listing.applyUrl', sourceUrl: '$listing.sourceUrl',
+        }] },
+      } },
+      { $facet: {
+        items: [
+          ...(status === 'all' ? [] : [{ $match: { status } }]),
+          { $sort: { trackedAt: -1, _id: -1 } }, { $skip: (page - 1) * PAGE_SIZE }, { $limit: PAGE_SIZE },
+        ],
+        counts: [{ $group: { _id: null, total: { $sum: 1 }, applied: { $sum: { $cond: [{ $eq: ['$status', 'applied'] }, 1, 0] } } } }],
+      } },
     ]);
+    const { total = 0, applied = 0 } = result.counts[0] ?? {};
+    const items = result.items.map(item => ({ ...item, jobSnapshot: {
+      title: item.jobSnapshot.title, company: item.jobSnapshot.company,
+      location: item.jobSnapshot.location || '', jobType: item.jobSnapshot.jobType || '',
+      applicationUrl: safeApplicationUrl(item.jobSnapshot),
+    } }));
     const summary = { total, opened: total - applied, applied };
     const filteredTotal = status === 'all' ? total : summary[status];
     return res.status(200).json({

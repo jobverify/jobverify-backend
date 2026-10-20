@@ -86,7 +86,7 @@ test('Eightfold template uses a larger default page size to reduce deep paginati
   assert.equal(new URL(seenUrls[0]).searchParams.get('limit'), '50')
 })
 
-test('runApiPortalScraper stays HTTP-only for blocked Eightfold GET APIs and returns the aggregate signal job', async () => {
+test('runApiPortalScraper stays HTTP-only and reports blocked Eightfold GET APIs as failures', async () => {
   let browserFallbackUsed = false
   const provider = expandApiPortalProviderTemplate({
     source: 'browser-eightfold',
@@ -101,7 +101,7 @@ test('runApiPortalScraper stays HTTP-only for blocked Eightfold GET APIs and ret
     },
   })
 
-  const jobs = await runApiPortalScraper({
+  await assert.rejects(runApiPortalScraper({
     provider,
     fetchJson: async (url) => {
       throw new Error(`HTTP 403 for ${url}`)
@@ -110,17 +110,12 @@ test('runApiPortalScraper stays HTTP-only for blocked Eightfold GET APIs and ret
       browserFallbackUsed = true
       throw new Error('Browser fallback should not run in the API-only engine')
     },
-  })
+  }), /HTTP 403/)
 
   assert.equal(browserFallbackUsed, false)
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Current openings at Browser Eightfold Corp')
-  assert.equal(jobs[0].link, 'https://browser-eightfold.example/careers')
-  assert.equal(jobs[0].jobId, 'browser-eightfold-current-openings')
-  assert.match(jobs[0].jobDescription, /Eightfold inventory API returned HTTP 403/i)
 })
 
-test('runApiPortalScraper returns an aggregate signal job when Eightfold inventory is hard-blocked', async () => {
+test('runApiPortalScraper propagates hard-blocked Eightfold inventory without synthetic jobs', async () => {
   const provider = expandApiPortalProviderTemplate({
     source: 'blocked-eightfold',
     companyName: 'Blocked Eightfold Corp',
@@ -134,18 +129,12 @@ test('runApiPortalScraper returns an aggregate signal job when Eightfold invento
     },
   })
 
-  const jobs = await runApiPortalScraper({
+  await assert.rejects(runApiPortalScraper({
     provider,
     fetchJson: async (url) => {
       throw new Error(`HTTP 403 for ${url}`)
     },
-  })
-
-  assert.equal(jobs.length, 1)
-  assert.equal(jobs[0].title, 'Current openings at Blocked Eightfold Corp')
-  assert.equal(jobs[0].link, 'https://blocked-eightfold.example/careers')
-  assert.equal(jobs[0].jobId, 'blocked-eightfold-current-openings')
-  assert.match(jobs[0].jobDescription, /Eightfold inventory API returned HTTP 403/i)
+  }), /HTTP 403/)
 })
 
 test('getValueAtPath resolves nested JSON paths without throwing for missing nodes', () => {

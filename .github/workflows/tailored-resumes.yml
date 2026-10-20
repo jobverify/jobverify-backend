@@ -1,0 +1,34 @@
+name: Jobverify Tailored Resumes
+run-name: 'Tailored Resumes #${{ github.run_number }}'
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: jobverify-tailored-resumes
+  cancel-in-progress: false
+jobs:
+  tailor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NODE_OPTIONS: '--use-system-ca'
+    steps:
+      - name: Record worker budget start
+        run: printf 'TAILORED_RESUME_WORKFLOW_STARTED_AT=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install backend dependencies
+        run: npm ci --ignore-scripts
+      - name: Cache only the immutable local model
+        uses: actions/cache@v4
+        with:
+          path: .cache/outreach-models/LFM2.5-1.2B-Instruct-Q4_K_M.gguf
+          key: outreach-lfm25-12b-q4km-b1b3de114215d950
+      - name: Generate explicitly requested tailored resumes
+        timeout-minutes: 8
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+        run: node scripts/runTailoredResumes.js
