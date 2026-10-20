@@ -7,6 +7,7 @@ import dotenv from 'dotenv'
 import connectDB from '../db/db.js'
 import Job from '../src/models/Job.js'
 import { CLASSIFICATION_FIELDS } from '../src/services/jobClassificationPolicy.js'
+import { normalizePublicJobType } from '../src/utils/publicJobTypeLabel.js'
 import { alreadyClassified, classificationShard, postScrapeInput,
   resolvePostScrapeClassification, sourceSnapshotFilter } from '../src/services/postScrapeClassification.js'
 import { startGliclassWorker } from './gliclassWorker.js'
@@ -91,7 +92,8 @@ export async function classifySavedJobs({ model = Job, worker, now = () => new D
         const result = resolvePostScrapeClassification(job, prediction, { now: clock, mode })
         if (priorNative) summary.nativeCached++
         const fields = mode === 'policy' ? { classification: result,
-          ...Object.fromEntries(CLASSIFICATION_FIELDS.map(field => [field, result.resolved[field] ?? null])) } : {}
+          ...Object.fromEntries(CLASSIFICATION_FIELDS.map(field => [field, result.resolved[field] ?? null])),
+          jobType: normalizePublicJobType(result.resolved.jobType) } : {}
         const updated = await model.updateOne({ ...snapshot, 'postClassification.owner': owner,
           'postClassification.inputHash': input.inputHash }, { $set: { ...fields,
           'postClassification.status': 'completed', 'postClassification.completedAt': now(),

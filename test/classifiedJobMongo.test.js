@@ -40,7 +40,8 @@ test('persisted authoritative categories and experience filters agree with Mongo
   for (const row of actual) {
     const job = stored.find(candidate => candidate.fingerprint === row.fingerprint);
     assert.equal(row.category, normalizeJobListResponseJob(job).jobType);
-    assert.equal(row.category, job.classification.resolved.jobType);
+    assert.equal(row.category, job.jobType);
+    if (job.classification.resolved.jobType === 'Unspecified') assert.equal(job.jobType, 'Full-time Experienced');
   }
   for (const experienceYear of ['0', '1', '3', 'unspecified']) {
     const matched = await Job.find(buildJobFilterConditions({ experienceYear })).select('fingerprint').lean().exec();
@@ -48,7 +49,7 @@ test('persisted authoritative categories and experience filters agree with Mongo
     assert.deepEqual(matched.map(job => job.fingerprint).sort(), expected.map(job => job.fingerprint).sort(), experienceYear);
   }
   assert.deepEqual((await Job.find(buildJobFilterConditions({ experienceYear: '0' })).lean().exec()).map(job => job.jobType), ['Intern']);
-  assert.deepEqual((await Job.find(buildJobFilterConditions({ experienceYear: 'unspecified' })).lean().exec()).map(job => job.jobType), ['Unspecified']);
+  assert.deepEqual((await Job.find(buildJobFilterConditions({ experienceYear: 'unspecified' })).lean().exec()).map(job => job.jobType), ['Full-time Experienced']);
 
   await t.test('rescrapes with valid descriptions update all authoritative fields together', async () => {
     const job = { title: 'Senior Engineer', company: 'Recovery Company', location: 'Bangalore, India', city: 'Bangalore', country: 'India', source: 'recovery', applyUrl: 'https://example.com/jobs/recovery', sourceUrl: 'https://example.com/jobs/recovery', sourceEmploymentType: 'Full-time', description: 'A permanent role requiring 5 years of professional experience.' };

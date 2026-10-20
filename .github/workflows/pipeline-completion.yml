@@ -1,4 +1,5 @@
 name: Jobverify Pipeline Coordinator
+run-name: 'Pipeline Coordinator #${{ github.run_number }}'
 on:
   workflow_run:
     workflows: ['Jobverify Scraper Cron', 'Jobverify Description Rewrite', 'Jobverify Post-scrape Classification']

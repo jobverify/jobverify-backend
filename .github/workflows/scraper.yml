@@ -77,6 +77,14 @@ jobs:
         with:
           path: .cache/scraper-actions/run-state.json
           key: scraper-state-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Report publishing coverage
+        if: always() && steps.scraper_run.outcome != 'skipped'
+        run: |
+          if [ -f .cache/scraper-actions/run-state.json ]; then
+            node scripts/analyzeCoverageJobGaps.js --publishing --mongo --run-state .cache/scraper-actions/run-state.json --output .cache/scraper-actions/publishing-coverage
+          else
+            node scripts/analyzeCoverageJobGaps.js --publishing --mongo --output .cache/scraper-actions/publishing-coverage
+          fi
       - name: Upload scraper diagnostics
         if: always()
         uses: actions/upload-artifact@v7
@@ -85,6 +93,7 @@ jobs:
           path: |
             .cache/scraper-actions/run-state.json
             .cache/scraper-actions/pipeline-scraper-summary.json
+            .cache/scraper-actions/publishing-coverage/
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 14

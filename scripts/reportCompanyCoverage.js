@@ -22,6 +22,7 @@ const topCoveredSources = Object.entries(matchedSources)
   .slice(0, 20)
 
 console.log(JSON.stringify({
+  coverageLabel: report.coverageLabel,
   csvPath,
   totalRows: report.totalRows,
   candidateRows: report.candidateRows,

@@ -337,7 +337,7 @@ export const hasEntryLevelCue = (value = "") => ENTRY_LEVEL_CUE_PATTERN.test(Str
 export const extractEntryLevelCue = (value = "") => String(value || "").match(ENTRY_LEVEL_CUE_PATTERN)?.[0] ?? null;
 
 const clampWorkArrangement = (value) =>
-  WORK_ARRANGEMENT_OPTIONS.includes(value) ? value : "Not specified";
+  WORK_ARRANGEMENT_OPTIONS.includes(value) ? value : "On-site";
 
 const normalizeNumberWords = (value) => value.replace(
   /\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\b/gi,
@@ -2119,7 +2119,6 @@ const detectWorkArrangement = (job = {}) => {
     if (/hybrid/i.test(explicit)) return "Hybrid";
     if (/remote/i.test(explicit)) return "Remote";
     if (/on[- ]site/i.test(explicit)) return "On-site";
-    if (/flexible/i.test(explicit)) return "Not specified";
   }
 
   const locationText = normalizeText(

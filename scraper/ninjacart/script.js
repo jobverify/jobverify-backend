@@ -1,3 +1,4 @@
+import { mapJobsWithInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { createDarwinboxScraper } from '../darwinbox/script.js'
 
 const createConfiguredScraper = () => {
@@ -31,7 +32,7 @@ const createConfiguredScraper = () => {
     ...baseScraper,
     async run(options = {}) {
       const jobs = await baseScraper.run(options)
-      return jobs.map((job) => ({
+      return mapJobsWithInventoryEvidence(jobs, (job) => ({
         ...job,
         city: normalizeCity(job),
       }))

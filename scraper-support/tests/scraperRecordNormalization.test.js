@@ -176,7 +176,7 @@ test('normalizeScrapedJob composes internship and contract job types from apiPor
     },
   )
 
-  assert.equal(internship.jobType, 'Internship')
+  assert.equal(internship.jobType, 'Intern')
   assert.equal(contract.jobType, 'Contract')
 })
 
@@ -278,7 +278,7 @@ test('normalizeScrapedJob suppresses unsupported part-time employment types', ()
   )
 
   assert.equal(normalized.employmentType, null)
-  assert.equal(normalized.jobType, null)
+  assert.equal(normalized.jobType, 'Full-time Experienced')
 })
 
 test('normalizeScrapedJob respects explicit experienceLevel cues for full-time apiPortal roles', () => {
@@ -1320,27 +1320,6 @@ test('normalizeScrapedJob maps semiconductor services roles at tessolve into sem
   )
 
   assert.equal(normalized.engineeringDomain, 'Semiconductor')
-})
-
-test('normalizeScrapedJob maps physical security installation engineers into electrical engineering', () => {
-  const normalized = normalizeScrapedJob(
-    {
-      title: 'Installation Engineer',
-      company: 'Vehant Technologies',
-      description: 'Installation and service of IP based CCTV, access control, UVSS, ANPR and ETD systems.',
-      experienceRequired: '2-3 Years',
-      location: 'Delhi, India',
-      city: 'Delhi',
-      link: 'https://www.vehant.com/jobs/installation-engineer-2/',
-    },
-    {
-      source: 'vehanttechnologies',
-      companyCareerPage: 'https://www.vehant.com/jobs/',
-      atsPlatform: 'official-company-careers',
-    },
-  )
-
-  assert.equal(normalized.engineeringDomain, 'Electrical')
 })
 
 test('normalizeScrapedJob maps AI architect roles into machine learning even when the local snapshot is thin', () => {

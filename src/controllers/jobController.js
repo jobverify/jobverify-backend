@@ -27,9 +27,12 @@ import {
 import { resolveJobType } from "../../scraper-support/utils/normalizeScrapedJob.js";
 
 import { PUBLIC_JOB_TYPE_EXPRESSION } from "../utils/publicJobType.js";
+import { normalizePublicJobType } from '../utils/publicJobTypeLabel.js';
+import { normalizePublicWorkArrangement, PUBLIC_WORK_ARRANGEMENT_EXPRESSION } from '../utils/publicWorkArrangement.js';
 import { getAuthoritativeClassification } from '../services/jobClassificationPolicy.js';
 import { withSemanticExperienceConstraint } from '../utils/classifiedExperienceFilters.js';
 import { applyPublicJobVisibility } from "../utils/publicJobVisibility.js";
+import { recordApplicationOpen } from '../services/applicationService.js';
 import { buildAggregateHiringSignalFilter } from "../utils/jobListingEvidence.js";
 import { buildMissingSourceDescriptionFilter } from "../utils/jobSourceContent.js";
 import { canUsePremiumFilters } from "../utils/accessControl.js";
@@ -529,7 +532,7 @@ const normalizeResponseExperienceLevel = (job = {}) => {
   return storedExperienceLevel;
 };
 
-const normalizeResponseJobType = (job = {}) => {
+const resolveResponseJobType = (job = {}) => {
   const classified = getAuthoritativeClassification(job);
   if (classified) return classified.jobType;
   if (Object.hasOwn(job, "_publicJobType")) return job._publicJobType;
@@ -582,6 +585,8 @@ const normalizeResponseJobType = (job = {}) => {
 
   return isPartTimeJobType(job.jobType) ? null : job.jobType || null;
 };
+
+const normalizeResponseJobType = job => normalizePublicJobType(resolveResponseJobType(job));
 
 const getSafeExternalApplicationUrl = (value) => {
   try {
@@ -858,6 +863,7 @@ export const normalizeResponseJob = (job) => {
     locations,
     experienceLevel: normalizeResponseExperienceLevel(job),
     jobType: normalizeResponseJobType(job),
+    workArrangement: normalizePublicWorkArrangement(job.workArrangement),
     ...buildApplicationState(job),
   };
 };
@@ -1776,7 +1782,7 @@ export const trackJobClick = async (req, res) => {
     const publicJobFilter = applyPublicJobVisibility({ _id: id, status: "active" }, req.siteSettings);
 
     if (existingClick) {
-      const existingJob = await Job.findOne(publicJobFilter).select("clickCount").lean().exec();
+      const existingJob = await Job.findOne(publicJobFilter).select("clickCount title company location city jobType applicationUrl applyUrl sourceUrl").lean().exec();
       if (!existingJob) {
         return res.status(404).json({
           code: 404,
@@ -1785,6 +1791,7 @@ export const trackJobClick = async (req, res) => {
         });
       }
 
+      const application = req.user ? await recordApplicationOpen(req.user._id, existingJob) : null;
       return res.status(200).json({
         code: 200,
         success: true,
@@ -1792,6 +1799,7 @@ export const trackJobClick = async (req, res) => {
         data: {
           jobId: existingJob._id,
           clickCount: existingJob.clickCount || 0,
+          application,
         },
       });
     }
@@ -1828,6 +1836,7 @@ export const trackJobClick = async (req, res) => {
       return res.status(404).json({ code: 404, success: false, message: 'Job not found' });
     }
 
+    const application = req.user ? await recordApplicationOpen(req.user._id, job) : null;
     return res.status(200).json({
       code: 200,
       success: true,
@@ -1835,6 +1844,7 @@ export const trackJobClick = async (req, res) => {
       data: {
         jobId: job._id,
         clickCount: job.clickCount || 0,
+        application,
       },
     });
   } catch (error) {
@@ -1939,13 +1949,10 @@ export const getJobMeta = async (req, res) => {
         )
         : Promise.resolve(ROLE_DOMAIN_OPTIONS),
       hasScopedFilters
-        ? resolveScopedDistinctValues(
-          queryParams,
-          "workArrangement",
-          ["workArrangement"],
-          { workArrangement: { $ne: null } },
-          req.siteSettings,
-        )
+        ? Job.aggregate([
+          { $match: buildJobMetaFilter(queryParams, ['workArrangement'], {}, req.siteSettings) },
+          { $group: { _id: PUBLIC_WORK_ARRANGEMENT_EXPRESSION } },
+        ]).exec().then(rows => rows.map(row => row._id))
         : Promise.resolve(WORK_ARRANGEMENT_OPTIONS),
       hasScopedFilters
         ? resolveScopedDatePostedOptions(queryParams, req.siteSettings)
@@ -1974,7 +1981,7 @@ export const getJobMeta = async (req, res) => {
           : ROLE_DOMAIN_OPTIONS,
         seniorityLevels: SENIORITY_LEVELS,
         workArrangements: hasScopedFilters
-          ? filterSupportedOptions(workArrangements, WORK_ARRANGEMENT_OPTIONS)
+          ? filterSupportedOptions(workArrangements.map(normalizePublicWorkArrangement), WORK_ARRANGEMENT_OPTIONS)
           : WORK_ARRANGEMENT_OPTIONS,
         datePostedOptions,
       },

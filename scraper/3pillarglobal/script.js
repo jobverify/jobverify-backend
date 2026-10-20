@@ -1,3 +1,4 @@
+import { mapJobsWithInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
@@ -47,7 +48,7 @@ export const createThreePillarGlobalScraper = ({
       }
       const jobs = await darwinbox.run({ ...options, signal, ...(maxJobs == null ? {} : { maxJobs }) })
       signal?.throwIfAborted()
-      return jobs.map((job) => ({
+      return mapJobsWithInventoryEvidence(jobs, (job) => ({
         ...job,
         country: 'India',
         scrapedAt: now(),

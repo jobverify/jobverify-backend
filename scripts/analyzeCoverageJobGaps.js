@@ -7,6 +7,8 @@ import mongoose from 'mongoose'
 import connectDB from '../db/db.js'
 import Job from '../src/models/Job.js'
 import { normalizeCompanyNameExact } from '../scraper-support/providers/companyCoverage.js'
+import { buildPublishingGapReport, publishingGapCsv } from './publishingGapReport.js'
+export { buildPublishingGapReport, publishingGapCsv }
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const backendDir = path.resolve(currentDir, '..')
@@ -211,6 +213,7 @@ const sortRows = (rows) =>
     || left.companyName.localeCompare(right.companyName))
 
 const main = async () => {
+  if (process.argv.includes('--publishing')) return writePublishingGapArtifacts()
   const report = JSON.parse(readFileSync(reportPath, 'utf8'))
   const { latestBySource, startedSources } = parseLatestPipelineRows()
 
@@ -338,6 +341,31 @@ const main = async () => {
   } finally {
     await mongoose.disconnect()
   }
+}
+
+export const writePublishingGapArtifacts = async (argv = process.argv.slice(2)) => {
+  const option = name => { const index = argv.indexOf(name); return index < 0 ? null : argv[index + 1] }
+  const { getScraperCatalog } = await import('../scraper-support/providers/index.js')
+  let runtime = option('--runtime') ? JSON.parse(readFileSync(path.resolve(option('--runtime')), 'utf8')) : null
+  if (argv.includes('--mongo')) {
+    const { readPublishingGapSnapshot } = await import('./collectPublishingGapSnapshot.js')
+    runtime = await readPublishingGapSnapshot()
+  }
+  const runState = option('--run-state') ? JSON.parse(readFileSync(path.resolve(option('--run-state')), 'utf8')) : null
+  const discovery = option('--discovery') ? JSON.parse(readFileSync(path.resolve(option('--discovery')), 'utf8')) : []
+  const extractionAudits = option('--extraction-audits') ? JSON.parse(readFileSync(path.resolve(option('--extraction-audits')), 'utf8')) : []
+  const report = buildPublishingGapReport({ catalog: getScraperCatalog(), runtime, runState, discovery, extractionAudits,
+    ...(option('--now') ? { now: new Date(option('--now')) } : {}),
+    ...(option('--max-age-hours') ? { maxAgeHours: Number(option('--max-age-hours')) } : {}),
+  })
+  const destination = path.resolve(option('--output') || path.join(outputDir, 'publishing'))
+  mkdirSync(destination, { recursive: true })
+  writeFileSync(path.join(destination, 'report.json'), `${JSON.stringify(report, null, 2)}\n`)
+  writeFileSync(path.join(destination, 'companies.csv'), publishingGapCsv(report.rows))
+  writeFileSync(path.join(destination, 'remediation-backlog.json'), `${JSON.stringify(report.backlog, null, 2)}\n`)
+  if (runtime) writeFileSync(path.join(destination, 'runtime-snapshot.json'), `${JSON.stringify(runtime, null, 2)}\n`)
+  console.log(JSON.stringify({ outputDirectory: destination, ...report.summary }, null, 2))
+  return report
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

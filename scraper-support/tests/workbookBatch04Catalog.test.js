@@ -29,7 +29,6 @@ const BATCH_04_PROVIDER_SOURCES = [
   'photomathindia',
   'piramaleswasthya',
   'piramalpharmadigital',
-  'puresoftware',
   'qburstindia',
   'quicko',
   'quiklyz',
@@ -39,7 +38,6 @@ const BATCH_04_PROVIDER_SOURCES = [
   'revv',
   'sahamati',
   'sastasundar',
-  'scapic',
   'securonixindia',
   'selfscribe',
   'simpliwork',
@@ -66,7 +64,7 @@ test('workbook batch 04 companies all resolve to providers after dedicated alias
   })
 
   assert.equal(manifest.batch, '04')
-  assert.equal(manifest.companies.length, 35)
+  assert.equal(manifest.companies.length, 33)
   assert.equal(report.matchedCount, manifest.companies.length)
   assert.equal(report.unmatchedCount, 0)
   assert.deepEqual(report.unmatched, [])

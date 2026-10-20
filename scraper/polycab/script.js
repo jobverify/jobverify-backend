@@ -1,3 +1,4 @@
+import { mapJobsWithInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { createDarwinboxScraper } from '../darwinbox/script.js'
 
 export const COMPANY_NAME = 'Polycab'
@@ -26,7 +27,7 @@ export const createPolycabScraper = ({
       const jobs = await baseScraper.run(options)
       const scrapedAt = now()
 
-      return jobs.map((job) => ({
+      return mapJobsWithInventoryEvidence(jobs, (job) => ({
         ...job,
         scrapedAt,
       }))

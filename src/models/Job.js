@@ -180,7 +180,7 @@ export const JobSchema = new Schema(
     seniority: { type: String, trim: true, default: "Unknown" },
     primaryRoleDomain: { type: String, trim: true, default: "Other" },
     secondaryRoleDomains: { type: [String], default: [] },
-    workArrangement: { type: String, trim: true, default: "Not specified" },
+    workArrangement: { type: String, trim: true, default: "On-site" },
     filterSignals: {
       type: FilterSignalsSchema,
       default: () => ({}),

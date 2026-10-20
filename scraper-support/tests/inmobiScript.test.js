@@ -113,5 +113,5 @@ test('normalizeScrapedJob composes InMobi job types from public API listings', (
   assert.equal(normalizedFullTime.employmentType, 'Full-time')
   assert.equal(normalizedFullTime.jobType, 'Full-time Experienced')
   assert.equal(normalizedIntern.employmentType, 'Internship')
-  assert.equal(normalizedIntern.jobType, 'Internship')
+  assert.equal(normalizedIntern.jobType, 'Intern')
 })

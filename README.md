@@ -1,5 +1,9 @@
 # Jobverify Backend
 
+Hiring-manager discovery, private outreach tracking, GitHub Actions drafting,
+and approved Gmail campaigns are described in [OUTREACH.md](OUTREACH.md).
+Provider and Gmail secrets stay on the backend; no enrichment starts from a page view.
+
 Express and MongoDB backend for Jobverify, with a separate scraper runtime that collects public job listings and writes normalized jobs into MongoDB.
 
 ## Tech Stack
@@ -9,6 +13,47 @@ Express and MongoDB backend for Jobverify, with a separate scraper runtime that 
 - MongoDB with Mongoose
 - JWT-based authentication
 - Provider scrapers under `scraper/`, orchestrated by `scraper-support/`
+
+## Profile resumes
+
+Authenticated users can store one current resume as PDF, Word (`.doc`, `.docx`),
+or LaTeX source (`.tex`), up to 5 MiB. The `Resume` collection stores original
+bytes as BSON binary with filename, MIME type, byte size, SHA-256 and upload date.
+The user ID is the primary key, so replacement keeps one document per account.
+Binary data is excluded from ordinary queries and profile responses.
+
+`GET /api/user/resume` returns metadata or `data: null`. Upload with a
+CSRF-protected `PUT` using `Content-Type: application/octet-stream`, the original
+file body, and a percent-encoded `X-Resume-Filename` header. The route validates
+size, extension and document signature before replacing the current file.
+`GET /api/user/resume/download` returns the owner's original attachment;
+CSRF-protected `DELETE /api/user/resume` removes it. All resume responses use
+`Cache-Control: no-store`, and account deletion removes resume data too.
+
+The upload parser is bounded and route-local; other API mutations retain their
+JSON requirements and body limits. No new services or environment variables are
+required. `node --test test/resumeFile.test.js test/resumeController.test.js
+test/resumeMongo.test.js` verifies validation, privacy and byte-exact storage
+using a disposable local MongoDB.
+
+## Application tracking
+
+For signed-in users, `POST /api/jobs/:id/click` also upserts a private
+`Application` record in MongoDB. Repeated clicks keep one record per user/job
+and never change an existing manual confirmation. The initial status is
+`opened`; it does not imply a submitted application.
+
+`GET /api/user/applications?page=1&status=all` returns paginated history and
+counts (`all`, `opened`, or `applied`). The owner manually confirms submission
+with the CSRF-protected `PUT /api/user/applications/:applicationId/applied`.
+Confirmation is idempotent and retains its original timestamp. Basic job details
+are preserved after a listing expires or is deleted; deleting an account removes
+its application records. No historical click is inferred to be a submission.
+
+The `Application` model declares a unique user/job index and owner/history
+indexes, included in `npm run db:indexes:plan`. Deploy backend and frontend
+together. `node --test test/applicationsMongo.test.js` tests this flow using a
+disposable local MongoDB and real HTTP cookie/CSRF requests.
 
 ## Public job build feed
 

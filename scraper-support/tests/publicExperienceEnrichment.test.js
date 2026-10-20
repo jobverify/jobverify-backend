@@ -1333,9 +1333,9 @@ test('enrichJobWithPublicExperience falls back to browser-rendered job text when
 test('enrichJobWithPublicExperience promotes detailed source-provided job descriptions to checked evidence without refetching', async () => {
   const job = {
     title: 'Broking - Territory Manager - East',
-    company: 'Kotak Securities',
-    applyUrl: 'https://kotaksecurities.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a6b1ed16e5ad',
-    sourceUrl: 'https://kotaksecurities.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a6b1ed16e5ad',
+    company: 'Example Securities',
+    applyUrl: 'https://example.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a6b1ed16e5ad',
+    sourceUrl: 'https://example.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a6b1ed16e5ad',
     experienceRequired: null,
     publicExperienceChecked: false,
     jobDescription: `

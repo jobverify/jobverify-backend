@@ -12,7 +12,7 @@ const sourcesRejectingGenericCountryFacet = [
   'epiqsystems', 'fox', 'hpinc', 'intel',
   'magnaautomotive', 'ncrvoyix', 'nissandigitalindia', 'nvidia',
   'q2ebanking', 'redhat', 'spgi',
-  'thoughtspot', 'weir', 'workday',
+  'thoughtspot', 'workday',
 ]
 
 test('known Workday tenants that reject the generic country facet start with India search text', () => {

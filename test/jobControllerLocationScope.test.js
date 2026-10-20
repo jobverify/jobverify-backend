@@ -823,6 +823,10 @@ test('getJobMeta applies the public location scope to metadata queries', async (
     return []
   }
   Job.aggregate = createAggregateExecStub(async (pipeline) => {
+    if (JSON.stringify(pipeline[1]?.$group?._id).includes('$workArrangement')) {
+      capturedFilters.set('workArrangement', pipeline[0].$match)
+      return []
+    }
     capturedCompanyPipeline = pipeline
     return []
   })
@@ -870,7 +874,6 @@ test('getJobMeta applies the public location scope to metadata queries', async (
     const expectedWorkArrangementFilter = {
       status: 'active',
       companyKey: 'example corp',
-      workArrangement: { $ne: null },
     }
 
     if (capturedCompanyPipeline) {

@@ -48,7 +48,7 @@ const careersHtml = `
         <h2>Grow your career with us</h2>
         <p>If you are looking to grow your career while shaping a better digital world, we want to hear from you.</p>
         <p>For job enquiries and applications, please write to us below.</p>
-        <p>STT Global Data Centres India Private Limited C/o Tata Communications Ltd., Tower B, 5th Floor, Plot No. C 21 &amp; C36, G Block, Bandra Kurla Complex, Vidyanagari Post, Bandra East, Mumbai - 400098</p>
+        <p>STT Global Data Centres India Private Limited Tower B, 5th Floor, Plot No. C 21 &amp; C36, G Block, Bandra Kurla Complex, Vidyanagari Post, Bandra East, Mumbai - 400098</p>
         <p>careers@sttelemediagdc.in</p>
         <p>contact@sttelemediagdc.in (HQ): +91-22-68192192</p>
         <p>Services</p>

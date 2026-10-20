@@ -1,3 +1,4 @@
+import { mapJobsWithInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -136,7 +137,7 @@ export const createLendingkartScraper = ({
     const jobs = await darwinboxScraper.run(darwinboxOptions)
     const scrapedAt = now()
 
-    return jobs.map((job) => ({ ...job, scrapedAt }))
+    return mapJobsWithInventoryEvidence(jobs, (job) => ({ ...job, scrapedAt }))
   },
 })
 

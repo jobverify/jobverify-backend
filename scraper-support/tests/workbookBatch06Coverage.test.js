@@ -26,7 +26,7 @@ test('workbook batch 06 companies all resolve to providers', () => {
   })
 
   assert.equal(manifest.batch, '06')
-  assert.equal(manifest.companies.length, 35)
+  assert.equal(manifest.companies.length, 33)
   assert.equal(report.matchedCount, manifest.companies.length)
   assert.equal(report.unmatchedCount, 0)
   assert.deepEqual(report.unmatched, [])

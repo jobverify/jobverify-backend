@@ -4,6 +4,7 @@
  */
 
 import Job from "../models/Job.js";
+import TailoredResume from '../models/TailoredResume.js';
 import Subscription from "../models/Subscription.js";
 import TelegramLinkToken from "../models/TelegramLinkToken.js";
 import User from "../models/User.js";
@@ -208,6 +209,10 @@ export const updateUserProfile = async (req, res) => {
     if (user) {
       // Update profile fields if provided
       if (req.body.name !== undefined) user.profile.name = normalizeProfileText(req.body.name);
+      for (const field of ['aboutYou', 'experienceProjects']) {
+        if (req.body[field] !== undefined) user.profile[field] = String(req.body[field]).trim().slice(0, 4000);
+      }
+      if (req.body.portfolioUrl !== undefined) user.profile.portfolioUrl = String(req.body.portfolioUrl).trim().slice(0, 2048);
       if (req.body.graduateEducation !== undefined) user.profile.graduateEducation = normalizeProfileText(req.body.graduateEducation);
       if (req.body.branch !== undefined) user.profile.branch = normalizeProfileText(req.body.branch);
       if (req.body.passingYear !== undefined) {
@@ -409,6 +414,13 @@ export const removeSavedJob = async (req, res) => {
     const nextSavedJobs = (user.savedJobs ?? []).filter(
       (savedJobId) => String(savedJobId) !== jobId,
     );
+
+    // Invalidate before removing membership so a remove/re-save race cannot
+    // revive a queued request or let an old worker publish its result.
+    await TailoredResume.updateMany({ user: user._id, job: jobId, status: { $in: ['queued', 'running'] } }, {
+      $set: { status: 'failed', ready: false, error: 'This job was removed from saved jobs. Save it again to generate a new resume.' },
+      $inc: { revision: 1 }, $unset: { leaseOwner: 1, leaseUntil: 1 },
+    });
 
     if (nextSavedJobs.length !== user.savedJobs.length) {
       await User.updateOne({ _id: user._id }, { $pull: { savedJobs: jobId } });

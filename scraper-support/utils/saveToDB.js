@@ -376,7 +376,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
           seniority: normalizedJob.seniority || 'Unknown',
           primaryRoleDomain: normalizedJob.primaryRoleDomain || 'Other',
           secondaryRoleDomains: normalizedJob.secondaryRoleDomains || [],
-          workArrangement: normalizedJob.workArrangement || 'Not specified',
+          workArrangement: normalizedJob.workArrangement || 'On-site',
           skillIds: normalizedJob.skillIds || [],
           requiredSkillIds: normalizedJob.requiredSkillIds || [],
           preferredSkillIds: normalizedJob.preferredSkillIds || [],

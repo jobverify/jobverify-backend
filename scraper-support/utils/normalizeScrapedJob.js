@@ -1,4 +1,5 @@
 import { withSourceDescription } from '../../src/utils/jobSourceContent.js';
+import { normalizePublicJobType } from '../../src/utils/publicJobTypeLabel.js';
 import { extractJobFilterSignals, hasEntryLevelCue } from '../../src/utils/jobFilterSignals.js'
 import { applyClassification, getAuthoritativeClassification } from '../../src/services/jobClassificationPolicy.js'
 import { resolveJobPostedAt } from '../../src/utils/jobLifecycle.js'
@@ -133,7 +134,6 @@ const SKILL_NAME_FILTER_SOURCES = new Set([
   'cloudthat',
   'cognida',
   'epaylater',
-  'gocomet',
   'hiveminds',
   'impactanalytics',
   'isocrates',
@@ -142,7 +142,6 @@ const SKILL_NAME_FILTER_SOURCES = new Set([
   'rapteehv',
   'relanto',
   'sisainformationsecurity',
-  'solarsquare',
   'surveysparrow',
   'unboxrobotics',
 ])
@@ -257,8 +256,6 @@ const hasTrustedPublicExperienceSurface = (job = {}, provider = {}) => {
       return /^https:\/\/nurture\.skillate\.com(?:\/|$)/i.test(sourceUrl)
     case 'nxtwave':
       return /^https:\/\/nxtwave\.freshteam\.com\/jobs\//i.test(sourceUrl)
-    case 'paytm':
-      return /^https:\/\/jobs\.lever\.co\/paytm\//i.test(sourceUrl)
     case 'plumhq':
       return /^https:\/\/careers\.kula\.ai\/plumhq(?:\/|$)/i.test(sourceUrl)
     default:
@@ -329,8 +326,8 @@ const inferEmploymentType = (job = {}) => {
   if (job.jobType === 'Full-time Fresher' || job.jobType === 'Full-time Experienced') {
     return 'Full-time'
   }
-  if (job.jobType === 'Internship' || job.jobType === 'Contract') {
-    return job.jobType
+  if (job.jobType === 'Intern' || job.jobType === 'Internship' || job.jobType === 'Contract') {
+    return job.jobType === 'Intern' ? 'Internship' : job.jobType
   }
   if (isPartTimeLabel(job.jobType)) return null
 
@@ -683,11 +680,6 @@ const SOURCE_ENGINEERING_DOMAIN_RULES = [
     value: 'Software Engineering',
   },
   {
-    sources: new Set(['coforge']),
-    pattern: /\b(duck creek|billing architect)\b/i,
-    value: 'Software Engineering',
-  },
-  {
     sources: new Set(['criamosengineeringpvtltd']),
     pattern: /\b(design engineer|tire|rubber|special purpose machines|material handling)\b/i,
     value: 'Mechanical',
@@ -756,16 +748,6 @@ const SOURCE_ENGINEERING_DOMAIN_RULES = [
     sources: new Set(['borgwarner']),
     pattern: /\b(functional safety|electric motor|system architect|model based system)\b/i,
     value: 'EV',
-  },
-  {
-    sources: new Set(['continental']),
-    pattern: /\b(data engineering)\b/i,
-    value: 'Data Engineering',
-  },
-  {
-    sources: new Set(['continental']),
-    pattern: /\b(local it engineer|field service technician|digital solutions)\b/i,
-    value: 'Cloud',
   },
   {
     sources: new Set(['ey']),
@@ -908,11 +890,6 @@ const SOURCE_ENGINEERING_DOMAIN_RULES = [
     value: 'Machine Learning',
   },
   {
-    sources: new Set(['sanmarengineering']),
-    pattern: /\b(application engineer|product engineer)\b/i,
-    value: 'Mechanical',
-  },
-  {
     sources: new Set(['sap']),
     pattern: /\b(non-human identities|identity management|\bnhi\b)\b/i,
     value: 'Security',
@@ -1006,11 +983,6 @@ const SOURCE_ENGINEERING_DOMAIN_RULES = [
     sources: new Set(['valenta']),
     pattern: /\b(it administrator)\b/i,
     value: 'Cloud',
-  },
-  {
-    sources: new Set(['vehanttechnologies']),
-    pattern: /\b(cctv|access control|uvss|anpr|etd)\b/i,
-    value: 'Electrical',
   },
   {
     sources: new Set(['yamaha']),
@@ -1573,7 +1545,7 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
   }
   const finalExperienceLevel = inferExperienceLevel(finalJob)
 
-  return applyClassification({
+  const classifiedJob = applyClassification({
     ...finalJob,
     experienceLevel: finalExperienceLevel,
     jobType: resolveJobType({
@@ -1581,4 +1553,5 @@ export const normalizeScrapedJob = (job = {}, provider = {}) => {
       experienceLevel: finalExperienceLevel,
     }),
   })
+  return { ...classifiedJob, jobType: normalizePublicJobType(classifiedJob.jobType) }
 }

@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 
 import { composeAbortSignals, fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -124,7 +125,8 @@ const validateListingPayload = (payload, source, pageNumber, pageSize) => {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)
     || !Array.isArray(payload.data)
     || (payload.status != null && !['success', true, 200].includes(payload.status))
-    || (total != null && (!Number.isInteger(total) || total < 0))
+    || (total != null && (!Number.isSafeInteger(total) || total < 0
+      || !['string', 'number'].includes(typeof payload.job_counts) || String(payload.job_counts).trim() === ''))
     || (payload.data.length === 0 && total > (pageNumber - 1) * pageSize)
     || payload.data.some((record) => !record || !normalizeWhitespace(record.id)
       || !normalizeWhitespace(record.title) || (!normalizeWhitespace(record.locations) && !normalizeWhitespace(record.country))
@@ -302,6 +304,22 @@ export const createDarwinboxScraper = ({
     signal?.throwIfAborted()
     const jobs = []
     let pageNumber = 1
+    let pagesFetched = 0
+    let reportedTotal = null
+    let exhausted = false
+    let duplicateRecords = false
+    const recordIds = new Set()
+    const finish = () => {
+      const complete = exhausted && !duplicateRecords && (recordIds.size > 0 || reportedTotal === 0)
+        && (reportedTotal == null || recordIds.size === reportedTotal)
+      if (!complete) for (const job of jobs) job.sourceListingComplete = false
+      return attachInventoryEvidence(jobs, {
+        status: complete ? recordIds.size === 0 ? 'verified-empty' : 'complete-inventory' : 'discovery-only',
+        surface: buildListingApiUrl(companyId), firstParty: true, listingComplete: complete,
+        pagesFetched, reportedTotal, indiaFacetCount: jobs.length, verifiedAt: new Date().toISOString(),
+        reason: complete ? 'darwinbox-complete-public-pagination' : 'darwinbox-incomplete-or-limited-pagination',
+      })
+    }
 
     while (pageNumber <= maxPages) {
       signal?.throwIfAborted()
@@ -319,6 +337,17 @@ export const createDarwinboxScraper = ({
       }
 
       validateListingPayload(payload, source, pageNumber, pageSize)
+      pagesFetched += 1
+      if (payload.job_counts != null) {
+        const nextTotal = Number(payload.job_counts)
+        if (reportedTotal != null && nextTotal !== reportedTotal) duplicateRecords = true
+        reportedTotal = nextTotal
+      }
+      for (const record of payload.data) {
+        const id = normalizeWhitespace(record.id)
+        if (recordIds.has(id)) duplicateRecords = true
+        recordIds.add(id)
+      }
       const results = extractSearchResults(payload)
 
       for (const job of results) {
@@ -330,7 +359,7 @@ export const createDarwinboxScraper = ({
         })
 
         if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
+          return finish()
         }
       }
 
@@ -339,11 +368,11 @@ export const createDarwinboxScraper = ({
         ? pageNumber * pageSize < totalJobCount
         : Array.isArray(payload?.data) && payload.data.length === pageSize
 
-      if (!hasMore) break
+      if (!hasMore) { exhausted = true; break }
       pageNumber += 1
     }
 
-    return jobs
+    return finish()
   }
 
   return {

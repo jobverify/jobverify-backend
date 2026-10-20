@@ -779,66 +779,6 @@
     }
   },
   {
-    "source": "matterev",
-    "companyName": "Matter EV",
-    "companyCareerPage": "https://www.matter.in/careers",
-    "countryFilter": "India",
-    "atsPlatform": "official-company-careers",
-    "paginationStrategy": "single-page",
-    "extractionStrategy": "api",
-    "parser": "api-portal",
-    "normalizationProfile": "engineering-default",
-    "config": {
-      "discovery": {
-        "careerPageUrl": "https://www.matter.in/careers",
-        "listingApiUrl": "https://matter-backend-integration-service.azurewebsites.net/api/getJobs"
-      },
-      "request": {
-        "method": "GET",
-        "headers": {
-          "Content-Type": "application/json",
-          "x-functions-key": "h1MQWjCB_Nitd4ox2hdQgrQ_brKqzPDp4YsjJPis0vRlAzFu4LCjxg=="
-        }
-      },
-      "pagination": {
-        "strategy": "single-page",
-        "resultsPath": "data"
-      },
-      "mapping": {
-        "title": "job_title",
-        "location": "location",
-        "jobId": "job_id",
-        "requisitionId": "job_id",
-        "sourceUrl": {
-          "strategy": "template",
-          "template": "https://www.matter.in/careers?job={{jobId}}",
-          "values": {
-            "jobId": "job_id"
-          }
-        },
-        "applyUrl": {
-          "strategy": "template",
-          "template": "https://www.matter.in/careers?apply={{jobId}}",
-          "values": {
-            "jobId": "job_id"
-          }
-        },
-        "department": "functional_name",
-        "employmentType": {
-          "path": "type",
-          "valueMap": {
-            "full-time": "Full-time",
-            "part-time": "Part-time",
-            "contract": "Contract",
-            "internship": "Internship"
-          }
-        },
-        "jobDescription": "description",
-        "postingDate": "updated_at"
-      }
-    }
-  },
-  {
     "source": "meesho",
     "companyName": "Meesho",
     "companyCareerPage": "https://www.meesho.io/jobs",

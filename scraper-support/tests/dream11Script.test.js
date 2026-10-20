@@ -34,7 +34,7 @@ const currentHomepageHtml = `
       <div tabindex="0" role="link"><p>About</p></div>
       <div tabindex="0" role="link"><p>Careers</p></div>
       <div tabindex="0" role="link"><p>Helpdesk</p></div>
-      <div>Sporta Technologies Private Limited. 7th Floor, Ascent, Sudam Kalu Ahire Marg, Opposite GSK, Worli, Mumbai Maharashtra 400030</div>
+      <div>Sporta Technologies Private Limited. 7th Floor, Ascent, Sudam Kalu Ahire Marg, Worli, Mumbai Maharashtra 400030</div>
       <p>India's Biggest Fantasy Sports Platform: Play for Free. Win Big.</p>
     </footer>
   </body>

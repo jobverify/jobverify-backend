@@ -13,6 +13,9 @@ import PlanPurchase from "../src/models/PlanPurchase.js";
 import AccessEvent from "../src/models/AccessEvent.js";
 import TelegramLinkToken from "../src/models/TelegramLinkToken.js";
 import UserSuggestion from "../src/models/UserSuggestion.js";
+import Application from '../src/models/Application.js';
+import Resume from '../src/models/Resume.js';
+import { mockOutreachDeletion } from './helpers/outreachDeletionDoubles.js';
 import AdminAudit from "../src/models/AdminAudit.js";
 import SiteSettings from "../src/models/SiteSettings.js";
 import BlacklistedToken from "../src/models/BlacklistedToken.js";
@@ -36,8 +39,9 @@ const responseDouble = () => ({
 });
 
 const setupCleanup = (t) => {
+  mockOutreachDeletion(t);
   const removals = [];
-  for (const Model of [Subscription, Click, JobAlertDelivery, PlanPurchase, AccessEvent, TelegramLinkToken, UserSuggestion, PendingUser, AdminAudit]) {
+  for (const Model of [Subscription, Click, JobAlertDelivery, PlanPurchase, AccessEvent, TelegramLinkToken, UserSuggestion, Application, Resume, PendingUser, AdminAudit]) {
     t.mock.method(Model, "deleteMany", async (filter) => {
       removals.push([Model.modelName, filter]);
       return { deletedCount: 1 };
@@ -51,6 +55,7 @@ const setupCleanup = (t) => {
     return { deletedCount: 1 };
   });
   t.mock.method(User, "updateOne", async (filter, update) => {
+    if (update.$set?.outreachDeletingAt) return { matchedCount: 1 };
     removals.push(["UserAccess", filter, update]);
     return { matchedCount: 1 };
   });
@@ -76,6 +81,8 @@ test("admin deletion removes every account-linked collection without clearing th
     ["AccessEvent", { user: memberId }],
     ["TelegramLinkToken", { user: memberId }],
     ["UserSuggestion", { user: memberId }],
+    ['Application', { user: memberId }],
+    ['Resume', { user: memberId }],
     ["PendingUser", { email }],
     ["AdminAudit", { $or: [{ admin: memberId }, { targetType: "User", targetId: memberId }] }],
     ["SiteSettings", { updatedBy: memberId }, { $unset: { updatedBy: "" } }],

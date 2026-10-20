@@ -248,6 +248,7 @@ export const generateCompanyCoverageReport = ({
 
   return {
     totalRows: rows.length,
+    coverageLabel: 'Catalog registration coverage',
     candidateRows: matched.length + unmatched.length,
     matchedCount: matched.length,
     unmatchedCount: unmatched.length,
