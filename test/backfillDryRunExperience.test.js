@@ -11,7 +11,7 @@ import {
 } from '../scripts/backfillDryRunExperience.js'
 
 test('buildRequestedSourceDirectoryNames resolves logical source ids to dry-run directory names', () => {
-  const requestedSources = new Set(['thales', 'abb', 'jlltechnologies'])
+  const requestedSources = new Set(['thales', 'abb', 'airbus'])
   const scrapers = [
     {
       name: 'thales',
@@ -22,8 +22,8 @@ test('buildRequestedSourceDirectoryNames resolves logical source ids to dry-run 
       dryRunFile: 'C:/repo/jobverify-backend/scraper/abb.workday/jobs.json',
     },
     {
-      name: 'jlltechnologies',
-      dryRunFile: 'C:/repo/jobverify-backend/scraper/jlltechnologies.workday/jobs.json',
+      name: 'airbus',
+      dryRunFile: 'C:/repo/jobverify-backend/scraper/airbus.workday/jobs.json',
     },
   ]
 
@@ -32,8 +32,8 @@ test('buildRequestedSourceDirectoryNames resolves logical source ids to dry-run 
   assert.deepEqual(resolved, [
     'abb',
     'abb.workday',
-    'jlltechnologies',
-    'jlltechnologies.workday',
+    'airbus',
+    'airbus.workday',
     'thales',
     'thales.workday',
   ])

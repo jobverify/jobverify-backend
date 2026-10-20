@@ -97,15 +97,16 @@ export const rewriteFailureDetails = (error, phase) => ({
 });
 
 /** The caller supplies a Mongo update boundary; source/filter fields never enter these updates. */
-export const rewriteCandidates = async (jobs, { client, update, deadline, signal, onResult = () => {} } = {}) => {
-  const stats = { attempted: 0, published: 0, failed: 0, skipped: 0, staleSources: 0, concurrentChanges: 0, interrupted: false };
-  for await (const job of jobs) {
-    if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; break; }
+export const rewriteCandidates = async (jobs, { client, update, deadline, signal, concurrency = 1, onResult = () => {} } = {}) => {
+  if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 4) throw new Error('Rewrite concurrency must be between one and four');
+  const stats = { attempted: 0, published: 0, failed: 0, skipped: 0, staleSources: 0, concurrentChanges: 0, interrupted: false, peakConcurrency: 0 };
+  const processJob = async job => {
+    if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
     const input = buildRewriteInput(job);
     const filter = { _id: job._id, status: 'active', sourceContentHash: job.sourceContentHash,
       'descriptionRewrite.status': job.descriptionRewrite.status,
       'descriptionRewrite.attempts': job.descriptionRewrite.attempts ?? 0 };
-    if (!input.eligible || input.inputHash !== job.sourceContentHash || job.descriptionRewrite.inputHash !== input.inputHash) { stats.staleSources++; continue; }
+    if (!input.eligible || input.inputHash !== job.sourceContentHash || job.descriptionRewrite.inputHash !== input.inputHash) { stats.staleSources++; return; }
     const started = Date.now();
     const assessment = assessRewriteInput(input);
     if (assessment.ok) stats.attempted++;
@@ -114,11 +115,11 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
       if (!assessment.ok) result = assessment;
       else {
       response = await client.generate(input, { signal, remainingMs: deadline - started });
-      if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; break; }
+      if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
       result = response.value && Object.hasOwn(response.value, 'categories') ? validateFactPlan(response.value, input, response.finishReason) : validateRewrite(response.value, input, response.finishReason);
       }
     } catch (error) {
-      if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; break; }
+      if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
       result = { ok: false, reason: error.name === 'TimeoutError' ? 'timeout' : 'generation_error' };
     }
     const now = new Date(), durationMs = Date.now() - started;
@@ -136,6 +137,22 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
     else if (!assessment.ok || ['not_improved','already_structured','dense_source','uncertain_section_assignment'].includes(result.reason)) stats.skipped++;
     else stats.failed++;
     await onResult({ id: String(job._id), inputHash: input.inputHash, ok: result.ok, reason: result.reason, durationMs, wordCount: result.wordCount, generated: assessment.ok, modelPlanCached: response?.cachedModelPlan || false, quality: result.quality, usage: response?.usage, timings: response?.timings });
-  }
+  };
+  const pending = new Set();
+  let failure;
+  try {
+    // One producer owns the cursor; only generation and guarded updates overlap.
+    for await (const job of jobs) {
+      if (failure) break;
+      if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; break; }
+      const task = processJob(job).catch(error => { failure ??= error; }).finally(() => pending.delete(task));
+      pending.add(task);
+      stats.peakConcurrency = Math.max(stats.peakConcurrency, pending.size);
+      if (pending.size >= concurrency) await Promise.race(pending);
+    }
+  } catch (error) { failure ??= error; }
+  // Always finish scheduled work before callers close the cursor, model, or database.
+  await Promise.all(pending);
+  if (failure) throw failure;
   return stats;
 };

@@ -105,7 +105,12 @@ export function createApp({ isReady = () => mongoose.connection.readyState === 1
   }));
   app.use(express.urlencoded({ extended: true, limit: "32kb" }));
 
-  app.use("/api", requireJsonMutation);
+  app.use('/api', (req, res, next) => {
+    // Only this authenticated file endpoint accepts binary mutations. CSRF and
+    // API rate limits below still run before its bounded, route-local parser.
+    if (req.method === 'PUT' && req.path === '/user/resume' && req.is('application/octet-stream')) return next();
+    return requireJsonMutation(req, res, next);
+  });
   app.use(
     "/api",
     createCsrfProtection({

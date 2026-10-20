@@ -122,6 +122,7 @@ test('Lakshmi Machine Works scraper validates the verified public surface and re
     source: 'lakshmimachineworks',
     link: 'https://lmwanubhav.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a6a509b0e3af75',
     scrapedAt: '2026-07-11T00:00:00.000Z',
+    sourceListingComplete: false,
   })
 })
 

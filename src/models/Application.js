@@ -1,0 +1,25 @@
+import { Schema, model } from 'mongoose';
+
+// History is independent of the live job inventory. Keep a small snapshot when
+// listings expire or a source is removed, rather than losing the user's record.
+const applicationSchema = new Schema({
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true, immutable: true },
+  job: { type: Schema.Types.ObjectId, ref: 'Job', required: true, immutable: true },
+  jobSnapshot: {
+    title: { type: String, required: true, maxlength: 1000 },
+    company: { type: String, required: true, maxlength: 500 },
+    location: { type: String, maxlength: 2000, default: '' },
+    jobType: { type: String, maxlength: 100, default: '' },
+    applicationUrl: { type: String, maxlength: 8192, default: '' },
+  },
+  status: { type: String, enum: ['opened', 'applied'], default: 'opened', required: true },
+  firstOpenedAt: { type: Date, default: Date.now, immutable: true },
+  lastOpenedAt: { type: Date, default: Date.now },
+  appliedAt: { type: Date, default: null },
+}, { timestamps: true });
+
+applicationSchema.index({ user: 1, job: 1 }, { unique: true });
+applicationSchema.index({ user: 1, firstOpenedAt: -1, _id: -1 });
+applicationSchema.index({ user: 1, status: 1, firstOpenedAt: -1, _id: -1 });
+
+export default model('Application', applicationSchema);

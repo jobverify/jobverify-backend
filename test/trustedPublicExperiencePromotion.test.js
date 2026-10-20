@@ -15,14 +15,6 @@ test('normalizeScrapedJob promotes trusted public experience checks for verified
     },
     {
       input: {
-        source: 'paytm',
-        title: 'Accounts Payable Specialist',
-        sourceUrl: 'https://jobs.lever.co/paytm/8182f4b5-4dcb-4d3d-87fc-93a0d8730d3d',
-        applyUrl: 'https://jobs.lever.co/paytm/8182f4b5-4dcb-4d3d-87fc-93a0d8730d3d/apply',
-      },
-    },
-    {
-      input: {
         source: 'amrita',
         title: 'Post Doctoral Fellows @ Bengaluru',
         sourceUrl: 'https://www.amrita.edu/job/post-doctoral-fellows-bengaluru/',

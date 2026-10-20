@@ -2,6 +2,7 @@
 // experiencedJobVisibility.test.js aligned when response normalization changes.
 // Native expressions let Mongo filter BEFORE pagination and counting.
 import { JOB_CLASSIFICATION_POLICY_VERSION } from './jobClassificationVersion.js';
+import { PUBLIC_JOB_TYPES } from './publicJobTypeLabel.js';
 const str = input => ({ $convert: { input, to: 'string', onError: '', onNull: '' } });
 const text = field => ({ $trim: { input: str('$' + field) } });
 // Match JavaScript whitespace (including NBSP) explicitly; PCRE \s is narrower.
@@ -134,10 +135,14 @@ const LEGACY_PUBLIC_JOB_TYPE_EXPRESSION = bind({
 
 // Most imported records already have a canonical employment type and level.
 // Avoid parsing long descriptions and experience text for those proven cases.
-export const PUBLIC_JOB_TYPE_EXPRESSION = bind({ type: { $toLower: text('jobType') } }, choose([
+const RESOLVED_PUBLIC_JOB_TYPE_EXPRESSION = bind({ type: { $toLower: text('jobType') } }, choose([
   [and(eq('$classification.authoritative', true), { $in: ['$classification.mode', ['enforce', 'policy']] }, eq('$classification.policyVersion', JOB_CLASSIFICATION_POLICY_VERSION),
     { $in: ['$classification.status', ['accepted', 'uncertain', 'fallback']] },
     { $in: ['$classification.resolved.jobType', ['Intern', 'Full-time Fresher', 'Full-time Experienced', 'Contract', 'Others', 'Unspecified']] }), '$classification.resolved.jobType'],
   [eq('$$type', 'contract'), 'Contract'], [eq('$$type', 'others'), 'Others'],
   [and(eq('$employmentType', 'Full-time'), { $in: ['$experienceLevel', ['Junior Level', 'Mid Level', 'Senior Level']] }), 'Full-time Experienced'],
 ], LEGACY_PUBLIC_JOB_TYPE_EXPRESSION));
+
+export const PUBLIC_JOB_TYPE_EXPRESSION = bind({ publicType: RESOLVED_PUBLIC_JOB_TYPE_EXPRESSION }, choose([
+  [{ $in: ['$$publicType', PUBLIC_JOB_TYPES] }, '$$publicType'],
+], 'Full-time Experienced'));

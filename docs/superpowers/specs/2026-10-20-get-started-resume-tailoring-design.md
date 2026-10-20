@@ -26,7 +26,7 @@ This workspace contains separate frontend and backend Git repositories, both wit
 - `src/pages/Profile/ProfilePreferenceFiltersCard.jsx` already provides the eight preference fields. `saveProfile` sends partial updates to `PUT /api/user/profile`, and the backend stores `profile.profilePreferenceFilters` on the MongoDB User document.
 - The jobs Redux slice already applies saved preferences when `quickMode` changes to `profile`, including resetting pagination and reflecting the selections in the visible filter controls.
 - Saved jobs already use authenticated MongoDB-backed endpoints and appear in `SavedJobsPage.jsx`.
-- `ResumeCard.jsx`, the resume Redux slice, and `/api/user/resume` already support private upload, download, replacement, and removal. One original resume per user is stored in a separate MongoDB document, with a 5 MB upload limit. Supported upload formats are PDF, DOC, DOCX, and LaTeX.
+- `ResumeCard.jsx`, the resume Redux slice, and `/api/user/resume` already support private upload, download, replacement, and removal. One original resume per user is stored in a separate MongoDB document, with a 500 KB upload limit. Supported upload formats are PDF, DOC, DOCX, and LaTeX.
 - `outreach/runner.js` and `outreach-drafts.yml` already run a pinned local language model in GitHub Actions. Existing dispatch, usage limits, leases, account-deletion checks, and recovery provide patterns for asynchronous generation.
 
 ## Approach

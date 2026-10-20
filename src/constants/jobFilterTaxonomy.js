@@ -67,7 +67,6 @@ export const WORK_ARRANGEMENT_OPTIONS = Object.freeze([
   "Remote",
   "Hybrid",
   "On-site",
-  "Not specified",
 ]);
 
 export const DATE_POSTED_NA_VALUE = "na";

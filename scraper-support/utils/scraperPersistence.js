@@ -5,6 +5,7 @@
 
 import mongoose from "mongoose";
 import { DEFAULT_JOB_RETENTION_DAYS } from "../../src/utils/jobLifecycle.js";
+import { isFreshCompleteInventoryEvidence } from "./inventoryEvidence.js";
 
 // Lazy-load models to prevent circular dependency issues
 let ScraperStatus;
@@ -12,6 +13,23 @@ let ScraperRun;
 export const PIPELINE_SOURCE = "__pipeline__";
 const MONGO_MAP_DOT_ESCAPE = "\uFF0E";
 const MONGO_MAP_DOLLAR_ESCAPE = "\uFF04";
+
+const ATTEMPT_DIAGNOSTIC_FIELDS = [
+  "rawRecords", "filteredNonIndia", "filteredClosed", "filteredInvalidUrl",
+  "filteredEmptyDescription", "filteredNonJob", "zeroJobEvidence", "inventoryEvidence",
+  "attemptedAt", "completedAt", "staleCheckSkipped", "staleCheckReason",
+  "softFailure", "upstreamOutage", "failureKind",
+];
+
+const attemptDiagnostics = (result) => Object.fromEntries(
+  ATTEMPT_DIAGNOSTIC_FIELDS.map((field) => [field, result[field] ?? null]),
+);
+
+const isCompleteCheck = (result, now = new Date()) => {
+  if (result.success !== true || result.staleCheckSkipped === true || result.skipped === true) return false;
+  const evidence = result.inventoryEvidence;
+  return isFreshCompleteInventoryEvidence(evidence, { now: result.completedAt ?? now });
+};
 
 const PIPELINE_STATUS_DEFAULTS = {
   lastJobsFound: 0,
@@ -89,7 +107,8 @@ export const upsertScraperStatus = async (source, result) => {
     ? (() => {
         const jobsFound = result.jobs || 0;
         const eligibleJobsFound = result.eligibleJobs ?? jobsFound;
-        const isPartial = result.staleCheckSkipped === true;
+        const isPartial = result.staleCheckSkipped === true
+          || (result.inventoryEvidence != null && !isCompleteCheck(result, now));
         const set = {
           lastRanAt: now,
           lastSuccess: true,
@@ -149,6 +168,23 @@ export const upsertScraperStatus = async (source, result) => {
         },
       };
 
+  update.$set.latestAttempt = {
+    ...result,
+    recordedAt: now,
+    jobs: result.jobs ?? null,
+    eligibleJobs: result.eligibleJobs ?? null,
+    inserted: result.inserted ?? null,
+    updated: result.updated ?? null,
+    deleted: result.deleted ?? null,
+    filteredOld: result.filteredOld ?? null,
+    expired: result.expired ?? null,
+    missed: result.missed ?? null,
+    ...attemptDiagnostics(result),
+  };
+  if (isCompleteCheck(result, now)) {
+    update.$set.lastCompleteCheckAt = result.completedAt ? new Date(result.completedAt) : now;
+  }
+
   await ScraperStatusModel.findOneAndUpdate({ source }, update, {
     upsert: true,
     new: true,
@@ -167,9 +203,10 @@ export const writeScraperRun = async (ranAt, summary) => {
 
   for (const [sourceName, sourceSummary] of Object.entries(summary)) {
     sourcesMap[encodeScraperRunSourceKey(sourceName)] = {
+      ...attemptDiagnostics(sourceSummary),
       success: sourceSummary.success,
-      jobsFound: sourceSummary.jobs || 0,
-      eligibleJobsFound: sourceSummary.eligibleJobs ?? sourceSummary.jobs ?? 0,
+      jobsFound: sourceSummary.jobs ?? null,
+      eligibleJobsFound: sourceSummary.eligibleJobs ?? null,
       inserted: sourceSummary.inserted || 0,
       updated: sourceSummary.updated || 0,
       deleted: sourceSummary.deleted || 0,

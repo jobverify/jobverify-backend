@@ -284,7 +284,7 @@ test('isAuthoritativeEmptyScrape trusts only valid structured verified-empty evi
     pagesFetched: 1,
     reportedTotal: 0,
     indiaFacetCount: 0,
-    verifiedAt: '2026-09-13T00:00:00.000Z',
+    verifiedAt: new Date().toISOString(),
     reason: 'validated-test-empty',
   })
   const legacyEmpty = []
@@ -382,7 +382,7 @@ test('getZeroJobEvidence does not treat an ordinary empty array as a verified em
     pagesFetched: 1,
     reportedTotal: 0,
     indiaFacetCount: 0,
-    verifiedAt: '2026-09-13T00:00:00.000Z',
+    verifiedAt: new Date().toISOString(),
     reason: 'validated-test-empty',
   })
 

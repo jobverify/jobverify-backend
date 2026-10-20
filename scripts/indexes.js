@@ -22,6 +22,17 @@ const { default: JobDatasetSummary } = await import("../src/models/JobDatasetSum
 const { default: ScraperRun } = await import("../src/models/ScraperRun.js");
 const { default: UserSuggestion } = await import("../src/models/UserSuggestion.js");
 const { default: HiringObservation } = await import('../src/models/HiringObservation.js');
+const { default: Application } = await import('../src/models/Application.js');
+const { default: Resume } = await import('../src/models/Resume.js');
+const { default: TailoredResume } = await import('../src/models/TailoredResume.js');
+const { default: OutreachThread } = await import('../src/models/OutreachThread.js');
+const { default: OutreachTask } = await import('../src/models/OutreachTask.js');
+const { default: OutreachDiscoveryCache } = await import('../src/models/OutreachDiscoveryCache.js');
+const { default: OutreachEmailCache } = await import('../src/models/OutreachEmailCache.js');
+const { default: OutreachUsage } = await import('../src/models/OutreachUsage.js');
+const { default: GmailConnection } = await import('../src/models/GmailConnection.js');
+const { default: GmailOAuthState } = await import('../src/models/GmailOAuthState.js');
+const { default: Campaign } = await import('../src/models/Campaign.js');
 
 const MODELS = [
   ["Job", Job],
@@ -35,6 +46,17 @@ const MODELS = [
   ["ScraperRun", ScraperRun],
   ["UserSuggestion", UserSuggestion],
   ['HiringObservation', HiringObservation],
+  ['Application', Application],
+  ['Resume', Resume],
+  ['TailoredResume', TailoredResume],
+  ['OutreachThread', OutreachThread],
+  ['OutreachTask', OutreachTask],
+  ['OutreachDiscoveryCache', OutreachDiscoveryCache],
+  ['OutreachEmailCache', OutreachEmailCache],
+  ['OutreachUsage', OutreachUsage],
+  ['GmailConnection', GmailConnection],
+  ['GmailOAuthState', GmailOAuthState],
+  ['Campaign', Campaign],
 ];
 
 const formatIndex = (idx) => {

@@ -1,3 +1,4 @@
+import { mapJobsWithInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -97,7 +98,7 @@ export const createClearTaxScraper = ({
     })
     const scrapedAt = now()
 
-    return jobs.map((job) => ({
+    return mapJobsWithInventoryEvidence(jobs, (job) => ({
       ...job,
       scrapedAt,
     }))

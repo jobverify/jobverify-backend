@@ -9,6 +9,13 @@ import TelegramLinkToken from "../models/TelegramLinkToken.js";
 import UserSuggestion from "../models/UserSuggestion.js";
 import AdminAudit from "../models/AdminAudit.js";
 import SiteSettings from "../models/SiteSettings.js";
+import Application from '../models/Application.js';
+import Resume from '../models/Resume.js';
+import TailoredResume from '../models/TailoredResume.js';
+import OutreachThread from '../models/OutreachThread.js';
+import OutreachTask from '../models/OutreachTask.js';
+import OutreachUsage from '../models/OutreachUsage.js';
+import { cleanupUserCampaignData } from './campaignService.js';
 
 // Keep the account until cleanup succeeds, so a failed deletion can be retried.
 export const removeUserAccount = async (user) => {
@@ -16,7 +23,9 @@ export const removeUserAccount = async (user) => {
     throw new Error("User ID and email are required for account deletion");
   }
   const userId = user._id;
-  for (const Model of [Subscription, Click, JobAlertDelivery, PlanPurchase, AccessEvent, TelegramLinkToken, UserSuggestion]) {
+  await User.updateOne({ _id: userId }, { $set: { outreachDeletingAt: new Date() } });
+  await cleanupUserCampaignData(userId);
+  for (const Model of [Subscription, Click, JobAlertDelivery, PlanPurchase, AccessEvent, TelegramLinkToken, UserSuggestion, Application, Resume, TailoredResume, OutreachTask, OutreachThread, OutreachUsage]) {
     await Model.deleteMany({ user: userId });
   }
   await PendingUser.deleteMany({ email: user.email });

@@ -26,6 +26,10 @@
     "coverage:companies:regenerate": "node scripts/regenerateCompanyCoverageReport.js",
     "coverage:companies:sync": "node scripts/syncCompanyCoverageReportsFromScraper.js",
     "coverage:companies:catalog-topology": "node scripts/reportScriptCatalogTopology.js",
+    "coverage:publishing": "node scripts/analyzeCoverageJobGaps.js --publishing",
+    "coverage:publishing:snapshot": "node scripts/collectPublishingGapSnapshot.js",
+    "coverage:publishing:validate": "node scripts/validatePublishingGapPersistence.js",
+    "coverage:publishing:rollout": "node scripts/publishPublishingGapRepairs.js",
     "backfill:job-filters": "node scripts/backfillJobFilterSignals.js",
     "backfill:job-posted-at": "node scripts/backfillMissingPostedAt.js",
     "backfill:job-search-keys": "node scripts/backfillJobSearchKeys.js",
@@ -80,11 +84,13 @@
     "google-auth-library": "^11.0.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
+    "mammoth": "^1.13.0",
     "mongoose": "^8.24.4",
     "nodemailer": "^9.1.1",
     "pdfjs-dist": "^6.2.108",
     "razorpay": "^2.9.8",
-    "tesseract.js": "^7.0.0"
+    "tesseract.js": "^7.0.0",
+    "word-extractor": "^1.0.4"
   },
   "devDependencies": {
     "mongodb-memory-server": "^11.2.0",

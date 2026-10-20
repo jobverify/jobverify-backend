@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import { createReadStream, createWriteStream } from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { createHash, randomUUID } from 'node:crypto';
 import { spawn, execFile } from 'node:child_process';
@@ -64,12 +65,20 @@ export const prepareRewriteRuntime = async ({ directory = path.join(root, '.cach
   return { modelFile, binary };
 };
 
-export const startRewriteWorker = async ({ modelFile, binary, port = 8766, threads = REWRITE_MODEL.cpuThreads, deadline = Date.now() + 120000, signal, logFile = path.join(root, '.cache/scraper-actions/description-worker.log') }) => {
+export function rewriteWorkerConfiguration({ threads = REWRITE_MODEL.cpuThreads, parallelism = 1, availableCpus = os.availableParallelism() } = {}) {
+  if (![Number(threads), Number(parallelism), Number(availableCpus)].every(value => Number.isInteger(value) && value > 0)) throw new Error('Invalid rewrite parallelism or threads');
+  const cpus = Math.min(4, Number(availableCpus));
+  const slots = Math.min(cpus, Number(parallelism));
+  return { threads: Math.min(cpus, Number(threads)), parallelism: slots, contextTokens: REWRITE_MODEL.contextTokens * slots };
+}
+
+export const startRewriteWorker = async ({ modelFile, binary, port = 8766, threads = REWRITE_MODEL.cpuThreads, parallelism = 1, deadline = Date.now() + 120000, signal, logFile = path.join(root, '.cache/scraper-actions/description-worker.log') }) => {
+  const config = rewriteWorkerConfiguration({ threads, parallelism });
   const model = 'job-description-' + randomUUID();
   await fs.mkdir(path.dirname(logFile), { recursive: true });
   const log = await fs.open(logFile, 'w');
   const child = spawn(binary, ['-m', modelFile, '--host', '127.0.0.1', '--port', String(port),
-    '--alias', model, '-c', String(REWRITE_MODEL.contextTokens), '-np', '1', '-t', String(Math.max(1, Math.min(4, Number(threads) || REWRITE_MODEL.cpuThreads))),
+    '--alias', model, '-c', String(config.contextTokens), '-np', String(config.parallelism), '-t', String(config.threads), '-tb', String(config.threads),
     '-ngl', '0', '--jinja', '--no-context-shift', '--no-webui', '--log-disable'], { cwd: path.dirname(binary), windowsHide: true,
     env: { ...process.env, LD_LIBRARY_PATH: path.dirname(binary) + path.delimiter + (process.env.LD_LIBRARY_PATH || '') },
     stdio: ['ignore', log.fd, log.fd] });
@@ -90,7 +99,7 @@ export const startRewriteWorker = async ({ modelFile, binary, port = 8766, threa
       try {
         const response = await fetch(endpoint + '/v1/models', { signal: AbortSignal.timeout(1000) });
         const health = response.ok ? await response.json() : null;
-        if (health?.data?.some(row => row.id === model)) return { endpoint, model, pid: child.pid, stop };
+        if (health?.data?.some(row => row.id === model)) return { endpoint, model, pid: child.pid, stop, parallelism: config.parallelism };
       } catch { /* bounded readiness poll */ }
       await delay(200, undefined, { signal });
     }

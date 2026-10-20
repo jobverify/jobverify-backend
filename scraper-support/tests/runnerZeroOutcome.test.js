@@ -22,7 +22,7 @@ const attach = (jobs, status, overrides = {}) => attachInventoryEvidence(jobs, {
   pagesFetched: 1,
   reportedTotal: jobs.length,
   indiaFacetCount: 0,
-  verifiedAt: '2026-09-13T00:00:00.000Z',
+  verifiedAt: new Date().toISOString(),
   reason: 'runner-zero-outcome-test',
   ...overrides,
 })
@@ -51,16 +51,16 @@ test('valid first-party verified-empty evidence authorizes a verified zero', () 
   assert.equal(resolveZeroJobOutcome({ provider: {} }, jobs, []), 'verified-empty')
 })
 
-test('generated verified-empty workbook scrapers attach authoritative zero evidence', async () => {
+test('generated workbook zero snapshots cannot authorize a current empty inventory', async () => {
   const provider = hydrateProviderCatalogEntry(adpushupProviderMetadata)
   const jobs = decorateJobsWithProviderMetadata(await runAdpushup(), provider)
 
   assert.deepEqual(jobs, [])
-  assert.equal(readInventoryEvidence(jobs)?.status, 'verified-empty')
-  assert.equal(resolveZeroJobOutcome({ provider }, jobs, []), 'verified-empty')
+  assert.equal(readInventoryEvidence(jobs)?.status, 'unverified')
+  assert.equal(resolveZeroJobOutcome({ provider }, jobs, []), 'coverage-gap')
 })
 
-test('verified no-current-openings providers attach authoritative zero evidence', () => {
+test('historical no-current-openings notes attach unverified zero evidence', () => {
   const provider = hydrateProviderCatalogEntry({
     source: 'official-empty-source',
     companyName: 'Official Empty Source',
@@ -75,8 +75,8 @@ test('verified no-current-openings providers attach authoritative zero evidence'
   })
   const jobs = decorateJobsWithProviderMetadata([], provider)
 
-  assert.equal(readInventoryEvidence(jobs)?.status, 'verified-empty')
-  assert.equal(resolveZeroJobOutcome({ provider }, jobs, []), 'verified-empty')
+  assert.equal(readInventoryEvidence(jobs)?.status, 'unverified')
+  assert.equal(resolveZeroJobOutcome({ provider }, jobs, []), 'coverage-gap')
 })
 
 test('verified no-enumerable-listings providers attach discovery-only zero evidence', () => {

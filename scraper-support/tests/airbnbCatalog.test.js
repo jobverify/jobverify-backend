@@ -59,7 +59,9 @@ test('buildScrapers and company coverage resolve Airbnb from the shared catalog'
   assert.ok(provider)
   assert.ok(scraper)
   assert.equal(provider.companyName, 'Airbnb')
-  assert.equal(provider.companyCareerPage, 'https://careers.airbnb.com/positions/')
+  assert.match(provider.companyCareerPage, /^https:\/\/careers\.airbnb\.com\/positions\//)
+  assert.equal(provider.atsPlatform, 'greenhouse')
+  assert.equal(provider.bindingEvidence.verified, true)
   assert.match(scraper.dryRunFile, /airbnb[\\/]jobs\.json$/i)
 
   const report = generateCompanyCoverageReport({

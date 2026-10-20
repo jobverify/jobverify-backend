@@ -14,6 +14,7 @@ import {
 } from "../constants/jobFilterTaxonomy.js";
 import { normalizeJobSearchKey } from "../utils/jobSearchKeys.js";
 import { normalizeProfilePreferenceFilters } from "../utils/profilePreferenceFilters.js";
+import { PUBLIC_WORK_ARRANGEMENT_EXPRESSION, normalizePublicWorkArrangement } from '../utils/publicWorkArrangement.js';
 
 const MAX_REGEX_FILTER_LENGTH = 80;
 const MAX_TEXT_QUERY_LENGTH = 200;
@@ -158,6 +159,10 @@ export const buildJobFilterConditions = (queryParams = {}, { includeExperienceYe
   }
   for (const [value, field, options] of [[experienceBucket, "experienceBucket", EXPERIENCE_BUCKET_VALUES], [roleDomain, "primaryRoleDomain", ROLE_DOMAIN_OPTIONS], [workArrangement, "workArrangement", WORK_ARRANGEMENT_OPTIONS]]) {
     const values = normalizeOptionValues(value, options);
+    if (field === 'workArrangement') {
+      if (values.length) appendFilterConstraint(filters, { $expr: { $in: [PUBLIC_WORK_ARRANGEMENT_EXPRESSION, values] } });
+      continue;
+    }
     if (values.length === 1) filters[field] = values[0];
     if (values.length > 1) filters[field] = { $in: values };
   }
@@ -204,7 +209,7 @@ export const jobMatchesSavedFilters = ({ job, filters, userProfile = {}, now = n
     && (normalized.location.length === 0 || normalized.location.some((value) => location.includes(String(value).toLowerCase())))
     && experienceMatches
     && (normalized.roleDomain.length === 0 || normalized.roleDomain.includes(job.primaryRoleDomain))
-    && (normalized.workArrangement.length === 0 || normalized.workArrangement.includes(job.workArrangement))
+    && (normalized.workArrangement.length === 0 || normalized.workArrangement.includes(normalizePublicWorkArrangement(job.workArrangement)))
     && (normalized.datePostedDays.length === 0 || normalized.datePostedDays.some((value) => (
       value === DATE_POSTED_NA_VALUE
         ? !job.postedAt

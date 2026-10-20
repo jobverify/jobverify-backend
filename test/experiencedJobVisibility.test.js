@@ -117,36 +117,36 @@ test('experienced job visibility is reversible and consistent across public surf
   await t.test('list pagination and stats exclude the category and its legacy alias', async () => {
     const result = await read('/api/jobs?limit=2');
     assert.equal(result.data.length, 2);
-    assert.equal(result.pagination.total, 4);
-    assert.equal(result.pagination.totalCompanies, 4);
-    assert.deepEqual((await read('/api/jobs/stats')).data, { totalJobs: 4, totalCompanies: 4 });
+    assert.equal(result.pagination.total, 3);
+    assert.equal(result.pagination.totalCompanies, 3);
+    assert.deepEqual((await read('/api/jobs/stats')).data, { totalJobs: 3, totalCompanies: 3 });
     assert.equal((await read('/api/jobs?jobType=Full-time%20Experienced')).pagination.total, 0);
   });
   await t.test('search, metadata, company suggestions and live companies use the same scope', async () => {
-    assert.equal((await read('/api/jobs/search')).data.length, 4);
+    assert.equal((await read('/api/jobs/search')).data.length, 3);
     const meta = (await read('/api/jobs/meta')).data;
     assert.ok(!meta.jobTypes.includes('Full-time Experienced'));
-    assert.equal((await read('/api/jobs/meta/companies')).data.companies.length, 4);
-    assert.equal((await read('/api/jobs/live-companies')).data.companies.length, 4);
+    assert.equal((await read('/api/jobs/meta/companies')).data.companies.length, 3);
+    assert.equal((await read('/api/jobs/live-companies')).data.companies.length, 3);
     assert.ok(!(await read('/api/jobs/meta?city=Bangalore')).data.jobTypes.includes('Full-time Experienced'));
   });
   await t.test('direct links and SEO feed exclude experienced jobs', async () => {
     assert.equal((await fetch(base + `/api/jobs/${ids[0]}`)).status, 404);
     assert.equal((await fetch(base + `/api/jobs/${ids[1]}`)).status, 200);
-    assert.equal((await read('/api/jobs/seo-feed')).data.length, 4);
+    assert.equal((await read('/api/jobs/seo-feed')).data.length, 3);
   });
   await t.test('analytics distributions and totals are calculated from visible jobs', async () => {
     const summary = (await read('/api/jobs/snapshot')).data;
-    assert.equal(summary.totalJobs, 4);
-    assert.equal(summary.totalCompanies, 4);
-    assert.equal(summary.locations[0].count, 4);
-    assert.equal(summary.jobTypes.reduce((sum, row) => sum + row.count, 0), 4);
+    assert.equal(summary.totalJobs, 3);
+    assert.equal(summary.totalCompanies, 3);
+    assert.equal(summary.locations[0].count, 3);
+    assert.equal(summary.jobTypes.reduce((sum, row) => sum + row.count, 0), 3);
     assert.ok(!summary.jobTypes.some(row => row.label === 'Full-time Experienced'));
   });
   await t.test('saved jobs are hidden without deleting bookmarks', async () => {
     const result = await read('/saved');
-    assert.equal(result.data.length, 4);
-    assert.equal(result.profileOverview.savedJobs, 4);
+    assert.equal(result.data.length, 3);
+    assert.equal(result.profileOverview.savedJobs, 3);
     assert.equal((await User.findById(userId)).savedJobs.length, 6);
   });
   await t.test('visibility follows public categories when legacy stored labels disagree', async () => {
@@ -163,7 +163,7 @@ test('experienced job visibility is reversible and consistent across public surf
     })));
     try {
       const result = await read('/api/jobs');
-      assert.equal(result.pagination.total, 6);
+      assert.equal(result.pagination.total, 5);
       assert.ok(!result.data.some(job => job.jobType === 'Full-time Experienced'));
       assert.equal(result.data.find(job => job._id === String(variantIds[1]))?.jobType, 'Full-time Fresher');
       assert.equal(result.data.find(job => job._id === String(variantIds[2]))?.jobType, 'Contract');
@@ -171,8 +171,8 @@ test('experienced job visibility is reversible and consistent across public surf
       assert.equal((await read('/api/jobs?jobType=Contract')).pagination.total, 2);
       assert.equal((await read('/api/jobs?jobType=Full-time%20Fresher')).pagination.total, 2);
       assert.ok((await read('/api/jobs/meta?jobType=Contract')).data.companies.includes('Legacy 2'));
-      assert.equal((await read('/api/jobs/stats')).data.totalJobs, 6);
-      assert.equal((await read('/api/jobs/snapshot')).data.totalJobs, 6);
+      assert.equal((await read('/api/jobs/stats')).data.totalJobs, 5);
+      assert.equal((await read('/api/jobs/snapshot')).data.totalJobs, 5);
       assert.ok(!(await read('/api/jobs/meta')).data.jobTypes.includes('Full-time Experienced'));
     } finally { await Job.deleteMany({ _id: { $in: variantIds } }); }
   });

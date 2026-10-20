@@ -246,7 +246,7 @@ test('normalizeScrapedJob composes Wipro internship and experienced job types fr
   })
 
   assert.equal(normalizedIntern.employmentType, 'Internship')
-  assert.equal(normalizedIntern.jobType, 'Internship')
+  assert.equal(normalizedIntern.jobType, 'Intern')
   assert.equal(normalizedExperienced.employmentType, 'Full-time')
   assert.equal(normalizedExperienced.jobType, 'Full-time Experienced')
 })

@@ -19,9 +19,9 @@ const readJsonFixture = (name) =>
 const clone = (value) => JSON.parse(JSON.stringify(value))
 
 const scraper = createDarwinboxScraper()
-const happiestMindsHostedScraper = createDarwinboxScraper({
-  companyName: 'Happiest Minds',
-  source: 'happiestminds',
+const customHostedScraper = createDarwinboxScraper({
+  companyName: 'Example Hosted Company',
+  source: 'examplehostedcompany',
   origin: 'https://smileshrms.darwinbox.com',
 })
 
@@ -38,19 +38,19 @@ test('buildListingApiUrl and buildJobDetailUrl keep Darwinbox links on the publi
 
 test('createDarwinboxScraper supports customer-hosted Darwinbox origins without changing the job payload contract', () => {
   assert.equal(
-    happiestMindsHostedScraper.buildCareersPageUrl(),
+    customHostedScraper.buildCareersPageUrl(),
     'https://smileshrms.darwinbox.com/ms/candidatev2/main/careers/allJobs',
   )
   assert.equal(
-    happiestMindsHostedScraper.buildListingApiUrl(),
+    customHostedScraper.buildListingApiUrl(),
     'https://smileshrms.darwinbox.com/ms/candidateapi/job/alljobs?companyId=main',
   )
   assert.equal(
-    happiestMindsHostedScraper.buildJobDetailUrl('a68875230db751'),
+    customHostedScraper.buildJobDetailUrl('a68875230db751'),
     'https://smileshrms.darwinbox.com/ms/candidatev2/main/careers/jobDetails/a68875230db751',
   )
 
-  const jobs = happiestMindsHostedScraper.extractSearchResults({
+  const jobs = customHostedScraper.extractSearchResults({
     data: [
       {
         id: 'a68875230db751',
@@ -69,7 +69,7 @@ test('createDarwinboxScraper supports customer-hosted Darwinbox origins without 
   assert.deepEqual(jobs, [
     {
       title: 'Module Lead',
-      company: 'Happiest Minds',
+      company: 'Example Hosted Company',
       department: 'MICROSOFT',
       location: 'Pune, Maharashtra , India',
       city: 'Pune',
@@ -117,7 +117,7 @@ test('extractSearchResults keeps India jobs from the Darwinbox listings payload 
 })
 
 test('extractSearchResults marks Darwinbox API descriptions as checked when experience is absent', () => {
-  const jobs = happiestMindsHostedScraper.extractSearchResults({
+  const jobs = customHostedScraper.extractSearchResults({
     data: [
       {
         id: 'a68875230db751',

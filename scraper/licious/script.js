@@ -1,3 +1,4 @@
+import { mapJobsWithInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -180,7 +181,7 @@ export const createLiciousScraper = ({
     })
     const scrapedAt = now()
 
-    return jobs.map((job) => ({
+    return mapJobsWithInventoryEvidence(jobs, (job) => ({
       ...job,
       scrapedAt,
     }))

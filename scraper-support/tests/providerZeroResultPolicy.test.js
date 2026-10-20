@@ -189,7 +189,7 @@ test('verified zero public count is sufficient for discovery-only India zero evi
   assert.equal(inventoryEvidence?.indiaFacetCount, 0)
 })
 
-test('verified public inventory with zero India count attaches complete-inventory evidence', () => {
+test('historical zero India catalog notes cannot substitute for fetched inventory', () => {
   const provider = hydrateProviderCatalogEntry({
     source: 'global-openings-zero-india',
     companyName: 'Global Openings Zero India',
@@ -206,9 +206,9 @@ test('verified public inventory with zero India count attaches complete-inventor
   const decoratedJobs = decorateJobsWithProviderMetadata([], provider)
   const inventoryEvidence = readInventoryEvidence(decoratedJobs)
 
-  assert.equal(inventoryEvidence?.status, 'complete-inventory')
-  assert.equal(inventoryEvidence?.reportedTotal, 9)
-  assert.equal(inventoryEvidence?.indiaFacetCount, 0)
+  assert.equal(inventoryEvidence?.status, 'unverified')
+  assert.equal(inventoryEvidence?.reportedTotal, null)
+  assert.equal(inventoryEvidence?.indiaFacetCount, null)
 })
 
 test('complete-inventory zero-India inference does not override positive India counts', () => {

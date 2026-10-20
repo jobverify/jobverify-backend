@@ -3,12 +3,14 @@ import HiringObservation from '../models/HiringObservation.js';
 import ScraperStatus from '../models/ScraperStatus.js';
 import { getSiteSettings } from './siteSettingsService.js';
 import { PUBLIC_JOB_TYPE_EXPRESSION } from '../utils/publicJobType.js';
+import { PUBLIC_WORK_ARRANGEMENT_EXPRESSION } from '../utils/publicWorkArrangement.js';
 import { applyPublicJobVisibility } from '../utils/publicJobVisibility.js';
 
 export const OBSERVATION_VERSION = 1;
 export const observationScope = settings => `india-v${OBSERVATION_VERSION}-${settings?.experiencedJobsEnabled === false ? 'early-career' : 'all-types'}`;
 export const indiaDay = date => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
-const label = field => ({ $trim: { input: { $ifNull: [field === 'jobType' ? PUBLIC_JOB_TYPE_EXPRESSION : '$' + field, ''] } } });
+const label = field => ({ $trim: { input: { $ifNull: [field === 'jobType' ? PUBLIC_JOB_TYPE_EXPRESSION
+  : field === 'workArrangement' ? PUBLIC_WORK_ARRANGEMENT_EXPRESSION : '$' + field, ''] } } });
 const ranking = field => [
   { $group: { _id: { $toLower: label(field) }, label: { $first: label(field) }, count: { $sum: 1 } } },
   { $sort: { count: -1, label: 1 } },

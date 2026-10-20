@@ -7,6 +7,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import Job from '../src/models/Job.js'
+import { PUBLIC_WORK_ARRANGEMENT_EXPRESSION } from '../src/utils/publicWorkArrangement.js'
 import JobDatasetSummary from '../src/models/JobDatasetSummary.js'
 import { ACCESS_ROLES, PLAN_IDS } from '../src/constants/accessPlans.js'
 import {
@@ -653,6 +654,10 @@ test('getJobMeta scopes each option group by the other active filters', async ()
     return []
   }
   Job.aggregate = createAggregateExecStub(async (pipeline) => {
+    if (JSON.stringify(pipeline[1]?.$group?._id).includes('$workArrangement')) {
+      capturedFilters.set('workArrangement', pipeline[0].$match)
+      return [{ _id: 'Remote' }]
+    }
     capturedCompanyFilter = pipeline[0].$match
     return [{ company: 'Acme Labs' }]
   })
@@ -690,7 +695,7 @@ test('getJobMeta scopes each option group by the other active filters', async ()
     assert.equal(companyFilter.locationKeys, 'bangalore')
     assert.deepEqual(companyFilter.jobType, { $in: ['Intern', 'Internship'] })
     assert.equal(companyFilter.primaryRoleDomain, 'Data Science & AI')
-    assert.equal(companyFilter.workArrangement, 'Remote')
+    assert.ok(JSON.stringify(companyFilter).includes('$workArrangement'))
     assert.ok(companyFilter.postedAt.$gte instanceof Date)
     assert.deepEqual(res.body.data.experienceYears, [0, 1])
 
@@ -709,7 +714,7 @@ test('getJobMeta scopes each option group by the other active filters', async ()
     assert.equal(roleDomainFilter.companyKey, 'acme labs')
 
     const workArrangementFilter = capturedFilters.get('workArrangement')
-    assert.deepEqual(workArrangementFilter.workArrangement, { $ne: null })
+    assert.equal(workArrangementFilter.workArrangement, undefined)
     assert.equal(workArrangementFilter.companyKey, 'acme labs')
   } finally {
     Job.countDocuments = originalCountDocuments
@@ -780,7 +785,7 @@ test('getAllJobs applies advanced filter fields for skills, role domain, seniori
     assert.equal(coreFilter.experienceBucket, '3-5')
     assert.equal(coreFilter.primaryRoleDomain, 'Data Science & AI')
     assert.equal(coreFilter.seniority, 'Senior')
-    assert.equal(coreFilter.workArrangement, 'Remote')
+    assert.ok(JSON.stringify(coreFilter).includes('$workArrangement'))
     assert.equal(coreFilter.isPublicIndia, true)
     assert.deepEqual(coreFilter.requiredSkillIds, { $all: ['python', 'aws'] })
     assert.ok(coreFilter.postedAt.$gte instanceof Date)
@@ -860,7 +865,7 @@ test('getAllJobs applies multiselect arrays for visible filters', async () => {
     assert.deepEqual(coreFilter.primaryRoleDomain, {
       $in: ['Data Science & AI', 'Sales & Customer Success'],
     })
-    assert.deepEqual(coreFilter.workArrangement, { $in: ['Remote', 'Hybrid'] })
+    assert.ok(coreFilter.$and.some(clause => clause.$expr?.$in?.[0] === PUBLIC_WORK_ARRANGEMENT_EXPRESSION))
     assert.deepEqual(coreFilter.jobType, {
       $in: ['Intern', 'Internship', 'Full-time Experienced', 'Full-time'],
     })

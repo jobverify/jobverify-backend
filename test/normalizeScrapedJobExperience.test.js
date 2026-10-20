@@ -305,9 +305,9 @@ test('normalizes parenthesized numeric ranges after number-word normalization', 
 test('normalizes abbreviated minimum year values in domain contexts', () => {
   const normalized = normalizeScrapedJob({
     title: 'IMp@CT- SAP S/4 HANA Roll-out Coordinator- CO',
-    company: 'Continental',
+    company: 'Example Engineering',
     location: 'Bengaluru, India',
-    sourceUrl: 'https://jobs.continental.com/en/detail-page/job-detail/REF91920T-p-125c34f3e71aa6e6a99f64b648c07145/',
+    sourceUrl: 'https://jobs.example.com/en/detail-page/job-detail/REF91920T-p-125c34f3e71aa6e6a99f64b648c07145/',
     description: 'Required Qualifications: Min. 7 yrs in SAP environment for min one relevant SAP module. Min. 3 yrs in a multinational environment.',
     experienceRequired: null,
   })
@@ -370,9 +370,9 @@ test('normalizes minimum experience requirement labels that provide exact year v
 test('normalizes open-ended year values even when bullet markers collapse into the unit token', () => {
   const normalized = normalizeScrapedJob({
     title: 'Module Lead - .Net Core , C#, WPF',
-    company: 'Happiest Minds',
+    company: 'Example Software',
     location: 'Bengaluru, India',
-    sourceUrl: 'https://jobs.example.com/happiestminds-module-lead',
+    sourceUrl: 'https://jobs.example.com/example-module-lead',
     description: 'Software development experience of 5+ yearso Strong hands-on experience on Object Oriented Design.',
     experienceRequired: null,
   })
@@ -929,9 +929,9 @@ test('normalizes degree-prefixed exact years when Bosch listings collapse the re
 test('normalizes degree-prefixed open-ended years when Bosch listings use more-than shorthand without the experience noun', () => {
   const normalized = normalizeScrapedJob({
     title: 'Executive / Assistant Manager_Supplier Quality',
-    company: 'Bosch Rexroth',
+    company: 'Example Engineering',
     location: 'India',
-    sourceUrl: 'https://jobs.bosch.com/en/job/REF276282V-in_bosch-rexroth-india_executive-assistant-manager_supplier-quality',
+    sourceUrl: 'https://jobs.example.com/en/job/REF276282V-supplier-quality',
     description: 'Q-focus program implementation support on cost reduction and new design concept for MPP project. B.E. Mechanical with More than 7 year in industry field; >2year quality management.',
     experienceRequired: null,
   })

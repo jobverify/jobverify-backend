@@ -37,6 +37,9 @@ const ScraperStatusSchema = new Schema(
       type: Boolean,
       required: true,
     },
+    // Latest attempt is independent of legacy last-success counts.
+    latestAttempt: { type: Schema.Types.Mixed, default: null },
+    lastCompleteCheckAt: { type: Date, default: null },
     consecutiveFailures: {
       type: Number,
       required: true,

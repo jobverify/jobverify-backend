@@ -187,11 +187,6 @@
     "locationCountry": "c4f78be1a8f14da0ab49ce1162348a5e"
   },
   {
-    "name": "weir",
-    "company": "Weir",
-    "baseUrl": "https://weir.wd3.myworkdayjobs.com/en-US/Weir_External_Careers"
-  },
-  {
     "name": "dentsuaegis",
     "company": "Dentsu Aegis",
     "baseUrl": "https://dentsuaegis.wd3.myworkdayjobs.com/DAN_GLOBAL"
@@ -511,13 +506,6 @@
     "locationCountry": "c4f78be1a8f14da0ab49ce1162348a5e"
   },
   {
-    "name": "xylem",
-    "company": "Xylem",
-    "baseUrl": "https://xylem.wd5.myworkdayjobs.com/xylem-careers",
-    "companyCareerPage": "https://www.xylem.com/en-us/careers/",
-    "locationCountry": "c4f78be1a8f14da0ab49ce1162348a5e"
-  },
-  {
     "name": "unisys",
     "company": "Unisys",
     "baseUrl": "https://unisys.wd5.myworkdayjobs.com/External",
@@ -535,13 +523,6 @@
     "company": "Wolters Kluwer",
     "baseUrl": "https://wk.wd3.myworkdayjobs.com/External",
     "companyCareerPage": "https://careers.wolterskluwer.com/en-in",
-    "locationCountry": "c4f78be1a8f14da0ab49ce1162348a5e"
-  },
-  {
-    "name": "jlltechnologies",
-    "company": "JLL Technologies",
-    "baseUrl": "https://jll.wd1.myworkdayjobs.com/jllcareers?jobFamilyGroup=f134f8e1c0811001fe9e2695d0c80000&jobFamilyGroup=c608fc06410f01484a9fec7aba539450&jobFamilyGroup=191bf29d19f71001fe706d09015e0000&jobFamilyGroup=ee1ccf9903501001feb0e7ffc6680000&jobFamilyGroup=b433b91436a91001fe918431478f0000",
-    "companyCareerPage": "https://www.jll.com/en-in/careers",
     "locationCountry": "c4f78be1a8f14da0ab49ce1162348a5e"
   },
   {

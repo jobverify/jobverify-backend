@@ -337,6 +337,8 @@ test("saveJob only accepts jobs that are still publicly visible", async () => {
 });
 
 test("removeSavedJob removes the saved job and returns the updated overview count", async (t) => {
+  const { default: TailoredResume } = await import('../src/models/TailoredResume.js');
+  t.mock.method(TailoredResume, 'updateMany', async () => ({ modifiedCount: 0 }));
   t.mock.method(User, 'updateOne', async () => ({ modifiedCount: 1 }));
   const { removeSavedJob } = await import("../src/controllers/userController.js");
   const originalFindById = User.findById;
