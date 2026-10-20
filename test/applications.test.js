@@ -84,17 +84,23 @@ test('another user cannot confirm an application or create one by confirmation',
 });
 
 test('application history is paginated, owner-scoped and retains snapshots without a live job', async t => {
-  t.mock.method(TailoredResume, 'distinct', async () => [jobId]);
   const item = { _id: applicationId, job: jobId, status: 'opened', jobSnapshot: job };
-  const query = { sort() { return this; }, skip(value) { assert.equal(value, 20); return this; }, limit(value) { assert.equal(value, 20); return this; }, lean: async () => [item] };
-  t.mock.method(Application, 'find', filter => { assert.deepEqual(filter, { user, job: { $in: [jobId] }, status: 'opened' }); return query; });
-  t.mock.method(Application, 'countDocuments', async filter => { assert.equal(filter.user, user); return filter.status === 'applied' ? 2 : 25; });
+  t.mock.method(TailoredResume, 'aggregate', async pipeline => {
+    assert.equal(String(pipeline[0].$match.user), user);
+    const { items } = pipeline.at(-1).$facet;
+    assert.deepEqual(items[0], { $match: { status: 'opened' } });
+    assert.deepEqual(items.at(-2), { $skip: 20 });
+    assert.deepEqual(items.at(-1), { $limit: 20 });
+    return [{ items: [item], counts: [{ total: 25, applied: 2 }] }];
+  });
   const res = response();
   await getApplications({ user: { _id: user }, query: { page: '2', status: 'opened' } }, res);
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body.summary, { total: 25, opened: 23, applied: 2 });
   assert.equal(res.body.pagination.totalPages, 2);
-  assert.deepEqual(res.body.data, [item]);
+  assert.equal(res.body.data[0]._id, item._id);
+  assert.equal(res.body.data[0].jobSnapshot.title, job.title);
+  assert.equal(res.body.data[0].jobSnapshot.applicationUrl, job.sourceUrl);
 });
 
 test('application history rejects invalid pagination and status filters', async () => {

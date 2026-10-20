@@ -5,7 +5,7 @@ import Resume from '../models/Resume.js';
 import TailoredResume from '../models/TailoredResume.js';
 import SiteSettings from '../models/SiteSettings.js';
 import { applyPublicJobVisibility } from '../utils/publicJobVisibility.js';
-import { dispatchOutreachDrafts } from './outreachService.js';
+import { dispatchTailoredResumes, tailoredResumeActionsConfigured, requireTailoredResumeActions } from './resumeTailoringWorkflow.js';
 import { dayKey, reserveUsage } from './outreachUsage.js';
 import { extractResumeText } from './resumeText.js';
 import { tailoringError, validateTailoredResume } from './resumeTailoringContent.js';
@@ -14,7 +14,6 @@ const activeOwner = user => ({ _id: user, deactivated: { $ne: true }, outreachDe
 const recordId = (user, job) => `${user}:${job}`;
 const jobHash = job => createHash('sha256').update(JSON.stringify([job.title, job.company, job.sourceDescription || job.description || ''])).digest('hex');
 const activeStatuses = ['queued', 'running'];
-const flagsReady = () => process.env.OUTREACH_ACTIONS_ENABLED === 'true' && process.env.OUTREACH_ACTIONS_FREE_CONFIRMED === 'true';
 
 async function context(user, jobId, { settings = {}, requireResume = false, withData = false } = {}) {
   if (!/^[a-f0-9]{24}$/i.test(String(jobId || ''))) throw tailoringError('Invalid job ID.');
@@ -42,14 +41,14 @@ export async function getTailoredResume(user, jobId, settings) {
   return publicRecord(await TailoredResume.findById(recordId(user._id, jobId)).lean(), source);
 }
 
-export async function requestTailoredResume(user, jobId, { regenerate = false, settings, dispatch = dispatchOutreachDrafts } = {}) {
+export async function requestTailoredResume(user, jobId, { regenerate = false, settings, dispatch = dispatchTailoredResumes } = {}) {
   const source = await context(user, jobId, { settings, requireResume: true });
   const id = recordId(user._id, jobId);
   const current = await TailoredResume.findById(id).lean();
   const view = publicRecord(current, source);
   if (current && activeStatuses.includes(current.status)) return view;
   if (current?.output && !view.stale && !regenerate) return view;
-  if (dispatch === dispatchOutreachDrafts && !flagsReady()) throw tailoringError('Resume tailoring is not available yet. Please try again when AI generation is enabled.', 503);
+  if (dispatch === dispatchTailoredResumes) requireTailoredResumeActions();
   let row;
   try {
     row = await TailoredResume.findOneAndUpdate({ _id: id, status: { $nin: activeStatuses } }, {
@@ -114,7 +113,7 @@ export async function drainTailoredResumes({ generate, maxTasks = 1, deadline = 
 }
 
 let recovering = false;
-export async function recoverTailoredResumes({ dispatch = dispatchOutreachDrafts, now = new Date() } = {}) {
+export async function recoverTailoredResumes({ dispatch = dispatchTailoredResumes, now = new Date() } = {}) {
   if (recovering) return;
   recovering = true;
   try {
@@ -124,7 +123,7 @@ export async function recoverTailoredResumes({ dispatch = dispatchOutreachDrafts
       { status: 'running', attempts: { $gte: 3 }, leaseUntil: { $lt: now } },
       { status: 'queued', ready: false, updatedAt: { $lt: new Date(now.getTime() - 60000) } },
     ] }, { $set: { status: 'failed', ready: false, error: 'This request was interrupted. Please retry generation.' }, $unset: { leaseOwner: 1, leaseUntil: 1 } });
-    if (dispatch === dispatchOutreachDrafts && !flagsReady()) return;
+    if (dispatch === dispatchTailoredResumes && !tailoredResumeActionsConfigured()) return;
     await TailoredResume.updateMany({ status: 'running', attempts: { $lt: 3 }, leaseUntil: { $lt: now } }, { $set: { status: 'queued' }, $unset: { leaseOwner: 1, leaseUntil: 1 } });
     const due = { status: 'queued', ready: true, $or: [{ dispatchAt: { $exists: false } }, { dispatchAt: { $lt: new Date(now.getTime() - 300000) } }] };
     if (await TailoredResume.exists(due)) {

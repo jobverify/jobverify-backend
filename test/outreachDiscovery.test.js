@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { createHash } from 'node:crypto';
 import { buildJobContext, groundedContacts, hunterEmail, searchTavily } from '../src/services/outreachProviders.js';
+import OutreachThread from '../src/models/OutreachThread.js';
 import OutreachUsage from '../src/models/OutreachUsage.js';
 import { reserveUsage } from '../src/services/outreachUsage.js';
 
@@ -70,6 +72,54 @@ test('hiring-post author employer evidence also excludes names and unrelated com
   assert.equal(groundedContacts([{ ...source, title: 'Ashley Smith on LinkedIn: We are hiring Frontend Engineers at EY', content: 'My team at EY is hiring a Frontend Engineer.' }], context)[0]?.kind, 'hiring_post_author');
 });
 
+test('referral discovery includes relevant employees and ranks them before recruiters', () => {
+  const results = [
+    { title: 'John Smith - Recruiter at Example Corp | LinkedIn', url: 'https://www.linkedin.com/in/john-smith', content: 'John Smith is a recruiter at Example Corp.' },
+    { title: 'Jamie Patel - Frontend Engineer at Example Corp | LinkedIn', url: 'https://www.linkedin.com/in/jamie-patel', content: 'Jamie Patel builds accessible frontend applications at Example Corp.' },
+    { title: 'Taylor Brown - Frontend Engineer at Other Corp | LinkedIn', url: 'https://www.linkedin.com/in/taylor-brown', content: 'Taylor Brown discusses Example Corp vacancies.' },
+    { title: 'Morgan Lee - Accountant at Example Corp | LinkedIn', url: 'https://www.linkedin.com/in/morgan-lee', content: 'Morgan Lee works in corporate accounting at Example Corp.' },
+  ];
+  const contacts = groundedContacts(results, buildJobContext(job));
+  assert.deepEqual(contacts.map(contact => contact.name), ['Jamie Patel', 'John Smith']);
+  assert.equal(contacts[0].kind, 'likely_contact', 'employment evidence does not establish willingness to refer');
+});
+
+test('an evidenced referral-post author ranks first and its kind survives thread validation', () => {
+  const results = [
+    { title: 'Alex Brown on LinkedIn: We are hiring Frontend Engineers at Example Corp', url: 'https://www.linkedin.com/posts/alex-brown_hiring-activity-123', content: 'My team at Example Corp is hiring a Frontend Engineer.' },
+    { title: 'Jamie Patel - Frontend Engineer at Example Corp | LinkedIn', url: 'https://www.linkedin.com/in/jamie-patel', content: 'Jamie Patel works at Example Corp.' },
+    { title: 'Sam Wilson on LinkedIn: Frontend Engineer referrals at Example Corp', url: 'https://www.linkedin.com/posts/sam-wilson_referral-activity-123', content: 'Sam Wilson is a Frontend Engineer at Example Corp. I can refer you for this frontend role.' },
+  ];
+  const contacts = groundedContacts(results, buildJobContext(job));
+  assert.deepEqual(contacts.map(contact => contact.name), ['Sam Wilson', 'Alex Brown', 'Jamie Patel']);
+  assert.equal(contacts[0].kind, 'referral_post_author');
+  const thread = new OutreachThread({ user: '507f1f77bcf86cd799439011', job: '507f1f77bcf86cd799439012', contactKey: 'sam-wilson', jobSnapshot: { title: job.title, company: job.company }, contact: contacts[0] });
+  assert.equal(thread.validateSync(), undefined);
+});
+
+test('referral mentions and declined referrals never become an offer to refer', () => {
+  const context = buildJobContext(job);
+  for (const evidence of ['I cannot refer candidates for this frontend role.', 'I am not happy to refer applicants.', 'Please do not message me for referrals.', 'We received a referral for a Frontend Engineer.', 'I can refer frontend candidates at Other Corp.']) {
+    const contacts = groundedContacts([{ title: 'Sam Wilson on LinkedIn: Frontend Engineer at Example Corp', url: 'https://www.linkedin.com/posts/sam-wilson_frontend-activity-123', content: evidence }], context);
+    assert.equal(contacts.length, 1);
+    assert.equal(contacts[0].kind, 'likely_contact', evidence);
+  }
+});
+
+test('former employees are not treated as current referral contacts', () => {
+  const context = buildJobContext(job);
+  for (const role of ['Former Frontend Engineer', 'Ex-Frontend Engineer', 'Previously Frontend Engineer']) {
+    assert.deepEqual(groundedContacts([{ title: `Jamie Patel - ${role} at Example Corp | LinkedIn`, url: 'https://www.linkedin.com/in/jamie-patel', content: 'Jamie Patel previously worked on frontend applications at Example Corp.' }], context), []);
+    assert.deepEqual(groundedContacts([{ title: `Jamie Patel on LinkedIn: ${role} at Example Corp`, url: 'https://www.linkedin.com/posts/jamie-patel_frontend-123', content: 'My team at Example Corp is hiring a Frontend Engineer.' }], context), []);
+  }
+});
+
+test('referral discovery does not reuse results cached under the previous hiring-only policy', () => {
+  const { contextHash, ...context } = buildJobContext(job);
+  const oldHash = createHash('sha256').update(JSON.stringify(context)).digest('hex');
+  assert.notEqual(contextHash, oldHash);
+});
+
 test('search explicitly uses one-credit basic search and never requests an AI answer', async () => {
   const result = await searchTavily(buildJobContext(job), { apiKey: 'fixture', fetchImpl: async (url, options) => {
     assert.equal(url, 'https://api.tavily.com/search');
@@ -78,6 +128,9 @@ test('search explicitly uses one-credit basic search and never requests an AI an
     assert.equal(body.auto_parameters, false);
     assert.equal(body.include_answer, false);
     assert.match(body.query, /Example Corp/);
+    assert.match(body.query, /referral/i);
+    assert.match(body.query, /employee/i);
+    assert.equal(body.max_results, 12);
     return { ok: true, json: async () => ({ results: [] }) };
   } });
   assert.deepEqual(result, []);

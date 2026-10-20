@@ -2,7 +2,9 @@ import { createHash, randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { factPlanMessages, factPlanSchema, validateFactPlan, assessRewriteInput, expandModelPlan } from './factPlan.js';
-import { REWRITE_MODEL, REWRITE_SCHEMA, buildRewriteInput, rewriteMessages, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
+import { REWRITE_MODEL, buildRewriteInput, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
+import { reconcileRewriteCandidate, rewriteSnapshotFilter } from './queue.js';
+import { RewriteWorkerError } from './worker.js';
 
 export const rewriteDeadline = ({ now = Date.now(), budgetSeconds = 1200, workflowStartedAt, workflowSeconds = 9000, cleanupSeconds = 120 } = {}) => {
   const budget = Number(budgetSeconds);
@@ -39,7 +41,7 @@ const readCompletionStream = async response => {
   return {choices:[{message:{content},finish_reason:finishReason}],usage,timings};
 };
 
-export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model = 'job-description-lfm', requestMs = REWRITE_MODEL.requestSeconds * 1000, planCacheDir } = {}) => {
+export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model = 'job-description-lfm', requestMs = REWRITE_MODEL.requestSeconds * 1000, planCacheDir, assertAlive = () => {} } = {}) => {
   const url = new URL(endpoint);
   if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || url.username || url.password || url.pathname !== '/' || url.search || url.hash) throw new Error('Generation must run on unauthenticated http://127.0.0.1');
   const cache = new Map();
@@ -47,6 +49,7 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
     const timeout = AbortSignal.timeout(Math.max(1, Math.floor(Math.min(requestMs, remainingMs))));
     const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
     combined.throwIfAborted();
+    assertAlive();
     const messages=factPlanMessages(input),schema=factPlanSchema(input);
     const requestHash=createHash('sha256').update(JSON.stringify([REWRITE_MODEL,messages,schema])).digest('hex');
     const cached=cache.get(requestHash);
@@ -57,13 +60,22 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
       combined.throwIfAborted();
       if(entry?.version===1&&entry.requestHash===requestHash){const value=expandModelPlan(entry.rawValue,input);if(value&&validateFactPlan(value,input,'stop').ok){const completion={value,rawValue:entry.rawValue,finishReason:'stop'};cache.set(requestHash,completion);return {...completion,cachedModelPlan:true,cacheSource:'disk'};}}
     }
-    const response = await fetch(url.origin + '/v1/chat/completions', { method: 'POST', signal: combined, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-      model, messages, temperature: .2, top_p: .8, seed: 42,
-      max_tokens: Math.min(REWRITE_MODEL.maxOutputTokens, 768), stream: true, stream_options: { include_usage: true },
-      response_format: { type: 'json_schema', json_schema: { name: 'job_description', strict: true, schema } },
-    }) });
-    if (!response.ok) throw new Error('Local generator HTTP ' + response.status);
-    const result = response.headers.get('content-type')?.includes('text/event-stream') ? await readCompletionStream(response) : await response.json();
+    let result;
+    try {
+      assertAlive();
+      const response = await fetch(url.origin + '/v1/chat/completions', { method: 'POST', signal: combined, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+        model, messages, temperature: .2, top_p: .8, seed: 42,
+        max_tokens: Math.min(REWRITE_MODEL.maxOutputTokens, 768), stream: true, stream_options: { include_usage: true },
+        response_format: { type: 'json_schema', json_schema: { name: 'job_description', strict: true, schema } },
+      }) });
+      if (!response.ok) throw new Error('Local generator HTTP ' + response.status);
+      result = response.headers.get('content-type')?.includes('text/event-stream') ? await readCompletionStream(response) : await response.json();
+    } catch (error) {
+      assertAlive();
+      if (error.cause?.code === 'ECONNREFUSED') throw new RewriteWorkerError('connection_refused');
+      throw error;
+    }
+    assertAlive();
     const choice = result.choices?.[0];
     if (!choice || typeof choice.message?.content !== 'string') throw new Error('Malformed generator response');
     let value;
@@ -75,6 +87,27 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
     }
     return completion;
   } };
+};
+
+/** Exercise fresh inference before any production queue entry can consume an attempt. */
+export const probeRewriteClient = async (client, { concurrency = 1, deadline = Date.now() + 180000, signal } = {}) => {
+  if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 4) throw new Error('Invalid probe concurrency');
+  const started = Date.now();
+  const probes = await Promise.allSettled(Array.from({ length: concurrency }, async (_, slot) => {
+    signal?.throwIfAborted();
+    const input = buildRewriteInput({ title: 'Software Engineer', company: 'Worker health check',
+      sourceDescription: `Role overview: Build Python services for customer group ${slot + 1}. Responsibilities: Design reliable APIs and maintain Python services. Required qualifications: At least 2 years of software development experience is required. Preferred qualifications: AWS experience is nice to have.` });
+    const response = await client.generate(input, { signal, remainingMs: Math.max(1, deadline - Date.now()) });
+    signal?.throwIfAborted();
+    if (response.cachedModelPlan || !validateFactPlan(response.value, input, response.finishReason).ok) throw new RewriteWorkerError('generation_probe');
+  }));
+  const failure = probes.find(result => result.status === 'rejected');
+  if (failure) {
+    signal?.throwIfAborted();
+    if (failure.reason.name === 'RewriteWorkerError') throw failure.reason;
+    throw new RewriteWorkerError('generation_probe');
+  }
+  return { requests: concurrency, durationMs: Date.now() - started };
 };
 
 export const rewriteQueueQuery = (now = new Date()) => ({ status: 'active', sourceContentHash: { $type: 'string' },
@@ -94,19 +127,31 @@ export const rewriteFailureDetails = (error, phase) => ({
   ...(Number.isInteger(error.code) ? { errorCode: error.code } : {}),
   ...(typeof error.codeName === 'string' && /^[A-Za-z][A-Za-z0-9]{0,79}$/.test(error.codeName)
     ? { errorCodeName: error.codeName } : {}),
+  ...(Number.isInteger(error.workerExitCode) ? { workerExitCode: error.workerExitCode } : {}),
+  ...(typeof error.workerSignal === 'string' && /^SIG[A-Z0-9]{1,20}$/.test(error.workerSignal) ? { workerSignal: error.workerSignal } : {}),
+  ...(['process_exit', 'spawn_error', 'connection_refused', 'generation_probe'].includes(error.workerFailure) ? { workerFailure: error.workerFailure } : {}),
 });
 
 /** The caller supplies a Mongo update boundary; source/filter fields never enter these updates. */
 export const rewriteCandidates = async (jobs, { client, update, deadline, signal, concurrency = 1, onResult = () => {} } = {}) => {
   if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 4) throw new Error('Rewrite concurrency must be between one and four');
-  const stats = { attempted: 0, published: 0, failed: 0, skipped: 0, staleSources: 0, concurrentChanges: 0, interrupted: false, peakConcurrency: 0 };
+  const stats = { attempted: 0, published: 0, failed: 0, skipped: 0, queueRepairs: 0, staleSources: 0, concurrentChanges: 0, interrupted: false, peakConcurrency: 0 };
   const processJob = async job => {
     if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
-    const input = buildRewriteInput(job);
-    const filter = { _id: job._id, status: 'active', sourceContentHash: job.sourceContentHash,
-      'descriptionRewrite.status': job.descriptionRewrite.status,
-      'descriptionRewrite.attempts': job.descriptionRewrite.attempts ?? 0 };
-    if (!input.eligible || input.inputHash !== job.sourceContentHash || job.descriptionRewrite.inputHash !== input.inputHash) { stats.staleSources++; return; }
+    const reconciled = await reconcileRewriteCandidate(job, { update });
+    if (reconciled.kind === 'stale') { stats.staleSources++; return; }
+    if (reconciled.kind === 'conflict') { stats.concurrentChanges++; return; }
+    if (reconciled.repaired) stats.queueRepairs++;
+    if (reconciled.kind === 'skipped') {
+      stats.skipped++;
+      await onResult({ id: String(job._id), inputHash: reconciled.input.inputHash,
+        ok: false, reason: reconciled.reason, durationMs: 0, generated: false });
+      return;
+    }
+    job = reconciled.job;
+    const { input } = reconciled;
+    const filter = rewriteSnapshotFilter(job);
+    if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
     const started = Date.now();
     const assessment = assessRewriteInput(input);
     if (assessment.ok) stats.attempted++;
@@ -120,6 +165,7 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
       }
     } catch (error) {
       if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
+      if (error.name === 'RewriteWorkerError') throw error;
       result = { ok: false, reason: error.name === 'TimeoutError' ? 'timeout' : 'generation_error' };
     }
     const now = new Date(), durationMs = Date.now() - started;
@@ -153,6 +199,6 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
   } catch (error) { failure ??= error; }
   // Always finish scheduled work before callers close the cursor, model, or database.
   await Promise.all(pending);
-  if (failure) throw failure;
+  if (failure) { failure.rewriteStats = { ...stats }; throw failure; }
   return stats;
 };

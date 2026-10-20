@@ -72,34 +72,61 @@ export function rewriteWorkerConfiguration({ threads = REWRITE_MODEL.cpuThreads,
   return { threads: Math.min(cpus, Number(threads)), parallelism: slots, contextTokens: REWRITE_MODEL.contextTokens * slots };
 }
 
-export const startRewriteWorker = async ({ modelFile, binary, port = 8766, threads = REWRITE_MODEL.cpuThreads, parallelism = 1, deadline = Date.now() + 120000, signal, logFile = path.join(root, '.cache/scraper-actions/description-worker.log') }) => {
+export class RewriteWorkerError extends Error {
+  constructor(workerFailure, { exitCode, signal } = {}) {
+    super('CPU generator failure: ' + workerFailure);
+    this.name = 'RewriteWorkerError';
+    this.workerFailure = workerFailure;
+    if (Number.isInteger(exitCode)) this.workerExitCode = exitCode;
+    if (typeof signal === 'string') this.workerSignal = signal;
+  }
+}
+
+export const startRewriteWorker = async ({ modelFile, binary, port = 8766, threads = REWRITE_MODEL.cpuThreads, parallelism = 1, deadline = Date.now() + 120000, signal, logFile = path.join(root, '.cache/scraper-actions/description-worker.log'), spawnProcess = spawn, fetchImpl = fetch }) => {
   const config = rewriteWorkerConfiguration({ threads, parallelism });
   const model = 'job-description-' + randomUUID();
   await fs.mkdir(path.dirname(logFile), { recursive: true });
   const log = await fs.open(logFile, 'w');
-  const child = spawn(binary, ['-m', modelFile, '--host', '127.0.0.1', '--port', String(port),
-    '--alias', model, '-c', String(config.contextTokens), '-np', String(config.parallelism), '-t', String(config.threads), '-tb', String(config.threads),
-    '-ngl', '0', '--jinja', '--no-context-shift', '--no-webui', '--log-disable'], { cwd: path.dirname(binary), windowsHide: true,
-    env: { ...process.env, LD_LIBRARY_PATH: path.dirname(binary) + path.delimiter + (process.env.LD_LIBRARY_PATH || '') },
-    stdio: ['ignore', log.fd, log.fd] });
-  await log.close();
+  let child;
+  try {
+    child = spawnProcess(binary, ['-m', modelFile, '--host', '127.0.0.1', '--port', String(port),
+      '--alias', model, '-c', String(config.contextTokens), '-np', String(config.parallelism), '-t', String(config.threads), '-tb', String(config.threads),
+      '-ngl', '0', '--jinja', '--no-context-shift', '--no-webui', '--log-verbosity', '2'], { cwd: path.dirname(binary), windowsHide: true,
+      env: { ...process.env, LD_LIBRARY_PATH: path.dirname(binary) + path.delimiter + (process.env.LD_LIBRARY_PATH || '') },
+      stdio: ['ignore', log.fd, log.fd] });
+  } catch {
+    await log.close();
+    throw new RewriteWorkerError('spawn_error');
+  }
   let error, exited = false;
+  let exitCode = null, exitSignal = null;
+  // Install listeners before awaiting anything: spawn errors can arrive on the next tick.
   child.on('error', value => { error = value; });
-  const exit = new Promise(resolve => child.once('exit', () => { exited = true; resolve(); }));
+  const exit = new Promise(resolve => child.once('exit', (code, signal) => { exited = true; exitCode = code; exitSignal = signal; resolve(); }));
+  const diagnostics = () => ({ pid: child.pid, status: error ? 'spawn_error'
+    : exited || child.exitCode != null || child.signalCode != null ? 'exited' : 'running',
+    exitCode: exitCode ?? child.exitCode ?? null, signal: exitSignal ?? child.signalCode ?? null });
+  const assertAlive = () => {
+    const state = diagnostics();
+    if (state.status !== 'running') throw new RewriteWorkerError(error ? 'spawn_error' : 'process_exit', state);
+  };
   const stop = async () => {
-    if (!exited && child.pid) { child.kill(); await Promise.race([exit, delay(5000)]); if (!exited) child.kill('SIGKILL'); }
+    if (!exited && child.pid) { child.kill(); await Promise.race([exit, delay(5000, undefined, { ref: false })]); if (!exited) child.kill('SIGKILL'); }
   };
   const endpoint = 'http://127.0.0.1:' + port;
   try {
+    await log.close();
     const startupDeadline = Math.min(deadline, Date.now() + 120000);
     while (Date.now() < startupDeadline) {
       signal?.throwIfAborted();
-      if (error) throw error;
-      if (exited) throw new Error('CPU generator exited during startup');
+      assertAlive();
       try {
-        const response = await fetch(endpoint + '/v1/models', { signal: AbortSignal.timeout(1000) });
+        const response = await fetchImpl(endpoint + '/v1/models', { signal: AbortSignal.timeout(1000) });
         const health = response.ok ? await response.json() : null;
-        if (health?.data?.some(row => row.id === model)) return { endpoint, model, pid: child.pid, stop, parallelism: config.parallelism };
+        if (health?.data?.some(row => row.id === model)) {
+          assertAlive();
+          return { endpoint, model, pid: child.pid, stop, assertAlive, diagnostics, parallelism: config.parallelism };
+        }
       } catch { /* bounded readiness poll */ }
       await delay(200, undefined, { signal });
     }

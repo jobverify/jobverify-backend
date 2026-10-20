@@ -284,6 +284,7 @@ test('Cambridge Technology Enterprises scraper validates the homepage handoff, p
       ].join(' '),
       remoteStatus: 'On-site',
       source: 'cambridgetechnologyenterprises',
+      sourceListingComplete: false,
       link: 'https://cambridgetechnology.freshteam.com/jobs/2WE1ZMkfs7C8/business-analyst',
       scrapedAt: '2026-07-18T00:00:00.000Z',
     },

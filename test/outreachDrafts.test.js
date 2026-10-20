@@ -14,6 +14,8 @@ test('prompt restricts experience and relationship claims and wraps context as u
   assert.match(prompt, /never invent/i);
   assert.match(prompt, /likely_contact/);
   assert.match(prompt, /weather app/);
+  assert.match(prompt, /ask.*referral/i);
+  assert.match(prompt, /never assume.*willing/i);
 });
 test('generated drafts must be bounded complete JSON and exclude email header injection', () => {
   const valid = { linkedin: 'Hello Jane', emailSubject: 'Engineer role', emailBody: 'Hello Jane, I built a weather app.' };

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { outreachError } from './outreachUsage.js';
 
 const text = (value, length = 3000) => typeof value === 'string' ? value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, length) : '';
+const DISCOVERY_POLICY = 'referrals-v1';
 const blockedDomains = ['lever.co', 'greenhouse.io', 'workday.com', 'myworkdayjobs.com', 'smartrecruiters.com', 'icims.com', 'taleo.net', 'successfactors.com', 'successfactors.eu', 'oraclecloud.com', 'bamboohr.com', 'recruitee.com', 'ashbyhq.com', 'breezy.hr', 'applytojob.com', 'keka.com', 'darwinbox.com', 'zohorecruit.com', 'linkedin.com', 'indeed.com', 'naukri.com', 'wellfound.com', 'foundit.in', 'gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'proton.me'];
 export const safePublicUrl = value => {
   try {
@@ -24,13 +25,24 @@ export function employerDomain(job) {
 }
 export function buildJobContext(job) {
   const context = { title: text(job.title, 1000), company: text(job.company, 500), companyDomain: employerDomain(job), department: text(job.department, 500), location: text(job.location, 2000), description: text(job.sourceDescription || job.description, 24000), jobUrl: safePublicUrl(job.applyUrl) || safePublicUrl(job.sourceUrl) || '' };
-  return { ...context, contextHash: createHash('sha256').update(JSON.stringify(context)).digest('hex') };
+  return { ...context, contextHash: createHash('sha256').update(JSON.stringify({ policy: DISCOVERY_POLICY, ...context })).digest('hex') };
 }
 export const jobSnapshot = context => Object.fromEntries(['title', 'company', 'companyDomain', 'location', 'jobUrl'].map(key => [key, context[key]]));
 
 const escapePattern = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const normalizeEmployer = value => value.normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim().replace(/[.,;:!?]+$/, '');
-const employmentRole = /\b(manager|director|head|lead|vp|vice president|cto|chief technology|recruiter|recruiting|recruitment|talent acquisition)\b/i;
+const employmentRole = /\b(engineer|developer|designer|analyst|scientist|manager|director|head|lead|vp|vice president|cto|chief technology|recruiter|recruiting|recruitment|talent acquisition)\b/i;
+const referralOffer = /(?:^|[.!?:]\s+)(?:(?:I|we)\s+can|I(?:'m|\s+am)\s+happy\s+to|we\s+are\s+happy\s+to|happy\s+to)\s+refer\b|(?:^|[.!?:]\s+)(?:dm|message|contact)\s+me\s+for\s+(?:(?:an?|employee|internal)\s+)?referrals?\b/i;
+
+function hasReferralOffer(source, company) {
+  const offer = referralOffer.exec(source);
+  if (!offer) return false;
+  const employer = /\bat\s+(.+)/i.exec(source.slice(offer.index + offer[0].length));
+  if (!employer) return true;
+  const expected = normalizeEmployer(company);
+  const actual = normalizeEmployer(employer[1]);
+  return actual === expected || new RegExp(`^${escapePattern(expected)}[.!?](?:\\s|$)`, 'u').test(actual);
+}
 
 /** Compare complete employer fields. Names, mentions and legal-name suffixes are not aliases. */
 function employerEvidence(name, roleTitle, evidence, company) {
@@ -52,6 +64,8 @@ function employerEvidence(name, roleTitle, evidence, company) {
     const sentence = new RegExp(`(?:^|[.!?]\\s+)${escapePattern(name)}\\s+(?:is|works|serves|leads|heads)\\b[^.!?]{0,140}?\\b(?:at|with|for)\\s+(.+)`, 'i').exec(evidence);
     employed = Boolean(sentence && sentenceStart(sentence[1]));
   }
+  const position = (employmentRole.test(fields[0] || '') ? fields[0] : fields[1] || fields[0] || '').split(/\b(?:at|with|for)\b/i)[0];
+  if (/\b(?:former|previously)\b|\bex[-\s]/i.test(position)) return { employed: false, hiring: false };
   const hiring = [roleTitle, evidence].some(source => {
     const before = /\b(?:my team|our team|we|I)(?:\s+(?:are|am))?\s+at\s+(.{1,140}?)\s+(?:(?:is|are|am)\s+)?(?:hiring|looking for|recruiting)\b/i.exec(source);
     if (before && exact(before[1])) return true;
@@ -81,12 +95,13 @@ export function groundedContacts(results, context) {
     const roleMatch = roleWords.some(word => combined.toLowerCase().includes(word));
     const role = title.slice(prefix.length).replace(/^\s*(?:[-\u2013\u2014|\u00b7]|on LinkedIn\s*:)\s*/i, '').replace(/\s*[|\u00b7]\s*LinkedIn.*$/i, '').slice(0, 500);
     const relation = employerEvidence(prefix, role, evidence, context.company);
-    const authoredPost = linkedin && /^\/posts\//.test(url.pathname) && /\bon LinkedIn\s*:/i.test(title) && relation.hiring && roleMatch;
+    const namedPost = linkedin && /^\/posts\//.test(url.pathname) && /\bon LinkedIn\s*:/i.test(title);
+    const authoredPost = namedPost && relation.hiring && roleMatch;
+    const referralPost = namedPost && relation.employed && roleMatch && hasReferralOffer(`${role}. ${evidence}`, context.company);
     if (!authoredPost && !relation.employed) continue;
     const recruiter = /\b(recruiter|recruiting|recruitment|talent acquisition)\b/i.test(combined);
-    const teamLead = /\b(manager|director|head|lead|vp|vice president|cto|chief technology)\b/i.test(combined) && roleMatch;
-    if (!authoredPost && !teamLead && !recruiter) continue;
-    contacts.push({ name: prefix, title: authoredPost ? 'Hiring-post author' : role, linkedinUrl: linkedin ? sourceUrl : '', sourceUrl, evidence, kind: authoredPost ? 'hiring_post_author' : 'likely_contact', email: '', emailStatus: 'unavailable', emailConfirmed: false, rank: authoredPost ? 0 : teamLead ? 1 : 2 });
+    if (!authoredPost && !roleMatch && !recruiter) continue;
+    contacts.push({ name: prefix, title: referralPost ? 'Referral-post author' : authoredPost ? 'Hiring-post author' : role, linkedinUrl: linkedin ? sourceUrl : '', sourceUrl, evidence, kind: referralPost ? 'referral_post_author' : authoredPost ? 'hiring_post_author' : 'likely_contact', email: '', emailStatus: 'unavailable', emailConfirmed: false, rank: referralPost ? 0 : authoredPost ? 1 : recruiter ? 3 : 2 });
   }
   const seen = new Set();
   return contacts.sort((a, b) => a.rank - b.rank).filter(contact => {
@@ -97,12 +112,12 @@ export function groundedContacts(results, context) {
 }
 
 export async function searchTavily(context, { apiKey = process.env.TAVILY_API_KEY, fetchImpl = fetch } = {}) {
-  if (!apiKey) throw outreachError('Hiring-manager search is not configured yet.', 503);
+  if (!apiKey) throw outreachError('Referral search is not configured yet.', 503);
   let response;
   try {
-    response = await fetchImpl('https://api.tavily.com/search', { method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ query: `"${context.company}" "${context.title}" ${context.department} ${context.location} hiring manager team lead recruiter LinkedIn`, topic: 'general', search_depth: 'basic', max_results: 12, include_answer: false, include_raw_content: false, auto_parameters: false }), signal: AbortSignal.timeout(25000) });
-  } catch { throw outreachError('Hiring-manager search could not be reached. Please retry.', 502); }
-  if (!response.ok) throw outreachError(response.status === 429 || response.status === 432 || response.status === 433 ? 'The shared search allowance is unavailable. Please try next month.' : 'Hiring-manager search is temporarily unavailable.', response.status === 429 ? 429 : 502);
+    response = await fetchImpl('https://api.tavily.com/search', { method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ query: `"${context.company}" "${context.title}" ${context.department} ${context.location} employee referral team hiring recruiter LinkedIn`, topic: 'general', search_depth: 'basic', max_results: 12, include_answer: false, include_raw_content: false, auto_parameters: false }), signal: AbortSignal.timeout(25000) });
+  } catch { throw outreachError('Referral search could not be reached. Please retry.', 502); }
+  if (!response.ok) throw outreachError(response.status === 429 || response.status === 432 || response.status === 433 ? 'The shared search allowance is unavailable. Please try next month.' : 'Referral search is temporarily unavailable.', response.status === 429 ? 429 : 502);
   const payload = await response.json();
   if (!Array.isArray(payload.results)) throw outreachError('Search returned an invalid response.', 502);
   return payload.results;

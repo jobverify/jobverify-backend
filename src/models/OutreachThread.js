@@ -14,7 +14,7 @@ export const outreachContactSchema = new Schema({
   linkedinUrl: { type: String, default: '', maxlength: 8192 },
   sourceUrl: { type: String, required: true, maxlength: 8192 },
   evidence: { type: String, required: true, maxlength: 3000 },
-  kind: { type: String, enum: ['hiring_post_author', 'likely_contact'], required: true },
+  kind: { type: String, enum: ['referral_post_author', 'hiring_post_author', 'likely_contact'], required: true },
   email: { type: String, default: '', maxlength: 320 },
   emailStatus: { type: String, enum: ['verified', 'public', 'unverified', 'unavailable'], default: 'unavailable' },
   emailConfirmed: { type: Boolean, default: false },
