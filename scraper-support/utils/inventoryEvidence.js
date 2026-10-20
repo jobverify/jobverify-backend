@@ -95,3 +95,29 @@ export const attachInventoryEvidence = (jobs, evidence) => {
 export const readInventoryEvidence = (jobs) => (
   Array.isArray(jobs) ? jobs[INVENTORY_EVIDENCE] || null : null
 )
+
+// Array.map drops non-enumerable inventory metadata. Company wrappers use this
+// when adding labels or timestamps to a shared adapter's validated results.
+export const mapJobsWithInventoryEvidence = (jobs, transform) => {
+  const mapped = jobs.map(transform)
+  const evidence = readInventoryEvidence(jobs)
+  if (!evidence) return mapped
+  const incomplete = mapped.some(job => job?.sourceListingComplete === false)
+  return attachInventoryEvidence(mapped, incomplete ? { ...evidence, status: 'discovery-only', listingComplete: false,
+    reason: 'company-wrapper-limited-inventory' } : evidence)
+}
+
+/** A complete current check needs fetched inventory, not just a status label. */
+export const isFreshCompleteInventoryEvidence = (evidence, {
+  now = new Date(), maxAgeHours = 48,
+} = {}) => {
+  if (!evidence || evidence.firstParty !== true || evidence.listingComplete !== true
+    || !toHttpUrl(evidence.surface) || toNonNegativeInteger(evidence.pagesFetched, -1) < 1
+    || !['complete-inventory', 'verified-empty'].includes(evidence.status)) return false
+  const at = toIsoTimestamp(evidence.verifiedAt)
+  const reference = toIsoTimestamp(now)
+  if (!at || !reference || !(maxAgeHours > 0)) return false
+  const age = new Date(reference) - new Date(at)
+  return age >= 0 && age <= maxAgeHours * 3600000
+    && (evidence.status !== 'verified-empty' || isVerifiedEmptyEvidence(evidence))
+}

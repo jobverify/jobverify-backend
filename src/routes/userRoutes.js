@@ -14,9 +14,15 @@ import {
   updateUserProfile,
 } from "../controllers/userController.js";
 import { submitUserSuggestion } from "../controllers/userSuggestionController.js";
+import { getApplications, markApplicationApplied } from '../controllers/applicationController.js';
 import { protect } from "../middleware/authMiddleware.js";
 import { validateRequest } from "../middleware/validateRequest.js";
 import { createRateLimiter } from "../utils/rateLimit.js";
+import outreachRoutes from './outreachRoutes.js';
+import gmailRoutes from './gmailRoutes.js';
+import campaignRoutes from './campaignRoutes.js';
+import resumeRoutes from './resumeRoutes.js';
+import tailoredResumeRoutes from './tailoredResumeRoutes.js';
 import {
   mongoIdParamValidation,
   suggestionSubmissionValidation,
@@ -37,6 +43,11 @@ const profileUpdateLimiter = createRateLimiter({
 });
 
 const router = express.Router();
+router.use('/outreach', outreachRoutes);
+router.use('/gmail', gmailRoutes);
+router.use('/campaigns', campaignRoutes);
+router.use('/resume', resumeRoutes);
+router.use('/tailored-resumes', tailoredResumeRoutes);
 
 router
   .route("/profile")
@@ -51,6 +62,10 @@ router
   );
 
 router.delete("/account", protect, deleteUserAccount);
+
+router.get('/applications', protect, getApplications);
+router.put('/applications/:applicationId/applied', protect,
+  ...mongoIdParamValidation('applicationId', 'application ID'), validateRequest, markApplicationApplied);
 
 router.post(
   "/suggestions",

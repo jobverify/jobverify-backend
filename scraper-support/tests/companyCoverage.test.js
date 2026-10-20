@@ -25,7 +25,6 @@ const sampleCsv = `row,company_name,url_in_text,note
 18,ASAPP,,
 19,Botminds.ai,,
 20,Goldi Solar Pvt. Ltd,,
-21,Bosch Rexroth,,
 22,Unknown Labs,,
 23,Appview,,
 24,Razor Pay,,
@@ -62,7 +61,6 @@ const sampleCsv = `row,company_name,url_in_text,note
 58,Bank of New York Mellon,,
 59,Bazaarvoice,,
 60,Bahwan Cybertek,,
-61,AurionPro,,
 62,Bank of America,,
 63,ViewzenLabs,,
 64,Ashok Leyland,,
@@ -110,7 +108,6 @@ const sampleCsv = `row,company_name,url_in_text,note
 106,Tectonics Labs India Pvt. Ltd.,,
 107,Valenta,,
 108,3Edge Solutions,,
-109,A&T Video Networks,,
 110,ABInBev GCC India,,
 111,ACS Network & Technologies,,
 112,ACTA.ai,,
@@ -216,9 +213,7 @@ Synechron,
 Techolution,
 Fev India,
 SLB,
-Tata Communications,
 Neeyamo,
-Matter EV,
 Fox,
 Alchemy Techsol India Pvt Ltd,
 Fundsroom,
@@ -231,7 +226,6 @@ Optum,
 G7 CR Technologies,
 Network Intelligence,
 Jumbotail,
-JLL Technologies,
 Impact Analytics,
 Increff,
 igus India,
@@ -347,9 +341,9 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
     catalog: getScraperCatalog(),
   })
 
-  assert.equal(report.totalRows, 161)
-  assert.equal(report.candidateRows, 158)
-  assert.equal(report.matchedCount, 152)
+  assert.equal(report.totalRows, 158)
+  assert.equal(report.candidateRows, 155)
+  assert.equal(report.matchedCount, 149)
   assert.equal(report.unmatchedCount, 6)
 
   assert.deepEqual(
@@ -372,7 +366,6 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
       ['ASAPP', 'asapp'],
       ['Botminds.ai', 'botminds'],
       ['Goldi Solar Pvt. Ltd', 'goldisolar'],
-      ['Bosch Rexroth', 'boschrexroth'],
       ['Appview', 'appviewx'],
       ['Razor Pay', 'razorpay'],
       ['iqigai.ai, built by Fractal Analytics', 'fractal'],
@@ -408,7 +401,6 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
       ['Bank of New York Mellon', 'bnymellon'],
       ['Bazaarvoice', 'bazaarvoice'],
       ['Bahwan Cybertek', 'bahwancybertek'],
-      ['AurionPro', 'aurionpro'],
       ['Bank of America', 'bankofamerica'],
       ['ViewzenLabs', 'viewzenlabs'],
       ['AVASOFT', 'avasoft'],
@@ -453,7 +445,6 @@ test('generateCompanyCoverageReport filters noise rows and resolves aliases agai
       ['Tectonics Labs India Pvt. Ltd.', 'tectonicslabs'],
       ['Valenta', 'valenta'],
       ['3Edge Solutions', '3edge'],
-      ['A&T Video Networks', 'atvideonetworks'],
       ['ABInBev GCC India', 'abinbevgccindia'],
       ['ACS Network & Technologies', 'acsnetworktechnologies'],
       ['ACTA.ai', 'actaai'],
@@ -601,9 +592,9 @@ test('generateCompanyCoverageReport resolves exact company names for newly added
     catalog: getScraperCatalog(),
   })
 
-  assert.equal(report.totalRows, 145)
-  assert.equal(report.candidateRows, 145)
-  assert.equal(report.matchedCount, 142)
+  assert.equal(report.totalRows, 142)
+  assert.equal(report.candidateRows, 142)
+  assert.equal(report.matchedCount, 139)
   assert.equal(report.unmatchedCount, 3)
   assert.deepEqual(
     report.matched.map((item) => [item.companyName, item.source, item.provider?.source ?? null]),
@@ -629,9 +620,7 @@ test('generateCompanyCoverageReport resolves exact company names for newly added
       ['Techolution', 'techolution', 'techolution'],
       ['Fev India', 'fevindia', 'fevindia'],
       ['SLB', 'slb', 'slb'],
-      ['Tata Communications', 'tatacommunications', 'tatacommunications'],
       ['Neeyamo', 'neeyamo', 'neeyamo'],
-      ['Matter EV', 'matterev', 'matterev'],
       ['Fox', 'fox', 'fox'],
       ['Alchemy Techsol India Pvt Ltd', 'alchemytechsolindia', 'alchemytechsolindia'],
       ['Fundsroom', 'fundsroom', 'fundsroom'],
@@ -644,7 +633,6 @@ test('generateCompanyCoverageReport resolves exact company names for newly added
       ['G7 CR Technologies', 'g7cr', 'g7cr'],
       ['Network Intelligence', 'networkintelligence', 'networkintelligence'],
       ['Jumbotail', 'jumbotail', 'jumbotail'],
-      ['JLL Technologies', 'jlltechnologies', 'jlltechnologies'],
       ['Impact Analytics', 'impactanalytics', 'impactanalytics'],
       ['Increff', 'increff', 'increff'],
       ['igus India', 'igusindia', 'igusindia'],

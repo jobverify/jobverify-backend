@@ -4,6 +4,7 @@ import { extractJobFilterSignals } from '../utils/jobFilterSignals.js';
 import { selectClassificationDescription } from './classificationDescription.js';
 import { JOB_CLASSIFICATION_POLICY_VERSION } from '../utils/jobClassificationVersion.js';
 import { resolveRecruitmentPolicy } from './jobRecruitmentPolicy.js';
+import { normalizePublicJobType } from '../utils/publicJobTypeLabel.js';
 
 const normalizedBytes = relative => readFileSync(new URL(`../../${relative}`, import.meta.url)).toString('utf8').replace(/\r\n/g, '\n');
 const policyBytes = normalizedBytes('classification/policy.json');
@@ -234,7 +235,7 @@ export const getAuthoritativeClassification = (job = {}) => {
   const result = job.classification;
   return result?.authoritative === true && ['enforce', 'policy'].includes(result.mode) && result.policyVersion === CLASSIFICATION_POLICY.version
     && ['accepted', 'uncertain', 'fallback'].includes(result.status) && PUBLIC_TYPES.includes(result.resolved?.jobType)
-    ? result.resolved : null;
+    ? { ...result.resolved, jobType: normalizePublicJobType(result.resolved.jobType) } : null;
 };
 
 export const applyClassification = job => {

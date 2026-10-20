@@ -13,6 +13,9 @@ import UserSuggestion from "../src/models/UserSuggestion.js";
 import PendingUser from "../src/models/PendingUser.js";
 import AdminAudit from "../src/models/AdminAudit.js";
 import SiteSettings from "../src/models/SiteSettings.js";
+import Application from '../src/models/Application.js';
+import Resume from '../src/models/Resume.js';
+import { mockOutreachDeletion } from './helpers/outreachDeletionDoubles.js';
 
 const createResponseDouble = () => ({
   statusCode: 200,
@@ -31,7 +34,9 @@ const createResponseDouble = () => ({
   },
 });
 
-test("deleteUserAccount removes the authenticated user's account-linked data and clears their session", async () => {
+test("deleteUserAccount removes the authenticated user's account-linked data and clears their session", async (t) => {
+  mockOutreachDeletion(t);
+  const resumeDeletion = t.mock.method(Resume, 'deleteMany', async () => ({ deletedCount: 1 }));
   const userId = "507f1f77bcf86cd799439011";
   const email = "deleted.account@gmail.com";
   const originalMethods = {
@@ -46,6 +51,7 @@ test("deleteUserAccount removes the authenticated user's account-linked data and
     pendingUsers: PendingUser.deleteMany,
     audits: AdminAudit.deleteMany,
     settings: SiteSettings.updateMany,
+    applications: Application.deleteMany,
   };
   const removals = [];
 
@@ -56,6 +62,7 @@ test("deleteUserAccount removes the authenticated user's account-linked data and
   PlanPurchase.deleteMany = async (filter) => { removals.push(["purchase", filter]); };
   AccessEvent.deleteMany = async (filter) => { removals.push(["accessEvent", filter]); };
   UserSuggestion.deleteMany = async (filter) => { removals.push(["suggestion", filter]); };
+  Application.deleteMany = async (filter) => { removals.push(['application', filter]); };
   TelegramLinkToken.deleteMany = async (filter) => { removals.push(["telegramToken", filter]); };
   PendingUser.deleteMany = async (filter) => { removals.push(["pendingUser", filter]); };
   AdminAudit.deleteMany = async (filter) => { removals.push(["audit", filter]); };
@@ -74,6 +81,7 @@ test("deleteUserAccount removes the authenticated user's account-linked data and
       message: "Account deleted successfully",
     });
     assert.equal(res.clearedCookie, "jobverify_token");
+    assert.deepEqual(resumeDeletion.mock.calls[0].arguments, [{ user: userId }]);
     assert.deepEqual(removals, [
       ["subscription", { user: userId }],
       ["click", { user: userId }],
@@ -82,6 +90,7 @@ test("deleteUserAccount removes the authenticated user's account-linked data and
       ["accessEvent", { user: userId }],
       ["telegramToken", { user: userId }],
       ["suggestion", { user: userId }],
+      ['application', { user: userId }],
       ["pendingUser", { email }],
       ["audit", { $or: [{ admin: userId }, { targetType: "User", targetId: userId }] }],
       ["settings", { updatedBy: userId }, { $unset: { updatedBy: "" } }],
@@ -99,5 +108,6 @@ test("deleteUserAccount removes the authenticated user's account-linked data and
     PendingUser.deleteMany = originalMethods.pendingUsers;
     AdminAudit.deleteMany = originalMethods.audits;
     SiteSettings.updateMany = originalMethods.settings;
+    Application.deleteMany = originalMethods.applications;
   }
 });

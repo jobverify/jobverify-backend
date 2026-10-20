@@ -3412,26 +3412,6 @@
     "companyDomain": "aquera.com"
   },
   {
-    "source": "aravindeyecaresystem",
-    "companyName": "Aravind Eye Care System",
-    "adapter": "script",
-    "modulePath": "../aravindeyecaresystem/script.js",
-    "companyCareerPage": "https://aravind.org/careers/",
-    "homepageUrl": "https://aravind.org/",
-    "pageSitemapUrl": "https://aravind.org/page-sitemap.xml",
-    "jobListingsAjaxUrl": "https://aravind.org/jm-ajax/get_listings/",
-    "jobListingsApiUrl": "https://aravind.org/wp-json/wp/v2/job-listings",
-    "companyDomain": "aravind.org",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "official-homepage-plus-careers-page-plus-wp-job-manager-first-party-feeds",
-    "extractionStrategy": "official-homepage+official-careers-page+page-sitemap+wp-job-manager-ajax-feed+wp-rest-job-listings",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-15",
-    "verifiedSurfaceSummary": "Verified on July 15, 2026 that https://aravind.org/ is the live official Aravind Eye Care System homepage, that https://aravind.org/careers/ is the first-party careers page published in https://aravind.org/page-sitemap.xml, and that the careers page exposes first-party WP Job Manager feeds at https://aravind.org/jm-ajax/get_listings/ and https://aravind.org/wp-json/wp/v2/job-listings. Those first-party public feeds returned the live postings Driver, AC Mechanic, and Data Engineering JD during verification."
-  },
-  {
     "source": "arbutus",
     "companyName": "Arbutus Biopharma",
     "adapter": "script",
@@ -3813,20 +3793,6 @@
     "verifiedSurfaceSummary": "Verified on Saturday, August 15, 2026 that https://ascinternational.com/careers/ remained ASC International's public first-party careers page with the \"Join Our Continuously Growing Team\" heading and a current Automated Optical Inspection (AOI) Engineer posting, and that the legacy first-party page at https://w2.ascinternational.com/job-posting/ mirrored the same role. Direct fetches to those first-party job pages timed out from the verified runtime environment, so this scraper keeps the live careers-page parser when the official page is reachable but accepts the dual first-party timeout state and returns an empty result until the verified public surface becomes directly reachable again."
   },
   {
-    "source": "ashianagroup",
-    "companyName": "Ashiana Group",
-    "adapter": "script",
-    "modulePath": "../ashianagroup/script.js",
-    "companyCareerPage": "https://www.ashianagroup.com/career.html",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "single-public-careers-page",
-    "extractionStrategy": "public-html-job-posting+mailto-apply",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "ashianagroup.com"
-  },
-  {
     "source": "asiptechnologies",
     "companyName": "ASIP Technologies",
     "adapter": "script",
@@ -4189,20 +4155,6 @@
     "normalizationProfile": "engineering-default"
   },
   {
-    "source": "atvideonetworks",
-    "companyName": "A&T Video Networks",
-    "adapter": "script",
-    "modulePath": "../atvideonetworks/script.js",
-    "companyCareerPage": "https://www.atnetindia.net/career/",
-    "atsPlatform": "official-company-site",
-    "countryFilter": "India",
-    "paginationStrategy": "single-page-accordion",
-    "extractionStrategy": "html-accordion-cards",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "atnetindia.net"
-  },
-  {
     "source": "aujas",
     "companyName": "Aujas Cybersecurity",
     "adapter": "script",
@@ -4249,19 +4201,6 @@
     "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://careers.aurigo.com/ was the live first-party Aurigo Software Technologies careers surface, that it still presented the Explore open positions at Aurigo search experience, that its public search results exposed current openings on paginated first-party pages, and that the verified listings included Manager - Legal and Senior Software Engineer I - DevOps.",
     "dryRunFile": "aurigo/jobs.json",
     "modulePath": "../aurigo/script.js"
-  },
-  {
-    "source": "aurionpro",
-    "companyName": "AurionPro",
-    "adapter": "script",
-    "modulePath": "../aurionpro/script.js",
-    "companyCareerPage": "https://zingnext.zinghr.com/portal/embed/career-website?CareerClientKey=AHJX1-HGSAB-BSHB1",
-    "atsPlatform": "zinghr",
-    "countryFilter": "India",
-    "paginationStrategy": "page-query",
-    "extractionStrategy": "json-search-api+json-detail-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default"
   },
   {
     "source": "aurobindopharma",
@@ -5692,20 +5631,6 @@
     "normalizationProfile": "engineering-default"
   },
   {
-    "source": "blastlineindiapvtltd",
-    "companyName": "BLASTLINE INDIA PVT LTD",
-    "adapter": "script",
-    "modulePath": "../blastlineindiapvtltd/script.js",
-    "companyCareerPage": "https://blastlineindia.com/about-us/careers/",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "homepage-plus-careers-page-handoff-plus-wordpress-payload-plus-official-board-details",
-    "extractionStrategy": "verified-homepage+verified-careers-handoff+verified-wordpress-payload+company-filtered-board-cards+jobposting-detail+direct-apply-form",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "blastlineindia.com"
-  },
-  {
     "source": "blinkit",
     "companyName": "Blinkit",
     "adapter": "script",
@@ -5978,19 +5903,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "jobs.bosch.com"
-  },
-  {
-    "source": "boschrexroth",
-    "companyName": "Bosch Rexroth",
-    "adapter": "script",
-    "modulePath": "../boschrexroth/script.js",
-    "companyCareerPage": "https://jobs.bosch.com/en/?pages=1&country=in",
-    "atsPlatform": "bosch-content-api",
-    "countryFilter": "India",
-    "paginationStrategy": "page-query",
-    "extractionStrategy": "json-search-api+json-detail-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default"
   },
   {
     "source": "botminds",
@@ -7419,20 +7331,6 @@
     "companyDomain": "clear.in"
   },
   {
-    "source": "cleartrip",
-    "companyName": "Cleartrip",
-    "adapter": "script",
-    "modulePath": "../cleartrip/script.js",
-    "companyCareerPage": "https://careers.cleartrip.com/",
-    "atsPlatform": "cleartrip-careers-to-flipkart-turbohire-handoff",
-    "countryFilter": "India",
-    "paginationStrategy": "official-jobs-redirect+publicorganization+turbohire-filteredjobs-api",
-    "extractionStrategy": "verified-cleartrip-careers-handoff+verified-flipkart-publicorganization+cleartrip-signal-filter",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "careers.cleartrip.com"
-  },
-  {
     "source": "clevertap",
     "companyName": "CleverTap",
     "adapter": "script",
@@ -7787,19 +7685,6 @@
     "companyDomain": "coditas.com"
   },
   {
-    "source": "coforge",
-    "companyName": "Coforge",
-    "adapter": "script",
-    "modulePath": "../coforge/script.js",
-    "companyCareerPage": "https://careers.coforge.com/coforge/",
-    "atsPlatform": "zwayam",
-    "countryFilter": "India",
-    "paginationStrategy": "offset-formdata",
-    "extractionStrategy": "json-search-api+json-detail-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default"
-  },
-  {
     "source": "cognida",
     "companyName": "Cognida.ai",
     "adapter": "script",
@@ -8076,20 +7961,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "constelli.com"
-  },
-  {
-    "source": "continental",
-    "companyName": "Continental",
-    "adapter": "script",
-    "modulePath": "../continental/script.js",
-    "companyCareerPage": "https://jobs.continental.com/en/",
-    "atsPlatform": "continental-job-portal-api",
-    "countryFilter": "India",
-    "paginationStrategy": "current-page-form-post",
-    "extractionStrategy": "official-result-list-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "jobs.continental.com"
   },
   {
     "source": "continualengine",
@@ -8371,20 +8242,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "criamose.com"
-  },
-  {
-    "source": "crimsonenergyexperts",
-    "companyName": "Crimson Energy Experts Pvt Ltd",
-    "adapter": "script",
-    "modulePath": "../crimsonenergyexperts/script.js",
-    "companyCareerPage": "https://crimsonenergy.in/careers.html",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "homepage-plus-sitemap-plus-first-party-careers-page-plus-missing-route-validation",
-    "extractionStrategy": "verified-homepage+verified-sitemap+verified-first-party-careers-page+inline-opportunity-cards+google-form-apply-links+verified-missing-jobs-routes",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "crimsonenergy.in"
   },
   {
     "source": "crimsoninteractive",
@@ -9852,31 +9709,6 @@
     "verifiedSurfaceSummary": "Verified on July 15, 2026 that https://digiversal.in/ redirects to the live first-party homepage at https://www.digiversal.co/, that https://www.digiversal.co/robots.txt and https://www.digiversal.co/sitemap.xml are live crawl surfaces, and that https://www.digiversal.co/careers/ is the first-party public careers board. The careers page currently exposes 22 same-domain role cards such as https://www.digiversal.co/careers/academic-research-mentor and https://www.digiversal.co/careers/android-developer, while https://www.digiversal.co/career, https://www.digiversal.co/jobs, https://www.digiversal.co/join-us, https://www.digiversal.co/openings, and https://www.digiversal.co/current-openings returned 404 during live checks."
   },
   {
-    "source": "dineout",
-    "companyName": "Dineout",
-    "officialBrandName": "Swiggy Dineout",
-    "parentCompanyName": "Swiggy",
-    "adapter": "script",
-    "modulePath": "../dineout/script.js",
-    "dryRunFile": "dineout/jobs.json",
-    "homepageUrl": "https://www.dineout.co.in/",
-    "canonicalConsumerSurfaceUrl": "https://www.swiggy.com/dineout",
-    "companyCareerPage": "https://careers.swiggy.in/",
-    "legacyCareersUrl": "https://careers.swiggy.com/",
-    "jobsFeedUrl": "https://careers.swiggy.in/api/jobs.json",
-    "jobsApiUrl": "https://api.smartrecruiters.com/v1/companies/SWIGGY/postings",
-    "jobsBoardUrl": "https://jobs.smartrecruiters.com/SWIGGY",
-    "companyDomain": "dineout.co.in",
-    "atsPlatform": "smartrecruiters",
-    "countryFilter": "India",
-    "paginationStrategy": "offset-paginated-parent-ats-with-count-checked-first-party-inventory",
-    "extractionStrategy": "verified-parent-careers-migration+reconciled-public-inventories+dine-out-business-unit+india-country-filter+job-details",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-10-08",
-    "verifiedSurfaceSummary": "Reverified on October 8, 2026 that the established parent careers URL https://careers.swiggy.com/ redirects to the current first-party https://careers.swiggy.in/ application. Its application identifies Dineout as a Swiggy business and loads the complete public feed https://careers.swiggy.in/api/jobs.json. The feed hands off to SmartRecruiters SWIGGY job ads. The count-checked public API https://api.smartrecruiters.com/v1/companies/SWIGGY/postings matches the parent feed by title, city and business unit. At verification both inventories contained 178 parent roles, including 30 explicitly attributed to the Dine Out business unit in India. Only Dine Out India roles with verified active public details are extracted for Dineout."
-  },
-  {
     "source": "dineshchandraragrawalinfracon",
     "companyName": "Dineshchandra R. Agrawal Infracon Private Limited",
     "adapter": "script",
@@ -10091,20 +9923,6 @@
     "normalizationProfile": "engineering-default",
     "verifiedOn": "2026-07-15",
     "verifiedSurfaceSummary": "Verified on July 15, 2026 that https://www.dozeehealth.ai/ is the live official homepage for Dozee, that https://www.dozeehealth.ai/careers is the live first-party careers page, and that this page links job openings to the public Lever board at https://jobs.lever.co/dozee. The public Lever postings API at https://api.lever.co/v0/postings/dozee?mode=json returned 32 public postings, including 24 India roles with country code IN, and a live India sample detail page was verified at https://jobs.lever.co/dozee/ccbcd4a2-0672-4139-b067-bb3905ff2738."
-  },
-  {
-    "source": "drdo",
-    "companyName": "DRDO",
-    "adapter": "script",
-    "modulePath": "../drdo/script.js",
-    "companyCareerPage": "https://drdo.gov.in/drdo/en/offerings/vacancies",
-    "atsPlatform": "official-government-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "page-query",
-    "extractionStrategy": "official-vacancy-cards",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "drdo.gov.in"
   },
   {
     "source": "dream11",
@@ -13260,19 +13078,6 @@
     "companyDomain": "careers.firstsource.com"
   },
   {
-    "source": "fiserv",
-    "companyName": "Fiserv",
-    "adapter": "script",
-    "modulePath": "../fiserv/script.js",
-    "companyCareerPage": "https://careers.fiserv.com/us/en",
-    "atsPlatform": "phenom",
-    "countryFilter": "India",
-    "paginationStrategy": "offset-query",
-    "extractionStrategy": "phenom-search+detail-enrichment",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default"
-  },
-  {
     "source": "five9india",
     "companyName": "Five9 India",
     "officialBrandName": "Five9",
@@ -13421,19 +13226,6 @@
     "companyDomain": "flintlab.io",
     "verifiedOn": "2026-08-07",
     "verifiedSurfaceSummary": "Verified on Friday, August 7, 2026 that https://flintlab.io/ was FlintLab's live first-party Next.js homepage, that it now led with the \"Ship Mobile & Web Apps\" and \"With Real Confidence, At Scale\" hero copy plus an \"Ask FlintBot\" control, and that its metadata and schema still identified FlintLab Sirius, AI NEXUS FLINT LAB INDIA PRIVATE LIMITED., engage@flintlab.io, and https://www.linkedin.com/company/flintlab-inc as the trusted public brand surface. Also verified on Friday, August 7, 2026 that https://flintlab.io/sitemap.xml exposed only product, docs, blog, and informational routes, while the first-party /careers, /career, and /jobs routes still resolved to branded missing-page responses rather than a public openings board. This provider remains fail-closed and returns an honest empty result until FlintLab publishes a trustworthy public careers surface."
-  },
-  {
-    "source": "flipkart",
-    "companyName": "Flipkart",
-    "adapter": "script",
-    "modulePath": "../flipkart/script.js",
-    "companyCareerPage": "https://www.flipkartcareers.com/",
-    "atsPlatform": "turbohire",
-    "countryFilter": "India",
-    "paginationStrategy": "single-page",
-    "extractionStrategy": "json-search-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default"
   },
   {
     "source": "flock",
@@ -14618,20 +14410,6 @@
     "verifiedSurfaceSummary": "Verified on July 16, 2026 that https://www.goapptiv.com/ and https://www.goapptiv.com/teamandculture are live first-party GoApptiv pages, while https://www.goapptiv.com/careers, /career, /jobs, and /hiring return first-party 404 pages with no trustworthy public job listings or ATS handoffs."
   },
   {
-    "source": "gocomet",
-    "companyName": "GoComet",
-    "adapter": "script",
-    "modulePath": "../gocomet/script.js",
-    "companyCareerPage": "https://www.gocomet.com/company/careers",
-    "atsPlatform": "keka-embed-api",
-    "countryFilter": "India",
-    "paginationStrategy": "single-keka-active-jobs-endpoint",
-    "extractionStrategy": "official-careers-page+keka-embed-api+jobdetails+applyjob",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "gocomet.com"
-  },
-  {
     "source": "godharinfratechpvtltd",
     "companyName": "Godhar Infratech Pvt ltd",
     "adapter": "script",
@@ -14693,49 +14471,6 @@
     "extractionStrategy": "html-signal-only",
     "parser": "custom-script",
     "normalizationProfile": "engineering-default"
-  },
-  {
-    "source": "gokhana",
-    "companyName": "GoKhana",
-    "companyCareerPage": "https://gokhana.com/careers/",
-    "companyDomain": "gokhana.com",
-    "adapter": "script",
-    "atsPlatform": "official-company-careers-linkout",
-    "countryFilter": "India",
-    "paginationStrategy": "single-page-job-card-scan",
-    "extractionStrategy": "official-careers-page+elementor-job-card-extraction+linkedin-apply-links",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "modulePath": "../gokhana/script.js",
-    "verifiedOn": "2026-07-16",
-    "verifiedSurfaceSummary": "Verified on July 16, 2026 that https://gokhana.com/careers/ is the current official GoKhana careers page and publicly lists 10 open positions on the first-party page with location, employment type, and LinkedIn apply links.",
-    "openingCount": 10,
-    "applyDomain": "linkedin.com"
-  },
-  {
-    "source": "gokwik",
-    "companyName": "GoKwik",
-    "officialBrandName": "GoKwik",
-    "adapter": "script",
-    "modulePath": "../gokwik/script.js",
-    "homepageUrl": "https://www.gokwik.co/",
-    "companyAboutPage": "https://www.gokwik.co/about?_gc=1",
-    "companyCareerPage": "https://gokwik.keka.com/careers",
-    "careerPortalInfoUrl": "https://gokwik.keka.com/careers/api/organization/default/careerportalinfo",
-    "activeJobsUrl": "https://gokwik.keka.com/careers/api/embedjobs/default/active/19d678f6-8b79-4532-a5f0-d57b593a822e",
-    "departmentsUrl": "https://gokwik.keka.com/careers/api/embedjobs/departments/19d678f6-8b79-4532-a5f0-d57b593a822e",
-    "expectedKekaDomain": "https://gokwik.keka.com/careers/",
-    "expectedIdentifier": "19d678f6-8b79-4532-a5f0-d57b593a822e",
-    "companyDomain": "gokwik.co",
-    "atsPlatform": "keka-embed-api",
-    "countryFilter": "India",
-    "paginationStrategy": "verified-first-party-about-page-plus-keka-active-jobs-endpoints",
-    "extractionStrategy": "verified-first-party-about-page+verified-keka-careers-link+careerportalinfo+active-keka-embed-api+departments+jobdetails+applyjob",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-16",
-    "verifiedSurfaceSummary": "Verified on July 16, 2026 that https://www.gokwik.co/about?_gc=1 is the live first-party GoKwik about page and that it links to the public Keka board at https://gokwik.keka.com/careers. Live verification on July 16, 2026 confirmed https://gokwik.keka.com/careers/api/organization/default/careerportalinfo, https://gokwik.keka.com/careers/api/embedjobs/default/active/19d678f6-8b79-4532-a5f0-d57b593a822e, and https://gokwik.keka.com/careers/api/embedjobs/departments/19d678f6-8b79-4532-a5f0-d57b593a822e returning the public GoKwik careers portal and active public India jobs.",
-    "dryRunFile": "gokwik/jobs.json"
   },
   {
     "source": "goldcast",
@@ -15233,23 +14968,6 @@
     "modulePath": "../gupshup/script.js"
   },
   {
-    "source": "gsk",
-    "companyName": "GSK",
-    "officialBrandName": "GSK",
-    "adapter": "script",
-    "modulePath": "../gsk/script.js",
-    "companyCareerPage": "https://india-pharma.gsk.com/en-in/careers",
-    "companyDomain": "gsk.com",
-    "atsPlatform": "phenom-first-party-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "offset-query",
-    "extractionStrategy": "verified-first-party-careers-handoff+phenom-search+detail-enrichment",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-25",
-    "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://india-pharma.gsk.com/en-in/careers was the live first-party GSK India careers page, that it exposed a Search jobs handoff to the public first-party Phenom board at https://jobs.gsk.com/us/en/search-results, and that the live board's embedded country aggregation reported 24 India openings. Verified public India listings on the same board included Associate Director Technology Manager in Bengaluru, India and AI Solutions Architect in Bengaluru, India."
-  },
-  {
     "source": "guru99",
     "companyName": "Guru99",
     "officialBrandName": "Guru99",
@@ -15349,37 +15067,6 @@
     "companyDomain": "happay.com",
     "verifiedOn": "2026-07-17",
     "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://happay.com/careers/ was the live first-party Happay careers page and still rendered Current Openings with Happay-MMT branding, that https://happay.com/jobs/ resolved on the first-party domain but only exposed the literal shortcode [jobs per_page=\"12\" show_filters=\"true\"] instead of public listings, and that https://happay.com/contact-us/ still routed hiring contact through careers@happay.in under MakeMyTrip India Private Limited. No trustworthy public Happay jobs listing contract was exposed from the first-party surface, so this provider is fail-closed."
-  },
-  {
-    "source": "happiestminds",
-    "companyName": "Happiest Minds",
-    "adapter": "script",
-    "modulePath": "../happiestminds/script.js",
-    "companyCareerPage": "https://careers.happiestminds.com/",
-    "atsPlatform": "zwayam",
-    "countryFilter": "India",
-    "paginationStrategy": "public-zwayam-total-count-plus-publisher-page-size",
-    "extractionStrategy": "verified-current-careers-dual-handoff+tenant-config-or-pinned-current-published-client+counted-zwayam+matching-native-details+incomplete-full-description-subset",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "happiestminds.com",
-    "publicListingApiUrl": "https://public.zwayam.com/jobs/search",
-    "additionalPublicJobsUrl": "https://smileshrms.darwinbox.com/ms/candidate/careers",
-    "verifiedOn": "2026-10-09",
-    "listingComplete": false,
-    "indiaInventoryTotal": null,
-    "verifiedSurfaceSummary": "Verified on October 9, 2026 (India time): the current first-party careers homepage publishes both the Happiest Minds Zwayam and Smileshrms Darwinbox boards. The Zwayam publisher tenant configuration explicitly binds company 15974, encoded listing companyId MTU5NzQ=, jobs.happiestminds.com, and https://www.happiestminds.com. Strict native traversal counted 392 distinct public-status rows across 40 pages with publisher page size 10; 342 rows have explicit India countries. Exact default validation returned a substantive-description subset of 334 unique India jobs, including 11 matched native details in the final frozen-source default check. Public application links use native row id; stable scraper jobId uses jobCode. Native Job Description, longDescription, and full listing mediumDescriptionWithoutHtml agree in captured current detail evidence. Detail and final snapshot requests intermittently return HTTP 403. All rows retain sourceListingComplete=false and coverage-gap evidence with unknown full source and India active vacancy counts; the separately published Darwinbox board remains uncovered. A denied final snapshot is admitted only after full counted listing traversal, unavailable native-detail coverage, and a nonempty substantive subset; malformed JSON, identity/country/status contradictions, actual snapshot drift, cancellation, caps, complete detail feeds, and empty subsets remain failures. The configuration endpoint may return HTTP403 while public listings remain200. Only configuration403/429/502/503/504 can use the alternative fresh employer-published portal and its exact reviewed client release cfe1aeb6e526cc646e5cdaa4709eb18d3e6ea3898e68cab06c0f7edf2de0099c, whose active native constants and consumers bind15974 and the exact employer/API domains. A changed client, foreign handoff, malformed configuration, employer contradiction,401/404,timeout or cancellation remains a failure. Fresh October9 default and actual runner/lifecycle read-only Mongo-context checks each returned334India jobs, allpartial; no captured jobs are used by production.",
-    "zwayamCompanyId": "MTU5NzQ=",
-    "zwayamDetailCompanyId": "15974",
-    "zwayamCompanyDomain": "jobs.happiestminds.com",
-    "verifiedPublicJobCount": null,
-    "verifiedIndiaJobCount": null,
-    "verifiedPublicListingRowCount": 392,
-    "verifiedIndiaListingRowCount": 342,
-    "verifiedDescriptionSubsetRowCount": 334,
-    "verifiedInventoryStatus": "coverage-gap",
-    "publishedClientIdentitySha256": "cfe1aeb6e526cc646e5cdaa4709eb18d3e6ea3898e68cab06c0f7edf2de0099c",
-    "sourceListingComplete": false
   },
   {
     "source": "happyfox",
@@ -18930,21 +18617,6 @@
     "verifiedSurfaceSummary": "Verified on Thursday, July 16, 2026 that https://www.kalelogistics.com/careers is the live first-party Kale Logistics careers page and links View Opportunities to the official Darwinbox portal at https://kale.darwinbox.in/ms/candidatev2/main/careers/home. Direct non-browser requests to the public Darwinbox listing API were Cloudflare-protected during verification, but the public candidate portal remained scrapeable through the repo browser-session Darwinbox flow and returned 2 India jobs."
   },
   {
-    "source": "kaleyra",
-    "companyName": "Kaleyra",
-    "adapter": "script",
-    "modulePath": "../kaleyra/script.js",
-    "companyCareerPage": "https://www.kaleyra.com/",
-    "atsPlatform": "official-homepage-handoff-to-shared-parent-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "homepage-redirect-plus-shared-parent-careers-portal-check",
-    "extractionStrategy": "verified-kaleyra-homepage-handoff+verified-shared-tata-careers-portal-without-kaleyra-board-return-empty",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "kaleyra.com",
-    "workspaceDomain": "jobs.tatacommunications.com"
-  },
-  {
     "source": "kalvium",
     "companyName": "Kalvium",
     "adapter": "script",
@@ -19717,29 +19389,6 @@
     "normalizationProfile": "engineering-default",
     "verifiedOn": "2026-07-25",
     "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.klook.com/careers/ is Klook's live first-party careers page and directs candidates to the official Klook careers search at https://www.klookcareers.com/jobs/search?page=1. A direct request to that official jobs URL redirected to the Moka login page rather than exposing enumerable public listings, so this provider fails closed until the first-party surface becomes publicly enumerable."
-  },
-  {
-    "source": "kotaksecurities",
-    "companyName": "Kotak Securities",
-    "officialBrandName": "Kotak Securities",
-    "adapter": "script",
-    "modulePath": "../kotaksecurities/script.js",
-    "dryRunFile": "kotaksecurities/jobs.json",
-    "homepageUrl": "https://www.kotaksecurities.com/",
-    "verifiedBrandHomepageRedirectUrl": "https://www.kotakneo.com/",
-    "companyCareerPage": "https://www.kotakneo.com/about-us/careers/",
-    "officialCareersHandoffUrl": "https://kotaksecurities.darwinbox.in/ms/candidate/careers/",
-    "darwinboxOrigin": "https://kotaksecurities.darwinbox.in",
-    "darwinboxCompanyId": "main",
-    "companyDomain": "kotaksecurities.com",
-    "atsPlatform": "darwinbox",
-    "countryFilter": "India",
-    "paginationStrategy": "browser-session-darwinbox-pagination",
-    "extractionStrategy": "official-careers-page+darwinbox-listing-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-16",
-    "verifiedSurfaceSummary": "Verified on Thursday, July 16, 2026 that https://www.kotaksecurities.com/ redirects to the live first-party brand homepage at https://www.kotakneo.com/, that the first-party careers page at https://www.kotakneo.com/about-us/careers/ explicitly directs candidates to the official Darwinbox handoff at https://kotaksecurities.darwinbox.in/ms/candidate/careers/, and that the public Darwinbox shell resolves to the Kotak Securities candidate portal for current openings."
   },
   {
     "source": "kottackalbusinesssolutionspvtltd",
@@ -22151,20 +21800,6 @@
     "verifiedSurfaceSummary": "Verified on Friday, August 14, 2026 that the public Meta Careers browser experience at https://www.metacareers.com/jobsearch/?q=India still returned 21 India results through the first-party GraphQL search flow, including Client Solutions Manager, Ecommerce; Enterprise Technical Sales Specialist, APAC; and Technical Solutions Consultant, Meta Business Agent. A live browser-rendered detail page at https://www.metacareers.com/profile/job_details/1721254462523213/ still exposed public job content for Client Solutions Manager, Ecommerce in Bangalore, India. Direct anonymous HTTP requests to the same search route, detail route, and replayed GraphQL endpoint returned Meta's generic first-party \"Sorry, something went wrong.\" error shell with HTTP 400 from this runtime, so the scraper now returns a truthful current-openings signal job instead of aborting the batch when that exact runtime error shell is encountered."
   },
   {
-    "source": "metconnectinfotech",
-    "companyName": "MetConnect Infotech",
-    "adapter": "script",
-    "modulePath": "../metconnectinfotech/script.js",
-    "companyCareerPage": "https://metconnectinfotech.com/company-career",
-    "atsPlatform": "official-company-site-public-jobs-page",
-    "countryFilter": "India",
-    "paginationStrategy": "single-first-party-jobs-api",
-    "extractionStrategy": "verified-official-homepage+verified-company-career-page+public-jobs-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "metconnectinfotech.com"
-  },
-  {
     "source": "metricstream",
     "companyName": "MetricStream",
     "officialBrandName": "MetricStream",
@@ -22958,19 +22593,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "mozark.ai"
-  },
-  {
-    "source": "mphasis",
-    "companyName": "Mphasis",
-    "adapter": "script",
-    "modulePath": "../mphasis/script.js",
-    "companyCareerPage": "https://careers.mphasis.com/home/hot-jobs/location-search/india.html",
-    "atsPlatform": "ripplehire",
-    "countryFilter": "India",
-    "paginationStrategy": "page-query",
-    "extractionStrategy": "xml+detail-page",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default"
   },
   {
     "source": "mpl",
@@ -24231,20 +23853,6 @@
     "dryRunFile": "nksecurities/jobs.json"
   },
   {
-    "source": "noblq",
-    "companyName": "NoblQ",
-    "adapter": "script",
-    "modulePath": "../noblq/script.js",
-    "companyCareerPage": "https://talent.noblq.com/jobs/Careers",
-    "atsPlatform": "zohorecruit",
-    "countryFilter": "India",
-    "paginationStrategy": "single-public-json-feed",
-    "extractionStrategy": "verified-official-homepage+verified-about-us-careers-handoff+verified-first-party-zoho-portal+zoho-public-jobs-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "talent.noblq.com"
-  },
-  {
     "source": "nobrokers",
     "companyName": "NoBroker",
     "adapter": "script",
@@ -24679,48 +24287,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "odnestcompany.com"
-  },
-  {
-    "source": "ofbtech",
-    "companyName": "OFB Tech",
-    "officialBrandName": "OFB Tech",
-    "adapter": "script",
-    "modulePath": "../ofbtech/script.js",
-    "officialHomepageUrl": "https://www.ofbcareers.com/",
-    "companyCareerPage": "https://www.ofbcareers.com/",
-    "officialListingsPageUrl": "https://www.ofbcareers.com/categories",
-    "officialJobDetailsBaseUrl": "https://www.ofbcareers.com/jobs/",
-    "companyDomain": "ofbcareers.com",
-    "atsPlatform": "wix",
-    "countryFilter": "India",
-    "paginationStrategy": "single-first-party-wix-listings-page",
-    "extractionStrategy": "verified-homepage+verified-listings-page+embedded-warmup-json-jobs-collection",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "dryRunFile": "ofbtech/jobs.json",
-    "verifiedOn": "2026-07-17",
-    "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.ofbcareers.com/ is the official first-party careers homepage branded to OFB Tech Pvt. Ltd., that https://www.ofbcareers.com/categories is the live public listings page backed by an embedded jobs dataset, and that detail pages such as https://www.ofbcareers.com/jobs/frontend-developer- publicly expose OFB Tech (OfBusiness) role context."
-  },
-  {
-    "source": "ofbusiness",
-    "companyName": "OfBusiness",
-    "officialBrandName": "OfBusiness",
-    "adapter": "script",
-    "modulePath": "../ofbusiness/script.js",
-    "homepageUrl": "https://www.ofbcareers.com/",
-    "officialCareersLandingUrl": "https://www.ofbcareers.com/",
-    "companyCareerPage": "https://www.ofbcareers.com/categories",
-    "companyDomain": "ofbcareers.com",
-    "wixWarmupScriptId": "wix-warmup-data",
-    "paginationQueryParam": "comp-lyh6vd88_page",
-    "atsPlatform": "wix-embedded-data",
-    "countryFilter": "India",
-    "paginationStrategy": "first-party-wix-warmup-pagination",
-    "extractionStrategy": "verified-careers-homepage+verified-categories-page+wix-warmup-data+paginated-first-party-job-slices+deduplication",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-17",
-    "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.ofbcareers.com/ is the official OfBusiness careers homepage, that https://www.ofbcareers.com/categories is the official first-party public jobs surface, that it exposes Wix warmup data in the wix-warmup-data script payload, and that the verified first-party pagination contract with comp-lyh6vd88_page exposed 18 pages and 72 unique public postings after de-duplication by first-party job id."
   },
   {
     "source": "ogmenrobotics",
@@ -25718,30 +25284,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "payoda.com"
-  },
-  {
-    "source": "paytm",
-    "companyName": "Paytm",
-    "officialBrandName": "Paytm",
-    "adapter": "script",
-    "modulePath": "../paytm/script.js",
-    "dryRunFile": "paytm/jobs.json",
-    "homepageUrl": "https://paytm.com/",
-    "companyCareerPage": "https://paytm.com/careers",
-    "companyDomain": "paytm.com",
-    "officialLeverBoardUrl": "https://jobs.lever.co/paytm",
-    "leverApiUrl": "https://api.lever.co/v0/postings/paytm?mode=json",
-    "verifiedSampleJobUrl": "https://jobs.lever.co/paytm/8182f4b5-4dcb-4d3d-87fc-93a0d8730d3d",
-    "verifiedPublicJobCount": 238,
-    "verifiedIndiaJobCount": 230,
-    "atsPlatform": "lever",
-    "countryFilter": "India",
-    "paginationStrategy": "official-careers-validation-plus-lever-api",
-    "extractionStrategy": "verified-first-party-careers-page+verified-lever-board+lever-postings-api+india-country-filter",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-16",
-    "verifiedSurfaceSummary": "Verified on Thursday, July 16, 2026 that https://paytm.com/careers is the live official Paytm careers page, that its Apply Now and View All Roles calls-to-action hand candidates to the public Lever board at https://jobs.lever.co/paytm, and that the public Lever postings API at https://api.lever.co/v0/postings/paytm?mode=json returned 238 public postings and 230 India postings including Accounts Payable Specialist in Noida, Uttar Pradesh and Ad Sales (KAM) - DM/ Sr. Manager - Paytm Ads - Bangalore in Bangalore, Karnataka."
   },
   {
     "source": "payu",
@@ -28908,20 +28450,6 @@
     "companyDomain": "sahaj.ai"
   },
   {
-    "source": "sahajanandtechnologiesprivatelimitedstpl",
-    "companyName": "Sahajanand Laser Technology Ltd. (SLTL Group)",
-    "adapter": "script",
-    "modulePath": "../sahajanandtechnologiesprivatelimitedstpl/script.js",
-    "companyCareerPage": "https://www.sltl.com/current-openings/",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "single-official-current-openings-page-plus-detail-pages",
-    "extractionStrategy": "official-current-openings-page+detail-pages+shared-first-party-apply-anchor",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "sltl.com"
-  },
-  {
     "source": "sahajevillage",
     "companyName": "Sahaj e-Village",
     "officialBrandName": "Sahaj e-Village Limited",
@@ -29248,20 +28776,6 @@
     "normalizationProfile": "engineering-default",
     "verifiedOn": "2026-07-17",
     "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that the exact-name first-party Sankalp Semiconductor site at https://sankalpsemi.hcltech.com/ exposes Careers navigation including a Search Openings handoff to https://sankalpsemi.alchemus.com/ and a job-opportunities contact email, and that the contact page at https://sankalpsemi.hcltech.com/contact/ also directs job seekers to sankalp-recruit@hcl.com. Direct verification of the linked ATS host did not yield a trustworthy public jobs surface on the verified date, so there is no trustworthy public jobs surface available and this provider must fail closed until that official handoff becomes publicly reachable with verifiable openings."
-  },
-  {
-    "source": "sanmarengineering",
-    "companyName": "The Sanmar Group (Sanmar Engineering)",
-    "adapter": "script",
-    "modulePath": "../sanmarengineering/script.js",
-    "companyCareerPage": "https://www.sanmargroup.com/working-at-sanmar/opportunities/",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "official-page-plus-wordpress-filter-ajax-per-business-area",
-    "extractionStrategy": "official-careers-page+first-party-filter-ajax+engineering-business-area-filter",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "sanmargroup.com"
   },
   {
     "source": "sanriaengineering",
@@ -31603,20 +31117,6 @@
     "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.solargroup.com/ is the live Solar Group homepage for Solar Industries India and its Careers navigation points to https://careers.solargroup.com/solargroup/. Search-indexed first-party pages on the careers subdomain expose a Current Openings shell and jobview routes such as https://careers.solargroup.com/solargroup/jobview/sr-executive-uav-2024122016373073, but direct fetches to both the board root and sample jobview returned 403 Forbidden in browser-based checks and timed out during direct HTTP probes, so there is no trustworthy public jobs surface currently accessible for extraction."
   },
   {
-    "source": "solarsquare",
-    "companyName": "SolarSquare",
-    "adapter": "script",
-    "modulePath": "../solarsquare/script.js",
-    "companyCareerPage": "https://www.solarsquare.in/about-us/",
-    "atsPlatform": "keka-public-careers-api",
-    "countryFilter": "India",
-    "paginationStrategy": "single-public-keka-jobs-endpoint",
-    "extractionStrategy": "official-company-page+public-keka-careers-api+departments+applyjob",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "solarsquare.in"
-  },
-  {
     "source": "solitontechnologies",
     "companyName": "Soliton Technologies",
     "adapter": "script",
@@ -32005,28 +31505,6 @@
     "modulePath": "../srei/script.js"
   },
   {
-    "source": "srichaitanya",
-    "companyName": "Sri Chaitanya",
-    "officialBrandName": "Sri Chaitanya",
-    "adapter": "script",
-    "modulePath": "../srichaitanya/script.js",
-    "homepageUrl": "https://srichaitanya.net/",
-    "companyCareerPage": "https://srichaitanya.net/careers/",
-    "companyDomain": "srichaitanya.net",
-    "detailPageUrls": [
-      "https://srichaitanya.net/career/sr-faculty-for-neet/",
-      "https://srichaitanya.net/career/sr-faculty-for-iitjee/"
-    ],
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "single-first-party-careers-page-with-first-party-detail-pages",
-    "extractionStrategy": "verified-first-party-careers-page+same-domain-detail-pages+inline-apply-form",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-17",
-    "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://srichaitanya.net/careers/ is the live first-party Sri Chaitanya careers page and it exposes same-domain role detail pages at https://srichaitanya.net/career/sr-faculty-for-neet/ and https://srichaitanya.net/career/sr-faculty-for-iitjee/. Those detail pages publish role metadata including Date Posted, Location, Experience, Qualification, and an inline Apply For Job form on the same first-party surface."
-  },
-  {
     "source": "srmgroupofcompanies",
     "companyName": "SRM Group of Companies",
     "adapter": "script",
@@ -32266,22 +31744,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "careers.stellantis.com"
-  },
-  {
-    "source": "stellaraaedutechpvtltd",
-    "companyName": "Stellaraa Edutech Pvt. Ltd.",
-    "adapter": "script",
-    "modulePath": "../stellaraaedutechpvtltd/script.js",
-    "companyCareerPage": "https://www.linkedin.com/jobs/search/?f_C=104439273&geoId=102713980",
-    "atsPlatform": "linkedin-guest-search",
-    "countryFilter": "India",
-    "paginationStrategy": "single-public-company-search-page",
-    "extractionStrategy": "official-homepage-linkedin-handoff+public-company-page+guest-search+public-detail-jsonld",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-08-05",
-    "verifiedSurfaceSummary": "Verified on Wednesday, August 5, 2026 that the official Stellaraa homepage at https://stellaraa.com/ still linked to the public LinkedIn company page at https://www.linkedin.com/company/stellaraa/, that the live LinkedIn company overview exposed the current Bengaluru, Karnataka surface with the updated 'Where education meets innovation' tagline and a public See jobs handoff, and that the public India guest-search page at https://www.linkedin.com/jobs/search/?f_C=104439273&geoId=102713980 exposed 2 current Stellaraa roles whose public LinkedIn detail pages still carried JobPosting JSON-LD.",
-    "companyDomain": "stellaraa.com"
   },
   {
     "source": "sterlinggtakeemobilityltd",
@@ -32731,20 +32193,6 @@
     "zeroResultPolicy": "discovery-only"
   },
   {
-    "source": "sutherlandglobal",
-    "companyName": "Sutherland Global",
-    "adapter": "script",
-    "modulePath": "../sutherlandglobal/script.js",
-    "companyCareerPage": "https://www.jobs.sutherlandglobal.com/job-results",
-    "atsPlatform": "shazamme",
-    "countryFilter": "India",
-    "paginationStrategy": "single-public-feed",
-    "extractionStrategy": "official-job-results-page-validation+shazamme-public-get-jobs-feed",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "jobs.sutherlandglobal.com"
-  },
-  {
     "source": "suyatitechnologies",
     "companyName": "Suyati Technologies",
     "adapter": "script",
@@ -32804,20 +32252,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "svayatt.co.in"
-  },
-  {
-    "source": "swelect",
-    "companyName": "Swelect",
-    "adapter": "script",
-    "modulePath": "../swelect/script.js",
-    "companyCareerPage": "https://www.swelectes.com/career.php",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "single-first-party-careers-page",
-    "extractionStrategy": "verified-homepage+verified-careers-page+inline-role-blocks+shared-apply-form",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "swelectes.com"
   },
   {
     "source": "swipewiretechnologies",
@@ -33356,28 +32790,6 @@
     "parser": "custom-script",
     "normalizationProfile": "engineering-default",
     "companyDomain": "tataclassedge.com"
-  },
-  {
-    "source": "tatacommunications",
-    "companyName": "Tata Communications",
-    "adapter": "script",
-    "modulePath": "../tatacommunications/script.js",
-    "companyCareerPage": "https://jobs.tatacommunications.com/",
-    "atsPlatform": "spire2grow-public-portal",
-    "countryFilter": "India",
-    "paginationStrategy": "public-count-plus-paginated-search-api",
-    "extractionStrategy": "workspace-bootstrap+public-requisition-search",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "tatacommunications.com",
-    "workspaceDomain": "jobs.tatacommunications.com",
-    "workspaceId": "TCLPROD-c62po",
-    "apiBase": "https://io.spire2grow.com/ies/v1/p",
-    "jobsCountUrl": "https://io.spire2grow.com/ies/v1/p/requisition/_count",
-    "jobsSearchUrl": "https://io.spire2grow.com/ies/v1/p/requisition/_search",
-    "verifiedOn": "2026-08-14",
-    "verifiedPublicJobCount": 175,
-    "verifiedSurfaceSummary": "Verified on 2026-08-14 that https://jobs.tatacommunications.com/ and /home still serve the first-party public portal shell, that the live public workspace bootstrap is https://io.spire2grow.com/ies/v1/p/workspaceId?domain=jobs.tatacommunications.com, and that the live requisition search moved to the public /ies/v1/p/requisition/_search endpoint with top-level entities plus total=175, including India roles such as Engineer - Platform Engineering in Chennai, Sr Manager - Customer Interaction Suite in Pune, and Customer Service Executive - Global Network Operations in Mumbai."
   },
   {
     "source": "tataconsultingengineers",
@@ -35561,20 +34973,6 @@
     "companyDomain": "vedantu.com"
   },
   {
-    "source": "vehanttechnologies",
-    "companyName": "Vehant Technologies",
-    "adapter": "script",
-    "modulePath": "../vehanttechnologies/script.js",
-    "companyCareerPage": "https://www.vehant.com/careers/",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "official-page-plus-wordpress-load-more",
-    "extractionStrategy": "official-careers-page+load-more-ajax+detail-pages",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "vehant.com"
-  },
-  {
     "source": "veltrikev",
     "companyName": "VELTRIK.EV",
     "adapter": "script",
@@ -36780,24 +36178,6 @@
     "dryRunFile": "zifo/jobs.json"
   },
   {
-    "source": "zinghr",
-    "companyName": "ZingHR",
-    "adapter": "script",
-    "modulePath": "../zinghr/script.js",
-    "dryRunFile": "zinghr/jobs.json",
-    "companyCareerPage": "https://www.zinghr.com/job-openings/",
-    "companyDomain": "zinghr.com",
-    "atsPlatform": "official-company-careers",
-    "countryFilter": "India",
-    "paginationStrategy": "single-page-role-index+detail-pages",
-    "extractionStrategy": "verified-first-party-job-openings-page+detail-pages+first-party-application-form",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-17",
-    "verifiedSurfaceSummary": "Verified on Friday, July 17, 2026 that https://www.zinghr.com/job-openings/ was the live first-party ZingHR jobs page, that it publicly listed five openings including Customer Support- (HRMS/HCM), Sales Manager, Project Manager, Talent Acquisition Specialist, and API Developer, and that the linked first-party detail pages under https://www.zinghr.com/jobs/ exposed job category, job type, job location, and an on-page application form.",
-    "openingCount": 5
-  },
-  {
     "source": "zoho",
     "companyName": "Zoho",
     "adapter": "script",
@@ -37568,25 +36948,6 @@
     "verifiedSurfaceSummary": "Verified on Saturday, July 18, 2026 that https://irisregtech.com/current-openings/ was the live first-party current openings page for IRIS RegTech Solutions Limited, that it identified the brand as formerly known as IRIS Business Services Limited, and that the page instructed candidates to send CVs to recruitments@irisbusiness.com while exposing no public job cards, detail pages, or structured listings. This local provider fails closed until IRIS publishes a trustworthy public jobs contract.",
     "dryRunFile": "irisbusinessservices/jobs.json",
     "modulePath": "../irisbusinessservices/script.js"
-  },
-  {
-    "source": "veehealthtek",
-    "companyName": "Vee Healthtek",
-    "officialBrandName": "Vee Healthtek Pvt. Ltd.",
-    "adapter": "script",
-    "homepageUrl": "https://www.veehealthtek.com/",
-    "companyCareerPage": "https://careers.veehealthtek.com/current-openings",
-    "companyDomain": "careers.veehealthtek.com",
-    "atsPlatform": "first-party-datatables-json",
-    "countryFilter": "India",
-    "paginationStrategy": "first-party-careers-pages-plus-discovered-datatables-endpoints",
-    "extractionStrategy": "verified-first-party-careers-pages+jobs-json-endpoints+detail-link-extraction+india-only-filter",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-18",
-    "verifiedSurfaceSummary": "Verified on Saturday, July 18, 2026 that https://careers.veehealthtek.com/current-openings and https://careers.veehealthtek.com/current-openings/other-job-openings were the live first-party Vee Healthtek careers pages, that both pages declared public DataTables jobs endpoints under https://careers.veehealthtek.com/jobs/, and that those endpoints returned live India openings including Agentic AI Lead, AR Caller Trainee, and Experienced System Admin L2 & Tech. Support Engineer.",
-    "dryRunFile": "veehealthtek/jobs.json",
-    "modulePath": "../veehealthtek/script.js"
   },
   {
     "source": "infibeamavenues",
@@ -40097,26 +39458,6 @@
     "modulePath": "../buddiai/script.js"
   },
   {
-    "source": "bebotechnologies",
-    "companyName": "bebo Technologies",
-    "officialBrandName": "bebo Technologies",
-    "adapter": "script",
-    "homepageUrl": "https://www.bebotechnologies.com/",
-    "companyCareerPage": "https://www.bebotechnologies.com/careers",
-    "companyDomain": "bebotechnologies.com",
-    "officialApplyHost": "https://bebotechnologiesin.mobile-recruit.com/",
-    "atsPlatform": "official-first-party-role-cards",
-    "countryFilter": "India",
-    "paginationStrategy": "single-first-party-careers-page",
-    "extractionStrategy": "verified-first-party-job-blocks+mobile-recruit-apply-links",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-18",
-    "verifiedSurfaceSummary": "Verified on Saturday, July 18, 2026 that https://www.bebotechnologies.com/careers remained the live first-party bebo Technologies careers page, publicly listed India openings on the page itself, and linked each opening to official public mobile-recruit apply URLs. The verified surface exposed roles including Associate Software Architect Level 1 Agentic AI, Sr. Software Engineer, and Software Engineer Java+Reactjs on the verified date.",
-    "modulePath": "../bebotechnologies/script.js",
-    "dryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_july_week3\\Jobverify-backend\\scraper\\bebotechnologies\\jobs.json"
-  },
-  {
     "source": "digitalwebsolutions",
     "companyName": "Digital Web Solutions",
     "officialBrandName": "Digital Web Solutions",
@@ -41170,25 +40511,6 @@
     "verifiedOn": "2026-07-18",
     "verifiedSurfaceSummary": "Verified on Saturday, July 18, 2026 that https://www.a3logics.com/careers/ remained the exact first-party A3Logics careers page, exposed an Explore Job opportunities handoff to https://a3logics.keka.com/careers/, and that the public Keka feed listed openings including Data Administrator, Senior System Administrator, and Admin Executive in Jaipur, India.",
     "modulePath": "../a3logics/script.js"
-  },
-  {
-    "source": "casepoint",
-    "companyName": "Casepoint",
-    "officialBrandName": "Casepoint",
-    "adapter": "script",
-    "homepageUrl": "https://www.casepoint.com/",
-    "companyCareerPage": "https://www.casepoint.com/careers/",
-    "jobsBoardUrl": "https://casepoint.keka.com/careers/",
-    "atsPlatform": "keka-embed-api",
-    "countryFilter": "India",
-    "paginationStrategy": "single-keka-active-jobs-feed",
-    "extractionStrategy": "verified-first-party-careers-page+india-roles-keka-handoff+active-jobs-api",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "companyDomain": "casepoint.com",
-    "verifiedOn": "2026-07-18",
-    "verifiedSurfaceSummary": "Verified on Saturday, July 18, 2026 that https://www.casepoint.com/careers/ remained the exact first-party Casepoint careers page, exposed View India Roles as a handoff to https://casepoint.keka.com/careers/, and that the public Keka feed listed openings including Performance Tester, Technical Support Engineer (Ediscovery), Business Analyst, and Software Engineer in Surat, India.",
-    "modulePath": "../casepoint/script.js"
   },
   {
     "source": "calsoft",
@@ -44126,25 +43448,6 @@
     "verifiedPublicPostingCount": 18,
     "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://www.saaslabs.co/careers links See Open Roles to https://careers.kula.ai/saas-labs, which exposes current India openings with stable /saas-labs/<numeric-id> detail links.",
     "surfaceInvariant": "SaaS Labs Careers + Open Positions + /saas-labs/<numeric-id> links"
-  },
-  {
-    "source": "homelane",
-    "companyName": "HomeLane",
-    "officialBrandName": "HomeLane",
-    "adapter": "script",
-    "companyCareerPage": "https://sentinel.homelane.com/jobs",
-    "companyDomain": "sentinel.homelane.com",
-    "atsPlatform": "first-party-nextjs-jobs-index",
-    "countryFilter": "India",
-    "paginationStrategy": "single-server-rendered-jobs-index-plus-detail-pages",
-    "extractionStrategy": "verified-first-party-jobs-index+server-rendered-role-cards+detail-page-apply-links",
-    "parser": "custom-script",
-    "normalizationProfile": "engineering-default",
-    "verifiedOn": "2026-07-25",
-    "verifiedPublicPostingCount": 15,
-    "verifiedSurfaceSummary": "Verified on Saturday, July 25, 2026 that https://sentinel.homelane.com/jobs is the live first-party public HomeLane jobs index and that it server-renders 15 open roles with stable detail routes such as /jobs/HL_20. Verified those detail pages expose public role metadata and first-party apply links under /apply/<id>.",
-    "dryRunFile": "homelane/jobs.json",
-    "modulePath": "../homelane/script.js"
   },
   {
     "source": "niramai",

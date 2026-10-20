@@ -12,6 +12,9 @@ import { recoverQueuedJobAlerts } from "./src/services/jobAlertService.js";
 import { downgradeExpiredPlans } from "./src/services/planService.js";
 import { captureHiringObservation } from './src/services/hiringObservationService.js';
 import { reconcileActivePipeline } from './src/pipeline/recovery.js';
+import { recoverOutreachTasks } from './src/services/outreachService.js';
+import { recoverTailoredResumes } from './src/services/resumeTailoringService.js';
+import { processCampaignQueue } from './src/services/campaignService.js';
 
 async function main() {
   const port = parsePort(process.env.PORT);
@@ -37,6 +40,18 @@ async function main() {
   console.log(`Server is running on 0.0.0.0:${port}`);
 
   const stopTasks = [
+    createPeriodicTask(recoverTailoredResumes, {
+      intervalMs: 5000, runImmediately: true,
+      onError: () => console.error('[Resume tailoring] Recovery could not finish.'),
+    }),
+    createPeriodicTask(recoverOutreachTasks, {
+      intervalMs: 5000, runImmediately: true,
+      onError: error => console.error('[Outreach tasks]', error.message),
+    }),
+    createPeriodicTask(processCampaignQueue, {
+      intervalMs: 15000, runImmediately: true,
+      onError: error => console.error('[Campaign queue]', error.message),
+    }),
     createPeriodicTask(reconcileActivePipeline, {
       intervalMs: 60_000, runImmediately: true,
       onError: error => console.error('[Pipeline recovery]', error.message),

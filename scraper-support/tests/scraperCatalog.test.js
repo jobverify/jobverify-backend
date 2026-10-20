@@ -21,7 +21,6 @@ test('getScraperCatalog merges workday and official portal providers into one re
   const cisco = catalog.find((provider) => provider.source === 'cisco')
   const cadence = catalog.find((provider) => provider.source === 'cadence')
   const cognizant = catalog.find((provider) => provider.source === 'cognizant')
-  const coforge = catalog.find((provider) => provider.source === 'coforge')
   const cyient = catalog.find((provider) => provider.source === 'cyient')
   const adobe = catalog.find((provider) => provider.source === 'adobe')
   const dell = catalog.find((provider) => provider.source === 'dell')
@@ -51,7 +50,6 @@ test('getScraperCatalog merges workday and official portal providers into one re
   const google = catalog.find((provider) => provider.source === 'google')
   const cgi = catalog.find((provider) => provider.source === 'cgi')
   const hcltech = catalog.find((provider) => provider.source === 'hcltech')
-  const mphasis = catalog.find((provider) => provider.source === 'mphasis')
   const nokia = catalog.find((provider) => provider.source === 'nokia')
   const questglobal = catalog.find((provider) => provider.source === 'questglobal')
   const persistent = catalog.find((provider) => provider.source === 'persistent')
@@ -152,11 +150,6 @@ test('getScraperCatalog merges workday and official portal providers into one re
   assert.match(cognizant.companyCareerPage, /careers\.cognizant\.com\/india-en\/jobs/i)
   assert.equal(cognizant.companyDomain, 'careers.cognizant.com')
 
-  assert.ok(coforge)
-  assert.equal(coforge.adapter, 'script')
-  assert.equal(coforge.atsPlatform, 'zwayam')
-  assert.match(coforge.companyCareerPage, /careers\.coforge\.com\/coforge/i)
-  assert.equal(coforge.companyDomain, 'careers.coforge.com')
 
   assert.ok(cyient)
   assert.equal(cyient.adapter, 'script')
@@ -284,11 +277,6 @@ test('getScraperCatalog merges workday and official portal providers into one re
   assert.match(motorolasolutions.companyCareerPage, /careers\.motorolasolutions\.com/i)
   assert.equal(motorolasolutions.companyDomain, 'careers.motorolasolutions.com')
 
-  assert.ok(mphasis)
-  assert.equal(mphasis.adapter, 'script')
-  assert.equal(mphasis.atsPlatform, 'ripplehire')
-  assert.match(mphasis.companyCareerPage, /careers\.mphasis\.com/i)
-  assert.equal(mphasis.companyDomain, 'careers.mphasis.com')
 
   assert.ok(nokia)
   assert.equal(nokia.adapter, 'script')
@@ -498,7 +486,6 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   const cisco = scrapers.find((scraper) => scraper.name === 'cisco')
   const cadence = scrapers.find((scraper) => scraper.name === 'cadence')
   const cognizant = scrapers.find((scraper) => scraper.name === 'cognizant')
-  const coforge = scrapers.find((scraper) => scraper.name === 'coforge')
   const cyient = scrapers.find((scraper) => scraper.name === 'cyient')
   const dell = scrapers.find((scraper) => scraper.name === 'dell')
   const deloitte = scrapers.find((scraper) => scraper.name === 'deloitte')
@@ -509,7 +496,6 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   const mastercard = scrapers.find((scraper) => scraper.name === 'mastercard')
   const meta = scrapers.find((scraper) => scraper.name === 'meta')
   const motorolasolutions = scrapers.find((scraper) => scraper.name === 'motorolasolutions')
-  const mphasis = scrapers.find((scraper) => scraper.name === 'mphasis')
   const nokia = scrapers.find((scraper) => scraper.name === 'nokia')
   const nvidia = scrapers.find((scraper) => scraper.name === 'nvidia')
   const netapp = scrapers.find((scraper) => scraper.name === 'netapp')
@@ -682,11 +668,6 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   assert.equal(cognizant.provider.source, 'cognizant')
   assert.equal(cognizant.provider.atsPlatform, 'official-company-careers')
 
-  assert.ok(coforge)
-  assert.equal(typeof coforge.run, 'function')
-  assert.match(coforge.dryRunFile, /coforge[\\/]jobs\.json$/)
-  assert.equal(coforge.provider.source, 'coforge')
-  assert.equal(coforge.provider.atsPlatform, 'zwayam')
 
   assert.ok(cyient)
   assert.equal(typeof cyient.run, 'function')
@@ -749,11 +730,6 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   assert.equal(motorolasolutions.provider.source, 'motorolasolutions')
   assert.equal(motorolasolutions.provider.companyDomain, 'careers.motorolasolutions.com')
 
-  assert.ok(mphasis)
-  assert.equal(typeof mphasis.run, 'function')
-  assert.match(mphasis.dryRunFile, /mphasis[\\/]jobs\.json$/)
-  assert.equal(mphasis.provider.source, 'mphasis')
-  assert.equal(mphasis.provider.atsPlatform, 'ripplehire')
 
   assert.ok(nokia)
   assert.equal(typeof nokia.run, 'function')

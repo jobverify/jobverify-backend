@@ -26,6 +26,35 @@ const reportPath = path.join(backendDir, 'company_coverage_report.json')
 const outputDir = path.join(backendDir, 'artifacts', 'scraper-catalog')
 const SENTINEL_MODULE_BASENAME = 'failClosedSentinel.js'
 
+// Directory/name coverage is independent of whether the entry can extract jobs.
+// Inspect the selected executable, not historical provider metadata: integrations
+// can have been repaired without every old metadata field being replaced yet.
+export const classifyProviderImplementation = (provider = {}, {
+  exists = existsSync,
+  read = (file) => readFileSync(file, 'utf8'),
+} = {}) => {
+  if (provider.adapter !== 'script') {
+    return { type: 'shared-adapter', reason: `adapter:${provider.adapter || 'unknown'}` }
+  }
+  if (!provider.modulePath || !exists(provider.modulePath)) {
+    return { type: 'missing-module', reason: 'Selected script module is absent.' }
+  }
+  let code
+  try { code = String(read(provider.modulePath)) } catch {
+    return { type: 'unreadable-module', reason: 'Selected script module cannot be inspected.' }
+  }
+  if (path.basename(provider.modulePath) === SENTINEL_MODULE_BASENAME
+    || /\bcreateFailClosedSentinelScraper\s*\(/.test(code)) {
+    return { type: 'sentinel', reason: 'Executable uses an always-empty sentinel.' }
+  }
+  const withoutComments = code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+  if (/(?:async\s+)?run\s*\([^)]*\)\s*\{\s*return\s*\[\s*\]\s*;?\s*\}/.test(withoutComments)
+    || /\brun\s*=\s*(?:async\s*)?\([^)]*\)\s*=>\s*(?:\{\s*return\s*)?\[\s*\]/.test(withoutComments)) {
+    return { type: 'static-empty', reason: 'Executable run method unconditionally returns an empty array.' }
+  }
+  return { type: 'script', reason: 'Script exists; runtime extraction is assessed separately.' }
+}
+
 const toRepoRelativePath = (value) =>
   path.relative(repoDir, value).replace(/\\/g, '/')
 
@@ -102,18 +131,21 @@ const resolveDryRunSummary = (dryRunFile) => {
   return summary
 }
 
-const buildCatalogTopologyReport = () => {
+export const buildCatalogTopologyReport = () => {
   const reportSources = readCoverageReportSources()
   const topLevelDirectories = getTopLevelScraperDirectories()
   const providerExtensionMetadataBySource = getProviderExtensionMetadataBySource()
 
   const realModuleMappings = []
   const sentinelPlaceholderMappings = []
+  const implementationCounts = {}
 
   for (const provider of getScraperCatalog()) {
     const source = String(provider.source || '').toLowerCase()
     if (!source) continue
     if (reportSources && !reportSources.has(source)) continue
+    const implementation = classifyProviderImplementation(provider)
+    implementationCounts[implementation.type] = (implementationCounts[implementation.type] || 0) + 1
     if (String(provider.adapter || '') !== 'script') continue
     if (topLevelDirectories.has(source)) continue
 
@@ -155,6 +187,8 @@ const buildCatalogTopologyReport = () => {
     realFileBackedSourcesWithoutTopLevelDirectory: realModuleMappings,
     sentinelPlaceholderSourcesWithoutTopLevelDirectory: sentinelPlaceholderMappings,
     summary: {
+      coverageLabel: 'Catalog registration coverage',
+      implementationCounts,
       realFileBackedSourceCount: realModuleMappings.length,
       sentinelPlaceholderSourceCount: sentinelPlaceholderMappings.length,
       sentinelCountsByModule,

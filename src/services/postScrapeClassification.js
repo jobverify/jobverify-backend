@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { buildClassificationInput, hashClassificationInput, resolveClassification, RUNTIME_HASH, CLASSIFICATION_FIELDS } from './jobClassificationPolicy.js'
 import { recoverClassificationSourceTitle } from './classificationSourceTitle.js'
+import { normalizePublicJobType } from '../utils/publicJobTypeLabel.js'
 
 export const GLICLASS_CONFIG = JSON.parse(readFileSync(new URL('../../classification/gliclass/model.json', import.meta.url)))
 const runtimeHash = createHash('sha256').update(RUNTIME_HASH).update([
@@ -59,6 +60,7 @@ export function postScrapePersistencePatch(job, previous, { now = new Date(), mo
     return { set: { postClassification: prior,
       ...(mode === 'policy' && classification?.complete === true ? {
         classification, ...Object.fromEntries(CLASSIFICATION_FIELDS.map(field => [field, classification.resolved[field] ?? null])),
+        jobType: normalizePublicJobType(classification.resolved.jobType),
       } : {}),
     }, unset: mode === 'shadow' ? { classification: '' } : {} }
   }

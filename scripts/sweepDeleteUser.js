@@ -27,9 +27,7 @@ if (!email) {
 const { default: connectDB } = await import("../db/db.js");
 const { default: User } = await import("../src/models/User.js");
 const { default: PendingUser } = await import("../src/models/PendingUser.js");
-const { default: Subscription } = await import("../src/models/Subscription.js");
-const { default: Click } = await import("../src/models/Click.js");
-const { default: UserSuggestion } = await import("../src/models/UserSuggestion.js");
+const { removeUserAccount } = await import('../src/services/userAccountDeletion.js');
 
 // Connects to the database and executes a cascade delete on the specified email.
 const runSweepDelete = async () => {
@@ -45,23 +43,10 @@ const runSweepDelete = async () => {
     const user = await User.findOne({ email });
     
     if (user) {
-      const userId = user._id;
-
-      // 3. Delete Alert Subscriptions
-      const subResult = await Subscription.deleteMany({ user: userId });
-      console.log(`- Subscriptions: Deleted ${subResult.deletedCount} job alert subscription(s).`);
-
-      // 4. Delete Job Click History
-      const clickResult = await Click.deleteMany({ user: userId });
-      console.log(`- Clicks: Deleted ${clickResult.deletedCount} job click record(s).`);
-
-      // 5. Delete suggestions submitted by this account
-      const suggestionResult = await UserSuggestion.deleteMany({ user: userId });
-      console.log(`- User suggestions: Deleted ${suggestionResult.deletedCount} suggestion record(s).`);
-
-      // 6. Delete User Account
-      await User.deleteOne({ _id: userId });
-      console.log(`- Users: Deleted user account.`);
+      // Share the API/admin cascade so new private collections cannot be left
+      // behind by local maintenance. This also revokes Gmail before deletion.
+      await removeUserAccount(user);
+      console.log('- Users: Deleted account and all linked private records.');
     } else {
       console.log("- Users: No active account found in the standard Users collection.");
     }

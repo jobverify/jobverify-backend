@@ -16,14 +16,15 @@ export const dispatchGithubStage=(run,stage,token=process.env.GITHUB_PAT)=>githu
   token,method:'POST',body:{ref:run.ref,inputs:{pipeline_id:run._id,dispatch_token:stage.dispatchToken,pipeline_sha:run.sha||''}},
 });
 
-/** Keep internal dispatch identity out of the scraper's workflow-list title. */
+/** Keep internal dispatch identity in job metadata instead of workflow-list titles. */
 export async function matchesGithubStage(repo,remote,stage,token=process.env.GITHUB_PAT) {
   if(!stage.dispatchToken)return false;
   // Previously dispatched workflows still carry identity in their title.
   if((remote.display_title||remote.name||'').includes(stage.dispatchToken))return true;
-  if(stage.key!=='scraper'||!/^Scraper #\d+$/.test(remote.display_title||''))return false;
+  const label={scraper:'Scraper',rewrite:'Description Rewrite',classification:'Job Classification'}[stage.key];
+  if(!label||!new RegExp(`^${label} #\\d+$`).test(remote.display_title||''))return false;
   const data=await githubRequest(repo,`/actions/runs/${remote.id}/jobs?per_page=100`,{token});
-  return data.jobs?.some(job=>job.name===`Scraper [dispatch:${stage.dispatchToken}]`)||false;
+  return data.jobs?.some(job=>job.name===`${label} [dispatch:${stage.dispatchToken}]`)||false;
 }
 
 /** Repair missed observer events using exact run IDs/tokens, never the latest unrelated run. */

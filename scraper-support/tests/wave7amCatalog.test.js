@@ -104,38 +104,6 @@ test('A3logics local catalog captures the verified first-party careers page and 
   await assertHydratedCatalogLoadsScript(provider)
 })
 
-test('Casepoint local catalog captures the verified India-roles Keka handoff', async () => {
-  const { constant, defaultExport } = await loadCatalog(
-    '../../scraper/casepoint/catalog.js',
-    'CASEPOINT_CATALOG',
-  )
-  const provider = hydrateProviderCatalogEntry(constant)
-
-  assert.equal(defaultExport, constant)
-  assert.equal(provider.source, 'casepoint')
-  assert.equal(provider.companyName, 'Casepoint')
-  assert.equal(provider.officialBrandName, 'Casepoint')
-  assert.equal(provider.homepageUrl, 'https://www.casepoint.com/')
-  assert.equal(provider.companyCareerPage, 'https://www.casepoint.com/careers/')
-  assert.equal(provider.jobsBoardUrl, 'https://casepoint.keka.com/careers/')
-  assert.equal(provider.atsPlatform, 'keka-embed-api')
-  assert.equal(provider.paginationStrategy, 'single-keka-active-jobs-feed')
-  assert.equal(
-    provider.extractionStrategy,
-    'verified-first-party-careers-page+india-roles-keka-handoff+active-jobs-api',
-  )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.match(provider.verifiedSurfaceSummary, /View India Roles/i)
-  assert.match(provider.verifiedSurfaceSummary, /Performance Tester/i)
-
-  assertCatalogMatchesBacklogRow({
-    provider,
-    companyName: 'Casepoint',
-    modulePath: path.resolve(currentDir, '../../scraper/casepoint/script.js'),
-  })
-  await assertHydratedCatalogLoadsScript(provider)
-})
-
 test('Calsoft local catalog captures the verified zero-openings first-party surface', async () => {
   const { constant, defaultExport } = await loadCatalog(
     '../../scraper/calsoft/catalog.js',

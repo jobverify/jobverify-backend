@@ -11,7 +11,21 @@ test("work arrangement taxonomy and extraction exclude Flexible", () => {
   });
 
   assert.ok(!WORK_ARRANGEMENT_OPTIONS.includes("Flexible"));
-  assert.equal(signals.workArrangement, "Not specified");
+  assert.equal(signals.workArrangement, "On-site");
+});
+
+test("ambiguous work arrangements still use source evidence before defaulting to On-site", () => {
+  for (const workArrangement of [undefined, "Flexible", "Not specified"]) {
+    for (const [description, expected] of [
+      ["This is a remote role based in India.", "Remote"],
+      ["This role follows a hybrid work arrangement.", "Hybrid"],
+      ["Develop software for our products.", "On-site"],
+    ]) {
+      const signals = extractJobFilterSignals({ title: "Engineer", workArrangement, description });
+      assert.equal(signals.workArrangement, expected);
+      assert.equal(signals.filterSignals.confidence.workArrangement, expected === "On-site" ? "low" : "high");
+    }
+  }
 });
 
 test("extractJobFilterSignals classifies required and preferred skills with domain, seniority, and experience signals", () => {

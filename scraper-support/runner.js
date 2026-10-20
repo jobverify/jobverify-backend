@@ -43,12 +43,25 @@ import { DEFAULT_JOB_RETENTION_DAYS } from '../src/utils/jobLifecycle.js'
 import ScraperStatus from '../src/models/ScraperStatus.js'
 import { buildScrapers } from './providers/index.js'
 import {
+  isFreshCompleteInventoryEvidence,
   isVerifiedEmptyEvidence,
   readInventoryEvidence,
 } from './utils/inventoryEvidence.js'
 
 const isDryRun = process.argv.includes('--dry-run')
 const isParallel = process.argv.includes('--parallel')
+
+export const buildScraperAttemptDiagnostics = (jobs, analysis = analyzePublishableJobs(jobs)) => ({
+  rawRecords: jobs.length,
+  jobs: analysis.indiaJobs.length,
+  eligibleJobs: analysis.eligibleJobs.length,
+  filteredNonIndia: analysis.filterCounts.nonIndia,
+  filteredClosed: analysis.filterCounts.closed,
+  filteredInvalidUrl: analysis.filterCounts.invalidUrl,
+  filteredEmptyDescription: analysis.filterCounts.emptyDescription,
+  filteredNonJob: analysis.filterCounts.nonJob,
+  inventoryEvidence: readInventoryEvidence(jobs),
+})
 const resolveExecutionPath = (value) => {
   if (value == null || value === '') return null
 
@@ -442,14 +455,16 @@ export const isAuthoritativeEmptyScrape = (scraper, jobs) => (
   Array.isArray(jobs)
   && jobs.length === 0
   && isVerifiedEmptyEvidence(readInventoryEvidence(jobs))
+  && isFreshCompleteInventoryEvidence(readInventoryEvidence(jobs))
 )
 
 export const resolveZeroJobOutcome = (scraper, jobs, indiaJobs) => {
   if (!Array.isArray(indiaJobs) || indiaJobs.length > 0) return null
 
   const evidence = readInventoryEvidence(jobs)
-  if (isVerifiedEmptyEvidence(evidence)) return 'verified-empty'
-  if (evidence?.status === 'complete-inventory') return 'fetched-zero'
+  if (isFreshCompleteInventoryEvidence(evidence)) {
+    return isVerifiedEmptyEvidence(evidence) ? 'verified-empty' : 'fetched-zero'
+  }
   if (evidence?.status === 'discovery-only') return 'blocked-zero'
   if (evidence?.status === 'coverage-gap') return 'coverage-gap'
   if (scraper?.provider?.zeroResultPolicy === 'coverage-gap') return 'coverage-gap'
@@ -1088,6 +1103,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
     let rawCaptureFile = null
     let capturedAt = null
     let processingStarted = false
+    let attemptDiagnostics = {}
     try {
       const jobs = await withRetry(
         () => runScraperAttemptWithRetryPolicy(scraper, { signal: stopSignal }),
@@ -1105,6 +1121,7 @@ export const runAll = async ({ stopSignal = null } = {}) => {
       capturedAt = new Date()
       rawCaptureFile = await saveRawSourceCapture(jobs, { source: scraper.name, dryRun: isDryRun, now: capturedAt })
       const publishableAnalysis = analyzePublishableJobs(jobs)
+      attemptDiagnostics = buildScraperAttemptDiagnostics(jobs, publishableAnalysis)
       const indiaJobs = publishableAnalysis.indiaJobs
       const zeroJobEvidence = resolveZeroJobOutcome(scraper, jobs, indiaJobs)
       const cities = [...new Set(indiaJobs.map(j => j.city).filter(Boolean))].sort()
@@ -1152,6 +1169,9 @@ export const runAll = async ({ stopSignal = null } = {}) => {
       summary[scraper.name] = {
         success: true,
         ...result,
+        ...attemptDiagnostics,
+        attemptedAt: new Date(scraperStart).toISOString(),
+        completedAt: new Date().toISOString(),
         ...(zeroJobEvidence === 'coverage-gap'
           ? buildCoverageGapResult(scraper.name, zeroJobEvidence)
           : {}),
@@ -1174,6 +1194,9 @@ export const runAll = async ({ stopSignal = null } = {}) => {
       const classification = classifyScraperError(err)
       const failureResult = {
         success: false,
+        ...attemptDiagnostics,
+        attemptedAt: new Date(scraperStart).toISOString(),
+        completedAt: new Date().toISOString(),
         error: err.message,
         ...(err.classificationPending ? { classificationPending: true } : {}),
         retry: getRetryMetadata(err),
@@ -1284,6 +1307,7 @@ export const runScraper = async (
   let rawCaptureFile = null
   let capturedAt = null
   let processingStarted = false
+  let attemptDiagnostics = {}
   try {
     throwIfAborted(lifecycleSignal)
     const scrapeStageStart = Date.now()
@@ -1312,6 +1336,7 @@ export const runScraper = async (
     throwIfAborted(lifecycleSignal)
     const retry = getRetryMetadata(jobs)
     const publishableAnalysis = analyzePublishableJobs(jobs)
+    attemptDiagnostics = buildScraperAttemptDiagnostics(jobs, publishableAnalysis)
     const indiaJobs = publishableAnalysis.indiaJobs
     const zeroJobEvidence = resolveZeroJobOutcome(scraper, jobs, indiaJobs)
     const dataQuality = indiaJobs.reduce((total, job = {}) => ({
@@ -1367,6 +1392,9 @@ export const runScraper = async (
     const successResult = {
       success: true,
       ...result,
+      ...attemptDiagnostics,
+      attemptedAt: new Date(scraperStart).toISOString(),
+      completedAt: new Date().toISOString(),
       ...(zeroJobEvidence === 'coverage-gap'
         ? buildCoverageGapResult(scraper.name, zeroJobEvidence)
         : {}),
@@ -1391,6 +1419,9 @@ export const runScraper = async (
     const classification = classifyScraperError(err)
     const failResult = {
       success: false,
+      ...attemptDiagnostics,
+      attemptedAt: new Date(scraperStart).toISOString(),
+      completedAt: new Date().toISOString(),
       error: err.message,
       ...(err.classificationPending ? { classificationPending: true } : {}),
       retry: getRetryMetadata(err),

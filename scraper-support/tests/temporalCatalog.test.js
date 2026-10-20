@@ -61,9 +61,10 @@ test('getScraperCatalog includes Temporal as a runnable script provider and reso
 
   assert.ok(provider, 'Expected Temporal provider to be registered in customProviders.json')
   assert.equal(provider.companyName, 'Temporal')
-  assert.equal(provider.companyCareerPage, 'https://temporal.io/about')
-  assert.equal(provider.atsPlatform, 'greenhouse-board-api')
-  assert.match(provider.modulePath, /temporal[\\/]script\.js$/i)
+  assert.equal(provider.companyCareerPage, 'https://temporal.io/careers')
+  assert.equal(provider.atsPlatform, 'ashby')
+  assert.equal(provider.bindingEvidence.verified, true)
+  assert.match(provider.modulePath, /temporal[\\/]publishing-gap-script\.js$/i)
 
   assert.equal(aliases['Temporal Technologies'], 'temporal')
   assert.equal(report.matchedCount, 2)

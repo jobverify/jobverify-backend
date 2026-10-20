@@ -3,9 +3,10 @@ import mongoose from "mongoose";
 import connectDB from "../db/db.js";
 import Job from "../src/models/Job.js";
 import { resolveJobType } from "../scraper-support/utils/normalizeScrapedJob.js";
+import { PUBLIC_JOB_TYPES, normalizePublicJobType } from '../src/utils/publicJobTypeLabel.js';
 
 const shouldApply = process.argv.includes("--apply");
-const canonicalJobTypes = ["Intern", "Internship", "Full-time Fresher", "Full-time Experienced", "Full-time", "Contract"];
+const canonicalJobTypes = PUBLIC_JOB_TYPES;
 const cursor = Job.find({ status: "active", jobType: { $nin: canonicalJobTypes } })
   .select("employmentType experienceLevel title department sourceDescription description jobDescription minimumQualification preferredQualification experienceRequired jobType")
   .lean()
@@ -27,7 +28,7 @@ try {
   for await (const job of cursor) {
     scanned += 1;
     const sourceEmploymentType = job.employmentType || job.jobType;
-    const jobType = resolveJobType({ ...job, employmentType: sourceEmploymentType });
+    const jobType = normalizePublicJobType(resolveJobType({ ...job, employmentType: sourceEmploymentType }));
     if (!jobType || jobType === job.jobType) continue;
 
     changed += 1;

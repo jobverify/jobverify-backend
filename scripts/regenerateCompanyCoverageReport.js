@@ -28,6 +28,7 @@ const buildReportFromProviderCatalog = ({ catalog } = {}) => {
 
   return {
     totalRows: providers.length,
+    coverageLabel: 'Catalog registration coverage',
     candidateRows: providers.length,
     matchedCount: matched.length,
     unmatchedCount: 0,
@@ -66,6 +67,7 @@ export const regenerateCompanyCoverageReport = ({
 
   return {
     sourceType: resolvedCsvPath ? 'csv-file' : 'provider-catalog',
+    coverageLabel: report.coverageLabel,
     source: resolvedCsvPath || path.join(resolvedScraperDirectoryPath, '..', 'scraper-support', 'providers', 'index.js'),
     backendReportPath: resolvedBackendReportPath,
     frontendReportPath: resolvedFrontendReportPath,

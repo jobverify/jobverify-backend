@@ -23,7 +23,8 @@ test('ChargePoint resolves only to its exact-name official provider', () => {
   assert.equal(provider.companyName, 'ChargePoint')
   assert.equal(provider.companyDomain, 'chargepoint.com')
   assert.equal(provider.exactCompanyMatchOnly, true)
-  assert.equal(provider.atsPlatform, 'exact-name-fail-closed-sentinel')
+  assert.equal(provider.atsPlatform, 'greenhouse')
+  assert.equal(provider.boardToken, 'chargepoint')
   assert.deepEqual(
     report.matched.filter((item) => item.companyName === 'ChargePoint').map((item) => item.source),
     ['chargepoint'],
@@ -35,9 +36,16 @@ test('ChargePoint resolves only to its exact-name official provider', () => {
   )
 })
 
-test('ChargePoint scraper fails closed without a verified enumerable official jobs feed', async () => {
+test('ChargePoint uses its verified Greenhouse feed and returns real India roles', async () => {
   const scraper = buildScrapers().find((item) => item.name === 'chargepoint')
 
   assert.ok(scraper, 'Expected ChargePoint scraper to be built from its provider extension')
-  assert.deepEqual(await scraper.run(), [])
+  const jobs = await scraper.run({ fetchJson: async () => ({ jobs: [{
+    id: 8826763002, title: 'Software Engineer', location: { name: 'Bangalore, India' },
+    absolute_url: 'https://job-boards.greenhouse.io/chargepoint/jobs/8826763002',
+    content: 'Design and develop charging software with our engineering team.',
+  }], meta: { total: 1 } }) })
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].source, 'chargepoint')
+  assert.equal(jobs[0].company, 'ChargePoint')
 })

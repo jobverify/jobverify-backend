@@ -17,6 +17,7 @@ import {
 } from '../supportPaths.js'
 import { TARGETED_OPENING_PROVIDERS } from './targetedOpeningProviders.js'
 import { attachInventoryEvidence, readInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { hasMatchingPublicAtsBinding } from '../utils/publicAtsIdentity.js'
 
 const currentDir = SUPPORT_PROVIDER_DIR
 const scraperDir = SCRAPER_DIR
@@ -205,6 +206,10 @@ const PROVIDER_DEFAULTS = {
     extractionStrategy: 'api+optional-detail',
     parser: 'api-portal',
     normalizationProfile: 'engineering-default',
+  },
+  publicAts: {
+    countryFilter: 'India', paginationStrategy: 'complete-public-posting-api',
+    parser: 'validated-public-ats', normalizationProfile: 'engineering-default',
   },
 }
 
@@ -525,12 +530,15 @@ export const getScraperCatalog = ({
     adapter: 'workday',
   })),
   ...customProviders,
-  ...providerExtensions,
+  ...providerExtensions.filter((item) => item.catalogOverride !== true),
   ...apiPortalProviders.map((item) => ({
     ...item,
     adapter: 'apiPortal',
   })),
   ...TARGETED_OPENING_PROVIDERS.map((item) => expandApiPortalProviderTemplate(item)),
+  // Explicit, verified repairs must win over stale base adapter configuration.
+  // Ordinary extensions retain their historical precedence for compatibility.
+  ...providerExtensions.filter((item) => item.catalogOverride === true),
 ]).map((provider) => hydrateProviderCatalogEntry(provider))
 
 export const decorateJobsWithProviderMetadata = (jobs, provider) => {
@@ -538,10 +546,14 @@ export const decorateJobsWithProviderMetadata = (jobs, provider) => {
   const inventoryEvidence = readInventoryEvidence(jobs)
   if (inventoryEvidence) {
     attachInventoryEvidence(decoratedJobs, inventoryEvidence)
-  } else if (decoratedJobs.length === 0 && hasVerifiedEmptyProviderSnapshot(provider)) {
-    attachInventoryEvidence(decoratedJobs, buildVerifiedEmptyProviderEvidence(provider))
-  } else if (decoratedJobs.length === 0 && hasCompleteInventoryZeroIndiaProviderSnapshot(provider)) {
-    attachInventoryEvidence(decoratedJobs, buildCompleteInventoryZeroIndiaProviderEvidence(provider))
+  } else if (decoratedJobs.length === 0 && (hasVerifiedEmptyProviderSnapshot(provider)
+    || hasCompleteInventoryZeroIndiaProviderSnapshot(provider))) {
+    // Catalog notes describe a past investigation, not a fetch in this attempt.
+    attachInventoryEvidence(decoratedJobs, {
+      status: 'unverified', surface: provider.companyCareerPage,
+      firstParty: false, listingComplete: false, pagesFetched: 0,
+      verifiedAt: null, reason: 'catalog-metadata-is-not-live-inventory-evidence',
+    })
   } else if (decoratedJobs.length === 0 && hasDiscoveryOnlyProviderSnapshot(provider)) {
     attachInventoryEvidence(decoratedJobs, buildDiscoveryOnlyProviderEvidence(provider))
   }
@@ -618,10 +630,23 @@ const createApiPortalScraper = (provider) => ({
   },
 })
 
+export const createPublicAtsCatalogScraper = (provider) => ({
+  name: provider.source,
+  provider,
+  dryRunFile: provider.dryRunFile,
+  async run(options = {}) {
+    if (!hasMatchingPublicAtsBinding(provider)) throw new Error(`[${provider.source}] Missing matching official ATS binding`)
+    const { createPublishingGapAtsScraper } = await import('../utils/publishingGapAts.js')
+    const jobs = await createPublishingGapAtsScraper(provider).run(options)
+    return decorateJobsWithProviderMetadata(jobs, provider)
+  },
+})
+
 const ADAPTER_FACTORIES = {
   workday: createWorkdayScraper,
   script: createScriptScraper,
   apiPortal: createApiPortalScraper,
+  publicAts: createPublicAtsCatalogScraper,
 }
 
 const dedupeCatalogBySource = (providers = []) => {
@@ -646,12 +671,10 @@ const dedupeCatalogBySource = (providers = []) => {
   return [...providersBySource.values()]
 }
 
-export const buildScrapers = () =>
-  getScraperCatalog().map((provider) => {
-    const factory = ADAPTER_FACTORIES[provider.adapter]
-    if (!factory) {
-      throw new Error(`Unsupported scraper adapter: ${provider.adapter}`)
-    }
+export const createCatalogScraper = (provider) => {
+  const factory = ADAPTER_FACTORIES[provider.adapter]
+  if (!factory) throw new Error(`Unsupported scraper adapter: ${provider.adapter}`)
+  return factory(provider)
+}
 
-    return factory(provider)
-  })
+export const buildScrapers = () => getScraperCatalog().map(createCatalogScraper)

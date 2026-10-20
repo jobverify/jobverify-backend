@@ -1,5 +1,5 @@
 name: Jobverify Post-scrape Classification
-run-name: 'Classification | ${{ inputs.pipeline_id }} | ${{ inputs.dispatch_token }}'
+run-name: 'Job Classification #${{ github.run_number }}'
 
 on:
   workflow_dispatch:
@@ -23,6 +23,7 @@ concurrency:
 
 jobs:
   register:
+    name: ${{ inputs.dispatch_token && format('Job Classification [dispatch:{0}]', inputs.dispatch_token) || 'Job Classification' }}
     runs-on: ubuntu-latest
     outputs:
       pipeline_id: ${{ steps.claim.outputs.pipeline_id }}

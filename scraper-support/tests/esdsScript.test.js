@@ -321,6 +321,7 @@ test('run validates the verified ESDS careers surface and keeps only Darwinbox j
       source: 'esds',
       link: 'https://esds.darwinbox.in/ms/candidatev2/main/careers/jobDetails/a688746f77752a',
       scrapedAt: FIXED_SCRAPED_AT,
+      sourceListingComplete: false,
     },
   ])
 })

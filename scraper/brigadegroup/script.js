@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { createDarwinboxScraper } from '../darwinbox/script.js'
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { attachInventoryEvidence, readInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -98,10 +99,10 @@ export const createBrigadeGroupScraper = ({
     })
     const scrapedAt = now()
 
-    return jobs.map((job) => ({
+    return attachInventoryEvidence(jobs.map((job) => ({
       ...job,
       scrapedAt,
-    }))
+    })), readInventoryEvidence(jobs))
   },
 })
 
