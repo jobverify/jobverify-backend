@@ -14,7 +14,7 @@ test('getScraperCatalog includes Fidelity as an official careers feed script pro
   assert.equal(provider.adapter, 'script')
   assert.equal(provider.atsPlatform, 'official-company-careers')
   assert.equal(provider.companyCareerPage, 'https://jobs.fidelity.com/in/jobs/')
-  assert.equal(provider.companyDomain, 'jobs.fidelity.com')
+  assert.equal(provider.companyDomain, 'fidelity.com')
   assert.match(provider.modulePath, /fidelity[\\/]script\.js$/i)
 })
 

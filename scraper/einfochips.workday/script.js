@@ -9,6 +9,8 @@ import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurren
 import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 
 import { EINFOCHIPS_CATALOG } from './catalog.js'
+import {runNativeEInfochips} from './nativeRun.js'
+import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -425,7 +427,7 @@ export const createEInfochipsScraper = ({
       const postings = Array.isArray(payload?.jobPostings) ? payload.jobPostings : []
 
       if (page === 1 && postings.length === 0) {
-        return []
+        return attachInventoryEvidence([], {status:'discovery-only',surface:ARROW_SEARCH_URL,firstParty:true,listingComplete:false,reason:'legacy-html-path-without-current-native-inventory-proof'})
       }
 
       for (const job of extractJobsFromPayload(payload, scrapedAt)) {
@@ -457,7 +459,7 @@ export const createEInfochipsScraper = ({
 
     const jobsToEnrich = maxJobs ? jobs.slice(0, maxJobs) : jobs
 
-    return mapWithConcurrency(
+    const legacyJobs = await mapWithConcurrency(
       jobsToEnrich,
       DETAIL_FETCH_CONCURRENCY,
       async (job) => {
@@ -490,10 +492,11 @@ export const createEInfochipsScraper = ({
         }
       },
     )
+    return attachInventoryEvidence(legacyJobs.map(job=>({...job,sourceListingComplete:false})), {status:'discovery-only',surface:ARROW_SEARCH_URL,firstParty:true,listingComplete:false,reason:'legacy-html-path-without-current-native-inventory-proof'})
   },
 })
 
-export const run = async (options = {}) => createEInfochipsScraper(options).run(options)
+export const run = runNativeEInfochips
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

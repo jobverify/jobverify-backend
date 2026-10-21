@@ -2,7 +2,12 @@ import { createHash } from 'node:crypto';
 import { outreachError } from './outreachUsage.js';
 
 const text = (value, length = 3000) => typeof value === 'string' ? value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, length) : '';
-const DISCOVERY_POLICY = 'referrals-v1';
+const DISCOVERY_POLICY = 'referrals-v2';
+export function discoveryProvider() {
+  const provider = String(process.env.OUTREACH_DISCOVERY_PROVIDER || 'actions').trim().toLowerCase();
+  if (!['actions', 'tavily'].includes(provider)) throw outreachError('Referral search provider configuration is invalid.', 503);
+  return provider;
+}
 const blockedDomains = ['lever.co', 'greenhouse.io', 'workday.com', 'myworkdayjobs.com', 'smartrecruiters.com', 'icims.com', 'taleo.net', 'successfactors.com', 'successfactors.eu', 'oraclecloud.com', 'bamboohr.com', 'recruitee.com', 'ashbyhq.com', 'breezy.hr', 'applytojob.com', 'keka.com', 'darwinbox.com', 'zohorecruit.com', 'linkedin.com', 'indeed.com', 'naukri.com', 'wellfound.com', 'foundit.in', 'gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'proton.me'];
 export const safePublicUrl = value => {
   try {
@@ -23,9 +28,9 @@ export function employerDomain(job) {
   }
   return '';
 }
-export function buildJobContext(job) {
+export function buildJobContext(job, { provider = discoveryProvider() } = {}) {
   const context = { title: text(job.title, 1000), company: text(job.company, 500), companyDomain: employerDomain(job), department: text(job.department, 500), location: text(job.location, 2000), description: text(job.sourceDescription || job.description, 24000), jobUrl: safePublicUrl(job.applyUrl) || safePublicUrl(job.sourceUrl) || '' };
-  return { ...context, contextHash: createHash('sha256').update(JSON.stringify({ policy: DISCOVERY_POLICY, ...context })).digest('hex') };
+  return { ...context, contextHash: createHash('sha256').update(JSON.stringify({ policy: DISCOVERY_POLICY, provider, ...context })).digest('hex') };
 }
 export const jobSnapshot = context => Object.fromEntries(['title', 'company', 'companyDomain', 'location', 'jobUrl'].map(key => [key, context[key]]));
 
@@ -76,7 +81,7 @@ function employerEvidence(name, roleTitle, evidence, company) {
 }
 
 /** Conservative extraction from provider source titles, never from generated answers or URL slugs. */
-export function groundedContacts(results, context) {
+export function groundedContacts(results, context, { limit = 3 } = {}) {
   const roleWords = `${context.title} ${context.department}`.toLowerCase().match(/[a-z]{4,}/g)?.filter(word => !['senior', 'junior', 'associate', 'intern', 'india', 'remote'].includes(word)) || [];
   const contacts = [];
   for (const result of results || []) {
@@ -108,7 +113,7 @@ export function groundedContacts(results, context) {
     const key = contact.name.toLocaleLowerCase();
     if (seen.has(key)) return false;
     seen.add(key); return true;
-  }).slice(0, 3).map(({ rank: _rank, ...contact }) => contact);
+  }).slice(0, Math.max(0, Math.min(12, Number.isInteger(limit) ? limit : 3))).map(({ rank: _rank, ...contact }) => contact);
 }
 
 export async function searchTavily(context, { apiKey = process.env.TAVILY_API_KEY, fetchImpl = fetch } = {}) {
@@ -130,12 +135,12 @@ export function hunterEmail(data, domain) {
   const publicSource = data?.sources?.some(source => safePublicUrl(source.uri || source.url));
   return { email, emailStatus: verified ? 'verified' : publicSource ? 'public' : 'unverified' };
 }
-export async function findHunterEmail(contact, domain, { apiKey = process.env.HUNTER_API_KEY, fetchImpl = fetch } = {}) {
+export async function findHunterEmail(contact, domain, { apiKey = process.env.HUNTER_API_KEY, fetchImpl = fetch, remainingMs = 15000 } = {}) {
   if (!apiKey || !domain) return { email: '', emailStatus: 'unavailable' };
   const url = new URL('https://api.hunter.io/v2/email-finder');
   url.search = new URLSearchParams({ domain, full_name: contact.name, api_key: apiKey }).toString();
   let response;
-  try { response = await fetchImpl(url, { signal: AbortSignal.timeout(15000) }); }
+  try { response = await fetchImpl(url, { signal: AbortSignal.timeout(Math.max(1, Math.min(15000, remainingMs))) }); }
   catch { throw outreachError('Email discovery is temporarily unavailable.', 502); }
   if (!response.ok) throw outreachError('Email discovery is temporarily unavailable or its allowance is exhausted.', 502);
   const payload = await response.json();

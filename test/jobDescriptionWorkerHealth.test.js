@@ -48,8 +48,9 @@ test('worker exit diagnostics and warning logs survive a child process failure',
     }).listen(0, '127.0.0.1', function() { process.send({port:this.address().port}); });
   `);
   // The real child chooses a free port, while the readiness HTTP call is redirected to it.
-  let child, port;
+  let child, port, workerArgs;
   const spawnProcess = (_binary, args, options) => {
+    workerArgs = args;
     child = spawn(process.execPath, [fixture, ...args], { ...options, stdio: ['ignore', options.stdio[1], options.stdio[2], 'ipc'] });
     child.on('message', message => { port = message.port; });
     return child;
@@ -59,7 +60,11 @@ test('worker exit diagnostics and warning logs survive a child process failure',
     return fetch(url.replace(':18771', ':' + port), options);
   };
   worker = await startRewriteWorker({ binary: process.execPath, modelFile: 'fixture.gguf', port: 18771,
-    logFile, spawnProcess, fetchImpl, deadline: Date.now() + 5000 });
+    logFile, spawnProcess, fetchImpl, parallelism: 4, deadline: Date.now() + 5000 });
+  assert.ok(workerArgs.includes('--cache-ram'));
+  assert.equal(workerArgs[workerArgs.indexOf('--cache-ram') + 1], '128');
+  assert.equal(workerArgs[workerArgs.indexOf('-np') + 1], '4');
+  assert.equal(workerArgs[workerArgs.indexOf('-c') + 1], '32768');
   assert.equal(worker.diagnostics().status, 'running');
   assert.match(await fs.readFile(logFile, 'utf8'), /worker warning retained/);
   await fetch('http://127.0.0.1:' + port + '/crash').catch(() => {});

@@ -1,0 +1,107 @@
+{
+  "source": "nttdataservices",
+  "capturedAt": "2026-10-20T21:26:29.950Z",
+  "requestedURL": "https://careers.nttdata.com/global/en/job/R-150127/Security-Platform-Engineer",
+  "finalURL": "https://careers.nttdata.com/global/en/job/R-150127/Security-Platform-Engineer",
+  "status": 200,
+  "nativeBodySha256": "0b66f4f0f2aacaa5b841d68a6f4881999b66f57f248b5daa522ae99be7cd1a29",
+  "receiptFile": "http-0045.json",
+  "receiptSha256": "86228246cf24fc8d2559c736ab3d862ccdd8a268095520f891df19098a02461a",
+  "provenance": "Exact native body and selected row from artifacts/full-catalog/phenom-health-001/ntt-default-native-001; not proof that the broad NTT DATA board belongs to the legacy NTT Data Services catalog company.",
+  "listing": {
+    "subCategory": "Information Security Services - Security Platform and Engineering",
+    "ml_skills": [
+      "platform engineer",
+      "devsecops",
+      "cloud security",
+      "ai",
+      "automation as code",
+      "security incident response",
+      "network security",
+      "edr configuration",
+      "siem implementation",
+      "firewall configuration",
+      "security architecture",
+      "ids/ips configuration",
+      "linux administration",
+      "windows administration",
+      "security controls configuration",
+      "log collection",
+      "syslog",
+      "security event reporting",
+      "soc/csirt operations",
+      "root cause analysis",
+      "service level agreement monitoring",
+      "service recovery",
+      "automation for incident response",
+      "honeypot",
+      "soar"
+    ],
+    "type": "Full time",
+    "descriptionTeaser": "Take on the role of Security Platform Engineer, where you will oversee operational security tasks, monitor security tools, and respond to escalated threats. This position requires seasoned expertise in security technologies and experience in incident response, ideal for candidates with strong technical and analytical skills.",
+    "state": "Telangāna",
+    "siteType": "external",
+    "multi_category": [
+      "Technical Engineering"
+    ],
+    "reqId": "R-150127",
+    "city": "Hyderabad",
+    "latitude": "17.38405",
+    "industry": "Professional Services",
+    "multi_location": [
+      "Hyderabad, Telangāna, India",
+      "Bangalore, Karnātaka, India"
+    ],
+    "address": "5th Floor (East Wing), Building 5 (VEGA), DivyaSree Orion, Survey No.66/1, Raidurg Village, Serilingampally Mandal, Ranga Reddy District, Hyderabad- 500032, Telangāna, India",
+    "applyUrl": "https://nttlimited.wd3.myworkdayjobs.com/NTT_Careers/job/hyderabad/Security-Platform-Engineer_R-150127/apply",
+    "ml_job_parser": {
+      "descriptionTeaser": "Take on the role of Security Platform Engineer, where you will oversee operational security tasks, monitor security tools, and respond to escalated threats. This position requires seasoned expertise in security technologies and experience in incident response, ideal for candidates with strong technical and analytical skills.",
+      "descriptionTeaser_ats": "Make an impact with NTT DATAJoin a company that is pushing the boundaries of what is possible. We are renowned for our technical excellence and leading innovations, and for making a difference to our ",
+      "descriptionTeaser_keyword": "Make an impact with NTT DATA. Join a company that is pushing the boundaries of what is possible. We are renowned for our technical excellence and leading innovations, and for making a difference to ou...",
+      "descriptionTeaser_first200": "Make an impact with NTT DATA. Join a company that is pushing the boundaries of what is possible. We are renowned for our technical excellence and leading innovations, and for making a difference to..."
+    },
+    "externalApply": false,
+    "cityState": "Hyderabad, Telangāna",
+    "country": "India",
+    "visibilityType": "External",
+    "longitude": "78.45636",
+    "jobId": "R-150127",
+    "remoteType": "On-site Working",
+    "locale": "en_GLOBAL",
+    "title": "Security Platform Engineer",
+    "jobSeqNo": "NTT1GLOBALR150127EXTERNALENGLOBAL",
+    "postedDate": "2026-10-20T00:00:00.000+0000",
+    "dateCreated": "2026-10-16T09:55:41.347+0000",
+    "cityStateCountry": "Hyderabad, Telangāna, India",
+    "jobVisibility": [
+      "external",
+      "internal"
+    ],
+    "location": "Hyderabad, Telangāna, India",
+    "category": "Technical Engineering",
+    "isMultiLocation": true,
+    "multi_location_array": [
+      {
+        "latlong": {
+          "lon": 78.45636,
+          "lat": 17.38405
+        },
+        "location": "Hyderabad, Telangāna, India"
+      },
+      {
+        "latlong": {
+          "lon": 77.59369,
+          "lat": 12.97194
+        },
+        "location": "Bangalore, Karnātaka, India"
+      }
+    ],
+    "isMultiCategory": true,
+    "multi_category_array": [
+      {
+        "category": "Technical Engineering"
+      }
+    ],
+    "badge": ""
+  }
+}

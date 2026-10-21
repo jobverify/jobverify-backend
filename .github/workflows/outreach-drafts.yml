@@ -2,15 +2,6 @@ name: Jobverify Outreach Drafts
 run-name: 'Outreach Drafts #${{ github.run_number }}'
 on:
   workflow_dispatch:
-    inputs:
-      mode:
-        description: 'Process queued drafts or verify model inference with synthetic data'
-        type: choice
-        options:
-          - queue
-          - smoke-test
-        default: queue
-        required: true
 permissions:
   contents: read
 concurrency:
@@ -30,7 +21,6 @@ jobs:
         with:
           persist-credentials: false
       - name: Check queue configuration
-        if: inputs.mode != 'smoke-test'
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
         run: |
@@ -49,12 +39,7 @@ jobs:
           path: .cache/outreach-models/LFM2.5-1.2B-Instruct-Q4_K_M.gguf
           key: outreach-lfm25-12b-q4km-b1b3de114215d950
       - name: Generate up to three explicitly requested outreach drafts
-        if: inputs.mode != 'smoke-test'
         timeout-minutes: 8
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
         run: node scripts/runOutreachDrafts.js
-      - name: Verify model inference with synthetic data
-        if: inputs.mode == 'smoke-test'
-        timeout-minutes: 8
-        run: node scripts/testOutreachModel.js

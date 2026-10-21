@@ -1,7 +1,10 @@
+import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
+import { runKulaPublicApi } from '../../scraper-support/shared/kulaPublicApi.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { resolveKulaJobDescriptions } from '../../scraper-support/utils/kulaFlight.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -88,8 +91,8 @@ const extractDescription = (value) => {
 
 export const buildSearchUrl = () => KULA_JOBS_URL
 
-export const extractSearchResults = (html) => (
-  parseEmbeddedJobs(html)
+export const mapKulaJobs = (rows) => (
+  rows
     .map((row) => {
       const title = normalizeWhitespace(row?.title)
       const jobId = normalizeWhitespace(row?.id)
@@ -126,6 +129,10 @@ export const extractSearchResults = (html) => (
     .sort((left, right) => left.title.localeCompare(right.title))
 )
 
+export const extractSearchResults = (html) => mapKulaJobs(
+  resolveKulaJobDescriptions(html, parseEmbeddedJobs(html)),
+)
+
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -145,6 +152,7 @@ export const createAckoScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
+    if (!options.fetchText || options.fetchJson) return runKulaPublicApi({ source: 'acko', mapKulaJobs }, { maxJobs, ...options })
     const fetchText = options.fetchText || defaultFetchText
     const html = await fetchText(buildSearchUrl())
     const jobs = extractSearchResults(html)
@@ -153,13 +161,15 @@ export const createAckoScraper = ({
     return selectedJobs.map((job) => ({
       ...job,
       source: 'acko',
+      sourceListingComplete: false,
+      sourceDetailComplete: hasSourceDescription(job),
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: new Date().toISOString(),
     }))
   },
 })
 
-export const run = async () => createAckoScraper().run()
+export const run = async (options = {}) => createAckoScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

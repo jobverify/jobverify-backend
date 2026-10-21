@@ -8,13 +8,23 @@ export const createResourceSampler = () => {let previous=null;return ()=>{const 
 /** A threshold stop is latched. Monitoring is independent of an awaiting inference request. */
 export const createResourceMonitor = ({sample=createResourceSampler(),onSample=()=>{},onStop=()=>{},limit=90,intervalMs=2000}={}) => {
  if(!Number.isFinite(limit)||limit<=0||limit>100||!Number.isFinite(intervalMs)||intervalMs<1)throw new Error('Invalid resource limits');
- let stopped=false,busy=false,timer;
+ let stopped=false,busy=false,timer,recordFailure;
+ // Resolve with the error so timer-driven failures can be awaited without
+ // creating an unhandled rejection for callers using check() directly.
+ const failure=new Promise(resolve=>{recordFailure=resolve;});
  const stop=()=>{if(timer)clearInterval(timer);timer=null;};
- const halt=async(reading,reason)=>{if(stopped)return;stopped=true;stop();await onStop(reading,reason);};
- const check=async()=>{if(stopped||busy)return;busy=true;let reading;
-  try{reading=await sample();if(!reading||!(reading.cpuPercent===null||Number.isFinite(reading.cpuPercent)&&reading.cpuPercent>=0&&reading.cpuPercent<=100)||!Number.isFinite(reading.memoryPercent)||reading.memoryPercent<0||reading.memoryPercent>100)throw new Error('Invalid resource sample');
-   await onSample(reading);if(reading.cpuPercent>limit||reading.memoryPercent>limit)await halt(reading,'resource_limit');
-  }catch(error){await halt({...reading,error:error.message},'monitor_error');}finally{busy=false;}
+ const halt=async(reading,reason)=>{
+  if(stopped)return;
+  stopped=true;stop();
+  try{await onStop(reading,reason);}catch(error){recordFailure(error);throw error;}
  };
- return {check,start:async()=>{await check();if(!stopped&&!timer)timer=setInterval(()=>{void check();},intervalMs);},stop,get stopped(){return stopped;}};
+ const check=async()=>{if(stopped||busy)return;busy=true;let reading;
+  try{
+   try{reading=await sample();if(!reading||!(reading.cpuPercent===null||Number.isFinite(reading.cpuPercent)&&reading.cpuPercent>=0&&reading.cpuPercent<=100)||!Number.isFinite(reading.memoryPercent)||reading.memoryPercent<0||reading.memoryPercent>100)throw new Error('Invalid resource sample');
+    await onSample(reading);
+   }catch(error){await halt({...reading,error:error.message},'monitor_error');return;}
+   if(reading.cpuPercent>limit||reading.memoryPercent>limit)await halt(reading,'resource_limit');
+  }finally{busy=false;}
+ };
+ return {check,failure,start:async()=>{await check();if(!stopped&&!timer)timer=setInterval(()=>{void check().catch(recordFailure);},intervalMs);},stop,get stopped(){return stopped;}};
 };

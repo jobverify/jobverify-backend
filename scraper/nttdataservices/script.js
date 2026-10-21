@@ -56,7 +56,7 @@ export const hasOfficialHomepageSignal = (html) => {
   const page = String(html ?? '')
   const normalized = normalizeWhitespace(page).toLowerCase()
 
-  const hasCurrentBrand = /<title[^>]*>\s*Intelligence to Impact\s*<\/title>/i.test(page)
+  const hasCurrentBrand = /<title[^>]*>\s*Intelligence to Impact(?:\s*\|\s*NTT DATA)?\s*<\/title>/i.test(page)
     && /<h1\b[^>]*>\s*Intelligence to Impact\s*<\/h1>/i.test(page)
     && /<img\b[^>]*alt=["']NTT DATA Logo["']/i.test(page)
 
@@ -77,7 +77,7 @@ export const hasOfficialCareersSignal = (html) => {
     && OFFICIAL_CAREERS_SEARCH_LINK_PATTERN.test(page)
     && OFFICIAL_CAREERS_JOBS_HOME_LINK_PATTERN.test(page)
 
-  return /<title[^>]*>\s*Accelerate your career\s*<\/title>/i.test(page)
+  return /<title[^>]*>\s*Accelerate your career(?:\s*\|\s*NTT DATA)?\s*<\/title>/i.test(page)
     && (hasCurrentEditorialCopy || hasVerifiedJobsHandoff)
 }
 

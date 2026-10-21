@@ -29,15 +29,19 @@ test('getScraperCatalog includes Castrol India as a verified careers handoff to 
   assert.equal(provider.companyDomain, 'castrol.com')
   assert.equal(provider.atsPlatform, 'greenhouse')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'official-careers-handoff-plus-greenhouse-board-api')
+  assert.equal(provider.paginationStrategy, 'native-public-GH-meta.total-reconciled-with-unfiltered-board-total+stable-final-full-feed')
   assert.equal(
     provider.extractionStrategy,
-    'verified-castrol-careers-page+verified-greenhouse-board+india-location-filter',
+    'current-official-EU-Greenhouse-handoff+complete-public-GH-API+native-office-hierarchy+full-native-role-content+unchanged-shared-GH-mapping',
   )
   assert.equal(provider.parser, 'custom-script')
   assert.equal(provider.normalizationProfile, 'engineering-default')
-  assert.equal(provider.verifiedOn, '2026-10-03')
-  assert.match(provider.verifiedSurfaceSummary, /nine India roles/i)
+  assert.equal(provider.verifiedOn, null)
+  assert.equal(provider.verifiedAt, null)
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
+  assert.equal(provider.jobsBoardUrl, 'https://job-boards.eu.greenhouse.io/castrol')
+  assert.match(provider.verifiedSurfaceSummary, /Current inventory counts are not stored/i)
   assert.match(provider.modulePath, /castrolindia[\\/]script\.js$/i)
   assert.match(provider.dryRunFile, /castrolindia[\\/]jobs\.json$/i)
 

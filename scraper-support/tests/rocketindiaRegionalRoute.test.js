@@ -51,3 +51,23 @@ test('Rocket still checks complete raw inventory before applying the India filte
     fetchText: async url => bootstrap(new URL(url).searchParams.has('from') ? [] : raw, 3),
   }), /empty page.*2.*3/i)
 })
+
+test('Rocket bounds native detail concurrency at two without changing explicit caller concurrency',async () => {
+  const raw=[row('R-1'),row('R-2')]
+  const measure=async override=>{
+    let active=0,maximum=0
+    const jobs=await run({detailEnrichmentBudgetMs:1000,...override,fetchText:async url=>{
+      if(url.endsWith('/search-results'))return bootstrap(raw)
+      const native=raw.find(job=>url.includes('/job/'+job.reqId+'/'))
+      active++;maximum=Math.max(maximum,active)
+      await new Promise(resolve=>setTimeout(resolve,15))
+      active--
+      return '<script>phApp.ddo = '+JSON.stringify({jobDetail:{data:{job:{...native,ml_country:'India',
+        ml_Description:'Build reliable native services with the current engineering team.'}}}})+'</script>'
+    }})
+    assert.ok(jobs.every(job=>job.sourceDetailComplete===true))
+    return maximum
+  }
+  assert.equal(await measure({}),2)
+  assert.equal(await measure({detailConcurrency:1}),1)
+})

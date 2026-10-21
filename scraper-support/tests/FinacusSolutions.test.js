@@ -84,15 +84,16 @@ test('Finacus Solutions local catalog captures the verified first-party careers 
   assert.equal(provider.companyDomain, 'finacus.co.in')
   assert.equal(provider.atsPlatform, 'official-company-careers-page')
   assert.equal(provider.countryFilter, 'India')
-  assert.equal(provider.paginationStrategy, 'single-first-party-current-openings-section')
+  assert.equal(provider.paginationStrategy, 'stable-current-visible-cards-global-total-unavailable')
   assert.equal(
     provider.extractionStrategy,
-    'verified-careers-page+inline-opening-cards+same-page-apply-form',
+    'current-official-careers+advertised-public-GET-detail+native-ID-title-full-JD+native-generic-application-position',
   )
-  assert.equal(provider.verifiedOn, '2026-07-18')
-  assert.equal(provider.verifiedPublicJobCount, 20)
+  assert.equal(provider.verifiedOn, null)
+  assert.equal(provider.verifiedPublicJobCount, null)
+  assert.equal(provider.verifiedIndiaJobCount, null)
   assert.equal(provider.modulePath, finacusModulePath)
-  assert.match(provider.verifiedSurfaceSummary, /20 visible role cards/i)
+  assert.match(provider.verifiedSurfaceSummary, /inventory remains partial/i)
   assert.equal(finacus.PROVIDER_METADATA.source, FINACUS_SOLUTIONS_CATALOG.source)
 
   const report = generateCompanyCoverageReport({

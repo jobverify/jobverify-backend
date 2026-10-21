@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const VERIFIED_SURFACE_SUMMARY =
-  'Verified on July 16, 2026 that both https://ivaluegroup.com/working-at-ivalue/ and https://ivaluegroup.com/en-in/careers/working-at-ivalue/ currently return an Incapsula noindex interstitial rather than a trustworthy scrapeable careers page. Also verified that the public iValue Group jobs board at https://ivgroup.greythr.com/hire/jobs/ is live, the GreytHR company details API at https://ivgroup.greythr.com/hire/api/career/get_company_details/ identifies iValue Group and https://ivaluegroup.com/, the public GreytHR employment category catalog at https://ivgroup.greythr.com/hire/api/greythr/emp-category/ exposes India location values such as Mumbai, Delhi, Ahmedabad, and Bangalore, and the public published jobs API at https://ivgroup.greythr.com/hire/api/career/published_jobs/ returns 36 India roles.'
+  'Current rendered corporate careers page visibly hands off to the exact iValue Group GreytHR board. Direct corporate HTTP currently returns an Incapsula interstitial; that response is not identity proof. The source requires an active current handoff or a fresh approved browser binding plus exact current native company identity, full public feed, matching role details, known location categories and final feed/category reconciliation. Runtime counts are separate. Browser binding expires after 48 hours; fetchOfficialPage supports fresh browser-backed renewal when direct corporate navigation remains blocked.'
 
 export const IVALUE_CATALOG = {
   source: 'ivalue',
@@ -23,12 +23,23 @@ export const IVALUE_CATALOG = {
   officialHomepageUrl: 'https://ivaluegroup.com/',
   atsPlatform: 'greythr',
   countryFilter: 'India',
-  paginationStrategy: 'official-careers-block-verification-plus-greythr-published-jobs-api',
+  paginationStrategy: 'native-public-full-feed-and-final-feed-category-reconciliation',
   extractionStrategy:
-    'verified-blocked-official-careers-pages+verified-greythr-jobs-page+greythr-company-details+greythr-location-catalog+published-jobs-api',
+    'current-official-handoff-or-fresh-approved-binding+exact-native-company+full-feed-and-matching-full-details',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
-  verifiedOn: '2026-07-16',
+  verifiedOn: null,
+  verifiedPublicJobCount: null,
+  verifiedIndiaJobCount: null,
+  approvedCorporateBinding: {
+    verified: true,
+    checkedAt: '2026-10-20T23:05:21.486Z',
+    officialURL: 'https://ivaluegroup.com/en-in/careers/working-at-ivalue/',
+    target: 'https://ivgroup.greythr.com/hire/jobs/',
+    provenance: 'current-rendered-public-official-corporate-navigation-no-forms',
+    proofFile: 'fixtures/official-browser-binding-20261020.json',
+    proofSha256: '7a0c4487c6b2c3859628c65234e00f8c3659630b6b862cc5a55753ea78201d0e',
+  },
   verifiedSurfaceSummary: VERIFIED_SURFACE_SUMMARY,
 }
 

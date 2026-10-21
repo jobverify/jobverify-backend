@@ -120,3 +120,68 @@ test('a newer legacy failure supersedes diagnostics written by an earlier deploy
   assert.equal(report.rows[0].rawJobs, null)
   assert.equal(report.rows[0].eligibleJobs, null)
 })
+
+test('complete enumeration with incomplete descriptions stays partial in production and isolated audits', () => {
+  for (const health of [{ filteredEmptyDescription: 1 }, { detailHealth: { complete: false, incompleteJobs: 1 } }]) {
+    const report = buildPublishingGapReport({ catalog: [provider('a')], now,
+      runtime: { databaseAvailable: true, generatedAt: now.toISOString(), inventory: [], publicCompanyNames: [],
+        statuses: [{ source: 'a', latestAttempt: attempt({ ...health, inventoryEvidence: { ...evidence, status: 'complete-inventory', reportedTotal: 2, indiaFacetCount: 2 } }) }] },
+      extractionAudits: [{ source: 'a', completedAt: now.toISOString(), outcome: 'complete-positive-extraction',
+        rawJobs: 2, indiaJobs: 2, eligibleJobs: 1, ...health,
+        filterCounts: health.filteredEmptyDescription ? { emptyDescription: health.filteredEmptyDescription } : undefined }],
+    })
+    assert.equal(report.rows[0].runtimeOutcome, 'partial')
+    assert.equal(report.summary.completeSuccessfulChecks, 0)
+    assert.equal(report.rows[0].extractionAuditOutcome, 'positive-extraction-incomplete-evidence')
+  }
+})
+
+test('validated partial-positive publication remains partial without hiding real upstream failures', () => {
+  const report = buildPublishingGapReport({ catalog: [provider('partial'), provider('failed')], now,
+    runtime: { databaseAvailable: true, generatedAt: now.toISOString(), inventory: [], publicCompanyNames: [], statuses: [
+      { source: 'partial', latestAttempt: attempt({ success: false, partial: true, failureKind: 'partial_positive', staleCheckSkipped: true }) },
+      { source: 'failed', latestAttempt: attempt({ success: false, partial: true, failureKind: 'network_or_timeout' }) },
+    ] } })
+  assert.deepEqual(report.rows.map(r=>[r.source,r.runtimeOutcome]), [['failed','failed'],['partial','partial']])
+})
+
+test('latest isolated audit keeps inspectable provenance and scoped inventory proof without inheriting earlier evidence', () => {
+  const proof = { artifact: 'native-probe.json', scope: 'unfiltered-first-page-count-only-not-complete-inventory', globalReportedTotal: 100 }
+  const report = buildPublishingGapReport({ catalog: [provider('a'), provider('b')], now,
+    extractionAudits: [
+      { source: 'a', completedAt: now.toISOString(), outcome: 'complete-no-eligible-jobs', rawJobs: 0,
+        inventoryEvidence: { ...evidence, reason: 'validated-workday-india-empty' },
+        mode: 'isolated-direct-live-extraction-no-database', productionWrites: false,
+        artifact: 'filtered-india-trial.json', supportingEvidence: [proof] },
+      { source: 'b', completedAt: '2026-10-20T04:00:00Z', outcome: 'complete-positive-extraction',
+        artifact: 'old-success.json', supportingEvidence: [proof], eligibleJobs: 100 },
+      { source: 'b', completedAt: now.toISOString(), outcome: 'extraction-failed', artifact: 'latest-failure.json' },
+    ] })
+  assert.equal(report.rows[0].extractionAuditEvidence.artifact, 'filtered-india-trial.json')
+  assert.deepEqual(report.rows[0].extractionAuditEvidence.supportingEvidence, [proof])
+  assert.equal(report.rows[0].extractionAuditEvidence.mode, 'isolated-direct-live-extraction-no-database')
+  assert.equal(report.rows[0].extractionAuditEvidence.productionWrites, false)
+  assert.equal(report.rows[1].extractionAuditEvidence.artifact, 'latest-failure.json')
+  assert.equal(report.rows[1].extractionAuditEvidence.supportingEvidence, null)
+  assert.equal(report.rows[1].extractionAuditEligibleJobs, null)
+  assert.ok(publishingGapCsv(report.rows).includes('unfiltered-first-page-count-only-not-complete-inventory'))
+})
+
+test('one primary explanation per source reconciles totals and exposes administrative exclusions in CSV', () => {
+  const report = buildPublishingGapReport({ catalog: [provider('a'), provider('b')], now,
+    runtime: { databaseAvailable: true, generatedAt: now.toISOString(), inventory: [], publicCompanyNames: [], statuses: [
+      { source: 'a', isActive: false }, { source: 'b', isActive: true },
+    ] }, extractionAudits: [{ source: 'a', completedAt: now.toISOString(), eligibleJobs: 20, outcome: 'complete-positive-extraction' }] })
+  assert.equal(report.rows[0].gapExplanation, 'administrator-disabled')
+  assert.equal(report.rows[0].isActive, false)
+  assert.equal(Object.values(report.summary.gapExplanationCounts).reduce((a, b) => a + b, 0), 2)
+  assert.ok(publishingGapCsv(report.rows).includes('gapExplanation'))
+  assert.ok(publishingGapCsv(report.rows).includes('administrator-disabled'))
+})
+
+test('shared native engines remain visible in remediation compatibility ranking', () => {
+  const report = buildPublishingGapReport({ now, catalog: ['darwinbox', 'phenom', 'successfactors-rmk', 'kula', 'kula-public-api'].map((atsPlatform, index) => ({
+    ...provider(`shared${index}`), adapter: 'script', atsPlatform,
+  })) })
+  assert.ok(report.rows.every(row => row.sharedAdapterCompatible))
+})

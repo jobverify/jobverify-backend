@@ -336,7 +336,7 @@ test('InfoEdge detail extraction marks job-specific public Zwayam placeholder pa
     requiredSkills: ['B2B Sales', 'Business Development', 'Client Acquisition'],
     postingDate: '2026-04-27',
     closingDate: null,
-    jobDescription: 'JD',
+    jobDescription: null,
     publicExperienceChecked: true,
   })
 })

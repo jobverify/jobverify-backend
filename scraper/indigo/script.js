@@ -5,6 +5,8 @@ import { normalizeCity } from '../../scraper-support/utils/cityNormalizer.js'
 import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { withRetry } from '../../scraper-support/utils/retry.js'
 import { INDIGO_CATALOG } from './catalog.js'
+import { runNativeIndigo } from './nativeRun.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -381,11 +383,17 @@ export const createIndigoScraper = () => ({
       throw new Error('Indigo public jobs API returned no public India jobs')
     }
 
-    return jobs
+    return attachInventoryEvidence(jobs.map(job => ({ ...job, sourceListingComplete: false, sourceDetailComplete: false, sourceDetailStatus: 'legacy-contract-unqualified' })), {
+      status: 'discovery-only', surface: JOB_SEARCH_API_URL, firstParty: true,
+      listingComplete: false, reportedTotal: null, indiaFacetCount: null,
+      verifiedAt: now(), reason: 'legacy-unreconciled-public-feed-contract',
+    })
   },
 })
 
-export const run = async (options = {}) => createIndigoScraper().run(options)
+export const run = async (options = {}) => options.fetchPage || options.fetchJson
+  ? createIndigoScraper().run(options)
+  : runNativeIndigo(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

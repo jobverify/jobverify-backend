@@ -62,15 +62,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .cache/description-rewriter
-          key: description-lfm230-cpu-${{ runner.os }}-e75f8326-b11146-14cf1303-c150306e
+          key: description-lfm12b-cpu-${{ runner.os }}-bb741ebb-b11146-14cf1303-c150306e
       - name: Restore validated compact decisions
         if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
         uses: actions/cache/restore@v4
         with:
           path: .cache/description-plans
-          key: description-lfm230-plans-${{ runner.os }}-v11-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: description-lfm12b-plans-${{ runner.os }}-v11-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            description-lfm230-plans-${{ runner.os }}-v11-${{ github.ref }}-
+            description-lfm12b-plans-${{ runner.os }}-v11-${{ github.ref }}-
       - name: Drain the durable source-hash queue
         if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
         timeout-minutes: 315
@@ -82,7 +82,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .cache/description-plans
-          key: description-lfm230-plans-${{ runner.os }}-v11-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: description-lfm12b-plans-${{ runner.os }}-v11-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Upload generation quality and capacity diagnostics
         if: always()
         uses: actions/upload-artifact@v7

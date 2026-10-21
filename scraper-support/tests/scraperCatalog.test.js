@@ -76,8 +76,10 @@ test('getScraperCatalog merges workday and official portal providers into one re
   assert.ok(airbus)
   assert.equal(airbus.adapter, 'workday')
   assert.equal(airbus.atsPlatform, 'workday')
-  assert.equal(airbus.companyCareerPage, airbus.baseUrl)
-  assert.match(airbus.companyDomain, /wd\d+\.myworkdayjobs\.com$/)
+  assert.equal(airbus.companyCareerPage, 'https://www.airbus.com/en/careers')
+  assert.equal(airbus.companyDomain, 'airbus.com')
+  assert.match(airbus.baseUrl, /ag\.wd3\.myworkdayjobs\.com\/en-US\/Airbus$/)
+  assert.equal(airbus.bindingEvidence.verified, true)
 
   assert.ok(abb)
   assert.equal(abb.adapter, 'script')
@@ -215,7 +217,8 @@ test('getScraperCatalog merges workday and official portal providers into one re
 
   assert.ok(inmobi)
   assert.equal(inmobi.adapter, 'script')
-  assert.equal(inmobi.atsPlatform, 'official-company-careers')
+  assert.equal(inmobi.atsPlatform, 'greenhouse')
+  assert.equal(inmobi.boardToken, 'inmobi')
   assert.match(inmobi.companyCareerPage, /inmobi\.com\/company\/careers/i)
   assert.equal(inmobi.companyDomain, 'inmobi.com')
 
@@ -398,7 +401,7 @@ test('getScraperCatalog merges workday and official portal providers into one re
   assert.ok(tcs)
   assert.equal(tcs.adapter, 'script')
   assert.equal(tcs.atsPlatform, 'official-company-careers')
-  assert.match(tcs.companyCareerPage, /ibegin\.tcsapps\.com\/candidate\/?$/i)
+  assert.equal(tcs.companyCareerPage, 'https://ibegin.tcsapps.com/candidate/next/en-IN/jobs/search')
   assert.equal(tcs.companyDomain, 'ibegin.tcsapps.com')
 
   assert.ok(tataelxsi)
@@ -407,11 +410,9 @@ test('getScraperCatalog merges workday and official portal providers into one re
   assert.match(tataelxsi.companyCareerPage, /tataelxsi\.com\/careers\/job-openings/i)
   assert.equal(tataelxsi.companyDomain, 'tataelxsi.com')
 
-  assert.ok(tatamotors)
-  assert.equal(tatamotors.adapter, 'script')
-  assert.equal(tatamotors.atsPlatform, 'successfactors')
-  assert.match(tatamotors.companyCareerPage, /careers\.tatamotors\.com/i)
-  assert.equal(tatamotors.companyDomain, 'careers.tatamotors.com')
+  // Retired providers stay outside the active catalog; their old adapter
+  // contracts must not silently reintroduce them.
+  assert.equal(tatamotors, undefined)
 
   assert.ok(tatatechnologies)
   assert.equal(tatatechnologies.adapter, 'script')
@@ -433,9 +434,9 @@ test('getScraperCatalog merges workday and official portal providers into one re
 
   assert.ok(zoom)
   assert.equal(zoom.adapter, 'script')
-  assert.equal(zoom.atsPlatform, 'official-company-careers')
-  assert.match(zoom.companyCareerPage, /careers\.zoom\.us\/jobs\/search/i)
-  assert.equal(zoom.companyDomain, 'careers.zoom.us')
+  assert.equal(zoom.atsPlatform, 'shazamme')
+  assert.equal(zoom.companyCareerPage, 'https://www.careers.zoom.us/')
+  assert.equal(zoom.companyDomain, 'zoom.com')
 
   assert.ok(workday)
   assert.equal(workday.adapter, 'workday')
@@ -457,7 +458,8 @@ test('getScraperCatalog merges workday and official portal providers into one re
 
   assert.ok(rubrik)
   assert.equal(rubrik.adapter, 'script')
-  assert.equal(rubrik.atsPlatform, 'official-company-careers')
+  assert.equal(rubrik.atsPlatform, 'greenhouse')
+  assert.equal(rubrik.boardToken, 'rubrik')
   assert.match(rubrik.companyCareerPage, /rubrik\.com/i)
 })
 
@@ -552,7 +554,8 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   assert.equal(typeof inmobi.run, 'function')
   assert.match(inmobi.dryRunFile, /inmobi[\\/]jobs\.json$/)
   assert.equal(inmobi.provider.source, 'inmobi')
-  assert.equal(inmobi.provider.atsPlatform, 'official-company-careers')
+  assert.equal(inmobi.provider.atsPlatform, 'greenhouse')
+  assert.equal(inmobi.provider.boardToken, 'inmobi')
 
   assert.ok(intel)
   assert.equal(typeof intel.run, 'function')
@@ -851,11 +854,7 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   assert.equal(tataelxsi.provider.source, 'tataelxsi')
   assert.equal(tataelxsi.provider.atsPlatform, 'official-company-careers')
 
-  assert.ok(tatamotors)
-  assert.equal(typeof tatamotors.run, 'function')
-  assert.match(tatamotors.dryRunFile, /tatamotors[\\/]jobs\.json$/)
-  assert.equal(tatamotors.provider.source, 'tatamotors')
-  assert.equal(tatamotors.provider.atsPlatform, 'successfactors')
+  assert.equal(tatamotors, undefined)
 
   assert.ok(tatatechnologies)
   assert.equal(typeof tatatechnologies.run, 'function')
@@ -879,7 +878,8 @@ test('buildScrapers keeps the existing runner contract while exposing provider m
   assert.equal(typeof zoom.run, 'function')
   assert.match(zoom.dryRunFile, /zoom[\\/]jobs\.json$/)
   assert.equal(zoom.provider.source, 'zoom')
-  assert.equal(zoom.provider.atsPlatform, 'official-company-careers')
+  assert.equal(zoom.provider.atsPlatform, 'shazamme')
+  assert.equal(zoom.provider.companyCareerPage, 'https://www.careers.zoom.us/')
 
   assert.ok(workday)
   assert.equal(typeof workday.run, 'function')
@@ -976,11 +976,12 @@ test('getScraperCatalog includes apiPortal providers with official metadata and 
   assert.match(github.config.discovery.listingApiUrl, /github\.careers\/api\/jobs/i)
 
   assert.ok(gitlab)
-  assert.equal(gitlab.adapter, 'apiPortal')
+  assert.equal(gitlab.adapter, 'script')
   assert.equal(gitlab.atsPlatform, 'greenhouse')
   assert.match(gitlab.companyCareerPage, /about\.gitlab\.com\/jobs\/all-jobs/i)
   assert.equal(gitlab.companyDomain, 'about.gitlab.com')
-  assert.match(gitlab.config.discovery.listingApiUrl, /boards-api\.greenhouse\.io\/v1\/boards\/gitlabcrm\/jobs/i)
+  assert.equal(gitlab.boardToken, 'gitlab')
+  assert.equal(gitlab.config, null)
 
   assert.ok(meesho)
   assert.equal(meesho.adapter, 'apiPortal')
@@ -1076,8 +1077,9 @@ test('buildScrapers exposes a runnable apiPortal scraper without changing the ru
 
   assert.ok(gitlab)
   assert.equal(typeof gitlab.run, 'function')
-  assert.equal(gitlab.provider.adapter, 'apiPortal')
-  assert.equal(gitlab.provider.parser, 'api-portal')
+  assert.equal(gitlab.provider.adapter, 'script')
+  assert.equal(gitlab.provider.parser, 'custom-script')
+  assert.equal(gitlab.provider.boardToken, 'gitlab')
   assert.match(gitlab.provider.companyCareerPage, /about\.gitlab\.com\/jobs\/all-jobs/i)
 
   assert.ok(meesho)
@@ -1125,7 +1127,7 @@ test('getScraperCatalog includes recent Chevron, CleverTap, and CloudThat custom
 
   assert.ok(cleverTap)
   assert.equal(cleverTap.adapter, 'script')
-  assert.equal(cleverTap.atsPlatform, 'kula')
+  assert.equal(cleverTap.atsPlatform, 'kula-public-api')
   assert.match(cleverTap.companyCareerPage, /clevertap\.com\/current-openings/i)
   assert.equal(cleverTap.companyDomain, 'clevertap.com')
   assert.match(cleverTap.modulePath, /clevertap[\\/]script\.js$/i)
@@ -1154,7 +1156,7 @@ test('buildScrapers exposes runnable Chevron, CleverTap, and CloudThat scrapers'
   assert.equal(typeof cleverTap.run, 'function')
   assert.match(cleverTap.dryRunFile, /clevertap[\\/]jobs\.json$/)
   assert.equal(cleverTap.provider.source, 'clevertap')
-  assert.equal(cleverTap.provider.atsPlatform, 'kula')
+  assert.equal(cleverTap.provider.atsPlatform, 'kula-public-api')
 
   assert.ok(cloudthat)
   assert.equal(typeof cloudthat.run, 'function')

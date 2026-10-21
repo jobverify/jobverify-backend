@@ -1,18 +1,15 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import { runWorkdayScraper } from '../../scraper-support/myworkday/engine.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "blueorigin"
 export const COMPANY = "Blue Origin"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-08-01"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 09 exact-name sentinel for Blue Origin added on Saturday, August 1, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const CAREERS_URL = 'https://www.blueorigin.com/careers/search'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run = options => runWorkdayScraper({...options,source:SOURCE,company:COMPANY,baseUrl:'https://blueorigin.wd5.myworkdayjobs.com/en-US/BlueOrigin',scraperDir:currentDir,boardIdentityVerified:true})
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

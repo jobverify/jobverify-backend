@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createPhenomScraper } from '../../scraper-support/phenom/engine.js'
+import { mapJobsWithInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -16,6 +17,8 @@ const phenomScraper = createPhenomScraper({
   baseUrl: BASE_URL,
   searchPath: SEARCH_PATH,
   scraperDir: currentDir,
+  defaultDetailEnrichmentBudgetMs: 120000,
+  defaultDetailConcurrency: 4,
 })
 
 export const {
@@ -31,7 +34,7 @@ export const createAbbScraper = ({
 } = {}) => ({
   async run(options = {}) {
     const jobs = await phenomScraper.run(options)
-    return jobs.map((job) => ({
+    return mapJobsWithInventoryEvidence(jobs, (job) => ({
       ...job,
       scrapedAt: now(),
     }))

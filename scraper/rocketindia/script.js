@@ -12,6 +12,7 @@ const scraper = createPhenomScraper({
   // Rocket India's homepage links a separate regional board and Workday apply site.
   searchPath: '/in/en/search-results',
   scraperDir: currentDir,
+  defaultDetailConcurrency: 2,
 })
 
 export const {

@@ -193,7 +193,7 @@ test('NTT Data Services scraper exposes the verified first-party surfaces and Ph
   )
 })
 
-test('NTT Data Services scraper verifies the official surfaces and returns India jobs from the public Phenom board', async () => {
+test('NTT Data Services preserves India identity but rejects an uncorroborated detail-only application URL', async () => {
   const ntt = await loadModule()
   const requestedUrls = []
   const searchResultsUrl = ntt.SEARCH_RESULTS_URL
@@ -255,15 +255,14 @@ test('NTT Data Services scraper verifies the official surfaces and returns India
   assert.equal(jobs[0].postingDate, '2025-08-12')
   assert.equal(
     jobs[0].applyUrl,
-    'https://careers.nttdata.com/global/en/job/P-100131/SASE-ENGINEER/apply',
+    detailUrl,
   )
   assert.equal(jobs[0].sourceUrl, detailUrl)
-  assert.equal(
-    jobs[0].minimumQualification,
-    'Bachelor of Engineering or equivalent degree.',
-  )
+  assert.equal(jobs[0].minimumQualification, null)
   assert.deepEqual(jobs[0].requiredSkills, ['Palo Alto Firewall', 'SASE'])
-  assert.match(jobs[0].jobDescription, /Secure the platform/i)
+  assert.equal(jobs[0].jobDescription, null)
+  assert.equal(jobs[0].sourceDetailComplete, false)
+  assert.equal(jobs[0].sourceDetailFailureKind, 'identity-mismatch')
   assert.match(jobs[0].experienceRequired, /5\+ years/i)
   assert.ok(jobs[0].scrapedAt)
 })

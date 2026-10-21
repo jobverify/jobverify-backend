@@ -3,6 +3,9 @@ import { fileURLToPath } from 'node:url'
 
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { IVALUE_CATALOG } from './catalog.js'
+import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {extractOfficialRecruitmentLinks} from '../../scripts/officialRecruitmentLinks.js'
+import {validateCompany,validateBoard,validateIValueFeed,validateIValueDetail} from './nativeContract.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -17,6 +20,12 @@ export const JOBS_PAGE_URL = PROVIDER_METADATA.verifiedPublicJobsPageUrl
 export const COMPANY_DETAILS_URL = PROVIDER_METADATA.companyDetailsUrl
 export const EMPLOYMENT_CATEGORIES_URL = PROVIDER_METADATA.employmentCategoriesUrl
 export const JOBS_API_URL = PROVIDER_METADATA.jobsApiUrl
+const SOURCE_DIAGNOSTICS=Symbol('ivalue-native-diagnostics')
+export const readIValueSourceDiagnostics=jobs=>jobs?.[SOURCE_DIAGNOSTICS]||null
+// The native client also advertises a separate hiring-event inventory. This
+// source has not reconciled that scope, so this board cannot prove company-wide
+// completeness or an empty employer even when its own full feed is stable.
+const COMPANY_SCOPE_COMPLETE=false
 
 const FOREIGN_LOCATION_NAMES = new Set([
   'Singapore',
@@ -76,17 +85,17 @@ const createTimeoutSignal = (timeoutMs) => {
   return controller.signal
 }
 
-const defaultFetchText = async (url) => {
+const defaultFetchText = async (url,{signal}={}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
-    signal: createTimeoutSignal(20000),
+    signal: signal || createTimeoutSignal(20000),
   })
 
-  if (!response.ok) {
+  if (response.status!==200 || response.url!==url) {
     throw new Error(`HTTP ${response.status} for ${url}`)
   }
 
@@ -105,10 +114,10 @@ const defaultFetchJson = async (url, options = {}) => {
     },
     body,
     redirect: 'follow',
-    signal: createTimeoutSignal(20000),
+    signal: options.signal || createTimeoutSignal(20000),
   })
 
-  if (!response.ok) {
+  if (response.status!==200 || response.url!==url) {
     throw new Error(`HTTP ${response.status} for ${url}`)
   }
 
@@ -168,7 +177,7 @@ const extractCity = (location) => {
 
 const isIndiaLocationName = (name) => {
   const normalized = normalizeWhitespace(name)
-  return Boolean(normalized) && !FOREIGN_LOCATION_NAMES.has(normalized)
+  return ['Mumbai','Delhi','Chennai','Bangalore','Hyderabad','Pune','New Delhi','Kolkata','Ahmedabad','Kochi','Telangana','Kerala','Coimbatore','Jaipur','Bhopal','Nashik','Lucknow'].includes(normalized)
 }
 
 const isIndiaJob = (locationNames, description) => {
@@ -183,7 +192,7 @@ const isIndiaJob = (locationNames, description) => {
   const fallbackLocation = extractLocationFromDescription(description)
   if (!fallbackLocation) return false
 
-  return !Array.from(FOREIGN_LOCATION_NAMES).some((name) => new RegExp(`\\b${name}\\b`, 'i').test(fallbackLocation))
+  return isIndiaLocationName(fallbackLocation)
 }
 
 export const hasOfficialCareersBlockSignal = (html = '') => {
@@ -203,13 +212,7 @@ export const hasPublicJobsPageSignal = (html = '') => {
 }
 
 export const hasCompanyDetailsSignal = (payload = {}) => {
-  const companyName = normalizeWhitespace(payload?.company_name)
-  const website = normalizeWhitespace(payload?.other_details?.website)
-  const linkedIn = normalizeWhitespace(payload?.other_details?.social?.in)
-
-  return companyName === 'iValue Group'
-    && /ivaluegroup\.com/i.test(website || '')
-    && /linkedin\.com\/company\/ivalue-group/i.test(linkedIn || '')
+  try{return validateCompany(payload)}catch{return false}
 }
 
 export const buildLocationLookup = (payload = {}) => {
@@ -278,53 +281,55 @@ const mapJob = (job, locationLookup, scrapedAt) => {
   }
 }
 
-export const createIValueScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
-} = {}) => ({
-  async run({
-    fetchText = defaultFetchText,
-    fetchJson = defaultFetchJson,
-    now = () => new Date().toISOString(),
-  } = {}) {
-    const legacyOfficialHtml = await fetchText(LEGACY_OFFICIAL_CAREERS_URL)
-    if (!hasOfficialCareersBlockSignal(legacyOfficialHtml)) {
-      throw new Error('The official iValue careers surface changed materially')
+export const createIValueScraper = ({maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : 10000} = {}) => ({
+ async run({fetchText=defaultFetchText,fetchJson=defaultFetchJson,fetchOfficialPage,now=()=>new Date().toISOString(),signal,detailConcurrency=2,timeoutMs=120000}={}) {
+  if(!Number.isInteger(maxJobs)||maxJobs<0||maxJobs>10000||!Number.isInteger(detailConcurrency)||detailConcurrency<1||detailConcurrency>3||!Number.isFinite(timeoutMs)||timeoutMs<=0||timeoutMs>180000)throw new Error('iValue invalid configured limits')
+  const controller=new AbortController(),abort=()=>controller.abort(signal?.reason),timer=setTimeout(()=>controller.abort(new Error('iValue source deadline exceeded')),timeoutMs)
+  if(signal?.aborted)abort();else signal?.addEventListener('abort',abort,{once:true})
+  const request=async(fn,url,options={})=>{controller.signal.throwIfAborted();const requestSignal=AbortSignal.any([controller.signal,AbortSignal.timeout(20000)]);let listener
+   try{return await Promise.race([Promise.resolve().then(()=>fn(url,{...options,signal:requestSignal})),new Promise((_,reject)=>{listener=()=>reject(requestSignal.reason);requestSignal.addEventListener('abort',listener,{once:true})})])}finally{requestSignal.removeEventListener('abort',listener)}
+  }
+  try{
+   const scrapedAt=now();if(typeof scrapedAt!=='string'||!Number.isFinite(Date.parse(scrapedAt)))throw new Error('iValue invalid check time')
+   let corporateCheck='active-current-official-handoff',officialHtml
+   if(fetchOfficialPage){const page=await request(fetchOfficialPage,OFFICIAL_CAREERS_URL);if(page?.status!==200||page.url!==OFFICIAL_CAREERS_URL||typeof page.html!=='string')throw new Error('iValue current browser/corporate handoff unavailable');officialHtml=page.html}
+   else officialHtml=await request(fetchText,OFFICIAL_CAREERS_URL)
+   const active=extractOfficialRecruitmentLinks(String(officialHtml??''),OFFICIAL_CAREERS_URL).some(l=>l.href===JOBS_PAGE_URL)
+   if(!active){
+    if(!hasOfficialCareersBlockSignal(officialHtml))throw new Error('iValue official handoff unavailable without verified interstitial')
+    const proof=IVALUE_CATALOG.approvedCorporateBinding,age=Date.parse(scrapedAt)-Date.parse(proof?.checkedAt)
+    if(proof?.officialURL!==OFFICIAL_CAREERS_URL||proof?.target!==JOBS_PAGE_URL||proof?.verified!==true||!Number.isFinite(age)||age<0||age>48*3600000)throw new Error('iValue blocked corporate check requires fresh approved binding or current fetchOfficialPage hook')
+    corporateCheck='blocked-interstitial-used-fresh-approved-binding'
+   }
+   validateBoard(await request(fetchText,JOBS_PAGE_URL))
+   validateCompany(await request(fetchJson,COMPANY_DETAILS_URL,{method:'GET'}))
+   const categories=await request(fetchJson,EMPLOYMENT_CATEGORIES_URL,{method:'GET'}),feed=validateIValueFeed(await request(fetchJson,JOBS_API_URL,{method:'POST',body:{}}),categories,{now:scrapedAt})
+   const indiaRows=feed.rows.filter(r=>r.scope.indiaLocations.length),limited=maxJobs<indiaRows.length,selected=limited?indiaRows.slice(0,maxJobs):feed.rows
+   const grouped=new Map();for(const entry of selected){const group=grouped.get(entry.record.apply_url)||[];group.push(entry);grouped.set(entry.record.apply_url,group)}
+   const groups=[...grouped.values()],results=new Array(groups.length),rejectedNativeIdentities=[];let cursor=0
+   await Promise.all(Array.from({length:Math.min(detailConcurrency,groups.length)},async()=>{
+    while(cursor<groups.length){controller.signal.throwIfAborted();const index=cursor++,group=groups[index],url='https://ivgroup.greythr.com/hire/api/career/get_job/'+group[0].record.slug+'/'
+     const payload=await request(fetchJson,url,{method:'GET'}),matching=group.filter(r=>r.record.id===payload?.job?.id)
+     if(matching.length!==1)throw new Error('iValue public detail cannot resolve native listing identity')
+     const row=matching[0].record,detail=validateIValueDetail(payload,row,categories,{now:scrapedAt})
+     for(const other of group.filter(r=>r.record.id!==row.id))rejectedNativeIdentities.push({nativeId:other.record.id,requisitionId:other.record.req_id,title:other.record.title,applyUrl:other.record.apply_url,resolvedNativeId:row.id,reason:'ambiguous-public-url-resolves-to-another-native-identity'})
+     if(!detail.scope.indiaLocations.length){results[index]=null;continue}
+     const locationLookup=Object.fromEntries(detail.scope.indiaLocations.map(p=>[p.id,p.name]))
+     const mapped=mapJob({...detail.record,locations:detail.scope.indiaLocations.map(p=>p.id)},locationLookup,scrapedAt)
+     if(!mapped)throw new Error('iValue validated native role failed mapping')
+     results[index]={...mapped,jobDescription:detail.description,postingDate:detail.postingDate,closingDate:detail.closingDate,sourceClosingDateIsExact:detail.sourceClosingDateIsExact,sourceDetailComplete:detail.sourceDetailComplete,sourceDetailStatus:detail.sourceDetailStatus,sourceListingComplete:!limited,sourceCorporateCheck:corporateCheck,sourceNativeLocations:detail.scope.locations}
     }
-
-    const officialCareersHtml = await fetchText(OFFICIAL_CAREERS_URL)
-    if (!hasOfficialCareersBlockSignal(officialCareersHtml)) {
-      throw new Error('The official iValue careers surface changed materially')
-    }
-
-    const jobsPageHtml = await fetchText(JOBS_PAGE_URL)
-    if (!hasPublicJobsPageSignal(jobsPageHtml)) {
-      throw new Error('The verified public GreytHR jobs page changed materially')
-    }
-
-    const companyDetails = await fetchJson(COMPANY_DETAILS_URL, { method: 'GET' })
-    if (!hasCompanyDetailsSignal(companyDetails)) {
-      throw new Error('The verified iValue GreytHR company details changed materially')
-    }
-
-    const employmentCategories = await fetchJson(EMPLOYMENT_CATEGORIES_URL, { method: 'GET' })
-    const locationLookup = buildLocationLookup(employmentCategories)
-
-    const payload = await fetchJson(JOBS_API_URL, {
-      method: 'POST',
-      body: {},
-    })
-
-    const rawJobs = Array.isArray(payload?.data) ? payload.data : []
-    const scrapedAt = now()
-    const mappedJobs = rawJobs
-      .map((job) => mapJob(job, locationLookup, scrapedAt))
-      .filter((job) => job?.title && job?.applyUrl)
-
-    return maxJobs ? mappedJobs.slice(0, maxJobs) : mappedJobs
-  },
+   }))
+   const finalCategories=await request(fetchJson,EMPLOYMENT_CATEGORIES_URL,{method:'GET'}),finalFeed=validateIValueFeed(await request(fetchJson,JOBS_API_URL,{method:'POST',body:{}}),finalCategories,{now:scrapedAt})
+   if(feed.snapshot!==finalFeed.snapshot||JSON.stringify(feed.rows.map(r=>r.scope))!==JSON.stringify(finalFeed.rows.map(r=>r.scope)))throw new Error('iValue native inventory or categories changed during details')
+   const jobs=results.filter(Boolean),complete=COMPANY_SCOPE_COMPLETE&&!limited&&feed.publicIdentityCollisions.length===0
+   jobs.forEach(job=>{job.sourceListingComplete=complete})
+   Object.defineProperty(jobs,SOURCE_DIAGNOSTICS,{value:{rawObservedRows:feed.total,rawObservedIndiaRows:indiaRows.length,uniquePublicUrls:new Set(feed.rows.map(r=>r.record.apply_url)).size,publicIdentityCollisions:feed.publicIdentityCollisions,rejectedNativeIdentities,corporateCheck,finalInventoryRechecked:true,companyHealthComplete:complete&&jobs.every(j=>j.sourceDetailComplete)}})
+   return attachInventoryEvidence(jobs,{status:complete?(feed.total?'complete-inventory':'verified-empty'):!limited?'coverage-gap':'discovery-only',surface:JOBS_PAGE_URL,firstParty:true,listingComplete:complete,pagesFetched:1,reportedTotal:feed.total,indiaFacetCount:indiaRows.length,verifiedAt:now(),reason:complete?(jobs.every(j=>j.sourceDetailComplete)?'full-public-feed-native-details-and-final-snapshot':'full-public-inventory-with-incomplete-details'):feed.publicIdentityCollisions.length?'ambiguous-native-public-identity; individually-verified-subset-only':limited?'configured-cap-incomplete':'additional-public-hiring-event-scope-unverified'})
+  }finally{controller.abort();clearTimeout(timer);signal?.removeEventListener('abort',abort)}
+ }
 })
-
-export const run = async (options = {}) => createIValueScraper().run(options)
+export const run=async(options={})=>createIValueScraper(options).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

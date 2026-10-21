@@ -1,0 +1,24 @@
+[
+  {
+    "jobId": "1419553100",
+    "title": "EXECUTIVE N - SALES ENGINEERING",
+    "sourceUrl": "https://careers.asianpaints.com/job/Mumbai-EXECUTIVE-N-SALES-ENGINEERING-MH/1419553100/",
+    "locations": [
+      "Mumbai, MH, IN"
+    ],
+    "expectedLocationCount": 1,
+    "countryCode": "IN",
+    "country": "India"
+  },
+  {
+    "jobId": "1286668100",
+    "title": "EXECUTIVE N - CUST. SERV. TECHNOLOGIST",
+    "sourceUrl": "https://careers.asianpaints.com/job/Ranchi-EXECUTIVE-N-CUST_-SERV_-TECHNOLOGIST-JH/1286668100/",
+    "locations": [
+      "Ranchi, JH, IN"
+    ],
+    "expectedLocationCount": 1,
+    "countryCode": "IN",
+    "country": "India"
+  }
+]

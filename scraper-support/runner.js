@@ -47,6 +47,7 @@ import {
   isVerifiedEmptyEvidence,
   readInventoryEvidence,
 } from './utils/inventoryEvidence.js'
+import { extractionDetailHealth } from './utils/extractionDetailHealth.js'
 
 const isDryRun = process.argv.includes('--dry-run')
 const isParallel = process.argv.includes('--parallel')
@@ -61,6 +62,7 @@ export const buildScraperAttemptDiagnostics = (jobs, analysis = analyzePublishab
   filteredEmptyDescription: analysis.filterCounts.emptyDescription,
   filteredNonJob: analysis.filterCounts.nonJob,
   inventoryEvidence: readInventoryEvidence(jobs),
+  detailHealth: extractionDetailHealth(analysis.indiaJobs),
 })
 const resolveExecutionPath = (value) => {
   if (value == null || value === '') return null

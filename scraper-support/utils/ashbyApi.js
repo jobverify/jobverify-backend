@@ -36,6 +36,7 @@ export const toLocationCandidate = (location = {}) => {
 }
 
 const hasExplicitIndiaSignal = (candidate = {}) => {
+  if (/^(?:india|in|ind)$/i.test(candidate.country || '')) return true
   const haystack = [
     candidate.location,
     candidate.city,
