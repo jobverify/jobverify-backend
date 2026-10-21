@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { INFOEDGE_CATALOG } from './catalog.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 import { mapWithConcurrency } from '../../scraper-support/utils/mapWithConcurrency.js'
+import { extractActiveDescription } from './nativeContent.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -49,13 +50,7 @@ const normalizeWhitespace = (value) => {
   return normalized || null
 }
 
-const stripTags = (value) => normalizeWhitespace(
-  String(value ?? '')
-    .replace(/<(br|\/p|\/div|\/li|\/h[1-6])\b[^>]*>/gi, '\n')
-    .replace(/<li\b[^>]*>/gi, ' ')
-    .replace(/<p\b[^>]*>/gi, '\n')
-    .replace(/<[^>]+>/g, ' '),
-)
+const stripTags = extractActiveDescription
 
 const splitCsv = (value) => normalizeWhitespace(value)
   ?.split(',')
@@ -84,7 +79,12 @@ const normalizeDate = (value) => {
       dec: '12',
     }
     const month = monthMap[monthName.toLowerCase()]
-    if (month) return `${year}-${month}-${day.padStart(2, '0')}`
+    if (month) {
+      const iso=`${year}-${month}-${day.padStart(2, '0')}`
+      const parsed=new Date(iso)
+      if(!Number.isFinite(parsed.getTime())||parsed.toISOString().slice(0,10)!==iso)inventoryFailure('invalid native calendar date')
+      return iso
+    }
   }
 
   if (/^\d{13}$/.test(normalized)) {
@@ -95,7 +95,8 @@ const normalizeDate = (value) => {
   }
 
   const parsed = new Date(normalized)
-  if (Number.isNaN(parsed.getTime())) return normalized
+  if (Number.isNaN(parsed.getTime())) inventoryFailure('invalid native date')
+  if (/^\d{4}-\d{2}-\d{2}/.test(normalized) && parsed.toISOString().slice(0,10)!==normalized.slice(0,10)) inventoryFailure('invalid native calendar date')
 
   return parsed.toISOString().slice(0, 10)
 }
@@ -307,10 +308,7 @@ export const extractJobDetail = (payload = {}, listing = {}) => {
     ),
     closingDate: normalizeDate(detailRecord?.endtDate || detailRecord?.endDate || listing.closingDate),
     jobDescription: stripTags(
-      detailRecord?.jobConfigurationData?.Description
-        || detailRecord?.longDescription
-        || detailRecord?.shortDescription
-        || listing.jobDescription,
+      detailRecord?.jobConfigurationData?.Description,
     ),
     publicExperienceChecked: hasPublicDetailEvidence,
   }
@@ -346,8 +344,8 @@ const defaultFetchJson = async (url, options = {}) => {
   const timeout = AbortSignal.timeout(Math.max(1, Math.min(20000, Number(options.timeoutMs) || 20000)))
   request.signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout
   const response = await fetch(url, request)
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`)
+  if (response.status !== 200 || response.url !== url) {
+    throw new Error(`HTTP ${response.status} or endpoint identity changed for ${url}`)
   }
 
   return response.json()
@@ -358,10 +356,22 @@ const ISO_COUNTRY_CODES = 'AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB
 const regionNames = new Intl.DisplayNames(['en'], { type: 'region' })
 const knownCountries = new Set(ISO_COUNTRY_CODES.flatMap(code => [code.toLowerCase(), regionNames.of(code).toLowerCase()]))
 const inventoryFailure = (message) => { throw new Error('InfoEdge Zwayam inventory ' + message) }
+const assertNativeEnvelope = payload => {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload) || payload.error
+    || (Array.isArray(payload.errors) ? payload.errors.length : payload.errors) || payload.success === false
+    || (payload.statusCode != null && payload.statusCode !== 200)
+    || (payload.code != null && payload.code !== 200)) inventoryFailure('upstream error envelope')
+}
 const text = value => String(value ?? '').trim().replace(/\s+/g, ' ')
 const countryOf = record => {
   const locations = record.jobLocationRecord || []
   if (!Array.isArray(locations)) inventoryFailure('country locations are malformed')
+  if (locations.some(location=>!location||typeof location!=='object'||Array.isArray(location)||typeof location.country!=='string') || (record.country!=null&&typeof record.country!=='string')) inventoryFailure('country fields must be strings')
+  for(const location of locations){
+    for(const key of ['city','state','formattedLocation','location'])if(location[key]!=null&&typeof location[key]!=='string')inventoryFailure('location fields must be strings')
+    const formatted=text(location.formattedLocation),city=text(location.city)
+    if(formatted&&city&&text(formatted.split(',')[0]).toLowerCase()!==city.toLowerCase())inventoryFailure('native city contradicts full location')
+  }
   let countries = locations.map(location => text(location.country).toLowerCase())
   if (record.country != null) countries.push(text(record.country).toLowerCase())
   if (countries.some(country => !knownCountries.has(country))) inventoryFailure('country is missing or unknown')
@@ -380,6 +390,9 @@ const countryOf = record => {
   return india
 }
 const verifyListing = record => {
+  const primitiveId=value=>(typeof value==='string'||typeof value==='number')&&/^\d+$/.test(String(value))
+  if(!record||typeof record!=='object'||Array.isArray(record)||!['companyId','id','jobCode'].every(key=>primitiveId(record[key]))||(record.newJobCode!=null&&!primitiveId(record.newJobCode)))inventoryFailure('listing primitive identities are malformed')
+  for(const key of ['jobTitle','jobUrl','careerSiteUrl','location','locAgg','city'])if(record[key]!=null&&typeof record[key]!=='string')inventoryFailure('listing text fields are malformed')
   if (!record || String(record.companyId) !== DETAIL_COMPANY_ID) inventoryFailure('employer identity changed')
   if (record.careerSiteUrl && text(record.careerSiteUrl) !== DOMAIN) inventoryFailure('portal identity changed')
   if (!Number.isSafeInteger(Number(record.id)) || Number(record.id) <= 0 || !/^\d+$/.test(text(record.jobCode)) || !text(record.jobTitle) || !/^[a-z0-9_, -]+$/i.test(text(record.jobUrl))) inventoryFailure('listing identity is malformed')
@@ -388,26 +401,35 @@ const verifyListing = record => {
   return countryOf(record)
 }
 const verifyPage = (payload, offset, previous) => {
+  assertNativeEnvelope(payload)
   const data = payload?.data
   if (!data || !Array.isArray(data.data)) inventoryFailure('response payload changed')
+  assertNativeEnvelope(data)
   const total = Number(data.totalCount), size = Number(data.facetedSearchConfig?.paginationHowMuch)
-  if (data.totalCount == null || !/^\d+$/.test(String(data.totalCount)) || !Number.isSafeInteger(total) || total < 0 || total > 10000 || !Number.isSafeInteger(size) || size < 1 || size > 100 || typeof data.hasMoreData !== 'boolean') inventoryFailure('count or paging metadata changed')
+  const primitiveCount = value => ['number','string'].includes(typeof value) && /^\d+$/.test(String(value))
+  if (!primitiveCount(data.totalCount) || !primitiveCount(data.facetedSearchConfig?.paginationHowMuch) || !Number.isSafeInteger(total) || total < 0 || total > 10000 || !Number.isSafeInteger(size) || size < 1 || size > 100 || typeof data.hasMoreData !== 'boolean') inventoryFailure('count or paging metadata changed')
   if (previous && (total !== previous.total || size !== previous.size)) inventoryFailure('count or page size changed during traversal')
   if (data.data.length !== Math.min(size, Math.max(total - offset, 0)) || data.hasMoreData !== (offset + data.data.length < total)) inventoryFailure('page rows do not reconcile with the advertised count')
   return { records: data.data.map(record => record?._source ?? record), total, size, hasMore: data.hasMoreData }
 }
 const verifyDetail = (payload, listing) => {
+  assertNativeEnvelope(payload)
   const detail = payload?.reponseObject ?? payload?.data ?? payload
+  assertNativeEnvelope(detail)
+  if(!detail||typeof detail!=='object'||Array.isArray(detail)||!['companyId','id','jobCode'].every(key=>(typeof detail[key]==='string'||typeof detail[key]==='number')&&/^\d+$/.test(String(detail[key]))))inventoryFailure('detail primitive identities are malformed')
+  for(const key of ['jobTitle','jobUrl','careerSiteUrl','location'])if(detail[key]!=null&&typeof detail[key]!=='string')inventoryFailure('detail text fields are malformed')
   if (!detail || String(detail.companyId) !== DETAIL_COMPANY_ID || String(detail.id) !== String(listing.id) || String(detail.jobCode) !== String(listing.jobCode) || text(detail.jobTitle) !== text(listing.jobTitle) || text(detail.jobUrl) !== text(listing.jobUrl)) inventoryFailure('detail identity changed')
   if (detail.careerSiteUrl && text(detail.careerSiteUrl) !== DOMAIN) inventoryFailure('detail portal identity changed')
   if (detail.status !== 1) inventoryFailure('detail public status changed')
+  if(detail.privateJobShare!=null&&detail.privateJobShare!=='N')inventoryFailure('detail private publication status')
+  if(detail.jobVisibiltyLevel!=null&&!['N','E','L','R'].includes(detail.jobVisibiltyLevel))inventoryFailure('detail visibility unavailable')
   if ((detail.country != null || detail.jobLocationRecord != null) && !countryOf(detail)) inventoryFailure('detail country contradicts India')
   const location = text(detail.location)
   const accepted = [listing.location, listing.locAgg, ...(listing.jobLocationRecord || []).flatMap(place => [place.location, place.formattedLocation])].map(place => text(place).toLowerCase())
-  if (!location || (!/\bindia\b/i.test(location) && !accepted.includes(location.toLowerCase()))) inventoryFailure('detail location no longer agrees with the verified India listing')
+  if (!location || !accepted.includes(location.toLowerCase())) inventoryFailure('detail location no longer agrees with the verified India listing')
   const tail = location.split(',').pop().trim().toLowerCase()
   if (knownCountries.has(tail) && tail !== 'india' && tail !== 'in') inventoryFailure('detail location is foreign')
-  if (typeof detail.jobConfigurationData?.Description !== 'string' || !text(detail.jobConfigurationData.Description)) inventoryFailure('detail description is missing')
+  if (typeof detail.jobConfigurationData?.Description !== 'string') inventoryFailure('detail description is missing')
   return detail
 }
 const fullListingDescription = record => {
@@ -415,7 +437,7 @@ const fullListingDescription = record => {
   return ['Normal', 'Enhanced', 'Limited', 'Recommended'].includes(record.jobVisibility)
     && description.length >= 100 && !/(?:\.\.\.|…)\s*$/.test(description)
     && description === text(record.metaDescription)
-    ? description : null
+    ? extractActiveDescription(description) : null
 }
 const unavailableDetail = error => error?.name !== 'SyntaxError'
   && (error?.name === 'TimeoutError' || /^HTTP (?:403|429|502|503|504)\b/i.test(error?.message || ''))
@@ -427,6 +449,14 @@ const firstPageSnapshot = page => JSON.stringify({ total: page.total, size: page
 export const createInfoEdgeScraper = ({ maxPages = DEFAULT_MAX_PAGES, maxJobs = DEFAULT_MAX_JOBS, detailConcurrency = DEFAULT_DETAIL_CONCURRENCY } = {}) => ({
   async run({ fetchJson, now = () => new Date().toISOString(), signal, requestTimeoutMs = 20000 } = {}) {
     signal?.throwIfAborted()
+    const checkedAt=new Date(now()).getTime()
+    if(!Number.isFinite(checkedAt))inventoryFailure('invalid check time')
+    const validateDates=record=>{
+      for(const field of ['createdDate','createDate'])if(record[field]!=null&&record[field]!==''){
+        const date=normalizeDate(record[field]);if(Date.parse(date)>checkedAt)inventoryFailure('native posting date is future')
+      }
+      for(const field of ['endtDate','endDate'])if(record[field]!=null&&record[field]!=='')normalizeDate(record[field])
+    }
     const requestJson = fetchJson || ((url, options) => defaultFetchJson(url, { ...options, timeoutMs: requestTimeoutMs }))
     const cancellation = signal ? { signal } : {}
     const pageLimit = Math.max(1, Math.min(500, Math.floor(Number(maxPages) || 1)))
@@ -441,6 +471,7 @@ export const createInfoEdgeScraper = ({ maxPages = DEFAULT_MAX_PAGES, maxJobs = 
       if (initialSnapshot == null) initialSnapshot = firstPageSnapshot(page)
       for (const record of page.records) {
         const india = verifyListing(record), id = String(record.jobCode)
+        validateDates(record)
         if (seen.has(id)) inventoryFailure('duplicate job identity prevents count reconciliation')
         const nativeId = String(Number(record.id))
         if (seenNativeIds.has(nativeId)) inventoryFailure('duplicate native job identity prevents count reconciliation')
@@ -461,7 +492,7 @@ export const createInfoEdgeScraper = ({ maxPages = DEFAULT_MAX_PAGES, maxJobs = 
           signal?.throwIfAborted()
           const payload = await requestJson(DETAIL_API_URL, { method: 'POST', json: buildDetailRequest(record), ...cancellation })
           signal?.throwIfAborted()
-          verifyDetail(payload, record); job = extractJobDetail(payload, listing)
+          validateDates(verifyDetail(payload, record)); job = extractJobDetail(payload, listing)
         } catch (error) {
           signal?.throwIfAborted()
           if (!unavailableDetail(error)) throw error
@@ -474,9 +505,10 @@ export const createInfoEdgeScraper = ({ maxPages = DEFAULT_MAX_PAGES, maxJobs = 
         if (!description) return null
         job = { ...listing, jobDescription: description, publicExperienceChecked: false }
       }
-      if (!job.jobDescription || /^(?:jd|tbd|n\/a|na)$/i.test(text(job.jobDescription))) { detailsComplete = false; return null }
+      const detailComplete=Boolean(job.jobDescription)
+      if (!detailComplete) { detailsComplete = false; job.jobDescription=null }
       const { _listingRecord, ...publicJob } = job
-      return { ...publicJob, country: 'India', source: SOURCE, link: job.applyUrl || job.sourceUrl, scrapedAt: now() }
+      return { ...publicJob, country: 'India', source: SOURCE, link: job.applyUrl || job.sourceUrl, sourceDetailComplete:detailComplete, ...(detailComplete?{}:{sourceDetailStatus:'missing-content',sourceListingComplete:false}), scrapedAt: now() }
     })
     signal?.throwIfAborted()
     const jobs = results.filter(Boolean)
@@ -496,7 +528,7 @@ export const createInfoEdgeScraper = ({ maxPages = DEFAULT_MAX_PAGES, maxJobs = 
     }
     const complete = !snapshotUnavailable && listingComplete && detailsComplete && jobs.length === indiaListings.length
     if (!complete) jobs.forEach(job => { job.sourceListingComplete = false })
-    return attachInventoryEvidence(jobs, { status: complete ? (jobs.length ? 'complete-inventory' : 'verified-empty') : 'coverage-gap', surface: CAREERS_URL, firstParty: true, listingComplete: complete, pagesFetched: pages, reportedTotal: summary?.total, indiaFacetCount: listingComplete && !snapshotUnavailable ? indiaListings.length : null, verifiedAt: now(), reason: complete ? 'counted-publisher-listing-and-matching-native-India-details' : 'configured-limit-or-unavailable-details; publisher-full-description-subset-only' + (snapshotUnavailable ? '; final-snapshot-unavailable; fresh-counted-rows-only' : '') })
+    return attachInventoryEvidence(jobs, { status: complete ? (summary?.total ? 'complete-inventory' : 'verified-empty') : 'coverage-gap', surface: CAREERS_URL, firstParty: true, listingComplete: complete, pagesFetched: pages, reportedTotal: summary?.total, indiaFacetCount: listingComplete && !snapshotUnavailable ? indiaListings.length : null, verifiedAt: now(), reason: complete ? 'counted-publisher-listing-and-matching-native-India-details' : 'configured-limit-or-unavailable-details; publisher-full-description-subset-only' + (snapshotUnavailable ? '; final-snapshot-unavailable; fresh-counted-rows-only' : '') })
   },
 })
 

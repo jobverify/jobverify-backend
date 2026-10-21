@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { buildScrapers } from '../scraper-support/providers/index.js';
 import { normalizeScrapedJob } from '../scraper-support/utils/normalizeScrapedJob.js';
-import { buildRewriteInput } from '../src/services/jobDescriptionPolicy.js';
+import { REWRITE_MODEL, buildRewriteInput } from '../src/services/jobDescriptionPolicy.js';
 import { factPlanMessages, factPlanSchema, buildSourceFacts, assessRewriteInput, expandModelPlan, validateFactPlan } from '../rewriting/factPlan.js';
 import { ensureArtifact, workerMemoryBytes } from '../rewriting/worker.js';
 import { writeFileAtomically } from '../rewriting/atomicFile.js';
@@ -21,7 +21,7 @@ const option = (name, fallback) => { const i = process.argv.indexOf(name); retur
 const phase = option('--phase', 'consume');
 const runDir = path.resolve(option('--run-dir', '.cache/description-benchmark/first100-liquid'));
 const assetDir = path.resolve(option('--asset-dir', '.cache/small-description-model-assets'));
-const modelSize = option('--model', '230');
+const modelSize = option('--model', '1200');
 const slots = Number(option('--slots', '1'));
 const threads = Number(option('--threads', '4'));
 const workers = Number(option('--workers', '1'));
@@ -43,14 +43,10 @@ const sampleSize = Number(option('--sample', '200'));
 const sampleKind = option('--sample-kind', 'lengths');
 const consumeLimit = Number(option('--limit', 'Infinity'));
 const configs = {
-  '230': { id: 'LiquidAI/LFM2.5-230M-GGUF', revision: '03502067c64ce32ac4fe87b0cec0310a1a13d3e9', file: 'LFM2.5-230M-QAD-Q4_0.gguf', sha256: 'e75f83268de11b2a1bcfab5f3b5c5c0c97569ddbbc0990aad88437e45b8ba292', bytes: 149081056 },
+  '1200': { id: REWRITE_MODEL.modelId, revision: REWRITE_MODEL.revision, file: REWRITE_MODEL.file, sha256: REWRITE_MODEL.sha256, bytes: REWRITE_MODEL.bytes },
   '350': { id: 'LiquidAI/LFM2.5-350M-GGUF', revision: '657e078c94084481950a2d555a941481f715536b', file: 'LFM2.5-350M-QAD-Q4_0.gguf', sha256: '3d10b6ab8fc91a919534b9558e266255aca0bbc7f6d015963599aa9e74e05b1d', bytes: 219312832 },
 };
-const runtimeTag = 'b11146';
-const runtimeAssets = {
-  win32: { file: 'llama-b11146-bin-win-cpu-x64.zip', sha256: '14cf1303ca9ac3abd94816850532f9f9a69ac66fbaca3776fc6f9061c2fac1d1' },
-  linux: { file: 'llama-b11146-bin-ubuntu-x64.tar.gz', sha256: 'c150306eb16b5ab696f76a8bdf810c35fd98a24e82158742e6fa28f420ff8410' },
-};
+const { runtimeTag, runtimeAssets } = REWRITE_MODEL;
 if (!['prepare', 'scrape', 'consume', 'evaluate'].includes(phase) || !configs[modelSize] || ![1, 2, 4].includes(slots) || ![1, 2, 4].includes(threads) || ![1, 2, 4].includes(workers) || threads * workers > 4 || totalConcurrency > 4 || !Number.isInteger(sampleSize) || sampleSize < 1 || !(consumeLimit===Infinity||Number.isSafeInteger(consumeLimit)&&consumeLimit>=1) || !['lengths', 'longest'].includes(sampleKind)) throw new Error('Invalid benchmark options');
 await fs.mkdir(runDir, { recursive: true });
 const log = value => console.log(JSON.stringify(value));
@@ -140,7 +136,7 @@ if (phase === 'prepare') {
     const worker = spawn(binary, ['-m', path.join(assetDir, config.file), '--alias', modelAlias,
       '--host', '127.0.0.1', '--port', String(port + i), '-c', String(8192 * slots), '-np', String(slots),
       '-t', String(threads), '-tb', String(threads), '-ngl', '0', '--jinja', '--no-context-shift', '--no-webui',
-      '--cache-ram', '256', ...(promptCache ? ['--ubatch-size', '256', '--checkpoint-min-step', '128'] : [])],
+      '--cache-ram', '128', ...(promptCache ? ['--ubatch-size', '256', '--checkpoint-min-step', '128'] : [])],
       { cwd: path.dirname(binary), windowsHide: true, stdio: ['ignore', logHandle.fd, logHandle.fd], env: { ...process.env, LD_LIBRARY_PATH: path.dirname(binary) + path.delimiter + (process.env.LD_LIBRARY_PATH || '') } });
     await logHandle.close();
     const server = { worker, endpoint: 'http://127.0.0.1:' + (port + i), exited: false, error: null, ready: false, peakMemoryBytes: 0 };

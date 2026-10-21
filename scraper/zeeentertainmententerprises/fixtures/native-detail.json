@@ -1,0 +1,74 @@
+{
+  "props": {
+    "pageProps": {
+      "job": {
+        "id": 5831,
+        "created_on": 1791979815831,
+        "updated_on": 1792524600414,
+        "department": "Zee Entertainment Enterprises Limited - Technology - Engineering - Applications & Platform - Application Engineering - iOS",
+        "department_id": 2082,
+        "experience_end": 9,
+        "experience_start": 5,
+        "title": "SDE-III",
+        "job_status": "OPEN",
+        "is_active": true,
+        "is_critical": false,
+        "is_deleted": false,
+        "is_published": true,
+        "is_referral_active": true,
+        "salary_start": 0,
+        "salary_end": 0,
+        "salary_currency": "",
+        "location": "Bangalore",
+        "organization_id": 5045,
+        "description_external": "<p><strong>iOS Developer Roles and Responsibilities</strong></p>\n<ul>\n  <li>You will be collaborating with our team to design and develop applications for our iOS platform.</li>\n  <li>You will be constantly analysing and revising pre-existing code for bug fixes.</li>\n  <li>You will have to troubleshoot issues and coordinate issue resolution with operational and technical teams.</li>\n  <li>You will be evaluating the app architecture to improve overall functionality and user experience.</li>\n  <li>You will have to stay up to date with the newest technologies and security measures to keep our iOS applications at the latest standard.</li>\n  <li>You will be sharing feedback and brainstorming ideas with teams to develop and introduce new features.</li>\n</ul>\n<p><strong>Must haves</strong></p>\n<ul>\n  <li>Strong foundation with iOS software, and architecture.</li>\n  <li>5+ years’ experience with Swift .</li>\n  <li>Should have an experience with SOLID, Algorithms, Architectural Patterns, MVVM,</li>\n  <li>Familiarity with web technologies and UI/UX standards (Swift UI, Apple HIG).</li>\n  <li>Previous experience with APIs and working with third party libraries.</li>\n  <li>Should be familiar with SSL Security and Keychain.</li>\n  <li>Should be familiar with combine and Swift UI</li>\n  <li>Proficient with GIT/ GitHub.</li>\n  <li>Should have built custom frameworks.</li>\n  <li>Good knowledge of Cocoa Pods.</li>\n  <li>Good knowledge of Unit Testing ( XCTesting)</li>\n</ul>\n<p><strong>Good to have</strong></p>\n<ul>\n  <li>Experience with GitHub Actions / Fastlane.</li>\n</ul>",
+        "skills_and_expertise_external": "<ul>\n  <li>iOS Application Development &amp; Architecture</li>\n  <li>Swift (5+ years)</li>\n  <li>SOLID Principles</li>\n  <li>Algorithms &amp; Data Structures</li>\n  <li>MVVM Architecture</li>\n  <li>Architectural Design Patterns</li>\n  <li>SwiftUI</li>\n  <li>Apple Human Interface Guidelines (HIG)</li>\n  <li>REST APIs &amp; Third-Party Library Integration</li>\n  <li>SSL Security</li>\n  <li>Keychain</li>\n  <li>Combine Framework</li>\n  <li>Git / GitHub</li>\n  <li>Custom Framework Development</li>\n  <li>CocoaPods</li>\n  <li>Unit Testing (XCTest)</li>\n  <li>UI/UX Best Practices</li>\n</ul>",
+        "functional_area": null,
+        "job_type": "FULLTIME",
+        "client_domain": null,
+        "code": "5931",
+        "office_id": 68,
+        "workplace_type": null,
+        "office": {
+          "id": 68,
+          "city": "Bangalore",
+          "country": "India",
+          "location": "Bangalore Tech Hub",
+          "name": "ZE02/1003-Bangalore Tech Hub",
+          "state": "Karnataka",
+          "pin_code": null
+        }
+      },
+      "organization": {
+        "id": 5045,
+        "name": "Zee",
+        "registered_name": "ZEE Entertainment Enterprises Ltd.",
+        "subdomain": "zee",
+        "career_page_subdomain": "zee",
+        "career_page": {
+          "organization_id": 5045,
+          "hosting_type": "SKILLATE"
+        }
+      },
+      "isIframe": false,
+      "referralKey": "",
+      "preview": false
+    },
+    "__N_SSP": true
+  },
+  "page": "/job",
+  "query": {
+    "id": "5831",
+    "showMainPageLink": "true"
+  },
+  "buildId": "SQH1AwZUujpW9gl0YL9Ln",
+  "assetPrefix": "/careers",
+  "runtimeConfig": {
+    "NEXT_PUBLIC_CHAT_HOST": "https://trm-chatbot.sensehq.com/",
+    "NEXT_PUBLIC_CAREER_BOT_HOST": "https://trm-career-portal-chatbot.sensehq.com/"
+  },
+  "isFallback": false,
+  "isExperimentalCompile": false,
+  "gssp": true,
+  "scriptLoader": []
+}

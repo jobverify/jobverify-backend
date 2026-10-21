@@ -1,7 +1,10 @@
+import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
+import { runKulaPublicApi } from '../../scraper-support/shared/kulaPublicApi.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { resolveKulaJobDescriptions } from '../../scraper-support/utils/kulaFlight.js'
 
 import GOODERA_CATALOG from './catalog.js'
 
@@ -186,8 +189,8 @@ const inferRemoteStatus = (offices = [], workplace = null) => {
 
 export const buildSearchUrl = () => KULA_JOBS_URL
 
-export const extractSearchResults = (html) => (
-  parseEmbeddedJobs(html)
+export const mapKulaJobs = (rows) => (
+  rows
     .map((row) => {
       if (row?.listed === false || String(row?.kind || '').toLowerCase() === 'internal') {
         return null
@@ -230,6 +233,10 @@ export const extractSearchResults = (html) => (
     .sort((left, right) => left.title.localeCompare(right.title))
 )
 
+export const extractSearchResults = (html) => mapKulaJobs(
+  resolveKulaJobDescriptions(html, parseEmbeddedJobs(html)),
+)
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -240,7 +247,9 @@ const defaultFetchText = (url) => fetchTextWithRetry(url, {
 })
 
 export const createGooderaScraper = () => ({
-  async run({ fetchText = defaultFetchText, now = () => new Date().toISOString() } = {}) {
+  async run(options = {}) {
+    if (!options.fetchText || options.fetchJson) return runKulaPublicApi({ source: 'goodera', mapKulaJobs }, options)
+    const { fetchText = defaultFetchText, now = () => new Date().toISOString() } = options
     const aboutHtml = await fetchText(ABOUT_US_URL)
     if (!hasAboutUsSignal(aboutHtml)) {
       throw new Error('The verified Goodera about page no longer matches the trusted first-party surface')
@@ -268,6 +277,8 @@ export const createGooderaScraper = () => ({
     return jobs.map((job) => ({
       ...job,
       source: SOURCE,
+      sourceListingComplete: false,
+      sourceDetailComplete: hasSourceDescription(job),
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: now(),
     }))

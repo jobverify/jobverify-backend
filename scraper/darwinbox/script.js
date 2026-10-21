@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url'
 import { composeAbortSignals, fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
 import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
+import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 const config = loadConfig(currentDir)
@@ -12,6 +13,7 @@ const DEFAULT_COMPANY_NAME = 'Darwinbox'
 const DEFAULT_SOURCE = 'darwinbox'
 const DEFAULT_COMPANY_ID = 'main'
 const DEFAULT_PAGE_SIZE = 10
+const DEFAULT_DETAIL_BUDGET_MS = 30000
 const DEFAULT_ORIGIN = 'https://dbx.darwinbox.in'
 const USER_AGENT = 'Mozilla/5.0 (compatible; Jobverify scraper)'
 
@@ -107,6 +109,22 @@ const isIndiaJob = (record) => {
   return /india/i.test(location || '') || /india/i.test(country || '')
 }
 
+const parseNativeClosingDate = (record, source) => {
+  const value = record?.job_posting?.careers?.to
+  if (value == null) return null
+  const seconds = typeof value === 'number' || (typeof value === 'string' && /^\d+$/.test(value.trim()))
+    ? Number(value) : NaN
+  const closingDate = new Date(seconds * 1000)
+  if (!Number.isSafeInteger(seconds) || seconds <= 0 || !Number.isFinite(closingDate.getTime())) {
+    const error = new Error(`[${source}] Darwinbox native closing epoch is malformed for ${normalizeWhitespace(record?.id) || 'unknown job'}`)
+    error.name = 'DarwinboxListingContractError'
+    error.abortRetries = true
+    error.failureKind = 'parser_or_contract_error'
+    throw error
+  }
+  return closingDate.toISOString()
+}
+
 export class DarwinboxUpstreamUnavailableError extends Error {
   constructor(source, url, cause) {
     super('[' + source + '] Darwinbox listing unavailable at ' + url + ': ' + cause.message, { cause })
@@ -137,6 +155,7 @@ const validateListingPayload = (payload, source, pageNumber, pageSize) => {
     error.failureKind = 'parser_or_contract_error'
     throw error
   }
+  for (const record of payload.data) parseNativeClosingDate(record, source)
 }
 export const createDarwinboxScraper = ({
   companyName = DEFAULT_COMPANY_NAME,
@@ -164,6 +183,9 @@ export const createDarwinboxScraper = ({
   const buildJobDetailUrl = (jobId, targetCompanyId = companyId) =>
     `${portalOrigin}/ms/candidatev2/${targetCompanyId}/careers/jobDetails/${normalizeWhitespace(jobId) || ''}`
 
+  const buildJobDetailApiUrl = (jobId, targetCompanyId = companyId) =>
+    `${portalOrigin}/ms/candidateapi/job/${encodeURIComponent(normalizeWhitespace(jobId) || '')}?companyId=${encodeURIComponent(targetCompanyId)}`
+
   const updatePublicSessionCookieHeader = (headers) => {
     const nextCookieHeader = buildCookieHeader(extractSetCookieValues(headers))
     if (nextCookieHeader) {
@@ -180,7 +202,7 @@ export const createDarwinboxScraper = ({
 
   const seedPublicSessionCookie = async (
     targetCompanyId = companyId,
-    { forceRefresh = false, signal } = {},
+    { forceRefresh = false, signal, timeoutMs = requestTimeoutMs } = {},
   ) => {
     signal?.throwIfAborted()
     if (!forceRefresh && publicSessionCookieHeader) return publicSessionCookieHeader
@@ -192,7 +214,7 @@ export const createDarwinboxScraper = ({
           'User-Agent': USER_AGENT,
           Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         },
-        signal: composeAbortSignals(signal, createTimeoutSignal(requestTimeoutMs)),
+        signal: composeAbortSignals(signal, createTimeoutSignal(timeoutMs)),
       })
 
       signal?.throwIfAborted()
@@ -214,6 +236,7 @@ export const createDarwinboxScraper = ({
           const location = normalizeWhitespace(record.locations)
           const jobDescription = normalizeWhitespace(record.jd)
           const experienceRequired = normalizeWhitespace(record.experience)
+          const closingDate = parseNativeClosingDate(record, source)
 
           if (!jobId || !location) return null
 
@@ -233,7 +256,8 @@ export const createDarwinboxScraper = ({
             preferredQualification: null,
             requiredSkills: [],
             postingDate: normalizeWhitespace(record.posted_on),
-            closingDate: null,
+            closingDate,
+            ...(closingDate ? { sourceClosingDateIsExact: true } : {}),
             jobDescription,
             ...(jobDescription && !experienceRequired
               ? { publicExperienceChecked: true }
@@ -295,10 +319,73 @@ export const createDarwinboxScraper = ({
     throw new Error(`[${source}] Darwinbox listings retry exhausted unexpectedly`)
   })()
 
+  // The public candidate client reads message.job[0].jd from GET job/{id}.
+  // Check blank listing jd against that endpoint without synthesizing missing text.
+  const fetchJobDetailFromApi = async ({ jobId, companyId: targetCompanyId = companyId, signal, timeoutMs = requestTimeoutMs }) => {
+    signal?.throwIfAborted()
+    const deadline = Date.now() + timeoutMs
+    const cookieHeader = await seedPublicSessionCookie(targetCompanyId, { signal, timeoutMs })
+    signal?.throwIfAborted()
+    const remainingMs = deadline - Date.now()
+    if (remainingMs <= 0) throw new Error('Darwinbox detail request budget exhausted during session seeding')
+    return fetchJsonWithRetry(buildJobDetailApiUrl(jobId, targetCompanyId), {
+      fetchImpl: cookieAwareFetchImpl,
+      method: 'GET',
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'application/json, text/plain, */*',
+        'Accept-Language': 'en',
+        Referer: buildJobDetailUrl(jobId, targetCompanyId),
+        ...(cookieHeader ? { cookie: cookieHeader } : {}),
+      },
+      attempts: 1,
+      timeoutMs: remainingMs,
+      signal,
+      label: `${source}-darwinbox-detail`,
+    })
+  }
+
+  const validateJobDetail = (payload, job) => {
+    const records = payload?.message?.job
+    const record = Array.isArray(records) && records.length === 1 ? records[0] : null
+    const location = normalizeWhitespace(record?.officelocation_show_arr)
+    const country = normalizeWhitespace(record?.country)
+    const locationList = record?.officelocation_show_arr_list
+    const isGroupedLocation = (value) => /^multiple locations$/i.test(normalizeWhitespace(value) || '')
+    const isExplicitIndiaLocation = (value) => typeof value === 'string'
+      && /(?:^|,\s*)India(?:\s*\([^)]*\))?$/i.test(normalizeWhitespace(value) || '')
+    const groupedLocation = isGroupedLocation(location)
+    const nativeAddresses = record?.tool_tip_locations
+    const completeIndiaAddresses = Array.isArray(nativeAddresses) && nativeAddresses.length > 0
+      && nativeAddresses.every(isExplicitIndiaLocation)
+    const validPrimaryLocation = groupedLocation ? completeIndiaAddresses : isExplicitIndiaLocation(location)
+    const invalidAddressList = ['tool_tip_locations', 'officelocations_area', 'officelocations_without_area']
+      .some((key) => record?.[key] != null && (!Array.isArray(record[key]) || !record[key].every(isExplicitIndiaLocation)))
+    if (!record || typeof record !== 'object' || Array.isArray(record)
+      || (payload.status != null && !['success', true, 200].includes(payload.status))
+      || normalizeWhitespace(record.id) !== job.jobId
+      || normalizeWhitespace(record.title) !== job.title
+      || typeof record.officelocation_show_arr !== 'string' || !validPrimaryLocation || invalidAddressList
+      || (locationList != null && (!Array.isArray(locationList)
+        || locationList.some((value) => !isExplicitIndiaLocation(value) && !(groupedLocation && isGroupedLocation(value)))))
+      || (record.country != null && typeof record.country !== 'string')
+      || (country && !/^(?:india|in)$/i.test(country))
+      || (record.jd != null && typeof record.jd !== 'string')) {
+      const error = new Error(`[${source}] Darwinbox detail identity, native location or payload is malformed for ${job.jobId}`)
+      error.name = 'DarwinboxDetailContractError'
+      error.abortRetries = true
+      error.failureKind = 'parser_or_contract_error'
+      throw error
+    }
+    return normalizeWhitespace(record.jd)
+  }
+
   const run = async ({
     maxPages = config.maxPages,
     maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
     fetchListingPage = fetchListingPageFromApi,
+    fetchJobDetail = fetchJobDetailFromApi,
+    detailEnrichmentBudgetMs = config.detailEnrichmentBudgetMs ?? DEFAULT_DETAIL_BUDGET_MS,
     signal,
   } = {}) => {
     signal?.throwIfAborted()
@@ -309,7 +396,38 @@ export const createDarwinboxScraper = ({
     let exhausted = false
     let duplicateRecords = false
     const recordIds = new Set()
-    const finish = () => {
+    const finish = async () => {
+      const configuredBudget = Number(detailEnrichmentBudgetMs)
+      const detailBudgetMs = Number.isFinite(configuredBudget) && configuredBudget >= 0
+        ? configuredBudget : DEFAULT_DETAIL_BUDGET_MS
+      const detailDeadline = Date.now() + detailBudgetMs
+      for (const job of jobs) {
+        if (hasSourceDescription(job)) continue
+        signal?.throwIfAborted()
+        const remainingMs = detailDeadline - Date.now()
+        job.sourceDetailComplete = false
+        if (remainingMs <= 0) {
+          job.sourceDetailFailureKind = 'budget-exhausted'
+          continue
+        }
+        let payload
+        try {
+          payload = await fetchJobDetail({ jobId: job.jobId, companyId, signal, timeoutMs: Math.min(requestTimeoutMs, remainingMs) })
+          signal?.throwIfAborted()
+        } catch (error) {
+          signal?.throwIfAborted()
+          job.sourceDetailFailureKind = !error?.status && Date.now() >= detailDeadline ? 'budget-exhausted' : 'upstream'
+          continue
+        }
+        const description = validateJobDetail(payload, job)
+        if (hasSourceDescription({ jobDescription: description })) {
+          job.jobDescription = description
+          job.sourceDetailComplete = true
+          if (!job.experienceRequired) job.publicExperienceChecked = true
+        } else {
+          job.sourceDetailFailureKind = 'missing-content'
+        }
+      }
       const complete = exhausted && !duplicateRecords && (recordIds.size > 0 || reportedTotal === 0)
         && (reportedTotal == null || recordIds.size === reportedTotal)
       if (!complete) for (const job of jobs) job.sourceListingComplete = false
@@ -379,8 +497,10 @@ export const createDarwinboxScraper = ({
     buildCareersPageUrl,
     buildListingApiUrl,
     buildJobDetailUrl,
+    buildJobDetailApiUrl,
     extractSearchResults,
     fetchListingPageFromApi,
+    fetchJobDetailFromApi,
     run,
   }
 }

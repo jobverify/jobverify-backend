@@ -1,8 +1,11 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { fetchJsonWithRetry } from '../../scraper-support/utils/fetch.js'
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
+import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {extractOfficialRecruitmentLinks} from '../../scripts/officialRecruitmentLinks.js'
+import {validateNativeInventory,validateNativeDetail} from './nativeContract.js'
+import {hasNativeBoardIdentity} from './nativeContent.js'
 
 import { NAVI_CATALOG } from './catalog.js'
 
@@ -89,13 +92,7 @@ const parseLocations = (value) => {
   }
 }
 
-const ensureIndiaLocation = (value) => {
-  const normalized = normalizeWhitespace(value)
-  if (!normalized) return null
-  return /\bindia\b/i.test(normalized) ? normalized : `${normalized}, India`
-}
-
-const extractPrimaryLocation = (value) => ensureIndiaLocation(parseLocations(value)[0]?.Address)
+const extractPrimaryLocation = (value) => normalizeWhitespace(parseLocations(value).find(p=>typeof p?.Address==='string'&&/,\s*India\s*$/i.test(p.Address))?.Address)
 
 const extractCity = (location) => normalizeWhitespace(String(location ?? '').split(',')[0]) || null
 
@@ -157,20 +154,9 @@ export const hasOfficialCareersPageSignal = (html) => {
     && /https:\/\/navi\.turbohire\.co\/dashboardv2\?orgId=3e818601-0baa-429c-b6f8-4b21903ae0e6(?:&amp;|&)type=0/i.test(rawHtml)
 }
 
-export const extractTurboHireHandoffUrl = (html) =>
-  normalizeWhitespace(
-    String(html ?? '').match(
-      /href=["'](https:\/\/navi\.turbohire\.co\/dashboardv2\?orgId=3e818601-0baa-429c-b6f8-4b21903ae0e6(?:&amp;|&)type=0)["']/i,
-    )?.[1],
-  )
+export const extractTurboHireHandoffUrl = html => extractOfficialRecruitmentLinks(String(html??''),CAREERS_PAGE_URL).find(link=>link.href===TURBOHIRE_BOARD_URL)?.href || null
 
-export const hasOfficialBoardSignal = (html) => {
-  const rawHtml = String(html ?? '')
-
-  return /<title>\s*NAVI TECHNOLOGIES LIMITED\s*<\/title>/i.test(rawHtml)
-    && /property=["']og:title["'][^>]+content=["']NAVI TECHNOLOGIES LIMITED - Career Page["']/i.test(rawHtml)
-    && /You need to enable JavaScript to run this app\./i.test(rawHtml)
-}
+export const hasOfficialBoardSignal = hasNativeBoardIdentity
 
 export const buildFilteredJobsRequestBody = () => JSON.stringify(LIVE_FILTER_BODY)
 
@@ -213,13 +199,14 @@ export const extractPublicJobs = (payload = {}) =>
     })
     .filter(Boolean)
 
-const defaultFetchPage = async (url) => {
+const defaultFetchPage = async (url,{signal}={}) => {
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
       Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     },
     redirect: 'follow',
+    signal,
   })
 
   return {
@@ -229,21 +216,30 @@ const defaultFetchPage = async (url) => {
   }
 }
 
-const defaultFetchJson = (url, options = {}) => fetchJsonWithRetry(url, {
-  method: options.method || 'GET',
-  headers: options.headers,
-  body: options.body,
-  label: SOURCE,
-  timeoutMs: 15000,
-})
+const defaultFetchJson = async (url,options={}) => {
+ const response=await fetch(url,{method:options.method||'GET',headers:options.headers,body:options.body,signal:options.signal})
+ if(response.status!==200||response.url!==url)throw new Error(`Navi native HTTP ${response.status} or unexpected redirect`)
+ return response.json()
+}
 
 export const createNaviScraper = ({
   fetchPage = defaultFetchPage,
   fetchJson = defaultFetchJson,
   now = () => new Date().toISOString(),
+  signal, maxJobs = 10000, detailConcurrency = 2, timeoutMs = 90000,
 } = {}) => ({
   async run() {
-    const careersPage = await fetchPage(CAREERS_PAGE_URL)
+    if(!Number.isInteger(maxJobs)||maxJobs<0||maxJobs>10000||!Number.isInteger(detailConcurrency)||detailConcurrency<1||detailConcurrency>3||!Number.isFinite(timeoutMs)||timeoutMs<=0||timeoutMs>180000)throw new Error('Navi invalid configured limits')
+    const controller=new AbortController(),abort=()=>controller.abort(signal?.reason),timer=setTimeout(()=>controller.abort(new Error('Navi source deadline exceeded')),timeoutMs)
+    if(signal?.aborted)abort();else signal?.addEventListener('abort',abort,{once:true})
+    const request=async(fn,url,options={})=>{
+      controller.signal.throwIfAborted();let listener
+      const requestSignal=AbortSignal.any([controller.signal,AbortSignal.timeout(15000)])
+      try{return await Promise.race([Promise.resolve().then(()=>fn(url,{...options,signal:requestSignal})),new Promise((_,reject)=>{listener=()=>reject(requestSignal.reason);requestSignal.addEventListener('abort',listener,{once:true})})])}
+      finally{requestSignal.removeEventListener('abort',listener)}
+    }
+    try {
+    const careersPage = await request(fetchPage,CAREERS_PAGE_URL)
     if (
       careersPage.status !== 200
       || !sameUrl(careersPage.url, CAREERS_PAGE_URL)
@@ -257,7 +253,7 @@ export const createNaviScraper = ({
       throw new Error('Navi verified official careers page no longer links to the verified TurboHire board')
     }
 
-    const boardPage = await fetchPage(TURBOHIRE_BOARD_URL)
+    const boardPage = await request(fetchPage,TURBOHIRE_BOARD_URL)
     if (
       boardPage.status !== 200
       || !sameUrl(boardPage.url, TURBOHIRE_BOARD_URL)
@@ -266,28 +262,41 @@ export const createNaviScraper = ({
       throw new Error('Navi verified TurboHire board changed materially')
     }
 
-    const tokenPayload = await fetchJson(NOAUTH_TOKEN_URL, {
+    const tokenPayload = await request(fetchJson,NOAUTH_TOKEN_URL, {
       method: 'GET',
       headers: buildPublicHeaders(),
     })
 
-    const listingsPayload = await fetchJson(FILTERED_JOBS_URL, {
+    if(typeof tokenPayload?.access_token!=='string'||!tokenPayload.access_token)throw new Error('Navi public anonymous token unavailable')
+    const listOptions={
       method: 'POST',
       headers: {
         ...buildPublicHeaders(tokenPayload?.access_token),
         'Content-Type': 'application/json',
       },
       body: buildFilteredJobsRequestBody(),
-    })
+    }
+    const listingsPayload = await request(fetchJson,FILTERED_JOBS_URL,listOptions)
 
     const scrapedAt = now()
 
-    return extractPublicJobs(listingsPayload).map((job) => ({
-      ...job,
-      source: SOURCE,
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt,
+    const inventory=validateNativeInventory(listingsPayload,{now:scrapedAt}),selected=inventory.rows.filter(r=>r.scope.indiaLocations.length>0),capped=selected.slice(0,maxJobs),jobs=new Array(capped.length)
+    let cursor=0
+    await Promise.all(Array.from({length:Math.min(detailConcurrency,capped.length)},async()=>{
+     while(cursor<capped.length){controller.signal.throwIfAborted();const index=cursor++,row=capped[index].record,url=`${API_BASE_URL}/api/publicjobs?jobId=${row.JobIdObfuscated}&fieldVisibility=None`
+      const raw=await request(fetchJson,url,{headers:buildPublicHeaders(tokenPayload.access_token)})
+      const detail=validateNativeDetail(raw,row,{now:scrapedAt}),location=detail.scope.indiaLocations[0]
+      const mapped=extractPublicJobs({Result:[{...row,JobDescV2:detail.jobDescription,Location:JSON.stringify([{Address:location.address}]),JobTypeV2:raw.JobTypeV2,Experience:raw.Experience,Skills:raw.Skills}]})[0]
+      if(!mapped)throw new Error('Navi validated native role could not be mapped')
+      jobs[index]={...mapped,location:location.address,city:location.city,jobDescription:detail.jobDescription,postingDate:detail.postingDate,closingDate:detail.closingDate,sourceNativeClosingDate:detail.sourceNativeClosingDate,sourceClosingDateIsExact:detail.sourceClosingDateIsExact,sourceDetailComplete:detail.sourceDetailComplete,sourceDetailStatus:detail.sourceDetailStatus,sourceDescriptionAttachment:detail.sourceDescriptionAttachment,sourceNativeLocations:detail.scope.locations,sourcePrimaryLocation:detail.scope.locations[0].address,source:SOURCE,link:mapped.applyUrl,scrapedAt,publicExperienceChecked:detail.sourceDetailComplete}
+     }
     }))
+    const final=validateNativeInventory(await request(fetchJson,FILTERED_JOBS_URL,listOptions),{now:scrapedAt})
+    if(final.total!==inventory.total||final.snapshot!==inventory.snapshot)throw new Error('Navi native inventory changed during detail validation')
+    const listingComplete=capped.length===selected.length,healthy=jobs.every(j=>j.sourceDetailComplete)
+    jobs.forEach(j=>{j.sourceListingComplete=listingComplete})
+    return attachInventoryEvidence(jobs,{status:listingComplete?(inventory.total?'complete-inventory':'verified-empty'):'discovery-only',surface:TURBOHIRE_BOARD_URL,firstParty:true,listingComplete,pagesFetched:1,reportedTotal:inventory.total,indiaFacetCount:selected.length,verifiedAt:now(),reason:listingComplete?(healthy?'complete-public-inventory-and-full-native-details':'complete-public-inventory-with-missing-native-details'):'configured-cap-incomplete'})
+    }finally{controller.abort();clearTimeout(timer);signal?.removeEventListener('abort',abort)}
   },
 })
 

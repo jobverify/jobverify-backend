@@ -7,49 +7,117 @@ import {promisify} from 'node:util';
 import {createResourceSampler,createResourceMonitor} from '../rewriting/resourceGuard.js';
 import {writeFileAtomically} from '../rewriting/atomicFile.js';
 import {capturedSourceNames} from '../rewriting/capturedSources.js';
+import {REWRITE_MODEL} from '../src/services/jobDescriptionPolicy.js';
 
 const backend=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const exec=promisify(execFile);
 const save=(file,value)=>writeFileAtomically(file,JSON.stringify(value,null,2)+'\n');
 
-export async function runMemoryLimitedChild({runDir,command,args,sample=createResourceSampler(),intervalMs=2000,onReading=()=>{},env=process.env}) {
-  let child,finished=false,stopReason=null,stopReading,killPromise,stopPromise;
+const withinShutdownDeadline=async(promise,timeoutMs,label)=>{
+  let timer;
+  try{return await Promise.race([promise,new Promise((_,reject)=>{
+    timer=setTimeout(()=>reject(new Error(`${label} timed out after ${timeoutMs}ms`)),timeoutMs);
+  })]);}finally{clearTimeout(timer);}
+};
+
+const terminateChildTree=async(child,{timeoutMs})=>{
+  if(process.platform==='win32'){
+    await exec('taskkill.exe',['/PID',String(child.pid),'/T','/F'],{windowsHide:true,timeout:timeoutMs});
+  }else if(!child.kill('SIGKILL')){
+    throw new Error('Could not terminate the supervised child');
+  }
+};
+
+export async function runMemoryLimitedChild({
+  runDir,command,args,sample=createResourceSampler(),intervalMs=2000,onReading=()=>{},env=process.env,
+  terminateChild=terminateChildTree,shutdownTimeoutMs=5000,
+}) {
+  if(!Number.isSafeInteger(shutdownTimeoutMs)||shutdownTimeoutMs<1)throw new Error('Invalid child shutdown timeout');
+  let child,finished=false,childExit,stopReason=null,stopReading,stopPromise;
+  let stdout,stderr,userStopPoll,primaryError,result,reportStopFailure;
+  const stopFailure=new Promise(resolve=>{reportStopFailure=resolve;});
   const stop=(reading,reason)=>{
     if(stopReason)return stopPromise;
     stopReason=reason;stopReading=reading;
     stopPromise=(async()=>{
-    if(child&&!finished&&child.pid){
-      // This PID comes only from our own still-running ChildProcess. /T includes
-      // the llama thin launcher's child and scraper helper descendants.
-      killPromise=process.platform==='win32'
-        ?exec('taskkill.exe',['/PID',String(child.pid),'/T','/F'],{windowsHide:true}).catch(error=>{if(!finished)throw error;})
-        :Promise.resolve(child.kill('SIGKILL'));
-      await killPromise;
-    }
-    await save(path.join(runDir,'memory-stop.json'),{reason,reading,at:new Date().toISOString(),childPid:child?.pid||null,automaticResume:false});
+      // Persist the cutoff even if process termination is denied.
+      await save(path.join(runDir,'memory-stop.json'),{reason,reading,at:new Date().toISOString(),childPid:child?.pid||null,automaticResume:false});
+      if(child&&!finished&&child.pid){
+        // This handle belongs only to this invocation. The default Windows
+        // operation also terminates descendants, with a bounded wait.
+        await withinShutdownDeadline(Promise.resolve().then(()=>terminateChild(child,{timeoutMs:shutdownTimeoutMs})),
+          shutdownTimeoutMs,'Child termination');
+        await withinShutdownDeadline(childExit,shutdownTimeoutMs,'Child exit after termination');
+      }
     })();
+    // Signal callbacks and timers cannot reject the caller's child-exit wait
+    // directly; bridge their failure into that wait.
+    void stopPromise.catch(reportStopFailure);
     return stopPromise;
   };
   const monitor=createResourceMonitor({limit:90,intervalMs,
     sample:async()=>{const reading=await sample();return {...reading,hostCpuPercent:reading.cpuPercent,cpuPercent:null};},
     onSample:async reading=>{await fs.appendFile(path.join(runDir,'resources.ndjson'),JSON.stringify(reading)+'\n');await onReading(reading);},onStop:stop});
-  await monitor.start();
-  if(stopReason)return {status:stopReason==='monitor_error'?'monitor_error':'resource_stopped',reason:stopReason,reading:stopReading,exitCode:90};
-  const stdout=await fs.open(path.join(runDir,'pipeline.log'),'a'),stderr=await fs.open(path.join(runDir,'pipeline.err.log'),'a');
-  const stopped=()=>{void stop(null,'user_stop');};
+  const stopped=()=>{void stop(null,'user_stop').catch(reportStopFailure);};
   let userStopBusy=false;
-  const userStopPoll=setInterval(async()=>{if(userStopBusy)return;userStopBusy=true;try{await fs.access(path.join(runDir,'user-stop'));await stop(null,'user_stop');}catch(error){if(error.code!=='ENOENT')await stop({error:error.message},'monitor_error');}finally{userStopBusy=false;}},intervalMs);
-  process.once('SIGINT',stopped);process.once('SIGTERM',stopped);
+  const checkUserStop=async()=>{
+    if(userStopBusy)return;
+    userStopBusy=true;
+    try{
+      try{await fs.access(path.join(runDir,'user-stop'));}
+      catch(error){if(error.code==='ENOENT')return;await stop({error:error.message},'monitor_error');return;}
+      await stop(null,'user_stop');
+    }finally{userStopBusy=false;}
+  };
   try {
-    child=spawn(command,args,{cwd:backend,env,windowsHide:true,stdio:['ignore',stdout.fd,stderr.fd]});
-    await save(path.join(runDir,'active-child.json'),{pid:child.pid,command,args,startedAt:new Date().toISOString()});
-    const outcome=await new Promise((resolve,reject)=>{child.once('error',reject);child.once('exit',(code,signal)=>{finished=true;resolve({code,signal});});});
+    await monitor.start();
+    let outcome={};
+    if(!stopReason){
+      stdout=await fs.open(path.join(runDir,'pipeline.log'),'a');
+      stderr=await fs.open(path.join(runDir,'pipeline.err.log'),'a');
+    }
+    // A periodic sample may breach the threshold while the files are opening.
+    if(!stopReason){
+      process.once('SIGINT',stopped);process.once('SIGTERM',stopped);
+      userStopPoll=setInterval(()=>{void checkUserStop().catch(reportStopFailure);},intervalMs);
+      child=spawn(command,args,{cwd:backend,env,windowsHide:true,stdio:['ignore',stdout.fd,stderr.fd]});
+      childExit=new Promise((resolve,reject)=>{
+        child.once('error',reject);
+        child.once('exit',(code,signal)=>{finished=true;resolve({code,signal});});
+      });
+      const settled=Promise.race([childExit,stopFailure.then(error=>{throw error;}),monitor.failure.then(error=>{throw error;})]);
+      // Attach before the asynchronous checkpoint so an early spawn error is
+      // observed even if the checkpoint itself also fails.
+      void settled.catch(()=>{});
+      await save(path.join(runDir,'active-child.json'),{pid:child.pid,command,args,startedAt:new Date().toISOString()});
+      outcome=await settled;
+    }
     await stopPromise;
-    return {status:stopReason?(stopReason==='user_stop'?'interrupted':stopReason==='monitor_error'?'monitor_error':'resource_stopped'):'exited',reason:stopReason,reading:stopReading,exitCode:stopReason?90:outcome.code,signal:outcome.signal};
+    result={status:stopReason?(stopReason==='user_stop'?'interrupted':stopReason==='monitor_error'?'monitor_error':'resource_stopped'):'exited',reason:stopReason,reading:stopReading,exitCode:stopReason?90:outcome.code,signal:outcome.signal};
+  } catch(error) {
+    primaryError=error;
   } finally {
     monitor.stop();clearInterval(userStopPoll);process.removeListener('SIGINT',stopped);process.removeListener('SIGTERM',stopped);
-    await stdout.close();await stderr.close();
+    const cleanupErrors=[];
+    if(child?.pid&&!finished){
+      // A denied tree kill must not leave this invocation's direct child alive.
+      // Preserve the original failure: direct-child cleanup cannot claim that
+      // descendants were terminated successfully.
+      try{
+        if(!child.kill('SIGKILL')&&!finished)throw new Error('Could not clean up the supervised child');
+        await withinShutdownDeadline(childExit,shutdownTimeoutMs,'Supervised child cleanup');
+      }catch(error){cleanupErrors.push(error);child.unref();}
+    }
+    for(const handle of [stdout,stderr]){
+      if(handle)try{await handle.close();}catch(error){cleanupErrors.push(error);}
+    }
+    if(cleanupErrors.length){
+      primaryError=new AggregateError([...(primaryError?[primaryError]:[]),...cleanupErrors],
+        'Child supervisor failed during cleanup',{cause:primaryError||cleanupErrors[0]});
+    }
   }
+  if(primaryError)throw primaryError;
+  return result;
 }
 
 export async function runFullDescriptionDryRun({runDir,sourceCount='all',concurrency=10,resumeDescriptions=false}) {
@@ -66,7 +134,7 @@ export async function runFullDescriptionDryRun({runDir,sourceCount='all',concurr
     await fs.copyFile(statusFile,path.join(runDir,'pipeline-status-before-recovery-'+Date.now()+'.json'));
   }else{try{await fs.access(statusFile);throw new Error('Use a new run directory; resource-stopped runs remain stopped.');}catch(error){if(error.code!=='ENOENT')throw error;}}
   const report=prior?{...prior,status:'starting',stage:'description_recovery',ownerPid:process.pid,resumedAt:new Date().toISOString()}:{status:'starting',stage:'starting',startedAt:new Date().toISOString(),ownerPid:process.pid,mongoWrites:0,
-    settings:{sourceCount,scraperConcurrency:concurrency,memoryLimitPercent:90,memoryIntervalMs:2000,model:'LiquidAI/LFM2.5-230M-GGUF Q4_0',modelThreads:4,modelSlots:1,promptCacheMiB:256,verify:'description sections only'},
+    settings:{sourceCount,scraperConcurrency:concurrency,memoryLimitPercent:90,memoryIntervalMs:2000,model:REWRITE_MODEL.modelId,modelFile:REWRITE_MODEL.file,modelRevision:REWRITE_MODEL.revision,modelThreads:4,modelSlots:1,promptCacheMiB:128,verify:'description sections only'},
     resources:{samples:0,peakMemoryPercent:0},stages:[]};
   delete report.finishedAt;delete report.stop;delete report.error;
   const checkpoint=()=>save(statusFile,{...report,updatedAt:new Date().toISOString()});
@@ -87,8 +155,8 @@ export async function runFullDescriptionDryRun({runDir,sourceCount='all',concurr
     const values=Object.values(state.completed||{});
     report.scrape={completedSources:state.completedCount,totalSources:state.totalSources,failedSources:values.filter(r=>!r.result?.success).length};
     await save(path.join(runDir,'scrape-summary.json'),{status:'complete',mongoWrites:0,selectedSources:sources.map((source,i)=>({index:i+1,source})),summary:report.scrape});
-    report.rewriteDirectory='230m-t4-slots1-arrival-full-final-snapshots';
-    if(!await stage('descriptions',['--use-system-ca','scripts/benchmarkSmallDescriptionModels.js','--phase','consume','--run-dir',runDir,'--model','230','--threads','4','--slots','1','--workers','1','--port','18772','--prompt-cache','--compact-plan','--preserve-source-context','--all-descriptions','--final-snapshots','--label','full-final-snapshots']))return report;
+    report.rewriteDirectory='1200m-t4-slots1-arrival-full-final-snapshots';
+    if(!await stage('descriptions',['--use-system-ca','scripts/benchmarkSmallDescriptionModels.js','--phase','consume','--run-dir',runDir,'--model','1200','--threads','4','--slots','1','--workers','1','--port','18772','--prompt-cache','--compact-plan','--preserve-source-context','--all-descriptions','--final-snapshots','--label','full-final-snapshots']))return report;
     const result=JSON.parse(await fs.readFile(path.join(runDir,report.rewriteDirectory,'summary.json'),'utf8'));
     report.descriptions=result.summary;report.descriptionsStatus=result.status;
     report.status=result.status==='complete'?'complete':'error';report.stage='finished';

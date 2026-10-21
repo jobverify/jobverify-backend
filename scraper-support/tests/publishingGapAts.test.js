@@ -2,6 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createPublishingGapAtsScraper } from '../utils/publishingGapAts.js'
 import { readInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { runApiPortalScraper } from '../apiPortal/engine.js'
+import { expandApiPortalProviderTemplate } from '../providers/apiPortalTemplates.js'
 
 const provider = { source: 'example', companyName: 'Example', companyCareerPage: 'https://example.com/careers', atsPlatform: 'greenhouse', boardToken: 'example' }
 const job = { id: 1, title: 'Engineer', location: { name: 'Bangalore, India' }, absolute_url: 'https://job-boards.greenhouse.io/example/jobs/1', content: '&lt;p&gt;Build software&lt;/p&gt;' }
@@ -15,6 +17,8 @@ test('Greenhouse maps complete inventory and excludes foreign and generic remote
   assert.match(jobs[0].jobDescription, /Build software/)
   assert.equal(readInventoryEvidence(jobs).reportedTotal, 3)
   assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 1)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+  assert.ok(jobs.every(row => row.sourceListingComplete !== false))
 })
 
 test('malformed, truncated, or failed inventory never becomes authoritative empty', async () => {
@@ -26,8 +30,8 @@ test('malformed, truncated, or failed inventory never becomes authoritative empt
 })
 
 test('live empty and complete zero India inventory carry distinct evidence', async () => {
-  assert.equal(readInventoryEvidence(await run({ jobs: [] })).status, 'verified-empty')
-  const jobs = await run({ jobs: [{ ...job, location: { name: 'Boston, US' } }] })
+  assert.equal(readInventoryEvidence(await run({ jobs: [], meta: { total: 0 } })).status, 'verified-empty')
+  const jobs = await run({ jobs: [{ ...job, location: { name: 'Boston, US' } }], meta: { total: 1 } })
   assert.equal(jobs.length, 0)
   assert.equal(readInventoryEvidence(jobs).status, 'complete-inventory')
   assert.equal(readInventoryEvidence(jobs).indiaFacetCount, 0)
@@ -38,6 +42,8 @@ test('Ashby includes India secondary locations and preserves missing description
   assert.equal(jobs.length, 1)
   assert.match(jobs[0].location, /Bengaluru/)
   assert.equal(jobs[0].jobDescription, null)
+  assert.equal(jobs[0].sourceListingComplete, false)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, false)
 })
 
 test('Lever includes all description sections, filters talent pools, and does not invent posting dates', async () => {
@@ -46,4 +52,56 @@ test('Lever includes all description sections, filters talent pools, and does no
   assert.equal(jobs.length, 1)
   assert.match(jobs[0].jobDescription, /Overview[\s\S]*JavaScript[\s\S]*Benefits/)
   assert.equal(jobs[0].postingDate, null)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 2)
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+  assert.notEqual(jobs[0].sourceListingComplete, false)
+})
+
+test('native Greenhouse template reconciles meta.total without a fictitious continuation field', async () => {
+  const config = expandApiPortalProviderTemplate({ ...provider, template: 'greenhouse', templateOptions: { boardToken: 'example' } })
+  const jobs = await runApiPortalScraper({ provider: config, fetchJson: async () => ({ jobs: [job], meta: { total: 1 } }) })
+  assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+  assert.equal(readInventoryEvidence(jobs).reportedTotal, 1)
+  assert.equal(jobs[0].sourceListingComplete, undefined)
+  const truncated = await runApiPortalScraper({ provider: config, fetchJson: async () => ({ jobs: [job], meta: { total: 2 } }) })
+  assert.equal(readInventoryEvidence(truncated).listingComplete, false)
+  assert.equal(truncated[0].sourceListingComplete, false)
+})
+
+test('missing native Greenhouse total remains unknown through the wrapper, including empty arrays', async () => {
+  for (const rows of [[job], []]) {
+    const jobs = await run({ jobs: rows })
+    const evidence = readInventoryEvidence(jobs)
+    assert.equal(evidence.listingComplete, false)
+    assert.equal(evidence.status, 'discovery-only')
+    assert.equal(evidence.reportedTotal, null)
+    assert.match(evidence.reason, /configured-total-unavailable/)
+    assert.ok(jobs.every(row => row.sourceListingComplete === false))
+  }
+})
+
+test('the ATS wrapper preserves inner incomplete evidence and lifecycle guards', async () => {
+  for (const [payload, overrides, reason] of [
+    [{ jobs: [job, { ...job, title: 'Duplicate ID' }], meta: { total: 2 } }, {}, /repeated-vacancy-identity/],
+    [{ jobs: [job], meta: { total: 1 } }, { config: { pagination: { hasMorePath: 'configuredContinuation' } } }, /configured-continuation-unavailable/],
+  ]) {
+    const jobs = await run(payload, overrides)
+    assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+    assert.equal(readInventoryEvidence(jobs).status, 'discovery-only')
+    assert.match(readInventoryEvidence(jobs).reason, reason)
+    assert.ok(jobs.every(row => row.sourceListingComplete === false))
+  }
+})
+
+test('selected roles without employer descriptions cannot authorize complete inventory', async () => {
+  for (const [payload, overrides] of [
+    [{ jobs: [{ ...job, content: '' }], meta: { total: 1 } }, {}],
+    [[{ id: 'x', text: 'Engineer', categories: { location: 'Hyderabad India' },
+      hostedUrl: 'https://jobs.lever.co/example/x', applyUrl: 'https://jobs.lever.co/example/x/apply' }], { atsPlatform: 'lever' }],
+  ]) {
+    const jobs = await run(payload, overrides)
+    assert.equal(jobs.length, 1)
+    assert.equal(readInventoryEvidence(jobs).listingComplete, false)
+    assert.equal(jobs[0].sourceListingComplete, false)
+  }
 })

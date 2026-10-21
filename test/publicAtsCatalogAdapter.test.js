@@ -7,7 +7,7 @@ const provider = { source: 'acme', companyName: 'Acme', adapter: 'publicAts', at
   companyCareerPage: 'https://acme.test/careers', bindingEvidence: { verified: true, officialURL: 'https://acme.test/careers', matchedLinks: ['https://boards.greenhouse.io/acme'] } }
 test('catalog adapter uses the verified shared ATS extractor and retains inventory evidence', async () => {
   const scraper = createPublicAtsCatalogScraper(provider)
-  const jobs = await scraper.run({ fetchJson: async () => ({ jobs: [{ id: 1, title: 'Engineer', location: { name: 'Bangalore, India' }, absolute_url: 'https://job-boards.greenhouse.io/acme/jobs/1', content: 'Build reliable software.' }] }) })
+  const jobs = await scraper.run({ fetchJson: async () => ({ meta: { total: 1 }, jobs: [{ id: 1, title: 'Engineer', location: { name: 'Bangalore, India' }, absolute_url: 'https://job-boards.greenhouse.io/acme/jobs/1', content: 'Build reliable software.' }] }) })
   assert.equal(scraper.name, 'acme')
   assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'acme')

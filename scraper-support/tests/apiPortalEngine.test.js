@@ -1070,6 +1070,7 @@ test('runApiPortalScraper supports Twilio-style search/detail APIs with detail-o
     requiredSkills: [],
     remoteStatus: 'Remote',
     scrapedAt: jobs[0].scrapedAt,
+    sourceListingComplete: false,
   })
 })
 

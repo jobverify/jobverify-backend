@@ -21,6 +21,24 @@ test('runner diagnostics retain raw inventory evidence and every mutually exclus
   assert.equal(metrics.eligibleJobs, 1)
   assert.deepEqual([metrics.filteredNonIndia, metrics.filteredClosed, metrics.filteredInvalidUrl, metrics.filteredEmptyDescription, metrics.filteredNonJob], [1, 1, 1, 1, 1])
   assert.equal(metrics.inventoryEvidence.surface, evidence.surface)
+  assert.deepEqual(metrics.detailHealth, { complete: false, inspectedJobs: 5,
+    incompleteJobs: 1, missingDescriptions: 1, failureKinds: { 'missing-content': 1 } })
+})
+
+test('runner detail diagnostics inspect India roles before eligibility filtering and retain explicit detail failures', () => {
+  const role = { title: 'Engineer', location: 'Bengaluru, India', country: 'India',
+    applyUrl: 'https://example.com/job/1', description: 'Build customer software.' }
+  const jobs = attachInventoryEvidence([
+    role,
+    { ...role, sourceDetailComplete: false, sourceDetailFailureKind: 'detail-budget-exhausted' },
+    { ...role, country: 'United Kingdom', location: 'London, United Kingdom', description: '' },
+  ], { status: 'complete-inventory', firstParty: true, listingComplete: true,
+    pagesFetched: 1, surface: 'https://example.com/jobs', verifiedAt: new Date().toISOString() })
+  const diagnostics = buildScraperAttemptDiagnostics(jobs)
+  assert.deepEqual(diagnostics.detailHealth, { complete: false, inspectedJobs: 2,
+    incompleteJobs: 1, missingDescriptions: 0, failureKinds: { 'detail-budget-exhausted': 1 } })
+  assert.equal(diagnostics.inventoryEvidence.listingComplete, true)
+  assert.equal(diagnostics.eligibleJobs, 2)
 })
 
 test('name coverage explicitly describes registration and keeps legacy counts', () => {

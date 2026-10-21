@@ -146,7 +146,7 @@ test('native transport has a bounded timeout even when a server never responds',
 test('native literal JD placeholders do not become complete jobs', async () => {
   const r = record(), d = detail(r); d.jobConfigurationData.Description = 'JD'
   const jobs = await run({ fetchJson: async url => url === source.LISTING_API_URL ? page([r]) : d })
-  assert.equal(jobs.length, 0); assert.equal(readInventoryEvidence(jobs)?.status, 'coverage-gap')
+  assert.equal(jobs.length, 1); assert.equal(jobs[0].jobDescription, null); assert.equal(jobs[0].sourceDetailComplete, false); assert.equal(readInventoryEvidence(jobs)?.status, 'coverage-gap')
 })
 
 test('native transport never serializes an abort signal as an HTTP header', async () => {
@@ -156,7 +156,9 @@ test('native transport never serializes an abort signal as an HTTP header', asyn
       assert.equal(Object.hasOwn(init.headers, 'signal'), false)
       assert.ok(init.signal instanceof AbortSignal)
       requests.push({ url, init })
-      return new Response(JSON.stringify(url === source.LISTING_API_URL ? page([r]) : detail(r)), { headers: { 'Content-Type': 'application/json' } })
+      const response = new Response(JSON.stringify(url === source.LISTING_API_URL ? page([r]) : detail(r)), { headers: { 'Content-Type': 'application/json' } })
+      Object.defineProperty(response, 'url', { value: url })
+      return response
     }
     const jobs = await run(); assert.equal(jobs.length, 1); assert.equal(requests.length, 3)
   } finally { globalThis.fetch = original }

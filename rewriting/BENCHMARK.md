@@ -1,10 +1,10 @@
 # LFM description organization on CPU
 
-The production description rewriter uses **LFM2.5-230M QAD Q4_0**, with immutable model/runtime checksums in [model.json](model.json). The renderer preserves employer statements; the model selects compact fact categories and an overview reference. It does not generate replacement employer facts.
+The configured description rewriter uses **LFM2.5-1.2B-Instruct QAD Q4_0**, with immutable model/runtime checksums in [model.json](model.json). The renderer preserves employer statements; the model selects compact fact categories and an overview reference. It does not generate replacement employer facts. The 21 October 2026 model switch was not tested locally; measurements for this checkpoint are pending pipeline validation.
 
-## Existing full local dry run
+## Historical full local dry run
 
-The 11 October 2026 dry run used four CPU threads, one model slot and an 8,192-token context. The workspace report is `artifacts/full-description-dry-run-2026-10-11-c10/REPORT.md`.
+The 11 October 2026 dry run used the previous checkpoint with four CPU threads, one model slot and an 8,192-token context. These results do not measure the currently configured 1.2B model. The workspace report is `artifacts/full-description-dry-run-2026-10-11-c10/REPORT.md`.
 
 - 42,125 raw jobs, 42,082 unique jobs.
 - 38,757 nonempty descriptions; 3,325 jobs lacked descriptions.
@@ -25,6 +25,6 @@ Run a database-free benchmark with 20 representative source descriptions:
 npm run descriptions:benchmark -- --input /path/to/20-source-jobs.json --output /path/to/report.json
 ```
 
-Resume requires unchanged input, model, runtime, platform and policy. A model switch invalidates old decision signatures and benchmark checkpoints. The 350M LFM variant remains a local comparison option; production uses 230M only.
+Resume requires unchanged input, model, runtime, platform and policy. A model switch invalidates old decision signatures and benchmark checkpoints. The benchmark defaults to the configured 1.2B checkpoint (`--model 1200`); the 350M LFM variant remains a local comparison option.
 
 See [runtime and publishing details](README.md) and [admin setup and pipeline checks](CONTROLS.md).

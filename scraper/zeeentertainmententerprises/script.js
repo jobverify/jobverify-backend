@@ -1,11 +1,9 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { runZeeNative } from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
 
 export const SOURCE = 'zeeentertainmententerprises'
 export const COMPANY = 'Zee Entertainment Enterprises Limited'
@@ -201,16 +199,7 @@ export const extractPaginationSummary = (html) => {
   }
 }
 
-export const extractSearchResults = (html) => {
-  const payload = extractNextDataPayload(html)
-  const rows = Array.isArray(payload?.props?.pageProps?.jobsData?.rows)
-    ? payload.props.pageProps.jobsData.rows
-    : []
-
-  return rows
-    .filter((record) => normalizeWhitespace(record.job_status)?.toUpperCase() === 'OPEN')
-    .filter((record) => isIndiaJob(record))
-    .map((record) => {
+export const mapZeeRecord = (record) => {
       const jobId = normalizeWhitespace(record.id)
       if (!jobId) return null
 
@@ -237,79 +226,26 @@ export const extractSearchResults = (html) => {
         jobDescription: stripHtml(record.description_external),
         publicExperienceChecked: true,
       }
-    })
-    .filter(Boolean)
 }
 
-const defaultFetchText = (url) => fetchTextWithRetry(url, {
-  headers: {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
-    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  },
-  label: 'zee-html',
-  timeoutMs: 15000,
-})
+export const extractSearchResults = (html) => {
+  const payload = extractNextDataPayload(html)
+  const rows = Array.isArray(payload?.props?.pageProps?.jobsData?.rows)
+    ? payload.props.pageProps.jobsData.rows : []
+  return rows.filter(record => normalizeWhitespace(record.job_status)?.toUpperCase() === 'OPEN')
+    .filter(isIndiaJob).map(mapZeeRecord).filter(Boolean)
+}
 
 export const createZeeEntertainmentEnterprisesScraper = ({
-  maxPages = Number.isInteger(config.maxPages) ? config.maxPages : Number.POSITIVE_INFINITY,
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+  maxPages = 50,
+  maxJobs = 500,
 } = {}) => ({
   async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-
-    try {
-      const officialAboutHtml = await fetchText(ABOUT_URL)
-      if (!hasOfficialAboutPageSignal(officialAboutHtml)) {
-        throw new Error('Zee about page no longer matches the verified official public surface')
-      }
-
-      const officialCareersHtml = await fetchText(CAREERS_URL)
-      if (!hasOfficialCareersPageSignal(officialCareersHtml)) {
-        throw new Error('Zee careers page no longer matches the verified official public surface')
-      }
-
-      const senseHqUrl = extractSenseHqCareersUrl(officialCareersHtml)
-      if (senseHqUrl !== API_BASE_URL) {
-        throw new Error('Zee careers page no longer exposes the expected SenseHQ jobs handoff')
-      }
-    } catch (error) {
-      if (!isOfficialPageTimeoutError(error)) {
-        throw error
-      }
-    }
-
-    const jobs = []
-    const seenJobIds = new Set()
-
-    for (let page = 1; page <= maxPages; page += 1) {
-      const html = await fetchText(buildListingUrl({ page }))
-      const pageJobs = extractSearchResults(html)
-      const summary = extractPaginationSummary(html)
-
-      for (const job of pageJobs) {
-        if (seenJobIds.has(job.jobId)) continue
-        seenJobIds.add(job.jobId)
-
-        jobs.push({
-          ...job,
-          source: SOURCE,
-          link: job.applyUrl || job.sourceUrl,
-          scrapedAt: new Date().toISOString(),
-        })
-
-        if (maxJobs && jobs.length >= maxJobs) {
-          return jobs
-        }
-      }
-
-      if (!summary.hasNext) break
-    }
-
-    return jobs
+    return runZeeNative({ maxPages, maxJobs, mapRecord: mapZeeRecord }, options)
   },
 })
 
-export const run = async () => createZeeEntertainmentEnterprisesScraper().run()
+export const run = async (options = {}) => createZeeEntertainmentEnterprisesScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

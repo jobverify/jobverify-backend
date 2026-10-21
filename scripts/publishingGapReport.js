@@ -1,5 +1,6 @@
 import { classifyProviderImplementation } from './reportScriptCatalogTopology.js'
 import { isVerifiedEmptyEvidence, isFreshCompleteInventoryEvidence } from '../scraper-support/utils/inventoryEvidence.js'
+import { explainPublishingGap } from './publishingGapExplanation.js'
 
 const metric = value => Number.isSafeInteger(value) && value >= 0 ? value : null
 const timestamp = value => {
@@ -8,6 +9,9 @@ const timestamp = value => {
   return Number.isFinite(date.getTime()) && date.getTime() > 0 ? date.toISOString() : null
 }
 const companyKey = value => String(value || '').trim().toLowerCase()
+const sharedAdapters = new Set(['workday', 'publicAts', 'apiPortal'])
+const sharedAtsPlatforms = new Set(['greenhouse', 'ashby', 'lever', 'workday', 'workable', 'workable-native-api',
+  'darwinbox', 'phenom', 'successfactors-rmk', 'kula', 'kula-public-api'])
 const countBy = (rows, field) => rows.reduce((counts, row) => {
   counts[row[field]] = (counts[row[field]] || 0) + 1
   return counts
@@ -59,11 +63,44 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
   now = new Date(now)
   if (!Number.isFinite(now.getTime()) || !(maxAgeHours > 0)) throw new TypeError('Valid now and positive maxAgeHours required')
   const databaseAvailable = runtime?.databaseAvailable === true
+  const snapshotFresh = databaseAvailable && fresh(runtime.generatedAt, now, maxAgeHours)
   const inventory = new Map((databaseAvailable ? runtime.inventory || [] : []).map(row => [row.source, row]))
   const statuses = new Map((runtime?.statuses || []).map(row => [row.source, row]))
   const discoveries = new Map(discovery.map(row => [row.source, row]))
-  const audits = new Map(extractionAudits.map(row => [row.source, row]))
+  const audits = new Map()
+  for (const audit of extractionAudits) {
+    const previousAt = timestamp(audits.get(audit.source)?.completedAt)
+    const auditAt = timestamp(audit.completedAt)
+    // Retain one whole attempt, never counts inherited from a prior success.
+    // Undated inputs retain input precedence and cannot supply fresh metrics.
+    if (!previousAt || !auditAt || new Date(auditAt) >= new Date(previousAt)) audits.set(audit.source, audit)
+  }
   const providers = [...new Map(catalog.map(p => [p.source, p])).values()].sort((a, b) => a.source.localeCompare(b.source))
+  const catalogSources = new Set(providers.map(provider => provider.source))
+  const delegationFor = provider => {
+    const declared = provider.inventoryDelegation
+    if (declared?.verified !== true || declared.preservesChildSourceAndCompany !== true
+      || !Array.isArray(declared.sources) || !declared.sources.length
+      || new Set(declared.sources).size !== declared.sources.length
+      || !declared.sources.every(source => source !== provider.source && catalogSources.has(source))
+      || !/^https:\/\//.test(declared.evidence?.url || '')
+      || typeof declared.evidence?.artifact !== 'string' || !declared.evidence.artifact
+      || !/^[a-f0-9]{64}$/.test(declared.evidence?.sha256 || '')) return null
+    const evidenceFresh = fresh(declared.verifiedAt, now, maxAgeHours)
+    const current = evidenceFresh && snapshotFresh && Array.isArray(runtime?.inventory) && Array.isArray(runtime?.publicCompanyNames)
+    const childInventories = declared.sources.map(source => {
+      const child = inventory.get(source)
+      const available = databaseAvailable && Array.isArray(runtime?.inventory)
+      return { source, savedJobs: available ? (child ? metric(child.savedJobs) : 0) : null,
+        visibleJobs: available ? (child ? metric(child.visibleJobs) : 0) : null,
+        visibleCompanies: available ? child?.visibleCompanies || [] : null }
+    })
+    return { verifiedAt: timestamp(declared.verifiedAt), evidenceFresh, snapshotAt: timestamp(runtime?.generatedAt),
+      fresh: current, sources: [...declared.sources], preservesChildSourceAndCompany: true,
+      evidence: declared.evidence, childInventories,
+      publicChildSources: current ? childInventories.filter(child => child.visibleJobs > 0).map(child => child.source) : [],
+      limitation: 'Child source counts are separate observations; no wrapper job matching, complete coverage or additional public company is inferred.' }
+  }
   const rows = providers.map(provider => {
     const status = statuses.get(provider.source)
     const attempt = attemptFor(provider.source, status, runState)
@@ -74,6 +111,9 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
     const discoveryFresh = fresh(discovered?.completedAt, now, maxAgeHours)
     const extractionAuditFresh = fresh(audited?.completedAt, now, maxAgeHours)
     const candidate = discovered?.candidate
+    const sharedAdapterCompatible = sharedAdapters.has(provider.adapter)
+      || (provider.adapter === 'script' && sharedAtsPlatforms.has(provider.atsPlatform))
+      || sharedAtsPlatforms.has(candidate?.atsPlatform)
     const sharedAtsSources = candidate?.boardToken ? providers.filter(other => other.source !== provider.source
       && other.atsPlatform === candidate.atsPlatform && other.boardToken === candidate.boardToken
       && inventory.get(other.source)?.visibleJobs > 0).map(other => other.source) : []
@@ -83,10 +123,12 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
     const completeEvidence = isFreshCompleteInventoryEvidence(evidence, { now, maxAgeHours })
       && isFreshCompleteInventoryEvidence(evidence, { now: attempt?.completedAt || now, maxAgeHours })
     const partial = attempt?.staleCheckSkipped === true || attempt?.partial === true
+      || attempt?.detailHealth?.complete === false || metric(attempt?.filteredEmptyDescription) > 0
     let runtimeOutcome = 'not-observed'
     if (attempt?.pending) runtimeOutcome = 'in-progress'
     else if (attempt?.skipped) runtimeOutcome = 'skipped'
     else if (attempt?.failureKind === 'coverage_gap' || attempt?.zeroJobEvidence === 'coverage-gap') runtimeOutcome = 'coverage-gap'
+    else if (attempt?.failureKind === 'partial_positive' && partial) runtimeOutcome = 'partial'
     else if (attempt?.success === false || attempt?.softFailure === true) runtimeOutcome = 'failed'
     else if (partial) runtimeOutcome = 'partial'
     else if (attempt?.success === true) {
@@ -102,8 +144,10 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
       .map(name => [name[0].toLowerCase() + name.slice(1), metric(attempt?.[`filtered${name}`])]))
     return {
       source: provider.source, companyName: provider.companyName || provider.company || provider.source,
+      adapter: provider.adapter || null, atsPlatform: provider.atsPlatform || null, sharedAdapterCompatible,
       implementationType: implementation.type, implementationReason: implementation.reason,
       zeroResultPolicy: provider.zeroResultPolicy || null,
+      isActive: typeof status?.isActive === 'boolean' ? status.isActive : null,
       latestAttemptAt: timestamp(attempt?.attemptedAt || attempt?.completedAt),
       latestAttemptCompletedAt: timestamp(attempt?.completedAt),
       lastCompleteCheckAt: timestamp(status?.lastCompleteCheckAt || (completeEvidence && attempt?.success === true && !partial && !attempt.skipped ? attempt.completedAt : null)),
@@ -113,8 +157,9 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
       rawJobs: metric(attempt?.rawRecords), indiaJobs: metric(attempt?.jobs), eligibleJobs: metric(attempt?.eligibleJobs),
       upstreamReportedJobs: metric(evidence?.reportedTotal),
       savedJobs, visibleJobs, visibleCompanies: current?.visibleCompanies || [], rejectionCounts,
+      inventoryDelegation: delegationFor(provider),
       completeSuccessfulCheck: attemptFresh && attempt?.success === true && !attempt.softFailure && !partial && !attempt.skipped && completeEvidence,
-      inventoryEvidence: evidence, zeroJobEvidence: attempt?.zeroJobEvidence || null,
+      inventoryEvidence: evidence, detailHealth: attempt?.detailHealth || null, zeroJobEvidence: attempt?.zeroJobEvidence || null,
       failureKind: attempt?.failureKind || null, error: attempt?.error || null,
       careerPage: provider.companyCareerPage || null,
       discoveryOutcome: discovered?.outcome || null, discoveryAt: timestamp(discovered?.completedAt), discoveryFresh,
@@ -122,35 +167,53 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
       discoveredAtsBoard: candidate ? { atsPlatform: candidate.atsPlatform, boardToken: candidate.boardToken,
         bindingEvidence: candidate.bindingEvidence, sharedPublishedSources: sharedAtsSources } : null,
       discoveredEligibleJobs: discoveryFresh ? metric(discovered?.eligibleJobs) : null,
-      extractionAuditOutcome: audited?.outcome || null, extractionAuditAt: timestamp(audited?.completedAt), extractionAuditFresh,
+      extractionAuditOutcome: ['complete-positive-extraction', 'complete-no-eligible-jobs'].includes(audited?.outcome)
+        && (audited?.detailHealth?.complete === false || metric(audited?.filterCounts?.emptyDescription) > 0)
+        ? 'positive-extraction-incomplete-evidence' : audited?.outcome || null,
+      extractionAuditAt: timestamp(audited?.completedAt), extractionAuditFresh,
+      extractionAuditDetailHealth: audited?.detailHealth || null,
+      extractionAuditRawJobs: extractionAuditFresh ? metric(audited?.rawJobs) : null,
+      extractionAuditExtractedJobs: extractionAuditFresh ? metric(audited?.extractedJobs) : null,
+      extractionAuditIndiaJobs: extractionAuditFresh ? metric(audited?.indiaJobs) : null,
       extractionAuditEligibleJobs: extractionAuditFresh ? metric(audited?.eligibleJobs) : null,
+      extractionAuditRejectionCounts: extractionAuditFresh && audited?.filterCounts
+        && typeof audited.filterCounts === 'object' && !Array.isArray(audited.filterCounts)
+        ? Object.fromEntries(Object.entries(audited.filterCounts).map(([name, count]) => [name, metric(count)])) : null,
       extractionAuditEvidence: audited ? { inventoryEvidence: audited.inventoryEvidence, failureCode: audited.failureCode || null,
-        failureKind: audited.failureKind || null } : null,
+        failureKind: audited.failureKind || null, artifact: audited.artifact || null,
+        mode: audited.mode || null, productionWrites: typeof audited.productionWrites === 'boolean' ? audited.productionWrites : null,
+        supportingEvidence: Array.isArray(audited.supportingEvidence) ? audited.supportingEvidence : null } : null,
       historicalVerification: { verifiedOn: provider.verifiedOn || null, summary: provider.verifiedSurfaceSummary || null },
     }
-  })
+  }).map(row => ({ ...row, gapExplanation: explainPublishingGap(row, { now, maxAgeHours }) }))
   const namesToSources = new Map()
   for (const row of rows) for (const name of new Set(row.visibleCompanies.map(companyKey).filter(Boolean))) {
     if (!namesToSources.has(name)) namesToSources.set(name, [])
     namesToSources.get(name).push(row.source)
   }
-  const catalogSources = new Set(rows.map(row => row.source))
   const publicNames = databaseAvailable ? new Set((runtime.publicCompanyNames || []).map(companyKey).filter(Boolean)) : null
-  const snapshotFresh = databaseAvailable && fresh(runtime.generatedAt, now, maxAgeHours)
   const backlog = rows.filter(row => row.publicationOutcome !== 'published').map(row => ({
     source: row.source, companyName: row.companyName, implementationType: row.implementationType,
-    reason: row.discoveredAtsBoard?.sharedPublishedSources?.length ? 'reconcile-shared-published-ats-board'
+    sharedAdapterCompatible: row.sharedAdapterCompatible,
+    reason: row.gapExplanation === 'latest-persisted-check-failed' ? 'latest-persisted-check-failed'
+      : row.gapExplanation === 'delegated-inventory-published-under-other-sources' ? 'reconcile-delegated-source-coverage'
+      : row.discoveredAtsBoard?.sharedPublishedSources?.length ? 'reconcile-shared-published-ats-board'
       : latestExploration(row) === 'audit' ? row.extractionAuditOutcome
       : latestExploration(row) === 'discovery' && row.discoveryOutcome !== 'already-published-not-rechecked' ? row.discoveryOutcome
       : row.runtimeOutcome === 'not-observed' ? row.implementationReason : row.runtimeOutcome,
+    gapExplanation: row.gapExplanation,
     careerPage: row.careerPage, discoveryRequired: true,
-    priority: row.discoveredAtsBoard?.sharedPublishedSources?.length ? 3
+    priority: row.gapExplanation === 'delegated-inventory-published-under-other-sources' || row.discoveredAtsBoard?.sharedPublishedSources?.length ? 3
       : exploredEligibleJobs(row) > 0 ? 0
       : ['sentinel', 'static-empty', 'missing-module'].includes(row.implementationType) ? 1 : 2,
     observedEligibleJobs: exploredEligibleJobs(row),
     evidence: { discoveryAt: row.discoveryAt, extractionAuditAt: row.extractionAuditAt,
-      discoveredAtsBoard: row.discoveredAtsBoard, extractionAudit: row.extractionAuditEvidence },
-  })).sort((a, b) => a.priority - b.priority || (b.observedEligibleJobs || 0) - (a.observedEligibleJobs || 0) || a.source.localeCompare(b.source))
+      discoveredAtsBoard: row.discoveredAtsBoard, extractionAudit: row.extractionAuditEvidence,
+      inventoryDelegation: row.inventoryDelegation },
+  })).sort((a, b) => a.priority - b.priority
+    || Number(b.sharedAdapterCompatible) - Number(a.sharedAdapterCompatible)
+    || (b.observedEligibleJobs || 0) - (a.observedEligibleJobs || 0)
+    || a.source.localeCompare(b.source))
   return {
     schemaVersion: 1, generatedAt: now.toISOString(), freshnessHours: maxAgeHours,
     coverageLabel: 'Catalog registration coverage',
@@ -165,10 +228,12 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
       sourcesWithVisibleJobs: databaseAvailable ? rows.filter(row => row.visibleJobs > 0).length : null,
       distinctVisibleCompanies: publicNames?.size ?? null,
       distinctVisibleCompaniesFromCatalog: databaseAvailable ? namesToSources.size : null,
+      delegatingSourcesWithPublicChildInventory: rows.filter(row => row.inventoryDelegation?.publicChildSources?.length > 0).length,
       runtimeReconciliationComplete: snapshotFresh && Array.isArray(runtime?.publicCompanyNames) && Array.isArray(runtime?.inventory),
       runtimeSnapshotAt: timestamp(runtime?.generatedAt),
       runtimeEnvironment: runtime?.environment || (databaseAvailable ? 'provided-snapshot' : null),
       implementationCounts: countBy(rows, 'implementationType'), runtimeOutcomeCounts: countBy(rows, 'runtimeOutcome'),
+      gapExplanationCounts: countBy(rows, 'gapExplanation'),
       discoveryOutcomeCounts: countBy(rows.filter(row => row.discoveryOutcome), 'discoveryOutcome'),
       extractionAuditOutcomeCounts: countBy(rows.filter(row => row.extractionAuditOutcome), 'extractionAuditOutcome'),
     },
@@ -185,17 +250,20 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
       sharedPublicCompanyNames: [...namesToSources].filter(([, sources]) => sources.length > 1).map(([company, sources]) => ({ company, sources })),
       aliasPublications: rows.filter(row => row.visibleJobs > 0 && !row.visibleCompanies.some(name => companyKey(name) === companyKey(row.companyName)))
         .map(row => ({ source: row.source, catalogCompany: row.companyName, visibleCompanies: row.visibleCompanies })),
+      delegatedSourceInventories: rows.filter(row => row.inventoryDelegation)
+        .map(row => ({ source: row.source, catalogCompany: row.companyName, ...row.inventoryDelegation })),
     },
     rows, backlog,
   }
 }
 
 export const publishingGapCsv = rows => {
-  const fields = ['source', 'companyName', 'implementationType', 'runtimeOutcome', 'publicationOutcome', 'latestAttemptAt', 'latestAttemptCompletedAt',
+  const fields = ['source', 'companyName', 'adapter', 'atsPlatform', 'sharedAdapterCompatible', 'implementationType', 'runtimeOutcome', 'publicationOutcome', 'gapExplanation', 'isActive', 'latestAttemptAt', 'latestAttemptCompletedAt',
     'lastCompleteCheckAt', 'attemptFresh', 'evidenceFresh', 'evidenceMode', 'rawJobs', 'upstreamReportedJobs', 'indiaJobs', 'eligibleJobs', 'savedJobs', 'visibleJobs',
-    'visibleCompanies', 'rejectionCounts', 'zeroJobEvidence', 'inventoryEvidence', 'failureKind', 'error', 'careerPage',
+    'visibleCompanies', 'rejectionCounts', 'zeroJobEvidence', 'inventoryEvidence', 'detailHealth', 'failureKind', 'error', 'careerPage',
     'discoveryOutcome', 'discoveryAt', 'discoveryFresh', 'discoveredEligibleJobs', 'discoveredAtsBoard', 'discoveryEvidence',
-    'extractionAuditOutcome', 'extractionAuditAt', 'extractionAuditFresh', 'extractionAuditEligibleJobs', 'extractionAuditEvidence']
+    'extractionAuditOutcome', 'extractionAuditAt', 'extractionAuditFresh', 'extractionAuditRawJobs', 'extractionAuditExtractedJobs',
+    'extractionAuditIndiaJobs', 'extractionAuditEligibleJobs', 'extractionAuditRejectionCounts', 'extractionAuditDetailHealth', 'extractionAuditEvidence', 'inventoryDelegation']
   const escape = value => {
     const text = value == null ? '' : typeof value === 'object' ? JSON.stringify(value) : String(value)
     return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text

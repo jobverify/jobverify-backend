@@ -1,0 +1,286 @@
+{
+  "capturedAt": "2026-10-20T22:00:36.454Z",
+  "source": "bmcsoftware",
+  "scope": "Exact official India filter;25roles, no global employer count asserted.",
+  "receipts": [
+    {
+      "fixture": "corporate-careers-http.html",
+      "requestedURL": "https://www.bmc.com/careers/careers.html?vu=careers",
+      "finalURL": "https://www.bmc.com/careers/careers.html?vu=careers",
+      "status": 200,
+      "completedAt": "2026-10-20T21:57:44.302Z",
+      "bodySha256": "66bd137f3b1f887ae2044ec410a9bc62899dab061891d37a4c1c125823573050",
+      "receiptSha256": "d05bdaddef7fe1d14dafb85f19a27769f4c30b2cf81073f2412c5c2ad3935141"
+    },
+    {
+      "fixture": "india-listing-http-0001.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/SearchJobs/?1274=9406&1274_format=1347&intcmp=JobsByCountry&listFilterMode=1",
+      "finalURL": "https://jobs.bmc.com/Careers/SearchJobs/?1274=9406&1274_format=1347&intcmp=JobsByCountry&listFilterMode=1",
+      "status": 200,
+      "completedAt": "2026-10-20T21:57:46.924Z",
+      "bodySha256": "e46093d7d5b5c182f935df3a5b0a41289f3bacfbaa5fac60231b3f761c914109",
+      "receiptSha256": "73d6487322a2d43517324c58b4002f40d5a88d542fe1f564f0740fc7a551d715"
+    },
+    {
+      "fixture": "india-listing-http-0002.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/SearchJobs/?1274=9406&1274_format=1347&listFilterMode=1&jobRecordsPerPage=6&jobOffset=6",
+      "finalURL": "https://jobs.bmc.com/Careers/SearchJobs/?1274=9406&1274_format=1347&listFilterMode=1&jobRecordsPerPage=6&jobOffset=6",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:09.443Z",
+      "bodySha256": "c5e4f90f7dab80945114283837500fd78fc275c9d87555d84f68a05c61f46b12",
+      "receiptSha256": "d5dbc76b43af84e27c509997dddbe4e27d52281964445837eee27a9160853511"
+    },
+    {
+      "fixture": "india-listing-http-0003.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/SearchJobs/?1274=9406&1274_format=1347&listFilterMode=1&jobRecordsPerPage=6&jobOffset=12",
+      "finalURL": "https://jobs.bmc.com/Careers/SearchJobs/?1274=9406&1274_format=1347&listFilterMode=1&jobRecordsPerPage=6&jobOffset=12",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:11.246Z",
+      "bodySha256": "2d7c63186d269993d5881371b85f7b95dbea1146f93aabb414e4ff1d391ee4c6",
+      "receiptSha256": "cf371e9b62bc1688e044ba904a1bc49127adce0061993ff86083e1f3a5a2fe5a"
+    },
+    {
+      "fixture": "india-listing-http-0004.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/SearchJobs/?1274=9406&1274_format=1347&listFilterMode=1&jobRecordsPerPage=6&jobOffset=18",
+      "finalURL": "https://jobs.bmc.com/Careers/SearchJobs/?1274=9406&1274_format=1347&listFilterMode=1&jobRecordsPerPage=6&jobOffset=18",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:13.037Z",
+      "bodySha256": "a9874607db5fffe5ddaa4dd972e3e2a63eac9bda572ec17a04300c8d0a31964f",
+      "receiptSha256": "fc06eaafc6a7266eb36fcf6d4dd395017fecc8c0391cb8a0b890db559c6a4053"
+    },
+    {
+      "fixture": "india-listing-http-0005.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/SearchJobs/?1274=9406&1274_format=1347&listFilterMode=1&jobRecordsPerPage=6&jobOffset=24",
+      "finalURL": "https://jobs.bmc.com/Careers/SearchJobs/?1274=9406&1274_format=1347&listFilterMode=1&jobRecordsPerPage=6&jobOffset=24",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:14.618Z",
+      "bodySha256": "fb8aca6d4fe45df1f699e9942451c8fcb44907ea40b35e5ef8e6c651c7abdd54",
+      "receiptSha256": "0423d9673af4a7ebf79d61d83f246ba13971e5a0de6467ff9c93f01597817900"
+    },
+    {
+      "fixture": "role-47334-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Consultant-India/47334",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Consultant-India/47334",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:17.309Z",
+      "bodySha256": "e334dc88d58c0e2386e1c77f8c09f2c175770af70b597da0eae19a1869fe1efc",
+      "receiptSha256": "7222f328b8adef27e5e96d6a6c02bea0f3f3d3d97723b16b6242b285df6fc07e"
+    },
+    {
+      "fixture": "role-47129-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Lead-DevOps-Engineer-India/47129",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Lead-DevOps-Engineer-India/47129",
+      "status": 200,
+      "completedAt": "2026-10-20T21:57:50.399Z",
+      "bodySha256": "138a2333b964723fea5705699989810322063d8fe6999469bbc6e709d4aaf437",
+      "receiptSha256": "5179a1a7ac8f80811683f3b505ed2c48a1e7fedf73cf7800192c19268c4a223c"
+    },
+    {
+      "fixture": "role-47687-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Lead-Product-Developer-India/47687",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Lead-Product-Developer-India/47687",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:18.095Z",
+      "bodySha256": "d5a05306f5a4e9b04920bd39791ad0d12aa750e1ba6c789f07f6186bb3d20ab8",
+      "receiptSha256": "5908a9df1ddf2007c7f3dbf7d4a45361771cb5e1fda6d129cbb21a3b2ab97681"
+    },
+    {
+      "fixture": "role-47462-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Mgr-BI-Research-India/47462",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Mgr-BI-Research-India/47462",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:18.228Z",
+      "bodySha256": "0c10f9e90997c89e9d8877999eae4cc560d4be6bd8763163743fd8d84a825fea",
+      "receiptSha256": "79f45aaa12a3b9d5976e6ad15baf098537e1fe1eb45b1e3df4a1ab79925fdcdf"
+    },
+    {
+      "fixture": "role-47417-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Product-Developer-II-India/47417",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Product-Developer-II-India/47417",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:20.010Z",
+      "bodySha256": "a37c3cd4b3a475c0c0bc63c755c23c4e59053634a0d3ccff7a92643c2f597ea0",
+      "receiptSha256": "c40efc062d3b8454affd45fa45b10414286fc96cc283dd27365eeaca4cc2dc7a"
+    },
+    {
+      "fixture": "role-47354-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Product-Developer-II-India/47354",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Product-Developer-II-India/47354",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:20.832Z",
+      "bodySha256": "d2692972d3789123a22700d51d4c73a12182044e1a59a9ef3a8dd5bf36fde357",
+      "receiptSha256": "e236ff9ccfb851aada3ec30d35a0b0846c9548e1a8b70804d9c31af8cdb5adee"
+    },
+    {
+      "fixture": "role-47487-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Product-Developer-III-India/47487",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Product-Developer-III-India/47487",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:20.737Z",
+      "bodySha256": "89450c507e3f8e454da806a7dc70de392145cb24a8c61c87b645a92f0c9857a9",
+      "receiptSha256": "78d6d022b6658497100f31bd346e8fb6983393d892cbbed36c669cc58cad972b"
+    },
+    {
+      "fixture": "role-47030-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Product-Developer-III-India/47030",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Product-Developer-III-India/47030",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:22.426Z",
+      "bodySha256": "459c2931f7d559d1bfe13e855cfd98a5c326fb2d2281d909d8630b08e12a6f1c",
+      "receiptSha256": "510b3413f61fce74ef4cc2f586c876fa6a4cb9492909903b889d3bfdcc0837d2"
+    },
+    {
+      "fixture": "role-47479-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/RPA-Developer-III-India/47479",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/RPA-Developer-III-India/47479",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:23.075Z",
+      "bodySha256": "19622698b76c0f072a1aa46d2d01ec65dee570d3fad144a649e7009b5938edfe",
+      "receiptSha256": "6506d4a848cef96d9611455b3f61ad8590e24836c07c3a38d0a369331c2eea90"
+    },
+    {
+      "fixture": "role-47634-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Consultant-India/47634",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Consultant-India/47634",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:23.170Z",
+      "bodySha256": "79c57b7d7afa9bc53b5b90f8c2c179f72919d7cb55cc9ae2b5e926b85c9201a2",
+      "receiptSha256": "7ca8bc00357665b412c308be2d16ff4c9a03e1106dba15097aa1698f9eb5985f"
+    },
+    {
+      "fixture": "role-47336-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Consultant-India/47336",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Consultant-India/47336",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:25.073Z",
+      "bodySha256": "c31390188ba1c0551f4fa735a830726ba4ef2f4cb329e453b262b13e855ae6a4",
+      "receiptSha256": "df36d2e9308f46bb4707b406f1f15ee1267f015d6b7cd9349453c48ea2916f8b"
+    },
+    {
+      "fixture": "role-47230-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Data-Scientist-India/47230",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Data-Scientist-India/47230",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:25.488Z",
+      "bodySha256": "90fbc550a946f871cbc755c11fdf65d1ef58fbe8b840f627cc89f17346a0e508",
+      "receiptSha256": "db38fbddfb2ad3666328a40fb4df82e7942f35bf6b4c95d69c0d9fe841a34c12"
+    },
+    {
+      "fixture": "role-47344-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Education-Developer-India/47344",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Education-Developer-India/47344",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:25.689Z",
+      "bodySha256": "801b8257743e400359c990436dc2fc7a23ae6d3f3ebf8170a4c06911356eaeda",
+      "receiptSha256": "e4582e2766bed0baf8caa8741b1ac3522baaa8c341986afac5ee278c7f96ce3d"
+    },
+    {
+      "fixture": "role-47679-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Platform-Systems-Admin-India/47679",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Platform-Systems-Admin-India/47679",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:27.636Z",
+      "bodySha256": "c47c85ca0af3e84fbc024ff58865a1fc523e1373a6320a33e89ed4db586ddb54",
+      "receiptSha256": "23691b669291e859bd5510ce06d3dc1b7f8f1950af90fa7a6a023a12aebacaa8"
+    },
+    {
+      "fixture": "role-47397-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Platform-Systems-Admin-India/47397",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Platform-Systems-Admin-India/47397",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:27.942Z",
+      "bodySha256": "b01d10594210dacbacdadbb72b54e3a6a6363318dc1af694a0bd4e4e7fb9d04e",
+      "receiptSha256": "aa3eb075fa0386925b1f3f3cfea0f4ff0f9ab03469cd7b90ced4a45e308b5029"
+    },
+    {
+      "fixture": "role-47686-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Product-Developer-India/47686",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Product-Developer-India/47686",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:28.034Z",
+      "bodySha256": "ce3e3b56215d9d59d2ba57c3ccd9ccd3b26afb9fae1a872a333bb658c1fa3a6f",
+      "receiptSha256": "22c940525721887c278d0d9e96f706cac67a5ff47eebd5ff56fc6f276d138db0"
+    },
+    {
+      "fixture": "role-47488-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Product-Developer-India/47488",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Product-Developer-India/47488",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:30.124Z",
+      "bodySha256": "5187cd57ef452deea8aced108d2f70acf654858f57e5a719c4f4c21a34a4247a",
+      "receiptSha256": "04de491a350e56978b625fa68927ba63a91345d4a4df74eb5b6cfe1a444c2801"
+    },
+    {
+      "fixture": "role-47453-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Product-Developer-India/47453",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Product-Developer-India/47453",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:30.304Z",
+      "bodySha256": "168d39ea34c788a9b22ffaf20b1ee6fa1b71e45121fc6e7a2f51f8c4a3898436",
+      "receiptSha256": "0e83a7a7f77d815a9e1acdc941854ed3a1b7ee8f75c57d001c1d1289b70d27a6"
+    },
+    {
+      "fixture": "role-47155-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Product-Developer-India/47155",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Product-Developer-India/47155",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:30.425Z",
+      "bodySha256": "29e922cbd6cd5cb1906e217a8472a6a5009d8b3f3b7b2bcbefee46d7c63f9696",
+      "receiptSha256": "705b601ebc5bc988f33c96022b31a33699a5a256d06dadf360cb8fed090a3d0e"
+    },
+    {
+      "fixture": "role-47162-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Product-Developer-India/47162",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Sr-Product-Developer-India/47162",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:32.387Z",
+      "bodySha256": "e3d5999a27e61972aaef48d07e1678491be0b1ba760b11f18be6f216207721fc",
+      "receiptSha256": "b508d1e24d05837d01a993a0a2df853fc3ffbd1f3b176947df321ddfe27a1a87"
+    },
+    {
+      "fixture": "role-47363-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Staff-Commissions-Analyst-India/47363",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Staff-Commissions-Analyst-India/47363",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:32.524Z",
+      "bodySha256": "52cb3204a9b30c5d8367ef06f0a19f8cb34501f7af19ce69655af285ddbd1db4",
+      "receiptSha256": "7bc8008990430f0791462480814d9e6a2f0fd56b4d6e39b0671f8399f88549f5"
+    },
+    {
+      "fixture": "role-47346-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Staff-Specialist-Cybersecurity-Engineer-India/47346",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Staff-Specialist-Cybersecurity-Engineer-India/47346",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:32.741Z",
+      "bodySha256": "2dbcb2b0195b20cf3101ace4e3265352930e9a3762f6e229346b89b2db768a63",
+      "receiptSha256": "216ec7c5f4c2af5d96dda160a67babf9f3038231636e5e2b6008d0e6784c05e3"
+    },
+    {
+      "fixture": "role-47541-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Staff-Specialist-Technology-Solutions-Specialist-India/47541",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Staff-Specialist-Technology-Solutions-Specialist-India/47541",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:34.880Z",
+      "bodySha256": "de9efcfe218d537610daeba16aa7518fbdb4297e9e2f128e56b554b9bdf893e3",
+      "receiptSha256": "2c03d86a18dfb05805ae720a7357c9b329482c2cf1c4aa0b627e18e15aeb0214"
+    },
+    {
+      "fixture": "role-47208-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Staff-Specialist-Technology-Solutions-Specialist-India/47208",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Staff-Specialist-Technology-Solutions-Specialist-India/47208",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:35.019Z",
+      "bodySha256": "292ab4e178a276472598346403a095b266a5214d8350a117f06fe258f434dd1d",
+      "receiptSha256": "0437c08c233ecf24c83111194b652fef14ec48478fc8d8cab746bd4e67d0e8ea"
+    },
+    {
+      "fixture": "role-47205-http.html",
+      "requestedURL": "https://jobs.bmc.com/Careers/JobDetail/Staff-Technology-Solutions-Specialist-India/47205",
+      "finalURL": "https://jobs.bmc.com/Careers/JobDetail/Staff-Technology-Solutions-Specialist-India/47205",
+      "status": 200,
+      "completedAt": "2026-10-20T22:00:35.290Z",
+      "bodySha256": "1187f049e547799a06d4f64db10188085c14296b372bd519f419db2581059815",
+      "receiptSha256": "49f159051d012993089c81aa60878f91817349a5f7f67f63953bc058e7df235f"
+    }
+  ]
+}

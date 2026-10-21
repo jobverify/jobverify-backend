@@ -6,7 +6,7 @@ import '../loadEnv.js';
 import { configureMongoDns } from '../src/utils/mongoDns.js';
 import Job from '../src/models/Job.js';
 import { REWRITE_MODEL } from '../src/services/jobDescriptionPolicy.js';
-import { rewriteDeadline, rewriteQueueQuery, rewriteQueueScan, rewriteFailureDetails, createRewriteClient, rewriteCandidates, probeRewriteClient } from '../rewriting/runner.js';
+import { rewriteDeadline, rewriteQueueQuery, rewriteQueueScan, rewriteFailureDetails, createRewriteClient, rewriteCandidates, probeRewriteClient, rewriteProgress } from '../rewriting/runner.js';
 import { prepareRewriteRuntime, startRewriteWorker, workerMemoryBytes, rewriteWorkerConfiguration } from '../rewriting/worker.js';
 
 const apply = process.argv.includes('--apply');
@@ -71,9 +71,9 @@ try {
   if (summary.results?.length) {
     const durations=summary.results.filter(r=>r.generated && !r.modelPlanCached && r.durationMs>0).map(r=>r.durationMs).sort((a,b)=>a-b);
     const seconds=(Date.now()-Date.parse(summary.startedAt))/1000;
-    summary.capacity={elapsedSeconds:seconds,modelRequests:summary.results.filter(r=>r.generated&&!r.modelPlanCached).length,attemptsPerHour:summary.attempted ? summary.attempted/seconds*3600 : 0,p50DurationMs:durations[Math.floor(durations.length*.5)]||null,p95DurationMs:durations[Math.min(durations.length-1,Math.floor(durations.length*.95))]||null};
+    summary.capacity={elapsedSeconds:seconds,modelRequests:summary.results.reduce((total,r)=>total+(r.generationRequests??(r.generated&&!r.modelPlanCached?1:0)),0),attemptsPerHour:summary.attempted ? summary.attempted/seconds*3600 : 0,p50DurationMs:durations[Math.floor(durations.length*.5)]||null,p95DurationMs:durations[Math.min(durations.length-1,Math.floor(durations.length*.95))]||null};
   }
-  if (apply && summary.queued !== undefined) summary.pendingEstimate=Math.max(0,summary.queued-(summary.published||0)-(summary.failed||0)-(summary.skipped||0));
+  if (apply && summary.queued !== undefined) Object.assign(summary, rewriteProgress(summary));
   summary.finishedAt = new Date().toISOString();
   if (apply) {
     const { stageOutcome } = await import('../src/pipeline/policy.js');

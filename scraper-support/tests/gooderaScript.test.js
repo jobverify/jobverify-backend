@@ -302,6 +302,8 @@ test('Goodera run validates the first-party contact handoff and decorates India 
       jobDescription: null,
       remoteStatus: 'On-site',
       source: 'goodera',
+      sourceListingComplete: false,
+      sourceDetailComplete: false,
       link: 'https://careers.kula.ai/goodera/40001/?jobs=true',
       scrapedAt: FIXED_SCRAPED_AT,
     },

@@ -1,0 +1,838 @@
+{
+  "listing": {
+    "code": 200,
+    "type": null,
+    "message": null,
+    "exception": null,
+    "data": {
+      "data": [
+        {
+          "_index": "es-g5-v1",
+          "_type": "_doc",
+          "_source": {
+            "reqFieldsAndValues": null,
+            "departmentId": 63228,
+            "salary": null,
+            "minJobSalary": null,
+            "appliesNotBlocked": 0,
+            "referenceNumber": "15592",
+            "officeLocation": null,
+            "fieldsRoleBased": null,
+            "desiredSkillList": [],
+            "state": null,
+            "shortlistsCounts": null,
+            "testAppliedList": null,
+            "funAreaSpecialization": null,
+            "minJobIndicateSalary": null,
+            "primaryRecruiterName": null,
+            "emailAppliesOnStatus": null,
+            "SrLocation": null,
+            "derivedInfo": null,
+            "tags": null,
+            "skillsToEvaluateList": [],
+            "groupName": null,
+            "text3": "",
+            "text4": "Jeevansathi",
+            "text1": null,
+            "grade": null,
+            "domain": null,
+            "text2": "",
+            "text7": null,
+            "srBillability": null,
+            "text8": "Volume",
+            "text5": "B2C Tele Sales",
+            "curatedDate": null,
+            "text6": null,
+            "newJobCode": "16543",
+            "careerSiteUrl": "careers.infoedge.com",
+            "startDate": null,
+            "text9": "Sales",
+            "positionsReqNum": null,
+            "minYearOfExperience": 0,
+            "srcompetency": null,
+            "role": "",
+            "workMode": null,
+            "jobVisibiltyLevel": "N",
+            "subDepartment": null,
+            "locationSeparatedbySlash": "Noida",
+            "expLeve": null,
+            "atsIdentifier": null,
+            "jobFunction": null,
+            "otherStatusOne": "Hidden",
+            "responsibility": null,
+            "requestDate": null,
+            "maxYrsOfExperience": null,
+            "ijpEnableDate": null,
+            "locationDisplayForManageJobs": "Noida",
+            "allDeptHierarchy": {},
+            "jobCreatedDate": 1789989030000,
+            "deptHierarchy": null,
+            "experties": null,
+            "candidateEmails": "N",
+            "isWorkflowNameModifiedByUser": false,
+            "requisitionStatus": "A",
+            "createdDate": 1789989029000,
+            "jdSkillsNew": "",
+            "refNumber": "15592",
+            "offersCounts": null,
+            "otherStatusTwo": "Closed",
+            "careerUrl": null,
+            "budgetConsumed": false,
+            "joins": null,
+            "country": null,
+            "notes": null,
+            "scoreExpression": null,
+            "isCampusEnabledForJob": null,
+            "mediumDescriptionWithoutHtml": "The objective of this role is to sell paid services to the already registered members of the platform via online product demonstrations. demonstrations.Job Description:? Connect & engage with the registered users (prospective clients or their parents) of jeevansathi.com via a dialer based calling process? Conduct online product demonstration to showcase, promote and sell personalized membership of the portal? Achieve sales targets by counselling the users and their family members on product features along with related services? Sell membership plans over the phone and update all the details accurately in the CRM software? Maintain call quality standards as per defined matrices? Develop constructive working relationships with focus on HNI users to achieve conversion on higher valued plansRequired Skills:? Good communication skills? Active listening skills? Strong convincing skills? Client handling skills? Comfortable with rotational offsDesired Skills:? Prior experience in inside sales/business development/voice process will be preferred? Solution oriented with effective problem solving skills? Knowledge of various online matrimonial portals will be an added advantage",
+            "applyWithRelevantpoints": null,
+            "recruiterLinkedInLink": null,
+            "eventsFromJobList": null,
+            "totalNoOfGoodProfile": null,
+            "ijpEnabled": null,
+            "isDispositionProcessed": 0,
+            "segment": null,
+            "showSal": false,
+            "jobEducation": null,
+            "isRequisition": "Y",
+            "departmentName": "Inside Sales - IB Leads",
+            "jobCollaboratedUserId": null,
+            "referralEnabled": false,
+            "attachResume": false,
+            "degree": null,
+            "diversityList": [],
+            "reqNotes": "Approved",
+            "deptNameToSet": null,
+            "maxJobIndicateSalary": null,
+            "curatable": true,
+            "signals": [],
+            "curatedBy": null,
+            "modifiedDate": 1792415410000,
+            "jobTestSelecteds": null,
+            "requisitionApprovedDate": 1789989030000,
+            "projectId": null,
+            "shineJobId": null,
+            "yrsOfExperience": null,
+            "maxYearOfExperience": 0,
+            "roles": "Senior Executive",
+            "erEnableDate": null,
+            "lastAppliedOnDate": null,
+            "isEmployeeReferralIjpEnabled": null,
+            "pitemplateId": "InfoEdge_PI",
+            "defaultERCampaign": null,
+            "SRCompetency": null,
+            "jobType": "J",
+            "isCompanyLive": 1,
+            "showRole": false,
+            "submittedBy": null,
+            "desiredSkill": null,
+            "roleId": null,
+            "mandatorySkills": [
+              "Cold Calling",
+              "Outbound Telesales",
+              "Business Development"
+            ],
+            "userName": "Admin",
+            "jdSkillsKnownList": [
+              "Good communication skills",
+              "Active listening skills",
+              "Strong convincing skills",
+              "Client handling skills",
+              "Solution oriented",
+              "Effective problem solving skills"
+            ],
+            "jobVisibility": "Normal",
+            "createdBy": 13086950,
+            "currentSubLevel": null,
+            "mediumDescription": "<p><span data-teams=''true''>The objective of this role is to sell paid services to the already registered members of the platform via online product demonstrations. demonstrations.<strong><span style=''text-decoration: underline;''>Job Description:</span></strong>? Connect &amp; engage with the reg",
+            "srPrimarySkills": null,
+            "metaTitle": "Senior Executive Noida Cold Calling, Outbound Telesales, Business Development @Info Edge India Ltd",
+            "filterExpression": null,
+            "location": "Noida",
+            "shortDescriptionDb": null,
+            "privateJobShare": "N",
+            "currencyType": "INR",
+            "atsAction": null,
+            "eduqualification": null,
+            "shortDescriptionWithoutHtml": "The objective of this role is to sell paid services to the already registered members of the platform via online product demonstrations. demonstration...",
+            "tempDbId": null,
+            "jobCode": 16543,
+            "extRefId": null,
+            "userJobNotificationStatus": null,
+            "jobSpecificQuestions": null,
+            "id": 1183436,
+            "distributionList": null,
+            "isProcess": null,
+            "encodedRequisitionId": null,
+            "positionsRequired": 1,
+            "parsed_skills": [
+              "Good communication skills",
+              "Active listening skills",
+              "Strong convincing skills",
+              "Client handling skills",
+              "Solution oriented",
+              "Effective problem solving skills"
+            ],
+            "responsibilityList": [],
+            "featuredJob": 0,
+            "pincode": null,
+            "experienceUIField": null,
+            "reqFieldsValue": [
+              {
+                "fieldName": "Note",
+                "requisitionFieldLevel": 1,
+                "requisitionFieldSubLevel": null,
+                "values": "",
+                "id": null
+              }
+            ],
+            "officeLocationIds": null,
+            "jobSource": null,
+            "primaryRecruiterEmailId": null,
+            "locAgg": "Noida",
+            "isEventFromJobId": null,
+            "userRoleId": null,
+            "isVendorReferralEnabled": null,
+            "currentRequisitionApprovers": null,
+            "modifiedByUserId": 13086950,
+            "status": 1,
+            "scoreForRecommendation": 0,
+            "city": null,
+            "PITemplateId": "InfoEdge_PI",
+            "fulfilled": false,
+            "displayStatus": "Open",
+            "workFlowHistoryId": null,
+            "parsed_designation": "Senior Executive",
+            "isEventFromJob": null,
+            "applyTemplateId": null,
+            "isJobSpecificQuestionsEnabled": null,
+            "jobUrl": "senior-executive-noida-202609211640309",
+            "isCurated": false,
+            "createDate": "21-Sep-2026",
+            "deptFullCode": "infoedgeindialtd.Jeevansathi.Jeevansathi.Inside Sales.Inside Sales - IB Leads",
+            "showViewStatusIcon": false,
+            "jobTypeField": null,
+            "numeric5": null,
+            "numeric4": null,
+            "numeric3": null,
+            "skillsToEvaluate": null,
+            "numeric2": null,
+            "numeric1": null,
+            "reqFieldsRoleBased": null,
+            "jobTitle": "Senior Executive",
+            "isJobExpManuallyCreated": 0,
+            "metaDescription": "The objective of this role is to sell paid services to the already registered members of the platform via online product demonstrations. demonstrations.Job Description:? Connect & engage with the registered users (prospective clients or their parents) of jeevansathi.com via a dialer based calling process? Conduct online product demonstration to showcase, promote and sell personalized membership of the portal? Achieve sales targets by counselling the users and their family members on product features along with related services? Sell membership plans over the phone and update all the details accurately in the CRM software? Maintain call quality standards as per defined matrices? Develop constructive working relationships with focus on HNI users to achieve conversion on higher valued plansRequired Skills:? Good communication skills? Active listening skills? Strong convincing skills? Client handling skills? Comfortable with rotational offsDesired Skills:? Prior experience in inside sales/business development/voice process will be preferred? Solution oriented with effective problem solving skills? Knowledge of various online matrimonial portals will be an added advantage",
+            "minYrsOfExperience": null,
+            "maxJobSalary": null,
+            "srCompetency": null,
+            "lastAction": "A",
+            "srLocation": null,
+            "interviewQuestionnaireFields": null,
+            "requisitionApprovedByUser": 13086950,
+            "notificationEmails": null,
+            "jobEvalStatus": "READY",
+            "approvalWorkflowHistory": null,
+            "jobPriority": null,
+            "jobCalibrationId": null,
+            "otherStatusThree": null,
+            "currencyConfigurationId": null,
+            "SRBillability": null,
+            "text15": null,
+            "degreeSpecialization": null,
+            "text14": null,
+            "jobLocationRecord": [
+              {
+                "jobId": 1183436,
+                "country": "India",
+                "companyId": 15578,
+                "city": "Noida",
+                "formattedLocation": "Noida, Uttar Pradesh, India",
+                "location": "Noida",
+                "id": 1834552,
+                "state": "Uttar Pradesh"
+              }
+            ],
+            "shortDescription": null,
+            "endtDate": null,
+            "qualification": null,
+            "companyId": 15578,
+            "refNum": "15592",
+            "text11": null,
+            "parsed_keywords": [
+              "Sell paid services",
+              "Online product demonstrations",
+              "Achieve sales targets",
+              "Counselling users",
+              "Membership plans",
+              "CRM software",
+              "Call quality standards",
+              "HNI users",
+              "Constructive working relationships",
+              "Knowledge of matrimonial portals"
+            ],
+            "text10": "B1-C",
+            "text13": null,
+            "text12": null,
+            "DepartmentName": "Inside Sales - IB Leads",
+            "designation": "Senior Executive",
+            "positionsReq": "1",
+            "jobSpecificQuestionsTemplateId": null,
+            "levelDeptWise": false,
+            "newStatus": null,
+            "IJPtemplate": "InfoEdge_IJP",
+            "jdSkillsKnown": "Good communication skills, Active listening skills, Strong convincing skills, Client handling skills, Solution oriented, Effective problem solving skills",
+            "noOfViews": null,
+            "reasonForEdit": null,
+            "SRPrimarySkills": null,
+            "metaKeywords": "Cold Calling, Outbound Telesales, Business Development",
+            "categoryList": [],
+            "officeLocationId": null,
+            "skillSet": "Cold Calling, Outbound Telesales, Business Development",
+            "workflowName": "Infoedge_workflow",
+            "additionalDetails": null,
+            "requisitionApprovalDetails": [],
+            "currentLevel": null,
+            "my_join_field": {
+              "name": "job"
+            },
+            "isEmployeeReferralEnabled": null,
+            "jobCollabratorList": [],
+            "webserviceAPIResponseCode": null,
+            "employeeType": null,
+            "rolesList": [
+              "Senior Executive"
+            ],
+            "geoLocation": null,
+            "jobTypeFieldDisplayName": null,
+            "category": null
+          },
+          "_id": "1183436",
+          "sort": [
+            1792415410000
+          ],
+          "_score": null
+        }
+      ],
+      "facets": {
+        "Location": [
+          {
+            "doc_count": 2,
+            "key": "Ahmedabad"
+          },
+          {
+            "doc_count": 1,
+            "key": "Ahmedabad, Gujarat, India"
+          },
+          {
+            "doc_count": 1,
+            "key": "Aurangabad"
+          },
+          {
+            "doc_count": 34,
+            "key": "Bangalore"
+          },
+          {
+            "doc_count": 1,
+            "key": "Bareilly"
+          },
+          {
+            "doc_count": 1,
+            "key": "Baroda"
+          },
+          {
+            "doc_count": 1,
+            "key": "Bhopal"
+          },
+          {
+            "doc_count": 1,
+            "key": "Bhubaneswar"
+          },
+          {
+            "doc_count": 1,
+            "key": "Chandigarh"
+          },
+          {
+            "doc_count": 1,
+            "key": "Chandigarh, Chandigarh, India;Vadodara, Gujarat, India"
+          },
+          {
+            "doc_count": 4,
+            "key": "Chennai"
+          },
+          {
+            "doc_count": 3,
+            "key": "Coimbatore"
+          },
+          {
+            "doc_count": 3,
+            "key": "Dubai"
+          },
+          {
+            "doc_count": 2,
+            "key": "Faridabad"
+          },
+          {
+            "doc_count": 1,
+            "key": "Ghaziabad"
+          },
+          {
+            "doc_count": 3,
+            "key": "Goa"
+          },
+          {
+            "doc_count": 7,
+            "key": "Gurgaon"
+          },
+          {
+            "doc_count": 2,
+            "key": "Gurugram, Haryana, India"
+          },
+          {
+            "doc_count": 1,
+            "key": "Gwalior"
+          },
+          {
+            "doc_count": 7,
+            "key": "Hyderabad"
+          },
+          {
+            "doc_count": 1,
+            "key": "Jaipur, Rajasthan, India"
+          },
+          {
+            "doc_count": 1,
+            "key": "Jalandhar"
+          },
+          {
+            "doc_count": 3,
+            "key": "Kochi"
+          },
+          {
+            "doc_count": 1,
+            "key": "Kolkata"
+          },
+          {
+            "doc_count": 2,
+            "key": "Lucknow"
+          },
+          {
+            "doc_count": 1,
+            "key": "Madurai"
+          },
+          {
+            "doc_count": 28,
+            "key": "Mumbai"
+          },
+          {
+            "doc_count": 3,
+            "key": "Mumbai, Maharashtra, India"
+          },
+          {
+            "doc_count": 1,
+            "key": "Mysore"
+          },
+          {
+            "doc_count": 2,
+            "key": "Nagpur"
+          },
+          {
+            "doc_count": 1,
+            "key": "Nashik"
+          },
+          {
+            "doc_count": 1,
+            "key": "Nellore"
+          },
+          {
+            "doc_count": 2,
+            "key": "New Delhi"
+          },
+          {
+            "doc_count": 154,
+            "key": "Noida"
+          },
+          {
+            "doc_count": 1,
+            "key": "Noida, Uttar Pradesh, India"
+          },
+          {
+            "doc_count": 18,
+            "key": "Pune"
+          },
+          {
+            "doc_count": 1,
+            "key": "Qatar"
+          },
+          {
+            "doc_count": 1,
+            "key": "Ranchi"
+          },
+          {
+            "doc_count": 2,
+            "key": "Riyadh"
+          },
+          {
+            "doc_count": 1,
+            "key": "Solapur"
+          },
+          {
+            "doc_count": 1,
+            "key": "Trivandrum"
+          },
+          {
+            "doc_count": 2,
+            "key": "Vapi"
+          },
+          {
+            "doc_count": 1,
+            "key": "Vijayawada"
+          },
+          {
+            "doc_count": 1,
+            "key": "haryana"
+          }
+        ]
+      },
+      "totalCount": 1,
+      "hasMoreData": false,
+      "facetedSearchConfig": {
+        "companyId": "15578",
+        "configId": null,
+        "domain": "careers.infoedge.com",
+        "paginationHowMuch": "12",
+        "paginationRequired": true,
+        "sortBasedOnConfigCriteria": "modifiedDate",
+        "visibleNumberOfPages": "10",
+        "countLimitForLeadingWildCard": null,
+        "jobsCountResponse": "6",
+        "facets": [
+          {
+            "displayInColumn": false,
+            "displayInFacetList": true,
+            "displayInAdvancedSearch": false,
+            "fieldName": "location",
+            "displayName": "Location",
+            "type": "keyword",
+            "nestedPath": null,
+            "mainAgg": null,
+            "sortByAlphabeticalOrder": true,
+            "sortOrder": "asc",
+            "subAgg": null,
+            "scope": [
+              "careers.infoedge.com"
+            ],
+            "ranges": []
+          }
+        ],
+        "range": {
+          "displayInColumn": true,
+          "displayInFacetList": true,
+          "displayInAdvancedSearch": true,
+          "fieldName": null,
+          "displayName": "By Experience (in Years)",
+          "type": null,
+          "nestedPath": null,
+          "mainAgg": null,
+          "sortByAlphabeticalOrder": false,
+          "sortOrder": null,
+          "subAgg": null,
+          "scope": [],
+          "ranges": [
+            {
+              "from": "minYearOfExperience",
+              "to": "maxYearOfExperience",
+              "from_as_string": null,
+              "to_as_string": null,
+              "key": null,
+              "doc_count": null,
+              "rangeName": null
+            }
+          ]
+        },
+        "nestedFacets": [],
+        "facetsMapping": {
+          "Location": "location"
+        },
+        "nestedFacetsMapping": {},
+        "freeTextfieldsConfig": {
+          "terms": {
+            "string": [
+              "mandatorySkills",
+              "desiredSkillList",
+              "jdSkillsKnownList",
+              "directInfoList.role",
+              "directInfoList.skill",
+              "directInfoList.responsibility"
+            ]
+          },
+          "wildcard": {
+            "string": [
+              "jobTitle",
+              "locAgg",
+              "location",
+              "jobLocationRecord.country",
+              "jobLocationRecord.city"
+            ]
+          }
+        },
+        "booleanSearchConfig": {},
+        "columnConfig": {},
+        "bucketsCount": null,
+        "queryCriteria": {
+          "careersite": {
+            "not": [
+              {
+                "fieldName": "jobVisibiltyLevel",
+                "fieldValues": null,
+                "type": "matchPhrase",
+                "fieldType": "string",
+                "fieldValueString": "P",
+                "fieldValueBoolean": null,
+                "isDynamic": false,
+                "dynamicFieldName": null,
+                "nestedPath": null,
+                "from": null,
+                "to": null,
+                "dynamicQueryField1": null,
+                "dynamicQueryField2": null,
+                "nested": null
+              },
+              {
+                "fieldName": "jobVisibiltyLevel",
+                "fieldValues": null,
+                "type": "matchPhrase",
+                "fieldType": "string",
+                "fieldValueString": "C",
+                "fieldValueBoolean": null,
+                "isDynamic": false,
+                "dynamicFieldName": null,
+                "nestedPath": null,
+                "from": null,
+                "to": null,
+                "dynamicQueryField1": null,
+                "dynamicQueryField2": null,
+                "nested": null
+              }
+            ],
+            "or": [
+              {
+                "fieldName": "location",
+                "fieldValues": [],
+                "type": "terms",
+                "fieldType": "string",
+                "fieldValueString": null,
+                "fieldValueBoolean": null,
+                "isDynamic": false,
+                "dynamicFieldName": null,
+                "nestedPath": null,
+                "from": null,
+                "to": null,
+                "dynamicQueryField1": null,
+                "dynamicQueryField2": null,
+                "nested": null
+              }
+            ],
+            "and": [
+              {
+                "fieldName": "companyId",
+                "fieldValues": null,
+                "type": "term",
+                "fieldType": "string",
+                "fieldValueString": "15578",
+                "fieldValueBoolean": null,
+                "isDynamic": false,
+                "dynamicFieldName": null,
+                "nestedPath": null,
+                "from": null,
+                "to": null,
+                "dynamicQueryField1": null,
+                "dynamicQueryField2": null,
+                "nested": null
+              },
+              {
+                "fieldName": "status",
+                "fieldValues": null,
+                "type": "term",
+                "fieldType": "string",
+                "fieldValueString": "1",
+                "fieldValueBoolean": null,
+                "isDynamic": false,
+                "dynamicFieldName": null,
+                "nestedPath": null,
+                "from": null,
+                "to": null,
+                "dynamicQueryField1": null,
+                "dynamicQueryField2": null,
+                "nested": null
+              },
+              {
+                "fieldName": "jobType",
+                "fieldValues": null,
+                "type": "matchPhrase",
+                "fieldType": "string",
+                "fieldValueString": "J",
+                "fieldValueBoolean": null,
+                "isDynamic": false,
+                "dynamicFieldName": null,
+                "nestedPath": null,
+                "from": null,
+                "to": null,
+                "dynamicQueryField1": null,
+                "dynamicQueryField2": null,
+                "nested": null
+              },
+              {
+                "fieldName": null,
+                "fieldValues": null,
+                "type": "currentDateRange",
+                "fieldType": "string",
+                "fieldValueString": null,
+                "fieldValueBoolean": null,
+                "isDynamic": false,
+                "dynamicFieldName": null,
+                "nestedPath": null,
+                "from": null,
+                "to": null,
+                "dynamicQueryField1": "startDate",
+                "dynamicQueryField2": "endtDate",
+                "nested": null
+              }
+            ]
+          }
+        },
+        "bucketsOrder": null,
+        "bucketsIconLabel": null,
+        "appliesconf": null,
+        "appliesButtonToShow": null,
+        "projectionFields": null,
+        "enableTabOnViewDetailsButton": false,
+        "uiFields": [
+          {
+            "displayInColumn": true,
+            "displayInFacetList": true,
+            "displayInAdvancedSearch": true,
+            "fieldName": null,
+            "displayName": "Experience",
+            "type": "experience",
+            "nestedPath": null,
+            "mainAgg": null,
+            "sortByAlphabeticalOrder": false,
+            "sortOrder": null,
+            "subAgg": null,
+            "scope": [],
+            "ranges": [
+              {
+                "from": "minYearOfExperience",
+                "to": "maxYearOfExperience",
+                "from_as_string": null,
+                "to_as_string": null,
+                "key": null,
+                "doc_count": null,
+                "rangeName": null
+              }
+            ]
+          }
+        ],
+        "rankFeaturedJobsOnTop": false,
+        "enableVectorLocationSearch": false,
+        "fieldsToExclude": null
+      },
+      "bucketsData": [],
+      "campaignInfo": {}
+    },
+    "webserviceAPIResponseCode": null
+  },
+  "detail": {
+    "id": 1183436,
+    "jobCode": 16543,
+    "jobUrl": "senior-executive-noida-202609211640309",
+    "status": 1,
+    "jobVisibiltyLevel": "N",
+    "privateJobShare": "N",
+    "jobTitle": "Senior Executive",
+    "longDescription": "<p><span data-teams=''true''>The objective of this role is to sell paid services to the already registered members of the platform via online product demonstrations. demonstrations.<strong><span style=''text-decoration: underline;''>Job Description:</span></strong>? Connect &amp; engage with the registered users (prospective clients or their parents) of jeevansathi.com via a dialer based calling process? Conduct online product demonstration to showcase, promote and sell personalized membership of the portal? Achieve sales targets by counselling the users and their family members on product features along with related services? Sell membership plans over the phone and update all the details accurately in the CRM software? Maintain call quality standards as per defined matrices? Develop constructive working relationships with focus on HNI users to achieve conversion on higher valued plans<strong><span style=''text-decoration: underline;''>Required Skills:</span></strong>? Good communication skills? Active listening skills? Strong convincing skills? Client handling skills? Comfortable with rotational offs<strong><span style=''text-decoration: underline;''>Desired Skills:</span></strong>? Prior experience in inside sales/business development/voice process will be preferred? Solution oriented with effective problem solving skills? Knowledge of various online matrimonial portals will be an added advantage</span></p>",
+    "role": "",
+    "location": "Noida",
+    "maxYrsOfExperience": null,
+    "minYrsOfExperience": null,
+    "skillSet": "Cold Calling, Outbound Telesales, Business Development",
+    "desiredSkill": null,
+    "designation": "Senior Executive",
+    "companyId": 15578,
+    "lastAppliedOnDate": 1791184393000,
+    "jobSpecificQuestions": [],
+    "shortDescriptionDb": null,
+    "shortDescription": "<p><span data-teams=\"\" true''=\"\">The objective of this role is to sell paid services to the already registered members of the platform via online product </span></p>...",
+    "shortDescriptionWithoutHtml": "The objective of this role is to sell paid services to the already registered members of the platform via online product demonstrations. demonstration...",
+    "mediumDescriptionWithoutHtml": "The objective of this role is to sell paid services to the already registered members of the platform via online product demonstrations. demonstrations.Job Description:? Connect & engage with the registered users (prospective clients or their parents) of jeevansathi.com via a dialer based calling pr...",
+    "jobConfigurationData": {
+      "Description": "<p><span data-teams=''true''>The objective of this role is to sell paid services to the already registered members of the platform via online product demonstrations. demonstrations.<strong><span style=''text-decoration: underline;''>Job Description:</span></strong>? Connect &amp; engage with the registered users (prospective clients or their parents) of jeevansathi.com via a dialer based calling process? Conduct online product demonstration to showcase, promote and sell personalized membership of the portal? Achieve sales targets by counselling the users and their family members on product features along with related services? Sell membership plans over the phone and update all the details accurately in the CRM software? Maintain call quality standards as per defined matrices? Develop constructive working relationships with focus on HNI users to achieve conversion on higher valued plans<strong><span style=''text-decoration: underline;''>Required Skills:</span></strong>? Good communication skills? Active listening skills? Strong convincing skills? Client handling skills? Comfortable with rotational offs<strong><span style=''text-decoration: underline;''>Desired Skills:</span></strong>? Prior experience in inside sales/business development/voice process will be preferred? Solution oriented with effective problem solving skills? Knowledge of various online matrimonial portals will be an added advantage</span></p>",
+      "Skills Required": "Cold Calling, Outbound Telesales, Business Development",
+      "Location": "Noida",
+      "Job Title": "Senior Executive"
+    },
+    "tags": null,
+    "createdDate": 1789989029000,
+    "createDate": "21-Sep-2026",
+    "noOfApplications": 0,
+    "officeLocationId": null,
+    "locationDisplayForManageJobs": "Noida",
+    "locationSeparatedbySlash": "Noida",
+    "isModifiedDateConfiguredForCareerSiteView": false,
+    "userRoleId": null,
+    "roleId": null,
+    "jobType": "J",
+    "applyTemplateId": null,
+    "departmentId": 63228,
+    "jobSpecificQuestionsTemplateId": null,
+    "workMode": null,
+    "referenceNumber": "15592",
+    "companyName": null,
+    "officeLocation": null,
+    "careerSiteUrl": "careers.infoedge.com",
+    "department": {
+      "id": 63228,
+      "departmentName": "Inside Sales - IB Leads",
+      "companyId": 15578,
+      "departmentFromEmail": null,
+      "currencyConfigurationId": null,
+      "departmentreplyToEmail": null,
+      "workflowName": "Infoedge_workflow",
+      "confidentialWorkflowName": null,
+      "isWorkflowNameModifiedByUser": null,
+      "departmentCode": null,
+      "parentId": 62883,
+      "departmentFullcode": "infoedgeindialtd.Jeevansathi.Jeevansathi.Inside Sales.Inside Sales - IB Leads",
+      "parentFullcode": "infoedgeindialtd.Jeevansathi.Jeevansathi.Inside Sales",
+      "departmentLevel": null,
+      "jobDisplayConfigId": "661cd8736bd536802157ba0c",
+      "ApplyTemplatepId": "DEFAULT",
+      "PITemplateId": "InfoEdge_PI",
+      "IJPtemplate": "InfoEdge_IJP",
+      "applyTemplateIdForPI": null,
+      "enableEmployeeReferralByDefalut": false,
+      "documentTemplateDefinitionsId": "8a0782128e7396be018e7e6a5e610002",
+      "applyLimit": 1,
+      "coolingPeriodDuration": 3,
+      "requisitionNotifyEmail": null,
+      "sourceValidityConfigurationId": null,
+      "enableExcelUpload": 1
+    },
+    "departmentName": "Inside Sales - IB Leads",
+    "domainUrl": null,
+    "subDepartment": null,
+    "startDate": null,
+    "endtDate": null,
+    "featuredJob": 0,
+    "eduqualification": null,
+    "modifiedDate": 1792415410000,
+    "lastUpdatedTime": 1792535430877,
+    "curatedDate": null,
+    "yrsOfExperience": null,
+    "positionsReq": "1",
+    "minJobSalary": null,
+    "maxJobSalary": null,
+    "careersiteRedirectionUrl": null,
+    "modifiedDateConfiguredForCareerSiteView": false
+  },
+  "provenance": "First native row/detail from infoedge-native-001; response count adjusted to one-row fixture; candidateEmails removed. Full immutable raw HTTP receipts preserved separately."
+}

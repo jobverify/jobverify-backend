@@ -47,7 +47,9 @@ export const analyzePublishableJobs = (jobs = [], { now = new Date() } = {}) => 
     }
 
     const closingDate = normalizeLifecycleDate(job?.closingDate)
-    if (closingDate && startOfUtcDay(closingDate) < today) {
+    if (closingDate && (job.sourceClosingDateIsExact === true
+      ? closingDate <= resolvedNow
+      : startOfUtcDay(closingDate) < today)) {
       filterCounts.closed += 1
       return false
     }

@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import { runNativeFinacus } from './nativeRun.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import { FINACUS_SOLUTIONS_CATALOG } from './catalog.js'
 
@@ -158,7 +160,7 @@ const defaultFetchDetailText = (jobId) => {
   })
 }
 
-export const createFinacusSolutionsScraper = ({
+const createLegacyFinacusSolutionsScraper = ({
   maxJobs = null,
   now = () => new Date().toISOString(),
 } = {}) => ({
@@ -199,6 +201,15 @@ export const createFinacusSolutionsScraper = ({
 })
 
 export const run = async (options = {}) => createFinacusSolutionsScraper(options).run(options)
+
+export const createFinacusSolutionsScraper = (defaults = {}) => ({
+  async run(options = {}) {
+    const combined = {...defaults,...options}
+    if (!options.fetchText && !options.fetchDetailText) return runNativeFinacus(combined)
+    const jobs = await createLegacyFinacusSolutionsScraper(defaults).run(options)
+    return attachInventoryEvidence(jobs.map(job=>({...job,sourceListingComplete:false,sourceDetailComplete:false,sourceDetailStatus:'legacy-native-contract-unqualified'})),{status:'discovery-only',surface:CAREERS_PAGE_URL,firstParty:true,listingComplete:false,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason:'legacy-unreconciled-native-contract'})
+  },
+})
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

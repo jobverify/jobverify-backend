@@ -103,6 +103,7 @@ export const normalizeApiPortalConfig = (config = {}) => ({
   pagination: config.pagination || {},
   mapping: config.mapping || {},
   detail: { ...DEFAULT_DETAIL, ...(config.detail || {}) },
+  recordFilter: config.recordFilter || null,
   resultFilter: { ...DEFAULT_RESULT_FILTER, ...(config.resultFilter || {}) },
   inventoryValidation: config.inventoryValidation || null,
   rateLimit: config.rateLimit || null,

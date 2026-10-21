@@ -1,3 +1,5 @@
+import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
+import { runKulaPublicApi } from '../../scraper-support/shared/kulaPublicApi.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -208,8 +210,8 @@ const extractDescription = (value) => {
 
 export const buildSearchUrl = () => KULA_JOBS_URL
 
-export const extractSearchResults = (html) => (
-  extractKulaInventoryJobs(html)
+export const mapKulaJobs = (rows) => (
+  rows
     .map((row) => {
       const title = normalizeWhitespace(row?.title)
       const jobId = normalizeWhitespace(row?.id)
@@ -247,6 +249,8 @@ export const extractSearchResults = (html) => (
     .sort((left, right) => left.title.localeCompare(right.title))
 )
 
+export const extractSearchResults = html => mapKulaJobs(extractKulaInventoryJobs(html))
+
 const defaultFetchText = async (url) => {
   const response = await fetch(url, {
     headers: {
@@ -266,6 +270,7 @@ export const createLionsbotScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
+    if (!options.fetchText || options.fetchJson) return runKulaPublicApi({ source: 'lionsbot', mapKulaJobs }, { maxJobs, ...options })
     const fetchText = options.fetchText || defaultFetchText
     const careersHtml = await fetchText(CAREER_PAGE_URL)
 
@@ -292,23 +297,25 @@ export const createLionsbotScraper = ({
     return attachInventoryEvidence(selectedJobs.map((job) => ({
       ...job,
       source: SOURCE,
+      sourceListingComplete: false,
+      sourceDetailComplete: hasSourceDescription(job),
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: new Date().toISOString(),
     })), {
-      status: 'complete-inventory',
+      status: 'discovery-only',
       surface: KULA_JOBS_URL,
       firstParty: true,
-      listingComplete: true,
+      listingComplete: false,
       pagesFetched: 1,
-      reportedTotal: inventory.length,
+      reportedTotal: null,
       indiaFacetCount: jobs.length,
       verifiedAt: new Date().toISOString(),
-      reason: 'official-first-party-handoff-to-complete-kula-jobs-payload',
+      reason: 'observed-kula-page-whole-board-completeness-unverified',
     })
   },
 })
 
-export const run = async () => createLionsbotScraper().run()
+export const run = async (options = {}) => createLionsbotScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

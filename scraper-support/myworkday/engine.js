@@ -18,6 +18,7 @@ import { attachInventoryEvidence } from '../utils/inventoryEvidence.js'
 const DEFAULT_COUNTRY_FACET_PARAMETER = 'locationCountry'
 const DEFAULT_WORKDAY_DETAIL_FETCH_CONCURRENCY = 4
 const DEFAULT_WORKDAY_DETAIL_ENRICHMENT_BUDGET_MS = 30 * 1000
+const MAX_DEFAULT_WORKDAY_DETAIL_ENRICHMENT_BUDGET_MS = 120 * 1000
 const DEFAULT_WORKDAY_REQUEST_TIMEOUT_MS = 20 * 1000
 const DEFAULT_WORKDAY_RATE_LIMIT_RETRY_DELAY_MS = 5 * 1000
 const WORKDAY_JOBS_API_PAGE_SIZE = 20
@@ -850,6 +851,7 @@ const maybeDisableWorkdayDetailEnrichment = (detailPayload, detailEnrichmentStat
   }
 
   detailEnrichmentState.disabled = true
+  detailEnrichmentState.failureReason = getWorkdayDetailFallbackReason(detailPayload)
   if (!detailEnrichmentState.noticeLogged) {
     detailEnrichmentState.noticeLogged = true
     logRecoverableWorkdayNotice(`  [${source}] Workday detail requests became unstable; continuing with listing-backed data for the remaining jobs on this source.`)
@@ -1249,7 +1251,9 @@ const extractDetailedJobPayload = async (page, jobUrl, config, source) => {
     }
   } catch (error) {
     logRecoverableWorkdayNotice(`  [${source}] Failed to enrich details for ${jobUrl}: ${error.message}`)
-    return emptyDetailPayload()
+    const detailPayload = emptyDetailPayload()
+    Object.defineProperty(detailPayload, WORKDAY_DETAIL_FALLBACK_REASON, { value: error })
+    return detailPayload
   }
 }
 
@@ -1317,7 +1321,7 @@ export const extractWorkdayStructuredDetail = payload => {
   const sourceDescription = toPlainText(posting.jobDescription)
   if (!sourceDescription) return null
   const detail = extractWorkdayJobDetail(`<section data-automation-id="jobPostingDescription"><div>${posting.jobDescription}</div></section>`)
-  const locationRecords = [posting.location, ...(Array.isArray(posting.additionalLocations) ? posting.additionalLocations : [])]
+  const locationRecords = [resolveWorkdayCxsPrimaryLocation(posting), ...(Array.isArray(posting.additionalLocations) ? posting.additionalLocations : [])]
     .map((value, index) => ({
       label: typeof value === 'string' ? value.trim() : value?.descriptor?.trim(),
       countryScope: resolveWorkdayCxsPrimaryCountryScope(index === 0
@@ -1349,6 +1353,7 @@ const fetchDetailedJobPayload = async (
     circuitBreaker = workdayHostCircuitBreaker,
     requestScheduler = workdayRequestScheduler,
     jobsApiUrl = null,
+    nativePayload = undefined,
   } = {},
 ) => {
   try {
@@ -1359,15 +1364,20 @@ const fetchDetailedJobPayload = async (
     const structuredUrl = buildWorkdayDetailApiUrl(jobUrl, jobsApiUrl)
     if (structuredUrl) {
       try {
-        const { response, bodyText } = await fetchWorkdayResource(structuredUrl, {
-          headers: { accept: 'application/json', 'user-agent': WORKDAY_FETCH_USER_AGENT,
-            ...(session?.bootstrapUrl ? { referer: session.bootstrapUrl } : {}),
-            ...(session?.cookieHeader ? { cookie: session.cookieHeader } : {}) },
-        }, { signal, timeoutMs: requestTimeoutMs, source, requestScheduler, kind: 'detail' },
-        async response => ({ response, bodyText: await response.text() }))
-        if (response.status === 429 || response.status >= 500) throw buildWorkdayHttpFailureError(source, structuredUrl, response.status, response.headers)
-        const structured = response.ok ? extractWorkdayStructuredDetail(JSON.parse(bodyText)) : null
-        if (structured) { circuitBreaker.recordSuccess(jobUrl); return structured }
+        if (nativePayload !== undefined) {
+          const structured = extractWorkdayStructuredDetail(nativePayload)
+          if (structured) return structured
+        } else {
+          const { response, bodyText } = await fetchWorkdayResource(structuredUrl, {
+            headers: { accept: 'application/json', 'user-agent': WORKDAY_FETCH_USER_AGENT,
+              ...(session?.bootstrapUrl ? { referer: session.bootstrapUrl } : {}),
+              ...(session?.cookieHeader ? { cookie: session.cookieHeader } : {}) },
+          }, { signal, timeoutMs: requestTimeoutMs, source, requestScheduler, kind: 'detail' },
+          async response => ({ response, bodyText: await response.text() }))
+          if (response.status === 429 || response.status >= 500) throw buildWorkdayHttpFailureError(source, structuredUrl, response.status, response.headers)
+          const structured = response.ok ? extractWorkdayStructuredDetail(JSON.parse(bodyText)) : null
+          if (structured) { circuitBreaker.recordSuccess(jobUrl); return structured }
+        }
       } catch (error) {
         throwIfAborted(signal)
         const status = Number(error?.jobsApiHttpStatus ?? error?.httpStatus)
@@ -1474,6 +1484,12 @@ const buildWorkdayIncompleteScopeError = (source, jobUrl, cause) => {
   return error
 }
 
+const resolveWorkdayCxsPrimaryLocation = (info = {}) => (
+  info.location == null || (typeof info.location === 'string' && !info.location.trim())
+    ? info.jobRequisitionLocation?.descriptor
+    : info.location
+)
+
 const resolveWorkdayCxsPrimaryCountryScope = (info = {}) => {
   const countryValues = [
     typeof info.country === 'string' ? info.country : null,
@@ -1495,7 +1511,7 @@ const resolveWorkdayCxsPrimaryCountryScope = (info = {}) => {
 
 // The HTML can expose only a foreign primary address for a multi-location role.
 // CXS supplies the additional locations needed to decide whether India is included.
-const fetchWorkdayScopeLocations = async ({
+const fetchWorkdayScopePayload = async ({
   candidate, jobsApiUrl, source, session, signal, requestTimeoutMs,
   retryBaseDelayMs, circuitBreaker, requestScheduler,
 }) => {
@@ -1532,7 +1548,7 @@ const fetchWorkdayScopeLocations = async ({
         }
 
         const info = payload?.jobPostingInfo
-        const locations = [info?.location, ...(Array.isArray(info?.additionalLocations) ? info.additionalLocations : [])]
+        const locations = [resolveWorkdayCxsPrimaryLocation(info), ...(Array.isArray(info?.additionalLocations) ? info.additionalLocations : [])]
         const expectedCount = Number(candidate.location.match(/^(\d+)\s+locations?$/i)?.[1]) || 1
         if (
           !info || (info.additionalLocations != null && !Array.isArray(info.additionalLocations))
@@ -1542,30 +1558,11 @@ const fetchWorkdayScopeLocations = async ({
           throw new Error('CXS job location payload is missing or ambiguous')
         }
         const normalizedLocations = locations.map((value) => value.trim())
-        const uniqueLocations = [...new Set(normalizedLocations)]
         if (normalizedLocations.length < expectedCount) {
           throw new Error('CXS supplied ' + normalizedLocations.length + ' of ' + expectedCount + ' job locations')
         }
-        const primaryCountryScope = resolveWorkdayCxsPrimaryCountryScope(info)
-        const primaryLocation = uniqueLocations[0]
-        const additionalLocations = uniqueLocations.slice(1)
-        const hasIndiaScope = primaryCountryScope === 'india'
-          || isWorkdayJobInPublicIndiaScope({ locations: uniqueLocations })
-        const hasCompleteForeignScope = (
-          primaryCountryScope === 'foreign'
-          || isClearlyOutsidePublicIndiaScope({ location: primaryLocation })
-        ) && additionalLocations.every((location) => (
-          isClearlyOutsidePublicIndiaScope({ location })
-        ))
-        if (!hasIndiaScope && !hasCompleteForeignScope) {
-          throw new Error('CXS job locations do not establish India or foreign scope')
-        }
-        const scopedLocations = primaryCountryScope === 'india'
-          && !isWorkdayJobInPublicIndiaScope({ location: primaryLocation })
-          ? [primaryLocation + ', India', ...additionalLocations]
-          : uniqueLocations
         circuitBreaker.recordSuccess(detailApiUrl.href)
-        return scopedLocations
+        return payload
       } catch (error) {
         throwIfAborted(signal)
         if (shouldCountWorkdayHostCircuitFailure(error)) circuitBreaker.recordFailure(detailApiUrl.href, error)
@@ -1575,6 +1572,72 @@ const fetchWorkdayScopeLocations = async ({
     }
   } catch (error) {
     throwIfAborted(signal)
+    throw buildWorkdayIncompleteScopeError(source, candidate.canonicalLink, error)
+  }
+}
+
+const workdayLocationEvidenceKey = value => String(value || '').trim().toLowerCase()
+
+// Countries belong to the primary location only. Opaque secondary labels may
+// borrow country evidence solely from matching primary labels in this run.
+const buildWorkdayLocationCountryEvidence = candidates => {
+  const evidence = new Map()
+  for (const candidate of candidates) {
+    const info = candidate.scopePayload?.jobPostingInfo
+    const scope = resolveWorkdayCxsPrimaryCountryScope(info)
+    const countries = [info.country, info.jobRequisitionLocation?.country].filter(Boolean)
+    const fields = countries.map(country => typeof country === 'string'
+      ? { [/^[a-z]{2}$/i.test(country.trim()) ? 'code' : 'name']: workdayLocationEvidenceKey(country) }
+      : Object.fromEntries([['code', 'alpha2Code'], ['name', 'descriptor'], ['id', 'id']]
+        .flatMap(([key, property]) => typeof country[property] === 'string' && country[property].trim()
+          ? [[key, workdayLocationEvidenceKey(country[property])]] : [])))
+    const countryScopes = countries.map(country => resolveWorkdayCxsPrimaryCountryScope({ country })).filter(Boolean)
+    const conflict = new Set(countryScopes).size > 1 || fields.some((country, index) => fields.slice(index + 1).some(other => (
+      !['code', 'id'].some(key => country[key] && country[key] === other[key])
+      && ['code', 'name', 'id'].some(key => country[key] && other[key] && country[key] !== other[key])
+    )))
+    candidate.scopeCountryConflict = conflict
+    if (!scope && !conflict) continue
+    const identifiers = new Set(fields.flatMap(country => Object.entries(country).map(([key, value]) => key + ':' + value)))
+    if (!identifiers.size) continue
+    const label = workdayLocationEvidenceKey(resolveWorkdayCxsPrimaryLocation(info))
+    const previous = evidence.get(label)
+    if (!previous) evidence.set(label, { scope, identifiers, conflict })
+    else {
+      const strongConflict = ['code:', 'id:'].some(prefix => {
+        const oldValues = [...previous.identifiers].filter(value => value.startsWith(prefix))
+        const newValues = [...identifiers].filter(value => value.startsWith(prefix))
+        return oldValues.length > 0 && newValues.length > 0 && !newValues.some(value => previous.identifiers.has(value))
+      })
+      if (conflict || strongConflict || previous.scope !== scope || ![...identifiers].some(value => previous.identifiers.has(value))) previous.conflict = true
+      for (const value of identifiers) previous.identifiers.add(value)
+    }
+  }
+  return evidence
+}
+
+const resolveWorkdayScopeLocations = (candidate, countryEvidence, source) => {
+  try {
+    if (candidate.scopeCountryConflict) throw new Error('CXS primary country fields conflict')
+    const info = candidate.scopePayload.jobPostingInfo
+    const locations = [...new Set([resolveWorkdayCxsPrimaryLocation(info), ...(info.additionalLocations || [])].map(value => value.trim()))]
+    const primaryScope = resolveWorkdayCxsPrimaryCountryScope(info)
+    const scopes = locations.map((location, index) => {
+      if (index === 0 && primaryScope) return primaryScope
+      const known = countryEvidence.get(workdayLocationEvidenceKey(location))
+      if (known?.conflict) throw new Error('CXS location has conflicting current primary-country evidence: ' + location)
+      if (known) return known.scope
+      if (isWorkdayJobInPublicIndiaScope({ location })) return 'india'
+      if (isClearlyOutsidePublicIndiaScope({ location })) return 'foreign'
+      return null
+    })
+    if (!scopes.includes('india') && !scopes.every(scope => scope === 'foreign')) {
+      throw new Error('CXS job locations do not establish India or foreign scope')
+    }
+    const scopedLocations = locations.map((location, index) => scopes[index] === 'india' && !isWorkdayJobInPublicIndiaScope({ location })
+      ? location + ', India' : location)
+    return { locations: scopedLocations, indiaLocations: scopedLocations.filter((_location, index) => scopes[index] === 'india') }
+  } catch (error) {
     throw buildWorkdayIncompleteScopeError(source, candidate.canonicalLink, error)
   }
 }
@@ -1593,7 +1656,7 @@ const runWorkdayJobsApiScraper = async ({
   requestScheduler = workdayRequestScheduler,
   detailCircuitBreaker = new WorkdayHostCircuitBreaker(),
   detailEnrichmentState = { disabled: false, noticeLogged: false },
-  detailEnrichmentBudgetMs = DEFAULT_WORKDAY_DETAIL_ENRICHMENT_BUDGET_MS,
+  detailEnrichmentBudgetMs = null,
 }) => {
   throwIfAborted(signal)
   const countryFacetParameter =
@@ -1820,29 +1883,49 @@ const runWorkdayJobsApiScraper = async ({
 
     // Required geography checks use the source deadline. Resolve these before
     // optional HTML enrichment starts its separate, shorter budget.
+    const scopeCandidates = allCandidates.filter(({ location }) => !isWorkdayJobInPublicIndiaScope({
+      location, city: extractCity(location),
+    }))
     await mapWithConcurrency(
-      allCandidates.filter(({ location }) => !isWorkdayJobInPublicIndiaScope({
-        location, city: extractCity(location),
-      })),
+      scopeCandidates,
       resolveWorkdayDetailFetchConcurrency(process.env.WORKDAY_DETAIL_FETCH_CONCURRENCY, config.detailFetchConcurrency),
       async (candidate) => {
-        candidate.scopeLocations = await fetchWorkdayScopeLocations({
+        candidate.scopePayload = await fetchWorkdayScopePayload({
           candidate, jobsApiUrl, source, session, signal, requestTimeoutMs,
           retryBaseDelayMs, circuitBreaker: detailCircuitBreaker, requestScheduler,
         })
       },
     )
+    const countryEvidence = buildWorkdayLocationCountryEvidence(scopeCandidates)
+    for (const candidate of scopeCandidates) {
+      const scope = resolveWorkdayScopeLocations(candidate, countryEvidence, source)
+      candidate.scopeLocations = scope.locations
+      candidate.scopeIndiaLocations = scope.indiaLocations
+    }
 
     // Finish listing before optional enrichment so a slow detail page cannot
     // prevent later job IDs from being included in the snapshot.
+    // Only the implicit allowance scales with remaining native detail work.
+    // Cached required-scope descriptions need no extra requests. Explicit
+    // option/config/env budgets, including zero, retain their exact limits.
+    const pendingDetailCount = allCandidates.filter(candidate => (
+      (!candidate.scopeIndiaLocations || candidate.scopeIndiaLocations.length > 0)
+      && !extractWorkdayStructuredDetail(candidate.scopePayload)
+    )).length
+    const pacedStartIntervalMs = Number.isFinite(requestScheduler?.minIntervalMs)
+      ? Math.max(0, requestScheduler.minIntervalMs) : 0
+    const effectiveDetailBudgetMs = detailEnrichmentBudgetMs ?? Math.min(
+      MAX_DEFAULT_WORKDAY_DETAIL_ENRICHMENT_BUDGET_MS,
+      DEFAULT_WORKDAY_DETAIL_ENRICHMENT_BUDGET_MS + pendingDetailCount * pacedStartIntervalMs,
+    )
     const detailController = new AbortController()
     const budgetError = new Error(`[${source}] Workday detail enrichment budget exhausted`)
     budgetError.name = 'WorkdayDetailBudgetExceededError'
     const detailSignal = signal
       ? AbortSignal.any([signal, detailController.signal])
       : detailController.signal
-    const detailBudgetTimer = setTimeout(() => detailController.abort(budgetError), detailEnrichmentBudgetMs)
-    if (detailEnrichmentBudgetMs === 0) detailController.abort(budgetError)
+    const detailBudgetTimer = setTimeout(() => detailController.abort(budgetError), effectiveDetailBudgetMs)
+    if (effectiveDetailBudgetMs === 0) detailController.abort(budgetError)
 
     try {
       const detailedJobs = await mapWithConcurrency(
@@ -1851,12 +1934,19 @@ const runWorkdayJobsApiScraper = async ({
           process.env.WORKDAY_DETAIL_FETCH_CONCURRENCY,
           config.detailFetchConcurrency,
         ),
-        async ({ job, canonicalLink, location, scopeLocations }) => {
+        async ({ job, canonicalLink, location, scopeLocations, scopeIndiaLocations, scopePayload }) => {
           throwIfAborted(signal)
+          if (scopeIndiaLocations && scopeIndiaLocations.length === 0) return null
           if (scopeLocations && !isWorkdayJobInPublicIndiaScope({ location, locations: scopeLocations })) return null
-          let detailPayload
-          if (detailEnrichmentState.disabled || detailController.signal.aborted) {
-            detailPayload = createFallbackDetailPayload(detailController.signal.reason)
+          let detailPayload = scopePayload ? extractWorkdayStructuredDetail(scopePayload) : null
+          if (detailPayload) {
+            // The required native scope phase already verified these addresses,
+            // including India secondaries whose labels lack a country name.
+            detailPayload = { ...detailPayload, locations: scopeLocations,
+              indiaScopeLocations: scopeIndiaLocations }
+          } else if (detailEnrichmentState.disabled || detailController.signal.aborted) {
+            detailPayload = createFallbackDetailPayload(detailEnrichmentState.disabled
+              ? detailEnrichmentState.failureReason : detailController.signal.reason)
           } else {
             try {
               detailPayload = await fetchDetailedJobPayload(
@@ -1869,6 +1959,7 @@ const runWorkdayJobsApiScraper = async ({
                   circuitBreaker: detailCircuitBreaker,
                   requestScheduler,
                   jobsApiUrl,
+                  nativePayload: scopePayload,
                 },
               )
             } catch (error) {
@@ -1878,7 +1969,7 @@ const runWorkdayJobsApiScraper = async ({
             }
           }
           maybeDisableWorkdayDetailEnrichment(detailPayload, detailEnrichmentState, source)
-          const structuredIndiaLocations = detailPayload.indiaScopeLocations
+          const structuredIndiaLocations = scopeIndiaLocations || detailPayload.indiaScopeLocations
           if (Array.isArray(structuredIndiaLocations) && structuredIndiaLocations.length === 0) return null
           const detailedLocations = structuredIndiaLocations || scopeLocations || resolveWorkdayLocationsFromSummary(location, detailPayload)
 
@@ -1888,6 +1979,9 @@ const runWorkdayJobsApiScraper = async ({
 
           const indiaScopeLocations = (structuredIndiaLocations || scopeLocations)?.filter((value) => isWorkdayJobInPublicIndiaScope({ location: value }))
           const displayLocation = indiaScopeLocations?.length ? indiaScopeLocations.join(' / ') : location
+          const sourceDetailComplete = [detailPayload.sourceDescription, detailPayload.jobDescription]
+            .some(value => typeof value === 'string' && value.trim())
+          const detailFailureReason = getWorkdayDetailFallbackReason(detailPayload)
           const workdayJob = {
             jobId: extractJobId(canonicalLink),
             title: job.title,
@@ -1901,6 +1995,10 @@ const runWorkdayJobsApiScraper = async ({
             postedAt: parsePostedOn(job.postedOn || detailPayload.postingDate),
             closingDate: null,
             jobDescription: detailPayload.jobDescription,
+            sourceDetailComplete,
+            ...(!sourceDetailComplete && { sourceDetailFailureKind:
+              detailFailureReason?.name === 'WorkdayDetailBudgetExceededError' ? 'budget-exhausted'
+                : detailFailureReason ? 'upstream' : 'missing-content' }),
             ...(detailPayload.sourceDescription && { sourceDescription: detailPayload.sourceDescription }),
             minimumQualification: detailPayload.minimumQualification,
             preferredQualification: detailPayload.preferredQualification,
@@ -1970,7 +2068,7 @@ export const runWorkdayScraper = async (options) => {
   ].filter((value) => value != null && value !== '')
     .map(Number)
     .find((value) => Number.isFinite(value) && value >= 0)
-    ?? DEFAULT_WORKDAY_DETAIL_ENRICHMENT_BUDGET_MS
+    ?? null
   throwIfAborted(signal)
 
   const countryId = Object.prototype.hasOwnProperty.call(config, 'locationCountry')

@@ -1,18 +1,25 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import { createWorkablePublicApiScraper } from '../../scraper-support/utils/workablePublicApi.js'
+import ALLUCENT_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "allucent"
 export const COMPANY = "Allucent"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-07-29"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 08 exact-name sentinel for Allucent added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const PROVIDER_METADATA = ALLUCENT_CATALOG
+export const CAREERS_URL = 'https://www.allucent.com/careers'
+export const WORKABLE_BOARD_URL = 'https://apply.workable.com/allucent/'
+export const DISPOSITION = 'live-parser'
+export const VERIFIED_ON = null
+export const VERIFIED_SURFACE_SUMMARY = PROVIDER_METADATA.verifiedSurfaceSummary
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run = async (options = {}) => createWorkablePublicApiScraper({
+  source: SOURCE, company: COMPANY, tenant: 'allucent',
+  accountUid: '7e3163b7-6595-472a-8fb6-7424218ed72b',
+  careersUrl: CAREERS_URL, companyDomain: 'allucent.com', boardIdentityVerified: true,
+}).run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

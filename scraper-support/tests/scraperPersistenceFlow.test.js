@@ -51,6 +51,66 @@ const setMongoUri = (value = 'mongodb://127.0.0.1:27017/jobverify-test') => {
   }
 }
 
+test('detail-incomplete success never advances complete-check status or replaces complete counts', async () => {
+  const restore = setReadyState(1)
+  const original = ScraperStatus.findOneAndUpdate
+  let captured
+  ScraperStatus.findOneAndUpdate = async (_filter, update) => { captured = update; return {} }
+  const at = new Date().toISOString()
+  const inventoryEvidence = { status: 'complete-inventory', firstParty: true, listingComplete: true,
+    pagesFetched: 1, reportedTotal: 192, surface: 'https://example.com/jobs', verifiedAt: at }
+  const detailHealth = { complete: false, inspectedJobs: 192, incompleteJobs: 79,
+    missingDescriptions: 79, failureKinds: { 'detail-budget-exhausted': 79 } }
+  try {
+    for (const diagnostics of [
+      { detailHealth, filteredEmptyDescription: 79, inventoryEvidence },
+      { filteredEmptyDescription: 79, inventoryEvidence },
+      { detailHealth, filteredEmptyDescription: 0, inventoryEvidence },
+      { detailHealth, filteredEmptyDescription: 0 },
+    ]) {
+      await upsertScraperStatus('detail-health-source', { success: true, jobs: 192, eligibleJobs: 113,
+        attemptedAt: at, completedAt: at, ...diagnostics })
+      assert.equal(Object.hasOwn(captured.$set, 'lastCompleteCheckAt'), false)
+      assert.equal(Object.hasOwn(captured.$set, 'lastCompleteJobsFound'), false)
+      assert.equal(Object.hasOwn(captured.$set, 'lastJobsFound'), false)
+      assert.ok(captured.$set.lastPartialAt instanceof Date)
+      assert.equal(captured.$set.latestAttempt.detailHealth, diagnostics.detailHealth ?? null)
+      if (diagnostics.inventoryEvidence) assert.equal(captured.$set.latestAttempt.inventoryEvidence.listingComplete, true)
+    }
+    await upsertScraperStatus('detail-health-source', { success: true, jobs: 192, eligibleJobs: 192,
+      completedAt: at, inventoryEvidence, detailHealth: { complete: true, inspectedJobs: 192,
+        incompleteJobs: 0, missingDescriptions: 0, failureKinds: {} }, filteredEmptyDescription: 0 })
+    assert.equal(captured.$set.lastCompleteCheckAt.toISOString(), at)
+    assert.equal(captured.$set.lastCompleteJobsFound, 192)
+  } finally {
+    ScraperStatus.findOneAndUpdate = original
+    restore()
+  }
+})
+
+test('run history persists detail health independently of complete enumeration evidence', async () => {
+  const restore = setReadyState(1)
+  const original = ScraperRun.create
+  let captured
+  ScraperRun.create = async document => { captured = document; return {} }
+  const detailHealth = { complete: false, inspectedJobs: 2, incompleteJobs: 1,
+    missingDescriptions: 1, failureKinds: { 'missing-content': 1 } }
+  try {
+    await writeScraperRun(new Date(), { 'detail-health-source': { success: true, jobs: 2, eligibleJobs: 1,
+      detailHealth, inventoryEvidence: { listingComplete: true }, filteredEmptyDescription: 1 } })
+    assert.deepEqual(captured.sources['detail-health-source'].detailHealth, detailHealth)
+    const model = new ScraperRun(captured)
+    assert.deepEqual(model.sources.get('detail-health-source').detailHealth, detailHealth)
+    assert.equal(model.sources.get('detail-health-source').inventoryEvidence.listingComplete, true)
+    const legacy = new ScraperRun({ sources: { legacy: { success: true } }, overall: { totalJobs: 0,
+      sourcesSucceeded: 1, sourcesFailed: 0 } })
+    assert.equal(legacy.sources.get('legacy').detailHealth, null)
+  } finally {
+    ScraperRun.create = original
+    restore()
+  }
+})
+
 test('runAll preserves the existing jobs collection during a full live run', async () => {
   const restoreReadyState = setReadyState(1)
   const restoreMongoUri = setMongoUri()

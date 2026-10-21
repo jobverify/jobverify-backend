@@ -8,6 +8,12 @@ import { classifyProviderImplementation } from './reportScriptCatalogTopology.js
 const backend = fileURLToPath(new URL('../', import.meta.url))
 const worker = fileURLToPath(new URL('./catalogExtractionWorker.js', import.meta.url))
 
+export function resolveExtractionAuditTimeout(value = 45000) {
+  const timeout = Number(value)
+  if (!Number.isInteger(timeout) || timeout < 1000 || timeout > 600000) throw new Error('Audit timeout must be between1,000 and600,000 milliseconds')
+  return timeout
+}
+
 export function selectCatalogExtractionAuditProviders(catalog, {
   runtime = null, sourceIds = null, includePublished = false, classifyImplementation = classifyProviderImplementation,
 } = {}) {
@@ -23,6 +29,8 @@ export function selectCatalogExtractionAuditProviders(catalog, {
 }
 
 export function runIsolatedExtraction(provider, { outputDirectory, timeoutMs = 45000 } = {}) {
+  timeoutMs = resolveExtractionAuditTimeout(timeoutMs)
+  const attemptedAt = new Date().toISOString()
   fs.mkdirSync(outputDirectory, { recursive: true })
   return new Promise(resolve => {
     let settled = false
@@ -42,7 +50,8 @@ export function runIsolatedExtraction(provider, { outputDirectory, timeoutMs = 4
       child.kill()
       resolve(result)
     }
-    const failure = outcome => ({ source: provider.source, completedAt: new Date().toISOString(), outcome,
+    const failure = outcome => ({ source: provider.source, attemptedAt, completedAt: new Date().toISOString(), outcome,
+      mode: 'isolated-direct-live-extraction-no-database', productionWrites: false,
       rawJobs: null, indiaJobs: null, eligibleJobs: null, inventoryEvidence: null })
     const timer = setTimeout(() => finish(failure('extraction-timeout')), timeoutMs)
     child.once('message', finish)
@@ -59,7 +68,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   const output = path.resolve(option('--output') || '../artifacts/catalog-extractions')
   const concurrency = Number(option('--concurrency') || 8)
   if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 12) throw new Error('Concurrency must be between 1 and 12')
-  const ids = option('--sources')?.split(',')
+  const timeoutMs = resolveExtractionAuditTimeout(option('--timeout-ms') ?? undefined)
+  if (option('--sources') && option('--sources-file')) throw new Error('Choose --sources or --sources-file')
+  const ids = option('--sources-file') ? JSON.parse(fs.readFileSync(path.resolve(option('--sources-file')), 'utf8')) : option('--sources')?.split(',')
+  if (ids && (!Array.isArray(ids) || ids.some(id => typeof id !== 'string'))) throw new Error('Source IDs must be a JSON string array')
   const providers = selectCatalogExtractionAuditProviders(getScraperCatalog(), {
     runtime, sourceIds: ids, includePublished: args.includes('--include-published'),
   })
@@ -90,7 +102,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
       while (index < providers.length) {
         const provider = providers[index++]
         if (completed.has(provider.source)) continue
-        const result = await runIsolatedExtraction(provider, { outputDirectory: path.join(output, 'isolated', provider.source) })
+        const result = await runIsolatedExtraction(provider, { outputDirectory: path.join(output, 'isolated', provider.source), timeoutMs })
         fs.writeFileSync(path.join(output, 'sources', `${provider.source}.json`), JSON.stringify(result, null, 2) + '\n')
         completed.set(provider.source, result)
       }

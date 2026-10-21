@@ -11,6 +11,23 @@ import { saveToDB } from '../scraper-support/utils/saveToDB.js'
 import { upsertScraperStatus } from '../scraper-support/utils/scraperPersistence.js'
 import { collectPublishingGapSnapshot } from './collectPublishingGapSnapshot.js'
 import { refreshJobDatasetSummary } from '../src/services/jobDatasetSummaryService.js'
+import { extractionDetailHealth } from '../scraper-support/utils/extractionDetailHealth.js'
+
+export const isSuccessfulPublishingGapTrial = (trial, { source, now = new Date() } = {}) => {
+  if (typeof source !== 'string' || !/^[a-z0-9][a-z0-9._-]{0,127}$/i.test(source)
+    || trial?.source !== source || !Array.isArray(trial.jobs) || !trial.jobs.length
+    || trial.jobs.some(job => !job || typeof job !== 'object' || Array.isArray(job)
+      || (job.source != null && job.source !== source) || job.sourceListingComplete === false)
+    || !extractionDetailHealth(trial.jobs).complete
+    || !isFreshCompleteInventoryEvidence(trial.inventoryEvidence, { now })
+    || trial.inventoryEvidence.status !== 'complete-inventory'
+    || trial.result?.success === false || trial.result?.softFailure === true) return false
+  const nativeExtraction = trial.outcome === 'complete-positive-extraction'
+    && ['browser-captured-live-http-replay', 'isolated-direct-live-extraction-no-database',
+      'captured-live-public-http-extraction-no-database'].includes(trial.mode)
+    && trial.productionWrites === false
+  return trial.result?.success === true || nativeExtraction
+}
 
 export const planPublishingGapRollout = ({ trials, validation, expectedSources = 50 }) => {
   if (!Number.isInteger(expectedSources) || expectedSources < 1) throw new Error('Positive expected source count required')
@@ -36,8 +53,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     const relative = path.relative(directory, file)
     if (relative.startsWith('..') || path.isAbsolute(relative)) throw new Error('Trial path escapes its directory')
     const trial = JSON.parse(fs.readFileSync(file, 'utf8'))
-    if (trial.source !== item.source || trial.result?.success !== true || !Array.isArray(trial.jobs) || !trial.jobs.length
-      || !isFreshCompleteInventoryEvidence(trial.inventoryEvidence)) throw new Error(`Fresh successful extraction required for ${item.source}`)
+    if (!isSuccessfulPublishingGapTrial(trial, { source: item.source })) throw new Error(`Fresh successful extraction required for ${item.source}`)
     return trial
   })
   const plan = planPublishingGapRollout({ trials, validation,
@@ -52,13 +68,15 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     if (!process.env.MONGO_URI) throw new Error('Database configuration is unavailable')
     const destination = path.resolve(option('--output') || '../artifacts/publishing-gap/rollout.json')
     fs.mkdirSync(path.dirname(destination), { recursive: true })
-    const progress = { startedAt: new Date().toISOString(), mode: 'targeted-live-upsert', batchSize: 10, rows: [], batches: [], completed: false }
+    const progress = { startedAt: new Date().toISOString(), mode: 'targeted-live-upsert', batchSize: 10, phase: 'connecting', rows: [], batches: [], completed: false }
     const writeProgress = () => fs.writeFileSync(destination, `${JSON.stringify(progress, null, 2)}\n`)
     try {
       configureMongoDns()
       await mongoose.connect(process.env.MONGO_URI, { autoIndex: false, autoCreate: false, serverSelectionTimeoutMS: 10000 })
+      progress.phase = 'reading-before-snapshot'
       const before = await collectPublishingGapSnapshot()
       if (!before.databaseAvailable) throw new Error('Current inventory could not be read')
+      progress.phase = 'checking-administrator-settings'
       if (before.statuses.some(status => status.isActive === false && trials.some(trial => trial.source === status.source))) throw new Error('An administrator has disabled a selected source')
       progress.beforeCompanies = before.publicCompanyNames.length
       fs.writeFileSync(path.join(path.dirname(destination), 'before-rollout-runtime.json'), `${JSON.stringify(before, null, 2)}\n`)
@@ -66,6 +84,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
       for (const batch of plan.batches) {
         for (const source of batch) {
           const trial = trials.find(item => item.source === source)
+          progress.phase = 'upserting-source'
+          progress.currentSource = source
+          writeProgress()
           // Targeted upserts cannot remove existing jobs or dispatch alerts.
           const result = await saveToDB(trial.jobs, source, { enrichPublicExperience: false, enqueueAlerts: false,
             descriptionRewriteMode: 'off', replaceExisting: false, refreshDatasetSummary: false })
@@ -76,6 +97,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
           progress.rows.push({ source, inserted: result.inserted, updated: result.updated, eligibleJobs: analysis.eligibleJobs })
           writeProgress()
         }
+        progress.phase = 'verifying-batch-visibility'
         const snapshot = await collectPublishingGapSnapshot()
         if (!snapshot.databaseAvailable) throw new Error('Post-batch visibility could not be verified')
         const outcomes = batch.map(source => ({ source, visibleJobs: snapshot.inventory.find(row => row.source === source)?.visibleJobs || 0 }))
@@ -84,12 +106,15 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
         if (outcomes.some(row => row.visibleJobs < 1)) throw new Error('A selected source failed public visibility verification')
         console.log(JSON.stringify({ batch: progress.batches.length, passedSources: outcomes.length, publicCompanies: snapshot.publicCompanyNames.length }))
       }
+      progress.phase = 'refreshing-public-summary'
       await refreshJobDatasetSummary()
+      progress.phase = 'reading-final-snapshot'
       const after = await collectPublishingGapSnapshot()
       if (!after.databaseAvailable) throw new Error('Final public inventory unavailable')
       progress.afterCompanies = after.publicCompanyNames.length
       progress.companiesChange = progress.afterCompanies - progress.beforeCompanies
       progress.completed = true
+      progress.phase = 'complete'
       fs.writeFileSync(path.join(path.dirname(destination), 'after-rollout-runtime.json'), `${JSON.stringify(after, null, 2)}\n`)
     } catch (error) {
       progress.error = error?.code ? `Rollout stopped: ${error.code}` : 'Rollout stopped; inspect completed batch outcomes before retrying'

@@ -1,14 +1,14 @@
 # LFM and empty-description verification
 
-Verified locally on 11 October 2026. No GitHub workflow was dispatched, repository variable changed, or production MongoDB data written.
+The checks below were recorded locally on 11 October 2026 with the previous checkpoint. They predate the 21 October 2026 switch to LFM2.5-1.2B-Instruct QAD Q4_0 and do not verify the new checkpoint. The model switch was not tested locally; GitHub pipeline validation is pending. No GitHub workflow was dispatched, repository variable changed, or production MongoDB data written for this switch.
 
 ## Result
 
-The sole description rewriting model is **LiquidAI/LFM2.5-230M-GGUF**, using the pinned LFM2.5-230M-QAD-Q4_0.gguf artifact (149,081,056 bytes). The production worker uses the LFM Jinja chat template and four CPU threads. The workflow has separate LFM model and decision cache keys; request identities prevent reuse of another model's decisions. Runtime, configuration, documentation and admin fixtures contain no old rewrite model references.
+The configured description rewriting model is **LiquidAI/LFM2.5-1.2B-Instruct-GGUF**, using the pinned LFM2.5-1.2B-Instruct-QAD-Q4_0.gguf artifact (695,755,488 bytes). The production worker uses the LFM Jinja chat template and up to four CPU threads, with a 128 MiB prompt-cache cap. The workflow has fresh model and decision cache keys; request identities prevent reuse of another model's decisions.
 
 The generic publishing filter rejects absent, null, blank, spacing-only and empty-HTML employer descriptions before enrichment, persistence and rewrite queueing. Explicitly empty source content cannot fall back to generated display text. Historical records with empty sources are excluded from public queries and counts. Filter diagnostics and resume checkpoints include filteredEmptyDescription. An empty later scrape cannot replace the last valid stored description; raw snapshots remain available for diagnostics.
 
-## Checks
+## Historical checks for the previous checkpoint
 
 | Check | Result |
 | --- | --- |

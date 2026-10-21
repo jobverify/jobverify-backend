@@ -505,20 +505,28 @@ export const saveToDB = async (jobs, source, options = {}) => {
 
   let shouldRefreshDatasetSummary = operations.length > 0
   const incompleteListing = jobs.some((job) => job?.sourceListingComplete === false)
+  // Enumeration can be complete while role details are not. Eligibility drops
+  // those roles before fingerprints are built, so that reduced set must never
+  // mark their previously saved versions as unseen.
+  const incompleteDetails = jobs.some((job) => job?.sourceDetailComplete === false)
+    || filterCounts.emptyDescription > 0
+  const incompleteSource = incompleteListing || incompleteDetails
   const authorizedEmptyLifecycle = currentFingerprints.length === 0
     && options.authoritativeEmpty === true
 
   if (
     options.replaceExisting !== false
-    && incompleteListing
+    && incompleteSource
   ) {
     result.staleCheckSkipped = true
-    result.staleCheckReason = 'Incomplete source listing; previous vacancies were preserved without recording lifecycle misses.'
+    result.staleCheckReason = incompleteDetails
+      ? 'Incomplete source role details; previous vacancies were preserved without recording lifecycle misses.'
+      : 'Incomplete source listing; previous vacancies were preserved without recording lifecycle misses.'
   }
 
   if (
     options.replaceExisting !== false
-    && !incompleteListing
+    && !incompleteSource
     && currentFingerprints.length === 0
     && !authorizedEmptyLifecycle
   ) {
@@ -529,7 +537,7 @@ export const saveToDB = async (jobs, source, options = {}) => {
 
   if (
     options.replaceExisting !== false
-    && !incompleteListing
+    && !incompleteSource
     && (currentFingerprints.length > 0 || authorizedEmptyLifecycle)
   ) {
     const unseenFilter = options.replaceAllJobs

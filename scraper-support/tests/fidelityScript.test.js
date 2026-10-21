@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+import {gunzipSync} from 'node:zlib'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -128,25 +130,5 @@ test('extractJobsFromFeed parses the official Fidelity India RSS feed and merges
   )
 })
 
-test('run fetches the official Fidelity RSS feed once and decorates shared runner fields', async () => {
-  const fidelity = await loadFidelityModule()
-  const requestedUrls = []
-
-  const jobs = await fidelity.createFidelityScraper().run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === fidelity.JOBS_XML_URL) return jobsXml
-      throw new Error(`Unexpected Fidelity URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [fidelity.JOBS_XML_URL])
-  assert.equal(jobs.length, 2)
-  assert.equal(jobs[0].company, 'Fidelity Investments')
-  assert.equal(jobs[0].source, 'fidelity')
-  assert.equal(
-    jobs[0].link,
-    'https://jobs.fidelity.com/in/jobs/2128596/software-engineer/',
-  )
-  assert.match(jobs[0].scrapedAt, /^\d{4}-\d{2}-\d{2}T/)
-})
+const nativeOptions=(change=()=>{})=>{const f=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/fidelity/fixtures/runtime-native-20261021.json.gz',import.meta.url)))),used=new Set();return{now:f.checkedAt,fetchPage:async url=>{const at=f.packets.findIndex((p,i)=>!used.has(i)&&p.url===url);assert.ok(at>=0,'Uncaptured request '+url);used.add(at);const p=structuredClone(f.packets[at]);change(p);return{status:p.status,url:p.finalURL,body:p.body}}}}
+test('ordinary Fidelity runtime reconciles current identity,board,feed,full details and stable final inventory',async()=>{const fidelity=await loadFidelityModule(),o=nativeOptions(),jobs=await fidelity.createFidelityScraper().run(o);assert.equal(jobs.length,14);assert.ok(jobs.every(j=>j.source==='fidelity'&&j.company==='Fidelity Investments'&&j.scrapedAt===o.now&&j.sourceDetailComplete&&!j.sourceListingComplete))})

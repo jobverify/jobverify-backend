@@ -195,10 +195,15 @@ export function createApp({ isReady = () => mongoose.connection.readyState === 1
     res.send("Hello from the Jobverify Backend!");
   });
   app.get("/health", (_req, res) => {
+    const deploymentCommit = env.RENDER_GIT_COMMIT;
+    res.set("Cache-Control", "no-store");
     res.status(200).json({
       status: "ok",
       uptimeSeconds: Math.round(process.uptime()),
       timestamp: new Date().toISOString(),
+      ...(typeof deploymentCommit === "string" && deploymentCommit.length === 40 && /^[a-f0-9]{40}$/i.test(deploymentCommit)
+        ? { deploymentCommit }
+        : {}),
     });
   });
 
