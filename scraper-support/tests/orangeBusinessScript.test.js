@@ -28,6 +28,9 @@ const searchHtml = `<html><body><script>phApp.ddo = ${JSON.stringify({
           type: 'Full time',
           postedDate: '2026-07-09',
           descriptionTeaser: 'Build OSS solutions for enterprise customers.',
+          // Current native listings provide the application handoff explicitly;
+          // a detail may repeat it only after matching the listing identity.
+          applyUrl: 'https://careers-orange.icims.com/jobs/27990/oss-solution-architect/job/login',
         },
         {
           reqId: 'ICM-587015',

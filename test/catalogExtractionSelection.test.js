@@ -28,3 +28,12 @@ test('an unknown requested source fails selection before any subprocess can star
   assert.equal(typeof audit.selectCatalogExtractionAuditProviders, 'function')
   assert.throws(() => audit.selectCatalogExtractionAuditProviders(catalog, { sourceIds: ['typo'], classifyImplementation }), /Unknown.*typo/)
 })
+
+test('large native inventories can request a bounded longer audit deadline', () => {
+  assert.equal(typeof audit.resolveExtractionAuditTimeout, 'function')
+  assert.equal(audit.resolveExtractionAuditTimeout(), 45000)
+  assert.equal(audit.resolveExtractionAuditTimeout('180000'), 180000)
+  for (const value of [0, -1, 'Infinity', 'invalid', 600001, 1.5]) {
+    assert.throws(() => audit.resolveExtractionAuditTimeout(value), /timeout/i)
+  }
+})

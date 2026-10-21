@@ -1,11 +1,11 @@
-import { execFile } from 'node:child_process'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { runNativeFidelity } from './nativeRun.js'
+import FIDELITY_CATALOG from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
-const config = loadConfig(currentDir)
+export const PROVIDER_METADATA=FIDELITY_CATALOG
 
 export const JOBS_XML_URL = 'https://jobs.fidelity.com/in/jobs/xml/?rss=true'
 
@@ -184,74 +184,20 @@ export const extractJobsFromFeed = (xml) => {
   return [...jobsByKey.values()]
 }
 
-const runCurlRequest = (url, execFileImpl = execFile) => new Promise((resolve, reject) => {
-  const command = process.platform === 'win32' ? 'curl.exe' : 'curl'
-  const args = [
-    '-L',
-    '--compressed',
-    '-A',
-    FIDELITY_HEADERS['User-Agent'],
-    '-H',
-    `Accept: ${FIDELITY_HEADERS.Accept}`,
-    '--',
-    url,
-  ]
-
-  execFileImpl(command, args, (error, stdout, stderr) => {
-    if (error) {
-      reject(error)
-      return
-    }
-
-    const output = String(stdout ?? '')
-    if (!output.trim()) {
-      reject(new Error(stderr || `Empty curl response for ${url}`))
-      return
-    }
-
-    resolve(output)
-  })
-})
-
-export const createDefaultFetchText = ({
-  fetchImpl = fetch,
-  execFileImpl = execFile,
-} = {}) => async (url) => {
-  try {
-    const response = await fetchImpl(url, { headers: FIDELITY_HEADERS })
-    if (response.ok) {
-      return response.text()
-    }
-
-    return runCurlRequest(url, execFileImpl)
-  } catch {
-    return runCurlRequest(url, execFileImpl)
-  }
-}
+export const createDefaultFetchText=({fetchImpl=fetch}={})=>async url=>{const signal=AbortSignal.timeout(15000),r=await fetchImpl(url,{headers:FIDELITY_HEADERS,signal});signal.throwIfAborted();if(r.status!==200)throw Error('Fidelity native public HTTP unavailable: '+r.status);const body=await r.text();signal.throwIfAborted();if(typeof body!=='string'||!body.trim())throw Error('Fidelity native body unavailable');return body}
 
 const defaultFetchText = createDefaultFetchText()
 
 export const createFidelityScraper = ({
-  maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
+  maxJobs = null,
+  now,
 } = {}) => ({
   async run(options = {}) {
-    const fetchText = options.fetchText || defaultFetchText
-    const limit = Number.isInteger(options.maxJobs) ? options.maxJobs : maxJobs
-    const xml = await fetchText(JOBS_XML_URL)
-    const listings = extractJobsFromFeed(xml)
-    const selected = limit ? listings.slice(0, limit) : listings
-    const scrapedAt = new Date().toISOString()
-
-    return selected.map((job) => ({
-      ...job,
-      source: 'fidelity',
-      link: job.applyUrl || job.sourceUrl,
-      scrapedAt,
-    }))
+    return runNativeFidelity({now,...options,maxJobs:options.maxJobs??maxJobs})
   },
 })
 
-export const run = async () => createFidelityScraper().run()
+export const run = async (options={}) => createFidelityScraper().run(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

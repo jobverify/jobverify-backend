@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+import {gunzipSync} from 'node:zlib'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
@@ -145,27 +147,7 @@ const loadModule = async () => {
   }
 }
 
-test('Fedility Investments helpers stay pinned to the verified Fidelity India jobs page and RSS feed', async () => {
-  const fedilityInvestments = await loadModule()
-
-  assert.equal(fedilityInvestments.SOURCE, 'fedilityinvestments')
-  assert.equal(fedilityInvestments.COMPANY, 'Fedility Investments')
-  assert.equal(fedilityInvestments.OFFICIAL_BRAND_NAME, 'Fidelity Investments')
-  assert.equal(fedilityInvestments.VERIFIED_ON, '2026-08-02')
-  assert.equal(fedilityInvestments.JOBS_PAGE_URL, JOBS_PAGE_URL)
-  assert.equal(fedilityInvestments.JOBS_XML_URL, JOBS_XML_URL)
-  assert.equal(
-    fedilityInvestments.OFFICIAL_JOB_DETAIL_EXAMPLE_URL,
-    DETAIL_URL,
-  )
-  assert.equal(fedilityInvestments.hasOfficialJobsPageSignal(jobsPageHtml), true)
-  assert.equal(
-    fedilityInvestments.hasCloudflareChallengePageSignal(cloudflareChallengeHtml),
-    true,
-  )
-  assert.equal(fedilityInvestments.hasOfficialJobsFeedSignal(jobsXml), true)
-  assert.equal(fedilityInvestments.normalizeEmploymentType('Regular'), 'Full-time')
-})
+test('historical spelling exports canonical employer and current guarded helpers; challenge is diagnostic only',async()=>{const m=await loadModule(),f=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/fidelity/fixtures/native-20261021.json.gz',import.meta.url))));assert.equal(m.SOURCE,'fedilityinvestments');assert.equal(m.CANONICAL_SOURCE,'fidelity');assert.equal(m.COMPANY,'Fidelity Investments');assert.equal(m.VERIFIED_ON,null);assert.equal(m.JOBS_PAGE_URL,JOBS_PAGE_URL);assert.equal(m.JOBS_XML_URL,JOBS_XML_URL);assert.equal(m.hasOfficialJobsPageSignal(f.board),true);assert.equal(m.hasOfficialJobsPageSignal(cloudflareChallengeHtml),false);assert.equal(m.hasCloudflareChallengePageSignal(cloudflareChallengeHtml),true);assert.equal(m.hasOfficialJobsFeedSignal(f.feed,{now:f.checkedAt}),true)})
 
 test('extractJobsFromFeed parses the verified Fidelity India XML feed and merges duplicate multi-location roles', async () => {
   const fedilityInvestments = await loadModule()
@@ -226,75 +208,7 @@ test('extractJobsFromFeed parses the verified Fidelity India XML feed and merges
   })
 })
 
-test('run validates the verified Fidelity India page and XML feed once, then decorates shared runner fields', async () => {
-  const fedilityInvestments = await loadModule()
-  const requestedUrls = []
+const nativeOptions=(change=()=>{})=>{const f=JSON.parse(gunzipSync(fs.readFileSync(new URL('../../scraper/fidelity/fixtures/runtime-native-20261021.json.gz',import.meta.url)))),used=new Set();return{now:f.checkedAt,fetchPage:async url=>{const at=f.packets.findIndex((p,i)=>!used.has(i)&&p.url===url);assert.ok(at>=0,'Uncaptured request '+url);used.add(at);const p=structuredClone(f.packets[at]);change(p);return{status:p.status,url:p.finalURL,body:p.body}}}}
+test('historical spelling delegates native extraction and preserves canonical source/company on all14 roles',async()=>{const m=await loadModule(),o=nativeOptions(),jobs=await m.createFedilityInvestmentsScraper().run(o);assert.equal(jobs.length,14);assert.ok(jobs.every(j=>j.source==='fidelity'&&j.company==='Fidelity Investments'&&j.scrapedAt===o.now&&j.sourceDetailComplete&&!j.sourceListingComplete))})
 
-  const jobs = await fedilityInvestments.createFedilityInvestmentsScraper({
-    now: () => FIXED_SCRAPED_AT,
-  }).run({
-    fetchText: async (url) => {
-      requestedUrls.push(url)
-      if (url === JOBS_PAGE_URL) return cloudflareChallengeHtml
-      if (url === JOBS_XML_URL) return jobsXml
-      throw new Error(`Unexpected Fedility Investments URL: ${url}`)
-    },
-  })
-
-  assert.deepEqual(requestedUrls, [JOBS_PAGE_URL, JOBS_XML_URL])
-  assert.equal(jobs.length, 2)
-  assert.deepEqual(
-    jobs.map((job) => ({
-      title: job.title,
-      company: job.company,
-      source: job.source,
-      link: job.link,
-      scrapedAt: job.scrapedAt,
-    })),
-    [
-      {
-        title: 'Lead Software Engineer',
-        company: 'Fidelity Investments',
-        source: 'fedilityinvestments',
-        link: 'https://jobs.fidelity.com/in/jobs/2131693/lead-software-engineer/',
-        scrapedAt: FIXED_SCRAPED_AT,
-      },
-      {
-        title: 'Principal Network Engineer',
-        company: 'Fidelity Investments',
-        source: 'fedilityinvestments',
-        link: 'https://jobs.fidelity.com/in/jobs/2130302/principal-network-engineer/',
-        scrapedAt: FIXED_SCRAPED_AT,
-      },
-    ],
-  )
-})
-
-test('run fails closed when the verified Fidelity India jobs page or XML feed contract drifts', async () => {
-  const fedilityInvestments = await loadModule()
-
-  await assert.rejects(
-    fedilityInvestments.createFedilityInvestmentsScraper().run({
-      fetchText: async (url) => {
-        if (url === JOBS_PAGE_URL) {
-          return jobsPageHtml.replace('<h1>Search Jobs</h1>', '<h1>Explore careers</h1>')
-        }
-        throw new Error(`Unexpected Fedility Investments URL: ${url}`)
-      },
-    }),
-    /verified fidelity india jobs page/i,
-  )
-
-  await assert.rejects(
-    fedilityInvestments.createFedilityInvestmentsScraper().run({
-      fetchText: async (url) => {
-        if (url === JOBS_PAGE_URL) return jobsPageHtml
-        if (url === JOBS_XML_URL) {
-          return jobsXml.replace('<publisher>Fidelity Investments Careers</publisher>', '<publisher>Other Careers</publisher>')
-        }
-        throw new Error(`Unexpected Fedility Investments URL: ${url}`)
-      },
-    }),
-    /verified fidelity india xml feed/i,
-  )
-})
+test('current runtime rejects challenge and changed native publisher rather than inheriting historical14',async()=>{const m=await loadModule();for(const change of [p=>{p.body=cloudflareChallengeHtml},p=>{if(p.url.includes('/xml/'))p.body=p.body.replace('Fidelity Investments Careers','Other Careers')}])await assert.rejects(m.createFedilityInvestmentsScraper().run(nativeOptions(change)))})

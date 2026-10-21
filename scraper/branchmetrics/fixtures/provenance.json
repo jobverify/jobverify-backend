@@ -1,0 +1,280 @@
+{
+  "mode": "actual-current-public-corporate-legal-native-rippling-http",
+  "source": "branchmetrics",
+  "productionWrites": false,
+  "databaseAccess": false,
+  "fixture": {
+    "file": "scraper/branchmetrics/fixtures/native-http-001.json.gz",
+    "bytes": 684798,
+    "sha256": "42539364bea5773a7912c3990750e464616e27239bc25aeba96b285c1e4f53b2"
+  },
+  "sourceArtifacts": "../artifacts/full-catalog/branchmetrics-native-001",
+  "packets": [
+    {
+      "file": "board-initial-001.json",
+      "url": "https://ats.rippling.com/branch/jobs",
+      "status": 200,
+      "startedAt": "2026-10-20T23:34:38.108Z",
+      "completedAt": "2026-10-20T23:34:38.787Z",
+      "bodySha256": "99dd29606a444d25bd0c306c221f7bee77817fac5d05cf68a6178d05e0e7dfc0",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/board-initial-001.json",
+        "bytes": 206085,
+        "sha256": "9c08730a1b1eac3a7c3eb9ca7e8ead99993e132b4d0f3cd16d9f60e41de8ac5d"
+      }
+    },
+    {
+      "file": "corporate-client-001.json",
+      "url": "https://www.branch.io/wp-content/plugins/branch-rippling-careers/assets/js/view.js?ver=1788895891",
+      "status": 200,
+      "startedAt": "2026-10-20T23:35:51.531Z",
+      "completedAt": "2026-10-20T23:35:51.824Z",
+      "bodySha256": "c682b0fc1afc2103d6affbad8014a2afa23f0c6f53f3ba313803e330ab761fce",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/corporate-client-001.json",
+        "bytes": 29567,
+        "sha256": "501c66d576c3d8b5a99e72f4e472b15622b61ea4701b0291f3c6b8a935ed60dc"
+      }
+    },
+    {
+      "file": "corporate-initial-001.json",
+      "url": "https://www.branch.io/careers/",
+      "status": 200,
+      "startedAt": "2026-10-20T23:34:38.793Z",
+      "completedAt": "2026-10-20T23:34:39.097Z",
+      "bodySha256": "66f966d44dd812d34708a6f2f5ab8b0c1691e39772e755c44da041dada9e2d47",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/corporate-initial-001.json",
+        "bytes": 154255,
+        "sha256": "1d8c4afefa4b52ddca1183109f314e47dab7b9189d919a59b24fef263474aaeb"
+      }
+    },
+    {
+      "file": "detail-14034902-e87c-4cdc-a07b-46260a42d095-001.json",
+      "url": "https://ats.rippling.com/branch/jobs/14034902-e87c-4cdc-a07b-46260a42d095",
+      "status": 200,
+      "startedAt": "2026-10-20T23:35:53.273Z",
+      "completedAt": "2026-10-20T23:35:53.685Z",
+      "bodySha256": "c514d369d84ec0ac7a4aeecc617303e5b8cb2228ef59eb499fb849323ac529c9",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/detail-14034902-e87c-4cdc-a07b-46260a42d095-001.json",
+        "bytes": 205425,
+        "sha256": "be458238f2b10dd50f138436956fa984cfebc3543436eac074d8b199b6e42602"
+      }
+    },
+    {
+      "file": "detail-454f3d28-ca85-4640-9cfe-c48f1931cfdc-001.json",
+      "url": "https://ats.rippling.com/branch/jobs/454f3d28-ca85-4640-9cfe-c48f1931cfdc",
+      "status": 200,
+      "startedAt": "2026-10-20T23:35:52.467Z",
+      "completedAt": "2026-10-20T23:35:52.968Z",
+      "bodySha256": "03e60d4638af274e5e542d1edb6d73d574664b9d678c9fa7108703db51898824",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/detail-454f3d28-ca85-4640-9cfe-c48f1931cfdc-001.json",
+        "bytes": 196888,
+        "sha256": "26778037869d8cdea053a2188130ce2b7854a60b394d933a46c007193f33884e"
+      }
+    },
+    {
+      "file": "detail-4736ca28-e371-4366-876d-c1204bd3d8ac-001.json",
+      "url": "https://ats.rippling.com/branch/jobs/4736ca28-e371-4366-876d-c1204bd3d8ac",
+      "status": 200,
+      "startedAt": "2026-10-20T23:38:01.463Z",
+      "completedAt": "2026-10-20T23:38:01.878Z",
+      "bodySha256": "aa64fa661f8f27c0e936edbe54385c6823f20f1f126627559552a46e0d93b917",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/detail-4736ca28-e371-4366-876d-c1204bd3d8ac-001.json",
+        "bytes": 219819,
+        "sha256": "401a3ab083fb78547e946f6e12fb2ca65673506e92e322e9c842846997c432e4"
+      }
+    },
+    {
+      "file": "detail-61fcb561-7dd0-4fef-a983-61412fd9c74f-001.json",
+      "url": "https://ats.rippling.com/branch/jobs/61fcb561-7dd0-4fef-a983-61412fd9c74f",
+      "status": 200,
+      "startedAt": "2026-10-20T23:35:52.972Z",
+      "completedAt": "2026-10-20T23:35:53.978Z",
+      "bodySha256": "6d367a357fb72e099c7ae284b6db67ed18157aff1394ac9710c030a3d905b1fa",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/detail-61fcb561-7dd0-4fef-a983-61412fd9c74f-001.json",
+        "bytes": 200174,
+        "sha256": "4eda0640d96fa591574622b01cb6ee785f0ee6a2eaaef289429ee2b2efc7dd1b"
+      }
+    },
+    {
+      "file": "detail-733b332c-967f-46dc-868f-2097e029ae64-001.json",
+      "url": "https://ats.rippling.com/branch/jobs/733b332c-967f-46dc-868f-2097e029ae64",
+      "status": 200,
+      "startedAt": "2026-10-20T23:37:59.515Z",
+      "completedAt": "2026-10-20T23:38:00.353Z",
+      "bodySha256": "4df8704f0159f85d41c3696cb0d1a346ce1b540eba8190c4d1515a0b2979942b",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/detail-733b332c-967f-46dc-868f-2097e029ae64-001.json",
+        "bytes": 211912,
+        "sha256": "2c00d3802ebb5781fefaa15b7d024e1c1f03ae9964ad3f2a1656cf3a4fad5267"
+      }
+    },
+    {
+      "file": "detail-736cd9d9-935d-4eff-9359-3437ac66eff1-001.json",
+      "url": "https://ats.rippling.com/branch/jobs/736cd9d9-935d-4eff-9359-3437ac66eff1",
+      "status": 200,
+      "startedAt": "2026-10-20T23:35:52.671Z",
+      "completedAt": "2026-10-20T23:35:53.263Z",
+      "bodySha256": "10a92671cf602d9ff406a2a01875413ebc74cba29204483183fd1d143097dbb3",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/detail-736cd9d9-935d-4eff-9359-3437ac66eff1-001.json",
+        "bytes": 202042,
+        "sha256": "8a1ffa32fcbe406a45d29eaac254ba06423c3da3661b989cea32636f1afe9986"
+      }
+    },
+    {
+      "file": "detail-880ddd70-03ab-415c-928b-42c63788f589-001.json",
+      "url": "https://ats.rippling.com/branch/jobs/880ddd70-03ab-415c-928b-42c63788f589",
+      "status": 200,
+      "startedAt": "2026-10-20T23:38:01.035Z",
+      "completedAt": "2026-10-20T23:38:01.455Z",
+      "bodySha256": "5c9728ecd02f57229cc684cc934750cd864b02442f2da1949f5cfbec27839af6",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/detail-880ddd70-03ab-415c-928b-42c63788f589-001.json",
+        "bytes": 203062,
+        "sha256": "6203a7e239948ea7a0527ebb08c7e569cbe44add6fc987445eabc2cb6e93b15b"
+      }
+    },
+    {
+      "file": "detail-b032edcf-2128-430c-8982-ef777261fc83-001.json",
+      "url": "https://ats.rippling.com/branch/jobs/b032edcf-2128-430c-8982-ef777261fc83",
+      "status": 200,
+      "startedAt": "2026-10-20T23:38:01.960Z",
+      "completedAt": "2026-10-20T23:38:02.392Z",
+      "bodySha256": "015e02be383809abdb83108a73c397e818e51bc2be296d5074e1b06cbe9d6eb3",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/detail-b032edcf-2128-430c-8982-ef777261fc83-001.json",
+        "bytes": 200657,
+        "sha256": "027938cd5980dc39f2eadd02af9e9f3c221cf4b1bf40bf1ef016e081ac573ce8"
+      }
+    },
+    {
+      "file": "detail-c6af0bc9-1da4-4e2d-9ad1-7ade4b622f43-001.json",
+      "url": "https://ats.rippling.com/branch/jobs/c6af0bc9-1da4-4e2d-9ad1-7ade4b622f43",
+      "status": 200,
+      "startedAt": "2026-10-20T23:37:59.561Z",
+      "completedAt": "2026-10-20T23:38:01.026Z",
+      "bodySha256": "f5c62419cb463b8131724f357e06ef71a9717721f8e77b5d038200ee8cba4bfa",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/detail-c6af0bc9-1da4-4e2d-9ad1-7ade4b622f43-001.json",
+        "bytes": 197932,
+        "sha256": "3e8df651aab97c4de0fa28e0a8e5b21eef74f0754776fd2e4c833b1642e0c30e"
+      }
+    },
+    {
+      "file": "detail-d69a1abd-a1b2-4a2e-a73b-57fd5769ce83-001.json",
+      "url": "https://ats.rippling.com/branch/jobs/d69a1abd-a1b2-4a2e-a73b-57fd5769ce83",
+      "status": 200,
+      "startedAt": "2026-10-20T23:35:53.688Z",
+      "completedAt": "2026-10-20T23:35:54.074Z",
+      "bodySha256": "0c754dc3949ee1f060235966e83c467ec866564bb090c6a30256d61a647edddc",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/detail-d69a1abd-a1b2-4a2e-a73b-57fd5769ce83-001.json",
+        "bytes": 219041,
+        "sha256": "a66e8c465abaff581ae656164acbdc2b2043e5e08db6b29758d2c8a8dc13fc23"
+      }
+    },
+    {
+      "file": "detail-dd6618ff-342f-4a05-a258-96bb8d347be8-001.json",
+      "url": "https://ats.rippling.com/branch/jobs/dd6618ff-342f-4a05-a258-96bb8d347be8",
+      "status": 200,
+      "startedAt": "2026-10-20T23:35:53.983Z",
+      "completedAt": "2026-10-20T23:35:54.388Z",
+      "bodySha256": "d2d90b954432eedf0d39e8e01eec35544d3a7884b44b56c0200686522f0f8600",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/detail-dd6618ff-342f-4a05-a258-96bb8d347be8-001.json",
+        "bytes": 201024,
+        "sha256": "e306f82d7d5ce7b3d565ff3556f496e872e8b784803a64354fcbe88204e880c9"
+      }
+    },
+    {
+      "file": "detail-e53a670f-0cef-4225-9d9a-e57277d601a1-001.json",
+      "url": "https://ats.rippling.com/branch/jobs/e53a670f-0cef-4225-9d9a-e57277d601a1",
+      "status": 200,
+      "startedAt": "2026-10-20T23:38:01.538Z",
+      "completedAt": "2026-10-20T23:38:01.950Z",
+      "bodySha256": "2fb18a18a80d549239c5bd2c7f1832243f3bef10958e408c895c0d2f6fa1a635",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/detail-e53a670f-0cef-4225-9d9a-e57277d601a1-001.json",
+        "bytes": 197586,
+        "sha256": "1c7080eb469912d9643d573b653527ff2c8b6603c53fb7d8a961d1cb63457a69"
+      }
+    },
+    {
+      "file": "detail-f03f6835-169f-4960-8378-ce9628831105-001.json",
+      "url": "https://ats.rippling.com/branch/jobs/f03f6835-169f-4960-8378-ce9628831105",
+      "status": 200,
+      "startedAt": "2026-10-20T23:38:01.886Z",
+      "completedAt": "2026-10-20T23:38:02.291Z",
+      "bodySha256": "7051fb6b8a2ac2fe0b4da5edfd499c862ad63d69a74b32b08077bc3a3ed69e66",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/detail-f03f6835-169f-4960-8378-ce9628831105-001.json",
+        "bytes": 212795,
+        "sha256": "3b7064f42109e2e263a62124a1add37b776db846730096ebc31f53fd3799b6ed"
+      }
+    },
+    {
+      "file": "detail-f113051e-7db9-4c43-a32d-9eac3c53e2ea-001.json",
+      "url": "https://ats.rippling.com/branch/jobs/f113051e-7db9-4c43-a32d-9eac3c53e2ea",
+      "status": 200,
+      "startedAt": "2026-10-20T23:38:00.356Z",
+      "completedAt": "2026-10-20T23:38:01.531Z",
+      "bodySha256": "ed8131b2fc0c3747d870f010a6f18cfaa422ebff70376270839020989c3eaf1c",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/detail-f113051e-7db9-4c43-a32d-9eac3c53e2ea-001.json",
+        "bytes": 215820,
+        "sha256": "f14e42ce355383f2a997b8d1d6d56dc14276544be9f8e659b380f504bb3ec783"
+      }
+    },
+    {
+      "file": "legal-privacy-001.json",
+      "url": "https://legal.branch.io/saas/privacy-policy/",
+      "status": 200,
+      "startedAt": "2026-10-20T23:35:51.826Z",
+      "completedAt": "2026-10-20T23:35:52.463Z",
+      "bodySha256": "4319693ff34f6e136568c6d8f75f591e5f03f40ef9ac90ed46eb35bc8bb9ef11",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/legal-privacy-001.json",
+        "bytes": 171852,
+        "sha256": "144314ebc870e3e11282e2e10ed5ba4da6a4cb21c330a02084856afdfd385529"
+      }
+    },
+    {
+      "file": "listing-initial-001.json",
+      "url": "https://ats.rippling.com/api/v2/board/branch/jobs?groupJobsByLocation=false&page=0&pageSize=1000",
+      "status": 200,
+      "startedAt": "2026-10-20T23:34:36.841Z",
+      "completedAt": "2026-10-20T23:34:38.103Z",
+      "bodySha256": "cb4a56203fc74f8447cd87dd3895fd4afc13e99d030bafcdba507015e42b5a2e",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/listing-initial-001.json",
+        "bytes": 11209,
+        "sha256": "efdb0857bc9ab28a03dc46ad150a4df5e9ea68962afed5034ae80f8198363cf6"
+      }
+    },
+    {
+      "file": "listing-terminal-001.json",
+      "url": "https://ats.rippling.com/api/v2/board/branch/jobs?groupJobsByLocation=false&page=1&pageSize=1000",
+      "status": 200,
+      "startedAt": "2026-10-20T23:35:51.480Z",
+      "completedAt": "2026-10-20T23:35:52.668Z",
+      "bodySha256": "c6b03c3f7716cc573c2220ff37af88b540a7fd6c09960d74db9e0c523ac7fff1",
+      "raw": {
+        "file": "../artifacts/full-catalog/branchmetrics-native-001/listing-terminal-001.json",
+        "bytes": 563,
+        "sha256": "e5e659c8599353ddb4616953392dfd2bb629800e2c1e8a1c954b830c0f63b36c"
+      }
+    }
+  ],
+  "nativeCounts": {
+    "locationRecords": 24,
+    "uniqueVacancies": 14,
+    "explicitIndiaVacancies": 6
+  },
+  "note": "Exact response bodies; no fixture is used as a runtime corporate identity cache or native content fallback."
+}

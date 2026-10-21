@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import {runNativeExperion} from './nativeRun.js'
+import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -272,11 +274,11 @@ export const createExperionTechnologiesScraper = ({ now = () => new Date().toISO
       })
     }
 
-    return jobs
+    return attachInventoryEvidence(jobs.map(job=>({...job,sourceListingComplete:false})),{status:'discovery-only',surface:CAREERS_URL,firstParty:true,listingComplete:false,reason:'legacy-text-only-path-without-current-native-proof'})
   },
 })
 
-export const run = async (options = {}) => createExperionTechnologiesScraper().run(options)
+export const run = runNativeExperion
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

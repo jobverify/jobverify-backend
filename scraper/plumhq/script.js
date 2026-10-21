@@ -1,8 +1,11 @@
+import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
+import { runKulaPublicApi } from '../../scraper-support/shared/kulaPublicApi.js'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
 import { loadConfig } from '../../scraper-support/utils/loadConfig.js'
+import { resolveKulaJobDescriptions } from '../../scraper-support/utils/kulaFlight.js'
 
 import { PLUM_HQ_CATALOG } from './catalog.js'
 
@@ -224,8 +227,8 @@ export const enrichJobsWithKulaDetails = async (jobs, fetchText = defaultFetchTe
 
 export const buildSearchUrl = () => KULA_JOBS_URL
 
-export const extractSearchResults = (html) => (
-  parseEmbeddedJobs(html)
+export const mapKulaJobs = (rows) => (
+  rows
     .map((row) => {
       if (row?.listed === false || String(row?.kind || '').toLowerCase() === 'internal') {
         return null
@@ -268,6 +271,10 @@ export const extractSearchResults = (html) => (
     .sort((left, right) => left.title.localeCompare(right.title))
 )
 
+export const extractSearchResults = (html) => mapKulaJobs(
+  resolveKulaJobDescriptions(html, parseEmbeddedJobs(html)),
+)
+
 const defaultFetchText = (url) => fetchTextWithRetry(url, {
   headers: {
     'User-Agent': USER_AGENT,
@@ -281,6 +288,7 @@ export const createPlumHqScraper = ({
   maxJobs = Number.isInteger(config.maxJobs) ? config.maxJobs : null,
 } = {}) => ({
   async run(options = {}) {
+    if (!options.fetchText || options.fetchJson) return runKulaPublicApi({ source: 'plumhq', mapKulaJobs }, { maxJobs, ...options })
     const fetchText = options.fetchText || defaultFetchText
     const now = options.now || (() => new Date().toISOString())
     const careersHtml = await fetchText(CAREERS_URL)
@@ -301,6 +309,8 @@ export const createPlumHqScraper = ({
     return enrichedJobs.map((job) => ({
       ...job,
       source: SOURCE,
+      sourceListingComplete: false,
+      sourceDetailComplete: hasSourceDescription(job),
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: now(),
     }))

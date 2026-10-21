@@ -12,10 +12,10 @@ test('getScraperCatalog includes the ACKO Kula-backed script provider with offic
 
   assert.ok(acko)
   assert.equal(acko.adapter, 'script')
-  assert.equal(acko.atsPlatform, 'kula')
+  assert.equal(acko.atsPlatform, 'kula-public-api')
   assert.match(acko.companyCareerPage, /acko\.com\/careers\/jobs/i)
   assert.equal(acko.companyDomain, 'acko.com')
-  assert.equal(acko.parser, 'custom-script')
+  assert.equal(acko.parser, 'validated-kula-public-api')
   assert.match(acko.modulePath, /acko[\\/]script\.js$/i)
 })
 
@@ -27,5 +27,5 @@ test('buildScrapers exposes a runnable ACKO scraper without changing the runner 
   assert.equal(typeof acko.run, 'function')
   assert.match(acko.dryRunFile, /acko[\\/]jobs\.json$/)
   assert.equal(acko.provider.source, 'acko')
-  assert.equal(acko.provider.atsPlatform, 'kula')
+  assert.equal(acko.provider.atsPlatform, 'kula-public-api')
 })

@@ -2,6 +2,8 @@ import { createPaginationState, getNextPageRequest, updatePaginationState, hasPa
 import { createHash } from 'node:crypto'
 import { attachInventoryEvidence } from '../utils/inventoryEvidence.js'
 import { isIndiaJob } from '../utils/indiaLocationFilter.js'
+import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
+import { fetchSmartRecruitersDetail } from './smartRecruitersDetail.js'
 import {
   expandTemplate,
   getMappedFieldValue,
@@ -14,6 +16,14 @@ const normalizeRequiredSkills = (value) => (
     ? value.map((item) => String(item).trim()).filter(Boolean)
     : []
 )
+
+const hasValueAtPath = (value, selector) => {
+  for (const key of String(selector || '').split('.')) {
+    if (value == null || !Object.hasOwn(Object(value), key)) return false
+    value = value[key]
+  }
+  return true
+}
 
 const deriveCity = (location) => {
   if (!location) return null
@@ -335,6 +345,9 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
   let indiaCount = 0
   let continuation = false
   const seenPages = new Set()
+  const seenIdentities = new Set()
+  const incompleteReasons = new Set()
+  const markIncomplete = reason => { inventoryComplete = false; incompleteReasons.add(reason) }
 
   try {
     while (true) {
@@ -376,11 +389,12 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
       }
       recordsFetched += listingRecords.length
       const rawTotal = config.pagination.totalCountPath ? getValueAtPath(listingPayload, config.pagination.totalCountPath) : null
+      if (config.pagination.totalCountPath && rawTotal == null) markIncomplete('configured-total-unavailable')
       const totalCount = rawTotal == null ? null : Number(rawTotal)
       if (rawTotal != null && (!['number', 'string'].includes(typeof rawTotal) || String(rawTotal).trim() === ''
         || !Number.isSafeInteger(totalCount) || totalCount < 0)) throw new Error('API portal inventory validation failed: malformed total count')
       if (totalCount != null) {
-        if (reportedTotal != null && reportedTotal !== totalCount) inventoryComplete = false
+        if (reportedTotal != null && reportedTotal !== totalCount) markIncomplete('upstream-total-changed')
         reportedTotal = totalCount
         if (listingRecords.length === 0 && recordsFetched < totalCount) throw new Error('API portal inventory incomplete: empty page contradicts total count')
       }
@@ -389,6 +403,9 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
         listingRecords,
         config.detail.enabled ? (config.detail.concurrency || 1) : 1,
         async (record) => {
+          // Reconcile the full feed above, but only hydrate explicitly selected
+          // public records. Draft/private records are not missing job details.
+          if (config.recordFilter && !passesResultFilter(record, config.recordFilter)) return null
           let detailPayload = {}
 
           if (config.detail.enabled) {
@@ -398,14 +415,29 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
             })
 
             try {
-              detailPayload = await fetchPortalJson(detailUrl, {
+              detailPayload = config.detail.strategy === 'smartrecruiters-public-posting'
+                ? await fetchSmartRecruitersDetail({
+                  publicUrl: getMappedValue(record, config.detail.publicUrlPath || config.mapping.applyUrl),
+                  expectedCompany: config.detail.expectedCompany,
+                  expectedCountry: config.detail.expectedCountry,
+                  expectedLocation: getMappedValue(record, config.detail.locationPath || config.mapping.location),
+                  fetchJson: fetchPortalJson,
+                })
+                : await fetchPortalJson(detailUrl, {
                 method: config.detail.method,
                 headers: config.detail.headers,
                 body: serializeRequestBody(config.detail.body, config.detail.headers),
               })
+              if (!detailPayload || typeof detailPayload !== 'object' || detailPayload.success === false
+                || detailPayload.error || (Array.isArray(detailPayload.errors) && detailPayload.errors.length)) {
+                throw new Error('API portal detail contract failed: upstream error response')
+              }
+              if (config.detail.mapping.jobDescription && !hasSourceDescription({
+                jobDescription: getMappedValue(detailPayload, config.detail.mapping.jobDescription),
+              })) throw new Error('API portal detail contract incomplete: missing employer description')
             } catch (error) {
-              if (config.detail.required) throw error
-              inventoryComplete = false
+              if (config.detail.required || error.incompleteScope === true) throw error
+              markIncomplete('optional-role-details-unavailable')
 
               detailPayload = {
                 sourceUrl: createFallbackDetailUrl(provider, record, config),
@@ -416,7 +448,19 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
           }
 
           const mapped = mapRecord(record, provider, config, detailPayload)
-          if (!mapped) inventoryComplete = false
+          if (!mapped) markIncomplete('unmappable-listing')
+          if (mapped) {
+            const identity = mapped.jobId ?? mapped.requisitionId ?? mapped.sourceUrl
+            if (identity != null) {
+              const key = String(identity)
+              if (seenIdentities.has(key)) markIncomplete('repeated-vacancy-identity')
+              seenIdentities.add(key)
+            }
+            if (!hasSourceDescription(mapped)) {
+              if (config.detail.enabled && config.detail.required) throw new Error('API portal detail contract incomplete: missing employer description')
+              markIncomplete('employer-description-unavailable')
+            }
+          }
           if (mapped && isIndiaJob(mapped)) indiaCount += 1
           return mapped && passesResultFilter(mapped, config.resultFilter) ? mapped : null
         },
@@ -429,6 +473,10 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
       const hasMore = config.pagination.hasMorePath
         ? getValueAtPath(listingPayload, config.pagination.hasMorePath)
         : null
+      if (config.pagination.hasMorePath && (hasMore == null)
+        && !(config.pagination.nullHasMoreIsTerminal === true && hasValueAtPath(listingPayload, config.pagination.hasMorePath))) {
+        markIncomplete('configured-continuation-unavailable')
+      }
       continuation = hasPaginationContinuation(hasMore)
 
       state = updatePaginationState(config.pagination, state, {
@@ -446,7 +494,11 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
       status: complete ? recordsFetched === 0 ? 'verified-empty' : 'complete-inventory' : 'discovery-only',
       surface: config.discovery.listingApiUrl, firstParty: true, listingComplete: complete,
       pagesFetched, reportedTotal, indiaFacetCount: indiaCount, verifiedAt: new Date().toISOString(),
-      reason: complete ? 'api-portal-complete-native-pagination' : 'api-portal-incomplete-listing-or-role-details',
+      reason: complete ? 'api-portal-complete-native-pagination'
+        : `api-portal-incomplete-listing-or-role-details:${[...incompleteReasons,
+          ...(!state.done || continuation ? ['unconsumed-continuation'] : []),
+          ...(reportedTotal != null && reportedTotal !== recordsFetched ? ['upstream-count-mismatch'] : []),
+        ].sort().join(',')}`,
     })
   } catch (error) {
     throw error

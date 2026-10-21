@@ -16,7 +16,7 @@ const MONGO_MAP_DOLLAR_ESCAPE = "\uFF04";
 
 const ATTEMPT_DIAGNOSTIC_FIELDS = [
   "rawRecords", "filteredNonIndia", "filteredClosed", "filteredInvalidUrl",
-  "filteredEmptyDescription", "filteredNonJob", "zeroJobEvidence", "inventoryEvidence",
+  "filteredEmptyDescription", "filteredNonJob", "zeroJobEvidence", "inventoryEvidence", "detailHealth",
   "attemptedAt", "completedAt", "staleCheckSkipped", "staleCheckReason",
   "softFailure", "upstreamOutage", "failureKind",
 ];
@@ -25,8 +25,12 @@ const attemptDiagnostics = (result) => Object.fromEntries(
   ATTEMPT_DIAGNOSTIC_FIELDS.map((field) => [field, result[field] ?? null]),
 );
 
+const hasIncompleteDetails = (result) => result.detailHealth?.complete === false
+  || result.filteredEmptyDescription > 0;
+
 const isCompleteCheck = (result, now = new Date()) => {
   if (result.success !== true || result.staleCheckSkipped === true || result.skipped === true) return false;
+  if (hasIncompleteDetails(result)) return false;
   const evidence = result.inventoryEvidence;
   return isFreshCompleteInventoryEvidence(evidence, { now: result.completedAt ?? now });
 };
@@ -107,7 +111,7 @@ export const upsertScraperStatus = async (source, result) => {
     ? (() => {
         const jobsFound = result.jobs || 0;
         const eligibleJobsFound = result.eligibleJobs ?? jobsFound;
-        const isPartial = result.staleCheckSkipped === true
+        const isPartial = result.staleCheckSkipped === true || hasIncompleteDetails(result)
           || (result.inventoryEvidence != null && !isCompleteCheck(result, now));
         const set = {
           lastRanAt: now,
@@ -120,7 +124,9 @@ export const upsertScraperStatus = async (source, result) => {
           durationMs: result.durationMs || 0,
           lastPartialAt: isPartial ? now : null,
           lastPartialReason: isPartial
-            ? (result.staleCheckReason || "Stale cleanup skipped after an empty eligible scrape result.")
+            ? (result.staleCheckReason || (hasIncompleteDetails(result)
+              ? "Employer role details remain incomplete; previous complete-check counts were preserved."
+              : "Stale cleanup skipped after an empty eligible scrape result."))
             : null,
           lastRetentionDays: result.retentionDays || DEFAULT_JOB_RETENTION_DAYS,
         };

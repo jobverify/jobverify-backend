@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFileSync } from 'node:fs'
 
 const loadZeeModule = async () => {
   try {
@@ -225,19 +226,22 @@ test('extractSearchResults keeps only open India jobs from the Zee SenseHQ listi
   })
 })
 
-test('run verifies the official Zee pages, paginates the SenseHQ board, and decorates shared runner fields', async () => {
+test('run verifies current corporate and native role identities and decorates shared runner fields', async () => {
   const zee = await loadZeeModule()
   assert.ok(zee, 'Expected Zee Entertainment Enterprises scraper module at ./script.js')
 
   const requests = []
-  const jobs = await zee.createZeeEntertainmentEnterprisesScraper({ maxPages: 2, maxJobs: 2 }).run({
+  const native = name => JSON.parse(readFileSync(new URL(`./fixtures/${name}.json`, import.meta.url)))
+  const encode = data => `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify(data).replace(/</g, '\\u003c')}</script>`
+  const jobs = await zee.createZeeEntertainmentEnterprisesScraper().run({
+    now: () => '2026-10-21T00:00:00.000Z',
     fetchText: async (url) => {
       requests.push(url)
 
       if (url === zee.ABOUT_URL) return OFFICIAL_ABOUT_HTML
       if (url === zee.CAREERS_URL) return OFFICIAL_CAREERS_HTML
-      if (url === zee.buildListingUrl({ page: 1 })) return LISTING_PAGE_1_HTML
-      if (url === zee.buildListingUrl({ page: 2 })) return LISTING_PAGE_2_HTML
+      if (url === zee.buildListingUrl()) return encode(native('native-listing'))
+      if (url === zee.buildJobUrl('5831')) return encode(native('native-detail'))
 
       throw new Error(`Unexpected Zee URL: ${url}`)
     },
@@ -246,20 +250,18 @@ test('run verifies the official Zee pages, paginates the SenseHQ board, and deco
   assert.deepEqual(requests, [
     zee.ABOUT_URL,
     zee.CAREERS_URL,
-    zee.buildListingUrl({ page: 1 }),
-    zee.buildListingUrl({ page: 2 }),
+    zee.buildListingUrl(),
+    zee.buildListingUrl(),
+    zee.buildJobUrl('5831'),
   ])
-  assert.equal(jobs.length, 2)
+  assert.equal(jobs.length, 1)
   assert.equal(jobs[0].source, 'zeeentertainmententerprises')
   assert.equal(jobs[0].link, jobs[0].applyUrl)
   assert.equal(jobs[0].publicExperienceChecked, true)
-  assert.equal(jobs[1].title, 'Senior Manager - Revenue Analytics')
-  assert.equal(jobs[1].location, 'Noida, India')
-  assert.equal(jobs[1].publicExperienceChecked, true)
-  assert.deepEqual(jobs[1].requiredSkills, [
-    'SQL',
-    'Forecasting',
-    'Tableau',
-  ])
+  assert.equal(jobs[0].title, 'SDE-III')
+  assert.equal(jobs[0].location, 'Bangalore, India')
+  assert.equal(jobs[0].sourceDetailComplete, true)
+  assert.equal(jobs[0].sourceListingComplete, true)
+  assert.match(jobs[0].jobDescription, /Swift/)
   assert.ok(jobs.every((job) => typeof job.scrapedAt === 'string' && job.scrapedAt.length > 0))
 })

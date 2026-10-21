@@ -1,9 +1,9 @@
 {
-  "modelId": "LiquidAI/LFM2.5-230M-GGUF",
-  "revision": "03502067c64ce32ac4fe87b0cec0310a1a13d3e9",
-  "file": "LFM2.5-230M-QAD-Q4_0.gguf",
-  "sha256": "e75f83268de11b2a1bcfab5f3b5c5c0c97569ddbbc0990aad88437e45b8ba292",
-  "bytes": 149081056,
+  "modelId": "LiquidAI/LFM2.5-1.2B-Instruct-GGUF",
+  "revision": "430bea1a9fa4d973ce789c15f15e9ed214846f4f",
+  "file": "LFM2.5-1.2B-Instruct-QAD-Q4_0.gguf",
+  "sha256": "bb741ebb106d543e9de114b843a3d3d73d51c74b5801e69da2abde821a0cb3e1",
+  "bytes": 695755488,
   "runtimeTag": "b11146",
   "runtimeAssets": {
     "linux": {

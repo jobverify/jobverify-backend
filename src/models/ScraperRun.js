@@ -28,6 +28,7 @@ const ScraperRunSourceSchema = new Schema(
     filteredNonJob: { type: Number, default: null },
     zeroJobEvidence: { type: String, default: null },
     inventoryEvidence: { type: Schema.Types.Mixed, default: null },
+    detailHealth: { type: Schema.Types.Mixed, default: null },
     attemptedAt: { type: Date, default: null },
     completedAt: { type: Date, default: null },
     softFailure: { type: Boolean, default: null },

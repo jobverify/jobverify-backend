@@ -10,7 +10,7 @@ const directory=path.resolve(process.argv[at+1]);
 const status=JSON.parse(await fs.readFile(path.join(directory,'pipeline-status.json'),'utf8'));
 const state=JSON.parse(await fs.readFile(path.join(directory,'run-state.json'),'utf8'));
 let alive=null;try{process.kill(status.ownerPid,0);alive=true;}catch(error){if(error.code==='ESRCH')alive=false;}
-const output=path.join(directory,status.rewriteDirectory||'230m-t4-slots1-arrival-full-final-snapshots');
+const output=path.join(directory,status.rewriteDirectory||'1200m-t4-slots1-arrival-full-final-snapshots');
 const report=JSON.parse(await fs.readFile(path.join(output,'summary.json'),'utf8'));
 const counts={processed:0,modelRequests:0,modelResponses:0,modelAccepted:0,fallbackDrafts:0,sourceMissing:0,modelErrors:0,contextSkipped:0},reasons={},durations=[];
 let last;

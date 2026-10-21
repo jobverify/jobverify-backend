@@ -1046,7 +1046,26 @@
       "pagination": {
         "strategy": "single-page",
         "resultsPath": "results",
-        "hasMorePath": "hasMore"
+        "totalCountPath": "totalCount"
+      },
+      "recordFilter": {
+        "include": [
+          { "field": "status", "pattern": "^PUBLIC$" }
+        ]
+      },
+      "detail": {
+        "enabled": true,
+        "required": false,
+        "strategy": "smartrecruiters-public-posting",
+        "expectedCompany": "PHONEPELIMITED",
+        "expectedCountry": "in",
+        "locationPath": "location",
+        "publicUrlPath": "applyUrl",
+        "concurrency": 3,
+        "mapping": {
+          "jobDescription": "jobDescription",
+          "minimumQualification": "minimumQualification"
+        }
       },
       "mapping": {
         "title": "title",

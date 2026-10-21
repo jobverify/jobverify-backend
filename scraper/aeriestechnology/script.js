@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { fetchJsonWithRetry, fetchTextWithRetry } from '../../scraper-support/utils/fetch.js'
+import {runNativeAeries} from './nativeRun.js'
+import {attachInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
 
 import { AERIES_TECHNOLOGY_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -230,7 +232,7 @@ export const createAeriesTechnologyScraper = ({
       throw new Error('Aeries Technology verified board API no longer exposes trusted public jobs listings')
     }
 
-    return jobs.map((job) => ({
+    return attachInventoryEvidence(jobs.map((job) => ({
       ...job,
       company: COMPANY,
       country: 'India',
@@ -241,18 +243,20 @@ export const createAeriesTechnologyScraper = ({
       requiredSkills: job.requiredSkills,
       postingDate: null,
       closingDate: null,
-      jobDescription: job.jobDescription,
+      jobDescription: null,
       source: SOURCE,
       companyCareerPage: CAREERS_URL,
       companyDomain: PROVIDER_METADATA.companyDomain,
       atsPlatform: PROVIDER_METADATA.atsPlatform,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: now(),
-    }))
+      sourceListingComplete: false,
+      sourceDetailComplete: false,
+    })),{status:'discovery-only',surface:JOBS_BOARD_URL,firstParty:true,listingComplete:false,reason:'legacy-listing-teaser-path-without-full-native-detail-proof'})
   },
 })
 
-export const run = async (options = {}) => createAeriesTechnologyScraper(options).run()
+export const run = runNativeAeries
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

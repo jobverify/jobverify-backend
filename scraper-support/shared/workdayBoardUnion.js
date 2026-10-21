@@ -1,0 +1,164 @@
+import { runWorkdayScraper, buildWorkdayAppliedFacets, buildWorkdayDetailApiUrl, extractWorkdayStructuredDetail } from '../myworkday/engine.js'
+import { loadConfig } from '../utils/loadConfig.js'
+import { attachInventoryEvidence, readInventoryEvidence } from '../utils/inventoryEvidence.js'
+import { toPlainText } from '../detailExtractors/shared.js'
+import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
+import { isJobInPublicLocationScope } from '../../src/utils/publicJobLocationScope.js'
+import { extractActiveDescription, decodeNativeEntities } from '../utils/activeNativeHtml.js'
+
+const INDIA = 'c4f78be1a8f14da0ab49ce1162348a5e'
+const FOREIGN_COUNTRY_CODES=new Set(('AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW').split(' '))
+// Codes that are also Indian state/territory abbreviations are ambiguous in
+// an India address. Do not invent a foreign country from those abbreviations.
+const INDIA_STATE_CODES=new Set('AN AP AR AS BR CG CH DD DL DN GA GJ HP HR JH JK KA KL LA LD MH ML MN MP MZ NL OD OR PB PY RJ SK TN TR TS UK UP UT WB'.split(' '))
+const explicitForeignCode=label=>{
+  const code=(label.match(/(?:,\s*|\(\s*)([a-z]{2})\)?\s*$/i)?.[1]||label.match(/^([a-z]{2})\s*[-,.:]\s*/i)?.[1]||'').toUpperCase()
+  return FOREIGN_COUNTRY_CODES.has(code)&&!INDIA_STATE_CODES.has(code)
+}
+const proof = (condition, message) => { if (!condition) throw new Error('Verified Workday board union: '+message) }
+const hasFailureEnvelope = value => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return true
+  return Object.entries(value).some(([key, field]) => {
+    const name = key.toLowerCase().replace(/[_\s-]/g,'')
+    if (['error','errors','errorcode','errormessage','exception','fault'].includes(name)) return true
+    if (name === 'success' && field !== true) return true
+    if (['status','statuscode','httpstatus','httpstatuscode'].includes(name) && typeof field !== 'object')
+      return !['200','ok','success','successful'].includes(String(field).toLowerCase())
+    return ['meta','metadata','response','result'].includes(name) && field != null && hasFailureEnvelope(field)
+  })
+}
+const locationKey = value => String(value).toLowerCase().replace(/\b(?:india|ind|in)\b/g,'').replace(/[^\p{L}\p{N}]+/gu,' ').trim()
+const normalizeSpace = value => String(value).replace(/\s+/g,' ').trim()
+const date = (value, now, publication=false) => {
+  proof(typeof value==='string' && /^\d{4}-\d{2}-\d{2}$/.test(value),'native date unavailable')
+  const parsed=new Date(value+'T00:00:00.000Z')
+  proof(Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0,10)===value,'invalid native calendar date')
+  proof(!publication || parsed.getTime()<=new Date(now).getTime(),'future native publication')
+  return parsed.toISOString()
+}
+const canonical = (value, board) => {
+  proof(typeof value==='string','native canonical unavailable')
+  const url=new URL(value),base=new URL(board.baseUrl)
+  const pathname=url.pathname.replace(/^\/[a-z]{2}-[A-Z]{2}\//,'/')
+  proof(url.origin===base.origin && !url.search && !url.hash && !url.username && !url.password
+    && pathname.startsWith('/'+board.site+'/job/'),'native canonical board mismatch')
+  return url.origin+pathname
+}
+const defaultJson = async (url,init,options) => {
+  options.signal?.throwIfAborted()
+  const signal=options.signal ? AbortSignal.any([options.signal,AbortSignal.timeout(options.requestTimeoutMs||25000)]) : AbortSignal.timeout(options.requestTimeoutMs||25000)
+  const response=await fetch(url,{...init,headers:{Accept:'application/json','Content-Type':'application/json','User-Agent':'Mozilla/5.0'},signal,redirect:'error'})
+  signal.throwIfAborted()
+  proof(response.status===200,`native HTTP ${response.status}`)
+  const payload=await response.json()
+  signal.throwIfAborted()
+  proof(!hasFailureEnvelope(payload),'native error envelope')
+  return payload
+}
+
+// Listing and geography stay in the existing Workday engine. This layer only
+// reconciles explicitly supplied official boards and checks their live details
+// before joining requisitions. It never discovers or guesses an employer site.
+export async function runVerifiedWorkdayBoardUnion({source,company,boards,employerPattern,requireEmployer=true,completeSourceScope=true,scopeReason},options={}) {
+  const now=options.now ? options.now() : new Date().toISOString()
+  proof(Number.isFinite(new Date(now).getTime()),'invalid current time')
+  const nativeJson=(url,init={})=>defaultJson(url,init,options)
+  const unique=new Map(),requisitions=new Map(),inventories=[]
+  let duplicateCount=0
+  for(const board of boards){
+    options.signal?.throwIfAborted()
+    const config=loadConfig(board.scraperDir)
+    proof(config.listingStrategy==='jobs-api' && typeof config.jobsApiUrl==='string','explicit native listing config missing')
+    const api=new URL(config.jobsApiUrl),base=new URL(board.baseUrl)
+    proof(api.origin===base.origin && api.pathname===`/wday/cxs/${board.tenant}/${board.site}/jobs` && !api.search,'native API board mismatch')
+    const jobs=await runWorkdayScraper({...options,source,company,baseUrl:board.baseUrl,scraperDir:board.scraperDir,boardIdentityVerified:true})
+    const evidence=readInventoryEvidence(jobs)
+    proof(evidence?.firstParty===true && evidence.listingComplete===true && evidence.pagesFetched>=1
+      && Number.isSafeInteger(evidence.reportedTotal) && evidence.reportedTotal>=0,'incomplete native board inventory')
+    proof(config.locationCountry==null || config.locationCountry===INDIA,'unverified configured country facet')
+    proof(!config.locationCountry || jobs.length===evidence.reportedTotal,'selected India facet and native India details disagree')
+    const facets=buildWorkdayAppliedFacets(board.baseUrl,config.locationCountry,config.countryFacetParameter)
+    const recheck=await nativeJson(config.jobsApiUrl,{method:'POST',body:JSON.stringify({appliedFacets:facets,limit:20,offset:0,searchText:config.searchText||''})})
+    proof(recheck.total===evidence.reportedTotal && Array.isArray(recheck.jobPostings)
+      && recheck.jobPostings.length===Math.min(20,recheck.total),'native total changed or incomplete first page')
+    for (const row of recheck.jobPostings) {
+      proof(typeof row.externalPath === 'string' && /^\/job\/[^?#]+$/.test(row.externalPath), 'invalid native recheck identity')
+      const url = new URL('/'+board.site+row.externalPath,board.baseUrl).href
+      const job = jobs.find(job => canonical(job.link,board) === url)
+      // Global boards also contain foreign rows omitted from the India output.
+      if (!job) { proof(!config.locationCountry && jobs.length < recheck.total,'native listing identities changed'); continue }
+      proof(row.title === job.title && (row.bulletFields == null || Array.isArray(row.bulletFields)), 'native listing title changed')
+      const ids = (row.bulletFields || []).filter(value => typeof value === 'string'
+        && /^(?:[A-Z]{1,6}[A-Z0-9_-]*\d[A-Z0-9_-]*|\d{5,})$/i.test(value))
+      proof(!ids.length || ids.includes(job.requisitionId),'native listing requisition changed')
+    }
+    if(!recheck.total)proof(jobs.length===0 && recheck.jobPostings.length===0,'native empty board disagrees')
+    inventories.push({site:board.site,tenant:board.tenant,scope:config.locationCountry?'india-country-facet':Object.keys(facets).length?'configured-native-location-subset':'global-unfiltered',appliedFacets:facets,reportedTotal:evidence.reportedTotal,
+      observedIndia:jobs.length,pagesFetched:evidence.pagesFetched,stableReportedTotal:true,explicitGlobalEmpty:Object.keys(facets).length===0&&recheck.total===0})
+    for(const job of jobs){
+      proof(job.sourceDetailComplete===true && typeof job.requisitionId==='string','native detail incomplete')
+      const detailUrl=buildWorkdayDetailApiUrl(job.link,config.jobsApiUrl)
+      proof(detailUrl,'native detail URL unavailable')
+      const payload=await nativeJson(detailUrl),info=payload.jobPostingInfo,employer=payload.hiringOrganization?.name
+      proof(info && info.jobPostingSiteId===board.site && typeof info.id==='string' && /^[a-f0-9]{32}$/.test(info.id)
+        && info.jobReqId===job.requisitionId && info.title===job.title,'native title/requisition/board mismatch')
+      proof(info.canApply===true && info.posted===true,'native application status unavailable')
+      proof(canonical(info.externalUrl,board)===canonical(job.link,board)
+        && info.jobPostingId===new URL(info.externalUrl).pathname.split('/').at(-1),'native canonical identity mismatch')
+      proof(info.country?.descriptor==='India' && info.country.id===INDIA
+        && info.jobRequisitionLocation?.country?.descriptor==='India'
+        && info.jobRequisitionLocation.country.id===INDIA && info.jobRequisitionLocation.country.alpha2Code==='IN','native India country unavailable or conflicting')
+      proof([info.location,info.jobRequisitionLocation.descriptor].every(label=>typeof label==='string' && label.trim() && !explicitForeignCode(label)
+        && isJobInPublicLocationScope({country:'India',location:label.replace(/\b(?:India|IND|IN)\b/gi,' ')})),
+        'explicit foreign native primary location contradicts India country')
+      proof(typeof employer==='string' && (employer.trim() ? employerPattern.test(employer) : !requireEmployer),'native employer unavailable or mismatched')
+      proof(typeof info.jobDescription==='string' && hasSourceDescription({sourceDescription:info.jobDescription})
+        && toPlainText(info.jobDescription)===job.sourceDescription,'native full description mismatch or missing')
+      const activeDescription=extractActiveDescription(info.jobDescription)
+      proof(activeDescription && normalizeSpace(activeDescription)===normalizeSpace(decodeNativeEntities(toPlainText(info.jobDescription))),
+        'native description is hidden, inert or placeholder content')
+      const detailLocations=extractWorkdayStructuredDetail(payload)?.locations
+      proof(Array.isArray(detailLocations) && detailLocations.length>0
+        && detailLocations.every(label=>job.locations?.some(existing=>locationKey(existing)===locationKey(label))),
+        'native detail locations changed or were not represented in extraction')
+      const postedAt=date(info.startDate,now,true),closingDate=info.endDate==null ? null : date(info.endDate,now)
+      const provenance={site:board.site,tenant:board.tenant,nativePostingUid:info.id,requisitionId:info.jobReqId,canonicalUrl:info.externalUrl,nativeEmployer:employer.trim()||null}
+      const mapped={...job,jobId:info.jobReqId,country:'India',sourceUrl:info.externalUrl,applyUrl:info.externalUrl,link:info.externalUrl,postedAt,closingDate,sourceClosingDateIsExact:false,
+        sourceDescription:info.jobDescription,jobDescription:toPlainText(info.jobDescription),nativeEmployer:employer.trim()||null,nativeBoardProvenance:[provenance]}
+      const signature=JSON.stringify([mapped.title,mapped.sourceDescription,mapped.locations,postedAt,closingDate])
+      const key=board.tenant+'|'+info.jobReqId+'|'+(employer.trim()||'')
+      const existing=requisitions.get(info.jobReqId)
+      proof(!existing || existing===key,'cross-board requisition has conflicting employer')
+      requisitions.set(info.jobReqId,key)
+      if(unique.has(key)){
+        proof(employer.trim() && unique.get(key).signature===signature,'cross-board duplicate content or geography conflict')
+        unique.get(key).job.nativeBoardProvenance.push(provenance)
+        duplicateCount++
+      }else unique.set(key,{job:mapped,signature})
+    }
+  }
+  const jobs=[...unique.values()].map(({job})=>({...job,sourceListingComplete:completeSourceScope,sourceGlobalJobCount:null,
+    sourceBoardInventories:inventories,sourceBoardDuplicateCount:duplicateCount,sourceObservedIndiaJobCount:unique.size}))
+  options.signal?.throwIfAborted()
+  return attachInventoryEvidence(jobs,{status:completeSourceScope ? jobs.length ? 'complete-inventory':'verified-empty':'coverage-gap',surface:boards[0].baseUrl,
+    firstParty:true,listingComplete:completeSourceScope,pagesFetched:inventories.reduce((sum,b)=>sum+b.pagesFetched,0),
+    reportedTotal:completeSourceScope?jobs.length:null,indiaFacetCount:completeSourceScope?jobs.length:null,verifiedAt:new Date().toISOString(),
+    reason:scopeReason||(completeSourceScope?'all-official-workday-boards-india-union':'additional-official-recruitment-surface-unresolved')})
+}
+
+export async function runWorkdayWithPartialFallback(settings,fallback,options={}) {
+  try{return await runVerifiedWorkdayBoardUnion(settings,options)}
+  catch(error){
+    options.signal?.throwIfAborted()
+    if(error?.failureKind!=='incomplete_location_scope')throw error
+    let jobs
+    try{jobs=await runVerifiedWorkdayBoardUnion({...fallback,completeSourceScope:false,
+      scopeReason:'unresolved-global-native-geography-verified-india-location-subset'},options)}
+    catch(fallbackError){
+      fallbackError.sourceFullScopeFailure={name:error.name,message:error.message,failureKind:error.failureKind}
+      throw fallbackError
+    }
+    for(const job of jobs)job.sourceFullScopeFailure={name:error.name,message:error.message,failureKind:error.failureKind}
+    return jobs
+  }
+}

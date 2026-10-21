@@ -1,0 +1,12 @@
+{
+  "mode": "current-rendered-public-official-corporate-navigation-no-forms",
+  "productionWrites": false,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "### Result\n{\n  \"checkedAt\": \"2026-10-20T23:05:21.486Z\",\n  \"url\": \"https://ivaluegroup.com/en-in/careers/working-at-ivalue/\",\n  \"title\": \"Working at iValue - iValue India\",\n  \"links\": [\n    {\n      \"href\": \"https://ivgroup.greythr.com/hire/jobs/\",\n      \"text\": \"Explore Opportunities\",\n      \"visible\": true,\n      \"rel\": \"noopener\",\n      \"target\": \"_blank\"\n    }\n  ],\n  \"companyFooter\": [\n    \"iValue\",\n    \"iValue, careers are built through real-world technology exposure, continuous learning, and early responsib\",\n    \"iValue, we recognize technology as both an ingredient and catalyst for growth and transformation.\"\n  ]\n}\n### Ran Playwright code\n```js\nawait page.evaluate('() => ({ checkedAt: new Date().toISOString(), url: location.href, title: document.title, links: Array.from(document.querySelectorAll(\\'a[href]\\')).filter(a => /greythr\\\\.com/.test(a.href)).map(a => ({href:a.href,text:a.textContent.trim(),visible:!!(a.offsetWidth || a.offsetHeight || a.getClientRects().length),rel:a.rel,target:a.target})), companyFooter: document.body.innerText.match(/iValue.{0,100}/g)?.slice(-5) })');\n```\n### Open tabs\n- 0: [](about:blank)\n- 1: [ABB Group | Helping industries outrun – leaner and cleaner | ABB](https://www.abb.com/global/en)\n- 2: (current) [1 new message](https://ivaluegroup.com/en-in/careers/working-at-ivalue/)\n### Page\n- Page URL: https://ivaluegroup.com/en-in/careers/working-at-ivalue/\n- Page Title: 1 new message"
+      }
+    ]
+  }
+}

@@ -2,6 +2,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { withRetry } from '../../scraper-support/utils/retry.js'
+import { runNativeCastrol } from './nativeRun.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -350,6 +352,8 @@ const verifyBlockedBpHandoff = async ({ fetchPage, url, label }) => {
   }
 }
 
+const legacyEvidence = jobs => attachInventoryEvidence(jobs.map(job=>({...job,sourceListingComplete:false,sourceDetailComplete:false,sourceDetailStatus:'legacy-native-contract-unqualified'})),{status:'discovery-only',surface:GREENHOUSE_JOBS_URL,firstParty:true,listingComplete:false,reportedTotal:null,indiaFacetCount:null,verifiedAt:new Date().toISOString(),reason:'legacy-unreconciled-native-contract'})
+
 export const createCastrolIndiaScraper = () => ({
   async run({
     fetchPage = defaultFetchPage,
@@ -376,12 +380,12 @@ export const createCastrolIndiaScraper = () => ({
         throw new Error('Castrol Greenhouse board no longer matches the official careers handoff')
       }
       const jobs = extractGreenhouseIndiaJobs(await fetchGreenhouseJobs(GREENHOUSE_JOBS_URL))
-      return jobs.map((job) => ({
+      return legacyEvidence(jobs.map((job) => ({
         ...job,
         source: SOURCE,
         link: job.applyUrl,
         scrapedAt: new Date().toISOString(),
-      }))
+      })))
     }
     if (
       careersPage.status !== 200
@@ -400,23 +404,25 @@ export const createCastrolIndiaScraper = () => ({
     }
 
     if (hasNoOpenRolesSignal(bpSearchPage.html)) {
-      return []
+      return legacyEvidence([])
     }
 
     const jobs = extractBpIndiaJobs(
       await fetchAlgoliaJobs(buildBpAlgoliaJobsRequest()),
     )
 
-    return jobs.map((job) => ({
+    return legacyEvidence(jobs.map((job) => ({
       ...job,
       source: SOURCE,
       link: job.applyUrl || job.sourceUrl,
       scrapedAt: new Date().toISOString(),
-    }))
+    })))
   },
 })
 
-export const run = async (options = {}) => createCastrolIndiaScraper().run(options)
+export const run = async (options = {}) => options.fetchPage || options.fetchAlgoliaJobs || options.fetchGreenhouseJobs
+  ? createCastrolIndiaScraper().run(options)
+  : runNativeCastrol(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

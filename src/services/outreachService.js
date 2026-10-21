@@ -8,7 +8,7 @@ import OutreachDiscoveryCache from '../models/OutreachDiscoveryCache.js';
 import OutreachEmailCache from '../models/OutreachEmailCache.js';
 import OutreachUsage from '../models/OutreachUsage.js';
 import Campaign from '../models/Campaign.js';
-import { buildJobContext, jobSnapshot, groundedContacts, searchTavily, findHunterEmail } from './outreachProviders.js';
+import { buildJobContext, discoveryProvider, jobSnapshot, groundedContacts, searchTavily, findHunterEmail } from './outreachProviders.js';
 import { dayKey, monthKey, outreachError, reserveUsage } from './outreachUsage.js';
 import { githubRequest } from '../pipeline/github.js';
 import { applyPublicJobVisibility } from '../utils/publicJobVisibility.js';
@@ -34,14 +34,24 @@ async function requireTaskOwner(task) {
   }
 }
 const tickDiscovery = id => { setImmediate(() => processDiscoveryTask(id).catch(() => {})); };
+async function completeDiscovery(task, owner, result) {
+  const saved = await OutreachTask.updateOne({ _id: task._id, user: task.user, status: 'running', leaseOwner: owner,
+    $expr: { $gt: ['$leaseUntil', '$$NOW'] },
+  }, terminalUpdate('completed', result));
+  if (!saved.matchedCount) return false;
+  try { await requireOwner(task.user); }
+  catch { await OutreachTask.deleteOne({ _id: task._id, user: task.user }); return false; }
+  return true;
+}
 
-export async function requestDiscovery(user, { jobId, refresh = false }, { schedule = tickDiscovery, now = new Date(), siteSettings = {} } = {}) {
+export async function requestDiscovery(user, { jobId, refresh = false }, { schedule = tickDiscovery, dispatch = dispatchOutreachDiscoveries, now = new Date(), siteSettings = {} } = {}) {
   assertId(jobId);
   if (typeof refresh !== 'boolean') throw outreachError('Refresh must be a boolean.');
   await requireOwner(user);
   const job = await Job.findOne(applyPublicJobVisibility({ _id: jobId, status: 'active', $or: [{ closingDate: null }, { closingDate: { $gt: now } }] }, siteSettings)).lean();
   if (!job) throw outreachError('This job is no longer available.', 404);
-  const context = buildJobContext(job);
+  const provider = discoveryProvider();
+  const context = buildJobContext(job, { provider });
   const activeKey = `${user}:discovery:${jobId}:${context.contextHash}`;
   const active = await OutreachTask.findOne({ user, activeKey });
   if (active) return publicTask(active);
@@ -51,26 +61,42 @@ export async function requestDiscovery(user, { jobId, refresh = false }, { sched
     await requireTaskOwner(task);
     return publicTask(task);
   }
-  if (!process.env.TAVILY_API_KEY) throw outreachError('Referral search is not configured yet.', 503);
+  if (provider === 'tavily' && !process.env.TAVILY_API_KEY) throw outreachError('Referral search is not configured yet.', 503);
+  if (provider === 'actions') requireOutreachActions('Referral discovery');
   let task;
-  try { task = await OutreachTask.create({ user, job: jobId, kind: 'discovery', activeKey, input: { context, refresh } }); }
+  try { task = await OutreachTask.create({ user, job: jobId, kind: 'discovery', activeKey, input: { provider, context, refresh } }); }
   catch (error) { if (error.code !== 11000) throw error; return publicTask(await OutreachTask.findOne({ user, activeKey })); }
   try {
     await reserveUsage(`user:${user}:discoveries:${dayKey(now)}`, 5, { user, now });
     await OutreachTask.updateOne({ _id: task._id, status: 'queued' }, { $set: { ready: true } });
     await requireTaskOwner(task);
-    schedule(task._id);
+    if (provider === 'actions') {
+      try {
+        await dispatch();
+        await OutreachTask.updateOne({ _id: task._id, status: 'queued' }, { $set: { dispatchAt: now } });
+      } catch (error) {
+        const message = error.statusCode ? error.message : 'Referral discovery could not be dispatched. Please retry.';
+        const changed = await OutreachTask.updateOne({ _id: task._id, status: 'queued', attempts: task.attempts || 0 }, terminalUpdate('failed', null, message));
+        if (changed.matchedCount) { task.status = 'failed'; task.error = message; }
+        else {
+          const current = await OutreachTask.findById(task._id).lean();
+          if (!current) throw outreachError('This referral request is no longer available.', 404);
+          return publicTask(current);
+        }
+      }
+    } else schedule(task._id);
   } catch (error) {
-    await OutreachTask.updateOne({ _id: task._id }, terminalUpdate('failed', null, error.message));
+    await OutreachTask.updateOne({ _id: task._id, status: 'queued', attempts: task.attempts || 0 }, terminalUpdate('failed', null, error.statusCode ? error.message : 'Referral discovery was interrupted. Please retry.'));
     throw error;
   }
   return publicTask(task);
 }
 
 /** Called only for an explicit, persisted request, including recovery of interrupted requests. */
-export async function processDiscoveryTask(id, { search = searchTavily, findEmail = findHunterEmail, now = new Date() } = {}) {
+export async function processDiscoveryTask(id, { provider = 'tavily', search = searchTavily, rankContacts, findEmail = findHunterEmail, now = new Date(), deadline = Date.now() + 150000 } = {}) {
+  if (provider === 'actions' && (search === searchTavily || typeof rankContacts !== 'function')) throw outreachError('Referral discovery requires its Actions search and ranking worker.', 503);
   const owner = randomUUID();
-  const task = await OutreachTask.findOneAndUpdate({ _id: id, kind: 'discovery', ready: true, attempts: { $lt: 3 }, $or: [{ status: 'queued' }, { status: 'running', leaseUntil: { $lt: now } }] }, { $set: { status: 'running', leaseOwner: owner, leaseUntil: new Date(now.getTime() + 3 * 60000) }, $inc: { attempts: 1 } }, { new: true }).select('+input +leaseOwner').lean();
+  const task = await OutreachTask.findOneAndUpdate({ _id: id, kind: 'discovery', 'input.provider': provider === 'actions' ? 'actions' : { $ne: 'actions' }, ready: true, attempts: { $lt: 3 }, $or: [{ status: 'queued' }, { status: 'running', leaseUntil: { $lt: now } }] }, { $set: { status: 'running', leaseOwner: owner, leaseUntil: new Date(now.getTime() + 3 * 60000) }, $inc: { attempts: 1 } }, { new: true }).select('+input +leaseOwner').lean();
   if (!task) return null;
   let cacheLocked = false;
   const hash = task.input.context.contextHash;
@@ -80,8 +106,7 @@ export async function processDiscoveryTask(id, { search = searchTavily, findEmai
     const cache = await OutreachDiscoveryCache.findOne({ contextHash: hash, expiresAt: { $gt: now } }).lean();
     if (cache && !task.input.refresh) {
       const result = { contacts: cache.contacts, jobSnapshot: jobSnapshot(context) };
-      await OutreachTask.updateOne({ _id: task._id, leaseOwner: owner }, terminalUpdate('completed', result));
-      return result;
+      return await completeDiscovery(task, owner, result) ? result : null;
     }
     try { await OutreachDiscoveryCache.updateOne({ contextHash: hash }, { $setOnInsert: { contacts: [] } }, { upsert: true }); }
     catch (error) { if (error.code !== 11000) throw error; }
@@ -91,29 +116,37 @@ export async function processDiscoveryTask(id, { search = searchTavily, findEmai
       return null;
     }
     cacheLocked = true;
-    await reserveUsage(`provider:tavily:${monthKey(now)}`, 1000, { now });
-    const contacts = groundedContacts(await search(context), context);
+    await reserveUsage(`provider:${provider === 'actions' ? 'searxng' : 'tavily'}:${monthKey(now)}`, 1000, { now });
+    const searchResults = await search(context, { deadline });
+    const candidates = groundedContacts(searchResults, context, { limit: provider === 'actions' ? 12 : 3 });
+    const contacts = rankContacts ? await rankContacts(context, candidates, { deadline }) : candidates;
+    if (!Array.isArray(contacts) || contacts.length > 3 || contacts.some(contact => !candidates.includes(contact))) throw outreachError('Referral ranking returned unsupported contacts. Please retry.', 502);
+    if (!contacts.length && searchResults.incomplete) throw outreachError('Public search engines are unavailable or blocked. Please retry later.', 502);
+    if (!await User.exists({ _id: task.user, deactivated: { $ne: true }, outreachDeletingAt: null })) { await OutreachTask.deleteOne({ _id: task._id, user: task.user }); return null; }
     for (const contact of contacts) {
-      if (!context.companyDomain) continue;
+      if (!context.companyDomain || deadline - Date.now() <= 1000) continue;
       const key = createHash('sha256').update(`${context.companyDomain}:${contact.name.toLocaleLowerCase()}`).digest('hex');
       const cachedEmail = await OutreachEmailCache.findOne({ key, expiresAt: { $gt: now } }).lean();
       if (cachedEmail) { Object.assign(contact, { email: cachedEmail.email, emailStatus: cachedEmail.emailStatus }); continue; }
       if (!process.env.HUNTER_API_KEY && findEmail === findHunterEmail) continue;
       try {
         await reserveUsage(`provider:hunter:${monthKey(now)}`, 50, { now });
-        const result = await findEmail(contact, context.companyDomain);
+        const result = await findEmail(contact, context.companyDomain, { remainingMs: deadline - Date.now() });
         Object.assign(contact, result);
         await OutreachEmailCache.updateOne({ key }, { $set: { ...result, expiresAt: new Date(now.getTime() + 30 * DAY) } }, { upsert: true });
       } catch { /* Contacts are still useful when email lookup or its budget is unavailable. */ }
     }
     const result = { contacts, jobSnapshot: jobSnapshot(context) };
-    await OutreachDiscoveryCache.updateOne({ contextHash: hash, leaseOwner: owner }, { $set: { ...result, expiresAt: new Date(now.getTime() + 7 * DAY) }, $unset: { leaseOwner: 1, leaseUntil: 1 } });
-    if (!await User.exists({ _id: task.user, deactivated: { $ne: true }, outreachDeletingAt: null })) { await OutreachTask.deleteOne({ _id: task._id, user: task.user }); return null; }
-    await OutreachTask.updateOne({ _id: task._id, leaseOwner: owner }, terminalUpdate('completed', result));
+    if (!await completeDiscovery(task, owner, result)) return null;
+    // Public evidence can outlive its requesting account. Publish it only after
+    // the private task commits, and only while this worker owns the cache lease.
+    const published = await OutreachDiscoveryCache.updateOne({ contextHash: hash, leaseOwner: owner, $expr: { $gt: ['$leaseUntil', '$$NOW'] } },
+      { $set: { ...result, expiresAt: new Date(now.getTime() + 7 * DAY) }, $unset: { leaseOwner: 1, leaseUntil: 1 } });
+    if (published.matchedCount) cacheLocked = false;
     return result;
   } catch (error) {
     const message = error.statusCode ? error.message : 'Discovery was interrupted. Please retry.';
-    await OutreachTask.updateOne({ _id: task._id, leaseOwner: owner }, terminalUpdate('failed', null, message));
+    await OutreachTask.updateOne({ _id: task._id, status: 'running', leaseOwner: owner, $expr: { $gt: ['$leaseUntil', '$$NOW'] } }, terminalUpdate('failed', null, message));
     return null;
   } finally {
     if (cacheLocked) await OutreachDiscoveryCache.updateOne({ contextHash: hash, leaseOwner: owner }, { $unset: { leaseOwner: 1, leaseUntil: 1 } });
@@ -219,32 +252,39 @@ export async function deleteThread(user, id) {
 
 const outreachDispatches = new Map();
 
-async function dispatchDraftWorkflow(repo, request, now) {
-  const data = await request(repo, '/actions/workflows/outreach-drafts.yml/runs?event=workflow_dispatch&per_page=20');
-  if (!Array.isArray(data?.workflow_runs)) throw outreachError('GitHub returned invalid drafting workflow status.', 502);
+async function dispatchOutreachWorkflow(repo, workflow, request, now) {
+  const data = await request(repo, `/actions/workflows/${workflow}/runs?event=workflow_dispatch&per_page=20`);
+  if (!Array.isArray(data?.workflow_runs)) throw outreachError('GitHub returned invalid outreach workflow status.', 502);
   if (data.workflow_runs.some(run => ['queued', 'in_progress', 'waiting', 'pending', 'requested'].includes(run.status))) return { reused: true };
   const repository = await request(repo, '');
-  if (!repository.default_branch) throw outreachError('The drafting workflow default branch is unavailable.', 502);
+  if (!repository.default_branch) throw outreachError('The outreach workflow default branch is unavailable.', 502);
   // Billing settings are an operator prerequisite. This additional cap bounds this feature's usage.
   const configured = Number(process.env.OUTREACH_ACTIONS_MONTHLY_RUN_LIMIT || 10);
   const cap = Number.isInteger(configured) ? Math.max(0, Math.min(100, configured)) : 0;
   await reserveUsage(`actions:${monthKey(now)}`, cap, { now });
-  await request(repo, '/actions/workflows/outreach-drafts.yml/dispatches', { method: 'POST', body: { ref: repository.default_branch } });
+  await request(repo, `/actions/workflows/${workflow}/dispatches`, { method: 'POST', body: { ref: repository.default_branch } });
   return { reused: false };
 }
 
-export async function dispatchOutreachDrafts({ request = githubRequest, now = new Date() } = {}) {
-  if (process.env.OUTREACH_ACTIONS_ENABLED !== 'true' || process.env.OUTREACH_ACTIONS_FREE_CONFIRMED !== 'true') throw outreachError('AI drafting is unavailable until free GitHub Actions capacity is configured.', 503);
+function requireOutreachActions(label) {
+  if (process.env.OUTREACH_ACTIONS_ENABLED !== 'true' || process.env.OUTREACH_ACTIONS_FREE_CONFIRMED !== 'true') throw outreachError(`${label} is unavailable until free GitHub Actions capacity is configured.`, 503);
+  if (!process.env.GITHUB_PAT || !/^[-\w.]+\/[-\w.]+$/.test(process.env.GITHUB_REPO || '')) throw outreachError(`${label} is unavailable until GitHub repository access is configured.`, 503);
+}
+
+async function dispatchRequestedOutreach(workflow, label, { request = githubRequest, now = new Date() } = {}) {
+  requireOutreachActions(label);
   const repo = process.env.GITHUB_REPO;
-  if (!process.env.GITHUB_PAT || !/^[-\w.]+\/[-\w.]+$/.test(repo || '')) throw outreachError('AI drafting is unavailable until GitHub repository access is configured.', 503);
   // GitHub may not list an accepted run immediately. Coalesce concurrent
   // requests so they do not each consume a monthly dispatch reservation.
-  if (outreachDispatches.has(repo)) return outreachDispatches.get(repo);
-  const pending = dispatchDraftWorkflow(repo, request, now);
-  outreachDispatches.set(repo, pending);
+  const key = `${repo}:${workflow}`;
+  if (outreachDispatches.has(key)) return outreachDispatches.get(key);
+  const pending = dispatchOutreachWorkflow(repo, workflow, request, now);
+  outreachDispatches.set(key, pending);
   try { return await pending; }
-  finally { if (outreachDispatches.get(repo) === pending) outreachDispatches.delete(repo); }
+  finally { if (outreachDispatches.get(key) === pending) outreachDispatches.delete(key); }
 }
+export function dispatchOutreachDrafts(options) { return dispatchRequestedOutreach('outreach-drafts.yml', 'AI drafting', options); }
+export function dispatchOutreachDiscoveries(options) { return dispatchRequestedOutreach('outreach-discoveries.yml', 'Referral discovery', options); }
 export async function requestDraft(user, threadId, { dispatch = dispatchOutreachDrafts, now = new Date() } = {}) {
   assertId(threadId);
   const owner = user._id;
@@ -275,20 +315,26 @@ export async function requestDraft(user, threadId, { dispatch = dispatchOutreach
 }
 
 let recovering = false;
-export async function recoverOutreachTasks() {
+export async function recoverOutreachTasks({ dispatchDiscovery = dispatchOutreachDiscoveries, dispatchDraft = dispatchOutreachDrafts, runDiscovery = processDiscoveryTask } = {}) {
   if (recovering) return;
   recovering = true;
   try {
     const now = new Date();
     await OutreachTask.updateMany({ status: { $in: ['queued', 'running'] }, createdAt: { $lt: new Date(now.getTime() - DAY) } }, terminalUpdate('failed', null, 'This request expired before it could finish. Please retry.'));
     await OutreachTask.updateMany({ status: 'running', leaseUntil: { $lt: now }, attempts: { $gte: 3 } }, terminalUpdate('failed', null, 'This request was interrupted repeatedly. Please retry.'));
-    const discoveries = await OutreachTask.find({ kind: 'discovery', ready: true, $or: [{ status: 'queued' }, { status: 'running', leaseUntil: { $lt: now } }] }).limit(3).select('_id').lean();
-    for (const task of discoveries) await processDiscoveryTask(task._id);
+    const discoveries = await OutreachTask.find({ kind: 'discovery', 'input.provider': { $ne: 'actions' }, ready: true, $or: [{ status: 'queued' }, { status: 'running', leaseUntil: { $lt: now } }] }).limit(3).select('_id').lean();
+    for (const task of discoveries) await runDiscovery(task._id);
     if (process.env.OUTREACH_ACTIONS_ENABLED !== 'true' || process.env.OUTREACH_ACTIONS_FREE_CONFIRMED !== 'true') return;
+    await OutreachTask.updateMany({ kind: 'discovery', 'input.provider': 'actions', status: 'running', leaseUntil: { $lt: now }, attempts: { $lt: 3 } }, { $set: { status: 'queued' }, $unset: { leaseOwner: 1, leaseUntil: 1 } });
+    const discovery = await OutreachTask.findOne({ kind: 'discovery', 'input.provider': 'actions', status: 'queued', ready: true, $or: [{ dispatchAt: { $exists: false } }, { dispatchAt: { $lt: new Date(now.getTime() - 5 * 60000) } }] });
+    if (discovery) {
+      try { await dispatchDiscovery(); await OutreachTask.updateMany({ kind: 'discovery', 'input.provider': 'actions', status: 'queued', ready: true }, { $set: { dispatchAt: now } }); }
+      catch { /* Keep only persisted, explicitly requested discovery jobs retryable. */ }
+    }
     await OutreachTask.updateMany({ kind: 'draft', status: 'running', leaseUntil: { $lt: now }, attempts: { $lt: 3 } }, { $set: { status: 'queued' }, $unset: { leaseOwner: 1, leaseUntil: 1 } });
     const task = await OutreachTask.findOne({ kind: 'draft', status: 'queued', ready: true, $or: [{ dispatchAt: { $exists: false } }, { dispatchAt: { $lt: new Date(now.getTime() - 5 * 60000) } }] });
     if (task) {
-      try { await dispatchOutreachDrafts(); await OutreachTask.updateMany({ kind: 'draft', status: 'queued', ready: true }, { $set: { dispatchAt: now } }); }
+      try { await dispatchDraft(); await OutreachTask.updateMany({ kind: 'draft', status: 'queued', ready: true }, { $set: { dispatchAt: now } }); }
       catch { /* A bounded, persisted request stays retryable while Actions is unavailable. */ }
     }
   } finally { recovering = false; }

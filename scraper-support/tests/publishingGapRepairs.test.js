@@ -34,14 +34,19 @@ for (const metadata of manifest) {
     const record = metadata.atsPlatform === 'greenhouse'
       ? { id: 1, title: 'Software Engineer', location: { name: 'Bangalore, India' }, absolute_url: url, content: 'Build and maintain applications.' }
       : metadata.atsPlatform === 'ashby'
-        ? { id: '1', title: 'Software Engineer', location: 'Bangalore, India', jobUrl: url, applyUrl: `${url}/apply`, isListed: true, descriptionPlain: 'Build and maintain applications.' }
+        ? { id: '1', title: 'Software Engineer', location: 'Bangalore, India',
+          jobUrl: `https://jobs.ashbyhq.com/${encodeURIComponent(metadata.boardToken)}/1`,
+          applyUrl: `https://jobs.ashbyhq.com/${encodeURIComponent(metadata.boardToken)}/1/application`,
+          isListed: true, descriptionPlain: 'Build and maintain applications.' }
         : { id: '1', text: 'Software Engineer', categories: { location: 'Bangalore, India' }, hostedUrl: url, applyUrl: `${url}/apply`, descriptionPlain: 'Build and maintain applications.' }
-    const payload = metadata.atsPlatform === 'lever' ? [record] : { jobs: [record] }
+    const payload = metadata.atsPlatform === 'lever' ? [record]
+      : metadata.atsPlatform === 'greenhouse' ? { jobs: [record], meta: { total: 1 } } : { jobs: [record], apiVersion: '1' }
     const jobs = await module.run({ fetchJson: async () => payload })
     assert.equal(jobs.length, 1)
     assert.equal(jobs[0].source, metadata.source)
     assert.equal(jobs[0].company, metadata.companyName)
     assert.equal(readInventoryEvidence(jobs).listingComplete, true)
+    assert.notEqual(jobs[0].sourceListingComplete, false)
     await assert.rejects(module.run({ fetchJson: async () => { throw new Error('HTTP 503') } }), /503/)
   })
 }

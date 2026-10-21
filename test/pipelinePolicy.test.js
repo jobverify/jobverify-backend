@@ -17,25 +17,35 @@ test('direct GitHub starts use the fixed suffix and ignore admin configuration',
   assert.deepEqual(directConfiguration('rewrite').stages.filter(s=>s.enabled).map(s=>s.key),['rewrite','classification']);
   assert.equal(createStages(defaultConfiguration()).filter(s=>s.status==='waiting').length,3);
 });
-test('outcomes stop failed or unfinished work but accept empty queues and deliberate skips', () => {
+test('outcomes stop execution errors or unfinished work and accept individual rewrite failures', () => {
   assert.equal(stageOutcome('rewrite',{queued:0,reason:'empty_queue'},0),'completed');
   assert.equal(stageOutcome('rewrite',{skipped:5},0),'completed');
-  assert.equal(stageOutcome('rewrite',{failed:1},0),'failed');
+  assert.equal(stageOutcome('rewrite',{failed:1},0),'completed');
   assert.equal(stageOutcome('rewrite',{pendingEstimate:1},0),'incomplete');
   assert.equal(stageOutcome('classification',{budgetExhausted:true},1),'incomplete');
   assert.equal(stageOutcome('scraper',{},1),'failed');
   assert.equal(stageOutcome('rewrite',{reason:'interrupted'},0),'incomplete');
 });
 
-test('source failures are warnings only for a successfully finished scraper stage', () => {
+test('scraper and rewrite item failures do not hide failed execution', () => {
   assert.equal(stageOutcome('scraper',{failed:2,warnings:315},0),'completed');
   assert.equal(stageOutcome('scraper',{failed:4654,warnings:4654},0),'completed');
   assert.equal(stageOutcome('scraper',{failed:2,warnings:315},1),'failed');
   assert.equal(stageOutcome('scraper',{failed:2,pendingEstimate:1},0),'incomplete');
   assert.equal(stageOutcome('scraper',{failed:2,interrupted:true},0),'incomplete');
   assert.equal(stageOutcome('scraper',{reason:'worker_error'},0),'failed');
-  assert.equal(stageOutcome('rewrite',{failed:1,warnings:1},0),'failed');
+  assert.equal(stageOutcome('rewrite',{failed:1,warnings:1},0),'completed');
   assert.equal(stageOutcome('classification',{failed:1,warnings:1},0),'failed');
+});
+
+test('rewrite item failures and source races are non-blocking while execution errors stop the stage', () => {
+  for (const summary of [{ failed: 3103 }, { staleSources: 2 }, { concurrentChanges: 1 }]) {
+    assert.equal(stageOutcome('rewrite', { ...summary, pendingEstimate: 0 }, 0), 'completed');
+  }
+  assert.equal(stageOutcome('rewrite', { failed: 1 }, 1), 'failed');
+  assert.equal(stageOutcome('rewrite', { failed: 1, reason: 'worker_error' }, 0), 'failed');
+  assert.equal(stageOutcome('rewrite', { reason: 'worker_error', pendingEstimate: 2 }, 1), 'failed');
+  assert.equal(stageOutcome('rewrite', { failed: 1, pendingEstimate: 2 }, 0), 'incomplete');
 });
 test('classification uses only a current published rewrite with original fallback and identity', () => {
   const original={sourceDescription:'Employer original',description:'Validated rewrite'};
@@ -47,4 +57,5 @@ test('classification uses only a current published rewrite with original fallbac
   assert.equal(selectClassificationDescription({...original,sourceDescription:'Edited employer original'}).text,'Edited employer original');
   assert.equal(selectClassificationDescription({...original,description:'  '}).text,'Employer original');
   assert.equal(selectClassificationDescription({...original,descriptionRewrite:{status:'skipped'}}).origin,'source');
+  assert.equal(selectClassificationDescription({...original,descriptionRewrite:{status:'failed'}}).text,'Employer original');
 });

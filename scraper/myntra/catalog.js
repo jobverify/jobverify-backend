@@ -20,6 +20,16 @@ export const MYNTRA_CATALOG = {
   atsPlatform: 'spire2grow-public-portal',
   countryFilter: 'India',
   paginationStrategy: 'public-count-plus-paginated-search-api',
+  zeroResultPolicy: 'evidence-required',
+  bindingEvidence: {
+    verified: true,
+    checkedAt: '2026-10-20T20:41:47.213Z',
+    officialURL: 'https://careers.myntra.com/',
+    matchedLinks: ['https://jobs.myntra.com/home'],
+    evidenceOrigin: 'direct-first-party-http-html',
+    httpProofFile: '../artifacts/full-catalog/myntra-native-002/002.json',
+    httpProofSha256: '6fa59b55f5d636f9ebc0188d7b6112ffbe6dc370dfcaef12b6f0643f7491f670',
+  },
   extractionStrategy:
     'verified-homepage-careers-link+verified-first-party-jobs-portal+public-v1-p-workspace-bootstrap+public-requisition-search',
   parser: 'custom-script',

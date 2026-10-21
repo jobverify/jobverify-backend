@@ -75,7 +75,7 @@ const API_PORTAL_TEMPLATES = {
     pagination: {
       strategy: 'single-page',
       resultsPath: 'jobs',
-      hasMorePath: 'hasMore',
+      totalCountPath: 'meta.total',
     },
     mapping: {
       title: 'title',

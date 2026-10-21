@@ -14,7 +14,7 @@ test('the pinned LFM CPU worker organizes employer facts through the production 
   const asset = REWRITE_MODEL.runtimeAssets[process.platform];
   assert.ok(asset, 'A pinned runtime must exist for this platform');
   // Require predownloaded assets: this smoke check never silently downloads a model.
-  assert.equal((await fs.stat(path.join(directory, REWRITE_MODEL.file))).size, 149081056);
+  assert.equal((await fs.stat(path.join(directory, REWRITE_MODEL.file))).size, REWRITE_MODEL.bytes);
   assert.equal(await sha256File(path.join(directory, REWRITE_MODEL.file)), REWRITE_MODEL.sha256);
   assert.equal(await sha256File(path.join(directory, asset.file)), asset.sha256);
   const controller = new AbortController();
@@ -46,7 +46,7 @@ test('the pinned LFM CPU worker organizes employer facts through the production 
     assert.match(saved.$set.description, /## Preferred/);
     assert.match(saved.$set.description, /AWS experience is nice to have/);
     assert.equal(saved.$set.sourceDescription, undefined);
-    assert.equal(saved.$set['descriptionRewrite.modelRevision'], '03502067c64ce32ac4fe87b0cec0310a1a13d3e9');
+    assert.equal(saved.$set['descriptionRewrite.modelRevision'], REWRITE_MODEL.revision);
     console.log(JSON.stringify({ modelId: REWRITE_MODEL.modelId, durationMs: Date.now() - started,
       workerMemoryBytes: await workerMemoryBytes(worker.pid), peakHostMemoryPercent: Math.round(peakHostMemory * 10) / 10, mongoWrites: 0 }));
   } finally {

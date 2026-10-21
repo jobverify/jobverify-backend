@@ -212,11 +212,15 @@ test('Navi run validates the official careers handoff, board shell, and public T
       })
 
       if (url === navi.NOAUTH_TOKEN_URL) return tokenPayload
-      if (url === navi.FILTERED_JOBS_URL) return sampleFilteredJobsPayload
+      if (url === navi.FILTERED_JOBS_URL) return {Total:1,Result:[sampleFilteredJobsPayload.Result[0]]}
+      if (url.startsWith(navi.API_BASE_URL+'/api/publicjobs?')) {
+        const row=sampleFilteredJobsPayload.Result[0]
+        return {...row,IsPublic:true,IsDraft:false,JobStatus:'Active',PublishedJobBoards:['CAREERPAGE'],JobDescriptionV2:row.JobDescV2}
+      }
 
       throw new Error(`Unexpected Navi json URL: ${url}`)
     },
-    now: () => '2026-07-16T00:00:00.000Z',
+    now: () => '2026-07-17T00:00:00.000Z',
   }).run()
 
   assert.deepEqual(pageRequests, [
@@ -227,6 +231,8 @@ test('Navi run validates the official careers handoff, board shell, and public T
     jsonRequests.map((request) => [request.url, request.method]),
     [
       [navi.NOAUTH_TOKEN_URL, 'GET'],
+      [navi.FILTERED_JOBS_URL, 'POST'],
+      [`${navi.API_BASE_URL}/api/publicjobs?jobId=${sampleFilteredJobsPayload.Result[0].JobIdObfuscated}&fieldVisibility=None`, 'GET'],
       [navi.FILTERED_JOBS_URL, 'POST'],
     ],
   )
@@ -263,7 +269,15 @@ test('Navi run validates the official careers handoff, board shell, and public T
       publicExperienceChecked: true,
       source: 'navi',
       link: 'https://navi.turbohire.co/job/publicjobs/Cvxwte5N5snwG3hC%2FJkmZDU3RTVAq0zyKiiGLI4keyB3_3_ZUhAlZKVULxyMnx6q',
-      scrapedAt: '2026-07-16T00:00:00.000Z',
+      scrapedAt: '2026-07-17T00:00:00.000Z',
+      sourceNativeClosingDate:'2026-08-31T18:29:00.32Z',
+      sourceClosingDateIsExact:true,
+      sourceDetailComplete:true,
+      sourceDetailStatus:'complete',
+      sourceDescriptionAttachment:null,
+      sourceNativeLocations:[{address:'Bangalore, Karnataka, India',city:'Bangalore',state:'Karnataka',countryCode:'IN'}],
+      sourcePrimaryLocation:'Bangalore, Karnataka, India',
+      sourceListingComplete:true,
     },
   ])
 })

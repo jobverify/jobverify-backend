@@ -15,20 +15,26 @@ import { drainTailoredResumes } from '../src/services/resumeTailoringService.js'
 
 export const OUTREACH_MODEL = JSON.parse(await fs.readFile(new URL('./model.json', import.meta.url), 'utf8'));
 const root = fileURLToPath(new URL('../', import.meta.url));
-const hashFile = async file => {
+const startupBudget = (deadline, maximum) => {
+  const remaining = Math.floor(deadline - Date.now());
+  if (!(remaining > 0)) throw new Error('The outreach runtime startup budget expired.');
+  return Math.min(maximum, remaining);
+};
+const hashFile = async (file, deadline = Infinity) => {
   const hash = createHash('sha256');
-  for await (const chunk of createReadStream(file)) hash.update(chunk);
+  for await (const chunk of createReadStream(file)) { startupBudget(deadline, 120000); hash.update(chunk); }
   return hash.digest('hex');
 };
-async function download(url, target, sha256) {
-  try { if (await hashFile(target) === sha256) return target; } catch { /* first run */ }
+async function download(url, target, sha256, { deadline = Infinity } = {}) {
+  startupBudget(deadline, 120000);
+  try { if (await hashFile(target, deadline) === sha256) return target; } catch { /* first run or expired budget; checked before download */ }
   await fs.mkdir(path.dirname(target), { recursive: true });
   const temporary = `${target}.${randomUUID()}.download`;
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(120000) });
+    const response = await fetch(url, { signal: AbortSignal.timeout(startupBudget(deadline, 120000)) });
     if (!response.ok || !response.body) throw new Error('Immutable outreach model/runtime download failed.');
     await pipeline(Readable.fromWeb(response.body), createWriteStream(temporary, { flags: 'wx', mode: 0o600 }));
-    if (await hashFile(temporary) !== sha256) throw new Error('Outreach model/runtime checksum mismatch.');
+    if (await hashFile(temporary, deadline) !== sha256) throw new Error('Outreach model/runtime checksum mismatch.');
     await fs.rename(temporary, target);
     return target;
   } finally { await fs.rm(temporary, { force: true }).catch(() => {}); }
@@ -46,24 +52,25 @@ async function findBinary(directory) {
   return null;
 }
 /** Only immutable model bytes enter the Actions cache; prompts and outputs stay in memory. */
-export async function prepareOutreachRuntime() {
+export async function prepareOutreachRuntime({ cacheRoot = root, deadline = Infinity } = {}) {
   if (process.platform !== 'linux' || process.arch !== 'x64') throw new Error('The outreach Actions worker requires the standard Linux x64 runner.');
-  const modelPath = path.join(root, '.cache/outreach-models', OUTREACH_MODEL.file);
-  await download(`https://huggingface.co/${OUTREACH_MODEL.modelId}/resolve/${OUTREACH_MODEL.revision}/${OUTREACH_MODEL.file}`, modelPath, OUTREACH_MODEL.sha256);
-  const runtimeDir = path.join(root, '.cache/outreach-runtime', OUTREACH_MODEL.runtimeTag);
+  const modelPath = path.join(cacheRoot, '.cache/outreach-models', OUTREACH_MODEL.file);
+  await download(`https://huggingface.co/${OUTREACH_MODEL.modelId}/resolve/${OUTREACH_MODEL.revision}/${OUTREACH_MODEL.file}`, modelPath, OUTREACH_MODEL.sha256, { deadline });
+  const runtimeDir = path.join(cacheRoot, '.cache/outreach-runtime', OUTREACH_MODEL.runtimeTag);
   const archive = path.join(runtimeDir, OUTREACH_MODEL.runtimeFile);
-  await download(`https://github.com/ggml-org/llama.cpp/releases/download/${OUTREACH_MODEL.runtimeTag}/${OUTREACH_MODEL.runtimeFile}`, archive, OUTREACH_MODEL.runtimeSha256);
-  await command('tar', ['-xzf', archive, '-C', runtimeDir]);
+  await download(`https://github.com/ggml-org/llama.cpp/releases/download/${OUTREACH_MODEL.runtimeTag}/${OUTREACH_MODEL.runtimeFile}`, archive, OUTREACH_MODEL.runtimeSha256, { deadline });
+  await command('tar', ['-xzf', archive, '-C', runtimeDir], { signal: AbortSignal.timeout(startupBudget(deadline, 30000)) });
   const binary = await findBinary(runtimeDir);
   if (!binary) throw new Error('The pinned outreach runtime did not contain llama-server.');
+  startupBudget(deadline, 60000);
   const server = spawn(binary, ['--model', modelPath, '--host', '127.0.0.1', '--port', '8769', '--ctx-size', String(OUTREACH_MODEL.contextTokens), '--threads', String(OUTREACH_MODEL.cpuThreads), '--parallel', '1', '--jinja', '--log-disable'], { stdio: 'ignore', windowsHide: true, env: { ...process.env, LD_LIBRARY_PATH: [path.dirname(binary), process.env.LD_LIBRARY_PATH].filter(Boolean).join(':') } });
   let startupError;
   server.on('error', error => { startupError = error; });
   try {
-    const deadline = Date.now() + 60000;
-    while (Date.now() < deadline) {
+    const readyBy = Math.min(deadline, Date.now() + 60000);
+    while (Date.now() < readyBy) {
       if (startupError || server.exitCode !== null) throw new Error('The outreach model server could not start.');
-      try { const response = await fetch('http://127.0.0.1:8769/health', { signal: AbortSignal.timeout(1000) }); if (response.ok) return { stop: () => server.kill('SIGTERM') }; } catch { /* Loading model. */ }
+      try { const response = await fetch('http://127.0.0.1:8769/health', { signal: AbortSignal.timeout(startupBudget(readyBy, 1000)) }); if (response.ok) return { stop: () => server.kill('SIGTERM') }; } catch { /* Loading model. */ }
       await new Promise(resolve => setTimeout(resolve, 500));
     }
     throw new Error('The outreach model server did not become ready.');

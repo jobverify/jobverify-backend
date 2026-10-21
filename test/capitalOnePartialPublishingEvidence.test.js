@@ -1,0 +1,17 @@
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import {gunzipSync} from 'node:zlib'
+import test,{before} from 'node:test'
+import assert from 'node:assert/strict'
+import {deriveCapitalOnePartialEvidence,verifyCapitalOnePartialPublishingTrial,createCapitalOnePartialTrial} from '../scripts/capitalOnePartialPublishingEvidence.js'
+import {freezeCapitalOnePartialTrial} from '../scripts/freezeCapitalOnePartialPublishingTrial.js'
+const f=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/capitalOne/partial-proof-001.json.gz',import.meta.url)))),readEvidence=async name=>Buffer.from(f.files[name]),now=new Date(f.now)
+let trial
+before(async()=>{const derived=await deriveCapitalOnePartialEvidence({source:'capitalone',httpEvidence:f.httpEvidence,readEvidence,now});trial=createCapitalOnePartialTrial(derived,f.httpEvidence)})
+const verify=t=>verifyCapitalOnePartialPublishingTrial({trial:t,bytes:Buffer.from(JSON.stringify(t)),readEvidence,now})
+test('exact31 responses qualify all12 original roles with partial company health and unknown employers',async()=>{const p=await verify(trial);assert.equal(p.eligibleJobs,12);assert.equal(p.replayEvidence.responsesUsed,31);assert.equal(p.companyScope.indiaTotal,null);assert.equal(p.detailHealth.complete,false);assert.ok(p.jobs.every(j=>j.nativeEmployer===null&&!j.sourceListingComplete));assert.equal(p.trial.jobs[0].scrapedAt,JSON.parse(f.files['evidence/capture-trial.json']).jobs[0].scrapedAt)})
+for(const[name,change]of [['dropped job',t=>t.jobs.pop()],['wrong country',t=>t.jobs[0].country='United States'],['wrong source',t=>t.source='other'],['invented employer',t=>t.jobs[0].nativeEmployer='Capital One'],['refreshed posting date',t=>t.jobs[0].postedAt=f.now],['truncated cap',t=>t.maxJobs=1],['complete health',t=>t.detailHealth.complete=true],['whole India total',t=>t.indiaJobs=12],['false success',t=>t.success=true],['source cleanup flag',t=>t.jobs[0].sourceListingComplete=true],['altered clock',t=>t.completedAt=f.now],['wrong native apply',t=>t.jobs[0].applyUrl='https://example.com/']])test(name+' rejects',async()=>{const changed=structuredClone(trial);change(changed);await assert.rejects(()=>verify(changed))})
+test('raw evidence, duplicate receipt and path escape fail closed',async()=>{for(const edit of [h=>h.receipts[0].sha256='0'.repeat(64),h=>h.receipts.push(h.receipts[0]),h=>h.receipts[0].file='../escape']){const h=structuredClone(f.httpEvidence);edit(h);await assert.rejects(()=>deriveCapitalOnePartialEvidence({source:'capitalone',httpEvidence:h,readEvidence,now}))}})
+test('stale native capture is not renewed by a new trial timestamp',async()=>{await assert.rejects(()=>deriveCapitalOnePartialEvidence({source:'capitalone',httpEvidence:f.httpEvidence,readEvidence,now:new Date(+now+49*3600000)}))})
+test('freezer preserves all original jobs and never overwrites a frozen release',async()=>{const base=fs.mkdtempSync(path.join(os.tmpdir(),'capitalone-partial-')),outputDirectory=path.join(base,'frozen');const result=await freezeCapitalOnePartialTrial({source:'capitalone',httpEvidence:f.httpEvidence,readEvidence,outputDirectory,now});assert.equal(result.eligibleJobs,12);const saved=JSON.parse(fs.readFileSync(path.join(outputDirectory,'capitalone.json')));assert.deepEqual(saved.jobs,trial.jobs);await assert.rejects(()=>freezeCapitalOnePartialTrial({source:'capitalone',httpEvidence:f.httpEvidence,readEvidence,outputDirectory,now}),/exists/)})

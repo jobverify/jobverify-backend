@@ -29,6 +29,9 @@ test('Mongo outreach queue lifecycle: explicit discovery, deduplication, cache, 
   await Job.collection.insertOne({ _id: jobId, title: 'Frontend Engineer', company: 'Example Corp', companyDomain: 'example.com', location: 'Pune, India', isPublicIndia: true, status: 'active', description: 'Build React applications.', fingerprint: 'outreach-fixture' });
   assert.equal(await OutreachTask.countDocuments(), 0, 'reading jobs must never create discovery tasks');
   const oldKey = process.env.TAVILY_API_KEY;
+  const oldProvider = process.env.OUTREACH_DISCOVERY_PROVIDER;
+  process.env.OUTREACH_DISCOVERY_PROVIDER = 'tavily';
+  t.after(() => { if (oldProvider === undefined) delete process.env.OUTREACH_DISCOVERY_PROVIDER; else process.env.OUTREACH_DISCOVERY_PROVIDER = oldProvider; });
   process.env.TAVILY_API_KEY = 'fixture-no-network';
   t.after(() => { if (oldKey === undefined) delete process.env.TAVILY_API_KEY; else process.env.TAVILY_API_KEY = oldKey; });
   const options = { schedule: () => {} };

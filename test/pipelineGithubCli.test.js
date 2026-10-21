@@ -38,10 +38,11 @@ test('GitHub CLI registers direct roots, reports work and dispatches separate co
  await complete('scraper','Jobverify Scraper Cron',1100);
  record=await PipelineRun.findById(record._id).lean();assert.equal(record.stages[1].status,'queued');
  await run('register','rewrite',1101,{PIPELINE_ID:record._id,PIPELINE_DISPATCH_TOKEN:record.stages[1].dispatchToken});
- await fs.writeFile(path.join(directory,'.cache/scraper-actions/description-summary.json'),JSON.stringify({queued:0,reason:'empty_queue'}));
+ await fs.writeFile(path.join(directory,'.cache/scraper-actions/description-summary.json'),JSON.stringify({queued:3103,published:2793,skipped:309,failed:1,warnings:1,pendingEstimate:0}));
  await run('report','rewrite',1101,{PIPELINE_JOB_RESULT:'success'});
  await complete('rewrite','Jobverify Description Rewrite',1101);
  record=await PipelineRun.findById(record._id).lean();assert.equal(record.stages[2].status,'queued');
+ assert.equal(record.stages[1].status,'completed');assert.equal(record.stages[1].summary.failed,1);assert.equal(record.stages[1].summary.warnings,1);
  await run('register','classification',1102,{PIPELINE_ID:record._id,PIPELINE_DISPATCH_TOKEN:record.stages[2].dispatchToken});
  for(let shard=0;shard<4;shard++)await fs.writeFile(path.join(directory,`.cache/scraper-actions/classification-${shard}.json`),JSON.stringify({completed:1,failed:0}));
  await run('report','classification',1102,{PIPELINE_JOB_RESULT:'success'});

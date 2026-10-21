@@ -101,7 +101,7 @@ test('an explicit upstream error cannot certify zero inventory even with an empt
 test('numeric and string end markers stop pagination instead of requesting the same final page again', async () => {
   for (const end of [0, '0', 'false', false, null]) {
     let calls = 0
-    const jobs = await runApiPortalScraper({ provider: provider({ strategy: 'offset-limit', pageSize: 1, totalCountPath: null, hasMorePath: 'nextPageId' }),
+    const jobs = await runApiPortalScraper({ provider: provider({ strategy: 'offset-limit', pageSize: 1, totalCountPath: null, hasMorePath: 'nextPageId', nullHasMoreIsTerminal: true }),
       fetchJson: async () => {
         if (++calls > 1) throw new Error('unexpected continuation after terminal nextPageId')
         return { jobs: [record('1')], nextPageId: end }
@@ -110,4 +110,47 @@ test('numeric and string end markers stop pagination instead of requesting the s
     assert.equal(jobs.length, 1)
     assert.equal(readInventoryEvidence(jobs)?.listingComplete, true)
   }
+})
+
+test('missing or null configured totals remain unknown even when the observed listing is empty', async () => {
+  for (const payload of [{ jobs: [] }, { jobs: [], total: null }]) {
+    const jobs = await runApiPortalScraper({ provider: provider(), fetchJson: async () => payload })
+    assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
+    assert.equal(readInventoryEvidence(jobs)?.status, 'discovery-only')
+  }
+})
+
+test('missing or null configured continuation flags cannot authorize lifecycle deletion', async () => {
+  for (const flags of [{}, { more: null }]) {
+    const jobs = await runApiPortalScraper({ provider: provider({ totalCountPath: null, hasMorePath: 'more' }),
+      fetchJson: async () => ({ jobs: [record('1')], ...flags }) })
+    assert.equal(jobs[0].sourceListingComplete, false)
+    assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
+  }
+})
+
+test('overlapping vacancy identities on different pages cannot inflate completeness counts', async () => {
+  const jobs = await runApiPortalScraper({ provider: provider(), fetchJson: async url => new URL(url).searchParams.get('page') === '1'
+    ? { jobs: [record('1'), record('2')], total: 4 }
+    : { jobs: [record('2'), record('3')], total: 4 } })
+  assert.equal(jobs.length, 4)
+  assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
+  assert.ok(jobs.every(job => job.sourceListingComplete === false))
+})
+
+test('required detail HTTP-success error payloads and missing content fail the role contract', async () => {
+  for (const detail of [{ error: 'blocked', success: false }, {}, { body: { description: '<p> </p>' } }]) {
+    const config = provider({ strategy: 'single-page' })
+    config.config.detail = { enabled: true, required: true, urlTemplate: 'https://careers.acme.test/api/jobs/{{jobId}}',
+      mapping: { jobDescription: 'body.description' } }
+    await assert.rejects(runApiPortalScraper({ provider: config, fetchJson: async url => url.includes('/api/jobs/1')
+      ? detail : { jobs: [record('1')], total: 1 } }), /detail.*(?:upstream|description|contract)/i)
+  }
+})
+
+test('missing employer descriptions cannot produce complete extraction evidence', async () => {
+  const jobs = await runApiPortalScraper({ provider: provider({ strategy: 'single-page' }),
+    fetchJson: async () => ({ jobs: [{ ...record('1'), description: null }], total: 1 }) })
+  assert.equal(jobs[0].sourceListingComplete, false)
+  assert.equal(readInventoryEvidence(jobs)?.listingComplete, false)
 })
