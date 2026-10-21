@@ -364,6 +364,22 @@ export const resetPasswordValidation = [
   }),
 ];
 
+export const changePasswordValidation = [
+  body('oldPassword').isString().bail().notEmpty().withMessage('Old password is required.'),
+  body('newPassword').custom((value) => {
+    if (typeof value !== 'string' || !isStrongPassword(value)) {
+      throw new Error(`Password must be at least ${PASSWORD_MIN_LENGTH} characters and include uppercase, lowercase, and a number.`);
+    }
+    return true;
+  }),
+  body('confirmPassword').custom((value, { req }) => {
+    if (typeof value !== 'string' || value !== req.body.newPassword) {
+      throw new Error('Passwords do not match.');
+    }
+    return true;
+  }),
+];
+
 export const jobQueryValidation = [
   query("page")
     .optional()

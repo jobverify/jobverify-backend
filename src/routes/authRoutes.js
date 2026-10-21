@@ -6,6 +6,7 @@
 import express from "express";
 import {
   authenticateWithGoogle,
+  changePassword,
   getCsrfToken,
   login,
   logout,
@@ -22,6 +23,7 @@ import { requireTurnstileCaptcha } from "../middleware/turnstileCaptcha.js";
 import { createRateLimiter } from "../utils/rateLimit.js";
 import {
   forgotPasswordValidation,
+  changePasswordValidation,
   googleAuthValidation,
   loginValidation,
   registerValidation,
@@ -102,6 +104,7 @@ router.post(
   login,
 );
 router.post("/logout", protect, logout);
+router.post('/change-password', protect, loginLimiter, changePasswordValidation, validateRequest, changePassword);
 router.get("/verify-email", redirectVerifyEmail);
 router.post("/verify-email", verifyEmailValidation, validateRequest, verifyEmail);
 router.post(

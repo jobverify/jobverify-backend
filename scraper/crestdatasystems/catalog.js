@@ -1,30 +1,53 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-const PROVIDER_METADATA = {
+import {fileURLToPath} from 'node:url'
+const currentDir=path.dirname(fileURLToPath(import.meta.url))
+const PROVIDER_METADATA={...{
   "source": "crestdatasystems",
   "companyName": "Crest Data Systems",
   "adapter": "script",
-  "modulePath": path.join(currentDir, 'script.js'),
-  "dryRunFile": path.join(currentDir, 'jobs.json'),
-  "atsPlatform": "workbook-exact-name-sentinel",
+  "atsPlatform": "wordpress-public-job-career",
+  "parser": "source-local-current-advertised-public-WP-feed-and-role-bound-form",
+  "companyDomain": "crestdata.ai",
+  "officialHomepageUrl": "https://www.crestdata.ai/",
+  "companyCareerPage": "https://www.crestdata.ai/careers/",
+  "jobsBoardUrl": "https://www.crestdata.ai/careers/open-positions/",
   "countryFilter": "India",
-  "paginationStrategy": "none",
-  "extractionStrategy": "exact-name-batch-coverage-sentinel-return-empty-until-public-surface-is-verified",
-  "parser": "custom-script",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-29",
-  "verifiedPublicJobCount": 0,
-  "verifiedIndiaJobCount": 0,
-  "verifiedSurfaceSummary": "Workbook batch 08 exact-name sentinel for Crest Data Systems added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name.",
-  "backfillMode": "sentinel",
-  "originalAdapter": "script",
-  "originalAtsPlatform": "workbook-exact-name-sentinel",
-  "originalModulePath": "../workbookbatch08/failClosedSentinel.js",
-  "originalDryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\workbookbatch08\\crestdatasystems.jobs.json"
-}
-
+  "paginationStrategy": "advertised100-public-feed-explicit-XWP-totals-pages1-final-full-feed-taxonomy-recheck",
+  "extractionStrategy": "current-official-rebrand-and-handoff+active-client-pin+exact-role-ID-full-content-application-form",
+  "verifiedPublicJobCount": null,
+  "verifiedIndiaJobCount": null,
+  "verifiedOn": null,
+  "verifiedAt": null,
+  "verifiedInventoryStatus": "unverified",
+  "zeroResultPolicy": "evidence-required",
+  "sourceScopeComplete": false,
+  "boardIdentityVerified": true,
+  "officialBindingVerifiedAt": "2026-10-21T14:23:38.854Z",
+  "backfillMode": "live-parser",
+  "originalModulePath": null,
+  "originalDryRunFile": null,
+  "remediationStatus": "implemented-offline-browser-fixture-validation-runtime-http-unqualified",
+  "runtimeQualification": "ordinary-http-failed-no-current-runtime-qualification",
+  "verificationDisposition": "actual-browser-native-evidence-separate-from-failed-ordinary-HTTP-runtime",
+  "sourceScopeNotes": "Current Crest Data brand explicitly rebranded from Crest Data Systems. This registration remains the canonical source; legal employer is not supplied. Complete observed WP feed only; whole company recruiting scope unknown. Native country is absent: exact Ahmedabad/Pune taxonomy and role labels corroborate current corporate India offices. Native timestamp zone absent, preserve local raw timestamp and date-only publication precision. Source remains HTTP-only, no runtime browser fallback.",
+  "bindingEvidence": {
+    "verified": true,
+    "checkedAt": "2026-10-21T14:23:38.854Z",
+    "officialURL": "https://www.crestdata.ai/",
+    "matchedLinks": [
+      "https://www.crestdata.ai/careers/",
+      "https://www.crestdata.ai/careers/open-positions/"
+    ],
+    "proofs": [
+      {
+        "file": "../artifacts/full-catalog/crestdata-native-001/browser-native-002/qualification-manifest-002.json",
+        "sha256": "9364ba6592d8fec6de3d116e5667f27ba2aa9416a1ba63840a0ec0719cdc4fc7"
+      }
+    ],
+    "bindingMethod": "current-owned-research-browser-raw-HTTP-active-corporate-handoffs-and-explicit-rebrand"
+  },
+  "verifiedSurfaceSummary": "Actual public corporate, native feed, six full role pages and final stable feed/taxonomy captured for local fixture qualification. Metadata does not contain runtime counts; ordinary Node network remains unavailable."
+},modulePath:path.join(currentDir,'script.js'),dryRunFile:path.join(currentDir,'jobs.json')}
 export default PROVIDER_METADATA
-export { PROVIDER_METADATA }
+export {PROVIDER_METADATA}

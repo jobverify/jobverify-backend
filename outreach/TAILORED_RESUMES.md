@@ -1,63 +1,45 @@
-# Tailored resumes on GitHub Actions
+﻿# Resume preparation and tailoring
 
-Clicking **Generate tailored resume** saves an owner-scoped request in MongoDB
-and dispatches `.github/workflows/tailored-resumes.yml`. The API does not run
-inference or call a hosted inference API. The standard Ubuntu runner downloads
-the checksum-verified model and llama.cpp runtime pinned in `outreach/model.json`,
-loads the original resume and saved job from MongoDB, generates structured output
-locally, and writes the result back to MongoDB. The existing dialog polls the
-request and displays the preview and download when it completes.
+Changed PDF, Word and TeX uploads automatically queue preparation; identical bytes reuse preparation. Original bytes remain unchanged in Resume (500 KB maximum). Legacy uploads expose Prepare resume without bulk conversion. Saving a job never triggers inference. Explicit tailoring requires a prepared base and saved job.
 
-## Deployment
+One tailored-resumes.yml run processes one preparation or tailoring item, serially, with a 30-minute job limit. Preparation generates full base LaTeX and PDF. Tailoring uses the entire base LaTeX, source facts and a versioned candidate-facing job snapshot. Oversized input is rejected without truncation. Scanned PDFs require an extractable-text version; OCR is not used.
 
-1. Deploy `tailored-resumes.yml` and its worker code to the backend repository's
-   default branch. GitHub must recognize the workflow before it can be dispatched.
-2. Configure backend `GITHUB_REPO=owner/repository` and `GITHUB_PAT`. A fine-grained
-   token needs access to that repository with **Actions: read and write**. Keep
-   the token on the backend; it is not a frontend variable or worker input.
-3. Set the repository Actions secret `MONGO_URI` to the database used by the API.
-   The database must accept connections from the GitHub-hosted runner. The secret
-   is supplied only to the generation step. Enable GitHub Actions for the repo.
-4. Deploy the updated API. Dispatch is available when the GitHub credentials are
-   configured. `TAILORED_RESUME_ACTIONS_ENABLED=false` disables API dispatch and
-   recovery; no outreach flags or inference API keys are required.
+## Model and compiler
 
-`TAILORED_RESUME_ACTIONS_MONTHLY_RUN_LIMIT` defaults to **10** workflow dispatches
-per UTC calendar month, shared across accounts. The configurable maximum is 100;
-zero disables new dispatches. This application cap is separate from GitHub's
-billing settings and does not guarantee that runner usage is free. Each user
-also retains the existing limit of ten generation requests per UTC day.
+outreach/resume-model.json separately pins Qwen3-4B-Instruct-2507 Q4_K_M, repository revision, checksums and llama.cpp runtime. The outreach model is unchanged. Every complete rendered prompt is token-counted, including source comparison and repair.
 
-GitHub's [workflow dispatch documentation](https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event)
-describes the repository permission and default-branch deployment requirements.
+outreach/compiler pins Tectonic 0.17.0 and warms trusted packages against a fingerprinted v33 bundle before processing candidate data. Docker compilation receives TeX via stdin and returns only PDF bytes. There are no host mounts, network, credentials, elevated capabilities, writable root filesystem or shell escape. Runtime, memory, processes and temporary file sizes are bounded. There is no unsandboxed fallback.
 
-## Queue and failure behavior
+Publication requires readable PDF text, minimum 10pt text, page-boundary checks, protected identity/contact/link/employment/education/date/number validation, and a separate LLM source comparison. Base documents preserve complete facts without a page target. Tailored documents must fit two pages. One repair is allowed. Failure preserves the previous successful version and exposes retry.
 
-- A waiting workflow is reused. A currently running workflow gets a follow-up
-  dispatch so a request arriving as it finishes is not stranded. Concurrent
-  clicks within one API process share the same in-flight dispatch.
-- The workflow serializes runs without cancelling a running worker. Each run
-  processes at most three resumes with a ten-minute job timeout. The API's
-  recovery task redispatches remaining queued requests after five minutes.
-- MongoDB leases and generation revisions prevent duplicate completion and late
-  writes after a resume replacement, unbookmark, retry, or account deletion.
-- Dispatch and model-startup failures produce a retryable failed state in the
-  app. Interrupted leases are recoverable, with at most three worker attempts;
-  requests expire after one day. A previous generated version is preserved.
-- GitHub events contain only the branch ref. Candidate files, prompts, job IDs,
-  account IDs and generated resumes are not workflow inputs, log messages,
-  artifacts, or cache entries. Only the immutable model is cached.
-- The outreach workflow now processes outreach drafts only. Tailoring uses the
-  same model/runtime implementation with its own prompt and output schema.
+## Storage and authenticated document APIs
 
-For a worker failure, inspect the **Jobverify Tailored Resumes** Actions run and
-its aggregate counts, correct deployment or database connectivity as needed,
-and retry generation in the app. No database export or candidate data is needed
-in logs to diagnose workflow startup.
+ResumeArtifact stores immutable owner-scoped generations: LaTeX up to 256 KB, PDF up to 5 MB, grounding facts, source hashes and model/style versions. JSON APIs expose metadata only. Document endpoints require authentication and use Cache-Control: no-store.
 
-Run focused validation from the backend:
+- POST /api/user/resume/prepare queues or retries preparation.
+- GET /api/user/resume/base?format=pdf|tex previews the base.
+- GET /api/user/resume/base/download?format=pdf|tex downloads the base.
+- POST /api/user/tailored-resumes/:jobId explicitly requests tailoring.
+- GET /api/user/tailored-resumes/:jobId/pdf previews the PDF.
+- GET /api/user/tailored-resumes/:jobId/download?format=pdf|tex downloads; PDF is the default. Legacy JSON drafts require regeneration.
 
-```sh
-node --test test/resumeTailoringWorkflow.test.js test/tailoredResumeActionsWorker.test.js test/resumeTailoringMongo.test.js test/resumeTailoringWorker.test.js test/resumeTailoringContent.test.js
-npm run lint
-```
+Revisions, persisted leases, source hashes and job hashes prevent late writes after retry, replacement, unbookmarking or deletion. Stale downloads are rejected. The latest successful base and result per user/job are retained, with the prior success preserved during regeneration.
+
+## Deployment and rollout gates
+
+1. Keep TAILORED_RESUME_ACTIONS_ENABLED=false until validation is complete.
+2. Deploy workflows and worker code to the backend default branch. Configure backend GITHUB_REPO and GITHUB_PAT (repository Actions read/write), and repository Actions secret MONGO_URI. The database secret belongs only to the generation step. Review npm run db:indexes:plan and apply the new preparation-queue and ResumeArtifact owner indexes with the existing index tool before enabling generation.
+3. Run Resume Model Rollout Benchmark on the actual standard GitHub runner for AlgoShack, Visa and Elsevier. It uses synthetic facts without database access or secrets, compiles short/long/special-character fixtures, renders every PDF page and reports aggregate timings and validation. Factual, rendering, two-page or time-budget failures block rollout.
+4. Deploy API and frontend. In isolated QA accounts repeat upload/retry/replacement/removal and the three live job scenarios using the authorized resume. Visually inspect every PDF page and verify PDF.js previews and PDF/TeX downloads. Delete QA records afterward.
+5. Enable dispatch after these gates pass. Preparation and tailoring share persisted deduplication, recovery and TAILORED_RESUME_ACTIONS_MONTHLY_RUN_LIMIT (default10, maximum100). Each run can use up to30minutes; configure GitHub billing limits separately. Existing per-user tailoring allowance remains ten requests per UTC day.
+
+Only immutable model/runtime archives and the trusted compiler image are cached. Resumes, prompts, TeX, PDFs and compiler logs are never cached or uploaded as Actions artifacts. Worker output contains aggregate counts only; benchmarks contain aggregate validation/timing evidence only.
+
+## Validation
+
+    node --test test/resume*.test.js test/tailoredResumeActionsWorker.test.js
+    npm run lint
+    node scripts/verifyResumeCompiler.js
+    RESUME_BENCHMARK_SCENARIO=algoshack node scripts/benchmarkResumeModel.js
+
+Real compiler acceptance needs a running Linux container engine and network for its initial trusted image build. Model benchmarking needs Linux x64. Unit, Mongo and browser fixtures verify application behavior; they do not establish model quality or runner speed.

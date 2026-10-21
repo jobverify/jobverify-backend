@@ -12,6 +12,7 @@ import SiteSettings from "../models/SiteSettings.js";
 import Application from '../models/Application.js';
 import Resume from '../models/Resume.js';
 import TailoredResume from '../models/TailoredResume.js';
+import ResumeArtifact from '../models/ResumeArtifact.js';
 import OutreachThread from '../models/OutreachThread.js';
 import OutreachTask from '../models/OutreachTask.js';
 import OutreachUsage from '../models/OutreachUsage.js';
@@ -25,7 +26,7 @@ export const removeUserAccount = async (user) => {
   const userId = user._id;
   await User.updateOne({ _id: userId }, { $set: { outreachDeletingAt: new Date() } });
   await cleanupUserCampaignData(userId);
-  for (const Model of [Subscription, Click, JobAlertDelivery, PlanPurchase, AccessEvent, TelegramLinkToken, UserSuggestion, Application, Resume, TailoredResume, OutreachTask, OutreachThread, OutreachUsage]) {
+  for (const Model of [Subscription, Click, JobAlertDelivery, PlanPurchase, AccessEvent, TelegramLinkToken, UserSuggestion, Application, Resume, TailoredResume, ResumeArtifact, OutreachTask, OutreachThread, OutreachUsage]) {
     await Model.deleteMany({ user: userId });
   }
   await PendingUser.deleteMany({ email: user.email });

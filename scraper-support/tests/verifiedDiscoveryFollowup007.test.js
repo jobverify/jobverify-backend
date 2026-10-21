@@ -185,7 +185,8 @@ test('a later Student role with unknown native geography rejects rather than reu
 })
 
 test('native date-only closing remains date-only and eligible through its current calendar day',async t=>{
-  mock(t,(data,site,part)=>{if(part!=='/jobs')data.jobPostingInfo.endDate='2026-10-20'})
+  // Keep posting age eligible so this case isolates the date-only closing rule.
+  mock(t,(data,site,part)=>{if(part!=='/jobs')Object.assign(data.jobPostingInfo,{startDate:'2026-10-19',endDate:'2026-10-20'})})
   const jobs=await createCatalogScraper(provider('blackberry')).run({requestScheduler:scheduler,retryBaseDelayMs:0,requestTimeoutMs:1000,now:()=> '2026-10-20T22:12:21.965Z'})
   assert.ok(jobs.every(j=>j.closingDate==='2026-10-20T00:00:00.000Z' && j.sourceClosingDateIsExact===false))
   assert.equal(analyzePublishableJobs(jobs,{now:new Date('2026-10-20T22:12:21.965Z')}).eligibleJobs.length,2)

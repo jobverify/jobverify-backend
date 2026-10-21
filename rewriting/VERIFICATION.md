@@ -1,10 +1,10 @@
-# LFM and empty-description verification
+# Description rewriting verification status
 
-The checks below were recorded locally on 11 October 2026 with the previous checkpoint. They predate the 21 October 2026 switch to LFM2.5-1.2B-Instruct QAD Q4_0 and do not verify the new checkpoint. The model switch was not tested locally; GitHub pipeline validation is pending. No GitHub workflow was dispatched, repository variable changed, or production MongoDB data written for this switch.
+The historical checks below were recorded locally on 11 October 2026 with an earlier checkpoint. They do not verify Qwen3.5-9B Q5_K_M or policy v12. No local tests, syntax/lint checks, model download or inference were run for this migration, as requested. GitHub pipeline validation is pending. No workflow was dispatched, repository variable changed, or production MongoDB data written for this switch.
 
 ## Result
 
-The configured description rewriting model is **LiquidAI/LFM2.5-1.2B-Instruct-GGUF**, using the pinned LFM2.5-1.2B-Instruct-QAD-Q4_0.gguf artifact (695,755,488 bytes). The production worker uses the LFM Jinja chat template and up to four CPU threads, with a 128 MiB prompt-cache cap. The workflow has fresh model and decision cache keys; request identities prevent reuse of another model's decisions.
+The configured model is **unsloth/Qwen3.5-9B-GGUF**, using pinned `Qwen3.5-9B-Q5_K_M.gguf` (6,577,841,376 bytes). The workflow configures one server, four CPU threads, one active request, an 8,192-token context and a 128 MiB prompt-cache cap. Thinking is disabled. Source-bound section caches replace the production compact-plan cache. Initial output is 2,048 tokens, with one truncation retry up to 4,096 tokens within a shared 600-second deadline and measured context headroom. New regression cases cover section generation, retries, prompt sizing, cache isolation, rejection fallback, mixed requirement scopes, conditions, responsibility retention and negation. They remain unexecuted.
 
 The generic publishing filter rejects absent, null, blank, spacing-only and empty-HTML employer descriptions before enrichment, persistence and rewrite queueing. Explicitly empty source content cannot fall back to generated display text. Historical records with empty sources are excluded from public queries and counts. Filter diagnostics and resume checkpoints include filteredEmptyDescription. An empty later scrape cannot replace the last valid stored description; raw snapshots remain available for diagnostics.
 

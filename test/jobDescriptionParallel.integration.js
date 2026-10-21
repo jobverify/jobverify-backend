@@ -9,8 +9,8 @@ import { REWRITE_MODEL, buildRewriteInput } from '../src/services/jobDescription
 import { prepareRewriteRuntime, startRewriteWorker, workerMemoryBytes } from '../rewriting/worker.js';
 import { createRewriteClient, rewriteCandidates } from '../rewriting/runner.js';
 
-test('one native model processes four concurrent descriptions with full request contexts', { timeout: 120000 }, async () => {
-  const directory = process.env.LFM_SMOKE_ASSET_DIR || fileURLToPath(new URL('../.cache/small-description-model-assets/', import.meta.url));
+test('optional native comparison measures one versus four slots; production starts at one', { timeout: 6600000 }, async () => {
+  const directory = process.env.DESCRIPTION_SMOKE_ASSET_DIR || fileURLToPath(new URL('../.cache/small-description-model-assets/', import.meta.url));
   await fs.access(path.join(directory, REWRITE_MODEL.file));
   await fs.access(path.join(directory, REWRITE_MODEL.runtimeAssets[process.platform].file));
   const controller = new AbortController();
@@ -39,7 +39,7 @@ test('one native model processes four concurrent descriptions with full request 
         });
         const saved = new Set(), started = Date.now();
         const stats = await rewriteCandidates(jobs, { client: createRewriteClient(worker), concurrency: parallelism,
-          signal: controller.signal, deadline: Date.now() + 45000,
+          signal: controller.signal, deadline: Date.now() + Math.ceil(jobs.length / parallelism) * REWRITE_MODEL.requestSeconds * 1000,
           update: async (filter, values) => {
             assert.match(values.$set.description, /At least 2 years/);
             assert.match(values.$set.description, /AWS experience is nice to have/);

@@ -9,6 +9,7 @@ const timestamp = value => {
   return Number.isFinite(date.getTime()) && date.getTime() > 0 ? date.toISOString() : null
 }
 const companyKey = value => String(value || '').trim().toLowerCase()
+const companyNamesAvailable = value => Array.isArray(value) && value.every(name => typeof name === 'string')
 const sharedAdapters = new Set(['workday', 'publicAts', 'apiPortal'])
 const sharedAtsPlatforms = new Set(['greenhouse', 'ashby', 'lever', 'workday', 'workable', 'workable-native-api',
   'darwinbox', 'phenom', 'successfactors-rmk', 'kula', 'kula-public-api'])
@@ -64,7 +65,25 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
   if (!Number.isFinite(now.getTime()) || !(maxAgeHours > 0)) throw new TypeError('Valid now and positive maxAgeHours required')
   const databaseAvailable = runtime?.databaseAvailable === true
   const snapshotFresh = databaseAvailable && fresh(runtime.generatedAt, now, maxAgeHours)
-  const inventory = new Map((databaseAvailable ? runtime.inventory || [] : []).map(row => [row.source, row]))
+  // Only a valid inventory collection establishes zero for an absent source.
+  // A present source's missing counters remain unknown independently.
+  const inventoryAvailable = databaseAvailable && Array.isArray(runtime?.inventory)
+    && runtime.inventory.every(row => row && typeof row === 'object' && !Array.isArray(row)
+      && (typeof row.source === 'string' || row.source === null))
+    && new Set(runtime.inventory.map(row => row.source)).size === runtime.inventory.length
+  const inventory = new Map((inventoryAvailable ? runtime.inventory : []).map(row => [row.source, row]))
+  const inventoryFor = source => {
+    const current = inventory.get(source)
+    return {
+      savedJobs: inventoryAvailable ? (current ? metric(current.savedJobs) : 0) : null,
+      visibleJobs: inventoryAvailable ? (current ? metric(current.visibleJobs) : 0) : null,
+      visibleCompanies: inventoryAvailable ? (current ? (companyNamesAvailable(current.visibleCompanies) ? current.visibleCompanies : null) : []) : null,
+    }
+  }
+  const inventoryCountersComplete = inventoryAvailable && [...inventory.values()]
+    .every(row => metric(row.savedJobs) !== null && metric(row.visibleJobs) !== null)
+  const inventoryNamesComplete = inventoryAvailable && [...inventory.values()].every(row => companyNamesAvailable(row.visibleCompanies))
+  const publicNamesAvailable = databaseAvailable && companyNamesAvailable(runtime?.publicCompanyNames)
   const statuses = new Map((runtime?.statuses || []).map(row => [row.source, row]))
   const discoveries = new Map(discovery.map(row => [row.source, row]))
   const audits = new Map()
@@ -87,14 +106,9 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
       || typeof declared.evidence?.artifact !== 'string' || !declared.evidence.artifact
       || !/^[a-f0-9]{64}$/.test(declared.evidence?.sha256 || '')) return null
     const evidenceFresh = fresh(declared.verifiedAt, now, maxAgeHours)
-    const current = evidenceFresh && snapshotFresh && Array.isArray(runtime?.inventory) && Array.isArray(runtime?.publicCompanyNames)
-    const childInventories = declared.sources.map(source => {
-      const child = inventory.get(source)
-      const available = databaseAvailable && Array.isArray(runtime?.inventory)
-      return { source, savedJobs: available ? (child ? metric(child.savedJobs) : 0) : null,
-        visibleJobs: available ? (child ? metric(child.visibleJobs) : 0) : null,
-        visibleCompanies: available ? child?.visibleCompanies || [] : null }
-    })
+    const childInventories = declared.sources.map(source => ({ source, ...inventoryFor(source) }))
+    const current = evidenceFresh && snapshotFresh && inventoryAvailable && publicNamesAvailable
+      && childInventories.every(child => child.savedJobs !== null && child.visibleJobs !== null && child.visibleCompanies !== null)
     return { verifiedAt: timestamp(declared.verifiedAt), evidenceFresh, snapshotAt: timestamp(runtime?.generatedAt),
       fresh: current, sources: [...declared.sources], preservesChildSourceAndCompany: true,
       evidence: declared.evidence, childInventories,
@@ -105,7 +119,7 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
     const status = statuses.get(provider.source)
     const attempt = attemptFor(provider.source, status, runState)
     const implementation = classifyImplementation(provider)
-    const current = inventory.get(provider.source)
+    const current = inventoryFor(provider.source)
     const discovered = discoveries.get(provider.source)
     const audited = audits.get(provider.source)
     const discoveryFresh = fresh(discovered?.completedAt, now, maxAgeHours)
@@ -116,7 +130,7 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
       || sharedAtsPlatforms.has(candidate?.atsPlatform)
     const sharedAtsSources = candidate?.boardToken ? providers.filter(other => other.source !== provider.source
       && other.atsPlatform === candidate.atsPlatform && other.boardToken === candidate.boardToken
-      && inventory.get(other.source)?.visibleJobs > 0).map(other => other.source) : []
+      && metric(inventory.get(other.source)?.visibleJobs) > 0).map(other => other.source) : []
     const evidence = attempt?.inventoryEvidence || null
     const evidenceFresh = fresh(evidence?.verifiedAt, now, maxAgeHours)
     const attemptFresh = fresh(attempt?.completedAt || attempt?.attemptedAt, now, maxAgeHours)
@@ -138,8 +152,7 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
       else if (metric(attempt.eligibleJobs) > 0) runtimeOutcome = 'eligible-jobs'
       else runtimeOutcome = 'diagnostics-missing'
     }
-    const visibleJobs = databaseAvailable ? metric(current?.visibleJobs ?? 0) : null
-    const savedJobs = databaseAvailable ? metric(current?.savedJobs ?? 0) : null
+    const { visibleJobs, savedJobs } = current
     const rejectionCounts = Object.fromEntries(['NonIndia', 'Closed', 'InvalidUrl', 'EmptyDescription', 'NonJob', 'Old']
       .map(name => [name[0].toLowerCase() + name.slice(1), metric(attempt?.[`filtered${name}`])]))
     return {
@@ -153,10 +166,10 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
       lastCompleteCheckAt: timestamp(status?.lastCompleteCheckAt || (completeEvidence && attempt?.success === true && !partial && !attempt.skipped ? attempt.completedAt : null)),
       attemptFresh, evidenceFresh, evidenceOrigin: attempt?.evidenceOrigin || (attempt ? 'database-status' : null),
       evidenceMode: attempt?.mode || (attempt ? 'live' : null),
-      runtimeOutcome, publicationOutcome: databaseAvailable ? (visibleJobs > 0 ? 'published' : 'not-published') : 'unknown',
+      runtimeOutcome, publicationOutcome: visibleJobs === null ? 'unknown' : visibleJobs > 0 ? 'published' : 'not-published',
       rawJobs: metric(attempt?.rawRecords), indiaJobs: metric(attempt?.jobs), eligibleJobs: metric(attempt?.eligibleJobs),
       upstreamReportedJobs: metric(evidence?.reportedTotal),
-      savedJobs, visibleJobs, visibleCompanies: current?.visibleCompanies || [], rejectionCounts,
+      savedJobs, visibleJobs, visibleCompanies: current.visibleCompanies, rejectionCounts,
       inventoryDelegation: delegationFor(provider),
       completeSuccessfulCheck: attemptFresh && attempt?.success === true && !attempt.softFailure && !partial && !attempt.skipped && completeEvidence,
       inventoryEvidence: evidence, detailHealth: attempt?.detailHealth || null, zeroJobEvidence: attempt?.zeroJobEvidence || null,
@@ -187,11 +200,14 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
     }
   }).map(row => ({ ...row, gapExplanation: explainPublishingGap(row, { now, maxAgeHours }) }))
   const namesToSources = new Map()
-  for (const row of rows) for (const name of new Set(row.visibleCompanies.map(companyKey).filter(Boolean))) {
+  for (const row of rows) for (const name of new Set((row.visibleCompanies || []).map(companyKey).filter(Boolean))) {
     if (!namesToSources.has(name)) namesToSources.set(name, [])
     namesToSources.get(name).push(row.source)
   }
-  const publicNames = databaseAvailable ? new Set((runtime.publicCompanyNames || []).map(companyKey).filter(Boolean)) : null
+  const publicNames = publicNamesAvailable ? new Set(runtime.publicCompanyNames.map(companyKey).filter(Boolean)) : null
+  const visibleCountsComplete = inventoryAvailable && rows.every(row => row.visibleJobs !== null)
+  const catalogNamesComplete = inventoryAvailable && rows.every(row => row.visibleCompanies !== null)
+  const delegations = rows.map(row => row.inventoryDelegation).filter(Boolean)
   const backlog = rows.filter(row => row.publicationOutcome !== 'published').map(row => ({
     source: row.source, companyName: row.companyName, implementationType: row.implementationType,
     sharedAdapterCompatible: row.sharedAdapterCompatible,
@@ -225,11 +241,12 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
       verifiedZeroInventories: rows.filter(row => row.runtimeOutcome === 'verified-zero' && row.attemptFresh).length,
       coverageGaps: rows.filter(row => row.zeroResultPolicy === 'coverage-gap' || row.runtimeOutcome === 'coverage-gap' || ['sentinel', 'static-empty', 'missing-module', 'unreadable-module'].includes(row.implementationType)).length,
       failures: rows.filter(row => row.runtimeOutcome === 'failed').length,
-      sourcesWithVisibleJobs: databaseAvailable ? rows.filter(row => row.visibleJobs > 0).length : null,
+      sourcesWithVisibleJobs: visibleCountsComplete ? rows.filter(row => row.visibleJobs > 0).length : null,
       distinctVisibleCompanies: publicNames?.size ?? null,
-      distinctVisibleCompaniesFromCatalog: databaseAvailable ? namesToSources.size : null,
-      delegatingSourcesWithPublicChildInventory: rows.filter(row => row.inventoryDelegation?.publicChildSources?.length > 0).length,
-      runtimeReconciliationComplete: snapshotFresh && Array.isArray(runtime?.publicCompanyNames) && Array.isArray(runtime?.inventory),
+      distinctVisibleCompaniesFromCatalog: catalogNamesComplete ? namesToSources.size : null,
+      // Counts established fresh delegation proofs, not unknown child inventory.
+      delegatingSourcesWithPublicChildInventory: delegations.filter(delegation => delegation.publicChildSources.length > 0).length,
+      runtimeReconciliationComplete: snapshotFresh && publicNamesAvailable && inventoryCountersComplete && inventoryNamesComplete,
       runtimeSnapshotAt: timestamp(runtime?.generatedAt),
       runtimeEnvironment: runtime?.environment || (databaseAvailable ? 'provided-snapshot' : null),
       implementationCounts: countBy(rows, 'implementationType'), runtimeOutcomeCounts: countBy(rows, 'runtimeOutcome'),
@@ -239,6 +256,10 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
     },
     limitations: [
       ...(!databaseAvailable ? ['Current database inventory unavailable; saved and visible counts are unknown.'] : []),
+      ...(databaseAvailable && !inventoryAvailable ? ['Current database inventory unavailable or malformed; saved and visible counts are unknown.'] : []),
+      ...(inventoryAvailable && !inventoryCountersComplete ? ['Some saved or visible source counts are unknown; inventory reconciliation is incomplete.'] : []),
+      ...(databaseAvailable && !publicNamesAvailable ? ['Public company-name evidence is unavailable or malformed; the distinct public company total is unknown.'] : []),
+      ...(inventoryAvailable && !inventoryNamesComplete ? ['Some source company-name evidence is unavailable or malformed; company-name reconciliation is incomplete.'] : []),
       ...(databaseAvailable && !snapshotFresh ? ['Database snapshot is stale or undated; regenerate before comparing public counts.'] : []),
       'Historical provider verification is discovery context, not proof of current openings or a complete inventory.',
       'Implemented sources counts executable candidates; completeSuccessfulChecks requires fresh first-party inventory evidence.',
@@ -248,7 +269,7 @@ export const buildPublishingGapReport = ({ catalog = [], runtime = null, runStat
     reconciliation: {
       untrackedSources: [...inventory.keys()].filter(source => !catalogSources.has(source)).sort(),
       sharedPublicCompanyNames: [...namesToSources].filter(([, sources]) => sources.length > 1).map(([company, sources]) => ({ company, sources })),
-      aliasPublications: rows.filter(row => row.visibleJobs > 0 && !row.visibleCompanies.some(name => companyKey(name) === companyKey(row.companyName)))
+      aliasPublications: rows.filter(row => row.visibleJobs > 0 && row.visibleCompanies !== null && !row.visibleCompanies.some(name => companyKey(name) === companyKey(row.companyName)))
         .map(row => ({ source: row.source, catalogCompany: row.companyName, visibleCompanies: row.visibleCompanies })),
       delegatedSourceInventories: rows.filter(row => row.inventoryDelegation)
         .map(row => ({ source: row.source, catalogCompany: row.companyName, ...row.inventoryDelegation })),

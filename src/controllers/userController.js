@@ -418,7 +418,7 @@ export const removeSavedJob = async (req, res) => {
     // Invalidate before removing membership so a remove/re-save race cannot
     // revive a queued request or let an old worker publish its result.
     await TailoredResume.updateMany({ user: user._id, job: jobId, status: { $in: ['queued', 'running'] } }, {
-      $set: { status: 'failed', ready: false, error: 'This job was removed from saved jobs. Save it again to generate a new resume.' },
+      $set: { status: 'failed', phase: 'failed', ready: false, error: 'This job was removed from saved jobs. Save it again to generate a new resume.' },
       $inc: { revision: 1 }, $unset: { leaseOwner: 1, leaseUntil: 1 },
     });
 

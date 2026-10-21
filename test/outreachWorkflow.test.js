@@ -13,7 +13,7 @@ function configure(t, values = {}) {
   t.mock.method(OutreachUsage, 'findOneAndUpdate', async () => ({ used: 1 }));
 }
 
-test('concurrent draft requests share one workflow dispatch and one Actions reservation', async t => {
+test('concurrent draft requests share one workflow dispatch and one usage increment', async t => {
   configure(t);
   let posts = 0;
   const request = async (_repo, endpoint, options) => {

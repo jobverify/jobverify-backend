@@ -12,7 +12,11 @@ const FOREIGN_COUNTRY_CODES=new Set(('AD AE AF AG AI AL AM AO AQ AR AS AT AU AW 
 // an India address. Do not invent a foreign country from those abbreviations.
 const INDIA_STATE_CODES=new Set('AN AP AR AS BR CG CH DD DL DN GA GJ HP HR JH JK KA KL LA LD MH ML MN MP MZ NL OD OR PB PY RJ SK TN TR TS UK UP UT WB'.split(' '))
 const explicitForeignCode=label=>{
-  const code=(label.match(/(?:,\s*|\(\s*)([a-z]{2})\)?\s*$/i)?.[1]||label.match(/^([a-z]{2})\s*[-,.:]\s*/i)?.[1]||'').toUpperCase()
+  // "No. 2" identifies a building number. Keep a real country suffix
+  // authoritative, even when the address starts with that abbreviation.
+  const buildingNumber=/^no\s*[.:]\s*#?\s*\d/i.test(label)
+  const prefix=buildingNumber?'':label.match(/^([a-z]{2})\s*[-,.:]\s*/i)?.[1]
+  const code=(label.match(/(?:,\s*|\(\s*)([a-z]{2})\)?\s*$/i)?.[1]||prefix||'').toUpperCase()
   return FOREIGN_COUNTRY_CODES.has(code)&&!INDIA_STATE_CODES.has(code)
 }
 const proof = (condition, message) => { if (!condition) throw new Error('Verified Workday board union: '+message) }

@@ -1,9 +1,10 @@
 {
-  "modelId": "LiquidAI/LFM2.5-1.2B-Instruct-GGUF",
-  "revision": "430bea1a9fa4d973ce789c15f15e9ed214846f4f",
-  "file": "LFM2.5-1.2B-Instruct-QAD-Q4_0.gguf",
-  "sha256": "bb741ebb106d543e9de114b843a3d3d73d51c74b5801e69da2abde821a0cb3e1",
-  "bytes": 695755488,
+  "modelId": "unsloth/Qwen3.5-9B-GGUF",
+  "baseModelId": "Qwen/Qwen3.5-9B",
+  "revision": "dcb5858fb5302827076259ceafff1690cb56d736",
+  "file": "Qwen3.5-9B-Q5_K_M.gguf",
+  "sha256": "dc2a39aef291f91a9116ad214058da0d86eb648743a124bd8c333787c4b9c91c",
+  "bytes": 6577841376,
   "runtimeTag": "b11146",
   "runtimeAssets": {
     "linux": {
@@ -15,9 +16,12 @@
       "sha256": "14cf1303ca9ac3abd94816850532f9f9a69ac66fbaca3776fc6f9061c2fac1d1"
     }
   },
-  "policyVersion": "job-description-fact-plan-v11",
+  "policyVersion": "job-description-grounded-sections-v12",
+  "outputFormat": "sections",
+  "enableThinking": false,
   "cpuThreads": 4,
   "contextTokens": 8192,
-  "maxOutputTokens": 768,
-  "requestSeconds": 180
+  "maxOutputTokens": 2048,
+  "maxRetryOutputTokens": 4096,
+  "requestSeconds": 600
 }

@@ -2,6 +2,7 @@ import { filterIndiaJobs } from './indiaLocationFilter.js'
 import { isAggregateHiringSignalJob } from '../../src/utils/jobListingEvidence.js'
 import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 import {
+  buildPublishableJobPostedAtCutoff,
   normalizeLifecycleDate,
   startOfUtcDay,
 } from '../../src/utils/jobLifecycle.js'
@@ -19,6 +20,7 @@ export const normalizeHttpUrl = (value) => {
 export const analyzePublishableJobs = (jobs = [], { now = new Date() } = {}) => {
   const resolvedNow = normalizeLifecycleDate(now) || new Date()
   const today = startOfUtcDay(resolvedNow)
+  const postedAtCutoff = buildPublishableJobPostedAtCutoff(resolvedNow)
   const filterCounts = {
     nonIndia: 0,
     old: 0,
@@ -43,6 +45,12 @@ export const analyzePublishableJobs = (jobs = [], { now = new Date() } = {}) => 
       ? normalizeHttpUrl(job?.sourceUrl) : null
     if (!normalizeHttpUrl(applicationUrl) && !emailSourceUrl) {
       filterCounts.invalidUrl += 1
+      return false
+    }
+
+    const postedAt = normalizeLifecycleDate(job?.postingDate) || normalizeLifecycleDate(job?.postedAt)
+    if (postedAt && postedAt < postedAtCutoff) {
+      filterCounts.old += 1
       return false
     }
 

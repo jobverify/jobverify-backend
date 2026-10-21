@@ -155,8 +155,8 @@ export async function runFullDescriptionDryRun({runDir,sourceCount='all',concurr
     const values=Object.values(state.completed||{});
     report.scrape={completedSources:state.completedCount,totalSources:state.totalSources,failedSources:values.filter(r=>!r.result?.success).length};
     await save(path.join(runDir,'scrape-summary.json'),{status:'complete',mongoWrites:0,selectedSources:sources.map((source,i)=>({index:i+1,source})),summary:report.scrape});
-    report.rewriteDirectory='1200m-t4-slots1-arrival-full-final-snapshots';
-    if(!await stage('descriptions',['--use-system-ca','scripts/benchmarkSmallDescriptionModels.js','--phase','consume','--run-dir',runDir,'--model','1200','--threads','4','--slots','1','--workers','1','--port','18772','--prompt-cache','--compact-plan','--preserve-source-context','--all-descriptions','--final-snapshots','--label','full-final-snapshots']))return report;
+    report.rewriteDirectory='9000m-t4-slots1-arrival-full-final-snapshots';
+    if(!await stage('descriptions',['--use-system-ca','scripts/benchmarkSmallDescriptionModels.js','--phase','consume','--run-dir',runDir,'--model','9000','--threads','4','--slots','1','--workers','1','--port','18772','--prompt-cache','--preserve-source-context','--all-descriptions','--final-snapshots','--label','full-final-snapshots']))return report;
     const result=JSON.parse(await fs.readFile(path.join(runDir,report.rewriteDirectory,'summary.json'),'utf8'));
     report.descriptions=result.summary;report.descriptionsStatus=result.status;
     report.status=result.status==='complete'?'complete':'error';report.stage='finished';

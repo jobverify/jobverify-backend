@@ -24,6 +24,7 @@ const { default: UserSuggestion } = await import("../src/models/UserSuggestion.j
 const { default: HiringObservation } = await import('../src/models/HiringObservation.js');
 const { default: Application } = await import('../src/models/Application.js');
 const { default: Resume } = await import('../src/models/Resume.js');
+const { default: ResumeArtifact } = await import('../src/models/ResumeArtifact.js');
 const { default: TailoredResume } = await import('../src/models/TailoredResume.js');
 const { default: OutreachThread } = await import('../src/models/OutreachThread.js');
 const { default: OutreachTask } = await import('../src/models/OutreachTask.js');
@@ -48,6 +49,7 @@ const MODELS = [
   ['HiringObservation', HiringObservation],
   ['Application', Application],
   ['Resume', Resume],
+  ['ResumeArtifact', ResumeArtifact],
   ['TailoredResume', TailoredResume],
   ['OutreachThread', OutreachThread],
   ['OutreachTask', OutreachTask],

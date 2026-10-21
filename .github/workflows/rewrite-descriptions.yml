@@ -26,7 +26,7 @@ jobs:
       JOB_DESCRIPTION_REWRITE_MODE: 'publish'
       JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS: ${{ vars.JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS || '18000' }}
       JOB_DESCRIPTION_REWRITE_CPU_THREADS: '4'
-      JOB_DESCRIPTION_REWRITE_CONCURRENCY: '4'
+      JOB_DESCRIPTION_REWRITE_CONCURRENCY: '1'
       JOB_DESCRIPTION_WORKFLOW_BUDGET_SECONDS: '21000'
       NODE_OPTIONS: '--use-system-ca'
       PIPELINE_STAGE: rewrite
@@ -62,27 +62,27 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .cache/description-rewriter
-          key: description-lfm12b-cpu-${{ runner.os }}-bb741ebb-b11146-14cf1303-c150306e
-      - name: Restore validated compact decisions
+          key: description-qwen35-9b-q5-cpu-${{ runner.os }}-dc2a39ae-b11146-14cf1303-c150306e
+      - name: Restore validated source-grounded rewrites
         if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
         uses: actions/cache/restore@v4
         with:
-          path: .cache/description-plans
-          key: description-lfm12b-plans-${{ runner.os }}-v11-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .cache/description-rewrites
+          key: description-qwen35-9b-q5-rewrites-${{ runner.os }}-v12-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            description-lfm12b-plans-${{ runner.os }}-v11-${{ github.ref }}-
+            description-qwen35-9b-q5-rewrites-${{ runner.os }}-v12-${{ github.ref }}-
       - name: Drain the durable source-hash queue
         if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
         timeout-minutes: 315
         run: node scripts/rewriteJobDescriptions.js --apply
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
-      - name: Save validated compact decisions for the next batch
+      - name: Save validated source-grounded rewrites for the next batch
         if: always() && steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
         uses: actions/cache/save@v4
         with:
-          path: .cache/description-plans
-          key: description-lfm12b-plans-${{ runner.os }}-v11-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .cache/description-rewrites
+          key: description-qwen35-9b-q5-rewrites-${{ runner.os }}-v12-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Upload generation quality and capacity diagnostics
         if: always()
         uses: actions/upload-artifact@v7

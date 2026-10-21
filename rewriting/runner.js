@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { factPlanMessages, factPlanSchema, validateFactPlan, assessRewriteInput, expandModelPlan } from './factPlan.js';
-import { REWRITE_MODEL, buildRewriteInput, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
+import { REWRITE_MODEL, REWRITE_SCHEMA, buildRewriteInput, rewriteMessages, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
 import { reconcileRewriteCandidate, rewriteSnapshotFilter } from './queue.js';
 import { RewriteWorkerError } from './worker.js';
 
@@ -18,6 +18,18 @@ export const rewriteDeadline = ({ now = Date.now(), budgetSeconds = 1200, workfl
 export class RewriteGenerationError extends Error {
   constructor(message, options) { super(message, options); this.name = 'RewriteGenerationError'; }
 }
+
+// The prose protocol handles dense text and mixed headings through evidence validation.
+// Keep the compact protocol available for historical benchmarks and explicit callers.
+export const assessDescriptionRewrite = (input, format = REWRITE_MODEL.outputFormat) => {
+  const assessment = assessRewriteInput(input);
+  if (format === 'sections' && ['mixed_requirement_scope', 'dense_source', 'already_structured',
+    'too_many_source_facts', 'model_context_budget'].includes(assessment.reason)) return { ok: true };
+  return assessment;
+};
+export const validateDescriptionRewrite = (value, input, finishReason, format) =>
+  format === 'fact-plan' || (!format && value && Object.hasOwn(value, 'categories'))
+    ? validateFactPlan(value, input, finishReason) : validateRewrite(value, input, finishReason);
 
 /** Read SSE incrementally; a closed socket without a finish frame is not a completion. */
 const readCompletionStream = async response => {
@@ -46,33 +58,71 @@ const readCompletionStream = async response => {
   return {choices:[{message:{content},finish_reason:finishReason}],usage,timings};
 };
 
-export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model = 'job-description-lfm', requestMs = REWRITE_MODEL.requestSeconds * 1000, planCacheDir, assertAlive = () => {} } = {}) => {
+export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model = 'job-description-qwen',
+  format = REWRITE_MODEL.outputFormat, requestMs = REWRITE_MODEL.requestSeconds * 1000, planCacheDir, assertAlive = () => {} } = {}) => {
+  if (!['sections', 'fact-plan'].includes(format)) throw new Error('Invalid rewrite output format');
   const url = new URL(endpoint);
   if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || url.username || url.password || url.pathname !== '/' || url.search || url.hash) throw new Error('Generation must run on unauthenticated http://127.0.0.1');
   const cache = new Map();
-  return { generate: async (input, { signal, remainingMs = requestMs } = {}) => {
+  const compact = format === 'fact-plan', cacheVersion = compact ? 1 : 2, cacheBytes = compact ? 16000 : 65536;
+  const expand = (value, input) => compact ? expandModelPlan(value, input) : value;
+  const validate = (value, input, finishReason) => validateDescriptionRewrite(value, input, finishReason, format);
+  const remember = (key, value) => {
+    cache.set(key, value);
+    if (cache.size > 128) cache.delete(cache.keys().next().value);
+  };
+  return { format, generate: async (input, { signal, remainingMs = requestMs } = {}) => {
     const timeout = AbortSignal.timeout(Math.max(1, Math.floor(Math.min(requestMs, remainingMs))));
     const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
     combined.throwIfAborted();
     assertAlive();
-    const messages=factPlanMessages(input),schema=factPlanSchema(input);
-    const requestHash=createHash('sha256').update(JSON.stringify([REWRITE_MODEL,messages,schema])).digest('hex');
+    const messages = compact ? factPlanMessages(input) : rewriteMessages(input);
+    const schema = compact ? factPlanSchema(input) : REWRITE_SCHEMA;
+    const requestHash=createHash('sha256').update(JSON.stringify([REWRITE_MODEL,format,
+      ...(compact ? [] : [input.inputHash]),messages,schema])).digest('hex');
     const cached=cache.get(requestHash);
-    if(cached)return {...cached,value:expandModelPlan(cached.rawValue,input),cachedModelPlan:true,cacheSource:'memory',generationRequests:0};
+    if(cached)return {...cached,value:expand(cached.rawValue,input),cachedModelPlan:true,cacheSource:'memory',generationRequests:0};
     const cacheFile=planCacheDir&&path.join(path.resolve(planCacheDir),requestHash+'.json');
     if(cacheFile){
-      let entry;try{if((await fs.stat(cacheFile)).size<=16000)entry=JSON.parse(await fs.readFile(cacheFile,{encoding:'utf8',signal:combined}));}catch{}
+      let entry;try{if((await fs.stat(cacheFile)).size<=cacheBytes)entry=JSON.parse(await fs.readFile(cacheFile,{encoding:'utf8',signal:combined}));}catch{}
       combined.throwIfAborted();
-      if(entry?.version===1&&entry.requestHash===requestHash){const value=expandModelPlan(entry.rawValue,input);if(value&&validateFactPlan(value,input,'stop').ok){const completion={value,rawValue:entry.rawValue,finishReason:'stop'};cache.set(requestHash,completion);return {...completion,cachedModelPlan:true,cacheSource:'disk',generationRequests:0};}}
+      if(entry?.version===cacheVersion&&entry.requestHash===requestHash){const value=expand(entry.rawValue,input);if(value&&validate(value,input,'stop').ok){const completion={value,rawValue:entry.rawValue,finishReason:'stop',format};remember(requestHash,completion);return {...completion,cachedModelPlan:true,cacheSource:'disk',generationRequests:0};}}
     }
-    let result, generationRequests = 0, outputTokens = REWRITE_MODEL.maxOutputTokens;
+    const initialOutputTokens = compact ? 768 : REWRITE_MODEL.maxOutputTokens;
+    let result, generationRequests = 0, outputTokens = initialOutputTokens, promptTokens = 0;
     try {
+      if (!compact) {
+        // Count the actual local chat template, including special tokens. Sizing
+        // and both completion attempts share the original request deadline.
+        const metadata = async (route, body) => {
+          combined.throwIfAborted();
+          assertAlive();
+          const response = await fetch(url.origin + route, { method: 'POST', signal: combined,
+            headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+          if (!response.ok) throw new RewriteGenerationError('Local generator sizing HTTP ' + response.status);
+          try { return await response.json(); }
+          catch (error) { if (error instanceof SyntaxError) throw new RewriteGenerationError('Malformed generator sizing response'); throw error; }
+        };
+        const rendered = await metadata('/apply-template', { messages, add_generation_prompt: true,
+          chat_template_kwargs: { enable_thinking: false } });
+        if (typeof rendered?.prompt !== 'string' || !rendered.prompt) throw new RewriteGenerationError('Missing generator prompt template');
+        const counted = await metadata('/tokenize', { content: rendered.prompt, add_special: true, parse_special: true });
+        if (!Array.isArray(counted?.tokens) || !counted.tokens.length || counted.tokens.some(token => !Number.isInteger(token))) {
+          throw new RewriteGenerationError('Malformed generator token count');
+        }
+        assertAlive();
+        promptTokens = counted.tokens.length;
+        const headroom = REWRITE_MODEL.contextTokens - promptTokens - 64;
+        if (headroom < 256) throw Object.assign(new RewriteGenerationError('Source exceeds model context budget'), { reason: 'model_context_budget' });
+        outputTokens = Math.min(initialOutputTokens, headroom);
+      }
       while (true) {
         combined.throwIfAborted();
         assertAlive();
         generationRequests++;
         const response = await fetch(url.origin + '/v1/chat/completions', { method: 'POST', signal: combined, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
           model, messages, temperature: .2, top_p: .8, seed: 41 + generationRequests,
+          ...(!compact ? { top_k: 20, min_p: 0, chat_template_kwargs: { enable_thinking: false } } : {}),
           max_tokens: outputTokens, stream: true, stream_options: { include_usage: true },
           response_format: { type: 'json_schema', json_schema: { name: 'job_description', strict: true, schema } },
         }) });
@@ -85,9 +135,11 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
         assertAlive();
         if (result?.choices?.[0]?.finish_reason !== 'length' || generationRequests >= 2) break;
         // Retry only token truncation, within the original timeout and per-slot context.
-        let retryTokens = Math.min(REWRITE_MODEL.maxOutputTokens * 2, Math.floor(REWRITE_MODEL.contextTokens / 4));
+        let retryTokens = Math.min(initialOutputTokens * 2,
+          compact ? Math.floor(REWRITE_MODEL.contextTokens / 4) : REWRITE_MODEL.maxRetryOutputTokens);
+        if (!compact) retryTokens = Math.min(retryTokens, REWRITE_MODEL.contextTokens - promptTokens - 64);
         if (Number.isInteger(result.usage?.prompt_tokens) && result.usage.prompt_tokens >= 0) {
-          retryTokens = Math.min(retryTokens, REWRITE_MODEL.contextTokens - result.usage.prompt_tokens - 32);
+          retryTokens = Math.min(retryTokens, REWRITE_MODEL.contextTokens - result.usage.prompt_tokens - (compact ? 32 : 64));
         }
         if (retryTokens <= outputTokens) break;
         outputTokens = retryTokens;
@@ -106,10 +158,10 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
     if (!choice || typeof choice.message?.content !== 'string') throw Object.assign(new RewriteGenerationError('Malformed generator response'), { generationRequests });
     let value;
     try { value = JSON.parse(choice.message.content); } catch { value = null; }
-    const completion={value:expandModelPlan(value,input),rawValue:value,finishReason:choice.finish_reason,timings:result.timings,usage:result.usage,generationRequests};
-    if(completion.finishReason==='stop'&&completion.value&&validateFactPlan(completion.value,input,'stop').ok){
-      cache.set(requestHash,completion);
-      if(cacheFile&&!combined.aborted){let temporary;try{await fs.mkdir(path.dirname(cacheFile),{recursive:true});temporary=cacheFile+'.'+randomUUID()+'.tmp';await fs.writeFile(temporary,JSON.stringify({version:1,requestHash,rawValue:completion.rawValue})+'\n');await fs.rename(temporary,cacheFile);}catch{if(temporary)await fs.rm(temporary,{force:true}).catch(()=>{});}}
+    const completion={value:expand(value,input),rawValue:value,finishReason:choice.finish_reason,timings:result.timings,usage:result.usage,generationRequests,format};
+    if(completion.finishReason==='stop'&&completion.value&&validate(completion.value,input,'stop').ok){
+      remember(requestHash,completion);
+      if(cacheFile&&!combined.aborted){let temporary;try{const serialized=JSON.stringify({version:cacheVersion,requestHash,rawValue:completion.rawValue})+'\n';if(Buffer.byteLength(serialized)<=cacheBytes){await fs.mkdir(path.dirname(cacheFile),{recursive:true});temporary=cacheFile+'.'+randomUUID()+'.tmp';await fs.writeFile(temporary,serialized);await fs.rename(temporary,cacheFile);}}catch{if(temporary)await fs.rm(temporary,{force:true}).catch(()=>{});}}
     }
     return completion;
   } };
@@ -126,7 +178,7 @@ export const probeRewriteClient = async (client, { concurrency = 1, deadline = D
     const response = await client.generate(input, { signal, remainingMs: Math.max(1, deadline - Date.now()) });
     signal?.throwIfAborted();
     if (response.cachedModelPlan) throw new RewriteWorkerError('generation_probe');
-    if (!validateFactPlan(response.value, input, response.finishReason).ok) throw new RewriteGenerationError('Model readiness output was rejected');
+    if (!validateDescriptionRewrite(response.value, input, response.finishReason, response.format || client.format).ok) throw new RewriteGenerationError('Model readiness output was rejected');
   }));
   signal?.throwIfAborted();
   const rejections = probes.filter(result => result.status === 'rejected');
@@ -188,7 +240,7 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
     const filter = rewriteSnapshotFilter(job);
     if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
     const started = Date.now();
-    const assessment = assessRewriteInput(input);
+    const assessment = assessDescriptionRewrite(input, client.format);
     if (assessment.ok) stats.attempted++;
     let response, result;
     try {
@@ -196,19 +248,20 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
       else {
       response = await client.generate(input, { signal, remainingMs: deadline - started });
       if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
-      result = response.value && Object.hasOwn(response.value, 'categories') ? validateFactPlan(response.value, input, response.finishReason) : validateRewrite(response.value, input, response.finishReason);
+      result = validateDescriptionRewrite(response.value, input, response.finishReason, response.format || client.format);
       }
     } catch (error) {
       if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
       if (!(error instanceof RewriteGenerationError) && error.name !== 'TimeoutError') throw error;
       if (Number.isInteger(error.generationRequests)) response = { generationRequests: error.generationRequests };
-      result = { ok: false, reason: error.name === 'TimeoutError' ? 'timeout' : 'generation_error' };
+      result = { ok: false, reason: error.name === 'TimeoutError' ? 'timeout'
+        : error.reason === 'model_context_budget' ? 'model_context_budget' : 'generation_error' };
     }
     const now = new Date(), durationMs = Date.now() - started;
     const metadata = { 'descriptionRewrite.attemptedAt': now, 'descriptionRewrite.durationMs': durationMs,
       'descriptionRewrite.modelRevision': REWRITE_MODEL.revision, 'descriptionRewrite.runtimeTag': REWRITE_MODEL.runtimeTag,
       'descriptionRewrite.policyVersion': REWRITE_MODEL.policyVersion,
-      'descriptionRewrite.status': result.ok ? 'published' : !assessment.ok || ['not_improved','already_structured','dense_source','uncertain_section_assignment'].includes(result.reason) ? 'skipped' : 'failed', 'descriptionRewrite.reason': result.ok ? null : result.reason };
+      'descriptionRewrite.status': result.ok ? 'published' : !assessment.ok || ['not_improved','already_structured','dense_source','uncertain_section_assignment','model_context_budget'].includes(result.reason) ? 'skipped' : 'failed', 'descriptionRewrite.reason': result.ok ? null : result.reason };
     const values = { $set: { ...metadata,
       ...(result.ok ? { description: result.description, descriptionFormat: 'markdown', 'descriptionRewrite.publishedAt': now,
         'descriptionRewrite.wordCount': result.wordCount, 'descriptionRewrite.quality': result.quality || null } : { 'descriptionRewrite.nextAttemptAt': new Date(now.getTime() + 3600000) }),
@@ -216,7 +269,7 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
     const saved = await update(filter, values);
     if (saved.matchedCount === 0) stats.concurrentChanges++;
     else if (result.ok) stats.published++;
-    else if (!assessment.ok || ['not_improved','already_structured','dense_source','uncertain_section_assignment'].includes(result.reason)) stats.skipped++;
+    else if (!assessment.ok || ['not_improved','already_structured','dense_source','uncertain_section_assignment','model_context_budget'].includes(result.reason)) stats.skipped++;
     else stats.failed++;
     await onResult({ id: String(job._id), inputHash: input.inputHash, ok: result.ok, reason: result.reason, durationMs, wordCount: result.wordCount, generated: assessment.ok, modelPlanCached: response?.cachedModelPlan || false,
       generationRequests: response?.generationRequests ?? (assessment.ok && !response?.cachedModelPlan ? 1 : 0), quality: result.quality, usage: response?.usage, timings: response?.timings });

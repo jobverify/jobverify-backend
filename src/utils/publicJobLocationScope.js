@@ -8,6 +8,7 @@ import { buildAggregateHiringSignalFilter } from "./jobListingEvidence.js";
 import { buildMissingSourceDescriptionFilter } from "./jobSourceContent.js";
 import { CANONICAL_CITIES } from "../../scraper-support/utils/cities.js";
 import {
+  buildPublishableJobPostedAtCutoff,
   normalizeLifecycleDate,
   startOfUtcDay,
 } from "./jobLifecycle.js";
@@ -272,7 +273,7 @@ export const buildPublicJobLifecycleDateScope = (
 
   return {
     // Unknown dates are not proof that a role has closed, so they remain visible.
-    // Keep open jobs regardless of posting age; only exclude future or closed roles.
+    // Known posting dates must fall within the last calendar month.
     $expr: {
       $and: [
         {
@@ -285,6 +286,12 @@ export const buildPublicJobLifecycleDateScope = (
           $gte: [
             { $ifNull: ["$closingDate", today] },
             today,
+          ],
+        },
+        {
+          $gte: [
+            { $ifNull: ["$postedAt", resolvedNow] },
+            buildPublishableJobPostedAtCutoff(resolvedNow),
           ],
         },
       ],

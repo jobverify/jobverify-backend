@@ -92,6 +92,8 @@ export const startRewriteWorker = async ({ modelFile, binary, port = 8766, threa
     child = spawnProcess(binary, ['-m', modelFile, '--host', '127.0.0.1', '--port', String(port),
       '--alias', model, '-c', String(config.contextTokens), '-np', String(config.parallelism), '-t', String(config.threads), '-tb', String(config.threads),
       '-ngl', '0', '--jinja', '--no-context-shift', '--no-webui', '--log-verbosity', '2',
+      '--chat-template-kwargs', JSON.stringify({ enable_thinking: REWRITE_MODEL.enableThinking === true }),
+      '--reasoning', 'off', '--no-reasoning-preserve',
       '--cache-ram', '128'], { cwd: path.dirname(binary), windowsHide: true,
       env: { ...process.env, LD_LIBRARY_PATH: path.dirname(binary) + path.delimiter + (process.env.LD_LIBRARY_PATH || '') },
       stdio: ['ignore', log.fd, log.fd] });

@@ -8,7 +8,8 @@ import { createHash } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { buildScrapers } from '../scraper-support/providers/index.js';
 import { normalizeScrapedJob } from '../scraper-support/utils/normalizeScrapedJob.js';
-import { REWRITE_MODEL, buildRewriteInput } from '../src/services/jobDescriptionPolicy.js';
+import { REWRITE_MODEL, REWRITE_SCHEMA, buildRewriteInput, rewriteMessages, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
+import { createRewriteClient, assessDescriptionRewrite, RewriteGenerationError } from '../rewriting/runner.js';
 import { factPlanMessages, factPlanSchema, buildSourceFacts, assessRewriteInput, expandModelPlan, validateFactPlan } from '../rewriting/factPlan.js';
 import { ensureArtifact, workerMemoryBytes } from '../rewriting/worker.js';
 import { writeFileAtomically } from '../rewriting/atomicFile.js';
@@ -21,7 +22,8 @@ const option = (name, fallback) => { const i = process.argv.indexOf(name); retur
 const phase = option('--phase', 'consume');
 const runDir = path.resolve(option('--run-dir', '.cache/description-benchmark/first100-liquid'));
 const assetDir = path.resolve(option('--asset-dir', '.cache/small-description-model-assets'));
-const modelSize = option('--model', '1200');
+const modelSize = option('--model', '9000');
+const grounded = modelSize === '9000';
 const slots = Number(option('--slots', '1'));
 const threads = Number(option('--threads', '4'));
 const workers = Number(option('--workers', '1'));
@@ -43,7 +45,7 @@ const sampleSize = Number(option('--sample', '200'));
 const sampleKind = option('--sample-kind', 'lengths');
 const consumeLimit = Number(option('--limit', 'Infinity'));
 const configs = {
-  '1200': { id: REWRITE_MODEL.modelId, revision: REWRITE_MODEL.revision, file: REWRITE_MODEL.file, sha256: REWRITE_MODEL.sha256, bytes: REWRITE_MODEL.bytes },
+  '9000': { id: REWRITE_MODEL.modelId, revision: REWRITE_MODEL.revision, file: REWRITE_MODEL.file, sha256: REWRITE_MODEL.sha256, bytes: REWRITE_MODEL.bytes },
   '350': { id: 'LiquidAI/LFM2.5-350M-GGUF', revision: '657e078c94084481950a2d555a941481f715536b', file: 'LFM2.5-350M-QAD-Q4_0.gguf', sha256: '3d10b6ab8fc91a919534b9558e266255aca0bbc7f6d015963599aa9e74e05b1d', bytes: 219312832 },
 };
 const { runtimeTag, runtimeAssets } = REWRITE_MODEL;
@@ -118,7 +120,7 @@ if (phase === 'prepare') {
   try { await fs.access(summaryFile); throw new Error('Benchmark output already exists; preserve it and choose another configuration/run directory'); } catch (e) { if (e.code !== 'ENOENT') throw e; }
   const report = { status: 'starting', startedAt: new Date().toISOString(), model: config, runtimeTag,
     environment: { platform: process.platform, node: process.version, cpu: os.cpus()[0]?.model, hostLogicalCpus: os.cpus().length, totalMemoryBytes: os.totalmem(), threads, slots, workers, totalModelThreads: threads * workers, totalConcurrency, contextTokensPerSlot: 8192 },
-    policy: 'existing fact-plan-v11; quoted source preserved; client output cache disabled; prompt cache ' + (promptCache ? 'enabled with bounded RAM' : 'disabled') + '; compact JSON grammar ' + compactPlan, mongoWrites: 0, seenBatches: [], results: [] };
+    policy: (grounded ? REWRITE_MODEL.policyVersion + '; generated sections with source evidence' : 'historical fact-plan-v11; quoted source preserved') + '; prompt cache ' + (promptCache ? 'enabled with bounded RAM' : 'disabled') + '; compact JSON grammar ' + (!grounded && compactPlan), mongoWrites: 0, seenBatches: [], results: [] };
   report.policy += '; preserveSourceContext='+preserveSourceContext+'; allDescriptions='+allDescriptions+'; minimalNumericTransport='+minimalPlan;
   // Keep large-run checkpoints small. Detailed results and source/draft pairs
   // are durably appended per job; repeatedly rewriting every row is quadratic.
@@ -128,7 +130,7 @@ if (phase === 'prepare') {
   const binary = await findServer(path.join(assetDir, 'runtime-' + process.platform));
   if (!binary) throw new Error('Run --phase prepare first');
   const port = Number(option('--port', '18772'));
-  const modelAlias = 'benchmark-liquid-' + modelSize;
+  const modelAlias = 'benchmark-description-' + modelSize;
   const setupAt = Date.now();
   const servers = [];
   for (let i = 0; i < workers; i++) {
@@ -136,6 +138,7 @@ if (phase === 'prepare') {
     const worker = spawn(binary, ['-m', path.join(assetDir, config.file), '--alias', modelAlias,
       '--host', '127.0.0.1', '--port', String(port + i), '-c', String(8192 * slots), '-np', String(slots),
       '-t', String(threads), '-tb', String(threads), '-ngl', '0', '--jinja', '--no-context-shift', '--no-webui',
+      ...(grounded ? ['--chat-template-kwargs', '{"enable_thinking":false}', '--reasoning', 'off', '--no-reasoning-preserve'] : []),
       '--cache-ram', '128', ...(promptCache ? ['--ubatch-size', '256', '--checkpoint-min-step', '128'] : [])],
       { cwd: path.dirname(binary), windowsHide: true, stdio: ['ignore', logHandle.fd, logHandle.fd], env: { ...process.env, LD_LIBRARY_PATH: path.dirname(binary) + path.delimiter + (process.env.LD_LIBRARY_PATH || '') } });
     await logHandle.close();
@@ -145,6 +148,7 @@ if (phase === 'prepare') {
     servers.push(server);
   }
   const assertWorkers = () => { for (const server of servers) if (server.error || server.exited) throw server.error || new Error('Model worker exited unexpectedly; see worker log'); };
+  const clients = grounded ? servers.map(server => createRewriteClient({ endpoint: server.endpoint, model: modelAlias, assertAlive: assertWorkers })) : [];
   let memoryTimer, memoryBusy = false;
   const memorySample = async () => { if (memoryBusy) return; memoryBusy = true; try {
     report.peakCoordinatorMemoryBytes = Math.max(report.peakCoordinatorMemoryBytes || 0, process.memoryUsage().rss);
@@ -211,13 +215,13 @@ if (phase === 'prepare') {
     }
   };
   const request = async (item, workerIndex = 0) => {
-    const { input } = item, assessment = assessRewriteInput(input,factOptions), facts = buildSourceFacts(input,factOptions);
-    const schema = factPlanSchema(input,factOptions), originalMessages = factPlanMessages(input,factOptions);
-    const transport=minimalPlan?minimalPlanTransport(schema,originalMessages):null,messages=transport?.messages||originalMessages;
+    const { input } = item, assessment = grounded ? assessDescriptionRewrite(input) : assessRewriteInput(input,factOptions), facts = buildSourceFacts(input,factOptions);
+    const schema = grounded ? REWRITE_SCHEMA : factPlanSchema(input,factOptions), originalMessages = grounded ? rewriteMessages(input) : factPlanMessages(input,factOptions);
+    const transport=!grounded&&minimalPlan?minimalPlanTransport(schema,originalMessages):null,messages=transport?.messages||originalMessages;
     const formatted = allDescriptions ? formatEmployerSource(input.sourceDescription) : null;
     const row = { key: item.key, index: item.index, source: item.source, title: item.job.title, url: item.job.sourceUrl || item.job.applyUrl || item.job.link,
       availableAt: item.availableAt, startedAt: new Date().toISOString(), sourceWords: input.sourceWords, sourceBytes: Buffer.byteLength(input.sourceDescription), sourceFacts: facts.length,
-      ambiguousFacts: schema.properties.categories.minItems, assessment: assessment.ok ? 'eligible' : assessment.reason,
+      ambiguousFacts: schema.properties.categories?.minItems || 0, assessment: assessment.ok ? 'eligible' : assessment.reason,
       requestSignature: createHash('sha256').update(JSON.stringify([messages, schema])).digest('hex'), workerIndex, attempted: false,
       ...(formatted?{sourceAvailable:formatted.sourceAvailable,sourcePayloadPreserved:formatted.preserved,headings:formatted.headingCount,bullets:formatted.bulletCount}:{}),
       ...(preserveSourceContext?{requiredFacts:facts.filter(f=>[2,3].includes(f.section)).length,preferredFacts:facts.filter(f=>f.section===4).length}:{}),
@@ -226,9 +230,16 @@ if (phase === 'prepare') {
     let validation = assessment, response, rawPlan, completionContent;
     const forceProbe = phase === 'evaluate' && (process.argv.includes('--probe-large') && input.sourceWords >= 25 || process.argv.includes('--probe-skips') && input.eligible && facts.length > 0 && facts.length <= 128);
     try {
-      const withinModelBudget=Buffer.byteLength(JSON.stringify(messages))<=12000&&schema.properties.categories.minItems<=200;
+      const withinModelBudget=grounded ? input.eligible : Buffer.byteLength(JSON.stringify(messages))<=12000&&schema.properties.categories.minItems<=200;
       if (assessment.ok || forceProbe || allDescriptions&&formatted.sourceAvailable&&withinModelBudget) {
         row.attempted = true; firstRequestAt ??= started;
+        if (grounded) {
+          response = await clients[workerIndex].generate(input, { signal });
+          rawPlan = response.value; completionContent = JSON.stringify(response.rawValue);
+          validation = validateRewrite(response.value, input, response.finishReason);
+          row.finishReason = response.finishReason; row.usage = response.usage; row.timings = response.timings;
+          row.generationRequests = response.generationRequests; row.modelPlanCached = !!response.cachedModelPlan;
+        } else {
         const timeout = AbortSignal.timeout(180000);
         const requestOptions = { method: 'POST', signal: AbortSignal.any([signal, timeout]), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: modelAlias,
           messages, ...(compactPlan ? { grammar: transport?.grammar||compactPlanGrammar(schema) } : { response_format: { type: 'json_schema', json_schema: { name: 'job_description', strict: true, schema } } }),
@@ -244,14 +255,20 @@ if (phase === 'prepare') {
         rawPlan = minimalPlan?transport.decode(JSON.parse(completionContent)):JSON.parse(completionContent);
         validation = validateFactPlan(expandModelPlan(rawPlan, input,factOptions), input, choice?.finish_reason,factOptions);
         row.finishReason = choice?.finish_reason; row.usage = response.usage; row.timings = response.timings;
+        }
       } else if(allDescriptions) validation={ok:false,reason:formatted.sourceAvailable?'model_context_budget':'empty_source'};
-    } catch (e) { validation = { ok: false, reason: e.name === 'TimeoutError' ? 'timeout' : 'generation_error' }; row.errorType = e.name; row.error = e.message; row.errorCode = e.cause?.code; }
+    } catch (e) {
+      if(grounded && !(e instanceof RewriteGenerationError) && !['TimeoutError','AbortError'].includes(e.name))throw e;
+      if(Number.isInteger(e.generationRequests))row.generationRequests=e.generationRequests;
+      validation = { ok: false, reason: e.reason==='model_context_budget'?'model_context_budget':e.name === 'TimeoutError' ? 'timeout' : 'generation_error' };
+      row.errorType = e.name; row.error = e.message; row.errorCode = e.cause?.code;
+    }
     row.durationMs = Date.now() - started; row.accepted = validation.ok; row.reason = validation.reason || null; row.quality = validation.quality;
     lastCompletionAt = Date.now();
     const outputDescription=validation.ok?validation.description:allDescriptions&&formatted?.sourceAvailable&&formatted.preserved?formatted.description:null;
-    row.outputMethod=validation.ok?'validated_model_plan':allDescriptions?'source_order_formatter_fallback':'no_draft';
+    row.outputMethod=validation.ok?(grounded?'validated_source_grounded_sections':'validated_model_plan'):allDescriptions?'source_order_formatter_fallback':'no_draft';
     row.formatted=!!outputDescription;
-    row.outputPreservationCheck=validation.ok?'locked_original_source_facts':formatted?.preserved?'normalized_source_payload':'failed';
+    row.outputPreservationCheck=validation.ok?(grounded?'source_evidence_numbers_negation_qualification_scope':'locked_original_source_facts'):formatted?.preserved?'normalized_source_payload':'failed';
     await save(path.join(outputDir, 'cases', String(row.index).padStart(6, '0') + '-' + row.key.slice(0, 12) + '.json'), { ...row, originalDescription: input.sourceDescription,
       description:outputDescription,
       modelSuggestedDescription:allDescriptions?validation.description||null:undefined,
@@ -292,7 +309,7 @@ if (phase === 'prepare') {
       } catch (e) { if (e.code !== 'ENOENT') throw e; }
       report.selectionCacheHit = !!selectionIndex;
       const candidates = pending.filter(item => {
-        const prior = selectionIndex?.get(item.key), eligible = prior ? prior.policyAssessment === 'eligible' : assessRewriteInput(item.input,factOptions).ok;
+        const prior = selectionIndex?.get(item.key), eligible = prior ? prior.policyAssessment === 'eligible' : (grounded ? assessDescriptionRewrite(item.input) : assessRewriteInput(item.input,factOptions)).ok;
         return eligible || process.argv.includes('--probe-large') && item.input.sourceWords >= 25 || process.argv.includes('--probe-skips') && item.input.eligible && (prior?.sourceFacts ?? buildSourceFacts(item.input,factOptions).length) <= 128;
       });
       candidates.sort((a, b) => a.input.sourceWords - b.input.sourceWords || a.key.localeCompare(b.key));
@@ -344,18 +361,19 @@ if (phase === 'prepare') {
     const inferenceWallSeconds = report.sample?.wallSeconds ?? (totalConcurrency === 1 ? sumMs / 1000 : firstRequestAt && lastCompletionAt ? (lastCompletionAt - firstRequestAt) / 1000 : 0);
     const reasonCounts = {}; for (const r of rows) if (r.reason) reasonCounts[r.reason] = (reasonCounts[r.reason] || 0) + 1;
     const lengthBuckets = [[0, 250], [250, 500], [500, 1000], [1000, Infinity]].map(([low, high]) => { const group = attempted.filter(r => r.sourceWords >= low && r.sourceWords < high); const d = group.map(r => r.durationMs).sort((a, b) => a - b); return { words: low + '-' + (high === Infinity ? 'plus' : high - 1), attempted: group.length, accepted: group.filter(r => r.accepted).length, meanMs: d.length ? d.reduce((n, v) => n + v, 0) / d.length : null, p50Ms: quantile(d, 0.5), p95Ms: quantile(d, 0.95) }; });
-    report.summary = { reviewed: rows.length, modelRequests: attempted.length, accepted: rows.filter(r => r.accepted).length, preflightSkipped: rows.filter(r => !r.attempted).length,
+    const modelRequests=rows.reduce((total,row)=>total+(row.generationRequests??(row.attempted?1:0)),0);
+    report.summary = { reviewed: rows.length, modelRequests, accepted: rows.filter(r => r.accepted).length, preflightSkipped: rows.filter(r => !r.attempted||r.reason==='model_context_budget').length,
       reasonCounts, uniqueRequestSignatures: new Set(attempted.map(r => r.requestSignature)).size, summedRequestSeconds: sumMs / 1000, inferenceWallSeconds,
       meanRequestMs: durations.length ? sumMs / durations.length : null, p50RequestMs: quantile(durations, 0.5), p95RequestMs: quantile(durations, 0.95), maxRequestMs: durations.at(-1) ?? null,
-      requestsPerSecond: inferenceWallSeconds ? attempted.length / inferenceWallSeconds : 0,
+      requestsPerSecond: inferenceWallSeconds ? modelRequests / inferenceWallSeconds : 0,
       extrapolated35000ModelHours: attempted.length ? 35000 * inferenceWallSeconds / attempted.length / 3600 : null,
       lengthBuckets, caveat: 'Local shared Windows host unless environment.platform says otherwise; source skips, model errors and accepted outputs are separate; no DB write timing; extrapolations are not Linux Actions benchmarks.' };
     report.summary.formatted=rows.filter(r=>r.formatted).length;
     report.summary.fallbackPayloadPreserved=rows.filter(r=>r.outputMethod==='source_order_formatter_fallback'&&r.sourcePayloadPreserved).length;
     report.summary.missingSource=rows.filter(r=>r.sourceAvailable===false).length;
-    report.summary.modelOrganized=rows.filter(r=>r.outputMethod==='validated_model_plan').length;
+    report.summary.modelOrganized=rows.filter(r=>['validated_model_plan','validated_source_grounded_sections'].includes(r.outputMethod)).length;
     report.summary.sourceFallback=rows.filter(r=>r.outputMethod==='source_order_formatter_fallback'&&r.formatted).length;
-    report.summary.outputMethod=allDescriptions?'validated model section plans; source-order formatting for rejected plans (reported separately)':'validated_model_plan';
+    report.summary.outputMethod=grounded?'validated source-grounded model sections; source-order fallback reported separately':allDescriptions?'validated model section plans; source-order formatting for rejected plans (reported separately)':'validated_model_plan';
     if(allDescriptions&&report.status==='complete') {
       log({event:'quality-audit-start',jobs:rows.length});
       report.qualityAudit=await auditDescriptionRun(outputDir);

@@ -9,6 +9,7 @@ import mongoose from 'mongoose'
 
 import Job from '../src/models/Job.js'
 import JobDatasetSummary from '../src/models/JobDatasetSummary.js'
+import { buildPublishableJobPostedAtCutoff } from '../src/utils/jobLifecycle.js'
 import { buildAggregateHiringSignalFilter } from '../src/utils/jobListingEvidence.js'
 import { buildMissingSourceDescriptionFilter } from '../src/utils/jobSourceContent.js'
 import { ACCESS_ROLES, PLAN_IDS } from '../src/constants/accessPlans.js'
@@ -91,6 +92,12 @@ const assertHasPublishedDateScope = (scope) => {
           today,
         ],
       },
+      {
+        $gte: [
+          { $ifNull: ['$postedAt', now] },
+          buildPublishableJobPostedAtCutoff(now),
+        ],
+      },
     ],
   })
 }
@@ -165,7 +172,7 @@ test('buildPublicJobLocationScope relies on the stored public-visibility flag', 
   assert.equal(scope.isPublicIndia, true)
 })
 
-test('buildPublicJobLocationScope keeps old open jobs while excluding future and past-closing jobs', () => {
+test('buildPublicJobLocationScope excludes jobs older than one month, future and past-closing jobs', () => {
   const now = new Date('2026-07-25T12:00:00.000Z')
   const scope = buildPublicJobLocationScope(now)
 
@@ -177,6 +184,10 @@ test('buildPublicJobLocationScope keeps old open jobs while excluding future and
   assert.equal(
     scope.$expr.$and[1].$gte[1].toISOString(),
     '2026-07-25T00:00:00.000Z',
+  )
+  assert.equal(
+    scope.$expr.$and[2].$gte[1].toISOString(),
+    '2026-06-25T00:00:00.000Z',
   )
 })
 

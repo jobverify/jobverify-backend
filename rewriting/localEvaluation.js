@@ -3,7 +3,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {writeFileAtomically} from './atomicFile.js';
 import {buildRewriteInput} from '../src/services/jobDescriptionPolicy.js';
-import {assessRewriteInput,validateFactPlan} from './factPlan.js';
+import {assessDescriptionRewrite,validateDescriptionRewrite} from './runner.js';
 
 export const evaluateLocalJobs = async (jobs,{outputDir,policyIdentity,client,deadline,signal,onResult=()=>{}}) => {
  await fs.mkdir(outputDir,{recursive:true});const stats={total:0,generated:0,cached:0,accepted:0,failed:0,skipped:0,interrupted:false};
@@ -12,13 +12,13 @@ export const evaluateLocalJobs = async (jobs,{outputDir,policyIdentity,client,de
   const input=buildRewriteInput(job),key=createHash('sha256').update(policyIdentity+'\n'+input.inputHash).digest('hex'),file=path.join(outputDir,key+'.json');stats.total++;
   let previous;try{previous=JSON.parse(await fs.readFile(file,'utf8'));}catch(error){if(error.code!=='ENOENT')throw error;}
   if(previous){if(previous.inputHash!==input.inputHash||previous.policyIdentity!==policyIdentity)throw new Error('Invalid local generation cache');stats.cached++;if(previous.accepted)stats.accepted++;else if(previous.generated)stats.failed++;else stats.skipped++;await onResult({...previous,cached:true,file});continue;}
-  const assessment=assessRewriteInput(input),started=Date.now();let response,result;
+  const assessment=assessDescriptionRewrite(input,client.format),started=Date.now();let response,result;
   if(!assessment.ok){result=assessment;stats.skipped++;}
   else{
    stats.generated++;
    try{response=await client.generate(input,{signal,remainingMs:deadline-Date.now()});
     if(signal?.aborted||Date.now()>=deadline){stats.interrupted=true;break;}
-    result=validateFactPlan(response.value,input,response.finishReason);
+    result=validateDescriptionRewrite(response.value,input,response.finishReason,response.format||client.format);
    }catch(error){if(signal?.aborted||Date.now()>=deadline){stats.interrupted=true;break;}result={ok:false,reason:error.name==='TimeoutError'?'timeout':'generation_error'};}
    if(result.ok)stats.accepted++;else stats.failed++;
   }

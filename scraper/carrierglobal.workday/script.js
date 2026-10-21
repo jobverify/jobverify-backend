@@ -1,18 +1,29 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import {run as runCarrier} from '../carrier.workday/script.js'
+import {verifyCarrierGroupDelegation} from './nativeBinding.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "carrierglobal"
 export const COMPANY = "Carrier Global"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-08-01"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 09 exact-name sentinel for Carrier Global added on Saturday, August 1, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const CANONICAL_SOURCE='carrier'
+export const CAREERS_URL='https://www.carrier.com/us/en/careers/'
+export const DISPOSITION='verified-shared-group-recruiting-surface-delegation-company-scope-partial'
+export const VERIFIED_ON=null
+export const VERIFIED_SURFACE_SUMMARY='Same current official Carrier group recruiting surface. Canonical jobs retain source carrier, company Carrier and their native legal employers; whole-company coverage remains unknown.'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run=async(options={})=>{
+ if(options.maxJobs!=null)throw Error('Carrier Global delegation cannot certify a truncated inventory')
+ const timeoutMs=options.timeoutMs??120000
+ if(!Number.isInteger(timeoutMs)||timeoutMs<=0||timeoutMs>180000)throw Error('Invalid Carrier Global deadline')
+ const deadline=AbortSignal.timeout(timeoutMs),signal=options.signal?AbortSignal.any([options.signal,deadline]):deadline
+ await verifyCarrierGroupDelegation({fetchPage:options.fetchPage,signal})
+ // Return the canonical array and its inventory evidence without rewriting
+ // source, company, native legal employers or company-coverage limitations.
+ const jobs=await runCarrier({...options,signal});signal.throwIfAborted();return jobs
+}
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
@@ -22,6 +33,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (isDryRun) {
     saveToFile(jobs, path.join(currentDir, 'jobs.json'))
   } else {
-    await saveToDB(jobs, SOURCE)
+    await saveToDB(jobs, CANONICAL_SOURCE)
   }
 }
