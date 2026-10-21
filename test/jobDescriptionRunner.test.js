@@ -1,8 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { createRewriteClient, rewriteCandidates, rewriteDeadline } from '../rewriting/runner.js';
+import { createRewriteClient as createProductionRewriteClient, rewriteCandidates, rewriteDeadline } from '../rewriting/runner.js';
 import { buildRewriteInput } from '../src/services/jobDescriptionPolicy.js';
+// Preserve explicit compact-protocol coverage; Qwen sections have their own integration coverage.
+const createRewriteClient = options => createProductionRewriteClient({ format: 'fact-plan', ...options });
 
 const source = 'Role overview: Build Python services for customer applications. Responsibilities: Design reliable APIs and maintain Python services. Required qualifications: At least 2 years of software development experience is required. Preferred qualifications: AWS experience is nice to have.';
 const job = { _id: 'job1', title: 'Software Engineer', company: 'Example', sourceDescription: source, status: 'active', descriptionRewrite: { status: 'pending', attempts: 0 } };
@@ -33,7 +35,7 @@ test('generation client rejects non-local endpoints', () => {
   assert.throws(() => createRewriteClient({ endpoint: 'https://example.com' }), /127\.0\.0\.1/);
 });
 
-test('the default rewrite client selects the LFM model alias', async t => {
+test('the rewrite client selects the configured Qwen model alias', async t => {
   let requestedModel;
   const server = http.createServer(async (req, res) => {
     let body = ''; for await (const part of req) body += part;
@@ -44,7 +46,7 @@ test('the default rewrite client selects the LFM model alias', async t => {
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   await createRewriteClient({ endpoint: 'http://127.0.0.1:' + server.address().port }).generate(buildRewriteInput(job));
-  assert.equal(requestedModel, 'job-description-lfm');
+  assert.equal(requestedModel, 'job-description-qwen');
 });
 
 test('run budget respects the workflow deadline and cleanup reserve', () => {
@@ -135,7 +137,7 @@ test('closed partial stream never invents a successful stop completion',async t=
 test('already structured source is skipped before inference and is never retried as a model failure',async()=>{
  const source='<h2>Responsibilities</h2><ul><li>Build reliable Python services and collaborate with developers to deliver software applications.</li></ul><h2>Requirements</h2><ul><li>At least 2 years of software development experience is required for this engineering role.</li></ul>';
  const x={...job,sourceDescription:source,descriptionRewrite:{status:'pending',attempts:0}};x.sourceContentHash=buildRewriteInput(x).inputHash;x.descriptionRewrite.inputHash=x.sourceContentHash;let saved;
- const stats=await rewriteCandidates([x],{client:{generate:async()=>{throw Error('must not generate');}},update:async(filter,values)=>{saved=values;return {matchedCount:1};},deadline:Date.now()+10000});assert.equal(stats.attempted,0);assert.equal(stats.skipped,1);assert.equal(saved.$set['descriptionRewrite.status'],'skipped');assert.equal(saved.$set['descriptionRewrite.reason'],'already_structured');assert.equal(saved.$set.description,undefined);
+ const stats=await rewriteCandidates([x],{client:{format:'fact-plan',generate:async()=>{throw Error('must not generate');}},update:async(filter,values)=>{saved=values;return {matchedCount:1};},deadline:Date.now()+10000});assert.equal(stats.attempted,0);assert.equal(stats.skipped,1);assert.equal(saved.$set['descriptionRewrite.status'],'skipped');assert.equal(saved.$set['descriptionRewrite.reason'],'already_structured');assert.equal(saved.$set.description,undefined);
 });
 
 test('identical compact requests reuse inference but reconstruct changed salary from its own source',async t=>{

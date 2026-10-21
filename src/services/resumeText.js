@@ -2,6 +2,7 @@ import { Worker } from 'node:worker_threads';
 import { inflateRawSync } from 'node:zlib';
 import { MAX_RESUME_BYTES } from '../utils/resumeFile.js';
 import { MAX_RESUME_TEXT_BYTES, tailoringError } from './resumeTailoringContent.js';
+import { normalizeResumeLinks } from './resumeSource.js';
 
 export function inspectResumeArchive(data) {
   const start = Math.max(0, data.length - 65557);
@@ -32,7 +33,7 @@ export function inspectResumeArchive(data) {
   }
 }
 
-export async function extractResumeText({ extension, data }) {
+export async function extractResumeContent({ extension, data }) {
   const bytes = Buffer.from(data || []);
   if (!bytes.length || bytes.length > MAX_RESUME_BYTES || !['pdf', 'doc', 'docx', 'tex'].includes(extension)) throw tailoringError('Upload a readable PDF, Word, or LaTeX resume.', 422);
   return new Promise((resolve, reject) => {
@@ -50,7 +51,12 @@ export async function extractResumeText({ extension, data }) {
     worker.once('message', result => {
       if (result.error || typeof result.text !== 'string' || result.text.trim().length < 40) return finish(tailoringError('Could not extract enough text. Upload a readable resume with your experience and education.', 422));
       if (Buffer.byteLength(result.text) > MAX_RESUME_TEXT_BYTES) return finish(tailoringError('Use a shorter resume so all candidate facts fit in the model context.', 422));
-      finish(null, result.text.trim());
+      finish(null, { text: result.text.trim(), links: normalizeResumeLinks(result.links) });
     });
   });
+}
+
+// Preserve the original plain-text API for existing uploads and legacy jobs.
+export async function extractResumeText(input) {
+  return (await extractResumeContent(input)).text;
 }

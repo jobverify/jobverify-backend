@@ -9,7 +9,7 @@ import OutreachEmailCache from '../models/OutreachEmailCache.js';
 import OutreachUsage from '../models/OutreachUsage.js';
 import Campaign from '../models/Campaign.js';
 import { buildJobContext, discoveryProvider, jobSnapshot, groundedContacts, searchTavily, findHunterEmail } from './outreachProviders.js';
-import { dayKey, monthKey, outreachError, reserveUsage } from './outreachUsage.js';
+import { dayKey, monthKey, outreachError, reserveUsage, recordUsage } from './outreachUsage.js';
 import { githubRequest } from '../pipeline/github.js';
 import { applyPublicJobVisibility } from '../utils/publicJobVisibility.js';
 
@@ -258,10 +258,9 @@ async function dispatchOutreachWorkflow(repo, workflow, request, now) {
   if (data.workflow_runs.some(run => ['queued', 'in_progress', 'waiting', 'pending', 'requested'].includes(run.status))) return { reused: true };
   const repository = await request(repo, '');
   if (!repository.default_branch) throw outreachError('The outreach workflow default branch is unavailable.', 502);
-  // Billing settings are an operator prerequisite. This additional cap bounds this feature's usage.
-  const configured = Number(process.env.OUTREACH_ACTIONS_MONTHLY_RUN_LIMIT || 10);
-  const cap = Number.isInteger(configured) ? Math.max(0, Math.min(100, configured)) : 0;
-  await reserveUsage(`actions:${monthKey(now)}`, cap, { now });
+  // Billing controls and free-usage confirmation remain operator prerequisites.
+  // Counts are telemetry; past runs and retired monthly settings never block work.
+  await recordUsage(`actions:${monthKey(now)}`, { now });
   await request(repo, `/actions/workflows/${workflow}/dispatches`, { method: 'POST', body: { ref: repository.default_branch } });
   return { reused: false };
 }
@@ -275,7 +274,7 @@ async function dispatchRequestedOutreach(workflow, label, { request = githubRequ
   requireOutreachActions(label);
   const repo = process.env.GITHUB_REPO;
   // GitHub may not list an accepted run immediately. Coalesce concurrent
-  // requests so they do not each consume a monthly dispatch reservation.
+  // requests so they do not each start a runner or increment the usage counter.
   const key = `${repo}:${workflow}`;
   if (outreachDispatches.has(key)) return outreachDispatches.get(key);
   const pending = dispatchOutreachWorkflow(repo, workflow, request, now);

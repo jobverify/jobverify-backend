@@ -6,6 +6,8 @@ import jwt from 'jsonwebtoken';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import Resume from '../src/models/Resume.js';
 import User from '../src/models/User.js';
+import ResumeArtifact from '../src/models/ResumeArtifact.js';
+import { requestResumePreparation, drainResumePreparations } from '../src/services/resumePreparationService.js';
 import { MAX_RESUME_BYTES } from '../src/utils/resumeFile.js';
 
 test('private resumes round-trip through HTTP and MongoDB without changing document bytes', { timeout: 90000 }, async t => {
@@ -45,6 +47,9 @@ test('private resumes round-trip through HTTP and MongoDB without changing docum
   assert.equal(metadata.filename, 'Résumé.pdf');
   assert.equal(metadata.size, pdf.length);
   assert.equal(metadata.data, undefined);
+  assert.equal(metadata.preparation.sourceHash, metadata.sha256);
+  assert.equal(typeof metadata.preparation.attempts, 'number');
+  assert.equal(typeof metadata.preparation.retryable, 'boolean');
   assert.equal((await Resume.findById(user).lean()).data, undefined, 'binary content is excluded from ordinary queries');
   assert.equal((await (await request()).json()).data.filename, 'Résumé.pdf');
   const download = await request('/api/user/resume/download');
@@ -65,12 +70,35 @@ test('private resumes round-trip through HTTP and MongoDB without changing docum
     assert.equal((await (await request()).json()).data.sha256, metadata.sha256, 'failed replacement keeps the current resume');
   }
   assert.equal((await request('/api/user/profile', { method: 'PUT', body: pdf })).status, 415, 'binary uploads cannot bypass JSON validation on other endpoints');
-  const latex = Buffer.from('\\documentclass{article}\n\\begin{document}My resume\\end{document}');
+  const latex = Buffer.from('\\documentclass{article}\n\\begin{document}Asha Rao. Built a React task manager in 2025. BSc Computer Science, 2026.\\end{document}');
   const replacement = await request(undefined, { method: 'PUT', body: latex, filename: 'resume.tex' });
   assert.equal(replacement.status, 200);
   assert.equal(await Resume.countDocuments({ user }), 1);
   assert.deepEqual(Buffer.from(await (await request('/api/user/resume/download')).arrayBuffer()), latex);
+  const generatedPdf = Buffer.from('%PDF-1.7\nAsha Rao prepared resume\n%%EOF');
+  await requestResumePreparation({ _id: user }, { dispatch: async () => {} });
+  assert.deepEqual(await drainResumePreparations({ generate: async () => ({ latex: latex.toString(), pdf: generatedPdf, pageCount: 1 }) }), { attempted: 1, completed: 1, failed: 0 });
+  const prepared = await request('/api/user/resume/prepare', { method: 'POST', type: 'application/json', body: '{}' });
+  assert.equal(prepared.status, 200);
+  const preparedMetadata = (await prepared.json()).data;
+  assert.equal(preparedMetadata.preparation.hasPdf, true);
+  assert.equal(preparedMetadata.preparation.status, 'completed');
+  assert.equal(preparedMetadata.filename, 'resume.tex');
+  assert.equal(preparedMetadata.pdf, undefined); assert.equal(preparedMetadata.preparation.facts, undefined);
+  assert.equal((await request('/api/user/resume/prepare', { method: 'POST', type: 'application/json', body: '{}', withCsrf: false })).status, 403);
+  assert.equal((await request('/api/user/resume/prepare', { method: 'POST', type: 'application/json', body: '{"regenerate":"yes"}' })).status, 400);
+  const inline = await request('/api/user/resume/base');
+  assert.equal(inline.status, 200); assert.equal(inline.headers.get('content-type'), 'application/pdf');
+  assert.equal(inline.headers.get('cache-control'), 'no-store'); assert.match(inline.headers.get('content-disposition'), /inline/);
+  assert.deepEqual(Buffer.from(await inline.arrayBuffer()), generatedPdf);
+  const generatedTex = await request('/api/user/resume/base/download?format=tex');
+  assert.equal(generatedTex.status, 200); assert.match(generatedTex.headers.get('content-disposition'), /attachment/);
+  assert.deepEqual(Buffer.from(await generatedTex.arrayBuffer()), latex);
+  assert.equal((await request('/api/user/resume/base?format=json')).status, 400);
+  assert.equal((await request('/api/user/resume/base', { owner: other })).status, 404);
+  assert.equal((await request('/api/user/resume/base', { owner: null })).status, 401);
   assert.equal((await request(undefined, { method: 'DELETE' })).status, 200);
   assert.equal((await (await request()).json()).data, null);
   assert.equal((await request('/api/user/resume/download')).status, 404);
+  assert.equal(await ResumeArtifact.countDocuments({ user }), 0);
 });

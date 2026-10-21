@@ -34,7 +34,7 @@ function readLiteral(text,start){
 // Scan lexical boundaries; never evaluate public JavaScript. Quoted text,
 // comments, templates and function-local assignments are not native preloads.
 function assignments(text,key){
-  const found=[];let depth=0
+  const found=[];let depth=0,round=0,square=0,boundary=0
   for(let i=0;i<text.length;i++){
     const c=text[i]
     if(c==='/'&&text[i+1]==='/'){i=text.indexOf('\n',i+2);if(i<0)break;continue}
@@ -42,9 +42,21 @@ function assignments(text,key){
     if(c==='"'||c==="'"||c.charCodeAt(0)===96){let closed=false;for(let j=i+1;j<text.length;j++){if(text[j]==='\\')j++;else if(text[j]===c){i=j;closed=true;break}}check(closed,'Truncated script string');continue}
     if(c==='{')depth++
     else if(c==='}')depth--
-    if(depth!==0||!/[A-Za-z_$]/.test(c))continue
-    const match=text.slice(i).match(/^[A-Za-z_$][\w$]*/)[0];i+=match.length-1
+    else if(c==='(')round++
+    else if(c===')')round--
+    else if(c==='[')square++
+    else if(c===']')square--
+    else if(c===';'&&depth===0&&round===0&&square===0)boundary=i+1
+    if(depth!==0||round!==0||square!==0||!/[A-Za-z_$]/.test(c))continue
+    const start=i,match=text.slice(i).match(/^[A-Za-z_$][\w$]*/)[0];i+=match.length-1
     if(match!==key)continue
+    // Only an unconditional top-level assignment/declaration can preload data.
+    // A JSON literal after if(false), &&, ?:, loops or other expressions is
+    // never executed here and therefore cannot establish current public data.
+    const prefix=text.slice(boundary,start).replace(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g,'').trim()
+    if(prefix!==''&&!/^(?:var|let|const)$/.test(prefix))continue
+    let before=start-1;while(before>=0&&/\s/.test(text[before]))before--
+    if(text[before]==='.')continue
     let at=i+1;while(at<text.length&&/\s/.test(text[at]))at++
     if(text[at]!=='='||text[at+1]==='=')continue
     at++;while(at<text.length&&/\s/.test(text[at]))at++
@@ -56,8 +68,8 @@ function assignments(text,key){
 }
 export function readNativeData(html,key){
   check(typeof html==='string'&&html.length<=3000000,'Native body invalid or over bound')
-  const doc=readNativeDocument(html),scripts=doc.nodes(n=>n.tag==='script'&&!n.attrs.src&&[undefined,'','text/javascript','application/javascript'].includes(n.attrs.type))
-  const values=scripts.flatMap(n=>assignments(n.raw||'',key))
+  const doc=readNativeDocument(html),scripts=doc.nodes(n=>n.tag==='script'&&!n.attrs.src&&!Object.hasOwn(n.attrs,'nomodule')&&[undefined,'','text/javascript','application/javascript'].includes(n.attrs.type))
+  const values=scripts.filter(n=>(n.raw||'').includes(key)).flatMap(n=>assignments(n.raw||'',key))
   check(values.length===1,'Expected one active '+key+' preload')
   return values[0]
 }

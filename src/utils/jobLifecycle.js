@@ -50,3 +50,14 @@ export const buildJobPostedAtCutoff = (
   cutoff.setUTCDate(cutoff.getUTCDate() - resolveJobRetentionDays(retentionDays));
   return cutoff;
 };
+
+// Public eligibility uses calendar months independently of storage retention.
+export const buildPublishableJobPostedAtCutoff = (now = new Date()) => {
+  const cutoff = startOfUtcDay(now);
+  const day = cutoff.getUTCDate();
+  cutoff.setUTCDate(1);
+  cutoff.setUTCMonth(cutoff.getUTCMonth() - 1);
+  const lastDay = new Date(Date.UTC(cutoff.getUTCFullYear(), cutoff.getUTCMonth() + 1, 0)).getUTCDate();
+  cutoff.setUTCDate(Math.min(day, lastDay));
+  return cutoff;
+};

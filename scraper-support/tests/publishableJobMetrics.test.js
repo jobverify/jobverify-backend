@@ -17,7 +17,7 @@ test('empty employer descriptions cannot become publishable through display text
   assert.equal(result.filterCounts.emptyDescription, 9)
 })
 
-test('keeps an open India job posted more than sixty days ago', () => {
+test('excludes an open India job posted before the previous calendar month', () => {
   const result = analyzePublishableJobs([{
     title: 'Open legacy role',
     location: 'Bengaluru, India',
@@ -26,8 +26,22 @@ test('keeps an open India job posted more than sixty days ago', () => {
     description: 'Build and maintain software for customers.',
   }], { now: new Date('2026-09-12T12:00:00.000Z') })
 
-  assert.equal(result.eligibleJobs.length, 1)
-  assert.equal(result.filterCounts.old, 0)
+  assert.equal(result.eligibleJobs.length, 0)
+  assert.equal(result.filterCounts.old, 1)
+})
+
+test('posting age keeps the cutoff day and unknown dates, with source dates taking precedence over scraping', () => {
+  const base = { title: 'Engineer', location: 'India', applyUrl: 'https://example.test/jobs/1', description: 'Build APIs.' }
+  const jobs = [
+    { ...base, jobId: 'old', postingDate: '2026-09-20T23:59:59.999Z', scrapedAt: '2026-10-21' },
+    { ...base, jobId: 'cutoff', postingDate: '2026-09-21' },
+    { ...base, jobId: 'recent', postedAt: '2026-10-20' },
+    { ...base, jobId: 'old-postedAt', postedAt: '2026-08-01' },
+    { ...base, jobId: 'unknown', postingDate: 'NA' },
+  ]
+  const result = analyzePublishableJobs(jobs, { now: new Date('2026-10-21T12:00:00Z') })
+  assert.deepEqual(result.eligibleJobs.map(job => job.jobId), ['cutoff', 'recent', 'unknown'])
+  assert.equal(result.filterCounts.old, 2)
 })
 
 test('rejects historic aggregate opening sentinels while preserving individual vacancies', () => {

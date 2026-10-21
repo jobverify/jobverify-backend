@@ -19,7 +19,11 @@ test('application schema requires ownership and has one record per user and job'
 });
 
 test('opening an application saves a server-owned snapshot without confirming it', async t => {
-  t.mock.method(TailoredResume, 'exists', async () => ({ _id: 'tailored' }));
+  t.mock.method(TailoredResume, 'exists', async filter => {
+    assert.equal(filter.outputFormat, 'latex-pdf');
+    assert.deepEqual(filter.generationId, { $exists: true, $ne: null });
+    return { _id: 'tailored' };
+  });
   const now = new Date('2026-10-19T10:00:00Z');
   t.mock.method(Application, 'findOneAndUpdate', async (filter, update, options) => {
     assert.deepEqual(filter, { user, job: jobId });

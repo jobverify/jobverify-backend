@@ -2,7 +2,7 @@ import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
 import { createRateLimiter } from '../utils/rateLimit.js';
 import { MAX_RESUME_BYTES } from '../utils/resumeFile.js';
-import { getResume, uploadResume, downloadResume, removeResume } from '../controllers/resumeController.js';
+import { getResume, uploadResume, downloadResume, removeResume, prepareResume, baseResume } from '../controllers/resumeController.js';
 
 const router = express.Router();
 const uploadLimiter = createRateLimiter({ windowMs: 15 * 60_000, limit: 20,
@@ -11,10 +11,13 @@ const uploadLimiter = createRateLimiter({ windowMs: 15 * 60_000, limit: 20,
 });
 const parseFile = express.raw({ type: 'application/octet-stream', limit: MAX_RESUME_BYTES, inflate: false });
 
-router.use(protect);
 router.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
+router.use(protect);
 router.get('/', getResume);
 router.get('/download', downloadResume);
+router.get('/base', baseResume);
+router.get('/base/download', baseResume);
+router.post('/prepare', uploadLimiter, prepareResume);
 router.delete('/', removeResume);
 router.put('/', uploadLimiter, (req, res, next) => {
   if (!req.is('application/octet-stream')) return res.status(415).json({ success: false, message: 'Upload the resume as application/octet-stream.' });

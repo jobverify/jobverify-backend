@@ -9,9 +9,6 @@ import { spawn } from 'node:child_process';
 import OutreachTask from '../src/models/OutreachTask.js';
 import User from '../src/models/User.js';
 import { buildDraftPrompt, validateGeneratedDraft, completeDraftTask } from '../src/services/outreachDrafting.js';
-import TailoredResume from '../src/models/TailoredResume.js';
-import { buildTailoringPrompt, TAILORING_SCHEMA, TAILORING_OUTPUT_TOKENS, tailoringError, validateTailoredResume } from '../src/services/resumeTailoringContent.js';
-import { drainTailoredResumes } from '../src/services/resumeTailoringService.js';
 
 export const OUTREACH_MODEL = JSON.parse(await fs.readFile(new URL('./model.json', import.meta.url), 'utf8'));
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -104,47 +101,4 @@ export async function drainDraftTasks({ generate = generateOutreachDraft, maxTas
     onProgress({ ...counts });
   }
   return counts;
-}
-
-export async function generateTailoredResume(input, { fetchImpl = fetch, remainingMs = 110000 } = {}) {
-  const messages = [{ role: 'user', content: buildTailoringPrompt(input) }];
-  const started = Date.now();
-  const request = async (endpoint, body) => {
-    const remaining = Math.min(OUTREACH_MODEL.requestSeconds * 1000, remainingMs) - (Date.now() - started);
-    if (remaining <= 0) throw new Error('Local resume generation was interrupted.');
-    const response = await fetchImpl(`http://127.0.0.1:8769${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(Math.max(1, remaining)), body: JSON.stringify(body) });
-    if (!response.ok) throw new Error('Local resume generation is unavailable.');
-    return response.json();
-  };
-  try {
-    const template = await request('/apply-template', { messages });
-    if (typeof template.prompt !== 'string') throw new Error('Local resume generation is unavailable.');
-    const tokens = await request('/tokenize', { content: template.prompt, add_special: true, parse_special: true });
-    if (!Array.isArray(tokens.tokens) || !tokens.tokens.every(Number.isInteger)) throw new Error('Local resume generation is unavailable.');
-    if (tokens.tokens.length + TAILORING_OUTPUT_TOKENS + 32 > OUTREACH_MODEL.contextTokens) throw tailoringError('The resume and job description exceed the model context. Try a shorter resume.', 422);
-    const payload = await request('/v1/chat/completions', { messages, temperature: 0.1, max_tokens: TAILORING_OUTPUT_TOKENS, stream: false,
-      response_format: { type: 'json_schema', json_schema: { name: 'tailored_resume', strict: true, schema: TAILORING_SCHEMA } } });
-    if (payload.choices?.[0]?.finish_reason !== 'stop') throw new Error('Local resume generation was incomplete.');
-    return validateTailoredResume(payload.choices[0].message?.content);
-  } catch (error) {
-    if (error.statusCode) throw error;
-    throw new Error('Local resume generation was unavailable, interrupted or incomplete.');
-  }
-}
-
-export async function drainGenerationQueues({ maxTasks = 3, deadline = Date.now() + 360000,
-  nextDraft = () => OutreachTask.findOne({ kind: 'draft', ready: true, attempts: { $lt: 3 }, $or: [{ status: 'queued' }, { status: 'running', leaseUntil: { $lt: new Date() } }] }).sort({ createdAt: 1 }).select('createdAt').lean(),
-  nextResume = () => TailoredResume.findOne({ ready: true, attempts: { $lt: 3 }, $or: [{ status: 'queued' }, { status: 'running', leaseUntil: { $lt: new Date() } }] }).sort({ updatedAt: 1 }).select('updatedAt').lean(),
-  runDraft = () => drainDraftTasks({ maxTasks: 1, deadline }),
-  runResume = () => drainTailoredResumes({ generate: generateTailoredResume, maxTasks: 1, deadline }),
-} = {}) {
-  const totals = { attempted: 0, completed: 0, failed: 0 };
-  for (let slot = 0; slot < Math.min(3, maxTasks) && deadline - Date.now() > 15000; slot++) {
-    const [draft, resume] = await Promise.all([nextDraft(), nextResume()]);
-    if (!draft && !resume) break;
-    const result = await (resume && (!draft || new Date(resume.updatedAt) < new Date(draft.createdAt)) ? runResume() : runDraft());
-    for (const key of Object.keys(totals)) totals[key] += result[key];
-  }
-  return totals;
 }

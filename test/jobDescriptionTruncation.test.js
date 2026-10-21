@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { createRewriteClient, rewriteCandidates } from '../rewriting/runner.js';
+import { createRewriteClient as createProductionRewriteClient, rewriteCandidates } from '../rewriting/runner.js';
 import { REWRITE_MODEL, buildRewriteInput } from '../src/services/jobDescriptionPolicy.js';
+const createRewriteClient = options => createProductionRewriteClient({ format: 'fact-plan', ...options });
 
 const source = 'Role overview: Build Python services for customer applications. Responsibilities: Design reliable APIs and maintain Python services. Required qualifications: At least 2 years of software development experience is required. Preferred qualifications: AWS experience is nice to have.';
 const candidate = () => {

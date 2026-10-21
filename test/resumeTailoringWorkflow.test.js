@@ -102,7 +102,10 @@ test('dedicated workflow runs local inference without outreach enablement, infer
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /group: jobverify-tailored-resumes/);
   assert.match(workflow, /cancel-in-progress: false/);
-  assert.match(workflow, /timeout-minutes: 10/);
+  assert.match(workflow, /timeout-minutes: 30/);
+  assert.match(workflow, /Qwen3-4B-Instruct-2507-Q4_K_M/);
+  assert.match(workflow, /\.cache\/resume-compiler\/image.tar/);
+  assert.doesNotMatch(workflow, /LFM2.5/);
   assert.match(workflow, /secrets\.MONGO_URI/);
   assert.match(workflow, /node scripts\/runTailoredResumes\.js/);
   assert.doesNotMatch(workflow, /OUTREACH_ACTIONS|upload-artifact|GITHUB_PAT|INFERENCE_API|OPENAI_API/);

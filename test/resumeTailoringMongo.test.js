@@ -9,12 +9,14 @@ import User from '../src/models/User.js';
 import Job from '../src/models/Job.js';
 import Resume from '../src/models/Resume.js';
 import TailoredResume from '../src/models/TailoredResume.js';
+import ResumeArtifact from '../src/models/ResumeArtifact.js';
+import { requestResumePreparation, drainResumePreparations } from '../src/services/resumePreparationService.js';
 import { removeUserAccount } from '../src/services/userAccountDeletion.js';
 import { removeSavedJob } from '../src/controllers/userController.js';
 import { getTailoredResume, requestTailoredResume, drainTailoredResumes, recoverTailoredResumes } from '../src/services/resumeTailoringService.js';
 
-const output = { name: 'Asha Rao', contact: 'asha@example.test', summary: 'Software engineer with React project experience.', skills: ['React'], experience: [], projects: ['Built a React task manager in 2025.'], education: ['BSc Computer Science, 2026'] };
 const latex = Buffer.from('\\documentclass{article}\n\\begin{document}Asha Rao. Built a React task manager in 2025. BSc Computer Science, 2026.\\end{document}');
+const output = { latex: latex.toString(), pdf: Buffer.from('%PDF-1.7\nAsha Rao\n%%EOF'), pageCount: 1, facts: { name: 'Asha Rao' }, modelVersion: 'test', styleVersion: 'test' };
 const hash = data => createHash('sha256').update(data).digest('hex');
 
 test('saved-job tailoring persists, isolates owners, retries and rejects stale generations', { timeout: 90000 }, async t => {
@@ -39,24 +41,30 @@ test('saved-job tailoring persists, isolates owners, retries and rejects stale g
   await assert.rejects(requestTailoredResume(owner, job, options), /upload.*resume/i);
   await assert.rejects(getTailoredResume(owner, 'invalid'), /job ID/i);
   await Resume.collection.insertOne({ _id: user, user, filename: 'resume.tex', extension: 'tex', mimeType: 'application/x-tex', sha256: hash(latex), size: latex.length, data: latex, uploadedAt: new Date() });
+  await assert.rejects(requestTailoredResume(owner, job, options), /prepare/i);
+  await requestResumePreparation(owner, options);
+  await drainResumePreparations({ generate: async () => output });
   const rows = await Promise.all(Array.from({ length: 6 }, () => requestTailoredResume(owner, job, options)));
   assert.equal(new Set(rows.map(row => row.id)).size, 1);
-  assert.equal(dispatched, 1);
+  assert.equal(dispatched, 2);
   assert.equal(await TailoredResume.countDocuments(), 1);
   let generated = 0;
-  const generate = async input => { generated++; assert.match(input.resumeText, /Asha Rao/); assert.equal(input.job.title, 'React Engineer'); return output; };
+  const generate = async input => { generated++; assert.match(input.source.text, /Asha Rao/); assert.equal(input.jobSnapshot.title, 'React Engineer'); return output; };
   await Promise.all([drainTailoredResumes({ generate, maxTasks: 1 }), drainTailoredResumes({ generate, maxTasks: 1 })]);
   assert.equal(generated, 1);
   assert.equal((await getTailoredResume(owner, job)).status, 'completed');
-  assert.deepEqual((await getTailoredResume(owner, job)).output, output);
+  assert.equal((await getTailoredResume(owner, job)).output, undefined);
+  assert.equal((await getTailoredResume(owner, job)).hasPdf, true);
+  const completedGeneration = (await TailoredResume.findOne({ user }).lean()).generationId;
   assert.equal((await getTailoredResume(owner, job)).stale, false);
   await requestTailoredResume(owner, job, options);
-  assert.equal(dispatched, 1, 'an identical completed request uses the saved output');
+  assert.equal(dispatched, 2, 'an identical completed request uses the saved output');
 
   await requestTailoredResume(owner, job, { ...options, regenerate: true });
   await drainTailoredResumes({ generate: async () => { throw Error('private provider payload'); }, maxTasks: 1 });
   const failed = await getTailoredResume(owner, job);
-  assert.equal(failed.status, 'failed'); assert.deepEqual(failed.output, output);
+  assert.equal(failed.status, 'failed'); assert.equal(failed.hasPdf, true);
+  assert.equal((await TailoredResume.findOne({ user }).lean()).generationId, completedGeneration);
   assert.doesNotMatch(failed.error, /private provider/);
 
   await requestTailoredResume(owner, job, { ...options, regenerate: true });
@@ -65,7 +73,8 @@ test('saved-job tailoring persists, isolates owners, retries and rejects stale g
     return { ...output, summary: 'This result must not be published.' };
   }, maxTasks: 1 });
   const stale = await getTailoredResume(owner, job);
-  assert.equal(stale.stale, true); assert.deepEqual(stale.output, output);
+  assert.equal(stale.stale, true); assert.equal(stale.hasPdf, true);
+  assert.equal((await TailoredResume.findOne({ user }).lean()).generationId, completedGeneration);
   assert.equal(stale.status, 'failed');
   await Resume.updateOne({ _id: user }, { $set: { sha256: hash(latex) } });
   await requestTailoredResume(owner, job, { ...options, regenerate: true });
@@ -90,7 +99,8 @@ test('saved-job tailoring persists, isolates owners, retries and rejects stale g
     await requestTailoredResume(owner, job, { ...options, regenerate: true });
     await drainTailoredResumes({ generate: async () => { await unbookmark(); return { ...output, summary: 'Cancelled result must never publish.' }; }, maxTasks: 1 });
     const result = await getTailoredResume(owner, job);
-    assert.equal(result.status, 'failed'); assert.deepEqual(result.output, output);
+    assert.equal(result.status, 'failed'); assert.equal(result.hasPdf, true);
+    assert.equal((await TailoredResume.findOne({ user }).lean()).generationId, completedGeneration);
   });
   await t.test('dispatch bookkeeping cannot extend the per-generation expiry', async () => {
     await requestTailoredResume(owner, job, { ...options, regenerate: true });
@@ -139,12 +149,20 @@ test('saved-job tailoring persists, isolates owners, retries and rejects stale g
   assert.equal(download.status, 200);
   assert.equal(download.headers.get('cache-control'), 'no-store');
   assert.match(download.headers.get('content-disposition'), /attachment/);
-  assert.match(await download.text(), /Asha Rao/);
+  assert.equal(download.headers.get('content-type'), 'application/pdf');
+  assert.deepEqual(Buffer.from(await download.arrayBuffer()), output.pdf);
+  const tex = await request('/download?format=tex');
+  assert.equal(tex.status, 200); assert.match(await tex.text(), /Asha Rao/);
+  assert.equal((await request('/download?format=txt')).status, 400);
+  const preview = await request('/pdf');
+  assert.equal(preview.status, 200); assert.match(preview.headers.get('content-disposition'), /inline/);
+  assert.equal(preview.headers.get('cache-control'), 'no-store');
   await Resume.updateOne({ _id: user }, { $set: { sha256: 'b'.repeat(64) } });
   assert.equal((await request('/download')).status, 409);
   const originalDelete = await fetch(`${base}/api/user/resume`, { method: 'DELETE', headers: { Authorization: `Bearer ${jwt.sign({ id: String(user), sessionVersion: 0 }, process.env.JWT_SECRET)}`, Origin: process.env.CORS_ORIGIN, Cookie: cookie, 'X-CSRF-Token': csrf, 'Content-Type': 'application/json' } });
   assert.equal(originalDelete.status, 200);
   assert.equal(await TailoredResume.countDocuments({ user }), 0, 'removing an original removes all derived resumes');
+  assert.equal(await ResumeArtifact.countDocuments({ user }), 0, 'removing an original removes generated binaries');
   await TailoredResume.collection.insertOne({ _id: `${user}:${jobId}`, user, job: jobId });
   await removeUserAccount({ _id: user, email: 'asha@example.test' });
   assert.equal(await TailoredResume.countDocuments({ user }), 0, 'account deletion removes derived resumes');
