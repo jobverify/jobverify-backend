@@ -10,15 +10,15 @@ const directory=path.resolve(process.argv[at+1]);
 const status=JSON.parse(await fs.readFile(path.join(directory,'pipeline-status.json'),'utf8'));
 const state=JSON.parse(await fs.readFile(path.join(directory,'run-state.json'),'utf8'));
 let alive=null;try{process.kill(status.ownerPid,0);alive=true;}catch(error){if(error.code==='ESRCH')alive=false;}
-const output=path.join(directory,status.rewriteDirectory||'1200m-t4-slots1-arrival-full-final-snapshots');
+const output=path.join(directory,status.rewriteDirectory||'9000m-t4-slots1-arrival-full-final-snapshots');
 const report=JSON.parse(await fs.readFile(path.join(output,'summary.json'),'utf8'));
 const counts={processed:0,modelRequests:0,modelResponses:0,modelAccepted:0,fallbackDrafts:0,sourceMissing:0,modelErrors:0,contextSkipped:0},reasons={},durations=[];
 let last;
 const lines=createInterface({input:createReadStream(path.join(output,'results.ndjson')),crlfDelay:Infinity});
 for await(const line of lines){if(!line.trim())continue;let row;try{row=JSON.parse(line);}catch{continue;}counts.processed++;last=row;
- if(row.attempted){counts.modelRequests++;durations.push(row.durationMs);}if(row.usage)counts.modelResponses++;
+ counts.modelRequests+=row.generationRequests??(row.attempted?1:0);if(row.attempted)durations.push(row.durationMs);if(row.usage)counts.modelResponses++;
  if(row.accepted)counts.modelAccepted++;if(row.outputMethod==='source_order_formatter_fallback'&&row.formatted)counts.fallbackDrafts++;
- if(row.sourceAvailable===false)counts.sourceMissing++;if(row.error)counts.modelErrors++;if(!row.attempted&&row.reason==='model_context_budget')counts.contextSkipped++;
+ if(row.sourceAvailable===false)counts.sourceMissing++;if(row.error&&row.reason!=='model_context_budget')counts.modelErrors++;if(row.reason==='model_context_budget')counts.contextSkipped++;
  if(row.reason)reasons[row.reason]=(reasons[row.reason]||0)+1;
 }
 durations.sort((a,b)=>a-b);const elapsed=(Date.now()-Date.parse(report.startedAt))/1000;

@@ -15,7 +15,7 @@ export function safeApplicationUrl(job) {
 
 export async function recordApplicationOpen(user, job, now = new Date()) {
   const filter = { user, job: job._id };
-  const resume = await TailoredResume.exists({ ...filter, status: 'completed', output: { $ne: null } });
+  const resume = await TailoredResume.exists({ ...filter, status: 'completed', outputFormat: 'latex-pdf', generationId: { $exists: true, $ne: null } });
   if (!resume) return null;
   const update = {
     $setOnInsert: {

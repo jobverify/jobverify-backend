@@ -480,6 +480,54 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+// Requires the existing password and renews this browser's session after revoking older sessions.
+export const changePassword = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return sendValidationError(res, errors);
+
+  const { oldPassword, newPassword } = req.body;
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user || (user.sessionVersion ?? 0) !== (req.user.sessionVersion ?? 0)) {
+      return res.status(401).json({ success: false, message: 'Your session has expired. Please sign in again.' });
+    }
+    if (!user.password) {
+      return res.status(400).json({ success: false, message: 'This account has no password yet. Use the reset email option to set one.' });
+    }
+    if (!await bcrypt.compare(oldPassword, user.password)) {
+      return res.status(400).json({ success: false, message: 'Old password is incorrect.' });
+    }
+
+    // Match the credentials we verified so concurrent changes cannot overwrite each other.
+    const sessionVersion = user.sessionVersion ?? 0;
+    const updated = await User.findOneAndUpdate(
+      {
+        _id: user._id,
+        password: user.password,
+        sessionVersion: sessionVersion === 0 ? { $in: [0, null] } : sessionVersion,
+      },
+      {
+        $set: {
+          password: await bcrypt.hash(newPassword, 10),
+          passwordChangedAt: new Date(),
+          resetPasswordTokenHash: null,
+          resetPasswordExpiresAt: null,
+          sessionVersion: sessionVersion + 1,
+        },
+      },
+      { new: true },
+    );
+    if (!updated) {
+      return res.status(409).json({ success: false, message: 'Your password or session changed. Please sign in again and retry.' });
+    }
+    setAuthCookie(res, generateToken(updated._id, updated.role, updated.sessionVersion));
+    return res.status(200).json({ success: true, message: 'Password changed successfully. Other sessions have been signed out.' });
+  } catch (err) {
+    console.error('Password change failed:', err.message);
+    return res.status(500).json({ success: false, message: 'Unable to change password. Please try again.' });
+  }
+};
+
 // Authenticates user credentials and issues a JWT token.
 export const login = async (req, res) => {
   const errors = validationResult(req);

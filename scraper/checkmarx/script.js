@@ -1,18 +1,18 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import {runNativeCheckmarx} from './nativeRun.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "checkmarx"
 export const COMPANY = "Checkmarx"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-07-29"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 08 exact-name sentinel for Checkmarx added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const CAREERS_URL = 'https://checkmarx.com/company/careers/'
+export const DISPOSITION = 'current-public-Comeet-native-board-company-scope-partial'
+export const VERIFIED_ON = null
+export const VERIFIED_SURFACE_SUMMARY = 'Current native public company identity, typed geography, full descriptions and public role visibility are reconciled each run. Company-wide counts remain unknown.'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run = options => runNativeCheckmarx(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

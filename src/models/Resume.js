@@ -13,7 +13,18 @@ const schema = new Schema({
   sha256: { type: String, required: true, match: /^[a-f0-9]{64}$/ },
   data: { type: Buffer, required: true, select: false, validate: value => (typeof value.length === 'number' ? value.length : value.buffer?.length) <= MAX_RESUME_BYTES },
   uploadedAt: { type: Date, required: true, default: Date.now },
+  preparation: {
+    status: { type: String, enum: ['unprepared', 'queued', 'running', 'completed', 'failed'], default: 'unprepared' },
+    phase: { type: String, default: '' }, error: { type: String, default: '', maxlength: 1000 },
+    revision: { type: Number, default: 0 }, ready: { type: Boolean, default: false },
+    sourceSha: String, attempts: { type: Number, default: 0 },
+    leaseOwner: { type: String, select: false }, leaseUntil: Date, dispatchAt: Date, requestedAt: Date,
+    generationId: String, outputResumeSha: String, pageCount: Number, generatedAt: Date,
+    modelVersion: String, styleVersion: String,
+  },
 }, { timestamps: true });
+
+schema.index({ 'preparation.status': 1, 'preparation.ready': 1, 'preparation.requestedAt': 1 });
 
 schema.set('toJSON', { transform(_doc, value) { delete value.data; delete value.__v; return value; } });
 export default model('Resume', schema);

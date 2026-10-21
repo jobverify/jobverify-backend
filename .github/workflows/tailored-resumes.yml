@@ -10,7 +10,7 @@ concurrency:
 jobs:
   tailor:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     env:
       NODE_OPTIONS: '--use-system-ca'
     steps:
@@ -22,13 +22,16 @@ jobs:
           node-version: '24'
       - name: Install backend dependencies
         run: npm ci --ignore-scripts
-      - name: Cache only the immutable local model
+      - name: Cache only immutable resume model and compiler dependencies
         uses: actions/cache@v4
         with:
-          path: .cache/outreach-models/LFM2.5-1.2B-Instruct-Q4_K_M.gguf
-          key: outreach-lfm25-12b-q4km-b1b3de114215d950
-      - name: Generate explicitly requested tailored resumes
-        timeout-minutes: 8
+          path: |
+            .cache/resume-models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf
+            .cache/resume-runtime/b11146/llama-b11146-bin-ubuntu-x64.tar.gz
+            .cache/resume-compiler/image.tar
+          key: resume-qwen4b-3605803b-runtime-c150306e-${{ hashFiles('outreach/compiler/**') }}
+      - name: Prepare or tailor one requested resume
+        timeout-minutes: 28
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
         run: node scripts/runTailoredResumes.js

@@ -1,0 +1,33 @@
+name: Resume Model Rollout Benchmark
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        type: choice
+        options: [algoshack, visa, elsevier]
+        default: algoshack
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NODE_OPTIONS: '--use-system-ca'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .cache/resume-models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf
+            .cache/resume-runtime/b11146/llama-b11146-bin-ubuntu-x64.tar.gz
+            .cache/resume-compiler/image.tar
+          key: resume-qwen4b-3605803b-runtime-c150306e-${{ hashFiles('outreach/compiler/**') }}
+      - name: Benchmark complete base and tailored generation with synthetic facts
+        env:
+          RESUME_BENCHMARK_SCENARIO: ${{ inputs.scenario }}
+        run: node scripts/benchmarkResumeModel.js

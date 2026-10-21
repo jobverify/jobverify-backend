@@ -54,7 +54,7 @@ test('cached discovery does not dispatch or require configured Actions access', 
   assert.equal(OutreachUsage.findOneAndUpdate.mock.callCount(), 0);
 });
 
-test('discovery dispatch is coalesced, carries no job/profile inputs and shares the outreach cap', async t => {
+test('discovery dispatch is coalesced, carries no job/profile inputs and records shared workflow usage', async t => {
   configure(t);
   let posts = 0;
   await Promise.all(Array.from({ length: 5 }, () => dispatchOutreachDiscoveries({ request: async (_repo, endpoint, options) => {
@@ -99,22 +99,30 @@ test('dispatch failures retain context, release the active key, and allow an exp
   assert.equal(created.length, 2);
 });
 
-test('discovery and drafting consume the same persistent monthly dispatch allowance', async t => {
+test('discovery and drafting dispatch after twenty runs despite a retired monthly limit', async t => {
   configure(t, { OUTREACH_ACTIONS_MONTHLY_RUN_LIMIT: '1' });
-  let reservedKey, posts = 0;
-  t.mock.method(OutreachUsage, 'findOneAndUpdate', async where => {
-    if (reservedKey) { assert.equal(where.key, reservedKey); return null; }
-    reservedKey = where.key; return { used: 1 };
-  });
+  let posts = 0;
+  // An existing counter above any former cap matches only an unbounded query.
+  t.mock.method(OutreachUsage, 'findOneAndUpdate', async where => where.used ? null : { used: 121 });
   const request = async (_repo, endpoint) => {
     if (endpoint.includes('/runs?')) return { workflow_runs: [] };
     if (!endpoint) return { default_branch: 'release' };
     posts++;
   };
   await dispatchOutreachDiscoveries({ request });
-  await assert.rejects(dispatchOutreachDrafts({ request }), { statusCode: 429 });
+  await dispatchOutreachDrafts({ request });
+  assert.equal(posts, 2);
+});
+
+test('a retired zero monthly limit cannot disable an enabled outreach workflow', async t => {
+  configure(t, { OUTREACH_ACTIONS_MONTHLY_RUN_LIMIT: '0' });
+  let posts = 0;
+  await dispatchOutreachDiscoveries({ request: async (_repo, endpoint) => {
+    if (endpoint.includes('/runs?')) return { workflow_runs: [] };
+    if (!endpoint) return { default_branch: 'release' };
+    posts++;
+  } });
   assert.equal(posts, 1);
-  assert.match(reservedKey, /^actions:/);
 });
 
 for (const state of ['running', 'completed']) test(`a late dispatch failure preserves a ${state} discovery`, async t => {

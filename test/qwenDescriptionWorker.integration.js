@@ -1,4 +1,4 @@
-/** Optional native, database-free check: node --test test/lfmDescriptionWorker.integration.js */
+/** Optional native, database-free check: node --test test/qwenDescriptionWorker.integration.js */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -9,8 +9,8 @@ import { REWRITE_MODEL, buildRewriteInput } from '../src/services/jobDescription
 import { prepareRewriteRuntime, startRewriteWorker, sha256File, workerMemoryBytes } from '../rewriting/worker.js';
 import { createRewriteClient, rewriteCandidates } from '../rewriting/runner.js';
 
-test('the pinned LFM CPU worker organizes employer facts through the production client', { timeout: 90000 }, async () => {
-  const directory = process.env.LFM_SMOKE_ASSET_DIR || fileURLToPath(new URL('../.cache/small-description-model-assets/', import.meta.url));
+test('the pinned Qwen CPU worker rewrites employer descriptions through the production client', { timeout: 720000 }, async () => {
+  const directory = process.env.DESCRIPTION_SMOKE_ASSET_DIR || fileURLToPath(new URL('../.cache/small-description-model-assets/', import.meta.url));
   const asset = REWRITE_MODEL.runtimeAssets[process.platform];
   assert.ok(asset, 'A pinned runtime must exist for this platform');
   // Require predownloaded assets: this smoke check never silently downloads a model.
@@ -22,22 +22,22 @@ test('the pinned LFM CPU worker organizes employer facts through the production 
   const checkMemory = () => {
     const used = (1 - os.freemem() / os.totalmem()) * 100;
     peakHostMemory = Math.max(peakHostMemory, used);
-    if (used > 90) controller.abort(new Error('Host physical memory exceeded 90%; native LFM check stopped.'));
+    if (used > 90) controller.abort(new Error('Host physical memory exceeded 90%; native Qwen check stopped.'));
   };
   checkMemory();
   controller.signal.throwIfAborted();
   const monitor = setInterval(checkMemory, 1000);
   try {
     worker = await startRewriteWorker({ ...await prepareRewriteRuntime({ directory, signal: controller.signal }),
-      signal: controller.signal, port: 18779, logFile: path.join(directory, 'lfm-production-smoke.log') });
+      signal: controller.signal, port: 18779, logFile: path.join(directory, 'qwen-production-smoke.log') });
     const source = 'Role overview: Build Python services for customer applications. Responsibilities: Design reliable APIs and maintain Python services. Required qualifications: At least 2 years of software development experience is required. Preferred qualifications: AWS experience is nice to have.';
-    const job = { _id: 'native-lfm', title: 'Software Engineer', company: 'Example', sourceDescription: source, status: 'active', descriptionRewrite: { status: 'pending', attempts: 0 } };
+    const job = { _id: 'native-qwen', title: 'Software Engineer', company: 'Example', sourceDescription: source, status: 'active', descriptionRewrite: { status: 'pending', attempts: 0 } };
     const input = buildRewriteInput(job);
     job.sourceContentHash = input.inputHash;
     job.descriptionRewrite.inputHash = input.inputHash;
     let saved;
     const started = Date.now();
-    const stats = await rewriteCandidates([job], { client: createRewriteClient(worker), deadline: Date.now() + 45000,
+    const stats = await rewriteCandidates([job], { client: createRewriteClient(worker), deadline: Date.now() + REWRITE_MODEL.requestSeconds * 1000,
       signal: controller.signal, update: async (_filter, values) => { saved = values; return { matchedCount: 1 }; } });
     controller.signal.throwIfAborted();
     assert.equal(stats.published, 1);

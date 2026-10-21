@@ -63,6 +63,8 @@ test('worker exit diagnostics and warning logs survive a child process failure',
     logFile, spawnProcess, fetchImpl, parallelism: 4, deadline: Date.now() + 5000 });
   assert.ok(workerArgs.includes('--cache-ram'));
   assert.equal(workerArgs[workerArgs.indexOf('--cache-ram') + 1], '128');
+  assert.equal(workerArgs[workerArgs.indexOf('--chat-template-kwargs') + 1], '{"enable_thinking":false}');
+  assert.equal(workerArgs[workerArgs.indexOf('--reasoning') + 1], 'off');
   assert.equal(workerArgs[workerArgs.indexOf('-np') + 1], '4');
   assert.equal(workerArgs[workerArgs.indexOf('-c') + 1], '32768');
   assert.equal(worker.diagnostics().status, 'running');
@@ -105,7 +107,7 @@ test('fresh generation probe exercises all slots without using cached plans or w
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
-  const result = await probeRewriteClient(createRewriteClient({ endpoint: 'http://127.0.0.1:' + server.address().port }),
+  const result = await probeRewriteClient(createRewriteClient({ endpoint: 'http://127.0.0.1:' + server.address().port, format: 'fact-plan' }),
     { concurrency: 4, deadline: Date.now() + 10000 });
   assert.equal(requests, 4); assert.equal(peak, 4); assert.equal(active, 0); assert.equal(result.requests, 4);
 });

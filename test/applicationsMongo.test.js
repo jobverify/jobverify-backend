@@ -57,7 +57,7 @@ test('MongoDB and HTTP application lifecycle preserves manual status, privacy an
   assert.equal(untracked.status, 200);
   assert.equal(untracked.body.data.application, null, 'Apply alone must not add a job');
   assert.equal(await Application.countDocuments({ user }), 0);
-  await TailoredResume.collection.insertOne({ _id: `${otherUser}:${jobId}`, user: otherUser, job: jobId, status: 'completed', output: { summary: 'Other user resume' } });
+  await TailoredResume.collection.insertOne({ _id: `${otherUser}:${jobId}`, user: otherUser, job: jobId, status: 'completed', outputFormat: 'latex-pdf', generationId: 'other-user-generation' });
   assert.equal(await recordApplicationOpen(user, job), null, 'another user resume does not qualify');
   await TailoredResume.collection.insertOne({ _id: `${user}:${jobId}`, user, job: jobId, status: 'queued', output: null });
   for (const resumeStatus of ['queued', 'running', 'failed', 'completed']) {
@@ -80,6 +80,8 @@ test('MongoDB and HTTP application lifecycle preserves manual status, privacy an
   await TailoredResume.updateOne({ user, job: jobId }, { $set: { status: 'failed' } });
   assert.equal(await recordApplicationOpen(user, job), null, 'failed generation does not qualify');
   await TailoredResume.updateOne({ user, job: jobId }, { $set: { status: 'completed', output: { summary: 'My tailored resume' } } });
+  assert.equal(await recordApplicationOpen(user, job), null, 'legacy JSON output does not qualify as a completed PDF');
+  await TailoredResume.updateOne({ user, job: jobId }, { $set: { outputFormat: 'latex-pdf', generationId: 'my-completed-generation' } });
   const first = await request(`/api/jobs/${jobId}/click`, { method: 'POST' });
   assert.equal(first.status, 200, JSON.stringify(first.body));
   assert.equal(first.body.data.application.status, 'opened');

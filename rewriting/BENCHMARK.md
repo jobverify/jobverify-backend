@@ -1,10 +1,10 @@
-# LFM description organization on CPU
+# Qwen description rewriting on CPU
 
-The configured description rewriter uses **LFM2.5-1.2B-Instruct QAD Q4_0**, with immutable model/runtime checksums in [model.json](model.json). The renderer preserves employer statements; the model selects compact fact categories and an overview reference. It does not generate replacement employer facts. The 21 October 2026 model switch was not tested locally; measurements for this checkpoint are pending pipeline validation.
+The configured description rewriter uses **Qwen3.5-9B Q5_K_M**, with immutable model/runtime checksums in [model.json](model.json). Policy v12 generates sections with verbatim source evidence and conservative publication checks. The initial workflow uses four CPU threads, one active request, an 8,192-token context, 2,048 initial output tokens, one bounded retry up to 4,096 tokens, a shared 600-second request deadline and a 128 MiB prompt cache. No local tests or inference were run for this migration. Quality, throughput and peak memory remain pending GitHub pipeline validation.
 
 ## Historical full local dry run
 
-The 11 October 2026 dry run used the previous checkpoint with four CPU threads, one model slot and an 8,192-token context. These results do not measure the currently configured 1.2B model. The workspace report is `artifacts/full-description-dry-run-2026-10-11-c10/REPORT.md`.
+The 11 October 2026 dry run used an earlier checkpoint with four CPU threads, one model slot and an 8,192-token context. These results do not measure Qwen or the current section-generation protocol. The workspace report is `artifacts/full-description-dry-run-2026-10-11-c10/REPORT.md`.
 
 - 42,125 raw jobs, 42,082 unique jobs.
 - 38,757 nonempty descriptions; 3,325 jobs lacked descriptions.
@@ -17,7 +17,7 @@ The generic publishing path now excludes empty descriptions. Raw dry-run snapsho
 
 ## Production behavior and reproduction
 
-The rewrite workflow is separate from scraping. It has a 350-minute job limit, a 315-minute generation step limit and a five-hour default total runtime budget. Pending source-hash work survives interruption and resumes on later runs. Valid compact decisions can be reused only when the model/prompt signature matches. The admin auto-run switch controls successful scraper completions; manual dispatch remains available when the switch is off.
+The rewrite workflow is separate from scraping. It has a 350-minute job limit, a 315-minute generation step limit and a five-hour default total runtime budget. Pending source-hash work survives interruption and resumes on later runs. Validated prose is reused only when the model, prompt and complete source signature match. Pipeline stage controls determine handoffs; individual generation rejections retain the source and do not fail the stage.
 
 Run a database-free benchmark with 20 representative source descriptions:
 
@@ -25,6 +25,6 @@ Run a database-free benchmark with 20 representative source descriptions:
 npm run descriptions:benchmark -- --input /path/to/20-source-jobs.json --output /path/to/report.json
 ```
 
-Resume requires unchanged input, model, runtime, platform and policy. A model switch invalidates old decision signatures and benchmark checkpoints. The benchmark defaults to the configured 1.2B checkpoint (`--model 1200`); the 350M LFM variant remains a local comparison option.
+Resume requires unchanged input, model, runtime, platform and policy. A model switch invalidates old cache signatures and benchmark checkpoints. The full dry-run benchmark defaults to the configured Qwen checkpoint (`--model 9000`); the 350M LFM variant remains an explicitly selected historical comparison option. The command above was not executed for this migration.
 
 See [runtime and publishing details](README.md) and [admin setup and pipeline checks](CONTROLS.md).

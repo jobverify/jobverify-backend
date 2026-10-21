@@ -1,10 +1,9 @@
-import { validateFactPlan, assessRewriteInput } from '../rewriting/factPlan.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { createHash } from 'node:crypto';
 import { REWRITE_MODEL, buildRewriteInput, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
-import { createRewriteClient } from '../rewriting/runner.js';
+import { createRewriteClient, assessDescriptionRewrite, validateDescriptionRewrite } from '../rewriting/runner.js';
 import { prepareRewriteRuntime, startRewriteWorker, workerMemoryBytes } from '../rewriting/worker.js';
 
 const option = name => { const index = process.argv.indexOf(name); return index < 0 ? null : process.argv[index + 1]; };
@@ -27,7 +26,7 @@ if (process.argv.includes('--resume')) {
   report.cases = previous.cases.map((row, index) => {
     const input = buildRewriteInput(jobs[index]);
     if (row.index !== index + 1 || row.inputHash !== input.inputHash) throw new Error('Cannot resume changed or reordered source jobs');
-    const replay = row.finishReason === 'stop' ? row.generatedPlan ? validateFactPlan(row.generatedPlan,input,row.finishReason) : row.generatedSections ? validateRewrite({ sections: row.generatedSections }, input, row.finishReason) : null : null;
+    const replay = row.finishReason === 'stop' ? row.generatedSections ? validateRewrite({ sections: row.generatedSections }, input, row.finishReason) : row.generatedPlan ? validateDescriptionRewrite(row.generatedPlan,input,row.finishReason) : null : null;
     return { ...row, generationPolicyHash: row.generationPolicyHash || previous.policyHash || 'unrecorded-initial-pilot',
       ...(replay && { accepted: replay.ok, reason: replay.reason, description: replay.description, validationPolicyHash: policyHash }) };
   });
@@ -48,10 +47,10 @@ try {
     const input = buildRewriteInput(job), started = Date.now();
     let response, validation;
     try {
-      const assessment=assessRewriteInput(input);
+      const assessment=assessDescriptionRewrite(input,client.format);
       if(!assessment.ok) validation=assessment;
       else { response = await client.generate(input, { signal: controller.signal });
-      validation = validateFactPlan(response.value, input, response.finishReason); }
+      validation = validateDescriptionRewrite(response.value, input, response.finishReason, response.format || client.format); }
     } catch (error) { validation = { ok: false, reason: error.name === 'TimeoutError' ? 'timeout' : 'generation_error' }; }
     const text = validation.description || response?.value?.sections?.flatMap(s => s.items?.map(i => i.text) || []).join(' ') || '';
     const wordCount = text.trim().split(/\s+/).filter(Boolean).length;

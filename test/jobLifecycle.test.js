@@ -4,12 +4,22 @@ import test from 'node:test'
 import {
   DEFAULT_JOB_RETENTION_DAYS,
   buildJobPostedAtCutoff,
+  buildPublishableJobPostedAtCutoff,
   normalizeLifecycleDate,
   resolveJobMissesBeforeExpiry,
   resolveJobPostedAt,
   resolveJobRetentionDays,
   startOfUtcDay,
 } from '../src/utils/jobLifecycle.js'
+
+test('publishable cutoff subtracts one calendar month and clamps to the last day of shorter months', () => {
+  for (const [now, expected] of [
+    ['2026-10-21T12:00:00Z', '2026-09-21T00:00:00.000Z'],
+    ['2026-03-31T12:00:00Z', '2026-02-28T00:00:00.000Z'],
+    ['2024-03-31T12:00:00Z', '2024-02-29T00:00:00.000Z'],
+    ['2026-01-01T12:00:00Z', '2025-12-01T00:00:00.000Z'],
+  ]) assert.equal(buildPublishableJobPostedAtCutoff(new Date(now)).toISOString(), expected)
+})
 
 test('resolveJobPostedAt prefers a valid postingDate and falls back from an invalid one', () => {
   const postedAt = '2026-07-20T00:00:00.000Z'

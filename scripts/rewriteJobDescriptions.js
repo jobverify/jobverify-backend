@@ -14,7 +14,12 @@ const mode = process.env.JOB_DESCRIPTION_REWRITE_MODE || 'off';
 const workerConfig = rewriteWorkerConfiguration({ threads: process.env.JOB_DESCRIPTION_REWRITE_CPU_THREADS || REWRITE_MODEL.cpuThreads,
   parallelism: process.env.JOB_DESCRIPTION_REWRITE_CONCURRENCY || 1 });
 if (!['off', 'publish'].includes(mode)) throw new Error('JOB_DESCRIPTION_REWRITE_MODE must be off or publish');
-const summary = { mode: apply ? mode : 'preview', modelRevision: REWRITE_MODEL.revision, policyVersion: REWRITE_MODEL.policyVersion, startedAt: new Date().toISOString(), environment: { platform: os.platform(), cpu: os.cpus()[0]?.model, availableCpus: os.availableParallelism(), cpuThreads: workerConfig.threads, parallelism: workerConfig.parallelism, contextTokensPerRequest: REWRITE_MODEL.contextTokens, totalMemoryBytes: os.totalmem() } };
+const summary = { mode: apply ? mode : 'preview', modelId: REWRITE_MODEL.modelId, modelFile: REWRITE_MODEL.file,
+  modelRevision: REWRITE_MODEL.revision, policyVersion: REWRITE_MODEL.policyVersion, outputFormat: REWRITE_MODEL.outputFormat,
+  startedAt: new Date().toISOString(), environment: { platform: os.platform(), cpu: os.cpus()[0]?.model,
+    availableCpus: os.availableParallelism(), cpuThreads: workerConfig.threads, parallelism: workerConfig.parallelism,
+    contextTokensPerRequest: REWRITE_MODEL.contextTokens, maxOutputTokens: REWRITE_MODEL.maxOutputTokens,
+    requestSeconds: REWRITE_MODEL.requestSeconds, totalMemoryBytes: os.totalmem() } };
 const summaryFile = path.resolve(process.env.PIPELINE_SUMMARY_FILE || '.cache/scraper-actions/description-summary.json');
 const deadline = rewriteDeadline({ budgetSeconds: process.env.JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS || 1200,
   workflowStartedAt: process.env.JOB_DESCRIPTION_WORKFLOW_STARTED_AT, workflowSeconds: process.env.JOB_DESCRIPTION_WORKFLOW_BUDGET_SECONDS || 9000 });
@@ -47,7 +52,7 @@ try {
         phase = 'process_queue';
         cursor = rewriteQueueScan(Job, query).cursor({ batchSize: 1 });
         summary.results = [];
-        Object.assign(summary, await rewriteCandidates(cursor, { client: createRewriteClient({ ...worker, planCacheDir: '.cache/description-plans' }), deadline, signal, concurrency: worker.parallelism,
+        Object.assign(summary, await rewriteCandidates(cursor, { client: createRewriteClient({ ...worker, planCacheDir: '.cache/description-rewrites' }), deadline, signal, concurrency: worker.parallelism,
           update: async (filter, update) => {
             try { return await Job.updateOne(filter, update, { runValidators: true, maxTimeMS: 15000 }); }
             catch (error) { error.rewritePhase = 'update_job'; throw error; }

@@ -1,6 +1,6 @@
 # Full catalog description trial
 
-This experimental path runs the configured catalog in dry-run mode and writes only local files. It uses the pinned LFM2.5-1.2B-Instruct QAD Q4_0 GGUF and CPU llama.cpp runtime used by the production description rewriter. The trial itself does not publish results or change production classifications. The model switch was not tested locally; its validation is deferred to the GitHub pipeline.
+This experimental path runs the configured catalog in dry-run mode and writes only local files. It now shares the pinned Qwen3.5-9B Q5_K_M GGUF and CPU llama.cpp runtime with the production rewriter. Its experimental draft policy below remains separate from production policy v12, which generates evidence-backed sections. The trial does not publish results or change production classifications. No local tests or inference were run for this migration; validation is deferred to the GitHub pipeline. Do not run these optional local commands unless requested.
 
 Start a fresh trial from the backend:
 
@@ -14,7 +14,7 @@ Scraping uses `SCRAPER_CONCURRENCY` from the process environment, then the backe
 
 The model writes a short role overview with two individually cited sentences. All detailed employer facts remain under structured headings. This is partly rewritten content: the detailed requirements are preserved verbatim. Mixed required/preferred wording, insufficient input and failed draft checks keep the complete original description. Every output is unpublished, with before/after text, source hashes, evidence, timing and validation results. Passing checks is not a manual publishability judgment.
 
-Trial policy v5 excludes opportunities offered to the applicant from duty evidence. It preserves identical text in different requirement sections and binds separate travel, relocation, position-type and referral-plan values to their source labels. It also recognizes additional employer role, qualification and office-policy headings. These context rules are enabled only in trial parsing; the default production fact-plan parser and its cached policy remain unchanged. Existing v4 case files and individual reviews are preserved. A v5 check of a stored candidate is an offline replay, not a new model generation.
+Trial policy v5 excludes opportunities offered to the applicant from duty evidence. It preserves identical text in different requirement sections and binds separate travel, relocation, position-type and referral-plan values to their source labels. It also recognizes additional employer role, qualification and office-policy headings. These context rules belong to the experimental trial parser. Production now uses the separate section protocol described in [README.md](README.md). Existing v4/v5 case files and reviews are historical; changed model fingerprints require a fresh trial directory. A replay is not a new model generation.
 
 These checks address observed failures, not general semantic correctness. Lexical overlap cannot establish that a paraphrase preserves who does what, conditional scope or recruitment availability. Every trial draft still requires individual source comparison and remains unpublished.
 

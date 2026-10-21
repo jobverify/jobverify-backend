@@ -1,6 +1,5 @@
-import { getTailoredResume, requestTailoredResume } from '../services/resumeTailoringService.js';
-import { tailoredResumeFilename, tailoredResumeText } from '../services/resumeTailoringContent.js';
-import Job from '../models/Job.js';
+import { getTailoredResume, requestTailoredResume, getTailoredResumeArtifact } from '../services/resumeTailoringService.js';
+import { artifactBytes } from '../services/resumeArtifactService.js';
 import { respondWithInternalError } from '../utils/respondWithInternalError.js';
 const failure = (res, error) => error.statusCode ? res.status(error.statusCode).json({ success: false, message: error.message })
   : respondWithInternalError(res, { name: error?.name }, { message: 'Could not load your tailored resume. Please try again.', logLabel: '[Resume tailoring]' });
@@ -17,10 +16,18 @@ export async function create(req, res) {
 }
 export async function download(req, res) {
   try {
-    const data = await getTailoredResume(req.user, req.params.jobId, req.siteSettings);
-    if (!data?.output) return res.status(404).json({ success: false, message: 'Generate a tailored resume first.' });
-    if (data.stale) return res.status(409).json({ success: false, message: 'Your resume or this job changed. Generate a new version before downloading.' });
-    const job = await Job.findById(req.params.jobId).select('title company').lean();
-    return res.attachment(tailoredResumeFilename(job || {})).type('text/plain; charset=utf-8').send(tailoredResumeText(data.output));
+    const format = req.query?.format || 'pdf';
+    if (!['pdf', 'tex'].includes(format)) return res.status(400).json({ success: false, message: 'Choose PDF or TeX format.' });
+    const { artifact, job } = await getTailoredResumeArtifact(req.user, req.params.jobId, req.siteSettings);
+    const name = `${job.company || ''}-${job.title || ''}-resume`.replace(/[^\p{L}\p{N} _-]/gu, '').slice(0, 150) || 'tailored-resume';
+    const data = artifactBytes(format === 'pdf' ? artifact.pdf : artifact.latex);
+    return res.attachment(`${name}.${format}`).type(format === 'pdf' ? 'application/pdf' : 'application/x-tex; charset=utf-8').send(data);
+  } catch (error) { return failure(res, error); }
+}
+
+export async function preview(req, res) {
+  try {
+    const { artifact } = await getTailoredResumeArtifact(req.user, req.params.jobId, req.siteSettings);
+    return res.set('Content-Disposition', 'inline; filename="tailored-resume.pdf"').type('application/pdf').send(artifactBytes(artifact.pdf));
   } catch (error) { return failure(res, error); }
 }

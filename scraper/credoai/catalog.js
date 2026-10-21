@@ -1,30 +1,54 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-const PROVIDER_METADATA = {
+import {fileURLToPath} from 'node:url'
+const currentDir=path.dirname(fileURLToPath(import.meta.url))
+const PROVIDER_METADATA={...{
   "source": "credoai",
   "companyName": "Credo AI",
   "adapter": "script",
-  "modulePath": path.join(currentDir, 'script.js'),
-  "dryRunFile": path.join(currentDir, 'jobs.json'),
-  "atsPlatform": "workbook-exact-name-sentinel",
+  "atsPlatform": "ashby",
+  "boardToken": "credo.ai",
+  "parser": "source-local-current-official-native-identity-and-shared-Ashby-mapper",
+  "companyDomain": "credo.ai",
+  "officialHomepageUrl": "https://www.credo.ai/",
+  "companyCareerPage": "https://www.credo.ai/company/jobs",
+  "jobsBoardUrl": "https://jobs.ashbyhq.com/credo.ai",
   "countryFilter": "India",
-  "paginationStrategy": "none",
-  "extractionStrategy": "exact-name-batch-coverage-sentinel-return-empty-until-public-surface-is-verified",
-  "parser": "custom-script",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-29",
-  "verifiedPublicJobCount": 0,
-  "verifiedIndiaJobCount": 0,
-  "verifiedSurfaceSummary": "Workbook batch 08 exact-name sentinel for Credo AI added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name.",
-  "backfillMode": "sentinel",
-  "originalAdapter": "script",
-  "originalAtsPlatform": "workbook-exact-name-sentinel",
-  "originalModulePath": "../workbookbatch08/failClosedSentinel.js",
-  "originalDryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\workbookbatch08\\credoai.jobs.json"
-}
-
+  "paginationStrategy": "public-single-response-API-and-native-board-ID-reconciliation-plus-final-whole-recheck",
+  "extractionStrategy": "current-active-corporate-embed+native-org-identity+public-API+exact-India-role-and-application-full-native-content",
+  "verifiedPublicJobCount": null,
+  "verifiedIndiaJobCount": null,
+  "verifiedOn": null,
+  "verifiedAt": null,
+  "verifiedInventoryStatus": "unverified",
+  "zeroResultPolicy": "evidence-required",
+  "sourceScopeComplete": false,
+  "boardIdentityVerified": true,
+  "officialBindingVerifiedAt": "2026-10-21T14:58:28.715Z",
+  "backfillMode": "live-parser",
+  "originalModulePath": null,
+  "originalDryRunFile": null,
+  "remediationStatus": "implemented-offline-native-fixture-qualified-awaiting-independent-review",
+  "runtimeQualification": "ordinary-http-not-qualified-research-browser-proof-separate",
+  "verificationDisposition": "current-official-native-binding-offline-qualification-runtime-status-separate",
+  "sourceScopeNotes": "Exact current Credo AI corporate jobs embed and native Credo.AI organization. Individual legal employer absent/null. Generic Remote future-hiring record unresolved; complete company/country coverage not claimed. Only current explicit native India country+India Remote roles qualify; new secondary/geographic contracts fail closed. Original UTC native publication timestamps retained; one-calendar-month eligibility. Browser used only for research rawHTTP capture, never runtime.",
+  "bindingEvidence": {
+    "verified": true,
+    "checkedAt": "2026-10-21T14:58:28.715Z",
+    "officialURL": "https://www.credo.ai/",
+    "matchedLinks": [
+      "https://www.credo.ai/company/jobs",
+      "https://jobs.ashbyhq.com/credo.ai/embed"
+    ],
+    "proofs": [
+      {
+        "file": "../artifacts/full-catalog/credoai-native-001/browser-native-001/manifest.json",
+        "sha256": "c215f494998b1b0cb43aaae360d449011f525086f0c295183355a7fd2b096c55"
+      }
+    ],
+    "bindingMethod": "actual-current-active-corporate-anchor-and-executable-native-embed"
+  },
+  "verifiedSurfaceSummary": "Current exact native organization, public API, India role/application pages and full API/board recheck support offline local qualification. Runtime inventory counts remain null."
+},modulePath:path.join(currentDir,'script.js'),dryRunFile:path.join(currentDir,'jobs.json')}
 export default PROVIDER_METADATA
-export { PROVIDER_METADATA }
+export{PROVIDER_METADATA}

@@ -4,6 +4,7 @@ import {run} from './script.js'
 import fs from 'node:fs'
 import {gunzipSync} from 'node:zlib'
 import {readInventoryEvidence} from '../../scraper-support/utils/inventoryEvidence.js'
+import {validateCarrierDetail} from './nativeRun.js'
 const fixture=()=>JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/runtime-native-20261021.json.gz',import.meta.url))))
 async function replay(change,options={}){
  const f=fixture(),original=globalThis.fetch;let calls=0
@@ -44,3 +45,28 @@ test('exact native pages reject duplicate IDs, primitive total errors and final 
 })
 test('HTTP202 and changed final response URL fail without producing an empty result',async()=>{for(const fn of [p=>{p.status=202},p=>{p.finalURL='https://example.invalid/'}])await assert.rejects(()=>replay(p=>{if(p.method==='POST')fn(p)}))})
 test('caller cancellation after the final response remains a failed attempt',async()=>{const c=new AbortController();let posts=0;await assert.rejects(()=>replay(p=>{if(p.method==='POST'&&++posts===6)c.abort(Error('final response cancellation'))},{signal:c.signal}),/final response cancellation/)})
+test('duplicate native posting UID across separate requisitions cannot qualify',async()=>{await assert.rejects(()=>replay(detailChange(j=>{j.jobPostingInfo.id='a'.repeat(32)})),/posting UID/)})
+test('optional native primary country code must agree with typed India',async()=>{await assert.rejects(()=>replay(detailChange(j=>{j.jobPostingInfo.country.alpha2Code='US'})),/countries/)})
+test('new native secondary office uses exact current primary India-country evidence, never a guessed city',()=>{
+ const f=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/new-secondary-20261021.json.gz',import.meta.url)))),payload=JSON.parse(f.detail.body),row={row:f.listing,id:'30220599',url:payload.jobPostingInfo.externalUrl},office=payload.jobPostingInfo.additionalLocations[0]
+ assert.throws(()=>validateCarrierDetail(payload,row,'2026-10-21T06:00:00Z',new Set()),/secondary/)
+ const result=validateCarrierDetail(payload,row,'2026-10-21T06:00:00Z',new Set([office.replace(/\s+/g,' ').trim()]))
+ assert.ok(result.locations.includes(office));assert.equal(result.city,null)
+})
+test('all68 fresh HTTP receipts replay once into exactly59 captured jobs, with original native fields and discrepancies',async()=>{
+ const f=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/runtime-current59-20261021.json.gz',import.meta.url)))),used=new Set(),original=globalThis.fetch
+ globalThis.fetch=async(url,init={})=>{const i=f.packets.findIndex((p,i)=>!used.has(i)&&p.url===String(url)&&p.method===(init.method??'GET')&&p.requestBody===(init.body??null));assert.ok(i>=0,'Missing exact receipt '+url);used.add(i);const p=f.packets[i],r=new Response(p.body,{status:p.status});Object.defineProperty(r,'url',{value:p.finalURL});return r}
+ const stable=j=>{const c=structuredClone(j);delete c.scrapedAt;delete c.sourceOfficialBinding.checkedAt;return c}
+ try{const jobs=await run({now:f.trial.completedAt});assert.equal(used.size,68);assert.equal(jobs.length,59);assert.deepEqual(jobs.map(stable),f.trial.jobs.map(stable));assert.equal(jobs.find(j=>j.jobId==='30213426').nativeLocationDiscrepancy.scopeAgreement,'India');assert.equal(jobs.find(j=>j.jobId==='30219751').city,null)}finally{globalThis.fetch=original}
+})
+for(const label of ['US - Chicago','United States - Remote','Singapore Office','Office Singapore','Chicago - US'])test('explicit foreign primary prefix or suffix contradicts typed India: '+label,async()=>{
+ await assert.rejects(()=>replay(p=>{if(p.method==='POST'){const j=JSON.parse(p.body);for(const row of j.jobPostings)row.locationsText=label;p.body=JSON.stringify(j)}else detailChange(j=>{j.jobPostingInfo.location=label;j.jobPostingInfo.jobRequisitionLocation.descriptor=label;j.jobPostingInfo.additionalLocations=[]})(p)}),/country/)
+})
+test('explicit foreign structured-office prefix cannot hide behind an Indian primary',async()=>{await assert.rejects(()=>replay(detailChange(j=>{j.jobPostingInfo.jobRequisitionLocation.descriptor='Singapore Office'})),/country/)})
+test('explicit foreign secondary prefix cannot hide behind an India suffix',async()=>{await assert.rejects(()=>replay(p=>{if(p.method==='POST'){const j=JSON.parse(p.body);for(const row of j.jobPostings)row.locationsText='2 Locations';p.body=JSON.stringify(j)}else detailChange(j=>{j.jobPostingInfo.additionalLocations=['Singapore Office, India']})(p)}),/country/)})
+test('ambiguous Indian state code UK does not invent a foreign country',()=>{
+ const f=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/new-secondary-20261021.json.gz',import.meta.url)))),p=JSON.parse(f.detail.body),label='UK - Dehradun',row={row:{...f.listing,locationsText:label},id:'30220599',url:p.jobPostingInfo.externalUrl};p.jobPostingInfo.location=label;p.jobPostingInfo.jobRequisitionLocation.descriptor=label;p.jobPostingInfo.additionalLocations=[];assert.equal(validateCarrierDetail(p,row,'2026-10-21T06:00:00Z').country,'India')
+})
+test('ordinary IT Park office words are not an Italy country prefix',()=>{
+ const f=JSON.parse(gunzipSync(fs.readFileSync(new URL('./fixtures/new-secondary-20261021.json.gz',import.meta.url)))),p=JSON.parse(f.detail.body),label='IT Park, Hyderabad, India',row={row:{...f.listing,locationsText:label},id:'30220599',url:p.jobPostingInfo.externalUrl};p.jobPostingInfo.location=label;p.jobPostingInfo.jobRequisitionLocation.descriptor=label;p.jobPostingInfo.additionalLocations=[];assert.equal(validateCarrierDetail(p,row,'2026-10-21T06:00:00Z').country,'India')
+})

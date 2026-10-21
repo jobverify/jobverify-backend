@@ -1,0 +1,46 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { generateResumeText, RESUME_MODEL } from '../outreach/resumeRuntime.js';
+import { compilerArguments } from '../outreach/latexCompiler.js';
+
+test('resume model is pinned separately and counts the complete rendered prompt before inference', async () => {
+  assert.match(RESUME_MODEL.modelId, /Qwen3-4B-Instruct-2507/);
+  assert.match(RESUME_MODEL.revision, /^[a-f0-9]{40}$/);
+  assert.match(RESUME_MODEL.sha256, /^[a-f0-9]{64}$/);
+  const calls = [];
+  const fetchImpl = async (url, options) => {
+    const body = JSON.parse(options.body); calls.push({ url, body });
+    return { ok: true, json: async () => url.endsWith('/apply-template') ? { prompt: 'entire rendered prompt' }
+      : url.endsWith('/tokenize') ? { tokens: Array(RESUME_MODEL.contextTokens).fill(1) }
+        : assert.fail('oversized input must not reach inference') };
+  };
+  await assert.rejects(generateResumeText('full resume and job', { fetchImpl }), { statusCode: 422 });
+  assert.equal(calls[0].body.messages[0].content, 'full resume and job');
+  assert.equal(calls[1].body.content, 'entire rendered prompt');
+});
+
+test('incomplete model output is rejected and verifier uses constrained JSON', async () => {
+  let completion;
+  const fetchImpl = async (url, options) => {
+    const body = JSON.parse(options.body);
+    if (url.endsWith('/apply-template')) return { ok: true, json: async () => ({ prompt: 'full' }) };
+    if (url.endsWith('/tokenize')) return { ok: true, json: async () => ({ tokens: [1, 2] }) };
+    completion = body;
+    return { ok: true, json: async () => ({ choices: [{ finish_reason: 'length', message: { content: 'partial' } }] }) };
+  };
+  await assert.rejects(generateResumeText('compare', { fetchImpl, comparison: true }), /incomplete/i);
+  assert.equal(completion.response_format.type, 'json_schema');
+});
+
+test('compiler isolation has no host mounts, network, secrets or shell execution', () => {
+  const args = compilerArguments({ name: 'resume-test', image: 'sha256:' + 'a'.repeat(64) });
+  assert.ok(args.includes('none'));
+  assert.ok(args.includes('--read-only'));
+  assert.ok(args.includes('--cap-drop=ALL'));
+  assert.ok(args.includes('--security-opt=no-new-privileges'));
+  assert.ok(args.includes('--memory=512m'));
+  assert.ok(args.includes('--pids-limit=64'));
+  assert.ok(args.includes('--untrusted'));
+  assert.ok(args.includes('--only-cached'));
+  assert.equal(args.some(arg => /(?:--volume|--mount|MONGO|GITHUB|--shell-escape)/.test(arg)), false);
+});
