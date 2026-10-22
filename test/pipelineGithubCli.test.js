@@ -44,10 +44,11 @@ test('GitHub CLI registers direct roots, reports work and dispatches separate co
  record=await PipelineRun.findById(record._id).lean();assert.equal(record.stages[2].status,'queued');
  assert.equal(record.stages[1].status,'completed');assert.equal(record.stages[1].summary.failed,1);assert.equal(record.stages[1].summary.warnings,1);
  await run('register','classification',1102,{PIPELINE_ID:record._id,PIPELINE_DISPATCH_TOKEN:record.stages[2].dispatchToken});
- for(let shard=0;shard<4;shard++)await fs.writeFile(path.join(directory,`.cache/scraper-actions/classification-${shard}.json`),JSON.stringify({completed:1,failed:0}));
+ for(let shard=0;shard<4;shard++)await fs.writeFile(path.join(directory,`.cache/scraper-actions/classification-${shard}.json`),JSON.stringify({shard,shardCount:4,assigned:1,scanned:4,completed:1,failed:0}));
  await run('report','classification',1102,{PIPELINE_JOB_RESULT:'success'});
  await complete('classification','Jobverify Post-scrape Classification',1102);
  record=await PipelineRun.findById(record._id).lean();assert.equal(record.status,'completed');assert.equal(record.stages[2].summary.completed,4);
+ assert.equal(record.stages[2].summary.scanned,4);assert.equal(record.stages[2].summary.identityScans,16);
  const dispatched=(await fs.readFile(dispatchFile,'utf8')).trim().split('\n').map(JSON.parse);
  assert.equal(dispatched.length,2);assert.match(dispatched[0].url,/rewrite-descriptions.yml/);assert.match(dispatched[1].url,/classify-jobs.yml/);
  assert.ok(dispatched.every(item=>item.body.inputs.pipeline_id===record._id&&item.body.inputs.pipeline_sha===env.GITHUB_SHA));

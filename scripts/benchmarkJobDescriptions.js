@@ -14,7 +14,7 @@ const jobs = JSON.parse(await fs.readFile(inputFile, 'utf8'));
 if (!Array.isArray(jobs) || jobs.length !== 20) throw new Error('Benchmark requires exactly 20 representative jobs');
 const controller = new AbortController();
 for (const event of ['SIGINT', 'SIGTERM']) process.once(event, () => controller.abort());
-const policyHash = createHash('sha256').update(await fs.readFile(new URL('../src/services/jobDescriptionPolicy.js', import.meta.url))).update(await fs.readFile(new URL('../rewriting/factPlan.js', import.meta.url))).update(await fs.readFile(new URL('../rewriting/runner.js', import.meta.url))).digest('hex');
+const policyHash = createHash('sha256').update(await fs.readFile(new URL('../src/services/jobDescriptionPolicy.js', import.meta.url))).update(await fs.readFile(new URL('../rewriting/factPlan.js', import.meta.url))).update(await fs.readFile(new URL('../rewriting/sectionProtocol.js', import.meta.url))).update(await fs.readFile(new URL('../rewriting/runner.js', import.meta.url))).digest('hex');
 const report = { model: REWRITE_MODEL, policyHash, environment: { platform: process.platform, arch: process.arch, cpu: os.cpus()[0]?.model, threads: REWRITE_MODEL.cpuThreads, totalMemoryBytes: os.totalmem() }, startedAt: new Date().toISOString(), cases: [] };
 if (process.argv.includes('--resume')) {
   const previous = JSON.parse(await fs.readFile(outputFile, 'utf8'));

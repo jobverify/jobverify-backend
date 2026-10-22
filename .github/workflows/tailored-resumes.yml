@@ -21,9 +21,10 @@ jobs:
         with:
           node-version: '24'
       - name: Install backend dependencies
-        run: npm ci --ignore-scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Cache only immutable resume model and compiler dependencies
-        uses: actions/cache@v4
+        id: resume-dependencies
+        uses: actions/cache/restore@v4
         with:
           path: |
             .cache/resume-models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf
@@ -35,3 +36,19 @@ jobs:
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
         run: node scripts/runTailoredResumes.js
+      - name: Check that every immutable dependency is ready
+        id: complete-cache
+        if: ${{ !cancelled() && steps.resume-dependencies.outputs.cache-hit != 'true' }}
+        run: |
+          if test -f .cache/resume-models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf && test -f .cache/resume-runtime/b11146/llama-b11146-bin-ubuntu-x64.tar.gz && test -f .cache/resume-compiler/image.tar; then
+            printf 'ready=true\n' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Save immutable dependencies even if document validation failed
+        if: ${{ !cancelled() && steps.complete-cache.outputs.ready == 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .cache/resume-models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf
+            .cache/resume-runtime/b11146/llama-b11146-bin-ubuntu-x64.tar.gz
+            .cache/resume-compiler/image.tar
+          key: ${{ steps.resume-dependencies.outputs.cache-primary-key }}

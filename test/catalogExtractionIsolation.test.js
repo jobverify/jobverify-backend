@@ -35,6 +35,32 @@ test('isolated extraction rejects database access before a source can connect', 
     const row = await runIsolatedExtraction(provider, { outputDirectory: path.join(directory, 'output') })
     assert.equal(row.outcome, 'extraction-failed')
     assert.equal(row.failureCode, 'AUDIT_DATABASE_BLOCKED')
+    assert.equal(row.failureKind, 'audit_database_blocked')
+  })
+})
+
+test('native fetch failure is reported from bounded underlying evidence with unknown qualified counts', async t => {
+  const fixture = `export const run = async () => {
+    const error = new Error('Arrow native collection incomplete; cleanup forbidden');
+    error.nativeEvidence = {observedListingCount: 3, jobs: [{rawHTML:'PRIVATE_JOB'}], cleanupAllowed: false,
+      failures:[{stage:'binding-pagination-or-closure', name:'Error',message:'Arrow native transport: fetch failed'}],
+      transportPackets:[{status:null,headers:{cookie:'PRIVATE_COOKIE'},bodyBase64:'PRIVATE_BODY',
+        failure:{name:'TypeError',message:'fetch failed',cause:{name:'ConnectTimeoutError',message:'Connect Timeout Error',code:'UND_ERR_CONNECT_TIMEOUT'}}}]};
+    throw error;
+  }`
+  await withFixture(fixture, async ({ directory, provider }) => {
+    const row = await runIsolatedExtraction(provider, { outputDirectory: path.join(directory, 'output') })
+    assert.equal(row.failureKind, 'network_or_timeout')
+    assert.equal(row.outcome, 'extraction-failed')
+    for (const key of ['rawJobs', 'indiaJobs', 'eligibleJobs', 'inventoryEvidence']) assert.equal(row[key], null)
+    assert.equal(row.failureEvidence.observedListingCount, 3)
+    assert.equal(row.failureEvidence.partialJobsLength, 1)
+    assert.equal(row.failureEvidence.cleanupAllowed, false)
+    assert.equal(row.failureEvidence.inventoryComplete, false)
+    assert.equal(row.failureEvidence.firstParty, null)
+    assert.equal(row.failureEvidence.reasons[0].cause.code, 'UND_ERR_CONNECT_TIMEOUT')
+    assert.doesNotMatch(JSON.stringify(row), /PRIVATE_|bodyBase64|rawHTML|headers/)
+    t.diagnostic(`Synthetic offline worker row: ${JSON.stringify(row)}`)
   })
 })
 

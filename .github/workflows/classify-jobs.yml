@@ -57,7 +57,7 @@ jobs:
       CLASSIFICATION_SHARD_COUNT: '4'
       CLASSIFICATION_BUDGET_SECONDS: '18000'
       POST_SCRAPE_CLASSIFICATION_MODE: 'policy'
-      GLICLASS_CPU_THREADS: '1'
+      GLICLASS_CPU_THREADS: '4'
       GLICLASS_MODEL_DIRECTORY: '.cache/gliclass-model'
       HF_HOME: '${{ github.workspace }}/.cache/gliclass-hub'
       NODE_OPTIONS: '--use-system-ca'
@@ -100,6 +100,7 @@ jobs:
           name: classification-${{ matrix.shard }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             .cache/scraper-actions/classification-${{ matrix.shard }}.json
+            .cache/scraper-actions/classification-${{ matrix.shard }}.ndjson
             .cache/scraper-actions/gliclass-worker.log
           include-hidden-files: true
           if-no-files-found: warn

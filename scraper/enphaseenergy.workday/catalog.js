@@ -1,28 +1,17 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-const PROVIDER_METADATA = {
-  "source": "enphaseenergy",
-  "companyName": "Enphase Energy",
-  "adapter": "script",
-  "atsPlatform": "workbook-exact-name-sentinel",
-  "countryFilter": "India",
-  "paginationStrategy": "none",
-  "extractionStrategy": "exact-name-batch-coverage-sentinel-return-empty-until-public-surface-is-verified",
-  "parser": "custom-script",
-  "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-08-01",
-  "verifiedPublicJobCount": 0,
-  "verifiedIndiaJobCount": 0,
-  "verificationDisposition": "no-trustworthy-exact-name-public-jobs-flow-verified-locally",
-  "verifiedSurfaceSummary": "Workbook batch 09 exact-name sentinel for Enphase Energy added on Saturday, August 1, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name.",
-  "originalModulePath": "../workbookbatch09a/failClosedSentinel.js",
-  "backfillMode": "workday",
-  "modulePath": path.join(currentDir, 'script.js'),
-  "dryRunFile": path.join(currentDir, 'jobs.json')
+import {fileURLToPath} from 'node:url'
+const currentDir=path.dirname(fileURLToPath(import.meta.url))
+const PROVIDER_METADATA={
+ source:'enphaseenergy',companyName:'Enphase Energy',adapter:'script',
+ modulePath:path.join(currentDir,'script.js'),dryRunFile:path.join(currentDir,'jobs.json'),
+ companyDomain:'enphase.com',officialHomepageUrl:'https://enphase.com/',companyCareerPage:'https://enphase.com/careers',
+ jobsBoardUrl:'https://enphase.com/api/v2/jobs',atsPlatform:'enphase-native-corporate-api',
+ countryFilter:'India',parser:'custom-script',normalizationProfile:'engineering-default',
+ paginationStrategy:'all-finite-zero-based-native-pages-and-full-final-recheck',
+ extractionStrategy:'explicit-India-native-IDs-matching-full-corporate-JDs-and-exact-configured-Jobvite-links',
+ verifiedOn:null,verifiedAt:null,verifiedPublicJobCount:null,verifiedIndiaJobCount:null,verifiedInventoryStatus:'unverified',
+ sourceScopeComplete:false,zeroResultPolicy:'coverage-gap',backfillMode:'implemented',remediationStatus:'implemented-awaiting-ordinary-audit-and-independent-review',
+ verifiedSurfaceSummary:'Corporate client, API records, full India role identity and configured native links are checked each run. Original dates, legal employer, posting status and company-wide totals remain null. Application control does not validate application form access.',
 }
-
 export default PROVIDER_METADATA
-export { PROVIDER_METADATA }
+export {PROVIDER_METADATA}

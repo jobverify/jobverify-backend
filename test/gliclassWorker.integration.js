@@ -13,6 +13,8 @@ test('offline GLiClass receives Unicode job text without corrupting the Windows 
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
   const worker = await startGliclassWorker({ logFile: path.join(directory, 'worker.log') })
   t.after(() => worker.stop())
+  assert.ok(worker.configuration.cpuThreads >= 1 && worker.configuration.cpuThreads <= 4)
+  assert.ok(worker.configuration.cpuThreads <= worker.configuration.availableCpus)
   const prediction = await worker.classify({ inputHash: 'unicode-regression',
     title: 'Software Engineer in Karnātaka',
     body: 'Full-time engineering position. Minimum 5 years of professional software development experience required.',

@@ -54,6 +54,23 @@ const normalizeEmploymentType = (value) => {
 
 const isPublishedRecord = (record = {}) => record.Publish !== false
 
+const normalizeNativePostingDate = (value) => {
+  if (value == null || value === '') return null
+  // This portal's Date_Opened field is day-first (including native 26/03 and
+  // 17/08 values). The JavaScript date parser reverses ambiguous days/months.
+  const match = typeof value === 'string' && /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value)
+  const iso = typeof value === 'string' && /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  const parts = match ? [match[3], match[2], match[1]] : iso ? iso.slice(1) : null
+  if (!parts) throw new Error('Flydocs Date_Opened no longer has a supported native date format')
+  const [year, month, day] = parts.map(Number)
+  const date = new Date(0)
+  date.setUTCFullYear(year, month - 1, day)
+  if (year < 1 || date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+    throw new Error('Flydocs Date_Opened contains an invalid calendar date')
+  }
+  return parts.join('-')
+}
+
 const isUnlockedRecord = (record = {}) => {
   if (record.Locked === true || record.Is_Locked === true) return false
   const status = normalizeWhitespace(
@@ -106,13 +123,19 @@ export const extractIndiaJobs = (payload) => (Array.isArray(payload?.data) ? pay
       minimumQualification: null,
       preferredQualification: null,
       requiredSkills: [],
-      postingDate: normalizeWhitespace(record.Date_Opened),
       closingDate: null,
       jobDescription: normalizeWhitespace(record.Job_Description),
       remoteStatus: /^(yes|true)$/i.test(String(record.Remote_Job ?? '')) ? 'Remote' : 'On-site',
     }
 
-    return isIndiaJobInScope(job) ? job : null
+    if (!isIndiaJobInScope(job)) return null
+    const postingDate = normalizeNativePostingDate(record.Date_Opened)
+    return {
+      ...job,
+      postingDate,
+      nativePostingDate: record.Date_Opened ?? null,
+      nativePostingDateFormat: postingDate ? (/^\d{4}-/.test(record.Date_Opened) ? 'yyyy-MM-dd' : 'dd/MM/yyyy') : null,
+    }
   })
   .filter(Boolean)
 

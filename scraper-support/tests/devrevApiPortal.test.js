@@ -45,7 +45,12 @@ test('runApiPortalScraper filters DevRev Greenhouse jobs to India-facing locatio
   })
 
   assert.equal(jobs.length, 1)
-  assert.deepEqual(jobs[0], {
+  const { nativePublication, ...mappedJob } = jobs[0]
+  assert.equal(nativePublication.status, 'unknown')
+  assert.equal(nativePublication.value, null)
+  assert.equal(nativePublication.candidates[0].updated_at, '2026-07-01T09:00:00Z')
+  assert.equal(nativePublication.candidates[1].status, 'not-observed')
+  assert.deepEqual(mappedJob, {
     title: 'Forward Deployed Engineer',
     company: 'DevRev',
     location: 'Bangalore, India; Chennai, India',
@@ -64,8 +69,8 @@ test('runApiPortalScraper filters DevRev Greenhouse jobs to India-facing locatio
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
-    postingDate: '2026-07-01T09:00:00Z',
     remoteStatus: 'On-site',
     scrapedAt: jobs[0].scrapedAt,
+    sourceListingComplete: false,
   })
 })

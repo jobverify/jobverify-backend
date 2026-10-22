@@ -1,0 +1,323 @@
+{
+  "evidence": "artifacts/full-catalog/fis-native-001/detail-001.json",
+  "job": {
+    "postingSiteType": "External",
+    "subCategory": "Other",
+    "hasSecondaryInternalQuestionnaire": "no",
+    "positionType": "Full time",
+    "ml_skills": [
+      "automation framework development",
+      "selenium",
+      "ci/cd pipeline integration",
+      "playwright",
+      "junit",
+      "testng",
+      "aws",
+      "distributed systems testing",
+      "microservices testing",
+      "data pipelines testing",
+      "cloud environments",
+      "ai-powered test generation",
+      "defect detection",
+      "regression selection",
+      "observability-based quality metrics",
+      "ai-powered model validation",
+      "ai-powered feature validation"
+    ],
+    "companyName": "FIS Global",
+    "ml_title": "Quality Analyst Engineer",
+    "category_raw": "Engineering",
+    "standardisedCountry": "India",
+    "type": "Experienced (relevant combo of work and education)",
+    "descriptionTeaser": "Position Type : Full time Type Of Hire : Experienced (relevant combo of work and education) Education Desired : Bachelor's DegreeFIS is a global leader in financial technology, powering mission‑critic",
+    "postingId": "SearchJobs",
+    "dummyaddress": "2nd, 3rd & 6th Floor, Tower 3, Warp Building, SJR I Park, EPIP-Zone1, Whitefield Road, Bengaluru- 560066, Karnātaka, India",
+    "state": "Karnātaka",
+    "educationDesired": "Bachelor's Degree",
+    "jobUpdatedDate": "2026-08-06T09:45:03.764+0000",
+    "siteType": "external",
+    "standardised_multi_location": [
+      {
+        "standardisedMapQueryLocation": "Bangalore,Karnataka,India",
+        "standardisedStateCode": "KA",
+        "standardisedCity": "Bangalore",
+        "latitude": "12.97194",
+        "latlong": {
+          "lon": 77.59369,
+          "lat": 12.97194
+        },
+        "isLocationStandardized": true,
+        "standardisedCountry": "India",
+        "standardisedTimezone": "+05:30 UTC",
+        "standardisedState": "Karnataka",
+        "longitude": "77.59369"
+      },
+      {
+        "standardisedMapQueryLocation": "Chennai,Tamil Nadu,India",
+        "standardisedStateCode": "TN",
+        "standardisedCity": "Chennai",
+        "latitude": "13.08784",
+        "latlong": {
+          "lon": 80.27847,
+          "lat": 13.08784
+        },
+        "isLocationStandardized": true,
+        "standardisedCountry": "India",
+        "standardisedTimezone": "+05:30 UTC",
+        "standardisedState": "Tamil Nadu",
+        "longitude": "80.27847"
+      }
+    ],
+    "secondaryQuestionnaireId": "",
+    "standardisedMapQueryLocation": "Bangalore,Karnataka,India",
+    "jobProfile": "Engineer Lead, Quality",
+    "costCenter": "",
+    "uniqueValue": {
+      "jobId": "JR0305635",
+      "refNum": "FIGLUS",
+      "siteType": "external"
+    },
+    "uniqueKey": "FIGLUSJR0305635external",
+    "internalCategoryId": "FIGLUS_Product_Development",
+    "jobUniqueIdentifier": "refNum,jobId,siteType",
+    "primaryInternalQuestionnaireId": "",
+    "ml_job_overview": {
+      "summary": "The Quality Analyst Engineer at FIS will play a pivotal role in advancing the reliability and quality of the Revenue Connect cloud platform, a next-generation solution for banks. This position focuses on designing, building, and maintaining automation frameworks for UI, API, data, and microservices testing, leveraging AI-driven techniques for test generation and defect detection. The role requires close collaboration with engineering, product, and SRE teams to ensure robust validation and testability across platform components. Candidates will lead and mentor a quality engineering team, fostering AI-assisted engineering practices and driving technical excellence. This is an opportunity to contribute to a leading global fintech company and build a career in the core banking and payments domain.",
+      "skills": [
+        "A minimum of 7 years of direct experience in software quality engineering, including automation architecture and framework development.",
+        "Strong hands-on expertise with modern automation tools such as Playwright, Selenium, JUnit/TestNG, and Postman.",
+        "Proven experience validating AI-enabled features, including LLMs, anomaly detection, model-driven logic, or generative workflows.",
+        "Deep knowledge of testing for distributed systems, microservices, data pipelines, and cloud environments, with AWS preferred.",
+        "Solid experience integrating automation into CI/CD pipelines.",
+        "Strong debugging, problem-solving, and analytical skills across frontend, backend, and data layers.",
+        "Excellent communication, collaboration, and cross-team influence skills in a fast-paced engineering organisation.",
+        "Experience with RAG pipelines, vector stores, guardrail frameworks, model evaluation, or safe AI patterns is an added bonus.",
+        "Experience testing financial systems, billing engines, or analytics-heavy platforms is a plus.",
+        "Familiarity with synthetic data generation or statistical validation for AI and data-driven testing is advantageous."
+      ],
+      "responsibilities": [
+        "Design, build, and maintain automation frameworks for UI, API, data, and microservices testing.",
+        "Leverage AI-driven techniques for test generation, defect detection, and regression selection.",
+        "Develop and track observability-based quality metrics and CI/CD quality gates.",
+        "Validate AI-powered features and collaborate to ensure safe and correct model behaviour.",
+        "Define and implement end-to-end quality strategies across key platform components.",
+        "Partner with engineering, product, and SRE teams to ensure strong SDLC testability and guardrails.",
+        "Lead and mentor a quality engineering team, fostering AI-assisted engineering practices.",
+        "Drive technical excellence through standards, code reviews, and continuous skill development."
+      ],
+      "education": [
+        "A Bachelor's Degree is required."
+      ]
+    },
+    "multi_category": [
+      {
+        "primaryLocaleCategory": "Product Development",
+        "internalCategoryId": "FIGLUS_Product_Development",
+        "category_raw": "Engineering",
+        "category": "Product Development"
+      }
+    ],
+    "reqId": "JR0305635",
+    "ai_summary": "As a Quality Analyst Engineer at FIS in India, you will lead the design, development, and maintenance of automation frameworks for UI, API, data, and microservices testing. The role involves leveraging AI-driven techniques for test generation, defect detection, and regression selection, as well as developing quality metrics and CI/CD quality gates. You will validate AI-powered features, define quality strategies, and mentor a quality engineering team. The position requires at least 7 years of direct experience in software quality engineering, strong hands-on expertise with modern automation tools (such as Playwright, Selenium, JUnit/TestNG, Postman), and deep knowledge of distributed systems, microservices, and cloud environments (preferably AWS). Excellent communication and analytical skills are essential. Experience with RAG pipelines, vector stores, guardrail frameworks, or financial systems is advantageous.",
+    "displayCareerSite": true,
+    "ml_country": "India",
+    "standardisedTimezone": "+05:30 UTC",
+    "jobProfileId": "500868",
+    "descriptionHashKey": "31cb949263ad866ea3c76decec469b43",
+    "skipJob": false,
+    "companyValue": "FIS",
+    "city": "Bengaluru",
+    "jobFamilyGroup": "Engineering",
+    "latitude": "12.97194",
+    "visibilityLocale": [
+      "en_US"
+    ],
+    "hasSecondaryQuestionnaire": "no",
+    "fesHash": "f6a52818d1ae296ee4592f101d33a22dd906ce3131fbfd03dd82e28ebfdb14f1",
+    "industry": "Banking",
+    "multi_location": [
+      {
+        "country": "India",
+        "cityState": "Bengaluru, Karnātaka",
+        "address": "2nd, 3rd & 6th Floor, Tower 3, Warp Building, SJR I Park, EPIP-Zone1, Whitefield Road, Bengaluru- 560066, Karnātaka, India",
+        "city": "Bengaluru",
+        "postalCode": "56006",
+        "latlong": {
+          "lon": 77.59369,
+          "lat": 12.97194
+        },
+        "latitude": "12.97194",
+        "stateCountry": "Karnātaka, India",
+        "locationId": "F794",
+        "location": "2nd, 3rd & 6th Floor, Tower 3, Warp Building, SJR I Park, EPIP-Zone1, Whitefield Road, Bengaluru- 560066, Karnātaka, India",
+        "state": "Karnātaka",
+        "cityCountry": "Bengaluru, India",
+        "cityStateCountry": "Bengaluru, Karnātaka, India",
+        "mapQueryLocation": "2nd, 3rd & 6th Floor, Tower 3, Warp Building, SJR I Park, EPIP-Zone1, Whitefield Road, Bengaluru- 560066, Karnātaka, India",
+        "longitude": "77.59369"
+      },
+      {
+        "country": "India",
+        "cityState": "Chennai, Tamil Nādu",
+        "address": "AMBIT IT PARK, 7th Floor, Block B & C, Chennai- 600058, Tamil Nādu, India",
+        "city": "Chennai",
+        "postalCode": "60005",
+        "latlong": {
+          "lon": 80.27847,
+          "lat": 13.08784
+        },
+        "latitude": "13.08784",
+        "stateCountry": "Tamil Nādu, India",
+        "locationId": "4044",
+        "location": "AMBIT IT PARK, 7th Floor, Block B & C, Chennai- 600058, Tamil Nādu, India",
+        "state": "Tamil Nādu",
+        "cityCountry": "Chennai, India",
+        "cityStateCountry": "Chennai, Tamil Nādu, India",
+        "mapQueryLocation": "AMBIT IT PARK, 7th Floor, Block B & C, Chennai- 600058, Tamil Nādu, India",
+        "longitude": "80.27847"
+      }
+    ],
+    "additionalDescription": "<p style=\"text-align:left\"><b> Position Type : </b></p>Full time<p style=\"text-align:left\"><b> Type Of Hire : </b></p>Experienced (relevant combo of work and education)<p style=\"text-align:left\"><b> Education Desired : </b></p>Bachelor's Degree",
+    "locationId": "F794",
+    "product": "",
+    "address": "2nd, 3rd & 6th Floor, Tower 3, Warp Building, SJR I Park, EPIP-Zone1, Whitefield Road, Bengaluru- 560066, Karnātaka, India",
+    "locationName": "IND BNGL FL2-3 TWR 3",
+    "jobPostingSiteId": "External",
+    "isTranslated": false,
+    "retainJobFields": true,
+    "hasPrimaryInternalQuestionnaire": "no",
+    "ml_language_fullform": "english",
+    "cmsJobId": "JR0305635",
+    "dummymapqueloc": "Bengaluru, Karnātaka, India",
+    "applyUrl": "https://fis.wd5.myworkdayjobs.com/SearchJobs/job/IND-BNGL-FL2-3-TWR-3/Quality-Analyst-Engineer_JR0305635/apply",
+    "ml_Description": "As Quality Engineering Lead, you’ll drive uncompromising reliability and intelligent automation, using AI-powered insights and automation-first engineering to ensure our platform’s excellence and robust validation at every layer. Design, build, and maintain automation frameworks for UI, API, data, and microservices testing. Leverage AI-driven techniques for test generation, defect detection, and regression selection. Develop and track observability-based quality metrics and CI/CD quality gates. Validate AI/ML-powered features and collaborate to ensure safe and correct model behaviour. Define and implement end-to-end quality strategies across key platform components. Partner with engineering, product, and SRE teams to ensure strong SDLC testability and guardrails. Lead and mentor a quality engineering team, fostering AI-assisted engineering practices. Drive technical excellence through standards, code reviews, and continuous skill development. 7+ years of direct experience in software quality engineering, including automation architecture and framework development. Strong hands‑on expertise with modern automation tools (Playwright, Selenium, JUnit/TestNG, Postman et al). Proven experience validating AI‑enabled features — LLMs, anomaly detection, model‑driven logic, or generative workflows. Deep knowledge of testing for distributed systems, microservices, data pipelines, and cloud environments (AWS preferred). Solid experience integrating automation into CI/CD pipelines. Strong debugging, problem‑solving, and analytical skills across frontend, backend, and data layers. Excellent communication, collaboration, and cross‑team influence skills in a fast‑paced engineering organization. Experience with RAG pipelines, vector stores, guardrail frameworks, model evaluation, or safe AI patterns. Experience testing financial systems, billing engines, or analytics‑heavy platforms. Familiarity with synthetic data generation or statistical validation for AI and data‑driven testing. Sourcing Model. Experienced (relevant combo of work and education) Education Desired . Bachelor's Degree. ",
+    "externalApply": false,
+    "cityState": "Bengaluru, Karnātaka",
+    "country": "India",
+    "postalCode": "56006",
+    "hasPrimaryQuestionnaire": "yes",
+    "subCategory_raw": "Engineer Lead, Quality",
+    "isEverGreenReq": "0",
+    "source": "WORKDAY",
+    "jobRequisitionId": "JR0305635",
+    "standardisedCity": "Bangalore",
+    "locationAccuracyLevel": "city",
+    "jobFamily": "Quality Engineering",
+    "jobReqStatus": "OPEN",
+    "secondaryQuestionnaireIds": "",
+    "externalTracking": false,
+    "sector": "",
+    "visibilityType": "External",
+    "longitude": "77.59369",
+    "ats": "WORKDAY",
+    "isDerived": false,
+    "latlong": {
+      "lon": 77.59369,
+      "lat": 12.97194
+    },
+    "secondaryInternalQuestionnaireId": "",
+    "dummylocId": "F794",
+    "stateCountry": "Karnātaka, India",
+    "jobId": "JR0305635",
+    "remoteType": "\"",
+    "companyId": "SUPERVISORY_ORGANIZATION-3-41107",
+    "updatedByOfflineProcessing": true,
+    "visType": "External",
+    "refNum": "FIGLUS",
+    "profileId": "500868",
+    "topic": "Intg.JobPull.GeoLocation",
+    "typeOfHire": "Experienced (relevant combo of work and education)",
+    "primaryLocaleCategory": "Product Development",
+    "description": "<p style=\"text-align:left\"><b> Position Type : </b></p>Full time<p style=\"text-align:left\"><b> Type Of Hire : </b></p>Experienced (relevant combo of work and education)<p style=\"text-align:left\"><b> Education Desired : </b></p>Bachelor's Degree<p>FIS is a global leader in financial technology, powering mission‑critical systems that help the world pay, bank, and invest. If you’re passionate about advancing the future of fintech and building transformative products used across the money lifecycle, we’d like to ask you: <b>Are you FIS?</b></p><p></p><p><b>About the team:</b></p><p></p><p>Revenue Connect is FIS’s next-generation cloud platform, designed to transform commercial pricing and billing for banks with modern AWS infrastructure, API-first microservices, and advanced UI/UX. This approach eliminates legacy technical debt and delivers the speed, accuracy, and transparency banks demand.</p><p>As Quality Engineering Lead, you’ll drive uncompromising reliability and intelligent automation, using AI-powered insights and automation-first engineering to ensure our platform’s excellence and robust validation at every layer.</p><p></p><p><b>What you will be doing:</b></p><ul><li>Design, build, and maintain automation frameworks for UI, API, data, and microservices testing.</li><li>Leverage AI-driven techniques for test generation, defect detection, and regression selection.</li><li>Develop and track observability-based quality metrics and CI/CD quality gates.</li><li>Validate AI/ML-powered features and collaborate to ensure safe and correct model behaviour.</li><li>Define and implement end-to-end quality strategies across key platform components.</li><li>Partner with engineering, product, and SRE teams to ensure strong SDLC testability and guardrails.</li><li>Lead and mentor a quality engineering team, fostering AI-assisted engineering practices.</li><li>Drive technical excellence through standards, code reviews, and continuous skill development.</li></ul><p></p><p><b>What you will need:</b></p><ul><li><b>7&#43; years</b> of direct experience in software quality engineering, including <b>automation architecture</b> and <b>framework development</b>.</li><li>Strong hands‑on expertise with modern automation tools (Playwright, Selenium, JUnit/TestNG, Postman et al).</li><li>Proven experience validating <b>AI‑enabled features</b> — LLMs, anomaly detection, model‑driven logic, or generative workflows.</li><li>Deep knowledge of testing for distributed systems, microservices, data pipelines, and cloud environments (AWS preferred).</li><li>Solid experience integrating automation into CI/CD pipelines.</li><li>Strong debugging, problem‑solving, and analytical skills across frontend, backend, and data layers.</li><li>Excellent communication, collaboration, and cross‑team influence skills in a fast‑paced engineering organization.</li></ul><p></p><p><b>Added bonus if you have: </b></p><ul><li>Experience with <b>RAG pipelines</b>, vector stores, guardrail frameworks, model evaluation, or safe AI patterns.</li><li>Experience testing financial systems, billing engines, or analytics‑heavy platforms.</li><li>Familiarity with synthetic data generation or statistical validation for AI and data‑driven testing.</li></ul><p></p><p><b>What we offer you:    </b></p><p>                                                                                                                                   <br />•An exciting opportunity be a part of Worlds Leading FinTech Product MNC<br />•To be a part of vibrant team and to build up a career on core banking/payments domain<br />•A broad range of professional education and personal development possibilities FIS is your final career step!<br />•Time to support charities and give back in your community</p><p><b>Privacy Statement</b></p><p></p><p>FIS is committed to protecting the privacy and security of all personal information that we process in order to provide services to our clients. For specific information on how FIS protects personal information online, please see the <a href=\"http://www.fisglobal.com/privacy\" target=\"_blank\">Online Privacy Notice</a>.</p><p></p><p><b>Sourcing Model</b></p><p></p><p>Recruitment at FIS works primarily on a direct sourcing model; a relatively small portion of our hiring is through recruitment agencies. FIS does not accept resumes from recruitment agencies which are not on the preferred supplier list and is not responsible for any related fees for resumes submitted to job postings, our employees, or any other part of our company.</p><p></p><p>#pridepass</p>",
+    "cityStateZipCode": "Bengaluru, Karnātaka, 560066",
+    "locale": "en_US",
+    "title": "Quality Analyst Engineer",
+    "jobSeqNo": "FIGLUSJR0305635EXTERNAL",
+    "postedDate": "2026-08-06T00:00:00.000+0000",
+    "ml_highlight": "Take on the role of Quality Analyst Engineer, driving automation and quality engineering for a next-generation cloud platform. Lead the design and maintenance of automation frameworks, validate AI-powered features, and collaborate with cross-functional teams. Ideal for experienced professionals with strong expertise in software quality engineering and modern automation tools.",
+    "dateCreated": "2026-03-13T16:29:24.153+0000",
+    "isLocationStandardized": true,
+    "remoteFlag": "\"",
+    "cityStateCountry": "Bengaluru, Karnātaka, India",
+    "jobType": "Full time",
+    "hashKey": "a183daea1ae2517c9ec51b0f6b838a3ccaefc67462bae1675d5601323cb2a720a1c8dcffe5989c9e72196ced2c01f1579ce92070deda2dc440215e9f123c8ddb",
+    "employmentType": "Experienced (relevant combo of work and education)",
+    "experienceDesired": "",
+    "parentRefNum": "FIGLUS",
+    "salaryGrade": "11",
+    "jobVisibility": [
+      "external",
+      "internal"
+    ],
+    "primaryQuestionnaireId": "QUESTIONNAIRE-3-1735",
+    "standardisedStateCode": "KA",
+    "travelPercentage": "",
+    "isCritical": true,
+    "jobFamilyId": "JF_Quality Engineering",
+    "location": "2nd, 3rd & 6th Floor, Tower 3, Warp Building, SJR I Park, EPIP-Zone1, Whitefield Road, Bengaluru- 560066, Karnātaka, India",
+    "cityCountry": "Bengaluru, India",
+    "category": "Product Development",
+    "mapQueryLocation": "2nd, 3rd & 6th Floor, Tower 3, Warp Building, SJR I Park, EPIP-Zone1, Whitefield Road, Bengaluru- 560066, Karnātaka, India",
+    "standardisedState": "Karnataka"
+  },
+  "posting": {
+    "identifier": {
+      "@type": "PropertyValue",
+      "name": "FIS Global",
+      "value": "JR0305635"
+    },
+    "hiringOrganization": {
+      "@type": "Organization",
+      "name": "FIS Global",
+      "sameAs": "https://careers.fisglobal.com/us/en",
+      "url": "https://careers.fisglobal.com/us/en/job/FIGLUSJR0305635EXTERNAL/Quality-Analyst-Engineer",
+      "logo": "https://assets.phenompeople.com/CareerConnectResources/FIGLUS/images/job_logo_config--1667924187838.png"
+    },
+    "jobLocation": [
+      {
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": "12.97194",
+          "longitude": "77.59369"
+        },
+        "address": {
+          "@type": "PostalAddress",
+          "postalCode": "56006",
+          "addressCountry": "India",
+          "addressLocality": "Bengaluru",
+          "addressRegion": "Karnātaka"
+        },
+        "@type": "Place"
+      },
+      {
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": "13.08784",
+          "longitude": "80.27847"
+        },
+        "address": {
+          "@type": "PostalAddress",
+          "postalCode": "60005",
+          "addressCountry": "India",
+          "addressLocality": "Chennai",
+          "addressRegion": "Tamil Nādu"
+        },
+        "@type": "Place"
+      }
+    ],
+    "employmentType": [
+      "OTHER",
+      "FULL_TIME"
+    ],
+    "@type": "JobPosting",
+    "workHours": "40 hours per week",
+    "description": "&lt;p style=\"text-align:left\"&gt;&lt;b&gt; Position Type : &lt;/b&gt;&lt;/p&gt;Full time&lt;p style=\"text-align:left\"&gt;&lt;b&gt; Type Of Hire : &lt;/b&gt;&lt;/p&gt;Experienced (relevant combo of work and education)&lt;p style=\"text-align:left\"&gt;&lt;b&gt; Education Desired : &lt;/b&gt;&lt;/p&gt;Bachelor's Degree&lt;p&gt;FIS is a global leader in financial technology, powering mission‑critical systems that help the world pay, bank, and invest. If you’re passionate about advancing the future of fintech and building transformative products used across the money lifecycle, we’d like to ask you: &lt;b&gt;Are you FIS?&lt;/b&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;About the team:&lt;/b&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;Revenue Connect is FIS’s next-generation cloud platform, designed to transform commercial pricing and billing for banks with modern AWS infrastructure, API-first microservices, and advanced UI/UX. This approach eliminates legacy technical debt and delivers the speed, accuracy, and transparency banks demand.&lt;/p&gt;&lt;p&gt;As Quality Engineering Lead, you’ll drive uncompromising reliability and intelligent automation, using AI-powered insights and automation-first engineering to ensure our platform’s excellence and robust validation at every layer.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;What you will be doing:&lt;/b&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Design, build, and maintain automation frameworks for UI, API, data, and microservices testing.&lt;/li&gt;&lt;li&gt;Leverage AI-driven techniques for test generation, defect detection, and regression selection.&lt;/li&gt;&lt;li&gt;Develop and track observability-based quality metrics and CI/CD quality gates.&lt;/li&gt;&lt;li&gt;Validate AI/ML-powered features and collaborate to ensure safe and correct model behaviour.&lt;/li&gt;&lt;li&gt;Define and implement end-to-end quality strategies across key platform components.&lt;/li&gt;&lt;li&gt;Partner with engineering, product, and SRE teams to ensure strong SDLC testability and guardrails.&lt;/li&gt;&lt;li&gt;Lead and mentor a quality engineering team, fostering AI-assisted engineering practices.&lt;/li&gt;&lt;li&gt;Drive technical excellence through standards, code reviews, and continuous skill development.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;What you will need:&lt;/b&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;7&#43; years&lt;/b&gt; of direct experience in software quality engineering, including &lt;b&gt;automation architecture&lt;/b&gt; and &lt;b&gt;framework development&lt;/b&gt;.&lt;/li&gt;&lt;li&gt;Strong hands‑on expertise with modern automation tools (Playwright, Selenium, JUnit/TestNG, Postman et al).&lt;/li&gt;&lt;li&gt;Proven experience validating &lt;b&gt;AI‑enabled features&lt;/b&gt; — LLMs, anomaly detection, model‑driven logic, or generative workflows.&lt;/li&gt;&lt;li&gt;Deep knowledge of testing for distributed systems, microservices, data pipelines, and cloud environments (AWS preferred).&lt;/li&gt;&lt;li&gt;Solid experience integrating automation into CI/CD pipelines.&lt;/li&gt;&lt;li&gt;Strong debugging, problem‑solving, and analytical skills across frontend, backend, and data layers.&lt;/li&gt;&lt;li&gt;Excellent communication, collaboration, and cross‑team influence skills in a fast‑paced engineering organization.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Added bonus if you have: &lt;/b&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Experience with &lt;b&gt;RAG pipelines&lt;/b&gt;, vector stores, guardrail frameworks, model evaluation, or safe AI patterns.&lt;/li&gt;&lt;li&gt;Experience testing financial systems, billing engines, or analytics‑heavy platforms.&lt;/li&gt;&lt;li&gt;Familiarity with synthetic data generation or statistical validation for AI and data‑driven testing.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;What we offer you:    &lt;/b&gt;&lt;/p&gt;&lt;p&gt;                                                                                                                                   &lt;br /&gt;•An exciting opportunity be a part of Worlds Leading FinTech Product MNC&lt;br /&gt;•To be a part of vibrant team and to build up a career on core banking/payments domain&lt;br /&gt;•A broad range of professional education and personal development possibilities FIS is your final career step!&lt;br /&gt;•Time to support charities and give back in your community&lt;/p&gt;&lt;p&gt;&lt;b&gt;Privacy Statement&lt;/b&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;FIS is committed to protecting the privacy and security of all personal information that we process in order to provide services to our clients. For specific information on how FIS protects personal information online, please see the &lt;a href=\"http://www.fisglobal.com/privacy\" target=\"_blank\"&gt;Online Privacy Notice&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Sourcing Model&lt;/b&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;Recruitment at FIS works primarily on a direct sourcing model; a relatively small portion of our hiring is through recruitment agencies. FIS does not accept resumes from recruitment agencies which are not on the preferred supplier list and is not responsible for any related fees for resumes submitted to job postings, our employees, or any other part of our company.&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;#pridepass&lt;/p&gt;",
+    "industry": "Banking",
+    "title": "Quality Analyst Engineer",
+    "datePosted": "2026-08-13",
+    "@context": "http://schema.org",
+    "occupationalCategory": "Product Development",
+    "directApply": false
+  },
+  "canonical": "https://careers.fisglobal.com/us/en/job/FIGLUSJR0305635EXTERNAL/Quality-Analyst-Engineer"
+}

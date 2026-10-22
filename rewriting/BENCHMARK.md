@@ -1,6 +1,12 @@
 # Qwen description rewriting on CPU
 
-The configured description rewriter uses **Qwen3.5-9B Q5_K_M**, with immutable model/runtime checksums in [model.json](model.json). Policy v12 generates sections with verbatim source evidence and conservative publication checks. The initial workflow uses four CPU threads, one active request, an 8,192-token context, 2,048 initial output tokens, one bounded retry up to 4,096 tokens, a shared 600-second request deadline and a 128 MiB prompt cache. No local tests or inference were run for this migration. Quality, throughput and peak memory remain pending GitHub pipeline validation.
+The configured model remains **Qwen3.5-9B Q5_K_M**, with immutable checksums in [model.json](model.json). Policy v13 returns source IDs and optional edits, preserving sensitive facts directly from source. It uses four CPU threads, one active request, an 8,192-token context, 1,024 initial output tokens, at most one retry up to 2,048 tokens, a shared 600-second deadline and a 128 MiB prompt cache. Its performance is unmeasured; no local tests or inference were run for these fixes.
+
+## Previous GitHub run, policy v12
+
+Artifact description-rewrite-39648222312-1.zip covers 21 October 2026 17:56:51–19:30:19 UTC (21–22 October in Asia/Calcutta), duration 1h33m28s. The runner exposed four CPUs and about 16 GB RAM. Qwen loaded and generated responses at approximately 5.55–6.08 output tokens/second; worker peak RSS was 6.89 GiB. This was not an out-of-memory shutdown.
+
+Of 15,992 queued jobs, 12 were attempted: zero published, seven validation rejections and five ten-minute timeouts. There were 17 generation requests. The terminal exception was MongoServerError code43 CursorNotFound while reading the queue; the worker was still running. The artifact cannot establish why MongoDB invalidated that cursor. The v13 changes close each page query before inference, remove repeated evidence generation, preserve sensitive facts directly, avoid retries predicted to exceed the deadline, and add bounded rejection examples. Do not extrapolate the first twelve jobs into a guaranteed whole-queue completion time.
 
 ## Historical full local dry run
 

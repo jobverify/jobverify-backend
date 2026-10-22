@@ -4,19 +4,29 @@ import { fileURLToPath } from 'node:url';
 import { createHash, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { remainingBudget } from './resumeRuntime.js';
+import { resumeFailure } from './resumeDiagnostics.js';
 
 const context = fileURLToPath(new URL('./compiler/', import.meta.url));
 const cache = fileURLToPath(new URL('../.cache/resume-compiler/', import.meta.url));
 let preparedImage;
+export function compilerFailure({ stderr = '', code, aborted = false } = {}) {
+  if (aborted || code === 137) return resumeFailure('compiler_resource_limit');
+  if (String(stderr).split(/\r?\n/).includes('RESUME_COMPILER_DEPENDENCY_MISSING')) return resumeFailure('compiler_dependency_missing');
+  if (String(stderr).split(/\r?\n/).includes('RESUME_COMPILER_RESOURCE_LIMIT')) return resumeFailure('compiler_resource_limit');
+  return resumeFailure('compiler_failed');
+}
 const dockerEnv = () => Object.fromEntries(['PATH', 'SystemRoot', 'SYSTEMROOT', 'TEMP', 'TMP', 'DOCKER_HOST', 'DOCKER_CONTEXT', 'DOCKER_CONFIG', 'HOME', 'USERPROFILE'].filter(key => process.env[key]).map(key => [key, process.env[key]]));
 async function docker(args, { deadline, input, limit = 8 * 1024 * 1024 } = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn('docker', args, { windowsHide: true, env: dockerEnv(), stdio: ['pipe', 'pipe', 'ignore'], signal: AbortSignal.timeout(remainingBudget(deadline ?? Date.now() + 90000, 600000)) });
+    const signal = AbortSignal.timeout(remainingBudget(deadline ?? Date.now() + 90000, 600000));
+    const child = spawn('docker', args, { windowsHide: true, env: dockerEnv(), stdio: ['pipe', 'pipe', 'pipe'], signal });
     let size = 0; const chunks = [];
+    let stderr = '';
+    child.stderr.on('data', chunk => { if (stderr.length < 65536) stderr += chunk.toString().slice(0, 65536 - stderr.length); });
     child.stdout.on('data', chunk => { size += chunk.length; if (size > limit) child.kill('SIGKILL'); else chunks.push(chunk); });
     child.stdin.on('error', () => {});
-    child.once('error', () => reject(new Error('The isolated PDF compiler is unavailable. Please retry.')));
-    child.once('exit', code => code === 0 && size <= limit ? resolve(Buffer.concat(chunks)) : reject(new Error('The isolated PDF compilation failed. Use only supported LaTeX packages and retry.')));
+    child.once('error', () => reject(compilerFailure({ stderr, aborted: signal.aborted })));
+    child.once('close', code => code === 0 && size <= limit ? resolve(Buffer.concat(chunks)) : reject(compilerFailure({ stderr, code, aborted: signal.aborted })));
     child.stdin.end(input);
   });
 }
@@ -37,7 +47,11 @@ export async function prepareResumeCompiler({ deadline = Date.now() + 600000 } =
     await docker(['build', '--quiet', '--tag', tag, context], { deadline, limit: 1024 * 1024 });
     preparedImage = (await docker(['image', 'inspect', '--format', '{{.Id}}', tag], { deadline })).toString().trim();
     await fs.mkdir(cache, { recursive: true });
-    await docker(['save', '--output', archive, tag], { deadline });
+    const temporary = `${archive}.${randomUUID()}.download`;
+    try {
+      await docker(['save', '--output', temporary, tag], { deadline });
+      await fs.rename(temporary, archive);
+    } finally { await fs.rm(temporary, { force: true }).catch(() => {}); }
   }
   if (!/^sha256:[a-f0-9]{64}$/.test(preparedImage)) throw new Error('The compiler image identity is invalid.');
   return preparedImage;
@@ -151,7 +165,8 @@ export async function compileResumeLatex(latex, { deadline = Date.now() + 90000,
   const name = `resume-${randomUUID()}`;
   try {
     const pdf = await docker(compilerArguments({ name, image }), { input: latex, deadline: Math.min(deadline, Date.now() + 90000), limit: 5 * 1024 * 1024 });
-    return await inspectResumePdf(pdf);
+    try { return await inspectResumePdf(pdf); }
+    catch (error) { throw Object.assign(error, { code: 'pdf_invalid' }); }
   } finally {
     // Aborting the CLI alone can leave a running container. Remove it explicitly.
     await docker(['rm', '--force', name], { deadline: Date.now() + 10000 }).catch(() => {});

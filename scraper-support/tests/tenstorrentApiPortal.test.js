@@ -35,7 +35,12 @@ test('runApiPortalScraper keeps Tenstorrent India Greenhouse jobs and drops non-
   })
 
   assert.equal(jobs.length, 1)
-  assert.deepEqual(jobs[0], {
+  const { nativePublication, ...mappedJob } = jobs[0]
+  assert.equal(nativePublication.status, 'unknown')
+  assert.equal(nativePublication.value, null)
+  assert.equal(nativePublication.candidates[0].updated_at, '2026-07-10T00:00:00Z')
+  assert.equal(nativePublication.candidates[1].status, 'not-observed')
+  assert.deepEqual(mappedJob, {
     title: '(India) System IP Design Engineer',
     company: 'Tenstorrent',
     location: 'Bengaluru, Karnataka, India',
@@ -54,8 +59,8 @@ test('runApiPortalScraper keeps Tenstorrent India Greenhouse jobs and drops non-
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
-    postingDate: '2026-07-10T00:00:00Z',
     remoteStatus: 'On-site',
     scrapedAt: jobs[0].scrapedAt,
+    sourceListingComplete: false,
   })
 })

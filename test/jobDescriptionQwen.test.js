@@ -4,9 +4,11 @@ import http from 'node:http';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { createRewriteClient, rewriteCandidates, rewriteProgress } from '../rewriting/runner.js';
+import { createRewriteClient as createProductionRewriteClient, rewriteCandidates, rewriteProgress } from '../rewriting/runner.js';
 import { REWRITE_MODEL, REWRITE_SCHEMA, buildRewriteInput, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
 import { auditDescriptionCase } from '../rewriting/auditDescriptionRun.js';
+// Keep the prior evidence-text protocol covered; v13 source IDs have separate coverage.
+const createRewriteClient = options => createProductionRewriteClient({ ...options, format: 'sections' });
 
 const overview = 'Build Python services for customer applications.';
 const responsibility = 'Design reliable APIs and maintain Python services.';

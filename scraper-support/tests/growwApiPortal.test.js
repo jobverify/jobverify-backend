@@ -37,7 +37,12 @@ test('runApiPortalScraper filters Groww Greenhouse jobs to India-facing location
   })
 
   assert.equal(jobs.length, 1)
-  assert.deepEqual(jobs[0], {
+  const { nativePublication, ...mappedJob } = jobs[0]
+  assert.equal(nativePublication.status, 'unknown')
+  assert.equal(nativePublication.value, null)
+  assert.equal(nativePublication.candidates[0].updated_at, '2026-06-03T02:46:08-04:00')
+  assert.equal(nativePublication.candidates[1].status, 'not-observed')
+  assert.deepEqual(mappedJob, {
     title: 'Associate - Content (Digest)',
     company: 'Groww',
     location: 'Bengaluru-VTP, India',
@@ -56,8 +61,8 @@ test('runApiPortalScraper filters Groww Greenhouse jobs to India-facing location
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
-    postingDate: '2026-06-03T02:46:08-04:00',
     remoteStatus: 'On-site',
     scrapedAt: jobs[0].scrapedAt,
+    sourceListingComplete: false,
   })
 })

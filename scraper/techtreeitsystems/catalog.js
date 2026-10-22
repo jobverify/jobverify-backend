@@ -13,14 +13,14 @@ export const TECHTREE_IT_SYSTEMS_CATALOG = {
   companyDomain: 'techtreeit.com',
   atsPlatform: 'wp-job-openings',
   countryFilter: 'India',
-  paginationStrategy: 'single-first-party-awsm-careers-page',
+  paginationStrategy: 'partial-inline-first-party-awsm-careers-page',
   extractionStrategy:
-    'verified-first-party-careers-page+inline-awsm-job-cards+same-domain-detail-links|verified-sucuri-challenge-empty-state',
+    'http-200-first-party-careers+inline-awsm-cards+validated-native-detail-publication|blocked-and-detail-errors-fail-closed',
   parser: 'custom-script',
   normalizationProfile: 'engineering-default',
   verifiedOn: '2026-08-15',
   verifiedSurfaceSummary:
-    'Verified on Saturday, August 15, 2026 that https://www.techtreeit.com/ and https://www.techtreeit.com/careers/ currently return the same first-party Sucuri challenge shell with the title "You are being redirected...". When this verified blocker state is present across the official homepage and careers page, the scraper returns an empty result instead of upstream-failing. When the public careers page is accessible again, the scraper still extracts inline wp-job-openings cards with same-domain detail links.',
+    'Historical August 15, 2026 evidence observed a Sucuri challenge with the title "You are being redirected..."; this is blocked inventory, never proof of zero jobs. Local repair accepts only HTTP 200 on the exact careers surface and extracts inline wp-job-openings cards with validated native identity, published status, original GMT publication and explicit role country. HTTP 500 HTML and failed details reject extraction. Inline pagination and whole-company scope remain incomplete; no current successful runtime verification is claimed.',
   modulePath: path.resolve(currentDir, 'script.js'),
   dryRunFile: 'techtreeitsystems/jobs.json',
 }

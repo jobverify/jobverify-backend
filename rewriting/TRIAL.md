@@ -1,6 +1,6 @@
 # Full catalog description trial
 
-This experimental path runs the configured catalog in dry-run mode and writes only local files. It now shares the pinned Qwen3.5-9B Q5_K_M GGUF and CPU llama.cpp runtime with the production rewriter. Its experimental draft policy below remains separate from production policy v12, which generates evidence-backed sections. The trial does not publish results or change production classifications. No local tests or inference were run for this migration; validation is deferred to the GitHub pipeline. Do not run these optional local commands unless requested.
+This experimental path runs the configured catalog in dry-run mode and writes only local files. It shares the pinned Qwen3.5-9B Q5_K_M GGUF and CPU llama.cpp runtime with production. Its experimental draft policy below remains separate from production policy v13, which resolves source IDs into evidence-backed sections. The trial does not publish results or change production classifications. No local tests or inference were run for the v13 fixes; validation is deferred to the GitHub pipeline. Do not run these optional local commands unless requested.
 
 Start a fresh trial from the backend:
 

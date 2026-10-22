@@ -54,7 +54,12 @@ test('runApiPortalScraper maps Thoughtworks Greenhouse jobs and keeps India role
   })
 
   assert.equal(jobs.length, 1)
-  assert.deepEqual(jobs[0], {
+  const { nativePublication, ...mappedJob } = jobs[0]
+  assert.equal(nativePublication.status, 'unknown')
+  assert.equal(nativePublication.value, null)
+  assert.equal(nativePublication.candidates[0].updated_at, '2026-06-20T10:00:00Z')
+  assert.equal(nativePublication.candidates[1].status, 'not-observed')
+  assert.deepEqual(mappedJob, {
     title: 'Principal Developer',
     company: 'Thoughtworks',
     location: 'Bangalore',
@@ -69,12 +74,12 @@ test('runApiPortalScraper maps Thoughtworks Greenhouse jobs and keeps India role
     department: 'Technology',
     employmentType: null,
     experienceRequired: null,
-    postingDate: '2026-06-20T10:00:00Z',
     jobDescription: '<p>Build modern software with cross-functional teams.</p>',
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
     remoteStatus: 'On-site',
     scrapedAt: jobs[0].scrapedAt,
+    sourceListingComplete: false,
   })
 })

@@ -1,27 +1,14 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-export const SOURCE = "garena"
-export const COMPANY = "Garena"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-08-08"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 10 exact-name sentinel for Garena added on Saturday, August 8, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
-
-export const run = async () => createFailClosedSentinelScraper().run()
-
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { runNative } from './native.js';
+export const SOURCE = 'garena';
+export const COMPANY = 'Garena';
+export const CAREERS_URL = 'https://careers.garena.com/global/careers';
+export const DISPOSITION = 'first-party-garena-nuxt-html';
+export const run = options => runNative(options);
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')
-  const isDryRun = process.argv.includes('--dry-run')
-  const jobs = await run()
-
-  if (isDryRun) {
-    saveToFile(jobs, path.join(currentDir, 'jobs.json'))
-  } else {
-    await saveToDB(jobs, SOURCE)
-  }
+  const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js');
+  const jobs = await run();
+  if (process.argv.includes('--dry-run')) saveToFile(jobs, path.join(path.dirname(fileURLToPath(import.meta.url)), 'jobs.json'));
+  else await saveToDB(jobs, SOURCE);
 }

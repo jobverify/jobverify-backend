@@ -8,7 +8,8 @@ import { createHash } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { buildScrapers } from '../scraper-support/providers/index.js';
 import { normalizeScrapedJob } from '../scraper-support/utils/normalizeScrapedJob.js';
-import { REWRITE_MODEL, REWRITE_SCHEMA, buildRewriteInput, rewriteMessages, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
+import { REWRITE_MODEL, buildRewriteInput, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
+import { buildReferencedSections } from '../rewriting/sectionProtocol.js';
 import { createRewriteClient, assessDescriptionRewrite, RewriteGenerationError } from '../rewriting/runner.js';
 import { factPlanMessages, factPlanSchema, buildSourceFacts, assessRewriteInput, expandModelPlan, validateFactPlan } from '../rewriting/factPlan.js';
 import { ensureArtifact, workerMemoryBytes } from '../rewriting/worker.js';
@@ -216,7 +217,8 @@ if (phase === 'prepare') {
   };
   const request = async (item, workerIndex = 0) => {
     const { input } = item, assessment = grounded ? assessDescriptionRewrite(input) : assessRewriteInput(input,factOptions), facts = buildSourceFacts(input,factOptions);
-    const schema = grounded ? REWRITE_SCHEMA : factPlanSchema(input,factOptions), originalMessages = grounded ? rewriteMessages(input) : factPlanMessages(input,factOptions);
+    const protocol = grounded ? buildReferencedSections(input) : null;
+    const schema = grounded ? protocol.schema : factPlanSchema(input,factOptions), originalMessages = grounded ? protocol.messages : factPlanMessages(input,factOptions);
     const transport=!grounded&&minimalPlan?minimalPlanTransport(schema,originalMessages):null,messages=transport?.messages||originalMessages;
     const formatted = allDescriptions ? formatEmployerSource(input.sourceDescription) : null;
     const row = { key: item.key, index: item.index, source: item.source, title: item.job.title, url: item.job.sourceUrl || item.job.applyUrl || item.job.link,

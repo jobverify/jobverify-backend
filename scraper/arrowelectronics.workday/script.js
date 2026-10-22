@@ -1,18 +1,20 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import { runNative } from './native.js'
+import { PROVIDER_METADATA } from './catalog.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "arrowelectronics"
 export const COMPANY = "Arrow Electronics"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-08-01"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 09 exact-name sentinel for Arrow Electronics added on Saturday, August 1, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export { PROVIDER_METADATA }
+export const CAREERS_URL = 'https://careers.arrow.com/us/en'
+export const DISPOSITION = 'official-native-Phenom-India-coverage-gap'
+export const VERIFIED_ON = null
+export const VERIFIED_SURFACE_SUMMARY = 'Arrow same-domain ARELUS native public search and full detail models; legal employer, first-ever publication and whole-company completeness unknown. Cleanup forbidden.'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run = (options = {}) => runNative(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

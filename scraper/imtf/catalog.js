@@ -1,30 +1,46 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-const PROVIDER_METADATA = {
+import {fileURLToPath} from 'node:url'
+const currentDir=path.dirname(fileURLToPath(import.meta.url))
+const PROVIDER_METADATA={...{
   "source": "imtf",
   "companyName": "IMTF",
   "adapter": "script",
-  "modulePath": path.join(currentDir, 'script.js'),
-  "dryRunFile": path.join(currentDir, 'jobs.json'),
-  "atsPlatform": "workbook-exact-name-sentinel",
+  "modulePath": "../imtf/script.js",
+  "dryRunFile": "imtf/jobs.json",
+  "catalogOverride": true,
+  "atsPlatform": "official-careers-advertised-workable-markdown",
   "countryFilter": "India",
-  "paginationStrategy": "none",
-  "extractionStrategy": "exact-name-batch-coverage-sentinel-return-empty-until-public-surface-is-verified",
-  "parser": "custom-script",
+  "parser": "source-specific-imtf-native-markdown",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-29",
-  "verifiedPublicJobCount": 0,
-  "verifiedIndiaJobCount": 0,
-  "verifiedSurfaceSummary": "Workbook batch 08 exact-name sentinel for IMTF added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name.",
-  "backfillMode": "sentinel",
-  "originalAdapter": "script",
-  "originalAtsPlatform": "workbook-exact-name-sentinel",
-  "originalModulePath": "../workbookbatch08/failClosedSentinel.js",
-  "originalDryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\workbookbatch08\\imtf.jobs.json"
-}
-
+  "backfillMode": "live-parser",
+  "paginationStrategy": "official-advertised-role-rows;whole-company-scope-unknown",
+  "extractionStrategy": "official-home-careers-handoff+each-role-own-explicit-Markdown-alternate",
+  "companyDomain": "imtf.com",
+  "officialHomepageUrl": "https://imtf.com/",
+  "companyCareerPage": "https://imtf.com/about-us/careers/",
+  "verifiedOn": null,
+  "verifiedAt": null,
+  "verifiedPublicJobCount": null,
+  "verifiedIndiaJobCount": null,
+  "verifiedInventoryStatus": "unverified",
+  "officialBindingVerifiedAt": null,
+  "verificationDisposition": "offline-implementation-awaiting-independent-review",
+  "remediationStatus": "implemented-offline-awaiting-independent-review",
+  "zeroResultPolicy": "coverage-gap",
+  "sourceScopeComplete": false,
+  "lifecycleCleanupAllowed": false,
+  "runtimeQualification": "unqualified-offline-fixture-only",
+  "verifiedSurfaceSummary": "Retained batch041 official IMTF home/careers advertises five Workable role links; one original full India role HTML and its explicitly advertised Markdown document retained at2026-10-22T00:23:16.299Z. Its native publication day remains2026-07-09. Four other role details/Markdown alternates are unretained. Dynamic source-specific advertised-link parser retains good India facts beside partial failures. Provisional official IMTF brand attribution only; legal employer, first-ever publication, lifecycle and global inventory unknown; no aliases, delegated inventory, verified empty or cleanup. Runtime, eligible, saved and visible counts unqualified.",
+  "bindingEvidence": {
+    "verified": false,
+    "officialURL": "https://imtf.com/about-us/careers/",
+    "bindingMethod": "official-home-to-careers-to-actual-advertised-role-HTML-and-Markdown-handoff",
+    "identityEvidenceScope": "Provisional registered IMTF brand association only; legal/global inventory/alias/delegation equivalence unknown",
+    "evidenceOrigin": "retained-batch041-offline-only",
+    "checkedAt": "2026-10-22T00:23:16.299Z",
+    "applicationsOpened": false,
+    "releaseRuling": "artifacts/full-catalog/imtf-offline-implementation-release-379.json"
+  }
+},modulePath:path.join(currentDir,'script.js'),dryRunFile:path.join(currentDir,'jobs.json')}
 export default PROVIDER_METADATA
-export { PROVIDER_METADATA }
+export {PROVIDER_METADATA}

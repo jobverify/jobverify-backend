@@ -2,8 +2,9 @@ import {createHash} from 'node:crypto'
 import {extractOfficialRecruitmentLinks} from '../../scripts/officialRecruitmentLinks.js'
 import {parseRmkDetail} from '../../scraper-support/shared/successFactorsRmk.js'
 import {readNativeDocument,extractActiveDescription} from './nativeHtml.js'
+import {cargillGuardError,parseCargillJson} from './nativeErrors.js'
 export const HOME='https://www.cargill.com/',CAREERS='https://careers.cargill.com/',SEARCH=CAREERS+'en/search-jobs',NATIVE='https://jobs.cargill.com',CLIENT='https://tbcdn.talentbrew.com/js/client/search.js',CORE='https://tbcdn.talentbrew.com/bundles/tb-corepack.js'
-const prove=(ok,message)=>{if(!ok)throw Error('Cargill native contract: '+message)},norm=s=>typeof s==='string'?s.replace(/\s+/g,' ').trim():'',plain=s=>typeof s==='string'&&norm(s).length>2&&!/[<>]/.test(s),id=s=>typeof s==='string'&&/^[1-9]\d*$/.test(s),one=(a,label)=>{prove(a.length===1,'Expected one '+label);return a[0]},hash=s=>createHash('sha256').update(s).digest('hex')
+const prove=(ok,message)=>{if(!ok)throw cargillGuardError('CONTRACT',message)},norm=s=>typeof s==='string'?s.replace(/\s+/g,' ').trim():'',plain=s=>typeof s==='string'&&norm(s).length>2&&!/[<>]/.test(s),id=s=>typeof s==='string'&&/^[1-9]\d*$/.test(s),one=(a,label)=>{prove(a.length===1,'Expected one '+label);return a[0]},hash=s=>createHash('sha256').update(s).digest('hex')
 const links=(html,base)=>{
  const d=readNativeDocument(html),active=new Set(d.nodes(n=>n.tag==='a'&&typeof n.attrs.href==='string').flatMap(n=>{try{return[new URL(n.attrs.href,base).href]}catch{return[]}}))
  return extractOfficialRecruitmentLinks(html,base).map(l=>l.href).filter(href=>active.has(href))
@@ -13,7 +14,8 @@ function failure(p){prove(p&&typeof p==='object'&&!Array.isArray(p),'Native enve
 function day(value,now){prove(typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value),'Native day unavailable');const d=new Date(value+'T00:00:00.000Z');prove(Number.isFinite(+d)&&d.toISOString().slice(0,10)===value&&+d<=Date.parse(now),'Invalid/future native day');return d.toISOString()}
 function rmkDate(value,now,publication){prove(typeof value==='string','Native timestamp unavailable');const m=value.match(/^(Sun|Mon|Tue|Wed|Thu|Fri|Sat) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{2}) (\d{2}):(\d{2}):(\d{2}) UTC (\d{4})$/);prove(m,'Native timestamp format changed');const d=new Date(value);prove(Number.isFinite(+d)&&d.getUTCDate()===Number(m[3])&&d.getUTCFullYear()===Number(m[7])&&d.getUTCHours()===Number(m[4])&&d.getUTCMinutes()===Number(m[5])&&d.getUTCSeconds()===Number(m[6])&&(!publication||+d<=Date.parse(now)),'Invalid/future native timestamp');return d.toISOString()}
 const cityKey=s=>norm(s).toLowerCase().replace(/^bengaluru$/,'bangalore')
-const countryCodes={India:'IN',Malaysia:'MY',Singapore:'SG'}
+const countryCodes={India:'IN',Malaysia:'MY',Singapore:'SG',China:'CN'}
+const sameRegion=(country,city,left,right)=>norm(left)===norm(right)||country==='China'&&cityKey(city)==='shanghai'&&[left,right].every(value=>['Shanghai','Shanghai Municipality'].includes(norm(value)))
 export function parseCargillSearch(corporate,careers,search,client,core){
  prove(links(corporate,HOME).includes(CAREERS),'Current corporate careers handoff unavailable');prove(links(careers,CAREERS+'en').includes(SEARCH),'Current official search handoff unavailable')
  const d=readNativeDocument(search),scripts=d.nodes(n=>n.tag==='script'&&!Object.hasOwn(n.attrs,'nomodule')&&[undefined,'','text/javascript','application/javascript'].includes(n.attrs.type)&&n.attrs.src).map(n=>new URL(n.attrs.src,SEARCH).href)
@@ -37,7 +39,7 @@ export function parseCargillPage(payload,page,total){
  prove(jobs.length===Math.min(15,total-(page-1)*15)&&new Set(jobs.map(j=>j.publicJobId)).size===jobs.length,'Native page rows/unique IDs disagree');return{jobs,page,total}
 }
 export function parseCargillOfficialRole(html,row,{now=new Date().toISOString()}={}){
- const d=readNativeDocument(html),models=d.nodes(n=>n.tag==='script'&&n.attrs.type==='application/ld+json').map(n=>JSON.parse(n.raw)),job=one(models.filter(j=>j['@type']==='JobPosting'),'native public JobPosting')
+ const d=readNativeDocument(html),models=d.nodes(n=>n.tag==='script'&&n.attrs.type==='application/ld+json').map(n=>parseCargillJson(n.raw,'official')),job=one(models.filter(j=>j['@type']==='JobPosting'),'native public JobPosting')
  prove(job.title===row.title&&job.url===row.sourceUrl&&job.hiringOrganization?.name==='Cargill'&&id(job.identifier?.value)&&job.identifier.name==='Job ID','Native public role identity mismatch');prove(d.nodes(n=>n.tag==='h2').some(n=>d.text(n)===row.title),'Visible public role title missing')
  prove(Array.isArray(job.jobLocation)&&job.jobLocation.length>0,'Native public role location missing');const addresses=job.jobLocation.map(l=>{const a=l.address;prove(a&&typeof a.addressCountry==='string'&&Object.hasOwn(countryCodes,a.addressCountry)&&plain(a.addressLocality)&&plain(a.addressRegion),'Unknown native public role country or office');return a});prove(addresses.some(a=>a.addressCountry==='India'),'India-filter role has no explicit native India office');prove(new Set(addresses.map(a=>JSON.stringify(a))).size===addresses.length,'Duplicate native public offices')
  const req=job.identifier.value,apply=[...new Set(links(html,row.sourceUrl).filter(link=>link.startsWith('https://career2.successfactors.eu/sfcareer/jobreqcareer?')))];prove(apply.length===1,'Native SAP application missing or ambiguous');const u=new URL(apply[0]);prove(u.searchParams.get('jobId')===req&&u.searchParams.get('company')==='cargill'&&u.searchParams.get('locale')==='en_US'&&[...u.searchParams].length===3&&!u.hash,'Native SAP company/requisition mismatch')
@@ -46,11 +48,19 @@ export function parseCargillOfficialRole(html,row,{now=new Date().toISOString()}
 export function parseCargillRmkDetail(html,finalURL,official,{now=new Date().toISOString()}={}){
  const url=new URL(finalURL);prove(url.origin===NATIVE&&!url.search&&!url.hash&&!url.username&&!url.password&&/^\/job\/[^/]+\/[1-9]\d*\/$/.test(url.pathname),'Native SAP handoff origin/role invalid');const publicId=url.pathname.split('/').at(-2),d=readNativeDocument(html)
  const canonical=one(d.nodes(n=>n.tag==='link'&&n.attrs.rel==='canonical'),'native canonical');prove(canonical.attrs.href===finalURL,'Native canonical identity mismatch')
- prove(d.text(one(d.nodes(n=>n.attrs['data-careersite-propertyid']==='customfield1'),'native requisition'))===official.requisitionId,'Native requisition mismatch')
+ const requisitions=d.nodes(n=>n.attrs['data-careersite-propertyid']==='customfield1')
+ if(requisitions.length!==1){
+  const error=cargillGuardError('CONTRACT','Expected one native requisition')
+  // Preserve the guard while exposing only the bounded, validated public ID.
+  // URLs, descriptions and arbitrary upstream error text never enter this code.
+  if(typeof official.requisitionId==='string'&&/^[1-9]\d{0,11}$/.test(official.requisitionId))error.code='CARGILL_REQUISITION_'+official.requisitionId+'_MISSING_OR_AMBIGUOUS'
+  throw error
+ }
+ prove(d.text(requisitions[0])===official.requisitionId,'Native requisition mismatch')
  const title=d.text(one(d.nodes(n=>n.attrs.itemprop==='title'),'native title'));prove(title===official.title,'Native role title mismatch')
  const meta=key=>d.nodes(n=>n.tag==='meta'&&n.attrs.itemprop===key).map(n=>n.attrs.content),employers=meta('hiringOrganization');prove(employers.length===1&&employers[0]==='cargill','Native employer mismatch')
  const locations=d.nodes(n=>d.hasClass(n,'jobGeoLocation')).map(n=>d.text(n));prove(locations.length>0&&new Set(locations).size===locations.length,'Native role locations missing or duplicated')
- const offices=locations.map(location=>{const parts=location.split(',').map(norm),country=Object.keys(countryCodes).find(name=>parts[2]===countryCodes[name]+' '+name);prove(parts.length===4&&country&&(country==='Malaysia'?/^\d{5}$/:/^\d{6}$/).test(parts[3]),'Native role country or postal identity unavailable');const address=official.addresses.find(a=>a.addressCountry===country&&cityKey(a.addressLocality)===cityKey(parts[0])&&norm(a.addressRegion)===parts[1]);prove(address,'Native role country/city/state mismatch');return{address,country,code:countryCodes[country],parts}})
+ const offices=locations.map(location=>{const parts=location.split(',').map(norm),country=Object.keys(countryCodes).find(name=>parts[2]===countryCodes[name]+' '+name);prove(parts.length===4&&country&&(country==='Malaysia'?/^\d{5}$/:/^\d{6}$/).test(parts[3]),'Native role country or postal identity unavailable');const address=official.addresses.find(a=>a.addressCountry===country&&cityKey(a.addressLocality)===cityKey(parts[0])&&sameRegion(country,parts[0],a.addressRegion,parts[1]));prove(address,'Native role country/city/state mismatch');return{address,country,code:countryCodes[country],parts}})
  const countries=meta('addressCountry');prove(countries.length>0&&countries.every(c=>typeof c==='string'&&offices.some(o=>o.code===c))&&offices.every(o=>countries.includes(o.code)),'Native country missing or conflicting')
  const normalized=offices.map(o=>[o.parts[0],o.parts[1],o.code,o.parts[3]].join(', ')),indiaLocations=official.addresses.filter(a=>a.addressCountry==='India').map(a=>{const o=offices.find(o=>o.address===a);return[a.addressLocality,a.addressRegion,'India',...(o?[o.parts[3]]:[])].join(', ')}),nativePostedAt=rmkDate(one(meta('datePosted'),'native publication'),now,true),ends=meta('validThrough');prove(ends.length<=1,'Native expiry ambiguous');const closingDate=ends.length?rmkDate(ends[0],now,false):null;prove(!closingDate||Date.parse(closingDate)>=Date.parse(nativePostedAt),'Native expiry precedes publication')
  const full=one(d.nodes(n=>n.attrs.itemprop==='description'),'native full description'),text=d.text(full)
@@ -58,9 +68,9 @@ export function parseCargillRmkDetail(html,finalURL,official,{now=new Date().toI
  // these sentences only when evaluating content; preserve actual full native JD.
  const substantive=text.split(/(?<=[.!?])\s+/).filter(sentence=>! /^(?:the\s+)?(?:full\s+|detailed\s+)?job description\b.*\b(?:unavailable|not available|available soon|coming soon)\b/i.test(sentence)&&!/^please\s+(?:check back|click apply now)\b.*\b(?:details|learn more|application|position)\b/i.test(sentence)).join(' ')
  const meaningful=substantive.replace(/\b(?:Job Purpose and Impact|Key Accountabilities|Qualifications|Minimum Qualifications|Preferred Qualifications|Apply now|Sample|Job Description|Coming soon|Read more)\b/gi,'').replace(/[^\p{L}]/gu,'');const description=meaningful.length>=40&&extractActiveDescription(text)?text:null
- // The native public address explicitly repeats both IN and India. Normalize
+ // Native addresses repeat the explicit country code and name. Normalize
  // only those already-validated geo spans for the existing RMK adapter.
- const adapterHtml=html.replace(/(<span\b[^>]*class="jobGeoLocation"[^>]*>)([\s\S]*?)(<\/span>)/g,(_m,a,b,c)=>a+b.replace(/\b(IN India|MY Malaysia|SG Singapore)\b/g,value=>value.slice(0,2))+c)
+ const adapterHtml=html.replace(/(<span\b[^>]*class="jobGeoLocation"[^>]*>)([\s\S]*?)(<\/span>)/g,(_m,a,b,c)=>a+b.replace(/\b(IN India|MY Malaysia|SG Singapore|CN China)\b/g,value=>value.slice(0,2))+c)
  const mapped=parseRmkDetail(adapterHtml,{jobId:publicId,title:official.title,sourceUrl:finalURL,locations:normalized,expectedLocationCount:normalized.length,country:offices[0].country},{source:'cargill',companyName:'Cargill',origin:NATIVE,companyToken:'cargill'})
  const postedAt=new Date(Math.min(Date.parse(official.publicPostedAt),Date.parse(nativePostedAt))).toISOString()
  return{...mapped,jobId:official.requisitionId,requisitionId:official.requisitionId,nativeRmkPublicId:publicId,nativePublicJobId:official.publicJobId,nativePublicRoleURL:official.sourceUrl,nativeSapApplicationURL:official.applicationURL,nativePublicPostedAt:official.publicPostedAt,nativeRmkPostedAt:nativePostedAt,nativeLocations:locations,nativePublicLocations:official.addresses,nativeListingLocation:official.nativeListingLocation,sourceLocationCorroborationComplete:offices.length===official.addresses.length,locations:indiaLocations,location:indiaLocations.join(' / '),country:'India',city:indiaLocations.length===1?indiaLocations[0].split(',')[0].trim():null,nativeEmployer:'cargill',postedAt,postingDate:postedAt,closingDate,sourceClosingDateIsExact:Boolean(closingDate),jobDescription:description,sourceDescription:description,sourceDetailComplete:Boolean(description),sourceDetailStatus:description?'complete':'native-full-description-missing',sourceListingComplete:false,sourceScopeComplete:false,scrapedAt:now}

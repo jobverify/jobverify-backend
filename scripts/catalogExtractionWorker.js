@@ -1,6 +1,6 @@
 import { readInventoryEvidence, isFreshCompleteInventoryEvidence } from '../scraper-support/utils/inventoryEvidence.js'
 import { analyzePublishableJobs } from '../scraper-support/utils/publishableJobMetrics.js'
-import { classifyScraperError } from '../scraper-support/utils/failureClassification.js'
+import { extractionFailureDetails } from './catalogExtractionFailureEvidence.js'
 import { extractionDetailHealth } from '../scraper-support/utils/extractionDetailHealth.js'
 
 // Called only by the restricted child process. Block database connections before
@@ -35,7 +35,7 @@ export async function auditExtraction(provider) {
     return { source: provider.source, mode: 'isolated-direct-live-extraction-no-database', productionWrites: false,
       attemptedAt, completedAt: new Date().toISOString(),
       outcome: ['ERR_ACCESS_DENIED', 'ERR_DLOPEN_DISABLED'].includes(error?.code) ? 'audit-permission-blocked' : 'extraction-failed',
-      failureKind: error?.code === 'AUDIT_DATABASE_BLOCKED' ? 'audit_database_blocked' : classifyScraperError(error).failureKind,
+      ...extractionFailureDetails(error),
       failureCode: /^[A-Z_0-9]{1,80}$/.test(error?.code || '') ? error.code : 'EXTRACTION_OR_UPSTREAM_ERROR',
       rawJobs: null, indiaJobs: null, eligibleJobs: null, inventoryEvidence: null,
     }

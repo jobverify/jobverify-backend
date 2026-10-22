@@ -1,0 +1,223 @@
+{
+  "canonical": "https://jobs.ecolab.com/global/en/job/R00305812/Microsoft-Fabric-Data-Engineer",
+  "app": {
+    "widgetApiEndpoint": "https://jobs.ecolab.com/widgets",
+    "country": "global",
+    "deviceType": "desktop",
+    "locale": "en_global",
+    "absUrl": true,
+    "refNum": "EIYEIEUS",
+    "cdnUrl": "https://cdn.phenompeople.com/CareerConnectResources",
+    "baseUrl": "https://jobs.ecolab.com/global/en/",
+    "baseDomain": "https://jobs.ecolab.com",
+    "phenomTrackURL": "jobs.ecolab.com/global/en/phenomtrack.min.js",
+    "pageId": "page150-prod",
+    "pageName": "job",
+    "siteType": "external",
+    "rootDomain": "https://jobs.ecolab.com"
+  },
+  "listing": {
+    "ml_skills": [
+      "microsoft fabric",
+      "python",
+      "sql",
+      "microsoft certified: fabric analytics engineer associate",
+      "pyspark",
+      "semantic modeling",
+      "dax",
+      "performance optimization",
+      "agentic ai frameworks",
+      "retrieval-augmented generation",
+      "ontology modeling",
+      "databricks",
+      "snowflake",
+      "ai agents",
+      "data agents",
+      "rag patterns",
+      "embeddings",
+      "vector search",
+      "llm integration",
+      "git",
+      "ci/cd",
+      "rest apis",
+      "security fundamentals",
+      "production deployment",
+      "azure ai services",
+      "azure openai",
+      "delta lake",
+      "cloud data-platform integration",
+      "devops automation",
+      "azure llm platforms"
+    ],
+    "type": "Full time",
+    "descriptionTeaser": "Role overview. Join the Fabric Center of Excellence to design and deliver modern data and AI solutions on Microsoft Fabric. The role combines data engineering, semantic modeling and Agentic AI to b...",
+    "state": "Karnātaka",
+    "siteType": "external",
+    "multi_category": [
+      "Information Technology"
+    ],
+    "reqId": "R00305812",
+    "city": "Bangalore",
+    "latitude": "12.9628957",
+    "multi_location": [
+      "Bangalore, Karnātaka, India"
+    ],
+    "address": "Posting Location Address Line, Bangalore- 999999, Karnātaka, India",
+    "applyUrl": "https://ecolab.wd1.myworkdayjobs.com/Ecolab_External/job/IND---Karnataka---Bangalore---EDC/Microsoft-Fabric-Data-Engineer_R00305812/apply",
+    "ml_job_parser": {
+      "descriptionTeaser": "We are expanding our team: As a Microsoft Fabric Data Engineer, you will design and deliver modern data and AI solutions, focusing on scalable data products and AI Agents. Ideal candidates bring strong Microsoft Fabric expertise and experience in data engineering, analytics, and AI solution development.",
+      "descriptionTeaser_first200": "Role overview. Join the Fabric Center of Excellence to design and deliver modern data and AI solutions on Microsoft Fabric. The role combines data engineering, semantic modeling and Agentic AI to b...",
+      "descriptionTeaser_keyword": "Role overview. Join the Fabric Center of Excellence to design and deliver modern data and AI solutions on Microsoft Fabric. The role combines data engineering, semantic modeling and Agentic AI to buil...",
+      "descriptionTeaser_ats": "Role overviewJoin the Fabric Center of Excellence to design and deliver modern data and AI solutions on Microsoft Fabric. The role combines data engineering, semantic modeling and Agentic AI to build"
+    },
+    "externalApply": false,
+    "cityState": "Bangalore, Karnātaka",
+    "country": "India",
+    "visibilityType": "External",
+    "longitude": "77.57754",
+    "jobId": "R00305812",
+    "locale": "en_GLOBAL",
+    "title": "Microsoft Fabric Data Engineer",
+    "jobSeqNo": "EIYEIEUSR00305812EXTERNALENGLOBAL",
+    "postedDate": "2026-09-24T00:00:00.000+0000",
+    "dateCreated": "2026-09-22T02:01:03.444+0000",
+    "cityStateCountry": "Bangalore, Karnātaka, India",
+    "jobVisibility": [
+      "external",
+      "internal"
+    ],
+    "location": "Bangalore, Karnātaka, India",
+    "category": "Information Technology",
+    "isMultiLocation": true,
+    "multi_location_array": [
+      {
+        "latlong": {
+          "lon": 77.57754,
+          "lat": 12.9628957
+        },
+        "location": "Bangalore, Karnātaka, India"
+      }
+    ],
+    "isMultiCategory": false,
+    "multi_category_array": [
+      {
+        "category": "Information Technology"
+      }
+    ],
+    "badge": ""
+  },
+  "job": {
+    "jobId": "R00305812",
+    "reqId": "R00305812",
+    "jobSeqNo": "EIYEIEUSR00305812EXTERNALENGLOBAL",
+    "title": "Microsoft Fabric Data Engineer",
+    "companyName": "Ecolab Inc.",
+    "company": "Ecolab Inc.",
+    "jobCompany": "(IND) Ecolab Global Services Private Limited",
+    "refNum": "EIYEIEUS",
+    "parentRefNum": "EIYEIEUS",
+    "country": "India",
+    "standardisedCountry": "India",
+    "ml_country": "India",
+    "city": "Bangalore",
+    "state": "Karnātaka",
+    "cityStateCountry": "Bangalore, Karnātaka, India",
+    "postalCode": "999999",
+    "multi_location": [
+      {
+        "country": "India",
+        "cityState": "Bangalore, Karnātaka",
+        "address": "Posting Location Address Line, Bangalore- 999999, Karnātaka, India",
+        "city": "Bangalore",
+        "postalCode": "999999",
+        "latlong": {
+          "lon": 77.57754,
+          "lat": 12.9628957
+        },
+        "latitude": "12.9628957",
+        "stateCountry": "Karnātaka, India",
+        "externalLocation": "",
+        "locationId": "LOCATION-3-5562",
+        "location": "Bangalore, Karnātaka, India",
+        "state": "Karnātaka",
+        "cityCountry": "Bangalore, India",
+        "cityStateCountry": "Bangalore, Karnātaka, India",
+        "mapQueryLocation": "Posting Location Address Line, Bangalore- 999999, Karnātaka, India",
+        "longitude": "77.57754"
+      }
+    ],
+    "siteType": "external",
+    "visibilityType": "External",
+    "jobVisibility": [
+      "external",
+      "internal"
+    ],
+    "postingStatus": "OPEN",
+    "skipJob": false,
+    "applyUrl": "https://ecolab.wd1.myworkdayjobs.com/Ecolab_External/job/IND---Karnataka---Bangalore---EDC/Microsoft-Fabric-Data-Engineer_R00305812/apply",
+    "description": "<h2>Role overview</h2><p>Join the Fabric Center of Excellence to design and deliver modern data and AI solutions on Microsoft Fabric. The role combines data engineering, semantic modeling and Agentic AI to build scalable data products, AI Agents, Data Agents, ontologies and business-facing applications.</p><h2>Key responsibilities</h2><ul><li>Design and develop scalable data engineering solutions using Microsoft Fabric Lakehouse, Data Factory, pipelines and notebooks.</li><li>Build ingestion, transformation and medallion-layer patterns for reliable, reusable and governed data products.</li><li>Design and develop AI Agents, Data Agents, ontology-driven solutions and Retrieval-Augmented Generation (RAG) experiences.</li><li>Create high-quality semantic models, relationships, calculations and DAX measures for analytics and AI consumption.</li><li>Use Python, PySpark and SQL to develop production-grade transformations, orchestration and validation logic.</li><li>Apply Semantic Link Labs and Fabric Notebooks to automate semantic-model engineering, testing, documentation and operational tasks.</li><li>Integrate data and AI capabilities into web applications, APIs and business workflows.</li><li>Collaborate with architects, platform engineers, product owners and business stakeholders from discovery through production deployment.</li><li>Contribute to engineering standards, reusable accelerators, technical documentation and knowledge sharing across the CoE.</li></ul><h2>Required technical capabilities</h2><ul><li>Strong Microsoft Fabric data engineering experience across Lakehouse, pipelines, notebooks and OneLake.</li><li>Python, PySpark and advanced SQL for data processing and transformation.</li><li>Semantic modeling, DAX, dimensional modeling and performance optimization.</li><li>Knowledge of Agentic AI frameworks, RAG patterns, embeddings, vector search and LLM integration.</li><li>Hands-on understanding of AI Agents, Data Agents, ontology concepts and AI-ready semantic models.</li><li>Working knowledge of Snowflake and Databricks.</li><li>Git, CI/CD, REST APIs, security fundamentals and production deployment practices.</li></ul><p></p><p></p><p>POSITION 02  |  CONTINUED</p><h2>Qualifications and certifications</h2><ul><li>Bachelor’s degree in computer science, data engineering, artificial intelligence or a related discipline, or equivalent relevant experience.</li><li>Microsoft Certified: Fabric Analytics Engineer Associate (DP-600) is mandatory.</li><li>Related certifications such as DP-203, AI-102 or PL-300 are preferred.</li><li>3-5 years of relevant experience in data engineering, analytics engineering or AI solution development.</li></ul><h2>Preferred experience</h2><ul><li>Developing AI-enabled web applications, APIs or conversational analytics experiences.</li><li>Azure AI services, Azure OpenAI or comparable enterprise LLM platforms.</li><li>Production implementation of RAG or Agentic AI solutions with evaluation, observability and responsible AI controls.</li><li>Databricks, Snowflake, Delta Lake and modern cloud data-platform integration.</li><li>Direct Lake, real-time analytics, deployment pipelines and DevOps automation.</li></ul><h2>Behavioral competencies</h2><ul><li>Strong engineering discipline and an experimentation mindset.</li><li>Ability to translate business problems into scalable data and AI solutions.</li><li>Clear communication, collaborative delivery and practical documentation.</li><li>Commitment to security, governance, responsible AI and measurable business outcomes.</li></ul><h2>Success in this role</h2><ul><li>Reusable and production-ready Fabric data products.</li><li>Trusted semantic and ontology layers that improve analytics and AI quality.</li><li>Secure, useful AI Agents and Data Agents aligned with business requirements.</li><li>Faster delivery through automation, standards and shared engineering patterns.</li></ul><br><p><b>Our Commitment to a Culture of Inclusion & Belonging</b><br>Ecolab is committed to fair and equal treatment of associates and applicants and furthering the principles of Equal Opportunity to Employment. We will recruit, hire, promote, transfer and provide opportunities for advancement based on individual qualifications and job performance in all matters affecting employment, compensation, benefits, working conditions, and opportunities for advancement. Ecolab will not discriminate against any associate or applicant for employment because of race, religion, color, creed, national origin,citizenship status, sex, sexual orientation, gender identity and expressions, genetic information, marital status, age, or disability.</p>",
+    "ml_Description": "Join the Fabric Center of Excellence to design and deliver modern data and AI solutions on Microsoft Fabric. The role combines data engineering, semantic modeling and Agentic AI to build scalable data products, AI Agents, Data Agents, ontologies and business-facing applications. Key responsibilities. Design and develop scalable data engineering solutions using Microsoft Fabric Lakehouse, Data Factory, pipelines and notebooks. Build ingestion, transformation and medallion-layer patterns for reliable, reusable and governed data products. Design and develop AI Agents, Data Agents, ontology-driven solutions and Retrieval-Augmented Generation (RAG) experiences. Create high-quality semantic models, relationships, calculations and DAX measures for analytics and AI consumption. Use Python, PySpark and SQL to develop production-grade transformations, orchestration and validation logic. Apply Semantic Link Labs and Fabric Notebooks to automate semantic-model engineering, testing, documentation and operational tasks. Integrate data and AI capabilities into web applications, APIs and business workflows. Collaborate with architects, platform engineers, product owners and business stakeholders from discovery through production deployment. Contribute to engineering standards, reusable accelerators, technical documentation and knowledge sharing across the CoE. Required technical capabilities. Strong Microsoft Fabric data engineering experience across Lakehouse, pipelines, notebooks and OneLake. Python, PySpark and advanced SQL for data processing and transformation. Semantic modeling, DAX, dimensional modeling and performance optimization. Knowledge of Agentic AI frameworks, RAG patterns, embeddings, vector search and LLM integration. Hands-on understanding of AI Agents, Data Agents, ontology concepts and AI-ready semantic models. Working knowledge of Snowflake and Databricks. Bachelor’s degree in computer science, data engineering, artificial intelligence or a related discipline, or equivalent relevant experience. Related certifications such as DP-203, AI-102 or PL-300 are preferred. 3-5 years of relevant experience in data engineering, analytics engineering or AI solution development. Azure AI services, Azure OpenAI or comparable enterprise LLM platforms. Production implementation of RAG or Agentic AI solutions with evaluation, observability and responsible AI controls. Databricks, Snowflake, Delta Lake and modern cloud data-platform integration. Direct Lake, real-time analytics, deployment pipelines and DevOps automation. Behavioral competencies. Strong engineering discipline and an experimentation mindset. Ability to translate business problems into scalable data and AI solutions. ",
+    "postedDate": "2026-09-24T00:00:00.000+0000",
+    "dateCreated": "2026-09-22T02:01:03.444+0000",
+    "jobUpdatedDate": "2026-09-24T16:46:43.262+0000",
+    "category": "Information Technology",
+    "type": "Full time",
+    "jobType": "Full time",
+    "workShift": "",
+    "jobRequisitionSkills": []
+  },
+  "posting": {
+    "identifier": {
+      "@type": "PropertyValue",
+      "name": "Ecolab Inc.",
+      "value": "R00305812"
+    },
+    "hiringOrganization": {
+      "@type": "Organization",
+      "name": "Ecolab Inc.",
+      "sameAs": "https://jobs.ecolab.com/global/en",
+      "url": "https://jobs.ecolab.com/global/en/job/R00305812/Microsoft-Fabric-Data-Engineer",
+      "logo": "https://assets.phenompeople.com/CareerConnectResources/prod/EIYEIEUS/images/job_logo_config--1780591448377.png"
+    },
+    "jobLocation": {
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": "12.9628957",
+        "longitude": "77.57754"
+      },
+      "address": {
+        "@type": "PostalAddress",
+        "postalCode": "999999",
+        "addressCountry": "India",
+        "addressLocality": "Bangalore",
+        "addressRegion": "Karnātaka"
+      },
+      "@type": "Place"
+    },
+    "employmentType": [
+      "FULL_TIME"
+    ],
+    "@type": "JobPosting",
+    "workHours": "40 hours per week",
+    "description": "&lt;h2&gt;Role overview&lt;/h2&gt;&lt;p&gt;Join the Fabric Center of Excellence to design and deliver modern data and AI solutions on Microsoft Fabric. The role combines data engineering, semantic modeling and Agentic AI to build scalable data products, AI Agents, Data Agents, ontologies and business-facing applications.&lt;/p&gt;&lt;h2&gt;Key responsibilities&lt;/h2&gt;&lt;ul&gt;&lt;li&gt;Design and develop scalable data engineering solutions using Microsoft Fabric Lakehouse, Data Factory, pipelines and notebooks.&lt;/li&gt;&lt;li&gt;Build ingestion, transformation and medallion-layer patterns for reliable, reusable and governed data products.&lt;/li&gt;&lt;li&gt;Design and develop AI Agents, Data Agents, ontology-driven solutions and Retrieval-Augmented Generation (RAG) experiences.&lt;/li&gt;&lt;li&gt;Create high-quality semantic models, relationships, calculations and DAX measures for analytics and AI consumption.&lt;/li&gt;&lt;li&gt;Use Python, PySpark and SQL to develop production-grade transformations, orchestration and validation logic.&lt;/li&gt;&lt;li&gt;Apply Semantic Link Labs and Fabric Notebooks to automate semantic-model engineering, testing, documentation and operational tasks.&lt;/li&gt;&lt;li&gt;Integrate data and AI capabilities into web applications, APIs and business workflows.&lt;/li&gt;&lt;li&gt;Collaborate with architects, platform engineers, product owners and business stakeholders from discovery through production deployment.&lt;/li&gt;&lt;li&gt;Contribute to engineering standards, reusable accelerators, technical documentation and knowledge sharing across the CoE.&lt;/li&gt;&lt;/ul&gt;&lt;h2&gt;Required technical capabilities&lt;/h2&gt;&lt;ul&gt;&lt;li&gt;Strong Microsoft Fabric data engineering experience across Lakehouse, pipelines, notebooks and OneLake.&lt;/li&gt;&lt;li&gt;Python, PySpark and advanced SQL for data processing and transformation.&lt;/li&gt;&lt;li&gt;Semantic modeling, DAX, dimensional modeling and performance optimization.&lt;/li&gt;&lt;li&gt;Knowledge of Agentic AI frameworks, RAG patterns, embeddings, vector search and LLM integration.&lt;/li&gt;&lt;li&gt;Hands-on understanding of AI Agents, Data Agents, ontology concepts and AI-ready semantic models.&lt;/li&gt;&lt;li&gt;Working knowledge of Snowflake and Databricks.&lt;/li&gt;&lt;li&gt;Git, CI/CD, REST APIs, security fundamentals and production deployment practices.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;POSITION 02  |  CONTINUED&lt;/p&gt;&lt;h2&gt;Qualifications and certifications&lt;/h2&gt;&lt;ul&gt;&lt;li&gt;Bachelor’s degree in computer science, data engineering, artificial intelligence or a related discipline, or equivalent relevant experience.&lt;/li&gt;&lt;li&gt;Microsoft Certified: Fabric Analytics Engineer Associate (DP-600) is mandatory.&lt;/li&gt;&lt;li&gt;Related certifications such as DP-203, AI-102 or PL-300 are preferred.&lt;/li&gt;&lt;li&gt;3-5 years of relevant experience in data engineering, analytics engineering or AI solution development.&lt;/li&gt;&lt;/ul&gt;&lt;h2&gt;Preferred experience&lt;/h2&gt;&lt;ul&gt;&lt;li&gt;Developing AI-enabled web applications, APIs or conversational analytics experiences.&lt;/li&gt;&lt;li&gt;Azure AI services, Azure OpenAI or comparable enterprise LLM platforms.&lt;/li&gt;&lt;li&gt;Production implementation of RAG or Agentic AI solutions with evaluation, observability and responsible AI controls.&lt;/li&gt;&lt;li&gt;Databricks, Snowflake, Delta Lake and modern cloud data-platform integration.&lt;/li&gt;&lt;li&gt;Direct Lake, real-time analytics, deployment pipelines and DevOps automation.&lt;/li&gt;&lt;/ul&gt;&lt;h2&gt;Behavioral competencies&lt;/h2&gt;&lt;ul&gt;&lt;li&gt;Strong engineering discipline and an experimentation mindset.&lt;/li&gt;&lt;li&gt;Ability to translate business problems into scalable data and AI solutions.&lt;/li&gt;&lt;li&gt;Clear communication, collaborative delivery and practical documentation.&lt;/li&gt;&lt;li&gt;Commitment to security, governance, responsible AI and measurable business outcomes.&lt;/li&gt;&lt;/ul&gt;&lt;h2&gt;Success in this role&lt;/h2&gt;&lt;ul&gt;&lt;li&gt;Reusable and production-ready Fabric data products.&lt;/li&gt;&lt;li&gt;Trusted semantic and ontology layers that improve analytics and AI quality.&lt;/li&gt;&lt;li&gt;Secure, useful AI Agents and Data Agents aligned with business requirements.&lt;/li&gt;&lt;li&gt;Faster delivery through automation, standards and shared engineering patterns.&lt;/li&gt;&lt;/ul&gt;&lt;br&gt;&lt;p&gt;&lt;b&gt;Our Commitment to a Culture of Inclusion & Belonging&lt;/b&gt;&lt;br&gt;Ecolab is committed to fair and equal treatment of associates and applicants and furthering the principles of Equal Opportunity to Employment. We will recruit, hire, promote, transfer and provide opportunities for advancement based on individual qualifications and job performance in all matters affecting employment, compensation, benefits, working conditions, and opportunities for advancement. Ecolab will not discriminate against any associate or applicant for employment because of race, religion, color, creed, national origin,citizenship status, sex, sexual orientation, gender identity and expressions, genetic information, marital status, age, or disability.&lt;/p&gt;",
+    "title": "Microsoft Fabric Data Engineer",
+    "datePosted": "2026-10-01",
+    "@context": "http://schema.org",
+    "occupationalCategory": "Information Technology",
+    "directApply": false
+  },
+  "provenance": {
+    "kind": "native-anonymous-public-response-selected-fields",
+    "detailBody": "artifacts/full-catalog/ecolab-native-001/research-001/004.body",
+    "detailReceipt": "artifacts/full-catalog/ecolab-native-001/research-001/004.json",
+    "inventoryBodies": [
+      "artifacts/full-catalog/ecolab-native-001/inventory-009/001.body",
+      "artifacts/full-catalog/ecolab-native-001/inventory-009/002.body",
+      "artifacts/full-catalog/ecolab-native-001/inventory-009/003.body"
+    ],
+    "observedAt": "2026-10-21T21:23:59.247Z",
+    "sourceExecution": false,
+    "publicationConflictPreserved": true,
+    "independentLegalEmployerVerified": false
+  }
+}

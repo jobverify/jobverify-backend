@@ -27,7 +27,7 @@ const assertBacklogRowMatches = ({ provider, companyName, modulePath }) => {
   assert.equal(provider.modulePath, modulePath)
 }
 
-test('Techtree It Systems local catalog captures the verified first-party Sucuri blocker and wp-job-openings fallback contract', async () => {
+test('Techtree It Systems local catalog records blocked inventory and partial wp-job-openings scope', async () => {
   const modulePath = path.resolve(currentDir, '../../scraper/techtreeitsystems/script.js')
   const {
     TECHTREE_IT_SYSTEMS_CATALOG,
@@ -44,10 +44,10 @@ test('Techtree It Systems local catalog captures the verified first-party Sucuri
   assert.equal(provider.companyCareerPage, 'https://www.techtreeit.com/careers/')
   assert.equal(provider.companyDomain, 'techtreeit.com')
   assert.equal(provider.atsPlatform, 'wp-job-openings')
-  assert.equal(provider.paginationStrategy, 'single-first-party-awsm-careers-page')
+  assert.equal(provider.paginationStrategy, 'partial-inline-first-party-awsm-careers-page')
   assert.equal(
     provider.extractionStrategy,
-    'verified-first-party-careers-page+inline-awsm-job-cards+same-domain-detail-links|verified-sucuri-challenge-empty-state',
+    'http-200-first-party-careers+inline-awsm-cards+validated-native-detail-publication|blocked-and-detail-errors-fail-closed',
   )
   assert.equal(provider.verifiedOn, '2026-08-15')
   assert.match(provider.verifiedSurfaceSummary, /You are being redirected\.\.\./i)

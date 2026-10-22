@@ -68,9 +68,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .cache/description-rewrites
-          key: description-qwen35-9b-q5-rewrites-${{ runner.os }}-v12-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: description-qwen35-9b-q5-rewrites-${{ runner.os }}-v13-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            description-qwen35-9b-q5-rewrites-${{ runner.os }}-v12-${{ github.ref }}-
+            description-qwen35-9b-q5-rewrites-${{ runner.os }}-v13-${{ github.ref }}-
       - name: Drain the durable source-hash queue
         if: steps.description_queue.outcome == 'success' && steps.description_queue.outputs.queued != '0'
         timeout-minutes: 315
@@ -82,7 +82,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .cache/description-rewrites
-          key: description-qwen35-9b-q5-rewrites-${{ runner.os }}-v12-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: description-qwen35-9b-q5-rewrites-${{ runner.os }}-v13-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Upload generation quality and capacity diagnostics
         if: always()
         uses: actions/upload-artifact@v7
@@ -91,6 +91,7 @@ jobs:
           path: |
             .cache/scraper-actions/description-summary.json
             .cache/scraper-actions/description-worker.log
+            .cache/scraper-actions/description-rejections.json
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 14
