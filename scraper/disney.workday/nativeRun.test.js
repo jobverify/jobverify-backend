@@ -100,3 +100,33 @@ for(const[name,html]of[
 for(const notice of['This role has expired.','This position is not available.'])test(notice+' cannot qualify a closed role',async()=>{const j=(await replay(p=>{p[5].body=p[5].body.replace('Job Summary:','Job Summary: '+notice+' ')}))[0];assert.equal(j.sourceDetailComplete,false);assert.equal(j.sourceDescription,null);assert.ok(j.nativeRejectedDescription.includes(notice));assert.equal(j.sourceDetailFailureReason,'native-role-explicitly-closed')})
 test('aria-disabled native application links reject instead of source-URL fallback',async()=>assert.rejects(replay(p=>{p[5].body=p[5].body.replaceAll('class="button job-apply','aria-disabled="true" class="button job-apply')})))
 test('rejected company-only native content is retained outside publishable fallback fields',async()=>{const html='<p>About The Walt Disney Company: Disney is a global entertainment company that produces films, television, streaming and immersive experiences for families throughout the world.</p>',j=(await replay(p=>replaceDescription(p[5],html)))[0];assert.equal(j.sourceDescription,null);assert.equal(j.jobDescription,null);assert.match(j.nativeRejectedDescription,/About The Walt Disney Company/);assert.equal(j.nativeRejectedDescriptionRawHTML,'<div class="ats-description">'+html+'</div>');assert.equal(j.sourceDetailFailureReason,'native-description-no-role-content')})
+for(const notice of['This role has expired','This position is not available'])test(notice+' in a complete unpunctuated paragraph cannot qualify the original JD',async()=>{
+ const jobs=await replay(p=>{p[5].body=p[5].body.replace('<div class="ats-description">','<div class="ats-description"><p>'+notice+'</p>')})
+ const j=jobs[0];assert.equal(jobs.length,32);assert.equal(j.sourceDescription,null);assert.equal(j.jobDescription,null);assert.equal(j.sourceDetailComplete,false)
+ assert.equal(j.sourceDetailFailureReason,'native-role-explicitly-closed');assert.ok(j.nativeRejectedDescription.startsWith(notice));assert.ok(j.nativeRejectedDescriptionRawHTML.startsWith('<div class="ats-description"><p>'+notice+'</p>'))
+ assert.equal(analyzePublishableJobs(jobs,{now}).eligibleJobs.length,8)
+})
+for(const[name,html]of[
+ ['until-application access','<p>The responsibilities, qualifications and required experience for this position cannot be provided until you complete an application through our recruitment system. Further information about the job description is withheld until an application has been received.</p>'],
+ ['once-you-apply access','<p>The responsibilities, qualifications and required experience for this position will be available once you apply through our recruitment system. The full job description and position details can be accessed only by registered applicants through their candidate portal.</p>'],
+])test(name+' alone retains the row and rejected evidence without qualifying a JD',async()=>{
+ const jobs=await replay(p=>replaceDescription(p[5],html)),j=jobs[0]
+ assert.equal(jobs.length,32);assert.equal(j.sourceDescription,null);assert.equal(j.jobDescription,null);assert.equal(j.sourceDetailComplete,false)
+ assert.equal(j.sourceDetailFailureReason,'native-description-instruction-or-unavailable-only');assert.match(j.nativeRejectedDescription,/responsibilities/i);assert.equal(j.nativeRejectedDescriptionRawHTML,'<div class="ats-description">'+html+'</div>')
+ assert.equal(analyzePublishableJobs(jobs,{now}).eligibleJobs.length,8)
+})
+function appendNativeParagraph(packet,html){
+ const start=packet.body.indexOf('<div class="ats-description">'),scan=/<\/?div\b[^>]*>/gi;assert.ok(start>=0);scan.lastIndex=start
+ let depth=0,end=-1,m;while((m=scan.exec(packet.body))){depth+=m[0].startsWith('</')?-1:1;if(depth===0){end=m.index;break}}
+ assert.ok(end>start);packet.body=packet.body.slice(0,end)+html+packet.body.slice(end)
+}
+for(const footer of[
+ '<p>The responsibilities and qualifications will be available once you apply through our recruitment system.</p>',
+ '<p>The job description cannot be provided until you complete an application through our recruitment system.</p>',
+ '<p>If this role has expired, please search our other vacancies and apply through our careers site.</p>',
+])test('genuine full JD remains qualified with separate paragraph footer '+footer,async()=>{
+ const jobs=await replay(p=>appendNativeParagraph(p[5],footer)),j=jobs[0]
+ assert.equal(jobs.length,32);assert.equal(j.sourceDetailComplete,true);assert.equal(j.sourceDetailFailureReason,null)
+ assert.equal(typeof j.sourceDescription,'string');assert.equal(j.sourceDescription,j.jobDescription);assert.ok(j.sourceDescription.includes(footer.slice(3,-4)))
+ assert.equal(j.nativeRejectedDescriptionRawHTML,undefined);assert.equal(analyzePublishableJobs(jobs,{now}).eligibleJobs.length,9)
+})

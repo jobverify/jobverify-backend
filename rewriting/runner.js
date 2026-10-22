@@ -2,9 +2,10 @@ import { createHash, randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { factPlanMessages, factPlanSchema, validateFactPlan, assessRewriteInput, expandModelPlan } from './factPlan.js';
-import { REWRITE_MODEL, REWRITE_SCHEMA, buildRewriteInput, rewriteMessages, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
+import { REWRITE_MODEL, REWRITE_SCHEMA, MAX_REWRITE_SECTION_ITEMS, buildRewriteInput, rewriteMessages, validateRewrite } from '../src/services/jobDescriptionPolicy.js';
 import { reconcileRewriteCandidate, rewriteSnapshotFilter } from './queue.js';
 import { RewriteWorkerError } from './worker.js';
+import { buildReferencedSections, expandReferencedSections } from './sectionProtocol.js';
 
 export const rewriteDeadline = ({ now = Date.now(), budgetSeconds = 1200, workflowStartedAt, workflowSeconds = 9000, cleanupSeconds = 120 } = {}) => {
   const budget = Number(budgetSeconds);
@@ -22,6 +23,14 @@ export class RewriteGenerationError extends Error {
 // The prose protocol handles dense text and mixed headings through evidence validation.
 // Keep the compact protocol available for historical benchmarks and explicit callers.
 export const assessDescriptionRewrite = (input, format = REWRITE_MODEL.outputFormat) => {
+  if (format === 'source-sections') {
+    if (!input.eligible) return { ok: false, reason: 'insufficient_source' };
+    const counts = new Map();
+    for (const unit of buildReferencedSections(input).sources.filter(unit => unit.automatic)) {
+      const section = unit.section || 'overview'; counts.set(section, (counts.get(section) || 0) + 1);
+    }
+    return [...counts.values()].some(count => count > MAX_REWRITE_SECTION_ITEMS) ? { ok: false, reason: 'too_many_source_facts' } : { ok: true };
+  }
   const assessment = assessRewriteInput(input);
   if (format === 'sections' && ['mixed_requirement_scope', 'dense_source', 'already_structured',
     'too_many_source_facts', 'model_context_budget'].includes(assessment.reason)) return { ok: true };
@@ -60,24 +69,33 @@ const readCompletionStream = async response => {
 
 export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model = 'job-description-qwen',
   format = REWRITE_MODEL.outputFormat, requestMs = REWRITE_MODEL.requestSeconds * 1000, planCacheDir, assertAlive = () => {} } = {}) => {
-  if (!['sections', 'fact-plan'].includes(format)) throw new Error('Invalid rewrite output format');
+  if (!['source-sections', 'sections', 'fact-plan'].includes(format)) throw new Error('Invalid rewrite output format');
   const url = new URL(endpoint);
   if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || url.username || url.password || url.pathname !== '/' || url.search || url.hash) throw new Error('Generation must run on unauthenticated http://127.0.0.1');
   const cache = new Map();
-  const compact = format === 'fact-plan', cacheVersion = compact ? 1 : 2, cacheBytes = compact ? 16000 : 65536;
-  const expand = (value, input) => compact ? expandModelPlan(value, input) : value;
+  const compact = format === 'fact-plan', referenced = format === 'source-sections';
+  const cacheVersion = compact ? 1 : referenced ? 3 : 2, cacheBytes = compact ? 16000 : 65536;
+  const expand = (value, input) => compact ? expandModelPlan(value, input) : referenced ? expandReferencedSections(value, input) : value;
   const validate = (value, input, finishReason) => validateDescriptionRewrite(value, input, finishReason, format);
+  const sourceMetrics = value => {
+    if (!referenced || !value) return {};
+    const items = value.sections.flatMap(section => section.items);
+    const modelEditedItems = items.filter(item => item.text !== item.evidence).length;
+    return { sourceCopiedItems: items.length - modelEditedItems, modelEditedItems };
+  };
   const remember = (key, value) => {
     cache.set(key, value);
     if (cache.size > 128) cache.delete(cache.keys().next().value);
   };
   return { format, generate: async (input, { signal, remainingMs = requestMs } = {}) => {
-    const timeout = AbortSignal.timeout(Math.max(1, Math.floor(Math.min(requestMs, remainingMs))));
+    const startedAt = Date.now(), availableMs = Math.max(1, Math.floor(Math.min(requestMs, remainingMs)));
+    const requestDeadline = startedAt + availableMs, timeout = AbortSignal.timeout(availableMs);
     const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
     combined.throwIfAborted();
     assertAlive();
-    const messages = compact ? factPlanMessages(input) : rewriteMessages(input);
-    const schema = compact ? factPlanSchema(input) : REWRITE_SCHEMA;
+    const protocol = referenced ? buildReferencedSections(input) : null;
+    const messages = protocol?.messages || (compact ? factPlanMessages(input) : rewriteMessages(input));
+    const schema = protocol?.schema || (compact ? factPlanSchema(input) : REWRITE_SCHEMA);
     const requestHash=createHash('sha256').update(JSON.stringify([REWRITE_MODEL,format,
       ...(compact ? [] : [input.inputHash]),messages,schema])).digest('hex');
     const cached=cache.get(requestHash);
@@ -86,10 +104,10 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
     if(cacheFile){
       let entry;try{if((await fs.stat(cacheFile)).size<=cacheBytes)entry=JSON.parse(await fs.readFile(cacheFile,{encoding:'utf8',signal:combined}));}catch{}
       combined.throwIfAborted();
-      if(entry?.version===cacheVersion&&entry.requestHash===requestHash){const value=expand(entry.rawValue,input);if(value&&validate(value,input,'stop').ok){const completion={value,rawValue:entry.rawValue,finishReason:'stop',format};remember(requestHash,completion);return {...completion,cachedModelPlan:true,cacheSource:'disk',generationRequests:0};}}
+      if(entry?.version===cacheVersion&&entry.requestHash===requestHash){const value=expand(entry.rawValue,input);if(value&&validate(value,input,'stop').ok){const completion={value,rawValue:entry.rawValue,finishReason:'stop',format,...sourceMetrics(value)};remember(requestHash,completion);return {...completion,cachedModelPlan:true,cacheSource:'disk',generationRequests:0};}}
     }
-    const initialOutputTokens = compact ? 768 : REWRITE_MODEL.maxOutputTokens;
-    let result, generationRequests = 0, outputTokens = initialOutputTokens, promptTokens = 0;
+    const initialOutputTokens = compact ? 768 : referenced ? REWRITE_MODEL.maxOutputTokens : 2048;
+    let result, retrySkipped, generationRequests = 0, outputTokens = initialOutputTokens, promptTokens = 0;
     try {
       if (!compact) {
         // Count the actual local chat template, including special tokens. Sizing
@@ -136,12 +154,23 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
         if (result?.choices?.[0]?.finish_reason !== 'length' || generationRequests >= 2) break;
         // Retry only token truncation, within the original timeout and per-slot context.
         let retryTokens = Math.min(initialOutputTokens * 2,
-          compact ? Math.floor(REWRITE_MODEL.contextTokens / 4) : REWRITE_MODEL.maxRetryOutputTokens);
+          compact ? Math.floor(REWRITE_MODEL.contextTokens / 4) : referenced ? REWRITE_MODEL.maxRetryOutputTokens : 4096);
         if (!compact) retryTokens = Math.min(retryTokens, REWRITE_MODEL.contextTokens - promptTokens - 64);
         if (Number.isInteger(result.usage?.prompt_tokens) && result.usage.prompt_tokens >= 0) {
           retryTokens = Math.min(retryTokens, REWRITE_MODEL.contextTokens - result.usage.prompt_tokens - (compact ? 32 : 64));
         }
         if (retryTokens <= outputTokens) break;
+        if (referenced) {
+          const measuredPerToken = result.timings?.predicted_per_token_ms
+            || (result.timings?.predicted_n > 0 ? result.timings.predicted_ms / result.timings.predicted_n : 0)
+            || (result.usage?.completion_tokens > 0 ? (Date.now() - startedAt) / result.usage.completion_tokens : 0);
+          const promptMs = Math.max(0, Number(result.timings?.prompt_ms) || 0);
+          const estimatedRetryMs = promptMs + measuredPerToken * retryTokens * 1.1 + 1000;
+          if (Number.isFinite(measuredPerToken) && measuredPerToken > 0 && requestDeadline - Date.now() < estimatedRetryMs) {
+            retrySkipped = 'insufficient_time';
+            break;
+          }
+        }
         outputTokens = retryTokens;
       }
     } catch (error) {
@@ -158,7 +187,8 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
     if (!choice || typeof choice.message?.content !== 'string') throw Object.assign(new RewriteGenerationError('Malformed generator response'), { generationRequests });
     let value;
     try { value = JSON.parse(choice.message.content); } catch { value = null; }
-    const completion={value:expand(value,input),rawValue:value,finishReason:choice.finish_reason,timings:result.timings,usage:result.usage,generationRequests,format};
+    const completion={value:expand(value,input),rawValue:value,finishReason:choice.finish_reason,timings:result.timings,usage:result.usage,generationRequests,format,...(retrySkipped&&{retrySkipped})};
+    Object.assign(completion, sourceMetrics(completion.value));
     if(completion.finishReason==='stop'&&completion.value&&validate(completion.value,input,'stop').ok){
       remember(requestHash,completion);
       if(cacheFile&&!combined.aborted){let temporary;try{const serialized=JSON.stringify({version:cacheVersion,requestHash,rawValue:completion.rawValue})+'\n';if(Buffer.byteLength(serialized)<=cacheBytes){await fs.mkdir(path.dirname(cacheFile),{recursive:true});temporary=cacheFile+'.'+randomUUID()+'.tmp';await fs.writeFile(temporary,serialized);await fs.rename(temporary,cacheFile);}}catch{if(temporary)await fs.rm(temporary,{force:true}).catch(()=>{});}}
@@ -168,7 +198,7 @@ export const createRewriteClient = ({ endpoint = 'http://127.0.0.1:8766', model 
 };
 
 /** Exercise fresh inference before any production queue entry can consume an attempt. */
-export const probeRewriteClient = async (client, { concurrency = 1, deadline = Date.now() + 180000, signal } = {}) => {
+export const probeRewriteClient = async (client, { concurrency = 1, deadline = Date.now() + 180000, signal, onRejection = () => {} } = {}) => {
   if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 4) throw new Error('Invalid probe concurrency');
   const started = Date.now();
   const probes = await Promise.allSettled(Array.from({ length: concurrency }, async (_, slot) => {
@@ -178,7 +208,11 @@ export const probeRewriteClient = async (client, { concurrency = 1, deadline = D
     const response = await client.generate(input, { signal, remainingMs: Math.max(1, deadline - Date.now()) });
     signal?.throwIfAborted();
     if (response.cachedModelPlan) throw new RewriteWorkerError('generation_probe');
-    if (!validateDescriptionRewrite(response.value, input, response.finishReason, response.format || client.format).ok) throw new RewriteGenerationError('Model readiness output was rejected');
+    const checked = validateDescriptionRewrite(response.value, input, response.finishReason, response.format || client.format);
+    if (!checked.ok) {
+      await onRejection({ id: 'worker-probe-' + slot, input, response, reason: checked.reason, diagnostic: checked.diagnostic });
+      throw new RewriteGenerationError('Model readiness output was rejected');
+    }
   }));
   signal?.throwIfAborted();
   const rejections = probes.filter(result => result.status === 'rejected');
@@ -203,6 +237,26 @@ export const rewriteQueueQuery = (now = new Date()) => ({ status: 'active', sour
 export const rewriteQueueScan = (Job, query = rewriteQueueQuery()) => Job.find(query)
   .sort({ _id: 1 }).hint({ _id: 1 }).lean();
 
+/** Materialize each small query before yielding: no server cursor waits for inference. */
+export async function* rewriteQueuePages(Job, query = rewriteQueueQuery(), { pageSize = 8, deadline = Infinity, signal } = {}) {
+  if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 64) throw new Error('Invalid rewrite page size');
+  let after;
+  while (!signal?.aborted && Date.now() < deadline) {
+    let page;
+    try {
+      page = await rewriteQueueScan(Job, after === undefined ? query : { $and: [query, { _id: { $gt: after } }] })
+        .limit(pageSize).maxTimeMS(15000).exec();
+    } catch (error) { error.rewritePhase = 'read_queue_page'; throw error; }
+    if (!page.length) return;
+    for (const job of page) {
+      if (signal?.aborted || Date.now() >= deadline) return;
+      yield job;
+    }
+    after = page.at(-1)._id;
+    if (page.length < pageSize) return;
+  }
+}
+
 export const rewriteFailureDetails = (error, phase) => ({
   errorType: error.name, errorPhase: phase,
   ...(Number.isInteger(error.code) ? { errorCode: error.code } : {}),
@@ -220,7 +274,7 @@ export const rewriteProgress = summary => {
 };
 
 /** The caller supplies a Mongo update boundary; source/filter fields never enter these updates. */
-export const rewriteCandidates = async (jobs, { client, update, deadline, signal, concurrency = 1, onResult = () => {} } = {}) => {
+export const rewriteCandidates = async (jobs, { client, update, deadline, signal, concurrency = 1, onResult = () => {}, onRejection = () => {} } = {}) => {
   if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 4) throw new Error('Rewrite concurrency must be between one and four');
   const stats = { attempted: 0, published: 0, failed: 0, skipped: 0, queueRepairs: 0, staleSources: 0, concurrentChanges: 0, interrupted: false, peakConcurrency: 0 };
   const processJob = async job => {
@@ -249,6 +303,8 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
       response = await client.generate(input, { signal, remainingMs: deadline - started });
       if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
       result = validateDescriptionRewrite(response.value, input, response.finishReason, response.format || client.format);
+      if (result.ok && Number.isInteger(response.modelEditedItems)) result.quality = { ...result.quality,
+        method: 'source_referenced_sections', modelEditedItems: response.modelEditedItems, sourceCopiedItems: response.sourceCopiedItems };
       }
     } catch (error) {
       if (signal?.aborted || Date.now() >= deadline) { stats.interrupted = true; return; }
@@ -257,6 +313,7 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
       result = { ok: false, reason: error.name === 'TimeoutError' ? 'timeout'
         : error.reason === 'model_context_budget' ? 'model_context_budget' : 'generation_error' };
     }
+    if (!result.ok && assessment.ok) await onRejection({ id: String(job._id), input, response, reason: result.reason, diagnostic: result.diagnostic });
     const now = new Date(), durationMs = Date.now() - started;
     const metadata = { 'descriptionRewrite.attemptedAt': now, 'descriptionRewrite.durationMs': durationMs,
       'descriptionRewrite.modelRevision': REWRITE_MODEL.revision, 'descriptionRewrite.runtimeTag': REWRITE_MODEL.runtimeTag,
@@ -272,7 +329,7 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
     else if (!assessment.ok || ['not_improved','already_structured','dense_source','uncertain_section_assignment','model_context_budget'].includes(result.reason)) stats.skipped++;
     else stats.failed++;
     await onResult({ id: String(job._id), inputHash: input.inputHash, ok: result.ok, reason: result.reason, durationMs, wordCount: result.wordCount, generated: assessment.ok, modelPlanCached: response?.cachedModelPlan || false,
-      generationRequests: response?.generationRequests ?? (assessment.ok && !response?.cachedModelPlan ? 1 : 0), quality: result.quality, usage: response?.usage, timings: response?.timings });
+      generationRequests: response?.generationRequests ?? (assessment.ok && !response?.cachedModelPlan ? 1 : 0), retrySkipped: response?.retrySkipped, quality: result.quality, usage: response?.usage, timings: response?.timings });
   };
   const pending = new Set();
   let failure;
@@ -289,6 +346,7 @@ export const rewriteCandidates = async (jobs, { client, update, deadline, signal
   } catch (error) { failure ??= error; }
   // Always finish scheduled work before callers close the cursor, model, or database.
   await Promise.all(pending);
+  if (signal?.aborted || Date.now() >= deadline) stats.interrupted = true;
   if (failure) { failure.rewriteStats = { ...stats }; throw failure; }
   return stats;
 };

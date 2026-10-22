@@ -49,7 +49,7 @@ async function bounded(signal,fn){signal.throwIfAborted();let listener;try{retur
 export async function runAllegionNative({signal,now}){
  let cookie='',csrf=''
  async function request(url,body){
-  const headers={Accept:body?'application/json':'text/html,application/json','User-Agent':'Mozilla/5.0',...(body?{'Content-Type':'application/json'}:{}),...(cookie?{Cookie:cookie}:{}),...(body&&csrf?{'x-calypso-csrf-token':csrf}:{})}
+  const headers={Accept:body?'application/json':url===BOARD?'text/html':'text/html,application/json','User-Agent':'Mozilla/5.0',...(body?{'Content-Type':'application/json'}:{}),...(cookie?{Cookie:cookie}:{}),...(body&&csrf?{'x-calypso-csrf-token':csrf}:{})}
   return bounded(signal,async()=>{
    const response=await fetch(url,{method:body?'POST':'GET',headers,...(body?{body:JSON.stringify(body)}:{}),redirect:'error',signal})
    check(response.status===200&&response.url===url,'Native HTTP status or final URL failure')

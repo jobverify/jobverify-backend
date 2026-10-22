@@ -10,10 +10,13 @@ RUN curl --fail --location --retry 3 --max-time 180 \
     && tar -xzf /tmp/tectonic.tar.gz -C /usr/local/bin tectonic && rm /tmp/tectonic.tar.gz
 ENV TECTONIC_CACHE_DIR=/opt/tectonic-cache HOME=/tmp TECTONIC_UNTRUSTED_MODE=1
 RUN --mount=type=bind,source=warmup.tex,target=/opt/warmup.tex,readonly \
-    tectonic --untrusted --bundle https://relay.fullyjustified.net/default_bundle_v33.tar --outdir /tmp /opt/warmup.tex >/dev/null 2>&1 \
-    && grep -R -q -x '6ffe055852f8faf66c0acbe1a7fb27f87b869a90bad1204f3bf4d9683f597c7c' /opt/tectonic-cache/bundles/hashes \
-    && rm -f /tmp/warmup.* \
-    && chmod -R a+rX /opt/tectonic-cache
+    set -eu; for size in 10 11 12; do \
+      sed "s/11pt,a4paper/${size}pt,a4paper/" /opt/warmup.tex > /tmp/warmup.tex; \
+      tectonic --untrusted --bundle https://relay.fullyjustified.net/default_bundle_v33.tar --outdir /tmp /tmp/warmup.tex >/dev/null 2>&1; \
+    done; \
+    grep -R -q -x '6ffe055852f8faf66c0acbe1a7fb27f87b869a90bad1204f3bf4d9683f597c7c' /opt/tectonic-cache/bundles/hashes; \
+    rm -f /tmp/warmup.*; \
+    chmod -R a+rX /opt/tectonic-cache
 COPY compile.sh /usr/local/bin/compile-resume
 RUN chmod 555 /usr/local/bin/compile-resume
 USER 10001:10001

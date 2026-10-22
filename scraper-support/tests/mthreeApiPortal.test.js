@@ -37,7 +37,12 @@ test('runApiPortalScraper filters mthree Greenhouse jobs to India-facing locatio
   })
 
   assert.equal(jobs.length, 1)
-  assert.deepEqual(jobs[0], {
+  const { nativePublication, ...mappedJob } = jobs[0]
+  assert.equal(nativePublication.status, 'unknown')
+  assert.equal(nativePublication.value, null)
+  assert.equal(nativePublication.candidates[0].updated_at, '2026-06-29T11:30:50-04:00')
+  assert.equal(nativePublication.candidates[1].status, 'not-observed')
+  assert.deepEqual(mappedJob, {
     title: 'Graduate Software Engineer',
     company: 'mthree',
     location: 'Bengaluru, India',
@@ -56,8 +61,8 @@ test('runApiPortalScraper filters mthree Greenhouse jobs to India-facing locatio
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
-    postingDate: '2026-06-29T11:30:50-04:00',
     remoteStatus: 'On-site',
     scrapedAt: jobs[0].scrapedAt,
+    sourceListingComplete: false,
   })
 })

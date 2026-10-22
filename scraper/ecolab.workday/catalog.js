@@ -1,28 +1,55 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import {fileURLToPath} from 'node:url'
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-const PROVIDER_METADATA = {
+const currentDir=path.dirname(fileURLToPath(import.meta.url))
+const PROVIDER_METADATA={
+  ...{
   "source": "ecolab",
   "companyName": "Ecolab",
   "adapter": "script",
-  "atsPlatform": "workbook-exact-name-sentinel",
+  "originalModulePath": null,
+  "companyDomain": "ecolab.com",
+  "officialHomepageUrl": "https://www.ecolab.com/",
+  "companyCareerPage": "https://jobs.ecolab.com/global/en",
+  "jobsBoardUrl": "https://jobs.ecolab.com/global/en/search-results",
+  "atsPlatform": "phenom-native-ecolab-external",
   "countryFilter": "India",
-  "paginationStrategy": "none",
-  "extractionStrategy": "exact-name-batch-coverage-sentinel-return-empty-until-public-surface-is-verified",
-  "parser": "custom-script",
+  "parser": "shared-phenom-inventory-with-source-local-native-contract-validation",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-08-01",
-  "verifiedPublicJobCount": 0,
-  "verifiedIndiaJobCount": 0,
-  "verificationDisposition": "no-trustworthy-exact-name-public-jobs-flow-verified-locally",
-  "verifiedSurfaceSummary": "Workbook batch 09 exact-name sentinel for Ecolab added on Saturday, August 1, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name.",
-  "originalModulePath": "../workbookbatch09a/failClosedSentinel.js",
-  "backfillMode": "workday",
-  "modulePath": path.join(currentDir, 'script.js'),
-  "dryRunFile": path.join(currentDir, 'jobs.json')
+  "paginationStrategy": "unfiltered-external-global-offsets-native-total-unique-sequences-and-India-facet-reconciliation",
+  "extractionStrategy": "active-official-EIYEIEUS-bootstrap+exact-Ecolab_External-identity+typed-India-offices+full-authoritative-JobPosting+earliest-native-publication",
+  "backfillMode": "live-parser",
+  "verifiedOn": null,
+  "verifiedAt": null,
+  "verifiedPublicJobCount": null,
+  "verifiedIndiaJobCount": null,
+  "verifiedInventoryStatus": "unverified",
+  "sourceScopeComplete": false,
+  "zeroResultPolicy": "evidence-required",
+  "remediationStatus": "implemented-awaiting-ordinary-audit-and-independent-review",
+  "runtimeQualification": "unqualified-offline-evidence-only-until-coordinated-ordinary-audit",
+  "verificationDisposition": "native-runtime-validation-required",
+  "bindingEvidence": {
+    "verified": true,
+    "checkedAt": "2026-10-21T21:38:10.261Z",
+    "officialURL": "https://jobs.ecolab.com/global/en",
+    "matchedLinks": [
+      "https://jobs.ecolab.com/global/en/search-results",
+      "https://ecolab.wd1.myworkdayjobs.com/Ecolab_External/job/IND---Karnataka---Bangalore---EDC/Microsoft-Fabric-Data-Engineer_R00305812/apply"
+    ],
+    "bindingMethod": "prior-official-corporate-careers-handoff+current-active-EIYEIEUS-bootstrap+native-exact-Workday-account-role-apply-identity",
+    "evidenceOrigin": "owned-fresh-anonymous-browser-public-GET-and-client-advertised-anonymous-refineSearch-inventory-POST-research",
+    "priorOfficialAssociationArtifact": "artifacts/full-catalog/official-discovery/batch-027.json",
+    "corporateCurrentGETStatus": 403,
+    "nativeProofArtifact": "artifacts/full-catalog/ecolab-native-001/qualification-032.json",
+    "nativeFullDetailManifest": "artifacts/full-catalog/ecolab-native-001/full-details-020/manifest-020.json",
+    "applicationsOpened": false
+  },
+  "sourceScopeNotes": "The official Ecolab branded external EIYEIEUS board and exact Ecolab_External account are verified native associations. Runtime enumerates the unfiltered board, reconciles offset totals and unique sequences, and validates typed India offices, title, external visibility, company branding, canonical identity and the exact advertised application URL. All authoritative JobPosting content is retained; listing and ML projections cannot replace missing content. Native legal jobCompany/hiringOrganization are source assertions with no independent legal-employer verification. Optional parentRefNum may be absent alongside other exact bindings; supplied conflicts fail closed. Earliest valid listing/detail/JSON-LD publication is retained with all raw fields and disagreement diagnostics, without treating creation/update/crawl dates as publication. Explicit closing values retain precision; absent closing instants remain unknown. Native CLOSED/FILLED, absent authoritative JobPosting and conflicting titles remain distinct source exclusions. Any failed detail or incomplete inventory preserves prior vacancies. Whole-company/legal-employer completeness is unknown; no static count or successful ordinary runtime is claimed.",
+  "verifiedSurfaceSummary": "Current anonymous native global inventory and all typed-India detail responses support the implementation and offline replay. Remaining malformed/blank authoritative posting blocks, a conflicting title and explicit closed/filled source states keep the observed inventory partial. Ordinary source audit, independent review and local visibility validation remain separate."
+},
+  modulePath:path.join(currentDir,'script.js'),
+  dryRunFile:path.join(currentDir,'jobs.json'),
 }
-
 export default PROVIDER_METADATA
-export { PROVIDER_METADATA }
+export {PROVIDER_METADATA}

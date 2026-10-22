@@ -7,13 +7,14 @@ import { availableParallelism } from 'node:os';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { spawn } from 'node:child_process';
+import { resumeFailure, safeResumeDiagnostic } from './resumeDiagnostics.js';
 
 export const RESUME_MODEL = JSON.parse(await fs.readFile(new URL('./resume-model.json', import.meta.url), 'utf8'));
 const root = fileURLToPath(new URL('../', import.meta.url));
 const serverUrl = 'http://127.0.0.1:8770';
 export function remainingBudget(deadline, maximum) {
   const remaining = deadline - Date.now();
-  if (remaining <= 0) throw new Error('The resume processing time limit was reached. Please retry.');
+  if (remaining <= 0) throw resumeFailure('time_limit', { statusCode: 504 });
   return Math.max(1, Math.floor(Math.min(remaining, maximum)));
 }
 async function hashFile(file) {
@@ -71,27 +72,33 @@ export async function prepareResumeModel({ cacheRoot = root, deadline = Date.now
     throw new Error('The resume model server did not become ready.');
   } catch (error) { server.kill('SIGTERM'); throw error; }
 }
-const comparisonSchema = { type: 'object', additionalProperties: false, required: ['supported', 'missingFacts', 'unsupportedClaims'], properties: {
-  supported: { type: 'boolean' }, missingFacts: { type: 'array', items: { type: 'string' } }, unsupportedClaims: { type: 'array', items: { type: 'string' } },
+const comparisonSchema = { type: 'object', additionalProperties: false, required: ['evidence', 'missingFacts', 'unsupportedClaims', 'supported'], properties: {
+  evidence: { type: 'string', minLength: 1, maxLength: 4096 },
+  missingFacts: { type: 'array', items: { type: 'string' } }, unsupportedClaims: { type: 'array', items: { type: 'string' } }, supported: { type: 'boolean' },
 } };
-export async function generateResumeText(prompt, { fetchImpl = fetch, deadline = Date.now() + 480000, comparison = false } = {}) {
+export async function generateResumeText(prompt, { fetchImpl = fetch, deadline = Date.now() + 480000, comparison = false, onDiagnostic = () => {} } = {}) {
   const messages = [{ role: 'user', content: prompt }];
   const maxTokens = comparison ? RESUME_MODEL.comparisonOutputTokens : RESUME_MODEL.maxOutputTokens;
   const request = async (endpoint, body) => {
-    const response = await fetchImpl(`${serverUrl}${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(remainingBudget(deadline, RESUME_MODEL.requestSeconds * 1000)), body: JSON.stringify(body) });
-    if (!response.ok) throw new Error('The local resume model is unavailable. Please retry.');
-    return response.json();
+    const signal = AbortSignal.timeout(remainingBudget(deadline, RESUME_MODEL.requestSeconds * 1000));
+    let response;
+    try {
+      response = await fetchImpl(`${serverUrl}${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal, body: JSON.stringify(body) });
+    } catch { throw resumeFailure(signal.aborted ? 'model_timeout' : 'model_unavailable'); }
+    if (!response.ok) throw resumeFailure('model_unavailable');
+    try { return await response.json(); } catch { throw resumeFailure(signal.aborted ? 'model_timeout' : 'model_protocol_invalid'); }
   };
   const rendered = await request('/apply-template', { messages });
-  if (typeof rendered.prompt !== 'string') throw new Error('Resume model could not count the complete input.');
+  if (typeof rendered.prompt !== 'string') throw resumeFailure('model_protocol_invalid');
   const tokens = await request('/tokenize', { content: rendered.prompt, add_special: true, parse_special: true });
-  if (!Array.isArray(tokens.tokens) || !tokens.tokens.every(Number.isInteger)) throw new Error('Resume model could not count the complete input.');
-  if (tokens.tokens.length + maxTokens + 32 > RESUME_MODEL.contextTokens) throw Object.assign(new Error('The complete resume and job information exceed the model input limit. Use a shorter source document or job description and retry; no content was truncated.'), { statusCode: 422 });
+  if (!Array.isArray(tokens.tokens) || !tokens.tokens.every(Number.isInteger)) throw resumeFailure('model_protocol_invalid');
+  onDiagnostic(safeResumeDiagnostic({ stage: comparison ? 'comparing' : 'generating', code: 'started', inputTokens: tokens.tokens.length }));
+  if (tokens.tokens.length + maxTokens + 32 > RESUME_MODEL.contextTokens) throw resumeFailure('input_too_large', { statusCode: 422 });
   const payload = await request('/v1/chat/completions', { messages, temperature: comparison ? 0 : 0.1, max_tokens: maxTokens, stream: false,
     ...(comparison ? { response_format: { type: 'json_schema', json_schema: { name: 'resume_source_comparison', strict: true, schema: comparisonSchema } } } : {}),
   });
   const choice = payload.choices?.[0];
-  if (choice?.finish_reason !== 'stop' || typeof choice.message?.content !== 'string') throw new Error('The resume model output was incomplete. Please retry.');
+  onDiagnostic(safeResumeDiagnostic({ stage: comparison ? 'comparing' : 'generating', code: choice?.finish_reason === 'stop' ? 'passed' : 'model_output_incomplete', outputTokens: payload.usage?.completion_tokens }));
+  if (choice?.finish_reason !== 'stop' || typeof choice.message?.content !== 'string') throw resumeFailure('model_output_incomplete');
   return choice.message.content;
 }

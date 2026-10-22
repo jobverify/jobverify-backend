@@ -75,6 +75,16 @@ export const readNativeDocument=html=>{const root=dom(html);return{nodes:predica
 export const decodeNativeHtml=decode
 
 export const nativeDescendants=(node,predicate)=>all(node,predicate)
+// Qualification keeps native block boundaries; published text still uses text().
+export const nativeTextBlocks=node=>{
+ const blocks=new Set(['address','article','aside','blockquote','dd','div','dl','dt','figcaption','figure','footer','h1','h2','h3','h4','h5','h6','header','hr','li','main','nav','ol','p','pre','section','table','tbody','td','th','thead','tr','ul','br'])
+ const visit=n=>{
+  if(n.inert||n.tag==='script')return''
+  const value=n.children.map(child=>typeof child==='string'?norm(child):visit(child)).join(' ')
+  return blocks.has(n.tag)?'\n'+value+'\n':value
+ }
+ return visit(node).split(/\n+/).map(norm).filter(Boolean)
+}
 // Evidence-only traversal may preserve rejected inactive native markup. It is
 // never used to qualify a title, binding, application or publishable full JD.
 export const nativeEvidenceDescendants=(node,predicate)=>[

@@ -4,6 +4,7 @@ import { attachInventoryEvidence } from '../utils/inventoryEvidence.js'
 import { isIndiaJob } from '../utils/indiaLocationFilter.js'
 import { hasSourceDescription } from '../../src/utils/jobSourceContent.js'
 import { fetchSmartRecruitersDetail } from './smartRecruitersDetail.js'
+import { isGreenhousePublicationProvider, resolveGreenhousePublication } from './greenhousePublication.js'
 import {
   expandTemplate,
   getMappedFieldValue,
@@ -144,12 +145,15 @@ const passesResultFilter = (mapped, resultFilter = {}) => {
   return true
 }
 
-const mapRecord = (raw, provider, config, detail = {}) => {
+const mapRecord = (raw, provider, config, detail = {}, detailObservation = 'not-requested') => {
+  const nativePublication = isGreenhousePublicationProvider(provider, config)
+    ? resolveGreenhousePublication(raw, detail, detailObservation)
+    : null
   const merged = { ...raw, ...detail }
   const title = getMappedValue(merged, config.mapping.title)
   const location = getMappedValue(merged, config.mapping.location)
   const experienceLevel = getMappedValue(merged, config.mapping.experienceLevel)
-  const postingDate = getMappedValue(merged, config.mapping.postingDate)
+  const postingDate = nativePublication ? nativePublication.value : getMappedValue(merged, config.mapping.postingDate)
   const remoteStatus = getMappedValue(merged, config.mapping.remoteStatus)
   const sourceUrl = toAbsoluteUrl(
     getMappedValue(merged, config.mapping.sourceUrl) ?? detail.sourceUrl,
@@ -182,6 +186,7 @@ const mapRecord = (raw, provider, config, detail = {}) => {
     experienceRequired: getMappedValue(merged, config.mapping.experienceRequired),
     ...(experienceLevel != null ? { experienceLevel } : {}),
     ...(postingDate != null ? { postingDate } : {}),
+    ...(nativePublication ? { nativePublication } : {}),
     jobDescription:
       getMappedValue(detail, config.detail.mapping.jobDescription)
       ?? getMappedValue(merged, config.mapping.jobDescription),
@@ -407,6 +412,7 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
           // public records. Draft/private records are not missing job details.
           if (config.recordFilter && !passesResultFilter(record, config.recordFilter)) return null
           let detailPayload = {}
+          let detailObservation = 'not-requested'
 
           if (config.detail.enabled) {
             const detailUrl = expandTemplate(config.detail.urlTemplate, {
@@ -435,9 +441,11 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
               if (config.detail.mapping.jobDescription && !hasSourceDescription({
                 jobDescription: getMappedValue(detailPayload, config.detail.mapping.jobDescription),
               })) throw new Error('API portal detail contract incomplete: missing employer description')
+              detailObservation = 'observed'
             } catch (error) {
               if (config.detail.required || error.incompleteScope === true) throw error
               markIncomplete('optional-role-details-unavailable')
+              detailObservation = 'failed'
 
               detailPayload = {
                 sourceUrl: createFallbackDetailUrl(provider, record, config),
@@ -447,7 +455,7 @@ export const runApiPortalScraper = async ({ provider, fetchJson, fetchBrowserJso
             }
           }
 
-          const mapped = mapRecord(record, provider, config, detailPayload)
+          const mapped = mapRecord(record, provider, config, detailPayload, detailObservation)
           if (!mapped) markIncomplete('unmappable-listing')
           if (mapped) {
             const identity = mapped.jobId ?? mapped.requisitionId ?? mapped.sourceUrl

@@ -51,7 +51,7 @@ const provider = {
         valuePath: 'value',
       },
       jobDescription: 'content',
-      postingDate: 'updated_at',
+      postingDate: 'first_published',
     },
     resultFilter: {
       include: [
@@ -71,7 +71,12 @@ test('runApiPortalScraper maps MongoDB Greenhouse jobs and keeps only India role
   })
 
   assert.equal(jobs.length, 51)
-  assert.deepEqual(jobs[0], {
+  const { nativePublication, ...mappedJob } = jobs[0]
+  assert.equal(nativePublication.status, 'known')
+  assert.equal(nativePublication.value, '2026-05-04T04:09:40-04:00')
+  assert.equal(nativePublication.candidates[0].updated_at, '2026-06-18T15:34:16-04:00')
+  assert.equal(nativePublication.candidates[1].status, 'not-observed')
+  assert.deepEqual(mappedJob, {
     title: 'Account Executive, Acquisition/Growth',
     company: 'MongoDB',
     location: 'Bengaluru; Gurugram; Mumbai',
@@ -92,7 +97,8 @@ test('runApiPortalScraper maps MongoDB Greenhouse jobs and keeps only India role
     requiredSkills: [],
     remoteStatus: 'On-site',
     scrapedAt: jobs[0].scrapedAt,
-    postingDate: '2026-06-18T15:34:16-04:00',
+    sourceListingComplete: false,
+    postingDate: '2026-05-04T04:09:40-04:00',
   })
 
   assert.match(jobs[0].jobDescription, /Come to MongoDB and get your Masters in Sales/i)

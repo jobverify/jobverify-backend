@@ -1,30 +1,55 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url))
-
-const PROVIDER_METADATA = {
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const dir = path.dirname(fileURLToPath(import.meta.url));
+const PROVIDER_METADATA = { ...{
   "source": "coursera",
   "companyName": "Coursera",
   "adapter": "script",
-  "modulePath": path.join(currentDir, 'script.js'),
-  "dryRunFile": path.join(currentDir, 'jobs.json'),
-  "atsPlatform": "workbook-exact-name-sentinel",
-  "countryFilter": "India",
-  "paginationStrategy": "none",
-  "extractionStrategy": "exact-name-batch-coverage-sentinel-return-empty-until-public-surface-is-verified",
-  "parser": "custom-script",
+  "modulePath": "../coursera/script.js",
+  "dryRunFile": "coursera/jobs.json",
+  "catalogOverride": true,
+  "atsPlatform": "first-party-coursera-native-html",
+  "parser": "native-html-jobposting",
   "normalizationProfile": "engineering-default",
-  "verifiedOn": "2026-07-29",
-  "verifiedPublicJobCount": 0,
-  "verifiedIndiaJobCount": 0,
-  "verifiedSurfaceSummary": "Workbook batch 08 exact-name sentinel for Coursera added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name.",
-  "backfillMode": "sentinel",
-  "originalAdapter": "script",
-  "originalAtsPlatform": "workbook-exact-name-sentinel",
+  "countryFilter": "India",
+  "paginationStrategy": "native-GET-next-links;range-and-total-reconciliation;closing-board-check",
+  "extractionStrategy": "listing-portal-ID;full-visible-and-JobPosting-description;explicit-native-country",
+  "companyDomain": "coursera.org",
+  "officialHomepageUrl": "https://www.coursera.org/",
+  "companyCareerPage": "https://careers.coursera.com/homepage",
+  "jobsBoardUrl": "https://careers.coursera.com/jobs/search/careers",
+  "verifiedOn": null,
+  "verifiedAt": null,
+  "verifiedPublicJobCount": null,
+  "verifiedIndiaJobCount": null,
+  "verificationDisposition": "implemented-offline-runtime-unverified",
+  "verifiedInventoryStatus": "unverified",
+  "zeroResultPolicy": "coverage-gap",
+  "remediationStatus": "implemented-offline-awaiting-focused-validation",
+  "runtimeQualification": "unqualified-offline-fixture-port-only",
+  "backfillMode": "live-parser",
   "originalModulePath": "../workbookbatch08/failClosedSentinel.js",
-  "originalDryRunFile": "C:\\Users\\mohv\\GitHub\\jobverify_Release_26.07.04\\jobverify-backend\\scraper\\workbookbatch08\\coursera.jobs.json"
-}
-
-export default PROVIDER_METADATA
-export { PROVIDER_METADATA }
+  "sourceScopeComplete": false,
+  "lifecycleCleanupAllowed": false,
+  "sourceObservedListingCount": 20,
+  "sourceObservedReportedTotal": 27,
+  "sourceObservedFirstPageIndiaLabels": 3,
+  "sourceRetainedFullIndiaDetails": 1,
+  "sourceNativeObservationCompletedAt": "2026-10-21T13:16:07.113Z",
+  "sourceNativeDetailObservationCompletedAt": "2026-10-21T13:19:36.407Z",
+  "verifiedSurfaceSummary": "Four retained native HTTP response-text captures establish the official Coursera career handoff, 20 first-page cards out of 27 advertised results, and one full India role. Page two and two other first-page India details are unretained, not zero inventories. The native portal ID agrees with JobPosting.identifier; the full visible and schema descriptions agree. Original dates and explicit IN geography are preserved. Current source health, persistence and public visibility remain unverified.",
+  "bindingEvidence": {
+    "verified": false,
+    "officialBrandHandoffDocumented": true,
+    "officialURL": "https://www.coursera.org/",
+    "advertisedCareersRoot": "https://careers.coursera.com/",
+    "retainedCanonicalPortal": "https://careers.coursera.com/homepage",
+    "wholeEmployerInventoryEquivalent": false,
+    "mixedPortalBrandsMerged": false,
+    "aliasesCreated": false,
+    "applicationsOpened": false
+  },
+  "sourceScopeNotes": "Only native hiringOrganization Coursera is accepted. Shared-portal Udemy labels are not relabeled or merged. Internal Courserian employee-board links are excluded from public application evidence. With no native public application link, the public role page is a separately labeled fallback; directApply does not establish application availability. Source-scope completeness, verified zero and deletion cleanup are never inferred."
+}, modulePath: path.join(dir, 'script.js'), dryRunFile: path.join(dir, 'jobs.json') };
+export default PROVIDER_METADATA;
+export { PROVIDER_METADATA };

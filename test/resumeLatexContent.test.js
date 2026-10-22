@@ -122,6 +122,8 @@ test('generation and independent comparison prompts ground facts in untrusted so
   const comparison = buildComparisonPrompt({ source, latexText: source.text, tailored: true, links: source.links, facts });
   for (const field of ['supported', 'missingFacts', 'unsupportedClaims']) assert.ok(comparison.includes(field));
   assert.match(comparison, /independent|compare/i);
+  assert.match(comparison, /Judge factual content, not layout/);
+  assert.match(comparison, /original hyperlinks array is not a complete list/);
   const repair = buildLatexRepairPrompt({ originalPrompt: tailored, latex, issues: ['Missing Cedar Systems'] });
   assert.ok(repair.includes('Missing Cedar Systems'));
   assert.match(repair, /complete.*LaTeX|LaTeX.*complete/i);

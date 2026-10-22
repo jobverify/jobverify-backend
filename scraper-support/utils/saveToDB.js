@@ -341,6 +341,11 @@ export const saveToDB = async (jobs, source, options = {}) => {
     const applyUrl = normalizeHttpUrl(normalizedJob.applyUrl) || sourceUrl
     const postedAt = resolveJobPostedAt(normalizedJob)
     const closingDate = normalizeLifecycleDate(normalizedJob.closingDate)
+    // Calendar-only source dates include the entire UTC day. Public queries use
+    // an exclusive instant cutoff; preserve exact and legacy dates unchanged.
+    if (closingDate && normalizedJob.sourceClosingDateIsExact === false) {
+      closingDate.setUTCHours(24, 0, 0, 0)
+    }
     const locations = normalizeStoredLocations(normalizedJob)
     const locationLabel = formatStoredLocationLabel(normalizedJob)
     const primaryLocation = getPrimaryStoredLocation(normalizedJob)

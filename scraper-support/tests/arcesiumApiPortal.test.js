@@ -33,7 +33,12 @@ test('runApiPortalScraper maps Arcesium Greenhouse jobs from the official board'
   })
 
   assert.equal(jobs.length, 1)
-  assert.deepEqual(jobs[0], {
+  const { nativePublication, ...mappedJob } = jobs[0]
+  assert.equal(nativePublication.status, 'unknown')
+  assert.equal(nativePublication.value, null)
+  assert.equal(nativePublication.candidates[0].updated_at, '2026-07-13T00:00:00Z')
+  assert.equal(nativePublication.candidates[1].status, 'not-observed')
+  assert.deepEqual(mappedJob, {
     title: 'Software Engineer',
     company: 'Arcesium',
     location: 'Hyderabad, India',
@@ -48,12 +53,12 @@ test('runApiPortalScraper maps Arcesium Greenhouse jobs from the official board'
     department: 'Engineering',
     employmentType: null,
     experienceRequired: null,
-    postingDate: '2026-07-13T00:00:00Z',
     jobDescription: '<p>Build core data systems for financial platforms.</p>',
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
     remoteStatus: 'On-site',
     scrapedAt: jobs[0].scrapedAt,
+    sourceListingComplete: false,
   })
 })

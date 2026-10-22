@@ -1,6 +1,8 @@
 import { prepareResumeRuntime, processResumeDocument } from '../outreach/resumePipeline.js';
 import { RESUME_MODEL } from '../outreach/resumeRuntime.js';
 import { verifyResumeCompiler, renderAndInspectPdf } from './verifyResumeCompiler.js';
+import { reportResumeDiagnostic } from '../outreach/resumeDiagnostics.js';
+import { verifyResumeComparison } from './verifyResumeComparison.js';
 
 // Synthetic public fixtures only. Never loads MongoDB or a candidate document.
 const source = { text: `Asha Rao
@@ -28,16 +30,18 @@ try {
   const start = Date.now(), deadline = start + 28 * 60000;
   runtime = await prepareResumeRuntime({ deadline });
   const compiler = await verifyResumeCompiler({ deadline, prepare: false });
+  const comparison = await verifyResumeComparison({ deadline, onDiagnostic: reportResumeDiagnostic });
   const baseStart = Date.now();
-  const base = await processResumeDocument({ mode: 'base', source }, { deadline });
+  const base = await processResumeDocument({ mode: 'base', source }, { deadline, onDiagnostic: reportResumeDiagnostic });
   await renderAndInspectPdf(base.pdf);
   const tailorStart = Date.now();
-  const result = await processResumeDocument({ mode: 'tailored', source, facts: base.facts, baseLatex: base.latex, jobSnapshot: scenarios[scenario] }, { deadline });
+  const result = await processResumeDocument({ mode: 'tailored', source, facts: base.facts, baseLatex: base.latex, jobSnapshot: scenarios[scenario] }, { deadline, onDiagnostic: reportResumeDiagnostic });
   await renderAndInspectPdf(result.pdf);
   // Aggregate timing and validation evidence only; no document data or logs.
-  console.log(JSON.stringify({ scenario, modelRevision: RESUME_MODEL.revision, ...compiler, baseSeconds: Math.round((tailorStart - baseStart) / 1000),
+  console.log(JSON.stringify({ scenario, modelRevision: RESUME_MODEL.revision, ...compiler, ...comparison, baseSeconds: Math.round((tailorStart - baseStart) / 1000),
     tailoredSeconds: Math.round((Date.now() - tailorStart) / 1000), totalSeconds: Math.round((Date.now() - start) / 1000), basePages: base.pageCount, tailoredPages: result.pageCount, factualValidation: true }));
-} catch {
+} catch (error) {
+  reportResumeDiagnostic({ stage: 'worker', code: error.code });
   console.error('Resume rollout benchmark failed. Keep resume generation disabled until the benchmark passes.');
   process.exitCode = 1;
 } finally { await runtime?.stop(); }

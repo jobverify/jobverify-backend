@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { extractJobFilterSignals } from '../../src/utils/jobFilterSignals.js'
 import { withRetry } from '../../scraper-support/utils/retry.js'
+import { attachInventoryEvidence } from '../../scraper-support/utils/inventoryEvidence.js'
 
 import { TECHTREE_IT_SYSTEMS_CATALOG as PROVIDER_METADATA } from './catalog.js'
 
@@ -65,6 +66,9 @@ const defaultFetchJson = (url) => withRetry(async () => {
   if (!response.ok) {
     throw new Error(`HTTP ${response.status} for ${url}`)
   }
+  if (response.status !== 200 || response.url !== url) {
+    throw new Error('Native detail response status or URL changed')
+  }
 
   return response.json()
 }, {
@@ -106,7 +110,11 @@ const extractVisibleText = (value) => decodeHtmlEntities(String(value ?? ''))
 
 const toAbsoluteUrl = (value) => {
   try {
-    return new URL(value, CAREERS_URL).toString()
+    const url = new URL(value, CAREERS_URL)
+    if (url.protocol !== 'https:' || !isSameOfficialDomain(url.href)
+      || url.username || url.password || url.search || url.hash
+      || !/^\/jobs\/[^/]+\/$/.test(url.pathname)) return null
+    return url.toString()
   } catch {
     return null
   }
@@ -127,7 +135,7 @@ const extractSpecificationTerms = (cardHtml, type) => {
     .filter(Boolean)
 }
 
-const formatLocation = (locations) => `${locations.join(' / ')}, India`
+const formatLocation = (locations) => locations.join(' / ')
 
 const buildDetailApiUrl = (postId) => {
   if (!postId) return null
@@ -186,8 +194,8 @@ export const hasSucuriChallengeSignal = (html = '') => {
 }
 
 export const isVerifiedCareersPage = ({ status, url, html } = {}) =>
-  [200, 500].includes(Number(status))
-  && isSameOfficialDomain(url)
+  Number(status) === 200
+  && url === CAREERS_URL
   && hasOfficialCareersSignal(html)
 
 export const isVerifiedSucuriChallengePage = ({ status, url, html } = {}) =>
@@ -225,16 +233,56 @@ export const extractJobCards = (html = '') => {
 }
 
 export const enrichJobWithDetailJson = (job, detailPayload = {}) => {
+  const nativeFields = Object.fromEntries(['id', 'link', 'status', 'type', 'date', 'date_gmt', 'modified', 'modified_gmt']
+    .map(key => [key, detailPayload?.[key] ?? null]))
+  const reject = (code) => { throw sourceError(code, { postId: job.postId, sourceUrl: job.sourceUrl, nativeFields }) }
+  if (!job.postId || !/^\d+$/.test(String(job.postId)) || String(detailPayload.id) !== String(job.postId)
+    || !toAbsoluteUrl(detailPayload.link) || detailPayload.link !== job.sourceUrl
+    || detailPayload.type !== 'awsm_job_openings'
+    || stripTags(detailPayload.title?.rendered) !== job.title) reject('native-identity-mismatch')
+  if (detailPayload.status !== 'publish') reject('native-status-not-published')
+  // WordPress date is local without an offset. Only date_gmt is an exact instant;
+  // modified is retained for provenance and never substituted for publication.
+  const rawGmt = detailPayload.date_gmt
+  if (rawGmt == null || rawGmt === '') reject('native-publication-missing')
+  if (typeof rawGmt !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(rawGmt)) reject('native-publication-invalid')
+  const timestamp = new Date(`${rawGmt}Z`)
+  if (!Number.isFinite(timestamp.getTime()) || timestamp.toISOString() !== `${rawGmt}.000Z`) reject('native-publication-invalid')
+  if (!Array.isArray(job.locations) || !job.locations.length
+    || !job.locations.every(location => /(?:^|,)\s*India\s*$/i.test(location))) reject('native-india-country-unproven')
   const detailHtml = detailPayload?.content?.rendered || ''
   const jobDescription = extractVisibleText(detailHtml) || null
+  if (!jobDescription) reject('native-description-missing')
 
   return {
     ...job,
+    country: 'India',
+    postingDate: timestamp.toISOString(),
+    postedAt: timestamp.toISOString(),
+    nativeDate: nativeFields.date,
+    nativeDateGmt: nativeFields.date_gmt,
+    nativeModified: nativeFields.modified,
+    nativeModifiedGmt: nativeFields.modified_gmt,
+    nativeId: nativeFields.id,
+    nativeLink: nativeFields.link,
+    nativeStatus: nativeFields.status,
+    sourceCountryEvidence: 'Every exact native inline role location explicitly names India',
     jobDescription,
     experienceRequired: inferExperienceFromDescription(jobDescription) || null,
     publicExperienceChecked: Boolean(jobDescription),
+    sourceDetailComplete: true,
+    sourceListingComplete: false,
+    sourceScopeComplete: false,
+    sourceCompanyCoverageComplete: false,
+    sourceGlobalJobCount: null,
+    sourceIndiaJobCount: null,
   }
 }
+
+const sourceError = (code, diagnostics = {}) => Object.assign(new Error(`TechTree extraction failed: ${code}`), {
+  code,
+  diagnostics: { listingComplete: false, companyCoverageComplete: false, ...diagnostics },
+})
 
 export const createTechtreeItSystemsScraper = ({
   now = () => new Date().toISOString(),
@@ -243,7 +291,10 @@ export const createTechtreeItSystemsScraper = ({
     fetchPage = defaultFetchPage,
     fetchJson = defaultFetchJson,
   } = {}) {
-    const careersPage = await fetchPage(CAREERS_URL)
+    let careersPage
+    try { careersPage = await fetchPage(CAREERS_URL) } catch (error) {
+      throw sourceError('careers-fetch-failed', { reason: error.message })
+    }
 
     if (!isVerifiedCareersPage(careersPage)) {
       try {
@@ -253,21 +304,23 @@ export const createTechtreeItSystemsScraper = ({
           isVerifiedSucuriChallengePage(careersPage)
           && isVerifiedSucuriChallengePage(homepagePage)
         ) {
-          return []
+          throw sourceError('careers-blocked', { status: careersPage.status, homepageStatus: homepagePage.status })
         }
-      } catch {
+      } catch (error) {
+        if (error.code === 'careers-blocked') throw error
         // Fall through to the fail-closed verified-surface error below.
       }
 
-      throw new Error('Techtree It Systems verified careers page changed materially')
+      throw sourceError('careers-unavailable', { status: careersPage?.status ?? null, url: careersPage?.url ?? null })
     }
 
     const cards = extractJobCards(careersPage.html)
     if (cards.length === 0) {
-      throw new Error('Techtree It Systems careers page no longer exposes trusted inline wp-job-openings cards')
+      throw sourceError('careers-cards-missing')
     }
 
     const jobs = []
+    const failures = []
 
     for (const card of cards) {
       const baseJob = {
@@ -276,7 +329,7 @@ export const createTechtreeItSystemsScraper = ({
         location: card.location,
         city: card.city,
         locations: card.locations,
-        country: 'India',
+        postId: card.postId,
         employmentType: card.employmentType,
         sourceUrl: card.sourceUrl,
         applyUrl: card.applyUrl,
@@ -293,12 +346,17 @@ export const createTechtreeItSystemsScraper = ({
       try {
         const detailPayload = await fetchJson(buildDetailApiUrl(card.postId))
         jobs.push(enrichJobWithDetailJson(baseJob, detailPayload))
-      } catch {
-        jobs.push(baseJob)
+      } catch (error) {
+        failures.push({ postId: card.postId, sourceUrl: card.sourceUrl,
+          code: error.code || 'detail-fetch-failed', reason: error.message, ...error.diagnostics })
       }
     }
 
-    return jobs
+    if (failures.length) throw sourceError('detail-extraction-failed', { observedCards: cards.length, validatedDetails: jobs.length, failures })
+    return attachInventoryEvidence(jobs, { status: 'coverage-gap', surface: CAREERS_URL,
+      firstParty: true, listingComplete: false, pagesFetched: 1, reportedTotal: null,
+      indiaFacetCount: null, verifiedAt: now(),
+      reason: 'Observed inline roles only; pagination, whole-company scope and application endpoints unverified' })
   },
 })
 
