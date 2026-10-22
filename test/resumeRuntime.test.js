@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateResumeText, RESUME_MODEL } from '../outreach/resumeRuntime.js';
-import { compilerArguments } from '../outreach/latexCompiler.js';
+import { compilerArguments, compilerFailure } from '../outreach/latexCompiler.js';
 
 test('resume model is pinned separately and counts the complete rendered prompt before inference', async () => {
   assert.match(RESUME_MODEL.modelId, /Qwen3-4B-Instruct-2507/);
@@ -30,6 +30,8 @@ test('incomplete model output is rejected and verifier uses constrained JSON', a
   };
   await assert.rejects(generateResumeText('compare', { fetchImpl, comparison: true }), /incomplete/i);
   assert.equal(completion.response_format.type, 'json_schema');
+  assert.equal(Object.keys(completion.response_format.json_schema.schema.properties)[0], 'evidence');
+  assert.ok(completion.response_format.json_schema.schema.required.includes('evidence'));
 });
 
 test('compiler isolation has no host mounts, network, secrets or shell execution', () => {
@@ -43,4 +45,21 @@ test('compiler isolation has no host mounts, network, secrets or shell execution
   assert.ok(args.includes('--untrusted'));
   assert.ok(args.includes('--only-cached'));
   assert.equal(args.some(arg => /(?:--volume|--mount|MONGO|GITHUB|--shell-escape)/.test(arg)), false);
+});
+
+test('compiler failures retain only fixed reason codes and discard private diagnostics', () => {
+  const error = compilerFailure({ stderr: 'private source alex@example.test\nRESUME_COMPILER_DEPENDENCY_MISSING\n', code: 1 });
+  assert.equal(error.code, 'compiler_dependency_missing');
+  assert.doesNotMatch(error.message, /private|alex@/);
+  assert.equal(compilerFailure({ code: 137 }).code, 'compiler_resource_limit');
+  assert.equal(compilerFailure({ stderr: 'untrusted content with missing-file speculation', code: 1 }).code, 'compiler_failed');
+});
+
+test('upstream model exceptions become useful safe failures without exposing response data', async () => {
+  await assert.rejects(generateResumeText('private candidate input', {
+    fetchImpl: async () => { throw Error('private model text and database configuration'); },
+  }), error => error.code === 'model_unavailable' && !/private|database/.test(error.message));
+  await assert.rejects(generateResumeText('private candidate input', {
+    fetchImpl: async () => ({ ok: true, json: async () => { throw Error('private response data'); } }),
+  }), error => error.code === 'model_protocol_invalid' && !/private/.test(error.message));
 });

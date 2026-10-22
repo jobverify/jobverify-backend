@@ -7,6 +7,7 @@ import { createPipeline, claimStage, recordStageResult, completeWorkflow, update
 import { directConfiguration, stageOutcome, WORKFLOWS, WORKFLOW_NAMES, isTerminal } from '../src/pipeline/policy.js';
 import { dispatchGithubStage, githubRequest, matchesGithubStage } from '../src/pipeline/github.js';
 import { redactLog } from '../src/pipeline/local.js';
+import { aggregateClassificationSummaries } from '../classification/reporting.js';
 
 const command=process.argv[2],key=process.env.PIPELINE_STAGE;
 const token=process.env.GH_TOKEN;
@@ -37,13 +38,12 @@ try {
     } else if(key==='rewrite') {
       try{summary=JSON.parse(await fs.readFile('.cache/scraper-actions/description-summary.json','utf8'));}catch{code=1;}
     } else if(key==='classification') {
+      const parts=[];
       for(let i=0;i<4;i++) {
         let part;try{part=JSON.parse(await fs.readFile(`.cache/scraper-actions/classification-${i}.json`,'utf8'));}catch{code=1;continue;}
-        for(const [name,value] of Object.entries(part)) {
-          if(['failed','stale','completed','skipped','cached','assigned','scanned','leased'].includes(name)&&typeof value==='number')summary[name]=(summary[name]||0)+value;
-          if(name==='budgetExhausted'&&value)summary.budgetExhausted=true;
-        }
+        parts.push(part);
       }
+      summary=aggregateClassificationSummaries(parts);
     }
     const outcome=stageOutcome(key,summary,code);
     await recordStageResult(run._id,key,{outcome,summary});

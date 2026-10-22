@@ -16,13 +16,13 @@ export async function startGliclassWorker({ python = process.env.GLICLASS_PYTHON
     windowsHide: true, stdio: ['pipe', 'pipe', log],
   })
   fs.closeSync(log)
-  let pending, ready, queue = Promise.resolve(), stopped = false
+  let pending, ready, configuration, queue = Promise.resolve(), stopped = false
   const rejectPending = error => { pending?.reject(error); pending = null; ready?.reject(error) }
   const lines = readline.createInterface({ input: child.stdout })
   lines.on('line', line => {
     try {
       const result = JSON.parse(line)
-      if (result.ready) { ready?.resolve(result); ready = null; return }
+      if (result.ready) { configuration = result; ready?.resolve(result); ready = null; return }
       if (!pending || result.id !== pending.id) throw new Error('Unexpected GLiClass response')
       const request = pending
       pending = null
@@ -51,6 +51,7 @@ export async function startGliclassWorker({ python = process.env.GLICLASS_PYTHON
   } catch (error) { await stop(); throw error }
   return {
     pid: child.pid,
+    configuration,
     classify(input) {
       const run = () => new Promise((resolve, reject) => {
         if (stopped || child.exitCode !== null) return reject(new Error('GLiClass is stopped'))

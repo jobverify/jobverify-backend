@@ -13,7 +13,7 @@ if (CLASSIFICATION_POLICY.version !== JOB_CLASSIFICATION_POLICY_VERSION) throw n
 export const CLASSIFICATION_MODEL = JSON.parse(readFileSync(new URL('../../classification/gliclass/model.json', import.meta.url)));
 export const POLICY_HASH = createHash('sha256').update(policyBytes).digest('hex');
 export const RUNTIME_HASH = createHash('sha256').update(JSON.stringify([
-  'classification/gliclass/model.json', 'classification/gliclass/requirements.txt', 'classification/gliclass/worker.py',
+  'classification/gliclass/model.json', 'classification/gliclass/requirements.txt', 'classification/gliclass/worker.py', 'classification/gliclass/runtime.py',
   'src/services/jobClassificationPolicy.js', 'src/services/classificationDescription.js', 'src/services/jobRecruitmentPolicy.js', 'src/utils/jobClassificationVersion.js', 'src/utils/jobFilterSignals.js', 'src/utils/jobSourceContent.js',
 ].map(relative => [relative, createHash('sha256').update(normalizedBytes(relative)).digest('hex')]))).digest('hex');
 const PUBLIC_TYPES = ['Intern', 'Full-time Fresher', 'Full-time Experienced', 'Contract', 'Others', 'Unspecified'];

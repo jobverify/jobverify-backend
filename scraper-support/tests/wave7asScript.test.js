@@ -91,6 +91,8 @@ const rocketCareersHtml = `
 const techtreeDetailJson = {
   'https://www.techtreeit.com/wp-json/wp/v2/awsm_job_openings/12193': {
     id: 12193,
+    status: 'publish', type: 'awsm_job_openings',
+    date_gmt: '2024-08-28T06:04:25',
     link: 'https://www.techtreeit.com/jobs/ui-developer/',
     title: { rendered: 'UI Developer' },
     content: {
@@ -106,6 +108,8 @@ const techtreeDetailJson = {
   },
   'https://www.techtreeit.com/wp-json/wp/v2/awsm_job_openings/12190': {
     id: 12190,
+    status: 'publish', type: 'awsm_job_openings',
+    date_gmt: '2024-08-27T06:00:00',
     link: 'https://www.techtreeit.com/jobs/associate-qa-engineer/',
     title: { rendered: 'Associate QA Engineer' },
     content: {
@@ -271,7 +275,7 @@ test('Techtree It Systems extracts the verified first-party wp-job-openings card
   assert.equal(techtree.hasOfficialCareersSignal(techtreeCareersHtml), true)
   assert.equal(
     techtree.isVerifiedCareersPage({
-      status: 500,
+      status: 200,
       url: techtree.CAREERS_URL,
       html: techtreeCareersHtml,
     }),
@@ -282,7 +286,7 @@ test('Techtree It Systems extracts the verified first-party wp-job-openings card
       title: 'UI Developer',
       employmentType: 'Full Time',
       locations: ['Belagavi', 'Mumbai'],
-      location: 'Belagavi / Mumbai, India',
+      location: 'Belagavi / Mumbai',
       city: 'Belagavi',
       sourceUrl: 'https://www.techtreeit.com/jobs/ui-developer/',
       applyUrl: 'https://www.techtreeit.com/jobs/ui-developer/',
@@ -292,7 +296,7 @@ test('Techtree It Systems extracts the verified first-party wp-job-openings card
       title: 'Associate QA Engineer',
       employmentType: 'Full Time',
       locations: ['Belagavi', 'Bengaluru'],
-      location: 'Belagavi / Bengaluru, India',
+      location: 'Belagavi / Bengaluru',
       city: 'Belagavi',
       sourceUrl: 'https://www.techtreeit.com/jobs/associate-qa-engineer/',
       applyUrl: 'https://www.techtreeit.com/jobs/associate-qa-engineer/',
@@ -306,9 +310,10 @@ test('Techtree It Systems extracts the verified first-party wp-job-openings card
     fetchPage: async (url) => {
       assert.equal(url, techtree.CAREERS_URL)
       return {
-        status: 500,
+        status: 200,
         url,
-        html: techtreeCareersHtml,
+        // Synthetic country-qualified labels exercise the explicit-country path.
+        html: techtreeCareersHtml.replace(/(awsm-job-specification-term">)(Belagavi|Mumbai|Bengaluru)(<\/span>)/g, '$1$2, India$3'),
       }
     },
     fetchJson: async (url) => {
@@ -331,7 +336,7 @@ test('Techtree It Systems extracts the verified first-party wp-job-openings card
     [
       {
         title: 'UI Developer',
-        location: 'Belagavi / Mumbai, India',
+        location: 'Belagavi, India / Mumbai, India',
         employmentType: 'Full Time',
         sourceUrl: 'https://www.techtreeit.com/jobs/ui-developer/',
         experienceRequired: '1-3 years',
@@ -339,7 +344,7 @@ test('Techtree It Systems extracts the verified first-party wp-job-openings card
       },
       {
         title: 'Associate QA Engineer',
-        location: 'Belagavi / Bengaluru, India',
+        location: 'Belagavi, India / Bengaluru, India',
         employmentType: 'Full Time',
         sourceUrl: 'https://www.techtreeit.com/jobs/associate-qa-engineer/',
         experienceRequired: '0-2 years',

@@ -1,18 +1,19 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import { run as runNative } from './native.js'
+export { parseBinding, parsePage, parseDetail } from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "averydennison"
 export const COMPANY = "Avery Dennison"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-08-08"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 11 exact-name sentinel for Avery Dennison added on Saturday, August 8, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const CAREERS_URL = 'https://www.averydennison.com/en/home/careers/search-jobs.html'
+export const DISPOSITION = 'current-advertised-public-native-India-surface-company-scope-partial'
+export const VERIFIED_ON = null
+export const VERIFIED_SURFACE_SUMMARY = 'Current corporate client advertises AveryDennison SmartRecruiters public listing and details. Complete native pages, typed India, active/PUBLIC full JDs, native releasedDate and exact configured role/application URLs are rechecked per run; whole-company/legal-employer coverage remains unknown.'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run = options => runNative(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

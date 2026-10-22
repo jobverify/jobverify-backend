@@ -16,12 +16,12 @@
       "sha256": "14cf1303ca9ac3abd94816850532f9f9a69ac66fbaca3776fc6f9061c2fac1d1"
     }
   },
-  "policyVersion": "job-description-grounded-sections-v12",
-  "outputFormat": "sections",
+  "policyVersion": "job-description-source-sections-v13",
+  "outputFormat": "source-sections",
   "enableThinking": false,
   "cpuThreads": 4,
   "contextTokens": 8192,
-  "maxOutputTokens": 2048,
-  "maxRetryOutputTokens": 4096,
+  "maxOutputTokens": 1024,
+  "maxRetryOutputTokens": 2048,
   "requestSeconds": 600
 }

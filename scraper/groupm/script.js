@@ -86,7 +86,7 @@ const createApiProvider = () => ({
       applyUrl: 'absolute_url',
       department: 'departments.0.name',
       jobDescription: 'content',
-      postingDate: 'updated_at',
+      postingDate: 'first_published',
     },
     resultFilter: {
       include: [

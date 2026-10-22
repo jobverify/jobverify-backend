@@ -44,7 +44,12 @@ test('runApiPortalScraper keeps only CommerceIQ Greenhouse jobs in India and exc
   })
 
   assert.equal(jobs.length, 1)
-  assert.deepEqual(jobs[0], {
+  const { nativePublication, ...mappedJob } = jobs[0]
+  assert.equal(nativePublication.status, 'unknown')
+  assert.equal(nativePublication.value, null)
+  assert.equal(nativePublication.candidates[0].updated_at, '2026-07-14T09:00:00Z')
+  assert.equal(nativePublication.candidates[1].status, 'not-observed')
+  assert.deepEqual(mappedJob, {
     title: 'Senior Software Engineer',
     company: 'CommerceIQ',
     location: 'Bengaluru, Karnataka, India',
@@ -63,8 +68,8 @@ test('runApiPortalScraper keeps only CommerceIQ Greenhouse jobs in India and exc
     minimumQualification: null,
     preferredQualification: null,
     requiredSkills: [],
-    postingDate: '2026-07-14T09:00:00Z',
     remoteStatus: 'On-site',
     scrapedAt: jobs[0].scrapedAt,
+    sourceListingComplete: false,
   })
 })

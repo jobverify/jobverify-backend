@@ -7,7 +7,7 @@ import { normalizePublicJobType } from '../utils/publicJobTypeLabel.js'
 export const GLICLASS_CONFIG = JSON.parse(readFileSync(new URL('../../classification/gliclass/model.json', import.meta.url)))
 const runtimeHash = createHash('sha256').update(RUNTIME_HASH).update([
   '../../classification/gliclass/model.json', '../../classification/gliclass/requirements.txt',
-  '../../classification/gliclass/worker.py', './postScrapeClassification.js', './classificationSourceTitle.js',
+  '../../classification/gliclass/worker.py', '../../classification/gliclass/runtime.py', './postScrapeClassification.js', './classificationSourceTitle.js',
   '../../scripts/gliclassWorker.js',
 ].map(file => readFileSync(new URL(file, import.meta.url)).toString().replace(/\r\n/g, '\n')).join('\n')).digest('hex')
 export const GLICLASS_IDENTITY = {

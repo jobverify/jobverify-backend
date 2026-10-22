@@ -1,18 +1,19 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import {runNativeEnphase} from './native.js'
+export {parsePage,parseDetail,parseBinding} from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "enphaseenergy"
 export const COMPANY = "Enphase Energy"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-08-01"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 09 exact-name sentinel for Enphase Energy added on Saturday, August 1, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const CAREERS_URL = 'https://enphase.com/careers'
+export const DISPOSITION = 'current-public-corporate-API-company-scope-partial'
+export const VERIFIED_ON = null
+export const VERIFIED_SURFACE_SUMMARY = 'Current corporate client, finite API inventory and full India corporate details are reconciled per run. Whole-company totals, posting dates and application access remain unqualified.'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run = options => runNativeEnphase(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

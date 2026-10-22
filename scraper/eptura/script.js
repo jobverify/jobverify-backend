@@ -1,18 +1,18 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import { runNativeEptura } from './nativeRun.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "eptura"
 export const COMPANY = "Eptura"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-07-29"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 08 exact-name sentinel for Eptura added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const CAREERS_URL = 'https://eptura.com/careers/'
+export const DISPOSITION = 'current-advertised-public-Pinpoint-native-company-scope-partial'
+export const VERIFIED_ON = null
+export const VERIFIED_SURFACE_SUMMARY = 'Current official Pinpoint delegation, typed India geography, full descriptions, native original dates and advertised public application entries are reconciled each run. Whole-company counts remain unknown.'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run = options => runNativeEptura(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

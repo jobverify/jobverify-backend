@@ -19,8 +19,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: npm ci --ignore-scripts
-      - uses: actions/cache@v4
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - uses: actions/cache/restore@v4
+        id: resume-dependencies
         with:
           path: |
             .cache/resume-models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf
@@ -31,3 +32,19 @@ jobs:
         env:
           RESUME_BENCHMARK_SCENARIO: ${{ inputs.scenario }}
         run: node scripts/benchmarkResumeModel.js
+      - name: Check that every immutable dependency is ready
+        id: complete-cache
+        if: ${{ !cancelled() && steps.resume-dependencies.outputs.cache-hit != 'true' }}
+        run: |
+          if test -f .cache/resume-models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf && test -f .cache/resume-runtime/b11146/llama-b11146-bin-ubuntu-x64.tar.gz && test -f .cache/resume-compiler/image.tar; then
+            printf 'ready=true\n' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Save immutable dependencies even if the benchmark failed
+        if: ${{ !cancelled() && steps.complete-cache.outputs.ready == 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .cache/resume-models/Qwen3-4B-Instruct-2507-Q4_K_M.gguf
+            .cache/resume-runtime/b11146/llama-b11146-bin-ubuntu-x64.tar.gz
+            .cache/resume-compiler/image.tar
+          key: ${{ steps.resume-dependencies.outputs.cache-primary-key }}

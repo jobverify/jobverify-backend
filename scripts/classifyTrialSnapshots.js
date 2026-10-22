@@ -71,7 +71,7 @@ export async function classifyTrialSnapshots(directory, { workerFactory = startG
   if (jobs) jobs.length = 0
   fs.mkdirSync(outputDir, { recursive: true })
   const nativeRuntime = createHash('sha256').update([
-    '../classification/gliclass/worker.py', '../classification/gliclass/model.json',
+    '../classification/gliclass/worker.py', '../classification/gliclass/runtime.py', '../classification/gliclass/model.json',
     '../classification/gliclass/requirements.txt', './gliclassWorker.js',
   ].map(file => fs.readFileSync(new URL(file, import.meta.url)).toString().replace(/\r\n/g, '\n')).join('\n')).digest('hex')
   const worker = await workerFactory({ logFile: path.join(directory, 'classifier.log') })

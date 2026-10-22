@@ -79,13 +79,18 @@ test('post-scrape Mongo updates resume, partition, and reject stale source predi
     await Job.deleteMany({})
     const seeded = await seed('native-reuse')
     let calls = 0
-    const worker = { classify: async () => { calls++; return prediction('Full-time Experienced') } }
+    const worker = { classify: async () => { calls++; return { ...prediction('Full-time Experienced'),
+      seconds: 2, cpuSeconds: 6, peakRssBytes: 100000 } } }
     const shadow = await classifySavedJobs({ worker, mode: 'shadow', now: () => now })
     assert.equal(shadow.completed, 1)
     assert.equal((await Job.findById(seeded._id).lean()).jobType, 'Unspecified')
     const publish = await classifySavedJobs({ worker, mode: 'policy', now: () => now })
     assert.equal(publish.completed, 1)
     assert.equal(publish.nativeCached, 1)
+    assert.equal(publish.modelRequests, 0)
+    assert.equal(publish.inference.measuredRequests, 0)
+    assert.equal(publish.inference.averageCpuCoresUsed, null)
+    assert.equal(publish.resources.peakRssBytes, 0)
     assert.equal(calls, 1)
     assert.equal((await Job.findById(seeded._id).lean()).jobType, 'Full-time Experienced')
     const nextYear = await classifySavedJobs({ worker, mode: 'policy', now: () => new Date('2027-01-02T12:00:00Z') })
@@ -195,6 +200,54 @@ test('post-scrape Mongo updates resume, partition, and reject stale source predi
     assert.equal(second.leased, 1)
     release()
     assert.equal((await first).completed, 1)
+  })
+
+  await t.test('skip diagnostics distinguish missing and oversized input and corrected source resumes', async () => {
+    await Job.deleteMany({})
+    const missing = await seed('diagnostic-missing', '')
+    await seed('diagnostic-oversized', 'Employer responsibilities and qualifications. '.repeat(7000))
+    await seed('diagnostic-valid')
+    const rows = [], progress = []
+    const worker = { configuration: { cpuThreads: 4, availableCpus: 4 }, classify: async () => ({
+      ...prediction('Full-time Fresher'), seconds: 2, cpuSeconds: 6, peakRssBytes: 100000, descriptionTokens: 40 }) }
+    const summary = await classifySavedJobs({ mode: 'policy', now: () => now, worker,
+      onResult: row => rows.push(row), onProgress: value => progress.push(JSON.parse(JSON.stringify(value))) })
+    assert.equal(summary.skipped, 2)
+    assert.equal(summary.skipReasons.missing_description, 1)
+    assert.equal(summary.skipReasons.oversized_description, 1)
+    assert.equal(summary.completed, 1)
+    assert.equal(summary.modelRequests, 1)
+    assert.equal(summary.descriptionOrigins.source, 3)
+    assert.equal(summary.quality.modelDisagreement, 1)
+    assert.equal(summary.resources.cpuThreads, 4)
+    assert.equal(summary.inference.averageCpuCoresUsed, 3)
+    assert.equal(rows.length, 3)
+    assert.equal(progress.length, 3)
+    const skipped = rows.find(row => row.id === String(missing._id))
+    assert.equal(skipped.reason, 'missing_description')
+    assert.equal(skipped.company, 'Trial Company')
+    assert.equal(skipped.inputBytes, 0)
+    assert.equal((await Job.findById(missing._id).lean()).postClassification.reason, 'missing_description')
+    assert.ok(rows.some(row => row.reason === 'oversized_description' && row.inputBytes > 262144))
+    assert.ok(rows.every(row => !Object.hasOwn(row, 'body') && !Object.hasOwn(row, 'sourceDescription')))
+    await Job.updateOne({ _id: missing._id }, { $set: { sourceDescription: 'Full-time position requiring 3 years of experience.' } })
+    const resumed = await classifySavedJobs({ mode: 'policy', now: () => now, worker })
+    assert.equal(resumed.completed, 1)
+    assert.equal(resumed.cached, 1)
+    assert.equal(resumed.skipped, 1)
+    assert.equal(resumed.modelRequests, 1)
+  })
+
+  await t.test('diagnostic write failures propagate without marking a saved classification as failed', async () => {
+    await Job.deleteMany({})
+    const seeded = await seed('diagnostic-write-failure')
+    await assert.rejects(classifySavedJobs({ mode: 'policy', now: () => now,
+      worker: { classify: async () => prediction('Full-time Experienced') },
+      onResult: () => { throw new Error('Diagnostic disk write failed') },
+    }), /Diagnostic disk write failed/)
+    const saved = await Job.findById(seeded._id).lean()
+    assert.equal(saved.postClassification.status, 'completed')
+    assert.equal(saved.jobType, 'Full-time Experienced')
   })
 
   await t.test('model failure stays retryable; missing description never produces a label', async () => {

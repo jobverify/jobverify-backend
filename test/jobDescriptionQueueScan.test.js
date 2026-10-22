@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import Job from '../src/models/Job.js';
-import { rewriteQueueQuery, rewriteQueueScan, rewriteFailureDetails } from '../rewriting/runner.js';
+import { rewriteQueueQuery, rewriteQueueScan, rewriteQueuePages, rewriteFailureDetails } from '../rewriting/runner.js';
 
 test('large rewrite queues stream through the existing index without a blocking sort', { timeout: 120000 }, async t => {
   const mongo = await MongoMemoryServer.create({
@@ -48,9 +48,7 @@ test('large rewrite queues stream through the existing index without a blocking 
   assert.ok(!stages.includes('SORT'));
 
   const ids = [];
-  const cursor = rewriteQueueScan(Job).cursor({ batchSize: 1 });
-  try { for await (const job of cursor) ids.push(String(job._id)); }
-  finally { await cursor.close(); }
+  for await (const job of rewriteQueuePages(Job, rewriteQueueQuery(), { pageSize: 8 })) ids.push(String(job._id));
   assert.deepEqual(ids, jobs.map(job => String(job._id)).sort());
   assert.equal(await Job.countDocuments(), jobs.length + excluded.length);
 });

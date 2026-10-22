@@ -6,8 +6,9 @@ import '../loadEnv.js';
 import { configureMongoDns } from '../src/utils/mongoDns.js';
 import Job from '../src/models/Job.js';
 import { REWRITE_MODEL } from '../src/services/jobDescriptionPolicy.js';
-import { rewriteDeadline, rewriteQueueQuery, rewriteQueueScan, rewriteFailureDetails, createRewriteClient, rewriteCandidates, probeRewriteClient, rewriteProgress } from '../rewriting/runner.js';
+import { rewriteDeadline, rewriteQueueQuery, rewriteQueuePages, rewriteFailureDetails, createRewriteClient, rewriteCandidates, probeRewriteClient, rewriteProgress } from '../rewriting/runner.js';
 import { prepareRewriteRuntime, startRewriteWorker, workerMemoryBytes, rewriteWorkerConfiguration } from '../rewriting/worker.js';
+import { createRewriteDiagnostics } from '../rewriting/diagnostics.js';
 
 const apply = process.argv.includes('--apply');
 const mode = process.env.JOB_DESCRIPTION_REWRITE_MODE || 'off';
@@ -19,15 +20,19 @@ const summary = { mode: apply ? mode : 'preview', modelId: REWRITE_MODEL.modelId
   startedAt: new Date().toISOString(), environment: { platform: os.platform(), cpu: os.cpus()[0]?.model,
     availableCpus: os.availableParallelism(), cpuThreads: workerConfig.threads, parallelism: workerConfig.parallelism,
     contextTokensPerRequest: REWRITE_MODEL.contextTokens, maxOutputTokens: REWRITE_MODEL.maxOutputTokens,
+    maxRetryOutputTokens: REWRITE_MODEL.maxRetryOutputTokens, queuePageSize: 8,
     requestSeconds: REWRITE_MODEL.requestSeconds, totalMemoryBytes: os.totalmem() } };
 const summaryFile = path.resolve(process.env.PIPELINE_SUMMARY_FILE || '.cache/scraper-actions/description-summary.json');
+const diagnosticFile = path.join(path.dirname(summaryFile), 'description-rejections.json');
+const diagnostics = createRewriteDiagnostics();
+const onRejection = rejection => diagnostics.record(rejection);
 const deadline = rewriteDeadline({ budgetSeconds: process.env.JOB_DESCRIPTION_REWRITE_BUDGET_SECONDS || 1200,
   workflowStartedAt: process.env.JOB_DESCRIPTION_WORKFLOW_STARTED_AT, workflowSeconds: process.env.JOB_DESCRIPTION_WORKFLOW_BUDGET_SECONDS || 9000 });
 const controller = new AbortController();
 for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => controller.abort());
 const budgetSignal = AbortSignal.timeout(Math.max(1, Math.floor(deadline - Date.now())));
 const signal = AbortSignal.any([controller.signal, budgetSignal]);
-let worker, cursor, phase = 'configuration';
+let worker, jobs, phase = 'configuration';
 try {
   if (apply && mode !== 'publish') summary.reason = 'disabled';
   else if (Date.now() >= deadline) summary.reason = 'workflow_budget_exhausted';
@@ -48,11 +53,11 @@ try {
         worker = await startRewriteWorker({ ...runtime, signal, deadline,
           threads: workerConfig.threads, parallelism: workerConfig.parallelism });
         phase = 'probe_worker';
-        summary.workerProbe = await probeRewriteClient(createRewriteClient(worker), { concurrency: worker.parallelism, deadline, signal });
+        summary.workerProbe = await probeRewriteClient(createRewriteClient(worker), { concurrency: worker.parallelism, deadline, signal, onRejection });
         phase = 'process_queue';
-        cursor = rewriteQueueScan(Job, query).cursor({ batchSize: 1 });
+        jobs = rewriteQueuePages(Job, query, { pageSize: 8, deadline, signal });
         summary.results = [];
-        Object.assign(summary, await rewriteCandidates(cursor, { client: createRewriteClient({ ...worker, planCacheDir: '.cache/description-rewrites' }), deadline, signal, concurrency: worker.parallelism,
+        Object.assign(summary, await rewriteCandidates(jobs, { client: createRewriteClient({ ...worker, planCacheDir: '.cache/description-rewrites' }), deadline, signal, concurrency: worker.parallelism, onRejection,
           update: async (filter, update) => {
             try { return await Job.updateOne(filter, update, { runValidators: true, maxTimeMS: 15000 }); }
             catch (error) { error.rewritePhase = 'update_job'; throw error; }
@@ -68,7 +73,7 @@ try {
   Object.assign(summary, rewriteFailureDetails(error, error.rewritePhase || phase));
   if (!signal.aborted) process.exitCode = 1;
 } finally {
-  await cursor?.close();
+  await jobs?.return();
   if (worker) summary.worker = worker.diagnostics();
   if (worker) summary.workerMemoryBytes = await workerMemoryBytes(worker.pid).catch(() => null);
   await worker?.stop();
@@ -86,6 +91,13 @@ try {
     if (summary.outcome !== 'completed') process.exitCode = 1;
   }
   await fs.mkdir(path.dirname(summaryFile), { recursive: true });
+  if (apply) {
+    const rejected = diagnostics.snapshot();
+    summary.rejectionDiagnostics = { file: path.basename(diagnosticFile), totalRejected: rejected.totalRejected,
+      sampleCount: rejected.samples.length, reasons: rejected.reasons, maxSamples: rejected.maxSamples, maxBytes: rejected.maxBytes };
+    await fs.writeFile(diagnosticFile + '.tmp', JSON.stringify(rejected) + '\n');
+    await fs.rename(diagnosticFile + '.tmp', diagnosticFile);
+  }
   await fs.writeFile(summaryFile + '.tmp', JSON.stringify(summary, null, 2) + '\n');
   await fs.rename(summaryFile + '.tmp', summaryFile);
   console.log(JSON.stringify({ ...summary, results: summary.results?.length }));

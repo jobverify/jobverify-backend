@@ -8,6 +8,7 @@ export const SECTION_TITLES = {
   required_qualifications: 'Required qualifications', required_skills: 'Required skills',
   preferred: 'Preferred qualifications and skills', employment: 'Employment details', application: 'Application details',
 };
+export const MAX_REWRITE_SECTION_ITEMS = 64;
 export const cleanRewriteSource = value => String(value ?? '').replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, '')
   .replace(/<\/?(?:p|br|div|li|h[1-6])\b[^>]*>/gi, '\n').replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
@@ -59,7 +60,7 @@ export const REWRITE_SCHEMA = { type: 'object', additionalProperties: false, req
   sections: { type: 'array', minItems: 1, maxItems: 7, items: { type: 'object', additionalProperties: false,
     required: ['key', 'items'], properties: {
       key: { type: 'string', enum: Object.keys(SECTION_TITLES) },
-      items: { type: 'array', minItems: 1, maxItems: 16, items: { type: 'object', additionalProperties: false,
+      items: { type: 'array', minItems: 1, maxItems: MAX_REWRITE_SECTION_ITEMS, items: { type: 'object', additionalProperties: false,
         required: ['text', 'evidence', 'style'], properties: {
           text: { type: 'string' }, evidence: { type: 'string' }, style: { type: 'string', enum: ['paragraph', 'bullet'] },
         } } },
@@ -99,10 +100,24 @@ const tokens = text => (text.toLowerCase().match(/[a-z][a-z0-9+#.-]*/g) || []).m
 const ignoredTokens = new Set(tokens([...filler].join(' ')));
 const grammaticalAdditions = new Set(tokens('a an the is are be being been this that these those also'));
 const contentTokens = text => tokens(text).filter(t => !ignoredTokens.has(t));
-const failure = reason => ({ ok: false, reason });
+const failure = (reason, diagnostic) => ({ ok: false, reason, ...(diagnostic && { diagnostic }) });
+export const requiresVerbatimRewrite = unit => ['required', 'preferred'].includes(unit.role)
+  || Boolean(unit.field) || numbers(unit.text).length > 0 || negationWords.test(unit.text) || conditionalWords.test(unit.text);
+
+// Split opposite explicit scopes, never the coordinated subjects in a phrase
+// such as "Python and Java experience is preferred".
+const splitQualificationClauses = text => text.split(/\s*(?:;|,?\s+\b(?:but|while|whereas)\b)\s*/i).flatMap(segment => {
+  for (const match of segment.matchAll(/\s+and\s+/gi)) {
+    const left = segment.slice(0, match.index), right = segment.slice(match.index + match[0].length);
+    if (requiredWords.test(left) && preferenceWords.test(right) || preferenceWords.test(left) && requiredWords.test(right)) {
+      return [left, ...splitQualificationClauses(right)];
+    }
+  }
+  return [segment];
+}).filter(Boolean);
 
 // Retain source section boundaries before display/hash whitespace normalization.
-const sourceStatements = input => {
+export const rewriteSourceStatements = input => {
   const heading = /^(role overview|responsibilities|what you(?:’|')ll (?:be )?doing|required(?: qualifications| skills| requirements)?|minimum qualifications|basic qualifications|qualifications|requirements|skills|preferred(?: qualifications| skills| requirements)?|nice to have|what makes you stand out|employment details|application details)\s*(?::|$)/i;
   const source = input.sourceDescription.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, '')
     .replace(/<\/?(?:p|br|div|li|h[1-6]|section|ul|ol)\b[^>]*>/gi, '\n')
@@ -116,13 +131,15 @@ const sourceStatements = input => {
       scope = /preferred|nice to have|stand out/i.test(match[1]) ? 'preferred'
         : /required|minimum|basic|qualifications|requirements|^skills$/i.test(match[1]) ? 'required' : 'neutral';
       section = /responsibilities|doing/i.test(match[1]) ? 'responsibilities'
-        : /employment/i.test(match[1]) ? 'employment' : /application/i.test(match[1]) ? 'application' : null;
+        : /employment/i.test(match[1]) ? 'employment' : /application/i.test(match[1]) ? 'application'
+          : /overview/i.test(match[1]) ? 'overview' : scope === 'preferred' ? 'preferred'
+            : scope === 'required' ? /skills/i.test(match[1]) ? 'required_skills' : 'required_qualifications' : null;
       text = text.slice(match[0].length).trim();
     }
     if (!text) continue;
     const clauses = preferenceWords.test(text) && (requiredWords.test(text) || scope === 'required')
       || requiredWords.test(text) && scope === 'preferred'
-      ? text.split(/\s*(?:;|,?\s+\b(?:and|but|while|whereas)\b)\s*/i).filter(Boolean) : [text];
+      ? splitQualificationClauses(text) : [text];
     let clauseScope = scope;
     for (const clause of clauses) {
       const role = ['responsibilities', 'employment', 'application'].includes(section) ? 'neutral'
@@ -132,10 +149,10 @@ const sourceStatements = input => {
     }
   }
   for (const [field, role] of [['minimumQualification', 'required'], ['sourceExperienceRequired', 'required'], ['preferredQualification', 'preferred']]) {
-    for (const text of input.facts[field].split(/(?<=[.!?])\s+(?=[A-Z])/).filter(Boolean)) units.push({ text, role });
+    for (const text of input.facts[field].split(/(?<=[.!?])\s+(?=[A-Z])/).filter(Boolean)) units.push({ text, role, field });
   }
   for (const field of ['sourceEmploymentType', 'location', 'salary']) {
-    if (input.facts[field]) units.push({ text: input.facts[field], role: 'neutral', section: 'employment' });
+    if (input.facts[field]) units.push({ text: input.facts[field], role: 'neutral', section: 'employment', field });
   }
   return units;
 };
@@ -146,39 +163,44 @@ export const validateRewrite = (value, input, finishReason) => {
   if (!input.eligible) return failure('insufficient_source');
   if (!value || Object.keys(value).some(k => k !== 'sections') || !Array.isArray(value.sections) || !value.sections.length || value.sections.length > 7) return failure('malformed');
   const seenKeys = new Set(), seenTexts = new Set(), paragraphs = [], sections = [], publishedItems = [];
-  const statements = sourceStatements(input);
+  const statements = rewriteSourceStatements(input);
   for (const section of value.sections) {
-    if (!section || !Object.hasOwn(SECTION_TITLES, section.key) || seenKeys.has(section.key) || Object.keys(section).some(k => !['key', 'items'].includes(k)) || !Array.isArray(section.items) || !section.items.length || section.items.length > 16) return failure('malformed');
+    if (!section || !Object.hasOwn(SECTION_TITLES, section.key) || seenKeys.has(section.key) || Object.keys(section).some(k => !['key', 'items'].includes(k)) || !Array.isArray(section.items) || !section.items.length || section.items.length > MAX_REWRITE_SECTION_ITEMS) return failure('malformed');
     seenKeys.add(section.key);
     const rendered = [];
-    for (const item of section.items) {
+    for (const [itemIndex, item] of section.items.entries()) {
       if (!item || Object.keys(item).some(k => !['text', 'evidence', 'style'].includes(k)) || typeof item.text !== 'string' || typeof item.evidence !== 'string' || !['paragraph', 'bullet'].includes(item.style)) return failure('malformed');
       const text = item.text.replace(/\s+/g, ' ').trim(), evidence = item.evidence.replace(/\s+/g, ' ').trim();
+      const rejectItem = reason => failure(reason, { section: section.key, itemIndex, text, evidence });
       const suppliedFields = Object.keys(input.facts).filter(key => key !== 'description' && input.facts[key] && input.facts[key] === evidence);
-      if (text.length < (suppliedFields.length ? 2 : 15) || text.length > 2400 || /<\/?[a-z]|https?:|^#/i.test(text)) return failure('malformed');
+      const completeSourceStatement = statements.some(unit => unit.text === evidence);
+      if (text.length < (suppliedFields.length || completeSourceStatement ? 2 : 15) || text.length > 2400 || /<\/?[a-z]|https?:|^#/i.test(text)) return rejectItem('malformed');
       const source = input.body.replace(/\s+/g, ' ');
-      if ((!suppliedFields.length && evidence.length < 15) || !evidence || !source.includes(evidence)) return failure('invalid_evidence');
+      if ((!suppliedFields.length && !completeSourceStatement && evidence.length < 15) || !evidence || !source.includes(evidence)) return rejectItem('invalid_evidence');
       const evidenceNumbers = new Set(numbers(evidence));
-      if (numbers(text).some(n => !evidenceNumbers.has(n))) return failure('unsupported_number');
+      if (numbers(text).some(n => !evidenceNumbers.has(n))) return rejectItem('unsupported_number');
       const evidencePosition = source.indexOf(evidence);
       const preceding = source.slice(0, evidencePosition);
       const field = suppliedFields.length === 1 ? suppliedFields[0]
         : [...preceding.matchAll(/(?:^| )(description|minimumQualification|preferredQualification|sourceEmploymentType|sourceExperienceRequired|location|salary): /g)].at(-1)?.[1];
       const headings = [...preceding.matchAll(/\b(preferred(?: qualifications| skills| requirements)?|nice to have|what makes you stand out|required(?: qualifications| skills)?|requirements|responsibilities|qualifications)\s*:/gi)];
-      const matchingStatements = statements.filter(unit => unit.text.includes(evidence) || evidence.includes(unit.text));
+      const exactStatements = statements.filter(unit => unit.text === evidence);
+      const matchingStatements = suppliedFields.length
+        ? exactStatements.filter(unit => suppliedFields.includes(unit.field))
+        : exactStatements.length ? exactStatements : statements.filter(unit => unit.text.includes(evidence) || evidence.includes(unit.text));
       for (const unit of matchingStatements) {
-        if (conditionalWords.test(unit.text) && !text.toLowerCase().includes(unit.text.toLowerCase())) return failure('condition_changed');
-        if (negationWords.test(unit.text) && !text.toLowerCase().includes(unit.text.toLowerCase())) return failure('negation_changed');
+        if (conditionalWords.test(unit.text) && !text.toLowerCase().includes(unit.text.toLowerCase())) return rejectItem('condition_changed');
+        if (negationWords.test(unit.text) && !text.toLowerCase().includes(unit.text.toLowerCase())) return rejectItem('negation_changed');
       }
       const inPreferredSection = field === 'preferredQualification' || matchingStatements.some(unit => unit.role === 'preferred') || (!matchingStatements.length && field === 'description' && /preferred|nice to have|stand out/i.test(headings.at(-1)?.[1] || ''));
-      if (inPreferredSection && section.key !== 'preferred') return failure('preferred_promoted');
-      if (section.key === 'preferred' && (requiredWords.test(evidence) || matchingStatements.some(unit => unit.role === 'required')) && !preferenceWords.test(evidence) && !inPreferredSection) return failure('required_demoted');
-      if (section.key === 'preferred' && requiredWords.test(text) && !requiredWords.test(evidence)) return failure('preferred_promoted');
-      if (numbers(evidence).length && text.toLowerCase() !== evidence.toLowerCase()) return failure('numeric_relationship_changed');
-      if (negationWords.test(evidence) && text.toLowerCase() !== evidence.toLowerCase()) return failure('negation_changed');
+      if (inPreferredSection && section.key !== 'preferred') return rejectItem('preferred_promoted');
+      if (section.key === 'preferred' && (requiredWords.test(evidence) || matchingStatements.some(unit => unit.role === 'required')) && !preferenceWords.test(evidence) && !inPreferredSection) return rejectItem('required_demoted');
+      if (section.key === 'preferred' && requiredWords.test(text) && !requiredWords.test(evidence)) return rejectItem('preferred_promoted');
+      if (numbers(evidence).length && text.toLowerCase() !== evidence.toLowerCase()) return rejectItem('numeric_relationship_changed');
+      if (negationWords.test(evidence) && text.toLowerCase() !== evidence.toLowerCase()) return rejectItem('negation_changed');
       const risky = /\b(remote|hybrid|onsite|salary|pay|paid|unpaid|bonus|insurance|guaranteed|mandatory|must|proficient|expert|expertise|advanced|senior|junior)\b/gi;
-      if ([...text.matchAll(risky)].some(match => !evidence.toLowerCase().includes(match[0].toLowerCase()))) return failure('unsupported_claim');
-      if (negationWords.test(evidence) !== negationWords.test(text)) return failure('negation_changed');
+      if ([...text.matchAll(risky)].some(match => !evidence.toLowerCase().includes(match[0].toLowerCase()))) return rejectItem('unsupported_claim');
+      if (negationWords.test(evidence) !== negationWords.test(text)) return rejectItem('negation_changed');
       const evidenceTokens = new Set(tokens(evidence));
       const fieldLabels = { title: 'title role', company: 'company employer', location: 'location located',
         salary: 'salary compensation pay', sourceEmploymentType: 'employment type',
@@ -186,7 +208,7 @@ export const validateRewrite = (value, input, finishReason) => {
       for (const key of suppliedFields) for (const token of tokens(fieldLabels[key] || '')) evidenceTokens.add(token);
       const claims = contentTokens(text);
       const unsupported = claims.filter(t => !evidenceTokens.has(t));
-      if (unsupported.length) return failure('unsupported_claim');
+      if (unsupported.length) return rejectItem('unsupported_claim');
       // Keep actions and actors as well as domain terms in source order. Matching
       // otherwise reverse who mentors whom or who pays whom. Conservative
       // rejection is preferable to publishing an uncertain relationship.
@@ -197,7 +219,7 @@ export const validateRewrite = (value, input, finishReason) => {
         const next = orderedEvidence.indexOf(claim, position);
         if (next < 0 && labelPrefix && labelTokens.has(claim)) continue;
         if (next < 0 && grammaticalAdditions.has(claim)) continue;
-        if (next < 0) return failure('relationship_changed');
+        if (next < 0) return rejectItem('relationship_changed');
         position = next + 1;
         labelPrefix = false;
       }
@@ -218,13 +240,13 @@ export const validateRewrite = (value, input, finishReason) => {
   for (const unit of statements.filter(unit => ['required', 'preferred'].includes(unit.role))) {
     const applicable = publishedItems.filter(item => unit.role === 'preferred' ? item.key === 'preferred' : ['required_qualifications', 'required_skills'].includes(item.key));
     const coveredTokens = new Set(applicable.flatMap(item => contentTokens(item.text)));
-    if (contentTokens(unit.text).some(token => !coveredTokens.has(token))) return failure('missing_requirements');
-    if ((numbers(unit.text).length || negationWords.test(unit.text) || conditionalWords.test(unit.text)) && !applicable.some(item => item.text.toLowerCase().includes(unit.text.toLowerCase()))) return failure('missing_requirements');
+    if (contentTokens(unit.text).some(token => !coveredTokens.has(token))) return failure('missing_requirements', { evidence: unit.text, scope: unit.role });
+    if ((numbers(unit.text).length || negationWords.test(unit.text) || conditionalWords.test(unit.text)) && !applicable.some(item => item.text.toLowerCase().includes(unit.text.toLowerCase()))) return failure('missing_requirements', { evidence: unit.text, scope: unit.role });
   }
   for (const unit of statements.filter(unit => unit.role === 'neutral' && ['responsibilities', 'employment', 'application'].includes(unit.section))) {
     const applicable = publishedItems.filter(item => item.key === unit.section);
     const covered = new Set(applicable.flatMap(item => contentTokens(item.text)));
-    if (contentTokens(unit.text).some(token => !covered.has(token))) return failure('missing_source_details');
+    if (contentTokens(unit.text).some(token => !covered.has(token))) return failure('missing_source_details', { evidence: unit.text, section: unit.section });
     if ((numbers(unit.text).length || negationWords.test(unit.text) || conditionalWords.test(unit.text))
       && !applicable.some(item => item.text.toLowerCase().includes(unit.text.toLowerCase()))) return failure('missing_source_details');
   }

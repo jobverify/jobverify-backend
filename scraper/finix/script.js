@@ -1,18 +1,18 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import { runNativeFinix } from './nativeRun.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "finix"
 export const COMPANY = "Finix"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-07-29"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 08 exact-name sentinel for Finix added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const CAREERS_URL = 'https://finix.com/careers'
+export const DISPOSITION = 'public-Lever-native-scope-with-partial-preservation'
+export const VERIFIED_ON = null
+export const VERIFIED_SURFACE_SUMMARY = 'Current official Finix Lever tenant uses the existing shared adapter with native secondary-location guards. Generic Remote scopes retain incomplete evidence; original publication dates and India-capable totals remain unknown.'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run = options => runNativeFinix(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

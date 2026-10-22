@@ -1,18 +1,19 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { createFailClosedSentinelScraper } from './failClosedSentinel.js'
+import {runNativeFlywire,CAREERS} from './native.js'
+export {parseBinding,parsePage,parseNativeDetail,parseIndiaPage} from './native.js'
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const SOURCE = "flywire"
 export const COMPANY = "Flywire"
-export const CAREERS_URL = null
-export const DISPOSITION = "workbook-exact-name-sentinel"
-export const VERIFIED_ON = "2026-07-29"
-export const VERIFIED_SURFACE_SUMMARY = "Workbook batch 08 exact-name sentinel for Flywire added on Wednesday, July 29, 2026. It intentionally returns zero jobs until a trustworthy public careers surface is verified for this exact company name."
+export const CAREERS_URL = CAREERS
+export const DISPOSITION = 'official-native-workday-board-publication-provenance-partial'
+export const VERIFIED_ON = null
+export const VERIFIED_SURFACE_SUMMARY = 'Reconciles the exact corporate Workday handoff, public native listing and full India details with typed countries and native JobPosting metadata. Original publication provenance and application access remain unqualified.'
 
-export const run = async () => createFailClosedSentinelScraper().run()
+export const run = options => runNativeFlywire(options)
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { saveToDB, saveToFile } = await import('../../scraper-support/utils/saveToDB.js')

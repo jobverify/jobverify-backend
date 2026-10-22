@@ -31,7 +31,7 @@ export async function renderAndInspectPdf(pdf) {
     return document.numPages;
   } finally { await task.destroy(); }
 }
-export async function verifyResumeCompiler({ deadline = Date.now() + 12 * 60000, prepare = true } = {}) {
+export async function verifyResumeCompiler({ deadline = Date.now() + 12 * 60000, prepare = true, compile = compileResumeLatex } = {}) {
   if (prepare) await prepareResumeCompiler({ deadline });
   let pages = 0;
   const head = '\\documentclass[11pt,a4paper]{article}\n\\usepackage[margin=0.7in]{geometry}\n\\usepackage[T1]{fontenc}\n\\usepackage{lmodern,hyperref,enumitem,titlesec}\n\\pagestyle{empty}\n\\begin{document}\n';
@@ -39,9 +39,11 @@ export async function verifyResumeCompiler({ deadline = Date.now() + 12 * 60000,
     `${head}\\section*{Short resume}Synthetic Candidate\\par Engineer at Example Corp, 2022 -- Present.\\par Education: Example University, BSc, 2018 -- 2022.\\end{document}`,
     `${head}\\section*{Special characters}Synthetic Candidate\\par C\\#, C++, R\\&D, 10\\%, \\_underscore, \\{braces\\}, caf\\'e.\\par \\href{mailto:synthetic@example.test}{synthetic@example.test}\\par \\href{https://example.test/profile?a=1\\&b=2}{Portfolio}\\end{document}`,
     `${head}\\section*{Long resume}\\begin{itemize}${Array.from({ length: 70 }, (_, i) => `\\item Synthetic project ${i + 1}: developed and tested a reliable Java service with documented operational procedures.`).join('\n')}\\end{itemize}\\section*{Final education section}Example University, BSc, 2018 -- 2022.\\end{document}`,
+    ...[10, 11, 12].map(size => `${head.replace('11pt', `${size}pt`)}\\section*{Font coverage}Readable regular text. \\textbf{Body bold}. \\textit{Employment dates}. \\textbf{\\textit{Bold italic}}. \\textsf{Sans serif}. \\texttt{Monospace}.\\end{document}`),
+    `${head.replace('\\usepackage[T1]{fontenc}\n', '').replace('\\usepackage{lmodern,hyperref,enumitem,titlesec}', '\\usepackage{hyperref,enumitem,titlesec}')}\\textbf{Default font bold}. \\textit{Default font italic}. Readable synthetic resume.\\end{document}`,
   ];
   for (const latex of cases) {
-    const result = await compileResumeLatex(latex, { deadline });
+    const result = await compile(latex, { deadline });
     if (latex.includes('Final education section')) assert.ok(result.text.includes('Final education section'), 'The final section must be readable.');
     if (latex.includes('mailto:')) assert.ok(result.links.includes('mailto:synthetic@example.test'));
     pages += await renderAndInspectPdf(result.pdf);
